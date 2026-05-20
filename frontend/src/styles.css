@@ -1,0 +1,137 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+:root[data-theme="dark"] {
+  --bg: #0b0e14;
+  --bg-2: #11151d;
+  --panel: #161b25;
+  --panel-2: #1b2230;
+  --text: #ecedee;
+  --muted: #9ba3b4;
+  --soft: #6b7384;
+  --accent: #4ade80;
+  --accent-2: #22d3ee;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --border: #232a36;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  --radius: 14px;
+  --gradient-1: rgba(34, 211, 238, 0.08);
+  --gradient-2: rgba(74, 222, 128, 0.07);
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f6fb;
+  --bg-2: #eaeef5;
+  --panel: #ffffff;
+  --panel-2: #f5f7fb;
+  --text: #1a202c;
+  --muted: #4a5568;
+  --soft: #718096;
+  --accent: #16a34a;
+  --accent-2: #0891b2;
+  --warn: #d97706;
+  --danger: #dc2626;
+  --border: #d6dce6;
+  --shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --radius: 14px;
+  --gradient-1: rgba(8, 145, 178, 0.06);
+  --gradient-2: rgba(22, 163, 74, 0.05);
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    @apply m-0 p-0 min-h-screen;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, Segoe UI, Roboto, sans-serif;
+    font-size: 15px; line-height: 1.5; color: var(--text);
+    background: radial-gradient(1200px 600px at 0% -10%, var(--gradient-1), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, var(--gradient-2), transparent 60%), var(--bg);
+  }
+  a { color: var(--accent-2); @apply no-underline; }
+  lucide-icon, lucide-angular { @apply inline-flex align-middle; }
+  input[type="text"], input[type="number"], select, textarea {
+    @apply w-full rounded-lg font-[inherit]; padding: 10px 12px; font-size: 0.94rem;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--accent-2); outline-offset: -2px;
+  }
+}
+
+/* Dynamic classes remain here */
+.active { font-weight: 600; background: var(--panel-2); color: var(--text); }
+.error { border-color: var(--danger) !important; color: var(--danger); }
+.empty { text-align: center; color: var(--muted); }
+.good { color: var(--accent); }
+.warn, .warning { color: var(--warn); }
+.info { border-color: rgba(34,211,238,0.4); }
+
+/* Verdict pills */
+.v-buy    { background: rgba(34,197,94,0.15);  color: var(--accent);  border-color: rgba(34,197,94,0.35); }
+.v-sell   { background: rgba(248,113,113,0.15); color: var(--danger);  border-color: rgba(248,113,113,0.35); }
+.v-hold   { background: rgba(251,191,36,0.15);  color: var(--warn);    border-color: rgba(251,191,36,0.35); }
+.v-unknown { background: var(--panel-2); color: var(--muted); }
+
+/* Score pills */
+.score-pill.high { background: rgba(34,197,94,0.18);  color: var(--accent); }
+.score-pill.mid  { background: rgba(251,191,36,0.18); color: var(--warn); }
+.score-pill.low  { background: var(--panel-2); color: var(--muted); }
+
+/* Category tags */
+.cat-renda  { background: rgba(34,197,94,0.15);  color: var(--accent);  border-color: rgba(34,197,94,0.35); }
+.cat-trade  { background: rgba(34,211,238,0.15); color: var(--accent-2); border-color: rgba(34,211,238,0.35); }
+.cat-cripto { background: rgba(168,85,247,0.18); color: #a855f7;         border-color: rgba(168,85,247,0.4); }
+.cat-caixa  { background: rgba(148,163,184,0.18); color: var(--muted);   border-color: rgba(148,163,184,0.4); }
+
+/* Dip verdict */
+.dip-oportunidade { background: rgba(74,222,128,0.12); border-color: #4ade80; }
+.dip-oportunidade .dip-verdict-title { color: #4ade80; }
+.dip-neutro       { background: rgba(251,191,36,0.10);  border-color: #fbbf24; }
+.dip-neutro .dip-verdict-title       { color: #fbbf24; }
+.dip-armadilha    { background: rgba(248,113,113,0.12); border-color: #f87171; }
+.dip-armadilha .dip-verdict-title    { color: #f87171; }
+
+.dip-badge-oportunidade { background: rgba(74,222,128,0.18); color: #4ade80; }
+.dip-badge-neutro       { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.dip-badge-armadilha    { background: rgba(248,113,113,0.15); color: #f87171; }
+
+/* Bar fills */
+.bar-good { background: var(--accent); }
+.bar-mid  { background: var(--warn); }
+.bar-low  { background: var(--danger); }
+
+/* News sentiment */
+.news-positive { border-left-color: var(--accent); }
+.news-negative { border-left-color: var(--danger); }
+.news-neutral  { border-left-color: var(--muted); }
+
+/* Alert types */
+.alert-info     { border-left-color: var(--accent-2); }
+.alert-warning  { border-left-color: var(--warn); }
+.alert-critical { border-left-color: var(--danger); }
+
+/* Save pill states */
+.save-pill.saving { color: var(--warn); }
+.save-pill.saved  { color: var(--accent); }
+
+/* Animations */
+@keyframes spin    { from { transform: rotate(0deg); }    to { transform: rotate(360deg); } }
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes fadeIn  { from { opacity: 0; }                  to { opacity: 1; } }
+.spin { @apply inline-flex; animation: spin 0.9s linear infinite; }
+.panel-overlay { @apply fixed inset-0 z-[200]; background: rgba(0,0,0,0.55); animation: fadeIn 0.2s; }
+.side-panel { @apply fixed top-0 right-0 h-screen z-[201] flex flex-col; width: min(620px, 100vw); background: var(--panel); box-shadow: -6px 0 40px rgba(0,0,0,0.4); animation: slideIn 0.25s cubic-bezier(0.16,1,0.3,1); }
+
+/* Strategy tags */
+.tag-success { background: rgba(34,197,94,0.15); color: var(--accent); border-color: rgba(34,197,94,0.35); }
+.tag-warning { background: rgba(251,191,36,0.15); color: var(--warn); border-color: rgba(251,191,36,0.35); }
+.tag-danger { background: rgba(248,113,113,0.15); color: var(--danger); border-color: rgba(248,113,113,0.35); }
+.tag-muted { background: var(--panel-2); color: var(--muted); border-color: var(--border); }
+.tag-accent { background: rgba(34,211,238,0.15); color: var(--accent-2); border-color: rgba(34,211,238,0.35); }
+
+/* Border classes for strategy */
+.border-accent-50 { border-color: rgba(34,211,238,0.5) !important; }
+.bg-accent-5 { background-color: rgba(34,211,238,0.05) !important; }

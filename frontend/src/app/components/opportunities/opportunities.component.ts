@@ -1,0 +1,495 @@
+import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, signal, computed, effect, Renderer2 } from '@angular/core';
+import { LucideAngularModule } from 'lucide-angular';
+import { AssetType, DipAnalysisResponse, LoadingService, Opportunity, RecommendService, UiHelperService, WatchlistItem } from '../../core';
+
+type SortKey = 'score' | 'dy' | 'mos' | 'price';
+
+@Component({
+  selector: 'app-opportunities',
+  standalone: true,
+  imports: [CommonModule, LucideAngularModule],
+  template: `
+    <div class="p-5 rounded-lg bg-panel border border-border">
+      <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-3 text-tx"><lucide-icon name="target" size="18"></lucide-icon> Oportunidades</h2>
+      <p class="text-sm text-muted mb-4">
+        Universo curado + sua watchlist, rankeado por mérito individual.
+        Use filtros para refinar.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-medium text-muted mb-1.5">Busca</label>
+          <input type="text" class="w-full px-3 py-2 rounded-lg bg-bg border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all" [class.border-accent]="filterText()" [class.border-border]="!filterText()" [class.bg-accent]="filterText()" [class.bg-opacity-10]="filterText()" [value]="filterText()" (input)="filterText.set($any($event.target).value)" placeholder="ticker ou nome" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-muted mb-1.5">DY mínimo (%)</label>
+          <input type="number" class="w-full px-3 py-2 rounded-lg bg-bg border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all" [class.border-accent]="filterMinDy() > 0" [class.border-border]="filterMinDy() === 0" [class.bg-accent]="filterMinDy() > 0" [class.bg-opacity-10]="filterMinDy() > 0" [value]="filterMinDy()" (input)="filterMinDy.set(ui.toNum($any($event.target).value))" min="0" step="0.5" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-muted mb-1.5">MS mínima (%)</label>
+          <input type="number" class="w-full px-3 py-2 rounded-lg bg-bg border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all" [class.border-accent]="filterMinMos() !== 0" [class.border-border]="filterMinMos() === 0" [class.bg-accent]="filterMinMos() !== 0" [class.bg-opacity-10]="filterMinMos() !== 0" [value]="filterMinMos()" (input)="filterMinMos.set(ui.toNum($any($event.target).value))" min="-50" step="5" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-muted mb-1.5">Caixa (R$)</label>
+          <input type="number" class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent" [value]="cashAvailable()" (change)="updateCash($event)" min="0" step="100" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-muted mb-1.5">Setor</label>
+          <select class="w-full px-3 py-2 rounded-lg bg-bg border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer transition-all" [class.border-accent]="filterSector()" [class.border-border]="!filterSector()" [class.bg-accent]="filterSector()" [class.bg-opacity-10]="filterSector()" [class.font-semibold]="filterSector()" [value]="filterSector()" (change)="filterSector.set($any($event.target).value)">
+            <option value="">Todos</option>
+            @for (s of availableSectors(); track s) {<option [value]="s">{{ ui.translateSector(s) }}</option>}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-muted mb-1.5">Ordenar por</label>
+          <select class="w-full px-3 py-2 rounded-lg bg-bg border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer transition-all" [class.border-accent]="sortKey() !== 'score' || sortOrder() !== 'desc'" [class.border-border]="sortKey() === 'score' && sortOrder() === 'desc'" [class.bg-accent]="sortKey() !== 'score' || sortOrder() !== 'desc'" [class.bg-opacity-10]="sortKey() !== 'score' || sortOrder() !== 'desc'" [class.font-semibold]="sortKey() !== 'score' || sortOrder() !== 'desc'" [value]="sortKey()" (change)="changeSortKey($any($event.target).value)">
+            <option value="score">Score {{ sortKey() === 'score' ? (sortOrder() === 'desc' ? '↓' : '↑') : '' }}</option>
+            <option value="mos">Margem de segurança {{ sortKey() === 'mos' ? (sortOrder() === 'desc' ? '↓' : '↑') : '' }}</option>
+            <option value="dy">Dividend Yield {{ sortKey() === 'dy' ? (sortOrder() === 'desc' ? '↓' : '↑') : '' }}</option>
+            <option value="price">Preço {{ sortKey() === 'price' ? (sortOrder() === 'desc' ? '↓' : '↑') : '' }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-muted mb-1.5">Tipo de ativo</label>
+          <div class="flex gap-1 flex-wrap">
+            <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all" [class.bg-accent]="filterType() === 'all'" [class.border-accent]="filterType() === 'all'" [class.text-white]="filterType() === 'all'" [class.bg-panel-2]="filterType() !== 'all'" [class.border-border]="filterType() !== 'all'" [class.text-tx]="filterType() !== 'all'" [class.hover:bg-panel]="filterType() !== 'all'" (click)="filterType.set('all')">Todos</button>
+            <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all" [class.bg-accent]="filterType() === 'br_stock'" [class.border-accent]="filterType() === 'br_stock'" [class.text-white]="filterType() === 'br_stock'" [class.bg-panel-2]="filterType() !== 'br_stock'" [class.border-border]="filterType() !== 'br_stock'" [class.text-tx]="filterType() !== 'br_stock'" [class.hover:bg-panel]="filterType() !== 'br_stock'" (click)="filterType.set('br_stock')">BR</button>
+            <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all" [class.bg-accent]="filterType() === 'fii'" [class.border-accent]="filterType() === 'fii'" [class.text-white]="filterType() === 'fii'" [class.bg-panel-2]="filterType() !== 'fii'" [class.border-border]="filterType() !== 'fii'" [class.text-tx]="filterType() !== 'fii'" [class.hover:bg-panel]="filterType() !== 'fii'" (click)="filterType.set('fii')">FII</button>
+            <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all" [class.bg-accent]="filterType() === 'us_stock'" [class.border-accent]="filterType() === 'us_stock'" [class.text-white]="filterType() === 'us_stock'" [class.bg-panel-2]="filterType() !== 'us_stock'" [class.border-border]="filterType() !== 'us_stock'" [class.text-tx]="filterType() !== 'us_stock'" [class.hover:bg-panel]="filterType() !== 'us_stock'" (click)="filterType.set('us_stock')">EUA</button>
+            <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all" [class.bg-accent]="filterType() === 'crypto'" [class.border-accent]="filterType() === 'crypto'" [class.text-white]="filterType() === 'crypto'" [class.bg-panel-2]="filterType() !== 'crypto'" [class.border-border]="filterType() !== 'crypto'" [class.text-tx]="filterType() !== 'crypto'" [class.hover:bg-panel]="filterType() !== 'crypto'" (click)="filterType.set('crypto')">Cripto</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-muted mb-1.5">Categoria</label>
+          <div class="flex gap-1 flex-wrap">
+            <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all" [class.bg-accent]="filterCategory() === 'all'" [class.border-accent]="filterCategory() === 'all'" [class.text-white]="filterCategory() === 'all'" [class.bg-panel-2]="filterCategory() !== 'all'" [class.border-border]="filterCategory() !== 'all'" [class.text-tx]="filterCategory() !== 'all'" [class.hover:bg-panel]="filterCategory() !== 'all'" (click)="filterCategory.set('all')">Todas</button>
+            <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all" [class.bg-accent]="filterCategory() === 'renda'" [class.border-accent]="filterCategory() === 'renda'" [class.text-white]="filterCategory() === 'renda'" [class.bg-panel-2]="filterCategory() !== 'renda'" [class.border-border]="filterCategory() !== 'renda'" [class.text-tx]="filterCategory() !== 'renda'" [class.hover:bg-panel]="filterCategory() !== 'renda'" (click)="filterCategory.set('renda')">Renda</button>
+            <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer border transition-all" [class.bg-accent]="filterCategory() === 'trade'" [class.border-accent]="filterCategory() === 'trade'" [class.text-white]="filterCategory() === 'trade'" [class.bg-panel-2]="filterCategory() !== 'trade'" [class.border-border]="filterCategory() !== 'trade'" [class.text-tx]="filterCategory() !== 'trade'" [class.hover:bg-panel]="filterCategory() !== 'trade'" (click)="filterCategory.set('trade')">Trade</button>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2 text-sm cursor-pointer transition-all" [class.text-tx]="!onlyBuy()" [class.text-accent]="onlyBuy()" [class.font-semibold]="onlyBuy()">
+            <input type="checkbox" class="w-4 h-4 rounded border-border accent-accent cursor-pointer" [checked]="onlyBuy()" (change)="onlyBuy.set($any($event.target).checked)"> Apenas BUY
+          </label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer transition-all" [class.text-tx]="!includeHeld()" [class.text-accent]="includeHeld()" [class.font-semibold]="includeHeld()">
+            <input type="checkbox" class="w-4 h-4 rounded border-border accent-accent cursor-pointer" [checked]="includeHeld()" (change)="includeHeld.set($any($event.target).checked)"> Incluir já em carteira
+          </label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer transition-all" [class.text-tx]="!onlyInteresting()" [class.text-accent]="onlyInteresting()" [class.font-semibold]="onlyInteresting()">
+            <input type="checkbox" class="w-4 h-4 rounded border-border accent-accent cursor-pointer" [checked]="onlyInteresting()" (change)="onlyInteresting.set($any($event.target).checked)"> 
+            <lucide-icon name="trending-up" size="14"></lucide-icon> Apenas Destaques
+          </label>
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" (click)="loadOpportunities()" [disabled]="loading.loading()">
+            <lucide-icon [name]="loading.loading() ? 'loader-circle' : 'search'" size="16"></lucide-icon>
+            {{ loading.loading() ? 'Buscando...' : 'Buscar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    @if (opps()) {
+      <div class="p-5 rounded-lg bg-panel border border-border">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold m-0 text-tx">
+            {{ filteredOpps().length }} oportunidade(s) 
+            @if (filteredOpps().length !== totalItems()) {
+              <span class="text-sm font-normal text-muted">({{ totalItems() }} total)</span>
+            }
+          </h2>
+          <div class="text-sm text-muted">
+            Página {{ currentPage() }} de {{ totalPages() }}
+          </div>
+        </div>
+        <div class="flex flex-col gap-3">
+          @for (o of filteredOpps(); track o.ticker) {
+            <div class="flex justify-between items-start gap-4 p-3 rounded-lg bg-panel-2 border hover:shadow-lg transition-shadow" 
+                 [class.border-accent]="o.is_interesting"
+                 [class.border-border]="!o.is_interesting">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap mb-1">
+                  @if (o.is_interesting) {
+                    <span class="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-accent text-white">
+                      <lucide-icon name="trending-up" size="12"></lucide-icon> DESTAQUE
+                    </span>
+                  }
+                  <div class="font-semibold text-base text-tx">{{ o.ticker }}</div>
+                  <span class="tag">{{ ui.assetTypeLabel(o.asset_type) }}</span>
+                  <span class="tag tag-cat" [class]="'cat-' + o.category_resolved">{{ ui.categoryLabel(o.category_resolved) }}</span>
+                  <span class="tag" *ngIf="o.in_portfolio">na carteira</span>
+                  <span class="tag" *ngIf="o.in_watchlist"><lucide-icon name="star" size="11"></lucide-icon> watchlist</span>
+                </div>
+                <div class="text-sm text-muted mb-2">{{ o.name }} <span *ngIf="o.sector">· {{ ui.translateSector(o.sector) }}</span></div>
+                <div class="flex items-center gap-2 flex-wrap text-xs">
+                  <span class="verdict-pill" [class]="ui.verdictClass(o.verdict)">{{ o.label }}</span>
+                  <span *ngIf="o.margin_of_safety != null" class="text-muted">MS: <strong>{{ (o.margin_of_safety * 100) | number: '1.0-0' }}%</strong></span>
+                  <span *ngIf="o.dividend_yield" class="text-muted">DY: {{ o.dividend_yield | number: '1.1-1' }}%</span>
+                  <span class="text-muted">Score: {{ o.score | number: '1.0-0' }}</span>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="text-lg font-bold text-tx">R$ {{ o.price | number: '1.2-2' }}</div>
+                <div class="text-xs text-muted" *ngIf="o.fair_price">justo: {{ o.fair_price | number: '1.2-2' }}</div>
+                <div class="text-xs text-soft mt-1" *ngIf="o.suggested_quantity">
+                  {{ o.suggested_quantity }} cotas · R$ {{ o.suggested_invest | number: '1.2-2' }}
+                </div>
+                <div class="flex gap-1.5 mt-1.5">
+                  <button class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all" (click)="openDipAnalysis(o.ticker)">
+                    <lucide-icon name="search" size="12"></lucide-icon> Analisar
+                  </button>
+                  <button class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all" *ngIf="!o.in_watchlist" (click)="addToWatchlist(o.ticker)">
+                    <lucide-icon name="star" size="12"></lucide-icon> Watchlist
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        
+        <!-- Paginação -->
+        @if (totalPages() > 1) {
+          <div class="flex justify-center items-center gap-2 mt-6">
+            <button 
+              class="px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              (click)="prevPage()"
+              [disabled]="currentPage() === 1 || loading.loading()">
+              <lucide-icon name="chevron-left" size="16"></lucide-icon>
+            </button>
+            
+            @for (page of [].constructor(totalPages()); track $index) {
+              @if ($index + 1 === 1 || $index + 1 === totalPages() || Math.abs($index + 1 - currentPage()) <= 2) {
+                <button 
+                  class="px-3 py-2 rounded-lg text-sm font-medium cursor-pointer border transition-all"
+                  [class.bg-accent]="$index + 1 === currentPage()"
+                  [class.text-white]="$index + 1 === currentPage()"
+                  [class.border-accent]="$index + 1 === currentPage()"
+                  [class.bg-panel-2]="$index + 1 !== currentPage()"
+                  [class.text-tx]="$index + 1 !== currentPage()"
+                  [class.border-border]="$index + 1 !== currentPage()"
+                  [class.hover:bg-panel]="$index + 1 !== currentPage()"
+                  (click)="goToPage($index + 1)"
+                  [disabled]="loading.loading()">
+                  {{ $index + 1 }}
+                </button>
+              } @else if ($index + 1 === currentPage() - 3 || $index + 1 === currentPage() + 3) {
+                <span class="text-muted">...</span>
+              }
+            }
+            
+            <button 
+              class="px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              (click)="nextPage()"
+              [disabled]="currentPage() === totalPages() || loading.loading()">
+              <lucide-icon name="chevron-right" size="16"></lucide-icon>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Modal de Análise de Dip -->
+    @if (showDipPanel()) {
+      <div class="fixed inset-0 bg-black/50 z-40" (click)="closeDipPanel()"></div>
+      <div class="fixed inset-0 md:left-auto md:w-full md:max-w-2xl bg-panel shadow-2xl z-50 flex flex-col">
+        <div class="flex justify-between items-start gap-4 p-5 bg-panel border-b border-border flex-shrink-0">
+          <div>
+            @if (dipPanelResult(); as d) {
+              <div class="text-lg font-bold text-tx">{{ d.symbol }} <span class="text-muted font-normal text-sm">{{ d.name }}</span></div>
+              <div class="flex gap-2 flex-wrap mt-1">
+                <span class="tag">{{ ui.assetTypeLabel(d.asset_type) }}</span>
+                <span *ngIf="d.sector" class="tag">{{ ui.translateSector(d.sector) }}</span>
+              </div>
+            } @else {
+              <div class="font-semibold text-tx">Analisando...</div>
+            }
+          </div>
+          <button class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-opacity" (click)="closeDipPanel()">
+            <lucide-icon name="x" size="20"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+          @if (dipPanelResult(); as d) {
+            <div class="p-5">
+            <div class="dip-verdict mb-5 p-4 rounded-lg border-2" [class]="'dip-' + d.verdict.toLowerCase()">
+              <div class="flex items-center gap-2 text-lg font-bold mb-2">
+                <lucide-icon [name]="d.verdict === 'OPORTUNIDADE' ? 'circle-check' : d.verdict === 'ARMADILHA' ? 'circle-x' : 'circle-minus'" size="20"></lucide-icon>
+                {{ d.verdict_label }}
+              </div>
+              <div class="text-sm mt-2">Score: <strong>{{ d.dip_score | number: '1.0-0' }}</strong>/100</div>
+              <div class="text-sm text-muted">Confiança: {{ (d.confidence * 100) | number: '1.0-0' }}%</div>
+            </div>
+
+            <div class="mb-4">
+              <h3 class="text-sm font-semibold mb-2 text-tx">Por que esse score?</h3>
+              <ul class="list-disc pl-4 m-0 space-y-1 text-xs">
+                @for (r of d.reasons; track r) {<li class="text-tx">{{ r }}</li>}
+              </ul>
+            </div>
+
+            <div class="mb-4">
+              <h3 class="text-sm font-semibold mb-2 text-tx flex items-center gap-2">
+                <lucide-icon name="newspaper" size="14"></lucide-icon>
+                Notícias recentes
+                @if (d.news_ai_summary) {
+                  <span class="px-2 py-0.5 text-[10px] rounded-full bg-accent/20 text-accent font-medium">IA</span>
+                }
+              </h3>
+              
+              @if (d.news_ai_summary) {
+                <div class="p-3 rounded-lg bg-gradient-to-br from-accent/5 to-accent/10 border border-accent/20 mb-3">
+                  <div class="flex items-start gap-2 mb-2">
+                    <lucide-icon name="star" size="14" class="text-accent flex-shrink-0 mt-0.5"></lucide-icon>
+                    <div class="flex-1">
+                      <div class="text-xs font-medium text-tx mb-1">Análise por IA</div>
+                      <p class="text-xs text-tx/90 leading-relaxed">{{ d.news_ai_summary }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3 flex-wrap mt-2.5">
+                    @if (d.news_ai_score != null) {
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] text-muted uppercase">Score</span>
+                        <div class="px-2 py-0.5 rounded text-xs font-bold" 
+                             [class]="d.news_ai_score >= 7 ? 'bg-green-500/20 text-green-400' : d.news_ai_score >= 4 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'">
+                          {{ d.news_ai_score | number: '1.1-1' }}/10
+                        </div>
+                      </div>
+                    }
+                    @if (d.news_impact) {
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] text-muted uppercase">Impacto</span>
+                        <span class="px-2 py-0.5 rounded text-xs font-medium" 
+                              [class]="d.news_impact === 'high' ? 'bg-orange-500/20 text-orange-400' : d.news_impact === 'medium' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'">
+                          {{ d.news_impact === 'high' ? 'Alto' : d.news_impact === 'medium' ? 'Médio' : 'Baixo' }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+                  @if (d.news_key_topics && d.news_key_topics.length > 0) {
+                    <div class="flex items-start gap-2 mt-2.5">
+                      <lucide-icon name="list" size="11" class="text-muted flex-shrink-0 mt-0.5"></lucide-icon>
+                      <div class="flex gap-1.5 flex-wrap">
+                        @for (topic of d.news_key_topics; track topic) {
+                          <span class="px-2 py-0.5 rounded-full text-[10px] bg-panel-2 border border-border text-muted">{{ topic }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+              
+              @if (d.news.length === 0) {
+                <div class="text-muted text-xs">Nenhuma notícia encontrada.</div>
+              } @else {
+                <div class="flex flex-col gap-2">
+                  @for (n of d.news; track n.url) {
+                    <div class="p-2 rounded-lg bg-panel-2 border border-border text-xs hover:border-accent/30 transition-colors">
+                      <div class="flex items-start gap-2">
+                        <lucide-icon [name]="n.sentiment === 'positive' ? 'trending-up' : n.sentiment === 'negative' ? 'trending-down' : 'minus'" 
+                                     size="11" 
+                                     class="flex-shrink-0 mt-0.5"
+                                     [class]="n.sentiment === 'positive' ? 'text-green-400' : n.sentiment === 'negative' ? 'text-red-400' : 'text-muted'"></lucide-icon>
+                        <a [href]="n.url" target="_blank" rel="noopener noreferrer" class="font-medium text-tx hover:text-accent transition-colors flex-1">{{ n.title }}</a>
+                      </div>
+                      <div class="text-xs text-muted mt-1 ml-5">{{ n.source }} · {{ n.published | slice:0:16 }}</div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="p-3 rounded-lg bg-panel-2 border border-border text-xs text-muted leading-relaxed">{{ d.disclaimer }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  `,
+})
+export class OpportunitiesComponent implements OnInit {
+  private svc = inject(RecommendService);
+  private renderer = inject(Renderer2);
+  readonly ui = inject(UiHelperService);
+  readonly loading = inject(LoadingService);
+  readonly Math = Math;
+
+  constructor() {
+    effect(() => {
+      if (this.showDipPanel()) {
+        this.renderer.addClass(document.body, 'overflow-hidden');
+      } else {
+        this.renderer.removeClass(document.body, 'overflow-hidden');
+      }
+    });
+  }
+
+  opps = signal<Opportunity[] | null>(null);
+  cashAvailable = signal(0);
+  totalItems = signal(0);
+  totalPages = signal(0);
+  currentPage = signal(1);
+  pageSize = signal(50);
+
+  filterText = signal('');
+  filterMinDy = signal(0);
+  filterMinMos = signal(0);
+  filterSector = signal('');
+  filterType = signal<'all' | AssetType>('all');
+  filterCategory = signal<'all' | 'renda' | 'trade'>('all');
+  sortKey = signal<SortKey>('score');
+  sortOrder = signal<'asc' | 'desc'>('desc');
+  onlyBuy = signal(true);
+  includeHeld = signal(false);
+  onlyInteresting = signal(false);
+
+  showDipPanel = signal(false);
+  dipPanelResult = signal<DipAnalysisResponse | null>(null);
+
+  availableSectors = computed(() => {
+    const list = this.opps() || [];
+    return [...new Set(list.map(o => o.sector).filter(s => s))];
+  });
+
+  filteredOpps = computed(() => {
+    let list = this.opps() || [];
+    const text = this.filterText().toLowerCase();
+    const minDy = this.filterMinDy();
+    const minMos = this.filterMinMos();
+    const sector = this.filterSector();
+    const type = this.filterType();
+    const category = this.filterCategory();
+    const interesting = this.onlyInteresting();
+
+    if (text) {
+      list = list.filter(o => o.ticker.toLowerCase().includes(text) || o.name?.toLowerCase().includes(text));
+    }
+    if (minDy > 0) {
+      list = list.filter(o => (o.dividend_yield || 0) >= minDy);
+    }
+    if (minMos !== 0) {
+      list = list.filter(o => (o.margin_of_safety || 0) * 100 >= minMos);
+    }
+    if (sector) {
+      list = list.filter(o => o.sector === sector);
+    }
+    if (type !== 'all') {
+      list = list.filter(o => o.asset_type === type);
+    }
+    if (category !== 'all') {
+      list = list.filter(o => o.category_resolved === category);
+    }
+    if (interesting) {
+      list = list.filter(o => o.is_interesting);
+    }
+
+    return list;
+  });
+
+  ngOnInit(): void {}
+
+  loadOpportunities(): void {
+    this.svc.opportunities(
+      this.includeHeld(),
+      this.onlyBuy(),
+      this.currentPage(),
+      this.pageSize(),
+      this.sortKey(),
+      this.sortOrder()
+    ).subscribe({
+      next: (res) => {
+        this.opps.set(res.items);
+        this.cashAvailable.set(res.cash_available);
+        this.totalItems.set(res.total_items);
+        this.totalPages.set(res.total_pages);
+        this.currentPage.set(res.current_page);
+        this.pageSize.set(res.page_size);
+      },
+      error: () => {},
+      complete: () => {},
+    });
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+      this.loadOpportunities();
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+      this.loadOpportunities();
+    }
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+      this.loadOpportunities();
+    }
+  }
+
+  changeSortKey(key: SortKey): void {
+    if (this.sortKey() === key) {
+      this.sortOrder.set(this.sortOrder() === 'desc' ? 'asc' : 'desc');
+    } else {
+      this.sortKey.set(key);
+      this.sortOrder.set('desc');
+    }
+    this.currentPage.set(1);
+    this.loadOpportunities();
+  }
+
+  updateCash(ev: Event): void {
+    const value = parseFloat((ev.target as HTMLInputElement).value);
+    this.svc.savePreferences(value, 0.06).subscribe({
+      next: () => {
+        this.cashAvailable.set(value);
+      },
+      error: () => {},
+      complete: () => {},
+    });
+  }
+
+  addToWatchlist(ticker: string): void {
+    this.svc.getWatchlist().subscribe({
+      next: (list) => {
+        const exists = list.some(w => w.ticker === ticker);
+        if (exists) return;
+        const updated = [...list, { ticker, note: '' }];
+        this.svc.saveWatchlist(updated).subscribe({
+          next: () => {
+            this.loadOpportunities();
+          },
+          error: () => {},
+          complete: () => {},
+        });
+      },
+      error: () => {},
+      complete: () => {},
+    });
+  }
+
+  openDipAnalysis(symbol: string): void {
+    this.showDipPanel.set(true);
+    this.dipPanelResult.set(null);
+    this.svc.dipAnalysis(symbol, 0.06).subscribe({
+      next: (res) => {
+        this.dipPanelResult.set(res);
+      },
+      error: () => {
+        this.closeDipPanel();
+      },
+    });
+  }
+
+  closeDipPanel(): void {
+    this.showDipPanel.set(false);
+    this.dipPanelResult.set(null);
+  }
+}

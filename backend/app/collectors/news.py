@@ -1,0 +1,173 @@
+from __future__ import annotations
+
+import asyncio
+import logging
+import re
+import urllib.parse
+import urllib.request
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Any
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class NewsItem:
+    title: str
+    source: str
+    published: str
+    url: str
+    sentiment: str  # Será preenchido pela IA, mantido para compatibilidade
+    description: str = ""  # Descrição/resumo da notícia do RSS
+
+
+def _safe_title(entry) -> str:
+    raw = getattr(entry, "title", "") or ""
+    return re.sub(r"<[^>]+>", "", raw).strip()
+
+
+def _safe_source(entry) -> str:
+    try:
+        return entry.source.title
+    except Exception:
+        pass
+    try:
+        return entry.tags[0].term
+    except Exception:
+        pass
+    return "—"
+
+
+def _safe_published(entry) -> str:
+    return getattr(entry, "published", "") or ""
+
+
+def _safe_link(entry) -> str:
+    return getattr(entry, "link", "") or ""
+
+
+def _safe_description(entry) -> str:
+    """Extrai descrição/resumo do RSS feed."""
+    # Tentar summary primeiro, depois description
+    desc = getattr(entry, "summary", "") or getattr(entry, "description", "") or ""
+    # Remover tags HTML
+    desc = re.sub(r"<[^>]+>", "", desc).strip()
+    # Limitar tamanho para não sobrecarregar a IA
+    return desc[:500] if desc else ""
+
+
+def _fetch_news_sync(symbol: str, lang: str = "pt-BR", gl: str = "BR", ceid: str = "BR:pt", max_items: int = 8, company_name: str = "") -> List[NewsItem]:
+    try:
+        import feedparser 
+    except ImportError:
+        logger.warning("feedparser não instalado. Instale com: pip install feedparser")
+        return []
+
+    name_clean = re.sub(r"\b(S\.?A\.?|S/A|Inc\.?|Corp\.?|Ltd\.?|Ltda\.?|S\.?E\.?|PLC)\b", "", company_name or "", flags=re.I).strip()
+    search_term = name_clean if len(name_clean) >= 3 else symbol
+    if gl == "BR":
+        query = urllib.parse.quote(f"{search_term}")
+    else:
+        query = urllib.parse.quote(f"{search_term} stock")
+    url = (
+        f"https://news.google.com/rss/search"
+        f"?q={query}&hl={lang}&gl={gl}&ceid={ceid}"
+    )
+
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
+        )
+        with urllib.request.urlopen(req, timeout=7) as resp:
+            raw = resp.read()
+        feed = feedparser.parse(raw)
+    except Exception as e:
+        logger.warning("Erro ao buscar RSS para %s (%s): %s", symbol, search_term, e)
+        return []
+
+    items: List[NewsItem] = []
+    for entry in (feed.entries or [])[:max_items]:
+        title = _safe_title(entry)
+        if not title:
+            continue
+        items.append(
+            NewsItem(
+                title=title,
+                source=_safe_source(entry),
+                published=_safe_published(entry),
+                url=_safe_link(entry),
+                sentiment="neutral",  # Será classificado pela IA
+                description=_safe_description(entry)
+            )
+        )
+    return items
+
+
+async def fetch_news(symbol: str, asset_type: str = "br_stock", company_name: str = "", max_items: int = 8) -> List[NewsItem]:
+    lang = "pt-BR" if asset_type in ("br_stock", "fii") else "en-US"
+    gl = "BR" if asset_type in ("br_stock", "fii") else "US"
+    ceid = "BR:pt" if gl == "BR" else "US:en"
+    loop = asyncio.get_event_loop()
+    
+    # Buscar notícias do RSS (sem scraping - títulos são suficientes para a IA)
+    items = await loop.run_in_executor(
+        None, _fetch_news_sync, symbol, lang, gl, ceid, max_items, company_name
+    )
+    
+    return items
+
+
+def news_sentiment_summary(items: List[NewsItem]) -> str:
+    """Retorna resumo básico. Use analyze_news_with_ai() para análise completa com IA."""
+    if not items:
+        return "Sem notícias recentes encontradas."
+    return f"{len(items)} notícia(s) recente(s) encontrada(s)."
+
+
+async def analyze_news_with_ai(items: List[NewsItem], symbol: str, company_name: str = "") -> Dict[str, Any]:
+    """Analisa notícias usando IA (Gemini) para sentimento, resumo e insights."""
+    if not items:
+        return {
+            "sentiment": "neutral",
+            "score": 5.0,
+            "summary": "Sem notícias recentes encontradas.",
+            "impact": "low",
+            "key_topics": [],
+            "ai_enabled": False
+        }
+    
+    # Converter NewsItem para dicts
+    news_dicts = [
+        {
+            "title": item.title,
+            "source": item.source,
+            "published": item.published,
+            "url": item.url,
+            "sentiment": item.sentiment,
+            "description": item.description
+        }
+        for item in items
+    ]
+    
+    # Importar e executar análise em executor para não bloquear
+    try:
+        from app.llm.gemini_client import analyze_news_sentiment
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None, analyze_news_sentiment, news_dicts, symbol, company_name
+        )
+        result["ai_enabled"] = True
+        return result
+    except Exception as e:
+        logger.warning(f"Erro ao analisar notícias com IA: {e}")
+        # Fallback para análise básica
+        return {
+            "sentiment": "neutral",
+            "score": 5.0,
+            "summary": news_sentiment_summary(items),
+            "impact": "low",
+            "key_topics": [],
+            "ai_enabled": False
+        }
+
