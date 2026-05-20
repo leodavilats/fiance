@@ -1,21 +1,34 @@
-MIT License
+# Licença Proprietária
 
-Copyright (c) 2026 Leonardo D'avila
+Copyright (c) 2026 Leonardo Soares
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Todos os direitos reservados.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## Permissões
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+É permitido utilizar este software apenas mediante autorização explícita do autor ou aquisição válida da licença comercial correspondente.
+
+## Restrições
+
+Sem autorização prévia por escrito, NÃO é permitido:
+
+- Copiar ou redistribuir o software;
+- Modificar, adaptar ou criar trabalhos derivados;
+- Revender, sublicenciar ou comercializar o software;
+- Disponibilizar o código-fonte publicamente;
+- Utilizar o software para fins ilegais.
+
+## Propriedade Intelectual
+
+Todo o código-fonte, documentação, arquitetura, design e demais componentes deste projeto são propriedade exclusiva do autor.
+
+## Isenção de Garantia
+
+Este software é fornecido "como está", sem garantias de qualquer tipo, expressas ou implícitas. O autor não se responsabiliza por quaisquer danos decorrentes do uso do software.
+
+## Contato
+
+Para licenciamento comercial, suporte ou permissões especiais:
+
+- Autor: Leonardo Soares
+- GitHub: https://github.com/
