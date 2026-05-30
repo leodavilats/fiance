@@ -1,10 +1,10 @@
-import { AssetType, Verdict } from './common.model';
+import { AssetType, Verdict, PortfolioCategory } from './common.model';
 
 export interface PortfolioItem {
   ticker: string;
   quantity: number;
   avg_price: number;
-  category?: 'auto' | 'renda' | 'trade';
+  category?: PortfolioCategory;
 }
 
 export interface PortfolioEvaluationRequest {

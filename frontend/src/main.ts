@@ -1,5 +1,6 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { importProvidersFrom } from '@angular/core';
 import {
   ArrowRight,
@@ -11,6 +12,7 @@ import {
   ChartColumn,
   ChartPie,
   Check,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
   CircleAlert,
@@ -22,7 +24,9 @@ import {
   CircleX,
   Cloud,
   Coins,
+  Database,
   DollarSign,
+  Eye,
   GitCompare,
   Globe,
   House,
@@ -49,6 +53,7 @@ import {
   Target,
   ThumbsDown,
   ThumbsUp,
+  Trash2,
   TrendingDown,
   TrendingUp,
   TriangleAlert,
@@ -58,10 +63,12 @@ import {
   X,
 } from 'lucide-angular';
 import { AppComponent } from './app/app.component';
+import { routes } from './app/app.routes';
 import { httpErrorInterceptor } from './app/core/interceptors/http-error.interceptor';
 
 bootstrapApplication(AppComponent, {
   providers: [
+    provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([httpErrorInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({
@@ -74,6 +81,7 @@ bootstrapApplication(AppComponent, {
         ChartColumn,
         ChartPie,
         Check,
+        CheckCircle,
         ChevronLeft,
         ChevronRight,
         CircleAlert,
@@ -85,7 +93,9 @@ bootstrapApplication(AppComponent, {
         CircleX,
         Cloud,
         Coins,
+        Database,
         DollarSign,
+        Eye,
         GitCompare,
         Globe,
         House,
@@ -111,6 +121,7 @@ bootstrapApplication(AppComponent, {
         Target,
         ThumbsDown,
         ThumbsUp,
+        Trash2,
         TrendingDown,
         TrendingUp,
         TriangleAlert,

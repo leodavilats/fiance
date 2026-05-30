@@ -1,4 +1,4 @@
-export type AllocationCategory = 'renda_fixa' | 'acoes_br' | 'acoes_int' | 'fiis' | 'cripto';
+import { AllocationCategory } from './common.model';
 
 export interface WatchlistItem {
   ticker: string;

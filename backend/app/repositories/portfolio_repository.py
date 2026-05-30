@@ -80,3 +80,13 @@ class PortfolioRepository:
     def set_preferences(cash_available: float, desired_yield: float) -> None:
         """Define preferências do usuário."""
         portfolio_store.set_preferences(cash_available, desired_yield)
+
+    @staticmethod
+    def list_sector_goals() -> list[dict]:
+        """Lista sector goals de alocação."""
+        return portfolio_store.list_sector_goals()
+
+    @staticmethod
+    def replace_sector_goals(goals: list[dict]) -> None:
+        """Substitui sector goals de alocação."""
+        portfolio_store.replace_sector_goals(goals)

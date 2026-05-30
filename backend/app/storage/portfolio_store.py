@@ -54,6 +54,12 @@ class Goal(TypedDict):
     deadline: str | None
 
 
+class SectorGoal(TypedDict):
+    sector: str
+
+    target_pct: float
+
+
 class Preferences(TypedDict):
     cash_available: float
 
@@ -105,6 +111,13 @@ def _init() -> None:
                 target_value REAL,
                 deadline     TEXT,
                 PRIMARY KEY (user_id, category)
+            );
+
+            CREATE TABLE IF NOT EXISTS sector_goals (
+                user_id    TEXT NOT NULL,
+                sector     TEXT NOT NULL,
+                target_pct REAL NOT NULL,
+                PRIMARY KEY (user_id, sector)
             );
 
             CREATE TABLE IF NOT EXISTS preferences (
@@ -442,4 +455,32 @@ def set_preferences(
                 updated_at     = excluded.updated_at
             """,
             (user_id, float(cash_available), float(desired_yield), now),
+        )
+
+
+def list_sector_goals(user_id: str = DEFAULT_USER) -> list[SectorGoal]:
+    """Lista sector goals de alocação."""
+    with _conn() as cx:
+        rows = cx.execute(
+            "SELECT sector, target_pct FROM sector_goals WHERE user_id = ? ORDER BY sector",
+            (user_id,),
+        ).fetchall()
+
+    return [
+        SectorGoal(
+            sector=r["sector"],
+            target_pct=r["target_pct"],
+        )
+        for r in rows
+    ]
+
+
+def replace_sector_goals(goals: list[SectorGoal], user_id: str = DEFAULT_USER) -> None:
+    """Substitui sector goals de alocação."""
+    with _conn() as cx:
+        cx.execute("DELETE FROM sector_goals WHERE user_id = ?", (user_id,))
+
+        cx.executemany(
+            "INSERT INTO sector_goals(user_id, sector, target_pct) VALUES (?, ?, ?)",
+            [(user_id, g["sector"], float(g["target_pct"])) for g in goals],
         )

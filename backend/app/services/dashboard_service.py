@@ -138,20 +138,42 @@ class DashboardService:
         cash: float,
     ) -> DashboardResponse:
         """Gera o dashboard completo."""
+        # Filtrar positions sintéticas de renda fixa das listas de top sells
+        real_positions = [p for p in positions if not p.ticker.startswith("RF_")]
+
         top_sells = sorted(
-            [p for p in positions if p.verdict in ("SELL", "STRONG_SELL")],
+            [p for p in real_positions if p.verdict in ("SELL", "STRONG_SELL")],
             key=lambda x: 0 if x.verdict == "STRONG_SELL" else 1,
         )
 
         allocations = self.calculate_category_allocations(positions, cash, goals)
-        alerts = self.classify_alerts(positions, top_buys, allocations)
+        alerts = self.classify_alerts(real_positions, top_buys, allocations)
 
         total_inv = sum(p.invested for p in positions)
         total_cur = sum(p.current_value or p.invested for p in positions)
         total_pnl = total_cur - total_inv
         total_pnl_pct = (total_pnl / total_inv * 100) if total_inv > 0 else 0.0
 
+        # Calcular métricas de renda passiva (apenas ativos reais, não RF sintética)
+        total_yearly_dividends = 0.0
+        for p in real_positions:
+            if p.dividend_yield and p.current_value:
+                yearly_div = p.current_value * (p.dividend_yield / 100)
+                total_yearly_dividends += yearly_div
+
+        monthly_dividends = total_yearly_dividends / 12
+        portfolio_yield = (total_yearly_dividends / total_cur * 100) if total_cur > 0 else 0.0
+
+        # Meta de renda passiva (pode ser configurada futuramente)
+        passive_income_goal = None  # Futuramente: ler de preferences
+        passive_income_progress = None
+        if passive_income_goal and passive_income_goal > 0:
+            passive_income_progress = monthly_dividends / passive_income_goal * 100
+
         snaps = self.portfolio_repo.list_snapshots(limit=90)
+
+        # Contar apenas ativos reais (não incluir positions sintéticas de renda fixa)
+        real_positions_count = len([p for p in positions if not p.ticker.startswith("RF_")])
 
         return DashboardResponse(
             summary=DashboardSummary(
@@ -160,9 +182,14 @@ class DashboardService:
                 total_pnl=round(total_pnl, 2),
                 total_pnl_pct=round(total_pnl_pct, 2),
                 cash_available=round(cash, 2),
-                monthly_dividends_estimate=0.0,
-                portfolio_yield=None,
-                positions_count=len(positions),
+                monthly_dividends_estimate=round(monthly_dividends, 2),
+                yearly_dividends_estimate=round(total_yearly_dividends, 2),
+                portfolio_yield=round(portfolio_yield, 2) if portfolio_yield > 0 else None,
+                passive_income_goal=passive_income_goal,
+                passive_income_progress=round(passive_income_progress, 2)
+                if passive_income_progress
+                else None,
+                positions_count=real_positions_count,
             ),
             positions=positions,
             top_buys=top_buys,

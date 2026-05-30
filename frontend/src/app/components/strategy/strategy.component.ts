@@ -329,7 +329,7 @@ interface RendaFixaForm {
                         }}</span>
                         <span
                           class="tag"
-                          [class]="gap.gap_value > 0 ? 'tag-success' : 'tag-warning'"
+                          [class]="gap.gap_value > 0 ? 'tag-warning' : 'tag-accent'"
                           >{{ gap.action }}</span
                         >
                       </div>
@@ -349,8 +349,8 @@ interface RendaFixaForm {
                         </div>
                         <div
                           class="ml-auto"
-                          [class.good]="gap.gap_value > 0"
-                          [class.warn]="gap.gap_value < 0"
+                          [class.warn]="gap.gap_value > 0"
+                          [class.good]="gap.gap_value < 0"
                         >
                           Gap:
                           <strong
@@ -362,15 +362,56 @@ interface RendaFixaForm {
                       </div>
                     </div>
                   </div>
-                  <div class="relative h-4 rounded-full bg-bg-2 overflow-hidden">
+                  <!-- Barra de alocação visual -->
+                  <div class="relative h-6 rounded-lg border border-border" style="background: rgba(var(--muted) / 0.08)">
+                    <!-- Preenchimento atual (cor da categoria) -->
                     <div
-                      class="absolute inset-y-0 left-0 rounded-full bg-accent/30 transition-all"
+                      class="absolute inset-y-0 left-0 transition-all duration-300 rounded-l-lg"
                       [style.width.%]="gap.current_pct"
+                      [style.background]="getCategoryBarColor(gap.category)"
+                      [title]="'Atual: ' + gap.current_pct.toFixed(1) + '%'"
                     ></div>
+                    
+                    <!-- Marcador IDEAL (meta) - Pin destacado -->
                     <div
-                      class="absolute top-0 bottom-0 w-0.5 bg-accent"
+                      class="absolute top-0 bottom-0 flex items-center z-20 transition-all duration-300"
                       [style.left.%]="gap.target_pct"
-                    ></div>
+                      style="transform: translateX(-50%)"
+                    >
+                      <!-- Pin/Marcador do ideal -->
+                      <div class="relative flex flex-col items-center">
+                        <!-- Círculo no topo -->
+                        <div 
+                          class="w-3 h-3 rounded-full border-2 -mb-1.5 z-10"
+                          style="background: rgb(var(--accent)); border-color: white; box-shadow: 0 2px 8px rgba(var(--accent) / 0.5)"
+                          [title]="'Meta: ' + gap.target_pct.toFixed(1) + '%'"
+                        ></div>
+                        <!-- Linha vertical do pin -->
+                        <div
+                          class="w-0.5 h-6"
+                          style="background: rgb(var(--accent)); box-shadow: 0 0 4px rgba(var(--accent) / 0.4)"
+                        ></div>
+                        <!-- Label IDEAL abaixo da barra -->
+                        <div 
+                          class="absolute -bottom-5 whitespace-nowrap text-[10px] font-semibold px-1.5 py-0.5 rounded dark:text-white"
+                          style="background: rgb(var(--accent)); color: black"
+                        >
+                          IDEAL
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Legenda da barra -->
+                  <div class="flex items-center justify-between text-xs text-muted mt-6">
+                    <span class="flex items-center gap-1.5">
+                      <span class="inline-block w-3 h-3 rounded" [style.background]="getCategoryBarColor(gap.category)"></span>
+                      <span>Atual: <strong class="text-tx">{{ gap.current_pct | number: '1.1-1' }}%</strong></span>
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                      <span>Meta: <strong class="text-accent">{{ gap.target_pct | number: '1.1-1' }}%</strong></span>
+                      <span class="inline-block w-2.5 h-2.5 rounded-full" style="background: rgb(var(--accent))"></span>
+                    </span>
                   </div>
                 </div>
               }
@@ -1051,5 +1092,16 @@ export class StrategyComponent implements OnInit {
         cra: 'CRA',
       }[tipo] || tipo.toUpperCase()
     );
+  }
+
+  getCategoryBarColor(category: string): string {
+    const colorMap: Record<string, string> = {
+      renda_fixa: 'rgba(59, 130, 246, 0.6)',    // Azul
+      acoes_br: 'rgba(34, 197, 94, 0.6)',       // Verde
+      acoes_int: 'rgba(168, 85, 247, 0.6)',     // Roxo
+      fiis: 'rgba(251, 191, 36, 0.6)',          // Amarelo
+      cripto: 'rgba(249, 115, 22, 0.6)',        // Laranja
+    };
+    return colorMap[category] || 'rgba(var(--accent) / 0.5)';
   }
 }

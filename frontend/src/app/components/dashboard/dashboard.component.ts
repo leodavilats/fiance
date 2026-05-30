@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { DashboardResponse, LoadingService, RecommendService, UiHelperService } from '../../core';
 
@@ -79,6 +80,61 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
             <div class="text-sm text-muted mt-1">DY médio ponderado</div>
           </div>
         </div>
+
+        <!-- Card de Renda Passiva (NOVO) -->
+        @if (d.summary.monthly_dividends_estimate > 0) {
+          <div
+            class="p-6 rounded-xl bg-gradient-to-br from-accent/20 to-accent-2/20 border-2 border-accent/30"
+          >
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <div class="flex items-center gap-2 text-sm font-medium text-accent mb-2">
+                  <lucide-icon name="coins" size="16"></lucide-icon>
+                  Renda Passiva Atual
+                </div>
+                <div class="text-4xl font-bold text-tx mb-1">
+                  R$ {{ d.summary.monthly_dividends_estimate | number: '1.2-2' }}
+                  <span class="text-base font-normal text-muted">/mês</span>
+                </div>
+                <div class="text-sm text-muted">
+                  R$ {{ d.summary.yearly_dividends_estimate | number: '1.2-2' }}/ano
+                  @if (d.summary.portfolio_yield) {
+                    <span class="ml-2"
+                      >• {{ d.summary.portfolio_yield | number: '1.2-2' }}% DY médio</span
+                    >
+                  }
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="goToStrategy()"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-[#0b0e14] hover:opacity-90 transition-opacity"
+              >
+                <lucide-icon name="trending-up" size="16"></lucide-icon>
+                Ver Projeções
+              </button>
+            </div>
+            @if (d.summary.passive_income_goal && d.summary.passive_income_goal > 0) {
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted">Progresso da Meta</span>
+                  <span class="font-semibold text-tx">
+                    {{ d.summary.passive_income_progress | number: '1.0-0' }}%
+                  </span>
+                </div>
+                <div class="relative h-3 rounded-full bg-bg-2 overflow-hidden">
+                  <div
+                    class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-accent to-accent-2 transition-all"
+                    [style.width.%]="Math.min(d.summary.passive_income_progress || 0, 100)"
+                  ></div>
+                </div>
+                <div class="text-xs text-muted text-right">
+                  Meta: R$ {{ d.summary.passive_income_goal | number: '1.2-2' }}/mês
+                </div>
+              </div>
+            }
+          </div>
+        }
 
         <!-- Alertas -->
         @if (d.alerts.length > 0) {
@@ -257,14 +313,129 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
             <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
               <lucide-icon name="chart-column" size="18"></lucide-icon> Evolução do patrimônio
             </h2>
-            <svg
-              class="w-full h-24 stroke-accent stroke-[2] fill-none"
-              viewBox="0 0 600 100"
-              preserveAspectRatio="none"
-            >
-              <path [attr.d]="ui.snapshotPath(d.snapshots, 600, 90)" />
-            </svg>
-            <div class="text-xs text-muted text-right mt-2">{{ d.snapshots.length }} pontos</div>
+            
+            <!-- Estatísticas do período -->
+            <div class="grid grid-cols-3 gap-4 mb-4">
+              <div class="text-center">
+                <div class="text-xs text-muted mb-1">Início</div>
+                <div class="text-sm font-semibold text-tx">
+                  R$ {{ d.snapshots[0].total_current | number: '1.2-2' }}
+                </div>
+                <div class="text-xs text-muted">
+                  {{ formatDate(d.snapshots[0].captured_at) }}
+                </div>
+              </div>
+              <div class="text-center">
+                <div class="text-xs text-muted mb-1">Variação</div>
+                <div
+                  class="text-sm font-semibold"
+                  [class.good]="d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current"
+                  [class.warn]="d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current"
+                >
+                  {{ d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current >= 0 ? '+' : '' }}
+                  R$ {{ (d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current) | number: '1.2-2' }}
+                </div>
+                <div
+                  class="text-xs"
+                  [class.good]="d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current"
+                  [class.warn]="d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current"
+                >
+                  {{ ((d.snapshots[d.snapshots.length - 1].total_current / d.snapshots[0].total_current - 1) * 100) | number: '1.2-2' }}%
+                </div>
+              </div>
+              <div class="text-center">
+                <div class="text-xs text-muted mb-1">Atual</div>
+                <div class="text-sm font-semibold text-tx">
+                  R$ {{ d.snapshots[d.snapshots.length - 1].total_current | number: '1.2-2' }}
+                </div>
+                <div class="text-xs text-muted">
+                  {{ formatDate(d.snapshots[d.snapshots.length - 1].captured_at) }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Gráfico melhorado -->
+            <div class="relative">
+              <svg
+                class="w-full"
+                viewBox="0 0 600 180"
+                preserveAspectRatio="xMidYMid meet"
+              >
+                <!-- Grid de fundo -->
+                <defs>
+                  <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:rgb(var(--accent));stop-opacity:0.3" />
+                    <stop offset="100%" style="stop-color:rgb(var(--accent));stop-opacity:0.05" />
+                  </linearGradient>
+                </defs>
+                
+                <!-- Linhas horizontais do grid -->
+                <line x1="40" y1="20" x2="590" y2="20" stroke="currentColor" stroke-opacity="0.1" stroke-width="1" />
+                <line x1="40" y1="60" x2="590" y2="60" stroke="currentColor" stroke-opacity="0.1" stroke-width="1" />
+                <line x1="40" y1="100" x2="590" y2="100" stroke="currentColor" stroke-opacity="0.1" stroke-width="1" />
+                <line x1="40" y1="140" x2="590" y2="140" stroke="currentColor" stroke-opacity="0.1" stroke-width="1" />
+                
+                <!-- Eixo X e Y -->
+                <line x1="40" y1="140" x2="590" y2="140" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" />
+                <line x1="40" y1="20" x2="40" y2="140" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" />
+                
+                <!-- Área preenchida -->
+                <path
+                  [attr.d]="ui.snapshotAreaPath(d.snapshots, 550, 120, 40, 20)"
+                  fill="url(#areaGradient)"
+                />
+                
+                <!-- Linha principal -->
+                <path
+                  [attr.d]="ui.snapshotPath(d.snapshots, 550, 120, 40, 20)"
+                  stroke="rgb(var(--accent))"
+                  stroke-width="2.5"
+                  fill="none"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                
+                <!-- Pontos de dados -->
+                @for (snap of d.snapshots; track snap.captured_at; let i = $index) {
+                  @if (i === 0 || i === d.snapshots.length - 1 || i % Math.max(1, Math.floor(d.snapshots.length / 8)) === 0) {
+                    <circle
+                      [attr.cx]="40 + (i / (d.snapshots.length - 1)) * 550"
+                      [attr.cy]="140 - ((snap.total_current - ui.minSnapshot(d.snapshots)) / (ui.maxSnapshot(d.snapshots) - ui.minSnapshot(d.snapshots))) * 120"
+                      r="3"
+                      fill="rgb(var(--accent))"
+                      stroke="rgb(var(--panel))"
+                      stroke-width="2"
+                    />
+                  }
+                }
+                
+                <!-- Labels do eixo Y -->
+                <text x="35" y="25" text-anchor="end" class="text-[8px] fill-muted">
+                  {{ ui.maxSnapshot(d.snapshots) | number: '1.0-0' }}
+                </text>
+                <text x="35" y="103" text-anchor="end" class="text-[8px] fill-muted">
+                  {{ ((ui.maxSnapshot(d.snapshots) + ui.minSnapshot(d.snapshots)) / 2) | number: '1.0-0' }}
+                </text>
+                <text x="35" y="143" text-anchor="end" class="text-[8px] fill-muted">
+                  {{ ui.minSnapshot(d.snapshots) | number: '1.0-0' }}
+                </text>
+                
+                <!-- Labels do eixo X (primeira e última data) -->
+                <text x="40" y="155" text-anchor="start" class="text-[8px] fill-muted">
+                  {{ formatDate(d.snapshots[0].captured_at) }}
+                </text>
+                <text x="590" y="155" text-anchor="end" class="text-[8px] fill-muted">
+                  {{ formatDate(d.snapshots[d.snapshots.length - 1].captured_at) }}
+                </text>
+              </svg>
+            </div>
+            
+            <div class="flex items-center justify-between mt-3 text-xs text-muted">
+              <span>{{ d.snapshots.length }} registros</span>
+              <span>
+                Período: {{ Math.ceil((d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) / 86400) }} dias
+              </span>
+            </div>
           </div>
         }
 
@@ -287,6 +458,7 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
 })
 export class DashboardComponent implements OnInit {
   private svc = inject(RecommendService);
+  private router = inject(Router);
   readonly ui = inject(UiHelperService);
   readonly loading = inject(LoadingService);
   readonly Math = Math;
@@ -304,6 +476,17 @@ export class DashboardComponent implements OnInit {
       },
       error: () => {},
       complete: () => {},
+    });
+  }
+
+  goToStrategy(): void {
+    this.router.navigate(['/strategy']);
+  }
+
+  formatDate(timestamp: number): string {
+    return new Date(timestamp * 1000).toLocaleDateString('pt-BR', { 
+      day: '2-digit', 
+      month: 'short' 
     });
   }
 }

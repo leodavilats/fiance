@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.models import Goal, GoalsRequest
+from app.models import Goal, GoalsRequest, SectorGoal, SectorGoalsRequest
 from app.services import GoalService
 
 router = APIRouter()
@@ -20,3 +20,15 @@ async def get_goals() -> list[Goal]:
 async def save_goals(req: GoalsRequest) -> list[Goal]:
     """Salva goals de alocação."""
     return goal_service.save_goals(req.goals)
+
+
+@router.get("/sector-goals", response_model=list[SectorGoal])
+async def get_sector_goals() -> list[SectorGoal]:
+    """Retorna sector goals de alocação."""
+    return goal_service.get_sector_goals()
+
+
+@router.put("/sector-goals", response_model=list[SectorGoal])
+async def save_sector_goals(req: SectorGoalsRequest) -> list[SectorGoal]:
+    """Salva sector goals de alocação."""
+    return goal_service.save_sector_goals(req.sector_goals)

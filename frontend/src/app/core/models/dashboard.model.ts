@@ -24,8 +24,14 @@ export interface DashboardSummary {
   total_pnl: number;
   total_pnl_pct: number;
   cash_available: number;
+
+  // Métricas de Renda Passiva
   monthly_dividends_estimate: number;
+  yearly_dividends_estimate: number;
   portfolio_yield: number | null;
+  passive_income_goal?: number | null;
+  passive_income_progress?: number | null;
+
   positions_count: number;
 }
 

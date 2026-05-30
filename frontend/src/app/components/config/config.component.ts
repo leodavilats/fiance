@@ -14,6 +14,7 @@ import {
   AllocationCategory,
   Goal,
   RecommendService,
+  SectorGoal,
   UiHelperService,
   WatchlistItem,
 } from '../../core';
@@ -25,10 +26,16 @@ interface GoalForm {
   deadline: FormControl<string | null>;
 }
 
+interface SectorGoalForm {
+  sector: FormControl<string>;
+  target_pct: FormControl<number>;
+}
+
 interface ConfigFormShape {
   cash_available: FormControl<number>;
   desired_yield: FormControl<number>;
   goals: FormArray<FormGroup<GoalForm>>;
+  sector_goals: FormArray<FormGroup<SectorGoalForm>>;
   watchlist: FormControl<string>;
 }
 
@@ -190,6 +197,69 @@ const CATEGORIES: { key: AllocationCategory; label: string; icon: string; desc: 
         </div>
       </div>
 
+      <!-- Alocação Setorial (NOVO) -->
+      <div class="p-5 rounded-lg bg-panel border border-border">
+        <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
+          <div>
+            <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+              <lucide-icon name="git-compare" size="18"></lucide-icon> Alocação Setorial
+            </h2>
+            <p class="text-xs text-muted m-0">
+              Defina quanto (%) de cada setor você quer dentro do total de ações.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              class="text-sm font-medium"
+              [class.text-accent]="sectorGoalSum() === 100"
+              [class.text-warn]="sectorGoalSum() !== 100"
+            >
+              Soma: <strong>{{ sectorGoalSum() }}%</strong>
+            </span>
+            @if (sectorGoalSum() !== 100) {
+              <span class="text-xs text-warn">(deve ser 100%)</span>
+            } @else {
+              <lucide-icon name="check-circle" size="16" class="text-accent"></lucide-icon>
+            }
+          </div>
+        </div>
+
+        <div
+          formArrayName="sector_goals"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
+        >
+          @for (sg of sectorGoalItems.controls; track $index; let i = $index) {
+            <div class="p-3 rounded-lg bg-panel-2 border border-border" [formGroupName]="i">
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="font-semibold text-sm text-tx">
+                  {{ sectorGoalItems.at(i).controls.sector.value }}
+                </div>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    class="w-16 px-2 py-1 rounded bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent text-center font-bold"
+                    formControlName="target_pct"
+                    min="0"
+                    max="100"
+                    step="5"
+                  />
+                  <span class="text-muted text-xs">%</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                class="w-full accent-accent h-1.5 rounded-full cursor-pointer"
+                [min]="0"
+                [max]="100"
+                [step]="5"
+                [value]="sectorGoalItems.at(i).controls.target_pct.value"
+                (input)="updateSectorGoalPct(i, $any($event.target).value)"
+              />
+            </div>
+          }
+        </div>
+      </div>
+
       <!-- Watchlist -->
       <div class="p-5 rounded-lg bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
@@ -251,7 +321,7 @@ const CATEGORIES: { key: AllocationCategory; label: string; icon: string; desc: 
             (click)="clearAllCache()"
             [disabled]="clearing()"
           >
-            <lucide-icon [name]="clearing() ? 'loader-circle' : 'trash-2'" size="16"></lucide-icon>
+            <lucide-icon [name]="clearing() ? 'loader-circle' : 'trash2'" size="16"></lucide-icon>
             {{ clearing() ? 'Limpando...' : 'Limpar todo cache' }}
           </button>
           <span class="text-sm text-muted" *ngIf="cacheMessage()">{{ cacheMessage() }}</span>
@@ -278,11 +348,16 @@ export class ConfigComponent implements OnInit {
       validators: [Validators.min(0.02), Validators.max(0.2)],
     }),
     goals: this.fb.array<FormGroup<GoalForm>>([]),
+    sector_goals: this.fb.array<FormGroup<SectorGoalForm>>([]),
     watchlist: this.fb.control('', { nonNullable: true }),
   });
 
   get goalItems() {
     return this.form.controls.goals;
+  }
+
+  get sectorGoalItems() {
+    return this.form.controls.sector_goals;
   }
 
   goalSum(): number {
@@ -295,6 +370,17 @@ export class ConfigComponent implements OnInit {
 
   updateGoalPct(i: number, val: string): void {
     this.goalItems.controls[i]?.controls.target_pct.setValue(Number(val));
+  }
+
+  sectorGoalSum(): number {
+    return this.sectorGoalItems.controls.reduce(
+      (sum, sg) => sum + (sg.controls.target_pct.value || 0),
+      0
+    );
+  }
+
+  updateSectorGoalPct(i: number, val: string): void {
+    this.sectorGoalItems.controls[i]?.controls.target_pct.setValue(Number(val));
   }
 
   catBarColor(cat: AllocationCategory): string {
@@ -321,12 +407,20 @@ export class ConfigComponent implements OnInit {
 
   ngOnInit(): void {
     this._initGoals();
+    this._initSectorGoals();
     this.loadConfig();
   }
 
   private _initGoals(): void {
     CATEGORIES.forEach(cat => {
       this.goalItems.push(this._makeGoalGroup(cat.key, 0));
+    });
+  }
+
+  private _initSectorGoals(): void {
+    const sectors = ['Financeiro', 'Energia', 'Varejo', 'Tecnologia', 'Saúde', 'Outros'];
+    sectors.forEach(sector => {
+      this.sectorGoalItems.push(this._makeSectorGoalGroup(sector, 0));
     });
   }
 
@@ -347,13 +441,24 @@ export class ConfigComponent implements OnInit {
     });
   }
 
+  private _makeSectorGoalGroup(sector: string, pct: number): FormGroup<SectorGoalForm> {
+    return this.fb.group<SectorGoalForm>({
+      sector: this.fb.control(sector, { nonNullable: true }),
+      target_pct: this.fb.control(pct, {
+        nonNullable: true,
+        validators: [Validators.min(0), Validators.max(100)],
+      }),
+    });
+  }
+
   private loadConfig(): void {
     forkJoin({
       prefs: this.svc.getPreferences(),
       goals: this.svc.getGoals(),
+      sectorGoals: this.svc.getSectorGoals(),
       watchlist: this.svc.getWatchlist(),
     }).subscribe({
-      next: ({ prefs, goals, watchlist }) => {
+      next: ({ prefs, goals, sectorGoals, watchlist }) => {
         this.form.patchValue({
           cash_available: prefs.cash_available,
           desired_yield: prefs.desired_yield,
@@ -373,19 +478,35 @@ export class ConfigComponent implements OnInit {
             });
           }
         });
+
+        // Mapear sector goals
+        const sectorGoalMap = new Map(sectorGoals.map(sg => [sg.sector, sg]));
+        this.sectorGoalItems.controls.forEach(ctrl => {
+          const sector = ctrl.controls.sector.value;
+          const sg = sectorGoalMap.get(sector);
+          if (sg) {
+            ctrl.patchValue({
+              target_pct: sg.target_pct,
+            });
+          }
+        });
       },
       error: () => {},
     });
   }
 
   saveConfig(): void {
-    const { cash_available, desired_yield, watchlist } = this.form.getRawValue();
+    const { cash_available, desired_yield, watchlist, sector_goals } = this.form.getRawValue();
     const goalsRaw = this.goalItems.getRawValue();
     const goalsPayload: Goal[] = goalsRaw.map(g => ({
       category: g.category,
       target_pct: g.target_pct,
       target_value: g.target_value,
       deadline: g.deadline,
+    }));
+    const sectorGoalsPayload: SectorGoal[] = sector_goals.map(sg => ({
+      sector: sg.sector,
+      target_pct: sg.target_pct,
     }));
     const watchlistItems: WatchlistItem[] = watchlist
       .split(',')
@@ -398,6 +519,7 @@ export class ConfigComponent implements OnInit {
     forkJoin({
       prefs: this.svc.savePreferences(cash_available, desired_yield),
       goals: this.svc.saveGoals(goalsPayload),
+      sectorGoals: this.svc.saveSectorGoals(sectorGoalsPayload),
       watchlist: this.svc.saveWatchlist(watchlistItems),
     }).subscribe({
       next: () => {

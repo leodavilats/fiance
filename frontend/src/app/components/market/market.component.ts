@@ -1,0 +1,455 @@
+import { CommonModule } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { LucideAngularModule } from 'lucide-angular';
+import {
+  DipAnalysisResponse,
+  DipScanItem,
+  OpportunitiesResponse,
+  Opportunity,
+  RecommendService,
+  UiHelperService,
+} from '../../core';
+
+type MarketTab = 'opportunities' | 'dip-scanner';
+
+@Component({
+  selector: 'app-market',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, LucideAngularModule],
+  template: `
+    <div class="space-y-5">
+      <div class="flex items-center gap-3">
+        <lucide-icon name="target" size="28" class="text-accent"></lucide-icon>
+        <h2 class="text-2xl font-bold m-0 text-tx">Mercado</h2>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-2 border-b border-border pb-2">
+        <button
+          type="button"
+          (click)="activeTab.set('opportunities')"
+          [class.active]="activeTab() === 'opportunities'"
+          class="tab-btn"
+        >
+          <lucide-icon name="target" size="18"></lucide-icon>
+          Oportunidades
+        </button>
+        <button
+          type="button"
+          (click)="activeTab.set('dip-scanner')"
+          [class.active]="activeTab() === 'dip-scanner'"
+          class="tab-btn"
+        >
+          <lucide-icon name="trending-down" size="18"></lucide-icon>
+          Scanner de Baixas
+        </button>
+      </div>
+
+      <!-- Oportunidades Tab -->
+      @if (activeTab() === 'opportunities') {
+        <div class="space-y-4">
+          <!-- Filtros -->
+          <div class="card">
+            <h3 class="text-lg font-semibold mb-3 text-tx">Filtros</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <input
+                type="text"
+                placeholder="Buscar ticker/nome..."
+                class="input"
+                [(ngModel)]="filterText"
+                (ngModelChange)="onFilterChange()"
+              />
+              <input
+                type="number"
+                placeholder="DY mínimo (%)"
+                class="input"
+                [(ngModel)]="filterMinDy"
+                (ngModelChange)="onFilterChange()"
+              />
+              <input
+                type="number"
+                placeholder="MS mínima (%)"
+                class="input"
+                [(ngModel)]="filterMinMos"
+                (ngModelChange)="onFilterChange()"
+              />
+              <select class="input" [(ngModel)]="filterCategory" (ngModelChange)="onFilterChange()">
+                <option value="">Todas categorias</option>
+                <option value="acoes_br">Ações BR</option>
+                <option value="acoes_int">Ações INT</option>
+                <option value="fiis">FIIs</option>
+                <option value="cripto">Cripto</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-4 mt-3">
+              <label class="flex items-center gap-2 cursor-pointer text-sm text-tx">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="onlyInteresting"
+                  (ngModelChange)="onFilterChange()"
+                  class="cursor-pointer"
+                />
+                Apenas Destaques
+              </label>
+              <button type="button" (click)="loadOpportunities()" class="btn-secondary text-sm">
+                <lucide-icon name="refresh-cw" size="16"></lucide-icon>
+                Atualizar
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de Oportunidades -->
+          @if (opportunities(); as opps) {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              @for (opp of opps.items; track opp.ticker) {
+                <div
+                  class="card hover:shadow-lg transition-shadow"
+                  [class.border-accent]="opp.is_interesting"
+                >
+                  <div class="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 class="font-bold text-tx text-lg">{{ opp.ticker }}</h4>
+                      <p class="text-xs text-muted">{{ opp.name || 'N/A' }}</p>
+                    </div>
+                    <span [class]="helper.verdictClass(opp.verdict)">
+                      {{ opp.label }}
+                    </span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span class="text-muted">Score:</span>
+                      <span class="font-semibold text-tx ml-1">{{ opp.score || 'N/A' }}</span>
+                    </div>
+                    <div>
+                      <span class="text-muted">DY:</span>
+                      <span class="font-semibold text-accent ml-1">
+                        {{
+                          opp.dividend_yield ? (opp.dividend_yield | number: '1.1-1') + '%' : 'N/A'
+                        }}
+                      </span>
+                    </div>
+                    <div>
+                      <span class="text-muted">Preço:</span>
+                      <span class="font-semibold text-tx ml-1">
+                        {{ opp.price ? 'R$ ' + (opp.price | number: '1.2-2') : 'N/A' }}
+                      </span>
+                    </div>
+                    <div>
+                      <span class="text-muted">MS:</span>
+                      <span class="font-semibold text-tx ml-1">
+                        {{
+                          opp.margin_of_safety
+                            ? (opp.margin_of_safety * 100 | number: '1.0-0') + '%'
+                            : 'N/A'
+                        }}
+                      </span>
+                    </div>
+                  </div>
+                  @if (opp.sector) {
+                    <p class="text-xs text-muted mt-2">{{ helper.translateSector(opp.sector) }}</p>
+                  }
+                </div>
+              }
+            </div>
+
+            @if (opps.items.length === 0) {
+              <div class="card text-center py-8">
+                <lucide-icon name="search" size="48" class="text-muted mx-auto mb-3"></lucide-icon>
+                <p class="text-muted">Nenhuma oportunidade encontrada com os filtros atuais.</p>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Scanner de Baixas Tab -->
+      @if (activeTab() === 'dip-scanner') {
+        <div class="space-y-4">
+          <!-- Configuração do Scanner -->
+          <form [formGroup]="scanForm" (ngSubmit)="runScan()" class="card">
+            <h3 class="text-lg font-semibold mb-3 text-tx">Configuração do Scanner</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <label class="label">Score Mínimo</label>
+                <input type="number" formControlName="min_score" class="input" />
+              </div>
+              <div>
+                <label class="label">Top N</label>
+                <input type="number" formControlName="top" class="input" />
+              </div>
+              <div>
+                <label class="label">Categoria</label>
+                <select formControlName="category" class="input">
+                  <option value="">Todas</option>
+                  <option value="acoes_br">Ações BR</option>
+                  <option value="fiis">FIIs</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary mt-3">
+              <lucide-icon name="scan" size="18"></lucide-icon>
+              Escanear Mercado
+            </button>
+          </form>
+
+          <!-- Resultados do Scanner -->
+          @if (dipResults(); as dips) {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              @for (dip of dips.items; track dip.symbol) {
+                <div
+                  class="card hover:shadow-lg transition-shadow cursor-pointer"
+                  (click)="showDipAnalysis(dip.symbol)"
+                >
+                  <div class="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 class="font-bold text-tx text-lg">{{ dip.symbol }}</h4>
+                      <p class="text-xs text-muted">{{ dip.name || 'N/A' }}</p>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-2xl font-bold text-accent">{{ dip.dip_score }}</div>
+                      <div class="text-xs text-muted">Score DIP</div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span class="text-muted">Queda do topo:</span>
+                      <span class="font-semibold text-warn ml-1">
+                        {{
+                          dip.drop_from_52w_high_pct
+                            ? (dip.drop_from_52w_high_pct | number: '1.1-1') + '%'
+                            : 'N/A'
+                        }}
+                      </span>
+                    </div>
+                    <div>
+                      <span class="text-muted">RSI:</span>
+                      <span class="font-semibold text-tx ml-1">{{ dip.rsi_14 || 'N/A' }}</span>
+                    </div>
+                    <div>
+                      <span class="text-muted">MS:</span>
+                      <span class="font-semibold text-accent ml-1">
+                        {{
+                          dip.margin_of_safety
+                            ? (dip.margin_of_safety * 100 | number: '1.0-0') + '%'
+                            : 'N/A'
+                        }}
+                      </span>
+                    </div>
+                    <div>
+                      <span class="text-muted">Confiança:</span>
+                      <span class="font-semibold text-tx ml-1">{{ dip.confidence || 'N/A' }}</span>
+                    </div>
+                  </div>
+                  <p class="text-xs text-muted mt-2">{{ dip.top_reason }}</p>
+                </div>
+              }
+            </div>
+
+            @if (dips.items.length === 0) {
+              <div class="card text-center py-8">
+                <lucide-icon
+                  name="trending-down"
+                  size="48"
+                  class="text-muted mx-auto mb-3"
+                ></lucide-icon>
+                <p class="text-muted">Nenhum ativo em baixa encontrado com os critérios atuais.</p>
+              </div>
+            }
+          }
+
+          <!-- Modal de Análise DIP -->
+          @if (showAnalysis()) {
+            <div
+              class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+              (click)="closeAnalysis()"
+            >
+              <div
+                class="bg-panel max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl"
+                (click)="$event.stopPropagation()"
+              >
+                @if (dipAnalysis(); as analysis) {
+                  <div
+                    class="sticky top-0 bg-panel border-b border-border p-4 flex justify-between items-center"
+                  >
+                    <h3 class="text-xl font-bold text-tx">Análise DIP: {{ analysis.symbol }}</h3>
+                    <button
+                      type="button"
+                      (click)="closeAnalysis()"
+                      class="text-muted hover:text-tx"
+                    >
+                      <lucide-icon name="x" size="24"></lucide-icon>
+                    </button>
+                  </div>
+                  <div class="p-4 space-y-4">
+                    <!-- Score DIP -->
+                    <div class="card bg-gradient-to-br from-accent/20 to-accent-2/20">
+                      <div class="text-center">
+                        <div class="text-5xl font-bold text-accent mb-2">
+                          {{ analysis.dip_score }}
+                        </div>
+                        <div class="text-sm text-muted">Score DIP (0-100)</div>
+                        <div class="text-lg font-semibold text-tx mt-2">
+                          {{ analysis.verdict_label }}
+                        </div>
+                        <div class="text-sm text-muted">Confiança: {{ analysis.confidence }}</div>
+                      </div>
+                    </div>
+
+                    <!-- Breakdown -->
+                    @if (analysis.breakdown) {
+                      <div class="card">
+                        <h4 class="font-semibold text-tx mb-2">Breakdown do Score</h4>
+                        <div class="space-y-2 text-sm">
+                          <div class="flex justify-between">
+                            <span class="text-muted">Valor:</span>
+                            <span class="text-tx">{{ analysis.breakdown.value_score }}</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-muted">Técnico:</span>
+                            <span class="text-tx">{{ analysis.breakdown.technical_score }}</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-muted">Qualidade:</span>
+                            <span class="text-tx">{{ analysis.breakdown.quality_score }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Rationale -->
+                    <div class="card">
+                      <h4 class="font-semibold text-tx mb-2">Análise</h4>
+                      <p class="text-sm text-tx">{{ analysis.reasons.join('. ') }}.</p>
+                    </div>
+
+                    <!-- Notícias -->
+                    @if (analysis.news && analysis.news.length > 0) {
+                      <div class="card">
+                        <h4 class="font-semibold text-tx mb-2">Notícias Recentes</h4>
+                        <div class="space-y-2">
+                          @for (item of analysis.news; track $index) {
+                            <div class="text-sm">
+                              <a
+                                [href]="item.url"
+                                target="_blank"
+                                class="text-accent hover:underline"
+                              >
+                                {{ item.title }}
+                              </a>
+                              <p class="text-xs text-muted">{{ item.published }}</p>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  `,
+  styles: [
+    `
+      .tab-btn {
+        @apply flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border border-b-0 text-tx hover:bg-panel transition-all;
+      }
+      .tab-btn.active {
+        @apply bg-panel border-accent text-accent font-semibold;
+      }
+      .btn-primary {
+        @apply flex items-center gap-2 px-4 py-2 rounded-lg font-medium cursor-pointer bg-gradient-to-r from-accent to-accent-2 text-[#0b0e14] hover:opacity-90 transition-opacity;
+      }
+      .btn-secondary {
+        @apply flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all;
+      }
+      .card {
+        @apply bg-panel rounded-xl p-4 border border-border;
+      }
+      .input {
+        @apply w-full px-3 py-2 rounded-lg bg-panel-2 border border-border text-tx placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent;
+      }
+      .label {
+        @apply block text-sm font-medium text-muted mb-1;
+      }
+    `,
+  ],
+})
+export class MarketComponent {
+  private api = inject(RecommendService);
+  readonly helper = inject(UiHelperService);
+  private fb = inject(FormBuilder);
+
+  // State
+  readonly activeTab = signal<MarketTab>('opportunities');
+  readonly opportunities = signal<OpportunitiesResponse | null>(null);
+  readonly dipResults = signal<{ items: DipScanItem[] } | null>(null);
+  readonly dipAnalysis = signal<DipAnalysisResponse | null>(null);
+  readonly showAnalysis = signal(false);
+
+  // Filtros de Oportunidades
+  filterText = '';
+  filterMinDy = 0;
+  filterMinMos = 0;
+  filterCategory = '';
+  onlyInteresting = false;
+
+  // Form para Scanner
+  scanForm = this.fb.nonNullable.group({
+    min_score: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
+    top: [12, [Validators.required, Validators.min(1), Validators.max(30)]],
+    category: [''],
+  });
+
+  ngOnInit() {
+    this.loadOpportunities();
+  }
+
+  onFilterChange() {
+    this.loadOpportunities();
+  }
+
+  loadOpportunities() {
+    this.api
+      .opportunities(
+        false,
+        1,
+        100,
+        'score',
+        'desc',
+        this.filterText,
+        this.filterMinDy,
+        this.filterMinMos,
+        '',
+        '',
+        this.filterCategory,
+        this.onlyInteresting
+      )
+      .subscribe(data => this.opportunities.set(data));
+  }
+
+  runScan() {
+    if (this.scanForm.invalid) return;
+
+    const { min_score, top, category } = this.scanForm.getRawValue();
+
+    this.api
+      .dipScanner(min_score, top, 0.06, undefined, category || undefined)
+      .subscribe(data => this.dipResults.set(data));
+  }
+
+  showDipAnalysis(ticker: string) {
+    this.api.dipAnalysis(ticker).subscribe(data => {
+      this.dipAnalysis.set(data);
+      this.showAnalysis.set(true);
+    });
+  }
+
+  closeAnalysis() {
+    this.showAnalysis.set(false);
+    this.dipAnalysis.set(null);
+  }
+}

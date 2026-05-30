@@ -9,11 +9,15 @@ import {
   Goal,
   InvestmentStrategy,
   OpportunitiesResponse,
+  PassiveIncomeProjectionRequest,
+  PassiveIncomeProjectionResponse,
   PortfolioEvaluationRequest,
   PortfolioEvaluationResponse,
   PortfolioItem,
   PortfolioStateResponse,
   Preferences,
+  QuickInvestRequest,
+  QuickInvestResponse,
   RecommendRequest,
   RecommendResponse,
   RendaFixaAnalysisResult,
@@ -21,6 +25,8 @@ import {
   RendaFixaCompareRequest,
   RendaFixaCompareResponse,
   ReferenceRates,
+  SectorAllocationResponse,
+  SectorGoal,
   WatchlistItem,
 } from '../models';
 
@@ -178,5 +184,39 @@ export class RecommendService {
 
   compareRendaFixa(req: RendaFixaCompareRequest): Observable<RendaFixaCompareResponse> {
     return this.http.post<RendaFixaCompareResponse>(`${this.base}/renda-fixa/comparar`, req);
+  }
+
+  // Projeção de Renda Passiva
+  projectPassiveIncome(
+    req: PassiveIncomeProjectionRequest
+  ): Observable<PassiveIncomeProjectionResponse> {
+    return this.http.post<PassiveIncomeProjectionResponse>(
+      `${this.base}/projection/passive-income`,
+      req
+    );
+  }
+
+  // Alocação Setorial
+  analyzeSectorAllocation(
+    targetAllocations: Record<string, number>
+  ): Observable<SectorAllocationResponse> {
+    return this.http.post<SectorAllocationResponse>(
+      `${this.base}/projection/sector-allocation`,
+      targetAllocations
+    );
+  }
+
+  // Sector Goals
+  getSectorGoals(): Observable<SectorGoal[]> {
+    return this.http.get<SectorGoal[]>(`${this.base}/sector-goals`);
+  }
+
+  saveSectorGoals(sectorGoals: SectorGoal[]): Observable<SectorGoal[]> {
+    return this.http.put<SectorGoal[]>(`${this.base}/sector-goals`, { sector_goals: sectorGoals });
+  }
+
+  // Quick Invest
+  quickInvest(req: QuickInvestRequest): Observable<QuickInvestResponse> {
+    return this.http.post<QuickInvestResponse>(`${this.base}/quick-invest`, req);
   }
 }

@@ -8,6 +8,8 @@ from .recommendation_service import RecommendationService
 from .dashboard_service import DashboardService
 from .strategy_service import StrategyService
 from .goal_service import GoalService
+from .projection_service import ProjectionService
+from .quick_invest_service import QuickInvestService
 
 __all__ = [
     "AssetService",
@@ -18,4 +20,6 @@ __all__ = [
     "DashboardService",
     "StrategyService",
     "GoalService",
+    "ProjectionService",
+    "QuickInvestService",
 ]

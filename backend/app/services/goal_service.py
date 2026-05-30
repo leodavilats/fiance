@@ -1,6 +1,6 @@
 """Service para gestão de goals com cálculo de progresso."""
 
-from app.models import Goal
+from app.models import Goal, SectorGoal
 from app.repositories import PortfolioRepository
 
 _DEFAULT_GOALS = [
@@ -9,6 +9,15 @@ _DEFAULT_GOALS = [
     {"category": "acoes_int", "target_pct": 15.0, "target_value": None, "deadline": None},
     {"category": "fiis", "target_pct": 15.0, "target_value": None, "deadline": None},
     {"category": "cripto", "target_pct": 5.0, "target_value": None, "deadline": None},
+]
+
+_DEFAULT_SECTOR_GOALS = [
+    {"sector": "Financeiro", "target_pct": 20.0},
+    {"sector": "Energia", "target_pct": 15.0},
+    {"sector": "Varejo", "target_pct": 15.0},
+    {"sector": "Tecnologia", "target_pct": 20.0},
+    {"sector": "Saúde", "target_pct": 10.0},
+    {"sector": "Outros", "target_pct": 20.0},
 ]
 
 
@@ -25,3 +34,15 @@ class GoalService:
     def save_goals(self, goals: list[Goal]) -> list[Goal]:
         self.repo.replace_goals([g.dict() for g in goals])
         return self.get_goals()
+
+    def get_sector_goals(self) -> list[SectorGoal]:
+        """Retorna metas de alocação setorial."""
+        data = self.repo.list_sector_goals()
+        if not data:
+            return [SectorGoal(**g) for g in _DEFAULT_SECTOR_GOALS]
+        return [SectorGoal(**g) for g in data]
+
+    def save_sector_goals(self, goals: list[SectorGoal]) -> list[SectorGoal]:
+        """Salva metas de alocação setorial."""
+        self.repo.replace_sector_goals([g.dict() for g in goals])
+        return self.get_sector_goals()

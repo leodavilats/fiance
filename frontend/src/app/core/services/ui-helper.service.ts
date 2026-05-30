@@ -129,7 +129,23 @@ export class UiHelperService {
     return `Você tem ${count} ${count === 1 ? 'posição' : 'posições'} com ${signal} de ${Math.abs(totalPnlPct).toFixed(2)}%.`;
   }
 
-  snapshotPath(snapshots: PortfolioSnapshot[], width: number, height: number): string {
+  minSnapshot(snapshots: PortfolioSnapshot[]): number {
+    if (!snapshots.length) return 0;
+    return Math.min(...snapshots.map(s => s.total_current));
+  }
+
+  maxSnapshot(snapshots: PortfolioSnapshot[]): number {
+    if (!snapshots.length) return 0;
+    return Math.max(...snapshots.map(s => s.total_current));
+  }
+
+  snapshotPath(
+    snapshots: PortfolioSnapshot[],
+    width: number,
+    height: number,
+    offsetX: number = 0,
+    offsetY: number = 0
+  ): string {
     if (!snapshots.length) return '';
     const values = snapshots.map(s => s.total_current);
     const min = Math.min(...values);
@@ -138,12 +154,39 @@ export class UiHelperService {
     const xStep = width / (values.length - 1 || 1);
 
     const points = values.map((v, i) => {
-      const x = i * xStep;
-      const y = height - ((v - min) / range) * height;
+      const x = offsetX + i * xStep;
+      const y = offsetY + height - ((v - min) / range) * height;
       return `${x},${y}`;
     });
 
     return `M ${points.join(' L ')}`;
+  }
+
+  snapshotAreaPath(
+    snapshots: PortfolioSnapshot[],
+    width: number,
+    height: number,
+    offsetX: number = 0,
+    offsetY: number = 0
+  ): string {
+    if (!snapshots.length) return '';
+    const values = snapshots.map(s => s.total_current);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const xStep = width / (values.length - 1 || 1);
+
+    const points = values.map((v, i) => {
+      const x = offsetX + i * xStep;
+      const y = offsetY + height - ((v - min) / range) * height;
+      return `${x},${y}`;
+    });
+
+    // Criar path de área: linha + fechar pelo fundo
+    const bottomRight = `${offsetX + width},${offsetY + height}`;
+    const bottomLeft = `${offsetX},${offsetY + height}`;
+    
+    return `M ${points[0]} L ${points.slice(1).join(' L ')} L ${bottomRight} L ${bottomLeft} Z`;
   }
 
   toNum(v: string | number | null): number {

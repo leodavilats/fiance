@@ -12,10 +12,10 @@ import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import {
-  AllocationCategory,
   LoadingService,
   PortfolioItem,
   PortfolioEvaluationResponse,
+  PortfolioCategory,
   RecommendService,
   RendaFixaTipo,
   UiHelperService,
@@ -25,7 +25,7 @@ interface PortfolioItemForm {
   ticker: FormControl<string>;
   quantity: FormControl<number>;
   avg_price: FormControl<number>;
-  category: FormControl<'auto' | 'renda' | 'trade'>;
+  category: FormControl<PortfolioCategory>;
 }
 
 interface RendaFixaItemForm {
@@ -578,6 +578,11 @@ export class AssetsComponent implements OnInit {
     this.svc.getPortfolio().subscribe({
       next: res => {
         res.items.forEach(item => {
+          // Ignorar positions sintéticas de renda fixa (criadas em persistPortfolio)
+          if (item.ticker.startsWith('RF_')) {
+            return;
+          }
+
           const group = this.fb.group<PortfolioItemForm>({
             ticker: this.fb.control(item.ticker, {
               nonNullable: true,
@@ -602,12 +607,26 @@ export class AssetsComponent implements OnInit {
 
   private persistPortfolio(): void {
     const items = this.portfolioItems.getRawValue();
-    if (items.length === 0) return;
+
+    // Converter renda fixa em positions sintéticas para incluir no cálculo do dashboard
+    // Isso permite que o dashboard conte renda fixa na alocação por categoria
+    const rfItems = this.rendaFixaItems.getRawValue();
+    const rfPositions: PortfolioItem[] = rfItems.map((rf, index) => ({
+      ticker: `RF_${rf.tipo}_${index + 1}`, // Ex: RF_cdb_1, RF_tesouro_2
+      quantity: 1,
+      avg_price: rf.valor_investido, // O preço médio é o valor investido
+      category: 'renda_fixa', // Força categoria renda_fixa
+    }));
+
+    const allItems = [...items, ...rfPositions];
+    if (allItems.length === 0) return;
 
     this.saveState.set('saving');
-    this.svc.savePortfolio(items).subscribe({
+    this.svc.savePortfolio(allItems).subscribe({
       next: () => {
         this.saveState.set('saved');
+        // Também persiste renda fixa no localStorage para edição
+        this.persistRendaFixa();
         setTimeout(() => this.saveState.set('idle'), 2000);
       },
       error: () => {

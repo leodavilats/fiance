@@ -11,6 +11,8 @@ from . import (
     opportunities,
     portfolio_routes,
     preferences,
+    projection,
+    quick_invest,
     recommendations,
     renda_fixa,
     strategy,
@@ -33,5 +35,7 @@ router.include_router(opportunities.router, tags=["Opportunities"])
 router.include_router(dashboard.router, tags=["Dashboard"])
 router.include_router(strategy.router, tags=["Strategy"])
 router.include_router(renda_fixa.router, tags=["Renda Fixa"])
+router.include_router(projection.router, tags=["Projection"])
+router.include_router(quick_invest.router, tags=["Quick Invest"])
 
 __all__ = ["router"]

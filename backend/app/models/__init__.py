@@ -41,7 +41,7 @@ from .portfolio import (
 from .watchlist import WatchlistItem, WatchlistRequest
 
 # Goals
-from .goal import Goal, GoalsRequest
+from .goal import Goal, GoalsRequest, SectorGoal, SectorGoalsRequest
 
 # Preferences
 from .preferences import Preferences, PreferencesRequest
@@ -73,6 +73,22 @@ from .renda_fixa import (
     RendaFixaCompareRequest,
     RendaFixaCompareResponse,
     ReferenceRates,
+)
+
+# Projection
+from .projection import (
+    PassiveIncomeMonth,
+    PassiveIncomeProjectionRequest,
+    PassiveIncomeProjectionResponse,
+    SectorAllocation,
+    SectorAllocationResponse,
+)
+
+# Quick Invest
+from .quick_invest import (
+    QuickInvestRequest,
+    QuickInvestResponse,
+    QuickInvestAllocation,
 )
 
 __all__ = [
@@ -111,6 +127,8 @@ __all__ = [
     # Goals
     "Goal",
     "GoalsRequest",
+    "SectorGoal",
+    "SectorGoalsRequest",
     # Preferences
     "Preferences",
     "PreferencesRequest",
@@ -134,4 +152,14 @@ __all__ = [
     "RendaFixaCompareRequest",
     "RendaFixaCompareResponse",
     "ReferenceRates",
+    # Projection
+    "PassiveIncomeMonth",
+    "PassiveIncomeProjectionRequest",
+    "PassiveIncomeProjectionResponse",
+    "SectorAllocation",
+    "SectorAllocationResponse",
+    # Quick Invest
+    "QuickInvestRequest",
+    "QuickInvestResponse",
+    "QuickInvestAllocation",
 ]

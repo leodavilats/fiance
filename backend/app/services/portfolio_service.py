@@ -34,6 +34,31 @@ class PortfolioService:
             raise ValueError("Carteira vazia.")
 
         async def _one(item: PortfolioItem) -> PortfolioPosition:
+            # Tratar positions sintéticas de renda fixa (não busca cotação)
+            if item.ticker.startswith("RF_"):
+                invested = round(item.quantity * item.avg_price, 2)
+                return PortfolioPosition(
+                    ticker=item.ticker.upper(),
+                    name="Renda Fixa",
+                    asset_type=AssetType.br_stock,  # Placeholder
+                    quantity=item.quantity,
+                    avg_price=item.avg_price,
+                    current_price=item.avg_price,  # RF não tem cotação, usa o valor investido
+                    invested=invested,
+                    current_value=invested,  # RF mantém valor (sem variação de preço)
+                    pnl=0.0,  # RF não tem P&L de cotação (rendimento é outro conceito)
+                    pnl_pct=0.0,
+                    fair_price=None,
+                    margin_of_safety=None,
+                    verdict="HOLD",
+                    label="Renda Fixa",
+                    reasons=["Investimento em renda fixa"],
+                    category="renda_fixa",
+                    category_resolved="renda_fixa",
+                    dividend_yield=None,
+                    sector="Renda Fixa",
+                )
+
             try:
                 snap = await self.asset_repo.get_asset(item.ticker)
             except Exception:

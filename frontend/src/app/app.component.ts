@@ -1,34 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { ThemeService } from './core';
-import {
-  AssetsComponent,
-  ConfigComponent,
-  DashboardComponent,
-  DipComponent,
-  GlobalLoaderComponent,
-  OpportunitiesComponent,
-  SnackbarComponent,
-  StrategyComponent,
-} from './components';
-
-type Tab = 'dashboard' | 'assets' | 'opportunities' | 'dip' | 'strategy' | 'config';
+import { GlobalLoaderComponent, SnackbarComponent } from './components';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
     CommonModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
     LucideAngularModule,
-    AssetsComponent,
-    ConfigComponent,
-    DashboardComponent,
-    DipComponent,
     GlobalLoaderComponent,
-    OpportunitiesComponent,
     SnackbarComponent,
-    StrategyComponent,
   ],
   template: `
     <app-global-loader />
@@ -60,77 +47,60 @@ type Tab = 'dashboard' | 'assets' | 'opportunities' | 'dip' | 'strategy' | 'conf
         </div>
       </header>
       <nav class="flex flex-wrap gap-2 mb-6">
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-          [class.active]="tab() === 'dashboard'"
-          (click)="tab.set('dashboard')"
+        <a
+          routerLink="/dashboard"
+          routerLinkActive="active"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
         >
           <lucide-icon name="layout-dashboard" size="16"></lucide-icon> Dashboard
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-          [class.active]="tab() === 'assets'"
-          (click)="tab.set('assets')"
+        </a>
+        <a
+          routerLink="/assets"
+          routerLinkActive="active"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
         >
           <lucide-icon name="briefcase" size="16"></lucide-icon> Meus Ativos
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-          [class.active]="tab() === 'opportunities'"
-          (click)="tab.set('opportunities')"
+        </a>
+        <a
+          routerLink="/market"
+          routerLinkActive="active"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
         >
-          <lucide-icon name="target" size="16"></lucide-icon> Oportunidades
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-          [class.active]="tab() === 'dip'"
-          (click)="tab.set('dip')"
-        >
-          <lucide-icon name="trending-down" size="16"></lucide-icon> Na Baixa?
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-          [class.active]="tab() === 'strategy'"
-          (click)="tab.set('strategy')"
+          <lucide-icon name="target" size="16"></lucide-icon> Mercado
+        </a>
+        <a
+          routerLink="/strategy"
+          routerLinkActive="active"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
         >
           <lucide-icon name="wand-sparkles" size="16"></lucide-icon> Estratégia
-        </button>
-        <button
-          type="button"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-          [class.active]="tab() === 'config'"
-          (click)="tab.set('config')"
+        </a>
+        <a
+          routerLink="/config"
+          routerLinkActive="active"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
         >
           <lucide-icon name="settings" size="16"></lucide-icon> Configurações
-        </button>
+        </a>
       </nav>
-      @if (tab() === 'dashboard') {
-        <app-dashboard />
-      }
-      @if (tab() === 'assets') {
-        <app-assets />
-      }
-      @if (tab() === 'opportunities') {
-        <app-opportunities />
-      }
-      @if (tab() === 'strategy') {
-        <app-strategy />
-      }
-      @if (tab() === 'dip') {
-        <app-dip />
-      }
-      @if (tab() === 'config') {
-        <app-config />
-      }
+      <router-outlet />
     </div>
   `,
+  styles: [
+    `
+      :host ::ng-deep a.active {
+        background: linear-gradient(135deg, #4ade80, #22d3ee);
+        color: #0b0e14;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(34, 211, 238, 0.3);
+      }
+
+      a {
+        text-decoration: none !important;
+      }
+    `,
+  ],
 })
 export class AppComponent {
   readonly theme = inject(ThemeService);
-  readonly tab = signal<Tab>('dashboard');
 }
