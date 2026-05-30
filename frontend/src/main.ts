@@ -4,6 +4,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { importProvidersFrom } from '@angular/core';
 import {
   ArrowRight,
+  BarChart3,
   Bitcoin,
   Briefcase,
   Building2,
@@ -13,8 +14,10 @@ import {
   ChartPie,
   Check,
   CheckCircle,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   CircleAlert,
   CircleArrowDown,
   CircleArrowUp,
@@ -30,6 +33,7 @@ import {
   GitCompare,
   Globe,
   House,
+  Inbox,
   Info,
   Landmark,
   LayoutDashboard,
@@ -73,6 +77,7 @@ bootstrapApplication(AppComponent, {
     importProvidersFrom(
       LucideAngularModule.pick({
         ArrowRight,
+        BarChart3,
         Bitcoin,
         Briefcase,
         Building2,
@@ -82,8 +87,10 @@ bootstrapApplication(AppComponent, {
         ChartPie,
         Check,
         CheckCircle,
+        ChevronDown,
         ChevronLeft,
         ChevronRight,
+        ChevronUp,
         CircleAlert,
         CircleArrowDown,
         CircleArrowUp,
@@ -99,6 +106,7 @@ bootstrapApplication(AppComponent, {
         GitCompare,
         Globe,
         House,
+        Inbox,
         Info,
         Landmark,
         LayoutDashboard,

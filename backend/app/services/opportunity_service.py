@@ -1,6 +1,7 @@
 """Service para análise de oportunidades de investimento."""
 
 import asyncio
+from typing import Optional
 
 from app.analysis.classify import auto_category
 from app.analysis.decision import decide
@@ -96,8 +97,8 @@ class OpportunityService:
         sort_by: str = "score",
         sort_order: str = "desc",
         search: str = "",
-        min_dy: float = 0,
-        min_mos: float = 0,
+        min_dy: Optional[float] = None,
+        min_mos: Optional[float] = None,
         sector: str = "",
         asset_type: str = "",
         category: str = "",
@@ -136,10 +137,10 @@ class OpportunityService:
                 if search_lower in o.ticker.lower() or (o.name and search_lower in o.name.lower())
             ]
 
-        if min_dy > 0:
+        if min_dy is not None and min_dy > 0:
             opps = [o for o in opps if (o.dividend_yield or 0) >= min_dy]
 
-        if min_mos != 0:
+        if min_mos is not None and min_mos != 0:
             opps = [o for o in opps if (o.margin_of_safety or 0) * 100 >= min_mos]
 
         if sector:

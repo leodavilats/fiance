@@ -106,26 +106,33 @@ export class RecommendService {
     sortBy = 'score',
     sortOrder = 'desc',
     search = '',
-    minDy = 0,
-    minMos = 0,
+    minDy: number | null = null,
+    minMos: number | null = null,
     sector = '',
     assetType = '',
     category = '',
     onlyInteresting = false
   ): Observable<OpportunitiesResponse> {
-    const params = new HttpParams()
+    let params = new HttpParams()
       .set('include_held', includeHeld)
       .set('page', page)
       .set('page_size', pageSize)
       .set('sort_by', sortBy)
       .set('sort_order', sortOrder)
       .set('search', search)
-      .set('min_dy', minDy)
-      .set('min_mos', minMos)
       .set('sector', sector)
       .set('asset_type', assetType)
       .set('category', category)
       .set('only_interesting', onlyInteresting);
+
+    // Apenas adiciona min_dy e min_mos se tiverem valores válidos
+    if (minDy !== null && minDy > 0) {
+      params = params.set('min_dy', minDy);
+    }
+    if (minMos !== null && minMos !== 0) {
+      params = params.set('min_mos', minMos);
+    }
+
     return this.http.get<OpportunitiesResponse>(`${this.base}/opportunities`, { params });
   }
 

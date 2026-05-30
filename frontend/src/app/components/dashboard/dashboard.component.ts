@@ -313,7 +313,7 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
             <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
               <lucide-icon name="chart-column" size="18"></lucide-icon> Evolução do patrimônio
             </h2>
-            
+
             <!-- Estatísticas do período -->
             <div class="grid grid-cols-3 gap-4 mb-4">
               <div class="text-center">
@@ -329,18 +329,43 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
                 <div class="text-xs text-muted mb-1">Variação</div>
                 <div
                   class="text-sm font-semibold"
-                  [class.good]="d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current"
-                  [class.warn]="d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current"
+                  [class.good]="
+                    d.snapshots[d.snapshots.length - 1].total_current >=
+                    d.snapshots[0].total_current
+                  "
+                  [class.warn]="
+                    d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
+                  "
                 >
-                  {{ d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current >= 0 ? '+' : '' }}
-                  R$ {{ (d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current) | number: '1.2-2' }}
+                  {{
+                    d.snapshots[d.snapshots.length - 1].total_current -
+                      d.snapshots[0].total_current >=
+                    0
+                      ? '+'
+                      : ''
+                  }}
+                  R$
+                  {{
+                    d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current
+                      | number: '1.2-2'
+                  }}
                 </div>
                 <div
                   class="text-xs"
-                  [class.good]="d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current"
-                  [class.warn]="d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current"
+                  [class.good]="
+                    d.snapshots[d.snapshots.length - 1].total_current >=
+                    d.snapshots[0].total_current
+                  "
+                  [class.warn]="
+                    d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
+                  "
                 >
-                  {{ ((d.snapshots[d.snapshots.length - 1].total_current / d.snapshots[0].total_current - 1) * 100) | number: '1.2-2' }}%
+                  {{
+                    (d.snapshots[d.snapshots.length - 1].total_current /
+                      d.snapshots[0].total_current -
+                      1) *
+                      100 | number: '1.2-2'
+                  }}%
                 </div>
               </div>
               <div class="text-center">
@@ -356,11 +381,7 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
 
             <!-- Gráfico melhorado -->
             <div class="relative">
-              <svg
-                class="w-full"
-                viewBox="0 0 600 180"
-                preserveAspectRatio="xMidYMid meet"
-              >
+              <svg class="w-full" viewBox="0 0 600 180" preserveAspectRatio="xMidYMid meet">
                 <!-- Grid de fundo -->
                 <defs>
                   <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -368,23 +389,71 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
                     <stop offset="100%" style="stop-color:rgb(var(--accent));stop-opacity:0.05" />
                   </linearGradient>
                 </defs>
-                
+
                 <!-- Linhas horizontais do grid -->
-                <line x1="40" y1="20" x2="590" y2="20" stroke="currentColor" stroke-opacity="0.1" stroke-width="1" />
-                <line x1="40" y1="60" x2="590" y2="60" stroke="currentColor" stroke-opacity="0.1" stroke-width="1" />
-                <line x1="40" y1="100" x2="590" y2="100" stroke="currentColor" stroke-opacity="0.1" stroke-width="1" />
-                <line x1="40" y1="140" x2="590" y2="140" stroke="currentColor" stroke-opacity="0.1" stroke-width="1" />
-                
+                <line
+                  x1="40"
+                  y1="20"
+                  x2="590"
+                  y2="20"
+                  stroke="currentColor"
+                  stroke-opacity="0.1"
+                  stroke-width="1"
+                />
+                <line
+                  x1="40"
+                  y1="60"
+                  x2="590"
+                  y2="60"
+                  stroke="currentColor"
+                  stroke-opacity="0.1"
+                  stroke-width="1"
+                />
+                <line
+                  x1="40"
+                  y1="100"
+                  x2="590"
+                  y2="100"
+                  stroke="currentColor"
+                  stroke-opacity="0.1"
+                  stroke-width="1"
+                />
+                <line
+                  x1="40"
+                  y1="140"
+                  x2="590"
+                  y2="140"
+                  stroke="currentColor"
+                  stroke-opacity="0.1"
+                  stroke-width="1"
+                />
+
                 <!-- Eixo X e Y -->
-                <line x1="40" y1="140" x2="590" y2="140" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" />
-                <line x1="40" y1="20" x2="40" y2="140" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" />
-                
+                <line
+                  x1="40"
+                  y1="140"
+                  x2="590"
+                  y2="140"
+                  stroke="currentColor"
+                  stroke-opacity="0.2"
+                  stroke-width="1.5"
+                />
+                <line
+                  x1="40"
+                  y1="20"
+                  x2="40"
+                  y2="140"
+                  stroke="currentColor"
+                  stroke-opacity="0.2"
+                  stroke-width="1.5"
+                />
+
                 <!-- Área preenchida -->
                 <path
                   [attr.d]="ui.snapshotAreaPath(d.snapshots, 550, 120, 40, 20)"
                   fill="url(#areaGradient)"
                 />
-                
+
                 <!-- Linha principal -->
                 <path
                   [attr.d]="ui.snapshotPath(d.snapshots, 550, 120, 40, 20)"
@@ -394,13 +463,22 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 />
-                
+
                 <!-- Pontos de dados -->
                 @for (snap of d.snapshots; track snap.captured_at; let i = $index) {
-                  @if (i === 0 || i === d.snapshots.length - 1 || i % Math.max(1, Math.floor(d.snapshots.length / 8)) === 0) {
+                  @if (
+                    i === 0 ||
+                    i === d.snapshots.length - 1 ||
+                    i % Math.max(1, Math.floor(d.snapshots.length / 8)) === 0
+                  ) {
                     <circle
                       [attr.cx]="40 + (i / (d.snapshots.length - 1)) * 550"
-                      [attr.cy]="140 - ((snap.total_current - ui.minSnapshot(d.snapshots)) / (ui.maxSnapshot(d.snapshots) - ui.minSnapshot(d.snapshots))) * 120"
+                      [attr.cy]="
+                        140 -
+                        ((snap.total_current - ui.minSnapshot(d.snapshots)) /
+                          (ui.maxSnapshot(d.snapshots) - ui.minSnapshot(d.snapshots))) *
+                          120
+                      "
                       r="3"
                       fill="rgb(var(--accent))"
                       stroke="rgb(var(--panel))"
@@ -408,18 +486,21 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
                     />
                   }
                 }
-                
+
                 <!-- Labels do eixo Y -->
                 <text x="35" y="25" text-anchor="end" class="text-[8px] fill-muted">
                   {{ ui.maxSnapshot(d.snapshots) | number: '1.0-0' }}
                 </text>
                 <text x="35" y="103" text-anchor="end" class="text-[8px] fill-muted">
-                  {{ ((ui.maxSnapshot(d.snapshots) + ui.minSnapshot(d.snapshots)) / 2) | number: '1.0-0' }}
+                  {{
+                    (ui.maxSnapshot(d.snapshots) + ui.minSnapshot(d.snapshots)) / 2
+                      | number: '1.0-0'
+                  }}
                 </text>
                 <text x="35" y="143" text-anchor="end" class="text-[8px] fill-muted">
                   {{ ui.minSnapshot(d.snapshots) | number: '1.0-0' }}
                 </text>
-                
+
                 <!-- Labels do eixo X (primeira e última data) -->
                 <text x="40" y="155" text-anchor="start" class="text-[8px] fill-muted">
                   {{ formatDate(d.snapshots[0].captured_at) }}
@@ -429,11 +510,18 @@ import { DashboardResponse, LoadingService, RecommendService, UiHelperService } 
                 </text>
               </svg>
             </div>
-            
+
             <div class="flex items-center justify-between mt-3 text-xs text-muted">
               <span>{{ d.snapshots.length }} registros</span>
               <span>
-                Período: {{ Math.ceil((d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) / 86400) }} dias
+                Período:
+                {{
+                  Math.ceil(
+                    (d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) /
+                      86400
+                  )
+                }}
+                dias
               </span>
             </div>
           </div>
@@ -484,9 +572,9 @@ export class DashboardComponent implements OnInit {
   }
 
   formatDate(timestamp: number): string {
-    return new Date(timestamp * 1000).toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: 'short' 
+    return new Date(timestamp * 1000).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'short',
     });
   }
 }

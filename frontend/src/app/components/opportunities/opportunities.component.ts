@@ -46,11 +46,11 @@ type SortKey = 'score' | 'dy' | 'mos' | 'price';
           <input
             type="number"
             class="w-full px-3 py-2 rounded-lg bg-bg border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-            [class.border-accent]="filterMinDy() > 0"
-            [class.border-border]="filterMinDy() === 0"
-            [class.bg-accent]="filterMinDy() > 0"
-            [class.bg-opacity-10]="filterMinDy() > 0"
-            [value]="filterMinDy()"
+            [class.border-accent]="filterMinDy() !== null && filterMinDy()! > 0"
+            [class.border-border]="filterMinDy() === null || filterMinDy()! === 0"
+            [class.bg-accent]="filterMinDy() !== null && filterMinDy()! > 0"
+            [class.bg-opacity-10]="filterMinDy() !== null && filterMinDy()! > 0"
+            [value]="filterMinDy() ?? ''"
             (input)="filterMinDy.set(ui.toNum($any($event.target).value))"
             min="0"
             step="0.5"
@@ -61,11 +61,11 @@ type SortKey = 'score' | 'dy' | 'mos' | 'price';
           <input
             type="number"
             class="w-full px-3 py-2 rounded-lg bg-bg border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-            [class.border-accent]="filterMinMos() !== 0"
-            [class.border-border]="filterMinMos() === 0"
-            [class.bg-accent]="filterMinMos() !== 0"
-            [class.bg-opacity-10]="filterMinMos() !== 0"
-            [value]="filterMinMos()"
+            [class.border-accent]="filterMinMos() !== null && filterMinMos()! !== 0"
+            [class.border-border]="filterMinMos() === null || filterMinMos()! === 0"
+            [class.bg-accent]="filterMinMos() !== null && filterMinMos()! !== 0"
+            [class.bg-opacity-10]="filterMinMos() !== null && filterMinMos()! !== 0"
+            [value]="filterMinMos() ?? ''"
             (input)="filterMinMos.set(ui.toNum($any($event.target).value))"
             min="-50"
             step="5"
@@ -651,8 +651,8 @@ export class OpportunitiesComponent implements OnInit {
   pageSize = signal(50);
 
   filterText = signal('');
-  filterMinDy = signal(0);
-  filterMinMos = signal(0);
+  filterMinDy = signal<number | null>(null);
+  filterMinMos = signal<number | null>(null);
   filterSector = signal('');
   filterType = signal<'all' | AssetType>('all');
   filterCategory = signal<string>('all');

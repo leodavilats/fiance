@@ -185,14 +185,15 @@ export class UiHelperService {
     // Criar path de área: linha + fechar pelo fundo
     const bottomRight = `${offsetX + width},${offsetY + height}`;
     const bottomLeft = `${offsetX},${offsetY + height}`;
-    
+
     return `M ${points[0]} L ${points.slice(1).join(' L ')} L ${bottomRight} L ${bottomLeft} Z`;
   }
 
-  toNum(v: string | number | null): number {
+  toNum(v: string | number | null): number | null {
     if (typeof v === 'number') return v;
-    const parsed = parseFloat(v || '0');
-    return isNaN(parsed) ? 0 : parsed;
+    if (!v || v.trim() === '') return null;
+    const parsed = parseFloat(v);
+    return isNaN(parsed) ? null : parsed;
   }
 
   verdictFromLabel(label: string): Verdict {
