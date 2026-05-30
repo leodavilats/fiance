@@ -1,11 +1,10 @@
-from typing import Optional
 from pydantic import BaseModel, Field
 
 
 class Preferences(BaseModel):
     cash_available: float = 0.0
     desired_yield: float = 0.06
-    updated_at: Optional[float] = None
+    updated_at: float | None = None
 
 
 class PreferencesRequest(BaseModel):

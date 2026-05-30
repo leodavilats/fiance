@@ -1,11 +1,9 @@
 """Service para análise de ativos."""
 
 import asyncio
-from typing import Optional
 
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical
-from app.collectors.news import news_sentiment_summary
 from app.models import (
     AssetAnalysis,
     AssetType,

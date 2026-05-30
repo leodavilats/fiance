@@ -1,7 +1,5 @@
 """Controller para ranking de dividendos."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Query
 
 from app.models import DividendRankingResponse
@@ -14,7 +12,7 @@ dividend_service = DividendService()
 
 @router.get("/dividends/ranking", response_model=DividendRankingResponse)
 async def dividends_ranking(
-    universe: Optional[str] = Query(
+    universe: str | None = Query(
         None, description="Tickers separados por vírgula. Usa default se omitido."
     ),
     top: int = Query(15, ge=1, le=50),

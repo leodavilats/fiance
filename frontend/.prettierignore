@@ -1,0 +1,13 @@
+# Dependências
+node_modules/
+dist/
+.angular/
+
+# Build outputs
+build/
+coverage/
+
+# Configurações
+angular.json
+package-lock.json
+tsconfig*.json

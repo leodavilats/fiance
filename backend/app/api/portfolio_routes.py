@@ -21,7 +21,7 @@ async def evaluate_portfolio(req: PortfolioEvaluationRequest) -> PortfolioEvalua
     try:
         return await portfolio_service.evaluate_portfolio(req)
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
 
 
 @router.get("/portfolio", response_model=PortfolioStateResponse)
@@ -48,4 +48,4 @@ async def refresh_portfolio(desired_yield: float = 0.06) -> PortfolioEvaluationR
     try:
         return await portfolio_service.refresh_portfolio(desired_yield)
     except ValueError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e

@@ -6,10 +6,10 @@ Sistema de gestão e análise de ativos financeiros — descubra o que comprar, 
 
 | Camada | Tecnologia |
 |---|---|
-| Backend | Python 3.11+ · FastAPI · yfinance · feedparser |
+| Backend | Python 3.11+ · FastAPI · yfinance · Alpha Vantage · feedparser |
 | Frontend | Angular 18 · Signals · Reactive Forms · Lucide Icons |
-| Dados | yfinance (gratuito) · BRAPI (gratuito) · Google News RSS |
-| LLM (opcional) | OpenAI GPT-4o-mini |
+| Dados | Yahoo Finance (gratuito) · Alpha Vantage (gratuito) · Google News RSS |
+| LLM (opcional) | Google Gemini AI |
 
 ---
 
@@ -47,9 +47,9 @@ fianceAI/
 │   ├── app/
 │   │   ├── analysis/        # fair_price, scoring, decision, dip_analysis
 │   │   ├── api/             # routes FastAPI
-│   │   ├── collectors/      # yfinance (universal), BRAPI (b3), Google News RSS (news)
+│   │   ├── collectors/      # yfinance (universal), Alpha Vantage, Google News RSS
 │   │   ├── core/            # config (.env), cache, universe
-│   │   ├── llm/             # openai_client (opcional)
+│   │   ├── llm/             # gemini_client
 │   │   ├── models/          # schemas Pydantic
 │   │   ├── optimizer/       # alocação e otimização de carteira
 │   │   └── storage/         # persistência local (portfolio_store)
@@ -78,8 +78,8 @@ pip install -r requirements.txt
 Crie um arquivo `.env` (opcional):
 
 ```env
-BRAPI_TOKEN=seu_token          # gratuito em brapi.dev — melhora dados B3
-OPENAI_API_KEY=sk-...          # apenas se quiser explicações LLM
+ALPHA_VANTAGE_KEY=your_key    # gratuito em alphavantage.co — dados fundamentais precisos
+GEMINI_API_KEY=your_key        # gratuito em ai.google.dev — análises com LLM
 DEFAULT_UNIVERSE=PETR4,VALE3,ITUB4,BBDC4,BBAS3,WEGE3,ITSA4
 ```
 
@@ -91,6 +91,16 @@ uvicorn app.main:app --reload
 # Docs interativas em http://127.0.0.1:8000/docs
 ```
 
+**Formatação de código:**
+
+```bash
+# Formatar código Python
+ruff format .
+
+# Verificar e corrigir linting
+ruff check --fix .
+```
+
 ### 2. Frontend
 
 ```bash
@@ -98,6 +108,16 @@ cd frontend
 npm install
 ng serve
 # App disponível em http://localhost:4200
+```
+
+**Formatação de código:**
+
+```bash
+# Formatar código TypeScript/HTML/CSS
+npm run format
+
+# Verificar formatação sem alterar
+npm run format:check
 ```
 
 ---

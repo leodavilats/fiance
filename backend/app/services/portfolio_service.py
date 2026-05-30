@@ -1,7 +1,6 @@
 """Service para gerenciamento de portfolio."""
 
 import asyncio
-from typing import List
 
 from app.analysis.classify import auto_category, resolve_category
 from app.analysis.decision import decide

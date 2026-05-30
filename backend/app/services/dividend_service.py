@@ -2,7 +2,6 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import List, Optional
 
 from app.analysis.fair_price import average_dividend_last_n_years, bazin_fair_price
 from app.core.config import get_settings
@@ -18,7 +17,7 @@ class DividendService:
 
     async def get_dividend_ranking(
         self,
-        universe: Optional[str] = None,
+        universe: str | None = None,
         top: int = 15,
     ) -> DividendRankingResponse:
         """Retorna ranking de ativos por dividend yield."""
@@ -31,7 +30,7 @@ class DividendService:
 
         cutoff = datetime.utcnow() - timedelta(days=365)
 
-        async def _one(tk: str) -> Optional[DividendRankingItem]:
+        async def _one(tk: str) -> DividendRankingItem | None:
             snap = await self.asset_repo.get_asset(tk)
             if not snap or not snap.price:
                 return None

@@ -11,10 +11,10 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   loading.show();
 
   return next(req).pipe(
-    timeout(60000),
+    timeout(180000),
     catchError((error: HttpErrorResponse | TimeoutError) => {
       let errorMessage = 'Erro ao processar requisição';
-      
+
       if (error instanceof TimeoutError) {
         errorMessage = 'Tempo de resposta excedido. Tente novamente.';
       } else if (error instanceof HttpErrorResponse) {
@@ -30,9 +30,9 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
           errorMessage = error.message;
         }
       }
-      
+
       snackbar.showError(errorMessage);
-      
+
       return throwError(() => error);
     }),
     finalize(() => {

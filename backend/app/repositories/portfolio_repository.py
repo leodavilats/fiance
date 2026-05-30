@@ -1,7 +1,5 @@
 """Repository para acesso a dados de portfolio."""
 
-from typing import List, Optional
-
 from app.storage import portfolio_store
 
 
@@ -9,12 +7,12 @@ class PortfolioRepository:
     """Repository para operações de dados de portfolio."""
 
     @staticmethod
-    def list_positions() -> List[dict]:
+    def list_positions() -> list[dict]:
         """Lista todas as posições do portfolio."""
         return portfolio_store.list_positions()
 
     @staticmethod
-    def replace_all(items: List[dict]) -> None:
+    def replace_all(items: list[dict]) -> None:
         """Substitui todas as posições do portfolio."""
         portfolio_store.replace_all(items)
 
@@ -39,22 +37,22 @@ class PortfolioRepository:
         )
 
     @staticmethod
-    def list_snapshots(limit: int = 90) -> List[dict]:
+    def list_snapshots(limit: int = 90) -> list[dict]:
         """Lista snapshots do portfolio."""
         return portfolio_store.list_snapshots(limit=limit)
 
     @staticmethod
-    def last_updated() -> Optional[float]:
+    def last_updated() -> float | None:
         """Retorna timestamp da última atualização."""
         return portfolio_store.last_updated()
 
     @staticmethod
-    def list_watchlist() -> List[dict]:
+    def list_watchlist() -> list[dict]:
         """Lista itens da watchlist."""
         return portfolio_store.list_watchlist()
 
     @staticmethod
-    def replace_watchlist(items: List[dict]) -> None:
+    def replace_watchlist(items: list[dict]) -> None:
         """Substitui a watchlist."""
         portfolio_store.replace_watchlist(items)
 
@@ -64,12 +62,12 @@ class PortfolioRepository:
         portfolio_store.remove_watchlist(ticker)
 
     @staticmethod
-    def list_goals() -> List[dict]:
+    def list_goals() -> list[dict]:
         """Lista goals de alocação."""
         return portfolio_store.list_goals()
 
     @staticmethod
-    def replace_goals(goals: List[dict]) -> None:
+    def replace_goals(goals: list[dict]) -> None:
         """Substitui goals de alocação."""
         portfolio_store.replace_goals(goals)
 

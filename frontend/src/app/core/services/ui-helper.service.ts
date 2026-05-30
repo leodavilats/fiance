@@ -19,13 +19,40 @@ export class UiHelperService {
 
   categoryLabel(c: string): string {
     const map: Record<string, string> = {
-      auto: 'Auto',
-      renda: 'Renda',
-      trade: 'Trade',
+      renda_fixa: 'Renda Fixa',
+      acoes_br: 'Ações BR',
+      acoes_int: 'Ações INT',
+      fiis: 'FIIs',
       cripto: 'Cripto',
-      caixa: 'Caixa',
+      // compatibilidade legada
+      renda: 'Renda Fixa',
+      trade: 'Ações BR',
+      caixa: 'Renda Fixa',
+      auto: 'Auto',
     };
     return map[c] || c;
+  }
+
+  categoryIcon(c: string): string {
+    const map: Record<string, string> = {
+      renda_fixa: 'landmark',
+      acoes_br: 'trending-up',
+      acoes_int: 'globe',
+      fiis: 'building-2',
+      cripto: 'bitcoin',
+    };
+    return map[c] || 'circle';
+  }
+
+  categoryColor(c: string): string {
+    const map: Record<string, string> = {
+      renda_fixa: 'text-blue-400',
+      acoes_br: 'text-green-400',
+      acoes_int: 'text-purple-400',
+      fiis: 'text-orange-400',
+      cripto: 'text-yellow-400',
+    };
+    return map[c] || 'text-muted';
   }
 
   verdictClass(v: Verdict): string {
@@ -104,7 +131,7 @@ export class UiHelperService {
 
   snapshotPath(snapshots: PortfolioSnapshot[], width: number, height: number): string {
     if (!snapshots.length) return '';
-    const values = snapshots.map((s) => s.total_current);
+    const values = snapshots.map(s => s.total_current);
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = max - min || 1;

@@ -10,7 +10,7 @@ export class LoadingService {
   show(): void {
     this._activeRequests++;
     this._loading.set(true);
-    
+
     this.clearAutoReset();
     this._autoResetTimer = setTimeout(() => {
       this.reset();
@@ -19,7 +19,7 @@ export class LoadingService {
 
   hide(): void {
     this._activeRequests--;
-    
+
     if (this._activeRequests <= 0) {
       this._activeRequests = 0;
       this._loading.set(false);

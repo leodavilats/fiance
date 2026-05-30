@@ -1,9 +1,7 @@
-export { AnalyzeComponent } from './analyze/analyze.component';
 export { AssetsComponent } from './assets/assets.component';
 export { ConfigComponent } from './config/config.component';
 export { DashboardComponent } from './dashboard/dashboard.component';
 export { DipComponent } from './dip/dip.component';
-export { DividendsComponent } from './dividends/dividends.component';
 export { GlobalLoaderComponent } from './global-loader/global-loader.component';
 export { OpportunitiesComponent } from './opportunities/opportunities.component';
 export { SnackbarComponent } from './snackbar/snackbar.component';

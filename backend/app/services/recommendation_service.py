@@ -1,7 +1,5 @@
 """Service para geração de recomendações de investimento."""
 
-from typing import List
-
 from app.analysis.scoring import rank
 from app.core.config import get_settings
 from app.llm.gemini_client import explain_portfolio
@@ -34,7 +32,7 @@ class RecommendationService:
         if not companies:
             raise ValueError("Não foi possível obter dados de nenhum ativo.")
 
-        ranked: List[ScoredCompany] = rank(companies, req.profile, req.exclude_sectors)
+        ranked: list[ScoredCompany] = rank(companies, req.profile, req.exclude_sectors)
 
         allocations = None
         history: dict = {}

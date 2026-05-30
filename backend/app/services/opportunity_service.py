@@ -1,13 +1,12 @@
 """Service para análise de oportunidades de investimento."""
 
 import asyncio
-from typing import List, Optional
 
 from app.analysis.classify import auto_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical
 from app.core.config import get_settings
-from app.models import AssetType, Opportunity, OpportunitiesResponse
+from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.repositories import AssetRepository, PortfolioRepository
 
 
@@ -20,7 +19,7 @@ class OpportunityService:
 
     async def _build_opportunity(
         self, symbol: str, desired_yield: float = 0.06
-    ) -> Optional[Opportunity]:
+    ) -> Opportunity | None:
         """Constrói uma oportunidade a partir de um símbolo."""
         try:
             snap = await self.asset_repo.get_asset(symbol)
@@ -52,7 +51,9 @@ class OpportunityService:
         rsi = tech.rsi_14 if tech.rsi_14 is not None else 50.0
 
         rsi_bonus = max(0.0, (60.0 - rsi) / 40.0)
-        trend_bonus = 5.0 if tech.trend == "uptrend" else (-5.0 if tech.trend == "downtrend" else 0.0)
+        trend_bonus = (
+            5.0 if tech.trend == "uptrend" else (-5.0 if tech.trend == "downtrend" else 0.0)
+        )
 
         score = round((mos * 60) + (dy_pct * 1.5) + (rsi_bonus * 10) + trend_bonus, 2)
 
@@ -90,11 +91,17 @@ class OpportunityService:
     async def get_opportunities(
         self,
         include_held: bool = False,
-        only_buy: bool = True,
         page: int = 1,
         page_size: int = 50,
         sort_by: str = "score",
         sort_order: str = "desc",
+        search: str = "",
+        min_dy: float = 0,
+        min_mos: float = 0,
+        sector: str = "",
+        asset_type: str = "",
+        category: str = "",
+        only_interesting: bool = False,
     ) -> OpportunitiesResponse:
         """Retorna lista de oportunidades de investimento."""
         settings = get_settings()
@@ -111,27 +118,51 @@ class OpportunityService:
             universe -= held
 
         raws = await asyncio.gather(*[self._build_opportunity(t, desired_yield) for t in universe])
-        opps: List[Opportunity] = [o for o in raws if o]
-
-        if only_buy:
-            opps = [o for o in opps if o.verdict in ("BUY", "STRONG_BUY")]
+        opps: list[Opportunity] = [o for o in raws if o]
 
         for o in opps:
             o.in_watchlist = o.ticker.upper() in watch
             o.in_portfolio = o.ticker.upper() in held
-            o.is_interesting = (
-                o.verdict == "STRONG_BUY" or (o.score >= 75 and (o.dividend_yield or 0) >= 6.0)
+            o.is_interesting = o.verdict == "STRONG_BUY" or (
+                o.score >= 75 and (o.dividend_yield or 0) >= 6.0
             )
+
+        # Aplicar filtros
+        if search:
+            search_lower = search.lower()
+            opps = [
+                o
+                for o in opps
+                if search_lower in o.ticker.lower() or (o.name and search_lower in o.name.lower())
+            ]
+
+        if min_dy > 0:
+            opps = [o for o in opps if (o.dividend_yield or 0) >= min_dy]
+
+        if min_mos != 0:
+            opps = [o for o in opps if (o.margin_of_safety or 0) * 100 >= min_mos]
+
+        if sector:
+            opps = [o for o in opps if o.sector == sector]
+
+        if asset_type:
+            opps = [o for o in opps if o.asset_type.value == asset_type]
+
+        if category:
+            opps = [o for o in opps if o.category_resolved == category]
+
+        if only_interesting:
+            opps = [o for o in opps if o.is_interesting]
 
         reverse = sort_order.lower() == "desc"
         if sort_by == "score":
             opps.sort(key=lambda x: x.score, reverse=reverse)
         elif sort_by == "dy":
-            opps.sort(key=lambda x: (x.dividend_yield or 0), reverse=reverse)
+            opps.sort(key=lambda x: x.dividend_yield or 0, reverse=reverse)
         elif sort_by == "mos":
-            opps.sort(key=lambda x: (x.margin_of_safety or 0), reverse=reverse)
+            opps.sort(key=lambda x: x.margin_of_safety or 0, reverse=reverse)
         elif sort_by == "price":
-            opps.sort(key=lambda x: (x.price or 0), reverse=reverse)
+            opps.sort(key=lambda x: x.price or 0, reverse=reverse)
         else:
             opps.sort(key=lambda x: x.score, reverse=True)
 

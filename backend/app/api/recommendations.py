@@ -16,9 +16,9 @@ async def recommend(req: RecommendRequest) -> RecommendResponse:
     try:
         return await recommendation_service.recommend(req)
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     except Exception as e:
-        raise HTTPException(502, str(e))
+        raise HTTPException(502, str(e)) from e
 
 
 @router.post("/analyze")

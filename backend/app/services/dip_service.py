@@ -2,11 +2,10 @@
 
 import asyncio
 import logging
-from typing import List, Optional
 
 from app.analysis.dip_analysis import compute_dip_analysis
 from app.analysis.fair_price import compute_fair_price, compute_technical
-from app.collectors.news import news_sentiment_summary, analyze_news_with_ai
+from app.collectors.news import analyze_news_with_ai, news_sentiment_summary
 from app.core.config import get_settings
 from app.models import (
     AssetType,
@@ -39,7 +38,9 @@ class DipService:
         history, dividends, news_items = await asyncio.gather(
             self.asset_repo.get_history(symbol, period="2y"),
             self.asset_repo.get_dividends(symbol),
-            self.asset_repo.get_news(symbol, asset_type=snap.asset_type, company_name=snap.name or ""),
+            self.asset_repo.get_news(
+                symbol, asset_type=snap.asset_type, company_name=snap.name or ""
+            ),
         )
 
         fair = compute_fair_price(
@@ -53,7 +54,7 @@ class DipService:
 
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
         sentiment_summary = news_sentiment_summary(news_items)
-        
+
         # Análise de notícias com IA
         news_ai_analysis = await analyze_news_with_ai(news_items, symbol, snap.name or "")
 
@@ -124,7 +125,7 @@ class DipService:
 
     async def scan_dips(
         self,
-        universe: Optional[str] = None,
+        universe: str | None = None,
         min_score: float = 40.0,
         top: int = 12,
         desired_yield: float = 0.06,
@@ -146,7 +147,7 @@ class DipService:
 
         sem = asyncio.Semaphore(5)
 
-        async def _scan_one(ticker: str) -> Optional[DipScanItem]:
+        async def _scan_one(ticker: str) -> DipScanItem | None:
             async with sem:
                 try:
                     snap = await self.asset_repo.get_asset(ticker)
@@ -167,7 +168,9 @@ class DipService:
                         week52_high=snap.fifty_two_week_high,
                     )
 
-                    tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
+                    tech = compute_technical(
+                        history, snap.fifty_two_week_high, snap.fifty_two_week_low
+                    )
 
                     dip = compute_dip_analysis(
                         margin_of_safety=fair.margin_of_safety,

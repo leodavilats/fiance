@@ -28,7 +28,7 @@ export class SnackbarService {
     const id = this.idCounter++;
     const msg: SnackbarMessage = { id, message, type };
     this._messages.update(msgs => [...msgs, msg]);
-    
+
     setTimeout(() => this.remove(id), 5000);
   }
 

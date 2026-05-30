@@ -11,13 +11,11 @@ export class ThemeService {
   constructor() {
     this.apply(this.theme());
     if (window.matchMedia && !localStorage.getItem(STORAGE_KEY)) {
-      window
-        .matchMedia('(prefers-color-scheme: dark)')
-        .addEventListener('change', (e) => {
-          const next: Theme = e.matches ? 'dark' : 'light';
-          this.theme.set(next);
-          this.apply(next);
-        });
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        const next: Theme = e.matches ? 'dark' : 'light';
+        this.theme.set(next);
+        this.apply(next);
+      });
     }
   }
 

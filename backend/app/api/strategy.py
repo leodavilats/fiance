@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from app.models import Goal, PortfolioEvaluationRequest, PortfolioItem
 from app.repositories import PortfolioRepository
-from app.services import OpportunityService, PortfolioService, StrategyService
+from app.services import GoalService, OpportunityService, PortfolioService, StrategyService
 
 router = APIRouter()
 
@@ -12,6 +12,15 @@ strategy_service = StrategyService()
 opportunity_service = OpportunityService()
 portfolio_service = PortfolioService()
 portfolio_repo = PortfolioRepository()
+goal_service = GoalService()
+
+_DEFAULT_GOALS = [
+    Goal(category="renda_fixa", target_pct=30),
+    Goal(category="acoes_br", target_pct=35),
+    Goal(category="acoes_int", target_pct=15),
+    Goal(category="fiis", target_pct=15),
+    Goal(category="cripto", target_pct=5),
+]
 
 
 @router.get("/strategy")
@@ -32,19 +41,14 @@ async def get_investment_strategy() -> dict:
         for i in stored
     ]
 
-    goals_data = portfolio_repo.list_goals()
-    if not goals_data:
-        goals = [
-            Goal(category="renda", target_pct=40),
-            Goal(category="trade", target_pct=50),
-            Goal(category="cripto", target_pct=5),
-            Goal(category="caixa", target_pct=5),
-        ]
-    else:
-        goals = [Goal(**g) for g in goals_data]
+    goals = goal_service.get_goals()
 
     opps_resp = await opportunity_service.get_opportunities(
-        include_held=False, only_buy=True, page=1, page_size=50, sort_by="score", sort_order="desc"
+        include_held=False,
+        page=1,
+        page_size=50,
+        sort_by="score",
+        sort_order="desc",
     )
 
     portfolio_evaluation = None

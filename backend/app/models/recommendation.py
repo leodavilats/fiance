@@ -1,25 +1,26 @@
-from typing import List, Optional
 from pydantic import BaseModel, Field
 
-from .enums import RiskProfile, OptimizationStrategy
+from .enums import OptimizationStrategy, RiskProfile
 
 
 class RecommendRequest(BaseModel):
     cash: float = Field(..., gt=0, description="Caixa disponível em BRL")
     profile: RiskProfile = RiskProfile.moderate
     max_positions: int = Field(8, ge=1, le=30)
-    universe: Optional[List[str]] = Field(
+    universe: list[str] | None = Field(
         None, description="Tickers B3 (sem .SA). Usa padrão se omitido."
     )
-    exclude_sectors: List[str] = Field(default_factory=list)
+    exclude_sectors: list[str] = Field(default_factory=list)
     strategy: OptimizationStrategy = OptimizationStrategy.score_weighted
-    explain: bool = Field(False, description="Pedir racional textual via LLM (requer OPENAI_API_KEY).")
+    explain: bool = Field(
+        False, description="Pedir racional textual via LLM (requer OPENAI_API_KEY)."
+    )
 
 
 class Allocation(BaseModel):
     ticker: str
-    name: Optional[str]
-    sector: Optional[str]
+    name: str | None
+    sector: str | None
     price: float
     quantity: int
     invested: float
@@ -34,7 +35,7 @@ class RecommendResponse(BaseModel):
     cash_input: float
     cash_invested: float
     cash_remaining: float
-    allocations: List[Allocation]
+    allocations: list[Allocation]
     metrics: dict = Field(default_factory=dict)
     explanation: str = ""
     disclaimer: str = (

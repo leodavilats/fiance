@@ -5,8 +5,8 @@ import logging
 import re
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Any
+from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -56,23 +56,32 @@ def _safe_description(entry) -> str:
     return desc[:500] if desc else ""
 
 
-def _fetch_news_sync(symbol: str, lang: str = "pt-BR", gl: str = "BR", ceid: str = "BR:pt", max_items: int = 8, company_name: str = "") -> List[NewsItem]:
+def _fetch_news_sync(
+    symbol: str,
+    lang: str = "pt-BR",
+    gl: str = "BR",
+    ceid: str = "BR:pt",
+    max_items: int = 8,
+    company_name: str = "",
+) -> list[NewsItem]:
     try:
-        import feedparser 
+        import feedparser
     except ImportError:
         logger.warning("feedparser não instalado. Instale com: pip install feedparser")
         return []
 
-    name_clean = re.sub(r"\b(S\.?A\.?|S/A|Inc\.?|Corp\.?|Ltd\.?|Ltda\.?|S\.?E\.?|PLC)\b", "", company_name or "", flags=re.I).strip()
+    name_clean = re.sub(
+        r"\b(S\.?A\.?|S/A|Inc\.?|Corp\.?|Ltd\.?|Ltda\.?|S\.?E\.?|PLC)\b",
+        "",
+        company_name or "",
+        flags=re.I,
+    ).strip()
     search_term = name_clean if len(name_clean) >= 3 else symbol
     if gl == "BR":
         query = urllib.parse.quote(f"{search_term}")
     else:
         query = urllib.parse.quote(f"{search_term} stock")
-    url = (
-        f"https://news.google.com/rss/search"
-        f"?q={query}&hl={lang}&gl={gl}&ceid={ceid}"
-    )
+    url = f"https://news.google.com/rss/search?q={query}&hl={lang}&gl={gl}&ceid={ceid}"
 
     try:
         req = urllib.request.Request(
@@ -86,7 +95,7 @@ def _fetch_news_sync(symbol: str, lang: str = "pt-BR", gl: str = "BR", ceid: str
         logger.warning("Erro ao buscar RSS para %s (%s): %s", symbol, search_term, e)
         return []
 
-    items: List[NewsItem] = []
+    items: list[NewsItem] = []
     for entry in (feed.entries or [])[:max_items]:
         title = _safe_title(entry)
         if not title:
@@ -98,34 +107,38 @@ def _fetch_news_sync(symbol: str, lang: str = "pt-BR", gl: str = "BR", ceid: str
                 published=_safe_published(entry),
                 url=_safe_link(entry),
                 sentiment="neutral",  # Será classificado pela IA
-                description=_safe_description(entry)
+                description=_safe_description(entry),
             )
         )
     return items
 
 
-async def fetch_news(symbol: str, asset_type: str = "br_stock", company_name: str = "", max_items: int = 8) -> List[NewsItem]:
+async def fetch_news(
+    symbol: str, asset_type: str = "br_stock", company_name: str = "", max_items: int = 8
+) -> list[NewsItem]:
     lang = "pt-BR" if asset_type in ("br_stock", "fii") else "en-US"
     gl = "BR" if asset_type in ("br_stock", "fii") else "US"
     ceid = "BR:pt" if gl == "BR" else "US:en"
     loop = asyncio.get_event_loop()
-    
+
     # Buscar notícias do RSS (sem scraping - títulos são suficientes para a IA)
     items = await loop.run_in_executor(
         None, _fetch_news_sync, symbol, lang, gl, ceid, max_items, company_name
     )
-    
+
     return items
 
 
-def news_sentiment_summary(items: List[NewsItem]) -> str:
+def news_sentiment_summary(items: list[NewsItem]) -> str:
     """Retorna resumo básico. Use analyze_news_with_ai() para análise completa com IA."""
     if not items:
         return "Sem notícias recentes encontradas."
     return f"{len(items)} notícia(s) recente(s) encontrada(s)."
 
 
-async def analyze_news_with_ai(items: List[NewsItem], symbol: str, company_name: str = "") -> Dict[str, Any]:
+async def analyze_news_with_ai(
+    items: list[NewsItem], symbol: str, company_name: str = ""
+) -> dict[str, Any]:
     """Analisa notícias usando IA (Gemini) para sentimento, resumo e insights."""
     if not items:
         return {
@@ -134,9 +147,9 @@ async def analyze_news_with_ai(items: List[NewsItem], symbol: str, company_name:
             "summary": "Sem notícias recentes encontradas.",
             "impact": "low",
             "key_topics": [],
-            "ai_enabled": False
+            "ai_enabled": False,
         }
-    
+
     # Converter NewsItem para dicts
     news_dicts = [
         {
@@ -145,14 +158,15 @@ async def analyze_news_with_ai(items: List[NewsItem], symbol: str, company_name:
             "published": item.published,
             "url": item.url,
             "sentiment": item.sentiment,
-            "description": item.description
+            "description": item.description,
         }
         for item in items
     ]
-    
+
     # Importar e executar análise em executor para não bloquear
     try:
         from app.llm.gemini_client import analyze_news_sentiment
+
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None, analyze_news_sentiment, news_dicts, symbol, company_name
@@ -168,6 +182,5 @@ async def analyze_news_with_ai(items: List[NewsItem], symbol: str, company_name:
             "summary": news_sentiment_summary(items),
             "impact": "low",
             "key_topics": [],
-            "ai_enabled": False
+            "ai_enabled": False,
         }
-

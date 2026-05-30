@@ -1,7 +1,15 @@
 # flake8: noqa
 
 # Enums
-from .enums import AssetType, OptimizationStrategy, RiskProfile
+from .enums import (
+    AssetCategory,
+    AssetType,
+    Liquidez,
+    OptimizationStrategy,
+    RendaFixaType,
+    RiskProfile,
+    TaxType,
+)
 
 # Company & Scoring
 from .company import CompanyFundamentals, ScoredCompany
@@ -28,9 +36,6 @@ from .portfolio import (
     SavePortfolioRequest,
     StoredPortfolioItem,
 )
-
-# Dividend
-from .dividend import DividendRankingItem, DividendRankingResponse
 
 # Watchlist
 from .watchlist import WatchlistItem, WatchlistRequest
@@ -61,11 +66,24 @@ from .dip import (
     NewsItemSchema,
 )
 
+# Renda Fixa
+from .renda_fixa import (
+    RendaFixaAsset,
+    RendaFixaAnalysisResult,
+    RendaFixaCompareRequest,
+    RendaFixaCompareResponse,
+    ReferenceRates,
+)
+
 __all__ = [
     # Enums
+    "AssetCategory",
     "AssetType",
+    "Liquidez",
     "OptimizationStrategy",
+    "RendaFixaType",
     "RiskProfile",
+    "TaxType",
     # Company & Scoring
     "CompanyFundamentals",
     "ScoredCompany",
@@ -87,9 +105,6 @@ __all__ = [
     "PortfolioStateResponse",
     "SavePortfolioRequest",
     "StoredPortfolioItem",
-    # Dividend
-    "DividendRankingItem",
-    "DividendRankingResponse",
     # Watchlist
     "WatchlistItem",
     "WatchlistRequest",
@@ -113,4 +128,10 @@ __all__ = [
     "DipScannerResponse",
     "DipScoreBreakdownSchema",
     "NewsItemSchema",
+    # Renda Fixa
+    "RendaFixaAsset",
+    "RendaFixaAnalysisResult",
+    "RendaFixaCompareRequest",
+    "RendaFixaCompareResponse",
+    "ReferenceRates",
 ]

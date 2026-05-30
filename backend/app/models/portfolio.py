@@ -1,4 +1,3 @@
-from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from .enums import AssetType
@@ -12,41 +11,39 @@ class PortfolioItem(BaseModel):
 
 
 class PortfolioEvaluationRequest(BaseModel):
-    items: List[PortfolioItem]
+    items: list[PortfolioItem]
     desired_yield: float = Field(0.06, gt=0, le=0.30)
 
 
 class PortfolioPosition(BaseModel):
     ticker: str
-    name: Optional[str]
+    name: str | None
     asset_type: AssetType
     quantity: float
     avg_price: float
-    current_price: Optional[float]
+    current_price: float | None
     invested: float
-    current_value: Optional[float]
-    pnl: Optional[float]
-    pnl_pct: Optional[float]
-    fair_price: Optional[float]
-    margin_of_safety: Optional[float]
+    current_value: float | None
+    pnl: float | None
+    pnl_pct: float | None
+    fair_price: float | None
+    margin_of_safety: float | None
     verdict: str
     label: str
-    reasons: List[str] = Field(default_factory=list)
+    reasons: list[str] = Field(default_factory=list)
     category: str = "auto"
     category_resolved: str = "trade"
-    dividend_yield: Optional[float] = None
-    sector: Optional[str] = None
+    dividend_yield: float | None = None
+    sector: str | None = None
 
 
 class PortfolioEvaluationResponse(BaseModel):
-    positions: List[PortfolioPosition]
+    positions: list[PortfolioPosition]
     total_invested: float
     total_current: float
     total_pnl: float
     total_pnl_pct: float
-    disclaimer: str = (
-        "Conteúdo educativo. Não constitui recomendação formal de investimento."
-    )
+    disclaimer: str = "Conteúdo educativo. Não constitui recomendação formal de investimento."
 
 
 class StoredPortfolioItem(BaseModel):
@@ -54,11 +51,11 @@ class StoredPortfolioItem(BaseModel):
     quantity: float
     avg_price: float
     category: str = "auto"
-    updated_at: Optional[float] = None
+    updated_at: float | None = None
 
 
 class SavePortfolioRequest(BaseModel):
-    items: List[PortfolioItem]
+    items: list[PortfolioItem]
 
 
 class PortfolioSnapshot(BaseModel):
@@ -70,6 +67,6 @@ class PortfolioSnapshot(BaseModel):
 
 
 class PortfolioStateResponse(BaseModel):
-    items: List[StoredPortfolioItem]
-    last_updated: Optional[float] = None
-    snapshots: List[PortfolioSnapshot] = Field(default_factory=list)
+    items: list[StoredPortfolioItem]
+    last_updated: float | None = None
+    snapshots: list[PortfolioSnapshot] = Field(default_factory=list)

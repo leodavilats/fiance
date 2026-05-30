@@ -1,38 +1,33 @@
 from __future__ import annotations
 
-from typing import Optional
+# Mapa de categorias legadas → novas (compatibilidade backward)
+_LEGACY_MAP = {
+    "renda": "fiis",
+    "trade": "acoes_br",
+    "caixa": "renda_fixa",
+}
+
+VALID_CATEGORIES = {"renda_fixa", "acoes_br", "acoes_int", "fiis", "cripto"}
+
 
 def auto_category(
-
     asset_type: str,
-
-    dividend_yield: Optional[float],
-
+    dividend_yield: float | None,
     has_dividend_history: bool = False,
-
 ) -> str:
-
     if asset_type == "fii":
-
-        return "renda"
-
+        return "fiis"
     if asset_type == "crypto":
+        return "cripto"
+    if asset_type == "us_stock":
+        return "acoes_int"
+    return "acoes_br"
 
-        return "trade"
-
-    dy = dividend_yield or 0.0
-
-    if dy >= 4.0 and has_dividend_history:
-
-        return "renda"
-
-    return "trade"
 
 def resolve_category(stored: str, auto: str) -> str:
-
-    if stored in ("renda", "trade"):
-
+    if stored in VALID_CATEGORIES:
         return stored
-
+    # Compatibilidade com categorias legadas
+    if stored in _LEGACY_MAP:
+        return _LEGACY_MAP[stored]
     return auto
-

@@ -1,8 +1,7 @@
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from .portfolio import PortfolioPosition, PortfolioSnapshot
 from .opportunity import Opportunity
+from .portfolio import PortfolioPosition, PortfolioSnapshot
 
 
 class Alert(BaseModel):
@@ -10,16 +9,16 @@ class Alert(BaseModel):
     kind: str
     title: str
     detail: str
-    ticker: Optional[str] = None
+    ticker: str | None = None
 
 
 class CategoryAllocation(BaseModel):
     category: str
     current_value: float
     current_pct: float
-    target_pct: Optional[float] = None
-    delta_pct: Optional[float] = None
-    delta_value: Optional[float] = None
+    target_pct: float | None = None
+    delta_pct: float | None = None
+    delta_value: float | None = None
 
 
 class DashboardSummary(BaseModel):
@@ -29,19 +28,17 @@ class DashboardSummary(BaseModel):
     total_pnl_pct: float
     cash_available: float
     monthly_dividends_estimate: float
-    portfolio_yield: Optional[float] = None
+    portfolio_yield: float | None = None
     positions_count: int
 
 
 class DashboardResponse(BaseModel):
     summary: DashboardSummary
-    positions: List[PortfolioPosition]
-    top_buys: List[Opportunity]
-    top_sells: List[PortfolioPosition]
-    alerts: List[Alert]
-    allocations: List[CategoryAllocation]
-    snapshots: List[PortfolioSnapshot]
-    last_updated: Optional[float] = None
-    disclaimer: str = (
-        "Conteúdo educativo. Não constitui recomendação formal de investimento."
-    )
+    positions: list[PortfolioPosition]
+    top_buys: list[Opportunity]
+    top_sells: list[PortfolioPosition]
+    alerts: list[Alert]
+    allocations: list[CategoryAllocation]
+    snapshots: list[PortfolioSnapshot]
+    last_updated: float | None = None
+    disclaimer: str = "Conteúdo educativo. Não constitui recomendação formal de investimento."

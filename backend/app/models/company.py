@@ -1,20 +1,19 @@
-from typing import Optional
 from pydantic import BaseModel, Field
 
 
 class CompanyFundamentals(BaseModel):
     ticker: str
-    name: Optional[str] = None
-    sector: Optional[str] = None
-    price: Optional[float] = None
-    market_cap: Optional[float] = None
-    pe_ratio: Optional[float] = None
-    pb_ratio: Optional[float] = None
-    roe: Optional[float] = None
-    dividend_yield: Optional[float] = None
-    debt_to_equity: Optional[float] = None
-    profit_margin: Optional[float] = None
-    revenue_growth: Optional[float] = None
+    name: str | None = None
+    sector: str | None = None
+    price: float | None = None
+    market_cap: float | None = None
+    pe_ratio: float | None = None
+    pb_ratio: float | None = None
+    roe: float | None = None
+    dividend_yield: float | None = None
+    debt_to_equity: float | None = None
+    profit_margin: float | None = None
+    revenue_growth: float | None = None
 
 
 class ScoredCompany(BaseModel):

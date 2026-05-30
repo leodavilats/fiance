@@ -1,7 +1,5 @@
 """Controller para watchlist."""
 
-from typing import List
-
 from fastapi import APIRouter
 
 from app.models import WatchlistItem, WatchlistRequest
@@ -12,14 +10,14 @@ router = APIRouter()
 portfolio_repo = PortfolioRepository()
 
 
-@router.get("/watchlist", response_model=List[WatchlistItem])
-async def get_watchlist() -> List[WatchlistItem]:
+@router.get("/watchlist", response_model=list[WatchlistItem])
+async def get_watchlist() -> list[WatchlistItem]:
     """Retorna a watchlist."""
     return [WatchlistItem(**w) for w in portfolio_repo.list_watchlist()]
 
 
-@router.put("/watchlist", response_model=List[WatchlistItem])
-async def save_watchlist(req: WatchlistRequest) -> List[WatchlistItem]:
+@router.put("/watchlist", response_model=list[WatchlistItem])
+async def save_watchlist(req: WatchlistRequest) -> list[WatchlistItem]:
     """Salva a watchlist."""
     portfolio_repo.replace_watchlist([{"ticker": i.ticker, "note": i.note} for i in req.items])
     return [WatchlistItem(**w) for w in portfolio_repo.list_watchlist()]

@@ -16,6 +16,13 @@ export interface AllocationGap {
   action: string;
 }
 
+export interface TransactionCost {
+  ir_rate_pct: number;
+  ir_amount: number;
+  net_profit: number;
+  observation: string;
+}
+
 export interface InvestmentSuggestion {
   ticker: string;
   name: string | null;
@@ -31,6 +38,7 @@ export interface InvestmentSuggestion {
   verdict: string;
   already_held: boolean;
   reasons: string[];
+  transaction_cost: TransactionCost | null;
 }
 
 export interface CurrentAllocation {

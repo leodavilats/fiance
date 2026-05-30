@@ -1,3 +1,5 @@
+export type AllocationCategory = 'renda_fixa' | 'acoes_br' | 'acoes_int' | 'fiis' | 'cripto';
+
 export interface WatchlistItem {
   ticker: string;
   note: string;
@@ -5,8 +7,10 @@ export interface WatchlistItem {
 }
 
 export interface Goal {
-  category: 'renda' | 'trade' | 'cripto' | 'caixa';
+  category: AllocationCategory;
   target_pct: number;
+  target_value?: number | null;
+  deadline?: string | null;
 }
 
 export interface Preferences {

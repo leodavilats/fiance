@@ -41,7 +41,7 @@ async def dashboard() -> DashboardResponse:
         positions = evaluation.positions
 
     opps_resp = await opportunity_service.get_opportunities(
-        include_held=False, only_buy=True, page=1, page_size=10, sort_by="score", sort_order="desc"
+        include_held=False, page=1, page_size=10, sort_by="score", sort_order="desc"
     )
     top_buys = opps_resp.items[:5]
 

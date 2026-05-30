@@ -6,7 +6,6 @@ import {
   DashboardResponse,
   DipAnalysisResponse,
   DipScannerResponse,
-  DividendRankingResponse,
   Goal,
   InvestmentStrategy,
   OpportunitiesResponse,
@@ -17,6 +16,11 @@ import {
   Preferences,
   RecommendRequest,
   RecommendResponse,
+  RendaFixaAnalysisResult,
+  RendaFixaAsset,
+  RendaFixaCompareRequest,
+  RendaFixaCompareResponse,
+  ReferenceRates,
   WatchlistItem,
 } from '../models';
 
@@ -31,17 +35,16 @@ export class RecommendService {
 
   analyzeAsset(symbol: string, desiredYield = 0.06): Observable<AssetAnalysis> {
     const params = new HttpParams().set('desired_yield', desiredYield);
-    return this.http.get<AssetAnalysis>(
-      `${this.base}/asset/${encodeURIComponent(symbol)}`,
-      { params },
-    );
+    return this.http.get<AssetAnalysis>(`${this.base}/asset/${encodeURIComponent(symbol)}`, {
+      params,
+    });
   }
 
   dipAnalysis(symbol: string, desiredYield = 0.06): Observable<DipAnalysisResponse> {
     const params = new HttpParams().set('desired_yield', desiredYield);
     return this.http.get<DipAnalysisResponse>(
       `${this.base}/asset/${encodeURIComponent(symbol)}/dip-analysis`,
-      { params },
+      { params }
     );
   }
 
@@ -50,30 +53,19 @@ export class RecommendService {
     top = 12,
     desiredYield = 0.06,
     universe?: string,
+    category?: string
   ): Observable<DipScannerResponse> {
     let params = new HttpParams()
       .set('min_score', minScore)
       .set('top', top)
       .set('desired_yield', desiredYield);
     if (universe) params = params.set('universe', universe);
+    if (category) params = params.set('category', category);
     return this.http.get<DipScannerResponse>(`${this.base}/dip-scanner`, { params });
   }
 
-  evaluatePortfolio(
-    req: PortfolioEvaluationRequest,
-  ): Observable<PortfolioEvaluationResponse> {
-    return this.http.post<PortfolioEvaluationResponse>(
-      `${this.base}/portfolio/evaluate`,
-      req,
-    );
-  }
-
-  dividendsRanking(universe?: string, top = 15): Observable<DividendRankingResponse> {
-    let params = new HttpParams().set('top', top);
-    if (universe) params = params.set('universe', universe);
-    return this.http.get<DividendRankingResponse>(`${this.base}/dividends/ranking`, {
-      params,
-    });
+  evaluatePortfolio(req: PortfolioEvaluationRequest): Observable<PortfolioEvaluationResponse> {
+    return this.http.post<PortfolioEvaluationResponse>(`${this.base}/portfolio/evaluate`, req);
   }
 
   getPortfolio(): Observable<PortfolioStateResponse> {
@@ -86,17 +78,15 @@ export class RecommendService {
 
   deletePosition(ticker: string): Observable<{ deleted: string }> {
     return this.http.delete<{ deleted: string }>(
-      `${this.base}/portfolio/${encodeURIComponent(ticker)}`,
+      `${this.base}/portfolio/${encodeURIComponent(ticker)}`
     );
   }
 
   refreshPortfolio(desiredYield = 0.06): Observable<PortfolioEvaluationResponse> {
     const params = new HttpParams().set('desired_yield', desiredYield);
-    return this.http.post<PortfolioEvaluationResponse>(
-      `${this.base}/portfolio/refresh`,
-      null,
-      { params },
-    );
+    return this.http.post<PortfolioEvaluationResponse>(`${this.base}/portfolio/refresh`, null, {
+      params,
+    });
   }
 
   dashboard(): Observable<DashboardResponse> {
@@ -105,19 +95,31 @@ export class RecommendService {
 
   opportunities(
     includeHeld = false,
-    onlyBuy = true,
     page = 1,
     pageSize = 50,
     sortBy = 'score',
-    sortOrder = 'desc'
+    sortOrder = 'desc',
+    search = '',
+    minDy = 0,
+    minMos = 0,
+    sector = '',
+    assetType = '',
+    category = '',
+    onlyInteresting = false
   ): Observable<OpportunitiesResponse> {
     const params = new HttpParams()
       .set('include_held', includeHeld)
-      .set('only_buy', onlyBuy)
       .set('page', page)
       .set('page_size', pageSize)
       .set('sort_by', sortBy)
-      .set('sort_order', sortOrder);
+      .set('sort_order', sortOrder)
+      .set('search', search)
+      .set('min_dy', minDy)
+      .set('min_mos', minMos)
+      .set('sector', sector)
+      .set('asset_type', assetType)
+      .set('category', category)
+      .set('only_interesting', onlyInteresting);
     return this.http.get<OpportunitiesResponse>(`${this.base}/opportunities`, { params });
   }
 
@@ -131,7 +133,7 @@ export class RecommendService {
 
   deleteWatchlist(ticker: string): Observable<{ deleted: string }> {
     return this.http.delete<{ deleted: string }>(
-      `${this.base}/watchlist/${encodeURIComponent(ticker)}`,
+      `${this.base}/watchlist/${encodeURIComponent(ticker)}`
     );
   }
 
@@ -156,5 +158,25 @@ export class RecommendService {
 
   getStrategy(): Observable<InvestmentStrategy> {
     return this.http.get<InvestmentStrategy>(`${this.base}/strategy`);
+  }
+
+  clearCache(pattern = '*'): Observable<{ message: string; deleted: number }> {
+    const params = new HttpParams().set('pattern', pattern);
+    return this.http.post<{ message: string; deleted: number }>(`${this.base}/cache/clear`, null, {
+      params,
+    });
+  }
+
+  // Renda Fixa
+  getReferencRates(): Observable<ReferenceRates> {
+    return this.http.get<ReferenceRates>(`${this.base}/renda-fixa/taxas`);
+  }
+
+  analyzeRendaFixa(ativo: RendaFixaAsset): Observable<RendaFixaAnalysisResult> {
+    return this.http.post<RendaFixaAnalysisResult>(`${this.base}/renda-fixa/analisar`, ativo);
+  }
+
+  compareRendaFixa(req: RendaFixaCompareRequest): Observable<RendaFixaCompareResponse> {
+    return this.http.post<RendaFixaCompareResponse>(`${this.base}/renda-fixa/comparar`, req);
   }
 }

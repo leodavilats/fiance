@@ -20,7 +20,7 @@ async def analyze_asset(
     try:
         return await asset_service.analyze_asset(symbol, desired_yield)
     except ValueError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e
 
 
 @router.get("/asset/{symbol}/dip-analysis", response_model=DipAnalysisResponse)
@@ -32,4 +32,4 @@ async def dip_analysis(
     try:
         return await dip_service.analyze_dip(symbol, desired_yield)
     except ValueError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e

@@ -1,21 +1,26 @@
 """Service para geração do dashboard."""
 
-from typing import List
-
 from app.models import (
     Alert,
-    AssetType,
     CategoryAllocation,
     DashboardResponse,
     DashboardSummary,
     Goal,
     Opportunity,
-    PortfolioEvaluationRequest,
-    PortfolioItem,
     PortfolioPosition,
     PortfolioSnapshot,
 )
 from app.repositories import PortfolioRepository
+
+# Mapa de AssetType → nova categoria
+_ASSET_TYPE_TO_CATEGORY = {
+    "br_stock": "acoes_br",
+    "fii": "fiis",
+    "us_stock": "acoes_int",
+    "crypto": "cripto",
+}
+
+_VALID_CATEGORIES = {"renda_fixa", "acoes_br", "acoes_int", "fiis", "cripto"}
 
 
 class DashboardService:
@@ -26,12 +31,12 @@ class DashboardService:
 
     def classify_alerts(
         self,
-        positions: List[PortfolioPosition],
-        top_buys: List[Opportunity],
-        allocations: List[CategoryAllocation],
-    ) -> List[Alert]:
+        positions: list[PortfolioPosition],
+        top_buys: list[Opportunity],
+        allocations: list[CategoryAllocation],
+    ) -> list[Alert]:
         """Classifica alertas baseados em posições e oportunidades."""
-        alerts: List[Alert] = []
+        alerts: list[Alert] = []
 
         for p in positions:
             if p.verdict in ("SELL", "STRONG_SELL"):
@@ -52,7 +57,7 @@ class DashboardService:
                         severity="info",
                         kind="opportunity",
                         title=f"{o.ticker}: oportunidade forte",
-                        detail=f"Margem de segurança {(o.margin_of_safety or 0)*100:.0f}%. {o.label}.",
+                        detail=f"Margem de segurança {(o.margin_of_safety or 0) * 100:.0f}%. {o.label}.",
                         ticker=o.ticker,
                     )
                 )
@@ -82,25 +87,30 @@ class DashboardService:
 
     def calculate_category_allocations(
         self,
-        positions: List[PortfolioPosition],
+        positions: list[PortfolioPosition],
         cash: float,
-        goals: List[Goal],
-    ) -> List[CategoryAllocation]:
-        """Calcula alocação por categoria."""
-        totals: dict[str, float] = {"renda": 0.0, "trade": 0.0, "cripto": 0.0, "caixa": cash}
+        goals: list[Goal],
+    ) -> list[CategoryAllocation]:
+        """Calcula alocação por categoria usando as novas categorias."""
+        totals: dict[str, float] = {
+            "renda_fixa": 0.0,
+            "acoes_br": 0.0,
+            "acoes_int": 0.0,
+            "fiis": 0.0,
+            "cripto": 0.0,
+        }
 
         for p in positions:
+            # Primeiro tenta category_resolved, depois mapeia pelo asset_type
             cat = p.category_resolved
-            if p.asset_type == AssetType.crypto:
-                cat = "cripto"
-            elif cat not in ("renda", "trade"):
-                cat = "trade"
+            if cat not in _VALID_CATEGORIES:
+                cat = _ASSET_TYPE_TO_CATEGORY.get(p.asset_type.value, "acoes_br")
             totals[cat] = totals.get(cat, 0.0) + (p.current_value or p.invested)
 
         total = sum(totals.values()) or 1.0
         target_map = {g.category: g.target_pct for g in goals}
 
-        result: List[CategoryAllocation] = []
+        result: list[CategoryAllocation] = []
         for cat, value in totals.items():
             pct = value / total * 100
             target = target_map.get(cat)
@@ -122,9 +132,9 @@ class DashboardService:
 
     async def generate_dashboard(
         self,
-        positions: List[PortfolioPosition],
-        top_buys: List[Opportunity],
-        goals: List[Goal],
+        positions: list[PortfolioPosition],
+        top_buys: list[Opportunity],
+        goals: list[Goal],
         cash: float,
     ) -> DashboardResponse:
         """Gera o dashboard completo."""
@@ -135,19 +145,6 @@ class DashboardService:
 
         allocations = self.calculate_category_allocations(positions, cash, goals)
         alerts = self.classify_alerts(positions, top_buys, allocations)
-
-        monthly_div = 0.0
-        weighted_value = 0.0
-        weighted_yield_sum = 0.0
-
-        for p in positions:
-            if p.current_value and p.dividend_yield:
-                yearly = (p.dividend_yield / 100.0) * p.current_value
-                monthly_div += yearly / 12.0
-                weighted_value += p.current_value
-                weighted_yield_sum += p.dividend_yield * p.current_value
-
-        portfolio_yield = (weighted_yield_sum / weighted_value) if weighted_value > 0 else None
 
         total_inv = sum(p.invested for p in positions)
         total_cur = sum(p.current_value or p.invested for p in positions)
@@ -163,8 +160,8 @@ class DashboardService:
                 total_pnl=round(total_pnl, 2),
                 total_pnl_pct=round(total_pnl_pct, 2),
                 cash_available=round(cash, 2),
-                monthly_dividends_estimate=round(monthly_div, 2),
-                portfolio_yield=round(portfolio_yield, 2) if portfolio_yield else None,
+                monthly_dividends_estimate=0.0,
+                portfolio_yield=None,
                 positions_count=len(positions),
             ),
             positions=positions,
