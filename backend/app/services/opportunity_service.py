@@ -1,7 +1,4 @@
-"""Service para análise de oportunidades de investimento."""
-
 import asyncio
-from typing import Optional
 
 from app.analysis.classify import auto_category
 from app.analysis.decision import decide
@@ -12,8 +9,6 @@ from app.repositories import AssetRepository, PortfolioRepository
 
 
 class OpportunityService:
-    """Service para identificação de oportunidades."""
-
     def __init__(self):
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
@@ -21,7 +16,6 @@ class OpportunityService:
     async def _build_opportunity(
         self, symbol: str, desired_yield: float = 0.06
     ) -> Opportunity | None:
-        """Constrói uma oportunidade a partir de um símbolo."""
         try:
             snap = await self.asset_repo.get_asset(symbol)
         except Exception:
@@ -97,14 +91,13 @@ class OpportunityService:
         sort_by: str = "score",
         sort_order: str = "desc",
         search: str = "",
-        min_dy: Optional[float] = None,
-        min_mos: Optional[float] = None,
+        min_dy: float | None = None,
+        min_mos: float | None = None,
         sector: str = "",
         asset_type: str = "",
         category: str = "",
         only_interesting: bool = False,
     ) -> OpportunitiesResponse:
-        """Retorna lista de oportunidades de investimento."""
         settings = get_settings()
         prefs = self.portfolio_repo.get_preferences()
         cash = prefs["cash_available"]
@@ -128,7 +121,6 @@ class OpportunityService:
                 o.score >= 75 and (o.dividend_yield or 0) >= 6.0
             )
 
-        # Aplicar filtros
         if search:
             search_lower = search.lower()
             opps = [

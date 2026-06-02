@@ -1,5 +1,3 @@
-"""Controller para scanner de dips."""
-
 from fastapi import APIRouter, Query
 
 from app.models import DipScannerResponse
@@ -26,7 +24,6 @@ async def dip_scanner(
         None, description="Filtrar por categoria: acoes_br | acoes_int | fiis | cripto"
     ),
 ) -> DipScannerResponse:
-    """Escaneia o universo em busca de oportunidades de dip."""
     result = await dip_service.scan_dips(universe, min_score, top, desired_yield)
 
     if category:

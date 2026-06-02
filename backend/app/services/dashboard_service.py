@@ -1,5 +1,3 @@
-"""Service para geração do dashboard."""
-
 from app.models import (
     Alert,
     CategoryAllocation,
@@ -12,7 +10,6 @@ from app.models import (
 )
 from app.repositories import PortfolioRepository
 
-# Mapa de AssetType → nova categoria
 _ASSET_TYPE_TO_CATEGORY = {
     "br_stock": "acoes_br",
     "fii": "fiis",
@@ -24,8 +21,6 @@ _VALID_CATEGORIES = {"renda_fixa", "acoes_br", "acoes_int", "fiis", "cripto"}
 
 
 class DashboardService:
-    """Service para geração do dashboard."""
-
     def __init__(self):
         self.portfolio_repo = PortfolioRepository()
 
@@ -35,7 +30,6 @@ class DashboardService:
         top_buys: list[Opportunity],
         allocations: list[CategoryAllocation],
     ) -> list[Alert]:
-        """Classifica alertas baseados em posições e oportunidades."""
         alerts: list[Alert] = []
 
         for p in positions:
@@ -91,7 +85,6 @@ class DashboardService:
         cash: float,
         goals: list[Goal],
     ) -> list[CategoryAllocation]:
-        """Calcula alocação por categoria usando as novas categorias."""
         totals: dict[str, float] = {
             "renda_fixa": 0.0,
             "acoes_br": 0.0,
@@ -101,7 +94,6 @@ class DashboardService:
         }
 
         for p in positions:
-            # Primeiro tenta category_resolved, depois mapeia pelo asset_type
             cat = p.category_resolved
             if cat not in _VALID_CATEGORIES:
                 cat = _ASSET_TYPE_TO_CATEGORY.get(p.asset_type.value, "acoes_br")
@@ -137,8 +129,7 @@ class DashboardService:
         goals: list[Goal],
         cash: float,
     ) -> DashboardResponse:
-        """Gera o dashboard completo."""
-        # Filtrar positions sintéticas de renda fixa das listas de top sells
+
         real_positions = [p for p in positions if not p.ticker.startswith("RF_")]
 
         top_sells = sorted(
@@ -154,7 +145,6 @@ class DashboardService:
         total_pnl = total_cur - total_inv
         total_pnl_pct = (total_pnl / total_inv * 100) if total_inv > 0 else 0.0
 
-        # Calcular métricas de renda passiva (apenas ativos reais, não RF sintética)
         total_yearly_dividends = 0.0
         for p in real_positions:
             if p.dividend_yield and p.current_value:
@@ -164,15 +154,13 @@ class DashboardService:
         monthly_dividends = total_yearly_dividends / 12
         portfolio_yield = (total_yearly_dividends / total_cur * 100) if total_cur > 0 else 0.0
 
-        # Meta de renda passiva (pode ser configurada futuramente)
-        passive_income_goal = None  # Futuramente: ler de preferences
+        passive_income_goal = None
         passive_income_progress = None
         if passive_income_goal and passive_income_goal > 0:
             passive_income_progress = monthly_dividends / passive_income_goal * 100
 
         snaps = self.portfolio_repo.list_snapshots(limit=90)
 
-        # Contar apenas ativos reais (não incluir positions sintéticas de renda fixa)
         real_positions_count = len([p for p in positions if not p.ticker.startswith("RF_")])
 
         return DashboardResponse(

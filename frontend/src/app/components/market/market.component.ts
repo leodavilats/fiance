@@ -25,21 +25,18 @@ export class MarketComponent {
   readonly helper = inject(UiHelperService);
   private fb = inject(FormBuilder);
 
-  // State
   readonly activeTab = signal<MarketTab>('opportunities');
   readonly opportunities = signal<OpportunitiesResponse | null>(null);
   readonly dipResults = signal<{ items: DipScanItem[] } | null>(null);
   readonly dipAnalysis = signal<DipAnalysisResponse | null>(null);
   readonly showAnalysis = signal(false);
 
-  // Filtros de Oportunidades
   filterText = '';
   filterMinDy: number | null = null;
   filterMinMos: number | null = null;
   filterCategory = '';
   onlyInteresting = false;
 
-  // Form para Scanner
   scanForm = this.fb.nonNullable.group({
     min_score: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
     top: [12, [Validators.required, Validators.min(1), Validators.max(30)]],
@@ -84,7 +81,6 @@ export class MarketComponent {
   }
 
   showOpportunityDetails(ticker: string) {
-    // Abre a análise DIP para a oportunidade
     this.showDipAnalysis(ticker);
   }
 

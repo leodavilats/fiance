@@ -1,4 +1,3 @@
-// Modelos para Projeção de Renda Passiva
 export interface PassiveIncomeMonth {
   month: string;
   portfolio_value: number;
@@ -31,7 +30,6 @@ export interface PassiveIncomeProjectionResponse {
   assumptions: Record<string, any>;
 }
 
-// Modelos para Alocação Setorial
 export interface SectorAllocation {
   sector: string;
   target_percentage: number;

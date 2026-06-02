@@ -12,8 +12,6 @@ class Goal(BaseModel):
 
 
 class SectorGoal(BaseModel):
-    """Meta de alocação setorial dentro de ações."""
-
     sector: str = Field(..., description="Nome do setor (ex: 'Financeiro', 'Energia')")
     target_pct: float = Field(..., ge=0, le=100, description="% dentro do total de ações")
 
@@ -23,6 +21,4 @@ class GoalsRequest(BaseModel):
 
 
 class SectorGoalsRequest(BaseModel):
-    """Requisição para salvar metas setoriais."""
-
     sector_goals: list[SectorGoal]

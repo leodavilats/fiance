@@ -29,7 +29,6 @@
     </button>
   </div>
 
-  <!-- ===== ABA: ANALISAR ===== -->
   @if (activeTab() === 'analisar') {
     <form
       class="p-5 rounded-lg bg-panel border border-border mb-4"
@@ -182,7 +181,6 @@
     }
   }
 
-  <!-- ===== ABA: AJUSTE DE CARTEIRA ===== -->
   @if (activeTab() === 'ajuste') {
     <div class="flex items-center gap-3 mb-5 flex-wrap">
       <button
@@ -202,7 +200,6 @@
     </div>
 
     @if (strategy(); as s) {
-      <!-- Perfil -->
       <div class="p-5 rounded-lg bg-panel border border-border mb-5">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-3 text-tx">
           <lucide-icon name="circle-user" size="18"></lucide-icon> Perfil de Investidor
@@ -247,7 +244,6 @@
         </div>
       </div>
 
-      <!-- Resumo -->
       <div
         class="p-5 rounded-lg bg-gradient-to-br from-accent/10 to-accent-2/10 border-2 border-accent/30 mb-5"
       >
@@ -257,7 +253,6 @@
         <p class="text-base leading-relaxed text-tx m-0">{{ s.summary }}</p>
       </div>
 
-      <!-- Gaps -->
       @if (s.allocation_gaps.length > 0) {
         <div class="p-5 rounded-lg bg-panel border border-border mb-5">
           <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
@@ -307,12 +302,11 @@
                     </div>
                   </div>
                 </div>
-                <!-- Barra de alocação visual -->
+
                 <div
                   class="relative h-6 rounded-lg border border-border"
                   style="background: rgba(var(--muted) / 0.08)"
                 >
-                  <!-- Preenchimento atual (cor da categoria) -->
                   <div
                     class="absolute inset-y-0 left-0 transition-all duration-300 rounded-l-lg"
                     [style.width.%]="gap.current_pct"
@@ -320,15 +314,12 @@
                     [title]="'Atual: ' + gap.current_pct.toFixed(1) + '%'"
                   ></div>
 
-                  <!-- Marcador IDEAL (meta) - Pin destacado -->
                   <div
                     class="absolute top-0 bottom-0 flex items-center z-20 transition-all duration-300"
                     [style.left.%]="gap.target_pct"
                     style="transform: translateX(-50%)"
                   >
-                    <!-- Pin/Marcador do ideal -->
                     <div class="relative flex flex-col items-center">
-                      <!-- Círculo no topo -->
                       <div
                         class="w-3 h-3 rounded-full border-2 -mb-1.5 z-10"
                         style="
@@ -338,7 +329,7 @@
                         "
                         [title]="'Meta: ' + gap.target_pct.toFixed(1) + '%'"
                       ></div>
-                      <!-- Linha vertical do pin -->
+
                       <div
                         class="w-0.5 h-6"
                         style="
@@ -346,7 +337,7 @@
                           box-shadow: 0 0 4px rgba(var(--accent) / 0.4);
                         "
                       ></div>
-                      <!-- Label IDEAL abaixo da barra -->
+
                       <div
                         class="absolute -bottom-5 whitespace-nowrap text-[10px] font-semibold px-1.5 py-0.5 rounded dark:text-white"
                         style="background: rgb(var(--accent)); color: black"
@@ -357,7 +348,6 @@
                   </div>
                 </div>
 
-                <!-- Legenda da barra -->
                 <div class="flex items-center justify-between text-xs text-muted mt-6">
                   <span class="flex items-center gap-1.5">
                     <span
@@ -390,7 +380,6 @@
         </div>
       }
 
-      <!-- Sugestões -->
       @if (s.suggestions.length > 0) {
         <div class="p-5 rounded-lg bg-panel border border-border mb-5">
           <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
@@ -404,7 +393,6 @@
           <div class="flex flex-col gap-4">
             @for (sug of s.suggestions; track sug.ticker) {
               @if (sug.ticker === 'RENDA_FIXA') {
-                <!-- Sugestão especial de Renda Fixa -->
                 <div class="p-4 rounded-lg bg-blue-500/10 border-2 border-blue-500/40">
                   <div class="flex items-start justify-between gap-4">
                     <div class="flex-1">
@@ -508,7 +496,7 @@
                       </div>
                     </div>
                   </div>
-                  <!-- Custo de transação se houver -->
+
                   @if (sug.transaction_cost) {
                     <div
                       class="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 mb-3 text-xs"
@@ -558,7 +546,6 @@
         </div>
       }
 
-      <!-- Alocação Projetada -->
       @if (s.suggestions.length > 0 && s.projected_allocation.length > 0) {
         <div class="p-5 rounded-lg bg-panel border border-border">
           <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
@@ -625,9 +612,7 @@
     }
   }
 
-  <!-- ===== ABA: RENDA FIXA ===== -->
   @if (activeTab() === 'renda_fixa') {
-    <!-- Taxas de referência -->
     @if (referenceRates()) {
       <div
         class="flex items-center gap-4 p-4 rounded-lg bg-panel border border-border mb-5 flex-wrap text-sm"
@@ -647,7 +632,6 @@
       </div>
     }
 
-    <!-- Lista de ativos para comparar -->
     <div class="p-5 rounded-lg bg-panel border border-border mb-5">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
@@ -798,7 +782,6 @@
       </div>
     </div>
 
-    <!-- Resultados RF -->
     @if (rfResult(); as result) {
       <div class="p-5 rounded-lg bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-tx">

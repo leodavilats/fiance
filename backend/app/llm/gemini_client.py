@@ -117,7 +117,6 @@ JSON puro (sem ```):"""
 def analyze_news_sentiment(
     news_items: list[dict[str, Any]], symbol: str, company_name: str = ""
 ) -> dict[str, Any]:
-    """Analisa sentimento de notícias usando IA."""
     settings = get_settings()
 
     if not settings.gemini_api_key or not news_items:
@@ -139,9 +138,8 @@ def analyze_news_sentiment(
             "key_topics": [],
         }
 
-    # Formatar notícias para análise (apenas títulos - funcionam bem!)
     news_text = ""
-    for idx, item in enumerate(news_items[:5], 1):  # Reduzido para 5 notícias
+    for idx, item in enumerate(news_items[:5], 1):
         title = item.get("title", "")[:150]
         source = item.get("source", "")
         news_text += f"{idx}. {title} ({source})\n"
@@ -150,7 +148,6 @@ def analyze_news_sentiment(
         company_name=company_name or symbol, symbol=symbol, news_text=news_text
     )
 
-    # Log do que está sendo enviado para a IA
     print("\n" + "=" * 80)
     print("📤 PROMPT ENVIADO PARA IA (Análise de Notícias)")
     print("=" * 80)
@@ -160,7 +157,6 @@ def analyze_news_sentiment(
     try:
         client = genai.Client(api_key=settings.gemini_api_key)
 
-        # Tentar modelo lite primeiro (quota separada)
         try:
             response = client.models.generate_content(
                 model="gemini-flash-lite-latest",
@@ -171,7 +167,6 @@ def analyze_news_sentiment(
                 ),
             )
         except Exception as lite_error:
-            # Fallback para modelo principal
             logger.debug(f"Gemini Lite falhou, tentando Flash: {lite_error}")
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
@@ -182,28 +177,23 @@ def analyze_news_sentiment(
                 ),
             )
 
-        # Extrair JSON da resposta
         result_text = response.text.strip()
 
-        # Log da resposta recebida
         print("\n" + "=" * 80)
         print("📥 RESPOSTA RECEBIDA DA IA")
         print("=" * 80)
         print(result_text)
         print("=" * 80 + "\n")
 
-        # Verificar se resposta está vazia ou truncada
         if not result_text or len(result_text) < 20:
             logger.warning("Resposta vazia ou muito curta, usando fallback")
             raise ValueError("Resposta vazia ou muito curta")
 
-        # Limpar marcadores de código
         if "```json" in result_text:
             result_text = result_text.split("```json")[1].split("```")[0].strip()
         elif "```" in result_text:
             result_text = result_text.split("```")[1].split("```")[0].strip()
 
-        # Remover texto antes/depois do JSON
         start_idx = result_text.find("{")
         end_idx = result_text.rfind("}")
         if start_idx == -1 or end_idx == -1:
@@ -212,7 +202,6 @@ def analyze_news_sentiment(
 
         result_text = result_text[start_idx : end_idx + 1]
 
-        # Corrigir números decimais incompletos (3. -> 3.0)
         import re
 
         result_text = re.sub(r":\s*(\d+)\.\s*([,\}])", r": \1.0\2", result_text)
@@ -220,19 +209,17 @@ def analyze_news_sentiment(
         try:
             result = json.loads(result_text)
         except json.JSONDecodeError:
-            # Tentar limpar aspas problemáticas e espaços
             result_text = result_text.replace("'", '"')
-            # Remover quebras de linha dentro de strings
+
             result_text = re.sub(r"\n\s+", " ", result_text)
             result = json.loads(result_text)
 
-        # Validar e normalizar campos
         result["sentiment"] = str(result.get("sentiment", "neutral")).lower()
         if result["sentiment"] not in ["positive", "negative", "neutral"]:
             result["sentiment"] = "neutral"
 
         result["score"] = max(0.0, min(10.0, float(result.get("score", 5.0))))
-        result["summary"] = str(result.get("summary", ""))[:500]  # Limitar tamanho
+        result["summary"] = str(result.get("summary", ""))[:500]
 
         result["impact"] = str(result.get("impact", "low")).lower()
         if result["impact"] not in ["high", "medium", "low"]:
@@ -245,7 +232,7 @@ def analyze_news_sentiment(
     except json.JSONDecodeError as e:
         logger.warning(f"Erro ao parsear JSON da análise de notícias: {e}")
         logger.warning(f"Resposta recebida: {result_text[:300]}")
-        # Fallback: análise básica baseada em contagem
+
         pos_count = sum(
             1
             for item in news_items

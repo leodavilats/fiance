@@ -1,5 +1,3 @@
-"""Service para gestão de goals com cálculo de progresso."""
-
 from app.models import Goal, SectorGoal
 from app.repositories import PortfolioRepository
 
@@ -36,13 +34,11 @@ class GoalService:
         return self.get_goals()
 
     def get_sector_goals(self) -> list[SectorGoal]:
-        """Retorna metas de alocação setorial."""
         data = self.repo.list_sector_goals()
         if not data:
             return [SectorGoal(**g) for g in _DEFAULT_SECTOR_GOALS]
         return [SectorGoal(**g) for g in data]
 
     def save_sector_goals(self, goals: list[SectorGoal]) -> list[SectorGoal]:
-        """Salva metas de alocação setorial."""
         self.repo.replace_sector_goals([g.dict() for g in goals])
         return self.get_sector_goals()

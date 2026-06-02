@@ -1,5 +1,3 @@
-"""Controller para dashboard."""
-
 from fastapi import APIRouter
 
 from app.models import DashboardResponse, PortfolioEvaluationRequest, PortfolioItem
@@ -16,7 +14,6 @@ portfolio_repo = PortfolioRepository()
 
 @router.get("/dashboard", response_model=DashboardResponse)
 async def dashboard() -> DashboardResponse:
-    """Gera o dashboard completo."""
     prefs = portfolio_repo.get_preferences()
     cash = prefs["cash_available"]
     desired_yield = prefs["desired_yield"]

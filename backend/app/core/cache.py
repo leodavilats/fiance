@@ -79,14 +79,12 @@ def delete(key: str) -> None:
 
 
 def delete_pattern(pattern: str) -> int:
-    """Delete all cache keys matching a pattern (SQL LIKE syntax)."""
     with _conn() as cx:
         cursor = cx.execute("DELETE FROM cache WHERE k LIKE ?", (pattern,))
         return cursor.rowcount
 
 
 def clear_all() -> int:
-    """Clear entire cache. Returns number of entries deleted."""
     with _conn() as cx:
         cursor = cx.execute("DELETE FROM cache")
         return cursor.rowcount

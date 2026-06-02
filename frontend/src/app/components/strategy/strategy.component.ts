@@ -56,7 +56,6 @@ export class StrategyComponent implements OnInit {
   rfResult = signal<RendaFixaCompareResponse | null>(null);
   referenceRates = signal<ReferenceRates | null>(null);
 
-  // Form de análise de ativo
   analyzeForm: FormGroup<AnalyzeForm> = this.fb.group({
     symbol: this.fb.control('VALE3', { nonNullable: true, validators: Validators.required }),
     desired_yield: this.fb.control(0.06, {
@@ -65,7 +64,6 @@ export class StrategyComponent implements OnInit {
     }),
   });
 
-  // FormArray para renda fixa
   rfForms!: FormArray<FormGroup<RendaFixaForm>>;
 
   ngOnInit(): void {
@@ -99,7 +97,7 @@ export class StrategyComponent implements OnInit {
   onTipoChange(i: number): void {
     const ctrl = this.rfForms.controls[i];
     const tipo = ctrl.controls.tipo.value;
-    // LCI, LCA, CRI, CRA geralmente pós-fixados
+
     if (['lci', 'lca', 'cri', 'cra'].includes(tipo)) {
       ctrl.controls.tipo_taxa.setValue('pos_fixado');
     } else if (tipo === 'tesouro_selic') {
@@ -199,11 +197,11 @@ export class StrategyComponent implements OnInit {
 
   getCategoryBarColor(category: string): string {
     const colorMap: Record<string, string> = {
-      renda_fixa: 'rgba(59, 130, 246, 0.6)', // Azul
-      acoes_br: 'rgba(34, 197, 94, 0.6)', // Verde
-      acoes_int: 'rgba(168, 85, 247, 0.6)', // Roxo
-      fiis: 'rgba(251, 191, 36, 0.6)', // Amarelo
-      cripto: 'rgba(249, 115, 22, 0.6)', // Laranja
+      renda_fixa: 'rgba(59, 130, 246, 0.6)',
+      acoes_br: 'rgba(34, 197, 94, 0.6)',
+      acoes_int: 'rgba(168, 85, 247, 0.6)',
+      fiis: 'rgba(251, 191, 36, 0.6)',
+      cripto: 'rgba(249, 115, 22, 0.6)',
     };
     return colorMap[category] || 'rgba(var(--accent) / 0.5)';
   }

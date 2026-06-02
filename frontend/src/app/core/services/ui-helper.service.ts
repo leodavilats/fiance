@@ -24,7 +24,6 @@ export class UiHelperService {
       acoes_int: 'Ações INT',
       fiis: 'FIIs',
       cripto: 'Cripto',
-      // compatibilidade legada
       renda: 'Renda Fixa',
       trade: 'Ações BR',
       caixa: 'Renda Fixa',
@@ -182,7 +181,6 @@ export class UiHelperService {
       return `${x},${y}`;
     });
 
-    // Criar path de área: linha + fechar pelo fundo
     const bottomRight = `${offsetX + width},${offsetY + height}`;
     const bottomLeft = `${offsetX},${offsetY + height}`;
 

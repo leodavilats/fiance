@@ -459,7 +459,6 @@ def set_preferences(
 
 
 def list_sector_goals(user_id: str = DEFAULT_USER) -> list[SectorGoal]:
-    """Lista sector goals de alocação."""
     with _conn() as cx:
         rows = cx.execute(
             "SELECT sector, target_pct FROM sector_goals WHERE user_id = ? ORDER BY sector",
@@ -476,7 +475,6 @@ def list_sector_goals(user_id: str = DEFAULT_USER) -> list[SectorGoal]:
 
 
 def replace_sector_goals(goals: list[SectorGoal], user_id: str = DEFAULT_USER) -> None:
-    """Substitui sector goals de alocação."""
     with _conn() as cx:
         cx.execute("DELETE FROM sector_goals WHERE user_id = ?", (user_id,))
 

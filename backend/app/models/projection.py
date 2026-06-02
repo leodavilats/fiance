@@ -1,11 +1,7 @@
-"""Modelos para projeção de renda passiva."""
-
 from pydantic import BaseModel, Field
 
 
 class PassiveIncomeMonth(BaseModel):
-    """Projeção de renda passiva em um mês específico."""
-
     month: str = Field(..., description="Formato YYYY-MM")
     portfolio_value: float = Field(..., description="Valor total da carteira")
     passive_income_monthly: float = Field(..., description="Renda passiva mensal (R$)")
@@ -14,8 +10,6 @@ class PassiveIncomeMonth(BaseModel):
 
 
 class PassiveIncomeProjectionRequest(BaseModel):
-    """Requisição para projeção de renda passiva."""
-
     monthly_contribution: float = Field(0.0, ge=0, description="Aporte mensal adicional (R$)")
     target_monthly_income: float | None = Field(
         None, ge=0, description="Meta de renda passiva mensal (R$)"
@@ -31,8 +25,6 @@ class PassiveIncomeProjectionRequest(BaseModel):
 
 
 class PassiveIncomeProjectionResponse(BaseModel):
-    """Resposta com projeção de renda passiva."""
-
     current_passive_income_monthly: float = Field(
         ..., description="Renda passiva mensal atual (R$)"
     )
@@ -52,8 +44,6 @@ class PassiveIncomeProjectionResponse(BaseModel):
 
 
 class SectorAllocation(BaseModel):
-    """Alocação por setor."""
-
     sector: str
     target_percentage: float = Field(..., ge=0, le=100)
     current_percentage: float = Field(0.0, ge=0, le=100)
@@ -62,8 +52,6 @@ class SectorAllocation(BaseModel):
 
 
 class SectorAllocationResponse(BaseModel):
-    """Resposta com análise de alocação setorial."""
-
     total_equity_value: float = Field(..., description="Valor total em ações")
     allocations: list[SectorAllocation]
     needs_rebalance: bool = Field(False, description="Precisa rebalancear")

@@ -125,7 +125,6 @@ export class RecommendService {
       .set('category', category)
       .set('only_interesting', onlyInteresting);
 
-    // Apenas adiciona min_dy e min_mos se tiverem valores válidos
     if (minDy !== null && minDy > 0) {
       params = params.set('min_dy', minDy);
     }
@@ -180,7 +179,6 @@ export class RecommendService {
     });
   }
 
-  // Renda Fixa
   getReferencRates(): Observable<ReferenceRates> {
     return this.http.get<ReferenceRates>(`${this.base}/renda-fixa/taxas`);
   }
@@ -193,7 +191,6 @@ export class RecommendService {
     return this.http.post<RendaFixaCompareResponse>(`${this.base}/renda-fixa/comparar`, req);
   }
 
-  // Projeção de Renda Passiva
   projectPassiveIncome(
     req: PassiveIncomeProjectionRequest
   ): Observable<PassiveIncomeProjectionResponse> {
@@ -203,7 +200,6 @@ export class RecommendService {
     );
   }
 
-  // Alocação Setorial
   analyzeSectorAllocation(
     targetAllocations: Record<string, number>
   ): Observable<SectorAllocationResponse> {
@@ -213,7 +209,6 @@ export class RecommendService {
     );
   }
 
-  // Sector Goals
   getSectorGoals(): Observable<SectorGoal[]> {
     return this.http.get<SectorGoal[]>(`${this.base}/sector-goals`);
   }
@@ -222,7 +217,6 @@ export class RecommendService {
     return this.http.put<SectorGoal[]>(`${this.base}/sector-goals`, { sector_goals: sectorGoals });
   }
 
-  // Quick Invest
   quickInvest(req: QuickInvestRequest): Observable<QuickInvestResponse> {
     return this.http.post<QuickInvestResponse>(`${this.base}/quick-invest`, req);
   }

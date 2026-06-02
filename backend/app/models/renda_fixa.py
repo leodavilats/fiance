@@ -1,13 +1,9 @@
-"""Modelos para análise de renda fixa."""
-
 from pydantic import BaseModel, Field
 
 from .enums import Liquidez, RendaFixaType, TaxType
 
 
 class RendaFixaAsset(BaseModel):
-    """Representa um ativo de renda fixa para análise."""
-
     tipo: RendaFixaType
     valor_investido: float = Field(..., gt=0, description="Valor a investir em R$")
     taxa: float = Field(..., gt=0, description="Taxa anual em % (ex.: 12.5 para 12.5% a.a.)")
@@ -28,8 +24,6 @@ class IrBreakdown(BaseModel):
 
 
 class RendaFixaAnalysisResult(BaseModel):
-    """Resultado da análise de um ativo de renda fixa."""
-
     tipo: str
     nome: str | None
     valor_investido: float
@@ -47,8 +41,6 @@ class RendaFixaAnalysisResult(BaseModel):
 
 
 class RendaFixaCompareRequest(BaseModel):
-    """Requisição para comparar múltiplos ativos de renda fixa."""
-
     ativos: list[RendaFixaAsset] = Field(..., min_length=1)
     cdi_anual: float | None = Field(
         None, description="CDI anual atual em % (se None usa valor padrão)"
@@ -59,8 +51,6 @@ class RendaFixaCompareRequest(BaseModel):
 
 
 class RendaFixaCompareResponse(BaseModel):
-    """Resposta com comparação entre ativos de renda fixa."""
-
     resultados: list[RendaFixaAnalysisResult]
     cdi_referencia: float
     selic_referencia: float
@@ -68,8 +58,6 @@ class RendaFixaCompareResponse(BaseModel):
 
 
 class ReferenceRates(BaseModel):
-    """Taxas de referência do mercado."""
-
     cdi_anual: float
     selic_anual: float
     ipca_anual: float

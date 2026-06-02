@@ -17,8 +17,8 @@ class NewsItem:
     source: str
     published: str
     url: str
-    sentiment: str  # Será preenchido pela IA, mantido para compatibilidade
-    description: str = ""  # Descrição/resumo da notícia do RSS
+    sentiment: str
+    description: str = ""
 
 
 def _safe_title(entry) -> str:
@@ -47,12 +47,11 @@ def _safe_link(entry) -> str:
 
 
 def _safe_description(entry) -> str:
-    """Extrai descrição/resumo do RSS feed."""
-    # Tentar summary primeiro, depois description
+
     desc = getattr(entry, "summary", "") or getattr(entry, "description", "") or ""
-    # Remover tags HTML
+
     desc = re.sub(r"<[^>]+>", "", desc).strip()
-    # Limitar tamanho para não sobrecarregar a IA
+
     return desc[:500] if desc else ""
 
 
@@ -106,7 +105,7 @@ def _fetch_news_sync(
                 source=_safe_source(entry),
                 published=_safe_published(entry),
                 url=_safe_link(entry),
-                sentiment="neutral",  # Será classificado pela IA
+                sentiment="neutral",
                 description=_safe_description(entry),
             )
         )
@@ -121,7 +120,6 @@ async def fetch_news(
     ceid = "BR:pt" if gl == "BR" else "US:en"
     loop = asyncio.get_event_loop()
 
-    # Buscar notícias do RSS (sem scraping - títulos são suficientes para a IA)
     items = await loop.run_in_executor(
         None, _fetch_news_sync, symbol, lang, gl, ceid, max_items, company_name
     )
@@ -130,7 +128,6 @@ async def fetch_news(
 
 
 def news_sentiment_summary(items: list[NewsItem]) -> str:
-    """Retorna resumo básico. Use analyze_news_with_ai() para análise completa com IA."""
     if not items:
         return "Sem notícias recentes encontradas."
     return f"{len(items)} notícia(s) recente(s) encontrada(s)."
@@ -139,7 +136,6 @@ def news_sentiment_summary(items: list[NewsItem]) -> str:
 async def analyze_news_with_ai(
     items: list[NewsItem], symbol: str, company_name: str = ""
 ) -> dict[str, Any]:
-    """Analisa notícias usando IA (Gemini) para sentimento, resumo e insights."""
     if not items:
         return {
             "sentiment": "neutral",
@@ -150,7 +146,6 @@ async def analyze_news_with_ai(
             "ai_enabled": False,
         }
 
-    # Converter NewsItem para dicts
     news_dicts = [
         {
             "title": item.title,
@@ -163,7 +158,6 @@ async def analyze_news_with_ai(
         for item in items
     ]
 
-    # Importar e executar análise em executor para não bloquear
     try:
         from app.llm.gemini_client import analyze_news_sentiment
 
@@ -175,7 +169,7 @@ async def analyze_news_with_ai(
         return result
     except Exception as e:
         logger.warning(f"Erro ao analisar notícias com IA: {e}")
-        # Fallback para análise básica
+
         return {
             "sentiment": "neutral",
             "score": 5.0,

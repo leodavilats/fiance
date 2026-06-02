@@ -1,6 +1,3 @@
-"""Controller para oportunidades de investimento."""
-
-from typing import Optional
 
 from fastapi import APIRouter, Query
 
@@ -20,14 +17,13 @@ async def opportunities(
     sort_by: str = Query("score", description="Campo para ordenação: score, dy, mos, price"),
     sort_order: str = Query("desc", description="Ordem: asc ou desc"),
     search: str = Query("", description="Busca por ticker ou nome"),
-    min_dy: Optional[float] = Query(None, ge=0, description="DY mínimo (%)"),
-    min_mos: Optional[float] = Query(None, description="MS mínima (%)"),
+    min_dy: float | None = Query(None, ge=0, description="DY mínimo (%)"),
+    min_mos: float | None = Query(None, description="MS mínima (%)"),
     sector: str = Query("", description="Filtrar por setor"),
     asset_type: str = Query("", description="Filtrar por tipo de ativo"),
     category: str = Query("", description="Filtrar por categoria: renda ou trade"),
     only_interesting: bool = Query(False, description="Apenas destaques"),
 ) -> OpportunitiesResponse:
-    """Retorna lista de oportunidades de investimento."""
     return await opportunity_service.get_opportunities(
         include_held=include_held,
         page=page,

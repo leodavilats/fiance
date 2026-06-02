@@ -332,7 +332,6 @@
       }
     </div>
 
-    <!-- Paginação -->
     @if (totalPages() > 1) {
       <div class="flex justify-center items-center gap-2 mt-6">
         <button
@@ -380,7 +379,6 @@
   </div>
 }
 
-<!-- Modal de Análise de Dip -->
 @if (showDipPanel()) {
   <div class="fixed inset-0 bg-black/50 z-40" (click)="closeDipPanel()"></div>
   <div

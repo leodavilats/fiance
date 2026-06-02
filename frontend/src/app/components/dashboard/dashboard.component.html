@@ -17,7 +17,6 @@
   </div>
 
   @if (data(); as d) {
-    <!-- KPIs -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="p-4 rounded-lg bg-panel border border-border">
         <div class="flex items-center gap-2 text-sm text-muted mb-2">
@@ -69,7 +68,6 @@
       </div>
     </div>
 
-    <!-- Card de Renda Passiva (NOVO) -->
     @if (d.summary.monthly_dividends_estimate > 0) {
       <div
         class="p-6 rounded-xl bg-gradient-to-br from-accent/20 to-accent-2/20 border-2 border-accent/30"
@@ -124,7 +122,6 @@
       </div>
     }
 
-    <!-- Alertas -->
     @if (d.alerts.length > 0) {
       <div class="p-5 rounded-lg bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
@@ -151,7 +148,6 @@
       </div>
     }
 
-    <!-- Top Buys / Sells -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="p-5 rounded-lg bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
@@ -249,7 +245,6 @@
       </div>
     </div>
 
-    <!-- Alocação vs Metas -->
     <div class="p-5 rounded-lg bg-panel border border-border">
       <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
         <lucide-icon name="target" size="18"></lucide-icon> Alocação vs. metas
@@ -293,14 +288,12 @@
       </div>
     </div>
 
-    <!-- Gráfico de Evolução -->
     @if (d.snapshots.length >= 2) {
       <div class="p-5 rounded-lg bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
           <lucide-icon name="chart-column" size="18"></lucide-icon> Evolução do patrimônio
         </h2>
 
-        <!-- Estatísticas do período -->
         <div class="grid grid-cols-3 gap-4 mb-4">
           <div class="text-center">
             <div class="text-xs text-muted mb-1">Início</div>
@@ -361,10 +354,8 @@
           </div>
         </div>
 
-        <!-- Gráfico melhorado -->
         <div class="relative">
           <svg class="w-full" viewBox="0 0 600 180" preserveAspectRatio="xMidYMid meet">
-            <!-- Grid de fundo -->
             <defs>
               <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" style="stop-color: rgb(var(--accent)); stop-opacity: 0.3" />
@@ -372,7 +363,6 @@
               </linearGradient>
             </defs>
 
-            <!-- Linhas horizontais do grid -->
             <line
               x1="40"
               y1="20"
@@ -410,7 +400,6 @@
               stroke-width="1"
             />
 
-            <!-- Eixo X e Y -->
             <line
               x1="40"
               y1="140"
@@ -430,13 +419,11 @@
               stroke-width="1.5"
             />
 
-            <!-- Área preenchida -->
             <path
               [attr.d]="ui.snapshotAreaPath(d.snapshots, 550, 120, 40, 20)"
               fill="url(#areaGradient)"
             />
 
-            <!-- Linha principal -->
             <path
               [attr.d]="ui.snapshotPath(d.snapshots, 550, 120, 40, 20)"
               stroke="rgb(var(--accent))"
@@ -446,7 +433,6 @@
               stroke-linejoin="round"
             />
 
-            <!-- Pontos de dados -->
             @for (snap of d.snapshots; track snap.captured_at; let i = $index) {
               @if (
                 i === 0 ||
@@ -469,7 +455,6 @@
               }
             }
 
-            <!-- Labels do eixo Y -->
             <text x="35" y="25" text-anchor="end" class="text-[8px] fill-muted">
               {{ ui.maxSnapshot(d.snapshots) | number: '1.0-0' }}
             </text>
@@ -482,7 +467,6 @@
               {{ ui.minSnapshot(d.snapshots) | number: '1.0-0' }}
             </text>
 
-            <!-- Labels do eixo X (primeira e última data) -->
             <text x="40" y="155" text-anchor="start" class="text-[8px] fill-muted">
               {{ formatDate(d.snapshots[0].captured_at) }}
             </text>

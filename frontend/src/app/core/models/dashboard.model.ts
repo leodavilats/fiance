@@ -25,7 +25,6 @@ export interface DashboardSummary {
   total_pnl_pct: number;
   cash_available: number;
 
-  // Métricas de Renda Passiva
   monthly_dividends_estimate: number;
   yearly_dividends_estimate: number;
   portfolio_yield: number | null;

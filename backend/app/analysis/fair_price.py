@@ -93,25 +93,19 @@ def compute_fair_price(
     desired_yield: float = DEFAULT_DESIRED_YIELD,
     week52_high: float | None = None,
 ) -> FairPriceResult:
-    """
-    Calculate fair price using Bazin and Graham methods.
-    No arbitrary caps - let the data speak for itself.
-    """
-    # Calculate average dividend (prefer mean, but use median if data seems erratic)
+
     avg_div = average_dividend_last_n_years(dividends, years=5, use_median=False)
     use_median = False
 
-    # If dividend yield would be extremely high (>30%), data might be erratic - use median
     if avg_div and price and price > 0:
         implied_dy = avg_div / price
-        if implied_dy > 0.30:  # Only if truly unrealistic (30%+)
+        if implied_dy > 0.30:
             avg_div = average_dividend_last_n_years(dividends, years=5, use_median=True)
             use_median = True
 
     bazin = bazin_fair_price(avg_div, desired_yield)
     graham = graham_fair_price(eps, book_value)
 
-    # Calculate consensus from available methods
     candidates = [v for v in (bazin, graham) if v is not None]
 
     consensus = round(sum(candidates) / len(candidates), 2) if candidates else None

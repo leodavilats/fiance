@@ -1,5 +1,3 @@
-"""Controller para estratégia de investimento."""
-
 from fastapi import APIRouter
 
 from app.models import Goal, PortfolioEvaluationRequest, PortfolioItem
@@ -25,7 +23,6 @@ _DEFAULT_GOALS = [
 
 @router.get("/strategy")
 async def get_investment_strategy() -> dict:
-    """Gera uma estratégia de investimento personalizada."""
     prefs = portfolio_repo.get_preferences()
     cash = prefs["cash_available"]
     desired_yield = prefs["desired_yield"]

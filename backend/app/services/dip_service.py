@@ -1,5 +1,3 @@
-"""Service para análise de dip (oportunidades de compra)."""
-
 import asyncio
 import logging
 
@@ -23,14 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class DipService:
-    """Service para análise de dips."""
-
     def __init__(self):
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
 
     async def analyze_dip(self, symbol: str, desired_yield: float = 0.06) -> DipAnalysisResponse:
-        """Analisa um ativo em busca de oportunidade de dip."""
         snap = await self.asset_repo.get_asset(symbol)
         if not snap:
             raise ValueError(f"Ativo '{symbol}' não encontrado ou sem dados.")
@@ -55,7 +50,6 @@ class DipService:
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
         sentiment_summary = news_sentiment_summary(news_items)
 
-        # Análise de notícias com IA
         news_ai_analysis = await analyze_news_with_ai(news_items, symbol, snap.name or "")
 
         dip = compute_dip_analysis(
@@ -130,7 +124,6 @@ class DipService:
         top: int = 12,
         desired_yield: float = 0.06,
     ) -> DipScannerResponse:
-        """Escaneia o universo em busca de oportunidades de dip."""
         settings = get_settings()
 
         if universe:

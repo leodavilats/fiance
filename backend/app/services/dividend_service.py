@@ -1,5 +1,3 @@
-"""Service para análise de dividendos."""
-
 import asyncio
 from datetime import datetime, timedelta
 
@@ -10,8 +8,6 @@ from app.repositories import AssetRepository
 
 
 class DividendService:
-    """Service para operações relacionadas a dividendos."""
-
     def __init__(self):
         self.asset_repo = AssetRepository()
 
@@ -20,7 +16,6 @@ class DividendService:
         universe: str | None = None,
         top: int = 15,
     ) -> DividendRankingResponse:
-        """Retorna ranking de ativos por dividend yield."""
         settings = get_settings()
 
         if universe:

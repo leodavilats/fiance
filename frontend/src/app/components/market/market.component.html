@@ -20,10 +20,8 @@
     </button>
   </div>
 
-  <!-- Oportunidades Tab -->
   @if (activeTab() === 'opportunities') {
     <div class="space-y-4">
-      <!-- Filtros -->
       <div class="card">
         <h3 class="text-lg font-semibold mb-3 text-tx">Filtros</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -73,7 +71,6 @@
         </div>
       </div>
 
-      <!-- Lista de Oportunidades -->
       @if (opportunities(); as opps) {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           @for (opp of opps.items; track opp.ticker) {
@@ -136,10 +133,8 @@
     </div>
   }
 
-  <!-- Scanner de Baixas Tab -->
   @if (activeTab() === 'dip-scanner') {
     <div class="space-y-4">
-      <!-- Configuração do Scanner -->
       <form [formGroup]="scanForm" (ngSubmit)="runScan()" class="card">
         <h3 class="text-lg font-semibold mb-3 text-tx">Configuração do Scanner</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -166,7 +161,6 @@
         </button>
       </form>
 
-      <!-- Resultados do Scanner -->
       @if (dipResults(); as dips) {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           @for (dip of dips.items; track dip.symbol) {
@@ -233,7 +227,6 @@
     </div>
   }
 
-  <!-- Modal de Análise DIP -->
   @if (showAnalysis()) {
     <div
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
@@ -253,7 +246,6 @@
             </button>
           </div>
           <div class="p-4 space-y-4">
-            <!-- Score DIP -->
             <div class="card bg-gradient-to-br from-accent/20 to-accent-2/20">
               <div class="text-center">
                 <div class="text-5xl font-bold text-accent mb-2">
@@ -267,7 +259,6 @@
               </div>
             </div>
 
-            <!-- Breakdown -->
             @if (analysis.breakdown) {
               <div class="card">
                 <h4 class="font-semibold text-tx mb-2">Breakdown do Score</h4>
@@ -288,13 +279,11 @@
               </div>
             }
 
-            <!-- Rationale -->
             <div class="card">
               <h4 class="font-semibold text-tx mb-2">Análise</h4>
               <p class="text-sm text-tx">{{ analysis.reasons.join('. ') }}.</p>
             </div>
 
-            <!-- Notícias -->
             @if (analysis.news && analysis.news.length > 0) {
               <div class="card">
                 <h4 class="font-semibold text-tx mb-2">Notícias Recentes</h4>

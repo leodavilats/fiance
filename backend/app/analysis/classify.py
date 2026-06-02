@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-# Mapa de categorias legadas → novas (compatibilidade backward)
 _LEGACY_MAP = {
     "renda": "fiis",
     "trade": "acoes_br",
@@ -27,7 +26,7 @@ def auto_category(
 def resolve_category(stored: str, auto: str) -> str:
     if stored in VALID_CATEGORIES:
         return stored
-    # Compatibilidade com categorias legadas
+
     if stored in _LEGACY_MAP:
         return _LEGACY_MAP[stored]
     return auto

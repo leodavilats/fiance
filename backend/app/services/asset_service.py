@@ -1,5 +1,3 @@
-"""Service para análise de ativos."""
-
 import asyncio
 
 from app.analysis.decision import decide
@@ -15,13 +13,10 @@ from app.repositories import AssetRepository
 
 
 class AssetService:
-    """Service para operações de análise de ativos."""
-
     def __init__(self):
         self.asset_repo = AssetRepository()
 
     async def analyze_asset(self, symbol: str, desired_yield: float = 0.06) -> AssetAnalysis:
-        """Analisa um ativo e retorna análise completa."""
         snap = await self.asset_repo.get_asset(symbol)
         if not snap:
             raise ValueError(f"Ativo '{symbol}' não encontrado ou sem dados.")

@@ -1,15 +1,3 @@
-"""
-Cálculo e análise de investimentos em renda fixa.
-
-Regras de IR (Lei 11.033/2004):
-  - até 180 dias: 22,5%
-  - 181 a 360 dias: 20,0%
-  - 361 a 720 dias: 17,5%
-  - acima de 720 dias: 15,0%
-
-Isentos de IR: LCI, LCA, CRI, CRA, Tesouro IPCA (pessoa física sobre rendimento)
-"""
-
 from __future__ import annotations
 
 from app.models.enums import RendaFixaType, TaxType
@@ -22,12 +10,11 @@ from app.models.renda_fixa import (
     RendaFixaCompareResponse,
 )
 
-# CDI e Selic padrão (valores estimados, atualizados manualmente ou via API)
-DEFAULT_CDI_ANUAL = 13.65  # %
-DEFAULT_SELIC_ANUAL = 13.75  # %
-DEFAULT_IPCA_ANUAL = 5.0  # %
+DEFAULT_CDI_ANUAL = 13.65
+DEFAULT_SELIC_ANUAL = 13.75
+DEFAULT_IPCA_ANUAL = 5.0
 
-# Tipos isentos de IR para pessoa física
+
 ISENTOS_IR = {
     RendaFixaType.lci,
     RendaFixaType.lca,
@@ -37,7 +24,6 @@ ISENTOS_IR = {
 
 
 def _aliquota_ir(prazo_dias: int) -> float:
-    """Retorna a alíquota de IR conforme tabela regressiva."""
     if prazo_dias <= 180:
         return 0.225
     elif prazo_dias <= 360:
@@ -49,13 +35,11 @@ def _aliquota_ir(prazo_dias: int) -> float:
 
 
 def _taxa_equivalente_periodo(taxa_anual_pct: float, meses: int) -> float:
-    """Converte taxa anual para o período em meses (capitalização composta)."""
     taxa_anual = taxa_anual_pct / 100.0
     return (1 + taxa_anual) ** (meses / 12.0) - 1
 
 
 def _taxa_cdi_periodo(cdi_anual: float, percentual_cdi: float, meses: int) -> float:
-    """Taxa pós-fixada no período para dado percentual do CDI."""
     taxa_cdi = (1 + cdi_anual / 100.0) ** (meses / 12.0) - 1
     return (1 + taxa_cdi) ** (percentual_cdi / 100.0) - 1
 
@@ -65,15 +49,12 @@ def analyze_one(
     cdi_anual: float = DEFAULT_CDI_ANUAL,
     selic_anual: float = DEFAULT_SELIC_ANUAL,
 ) -> RendaFixaAnalysisResult:
-    """Analisa um único ativo de renda fixa."""
     prazo_dias = int(ativo.prazo_meses * 30.44)
 
-    # Determinar se isento de IR
     isento = ativo.isento_ir
     if isento is None:
         isento = ativo.tipo in ISENTOS_IR
 
-    # Calcular taxa bruta no período
     if ativo.tipo_taxa == TaxType.pos_fixado and ativo.percentual_cdi:
         taxa_periodo = _taxa_cdi_periodo(cdi_anual, ativo.percentual_cdi, ativo.prazo_meses)
     else:
@@ -82,7 +63,6 @@ def analyze_one(
     valor_bruto = ativo.valor_investido * (1 + taxa_periodo)
     rendimento_bruto = valor_bruto - ativo.valor_investido
 
-    # Calcular IR
     if isento:
         aliquota = 0.0
         valor_ir = 0.0
@@ -93,17 +73,13 @@ def analyze_one(
     rendimento_liquido = rendimento_bruto - valor_ir
     valor_liquido = ativo.valor_investido + rendimento_liquido
 
-    # Taxa líquida anual
     if ativo.prazo_meses > 0:
         taxa_liq_periodo = rendimento_liquido / ativo.valor_investido
         taxa_liq_aa = ((1 + taxa_liq_periodo) ** (12.0 / ativo.prazo_meses) - 1) * 100
     else:
         taxa_liq_aa = 0.0
 
-    # Equivalência CDI líquido
-    taxa_cdi_periodo = _taxa_equivalente_periodo(
-        cdi_anual * 0.85, ativo.prazo_meses
-    )  # CDI líquido padrão
+    taxa_cdi_periodo = _taxa_equivalente_periodo(cdi_anual * 0.85, ativo.prazo_meses)
     equiv_cdi_pct: float | None = None
     if taxa_cdi_periodo > 0:
         equiv_cdi_pct = round((taxa_liq_periodo / taxa_cdi_periodo) * 100, 2)
@@ -130,7 +106,6 @@ def analyze_one(
 
 
 def compare_options(req: RendaFixaCompareRequest) -> RendaFixaCompareResponse:
-    """Compara múltiplos ativos de renda fixa e identifica o melhor."""
     cdi = req.cdi_anual if req.cdi_anual else DEFAULT_CDI_ANUAL
     selic = req.selic_anual if req.selic_anual else DEFAULT_SELIC_ANUAL
 
@@ -138,7 +113,6 @@ def compare_options(req: RendaFixaCompareRequest) -> RendaFixaCompareResponse:
         analyze_one(ativo, cdi, selic) for ativo in req.ativos
     ]
 
-    # Encontrar melhor opção por taxa líquida a.a.
     melhor_idx = max(range(len(resultados)), key=lambda i: resultados[i].taxa_liquida_aa)
     for i, r in enumerate(resultados):
         r.melhor_opcao = i == melhor_idx
@@ -152,7 +126,6 @@ def compare_options(req: RendaFixaCompareRequest) -> RendaFixaCompareResponse:
 
 
 def get_reference_rates() -> ReferenceRates:
-    """Retorna taxas de referência do mercado."""
     return ReferenceRates(
         cdi_anual=DEFAULT_CDI_ANUAL,
         selic_anual=DEFAULT_SELIC_ANUAL,

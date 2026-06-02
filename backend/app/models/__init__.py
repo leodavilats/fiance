@@ -1,6 +1,23 @@
-# flake8: noqa
-
-# Enums
+from .analysis import (
+    AssetAnalysis,
+    DecisionBlock,
+    FairPriceBlock,
+    TechnicalBlock,
+)
+from .company import CompanyFundamentals, ScoredCompany
+from .dashboard import (
+    Alert,
+    CategoryAllocation,
+    DashboardResponse,
+    DashboardSummary,
+)
+from .dip import (
+    DipAnalysisResponse,
+    DipScanItem,
+    DipScannerResponse,
+    DipScoreBreakdownSchema,
+    NewsItemSchema,
+)
 from .enums import (
     AssetCategory,
     AssetType,
@@ -10,22 +27,8 @@ from .enums import (
     RiskProfile,
     TaxType,
 )
-
-# Company & Scoring
-from .company import CompanyFundamentals, ScoredCompany
-
-# Recommendation
-from .recommendation import Allocation, RecommendRequest, RecommendResponse
-
-# Analysis
-from .analysis import (
-    AssetAnalysis,
-    DecisionBlock,
-    FairPriceBlock,
-    TechnicalBlock,
-)
-
-# Portfolio
+from .goal import Goal, GoalsRequest, SectorGoal, SectorGoalsRequest
+from .opportunity import OpportunitiesResponse, Opportunity
 from .portfolio import (
     PortfolioEvaluationRequest,
     PortfolioEvaluationResponse,
@@ -36,46 +39,7 @@ from .portfolio import (
     SavePortfolioRequest,
     StoredPortfolioItem,
 )
-
-# Watchlist
-from .watchlist import WatchlistItem, WatchlistRequest
-
-# Goals
-from .goal import Goal, GoalsRequest, SectorGoal, SectorGoalsRequest
-
-# Preferences
 from .preferences import Preferences, PreferencesRequest
-
-# Opportunities
-from .opportunity import Opportunity, OpportunitiesResponse
-
-# Dashboard
-from .dashboard import (
-    Alert,
-    CategoryAllocation,
-    DashboardResponse,
-    DashboardSummary,
-)
-
-# Dip Analysis
-from .dip import (
-    DipAnalysisResponse,
-    DipScanItem,
-    DipScannerResponse,
-    DipScoreBreakdownSchema,
-    NewsItemSchema,
-)
-
-# Renda Fixa
-from .renda_fixa import (
-    RendaFixaAsset,
-    RendaFixaAnalysisResult,
-    RendaFixaCompareRequest,
-    RendaFixaCompareResponse,
-    ReferenceRates,
-)
-
-# Projection
 from .projection import (
     PassiveIncomeMonth,
     PassiveIncomeProjectionRequest,
@@ -83,16 +47,22 @@ from .projection import (
     SectorAllocation,
     SectorAllocationResponse,
 )
-
-# Quick Invest
 from .quick_invest import (
+    QuickInvestAllocation,
     QuickInvestRequest,
     QuickInvestResponse,
-    QuickInvestAllocation,
 )
+from .recommendation import Allocation, RecommendRequest, RecommendResponse
+from .renda_fixa import (
+    ReferenceRates,
+    RendaFixaAnalysisResult,
+    RendaFixaAsset,
+    RendaFixaCompareRequest,
+    RendaFixaCompareResponse,
+)
+from .watchlist import WatchlistItem, WatchlistRequest
 
 __all__ = [
-    # Enums
     "AssetCategory",
     "AssetType",
     "Liquidez",
@@ -100,19 +70,15 @@ __all__ = [
     "RendaFixaType",
     "RiskProfile",
     "TaxType",
-    # Company & Scoring
     "CompanyFundamentals",
     "ScoredCompany",
-    # Recommendation
     "Allocation",
     "RecommendRequest",
     "RecommendResponse",
-    # Analysis
     "AssetAnalysis",
     "DecisionBlock",
     "FairPriceBlock",
     "TechnicalBlock",
-    # Portfolio
     "PortfolioEvaluationRequest",
     "PortfolioEvaluationResponse",
     "PortfolioItem",
@@ -121,44 +87,35 @@ __all__ = [
     "PortfolioStateResponse",
     "SavePortfolioRequest",
     "StoredPortfolioItem",
-    # Watchlist
     "WatchlistItem",
     "WatchlistRequest",
-    # Goals
     "Goal",
     "GoalsRequest",
     "SectorGoal",
     "SectorGoalsRequest",
-    # Preferences
     "Preferences",
     "PreferencesRequest",
-    # Opportunities
     "Opportunity",
     "OpportunitiesResponse",
-    # Dashboard
     "Alert",
     "CategoryAllocation",
     "DashboardResponse",
     "DashboardSummary",
-    # Dip Analysis
     "DipAnalysisResponse",
     "DipScanItem",
     "DipScannerResponse",
     "DipScoreBreakdownSchema",
     "NewsItemSchema",
-    # Renda Fixa
     "RendaFixaAsset",
     "RendaFixaAnalysisResult",
     "RendaFixaCompareRequest",
     "RendaFixaCompareResponse",
     "ReferenceRates",
-    # Projection
     "PassiveIncomeMonth",
     "PassiveIncomeProjectionRequest",
     "PassiveIncomeProjectionResponse",
     "SectorAllocation",
     "SectorAllocationResponse",
-    # Quick Invest
     "QuickInvestRequest",
     "QuickInvestResponse",
     "QuickInvestAllocation",

@@ -188,7 +188,6 @@ export class ConfigComponent implements OnInit {
           watchlist: watchlist.map(w => w.ticker).join(', '),
         });
 
-        // Mapear goals por categoria
         const goalMap = new Map(goals.map(g => [g.category, g]));
         this.goalItems.controls.forEach((ctrl, i) => {
           const cat = CATEGORIES[i].key;
@@ -202,7 +201,6 @@ export class ConfigComponent implements OnInit {
           }
         });
 
-        // Mapear sector goals
         const sectorGoalMap = new Map(sectorGoals.map(sg => [sg.sector, sg]));
         this.sectorGoalItems.controls.forEach(ctrl => {
           const sector = ctrl.controls.sector.value;

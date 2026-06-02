@@ -37,6 +37,7 @@ interface RendaFixaItemForm {
   data_aplicacao: FormControl<string>;
   tipo_taxa: FormControl<'pre_fixado' | 'pos_fixado' | 'hibrido'>;
   percentual_cdi: FormControl<number | null>;
+  oculto: FormControl<boolean>;
 }
 
 interface PortfolioFormShape {
@@ -67,7 +68,10 @@ export class AssetsComponent implements OnInit {
     negociados: true,
     rendaFixa: true,
     avaliacao: true,
+    detalhamentoRF: false,
   };
+
+  rfVersion = signal(0);
 
   private saveDebounce = new Subject<void>();
 
@@ -79,7 +83,6 @@ export class AssetsComponent implements OnInit {
     return this.form.controls.renda_fixa as FormArray<FormGroup<RendaFixaItemForm>>;
   }
 
-  // Computed properties
   totalInvestido = computed(() => {
     const negociados = this.portfolioItems
       .getRawValue()
@@ -112,15 +115,20 @@ export class AssetsComponent implements OnInit {
   });
 
   totalRendaFixa = computed(() => {
+    this.rfVersion();
     return this.rendaFixaItems
       .getRawValue()
+      .filter(item => !item.oculto)
       .reduce((sum, item) => sum + (item.valor_investido || 0), 0);
   });
 
   totalRendimentoRF = computed(() => {
+    this.rfVersion();
     let total = 0;
     for (let i = 0; i < this.rendaFixaItems.length; i++) {
-      total += this.calcularRendimento(i);
+      if (!this.rendaFixaItems.at(i).getRawValue().oculto) {
+        total += this.calcularRendimento(i);
+      }
     }
     return total;
   });
@@ -130,26 +138,26 @@ export class AssetsComponent implements OnInit {
   });
 
   totalValorFuturoRF = computed(() => {
+    this.rfVersion();
     let total = 0;
     for (let i = 0; i < this.rendaFixaItems.length; i++) {
-      total += this.calcularValorFinal(i);
+      if (!this.rendaFixaItems.at(i).getRawValue().oculto) {
+        total += this.calcularValorFinal(i);
+      }
     }
     return total;
   });
 
   avgTaxaRF = computed(() => {
-    const items = this.rendaFixaItems.getRawValue();
+    this.rfVersion();
+    const items = this.rendaFixaItems.getRawValue().filter(item => !item.oculto);
     if (items.length === 0) return 0;
 
-    // Média ponderada pelo valor investido
     let somaValorTaxa = 0;
     let somaValor = 0;
 
     items.forEach(item => {
-      const taxa =
-        item.tipo_taxa === 'pos_fixado'
-          ? (item.percentual_cdi || 0) * 0.135 // Estimativa: 110% CDI ≈ 13.5% a.a. (CDI atual ~13.5%)
-          : item.taxa;
+      const taxa = item.tipo_taxa === 'pos_fixado' ? (item.percentual_cdi || 0) * 0.135 : item.taxa;
       somaValorTaxa += item.valor_investido * taxa;
       somaValor += item.valor_investido;
     });
@@ -160,6 +168,7 @@ export class AssetsComponent implements OnInit {
   ngOnInit() {
     this.buildForm();
     this.loadStoredRendaFixa();
+    this.loadStoredPortfolioItems();
     this.saveDebounce.pipe(debounceTime(1000)).subscribe(() => this.savePortfolio());
   }
 
@@ -169,8 +178,6 @@ export class AssetsComponent implements OnInit {
       renda_fixa: this.fb.array<FormGroup<RendaFixaItemForm>>([]),
       desired_yield: this.fb.control(12, { nonNullable: true }),
     });
-
-    this.addItem();
   }
 
   addItem() {
@@ -207,6 +214,7 @@ export class AssetsComponent implements OnInit {
       data_aplicacao: this.fb.control('', { nonNullable: true, validators: Validators.required }),
       tipo_taxa: this.fb.control('pre_fixado' as const, { nonNullable: true }),
       percentual_cdi: this.fb.control<number | null>(null),
+      oculto: this.fb.control(false, { nonNullable: true }),
     });
     this.rendaFixaItems.push(group);
   }
@@ -216,8 +224,15 @@ export class AssetsComponent implements OnInit {
     this.saveDebounce.next();
   }
 
-  toggleSection(section: 'negociados' | 'rendaFixa' | 'avaliacao') {
+  toggleSection(section: 'negociados' | 'rendaFixa' | 'avaliacao' | 'detalhamentoRF') {
     this.expandedSections[section] = !this.expandedSections[section];
+  }
+
+  toggleOcultarRF(index: number) {
+    const ctrl = this.rendaFixaItems.at(index);
+    ctrl.controls.oculto.setValue(!ctrl.controls.oculto.value);
+    this.rfVersion.update(v => v + 1);
+    this.saveDebounce.next();
   }
 
   async evaluateAssets() {
@@ -228,7 +243,7 @@ export class AssetsComponent implements OnInit {
     this.svc
       .evaluatePortfolio({
         items,
-        desired_yield: this.form.controls.desired_yield.value,
+        desired_yield: this.form.controls.desired_yield.value / 100,
       })
       .subscribe({
         next: res => {
@@ -245,13 +260,12 @@ export class AssetsComponent implements OnInit {
   async savePortfolio() {
     const items = this.portfolioItems.getRawValue().filter(x => x.ticker.trim() !== '');
 
-    // Converte renda fixa para PortfolioItem
     const rfItems = this.rendaFixaItems.getRawValue();
     const rfPositions: PortfolioItem[] = rfItems.map((rf, idx) => ({
-      ticker: `RF_${rf.tipo}_${idx + 1}`, // Ex: RF_cdb_1, RF_tesouro_2
+      ticker: `RF_${rf.tipo}_${idx + 1}`,
       quantity: 1,
-      avg_price: rf.valor_investido, // O preço médio é o valor investido
-      category: 'renda_fixa', // Força categoria renda_fixa
+      avg_price: rf.valor_investido,
+      category: 'renda_fixa',
     }));
 
     const allItems = [...items, ...rfPositions];
@@ -261,7 +275,7 @@ export class AssetsComponent implements OnInit {
     this.svc.savePortfolio(allItems).subscribe({
       next: () => {
         this.saveState.set('saved');
-        // Também persiste renda fixa no localStorage para edição
+
         this.persistRendaFixa();
         setTimeout(() => this.saveState.set('idle'), 2000);
       },
@@ -296,7 +310,7 @@ export class AssetsComponent implements OnInit {
     const item = this.rendaFixaItems.at(index)?.getRawValue();
     if (!item) return 0;
 
-    const CDI_ANUAL = 13.5; // Taxa CDI estimada 13.5% a.a.
+    const CDI_ANUAL = 13.5;
 
     let taxaAnual = 0;
     if (item.tipo_taxa === 'pos_fixado') {
@@ -305,7 +319,6 @@ export class AssetsComponent implements OnInit {
       taxaAnual = item.taxa;
     }
 
-    // Calcular dias corridos desde a aplicação
     const dataAplicacao = new Date(item.data_aplicacao);
     const hoje = new Date();
     const diasCorridos = Math.max(
@@ -313,22 +326,17 @@ export class AssetsComponent implements OnInit {
       Math.floor((hoje.getTime() - dataAplicacao.getTime()) / (1000 * 60 * 60 * 24))
     );
 
-    // Rendimento proporcional ao período
     const rendimentoBruto =
       item.valor_investido * (Math.pow(1 + taxaAnual / 100, diasCorridos / 365) - 1);
 
-    // Aplicar IR se não for isento
     if (this.isIsentoIR(item.tipo)) {
       return rendimentoBruto;
     }
 
-    // Alíquota de IR regressiva
-    let aliquotaIR = 0.225; // 22,5% até 180 dias
-    if (diasCorridos > 720)
-      aliquotaIR = 0.15; // 15% acima de 720 dias
-    else if (diasCorridos > 360)
-      aliquotaIR = 0.175; // 17,5% de 361 a 720 dias
-    else if (diasCorridos > 180) aliquotaIR = 0.2; // 20% de 181 a 360 dias
+    let aliquotaIR = 0.225;
+    if (diasCorridos > 720) aliquotaIR = 0.15;
+    else if (diasCorridos > 360) aliquotaIR = 0.175;
+    else if (diasCorridos > 180) aliquotaIR = 0.2;
 
     return rendimentoBruto * (1 - aliquotaIR);
   }
@@ -346,17 +354,14 @@ export class AssetsComponent implements OnInit {
       taxaAnual = item.taxa;
     }
 
-    // Montante no vencimento
     const montanteBruto =
       item.valor_investido * Math.pow(1 + taxaAnual / 100, item.prazo_meses / 12);
     const rendimentoBruto = montanteBruto - item.valor_investido;
 
-    // Aplicar IR
     if (this.isIsentoIR(item.tipo)) {
       return montanteBruto;
     }
 
-    // Alíquota de IR para o prazo total
     const diasTotais = item.prazo_meses * 30;
     let aliquotaIR = 0.225;
     if (diasTotais > 720) aliquotaIR = 0.15;
@@ -397,6 +402,7 @@ export class AssetsComponent implements OnInit {
           }),
           tipo_taxa: this.fb.control(item.tipo_taxa || 'pre_fixado', { nonNullable: true }),
           percentual_cdi: this.fb.control(item.percentual_cdi || null),
+          oculto: this.fb.control(item.oculto ?? false, { nonNullable: true }),
         });
         this.rendaFixaItems.push(group);
       });
@@ -408,5 +414,29 @@ export class AssetsComponent implements OnInit {
   private persistRendaFixa(): void {
     const items = this.rendaFixaItems.getRawValue();
     localStorage.setItem('portfolio_renda_fixa', JSON.stringify(items));
+  }
+
+  private loadStoredPortfolioItems(): void {
+    this.svc.getPortfolio().subscribe({
+      next: res => {
+        const realItems = res.items.filter(item => !item.ticker.startsWith('RF_'));
+        if (realItems.length > 0) {
+          realItems.forEach(item => {
+            const group = this.fb.group<PortfolioItemForm>({
+              ticker: this.fb.control(item.ticker, { nonNullable: true }),
+              quantity: this.fb.control(item.quantity, { nonNullable: true }),
+              avg_price: this.fb.control(item.avg_price, { nonNullable: true }),
+              category: this.fb.control(item.category as PortfolioCategory, { nonNullable: true }),
+            });
+            this.portfolioItems.push(group);
+          });
+        } else {
+          this.addItem();
+        }
+      },
+      error: () => {
+        this.addItem();
+      },
+    });
   }
 }

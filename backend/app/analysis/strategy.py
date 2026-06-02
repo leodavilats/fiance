@@ -1,7 +1,3 @@
-"""
-Módulo de análise de estratégia de investimentos personalizada.
-"""
-
 from typing import Any
 
 from ..models.enums import AssetCategory
@@ -10,7 +6,6 @@ from ..models.opportunity import Opportunity
 from ..models.portfolio import PortfolioItem
 from ..optimizer.cost_calculator import calculate_sell_cost
 
-# Mapa de asset_type → categoria padrão
 _ASSET_TO_CATEGORY = {
     "br_stock": AssetCategory.acoes_br.value,
     "fii": AssetCategory.fiis.value,
@@ -140,7 +135,6 @@ def _generate_investment_suggestions(
     remaining_cash = cash_available
     held_tickers = {item.ticker.upper() for item in current_portfolio}
 
-    # Mapa de preço médio para cálculo de custos
     avg_price_map = {item.ticker.upper(): item.avg_price for item in current_portfolio}
 
     for gap in allocation_gaps:
@@ -149,7 +143,6 @@ def _generate_investment_suggestions(
 
         category = gap["category"]
 
-        # Renda fixa: não sugerimos ativos de bolsa — apenas lembrete
         if category == AssetCategory.renda_fixa.value:
             suggestions.append(
                 {
@@ -199,10 +192,8 @@ def _generate_investment_suggestions(
 
             actual_invest = quantity * opp.price
 
-            # Calcular custo de transação se já está em carteira (sugestão de aumento)
             cost_info = None
             if opp.ticker.upper() in held_tickers and avg_price_map.get(opp.ticker.upper()):
-                # Contexto: se precisasse vender, qual seria o custo?
                 avg = avg_price_map[opp.ticker.upper()]
                 if opp.price > avg:
                     cost = calculate_sell_cost(category, quantity, opp.price, avg)
@@ -346,40 +337,22 @@ def build_investment_strategy(
     opportunities: list[Opportunity],
     portfolio_evaluation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """
-    Constrói uma estratégia de investimento personalizada baseada no perfil do investidor.
 
-    Args:
-        cash_available: Caixa disponível para investir
-        current_portfolio: Portfólio atual do investidor
-        goals: Metas de alocação por categoria
-        opportunities: Lista de oportunidades disponíveis
-        portfolio_evaluation: Avaliação atual do portfólio (opcional)
-
-    Returns:
-        Estratégia completa com sugestões de investimento
-    """
-    # Calcular valor total da carteira
     total_invested = sum(item.quantity * item.avg_price for item in current_portfolio)
     total_capital = total_invested + cash_available
 
-    # Analisar perfil com base nas metas
     profile = _analyze_investor_profile(goals)
 
-    # Calcular alocação atual por categoria
     current_allocation = _calculate_current_allocation(
         current_portfolio, portfolio_evaluation, total_capital
     )
 
-    # Identificar gaps de alocação
     allocation_gaps = _identify_allocation_gaps(goals, current_allocation, total_capital)
 
-    # Gerar sugestões de investimento
     suggestions = _generate_investment_suggestions(
         allocation_gaps, opportunities, cash_available, current_portfolio
     )
 
-    # Calcular nova alocação projetada
     projected_allocation = _calculate_projected_allocation(
         current_allocation, suggestions, total_capital
     )
@@ -398,15 +371,12 @@ def build_investment_strategy(
 
 
 def _analyze_investor_profile(goals: list[Goal]) -> dict[str, Any]:
-    """Analisa o perfil do investidor com base nas metas."""
     total_pct = sum(g.target_pct for g in goals)
 
-    # Normalizar se não somar 100%
     normalized_goals = {}
     for g in goals:
         normalized_goals[g.category] = (g.target_pct / total_pct * 100) if total_pct > 0 else 0
 
-    # Definir perfil
     renda_pct = normalized_goals.get("renda", 0)
     trade_pct = normalized_goals.get("trade", 0)
     cripto_pct = normalized_goals.get("cripto", 0)
@@ -433,7 +403,6 @@ def _analyze_investor_profile(goals: list[Goal]) -> dict[str, Any]:
 
 
 def _assess_risk_tolerance(trade_pct: float, cripto_pct: float) -> str:
-    """Avalia a tolerância ao risco."""
     risk_score = trade_pct * 0.5 + cripto_pct * 1.0
 
     if risk_score >= 40:
@@ -449,7 +418,6 @@ def _calculate_current_allocation(
     evaluation: dict[str, Any] | None,
     total_capital: float,
 ) -> list[dict[str, Any]]:
-    """Calcula a alocação atual por categoria."""
     if not evaluation or not evaluation.get("positions"):
         return []
 
@@ -464,7 +432,6 @@ def _calculate_current_allocation(
         allocation[cat]["value"] += current_value
         allocation[cat]["count"] += 1
 
-    # Converter para lista e calcular percentuais
     result = []
     for cat, data in allocation.items():
         pct = (data["value"] / total_capital * 100) if total_capital > 0 else 0
@@ -485,7 +452,6 @@ def _identify_allocation_gaps(
     current_allocation: list[dict[str, Any]],
     total_capital: float,
 ) -> list[dict[str, Any]]:
-    """Identifica gaps entre alocação atual e metas."""
     gaps = []
 
     current_by_cat = {item["category"]: item for item in current_allocation}
@@ -497,7 +463,7 @@ def _identify_allocation_gaps(
         current_value = current_item.get("current_value", 0)
         gap_value = target_value - current_value
 
-        if abs(gap_value) > 100:  # Apenas gaps significativos
+        if abs(gap_value) > 100:
             gaps.append(
                 {
                     "category": cat,
@@ -511,7 +477,6 @@ def _identify_allocation_gaps(
                 }
             )
 
-    # Ordenar por gap absoluto (maior primeiro)
     gaps.sort(key=lambda x: abs(x["gap_value"]), reverse=True)
 
     return gaps
@@ -523,14 +488,11 @@ def _generate_investment_suggestions(
     cash_available: float,
     current_portfolio: list[PortfolioItem],
 ) -> list[dict[str, Any]]:
-    """Gera sugestões de investimento baseadas nos gaps."""
     suggestions = []
     remaining_cash = cash_available
 
-    # Tickers já em carteira
     held_tickers = {item.ticker.upper() for item in current_portfolio}
 
-    # Processar gaps que precisam de compra
     for gap in allocation_gaps:
         if gap["gap_value"] <= 0 or remaining_cash < 100:
             continue
@@ -538,7 +500,6 @@ def _generate_investment_suggestions(
         category = gap["category"]
         budget_for_category = min(gap["gap_value"], remaining_cash)
 
-        # Filtrar oportunidades para essa categoria
         category_opps = [
             opp
             for opp in opportunities
@@ -547,16 +508,13 @@ def _generate_investment_suggestions(
             and opp.price > 0
         ]
 
-        # Ordenar por score
         category_opps.sort(key=lambda x: x.score, reverse=True)
 
-        # Selecionar até 3 melhores
         allocated = 0
         for opp in category_opps[:3]:
             if allocated >= budget_for_category:
                 break
 
-            # Calcular quantidade sugerida
             amount_to_invest = min(budget_for_category - allocated, remaining_cash * 0.3)
             quantity = int(amount_to_invest / opp.price)
 
@@ -565,7 +523,6 @@ def _generate_investment_suggestions(
 
             actual_invest = quantity * opp.price
 
-            # Gerar objetivo da sugestão
             objective = _generate_investment_objective(opp, category)
 
             suggestions.append(
@@ -590,7 +547,6 @@ def _generate_investment_suggestions(
             allocated += actual_invest
             remaining_cash -= actual_invest
 
-    # Se sobrou muito caixa e não há gaps, sugerir top oportunidades
     if remaining_cash > cash_available * 0.5 and len(suggestions) < 3:
         top_opps = [
             opp
@@ -635,7 +591,6 @@ def _generate_investment_suggestions(
 
 
 def _generate_investment_objective(opp: Opportunity, category: str) -> str:
-    """Gera o objetivo do investimento."""
     objectives = {
         "renda": "Geração de renda passiva através de dividendos",
         "trade": "Crescimento de capital através de valorização",
@@ -645,7 +600,6 @@ def _generate_investment_objective(opp: Opportunity, category: str) -> str:
 
     base = objectives.get(category, "Diversificação de portfólio")
 
-    # Adicionar contexto específico
     if opp.dividend_yield and opp.dividend_yield >= 6:
         return f"{base} — DY atrativo de {opp.dividend_yield:.1f}%"
     elif opp.margin_of_safety and opp.margin_of_safety >= 0.15:
@@ -659,16 +613,13 @@ def _generate_suggestion_reasons(
     category: str,
     gap: dict[str, Any],
 ) -> list[str]:
-    """Gera razões para a sugestão."""
     reasons = []
 
-    # Razão de alocação
     if gap["gap_value"] > 0:
         reasons.append(
             f"Ajusta alocação de {category}: falta {gap['gap_pct']:.1f}% para atingir meta"
         )
 
-    # Razões do ativo
     if opp.score >= 70:
         reasons.append(f"Score elevado ({opp.score:.0f}) indica forte potencial")
 
@@ -681,7 +632,7 @@ def _generate_suggestion_reasons(
     if opp.verdict == "STRONG_BUY":
         reasons.append("Sinal forte de compra baseado em análise fundamentalista")
 
-    return reasons[:3]  # Máximo 3 razões
+    return reasons[:3]
 
 
 def _calculate_projected_allocation(
@@ -689,10 +640,8 @@ def _calculate_projected_allocation(
     suggestions: list[dict[str, Any]],
     total_capital: float,
 ) -> list[dict[str, Any]]:
-    """Calcula a alocação projetada após executar as sugestões."""
     projected = {item["category"]: item.copy() for item in current_allocation}
 
-    # Adicionar valores das sugestões
     for sug in suggestions:
         cat = sug["category"]
         if cat not in projected:
@@ -707,7 +656,6 @@ def _calculate_projected_allocation(
         if not sug["already_held"]:
             projected[cat]["assets_count"] += 1
 
-    # Recalcular percentuais
     result = []
     new_total = total_capital + sum(s["invest_amount"] for s in suggestions)
 
@@ -730,7 +678,6 @@ def _generate_strategy_summary(
     suggestions: list[dict[str, Any]],
     gaps: list[dict[str, Any]],
 ) -> str:
-    """Gera um resumo textual da estratégia."""
     if not suggestions:
         return "Seu portfólio está bem balanceado. Considere aguardar novas oportunidades."
 
@@ -742,7 +689,6 @@ def _generate_strategy_summary(
     summary += "ativo" if n_suggestions == 1 else "ativos"
     summary += ". "
 
-    # Adicionar principais categorias
     categories = {}
     for sug in suggestions:
         cat = sug["category"]
@@ -752,7 +698,6 @@ def _generate_strategy_summary(
         main_cat = max(categories.items(), key=lambda x: x[1])
         summary += f"Maior alocação em {main_cat[0]} (R$ {main_cat[1]:,.2f}). "
 
-    # Adicionar gap mais crítico
     if gaps:
         critical_gap = gaps[0]
         if critical_gap["gap_value"] > 0:

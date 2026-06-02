@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from fastapi import APIRouter
 
 from . import (
@@ -19,10 +17,8 @@ from . import (
     watchlist,
 )
 
-# Create main router
 router = APIRouter()
 
-# Register all routers
 router.include_router(basic.router, tags=["Basic"])
 router.include_router(recommendations.router, tags=["Recommendations"])
 router.include_router(assets.router, tags=["Assets"])

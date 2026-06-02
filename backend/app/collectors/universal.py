@@ -1,8 +1,3 @@
-"""
-Universal asset data collector.
-Uses Yahoo Finance as primary source and Alpha Vantage for enhanced fundamental data.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -113,7 +108,6 @@ class AssetSnapshot:
 
 
 def _safe_float(v) -> float | None:
-    """Safely convert value to float without arbitrary limits."""
     try:
         return float(v) if v is not None else None
     except (ValueError, TypeError):
@@ -121,22 +115,20 @@ def _safe_float(v) -> float | None:
 
 
 def _safe_pct(v) -> float | None:
-    """Convert decimal to percentage (0.05 -> 5.0) without arbitrary caps."""
     try:
         if v is None:
             return None
         f = float(v)
-        # If value is already > 1, assume it's already in percentage
+
         if f > 1.0:
             return f
-        # Convert decimal to percentage
+
         return f * 100.0
     except (ValueError, TypeError):
         return None
 
 
 def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> float | None:
-    """Calculate accurate dividend yield from actual dividend payments."""
     try:
         if current_price <= 0 or dividends_12m < 0:
             return None
@@ -146,10 +138,6 @@ def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> flo
 
 
 def _fetch_sync(symbol: str, asset_type: AssetType | None = None) -> AssetSnapshot | None:
-    """
-    Fetch asset data from Yahoo Finance.
-    Calculates dividend yield accurately from actual dividend history.
-    """
     try:
         import yfinance as yf
 
@@ -170,7 +158,6 @@ def _fetch_sync(symbol: str, asset_type: AssetType | None = None) -> AssetSnapsh
 
         return None
 
-    # Get current price
     price = _safe_float(info.get("currentPrice")) or _safe_float(info.get("regularMarketPrice"))
 
     if not price:
@@ -186,7 +173,6 @@ def _fetch_sync(symbol: str, asset_type: AssetType | None = None) -> AssetSnapsh
     if not price:
         return None
 
-    # Calculate dividend yield from actual dividend history
     dividend_yield = None
     try:
         divs = tk.dividends
@@ -202,7 +188,7 @@ def _fetch_sync(symbol: str, asset_type: AssetType | None = None) -> AssetSnapsh
                 logger.debug(f"{yf_sym}: DY calculado = {dividend_yield}%")
     except Exception as e:
         logger.debug(f"{yf_sym}: Não foi possível calcular DY: {e}")
-        # Fallback to info dividendYield if calculation fails
+
         dividend_yield = _safe_pct(info.get("dividendYield"))
 
     return AssetSnapshot(

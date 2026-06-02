@@ -1,5 +1,3 @@
-"""Service para gerenciamento de portfolio."""
-
 import asyncio
 
 from app.analysis.classify import auto_category, resolve_category
@@ -20,8 +18,6 @@ from app.repositories import AssetRepository, PortfolioRepository
 
 
 class PortfolioService:
-    """Service para operações de portfolio."""
-
     def __init__(self):
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
@@ -29,24 +25,23 @@ class PortfolioService:
     async def evaluate_portfolio(
         self, req: PortfolioEvaluationRequest
     ) -> PortfolioEvaluationResponse:
-        """Avalia o portfolio atual."""
         if not req.items:
             raise ValueError("Carteira vazia.")
 
         async def _one(item: PortfolioItem) -> PortfolioPosition:
-            # Tratar positions sintéticas de renda fixa (não busca cotação)
+
             if item.ticker.startswith("RF_"):
                 invested = round(item.quantity * item.avg_price, 2)
                 return PortfolioPosition(
                     ticker=item.ticker.upper(),
                     name="Renda Fixa",
-                    asset_type=AssetType.br_stock,  # Placeholder
+                    asset_type=AssetType.br_stock,
                     quantity=item.quantity,
                     avg_price=item.avg_price,
-                    current_price=item.avg_price,  # RF não tem cotação, usa o valor investido
+                    current_price=item.avg_price,
                     invested=invested,
-                    current_value=invested,  # RF mantém valor (sem variação de preço)
-                    pnl=0.0,  # RF não tem P&L de cotação (rendimento é outro conceito)
+                    current_value=invested,
+                    pnl=0.0,
                     pnl_pct=0.0,
                     fair_price=None,
                     margin_of_safety=None,
@@ -158,7 +153,6 @@ class PortfolioService:
         )
 
     def get_portfolio(self) -> PortfolioStateResponse:
-        """Retorna o estado atual do portfolio."""
         items = self.portfolio_repo.list_positions()
         snaps = self.portfolio_repo.list_snapshots(limit=90)
 
@@ -169,7 +163,6 @@ class PortfolioService:
         )
 
     def save_portfolio(self, req: SavePortfolioRequest) -> PortfolioStateResponse:
-        """Salva o portfolio."""
         self.portfolio_repo.replace_all(
             [
                 {
@@ -192,12 +185,10 @@ class PortfolioService:
         )
 
     def delete_position(self, ticker: str) -> dict:
-        """Remove uma posição do portfolio."""
         self.portfolio_repo.delete_position(ticker)
         return {"deleted": ticker.upper()}
 
     async def refresh_portfolio(self, desired_yield: float = 0.06) -> PortfolioEvaluationResponse:
-        """Atualiza e reavalia o portfolio."""
         items = self.portfolio_repo.list_positions()
         if not items:
             raise ValueError("Nenhuma carteira salva ainda.")

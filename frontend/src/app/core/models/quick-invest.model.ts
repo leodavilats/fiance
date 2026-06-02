@@ -1,4 +1,3 @@
-// Modelos para Quick Invest
 export interface QuickInvestRequest {
   cash_available: number;
   use_current_goals: boolean;

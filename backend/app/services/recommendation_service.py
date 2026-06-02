@@ -1,5 +1,3 @@
-"""Service para geração de recomendações de investimento."""
-
 from app.analysis.scoring import rank
 from app.core.config import get_settings
 from app.llm.gemini_client import explain_portfolio
@@ -15,13 +13,10 @@ from app.repositories import AssetRepository
 
 
 class RecommendationService:
-    """Service para geração de recomendações."""
-
     def __init__(self):
         self.asset_repo = AssetRepository()
 
     async def recommend(self, req: RecommendRequest) -> RecommendResponse:
-        """Gera recomendação de portfolio."""
         settings = get_settings()
         tickers = req.universe or settings.universe
 
@@ -70,7 +65,6 @@ class RecommendationService:
         )
 
     async def analyze(self, req: RecommendRequest) -> dict:
-        """Analisa o universo e retorna ranking."""
         settings = get_settings()
         tickers = req.universe or settings.universe
         companies = await self.asset_repo.get_universe(tickers)

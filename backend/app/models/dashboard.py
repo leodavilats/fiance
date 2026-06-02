@@ -28,12 +28,11 @@ class DashboardSummary(BaseModel):
     total_pnl_pct: float
     cash_available: float
 
-    # Métricas de Renda Passiva
     monthly_dividends_estimate: float
     yearly_dividends_estimate: float = 0.0
     portfolio_yield: float | None = None
     passive_income_goal: float | None = None
-    passive_income_progress: float | None = None  # % da meta
+    passive_income_progress: float | None = None
 
     positions_count: int
 

@@ -34,7 +34,6 @@ class DipResult:
 
 
 def _value_score(margin_of_safety: float | None) -> tuple[float, list[str]]:
-    """MOS = (fair_price - current_price) / fair_price. Positivo = barato."""
     reasons: list[str] = []
     if margin_of_safety is None:
         reasons.append(
@@ -88,7 +87,6 @@ def _quality_score(
     else:
         reasons.append("ROE indisponível.")
 
-    # Margem de lucro (até 8 pts)
     if profit_margin is not None:
         if profit_margin >= 15:
             pts += 8
