@@ -37,18 +37,6 @@ class PortfolioRepository:
         return portfolio_store.last_updated()
 
     @staticmethod
-    def list_watchlist() -> list[dict]:
-        return portfolio_store.list_watchlist()
-
-    @staticmethod
-    def replace_watchlist(items: list[dict]) -> None:
-        portfolio_store.replace_watchlist(items)
-
-    @staticmethod
-    def remove_watchlist(ticker: str) -> None:
-        portfolio_store.remove_watchlist(ticker)
-
-    @staticmethod
     def list_goals() -> list[dict]:
         return portfolio_store.list_goals()
 
@@ -61,8 +49,8 @@ class PortfolioRepository:
         return portfolio_store.get_preferences()
 
     @staticmethod
-    def set_preferences(cash_available: float, desired_yield: float) -> None:
-        portfolio_store.set_preferences(cash_available, desired_yield)
+    def set_preferences(cash_available: float) -> None:
+        portfolio_store.set_preferences(cash_available)
 
     @staticmethod
     def list_sector_goals() -> list[dict]:

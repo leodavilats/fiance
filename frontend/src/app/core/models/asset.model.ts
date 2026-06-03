@@ -6,6 +6,10 @@ export interface FairPriceBlock {
   consensus: number | null;
   margin_of_safety: number | null;
   avg_dividend_5y: number | null;
+  dy_12m: number | null;
+  dy_5y: number | null;
+  data_years: number;
+  desired_yield_used: number;
   details: Record<string, number | null>;
 }
 

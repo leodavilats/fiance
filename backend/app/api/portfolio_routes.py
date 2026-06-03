@@ -37,8 +37,8 @@ async def delete_position(ticker: str) -> dict:
 
 
 @router.post("/portfolio/refresh", response_model=PortfolioEvaluationResponse)
-async def refresh_portfolio(desired_yield: float = 0.06) -> PortfolioEvaluationResponse:
+async def refresh_portfolio() -> PortfolioEvaluationResponse:
     try:
-        return await portfolio_service.refresh_portfolio(desired_yield)
+        return await portfolio_service.refresh_portfolio()
     except ValueError as e:
         raise HTTPException(404, str(e)) from e

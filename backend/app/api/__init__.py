@@ -14,7 +14,6 @@ from . import (
     recommendations,
     renda_fixa,
     strategy,
-    watchlist,
 )
 
 router = APIRouter()
@@ -24,7 +23,6 @@ router.include_router(recommendations.router, tags=["Recommendations"])
 router.include_router(assets.router, tags=["Assets"])
 router.include_router(dip_scanner.router, tags=["Dip Scanner"])
 router.include_router(portfolio_routes.router, tags=["Portfolio"])
-router.include_router(watchlist.router, tags=["Watchlist"])
 router.include_router(goals.router, tags=["Goals"])
 router.include_router(preferences.router, tags=["Preferences"])
 router.include_router(opportunities.router, tags=["Opportunities"])

@@ -60,7 +60,6 @@ from .renda_fixa import (
     RendaFixaCompareRequest,
     RendaFixaCompareResponse,
 )
-from .watchlist import WatchlistItem, WatchlistRequest
 
 __all__ = [
     "AssetCategory",
@@ -87,8 +86,6 @@ __all__ = [
     "PortfolioStateResponse",
     "SavePortfolioRequest",
     "StoredPortfolioItem",
-    "WatchlistItem",
-    "WatchlistRequest",
     "Goal",
     "GoalsRequest",
     "SectorGoal",

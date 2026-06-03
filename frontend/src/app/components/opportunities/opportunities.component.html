@@ -3,7 +3,7 @@
     <lucide-icon name="target" size="18"></lucide-icon> Oportunidades
   </h2>
   <p class="text-sm text-muted mb-4">
-    Universo curado + sua watchlist, rankeado por mérito individual. Use filtros para refinar.
+    Universo curado do sistema, rankeado por mérito individual. Use filtros para refinar.
   </p>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
@@ -279,9 +279,6 @@
                 ui.categoryLabel(o.category_resolved)
               }}</span>
               <span class="tag" *ngIf="o.in_portfolio">na carteira</span>
-              <span class="tag" *ngIf="o.in_watchlist"
-                ><lucide-icon name="star" size="11"></lucide-icon> watchlist</span
-              >
             </div>
             @if (o.name && o.name !== o.ticker) {
               <div class="text-sm text-muted mb-2">
@@ -318,13 +315,6 @@
                 (click)="openDipAnalysis(o.ticker)"
               >
                 <lucide-icon name="search" size="12"></lucide-icon> Analisar
-              </button>
-              <button
-                class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-                *ngIf="!o.in_watchlist"
-                (click)="addToWatchlist(o.ticker)"
-              >
-                <lucide-icon name="star" size="12"></lucide-icon> Watchlist
               </button>
             </div>
           </div>

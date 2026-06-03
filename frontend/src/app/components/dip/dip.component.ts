@@ -62,22 +62,20 @@ export class DipComponent implements OnInit {
 
   submitScan(): void {
     const { min_score, top, universe, category } = this.scanForm.getRawValue();
-    this.svc
-      .dipScanner(min_score, top, 0.06, universe || undefined, category || undefined)
-      .subscribe({
-        next: res => {
-          this.scanResult.set(res);
-        },
-        error: () => {},
-        complete: () => {},
-      });
+    this.svc.dipScanner(min_score, top, universe || undefined, category || undefined).subscribe({
+      next: res => {
+        this.scanResult.set(res);
+      },
+      error: () => {},
+      complete: () => {},
+    });
   }
 
   openPanel(symbol: string): void {
     this.showPanel.set(true);
     this.panelResult.set(null);
 
-    this.svc.dipAnalysis(symbol, 0.06).subscribe({
+    this.svc.dipAnalysis(symbol).subscribe({
       next: res => {
         this.panelResult.set(res);
       },

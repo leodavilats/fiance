@@ -12,7 +12,6 @@ class PortfolioItem(BaseModel):
 
 class PortfolioEvaluationRequest(BaseModel):
     items: list[PortfolioItem]
-    desired_yield: float = Field(0.06, gt=0, le=0.30)
 
 
 class PortfolioPosition(BaseModel):

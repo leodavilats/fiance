@@ -25,7 +25,7 @@ class DipService:
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
 
-    async def analyze_dip(self, symbol: str, desired_yield: float = 0.06) -> DipAnalysisResponse:
+    async def analyze_dip(self, symbol: str) -> DipAnalysisResponse:
         snap = await self.asset_repo.get_asset(symbol)
         if not snap:
             raise ValueError(f"Ativo '{symbol}' não encontrado ou sem dados.")
@@ -43,7 +43,7 @@ class DipService:
             eps=snap.eps,
             book_value=snap.book_value,
             dividends=dividends,
-            desired_yield=desired_yield,
+            asset_type=snap.asset_type,
             week52_high=snap.fifty_two_week_high,
         )
 
@@ -122,21 +122,13 @@ class DipService:
         universe: str | None = None,
         min_score: float = 40.0,
         top: int = 12,
-        desired_yield: float = 0.06,
     ) -> DipScannerResponse:
         settings = get_settings()
 
         if universe:
             tickers = [t.strip().upper() for t in universe.split(",") if t.strip()]
         else:
-            base = list(settings.universe)
-            watchlist_tickers = [w["ticker"].upper() for w in self.portfolio_repo.list_watchlist()]
-            seen: set = set()
-            tickers = []
-            for t in base + watchlist_tickers:
-                if t not in seen:
-                    seen.add(t)
-                    tickers.append(t)
+            tickers = list(settings.universe)
 
         sem = asyncio.Semaphore(5)
 
@@ -157,7 +149,7 @@ class DipService:
                         eps=snap.eps,
                         book_value=snap.book_value,
                         dividends=dividends,
-                        desired_yield=desired_yield,
+                        asset_type=snap.asset_type,
                         week52_high=snap.fifty_two_week_high,
                     )
 

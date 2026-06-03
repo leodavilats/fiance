@@ -8,7 +8,6 @@ import {
   Opportunity,
   RecommendService,
   UiHelperService,
-  WatchlistItem,
 } from '../../core';
 
 type SortKey = 'score' | 'dy' | 'mos' | 'price';
@@ -144,28 +143,9 @@ export class OpportunitiesComponent implements OnInit {
 
   updateCash(ev: Event): void {
     const value = parseFloat((ev.target as HTMLInputElement).value);
-    this.svc.savePreferences(value, 0.06).subscribe({
+    this.svc.savePreferences(value).subscribe({
       next: () => {
         this.cashAvailable.set(value);
-      },
-      error: () => {},
-      complete: () => {},
-    });
-  }
-
-  addToWatchlist(ticker: string): void {
-    this.svc.getWatchlist().subscribe({
-      next: list => {
-        const exists = list.some(w => w.ticker === ticker);
-        if (exists) return;
-        const updated = [...list, { ticker, note: '' }];
-        this.svc.saveWatchlist(updated).subscribe({
-          next: () => {
-            this.loadOpportunities();
-          },
-          error: () => {},
-          complete: () => {},
-        });
       },
       error: () => {},
       complete: () => {},
@@ -175,7 +155,7 @@ export class OpportunitiesComponent implements OnInit {
   openDipAnalysis(symbol: string): void {
     this.showDipPanel.set(true);
     this.dipPanelResult.set(null);
-    this.svc.dipAnalysis(symbol, 0.06).subscribe({
+    this.svc.dipAnalysis(symbol).subscribe({
       next: res => {
         this.dipPanelResult.set(res);
       },

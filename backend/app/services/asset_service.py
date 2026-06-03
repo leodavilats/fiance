@@ -16,7 +16,7 @@ class AssetService:
     def __init__(self):
         self.asset_repo = AssetRepository()
 
-    async def analyze_asset(self, symbol: str, desired_yield: float = 0.06) -> AssetAnalysis:
+    async def analyze_asset(self, symbol: str) -> AssetAnalysis:
         snap = await self.asset_repo.get_asset(symbol)
         if not snap:
             raise ValueError(f"Ativo '{symbol}' não encontrado ou sem dados.")
@@ -31,7 +31,7 @@ class AssetService:
             eps=snap.eps,
             book_value=snap.book_value,
             dividends=dividends,
-            desired_yield=desired_yield,
+            asset_type=snap.asset_type,
             week52_high=snap.fifty_two_week_high,
         )
 

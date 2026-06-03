@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
-DEFAULT_DESIRED_YIELD = 0.06
+DESIRED_YIELD_STOCK = 0.06
+DESIRED_YIELD_FII = 0.10
+DEFAULT_DESIRED_YIELD = DESIRED_YIELD_STOCK
 
 
 @dataclass
@@ -19,7 +21,38 @@ class FairPriceResult:
 
     avg_dividend_5y: float | None
 
-    details: dict[str, float | None]
+    dy_12m: float | None
+
+    dy_5y: float | None
+
+    data_years: int
+
+    desired_yield_used: float
+
+    details: dict[str, float | None] = field(default_factory=dict)
+
+
+def average_dividend_last_12m(
+    dividends: list[dict[str, float]],
+) -> float | None:
+    if not dividends:
+        return None
+
+    today = datetime.utcnow()
+    cutoff_str = f"{today.year - 1}-{today.month:02d}-{today.day:02d}"
+
+    total = 0.0
+    found = False
+    for d in dividends:
+        try:
+            date_str = d["date"][:10]
+        except Exception:
+            continue
+        if date_str >= cutoff_str:
+            total += float(d.get("value", 0.0))
+            found = True
+
+    return round(total, 4) if found else None
 
 
 def average_dividend_last_n_years(
@@ -90,9 +123,24 @@ def compute_fair_price(
     eps: float | None,
     book_value: float | None,
     dividends: list[dict[str, float]],
-    desired_yield: float = DEFAULT_DESIRED_YIELD,
+    asset_type: str = "br_stock",
     week52_high: float | None = None,
+    desired_yield: float | None = None,
 ) -> FairPriceResult:
+
+    is_fii = asset_type == "fii"
+    effective_yield = DESIRED_YIELD_FII if is_fii else DESIRED_YIELD_STOCK
+
+    today = datetime.utcnow()
+    years_with_data: set[int] = set()
+    for d in dividends:
+        try:
+            y = int(d["date"][:4])
+        except Exception:
+            continue
+        if y <= today.year and y > today.year - 6:
+            years_with_data.add(y)
+    data_years = len(years_with_data)
 
     avg_div = average_dividend_last_n_years(dividends, years=5, use_median=False)
     use_median = False
@@ -103,7 +151,7 @@ def compute_fair_price(
             avg_div = average_dividend_last_n_years(dividends, years=5, use_median=True)
             use_median = True
 
-    bazin = bazin_fair_price(avg_div, desired_yield)
+    bazin = bazin_fair_price(avg_div, effective_yield)
     graham = graham_fair_price(eps, book_value)
 
     candidates = [v for v in (bazin, graham) if v is not None]
@@ -115,16 +163,25 @@ def compute_fair_price(
     if consensus and price and price > 0:
         mos = round((consensus - price) / consensus, 4)
 
+    div_12m = average_dividend_last_12m(dividends)
+    dy_12m = round(div_12m / price, 4) if (div_12m and price and price > 0) else None
+
+    dy_5y = round(avg_div / price, 4) if (avg_div and price and price > 0) else None
+
     return FairPriceResult(
         bazin=bazin,
         graham=graham,
         consensus=consensus,
         margin_of_safety=mos,
         avg_dividend_5y=round(avg_div, 4) if avg_div else None,
+        dy_12m=dy_12m,
+        dy_5y=dy_5y,
+        data_years=data_years,
+        desired_yield_used=effective_yield,
         details={
             "eps": eps,
             "book_value": book_value,
-            "desired_yield_pct": desired_yield * 100,
+            "desired_yield_pct": effective_yield * 100,
             "used_median": use_median,
         },
     )

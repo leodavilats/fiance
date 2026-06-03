@@ -16,7 +16,6 @@ import {
   RecommendService,
   SectorGoal,
   UiHelperService,
-  WatchlistItem,
 } from '../../core';
 
 interface GoalForm {
@@ -33,10 +32,8 @@ interface SectorGoalForm {
 
 interface ConfigFormShape {
   cash_available: FormControl<number>;
-  desired_yield: FormControl<number>;
   goals: FormArray<FormGroup<GoalForm>>;
   sector_goals: FormArray<FormGroup<SectorGoalForm>>;
-  watchlist: FormControl<string>;
 }
 
 const CATEGORIES: { key: AllocationCategory; label: string; icon: string; desc: string }[] = [
@@ -66,13 +63,8 @@ export class ConfigComponent implements OnInit {
 
   form: FormGroup<ConfigFormShape> = this.fb.group({
     cash_available: this.fb.control(0, { nonNullable: true, validators: Validators.min(0) }),
-    desired_yield: this.fb.control(0.06, {
-      nonNullable: true,
-      validators: [Validators.min(0.02), Validators.max(0.2)],
-    }),
     goals: this.fb.array<FormGroup<GoalForm>>([]),
     sector_goals: this.fb.array<FormGroup<SectorGoalForm>>([]),
-    watchlist: this.fb.control('', { nonNullable: true }),
   });
 
   get goalItems() {
@@ -179,13 +171,10 @@ export class ConfigComponent implements OnInit {
       prefs: this.svc.getPreferences(),
       goals: this.svc.getGoals(),
       sectorGoals: this.svc.getSectorGoals(),
-      watchlist: this.svc.getWatchlist(),
     }).subscribe({
-      next: ({ prefs, goals, sectorGoals, watchlist }) => {
+      next: ({ prefs, goals, sectorGoals }) => {
         this.form.patchValue({
           cash_available: prefs.cash_available,
-          desired_yield: prefs.desired_yield,
-          watchlist: watchlist.map(w => w.ticker).join(', '),
         });
 
         const goalMap = new Map(goals.map(g => [g.category, g]));
@@ -217,7 +206,7 @@ export class ConfigComponent implements OnInit {
   }
 
   saveConfig(): void {
-    const { cash_available, desired_yield, watchlist, sector_goals } = this.form.getRawValue();
+    const { cash_available, sector_goals } = this.form.getRawValue();
     const goalsRaw = this.goalItems.getRawValue();
     const goalsPayload: Goal[] = goalsRaw.map(g => ({
       category: g.category,
@@ -229,19 +218,14 @@ export class ConfigComponent implements OnInit {
       sector: sg.sector,
       target_pct: sg.target_pct,
     }));
-    const watchlistItems: WatchlistItem[] = watchlist
-      .split(',')
-      .map(t => ({ ticker: t.trim(), note: '' }))
-      .filter(w => w.ticker);
 
     this.saving.set(true);
     this.message.set('');
 
     forkJoin({
-      prefs: this.svc.savePreferences(cash_available, desired_yield),
+      prefs: this.svc.savePreferences(cash_available),
       goals: this.svc.saveGoals(goalsPayload),
       sectorGoals: this.svc.saveSectorGoals(sectorGoalsPayload),
-      watchlist: this.svc.saveWatchlist(watchlistItems),
     }).subscribe({
       next: () => {
         this.saving.set(false);

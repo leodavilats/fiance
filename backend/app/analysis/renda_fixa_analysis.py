@@ -10,8 +10,8 @@ from app.models.renda_fixa import (
     RendaFixaCompareResponse,
 )
 
-DEFAULT_CDI_ANUAL = 13.65
-DEFAULT_SELIC_ANUAL = 13.75
+DEFAULT_CDI_ANUAL = 14.40
+DEFAULT_SELIC_ANUAL = 14.40
 DEFAULT_IPCA_ANUAL = 5.0
 
 

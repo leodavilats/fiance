@@ -43,7 +43,6 @@ interface RendaFixaItemForm {
 interface PortfolioFormShape {
   items: FormArray<FormGroup<PortfolioItemForm>>;
   renda_fixa: FormArray<FormGroup<RendaFixaItemForm>>;
-  desired_yield: FormControl<number>;
 }
 
 @Component({
@@ -176,7 +175,6 @@ export class AssetsComponent implements OnInit {
     this.form = this.fb.group<PortfolioFormShape>({
       items: this.fb.array<FormGroup<PortfolioItemForm>>([]),
       renda_fixa: this.fb.array<FormGroup<RendaFixaItemForm>>([]),
-      desired_yield: this.fb.control(12, { nonNullable: true }),
     });
   }
 
@@ -243,7 +241,6 @@ export class AssetsComponent implements OnInit {
     this.svc
       .evaluatePortfolio({
         items,
-        desired_yield: this.form.controls.desired_yield.value / 100,
       })
       .subscribe({
         next: res => {

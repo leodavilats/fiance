@@ -24,7 +24,6 @@ type StrategyTab = 'analisar' | 'ajuste' | 'renda_fixa';
 
 interface AnalyzeForm {
   symbol: FormControl<string>;
-  desired_yield: FormControl<number>;
 }
 
 interface RendaFixaForm {
@@ -58,10 +57,6 @@ export class StrategyComponent implements OnInit {
 
   analyzeForm: FormGroup<AnalyzeForm> = this.fb.group({
     symbol: this.fb.control('VALE3', { nonNullable: true, validators: Validators.required }),
-    desired_yield: this.fb.control(0.06, {
-      nonNullable: true,
-      validators: [Validators.min(0.02), Validators.max(0.2)],
-    }),
   });
 
   rfForms!: FormArray<FormGroup<RendaFixaForm>>;
@@ -151,8 +146,8 @@ export class StrategyComponent implements OnInit {
 
   submitAnalyze(): void {
     if (this.analyzeForm.invalid) return;
-    const { symbol, desired_yield } = this.analyzeForm.getRawValue();
-    this.svc.analyzeAsset(symbol, desired_yield).subscribe({
+    const { symbol } = this.analyzeForm.getRawValue();
+    this.svc.analyzeAsset(symbol).subscribe({
       next: res => this.analyzeResult.set(res),
       error: () => {},
     });

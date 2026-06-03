@@ -90,7 +90,7 @@ class PortfolioService:
                 eps=snap.eps,
                 book_value=snap.book_value,
                 dividends=dividends,
-                desired_yield=req.desired_yield,
+                asset_type=snap.asset_type,
                 week52_high=snap.fifty_two_week_high,
             )
 
@@ -188,7 +188,7 @@ class PortfolioService:
         self.portfolio_repo.delete_position(ticker)
         return {"deleted": ticker.upper()}
 
-    async def refresh_portfolio(self, desired_yield: float = 0.06) -> PortfolioEvaluationResponse:
+    async def refresh_portfolio(self) -> PortfolioEvaluationResponse:
         items = self.portfolio_repo.list_positions()
         if not items:
             raise ValueError("Nenhuma carteira salva ainda.")
@@ -203,7 +203,6 @@ class PortfolioService:
                 )
                 for i in items
             ],
-            desired_yield=desired_yield,
         )
 
         return await self.evaluate_portfolio(req)

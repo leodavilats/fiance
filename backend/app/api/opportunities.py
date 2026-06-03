@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Query
 
 from app.models import OpportunitiesResponse

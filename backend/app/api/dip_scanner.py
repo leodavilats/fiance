@@ -11,20 +11,17 @@ dip_service = DipService()
 @router.get("/dip-scanner", response_model=DipScannerResponse)
 async def dip_scanner(
     universe: str | None = Query(
-        None, description="Tickers separados por vírgula. Padrão: universo + watchlist"
+        None, description="Tickers separados por vírgula. Padrão: universo do sistema"
     ),
     min_score: float = Query(
         40.0, ge=0, le=100, description="Score mínimo para incluir no resultado"
     ),
     top: int = Query(12, ge=1, le=30, description="Máximo de itens retornados"),
-    desired_yield: float = Query(
-        0.06, gt=0, le=0.30, description="Yield desejado para cálculo Bazin"
-    ),
     category: str | None = Query(
         None, description="Filtrar por categoria: acoes_br | acoes_int | fiis | cripto"
     ),
 ) -> DipScannerResponse:
-    result = await dip_service.scan_dips(universe, min_score, top, desired_yield)
+    result = await dip_service.scan_dips(universe, min_score, top)
 
     if category:
         from app.analysis.classify import auto_category

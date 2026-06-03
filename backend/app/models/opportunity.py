@@ -16,7 +16,6 @@ class Opportunity(BaseModel):
     label: str
     category_resolved: str = "trade"
     score: float = 0.0
-    in_watchlist: bool = False
     in_portfolio: bool = False
     is_interesting: bool = False
     reasons: list[str] = Field(default_factory=list)

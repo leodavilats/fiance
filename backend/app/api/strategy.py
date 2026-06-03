@@ -25,7 +25,6 @@ _DEFAULT_GOALS = [
 async def get_investment_strategy() -> dict:
     prefs = portfolio_repo.get_preferences()
     cash = prefs["cash_available"]
-    desired_yield = prefs["desired_yield"]
 
     stored = portfolio_repo.list_positions()
     current_portfolio = [
@@ -50,7 +49,7 @@ async def get_investment_strategy() -> dict:
 
     portfolio_evaluation = None
     if stored:
-        req = PortfolioEvaluationRequest(items=current_portfolio, desired_yield=desired_yield)
+        req = PortfolioEvaluationRequest(items=current_portfolio)
         eval_resp = await portfolio_service.evaluate_portfolio(req)
         portfolio_evaluation = {
             "positions": [p.dict() for p in eval_resp.positions],

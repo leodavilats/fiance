@@ -76,7 +76,7 @@ export class MarketComponent {
     const { min_score, top, category } = this.scanForm.getRawValue();
 
     this.api
-      .dipScanner(min_score, top, 0.06, undefined, category || undefined)
+      .dipScanner(min_score, top, undefined, category || undefined)
       .subscribe(data => this.dipResults.set(data));
   }
 

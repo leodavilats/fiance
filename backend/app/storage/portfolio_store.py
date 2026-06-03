@@ -36,14 +36,6 @@ class Snapshot(TypedDict):
     total_pnl_pct: float
 
 
-class WatchlistItem(TypedDict):
-    ticker: str
-
-    note: str
-
-    created_at: float
-
-
 class Goal(TypedDict):
     category: str
 
@@ -62,8 +54,6 @@ class SectorGoal(TypedDict):
 
 class Preferences(TypedDict):
     cash_available: float
-
-    desired_yield: float
 
     updated_at: float
 
@@ -326,59 +316,6 @@ def last_updated(user_id: str = DEFAULT_USER) -> float | None:
     return row["u"] if row and row["u"] else None
 
 
-def list_watchlist(user_id: str = DEFAULT_USER) -> list[WatchlistItem]:
-
-    with _conn() as cx:
-        rows = cx.execute(
-            "SELECT ticker, note, created_at FROM watchlist WHERE user_id = ? ORDER BY ticker",
-            (user_id,),
-        ).fetchall()
-
-    return [
-        WatchlistItem(ticker=r["ticker"], note=r["note"] or "", created_at=r["created_at"])
-        for r in rows
-    ]
-
-
-def add_watchlist(ticker: str, note: str = "", user_id: str = DEFAULT_USER) -> None:
-
-    with _conn() as cx:
-        cx.execute(
-            """
-            INSERT INTO watchlist(user_id, ticker, note, created_at)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(user_id, ticker) DO UPDATE SET note = excluded.note
-            """,
-            (user_id, ticker.strip().upper(), note, time.time()),
-        )
-
-
-def remove_watchlist(ticker: str, user_id: str = DEFAULT_USER) -> None:
-
-    with _conn() as cx:
-        cx.execute(
-            "DELETE FROM watchlist WHERE user_id = ? AND ticker = ?",
-            (user_id, ticker.strip().upper()),
-        )
-
-
-def replace_watchlist(items: list[WatchlistItem], user_id: str = DEFAULT_USER) -> None:
-
-    now = time.time()
-
-    with _conn() as cx:
-        cx.execute("DELETE FROM watchlist WHERE user_id = ?", (user_id,))
-
-        cx.executemany(
-            "INSERT INTO watchlist(user_id, ticker, note, created_at) VALUES (?, ?, ?, ?)",
-            [
-                (user_id, it["ticker"].upper(), it.get("note", ""), now)
-                for it in items
-                if it.get("ticker")
-            ],
-        )
-
-
 def list_goals(user_id: str = DEFAULT_USER) -> list[Goal]:
 
     with _conn() as cx:
@@ -422,23 +359,21 @@ def get_preferences(user_id: str = DEFAULT_USER) -> Preferences:
 
     with _conn() as cx:
         row = cx.execute(
-            "SELECT cash_available, desired_yield, updated_at FROM preferences WHERE user_id = ?",
+            "SELECT cash_available, updated_at FROM preferences WHERE user_id = ?",
             (user_id,),
         ).fetchone()
 
     if row:
         return Preferences(
             cash_available=row["cash_available"],
-            desired_yield=row["desired_yield"],
             updated_at=row["updated_at"],
         )
 
-    return Preferences(cash_available=0.0, desired_yield=0.06, updated_at=0.0)
+    return Preferences(cash_available=0.0, updated_at=0.0)
 
 
 def set_preferences(
     cash_available: float,
-    desired_yield: float = 0.06,
     user_id: str = DEFAULT_USER,
 ) -> None:
 
@@ -448,13 +383,12 @@ def set_preferences(
         cx.execute(
             """
             INSERT INTO preferences(user_id, cash_available, desired_yield, updated_at)
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, 0.06, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 cash_available = excluded.cash_available,
-                desired_yield  = excluded.desired_yield,
                 updated_at     = excluded.updated_at
             """,
-            (user_id, float(cash_available), float(desired_yield), now),
+            (user_id, float(cash_available), now),
         )
 
 

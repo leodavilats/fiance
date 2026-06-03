@@ -13,9 +13,7 @@ class OpportunityService:
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
 
-    async def _build_opportunity(
-        self, symbol: str, desired_yield: float = 0.06
-    ) -> Opportunity | None:
+    async def _build_opportunity(self, symbol: str) -> Opportunity | None:
         try:
             snap = await self.asset_repo.get_asset(symbol)
         except Exception:
@@ -32,7 +30,7 @@ class OpportunityService:
             eps=snap.eps,
             book_value=snap.book_value,
             dividends=dividends,
-            desired_yield=desired_yield,
+            asset_type=snap.asset_type,
             week52_high=snap.fifty_two_week_high,
         )
 
@@ -101,21 +99,18 @@ class OpportunityService:
         settings = get_settings()
         prefs = self.portfolio_repo.get_preferences()
         cash = prefs["cash_available"]
-        desired_yield = prefs["desired_yield"]
 
         held = {p["ticker"].upper() for p in self.portfolio_repo.list_positions()}
-        watch = {w["ticker"].upper() for w in self.portfolio_repo.list_watchlist()}
 
-        universe = set(settings.universe) | watch
+        universe = set(settings.universe)
 
         if not include_held:
             universe -= held
 
-        raws = await asyncio.gather(*[self._build_opportunity(t, desired_yield) for t in universe])
+        raws = await asyncio.gather(*[self._build_opportunity(t) for t in universe])
         opps: list[Opportunity] = [o for o in raws if o]
 
         for o in opps:
-            o.in_watchlist = o.ticker.upper() in watch
             o.in_portfolio = o.ticker.upper() in held
             o.is_interesting = o.verdict == "STRONG_BUY" or (
                 o.score >= 75 and (o.dividend_yield or 0) >= 6.0

@@ -9,7 +9,6 @@ export interface PortfolioItem {
 
 export interface PortfolioEvaluationRequest {
   items: PortfolioItem[];
-  desired_yield: number;
 }
 
 export interface PortfolioPosition {

@@ -16,7 +16,6 @@ portfolio_repo = PortfolioRepository()
 async def dashboard() -> DashboardResponse:
     prefs = portfolio_repo.get_preferences()
     cash = prefs["cash_available"]
-    desired_yield = prefs["desired_yield"]
 
     stored = portfolio_repo.list_positions()
     positions = []
@@ -32,7 +31,6 @@ async def dashboard() -> DashboardResponse:
                 )
                 for i in stored
             ],
-            desired_yield=desired_yield,
         )
         evaluation = await portfolio_service.evaluate_portfolio(req)
         positions = evaluation.positions

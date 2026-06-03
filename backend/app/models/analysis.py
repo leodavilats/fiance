@@ -9,6 +9,10 @@ class FairPriceBlock(BaseModel):
     consensus: float | None = None
     margin_of_safety: float | None = None
     avg_dividend_5y: float | None = None
+    dy_12m: float | None = None
+    dy_5y: float | None = None
+    data_years: int = 0
+    desired_yield_used: float = 0.06
     details: dict = Field(default_factory=dict)
 
 

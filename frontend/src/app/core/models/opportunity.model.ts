@@ -13,7 +13,6 @@ export interface Opportunity {
   label: string;
   category_resolved: 'renda' | 'trade';
   score: number;
-  in_watchlist: boolean;
   in_portfolio: boolean;
   is_interesting: boolean;
   reasons: string[];

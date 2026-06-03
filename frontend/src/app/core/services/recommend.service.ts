@@ -27,7 +27,6 @@ import {
   ReferenceRates,
   SectorAllocationResponse,
   SectorGoal,
-  WatchlistItem,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -39,32 +38,23 @@ export class RecommendService {
     return this.http.post<RecommendResponse>(`${this.base}/recommend`, req);
   }
 
-  analyzeAsset(symbol: string, desiredYield = 0.06): Observable<AssetAnalysis> {
-    const params = new HttpParams().set('desired_yield', desiredYield);
-    return this.http.get<AssetAnalysis>(`${this.base}/asset/${encodeURIComponent(symbol)}`, {
-      params,
-    });
+  analyzeAsset(symbol: string): Observable<AssetAnalysis> {
+    return this.http.get<AssetAnalysis>(`${this.base}/asset/${encodeURIComponent(symbol)}`);
   }
 
-  dipAnalysis(symbol: string, desiredYield = 0.06): Observable<DipAnalysisResponse> {
-    const params = new HttpParams().set('desired_yield', desiredYield);
+  dipAnalysis(symbol: string): Observable<DipAnalysisResponse> {
     return this.http.get<DipAnalysisResponse>(
-      `${this.base}/asset/${encodeURIComponent(symbol)}/dip-analysis`,
-      { params }
+      `${this.base}/asset/${encodeURIComponent(symbol)}/dip-analysis`
     );
   }
 
   dipScanner(
     minScore = 40,
     top = 12,
-    desiredYield = 0.06,
     universe?: string,
     category?: string
   ): Observable<DipScannerResponse> {
-    let params = new HttpParams()
-      .set('min_score', minScore)
-      .set('top', top)
-      .set('desired_yield', desiredYield);
+    let params = new HttpParams().set('min_score', minScore).set('top', top);
     if (universe) params = params.set('universe', universe);
     if (category) params = params.set('category', category);
     return this.http.get<DipScannerResponse>(`${this.base}/dip-scanner`, { params });
@@ -88,11 +78,8 @@ export class RecommendService {
     );
   }
 
-  refreshPortfolio(desiredYield = 0.06): Observable<PortfolioEvaluationResponse> {
-    const params = new HttpParams().set('desired_yield', desiredYield);
-    return this.http.post<PortfolioEvaluationResponse>(`${this.base}/portfolio/refresh`, null, {
-      params,
-    });
+  refreshPortfolio(): Observable<PortfolioEvaluationResponse> {
+    return this.http.post<PortfolioEvaluationResponse>(`${this.base}/portfolio/refresh`, null);
   }
 
   dashboard(): Observable<DashboardResponse> {
@@ -135,20 +122,6 @@ export class RecommendService {
     return this.http.get<OpportunitiesResponse>(`${this.base}/opportunities`, { params });
   }
 
-  getWatchlist(): Observable<WatchlistItem[]> {
-    return this.http.get<WatchlistItem[]>(`${this.base}/watchlist`);
-  }
-
-  saveWatchlist(items: WatchlistItem[]): Observable<WatchlistItem[]> {
-    return this.http.put<WatchlistItem[]>(`${this.base}/watchlist`, { items });
-  }
-
-  deleteWatchlist(ticker: string): Observable<{ deleted: string }> {
-    return this.http.delete<{ deleted: string }>(
-      `${this.base}/watchlist/${encodeURIComponent(ticker)}`
-    );
-  }
-
   getGoals(): Observable<Goal[]> {
     return this.http.get<Goal[]>(`${this.base}/goals`);
   }
@@ -161,10 +134,9 @@ export class RecommendService {
     return this.http.get<Preferences>(`${this.base}/preferences`);
   }
 
-  savePreferences(cash: number, desiredYield = 0.06): Observable<Preferences> {
+  savePreferences(cash: number): Observable<Preferences> {
     return this.http.put<Preferences>(`${this.base}/preferences`, {
       cash_available: cash,
-      desired_yield: desiredYield,
     });
   }
 
