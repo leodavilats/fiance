@@ -71,6 +71,7 @@ export class AssetsComponent implements OnInit {
   };
 
   rfVersion = signal(0);
+  portfolioVersion = signal(0);
 
   private saveDebounce = new Subject<void>();
 
@@ -83,6 +84,7 @@ export class AssetsComponent implements OnInit {
   }
 
   totalInvestido = computed(() => {
+    this.portfolioVersion();
     const negociados = this.portfolioItems
       .getRawValue()
       .filter(x => x.ticker.trim() !== '')
@@ -109,8 +111,13 @@ export class AssetsComponent implements OnInit {
     return (this.rendimentoTotal() / invested) * 100;
   });
 
+  negociadosCount = computed(() => {
+    this.portfolioVersion();
+    return this.portfolioItems.getRawValue().filter(x => x.ticker.trim() !== '').length;
+  });
+
   totalAtivos = computed(() => {
-    return this.portfolioItems.length + this.rendaFixaItems.length;
+    return this.negociadosCount() + this.rendaFixaItems.length;
   });
 
   totalRendaFixa = computed(() => {
@@ -169,6 +176,7 @@ export class AssetsComponent implements OnInit {
     this.loadStoredRendaFixa();
     this.loadStoredPortfolioItems();
     this.saveDebounce.pipe(debounceTime(1000)).subscribe(() => this.savePortfolio());
+    this.portfolioItems.valueChanges.subscribe(() => this.portfolioVersion.update(v => v + 1));
   }
 
   buildForm() {
