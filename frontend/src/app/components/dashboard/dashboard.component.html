@@ -534,12 +534,53 @@
       </button>
     </div>
   } @else if (!loading.loading()) {
-    <div class="empty p-6 rounded-lg bg-panel border border-border">
-      <h3 class="text-lg font-semibold m-0 mb-2 text-tx">Bem-vindo</h3>
-      <p class="text-sm text-muted m-0">
-        Vá em <strong>Meus Ativos</strong> para cadastrar sua carteira ou em
-        <strong>Configurações</strong> para definir caixa e metas.
-      </p>
+    <div class="p-6 rounded-xl bg-panel border border-border">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-accent/20 grid place-items-center flex-shrink-0">
+          <lucide-icon name="sparkles" size="20" class="text-accent"></lucide-icon>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold m-0 text-tx">Bem-vindo ao FinançaAI</h3>
+          <p class="text-sm text-muted m-0">
+            Siga os 3 passos para começar a monitorar sua carteira
+          </p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-black text-accent/40 leading-none">01</span>
+            <lucide-icon name="wallet" size="18" class="text-accent"></lucide-icon>
+          </div>
+          <div class="font-semibold text-sm text-tx">Cadastre seus ativos</div>
+          <p class="text-xs text-muted m-0 leading-relaxed">
+            Vá em <strong>Meus Ativos</strong> e adicione suas ações, FIIs e renda fixa com
+            quantidade e preço médio.
+          </p>
+        </div>
+        <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-black text-accent/40 leading-none">02</span>
+            <lucide-icon name="settings" size="18" class="text-accent"></lucide-icon>
+          </div>
+          <div class="font-semibold text-sm text-tx">Defina suas metas</div>
+          <p class="text-xs text-muted m-0 leading-relaxed">
+            Vá em <strong>Configurações</strong> para informar o caixa disponível e sua meta de
+            renda passiva mensal.
+          </p>
+        </div>
+        <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-black text-accent/40 leading-none">03</span>
+            <lucide-icon name="target" size="18" class="text-accent"></lucide-icon>
+          </div>
+          <div class="font-semibold text-sm text-tx">Explore oportunidades</div>
+          <p class="text-xs text-muted m-0 leading-relaxed">
+            Vá em <strong>Mercado</strong> para ver ativos com bom Bazin e Graham, e encontrar as
+            melhores entradas.
+          </p>
+        </div>
+      </div>
     </div>
   }
 </div>

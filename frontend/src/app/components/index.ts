@@ -1,4 +1,5 @@
 export { AlertModalComponent } from './alert-modal/alert-modal.component';
+export { HelpTooltipComponent } from './help-tooltip/help-tooltip.component';
 export { AssetsComponent } from './assets/assets.component';
 export { ConfigComponent } from './config/config.component';
 export { DashboardComponent } from './dashboard/dashboard.component';

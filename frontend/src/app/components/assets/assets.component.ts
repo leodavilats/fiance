@@ -73,6 +73,7 @@ export class AssetsComponent implements OnInit {
   rfVersion = signal(0);
   portfolioVersion = signal(0);
 
+  private _initialized = false;
   private saveDebounce = new Subject<void>();
 
   get portfolioItems() {
@@ -178,11 +179,11 @@ export class AssetsComponent implements OnInit {
     this.saveDebounce.pipe(debounceTime(1000)).subscribe(() => this.savePortfolio());
     this.portfolioItems.valueChanges.subscribe(() => {
       this.portfolioVersion.update(v => v + 1);
-      this.saveDebounce.next();
+      if (this._initialized) this.saveDebounce.next();
     });
     this.rendaFixaItems.valueChanges.subscribe(() => {
       this.rfVersion.update(v => v + 1);
-      this.saveDebounce.next();
+      if (this._initialized) this.saveDebounce.next();
     });
   }
 
@@ -433,6 +434,42 @@ export class AssetsComponent implements OnInit {
     this.svc.getPortfolio().subscribe({
       next: res => {
         const realItems = res.items.filter(item => !item.ticker.startsWith('RF_'));
+
+        if (this.rendaFixaItems.length === 0) {
+          const backendRfItems = res.items.filter(item => item.ticker.startsWith('RF_'));
+          if (backendRfItems.length > 0) {
+            backendRfItems.forEach(rfItem => {
+              const parts = rfItem.ticker.split('_');
+              const tipo = (parts[1] || 'cdb') as RendaFixaTipo;
+              const group = this.fb.group<RendaFixaItemForm>({
+                nome: this.fb.control('', { nonNullable: true, validators: Validators.required }),
+                tipo: this.fb.control(tipo, { nonNullable: true }),
+                valor_investido: this.fb.control(rfItem.avg_price, {
+                  nonNullable: true,
+                  validators: [Validators.required, Validators.min(1)],
+                }),
+                taxa: this.fb.control(0, {
+                  nonNullable: true,
+                  validators: [Validators.required, Validators.min(0)],
+                }),
+                prazo_meses: this.fb.control(12, {
+                  nonNullable: true,
+                  validators: [Validators.required, Validators.min(1)],
+                }),
+                data_aplicacao: this.fb.control('', {
+                  nonNullable: true,
+                  validators: Validators.required,
+                }),
+                tipo_taxa: this.fb.control('pre_fixado' as const, { nonNullable: true }),
+                percentual_cdi: this.fb.control<number | null>(null),
+                oculto: this.fb.control(false, { nonNullable: true }),
+              });
+              this.rendaFixaItems.push(group);
+            });
+            this.persistRendaFixa();
+          }
+        }
+
         if (realItems.length > 0) {
           realItems.forEach(item => {
             const group = this.fb.group<PortfolioItemForm>({
@@ -447,9 +484,15 @@ export class AssetsComponent implements OnInit {
         } else {
           this.addItem();
         }
+
+        this._initialized = true;
+        if (this.rendaFixaItems.length > 0) {
+          this.savePortfolio();
+        }
       },
       error: () => {
         this.addItem();
+        this._initialized = true;
       },
     });
   }

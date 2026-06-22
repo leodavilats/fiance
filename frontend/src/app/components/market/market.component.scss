@@ -8,7 +8,14 @@
   @apply block text-sm font-medium text-muted mb-1;
 }
 
-/* Bazin price indicator backgrounds */
+.pagination-btn {
+  @apply w-9 h-9 rounded-lg text-sm font-medium text-muted bg-panel-2 border border-border hover:border-accent hover:text-tx transition-colors;
+
+  &.active {
+    @apply bg-accent text-white border-accent font-bold;
+  }
+}
+
 .bazin-below {
   background-color: rgba(34, 197, 94, 0.08);
   border: 1px solid rgba(34, 197, 94, 0.2);

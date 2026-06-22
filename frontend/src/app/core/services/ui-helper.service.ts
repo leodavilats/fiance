@@ -221,4 +221,24 @@ export class UiHelperService {
     };
     return map[verdict] || 'verdict-neutro';
   }
+
+  scoreLabel(score: number): { text: string; cls: string } {
+    if (score >= 75) return { text: 'Excelente entrada', cls: 'text-green-400' };
+    if (score >= 60) return { text: 'Boa oportunidade', cls: 'text-accent' };
+    if (score >= 40) return { text: 'Neutro', cls: 'text-yellow-400' };
+    return { text: 'Evitar agora', cls: 'text-red-400' };
+  }
+
+  readonly glossary: Record<string, string> = {
+    dy: 'Dividend Yield — percentual do preço atual pago em dividendos nos últimos 12 meses. Acima de 6% é considerado bom para ações; acima de 8% para FIIs.',
+    ms: 'Margem de Segurança — desconto do preço atual em relação ao preço justo calculado. Quanto maior, mais "barato" está o ativo em relação ao seu valor intrínseco.',
+    score:
+      'Pontuação 0–100 calculada pelo sistema combinando valuation, histórico de dividendos e qualidade do ativo. Acima de 70 = oportunidade; 40–70 = neutro; abaixo de 40 = cuidado.',
+    bazin:
+      'Método Décio Bazin — define o Preço Teto como o dividendo anual dividido por 6% (ações) ou 10% (FIIs). Comprar abaixo desse teto garante um DY mínimo aceitável.',
+    graham:
+      'Fórmula Benjamin Graham — Preço Intrínseco = √(22,5 × LPA × VPA). Válido para empresas com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização.',
+    lpa: 'Lucro Por Ação — lucro líquido da empresa dividido pelo número de ações em circulação. Quanto maior e mais consistente, melhor.',
+    vpa: 'Valor Patrimonial por Ação — patrimônio líquido da empresa dividido pelo número de ações. Indica o "valor contábil" de cada ação.',
+  };
 }
