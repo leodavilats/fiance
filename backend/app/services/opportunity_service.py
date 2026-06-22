@@ -72,6 +72,8 @@ class OpportunityService:
             sector=snap.sector,
             price=snap.price,
             fair_price=fair.consensus,
+            bazin=fair.bazin,
+            graham=fair.graham,
             margin_of_safety=fair.margin_of_safety,
             dividend_yield=snap.dividend_yield,
             verdict=verdict,
@@ -104,7 +106,7 @@ class OpportunityService:
 
         universe = set(settings.universe)
 
-        if not include_held:
+        if not include_held and not search:
             universe -= held
 
         raws = await asyncio.gather(*[self._build_opportunity(t) for t in universe])

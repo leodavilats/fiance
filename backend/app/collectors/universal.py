@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 
 AssetType = Literal["br_stock", "fii", "us_stock", "crypto"]
 
-FUND_TTL = 6 * 3600
-
+FUND_TTL = 2 * 3600
 HIST_TTL = 12 * 3600
-
 DIV_TTL = 24 * 3600
+
+_FETCH_SEMAPHORE = asyncio.Semaphore(10)
 
 _BR_STOCK = re.compile(r"^[A-Z]{4}\d{1,2}$")
 
@@ -227,7 +227,15 @@ async def fetch_asset(symbol: str, asset_type: AssetType | None = None) -> Asset
         except Exception:
             pass
 
-    snap = await asyncio.to_thread(_fetch_sync, symbol, asset_type)
+    async with _FETCH_SEMAPHORE:
+        cached = cache.get(ck)
+        if cached:
+            try:
+                return AssetSnapshot(**cached)
+            except Exception:
+                pass
+
+        snap = await asyncio.to_thread(_fetch_sync, symbol, asset_type)
 
     if snap:
         cache.set(ck, snap.to_dict(), FUND_TTL)
@@ -246,6 +254,8 @@ async def fetch_many(symbols: list[str]) -> list[AssetSnapshot]:
     for r in results:
         if isinstance(r, AssetSnapshot):
             out.append(r)
+        elif isinstance(r, Exception):
+            logger.debug("fetch_many: erro ignorado — %s", r)
 
     return out
 

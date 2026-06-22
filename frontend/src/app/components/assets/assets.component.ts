@@ -176,7 +176,14 @@ export class AssetsComponent implements OnInit {
     this.loadStoredRendaFixa();
     this.loadStoredPortfolioItems();
     this.saveDebounce.pipe(debounceTime(1000)).subscribe(() => this.savePortfolio());
-    this.portfolioItems.valueChanges.subscribe(() => this.portfolioVersion.update(v => v + 1));
+    this.portfolioItems.valueChanges.subscribe(() => {
+      this.portfolioVersion.update(v => v + 1);
+      this.saveDebounce.next();
+    });
+    this.rendaFixaItems.valueChanges.subscribe(() => {
+      this.rfVersion.update(v => v + 1);
+      this.saveDebounce.next();
+    });
   }
 
   buildForm() {
@@ -202,6 +209,7 @@ export class AssetsComponent implements OnInit {
   }
 
   addRF() {
+    this.saveDebounce.next();
     const group = this.fb.group<RendaFixaItemForm>({
       nome: this.fb.control('', { nonNullable: true, validators: Validators.required }),
       tipo: this.fb.control('cdb', { nonNullable: true }),
@@ -435,6 +443,7 @@ export class AssetsComponent implements OnInit {
             });
             this.portfolioItems.push(group);
           });
+          this.evaluateAssets();
         } else {
           this.addItem();
         }

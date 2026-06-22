@@ -55,6 +55,8 @@ class SectorGoal(TypedDict):
 class Preferences(TypedDict):
     cash_available: float
 
+    passive_income_goal: float | None
+
     updated_at: float
 
 
@@ -117,7 +119,19 @@ def _init() -> None:
                 updated_at     REAL NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS price_alerts (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id      TEXT NOT NULL,
+                ticker       TEXT NOT NULL,
+                condition    TEXT NOT NULL CHECK(condition IN ('above','below')),
+                target_price REAL NOT NULL,
+                note         TEXT,
+                created_at   REAL NOT NULL,
+                triggered_at REAL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_snap_user ON portfolio_snapshot(user_id, captured_at);
+            CREATE INDEX IF NOT EXISTS idx_alerts_user ON price_alerts(user_id);
             """
         )
 
@@ -135,6 +149,12 @@ def _init() -> None:
 
         try:
             cx.execute("ALTER TABLE portfolio ADD COLUMN category TEXT NOT NULL DEFAULT 'auto'")
+
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cx.execute("ALTER TABLE preferences ADD COLUMN passive_income_goal REAL")
 
         except sqlite3.OperationalError:
             pass
@@ -267,6 +287,8 @@ def record_snapshot(
 
     day_key = int(now // 86400) * 86400
 
+    cutoff = now - (365 * 86400)
+
     with _conn() as cx:
         cx.execute(
             """
@@ -280,6 +302,10 @@ def record_snapshot(
                 total_pnl_pct  = excluded.total_pnl_pct
             """,
             (user_id, day_key, total_invested, total_current, total_pnl, total_pnl_pct),
+        )
+        cx.execute(
+            "DELETE FROM portfolio_snapshot WHERE user_id = ? AND captured_at < ?",
+            (user_id, cutoff),
         )
 
 
@@ -359,21 +385,23 @@ def get_preferences(user_id: str = DEFAULT_USER) -> Preferences:
 
     with _conn() as cx:
         row = cx.execute(
-            "SELECT cash_available, updated_at FROM preferences WHERE user_id = ?",
+            "SELECT cash_available, passive_income_goal, updated_at FROM preferences WHERE user_id = ?",
             (user_id,),
         ).fetchone()
 
     if row:
         return Preferences(
             cash_available=row["cash_available"],
+            passive_income_goal=row["passive_income_goal"],
             updated_at=row["updated_at"],
         )
 
-    return Preferences(cash_available=0.0, updated_at=0.0)
+    return Preferences(cash_available=0.0, passive_income_goal=None, updated_at=0.0)
 
 
 def set_preferences(
     cash_available: float,
+    passive_income_goal: float | None = None,
     user_id: str = DEFAULT_USER,
 ) -> None:
 
@@ -382,13 +410,14 @@ def set_preferences(
     with _conn() as cx:
         cx.execute(
             """
-            INSERT INTO preferences(user_id, cash_available, desired_yield, updated_at)
-            VALUES (?, ?, 0.06, ?)
+            INSERT INTO preferences(user_id, cash_available, passive_income_goal, desired_yield, updated_at)
+            VALUES (?, ?, ?, 0.06, ?)
             ON CONFLICT(user_id) DO UPDATE SET
-                cash_available = excluded.cash_available,
-                updated_at     = excluded.updated_at
+                cash_available       = excluded.cash_available,
+                passive_income_goal  = excluded.passive_income_goal,
+                updated_at           = excluded.updated_at
             """,
-            (user_id, float(cash_available), now),
+            (user_id, float(cash_available), passive_income_goal, now),
         )
 
 
@@ -415,4 +444,69 @@ def replace_sector_goals(goals: list[SectorGoal], user_id: str = DEFAULT_USER) -
         cx.executemany(
             "INSERT INTO sector_goals(user_id, sector, target_pct) VALUES (?, ?, ?)",
             [(user_id, g["sector"], float(g["target_pct"])) for g in goals],
+        )
+
+
+class PriceAlert(TypedDict):
+    id: int
+    ticker: str
+    condition: str
+    target_price: float
+    note: str | None
+    created_at: float
+    triggered_at: float | None
+
+
+def list_price_alerts(user_id: str = DEFAULT_USER) -> list[PriceAlert]:
+    with _conn() as cx:
+        rows = cx.execute(
+            "SELECT id, ticker, condition, target_price, note, created_at, triggered_at "
+            "FROM price_alerts WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,),
+        ).fetchall()
+    return [
+        PriceAlert(
+            id=r["id"],
+            ticker=r["ticker"],
+            condition=r["condition"],
+            target_price=r["target_price"],
+            note=r["note"],
+            created_at=r["created_at"],
+            triggered_at=r["triggered_at"],
+        )
+        for r in rows
+    ]
+
+
+def create_price_alert(
+    ticker: str,
+    condition: str,
+    target_price: float,
+    note: str | None = None,
+    user_id: str = DEFAULT_USER,
+) -> int:
+    now = time.time()
+    with _conn() as cx:
+        cur = cx.execute(
+            "INSERT INTO price_alerts(user_id, ticker, condition, target_price, note, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, ticker.strip().upper(), condition, float(target_price), note, now),
+        )
+        return cur.lastrowid or 0
+
+
+def delete_price_alert(alert_id: int, user_id: str = DEFAULT_USER) -> bool:
+    with _conn() as cx:
+        cur = cx.execute(
+            "DELETE FROM price_alerts WHERE id = ? AND user_id = ?",
+            (alert_id, user_id),
+        )
+        return cur.rowcount > 0
+
+
+def mark_alert_triggered(alert_id: int, user_id: str = DEFAULT_USER) -> None:
+    with _conn() as cx:
+        cx.execute(
+            "UPDATE price_alerts SET triggered_at = ? WHERE id = ? AND user_id = ?",
+            (time.time(), alert_id, user_id),
         )

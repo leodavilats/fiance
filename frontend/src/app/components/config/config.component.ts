@@ -13,6 +13,7 @@ import { forkJoin } from 'rxjs';
 import {
   AllocationCategory,
   Goal,
+  PriceAlert,
   RecommendService,
   SectorGoal,
   UiHelperService,
@@ -32,6 +33,7 @@ interface SectorGoalForm {
 
 interface ConfigFormShape {
   cash_available: FormControl<number>;
+  passive_income_goal: FormControl<number | null>;
   goals: FormArray<FormGroup<GoalForm>>;
   sector_goals: FormArray<FormGroup<SectorGoalForm>>;
 }
@@ -63,6 +65,7 @@ export class ConfigComponent implements OnInit {
 
   form: FormGroup<ConfigFormShape> = this.fb.group({
     cash_available: this.fb.control(0, { nonNullable: true, validators: Validators.min(0) }),
+    passive_income_goal: this.fb.control<number | null>(null, { validators: Validators.min(0) }),
     goals: this.fb.array<FormGroup<GoalForm>>([]),
     sector_goals: this.fb.array<FormGroup<SectorGoalForm>>([]),
   });
@@ -124,6 +127,7 @@ export class ConfigComponent implements OnInit {
     this._initGoals();
     this._initSectorGoals();
     this.loadConfig();
+    this.loadAlerts();
   }
 
   private _initGoals(): void {
@@ -175,6 +179,7 @@ export class ConfigComponent implements OnInit {
       next: ({ prefs, goals, sectorGoals }) => {
         this.form.patchValue({
           cash_available: prefs.cash_available,
+          passive_income_goal: prefs.passive_income_goal ?? null,
         });
 
         const goalMap = new Map(goals.map(g => [g.category, g]));
@@ -206,7 +211,7 @@ export class ConfigComponent implements OnInit {
   }
 
   saveConfig(): void {
-    const { cash_available, sector_goals } = this.form.getRawValue();
+    const { cash_available, passive_income_goal, sector_goals } = this.form.getRawValue();
     const goalsRaw = this.goalItems.getRawValue();
     const goalsPayload: Goal[] = goalsRaw.map(g => ({
       category: g.category,
@@ -223,7 +228,7 @@ export class ConfigComponent implements OnInit {
     this.message.set('');
 
     forkJoin({
-      prefs: this.svc.savePreferences(cash_available),
+      prefs: this.svc.savePreferences(cash_available, passive_income_goal ?? undefined),
       goals: this.svc.saveGoals(goalsPayload),
       sectorGoals: this.svc.saveSectorGoals(sectorGoalsPayload),
     }).subscribe({
@@ -272,5 +277,40 @@ export class ConfigComponent implements OnInit {
         setTimeout(() => this.cacheMessage.set(''), 3000);
       },
     });
+  }
+
+  // ── Alertas de preço ──────────────────────────────────────────────────
+  alerts = signal<PriceAlert[]>([]);
+  alertMessage = signal('');
+  alertForm: FormGroup<{
+    ticker: FormControl<string>;
+    condition: FormControl<string>;
+    target_price: FormControl<number>;
+    note: FormControl<string>;
+  }> = this.fb.group({
+    ticker: this.fb.control('', { nonNullable: true, validators: Validators.required }),
+    condition: this.fb.control('below', { nonNullable: true }),
+    target_price: this.fb.control(0, { nonNullable: true, validators: Validators.min(0.01) }),
+    note: this.fb.control('', { nonNullable: true }),
+  });
+
+  loadAlerts(): void {
+    this.svc.getAlerts().subscribe({ next: a => this.alerts.set(a), error: () => {} });
+  }
+
+  addAlert(): void {
+    if (this.alertForm.invalid) return;
+    const { ticker, condition, target_price, note } = this.alertForm.getRawValue();
+    this.svc.createAlert({ ticker, condition, target_price, note: note || undefined }).subscribe({
+      next: () => {
+        this.alertForm.patchValue({ ticker: '', target_price: 0, note: '' });
+        this.loadAlerts();
+      },
+      error: () => this.alertMessage.set('✗ Erro ao criar alerta'),
+    });
+  }
+
+  removeAlert(id: number): void {
+    this.svc.deleteAlert(id).subscribe({ next: () => this.loadAlerts(), error: () => {} });
   }
 }

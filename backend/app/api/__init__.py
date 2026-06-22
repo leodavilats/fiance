@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from . import (
+    alerts,
     assets,
     basic,
     dashboard,
@@ -31,5 +32,6 @@ router.include_router(strategy.router, tags=["Strategy"])
 router.include_router(renda_fixa.router, tags=["Renda Fixa"])
 router.include_router(projection.router, tags=["Projection"])
 router.include_router(quick_invest.router, tags=["Quick Invest"])
+router.include_router(alerts.router, tags=["Alerts"])
 
 __all__ = ["router"]

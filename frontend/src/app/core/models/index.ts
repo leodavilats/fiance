@@ -1,3 +1,4 @@
+export * from './alerts.model';
 export * from './common.model';
 export * from './asset.model';
 export * from './dashboard.model';

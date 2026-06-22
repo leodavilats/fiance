@@ -49,8 +49,8 @@ class PortfolioRepository:
         return portfolio_store.get_preferences()
 
     @staticmethod
-    def set_preferences(cash_available: float) -> None:
-        portfolio_store.set_preferences(cash_available)
+    def set_preferences(cash_available: float, passive_income_goal: float | None = None) -> None:
+        portfolio_store.set_preferences(cash_available, passive_income_goal)
 
     @staticmethod
     def list_sector_goals() -> list[dict]:

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import logging
+import traceback
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api import router
 from app.core.config import get_settings
@@ -13,7 +15,11 @@ def create_app() -> FastAPI:
 
     settings = get_settings()
 
-    logging.basicConfig(level=settings.log_level)
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level.upper(), logging.INFO),
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
 
     app = FastAPI(
         title="fianceAI",
@@ -23,10 +29,31 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "Accept"],
     )
+
+    @app.exception_handler(ValueError)
+    async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
+        logging.getLogger("fianceai").warning("ValueError em %s: %s", request.url.path, exc)
+        msg = str(exc).lower()
+        status = 404 if ("não encontrado" in msg or "not found" in msg or "nenhum" in msg) else 400
+        return JSONResponse(status_code=status, content={"detail": str(exc)})
+
+    @app.exception_handler(Exception)
+    async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        logging.getLogger("fianceai").error(
+            "Erro inesperado em %s: %s\n%s",
+            request.url.path,
+            exc,
+            traceback.format_exc(),
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Erro interno do servidor. Tente novamente mais tarde."},
+        )
 
     app.include_router(router, prefix="/api")
 

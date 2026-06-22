@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import {
   AssetAnalysis,
   DashboardResponse,
@@ -16,6 +17,8 @@ import {
   PortfolioItem,
   PortfolioStateResponse,
   Preferences,
+  PriceAlert,
+  PriceAlertTriggered,
   QuickInvestRequest,
   QuickInvestResponse,
   RecommendRequest,
@@ -32,7 +35,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class RecommendService {
   private http = inject(HttpClient);
-  private base = 'http://127.0.0.1:8000/api';
+  private base = environment.apiBaseUrl;
 
   recommend(req: RecommendRequest): Observable<RecommendResponse> {
     return this.http.post<RecommendResponse>(`${this.base}/recommend`, req);
@@ -134,9 +137,10 @@ export class RecommendService {
     return this.http.get<Preferences>(`${this.base}/preferences`);
   }
 
-  savePreferences(cash: number): Observable<Preferences> {
+  savePreferences(cash: number, passiveIncomeGoal?: number): Observable<Preferences> {
     return this.http.put<Preferences>(`${this.base}/preferences`, {
       cash_available: cash,
+      passive_income_goal: passiveIncomeGoal ?? null,
     });
   }
 
@@ -191,5 +195,26 @@ export class RecommendService {
 
   quickInvest(req: QuickInvestRequest): Observable<QuickInvestResponse> {
     return this.http.post<QuickInvestResponse>(`${this.base}/quick-invest`, req);
+  }
+
+  getAlerts(): Observable<PriceAlert[]> {
+    return this.http.get<PriceAlert[]>(`${this.base}/alerts`);
+  }
+
+  checkAlerts(): Observable<PriceAlertTriggered[]> {
+    return this.http.get<PriceAlertTriggered[]>(`${this.base}/alerts/check`);
+  }
+
+  createAlert(alert: {
+    ticker: string;
+    condition: string;
+    target_price: number;
+    note?: string;
+  }): Observable<PriceAlert> {
+    return this.http.post<PriceAlert>(`${this.base}/alerts`, alert);
+  }
+
+  deleteAlert(id: number): Observable<{ deleted: number }> {
+    return this.http.delete<{ deleted: number }>(`${this.base}/alerts/${id}`);
   }
 }

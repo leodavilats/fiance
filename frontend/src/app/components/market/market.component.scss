@@ -7,3 +7,13 @@
 .label {
   @apply block text-sm font-medium text-muted mb-1;
 }
+
+/* Bazin price indicator backgrounds */
+.bazin-below {
+  background-color: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+.bazin-above {
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}

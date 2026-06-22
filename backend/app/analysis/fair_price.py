@@ -15,6 +15,8 @@ class FairPriceResult:
 
     graham: float | None
 
+    dcf: float | None
+
     consensus: float | None
 
     margin_of_safety: float | None
@@ -118,6 +120,42 @@ def graham_fair_price(eps: float | None, book_value: float | None) -> float | No
     return round(math.sqrt(22.5 * eps * book_value), 2)
 
 
+def dcf_fair_price(
+    eps: float | None,
+    revenue_growth_rate: float | None = None,
+    discount_rate: float = 0.13,
+    growth_years: int = 5,
+    terminal_pe: float = 15.0,
+) -> float | None:
+    """DCF simplificado para empresas de crescimento sem histórico de dividendos.
+
+    Usa EPS atual projetado pelo revenue_growth_rate por `growth_years` anos,
+    depois aplica um P/L terminal para estimar valor intrínseco trazido a VP.
+
+    Retorna None se os dados forem insuficientes.
+    """
+    if eps is None or eps <= 0:
+        return None
+
+    growth = (
+        revenue_growth_rate
+        if (revenue_growth_rate is not None and 0 < revenue_growth_rate < 1)
+        else 0.08
+    )
+
+    pv_earnings = 0.0
+    current_eps = eps
+    for year in range(1, growth_years + 1):
+        projected_eps = current_eps * (1 + growth) ** year
+        pv_earnings += projected_eps / (1 + discount_rate) ** year
+
+    terminal_eps = eps * (1 + growth) ** growth_years
+    terminal_value = terminal_eps * terminal_pe / (1 + discount_rate) ** growth_years
+
+    fair = pv_earnings + terminal_value
+    return round(fair, 2) if fair > 0 else None
+
+
 def compute_fair_price(
     price: float | None,
     eps: float | None,
@@ -126,6 +164,7 @@ def compute_fair_price(
     asset_type: str = "br_stock",
     week52_high: float | None = None,
     desired_yield: float | None = None,
+    revenue_growth_rate: float | None = None,
 ) -> FairPriceResult:
 
     is_fii = asset_type == "fii"
@@ -154,7 +193,13 @@ def compute_fair_price(
     bazin = bazin_fair_price(avg_div, effective_yield)
     graham = graham_fair_price(eps, book_value)
 
-    candidates = [v for v in (bazin, graham) if v is not None]
+    is_crypto = asset_type == "crypto"
+    dcf = None
+    if not is_crypto and eps is not None and eps > 0:
+        if bazin is None:
+            dcf = dcf_fair_price(eps, revenue_growth_rate)
+
+    candidates = [v for v in (bazin, graham, dcf) if v is not None]
 
     consensus = round(sum(candidates) / len(candidates), 2) if candidates else None
 
@@ -171,6 +216,7 @@ def compute_fair_price(
     return FairPriceResult(
         bazin=bazin,
         graham=graham,
+        dcf=dcf,
         consensus=consensus,
         margin_of_safety=mos,
         avg_dividend_5y=round(avg_div, 4) if avg_div else None,

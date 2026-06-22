@@ -1,4 +1,4 @@
-import { AssetType, Verdict } from './common.model';
+import { AllocationCategory, AssetType, Verdict } from './common.model';
 
 export interface Opportunity {
   ticker: string;
@@ -7,11 +7,13 @@ export interface Opportunity {
   sector: string | null;
   price: number | null;
   fair_price: number | null;
+  bazin: number | null;
+  graham: number | null;
   margin_of_safety: number | null;
   dividend_yield: number | null;
   verdict: Verdict;
   label: string;
-  category_resolved: 'renda' | 'trade';
+  category_resolved: AllocationCategory;
   score: number;
   in_portfolio: boolean;
   is_interesting: boolean;

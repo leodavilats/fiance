@@ -131,6 +131,7 @@ class DashboardService:
     ) -> DashboardResponse:
 
         real_positions = [p for p in positions if not p.ticker.startswith("RF_")]
+        rf_positions = [p for p in positions if p.ticker.startswith("RF_")]
 
         top_sells = sorted(
             [p for p in real_positions if p.verdict in ("SELL", "STRONG_SELL")],
@@ -151,10 +152,17 @@ class DashboardService:
                 yearly_div = p.current_value * (p.dividend_yield / 100)
                 total_yearly_dividends += yearly_div
 
+        for p in rf_positions:
+            if p.dividend_yield and (p.current_value or p.invested):
+                rf_value = p.current_value or p.invested
+                yearly_rf = rf_value * (p.dividend_yield / 100)
+                total_yearly_dividends += yearly_rf
+
         monthly_dividends = total_yearly_dividends / 12
         portfolio_yield = (total_yearly_dividends / total_cur * 100) if total_cur > 0 else 0.0
 
-        passive_income_goal = None
+        prefs = self.portfolio_repo.get_preferences()
+        passive_income_goal = prefs.get("passive_income_goal")
         passive_income_progress = None
         if passive_income_goal and passive_income_goal > 0:
             passive_income_progress = monthly_dividends / passive_income_goal * 100

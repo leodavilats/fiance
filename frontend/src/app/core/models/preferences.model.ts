@@ -9,5 +9,6 @@ export interface Goal {
 
 export interface Preferences {
   cash_available: number;
+  passive_income_goal?: number | null;
   updated_at?: number | null;
 }

@@ -71,6 +71,34 @@
         </div>
       </div>
 
+      <!-- Legenda B3 -->
+      <div class="card py-3 px-4">
+        <div class="flex items-center gap-2 mb-2">
+          <lucide-icon name="info" size="14" class="text-muted flex-shrink-0"></lucide-icon>
+          <span class="text-xs font-semibold text-muted uppercase tracking-wide">Referências de valuation B3</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted">
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-1.5">
+              <span class="inline-block w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
+              <span><strong class="text-tx">Bazin (Preço Teto)</strong> — Dividendo anual ÷ 6% (ações) ou ÷ 10% (FIIs).</span>
+            </div>
+            <div class="pl-3.5 text-muted leading-relaxed">
+              Preço abaixo do Bazin = DY acima do mínimo aceitável. Acima = rendimento insuficiente.
+            </div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-1.5">
+              <span class="inline-block w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
+              <span><strong class="text-tx">Graham (Preço Intrínseco)</strong> — √(22,5 × LPA × VPA).</span>
+            </div>
+            <div class="pl-3.5 text-muted leading-relaxed">
+              Válido para empresas com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização.
+            </div>
+          </div>
+        </div>
+      </div>
+
       @if (opportunities(); as opps) {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           @for (opp of opps.items; track opp.ticker) {
@@ -79,46 +107,115 @@
               [class.border-accent]="opp.is_interesting"
               (click)="showOpportunityDetails(opp.ticker)"
             >
-              <div class="flex items-start justify-between mb-2">
+              <!-- Cabeçalho -->
+              <div class="flex items-start justify-between mb-3">
                 <div>
-                  <h4 class="font-bold text-tx text-lg">{{ opp.ticker }}</h4>
-                  <p class="text-xs text-muted">{{ opp.name || 'N/A' }}</p>
+                  <div class="flex items-center gap-2">
+                    <h4 class="font-bold text-tx text-lg leading-none">{{ opp.ticker }}</h4>
+                    @if (opp.is_interesting) {
+                      <span class="text-xs px-1.5 py-0.5 rounded bg-accent/20 text-accent font-medium">Destaque</span>
+                    }
+                  </div>
+                  <p class="text-xs text-muted mt-0.5">{{ opp.name || '—' }}</p>
                 </div>
-                <span [class]="helper.verdictClass(opp.verdict)">
+                <span [class]="helper.verdictClass(opp.verdict)" class="text-xs flex-shrink-0">
                   {{ opp.label }}
                 </span>
               </div>
-              <div class="grid grid-cols-2 gap-2 text-sm">
+
+              <!-- Preço e Score -->
+              <div class="flex items-end justify-between mb-3">
                 <div>
-                  <span class="text-muted">Score:</span>
-                  <span class="font-semibold text-tx ml-1">{{ opp.score || 'N/A' }}</span>
+                  <div class="text-xl font-bold text-tx leading-none">
+                    {{ opp.price ? 'R$ ' + (opp.price | number: '1.2-2') : '—' }}
+                  </div>
+                  <div class="text-xs text-muted mt-0.5">preço atual</div>
                 </div>
-                <div>
-                  <span class="text-muted">DY:</span>
-                  <span class="font-semibold text-accent ml-1">
-                    {{ opp.dividend_yield ? (opp.dividend_yield | number: '1.1-1') + '%' : 'N/A' }}
-                  </span>
-                </div>
-                <div>
-                  <span class="text-muted">Preço:</span>
-                  <span class="font-semibold text-tx ml-1">
-                    {{ opp.price ? 'R$ ' + (opp.price | number: '1.2-2') : 'N/A' }}
-                  </span>
-                </div>
-                <div>
-                  <span class="text-muted">MS:</span>
-                  <span class="font-semibold text-tx ml-1">
-                    {{
-                      opp.margin_of_safety
-                        ? (opp.margin_of_safety * 100 | number: '1.0-0') + '%'
-                        : 'N/A'
-                    }}
-                  </span>
+                <div class="text-right">
+                  <div class="text-lg font-bold"
+                    [class.good]="opp.score >= 70"
+                    [class.warn]="opp.score < 70 && opp.score >= 40"
+                    [class.text-muted]="opp.score < 40">
+                    {{ opp.score | number: '1.0-0' }}
+                  </div>
+                  <div class="text-xs text-muted">score</div>
                 </div>
               </div>
-              @if (opp.sector) {
-                <p class="text-xs text-muted mt-2">{{ helper.translateSector(opp.sector) }}</p>
-              }
+
+              <!-- Linha divisória -->
+              <div class="border-t border-border mb-3"></div>
+
+              <!-- Bazin e Graham -->
+              <div class="grid grid-cols-2 gap-2 mb-3">
+                <div class="rounded-md px-2.5 py-2"
+                  [ngClass]="opp.bazin && opp.price
+                    ? (opp.price <= opp.bazin ? 'bazin-below' : 'bazin-above')
+                    : 'bg-panel-2'">
+                  <div class="flex items-center gap-1 mb-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      [class.bg-green-400]="opp.bazin && opp.price && opp.price <= opp.bazin"
+                      [class.bg-red-400]="opp.bazin && opp.price && opp.price > opp.bazin"
+                      [class.bg-muted]="!opp.bazin || !opp.price"></span>
+                    <span class="text-xs text-muted font-medium">Bazin</span>
+                  </div>
+                  @if (opp.bazin) {
+                    <div class="font-semibold text-sm text-tx">R$ {{ opp.bazin | number: '1.2-2' }}</div>
+                    @if (opp.price) {
+                      <div class="text-xs mt-0.5"
+                        [class.text-green-400]="opp.price <= opp.bazin"
+                        [class.text-red-400]="opp.price > opp.bazin">
+                        {{ opp.price <= opp.bazin ? '▼ abaixo do teto' : '▲ acima do teto' }}
+                      </div>
+                    }
+                  } @else {
+                    <div class="text-sm text-muted">—</div>
+                    <div class="text-xs text-muted">sem histórico de div.</div>
+                  }
+                </div>
+
+                <div class="rounded-md px-2.5 py-2"
+                  [class.bg-panel-2]="!opp.graham || !opp.price">
+                  <div class="flex items-center gap-1 mb-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      [class.bg-blue-400]="opp.graham && opp.price && opp.price <= opp.graham"
+                      [class.bg-orange-400]="opp.graham && opp.price && opp.price > opp.graham"
+                      [class.bg-muted]="!opp.graham || !opp.price"></span>
+                    <span class="text-xs text-muted font-medium">Graham</span>
+                  </div>
+                  @if (opp.graham) {
+                    <div class="font-semibold text-sm text-tx">R$ {{ opp.graham | number: '1.2-2' }}</div>
+                    @if (opp.price) {
+                      <div class="text-xs mt-0.5"
+                        [class.text-blue-400]="opp.price <= opp.graham"
+                        [class.text-orange-400]="opp.price > opp.graham">
+                        {{ opp.price <= opp.graham ? '▼ abaixo do intrínseco' : '▲ acima do intrínseco' }}
+                      </div>
+                    }
+                  } @else {
+                    <div class="text-sm text-muted">—</div>
+                    <div class="text-xs text-muted">sem LPA/VPA válidos</div>
+                  }
+                </div>
+              </div>
+
+              <!-- DY e Setor -->
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-3">
+                  @if (opp.dividend_yield) {
+                    <span [class]="helper.dyClass(opp.dividend_yield)" class="font-semibold">
+                      DY {{ opp.dividend_yield | number: '1.1-1' }}%
+                    </span>
+                  }
+                  @if (opp.margin_of_safety != null) {
+                    <span class="text-muted">
+                      MS {{ opp.margin_of_safety * 100 | number: '1.0-0' }}%
+                    </span>
+                  }
+                </div>
+                @if (opp.sector) {
+                  <span class="text-muted truncate max-w-[100px]">{{ helper.translateSector(opp.sector) }}</span>
+                }
+              </div>
             </div>
           }
         </div>

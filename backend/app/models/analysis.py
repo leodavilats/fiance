@@ -6,6 +6,7 @@ from .enums import AssetType
 class FairPriceBlock(BaseModel):
     bazin: float | None = None
     graham: float | None = None
+    dcf: float | None = None
     consensus: float | None = None
     margin_of_safety: float | None = None
     avg_dividend_5y: float | None = None

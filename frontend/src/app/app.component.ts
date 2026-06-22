@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { ThemeService } from './core';
-import { GlobalLoaderComponent, SnackbarComponent } from './components';
+import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from './components';
 
 @Component({
   selector: 'app-root',
@@ -16,21 +16,23 @@ import { GlobalLoaderComponent, SnackbarComponent } from './components';
     LucideAngularModule,
     GlobalLoaderComponent,
     SnackbarComponent,
+    AlertModalComponent,
   ],
   template: `
     <app-global-loader />
     <app-snackbar />
-    <div class="max-w-[1180px] mx-auto px-5 pt-6 pb-10">
-      <header class="flex justify-between items-center gap-4 py-2 px-1 pb-[18px]">
-        <div style="display:flex; align-items:center; gap:14px;">
+    <app-alert-modal />
+    <div class="max-w-[1180px] mx-auto px-3 sm:px-5 pt-4 sm:pt-6 pb-20 sm:pb-10">
+      <header class="flex justify-between items-center gap-4 py-2 px-1 pb-[14px] sm:pb-[18px]">
+        <div style="display:flex; align-items:center; gap:10px;">
           <div
-            class="w-11 h-11 grid place-items-center rounded-xl font-extrabold text-[1.4rem] text-[#0b0e14] bg-gradient-to-br from-accent to-accent-2"
+            class="w-9 h-9 sm:w-11 sm:h-11 grid place-items-center rounded-xl font-extrabold text-[1.2rem] sm:text-[1.4rem] text-[#0b0e14] bg-gradient-to-br from-accent to-accent-2"
           >
             f
           </div>
           <div>
-            <h1 class="text-[1.7rem] font-bold m-0 text-tx">fianceAI</h1>
-            <p class="m-0 text-sm text-muted">
+            <h1 class="text-[1.3rem] sm:text-[1.7rem] font-bold m-0 text-tx">fianceAI</h1>
+            <p class="m-0 text-xs sm:text-sm text-muted hidden sm:block">
               Sistema de gestão de ativos — descubra o que comprar, manter ou vender.
             </p>
           </div>
@@ -46,7 +48,8 @@ import { GlobalLoaderComponent, SnackbarComponent } from './components';
           </button>
         </div>
       </header>
-      <nav class="flex flex-wrap gap-2 mb-6">
+
+      <nav class="hidden sm:flex flex-wrap gap-2 mb-6">
         <a
           routerLink="/dashboard"
           routerLinkActive="active"
@@ -83,8 +86,57 @@ import { GlobalLoaderComponent, SnackbarComponent } from './components';
           <lucide-icon name="settings" size="16"></lucide-icon> Configurações
         </a>
       </nav>
+
       <router-outlet />
     </div>
+
+    <nav
+      class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-border"
+      style="background: var(--panel); padding-bottom: env(safe-area-inset-bottom);"
+    >
+      <div class="flex items-stretch justify-around h-14">
+        <a
+          routerLink="/dashboard"
+          routerLinkActive="active-mob"
+          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+        >
+          <lucide-icon name="layout-dashboard" size="20"></lucide-icon>
+          <span>Início</span>
+        </a>
+        <a
+          routerLink="/assets"
+          routerLinkActive="active-mob"
+          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+        >
+          <lucide-icon name="briefcase" size="20"></lucide-icon>
+          <span>Ativos</span>
+        </a>
+        <a
+          routerLink="/market"
+          routerLinkActive="active-mob"
+          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+        >
+          <lucide-icon name="target" size="20"></lucide-icon>
+          <span>Mercado</span>
+        </a>
+        <a
+          routerLink="/strategy"
+          routerLinkActive="active-mob"
+          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+        >
+          <lucide-icon name="wand-sparkles" size="20"></lucide-icon>
+          <span>Estratégia</span>
+        </a>
+        <a
+          routerLink="/config"
+          routerLinkActive="active-mob"
+          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+        >
+          <lucide-icon name="settings" size="20"></lucide-icon>
+          <span>Config</span>
+        </a>
+      </div>
+    </nav>
   `,
   styles: [
     `
@@ -94,7 +146,9 @@ import { GlobalLoaderComponent, SnackbarComponent } from './components';
         font-weight: 600;
         box-shadow: 0 2px 8px rgba(34, 211, 238, 0.3);
       }
-
+      :host ::ng-deep a.active-mob {
+        color: var(--accent);
+      }
       a {
         text-decoration: none !important;
       }

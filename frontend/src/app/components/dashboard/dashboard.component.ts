@@ -3,11 +3,12 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { DashboardResponse, LoadingService, RecommendService, UiHelperService } from '../../core';
+import { EmptyStateComponent, SkeletonComponent } from '../index';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, SkeletonComponent, EmptyStateComponent],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
@@ -18,17 +19,24 @@ export class DashboardComponent implements OnInit {
   readonly Math = Math;
 
   data = signal<DashboardResponse | null>(null);
+  isInitialLoad = signal(true);
+  hasError = signal(false);
 
   ngOnInit(): void {
     this.loadDashboard();
   }
 
   loadDashboard(): void {
+    this.hasError.set(false);
     this.svc.dashboard().subscribe({
       next: res => {
         this.data.set(res);
+        this.isInitialLoad.set(false);
       },
-      error: () => {},
+      error: () => {
+        this.hasError.set(true);
+        this.isInitialLoad.set(false);
+      },
       complete: () => {},
     });
   }

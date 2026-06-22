@@ -16,6 +16,26 @@
     </span>
   </div>
 
+  @if (isInitialLoad() && loading.loading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="p-4 rounded-lg bg-panel border border-border">
+          <app-skeleton height="14px" width="60%" />
+          <app-skeleton height="32px" [rows]="1" />
+          <app-skeleton height="12px" width="50%" />
+        </div>
+      }
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      @for (i of [1, 2]; track i) {
+        <div class="p-5 rounded-lg bg-panel border border-border">
+          <app-skeleton height="24px" width="40%" />
+          <app-skeleton height="60px" [rows]="3" />
+        </div>
+      }
+    </div>
+  }
+
   @if (data(); as d) {
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="p-4 rounded-lg bg-panel border border-border">
@@ -494,6 +514,24 @@
 
     <div class="p-4 rounded-lg bg-panel-2 border border-border text-xs text-muted leading-relaxed">
       {{ d.disclaimer }}
+    </div>
+  } @else if (hasError()) {
+    <div class="p-6 rounded-lg bg-panel border border-border">
+      <div class="flex items-center gap-3 mb-3">
+        <lucide-icon name="triangle-alert" size="20" class="text-warn flex-shrink-0"></lucide-icon>
+        <h3 class="text-base font-semibold m-0 text-tx">Não foi possível carregar o dashboard</h3>
+      </div>
+      <p class="text-sm text-muted m-0 mb-4">
+        Verifique se o backend está rodando e tente novamente.
+      </p>
+      <button
+        type="button"
+        (click)="loadDashboard()"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 transition-opacity"
+      >
+        <lucide-icon name="refresh-cw" size="14"></lucide-icon>
+        Tentar novamente
+      </button>
     </div>
   } @else if (!loading.loading()) {
     <div class="empty p-6 rounded-lg bg-panel border border-border">

@@ -137,8 +137,6 @@ export class OpportunitiesComponent implements OnInit {
       this.sortKey.set(key);
       this.sortOrder.set('desc');
     }
-    this.currentPage.set(1);
-    this.loadOpportunities();
   }
 
   updateCash(ev: Event): void {

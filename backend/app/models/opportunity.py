@@ -10,11 +10,13 @@ class Opportunity(BaseModel):
     sector: str | None = None
     price: float | None = None
     fair_price: float | None = None
+    bazin: float | None = None
+    graham: float | None = None
     margin_of_safety: float | None = None
     dividend_yield: float | None = None
     verdict: str
     label: str
-    category_resolved: str = "trade"
+    category_resolved: str = "acoes_br"
     score: float = 0.0
     in_portfolio: bool = False
     is_interesting: bool = False

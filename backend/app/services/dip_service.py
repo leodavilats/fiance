@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from app.analysis.dip_analysis import compute_dip_analysis
 from app.analysis.fair_price import compute_fair_price, compute_technical
@@ -68,6 +70,7 @@ class DipService:
             current_price=snap.price,
             news_items=news_items,
             news_sentiment_summary=sentiment_summary,
+            asset_type=snap.asset_type,
         )
 
         return DipAnalysisResponse(
@@ -173,6 +176,7 @@ class DipService:
                         current_price=snap.price,
                         news_items=[],
                         news_sentiment_summary="",
+                        asset_type=snap.asset_type,
                     )
 
                     if dip.dip_score < min_score:
@@ -211,3 +215,144 @@ class DipService:
             scanned=len(tickers),
             universe_used=tickers,
         )
+
+    async def scan_dips_stream(
+        self,
+        universe: str | None = None,
+        min_score: float = 40.0,
+        top: int = 12,
+        category: str | None = None,
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        """Versão SSE do scan: produz eventos à medida que cada ticker é processado."""
+        settings = get_settings()
+
+        if universe:
+            tickers = [t.strip().upper() for t in universe.split(",") if t.strip()]
+        else:
+            tickers = list(settings.universe)
+
+        if category:
+            from app.analysis.classify import auto_category
+
+        total = len(tickers)
+        found: list[DipScanItem] = []
+        processed = 0
+
+        sem = asyncio.Semaphore(10)
+
+        async def _scan_one_stream(ticker: str) -> DipScanItem | None:
+            async with sem:
+                try:
+                    snap = await self.asset_repo.get_asset(ticker)
+                    if not snap or not snap.price:
+                        return None
+
+                    history, dividends = await asyncio.gather(
+                        self.asset_repo.get_history(ticker, period="2y"),
+                        self.asset_repo.get_dividends(ticker),
+                    )
+
+                    fair = compute_fair_price(
+                        price=snap.price,
+                        eps=snap.eps,
+                        book_value=snap.book_value,
+                        dividends=dividends,
+                        asset_type=snap.asset_type,
+                        week52_high=snap.fifty_two_week_high,
+                    )
+
+                    tech = compute_technical(
+                        history, snap.fifty_two_week_high, snap.fifty_two_week_low
+                    )
+
+                    dip = compute_dip_analysis(
+                        margin_of_safety=fair.margin_of_safety,
+                        roe=snap.roe,
+                        profit_margin=snap.profit_margin,
+                        debt_to_equity=snap.debt_to_equity,
+                        rsi_14=tech.rsi_14,
+                        trend=tech.trend,
+                        distance_from_52w_high_pct=tech.distance_from_52w_high_pct,
+                        sma_200=tech.sma_200,
+                        last_price=tech.last_price,
+                        dividend_yield=snap.dividend_yield,
+                        avg_dividend_5y=fair.avg_dividend_5y,
+                        fair_price_consensus=fair.consensus,
+                        current_price=snap.price,
+                        news_items=[],
+                        news_sentiment_summary="",
+                        asset_type=snap.asset_type,
+                    )
+
+                    if dip.dip_score < min_score:
+                        return None
+
+                    item = DipScanItem(
+                        symbol=snap.symbol,
+                        name=snap.name,
+                        asset_type=AssetType(snap.asset_type),
+                        sector=snap.sector,
+                        price=snap.price,
+                        fair_price_consensus=fair.consensus,
+                        margin_of_safety=fair.margin_of_safety,
+                        dip_score=dip.dip_score,
+                        breakdown=DipScoreBreakdownSchema(**dip.breakdown.__dict__),
+                        verdict=dip.verdict,
+                        verdict_label=dip.verdict_label,
+                        confidence=dip.confidence,
+                        drop_from_52w_high_pct=dip.drop_from_52w_high_pct,
+                        drop_from_fair_price_pct=dip.drop_from_fair_price_pct,
+                        dividend_yield=snap.dividend_yield,
+                        rsi_14=tech.rsi_14,
+                        top_reason=dip.reasons[0] if dip.reasons else "",
+                    )
+
+                    if category:
+                        item_cat = auto_category(
+                            item.asset_type.value
+                            if hasattr(item.asset_type, "value")
+                            else str(item.asset_type),
+                            None,
+                        )
+                        if item_cat != category:
+                            return None
+
+                    return item
+
+                except Exception as exc:
+                    logger.warning("Dip scan falhou para %s: %s", ticker, exc)
+                    return None
+
+        queue: asyncio.Queue[DipScanItem | None] = asyncio.Queue()
+
+        async def producer():
+            tasks = [_scan_one_stream(t) for t in tickers]
+            for coro in asyncio.as_completed(tasks):
+                result = await coro
+                await queue.put(result)
+            await queue.put(None)  # sentinel
+
+        producer_task = asyncio.create_task(producer())
+
+        try:
+            while True:
+                item = await queue.get()
+                if item is None:
+                    break
+                processed += 1
+                found.append(item)
+                yield {
+                    "type": "item",
+                    "item": item.model_dump(),
+                    "progress": {"processed": processed, "total": total},
+                }
+        finally:
+            producer_task.cancel()
+
+        found.sort(key=lambda x: x.dip_score, reverse=True)
+        yield {
+            "type": "summary",
+            "scanned": total,
+            "found": len(found),
+            "top": [i.model_dump() for i in found[:top]],
+        }

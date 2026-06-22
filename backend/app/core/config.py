@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    allowed_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
+
     alpha_vantage_key: str = ""
 
     gemini_api_key: str = ""
@@ -67,8 +69,13 @@ class Settings(BaseSettings):
 
     @property
     def universe(self) -> list[str]:
-
         return [t.strip().upper() for t in self.default_universe.split(",") if t.strip()]
+
+    @property
+    def cors_origins(self) -> list[str]:
+        if self.app_env == "development":
+            return ["*"]
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
 
 
 @lru_cache

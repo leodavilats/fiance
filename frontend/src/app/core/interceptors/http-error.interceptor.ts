@@ -1,38 +1,59 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, finalize, throwError, timeout, TimeoutError } from 'rxjs';
+import { catchError, finalize, retry, throwError, timeout, TimeoutError } from 'rxjs';
 import { LoadingService } from '../services/loading.service';
 import { SnackbarService } from '../services/snackbar.service';
+
+const RETRYABLE_METHODS = ['GET'];
+const MAX_RETRIES = 1;
+// Rotas de scanner demoram mais — não usar timeout curto
+const LONG_TIMEOUT_PATTERNS = ['/dip-scanner', '/opportunities', '/dashboard', '/strategy'];
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const loading = inject(LoadingService);
   const snackbar = inject(SnackbarService);
 
+  const isLongRequest = LONG_TIMEOUT_PATTERNS.some(p => req.url.includes(p));
+  const requestTimeout = isLongRequest ? 300_000 : 90_000; // 5min ou 90s
+  const canRetry = RETRYABLE_METHODS.includes(req.method) && !isLongRequest;
+
   loading.show();
 
-  return next(req).pipe(
-    timeout(180000),
+  let pipeline = next(req).pipe(timeout(requestTimeout));
+
+  if (canRetry) {
+    pipeline = pipeline.pipe(retry({ count: MAX_RETRIES, delay: 1000 }));
+  }
+
+  return pipeline.pipe(
     catchError((error: HttpErrorResponse | TimeoutError) => {
       let errorMessage = 'Erro ao processar requisição';
 
       if (error instanceof TimeoutError) {
-        errorMessage = 'Tempo de resposta excedido. Tente novamente.';
+        errorMessage = 'A operação demorou demais. Tente novamente.';
       } else if (error instanceof HttpErrorResponse) {
-        if (error.status === 0) {
-          errorMessage = 'Não foi possível conectar ao servidor. Verifique sua conexão.';
-        } else if (error.status === 404) {
-          errorMessage = 'Recurso não encontrado.';
-        } else if (error.status === 500) {
-          errorMessage = 'Erro interno do servidor.';
-        } else if (error.error?.detail) {
-          errorMessage = error.error.detail;
-        } else if (error.message) {
-          errorMessage = error.message;
+        switch (error.status) {
+          case 0:
+            errorMessage = 'Sem conexão com o servidor. Verifique se o backend está rodando.';
+            break;
+          case 404:
+            errorMessage = error.error?.detail || 'Recurso não encontrado.';
+            break;
+          case 422:
+            errorMessage = 'Dados inválidos. Verifique os campos e tente novamente.';
+            break;
+          case 500:
+            errorMessage = error.error?.detail || 'Erro interno do servidor.';
+            break;
+          case 503:
+            errorMessage = 'Serviço temporariamente indisponível. Aguarde e tente novamente.';
+            break;
+          default:
+            errorMessage = error.error?.detail || error.message || `Erro ${error.status}`;
         }
       }
 
       snackbar.showError(errorMessage);
-
       return throwError(() => error);
     }),
     finalize(() => {
