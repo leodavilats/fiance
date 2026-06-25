@@ -32,3 +32,5 @@ class OpportunitiesResponse(BaseModel):
     total_pages: int = 0
     current_page: int = 1
     page_size: int = 50
+    universe_size: int = 0
+    failed_count: int = 0

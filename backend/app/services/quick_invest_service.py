@@ -29,7 +29,7 @@ class QuickInvestService:
             value = item.quantity * snap.price
             total_portfolio += value
 
-            cat = auto_category(item.ticker, snap.asset_type)
+            cat = auto_category(snap.asset_type, snap.dividend_yield)
             category_values[cat] = category_values.get(cat, 0) + value
 
         goals = self.goal_service.get_goals() if req.use_current_goals else []
@@ -80,7 +80,13 @@ class QuickInvestService:
             cat_opps = [
                 opp
                 for opp in opportunities
-                if auto_category(opp.ticker, opp.asset_type) == category
+                if auto_category(
+                    opp.asset_type.value
+                    if hasattr(opp.asset_type, "value")
+                    else str(opp.asset_type),
+                    opp.dividend_yield,
+                )
+                == category
             ]
 
             if not cat_opps:

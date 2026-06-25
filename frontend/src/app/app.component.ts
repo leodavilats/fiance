@@ -79,6 +79,13 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
           <lucide-icon name="wand-sparkles" size="16"></lucide-icon> Estratégia
         </a>
         <a
+          routerLink="/sectors"
+          routerLinkActive="active"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
+        >
+          <lucide-icon name="chart-pie" size="16"></lucide-icon> Segmentos
+        </a>
+        <a
           routerLink="/config"
           routerLinkActive="active"
           class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
@@ -126,6 +133,14 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
         >
           <lucide-icon name="wand-sparkles" size="20"></lucide-icon>
           <span>Estratégia</span>
+        </a>
+        <a
+          routerLink="/sectors"
+          routerLinkActive="active-mob"
+          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+        >
+          <lucide-icon name="chart-pie" size="20"></lucide-icon>
+          <span>Segmentos</span>
         </a>
         <a
           routerLink="/config"

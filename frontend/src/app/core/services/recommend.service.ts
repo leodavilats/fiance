@@ -30,6 +30,7 @@ import {
   ReferenceRates,
   SectorAllocationResponse,
   SectorGoal,
+  SectorsSummaryResponse,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -216,5 +217,10 @@ export class RecommendService {
 
   deleteAlert(id: number): Observable<{ deleted: number }> {
     return this.http.delete<{ deleted: number }>(`${this.base}/alerts/${id}`);
+  }
+
+  sectorsSummary(category = 'acoes_br'): Observable<SectorsSummaryResponse> {
+    const params = new HttpParams().set('category', category);
+    return this.http.get<SectorsSummaryResponse>(`${this.base}/sectors-summary`, { params });
   }
 }

@@ -329,8 +329,9 @@ class DipService:
             tasks = [_scan_one_stream(t) for t in tickers]
             for coro in asyncio.as_completed(tasks):
                 result = await coro
-                await queue.put(result)
-            await queue.put(None)  # sentinel
+                if result is not None:
+                    await queue.put(result)
+            await queue.put(None)
 
         producer_task = asyncio.create_task(producer())
 

@@ -1,0 +1,144 @@
+<div class="flex flex-col gap-5">
+  <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+    <div class="flex gap-2 flex-wrap">
+      @for (cat of categories; track cat.value) {
+        <button
+          type="button"
+          (click)="selectCategory(cat.value)"
+          [class]="
+            'px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer border transition-all ' +
+            (activeCategory() === cat.value
+              ? 'bg-accent text-[#0b0e14] border-accent'
+              : 'bg-panel-2 border-border text-tx hover:bg-panel')
+          "
+        >
+          {{ cat.label }}
+        </button>
+      }
+    </div>
+    <button
+      type="button"
+      (click)="load()"
+      [disabled]="isLoading()"
+      class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all disabled:opacity-50"
+    >
+      <lucide-icon [name]="isLoading() ? 'loader-circle' : 'refresh-cw'" size="14"></lucide-icon>
+      {{ isLoading() ? 'Carregando...' : 'Atualizar' }}
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="p-4 rounded-lg bg-panel border border-border">
+          <app-skeleton height="16px" width="50%" />
+          <app-skeleton height="12px" width="30%" />
+          <div class="flex gap-4 mt-3">
+            <app-skeleton height="28px" width="45%" />
+            <app-skeleton height="28px" width="45%" />
+          </div>
+          <app-skeleton height="12px" [rows]="3" />
+        </div>
+      }
+    </div>
+
+  } @else if (hasError()) {
+    <div class="p-6 rounded-lg bg-panel border border-border">
+      <div class="flex items-center gap-3 mb-3">
+        <lucide-icon name="triangle-alert" size="20" class="text-warn flex-shrink-0"></lucide-icon>
+        <h3 class="text-base font-semibold m-0 text-tx">Não foi possível carregar os segmentos</h3>
+      </div>
+      <p class="text-sm text-muted m-0 mb-4">
+        Verifique se o backend está rodando e tente novamente.
+      </p>
+      <button
+        type="button"
+        (click)="load()"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 transition-opacity"
+      >
+        <lucide-icon name="refresh-cw" size="14"></lucide-icon>
+        Tentar novamente
+      </button>
+    </div>
+
+  } @else if (data()) {
+    @let d = data()!;
+
+    <div class="flex flex-wrap gap-3 text-sm text-muted">
+      <span>
+        <span class="font-semibold text-tx">{{ d.sectors.length }}</span> segmentos
+      </span>
+      <span>·</span>
+      <span>
+        <span class="font-semibold text-tx">{{ d.total_assets }}</span> ativos analisados
+      </span>
+      @if (d.failed_count > 0) {
+        <span>·</span>
+        <span class="text-warn">{{ d.failed_count }} sem dados</span>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (sector of d.sectors; track sector.sector) {
+        <div
+          class="flex flex-col gap-3 p-4 rounded-lg bg-panel border border-border hover:border-accent/40 transition-colors"
+        >
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 grid place-items-center rounded-lg bg-accent/10 text-accent flex-shrink-0"
+            >
+              <lucide-icon [name]="ui.sectorIcon(sector.sector)" size="16"></lucide-icon>
+            </div>
+            <div class="min-w-0">
+              <p class="font-semibold text-sm text-tx m-0 truncate">
+                {{ ui.translateSector(sector.sector) }}
+              </p>
+              <p class="text-xs text-muted m-0">
+                {{ sector.count }} {{ sector.count === 1 ? 'ativo' : 'ativos' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2 rounded bg-panel-2 text-center">
+              <p class="text-xs text-muted m-0 mb-0.5">Score médio</p>
+              <p class="font-bold text-sm m-0" [class]="scoreClass(sector.avg_score)">
+                {{ sector.avg_score | number: '1.0-1' }}
+              </p>
+            </div>
+            <div class="p-2 rounded bg-panel-2 text-center">
+              <p class="text-xs text-muted m-0 mb-0.5">DY médio</p>
+              <p class="font-bold text-sm m-0" [class]="dyClass(sector.avg_dy)">
+                @if (sector.avg_dy > 0) {
+                  {{ sector.avg_dy | number: '1.1-2' }}%
+                } @else {
+                  —
+                }
+              </p>
+            </div>
+          </div>
+
+          @if (sector.top_assets.length > 0) {
+            <div class="flex flex-col gap-1">
+              @for (asset of sector.top_assets; track asset.ticker; let i = $index) {
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-medium text-tx">{{ asset.ticker }}</span>
+                  <div class="flex items-center gap-2">
+                    @if (asset.dividend_yield) {
+                      <span class="text-muted"
+                        >{{ asset.dividend_yield * 100 | number: '1.1-1' }}% DY</span
+                      >
+                    }
+                    <span [class]="'font-semibold ' + scoreClass(asset.score)">
+                      {{ asset.score | number: '1.0-0' }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

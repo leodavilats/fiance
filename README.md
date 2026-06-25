@@ -1,148 +1,177 @@
 # fianceAI
 
-Sistema de gestão e análise de ativos financeiros — descubra o que comprar, manter ou vender.
+Plataforma de inteligência de investimentos com análise fundamentalista, varredura de oportunidades e recomendações orientadas por IA, focada no mercado brasileiro (B3).
 
-## Stack
+## Visão Geral
+
+O fianceAI integra dados de mercado em tempo real, métodos clássicos de valuation (Bazin, Graham, DCF) e o modelo Gemini da Google para entregar uma visão consolidada da sua carteira, identificar ativos com desconto e gerar estratégias de alocação personalizadas.
+
+**Principais funcionalidades:**
+
+- Dashboard com posições, P&L e metas de alocação
+- Scanner de oportunidades com pontuação fundamentalista e técnica
+- Scanner de quedas ("dip") com streaming em tempo real (SSE)
+- Visão por segmento de mercado: score médio, DY médio e top ativos por setor
+- Histórico e análise de dividendos (DY, projeções)
+- Alertas de preço configuráveis por ativo
+- Insights e estratégias gerados por IA (Google Gemini)
+- Suporte a ações B3, FIIs, ETFs, criptomoedas e renda fixa
+
+## Tecnologias
 
 | Camada | Tecnologia |
-|---|---|
-| Backend | Python 3.11+ · FastAPI · yfinance · Alpha Vantage · feedparser |
-| Frontend | Angular 18 · Signals · Reactive Forms · Lucide Icons |
-| Dados | Yahoo Finance (gratuito) · Alpha Vantage (gratuito) · Google News RSS |
-| LLM (opcional) | Google Gemini AI |
+|--------|-----------|
+| Backend | Python 3.11+, FastAPI, Uvicorn |
+| Frontend | Angular 18, TypeScript 5.5, Tailwind CSS |
+| Dados de mercado | yfinance |
+| IA | Google Gemini API |
+| Linting / Format | Ruff (Python), Prettier (TypeScript) |
 
----
+## Pré-requisitos
 
-## Funcionalidades
+- Python 3.11+
+- Node.js 18+ e npm
+- Chave de API: [Google Gemini](https://aistudio.google.com/app/apikey) (plano gratuito: 15 req/min)
 
-| Aba | Descrição |
-|---|---|
-| **Dashboard** | Visão geral: patrimônio, PnL, alertas, oportunidades de compra/venda, alocação vs. metas, evolução histórica |
-| **Meus Ativos** | Cadastre posições (ticker, quantidade, preço médio). Auto-salvo com debounce. Avaliação em tempo real com P&L e veredicto |
-| **Oportunidades** | Universo curado + watchlist ranqueado por score. Filtros por tipo, setor, DY mínimo e margem de segurança |
-| **Dividendos** | Ranking de maiores pagadores de dividendos (DY 12m) com preço justo Bazin |
-| **Analisar** | Análise detalhada de qualquer ativo (B3, EUA, FII, cripto): preço justo, técnicos, decisão fundamentada |
-| **Na Baixa?** | Analisa se um ativo em queda é **oportunidade ou armadilha** — score 0–100 cruzando fundamentos, técnico, dividendos e notícias |
-| **Configurações** | Caixa disponível, yield desejado (Bazin), metas de alocação por categoria, watchlist |
+## Instalação
 
-### Score "Vale na Baixa?" (0–100)
+### Backend
 
-| Dimensão | Peso |
-|---|---|
-| Preço vs. Preço Justo (Bazin/Graham) | 30 pts |
-| Qualidade fundamentalista (ROE, margem, dívida) | 25 pts |
-| Indicadores técnicos (RSI, SMA200, queda do topo 52s) | 25 pts |
-| Dividendos (DY e histórico 5 anos) | 10 pts |
-| Sentimento de notícias (Google News RSS) | 10 pts |
+```bash
+cd backend
+python -m venv .venv
 
-**Veredicto:** `OPORTUNIDADE` (≥68) · `NEUTRO` (42–67) · `ARMADILHA` (<42)
+# Windows
+.venv\Scripts\activate
+# Linux / macOS
+source .venv/bin/activate
 
----
+pip install -r requirements.txt
+```
 
-## Estrutura
+### Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+## Configuração de Ambiente
+
+Copie o arquivo de exemplo e preencha as variáveis:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+| Variável | Obrigatória | Descrição |
+|----------|:-----------:|-----------|
+| `GEMINI_API_KEY` | Sim | Chave da API Google Gemini |
+| `APP_ENV` | Não | `development` ou `production` (padrão: `development`) |
+| `LOG_LEVEL` | Não | Nível de log: `DEBUG`, `INFO`, `WARNING` (padrão: `INFO`) |
+| `ALLOWED_ORIGINS` | Não | Origens CORS permitidas (padrão: `http://localhost:4200`) |
+| `DEFAULT_UNIVERSE` | Não | Tickers monitorados, separados por vírgula |
+
+## Execução
+
+### Desenvolvimento
+
+```bash
+# Terminal 1 — Backend (http://localhost:8000)
+cd backend
+uvicorn app.main:app --reload --port 8000
+
+# Terminal 2 — Frontend (http://localhost:4200)
+cd frontend
+npm start
+```
+
+### Build de Produção
+
+```bash
+# Frontend
+cd frontend
+npm run build   # saída em dist/
+
+# Backend — recomenda-se usar Gunicorn com worker Uvicorn
+pip install gunicorn
+gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
+
+## Documentação da API
+
+Com o backend rodando, acesse a documentação interativa:
+
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+
+### Endpoints principais
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/dashboard` | Dados consolidados do dashboard |
+| `GET/POST` | `/api/portfolio` | Gerenciar posições |
+| `POST` | `/api/portfolio/evaluate` | Calcular P&L e alocação |
+| `GET` | `/api/opportunities` | Oportunidades de investimento com score |
+| `GET` | `/api/dip-scanner` | Ativos abaixo do preço justo |
+| `GET` | `/api/dip-scanner/stream` | Varredura de quedas em tempo real (SSE) |
+| `GET` | `/api/sectors-summary` | Agrupamento por setor: score médio, DY médio, top ativos |
+| `GET` | `/api/strategy` | Estratégia de alocação gerada por IA |
+| `GET/POST` | `/api/alerts` | Alertas de preço |
+| `GET` | `/api/dividends` | Histórico de dividendos |
+| `GET` | `/api/recommendations` | Top recomendações de compra |
+
+## Estrutura do Projeto
 
 ```
 fianceAI/
 ├── backend/
 │   ├── app/
-│   │   ├── analysis/        # fair_price, scoring, decision, dip_analysis
-│   │   ├── api/             # routes FastAPI
-│   │   ├── collectors/      # yfinance (universal), Alpha Vantage, Google News RSS
-│   │   ├── core/            # config (.env), cache, universe
-│   │   ├── llm/             # gemini_client
-│   │   ├── models/          # schemas Pydantic
-│   │   ├── optimizer/       # alocação e otimização de carteira
-│   │   └── storage/         # persistência local (portfolio_store)
-│   └── requirements.txt
+│   │   ├── main.py              # Ponto de entrada FastAPI
+│   │   ├── analysis/            # Algoritmos: Bazin, Graham, DCF, scoring
+│   │   ├── api/                 # Rotas REST
+│   │   ├── collectors/          # Coleta de dados (yfinance, RSS)
+│   │   ├── services/            # Regras de negócio
+│   │   ├── models/              # Schemas Pydantic
+│   │   ├── repositories/        # Persistência (JSON local)
+│   │   ├── llm/                 # Integração Google Gemini
+│   │   ├── core/                # Configuração e cache
+│   │   └── optimizer/           # Otimização de carteira
+│   ├── requirements.txt
+│   └── .env.example
+│
 └── frontend/
-    └── src/app/
-        ├── app.component.ts  # componente único com todas as abas
-        ├── models.ts          # interfaces TypeScript
-        ├── recommend.service.ts
-        └── theme.service.ts
+    └── src/
+        └── app/
+            ├── components/      # Dashboard, Assets, Market, Strategy, Dip, Sectors…
+            └── core/            # Serviços HTTP, interceptors, tema
 ```
 
----
+## Métodos de Valuation
 
-## Configuração
+| Método | Fórmula | Aplicação |
+|--------|---------|-----------|
+| **Bazin** | `Preço justo = DPA médio / Yield desejado` | Ações com dividendos consistentes |
+| **Graham** | `Preço justo = √(22,5 × LPA × VPA)` | Ações de valor |
+| **DCF** | Fluxo de caixa descontado | Crescimento futuro |
+| **Consenso** | Média dos métodos disponíveis (1–3) | Visão geral; `consensus_methods` indica quantos métodos foram usados |
 
-### 1. Backend
+## Scripts Disponíveis
 
 ```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate          # Windows
-pip install -r requirements.txt
-```
-
-Crie um arquivo `.env` (opcional):
-
-```env
-ALPHA_VANTAGE_KEY=your_key    # gratuito em alphavantage.co — dados fundamentais precisos
-GEMINI_API_KEY=your_key        # gratuito em ai.google.dev — análises com LLM
-DEFAULT_UNIVERSE=PETR4,VALE3,ITUB4,BBDC4,BBAS3,WEGE3,ITSA4
-```
-
-Inicie o servidor:
-
-```bash
-uvicorn app.main:app --reload
-# API disponível em http://127.0.0.1:8000
-# Docs interativas em http://127.0.0.1:8000/docs
-```
-
-**Formatação de código:**
-
-```bash
-# Formatar código Python
+# Backend
+uvicorn app.main:app --reload    # servidor dev
 ruff format .
-
-# Verificar e corrigir linting
 ruff check --fix .
+
+# Frontend
+npm start           # servidor dev
+npm run build       # build de produção
+npm run format      # formatar código com Prettier
+npm run format:check # verificar formatação
 ```
 
-### 2. Frontend
+## Licença
 
-```bash
-cd frontend
-npm install
-ng serve
-# App disponível em http://localhost:4200
-```
-
-**Formatação de código:**
-
-```bash
-# Formatar código TypeScript/HTML/CSS
-npm run format
-
-# Verificar formatação sem alterar
-npm run format:check
-```
-
----
-
-## Principais endpoints
-
-| Método | Rota | Descrição |
-|---|---|---|
-| `GET` | `/api/health` | Health check |
-| `POST` | `/api/recommend` | Recomendação de carteira otimizada |
-| `GET` | `/api/asset/{symbol}` | Análise detalhada (fair price + técnico + decisão) |
-| `GET` | `/api/asset/{symbol}/dip-analysis` | Score "vale na baixa" + notícias |
-| `POST` | `/api/portfolio/evaluate` | Avalia posições com P&L e veredicto |
-| `GET` | `/api/opportunities` | Ranking de oportunidades do universo |
-| `GET` | `/api/dividends/ranking` | Top pagadoras de dividendos |
-| `GET` | `/api/dashboard` | Visão consolidada completa |
-
----
-
-## Mercados suportados
-
-- **B3** — Ações (ex.: `PETR4`) e FIIs (ex.: `HGLG11`)
-- **EUA** — Ações americanas (ex.: `AAPL`, `NVDA`)
-- **Cripto** — BTC, ETH, SOL, entre outros
-
----
-
-> **Aviso:** Conteúdo educativo. Não constitui recomendação formal de investimento. Consulte um profissional habilitado.
+Distribuído sob licença proprietária. Consulte o arquivo [LICENSE](LICENSE) para detalhes.

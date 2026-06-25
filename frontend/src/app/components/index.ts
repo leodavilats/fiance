@@ -9,4 +9,5 @@ export { GlobalLoaderComponent } from './global-loader/global-loader.component';
 export { OpportunitiesComponent } from './opportunities/opportunities.component';
 export { SkeletonComponent } from './skeleton/skeleton.component';
 export { SnackbarComponent } from './snackbar/snackbar.component';
+export { SectorsComponent } from './sectors/sectors.component';
 export { StrategyComponent } from './strategy/strategy.component';

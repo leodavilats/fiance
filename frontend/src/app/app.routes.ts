@@ -31,6 +31,12 @@ export const routes: Routes = [
     title: 'Estratégia - fianceAI',
   },
   {
+    path: 'sectors',
+    loadComponent: () =>
+      import('./components/sectors/sectors.component').then(m => m.SectorsComponent),
+    title: 'Segmentos - fianceAI',
+  },
+  {
     path: 'config',
     loadComponent: () =>
       import('./components/config/config.component').then(m => m.ConfigComponent),

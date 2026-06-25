@@ -279,7 +279,6 @@ export class ConfigComponent implements OnInit {
     });
   }
 
-  // ── Alertas de preço ──────────────────────────────────────────────────
   alerts = signal<PriceAlert[]>([]);
   alertMessage = signal('');
   alertForm: FormGroup<{

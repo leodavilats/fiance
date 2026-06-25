@@ -6,8 +6,13 @@ import { SnackbarService } from '../services/snackbar.service';
 
 const RETRYABLE_METHODS = ['GET'];
 const MAX_RETRIES = 1;
-// Rotas de scanner demoram mais — não usar timeout curto
-const LONG_TIMEOUT_PATTERNS = ['/dip-scanner', '/opportunities', '/dashboard', '/strategy'];
+const LONG_TIMEOUT_PATTERNS = [
+  '/dip-scanner',
+  '/opportunities',
+  '/dashboard',
+  '/strategy',
+  '/sectors-summary',
+];
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const loading = inject(LoadingService);

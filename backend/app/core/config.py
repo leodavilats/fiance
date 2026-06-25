@@ -14,8 +14,6 @@ class Settings(BaseSettings):
 
     allowed_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
 
-    alpha_vantage_key: str = ""
-
     gemini_api_key: str = ""
 
     default_universe: str = (

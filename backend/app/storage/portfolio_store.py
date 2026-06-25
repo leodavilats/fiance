@@ -240,6 +240,13 @@ def replace_all(
     user_id: str = DEFAULT_USER,
 ) -> None:
 
+    validated = [
+        it for it in items if it.get("ticker") and it.get("quantity") and it.get("avg_price")
+    ]
+
+    if not validated:
+        return
+
     now = time.time()
 
     with _conn() as cx:
@@ -260,8 +267,7 @@ def replace_all(
                     now,
                     now,
                 )
-                for it in items
-                if it.get("ticker") and it.get("quantity") and it.get("avg_price")
+                for it in validated
             ],
         )
 

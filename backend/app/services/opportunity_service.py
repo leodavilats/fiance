@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from app.analysis.classify import auto_category
 from app.analysis.decision import decide
@@ -6,6 +7,8 @@ from app.analysis.fair_price import compute_fair_price, compute_technical
 from app.core.config import get_settings
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.repositories import AssetRepository, PortfolioRepository
+
+logger = logging.getLogger(__name__)
 
 
 class OpportunityService:
@@ -16,7 +19,8 @@ class OpportunityService:
     async def _build_opportunity(self, symbol: str) -> Opportunity | None:
         try:
             snap = await self.asset_repo.get_asset(symbol)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Falha ao buscar dados de %s: %s", symbol, exc)
             return None
 
         if not snap or not snap.price:
@@ -109,8 +113,16 @@ class OpportunityService:
         if not include_held and not search:
             universe -= held
 
+        universe_size = len(universe)
         raws = await asyncio.gather(*[self._build_opportunity(t) for t in universe])
-        opps: list[Opportunity] = [o for o in raws if o]
+        opps: list[Opportunity] = [o for o in raws if o is not None]
+        failed_count = universe_size - len(opps)
+        if failed_count > 0:
+            logger.info(
+                "Análise de oportunidades: %d/%d ativos falharam na coleta",
+                failed_count,
+                universe_size,
+            )
 
         for o in opps:
             o.in_portfolio = o.ticker.upper() in held
@@ -180,4 +192,6 @@ class OpportunityService:
             total_pages=total_pages,
             current_page=page,
             page_size=page_size,
+            universe_size=universe_size,
+            failed_count=failed_count,
         )

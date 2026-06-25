@@ -55,10 +55,16 @@ async def dip_scanner_stream(
     """SSE endpoint: retorna itens do dip scanner progressivamente conforme são processados."""
 
     async def event_generator():
+        found = 0
+        scanned = 0
         async for event in dip_service.scan_dips_stream(universe, min_score, top, category):
+            if event.get("type") == "item":
+                found += 1
+            if event.get("type") == "summary":
+                scanned = event.get("scanned", 0)
             yield f"data: {json.dumps(event)}\n\n"
-            await asyncio.sleep(0)  # yield controle ao event loop
-        yield 'data: {"type": "done"}\n\n'
+            await asyncio.sleep(0)
+        yield f"data: {json.dumps({'type': 'done', 'found': found, 'scanned': scanned})}\n\n"
 
     return StreamingResponse(
         event_generator(),

@@ -19,6 +19,8 @@ class FairPriceResult:
 
     consensus: float | None
 
+    consensus_methods: int
+
     margin_of_safety: float | None
 
     avg_dividend_5y: float | None
@@ -202,6 +204,7 @@ def compute_fair_price(
     candidates = [v for v in (bazin, graham, dcf) if v is not None]
 
     consensus = round(sum(candidates) / len(candidates), 2) if candidates else None
+    consensus_methods = len(candidates)
 
     mos = None
 
@@ -209,15 +212,16 @@ def compute_fair_price(
         mos = round((consensus - price) / consensus, 4)
 
     div_12m = average_dividend_last_12m(dividends)
-    dy_12m = round(div_12m / price, 4) if (div_12m and price and price > 0) else None
+    dy_12m = round(div_12m / price, 4) if (div_12m is not None and price and price > 0) else None
 
-    dy_5y = round(avg_div / price, 4) if (avg_div and price and price > 0) else None
+    dy_5y = round(avg_div / price, 4) if (avg_div is not None and price and price > 0) else None
 
     return FairPriceResult(
         bazin=bazin,
         graham=graham,
         dcf=dcf,
         consensus=consensus,
+        consensus_methods=consensus_methods,
         margin_of_safety=mos,
         avg_dividend_5y=round(avg_div, 4) if avg_div else None,
         dy_12m=dy_12m,

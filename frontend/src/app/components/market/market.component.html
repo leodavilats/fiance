@@ -341,21 +341,34 @@
                   <span class="text-muted px-1">…</span>
                 }
               }
-              @for (page of [opps.current_page - 2, opps.current_page - 1, opps.current_page, opps.current_page + 1, opps.current_page + 2]; track page) {
+              @for (
+                page of [
+                  opps.current_page - 2,
+                  opps.current_page - 1,
+                  opps.current_page,
+                  opps.current_page + 1,
+                  opps.current_page + 2,
+                ];
+                track page
+              ) {
                 @if (page >= 1 && page <= opps.total_pages) {
                   <button
                     type="button"
                     class="pagination-btn"
                     [class.active]="page === opps.current_page"
                     (click)="goToPage(page)"
-                  >{{ page }}</button>
+                  >
+                    {{ page }}
+                  </button>
                 }
               }
               @if (opps.current_page < opps.total_pages - 2) {
                 @if (opps.current_page < opps.total_pages - 3) {
                   <span class="text-muted px-1">…</span>
                 }
-                <button type="button" class="pagination-btn" (click)="goToPage(opps.total_pages)">{{ opps.total_pages }}</button>
+                <button type="button" class="pagination-btn" (click)="goToPage(opps.total_pages)">
+                  {{ opps.total_pages }}
+                </button>
               }
             </div>
 

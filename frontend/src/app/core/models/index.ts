@@ -10,4 +10,5 @@ export * from './projection.model';
 export * from './quick-invest.model';
 export * from './recommendation.model';
 export * from './renda_fixa.model';
+export * from './sectors.model';
 export * from './strategy.model';

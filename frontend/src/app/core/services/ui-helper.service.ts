@@ -97,20 +97,61 @@ export class UiHelperService {
   translateSector(s: string | null): string {
     if (!s) return '—';
     const map: Record<string, string> = {
+      'Financial Services': 'Financeiro',
+      Technology: 'Tecnologia',
+      Healthcare: 'Saúde',
+      Energy: 'Energia',
+      'Basic Materials': 'Materiais Básicos',
+      Industrials: 'Industrial',
+      'Consumer Cyclical': 'Consumo Cíclico',
+      'Consumer Defensive': 'Consumo Básico',
+      'Real Estate': 'Imobiliário',
+      Utilities: 'Utilidades Públicas',
+      'Communication Services': 'Telecomunicações',
       technology: 'Tecnologia',
       finance: 'Financeiro',
       healthcare: 'Saúde',
       energy: 'Energia',
       utilities: 'Utilidades Públicas',
-      'consumer-discretionary': 'Consumo Discricionário',
+      'consumer-discretionary': 'Consumo Cíclico',
       'consumer-staples': 'Consumo Básico',
       industrials: 'Industrial',
-      materials: 'Materiais',
+      materials: 'Materiais Básicos',
       'real-estate': 'Imobiliário',
-      telecommunications: 'Telecom',
+      telecommunications: 'Telecomunicações',
       crypto: 'Cripto',
     };
     return map[s] || s;
+  }
+
+  sectorIcon(s: string): string {
+    const map: Record<string, string> = {
+      Financeiro: 'landmark',
+      'Financial Services': 'landmark',
+      Tecnologia: 'cpu',
+      Technology: 'cpu',
+      Saúde: 'heart-pulse',
+      Healthcare: 'heart-pulse',
+      Energia: 'zap',
+      Energy: 'zap',
+      'Materiais Básicos': 'gem',
+      'Basic Materials': 'gem',
+      Industrial: 'factory',
+      Industrials: 'factory',
+      'Consumo Cíclico': 'shopping-bag',
+      'Consumer Cyclical': 'shopping-bag',
+      'Consumo Básico': 'shopping-cart',
+      'Consumer Defensive': 'shopping-cart',
+      Imobiliário: 'building-2',
+      'Real Estate': 'building-2',
+      'Utilidades Públicas': 'plug-zap',
+      Utilities: 'plug-zap',
+      Telecomunicações: 'wifi',
+      'Communication Services': 'wifi',
+      Cripto: 'bitcoin',
+      Outros: 'circle-dot',
+    };
+    return map[s] || 'chart-bar';
   }
 
   alertIcon(kind: string): string {
