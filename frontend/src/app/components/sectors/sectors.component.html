@@ -124,7 +124,7 @@
                   <div class="flex items-center gap-2">
                     @if (asset.dividend_yield) {
                       <span class="text-muted"
-                        >{{ asset.dividend_yield * 100 | number: '1.1-1' }}% DY</span
+                        >{{ asset.dividend_yield | number: '1.1-1' }}% DY</span
                       >
                     }
                     <span [class]="'font-semibold ' + scoreClass(asset.score)">

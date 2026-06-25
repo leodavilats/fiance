@@ -1,5 +1,4 @@
 <div class="flex flex-col gap-5">
-  <!-- ── Header bar ─────────────────────────────────────────────── -->
   <div class="flex items-center justify-between gap-3 flex-wrap">
     <div>
       <h2 class="text-lg font-bold text-tx m-0">Visão Geral</h2>
@@ -20,7 +19,6 @@
     </button>
   </div>
 
-  <!-- ── Skeleton ───────────────────────────────────────────────── -->
   @if (isInitialLoad() && loading.loading()) {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       @for (i of [1, 2, 3, 4]; track i) {
@@ -44,9 +42,7 @@
   }
 
   @if (data(); as d) {
-    <!-- ── KPI cards ───────────────────────────────────────────── -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <!-- Patrimônio atual -->
       <div class="p-4 rounded-xl bg-panel border border-border relative overflow-hidden">
         <div
           class="absolute top-0 right-0 w-16 h-16 rounded-bl-3xl opacity-10"
@@ -75,7 +71,6 @@
         </div>
       </div>
 
-      <!-- Investido -->
       <div class="p-4 rounded-xl bg-panel border border-border">
         <div class="flex items-center gap-2 text-xs text-muted mb-2">
           <lucide-icon name="chart-column" size="13"></lucide-icon> Investido
@@ -86,7 +81,6 @@
         <div class="text-xs text-muted">{{ d.summary.positions_count }} posições</div>
       </div>
 
-      <!-- Caixa disponível -->
       <div class="p-4 rounded-xl bg-panel border border-border">
         <div class="flex items-center gap-2 text-xs text-muted mb-2">
           <lucide-icon name="coins" size="13"></lucide-icon> Caixa disponível
@@ -103,7 +97,6 @@
         </button>
       </div>
 
-      <!-- Yield da carteira -->
       <div class="p-4 rounded-xl bg-panel border border-border">
         <div class="flex items-center gap-2 text-xs text-muted mb-2">
           <lucide-icon name="percent" size="13"></lucide-icon> DY médio
@@ -119,7 +112,6 @@
       </div>
     </div>
 
-    <!-- ── Renda passiva ───────────────────────────────────────── -->
     @if (d.summary.monthly_dividends_estimate > 0) {
       <div
         class="p-5 rounded-xl bg-gradient-to-r from-accent/15 to-accent-2/10 border border-accent/30"
@@ -170,7 +162,6 @@
       </div>
     }
 
-    <!-- ── Alertas ─────────────────────────────────────────────── -->
     @if (d.alerts.length > 0) {
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-3 text-tx">
@@ -199,7 +190,6 @@
       </div>
     }
 
-    <!-- ── Top Buys / Top Sells ────────────────────────────────── -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
@@ -286,7 +276,6 @@
       </div>
     </div>
 
-    <!-- ── Posições da carteira ────────────────────────────────── -->
     @if (d.positions.length > 0) {
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
@@ -341,7 +330,6 @@
       </div>
     }
 
-    <!-- ── Alocação vs metas ───────────────────────────────────── -->
     @if (d.allocations.length > 0) {
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
@@ -387,7 +375,6 @@
       </div>
     }
 
-    <!-- ── Evolução do patrimônio ──────────────────────────────── -->
     @if (d.snapshots.length >= 2) {
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
@@ -566,7 +553,6 @@
       </div>
     }
 
-    <!-- ── Disclaimer ──────────────────────────────────────────── -->
     <div class="p-4 rounded-lg bg-panel-2 border border-border text-xs text-muted leading-relaxed">
       {{ d.disclaimer }}
     </div>
@@ -588,7 +574,6 @@
       </button>
     </div>
   } @else if (!loading.loading()) {
-    <!-- Onboarding -->
     <div class="p-6 rounded-xl bg-panel border border-border">
       <div class="flex items-center gap-3 mb-5">
         <div class="w-10 h-10 rounded-full bg-accent/20 grid place-items-center flex-shrink-0">

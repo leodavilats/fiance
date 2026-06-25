@@ -1,5 +1,4 @@
 <div class="space-y-5">
-  <!-- Tab bar -->
   <div class="flex gap-1 border-b border-border pb-2 overflow-x-auto">
     <button
       type="button"
@@ -51,9 +50,6 @@
     </button>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- TAB: OPORTUNIDADES                                           -->
-  <!-- ══════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'opportunities') {
     <div class="space-y-4">
       <div class="card">
@@ -409,16 +405,12 @@
     </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- TAB: SEGMENTOS                                               -->
-  <!-- ══════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'segments') {
-    <app-sectors />
+    <div class="space-y-4">
+      <app-sectors />
+    </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- TAB: SCANNER DE BAIXAS                                       -->
-  <!-- ══════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'dip-scanner') {
     <div class="space-y-4">
       <form [formGroup]="scanForm" (ngSubmit)="runScan()" class="card">
@@ -507,9 +499,6 @@
     </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- TAB: ANALISAR ATIVO                                          -->
-  <!-- ══════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'analisar') {
     <form
       class="p-5 rounded-lg bg-panel border border-border mb-4"
@@ -649,12 +638,8 @@
     }
   }
 
-  <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- TAB: AJUSTE NA CARTEIRA (quick invest + AI strategy)         -->
-  <!-- ══════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'ajuste') {
     <div class="space-y-5">
-      <!-- Quick Invest por caixa -->
       <div class="card">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-tx">
           <lucide-icon name="lightbulb" size="18"></lucide-icon> Sugestão por Caixa Disponível
@@ -799,7 +784,6 @@
         }
       }
 
-      <!-- AI Strategy -->
       <div class="border-t border-border pt-5">
         <div class="flex items-center gap-3 mb-5 flex-wrap">
           <button
@@ -1233,9 +1217,6 @@
     </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════════ -->
-  <!-- TAB: SIMULADOR DE RF                                         -->
-  <!-- ══════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'simulador_rf') {
     @if (referenceRates()) {
       <div
@@ -1508,7 +1489,6 @@
     }
   }
 
-  <!-- DIP analysis modal -->
   @if (showAnalysis()) {
     <div
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"

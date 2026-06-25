@@ -55,7 +55,7 @@ async def sectors_summary(
         sectors_map[sector]["assets"].append(opp)
         sectors_map[sector]["scores"].append(opp.score)
         if opp.dividend_yield is not None:
-            sectors_map[sector]["dys"].append(opp.dividend_yield * 100)
+            sectors_map[sector]["dys"].append(opp.dividend_yield)
 
     result: list[SectorSummary] = []
     for sector, data in sorted(sectors_map.items(), key=lambda x: -len(x[1]["assets"])):
