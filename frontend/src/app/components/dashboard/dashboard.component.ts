@@ -41,8 +41,8 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  goToStrategy(): void {
-    this.router.navigate(['/strategy']);
+  goToMarket(): void {
+    this.router.navigate(['/market']);
   }
 
   formatDate(timestamp: number): string {

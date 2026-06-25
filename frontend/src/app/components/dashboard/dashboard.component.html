@@ -1,7 +1,14 @@
 <div class="flex flex-col gap-5">
-  <div class="flex items-center gap-3 flex-wrap">
+  <!-- ── Header bar ─────────────────────────────────────────────── -->
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div>
+      <h2 class="text-lg font-bold text-tx m-0">Visão Geral</h2>
+      <span class="text-xs text-muted" *ngIf="data()?.last_updated">
+        Atualizado {{ ui.formatTimestamp(data()!.last_updated!) }}
+      </span>
+    </div>
     <button
-      class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       (click)="loadDashboard()"
       [disabled]="loading.loading()"
     >
@@ -9,132 +16,153 @@
         [name]="loading.loading() ? 'loader-circle' : 'refresh-cw'"
         size="16"
       ></lucide-icon>
-      {{ loading.loading() ? 'Atualizando...' : 'Atualizar dados' }}
+      {{ loading.loading() ? 'Atualizando...' : 'Atualizar' }}
     </button>
-    <span class="text-sm text-muted" *ngIf="data()?.last_updated">
-      Última atualização: {{ ui.formatTimestamp(data()!.last_updated!) }}
-    </span>
   </div>
 
+  <!-- ── Skeleton ───────────────────────────────────────────────── -->
   @if (isInitialLoad() && loading.loading()) {
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       @for (i of [1, 2, 3, 4]; track i) {
-        <div class="p-4 rounded-lg bg-panel border border-border">
-          <app-skeleton height="14px" width="60%" />
-          <app-skeleton height="32px" [rows]="1" />
-          <app-skeleton height="12px" width="50%" />
+        <div class="p-4 rounded-xl bg-panel border border-border">
+          <div class="h-3 w-24 bg-border rounded mb-3"></div>
+          <div class="h-8 w-32 bg-border rounded mb-2"></div>
+          <div class="h-3 w-20 bg-border rounded"></div>
         </div>
       }
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       @for (i of [1, 2]; track i) {
-        <div class="p-5 rounded-lg bg-panel border border-border">
-          <app-skeleton height="24px" width="40%" />
-          <app-skeleton height="60px" [rows]="3" />
+        <div class="p-5 rounded-xl bg-panel border border-border">
+          <div class="h-5 w-40 bg-border rounded mb-4"></div>
+          @for (j of [1, 2, 3]; track j) {
+            <div class="h-14 bg-border rounded mb-2"></div>
+          }
         </div>
       }
     </div>
   }
 
   @if (data(); as d) {
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="p-4 rounded-lg bg-panel border border-border">
-        <div class="flex items-center gap-2 text-sm text-muted mb-2">
-          <lucide-icon name="wallet" size="14"></lucide-icon> Valor atual
+    <!-- ── KPI cards ───────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <!-- Patrimônio atual -->
+      <div class="p-4 rounded-xl bg-panel border border-border relative overflow-hidden">
+        <div
+          class="absolute top-0 right-0 w-16 h-16 rounded-bl-3xl opacity-10"
+          [class.bg-green-400]="d.summary.total_pnl >= 0"
+          [class.bg-red-400]="d.summary.total_pnl < 0"
+        ></div>
+        <div class="flex items-center gap-2 text-xs text-muted mb-2">
+          <lucide-icon name="wallet" size="13"></lucide-icon> Patrimônio
         </div>
-        <div class="text-2xl font-bold text-tx">
-          R$ {{ d.summary.total_current | number: '1.2-2' }}
+        <div class="text-2xl font-bold text-tx leading-none mb-1">
+          R$ {{ d.summary.total_current | number: '1.0-0' }}
         </div>
         <div
-          class="text-sm mt-1"
+          class="flex items-center gap-1 text-xs font-medium mt-1"
           [class.good]="d.summary.total_pnl >= 0"
           [class.warn]="d.summary.total_pnl < 0"
         >
-          {{ d.summary.total_pnl >= 0 ? '+' : '' }}{{ d.summary.total_pnl | number: '1.2-2' }} ({{
+          <lucide-icon
+            [name]="d.summary.total_pnl >= 0 ? 'trending-up' : 'trending-down'"
+            size="12"
+          ></lucide-icon>
+          {{ d.summary.total_pnl >= 0 ? '+' : '' }}R$
+          {{ d.summary.total_pnl | number: '1.0-0' }} ({{
             d.summary.total_pnl_pct | number: '1.2-2'
           }}%)
         </div>
       </div>
-      <div class="p-4 rounded-lg bg-panel border border-border">
-        <div class="flex items-center gap-2 text-sm text-muted mb-2">
-          <lucide-icon name="chart-column" size="14"></lucide-icon> Investido
+
+      <!-- Investido -->
+      <div class="p-4 rounded-xl bg-panel border border-border">
+        <div class="flex items-center gap-2 text-xs text-muted mb-2">
+          <lucide-icon name="chart-column" size="13"></lucide-icon> Investido
         </div>
-        <div class="text-2xl font-bold text-tx">
-          R$ {{ d.summary.total_invested | number: '1.2-2' }}
+        <div class="text-2xl font-bold text-tx leading-none mb-1">
+          R$ {{ d.summary.total_invested | number: '1.0-0' }}
         </div>
-        <div class="text-sm text-muted mt-1">{{ d.summary.positions_count }} ativos</div>
+        <div class="text-xs text-muted">{{ d.summary.positions_count }} posições</div>
       </div>
-      <div class="p-4 rounded-lg bg-panel border border-border">
-        <div class="flex items-center gap-2 text-sm text-muted mb-2">
-          <lucide-icon name="coins" size="14"></lucide-icon> Caixa disponível
+
+      <!-- Caixa disponível -->
+      <div class="p-4 rounded-xl bg-panel border border-border">
+        <div class="flex items-center gap-2 text-xs text-muted mb-2">
+          <lucide-icon name="coins" size="13"></lucide-icon> Caixa disponível
         </div>
-        <div class="text-2xl font-bold text-tx">
-          R$ {{ d.summary.cash_available | number: '1.2-2' }}
+        <div class="text-2xl font-bold text-tx leading-none mb-1">
+          R$ {{ d.summary.cash_available | number: '1.0-0' }}
         </div>
-        <div class="text-sm text-muted mt-1">para alocar</div>
+        <button
+          type="button"
+          (click)="goToMarket()"
+          class="text-xs text-accent hover:underline cursor-pointer bg-transparent border-0 p-0 font-medium"
+        >
+          Ver oportunidades →
+        </button>
       </div>
-      <div class="p-4 rounded-lg bg-panel border border-border">
-        <div class="flex items-center gap-2 text-sm text-muted mb-2">
-          <lucide-icon name="percent" size="14"></lucide-icon> Yield da carteira
+
+      <!-- Yield da carteira -->
+      <div class="p-4 rounded-xl bg-panel border border-border">
+        <div class="flex items-center gap-2 text-xs text-muted mb-2">
+          <lucide-icon name="percent" size="13"></lucide-icon> DY médio
         </div>
-        <div class="text-2xl font-bold text-tx">
+        <div class="text-2xl font-bold text-tx leading-none mb-1">
           {{
             d.summary.portfolio_yield != null
               ? (d.summary.portfolio_yield | number: '1.2-2') + '%'
               : '—'
           }}
         </div>
-        <div class="text-sm text-muted mt-1">DY médio ponderado</div>
+        <div class="text-xs text-muted">Dividend yield ponderado</div>
       </div>
     </div>
 
+    <!-- ── Renda passiva ───────────────────────────────────────── -->
     @if (d.summary.monthly_dividends_estimate > 0) {
       <div
-        class="p-6 rounded-xl bg-gradient-to-br from-accent/20 to-accent-2/20 border-2 border-accent/30"
+        class="p-5 rounded-xl bg-gradient-to-r from-accent/15 to-accent-2/10 border border-accent/30"
       >
-        <div class="flex items-start justify-between gap-4 mb-4">
+        <div class="flex items-start justify-between gap-4 mb-3">
           <div>
-            <div class="flex items-center gap-2 text-sm font-medium text-accent mb-2">
-              <lucide-icon name="coins" size="16"></lucide-icon>
-              Renda Passiva Atual
+            <div
+              class="flex items-center gap-2 text-xs font-semibold text-accent mb-2 uppercase tracking-wider"
+            >
+              <lucide-icon name="coins" size="14"></lucide-icon> Renda Passiva Estimada
             </div>
-            <div class="text-4xl font-bold text-tx mb-1">
-              R$ {{ d.summary.monthly_dividends_estimate | number: '1.2-2' }}
-              <span class="text-base font-normal text-muted">/mês</span>
-            </div>
-            <div class="text-sm text-muted">
-              R$ {{ d.summary.yearly_dividends_estimate | number: '1.2-2' }}/ano
-              @if (d.summary.portfolio_yield) {
-                <span class="ml-2"
-                  >• {{ d.summary.portfolio_yield | number: '1.2-2' }}% DY médio</span
-                >
-              }
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <span class="text-3xl font-bold text-tx"
+                >R$ {{ d.summary.monthly_dividends_estimate | number: '1.2-2' }}</span
+              >
+              <span class="text-sm text-muted"
+                >/mês · R$ {{ d.summary.yearly_dividends_estimate | number: '1.0-0' }}/ano</span
+              >
             </div>
           </div>
           <button
             type="button"
-            (click)="goToStrategy()"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-[#0b0e14] hover:opacity-90 transition-opacity"
+            (click)="goToMarket()"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-[#0b0e14] hover:opacity-90 transition-opacity flex-shrink-0"
           >
-            <lucide-icon name="trending-up" size="16"></lucide-icon>
-            Ver Projeções
+            <lucide-icon name="trending-up" size="15"></lucide-icon> Estratégia
           </button>
         </div>
         @if (d.summary.passive_income_goal && d.summary.passive_income_goal > 0) {
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-muted">Progresso da Meta</span>
-              <span class="font-semibold text-tx">
-                {{ d.summary.passive_income_progress | number: '1.0-0' }}%
-              </span>
+          <div>
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="text-muted">Progresso da meta mensal</span>
+              <span class="font-semibold text-tx"
+                >{{ d.summary.passive_income_progress | number: '1.0-0' }}%</span
+              >
             </div>
-            <div class="relative h-3 rounded-full bg-bg-2 overflow-hidden">
+            <div class="relative h-2.5 rounded-full bg-bg-2 overflow-hidden">
               <div
                 class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-accent to-accent-2 transition-all"
                 [style.width.%]="Math.min(d.summary.passive_income_progress || 0, 100)"
               ></div>
             </div>
-            <div class="text-xs text-muted text-right">
+            <div class="text-xs text-muted text-right mt-1">
               Meta: R$ {{ d.summary.passive_income_goal | number: '1.2-2' }}/mês
             </div>
           </div>
@@ -142,74 +170,73 @@
       </div>
     }
 
+    <!-- ── Alertas ─────────────────────────────────────────────── -->
     @if (d.alerts.length > 0) {
-      <div class="p-5 rounded-lg bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="triangle-alert" size="18"></lucide-icon> Alertas
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-3 text-tx">
+          <lucide-icon name="triangle-alert" size="16"></lucide-icon> Alertas
+          <span class="ml-auto text-xs font-normal bg-warn/20 text-warn px-2 py-0.5 rounded-full">{{
+            d.alerts.length
+          }}</span>
         </h2>
         <div class="flex flex-col gap-2">
           @for (a of d.alerts; track a.title) {
             <div class="alert" [class]="'alert-' + a.severity">
               <div class="flex items-center gap-2 font-medium text-sm">
-                <lucide-icon [name]="ui.alertIcon(a.kind)" size="14"></lucide-icon>
-                {{ a.title }}
+                <lucide-icon [name]="ui.alertIcon(a.kind)" size="14"></lucide-icon> {{ a.title }}
               </div>
-              <div class="text-sm text-muted mt-1">{{ a.detail }}</div>
+              <div class="text-sm text-muted mt-0.5">{{ a.detail }}</div>
             </div>
           }
         </div>
       </div>
     } @else if (d.positions.length > 0) {
       <div
-        class="empty flex items-center gap-2 p-4 rounded-lg bg-panel border border-border text-muted"
+        class="flex items-center gap-2 p-3 rounded-lg bg-panel border border-border text-muted text-sm"
       >
-        <lucide-icon name="check" size="16"></lucide-icon>
-        Nenhum alerta no momento. Sua carteira está dentro dos parâmetros.
+        <lucide-icon name="check" size="14"></lucide-icon> Nenhum alerta. Sua carteira está dentro
+        dos parâmetros.
       </div>
     }
 
+    <!-- ── Top Buys / Top Sells ────────────────────────────────── -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="p-5 rounded-lg bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="trending-up" size="18"></lucide-icon> Oportunidades de compra
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+          <lucide-icon name="trending-up" size="16"></lucide-icon> Oportunidades de compra
         </h2>
         @if (d.top_buys.length === 0) {
-          <div class="text-muted">Nenhuma oportunidade clara no momento.</div>
+          <div class="text-sm text-muted py-3">Nenhuma oportunidade clara no momento.</div>
         } @else {
-          <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-2">
             @for (o of d.top_buys; track o.ticker) {
               <div
-                class="flex justify-between items-start gap-4 p-3 rounded-lg bg-panel-2 border border-border hover:shadow-lg transition-shadow"
+                class="flex justify-between items-center gap-3 p-3 rounded-lg bg-panel-2 border border-border hover:border-accent/30 transition-colors"
               >
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap mb-1">
-                    <div class="font-semibold text-base text-tx">{{ o.ticker }}</div>
-                    <span class="tag">{{ ui.assetTypeLabel(o.asset_type) }}</span>
-                    <span class="tag tag-cat" [class]="'cat-' + o.category_resolved">{{
-                      ui.categoryLabel(o.category_resolved)
-                    }}</span>
-                  </div>
-                  <div class="text-sm text-muted truncate mb-2">{{ o.name }}</div>
-                  <div class="flex items-center gap-2 flex-wrap text-xs">
-                    <span class="verdict-pill" [class]="ui.verdictClass(o.verdict)">{{
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <div class="font-semibold text-sm text-tx">{{ o.ticker }}</div>
+                    <span class="verdict-pill text-[10px]" [class]="ui.verdictClass(o.verdict)">{{
                       o.label
                     }}</span>
-                    <span *ngIf="o.margin_of_safety != null" class="text-muted"
+                  </div>
+                  <div class="text-xs text-muted truncate">{{ o.name }}</div>
+                  <div class="flex items-center gap-2 mt-0.5 text-xs text-muted">
+                    <span *ngIf="o.margin_of_safety != null"
                       >MS: {{ o.margin_of_safety * 100 | number: '1.0-0' }}%</span
                     >
-                    <span *ngIf="o.dividend_yield" class="text-muted"
+                    <span *ngIf="o.dividend_yield"
                       >DY: {{ o.dividend_yield | number: '1.1-1' }}%</span
                     >
                   </div>
                 </div>
                 <div class="text-right flex-shrink-0">
-                  <div class="text-lg font-bold text-tx">R$ {{ o.price | number: '1.2-2' }}</div>
+                  <div class="font-bold text-sm text-tx">R$ {{ o.price | number: '1.2-2' }}</div>
                   <div class="text-xs text-muted" *ngIf="o.fair_price">
                     justo: {{ o.fair_price | number: '1.2-2' }}
                   </div>
-                  <div class="text-xs text-soft mt-1" *ngIf="o.suggested_quantity">
-                    {{ o.suggested_quantity }} cotas · R$
-                    {{ o.suggested_invest | number: '1.2-2' }}
+                  <div class="text-xs text-accent font-medium mt-0.5" *ngIf="o.suggested_quantity">
+                    {{ o.suggested_quantity }}x · R$ {{ o.suggested_invest | number: '1.0-0' }}
                   </div>
                 </div>
               </div>
@@ -218,44 +245,38 @@
         }
       </div>
 
-      <div class="p-5 rounded-lg bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="trending-down" size="18"></lucide-icon> Atenção (sinal de venda)
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+          <lucide-icon name="trending-down" size="16"></lucide-icon> Atenção (sinal de venda)
         </h2>
         @if (d.top_sells.length === 0) {
-          <div class="text-muted">Nenhum ativo com sinal de venda.</div>
+          <div class="text-sm text-muted py-3">Nenhum ativo com sinal de venda.</div>
         } @else {
-          <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-2">
             @for (p of d.top_sells; track p.ticker) {
               <div
-                class="flex justify-between items-start gap-4 p-3 rounded-lg bg-panel-2 border border-border hover:shadow-lg transition-shadow"
+                class="flex justify-between items-center gap-3 p-3 rounded-lg bg-panel-2 border border-border hover:border-warn/30 transition-colors"
               >
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap mb-1">
-                    <div class="font-semibold text-base text-tx">{{ p.ticker }}</div>
-                    <span class="tag">{{ ui.assetTypeLabel(p.asset_type) }}</span>
-                  </div>
-                  <div class="text-sm text-muted truncate mb-2">{{ p.name }}</div>
-                  <div class="flex items-center gap-2 flex-wrap text-xs">
-                    <span class="verdict-pill" [class]="ui.verdictClass(p.verdict)">{{
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <div class="font-semibold text-sm text-tx">{{ p.ticker }}</div>
+                    <span class="verdict-pill text-[10px]" [class]="ui.verdictClass(p.verdict)">{{
                       p.label
                     }}</span>
-                    <span
-                      *ngIf="p.pnl_pct != null"
-                      [class.good]="p.pnl_pct >= 0"
-                      [class.warn]="p.pnl_pct < 0"
-                      class="text-xs"
-                    >
-                      PnL: {{ p.pnl_pct | number: '1.2-2' }}%
-                    </span>
                   </div>
+                  <div class="text-xs text-muted truncate">{{ p.name }}</div>
                 </div>
                 <div class="text-right flex-shrink-0">
-                  <div class="text-lg font-bold text-tx">
+                  <div class="font-bold text-sm text-tx">
                     R$ {{ p.current_price | number: '1.2-2' }}
                   </div>
-                  <div class="text-xs text-muted" *ngIf="p.fair_price">
-                    justo: {{ p.fair_price | number: '1.2-2' }}
+                  <div
+                    class="text-xs"
+                    *ngIf="p.pnl_pct != null"
+                    [class.good]="p.pnl_pct >= 0"
+                    [class.warn]="p.pnl_pct < 0"
+                  >
+                    PnL: {{ p.pnl_pct | number: '1.2-2' }}%
                   </div>
                 </div>
               </div>
@@ -265,67 +286,124 @@
       </div>
     </div>
 
-    <div class="p-5 rounded-lg bg-panel border border-border">
-      <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
-        <lucide-icon name="target" size="18"></lucide-icon> Alocação vs. metas
-      </h2>
-      <div class="flex flex-col gap-4">
-        @for (a of d.allocations; track a.category) {
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-3">
-              <span class="tag tag-cat" [class]="'cat-' + a.category">{{
-                ui.categoryLabel(a.category)
-              }}</span>
-              <span class="text-sm text-muted">R$ {{ a.current_value | number: '1.2-2' }}</span>
-            </div>
-            <div class="relative h-6 rounded-full bg-bg-2 overflow-hidden">
-              <div
-                class="absolute inset-y-0 left-0 rounded-full bg-accent transition-all"
-                [style.width.%]="a.current_pct"
-              ></div>
-              <div
-                class="absolute top-0 bottom-0 w-0.5 bg-accent-2"
-                *ngIf="a.target_pct != null"
-                [style.left.%]="a.target_pct"
-              ></div>
-            </div>
-            <div class="flex items-center gap-2 text-sm">
-              <strong class="text-tx">{{ a.current_pct | number: '1.1-1' }}%</strong>
-              <span class="text-muted" *ngIf="a.target_pct != null">
-                / meta {{ a.target_pct }}%</span
-              >
-              <span
-                *ngIf="a.delta_pct != null && Math.abs(a.delta_pct) >= 2"
-                class="text-xs"
-                [class.good]="a.delta_pct >= 0"
-                [class.warn]="a.delta_pct < 0"
-              >
-                {{ a.delta_pct > 0 ? '+' : '' }}{{ a.delta_pct | number: '1.1-1' }}%
-              </span>
-            </div>
-          </div>
-        }
+    <!-- ── Posições da carteira ────────────────────────────────── -->
+    @if (d.positions.length > 0) {
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+          <lucide-icon name="briefcase" size="16"></lucide-icon> Carteira
+          <span class="ml-auto text-xs font-normal text-muted"
+            >{{ d.positions.length }} ativos</span
+          >
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-border text-xs text-muted">
+                <th class="text-left py-2 pr-4 font-medium">Ativo</th>
+                <th class="text-right py-2 px-2 font-medium hidden sm:table-cell">Qtd</th>
+                <th class="text-right py-2 px-2 font-medium hidden md:table-cell">PM</th>
+                <th class="text-right py-2 px-2 font-medium">Atual</th>
+                <th class="text-right py-2 pl-2 font-medium">P&L</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pos of d.positions; track pos.ticker) {
+                <tr class="border-b border-border/50 hover:bg-panel-2 transition-colors">
+                  <td class="py-2 pr-4">
+                    <div class="font-semibold text-tx">{{ pos.ticker }}</div>
+                    <div class="text-xs text-muted">{{ pos.name }}</div>
+                  </td>
+                  <td class="py-2 px-2 text-right text-muted hidden sm:table-cell">
+                    {{ pos.quantity }}
+                  </td>
+                  <td class="py-2 px-2 text-right text-muted hidden md:table-cell">
+                    R$ {{ pos.avg_price | number: '1.2-2' }}
+                  </td>
+                  <td class="py-2 px-2 text-right font-medium text-tx">
+                    {{ pos.current_price ? 'R$ ' + (pos.current_price | number: '1.2-2') : '—' }}
+                  </td>
+                  <td
+                    class="py-2 pl-2 text-right font-semibold"
+                    [class.good]="(pos.pnl_pct ?? 0) >= 0"
+                    [class.warn]="(pos.pnl_pct ?? 0) < 0"
+                  >
+                    {{
+                      pos.pnl_pct != null
+                        ? (pos.pnl_pct >= 0 ? '+' : '') + (pos.pnl_pct | number: '1.2-2') + '%'
+                        : '—'
+                    }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    }
 
+    <!-- ── Alocação vs metas ───────────────────────────────────── -->
+    @if (d.allocations.length > 0) {
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+          <lucide-icon name="target" size="16"></lucide-icon> Alocação vs. Metas
+        </h2>
+        <div class="flex flex-col gap-4">
+          @for (a of d.allocations; track a.category) {
+            <div class="flex flex-col gap-1.5">
+              <div class="flex items-center justify-between gap-3 text-sm">
+                <span class="tag tag-cat" [class]="'cat-' + a.category">{{
+                  ui.categoryLabel(a.category)
+                }}</span>
+                <div class="flex items-center gap-3 ml-auto">
+                  <span class="font-semibold text-tx">{{ a.current_pct | number: '1.1-1' }}%</span>
+                  <span class="text-muted" *ngIf="a.target_pct != null"
+                    >/ meta {{ a.target_pct }}%</span
+                  >
+                  <span
+                    class="text-xs font-medium"
+                    *ngIf="a.delta_pct != null && Math.abs(a.delta_pct) >= 2"
+                    [class.good]="a.delta_pct >= 0"
+                    [class.warn]="a.delta_pct < 0"
+                  >
+                    {{ a.delta_pct > 0 ? '+' : '' }}{{ a.delta_pct | number: '1.1-1' }}%
+                  </span>
+                  <span class="text-xs text-muted">R$ {{ a.current_value | number: '1.0-0' }}</span>
+                </div>
+              </div>
+              <div class="relative h-5 rounded-full bg-bg-2 overflow-hidden">
+                <div
+                  class="absolute inset-y-0 left-0 rounded-full bg-accent transition-all"
+                  [style.width.%]="a.current_pct"
+                ></div>
+                <div
+                  class="absolute top-0 bottom-0 w-0.5 bg-accent-2"
+                  *ngIf="a.target_pct != null"
+                  [style.left.%]="a.target_pct"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ── Evolução do patrimônio ──────────────────────────────── -->
     @if (d.snapshots.length >= 2) {
-      <div class="p-5 rounded-lg bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="chart-column" size="18"></lucide-icon> Evolução do patrimônio
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+          <lucide-icon name="chart-column" size="16"></lucide-icon> Evolução do Patrimônio
         </h2>
 
         <div class="grid grid-cols-3 gap-4 mb-4">
-          <div class="text-center">
-            <div class="text-xs text-muted mb-1">Início</div>
+          <div class="text-center p-3 rounded-lg bg-panel-2">
+            <div class="text-xs text-muted mb-0.5">Início</div>
             <div class="text-sm font-semibold text-tx">
-              R$ {{ d.snapshots[0].total_current | number: '1.2-2' }}
+              R$ {{ d.snapshots[0].total_current | number: '1.0-0' }}
             </div>
-            <div class="text-xs text-muted">
-              {{ formatDate(d.snapshots[0].captured_at) }}
-            </div>
+            <div class="text-xs text-muted">{{ formatDate(d.snapshots[0].captured_at) }}</div>
           </div>
-          <div class="text-center">
-            <div class="text-xs text-muted mb-1">Variação</div>
+          <div class="text-center p-3 rounded-lg bg-panel-2">
+            <div class="text-xs text-muted mb-0.5">Variação total</div>
             <div
               class="text-sm font-semibold"
               [class.good]="
@@ -340,11 +418,10 @@
                 0
                   ? '+'
                   : ''
-              }}
-              R$
+              }}R$
               {{
                 d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current
-                  | number: '1.2-2'
+                  | number: '1.0-0'
               }}
             </div>
             <div
@@ -363,10 +440,10 @@
               }}%
             </div>
           </div>
-          <div class="text-center">
-            <div class="text-xs text-muted mb-1">Atual</div>
+          <div class="text-center p-3 rounded-lg bg-panel-2">
+            <div class="text-xs text-muted mb-0.5">Atual</div>
             <div class="text-sm font-semibold text-tx">
-              R$ {{ d.snapshots[d.snapshots.length - 1].total_current | number: '1.2-2' }}
+              R$ {{ d.snapshots[d.snapshots.length - 1].total_current | number: '1.0-0' }}
             </div>
             <div class="text-xs text-muted">
               {{ formatDate(d.snapshots[d.snapshots.length - 1].captured_at) }}
@@ -379,17 +456,16 @@
             <defs>
               <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" style="stop-color: rgb(var(--accent)); stop-opacity: 0.3" />
-                <stop offset="100%" style="stop-color: rgb(var(--accent)); stop-opacity: 0.05" />
+                <stop offset="100%" style="stop-color: rgb(var(--accent)); stop-opacity: 0.02" />
               </linearGradient>
             </defs>
-
             <line
               x1="40"
               y1="20"
               x2="590"
               y2="20"
               stroke="currentColor"
-              stroke-opacity="0.1"
+              stroke-opacity="0.08"
               stroke-width="1"
             />
             <line
@@ -398,7 +474,7 @@
               x2="590"
               y2="60"
               stroke="currentColor"
-              stroke-opacity="0.1"
+              stroke-opacity="0.08"
               stroke-width="1"
             />
             <line
@@ -407,7 +483,7 @@
               x2="590"
               y2="100"
               stroke="currentColor"
-              stroke-opacity="0.1"
+              stroke-opacity="0.08"
               stroke-width="1"
             />
             <line
@@ -416,18 +492,8 @@
               x2="590"
               y2="140"
               stroke="currentColor"
-              stroke-opacity="0.1"
+              stroke-opacity="0.15"
               stroke-width="1"
-            />
-
-            <line
-              x1="40"
-              y1="140"
-              x2="590"
-              y2="140"
-              stroke="currentColor"
-              stroke-opacity="0.2"
-              stroke-width="1.5"
             />
             <line
               x1="40"
@@ -435,15 +501,13 @@
               x2="40"
               y2="140"
               stroke="currentColor"
-              stroke-opacity="0.2"
-              stroke-width="1.5"
+              stroke-opacity="0.15"
+              stroke-width="1"
             />
-
             <path
               [attr.d]="ui.snapshotAreaPath(d.snapshots, 550, 120, 40, 20)"
               fill="url(#areaGradient)"
             />
-
             <path
               [attr.d]="ui.snapshotPath(d.snapshots, 550, 120, 40, 20)"
               stroke="rgb(var(--accent))"
@@ -452,7 +516,6 @@
               stroke-linecap="round"
               stroke-linejoin="round"
             />
-
             @for (snap of d.snapshots; track snap.captured_at; let i = $index) {
               @if (
                 i === 0 ||
@@ -474,49 +537,41 @@
                 />
               }
             }
-
             <text x="35" y="25" text-anchor="end" class="text-[8px] fill-muted">
               {{ ui.maxSnapshot(d.snapshots) | number: '1.0-0' }}
-            </text>
-            <text x="35" y="103" text-anchor="end" class="text-[8px] fill-muted">
-              {{
-                (ui.maxSnapshot(d.snapshots) + ui.minSnapshot(d.snapshots)) / 2 | number: '1.0-0'
-              }}
             </text>
             <text x="35" y="143" text-anchor="end" class="text-[8px] fill-muted">
               {{ ui.minSnapshot(d.snapshots) | number: '1.0-0' }}
             </text>
-
-            <text x="40" y="155" text-anchor="start" class="text-[8px] fill-muted">
+            <text x="40" y="160" text-anchor="start" class="text-[8px] fill-muted">
               {{ formatDate(d.snapshots[0].captured_at) }}
             </text>
-            <text x="590" y="155" text-anchor="end" class="text-[8px] fill-muted">
+            <text x="590" y="160" text-anchor="end" class="text-[8px] fill-muted">
               {{ formatDate(d.snapshots[d.snapshots.length - 1].captured_at) }}
             </text>
           </svg>
         </div>
-
-        <div class="flex items-center justify-between mt-3 text-xs text-muted">
+        <div class="flex items-center justify-between mt-2 text-xs text-muted">
           <span>{{ d.snapshots.length }} registros</span>
-          <span>
-            Período:
-            {{
+          <span
+            >{{
               Math.ceil(
                 (d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) /
                   86400
               )
             }}
-            dias
-          </span>
+            dias</span
+          >
         </div>
       </div>
     }
 
+    <!-- ── Disclaimer ──────────────────────────────────────────── -->
     <div class="p-4 rounded-lg bg-panel-2 border border-border text-xs text-muted leading-relaxed">
       {{ d.disclaimer }}
     </div>
   } @else if (hasError()) {
-    <div class="p-6 rounded-lg bg-panel border border-border">
+    <div class="p-6 rounded-xl bg-panel border border-border">
       <div class="flex items-center gap-3 mb-3">
         <lucide-icon name="triangle-alert" size="20" class="text-warn flex-shrink-0"></lucide-icon>
         <h3 class="text-base font-semibold m-0 text-tx">Não foi possível carregar o dashboard</h3>
@@ -529,18 +584,18 @@
         (click)="loadDashboard()"
         class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 transition-opacity"
       >
-        <lucide-icon name="refresh-cw" size="14"></lucide-icon>
-        Tentar novamente
+        <lucide-icon name="refresh-cw" size="14"></lucide-icon> Tentar novamente
       </button>
     </div>
   } @else if (!loading.loading()) {
+    <!-- Onboarding -->
     <div class="p-6 rounded-xl bg-panel border border-border">
-      <div class="flex items-center gap-3 mb-4">
+      <div class="flex items-center gap-3 mb-5">
         <div class="w-10 h-10 rounded-full bg-accent/20 grid place-items-center flex-shrink-0">
           <lucide-icon name="sparkles" size="20" class="text-accent"></lucide-icon>
         </div>
         <div>
-          <h3 class="text-lg font-bold m-0 text-tx">Bem-vindo ao FinançaAI</h3>
+          <h3 class="text-lg font-bold m-0 text-tx">Bem-vindo ao fianceAI</h3>
           <p class="text-sm text-muted m-0">
             Siga os 3 passos para começar a monitorar sua carteira
           </p>
@@ -549,8 +604,8 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
           <div class="flex items-center gap-2">
-            <span class="text-2xl font-black text-accent/40 leading-none">01</span>
-            <lucide-icon name="wallet" size="18" class="text-accent"></lucide-icon>
+            <span class="text-2xl font-black text-accent/30 leading-none">01</span
+            ><lucide-icon name="wallet" size="18" class="text-accent"></lucide-icon>
           </div>
           <div class="font-semibold text-sm text-tx">Cadastre seus ativos</div>
           <p class="text-xs text-muted m-0 leading-relaxed">
@@ -560,8 +615,8 @@
         </div>
         <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
           <div class="flex items-center gap-2">
-            <span class="text-2xl font-black text-accent/40 leading-none">02</span>
-            <lucide-icon name="settings" size="18" class="text-accent"></lucide-icon>
+            <span class="text-2xl font-black text-accent/30 leading-none">02</span
+            ><lucide-icon name="settings" size="18" class="text-accent"></lucide-icon>
           </div>
           <div class="font-semibold text-sm text-tx">Defina suas metas</div>
           <p class="text-xs text-muted m-0 leading-relaxed">
@@ -571,13 +626,13 @@
         </div>
         <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
           <div class="flex items-center gap-2">
-            <span class="text-2xl font-black text-accent/40 leading-none">03</span>
-            <lucide-icon name="target" size="18" class="text-accent"></lucide-icon>
+            <span class="text-2xl font-black text-accent/30 leading-none">03</span
+            ><lucide-icon name="target" size="18" class="text-accent"></lucide-icon>
           </div>
-          <div class="font-semibold text-sm text-tx">Explore oportunidades</div>
+          <div class="font-semibold text-sm text-tx">Explore o mercado</div>
           <p class="text-xs text-muted m-0 leading-relaxed">
-            Vá em <strong>Mercado</strong> para ver ativos com bom Bazin e Graham, e encontrar as
-            melhores entradas.
+            Vá em <strong>Mercado</strong> para ver oportunidades, analisar ativos e obter sugestões
+            de compra personalizadas.
           </p>
         </div>
       </div>

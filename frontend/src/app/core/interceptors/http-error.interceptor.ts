@@ -12,6 +12,7 @@ const LONG_TIMEOUT_PATTERNS = [
   '/dashboard',
   '/strategy',
   '/sectors-summary',
+  '/quick-invest',
 ];
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {

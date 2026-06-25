@@ -25,18 +25,6 @@ export const routes: Routes = [
     title: 'Mercado - fianceAI',
   },
   {
-    path: 'strategy',
-    loadComponent: () =>
-      import('./components/strategy/strategy.component').then(m => m.StrategyComponent),
-    title: 'Estratégia - fianceAI',
-  },
-  {
-    path: 'sectors',
-    loadComponent: () =>
-      import('./components/sectors/sectors.component').then(m => m.SectorsComponent),
-    title: 'Segmentos - fianceAI',
-  },
-  {
     path: 'config',
     loadComponent: () =>
       import('./components/config/config.component').then(m => m.ConfigComponent),

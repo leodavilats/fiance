@@ -13,6 +13,7 @@ import {
   AssetAnalysis,
   InvestmentStrategy,
   LoadingService,
+  QuickInvestResponse,
   RecommendService,
   RendaFixaAsset,
   RendaFixaCompareResponse,
@@ -20,7 +21,7 @@ import {
   UiHelperService,
 } from '../../core';
 
-type StrategyTab = 'analisar' | 'ajuste' | 'renda_fixa';
+type StrategyTab = 'analisar' | 'ajuste' | 'renda_fixa' | 'sugestao';
 
 interface AnalyzeForm {
   symbol: FormControl<string>;
@@ -54,9 +55,19 @@ export class StrategyComponent implements OnInit {
   analyzeResult = signal<AssetAnalysis | null>(null);
   rfResult = signal<RendaFixaCompareResponse | null>(null);
   referenceRates = signal<ReferenceRates | null>(null);
+  quickInvestResult = signal<QuickInvestResponse | null>(null);
+  quickInvestLoading = signal(false);
+  quickInvestError = signal(false);
 
   analyzeForm: FormGroup<AnalyzeForm> = this.fb.group({
     symbol: this.fb.control('VALE3', { nonNullable: true, validators: Validators.required }),
+  });
+
+  quickInvestForm = this.fb.nonNullable.group({
+    cash_available: [1000, [Validators.required, Validators.min(1)]],
+    min_order_value: [50, [Validators.required, Validators.min(1)]],
+    use_current_goals: [true],
+    prioritize_rebalance: [true],
   });
 
   rfForms!: FormArray<FormGroup<RendaFixaForm>>;
@@ -135,6 +146,31 @@ export class StrategyComponent implements OnInit {
       next: r => this.rfResult.set(r),
       error: () => {},
     });
+  }
+
+  runQuickInvest(): void {
+    if (this.quickInvestForm.invalid) return;
+    this.quickInvestLoading.set(true);
+    this.quickInvestError.set(false);
+    this.quickInvestResult.set(null);
+    const v = this.quickInvestForm.getRawValue();
+    this.svc
+      .quickInvest({
+        cash_available: v.cash_available,
+        use_current_goals: v.use_current_goals,
+        prioritize_rebalance: v.prioritize_rebalance,
+        min_order_value: v.min_order_value,
+      })
+      .subscribe({
+        next: r => {
+          this.quickInvestResult.set(r);
+          this.quickInvestLoading.set(false);
+        },
+        error: () => {
+          this.quickInvestError.set(true);
+          this.quickInvestLoading.set(false);
+        },
+      });
   }
 
   loadStrategy(): void {

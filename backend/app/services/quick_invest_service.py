@@ -22,11 +22,11 @@ class QuickInvestService:
         total_portfolio = 0.0
 
         for item in stored:
-            snap = await self.asset_repo.get_asset(item.ticker)
+            snap = await self.asset_repo.get_asset(item["ticker"])
             if not snap or not snap.price:
                 continue
 
-            value = item.quantity * snap.price
+            value = item["quantity"] * snap.price
             total_portfolio += value
 
             cat = auto_category(snap.asset_type, snap.dividend_yield)
@@ -56,9 +56,10 @@ class QuickInvestService:
             }
 
         opps_response = await self.opportunity_service.get_opportunities(
-            min_score=60,
-            top=30,
-            only_interesting=False,
+            page=1,
+            page_size=30,
+            sort_by="score",
+            sort_order="desc",
         )
         opportunities = opps_response.items
 
