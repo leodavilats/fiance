@@ -7,15 +7,58 @@ export class UiHelperService {
     return new Date(ts * 1000).toLocaleString('pt-BR');
   }
 
-  assetTypeLabel(t: AssetType): string {
-    const map: Record<AssetType, string> = {
+  assetTypeLabel(t: AssetType | string): string {
+    const map: Record<string, string> = {
       br_stock: 'Ação BR',
       bdr: 'BDR',
       fii: 'FII',
       us_stock: 'Ação EUA',
       crypto: 'Cripto',
+      renda_fixa: 'Renda Fixa',
     };
     return map[t] || t;
+  }
+
+  assetTypeIcon(t: string): string {
+    const map: Record<string, string> = {
+      renda_fixa: 'landmark',
+      br_stock: 'trending-up',
+      bdr: 'globe',
+      fii: 'building-2',
+      us_stock: 'flag',
+      crypto: 'bitcoin',
+    };
+    return map[t] || 'circle';
+  }
+
+  // Cores categóricas fixas (não ciclam) — mesma cor sempre representa o mesmo tipo/segmento.
+  assetTypeSeriesColor(t: string): string {
+    const map: Record<string, string> = {
+      renda_fixa: 'var(--series-1)',
+      br_stock: 'var(--series-2)',
+      fii: 'var(--series-3)',
+      bdr: 'var(--series-5)',
+      us_stock: 'var(--series-7)',
+      crypto: 'var(--series-8)',
+    };
+    return map[t] || 'var(--series-muted)';
+  }
+
+  sectorSeriesColor(sectorLabel: string): string {
+    const map: Record<string, string> = {
+      Financeiro: 'var(--series-1)',
+      Tecnologia: 'var(--series-2)',
+      Energia: 'var(--series-3)',
+      'Consumo Cíclico': 'var(--series-4)',
+      Saúde: 'var(--series-5)',
+      Industrial: 'var(--series-6)',
+      Imobiliário: 'var(--series-7)',
+      'Consumo Básico': 'var(--series-8)',
+      'Materiais Básicos': 'var(--series-9)',
+      'Utilidades Públicas': 'var(--series-10)',
+      Telecomunicações: 'var(--series-11)',
+    };
+    return map[sectorLabel] || 'var(--series-muted)';
   }
 
   categoryLabel(c: string): string {

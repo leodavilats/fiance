@@ -45,6 +45,104 @@
 </div>
 
 <div class="p-5 rounded-lg bg-panel border border-border mb-5">
+  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+    <lucide-icon name="chart-pie" size="20"></lucide-icon> Composição da Carteira
+  </h2>
+  <p class="text-sm text-muted mb-4">
+    Quanto do seu dinheiro está em cada tipo de investimento e, no caso de ações/BDRs, em cada
+    segmento.
+  </p>
+
+  @if (alocacaoPorTipo().length === 0) {
+    <p class="text-sm text-muted italic">
+      Adicione ativos e clique em "Avaliar" para ver a composição da carteira.
+    </p>
+  } @else {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div>
+        <h3 class="text-sm font-semibold text-tx mb-3">Por tipo de investimento</h3>
+        <div class="flex h-3 rounded-full overflow-hidden mb-3 bg-bg-2 gap-0.5">
+          @for (t of alocacaoPorTipo(); track t.tipo) {
+            <div
+              [style.width.%]="t.pct"
+              [style.background]="ui.assetTypeSeriesColor(t.tipo)"
+              [title]="ui.assetTypeLabel(t.tipo) + ': ' + (t.pct | number: '1.1-1') + '%'"
+            ></div>
+          }
+        </div>
+        <div class="flex flex-col gap-2">
+          @for (t of alocacaoPorTipo(); track t.tipo) {
+            <div class="flex items-center justify-between gap-3 text-sm">
+              <span class="flex items-center gap-2 text-tx">
+                <span
+                  class="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                  [style.background]="ui.assetTypeSeriesColor(t.tipo)"
+                ></span>
+                <lucide-icon
+                  [name]="ui.assetTypeIcon(t.tipo)"
+                  size="14"
+                  class="text-muted shrink-0"
+                ></lucide-icon>
+                {{ ui.assetTypeLabel(t.tipo) }}
+              </span>
+              <span class="flex items-center gap-3 shrink-0">
+                <span class="text-muted text-xs">R$ {{ t.valor | number: '1.2-2' }}</span>
+                <span class="font-semibold text-tx w-14 text-right"
+                  >{{ t.pct | number: '1.1-1' }}%</span
+                >
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold text-tx mb-3">Ações/BDRs por segmento</h3>
+        @if (alocacaoPorSetor().length === 0) {
+          <p class="text-sm text-muted italic">
+            Nenhuma ação ou BDR avaliada ainda. Avalie os ativos negociados para ver os segmentos.
+          </p>
+        } @else {
+          <div class="flex h-3 rounded-full overflow-hidden mb-3 bg-bg-2 gap-0.5">
+            @for (s of alocacaoPorSetor(); track s.setor) {
+              <div
+                [style.width.%]="s.pct"
+                [style.background]="ui.sectorSeriesColor(s.setor)"
+                [title]="s.setor + ': ' + (s.pct | number: '1.1-1') + '%'"
+              ></div>
+            }
+          </div>
+          <div class="flex flex-col gap-2">
+            @for (s of alocacaoPorSetor(); track s.setor) {
+              <div class="flex items-center justify-between gap-3 text-sm">
+                <span class="flex items-center gap-2 text-tx">
+                  <span
+                    class="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                    [style.background]="ui.sectorSeriesColor(s.setor)"
+                  ></span>
+                  <lucide-icon
+                    [name]="ui.sectorIcon(s.setor)"
+                    size="14"
+                    class="text-muted shrink-0"
+                  ></lucide-icon>
+                  {{ s.setor }}
+                </span>
+                <span class="flex items-center gap-3 shrink-0">
+                  <span class="text-muted text-xs">R$ {{ s.valor | number: '1.2-2' }}</span>
+                  <span class="font-semibold text-tx w-14 text-right"
+                    >{{ s.pct | number: '1.1-1' }}%</span
+                  >
+                </span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<div class="p-5 rounded-lg bg-panel border border-border mb-5">
   <div class="flex items-center justify-between mb-4">
     <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
       <lucide-icon name="trending-up" size="20"></lucide-icon> Ativos Negociados

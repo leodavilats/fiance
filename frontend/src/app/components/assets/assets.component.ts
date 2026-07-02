@@ -163,6 +163,62 @@ export class AssetsComponent implements OnInit {
     return total;
   });
 
+  alocacaoPorTipo = computed(() => {
+    const total = this.valorAtual();
+    if (total <= 0) return [];
+
+    const buckets = new Map<string, number>();
+
+    const rf = this.totalValorAtualRF();
+    if (rf > 0) buckets.set('renda_fixa', rf);
+
+    const r = this.result();
+    if (r) {
+      for (const p of r.positions) {
+        const valor = p.current_value ?? p.invested;
+        buckets.set(p.asset_type, (buckets.get(p.asset_type) || 0) + valor);
+      }
+    }
+
+    return Array.from(buckets.entries())
+      .map(([tipo, valor]) => ({ tipo, valor, pct: (valor / total) * 100 }))
+      .sort((a, b) => b.valor - a.valor);
+  });
+
+  alocacaoPorSetor = computed(() => {
+    const r = this.result();
+    if (!r) return [];
+
+    const STOCK_TYPES = new Set(['br_stock', 'bdr', 'us_stock']);
+    const buckets = new Map<string, number>();
+    let totalAcoes = 0;
+
+    for (const p of r.positions) {
+      if (!STOCK_TYPES.has(p.asset_type)) continue;
+      const valor = p.current_value ?? p.invested;
+      const setor = p.sector ? this.ui.translateSector(p.sector) : 'Outros';
+      buckets.set(setor, (buckets.get(setor) || 0) + valor);
+      totalAcoes += valor;
+    }
+
+    if (totalAcoes <= 0) return [];
+
+    let entries = Array.from(buckets.entries())
+      .map(([setor, valor]) => ({ setor, valor }))
+      .sort((a, b) => b.valor - a.valor);
+
+    const MAX_SEGMENTOS = 8;
+    if (entries.length > MAX_SEGMENTOS) {
+      const cauda = entries.slice(MAX_SEGMENTOS - 1);
+      const outros = cauda.reduce((sum, e) => sum + e.valor, 0);
+      entries = [...entries.slice(0, MAX_SEGMENTOS - 1), { setor: 'Outros', valor: outros }].sort(
+        (a, b) => b.valor - a.valor
+      );
+    }
+
+    return entries.map(e => ({ ...e, pct: (e.valor / totalAcoes) * 100 }));
+  });
+
   avgTaxaRF = computed(() => {
     this.rfVersion();
     const items = this.rendaFixaItems.getRawValue().filter(item => !item.oculto);
@@ -359,10 +415,9 @@ export class AssetsComponent implements OnInit {
 
     const dataAplicacao = new Date(item.data_aplicacao);
     const hoje = new Date();
-    const diasCorridos = Math.max(
-      0,
-      Math.floor((hoje.getTime() - dataAplicacao.getTime()) / (1000 * 60 * 60 * 24))
-    );
+    const diasCorridos = isNaN(dataAplicacao.getTime())
+      ? 0
+      : Math.max(0, Math.floor((hoje.getTime() - dataAplicacao.getTime()) / (1000 * 60 * 60 * 24)));
 
     const rendimentoBruto =
       item.valor_investido * (Math.pow(1 + taxaAnual / 100, diasCorridos / 365) - 1);
