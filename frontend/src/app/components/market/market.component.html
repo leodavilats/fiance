@@ -18,39 +18,44 @@
     </button>
     <button
       type="button"
-      (click)="activeTab.set('dip-scanner')"
-      [class.active]="activeTab() === 'dip-scanner'"
+      (click)="activeTab.set('investir')"
+      [class.active]="activeTab() === 'investir'"
       class="tab-btn whitespace-nowrap"
     >
-      <lucide-icon name="trending-down" size="18"></lucide-icon> Scanner de Baixas
+      <lucide-icon name="wand-sparkles" size="18"></lucide-icon> Investir
     </button>
     <button
       type="button"
-      (click)="activeTab.set('analisar')"
-      [class.active]="activeTab() === 'analisar'"
+      (click)="activeTab.set('ferramentas')"
+      [class.active]="activeTab() === 'ferramentas'"
       class="tab-btn whitespace-nowrap"
     >
-      <lucide-icon name="search" size="18"></lucide-icon> Analisar Ativo
-    </button>
-    <button
-      type="button"
-      (click)="activeTab.set('ajuste')"
-      [class.active]="activeTab() === 'ajuste'"
-      class="tab-btn whitespace-nowrap"
-    >
-      <lucide-icon name="wand-sparkles" size="18"></lucide-icon> Ajuste na Carteira
-    </button>
-    <button
-      type="button"
-      (click)="activeTab.set('simulador_rf')"
-      [class.active]="activeTab() === 'simulador_rf'"
-      class="tab-btn whitespace-nowrap"
-    >
-      <lucide-icon name="landmark" size="18"></lucide-icon> Simulador de RF
+      <lucide-icon name="wrench" size="18"></lucide-icon> Ferramentas
     </button>
   </div>
 
   @if (activeTab() === 'opportunities') {
+    <div class="flex gap-2">
+      <button
+        type="button"
+        (click)="oppMode.set('todas')"
+        [class.active]="oppMode() === 'todas'"
+        class="tab-btn text-sm whitespace-nowrap"
+      >
+        <lucide-icon name="target" size="16"></lucide-icon> Todas
+      </button>
+      <button
+        type="button"
+        (click)="oppMode.set('queda')"
+        [class.active]="oppMode() === 'queda'"
+        class="tab-btn text-sm whitespace-nowrap"
+      >
+        <lucide-icon name="trending-down" size="16"></lucide-icon> Em queda
+      </button>
+    </div>
+  }
+
+  @if (activeTab() === 'opportunities' && oppMode() === 'todas') {
     <div class="space-y-4">
       <div class="card">
         <h3 class="text-lg font-semibold mb-3 text-tx">Filtros</h3>
@@ -276,15 +281,19 @@
                     <div class="text-xs text-muted">sem histórico de div.</div>
                   }
                 </div>
-                <div class="rounded-md px-2.5 py-2" [class.bg-panel-2]="!opp.graham || !opp.price">
+                <div class="rounded-md px-2.5 py-2" [class.bg-panel-2]="!opp.graham && !opp.pvp">
                   <div class="flex items-center gap-1 mb-0.5">
                     <span
                       class="w-1.5 h-1.5 rounded-full flex-shrink-0"
                       [class.bg-blue-400]="opp.graham && opp.price && opp.price <= opp.graham"
                       [class.bg-orange-400]="opp.graham && opp.price && opp.price > opp.graham"
-                      [class.bg-muted]="!opp.graham || !opp.price"
+                      [class.bg-green-400]="!opp.graham && opp.pvp && opp.pvp < 1"
+                      [class.bg-yellow-400]="!opp.graham && opp.pvp && opp.pvp >= 1"
+                      [class.bg-muted]="!opp.graham && !opp.pvp"
                     ></span>
-                    <span class="text-xs text-muted font-medium">Graham</span>
+                    <span class="text-xs text-muted font-medium">{{
+                      !opp.graham && opp.pvp ? 'P/VP' : 'Graham'
+                    }}</span>
                   </div>
                   @if (opp.graham) {
                     <div class="font-semibold text-sm text-tx">
@@ -303,9 +312,20 @@
                         }}
                       </div>
                     }
+                  } @else if (opp.pvp) {
+                    <div class="font-semibold text-sm text-tx">
+                      {{ opp.pvp | number: '1.2-2' }}
+                    </div>
+                    <div
+                      class="text-xs mt-0.5"
+                      [class.text-green-400]="opp.pvp < 1"
+                      [class.text-orange-400]="opp.pvp >= 1"
+                    >
+                      {{ opp.pvp < 1 ? '▼ desconto patrimonial' : '▲ ágio patrimonial' }}
+                    </div>
                   } @else {
                     <div class="text-sm text-muted">—</div>
-                    <div class="text-xs text-muted">sem LPA/VPA válidos</div>
+                    <div class="text-xs text-muted">sem dados</div>
                   }
                 </div>
               </div>
@@ -411,7 +431,7 @@
     </div>
   }
 
-  @if (activeTab() === 'dip-scanner') {
+  @if (activeTab() === 'opportunities' && oppMode() === 'queda') {
     <div class="space-y-4">
       <form [formGroup]="scanForm" (ngSubmit)="runScan()" class="card">
         <h3 class="text-lg font-semibold mb-3 text-tx">Configuração do Scanner</h3>
@@ -499,7 +519,28 @@
     </div>
   }
 
-  @if (activeTab() === 'analisar') {
+  @if (activeTab() === 'ferramentas') {
+    <div class="flex gap-2">
+      <button
+        type="button"
+        (click)="toolMode.set('analisar')"
+        [class.active]="toolMode() === 'analisar'"
+        class="tab-btn text-sm whitespace-nowrap"
+      >
+        <lucide-icon name="search" size="16"></lucide-icon> Analisar Ativo
+      </button>
+      <button
+        type="button"
+        (click)="toolMode.set('renda_fixa')"
+        [class.active]="toolMode() === 'renda_fixa'"
+        class="tab-btn text-sm whitespace-nowrap"
+      >
+        <lucide-icon name="landmark" size="16"></lucide-icon> Simulador de RF
+      </button>
+    </div>
+  }
+
+  @if (activeTab() === 'ferramentas' && toolMode() === 'analisar') {
     <form
       class="p-5 rounded-lg bg-panel border border-border mb-4"
       [formGroup]="analyzeForm"
@@ -597,6 +638,12 @@
                 <span class="text-muted">Graham</span
                 ><strong class="text-tx">{{ ui.fmtNum(a.fair_price.graham) }}</strong>
               </li>
+              @if (a.fair_price.pvp != null) {
+                <li class="flex justify-between items-center py-1.5 border-b border-border">
+                  <span class="text-muted">P/VP</span
+                  ><strong class="text-tx">{{ ui.fmtNum(a.fair_price.pvp) }}</strong>
+                </li>
+              }
               <li class="flex justify-between items-center py-1.5 border-b border-border">
                 <span class="text-muted">Dividendo médio 5a</span
                 ><strong class="text-tx">{{ ui.fmtNum(a.fair_price.avg_dividend_5y) }}</strong>
@@ -638,7 +685,7 @@
     }
   }
 
-  @if (activeTab() === 'ajuste') {
+  @if (activeTab() === 'investir') {
     <div class="space-y-5">
       <div class="card">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-tx">
@@ -1019,7 +1066,7 @@
                           <button
                             class="flex items-center gap-1 px-3 py-1.5 mt-2 rounded-lg text-xs font-medium cursor-pointer bg-blue-500 text-white border-0 hover:opacity-90 transition-opacity"
                             type="button"
-                            (click)="activeTab.set('simulador_rf')"
+                            (click)="activeTab.set('ferramentas'); toolMode.set('renda_fixa')"
                           >
                             <lucide-icon name="calculator" size="12"></lucide-icon> Simular RF
                           </button>
@@ -1217,7 +1264,7 @@
     </div>
   }
 
-  @if (activeTab() === 'simulador_rf') {
+  @if (activeTab() === 'ferramentas' && toolMode() === 'renda_fixa') {
     @if (referenceRates()) {
       <div
         class="flex items-center gap-4 p-4 rounded-lg bg-panel border border-border mb-5 flex-wrap text-sm"

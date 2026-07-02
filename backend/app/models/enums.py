@@ -16,6 +16,7 @@ class OptimizationStrategy(StrEnum):
 
 class AssetType(StrEnum):
     br_stock = "br_stock"
+    bdr = "bdr"
     fii = "fii"
     us_stock = "us_stock"
     crypto = "crypto"

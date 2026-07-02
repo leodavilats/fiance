@@ -1,8 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationStart,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { ThemeService } from './core';
+import { LoadingService, ThemeService } from './core';
 import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from './components';
 
 @Component({
@@ -142,4 +151,35 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
 })
 export class AppComponent {
   readonly theme = inject(ThemeService);
+  private readonly router = inject(Router);
+  private readonly loading = inject(LoadingService);
+
+  private _navShown = false;
+  private _navTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.router.events.subscribe(e => {
+      if (e instanceof NavigationStart) {
+        if (this._navShown || this._navTimer) return;
+        this._navTimer = setTimeout(() => {
+          this._navTimer = null;
+          this._navShown = true;
+          this.loading.show();
+        }, 150);
+      } else if (
+        e instanceof NavigationEnd ||
+        e instanceof NavigationCancel ||
+        e instanceof NavigationError
+      ) {
+        if (this._navTimer) {
+          clearTimeout(this._navTimer);
+          this._navTimer = null;
+        }
+        if (this._navShown) {
+          this._navShown = false;
+          this.loading.hide();
+        }
+      }
+    });
+  }
 }

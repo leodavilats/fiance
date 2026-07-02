@@ -57,6 +57,12 @@ class Preferences(TypedDict):
 
     passive_income_goal: float | None
 
+    desired_yield_stock: float
+
+    desired_yield_fii: float
+
+    desired_yield_int: float
+
     updated_at: float
 
 
@@ -155,6 +161,22 @@ def _init() -> None:
 
         try:
             cx.execute("ALTER TABLE preferences ADD COLUMN passive_income_goal REAL")
+
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cx.execute(
+                "ALTER TABLE preferences ADD COLUMN desired_yield_fii REAL NOT NULL DEFAULT 0.10"
+            )
+
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cx.execute(
+                "ALTER TABLE preferences ADD COLUMN desired_yield_int REAL NOT NULL DEFAULT 0.04"
+            )
 
         except sqlite3.OperationalError:
             pass
@@ -391,7 +413,11 @@ def get_preferences(user_id: str = DEFAULT_USER) -> Preferences:
 
     with _conn() as cx:
         row = cx.execute(
-            "SELECT cash_available, passive_income_goal, updated_at FROM preferences WHERE user_id = ?",
+            "SELECT cash_available, passive_income_goal, "
+            "COALESCE(desired_yield, 0.06) AS dy_stock, "
+            "COALESCE(desired_yield_fii, 0.10) AS dy_fii, "
+            "COALESCE(desired_yield_int, 0.04) AS dy_int, "
+            "updated_at FROM preferences WHERE user_id = ?",
             (user_id,),
         ).fetchone()
 
@@ -399,31 +425,57 @@ def get_preferences(user_id: str = DEFAULT_USER) -> Preferences:
         return Preferences(
             cash_available=row["cash_available"],
             passive_income_goal=row["passive_income_goal"],
+            desired_yield_stock=row["dy_stock"],
+            desired_yield_fii=row["dy_fii"],
+            desired_yield_int=row["dy_int"],
             updated_at=row["updated_at"],
         )
 
-    return Preferences(cash_available=0.0, passive_income_goal=None, updated_at=0.0)
+    return Preferences(
+        cash_available=0.0,
+        passive_income_goal=None,
+        desired_yield_stock=0.06,
+        desired_yield_fii=0.10,
+        desired_yield_int=0.04,
+        updated_at=0.0,
+    )
 
 
 def set_preferences(
     cash_available: float,
     passive_income_goal: float | None = None,
+    desired_yield_stock: float | None = None,
+    desired_yield_fii: float | None = None,
+    desired_yield_int: float | None = None,
     user_id: str = DEFAULT_USER,
 ) -> None:
 
     now = time.time()
 
+    current = get_preferences(user_id)
+    dy_stock = (
+        desired_yield_stock if desired_yield_stock is not None else current["desired_yield_stock"]
+    )
+    dy_fii = desired_yield_fii if desired_yield_fii is not None else current["desired_yield_fii"]
+    dy_int = desired_yield_int if desired_yield_int is not None else current["desired_yield_int"]
+
     with _conn() as cx:
         cx.execute(
             """
-            INSERT INTO preferences(user_id, cash_available, passive_income_goal, desired_yield, updated_at)
-            VALUES (?, ?, ?, 0.06, ?)
+            INSERT INTO preferences(
+                user_id, cash_available, passive_income_goal,
+                desired_yield, desired_yield_fii, desired_yield_int, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 cash_available       = excluded.cash_available,
                 passive_income_goal  = excluded.passive_income_goal,
+                desired_yield        = excluded.desired_yield,
+                desired_yield_fii    = excluded.desired_yield_fii,
+                desired_yield_int    = excluded.desired_yield_int,
                 updated_at           = excluded.updated_at
             """,
-            (user_id, float(cash_available), passive_income_goal, now),
+            (user_id, float(cash_available), passive_income_goal, dy_stock, dy_fii, dy_int, now),
         )
 
 

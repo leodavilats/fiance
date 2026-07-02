@@ -29,13 +29,9 @@ import {
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import { SectorsComponent } from '../sectors/sectors.component';
 
-type MarketTab =
-  | 'opportunities'
-  | 'segments'
-  | 'dip-scanner'
-  | 'analisar'
-  | 'ajuste'
-  | 'simulador_rf';
+type MarketTab = 'opportunities' | 'segments' | 'investir' | 'ferramentas';
+type OppMode = 'todas' | 'queda';
+type ToolMode = 'analisar' | 'renda_fixa';
 
 const FILTER_STORAGE_KEY = 'market_filters';
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -82,6 +78,8 @@ export class MarketComponent implements OnInit, OnDestroy {
   _cacheTime: number | null = null;
 
   readonly activeTab = signal<MarketTab>('opportunities');
+  readonly oppMode = signal<OppMode>('todas');
+  readonly toolMode = signal<ToolMode>('analisar');
   readonly opportunities = signal<OpportunitiesResponse | null>(null);
   readonly loadingOpportunities = signal(false);
   readonly dipResults = signal<{ items: DipScanItem[] } | null>(null);
@@ -143,6 +141,14 @@ export class MarketComponent implements OnInit, OnDestroy {
     this.api
       .getReferencRates()
       .subscribe({ next: r => this.referenceRates.set(r), error: () => {} });
+    this.api.getPreferences().subscribe({
+      next: p => {
+        if (p.cash_available > 0) {
+          this.quickInvestForm.patchValue({ cash_available: p.cash_available });
+        }
+      },
+      error: () => {},
+    });
   }
 
   ngOnDestroy() {
@@ -387,9 +393,7 @@ export class MarketComponent implements OnInit, OnDestroy {
   }
 
   assetLabel(type: string): string {
-    return (
-      { br_stock: 'Ação BR', fii: 'FII', us_stock: 'Ação EUA', crypto: 'Cripto' }[type] || type
-    );
+    return this.ui.assetTypeLabel(type as any);
   }
 
   rfTipoLabel(tipo: string): string {
@@ -409,13 +413,6 @@ export class MarketComponent implements OnInit, OnDestroy {
   }
 
   getCategoryBarColor(category: string): string {
-    const colorMap: Record<string, string> = {
-      renda_fixa: 'rgba(59, 130, 246, 0.6)',
-      acoes_br: 'rgba(34, 197, 94, 0.6)',
-      acoes_int: 'rgba(168, 85, 247, 0.6)',
-      fiis: 'rgba(251, 191, 36, 0.6)',
-      cripto: 'rgba(249, 115, 22, 0.6)',
-    };
-    return colorMap[category] || 'rgba(var(--accent) / 0.5)';
+    return this.ui.categoryBarColor(category);
   }
 }

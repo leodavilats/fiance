@@ -10,7 +10,7 @@ from app.core import cache
 
 logger = logging.getLogger(__name__)
 
-AssetType = Literal["br_stock", "fii", "us_stock", "crypto"]
+AssetType = Literal["br_stock", "bdr", "fii", "us_stock", "crypto"]
 
 FUND_TTL = 2 * 3600
 HIST_TTL = 12 * 3600
@@ -18,27 +18,44 @@ DIV_TTL = 24 * 3600
 
 _FETCH_SEMAPHORE = asyncio.Semaphore(10)
 
+_CRYPTO_SYMBOLS = {"BTC", "ETH", "SOL", "ADA", "BNB", "XRP", "DOGE", "DOT", "AVAX", "MATIC", "LTC"}
+
+KNOWN_UNITS = {
+    "SANB11",
+    "TAEE11",
+    "BPAC11",
+    "KLBN11",
+    "SAPR11",
+    "ALUP11",
+    "ENGI11",
+    "IGTI11",
+    "RNEW11",
+    "BRBI11",
+}
+
+_BDR = re.compile(r"^[A-Z]{4}3\d$")
+_ENDS_11 = re.compile(r"^[A-Z]{4}11$")
 _BR_STOCK = re.compile(r"^[A-Z]{4}\d{1,2}$")
-
-_FII = re.compile(r"^[A-Z]{4}11$")
-
-_CRYPTO_HINT = re.compile(r"^[A-Z]{2,10}(-USD|-BRL)?$")
 
 
 def detect_type(symbol: str) -> AssetType:
 
     s = symbol.strip().upper()
+    base = s[:-3] if s.endswith(".SA") else s
 
     if "-USD" in s or "-BRL" in s:
         return "crypto"
 
-    if _FII.match(s):
-        return "fii"
+    if _BDR.match(base):
+        return "bdr"
 
-    if _BR_STOCK.match(s):
+    if _ENDS_11.match(base):
+        return "br_stock" if base in KNOWN_UNITS else "fii"
+
+    if _BR_STOCK.match(base):
         return "br_stock"
 
-    if s in {"BTC", "ETH", "SOL", "ADA", "BNB", "XRP", "DOGE", "DOT", "AVAX", "MATIC", "LTC"}:
+    if base in _CRYPTO_SYMBOLS:
         return "crypto"
 
     return "us_stock"
@@ -50,7 +67,7 @@ def to_yf_symbol(symbol: str, asset_type: AssetType | None = None) -> str:
 
     t = asset_type or detect_type(s)
 
-    if t in ("br_stock", "fii"):
+    if t in ("br_stock", "fii", "bdr"):
         return s if s.endswith(".SA") else f"{s}.SA"
 
     if t == "crypto":
@@ -157,6 +174,10 @@ def _fetch_sync(symbol: str, asset_type: AssetType | None = None) -> AssetSnapsh
         logger.warning("yfinance falhou %s: %s", yf_sym, e)
 
         return None
+
+    _tokens = (info.get("longName") or info.get("shortName") or "").upper().split()
+    if t == "fii" and any(tok in ("UNT", "UNIT", "UNITS") for tok in _tokens):
+        t = "br_stock"
 
     price = _safe_float(info.get("currentPrice")) or _safe_float(info.get("regularMarketPrice"))
 

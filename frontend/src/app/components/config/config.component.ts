@@ -34,6 +34,9 @@ interface SectorGoalForm {
 interface ConfigFormShape {
   cash_available: FormControl<number>;
   passive_income_goal: FormControl<number | null>;
+  yield_stock: FormControl<number>;
+  yield_fii: FormControl<number>;
+  yield_int: FormControl<number>;
   goals: FormArray<FormGroup<GoalForm>>;
   sector_goals: FormArray<FormGroup<SectorGoalForm>>;
 }
@@ -63,9 +66,14 @@ export class ConfigComponent implements OnInit {
   clearing = signal(false);
   cacheMessage = signal('');
 
+  private readonly yieldValidators = [Validators.min(0.5), Validators.max(30)];
+
   form: FormGroup<ConfigFormShape> = this.fb.group({
     cash_available: this.fb.control(0, { nonNullable: true, validators: Validators.min(0) }),
     passive_income_goal: this.fb.control<number | null>(null, { validators: Validators.min(0) }),
+    yield_stock: this.fb.control(6, { nonNullable: true, validators: this.yieldValidators }),
+    yield_fii: this.fb.control(10, { nonNullable: true, validators: this.yieldValidators }),
+    yield_int: this.fb.control(4, { nonNullable: true, validators: this.yieldValidators }),
     goals: this.fb.array<FormGroup<GoalForm>>([]),
     sector_goals: this.fb.array<FormGroup<SectorGoalForm>>([]),
   });
@@ -102,25 +110,11 @@ export class ConfigComponent implements OnInit {
   }
 
   catBarColor(cat: AllocationCategory): string {
-    const map: Record<AllocationCategory, string> = {
-      renda_fixa: 'bg-blue-400',
-      acoes_br: 'bg-green-400',
-      acoes_int: 'bg-purple-400',
-      fiis: 'bg-orange-400',
-      cripto: 'bg-yellow-400',
-    };
-    return map[cat] || 'bg-muted';
+    return this.ui.categoryBarClass(cat);
   }
 
   catBgColor(cat: AllocationCategory): string {
-    const map: Record<AllocationCategory, string> = {
-      renda_fixa: 'bg-blue-500',
-      acoes_br: 'bg-green-500',
-      acoes_int: 'bg-purple-500',
-      fiis: 'bg-orange-500',
-      cripto: 'bg-yellow-500',
-    };
-    return map[cat] || 'bg-muted';
+    return this.ui.categoryBgClass(cat);
   }
 
   ngOnInit(): void {
@@ -180,6 +174,9 @@ export class ConfigComponent implements OnInit {
         this.form.patchValue({
           cash_available: prefs.cash_available,
           passive_income_goal: prefs.passive_income_goal ?? null,
+          yield_stock: Math.round((prefs.desired_yield_stock ?? 0.06) * 1000) / 10,
+          yield_fii: Math.round((prefs.desired_yield_fii ?? 0.1) * 1000) / 10,
+          yield_int: Math.round((prefs.desired_yield_int ?? 0.04) * 1000) / 10,
         });
 
         const goalMap = new Map(goals.map(g => [g.category, g]));
@@ -211,7 +208,8 @@ export class ConfigComponent implements OnInit {
   }
 
   saveConfig(): void {
-    const { cash_available, passive_income_goal, sector_goals } = this.form.getRawValue();
+    const { cash_available, passive_income_goal, sector_goals, yield_stock, yield_fii, yield_int } =
+      this.form.getRawValue();
     const goalsRaw = this.goalItems.getRawValue();
     const goalsPayload: Goal[] = goalsRaw.map(g => ({
       category: g.category,
@@ -228,7 +226,11 @@ export class ConfigComponent implements OnInit {
     this.message.set('');
 
     forkJoin({
-      prefs: this.svc.savePreferences(cash_available, passive_income_goal ?? undefined),
+      prefs: this.svc.savePreferences(cash_available, passive_income_goal ?? undefined, {
+        stock: yield_stock / 100,
+        fii: yield_fii / 100,
+        int: yield_int / 100,
+      }),
       goals: this.svc.saveGoals(goalsPayload),
       sectorGoals: this.svc.saveSectorGoals(sectorGoalsPayload),
     }).subscribe({

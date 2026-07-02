@@ -6,7 +6,25 @@ from datetime import datetime
 
 DESIRED_YIELD_STOCK = 0.06
 DESIRED_YIELD_FII = 0.10
+DESIRED_YIELD_INTERNATIONAL = 0.04
 DEFAULT_DESIRED_YIELD = DESIRED_YIELD_STOCK
+
+
+def desired_yield_for(asset_type: str, prefs: dict | None = None) -> float:
+    """Meta de dividend yield (Bazin) para o tipo de ativo, respeitando as preferências."""
+    stock = DESIRED_YIELD_STOCK
+    fii = DESIRED_YIELD_FII
+    intl = DESIRED_YIELD_INTERNATIONAL
+    if prefs:
+        stock = prefs.get("desired_yield_stock") or stock
+        fii = prefs.get("desired_yield_fii") or fii
+        intl = prefs.get("desired_yield_int") or intl
+
+    if asset_type == "fii":
+        return fii
+    if asset_type in ("bdr", "us_stock"):
+        return intl
+    return stock
 
 
 @dataclass
@@ -32,6 +50,8 @@ class FairPriceResult:
     data_years: int
 
     desired_yield_used: float
+
+    pvp: float | None = None
 
     details: dict[str, float | None] = field(default_factory=dict)
 
@@ -167,10 +187,21 @@ def compute_fair_price(
     week52_high: float | None = None,
     desired_yield: float | None = None,
     revenue_growth_rate: float | None = None,
+    pb_ratio: float | None = None,
 ) -> FairPriceResult:
 
     is_fii = asset_type == "fii"
-    effective_yield = DESIRED_YIELD_FII if is_fii else DESIRED_YIELD_STOCK
+    is_crypto = asset_type == "crypto"
+    is_international = asset_type in ("bdr", "us_stock")
+
+    if desired_yield and desired_yield > 0:
+        effective_yield = desired_yield
+    elif is_fii:
+        effective_yield = DESIRED_YIELD_FII
+    elif is_international:
+        effective_yield = DESIRED_YIELD_INTERNATIONAL
+    else:
+        effective_yield = DESIRED_YIELD_STOCK
 
     today = datetime.utcnow()
     years_with_data: set[int] = set()
@@ -193,15 +224,34 @@ def compute_fair_price(
             use_median = True
 
     bazin = bazin_fair_price(avg_div, effective_yield)
-    graham = graham_fair_price(eps, book_value)
 
-    is_crypto = asset_type == "crypto"
-    dcf = None
-    if not is_crypto and eps is not None and eps > 0:
-        if bazin is None:
+    pvp: float | None = None
+    pvp_fair: float | None = None
+    if book_value and book_value > 0:
+        if pb_ratio and pb_ratio > 0:
+            pvp = round(pb_ratio, 2)
+        elif price and price > 0:
+            pvp = round(price / book_value, 2)
+        pvp_fair = round(book_value, 2)
+
+    graham: float | None = None
+    dcf: float | None = None
+
+    if is_fii:
+        candidates = [v for v in (bazin, pvp_fair) if v is not None]
+    elif is_crypto:
+        candidates = []
+    elif is_international:
+        bazin = None
+        graham = graham_fair_price(eps, book_value)
+        if eps is not None and eps > 0:
             dcf = dcf_fair_price(eps, revenue_growth_rate)
-
-    candidates = [v for v in (bazin, graham, dcf) if v is not None]
+        candidates = [v for v in (graham, dcf) if v is not None]
+    else:
+        graham = graham_fair_price(eps, book_value)
+        if eps is not None and eps > 0 and bazin is None:
+            dcf = dcf_fair_price(eps, revenue_growth_rate)
+        candidates = [v for v in (bazin, graham, dcf) if v is not None]
 
     consensus = round(sum(candidates) / len(candidates), 2) if candidates else None
     consensus_methods = len(candidates)
@@ -228,11 +278,13 @@ def compute_fair_price(
         dy_5y=dy_5y,
         data_years=data_years,
         desired_yield_used=effective_yield,
+        pvp=pvp,
         details={
             "eps": eps,
             "book_value": book_value,
             "desired_yield_pct": effective_yield * 100,
             "used_median": use_median,
+            "pvp_fair": pvp_fair,
         },
     )
 

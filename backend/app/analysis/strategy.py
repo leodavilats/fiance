@@ -9,6 +9,7 @@ from ..optimizer.cost_calculator import calculate_sell_cost
 _ASSET_TO_CATEGORY = {
     "br_stock": AssetCategory.acoes_br.value,
     "fii": AssetCategory.fiis.value,
+    "bdr": AssetCategory.acoes_int.value,
     "us_stock": AssetCategory.acoes_int.value,
     "crypto": AssetCategory.cripto.value,
 }

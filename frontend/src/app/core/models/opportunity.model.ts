@@ -9,6 +9,7 @@ export interface Opportunity {
   fair_price: number | null;
   bazin: number | null;
   graham: number | null;
+  pvp: number | null;
   margin_of_safety: number | null;
   dividend_yield: number | null;
   verdict: Verdict;

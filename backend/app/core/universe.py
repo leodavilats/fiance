@@ -11,16 +11,29 @@ CURATED_BR_STOCKS = [
     "B3SA3.SA",
     "RENT3.SA",
     "EQTL3.SA",
-    "TAEE11.SA",
     "CPLE6.SA",
-    "SAPR11.SA",
     "VIVT3.SA",
     "EGIE3.SA",
-    "KLBN11.SA",
     "SUZB3.SA",
     "TOTS3.SA",
     "RADL3.SA",
     "RAIL3.SA",
+]
+
+CURATED_UNITS = [
+    "TAEE11.SA",
+    "SAPR11.SA",
+    "KLBN11.SA",
+    "SANB11.SA",
+    "BPAC11.SA",
+]
+
+CURATED_BDRS = [
+    "AAPL34.SA",
+    "MSFT34.SA",
+    "GOGL34.SA",
+    "AMZO34.SA",
+    "NVDC34.SA",
 ]
 
 CURATED_FIIS = [
@@ -60,4 +73,11 @@ CURATED_CRYPTO = ["BTC", "ETH", "SOL"]
 
 def curated_all() -> list[str]:
 
-    return CURATED_BR_STOCKS + CURATED_FIIS + CURATED_US + CURATED_CRYPTO
+    return (
+        CURATED_BR_STOCKS
+        + CURATED_UNITS
+        + CURATED_BDRS
+        + CURATED_FIIS
+        + CURATED_US
+        + CURATED_CRYPTO
+    )

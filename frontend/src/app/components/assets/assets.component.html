@@ -174,9 +174,11 @@
                   padding-right: 36px;
                 "
               >
-                <option value="auto">Auto</option>
-                <option value="renda">Renda</option>
-                <option value="trade">Trade</option>
+                <option value="auto">Auto (detectar)</option>
+                <option value="acoes_br">Ações BR</option>
+                <option value="acoes_int">Ações INT / BDR</option>
+                <option value="fiis">FIIs</option>
+                <option value="cripto">Cripto</option>
               </select>
             </div>
 
@@ -213,19 +215,21 @@
         >
           <lucide-icon name="plus" size="16"></lucide-icon> Adicionar ativo
         </button>
-        <button
-          type="button"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-          (click)="evaluateAssets()"
-          [disabled]="loading.loading() || portfolioItems.length === 0"
-        >
-          <lucide-icon
-            [name]="loading.loading() ? 'loader-circle' : 'refresh-cw'"
-            [class.animate-spin]="loading.loading()"
-            size="16"
-          ></lucide-icon>
-          {{ loading.loading() ? 'Avaliando...' : 'Avaliar agora' }}
-        </button>
+        <div class="flex items-center gap-2 text-sm ml-auto">
+          @if (evaluating()) {
+            <lucide-icon
+              name="loader-circle"
+              class="animate-spin text-muted"
+              size="16"
+            ></lucide-icon>
+            <span class="text-muted">Avaliando…</span>
+          } @else if (lastEvaluatedAt()) {
+            <lucide-icon name="circle-check" size="16" class="text-accent"></lucide-icon>
+            <span class="text-muted">Avaliação automática · {{ lastEvaluatedLabel() }}</span>
+          } @else {
+            <span class="text-muted">A avaliação é automática ao editar.</span>
+          }
+        </div>
       </div>
     </form>
   }

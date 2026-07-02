@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import math
+
+from app.collectors.universal import detect_type
 from app.models.company import CompanyFundamentals, ScoredCompany
 from app.models.enums import RiskProfile
 
@@ -83,6 +86,56 @@ def _score_growth(rev_growth: float | None) -> float:
     return _clip((rev_growth + 10) * (100 / 30))
 
 
+def _score_pvp(pvp: float | None) -> float:
+    if pvp is None or pvp <= 0:
+        return 50.0
+
+    return _clip(100 - (pvp - 0.7) * 100)
+
+
+def _score_liquidity(market_cap: float | None) -> float:
+    if not market_cap or market_cap <= 0:
+        return 50.0
+
+    return _clip((math.log10(market_cap) - 7) * 30)
+
+
+def _score_fii(f: CompanyFundamentals) -> ScoredCompany:
+    breakdown = {
+        "dividend": _score_dividend(f.dividend_yield),
+        "value": _score_pvp(f.pb_ratio),
+        "liquidity": _score_liquidity(f.market_cap),
+    }
+    weights = {"dividend": 0.50, "value": 0.35, "liquidity": 0.15}
+
+    total = sum(weights[k] * breakdown[k] for k in weights)
+
+    tags: list[str] = []
+    if f.dividend_yield:
+        tags.append(f"DY {f.dividend_yield:.1f}% a.a.")
+    if f.pb_ratio:
+        tags.append(f"P/VP {f.pb_ratio:.2f}" + (" (desconto)" if f.pb_ratio < 1 else ""))
+    if not tags:
+        tags.append("Fundo imobiliário")
+
+    return ScoredCompany(
+        fundamentals=f,
+        score=round(total, 2),
+        breakdown={k: round(v, 2) for k, v in breakdown.items()},
+        rationale=" · ".join(tags[:3]),
+    )
+
+
+def _score_crypto(f: CompanyFundamentals) -> ScoredCompany:
+    # Cripto não tem base fundamentalista; score neutro (decisão fica com a análise técnica).
+    return ScoredCompany(
+        fundamentals=f,
+        score=50.0,
+        breakdown={"neutral": 50.0},
+        rationale="Cripto — avaliação por preço/tendência, fora do modelo fundamentalista.",
+    )
+
+
 def _rationale(f: CompanyFundamentals, breakdown: dict[str, float]) -> str:
 
     tags: list[str] = []
@@ -120,7 +173,17 @@ def _rationale(f: CompanyFundamentals, breakdown: dict[str, float]) -> str:
     return " · ".join(tags[:3])
 
 
-def score_company(f: CompanyFundamentals, profile: RiskProfile) -> ScoredCompany:
+def score_company(
+    f: CompanyFundamentals, profile: RiskProfile, asset_type: str | None = None
+) -> ScoredCompany:
+
+    at = asset_type or detect_type(f.ticker)
+
+    if at == "fii":
+        return _score_fii(f)
+
+    if at == "crypto":
+        return _score_crypto(f)
 
     weights = PROFILE_WEIGHTS[profile]
 

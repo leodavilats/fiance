@@ -118,7 +118,7 @@ class ProjectionService:
             if not snap or not snap.price:
                 continue
 
-            if snap.asset_type not in ["br_stock", "us_stock"]:
+            if snap.asset_type not in ["br_stock", "us_stock", "bdr"]:
                 continue
 
             position_value = item.quantity * snap.price

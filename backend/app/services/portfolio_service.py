@@ -2,7 +2,7 @@ import asyncio
 
 from app.analysis.classify import auto_category, resolve_category
 from app.analysis.decision import decide
-from app.analysis.fair_price import compute_fair_price, compute_technical
+from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
 from app.models import (
     AssetType,
     PortfolioEvaluationRequest,
@@ -27,6 +27,8 @@ class PortfolioService:
     ) -> PortfolioEvaluationResponse:
         if not req.items:
             raise ValueError("Carteira vazia.")
+
+        prefs = self.portfolio_repo.get_preferences()
 
         async def _one(item: PortfolioItem) -> PortfolioPosition:
 
@@ -92,6 +94,9 @@ class PortfolioService:
                 dividends=dividends,
                 asset_type=snap.asset_type,
                 week52_high=snap.fifty_two_week_high,
+                pb_ratio=snap.pb_ratio,
+                revenue_growth_rate=snap.revenue_growth,
+                desired_yield=desired_yield_for(snap.asset_type, prefs),
             )
 
             tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)

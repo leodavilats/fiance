@@ -13,6 +13,7 @@ from app.repositories import PortfolioRepository
 _ASSET_TYPE_TO_CATEGORY = {
     "br_stock": "acoes_br",
     "fii": "fiis",
+    "bdr": "acoes_int",
     "us_stock": "acoes_int",
     "crypto": "cripto",
 }

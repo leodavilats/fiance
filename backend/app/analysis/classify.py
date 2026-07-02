@@ -11,14 +11,14 @@ VALID_CATEGORIES = {"renda_fixa", "acoes_br", "acoes_int", "fiis", "cripto"}
 
 def auto_category(
     asset_type: str,
-    dividend_yield: float | None,
+    dividend_yield: float | None = None,
     has_dividend_history: bool = False,
 ) -> str:
     if asset_type == "fii":
         return "fiis"
     if asset_type == "crypto":
         return "cripto"
-    if asset_type == "us_stock":
+    if asset_type in ("us_stock", "bdr"):
         return "acoes_int"
     return "acoes_br"
 

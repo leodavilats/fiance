@@ -14,6 +14,7 @@ class FairPriceBlock(BaseModel):
     dy_5y: float | None = None
     data_years: int = 0
     desired_yield_used: float = 0.06
+    pvp: float | None = None
     details: dict = Field(default_factory=dict)
 
 

@@ -62,6 +62,13 @@ export class AssetsComponent implements OnInit {
 
   result = signal<PortfolioEvaluationResponse | null>(null);
   saveState = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  cdiAnual = signal(14.4); // CDI % a.a. — carregado das taxas reais do backend (BCB)
+  evaluating = signal(false);
+  lastEvaluatedAt = signal<number | null>(null);
+  lastEvaluatedLabel = computed(() => {
+    const t = this.lastEvaluatedAt();
+    return t ? new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  });
 
   expandedSections = {
     negociados: true,
@@ -75,6 +82,7 @@ export class AssetsComponent implements OnInit {
 
   private _initialized = false;
   private saveDebounce = new Subject<void>();
+  private evalDebounce = new Subject<void>();
 
   get portfolioItems() {
     return this.form.controls.items as FormArray<FormGroup<PortfolioItemForm>>;
@@ -164,7 +172,10 @@ export class AssetsComponent implements OnInit {
     let somaValor = 0;
 
     items.forEach(item => {
-      const taxa = item.tipo_taxa === 'pos_fixado' ? (item.percentual_cdi || 0) * 0.135 : item.taxa;
+      const taxa =
+        item.tipo_taxa === 'pos_fixado'
+          ? (item.percentual_cdi || 0) * (this.cdiAnual() / 100)
+          : item.taxa;
       somaValorTaxa += item.valor_investido * taxa;
       somaValor += item.valor_investido;
     });
@@ -174,12 +185,20 @@ export class AssetsComponent implements OnInit {
 
   ngOnInit() {
     this.buildForm();
+    this.svc.getReferencRates().subscribe({
+      next: r => this.cdiAnual.set(r.cdi_anual),
+      error: () => {},
+    });
     this.loadStoredRendaFixa();
     this.loadStoredPortfolioItems();
     this.saveDebounce.pipe(debounceTime(1000)).subscribe(() => this.savePortfolio());
+    this.evalDebounce.pipe(debounceTime(1800)).subscribe(() => this.evaluateAssets(false));
     this.portfolioItems.valueChanges.subscribe(() => {
       this.portfolioVersion.update(v => v + 1);
-      if (this._initialized) this.saveDebounce.next();
+      if (this._initialized) {
+        this.saveDebounce.next();
+        this.evalDebounce.next();
+      }
     });
     this.rendaFixaItems.valueChanges.subscribe(() => {
       this.rfVersion.update(v => v + 1);
@@ -250,11 +269,13 @@ export class AssetsComponent implements OnInit {
     this.saveDebounce.next();
   }
 
-  async evaluateAssets() {
+  async evaluateAssets(showLoader = true) {
     const items = this.portfolioItems.getRawValue().filter(x => x.ticker.trim() !== '');
     if (items.length === 0) return;
 
-    this.loading.show();
+    if (showLoader) this.loading.show();
+    else this.evaluating.set(true);
+
     this.svc
       .evaluatePortfolio({
         items,
@@ -262,11 +283,14 @@ export class AssetsComponent implements OnInit {
       .subscribe({
         next: res => {
           this.result.set(res);
-          this.loading.hide();
+          this.lastEvaluatedAt.set(Date.now());
+          if (showLoader) this.loading.hide();
+          else this.evaluating.set(false);
         },
         error: err => {
           console.error('Erro ao avaliar portfolio:', err);
-          this.loading.hide();
+          if (showLoader) this.loading.hide();
+          else this.evaluating.set(false);
         },
       });
   }
@@ -324,7 +348,7 @@ export class AssetsComponent implements OnInit {
     const item = this.rendaFixaItems.at(index)?.getRawValue();
     if (!item) return 0;
 
-    const CDI_ANUAL = 13.5;
+    const CDI_ANUAL = this.cdiAnual();
 
     let taxaAnual = 0;
     if (item.tipo_taxa === 'pos_fixado') {
@@ -359,7 +383,7 @@ export class AssetsComponent implements OnInit {
     const item = this.rendaFixaItems.at(index)?.getRawValue();
     if (!item) return 0;
 
-    const CDI_ANUAL = 13.5;
+    const CDI_ANUAL = this.cdiAnual();
 
     let taxaAnual = 0;
     if (item.tipo_taxa === 'pos_fixado') {

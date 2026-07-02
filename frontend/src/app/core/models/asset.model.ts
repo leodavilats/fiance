@@ -10,6 +10,7 @@ export interface FairPriceBlock {
   dy_5y: number | null;
   data_years: number;
   desired_yield_used: number;
+  pvp: number | null;
   details: Record<string, number | null>;
 }
 

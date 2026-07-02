@@ -1,7 +1,7 @@
 import asyncio
 
 from app.analysis.decision import decide
-from app.analysis.fair_price import compute_fair_price, compute_technical
+from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
 from app.models import (
     AssetAnalysis,
     AssetType,
@@ -9,12 +9,13 @@ from app.models import (
     FairPriceBlock,
     TechnicalBlock,
 )
-from app.repositories import AssetRepository
+from app.repositories import AssetRepository, PortfolioRepository
 
 
 class AssetService:
     def __init__(self):
         self.asset_repo = AssetRepository()
+        self.portfolio_repo = PortfolioRepository()
 
     async def analyze_asset(self, symbol: str) -> AssetAnalysis:
         snap = await self.asset_repo.get_asset(symbol)
@@ -26,6 +27,8 @@ class AssetService:
             self.asset_repo.get_dividends(symbol),
         )
 
+        prefs = self.portfolio_repo.get_preferences()
+
         fair = compute_fair_price(
             price=snap.price,
             eps=snap.eps,
@@ -33,6 +36,9 @@ class AssetService:
             dividends=dividends,
             asset_type=snap.asset_type,
             week52_high=snap.fifty_two_week_high,
+            pb_ratio=snap.pb_ratio,
+            revenue_growth_rate=snap.revenue_growth,
+            desired_yield=desired_yield_for(snap.asset_type, prefs),
         )
 
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)

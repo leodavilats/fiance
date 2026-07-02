@@ -3,7 +3,7 @@ import logging
 
 from app.analysis.classify import auto_category
 from app.analysis.decision import decide
-from app.analysis.fair_price import compute_fair_price, compute_technical
+from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
 from app.core.config import get_settings
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.repositories import AssetRepository, PortfolioRepository
@@ -16,7 +16,9 @@ class OpportunityService:
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
 
-    async def _build_opportunity(self, symbol: str) -> Opportunity | None:
+    async def _build_opportunity(
+        self, symbol: str, prefs: dict | None = None
+    ) -> Opportunity | None:
         try:
             snap = await self.asset_repo.get_asset(symbol)
         except Exception as exc:
@@ -36,6 +38,9 @@ class OpportunityService:
             dividends=dividends,
             asset_type=snap.asset_type,
             week52_high=snap.fifty_two_week_high,
+            pb_ratio=snap.pb_ratio,
+            revenue_growth_rate=snap.revenue_growth,
+            desired_yield=desired_yield_for(snap.asset_type, prefs),
         )
 
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
@@ -78,6 +83,7 @@ class OpportunityService:
             fair_price=fair.consensus,
             bazin=fair.bazin,
             graham=fair.graham,
+            pvp=fair.pvp,
             margin_of_safety=fair.margin_of_safety,
             dividend_yield=snap.dividend_yield,
             verdict=verdict,
@@ -114,7 +120,7 @@ class OpportunityService:
             universe -= held
 
         universe_size = len(universe)
-        raws = await asyncio.gather(*[self._build_opportunity(t) for t in universe])
+        raws = await asyncio.gather(*[self._build_opportunity(t, prefs) for t in universe])
         opps: list[Opportunity] = [o for o in raws if o is not None]
         failed_count = universe_size - len(opps)
         if failed_count > 0:

@@ -1,6 +1,11 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import {
+  PreloadAllModules,
+  provideRouter,
+  withComponentInputBinding,
+  withPreloading,
+} from '@angular/router';
 import { importProvidersFrom } from '@angular/core';
 import {
   ArrowRight,
@@ -83,7 +88,7 @@ import { httpErrorInterceptor } from './app/core/interceptors/http-error.interce
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes, withComponentInputBinding()),
+    provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
     provideHttpClient(withInterceptors([httpErrorInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({

@@ -10,5 +10,8 @@ export interface Goal {
 export interface Preferences {
   cash_available: number;
   passive_income_goal?: number | null;
+  desired_yield_stock?: number;
+  desired_yield_fii?: number;
+  desired_yield_int?: number;
   updated_at?: number | null;
 }

@@ -93,6 +93,16 @@ def decide(
     if fair.graham:
         reasons.append(f"Preço justo Graham (lucro/PL): R$ {fair.graham:.2f}.")
 
+    if fair.pvp:
+        if fair.pvp < 1:
+            reasons.append(
+                f"P/VP {fair.pvp:.2f}: negociando abaixo do valor patrimonial (desconto)."
+            )
+        elif fair.pvp > 1:
+            reasons.append(f"P/VP {fair.pvp:.2f}: negociando acima do valor patrimonial (ágio).")
+        else:
+            reasons.append(f"P/VP {fair.pvp:.2f}: no valor patrimonial.")
+
     if tech:
         if tech.trend == "uptrend":
             reasons.append("Tendência de alta (média 50 acima da 200).")

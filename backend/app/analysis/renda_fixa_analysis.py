@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.collectors.rates import get_rates
 from app.models.enums import RendaFixaType, TaxType
 from app.models.renda_fixa import (
     IrBreakdown,
@@ -126,9 +127,10 @@ def compare_options(req: RendaFixaCompareRequest) -> RendaFixaCompareResponse:
 
 
 def get_reference_rates() -> ReferenceRates:
+    r = get_rates()
     return ReferenceRates(
-        cdi_anual=DEFAULT_CDI_ANUAL,
-        selic_anual=DEFAULT_SELIC_ANUAL,
-        ipca_anual=DEFAULT_IPCA_ANUAL,
-        source="estimativa",
+        cdi_anual=r["cdi_anual"],
+        selic_anual=r["selic_anual"],
+        ipca_anual=r["ipca_anual"],
+        source=r["source"],
     )

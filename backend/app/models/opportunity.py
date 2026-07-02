@@ -12,6 +12,7 @@ class Opportunity(BaseModel):
     fair_price: float | None = None
     bazin: float | None = None
     graham: float | None = None
+    pvp: float | None = None
     margin_of_safety: float | None = None
     dividend_yield: float | None = None
     verdict: str

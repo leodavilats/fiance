@@ -10,6 +10,7 @@ export class UiHelperService {
   assetTypeLabel(t: AssetType): string {
     const map: Record<AssetType, string> = {
       br_stock: 'Ação BR',
+      bdr: 'BDR',
       fii: 'FII',
       us_stock: 'Ação EUA',
       crypto: 'Cripto',
@@ -52,6 +53,39 @@ export class UiHelperService {
       cripto: 'text-yellow-400',
     };
     return map[c] || 'text-muted';
+  }
+
+  categoryBarClass(c: string): string {
+    const map: Record<string, string> = {
+      renda_fixa: 'bg-blue-400',
+      acoes_br: 'bg-green-400',
+      acoes_int: 'bg-purple-400',
+      fiis: 'bg-orange-400',
+      cripto: 'bg-yellow-400',
+    };
+    return map[c] || 'bg-muted';
+  }
+
+  categoryBgClass(c: string): string {
+    const map: Record<string, string> = {
+      renda_fixa: 'bg-blue-500',
+      acoes_br: 'bg-green-500',
+      acoes_int: 'bg-purple-500',
+      fiis: 'bg-orange-500',
+      cripto: 'bg-yellow-500',
+    };
+    return map[c] || 'bg-muted';
+  }
+
+  categoryBarColor(c: string): string {
+    const map: Record<string, string> = {
+      renda_fixa: 'rgba(59, 130, 246, 0.6)',
+      acoes_br: 'rgba(34, 197, 94, 0.6)',
+      acoes_int: 'rgba(168, 85, 247, 0.6)',
+      fiis: 'rgba(251, 191, 36, 0.6)',
+      cripto: 'rgba(249, 115, 22, 0.6)',
+    };
+    return map[c] || 'rgba(148, 163, 184, 0.5)';
   }
 
   verdictClass(v: Verdict): string {
@@ -276,9 +310,10 @@ export class UiHelperService {
     score:
       'Pontuação 0–100 calculada pelo sistema combinando valuation, histórico de dividendos e qualidade do ativo. Acima de 70 = oportunidade; 40–70 = neutro; abaixo de 40 = cuidado.',
     bazin:
-      'Método Décio Bazin — define o Preço Teto como o dividendo anual dividido por 6% (ações) ou 10% (FIIs). Comprar abaixo desse teto garante um DY mínimo aceitável.',
+      'Método Décio Bazin — define o Preço Teto como o dividendo anual dividido pela meta de yield: 6% (ações BR) ou 10% (FIIs). Comprar abaixo do teto garante um DY mínimo. Não se aplica a BDRs/ações internacionais (avaliadas por Graham/DCF).',
     graham:
       'Fórmula Benjamin Graham — Preço Intrínseco = √(22,5 × LPA × VPA). Válido para empresas com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização.',
+    pvp: 'Preço / Valor Patrimonial — quanto se paga por cada R$ 1 de patrimônio. P/VP < 1 indica desconto (comum em FIIs atrativos); > 1 indica ágio.',
     lpa: 'Lucro Por Ação — lucro líquido da empresa dividido pelo número de ações em circulação. Quanto maior e mais consistente, melhor.',
     vpa: 'Valor Patrimonial por Ação — patrimônio líquido da empresa dividido pelo número de ações. Indica o "valor contábil" de cada ação.',
   };

@@ -47,6 +47,8 @@ class DipService:
             dividends=dividends,
             asset_type=snap.asset_type,
             week52_high=snap.fifty_two_week_high,
+            pb_ratio=snap.pb_ratio,
+            revenue_growth_rate=snap.revenue_growth,
         )
 
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
@@ -154,6 +156,8 @@ class DipService:
                         dividends=dividends,
                         asset_type=snap.asset_type,
                         week52_high=snap.fifty_two_week_high,
+                        pb_ratio=snap.pb_ratio,
+                        revenue_growth_rate=snap.revenue_growth,
                     )
 
                     tech = compute_technical(
@@ -259,6 +263,8 @@ class DipService:
                         dividends=dividends,
                         asset_type=snap.asset_type,
                         week52_high=snap.fifty_two_week_high,
+                        pb_ratio=snap.pb_ratio,
+                        revenue_growth_rate=snap.revenue_growth,
                     )
 
                     tech = compute_technical(
