@@ -16,6 +16,16 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = ""
 
+    database_url: str = "sqlite:///./.cache/fianceai.db"
+
+    google_client_id: str = ""
+
+    jwt_secret: str = "change-me"
+
+    brapi_token: str = ""
+
+    finnhub_api_key: str = ""
+
     default_universe: str = (
         "ITUB4,BBDC4,BBAS3,SANB11,BPAC11,ITSA4,BRSR6,B3SA3,ABCB4,BMGB4,INTER3,"
         "PETR4,PETR3,PRIO3,RECV3,BRAV3,CSAN3,UGPA3,"
@@ -74,6 +84,19 @@ class Settings(BaseSettings):
         if self.app_env == "development":
             return ["*"]
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+    @property
+    def google_client_ids(self) -> list[str]:
+        return [c.strip() for c in self.google_client_id.split(",") if c.strip()]
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        url = self.database_url or "sqlite:///./.cache/fianceai.db"
+        if url.startswith("postgres://"):
+            url = "postgresql+psycopg://" + url[len("postgres://") :]
+        elif url.startswith("postgresql://"):
+            url = "postgresql+psycopg://" + url[len("postgresql://") :]
+        return url
 
 
 @lru_cache

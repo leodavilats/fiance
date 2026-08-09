@@ -71,3 +71,15 @@ class PortfolioRepository:
     @staticmethod
     def replace_sector_goals(goals: list[dict]) -> None:
         portfolio_store.replace_sector_goals(goals)
+
+    @staticmethod
+    def list_watchlist() -> list[dict]:
+        return portfolio_store.list_watchlist()
+
+    @staticmethod
+    def replace_watchlist(items: list[dict]) -> None:
+        portfolio_store.replace_watchlist(items)
+
+    @staticmethod
+    def remove_watchlist(ticker: str) -> None:
+        portfolio_store.remove_watchlist(ticker)

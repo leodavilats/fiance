@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.api import router
 from app.core.config import get_settings
+from app.core.database import init_db
 
 
 def create_app() -> FastAPI:
@@ -56,6 +57,10 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(router, prefix="/api")
+
+    @app.on_event("startup")
+    def _startup() -> None:
+        init_db()
 
     return app
 
