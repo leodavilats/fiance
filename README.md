@@ -22,7 +22,8 @@ O fianceAI integra dados de mercado em tempo real, métodos clássicos de valuat
 | Camada | Tecnologia |
 |--------|-----------|
 | Backend | Python 3.11+, FastAPI, Uvicorn |
-| Frontend | Angular 18, TypeScript 5.5, Tailwind CSS |
+| Web | Angular 18, TypeScript 5.5, Tailwind CSS |
+| Mobile | Flutter (iOS/Android) |
 | Dados de mercado | yfinance |
 | IA | Google Gemini API |
 | Linting / Format | Ruff (Python), Prettier (TypeScript) |
@@ -49,10 +50,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Frontend
+### Web
 
 ```bash
-cd frontend
+cd web
 npm install
 ```
 
@@ -81,16 +82,16 @@ cp backend/.env.example backend/.env
 cd backend
 uvicorn app.main:app --reload --port 8000
 
-# Terminal 2 — Frontend (http://localhost:4200)
-cd frontend
+# Terminal 2 — Web (http://localhost:4200)
+cd web
 npm start
 ```
 
 ### Build de Produção
 
 ```bash
-# Frontend
-cd frontend
+# Web
+cd web
 npm run build   # saída em dist/
 
 # Backend — recomenda-se usar Gunicorn com worker Uvicorn
@@ -141,11 +142,13 @@ fianceAI/
 │   ├── requirements.txt
 │   └── .env.example
 │
-└── frontend/
-    └── src/
-        └── app/
-            ├── components/      # Dashboard, Assets, Market, Strategy, Dip, Sectors…
-            └── core/            # Serviços HTTP, interceptors, tema
+├── web/
+│   └── src/
+│       └── app/
+│           ├── components/      # Dashboard, Assets, Market, Strategy, Dip, Sectors…
+│           └── core/            # Serviços HTTP, interceptors, tema
+│
+└── mobile/                      # App Flutter (iOS/Android)
 ```
 
 ## Métodos de Valuation
@@ -165,7 +168,7 @@ uvicorn app.main:app --reload    # servidor dev
 ruff format .
 ruff check --fix .
 
-# Frontend
+# Web
 npm start           # servidor dev
 npm run build       # build de produção
 npm run format      # formatar código com Prettier
