@@ -1,6 +1,8 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, finalize, retry, throwError, timeout, TimeoutError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 import { LoadingService } from '../services/loading.service';
 import { SnackbarService } from '../services/snackbar.service';
 
@@ -18,6 +20,8 @@ const LONG_TIMEOUT_PATTERNS = [
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const loading = inject(LoadingService);
   const snackbar = inject(SnackbarService);
+  const auth = inject(AuthService);
+  const router = inject(Router);
 
   const isLongRequest = LONG_TIMEOUT_PATTERNS.some(p => req.url.includes(p));
   const requestTimeout = isLongRequest ? 300_000 : 90_000; // 5min ou 90s
@@ -41,6 +45,11 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
         switch (error.status) {
           case 0:
             errorMessage = 'Sem conexão com o servidor. Verifique se o backend está rodando.';
+            break;
+          case 401:
+            errorMessage = 'Sessão expirada. Faça login novamente.';
+            auth.logout();
+            router.navigateByUrl('/login');
             break;
           case 404:
             errorMessage = error.error?.detail || 'Recurso não encontrado.';

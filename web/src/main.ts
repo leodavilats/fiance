@@ -84,12 +84,13 @@ import {
 } from 'lucide-angular';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
+import { authInterceptor } from './app/core/interceptors/auth.interceptor';
 import { httpErrorInterceptor } from './app/core/interceptors/http-error.interceptor';
 
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
-    provideHttpClient(withInterceptors([httpErrorInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, httpErrorInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({
         ArrowRight,

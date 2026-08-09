@@ -11,7 +11,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { LoadingService, ThemeService } from './core';
+import { AuthService, LoadingService, ThemeService } from './core';
 import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from './components';
 
 @Component({
@@ -32,33 +32,48 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
     <app-snackbar />
     <app-alert-modal />
     <div class="max-w-[1180px] mx-auto px-3 sm:px-5 pt-4 sm:pt-6 pb-20 sm:pb-10">
-      <header class="flex justify-between items-center gap-4 py-2 px-1 pb-[14px] sm:pb-[18px]">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div
-            class="w-9 h-9 sm:w-11 sm:h-11 grid place-items-center rounded-xl font-extrabold text-[1.2rem] sm:text-[1.4rem] text-[#0b0e14] bg-gradient-to-br from-accent to-accent-2"
-          >
-            f
+      @if (auth.user(); as user) {
+        <header class="flex justify-between items-center gap-4 py-2 px-1 pb-[14px] sm:pb-[18px]">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div
+              class="w-9 h-9 sm:w-11 sm:h-11 grid place-items-center rounded-xl font-extrabold text-[1.2rem] sm:text-[1.4rem] text-[#0b0e14] bg-gradient-to-br from-accent to-accent-2"
+            >
+              f
+            </div>
+            <div>
+              <h1 class="text-[1.3rem] sm:text-[1.7rem] font-bold m-0 text-tx">fianceAI</h1>
+              <p class="m-0 text-xs sm:text-sm text-muted hidden sm:block">
+                Sistema de gestão de ativos — descubra o que comprar, manter ou vender.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 class="text-[1.3rem] sm:text-[1.7rem] font-bold m-0 text-tx">fianceAI</h1>
-            <p class="m-0 text-xs sm:text-sm text-muted hidden sm:block">
-              Sistema de gestão de ativos — descubra o que comprar, manter ou vender.
-            </p>
+          <div class="flex items-center gap-2">
+            <button
+              class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel hover:opacity-90 transition-opacity"
+              type="button"
+              (click)="theme.toggle()"
+              [title]="theme.theme() === 'dark' ? 'Modo claro' : 'Modo escuro'"
+            >
+              <lucide-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" size="18"></lucide-icon>
+            </button>
+            <img
+              [src]="user.picture"
+              [title]="user.name"
+              class="w-9 h-9 rounded-full border border-border"
+              referrerpolicy="no-referrer"
+            />
+            <button
+              class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel hover:opacity-90 transition-opacity"
+              type="button"
+              (click)="logout()"
+              title="Sair"
+            >
+              <lucide-icon name="x" size="18"></lucide-icon>
+            </button>
           </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel hover:opacity-90 transition-opacity"
-            type="button"
-            (click)="theme.toggle()"
-            [title]="theme.theme() === 'dark' ? 'Modo claro' : 'Modo escuro'"
-          >
-            <lucide-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" size="18"></lucide-icon>
-          </button>
-        </div>
-      </header>
+        </header>
 
-      <nav class="hidden sm:flex flex-wrap gap-2 mb-6">
+        <nav class="hidden sm:flex flex-wrap gap-2 mb-6">
         <a
           routerLink="/dashboard"
           routerLinkActive="active"
@@ -87,15 +102,17 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
         >
           <lucide-icon name="settings" size="16"></lucide-icon> Configurações
         </a>
-      </nav>
+        </nav>
+      }
 
       <router-outlet />
     </div>
 
-    <nav
-      class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-border"
-      style="background: var(--panel); padding-bottom: env(safe-area-inset-bottom);"
-    >
+    @if (auth.user()) {
+      <nav
+        class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-border"
+        style="background: var(--panel); padding-bottom: env(safe-area-inset-bottom);"
+      >
       <div class="flex items-stretch justify-around h-14">
         <a
           routerLink="/dashboard"
@@ -130,7 +147,8 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
           <span>Config</span>
         </a>
       </div>
-    </nav>
+      </nav>
+    }
   `,
   styles: [
     `
@@ -151,8 +169,14 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
 })
 export class AppComponent {
   readonly theme = inject(ThemeService);
+  readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly loading = inject(LoadingService);
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigateByUrl('/login');
+  }
 
   private _navShown = false;
   private _navTimer: ReturnType<typeof setTimeout> | null = null;

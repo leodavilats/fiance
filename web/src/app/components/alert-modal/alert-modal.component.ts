@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { PriceAlertTriggered, RecommendService } from '../../core';
+import { AuthService, PriceAlertTriggered, RecommendService } from '../../core';
 
 const SESSION_KEY = 'fianceai_alerts_dismissed';
 
@@ -92,11 +92,13 @@ const SESSION_KEY = 'fianceai_alerts_dismissed';
 })
 export class AlertModalComponent implements OnInit {
   private svc = inject(RecommendService);
+  private auth = inject(AuthService);
 
   visible = signal(false);
   triggered = signal<PriceAlertTriggered[]>([]);
 
   ngOnInit(): void {
+    if (!this.auth.isAuthenticated()) return;
     if (sessionStorage.getItem(SESSION_KEY)) return;
 
     this.svc.checkAlerts().subscribe({

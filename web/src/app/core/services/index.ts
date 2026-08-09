@@ -1,3 +1,4 @@
+export * from './auth.service';
 export * from './loading.service';
 export * from './recommend.service';
 export * from './snackbar.service';
