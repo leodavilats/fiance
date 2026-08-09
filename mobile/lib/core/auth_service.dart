@@ -23,7 +23,14 @@ class AppUser {
 class AuthService {
   AuthService({String apiBaseUrl = 'http://localhost:8000/api'})
       : _dio = Dio(BaseOptions(baseUrl: apiBaseUrl)),
-        _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+        _googleSignIn = GoogleSignIn(
+          scopes: ['email', 'profile'],
+          // Client ID do tipo Web do mesmo projeto GCP — necessário para o
+          // plugin devolver um idToken no Android (o client ID Android por
+          // si só não gera idToken). O backend valida o aud contra este ID.
+          serverClientId:
+              '226171385204-fgrdfsrqimsfc95dotuet2ru4e7eunhc.apps.googleusercontent.com',
+        );
 
   final Dio _dio;
   final GoogleSignIn _googleSignIn;
