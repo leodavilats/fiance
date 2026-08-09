@@ -19,7 +19,7 @@ FUND_TTL = 2 * 3600
 HIST_TTL = 12 * 3600
 DIV_TTL = 24 * 3600
 
-_FETCH_SEMAPHORE = asyncio.Semaphore(10)
+_FETCH_SEMAPHORE = asyncio.Semaphore(30)
 
 _CRYPTO_IDS = {
     "BTC": "bitcoin",
@@ -161,27 +161,56 @@ def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> flo
 
 # --------------------------------------------------------------------------
 # BRAPI — ações B3, FIIs e BDRs (.SA)
+#
+# Uma única chamada combinada (fundamental+dividends+range) traz tudo que
+# fetch_asset/fetch_dividends/fetch_history_universal precisam — evita 3
+# requisições HTTP separadas (e ~3x mais lentas/sujeitas a rate limit) por
+# ticker. O resultado bruto fica em cache e é reaproveitado pelas três.
 # --------------------------------------------------------------------------
 
+_BRAPI_RAW_TTL = FUND_TTL
 
-def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
+
+def _brapi_raw(base: str) -> dict:
+    ck = f"brapi_raw:{base}"
+    cached = cache.get(ck)
+    if cached is not None:
+        return cached
+
     settings = get_settings()
-    base = _base_symbol(symbol)
-
     try:
         resp = httpx.get(
             f"{_BRAPI_BASE}/quote/{base}",
-            params={"token": settings.brapi_token, "fundamental": "true", "dividends": "true"},
-            timeout=10,
+            params={
+                "token": settings.brapi_token,
+                "fundamental": "true",
+                # "dividends": "true" -> bloqueado no plano gratuito (403
+                # FEATURE_NOT_AVAILABLE). Sem isso não há dividendYield/
+                # dividendsData vindo da BRAPI — ver aviso no README/PR.
+                # O plano gratuito também só permite ranges curtos
+                # (1d, 5d, 1mo, 3mo) — qualquer outro valor retorna 400.
+                "range": "3mo",
+                "interval": "1d",
+            },
+            timeout=15,
         )
         resp.raise_for_status()
-        data = resp.json()
-        results = data.get("results") or []
+        results = resp.json().get("results") or []
         if not results:
-            return None
+            return {}
         r = results[0]
     except Exception as e:
         logger.warning("brapi falhou %s: %s", base, e)
+        return {}
+
+    cache.set(ck, r, _BRAPI_RAW_TTL)
+    return r
+
+
+def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
+    base = _base_symbol(symbol)
+    r = _brapi_raw(base)
+    if not r:
         return None
 
     price = _safe_float(r.get("regularMarketPrice"))
@@ -227,23 +256,14 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
 
 
 def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
-    settings = get_settings()
     base = _base_symbol(symbol)
-    range_map = {"5d": "5d", "1y": "1y", "2y": "2y", "6mo": "6mo", "max": "max"}
-    rng = range_map.get(period, "1y")
+    r = _brapi_raw(base)
+    prices = r.get("historicalDataPrice") or []
 
-    try:
-        resp = httpx.get(
-            f"{_BRAPI_BASE}/quote/{base}",
-            params={"token": settings.brapi_token, "range": rng, "interval": "1d"},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        results = (resp.json().get("results") or [{}])[0]
-        prices = results.get("historicalDataPrice") or []
-    except Exception as e:
-        logger.warning("brapi hist falhou %s: %s", base, e)
-        return {}
+    days_map = {"5d": 5, "6mo": 182, "1y": 365, "2y": 730, "max": 10_000}
+    max_days = days_map.get(period, 365)
+    if max_days < 730:
+        prices = prices[-max_days:]
 
     out: dict[str, float] = {}
     for p in prices:
@@ -262,21 +282,9 @@ def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
 
 
 def _dividends_brapi(symbol: str) -> list[dict[str, float]]:
-    settings = get_settings()
     base = _base_symbol(symbol)
-
-    try:
-        resp = httpx.get(
-            f"{_BRAPI_BASE}/quote/{base}",
-            params={"token": settings.brapi_token, "dividends": "true"},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        results = (resp.json().get("results") or [{}])[0]
-        cash_divs = (results.get("dividendsData") or {}).get("cashDividends") or []
-    except Exception as e:
-        logger.warning("brapi div falhou %s: %s", base, e)
-        return []
+    r = _brapi_raw(base)
+    cash_divs = (r.get("dividendsData") or {}).get("cashDividends") or []
 
     out: list[dict[str, float]] = []
     for d in cash_divs:

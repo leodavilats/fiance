@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import traceback
 
@@ -61,6 +62,19 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     def _startup() -> None:
         init_db()
+
+        async def _warm_up_opportunities() -> None:
+            from app.services import OpportunityService
+
+            try:
+                await OpportunityService()._scan_universe({})
+                logging.getLogger("fianceai").info("Cache de oportunidades aquecido no startup.")
+            except Exception:
+                logging.getLogger("fianceai").warning(
+                    "Falha ao aquecer cache de oportunidades no startup", exc_info=True
+                )
+
+        asyncio.create_task(_warm_up_opportunities())
 
     return app
 

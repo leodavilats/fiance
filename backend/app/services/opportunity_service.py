@@ -4,11 +4,16 @@ import logging
 from app.analysis.classify import auto_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.core import cache
 from app.core.config import get_settings
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.repositories import AssetRepository, PortfolioRepository
 
 logger = logging.getLogger(__name__)
+
+_SCAN_CACHE_KEY = "opps_full_scan"
+_SCAN_TTL = 20 * 60  # 20min — evita rescanear o universo inteiro a cada request
+_scan_lock = asyncio.Lock()
 
 
 class OpportunityService:
@@ -93,6 +98,43 @@ class OpportunityService:
             reasons=dec.reasons,
         )
 
+    async def _scan_universe(self, prefs: dict) -> tuple[list[Opportunity], int]:
+        """Avalia TODO o universo e cacheia o resultado — evitar rescanear 300+
+        tickers (cada um custando ~1 chamada à BRAPI/Finnhub) a cada request.
+        Compartilhado por /dashboard, /opportunities e /sectors-summary."""
+        settings = get_settings()
+        universe = set(settings.universe)
+
+        cached = cache.get(_SCAN_CACHE_KEY)
+        if cached is not None:
+            opps = [Opportunity(**o) for o in cached["items"]]
+            return opps, cached["universe_size"]
+
+        async with _scan_lock:
+            # outra request pode ter preenchido o cache enquanto esperávamos o lock
+            cached = cache.get(_SCAN_CACHE_KEY)
+            if cached is not None:
+                opps = [Opportunity(**o) for o in cached["items"]]
+                return opps, cached["universe_size"]
+
+            universe_size = len(universe)
+            raws = await asyncio.gather(*[self._build_opportunity(t, prefs) for t in universe])
+            opps = [o for o in raws if o is not None]
+            failed_count = universe_size - len(opps)
+            if failed_count > 0:
+                logger.info(
+                    "Análise de oportunidades: %d/%d ativos falharam na coleta",
+                    failed_count,
+                    universe_size,
+                )
+
+            cache.set(
+                _SCAN_CACHE_KEY,
+                {"items": [o.model_dump(mode="json") for o in opps], "universe_size": universe_size},
+                _SCAN_TTL,
+            )
+            return opps, universe_size
+
     async def get_opportunities(
         self,
         include_held: bool = False,
@@ -108,27 +150,16 @@ class OpportunityService:
         category: str = "",
         only_interesting: bool = False,
     ) -> OpportunitiesResponse:
-        settings = get_settings()
         prefs = self.portfolio_repo.get_preferences()
         cash = prefs["cash_available"]
 
         held = {p["ticker"].upper() for p in self.portfolio_repo.list_positions()}
 
-        universe = set(settings.universe)
+        scanned, universe_size = await self._scan_universe(prefs)
+        opps: list[Opportunity] = [o.model_copy() for o in scanned]
 
         if not include_held and not search:
-            universe -= held
-
-        universe_size = len(universe)
-        raws = await asyncio.gather(*[self._build_opportunity(t, prefs) for t in universe])
-        opps: list[Opportunity] = [o for o in raws if o is not None]
-        failed_count = universe_size - len(opps)
-        if failed_count > 0:
-            logger.info(
-                "Análise de oportunidades: %d/%d ativos falharam na coleta",
-                failed_count,
-                universe_size,
-            )
+            opps = [o for o in opps if o.ticker.upper() not in held]
 
         for o in opps:
             o.in_portfolio = o.ticker.upper() in held
@@ -199,5 +230,5 @@ class OpportunityService:
             current_page=page,
             page_size=page_size,
             universe_size=universe_size,
-            failed_count=failed_count,
+            failed_count=universe_size - len(scanned),
         )
