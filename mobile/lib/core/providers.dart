@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api_client.dart';
+import 'api_repository.dart';
 import 'auth_service.dart';
+import 'models.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(apiBaseUrl: apiBaseUrl);
@@ -11,4 +13,47 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(ref.watch(authServiceProvider));
 });
 
+final apiRepositoryProvider = Provider<ApiRepository>((ref) {
+  return ApiRepository(ref.watch(apiClientProvider).dio);
+});
+
 final currentUserProvider = StateProvider<AppUser?>((ref) => null);
+
+final dashboardProvider = FutureProvider.autoDispose<DashboardData>((ref) {
+  return ref.watch(apiRepositoryProvider).getDashboard();
+});
+
+final portfolioProvider =
+    FutureProvider.autoDispose<List<StoredPortfolioItem>>((ref) {
+  return ref.watch(apiRepositoryProvider).getPortfolio();
+});
+
+final opportunitiesSearchProvider = StateProvider.autoDispose<String>((ref) => '');
+
+final opportunitiesProvider = FutureProvider.autoDispose<List<Opportunity>>((ref) {
+  final search = ref.watch(opportunitiesSearchProvider);
+  return ref.watch(apiRepositoryProvider).getOpportunities(search: search);
+});
+
+final preferencesProvider = FutureProvider.autoDispose<Preferences>((ref) {
+  return ref.watch(apiRepositoryProvider).getPreferences();
+});
+
+final sectorsCategoryProvider = StateProvider.autoDispose<String>((ref) => 'acoes_br');
+
+final sectorsSummaryProvider = FutureProvider.autoDispose<List<SectorSummary>>((ref) {
+  final category = ref.watch(sectorsCategoryProvider);
+  return ref.watch(apiRepositoryProvider).getSectorsSummary(category: category);
+});
+
+final goalsProvider = FutureProvider.autoDispose<List<Goal>>((ref) {
+  return ref.watch(apiRepositoryProvider).getGoals();
+});
+
+final sectorGoalsProvider = FutureProvider.autoDispose<List<SectorGoal>>((ref) {
+  return ref.watch(apiRepositoryProvider).getSectorGoals();
+});
+
+final alertsProvider = FutureProvider.autoDispose<List<PriceAlert>>((ref) {
+  return ref.watch(apiRepositoryProvider).getAlerts();
+});
