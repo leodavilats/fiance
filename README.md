@@ -1,6 +1,6 @@
 # fianceAI
 
-Plataforma de inteligência de investimentos com análise fundamentalista, varredura de oportunidades e recomendações orientadas por IA, focada no mercado brasileiro (B3).
+Plataforma de inteligência de investimentos com análise fundamentalista, varredura de oportunidades e recomendações orientadas por IA, focada no mercado brasileiro (B3). Disponível como app web e mobile (iOS/Android), com login por conta Google e dados isolados por usuário.
 
 ## Visão Geral
 
@@ -8,6 +8,7 @@ O fianceAI integra dados de mercado em tempo real, métodos clássicos de valuat
 
 **Principais funcionalidades:**
 
+- Login com Google (multi-usuário, dados isolados por conta)
 - Dashboard com posições, P&L e metas de alocação
 - Scanner de oportunidades com pontuação fundamentalista e técnica
 - Scanner de quedas ("dip") com streaming em tempo real (SSE)
@@ -15,24 +16,32 @@ O fianceAI integra dados de mercado em tempo real, métodos clássicos de valuat
 - Histórico e análise de dividendos (DY, projeções)
 - Alertas de preço configuráveis por ativo
 - Insights e estratégias gerados por IA (Google Gemini)
-- Suporte a ações B3, FIIs, ETFs, criptomoedas e renda fixa
+- Suporte a ações B3, BDRs, FIIs, ações americanas, criptomoedas e renda fixa
 
 ## Tecnologias
 
 | Camada | Tecnologia |
 |--------|-----------|
-| Backend | Python 3.11+, FastAPI, Uvicorn |
+| Backend | Python 3.11+, FastAPI, Uvicorn, SQLAlchemy |
+| Banco de dados | PostgreSQL (produção, via Railway) / SQLite (fallback local) |
+| Autenticação | Login com Google (OAuth) + JWT de sessão próprio |
 | Web | Angular 18, TypeScript 5.5, Tailwind CSS |
-| Mobile | Flutter (iOS/Android) |
-| Dados de mercado | yfinance |
+| Mobile | Flutter (iOS/Android), Riverpod, go_router |
+| Dados de mercado — B3/FIIs/BDRs | [BRAPI](https://brapi.dev) |
+| Dados de mercado — ações americanas | [Finnhub](https://finnhub.io) |
+| Dados de mercado — criptomoedas | [CoinGecko](https://www.coingecko.com) |
 | IA | Google Gemini API |
+| Hospedagem backend | Railway |
 | Linting / Format | Ruff (Python), Prettier (TypeScript) |
 
 ## Pré-requisitos
 
 - Python 3.11+
-- Node.js 18+ e npm
-- Chave de API: [Google Gemini](https://aistudio.google.com/app/apikey) (plano gratuito: 15 req/min)
+- Node.js 18+ e npm (para o app web)
+- Flutter 3.x + Android Studio / Xcode (para o app mobile)
+- Chaves de API: [Google Gemini](https://aistudio.google.com/app/apikey), [BRAPI](https://brapi.dev), [Finnhub](https://finnhub.io)
+- OAuth Client IDs do Google (Web, Android e iOS) em [console.cloud.google.com](https://console.cloud.google.com/apis/credentials)
+- Projeto no [Railway](https://railway.app) com addon PostgreSQL (para produção)
 
 ## Instalação
 
@@ -57,6 +66,13 @@ cd web
 npm install
 ```
 
+### Mobile
+
+```bash
+cd mobile
+flutter pub get
+```
+
 ## Configuração de Ambiente
 
 Copie o arquivo de exemplo e preencha as variáveis:
@@ -68,10 +84,17 @@ cp backend/.env.example backend/.env
 | Variável | Obrigatória | Descrição |
 |----------|:-----------:|-----------|
 | `GEMINI_API_KEY` | Sim | Chave da API Google Gemini |
+| `GOOGLE_CLIENT_ID` | Sim | Client IDs OAuth aceitos como audience do login (Web, Android, iOS — separados por vírgula) |
+| `JWT_SECRET` | Sim | Segredo usado para assinar o JWT de sessão emitido após o login |
+| `BRAPI_TOKEN` | Sim | Token da BRAPI (cotações/fundamentos B3, FIIs, BDRs) |
+| `FINNHUB_API_KEY` | Sim | Chave da Finnhub (ações americanas) |
+| `DATABASE_URL` | Não | String de conexão Postgres. Em produção, o Railway injeta automaticamente; sem ela, cai no SQLite local |
 | `APP_ENV` | Não | `development` ou `production` (padrão: `development`) |
 | `LOG_LEVEL` | Não | Nível de log: `DEBUG`, `INFO`, `WARNING` (padrão: `INFO`) |
 | `ALLOWED_ORIGINS` | Não | Origens CORS permitidas (padrão: `http://localhost:4200`) |
 | `DEFAULT_UNIVERSE` | Não | Tickers monitorados, separados por vírgula |
+
+No app mobile (`mobile/lib/core/auth_service.dart`), o login com Google usa um `serverClientId` (o Client ID **Web**) — é ele que faz o `idToken` ter uma audience validável pelo backend, independente da plataforma (Android/iOS).
 
 ## Execução
 
@@ -85,6 +108,11 @@ uvicorn app.main:app --reload --port 8000
 # Terminal 2 — Web (http://localhost:4200)
 cd web
 npm start
+
+# Terminal 3 — Mobile (emulador/dispositivo, apontando pro backend local)
+cd mobile
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api   # emulador Android
+flutter run --dart-define=API_BASE_URL=http://localhost:8000/api  # iOS simulator
 ```
 
 ### Build de Produção
@@ -94,10 +122,18 @@ npm start
 cd web
 npm run build   # saída em dist/
 
-# Backend — recomenda-se usar Gunicorn com worker Uvicorn
-pip install gunicorn
-gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+# Backend — Railway usa o Procfile (uvicorn) automaticamente.
+# Root Directory do serviço no Railway deve ser "backend".
+
+# Mobile — APK de teste
+cd mobile
+flutter build apk --release   # saída em build/app/outputs/flutter-apk/
+
+# Mobile — App Bundle para a Play Store (requer keystore de release configurado)
+flutter build appbundle --release
 ```
+
+Por padrão, o app mobile aponta para o backend em produção (`https://fianceai-production.up.railway.app/api`), configurado em `mobile/lib/core/api_client.dart`.
 
 ## Documentação da API
 
@@ -110,9 +146,10 @@ Com o backend rodando, acesse a documentação interativa:
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| `GET` | `/api/health` | Health check |
+| `GET` | `/api/health` | Health check (público) |
+| `POST` | `/api/auth/google` | Login: troca o `id_token` do Google por um JWT de sessão (público) |
 | `GET` | `/api/dashboard` | Dados consolidados do dashboard |
-| `GET/POST` | `/api/portfolio` | Gerenciar posições |
+| `GET/PUT` | `/api/portfolio` | Gerenciar posições |
 | `POST` | `/api/portfolio/evaluate` | Calcular P&L e alocação |
 | `GET` | `/api/opportunities` | Oportunidades de investimento com score |
 | `GET` | `/api/dip-scanner` | Ativos abaixo do preço justo |
@@ -120,8 +157,13 @@ Com o backend rodando, acesse a documentação interativa:
 | `GET` | `/api/sectors-summary` | Agrupamento por setor: score médio, DY médio, top ativos |
 | `GET` | `/api/strategy` | Estratégia de alocação gerada por IA |
 | `GET/POST` | `/api/alerts` | Alertas de preço |
+| `GET/PUT` | `/api/watchlist` | Lista de acompanhamento |
+| `GET/PUT` | `/api/goals` , `/api/sector-goals` | Metas de alocação por categoria/setor |
+| `GET/PUT` | `/api/preferences` | Caixa disponível, yields desejados, meta de renda passiva |
 | `GET` | `/api/dividends` | Histórico de dividendos |
 | `GET` | `/api/recommendations` | Top recomendações de compra |
+
+Todas as rotas acima (exceto `/health` e `/auth/google`) exigem `Authorization: Bearer <token>` e retornam dados isolados por usuário.
 
 ## Estrutura do Projeto
 
@@ -131,14 +173,16 @@ fianceAI/
 │   ├── app/
 │   │   ├── main.py              # Ponto de entrada FastAPI
 │   │   ├── analysis/            # Algoritmos: Bazin, Graham, DCF, scoring
-│   │   ├── api/                 # Rotas REST
-│   │   ├── collectors/          # Coleta de dados (yfinance, RSS)
+│   │   ├── api/                 # Rotas REST (auth, dashboard, portfolio, ...)
+│   │   ├── collectors/          # Coleta de dados (BRAPI, Finnhub, CoinGecko, RSS)
 │   │   ├── services/            # Regras de negócio
-│   │   ├── models/              # Schemas Pydantic
-│   │   ├── repositories/        # Persistência (JSON local)
+│   │   ├── models/              # Schemas Pydantic + modelos ORM (SQLAlchemy)
+│   │   ├── repositories/        # Camada de persistência
+│   │   ├── storage/             # Acesso ao banco (portfolio, goals, preferences...)
 │   │   ├── llm/                 # Integração Google Gemini
-│   │   ├── core/                # Configuração e cache
+│   │   ├── core/                # Config, banco de dados, autenticação, cache
 │   │   └── optimizer/           # Otimização de carteira
+│   ├── Procfile                 # Comando de start usado pelo Railway
 │   ├── requirements.txt
 │   └── .env.example
 │
@@ -149,14 +193,17 @@ fianceAI/
 │           └── core/            # Serviços HTTP, interceptors, tema
 │
 └── mobile/                      # App Flutter (iOS/Android)
+    └── lib/
+        ├── core/                # API client, auth (Google), providers, modelos
+        └── features/            # Login, Dashboard, Meus Ativos, Mercado, Config
 ```
 
 ## Métodos de Valuation
 
 | Método | Fórmula | Aplicação |
 |--------|---------|-----------|
-| **Bazin** | `Preço justo = DPA médio / Yield desejado` | Ações com dividendos consistentes |
-| **Graham** | `Preço justo = √(22,5 × LPA × VPA)` | Ações de valor |
+| **Bazin** | `Preço justo = DPA médio / Yield desejado` | Ações com dividendos consistentes, FIIs |
+| **Graham** | `Preço justo = √(22,5 × LPA × VPA)` | Ações de valor, BDRs |
 | **DCF** | Fluxo de caixa descontado | Crescimento futuro |
 | **Consenso** | Média dos métodos disponíveis (1–3) | Visão geral; `consensus_methods` indica quantos métodos foram usados |
 
@@ -173,6 +220,11 @@ npm start           # servidor dev
 npm run build       # build de produção
 npm run format      # formatar código com Prettier
 npm run format:check # verificar formatação
+
+# Mobile
+flutter analyze         # lint
+flutter test             # testes
+flutter build apk         # build de release (Android)
 ```
 
 ## Licença
