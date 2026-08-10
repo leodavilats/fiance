@@ -29,8 +29,8 @@ import {
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import { SectorsComponent } from '../sectors/sectors.component';
 
-type MarketTab = 'opportunities' | 'segments' | 'investir' | 'ferramentas';
-type OppMode = 'todas' | 'queda';
+type MarketTab = 'opportunities' | 'investir' | 'ferramentas';
+type OppMode = 'todas' | 'setores' | 'queda';
 type ToolMode = 'analisar' | 'renda_fixa';
 
 const FILTER_STORAGE_KEY = 'market_filters';

@@ -1,4 +1,7 @@
 <div class="space-y-5">
+  <p class="text-sm text-muted m-0">
+    Explore ativos da B3, aja sobre seu caixa e investigue oportunidades específicas.
+  </p>
   <div class="flex gap-1 border-b border-border pb-2 overflow-x-auto">
     <button
       type="button"
@@ -6,15 +9,7 @@
       [class.active]="activeTab() === 'opportunities'"
       class="tab-btn whitespace-nowrap"
     >
-      <lucide-icon name="target" size="18"></lucide-icon> Oportunidades
-    </button>
-    <button
-      type="button"
-      (click)="activeTab.set('segments')"
-      [class.active]="activeTab() === 'segments'"
-      class="tab-btn whitespace-nowrap"
-    >
-      <lucide-icon name="chart-pie" size="18"></lucide-icon> Segmentos
+      <lucide-icon name="compass" size="18"></lucide-icon> Explorar
     </button>
     <button
       type="button"
@@ -36,9 +31,7 @@
 
   @if (activeTab() === 'opportunities') {
     <div>
-      <p class="text-xs text-muted mb-1.5">
-        Ativos com bom preço segundo os métodos de valuation, ou só os que estão em queda.
-      </p>
+      <p class="text-xs text-muted mb-1.5">Três formas de olhar pro mesmo mercado:</p>
       <div class="subtab-group">
         <button
           type="button"
@@ -46,7 +39,15 @@
           [class.active]="oppMode() === 'todas'"
           class="subtab-btn"
         >
-          <lucide-icon name="target" size="14"></lucide-icon> Todas
+          <lucide-icon name="list" size="14"></lucide-icon> Lista de ativos
+        </button>
+        <button
+          type="button"
+          (click)="oppMode.set('setores')"
+          [class.active]="oppMode() === 'setores'"
+          class="subtab-btn"
+        >
+          <lucide-icon name="chart-pie" size="14"></lucide-icon> Por setor
         </button>
         <button
           type="button"
@@ -430,9 +431,9 @@
     </div>
   }
 
-  @if (activeTab() === 'segments') {
+  @if (activeTab() === 'opportunities' && oppMode() === 'setores') {
     <div class="space-y-4">
-      <p class="text-xs text-muted -mt-1">
+      <p class="text-xs text-muted -mt-1 mb-1">
         Visão consolidada por setor: score médio, DY médio e destaques de cada segmento.
       </p>
       <app-sectors />
