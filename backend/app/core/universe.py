@@ -79,16 +79,10 @@ def _build_brapi_universe(
     stocks = [s for s in stocks if not _FRACTIONAL_LOT.match(s.get("stock") or "")]
 
     br_stocks = [
-        s
-        for s in stocks
-        if s.get("subType") == "stock" and (s.get("market_cap") or 0) > 0
+        s for s in stocks if s.get("subType") == "stock" and (s.get("market_cap") or 0) > 0
     ]
     fiis = [s for s in stocks if s.get("subType") == "fii" and (s.get("volume") or 0) > 0]
-    bdrs = [
-        s
-        for s in stocks
-        if s.get("subType") == "bdr" and (s.get("market_cap") or 0) > 0
-    ]
+    bdrs = [s for s in stocks if s.get("subType") == "bdr" and (s.get("market_cap") or 0) > 0]
 
     br_stocks.sort(key=lambda s: s.get("market_cap") or 0, reverse=True)
     fiis.sort(key=lambda s: s.get("volume") or 0, reverse=True)

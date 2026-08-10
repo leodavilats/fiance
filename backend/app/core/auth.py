@@ -98,7 +98,9 @@ async def get_current_user(
 
     settings = get_settings()
     try:
-        payload = jwt.decode(credentials.credentials, settings.jwt_secret, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(
+            credentials.credentials, settings.jwt_secret, algorithms=[JWT_ALGORITHM]
+        )
     except jwt.PyJWTError as exc:
         raise HTTPException(status_code=401, detail="Sessão inválida ou expirada") from exc
 

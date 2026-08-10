@@ -128,7 +128,10 @@ class OpportunityService:
 
             cache.set(
                 _SCAN_CACHE_KEY,
-                {"items": [o.model_dump(mode="json") for o in opps], "universe_size": universe_size},
+                {
+                    "items": [o.model_dump(mode="json") for o in opps],
+                    "universe_size": universe_size,
+                },
                 _SCAN_TTL,
             )
             return opps, universe_size

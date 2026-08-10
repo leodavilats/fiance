@@ -102,9 +102,9 @@ def _session(user_id: str | None):
 def list_positions(user_id: str | None = None) -> list[StoredItem]:
     with _session(user_id) as (session, uid):
         rows = session.scalars(
-            select(PortfolioPosition).where(PortfolioPosition.user_id == uid).order_by(
-                PortfolioPosition.ticker
-            )
+            select(PortfolioPosition)
+            .where(PortfolioPosition.user_id == uid)
+            .order_by(PortfolioPosition.ticker)
         ).all()
         return [
             StoredItem(
@@ -250,9 +250,7 @@ def list_snapshots(limit: int = 90, user_id: str | None = None) -> list[Snapshot
 def last_updated(user_id: str | None = None) -> float | None:
     with _session(user_id) as (session, uid):
         return session.scalar(
-            select(func.max(PortfolioPosition.updated_at)).where(
-                PortfolioPosition.user_id == uid
-            )
+            select(func.max(PortfolioPosition.updated_at)).where(PortfolioPosition.user_id == uid)
         )
 
 
@@ -326,7 +324,9 @@ def set_preferences(
                 user_id=uid,
                 cash_available=float(cash_available),
                 passive_income_goal=passive_income_goal,
-                desired_yield_stock=desired_yield_stock if desired_yield_stock is not None else 0.06,
+                desired_yield_stock=desired_yield_stock
+                if desired_yield_stock is not None
+                else 0.06,
                 desired_yield_fii=desired_yield_fii if desired_yield_fii is not None else 0.10,
                 desired_yield_int=desired_yield_int if desired_yield_int is not None else 0.04,
                 updated_at=now,

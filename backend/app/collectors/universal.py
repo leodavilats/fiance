@@ -4,6 +4,7 @@ import asyncio
 import logging
 import re
 from dataclasses import dataclass
+from datetime import UTC
 from typing import Literal
 
 import httpx
@@ -272,9 +273,9 @@ def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
         if close is None or ts is None:
             continue
         try:
-            from datetime import datetime, timezone
+            from datetime import datetime
 
-            day = datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
+            day = datetime.fromtimestamp(int(ts), tz=UTC).strftime("%Y-%m-%d")
             out[day] = close
         except Exception:
             continue
@@ -432,9 +433,9 @@ def _history_coingecko(symbol: str, period: str = "1y") -> dict[str, float]:
     out: dict[str, float] = {}
     for ts_ms, price in prices:
         try:
-            from datetime import datetime, timezone
+            from datetime import datetime
 
-            day = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+            day = datetime.fromtimestamp(ts_ms / 1000, tz=UTC).strftime("%Y-%m-%d")
             out[day] = float(price)
         except Exception:
             continue
