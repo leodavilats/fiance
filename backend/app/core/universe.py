@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 _LIST_URL = "https://brapi.dev/api/quote/list"
 _UNIVERSE_CACHE_KEY = "brapi_universe_v1"
+_STOCKS_RAW_CACHE_KEY = "brapi_stocks_raw_v1"
 _UNIVERSE_TTL = 24 * 3600
 
 # Lotes fracionários (ex.: PETR4F) são o mesmo ativo do ticker "cheio"
@@ -63,6 +64,30 @@ def _fetch_brapi_list() -> list[dict]:
         return []
 
 
+def _get_brapi_stocks_cached() -> list[dict]:
+    """/quote/list completo, cacheado — usado tanto para montar o universo
+    quanto para o mapa de setores (é a única fonte que traz `sector`; o
+    endpoint de cotação individual não devolve esse campo)."""
+
+    cached = cache.get(_STOCKS_RAW_CACHE_KEY)
+    if cached is not None:
+        return cached
+
+    stocks = _fetch_brapi_list()
+    if stocks:
+        cache.set(_STOCKS_RAW_CACHE_KEY, stocks, _UNIVERSE_TTL)
+    return stocks
+
+
+def get_sector_map() -> dict[str, str]:
+    """Ticker (sem sufixo) → setor bruto da BRAPI (taxonomia em inglês,
+    tipo 'Finance', 'Technology Services'). Tradução pro português fica a
+    cargo do frontend (UiHelperService.translateSector)."""
+
+    stocks = _get_brapi_stocks_cached()
+    return {s["stock"]: s["sector"] for s in stocks if s.get("stock") and s.get("sector")}
+
+
 def _build_brapi_universe(
     max_stocks: int = 150, max_fiis: int = 60, max_bdrs: int = 40
 ) -> list[str]:
@@ -72,7 +97,7 @@ def _build_brapi_universe(
     para manter o tempo de varredura sob controle (~300 tickers no total,
     igual ao universo estático anterior)."""
 
-    stocks = _fetch_brapi_list()
+    stocks = _get_brapi_stocks_cached()
     if not stocks:
         return []
 

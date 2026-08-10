@@ -11,6 +11,7 @@ import httpx
 
 from app.core import cache
 from app.core.config import get_settings
+from app.core.universe import get_sector_map
 
 logger = logging.getLogger(__name__)
 
@@ -233,12 +234,17 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
     except Exception:
         pass
 
+    # O endpoint de cotação individual não devolve `sector` no plano
+    # gratuito — busca no mapa construído a partir do /quote/list (que tem
+    # esse campo para praticamente todo ticker da B3).
+    sector = r.get("sector") or get_sector_map().get(base)
+
     return AssetSnapshot(
         symbol=symbol.upper(),
         yf_symbol=to_yf_symbol(symbol, t),
         asset_type=t,
         name=name,
-        sector=r.get("sector"),
+        sector=sector,
         currency=r.get("currency") or "BRL",
         price=price,
         market_cap=_safe_float(r.get("marketCap")),

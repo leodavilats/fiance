@@ -197,6 +197,27 @@ export class UiHelperService {
       'real-estate': 'Imobiliário',
       telecommunications: 'Telecomunicações',
       crypto: 'Cripto',
+      // Taxonomia da BRAPI (/quote/list) — diferente da usada pelo
+      // yfinance acima, mapeada pras mesmas categorias em português.
+      Miscellaneous: 'Outros',
+      Finance: 'Financeiro',
+      'Technology Services': 'Tecnologia',
+      'Electronic Technology': 'Tecnologia',
+      'Producer Manufacturing': 'Industrial',
+      'Industrial Services': 'Industrial',
+      'Retail Trade': 'Consumo Cíclico',
+      'Consumer Services': 'Consumo Cíclico',
+      'Consumer Durables': 'Consumo Cíclico',
+      'Process Industries': 'Materiais Básicos',
+      'Non-Energy Minerals': 'Materiais Básicos',
+      'Health Technology': 'Saúde',
+      'Health Services': 'Saúde',
+      'Consumer Non-Durables': 'Consumo Básico',
+      'Commercial Services': 'Industrial',
+      Transportation: 'Industrial',
+      'Energy Minerals': 'Energia',
+      Communications: 'Telecomunicações',
+      'Distribution Services': 'Industrial',
     };
     return map[s] || s;
   }
