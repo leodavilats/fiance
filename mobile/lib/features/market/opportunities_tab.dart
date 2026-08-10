@@ -39,18 +39,27 @@ class OpportunitiesFilters {
 }
 
 final opportunitiesFiltersProvider =
-    StateProvider.autoDispose<OpportunitiesFilters>((ref) => const OpportunitiesFilters());
+    StateProvider.autoDispose<OpportunitiesFilters>(
+      (ref) => const OpportunitiesFilters(),
+    );
 
-final filteredOpportunitiesProvider = FutureProvider.autoDispose<List<Opportunity>>((ref) {
-  final f = ref.watch(opportunitiesFiltersProvider);
-  return ref.watch(apiRepositoryProvider).getOpportunities(search: f.search);
-});
+final filteredOpportunitiesProvider =
+    FutureProvider.autoDispose<List<Opportunity>>((ref) {
+      final f = ref.watch(opportunitiesFiltersProvider);
+      return ref
+          .watch(apiRepositoryProvider)
+          .getOpportunities(search: f.search);
+    });
 
-final dipScanResultProvider = FutureProvider.autoDispose<List<DipScanItem>>((ref) {
+final dipScanResultProvider = FutureProvider.autoDispose<List<DipScanItem>>((
+  ref,
+) {
   return ref.watch(apiRepositoryProvider).dipScan();
 });
 
-final oppModeProvider = StateProvider.autoDispose<bool>((ref) => false); // false=Todas, true=Em queda
+final oppModeProvider = StateProvider.autoDispose<bool>(
+  (ref) => false,
+); // false=Todas, true=Em queda
 
 class OpportunitiesTab extends ConsumerWidget {
   const OpportunitiesTab({super.key});
@@ -69,10 +78,15 @@ class OpportunitiesTab extends ConsumerWidget {
               ButtonSegment(value: true, label: Text('Em queda')),
             ],
             selected: {isDipMode},
-            onSelectionChanged: (s) => ref.read(oppModeProvider.notifier).state = s.first,
+            onSelectionChanged: (s) =>
+                ref.read(oppModeProvider.notifier).state = s.first,
           ),
         ),
-        Expanded(child: isDipMode ? const _DipScannerView() : const _AllOpportunitiesView()),
+        Expanded(
+          child: isDipMode
+              ? const _DipScannerView()
+              : const _AllOpportunitiesView(),
+        ),
       ],
     );
   }
@@ -95,7 +109,10 @@ class _DipScannerView extends ConsumerWidget {
               children: const [
                 Padding(
                   padding: EdgeInsets.all(32),
-                  child: Text('Nenhum ativo em queda encontrado agora', textAlign: TextAlign.center),
+                  child: Text(
+                    'Nenhum ativo em queda encontrado agora',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ],
             );
@@ -117,13 +134,29 @@ class _DipScannerView extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(item.symbol, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            Text('score ${item.dipScore.toStringAsFixed(0)}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                            Text(
+                              item.symbol,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'score ${item.dipScore.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange,
+                              ),
+                            ),
                           ],
                         ),
                         if (item.name != null)
-                          Text(item.name!, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          Text(
+                            item.name!,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                          ),
                         const SizedBox(height: 6),
                         Text(
                           'Queda do topo: ${formatPercent(item.dropFromHighPct)} · MS: ${formatPercent(item.marginOfSafety)}',
@@ -132,7 +165,13 @@ class _DipScannerView extends ConsumerWidget {
                         if (item.topReason.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
-                            child: Text(item.topReason, style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                            child: Text(
+                              item.topReason,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -157,8 +196,13 @@ class _AllOpportunitiesView extends ConsumerWidget {
 
     var items = opportunities.valueOrNull ?? [];
     items = items.where((o) {
-      if (filters.minDy != null && (o.dividendYield ?? 0) < filters.minDy!) return false;
-      if (filters.minMos != null && (o.marginOfSafety ?? -999) < filters.minMos!) return false;
+      if (filters.minDy != null && (o.dividendYield ?? 0) < filters.minDy!) {
+        return false;
+      }
+      if (filters.minMos != null &&
+          (o.marginOfSafety ?? -999) < filters.minMos!) {
+        return false;
+      }
       return true;
     }).toList();
 
@@ -175,8 +219,9 @@ class _AllOpportunitiesView extends ConsumerWidget {
                   isDense: true,
                   border: OutlineInputBorder(),
                 ),
-                onSubmitted: (v) => ref.read(opportunitiesFiltersProvider.notifier).state =
-                    filters.copyWith(search: v),
+                onSubmitted: (v) =>
+                    ref.read(opportunitiesFiltersProvider.notifier).state =
+                        filters.copyWith(search: v),
               ),
               const SizedBox(height: 8),
               SingleChildScrollView(
@@ -184,20 +229,45 @@ class _AllOpportunitiesView extends ConsumerWidget {
                 child: Row(
                   children: [
                     _CategoryChip(
-                        label: 'Todas', value: '', selected: filters.category, filters: filters),
+                      label: 'Todas',
+                      value: '',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
                     _CategoryChip(
-                        label: 'Ações BR', value: 'acoes_br', selected: filters.category, filters: filters),
+                      label: 'Ações BR',
+                      value: 'acoes_br',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
                     _CategoryChip(
-                        label: 'Ações INT', value: 'acoes_int', selected: filters.category, filters: filters),
-                    _CategoryChip(label: 'FIIs', value: 'fiis', selected: filters.category, filters: filters),
+                      label: 'Ações INT',
+                      value: 'acoes_int',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
                     _CategoryChip(
-                        label: 'Cripto', value: 'cripto', selected: filters.category, filters: filters),
+                      label: 'FIIs',
+                      value: 'fiis',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
+                    _CategoryChip(
+                      label: 'Cripto',
+                      value: 'cripto',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
                     const SizedBox(width: 8),
                     FilterChip(
                       label: const Text('Destaques'),
                       selected: filters.onlyInteresting,
-                      onSelected: (v) => ref.read(opportunitiesFiltersProvider.notifier).state =
-                          filters.copyWith(onlyInteresting: v),
+                      onSelected: (v) =>
+                          ref
+                              .read(opportunitiesFiltersProvider.notifier)
+                              .state = filters.copyWith(
+                            onlyInteresting: v,
+                          ),
                     ),
                   ],
                 ),
@@ -207,7 +277,8 @@ class _AllOpportunitiesView extends ConsumerWidget {
         ),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: () async => ref.invalidate(filteredOpportunitiesProvider),
+            onRefresh: () async =>
+                ref.invalidate(filteredOpportunitiesProvider),
             child: opportunities.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Erro: $err')),
@@ -217,16 +288,23 @@ class _AllOpportunitiesView extends ConsumerWidget {
                     children: const [
                       Padding(
                         padding: EdgeInsets.all(32),
-                        child: Text('Nenhuma oportunidade encontrada', textAlign: TextAlign.center),
+                        child: Text(
+                          'Nenhuma oportunidade encontrada',
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   );
                 }
                 return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 6),
-                  itemBuilder: (context, index) => _OpportunityCard(opportunity: items[index]),
+                  itemBuilder: (context, index) =>
+                      _OpportunityCard(opportunity: items[index]),
                 );
               },
             ),
@@ -258,7 +336,8 @@ class _CategoryChip extends ConsumerWidget {
         label: Text(label),
         selected: selected == value,
         onSelected: (_) =>
-            ref.read(opportunitiesFiltersProvider.notifier).state = filters.copyWith(category: value),
+            ref.read(opportunitiesFiltersProvider.notifier).state = filters
+                .copyWith(category: value),
       ),
     );
   }
@@ -299,20 +378,41 @@ class _OpportunityCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(opportunity.ticker, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(
+                          opportunity.ticker,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                         if (opportunity.name != null)
-                          Text(opportunity.name!, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          Text(
+                            opportunity.name!,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                          ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: _verdictColor().withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(opportunity.label,
-                        style: TextStyle(color: _verdictColor(), fontWeight: FontWeight.w600, fontSize: 12)),
+                    child: Text(
+                      opportunity.label,
+                      style: TextStyle(
+                        color: _verdictColor(),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -320,10 +420,22 @@ class _OpportunityCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _Stat(label: 'Preço', value: formatCurrency(opportunity.price)),
-                  _Stat(label: 'Preço justo', value: formatCurrency(opportunity.fairPrice)),
-                  _Stat(label: 'MS', value: formatPercent(opportunity.marginOfSafety)),
-                  _Stat(label: 'DY', value: formatPercent(opportunity.dividendYield)),
+                  _Stat(
+                    label: 'Preço',
+                    value: formatCurrency(opportunity.price),
+                  ),
+                  _Stat(
+                    label: 'Preço justo',
+                    value: formatCurrency(opportunity.fairPrice),
+                  ),
+                  _Stat(
+                    label: 'MS',
+                    value: formatPercent(opportunity.marginOfSafety),
+                  ),
+                  _Stat(
+                    label: 'DY',
+                    value: formatPercent(opportunity.dividendYield),
+                  ),
                 ],
               ),
             ],
@@ -345,8 +457,14 @@ class _Stat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
       ],
     );
   }

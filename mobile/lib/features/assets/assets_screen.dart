@@ -23,23 +23,35 @@ class AssetsScreen extends ConsumerWidget {
             TextField(
               controller: tickerCtrl,
               textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(labelText: 'Ticker (ex: PETR4)'),
+              decoration: const InputDecoration(
+                labelText: 'Ticker (ex: PETR4)',
+              ),
             ),
             TextField(
               controller: qtyCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(labelText: 'Quantidade'),
             ),
             TextField(
               controller: priceCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(labelText: 'Preço médio'),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Salvar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Salvar'),
+          ),
         ],
       ),
     );
@@ -53,7 +65,9 @@ class AssetsScreen extends ConsumerWidget {
     if (ticker.isEmpty || quantity == null || avgPrice == null) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Preencha ticker, quantidade e preço corretamente')),
+          const SnackBar(
+            content: Text('Preencha ticker, quantidade e preço corretamente'),
+          ),
         );
       }
       return;
@@ -63,14 +77,23 @@ class AssetsScreen extends ConsumerWidget {
     final current = await repo.getPortfolio();
     final updated = [
       ...current.where((i) => i.ticker != ticker),
-      StoredPortfolioItem(ticker: ticker, quantity: quantity, avgPrice: avgPrice, category: 'auto'),
+      StoredPortfolioItem(
+        ticker: ticker,
+        quantity: quantity,
+        avgPrice: avgPrice,
+        category: 'auto',
+      ),
     ];
     await repo.savePortfolio(updated);
     ref.invalidate(portfolioProvider);
     ref.invalidate(dashboardProvider);
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref, String ticker) async {
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    String ticker,
+  ) async {
     await ref.read(apiRepositoryProvider).deletePosition(ticker);
     ref.invalidate(portfolioProvider);
     ref.invalidate(dashboardProvider);
@@ -121,9 +144,16 @@ class AssetsScreen extends ConsumerWidget {
                   ),
                   onDismissed: (_) => _delete(context, ref, item.ticker),
                   child: ListTile(
-                    title: Text(item.ticker, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${item.quantity} un. · PM ${formatCurrency(item.avgPrice)}'),
-                    trailing: Text(formatCurrency(item.quantity * item.avgPrice)),
+                    title: Text(
+                      item.ticker,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      '${item.quantity} un. · PM ${formatCurrency(item.avgPrice)}',
+                    ),
+                    trailing: Text(
+                      formatCurrency(item.quantity * item.avgPrice),
+                    ),
                   ),
                 );
               },

@@ -23,14 +23,19 @@ final dashboardProvider = FutureProvider.autoDispose<DashboardData>((ref) {
   return ref.watch(apiRepositoryProvider).getDashboard();
 });
 
-final portfolioProvider =
-    FutureProvider.autoDispose<List<StoredPortfolioItem>>((ref) {
-  return ref.watch(apiRepositoryProvider).getPortfolio();
-});
+final portfolioProvider = FutureProvider.autoDispose<List<StoredPortfolioItem>>(
+  (ref) {
+    return ref.watch(apiRepositoryProvider).getPortfolio();
+  },
+);
 
-final opportunitiesSearchProvider = StateProvider.autoDispose<String>((ref) => '');
+final opportunitiesSearchProvider = StateProvider.autoDispose<String>(
+  (ref) => '',
+);
 
-final opportunitiesProvider = FutureProvider.autoDispose<List<Opportunity>>((ref) {
+final opportunitiesProvider = FutureProvider.autoDispose<List<Opportunity>>((
+  ref,
+) {
   final search = ref.watch(opportunitiesSearchProvider);
   return ref.watch(apiRepositoryProvider).getOpportunities(search: search);
 });
@@ -39,9 +44,13 @@ final preferencesProvider = FutureProvider.autoDispose<Preferences>((ref) {
   return ref.watch(apiRepositoryProvider).getPreferences();
 });
 
-final sectorsCategoryProvider = StateProvider.autoDispose<String>((ref) => 'acoes_br');
+final sectorsCategoryProvider = StateProvider.autoDispose<String>(
+  (ref) => 'acoes_br',
+);
 
-final sectorsSummaryProvider = FutureProvider.autoDispose<List<SectorSummary>>((ref) {
+final sectorsSummaryProvider = FutureProvider.autoDispose<List<SectorSummary>>((
+  ref,
+) {
   final category = ref.watch(sectorsCategoryProvider);
   return ref.watch(apiRepositoryProvider).getSectorsSummary(category: category);
 });

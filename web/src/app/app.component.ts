@@ -54,7 +54,10 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
               (click)="theme.toggle()"
               [title]="theme.theme() === 'dark' ? 'Modo claro' : 'Modo escuro'"
             >
-              <lucide-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" size="18"></lucide-icon>
+              <lucide-icon
+                [name]="theme.theme() === 'dark' ? 'sun' : 'moon'"
+                size="18"
+              ></lucide-icon>
             </button>
             <img
               [src]="user.picture"
@@ -74,34 +77,34 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
         </header>
 
         <nav class="hidden sm:flex flex-wrap gap-2 mb-6">
-        <a
-          routerLink="/dashboard"
-          routerLinkActive="active"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
-        >
-          <lucide-icon name="layout-dashboard" size="16"></lucide-icon> Dashboard
-        </a>
-        <a
-          routerLink="/assets"
-          routerLinkActive="active"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
-        >
-          <lucide-icon name="briefcase" size="16"></lucide-icon> Meus Ativos
-        </a>
-        <a
-          routerLink="/market"
-          routerLinkActive="active"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
-        >
-          <lucide-icon name="target" size="16"></lucide-icon> Mercado
-        </a>
-        <a
-          routerLink="/config"
-          routerLinkActive="active"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
-        >
-          <lucide-icon name="settings" size="16"></lucide-icon> Configurações
-        </a>
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="active"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
+          >
+            <lucide-icon name="layout-dashboard" size="16"></lucide-icon> Dashboard
+          </a>
+          <a
+            routerLink="/assets"
+            routerLinkActive="active"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
+          >
+            <lucide-icon name="briefcase" size="16"></lucide-icon> Meus Ativos
+          </a>
+          <a
+            routerLink="/market"
+            routerLinkActive="active"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
+          >
+            <lucide-icon name="target" size="16"></lucide-icon> Mercado
+          </a>
+          <a
+            routerLink="/config"
+            routerLinkActive="active"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
+          >
+            <lucide-icon name="settings" size="16"></lucide-icon> Configurações
+          </a>
         </nav>
       }
 
@@ -113,40 +116,40 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
         class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-border"
         style="background: var(--panel); padding-bottom: env(safe-area-inset-bottom);"
       >
-      <div class="flex items-stretch justify-around h-14">
-        <a
-          routerLink="/dashboard"
-          routerLinkActive="active-mob"
-          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
-        >
-          <lucide-icon name="layout-dashboard" size="20"></lucide-icon>
-          <span>Início</span>
-        </a>
-        <a
-          routerLink="/assets"
-          routerLinkActive="active-mob"
-          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
-        >
-          <lucide-icon name="briefcase" size="20"></lucide-icon>
-          <span>Ativos</span>
-        </a>
-        <a
-          routerLink="/market"
-          routerLinkActive="active-mob"
-          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
-        >
-          <lucide-icon name="target" size="20"></lucide-icon>
-          <span>Mercado</span>
-        </a>
-        <a
-          routerLink="/config"
-          routerLinkActive="active-mob"
-          class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
-        >
-          <lucide-icon name="settings" size="20"></lucide-icon>
-          <span>Config</span>
-        </a>
-      </div>
+        <div class="flex items-stretch justify-around h-14">
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="active-mob"
+            class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+          >
+            <lucide-icon name="layout-dashboard" size="20"></lucide-icon>
+            <span>Início</span>
+          </a>
+          <a
+            routerLink="/assets"
+            routerLinkActive="active-mob"
+            class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+          >
+            <lucide-icon name="briefcase" size="20"></lucide-icon>
+            <span>Ativos</span>
+          </a>
+          <a
+            routerLink="/market"
+            routerLinkActive="active-mob"
+            class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+          >
+            <lucide-icon name="target" size="20"></lucide-icon>
+            <span>Mercado</span>
+          </a>
+          <a
+            routerLink="/config"
+            routerLinkActive="active-mob"
+            class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
+          >
+            <lucide-icon name="settings" size="20"></lucide-icon>
+            <span>Config</span>
+          </a>
+        </div>
       </nav>
     }
   `,

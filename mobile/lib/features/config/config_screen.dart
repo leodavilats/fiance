@@ -9,7 +9,11 @@ import '../../core/providers.dart';
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
 
-  Future<void> _editCash(BuildContext context, WidgetRef ref, double current) async {
+  Future<void> _editCash(
+    BuildContext context,
+    WidgetRef ref,
+    double current,
+  ) async {
     final ctrl = TextEditingController(text: current.toStringAsFixed(2));
 
     final confirmed = await showDialog<bool>(
@@ -22,8 +26,14 @@ class ConfigScreen extends ConsumerWidget {
           decoration: const InputDecoration(prefixText: 'R\$ '),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Salvar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Salvar'),
+          ),
         ],
       ),
     );
@@ -49,8 +59,12 @@ class ConfigScreen extends ConsumerWidget {
           if (user != null)
             ListTile(
               leading: CircleAvatar(
-                backgroundImage: user.picture.isNotEmpty ? NetworkImage(user.picture) : null,
-                child: user.picture.isEmpty ? Text(user.name.isNotEmpty ? user.name[0] : '?') : null,
+                backgroundImage: user.picture.isNotEmpty
+                    ? NetworkImage(user.picture)
+                    : null,
+                child: user.picture.isEmpty
+                    ? Text(user.name.isNotEmpty ? user.name[0] : '?')
+                    : null,
               ),
               title: Text(user.name),
               subtitle: Text(user.email),
@@ -93,7 +107,9 @@ class ConfigScreen extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.flag_outlined),
                     title: const Text('Meta de renda passiva'),
-                    trailing: Text('${formatCurrency(prefs.passiveIncomeGoal)}/mês'),
+                    trailing: Text(
+                      '${formatCurrency(prefs.passiveIncomeGoal)}/mês',
+                    ),
                   ),
               ],
             ),
@@ -160,37 +176,55 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
     final goals = ref.watch(goalsProvider);
 
     return goals.when(
-      loading: () => const Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator()),
-      error: (err, _) => Padding(padding: const EdgeInsets.all(16), child: Text('Erro: $err')),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: LinearProgressIndicator(),
+      ),
+      error: (err, _) =>
+          Padding(padding: const EdgeInsets.all(16), child: Text('Erro: $err')),
       data: (data) {
         final items = _editing ?? data;
         final total = items.fold<double>(0, (sum, g) => sum + g.targetPct);
 
         return Column(
           children: [
-            ...items.map((g) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(_categoryLabels[g.category] ?? g.category)),
-                      SizedBox(
-                        width: 160,
-                        child: Slider(
-                          value: g.targetPct.clamp(0, 100),
-                          max: 100,
-                          divisions: 100,
-                          label: '${g.targetPct.toStringAsFixed(0)}%',
-                          onChanged: (v) => setState(() {
-                            _editing = items
-                                .map((it) => it.category == g.category ? it.copyWith(targetPct: v) : it)
-                                .toList();
-                          }),
-                        ),
+            ...items.map(
+              (g) => Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(_categoryLabels[g.category] ?? g.category),
+                    ),
+                    SizedBox(
+                      width: 160,
+                      child: Slider(
+                        value: g.targetPct.clamp(0, 100),
+                        max: 100,
+                        divisions: 100,
+                        label: '${g.targetPct.toStringAsFixed(0)}%',
+                        onChanged: (v) => setState(() {
+                          _editing = items
+                              .map(
+                                (it) => it.category == g.category
+                                    ? it.copyWith(targetPct: v)
+                                    : it,
+                              )
+                              .toList();
+                        }),
                       ),
-                      SizedBox(width: 44, child: Text('${g.targetPct.toStringAsFixed(0)}%')),
-                    ],
-                  ),
-                )),
+                    ),
+                    SizedBox(
+                      width: 44,
+                      child: Text('${g.targetPct.toStringAsFixed(0)}%'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -199,7 +233,9 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
                   Text(
                     'Total: ${total.toStringAsFixed(0)}%',
                     style: TextStyle(
-                      color: (total - 100).abs() < 0.5 ? Colors.green.shade700 : Colors.red.shade700,
+                      color: (total - 100).abs() < 0.5
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -207,7 +243,9 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
                     onPressed: _editing == null || (total - 100).abs() >= 0.5
                         ? null
                         : () async {
-                            await ref.read(apiRepositoryProvider).saveGoals(_editing!);
+                            await ref
+                                .read(apiRepositoryProvider)
+                                .saveGoals(_editing!);
                             ref.invalidate(goalsProvider);
                             setState(() => _editing = null);
                           },
@@ -223,13 +261,21 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
   }
 }
 
-const _sectorFallbackList = ['Financeiro', 'Energia', 'Varejo', 'Tecnologia', 'Saúde', 'Outros'];
+const _sectorFallbackList = [
+  'Financeiro',
+  'Energia',
+  'Varejo',
+  'Tecnologia',
+  'Saúde',
+  'Outros',
+];
 
 class _SectorGoalsSection extends ConsumerStatefulWidget {
   const _SectorGoalsSection();
 
   @override
-  ConsumerState<_SectorGoalsSection> createState() => _SectorGoalsSectionState();
+  ConsumerState<_SectorGoalsSection> createState() =>
+      _SectorGoalsSectionState();
 }
 
 class _SectorGoalsSectionState extends ConsumerState<_SectorGoalsSection> {
@@ -240,40 +286,63 @@ class _SectorGoalsSectionState extends ConsumerState<_SectorGoalsSection> {
     final goals = ref.watch(sectorGoalsProvider);
 
     return goals.when(
-      loading: () => const Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator()),
-      error: (err, _) => Padding(padding: const EdgeInsets.all(16), child: Text('Erro: $err')),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: LinearProgressIndicator(),
+      ),
+      error: (err, _) =>
+          Padding(padding: const EdgeInsets.all(16), child: Text('Erro: $err')),
       data: (data) {
         final items = data.isNotEmpty
             ? data
-            : _sectorFallbackList.map((s) => SectorGoal(sector: s, targetPct: 100 / _sectorFallbackList.length)).toList();
+            : _sectorFallbackList
+                  .map(
+                    (s) => SectorGoal(
+                      sector: s,
+                      targetPct: 100 / _sectorFallbackList.length,
+                    ),
+                  )
+                  .toList();
         final current = _editing ?? items;
         final total = current.fold<double>(0, (sum, g) => sum + g.targetPct);
 
         return Column(
           children: [
-            ...current.map((g) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(g.sector)),
-                      SizedBox(
-                        width: 160,
-                        child: Slider(
-                          value: g.targetPct.clamp(0, 100),
-                          max: 100,
-                          divisions: 100,
-                          label: '${g.targetPct.toStringAsFixed(0)}%',
-                          onChanged: (v) => setState(() {
-                            _editing = current
-                                .map((it) => it.sector == g.sector ? it.copyWith(targetPct: v) : it)
-                                .toList();
-                          }),
-                        ),
+            ...current.map(
+              (g) => Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(g.sector)),
+                    SizedBox(
+                      width: 160,
+                      child: Slider(
+                        value: g.targetPct.clamp(0, 100),
+                        max: 100,
+                        divisions: 100,
+                        label: '${g.targetPct.toStringAsFixed(0)}%',
+                        onChanged: (v) => setState(() {
+                          _editing = current
+                              .map(
+                                (it) => it.sector == g.sector
+                                    ? it.copyWith(targetPct: v)
+                                    : it,
+                              )
+                              .toList();
+                        }),
                       ),
-                      SizedBox(width: 44, child: Text('${g.targetPct.toStringAsFixed(0)}%')),
-                    ],
-                  ),
-                )),
+                    ),
+                    SizedBox(
+                      width: 44,
+                      child: Text('${g.targetPct.toStringAsFixed(0)}%'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -284,7 +353,9 @@ class _SectorGoalsSectionState extends ConsumerState<_SectorGoalsSection> {
                     onPressed: _editing == null
                         ? null
                         : () async {
-                            await ref.read(apiRepositoryProvider).saveSectorGoals(_editing!);
+                            await ref
+                                .read(apiRepositoryProvider)
+                                .saveSectorGoals(_editing!);
                             ref.invalidate(sectorGoalsProvider);
                             setState(() => _editing = null);
                           },
@@ -332,14 +403,24 @@ class _AlertsSection extends ConsumerWidget {
               ),
               TextField(
                 controller: priceCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Preço alvo (R\$)'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Preço alvo (R\$)',
+                ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Criar')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Criar'),
+            ),
           ],
         ),
       ),
@@ -350,7 +431,9 @@ class _AlertsSection extends ConsumerWidget {
     final price = double.tryParse(priceCtrl.text.replaceAll(',', '.'));
     if (ticker.isEmpty || price == null) return;
 
-    await ref.read(apiRepositoryProvider).createAlert(ticker: ticker, condition: condition, targetPrice: price);
+    await ref
+        .read(apiRepositoryProvider)
+        .createAlert(ticker: ticker, condition: condition, targetPrice: price);
     ref.invalidate(alertsProvider);
   }
 
@@ -361,31 +444,44 @@ class _AlertsSection extends ConsumerWidget {
     return Column(
       children: [
         alerts.when(
-          loading: () => const Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator()),
-          error: (err, _) => Padding(padding: const EdgeInsets.all(16), child: Text('Erro: $err')),
+          loading: () => const Padding(
+            padding: EdgeInsets.all(16),
+            child: LinearProgressIndicator(),
+          ),
+          error: (err, _) => Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Erro: $err'),
+          ),
           data: (items) {
             if (items.isEmpty) {
               return const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('Nenhum alerta configurado', style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'Nenhum alerta configurado',
+                  style: TextStyle(color: Colors.grey),
+                ),
               );
             }
             return Column(
               children: items
-                  .map((a) => ListTile(
-                        title: Text(a.ticker),
-                        subtitle: Text(
-                          '${a.condition == 'below' ? 'Abaixo de' : 'Acima de'} ${formatCurrency(a.targetPrice)}'
-                          '${a.triggeredAt != null ? ' · disparado' : ''}',
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () async {
-                            await ref.read(apiRepositoryProvider).deleteAlert(a.id);
-                            ref.invalidate(alertsProvider);
-                          },
-                        ),
-                      ))
+                  .map(
+                    (a) => ListTile(
+                      title: Text(a.ticker),
+                      subtitle: Text(
+                        '${a.condition == 'below' ? 'Abaixo de' : 'Acima de'} ${formatCurrency(a.targetPrice)}'
+                        '${a.triggeredAt != null ? ' · disparado' : ''}',
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () async {
+                          await ref
+                              .read(apiRepositoryProvider)
+                              .deleteAlert(a.id);
+                          ref.invalidate(alertsProvider);
+                        },
+                      ),
+                    ),
+                  )
                   .toList(),
             );
           },

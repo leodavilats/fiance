@@ -30,7 +30,11 @@ class _FerramentasTabState extends State<FerramentasTab> {
             onSelectionChanged: (s) => setState(() => _showRendaFixa = s.first),
           ),
         ),
-        Expanded(child: _showRendaFixa ? const _RendaFixaSimulator() : const _AnalyzeAssetView()),
+        Expanded(
+          child: _showRendaFixa
+              ? const _RendaFixaSimulator()
+              : const _AnalyzeAssetView(),
+        ),
       ],
     );
   }
@@ -91,13 +95,20 @@ class _AnalyzeAssetViewState extends ConsumerState<_AnalyzeAssetView> {
             FilledButton(
               onPressed: _loading ? null : _analyze,
               child: _loading
-                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text('Analisar'),
             ),
           ],
         ),
         if (_error != null)
-          Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, style: const TextStyle(color: Colors.red))),
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(_error!, style: const TextStyle(color: Colors.red)),
+          ),
         if (_result != null) _AssetAnalysisCard(analysis: _result!),
       ],
     );
@@ -126,11 +137,24 @@ class _AssetAnalysisCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(a.symbol, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                      if (a.name != null) Text(a.name!, style: TextStyle(color: Colors.grey.shade600)),
+                      Text(
+                        a.symbol,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      if (a.name != null)
+                        Text(
+                          a.name!,
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
                     ],
                   ),
-                  Text(a.label, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    a.label,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
               const Divider(height: 20),
@@ -139,15 +163,24 @@ class _AssetAnalysisCard extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   _Stat(label: 'Preço', value: formatCurrency(a.price)),
-                  _Stat(label: 'Preço justo', value: formatCurrency(a.consensus)),
+                  _Stat(
+                    label: 'Preço justo',
+                    value: formatCurrency(a.consensus),
+                  ),
                   _Stat(label: 'MS', value: formatPercent(a.marginOfSafety)),
-                  _Stat(label: 'RSI(14)', value: a.rsi14?.toStringAsFixed(1) ?? '—'),
+                  _Stat(
+                    label: 'RSI(14)',
+                    value: a.rsi14?.toStringAsFixed(1) ?? '—',
+                  ),
                   _Stat(label: 'Tendência', value: a.trend),
                 ],
               ),
               if (a.reasons.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Text('Por que essa decisão?', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Por que essa decisão?',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 6),
                 ...a.reasons.map((r) => Text('• $r')),
               ],
@@ -170,7 +203,10 @@ class _Stat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        ),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
     );
@@ -199,7 +235,8 @@ class _RendaFixaSimulator extends ConsumerStatefulWidget {
   const _RendaFixaSimulator();
 
   @override
-  ConsumerState<_RendaFixaSimulator> createState() => _RendaFixaSimulatorState();
+  ConsumerState<_RendaFixaSimulator> createState() =>
+      _RendaFixaSimulatorState();
 }
 
 class _RendaFixaSimulatorState extends ConsumerState<_RendaFixaSimulator> {
@@ -225,17 +262,23 @@ class _RendaFixaSimulatorState extends ConsumerState<_RendaFixaSimulator> {
       _error = null;
     });
     try {
-      final results = await ref.read(apiRepositoryProvider).compareRendaFixa(_options
-          .map((o) => {
-                'tipo': o.tipo,
-                'nome': o.nome.isEmpty ? null : o.nome,
-                'valor_investido': o.valor,
-                'taxa': o.taxa,
-                'prazo_meses': o.prazoMeses,
-                'tipo_taxa': o.tipoTaxa,
-                if (o.tipoTaxa == 'pos_fixado') 'percentual_cdi': o.taxa,
-              })
-          .toList());
+      final results = await ref
+          .read(apiRepositoryProvider)
+          .compareRendaFixa(
+            _options
+                .map(
+                  (o) => {
+                    'tipo': o.tipo,
+                    'nome': o.nome.isEmpty ? null : o.nome,
+                    'valor_investido': o.valor,
+                    'taxa': o.taxa,
+                    'prazo_meses': o.prazoMeses,
+                    'tipo_taxa': o.tipoTaxa,
+                    if (o.tipoTaxa == 'pos_fixado') 'percentual_cdi': o.taxa,
+                  },
+                )
+                .toList(),
+          );
       setState(() => _results = results);
     } catch (e) {
       setState(() => _error = 'Erro ao comparar: $e');
@@ -266,12 +309,17 @@ class _RendaFixaSimulatorState extends ConsumerState<_RendaFixaSimulator> {
             ),
           ),
         ),
-        ...List.generate(_options.length, (i) => _OptionForm(
-              option: _options[i],
-              tipos: _tipos,
-              onRemove: _options.length > 1 ? () => setState(() => _options.removeAt(i)) : null,
-              onChanged: () => setState(() {}),
-            )),
+        ...List.generate(
+          _options.length,
+          (i) => _OptionForm(
+            option: _options[i],
+            tipos: _tipos,
+            onRemove: _options.length > 1
+                ? () => setState(() => _options.removeAt(i))
+                : null,
+            onChanged: () => setState(() {}),
+          ),
+        ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: () => setState(() => _options.add(_RendaFixaOption())),
@@ -282,21 +330,36 @@ class _RendaFixaSimulatorState extends ConsumerState<_RendaFixaSimulator> {
         FilledButton(
           onPressed: _loading ? null : _compare,
           child: _loading
-              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Comparar'),
         ),
         if (_error != null)
-          Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, style: const TextStyle(color: Colors.red))),
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(_error!, style: const TextStyle(color: Colors.red)),
+          ),
         if (_results != null) ...[
           const SizedBox(height: 16),
-          ..._results!.map((r) => Card(
-                color: r.melhorOpcao ? Colors.green.shade50 : null,
-                child: ListTile(
-                  title: Text('${_tipos[r.tipo] ?? r.tipo} ${r.nome != null ? "· ${r.nome}" : ""}'),
-                  subtitle: Text('Líquido: ${formatCurrency(r.valorLiquido)} · Taxa líq: ${formatPercent(r.taxaLiquidaAa)}'),
-                  trailing: r.melhorOpcao ? const Icon(Icons.star, color: Colors.green) : null,
+          ..._results!.map(
+            (r) => Card(
+              color: r.melhorOpcao ? Colors.green.shade50 : null,
+              child: ListTile(
+                title: Text(
+                  '${_tipos[r.tipo] ?? r.tipo} ${r.nome != null ? "· ${r.nome}" : ""}',
                 ),
-              )),
+                subtitle: Text(
+                  'Líquido: ${formatCurrency(r.valorLiquido)} · Taxa líq: ${formatPercent(r.taxaLiquidaAa)}',
+                ),
+                trailing: r.melhorOpcao
+                    ? const Icon(Icons.star, color: Colors.green)
+                    : null,
+              ),
+            ),
+          ),
         ],
       ],
     );
@@ -308,7 +371,12 @@ final _ratesProvider = FutureProvider.autoDispose<ReferenceRates>((ref) {
 });
 
 class _OptionForm extends StatelessWidget {
-  const _OptionForm({required this.option, required this.tipos, required this.onChanged, this.onRemove});
+  const _OptionForm({
+    required this.option,
+    required this.tipos,
+    required this.onChanged,
+    this.onRemove,
+  });
 
   final _RendaFixaOption option;
   final Map<String, String> tipos;
@@ -329,21 +397,34 @@ class _OptionForm extends StatelessWidget {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: option.tipo,
-                    decoration: const InputDecoration(labelText: 'Tipo', isDense: true),
-                    items: tipos.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+                    decoration: const InputDecoration(
+                      labelText: 'Tipo',
+                      isDense: true,
+                    ),
+                    items: tipos.entries
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.key,
+                            child: Text(e.value),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (v) {
                       option.tipo = v!;
                       option.tipoTaxa = (v == 'tesouro_ipca')
                           ? 'hibrido'
                           : (v == 'tesouro_pre')
-                              ? 'pre_fixado'
-                              : 'pos_fixado';
+                          ? 'pre_fixado'
+                          : 'pos_fixado';
                       onChanged();
                     },
                   ),
                 ),
                 if (onRemove != null)
-                  IconButton(onPressed: onRemove, icon: const Icon(Icons.delete_outline)),
+                  IconButton(
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.delete_outline),
+                  ),
               ],
             ),
             Row(
@@ -351,9 +432,13 @@ class _OptionForm extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     initialValue: option.valor.toStringAsFixed(0),
-                    decoration: const InputDecoration(labelText: 'Valor (R\$)', isDense: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Valor (R\$)',
+                      isDense: true,
+                    ),
                     keyboardType: TextInputType.number,
-                    onChanged: (v) => option.valor = double.tryParse(v) ?? option.valor,
+                    onChanged: (v) =>
+                        option.valor = double.tryParse(v) ?? option.valor,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -361,20 +446,27 @@ class _OptionForm extends StatelessWidget {
                   child: TextFormField(
                     initialValue: option.taxa.toStringAsFixed(0),
                     decoration: InputDecoration(
-                      labelText: option.tipoTaxa == 'pos_fixado' ? '% do CDI' : 'Taxa % a.a.',
+                      labelText: option.tipoTaxa == 'pos_fixado'
+                          ? '% do CDI'
+                          : 'Taxa % a.a.',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
-                    onChanged: (v) => option.taxa = double.tryParse(v) ?? option.taxa,
+                    onChanged: (v) =>
+                        option.taxa = double.tryParse(v) ?? option.taxa,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     initialValue: option.prazoMeses.toString(),
-                    decoration: const InputDecoration(labelText: 'Prazo (meses)', isDense: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Prazo (meses)',
+                      isDense: true,
+                    ),
                     keyboardType: TextInputType.number,
-                    onChanged: (v) => option.prazoMeses = int.tryParse(v) ?? option.prazoMeses,
+                    onChanged: (v) => option.prazoMeses =
+                        int.tryParse(v) ?? option.prazoMeses,
                   ),
                 ),
               ],

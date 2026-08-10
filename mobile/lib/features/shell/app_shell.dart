@@ -19,10 +19,19 @@ class AppShell extends StatelessWidget {
           initialLocation: index == navigationShell.currentIndex,
         ),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
-          NavigationDestination(icon: Icon(Icons.pie_chart_outline), label: 'Meus Ativos'),
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.pie_chart_outline),
+            label: 'Meus Ativos',
+          ),
           NavigationDestination(icon: Icon(Icons.show_chart), label: 'Mercado'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Config'),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            label: 'Config',
+          ),
         ],
       ),
     );

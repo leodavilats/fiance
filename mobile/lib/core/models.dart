@@ -31,7 +31,8 @@ class PortfolioPosition {
   final double? dividendYield;
   final String? sector;
 
-  factory PortfolioPosition.fromJson(Map<String, dynamic> j) => PortfolioPosition(
+  factory PortfolioPosition.fromJson(Map<String, dynamic> j) =>
+      PortfolioPosition(
         ticker: j['ticker'] as String,
         name: j['name'] as String?,
         quantity: (j['quantity'] as num).toDouble(),
@@ -62,7 +63,8 @@ class StoredPortfolioItem {
   final double avgPrice;
   final String category;
 
-  factory StoredPortfolioItem.fromJson(Map<String, dynamic> j) => StoredPortfolioItem(
+  factory StoredPortfolioItem.fromJson(Map<String, dynamic> j) =>
+      StoredPortfolioItem(
         ticker: j['ticker'] as String,
         quantity: (j['quantity'] as num).toDouble(),
         avgPrice: (j['avg_price'] as num).toDouble(),
@@ -70,11 +72,11 @@ class StoredPortfolioItem {
       );
 
   Map<String, dynamic> toJson() => {
-        'ticker': ticker,
-        'quantity': quantity,
-        'avg_price': avgPrice,
-        'category': category,
-      };
+    'ticker': ticker,
+    'quantity': quantity,
+    'avg_price': avgPrice,
+    'category': category,
+  };
 }
 
 class DashboardSummary {
@@ -101,16 +103,17 @@ class DashboardSummary {
   final int positionsCount;
 
   factory DashboardSummary.fromJson(Map<String, dynamic> j) => DashboardSummary(
-        totalInvested: (j['total_invested'] as num).toDouble(),
-        totalCurrent: (j['total_current'] as num).toDouble(),
-        totalPnl: (j['total_pnl'] as num).toDouble(),
-        totalPnlPct: (j['total_pnl_pct'] as num).toDouble(),
-        cashAvailable: (j['cash_available'] as num).toDouble(),
-        monthlyDividendsEstimate: (j['monthly_dividends_estimate'] as num).toDouble(),
-        passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
-        passiveIncomeProgress: (j['passive_income_progress'] as num?)?.toDouble(),
-        positionsCount: j['positions_count'] as int,
-      );
+    totalInvested: (j['total_invested'] as num).toDouble(),
+    totalCurrent: (j['total_current'] as num).toDouble(),
+    totalPnl: (j['total_pnl'] as num).toDouble(),
+    totalPnlPct: (j['total_pnl_pct'] as num).toDouble(),
+    cashAvailable: (j['cash_available'] as num).toDouble(),
+    monthlyDividendsEstimate: (j['monthly_dividends_estimate'] as num)
+        .toDouble(),
+    passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
+    passiveIncomeProgress: (j['passive_income_progress'] as num?)?.toDouble(),
+    positionsCount: j['positions_count'] as int,
+  );
 }
 
 class CategoryAllocation {
@@ -126,7 +129,8 @@ class CategoryAllocation {
   final double currentPct;
   final double? targetPct;
 
-  factory CategoryAllocation.fromJson(Map<String, dynamic> j) => CategoryAllocation(
+  factory CategoryAllocation.fromJson(Map<String, dynamic> j) =>
+      CategoryAllocation(
         category: j['category'] as String,
         currentValue: (j['current_value'] as num).toDouble(),
         currentPct: (j['current_pct'] as num).toDouble(),
@@ -135,7 +139,12 @@ class CategoryAllocation {
 }
 
 class PortfolioAlert {
-  PortfolioAlert({required this.severity, required this.title, required this.detail, required this.ticker});
+  PortfolioAlert({
+    required this.severity,
+    required this.title,
+    required this.detail,
+    required this.ticker,
+  });
 
   final String severity;
   final String title;
@@ -143,11 +152,11 @@ class PortfolioAlert {
   final String? ticker;
 
   factory PortfolioAlert.fromJson(Map<String, dynamic> j) => PortfolioAlert(
-        severity: j['severity'] as String? ?? 'info',
-        title: j['title'] as String? ?? '',
-        detail: j['detail'] as String? ?? '',
-        ticker: j['ticker'] as String?,
-      );
+    severity: j['severity'] as String? ?? 'info',
+    title: j['title'] as String? ?? '',
+    detail: j['detail'] as String? ?? '',
+    ticker: j['ticker'] as String?,
+  );
 }
 
 class DashboardData {
@@ -168,23 +177,23 @@ class DashboardData {
   final List<PortfolioAlert> alerts;
 
   factory DashboardData.fromJson(Map<String, dynamic> j) => DashboardData(
-        summary: DashboardSummary.fromJson(j['summary'] as Map<String, dynamic>),
-        positions: (j['positions'] as List)
-            .map((e) => PortfolioPosition.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        allocations: (j['allocations'] as List)
-            .map((e) => CategoryAllocation.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        topBuys: (j['top_buys'] as List)
-            .map((e) => Opportunity.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        topSells: (j['top_sells'] as List)
-            .map((e) => PortfolioPosition.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        alerts: (j['alerts'] as List)
-            .map((e) => PortfolioAlert.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    summary: DashboardSummary.fromJson(j['summary'] as Map<String, dynamic>),
+    positions: (j['positions'] as List)
+        .map((e) => PortfolioPosition.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    allocations: (j['allocations'] as List)
+        .map((e) => CategoryAllocation.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    topBuys: (j['top_buys'] as List)
+        .map((e) => Opportunity.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    topSells: (j['top_sells'] as List)
+        .map((e) => PortfolioPosition.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    alerts: (j['alerts'] as List)
+        .map((e) => PortfolioAlert.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 class Opportunity {
@@ -213,21 +222,26 @@ class Opportunity {
   final double score;
 
   factory Opportunity.fromJson(Map<String, dynamic> j) => Opportunity(
-        ticker: j['ticker'] as String,
-        name: j['name'] as String?,
-        price: (j['price'] as num?)?.toDouble(),
-        fairPrice: (j['fair_price'] as num?)?.toDouble(),
-        marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
-        dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
-        verdict: j['verdict'] as String? ?? '',
-        label: j['label'] as String? ?? '',
-        sector: j['sector'] as String?,
-        score: (j['score'] as num?)?.toDouble() ?? 0,
-      );
+    ticker: j['ticker'] as String,
+    name: j['name'] as String?,
+    price: (j['price'] as num?)?.toDouble(),
+    fairPrice: (j['fair_price'] as num?)?.toDouble(),
+    marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
+    dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
+    verdict: j['verdict'] as String? ?? '',
+    label: j['label'] as String? ?? '',
+    sector: j['sector'] as String?,
+    score: (j['score'] as num?)?.toDouble() ?? 0,
+  );
 }
 
 class SectorAsset {
-  SectorAsset({required this.ticker, required this.name, required this.score, required this.dividendYield});
+  SectorAsset({
+    required this.ticker,
+    required this.name,
+    required this.score,
+    required this.dividendYield,
+  });
 
   final String ticker;
   final String? name;
@@ -235,11 +249,11 @@ class SectorAsset {
   final double? dividendYield;
 
   factory SectorAsset.fromJson(Map<String, dynamic> j) => SectorAsset(
-        ticker: j['ticker'] as String,
-        name: j['name'] as String?,
-        score: (j['score'] as num?)?.toDouble() ?? 0,
-        dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
-      );
+    ticker: j['ticker'] as String,
+    name: j['name'] as String?,
+    score: (j['score'] as num?)?.toDouble() ?? 0,
+    dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
+  );
 }
 
 class SectorSummary {
@@ -258,14 +272,14 @@ class SectorSummary {
   final List<SectorAsset> topAssets;
 
   factory SectorSummary.fromJson(Map<String, dynamic> j) => SectorSummary(
-        sector: j['sector'] as String,
-        count: j['count'] as int,
-        avgScore: (j['avg_score'] as num).toDouble(),
-        avgDy: (j['avg_dy'] as num).toDouble(),
-        topAssets: (j['top_assets'] as List)
-            .map((e) => SectorAsset.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    sector: j['sector'] as String,
+    count: j['count'] as int,
+    avgScore: (j['avg_score'] as num).toDouble(),
+    avgDy: (j['avg_dy'] as num).toDouble(),
+    topAssets: (j['top_assets'] as List)
+        .map((e) => SectorAsset.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 class DipScanItem {
@@ -290,15 +304,15 @@ class DipScanItem {
   final String topReason;
 
   factory DipScanItem.fromJson(Map<String, dynamic> j) => DipScanItem(
-        symbol: j['symbol'] as String,
-        name: j['name'] as String?,
-        price: (j['price'] as num?)?.toDouble(),
-        dipScore: (j['dip_score'] as num).toDouble(),
-        verdictLabel: j['verdict_label'] as String? ?? '',
-        dropFromHighPct: (j['drop_from_52w_high_pct'] as num?)?.toDouble(),
-        marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
-        topReason: j['top_reason'] as String? ?? '',
-      );
+    symbol: j['symbol'] as String,
+    name: j['name'] as String?,
+    price: (j['price'] as num?)?.toDouble(),
+    dipScore: (j['dip_score'] as num).toDouble(),
+    verdictLabel: j['verdict_label'] as String? ?? '',
+    dropFromHighPct: (j['drop_from_52w_high_pct'] as num?)?.toDouble(),
+    marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
+    topReason: j['top_reason'] as String? ?? '',
+  );
 }
 
 class AssetAnalysis {
@@ -349,23 +363,28 @@ class AssetAnalysis {
       trend: tech['trend'] as String? ?? 'unknown',
       verdict: dec['verdict'] as String? ?? '',
       label: dec['label'] as String? ?? '',
-      reasons: (dec['reasons'] as List?)?.map((e) => e as String).toList() ?? [],
+      reasons:
+          (dec['reasons'] as List?)?.map((e) => e as String).toList() ?? [],
     );
   }
 }
 
 class ReferenceRates {
-  ReferenceRates({required this.cdiAnual, required this.selicAnual, required this.ipcaAnual});
+  ReferenceRates({
+    required this.cdiAnual,
+    required this.selicAnual,
+    required this.ipcaAnual,
+  });
 
   final double cdiAnual;
   final double selicAnual;
   final double ipcaAnual;
 
   factory ReferenceRates.fromJson(Map<String, dynamic> j) => ReferenceRates(
-        cdiAnual: (j['cdi_anual'] as num).toDouble(),
-        selicAnual: (j['selic_anual'] as num).toDouble(),
-        ipcaAnual: (j['ipca_anual'] as num).toDouble(),
-      );
+    cdiAnual: (j['cdi_anual'] as num).toDouble(),
+    selicAnual: (j['selic_anual'] as num).toDouble(),
+    ipcaAnual: (j['ipca_anual'] as num).toDouble(),
+  );
 }
 
 class RendaFixaResult {
@@ -388,14 +407,14 @@ class RendaFixaResult {
   final bool melhorOpcao;
 
   factory RendaFixaResult.fromJson(Map<String, dynamic> j) => RendaFixaResult(
-        tipo: j['tipo'] as String,
-        nome: j['nome'] as String?,
-        valorInvestido: (j['valor_investido'] as num).toDouble(),
-        valorLiquido: (j['valor_liquido'] as num).toDouble(),
-        rendimentoLiquido: (j['rendimento_liquido'] as num).toDouble(),
-        taxaLiquidaAa: (j['taxa_liquida_aa'] as num).toDouble(),
-        melhorOpcao: j['melhor_opcao'] as bool? ?? false,
-      );
+    tipo: j['tipo'] as String,
+    nome: j['nome'] as String?,
+    valorInvestido: (j['valor_investido'] as num).toDouble(),
+    valorLiquido: (j['valor_liquido'] as num).toDouble(),
+    rendimentoLiquido: (j['rendimento_liquido'] as num).toDouble(),
+    taxaLiquidaAa: (j['taxa_liquida_aa'] as num).toDouble(),
+    melhorOpcao: j['melhor_opcao'] as bool? ?? false,
+  );
 }
 
 class Goal {
@@ -406,20 +425,23 @@ class Goal {
   final double? targetValue;
 
   factory Goal.fromJson(Map<String, dynamic> j) => Goal(
-        category: j['category'] as String,
-        targetPct: (j['target_pct'] as num).toDouble(),
-        targetValue: (j['target_value'] as num?)?.toDouble(),
-      );
+    category: j['category'] as String,
+    targetPct: (j['target_pct'] as num).toDouble(),
+    targetValue: (j['target_value'] as num?)?.toDouble(),
+  );
 
   Map<String, dynamic> toJson() => {
-        'category': category,
-        'target_pct': targetPct,
-        'target_value': targetValue,
-        'deadline': null,
-      };
+    'category': category,
+    'target_pct': targetPct,
+    'target_value': targetValue,
+    'deadline': null,
+  };
 
-  Goal copyWith({double? targetPct}) =>
-      Goal(category: category, targetPct: targetPct ?? this.targetPct, targetValue: targetValue);
+  Goal copyWith({double? targetPct}) => Goal(
+    category: category,
+    targetPct: targetPct ?? this.targetPct,
+    targetValue: targetValue,
+  );
 }
 
 class SectorGoal {
@@ -429,9 +451,9 @@ class SectorGoal {
   final double targetPct;
 
   factory SectorGoal.fromJson(Map<String, dynamic> j) => SectorGoal(
-        sector: j['sector'] as String,
-        targetPct: (j['target_pct'] as num).toDouble(),
-      );
+    sector: j['sector'] as String,
+    targetPct: (j['target_pct'] as num).toDouble(),
+  );
 
   Map<String, dynamic> toJson() => {'sector': sector, 'target_pct': targetPct};
 
@@ -457,13 +479,13 @@ class PriceAlert {
   final double? triggeredAt;
 
   factory PriceAlert.fromJson(Map<String, dynamic> j) => PriceAlert(
-        id: j['id'] as int,
-        ticker: j['ticker'] as String,
-        condition: j['condition'] as String,
-        targetPrice: (j['target_price'] as num).toDouble(),
-        note: j['note'] as String?,
-        triggeredAt: (j['triggered_at'] as num?)?.toDouble(),
-      );
+    id: j['id'] as int,
+    ticker: j['ticker'] as String,
+    condition: j['condition'] as String,
+    targetPrice: (j['target_price'] as num).toDouble(),
+    note: j['note'] as String?,
+    triggeredAt: (j['triggered_at'] as num?)?.toDouble(),
+  );
 }
 
 class Preferences {
@@ -482,10 +504,10 @@ class Preferences {
   final double desiredYieldInt;
 
   factory Preferences.fromJson(Map<String, dynamic> j) => Preferences(
-        cashAvailable: (j['cash_available'] as num).toDouble(),
-        passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
-        desiredYieldStock: (j['desired_yield_stock'] as num).toDouble(),
-        desiredYieldFii: (j['desired_yield_fii'] as num).toDouble(),
-        desiredYieldInt: (j['desired_yield_int'] as num).toDouble(),
-      );
+    cashAvailable: (j['cash_available'] as num).toDouble(),
+    passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
+    desiredYieldStock: (j['desired_yield_stock'] as num).toDouble(),
+    desiredYieldFii: (j['desired_yield_fii'] as num).toDouble(),
+    desiredYieldInt: (j['desired_yield_int'] as num).toDouble(),
+  );
 }

@@ -10,6 +10,7 @@ import { importProvidersFrom } from '@angular/core';
 import {
   ArrowRight,
   Bell,
+  BellRing,
   Bitcoin,
   Briefcase,
   Building2,
@@ -58,6 +59,7 @@ import {
   PlugZap,
   Plus,
   Radar,
+  Receipt,
   RefreshCw,
   Scan,
   Search,
@@ -79,6 +81,7 @@ import {
   Wallet,
   WandSparkles,
   Wifi,
+  Wrench,
   X,
   Zap,
 } from 'lucide-angular';
@@ -95,6 +98,7 @@ bootstrapApplication(AppComponent, {
       LucideAngularModule.pick({
         ArrowRight,
         Bell,
+        BellRing,
         Bitcoin,
         Briefcase,
         Building2,
@@ -142,6 +146,7 @@ bootstrapApplication(AppComponent, {
         PlugZap,
         Plus,
         Radar,
+        Receipt,
         RefreshCw,
         Scan,
         Search,
@@ -163,6 +168,7 @@ bootstrapApplication(AppComponent, {
         Wallet,
         WandSparkles,
         Wifi,
+        Wrench,
         X,
         Zap,
       })

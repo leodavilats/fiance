@@ -28,14 +28,18 @@ class SectorsTab extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: categories.entries
-                  .map((e) => Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: Text(e.value),
-                          selected: category == e.key,
-                          onSelected: (_) => ref.read(sectorsCategoryProvider.notifier).state = e.key,
-                        ),
-                      ))
+                  .map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        label: Text(e.value),
+                        selected: category == e.key,
+                        onSelected: (_) =>
+                            ref.read(sectorsCategoryProvider.notifier).state =
+                                e.key,
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -52,7 +56,10 @@ class SectorsTab extends ConsumerWidget {
                     children: const [
                       Padding(
                         padding: EdgeInsets.all(32),
-                        child: Text('Nenhum setor encontrado', textAlign: TextAlign.center),
+                        child: Text(
+                          'Nenhum setor encontrado',
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   );
@@ -60,7 +67,8 @@ class SectorsTab extends ConsumerWidget {
                 return ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: items.length,
-                  itemBuilder: (context, index) => _SectorCard(sector: items[index]),
+                  itemBuilder: (context, index) =>
+                      _SectorCard(sector: items[index]),
                 );
               },
             ),
@@ -88,18 +96,37 @@ class _SectorCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(sector.sector, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text('${sector.count} ativos', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                Text(
+                  sector.sector,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  '${sector.count} ativos',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
               ],
             ),
             const SizedBox(height: 6),
             Row(
               children: [
-                Text('Score médio: ${sector.avgScore.toStringAsFixed(1)}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(
+                  'Score médio: ${sector.avgScore.toStringAsFixed(1)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Text('DY médio: ${formatPercent(sector.avgDy)}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(
+                  'DY médio: ${formatPercent(sector.avgDy)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
             if (sector.topAssets.isNotEmpty) ...[
@@ -108,12 +135,16 @@ class _SectorCard extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 4,
                 children: sector.topAssets
-                    .map((a) => Chip(
-                          label: Text('${a.ticker} · DY ${formatPercent(a.dividendYield)}',
-                              style: const TextStyle(fontSize: 11)),
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                        ))
+                    .map(
+                      (a) => Chip(
+                        label: Text(
+                          '${a.ticker} · DY ${formatPercent(a.dividendYield)}',
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    )
                     .toList(),
               ),
             ],

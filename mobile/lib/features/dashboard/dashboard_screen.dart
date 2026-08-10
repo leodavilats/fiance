@@ -80,7 +80,10 @@ class _AlertTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         leading: Icon(Icons.info_outline, color: _color()),
-        title: Text(alert.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          alert.title,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: Text(alert.detail),
       ),
     );
@@ -99,14 +102,22 @@ class _PositionRow extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
-        title: Text(position.ticker, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${position.quantity} un. · PM ${formatCurrency(position.avgPrice)}'),
+        title: Text(
+          position.ticker,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          '${position.quantity} un. · PM ${formatCurrency(position.avgPrice)}',
+        ),
         trailing: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(formatCurrency(position.currentValue)),
-            Text(formatPercent(position.pnlPct), style: TextStyle(color: color, fontSize: 12)),
+            Text(
+              formatPercent(position.pnlPct),
+              style: TextStyle(color: color, fontSize: 12),
+            ),
           ],
         ),
       ),
@@ -132,18 +143,29 @@ class _SummaryCard extends StatelessWidget {
           children: [
             Text(
               formatCurrency(summary.totalCurrent),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            Text('${summary.positionsCount} posições · caixa ${formatCurrency(summary.cashAvailable)}',
-                style: TextStyle(color: Colors.grey.shade600)),
+            Text(
+              '${summary.positionsCount} posições · caixa ${formatCurrency(summary.cashAvailable)}',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(positive ? Icons.arrow_upward : Icons.arrow_downward, color: pnlColor, size: 18),
+                Icon(
+                  positive ? Icons.arrow_upward : Icons.arrow_downward,
+                  color: pnlColor,
+                  size: 18,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '${formatCurrency(summary.totalPnl)} (${formatPercent(summary.totalPnlPct)})',
-                  style: TextStyle(color: pnlColor, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: pnlColor,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -151,13 +173,21 @@ class _SummaryCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _MiniStat(label: 'Investido', value: formatCurrency(summary.totalInvested)),
-                _MiniStat(label: 'Dividendos/mês', value: formatCurrency(summary.monthlyDividendsEstimate)),
+                _MiniStat(
+                  label: 'Investido',
+                  value: formatCurrency(summary.totalInvested),
+                ),
+                _MiniStat(
+                  label: 'Dividendos/mês',
+                  value: formatCurrency(summary.monthlyDividendsEstimate),
+                ),
               ],
             ),
             if (summary.passiveIncomeGoal != null) ...[
               const SizedBox(height: 16),
-              Text('Meta de renda passiva: ${formatCurrency(summary.passiveIncomeGoal)}/mês'),
+              Text(
+                'Meta de renda passiva: ${formatCurrency(summary.passiveIncomeGoal)}/mês',
+              ),
               const SizedBox(height: 4),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
@@ -185,7 +215,10 @@ class _MiniStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        ),
         Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
       ],
     );
@@ -201,7 +234,12 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, top: 8),
-      child: Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+      child: Text(
+        title,
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+      ),
     );
   }
 }
@@ -222,13 +260,18 @@ class _AllocationRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(allocation.category),
-              Text('${formatCurrency(allocation.currentValue)} · ${formatPercent(allocation.currentPct)}'),
+              Text(
+                '${formatCurrency(allocation.currentValue)} · ${formatPercent(allocation.currentPct)}',
+              ),
             ],
           ),
           const SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(value: (allocation.currentPct / 100).clamp(0, 1), minHeight: 6),
+            child: LinearProgressIndicator(
+              value: (allocation.currentPct / 100).clamp(0, 1),
+              minHeight: 6,
+            ),
           ),
         ],
       ),
@@ -246,15 +289,20 @@ class _OpportunityTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
-        title: Text(opportunity.ticker, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          opportunity.ticker,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(opportunity.name ?? ''),
         trailing: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(formatCurrency(opportunity.price)),
-            Text('DY ${formatPercent(opportunity.dividendYield)}',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+            Text(
+              'DY ${formatPercent(opportunity.dividendYield)}',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            ),
           ],
         ),
       ),

@@ -56,7 +56,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
               ElevatedButton.icon(
                 onPressed: _loading ? null : _handleSignIn,
@@ -69,7 +72,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     : const Icon(Icons.login),
                 label: const Text('Entrar com Google'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
                 ),
               ),
             ],

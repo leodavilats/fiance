@@ -12,19 +12,40 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+      builder: (context, state, navigationShell) =>
+          AppShell(navigationShell: navigationShell),
       branches: [
         StatefulShellBranch(
-          routes: [GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen())],
+          routes: [
+            GoRoute(
+              path: '/dashboard',
+              builder: (context, state) => const DashboardScreen(),
+            ),
+          ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: '/assets', builder: (context, state) => const AssetsScreen())],
+          routes: [
+            GoRoute(
+              path: '/assets',
+              builder: (context, state) => const AssetsScreen(),
+            ),
+          ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: '/market', builder: (context, state) => const MarketScreen())],
+          routes: [
+            GoRoute(
+              path: '/market',
+              builder: (context, state) => const MarketScreen(),
+            ),
+          ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: '/config', builder: (context, state) => const ConfigScreen())],
+          routes: [
+            GoRoute(
+              path: '/config',
+              builder: (context, state) => const ConfigScreen(),
+            ),
+          ],
         ),
       ],
     ),

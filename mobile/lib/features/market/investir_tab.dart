@@ -38,7 +38,9 @@ class _InvestirTabState extends ConsumerState<InvestirTab> {
       _error = null;
     });
     try {
-      final result = await ref.read(apiRepositoryProvider).quickInvest(cashAvailable: cash);
+      final result = await ref
+          .read(apiRepositoryProvider)
+          .quickInvest(cashAvailable: cash);
       setState(() => _quickInvestResult = result);
     } catch (e) {
       setState(() => _error = 'Erro ao gerar sugestão: $e');
@@ -67,33 +69,55 @@ class _InvestirTabState extends ConsumerState<InvestirTab> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('Sugestão por caixa disponível', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        const Text(
+          'Sugestão por caixa disponível',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _cashCtrl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(labelText: 'Valor disponível (R\$)', border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+            labelText: 'Valor disponível (R\$)',
+            border: OutlineInputBorder(),
+          ),
         ),
         const SizedBox(height: 8),
         FilledButton(
           onPressed: _loadingQuickInvest ? null : _runQuickInvest,
           child: _loadingQuickInvest
-              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Gerar sugestão'),
         ),
         if (_error != null)
-          Padding(padding: const EdgeInsets.only(top: 8), child: Text(_error!, style: const TextStyle(color: Colors.red))),
-        if (_quickInvestResult != null) _QuickInvestResultView(data: _quickInvestResult!),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(_error!, style: const TextStyle(color: Colors.red)),
+          ),
+        if (_quickInvestResult != null)
+          _QuickInvestResultView(data: _quickInvestResult!),
         const Divider(height: 32),
-        const Text('Estratégia gerada por IA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        const Text(
+          'Estratégia gerada por IA',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         const SizedBox(height: 8),
         FilledButton.tonal(
           onPressed: _loadingStrategy ? null : _runStrategy,
           child: _loadingStrategy
-              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Gerar estratégia IA'),
         ),
-        if (_strategyResult != null) _StrategyResultView(data: _strategyResult!),
+        if (_strategyResult != null)
+          _StrategyResultView(data: _strategyResult!),
       ],
     );
   }
@@ -112,13 +136,20 @@ class _QuickInvestResultView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(data['summary'] as String? ?? '', style: const TextStyle(fontStyle: FontStyle.italic)),
+          Text(
+            data['summary'] as String? ?? '',
+            style: const TextStyle(fontStyle: FontStyle.italic),
+          ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Alocado: ${formatCurrency((data['allocated_cash'] as num?)?.toDouble())}'),
-              Text('Sobra: ${formatCurrency((data['remaining_cash'] as num?)?.toDouble())}'),
+              Text(
+                'Alocado: ${formatCurrency((data['allocated_cash'] as num?)?.toDouble())}',
+              ),
+              Text(
+                'Sobra: ${formatCurrency((data['remaining_cash'] as num?)?.toDouble())}',
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -126,7 +157,9 @@ class _QuickInvestResultView extends StatelessWidget {
             final m = a as Map<String, dynamic>;
             return Card(
               child: ListTile(
-                title: Text('${m['ticker']} · ${formatCurrency((m['suggested_investment'] as num?)?.toDouble())}'),
+                title: Text(
+                  '${m['ticker']} · ${formatCurrency((m['suggested_investment'] as num?)?.toDouble())}',
+                ),
                 subtitle: Text(m['rationale'] as String? ?? ''),
                 trailing: Text('${m['suggested_quantity']} un.'),
               ),
@@ -155,14 +188,26 @@ class _StrategyResultView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (profile != null) ...[
-            Text('Perfil: ${profile['type'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(profile['description'] as String? ?? '', style: TextStyle(color: Colors.grey.shade600)),
+            Text(
+              'Perfil: ${profile['type'] ?? ''}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              profile['description'] as String? ?? '',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
             const SizedBox(height: 12),
           ],
-          Text(data['summary'] as String? ?? '', style: const TextStyle(fontStyle: FontStyle.italic)),
+          Text(
+            data['summary'] as String? ?? '',
+            style: const TextStyle(fontStyle: FontStyle.italic),
+          ),
           if (gaps.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('Ajustes necessários', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Ajustes necessários',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             ...gaps.map((g) {
               final m = g as Map<String, dynamic>;
               final gapPct = (m['gap_pct'] as num?)?.toDouble() ?? 0;
@@ -174,7 +219,11 @@ class _StrategyResultView extends StatelessWidget {
                     Text('${m['category']}'),
                     Text(
                       '${m['action']} ${formatCurrency((m['gap_value'] as num?)?.toDouble().abs())}',
-                      style: TextStyle(color: gapPct > 0 ? Colors.green.shade700 : Colors.orange.shade700),
+                      style: TextStyle(
+                        color: gapPct > 0
+                            ? Colors.green.shade700
+                            : Colors.orange.shade700,
+                      ),
                     ),
                   ],
                 ),
@@ -183,12 +232,17 @@ class _StrategyResultView extends StatelessWidget {
           ],
           if (suggestions.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('Sugestões de investimento', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Sugestões de investimento',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             ...suggestions.map((s) {
               final m = s as Map<String, dynamic>;
               return Card(
                 child: ListTile(
-                  title: Text('${m['ticker']} · ${formatCurrency((m['invest_amount'] as num?)?.toDouble())}'),
+                  title: Text(
+                    '${m['ticker']} · ${formatCurrency((m['invest_amount'] as num?)?.toDouble())}',
+                  ),
                   subtitle: Text(m['objective'] as String? ?? ''),
                   trailing: Text(m['verdict'] as String? ?? ''),
                 ),

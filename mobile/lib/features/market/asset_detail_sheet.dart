@@ -23,7 +23,10 @@ void showAssetDetailSheet(BuildContext context, String ticker) {
 }
 
 class _AssetDetailContent extends ConsumerWidget {
-  const _AssetDetailContent({required this.ticker, required this.scrollController});
+  const _AssetDetailContent({
+    required this.ticker,
+    required this.scrollController,
+  });
 
   final String ticker;
   final ScrollController scrollController;
@@ -45,8 +48,18 @@ class _AssetDetailContent extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(a.symbol, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  if (a.name != null) Text(a.name!, style: TextStyle(color: Colors.grey.shade600)),
+                  Text(
+                    a.symbol,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (a.name != null)
+                    Text(
+                      a.name!,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
                 ],
               ),
               _VerdictPill(verdict: a.verdict, label: a.label),
@@ -60,29 +73,51 @@ class _AssetDetailContent extends ConsumerWidget {
             childAspectRatio: 2.6,
             children: [
               _StatCard(label: 'Preço atual', value: formatCurrency(a.price)),
-              _StatCard(label: 'Preço justo (consenso)', value: formatCurrency(a.consensus)),
-              _StatCard(label: 'Margem de segurança', value: formatPercent(a.marginOfSafety)),
+              _StatCard(
+                label: 'Preço justo (consenso)',
+                value: formatCurrency(a.consensus),
+              ),
+              _StatCard(
+                label: 'Margem de segurança',
+                value: formatPercent(a.marginOfSafety),
+              ),
               _StatCard(label: 'Setor', value: a.sector ?? '—'),
             ],
           ),
           const SizedBox(height: 16),
-          const Text('Preço justo detalhado', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'Preço justo detalhado',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
-          if (a.bazin != null) _KeyValueRow(label: 'Bazin', value: formatCurrency(a.bazin)),
-          if (a.graham != null) _KeyValueRow(label: 'Graham', value: formatCurrency(a.graham)),
+          if (a.bazin != null)
+            _KeyValueRow(label: 'Bazin', value: formatCurrency(a.bazin)),
+          if (a.graham != null)
+            _KeyValueRow(label: 'Graham', value: formatCurrency(a.graham)),
           const SizedBox(height: 16),
-          const Text('Indicadores técnicos', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'Indicadores técnicos',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           _KeyValueRow(label: 'Tendência', value: a.trend),
-          _KeyValueRow(label: 'RSI (14)', value: a.rsi14?.toStringAsFixed(1) ?? '—'),
+          _KeyValueRow(
+            label: 'RSI (14)',
+            value: a.rsi14?.toStringAsFixed(1) ?? '—',
+          ),
           if (a.reasons.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('Por que essa decisão?', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Por que essa decisão?',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
-            ...a.reasons.map((r) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text('• $r'),
-                )),
+            ...a.reasons.map(
+              (r) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text('• $r'),
+              ),
+            ),
           ],
         ],
       ),
@@ -90,10 +125,10 @@ class _AssetDetailContent extends ConsumerWidget {
   }
 }
 
-final _assetAnalysisProvider =
-    FutureProvider.autoDispose.family<AssetAnalysis, String>((ref, ticker) {
-  return ref.watch(apiRepositoryProvider).analyzeAsset(ticker);
-});
+final _assetAnalysisProvider = FutureProvider.autoDispose
+    .family<AssetAnalysis, String>((ref, ticker) {
+      return ref.watch(apiRepositoryProvider).analyzeAsset(ticker);
+    });
 
 class _VerdictPill extends StatelessWidget {
   const _VerdictPill({required this.verdict, required this.label});
@@ -111,8 +146,14 @@ class _VerdictPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: _color().withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-      child: Text(label, style: TextStyle(color: _color(), fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: _color().withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: _color(), fontWeight: FontWeight.bold),
+      ),
     );
   }
 }
@@ -135,7 +176,10 @@ class _StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          ),
           Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
@@ -155,7 +199,10 @@ class _KeyValueRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(label), Text(value, style: const TextStyle(fontWeight: FontWeight.w600))],
+        children: [
+          Text(label),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }
