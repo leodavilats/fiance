@@ -21,5 +21,21 @@
 5. **Universo hardcoded como fallback** — `backend/app/core/config.py::default_universe` mantém uma lista de ~400 tickers hardcoded, mesmo já existindo universo dinâmico via BRAPI (`core/universe.py`). É um fallback defensivo intencional, mas extenso.
 6. **Rota `/dividends/ranking` intencionalmente desativada** — `backend/app/api/dividends.py` existe mas não está registrada em `backend/app/api/__init__.py`. Decisão do dono do produto (2026-08-10): manter desativada para evitar custo do plano pago da BRAPI (o ranking de dividendos exige mais chamadas). Reativar quando o plano pago for contratado — não remover o código.
 7. **BDR sem ajuste de escala** — ver tabela acima, item de fair price de BDR.
-8. **Labels/ícones duplicados cross-stack** (`ui-helper.service.ts` no web vs `labels.dart` no mobile) — duplicação estrutural (TS↔Dart não compartilha código nativamente), não um descuido, mas motivo de fricção quando se adiciona um novo AssetType/setor.
+8. **Labels/ícones duplicados cross-stack** (`ui-helper.service.ts` no web vs `labels.dart` no mobile) — duplicação estrutural (TS↔Dart não compartilha código nativamente), não um descuido, mas motivo de fricção quando se adiciona um novo AssetType/setor. **Parcialmente mitigado em 2026-08-10** (ver design system, abaixo): as cores agora são idênticas nos dois lados; ainda é preciso lembrar de atualizar os dois arquivos manualmente se um novo AssetType/categoria for adicionado.
 9. **Sparklines feitas à mão** (`ui-helper.service.ts`, geração manual de path SVG) em vez de usar uma lib de charting — funciona, mas é mais lógica para manter internamente.
+
+## Unificação visual web↔mobile — Fase 1 (2026-08-10)
+
+Varredura visual completa encontrou: paletas de cor divergentes entre web e mobile (nenhuma cor de marca/ganho/perda/categoria batia, exceto na logo), mobile sem dark mode (tema indigo padrão do Material, não a marca verde/ciano), ícones de navegação diferentes, e uma **inconsistência interna no próprio web** (`categoryBarColor()` tinha FIIs e Cripto trocados em relação a `categoryBarClass`/`categoryColor`).
+
+Ações tomadas (só tokens de design — sem reestruturar telas, por decisão do usuário):
+- `web/src/app/core/services/ui-helper.service.ts::categoryBarColor()` corrigido para bater com as outras 3 funções de cor de categoria (FIIs=laranja, Cripto=amarelo).
+- `mobile/lib/core/theme.dart` (novo) — tokens espelhando 1:1 as CSS custom properties de `web/src/styles.css` (`--bg`, `--panel`, `--accent`, `--accent-2`, `--warn`, `--danger`, `--radius`), para dark e light. Fonte trocada para Inter (`google_fonts`), igual ao web.
+- `mobile/lib/core/theme_provider.dart` (novo) — dark como padrão + toggle persistido (`shared_preferences`), espelhando `theme.service.ts`. Toggle exposto em Configurações.
+- `mobile/lib/core/labels.dart` — cores de categoria trocadas para os hex exatos do Tailwind `*-400` usados no web (`acoes_int` e `fiis` e `cripto` estavam com cores erradas: `fiis` era âmbar em vez de laranja, `cripto` era rosa em vez de amarelo).
+- Cores de ganho/perda/alerta hardcoded (`Colors.green.shade700`/`Colors.red.shade700`/etc., ~20 ocorrências em 9 arquivos) substituídas por `gainColor()`/`lossColor()`/`warnColor()` do tema — reagem automaticamente ao dark/light mode agora.
+- Ícones de navegação (`app_shell.dart`) trocados para os equivalentes Material mais próximos dos ícones Lucide do web (`briefcase`→`work_outline`, `target`→`track_changes_outlined`).
+- `pubspec.yaml`: adicionadas `google_fonts` e `shared_preferences`.
+- Validado com `flutter analyze` (0 erros, só warnings pré-existentes não relacionados) e `flutter build apk --debug`.
+
+**Não feito nesta fase** (ficou fora do escopo combinado): quebra de `market.component.html` (1627 linhas) e dos arquivos grandes do mobile em componentes menores; padronização de espaçamento/`BoxDecoration` no mobile (ainda cada widget define os próprios valores, sem spacing scale); teste visual manual completo em dispositivo/emulador (recomenda-se rodar `flutter run` e navegar as 4 abas em dark e light antes de considerar fechado).

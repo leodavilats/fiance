@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
 import 'asset_detail_sheet.dart';
 
 class OpportunitiesFilters {
@@ -348,14 +349,14 @@ class _OpportunityCard extends StatelessWidget {
 
   final Opportunity opportunity;
 
-  Color _verdictColor() {
+  Color _verdictColor(Brightness brightness) {
     switch (opportunity.verdict) {
       case 'STRONG_BUY':
       case 'BUY':
-        return Colors.green.shade700;
+        return gainColor(brightness);
       case 'STRONG_SELL':
       case 'SELL':
-        return Colors.red.shade700;
+        return lossColor(brightness);
       default:
         return Colors.grey.shade700;
     }
@@ -363,6 +364,7 @@ class _OpportunityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final verdictColor = _verdictColor(Theme.of(context).brightness);
     return Card(
       child: InkWell(
         onTap: () => showAssetDetailSheet(context, opportunity.ticker),
@@ -402,13 +404,13 @@ class _OpportunityCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: _verdictColor().withValues(alpha: 0.12),
+                      color: verdictColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       opportunity.label,
                       style: TextStyle(
-                        color: _verdictColor(),
+                        color: verdictColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),

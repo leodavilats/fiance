@@ -5,6 +5,7 @@ import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -107,14 +108,14 @@ class _AlertTile extends StatelessWidget {
 
   final PortfolioAlert alert;
 
-  Color _color() {
+  Color _color(Brightness brightness) {
     switch (alert.severity) {
       case 'critical':
       case 'high':
-        return Colors.red.shade700;
+        return lossColor(brightness);
       case 'warning':
       case 'medium':
-        return Colors.orange.shade700;
+        return warnColor(brightness);
       default:
         return Colors.blueGrey;
     }
@@ -122,12 +123,13 @@ class _AlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = _color(Theme.of(context).brightness);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _color().withValues(alpha: 0.12),
-          child: Icon(Icons.info_outline, color: _color(), size: 20),
+          backgroundColor: color.withValues(alpha: 0.12),
+          child: Icon(Icons.info_outline, color: color, size: 20),
         ),
         title: Text(
           alert.title,
@@ -145,15 +147,15 @@ class _VerdictChip extends StatelessWidget {
   final String verdict;
   final String label;
 
-  Color _color() {
-    if (verdict.contains('BUY')) return Colors.green.shade700;
-    if (verdict.contains('SELL')) return Colors.red.shade700;
+  Color _color(Brightness brightness) {
+    if (verdict.contains('BUY')) return gainColor(brightness);
+    if (verdict.contains('SELL')) return lossColor(brightness);
     return Colors.blueGrey;
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = _color();
+    final c = _color(Theme.of(context).brightness);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -176,7 +178,8 @@ class _PositionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final positive = (position.pnl ?? 0) >= 0;
-    final color = positive ? Colors.green.shade700 : Colors.red.shade700;
+    final brightness = Theme.of(context).brightness;
+    final color = positive ? gainColor(brightness) : lossColor(brightness);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
@@ -240,7 +243,8 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final positive = summary.totalPnl >= 0;
-    final pnlColor = positive ? Colors.green.shade700 : Colors.red.shade700;
+    final brightness = Theme.of(context).brightness;
+    final pnlColor = positive ? gainColor(brightness) : lossColor(brightness);
     final scheme = Theme.of(context).colorScheme;
 
     return Card(

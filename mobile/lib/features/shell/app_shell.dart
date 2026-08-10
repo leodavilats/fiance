@@ -18,16 +18,21 @@ class AppShell extends StatelessWidget {
           index,
           initialLocation: index == navigationShell.currentIndex,
         ),
+        // Ícones alinhados conceitualmente aos do web (Lucide):
+        // layout-dashboard, briefcase, target, settings.
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             label: 'Dashboard',
           ),
           NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline),
+            icon: Icon(Icons.work_outline),
             label: 'Meus Ativos',
           ),
-          NavigationDestination(icon: Icon(Icons.show_chart), label: 'Mercado'),
+          NavigationDestination(
+            icon: Icon(Icons.track_changes_outlined),
+            label: 'Mercado',
+          ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             label: 'Config',

@@ -6,6 +6,8 @@ import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
+import '../../core/theme_provider.dart';
 
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
@@ -70,6 +72,17 @@ class ConfigScreen extends ConsumerWidget {
               title: Text(user.name),
               subtitle: Text(user.email),
             ),
+          const Divider(),
+          SwitchListTile(
+            secondary: Icon(
+              ref.watch(themeModeProvider) == ThemeMode.dark
+                  ? Icons.dark_mode_outlined
+                  : Icons.light_mode_outlined,
+            ),
+            title: const Text('Tema escuro'),
+            value: ref.watch(themeModeProvider) == ThemeMode.dark,
+            onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
+          ),
           const Divider(),
           preferences.when(
             loading: () => const Padding(
@@ -225,8 +238,8 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
                     'Total: ${total.toStringAsFixed(0)}%',
                     style: TextStyle(
                       color: (total - 100).abs() < 0.5
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
+                          ? gainColor(Theme.of(context).brightness)
+                          : lossColor(Theme.of(context).brightness),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

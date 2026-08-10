@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
 
 void showAssetDetailSheet(BuildContext context, String ticker) {
   showModalBottomSheet(
@@ -136,23 +137,24 @@ class _VerdictPill extends StatelessWidget {
   final String verdict;
   final String label;
 
-  Color _color() {
-    if (verdict.contains('BUY')) return Colors.green.shade700;
-    if (verdict.contains('SELL')) return Colors.red.shade700;
+  Color _color(Brightness brightness) {
+    if (verdict.contains('BUY')) return gainColor(brightness);
+    if (verdict.contains('SELL')) return lossColor(brightness);
     return Colors.grey.shade700;
   }
 
   @override
   Widget build(BuildContext context) {
+    final color = _color(Theme.of(context).brightness);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: _color().withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
-        style: TextStyle(color: _color(), fontWeight: FontWeight.bold),
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
       ),
     );
   }

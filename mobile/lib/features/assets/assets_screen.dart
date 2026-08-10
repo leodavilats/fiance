@@ -5,6 +5,7 @@ import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
 
 class AssetsScreen extends ConsumerWidget {
   const AssetsScreen({super.key});
@@ -217,7 +218,8 @@ class _SummaryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final positive = summary.totalPnl >= 0;
-    final pnlColor = positive ? Colors.green.shade700 : Colors.red.shade700;
+    final brightness = Theme.of(context).brightness;
+    final pnlColor = positive ? gainColor(brightness) : lossColor(brightness);
 
     return Card(
       margin: EdgeInsets.zero,
@@ -408,7 +410,8 @@ class _AssetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = position;
     final positive = (p.pnl ?? 0) >= 0;
-    final pnlColor = positive ? Colors.green.shade700 : Colors.red.shade700;
+    final brightness = Theme.of(context).brightness;
+    final pnlColor = positive ? gainColor(brightness) : lossColor(brightness);
 
     return Dismissible(
       key: ValueKey(p.ticker),
@@ -434,7 +437,7 @@ class _AssetCard extends StatelessWidget {
       background: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: Colors.red.shade400,
+          color: lossColor(Theme.of(context).brightness),
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.centerRight,

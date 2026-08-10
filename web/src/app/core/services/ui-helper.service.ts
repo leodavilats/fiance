@@ -121,12 +121,14 @@ export class UiHelperService {
   }
 
   categoryBarColor(c: string): string {
+    // Mantido em paridade com categoryBarClass/categoryBgClass/categoryColor
+    // (fiis=laranja, cripto=amarelo) — fonte da verdade também usada pelo mobile.
     const map: Record<string, string> = {
       renda_fixa: 'rgba(59, 130, 246, 0.6)',
       acoes_br: 'rgba(34, 197, 94, 0.6)',
       acoes_int: 'rgba(168, 85, 247, 0.6)',
-      fiis: 'rgba(251, 191, 36, 0.6)',
-      cripto: 'rgba(249, 115, 22, 0.6)',
+      fiis: 'rgba(251, 146, 60, 0.6)',
+      cripto: 'rgba(250, 204, 21, 0.6)',
     };
     return map[c] || 'rgba(148, 163, 184, 0.5)';
   }

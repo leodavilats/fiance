@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
 
 class FerramentasTab extends StatefulWidget {
   const FerramentasTab({super.key});
@@ -107,7 +108,7 @@ class _AnalyzeAssetViewState extends ConsumerState<_AnalyzeAssetView> {
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(_error!, style: const TextStyle(color: Colors.red)),
+            child: Text(_error!, style: TextStyle(color: lossColor(Theme.of(context).brightness))),
           ),
         if (_result != null) _AssetAnalysisCard(analysis: _result!),
       ],
@@ -340,13 +341,15 @@ class _RendaFixaSimulatorState extends ConsumerState<_RendaFixaSimulator> {
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(_error!, style: const TextStyle(color: Colors.red)),
+            child: Text(_error!, style: TextStyle(color: lossColor(Theme.of(context).brightness))),
           ),
         if (_results != null) ...[
           const SizedBox(height: 16),
           ..._results!.map(
             (r) => Card(
-              color: r.melhorOpcao ? Colors.green.shade50 : null,
+              color: r.melhorOpcao
+                  ? gainColor(Theme.of(context).brightness).withValues(alpha: 0.12)
+                  : null,
               child: ListTile(
                 title: Text(
                   '${_tipos[r.tipo] ?? r.tipo} ${r.nome != null ? "· ${r.nome}" : ""}',
@@ -355,7 +358,7 @@ class _RendaFixaSimulatorState extends ConsumerState<_RendaFixaSimulator> {
                   'Líquido: ${formatCurrency(r.valorLiquido)} · Taxa líq: ${formatPercent(r.taxaLiquidaAa)}',
                 ),
                 trailing: r.melhorOpcao
-                    ? const Icon(Icons.star, color: Colors.green)
+                    ? Icon(Icons.star, color: gainColor(Theme.of(context).brightness))
                     : null,
               ),
             ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
 
 class InvestirTab extends ConsumerStatefulWidget {
   const InvestirTab({super.key});
@@ -96,7 +97,7 @@ class _InvestirTabState extends ConsumerState<InvestirTab> {
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(_error!, style: const TextStyle(color: Colors.red)),
+            child: Text(_error!, style: TextStyle(color: lossColor(Theme.of(context).brightness))),
           ),
         if (_quickInvestResult != null)
           _QuickInvestResultView(data: _quickInvestResult!),
@@ -221,8 +222,8 @@ class _StrategyResultView extends StatelessWidget {
                       '${m['action']} ${formatCurrency((m['gap_value'] as num?)?.toDouble().abs())}',
                       style: TextStyle(
                         color: gapPct > 0
-                            ? Colors.green.shade700
-                            : Colors.orange.shade700,
+                            ? gainColor(Theme.of(context).brightness)
+                            : warnColor(Theme.of(context).brightness),
                       ),
                     ),
                   ],

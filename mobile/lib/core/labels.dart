@@ -30,14 +30,15 @@ String assetTypeLabel(String? assetType) {
   return _assetTypeLabels[assetType] ?? assetType;
 }
 
-/// Cor consistente por categoria — usada em barras/legendas de composição.
+/// Cor consistente por categoria — espelha exatamente
+/// UiHelperService.categoryColor/-BarClass/-BgClass do web (Tailwind *-400).
 Color categoryColor(String? category) {
   const colors = {
-    'renda_fixa': Color(0xFF60A5FA), // azul
-    'acoes_br': Color(0xFF4ADE80), // verde (cor de marca)
-    'acoes_int': Color(0xFFA78BFA), // violeta
-    'fiis': Color(0xFFFBBF24), // âmbar
-    'cripto': Color(0xFFF472B6), // rosa
+    'renda_fixa': Color(0xFF60A5FA), // blue-400
+    'acoes_br': Color(0xFF4ADE80), // green-400 (cor de marca)
+    'acoes_int': Color(0xFFC084FC), // purple-400
+    'fiis': Color(0xFFFB923C), // orange-400
+    'cripto': Color(0xFFFACC15), // yellow-400
   };
   return colors[category] ?? const Color(0xFF9CA3AF);
 }
