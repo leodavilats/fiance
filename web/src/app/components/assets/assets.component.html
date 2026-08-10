@@ -186,7 +186,7 @@
 
     <form [formGroup]="form">
       <div class="flex flex-col gap-3" formArrayName="items">
-        @for (item of portfolioItems.controls; track $index; let i = $index) {
+        @for (item of portfolioItems.controls; track item; let i = $index) {
           <div
             class="p-3 rounded-lg bg-panel-2 border border-border grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr_2.25rem] gap-3 sm:gap-2 sm:items-end"
             [formGroupName]="i"
@@ -243,7 +243,7 @@
               <button
                 type="button"
                 class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border text-danger hover:bg-danger hover:text-white transition-colors"
-                (click)="removeItem(i)"
+                (click)="removeItem(item)"
                 title="Remover"
               >
                 <lucide-icon name="x" size="16"></lucide-icon>
@@ -357,7 +357,7 @@
 
     <form [formGroup]="form">
       <div class="flex flex-col gap-3" formArrayName="renda_fixa">
-        @for (rf of rendaFixaItems.controls; track $index; let i = $index) {
+        @for (rf of rendaFixaItems.controls; track rf; let i = $index) {
           <div
             class="p-3 rounded-lg bg-panel-2 border border-border transition-opacity"
             [formGroupName]="i"
@@ -379,7 +379,7 @@
                   class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border transition-colors"
                   [class.text-warning]="rf.controls.oculto.value"
                   [class.text-muted]="!rf.controls.oculto.value"
-                  (click)="toggleOcultarRF(i)"
+                  (click)="toggleOcultarRF(rf)"
                   [title]="
                     rf.controls.oculto.value
                       ? 'Incluir no montante'
@@ -394,7 +394,7 @@
                 <button
                   type="button"
                   class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border text-danger hover:bg-danger hover:text-white transition-colors"
-                  (click)="removeRF(i)"
+                  (click)="removeRF(rf)"
                   title="Remover"
                 >
                   <lucide-icon name="x" size="16"></lucide-icon>

@@ -279,7 +279,9 @@ export class AssetsComponent implements OnInit {
     this.portfolioItems.push(group);
   }
 
-  removeItem(index: number) {
+  removeItem(group: FormGroup<PortfolioItemForm>) {
+    const index = this.portfolioItems.controls.indexOf(group);
+    if (index === -1) return;
     this.portfolioItems.removeAt(index);
     this.saveDebounce.next();
   }
@@ -309,7 +311,9 @@ export class AssetsComponent implements OnInit {
     this.rendaFixaItems.push(group);
   }
 
-  removeRF(index: number) {
+  removeRF(group: FormGroup<RendaFixaItemForm>) {
+    const index = this.rendaFixaItems.controls.indexOf(group);
+    if (index === -1) return;
     this.rendaFixaItems.removeAt(index);
     this.saveDebounce.next();
   }
@@ -318,9 +322,8 @@ export class AssetsComponent implements OnInit {
     this.expandedSections[section] = !this.expandedSections[section];
   }
 
-  toggleOcultarRF(index: number) {
-    const ctrl = this.rendaFixaItems.at(index);
-    ctrl.controls.oculto.setValue(!ctrl.controls.oculto.value);
+  toggleOcultarRF(group: FormGroup<RendaFixaItemForm>) {
+    group.controls.oculto.setValue(!group.controls.oculto.value);
     this.rfVersion.update(v => v + 1);
     this.saveDebounce.next();
   }
