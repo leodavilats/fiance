@@ -1,7 +1,9 @@
+import asyncio
+
 from fastapi import APIRouter
 
 from app.core import cache
-from app.core.config import get_settings
+from app.core.universe import get_universe
 
 router = APIRouter()
 
@@ -13,7 +15,7 @@ async def health() -> dict:
 
 @router.get("/universe")
 async def universe() -> dict:
-    return {"tickers": get_settings().universe}
+    return {"tickers": await asyncio.to_thread(get_universe)}
 
 
 @router.post("/cache/clear")

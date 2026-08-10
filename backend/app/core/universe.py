@@ -1,56 +1,28 @@
 from __future__ import annotations
 
-CURATED_BR_STOCKS = [
-    "PETR4.SA",
-    "VALE3.SA",
-    "ITUB4.SA",
-    "BBDC4.SA",
-    "BBAS3.SA",
-    "WEGE3.SA",
-    "ITSA4.SA",
-    "B3SA3.SA",
-    "RENT3.SA",
-    "EQTL3.SA",
-    "CPLE6.SA",
-    "VIVT3.SA",
-    "EGIE3.SA",
-    "SUZB3.SA",
-    "TOTS3.SA",
-    "RADL3.SA",
-    "RAIL3.SA",
-]
+import logging
+import re
 
-CURATED_UNITS = [
-    "TAEE11.SA",
-    "SAPR11.SA",
-    "KLBN11.SA",
-    "SANB11.SA",
-    "BPAC11.SA",
-]
+import httpx
 
-CURATED_BDRS = [
-    "AAPL34.SA",
-    "MSFT34.SA",
-    "GOGL34.SA",
-    "AMZO34.SA",
-    "NVDC34.SA",
-]
+from app.core import cache
+from app.core.config import get_settings
 
-CURATED_FIIS = [
-    "HGLG11.SA",
-    "MXRF11.SA",
-    "KNCR11.SA",
-    "KNRI11.SA",
-    "BCFF11.SA",
-    "XPML11.SA",
-    "VISC11.SA",
-    "HGRE11.SA",
-    "MALL11.SA",
-    "BTLG11.SA",
-    "VINO11.SA",
-    "RBRR11.SA",
-]
+logger = logging.getLogger(__name__)
 
+_LIST_URL = "https://brapi.dev/api/quote/list"
+_UNIVERSE_CACHE_KEY = "brapi_universe_v1"
+_UNIVERSE_TTL = 24 * 3600
+
+# Lotes fracionários (ex.: PETR4F) são o mesmo ativo do ticker "cheio"
+# (PETR4) negociado em quantidade fracionada — mesmo fundamento, mesmo
+# preço-base. Sem filtrar, competem pelas vagas do top-N como se fossem
+# ativos distintos.
+_FRACTIONAL_LOT = re.compile(r"^[A-Z]{4}\d{1,2}F$")
+
+# Ações americanas e cripto não vêm da BRAPI (Finnhub/CoinGecko não têm um
+# endpoint de "listar tudo" prático) — mantidos como uma lista curta e
+# curada manualmente.
 CURATED_US = [
     "AAPL",
     "MSFT",
@@ -58,26 +30,92 @@ CURATED_US = [
     "AMZN",
     "META",
     "NVDA",
-    "BRK-B",
+    "TSLA",
+    "NFLX",
     "JNJ",
     "JPM",
     "V",
     "KO",
     "PEP",
-    "SCHD",
-    "VOO",
 ]
 
-CURATED_CRYPTO = ["BTC", "ETH", "SOL"]
+CURATED_CRYPTO = [
+    "BTC-USD",
+    "ETH-USD",
+    "SOL-USD",
+    "BNB-USD",
+    "XRP-USD",
+    "ADA-USD",
+    "DOGE-USD",
+    "DOT-USD",
+    "AVAX-USD",
+]
 
 
-def curated_all() -> list[str]:
+def _fetch_brapi_list() -> list[dict]:
+    settings = get_settings()
+    try:
+        resp = httpx.get(_LIST_URL, params={"token": settings.brapi_token}, timeout=20)
+        resp.raise_for_status()
+        return resp.json().get("stocks") or []
+    except Exception as e:
+        logger.warning("Falha ao buscar lista de tickers da BRAPI: %s", e)
+        return []
 
-    return (
-        CURATED_BR_STOCKS
-        + CURATED_UNITS
-        + CURATED_BDRS
-        + CURATED_FIIS
-        + CURATED_US
-        + CURATED_CRYPTO
+
+def _build_brapi_universe(
+    max_stocks: int = 150, max_fiis: int = 60, max_bdrs: int = 40
+) -> list[str]:
+    """Monta o universo de ações/FIIs/BDRs a partir de TODOS os tickers
+    negociados na B3 (endpoint /quote/list da BRAPI), sem curadoria manual —
+    ordenado por relevância (market cap / volume) e limitado por categoria
+    para manter o tempo de varredura sob controle (~300 tickers no total,
+    igual ao universo estático anterior)."""
+
+    stocks = _fetch_brapi_list()
+    if not stocks:
+        return []
+
+    stocks = [s for s in stocks if not _FRACTIONAL_LOT.match(s.get("stock") or "")]
+
+    br_stocks = [
+        s
+        for s in stocks
+        if s.get("subType") == "stock" and (s.get("market_cap") or 0) > 0
+    ]
+    fiis = [s for s in stocks if s.get("subType") == "fii" and (s.get("volume") or 0) > 0]
+    bdrs = [
+        s
+        for s in stocks
+        if s.get("subType") == "bdr" and (s.get("market_cap") or 0) > 0
+    ]
+
+    br_stocks.sort(key=lambda s: s.get("market_cap") or 0, reverse=True)
+    fiis.sort(key=lambda s: s.get("volume") or 0, reverse=True)
+    bdrs.sort(key=lambda s: s.get("market_cap") or 0, reverse=True)
+
+    tickers = (
+        [s["stock"] for s in br_stocks[:max_stocks]]
+        + [s["stock"] for s in fiis[:max_fiis]]
+        + [s["stock"] for s in bdrs[:max_bdrs]]
     )
+    return tickers
+
+
+def get_universe() -> list[str]:
+    """Universo completo (B3 dinâmico via BRAPI + US/cripto curados).
+    Cacheado por 24h — a composição da B3 não muda de um dia pro outro.
+    Se a BRAPI falhar, cai para o DEFAULT_UNIVERSE estático (.env)."""
+
+    cached = cache.get(_UNIVERSE_CACHE_KEY)
+    if cached is not None:
+        return cached
+
+    brapi_tickers = _build_brapi_universe()
+    if not brapi_tickers:
+        logger.warning("Usando DEFAULT_UNIVERSE estático — lista dinâmica da BRAPI falhou.")
+        return get_settings().universe
+
+    universe = brapi_tickers + CURATED_US + CURATED_CRYPTO
+    cache.set(_UNIVERSE_CACHE_KEY, universe, _UNIVERSE_TTL)
+    return universe

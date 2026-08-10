@@ -6,7 +6,7 @@ from typing import Any
 from app.analysis.dip_analysis import compute_dip_analysis
 from app.analysis.fair_price import compute_fair_price, compute_technical
 from app.collectors.news import analyze_news_with_ai, news_sentiment_summary
-from app.core.config import get_settings
+from app.core.universe import get_universe
 from app.models import (
     AssetType,
     DipAnalysisResponse,
@@ -128,12 +128,10 @@ class DipService:
         min_score: float = 40.0,
         top: int = 12,
     ) -> DipScannerResponse:
-        settings = get_settings()
-
         if universe:
             tickers = [t.strip().upper() for t in universe.split(",") if t.strip()]
         else:
-            tickers = list(settings.universe)
+            tickers = await asyncio.to_thread(get_universe)
 
         sem = asyncio.Semaphore(5)
 
@@ -228,12 +226,10 @@ class DipService:
         category: str | None = None,
     ) -> AsyncGenerator[dict[str, Any], None]:
         """Versão SSE do scan: produz eventos à medida que cada ticker é processado."""
-        settings = get_settings()
-
         if universe:
             tickers = [t.strip().upper() for t in universe.split(",") if t.strip()]
         else:
-            tickers = list(settings.universe)
+            tickers = await asyncio.to_thread(get_universe)
 
         if category:
             from app.analysis.classify import auto_category

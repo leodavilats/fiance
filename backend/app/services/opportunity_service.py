@@ -5,7 +5,7 @@ from app.analysis.classify import auto_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
 from app.core import cache
-from app.core.config import get_settings
+from app.core.universe import get_universe
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.repositories import AssetRepository, PortfolioRepository
 
@@ -102,9 +102,6 @@ class OpportunityService:
         """Avalia TODO o universo e cacheia o resultado — evitar rescanear 300+
         tickers (cada um custando ~1 chamada à BRAPI/Finnhub) a cada request.
         Compartilhado por /dashboard, /opportunities e /sectors-summary."""
-        settings = get_settings()
-        universe = set(settings.universe)
-
         cached = cache.get(_SCAN_CACHE_KEY)
         if cached is not None:
             opps = [Opportunity(**o) for o in cached["items"]]
@@ -117,6 +114,7 @@ class OpportunityService:
                 opps = [Opportunity(**o) for o in cached["items"]]
                 return opps, cached["universe_size"]
 
+            universe = set(await asyncio.to_thread(get_universe))
             universe_size = len(universe)
             raws = await asyncio.gather(*[self._build_opportunity(t, prefs) for t in universe])
             opps = [o for o in raws if o is not None]
