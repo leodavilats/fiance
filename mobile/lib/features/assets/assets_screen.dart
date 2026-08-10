@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 
 class AssetsScreen extends ConsumerWidget {
   const AssetsScreen({super.key});
 
-  Future<void> _openAddDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _openAddDialog(
+    BuildContext context,
+    WidgetRef ref,
+    List<PortfolioPosition> current,
+  ) async {
     final tickerCtrl = TextEditingController();
     final qtyCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
@@ -73,10 +78,17 @@ class AssetsScreen extends ConsumerWidget {
       return;
     }
 
-    final repo = ref.read(apiRepositoryProvider);
-    final current = await repo.getPortfolio();
     final updated = [
-      ...current.where((i) => i.ticker != ticker),
+      ...current
+          .where((i) => i.ticker != ticker)
+          .map(
+            (i) => StoredPortfolioItem(
+              ticker: i.ticker,
+              quantity: i.quantity,
+              avgPrice: i.avgPrice,
+              category: i.categoryResolved,
+            ),
+          ),
       StoredPortfolioItem(
         ticker: ticker,
         quantity: quantity,
@@ -84,83 +96,473 @@ class AssetsScreen extends ConsumerWidget {
         category: 'auto',
       ),
     ];
-    await repo.savePortfolio(updated);
-    ref.invalidate(portfolioProvider);
+    await ref.read(apiRepositoryProvider).savePortfolio(updated);
     ref.invalidate(dashboardProvider);
+    ref.invalidate(portfolioProvider);
   }
 
-  Future<void> _delete(
-    BuildContext context,
-    WidgetRef ref,
-    String ticker,
-  ) async {
+  Future<void> _delete(WidgetRef ref, String ticker) async {
     await ref.read(apiRepositoryProvider).deletePosition(ticker);
-    ref.invalidate(portfolioProvider);
     ref.invalidate(dashboardProvider);
+    ref.invalidate(portfolioProvider);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final portfolio = ref.watch(portfolioProvider);
+    final dashboard = ref.watch(dashboardProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Meus Ativos')),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAddDialog(context, ref),
+        onPressed: () => _openAddDialog(
+          context,
+          ref,
+          dashboard.valueOrNull?.positions ?? [],
+        ),
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(portfolioProvider),
-        child: portfolio.when(
+        onRefresh: () async => ref.invalidate(dashboardProvider),
+        child: dashboard.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(child: Text('Erro: $err')),
-          data: (items) {
-            if (items.isEmpty) {
+          data: (data) {
+            if (data.positions.isEmpty) {
               return ListView(
-                children: const [
+                children: [
                   Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Text(
-                      'Nenhum ativo cadastrado ainda. Toque em + pra adicionar.',
-                      textAlign: TextAlign.center,
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.inbox_outlined,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Nenhum ativo cadastrado ainda.\nToque em + pra adicionar.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
                 ],
               );
             }
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Dismissible(
-                  key: ValueKey(item.ticker),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: Colors.red.shade400,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
-                    child: const Icon(Icons.delete, color: Colors.white),
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
+              children: [
+                _SummaryGrid(summary: data.summary),
+                if (data.allocations.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  const _SectionTitle(
+                    icon: Icons.donut_small_outlined,
+                    title: 'Composição da carteira',
                   ),
-                  onDismissed: (_) => _delete(context, ref, item.ticker),
-                  child: ListTile(
-                    title: Text(
-                      item.ticker,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      '${item.quantity} un. · PM ${formatCurrency(item.avgPrice)}',
-                    ),
-                    trailing: Text(
-                      formatCurrency(item.quantity * item.avgPrice),
-                    ),
+                  _CompositionCard(allocations: data.allocations),
+                ],
+                const SizedBox(height: 20),
+                _SectionTitle(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'Ativos negociados (${data.positions.length})',
+                ),
+                ...data.positions.map(
+                  (p) => _AssetCard(
+                    position: p,
+                    onDelete: () => _delete(ref, p.ticker),
                   ),
-                );
-              },
+                ),
+              ],
             );
           },
         ),
       ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, left: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.grey.shade700),
+          const SizedBox(width: 6),
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryGrid extends StatelessWidget {
+  const _SummaryGrid({required this.summary});
+
+  final DashboardSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final positive = summary.totalPnl >= 0;
+    final pnlColor = positive ? Colors.green.shade700 : Colors.red.shade700;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Resumo geral',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatBlock(
+                    label: 'Investido',
+                    value: formatCurrency(summary.totalInvested),
+                  ),
+                ),
+                Expanded(
+                  child: _StatBlock(
+                    label: 'Valor atual',
+                    value: formatCurrency(summary.totalCurrent),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatBlock(
+                    label: 'Rendimento',
+                    value:
+                        '${positive ? '+' : ''}${formatCurrency(summary.totalPnl)}',
+                    valueColor: pnlColor,
+                    caption: formatPercent(summary.totalPnlPct),
+                  ),
+                ),
+                Expanded(
+                  child: _StatBlock(
+                    label: 'Ativos',
+                    value: '${summary.positionsCount}',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatBlock extends StatelessWidget {
+  const _StatBlock({
+    required this.label,
+    required this.value,
+    this.valueColor,
+    this.caption,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+  final String? caption;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 11,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: valueColor,
+              ),
+            ),
+            if (caption != null) ...[
+              const SizedBox(width: 6),
+              Text(caption!, style: TextStyle(color: valueColor, fontSize: 12)),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CompositionCard extends StatelessWidget {
+  const _CompositionCard({required this.allocations});
+
+  final List<CategoryAllocation> allocations;
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = [...allocations]
+      ..sort((a, b) => b.currentValue.compareTo(a.currentValue));
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: SizedBox(
+                height: 10,
+                child: Row(
+                  children: sorted
+                      .where((a) => a.currentPct > 0)
+                      .map(
+                        (a) => Expanded(
+                          flex: (a.currentPct * 10).round().clamp(1, 100000),
+                          child: Container(color: categoryColor(a.category)),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            for (var i = 0; i < sorted.length; i++) ...[
+              if (i > 0) const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      categoryIcon(sorted[i].category),
+                      size: 16,
+                      color: categoryColor(sorted[i].category),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(categoryLabel(sorted[i].category))),
+                    Text(
+                      formatCurrency(sorted[i].currentValue),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 48,
+                      child: Text(
+                        formatPercent(sorted[i].currentPct),
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AssetCard extends StatelessWidget {
+  const _AssetCard({required this.position, required this.onDelete});
+
+  final PortfolioPosition position;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = position;
+    final positive = (p.pnl ?? 0) >= 0;
+    final pnlColor = positive ? Colors.green.shade700 : Colors.red.shade700;
+
+    return Dismissible(
+      key: ValueKey(p.ticker),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Remover ativo'),
+          content: Text('Remover ${p.ticker} da carteira?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.tonal(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Remover'),
+            ),
+          ],
+        ),
+      ).then((v) => v ?? false),
+      onDismissed: (_) => onDelete(),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.red.shade400,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 10),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              p.ticker,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: categoryColor(
+                                  p.categoryResolved,
+                                ).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Text(
+                                categoryLabel(p.categoryResolved),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: categoryColor(p.categoryResolved),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (p.name != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              p.name!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        formatCurrency(p.currentValue),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        '${positive ? '+' : ''}${formatPercent(p.pnlPct)}',
+                        style: TextStyle(
+                          color: pnlColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const Divider(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _MiniInfo(label: 'Qtd.', value: '${p.quantity}'),
+                  _MiniInfo(label: 'PM', value: formatCurrency(p.avgPrice)),
+                  _MiniInfo(
+                    label: 'Atual',
+                    value: formatCurrency(p.currentPrice),
+                  ),
+                  _MiniInfo(label: 'DY', value: formatPercent(p.dividendYield)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniInfo extends StatelessWidget {
+  const _MiniInfo({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey.shade500, fontSize: 10),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+        ),
+      ],
     );
   }
 }

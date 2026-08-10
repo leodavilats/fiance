@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 
@@ -153,14 +154,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-const _categoryLabels = {
-  'renda_fixa': 'Renda Fixa',
-  'acoes_br': 'Ações BR',
-  'acoes_int': 'Ações INT',
-  'fiis': 'FIIs',
-  'cripto': 'Cripto',
-};
-
 class _GoalsSection extends ConsumerStatefulWidget {
   const _GoalsSection();
 
@@ -196,9 +189,7 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
                 ),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: Text(_categoryLabels[g.category] ?? g.category),
-                    ),
+                    Expanded(child: Text(categoryLabel(g.category))),
                     SizedBox(
                       width: 160,
                       child: Slider(

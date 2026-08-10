@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 
@@ -20,36 +21,81 @@ class DashboardScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => _ErrorView(message: '$err'),
           data: (data) => ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
               _SummaryCard(summary: data.summary),
-              const SizedBox(height: 16),
               if (data.allocations.isNotEmpty) ...[
-                const _SectionTitle('Alocação por categoria'),
-                ...data.allocations.map((a) => _AllocationRow(allocation: a)),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.pie_chart_outline,
+                  title: 'Alocação por categoria',
+                ),
+                _CardGroup(
+                  children: data.allocations
+                      .map((a) => _AllocationRow(allocation: a))
+                      .toList(),
+                ),
               ],
               if (data.alerts.isNotEmpty) ...[
-                const _SectionTitle('Alertas'),
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.notifications_none,
+                  title: 'Alertas',
+                ),
                 ...data.alerts.map((a) => _AlertTile(alert: a)),
-                const SizedBox(height: 16),
               ],
               if (data.positions.isNotEmpty) ...[
-                const _SectionTitle('Carteira'),
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: 'Carteira',
+                ),
                 ...data.positions.map((p) => _PositionRow(position: p)),
-                const SizedBox(height: 16),
               ],
               if (data.topBuys.isNotEmpty) ...[
-                const _SectionTitle('Oportunidades em destaque'),
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.trending_up,
+                  title: 'Oportunidades em destaque',
+                ),
                 ...data.topBuys.map((o) => _OpportunityTile(opportunity: o)),
               ],
               if (data.topSells.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const _SectionTitle('Atenção (sinal de venda)'),
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.trending_down,
+                  title: 'Atenção (sinal de venda)',
+                ),
                 ...data.topSells.map((p) => _PositionRow(position: p)),
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Agrupa linhas relacionadas dentro de um único Card, com divisores finos
+/// entre elas — evita a repetição visual de "card dentro de card".
+class _CardGroup extends StatelessWidget {
+  const _CardGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0) const Divider(height: 1),
+              children[i],
+            ],
+          ],
         ),
       ),
     );
@@ -77,14 +123,46 @@ class _AlertTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: Icon(Icons.info_outline, color: _color()),
+        leading: CircleAvatar(
+          backgroundColor: _color().withValues(alpha: 0.12),
+          child: Icon(Icons.info_outline, color: _color(), size: 20),
+        ),
         title: Text(
           alert.title,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(alert.detail),
+      ),
+    );
+  }
+}
+
+class _VerdictChip extends StatelessWidget {
+  const _VerdictChip({required this.verdict, required this.label});
+
+  final String verdict;
+  final String label;
+
+  Color _color() {
+    if (verdict.contains('BUY')) return Colors.green.shade700;
+    if (verdict.contains('SELL')) return Colors.red.shade700;
+    return Colors.blueGrey;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _color();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: c, fontWeight: FontWeight.w600, fontSize: 11),
       ),
     );
   }
@@ -100,23 +178,52 @@ class _PositionRow extends StatelessWidget {
     final positive = (position.pnl ?? 0) >= 0;
     final color = positive ? Colors.green.shade700 : Colors.red.shade700;
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        title: Text(
-          position.ticker,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          '${position.quantity} un. · PM ${formatCurrency(position.avgPrice)}',
-        ),
-        trailing: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
           children: [
-            Text(formatCurrency(position.currentValue)),
-            Text(
-              formatPercent(position.pnlPct),
-              style: TextStyle(color: color, fontSize: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        position.ticker,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 6),
+                      _VerdictChip(
+                        verdict: position.verdict,
+                        label: position.label,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${position.quantity} un. · PM ${formatCurrency(position.avgPrice)}',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  formatCurrency(position.currentValue),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  formatPercent(position.pnlPct),
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -134,30 +241,44 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final positive = summary.totalPnl >= 0;
     final pnlColor = positive ? Colors.green.shade700 : Colors.red.shade700;
+    final scheme = Theme.of(context).colorScheme;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              scheme.primaryContainer.withValues(alpha: 0.5),
+              scheme.surface,
+            ],
+          ),
+        ),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Patrimônio total',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const SizedBox(height: 4),
             Text(
               formatCurrency(summary.totalCurrent),
               style: Theme.of(
                 context,
               ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            Text(
-              '${summary.positionsCount} posições · caixa ${formatCurrency(summary.cashAvailable)}',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Row(
               children: [
                 Icon(
                   positive ? Icons.arrow_upward : Icons.arrow_downward,
                   color: pnlColor,
-                  size: 18,
+                  size: 16,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -165,30 +286,61 @@ class _SummaryCard extends StatelessWidget {
                   style: TextStyle(
                     color: pnlColor,
                     fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '· ${summary.positionsCount} posições',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: _MiniStat(
+                    icon: Icons.savings_outlined,
+                    label: 'Investido',
+                    value: formatCurrency(summary.totalInvested),
+                  ),
+                ),
+                Expanded(
+                  child: _MiniStat(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Caixa',
+                    value: formatCurrency(summary.cashAvailable),
+                  ),
+                ),
+                Expanded(
+                  child: _MiniStat(
+                    icon: Icons.payments_outlined,
+                    label: 'Div./mês',
+                    value: formatCurrency(summary.monthlyDividendsEstimate),
                   ),
                 ),
               ],
             ),
-            const Divider(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _MiniStat(
-                  label: 'Investido',
-                  value: formatCurrency(summary.totalInvested),
-                ),
-                _MiniStat(
-                  label: 'Dividendos/mês',
-                  value: formatCurrency(summary.monthlyDividendsEstimate),
-                ),
-              ],
-            ),
             if (summary.passiveIncomeGoal != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Meta de renda passiva: ${formatCurrency(summary.passiveIncomeGoal)}/mês',
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Meta de renda passiva',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                  Text(
+                    '${formatCurrency(summary.passiveIncomeGoal)}/mês',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
@@ -205,8 +357,13 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.label, required this.value});
+  const _MiniStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
+  final IconData icon;
   final String label;
   final String value;
 
@@ -215,30 +372,47 @@ class _MiniStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        Row(
+          children: [
+            Icon(icon, size: 14, color: Colors.grey.shade600),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+            ),
+          ],
         ),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
       ],
     );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.title);
+  const _SectionTitle({required this.icon, required this.title});
 
+  final IconData icon;
   final String title;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 8),
-      child: Text(
-        title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+      padding: const EdgeInsets.only(bottom: 10, left: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.grey.shade700),
+          const SizedBox(width: 6),
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }
@@ -251,26 +425,46 @@ class _AllocationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = categoryColor(allocation.category);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(allocation.category),
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    categoryLabel(allocation.category),
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
               Text(
                 '${formatCurrency(allocation.currentValue)} · ${formatPercent(allocation.currentPct)}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: (allocation.currentPct / 100).clamp(0, 1),
               minHeight: 6,
+              backgroundColor: color.withValues(alpha: 0.12),
+              valueColor: AlwaysStoppedAnimation(color),
             ),
           ),
         ],
@@ -287,7 +481,7 @@ class _OpportunityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         title: Text(
           opportunity.ticker,
