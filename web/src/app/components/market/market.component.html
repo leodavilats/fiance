@@ -35,23 +35,28 @@
   </div>
 
   @if (activeTab() === 'opportunities') {
-    <div class="flex gap-2">
-      <button
-        type="button"
-        (click)="oppMode.set('todas')"
-        [class.active]="oppMode() === 'todas'"
-        class="tab-btn text-sm whitespace-nowrap"
-      >
-        <lucide-icon name="target" size="16"></lucide-icon> Todas
-      </button>
-      <button
-        type="button"
-        (click)="oppMode.set('queda')"
-        [class.active]="oppMode() === 'queda'"
-        class="tab-btn text-sm whitespace-nowrap"
-      >
-        <lucide-icon name="trending-down" size="16"></lucide-icon> Em queda
-      </button>
+    <div>
+      <p class="text-xs text-muted mb-1.5">
+        Ativos com bom preço segundo os métodos de valuation, ou só os que estão em queda.
+      </p>
+      <div class="subtab-group">
+        <button
+          type="button"
+          (click)="oppMode.set('todas')"
+          [class.active]="oppMode() === 'todas'"
+          class="subtab-btn"
+        >
+          <lucide-icon name="target" size="14"></lucide-icon> Todas
+        </button>
+        <button
+          type="button"
+          (click)="oppMode.set('queda')"
+          [class.active]="oppMode() === 'queda'"
+          class="subtab-btn"
+        >
+          <lucide-icon name="trending-down" size="14"></lucide-icon> Em queda
+        </button>
+      </div>
     </div>
   }
 
@@ -427,6 +432,9 @@
 
   @if (activeTab() === 'segments') {
     <div class="space-y-4">
+      <p class="text-xs text-muted -mt-1">
+        Visão consolidada por setor: score médio, DY médio e destaques de cada segmento.
+      </p>
       <app-sectors />
     </div>
   }
@@ -520,23 +528,28 @@
   }
 
   @if (activeTab() === 'ferramentas') {
-    <div class="flex gap-2">
-      <button
-        type="button"
-        (click)="toolMode.set('analisar')"
-        [class.active]="toolMode() === 'analisar'"
-        class="tab-btn text-sm whitespace-nowrap"
-      >
-        <lucide-icon name="search" size="16"></lucide-icon> Analisar Ativo
-      </button>
-      <button
-        type="button"
-        (click)="toolMode.set('renda_fixa')"
-        [class.active]="toolMode() === 'renda_fixa'"
-        class="tab-btn text-sm whitespace-nowrap"
-      >
-        <lucide-icon name="landmark" size="16"></lucide-icon> Simulador de RF
-      </button>
+    <div>
+      <p class="text-xs text-muted mb-1.5">
+        Investigue um ativo específico ou compare opções de renda fixa.
+      </p>
+      <div class="subtab-group">
+        <button
+          type="button"
+          (click)="toolMode.set('analisar')"
+          [class.active]="toolMode() === 'analisar'"
+          class="subtab-btn"
+        >
+          <lucide-icon name="search" size="14"></lucide-icon> Analisar Ativo
+        </button>
+        <button
+          type="button"
+          (click)="toolMode.set('renda_fixa')"
+          [class.active]="toolMode() === 'renda_fixa'"
+          class="subtab-btn"
+        >
+          <lucide-icon name="landmark" size="14"></lucide-icon> Simulador de RF
+        </button>
+      </div>
     </div>
   }
 
@@ -687,6 +700,10 @@
 
   @if (activeTab() === 'investir') {
     <div class="space-y-5">
+      <p class="text-xs text-muted -mt-1">
+        Duas formas de agir agora: distribuir seu caixa disponível, ou pedir uma estratégia
+        completa gerada por IA com base na sua carteira e metas.
+      </p>
       <div class="card">
         <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-tx">
           <lucide-icon name="lightbulb" size="18"></lucide-icon> Sugestão por Caixa Disponível

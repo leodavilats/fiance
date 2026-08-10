@@ -396,6 +396,28 @@ select.input {
   border-color: var(--border);
 }
 
+/* Segmentado de segundo nível (ex.: modo dentro de uma aba) — visualmente
+   distinto de .tab-btn para não parecer outra linha de abas principais. */
+.subtab-group {
+  @apply inline-flex items-center gap-0.5 p-1 rounded-lg w-fit;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+.subtab-btn {
+  @apply flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-all whitespace-nowrap;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+}
+.subtab-btn:hover {
+  color: var(--text);
+}
+.subtab-btn.active {
+  background: var(--accent);
+  color: #0b0e14;
+  font-weight: 600;
+}
+
 .skeleton {
   @apply rounded-lg;
   background: linear-gradient(90deg, var(--panel-2) 25%, var(--panel) 50%, var(--panel-2) 75%);
