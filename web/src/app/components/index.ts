@@ -6,6 +6,8 @@ export { DashboardComponent } from './dashboard/dashboard.component';
 export { DipComponent } from './dip/dip.component';
 export { EmptyStateComponent } from './empty-state/empty-state.component';
 export { GlobalLoaderComponent } from './global-loader/global-loader.component';
+export { LogoComponent } from './logo/logo.component';
+export { ProfileModalComponent } from './profile-modal/profile-modal.component';
 export { OpportunitiesComponent } from './opportunities/opportunities.component';
 export { SkeletonComponent } from './skeleton/skeleton.component';
 export { SnackbarComponent } from './snackbar/snackbar.component';

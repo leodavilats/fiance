@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import {
   NavigationCancel,
   NavigationEnd,
@@ -12,7 +12,13 @@ import {
 } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService, LoadingService, ThemeService } from './core';
-import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from './components';
+import {
+  AlertModalComponent,
+  GlobalLoaderComponent,
+  LogoComponent,
+  ProfileModalComponent,
+  SnackbarComponent,
+} from './components';
 
 @Component({
   selector: 'app-root',
@@ -26,20 +32,24 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
     GlobalLoaderComponent,
     SnackbarComponent,
     AlertModalComponent,
+    LogoComponent,
+    ProfileModalComponent,
   ],
   template: `
     <app-global-loader />
     <app-snackbar />
     <app-alert-modal />
+    <app-profile-modal
+      [open]="showProfile()"
+      [user]="auth.user()"
+      (close)="showProfile.set(false)"
+      (logout)="logout()"
+    />
     <div class="max-w-[1180px] mx-auto px-3 sm:px-5 pt-4 sm:pt-6 pb-20 sm:pb-10">
       @if (auth.user(); as user) {
         <header class="flex justify-between items-center gap-4 py-2 px-1 pb-[14px] sm:pb-[18px]">
           <div style="display:flex; align-items:center; gap:10px;">
-            <div
-              class="w-9 h-9 sm:w-11 sm:h-11 grid place-items-center rounded-xl font-extrabold text-[1.2rem] sm:text-[1.4rem] text-[#0b0e14] bg-gradient-to-br from-accent to-accent-2"
-            >
-              f
-            </div>
+            <app-logo />
             <div>
               <h1 class="text-[1.3rem] sm:text-[1.7rem] font-bold m-0 text-tx">fianceAI</h1>
               <p class="m-0 text-xs sm:text-sm text-muted hidden sm:block">
@@ -59,19 +69,18 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
                 size="18"
               ></lucide-icon>
             </button>
-            <img
-              [src]="user.picture"
-              [title]="user.name"
-              class="w-9 h-9 rounded-full border border-border"
-              referrerpolicy="no-referrer"
-            />
             <button
-              class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel hover:opacity-90 transition-opacity"
               type="button"
-              (click)="logout()"
-              title="Sair"
+              class="cursor-pointer border-0 bg-transparent p-0 rounded-full"
+              (click)="showProfile.set(true)"
+              title="Sua conta"
             >
-              <lucide-icon name="x" size="18"></lucide-icon>
+              <img
+                [src]="user.picture"
+                [alt]="user.name"
+                class="w-9 h-9 rounded-full border border-border hover:opacity-80 transition-opacity"
+                referrerpolicy="no-referrer"
+              />
             </button>
           </div>
         </header>
@@ -173,10 +182,12 @@ import { AlertModalComponent, GlobalLoaderComponent, SnackbarComponent } from '.
 export class AppComponent {
   readonly theme = inject(ThemeService);
   readonly auth = inject(AuthService);
+  readonly showProfile = signal(false);
   private readonly router = inject(Router);
   private readonly loading = inject(LoadingService);
 
   logout(): void {
+    this.showProfile.set(false);
     this.auth.logout();
     this.router.navigateByUrl('/login');
   }

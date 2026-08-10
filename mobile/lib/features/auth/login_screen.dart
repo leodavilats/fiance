@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_logo.dart';
 import '../../core/providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -41,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.trending_up, size: 72, color: Colors.indigo),
+              const AppLogo(size: 72),
               const SizedBox(height: 16),
               const Text(
                 'fianceAI',
