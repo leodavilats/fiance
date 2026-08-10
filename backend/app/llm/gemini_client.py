@@ -148,11 +148,7 @@ def analyze_news_sentiment(
         company_name=company_name or symbol, symbol=symbol, news_text=news_text
     )
 
-    print("\n" + "=" * 80)
-    print("📤 PROMPT ENVIADO PARA IA (Análise de Notícias)")
-    print("=" * 80)
-    print(prompt)
-    print("=" * 80 + "\n")
+    logger.debug("Prompt enviado para IA (Análise de Notícias): %s", prompt)
 
     try:
         client = genai.Client(api_key=settings.gemini_api_key)
@@ -179,11 +175,7 @@ def analyze_news_sentiment(
 
         result_text = response.text.strip()
 
-        print("\n" + "=" * 80)
-        print("📥 RESPOSTA RECEBIDA DA IA")
-        print("=" * 80)
-        print(result_text)
-        print("=" * 80 + "\n")
+        logger.debug("Resposta recebida da IA: %s", result_text)
 
         if not result_text or len(result_text) < 20:
             logger.warning("Resposta vazia ou muito curta, usando fallback")

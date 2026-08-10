@@ -14,3 +14,4 @@ psycopg[binary]>=3.2,<4
 google-auth>=2.34,<3
 pyjwt>=2.9,<3
 ruff>=0.5.0
+pytest>=8.0,<9
