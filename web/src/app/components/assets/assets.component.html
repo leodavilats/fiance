@@ -185,92 +185,51 @@
     </p>
 
     <form [formGroup]="form">
-      <div class="flex flex-col gap-2" formArrayName="items">
+      <div class="flex flex-col gap-3" formArrayName="items">
         @for (item of portfolioItems.controls; track $index; let i = $index) {
-          <div class="grid grid-cols-[2fr_1fr_1fr_1.5fr_2.25rem] gap-2" [formGroupName]="i">
+          <div
+            class="p-3 rounded-lg bg-panel-2 border border-border grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr_2.25rem] gap-3 sm:gap-2 sm:items-end"
+            [formGroupName]="i"
+          >
             <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">
-                  Ticker
-                  <span class="text-xs font-normal">(ex.: PETR4, MXRF11)</span>
-                </span>
-              }
+              <span class="text-xs font-medium text-muted">Ticker <span class="opacity-70">(ex.: PETR4)</span></span>
               <input
                 type="text"
                 formControlName="ticker"
                 placeholder="ex.: PETR4"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                style="
-                  height: 42px;
-                  text-transform: uppercase;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                "
+                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent uppercase"
               />
             </div>
 
             <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Quantidade</span>
-              }
+              <span class="text-xs font-medium text-muted">Quantidade</span>
               <input
                 type="number"
                 formControlName="quantity"
                 placeholder="qtd"
                 step="0.0001"
                 min="0"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                "
+                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
             <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Preço médio</span>
-              }
+              <span class="text-xs font-medium text-muted">Preço médio</span>
               <input
                 type="number"
                 formControlName="avg_price"
                 placeholder="preço"
                 step="0.01"
                 min="0"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                "
+                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
             <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Categoria</span>
-              }
+              <span class="text-xs font-medium text-muted">Categoria</span>
               <select
                 formControlName="category"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                  background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%239ba3b4%27 d=%27M6 8L2 4h8z%27/%3E%3C/svg%3E');
-                  background-repeat: no-repeat;
-                  background-position: right 12px center;
-                  padding-right: 36px;
-                "
+                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
               >
                 <option value="auto">Auto (detectar)</option>
                 <option value="acoes_br">Ações BR</option>
@@ -280,13 +239,10 @@
               </select>
             </div>
 
-            <div class="flex flex-col justify-end">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted invisible">-</span>
-              }
+            <div class="flex sm:justify-center">
               <button
                 type="button"
-                class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border text-danger hover:bg-danger hover:text-white transition-colors"
+                class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border text-danger hover:bg-danger hover:text-white transition-colors"
                 (click)="removeItem(i)"
                 title="Remover"
               >
@@ -400,222 +356,140 @@
     </div>
 
     <form [formGroup]="form">
-      <div class="flex flex-col gap-2" formArrayName="renda_fixa">
+      <div class="flex flex-col gap-3" formArrayName="renda_fixa">
         @for (rf of rendaFixaItems.controls; track $index; let i = $index) {
           <div
-            class="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr_1.2fr_2.25rem_2.25rem] gap-2 transition-opacity"
+            class="p-3 rounded-lg bg-panel-2 border border-border transition-opacity"
             [formGroupName]="i"
             [class.opacity-40]="rf.controls.oculto.value"
           >
-            <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Nome/Banco</span>
-              }
-              <input
-                type="text"
-                formControlName="nome"
-                placeholder="ex.: Banco Inter"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                "
-              />
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <div class="flex-1 min-w-0">
+                <span class="text-xs font-medium text-muted">Nome/Banco</span>
+                <input
+                  type="text"
+                  formControlName="nome"
+                  placeholder="ex.: Banco Inter"
+                  class="mt-1 w-full px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+              <div class="flex items-end gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border transition-colors"
+                  [class.text-warning]="rf.controls.oculto.value"
+                  [class.text-muted]="!rf.controls.oculto.value"
+                  (click)="toggleOcultarRF(i)"
+                  [title]="
+                    rf.controls.oculto.value
+                      ? 'Incluir no montante'
+                      : 'Ocultar do montante (simulação)'
+                  "
+                >
+                  <lucide-icon
+                    [name]="rf.controls.oculto.value ? 'eye-off' : 'eye'"
+                    size="16"
+                  ></lucide-icon>
+                </button>
+                <button
+                  type="button"
+                  class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border text-danger hover:bg-danger hover:text-white transition-colors"
+                  (click)="removeRF(i)"
+                  title="Remover"
+                >
+                  <lucide-icon name="x" size="16"></lucide-icon>
+                </button>
+              </div>
             </div>
 
-            <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Tipo</span>
-              }
-              <select
-                formControlName="tipo"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                  background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%239ba3b4%27 d=%27M6 8L2 4h8z%27/%3E%3C/svg%3E');
-                  background-repeat: no-repeat;
-                  background-position: right 12px center;
-                  padding-right: 36px;
-                "
-              >
-                <option value="cdb">CDB</option>
-                <option value="lci">LCI</option>
-                <option value="lca">LCA</option>
-                <option value="tesouro_selic">Tesouro Selic</option>
-                <option value="tesouro_ipca">Tesouro IPCA+</option>
-                <option value="tesouro_pre">Tesouro Pré</option>
-                <option value="lc">LC</option>
-                <option value="cri">CRI</option>
-                <option value="cra">CRA</option>
-              </select>
-            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium text-muted">Tipo</span>
+                <select
+                  formControlName="tipo"
+                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+                >
+                  <option value="cdb">CDB</option>
+                  <option value="lci">LCI</option>
+                  <option value="lca">LCA</option>
+                  <option value="tesouro_selic">Tesouro Selic</option>
+                  <option value="tesouro_ipca">Tesouro IPCA+</option>
+                  <option value="tesouro_pre">Tesouro Pré</option>
+                  <option value="lc">LC</option>
+                  <option value="cri">CRI</option>
+                  <option value="cra">CRA</option>
+                </select>
+              </div>
 
-            <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Tipo Taxa</span>
-              }
-              <select
-                formControlName="tipo_taxa"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                  background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%239ba3b4%27 d=%27M6 8L2 4h8z%27/%3E%3C/svg%3E');
-                  background-repeat: no-repeat;
-                  background-position: right 12px center;
-                  padding-right: 36px;
-                "
-              >
-                <option value="pre_fixado">Pré</option>
-                <option value="pos_fixado">Pós (CDI)</option>
-                <option value="hibrido">Híbrido</option>
-              </select>
-            </div>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium text-muted">Tipo Taxa</span>
+                <select
+                  formControlName="tipo_taxa"
+                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+                >
+                  <option value="pre_fixado">Pré</option>
+                  <option value="pos_fixado">Pós (CDI)</option>
+                  <option value="hibrido">Híbrido</option>
+                </select>
+              </div>
 
-            <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Valor (R$)</span>
-              }
-              <input
-                type="number"
-                formControlName="valor_investido"
-                placeholder="10000"
-                min="0"
-                step="100"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                "
-              />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Taxa/% CDI</span>
-              }
-              @if (rf.controls.tipo_taxa.value === 'pos_fixado') {
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium text-muted">Valor (R$)</span>
                 <input
                   type="number"
-                  formControlName="percentual_cdi"
-                  placeholder="110"
+                  formControlName="valor_investido"
+                  placeholder="10000"
                   min="0"
+                  step="100"
+                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium text-muted">{{
+                  rf.controls.tipo_taxa.value === 'pos_fixado' ? '% do CDI' : 'Taxa (% a.a.)'
+                }}</span>
+                @if (rf.controls.tipo_taxa.value === 'pos_fixado') {
+                  <input
+                    type="number"
+                    formControlName="percentual_cdi"
+                    placeholder="110"
+                    min="0"
+                    step="1"
+                    class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                } @else {
+                  <input
+                    type="number"
+                    formControlName="taxa"
+                    placeholder="12.5"
+                    min="0"
+                    step="0.1"
+                    class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                }
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium text-muted">Prazo (meses)</span>
+                <input
+                  type="number"
+                  formControlName="prazo_meses"
+                  placeholder="12"
+                  min="1"
                   step="1"
-                  class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  style="
-                    height: 42px;
-                    appearance: none;
-                    -webkit-appearance: none;
-                    -moz-appearance: none;
-                    box-sizing: border-box;
-                  "
+                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                 />
-              } @else {
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-medium text-muted">Data da aplicação</span>
                 <input
-                  type="number"
-                  formControlName="taxa"
-                  placeholder="12.5"
-                  min="0"
-                  step="0.1"
-                  class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  style="
-                    height: 42px;
-                    appearance: none;
-                    -webkit-appearance: none;
-                    -moz-appearance: none;
-                    box-sizing: border-box;
-                  "
+                  type="date"
+                  formControlName="data_aplicacao"
+                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                 />
-              }
-            </div>
-
-            <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Prazo (m)</span>
-              }
-              <input
-                type="number"
-                formControlName="prazo_meses"
-                placeholder="12"
-                min="1"
-                step="1"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                "
-              />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              @if (i === 0) {
-                <span class="text-sm font-medium text-muted px-3">Aplicação</span>
-              }
-              <input
-                type="date"
-                formControlName="data_aplicacao"
-                class="px-3 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                style="
-                  height: 42px;
-                  appearance: none;
-                  -webkit-appearance: none;
-                  -moz-appearance: none;
-                  box-sizing: border-box;
-                "
-              />
-            </div>
-
-            <div class="flex flex-col justify-end">
-              @if (i === 0) {
-                <span class="text-xs font-medium text-muted invisible">-</span>
-              }
-              <button
-                type="button"
-                class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border transition-colors"
-                [class.text-warning]="rf.controls.oculto.value"
-                [class.text-muted]="!rf.controls.oculto.value"
-                (click)="toggleOcultarRF(i)"
-                [title]="
-                  rf.controls.oculto.value
-                    ? 'Incluir no montante'
-                    : 'Ocultar do montante (simulação)'
-                "
-              >
-                <lucide-icon
-                  [name]="rf.controls.oculto.value ? 'eye-off' : 'eye'"
-                  size="16"
-                ></lucide-icon>
-              </button>
-            </div>
-
-            <div class="flex flex-col justify-end">
-              @if (i === 0) {
-                <span class="text-xs font-medium text-muted invisible">-</span>
-              }
-              <button
-                type="button"
-                class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border text-danger hover:bg-danger hover:text-white transition-colors"
-                (click)="removeRF(i)"
-                title="Remover"
-              >
-                <lucide-icon name="x" size="16"></lucide-icon>
-              </button>
+              </div>
             </div>
           </div>
         }

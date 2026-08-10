@@ -73,7 +73,7 @@ export class AssetsComponent implements OnInit {
   expandedSections = {
     negociados: true,
     rendaFixa: true,
-    avaliacao: true,
+    avaliacao: false,
     detalhamentoRF: false,
   };
 
