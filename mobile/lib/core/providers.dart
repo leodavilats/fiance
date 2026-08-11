@@ -66,3 +66,9 @@ final sectorGoalsProvider = FutureProvider.autoDispose<List<SectorGoal>>((ref) {
 final alertsProvider = FutureProvider.autoDispose<List<PriceAlert>>((ref) {
   return ref.watch(apiRepositoryProvider).getAlerts();
 });
+
+final closedTradesProvider = FutureProvider.autoDispose<ClosedTradesResponse>((
+  ref,
+) {
+  return ref.watch(apiRepositoryProvider).getClosedTrades();
+});

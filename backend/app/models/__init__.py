@@ -30,6 +30,8 @@ from .enums import (
 from .goal import Goal, GoalsRequest, SectorGoal, SectorGoalsRequest
 from .opportunity import OpportunitiesResponse, Opportunity
 from .portfolio import (
+    ClosedTrade,
+    ClosedTradesResponse,
     PortfolioEvaluationRequest,
     PortfolioEvaluationResponse,
     PortfolioItem,
@@ -37,6 +39,7 @@ from .portfolio import (
     PortfolioSnapshot,
     PortfolioStateResponse,
     SavePortfolioRequest,
+    SellRequest,
     StoredPortfolioItem,
 )
 from .preferences import Preferences, PreferencesRequest
@@ -87,6 +90,9 @@ __all__ = [
     "PortfolioStateResponse",
     "SavePortfolioRequest",
     "StoredPortfolioItem",
+    "SellRequest",
+    "ClosedTrade",
+    "ClosedTradesResponse",
     "Goal",
     "GoalsRequest",
     "SectorGoal",

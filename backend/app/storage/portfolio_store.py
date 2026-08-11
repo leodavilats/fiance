@@ -9,6 +9,7 @@ from sqlalchemy import delete, func, select
 from app.core.context import get_current_user_id
 from app.core.database import SessionLocal, init_db
 from app.models.db_models import (
+    ClosedTradeDb,
     GoalDb,
     PortfolioPosition,
     PortfolioSnapshot,
@@ -75,6 +76,20 @@ class PriceAlert(TypedDict):
     note: str | None
     created_at: float
     triggered_at: float | None
+
+
+class ClosedTrade(TypedDict):
+    id: int
+    ticker: str
+    category: str
+    quantity: float
+    avg_price: float
+    sell_price: float
+    gross_profit: float
+    ir_rate: float
+    ir_amount: float
+    net_profit: float
+    sold_at: float
 
 
 def _ensure_user(session, user_id: str) -> None:
@@ -187,6 +202,131 @@ def delete_position(ticker: str, user_id: str | None = None) -> None:
                 PortfolioPosition.ticker == ticker.strip().upper(),
             )
         )
+
+
+def get_position(ticker: str, user_id: str | None = None) -> StoredItem | None:
+    with _session(user_id) as (session, uid):
+        row = session.get(PortfolioPosition, (uid, ticker.strip().upper()))
+        if row is None:
+            return None
+        return StoredItem(
+            ticker=row.ticker,
+            quantity=row.quantity,
+            avg_price=row.avg_price,
+            category=row.category or "auto",
+            updated_at=row.updated_at,
+        )
+
+
+def reduce_position_quantity(ticker: str, sold_qty: float, user_id: str | None = None) -> None:
+    """Decrementa a quantidade de uma posição após uma venda; remove a
+    posição por completo se a quantidade restante for ~zero."""
+    t = ticker.strip().upper()
+    with _session(user_id) as (session, uid):
+        row = session.get(PortfolioPosition, (uid, t))
+        if row is None:
+            return
+        remaining = row.quantity - sold_qty
+        if remaining <= 1e-9:
+            session.execute(
+                delete(PortfolioPosition).where(
+                    PortfolioPosition.user_id == uid, PortfolioPosition.ticker == t
+                )
+            )
+        else:
+            row.quantity = remaining
+            row.updated_at = time.time()
+
+
+def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None) -> float:
+    """Soma o valor bruto (quantity*sell_price) de vendas já registradas na
+    mesma categoria dentro do mês corrente — usado para a isenção mensal de IR."""
+    now = time.time()
+    from datetime import datetime, timezone
+
+    dt = datetime.fromtimestamp(now, tz=timezone.utc)
+    month_start = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp()
+
+    with _session(user_id) as (session, uid):
+        rows = session.scalars(
+            select(ClosedTradeDb).where(
+                ClosedTradeDb.user_id == uid,
+                ClosedTradeDb.category == ticker_category,
+                ClosedTradeDb.sold_at >= month_start,
+            )
+        ).all()
+        return sum(r.quantity * r.sell_price for r in rows)
+
+
+def create_closed_trade(
+    ticker: str,
+    category: str,
+    quantity: float,
+    avg_price: float,
+    sell_price: float,
+    gross_profit: float,
+    ir_rate: float,
+    ir_amount: float,
+    net_profit: float,
+    sold_at: float,
+    user_id: str | None = None,
+) -> ClosedTrade:
+    now = time.time()
+    with _session(user_id) as (session, uid):
+        row = ClosedTradeDb(
+            user_id=uid,
+            ticker=ticker.strip().upper(),
+            category=category,
+            quantity=quantity,
+            avg_price=avg_price,
+            sell_price=sell_price,
+            gross_profit=gross_profit,
+            ir_rate=ir_rate,
+            ir_amount=ir_amount,
+            net_profit=net_profit,
+            sold_at=sold_at,
+            created_at=now,
+        )
+        session.add(row)
+        session.flush()
+        return ClosedTrade(
+            id=row.id or 0,
+            ticker=row.ticker,
+            category=row.category,
+            quantity=row.quantity,
+            avg_price=row.avg_price,
+            sell_price=row.sell_price,
+            gross_profit=row.gross_profit,
+            ir_rate=row.ir_rate,
+            ir_amount=row.ir_amount,
+            net_profit=row.net_profit,
+            sold_at=row.sold_at,
+        )
+
+
+def list_closed_trades(user_id: str | None = None) -> list[ClosedTrade]:
+    with _session(user_id) as (session, uid):
+        rows = session.scalars(
+            select(ClosedTradeDb)
+            .where(ClosedTradeDb.user_id == uid)
+            .order_by(ClosedTradeDb.sold_at.desc())
+        ).all()
+        return [
+            ClosedTrade(
+                id=r.id,
+                ticker=r.ticker,
+                category=r.category,
+                quantity=r.quantity,
+                avg_price=r.avg_price,
+                sell_price=r.sell_price,
+                gross_profit=r.gross_profit,
+                ir_rate=r.ir_rate,
+                ir_amount=r.ir_amount,
+                net_profit=r.net_profit,
+                sold_at=r.sold_at,
+            )
+            for r in rows
+        ]
 
 
 def record_snapshot(

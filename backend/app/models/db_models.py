@@ -80,6 +80,24 @@ class PreferencesDb(Base):
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 
+class ClosedTradeDb(Base):
+    __tablename__ = "closed_trades"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    ticker: Mapped[str] = mapped_column(String)
+    category: Mapped[str] = mapped_column(String)
+    quantity: Mapped[float] = mapped_column(Float)
+    avg_price: Mapped[float] = mapped_column(Float)
+    sell_price: Mapped[float] = mapped_column(Float)
+    gross_profit: Mapped[float] = mapped_column(Float)
+    ir_rate: Mapped[float] = mapped_column(Float)
+    ir_amount: Mapped[float] = mapped_column(Float)
+    net_profit: Mapped[float] = mapped_column(Float)
+    sold_at: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[float] = mapped_column(Float)
+
+
 class PriceAlertDb(Base):
     __tablename__ = "price_alerts"
 

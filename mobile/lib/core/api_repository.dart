@@ -41,6 +41,23 @@ class ApiRepository {
     await _dio.delete('/portfolio/$ticker');
   }
 
+  Future<ClosedTrade> sellPosition({
+    required String ticker,
+    required double quantity,
+    required double sellPrice,
+  }) async {
+    final res = await _dio.post(
+      '/portfolio/sell',
+      data: {'ticker': ticker, 'quantity': quantity, 'sell_price': sellPrice},
+    );
+    return ClosedTrade.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<ClosedTradesResponse> getClosedTrades() async {
+    final res = await _dio.get('/portfolio/trades');
+    return ClosedTradesResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<List<Opportunity>> getOpportunities({String search = ''}) async {
     final res = await _dio.get(
       '/opportunities',

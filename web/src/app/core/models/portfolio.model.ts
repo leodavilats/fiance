@@ -63,3 +63,30 @@ export interface PortfolioStateResponse {
   last_updated: number | null;
   snapshots: PortfolioSnapshot[];
 }
+
+export interface SellRequest {
+  ticker: string;
+  quantity: number;
+  sell_price: number;
+  sold_at?: number | null;
+}
+
+export interface ClosedTrade {
+  id: number;
+  ticker: string;
+  category: string;
+  quantity: number;
+  avg_price: number;
+  sell_price: number;
+  gross_profit: number;
+  ir_rate: number;
+  ir_amount: number;
+  net_profit: number;
+  sold_at: number;
+}
+
+export interface ClosedTradesResponse {
+  trades: ClosedTrade[];
+  total_realized_pnl: number;
+  total_ir_paid: number;
+}

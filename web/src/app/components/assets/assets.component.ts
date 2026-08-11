@@ -5,19 +5,24 @@ import {
   FormGroup,
   FormControl,
   FormArray,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
+import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import {
+  ClosedTradesResponse,
   LoadingService,
   PortfolioItem,
   PortfolioEvaluationResponse,
   PortfolioCategory,
+  PortfolioPosition,
   RecommendService,
   RendaFixaTipo,
+  SnackbarService,
   UiHelperService,
 } from '../../core';
 
@@ -48,13 +53,20 @@ interface PortfolioFormShape {
 @Component({
   selector: 'app-assets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    LucideAngularModule,
+    HelpTooltipComponent,
+  ],
   templateUrl: './assets.component.html',
   styleUrls: ['./assets.component.scss'],
 })
 export class AssetsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly svc = inject(RecommendService);
+  private readonly snackbar = inject(SnackbarService);
   readonly loading = inject(LoadingService);
   readonly ui = inject(UiHelperService);
 
@@ -79,6 +91,18 @@ export class AssetsComponent implements OnInit {
 
   rfVersion = signal(0);
   portfolioVersion = signal(0);
+
+  closedTrades = signal<ClosedTradesResponse | null>(null);
+  showClosedTrades = signal(false);
+  sellModal = signal<{ position: PortfolioPosition; quantity: number; price: number } | null>(
+    null
+  );
+  sellingInProgress = signal(false);
+  expandedReasonsTicker = signal<string | null>(null);
+
+  toggleReasons(ticker: string) {
+    this.expandedReasonsTicker.set(this.expandedReasonsTicker() === ticker ? null : ticker);
+  }
 
   private _initialized = false;
   private saveDebounce = new Subject<void>();
@@ -247,6 +271,7 @@ export class AssetsComponent implements OnInit {
     });
     this.loadStoredRendaFixa();
     this.loadStoredPortfolioItems();
+    this.loadClosedTrades();
     this.saveDebounce.pipe(debounceTime(1000)).subscribe(() => this.savePortfolio());
     this.evalDebounce.pipe(debounceTime(1800)).subscribe(() => this.evaluateAssets(false));
     this.portfolioItems.valueChanges.subscribe(() => {
@@ -284,6 +309,79 @@ export class AssetsComponent implements OnInit {
     if (index === -1) return;
     this.portfolioItems.removeAt(index);
     this.saveDebounce.next();
+  }
+
+  openSellModal(p: PortfolioPosition) {
+    this.sellModal.set({
+      position: p,
+      quantity: p.quantity,
+      price: p.current_price ?? p.avg_price,
+    });
+  }
+
+  closeSellModal() {
+    if (this.sellingInProgress()) return;
+    this.sellModal.set(null);
+  }
+
+  updateSellQuantity(quantity: number) {
+    const modal = this.sellModal();
+    if (modal) this.sellModal.set({ ...modal, quantity });
+  }
+
+  updateSellPrice(price: number) {
+    const modal = this.sellModal();
+    if (modal) this.sellModal.set({ ...modal, price });
+  }
+
+  confirmSell() {
+    const modal = this.sellModal();
+    if (!modal) return;
+
+    const { position, quantity, price } = modal;
+    if (quantity <= 0 || quantity > position.quantity || price <= 0) {
+      this.snackbar.showError('Quantidade ou preço de venda inválidos.');
+      return;
+    }
+
+    this.sellingInProgress.set(true);
+    this.svc
+      .sellPosition({ ticker: position.ticker, quantity, sell_price: price })
+      .subscribe({
+        next: trade => {
+          this.sellingInProgress.set(false);
+          this.sellModal.set(null);
+          const lucro = trade.net_profit >= 0 ? 'lucro' : 'prejuízo';
+          this.snackbar.showSuccess(
+            `Venda registrada: ${lucro} líquido de R$ ${Math.abs(trade.net_profit).toFixed(2)}` +
+              (trade.ir_amount > 0 ? ` (IR: R$ ${trade.ir_amount.toFixed(2)})` : '')
+          );
+          this.loadClosedTrades();
+          // Reflete a nova quantidade (ou remoção) da posição no form local.
+          const idx = this.portfolioItems
+            .getRawValue()
+            .findIndex(i => i.ticker.toUpperCase() === position.ticker.toUpperCase());
+          if (idx !== -1) {
+            const remaining = position.quantity - quantity;
+            if (remaining <= 1e-9) {
+              this.portfolioItems.removeAt(idx);
+            } else {
+              this.portfolioItems.at(idx).controls.quantity.setValue(remaining);
+            }
+          }
+        },
+        error: err => {
+          this.sellingInProgress.set(false);
+          this.snackbar.showError(err?.error?.detail || 'Erro ao registrar venda.');
+        },
+      });
+  }
+
+  loadClosedTrades() {
+    this.svc.getClosedTrades().subscribe({
+      next: res => this.closedTrades.set(res),
+      error: () => {},
+    });
   }
 
   addRF() {

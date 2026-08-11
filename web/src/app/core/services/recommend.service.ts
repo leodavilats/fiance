@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   AssetAnalysis,
+  ClosedTradesResponse,
   DashboardResponse,
   DipAnalysisResponse,
   DipScannerResponse,
@@ -31,6 +32,8 @@ import {
   SectorAllocationResponse,
   SectorGoal,
   SectorsSummaryResponse,
+  SellRequest,
+  ClosedTrade,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -84,6 +87,14 @@ export class RecommendService {
 
   refreshPortfolio(): Observable<PortfolioEvaluationResponse> {
     return this.http.post<PortfolioEvaluationResponse>(`${this.base}/portfolio/refresh`, null);
+  }
+
+  sellPosition(req: SellRequest): Observable<ClosedTrade> {
+    return this.http.post<ClosedTrade>(`${this.base}/portfolio/sell`, req);
+  }
+
+  getClosedTrades(): Observable<ClosedTradesResponse> {
+    return this.http.get<ClosedTradesResponse>(`${this.base}/portfolio/trades`);
   }
 
   dashboard(): Observable<DashboardResponse> {

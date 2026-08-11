@@ -15,6 +15,26 @@ class PortfolioRepository:
         portfolio_store.delete_position(ticker)
 
     @staticmethod
+    def get_position(ticker: str) -> dict | None:
+        return portfolio_store.get_position(ticker)
+
+    @staticmethod
+    def reduce_position_quantity(ticker: str, sold_qty: float) -> None:
+        portfolio_store.reduce_position_quantity(ticker, sold_qty)
+
+    @staticmethod
+    def sum_gross_sales_this_month(category: str) -> float:
+        return portfolio_store.sum_gross_sales_this_month(category)
+
+    @staticmethod
+    def create_closed_trade(**kwargs) -> dict:
+        return portfolio_store.create_closed_trade(**kwargs)
+
+    @staticmethod
+    def list_closed_trades() -> list[dict]:
+        return portfolio_store.list_closed_trades()
+
+    @staticmethod
     def record_snapshot(
         total_invested: float,
         total_current: float,

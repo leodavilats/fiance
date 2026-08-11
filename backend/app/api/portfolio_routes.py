@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException
 
 from app.models import (
+    ClosedTrade,
+    ClosedTradesResponse,
     PortfolioEvaluationRequest,
     PortfolioEvaluationResponse,
     PortfolioStateResponse,
     SavePortfolioRequest,
+    SellRequest,
 )
 from app.services import PortfolioService
 
@@ -42,3 +45,17 @@ async def refresh_portfolio() -> PortfolioEvaluationResponse:
         return await portfolio_service.refresh_portfolio()
     except ValueError as e:
         raise HTTPException(404, str(e)) from e
+
+
+@router.post("/portfolio/sell", response_model=ClosedTrade)
+async def sell_position(req: SellRequest) -> ClosedTrade:
+    try:
+        return await portfolio_service.sell_position(req)
+    except ValueError as e:
+        status = 404 if "não encontrada" in str(e) else 400
+        raise HTTPException(status, str(e)) from e
+
+
+@router.get("/portfolio/trades", response_model=ClosedTradesResponse)
+async def get_closed_trades() -> ClosedTradesResponse:
+    return portfolio_service.get_closed_trades()

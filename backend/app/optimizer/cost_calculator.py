@@ -24,10 +24,19 @@ def calculate_sell_cost(
     quantity: float,
     sell_price: float,
     avg_price: float,
+    gross_value_month_before: float = 0.0,
 ) -> TransactionCost:
+    """Calcula lucro/IR de uma venda.
+
+    `gross_value_month_before` é a soma do valor bruto (quantity*sell_price)
+    de outras vendas já realizadas na mesma categoria dentro do mês corrente
+    — usado para aplicar corretamente as isenções mensais (R$20k ações BR,
+    R$35k cripto) sobre o ACUMULADO do mês, não por transação isolada.
+    """
     gross_value = quantity * sell_price
     cost_basis = quantity * avg_price
     gross_profit = gross_value - cost_basis
+    gross_value_month_total = gross_value_month_before + gross_value
 
     if gross_profit <= 0:
         return TransactionCost(
@@ -40,10 +49,10 @@ def calculate_sell_cost(
         )
 
     if asset_category == AssetCategory.acoes_br.value:
-        if gross_value <= 20_000:
+        if gross_value_month_total <= 20_000:
             ir_rate = 0.0
             ir_amount = 0.0
-            obs = "Venda ≤ R$20k/mês → isento de IR (ações BR)."
+            obs = "Vendas do mês ≤ R$20k → isento de IR (ações BR)."
         else:
             ir_rate = IR_ACOES
             ir_amount = gross_profit * ir_rate
@@ -60,10 +69,10 @@ def calculate_sell_cost(
         obs = f"IR {ir_rate * 100:.0f}% sobre lucro na venda de FII."
 
     elif asset_category == AssetCategory.cripto.value:
-        if gross_value <= 35_000:
+        if gross_value_month_total <= 35_000:
             ir_rate = 0.0
             ir_amount = 0.0
-            obs = "Venda ≤ R$35k/mês → isento de IR (cripto)."
+            obs = "Vendas do mês ≤ R$35k → isento de IR (cripto)."
         else:
             ir_rate = IR_CRIPTO
             ir_amount = gross_profit * ir_rate

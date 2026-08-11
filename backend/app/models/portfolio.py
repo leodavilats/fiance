@@ -69,3 +69,30 @@ class PortfolioStateResponse(BaseModel):
     items: list[StoredPortfolioItem]
     last_updated: float | None = None
     snapshots: list[PortfolioSnapshot] = Field(default_factory=list)
+
+
+class SellRequest(BaseModel):
+    ticker: str
+    quantity: float = Field(..., gt=0)
+    sell_price: float = Field(..., gt=0)
+    sold_at: float | None = Field(None, description="Timestamp da venda; default = agora")
+
+
+class ClosedTrade(BaseModel):
+    id: int
+    ticker: str
+    category: str
+    quantity: float
+    avg_price: float
+    sell_price: float
+    gross_profit: float
+    ir_rate: float
+    ir_amount: float
+    net_profit: float
+    sold_at: float
+
+
+class ClosedTradesResponse(BaseModel):
+    trades: list[ClosedTrade]
+    total_realized_pnl: float
+    total_ir_paid: float

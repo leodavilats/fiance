@@ -108,6 +108,109 @@ class AssetsScreen extends ConsumerWidget {
     ref.invalidate(portfolioProvider);
   }
 
+  Future<void> _openSellDialog(
+    BuildContext context,
+    WidgetRef ref,
+    PortfolioPosition position,
+  ) async {
+    final qtyCtrl = TextEditingController(text: '${position.quantity}');
+    final priceCtrl = TextEditingController(
+      text: '${position.currentPrice ?? position.avgPrice}',
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Vender ${position.ticker}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: qtyCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: 'Quantidade (máx. ${position.quantity})',
+              ),
+            ),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(labelText: 'Preço de venda'),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Lucro/prejuízo, IR e histórico serão calculados automaticamente.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirmar venda'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final quantity = double.tryParse(qtyCtrl.text.replaceAll(',', '.'));
+    final sellPrice = double.tryParse(priceCtrl.text.replaceAll(',', '.'));
+
+    if (quantity == null ||
+        quantity <= 0 ||
+        quantity > position.quantity ||
+        sellPrice == null ||
+        sellPrice <= 0) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quantidade ou preço inválidos')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final trade = await ref
+          .read(apiRepositoryProvider)
+          .sellPosition(
+            ticker: position.ticker,
+            quantity: quantity,
+            sellPrice: sellPrice,
+          );
+      ref.invalidate(dashboardProvider);
+      ref.invalidate(portfolioProvider);
+      ref.invalidate(closedTradesProvider);
+      if (context.mounted) {
+        final lucro = trade.netProfit >= 0 ? 'lucro' : 'prejuízo';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Venda registrada: $lucro líquido de '
+              '${formatCurrency(trade.netProfit.abs())}'
+              '${trade.irAmount > 0 ? ' (IR: ${formatCurrency(trade.irAmount)})' : ''}',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao vender: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(dashboardProvider);
@@ -173,8 +276,11 @@ class AssetsScreen extends ConsumerWidget {
                   (p) => _AssetCard(
                     position: p,
                     onDelete: () => _delete(ref, p.ticker),
+                    onSell: () => _openSellDialog(context, ref, p),
                   ),
                 ),
+                const SizedBox(height: 20),
+                const _ClosedTradesSection(),
               ],
             );
           },
@@ -401,10 +507,15 @@ class _CompositionCard extends StatelessWidget {
 }
 
 class _AssetCard extends StatelessWidget {
-  const _AssetCard({required this.position, required this.onDelete});
+  const _AssetCard({
+    required this.position,
+    required this.onDelete,
+    required this.onSell,
+  });
 
   final PortfolioPosition position;
   final VoidCallback onDelete;
+  final VoidCallback onSell;
 
   @override
   Widget build(BuildContext context) {
@@ -538,10 +649,134 @@ class _AssetCard extends StatelessWidget {
                   _MiniInfo(label: 'DY', value: formatPercent(p.dividendYield)),
                 ],
               ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: onSell,
+                  icon: const Icon(Icons.sell_outlined, size: 16),
+                  label: const Text('Vender'),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 32),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ClosedTradesSection extends ConsumerStatefulWidget {
+  const _ClosedTradesSection();
+
+  @override
+  ConsumerState<_ClosedTradesSection> createState() =>
+      _ClosedTradesSectionState();
+}
+
+class _ClosedTradesSectionState extends ConsumerState<_ClosedTradesSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final trades = ref.watch(closedTradesProvider);
+
+    return trades.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (data) {
+        if (data.trades.isEmpty) return const SizedBox.shrink();
+
+        final brightness = Theme.of(context).brightness;
+        final totalColor = data.totalRealizedPnl >= 0
+            ? gainColor(brightness)
+            : lossColor(brightness);
+
+        return Card(
+          margin: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ListTile(
+                title: const Text(
+                  'Operações encerradas',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: RichText(
+                  text: TextSpan(
+                    style: DefaultTextStyle.of(context).style.copyWith(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
+                    ),
+                    children: [
+                      const TextSpan(text: 'Lucro/prejuízo realizado: '),
+                      TextSpan(
+                        text: formatCurrency(data.totalRealizedPnl),
+                        style: TextStyle(
+                          color: totalColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      TextSpan(text: ' · IR: ${formatCurrency(data.totalIrPaid)}'),
+                    ],
+                  ),
+                ),
+                trailing: Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                ),
+                onTap: () => setState(() => _expanded = !_expanded),
+              ),
+              if (_expanded)
+                ...data.trades.map(
+                  (t) => Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                t.ticker,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                '${t.quantity} un. · venda ${formatCurrency(t.sellPrice)}',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '${t.netProfit >= 0 ? '+' : ''}${formatCurrency(t.netProfit)}',
+                          style: TextStyle(
+                            color: t.netProfit >= 0
+                                ? gainColor(brightness)
+                                : lossColor(brightness),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 }

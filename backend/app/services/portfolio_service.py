@@ -1,10 +1,13 @@
 import asyncio
+import time
 
 from app.analysis.classify import auto_category, resolve_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
 from app.models import (
     AssetType,
+    ClosedTrade,
+    ClosedTradesResponse,
     PortfolioEvaluationRequest,
     PortfolioEvaluationResponse,
     PortfolioItem,
@@ -12,8 +15,10 @@ from app.models import (
     PortfolioSnapshot,
     PortfolioStateResponse,
     SavePortfolioRequest,
+    SellRequest,
     StoredPortfolioItem,
 )
+from app.optimizer.cost_calculator import calculate_sell_cost
 from app.repositories import AssetRepository, PortfolioRepository
 
 
@@ -192,6 +197,61 @@ class PortfolioService:
     def delete_position(self, ticker: str) -> dict:
         self.portfolio_repo.delete_position(ticker)
         return {"deleted": ticker.upper()}
+
+    async def sell_position(self, req: SellRequest) -> ClosedTrade:
+        pos = self.portfolio_repo.get_position(req.ticker)
+        if pos is None:
+            raise ValueError(f"Posição {req.ticker.upper()} não encontrada na carteira.")
+        if req.quantity > pos["quantity"] + 1e-9:
+            raise ValueError(
+                f"Quantidade de venda ({req.quantity}) maior que a quantidade em carteira "
+                f"({pos['quantity']})."
+            )
+
+        try:
+            snap = await self.asset_repo.get_asset(req.ticker)
+            asset_type = snap.asset_type if snap else None
+        except Exception:
+            asset_type = None
+
+        auto = auto_category(asset_type) if asset_type else "acoes_br"
+        category = resolve_category(pos["category"], auto)
+
+        sold_at = req.sold_at or time.time()
+        month_before = self.portfolio_repo.sum_gross_sales_this_month(category)
+
+        cost = calculate_sell_cost(
+            category,
+            req.quantity,
+            req.sell_price,
+            pos["avg_price"],
+            gross_value_month_before=month_before,
+        )
+
+        trade = self.portfolio_repo.create_closed_trade(
+            ticker=req.ticker.upper(),
+            category=category,
+            quantity=req.quantity,
+            avg_price=pos["avg_price"],
+            sell_price=req.sell_price,
+            gross_profit=cost.gross_profit,
+            ir_rate=cost.ir_rate,
+            ir_amount=cost.ir_amount,
+            net_profit=cost.net_profit,
+            sold_at=sold_at,
+        )
+        self.portfolio_repo.reduce_position_quantity(req.ticker, req.quantity)
+        return ClosedTrade(**trade)
+
+    def get_closed_trades(self) -> ClosedTradesResponse:
+        trades = self.portfolio_repo.list_closed_trades()
+        total_realized = sum(t["net_profit"] for t in trades)
+        total_ir = sum(t["ir_amount"] for t in trades)
+        return ClosedTradesResponse(
+            trades=[ClosedTrade(**t) for t in trades],
+            total_realized_pnl=round(total_realized, 2),
+            total_ir_paid=round(total_ir, 2),
+        )
 
     async def refresh_portfolio(self) -> PortfolioEvaluationResponse:
         items = self.portfolio_repo.list_positions()

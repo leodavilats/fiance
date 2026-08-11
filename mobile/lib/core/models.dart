@@ -79,6 +79,69 @@ class StoredPortfolioItem {
   };
 }
 
+class ClosedTrade {
+  ClosedTrade({
+    required this.id,
+    required this.ticker,
+    required this.category,
+    required this.quantity,
+    required this.avgPrice,
+    required this.sellPrice,
+    required this.grossProfit,
+    required this.irRate,
+    required this.irAmount,
+    required this.netProfit,
+    required this.soldAt,
+  });
+
+  final int id;
+  final String ticker;
+  final String category;
+  final double quantity;
+  final double avgPrice;
+  final double sellPrice;
+  final double grossProfit;
+  final double irRate;
+  final double irAmount;
+  final double netProfit;
+  final double soldAt;
+
+  factory ClosedTrade.fromJson(Map<String, dynamic> j) => ClosedTrade(
+    id: j['id'] as int,
+    ticker: j['ticker'] as String,
+    category: j['category'] as String,
+    quantity: (j['quantity'] as num).toDouble(),
+    avgPrice: (j['avg_price'] as num).toDouble(),
+    sellPrice: (j['sell_price'] as num).toDouble(),
+    grossProfit: (j['gross_profit'] as num).toDouble(),
+    irRate: (j['ir_rate'] as num).toDouble(),
+    irAmount: (j['ir_amount'] as num).toDouble(),
+    netProfit: (j['net_profit'] as num).toDouble(),
+    soldAt: (j['sold_at'] as num).toDouble(),
+  );
+}
+
+class ClosedTradesResponse {
+  ClosedTradesResponse({
+    required this.trades,
+    required this.totalRealizedPnl,
+    required this.totalIrPaid,
+  });
+
+  final List<ClosedTrade> trades;
+  final double totalRealizedPnl;
+  final double totalIrPaid;
+
+  factory ClosedTradesResponse.fromJson(Map<String, dynamic> j) =>
+      ClosedTradesResponse(
+        trades: (j['trades'] as List)
+            .map((e) => ClosedTrade.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        totalRealizedPnl: (j['total_realized_pnl'] as num).toDouble(),
+        totalIrPaid: (j['total_ir_paid'] as num).toDouble(),
+      );
+}
+
 class DashboardSummary {
   DashboardSummary({
     required this.totalInvested,
