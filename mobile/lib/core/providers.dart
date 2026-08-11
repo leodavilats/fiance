@@ -24,6 +24,21 @@ final notificationsServiceProvider = Provider<NotificationsService>((ref) {
 
 final currentUserProvider = StateProvider<AppUser?>((ref) => null);
 
+final authStatusProvider = FutureProvider<AppUser?>((ref) async {
+  final authService = ref.watch(authServiceProvider);
+  final token = await authService.readToken();
+  if (token == null) return null;
+
+  try {
+    final user = await ref.watch(apiRepositoryProvider).getMe();
+    ref.read(currentUserProvider.notifier).state = user;
+    return user;
+  } catch (_) {
+    await authService.signOut();
+    return null;
+  }
+});
+
 final dashboardProvider = FutureProvider.autoDispose<DashboardData>((ref) {
   return ref.watch(apiRepositoryProvider).getDashboard();
 });

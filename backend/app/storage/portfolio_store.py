@@ -540,6 +540,17 @@ def list_all_device_tokens() -> list[DeviceToken]:
         ]
 
 
+def list_device_tokens(user_id: str | None = None) -> list[DeviceToken]:
+    with _session(user_id) as (session, uid):
+        rows = session.scalars(
+            select(DeviceTokenDb).where(DeviceTokenDb.user_id == uid)
+        ).all()
+        return [
+            DeviceToken(id=r.id, user_id=r.user_id, token=r.token, platform=r.platform)
+            for r in rows
+        ]
+
+
 def get_notified_opportunity_tickers(user_id: str) -> set[str]:
     with _session(user_id) as (session, uid):
         rows = session.scalars(

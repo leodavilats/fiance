@@ -51,7 +51,8 @@ Autenticados (JWT obrigatório via `Depends(get_current_user)`):
 | GET/PUT | `/goals`, `/sector-goals` | `goals.py` |
 | GET | `/opportunities` | `opportunities.py` |
 | POST/GET/PUT/DELETE | `/portfolio*`, `POST /portfolio/sell`, `GET /portfolio/trades` | `portfolio_routes.py` |
-| POST/DELETE | `/notifications/register-token` | `notifications.py` |
+| GET | `/auth/me` | `auth.py` |
+| POST/DELETE | `/notifications/register-token`, `POST /notifications/test` | `notifications.py` |
 | GET/PUT | `/preferences` | `preferences.py` |
 | POST | `/projection/passive-income`, `/projection/sector-allocation` | `projection.py` |
 | POST | `/quick-invest` | `quick_invest.py` |

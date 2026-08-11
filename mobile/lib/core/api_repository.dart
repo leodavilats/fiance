@@ -1,11 +1,22 @@
 import 'package:dio/dio.dart';
 
+import 'auth_service.dart';
 import 'models.dart';
 
 class ApiRepository {
   ApiRepository(this._dio);
 
   final Dio _dio;
+
+  Future<AppUser> getMe() async {
+    final res = await _dio.get('/auth/me');
+    return AppUser.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> sendTestNotification() async {
+    final res = await _dio.post('/notifications/test');
+    return res.data as Map<String, dynamic>;
+  }
 
   Future<DashboardData> getDashboard() async {
     final res = await _dio.get('/dashboard');

@@ -23,6 +23,14 @@ def test_register_same_token_reassigns_user():
     assert matching[0]["user_id"] == "user_b"
 
 
+def test_list_device_tokens_filters_by_user():
+    portfolio_store.register_device_token("tok-user-x", "android", user_id="user_x")
+    portfolio_store.register_device_token("tok-user-y", "android", user_id="user_y")
+
+    mine = portfolio_store.list_device_tokens(user_id="user_x")
+    assert [t["token"] for t in mine] == ["tok-user-x"]
+
+
 def test_unregister_device_token():
     uid = "test_notif_unregister"
     portfolio_store.register_device_token("token-to-remove", "android", user_id=uid)

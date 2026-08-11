@@ -101,6 +101,10 @@ class PortfolioRepository:
         return portfolio_store.list_all_device_tokens()
 
     @staticmethod
+    def list_device_tokens() -> list[dict]:
+        return portfolio_store.list_device_tokens()
+
+    @staticmethod
     def get_notified_opportunity_tickers(user_id: str) -> set[str]:
         return portfolio_store.get_notified_opportunity_tickers(user_id)
 

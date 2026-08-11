@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +52,46 @@ class ConfigScreen extends ConsumerWidget {
     ref.invalidate(dashboardProvider);
   }
 
+  Future<void> _sendTestNotification(BuildContext context, WidgetRef ref) async {
+    final notifications = ref.read(notificationsServiceProvider);
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (notifications.permissionStatus == AuthorizationStatus.denied) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Permissão de notificação negada — habilite nas configurações do Android.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final result = await ref.read(apiRepositoryProvider).sendTestNotification();
+      final tokensFound = result['tokens_found'] as int? ?? 0;
+      if (tokensFound == 0) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Nenhum dispositivo registrado — o token de notificação não chegou a ser salvo no servidor.',
+            ),
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Enviado para $tokensFound dispositivo(s). Se não chegar em ~1 min, é problema de credencial no servidor.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Erro ao enviar: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
@@ -59,32 +100,55 @@ class ConfigScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Configurações')),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
         children: [
-          if (user != null)
-            ListTile(
-              leading: CircleAvatar(
-                backgroundImage: user.picture.isNotEmpty
-                    ? NetworkImage(user.picture)
-                    : null,
-                child: user.picture.isEmpty
-                    ? Text(user.name.isNotEmpty ? user.name[0] : '?')
-                    : null,
+          _SettingsCard(
+            icon: Icons.person_outline,
+            title: 'Conta',
+            children: [
+              if (user != null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundImage: user.picture.isNotEmpty
+                        ? NetworkImage(user.picture)
+                        : null,
+                    child: user.picture.isEmpty
+                        ? Text(user.name.isNotEmpty ? user.name[0] : '?')
+                        : null,
+                  ),
+                  title: Text(user.name),
+                  subtitle: Text(user.email),
+                ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.logout),
+                title: const Text('Sair'),
+                onTap: () async {
+                  await ref.read(authServiceProvider).signOut();
+                  ref.read(currentUserProvider.notifier).state = null;
+                  if (context.mounted) context.go('/login');
+                },
               ),
-              title: Text(user.name),
-              subtitle: Text(user.email),
-            ),
-          const Divider(),
-          SwitchListTile(
-            secondary: Icon(
-              ref.watch(themeModeProvider) == ThemeMode.dark
-                  ? Icons.dark_mode_outlined
-                  : Icons.light_mode_outlined,
-            ),
-            title: const Text('Tema escuro'),
-            value: ref.watch(themeModeProvider) == ThemeMode.dark,
-            onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
+            ],
           ),
-          const Divider(),
+          _SettingsCard(
+            icon: Icons.palette_outlined,
+            title: 'Aparência',
+            children: [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: Icon(
+                  ref.watch(themeModeProvider) == ThemeMode.dark
+                      ? Icons.dark_mode_outlined
+                      : Icons.light_mode_outlined,
+                ),
+                title: const Text('Tema escuro'),
+                value: ref.watch(themeModeProvider) == ThemeMode.dark,
+                onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
+              ),
+            ],
+          ),
           preferences.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(24),
@@ -96,90 +160,124 @@ class ConfigScreen extends ConsumerWidget {
             ),
             data: (prefs) => Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.account_balance_wallet_outlined),
-                  title: const Text('Caixa disponível'),
-                  subtitle: Text(formatCurrency(prefs.cashAvailable)),
-                  trailing: const Icon(Icons.edit, size: 18),
-                  onTap: () => _editCash(context, ref, prefs.cashAvailable),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.savings_outlined),
-                  title: const Text('Yield desejado — Ações'),
-                  trailing: Text(formatPercent(prefs.desiredYieldStock * 100)),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.apartment_outlined),
-                  title: const Text('Yield desejado — FIIs'),
-                  trailing: Text(formatPercent(prefs.desiredYieldFii * 100)),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.public_outlined),
-                  title: const Text('Yield desejado — Internacional'),
-                  trailing: Text(formatPercent(prefs.desiredYieldInt * 100)),
-                ),
-                if (prefs.passiveIncomeGoal != null)
-                  ListTile(
-                    leading: const Icon(Icons.flag_outlined),
-                    title: const Text('Meta de renda passiva'),
-                    trailing: Text(
-                      '${formatCurrency(prefs.passiveIncomeGoal)}/mês',
+                _SettingsCard(
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: 'Preferências financeiras',
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                      ),
+                      title: const Text('Caixa disponível'),
+                      subtitle: Text(formatCurrency(prefs.cashAvailable)),
+                      trailing: const Icon(Icons.edit, size: 18),
+                      onTap: () =>
+                          _editCash(context, ref, prefs.cashAvailable),
                     ),
-                  ),
-                const Divider(height: 1),
-                SwitchListTile(
-                  secondary: const Icon(Icons.notifications_active_outlined),
-                  title: const Text('Notificar alertas de preço'),
-                  value: prefs.notifyPriceAlerts,
-                  onChanged: (v) async {
-                    await ref
-                        .read(apiRepositoryProvider)
-                        .savePreferences(
-                          cashAvailable: prefs.cashAvailable,
-                          passiveIncomeGoal: prefs.passiveIncomeGoal,
-                          notifyPriceAlerts: v,
-                          notifyNewOpportunities: prefs.notifyNewOpportunities,
-                        );
-                    ref.invalidate(preferencesProvider);
-                  },
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.savings_outlined),
+                      title: const Text('Yield desejado — Ações'),
+                      trailing: Text(
+                        formatPercent(prefs.desiredYieldStock * 100),
+                      ),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.apartment_outlined),
+                      title: const Text('Yield desejado — FIIs'),
+                      trailing: Text(
+                        formatPercent(prefs.desiredYieldFii * 100),
+                      ),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.public_outlined),
+                      title: const Text('Yield desejado — Internacional'),
+                      trailing: Text(
+                        formatPercent(prefs.desiredYieldInt * 100),
+                      ),
+                    ),
+                    if (prefs.passiveIncomeGoal != null)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.flag_outlined),
+                        title: const Text('Meta de renda passiva'),
+                        trailing: Text(
+                          '${formatCurrency(prefs.passiveIncomeGoal)}/mês',
+                        ),
+                      ),
+                  ],
                 ),
-                SwitchListTile(
-                  secondary: const Icon(Icons.auto_awesome_outlined),
-                  title: const Text('Notificar novas oportunidades'),
-                  value: prefs.notifyNewOpportunities,
-                  onChanged: (v) async {
-                    await ref
-                        .read(apiRepositoryProvider)
-                        .savePreferences(
-                          cashAvailable: prefs.cashAvailable,
-                          passiveIncomeGoal: prefs.passiveIncomeGoal,
-                          notifyPriceAlerts: prefs.notifyPriceAlerts,
-                          notifyNewOpportunities: v,
-                        );
-                    ref.invalidate(preferencesProvider);
-                  },
+                _SettingsCard(
+                  icon: Icons.notifications_active_outlined,
+                  title: 'Notificações',
+                  children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: const Icon(
+                        Icons.notifications_active_outlined,
+                      ),
+                      title: const Text('Notificar alertas de preço'),
+                      value: prefs.notifyPriceAlerts,
+                      onChanged: (v) async {
+                        await ref
+                            .read(apiRepositoryProvider)
+                            .savePreferences(
+                              cashAvailable: prefs.cashAvailable,
+                              passiveIncomeGoal: prefs.passiveIncomeGoal,
+                              notifyPriceAlerts: v,
+                              notifyNewOpportunities:
+                                  prefs.notifyNewOpportunities,
+                            );
+                        ref.invalidate(preferencesProvider);
+                      },
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: const Icon(Icons.auto_awesome_outlined),
+                      title: const Text('Notificar novas oportunidades'),
+                      value: prefs.notifyNewOpportunities,
+                      onChanged: (v) async {
+                        await ref
+                            .read(apiRepositoryProvider)
+                            .savePreferences(
+                              cashAvailable: prefs.cashAvailable,
+                              passiveIncomeGoal: prefs.passiveIncomeGoal,
+                              notifyPriceAlerts: prefs.notifyPriceAlerts,
+                              notifyNewOpportunities: v,
+                            );
+                        ref.invalidate(preferencesProvider);
+                      },
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _sendTestNotification(context, ref),
+                        icon: const Icon(Icons.send_outlined, size: 18),
+                        label: const Text('Enviar notificação de teste'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const Divider(),
-          const _SectionHeader('Metas de alocação por categoria'),
-          const _GoalsSection(),
-          const Divider(),
-          const _SectionHeader('Metas de alocação por setor'),
-          const _SectorGoalsSection(),
-          const Divider(),
-          const _SectionHeader('Alertas de preço'),
-          const _AlertsSection(),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Sair'),
-            onTap: () async {
-              await ref.read(authServiceProvider).signOut();
-              ref.read(currentUserProvider.notifier).state = null;
-              if (context.mounted) context.go('/login');
-            },
+          _SettingsCard(
+            icon: Icons.pie_chart_outline,
+            title: 'Metas de alocação por categoria',
+            children: const [_GoalsSection()],
+          ),
+          _SettingsCard(
+            icon: Icons.donut_small_outlined,
+            title: 'Metas de alocação por setor',
+            children: const [_SectorGoalsSection()],
+          ),
+          _SettingsCard(
+            icon: Icons.notifications_none,
+            title: 'Alertas de preço',
+            children: const [_AlertsSection()],
           ),
         ],
       ),
@@ -187,16 +285,41 @@ class ConfigScreen extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({
+    required this.icon,
+    required this.title,
+    required this.children,
+  });
 
+  final IconData icon;
   final String title;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: Colors.grey.shade600),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...children,
+          ],
+        ),
+      ),
     );
   }
 }

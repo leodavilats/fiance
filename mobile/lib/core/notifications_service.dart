@@ -18,6 +18,10 @@ class NotificationsService {
   final _localNotifications = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
+  AuthorizationStatus? permissionStatus;
+  bool tokenRegistered = false;
+  String? lastError;
+
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
@@ -34,7 +38,8 @@ class NotificationsService {
         ?.createNotificationChannel(_androidChannel);
 
     final messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission();
+    final settings = await messaging.requestPermission();
+    permissionStatus = settings.authorizationStatus;
 
     FirebaseMessaging.onMessage.listen(_showForegroundNotification);
 
@@ -47,8 +52,12 @@ class NotificationsService {
       final token = await FirebaseMessaging.instance.getToken();
       if (token == null) return;
       await _repo.registerDeviceToken(token: token, platform: 'android');
+      tokenRegistered = true;
+      lastError = null;
     } catch (e) {
       // Push é um extra, não deve derrubar o app se falhar.
+      tokenRegistered = false;
+      lastError = e.toString();
       debugPrint('Falha ao registrar token de notificação: $e');
     }
   }

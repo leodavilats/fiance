@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/app_logo.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/brand_background.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -37,50 +38,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const AppLogo(size: 72),
-              const SizedBox(height: 16),
-              const Text(
-                'fianceAI',
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Análise de investimentos B3 na sua mão',
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 40),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: lossColor(Theme.of(context).brightness)),
+      body: BrandBackground(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const AppLogo(size: 80),
+                const SizedBox(height: 20),
+                const Text(
+                  'fianceAI',
+                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Ações, FIIs, cripto e renda fixa — tudo em um só assistente',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                ),
+                const SizedBox(height: 48),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(color: lossColor(Theme.of(context).brightness)),
+                    ),
+                  ),
+                FilledButton.icon(
+                  onPressed: _loading ? null : _handleSignIn,
+                  icon: _loading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.login),
+                  label: const Text('Entrar com Google'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 16,
+                    ),
                   ),
                 ),
-              ElevatedButton.icon(
-                onPressed: _loading ? null : _handleSignIn,
-                icon: _loading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.login),
-                label: const Text('Entrar com Google'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 14,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
