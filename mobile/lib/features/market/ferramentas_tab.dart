@@ -215,21 +215,12 @@ class _Stat extends StatelessWidget {
 }
 
 class _RendaFixaOption {
-  _RendaFixaOption({
-    this.tipo = 'cdb',
-    this.nome = '',
-    this.valor = 1000,
-    this.taxa = 110,
-    this.prazoMeses = 12,
-    this.tipoTaxa = 'pos_fixado',
-  });
-
-  String tipo;
-  String nome;
-  double valor;
-  double taxa;
-  int prazoMeses;
-  String tipoTaxa;
+  String tipo = 'cdb';
+  String nome = '';
+  double valor = 1000;
+  double taxa = 110;
+  int prazoMeses = 12;
+  String tipoTaxa = 'pos_fixado';
 }
 
 class _RendaFixaSimulator extends ConsumerStatefulWidget {
