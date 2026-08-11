@@ -6,3 +6,8 @@ export type Verdict = 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL' | '
 export type AllocationCategory = 'renda_fixa' | 'acoes_br' | 'acoes_int' | 'fiis' | 'cripto';
 
 export type PortfolioCategory = AllocationCategory | 'auto' | 'renda' | 'trade';
+
+export interface TickerSuggestion {
+  ticker: string;
+  name: string;
+}

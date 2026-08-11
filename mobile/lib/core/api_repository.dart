@@ -41,6 +41,17 @@ class ApiRepository {
     await _dio.delete('/portfolio/$ticker');
   }
 
+  Future<List<TickerSuggestion>> searchTickers(String query, {int limit = 8}) async {
+    if (query.trim().isEmpty) return [];
+    final res = await _dio.get(
+      '/universe/search',
+      queryParameters: {'q': query, 'limit': limit},
+    );
+    return (res.data['items'] as List)
+        .map((e) => TickerSuggestion.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<ClosedTrade> sellPosition({
     required String ticker,
     required double quantity,

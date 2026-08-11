@@ -147,6 +147,18 @@ class ClosedTradesResponse {
       );
 }
 
+class TickerSuggestion {
+  TickerSuggestion({required this.ticker, required this.name});
+
+  final String ticker;
+  final String name;
+
+  factory TickerSuggestion.fromJson(Map<String, dynamic> j) => TickerSuggestion(
+    ticker: j['ticker'] as String,
+    name: j['name'] as String? ?? '',
+  );
+}
+
 class DashboardSummary {
   DashboardSummary({
     required this.totalInvested,

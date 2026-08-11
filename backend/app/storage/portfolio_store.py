@@ -512,7 +512,9 @@ def set_preferences(
             row.updated_at = now
 
 
-def register_device_token(token: str, platform: str = "android", user_id: str | None = None) -> None:
+def register_device_token(
+    token: str, platform: str = "android", user_id: str | None = None
+) -> None:
     """Registra (ou realoca, se outro usuário tinha o mesmo token — ex.:
     troca de conta no mesmo aparelho) um token FCM para o usuário atual."""
     with _session(user_id) as (session, uid):
@@ -522,18 +524,14 @@ def register_device_token(token: str, platform: str = "android", user_id: str | 
             existing.platform = platform
         else:
             session.add(
-                DeviceTokenDb(
-                    user_id=uid, token=token, platform=platform, created_at=time.time()
-                )
+                DeviceTokenDb(user_id=uid, token=token, platform=platform, created_at=time.time())
             )
 
 
 def unregister_device_token(token: str, user_id: str | None = None) -> None:
     with _session(user_id) as (session, uid):
         session.execute(
-            delete(DeviceTokenDb).where(
-                DeviceTokenDb.user_id == uid, DeviceTokenDb.token == token
-            )
+            delete(DeviceTokenDb).where(DeviceTokenDb.user_id == uid, DeviceTokenDb.token == token)
         )
 
 

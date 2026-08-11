@@ -14,7 +14,7 @@ def test_add_missing_columns_backfills_existing_rows():
     portfolio_store.set_preferences(cash_available=50.0, user_id=uid)
 
     with engine.begin() as conn:
-        conn.execute(text('ALTER TABLE preferences DROP COLUMN notify_price_alerts'))
+        conn.execute(text("ALTER TABLE preferences DROP COLUMN notify_price_alerts"))
 
     # Sem a coluna, ler preferências deve falhar (confirma que o cenário do
     # bug foi reproduzido).

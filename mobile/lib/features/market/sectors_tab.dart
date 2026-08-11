@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/sector_translations.dart';
 
 class SectorsTab extends ConsumerWidget {
   const SectorsTab({super.key});
@@ -97,7 +98,7 @@ class _SectorCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  sector.sector,
+                  translateSector(sector.sector),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,

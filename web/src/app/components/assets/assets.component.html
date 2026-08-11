@@ -65,8 +65,8 @@
           @for (t of alocacaoPorTipo(); track t.tipo) {
             <div
               [style.width.%]="t.pct"
-              [style.background]="ui.assetTypeSeriesColor(t.tipo)"
-              [title]="ui.assetTypeLabel(t.tipo) + ': ' + (t.pct | number: '1.1-1') + '%'"
+              [style.background]="ui.categoryBarColor(t.tipo)"
+              [title]="ui.categoryLabel(t.tipo) + ': ' + (t.pct | number: '1.1-1') + '%'"
             ></div>
           }
         </div>
@@ -76,14 +76,14 @@
               <span class="flex items-center gap-2 text-tx">
                 <span
                   class="w-2.5 h-2.5 rounded-full inline-block shrink-0"
-                  [style.background]="ui.assetTypeSeriesColor(t.tipo)"
+                  [style.background]="ui.categoryBarColor(t.tipo)"
                 ></span>
                 <lucide-icon
-                  [name]="ui.assetTypeIcon(t.tipo)"
+                  [name]="ui.categoryIcon(t.tipo)"
                   size="14"
                   class="text-muted shrink-0"
                 ></lucide-icon>
-                {{ ui.assetTypeLabel(t.tipo) }}
+                {{ ui.categoryLabel(t.tipo) }}
               </span>
               <span class="flex items-center gap-3 shrink-0">
                 <span class="text-muted text-xs">R$ {{ t.valor | number: '1.2-2' }}</span>
@@ -191,14 +191,38 @@
             class="p-3 rounded-lg bg-panel-2 border border-border grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr_2.25rem] gap-3 sm:gap-2 sm:items-end"
             [formGroupName]="i"
           >
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-muted">Ticker <span class="opacity-70">(ex.: PETR4)</span></span>
+            <div class="relative flex flex-col gap-1">
+              <span class="text-xs font-medium text-muted"
+                >Ticker <span class="opacity-70">(ex.: PETR4)</span></span
+              >
               <input
                 type="text"
                 formControlName="ticker"
                 placeholder="ex.: PETR4"
+                autocomplete="off"
                 class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent uppercase"
+                (input)="onTickerInput(i, $any($event.target).value)"
+                (focus)="onTickerInput(i, $any($event.target).value)"
+                (focusout)="closeTickerSuggestions()"
               />
+              @if (tickerSuggestionsRow() === i && tickerSuggestions().length > 0) {
+                <ul
+                  class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-border bg-panel shadow-xl max-h-56 overflow-y-auto text-sm"
+                >
+                  @for (s of tickerSuggestions(); track s.ticker) {
+                    <li>
+                      <button
+                        type="button"
+                        class="w-full text-left px-3 py-2 hover:bg-panel-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                        (mousedown)="$event.preventDefault(); selectTickerSuggestion(i, s)"
+                      >
+                        <span class="font-semibold text-tx">{{ s.ticker }}</span>
+                        <span class="text-muted text-xs truncate">{{ s.name }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
             </div>
 
             <div class="flex flex-col gap-1">
@@ -702,7 +726,9 @@
                     {{ p.label }}
                     @if (p.reasons.length) {
                       <lucide-icon
-                        [name]="expandedReasonsTicker() === p.ticker ? 'chevron-up' : 'chevron-down'"
+                        [name]="
+                          expandedReasonsTicker() === p.ticker ? 'chevron-up' : 'chevron-down'
+                        "
                         size="12"
                         class="ml-1 inline-block align-middle"
                       ></lucide-icon>
@@ -741,7 +767,10 @@
 
 <!-- Modal de venda -->
 @if (sellModal(); as modal) {
-  <div class="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4" (click)="closeSellModal()">
+  <div
+    class="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4"
+    (click)="closeSellModal()"
+  >
     <div
       class="relative w-full max-w-sm rounded-xl border border-border shadow-2xl p-5"
       style="background: var(--panel)"
@@ -830,8 +859,12 @@
             [class.good]="ct.total_realized_pnl >= 0"
             [class.warn]="ct.total_realized_pnl < 0"
           >
-            <div class="text-xs text-muted mb-1 uppercase tracking-wide">Lucro/prejuízo realizado</div>
-            <div class="text-xl font-bold text-tx">R$ {{ ct.total_realized_pnl | number: '1.2-2' }}</div>
+            <div class="text-xs text-muted mb-1 uppercase tracking-wide">
+              Lucro/prejuízo realizado
+            </div>
+            <div class="text-xl font-bold text-tx">
+              R$ {{ ct.total_realized_pnl | number: '1.2-2' }}
+            </div>
           </div>
           <div class="p-4 rounded-lg bg-bg-2 border border-border">
             <div class="text-xs text-muted mb-1 uppercase tracking-wide">IR pago (estimado)</div>

@@ -12,6 +12,10 @@ CRUD de posições da carteira (ações, FIIs, BDRs, cripto) e formulário de Re
 
 **Explicações de decisão:** cada posição mostra os motivos (`reasons`) por trás do veredito de compra/venda/manutenção — no web, expansível ao clicar na pill de Decisão; no mobile, num botão "Por quê?". Tooltips de glossário (DY, MS, P/VP, Bazin, Graham, Score) disponíveis no web (Meus Ativos e Mercado) e no mobile (Oportunidades).
 
+**Autocomplete de ticker (2026-08-11):** o campo de ticker (Meus Ativos, web e mobile) sugere ticker+nome da empresa enquanto o usuário digita, via `GET /universe/search` (busca por prefixo/substring em toda a lista de ações/FIIs/BDRs da B3 + ações US/cripto curadas — não só o universo limitado usado no scanner de oportunidades).
+
+**Notificações push (Fase 3, 2026-08-11):** alertas de preço disparados e novas oportunidades (STRONG_BUY ou score alto + DY alto) notificam o usuário via FCM, com toggles em Configurações para ligar/desligar cada tipo.
+
 ## Mercado (`/market`)
 Maior área do app, dividida em sub-abas (reduzidas de 4 para 3 no web, unificando Segmentos em "Explorar"):
 - **Oportunidades** — varredura do universo de ativos com score/fair price.

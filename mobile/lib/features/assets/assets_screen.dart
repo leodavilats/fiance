@@ -6,6 +6,7 @@ import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/ticker_autocomplete_field.dart';
 
 class AssetsScreen extends ConsumerWidget {
   const AssetsScreen({super.key});
@@ -26,13 +27,11 @@ class AssetsScreen extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            TickerAutocompleteField(
               controller: tickerCtrl,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Ticker (ex: PETR4)',
-              ),
+              labelText: 'Ticker (ex: PETR4)',
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: qtyCtrl,
               keyboardType: const TextInputType.numberWithOptions(
@@ -40,6 +39,7 @@ class AssetsScreen extends ConsumerWidget {
               ),
               decoration: const InputDecoration(labelText: 'Quantidade'),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: priceCtrl,
               keyboardType: const TextInputType.numberWithOptions(
@@ -134,6 +134,7 @@ class AssetsScreen extends ConsumerWidget {
                 labelText: 'Quantidade (máx. ${position.quantity})',
               ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: priceCtrl,
               keyboardType: const TextInputType.numberWithOptions(

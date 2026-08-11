@@ -24,33 +24,36 @@ _FRACTIONAL_LOT = re.compile(r"^[A-Z]{4}\d{1,2}F$")
 # Ações americanas e cripto não vêm da BRAPI (Finnhub/CoinGecko não têm um
 # endpoint de "listar tudo" prático) — mantidos como uma lista curta e
 # curada manualmente.
-CURATED_US = [
-    "AAPL",
-    "MSFT",
-    "GOOGL",
-    "AMZN",
-    "META",
-    "NVDA",
-    "TSLA",
-    "NFLX",
-    "JNJ",
-    "JPM",
-    "V",
-    "KO",
-    "PEP",
-]
+CURATED_US_NAMES = {
+    "AAPL": "Apple Inc.",
+    "MSFT": "Microsoft Corp.",
+    "GOOGL": "Alphabet Inc.",
+    "AMZN": "Amazon.com Inc.",
+    "META": "Meta Platforms Inc.",
+    "NVDA": "NVIDIA Corp.",
+    "TSLA": "Tesla Inc.",
+    "NFLX": "Netflix Inc.",
+    "JNJ": "Johnson & Johnson",
+    "JPM": "JPMorgan Chase & Co.",
+    "V": "Visa Inc.",
+    "KO": "The Coca-Cola Company",
+    "PEP": "PepsiCo Inc.",
+}
 
-CURATED_CRYPTO = [
-    "BTC-USD",
-    "ETH-USD",
-    "SOL-USD",
-    "BNB-USD",
-    "XRP-USD",
-    "ADA-USD",
-    "DOGE-USD",
-    "DOT-USD",
-    "AVAX-USD",
-]
+CURATED_CRYPTO_NAMES = {
+    "BTC-USD": "Bitcoin",
+    "ETH-USD": "Ethereum",
+    "SOL-USD": "Solana",
+    "BNB-USD": "BNB",
+    "XRP-USD": "XRP",
+    "ADA-USD": "Cardano",
+    "DOGE-USD": "Dogecoin",
+    "DOT-USD": "Polkadot",
+    "AVAX-USD": "Avalanche",
+}
+
+CURATED_US = list(CURATED_US_NAMES)
+CURATED_CRYPTO = list(CURATED_CRYPTO_NAMES)
 
 
 def _fetch_brapi_list() -> list[dict]:
@@ -138,3 +141,37 @@ def get_universe() -> list[str]:
     universe = brapi_tickers + CURATED_US + CURATED_CRYPTO
     cache.set(_UNIVERSE_CACHE_KEY, universe, _UNIVERSE_TTL)
     return universe
+
+
+def search_universe(query: str, limit: int = 10) -> list[dict]:
+    """Busca ticker+nome por prefixo/substring — usado pelo autocomplete de
+    ticker no web/mobile. Varre TODA a lista de ações/FIIs/BDRs da B3 (não só
+    o universo curado/limitado de `get_universe()`), mais as listas curadas
+    de ações US e cripto."""
+    q = query.strip().upper()
+    if not q:
+        return []
+
+    seen: set[str] = set()
+    results: list[dict] = []
+
+    for s in _get_brapi_stocks_cached():
+        ticker = (s.get("stock") or "").upper()
+        name = s.get("name") or ""
+        if not ticker or ticker in seen or _FRACTIONAL_LOT.match(ticker):
+            continue
+        if q in ticker or q in name.upper():
+            seen.add(ticker)
+            results.append({"ticker": ticker, "name": name})
+
+    for ticker, name in {**CURATED_US_NAMES, **CURATED_CRYPTO_NAMES}.items():
+        if ticker in seen:
+            continue
+        if q in ticker or q in name.upper():
+            seen.add(ticker)
+            results.append({"ticker": ticker, "name": name})
+
+    # Prioriza tickers que começam com a busca sobre matches no meio da
+    # string/nome, depois ordem alfabética.
+    results.sort(key=lambda r: (not r["ticker"].startswith(q), r["ticker"]))
+    return results[:limit]

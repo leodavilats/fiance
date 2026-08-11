@@ -34,6 +34,7 @@ import {
   SectorsSummaryResponse,
   SellRequest,
   ClosedTrade,
+  TickerSuggestion,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -240,5 +241,12 @@ export class RecommendService {
   sectorsSummary(category = 'acoes_br'): Observable<SectorsSummaryResponse> {
     const params = new HttpParams().set('category', category);
     return this.http.get<SectorsSummaryResponse>(`${this.base}/sectors-summary`, { params });
+  }
+
+  searchTickers(query: string, limit = 8): Observable<{ items: TickerSuggestion[] }> {
+    const params = new HttpParams().set('q', query).set('limit', limit);
+    return this.http.get<{ items: TickerSuggestion[] }>(`${this.base}/universe/search`, {
+      params,
+    });
   }
 }

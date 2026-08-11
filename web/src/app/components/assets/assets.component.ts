@@ -11,7 +11,7 @@ import {
 } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, switchMap } from 'rxjs/operators';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import {
   ClosedTradesResponse,
@@ -23,6 +23,7 @@ import {
   RecommendService,
   RendaFixaTipo,
   SnackbarService,
+  TickerSuggestion,
   UiHelperService,
 } from '../../core';
 
@@ -94,15 +95,17 @@ export class AssetsComponent implements OnInit {
 
   closedTrades = signal<ClosedTradesResponse | null>(null);
   showClosedTrades = signal(false);
-  sellModal = signal<{ position: PortfolioPosition; quantity: number; price: number } | null>(
-    null
-  );
+  sellModal = signal<{ position: PortfolioPosition; quantity: number; price: number } | null>(null);
   sellingInProgress = signal(false);
   expandedReasonsTicker = signal<string | null>(null);
 
   toggleReasons(ticker: string) {
     this.expandedReasonsTicker.set(this.expandedReasonsTicker() === ticker ? null : ticker);
   }
+
+  tickerSuggestions = signal<TickerSuggestion[]>([]);
+  tickerSuggestionsRow = signal<number | null>(null);
+  private tickerSearch$ = new Subject<{ index: number; query: string }>();
 
   private _initialized = false;
   private saveDebounce = new Subject<void>();
@@ -200,7 +203,11 @@ export class AssetsComponent implements OnInit {
     if (r) {
       for (const p of r.positions) {
         const valor = p.current_value ?? p.invested;
-        buckets.set(p.asset_type, (buckets.get(p.asset_type) || 0) + valor);
+        // Agrupa por categoria consolidada (não asset_type bruto) para bater
+        // com o resto da tela — sem isso, BDR e Ação EUA apareciam como
+        // fatias separadas em vez de "Ações Internacionais".
+        const categoria = p.category_resolved;
+        buckets.set(categoria, (buckets.get(categoria) || 0) + valor);
       }
     }
 
@@ -285,6 +292,37 @@ export class AssetsComponent implements OnInit {
       this.rfVersion.update(v => v + 1);
       if (this._initialized) this.saveDebounce.next();
     });
+
+    this.tickerSearch$
+      .pipe(
+        debounceTime(250),
+        switchMap(({ index, query }) => {
+          if (query.trim().length < 1) return [{ index, items: [] as TickerSuggestion[] }];
+          return this.svc
+            .searchTickers(query)
+            .pipe(switchMap(res => [{ index, items: res.items }]));
+        })
+      )
+      .subscribe(({ index, items }) => {
+        // Descarta resultado se o usuário já mudou de linha ou apagou o campo.
+        if (this.tickerSuggestionsRow() !== index) return;
+        this.tickerSuggestions.set(items);
+      });
+  }
+
+  onTickerInput(index: number, value: string) {
+    this.tickerSuggestionsRow.set(index);
+    this.tickerSearch$.next({ index, query: value });
+  }
+
+  selectTickerSuggestion(index: number, suggestion: TickerSuggestion) {
+    this.portfolioItems.at(index).controls.ticker.setValue(suggestion.ticker);
+    this.closeTickerSuggestions();
+  }
+
+  closeTickerSuggestions() {
+    this.tickerSuggestionsRow.set(null);
+    this.tickerSuggestions.set([]);
   }
 
   buildForm() {
@@ -345,36 +383,34 @@ export class AssetsComponent implements OnInit {
     }
 
     this.sellingInProgress.set(true);
-    this.svc
-      .sellPosition({ ticker: position.ticker, quantity, sell_price: price })
-      .subscribe({
-        next: trade => {
-          this.sellingInProgress.set(false);
-          this.sellModal.set(null);
-          const lucro = trade.net_profit >= 0 ? 'lucro' : 'prejuízo';
-          this.snackbar.showSuccess(
-            `Venda registrada: ${lucro} líquido de R$ ${Math.abs(trade.net_profit).toFixed(2)}` +
-              (trade.ir_amount > 0 ? ` (IR: R$ ${trade.ir_amount.toFixed(2)})` : '')
-          );
-          this.loadClosedTrades();
-          // Reflete a nova quantidade (ou remoção) da posição no form local.
-          const idx = this.portfolioItems
-            .getRawValue()
-            .findIndex(i => i.ticker.toUpperCase() === position.ticker.toUpperCase());
-          if (idx !== -1) {
-            const remaining = position.quantity - quantity;
-            if (remaining <= 1e-9) {
-              this.portfolioItems.removeAt(idx);
-            } else {
-              this.portfolioItems.at(idx).controls.quantity.setValue(remaining);
-            }
+    this.svc.sellPosition({ ticker: position.ticker, quantity, sell_price: price }).subscribe({
+      next: trade => {
+        this.sellingInProgress.set(false);
+        this.sellModal.set(null);
+        const lucro = trade.net_profit >= 0 ? 'lucro' : 'prejuízo';
+        this.snackbar.showSuccess(
+          `Venda registrada: ${lucro} líquido de R$ ${Math.abs(trade.net_profit).toFixed(2)}` +
+            (trade.ir_amount > 0 ? ` (IR: R$ ${trade.ir_amount.toFixed(2)})` : '')
+        );
+        this.loadClosedTrades();
+        // Reflete a nova quantidade (ou remoção) da posição no form local.
+        const idx = this.portfolioItems
+          .getRawValue()
+          .findIndex(i => i.ticker.toUpperCase() === position.ticker.toUpperCase());
+        if (idx !== -1) {
+          const remaining = position.quantity - quantity;
+          if (remaining <= 1e-9) {
+            this.portfolioItems.removeAt(idx);
+          } else {
+            this.portfolioItems.at(idx).controls.quantity.setValue(remaining);
           }
-        },
-        error: err => {
-          this.sellingInProgress.set(false);
-          this.snackbar.showError(err?.error?.detail || 'Erro ao registrar venda.');
-        },
-      });
+        }
+      },
+      error: err => {
+        this.sellingInProgress.set(false);
+        this.snackbar.showError(err?.error?.detail || 'Erro ao registrar venda.');
+      },
+    });
   }
 
   loadClosedTrades() {

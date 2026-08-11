@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 
 void showAssetDetailSheet(BuildContext context, String ticker) {
@@ -82,7 +83,7 @@ class _AssetDetailContent extends ConsumerWidget {
                 label: 'Margem de segurança',
                 value: formatPercent(a.marginOfSafety),
               ),
-              _StatCard(label: 'Setor', value: a.sector ?? '—'),
+              _StatCard(label: 'Setor', value: translateSector(a.sector)),
             ],
           ),
           const SizedBox(height: 16),

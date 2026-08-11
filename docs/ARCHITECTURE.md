@@ -37,7 +37,7 @@ fianceAI é uma plataforma multi-tenant de análise de investimentos focada na B
 
 ### Endpoints (`/api/...`)
 
-Públicos: `GET /health`, `GET /universe`, `POST /cache/clear` (`basic.py`), `POST /auth/google` (`auth.py`).
+Públicos: `GET /health`, `GET /universe`, `GET /universe/search` (autocomplete de ticker por prefixo/nome), `POST /cache/clear` (`basic.py`), `POST /auth/google` (`auth.py`).
 
 Autenticados (JWT obrigatório via `Depends(get_current_user)`):
 

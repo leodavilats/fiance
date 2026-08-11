@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/theme_provider.dart';
 
@@ -353,7 +354,7 @@ class _SectorGoalsSectionState extends ConsumerState<_SectorGoalsSection> {
                 ),
                 child: Row(
                   children: [
-                    Expanded(child: Text(g.sector)),
+                    Expanded(child: Text(translateSector(g.sector))),
                     SizedBox(
                       width: 160,
                       child: Slider(
@@ -429,6 +430,7 @@ class _AlertsSection extends ConsumerWidget {
                 textCapitalization: TextCapitalization.characters,
                 decoration: const InputDecoration(labelText: 'Ticker'),
               ),
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: condition,
                 decoration: const InputDecoration(labelText: 'Condição'),
@@ -438,6 +440,7 @@ class _AlertsSection extends ConsumerWidget {
                 ],
                 onChanged: (v) => setState(() => condition = v!),
               ),
+              const SizedBox(height: 16),
               TextField(
                 controller: priceCtrl,
                 keyboardType: const TextInputType.numberWithOptions(
