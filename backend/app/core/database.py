@@ -66,7 +66,10 @@ def _add_missing_columns() -> None:
                 if default is not None and getattr(default, "is_scalar", False):
                     value = default.arg
                     if isinstance(value, bool):
-                        default_sql = f" DEFAULT {1 if value else 0}"
+                        # TRUE/FALSE (não 1/0) — Postgres exige o literal
+                        # booleano certo para uma coluna BOOLEAN; SQLite
+                        # aceita TRUE/FALSE como alias desde a versão 3.23.
+                        default_sql = f" DEFAULT {'TRUE' if value else 'FALSE'}"
                     elif isinstance(value, int | float):
                         default_sql = f" DEFAULT {value}"
                     elif isinstance(value, str):
