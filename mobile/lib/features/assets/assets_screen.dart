@@ -517,6 +517,33 @@ class _AssetCard extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onSell;
 
+  void _showReasons(BuildContext context, PortfolioPosition p) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${p.ticker} — ${p.label}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            ...p.reasons.map(
+              (r) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text('•  $r', style: const TextStyle(height: 1.4)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = position;
@@ -649,18 +676,32 @@ class _AssetCard extends StatelessWidget {
                   _MiniInfo(label: 'DY', value: formatPercent(p.dividendYield)),
                 ],
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: onSell,
-                  icon: const Icon(Icons.sell_outlined, size: 16),
-                  label: const Text('Vender'),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 32),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (p.reasons.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: () => _showReasons(context, p),
+                      icon: const Icon(Icons.info_outline, size: 16),
+                      label: const Text('Por quê?'),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    onPressed: onSell,
+                    icon: const Icon(Icons.sell_outlined, size: 16),
+                    label: const Text('Vender'),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

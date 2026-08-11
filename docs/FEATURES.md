@@ -8,6 +8,10 @@ Tela inicial consolidada: resumo de carteira, alocação por categoria, alertas 
 ## Meus Ativos (`/assets`)
 CRUD de posições da carteira (ações, FIIs, BDRs, cripto) e formulário de Renda Fixa. No web, inclui preview client-side de rendimento RF (calculado no navegador antes de salvar). No mobile, o preview vem sempre do backend.
 
+**Venda de ativos e histórico (2026-08-10):** cada posição pode ser vendida parcial ou totalmente (botão "Vender" no web e no mobile), gerando automaticamente lucro/prejuízo realizado e o imposto de renda devido (alíquotas por categoria, com isenção mensal acumulada para ações BR e cripto). Toda venda vira um registro em "Operações Encerradas", com totais de lucro realizado e IR pago.
+
+**Explicações de decisão:** cada posição mostra os motivos (`reasons`) por trás do veredito de compra/venda/manutenção — no web, expansível ao clicar na pill de Decisão; no mobile, num botão "Por quê?". Tooltips de glossário (DY, MS, P/VP, Bazin, Graham, Score) disponíveis no web (Meus Ativos e Mercado) e no mobile (Oportunidades).
+
 ## Mercado (`/market`)
 Maior área do app, dividida em sub-abas (reduzidas de 4 para 3 no web, unificando Segmentos em "Explorar"):
 - **Oportunidades** — varredura do universo de ativos com score/fair price.

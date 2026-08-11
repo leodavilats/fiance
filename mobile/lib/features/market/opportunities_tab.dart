@@ -5,6 +5,7 @@ import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/help_tooltip.dart';
 import 'asset_detail_sheet.dart';
 
 class OpportunitiesFilters {
@@ -433,10 +434,12 @@ class _OpportunityCard extends StatelessWidget {
                   _Stat(
                     label: 'MS',
                     value: formatPercent(opportunity.marginOfSafety),
+                    glossaryKey: 'ms',
                   ),
                   _Stat(
                     label: 'DY',
                     value: formatPercent(opportunity.dividendYield),
+                    glossaryKey: 'dy',
                   ),
                 ],
               ),
@@ -449,19 +452,26 @@ class _OpportunityCard extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value});
+  const _Stat({required this.label, required this.value, this.glossaryKey});
 
   final String label;
   final String value;
+  final String? glossaryKey;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+            ),
+            if (glossaryKey != null) HelpTooltip(termKey: glossaryKey!),
+          ],
         ),
         Text(
           value,

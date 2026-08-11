@@ -27,7 +27,7 @@ fianceAI é uma plataforma multi-tenant de análise de investimentos focada na B
   - `news.py` — coleta de notícias (RSS).
 - **`core/`** — `config.py` (Pydantic Settings, universo hardcoded de fallback), `database.py` (engine SQLAlchemy, `init_db()`), `auth.py` (validação de ID token Google contra múltiplos `aud` permitidos, emissão de JWT HS256 próprio com TTL 30 dias), `cache.py`, `context.py` (contexto do usuário da request), `universe.py` (universo dinâmico via BRAPI `/quote/list`).
 - **`llm/gemini_client.py`** — dois usos do Gemini: `explain_portfolio()` (explicação textual da carteira, `gemini-2.0-flash`, disclaimer obrigatório) e `analyze_news_sentiment()` (sentimento de notícias, `gemini-flash-lite-latest` com fallback, parsing robusto de JSON com heurística de palavras-chave se falhar).
-- **`models/db_models.py`** — ORM: `User`, `PortfolioPosition` (PK composta `user_id+ticker`), `PortfolioSnapshot` (histórico diário, purga após 365 dias), `WatchlistItemDb`, `GoalDb`, `SectorGoalDb`, `PreferencesDb` (inclui `desired_yield_stock/fii/int`), `PriceAlertDb`.
+- **`models/db_models.py`** — ORM: `User`, `PortfolioPosition` (PK composta `user_id+ticker`), `PortfolioSnapshot` (histórico diário, purga após 365 dias), `WatchlistItemDb`, `GoalDb`, `SectorGoalDb`, `PreferencesDb` (inclui `desired_yield_stock/fii/int`), `PriceAlertDb`, `ClosedTradeDb` (histórico de vendas — lucro/prejuízo realizado, IR).
 - **`optimizer/`** — `allocator.py`, `cost_calculator.py`, `portfolio.py`: otimização de alocação de carteira.
 - **`repositories/`** — fachada fina (`PortfolioRepository`, `AssetRepository`) sobre `storage/portfolio_store.py`.
 - **`storage/portfolio_store.py`** — persistência real via SQLAlchemy `Session`. Todo método resolve `user_id` via `_session()` (contexto da request) e garante (`_ensure_user`) merge automático do usuário antes de qualquer operação — é aqui que o multi-tenancy é aplicado.
@@ -48,7 +48,7 @@ Autenticados (JWT obrigatório via `Depends(get_current_user)`):
 | GET | `/dividends/ranking` | `dividends.py` ⚠️ ver Débito Técnico |
 | GET/PUT | `/goals`, `/sector-goals` | `goals.py` |
 | GET | `/opportunities` | `opportunities.py` |
-| POST/GET/PUT/DELETE | `/portfolio*` | `portfolio_routes.py` |
+| POST/GET/PUT/DELETE | `/portfolio*`, `POST /portfolio/sell`, `GET /portfolio/trades` | `portfolio_routes.py` |
 | GET/PUT | `/preferences` | `preferences.py` |
 | POST | `/projection/passive-income`, `/projection/sector-allocation` | `projection.py` |
 | POST | `/quick-invest` | `quick_invest.py` |

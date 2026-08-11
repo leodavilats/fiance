@@ -14,6 +14,7 @@ class PortfolioPosition {
     required this.categoryResolved,
     required this.dividendYield,
     required this.sector,
+    this.reasons = const [],
   });
 
   final String ticker;
@@ -30,6 +31,7 @@ class PortfolioPosition {
   final String categoryResolved;
   final double? dividendYield;
   final String? sector;
+  final List<String> reasons;
 
   factory PortfolioPosition.fromJson(Map<String, dynamic> j) =>
       PortfolioPosition(
@@ -47,6 +49,9 @@ class PortfolioPosition {
         categoryResolved: j['category_resolved'] as String? ?? 'trade',
         dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
         sector: j['sector'] as String?,
+        reasons:
+            (j['reasons'] as List?)?.map((e) => e as String).toList() ??
+            const [],
       );
 }
 
