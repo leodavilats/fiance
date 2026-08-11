@@ -70,23 +70,23 @@ class ConfigScreen extends ConsumerWidget {
     try {
       final result = await ref.read(apiRepositoryProvider).sendTestNotification();
       final tokensFound = result['tokens_found'] as int? ?? 0;
+      final firebaseConfigured = result['firebase_configured'] as bool? ?? false;
+
+      String message;
       if (tokensFound == 0) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Nenhum dispositivo registrado — o token de notificação não chegou a ser salvo no servidor.',
-            ),
-          ),
-        );
+        message =
+            'Nenhum dispositivo registrado — o token de notificação não chegou a ser salvo no servidor.';
+      } else if (!firebaseConfigured) {
+        message =
+            'O servidor NÃO tem a credencial do Firebase configurada — a notificação foi só simulada, nunca vai chegar. Configure FIREBASE_SERVICE_ACCOUNT_JSON no ambiente do backend.';
       } else {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              'Enviado para $tokensFound dispositivo(s). Se não chegar em ~1 min, é problema de credencial no servidor.',
-            ),
-          ),
-        );
+        message =
+            'Enviado de verdade para $tokensFound dispositivo(s) — deve chegar em poucos segundos.';
       }
+
+      messenger.showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 6)),
+      );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Erro ao enviar: $e')));
     }

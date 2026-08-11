@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from app.notifications import send_push
+from app.notifications import is_configured, send_push
 from app.repositories import PortfolioRepository
 
 router = APIRouter()
@@ -17,6 +17,7 @@ class DeviceTokenRequest(BaseModel):
 class TestNotificationResponse(BaseModel):
     tokens_found: int
     invalid_tokens: int
+    firebase_configured: bool
 
 
 @router.post("/notifications/register-token", status_code=204)
@@ -40,4 +41,8 @@ async def send_test_notification() -> TestNotificationResponse:
     )
     for token in invalid:
         portfolio_repo.unregister_device_token(token)
-    return TestNotificationResponse(tokens_found=len(tokens), invalid_tokens=len(invalid))
+    return TestNotificationResponse(
+        tokens_found=len(tokens),
+        invalid_tokens=len(invalid),
+        firebase_configured=is_configured(),
+    )

@@ -25,3 +25,15 @@ def test_send_push_without_credentials_is_noop(monkeypatch):
 
 def test_send_push_with_no_tokens_is_noop():
     assert push.send_push([], "Título", "Corpo") == []
+
+
+def test_is_configured_false_without_credentials(monkeypatch):
+    class _FakeSettings:
+        firebase_service_account_json = ""
+
+    monkeypatch.setattr(push, "get_settings", lambda: _FakeSettings())
+    _reset_firebase_app_cache()
+    try:
+        assert push.is_configured() is False
+    finally:
+        _reset_firebase_app_cache()

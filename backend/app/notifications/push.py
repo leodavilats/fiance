@@ -40,6 +40,10 @@ def _get_firebase_app():
     return _firebase_app
 
 
+def is_configured() -> bool:
+    return _get_firebase_app() is not None
+
+
 def send_push(
     tokens: list[str],
     title: str,

@@ -1,3 +1,3 @@
-from .push import send_push
+from .push import is_configured, send_push
 
-__all__ = ["send_push"]
+__all__ = ["is_configured", "send_push"]
