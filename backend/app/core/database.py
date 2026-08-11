@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from sqlalchemy import create_engine
+import logging
+
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.config import get_settings
+
+logger = logging.getLogger("fianceai.database")
 
 
 class Base(DeclarativeBase):
@@ -29,3 +33,53 @@ def init_db() -> None:
     from app.models import db_models  # noqa: F401 — registra os modelos no Base
 
     Base.metadata.create_all(bind=engine)
+    _add_missing_columns()
+
+
+def _add_missing_columns() -> None:
+    """Sem Alembic: `create_all()` só cria tabelas que ainda não existem —
+    nunca adiciona colunas novas a uma tabela já existente. Isso quebra toda
+    vez que um modelo ganha um campo novo (ex.: `notify_price_alerts` em
+    `PreferencesDb`) contra um banco (dev ou produção) criado antes dessa
+    mudança. Este helper cobre esse caso: para cada coluna do model ausente
+    na tabela real, faz `ALTER TABLE ... ADD COLUMN`, com `DEFAULT` quando o
+    valor padrão do model é um escalar simples (bool/int/float/str) — sem
+    isso, adicionar uma coluna NOT NULL numa tabela com linhas existentes
+    falha tanto no SQLite quanto no Postgres.
+    """
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue
+
+            existing_columns = {c["name"] for c in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in existing_columns:
+                    continue
+
+                col_type = column.type.compile(dialect=engine.dialect)
+                default_sql = ""
+                default = column.default
+                if default is not None and getattr(default, "is_scalar", False):
+                    value = default.arg
+                    if isinstance(value, bool):
+                        default_sql = f" DEFAULT {1 if value else 0}"
+                    elif isinstance(value, int | float):
+                        default_sql = f" DEFAULT {value}"
+                    elif isinstance(value, str):
+                        default_sql = f" DEFAULT '{value}'"
+
+                # NOT NULL só é seguro se temos um valor pra preencher as
+                # linhas já existentes; caso contrário, deixa a coluna
+                # nullable (evita quebrar em tabelas não-vazias).
+                not_null_sql = " NOT NULL" if (not column.nullable and default_sql) else ""
+
+                ddl = (
+                    f'ALTER TABLE "{table.name}" '
+                    f'ADD COLUMN "{column.name}" {col_type}{default_sql}{not_null_sql}'
+                )
+                conn.execute(text(ddl))
+                logger.info("Migração leve: %s.%s adicionada", table.name, column.name)
