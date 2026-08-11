@@ -76,6 +76,23 @@ def create_app() -> FastAPI:
 
         asyncio.create_task(_warm_up_opportunities())
 
+        async def _notification_loop() -> None:
+            from app.services.notification_job import run_notification_cycle
+
+            # Espera o warm-up de oportunidades preencher o cache antes do
+            # primeiro ciclo, evitando pagar o scan completo duas vezes.
+            await asyncio.sleep(60)
+            while True:
+                try:
+                    await run_notification_cycle()
+                except Exception:
+                    logging.getLogger("fianceai").warning(
+                        "Falha no ciclo de notificações", exc_info=True
+                    )
+                await asyncio.sleep(15 * 60)
+
+        asyncio.create_task(_notification_loop())
+
     return app
 
 

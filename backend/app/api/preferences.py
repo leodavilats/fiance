@@ -21,5 +21,7 @@ async def save_preferences(req: PreferencesRequest) -> Preferences:
         req.desired_yield_stock,
         req.desired_yield_fii,
         req.desired_yield_int,
+        req.notify_price_alerts,
+        req.notify_new_opportunities,
     )
     return Preferences(**portfolio_repo.get_preferences())

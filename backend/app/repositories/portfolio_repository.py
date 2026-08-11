@@ -75,6 +75,8 @@ class PortfolioRepository:
         desired_yield_stock: float | None = None,
         desired_yield_fii: float | None = None,
         desired_yield_int: float | None = None,
+        notify_price_alerts: bool | None = None,
+        notify_new_opportunities: bool | None = None,
     ) -> None:
         portfolio_store.set_preferences(
             cash_available,
@@ -82,7 +84,29 @@ class PortfolioRepository:
             desired_yield_stock,
             desired_yield_fii,
             desired_yield_int,
+            notify_price_alerts,
+            notify_new_opportunities,
         )
+
+    @staticmethod
+    def register_device_token(token: str, platform: str = "android") -> None:
+        portfolio_store.register_device_token(token, platform)
+
+    @staticmethod
+    def unregister_device_token(token: str) -> None:
+        portfolio_store.unregister_device_token(token)
+
+    @staticmethod
+    def list_all_device_tokens() -> list[dict]:
+        return portfolio_store.list_all_device_tokens()
+
+    @staticmethod
+    def get_notified_opportunity_tickers(user_id: str) -> set[str]:
+        return portfolio_store.get_notified_opportunity_tickers(user_id)
+
+    @staticmethod
+    def mark_opportunities_notified(user_id: str, tickers: list[str]) -> None:
+        portfolio_store.mark_opportunities_notified(user_id, tickers)
 
     @staticmethod
     def list_sector_goals() -> list[dict]:

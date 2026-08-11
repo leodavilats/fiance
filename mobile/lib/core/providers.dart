@@ -4,6 +4,7 @@ import 'api_client.dart';
 import 'api_repository.dart';
 import 'auth_service.dart';
 import 'models.dart';
+import 'notifications_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(apiBaseUrl: apiBaseUrl);
@@ -15,6 +16,10 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 
 final apiRepositoryProvider = Provider<ApiRepository>((ref) {
   return ApiRepository(ref.watch(apiClientProvider).dio);
+});
+
+final notificationsServiceProvider = Provider<NotificationsService>((ref) {
+  return NotificationsService(ref.watch(apiRepositoryProvider));
 });
 
 final currentUserProvider = StateProvider<AppUser?>((ref) => null);

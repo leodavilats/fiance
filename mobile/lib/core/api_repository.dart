@@ -81,12 +81,16 @@ class ApiRepository {
   Future<Preferences> savePreferences({
     required double cashAvailable,
     double? passiveIncomeGoal,
+    bool? notifyPriceAlerts,
+    bool? notifyNewOpportunities,
   }) async {
     final res = await _dio.put(
       '/preferences',
       data: {
         'cash_available': cashAvailable,
         'passive_income_goal': passiveIncomeGoal,
+        'notify_price_alerts': notifyPriceAlerts,
+        'notify_new_opportunities': notifyNewOpportunities,
       },
     );
     return Preferences.fromJson(res.data as Map<String, dynamic>);
@@ -227,5 +231,22 @@ class ApiRepository {
 
   Future<void> deleteAlert(int id) async {
     await _dio.delete('/alerts/$id');
+  }
+
+  Future<void> registerDeviceToken({
+    required String token,
+    required String platform,
+  }) async {
+    await _dio.post(
+      '/notifications/register-token',
+      data: {'token': token, 'platform': platform},
+    );
+  }
+
+  Future<void> unregisterDeviceToken(String token) async {
+    await _dio.delete(
+      '/notifications/register-token',
+      queryParameters: {'token': token},
+    );
   }
 }

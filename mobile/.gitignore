@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase — segredo por projeto/desenvolvedor, nunca commitar.
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist

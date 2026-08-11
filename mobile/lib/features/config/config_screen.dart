@@ -125,6 +125,39 @@ class ConfigScreen extends ConsumerWidget {
                       '${formatCurrency(prefs.passiveIncomeGoal)}/mês',
                     ),
                   ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(Icons.notifications_active_outlined),
+                  title: const Text('Notificar alertas de preço'),
+                  value: prefs.notifyPriceAlerts,
+                  onChanged: (v) async {
+                    await ref
+                        .read(apiRepositoryProvider)
+                        .savePreferences(
+                          cashAvailable: prefs.cashAvailable,
+                          passiveIncomeGoal: prefs.passiveIncomeGoal,
+                          notifyPriceAlerts: v,
+                          notifyNewOpportunities: prefs.notifyNewOpportunities,
+                        );
+                    ref.invalidate(preferencesProvider);
+                  },
+                ),
+                SwitchListTile(
+                  secondary: const Icon(Icons.auto_awesome_outlined),
+                  title: const Text('Notificar novas oportunidades'),
+                  value: prefs.notifyNewOpportunities,
+                  onChanged: (v) async {
+                    await ref
+                        .read(apiRepositoryProvider)
+                        .savePreferences(
+                          cashAvailable: prefs.cashAvailable,
+                          passiveIncomeGoal: prefs.passiveIncomeGoal,
+                          notifyPriceAlerts: prefs.notifyPriceAlerts,
+                          notifyNewOpportunities: v,
+                        );
+                    ref.invalidate(preferencesProvider);
+                  },
+                ),
               ],
             ),
           ),

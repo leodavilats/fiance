@@ -10,6 +10,7 @@ from . import (
     dashboard,
     dip_scanner,
     goals,
+    notifications,
     opportunities,
     portfolio_routes,
     preferences,
@@ -45,6 +46,7 @@ protected.include_router(quick_invest.router, tags=["Quick Invest"])
 protected.include_router(alerts.router, tags=["Alerts"])
 protected.include_router(sectors.router, tags=["Sectors"])
 protected.include_router(watchlist.router, tags=["Watchlist"])
+protected.include_router(notifications.router, tags=["Notifications"])
 
 router.include_router(protected)
 

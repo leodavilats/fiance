@@ -77,6 +77,8 @@ class PreferencesDb(Base):
     desired_yield_stock: Mapped[float] = mapped_column(Float, default=0.06)
     desired_yield_fii: Mapped[float] = mapped_column(Float, default=0.10)
     desired_yield_int: Mapped[float] = mapped_column(Float, default=0.04)
+    notify_price_alerts: Mapped[bool] = mapped_column(default=True)
+    notify_new_opportunities: Mapped[bool] = mapped_column(default=True)
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 
@@ -95,6 +97,24 @@ class ClosedTradeDb(Base):
     ir_amount: Mapped[float] = mapped_column(Float)
     net_profit: Mapped[float] = mapped_column(Float)
     sold_at: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[float] = mapped_column(Float)
+
+
+class NotifiedOpportunityDb(Base):
+    __tablename__ = "notified_opportunities"
+
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    ticker: Mapped[str] = mapped_column(String, primary_key=True)
+    notified_at: Mapped[float] = mapped_column(Float)
+
+
+class DeviceTokenDb(Base):
+    __tablename__ = "device_tokens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    token: Mapped[str] = mapped_column(String, unique=True, index=True)
+    platform: Mapped[str] = mapped_column(String, default="android")
     created_at: Mapped[float] = mapped_column(Float)
 
 

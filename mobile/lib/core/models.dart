@@ -563,6 +563,8 @@ class Preferences {
     required this.desiredYieldStock,
     required this.desiredYieldFii,
     required this.desiredYieldInt,
+    this.notifyPriceAlerts = true,
+    this.notifyNewOpportunities = true,
   });
 
   final double cashAvailable;
@@ -570,6 +572,8 @@ class Preferences {
   final double desiredYieldStock;
   final double desiredYieldFii;
   final double desiredYieldInt;
+  final bool notifyPriceAlerts;
+  final bool notifyNewOpportunities;
 
   factory Preferences.fromJson(Map<String, dynamic> j) => Preferences(
     cashAvailable: (j['cash_available'] as num).toDouble(),
@@ -577,5 +581,7 @@ class Preferences {
     desiredYieldStock: (j['desired_yield_stock'] as num).toDouble(),
     desiredYieldFii: (j['desired_yield_fii'] as num).toDouble(),
     desiredYieldInt: (j['desired_yield_int'] as num).toDouble(),
+    notifyPriceAlerts: j['notify_price_alerts'] as bool? ?? true,
+    notifyNewOpportunities: j['notify_new_opportunities'] as bool? ?? true,
   );
 }

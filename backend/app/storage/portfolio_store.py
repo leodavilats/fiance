@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from contextlib import contextmanager
+from datetime import UTC
 from typing import TypedDict
 
 from sqlalchemy import delete, func, select
@@ -10,7 +11,9 @@ from app.core.context import get_current_user_id
 from app.core.database import SessionLocal, init_db
 from app.models.db_models import (
     ClosedTradeDb,
+    DeviceTokenDb,
     GoalDb,
+    NotifiedOpportunityDb,
     PortfolioPosition,
     PortfolioSnapshot,
     PreferencesDb,
@@ -59,7 +62,16 @@ class Preferences(TypedDict):
     desired_yield_stock: float
     desired_yield_fii: float
     desired_yield_int: float
+    notify_price_alerts: bool
+    notify_new_opportunities: bool
     updated_at: float
+
+
+class DeviceToken(TypedDict):
+    id: int
+    user_id: str
+    token: str
+    platform: str
 
 
 class WatchlistItemRow(TypedDict):
@@ -242,9 +254,9 @@ def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None)
     """Soma o valor bruto (quantity*sell_price) de vendas já registradas na
     mesma categoria dentro do mês corrente — usado para a isenção mensal de IR."""
     now = time.time()
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    dt = datetime.fromtimestamp(now, tz=timezone.utc)
+    dt = datetime.fromtimestamp(now, tz=UTC)
     month_start = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp()
 
     with _session(user_id) as (session, uid):
@@ -435,6 +447,8 @@ def get_preferences(user_id: str | None = None) -> Preferences:
                 desired_yield_stock=row.desired_yield_stock,
                 desired_yield_fii=row.desired_yield_fii,
                 desired_yield_int=row.desired_yield_int,
+                notify_price_alerts=row.notify_price_alerts,
+                notify_new_opportunities=row.notify_new_opportunities,
                 updated_at=row.updated_at,
             )
 
@@ -444,6 +458,8 @@ def get_preferences(user_id: str | None = None) -> Preferences:
         desired_yield_stock=0.06,
         desired_yield_fii=0.10,
         desired_yield_int=0.04,
+        notify_price_alerts=True,
+        notify_new_opportunities=True,
         updated_at=0.0,
     )
 
@@ -454,6 +470,8 @@ def set_preferences(
     desired_yield_stock: float | None = None,
     desired_yield_fii: float | None = None,
     desired_yield_int: float | None = None,
+    notify_price_alerts: bool | None = None,
+    notify_new_opportunities: bool | None = None,
     user_id: str | None = None,
 ) -> None:
     now = time.time()
@@ -469,6 +487,12 @@ def set_preferences(
                 else 0.06,
                 desired_yield_fii=desired_yield_fii if desired_yield_fii is not None else 0.10,
                 desired_yield_int=desired_yield_int if desired_yield_int is not None else 0.04,
+                notify_price_alerts=notify_price_alerts
+                if notify_price_alerts is not None
+                else True,
+                notify_new_opportunities=notify_new_opportunities
+                if notify_new_opportunities is not None
+                else True,
                 updated_at=now,
             )
             session.add(row)
@@ -481,7 +505,62 @@ def set_preferences(
                 row.desired_yield_fii = desired_yield_fii
             if desired_yield_int is not None:
                 row.desired_yield_int = desired_yield_int
+            if notify_price_alerts is not None:
+                row.notify_price_alerts = notify_price_alerts
+            if notify_new_opportunities is not None:
+                row.notify_new_opportunities = notify_new_opportunities
             row.updated_at = now
+
+
+def register_device_token(token: str, platform: str = "android", user_id: str | None = None) -> None:
+    """Registra (ou realoca, se outro usuário tinha o mesmo token — ex.:
+    troca de conta no mesmo aparelho) um token FCM para o usuário atual."""
+    with _session(user_id) as (session, uid):
+        existing = session.scalar(select(DeviceTokenDb).where(DeviceTokenDb.token == token))
+        if existing is not None:
+            existing.user_id = uid
+            existing.platform = platform
+        else:
+            session.add(
+                DeviceTokenDb(
+                    user_id=uid, token=token, platform=platform, created_at=time.time()
+                )
+            )
+
+
+def unregister_device_token(token: str, user_id: str | None = None) -> None:
+    with _session(user_id) as (session, uid):
+        session.execute(
+            delete(DeviceTokenDb).where(
+                DeviceTokenDb.user_id == uid, DeviceTokenDb.token == token
+            )
+        )
+
+
+def list_all_device_tokens() -> list[DeviceToken]:
+    """Todos os tokens de todos os usuários — usado pelo job de notificações."""
+    with _session(DEFAULT_USER) as (session, _uid):
+        rows = session.scalars(select(DeviceTokenDb)).all()
+        return [
+            DeviceToken(id=r.id, user_id=r.user_id, token=r.token, platform=r.platform)
+            for r in rows
+        ]
+
+
+def get_notified_opportunity_tickers(user_id: str) -> set[str]:
+    with _session(user_id) as (session, uid):
+        rows = session.scalars(
+            select(NotifiedOpportunityDb.ticker).where(NotifiedOpportunityDb.user_id == uid)
+        ).all()
+        return set(rows)
+
+
+def mark_opportunities_notified(user_id: str, tickers: list[str]) -> None:
+    now = time.time()
+    with _session(user_id) as (session, uid):
+        for ticker in tickers:
+            if session.get(NotifiedOpportunityDb, (uid, ticker)) is None:
+                session.add(NotifiedOpportunityDb(user_id=uid, ticker=ticker, notified_at=now))
 
 
 def list_sector_goals(user_id: str | None = None) -> list[SectorGoal]:

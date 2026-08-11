@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,7 +6,15 @@ import 'core/router.dart';
 import 'core/theme.dart';
 import 'core/theme_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    // Sem google-services.json configurado (ex.: build local sem Firebase)
+    // o app deve continuar funcionando normalmente, só sem push.
+    debugPrint('Firebase não inicializado: $e');
+  }
   runApp(const ProviderScope(child: FianceAIApp()));
 }
 
