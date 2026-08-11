@@ -52,8 +52,6 @@ async def dip_scanner_stream(
     top: int = Query(12, ge=1, le=30),
     category: str | None = Query(None),
 ) -> StreamingResponse:
-    """SSE endpoint: retorna itens do dip scanner progressivamente conforme são processados."""
-
     async def event_generator():
         found = 0
         scanned = 0

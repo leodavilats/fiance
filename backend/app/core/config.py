@@ -26,9 +26,6 @@ class Settings(BaseSettings):
 
     finnhub_api_key: str = ""
 
-    # JSON completo da chave de conta de serviço do Firebase (Project Settings
-    # → Service Accounts → Generate new private key), como string. Sem isso,
-    # o envio de push é apenas logado (ver notifications/push.py).
     firebase_service_account_json: str = ""
 
     default_universe: str = (

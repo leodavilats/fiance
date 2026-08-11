@@ -765,7 +765,6 @@
   </div>
 }
 
-<!-- Modal de venda -->
 @if (sellModal(); as modal) {
   <div
     class="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4"
@@ -831,7 +830,6 @@
   </div>
 }
 
-<!-- Operações encerradas -->
 @if (closedTrades(); as ct) {
   @if (ct.trades.length > 0) {
     <div class="mt-6 p-4 sm:p-5 rounded-xl border border-border" style="background: var(--panel)">

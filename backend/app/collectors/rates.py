@@ -1,9 +1,3 @@
-"""Taxas de referência (CDI, Selic, IPCA) via API pública do Banco Central (SGS).
-
-Sem chave de API. Resultado é cacheado por 24h; em caso de falha, cai para
-estimativas conservadoras — o app nunca quebra por indisponibilidade do BCB.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -37,7 +31,6 @@ def _fetch_series(client: httpx.Client, sid: int) -> float | None:
 
 
 def get_rates() -> dict:
-    """Retorna {cdi_anual, selic_anual, ipca_anual, source}. `source` = 'bcb' | 'estimativa'."""
     cached = cache.get(_CACHE_KEY)
     if cached:
         return cached

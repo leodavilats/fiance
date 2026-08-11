@@ -26,13 +26,9 @@ def calculate_sell_cost(
     avg_price: float,
     gross_value_month_before: float = 0.0,
 ) -> TransactionCost:
-    """Calcula lucro/IR de uma venda.
-
-    `gross_value_month_before` é a soma do valor bruto (quantity*sell_price)
-    de outras vendas já realizadas na mesma categoria dentro do mês corrente
-    — usado para aplicar corretamente as isenções mensais (R$20k ações BR,
-    R$35k cripto) sobre o ACUMULADO do mês, não por transação isolada.
-    """
+    # gross_value_month_before é o acumulado bruto de vendas já feitas no mês
+    # nesta categoria — as isenções (R$20k ações BR, R$35k cripto) valem sobre
+    # o total do mês, não por transação isolada.
     gross_value = quantity * sell_price
     cost_basis = quantity * avg_price
     gross_profit = gross_value - cost_basis

@@ -15,15 +15,10 @@ _UNIVERSE_CACHE_KEY = "brapi_universe_v1"
 _STOCKS_RAW_CACHE_KEY = "brapi_stocks_raw_v1"
 _UNIVERSE_TTL = 24 * 3600
 
-# Lotes fracionários (ex.: PETR4F) são o mesmo ativo do ticker "cheio"
-# (PETR4) negociado em quantidade fracionada — mesmo fundamento, mesmo
-# preço-base. Sem filtrar, competem pelas vagas do top-N como se fossem
-# ativos distintos.
+# PETR4F etc. são lotes fracionários do mesmo ativo "cheio" (PETR4); sem
+# filtrar, competem pelas vagas do top-N como se fossem ativos distintos.
 _FRACTIONAL_LOT = re.compile(r"^[A-Z]{4}\d{1,2}F$")
 
-# Ações americanas e cripto não vêm da BRAPI (Finnhub/CoinGecko não têm um
-# endpoint de "listar tudo" prático) — mantidos como uma lista curta e
-# curada manualmente.
 CURATED_US_NAMES = {
     "AAPL": "Apple Inc.",
     "MSFT": "Microsoft Corp.",
@@ -68,10 +63,6 @@ def _fetch_brapi_list() -> list[dict]:
 
 
 def _get_brapi_stocks_cached() -> list[dict]:
-    """/quote/list completo, cacheado — usado tanto para montar o universo
-    quanto para o mapa de setores (é a única fonte que traz `sector`; o
-    endpoint de cotação individual não devolve esse campo)."""
-
     cached = cache.get(_STOCKS_RAW_CACHE_KEY)
     if cached is not None:
         return cached
@@ -83,10 +74,6 @@ def _get_brapi_stocks_cached() -> list[dict]:
 
 
 def get_sector_map() -> dict[str, str]:
-    """Ticker (sem sufixo) → setor bruto da BRAPI (taxonomia em inglês,
-    tipo 'Finance', 'Technology Services'). Tradução pro português fica a
-    cargo do frontend (UiHelperService.translateSector)."""
-
     stocks = _get_brapi_stocks_cached()
     return {s["stock"]: s["sector"] for s in stocks if s.get("stock") and s.get("sector")}
 
@@ -94,12 +81,6 @@ def get_sector_map() -> dict[str, str]:
 def _build_brapi_universe(
     max_stocks: int = 150, max_fiis: int = 60, max_bdrs: int = 40
 ) -> list[str]:
-    """Monta o universo de ações/FIIs/BDRs a partir de TODOS os tickers
-    negociados na B3 (endpoint /quote/list da BRAPI), sem curadoria manual —
-    ordenado por relevância (market cap / volume) e limitado por categoria
-    para manter o tempo de varredura sob controle (~300 tickers no total,
-    igual ao universo estático anterior)."""
-
     stocks = _get_brapi_stocks_cached()
     if not stocks:
         return []
@@ -125,10 +106,6 @@ def _build_brapi_universe(
 
 
 def get_universe() -> list[str]:
-    """Universo completo (B3 dinâmico via BRAPI + US/cripto curados).
-    Cacheado por 24h — a composição da B3 não muda de um dia pro outro.
-    Se a BRAPI falhar, cai para o DEFAULT_UNIVERSE estático (.env)."""
-
     cached = cache.get(_UNIVERSE_CACHE_KEY)
     if cached is not None:
         return cached
@@ -144,10 +121,6 @@ def get_universe() -> list[str]:
 
 
 def search_universe(query: str, limit: int = 10) -> list[dict]:
-    """Busca ticker+nome por prefixo/substring — usado pelo autocomplete de
-    ticker no web/mobile. Varre TODA a lista de ações/FIIs/BDRs da B3 (não só
-    o universo curado/limitado de `get_universe()`), mais as listas curadas
-    de ações US e cripto."""
     q = query.strip().upper()
     if not q:
         return []
@@ -171,7 +144,5 @@ def search_universe(query: str, limit: int = 10) -> list[dict]:
             seen.add(ticker)
             results.append({"ticker": ticker, "name": name})
 
-    # Prioriza tickers que começam com a busca sobre matches no meio da
-    # string/nome, depois ordem alfabética.
     results.sort(key=lambda r: (not r["ticker"].startswith(q), r["ticker"]))
     return results[:limit]

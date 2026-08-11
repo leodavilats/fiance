@@ -73,6 +73,8 @@ class _AssetDetailContent extends ConsumerWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             childAspectRatio: 2.6,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
             children: [
               _StatCard(label: 'Preço atual', value: formatCurrency(a.price)),
               _StatCard(
@@ -169,10 +171,12 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: isDark ? AppColors.darkPanel2 : AppColors.lightPanel2,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -181,9 +185,15 @@ class _StatCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? AppColors.darkMuted : AppColors.lightMuted,
+            ),
           ),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface),
+          ),
         ],
       ),
     );

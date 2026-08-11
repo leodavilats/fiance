@@ -11,7 +11,6 @@ DEFAULT_DESIRED_YIELD = DESIRED_YIELD_STOCK
 
 
 def desired_yield_for(asset_type: str, prefs: dict | None = None) -> float:
-    """Meta de dividend yield (Bazin) para o tipo de ativo, respeitando as preferências."""
     stock = DESIRED_YIELD_STOCK
     fii = DESIRED_YIELD_FII
     intl = DESIRED_YIELD_INTERNATIONAL
@@ -149,13 +148,6 @@ def dcf_fair_price(
     growth_years: int = 5,
     terminal_pe: float = 15.0,
 ) -> float | None:
-    """DCF simplificado para empresas de crescimento sem histórico de dividendos.
-
-    Usa EPS atual projetado pelo revenue_growth_rate por `growth_years` anos,
-    depois aplica um P/L terminal para estimar valor intrínseco trazido a VP.
-
-    Retorna None se os dados forem insuficientes.
-    """
     if eps is None or eps <= 0:
         return None
 

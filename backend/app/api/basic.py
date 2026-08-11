@@ -20,8 +20,6 @@ async def universe() -> dict:
 
 @router.get("/universe/search")
 async def universe_search(q: str = "", limit: int = 10) -> dict:
-    """Autocomplete de ticker (web/mobile) — busca por prefixo/substring em
-    ticker ou nome da empresa, em todo o universo (não só o curado)."""
     limit = max(1, min(limit, 25))
     return {"items": await asyncio.to_thread(search_universe, q, limit)}
 

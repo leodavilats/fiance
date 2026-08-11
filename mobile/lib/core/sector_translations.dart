@@ -1,5 +1,4 @@
-/// Tradução de nomes de setor — espelha 1:1
-/// `UiHelperService.translateSector()` do web (mesma fonte da verdade).
+// Espelha 1:1 UiHelperService.translateSector() do web — manter em sincronia.
 const Map<String, String> _sectorTranslations = {
   'Financial Services': 'Financeiro',
   'Technology': 'Tecnologia',
@@ -24,8 +23,8 @@ const Map<String, String> _sectorTranslations = {
   'real-estate': 'Imobiliário',
   'telecommunications': 'Telecomunicações',
   'crypto': 'Cripto',
-  // Taxonomia da BRAPI (/quote/list) — diferente da usada pelo yfinance
-  // acima, mapeada pras mesmas categorias em português.
+  // Chaves abaixo usam a taxonomia da BRAPI (/quote/list), diferente da
+  // usada acima — mapeadas pras mesmas categorias em português.
   'Miscellaneous': 'Outros',
   'Finance': 'Financeiro',
   'Technology Services': 'Tecnologia',

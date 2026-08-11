@@ -225,7 +225,6 @@ class DipService:
         top: int = 12,
         category: str | None = None,
     ) -> AsyncGenerator[dict[str, Any], None]:
-        """Versão SSE do scan: produz eventos à medida que cada ticker é processado."""
         if universe:
             tickers = [t.strip().upper() for t in universe.split(",") if t.strip()]
         else:

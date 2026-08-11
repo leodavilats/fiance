@@ -25,11 +25,9 @@ from . import (
 
 router = APIRouter()
 
-# Rotas públicas: health check e login.
 router.include_router(basic.router, tags=["Basic"])
 router.include_router(auth.router, tags=["Auth"])
 
-# Rotas protegidas: exigem usuário autenticado (Google → JWT próprio).
 protected = APIRouter(dependencies=[Depends(get_current_user)])
 protected.include_router(recommendations.router, tags=["Recommendations"])
 protected.include_router(assets.router, tags=["Assets"])

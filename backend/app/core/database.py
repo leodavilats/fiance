@@ -37,16 +37,8 @@ def init_db() -> None:
 
 
 def _add_missing_columns() -> None:
-    """Sem Alembic: `create_all()` só cria tabelas que ainda não existem —
-    nunca adiciona colunas novas a uma tabela já existente. Isso quebra toda
-    vez que um modelo ganha um campo novo (ex.: `notify_price_alerts` em
-    `PreferencesDb`) contra um banco (dev ou produção) criado antes dessa
-    mudança. Este helper cobre esse caso: para cada coluna do model ausente
-    na tabela real, faz `ALTER TABLE ... ADD COLUMN`, com `DEFAULT` quando o
-    valor padrão do model é um escalar simples (bool/int/float/str) — sem
-    isso, adicionar uma coluna NOT NULL numa tabela com linhas existentes
-    falha tanto no SQLite quanto no Postgres.
-    """
+    # Sem Alembic: create_all() nunca adiciona colunas a tabelas já existentes,
+    # então bancos criados antes de um novo campo no model ficam desatualizados.
     inspector = inspect(engine)
     existing_tables = set(inspector.get_table_names())
 
@@ -66,18 +58,14 @@ def _add_missing_columns() -> None:
                 if default is not None and getattr(default, "is_scalar", False):
                     value = default.arg
                     if isinstance(value, bool):
-                        # TRUE/FALSE (não 1/0) — Postgres exige o literal
-                        # booleano certo para uma coluna BOOLEAN; SQLite
-                        # aceita TRUE/FALSE como alias desde a versão 3.23.
+                        # Postgres exige TRUE/FALSE (não 1/0) para coluna BOOLEAN.
                         default_sql = f" DEFAULT {'TRUE' if value else 'FALSE'}"
                     elif isinstance(value, int | float):
                         default_sql = f" DEFAULT {value}"
                     elif isinstance(value, str):
                         default_sql = f" DEFAULT '{value}'"
 
-                # NOT NULL só é seguro se temos um valor pra preencher as
-                # linhas já existentes; caso contrário, deixa a coluna
-                # nullable (evita quebrar em tabelas não-vazias).
+                # NOT NULL só é seguro com DEFAULT pra preencher linhas existentes.
                 not_null_sql = " NOT NULL" if (not column.nullable and default_sql) else ""
 
                 ddl = (

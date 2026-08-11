@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
 
-/// Casca de navegação com as 4 abas espelhando o app web
-/// (Dashboard, Meus Ativos, Mercado, Configurações).
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key, required this.navigationShell});
 
@@ -20,7 +18,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   void initState() {
     super.initState();
     // Chega aqui só com usuário autenticado — momento certo para registrar
-    // o token de push no backend.
+    // o token de push.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationsServiceProvider).init();
     });
@@ -37,8 +35,6 @@ class _AppShellState extends ConsumerState<AppShell> {
           index,
           initialLocation: index == navigationShell.currentIndex,
         ),
-        // Ícones alinhados conceitualmente aos do web (Lucide):
-        // layout-dashboard, briefcase, target, settings.
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),

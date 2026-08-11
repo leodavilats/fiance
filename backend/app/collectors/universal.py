@@ -82,7 +82,6 @@ def detect_type(symbol: str) -> AssetType:
 
 
 def _base_symbol(symbol: str) -> str:
-    """Ticker sem sufixo .SA / -USD, em maiúsculas."""
     s = symbol.strip().upper()
     if s.endswith(".SA"):
         return s[:-3]
@@ -92,7 +91,6 @@ def _base_symbol(symbol: str) -> str:
 
 
 def to_yf_symbol(symbol: str, asset_type: AssetType | None = None) -> str:
-    """Mantido por compat: normaliza o ticker para o padrão B3/cripto usado internamente."""
     s = symbol.strip().upper()
     t = asset_type or detect_type(s)
 
@@ -161,15 +159,9 @@ def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> flo
         return None
 
 
-# --------------------------------------------------------------------------
-# BRAPI — ações B3, FIIs e BDRs (.SA)
-#
-# Uma única chamada combinada (fundamental+dividends+range) traz tudo que
-# fetch_asset/fetch_dividends/fetch_history_universal precisam — evita 3
-# requisições HTTP separadas (e ~3x mais lentas/sujeitas a rate limit) por
-# ticker. O resultado bruto fica em cache e é reaproveitado pelas três.
-# --------------------------------------------------------------------------
-
+# Uma única chamada combinada (fundamental+dividends+range) evita 3 requisições
+# HTTP separadas por ticker; o resultado bruto é reaproveitado por fetch_asset/
+# fetch_dividends/fetch_history_universal via cache.
 _BRAPI_RAW_TTL = FUND_TTL
 
 
@@ -186,11 +178,8 @@ def _brapi_raw(base: str) -> dict:
             params={
                 "token": settings.brapi_token,
                 "fundamental": "true",
-                # "dividends": "true" -> bloqueado no plano gratuito (403
-                # FEATURE_NOT_AVAILABLE). Sem isso não há dividendYield/
-                # dividendsData vindo da BRAPI — ver aviso no README/PR.
-                # O plano gratuito também só permite ranges curtos
-                # (1d, 5d, 1mo, 3mo) — qualquer outro valor retorna 400.
+                # "dividends": "true" bloqueado no plano gratuito (403 FEATURE_NOT_AVAILABLE);
+                # plano gratuito também só aceita ranges curtos (1d/5d/1mo/3mo), outro valor = 400.
                 "range": "3mo",
                 "interval": "1d",
             },
@@ -234,9 +223,7 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
     except Exception:
         pass
 
-    # O endpoint de cotação individual não devolve `sector` no plano
-    # gratuito — busca no mapa construído a partir do /quote/list (que tem
-    # esse campo para praticamente todo ticker da B3).
+    # /quote não devolve `sector` no plano gratuito; usa mapa do /quote/list.
     sector = r.get("sector") or get_sector_map().get(base)
 
     return AssetSnapshot(
@@ -302,11 +289,6 @@ def _dividends_brapi(symbol: str) -> list[dict[str, float]]:
     return sorted(out, key=lambda x: x["date"])
 
 
-# --------------------------------------------------------------------------
-# Finnhub — ações americanas (inclui ticker-mãe de BDRs)
-# --------------------------------------------------------------------------
-
-
 def _fetch_finnhub(symbol: str) -> AssetSnapshot | None:
     settings = get_settings()
     if not settings.finnhub_api_key:
@@ -360,11 +342,6 @@ def _fetch_finnhub(symbol: str) -> AssetSnapshot | None:
         fifty_two_week_high=_safe_float(m.get("52WeekHigh")),
         fifty_two_week_low=_safe_float(m.get("52WeekLow")),
     )
-
-
-# --------------------------------------------------------------------------
-# CoinGecko — criptomoedas
-# --------------------------------------------------------------------------
 
 
 def _fetch_coingecko(symbol: str) -> AssetSnapshot | None:
@@ -446,11 +423,6 @@ def _history_coingecko(symbol: str, period: str = "1y") -> dict[str, float]:
         except Exception:
             continue
     return out
-
-
-# --------------------------------------------------------------------------
-# Dispatcher por tipo de ativo
-# --------------------------------------------------------------------------
 
 
 def _fetch_sync(symbol: str, asset_type: AssetType | None = None) -> AssetSnapshot | None:

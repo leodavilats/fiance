@@ -2,12 +2,6 @@ import 'package:dio/dio.dart';
 
 import 'auth_service.dart';
 
-/// URL base da API FastAPI.
-///
-/// Aponta por padrão para o backend em produção (Railway). Para testar
-/// contra um backend local, rode com:
-///   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api   (emulador Android)
-///   flutter run --dart-define=API_BASE_URL=http://localhost:8000/api  (iOS simulator / web)
 const String apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: 'https://fianceai-production.up.railway.app/api',

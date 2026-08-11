@@ -59,7 +59,6 @@ export class AuthService {
     return raw ? (JSON.parse(raw) as AppUser) : null;
   }
 
-  /** Renderiza o botão "Entrar com Google" dentro do elemento informado. */
   renderGoogleButton(container: HTMLElement): void {
     if (!window.google) {
       // Script do GSI ainda não carregou; tenta novamente em breve.

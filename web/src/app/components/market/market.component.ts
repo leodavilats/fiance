@@ -86,7 +86,6 @@ export class MarketComponent implements OnInit, OnDestroy {
   readonly dipAnalysis = signal<DipAnalysisResponse | null>(null);
   readonly showAnalysis = signal(false);
 
-  // Strategy signals
   strategy = signal<InvestmentStrategy | null>(null);
   analyzeResult = signal<AssetAnalysis | null>(null);
   rfResult = signal<RendaFixaCompareResponse | null>(null);
@@ -95,7 +94,6 @@ export class MarketComponent implements OnInit, OnDestroy {
   quickInvestLoading = signal(false);
   quickInvestError = signal(false);
 
-  // Opportunity filters
   filterText = '';
   filterMinDy: number | null = null;
   filterMinMos: number | null = null;
@@ -106,22 +104,18 @@ export class MarketComponent implements OnInit, OnDestroy {
   readonly pageSize = 24;
   readonly skeletonItems = [1, 2, 3, 4, 5, 6];
 
-  // Dip scanner form
   scanForm = this.fb.nonNullable.group({
     min_score: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
     top: [12, [Validators.required, Validators.min(1), Validators.max(30)]],
     category: [''],
   });
 
-  // Analyze form
   analyzeForm: FormGroup<AnalyzeForm> = this.fb.group({
     symbol: this.fb.control('VALE3', { nonNullable: true, validators: Validators.required }),
   });
 
-  // Renda Fixa forms
   rfForms!: FormArray<FormGroup<RendaFixaForm>>;
 
-  // Quick invest form
   quickInvestForm = this.fb.nonNullable.group({
     cash_available: [1000, [Validators.required, Validators.min(1)]],
     min_order_value: [50, [Validators.required, Validators.min(1)]],
@@ -155,8 +149,6 @@ export class MarketComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  // ── Opportunity filters ──────────────────────────────────────────
 
   private _filterKey(): string {
     return JSON.stringify({
@@ -238,8 +230,6 @@ export class MarketComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ── Dip scanner ──────────────────────────────────────────────────
-
   runScan() {
     if (this.scanForm.invalid) return;
     const { min_score, top, category } = this.scanForm.getRawValue();
@@ -263,8 +253,6 @@ export class MarketComponent implements OnInit, OnDestroy {
     this.showAnalysis.set(false);
     this.dipAnalysis.set(null);
   }
-
-  // ── Strategy / Analyze ───────────────────────────────────────────
 
   submitAnalyze(): void {
     if (this.analyzeForm.invalid) return;
@@ -306,8 +294,6 @@ export class MarketComponent implements OnInit, OnDestroy {
         },
       });
   }
-
-  // ── Renda Fixa ───────────────────────────────────────────────────
 
   private _makeRFGroup(): FormGroup<RendaFixaForm> {
     return this.fb.group<RendaFixaForm>({
@@ -374,8 +360,6 @@ export class MarketComponent implements OnInit, OnDestroy {
       error: () => {},
     });
   }
-
-  // ── Helpers ──────────────────────────────────────────────────────
 
   riskClass(risk: string): string {
     return { Baixo: 'tag-success', Médio: 'tag-warning', Alto: 'tag-danger' }[risk] || 'tag-muted';

@@ -12,10 +12,7 @@ _init_attempted = False
 
 
 def _get_firebase_app():
-    """Inicializa o Firebase Admin SDK sob demanda a partir da chave de conta
-    de serviço em settings.firebase_service_account_json. Retorna None (e loga
-    um aviso, uma única vez) se a credencial não estiver configurada — nesse
-    caso send_push() apenas loga em vez de enviar de verdade."""
+    # Sem credencial configurada, send_push() só loga em vez de enviar de verdade.
     global _firebase_app, _init_attempted
     if _firebase_app is not None or _init_attempted:
         return _firebase_app
@@ -49,14 +46,9 @@ def send_push(
     body: str,
     data: dict[str, str] | None = None,
 ) -> list[str]:
-    """Envia uma notificação push para os tokens informados.
-
-    Retorna a lista de tokens que falharam por serem inválidos/não registrados
-    (o chamador deve removê-los via portfolio_store.unregister_device_token).
-    Se o Firebase não estiver configurado, apenas loga e retorna [] (nenhum
-    token é considerado inválido nesse caso — é uma limitação de ambiente,
-    não do token).
-    """
+    # Retorna [] quando o Firebase não está configurado, mesmo sem erro de
+    # token — é limitação de ambiente, não invalidez do token; o chamador não
+    # deve desregistrar tokens nesse caso.
     if not tokens:
         return []
 

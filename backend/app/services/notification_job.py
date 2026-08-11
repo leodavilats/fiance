@@ -67,7 +67,6 @@ async def _check_new_opportunities(
     if not new_ones:
         return
 
-    # Limita a 3 por ciclo para não inundar o usuário se muitas surgirem juntas.
     to_notify = new_ones[:3]
     for opp in to_notify:
         invalid = send_push(
@@ -83,9 +82,6 @@ async def _check_new_opportunities(
 
 
 async def run_notification_cycle() -> None:
-    """Verifica alertas de preço disparados e novas oportunidades para cada
-    usuário com token de push registrado, e envia as notificações cabíveis.
-    Chamado periodicamente por um loop em background (ver app/main.py)."""
     tokens_by_user: dict[str, list[str]] = {}
     for row in portfolio_store.list_all_device_tokens():
         tokens_by_user.setdefault(row["user_id"], []).append(row["token"])

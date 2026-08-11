@@ -12,7 +12,7 @@ from app.repositories import AssetRepository, PortfolioRepository
 logger = logging.getLogger(__name__)
 
 _SCAN_CACHE_KEY = "opps_full_scan"
-_SCAN_TTL = 20 * 60  # 20min — evita rescanear o universo inteiro a cada request
+_SCAN_TTL = 20 * 60
 _scan_lock = asyncio.Lock()
 
 
@@ -99,16 +99,13 @@ class OpportunityService:
         )
 
     async def _scan_universe(self, prefs: dict) -> tuple[list[Opportunity], int]:
-        """Avalia TODO o universo e cacheia o resultado — evitar rescanear 300+
-        tickers (cada um custando ~1 chamada à BRAPI/Finnhub) a cada request.
-        Compartilhado por /dashboard, /opportunities e /sectors-summary."""
         cached = cache.get(_SCAN_CACHE_KEY)
         if cached is not None:
             opps = [Opportunity(**o) for o in cached["items"]]
             return opps, cached["universe_size"]
 
         async with _scan_lock:
-            # outra request pode ter preenchido o cache enquanto esperávamos o lock
+            # revalida: outra request pode ter preenchido o cache enquanto esperávamos o lock
             cached = cache.get(_SCAN_CACHE_KEY)
             if cached is not None:
                 opps = [Opportunity(**o) for o in cached["items"]]

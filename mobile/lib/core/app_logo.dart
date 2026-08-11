@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Selo da marca: gradiente verde→ciano com o ícone de tendência de alta.
-/// Mesma identidade visual usada no app web (header e tela de login).
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 44});
 

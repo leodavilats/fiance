@@ -24,7 +24,7 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
 
   const isLongRequest = LONG_TIMEOUT_PATTERNS.some(p => req.url.includes(p));
-  const requestTimeout = isLongRequest ? 300_000 : 90_000; // 5min ou 90s
+  const requestTimeout = isLongRequest ? 300_000 : 90_000;
   const canRetry = RETRYABLE_METHODS.includes(req.method) && !isLongRequest;
 
   loading.show();

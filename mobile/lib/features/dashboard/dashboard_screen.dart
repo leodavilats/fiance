@@ -77,8 +77,8 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-/// Agrupa linhas relacionadas dentro de um único Card, com divisores finos
-/// entre elas — evita a repetição visual de "card dentro de card".
+// Agrupa linhas num único Card com divisores para evitar repetição visual
+// de "card dentro de card".
 class _CardGroup extends StatelessWidget {
   const _CardGroup({required this.children});
 

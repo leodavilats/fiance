@@ -54,7 +54,6 @@ async def list_alerts() -> list[AlertResponse]:
 
 @router.get("/alerts/check", response_model=list[AlertTriggered])
 async def check_alerts() -> list[AlertTriggered]:
-    """Return alerts whose price condition is currently met (not yet triggered)."""
     alerts = portfolio_store.list_price_alerts()
     active = [a for a in alerts if a["triggered_at"] is None]
     if not active:

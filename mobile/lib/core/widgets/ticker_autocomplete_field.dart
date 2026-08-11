@@ -6,10 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models.dart';
 import '../providers.dart';
 
-/// Campo de ticker com sugestões (ticker + nome da empresa) enquanto o
-/// usuário digita, buscando em `GET /universe/search`. Pensado para uso
-/// dentro de diálogos — mostra a lista inline (não em overlay), evitando
-/// problemas de posicionamento dentro de um `AlertDialog`.
+// Mostra a lista de sugestões inline (não em overlay) para evitar problemas
+// de posicionamento quando usado dentro de um AlertDialog.
 class TickerAutocompleteField extends ConsumerStatefulWidget {
   const TickerAutocompleteField({
     super.key,

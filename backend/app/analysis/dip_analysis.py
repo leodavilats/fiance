@@ -266,8 +266,6 @@ def _crypto_score(
     last_price: float | None,
     news_items: list,
 ) -> tuple[float, float, float, list[str]]:
-    """Scoring específico para cripto: foco em momentum técnico, distância do topo e sentimento.
-    Retorna (technical_pts, news_pts, value_pts, reasons)."""
     reasons: list[str] = []
 
     tech_pts = 0.0

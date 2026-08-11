@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../glossary.dart';
 
-/// Ícone de ajuda que mostra a explicação de um termo do glossário ao ser
-/// tocado — equivalente mobile do `app-help-tooltip` do web. Toque (em vez
-/// de hover) pois é a interação natural em touch.
+// Toque em vez de hover, pois é a interação natural em touch.
 class HelpTooltip extends StatelessWidget {
   const HelpTooltip({super.key, required this.termKey});
 

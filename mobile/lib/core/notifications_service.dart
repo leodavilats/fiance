@@ -11,9 +11,6 @@ const _androidChannel = AndroidNotificationChannel(
   importance: Importance.high,
 );
 
-/// Inicializa push notifications (Firebase Cloud Messaging) e registra o
-/// token do aparelho no backend. Chamado após o login, quando já existe um
-/// usuário autenticado para associar o token.
 class NotificationsService {
   NotificationsService(this._repo);
 
@@ -51,8 +48,7 @@ class NotificationsService {
       if (token == null) return;
       await _repo.registerDeviceToken(token: token, platform: 'android');
     } catch (e) {
-      // Push é um extra, não deve derrubar o app se falhar (ex.: sem
-      // Google Play Services no emulador, ou backend fora do ar).
+      // Push é um extra, não deve derrubar o app se falhar.
       debugPrint('Falha ao registrar token de notificação: $e');
     }
   }

@@ -75,7 +75,7 @@ export class AssetsComponent implements OnInit {
 
   result = signal<PortfolioEvaluationResponse | null>(null);
   saveState = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  cdiAnual = signal(14.4); // CDI % a.a. — carregado das taxas reais do backend (BCB)
+  cdiAnual = signal(14.4);
   evaluating = signal(false);
   lastEvaluatedAt = signal<number | null>(null);
   lastEvaluatedLabel = computed(() => {
@@ -304,7 +304,6 @@ export class AssetsComponent implements OnInit {
         })
       )
       .subscribe(({ index, items }) => {
-        // Descarta resultado se o usuário já mudou de linha ou apagou o campo.
         if (this.tickerSuggestionsRow() !== index) return;
         this.tickerSuggestions.set(items);
       });
@@ -393,7 +392,6 @@ export class AssetsComponent implements OnInit {
             (trade.ir_amount > 0 ? ` (IR: R$ ${trade.ir_amount.toFixed(2)})` : '')
         );
         this.loadClosedTrades();
-        // Reflete a nova quantidade (ou remoção) da posição no form local.
         const idx = this.portfolioItems
           .getRawValue()
           .findIndex(i => i.ticker.toUpperCase() === position.ticker.toUpperCase());

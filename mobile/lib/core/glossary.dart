@@ -1,5 +1,4 @@
-/// Glossário de termos financeiros — espelha 1:1
-/// `UiHelperService.glossary` do web (mesma fonte da verdade).
+// Espelha 1:1 UiHelperService.glossary do web — manter os dois em sincronia.
 const Map<String, String> glossary = {
   'dy':
       'Dividend Yield — percentual do preço atual pago em dividendos nos últimos 12 meses. '

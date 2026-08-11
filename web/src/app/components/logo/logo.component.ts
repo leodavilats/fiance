@@ -15,11 +15,7 @@ import { LucideAngularModule } from 'lucide-angular';
       [style.width.px]="size()"
       [style.height.px]="size()"
     >
-      <lucide-icon
-        name="trending-up"
-        [size]="size() * 0.56"
-        style="color: #0b0e14"
-      ></lucide-icon>
+      <lucide-icon name="trending-up" [size]="size() * 0.56" style="color: #0b0e14"></lucide-icon>
     </div>
   `,
 })

@@ -231,8 +231,6 @@ def get_position(ticker: str, user_id: str | None = None) -> StoredItem | None:
 
 
 def reduce_position_quantity(ticker: str, sold_qty: float, user_id: str | None = None) -> None:
-    """Decrementa a quantidade de uma posição após uma venda; remove a
-    posição por completo se a quantidade restante for ~zero."""
     t = ticker.strip().upper()
     with _session(user_id) as (session, uid):
         row = session.get(PortfolioPosition, (uid, t))
@@ -251,8 +249,7 @@ def reduce_position_quantity(ticker: str, sold_qty: float, user_id: str | None =
 
 
 def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None) -> float:
-    """Soma o valor bruto (quantity*sell_price) de vendas já registradas na
-    mesma categoria dentro do mês corrente — usado para a isenção mensal de IR."""
+    # usado para aplicar a isenção mensal de IR (R$20k ações BR / R$35k cripto) sobre o acumulado do mês
     now = time.time()
     from datetime import datetime
 
@@ -515,8 +512,7 @@ def set_preferences(
 def register_device_token(
     token: str, platform: str = "android", user_id: str | None = None
 ) -> None:
-    """Registra (ou realoca, se outro usuário tinha o mesmo token — ex.:
-    troca de conta no mesmo aparelho) um token FCM para o usuário atual."""
+    # reatribui o token ao usuário atual mesmo se já pertencia a outro (troca de conta no mesmo aparelho)
     with _session(user_id) as (session, uid):
         existing = session.scalar(select(DeviceTokenDb).where(DeviceTokenDb.token == token))
         if existing is not None:
@@ -536,7 +532,6 @@ def unregister_device_token(token: str, user_id: str | None = None) -> None:
 
 
 def list_all_device_tokens() -> list[DeviceToken]:
-    """Todos os tokens de todos os usuários — usado pelo job de notificações."""
     with _session(DEFAULT_USER) as (session, _uid):
         rows = session.scalars(select(DeviceTokenDb)).all()
         return [

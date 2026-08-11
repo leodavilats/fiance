@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Tokens de design do fianceAI — espelham 1:1 as CSS custom properties
-/// definidas em `web/src/styles.css` (:root[data-theme='dark'|'light']).
-/// Qualquer mudança de cor de marca deve ser feita nos dois lugares.
+// Espelham 1:1 as CSS custom properties de web/src/styles.css
+// (:root[data-theme='dark'|'light']) — mudança de cor de marca precisa ser
+// feita nos dois lugares.
 abstract class AppColors {
-  // Dark (padrão)
   static const darkBg = Color(0xFF0B0E14);
   static const darkPanel = Color(0xFF161B25);
   static const darkPanel2 = Color(0xFF1B2230);
@@ -17,7 +16,6 @@ abstract class AppColors {
   static const darkWarn = Color(0xFFFBBF24);
   static const darkDanger = Color(0xFFF87171);
 
-  // Light
   static const lightBg = Color(0xFFF4F6FB);
   static const lightPanel = Color(0xFFFFFFFF);
   static const lightPanel2 = Color(0xFFF5F7FB);
@@ -30,8 +28,6 @@ abstract class AppColors {
   static const lightDanger = Color(0xFFDC2626);
 }
 
-/// Cor de ganho/perda para o brightness atual — usar no lugar de
-/// Colors.green/Colors.red hardcoded.
 Color gainColor(Brightness b) => b == Brightness.dark ? AppColors.darkAccent : AppColors.lightAccent;
 
 Color lossColor(Brightness b) => b == Brightness.dark ? AppColors.darkDanger : AppColors.lightDanger;

@@ -79,8 +79,7 @@ def create_app() -> FastAPI:
         async def _notification_loop() -> None:
             from app.services.notification_job import run_notification_cycle
 
-            # Espera o warm-up de oportunidades preencher o cache antes do
-            # primeiro ciclo, evitando pagar o scan completo duas vezes.
+            # Espera o warm-up preencher o cache pra não pagar o scan completo 2x.
             await asyncio.sleep(60)
             while True:
                 try:
