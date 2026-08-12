@@ -165,7 +165,6 @@ class DashboardSummary {
     required this.totalCurrent,
     required this.totalPnl,
     required this.totalPnlPct,
-    required this.cashAvailable,
     required this.monthlyDividendsEstimate,
     required this.passiveIncomeGoal,
     required this.passiveIncomeProgress,
@@ -176,7 +175,6 @@ class DashboardSummary {
   final double totalCurrent;
   final double totalPnl;
   final double totalPnlPct;
-  final double cashAvailable;
   final double monthlyDividendsEstimate;
   final double? passiveIncomeGoal;
   final double? passiveIncomeProgress;
@@ -187,7 +185,6 @@ class DashboardSummary {
     totalCurrent: (j['total_current'] as num).toDouble(),
     totalPnl: (j['total_pnl'] as num).toDouble(),
     totalPnlPct: (j['total_pnl_pct'] as num).toDouble(),
-    cashAvailable: (j['cash_available'] as num).toDouble(),
     monthlyDividendsEstimate: (j['monthly_dividends_estimate'] as num)
         .toDouble(),
     passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),

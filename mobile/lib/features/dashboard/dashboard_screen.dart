@@ -312,13 +312,6 @@ class _SummaryCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: _MiniStat(
-                    icon: Icons.account_balance_wallet_outlined,
-                    label: 'Caixa',
-                    value: formatCurrency(summary.cashAvailable),
-                  ),
-                ),
-                Expanded(
-                  child: _MiniStat(
                     icon: Icons.payments_outlined,
                     label: 'Div./mês',
                     value: formatCurrency(summary.monthlyDividendsEstimate),
