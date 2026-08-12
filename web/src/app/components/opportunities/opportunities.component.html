@@ -52,17 +52,6 @@
       />
     </div>
     <div>
-      <label class="block text-xs font-medium text-muted mb-1.5">Caixa (R$)</label>
-      <input
-        type="number"
-        class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-        [value]="cashAvailable()"
-        (change)="updateCash($event)"
-        min="0"
-        step="100"
-      />
-    </div>
-    <div>
       <label class="block text-xs font-medium text-muted mb-1.5">Setor</label>
       <select
         class="w-full px-3 py-2 rounded-lg bg-bg border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer transition-all"
@@ -257,66 +246,79 @@
       <h2 class="text-xl font-bold m-0 text-tx">{{ totalItems() }} oportunidade(s)</h2>
       <div class="text-sm text-muted">Página {{ currentPage() }} de {{ totalPages() }}</div>
     </div>
-    <div class="flex flex-col gap-3">
-      @for (o of opps(); track o.ticker) {
-        <div
-          class="flex justify-between items-start gap-4 p-3 rounded-lg bg-panel-2 border hover:shadow-lg transition-shadow"
-          [class.border-accent]="o.is_interesting"
-          [class.border-border]="!o.is_interesting"
-        >
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap mb-1">
-              @if (o.is_interesting) {
-                <span
-                  class="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-accent text-white"
-                >
-                  <lucide-icon name="trending-up" size="12"></lucide-icon> DESTAQUE
-                </span>
-              }
-              <div class="font-semibold text-base text-tx">{{ o.ticker }}</div>
-              <span class="tag">{{ ui.assetTypeLabel(o.asset_type) }}</span>
-              <span class="tag tag-cat" [class]="'cat-' + o.category_resolved">{{
-                ui.categoryLabel(o.category_resolved)
-              }}</span>
-              <span class="tag" *ngIf="o.in_portfolio">na carteira</span>
-            </div>
-            @if (o.name && o.name !== o.ticker) {
-              <div class="text-sm text-muted mb-2">
-                {{ o.name }}
-                @if (o.sector) {
-                  · {{ ui.translateSector(o.sector) }}
-                }
+    <div class="flex flex-col gap-8">
+      @for (group of groupedOpps(); track group.category) {
+        <div class="flex flex-col gap-3">
+          <h3
+            class="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted m-0 pb-2 border-b border-border"
+          >
+            <span class="tag tag-cat" [class]="'cat-' + group.category">{{
+              ui.categoryLabel(group.category)
+            }}</span>
+            <span class="text-xs font-normal text-muted">{{ group.items.length }} ativo(s)</span>
+          </h3>
+          <div class="flex flex-col gap-4">
+            @for (o of group.items; track o.ticker) {
+              <div
+                class="flex justify-between items-start gap-4 p-4 rounded-lg bg-panel-2 border hover:shadow-lg transition-shadow"
+                [class.border-accent]="o.is_interesting"
+                [class.border-border]="!o.is_interesting"
+              >
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
+                    @if (o.is_interesting) {
+                      <span
+                        class="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-accent text-white"
+                      >
+                        <lucide-icon name="trending-up" size="12"></lucide-icon> DESTAQUE
+                      </span>
+                    }
+                    <div class="font-semibold text-base text-tx">{{ o.ticker }}</div>
+                    <span class="tag">{{ ui.assetTypeLabel(o.asset_type) }}</span>
+                    <span class="tag" *ngIf="o.in_portfolio">na carteira</span>
+                  </div>
+                  @if (o.name && o.name !== o.ticker) {
+                    <div class="text-sm text-muted mb-2">
+                      {{ o.name }}
+                      @if (o.sector) {
+                        · {{ ui.translateSector(o.sector) }}
+                      }
+                    </div>
+                  } @else if (o.sector) {
+                    <div class="text-sm text-muted mb-2">{{ ui.translateSector(o.sector) }}</div>
+                  }
+                  <div class="flex items-center gap-2 flex-wrap text-xs">
+                    <span class="verdict-pill" [class]="ui.verdictClass(o.verdict)">{{
+                      o.label
+                    }}</span>
+                    <span *ngIf="o.margin_of_safety != null" class="text-muted"
+                      >MS: <strong>{{ o.margin_of_safety * 100 | number: '1.0-0' }}%</strong></span
+                    >
+                    <span *ngIf="o.dividend_yield" class="text-muted"
+                      >DY: {{ o.dividend_yield | number: '1.1-1' }}%</span
+                    >
+                    <span class="text-muted">Score: {{ o.score | number: '1.0-0' }}</span>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <div class="text-lg font-bold text-tx">R$ {{ o.price | number: '1.2-2' }}</div>
+                  <div class="text-xs text-muted" *ngIf="o.fair_price">
+                    justo: {{ o.fair_price | number: '1.2-2' }}
+                  </div>
+                  <div class="text-xs text-soft mt-1" *ngIf="o.suggested_quantity">
+                    {{ o.suggested_quantity }} cotas · R$ {{ o.suggested_invest | number: '1.2-2' }}
+                  </div>
+                  <div class="flex gap-1.5 mt-1.5">
+                    <button
+                      class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
+                      (click)="openDipAnalysis(o.ticker)"
+                    >
+                      <lucide-icon name="search" size="12"></lucide-icon> Analisar
+                    </button>
+                  </div>
+                </div>
               </div>
-            } @else if (o.sector) {
-              <div class="text-sm text-muted mb-2">{{ ui.translateSector(o.sector) }}</div>
             }
-            <div class="flex items-center gap-2 flex-wrap text-xs">
-              <span class="verdict-pill" [class]="ui.verdictClass(o.verdict)">{{ o.label }}</span>
-              <span *ngIf="o.margin_of_safety != null" class="text-muted"
-                >MS: <strong>{{ o.margin_of_safety * 100 | number: '1.0-0' }}%</strong></span
-              >
-              <span *ngIf="o.dividend_yield" class="text-muted"
-                >DY: {{ o.dividend_yield | number: '1.1-1' }}%</span
-              >
-              <span class="text-muted">Score: {{ o.score | number: '1.0-0' }}</span>
-            </div>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <div class="text-lg font-bold text-tx">R$ {{ o.price | number: '1.2-2' }}</div>
-            <div class="text-xs text-muted" *ngIf="o.fair_price">
-              justo: {{ o.fair_price | number: '1.2-2' }}
-            </div>
-            <div class="text-xs text-soft mt-1" *ngIf="o.suggested_quantity">
-              {{ o.suggested_quantity }} cotas · R$ {{ o.suggested_invest | number: '1.2-2' }}
-            </div>
-            <div class="flex gap-1.5 mt-1.5">
-              <button
-                class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-                (click)="openDipAnalysis(o.ticker)"
-              >
-                <lucide-icon name="search" size="12"></lucide-icon> Analisar
-              </button>
-            </div>
           </div>
         </div>
       }

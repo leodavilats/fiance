@@ -566,14 +566,36 @@
       <p class="text-sm text-muted mb-4">
         Ação BR (PETR4), FII (HGLG11), EUA (AAPL) ou cripto (BTC, ETH).
       </p>
-      <div>
+      <div class="relative">
         <label class="block text-xs font-medium text-muted mb-1.5">Ticker</label>
         <input
           type="text"
-          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent uppercase"
           formControlName="symbol"
           placeholder="ex.: VALE3"
+          autocomplete="off"
+          (input)="onSymbolInput($any($event.target).value)"
+          (focus)="onSymbolInput($any($event.target).value)"
+          (focusout)="closeSymbolSuggestions()"
         />
+        @if (symbolSuggestionsOpen() && symbolSuggestions().length > 0) {
+          <ul
+            class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-border bg-panel shadow-xl max-h-56 overflow-y-auto text-sm"
+          >
+            @for (s of symbolSuggestions(); track s.ticker) {
+              <li>
+                <button
+                  type="button"
+                  class="w-full text-left px-3 py-2 hover:bg-panel-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                  (mousedown)="$event.preventDefault(); selectSymbolSuggestion(s)"
+                >
+                  <span class="font-semibold text-tx">{{ s.ticker }}</span>
+                  <span class="text-muted text-xs truncate">{{ s.name }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
       </div>
       <div class="flex items-center gap-3 mt-4">
         <button

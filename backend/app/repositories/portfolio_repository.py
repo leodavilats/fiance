@@ -70,7 +70,7 @@ class PortfolioRepository:
 
     @staticmethod
     def set_preferences(
-        cash_available: float,
+        cash_available: float = 0.0,
         passive_income_goal: float | None = None,
         desired_yield_stock: float | None = None,
         desired_yield_fii: float | None = None,

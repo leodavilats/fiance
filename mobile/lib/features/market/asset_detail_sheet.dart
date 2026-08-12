@@ -47,23 +47,28 @@ class _AssetDetailContent extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    a.symbol,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (a.name != null)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      a.name!,
-                      style: TextStyle(color: Colors.grey.shade600),
+                      a.symbol,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                ],
+                    if (a.name != null)
+                      Text(
+                        a.name!,
+                        style: TextStyle(color: Colors.grey.shade600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               _VerdictPill(verdict: a.verdict, label: a.label),
             ],
           ),

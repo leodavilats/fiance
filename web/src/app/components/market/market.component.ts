@@ -11,7 +11,7 @@ import {
 } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AssetAnalysis,
   DipAnalysisResponse,
@@ -24,6 +24,7 @@ import {
   RendaFixaAsset,
   RendaFixaCompareResponse,
   ReferenceRates,
+  TickerSuggestion,
   UiHelperService,
 } from '../../core';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
@@ -114,6 +115,10 @@ export class MarketComponent implements OnInit, OnDestroy {
     symbol: this.fb.control('VALE3', { nonNullable: true, validators: Validators.required }),
   });
 
+  symbolSuggestions = signal<TickerSuggestion[]>([]);
+  symbolSuggestionsOpen = signal(false);
+  private symbolSearch$ = new Subject<string>();
+
   rfForms!: FormArray<FormGroup<RendaFixaForm>>;
 
   quickInvestForm = this.fb.nonNullable.group({
@@ -135,14 +140,34 @@ export class MarketComponent implements OnInit, OnDestroy {
     this.api
       .getReferencRates()
       .subscribe({ next: r => this.referenceRates.set(r), error: () => {} });
-    this.api.getPreferences().subscribe({
-      next: p => {
-        if (p.cash_available > 0) {
-          this.quickInvestForm.patchValue({ cash_available: p.cash_available });
-        }
-      },
-      error: () => {},
-    });
+
+    this.symbolSearch$
+      .pipe(
+        debounceTime(250),
+        switchMap(query => {
+          if (query.trim().length < 1) return [[] as TickerSuggestion[]];
+          return this.api.searchTickers(query).pipe(switchMap(res => [res.items]));
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(items => {
+        this.symbolSuggestions.set(items);
+      });
+  }
+
+  onSymbolInput(value: string): void {
+    this.symbolSuggestionsOpen.set(true);
+    this.symbolSearch$.next(value);
+  }
+
+  selectSymbolSuggestion(suggestion: TickerSuggestion): void {
+    this.analyzeForm.controls.symbol.setValue(suggestion.ticker);
+    this.closeSymbolSuggestions();
+  }
+
+  closeSymbolSuggestions(): void {
+    this.symbolSuggestionsOpen.set(false);
+    this.symbolSuggestions.set([]);
   }
 
   ngOnDestroy() {

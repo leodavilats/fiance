@@ -44,7 +44,6 @@ export class OpportunitiesComponent implements OnInit {
   }
 
   opps = signal<Opportunity[] | null>(null);
-  cashAvailable = signal(0);
   totalItems = signal(0);
   totalPages = signal(0);
   currentPage = signal(1);
@@ -67,6 +66,17 @@ export class OpportunitiesComponent implements OnInit {
   availableSectors = computed(() => {
     const list = this.opps() || [];
     return [...new Set(list.map(o => o.sector).filter(s => s))];
+  });
+
+  groupedOpps = computed(() => {
+    const list = this.opps() || [];
+    const groups = new Map<string, Opportunity[]>();
+    for (const o of list) {
+      const key = o.category_resolved || 'outros';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(o);
+    }
+    return [...groups.entries()].map(([category, items]) => ({ category, items }));
   });
 
   ngOnInit(): void {}
@@ -98,7 +108,6 @@ export class OpportunitiesComponent implements OnInit {
       .subscribe({
         next: res => {
           this.opps.set(res.items);
-          this.cashAvailable.set(res.cash_available);
           this.totalItems.set(res.total_items);
           this.totalPages.set(res.total_pages);
           this.currentPage.set(res.current_page);
@@ -137,17 +146,6 @@ export class OpportunitiesComponent implements OnInit {
       this.sortKey.set(key);
       this.sortOrder.set('desc');
     }
-  }
-
-  updateCash(ev: Event): void {
-    const value = parseFloat((ev.target as HTMLInputElement).value);
-    this.svc.savePreferences(value).subscribe({
-      next: () => {
-        this.cashAvailable.set(value);
-      },
-      error: () => {},
-      complete: () => {},
-    });
   }
 
   openDipAnalysis(symbol: string): void {

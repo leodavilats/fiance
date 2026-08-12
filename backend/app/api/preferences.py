@@ -16,12 +16,11 @@ async def get_preferences() -> Preferences:
 @router.put("/preferences", response_model=Preferences)
 async def save_preferences(req: PreferencesRequest) -> Preferences:
     portfolio_repo.set_preferences(
-        req.cash_available,
-        req.passive_income_goal,
-        req.desired_yield_stock,
-        req.desired_yield_fii,
-        req.desired_yield_int,
-        req.notify_price_alerts,
-        req.notify_new_opportunities,
+        passive_income_goal=req.passive_income_goal,
+        desired_yield_stock=req.desired_yield_stock,
+        desired_yield_fii=req.desired_yield_fii,
+        desired_yield_int=req.desired_yield_int,
+        notify_price_alerts=req.notify_price_alerts,
+        notify_new_opportunities=req.notify_new_opportunities,
     )
     return Preferences(**portfolio_repo.get_preferences())

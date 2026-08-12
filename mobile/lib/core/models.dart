@@ -570,7 +570,6 @@ class PriceAlert {
 
 class Preferences {
   Preferences({
-    required this.cashAvailable,
     required this.passiveIncomeGoal,
     required this.desiredYieldStock,
     required this.desiredYieldFii,
@@ -579,7 +578,6 @@ class Preferences {
     this.notifyNewOpportunities = true,
   });
 
-  final double cashAvailable;
   final double? passiveIncomeGoal;
   final double desiredYieldStock;
   final double desiredYieldFii;
@@ -588,7 +586,6 @@ class Preferences {
   final bool notifyNewOpportunities;
 
   factory Preferences.fromJson(Map<String, dynamic> j) => Preferences(
-    cashAvailable: (j['cash_available'] as num).toDouble(),
     passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
     desiredYieldStock: (j['desired_yield_stock'] as num).toDouble(),
     desiredYieldFii: (j['desired_yield_fii'] as num).toDouble(),

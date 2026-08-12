@@ -20,14 +20,6 @@ class _InvestirTabState extends ConsumerState<InvestirTab> {
   Map<String, dynamic>? _strategyResult;
   String? _error;
 
-  @override
-  void initState() {
-    super.initState();
-    ref.read(preferencesProvider.future).then((p) {
-      if (mounted) _cashCtrl.text = p.cashAvailable.toStringAsFixed(2);
-    });
-  }
-
   Future<void> _runQuickInvest() async {
     final cash = double.tryParse(_cashCtrl.text.replaceAll(',', '.'));
     if (cash == null || cash <= 0) {
@@ -51,12 +43,15 @@ class _InvestirTabState extends ConsumerState<InvestirTab> {
   }
 
   Future<void> _runStrategy() async {
+    final cash = double.tryParse(_cashCtrl.text.replaceAll(',', '.')) ?? 0.0;
     setState(() {
       _loadingStrategy = true;
       _error = null;
     });
     try {
-      final result = await ref.read(apiRepositoryProvider).getStrategy();
+      final result = await ref
+          .read(apiRepositoryProvider)
+          .getStrategy(cashAvailable: cash);
       setState(() => _strategyResult = result);
     } catch (e) {
       setState(() => _error = 'Erro ao gerar estratégia: $e');

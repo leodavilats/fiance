@@ -91,6 +91,119 @@ def explain_portfolio(
         return ""
 
 
+STRATEGY_RANKING_PROMPT = """Você é um analista financeiro CNPI ajudando a escolher, dentro de uma \
+categoria de alocação, quais oportunidades de investimento priorizar para fechar um gap de \
+alocação de carteira.
+
+Categoria: {category}
+Valor a alocar nesta categoria: R$ {budget:.2f}
+
+Candidatos (já filtrados por sinal de compra):
+{candidates_text}
+
+Retorne APENAS um JSON (sem markdown, sem texto extra) no formato:
+{{
+  "ranking": [
+    {{"ticker": "TICKER1", "rationale": "justificativa curta em português, 1 frase"}},
+    {{"ticker": "TICKER2", "rationale": "..."}}
+  ]
+}}
+
+Regras:
+- Ordene do melhor para o pior candidato para receber o aporte, considerando score, \
+dividend yield, margem de segurança e sentimento de notícias quando disponível.
+- Inclua todos os tickers recebidos, sem inventar novos.
+- "rationale" deve ter no máximo 140 caracteres.
+
+JSON puro (sem ```):"""
+
+
+def rank_opportunities_for_gap(
+    category: str,
+    budget: float,
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]] | None:
+    """Pede ao Gemini para ranquear/escolher a melhor oportunidade dentro de um gap
+    de alocação (categoria/setor), considerando score, DY, margem de segurança e
+    sentimento de notícias já calculados.
+
+    Retorna uma lista ordenada de {"ticker", "rationale"} ou None se o LLM falhar,
+    não estiver configurado ou não estiver disponível — o chamador deve cair no
+    fallback (primeira oportunidade disponível por score) sem propagar exceção.
+    """
+    settings = get_settings()
+
+    if not settings.gemini_api_key or not candidates or not GEMINI_AVAILABLE:
+        return None
+
+    candidates_text = "\n".join(
+        f"- {c['ticker']}: score {c.get('score', 0):.1f}, "
+        f"DY {c.get('dividend_yield') or 0:.1f}%, "
+        f"margem de segurança {(c.get('margin_of_safety') or 0) * 100:.0f}%, "
+        f"veredito {c.get('verdict', '')}, "
+        f"sentimento de notícias {c.get('news_sentiment') or 'desconhecido'}"
+        for c in candidates
+    )
+
+    prompt = STRATEGY_RANKING_PROMPT.format(
+        category=category, budget=budget, candidates_text=candidates_text
+    )
+
+    try:
+        client = genai.Client(api_key=settings.gemini_api_key)
+        response = client.models.generate_content(
+            model="gemini-flash-lite-latest",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.2,
+                max_output_tokens=500,
+            ),
+        )
+
+        result_text = (response.text or "").strip()
+        if not result_text:
+            return None
+
+        if "```json" in result_text:
+            result_text = result_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in result_text:
+            result_text = result_text.split("```")[1].split("```")[0].strip()
+
+        start_idx = result_text.find("{")
+        end_idx = result_text.rfind("}")
+        if start_idx == -1 or end_idx == -1:
+            return None
+        result_text = result_text[start_idx : end_idx + 1]
+
+        parsed = json.loads(result_text)
+        ranking = parsed.get("ranking")
+        if not isinstance(ranking, list) or not ranking:
+            return None
+
+        known_tickers = {c["ticker"].upper() for c in candidates}
+        cleaned: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for item in ranking:
+            if not isinstance(item, dict):
+                continue
+            ticker = str(item.get("ticker", "")).upper()
+            if not ticker or ticker not in known_tickers or ticker in seen:
+                continue
+            seen.add(ticker)
+            cleaned.append(
+                {
+                    "ticker": ticker,
+                    "rationale": str(item.get("rationale", ""))[:200],
+                }
+            )
+
+        return cleaned or None
+
+    except Exception as e:
+        logger.warning("Falha ao ranquear oportunidades via Gemini: %s", e)
+        return None
+
+
 NEWS_ANALYSIS_PROMPT = """Analise as notícias sobre {company_name} ({symbol}) e retorne APENAS este JSON (sem markdown):
 
 {{

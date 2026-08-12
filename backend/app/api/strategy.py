@@ -22,9 +22,8 @@ _DEFAULT_GOALS = [
 
 
 @router.get("/strategy")
-async def get_investment_strategy() -> dict:
-    prefs = portfolio_repo.get_preferences()
-    cash = prefs["cash_available"]
+async def get_investment_strategy(cash_available: float = 0.0) -> dict:
+    cash = cash_available
 
     stored = portfolio_repo.list_positions()
     current_portfolio = [

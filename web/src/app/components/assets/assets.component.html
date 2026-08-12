@@ -90,6 +90,16 @@
                 <span class="font-semibold text-tx w-14 text-right"
                   >{{ t.pct | number: '1.1-1' }}%</span
                 >
+                @if (t.targetPct != null) {
+                  <span
+                    class="text-xs font-medium px-1.5 py-0.5 rounded"
+                    [class.good]="t.pct >= t.targetPct"
+                    [class.warn]="t.pct < t.targetPct"
+                    [title]="'meta: ' + t.targetPct + '%'"
+                  >
+                    meta {{ t.targetPct }}%
+                  </span>
+                }
               </span>
             </div>
           }
@@ -132,6 +142,16 @@
                   <span class="font-semibold text-tx w-14 text-right"
                     >{{ s.pct | number: '1.1-1' }}%</span
                   >
+                  @if (s.targetPct != null) {
+                    <span
+                      class="text-xs font-medium px-1.5 py-0.5 rounded"
+                      [class.good]="s.pct >= s.targetPct"
+                      [class.warn]="s.pct < s.targetPct"
+                      [title]="'meta: ' + s.targetPct + '%'"
+                    >
+                      meta {{ s.targetPct }}%
+                    </span>
+                  }
                 </span>
               </div>
             }

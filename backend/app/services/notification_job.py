@@ -73,7 +73,7 @@ async def _check_new_opportunities(
             tokens,
             title=f"Nova oportunidade: {opp.ticker}",
             body=f"{opp.label} — score {opp.score:.0f}, DY {opp.dividend_yield or 0:.1f}%",
-            data={"type": "opportunity", "ticker": opp.ticker},
+            data={"type": "new_opportunity", "ticker": opp.ticker},
         )
         for invalid_token in invalid:
             portfolio_store.unregister_device_token(invalid_token, user_id=user_id)

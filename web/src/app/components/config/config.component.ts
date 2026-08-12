@@ -32,7 +32,6 @@ interface SectorGoalForm {
 }
 
 interface ConfigFormShape {
-  cash_available: FormControl<number>;
   passive_income_goal: FormControl<number | null>;
   yield_stock: FormControl<number>;
   yield_fii: FormControl<number>;
@@ -69,7 +68,6 @@ export class ConfigComponent implements OnInit {
   private readonly yieldValidators = [Validators.min(0.5), Validators.max(30)];
 
   form: FormGroup<ConfigFormShape> = this.fb.group({
-    cash_available: this.fb.control(0, { nonNullable: true, validators: Validators.min(0) }),
     passive_income_goal: this.fb.control<number | null>(null, { validators: Validators.min(0) }),
     yield_stock: this.fb.control(6, { nonNullable: true, validators: this.yieldValidators }),
     yield_fii: this.fb.control(10, { nonNullable: true, validators: this.yieldValidators }),
@@ -172,7 +170,6 @@ export class ConfigComponent implements OnInit {
     }).subscribe({
       next: ({ prefs, goals, sectorGoals }) => {
         this.form.patchValue({
-          cash_available: prefs.cash_available,
           passive_income_goal: prefs.passive_income_goal ?? null,
           yield_stock: Math.round((prefs.desired_yield_stock ?? 0.06) * 1000) / 10,
           yield_fii: Math.round((prefs.desired_yield_fii ?? 0.1) * 1000) / 10,
@@ -208,7 +205,7 @@ export class ConfigComponent implements OnInit {
   }
 
   saveConfig(): void {
-    const { cash_available, passive_income_goal, sector_goals, yield_stock, yield_fii, yield_int } =
+    const { passive_income_goal, sector_goals, yield_stock, yield_fii, yield_int } =
       this.form.getRawValue();
     const goalsRaw = this.goalItems.getRawValue();
     const goalsPayload: Goal[] = goalsRaw.map(g => ({
@@ -226,7 +223,7 @@ export class ConfigComponent implements OnInit {
     this.message.set('');
 
     forkJoin({
-      prefs: this.svc.savePreferences(cash_available, passive_income_goal ?? undefined, {
+      prefs: this.svc.savePreferences(passive_income_goal ?? undefined, {
         stock: yield_stock / 100,
         fii: yield_fii / 100,
         int: yield_int / 100,

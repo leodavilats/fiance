@@ -151,12 +151,10 @@ export class RecommendService {
   }
 
   savePreferences(
-    cash: number,
     passiveIncomeGoal?: number,
     yields?: { stock?: number; fii?: number; int?: number }
   ): Observable<Preferences> {
     return this.http.put<Preferences>(`${this.base}/preferences`, {
-      cash_available: cash,
       passive_income_goal: passiveIncomeGoal ?? null,
       desired_yield_stock: yields?.stock ?? null,
       desired_yield_fii: yields?.fii ?? null,
@@ -164,8 +162,10 @@ export class RecommendService {
     });
   }
 
-  getStrategy(): Observable<InvestmentStrategy> {
-    return this.http.get<InvestmentStrategy>(`${this.base}/strategy`);
+  getStrategy(cashAvailable = 0): Observable<InvestmentStrategy> {
+    return this.http.get<InvestmentStrategy>(`${this.base}/strategy`, {
+      params: { cash_available: cashAvailable },
+    });
   }
 
   clearCache(pattern = '*'): Observable<{ message: string; deleted: number }> {

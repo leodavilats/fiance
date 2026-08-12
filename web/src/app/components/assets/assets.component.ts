@@ -15,6 +15,7 @@ import { debounceTime, switchMap } from 'rxjs/operators';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import {
   ClosedTradesResponse,
+  Goal,
   LoadingService,
   PortfolioItem,
   PortfolioEvaluationResponse,
@@ -22,6 +23,7 @@ import {
   PortfolioPosition,
   RecommendService,
   RendaFixaTipo,
+  SectorGoal,
   SnackbarService,
   TickerSuggestion,
   UiHelperService,
@@ -102,6 +104,21 @@ export class AssetsComponent implements OnInit {
   toggleReasons(ticker: string) {
     this.expandedReasonsTicker.set(this.expandedReasonsTicker() === ticker ? null : ticker);
   }
+
+  goals = signal<Goal[]>([]);
+  sectorGoals = signal<SectorGoal[]>([]);
+
+  goalTargetByCategory = computed(() => {
+    const map = new Map<string, number>();
+    for (const g of this.goals()) map.set(g.category, g.target_pct);
+    return map;
+  });
+
+  goalTargetBySector = computed(() => {
+    const map = new Map<string, number>();
+    for (const sg of this.sectorGoals()) map.set(sg.sector, sg.target_pct);
+    return map;
+  });
 
   tickerSuggestions = signal<TickerSuggestion[]>([]);
   tickerSuggestionsRow = signal<number | null>(null);
@@ -211,8 +228,14 @@ export class AssetsComponent implements OnInit {
       }
     }
 
+    const targets = this.goalTargetByCategory();
     return Array.from(buckets.entries())
-      .map(([tipo, valor]) => ({ tipo, valor, pct: (valor / total) * 100 }))
+      .map(([tipo, valor]) => ({
+        tipo,
+        valor,
+        pct: (valor / total) * 100,
+        targetPct: targets.get(tipo) ?? null,
+      }))
       .sort((a, b) => b.valor - a.valor);
   });
 
@@ -247,7 +270,12 @@ export class AssetsComponent implements OnInit {
       );
     }
 
-    return entries.map(e => ({ ...e, pct: (e.valor / totalAcoes) * 100 }));
+    const targets = this.goalTargetBySector();
+    return entries.map(e => ({
+      ...e,
+      pct: (e.valor / totalAcoes) * 100,
+      targetPct: targets.get(e.setor) ?? null,
+    }));
   });
 
   avgTaxaRF = computed(() => {
@@ -279,6 +307,8 @@ export class AssetsComponent implements OnInit {
     this.loadStoredRendaFixa();
     this.loadStoredPortfolioItems();
     this.loadClosedTrades();
+    this.svc.getGoals().subscribe({ next: g => this.goals.set(g), error: () => {} });
+    this.svc.getSectorGoals().subscribe({ next: sg => this.sectorGoals.set(sg), error: () => {} });
     this.saveDebounce.pipe(debounceTime(1000)).subscribe(() => this.savePortfolio());
     this.evalDebounce.pipe(debounceTime(1800)).subscribe(() => this.evaluateAssets(false));
     this.portfolioItems.valueChanges.subscribe(() => {

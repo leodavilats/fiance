@@ -6,6 +6,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/help_tooltip.dart';
+import '../../core/widgets/ticker_autocomplete_field.dart';
 import 'asset_detail_sheet.dart';
 
 class OpportunitiesFilters {
@@ -122,10 +123,12 @@ class _DipScannerView extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(12),
             itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 6),
+            separatorBuilder: (_, _) => const SizedBox(height: 14),
             itemBuilder: (context, index) {
               final item = items[index];
               return Card(
+                margin: EdgeInsets.zero,
+                elevation: 1.5,
                 child: InkWell(
                   onTap: () => showAssetDetailSheet(context, item.symbol),
                   child: Padding(
@@ -188,11 +191,25 @@ class _DipScannerView extends ConsumerWidget {
   }
 }
 
-class _AllOpportunitiesView extends ConsumerWidget {
+class _AllOpportunitiesView extends ConsumerStatefulWidget {
   const _AllOpportunitiesView();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AllOpportunitiesView> createState() =>
+      _AllOpportunitiesViewState();
+}
+
+class _AllOpportunitiesViewState extends ConsumerState<_AllOpportunitiesView> {
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final filters = ref.watch(opportunitiesFiltersProvider);
     final opportunities = ref.watch(filteredOpportunitiesProvider);
 
@@ -214,16 +231,13 @@ class _AllOpportunitiesView extends ConsumerWidget {
           padding: const EdgeInsets.all(12),
           child: Column(
             children: [
-              TextField(
-                decoration: const InputDecoration(
-                  hintText: 'Buscar ticker ou nome...',
-                  prefixIcon: Icon(Icons.search),
-                  isDense: true,
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (v) =>
-                    ref.read(opportunitiesFiltersProvider.notifier).state =
-                        filters.copyWith(search: v),
+              TickerAutocompleteField(
+                controller: _searchCtrl,
+                labelText: 'Buscar ticker ou nome...',
+                onSelected: (s) {
+                  ref.read(opportunitiesFiltersProvider.notifier).state =
+                      filters.copyWith(search: s.ticker);
+                },
               ),
               const SizedBox(height: 8),
               SingleChildScrollView(
@@ -301,10 +315,10 @@ class _AllOpportunitiesView extends ConsumerWidget {
                 return ListView.separated(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 8,
+                    vertical: 12,
                   ),
                   itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 6),
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (context, index) =>
                       _OpportunityCard(opportunity: items[index]),
                 );
@@ -367,10 +381,12 @@ class _OpportunityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final verdictColor = _verdictColor(Theme.of(context).brightness);
     return Card(
+      margin: EdgeInsets.zero,
+      elevation: 1.5,
       child: InkWell(
         onTap: () => showAssetDetailSheet(context, opportunity.ticker),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

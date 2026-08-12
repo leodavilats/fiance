@@ -26,7 +26,6 @@ class DashboardSummary(BaseModel):
     total_current: float
     total_pnl: float
     total_pnl_pct: float
-    cash_available: float
 
     monthly_dividends_estimate: float
     yearly_dividends_estimate: float = 0.0

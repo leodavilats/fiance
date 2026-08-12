@@ -165,6 +165,7 @@ export class StrategyComponent implements OnInit {
         next: r => {
           this.quickInvestResult.set(r);
           this.quickInvestLoading.set(false);
+          this.loadStrategy();
         },
         error: () => {
           this.quickInvestError.set(true);
@@ -174,7 +175,8 @@ export class StrategyComponent implements OnInit {
   }
 
   loadStrategy(): void {
-    this.svc.getStrategy().subscribe({
+    const cash = this.quickInvestForm.getRawValue().cash_available;
+    this.svc.getStrategy(cash).subscribe({
       next: data => this.strategy.set(data),
       error: () => {},
     });

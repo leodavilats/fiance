@@ -13,11 +13,6 @@ class ApiRepository {
     return AppUser.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<Map<String, dynamic>> sendTestNotification() async {
-    final res = await _dio.post('/notifications/test');
-    return res.data as Map<String, dynamic>;
-  }
-
   Future<DashboardData> getDashboard() async {
     final res = await _dio.get('/dashboard');
     return DashboardData.fromJson(res.data as Map<String, dynamic>);
@@ -101,7 +96,6 @@ class ApiRepository {
   }
 
   Future<Preferences> savePreferences({
-    required double cashAvailable,
     double? passiveIncomeGoal,
     bool? notifyPriceAlerts,
     bool? notifyNewOpportunities,
@@ -109,7 +103,6 @@ class ApiRepository {
     final res = await _dio.put(
       '/preferences',
       data: {
-        'cash_available': cashAvailable,
         'passive_income_goal': passiveIncomeGoal,
         'notify_price_alerts': notifyPriceAlerts,
         'notify_new_opportunities': notifyNewOpportunities,
@@ -166,8 +159,11 @@ class ApiRepository {
     return res.data as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> getStrategy() async {
-    final res = await _dio.get('/strategy');
+  Future<Map<String, dynamic>> getStrategy({double cashAvailable = 0.0}) async {
+    final res = await _dio.get(
+      '/strategy',
+      queryParameters: {'cash_available': cashAvailable},
+    );
     return res.data as Map<String, dynamic>;
   }
 

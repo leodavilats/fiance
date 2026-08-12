@@ -1,4 +1,3 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,84 +12,6 @@ import '../../core/theme_provider.dart';
 
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
-
-  Future<void> _editCash(
-    BuildContext context,
-    WidgetRef ref,
-    double current,
-  ) async {
-    final ctrl = TextEditingController(text: current.toStringAsFixed(2));
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Caixa disponível'),
-        content: TextField(
-          controller: ctrl,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(prefixText: 'R\$ '),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-    final value = double.tryParse(ctrl.text.replaceAll(',', '.'));
-    if (value == null) return;
-
-    await ref.read(apiRepositoryProvider).savePreferences(cashAvailable: value);
-    ref.invalidate(preferencesProvider);
-    ref.invalidate(dashboardProvider);
-  }
-
-  Future<void> _sendTestNotification(BuildContext context, WidgetRef ref) async {
-    final notifications = ref.read(notificationsServiceProvider);
-    final messenger = ScaffoldMessenger.of(context);
-
-    if (notifications.permissionStatus == AuthorizationStatus.denied) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Permissão de notificação negada — habilite nas configurações do Android.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    try {
-      final result = await ref.read(apiRepositoryProvider).sendTestNotification();
-      final tokensFound = result['tokens_found'] as int? ?? 0;
-      final firebaseConfigured = result['firebase_configured'] as bool? ?? false;
-
-      String message;
-      if (tokensFound == 0) {
-        message =
-            'Nenhum dispositivo registrado — o token de notificação não chegou a ser salvo no servidor.';
-      } else if (!firebaseConfigured) {
-        message =
-            'O servidor NÃO tem a credencial do Firebase configurada — a notificação foi só simulada, nunca vai chegar. Configure FIREBASE_SERVICE_ACCOUNT_JSON no ambiente do backend.';
-      } else {
-        message =
-            'Enviado de verdade para $tokensFound dispositivo(s) — deve chegar em poucos segundos.';
-      }
-
-      messenger.showSnackBar(
-        SnackBar(content: Text(message), duration: const Duration(seconds: 6)),
-      );
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Erro ao enviar: $e')));
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -166,17 +87,6 @@ class ConfigScreen extends ConsumerWidget {
                   children: [
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(
-                        Icons.account_balance_wallet_outlined,
-                      ),
-                      title: const Text('Caixa disponível'),
-                      subtitle: Text(formatCurrency(prefs.cashAvailable)),
-                      trailing: const Icon(Icons.edit, size: 18),
-                      onTap: () =>
-                          _editCash(context, ref, prefs.cashAvailable),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.savings_outlined),
                       title: const Text('Yield desejado — Ações'),
                       trailing: Text(
@@ -225,7 +135,6 @@ class ConfigScreen extends ConsumerWidget {
                         await ref
                             .read(apiRepositoryProvider)
                             .savePreferences(
-                              cashAvailable: prefs.cashAvailable,
                               passiveIncomeGoal: prefs.passiveIncomeGoal,
                               notifyPriceAlerts: v,
                               notifyNewOpportunities:
@@ -243,21 +152,12 @@ class ConfigScreen extends ConsumerWidget {
                         await ref
                             .read(apiRepositoryProvider)
                             .savePreferences(
-                              cashAvailable: prefs.cashAvailable,
                               passiveIncomeGoal: prefs.passiveIncomeGoal,
                               notifyPriceAlerts: prefs.notifyPriceAlerts,
                               notifyNewOpportunities: v,
                             );
                         ref.invalidate(preferencesProvider);
                       },
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _sendTestNotification(context, ref),
-                        icon: const Icon(Icons.send_outlined, size: 18),
-                        label: const Text('Enviar notificação de teste'),
-                      ),
                     ),
                   ],
                 ),

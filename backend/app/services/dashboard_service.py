@@ -83,7 +83,6 @@ class DashboardService:
     def calculate_category_allocations(
         self,
         positions: list[PortfolioPosition],
-        cash: float,
         goals: list[Goal],
     ) -> list[CategoryAllocation]:
         totals: dict[str, float] = {
@@ -128,7 +127,6 @@ class DashboardService:
         positions: list[PortfolioPosition],
         top_buys: list[Opportunity],
         goals: list[Goal],
-        cash: float,
     ) -> DashboardResponse:
 
         real_positions = [p for p in positions if not p.ticker.startswith("RF_")]
@@ -139,7 +137,7 @@ class DashboardService:
             key=lambda x: 0 if x.verdict == "STRONG_SELL" else 1,
         )
 
-        allocations = self.calculate_category_allocations(positions, cash, goals)
+        allocations = self.calculate_category_allocations(positions, goals)
         alerts = self.classify_alerts(real_positions, top_buys, allocations)
 
         total_inv = sum(p.invested for p in positions)
@@ -178,7 +176,6 @@ class DashboardService:
                 total_current=round(total_cur, 2),
                 total_pnl=round(total_pnl, 2),
                 total_pnl_pct=round(total_pnl_pct, 2),
-                cash_available=round(cash, 2),
                 monthly_dividends_estimate=round(monthly_dividends, 2),
                 yearly_dividends_estimate=round(total_yearly_dividends, 2),
                 portfolio_yield=round(portfolio_yield, 2) if portfolio_yield > 0 else None,

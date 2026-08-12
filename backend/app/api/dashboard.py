@@ -14,9 +14,6 @@ portfolio_repo = PortfolioRepository()
 
 @router.get("/dashboard", response_model=DashboardResponse)
 async def dashboard() -> DashboardResponse:
-    prefs = portfolio_repo.get_preferences()
-    cash = prefs["cash_available"]
-
     stored = portfolio_repo.list_positions()
     positions = []
 
@@ -55,4 +52,4 @@ async def dashboard() -> DashboardResponse:
 
         goals = [Goal(**g) for g in goals_data]
 
-    return await dashboard_service.generate_dashboard(positions, top_buys, goals, cash)
+    return await dashboard_service.generate_dashboard(positions, top_buys, goals)
