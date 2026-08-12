@@ -1,8 +1,8 @@
 from app.analysis.fair_price import (
     bazin_fair_price,
     compute_fair_price,
-    graham_fair_price,
     dcf_fair_price,
+    graham_fair_price,
 )
 
 

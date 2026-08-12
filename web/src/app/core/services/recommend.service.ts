@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   AssetAnalysis,
+  BenchmarkResponse,
   ClosedTradesResponse,
+  CompareResponse,
   DashboardResponse,
   DipAnalysisResponse,
   DipScannerResponse,
@@ -22,6 +24,7 @@ import {
   PriceAlertTriggered,
   QuickInvestRequest,
   QuickInvestResponse,
+  RebalanceResponse,
   RecommendRequest,
   RecommendResponse,
   RendaFixaAnalysisResult,
@@ -248,5 +251,18 @@ export class RecommendService {
     return this.http.get<{ items: TickerSuggestion[] }>(`${this.base}/universe/search`, {
       params,
     });
+  }
+
+  getBenchmark(): Observable<BenchmarkResponse> {
+    return this.http.get<BenchmarkResponse>(`${this.base}/benchmark`);
+  }
+
+  getRebalancePlan(): Observable<RebalanceResponse> {
+    return this.http.get<RebalanceResponse>(`${this.base}/rebalance`);
+  }
+
+  compareAssets(tickers: string[]): Observable<CompareResponse> {
+    const params = new HttpParams().set('tickers', tickers.join(','));
+    return this.http.get<CompareResponse>(`${this.base}/compare`, { params });
   }
 }

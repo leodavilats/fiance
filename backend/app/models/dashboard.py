@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .opportunity import Opportunity
 from .portfolio import PortfolioPosition, PortfolioSnapshot
@@ -19,6 +19,19 @@ class CategoryAllocation(BaseModel):
     target_pct: float | None = None
     delta_pct: float | None = None
     delta_value: float | None = None
+
+
+class PortfolioHealth(BaseModel):
+    score: float = Field(..., description="Score de saúde da carteira, 0-100")
+    concentration_score: float
+    sector_concentration_score: float
+    diversification_score: float
+    risk_score: float
+    top_position_ticker: str | None = None
+    top_position_pct: float | None = None
+    top_sector: str | None = None
+    top_sector_pct: float | None = None
+    warnings: list[str] = Field(default_factory=list)
 
 
 class DashboardSummary(BaseModel):
@@ -44,5 +57,6 @@ class DashboardResponse(BaseModel):
     alerts: list[Alert]
     allocations: list[CategoryAllocation]
     snapshots: list[PortfolioSnapshot]
+    health: PortfolioHealth | None = None
     last_updated: float | None = None
     disclaimer: str = "Conteúdo educativo. Não constitui recomendação formal de investimento."

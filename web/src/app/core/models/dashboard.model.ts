@@ -3,10 +3,23 @@ import { Opportunity } from './opportunity.model';
 
 export interface Alert {
   severity: 'info' | 'warning' | 'critical';
-  kind: 'sell_target' | 'opportunity' | 'concentration';
+  kind: 'sell_target' | 'opportunity' | 'concentration' | 'rebalance';
   title: string;
   detail: string;
   ticker?: string | null;
+}
+
+export interface PortfolioHealth {
+  score: number;
+  concentration_score: number;
+  sector_concentration_score: number;
+  diversification_score: number;
+  risk_score: number;
+  top_position_ticker: string | null;
+  top_position_pct: number | null;
+  top_sector: string | null;
+  top_sector_pct: number | null;
+  warnings: string[];
 }
 
 export interface CategoryAllocation {
@@ -42,6 +55,7 @@ export interface DashboardResponse {
   alerts: Alert[];
   allocations: CategoryAllocation[];
   snapshots: PortfolioSnapshot[];
+  health: PortfolioHealth | null;
   last_updated: number | null;
   disclaimer: string;
 }

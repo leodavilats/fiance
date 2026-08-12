@@ -270,6 +270,7 @@ class DashboardData {
     required this.topSells,
     required this.alerts,
     this.snapshots = const [],
+    this.health,
   });
 
   final DashboardSummary summary;
@@ -279,6 +280,7 @@ class DashboardData {
   final List<PortfolioPosition> topSells;
   final List<PortfolioAlert> alerts;
   final List<PortfolioSnapshot> snapshots;
+  final PortfolioHealth? health;
 
   factory DashboardData.fromJson(Map<String, dynamic> j) => DashboardData(
     summary: DashboardSummary.fromJson(j['summary'] as Map<String, dynamic>),
@@ -291,6 +293,9 @@ class DashboardData {
     topBuys: (j['top_buys'] as List)
         .map((e) => Opportunity.fromJson(e as Map<String, dynamic>))
         .toList(),
+    health: j['health'] != null
+        ? PortfolioHealth.fromJson(j['health'] as Map<String, dynamic>)
+        : null,
     topSells: (j['top_sells'] as List)
         .map((e) => PortfolioPosition.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -438,6 +443,7 @@ class AssetAnalysis {
     required this.verdict,
     required this.label,
     required this.reasons,
+    this.fundamentals = const {},
   });
 
   final String symbol;
@@ -453,11 +459,13 @@ class AssetAnalysis {
   final String verdict;
   final String label;
   final List<String> reasons;
+  final Map<String, double?> fundamentals;
 
   factory AssetAnalysis.fromJson(Map<String, dynamic> j) {
     final fp = j['fair_price'] as Map<String, dynamic>;
     final tech = j['technical'] as Map<String, dynamic>;
     final dec = j['decision'] as Map<String, dynamic>;
+    final fund = (j['fundamentals'] as Map<String, dynamic>?) ?? {};
     return AssetAnalysis(
       symbol: j['symbol'] as String,
       name: j['name'] as String?,
@@ -473,6 +481,9 @@ class AssetAnalysis {
       label: dec['label'] as String? ?? '',
       reasons:
           (dec['reasons'] as List?)?.map((e) => e as String).toList() ?? [],
+      fundamentals: fund.map(
+        (k, v) => MapEntry(k, (v as num?)?.toDouble()),
+      ),
     );
   }
 }
@@ -620,5 +631,200 @@ class Preferences {
     desiredYieldInt: (j['desired_yield_int'] as num).toDouble(),
     notifyPriceAlerts: j['notify_price_alerts'] as bool? ?? true,
     notifyNewOpportunities: j['notify_new_opportunities'] as bool? ?? true,
+  );
+}
+
+class PortfolioHealth {
+  PortfolioHealth({
+    required this.score,
+    required this.concentrationScore,
+    required this.sectorConcentrationScore,
+    required this.diversificationScore,
+    required this.riskScore,
+    required this.topPositionTicker,
+    required this.topPositionPct,
+    required this.topSector,
+    required this.topSectorPct,
+    required this.warnings,
+  });
+
+  final double score;
+  final double concentrationScore;
+  final double sectorConcentrationScore;
+  final double diversificationScore;
+  final double riskScore;
+  final String? topPositionTicker;
+  final double? topPositionPct;
+  final String? topSector;
+  final double? topSectorPct;
+  final List<String> warnings;
+
+  factory PortfolioHealth.fromJson(Map<String, dynamic> j) => PortfolioHealth(
+    score: (j['score'] as num).toDouble(),
+    concentrationScore: (j['concentration_score'] as num).toDouble(),
+    sectorConcentrationScore: (j['sector_concentration_score'] as num).toDouble(),
+    diversificationScore: (j['diversification_score'] as num).toDouble(),
+    riskScore: (j['risk_score'] as num).toDouble(),
+    topPositionTicker: j['top_position_ticker'] as String?,
+    topPositionPct: (j['top_position_pct'] as num?)?.toDouble(),
+    topSector: j['top_sector'] as String?,
+    topSectorPct: (j['top_sector_pct'] as num?)?.toDouble(),
+    warnings: (j['warnings'] as List?)?.map((e) => e as String).toList() ?? [],
+  );
+}
+
+class BenchmarkPoint {
+  BenchmarkPoint({
+    required this.date,
+    required this.portfolioPct,
+    required this.cdiPct,
+    required this.ibovPct,
+  });
+
+  final String date;
+  final double portfolioPct;
+  final double cdiPct;
+  final double? ibovPct;
+
+  factory BenchmarkPoint.fromJson(Map<String, dynamic> j) => BenchmarkPoint(
+    date: j['date'] as String,
+    portfolioPct: (j['portfolio_pct'] as num).toDouble(),
+    cdiPct: (j['cdi_pct'] as num).toDouble(),
+    ibovPct: (j['ibov_pct'] as num?)?.toDouble(),
+  );
+}
+
+class BenchmarkResponse {
+  BenchmarkResponse({
+    required this.points,
+    required this.ibovAvailable,
+    required this.portfolioReturnPct,
+    required this.cdiReturnPct,
+    required this.ibovReturnPct,
+  });
+
+  final List<BenchmarkPoint> points;
+  final bool ibovAvailable;
+  final double portfolioReturnPct;
+  final double cdiReturnPct;
+  final double? ibovReturnPct;
+
+  factory BenchmarkResponse.fromJson(Map<String, dynamic> j) => BenchmarkResponse(
+    points: (j['points'] as List)
+        .map((e) => BenchmarkPoint.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    ibovAvailable: j['ibov_available'] as bool? ?? false,
+    portfolioReturnPct: (j['portfolio_return_pct'] as num?)?.toDouble() ?? 0,
+    cdiReturnPct: (j['cdi_return_pct'] as num?)?.toDouble() ?? 0,
+    ibovReturnPct: (j['ibov_return_pct'] as num?)?.toDouble(),
+  );
+}
+
+class QuickInvestAllocation {
+  QuickInvestAllocation({
+    required this.ticker,
+    required this.category,
+    required this.suggestedQuantity,
+    required this.suggestedInvestment,
+    required this.rationale,
+  });
+
+  final String ticker;
+  final String category;
+  final int suggestedQuantity;
+  final double suggestedInvestment;
+  final String rationale;
+
+  factory QuickInvestAllocation.fromJson(Map<String, dynamic> j) => QuickInvestAllocation(
+    ticker: j['ticker'] as String,
+    category: j['category'] as String,
+    suggestedQuantity: (j['suggested_quantity'] as num).toInt(),
+    suggestedInvestment: (j['suggested_investment'] as num).toDouble(),
+    rationale: j['rationale'] as String? ?? '',
+  );
+}
+
+class RebalanceResponse {
+  RebalanceResponse({
+    required this.needsRebalance,
+    required this.totalGapAmount,
+    required this.suggestions,
+    required this.message,
+  });
+
+  final bool needsRebalance;
+  final double totalGapAmount;
+  final List<QuickInvestAllocation> suggestions;
+  final String message;
+
+  factory RebalanceResponse.fromJson(Map<String, dynamic> j) => RebalanceResponse(
+    needsRebalance: j['needs_rebalance'] as bool? ?? false,
+    totalGapAmount: (j['total_gap_amount'] as num?)?.toDouble() ?? 0,
+    suggestions: (j['suggestions'] as List?)
+            ?.map((e) => QuickInvestAllocation.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [],
+    message: j['message'] as String? ?? '',
+  );
+}
+
+class CompareResponse {
+  CompareResponse({required this.items, required this.errors});
+
+  final List<AssetAnalysis> items;
+  final List<String> errors;
+
+  factory CompareResponse.fromJson(Map<String, dynamic> j) => CompareResponse(
+    items: (j['items'] as List)
+        .map((e) => AssetAnalysis.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    errors: (j['errors'] as List?)?.map((e) => e as String).toList() ?? [],
+  );
+}
+
+class PassiveIncomeMonth {
+  PassiveIncomeMonth({
+    required this.month,
+    required this.portfolioValue,
+    required this.passiveIncomeMonthly,
+  });
+
+  final String month;
+  final double portfolioValue;
+  final double passiveIncomeMonthly;
+
+  factory PassiveIncomeMonth.fromJson(Map<String, dynamic> j) => PassiveIncomeMonth(
+    month: j['month'] as String,
+    portfolioValue: (j['portfolio_value'] as num).toDouble(),
+    passiveIncomeMonthly: (j['passive_income_monthly'] as num).toDouble(),
+  );
+}
+
+class PassiveIncomeProjection {
+  PassiveIncomeProjection({
+    required this.currentPortfolioValue,
+    required this.currentPassiveIncomeMonthly,
+    required this.projections,
+    required this.targetMonthlyIncome,
+    required this.monthsToTarget,
+    required this.targetDate,
+  });
+
+  final double currentPortfolioValue;
+  final double currentPassiveIncomeMonthly;
+  final List<PassiveIncomeMonth> projections;
+  final double? targetMonthlyIncome;
+  final int? monthsToTarget;
+  final String? targetDate;
+
+  factory PassiveIncomeProjection.fromJson(Map<String, dynamic> j) => PassiveIncomeProjection(
+    currentPortfolioValue: (j['current_portfolio_value'] as num).toDouble(),
+    currentPassiveIncomeMonthly: (j['current_passive_income_monthly'] as num).toDouble(),
+    projections: (j['projections'] as List)
+        .map((e) => PassiveIncomeMonth.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    targetMonthlyIncome: (j['target_monthly_income'] as num?)?.toDouble(),
+    monthsToTarget: (j['months_to_target'] as num?)?.toInt(),
+    targetDate: j['target_date'] as String?,
   );
 }

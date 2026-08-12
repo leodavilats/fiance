@@ -5,6 +5,7 @@ import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/ticker_autocomplete_field.dart';
 
 class FerramentasTab extends StatefulWidget {
   const FerramentasTab({super.key});
@@ -13,8 +14,10 @@ class FerramentasTab extends StatefulWidget {
   State<FerramentasTab> createState() => _FerramentasTabState();
 }
 
+enum _ToolMode { analisar, rendaFixa, comparar, aportes }
+
 class _FerramentasTabState extends State<FerramentasTab> {
-  bool _showRendaFixa = false;
+  _ToolMode _mode = _ToolMode.analisar;
 
   @override
   Widget build(BuildContext context) {
@@ -22,19 +25,27 @@ class _FerramentasTabState extends State<FerramentasTab> {
       children: [
         Padding(
           padding: const EdgeInsets.all(12),
-          child: SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(value: false, label: Text('Analisar ativo')),
-              ButtonSegment(value: true, label: Text('Simulador RF')),
-            ],
-            selected: {_showRendaFixa},
-            onSelectionChanged: (s) => setState(() => _showRendaFixa = s.first),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SegmentedButton<_ToolMode>(
+              segments: const [
+                ButtonSegment(value: _ToolMode.analisar, label: Text('Analisar')),
+                ButtonSegment(value: _ToolMode.rendaFixa, label: Text('Simulador RF')),
+                ButtonSegment(value: _ToolMode.comparar, label: Text('Comparar')),
+                ButtonSegment(value: _ToolMode.aportes, label: Text('Aportes')),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (s) => setState(() => _mode = s.first),
+            ),
           ),
         ),
         Expanded(
-          child: _showRendaFixa
-              ? const _RendaFixaSimulator()
-              : const _AnalyzeAssetView(),
+          child: switch (_mode) {
+            _ToolMode.analisar => const _AnalyzeAssetView(),
+            _ToolMode.rendaFixa => const _RendaFixaSimulator(),
+            _ToolMode.comparar => const _CompareAssetsView(),
+            _ToolMode.aportes => const _ContributionSimulatorView(),
+          },
         ),
       ],
     );
@@ -469,5 +480,323 @@ class _OptionForm extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+const _maxCompareTickers = 4;
+
+class _CompareAssetsView extends ConsumerStatefulWidget {
+  const _CompareAssetsView();
+
+  @override
+  ConsumerState<_CompareAssetsView> createState() => _CompareAssetsViewState();
+}
+
+class _CompareAssetsViewState extends ConsumerState<_CompareAssetsView> {
+  final _tickerCtrl = TextEditingController();
+  final List<String> _tickers = [];
+  bool _loading = false;
+  CompareResponse? _result;
+  String? _error;
+
+  void _addTicker(String ticker) {
+    final t = ticker.trim().toUpperCase();
+    if (t.isEmpty || _tickers.contains(t) || _tickers.length >= _maxCompareTickers) return;
+    setState(() {
+      _tickers.add(t);
+      _tickerCtrl.clear();
+    });
+  }
+
+  Future<void> _compare() async {
+    if (_tickers.length < 2) {
+      setState(() => _error = 'Adicione ao menos 2 ativos para comparar.');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final result = await ref.read(apiRepositoryProvider).compareAssets(_tickers);
+      setState(() => _result = result);
+    } catch (e) {
+      setState(() => _error = 'Não foi possível comparar os ativos agora.');
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          'Compare até $_maxCompareTickers ativos lado a lado.',
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _tickers
+              .map(
+                (t) => Chip(
+                  label: Text(t),
+                  onDeleted: () => setState(() => _tickers.remove(t)),
+                ),
+              )
+              .toList(),
+        ),
+        if (_tickers.length < _maxCompareTickers) ...[
+          const SizedBox(height: 8),
+          TickerAutocompleteField(
+            controller: _tickerCtrl,
+            labelText: 'Adicionar ticker',
+            onSelected: (s) => _addTicker(s.ticker),
+          ),
+        ],
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: _loading ? null : _compare,
+          child: _loading
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Comparar'),
+        ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text(_error!, style: TextStyle(color: lossColor(Theme.of(context).brightness))),
+          ),
+        if (_result != null) ...[
+          const SizedBox(height: 16),
+          if (_result!.errors.isNotEmpty)
+            Text(
+              'Não foi possível buscar: ${_result!.errors.join(', ')}',
+              style: TextStyle(color: warnColor(Theme.of(context).brightness), fontSize: 12),
+            ),
+          if (_result!.items.isNotEmpty) _CompareTable(items: _result!.items),
+        ],
+      ],
+    );
+  }
+}
+
+class _CompareTable extends StatelessWidget {
+  const _CompareTable({required this.items});
+
+  final List<AssetAnalysis> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <(String, String Function(AssetAnalysis))>[
+      ('Preço', (a) => formatCurrency(a.price)),
+      ('Preço justo', (a) => formatCurrency(a.consensus)),
+      ('Margem de segurança', (a) => formatPercent(a.marginOfSafety)),
+      ('Decisão', (a) => a.label),
+      ('P/L', (a) => a.fundamentals['pe_ratio']?.toStringAsFixed(1) ?? '—'),
+      ('P/VP', (a) => a.fundamentals['pb_ratio']?.toStringAsFixed(2) ?? '—'),
+      (
+        'Dividend Yield',
+        (a) => a.fundamentals['dividend_yield'] != null
+            ? '${a.fundamentals['dividend_yield']!.toStringAsFixed(1)}%'
+            : '—',
+      ),
+      ('RSI (14)', (a) => a.rsi14?.toStringAsFixed(0) ?? '—'),
+      ('Tendência', (a) => a.trend),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: [
+          const DataColumn(label: Text('Indicador')),
+          ...items.map((a) => DataColumn(label: Text(a.symbol))),
+        ],
+        rows: rows
+            .map(
+              (r) => DataRow(
+                cells: [
+                  DataCell(Text(r.$1)),
+                  ...items.map((a) => DataCell(Text(r.$2(a)))),
+                ],
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _ContributionSimulatorView extends ConsumerStatefulWidget {
+  const _ContributionSimulatorView();
+
+  @override
+  ConsumerState<_ContributionSimulatorView> createState() =>
+      _ContributionSimulatorViewState();
+}
+
+class _ContributionSimulatorViewState
+    extends ConsumerState<_ContributionSimulatorView> {
+  final _contributionCtrl = TextEditingController(text: '500');
+  final _monthsCtrl = TextEditingController(text: '60');
+  final _growthCtrl = TextEditingController(text: '10');
+  final _divGrowthCtrl = TextEditingController(text: '5');
+  final _targetCtrl = TextEditingController();
+  bool _reinvest = true;
+  bool _loading = false;
+  PassiveIncomeProjection? _result;
+
+  Future<void> _simulate() async {
+    setState(() => _loading = true);
+    try {
+      final result = await ref
+          .read(apiRepositoryProvider)
+          .projectPassiveIncome(
+            monthlyContribution: double.tryParse(_contributionCtrl.text) ?? 0,
+            monthsAhead: int.tryParse(_monthsCtrl.text) ?? 60,
+            portfolioGrowthRate: (double.tryParse(_growthCtrl.text) ?? 10) / 100,
+            dividendGrowthRate: (double.tryParse(_divGrowthCtrl.text) ?? 5) / 100,
+            reinvestDividends: _reinvest,
+            targetMonthlyIncome: double.tryParse(_targetCtrl.text),
+          );
+      setState(() => _result = result);
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          'Simule um aporte mensal recorrente e veja a evolução da sua carteira e renda passiva.',
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _contributionCtrl,
+                decoration: const InputDecoration(labelText: 'Aporte mensal (R\$)'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _monthsCtrl,
+                decoration: const InputDecoration(labelText: 'Meses'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _growthCtrl,
+                decoration: const InputDecoration(labelText: 'Valorização anual (%)'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _divGrowthCtrl,
+                decoration: const InputDecoration(labelText: 'Crescimento dividendos (%)'),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _targetCtrl,
+          decoration: const InputDecoration(labelText: 'Meta de renda passiva/mês (opcional)'),
+          keyboardType: TextInputType.number,
+        ),
+        CheckboxListTile(
+          value: _reinvest,
+          onChanged: (v) => setState(() => _reinvest = v ?? true),
+          title: const Text('Reinvestir dividendos'),
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+        ),
+        const SizedBox(height: 8),
+        FilledButton(
+          onPressed: _loading ? null : _simulate,
+          child: _loading
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Simular'),
+        ),
+        if (_result != null) ..._buildResult(_result!),
+      ],
+    );
+  }
+
+  List<Widget> _buildResult(PassiveIncomeProjection r) {
+    final last = r.projections.last;
+    return [
+      const SizedBox(height: 16),
+      Row(
+        children: [
+          Expanded(
+            child: _Stat(label: 'Carteira hoje', value: formatCurrency(r.currentPortfolioValue)),
+          ),
+          Expanded(
+            child: _Stat(label: 'Carteira no fim', value: formatCurrency(last.portfolioValue)),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          Expanded(
+            child: _Stat(
+              label: 'Renda passiva hoje',
+              value: formatCurrency(r.currentPassiveIncomeMonthly),
+            ),
+          ),
+          Expanded(
+            child: _Stat(
+              label: 'Renda passiva no fim',
+              value: formatCurrency(last.passiveIncomeMonthly),
+            ),
+          ),
+        ],
+      ),
+      if (r.targetMonthlyIncome != null) ...[
+        const SizedBox(height: 12),
+        if (r.monthsToTarget != null)
+          Text(
+            '🎯 Meta de ${formatCurrency(r.targetMonthlyIncome)}/mês atingida em ${r.monthsToTarget} meses (${r.targetDate}).',
+          )
+        else
+          Text(
+            'Meta de ${formatCurrency(r.targetMonthlyIncome)}/mês não atingida no período simulado.',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+      ],
+      const SizedBox(height: 12),
+      Text(
+        'Projeção educativa, não é garantia de rentabilidade futura.',
+        style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+      ),
+    ];
   }
 }

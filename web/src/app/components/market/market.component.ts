@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { DipAnalysisResponse, RecommendService } from '../../core';
 import { AnalyzeAssetComponent } from './analyze-asset/analyze-asset.component';
+import { CompareAssetsComponent } from './compare-assets/compare-assets.component';
+import { ContributionSimulatorComponent } from './contribution-simulator/contribution-simulator.component';
 import { DipAnalysisModalComponent } from './dip-analysis-modal/dip-analysis-modal.component';
 import { DipScannerComponent } from './dip-scanner/dip-scanner.component';
 import { InvestmentStrategyComponent } from './investment-strategy/investment-strategy.component';
@@ -13,7 +15,7 @@ import { SectorsComponent } from '../sectors/sectors.component';
 
 type MarketTab = 'opportunities' | 'investir' | 'ferramentas';
 type OppMode = 'todas' | 'setores' | 'queda';
-type ToolMode = 'analisar' | 'renda_fixa';
+type ToolMode = 'analisar' | 'renda_fixa' | 'comparar' | 'projecao';
 
 @Component({
   selector: 'app-market',
@@ -29,6 +31,8 @@ type ToolMode = 'analisar' | 'renda_fixa';
     InvestmentStrategyComponent,
     RendaFixaComponent,
     DipAnalysisModalComponent,
+    CompareAssetsComponent,
+    ContributionSimulatorComponent,
   ],
   templateUrl: './market.component.html',
   styleUrls: ['./market.component.scss'],

@@ -267,4 +267,44 @@ class ApiRepository {
       queryParameters: {'token': token},
     );
   }
+
+  Future<BenchmarkResponse> getBenchmark() async {
+    final res = await _dio.get('/benchmark');
+    return BenchmarkResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<RebalanceResponse> getRebalancePlan() async {
+    final res = await _dio.get('/rebalance');
+    return RebalanceResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<CompareResponse> compareAssets(List<String> tickers) async {
+    final res = await _dio.get(
+      '/compare',
+      queryParameters: {'tickers': tickers.join(',')},
+    );
+    return CompareResponse.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<PassiveIncomeProjection> projectPassiveIncome({
+    required double monthlyContribution,
+    required int monthsAhead,
+    required double portfolioGrowthRate,
+    required double dividendGrowthRate,
+    required bool reinvestDividends,
+    double? targetMonthlyIncome,
+  }) async {
+    final res = await _dio.post(
+      '/projection/passive-income',
+      data: {
+        'monthly_contribution': monthlyContribution,
+        'months_ahead': monthsAhead,
+        'portfolio_growth_rate': portfolioGrowthRate,
+        'dividend_growth_rate': dividendGrowthRate,
+        'reinvest_dividends': reinvestDividends,
+        'target_monthly_income': targetMonthlyIncome,
+      },
+    );
+    return PassiveIncomeProjection.fromJson(res.data as Map<String, dynamic>);
+  }
 }

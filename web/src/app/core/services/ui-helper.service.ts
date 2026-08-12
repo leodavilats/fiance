@@ -259,6 +259,7 @@ export class UiHelperService {
       sell_target: 'trending-down',
       opportunity: 'trending-up',
       concentration: 'chart-pie',
+      rebalance: 'scale',
     };
     return map[kind] || 'info';
   }

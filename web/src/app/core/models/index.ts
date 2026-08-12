@@ -1,6 +1,7 @@
 export * from './alerts.model';
 export * from './common.model';
 export * from './asset.model';
+export * from './benchmark.model';
 export * from './dashboard.model';
 export * from './dip.model';
 export * from './opportunity.model';
@@ -8,6 +9,7 @@ export * from './portfolio.model';
 export * from './preferences.model';
 export * from './projection.model';
 export * from './quick-invest.model';
+export * from './rebalance.model';
 export * from './recommendation.model';
 export * from './renda_fixa.model';
 export * from './sectors.model';

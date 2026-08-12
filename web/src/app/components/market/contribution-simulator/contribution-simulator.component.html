@@ -1,0 +1,154 @@
+<div class="space-y-4">
+  <p class="text-xs text-muted m-0">
+    Simule um aporte mensal recorrente e veja como sua carteira e sua renda passiva evoluiriam ao
+    longo do tempo.
+  </p>
+
+  <form
+    [formGroup]="form"
+    (ngSubmit)="simulate()"
+    class="p-4 rounded-lg bg-panel border border-border"
+  >
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5">Aporte mensal (R$)</label>
+        <input
+          type="number"
+          formControlName="monthly_contribution"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5">Período (meses)</label>
+        <input
+          type="number"
+          formControlName="months_ahead"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5"
+          >Valorização anual esperada (%)</label
+        >
+        <input
+          type="number"
+          formControlName="portfolio_growth_rate"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5"
+          >Crescimento anual dos dividendos (%)</label
+        >
+        <input
+          type="number"
+          formControlName="dividend_growth_rate"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5"
+          >Meta de renda passiva mensal (R$, opcional)</label
+        >
+        <input
+          type="number"
+          formControlName="target_monthly_income"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+      <div class="flex items-center gap-2 mt-6">
+        <input type="checkbox" formControlName="reinvest_dividends" id="reinvest" class="w-4 h-4" />
+        <label for="reinvest" class="text-xs text-tx">Reinvestir dividendos automaticamente</label>
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      [disabled]="loading() || form.invalid"
+      class="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 disabled:opacity-50 transition-opacity"
+    >
+      {{ loading() ? 'Simulando...' : 'Simular' }}
+    </button>
+  </form>
+
+  @if (result(); as r) {
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="text-center p-3 rounded-lg bg-panel border border-border">
+        <div class="text-xs text-muted mb-0.5">Carteira hoje</div>
+        <div class="text-sm font-semibold text-tx">
+          R$ {{ r.current_portfolio_value | number: '1.0-0' }}
+        </div>
+      </div>
+      <div class="text-center p-3 rounded-lg bg-panel border border-border">
+        <div class="text-xs text-muted mb-0.5">
+          Carteira em {{ form.getRawValue().months_ahead }} meses
+        </div>
+        <div class="text-sm font-semibold good">
+          R$ {{ r.projections[r.projections.length - 1].portfolio_value | number: '1.0-0' }}
+        </div>
+      </div>
+      <div class="text-center p-3 rounded-lg bg-panel border border-border">
+        <div class="text-xs text-muted mb-0.5">Renda passiva/mês hoje</div>
+        <div class="text-sm font-semibold text-tx">
+          R$ {{ r.current_passive_income_monthly | number: '1.2-2' }}
+        </div>
+      </div>
+      <div class="text-center p-3 rounded-lg bg-panel border border-border">
+        <div class="text-xs text-muted mb-0.5">Renda passiva/mês no fim</div>
+        <div class="text-sm font-semibold good">
+          R$
+          {{ r.projections[r.projections.length - 1].passive_income_monthly | number: '1.2-2' }}
+        </div>
+      </div>
+    </div>
+
+    @if (r.target_monthly_income) {
+      <div class="p-4 rounded-lg bg-panel border border-border">
+        @if (r.months_to_target) {
+          <div class="text-sm text-tx">
+            🎯 Você atinge a meta de
+            <strong>R$ {{ r.target_monthly_income | number: '1.2-2' }}/mês</strong> em
+            <strong>{{ r.months_to_target }} meses</strong> ({{ r.target_date }}).
+          </div>
+        } @else {
+          <div class="text-sm text-muted">
+            Com essas premissas, a meta de R$ {{ r.target_monthly_income | number: '1.2-2' }}/mês
+            não é atingida dentro do período simulado. Tente aumentar o aporte mensal ou o período.
+          </div>
+        }
+      </div>
+    }
+
+    <div class="overflow-x-auto rounded-lg border border-border">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-panel-2 text-muted text-xs">
+            <th class="text-left px-3 py-2 font-medium">Mês</th>
+            <th class="text-right px-3 py-2 font-medium">Valor da carteira</th>
+            <th class="text-right px-3 py-2 font-medium">Renda passiva/mês</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of milestones(r); track m.month) {
+            <tr class="border-t border-border">
+              <td class="px-3 py-2 text-tx">{{ m.month }}</td>
+              <td class="px-3 py-2 text-right text-tx">
+                R$ {{ m.portfolio_value | number: '1.0-0' }}
+              </td>
+              <td class="px-3 py-2 text-right text-tx">
+                R$ {{ m.passive_income_monthly | number: '1.2-2' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="text-xs text-muted">
+      Premissas: valorização de
+      {{ r.assumptions['portfolio_growth_rate_yearly'] * 100 | number: '1.0-0' }}%/ano, dividendos
+      crescendo {{ r.assumptions['dividend_growth_rate_yearly'] * 100 | number: '1.0-0' }}%/ano.
+      Projeção educativa, não é garantia de rentabilidade futura.
+    </div>
+  }
+</div>

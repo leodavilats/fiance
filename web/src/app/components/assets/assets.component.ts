@@ -21,6 +21,7 @@ import {
   PortfolioEvaluationResponse,
   PortfolioCategory,
   PortfolioPosition,
+  RebalanceResponse,
   RecommendService,
   RendaFixaTipo,
   SectorGoal,
@@ -107,6 +108,28 @@ export class AssetsComponent implements OnInit {
 
   goals = signal<Goal[]>([]);
   sectorGoals = signal<SectorGoal[]>([]);
+
+  rebalancePlan = signal<RebalanceResponse | null>(null);
+  loadingRebalance = signal(false);
+  showRebalance = signal(false);
+
+  toggleRebalance(): void {
+    this.showRebalance.update(v => !v);
+    if (this.showRebalance() && !this.rebalancePlan()) {
+      this.loadRebalancePlan();
+    }
+  }
+
+  loadRebalancePlan(): void {
+    this.loadingRebalance.set(true);
+    this.svc.getRebalancePlan().subscribe({
+      next: res => {
+        this.rebalancePlan.set(res);
+        this.loadingRebalance.set(false);
+      },
+      error: () => this.loadingRebalance.set(false),
+    });
+  }
 
   goalTargetByCategory = computed(() => {
     const map = new Map<string, number>();

@@ -35,6 +35,20 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 _EvolutionChart(snapshots: data.snapshots),
               ],
+              if (data.health != null) ...[
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.health_and_safety_outlined,
+                  title: 'Saúde da carteira',
+                ),
+                _HealthCard(health: data.health!),
+              ],
+              const SizedBox(height: 20),
+              const _SectionTitle(
+                icon: Icons.bar_chart_outlined,
+                title: 'Carteira vs benchmarks',
+              ),
+              const _BenchmarkSection(),
               if (data.allocations.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 const _SectionTitle(
@@ -587,6 +601,197 @@ class _EvolutionChartState extends State<_EvolutionChart> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HealthCard extends StatelessWidget {
+  const _HealthCard({required this.health});
+
+  final PortfolioHealth health;
+
+  Color _scoreColor(Brightness brightness) {
+    if (health.score >= 70) return gainColor(brightness);
+    if (health.score >= 40) return warnColor(brightness);
+    return lossColor(brightness);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final color = _scoreColor(brightness);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Score geral',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  '${health.score.round()}/100',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _HealthMetric(label: 'Concentração', value: health.concentrationScore),
+                ),
+                Expanded(
+                  child: _HealthMetric(label: 'Setor', value: health.sectorConcentrationScore),
+                ),
+                Expanded(
+                  child: _HealthMetric(label: 'Diversif.', value: health.diversificationScore),
+                ),
+                Expanded(
+                  child: _HealthMetric(label: 'Risco', value: health.riskScore),
+                ),
+              ],
+            ),
+            if (health.warnings.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final w in health.warnings)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, size: 14, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          w,
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HealthMetric extends StatelessWidget {
+  const _HealthMetric({required this.label, required this.value});
+
+  final String label;
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value.round().toString(),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
+        ),
+      ],
+    );
+  }
+}
+
+class _BenchmarkSection extends ConsumerWidget {
+  const _BenchmarkSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final benchmark = ref.watch(benchmarkProvider);
+
+    return benchmark.when(
+      loading: () => const Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (data) {
+        if (data.points.length < 2) return const SizedBox.shrink();
+        return Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _BenchmarkStat(
+                      label: 'Carteira',
+                      pct: data.portfolioReturnPct,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    _BenchmarkStat(
+                      label: 'CDI',
+                      pct: data.cdiReturnPct,
+                      color: Colors.grey.shade500,
+                    ),
+                    if (data.ibovAvailable)
+                      _BenchmarkStat(
+                        label: 'Ibovespa',
+                        pct: data.ibovReturnPct ?? 0,
+                        color: warnColor(Theme.of(context).brightness),
+                      ),
+                  ],
+                ),
+                if (!data.ibovAvailable) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Ibovespa indisponível no momento.',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BenchmarkStat extends StatelessWidget {
+  const _BenchmarkStat({required this.label, required this.pct, required this.color});
+
+  final String label;
+  final double pct;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          '${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(1)}%',
+          style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+      ],
     );
   }
 }

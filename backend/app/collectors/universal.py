@@ -506,6 +506,63 @@ async def fetch_history_universal(symbol: str, period: str = "1y") -> dict[str, 
     return series
 
 
+_IBOV_SYMBOL = "^BVSP"
+
+
+def _fetch_ibov_history_sync(days: int) -> dict[str, float]:
+    settings = get_settings()
+    range_param = "1y" if days > 90 else "3mo"
+    try:
+        resp = httpx.get(
+            f"{_BRAPI_BASE}/quote/{_IBOV_SYMBOL}",
+            params={
+                "token": settings.brapi_token,
+                "range": range_param,
+                "interval": "1d",
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        results = resp.json().get("results") or []
+        if not results:
+            return {}
+        prices = results[0].get("historicalDataPrice") or []
+    except Exception as e:
+        logger.warning("brapi falhou ao buscar histórico do Ibovespa: %s", e)
+        return {}
+
+    out: dict[str, float] = {}
+    for p in prices:
+        close = _safe_float(p.get("close"))
+        ts = p.get("date")
+        if close is None or ts is None:
+            continue
+        try:
+            from datetime import datetime
+
+            day = datetime.fromtimestamp(int(ts), tz=UTC).strftime("%Y-%m-%d")
+            out[day] = close
+        except Exception:
+            continue
+    return out
+
+
+async def fetch_ibov_history(days: int = 365) -> dict[str, float]:
+    """Histórico diário do Ibovespa (fechamento por dia, YYYY-MM-DD).
+
+    Usado só para o comparativo de benchmark — se a BRAPI não suportar o
+    índice no plano em uso, retorna {} e o benchmark segue só com o CDI.
+    """
+    ck = f"uhist:{_IBOV_SYMBOL}:{days}"
+    cached = cache.get(ck)
+    if cached is not None:
+        return cached
+
+    series = await asyncio.to_thread(_fetch_ibov_history_sync, days)
+    cache.set(ck, series, HIST_TTL)
+    return series
+
+
 async def fetch_dividends(symbol: str) -> list[dict[str, float]]:
     ck = f"udiv:{symbol.upper()}"
     cached = cache.get(ck)

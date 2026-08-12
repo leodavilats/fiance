@@ -1,15 +1,18 @@
 from .analysis import (
     AssetAnalysis,
+    CompareResponse,
     DecisionBlock,
     FairPriceBlock,
     TechnicalBlock,
 )
+from .benchmark import BenchmarkPoint, BenchmarkResponse
 from .company import CompanyFundamentals, ScoredCompany
 from .dashboard import (
     Alert,
     CategoryAllocation,
     DashboardResponse,
     DashboardSummary,
+    PortfolioHealth,
 )
 from .dip import (
     DipAnalysisResponse,
@@ -55,6 +58,7 @@ from .quick_invest import (
     QuickInvestRequest,
     QuickInvestResponse,
 )
+from .rebalance import RebalanceResponse
 from .recommendation import Allocation, RecommendRequest, RecommendResponse
 from .renda_fixa import (
     ReferenceRates,
@@ -79,9 +83,14 @@ __all__ = [
     "RecommendRequest",
     "RecommendResponse",
     "AssetAnalysis",
+    "CompareResponse",
     "DecisionBlock",
     "FairPriceBlock",
     "TechnicalBlock",
+    "BenchmarkPoint",
+    "BenchmarkResponse",
+    "PortfolioHealth",
+    "RebalanceResponse",
     "PortfolioEvaluationRequest",
     "PortfolioEvaluationResponse",
     "PortfolioItem",

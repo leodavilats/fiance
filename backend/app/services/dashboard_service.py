@@ -1,3 +1,4 @@
+from app.analysis.portfolio_health import compute_portfolio_health
 from app.models import (
     Alert,
     CategoryAllocation,
@@ -9,6 +10,8 @@ from app.models import (
     PortfolioSnapshot,
 )
 from app.repositories import PortfolioRepository
+
+REBALANCE_THRESHOLD_PCT = 5.0
 
 _ASSET_TYPE_TO_CATEGORY = {
     "br_stock": "acoes_br",
@@ -75,6 +78,23 @@ class DashboardService:
                         kind="concentration",
                         title=f"Setor {sector} concentrado",
                         detail=f"{pct:.1f}% da carteira em um único setor. Considere diversificar.",
+                    )
+                )
+
+        for a in allocations:
+            if a.target_pct is None or a.delta_pct is None:
+                continue
+            if abs(a.delta_pct) >= REBALANCE_THRESHOLD_PCT:
+                direction = "acima" if a.delta_pct > 0 else "abaixo"
+                alerts.append(
+                    Alert(
+                        severity="warning",
+                        kind="rebalance",
+                        title=f"{a.category}: {direction} da meta",
+                        detail=(
+                            f"Atual {a.current_pct:.1f}% vs meta {a.target_pct:.1f}% "
+                            f"({a.delta_pct:+.1f}pp). Veja como rebalancear em Ativos."
+                        ),
                     )
                 )
 
@@ -169,6 +189,7 @@ class DashboardService:
         snaps = self.portfolio_repo.list_snapshots(limit=90)
 
         real_positions_count = len([p for p in positions if not p.ticker.startswith("RF_")])
+        health = compute_portfolio_health(positions, allocations)
 
         return DashboardResponse(
             summary=DashboardSummary(
@@ -191,5 +212,6 @@ class DashboardService:
             alerts=alerts,
             allocations=allocations,
             snapshots=[PortfolioSnapshot(**s) for s in snaps],
+            health=health,
             last_updated=self.portfolio_repo.last_updated(),
         )

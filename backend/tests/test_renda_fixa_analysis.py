@@ -4,17 +4,17 @@ from app.models.renda_fixa import RendaFixaAsset
 
 
 def _asset(**overrides):
-    defaults = dict(
-        tipo=RendaFixaType.cdb,
-        valor_investido=10_000.0,
-        taxa=12.0,
-        prazo_meses=12,
-        tipo_taxa=TaxType.pre_fixado,
-        percentual_cdi=None,
-        liquidez=Liquidez.no_vencimento,
-        nome="Teste",
-        isento_ir=None,
-    )
+    defaults = {
+        "tipo": RendaFixaType.cdb,
+        "valor_investido": 10_000.0,
+        "taxa": 12.0,
+        "prazo_meses": 12,
+        "tipo_taxa": TaxType.pre_fixado,
+        "percentual_cdi": None,
+        "liquidez": Liquidez.no_vencimento,
+        "nome": "Teste",
+        "isento_ir": None,
+    }
     defaults.update(overrides)
     return RendaFixaAsset(**defaults)
 

@@ -98,3 +98,13 @@ final closedTradesProvider = FutureProvider.autoDispose<ClosedTradesResponse>((
 ) {
   return ref.watch(apiRepositoryProvider).getClosedTrades();
 });
+
+final benchmarkProvider = FutureProvider.autoDispose<BenchmarkResponse>((ref) {
+  return ref.watch(apiRepositoryProvider).getBenchmark();
+});
+
+final rebalancePlanProvider = FutureProvider.autoDispose<RebalanceResponse>((
+  ref,
+) {
+  return ref.watch(apiRepositoryProvider).getRebalancePlan();
+});

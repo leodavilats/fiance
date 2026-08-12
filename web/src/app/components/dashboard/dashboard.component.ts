@@ -2,8 +2,19 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { DashboardResponse, LoadingService, RecommendService, UiHelperService } from '../../core';
-import { EmptyStateComponent, PatrimonyChartComponent, SkeletonComponent } from '../index';
+import {
+  BenchmarkResponse,
+  DashboardResponse,
+  LoadingService,
+  RecommendService,
+  UiHelperService,
+} from '../../core';
+import {
+  BenchmarkChartComponent,
+  EmptyStateComponent,
+  PatrimonyChartComponent,
+  SkeletonComponent,
+} from '../index';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,6 +25,7 @@ import { EmptyStateComponent, PatrimonyChartComponent, SkeletonComponent } from 
     SkeletonComponent,
     EmptyStateComponent,
     PatrimonyChartComponent,
+    BenchmarkChartComponent,
   ],
   templateUrl: './dashboard.component.html',
 })
@@ -25,6 +37,7 @@ export class DashboardComponent implements OnInit {
   readonly Math = Math;
 
   data = signal<DashboardResponse | null>(null);
+  benchmark = signal<BenchmarkResponse | null>(null);
   isInitialLoad = signal(true);
   hasError = signal(false);
 
@@ -44,6 +57,11 @@ export class DashboardComponent implements OnInit {
         this.isInitialLoad.set(false);
       },
       complete: () => {},
+    });
+
+    this.svc.getBenchmark().subscribe({
+      next: res => this.benchmark.set(res),
+      error: () => this.benchmark.set(null),
     });
   }
 

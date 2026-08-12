@@ -7,6 +7,7 @@ from . import (
     assets,
     auth,
     basic,
+    benchmark,
     dashboard,
     dip_scanner,
     goals,
@@ -16,6 +17,7 @@ from . import (
     preferences,
     projection,
     quick_invest,
+    rebalance,
     recommendations,
     renda_fixa,
     sectors,
@@ -41,6 +43,8 @@ protected.include_router(strategy.router, tags=["Strategy"])
 protected.include_router(renda_fixa.router, tags=["Renda Fixa"])
 protected.include_router(projection.router, tags=["Projection"])
 protected.include_router(quick_invest.router, tags=["Quick Invest"])
+protected.include_router(benchmark.router, tags=["Benchmark"])
+protected.include_router(rebalance.router, tags=["Rebalance"])
 protected.include_router(alerts.router, tags=["Alerts"])
 protected.include_router(sectors.router, tags=["Sectors"])
 protected.include_router(watchlist.router, tags=["Watchlist"])

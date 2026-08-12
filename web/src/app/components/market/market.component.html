@@ -100,12 +100,36 @@
         >
           <lucide-icon name="landmark" size="14"></lucide-icon> Simulador de RF
         </button>
+        <button
+          type="button"
+          (click)="toolMode.set('comparar')"
+          [class.active]="toolMode() === 'comparar'"
+          class="subtab-btn"
+        >
+          <lucide-icon name="git-compare" size="14"></lucide-icon> Comparar Ativos
+        </button>
+        <button
+          type="button"
+          (click)="toolMode.set('projecao')"
+          [class.active]="toolMode() === 'projecao'"
+          class="subtab-btn"
+        >
+          <lucide-icon name="calendar-clock" size="14"></lucide-icon> Simulador de Aportes
+        </button>
       </div>
     </div>
   }
 
   @if (activeTab() === 'ferramentas' && toolMode() === 'analisar') {
     <app-analyze-asset />
+  }
+
+  @if (activeTab() === 'ferramentas' && toolMode() === 'comparar') {
+    <app-compare-assets />
+  }
+
+  @if (activeTab() === 'ferramentas' && toolMode() === 'projecao') {
+    <app-contribution-simulator />
   }
 
   @if (activeTab() === 'investir') {

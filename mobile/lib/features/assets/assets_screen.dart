@@ -274,6 +274,8 @@ class AssetsScreen extends ConsumerWidget {
                     title: 'Composição da carteira',
                   ),
                   _CompositionCard(allocations: data.allocations),
+                  const SizedBox(height: 12),
+                  const _RebalanceCard(),
                 ],
                 const SizedBox(height: 20),
                 _SectionTitle(
@@ -536,6 +538,97 @@ class _CompositionCard extends StatelessWidget {
   }
 }
 
+class _RebalanceCard extends ConsumerStatefulWidget {
+  const _RebalanceCard();
+
+  @override
+  ConsumerState<_RebalanceCard> createState() => _RebalanceCardState();
+}
+
+class _RebalanceCardState extends ConsumerState<_RebalanceCard> {
+  bool _expanded = false;
+  bool _loading = false;
+  RebalanceResponse? _plan;
+
+  Future<void> _toggle() async {
+    setState(() => _expanded = !_expanded);
+    if (_expanded && _plan == null) {
+      setState(() => _loading = true);
+      try {
+        final plan = await ref.read(apiRepositoryProvider).getRebalancePlan();
+        setState(() => _plan = plan);
+      } finally {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.balance_outlined),
+            title: const Text('Como rebalancear minha carteira?'),
+            trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+            onTap: _toggle,
+          ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _plan == null
+                  ? const Text('Não foi possível calcular agora.')
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_plan!.message),
+                        if (_plan!.suggestions.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          for (final s in _plan!.suggestions)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          s.ticker,
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        Text(
+                                          s.rationale,
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${s.suggestedQuantity}x · ${formatCurrency(s.suggestedInvestment)}',
+                                    style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _GroupedPositionsList extends ConsumerWidget {
   const _GroupedPositionsList({
     required this.positions,
@@ -623,7 +716,6 @@ class _GroupedPositionsList extends ConsumerWidget {
       );
     }
 
-    // Por setor
     final sectorGoals = ref.watch(sectorGoalsProvider).valueOrNull ?? [];
     final groups = <String, List<PortfolioPosition>>{};
     for (final p in positions) {

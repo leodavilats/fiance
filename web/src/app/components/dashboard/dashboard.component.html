@@ -314,6 +314,110 @@
       </div>
     }
 
+    @if (d.health; as health) {
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <h2 class="flex items-center gap-2 text-base font-bold m-0 text-tx">
+            <lucide-icon name="shield-check" size="16"></lucide-icon> Saúde da Carteira
+          </h2>
+          <div class="flex items-center gap-2">
+            <span
+              class="text-2xl font-bold leading-none"
+              [class.good]="health.score >= 70"
+              [class.warn]="health.score >= 40 && health.score < 70"
+              [class.error]="health.score < 40"
+              >{{ health.score | number: '1.0-0' }}</span
+            >
+            <span class="text-xs text-muted">/ 100</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          <div class="text-center p-2 rounded-lg bg-panel-2">
+            <div class="text-xs text-muted mb-0.5">Concentração</div>
+            <div class="text-sm font-semibold text-tx">
+              {{ health.concentration_score | number: '1.0-0' }}
+            </div>
+          </div>
+          <div class="text-center p-2 rounded-lg bg-panel-2">
+            <div class="text-xs text-muted mb-0.5">Setor</div>
+            <div class="text-sm font-semibold text-tx">
+              {{ health.sector_concentration_score | number: '1.0-0' }}
+            </div>
+          </div>
+          <div class="text-center p-2 rounded-lg bg-panel-2">
+            <div class="text-xs text-muted mb-0.5">Diversificação</div>
+            <div class="text-sm font-semibold text-tx">
+              {{ health.diversification_score | number: '1.0-0' }}
+            </div>
+          </div>
+          <div class="text-center p-2 rounded-lg bg-panel-2">
+            <div class="text-xs text-muted mb-0.5">Risco</div>
+            <div class="text-sm font-semibold text-tx">
+              {{ health.risk_score | number: '1.0-0' }}
+            </div>
+          </div>
+        </div>
+        @if (health.warnings.length > 0) {
+          <div class="flex flex-col gap-1.5">
+            @for (w of health.warnings; track w) {
+              <div class="flex items-start gap-2 text-xs text-muted">
+                <lucide-icon
+                  name="circle-alert"
+                  size="13"
+                  class="text-warn flex-shrink-0 mt-0.5"
+                ></lucide-icon>
+                {{ w }}
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="text-xs text-muted">Sem pontos de atenção identificados.</div>
+        }
+      </div>
+    }
+
+    @if (benchmark(); as bm) {
+      @if (bm.points.length >= 2) {
+        <div class="p-5 rounded-xl bg-panel border border-border">
+          <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+            <lucide-icon name="bar-chart-3" size="16"></lucide-icon> Carteira vs Benchmarks
+          </h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">Carteira</div>
+              <div
+                class="text-sm font-semibold"
+                [class.good]="bm.portfolio_return_pct >= 0"
+                [class.warn]="bm.portfolio_return_pct < 0"
+              >
+                {{ bm.portfolio_return_pct >= 0 ? '+' : ''
+                }}{{ bm.portfolio_return_pct | number: '1.1-1' }}%
+              </div>
+            </div>
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">CDI</div>
+              <div class="text-sm font-semibold text-tx">
+                {{ bm.cdi_return_pct >= 0 ? '+' : '' }}{{ bm.cdi_return_pct | number: '1.1-1' }}%
+              </div>
+            </div>
+            @if (bm.ibov_available) {
+              <div class="text-center p-3 rounded-lg bg-panel-2">
+                <div class="text-xs text-muted mb-0.5">Ibovespa</div>
+                <div class="text-sm font-semibold text-tx">
+                  {{ (bm.ibov_return_pct ?? 0) >= 0 ? '+' : ''
+                  }}{{ bm.ibov_return_pct | number: '1.1-1' }}%
+                </div>
+              </div>
+            }
+          </div>
+          <app-benchmark-chart
+            [points]="bm.points"
+            [ibovAvailable]="bm.ibov_available"
+          ></app-benchmark-chart>
+        </div>
+      }
+    }
+
     @if (d.snapshots.length >= 1) {
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">

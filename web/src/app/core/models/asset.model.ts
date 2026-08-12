@@ -43,3 +43,8 @@ export interface AssetAnalysis {
   technical: TechnicalBlock;
   decision: DecisionBlock;
 }
+
+export interface CompareResponse {
+  items: AssetAnalysis[];
+  errors: string[];
+}

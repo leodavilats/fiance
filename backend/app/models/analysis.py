@@ -46,3 +46,10 @@ class AssetAnalysis(BaseModel):
     fair_price: FairPriceBlock
     technical: TechnicalBlock
     decision: DecisionBlock
+
+
+class CompareResponse(BaseModel):
+    items: list[AssetAnalysis] = Field(default_factory=list)
+    errors: list[str] = Field(
+        default_factory=list, description="Tickers que falharam ao buscar/analisar"
+    )

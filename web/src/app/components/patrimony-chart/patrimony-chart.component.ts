@@ -58,7 +58,6 @@ const PAD_BOTTOM = 34;
             </linearGradient>
           </defs>
 
-          <!-- gridlines (recessive) -->
           @for (gy of gridLines(); track gy.y) {
             <line
               [attr.x1]="padLeft"
@@ -79,7 +78,6 @@ const PAD_BOTTOM = 34;
               {{ gy.value | number: '1.0-0' }}
             </text>
           }
-          <!-- baseline -->
           <line
             [attr.x1]="padLeft"
             [attr.y1]="vbHeight - padBottom"
@@ -90,10 +88,8 @@ const PAD_BOTTOM = 34;
             stroke-width="1"
           />
 
-          <!-- area fill -->
           <path [attr.d]="areaPath()" fill="url(#patrimonyAreaGradient)" />
 
-          <!-- line -->
           <path
             [attr.d]="linePath()"
             stroke="var(--accent)"
@@ -103,7 +99,6 @@ const PAD_BOTTOM = 34;
             stroke-linejoin="round"
           />
 
-          <!-- crosshair -->
           @if (hoverIndex() !== null) {
             <line
               [attr.x1]="points()[hoverIndex()!].x"
@@ -117,7 +112,6 @@ const PAD_BOTTOM = 34;
             />
           }
 
-          <!-- data points -->
           @for (p of points(); track p.capturedAt; let i = $index) {
             @if (isKeyPoint(i)) {
               <circle
@@ -141,7 +135,6 @@ const PAD_BOTTOM = 34;
             }
           }
 
-          <!-- x-axis labels -->
           <text
             [attr.x]="padLeft"
             [attr.y]="vbHeight - 10"
@@ -162,7 +155,6 @@ const PAD_BOTTOM = 34;
           </text>
         </svg>
 
-        <!-- tooltip -->
         @if (hoverIndex() !== null) {
           <div
             class="pointer-events-none absolute z-10 rounded-lg border border-border bg-panel px-3 py-2 text-xs shadow-lg"

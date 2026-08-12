@@ -1,0 +1,207 @@
+<div class="space-y-4">
+  <p class="text-xs text-muted m-0">
+    Compare até {{ maxTickers }} ativos lado a lado: preço justo, margem de segurança e indicadores
+    principais.
+  </p>
+
+  <div class="p-4 rounded-lg bg-panel border border-border">
+    <div class="flex items-center gap-2 flex-wrap mb-3">
+      @for (t of tickers(); track t) {
+        <span
+          class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-panel-2 border border-border text-xs font-medium text-tx"
+        >
+          {{ t }}
+          <button
+            type="button"
+            (click)="removeTicker(t)"
+            class="bg-transparent border-0 cursor-pointer text-muted hover:text-tx p-0 leading-none"
+          >
+            ×
+          </button>
+        </span>
+      }
+    </div>
+
+    @if (tickers().length < maxTickers) {
+      <div class="relative">
+        <input
+          type="text"
+          [value]="tickerInput()"
+          (input)="onTickerInput($any($event.target).value)"
+          (focus)="onTickerInput(tickerInput())"
+          (focusout)="closeSuggestions()"
+          (keydown.enter)="addTicker(tickerInput())"
+          placeholder="Adicionar ticker (ex.: PETR4)"
+          autocomplete="off"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent uppercase"
+        />
+        @if (suggestionsOpen() && suggestions().length > 0) {
+          <ul
+            class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-border bg-panel shadow-xl max-h-56 overflow-y-auto text-sm"
+          >
+            @for (s of suggestions(); track s.ticker) {
+              <li>
+                <button
+                  type="button"
+                  class="w-full text-left px-3 py-2 hover:bg-panel-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                  (mousedown)="$event.preventDefault(); addTicker(s.ticker)"
+                >
+                  <span class="font-semibold text-tx">{{ s.ticker }}</span>
+                  <span class="text-muted text-xs truncate">{{ s.name }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    <button
+      type="button"
+      (click)="compare()"
+      [disabled]="loading() || tickers().length < 2"
+      class="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 disabled:opacity-50 transition-opacity"
+    >
+      {{ loading() ? 'Comparando...' : 'Comparar' }}
+    </button>
+
+    @if (error()) {
+      <div class="text-xs text-warn mt-2">{{ error() }}</div>
+    }
+  </div>
+
+  @if (result(); as r) {
+    @if (r.errors.length > 0) {
+      <div class="text-xs text-warn">Não foi possível buscar: {{ r.errors.join(', ') }}</div>
+    }
+
+    @if (r.items.length > 0) {
+      <div class="overflow-x-auto rounded-lg border border-border">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-panel-2 text-muted text-xs">
+              <th class="text-left px-3 py-2 font-medium">Indicador</th>
+              @for (item of r.items; track item.symbol) {
+                <th class="text-right px-3 py-2 font-medium text-tx">{{ item.symbol }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-t border-border">
+              <td class="px-3 py-2 text-muted">Preço</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right text-tx">
+                  {{ item.price != null ? (item.price | number: '1.2-2') : '—' }}
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border bg-panel-2/50">
+              <td class="px-3 py-2 text-muted">Preço justo (consenso)</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right text-tx">
+                  {{
+                    item.fair_price.consensus != null
+                      ? (item.fair_price.consensus | number: '1.2-2')
+                      : '—'
+                  }}
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border">
+              <td class="px-3 py-2 text-muted">Margem de segurança</td>
+              @for (item of r.items; track item.symbol) {
+                <td
+                  class="px-3 py-2 text-right font-medium"
+                  [class.good]="(item.fair_price.margin_of_safety ?? 0) >= 0"
+                  [class.warn]="(item.fair_price.margin_of_safety ?? 0) < 0"
+                >
+                  {{
+                    item.fair_price.margin_of_safety != null
+                      ? (item.fair_price.margin_of_safety * 100 | number: '1.0-0') + '%'
+                      : '—'
+                  }}
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border bg-panel-2/50">
+              <td class="px-3 py-2 text-muted">Decisão</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right">
+                  <span
+                    class="verdict-pill text-[10px]"
+                    [class]="ui.verdictClass(item.decision.verdict)"
+                    >{{ item.decision.label }}</span
+                  >
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border">
+              <td class="px-3 py-2 text-muted">P/L</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right text-tx">
+                  {{
+                    fundamental(item, 'pe_ratio') != null
+                      ? (fundamental(item, 'pe_ratio') | number: '1.1-1')
+                      : '—'
+                  }}
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border bg-panel-2/50">
+              <td class="px-3 py-2 text-muted">P/VP</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right text-tx">
+                  {{
+                    fundamental(item, 'pb_ratio') != null
+                      ? (fundamental(item, 'pb_ratio') | number: '1.2-2')
+                      : '—'
+                  }}
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border">
+              <td class="px-3 py-2 text-muted">Dividend Yield</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right text-tx">
+                  {{
+                    fundamental(item, 'dividend_yield') != null
+                      ? (fundamental(item, 'dividend_yield') | number: '1.1-1') + '%'
+                      : '—'
+                  }}
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border bg-panel-2/50">
+              <td class="px-3 py-2 text-muted">ROE</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right text-tx">
+                  {{
+                    fundamental(item, 'roe') != null
+                      ? (fundamental(item, 'roe') | number: '1.1-1') + '%'
+                      : '—'
+                  }}
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border">
+              <td class="px-3 py-2 text-muted">RSI (14)</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right text-tx">
+                  {{
+                    item.technical.rsi_14 != null ? (item.technical.rsi_14 | number: '1.0-0') : '—'
+                  }}
+                </td>
+              }
+            </tr>
+            <tr class="border-t border-border bg-panel-2/50">
+              <td class="px-3 py-2 text-muted">Tendência</td>
+              @for (item of r.items; track item.symbol) {
+                <td class="px-3 py-2 text-right text-tx capitalize">{{ item.technical.trend }}</td>
+              }
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>
