@@ -1,0 +1,68 @@
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  (click)="closeAnalysis()"
+>
+  <div
+    class="bg-panel max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl"
+    (click)="$event.stopPropagation()"
+  >
+    @if (analysis(); as analysis) {
+      <div
+        class="sticky top-0 bg-panel border-b border-border p-4 flex justify-between items-center"
+      >
+        <h3 class="text-xl font-bold text-tx">Análise DIP: {{ analysis.symbol }}</h3>
+        <button type="button" (click)="closeAnalysis()" class="text-muted hover:text-tx">
+          <lucide-icon name="x" size="24"></lucide-icon>
+        </button>
+      </div>
+      <div class="p-4 space-y-4">
+        <div class="card bg-gradient-to-br from-accent/20 to-accent-2/20">
+          <div class="text-center">
+            <div class="text-5xl font-bold text-accent mb-2">{{ analysis.dip_score }}</div>
+            <div class="text-sm text-muted">Score DIP (0-100)</div>
+            <div class="text-lg font-semibold text-tx mt-2">{{ analysis.verdict_label }}</div>
+            <div class="text-sm text-muted">Confiança: {{ analysis.confidence }}</div>
+          </div>
+        </div>
+        @if (analysis.breakdown) {
+          <div class="card">
+            <h4 class="font-semibold text-tx mb-2">Breakdown do Score</h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-muted">Valor:</span
+                ><span class="text-tx">{{ analysis.breakdown.value_score }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted">Técnico:</span
+                ><span class="text-tx">{{ analysis.breakdown.technical_score }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted">Qualidade:</span
+                ><span class="text-tx">{{ analysis.breakdown.quality_score }}</span>
+              </div>
+            </div>
+          </div>
+        }
+        <div class="card">
+          <h4 class="font-semibold text-tx mb-2">Análise</h4>
+          <p class="text-sm text-tx">{{ analysis.reasons.join('. ') }}.</p>
+        </div>
+        @if (analysis.news && analysis.news.length > 0) {
+          <div class="card">
+            <h4 class="font-semibold text-tx mb-2">Notícias Recentes</h4>
+            <div class="space-y-2">
+              @for (item of analysis.news; track $index) {
+                <div class="text-sm">
+                  <a [href]="item.url" target="_blank" class="text-accent hover:underline">{{
+                    item.title
+                  }}</a>
+                  <p class="text-xs text-muted">{{ item.published }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

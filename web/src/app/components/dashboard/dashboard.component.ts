@@ -3,12 +3,18 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { DashboardResponse, LoadingService, RecommendService, UiHelperService } from '../../core';
-import { EmptyStateComponent, SkeletonComponent } from '../index';
+import { EmptyStateComponent, PatrimonyChartComponent, SkeletonComponent } from '../index';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, SkeletonComponent, EmptyStateComponent],
+  imports: [
+    CommonModule,
+    LucideAngularModule,
+    SkeletonComponent,
+    EmptyStateComponent,
+    PatrimonyChartComponent,
+  ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {

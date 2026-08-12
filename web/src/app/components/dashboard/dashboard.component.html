@@ -314,181 +314,89 @@
       </div>
     }
 
-    @if (d.snapshots.length >= 2) {
+    @if (d.snapshots.length >= 1) {
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
           <lucide-icon name="chart-column" size="16"></lucide-icon> Evolução do Patrimônio
         </h2>
 
-        <div class="grid grid-cols-3 gap-4 mb-4">
-          <div class="text-center p-3 rounded-lg bg-panel-2">
-            <div class="text-xs text-muted mb-0.5">Início</div>
-            <div class="text-sm font-semibold text-tx">
-              R$ {{ d.snapshots[0].total_current | number: '1.0-0' }}
+        @if (d.snapshots.length >= 2) {
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">Início</div>
+              <div class="text-sm font-semibold text-tx">
+                R$ {{ d.snapshots[0].total_current | number: '1.0-0' }}
+              </div>
+              <div class="text-xs text-muted">{{ formatDate(d.snapshots[0].captured_at) }}</div>
             </div>
-            <div class="text-xs text-muted">{{ formatDate(d.snapshots[0].captured_at) }}</div>
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">Variação total</div>
+              <div
+                class="text-sm font-semibold"
+                [class.good]="
+                  d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
+                "
+                [class.warn]="
+                  d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
+                "
+              >
+                {{
+                  d.snapshots[d.snapshots.length - 1].total_current -
+                    d.snapshots[0].total_current >=
+                  0
+                    ? '+'
+                    : ''
+                }}R$
+                {{
+                  d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current
+                    | number: '1.0-0'
+                }}
+              </div>
+              <div
+                class="text-xs"
+                [class.good]="
+                  d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
+                "
+                [class.warn]="
+                  d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
+                "
+              >
+                {{
+                  (d.snapshots[d.snapshots.length - 1].total_current /
+                    d.snapshots[0].total_current -
+                    1) *
+                    100 | number: '1.2-2'
+                }}%
+              </div>
+            </div>
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">Atual</div>
+              <div class="text-sm font-semibold text-tx">
+                R$ {{ d.snapshots[d.snapshots.length - 1].total_current | number: '1.0-0' }}
+              </div>
+              <div class="text-xs text-muted">
+                {{ formatDate(d.snapshots[d.snapshots.length - 1].captured_at) }}
+              </div>
+            </div>
           </div>
-          <div class="text-center p-3 rounded-lg bg-panel-2">
-            <div class="text-xs text-muted mb-0.5">Variação total</div>
-            <div
-              class="text-sm font-semibold"
-              [class.good]="
-                d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
-              "
-              [class.warn]="
-                d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
-              "
-            >
-              {{
-                d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current >=
-                0
-                  ? '+'
-                  : ''
-              }}R$
-              {{
-                d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current
-                  | number: '1.0-0'
-              }}
-            </div>
-            <div
-              class="text-xs"
-              [class.good]="
-                d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
-              "
-              [class.warn]="
-                d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
-              "
-            >
-              {{
-                (d.snapshots[d.snapshots.length - 1].total_current / d.snapshots[0].total_current -
-                  1) *
-                  100 | number: '1.2-2'
-              }}%
-            </div>
-          </div>
-          <div class="text-center p-3 rounded-lg bg-panel-2">
-            <div class="text-xs text-muted mb-0.5">Atual</div>
-            <div class="text-sm font-semibold text-tx">
-              R$ {{ d.snapshots[d.snapshots.length - 1].total_current | number: '1.0-0' }}
-            </div>
-            <div class="text-xs text-muted">
-              {{ formatDate(d.snapshots[d.snapshots.length - 1].captured_at) }}
-            </div>
-          </div>
-        </div>
+        }
 
-        <div class="relative">
-          <svg class="w-full" viewBox="0 0 600 180" preserveAspectRatio="xMidYMid meet">
-            <defs>
-              <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color: rgb(var(--accent)); stop-opacity: 0.3" />
-                <stop offset="100%" style="stop-color: rgb(var(--accent)); stop-opacity: 0.02" />
-              </linearGradient>
-            </defs>
-            <line
-              x1="40"
-              y1="20"
-              x2="590"
-              y2="20"
-              stroke="currentColor"
-              stroke-opacity="0.08"
-              stroke-width="1"
-            />
-            <line
-              x1="40"
-              y1="60"
-              x2="590"
-              y2="60"
-              stroke="currentColor"
-              stroke-opacity="0.08"
-              stroke-width="1"
-            />
-            <line
-              x1="40"
-              y1="100"
-              x2="590"
-              y2="100"
-              stroke="currentColor"
-              stroke-opacity="0.08"
-              stroke-width="1"
-            />
-            <line
-              x1="40"
-              y1="140"
-              x2="590"
-              y2="140"
-              stroke="currentColor"
-              stroke-opacity="0.15"
-              stroke-width="1"
-            />
-            <line
-              x1="40"
-              y1="20"
-              x2="40"
-              y2="140"
-              stroke="currentColor"
-              stroke-opacity="0.15"
-              stroke-width="1"
-            />
-            <path
-              [attr.d]="ui.snapshotAreaPath(d.snapshots, 550, 120, 40, 20)"
-              fill="url(#areaGradient)"
-            />
-            <path
-              [attr.d]="ui.snapshotPath(d.snapshots, 550, 120, 40, 20)"
-              stroke="rgb(var(--accent))"
-              stroke-width="2.5"
-              fill="none"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            @for (snap of d.snapshots; track snap.captured_at; let i = $index) {
-              @if (
-                i === 0 ||
-                i === d.snapshots.length - 1 ||
-                i % Math.max(1, Math.floor(d.snapshots.length / 8)) === 0
-              ) {
-                <circle
-                  [attr.cx]="40 + (i / (d.snapshots.length - 1)) * 550"
-                  [attr.cy]="
-                    140 -
-                    ((snap.total_current - ui.minSnapshot(d.snapshots)) /
-                      (ui.maxSnapshot(d.snapshots) - ui.minSnapshot(d.snapshots))) *
-                      120
-                  "
-                  r="3"
-                  fill="rgb(var(--accent))"
-                  stroke="rgb(var(--panel))"
-                  stroke-width="2"
-                />
-              }
-            }
-            <text x="35" y="25" text-anchor="end" class="text-[8px] fill-muted">
-              {{ ui.maxSnapshot(d.snapshots) | number: '1.0-0' }}
-            </text>
-            <text x="35" y="143" text-anchor="end" class="text-[8px] fill-muted">
-              {{ ui.minSnapshot(d.snapshots) | number: '1.0-0' }}
-            </text>
-            <text x="40" y="160" text-anchor="start" class="text-[8px] fill-muted">
-              {{ formatDate(d.snapshots[0].captured_at) }}
-            </text>
-            <text x="590" y="160" text-anchor="end" class="text-[8px] fill-muted">
-              {{ formatDate(d.snapshots[d.snapshots.length - 1].captured_at) }}
-            </text>
-          </svg>
-        </div>
-        <div class="flex items-center justify-between mt-2 text-xs text-muted">
-          <span>{{ d.snapshots.length }} registros</span>
-          <span
-            >{{
-              Math.ceil(
-                (d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) /
-                  86400
-              )
-            }}
-            dias</span
-          >
-        </div>
+        <app-patrimony-chart [snapshots]="d.snapshots"></app-patrimony-chart>
+
+        @if (d.snapshots.length >= 2) {
+          <div class="flex items-center justify-between mt-2 text-xs text-muted">
+            <span>{{ d.snapshots.length }} registros</span>
+            <span
+              >{{
+                Math.ceil(
+                  (d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) /
+                    86400
+                )
+              }}
+              dias</span
+            >
+          </div>
+        }
       </div>
     }
 

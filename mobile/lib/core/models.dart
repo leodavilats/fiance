@@ -236,6 +236,31 @@ class PortfolioAlert {
   );
 }
 
+class PortfolioSnapshot {
+  PortfolioSnapshot({
+    required this.capturedAt,
+    required this.totalInvested,
+    required this.totalCurrent,
+    required this.totalPnl,
+    required this.totalPnlPct,
+  });
+
+  final double capturedAt;
+  final double totalInvested;
+  final double totalCurrent;
+  final double totalPnl;
+  final double totalPnlPct;
+
+  factory PortfolioSnapshot.fromJson(Map<String, dynamic> j) =>
+      PortfolioSnapshot(
+        capturedAt: (j['captured_at'] as num).toDouble(),
+        totalInvested: (j['total_invested'] as num).toDouble(),
+        totalCurrent: (j['total_current'] as num).toDouble(),
+        totalPnl: (j['total_pnl'] as num).toDouble(),
+        totalPnlPct: (j['total_pnl_pct'] as num).toDouble(),
+      );
+}
+
 class DashboardData {
   DashboardData({
     required this.summary,
@@ -244,6 +269,7 @@ class DashboardData {
     required this.topBuys,
     required this.topSells,
     required this.alerts,
+    this.snapshots = const [],
   });
 
   final DashboardSummary summary;
@@ -252,6 +278,7 @@ class DashboardData {
   final List<Opportunity> topBuys;
   final List<PortfolioPosition> topSells;
   final List<PortfolioAlert> alerts;
+  final List<PortfolioSnapshot> snapshots;
 
   factory DashboardData.fromJson(Map<String, dynamic> j) => DashboardData(
     summary: DashboardSummary.fromJson(j['summary'] as Map<String, dynamic>),
@@ -270,6 +297,10 @@ class DashboardData {
     alerts: (j['alerts'] as List)
         .map((e) => PortfolioAlert.fromJson(e as Map<String, dynamic>))
         .toList(),
+    snapshots: (j['snapshots'] as List?)
+            ?.map((e) => PortfolioSnapshot.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
   );
 }
 

@@ -1,0 +1,363 @@
+<div class="space-y-4">
+  <div class="card">
+    <h3 class="text-lg font-semibold mb-3 text-tx">Filtros</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <input
+        type="text"
+        placeholder="Buscar ticker/nome..."
+        class="input"
+        [(ngModel)]="filterText"
+        (ngModelChange)="onFilterChange()"
+      />
+      <input
+        type="number"
+        placeholder="DY mínimo (%)"
+        class="input"
+        [(ngModel)]="filterMinDy"
+        (ngModelChange)="onFilterChange()"
+      />
+      <input
+        type="number"
+        placeholder="MS mínima (%)"
+        class="input"
+        [(ngModel)]="filterMinMos"
+        (ngModelChange)="onFilterChange()"
+      />
+      <select class="input" [(ngModel)]="filterCategory" (ngModelChange)="onFilterChange()">
+        <option value="">Todas categorias</option>
+        <option value="acoes_br">Ações BR</option>
+        <option value="acoes_int">Ações INT</option>
+        <option value="fiis">FIIs</option>
+        <option value="cripto">Cripto</option>
+      </select>
+    </div>
+    <div class="flex items-center gap-4 mt-3">
+      <label class="flex items-center gap-2 cursor-pointer text-sm text-tx">
+        <input
+          type="checkbox"
+          [(ngModel)]="onlyInteresting"
+          (ngModelChange)="onFilterChange()"
+          class="cursor-pointer"
+        />
+        Apenas Destaques
+      </label>
+      <button type="button" (click)="loadOpportunities(true)" class="btn-secondary text-sm">
+        <lucide-icon name="refresh-cw" size="16"></lucide-icon> Atualizar
+      </button>
+    </div>
+  </div>
+
+  <div class="card py-3 px-4">
+    <div class="flex items-center gap-2 mb-2">
+      <lucide-icon name="info" size="14" class="text-muted flex-shrink-0"></lucide-icon>
+      <span class="text-xs font-semibold text-muted uppercase tracking-wide"
+        >Referências de valuation B3</span
+      >
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted">
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-1.5">
+          <span class="inline-block w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
+          <span
+            ><strong class="text-tx">Bazin (Preço Teto)</strong> — Dividendo anual ÷ 6% (ações) ou ÷
+            10% (FIIs).</span
+          >
+          <app-help-tooltip [text]="helper.glossary['bazin']"></app-help-tooltip>
+        </div>
+        <div class="pl-3.5 text-muted leading-relaxed">
+          Preço abaixo do Bazin = DY acima do mínimo aceitável.
+        </div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-1.5">
+          <span class="inline-block w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
+          <span
+            ><strong class="text-tx">Graham (Preço Intrínseco)</strong> — √(22,5 × LPA × VPA).</span
+          >
+          <app-help-tooltip [text]="helper.glossary['graham']"></app-help-tooltip>
+        </div>
+        <div class="pl-3.5 text-muted leading-relaxed">Válido para P/L ≤ 15 e P/VP ≤ 1,5.</div>
+      </div>
+    </div>
+  </div>
+
+  @if (loadingOpportunities()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (i of skeletonItems; track i) {
+        <div class="card animate-pulse">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <div class="h-6 w-20 bg-border rounded mb-1.5"></div>
+              <div class="h-3 w-32 bg-border rounded"></div>
+            </div>
+            <div class="h-5 w-16 bg-border rounded-full"></div>
+          </div>
+          <div class="flex items-end justify-between mb-3">
+            <div>
+              <div class="h-7 w-24 bg-border rounded mb-1"></div>
+              <div class="h-3 w-16 bg-border rounded"></div>
+            </div>
+            <div class="text-right">
+              <div class="h-6 w-8 bg-border rounded mb-1 ml-auto"></div>
+              <div class="h-3 w-14 bg-border rounded ml-auto"></div>
+            </div>
+          </div>
+          <div class="border-t border-border mb-3"></div>
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <div class="rounded-md px-2.5 py-2 bg-panel-2">
+              <div class="h-3 w-10 bg-border rounded mb-2"></div>
+              <div class="h-5 w-16 bg-border rounded mb-1"></div>
+              <div class="h-3 w-20 bg-border rounded"></div>
+            </div>
+            <div class="rounded-md px-2.5 py-2 bg-panel-2">
+              <div class="h-3 w-12 bg-border rounded mb-2"></div>
+              <div class="h-5 w-16 bg-border rounded mb-1"></div>
+              <div class="h-3 w-20 bg-border rounded"></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="h-4 w-16 bg-border rounded"></div>
+            <div class="h-3 w-20 bg-border rounded"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (!loadingOpportunities() && opportunities(); as opps) {
+    <div class="flex items-center justify-between text-xs text-muted mb-1">
+      <span
+        >{{ opps.items.length }} de {{ opps.total_items }} ativo{{
+          opps.total_items !== 1 ? 's' : ''
+        }}</span
+      >
+      @if (_cacheTime) {
+        <span>Atualizado {{ helper.formatTimestamp(_cacheTime / 1000) }}</span>
+      }
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (opp of opps.items; track opp.ticker) {
+        <div
+          class="card hover:shadow-lg transition-shadow cursor-pointer"
+          [class.border-accent]="opp.is_interesting"
+          (click)="showOpportunityDetails(opp.ticker)"
+        >
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="font-bold text-tx text-lg leading-none">{{ opp.ticker }}</h4>
+                @if (opp.is_interesting) {
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-accent/20 text-accent font-medium"
+                    >Destaque</span
+                  >
+                }
+              </div>
+              <p class="text-xs text-muted mt-0.5">{{ opp.name || '—' }}</p>
+            </div>
+            <span [class]="helper.verdictClass(opp.verdict)" class="text-xs flex-shrink-0">{{
+              opp.label
+            }}</span>
+          </div>
+          <div class="flex items-end justify-between mb-3">
+            <div>
+              <div class="text-xl font-bold text-tx leading-none">
+                {{ opp.price ? 'R$ ' + (opp.price | number: '1.2-2') : '—' }}
+              </div>
+              <div class="text-xs text-muted mt-0.5">preço atual</div>
+            </div>
+            <div class="text-right">
+              <div class="flex items-center justify-end gap-1">
+                <div
+                  class="text-lg font-bold"
+                  [class.good]="opp.score >= 70"
+                  [class.warn]="opp.score < 70 && opp.score >= 40"
+                  [class.text-muted]="opp.score < 40"
+                >
+                  {{ opp.score | number: '1.0-0' }}
+                </div>
+                <app-help-tooltip [text]="helper.glossary['score']"></app-help-tooltip>
+              </div>
+              <div class="text-xs mt-0.5" [ngClass]="helper.scoreLabel(opp.score).cls">
+                {{ helper.scoreLabel(opp.score).text }}
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-border mb-3"></div>
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <div
+              class="rounded-md px-2.5 py-2"
+              [ngClass]="
+                opp.bazin && opp.price
+                  ? opp.price <= opp.bazin
+                    ? 'bazin-below'
+                    : 'bazin-above'
+                  : 'bg-panel-2'
+              "
+            >
+              <div class="flex items-center gap-1 mb-0.5">
+                <span
+                  class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  [class.bg-green-400]="opp.bazin && opp.price && opp.price <= opp.bazin"
+                  [class.bg-red-400]="opp.bazin && opp.price && opp.price > opp.bazin"
+                  [class.bg-muted]="!opp.bazin || !opp.price"
+                ></span>
+                <span class="text-xs text-muted font-medium">Bazin</span>
+              </div>
+              @if (opp.bazin) {
+                <div class="font-semibold text-sm text-tx">
+                  R$ {{ opp.bazin | number: '1.2-2' }}
+                </div>
+                @if (opp.price) {
+                  <div
+                    class="text-xs mt-0.5"
+                    [class.text-green-400]="opp.price <= opp.bazin"
+                    [class.text-red-400]="opp.price > opp.bazin"
+                  >
+                    {{ opp.price <= opp.bazin ? '▼ abaixo do teto' : '▲ acima do teto' }}
+                  </div>
+                }
+              } @else {
+                <div class="text-sm text-muted">—</div>
+                <div class="text-xs text-muted">sem histórico de div.</div>
+              }
+            </div>
+            <div class="rounded-md px-2.5 py-2" [class.bg-panel-2]="!opp.graham && !opp.pvp">
+              <div class="flex items-center gap-1 mb-0.5">
+                <span
+                  class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  [class.bg-blue-400]="opp.graham && opp.price && opp.price <= opp.graham"
+                  [class.bg-orange-400]="opp.graham && opp.price && opp.price > opp.graham"
+                  [class.bg-green-400]="!opp.graham && opp.pvp && opp.pvp < 1"
+                  [class.bg-yellow-400]="!opp.graham && opp.pvp && opp.pvp >= 1"
+                  [class.bg-muted]="!opp.graham && !opp.pvp"
+                ></span>
+                <span class="text-xs text-muted font-medium">{{
+                  !opp.graham && opp.pvp ? 'P/VP' : 'Graham'
+                }}</span>
+              </div>
+              @if (opp.graham) {
+                <div class="font-semibold text-sm text-tx">
+                  R$ {{ opp.graham | number: '1.2-2' }}
+                </div>
+                @if (opp.price) {
+                  <div
+                    class="text-xs mt-0.5"
+                    [class.text-blue-400]="opp.price <= opp.graham"
+                    [class.text-orange-400]="opp.price > opp.graham"
+                  >
+                    {{
+                      opp.price <= opp.graham ? '▼ abaixo do intrínseco' : '▲ acima do intrínseco'
+                    }}
+                  </div>
+                }
+              } @else if (opp.pvp) {
+                <div class="font-semibold text-sm text-tx">
+                  {{ opp.pvp | number: '1.2-2' }}
+                </div>
+                <div
+                  class="text-xs mt-0.5"
+                  [class.text-green-400]="opp.pvp < 1"
+                  [class.text-orange-400]="opp.pvp >= 1"
+                >
+                  {{ opp.pvp < 1 ? '▼ desconto patrimonial' : '▲ ágio patrimonial' }}
+                </div>
+              } @else {
+                <div class="text-sm text-muted">—</div>
+                <div class="text-xs text-muted">sem dados</div>
+              }
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-3">
+              @if (opp.dividend_yield) {
+                <span class="flex items-center">
+                  <span [class]="helper.dyClass(opp.dividend_yield)" class="font-semibold"
+                    >DY {{ opp.dividend_yield | number: '1.1-1' }}%</span
+                  >
+                  <app-help-tooltip [text]="helper.glossary['dy']"></app-help-tooltip>
+                </span>
+              }
+              @if (opp.margin_of_safety != null) {
+                <span class="flex items-center text-muted"
+                  >MS {{ opp.margin_of_safety * 100 | number: '1.0-0' }}%<app-help-tooltip
+                    [text]="helper.glossary['ms']"
+                  ></app-help-tooltip
+                ></span>
+              }
+            </div>
+            @if (opp.sector) {
+              <span class="text-muted truncate max-w-[100px]">{{
+                helper.translateSector(opp.sector)
+              }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (opps.items.length === 0) {
+      <div class="card text-center py-8">
+        <lucide-icon name="search" size="48" class="text-muted mx-auto mb-3"></lucide-icon>
+        <p class="text-muted">Nenhuma oportunidade encontrada com os filtros atuais.</p>
+      </div>
+    }
+
+    @if (opps.total_pages > 1) {
+      <div class="flex items-center justify-center gap-2 pt-2">
+        <button
+          type="button"
+          class="btn-secondary text-sm px-3 py-1.5"
+          [disabled]="opps.current_page <= 1"
+          (click)="goToPage(opps.current_page - 1)"
+        >
+          <lucide-icon name="chevron-left" size="16"></lucide-icon> Anterior
+        </button>
+        <div class="flex items-center gap-1">
+          @if (opps.current_page > 3) {
+            <button type="button" class="pagination-btn" (click)="goToPage(1)">1</button>
+            @if (opps.current_page > 4) {
+              <span class="text-muted px-1">…</span>
+            }
+          }
+          @for (
+            page of [
+              opps.current_page - 2,
+              opps.current_page - 1,
+              opps.current_page,
+              opps.current_page + 1,
+              opps.current_page + 2,
+            ];
+            track page
+          ) {
+            @if (page >= 1 && page <= opps.total_pages) {
+              <button
+                type="button"
+                class="pagination-btn"
+                [class.active]="page === opps.current_page"
+                (click)="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+            }
+          }
+          @if (opps.current_page < opps.total_pages - 2) {
+            @if (opps.current_page < opps.total_pages - 3) {
+              <span class="text-muted px-1">…</span>
+            }
+            <button type="button" class="pagination-btn" (click)="goToPage(opps.total_pages)">
+              {{ opps.total_pages }}
+            </button>
+          }
+        </div>
+        <button
+          type="button"
+          class="btn-secondary text-sm px-3 py-1.5"
+          [disabled]="opps.current_page >= opps.total_pages"
+          (click)="goToPage(opps.current_page + 1)"
+        >
+          Próxima <lucide-icon name="chevron-right" size="16"></lucide-icon>
+        </button>
+      </div>
+    }
+  }
+</div>

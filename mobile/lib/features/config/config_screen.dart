@@ -9,6 +9,7 @@ import '../../core/providers.dart';
 import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/theme_provider.dart';
+import '../../core/widgets/ticker_autocomplete_field.dart';
 
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
@@ -448,11 +449,7 @@ class _AlertsSection extends ConsumerWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: tickerCtrl,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(labelText: 'Ticker'),
-              ),
+              TickerAutocompleteField(controller: tickerCtrl),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: condition,

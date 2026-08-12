@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,6 +26,14 @@ class DashboardScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
               _SummaryCard(summary: data.summary),
+              if (data.snapshots.length > 1) ...[
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.show_chart,
+                  title: 'Evolução do patrimônio',
+                ),
+                _EvolutionChart(snapshots: data.snapshots),
+              ],
               if (data.allocations.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 const _SectionTitle(
@@ -347,6 +356,76 @@ class _SummaryCard extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EvolutionChart extends StatelessWidget {
+  const _EvolutionChart({required this.snapshots});
+
+  final List<PortfolioSnapshot> snapshots;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final positive = snapshots.last.totalCurrent >= snapshots.first.totalCurrent;
+    final lineColor = positive ? gainColor(brightness) : lossColor(brightness);
+
+    final spots = <FlSpot>[
+      for (var i = 0; i < snapshots.length; i++)
+        FlSpot(i.toDouble(), snapshots[i].totalCurrent),
+    ];
+
+    final values = snapshots.map((s) => s.totalCurrent).toList();
+    final minY = values.reduce((a, b) => a < b ? a : b);
+    final maxY = values.reduce((a, b) => a > b ? a : b);
+    final padding = (maxY - minY).abs() * 0.1 + 1;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
+        child: SizedBox(
+          height: 180,
+          child: LineChart(
+            LineChartData(
+              minY: minY - padding,
+              maxY: maxY + padding,
+              gridData: const FlGridData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (touchedSpots) => touchedSpots
+                      .map(
+                        (s) => LineTooltipItem(
+                          formatCurrency(s.y),
+                          TextStyle(
+                            color: lineColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  color: lineColor,
+                  barWidth: 2,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: lineColor.withValues(alpha: 0.12),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

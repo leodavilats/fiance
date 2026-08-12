@@ -1,0 +1,79 @@
+<div class="space-y-4">
+  <form [formGroup]="scanForm" (ngSubmit)="runScan()" class="card">
+    <h3 class="text-lg font-semibold mb-3 text-tx">Configuração do Scanner</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+      <div>
+        <label class="label">Score Mínimo</label
+        ><input type="number" formControlName="min_score" class="input" />
+      </div>
+      <div>
+        <label class="label">Top N</label
+        ><input type="number" formControlName="top" class="input" />
+      </div>
+      <div>
+        <label class="label">Categoria</label>
+        <select formControlName="category" class="input">
+          <option value="">Todas</option>
+          <option value="acoes_br">Ações BR</option>
+          <option value="fiis">FIIs</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn-primary mt-3">
+      <lucide-icon name="scan" size="18"></lucide-icon> Escanear Mercado
+    </button>
+  </form>
+
+  @if (dipResults(); as dips) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (dip of dips.items; track dip.symbol) {
+        <div
+          class="card hover:shadow-lg transition-shadow cursor-pointer"
+          (click)="showDipAnalysis(dip.symbol)"
+        >
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <h4 class="font-bold text-tx text-lg">{{ dip.symbol }}</h4>
+              <p class="text-xs text-muted">{{ dip.name || 'N/A' }}</p>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-bold text-accent">{{ dip.dip_score }}</div>
+              <div class="text-xs text-muted">Score DIP</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span class="text-muted">Queda do topo:</span
+              ><span class="font-semibold text-warn ml-1">{{
+                dip.drop_from_52w_high_pct
+                  ? (dip.drop_from_52w_high_pct | number: '1.1-1') + '%'
+                  : 'N/A'
+              }}</span>
+            </div>
+            <div>
+              <span class="text-muted">RSI:</span
+              ><span class="font-semibold text-tx ml-1">{{ dip.rsi_14 || 'N/A' }}</span>
+            </div>
+            <div>
+              <span class="text-muted">MS:</span
+              ><span class="font-semibold text-accent ml-1">{{
+                dip.margin_of_safety ? (dip.margin_of_safety * 100 | number: '1.0-0') + '%' : 'N/A'
+              }}</span>
+            </div>
+            <div>
+              <span class="text-muted">Confiança:</span
+              ><span class="font-semibold text-tx ml-1">{{ dip.confidence || 'N/A' }}</span>
+            </div>
+          </div>
+          <p class="text-xs text-muted mt-2">{{ dip.top_reason }}</p>
+        </div>
+      }
+    </div>
+    @if (dips.items.length === 0) {
+      <div class="card text-center py-8">
+        <lucide-icon name="trending-down" size="48" class="text-muted mx-auto mb-3"></lucide-icon>
+        <p class="text-muted">Nenhum ativo em baixa encontrado com os critérios atuais.</p>
+      </div>
+    }
+  }
+</div>

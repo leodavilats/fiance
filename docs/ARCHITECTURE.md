@@ -52,7 +52,7 @@ Autenticados (JWT obrigatório via `Depends(get_current_user)`):
 | GET | `/opportunities` | `opportunities.py` |
 | POST/GET/PUT/DELETE | `/portfolio*`, `POST /portfolio/sell`, `GET /portfolio/trades` | `portfolio_routes.py` |
 | GET | `/auth/me` | `auth.py` |
-| POST/DELETE | `/notifications/register-token`, `POST /notifications/test` | `notifications.py` |
+| POST/DELETE | `/notifications/register-token` | `notifications.py` |
 | GET/PUT | `/preferences` | `preferences.py` |
 | POST | `/projection/passive-income`, `/projection/sector-allocation` | `projection.py` |
 | POST | `/quick-invest` | `quick_invest.py` |
@@ -69,7 +69,7 @@ Angular 18 standalone components, lazy-loaded. Rotas (`app.routes.ts`): `/login`
 
 - **`components/dashboard/`** — tela inicial consolidada.
 - **`components/assets/`** ("Meus Ativos") — CRUD de posições + renda fixa. Tem preview client-side de rendimento RF (`calcularRendimento()`, alíquotas de IR hardcoded) — duplica regra do backend, ver Débito Técnico.
-- **`components/market/`** — maior tela do app (`market.component.html`: 1627 linhas). Sub-abas reduzidas de 4 para 3 (Segmentos unificado em "Explorar", commit `d44485f`).
+- **`components/market/`** — maior tela do app. Sub-abas reduzidas de 4 para 3 (Segmentos unificado em "Explorar", commit `d44485f`). `market.component.ts/html` ficou reduzido a navegação de tabs (`activeTab`/`oppMode`/`toolMode`) + o modal compartilhado de análise de queda; cada sub-aba é um subcomponente próprio em `components/market/` (`opportunities-list`, `dip-scanner`, `analyze-asset`, `quick-invest`, `investment-strategy`, `renda-fixa`, `dip-analysis-modal`).
 - **`components/sectors/`, `opportunities/`, `dip/`, `strategy/`** — abas/telas de análise.
 - **`components/config/`** — configurações e metas de yield por categoria.
 - **`core/services/ui-helper.service.ts`** — mapeia labels/ícones/cores de AssetType, categoria, setor (mantém dicionários EN→PT-BR de yfinance E BRAPI simultaneamente), glossário de termos financeiros para tooltips, e funções de path SVG para sparklines feitas à mão (sem lib de charting).
