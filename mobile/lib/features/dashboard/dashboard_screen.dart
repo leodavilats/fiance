@@ -255,6 +255,9 @@ class _SummaryCard extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final pnlColor = positive ? gainColor(brightness) : lossColor(brightness);
     final scheme = Theme.of(context).colorScheme;
+    final mutedColor = brightness == Brightness.dark
+        ? AppColors.darkMuted
+        : AppColors.lightMuted;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -265,7 +268,7 @@ class _SummaryCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              scheme.primaryContainer.withValues(alpha: 0.5),
+              scheme.primary.withValues(alpha: brightness == Brightness.dark ? 0.16 : 0.10),
               scheme.surface,
             ],
           ),
@@ -276,14 +279,15 @@ class _SummaryCard extends StatelessWidget {
           children: [
             Text(
               'Patrimônio total',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              style: TextStyle(color: mutedColor, fontSize: 13),
             ),
             const SizedBox(height: 4),
             Text(
               formatCurrency(summary.totalCurrent),
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: scheme.onSurface,
+              ),
             ),
             const SizedBox(height: 6),
             Row(
@@ -305,7 +309,7 @@ class _SummaryCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '· ${summary.positionsCount} posições',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  style: TextStyle(color: mutedColor, fontSize: 13),
                 ),
               ],
             ),
