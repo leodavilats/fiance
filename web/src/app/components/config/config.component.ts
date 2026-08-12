@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -9,13 +9,15 @@ import {
   Validators,
 } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subject } from 'rxjs';
+import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AllocationCategory,
   Goal,
   PriceAlert,
   RecommendService,
   SectorGoal,
+  TickerSuggestion,
   UiHelperService,
 } from '../../core';
 
@@ -54,10 +56,12 @@ const CATEGORIES: { key: AllocationCategory; label: string; icon: string; desc: 
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './config.component.html',
 })
-export class ConfigComponent implements OnInit {
+export class ConfigComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private svc = inject(RecommendService);
   readonly ui = inject(UiHelperService);
+
+  private destroy$ = new Subject<void>();
 
   readonly categories = CATEGORIES;
   saving = signal(false);
@@ -120,6 +124,43 @@ export class ConfigComponent implements OnInit {
     this._initSectorGoals();
     this.loadConfig();
     this.loadAlerts();
+
+    this.alertTickerSearch$
+      .pipe(
+        debounceTime(1000),
+        switchMap(query => {
+          if (query.trim().length < 1) return [[] as TickerSuggestion[]];
+          return this.svc.searchTickers(query).pipe(switchMap(res => [res.items]));
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(items => {
+        this.alertTickerSuggestions.set(items);
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  alertTickerSuggestions = signal<TickerSuggestion[]>([]);
+  alertTickerSuggestionsOpen = signal(false);
+  private alertTickerSearch$ = new Subject<string>();
+
+  onAlertTickerInput(value: string): void {
+    this.alertTickerSuggestionsOpen.set(true);
+    this.alertTickerSearch$.next(value);
+  }
+
+  selectAlertTickerSuggestion(suggestion: TickerSuggestion): void {
+    this.alertForm.controls.ticker.setValue(suggestion.ticker);
+    this.closeAlertTickerSuggestions();
+  }
+
+  closeAlertTickerSuggestions(): void {
+    this.alertTickerSuggestionsOpen.set(false);
+    this.alertTickerSuggestions.set([]);
   }
 
   private _initGoals(): void {
@@ -302,6 +343,7 @@ export class ConfigComponent implements OnInit {
     this.svc.createAlert({ ticker, condition, target_price, note: note || undefined }).subscribe({
       next: () => {
         this.alertForm.patchValue({ ticker: '', target_price: 0, note: '' });
+        this.closeAlertTickerSuggestions();
         this.loadAlerts();
       },
       error: () => this.alertMessage.set('✗ Erro ao criar alerta'),

@@ -3,8 +3,13 @@ import { Component, inject, OnDestroy, OnInit, output, signal } from '@angular/c
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
-import { debounceTime, takeUntil } from 'rxjs/operators';
-import { OpportunitiesResponse, RecommendService, UiHelperService } from '../../../core';
+import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
+import {
+  OpportunitiesResponse,
+  RecommendService,
+  TickerSuggestion,
+  UiHelperService,
+} from '../../../core';
 import { HelpTooltipComponent } from '../../help-tooltip/help-tooltip.component';
 
 const FILTER_STORAGE_KEY = 'market_filters';
@@ -24,7 +29,11 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
   readonly analyze = output<string>();
 
   private filterDebounce$ = new Subject<void>();
+  private tickerSearch$ = new Subject<string>();
   private destroy$ = new Subject<void>();
+
+  readonly tickerSuggestions = signal<TickerSuggestion[]>([]);
+  readonly tickerSuggestionsOpen = signal(false);
   private _cacheKey: string | null = null;
   _cacheTime: number | null = null;
 
@@ -46,6 +55,17 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
     this.filterDebounce$
       .pipe(debounceTime(500), takeUntil(this.destroy$))
       .subscribe(() => this.loadOpportunities());
+
+    this.tickerSearch$
+      .pipe(
+        debounceTime(1000),
+        switchMap(query => {
+          if (query.trim().length < 1) return [[] as TickerSuggestion[]];
+          return this.api.searchTickers(query).pipe(switchMap(res => [res.items]));
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(items => this.tickerSuggestions.set(items));
 
     this.loadOpportunities();
   }
@@ -89,6 +109,24 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
     this._saveFilters();
     this.currentPage.set(1);
     this.filterDebounce$.next();
+  }
+
+  onFilterTextInput(value: string): void {
+    this.filterText = value;
+    this.tickerSuggestionsOpen.set(true);
+    this.tickerSearch$.next(value);
+    this.onFilterChange();
+  }
+
+  selectTickerSuggestion(suggestion: TickerSuggestion): void {
+    this.filterText = suggestion.ticker;
+    this.closeTickerSuggestions();
+    this.onFilterChange();
+  }
+
+  closeTickerSuggestions(): void {
+    this.tickerSuggestionsOpen.set(false);
+    this.tickerSuggestions.set([]);
   }
 
   goToPage(page: number) {

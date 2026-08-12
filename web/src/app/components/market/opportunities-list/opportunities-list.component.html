@@ -2,13 +2,36 @@
   <div class="card">
     <h3 class="text-lg font-semibold mb-3 text-tx">Filtros</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      <input
-        type="text"
-        placeholder="Buscar ticker/nome..."
-        class="input"
-        [(ngModel)]="filterText"
-        (ngModelChange)="onFilterChange()"
-      />
+      <div class="relative">
+        <input
+          type="text"
+          placeholder="Buscar ticker/nome..."
+          class="input w-full"
+          autocomplete="off"
+          [(ngModel)]="filterText"
+          (ngModelChange)="onFilterTextInput(filterText)"
+          (focus)="onFilterTextInput(filterText)"
+          (focusout)="closeTickerSuggestions()"
+        />
+        @if (tickerSuggestionsOpen() && tickerSuggestions().length > 0) {
+          <ul
+            class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-border bg-panel shadow-xl max-h-56 overflow-y-auto text-sm"
+          >
+            @for (s of tickerSuggestions(); track s.ticker) {
+              <li>
+                <button
+                  type="button"
+                  class="w-full text-left px-3 py-2 hover:bg-panel-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                  (mousedown)="$event.preventDefault(); selectTickerSuggestion(s)"
+                >
+                  <span class="font-semibold text-tx">{{ s.ticker }}</span>
+                  <span class="text-muted text-xs truncate">{{ s.name }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
       <input
         type="number"
         placeholder="DY mínimo (%)"

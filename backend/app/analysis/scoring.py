@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import statistics
 
 from app.collectors.universal import detect_type
 from app.models.company import CompanyFundamentals, ScoredCompany
@@ -36,16 +37,30 @@ def _clip(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, v))
 
 
-def _score_value(pe: float | None, pb: float | None) -> float:
+def _score_relative(value: float, sector_median: float) -> float:
+    ratio = value / sector_median
+    return _clip(150 - ratio * 100)
+
+
+def _score_value(
+    pe: float | None,
+    pb: float | None,
+    sector_pe_median: float | None = None,
+    sector_pb_median: float | None = None,
+) -> float:
 
     if pe is not None and pe > 0:
         score_pe = _clip(100 - (pe - 5) * 5)
+        if sector_pe_median and sector_pe_median > 0:
+            score_pe = (score_pe + _score_relative(pe, sector_pe_median)) / 2
 
     else:
         score_pe = 30.0
 
     if pb is not None and pb > 0:
         score_pb = _clip(100 - (pb - 0.5) * 28.5)
+        if sector_pb_median and sector_pb_median > 0:
+            score_pb = (score_pb + _score_relative(pb, sector_pb_median)) / 2
 
     else:
         score_pb = 30.0
@@ -174,7 +189,10 @@ def _rationale(f: CompanyFundamentals, breakdown: dict[str, float]) -> str:
 
 
 def score_company(
-    f: CompanyFundamentals, profile: RiskProfile, asset_type: str | None = None
+    f: CompanyFundamentals,
+    profile: RiskProfile,
+    asset_type: str | None = None,
+    sector_medians: dict[str, tuple[float, float]] | None = None,
 ) -> ScoredCompany:
 
     at = asset_type or detect_type(f.ticker)
@@ -187,8 +205,12 @@ def score_company(
 
     weights = PROFILE_WEIGHTS[profile]
 
+    sector_pe_median, sector_pb_median = (sector_medians or {}).get(
+        (f.sector or "").lower(), (None, None)
+    )
+
     breakdown = {
-        "value": _score_value(f.pe_ratio, f.pb_ratio),
+        "value": _score_value(f.pe_ratio, f.pb_ratio, sector_pe_median, sector_pb_median),
         "quality": _score_quality(f.roe, f.profit_margin),
         "dividend": _score_dividend(f.dividend_yield),
         "leverage": _score_leverage(f.debt_to_equity),
@@ -205,6 +227,33 @@ def score_company(
     )
 
 
+def _compute_sector_medians(
+    companies: list[CompanyFundamentals],
+) -> dict[str, tuple[float, float]]:
+    pe_by_sector: dict[str, list[float]] = {}
+    pb_by_sector: dict[str, list[float]] = {}
+
+    for c in companies:
+        sector = (c.sector or "").lower()
+        if not sector:
+            continue
+        if c.pe_ratio and c.pe_ratio > 0:
+            pe_by_sector.setdefault(sector, []).append(c.pe_ratio)
+        if c.pb_ratio and c.pb_ratio > 0:
+            pb_by_sector.setdefault(sector, []).append(c.pb_ratio)
+
+    sectors = set(pe_by_sector) | set(pb_by_sector)
+    medians = {}
+    for sector in sectors:
+        pe_values = pe_by_sector.get(sector, [])
+        pb_values = pb_by_sector.get(sector, [])
+        pe_median = statistics.median(pe_values) if len(pe_values) >= 3 else None
+        pb_median = statistics.median(pb_values) if len(pb_values) >= 3 else None
+        medians[sector] = (pe_median, pb_median)
+
+    return medians
+
+
 def rank(
     companies: list[CompanyFundamentals],
     profile: RiskProfile,
@@ -213,11 +262,13 @@ def rank(
 
     excluded = {s.lower() for s in (exclude_sectors or [])}
 
-    scored = [
-        score_company(c, profile)
-        for c in companies
-        if c.price and c.price > 0 and (c.sector or "").lower() not in excluded
+    eligible = [
+        c for c in companies if c.price and c.price > 0 and (c.sector or "").lower() not in excluded
     ]
+
+    sector_medians = _compute_sector_medians(eligible)
+
+    scored = [score_company(c, profile, sector_medians=sector_medians) for c in eligible]
 
     scored.sort(key=lambda s: s.score, reverse=True)
 

@@ -285,13 +285,37 @@
   </p>
 
   <form [formGroup]="alertForm" (ngSubmit)="addAlert()" class="flex flex-col gap-3 mb-4">
-    <input
-      formControlName="ticker"
-      type="text"
-      placeholder="Ticker (ex: PETR4)"
-      class="input flex-1 min-w-[120px]"
-      style="text-transform: uppercase"
-    />
+    <div class="relative flex-1 min-w-[120px]">
+      <input
+        formControlName="ticker"
+        type="text"
+        placeholder="Ticker (ex: PETR4)"
+        class="input w-full"
+        style="text-transform: uppercase"
+        autocomplete="off"
+        (input)="onAlertTickerInput($any($event.target).value)"
+        (focus)="onAlertTickerInput($any($event.target).value)"
+        (focusout)="closeAlertTickerSuggestions()"
+      />
+      @if (alertTickerSuggestionsOpen() && alertTickerSuggestions().length > 0) {
+        <ul
+          class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-border bg-panel shadow-xl max-h-56 overflow-y-auto text-sm"
+        >
+          @for (s of alertTickerSuggestions(); track s.ticker) {
+            <li>
+              <button
+                type="button"
+                class="w-full text-left px-3 py-2 hover:bg-panel-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                (mousedown)="$event.preventDefault(); selectAlertTickerSuggestion(s)"
+              >
+                <span class="font-semibold text-tx">{{ s.ticker }}</span>
+                <span class="text-muted text-xs truncate">{{ s.name }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
     <select formControlName="condition" class="input w-32">
       <option value="below">Abaixo de</option>
       <option value="above">Acima de</option>
