@@ -25,7 +25,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(
         title="fiance",
-        version="0.1.0",
+        version="1.0.0",
         description="Análise fundamentalista e recomendação de carteira (B3).",
     )
 
