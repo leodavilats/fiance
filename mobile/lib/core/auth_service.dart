@@ -31,7 +31,7 @@ class AuthService {
         // Client ID Web necessário p/ o plugin devolver idToken no Android
         // (o client ID Android sozinho não gera idToken).
         serverClientId:
-            '226171385204-fgrdfsrqimsfc95dotuet2ru4e7eunhc.apps.googleusercontent.com',
+            '113865070204-6lkq31ahsk3ihgshrecggp6l1kiu93tc.apps.googleusercontent.com',
       );
 
   final Dio _dio;
