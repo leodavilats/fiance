@@ -9,12 +9,7 @@ import {
   RecommendService,
   UiHelperService,
 } from '../../core';
-import {
-  BenchmarkChartComponent,
-  EmptyStateComponent,
-  PatrimonyChartComponent,
-  SkeletonComponent,
-} from '../index';
+import { BenchmarkChartComponent, PatrimonyChartComponent } from '../index';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,8 +17,6 @@ import {
   imports: [
     CommonModule,
     LucideAngularModule,
-    SkeletonComponent,
-    EmptyStateComponent,
     PatrimonyChartComponent,
     BenchmarkChartComponent,
   ],
