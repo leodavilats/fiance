@@ -4,7 +4,7 @@ import 'auth_service.dart';
 
 const String apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://fianceai-production.up.railway.app/api',
+  defaultValue: 'https://fiance.up.railway.app/api',
 );
 
 class ApiClient {

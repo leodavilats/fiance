@@ -24,7 +24,7 @@ def create_app() -> FastAPI:
     )
 
     app = FastAPI(
-        title="fianceAI",
+        title="fiance",
         version="0.1.0",
         description="Análise fundamentalista e recomendação de carteira (B3).",
     )
@@ -39,14 +39,14 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
-        logging.getLogger("fianceai").warning("ValueError em %s: %s", request.url.path, exc)
+        logging.getLogger("fiance").warning("ValueError em %s: %s", request.url.path, exc)
         msg = str(exc).lower()
         status = 404 if ("não encontrado" in msg or "not found" in msg or "nenhum" in msg) else 400
         return JSONResponse(status_code=status, content={"detail": str(exc)})
 
     @app.exception_handler(Exception)
     async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
-        logging.getLogger("fianceai").error(
+        logging.getLogger("fiance").error(
             "Erro inesperado em %s: %s\n%s",
             request.url.path,
             exc,
@@ -68,9 +68,9 @@ def create_app() -> FastAPI:
 
             try:
                 await OpportunityService()._scan_universe({})
-                logging.getLogger("fianceai").info("Cache de oportunidades aquecido no startup.")
+                logging.getLogger("fiance").info("Cache de oportunidades aquecido no startup.")
             except Exception:
-                logging.getLogger("fianceai").warning(
+                logging.getLogger("fiance").warning(
                     "Falha ao aquecer cache de oportunidades no startup", exc_info=True
                 )
 
@@ -85,7 +85,7 @@ def create_app() -> FastAPI:
                 try:
                     await run_notification_cycle()
                 except Exception:
-                    logging.getLogger("fianceai").warning(
+                    logging.getLogger("fiance").warning(
                         "Falha no ciclo de notificações", exc_info=True
                     )
                 await asyncio.sleep(15 * 60)

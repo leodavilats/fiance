@@ -1,10 +1,10 @@
-# fianceAI
+# fiance
 
 Plataforma de inteligência de investimentos com análise fundamentalista, varredura de oportunidades e recomendações orientadas por IA, focada no mercado brasileiro (B3). Disponível como app web e mobile (iOS/Android), com login por conta Google e dados isolados por usuário.
 
 ## Visão Geral
 
-O fianceAI integra dados de mercado em tempo real, métodos clássicos de valuation (Bazin, Graham, DCF) e o modelo Gemini da Google para entregar uma visão consolidada da sua carteira, identificar ativos com desconto e gerar estratégias de alocação personalizadas.
+O fiance integra dados de mercado em tempo real, métodos clássicos de valuation (Bazin, Graham, DCF) e o modelo Gemini da Google para entregar uma visão consolidada da sua carteira, identificar ativos com desconto e gerar estratégias de alocação personalizadas.
 
 **Principais funcionalidades:**
 
@@ -133,7 +133,7 @@ flutter build apk --release   # saída em build/app/outputs/flutter-apk/
 flutter build appbundle --release
 ```
 
-Por padrão, o app mobile aponta para o backend em produção (`https://fianceai-production.up.railway.app/api`), configurado em `mobile/lib/core/api_client.dart`.
+Por padrão, o app mobile aponta para o backend em produção (`https://fiance.up.railway.app/api`), configurado em `mobile/lib/core/api_client.dart`.
 
 ## Documentação da API
 
@@ -168,7 +168,7 @@ Todas as rotas acima (exceto `/health` e `/auth/google`) exigem `Authorization: 
 ## Estrutura do Projeto
 
 ```
-fianceAI/
+fiance/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              # Ponto de entrada FastAPI

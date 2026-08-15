@@ -1,4 +1,4 @@
-# fianceAI — Inventário de features por tela
+# fiance — Inventário de features por tela
 
 > Gerado por varredura completa em 2026-08-10. Web (Angular) e Mobile (Flutter) têm paridade quase total de navegação (4 abas espelhadas) e consomem a mesma API.
 

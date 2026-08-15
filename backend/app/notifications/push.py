@@ -5,7 +5,7 @@ import logging
 
 from app.core.config import get_settings
 
-logger = logging.getLogger("fianceai.push")
+logger = logging.getLogger("fiance.push")
 
 _firebase_app = None
 _init_attempted = False

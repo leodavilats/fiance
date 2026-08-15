@@ -51,7 +51,7 @@ import {
           <div style="display:flex; align-items:center; gap:10px;">
             <app-logo />
             <div>
-              <h1 class="text-[1.3rem] sm:text-[1.7rem] font-bold m-0 text-tx">fianceAI</h1>
+              <h1 class="text-[1.3rem] sm:text-[1.7rem] font-bold m-0 text-tx">fiance</h1>
               <p class="m-0 text-xs sm:text-sm text-muted hidden sm:block">
                 Sistema de gestão de ativos — descubra o que comprar, manter ou vender.
               </p>

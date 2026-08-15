@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 
 export type Theme = 'light' | 'dark';
 
-const STORAGE_KEY = 'fianceai.theme';
+const STORAGE_KEY = 'fiance.theme';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {

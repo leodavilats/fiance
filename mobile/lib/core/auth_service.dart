@@ -38,7 +38,7 @@ class AuthService {
   final GoogleSignIn _googleSignIn;
   final _storage = const FlutterSecureStorage();
 
-  static const _tokenKey = 'fianceai_access_token';
+  static const _tokenKey = 'fiance_access_token';
 
   Future<String?> readToken() => _storage.read(key: _tokenKey);
 

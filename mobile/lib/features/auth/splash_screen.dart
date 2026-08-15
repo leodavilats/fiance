@@ -37,7 +37,7 @@ class SplashScreen extends ConsumerWidget {
                   const BrandLoadingIndicator(size: 72),
                   const SizedBox(height: 20),
                   const Text(
-                    'fianceAI',
+                    'fiance',
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),

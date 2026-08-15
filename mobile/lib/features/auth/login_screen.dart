@@ -74,7 +74,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         colors: [accent, accent2],
                       ).createShader(bounds),
                       child: const Text(
-                        'fianceAI',
+                        'fiance',
                         style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,

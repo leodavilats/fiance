@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.config import get_settings
 
-logger = logging.getLogger("fianceai.database")
+logger = logging.getLogger("fiance.database")
 
 
 class Base(DeclarativeBase):

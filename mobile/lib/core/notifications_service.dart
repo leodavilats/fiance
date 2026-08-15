@@ -5,8 +5,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'api_repository.dart';
 
 const _androidChannel = AndroidNotificationChannel(
-  'fianceai_default',
-  'fianceAI',
+  'fiance_default',
+  'fiance',
   description: 'Alertas de preço e novas oportunidades',
   importance: Importance.high,
 );

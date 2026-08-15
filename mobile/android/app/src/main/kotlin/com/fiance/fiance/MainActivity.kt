@@ -1,4 +1,4 @@
-package com.fianceai.fianceai
+package com.fiance.fiance
 
 import io.flutter.embedding.android.FlutterActivity
 

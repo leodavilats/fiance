@@ -33,8 +33,8 @@ interface LoginResponse {
   user: AppUser;
 }
 
-const TOKEN_KEY = 'fianceai_access_token';
-const USER_KEY = 'fianceai_user';
+const TOKEN_KEY = 'fiance_access_token';
+const USER_KEY = 'fiance_user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

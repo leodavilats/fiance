@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = ""
 
-    database_url: str = "sqlite:///./.cache/fianceai.db"
+    database_url: str = "sqlite:///./.cache/fiance.db"
 
     google_client_id: str = ""
 
@@ -93,7 +93,7 @@ class Settings(BaseSettings):
 
     @property
     def sqlalchemy_database_url(self) -> str:
-        url = self.database_url or "sqlite:///./.cache/fianceai.db"
+        url = self.database_url or "sqlite:///./.cache/fiance.db"
         if url.startswith("postgres://"):
             url = "postgresql+psycopg://" + url[len("postgres://") :]
         elif url.startswith("postgresql://"):

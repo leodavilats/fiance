@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService, PriceAlertTriggered, RecommendService } from '../../core';
 
-const SESSION_KEY = 'fianceai_alerts_dismissed';
+const SESSION_KEY = 'fiance_alerts_dismissed';
 
 @Component({
   selector: 'app-alert-modal',

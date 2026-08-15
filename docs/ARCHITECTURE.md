@@ -1,10 +1,10 @@
-# fianceAI — Arquitetura Técnica
+# fiance — Arquitetura Técnica
 
 > Gerado por varredura completa em 2026-08-10. Complementa o README.md (setup/instalação) com detalhes de arquitetura, algoritmos e estrutura interna.
 
 ## Visão geral
 
-fianceAI é uma plataforma multi-tenant de análise de investimentos focada na B3, com três frontends consumindo a mesma API: **web** (Angular 18), **mobile** (Flutter) e a API em si (**FastAPI**). Login via Google (JWT próprio emitido pelo backend), dados persistidos em Postgres (produção) / SQLite (dev), isolados por `user_id`.
+fiance é uma plataforma multi-tenant de análise de investimentos focada na B3, com três frontends consumindo a mesma API: **web** (Angular 18), **mobile** (Flutter) e a API em si (**FastAPI**). Login via Google (JWT próprio emitido pelo backend), dados persistidos em Postgres (produção) / SQLite (dev), isolados por `user_id`.
 
 **Correção importante em relação a documentação/memória antigas**: o projeto migrou de yfinance/Alpha Vantage para **BRAPI** (ações BR/FIIs/BDRs), **Finnhub** (ações US) e **CoinGecko** (cripto). A persistência não é mais JSON local — é SQLAlchemy sobre Postgres/SQLite.
 

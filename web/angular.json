@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "fianceai": {
+    "fiance": {
       "projectType": "application",
       "root": "",
       "sourceRoot": "src",
@@ -12,7 +12,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/fianceai",
+            "outputPath": "dist/fiance",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
@@ -25,7 +25,7 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "buildTarget": "fianceai:build",
+            "buildTarget": "fiance:build",
             "port": 4200
           }
         }

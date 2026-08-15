@@ -5,7 +5,7 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent),
-    title: 'Entrar - fianceAI',
+    title: 'Entrar - fiance',
   },
   {
     path: '',
@@ -17,28 +17,28 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
-    title: 'Dashboard - fianceAI',
+    title: 'Dashboard - fiance',
   },
   {
     path: 'assets',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./components/assets/assets.component').then(m => m.AssetsComponent),
-    title: 'Meus Ativos - fianceAI',
+    title: 'Meus Ativos - fiance',
   },
   {
     path: 'market',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./components/market/market.component').then(m => m.MarketComponent),
-    title: 'Mercado - fianceAI',
+    title: 'Mercado - fiance',
   },
   {
     path: 'config',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./components/config/config.component').then(m => m.ConfigComponent),
-    title: 'Configurações - fianceAI',
+    title: 'Configurações - fiance',
   },
   {
     path: '**',

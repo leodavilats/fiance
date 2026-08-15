@@ -7,7 +7,7 @@ from app.notifications import send_push
 from app.services.opportunity_service import OpportunityService
 from app.storage import portfolio_store
 
-logger = logging.getLogger("fianceai.notification_job")
+logger = logging.getLogger("fiance.notification_job")
 
 
 async def _check_price_alerts(user_id: str, tokens: list[str]) -> None:

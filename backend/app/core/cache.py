@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / ".cache" / "fianceai.db"
+DB_PATH = Path(__file__).resolve().parent.parent.parent / ".cache" / "fiance.db"
 
 
 def _ensure_db() -> None:

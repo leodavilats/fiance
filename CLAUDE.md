@@ -1,4 +1,4 @@
-# fianceAI
+# fiance
 
 Plataforma multi-tenant de análise de investimentos focada na B3. Stack: FastAPI+Postgres (backend/), Angular 18 (web/), Flutter (mobile/).
 

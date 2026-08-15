@@ -15,17 +15,17 @@ void main() async {
     // continuar funcionando normalmente, só sem push.
     debugPrint('Firebase não inicializado: $e');
   }
-  runApp(const ProviderScope(child: FianceAIApp()));
+  runApp(const ProviderScope(child: FianceApp()));
 }
 
-class FianceAIApp extends ConsumerWidget {
-  const FianceAIApp({super.key});
+class FianceApp extends ConsumerWidget {
+  const FianceApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
-      title: 'fianceAI',
+      title: 'fiance',
       themeMode: themeMode,
       theme: buildAppTheme(Brightness.light),
       darkTheme: buildAppTheme(Brightness.dark),
