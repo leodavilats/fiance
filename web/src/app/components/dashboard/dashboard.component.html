@@ -332,31 +332,67 @@
           </div>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-          <div class="text-center p-2 rounded-lg bg-panel-2">
+          <button
+            type="button"
+            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
+            (click)="toggleHealthInfo()"
+          >
             <div class="text-xs text-muted mb-0.5">Concentração</div>
             <div class="text-sm font-semibold text-tx">
               {{ health.concentration_score | number: '1.0-0' }}
             </div>
-          </div>
-          <div class="text-center p-2 rounded-lg bg-panel-2">
+          </button>
+          <button
+            type="button"
+            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
+            (click)="toggleHealthInfo()"
+          >
             <div class="text-xs text-muted mb-0.5">Setor</div>
             <div class="text-sm font-semibold text-tx">
               {{ health.sector_concentration_score | number: '1.0-0' }}
             </div>
-          </div>
-          <div class="text-center p-2 rounded-lg bg-panel-2">
+          </button>
+          <button
+            type="button"
+            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
+            (click)="toggleHealthInfo()"
+          >
             <div class="text-xs text-muted mb-0.5">Diversificação</div>
             <div class="text-sm font-semibold text-tx">
               {{ health.diversification_score | number: '1.0-0' }}
             </div>
-          </div>
-          <div class="text-center p-2 rounded-lg bg-panel-2">
+          </button>
+          <button
+            type="button"
+            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
+            (click)="toggleHealthInfo()"
+          >
             <div class="text-xs text-muted mb-0.5">Risco</div>
             <div class="text-sm font-semibold text-tx">
               {{ health.risk_score | number: '1.0-0' }}
             </div>
-          </div>
+          </button>
         </div>
+        @if (showHealthInfo()) {
+          <div class="p-3 rounded-lg bg-panel-2 text-xs text-muted mb-3 flex flex-col gap-2">
+            <div>
+              <strong class="text-tx">Concentração:</strong> quanto do valor da carteira está
+              concentrado nos poucos ativos de maior peso — quanto mais espalhado, maior a nota.
+            </div>
+            <div>
+              <strong class="text-tx">Setor:</strong> quanto as ações/BDRs estão concentradas em
+              poucos setores da economia.
+            </div>
+            <div>
+              <strong class="text-tx">Diversificação:</strong> variedade entre categorias (renda
+              fixa, ações BR, ações internacionais, FIIs, cripto) e número total de ativos.
+            </div>
+            <div>
+              <strong class="text-tx">Risco:</strong> percentual da carteira em ativos com sinal de
+              venda (Vender/Venda Forte) na avaliação atual.
+            </div>
+          </div>
+        }
         @if (health.warnings.length > 0) {
           <div class="flex flex-col gap-1.5">
             @for (w of health.warnings; track w) {

@@ -12,5 +12,4 @@ export { PatrimonyChartComponent } from './patrimony-chart/patrimony-chart.compo
 export { ProfileModalComponent } from './profile-modal/profile-modal.component';
 export { SkeletonComponent } from './skeleton/skeleton.component';
 export { SnackbarComponent } from './snackbar/snackbar.component';
-export { SectorsComponent } from './sectors/sectors.component';
 export { StrategyComponent } from './strategy/strategy.component';

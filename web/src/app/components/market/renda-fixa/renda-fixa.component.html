@@ -48,9 +48,9 @@
             </button>
           }
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-5">
           <div>
-            <label class="block text-xs text-muted mb-1">Nome / Banco (opcional)</label>
+            <label class="block text-xs text-muted mb-1.5">Nome / Banco (opcional)</label>
             <input
               type="text"
               class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
@@ -59,7 +59,7 @@
             />
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1">Tipo</label>
+            <label class="block text-xs text-muted mb-1.5">Tipo</label>
             <select
               class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
               formControlName="tipo"
@@ -77,7 +77,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1">Tipo de taxa</label>
+            <label class="block text-xs text-muted mb-1.5">Tipo de taxa</label>
             <select
               class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
               formControlName="tipo_taxa"
@@ -89,7 +89,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1">Valor investido (R$)</label>
+            <label class="block text-xs text-muted mb-1.5">Valor investido (R$)</label>
             <input
               type="number"
               class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
@@ -99,7 +99,7 @@
             />
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1">
+            <label class="block text-xs text-muted mb-1.5">
               @if (ctrl.controls['tipo_taxa'].value === 'pos_fixado') {
                 % do CDI
               } @else {
@@ -120,7 +120,7 @@
             />
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1">Prazo (meses)</label>
+            <label class="block text-xs text-muted mb-1.5">Prazo (meses)</label>
             <input
               type="number"
               class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
@@ -130,7 +130,7 @@
             />
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1">Liquidez</label>
+            <label class="block text-xs text-muted mb-1.5">Liquidez</label>
             <select
               class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
               formControlName="liquidez"

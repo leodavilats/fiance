@@ -21,7 +21,6 @@ import {
   PortfolioEvaluationResponse,
   PortfolioCategory,
   PortfolioPosition,
-  RebalanceResponse,
   RecommendService,
   RendaFixaTipo,
   SectorGoal,
@@ -109,26 +108,10 @@ export class AssetsComponent implements OnInit {
   goals = signal<Goal[]>([]);
   sectorGoals = signal<SectorGoal[]>([]);
 
-  rebalancePlan = signal<RebalanceResponse | null>(null);
-  loadingRebalance = signal(false);
-  showRebalance = signal(false);
+  composicaoMode = signal<'ativo' | 'setor'>('ativo');
 
-  toggleRebalance(): void {
-    this.showRebalance.update(v => !v);
-    if (this.showRebalance() && !this.rebalancePlan()) {
-      this.loadRebalancePlan();
-    }
-  }
-
-  loadRebalancePlan(): void {
-    this.loadingRebalance.set(true);
-    this.svc.getRebalancePlan().subscribe({
-      next: res => {
-        this.rebalancePlan.set(res);
-        this.loadingRebalance.set(false);
-      },
-      error: () => this.loadingRebalance.set(false),
-    });
+  setComposicaoMode(mode: 'ativo' | 'setor'): void {
+    this.composicaoMode.set(mode);
   }
 
   goalTargetByCategory = computed(() => {
@@ -299,6 +282,39 @@ export class AssetsComponent implements OnInit {
       pct: (e.valor / totalAcoes) * 100,
       targetPct: targets.get(e.setor) ?? null,
     }));
+  });
+
+  composicaoSlices = computed(() => {
+    const mode = this.composicaoMode();
+    const raw =
+      mode === 'ativo'
+        ? this.alocacaoPorTipo().map(t => ({
+            label: this.ui.categoryLabel(t.tipo),
+            valor: t.valor,
+            pct: t.pct,
+            color: this.ui.categoryBarColor(t.tipo),
+            icon: this.ui.categoryIcon(t.tipo),
+          }))
+        : this.alocacaoPorSetor().map(s => ({
+            label: s.setor,
+            valor: s.valor,
+            pct: s.pct,
+            color: this.ui.sectorSeriesColor(s.setor),
+            icon: this.ui.sectorIcon(s.setor),
+          }));
+
+    let acc = 0;
+    return raw.map(r => {
+      const start = acc;
+      acc += r.pct;
+      return { ...r, start, end: acc };
+    });
+  });
+
+  conicGradient = computed(() => {
+    const slices = this.composicaoSlices();
+    if (slices.length === 0) return 'none';
+    return `conic-gradient(${slices.map(s => `${s.color} ${s.start}% ${s.end}%`).join(', ')})`;
   });
 
   avgTaxaRF = computed(() => {

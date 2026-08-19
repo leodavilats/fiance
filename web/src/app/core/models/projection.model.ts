@@ -30,21 +30,6 @@ export interface PassiveIncomeProjectionResponse {
   assumptions: Record<string, any>;
 }
 
-export interface SectorAllocation {
-  sector: string;
-  target_percentage: number;
-  current_percentage: number;
-  current_value: number;
-  deviation: number;
-}
-
-export interface SectorAllocationResponse {
-  total_equity_value: number;
-  allocations: SectorAllocation[];
-  needs_rebalance: boolean;
-  max_deviation: number;
-}
-
 export interface SectorGoal {
   sector: string;
   target_pct: number;

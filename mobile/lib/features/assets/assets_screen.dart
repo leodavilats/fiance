@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -273,9 +274,10 @@ class AssetsScreen extends ConsumerWidget {
                     icon: Icons.donut_small_outlined,
                     title: 'Composição da carteira',
                   ),
-                  _CompositionCard(allocations: data.allocations),
-                  const SizedBox(height: 12),
-                  const _RebalanceCard(),
+                  _CompositionCard(
+                    allocations: data.allocations,
+                    positions: data.positions,
+                  ),
                 ],
                 const SizedBox(height: 20),
                 _SectionTitle(
@@ -464,15 +466,87 @@ class _StatBlock extends StatelessWidget {
   }
 }
 
-class _CompositionCard extends StatelessWidget {
-  const _CompositionCard({required this.allocations});
+enum _CompositionMode { asset, sector }
+
+const _stockCategories = {'acoes_br', 'acoes_int'};
+
+class _CompositionSlice {
+  const _CompositionSlice({
+    required this.label,
+    required this.value,
+    required this.pct,
+    required this.color,
+    required this.icon,
+  });
+
+  final String label;
+  final double value;
+  final double pct;
+  final Color color;
+  final IconData? icon;
+}
+
+class _CompositionCard extends StatefulWidget {
+  const _CompositionCard({required this.allocations, required this.positions});
 
   final List<CategoryAllocation> allocations;
+  final List<PortfolioPosition> positions;
+
+  @override
+  State<_CompositionCard> createState() => _CompositionCardState();
+}
+
+class _CompositionCardState extends State<_CompositionCard> {
+  _CompositionMode _mode = _CompositionMode.asset;
+
+  List<_CompositionSlice> get _byAsset {
+    final sorted = [...widget.allocations]
+      ..sort((a, b) => b.currentValue.compareTo(a.currentValue));
+    return sorted
+        .where((a) => a.currentPct > 0)
+        .map(
+          (a) => _CompositionSlice(
+            label: categoryLabel(a.category),
+            value: a.currentValue,
+            pct: a.currentPct,
+            color: categoryColor(a.category),
+            icon: categoryIcon(a.category),
+          ),
+        )
+        .toList();
+  }
+
+  List<_CompositionSlice> get _bySector {
+    final buckets = <String, double>{};
+    var totalAcoes = 0.0;
+    for (final p in widget.positions) {
+      if (!_stockCategories.contains(p.categoryResolved)) continue;
+      final valor = p.currentValue ?? p.invested;
+      final setor = translateSector(p.sector);
+      buckets[setor] = (buckets[setor] ?? 0) + valor;
+      totalAcoes += valor;
+    }
+    if (totalAcoes <= 0) return [];
+
+    final entries = buckets.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return entries
+        .map(
+          (e) => _CompositionSlice(
+            label: e.key,
+            value: e.value,
+            pct: e.value / totalAcoes * 100,
+            color: sectorColor(e.key),
+            icon: null,
+          ),
+        )
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final sorted = [...allocations]
-      ..sort((a, b) => b.currentValue.compareTo(a.currentValue));
+    final slices = _mode == _CompositionMode.asset ? _byAsset : _bySector;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -480,150 +554,99 @@ class _CompositionCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: SizedBox(
-                height: 10,
-                child: Row(
-                  children: sorted
-                      .where((a) => a.currentPct > 0)
-                      .map(
-                        (a) => Expanded(
-                          flex: (a.currentPct * 10).round().clamp(1, 100000),
-                          child: Container(color: categoryColor(a.category)),
-                        ),
-                      )
-                      .toList(),
+            SegmentedButton<_CompositionMode>(
+              segments: const [
+                ButtonSegment(
+                  value: _CompositionMode.asset,
+                  label: Text('Por ativo'),
                 ),
-              ),
+                ButtonSegment(
+                  value: _CompositionMode.sector,
+                  label: Text('Por setor (ações)'),
+                ),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (s) => setState(() => _mode = s.first),
             ),
-            const SizedBox(height: 14),
-            for (var i = 0; i < sorted.length; i++) ...[
-              if (i > 0) const Divider(height: 1),
+            const SizedBox(height: 16),
+            if (slices.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      categoryIcon(sorted[i].category),
-                      size: 16,
-                      color: categoryColor(sorted[i].category),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(categoryLabel(sorted[i].category))),
-                    Text(
-                      formatCurrency(sorted[i].currentValue),
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 48,
-                      child: Text(
-                        formatPercent(sorted[i].currentPct),
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  'Nenhuma ação ou BDR avaliada ainda.',
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+              )
+            else ...[
+              SizedBox(
+                height: 180,
+                child: PieChart(
+                  PieChartData(
+                    sections: slices
+                        .map(
+                          (s) => PieChartSectionData(
+                            value: s.value,
+                            color: s.color,
+                            title: '${s.pct.round()}%',
+                            radius: 60,
+                            titleStyle: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 36,
+                  ),
                 ),
               ),
+              const SizedBox(height: 14),
+              for (var i = 0; i < slices.length; i++) ...[
+                if (i > 0) const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      if (slices[i].icon != null) ...[
+                        Icon(slices[i].icon, size: 16, color: slices[i].color),
+                        const SizedBox(width: 8),
+                      ] else ...[
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: slices[i].color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Expanded(child: Text(slices[i].label)),
+                      Text(
+                        formatCurrency(slices[i].value),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 48,
+                        child: Text(
+                          formatPercent(slices[i].pct),
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _RebalanceCard extends ConsumerStatefulWidget {
-  const _RebalanceCard();
-
-  @override
-  ConsumerState<_RebalanceCard> createState() => _RebalanceCardState();
-}
-
-class _RebalanceCardState extends ConsumerState<_RebalanceCard> {
-  bool _expanded = false;
-  bool _loading = false;
-  RebalanceResponse? _plan;
-
-  Future<void> _toggle() async {
-    setState(() => _expanded = !_expanded);
-    if (_expanded && _plan == null) {
-      setState(() => _loading = true);
-      try {
-        final plan = await ref.read(apiRepositoryProvider).getRebalancePlan();
-        setState(() => _plan = plan);
-      } finally {
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.balance_outlined),
-            title: const Text('Como rebalancear minha carteira?'),
-            trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-            onTap: _toggle,
-          ),
-          if (_expanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _plan == null
-                  ? const Text('Não foi possível calcular agora.')
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_plan!.message),
-                        if (_plan!.suggestions.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          for (final s in _plan!.suggestions)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          s.ticker,
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                        Text(
-                                          s.rationale,
-                                          style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Text(
-                                    '${s.suggestedQuantity}x · ${formatCurrency(s.suggestedInvestment)}',
-                                    style: const TextStyle(fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ],
-                    ),
-            ),
-        ],
       ),
     );
   }

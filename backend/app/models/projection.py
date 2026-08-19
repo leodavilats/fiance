@@ -41,18 +41,3 @@ class PassiveIncomeProjectionResponse(BaseModel):
     target_date: str | None = Field(None, description="Data estimada para atingir meta (YYYY-MM)")
 
     assumptions: dict = Field(default_factory=dict, description="Premissas utilizadas na projeção")
-
-
-class SectorAllocation(BaseModel):
-    sector: str
-    target_percentage: float = Field(..., ge=0, le=100)
-    current_percentage: float = Field(0.0, ge=0, le=100)
-    current_value: float = Field(0.0, ge=0)
-    deviation: float = Field(0.0, description="Desvio do target (%)")
-
-
-class SectorAllocationResponse(BaseModel):
-    total_equity_value: float = Field(..., description="Valor total em ações")
-    allocations: list[SectorAllocation]
-    needs_rebalance: bool = Field(False, description="Precisa rebalancear")
-    max_deviation: float = Field(0.0, description="Maior desvio encontrado (%)")

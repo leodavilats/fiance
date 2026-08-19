@@ -17,12 +17,9 @@ from . import (
     preferences,
     projection,
     quick_invest,
-    rebalance,
-    recommendations,
     renda_fixa,
     sectors,
     strategy,
-    watchlist,
 )
 
 router = APIRouter()
@@ -31,7 +28,6 @@ router.include_router(basic.router, tags=["Basic"])
 router.include_router(auth.router, tags=["Auth"])
 
 protected = APIRouter(dependencies=[Depends(get_current_user)])
-protected.include_router(recommendations.router, tags=["Recommendations"])
 protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])
 protected.include_router(portfolio_routes.router, tags=["Portfolio"])
@@ -44,10 +40,8 @@ protected.include_router(renda_fixa.router, tags=["Renda Fixa"])
 protected.include_router(projection.router, tags=["Projection"])
 protected.include_router(quick_invest.router, tags=["Quick Invest"])
 protected.include_router(benchmark.router, tags=["Benchmark"])
-protected.include_router(rebalance.router, tags=["Rebalance"])
 protected.include_router(alerts.router, tags=["Alerts"])
 protected.include_router(sectors.router, tags=["Sectors"])
-protected.include_router(watchlist.router, tags=["Watchlist"])
 protected.include_router(notifications.router, tags=["Notifications"])
 
 router.include_router(protected)

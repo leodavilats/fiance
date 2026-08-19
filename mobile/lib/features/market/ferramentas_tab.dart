@@ -24,19 +24,36 @@ class _FerramentasTabState extends State<FerramentasTab> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(12),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SegmentedButton<_ToolMode>(
-              segments: const [
-                ButtonSegment(value: _ToolMode.analisar, label: Text('Analisar')),
-                ButtonSegment(value: _ToolMode.rendaFixa, label: Text('Simulador RF')),
-                ButtonSegment(value: _ToolMode.comparar, label: Text('Comparar')),
-                ButtonSegment(value: _ToolMode.aportes, label: Text('Aportes')),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (s) => setState(() => _mode = s.first),
-            ),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _ToolModeChip(
+                label: 'Analisar',
+                icon: Icons.search,
+                selected: _mode == _ToolMode.analisar,
+                onSelected: () => setState(() => _mode = _ToolMode.analisar),
+              ),
+              _ToolModeChip(
+                label: 'Simulador RF',
+                icon: Icons.account_balance_outlined,
+                selected: _mode == _ToolMode.rendaFixa,
+                onSelected: () => setState(() => _mode = _ToolMode.rendaFixa),
+              ),
+              _ToolModeChip(
+                label: 'Comparar',
+                icon: Icons.compare_arrows,
+                selected: _mode == _ToolMode.comparar,
+                onSelected: () => setState(() => _mode = _ToolMode.comparar),
+              ),
+              _ToolModeChip(
+                label: 'Aportes',
+                icon: Icons.savings_outlined,
+                selected: _mode == _ToolMode.aportes,
+                onSelected: () => setState(() => _mode = _ToolMode.aportes),
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -48,6 +65,30 @@ class _FerramentasTabState extends State<FerramentasTab> {
           },
         ),
       ],
+    );
+  }
+}
+
+class _ToolModeChip extends StatelessWidget {
+  const _ToolModeChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      avatar: Icon(icon, size: 16),
+      selected: selected,
+      onSelected: (_) => onSelected(),
     );
   }
 }
@@ -652,18 +693,20 @@ class _ContributionSimulatorViewState
   bool _loading = false;
   PassiveIncomeProjection? _result;
 
+  double? _parseDecimal(String text) => double.tryParse(text.trim().replaceAll(',', '.'));
+
   Future<void> _simulate() async {
     setState(() => _loading = true);
     try {
       final result = await ref
           .read(apiRepositoryProvider)
           .projectPassiveIncome(
-            monthlyContribution: double.tryParse(_contributionCtrl.text) ?? 0,
+            monthlyContribution: _parseDecimal(_contributionCtrl.text) ?? 0,
             monthsAhead: int.tryParse(_monthsCtrl.text) ?? 60,
-            portfolioGrowthRate: (double.tryParse(_growthCtrl.text) ?? 10) / 100,
-            dividendGrowthRate: (double.tryParse(_divGrowthCtrl.text) ?? 5) / 100,
+            portfolioGrowthRate: (_parseDecimal(_growthCtrl.text) ?? 10) / 100,
+            dividendGrowthRate: (_parseDecimal(_divGrowthCtrl.text) ?? 5) / 100,
             reinvestDividends: _reinvest,
-            targetMonthlyIncome: double.tryParse(_targetCtrl.text),
+            targetMonthlyIncome: _parseDecimal(_targetCtrl.text),
           );
       setState(() => _result = result);
     } finally {
@@ -687,7 +730,7 @@ class _ContributionSimulatorViewState
               child: TextField(
                 controller: _contributionCtrl,
                 decoration: const InputDecoration(labelText: 'Aporte mensal (R\$)'),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
             ),
             const SizedBox(width: 8),
@@ -707,7 +750,7 @@ class _ContributionSimulatorViewState
               child: TextField(
                 controller: _growthCtrl,
                 decoration: const InputDecoration(labelText: 'Valorização anual (%)'),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
             ),
             const SizedBox(width: 8),
@@ -715,7 +758,7 @@ class _ContributionSimulatorViewState
               child: TextField(
                 controller: _divGrowthCtrl,
                 decoration: const InputDecoration(labelText: 'Crescimento dividendos (%)'),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
             ),
           ],
@@ -724,7 +767,7 @@ class _ContributionSimulatorViewState
         TextField(
           controller: _targetCtrl,
           decoration: const InputDecoration(labelText: 'Meta de renda passiva/mês (opcional)'),
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
         CheckboxListTile(
           value: _reinvest,

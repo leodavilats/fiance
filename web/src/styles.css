@@ -398,8 +398,45 @@ select.input {
 
 /* Segmentado de segundo nível (ex.: modo dentro de uma aba) — visualmente
    distinto de .tab-btn para não parecer outra linha de abas principais. */
+/* input[type=range] só herda a cor do preenchido via accent-color — a trilha
+   (parte não preenchida) fica com o cinza padrão do browser, que em light
+   mode é quase branco sobre painel branco e fica invisível. */
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+.range-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+}
+.range-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+}
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+.range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
 .subtab-group {
-  @apply inline-flex items-center gap-0.5 p-1 rounded-lg w-fit;
+  @apply flex flex-wrap items-center gap-1 p-1 rounded-lg w-fit;
   background: var(--bg-2);
   border: 1px solid var(--border);
 }

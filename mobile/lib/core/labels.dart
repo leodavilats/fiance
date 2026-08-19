@@ -49,3 +49,24 @@ IconData categoryIcon(String? category) {
   };
   return icons[category] ?? Icons.category_outlined;
 }
+
+// Mesma paleta categórica fixa das séries do web (--series-N), pra manter
+// paridade visual entre plataformas nos gráficos por setor.
+const _sectorPalette = [
+  Color(0xFF60A5FA),
+  Color(0xFF4ADE80),
+  Color(0xFFC084FC),
+  Color(0xFFFB923C),
+  Color(0xFFFACC15),
+  Color(0xFFF472B6),
+  Color(0xFF34D399),
+  Color(0xFF818CF8),
+  Color(0xFFFB7185),
+  Color(0xFFA3E635),
+  Color(0xFF22D3EE),
+];
+
+Color sectorColor(String sector) {
+  final index = sector.hashCode.abs() % _sectorPalette.length;
+  return _sectorPalette[index];
+}

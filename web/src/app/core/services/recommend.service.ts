@@ -24,15 +24,9 @@ import {
   PriceAlertTriggered,
   QuickInvestRequest,
   QuickInvestResponse,
-  RebalanceResponse,
-  RecommendRequest,
-  RecommendResponse,
-  RendaFixaAnalysisResult,
-  RendaFixaAsset,
   RendaFixaCompareRequest,
   RendaFixaCompareResponse,
   ReferenceRates,
-  SectorAllocationResponse,
   SectorGoal,
   SectorsSummaryResponse,
   SellRequest,
@@ -44,10 +38,6 @@ import {
 export class RecommendService {
   private http = inject(HttpClient);
   private base = environment.apiBaseUrl;
-
-  recommend(req: RecommendRequest): Observable<RecommendResponse> {
-    return this.http.post<RecommendResponse>(`${this.base}/recommend`, req);
-  }
 
   analyzeAsset(symbol: string): Observable<AssetAnalysis> {
     return this.http.get<AssetAnalysis>(`${this.base}/asset/${encodeURIComponent(symbol)}`);
@@ -87,10 +77,6 @@ export class RecommendService {
     return this.http.delete<{ deleted: string }>(
       `${this.base}/portfolio/${encodeURIComponent(ticker)}`
     );
-  }
-
-  refreshPortfolio(): Observable<PortfolioEvaluationResponse> {
-    return this.http.post<PortfolioEvaluationResponse>(`${this.base}/portfolio/refresh`, null);
   }
 
   sellPosition(req: SellRequest): Observable<ClosedTrade> {
@@ -182,10 +168,6 @@ export class RecommendService {
     return this.http.get<ReferenceRates>(`${this.base}/renda-fixa/taxas`);
   }
 
-  analyzeRendaFixa(ativo: RendaFixaAsset): Observable<RendaFixaAnalysisResult> {
-    return this.http.post<RendaFixaAnalysisResult>(`${this.base}/renda-fixa/analisar`, ativo);
-  }
-
   compareRendaFixa(req: RendaFixaCompareRequest): Observable<RendaFixaCompareResponse> {
     return this.http.post<RendaFixaCompareResponse>(`${this.base}/renda-fixa/comparar`, req);
   }
@@ -196,15 +178,6 @@ export class RecommendService {
     return this.http.post<PassiveIncomeProjectionResponse>(
       `${this.base}/projection/passive-income`,
       req
-    );
-  }
-
-  analyzeSectorAllocation(
-    targetAllocations: Record<string, number>
-  ): Observable<SectorAllocationResponse> {
-    return this.http.post<SectorAllocationResponse>(
-      `${this.base}/projection/sector-allocation`,
-      targetAllocations
     );
   }
 
@@ -255,10 +228,6 @@ export class RecommendService {
 
   getBenchmark(): Observable<BenchmarkResponse> {
     return this.http.get<BenchmarkResponse>(`${this.base}/benchmark`);
-  }
-
-  getRebalancePlan(): Observable<RebalanceResponse> {
-    return this.http.get<RebalanceResponse>(`${this.base}/rebalance`);
   }
 
   compareAssets(tickers: string[]): Observable<CompareResponse> {

@@ -136,5 +136,13 @@ ThemeData buildAppTheme(Brightness brightness) {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appRadius)),
       ),
     ),
+    // Sem isso, o Material3 deriva a trilha inativa de colorScheme.surfaceVariant,
+    // que em light mode fica quase idêntica ao fundo dos cards e some visualmente.
+    sliderTheme: SliderThemeData(
+      activeTrackColor: accent,
+      inactiveTrackColor: border,
+      thumbColor: accent,
+      overlayColor: accent.withValues(alpha: 0.12),
+    ),
   );
 }

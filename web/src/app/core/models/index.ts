@@ -9,8 +9,6 @@ export * from './portfolio.model';
 export * from './preferences.model';
 export * from './projection.model';
 export * from './quick-invest.model';
-export * from './rebalance.model';
-export * from './recommendation.model';
 export * from './renda_fixa.model';
 export * from './sectors.model';
 export * from './strategy.model';

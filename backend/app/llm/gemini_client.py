@@ -5,8 +5,6 @@ import logging
 from typing import Any
 
 from app.core.config import get_settings
-from app.models.enums import RiskProfile
-from app.models.recommendation import Allocation
 
 logger = logging.getLogger(__name__)
 
@@ -18,78 +16,6 @@ try:
 except ImportError:
     GEMINI_AVAILABLE = False
     logger.warning("google-genai não instalado. Execute: pip install google-genai")
-
-SYSTEM_PROMPT = (
-    "Você é um analista financeiro CNPI. Explique de forma objetiva, em "
-    "português do Brasil, por que a carteira sugerida faz sentido para o "
-    "perfil informado. Cite riscos relevantes. Máximo 6 frases. Inclua "
-    "disclaimer de que não é recomendação formal."
-)
-
-
-def _format_allocations(allocations: list[Allocation]) -> str:
-
-    lines = []
-
-    for a in allocations:
-        lines.append(
-            f"- {a.ticker} ({a.sector or 's/setor'}): {a.weight * 100:.1f}% | "
-            f"R$ {a.invested:.2f} | score {a.score:.1f} | {a.rationale}"
-        )
-
-    return "\n".join(lines)
-
-
-def explain_portfolio(
-    allocations: list[Allocation],
-    profile: RiskProfile,
-    metrics: dict | None = None,
-) -> str:
-
-    settings = get_settings()
-
-    if not settings.gemini_api_key or not allocations:
-        return ""
-
-    if not GEMINI_AVAILABLE:
-        logger.warning("google-generativeai não instalado.")
-
-        return ""
-
-    metrics_txt = ""
-
-    if metrics:
-        metrics_txt = (
-            f"\nMétricas estimadas: retorno {metrics.get('expected_return', 0) * 100:.1f}% a.a., "
-            f"volatilidade {metrics.get('volatility', 0) * 100:.1f}%, "
-            f"Sharpe {metrics.get('sharpe', 0):.2f}."
-        )
-
-    user = (
-        f"Perfil: {profile.value}.\nCarteira sugerida:\n"
-        f"{_format_allocations(allocations)}{metrics_txt}"
-    )
-
-    try:
-        client = genai.Client(api_key=settings.gemini_api_key)
-
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=user,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                temperature=0.3,
-                max_output_tokens=400,
-            ),
-        )
-
-        return response.text.strip()
-
-    except Exception as e:
-        logger.warning("LLM falhou: %s", e)
-
-        return ""
-
 
 STRATEGY_RANKING_PROMPT = """Você é um analista financeiro CNPI ajudando a escolher, dentro de uma \
 categoria de alocação, quais oportunidades de investimento priorizar para fechar um gap de \

@@ -39,14 +39,6 @@ async def delete_position(ticker: str) -> dict:
     return portfolio_service.delete_position(ticker)
 
 
-@router.post("/portfolio/refresh", response_model=PortfolioEvaluationResponse)
-async def refresh_portfolio() -> PortfolioEvaluationResponse:
-    try:
-        return await portfolio_service.refresh_portfolio()
-    except ValueError as e:
-        raise HTTPException(404, str(e)) from e
-
-
 @router.post("/portfolio/sell", response_model=ClosedTrade)
 async def sell_position(req: SellRequest) -> ClosedTrade:
     try:

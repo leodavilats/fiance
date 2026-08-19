@@ -5,12 +5,10 @@ def test_portfolio_crud_flow(client):
     uid = "test_portfolio_crud"
     headers = make_auth_headers(uid)
 
-    # Vazio no início.
     resp = client.get("/api/portfolio", headers=headers)
     assert resp.status_code == 200
     assert resp.json()["items"] == []
 
-    # Cria (PUT substitui a carteira toda).
     resp = client.put(
         "/api/portfolio",
         headers=headers,
@@ -23,12 +21,10 @@ def test_portfolio_crud_flow(client):
     assert len(items) == 1
     assert items[0]["ticker"] == "PETR4"
 
-    # Busca de volta.
     resp = client.get("/api/portfolio", headers=headers)
     assert resp.status_code == 200
     assert len(resp.json()["items"]) == 1
 
-    # Atualiza (substitui por outra composição).
     resp = client.put(
         "/api/portfolio",
         headers=headers,
@@ -43,7 +39,6 @@ def test_portfolio_crud_flow(client):
     items = resp.json()["items"]
     assert {i["ticker"] for i in items} == {"PETR4", "VALE3"}
 
-    # Deleta uma posição.
     resp = client.delete("/api/portfolio/VALE3", headers=headers)
     assert resp.status_code == 200
 
@@ -64,7 +59,6 @@ def test_portfolio_sell_partial_then_total_and_closed_trades(client):
         },
     )
 
-    # Venda parcial.
     resp = client.post(
         "/api/portfolio/sell",
         headers=headers,
@@ -79,7 +73,6 @@ def test_portfolio_sell_partial_then_total_and_closed_trades(client):
     remaining = [i for i in resp.json()["items"] if i["ticker"] == "PETR4"][0]
     assert remaining["quantity"] == 60
 
-    # Venda total do restante.
     resp = client.post(
         "/api/portfolio/sell",
         headers=headers,
@@ -90,7 +83,6 @@ def test_portfolio_sell_partial_then_total_and_closed_trades(client):
     resp = client.get("/api/portfolio", headers=headers)
     assert resp.json()["items"] == []
 
-    # Trades encerrados: as duas vendas aparecem.
     resp = client.get("/api/portfolio/trades", headers=headers)
     assert resp.status_code == 200
     trades_body = resp.json()

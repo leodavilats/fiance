@@ -23,6 +23,14 @@ _ASSET_TYPE_TO_CATEGORY = {
 
 _VALID_CATEGORIES = {"renda_fixa", "acoes_br", "acoes_int", "fiis", "cripto"}
 
+_CATEGORY_LABELS = {
+    "renda_fixa": "Renda Fixa",
+    "acoes_br": "Ações BR",
+    "acoes_int": "Ações INT",
+    "fiis": "FIIs",
+    "cripto": "Cripto",
+}
+
 
 class DashboardService:
     def __init__(self):
@@ -86,14 +94,15 @@ class DashboardService:
                 continue
             if abs(a.delta_pct) >= REBALANCE_THRESHOLD_PCT:
                 direction = "acima" if a.delta_pct > 0 else "abaixo"
+                label = _CATEGORY_LABELS.get(a.category, a.category)
                 alerts.append(
                     Alert(
                         severity="warning",
                         kind="rebalance",
-                        title=f"{a.category}: {direction} da meta",
+                        title=f"{label}: {direction} da meta",
                         detail=(
                             f"Atual {a.current_pct:.1f}% vs meta {a.target_pct:.1f}% "
-                            f"({a.delta_pct:+.1f}pp). Veja como rebalancear em Ativos."
+                            f"({a.delta_pct:+.1f}pp)."
                         ),
                     )
                 )

@@ -7,8 +7,6 @@ from .opportunity_service import OpportunityService
 from .portfolio_service import PortfolioService
 from .projection_service import ProjectionService
 from .quick_invest_service import QuickInvestService
-from .rebalance_service import RebalanceService
-from .recommendation_service import RecommendationService
 from .strategy_service import StrategyService
 
 __all__ = [
@@ -17,11 +15,9 @@ __all__ = [
     "DipService",
     "OpportunityService",
     "PortfolioService",
-    "RecommendationService",
     "DashboardService",
     "StrategyService",
     "GoalService",
     "ProjectionService",
     "QuickInvestService",
-    "RebalanceService",
 ]

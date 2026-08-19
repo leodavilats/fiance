@@ -252,22 +252,3 @@ class PortfolioService:
             total_realized_pnl=round(total_realized, 2),
             total_ir_paid=round(total_ir, 2),
         )
-
-    async def refresh_portfolio(self) -> PortfolioEvaluationResponse:
-        items = self.portfolio_repo.list_positions()
-        if not items:
-            raise ValueError("Nenhuma carteira salva ainda.")
-
-        req = PortfolioEvaluationRequest(
-            items=[
-                PortfolioItem(
-                    ticker=i["ticker"],
-                    quantity=i["quantity"],
-                    avg_price=i["avg_price"],
-                    category=i.get("category", "auto"),
-                )
-                for i in items
-            ],
-        )
-
-        return await self.evaluate_portfolio(req)

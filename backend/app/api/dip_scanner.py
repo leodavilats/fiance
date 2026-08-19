@@ -1,8 +1,4 @@
-import asyncio
-import json
-
 from fastapi import APIRouter, Query
-from fastapi.responses import StreamingResponse
 
 from app.models import DipScannerResponse
 from app.services import DipService
@@ -43,32 +39,3 @@ async def dip_scanner(
         ]
 
     return result
-
-
-@router.get("/dip-scanner/stream")
-async def dip_scanner_stream(
-    universe: str | None = Query(None),
-    min_score: float = Query(40.0, ge=0, le=100),
-    top: int = Query(12, ge=1, le=30),
-    category: str | None = Query(None),
-) -> StreamingResponse:
-    async def event_generator():
-        found = 0
-        scanned = 0
-        async for event in dip_service.scan_dips_stream(universe, min_score, top, category):
-            if event.get("type") == "item":
-                found += 1
-            if event.get("type") == "summary":
-                scanned = event.get("scanned", 0)
-            yield f"data: {json.dumps(event)}\n\n"
-            await asyncio.sleep(0)
-        yield f"data: {json.dumps({'type': 'done', 'found': found, 'scanned': scanned})}\n\n"
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
-    )

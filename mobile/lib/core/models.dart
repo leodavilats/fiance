@@ -720,54 +720,6 @@ class BenchmarkResponse {
   );
 }
 
-class QuickInvestAllocation {
-  QuickInvestAllocation({
-    required this.ticker,
-    required this.category,
-    required this.suggestedQuantity,
-    required this.suggestedInvestment,
-    required this.rationale,
-  });
-
-  final String ticker;
-  final String category;
-  final int suggestedQuantity;
-  final double suggestedInvestment;
-  final String rationale;
-
-  factory QuickInvestAllocation.fromJson(Map<String, dynamic> j) => QuickInvestAllocation(
-    ticker: j['ticker'] as String,
-    category: j['category'] as String,
-    suggestedQuantity: (j['suggested_quantity'] as num).toInt(),
-    suggestedInvestment: (j['suggested_investment'] as num).toDouble(),
-    rationale: j['rationale'] as String? ?? '',
-  );
-}
-
-class RebalanceResponse {
-  RebalanceResponse({
-    required this.needsRebalance,
-    required this.totalGapAmount,
-    required this.suggestions,
-    required this.message,
-  });
-
-  final bool needsRebalance;
-  final double totalGapAmount;
-  final List<QuickInvestAllocation> suggestions;
-  final String message;
-
-  factory RebalanceResponse.fromJson(Map<String, dynamic> j) => RebalanceResponse(
-    needsRebalance: j['needs_rebalance'] as bool? ?? false,
-    totalGapAmount: (j['total_gap_amount'] as num?)?.toDouble() ?? 0,
-    suggestions: (j['suggestions'] as List?)
-            ?.map((e) => QuickInvestAllocation.fromJson(e as Map<String, dynamic>))
-            .toList() ??
-        [],
-    message: j['message'] as String? ?? '',
-  );
-}
-
 class CompareResponse {
   CompareResponse({required this.items, required this.errors});
 

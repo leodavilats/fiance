@@ -50,16 +50,12 @@ from .projection import (
     PassiveIncomeMonth,
     PassiveIncomeProjectionRequest,
     PassiveIncomeProjectionResponse,
-    SectorAllocation,
-    SectorAllocationResponse,
 )
 from .quick_invest import (
     QuickInvestAllocation,
     QuickInvestRequest,
     QuickInvestResponse,
 )
-from .rebalance import RebalanceResponse
-from .recommendation import Allocation, RecommendRequest, RecommendResponse
 from .renda_fixa import (
     ReferenceRates,
     RendaFixaAnalysisResult,
@@ -67,7 +63,6 @@ from .renda_fixa import (
     RendaFixaCompareRequest,
     RendaFixaCompareResponse,
 )
-from .watchlist import WatchlistItem, WatchlistRequest
 
 __all__ = [
     "AssetCategory",
@@ -79,9 +74,6 @@ __all__ = [
     "TaxType",
     "CompanyFundamentals",
     "ScoredCompany",
-    "Allocation",
-    "RecommendRequest",
-    "RecommendResponse",
     "AssetAnalysis",
     "CompareResponse",
     "DecisionBlock",
@@ -90,7 +82,6 @@ __all__ = [
     "BenchmarkPoint",
     "BenchmarkResponse",
     "PortfolioHealth",
-    "RebalanceResponse",
     "PortfolioEvaluationRequest",
     "PortfolioEvaluationResponse",
     "PortfolioItem",
@@ -127,11 +118,7 @@ __all__ = [
     "PassiveIncomeMonth",
     "PassiveIncomeProjectionRequest",
     "PassiveIncomeProjectionResponse",
-    "SectorAllocation",
-    "SectorAllocationResponse",
     "QuickInvestRequest",
     "QuickInvestResponse",
     "QuickInvestAllocation",
-    "WatchlistItem",
-    "WatchlistRequest",
 ]

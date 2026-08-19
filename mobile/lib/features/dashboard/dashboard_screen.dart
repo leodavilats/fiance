@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
-import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
@@ -49,18 +48,6 @@ class DashboardScreen extends ConsumerWidget {
                 title: 'Carteira vs benchmarks',
               ),
               const _BenchmarkSection(),
-              if (data.allocations.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                const _SectionTitle(
-                  icon: Icons.pie_chart_outline,
-                  title: 'Alocação por categoria',
-                ),
-                _CardGroup(
-                  children: data.allocations
-                      .map((a) => _AllocationRow(allocation: a))
-                      .toList(),
-                ),
-              ],
               if (data.alerts.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 const _SectionTitle(
@@ -95,32 +82,6 @@ class DashboardScreen extends ConsumerWidget {
               ],
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Agrupa linhas num único Card com divisores para evitar repetição visual
-// de "card dentro de card".
-class _CardGroup extends StatelessWidget {
-  const _CardGroup({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          children: [
-            for (var i = 0; i < children.length; i++) ...[
-              if (i > 0) const Divider(height: 1),
-              children[i],
-            ],
-          ],
         ),
       ),
     );
@@ -425,7 +386,6 @@ class _EvolutionChartState extends State<_EvolutionChart> {
     final maxY = values.reduce((a, b) => a > b ? a : b);
     final padding = (maxY - minY).abs() * 0.15 + 1;
 
-    // índices onde mostrar rótulo de data no eixo X: início, meio e fim.
     final labelIndices = <int>{0, lastIndex, (lastIndex / 2).round()};
 
     return Card(
@@ -605,19 +565,38 @@ class _EvolutionChartState extends State<_EvolutionChart> {
   }
 }
 
-class _HealthCard extends StatelessWidget {
+const _healthMetricExplanations = {
+  'Concentração':
+      'Quanto do valor da carteira está concentrado nos poucos ativos de maior peso — quanto mais espalhado, maior a nota.',
+  'Setor':
+      'Quanto as ações/BDRs estão concentradas em poucos setores da economia.',
+  'Diversificação':
+      'Variedade entre categorias (renda fixa, ações BR, ações internacionais, FIIs, cripto) e número total de ativos.',
+  'Risco':
+      'Percentual da carteira em ativos com sinal de venda (Vender/Venda Forte) na avaliação atual.',
+};
+
+class _HealthCard extends StatefulWidget {
   const _HealthCard({required this.health});
 
   final PortfolioHealth health;
 
+  @override
+  State<_HealthCard> createState() => _HealthCardState();
+}
+
+class _HealthCardState extends State<_HealthCard> {
+  bool _showInfo = false;
+
   Color _scoreColor(Brightness brightness) {
-    if (health.score >= 70) return gainColor(brightness);
-    if (health.score >= 40) return warnColor(brightness);
+    if (widget.health.score >= 70) return gainColor(brightness);
+    if (widget.health.score >= 40) return warnColor(brightness);
     return lossColor(brightness);
   }
 
   @override
   Widget build(BuildContext context) {
+    final health = widget.health;
     final brightness = Theme.of(context).brightness;
     final color = _scoreColor(brightness);
 
@@ -646,22 +625,60 @@ class _HealthCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _HealthMetric(label: 'Concentração', value: health.concentrationScore),
+            InkWell(
+              onTap: () => setState(() => _showInfo = !_showInfo),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _HealthMetric(label: 'Concentração', value: health.concentrationScore),
+                    ),
+                    Expanded(
+                      child: _HealthMetric(label: 'Setor', value: health.sectorConcentrationScore),
+                    ),
+                    Expanded(
+                      child: _HealthMetric(label: 'Diversif.', value: health.diversificationScore),
+                    ),
+                    Expanded(
+                      child: _HealthMetric(label: 'Risco', value: health.riskScore),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: _HealthMetric(label: 'Setor', value: health.sectorConcentrationScore),
-                ),
-                Expanded(
-                  child: _HealthMetric(label: 'Diversif.', value: health.diversificationScore),
-                ),
-                Expanded(
-                  child: _HealthMetric(label: 'Risco', value: health.riskScore),
-                ),
-              ],
+              ),
             ),
+            if (_showInfo) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final entry in _healthMetricExplanations.entries)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: RichText(
+                          text: TextSpan(
+                            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                            children: [
+                              TextSpan(
+                                text: '${entry.key}: ',
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              TextSpan(text: entry.value),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
             if (health.warnings.isNotEmpty) ...[
               const SizedBox(height: 12),
               for (final w in health.warnings)
@@ -851,61 +868,6 @@ class _SectionTitle extends StatelessWidget {
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AllocationRow extends StatelessWidget {
-  const _AllocationRow({required this.allocation});
-
-  final CategoryAllocation allocation;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = categoryColor(allocation.category);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    categoryLabel(allocation.category),
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-              Text(
-                '${formatCurrency(allocation.currentValue)} · ${formatPercent(allocation.currentPct)}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (allocation.currentPct / 100).clamp(0, 1),
-              minHeight: 6,
-              backgroundColor: color.withValues(alpha: 0.12),
-              valueColor: AlwaysStoppedAnimation(color),
-            ),
           ),
         ],
       ),

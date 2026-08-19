@@ -141,32 +141,6 @@ class ApiRepository {
         .toList();
   }
 
-  Future<Map<String, dynamic>> quickInvest({
-    required double cashAvailable,
-    bool useCurrentGoals = true,
-    bool prioritizeRebalance = true,
-    double minOrderValue = 100,
-  }) async {
-    final res = await _dio.post(
-      '/quick-invest',
-      data: {
-        'cash_available': cashAvailable,
-        'use_current_goals': useCurrentGoals,
-        'prioritize_rebalance': prioritizeRebalance,
-        'min_order_value': minOrderValue,
-      },
-    );
-    return res.data as Map<String, dynamic>;
-  }
-
-  Future<Map<String, dynamic>> getStrategy({double cashAvailable = 0.0}) async {
-    final res = await _dio.get(
-      '/strategy',
-      queryParameters: {'cash_available': cashAvailable},
-    );
-    return res.data as Map<String, dynamic>;
-  }
-
   Future<AssetAnalysis> analyzeAsset(String symbol) async {
     final res = await _dio.get('/asset/$symbol');
     return AssetAnalysis.fromJson(res.data as Map<String, dynamic>);
@@ -261,21 +235,9 @@ class ApiRepository {
     );
   }
 
-  Future<void> unregisterDeviceToken(String token) async {
-    await _dio.delete(
-      '/notifications/register-token',
-      queryParameters: {'token': token},
-    );
-  }
-
   Future<BenchmarkResponse> getBenchmark() async {
     final res = await _dio.get('/benchmark');
     return BenchmarkResponse.fromJson(res.data as Map<String, dynamic>);
-  }
-
-  Future<RebalanceResponse> getRebalancePlan() async {
-    final res = await _dio.get('/rebalance');
-    return RebalanceResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<CompareResponse> compareAssets(List<String> tickers) async {

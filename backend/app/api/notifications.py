@@ -16,8 +16,3 @@ class DeviceTokenRequest(BaseModel):
 @router.post("/notifications/register-token", status_code=204)
 async def register_token(req: DeviceTokenRequest) -> None:
     portfolio_repo.register_device_token(req.token, req.platform)
-
-
-@router.delete("/notifications/register-token", status_code=204)
-async def unregister_token(token: str) -> None:
-    portfolio_repo.unregister_device_token(token)

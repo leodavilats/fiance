@@ -14,12 +14,7 @@ import { BenchmarkChartComponent, PatrimonyChartComponent } from '../index';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [
-    CommonModule,
-    LucideAngularModule,
-    PatrimonyChartComponent,
-    BenchmarkChartComponent,
-  ],
+  imports: [CommonModule, LucideAngularModule, PatrimonyChartComponent, BenchmarkChartComponent],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
@@ -33,6 +28,11 @@ export class DashboardComponent implements OnInit {
   benchmark = signal<BenchmarkResponse | null>(null);
   isInitialLoad = signal(true);
   hasError = signal(false);
+  showHealthInfo = signal(false);
+
+  toggleHealthInfo(): void {
+    this.showHealthInfo.update(v => !v);
+  }
 
   ngOnInit(): void {
     this.loadDashboard();
