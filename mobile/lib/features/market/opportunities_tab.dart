@@ -148,39 +148,40 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
                       selected: filters.category,
                       filters: filters,
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  FilterChip(
-                    avatar: Icon(
-                      Icons.trending_down,
-                      size: 16,
-                      color: filters.onlyDip
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                    ),
-                    label: const Text('Em queda'),
-                    selected: filters.onlyDip,
-                    onSelected: (v) =>
-                        ref.read(opportunitiesFiltersProvider.notifier).state =
-                            filters.copyWith(onlyDip: v),
-                  ),
-                  const SizedBox(width: 8),
-                  if (!filters.onlyDip)
+                    const SizedBox(width: 8),
+                    Container(width: 1, height: 20, color: Theme.of(context).dividerColor),
+                    const SizedBox(width: 8),
                     FilterChip(
-                      label: const Text('Destaques'),
-                      selected: filters.onlyInteresting,
+                      avatar: Icon(
+                        Icons.trending_down,
+                        size: 16,
+                        color: filters.onlyDip
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      label: const Text('Em queda'),
+                      selected: filters.onlyDip,
                       onSelected: (v) =>
                           ref
                               .read(opportunitiesFiltersProvider.notifier)
                               .state = filters.copyWith(
-                            onlyInteresting: v,
+                            onlyDip: v,
                           ),
                     ),
-                ],
+                    const SizedBox(width: 6),
+                    if (!filters.onlyDip)
+                      FilterChip(
+                        label: const Text('Destaques'),
+                        selected: filters.onlyInteresting,
+                        onSelected: (v) =>
+                            ref
+                                .read(opportunitiesFiltersProvider.notifier)
+                                .state = filters.copyWith(
+                              onlyInteresting: v,
+                            ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),

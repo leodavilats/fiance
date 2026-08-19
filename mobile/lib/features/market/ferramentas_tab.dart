@@ -17,7 +17,7 @@ class FerramentasTab extends StatefulWidget {
 enum _ToolMode { analisar, rendaFixa, comparar, aportes }
 
 class _FerramentasTabState extends State<FerramentasTab> {
-  _ToolMode _mode = _ToolMode.analisar;
+  _ToolMode _mode = _ToolMode.rendaFixa;
 
   @override
   Widget build(BuildContext context) {
@@ -34,16 +34,16 @@ class _FerramentasTabState extends State<FerramentasTab> {
             childAspectRatio: 2.4,
             children: [
               _ToolModeCard(
-                label: 'Analisar',
-                icon: Icons.search,
-                selected: _mode == _ToolMode.analisar,
-                onSelected: () => setState(() => _mode = _ToolMode.analisar),
-              ),
-              _ToolModeCard(
                 label: 'Simulador RF',
                 icon: Icons.account_balance_outlined,
                 selected: _mode == _ToolMode.rendaFixa,
                 onSelected: () => setState(() => _mode = _ToolMode.rendaFixa),
+              ),
+              _ToolModeCard(
+                label: 'Analisar',
+                icon: Icons.search,
+                selected: _mode == _ToolMode.analisar,
+                onSelected: () => setState(() => _mode = _ToolMode.analisar),
               ),
               _ToolModeCard(
                 label: 'Comparar',
