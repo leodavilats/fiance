@@ -36,7 +36,7 @@ class SectorsSummaryResponse(BaseModel):
 async def sectors_summary(
     category: str = Query(
         "acoes_br",
-        description="Filtrar por categoria: acoes_br | fiis | acoes_int | cripto",
+        description="Filtrar por categoria: acoes_br | fiis | bdrs | etfs",
     ),
 ) -> SectorsSummaryResponse:
     response = await _service.get_opportunities(

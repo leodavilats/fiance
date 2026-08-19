@@ -22,7 +22,6 @@ const Map<String, String> _sectorTranslations = {
   'materials': 'Materiais Básicos',
   'real-estate': 'Imobiliário',
   'telecommunications': 'Telecomunicações',
-  'crypto': 'Cripto',
   // Chaves abaixo usam a taxonomia da BRAPI (/quote/list), diferente da
   // usada acima — mapeadas pras mesmas categorias em português.
   'Miscellaneous': 'Outros',

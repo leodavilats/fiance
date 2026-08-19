@@ -28,19 +28,20 @@ def test_fiis_sempre_tributado_sem_isencao():
     assert result.ir_amount == round((20.0 - 10.0) * 100 * 0.20, 2)
 
 
-def test_acoes_int_sempre_tributado_sem_isencao():
-    result = calculate_sell_cost("acoes_int", 10, 200.0, 100.0, gross_value_month_before=0)
+def test_bdrs_sempre_tributado_sem_isencao():
+    result = calculate_sell_cost("bdrs", 10, 200.0, 100.0, gross_value_month_before=0)
     assert result.ir_rate == 0.15
 
 
-def test_cripto_isento_ate_35k_no_mes():
-    result = calculate_sell_cost("cripto", 1, 30_000.0, 10_000.0, gross_value_month_before=0)
-    assert result.ir_rate == 0.0
-
-
-def test_cripto_perde_isencao_por_acumulado_mensal():
-    result = calculate_sell_cost("cripto", 1, 30_000.0, 10_000.0, gross_value_month_before=10_000)
+def test_etfs_sempre_tributado_sem_isencao():
+    result = calculate_sell_cost("etfs", 10, 200.0, 100.0, gross_value_month_before=0)
     assert result.ir_rate == 0.15
+
+    # sem isenção mensal, mesmo com acumulado alto no mês
+    result_high_volume = calculate_sell_cost(
+        "etfs", 10, 200.0, 100.0, gross_value_month_before=100_000
+    )
+    assert result_high_volume.ir_rate == 0.15
 
 
 def test_net_profit_equals_gross_minus_ir():

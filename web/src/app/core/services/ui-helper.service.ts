@@ -12,8 +12,7 @@ export class UiHelperService {
       br_stock: 'Ação BR',
       bdr: 'BDR',
       fii: 'FII',
-      us_stock: 'Ação EUA',
-      crypto: 'Cripto',
+      etf: 'ETF',
       renda_fixa: 'Renda Fixa',
     };
     return map[t] || t;
@@ -25,8 +24,7 @@ export class UiHelperService {
       br_stock: 'trending-up',
       bdr: 'globe',
       fii: 'building-2',
-      us_stock: 'flag',
-      crypto: 'bitcoin',
+      etf: 'layers',
     };
     return map[t] || 'circle';
   }
@@ -38,8 +36,7 @@ export class UiHelperService {
       br_stock: 'var(--series-2)',
       fii: 'var(--series-3)',
       bdr: 'var(--series-5)',
-      us_stock: 'var(--series-7)',
-      crypto: 'var(--series-8)',
+      etf: 'var(--series-8)',
     };
     return map[t] || 'var(--series-muted)';
   }
@@ -65,9 +62,9 @@ export class UiHelperService {
     const map: Record<string, string> = {
       renda_fixa: 'Renda Fixa',
       acoes_br: 'Ações BR',
-      acoes_int: 'Ações INT',
+      bdrs: 'BDRs',
       fiis: 'FIIs',
-      cripto: 'Cripto',
+      etfs: 'ETFs',
       renda: 'Renda Fixa',
       trade: 'Ações BR',
       caixa: 'Renda Fixa',
@@ -80,9 +77,9 @@ export class UiHelperService {
     const map: Record<string, string> = {
       renda_fixa: 'landmark',
       acoes_br: 'trending-up',
-      acoes_int: 'globe',
+      bdrs: 'globe',
       fiis: 'building-2',
-      cripto: 'bitcoin',
+      etfs: 'layers',
     };
     return map[c] || 'circle';
   }
@@ -91,9 +88,9 @@ export class UiHelperService {
     const map: Record<string, string> = {
       renda_fixa: 'text-blue-400',
       acoes_br: 'text-green-400',
-      acoes_int: 'text-purple-400',
+      bdrs: 'text-purple-400',
       fiis: 'text-orange-400',
-      cripto: 'text-yellow-400',
+      etfs: 'text-yellow-400',
     };
     return map[c] || 'text-muted';
   }
@@ -102,9 +99,9 @@ export class UiHelperService {
     const map: Record<string, string> = {
       renda_fixa: 'bg-blue-400',
       acoes_br: 'bg-green-400',
-      acoes_int: 'bg-purple-400',
+      bdrs: 'bg-purple-400',
       fiis: 'bg-orange-400',
-      cripto: 'bg-yellow-400',
+      etfs: 'bg-yellow-400',
     };
     return map[c] || 'bg-muted';
   }
@@ -113,22 +110,22 @@ export class UiHelperService {
     const map: Record<string, string> = {
       renda_fixa: 'bg-blue-500',
       acoes_br: 'bg-green-500',
-      acoes_int: 'bg-purple-500',
+      bdrs: 'bg-purple-500',
       fiis: 'bg-orange-500',
-      cripto: 'bg-yellow-500',
+      etfs: 'bg-yellow-500',
     };
     return map[c] || 'bg-muted';
   }
 
   categoryBarColor(c: string): string {
     // Mantido em paridade com categoryBarClass/categoryBgClass/categoryColor
-    // (fiis=laranja, cripto=amarelo) — fonte da verdade também usada pelo mobile.
+    // (fiis=laranja, etfs=amarelo) — fonte da verdade também usada pelo mobile.
     const map: Record<string, string> = {
       renda_fixa: 'rgba(59, 130, 246, 0.6)',
       acoes_br: 'rgba(34, 197, 94, 0.6)',
-      acoes_int: 'rgba(168, 85, 247, 0.6)',
+      bdrs: 'rgba(168, 85, 247, 0.6)',
       fiis: 'rgba(251, 146, 60, 0.6)',
-      cripto: 'rgba(250, 204, 21, 0.6)',
+      etfs: 'rgba(250, 204, 21, 0.6)',
     };
     return map[c] || 'rgba(148, 163, 184, 0.5)';
   }
@@ -198,7 +195,6 @@ export class UiHelperService {
       materials: 'Materiais Básicos',
       'real-estate': 'Imobiliário',
       telecommunications: 'Telecomunicações',
-      crypto: 'Cripto',
       // Taxonomia da BRAPI (/quote/list) — diferente da usada pelo
       // yfinance acima, mapeada pras mesmas categorias em português.
       Miscellaneous: 'Outros',
@@ -248,7 +244,6 @@ export class UiHelperService {
       Utilities: 'plug-zap',
       Telecomunicações: 'wifi',
       'Communication Services': 'wifi',
-      Cripto: 'bitcoin',
       Outros: 'circle-dot',
     };
     return map[s] || 'chart-bar';
@@ -318,7 +313,7 @@ export class UiHelperService {
     score:
       'Pontuação 0–100 calculada pelo sistema combinando valuation, histórico de dividendos e qualidade do ativo. Acima de 70 = oportunidade; 40–70 = neutro; abaixo de 40 = cuidado.',
     bazin:
-      'Método Décio Bazin — define o Preço Teto como o dividendo anual dividido pela meta de yield: 6% (ações BR) ou 10% (FIIs). Comprar abaixo do teto garante um DY mínimo. Não se aplica a BDRs/ações internacionais (avaliadas por Graham/DCF).',
+      'Método Décio Bazin — define o Preço Teto como o dividendo anual dividido pela meta de yield: 6% (ações BR), 10% (FIIs) ou 4% (ETFs, quando distribuem dividendos). Comprar abaixo do teto garante um DY mínimo. Não se aplica a BDRs (avaliados por Graham/DCF).',
     graham:
       'Fórmula Benjamin Graham — Preço Intrínseco = √(22,5 × LPA × VPA). Válido para empresas com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização.',
     pvp: 'Preço / Valor Patrimonial — quanto se paga por cada R$ 1 de patrimônio. P/VP < 1 indica desconto (comum em FIIs atrativos); > 1 indica ágio.',

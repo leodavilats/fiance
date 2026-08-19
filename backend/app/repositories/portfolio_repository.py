@@ -74,7 +74,8 @@ class PortfolioRepository:
         passive_income_goal: float | None = None,
         desired_yield_stock: float | None = None,
         desired_yield_fii: float | None = None,
-        desired_yield_int: float | None = None,
+        desired_yield_bdr: float | None = None,
+        desired_yield_etf: float | None = None,
         notify_price_alerts: bool | None = None,
         notify_new_opportunities: bool | None = None,
     ) -> None:
@@ -83,7 +84,8 @@ class PortfolioRepository:
             passive_income_goal,
             desired_yield_stock,
             desired_yield_fii,
-            desired_yield_int,
+            desired_yield_bdr,
+            desired_yield_etf,
             notify_price_alerts,
             notify_new_opportunities,
         )

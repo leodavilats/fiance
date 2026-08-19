@@ -12,6 +12,7 @@ export interface Preferences {
   passive_income_goal?: number | null;
   desired_yield_stock?: number;
   desired_yield_fii?: number;
-  desired_yield_int?: number;
+  desired_yield_bdr?: number;
+  desired_yield_etf?: number;
   updated_at?: number | null;
 }

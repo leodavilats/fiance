@@ -105,9 +105,17 @@ class ConfigScreen extends ConsumerWidget {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.public_outlined),
-                      title: const Text('Yield desejado — Internacional'),
+                      title: const Text('Yield desejado — BDRs'),
                       trailing: Text(
-                        formatPercent(prefs.desiredYieldInt * 100),
+                        formatPercent(prefs.desiredYieldBdr * 100),
+                      ),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.layers_outlined),
+                      title: const Text('Yield desejado — ETFs'),
+                      trailing: Text(
+                        formatPercent(prefs.desiredYieldEtf * 100),
                       ),
                     ),
                     if (prefs.passiveIncomeGoal != null)

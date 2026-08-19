@@ -5,16 +5,12 @@ def test_auto_category_fii():
     assert auto_category("fii") == "fiis"
 
 
-def test_auto_category_crypto():
-    assert auto_category("crypto") == "cripto"
+def test_auto_category_etf():
+    assert auto_category("etf") == "etfs"
 
 
 def test_auto_category_bdr_is_international():
-    assert auto_category("bdr") == "acoes_int"
-
-
-def test_auto_category_us_stock_is_international():
-    assert auto_category("us_stock") == "acoes_int"
+    assert auto_category("bdr") == "bdrs"
 
 
 def test_auto_category_br_stock_default():
@@ -38,4 +34,4 @@ def test_resolve_category_maps_legacy_caixa_to_renda_fixa():
 
 
 def test_resolve_category_falls_back_to_auto_for_unknown_value():
-    assert resolve_category("nonsense", "cripto") == "cripto"
+    assert resolve_category("nonsense", "etfs") == "etfs"

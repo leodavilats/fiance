@@ -10,10 +10,6 @@ W_TECHNICAL = 25
 W_DIVIDEND = 10
 W_NEWS = 10
 
-W_CRYPTO_TECHNICAL = 50
-W_CRYPTO_NEWS = 25
-W_CRYPTO_VALUE = 25
-
 
 @dataclass
 class DipScoreBreakdown:
@@ -41,7 +37,7 @@ def _value_score(margin_of_safety: float | None) -> tuple[float, list[str]]:
     reasons: list[str] = []
     if margin_of_safety is None:
         reasons.append(
-            "Preço justo não calculado (sem EPS/dividendos — ex.: cripto ou growth sem histórico). Pontuação neutra aplicada."
+            "Preço justo não calculado (sem EPS/dividendos — ex.: ETF ou growth sem histórico). Pontuação neutra aplicada."
         )
         return round(W_VALUE * 0.35, 2), reasons
 
@@ -259,94 +255,6 @@ def _news_score(items: list) -> tuple[float, list[str]]:
     return round(pts, 2), reasons
 
 
-def _crypto_score(
-    rsi_14: float | None,
-    distance_from_52w_high_pct: float | None,
-    sma_200: float | None,
-    last_price: float | None,
-    news_items: list,
-) -> tuple[float, float, float, list[str]]:
-    reasons: list[str] = []
-
-    tech_pts = 0.0
-    if rsi_14 is not None:
-        if rsi_14 <= 28:
-            tech_pts += W_CRYPTO_TECHNICAL * 0.5
-            reasons.append(f"RSI muito sobrevendido ({rsi_14:.0f}) — região de capitulação cripto.")
-        elif rsi_14 <= 38:
-            tech_pts += W_CRYPTO_TECHNICAL * 0.35
-            reasons.append(f"RSI sobrevendido ({rsi_14:.0f}) — possível fundo de curto prazo.")
-        elif rsi_14 <= 48:
-            tech_pts += W_CRYPTO_TECHNICAL * 0.2
-            reasons.append(f"RSI neutro-baixo ({rsi_14:.0f}).")
-        elif rsi_14 >= 70:
-            reasons.append(f"RSI sobrecomprado ({rsi_14:.0f}) — crypto não está em dip técnico.")
-        else:
-            tech_pts += W_CRYPTO_TECHNICAL * 0.1
-    else:
-        reasons.append("RSI indisponível para cripto.")
-
-    if sma_200 is not None and last_price is not None:
-        if last_price < sma_200 * 0.85:
-            tech_pts += W_CRYPTO_TECHNICAL * 0.35
-            reasons.append(
-                "Preço significativamente abaixo da SMA200 — zona de desconto histórico em cripto."
-            )
-        elif last_price < sma_200:
-            tech_pts += W_CRYPTO_TECHNICAL * 0.2
-            reasons.append("Preço abaixo da SMA200 — zona de valor histórico.")
-        else:
-            reasons.append("Preço acima da SMA200 — não é um dip profundo.")
-
-    tech_pts = round(min(tech_pts, W_CRYPTO_TECHNICAL), 2)
-
-    news_pts = 0.0
-    if not news_items:
-        news_pts = W_CRYPTO_NEWS * 0.4
-        reasons.append("Sem notícias recentes — sentimento neutro.")
-    else:
-        pos = sum(1 for i in news_items if i.sentiment == "positive")
-        neg = sum(1 for i in news_items if i.sentiment == "negative")
-        total = len(news_items)
-        ratio = (pos - neg) / total if total > 0 else 0
-        if ratio >= 0.4:
-            news_pts = W_CRYPTO_NEWS
-            reasons.append(f"Sentimento de mercado positivo ({pos}/{total} notícias positivas).")
-        elif ratio >= 0:
-            news_pts = W_CRYPTO_NEWS * 0.6
-            reasons.append("Sentimento de mercado neutro a levemente positivo.")
-        else:
-            news_pts = W_CRYPTO_NEWS * 0.1
-            reasons.append(f"Sentimento negativo ({neg}/{total}) — cautela elevada.")
-
-    news_pts = round(min(news_pts, W_CRYPTO_NEWS), 2)
-
-    value_pts = 0.0
-    if distance_from_52w_high_pct is not None:
-        drop = abs(distance_from_52w_high_pct)
-        if drop >= 60:
-            value_pts = W_CRYPTO_VALUE
-            reasons.append(f"Queda de {drop:.0f}% do topo de 52 semanas — dip histórico cripto.")
-        elif drop >= 40:
-            value_pts = W_CRYPTO_VALUE * 0.75
-            reasons.append(f"Queda de {drop:.0f}% do topo — dip pronunciado para cripto.")
-        elif drop >= 25:
-            value_pts = W_CRYPTO_VALUE * 0.5
-            reasons.append(f"Queda de {drop:.0f}% do topo — correção moderada.")
-        elif drop >= 10:
-            value_pts = W_CRYPTO_VALUE * 0.2
-            reasons.append(f"Queda de {drop:.0f}% — pequena correção.")
-        else:
-            reasons.append(f"Próximo do topo de 52 semanas (queda de {drop:.0f}%) — não é dip.")
-    else:
-        value_pts = W_CRYPTO_VALUE * 0.3
-        reasons.append("Histórico de 52 semanas indisponível para cripto.")
-
-    value_pts = round(min(value_pts, W_CRYPTO_VALUE), 2)
-
-    return tech_pts, news_pts, value_pts, reasons
-
-
 def compute_dip_analysis(
     margin_of_safety: float | None,
     roe: float | None,
@@ -367,56 +275,42 @@ def compute_dip_analysis(
 ) -> DipResult:
     all_reasons: list[str] = []
 
-    is_crypto = asset_type == "crypto"
+    is_etf = asset_type == "etf"
 
-    if is_crypto:
+    if is_etf:
         all_reasons.append(
-            "Ativo classificado como cripto — análise usa perfil de momentum/sentimento (sem ROE, margem ou P/VP)."
-        )
-        t_pts, n_pts, v_pts, extra_reasons = _crypto_score(
-            rsi_14, distance_from_52w_high_pct, sma_200, last_price, news_items
-        )
-        all_reasons.extend(extra_reasons)
-        q_pts = 0.0
-        d_pts = 0.0
-        total = round(t_pts + n_pts + v_pts, 2)
-        breakdown = DipScoreBreakdown(
-            value_score=v_pts,
-            quality_score=0.0,
-            technical_score=t_pts,
-            dividend_score=0.0,
-            news_score=n_pts,
-        )
-    else:
-        v_pts, v_reasons = _value_score(margin_of_safety)
-        q_pts, q_reasons = _quality_score(roe, profit_margin, debt_to_equity)
-        t_pts, t_reasons = _technical_score(
-            rsi_14, trend, distance_from_52w_high_pct, sma_200, last_price
-        )
-        d_pts, d_reasons = _dividend_score(dividend_yield, avg_dividend_5y)
-        n_pts, n_reasons = _news_score(news_items)
-
-        all_reasons.extend(v_reasons)
-        all_reasons.extend(q_reasons)
-        all_reasons.extend(t_reasons)
-        all_reasons.extend(d_reasons)
-        all_reasons.extend(n_reasons)
-
-        total = round(v_pts + q_pts + t_pts + d_pts + n_pts, 2)
-        breakdown = DipScoreBreakdown(
-            value_score=v_pts,
-            quality_score=q_pts,
-            technical_score=t_pts,
-            dividend_score=d_pts,
-            news_score=n_pts,
+            "ETF — sem ROE/margem/D-E de empresa; pontuação de qualidade usa proxy neutro."
         )
 
-    oportunidade_threshold = 55 if is_crypto else 68
-    armadilha_threshold = 35 if is_crypto else 42
+    v_pts, v_reasons = _value_score(margin_of_safety)
+    q_pts, q_reasons = _quality_score(roe, profit_margin, debt_to_equity)
+    t_pts, t_reasons = _technical_score(
+        rsi_14, trend, distance_from_52w_high_pct, sma_200, last_price
+    )
+    d_pts, d_reasons = _dividend_score(dividend_yield, avg_dividend_5y)
+    n_pts, n_reasons = _news_score(news_items)
+
+    all_reasons.extend(v_reasons)
+    all_reasons.extend(q_reasons)
+    all_reasons.extend(t_reasons)
+    all_reasons.extend(d_reasons)
+    all_reasons.extend(n_reasons)
+
+    total = round(v_pts + q_pts + t_pts + d_pts + n_pts, 2)
+    breakdown = DipScoreBreakdown(
+        value_score=v_pts,
+        quality_score=q_pts,
+        technical_score=t_pts,
+        dividend_score=d_pts,
+        news_score=n_pts,
+    )
+
+    oportunidade_threshold = 68
+    armadilha_threshold = 42
 
     if total >= oportunidade_threshold:
         verdict = "OPORTUNIDADE"
-        verdict_label = "Oportunidade na baixa" if not is_crypto else "Zona de acumulação (cripto)"
+        verdict_label = "Oportunidade na baixa"
         confidence = min(1.0, total / 100)
     elif total >= armadilha_threshold:
         verdict = "NEUTRO"
@@ -424,11 +318,7 @@ def compute_dip_analysis(
         confidence = 0.5
     else:
         verdict = "ARMADILHA"
-        verdict_label = (
-            "Armadilha — cuidado com o value trap"
-            if not is_crypto
-            else "Possível queda adicional — cautela máxima"
-        )
+        verdict_label = "Armadilha — cuidado com o value trap"
         confidence = min(1.0, (100 - total) / 100)
 
     drop_52w: float | None = None

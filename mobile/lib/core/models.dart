@@ -612,7 +612,8 @@ class Preferences {
     required this.passiveIncomeGoal,
     required this.desiredYieldStock,
     required this.desiredYieldFii,
-    required this.desiredYieldInt,
+    required this.desiredYieldBdr,
+    required this.desiredYieldEtf,
     this.notifyPriceAlerts = true,
     this.notifyNewOpportunities = true,
   });
@@ -620,7 +621,8 @@ class Preferences {
   final double? passiveIncomeGoal;
   final double desiredYieldStock;
   final double desiredYieldFii;
-  final double desiredYieldInt;
+  final double desiredYieldBdr;
+  final double desiredYieldEtf;
   final bool notifyPriceAlerts;
   final bool notifyNewOpportunities;
 
@@ -628,7 +630,8 @@ class Preferences {
     passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
     desiredYieldStock: (j['desired_yield_stock'] as num).toDouble(),
     desiredYieldFii: (j['desired_yield_fii'] as num).toDouble(),
-    desiredYieldInt: (j['desired_yield_int'] as num).toDouble(),
+    desiredYieldBdr: (j['desired_yield_bdr'] as num).toDouble(),
+    desiredYieldEtf: (j['desired_yield_etf'] as num?)?.toDouble() ?? 0.04,
     notifyPriceAlerts: j['notify_price_alerts'] as bool? ?? true,
     notifyNewOpportunities: j['notify_new_opportunities'] as bool? ?? true,
   );

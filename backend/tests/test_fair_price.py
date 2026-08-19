@@ -53,7 +53,7 @@ def test_compute_fair_price_fii_never_uses_graham():
     assert result.dcf is None
 
 
-def test_compute_fair_price_international_never_uses_bazin():
+def test_compute_fair_price_bdr_never_uses_bazin():
     result = compute_fair_price(
         price=100.0,
         eps=5.0,
@@ -64,7 +64,7 @@ def test_compute_fair_price_international_never_uses_bazin():
     assert result.bazin is None
 
 
-def test_compute_fair_price_international_survives_missing_book_value():
+def test_compute_fair_price_bdr_survives_missing_book_value():
     # regression: BDRs from BRAPI often lack book_value — Graham should
     # gracefully become None while DCF (eps-only) still computes.
     result = compute_fair_price(
@@ -78,13 +78,28 @@ def test_compute_fair_price_international_survives_missing_book_value():
     assert result.dcf is not None
 
 
-def test_compute_fair_price_crypto_has_no_candidates():
+def test_compute_fair_price_etf_never_uses_graham_or_dcf():
+    # ETF é cota de fundo, sem EPS/book_value de empresa — só bazin (dividend
+    # yield histórico) pode formar o consenso.
+    result = compute_fair_price(
+        price=100.0,
+        eps=None,
+        book_value=None,
+        dividends=[{"date": "2025-01-15", "value": 1.0}] * 12,
+        asset_type="etf",
+    )
+    assert result.graham is None
+    assert result.dcf is None
+    assert result.bazin is not None
+
+
+def test_compute_fair_price_etf_without_dividends_has_no_candidates():
     result = compute_fair_price(
         price=100.0,
         eps=None,
         book_value=None,
         dividends=[],
-        asset_type="crypto",
+        asset_type="etf",
     )
     assert result.consensus is None
     assert result.consensus_methods == 0

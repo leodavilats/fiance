@@ -36,7 +36,7 @@ def auth_headers():
 
 
 # Snapshots fake para os tickers usados nos testes de API — evita qualquer
-# chamada de rede real (BRAPI/Finnhub/CoinGecko) durante os testes HTTP.
+# chamada de rede real (BRAPI) durante os testes HTTP.
 def _fake_snapshot(symbol: str):
     from app.collectors.universal import AssetSnapshot
 

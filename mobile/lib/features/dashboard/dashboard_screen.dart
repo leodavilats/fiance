@@ -571,7 +571,7 @@ const _healthMetricExplanations = {
   'Setor':
       'Quanto as ações/BDRs estão concentradas em poucos setores da economia.',
   'Diversificação':
-      'Variedade entre categorias (renda fixa, ações BR, ações internacionais, FIIs, cripto) e número total de ativos.',
+      'Variedade entre categorias (renda fixa, ações BR, BDRs, FIIs, ETFs) e número total de ativos.',
   'Risco':
       'Percentual da carteira em ativos com sinal de venda (Vender/Venda Forte) na avaliação atual.',
 };

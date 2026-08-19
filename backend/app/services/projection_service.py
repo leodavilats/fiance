@@ -23,7 +23,10 @@ class ProjectionService:
         current_dividends_yearly = 0.0
 
         for item in stored:
-            snap = await self.asset_repo.get_asset(item.ticker)
+            try:
+                snap = await self.asset_repo.get_asset(item.ticker)
+            except Exception:
+                snap = None
             if not snap or not snap.price:
                 continue
 

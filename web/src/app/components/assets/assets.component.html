@@ -154,7 +154,7 @@
 
   @if (expandedSections.negociados) {
     <p class="text-sm text-muted mb-4">
-      Ações, FIIs, criptomoedas e outros ativos com ticker/cotação em bolsa.
+      Ações, FIIs, BDRs, ETFs e outros ativos com ticker/cotação em bolsa.
     </p>
 
     <form [formGroup]="form">
@@ -230,9 +230,9 @@
               >
                 <option value="auto">Auto (detectar)</option>
                 <option value="acoes_br">Ações BR</option>
-                <option value="acoes_int">Ações INT / BDR</option>
+                <option value="bdrs">BDRs</option>
                 <option value="fiis">FIIs</option>
-                <option value="cripto">Cripto</option>
+                <option value="etfs">ETFs</option>
               </select>
             </div>
 

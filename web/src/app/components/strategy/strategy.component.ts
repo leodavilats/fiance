@@ -207,9 +207,7 @@ export class StrategyComponent implements OnInit {
   }
 
   assetLabel(type: string): string {
-    return (
-      { br_stock: 'Ação BR', fii: 'FII', us_stock: 'Ação EUA', crypto: 'Cripto' }[type] || type
-    );
+    return { br_stock: 'Ação BR', fii: 'FII', bdr: 'BDR', etf: 'ETF' }[type] || type;
   }
 
   rfTipoLabel(tipo: string): string {
@@ -232,9 +230,9 @@ export class StrategyComponent implements OnInit {
     const colorMap: Record<string, string> = {
       renda_fixa: 'rgba(59, 130, 246, 0.6)',
       acoes_br: 'rgba(34, 197, 94, 0.6)',
-      acoes_int: 'rgba(168, 85, 247, 0.6)',
+      bdrs: 'rgba(168, 85, 247, 0.6)',
       fiis: 'rgba(251, 191, 36, 0.6)',
-      cripto: 'rgba(249, 115, 22, 0.6)',
+      etfs: 'rgba(249, 115, 22, 0.6)',
     };
     return colorMap[category] || 'rgba(var(--accent) / 0.5)';
   }

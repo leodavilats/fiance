@@ -18,7 +18,7 @@ async def dip_scanner(
     ),
     top: int = Query(12, ge=1, le=30, description="Máximo de itens retornados"),
     category: str | None = Query(
-        None, description="Filtrar por categoria: acoes_br | acoes_int | fiis | cripto"
+        None, description="Filtrar por categoria: acoes_br | bdrs | fiis | etfs"
     ),
 ) -> DipScannerResponse:
     result = await dip_service.scan_dips(universe, min_score, top)

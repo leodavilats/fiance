@@ -6,7 +6,6 @@ from app.models.enums import AssetCategory
 
 IR_ACOES = 0.15
 IR_FIIS = 0.20
-IR_CRIPTO = 0.15
 
 
 @dataclass
@@ -27,8 +26,8 @@ def calculate_sell_cost(
     gross_value_month_before: float = 0.0,
 ) -> TransactionCost:
     # gross_value_month_before é o acumulado bruto de vendas já feitas no mês
-    # nesta categoria — as isenções (R$20k ações BR, R$35k cripto) valem sobre
-    # o total do mês, não por transação isolada.
+    # nesta categoria — a isenção de R$20k (ações BR) vale sobre o total do
+    # mês, não por transação isolada.
     gross_value = quantity * sell_price
     cost_basis = quantity * avg_price
     gross_profit = gross_value - cost_basis
@@ -54,25 +53,20 @@ def calculate_sell_cost(
             ir_amount = gross_profit * ir_rate
             obs = f"IR {ir_rate * 100:.0f}% sobre ganho de capital."
 
-    elif asset_category == AssetCategory.acoes_int.value:
+    elif asset_category == AssetCategory.bdrs.value:
         ir_rate = IR_ACOES
         ir_amount = gross_profit * ir_rate
-        obs = f"IR {ir_rate * 100:.0f}% sobre ganho de capital (ações internacionais)."
+        obs = f"IR {ir_rate * 100:.0f}% sobre ganho de capital (BDR), sem isenção mensal."
 
     elif asset_category == AssetCategory.fiis.value:
         ir_rate = IR_FIIS
         ir_amount = gross_profit * ir_rate
         obs = f"IR {ir_rate * 100:.0f}% sobre lucro na venda de FII."
 
-    elif asset_category == AssetCategory.cripto.value:
-        if gross_value_month_total <= 35_000:
-            ir_rate = 0.0
-            ir_amount = 0.0
-            obs = "Vendas do mês ≤ R$35k → isento de IR (cripto)."
-        else:
-            ir_rate = IR_CRIPTO
-            ir_amount = gross_profit * ir_rate
-            obs = f"IR {ir_rate * 100:.0f}% sobre ganho de capital (cripto)."
+    elif asset_category == AssetCategory.etfs.value:
+        ir_rate = IR_ACOES
+        ir_amount = gross_profit * ir_rate
+        obs = f"IR {ir_rate * 100:.0f}% sobre ganho de capital (ETF), sem isenção mensal."
 
     else:
         ir_rate = 0.0

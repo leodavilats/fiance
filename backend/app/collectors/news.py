@@ -115,13 +115,12 @@ def _fetch_news_sync(
 async def fetch_news(
     symbol: str, asset_type: str = "br_stock", company_name: str = "", max_items: int = 8
 ) -> list[NewsItem]:
-    lang = "pt-BR" if asset_type in ("br_stock", "fii") else "en-US"
-    gl = "BR" if asset_type in ("br_stock", "fii") else "US"
-    ceid = "BR:pt" if gl == "BR" else "US:en"
+    # Todos os asset_types suportados (br_stock/fii/bdr/etf) são negociados na
+    # B3 — busca de notícias sempre em português.
     loop = asyncio.get_event_loop()
 
     items = await loop.run_in_executor(
-        None, _fetch_news_sync, symbol, lang, gl, ceid, max_items, company_name
+        None, _fetch_news_sync, symbol, "pt-BR", "BR", "BR:pt", max_items, company_name
     )
 
     return items
@@ -146,35 +145,11 @@ async def analyze_news_with_ai(
             "ai_enabled": False,
         }
 
-    news_dicts = [
-        {
-            "title": item.title,
-            "source": item.source,
-            "published": item.published,
-            "url": item.url,
-            "sentiment": item.sentiment,
-            "description": item.description,
-        }
-        for item in items
-    ]
-
-    try:
-        from app.llm.gemini_client import analyze_news_sentiment
-
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            None, analyze_news_sentiment, news_dicts, symbol, company_name
-        )
-        result["ai_enabled"] = True
-        return result
-    except Exception as e:
-        logger.warning(f"Erro ao analisar notícias com IA: {e}")
-
-        return {
-            "sentiment": "neutral",
-            "score": 5.0,
-            "summary": news_sentiment_summary(items),
-            "impact": "low",
-            "key_topics": [],
-            "ai_enabled": False,
-        }
+    return {
+        "sentiment": "neutral",
+        "score": 5.0,
+        "summary": news_sentiment_summary(items),
+        "impact": "low",
+        "key_topics": [],
+        "ai_enabled": False,
+    }

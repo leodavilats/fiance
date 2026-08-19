@@ -6,7 +6,7 @@ _LEGACY_MAP = {
     "caixa": "renda_fixa",
 }
 
-VALID_CATEGORIES = {"renda_fixa", "acoes_br", "acoes_int", "fiis", "cripto"}
+VALID_CATEGORIES = {"renda_fixa", "acoes_br", "bdrs", "fiis", "etfs"}
 
 
 def auto_category(
@@ -16,10 +16,10 @@ def auto_category(
 ) -> str:
     if asset_type == "fii":
         return "fiis"
-    if asset_type == "crypto":
-        return "cripto"
-    if asset_type in ("us_stock", "bdr"):
-        return "acoes_int"
+    if asset_type == "etf":
+        return "etfs"
+    if asset_type == "bdr":
+        return "bdrs"
     return "acoes_br"
 
 

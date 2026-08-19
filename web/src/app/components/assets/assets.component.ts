@@ -227,8 +227,7 @@ export class AssetsComponent implements OnInit {
       for (const p of r.positions) {
         const valor = p.current_value ?? p.invested;
         // Agrupa por categoria consolidada (não asset_type bruto) para bater
-        // com o resto da tela — sem isso, BDR e Ação EUA apareciam como
-        // fatias separadas em vez de "Ações Internacionais".
+        // com o resto da tela.
         const categoria = p.category_resolved;
         buckets.set(categoria, (buckets.get(categoria) || 0) + valor);
       }
@@ -249,7 +248,7 @@ export class AssetsComponent implements OnInit {
     const r = this.result();
     if (!r) return [];
 
-    const STOCK_TYPES = new Set(['br_stock', 'bdr', 'us_stock']);
+    const STOCK_TYPES = new Set(['br_stock', 'bdr']);
     const buckets = new Map<string, number>();
     let totalAcoes = 0;
 

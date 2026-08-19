@@ -61,7 +61,8 @@ class Preferences(TypedDict):
     passive_income_goal: float | None
     desired_yield_stock: float
     desired_yield_fii: float
-    desired_yield_int: float
+    desired_yield_bdr: float
+    desired_yield_etf: float
     notify_price_alerts: bool
     notify_new_opportunities: bool
     updated_at: float
@@ -249,7 +250,7 @@ def reduce_position_quantity(ticker: str, sold_qty: float, user_id: str | None =
 
 
 def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None) -> float:
-    # usado para aplicar a isenção mensal de IR (R$20k ações BR / R$35k cripto) sobre o acumulado do mês
+    # usado para aplicar a isenção mensal de IR (R$20k ações BR) sobre o acumulado do mês
     now = time.time()
     from datetime import datetime
 
@@ -443,7 +444,8 @@ def get_preferences(user_id: str | None = None) -> Preferences:
                 passive_income_goal=row.passive_income_goal,
                 desired_yield_stock=row.desired_yield_stock,
                 desired_yield_fii=row.desired_yield_fii,
-                desired_yield_int=row.desired_yield_int,
+                desired_yield_bdr=row.desired_yield_bdr,
+                desired_yield_etf=row.desired_yield_etf,
                 notify_price_alerts=row.notify_price_alerts,
                 notify_new_opportunities=row.notify_new_opportunities,
                 updated_at=row.updated_at,
@@ -454,7 +456,8 @@ def get_preferences(user_id: str | None = None) -> Preferences:
         passive_income_goal=None,
         desired_yield_stock=0.06,
         desired_yield_fii=0.10,
-        desired_yield_int=0.04,
+        desired_yield_bdr=0.04,
+        desired_yield_etf=0.04,
         notify_price_alerts=True,
         notify_new_opportunities=True,
         updated_at=0.0,
@@ -466,7 +469,8 @@ def set_preferences(
     passive_income_goal: float | None = None,
     desired_yield_stock: float | None = None,
     desired_yield_fii: float | None = None,
-    desired_yield_int: float | None = None,
+    desired_yield_bdr: float | None = None,
+    desired_yield_etf: float | None = None,
     notify_price_alerts: bool | None = None,
     notify_new_opportunities: bool | None = None,
     user_id: str | None = None,
@@ -483,7 +487,8 @@ def set_preferences(
                 if desired_yield_stock is not None
                 else 0.06,
                 desired_yield_fii=desired_yield_fii if desired_yield_fii is not None else 0.10,
-                desired_yield_int=desired_yield_int if desired_yield_int is not None else 0.04,
+                desired_yield_bdr=desired_yield_bdr if desired_yield_bdr is not None else 0.04,
+                desired_yield_etf=desired_yield_etf if desired_yield_etf is not None else 0.04,
                 notify_price_alerts=notify_price_alerts
                 if notify_price_alerts is not None
                 else True,
@@ -500,8 +505,10 @@ def set_preferences(
                 row.desired_yield_stock = desired_yield_stock
             if desired_yield_fii is not None:
                 row.desired_yield_fii = desired_yield_fii
-            if desired_yield_int is not None:
-                row.desired_yield_int = desired_yield_int
+            if desired_yield_bdr is not None:
+                row.desired_yield_bdr = desired_yield_bdr
+            if desired_yield_etf is not None:
+                row.desired_yield_etf = desired_yield_etf
             if notify_price_alerts is not None:
                 row.notify_price_alerts = notify_price_alerts
             if notify_new_opportunities is not None:

@@ -1,6 +1,5 @@
 from typing import Any
 
-from ..llm.gemini_client import rank_opportunities_for_gap
 from ..models.goal import Goal
 from ..models.opportunity import Opportunity
 from ..models.portfolio import PortfolioItem
@@ -15,7 +14,6 @@ def _analyze_investor_profile(goals: list[Goal]) -> dict[str, Any]:
 
     renda_pct = normalized_goals.get("renda", 0)
     trade_pct = normalized_goals.get("trade", 0)
-    cripto_pct = normalized_goals.get("cripto", 0)
 
     if renda_pct >= 60:
         profile_type = "Conservador"
@@ -23,9 +21,6 @@ def _analyze_investor_profile(goals: list[Goal]) -> dict[str, Any]:
     elif trade_pct >= 50:
         profile_type = "Agressivo"
         description = "Foco em crescimento e valorização de capital."
-    elif cripto_pct >= 30:
-        profile_type = "Arrojado"
-        description = "Alto risco com foco em criptomoedas e ativos voláteis."
     else:
         profile_type = "Moderado"
         description = "Equilíbrio entre renda e crescimento."
@@ -34,12 +29,12 @@ def _analyze_investor_profile(goals: list[Goal]) -> dict[str, Any]:
         "type": profile_type,
         "description": description,
         "goals": normalized_goals,
-        "risk_tolerance": _assess_risk_tolerance(trade_pct, cripto_pct),
+        "risk_tolerance": _assess_risk_tolerance(trade_pct),
     }
 
 
-def _assess_risk_tolerance(trade_pct: float, cripto_pct: float) -> str:
-    risk_score = trade_pct * 0.5 + cripto_pct * 1.0
+def _assess_risk_tolerance(trade_pct: float) -> str:
+    risk_score = trade_pct * 0.5
 
     if risk_score >= 40:
         return "Alto"
@@ -123,52 +118,10 @@ def _rank_category_opportunities(
     budget: float,
     category_opps: list[Opportunity],
 ) -> tuple[list[Opportunity], dict[str, str]]:
-    """Ordena as oportunidades candidatas de um gap usando o Gemini para ponderar
-    QUAL oportunidade escolher (considerando score/DY/margem de segurança/sentimento
-    de notícias), com fallback silencioso para a ordenação por score quando o LLM
-    falhar, não estiver configurado ou não retornar um resultado utilizável.
-
-    Retorna a lista ordenada de oportunidades e um dict ticker -> justificativa
-    curta do Gemini (vazio quando o fallback foi usado).
-    """
+    """Ordena as oportunidades candidatas de um gap por score (determinístico —
+    sem dependência de IA externa)."""
     by_score = sorted(category_opps, key=lambda x: x.score, reverse=True)
-    candidates = by_score[:8]
-    if len(candidates) < 2:
-        return by_score, {}
-
-    try:
-        candidate_payload = [
-            {
-                "ticker": c.ticker.upper(),
-                "score": c.score,
-                "dividend_yield": c.dividend_yield,
-                "margin_of_safety": c.margin_of_safety,
-                "verdict": c.verdict,
-                "news_sentiment": getattr(c, "news_sentiment", None),
-            }
-            for c in candidates
-        ]
-        ranking = rank_opportunities_for_gap(category, budget, candidate_payload)
-    except Exception:
-        ranking = None
-
-    if not ranking:
-        return by_score, {}
-
-    rationale_by_ticker = {r["ticker"]: r.get("rationale", "") for r in ranking}
-    ordered_tickers = [r["ticker"] for r in ranking]
-    by_ticker = {c.ticker.upper(): c for c in candidates}
-
-    ranked: list[Opportunity] = []
-    for ticker in ordered_tickers:
-        opp = by_ticker.pop(ticker, None)
-        if opp is not None:
-            ranked.append(opp)
-
-    # Mantém no fim os que sobraram (não retornados pelo LLM) e os que ficaram
-    # de fora do top 8 considerado, na ordem original por score.
-    leftovers = list(by_ticker.values()) + by_score[len(candidates) :]
-    return ranked + leftovers, rationale_by_ticker
+    return by_score, {}
 
 
 def _generate_investment_suggestions(
@@ -197,7 +150,7 @@ def _generate_investment_suggestions(
             and opp.price > 0
         ]
 
-        category_opps, rationale_by_ticker = _rank_category_opportunities(
+        category_opps, _ = _rank_category_opportunities(
             category, budget_for_category, category_opps
         )
 
@@ -214,9 +167,8 @@ def _generate_investment_suggestions(
 
             actual_invest = quantity * opp.price
 
-            gemini_rationale = rationale_by_ticker.get(opp.ticker.upper()) or None
-            objective = _generate_investment_objective(opp, category, gemini_rationale)
-            reasons = _generate_suggestion_reasons(opp, category, gap, gemini_rationale)
+            objective = _generate_investment_objective(opp, category)
+            reasons = _generate_suggestion_reasons(opp, category, gap)
 
             suggestions.append(
                 {
@@ -234,7 +186,7 @@ def _generate_investment_suggestions(
                     "verdict": opp.verdict,
                     "already_held": opp.ticker in held_tickers,
                     "reasons": reasons,
-                    "rationale": gemini_rationale,
+                    "rationale": None,
                 }
             )
 
@@ -285,20 +237,15 @@ def _generate_investment_suggestions(
     return suggestions
 
 
-def _generate_investment_objective(
-    opp: Opportunity, category: str, gemini_rationale: str | None = None
-) -> str:
+def _generate_investment_objective(opp: Opportunity, category: str) -> str:
     objectives = {
         "renda": "Geração de renda passiva através de dividendos",
         "trade": "Crescimento de capital através de valorização",
-        "cripto": "Exposição a ativos digitais com alto potencial",
+        "etfs": "Diversificação de baixo custo via ETF",
         "caixa": "Preservação de capital e liquidez",
     }
 
     base = objectives.get(category, "Diversificação de portfólio")
-
-    if gemini_rationale:
-        return f"{base} — {gemini_rationale}"
 
     if opp.dividend_yield and opp.dividend_yield >= 6:
         return f"{base} — DY atrativo de {opp.dividend_yield:.1f}%"
@@ -312,12 +259,8 @@ def _generate_suggestion_reasons(
     opp: Opportunity,
     category: str,
     gap: dict[str, Any],
-    gemini_rationale: str | None = None,
 ) -> list[str]:
     reasons = []
-
-    if gemini_rationale:
-        reasons.append(gemini_rationale)
 
     if gap["gap_value"] > 0:
         reasons.append(

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.models import DashboardResponse, PortfolioEvaluationRequest, PortfolioItem
 from app.repositories import PortfolioRepository
-from app.services import DashboardService, OpportunityService, PortfolioService
+from app.services import DashboardService, GoalService, OpportunityService, PortfolioService
 
 router = APIRouter()
 
@@ -10,6 +10,7 @@ dashboard_service = DashboardService()
 opportunity_service = OpportunityService()
 portfolio_service = PortfolioService()
 portfolio_repo = PortfolioRepository()
+goal_service = GoalService()
 
 
 @router.get("/dashboard", response_model=DashboardResponse)
@@ -37,19 +38,6 @@ async def dashboard() -> DashboardResponse:
     )
     top_buys = opps_resp.items[:5]
 
-    goals_data = portfolio_repo.list_goals()
-    if not goals_data:
-        from app.models import Goal
-
-        goals = [
-            Goal(category="renda", target_pct=40),
-            Goal(category="trade", target_pct=50),
-            Goal(category="cripto", target_pct=5),
-            Goal(category="caixa", target_pct=5),
-        ]
-    else:
-        from app.models import Goal
-
-        goals = [Goal(**g) for g in goals_data]
+    goals = goal_service.get_goals()
 
     return await dashboard_service.generate_dashboard(positions, top_buys, goals)

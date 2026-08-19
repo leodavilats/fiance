@@ -4,7 +4,7 @@ Plataforma de inteligência de investimentos com análise fundamentalista, varre
 
 ## Visão Geral
 
-O fiance integra dados de mercado em tempo real, métodos clássicos de valuation (Bazin, Graham, DCF) e o modelo Gemini da Google para entregar uma visão consolidada da sua carteira, identificar ativos com desconto e gerar estratégias de alocação personalizadas.
+O fiance integra dados de mercado em tempo real e métodos clássicos de valuation (Bazin, Graham, DCF) para entregar uma visão consolidada da sua carteira, identificar ativos com desconto e gerar estratégias de alocação personalizadas — focado 100% na B3 (ações, BDRs, FIIs e ETFs).
 
 **Principais funcionalidades:**
 
@@ -15,8 +15,8 @@ O fiance integra dados de mercado em tempo real, métodos clássicos de valuatio
 - Visão por segmento de mercado: score médio, DY médio e top ativos por setor
 - Histórico e análise de dividendos (DY, projeções)
 - Alertas de preço configuráveis por ativo
-- Insights e estratégias gerados por IA (Google Gemini)
-- Suporte a ações B3, BDRs, FIIs, ações americanas, criptomoedas e renda fixa
+- Estratégias de alocação com sugestões determinísticas por gap de categoria
+- Suporte a ações B3, BDRs, FIIs, ETFs e renda fixa
 
 ## Tecnologias
 
@@ -27,10 +27,8 @@ O fiance integra dados de mercado em tempo real, métodos clássicos de valuatio
 | Autenticação | Login com Google (OAuth) + JWT de sessão próprio |
 | Web | Angular 18, TypeScript 5.5, Tailwind CSS |
 | Mobile | Flutter (iOS/Android), Riverpod, go_router |
-| Dados de mercado — B3/FIIs/BDRs | [BRAPI](https://brapi.dev) |
-| Dados de mercado — ações americanas | [Finnhub](https://finnhub.io) |
-| Dados de mercado — criptomoedas | [CoinGecko](https://www.coingecko.com) |
-| IA | Google Gemini API |
+| Dados de mercado — B3/FIIs/BDRs/ETFs | [BRAPI](https://brapi.dev) |
+| Dados de renda fixa — CDI/Selic/IPCA | [BCB SGS](https://www3.bcb.gov.br/sgspub/) |
 | Hospedagem backend | Railway |
 | Linting / Format | Ruff (Python), Prettier (TypeScript) |
 
@@ -39,7 +37,7 @@ O fiance integra dados de mercado em tempo real, métodos clássicos de valuatio
 - Python 3.11+
 - Node.js 18+ e npm (para o app web)
 - Flutter 3.x + Android Studio / Xcode (para o app mobile)
-- Chaves de API: [Google Gemini](https://aistudio.google.com/app/apikey), [BRAPI](https://brapi.dev), [Finnhub](https://finnhub.io)
+- Chave de API: [BRAPI](https://brapi.dev)
 - OAuth Client IDs do Google (Web, Android e iOS) em [console.cloud.google.com](https://console.cloud.google.com/apis/credentials)
 - Projeto no [Railway](https://railway.app) com addon PostgreSQL (para produção)
 
@@ -83,11 +81,9 @@ cp backend/.env.example backend/.env
 
 | Variável | Obrigatória | Descrição |
 |----------|:-----------:|-----------|
-| `GEMINI_API_KEY` | Sim | Chave da API Google Gemini |
 | `GOOGLE_CLIENT_ID` | Sim | Client IDs OAuth aceitos como audience do login (Web, Android, iOS — separados por vírgula) |
 | `JWT_SECRET` | Sim | Segredo usado para assinar o JWT de sessão emitido após o login |
-| `BRAPI_TOKEN` | Sim | Token da BRAPI (cotações/fundamentos B3, FIIs, BDRs) |
-| `FINNHUB_API_KEY` | Sim | Chave da Finnhub (ações americanas) |
+| `BRAPI_TOKEN` | Sim | Token da BRAPI (cotações/fundamentos B3, FIIs, BDRs, ETFs) |
 | `DATABASE_URL` | Não | String de conexão Postgres. Em produção, o Railway injeta automaticamente; sem ela, cai no SQLite local |
 | `APP_ENV` | Não | `development` ou `production` (padrão: `development`) |
 | `LOG_LEVEL` | Não | Nível de log: `DEBUG`, `INFO`, `WARNING` (padrão: `INFO`) |
@@ -174,12 +170,11 @@ fiance/
 │   │   ├── main.py              # Ponto de entrada FastAPI
 │   │   ├── analysis/            # Algoritmos: Bazin, Graham, DCF, scoring
 │   │   ├── api/                 # Rotas REST (auth, dashboard, portfolio, ...)
-│   │   ├── collectors/          # Coleta de dados (BRAPI, Finnhub, CoinGecko, RSS)
+│   │   ├── collectors/          # Coleta de dados (BRAPI, RSS)
 │   │   ├── services/            # Regras de negócio
 │   │   ├── models/              # Schemas Pydantic + modelos ORM (SQLAlchemy)
 │   │   ├── repositories/        # Camada de persistência
 │   │   ├── storage/             # Acesso ao banco (portfolio, goals, preferences...)
-│   │   ├── llm/                 # Integração Google Gemini
 │   │   ├── core/                # Config, banco de dados, autenticação, cache
 │   │   └── optimizer/           # Otimização de carteira
 │   ├── Procfile                 # Comando de start usado pelo Railway

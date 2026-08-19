@@ -42,7 +42,7 @@ class SplashScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Ações, FIIs, cripto e renda fixa — tudo em um só assistente',
+                    'Ações, FIIs, BDRs, ETFs e renda fixa — tudo em um só assistente',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.grey.shade600,

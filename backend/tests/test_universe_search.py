@@ -40,13 +40,13 @@ def test_search_prioritizes_prefix_match(monkeypatch):
     assert results[0]["ticker"].startswith("PETR")
 
 
-def test_search_curated_us_and_crypto(monkeypatch):
+def test_search_does_not_return_unsupported_tickers(monkeypatch):
     monkeypatch.setattr(universe, "_get_brapi_stocks_cached", list)
     results = universe.search_universe("bitcoin")
-    assert any(r["ticker"] == "BTC-USD" for r in results)
+    assert results == []
 
     results = universe.search_universe("AAPL")
-    assert any(r["ticker"] == "AAPL" for r in results)
+    assert results == []
 
 
 def test_search_respects_limit(monkeypatch):

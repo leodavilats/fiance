@@ -468,7 +468,7 @@ class _StatBlock extends StatelessWidget {
 
 enum _CompositionMode { asset, sector }
 
-const _stockCategories = {'acoes_br', 'acoes_int'};
+const _stockCategories = {'acoes_br', 'bdrs'};
 
 class _CompositionSlice {
   const _CompositionSlice({

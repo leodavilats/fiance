@@ -222,7 +222,7 @@ select.input {
   color: var(--accent-2);
   border-color: rgba(34, 211, 238, 0.35);
 }
-.cat-cripto {
+.cat-etfs {
   background: rgba(168, 85, 247, 0.18);
   color: #a855f7;
   border-color: rgba(168, 85, 247, 0.4);
@@ -396,12 +396,8 @@ select.input {
   border-color: var(--border);
 }
 
-/* Segmentado de segundo nível (ex.: modo dentro de uma aba) — visualmente
-   distinto de .tab-btn para não parecer outra linha de abas principais. */
-/* input[type=range] só herda a cor do preenchido via accent-color — a trilha
-   (parte não preenchida) fica com o cinza padrão do browser, que em light
-   mode é quase branco sobre painel branco e fica invisível. */
 .range-slider {
+  --range-pct: 0%;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
@@ -409,12 +405,21 @@ select.input {
 .range-slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
-  background: var(--border);
+  background: linear-gradient(
+    to right,
+    var(--accent) var(--range-pct),
+    var(--border) var(--range-pct)
+  );
 }
 .range-slider::-moz-range-track {
   height: 6px;
   border-radius: 999px;
   background: var(--border);
+}
+.range-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
 }
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;

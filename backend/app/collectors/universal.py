@@ -5,40 +5,26 @@ import logging
 import re
 from dataclasses import dataclass
 from datetime import UTC
-from typing import Literal
 
 import httpx
 
 from app.core import cache
 from app.core.config import get_settings
 from app.core.universe import get_sector_map
+from app.models.enums import AssetType
 
 logger = logging.getLogger(__name__)
 
-AssetType = Literal["br_stock", "bdr", "fii", "us_stock", "crypto"]
+
+class UnsupportedTickerError(ValueError):
+    """Ticker não corresponde a nenhum asset_type suportado (br_stock/bdr/fii/etf)."""
+
 
 FUND_TTL = 2 * 3600
 HIST_TTL = 12 * 3600
 DIV_TTL = 24 * 3600
 
 _FETCH_SEMAPHORE = asyncio.Semaphore(30)
-
-_CRYPTO_IDS = {
-    "BTC": "bitcoin",
-    "ETH": "ethereum",
-    "SOL": "solana",
-    "ADA": "cardano",
-    "BNB": "binancecoin",
-    "XRP": "ripple",
-    "DOGE": "dogecoin",
-    "DOT": "polkadot",
-    "AVAX": "avalanche-2",
-    "MATIC": "matic-network",
-    "LTC": "litecoin",
-    "LINK": "chainlink",
-    "ATOM": "cosmos",
-    "BCH": "bitcoin-cash",
-}
 
 KNOWN_UNITS = {
     "SANB11",
@@ -53,32 +39,51 @@ KNOWN_UNITS = {
     "BRBI11",
 }
 
+# ETFs líquidos da B3 usados como rede de segurança quando o subType da BRAPI
+# não vier marcado corretamente (mesmo papel que KNOWN_UNITS tem para units).
+KNOWN_ETFS = {
+    "BOVA11",
+    "BOVV11",
+    "SMAL11",
+    "IVVB11",
+    "PIBB11",
+    "DIVO11",
+    "GOVE11",
+    "MATB11",
+    "FIND11",
+    "ISUS11",
+    "ECOO11",
+    "HASH11",
+    "BITH11",
+}
+
 _BDR = re.compile(r"^[A-Z]{4}3\d$")
 _ENDS_11 = re.compile(r"^[A-Z]{4}11$")
 _BR_STOCK = re.compile(r"^[A-Z]{4}\d{1,2}$")
 
 _BRAPI_BASE = "https://brapi.dev/api"
-_FINNHUB_BASE = "https://finnhub.io/api/v1"
-_COINGECKO_BASE = "https://api.coingecko.com/api/v3"
 
 
 def detect_type(symbol: str) -> AssetType:
     s = symbol.strip().upper()
     base = s[:-3] if s.endswith(".SA") else s
 
-    if "-USD" in s or "-BRL" in s or base in _CRYPTO_IDS:
-        return "crypto"
+    if base in KNOWN_ETFS:
+        return AssetType.etf
 
     if _BDR.match(base):
-        return "bdr"
+        return AssetType.bdr
 
     if _ENDS_11.match(base):
-        return "br_stock" if base in KNOWN_UNITS else "fii"
+        return AssetType.br_stock if base in KNOWN_UNITS else AssetType.fii
 
     if _BR_STOCK.match(base):
-        return "br_stock"
+        return AssetType.br_stock
 
-    return "us_stock"
+    raise UnsupportedTickerError(
+        f"Tipo de ativo não suportado para {symbol!r} — este sistema cobre apenas "
+        "ações BR, BDRs, FIIs e ETFs da B3."
+    )
 
 
 def _base_symbol(symbol: str) -> str:
@@ -94,13 +99,8 @@ def to_yf_symbol(symbol: str, asset_type: AssetType | None = None) -> str:
     s = symbol.strip().upper()
     t = asset_type or detect_type(s)
 
-    if t in ("br_stock", "fii", "bdr"):
+    if t in ("br_stock", "fii", "bdr", "etf"):
         return s if s.endswith(".SA") else f"{s}.SA"
-
-    if t == "crypto":
-        if "-USD" in s or "-BRL" in s:
-            return s
-        return f"{s}-USD"
 
     return s
 
@@ -289,166 +289,26 @@ def _dividends_brapi(symbol: str) -> list[dict[str, float]]:
     return sorted(out, key=lambda x: x["date"])
 
 
-def _fetch_finnhub(symbol: str) -> AssetSnapshot | None:
-    settings = get_settings()
-    if not settings.finnhub_api_key:
-        return None
-
-    base = _base_symbol(symbol)
-    try:
-        quote = httpx.get(
-            f"{_FINNHUB_BASE}/quote",
-            params={"symbol": base, "token": settings.finnhub_api_key},
-            timeout=10,
-        ).json()
-        metric = httpx.get(
-            f"{_FINNHUB_BASE}/stock/metric",
-            params={"symbol": base, "metric": "all", "token": settings.finnhub_api_key},
-            timeout=10,
-        ).json()
-        profile = httpx.get(
-            f"{_FINNHUB_BASE}/stock/profile2",
-            params={"symbol": base, "token": settings.finnhub_api_key},
-            timeout=10,
-        ).json()
-    except Exception as e:
-        logger.warning("finnhub falhou %s: %s", base, e)
-        return None
-
-    price = _safe_float(quote.get("c"))
-    if not price:
-        return None
-
-    m = metric.get("metric") or {}
-
-    return AssetSnapshot(
-        symbol=symbol.upper(),
-        yf_symbol=base,
-        asset_type="us_stock",
-        name=profile.get("name") or base,
-        sector=profile.get("finnhubIndustry"),
-        currency=profile.get("currency") or "USD",
-        price=price,
-        market_cap=_safe_float(profile.get("marketCapitalization")),
-        pe_ratio=_safe_float(m.get("peBasicExclExtraTTM")),
-        pb_ratio=_safe_float(m.get("pbAnnual")),
-        eps=_safe_float(m.get("epsTTM")),
-        book_value=_safe_float(m.get("bookValuePerShareAnnual")),
-        roe=_safe_pct(m.get("roeTTM")),
-        dividend_yield=_safe_pct(m.get("dividendYieldIndicatedAnnual")),
-        debt_to_equity=_safe_float(m.get("totalDebt/totalEquityAnnual")),
-        profit_margin=_safe_pct(m.get("netProfitMarginTTM")),
-        revenue_growth=_safe_pct(m.get("revenueGrowthTTMYoy")),
-        fifty_two_week_high=_safe_float(m.get("52WeekHigh")),
-        fifty_two_week_low=_safe_float(m.get("52WeekLow")),
-    )
-
-
-def _fetch_coingecko(symbol: str) -> AssetSnapshot | None:
-    base = _base_symbol(symbol)
-    coin_id = _CRYPTO_IDS.get(base)
-    if not coin_id:
-        return None
-
-    try:
-        data = httpx.get(
-            f"{_COINGECKO_BASE}/simple/price",
-            params={
-                "ids": coin_id,
-                "vs_currencies": "usd",
-                "include_market_cap": "true",
-                "include_24hr_change": "true",
-            },
-            timeout=10,
-        ).json()
-        coin = data.get(coin_id) or {}
-    except Exception as e:
-        logger.warning("coingecko falhou %s: %s", base, e)
-        return None
-
-    price = _safe_float(coin.get("usd"))
-    if not price:
-        return None
-
-    return AssetSnapshot(
-        symbol=symbol.upper(),
-        yf_symbol=f"{base}-USD",
-        asset_type="crypto",
-        name=base,
-        sector="Criptomoeda",
-        currency="USD",
-        price=price,
-        market_cap=_safe_float(coin.get("usd_market_cap")),
-        pe_ratio=None,
-        pb_ratio=None,
-        eps=None,
-        book_value=None,
-        roe=None,
-        dividend_yield=None,
-        debt_to_equity=None,
-        profit_margin=None,
-        revenue_growth=None,
-        fifty_two_week_high=None,
-        fifty_two_week_low=None,
-    )
-
-
-def _history_coingecko(symbol: str, period: str = "1y") -> dict[str, float]:
-    base = _base_symbol(symbol)
-    coin_id = _CRYPTO_IDS.get(base)
-    if not coin_id:
-        return {}
-
-    days_map = {"5d": 5, "6mo": 180, "1y": 365, "2y": 730, "max": "max"}
-    days = days_map.get(period, 365)
-
-    try:
-        data = httpx.get(
-            f"{_COINGECKO_BASE}/coins/{coin_id}/market_chart",
-            params={"vs_currency": "usd", "days": days},
-            timeout=15,
-        ).json()
-        prices = data.get("prices") or []
-    except Exception as e:
-        logger.warning("coingecko hist falhou %s: %s", base, e)
-        return {}
-
-    out: dict[str, float] = {}
-    for ts_ms, price in prices:
-        try:
-            from datetime import datetime
-
-            day = datetime.fromtimestamp(ts_ms / 1000, tz=UTC).strftime("%Y-%m-%d")
-            out[day] = float(price)
-        except Exception:
-            continue
-    return out
-
-
 def _fetch_sync(symbol: str, asset_type: AssetType | None = None) -> AssetSnapshot | None:
     t = asset_type or detect_type(symbol)
 
-    if t in ("br_stock", "fii", "bdr"):
+    if t in ("br_stock", "fii", "bdr", "etf"):
         return _fetch_brapi(symbol, t)
-    if t == "crypto":
-        return _fetch_coingecko(symbol)
-    return _fetch_finnhub(symbol)
+    return None
 
 
 def _history_sync(symbol: str, period: str = "1y") -> dict[str, float]:
     t = detect_type(symbol)
 
-    if t in ("br_stock", "fii", "bdr"):
+    if t in ("br_stock", "fii", "bdr", "etf"):
         return _history_brapi(symbol, period)
-    if t == "crypto":
-        return _history_coingecko(symbol, period)
     return {}
 
 
 def _dividends_sync(symbol: str) -> list[dict[str, float]]:
     t = detect_type(symbol)
 
-    if t in ("br_stock", "fii", "bdr"):
+    if t in ("br_stock", "fii", "bdr", "etf"):
         return _dividends_brapi(symbol)
     return []
 

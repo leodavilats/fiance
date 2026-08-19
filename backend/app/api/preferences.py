@@ -19,7 +19,8 @@ async def save_preferences(req: PreferencesRequest) -> Preferences:
         passive_income_goal=req.passive_income_goal,
         desired_yield_stock=req.desired_yield_stock,
         desired_yield_fii=req.desired_yield_fii,
-        desired_yield_int=req.desired_yield_int,
+        desired_yield_bdr=req.desired_yield_bdr,
+        desired_yield_etf=req.desired_yield_etf,
         notify_price_alerts=req.notify_price_alerts,
         notify_new_opportunities=req.notify_new_opportunities,
     )

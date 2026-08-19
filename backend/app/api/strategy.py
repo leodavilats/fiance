@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.models import Goal, PortfolioEvaluationRequest, PortfolioItem
+from app.models import PortfolioEvaluationRequest, PortfolioItem
 from app.repositories import PortfolioRepository
 from app.services import GoalService, OpportunityService, PortfolioService, StrategyService
 
@@ -11,14 +11,6 @@ opportunity_service = OpportunityService()
 portfolio_service = PortfolioService()
 portfolio_repo = PortfolioRepository()
 goal_service = GoalService()
-
-_DEFAULT_GOALS = [
-    Goal(category="renda_fixa", target_pct=30),
-    Goal(category="acoes_br", target_pct=35),
-    Goal(category="acoes_int", target_pct=15),
-    Goal(category="fiis", target_pct=15),
-    Goal(category="cripto", target_pct=5),
-]
 
 
 @router.get("/strategy")

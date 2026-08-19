@@ -19,36 +19,24 @@ _UNIVERSE_TTL = 24 * 3600
 # filtrar, competem pelas vagas do top-N como se fossem ativos distintos.
 _FRACTIONAL_LOT = re.compile(r"^[A-Z]{4}\d{1,2}F$")
 
-CURATED_US_NAMES = {
-    "AAPL": "Apple Inc.",
-    "MSFT": "Microsoft Corp.",
-    "GOOGL": "Alphabet Inc.",
-    "AMZN": "Amazon.com Inc.",
-    "META": "Meta Platforms Inc.",
-    "NVDA": "NVIDIA Corp.",
-    "TSLA": "Tesla Inc.",
-    "NFLX": "Netflix Inc.",
-    "JNJ": "Johnson & Johnson",
-    "JPM": "JPMorgan Chase & Co.",
-    "V": "Visa Inc.",
-    "KO": "The Coca-Cola Company",
-    "PEP": "PepsiCo Inc.",
+# ETFs líquidos da B3 usados como seed/fallback quando o subType retornado
+# pela BRAPI não vier marcado corretamente (mesmo papel de KNOWN_ETFS em
+# app.collectors.universal, mantido em sincronia manualmente).
+KNOWN_ETFS = {
+    "BOVA11",
+    "BOVV11",
+    "SMAL11",
+    "IVVB11",
+    "PIBB11",
+    "DIVO11",
+    "GOVE11",
+    "MATB11",
+    "FIND11",
+    "ISUS11",
+    "ECOO11",
+    "HASH11",
+    "BITH11",
 }
-
-CURATED_CRYPTO_NAMES = {
-    "BTC-USD": "Bitcoin",
-    "ETH-USD": "Ethereum",
-    "SOL-USD": "Solana",
-    "BNB-USD": "BNB",
-    "XRP-USD": "XRP",
-    "ADA-USD": "Cardano",
-    "DOGE-USD": "Dogecoin",
-    "DOT-USD": "Polkadot",
-    "AVAX-USD": "Avalanche",
-}
-
-CURATED_US = list(CURATED_US_NAMES)
-CURATED_CRYPTO = list(CURATED_CRYPTO_NAMES)
 
 
 def _fetch_brapi_list() -> list[dict]:
@@ -79,7 +67,7 @@ def get_sector_map() -> dict[str, str]:
 
 
 def _build_brapi_universe(
-    max_stocks: int = 150, max_fiis: int = 60, max_bdrs: int = 40
+    max_stocks: int = 150, max_fiis: int = 60, max_bdrs: int = 40, max_etfs: int = 30
 ) -> list[str]:
     stocks = _get_brapi_stocks_cached()
     if not stocks:
@@ -92,15 +80,20 @@ def _build_brapi_universe(
     ]
     fiis = [s for s in stocks if s.get("subType") == "fii" and (s.get("volume") or 0) > 0]
     bdrs = [s for s in stocks if s.get("subType") == "bdr" and (s.get("market_cap") or 0) > 0]
+    etfs = [s for s in stocks if s.get("subType") == "etf" and (s.get("volume") or 0) > 0]
 
     br_stocks.sort(key=lambda s: s.get("market_cap") or 0, reverse=True)
     fiis.sort(key=lambda s: s.get("volume") or 0, reverse=True)
     bdrs.sort(key=lambda s: s.get("market_cap") or 0, reverse=True)
+    etfs.sort(key=lambda s: s.get("volume") or 0, reverse=True)
+
+    etf_tickers = {s["stock"] for s in etfs[:max_etfs]} | KNOWN_ETFS
 
     tickers = (
         [s["stock"] for s in br_stocks[:max_stocks]]
         + [s["stock"] for s in fiis[:max_fiis]]
         + [s["stock"] for s in bdrs[:max_bdrs]]
+        + sorted(etf_tickers)
     )
     return tickers
 
@@ -115,9 +108,8 @@ def get_universe() -> list[str]:
         logger.warning("Usando DEFAULT_UNIVERSE estático — lista dinâmica da BRAPI falhou.")
         return get_settings().universe
 
-    universe = brapi_tickers + CURATED_US + CURATED_CRYPTO
-    cache.set(_UNIVERSE_CACHE_KEY, universe, _UNIVERSE_TTL)
-    return universe
+    cache.set(_UNIVERSE_CACHE_KEY, brapi_tickers, _UNIVERSE_TTL)
+    return brapi_tickers
 
 
 def search_universe(query: str, limit: int = 10) -> list[dict]:
@@ -132,13 +124,6 @@ def search_universe(query: str, limit: int = 10) -> list[dict]:
         ticker = (s.get("stock") or "").upper()
         name = s.get("name") or ""
         if not ticker or ticker in seen or _FRACTIONAL_LOT.match(ticker):
-            continue
-        if q in ticker or q in name.upper():
-            seen.add(ticker)
-            results.append({"ticker": ticker, "name": name})
-
-    for ticker, name in {**CURATED_US_NAMES, **CURATED_CRYPTO_NAMES}.items():
-        if ticker in seen:
             continue
         if q in ticker or q in name.upper():
             seen.add(ticker)

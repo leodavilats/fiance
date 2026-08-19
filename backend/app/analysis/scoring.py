@@ -141,13 +141,29 @@ def _score_fii(f: CompanyFundamentals) -> ScoredCompany:
     )
 
 
-def _score_crypto(f: CompanyFundamentals) -> ScoredCompany:
-    # Cripto não tem base fundamentalista; score neutro (decisão fica com a análise técnica).
+def _score_etf(f: CompanyFundamentals) -> ScoredCompany:
+    # ETF é uma cota de fundo, não uma empresa — sem EPS/ROE/margem, então o
+    # score usa dividend yield (quando o ETF distribui) e liquidez como proxy de qualidade.
+    breakdown = {
+        "dividend": _score_dividend(f.dividend_yield),
+        "liquidity": _score_liquidity(f.market_cap),
+    }
+    weights = {"dividend": 0.5, "liquidity": 0.5}
+
+    total = sum(weights[k] * breakdown[k] for k in weights)
+
+    tags: list[str] = []
+    if f.dividend_yield:
+        tags.append(f"DY {f.dividend_yield:.1f}% a.a.")
+    tags.append(
+        "ETF — avaliação por dividend yield e liquidez, fora do modelo fundamentalista de empresa."
+    )
+
     return ScoredCompany(
         fundamentals=f,
-        score=50.0,
-        breakdown={"neutral": 50.0},
-        rationale="Cripto — avaliação por preço/tendência, fora do modelo fundamentalista.",
+        score=round(total, 2),
+        breakdown={k: round(v, 2) for k, v in breakdown.items()},
+        rationale=" · ".join(tags[:3]),
     )
 
 
@@ -200,8 +216,8 @@ def score_company(
     if at == "fii":
         return _score_fii(f)
 
-    if at == "crypto":
-        return _score_crypto(f)
+    if at == "etf":
+        return _score_etf(f)
 
     weights = PROFILE_WEIGHTS[profile]
 

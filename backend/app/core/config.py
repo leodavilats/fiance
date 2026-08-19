@@ -14,8 +14,6 @@ class Settings(BaseSettings):
 
     allowed_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
 
-    gemini_api_key: str = ""
-
     database_url: str = "sqlite:///./.cache/fiance.db"
 
     google_client_id: str = ""
@@ -23,8 +21,6 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me"
 
     brapi_token: str = ""
-
-    finnhub_api_key: str = ""
 
     firebase_service_account_json: str = ""
 
@@ -74,7 +70,7 @@ class Settings(BaseSettings):
         "PFIZ34,"
         "EXXO34,"
         "DISB34,W1BD34,INBR32,ROXO34,PAGS34,"
-        "BTC-USD,ETH-USD,SOL-USD,BNB-USD,XRP-USD,ADA-USD,DOGE-USD,DOT-USD,AVAX-USD,LINK-USD,ATOM-USD,LTC-USD,BCH-USD"
+        "BOVA11,BOVV11,SMAL11,IVVB11,PIBB11,DIVO11,GOVE11,MATB11,FIND11,ISUS11,ECOO11,HASH11,BITH11"
     )
 
     @property

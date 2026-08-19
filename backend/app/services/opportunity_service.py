@@ -67,7 +67,7 @@ class OpportunityService:
         verdict = dec.verdict
         label = dec.label
 
-        if snap.asset_type == "crypto" and verdict == "UNKNOWN":
+        if snap.asset_type == "etf" and verdict == "UNKNOWN":
             if tech.trend == "uptrend" and rsi < 70:
                 verdict, label = "BUY", "Comprar (momentum)"
             elif tech.trend == "downtrend" and rsi > 30:

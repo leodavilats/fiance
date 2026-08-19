@@ -18,16 +18,15 @@ class AssetType(StrEnum):
     br_stock = "br_stock"
     bdr = "bdr"
     fii = "fii"
-    us_stock = "us_stock"
-    crypto = "crypto"
+    etf = "etf"
 
 
 class AssetCategory(StrEnum):
     renda_fixa = "renda_fixa"
     acoes_br = "acoes_br"
-    acoes_int = "acoes_int"
+    bdrs = "bdrs"
     fiis = "fiis"
-    cripto = "cripto"
+    etfs = "etfs"
 
 
 class RendaFixaType(StrEnum):

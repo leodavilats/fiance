@@ -1,4 +1,6 @@
-from app.collectors.universal import detect_type
+import pytest
+
+from app.collectors.universal import UnsupportedTickerError, detect_type
 
 
 def test_bdr_detected_before_fii_check():
@@ -24,14 +26,13 @@ def test_plain_br_stock():
     assert detect_type("VALE3") == "br_stock"
 
 
-def test_crypto_by_suffix():
-    assert detect_type("BTC-USD") == "crypto"
+def test_known_etf_detected():
+    for ticker in ["BOVA11", "IVVB11", "SMAL11"]:
+        assert detect_type(ticker) == "etf"
 
 
-def test_crypto_by_known_symbol():
-    assert detect_type("BTC") == "crypto"
-
-
-def test_us_stock_fallback():
-    assert detect_type("AAPL") == "us_stock"
-    assert detect_type("MSFT") == "us_stock"
+def test_unsupported_ticker_raises():
+    with pytest.raises(UnsupportedTickerError):
+        detect_type("AAPL")
+    with pytest.raises(UnsupportedTickerError):
+        detect_type("BTC-USD")

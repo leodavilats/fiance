@@ -11,8 +11,8 @@ const Map<String, String> glossary = {
       'e qualidade do ativo. Acima de 70 = oportunidade; 40–70 = neutro; abaixo de 40 = cuidado.',
   'bazin':
       'Método Décio Bazin — define o Preço Teto como o dividendo anual dividido pela meta de '
-      'yield: 6% (ações BR) ou 10% (FIIs). Comprar abaixo do teto garante um DY mínimo. Não se '
-      'aplica a BDRs/ações internacionais (avaliadas por Graham/DCF).',
+      'yield: 6% (ações BR), 10% (FIIs) ou 4% (ETFs, quando distribuem dividendos). Comprar '
+      'abaixo do teto garante um DY mínimo. Não se aplica a BDRs (avaliadas por Graham/DCF).',
   'graham':
       'Fórmula Benjamin Graham — Preço Intrínseco = √(22,5 × LPA × VPA). Válido para empresas '
       'com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização.',

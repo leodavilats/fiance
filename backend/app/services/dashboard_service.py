@@ -16,19 +16,18 @@ REBALANCE_THRESHOLD_PCT = 5.0
 _ASSET_TYPE_TO_CATEGORY = {
     "br_stock": "acoes_br",
     "fii": "fiis",
-    "bdr": "acoes_int",
-    "us_stock": "acoes_int",
-    "crypto": "cripto",
+    "bdr": "bdrs",
+    "etf": "etfs",
 }
 
-_VALID_CATEGORIES = {"renda_fixa", "acoes_br", "acoes_int", "fiis", "cripto"}
+_VALID_CATEGORIES = {"renda_fixa", "acoes_br", "bdrs", "fiis", "etfs"}
 
 _CATEGORY_LABELS = {
     "renda_fixa": "Renda Fixa",
     "acoes_br": "Ações BR",
-    "acoes_int": "Ações INT",
+    "bdrs": "BDRs",
     "fiis": "FIIs",
-    "cripto": "Cripto",
+    "etfs": "ETFs",
 }
 
 
@@ -117,9 +116,9 @@ class DashboardService:
         totals: dict[str, float] = {
             "renda_fixa": 0.0,
             "acoes_br": 0.0,
-            "acoes_int": 0.0,
+            "bdrs": 0.0,
             "fiis": 0.0,
-            "cripto": 0.0,
+            "etfs": 0.0,
         }
 
         for p in positions:

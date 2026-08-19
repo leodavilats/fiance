@@ -22,7 +22,10 @@ class QuickInvestService:
         total_portfolio = 0.0
 
         for item in stored:
-            snap = await self.asset_repo.get_asset(item["ticker"])
+            try:
+                snap = await self.asset_repo.get_asset(item["ticker"])
+            except Exception:
+                snap = None
             if not snap or not snap.price:
                 continue
 
@@ -106,7 +109,10 @@ class QuickInvestService:
                 if allocation_value < req.min_order_value:
                     continue
 
-                snap = await self.asset_repo.get_asset(opp.ticker)
+                try:
+                    snap = await self.asset_repo.get_asset(opp.ticker)
+                except Exception:
+                    snap = None
                 if not snap or not snap.price:
                     continue
 

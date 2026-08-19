@@ -84,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Ações, FIIs, cripto e renda fixa — tudo em um só assistente',
+                      'Ações, FIIs, BDRs, ETFs e renda fixa — tudo em um só assistente',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: mutedColor, fontSize: 14, height: 1.4),
                     ),

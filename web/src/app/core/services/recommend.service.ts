@@ -141,13 +141,14 @@ export class RecommendService {
 
   savePreferences(
     passiveIncomeGoal?: number,
-    yields?: { stock?: number; fii?: number; int?: number }
+    yields?: { stock?: number; fii?: number; bdr?: number; etf?: number }
   ): Observable<Preferences> {
     return this.http.put<Preferences>(`${this.base}/preferences`, {
       passive_income_goal: passiveIncomeGoal ?? null,
       desired_yield_stock: yields?.stock ?? null,
       desired_yield_fii: yields?.fii ?? null,
-      desired_yield_int: yields?.int ?? null,
+      desired_yield_bdr: yields?.bdr ?? null,
+      desired_yield_etf: yields?.etf ?? null,
     });
   }
 

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -37,7 +37,8 @@ interface ConfigFormShape {
   passive_income_goal: FormControl<number | null>;
   yield_stock: FormControl<number>;
   yield_fii: FormControl<number>;
-  yield_int: FormControl<number>;
+  yield_bdr: FormControl<number>;
+  yield_etf: FormControl<number>;
   goals: FormArray<FormGroup<GoalForm>>;
   sector_goals: FormArray<FormGroup<SectorGoalForm>>;
 }
@@ -45,9 +46,14 @@ interface ConfigFormShape {
 const CATEGORIES: { key: AllocationCategory; label: string; icon: string; desc: string }[] = [
   { key: 'renda_fixa', label: 'Renda Fixa', icon: 'landmark', desc: 'CDB, LCI, LCA, Tesouro...' },
   { key: 'acoes_br', label: 'Ações BR', icon: 'trending-up', desc: 'Ações da B3' },
-  { key: 'acoes_int', label: 'Ações INT', icon: 'globe', desc: 'Ações internacionais' },
+  { key: 'bdrs', label: 'BDRs', icon: 'globe', desc: 'BDRs (ações internacionais)' },
   { key: 'fiis', label: 'FIIs', icon: 'building-2', desc: 'Fundos Imobiliários' },
-  { key: 'cripto', label: 'Cripto', icon: 'bitcoin', desc: 'Criptomoedas' },
+  {
+    key: 'etfs',
+    label: 'ETFs',
+    icon: 'layers',
+    desc: 'ETFs (fundos de índice negociados na bolsa)',
+  },
 ];
 
 @Component({
@@ -59,6 +65,7 @@ const CATEGORIES: { key: AllocationCategory; label: string; icon: string; desc: 
 export class ConfigComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private svc = inject(RecommendService);
+  private cdr = inject(ChangeDetectorRef);
   readonly ui = inject(UiHelperService);
 
   private destroy$ = new Subject<void>();
@@ -75,7 +82,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
     passive_income_goal: this.fb.control<number | null>(null, { validators: Validators.min(0) }),
     yield_stock: this.fb.control(6, { nonNullable: true, validators: this.yieldValidators }),
     yield_fii: this.fb.control(10, { nonNullable: true, validators: this.yieldValidators }),
-    yield_int: this.fb.control(4, { nonNullable: true, validators: this.yieldValidators }),
+    yield_bdr: this.fb.control(4, { nonNullable: true, validators: this.yieldValidators }),
+    yield_etf: this.fb.control(4, { nonNullable: true, validators: this.yieldValidators }),
     goals: this.fb.array<FormGroup<GoalForm>>([]),
     sector_goals: this.fb.array<FormGroup<SectorGoalForm>>([]),
   });
@@ -214,7 +222,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
           passive_income_goal: prefs.passive_income_goal ?? null,
           yield_stock: Math.round((prefs.desired_yield_stock ?? 0.06) * 1000) / 10,
           yield_fii: Math.round((prefs.desired_yield_fii ?? 0.1) * 1000) / 10,
-          yield_int: Math.round((prefs.desired_yield_int ?? 0.04) * 1000) / 10,
+          yield_bdr: Math.round((prefs.desired_yield_bdr ?? 0.04) * 1000) / 10,
+          yield_etf: Math.round((prefs.desired_yield_etf ?? 0.04) * 1000) / 10,
         });
 
         const goalMap = new Map(goals.map(g => [g.category, g]));
@@ -240,13 +249,15 @@ export class ConfigComponent implements OnInit, OnDestroy {
             });
           }
         });
+
+        this.cdr.detectChanges();
       },
       error: () => {},
     });
   }
 
   saveConfig(): void {
-    const { passive_income_goal, sector_goals, yield_stock, yield_fii, yield_int } =
+    const { passive_income_goal, sector_goals, yield_stock, yield_fii, yield_bdr, yield_etf } =
       this.form.getRawValue();
     const goalsRaw = this.goalItems.getRawValue();
     const goalsPayload: Goal[] = goalsRaw.map(g => ({
@@ -267,7 +278,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
       prefs: this.svc.savePreferences(passive_income_goal ?? undefined, {
         stock: yield_stock / 100,
         fii: yield_fii / 100,
-        int: yield_int / 100,
+        bdr: yield_bdr / 100,
+        etf: yield_etf / 100,
       }),
       goals: this.svc.saveGoals(goalsPayload),
       sectorGoals: this.svc.saveSectorGoals(sectorGoalsPayload),

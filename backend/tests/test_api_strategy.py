@@ -24,17 +24,15 @@ def test_strategy_with_cash_available_query_param(client):
     assert isinstance(resp.json(), dict)
 
 
-def test_strategy_works_without_gemini_configured(client, monkeypatch):
-    """O projeto tem fallback determinístico quando o Gemini não está
-    configurado (sem GEMINI_API_KEY) — rank_opportunities_for_gap retorna
-    None e o chamador usa a primeira oportunidade por score, sem propagar
-    exceção. Confirma que /api/strategy não quebra nesse cenário (que já é
-    o cenário padrão em ambiente de teste, sem GEMINI_API_KEY configurada)."""
+def test_strategy_uses_deterministic_ranking(client, monkeypatch):
+    """Gemini foi removido do projeto — /api/strategy ordena oportunidades
+    por gap de alocação usando só ordenação determinística por score (sem
+    dependência de IA externa). Confirma que o endpoint não quebra."""
     from app.core.config import get_settings
 
     get_settings.cache_clear() if hasattr(get_settings, "cache_clear") else None
 
-    uid = "test_strategy_no_gemini"
+    uid = "test_strategy_deterministic_ranking"
     headers = make_auth_headers(uid)
 
     resp = client.get("/api/strategy", headers=headers, params={"cash_available": 1000})

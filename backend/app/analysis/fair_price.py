@@ -6,23 +6,28 @@ from datetime import datetime
 
 DESIRED_YIELD_STOCK = 0.06
 DESIRED_YIELD_FII = 0.10
-DESIRED_YIELD_INTERNATIONAL = 0.04
+DESIRED_YIELD_BDR = 0.04
+DESIRED_YIELD_ETF = 0.04
 DEFAULT_DESIRED_YIELD = DESIRED_YIELD_STOCK
 
 
 def desired_yield_for(asset_type: str, prefs: dict | None = None) -> float:
     stock = DESIRED_YIELD_STOCK
     fii = DESIRED_YIELD_FII
-    intl = DESIRED_YIELD_INTERNATIONAL
+    bdr = DESIRED_YIELD_BDR
+    etf = DESIRED_YIELD_ETF
     if prefs:
         stock = prefs.get("desired_yield_stock") or stock
         fii = prefs.get("desired_yield_fii") or fii
-        intl = prefs.get("desired_yield_int") or intl
+        bdr = prefs.get("desired_yield_bdr") or bdr
+        etf = prefs.get("desired_yield_etf") or etf
 
     if asset_type == "fii":
         return fii
-    if asset_type in ("bdr", "us_stock"):
-        return intl
+    if asset_type == "bdr":
+        return bdr
+    if asset_type == "etf":
+        return etf
     return stock
 
 
@@ -183,15 +188,17 @@ def compute_fair_price(
 ) -> FairPriceResult:
 
     is_fii = asset_type == "fii"
-    is_crypto = asset_type == "crypto"
-    is_international = asset_type in ("bdr", "us_stock")
+    is_etf = asset_type == "etf"
+    is_bdr = asset_type == "bdr"
 
     if desired_yield and desired_yield > 0:
         effective_yield = desired_yield
     elif is_fii:
         effective_yield = DESIRED_YIELD_FII
-    elif is_international:
-        effective_yield = DESIRED_YIELD_INTERNATIONAL
+    elif is_etf:
+        effective_yield = DESIRED_YIELD_ETF
+    elif is_bdr:
+        effective_yield = DESIRED_YIELD_BDR
     else:
         effective_yield = DESIRED_YIELD_STOCK
 
@@ -231,9 +238,11 @@ def compute_fair_price(
 
     if is_fii:
         candidates = [v for v in (bazin, pvp_fair) if v is not None]
-    elif is_crypto:
-        candidates = []
-    elif is_international:
+    elif is_etf:
+        # ETF é cota de fundo, sem EPS/book_value de empresa — Graham/DCF não
+        # se aplicam; fair price fica só no dividend yield histórico (Bazin).
+        candidates = [v for v in (bazin,) if v is not None]
+    elif is_bdr:
         bazin = None
         graham = graham_fair_price(eps, book_value)
         if eps is not None and eps > 0:

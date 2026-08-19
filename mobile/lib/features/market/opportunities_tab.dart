@@ -257,8 +257,8 @@ class _AllOpportunitiesViewState extends ConsumerState<_AllOpportunitiesView> {
                       filters: filters,
                     ),
                     _CategoryChip(
-                      label: 'Ações INT',
-                      value: 'acoes_int',
+                      label: 'BDRs',
+                      value: 'bdrs',
                       selected: filters.category,
                       filters: filters,
                     ),
@@ -269,8 +269,8 @@ class _AllOpportunitiesViewState extends ConsumerState<_AllOpportunitiesView> {
                       filters: filters,
                     ),
                     _CategoryChip(
-                      label: 'Cripto',
-                      value: 'cripto',
+                      label: 'ETFs',
+                      value: 'etfs',
                       selected: filters.category,
                       filters: filters,
                     ),
