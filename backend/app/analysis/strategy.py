@@ -365,6 +365,115 @@ def _calculate_projected_allocation(
     return result
 
 
+def build_rebalance_suggestions(
+    current_portfolio: list[PortfolioItem],
+    goals: list[Goal],
+    opportunities: list[Opportunity],
+    portfolio_evaluation: dict[str, Any] | None,
+    excluded_tickers: set[str] | None = None,
+) -> dict[str, Any]:
+    """Avalia cada ativo já investido e sugere uma ação (comprar mais / vender /
+    realocar / manter), cruzando o gap de alocação por categoria com o score de
+    oportunidade — mesma lógica do gap engine de `build_investment_strategy`,
+    mas aplicada à carteira existente em vez de dinheiro novo."""
+    excluded_tickers = excluded_tickers or set()
+
+    total_capital = sum(item.quantity * item.avg_price for item in current_portfolio)
+
+    current_allocation = _calculate_current_allocation(
+        current_portfolio, portfolio_evaluation, total_capital
+    )
+    allocation_gaps = _identify_allocation_gaps(goals, current_allocation, total_capital)
+
+    underweight_categories = {g["category"] for g in allocation_gaps if g["gap_value"] > 0}
+
+    opps_by_category: dict[str, list[Opportunity]] = {}
+    for opp in opportunities:
+        if opp.ticker.upper() in excluded_tickers:
+            continue
+        opps_by_category.setdefault(opp.category_resolved, []).append(opp)
+    for opps in opps_by_category.values():
+        opps.sort(key=lambda o: o.score, reverse=True)
+
+    held_tickers = {item.ticker.upper() for item in current_portfolio}
+    positions = (portfolio_evaluation or {}).get("positions", [])
+
+    items = []
+    for pos in positions:
+        ticker = pos["ticker"]
+        category = pos.get("category_resolved", "acoes_br")
+        verdict = pos.get("verdict", "HOLD")
+        is_excluded = ticker.upper() in excluded_tickers
+
+        action = "manter"
+        reasons = list(pos.get("reasons") or [])
+        realocar_para = None
+
+        if is_excluded:
+            action = "manter"
+            reasons = ["Ativo excluído nas suas preferências — mantido sem sugestão ativa."]
+        elif verdict in ("SELL", "STRONG_SELL"):
+            target = next(
+                (
+                    opp
+                    for cat in underweight_categories
+                    for opp in opps_by_category.get(cat, [])
+                    if opp.ticker.upper() not in held_tickers
+                    and opp.verdict in ("BUY", "STRONG_BUY")
+                ),
+                None,
+            )
+            if target is not None:
+                action = "realocar"
+                realocar_para = {
+                    "ticker": target.ticker,
+                    "name": target.name,
+                    "category": target.category_resolved,
+                    "score": target.score,
+                    "verdict": target.verdict,
+                }
+                reasons.append(
+                    f"Realocar para {target.ticker} — categoria {target.category_resolved} "
+                    "está abaixo da meta de alocação"
+                )
+            else:
+                action = "vender"
+        elif verdict in ("BUY", "STRONG_BUY") and category in underweight_categories:
+            action = "comprar_mais"
+            reasons.append(f"Categoria {category} está abaixo da meta de alocação")
+        else:
+            reasons = reasons or ["Sem sinal de ajuste — posição alinhada ao perfil atual"]
+
+        items.append(
+            {
+                "ticker": ticker,
+                "name": pos.get("name"),
+                "category": category,
+                "verdict": verdict,
+                "action": action,
+                "current_value": pos.get("current_value"),
+                "quantity": pos.get("quantity"),
+                "pnl_pct": pos.get("pnl_pct"),
+                "reasons": reasons[:3],
+                "realocar_para": realocar_para,
+                "requires_tax_review": action in ("vender", "realocar"),
+            }
+        )
+
+    order = {"realocar": 0, "vender": 1, "comprar_mais": 2, "manter": 3}
+    items.sort(key=lambda i: order.get(i["action"], 4))
+
+    return {
+        "allocation_gaps": allocation_gaps,
+        "items": items,
+        "tax_disclaimer": (
+            "As sugestões de venda e realocação não consideram Imposto de Renda sobre "
+            "ganho de capital, custos de corretagem ou preço médio para fins fiscais. "
+            "Avalie o impacto tributário antes de vender."
+        ),
+    }
+
+
 def _generate_strategy_summary(
     profile: dict[str, Any],
     suggestions: list[dict[str, Any]],

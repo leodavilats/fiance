@@ -27,6 +27,7 @@ import {
   PriceAlertTriggered,
   QuickInvestRequest,
   QuickInvestResponse,
+  RebalanceSuggestionsResponse,
   RendaFixaCompareRequest,
   RendaFixaCompareResponse,
   ReferenceRates,
@@ -209,6 +210,10 @@ export class RecommendService {
 
   quickInvest(req: QuickInvestRequest): Observable<QuickInvestResponse> {
     return this.http.post<QuickInvestResponse>(`${this.base}/quick-invest`, req);
+  }
+
+  getRebalanceSuggestions(): Observable<RebalanceSuggestionsResponse> {
+    return this.http.get<RebalanceSuggestionsResponse>(`${this.base}/rebalance-suggestions`);
   }
 
   getAlerts(): Observable<PriceAlert[]> {

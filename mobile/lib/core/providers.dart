@@ -66,6 +66,11 @@ final opportunitiesProvider = FutureProvider.autoDispose<List<Opportunity>>((
   return ref.watch(apiRepositoryProvider).getOpportunities(search: search);
 });
 
+final rebalanceSuggestionsProvider =
+    FutureProvider.autoDispose<RebalanceSuggestions>((ref) {
+      return ref.watch(apiRepositoryProvider).getRebalanceSuggestions();
+    });
+
 final preferencesProvider = FutureProvider.autoDispose<Preferences>((ref) {
   return ref.watch(apiRepositoryProvider).getPreferences();
 });

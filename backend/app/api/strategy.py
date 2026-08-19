@@ -57,3 +57,44 @@ async def get_investment_strategy(cash_available: float = 0.0) -> dict:
         opportunities=opps_resp.items,
         portfolio_evaluation=portfolio_evaluation,
     )
+
+
+@router.get("/rebalance-suggestions")
+async def get_rebalance_suggestions() -> dict:
+    stored = portfolio_repo.list_positions()
+    if not stored:
+        return {"allocation_gaps": [], "items": [], "tax_disclaimer": None}
+
+    current_portfolio = [
+        PortfolioItem(
+            ticker=i["ticker"],
+            quantity=i["quantity"],
+            avg_price=i["avg_price"],
+            category=i.get("category", "auto"),
+        )
+        for i in stored
+    ]
+
+    goals = goal_service.get_goals()
+    prefs = portfolio_repo.get_preferences()
+    excluded_tickers = {t.upper() for t in prefs.get("excluded_tickers", [])}
+
+    opps_resp = await opportunity_service.get_opportunities(
+        include_held=False,
+        page=1,
+        page_size=50,
+        sort_by="score",
+        sort_order="desc",
+    )
+
+    req = PortfolioEvaluationRequest(items=current_portfolio)
+    eval_resp = await portfolio_service.evaluate_portfolio(req)
+    portfolio_evaluation = {"positions": [p.dict() for p in eval_resp.positions]}
+
+    return strategy_service.generate_rebalance_suggestions(
+        current_portfolio=current_portfolio,
+        goals=goals,
+        opportunities=opps_resp.items,
+        portfolio_evaluation=portfolio_evaluation,
+        excluded_tickers=excluded_tickers,
+    )

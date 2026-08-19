@@ -100,6 +100,11 @@ class ApiRepository {
         .toList();
   }
 
+  Future<RebalanceSuggestions> getRebalanceSuggestions() async {
+    final res = await _dio.get('/rebalance-suggestions');
+    return RebalanceSuggestions.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<Preferences> getPreferences() async {
     final res = await _dio.get('/preferences');
     return Preferences.fromJson(res.data as Map<String, dynamic>);

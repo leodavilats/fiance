@@ -68,6 +68,36 @@ export interface ProjectedAllocation {
   assets_count: number;
 }
 
+export interface RebalanceTarget {
+  ticker: string;
+  name: string | null;
+  category: string;
+  score: number;
+  verdict: string;
+}
+
+export type RebalanceAction = 'comprar_mais' | 'vender' | 'realocar' | 'manter';
+
+export interface RebalanceItem {
+  ticker: string;
+  name: string | null;
+  category: string;
+  verdict: string;
+  action: RebalanceAction;
+  current_value: number | null;
+  quantity: number | null;
+  pnl_pct: number | null;
+  reasons: string[];
+  realocar_para: RebalanceTarget | null;
+  requires_tax_review: boolean;
+}
+
+export interface RebalanceSuggestionsResponse {
+  allocation_gaps: AllocationGap[];
+  items: RebalanceItem[];
+  tax_disclaimer: string | null;
+}
+
 export interface InvestmentStrategy {
   profile: InvestorProfile;
   total_capital: number;

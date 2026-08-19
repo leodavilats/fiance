@@ -11,6 +11,14 @@
     </button>
     <button
       type="button"
+      (click)="activeTab.set('rebalance')"
+      [class.active]="activeTab() === 'rebalance'"
+      class="tab-btn whitespace-nowrap"
+    >
+      <lucide-icon name="shuffle" size="18"></lucide-icon> Rebalanceamento
+    </button>
+    <button
+      type="button"
       (click)="activeTab.set('ferramentas')"
       [class.active]="activeTab() === 'ferramentas'"
       class="tab-btn whitespace-nowrap"
@@ -49,6 +57,10 @@
 
   @if (activeTab() === 'opportunities' && oppMode() === 'queda') {
     <app-dip-scanner (analyze)="showDipAnalysis($event)" />
+  }
+
+  @if (activeTab() === 'rebalance') {
+    <app-rebalance-suggestions />
   }
 
   @if (activeTab() === 'ferramentas') {

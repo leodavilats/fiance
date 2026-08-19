@@ -348,6 +348,91 @@ class Opportunity {
   );
 }
 
+class RebalanceTarget {
+  RebalanceTarget({
+    required this.ticker,
+    required this.name,
+    required this.category,
+    required this.score,
+    required this.verdict,
+  });
+
+  final String ticker;
+  final String? name;
+  final String category;
+  final double score;
+  final String verdict;
+
+  factory RebalanceTarget.fromJson(Map<String, dynamic> j) => RebalanceTarget(
+    ticker: j['ticker'] as String,
+    name: j['name'] as String?,
+    category: j['category'] as String? ?? '',
+    score: (j['score'] as num?)?.toDouble() ?? 0,
+    verdict: j['verdict'] as String? ?? '',
+  );
+}
+
+class RebalanceItem {
+  RebalanceItem({
+    required this.ticker,
+    required this.name,
+    required this.category,
+    required this.verdict,
+    required this.action,
+    required this.currentValue,
+    required this.quantity,
+    required this.pnlPct,
+    required this.reasons,
+    required this.realocarPara,
+    required this.requiresTaxReview,
+  });
+
+  final String ticker;
+  final String? name;
+  final String category;
+  final String verdict;
+  final String action;
+  final double? currentValue;
+  final double? quantity;
+  final double? pnlPct;
+  final List<String> reasons;
+  final RebalanceTarget? realocarPara;
+  final bool requiresTaxReview;
+
+  factory RebalanceItem.fromJson(Map<String, dynamic> j) => RebalanceItem(
+    ticker: j['ticker'] as String,
+    name: j['name'] as String?,
+    category: j['category'] as String? ?? '',
+    verdict: j['verdict'] as String? ?? '',
+    action: j['action'] as String? ?? 'manter',
+    currentValue: (j['current_value'] as num?)?.toDouble(),
+    quantity: (j['quantity'] as num?)?.toDouble(),
+    pnlPct: (j['pnl_pct'] as num?)?.toDouble(),
+    reasons: (j['reasons'] as List? ?? const [])
+        .map((e) => e as String)
+        .toList(),
+    realocarPara: j['realocar_para'] != null
+        ? RebalanceTarget.fromJson(j['realocar_para'] as Map<String, dynamic>)
+        : null,
+    requiresTaxReview: j['requires_tax_review'] as bool? ?? false,
+  );
+}
+
+class RebalanceSuggestions {
+  RebalanceSuggestions({required this.items, required this.taxDisclaimer});
+
+  final List<RebalanceItem> items;
+  final String? taxDisclaimer;
+
+  factory RebalanceSuggestions.fromJson(Map<String, dynamic> j) =>
+      RebalanceSuggestions(
+        items: (j['items'] as List? ?? const [])
+            .map((e) => RebalanceItem.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        taxDisclaimer: j['tax_disclaimer'] as String?,
+      );
+}
+
 class SectorAsset {
   SectorAsset({
     required this.ticker,

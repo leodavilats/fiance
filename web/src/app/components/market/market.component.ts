@@ -7,10 +7,11 @@ import { ContributionSimulatorComponent } from './contribution-simulator/contrib
 import { DipAnalysisModalComponent } from './dip-analysis-modal/dip-analysis-modal.component';
 import { DipScannerComponent } from './dip-scanner/dip-scanner.component';
 import { OpportunitiesListComponent } from './opportunities-list/opportunities-list.component';
+import { RebalanceSuggestionsComponent } from './rebalance-suggestions/rebalance-suggestions.component';
 import { RendaFixaComponent } from './renda-fixa/renda-fixa.component';
 import { LucideAngularModule } from 'lucide-angular';
 
-type MarketTab = 'opportunities' | 'ferramentas';
+type MarketTab = 'opportunities' | 'rebalance' | 'ferramentas';
 type OppMode = 'todas' | 'queda';
 type ToolMode = 'analisar' | 'renda_fixa' | 'comparar' | 'projecao';
 
@@ -27,6 +28,7 @@ type ToolMode = 'analisar' | 'renda_fixa' | 'comparar' | 'projecao';
     DipAnalysisModalComponent,
     CompareAssetsComponent,
     ContributionSimulatorComponent,
+    RebalanceSuggestionsComponent,
   ],
   templateUrl: './market.component.html',
   styleUrls: ['./market.component.scss'],
