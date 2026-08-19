@@ -22,6 +22,12 @@ async def save_preferences(req: PreferencesRequest) -> Preferences:
         desired_yield_bdr=req.desired_yield_bdr,
         desired_yield_etf=req.desired_yield_etf,
         notify_price_alerts=req.notify_price_alerts,
-        notify_new_opportunities=req.notify_new_opportunities,
+        opportunities_frequency=req.opportunities_frequency,
+        risk_profile=req.risk_profile.value if req.risk_profile else None,
+        preferred_categories=[c.value for c in req.preferred_categories]
+        if req.preferred_categories is not None
+        else None,
+        preferred_sectors=req.preferred_sectors,
+        excluded_tickers=req.excluded_tickers,
     )
     return Preferences(**portfolio_repo.get_preferences())

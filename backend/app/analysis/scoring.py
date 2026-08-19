@@ -115,6 +115,95 @@ def _score_liquidity(market_cap: float | None) -> float:
     return _clip((math.log10(market_cap) - 7) * 30)
 
 
+def _score_technical(rsi_14: float | None, trend: str) -> float:
+    rsi = rsi_14 if rsi_14 is not None else 50.0
+
+    score = 50.0 + (60.0 - rsi) * 0.5
+
+    if trend == "uptrend":
+        score += 10
+    elif trend == "downtrend":
+        score -= 10
+
+    return _clip(score)
+
+
+def _score_mos(margin_of_safety: float | None) -> float:
+    return _clip(50 + (margin_of_safety or 0.0) * 100)
+
+
+OPPORTUNITY_WEIGHTS: dict[RiskProfile, dict[str, float]] = {
+    RiskProfile.conservative: {
+        "mos": 0.30,
+        "quality": 0.20,
+        "dividend": 0.25,
+        "leverage": 0.15,
+        "growth": 0.05,
+        "technical": 0.05,
+    },
+    RiskProfile.moderate: {
+        "mos": 0.30,
+        "quality": 0.20,
+        "dividend": 0.15,
+        "leverage": 0.10,
+        "growth": 0.15,
+        "technical": 0.10,
+    },
+    RiskProfile.aggressive: {
+        "mos": 0.20,
+        "quality": 0.20,
+        "dividend": 0.05,
+        "leverage": 0.05,
+        "growth": 0.40,
+        "technical": 0.10,
+    },
+}
+
+_FII_WEIGHTS = {"mos": 0.45, "dividend": 0.40, "liquidity": 0.15}
+_ETF_WEIGHTS = {"mos": 0.55, "dividend": 0.30, "liquidity": 0.15}
+
+
+def score_opportunity(
+    asset_type: str,
+    margin_of_safety: float | None,
+    dividend_yield: float | None,
+    roe: float | None,
+    profit_margin: float | None,
+    debt_to_equity: float | None,
+    revenue_growth: float | None,
+    market_cap: float | None,
+    rsi_14: float | None,
+    trend: str,
+    profile: RiskProfile = RiskProfile.moderate,
+) -> tuple[float, dict[str, float]]:
+    """Score composto 0-100 de oportunidade: margem de segurança (preço justo) +
+    fundamentos (qualidade, endividamento, crescimento) + dividendos + técnico,
+    ponderados pelo perfil de risco do usuário. FII/ETF usam um subconjunto
+    (sem EPS/ROE/dívida de empresa aplicável)."""
+
+    mos_score = _score_mos(margin_of_safety)
+    dividend_score = _score_dividend(dividend_yield)
+
+    if asset_type in ("fii", "etf"):
+        liquidity_score = _score_liquidity(market_cap)
+        breakdown = {"mos": mos_score, "dividend": dividend_score, "liquidity": liquidity_score}
+        weights = _FII_WEIGHTS if asset_type == "fii" else _ETF_WEIGHTS
+    else:
+        breakdown = {
+            "mos": mos_score,
+            "quality": _score_quality(roe, profit_margin),
+            "dividend": dividend_score,
+            "leverage": _score_leverage(debt_to_equity),
+            "growth": _score_growth(revenue_growth),
+            "technical": _score_technical(rsi_14, trend),
+        }
+        weights = OPPORTUNITY_WEIGHTS[profile]
+
+    total = sum(weights[k] * breakdown[k] for k in weights)
+
+    return round(total, 2), {k: round(v, 2) for k, v in breakdown.items()}
+
+
 def _score_fii(f: CompanyFundamentals) -> ScoredCompany:
     breakdown = {
         "dividend": _score_dividend(f.dividend_yield),

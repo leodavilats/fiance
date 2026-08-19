@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  AllocationCategory,
   AssetAnalysis,
   BenchmarkResponse,
   ClosedTradesResponse,
@@ -12,6 +13,7 @@ import {
   DipScannerResponse,
   Goal,
   InvestmentStrategy,
+  OpportunitiesFrequency,
   OpportunitiesResponse,
   PassiveIncomeProjectionRequest,
   PassiveIncomeProjectionResponse,
@@ -21,6 +23,7 @@ import {
   PortfolioStateResponse,
   Preferences,
   PriceAlert,
+  RiskProfile,
   PriceAlertTriggered,
   QuickInvestRequest,
   QuickInvestResponse,
@@ -141,7 +144,15 @@ export class RecommendService {
 
   savePreferences(
     passiveIncomeGoal?: number,
-    yields?: { stock?: number; fii?: number; bdr?: number; etf?: number }
+    yields?: { stock?: number; fii?: number; bdr?: number; etf?: number },
+    recommendation?: {
+      notifyPriceAlerts?: boolean;
+      opportunitiesFrequency?: OpportunitiesFrequency;
+      riskProfile?: RiskProfile;
+      preferredCategories?: AllocationCategory[];
+      preferredSectors?: string[];
+      excludedTickers?: string[];
+    }
   ): Observable<Preferences> {
     return this.http.put<Preferences>(`${this.base}/preferences`, {
       passive_income_goal: passiveIncomeGoal ?? null,
@@ -149,6 +160,12 @@ export class RecommendService {
       desired_yield_fii: yields?.fii ?? null,
       desired_yield_bdr: yields?.bdr ?? null,
       desired_yield_etf: yields?.etf ?? null,
+      notify_price_alerts: recommendation?.notifyPriceAlerts ?? null,
+      opportunities_frequency: recommendation?.opportunitiesFrequency ?? null,
+      risk_profile: recommendation?.riskProfile ?? null,
+      preferred_categories: recommendation?.preferredCategories ?? null,
+      preferred_sectors: recommendation?.preferredSectors ?? null,
+      excluded_tickers: recommendation?.excludedTickers ?? null,
     });
   }
 

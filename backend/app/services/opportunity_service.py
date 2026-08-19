@@ -4,9 +4,11 @@ import logging
 from app.analysis.classify import auto_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.analysis.scoring import score_opportunity
 from app.core import cache
 from app.core.universe import get_universe
 from app.models import AssetType, OpportunitiesResponse, Opportunity
+from app.models.enums import RiskProfile
 from app.repositories import AssetRepository, PortfolioRepository
 
 logger = logging.getLogger(__name__)
@@ -53,16 +55,21 @@ class OpportunityService:
 
         auto = auto_category(snap.asset_type, snap.dividend_yield, bool(dividends))
 
-        mos = fair.margin_of_safety or 0.0
-        dy_pct = snap.dividend_yield or 0.0
-        rsi = tech.rsi_14 if tech.rsi_14 is not None else 50.0
+        profile = RiskProfile(prefs.get("risk_profile") or "moderate")
 
-        rsi_bonus = max(0.0, (60.0 - rsi) / 40.0)
-        trend_bonus = (
-            5.0 if tech.trend == "uptrend" else (-5.0 if tech.trend == "downtrend" else 0.0)
+        score, breakdown = score_opportunity(
+            asset_type=snap.asset_type,
+            margin_of_safety=fair.margin_of_safety,
+            dividend_yield=snap.dividend_yield,
+            roe=snap.roe,
+            profit_margin=snap.profit_margin,
+            debt_to_equity=snap.debt_to_equity,
+            revenue_growth=snap.revenue_growth,
+            market_cap=snap.market_cap,
+            rsi_14=tech.rsi_14,
+            trend=tech.trend,
+            profile=profile,
         )
-
-        score = round((mos * 60) + (dy_pct * 1.5) + (rsi_bonus * 10) + trend_bonus, 2)
 
         verdict = dec.verdict
         label = dec.label
@@ -95,6 +102,7 @@ class OpportunityService:
             label=label,
             category_resolved=auto,
             score=score,
+            score_breakdown=breakdown,
             reasons=dec.reasons,
         )
 
@@ -149,7 +157,6 @@ class OpportunityService:
         only_interesting: bool = False,
     ) -> OpportunitiesResponse:
         prefs = self.portfolio_repo.get_preferences()
-        cash = prefs["cash_available"]
 
         held = {p["ticker"].upper() for p in self.portfolio_repo.list_positions()}
 
@@ -158,6 +165,22 @@ class OpportunityService:
 
         if not include_held and not search:
             opps = [o for o in opps if o.ticker.upper() not in held]
+
+        excluded_tickers = {t.upper() for t in prefs.get("excluded_tickers", [])}
+        if excluded_tickers:
+            opps = [o for o in opps if o.ticker.upper() not in excluded_tickers]
+
+        preferred_categories = set(prefs.get("preferred_categories", []))
+        preferred_sectors = set(prefs.get("preferred_sectors", []))
+        if preferred_categories or preferred_sectors:
+            for o in opps:
+                boost = 0.0
+                if o.category_resolved in preferred_categories:
+                    boost += 5.0
+                if o.sector and o.sector in preferred_sectors:
+                    boost += 3.0
+                if boost:
+                    o.score = round(min(100.0, o.score + boost), 2)
 
         for o in opps:
             o.in_portfolio = o.ticker.upper() in held
@@ -209,20 +232,8 @@ class OpportunityService:
         end_idx = start_idx + page_size
         paginated_list = opps[start_idx:end_idx]
 
-        if cash > 0 and paginated_list:
-            n_sugg = min(5, len(paginated_list))
-            per_asset = cash / n_sugg
-
-            for o in paginated_list[:n_sugg]:
-                if o.price and o.price > 0:
-                    qty = int(per_asset // o.price)
-                    if qty > 0:
-                        o.suggested_quantity = qty
-                        o.suggested_invest = round(qty * o.price, 2)
-
         return OpportunitiesResponse(
             items=paginated_list,
-            cash_available=cash,
             total_items=total_items,
             total_pages=total_pages,
             current_page=page,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 from app.collectors.universal import fetch_many
 from app.notifications import send_push
@@ -8,6 +9,23 @@ from app.services.opportunity_service import OpportunityService
 from app.storage import portfolio_store
 
 logger = logging.getLogger("fiance.notification_job")
+
+# Plataforma é para investimento, não day trade — cadência mínima é diária.
+# Intervalos um pouco menores que o período nominal absorvem o drift do ciclo de 15 min.
+_FREQUENCY_SECONDS = {
+    "daily": 20 * 3600,
+    "weekly": 6 * 24 * 3600,
+    "monthly": 27 * 24 * 3600,
+}
+
+
+def _digest_due(frequency: str, last_sent_at: float | None) -> bool:
+    interval = _FREQUENCY_SECONDS.get(frequency)
+    if interval is None:  # "off" ou valor desconhecido
+        return False
+    if last_sent_at is None:
+        return True
+    return (time.time() - last_sent_at) >= interval
 
 
 async def _check_price_alerts(user_id: str, tokens: list[str]) -> None:
@@ -46,7 +64,7 @@ async def _check_price_alerts(user_id: str, tokens: list[str]) -> None:
             portfolio_store.unregister_device_token(invalid_token, user_id=user_id)
 
 
-async def _check_new_opportunities(
+async def _send_opportunities_digest(
     user_id: str,
     tokens: list[str],
     service: OpportunityService,
@@ -54,31 +72,61 @@ async def _check_new_opportunities(
 ) -> None:
     scanned, _universe_size = await service._scan_universe(prefs)  # noqa: SLF001 — reuso interno
 
+    excluded = {t.upper() for t in prefs.get("excluded_tickers", [])}
+    by_ticker = {o.ticker.upper(): o for o in scanned}
+
+    held_tickers = {p["ticker"].upper() for p in portfolio_store.list_positions(user_id=user_id)}
+    to_review = sorted(
+        (
+            by_ticker[t]
+            for t in held_tickers
+            if t in by_ticker and by_ticker[t].verdict in ("SELL", "STRONG_SELL")
+        ),
+        key=lambda o: o.score,
+    )[:3]
+
     interesting = [
         o
         for o in scanned
-        if o.verdict == "STRONG_BUY" or (o.score >= 75 and (o.dividend_yield or 0) >= 6.0)
+        if o.ticker.upper() not in held_tickers
+        and o.ticker.upper() not in excluded
+        and (o.verdict == "STRONG_BUY" or (o.score >= 75 and (o.dividend_yield or 0) >= 6.0))
     ]
-    if not interesting:
+
+    if not interesting and not to_review:
         return
 
     already_notified = portfolio_store.get_notified_opportunity_tickers(user_id)
     new_ones = [o for o in interesting if o.ticker.upper() not in already_notified]
-    if not new_ones:
-        return
+    # Se nada é literalmente novo desde o último resumo, ainda reforça as melhores atuais —
+    # o objetivo é um resumo periódico, não só alertar sobre estreias no ranking.
+    highlighted = sorted(new_ones or interesting, key=lambda o: o.score, reverse=True)[:5]
 
-    to_notify = new_ones[:3]
-    for opp in to_notify:
-        invalid = send_push(
-            tokens,
-            title=f"Nova oportunidade: {opp.ticker}",
-            body=f"{opp.label} — score {opp.score:.0f}, DY {opp.dividend_yield or 0:.1f}%",
-            data={"type": "new_opportunity", "ticker": opp.ticker},
+    body_parts = []
+    if highlighted:
+        summary = ", ".join(f"{o.ticker} ({o.score:.0f})" for o in highlighted)
+        body_parts.append(f"{len(interesting)} ativo(s) bem avaliados: {summary}")
+    if to_review:
+        review_summary = ", ".join(o.ticker for o in to_review)
+        body_parts.append(f"revisar na carteira: {review_summary}")
+
+    invalid = send_push(
+        tokens,
+        title="Resumo de ajuste de carteira",
+        body=" · ".join(body_parts),
+        data={
+            "type": "opportunities_digest",
+            "tickers": ",".join(o.ticker for o in highlighted),
+            "review_tickers": ",".join(o.ticker for o in to_review),
+        },
+    )
+    for invalid_token in invalid:
+        portfolio_store.unregister_device_token(invalid_token, user_id=user_id)
+
+    if highlighted:
+        portfolio_store.mark_opportunities_notified(
+            user_id, [o.ticker.upper() for o in highlighted]
         )
-        for invalid_token in invalid:
-            portfolio_store.unregister_device_token(invalid_token, user_id=user_id)
-
-    portfolio_store.mark_opportunities_notified(user_id, [o.ticker.upper() for o in new_ones])
 
 
 async def run_notification_cycle() -> None:
@@ -90,6 +138,7 @@ async def run_notification_cycle() -> None:
         return
 
     opportunity_service = OpportunityService()
+    now = time.time()
 
     for user_id, tokens in tokens_by_user.items():
         try:
@@ -98,7 +147,10 @@ async def run_notification_cycle() -> None:
             if prefs.get("notify_price_alerts", True):
                 await _check_price_alerts(user_id, tokens)
 
-            if prefs.get("notify_new_opportunities", True):
-                await _check_new_opportunities(user_id, tokens, opportunity_service, prefs)
+            frequency = prefs.get("opportunities_frequency", "weekly")
+            last_sent = portfolio_store.get_last_digest_sent_at(user_id=user_id)
+            if _digest_due(frequency, last_sent):
+                await _send_opportunities_digest(user_id, tokens, opportunity_service, prefs)
+                portfolio_store.mark_digest_sent(now, user_id=user_id)
         except Exception:
             logger.exception("Falha no ciclo de notificações do usuário %s", user_id)

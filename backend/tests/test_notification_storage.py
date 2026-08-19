@@ -56,7 +56,7 @@ def test_preferences_notification_flags_default_true():
     uid = "test_notif_prefs_default"
     prefs = portfolio_store.get_preferences(user_id=uid)
     assert prefs["notify_price_alerts"] is True
-    assert prefs["notify_new_opportunities"] is True
+    assert prefs["opportunities_frequency"] == "weekly"
 
 
 def test_preferences_notification_flags_can_be_disabled():
@@ -64,9 +64,26 @@ def test_preferences_notification_flags_can_be_disabled():
     portfolio_store.set_preferences(
         cash_available=100.0,
         notify_price_alerts=False,
-        notify_new_opportunities=True,
+        opportunities_frequency="monthly",
         user_id=uid,
     )
     prefs = portfolio_store.get_preferences(user_id=uid)
     assert prefs["notify_price_alerts"] is False
-    assert prefs["notify_new_opportunities"] is True
+    assert prefs["opportunities_frequency"] == "monthly"
+
+
+def test_preferences_asset_preferences_roundtrip():
+    uid = "test_notif_prefs_asset_prefs"
+    portfolio_store.set_preferences(
+        cash_available=0.0,
+        risk_profile="aggressive",
+        preferred_categories=["fiis", "etfs"],
+        preferred_sectors=["Energia"],
+        excluded_tickers=["MGLU3"],
+        user_id=uid,
+    )
+    prefs = portfolio_store.get_preferences(user_id=uid)
+    assert prefs["risk_profile"] == "aggressive"
+    assert prefs["preferred_categories"] == ["fiis", "etfs"]
+    assert prefs["preferred_sectors"] == ["Energia"]
+    assert prefs["excluded_tickers"] == ["MGLU3"]

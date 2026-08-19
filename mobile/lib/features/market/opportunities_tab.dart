@@ -67,6 +67,8 @@ final filteredOpportunitiesProvider =
             search: f.search,
             assetType: _categoryToAssetType[f.category] ?? '',
             onlyInteresting: f.onlyInteresting,
+            minDy: f.minDy,
+            minMosPct: f.minMos != null ? f.minMos! * 100 : null,
           );
     });
 
@@ -86,6 +88,24 @@ class OpportunitiesTab extends ConsumerStatefulWidget {
   ConsumerState<OpportunitiesTab> createState() => _OpportunitiesTabState();
 }
 
+const _categoryLabels = {
+  '': 'Todas',
+  'acoes_br': 'Ações BR',
+  'bdrs': 'BDRs',
+  'fiis': 'FIIs',
+  'etfs': 'ETFs',
+};
+
+int _activeFilterCount(OpportunitiesFilters f) {
+  var count = 0;
+  if (f.category.isNotEmpty) count++;
+  if (f.onlyDip) count++;
+  if (f.onlyInteresting) count++;
+  if (f.minDy != null) count++;
+  if (f.minMos != null) count++;
+  return count;
+}
+
 class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
   final _searchCtrl = TextEditingController();
 
@@ -95,94 +115,113 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
     super.dispose();
   }
 
+  Future<void> _openFilters() async {
+    final filters = ref.read(opportunitiesFiltersProvider);
+    final result = await showModalBottomSheet<OpportunitiesFilters>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _FiltersSheet(initial: filters),
+    );
+    if (result != null) {
+      ref.read(opportunitiesFiltersProvider.notifier).state = result;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filters = ref.watch(opportunitiesFiltersProvider);
+    final activeCount = _activeFilterCount(filters);
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 8, 0),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: Column(
             children: [
-              TickerAutocompleteField(
-                controller: _searchCtrl,
-                labelText: 'Buscar ticker ou nome...',
-                onSelected: (s) {
-                  ref.read(opportunitiesFiltersProvider.notifier).state =
-                      filters.copyWith(search: s.ticker);
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: TickerAutocompleteField(
+                      controller: _searchCtrl,
+                      labelText: 'Buscar ticker ou nome...',
+                      onSelected: (s) {
+                        ref.read(opportunitiesFiltersProvider.notifier).state =
+                            filters.copyWith(search: s.ticker);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Badge(
+                    label: Text('$activeCount'),
+                    isLabelVisible: activeCount > 0,
+                    child: IconButton.filledTonal(
+                      icon: const Icon(Icons.tune),
+                      tooltip: 'Filtros',
+                      onPressed: _openFilters,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _CategoryChip(
-                      label: 'Todas',
-                      value: '',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    _CategoryChip(
-                      label: 'Ações BR',
-                      value: 'acoes_br',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    _CategoryChip(
-                      label: 'BDRs',
-                      value: 'bdrs',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    _CategoryChip(
-                      label: 'FIIs',
-                      value: 'fiis',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    _CategoryChip(
-                      label: 'ETFs',
-                      value: 'etfs',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    const SizedBox(width: 8),
-                    Container(width: 1, height: 20, color: Theme.of(context).dividerColor),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      avatar: Icon(
-                        Icons.trending_down,
-                        size: 16,
-                        color: filters.onlyDip
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                      label: const Text('Em queda'),
-                      selected: filters.onlyDip,
-                      onSelected: (v) =>
-                          ref
-                              .read(opportunitiesFiltersProvider.notifier)
-                              .state = filters.copyWith(
-                            onlyDip: v,
-                          ),
-                    ),
-                    const SizedBox(width: 6),
-                    if (!filters.onlyDip)
-                      FilterChip(
-                        label: const Text('Destaques'),
-                        selected: filters.onlyInteresting,
-                        onSelected: (v) =>
-                            ref
-                                .read(opportunitiesFiltersProvider.notifier)
-                                .state = filters.copyWith(
-                              onlyInteresting: v,
-                            ),
-                      ),
-                  ],
+              if (activeCount > 0) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      if (filters.category.isNotEmpty)
+                        _ActiveFilterChip(
+                          label: _categoryLabels[filters.category] ?? filters.category,
+                          onDeleted: () =>
+                              ref.read(opportunitiesFiltersProvider.notifier).state =
+                                  filters.copyWith(category: ''),
+                        ),
+                      if (filters.onlyDip)
+                        _ActiveFilterChip(
+                          label: 'Em queda',
+                          onDeleted: () =>
+                              ref.read(opportunitiesFiltersProvider.notifier).state =
+                                  filters.copyWith(onlyDip: false),
+                        ),
+                      if (filters.onlyInteresting)
+                        _ActiveFilterChip(
+                          label: 'Destaques',
+                          onDeleted: () =>
+                              ref.read(opportunitiesFiltersProvider.notifier).state =
+                                  filters.copyWith(onlyInteresting: false),
+                        ),
+                      if (filters.minDy != null)
+                        _ActiveFilterChip(
+                          label: 'DY ≥ ${filters.minDy!.toStringAsFixed(1)}%',
+                          onDeleted: () =>
+                              ref.read(opportunitiesFiltersProvider.notifier).state =
+                                  OpportunitiesFilters(
+                                    search: filters.search,
+                                    minMos: filters.minMos,
+                                    category: filters.category,
+                                    onlyInteresting: filters.onlyInteresting,
+                                    onlyDip: filters.onlyDip,
+                                  ),
+                        ),
+                      if (filters.minMos != null)
+                        _ActiveFilterChip(
+                          label: 'MS ≥ ${(filters.minMos! * 100).toStringAsFixed(0)}%',
+                          onDeleted: () =>
+                              ref.read(opportunitiesFiltersProvider.notifier).state =
+                                  OpportunitiesFilters(
+                                    search: filters.search,
+                                    minDy: filters.minDy,
+                                    category: filters.category,
+                                    onlyInteresting: filters.onlyInteresting,
+                                    onlyDip: filters.onlyDip,
+                                  ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -192,6 +231,163 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
               : const _AllOpportunitiesView(),
         ),
       ],
+    );
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  const _ActiveFilterChip({required this.label, required this.onDeleted});
+
+  final String label;
+  final VoidCallback onDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputChip(
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+      onDeleted: onDeleted,
+      visualDensity: VisualDensity.compact,
+    );
+  }
+}
+
+class _FiltersSheet extends StatefulWidget {
+  const _FiltersSheet({required this.initial});
+
+  final OpportunitiesFilters initial;
+
+  @override
+  State<_FiltersSheet> createState() => _FiltersSheetState();
+}
+
+class _FiltersSheetState extends State<_FiltersSheet> {
+  late String _category = widget.initial.category;
+  late bool _onlyDip = widget.initial.onlyDip;
+  late bool _onlyInteresting = widget.initial.onlyInteresting;
+  late bool _dyEnabled = widget.initial.minDy != null;
+  late double _dyValue = widget.initial.minDy ?? 6.0;
+  late bool _mosEnabled = widget.initial.minMos != null;
+  late double _mosValue = (widget.initial.minMos ?? 0.15) * 100;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 16,
+          bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Filtros',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                TextButton(
+                  onPressed: () => setState(() {
+                    _category = '';
+                    _onlyDip = false;
+                    _onlyInteresting = false;
+                    _dyEnabled = false;
+                    _mosEnabled = false;
+                  }),
+                  child: const Text('Limpar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text('Categoria', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _categoryLabels.entries
+                  .map(
+                    (e) => ChoiceChip(
+                      label: Text(e.value),
+                      selected: _category == e.key,
+                      onSelected: (_) => setState(() => _category = e.key),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Em queda'),
+              subtitle: const Text('Scanner de ativos em queda recente'),
+              value: _onlyDip,
+              onChanged: (v) => setState(() => _onlyDip = v),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Somente destaques'),
+              value: _onlyInteresting,
+              onChanged: _onlyDip ? null : (v) => setState(() => _onlyInteresting = v),
+            ),
+            const Divider(height: 24),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Dividend yield mínimo'),
+              subtitle: _dyEnabled ? Text('${_dyValue.toStringAsFixed(1)}%') : null,
+              value: _dyEnabled,
+              onChanged: (v) => setState(() => _dyEnabled = v),
+            ),
+            if (_dyEnabled)
+              Slider(
+                value: _dyValue,
+                min: 0,
+                max: 20,
+                divisions: 40,
+                label: '${_dyValue.toStringAsFixed(1)}%',
+                onChanged: (v) => setState(() => _dyValue = v),
+              ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Margem de segurança mínima'),
+              subtitle: _mosEnabled ? Text('${_mosValue.toStringAsFixed(0)}%') : null,
+              value: _mosEnabled,
+              onChanged: (v) => setState(() => _mosEnabled = v),
+            ),
+            if (_mosEnabled)
+              Slider(
+                value: _mosValue,
+                min: -20,
+                max: 50,
+                divisions: 70,
+                label: '${_mosValue.toStringAsFixed(0)}%',
+                onChanged: (v) => setState(() => _mosValue = v),
+              ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.pop(
+                    context,
+                    OpportunitiesFilters(
+                      search: widget.initial.search,
+                      category: _category,
+                      onlyDip: _onlyDip,
+                      onlyInteresting: _onlyDip ? false : _onlyInteresting,
+                      minDy: _dyEnabled ? _dyValue : null,
+                      minMos: _mosEnabled ? _mosValue / 100 : null,
+                    ),
+                  );
+                },
+                child: const Text('Aplicar filtros'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -339,34 +535,6 @@ class _AllOpportunitiesView extends ConsumerWidget {
                 _OpportunityCard(opportunity: items[index]),
           );
         },
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends ConsumerWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.value,
-    required this.selected,
-    required this.filters,
-  });
-
-  final String label;
-  final String value;
-  final String selected;
-  final OpportunitiesFilters filters;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected == value,
-        onSelected: (_) =>
-            ref.read(opportunitiesFiltersProvider.notifier).state = filters
-                .copyWith(category: value),
       ),
     );
   }

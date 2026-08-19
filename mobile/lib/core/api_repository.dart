@@ -79,6 +79,8 @@ class ApiRepository {
     String search = '',
     String assetType = '',
     bool onlyInteresting = false,
+    double? minDy,
+    double? minMosPct,
   }) async {
     final res = await _dio.get(
       '/opportunities',
@@ -89,6 +91,8 @@ class ApiRepository {
         if (search.isNotEmpty) 'search': search,
         if (assetType.isNotEmpty) 'asset_type': assetType,
         if (onlyInteresting) 'only_interesting': true,
+        'min_dy': ?minDy,
+        'min_mos': ?minMosPct,
       },
     );
     return (res.data['items'] as List)
@@ -104,14 +108,22 @@ class ApiRepository {
   Future<Preferences> savePreferences({
     double? passiveIncomeGoal,
     bool? notifyPriceAlerts,
-    bool? notifyNewOpportunities,
+    String? opportunitiesFrequency,
+    String? riskProfile,
+    List<String>? preferredCategories,
+    List<String>? preferredSectors,
+    List<String>? excludedTickers,
   }) async {
     final res = await _dio.put(
       '/preferences',
       data: {
         'passive_income_goal': passiveIncomeGoal,
         'notify_price_alerts': notifyPriceAlerts,
-        'notify_new_opportunities': notifyNewOpportunities,
+        'opportunities_frequency': opportunitiesFrequency,
+        'risk_profile': riskProfile,
+        'preferred_categories': preferredCategories,
+        'preferred_sectors': preferredSectors,
+        'excluded_tickers': excludedTickers,
       },
     );
     return Preferences.fromJson(res.data as Map<String, dynamic>);

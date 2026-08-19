@@ -14,8 +14,10 @@ import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AllocationCategory,
   Goal,
+  OpportunitiesFrequency,
   PriceAlert,
   RecommendService,
+  RiskProfile,
   SectorGoal,
   TickerSuggestion,
   UiHelperService,
@@ -41,7 +43,26 @@ interface ConfigFormShape {
   yield_etf: FormControl<number>;
   goals: FormArray<FormGroup<GoalForm>>;
   sector_goals: FormArray<FormGroup<SectorGoalForm>>;
+  notify_price_alerts: FormControl<boolean>;
+  opportunities_frequency: FormControl<OpportunitiesFrequency>;
+  risk_profile: FormControl<RiskProfile>;
+  preferred_categories: FormControl<AllocationCategory[]>;
+  preferred_sectors: FormControl<string>;
+  excluded_tickers: FormControl<string>;
 }
+
+const FREQUENCY_OPTIONS: { key: OpportunitiesFrequency; label: string }[] = [
+  { key: 'off', label: 'Desativado' },
+  { key: 'daily', label: 'Diária' },
+  { key: 'weekly', label: 'Semanal' },
+  { key: 'monthly', label: 'Mensal' },
+];
+
+const RISK_PROFILE_OPTIONS: { key: RiskProfile; label: string }[] = [
+  { key: 'conservative', label: 'Conservador' },
+  { key: 'moderate', label: 'Moderado' },
+  { key: 'aggressive', label: 'Arrojado' },
+];
 
 const CATEGORIES: { key: AllocationCategory; label: string; icon: string; desc: string }[] = [
   { key: 'renda_fixa', label: 'Renda Fixa', icon: 'landmark', desc: 'CDB, LCI, LCA, Tesouro...' },
@@ -71,6 +92,8 @@ export class ConfigComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   readonly categories = CATEGORIES;
+  readonly frequencyOptions = FREQUENCY_OPTIONS;
+  readonly riskProfileOptions = RISK_PROFILE_OPTIONS;
   saving = signal(false);
   message = signal('');
   clearing = signal(false);
@@ -86,7 +109,25 @@ export class ConfigComponent implements OnInit, OnDestroy {
     yield_etf: this.fb.control(4, { nonNullable: true, validators: this.yieldValidators }),
     goals: this.fb.array<FormGroup<GoalForm>>([]),
     sector_goals: this.fb.array<FormGroup<SectorGoalForm>>([]),
+    notify_price_alerts: this.fb.control(true, { nonNullable: true }),
+    opportunities_frequency: this.fb.control<OpportunitiesFrequency>('weekly', {
+      nonNullable: true,
+    }),
+    risk_profile: this.fb.control<RiskProfile>('moderate', { nonNullable: true }),
+    preferred_categories: this.fb.control<AllocationCategory[]>([], { nonNullable: true }),
+    preferred_sectors: this.fb.control('', { nonNullable: true }),
+    excluded_tickers: this.fb.control('', { nonNullable: true }),
   });
+
+  isPreferredCategory(cat: AllocationCategory): boolean {
+    return this.form.controls.preferred_categories.value.includes(cat);
+  }
+
+  togglePreferredCategory(cat: AllocationCategory, checked: boolean): void {
+    const current = this.form.controls.preferred_categories.value;
+    const next = checked ? [...current, cat] : current.filter(c => c !== cat);
+    this.form.controls.preferred_categories.setValue(next);
+  }
 
   get goalItems() {
     return this.form.controls.goals;
@@ -224,6 +265,12 @@ export class ConfigComponent implements OnInit, OnDestroy {
           yield_fii: Math.round((prefs.desired_yield_fii ?? 0.1) * 1000) / 10,
           yield_bdr: Math.round((prefs.desired_yield_bdr ?? 0.04) * 1000) / 10,
           yield_etf: Math.round((prefs.desired_yield_etf ?? 0.04) * 1000) / 10,
+          notify_price_alerts: prefs.notify_price_alerts ?? true,
+          opportunities_frequency: prefs.opportunities_frequency ?? 'weekly',
+          risk_profile: prefs.risk_profile ?? 'moderate',
+          preferred_categories: prefs.preferred_categories ?? [],
+          preferred_sectors: (prefs.preferred_sectors ?? []).join(', '),
+          excluded_tickers: (prefs.excluded_tickers ?? []).join(', '),
         });
 
         const goalMap = new Map(goals.map(g => [g.category, g]));
@@ -257,8 +304,20 @@ export class ConfigComponent implements OnInit, OnDestroy {
   }
 
   saveConfig(): void {
-    const { passive_income_goal, sector_goals, yield_stock, yield_fii, yield_bdr, yield_etf } =
-      this.form.getRawValue();
+    const {
+      passive_income_goal,
+      sector_goals,
+      yield_stock,
+      yield_fii,
+      yield_bdr,
+      yield_etf,
+      notify_price_alerts,
+      opportunities_frequency,
+      risk_profile,
+      preferred_categories,
+      preferred_sectors,
+      excluded_tickers,
+    } = this.form.getRawValue();
     const goalsRaw = this.goalItems.getRawValue();
     const goalsPayload: Goal[] = goalsRaw.map(g => ({
       category: g.category,
@@ -275,23 +334,38 @@ export class ConfigComponent implements OnInit, OnDestroy {
     this.message.set('');
 
     forkJoin({
-      prefs: this.svc.savePreferences(passive_income_goal ?? undefined, {
-        stock: yield_stock / 100,
-        fii: yield_fii / 100,
-        bdr: yield_bdr / 100,
-        etf: yield_etf / 100,
-      }),
+      prefs: this.svc.savePreferences(
+        passive_income_goal ?? undefined,
+        {
+          stock: yield_stock / 100,
+          fii: yield_fii / 100,
+          bdr: yield_bdr / 100,
+          etf: yield_etf / 100,
+        },
+        {
+          notifyPriceAlerts: notify_price_alerts,
+          opportunitiesFrequency: opportunities_frequency,
+          riskProfile: risk_profile,
+          preferredCategories: preferred_categories,
+          preferredSectors: preferred_sectors
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean),
+          excludedTickers: excluded_tickers
+            .split(',')
+            .map(s => s.trim().toUpperCase())
+            .filter(Boolean),
+        }
+      ),
       goals: this.svc.saveGoals(goalsPayload),
       sectorGoals: this.svc.saveSectorGoals(sectorGoalsPayload),
     }).subscribe({
       next: () => {
         this.saving.set(false);
-        this.message.set('✓ Configurações salvas!');
         setTimeout(() => this.message.set(''), 3000);
       },
       error: () => {
         this.saving.set(false);
-        this.message.set('✗ Erro ao salvar');
         setTimeout(() => this.message.set(''), 3000);
       },
     });

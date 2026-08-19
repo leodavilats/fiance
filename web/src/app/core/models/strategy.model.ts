@@ -41,6 +41,19 @@ export interface InvestmentSuggestion {
   transaction_cost: TransactionCost | null;
 }
 
+export interface ReduceSuggestion {
+  ticker: string;
+  name: string | null;
+  category: string;
+  verdict: string;
+  label: string;
+  quantity: number;
+  current_value: number | null;
+  pnl_pct: number | null;
+  overweight_category: boolean;
+  reasons: string[];
+}
+
 export interface CurrentAllocation {
   category: string;
   current_value: number;
@@ -63,6 +76,7 @@ export interface InvestmentStrategy {
   current_allocation: CurrentAllocation[];
   allocation_gaps: AllocationGap[];
   suggestions: InvestmentSuggestion[];
+  reduce_suggestions: ReduceSuggestion[];
   projected_allocation: ProjectedAllocation[];
   summary: string;
 }

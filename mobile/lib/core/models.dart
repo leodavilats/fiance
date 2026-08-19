@@ -615,7 +615,11 @@ class Preferences {
     required this.desiredYieldBdr,
     required this.desiredYieldEtf,
     this.notifyPriceAlerts = true,
-    this.notifyNewOpportunities = true,
+    this.opportunitiesFrequency = 'weekly',
+    this.riskProfile = 'moderate',
+    this.preferredCategories = const [],
+    this.preferredSectors = const [],
+    this.excludedTickers = const [],
   });
 
   final double? passiveIncomeGoal;
@@ -624,7 +628,11 @@ class Preferences {
   final double desiredYieldBdr;
   final double desiredYieldEtf;
   final bool notifyPriceAlerts;
-  final bool notifyNewOpportunities;
+  final String opportunitiesFrequency;
+  final String riskProfile;
+  final List<String> preferredCategories;
+  final List<String> preferredSectors;
+  final List<String> excludedTickers;
 
   factory Preferences.fromJson(Map<String, dynamic> j) => Preferences(
     passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
@@ -633,7 +641,15 @@ class Preferences {
     desiredYieldBdr: (j['desired_yield_bdr'] as num).toDouble(),
     desiredYieldEtf: (j['desired_yield_etf'] as num?)?.toDouble() ?? 0.04,
     notifyPriceAlerts: j['notify_price_alerts'] as bool? ?? true,
-    notifyNewOpportunities: j['notify_new_opportunities'] as bool? ?? true,
+    opportunitiesFrequency:
+        j['opportunities_frequency'] as String? ?? 'weekly',
+    riskProfile: j['risk_profile'] as String? ?? 'moderate',
+    preferredCategories:
+        (j['preferred_categories'] as List?)?.cast<String>() ?? const [],
+    preferredSectors:
+        (j['preferred_sectors'] as List?)?.cast<String>() ?? const [],
+    excludedTickers:
+        (j['excluded_tickers'] as List?)?.cast<String>() ?? const [],
   );
 }
 

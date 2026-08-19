@@ -18,11 +18,11 @@ CRUD de posições da carteira (ações, FIIs, BDRs, ETFs) e formulário de Rend
 
 **Autocomplete de ticker (2026-08-11):** o campo de ticker (Meus Ativos, web e mobile) sugere ticker+nome da empresa enquanto o usuário digita, via `GET /universe/search` (busca por prefixo/substring em toda a lista de ações/FIIs/BDRs/ETFs da B3 — não só o universo limitado usado no scanner de oportunidades). Tickers não suportados pelo sistema (ex.: ação US pura, cripto) não aparecem nas sugestões.
 
-**Notificações push (Fase 3, 2026-08-11):** alertas de preço disparados e novas oportunidades (STRONG_BUY ou score alto + DY alto) notificam o usuário via FCM, com toggles em Configurações para ligar/desligar cada tipo.
+**Notificações push (Fase 3, 2026-08-11; cadência configurável, 2026-08-19):** alertas de preço disparados continuam imediatos via FCM (toggle em Configurações). O antigo toggle "novas oportunidades" foi substituído por uma cadência (`off`/diária/semanal/mensal, em Configurações) — o job periódico só envia o resumo agregado de oportunidades quando o intervalo escolhido já venceu, alinhado à filosofia de investimento (não day trade) da plataforma.
 
 ## Mercado (`/market`)
 Maior área do app, reduzida a 2 abas (2026-08-19, removidas "Segmentos" e "Investir" de ambas as plataformas — o quick-invest e a visão por setor não tinham uso comprovado nessa tela):
-- **Oportunidades** — varredura do universo de ativos com score/fair price, com sub-modo "Em queda" (scanner de dip).
+- **Oportunidades** — varredura do universo de ativos com score/fair price, com sub-modo "Em queda" (scanner de dip). Score (2026-08-19) combina margem de segurança + qualidade (ROE/margem) + endividamento + crescimento + dividend yield + técnico, ponderados pelo perfil de risco configurado em Preferências; categorias/setores marcados como preferidos recebem um pequeno boost, e tickers em `excluded_tickers` somem da lista.
 - **Ferramentas** — Analisar (ficha de um ativo), Simulador de Renda Fixa, Comparar Ativos, Simulador de Aportes.
 
 A "Estratégia de Investimento" (`/strategy`, motor de decisão/alocação sugerida via IA) permanece como página própria fora de Mercado — não afetada por essa mudança.

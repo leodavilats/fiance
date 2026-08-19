@@ -28,6 +28,14 @@ DEFAULT_USER = "default"
 _initialized = False
 
 
+def _list_to_csv(items: list[str] | None) -> str:
+    return ",".join(items) if items else ""
+
+
+def _csv_to_list(csv: str | None) -> list[str]:
+    return [v for v in (csv or "").split(",") if v]
+
+
 class StoredItem(TypedDict):
     ticker: str
     quantity: float
@@ -64,7 +72,11 @@ class Preferences(TypedDict):
     desired_yield_bdr: float
     desired_yield_etf: float
     notify_price_alerts: bool
-    notify_new_opportunities: bool
+    opportunities_frequency: str
+    risk_profile: str
+    preferred_categories: list[str]
+    preferred_sectors: list[str]
+    excluded_tickers: list[str]
     updated_at: float
 
 
@@ -447,7 +459,11 @@ def get_preferences(user_id: str | None = None) -> Preferences:
                 desired_yield_bdr=row.desired_yield_bdr,
                 desired_yield_etf=row.desired_yield_etf,
                 notify_price_alerts=row.notify_price_alerts,
-                notify_new_opportunities=row.notify_new_opportunities,
+                opportunities_frequency=row.opportunities_frequency,
+                risk_profile=row.risk_profile,
+                preferred_categories=_csv_to_list(row.preferred_categories),
+                preferred_sectors=_csv_to_list(row.preferred_sectors),
+                excluded_tickers=_csv_to_list(row.excluded_tickers),
                 updated_at=row.updated_at,
             )
 
@@ -459,7 +475,11 @@ def get_preferences(user_id: str | None = None) -> Preferences:
         desired_yield_bdr=0.04,
         desired_yield_etf=0.04,
         notify_price_alerts=True,
-        notify_new_opportunities=True,
+        opportunities_frequency="weekly",
+        risk_profile="moderate",
+        preferred_categories=[],
+        preferred_sectors=[],
+        excluded_tickers=[],
         updated_at=0.0,
     )
 
@@ -472,7 +492,11 @@ def set_preferences(
     desired_yield_bdr: float | None = None,
     desired_yield_etf: float | None = None,
     notify_price_alerts: bool | None = None,
-    notify_new_opportunities: bool | None = None,
+    opportunities_frequency: str | None = None,
+    risk_profile: str | None = None,
+    preferred_categories: list[str] | None = None,
+    preferred_sectors: list[str] | None = None,
+    excluded_tickers: list[str] | None = None,
     user_id: str | None = None,
 ) -> None:
     now = time.time()
@@ -492,9 +516,11 @@ def set_preferences(
                 notify_price_alerts=notify_price_alerts
                 if notify_price_alerts is not None
                 else True,
-                notify_new_opportunities=notify_new_opportunities
-                if notify_new_opportunities is not None
-                else True,
+                opportunities_frequency=opportunities_frequency or "weekly",
+                risk_profile=risk_profile or "moderate",
+                preferred_categories=_list_to_csv(preferred_categories),
+                preferred_sectors=_list_to_csv(preferred_sectors),
+                excluded_tickers=_list_to_csv(excluded_tickers),
                 updated_at=now,
             )
             session.add(row)
@@ -511,9 +537,33 @@ def set_preferences(
                 row.desired_yield_etf = desired_yield_etf
             if notify_price_alerts is not None:
                 row.notify_price_alerts = notify_price_alerts
-            if notify_new_opportunities is not None:
-                row.notify_new_opportunities = notify_new_opportunities
+            if opportunities_frequency is not None:
+                row.opportunities_frequency = opportunities_frequency
+            if risk_profile is not None:
+                row.risk_profile = risk_profile
+            if preferred_categories is not None:
+                row.preferred_categories = _list_to_csv(preferred_categories)
+            if preferred_sectors is not None:
+                row.preferred_sectors = _list_to_csv(preferred_sectors)
+            if excluded_tickers is not None:
+                row.excluded_tickers = _list_to_csv(excluded_tickers)
             row.updated_at = now
+
+
+def get_last_digest_sent_at(user_id: str | None = None) -> float | None:
+    with _session(user_id) as (session, uid):
+        row = session.get(PreferencesDb, uid)
+        return row.last_digest_sent_at if row else None
+
+
+def mark_digest_sent(sent_at: float, user_id: str | None = None) -> None:
+    with _session(user_id) as (session, uid):
+        row = session.get(PreferencesDb, uid)
+        if row is None:
+            row = PreferencesDb(user_id=uid, last_digest_sent_at=sent_at, updated_at=sent_at)
+            session.add(row)
+        else:
+            row.last_digest_sent_at = sent_at
 
 
 def register_device_token(

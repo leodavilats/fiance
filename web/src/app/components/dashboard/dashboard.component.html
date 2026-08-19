@@ -220,7 +220,9 @@
             >
               {{ health.concentration_score | number: '1.0-0' }}
             </div>
-            <div class="text-[10px] text-muted">{{ healthBandLabel(health.concentration_score) }}</div>
+            <div class="text-[10px] text-muted">
+              {{ healthBandLabel(health.concentration_score) }}
+            </div>
           </button>
           <button
             type="button"
@@ -236,7 +238,9 @@
             >
               {{ health.sector_concentration_score | number: '1.0-0' }}
             </div>
-            <div class="text-[10px] text-muted">{{ healthBandLabel(health.sector_concentration_score) }}</div>
+            <div class="text-[10px] text-muted">
+              {{ healthBandLabel(health.sector_concentration_score) }}
+            </div>
           </button>
           <button
             type="button"
@@ -252,7 +256,9 @@
             >
               {{ health.diversification_score | number: '1.0-0' }}
             </div>
-            <div class="text-[10px] text-muted">{{ healthBandLabel(health.diversification_score) }}</div>
+            <div class="text-[10px] text-muted">
+              {{ healthBandLabel(health.diversification_score) }}
+            </div>
           </button>
           <button
             type="button"
@@ -275,22 +281,16 @@
           <div class="p-3 rounded-lg bg-panel-2 text-xs text-muted mb-3 flex flex-col gap-2.5">
             <div class="flex items-center gap-3 text-[11px] pb-2 border-b border-border">
               <span class="flex items-center gap-1"
-                ><span
-                  class="w-2 h-2 rounded-full"
-                  style="background: var(--accent)"
-                ></span
-                >≥70 bom</span
+                ><span class="w-2 h-2 rounded-full" style="background: var(--accent)"></span>≥70
+                bom</span
               >
               <span class="flex items-center gap-1"
                 ><span class="w-2 h-2 rounded-full" style="background: var(--warn)"></span>40–69
                 atenção</span
               >
               <span class="flex items-center gap-1"
-                ><span
-                  class="w-2 h-2 rounded-full"
-                  style="background: var(--danger)"
-                ></span
-                >&lt;40 ruim</span
+                ><span class="w-2 h-2 rounded-full" style="background: var(--danger)"></span>&lt;40
+                ruim</span
               >
             </div>
             <div>
@@ -368,9 +368,6 @@
                   <div class="font-bold text-sm text-tx">R$ {{ o.price | number: '1.2-2' }}</div>
                   <div class="text-xs text-muted" *ngIf="o.fair_price">
                     justo: {{ o.fair_price | number: '1.2-2' }}
-                  </div>
-                  <div class="text-xs text-accent font-medium mt-0.5" *ngIf="o.suggested_quantity">
-                    {{ o.suggested_quantity }}x · R$ {{ o.suggested_invest | number: '1.0-0' }}
                   </div>
                 </div>
               </div>

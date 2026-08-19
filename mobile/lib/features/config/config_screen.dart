@@ -139,6 +139,7 @@ class ConfigScreen extends ConsumerWidget {
                         Icons.notifications_active_outlined,
                       ),
                       title: const Text('Notificar alertas de preço'),
+                      subtitle: const Text('Sempre imediato, é um alerta de risco'),
                       value: prefs.notifyPriceAlerts,
                       onChanged: (v) async {
                         await ref
@@ -146,27 +147,99 @@ class ConfigScreen extends ConsumerWidget {
                             .savePreferences(
                               passiveIncomeGoal: prefs.passiveIncomeGoal,
                               notifyPriceAlerts: v,
-                              notifyNewOpportunities:
-                                  prefs.notifyNewOpportunities,
                             );
                         ref.invalidate(preferencesProvider);
                       },
                     ),
-                    SwitchListTile(
+                    ListTile(
                       contentPadding: EdgeInsets.zero,
-                      secondary: const Icon(Icons.auto_awesome_outlined),
-                      title: const Text('Notificar novas oportunidades'),
-                      value: prefs.notifyNewOpportunities,
-                      onChanged: (v) async {
-                        await ref
+                      leading: const Icon(Icons.auto_awesome_outlined),
+                      title: const Text('Resumo de oportunidades'),
+                      subtitle: Text(
+                        'Cadência: ${_frequencyLabel(prefs.opportunitiesFrequency)}',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _pickFrequency(context, ref, prefs),
+                    ),
+                  ],
+                ),
+                _SettingsCard(
+                  icon: Icons.tune_outlined,
+                  title: 'Preferências de recomendação',
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.shield_outlined),
+                      title: const Text('Perfil de risco'),
+                      subtitle: Text(_riskProfileLabel(prefs.riskProfile)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _pickRiskProfile(context, ref, prefs),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.category_outlined),
+                      title: const Text('Categorias preferidas'),
+                      subtitle: Text(
+                        prefs.preferredCategories.isEmpty
+                            ? 'Nenhuma — todas pesam igual'
+                            : prefs.preferredCategories
+                                  .map(categoryLabel)
+                                  .join(', '),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _pickPreferredCategories(context, ref, prefs),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.factory_outlined),
+                      title: const Text('Setores preferidos'),
+                      subtitle: Text(
+                        prefs.preferredSectors.isEmpty
+                            ? 'Nenhum'
+                            : prefs.preferredSectors.join(', '),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _editCsvList(
+                        context,
+                        ref,
+                        prefs,
+                        title: 'Setores preferidos',
+                        hint: 'Ex.: Energia, Bancos, Varejo',
+                        initial: prefs.preferredSectors,
+                        apply: (values) => ref
                             .read(apiRepositoryProvider)
                             .savePreferences(
                               passiveIncomeGoal: prefs.passiveIncomeGoal,
-                              notifyPriceAlerts: prefs.notifyPriceAlerts,
-                              notifyNewOpportunities: v,
-                            );
-                        ref.invalidate(preferencesProvider);
-                      },
+                              preferredSectors: values,
+                            ),
+                      ),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.block_outlined),
+                      title: const Text('Ativos excluídos'),
+                      subtitle: Text(
+                        prefs.excludedTickers.isEmpty
+                            ? 'Nenhum'
+                            : prefs.excludedTickers.join(', '),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _editCsvList(
+                        context,
+                        ref,
+                        prefs,
+                        title: 'Ativos excluídos das oportunidades',
+                        hint: 'Ex.: MGLU3, IRBR3',
+                        initial: prefs.excludedTickers,
+                        apply: (values) => ref
+                            .read(apiRepositoryProvider)
+                            .savePreferences(
+                              passiveIncomeGoal: prefs.passiveIncomeGoal,
+                              excludedTickers: values
+                                  .map((v) => v.toUpperCase())
+                                  .toList(),
+                            ),
+                      ),
                     ),
                   ],
                 ),
@@ -192,6 +265,189 @@ class ConfigScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+const _frequencyLabels = {
+  'off': 'Desativado',
+  'daily': 'Diária',
+  'weekly': 'Semanal',
+  'monthly': 'Mensal',
+};
+
+String _frequencyLabel(String value) => _frequencyLabels[value] ?? value;
+
+const _riskProfileLabels = {
+  'conservative': 'Conservador',
+  'moderate': 'Moderado',
+  'aggressive': 'Arrojado',
+};
+
+String _riskProfileLabel(String value) => _riskProfileLabels[value] ?? value;
+
+const _preferenceCategories = ['acoes_br', 'bdrs', 'fiis', 'etfs', 'renda_fixa'];
+
+Future<void> _pickFrequency(
+  BuildContext context,
+  WidgetRef ref,
+  Preferences prefs,
+) async {
+  final picked = await showDialog<String>(
+    context: context,
+    builder: (context) => SimpleDialog(
+      title: const Text('Cadência do resumo de oportunidades'),
+      children: [
+        RadioGroup<String>(
+          groupValue: prefs.opportunitiesFrequency,
+          onChanged: (v) => Navigator.pop(context, v),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _frequencyLabels.entries
+                .map((e) => RadioListTile<String>(value: e.key, title: Text(e.value)))
+                .toList(),
+          ),
+        ),
+      ],
+    ),
+  );
+  if (picked == null || picked == prefs.opportunitiesFrequency) return;
+
+  await ref
+      .read(apiRepositoryProvider)
+      .savePreferences(
+        passiveIncomeGoal: prefs.passiveIncomeGoal,
+        opportunitiesFrequency: picked,
+      );
+  ref.invalidate(preferencesProvider);
+}
+
+Future<void> _pickRiskProfile(
+  BuildContext context,
+  WidgetRef ref,
+  Preferences prefs,
+) async {
+  final picked = await showDialog<String>(
+    context: context,
+    builder: (context) => SimpleDialog(
+      title: const Text('Perfil de risco'),
+      children: [
+        RadioGroup<String>(
+          groupValue: prefs.riskProfile,
+          onChanged: (v) => Navigator.pop(context, v),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _riskProfileLabels.entries
+                .map((e) => RadioListTile<String>(value: e.key, title: Text(e.value)))
+                .toList(),
+          ),
+        ),
+      ],
+    ),
+  );
+  if (picked == null || picked == prefs.riskProfile) return;
+
+  await ref
+      .read(apiRepositoryProvider)
+      .savePreferences(
+        passiveIncomeGoal: prefs.passiveIncomeGoal,
+        riskProfile: picked,
+      );
+  ref.invalidate(preferencesProvider);
+}
+
+Future<void> _pickPreferredCategories(
+  BuildContext context,
+  WidgetRef ref,
+  Preferences prefs,
+) async {
+  var selected = {...prefs.preferredCategories};
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('Categorias preferidas'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _preferenceCategories
+              .map(
+                (c) => CheckboxListTile(
+                  value: selected.contains(c),
+                  title: Text(categoryLabel(c)),
+                  onChanged: (v) => setState(() {
+                    if (v == true) {
+                      selected.add(c);
+                    } else {
+                      selected.remove(c);
+                    }
+                  }),
+                ),
+              )
+              .toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (confirmed != true) return;
+
+  await ref
+      .read(apiRepositoryProvider)
+      .savePreferences(
+        passiveIncomeGoal: prefs.passiveIncomeGoal,
+        preferredCategories: selected.toList(),
+      );
+  ref.invalidate(preferencesProvider);
+}
+
+Future<void> _editCsvList(
+  BuildContext context,
+  WidgetRef ref,
+  Preferences prefs, {
+  required String title,
+  required String hint,
+  required List<String> initial,
+  required Future<void> Function(List<String> values) apply,
+}) async {
+  final controller = TextEditingController(text: initial.join(', '));
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: TextField(
+        controller: controller,
+        decoration: InputDecoration(hintText: hint),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Salvar'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+
+  final values = controller.text
+      .split(',')
+      .map((v) => v.trim())
+      .where((v) => v.isNotEmpty)
+      .toList();
+  await apply(values);
+  ref.invalidate(preferencesProvider);
 }
 
 class _SettingsCard extends StatelessWidget {

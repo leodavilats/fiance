@@ -282,6 +282,51 @@ def _generate_suggestion_reasons(
     return reasons[:3]
 
 
+def _generate_reduce_suggestions(
+    portfolio_evaluation: dict[str, Any] | None,
+    allocation_gaps: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Aponta posições já na carteira com veredito de venda — carteira só cresce
+    se o que já está nela ainda faz sentido, não só o que falta comprar."""
+    if not portfolio_evaluation or not portfolio_evaluation.get("positions"):
+        return []
+
+    overweight_categories = {gap["category"] for gap in allocation_gaps if gap["gap_value"] < 0}
+
+    severity = {"STRONG_SELL": 0, "SELL": 1}
+
+    candidates = [
+        pos for pos in portfolio_evaluation["positions"] if pos.get("verdict") in severity
+    ]
+    candidates.sort(
+        key=lambda p: (severity[p["verdict"]], -(p.get("pnl_pct") or 0)),
+    )
+
+    suggestions = []
+    for pos in candidates:
+        category = pos.get("category_resolved", "acoes_br")
+        reasons = list(pos.get("reasons") or [])
+        if category in overweight_categories:
+            reasons.append(f"Categoria {category} também está acima da meta de alocação.")
+
+        suggestions.append(
+            {
+                "ticker": pos["ticker"],
+                "name": pos.get("name"),
+                "category": category,
+                "verdict": pos["verdict"],
+                "label": pos.get("label", "Vender"),
+                "quantity": pos.get("quantity"),
+                "current_value": pos.get("current_value"),
+                "pnl_pct": pos.get("pnl_pct"),
+                "overweight_category": category in overweight_categories,
+                "reasons": reasons[:3],
+            }
+        )
+
+    return suggestions
+
+
 def _calculate_projected_allocation(
     current_allocation: list[dict[str, Any]],
     suggestions: list[dict[str, Any]],
@@ -377,6 +422,8 @@ def build_investment_strategy(
         allocation_gaps, opportunities, cash_available, current_portfolio
     )
 
+    reduce_suggestions = _generate_reduce_suggestions(portfolio_evaluation, allocation_gaps)
+
     projected_allocation = _calculate_projected_allocation(
         current_allocation, suggestions, total_capital
     )
@@ -389,6 +436,7 @@ def build_investment_strategy(
         "current_allocation": current_allocation,
         "allocation_gaps": allocation_gaps,
         "suggestions": suggestions,
+        "reduce_suggestions": reduce_suggestions,
         "projected_allocation": projected_allocation,
         "summary": _generate_strategy_summary(profile, suggestions, allocation_gaps),
     }

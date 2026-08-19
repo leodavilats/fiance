@@ -77,7 +77,11 @@ class PortfolioRepository:
         desired_yield_bdr: float | None = None,
         desired_yield_etf: float | None = None,
         notify_price_alerts: bool | None = None,
-        notify_new_opportunities: bool | None = None,
+        opportunities_frequency: str | None = None,
+        risk_profile: str | None = None,
+        preferred_categories: list[str] | None = None,
+        preferred_sectors: list[str] | None = None,
+        excluded_tickers: list[str] | None = None,
     ) -> None:
         portfolio_store.set_preferences(
             cash_available,
@@ -87,8 +91,20 @@ class PortfolioRepository:
             desired_yield_bdr,
             desired_yield_etf,
             notify_price_alerts,
-            notify_new_opportunities,
+            opportunities_frequency,
+            risk_profile,
+            preferred_categories,
+            preferred_sectors,
+            excluded_tickers,
         )
+
+    @staticmethod
+    def get_last_digest_sent_at(user_id: str | None = None) -> float | None:
+        return portfolio_store.get_last_digest_sent_at(user_id)
+
+    @staticmethod
+    def mark_digest_sent(sent_at: float, user_id: str | None = None) -> None:
+        portfolio_store.mark_digest_sent(sent_at, user_id)
 
     @staticmethod
     def register_device_token(token: str, platform: str = "android") -> None:

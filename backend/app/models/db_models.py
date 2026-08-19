@@ -79,7 +79,12 @@ class PreferencesDb(Base):
     desired_yield_bdr: Mapped[float] = mapped_column(Float, default=0.04)
     desired_yield_etf: Mapped[float] = mapped_column(Float, default=0.04)
     notify_price_alerts: Mapped[bool] = mapped_column(default=True)
-    notify_new_opportunities: Mapped[bool] = mapped_column(default=True)
+    opportunities_frequency: Mapped[str] = mapped_column(String, default="weekly")
+    risk_profile: Mapped[str] = mapped_column(String, default="moderate")
+    preferred_categories: Mapped[str] = mapped_column(String, default="")
+    preferred_sectors: Mapped[str] = mapped_column(String, default="")
+    excluded_tickers: Mapped[str] = mapped_column(String, default="")
+    last_digest_sent_at: Mapped[float | None] = mapped_column(Float, nullable=True)
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 
