@@ -74,14 +74,14 @@ class OpportunityService:
         verdict = dec.verdict
         label = dec.label
 
-        if snap.asset_type == "etf" and verdict == "UNKNOWN":
-            if tech.trend == "uptrend" and rsi < 70:
+        if snap.asset_type == "etf" and verdict == "UNKNOWN" and tech.rsi_14 is not None:
+            if tech.trend == "uptrend" and tech.rsi_14 < 70:
                 verdict, label = "BUY", "Comprar (momentum)"
-            elif tech.trend == "downtrend" and rsi > 30:
+            elif tech.trend == "downtrend" and tech.rsi_14 > 30:
                 verdict, label = "SELL", "Evitar (tendência ruim)"
-            elif rsi <= 30:
+            elif tech.rsi_14 <= 30:
                 verdict, label = "BUY", "Comprar (sobrevendido)"
-            elif rsi >= 70:
+            elif tech.rsi_14 >= 70:
                 verdict, label = "HOLD", "Aguardar (sobrecomprado)"
             else:
                 verdict, label = "HOLD", "Manter"
