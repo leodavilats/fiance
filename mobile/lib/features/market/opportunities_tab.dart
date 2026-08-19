@@ -9,6 +9,14 @@ import '../../core/widgets/help_tooltip.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import 'asset_detail_sheet.dart';
 
+const _categoryToAssetType = {
+  '': '',
+  'acoes_br': 'br_stock',
+  'bdrs': 'bdr',
+  'fiis': 'fii',
+  'etfs': 'etf',
+};
+
 class OpportunitiesFilters {
   const OpportunitiesFilters({
     this.search = '',
@@ -16,6 +24,7 @@ class OpportunitiesFilters {
     this.minMos,
     this.category = '',
     this.onlyInteresting = false,
+    this.onlyDip = false,
   });
 
   final String search;
@@ -23,6 +32,7 @@ class OpportunitiesFilters {
   final double? minMos;
   final String category;
   final bool onlyInteresting;
+  final bool onlyDip;
 
   OpportunitiesFilters copyWith({
     String? search,
@@ -30,6 +40,7 @@ class OpportunitiesFilters {
     double? minMos,
     String? category,
     bool? onlyInteresting,
+    bool? onlyDip,
   }) {
     return OpportunitiesFilters(
       search: search ?? this.search,
@@ -37,6 +48,7 @@ class OpportunitiesFilters {
       minMos: minMos ?? this.minMos,
       category: category ?? this.category,
       onlyInteresting: onlyInteresting ?? this.onlyInteresting,
+      onlyDip: onlyDip ?? this.onlyDip,
     );
   }
 }
@@ -51,42 +63,130 @@ final filteredOpportunitiesProvider =
       final f = ref.watch(opportunitiesFiltersProvider);
       return ref
           .watch(apiRepositoryProvider)
-          .getOpportunities(search: f.search);
+          .getOpportunities(
+            search: f.search,
+            assetType: _categoryToAssetType[f.category] ?? '',
+            onlyInteresting: f.onlyInteresting,
+          );
     });
 
 final dipScanResultProvider = FutureProvider.autoDispose<List<DipScanItem>>((
   ref,
 ) {
-  return ref.watch(apiRepositoryProvider).dipScan();
+  final f = ref.watch(opportunitiesFiltersProvider);
+  return ref
+      .watch(apiRepositoryProvider)
+      .dipScan(category: f.category.isEmpty ? null : f.category);
 });
 
-final oppModeProvider = StateProvider.autoDispose<bool>(
-  (ref) => false,
-); // false=Todas, true=Em queda
-
-class OpportunitiesTab extends ConsumerWidget {
+class OpportunitiesTab extends ConsumerStatefulWidget {
   const OpportunitiesTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDipMode = ref.watch(oppModeProvider);
+  ConsumerState<OpportunitiesTab> createState() => _OpportunitiesTabState();
+}
+
+class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filters = ref.watch(opportunitiesFiltersProvider);
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-          child: SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(value: false, label: Text('Todas')),
-              ButtonSegment(value: true, label: Text('Em queda')),
+          padding: const EdgeInsets.fromLTRB(12, 12, 8, 0),
+          child: Column(
+            children: [
+              TickerAutocompleteField(
+                controller: _searchCtrl,
+                labelText: 'Buscar ticker ou nome...',
+                onSelected: (s) {
+                  ref.read(opportunitiesFiltersProvider.notifier).state =
+                      filters.copyWith(search: s.ticker);
+                },
+              ),
+              const SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _CategoryChip(
+                      label: 'Todas',
+                      value: '',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
+                    _CategoryChip(
+                      label: 'Ações BR',
+                      value: 'acoes_br',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
+                    _CategoryChip(
+                      label: 'BDRs',
+                      value: 'bdrs',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
+                    _CategoryChip(
+                      label: 'FIIs',
+                      value: 'fiis',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
+                    _CategoryChip(
+                      label: 'ETFs',
+                      value: 'etfs',
+                      selected: filters.category,
+                      filters: filters,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  FilterChip(
+                    avatar: Icon(
+                      Icons.trending_down,
+                      size: 16,
+                      color: filters.onlyDip
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    label: const Text('Em queda'),
+                    selected: filters.onlyDip,
+                    onSelected: (v) =>
+                        ref.read(opportunitiesFiltersProvider.notifier).state =
+                            filters.copyWith(onlyDip: v),
+                  ),
+                  const SizedBox(width: 8),
+                  if (!filters.onlyDip)
+                    FilterChip(
+                      label: const Text('Destaques'),
+                      selected: filters.onlyInteresting,
+                      onSelected: (v) =>
+                          ref
+                              .read(opportunitiesFiltersProvider.notifier)
+                              .state = filters.copyWith(
+                            onlyInteresting: v,
+                          ),
+                    ),
+                ],
+              ),
             ],
-            selected: {isDipMode},
-            onSelectionChanged: (s) =>
-                ref.read(oppModeProvider.notifier).state = s.first,
           ),
         ),
         Expanded(
-          child: isDipMode
+          child: filters.onlyDip
               ? const _DipScannerView()
               : const _AllOpportunitiesView(),
         ),
@@ -191,25 +291,11 @@ class _DipScannerView extends ConsumerWidget {
   }
 }
 
-class _AllOpportunitiesView extends ConsumerStatefulWidget {
+class _AllOpportunitiesView extends ConsumerWidget {
   const _AllOpportunitiesView();
 
   @override
-  ConsumerState<_AllOpportunitiesView> createState() =>
-      _AllOpportunitiesViewState();
-}
-
-class _AllOpportunitiesViewState extends ConsumerState<_AllOpportunitiesView> {
-  final _searchCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final filters = ref.watch(opportunitiesFiltersProvider);
     final opportunities = ref.watch(filteredOpportunitiesProvider);
 
@@ -225,108 +311,34 @@ class _AllOpportunitiesViewState extends ConsumerState<_AllOpportunitiesView> {
       return true;
     }).toList();
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              TickerAutocompleteField(
-                controller: _searchCtrl,
-                labelText: 'Buscar ticker ou nome...',
-                onSelected: (s) {
-                  ref.read(opportunitiesFiltersProvider.notifier).state =
-                      filters.copyWith(search: s.ticker);
-                },
-              ),
-              const SizedBox(height: 8),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _CategoryChip(
-                      label: 'Todas',
-                      value: '',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    _CategoryChip(
-                      label: 'Ações BR',
-                      value: 'acoes_br',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    _CategoryChip(
-                      label: 'BDRs',
-                      value: 'bdrs',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    _CategoryChip(
-                      label: 'FIIs',
-                      value: 'fiis',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    _CategoryChip(
-                      label: 'ETFs',
-                      value: 'etfs',
-                      selected: filters.category,
-                      filters: filters,
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Destaques'),
-                      selected: filters.onlyInteresting,
-                      onSelected: (v) =>
-                          ref
-                              .read(opportunitiesFiltersProvider.notifier)
-                              .state = filters.copyWith(
-                            onlyInteresting: v,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () async =>
-                ref.invalidate(filteredOpportunitiesProvider),
-            child: opportunities.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Erro: $err')),
-              data: (_) {
-                if (items.isEmpty) {
-                  return ListView(
-                    children: const [
-                      Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Text(
-                          'Nenhuma oportunidade encontrada',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
+    return RefreshIndicator(
+      onRefresh: () async => ref.invalidate(filteredOpportunitiesProvider),
+      child: opportunities.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text('Erro: $err')),
+        data: (_) {
+          if (items.isEmpty) {
+            return ListView(
+              children: const [
+                Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Text(
+                    'Nenhuma oportunidade encontrada',
+                    textAlign: TextAlign.center,
                   ),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (context, index) =>
-                      _OpportunityCard(opportunity: items[index]),
-                );
-              },
-            ),
-          ),
-        ),
-      ],
+                ),
+              ],
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            itemCount: items.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 14),
+            itemBuilder: (context, index) =>
+                _OpportunityCard(opportunity: items[index]),
+          );
+        },
+      ),
     );
   }
 }

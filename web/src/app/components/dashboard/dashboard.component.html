@@ -174,6 +174,166 @@
       </div>
     }
 
+    @if (d.health; as health) {
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <h2 class="flex items-center gap-2 text-base font-bold m-0 text-tx">
+            <lucide-icon name="shield-check" size="16"></lucide-icon> Saúde da Carteira
+          </h2>
+          <div class="flex items-center gap-2">
+            <span
+              class="text-2xl font-bold leading-none"
+              [class.good]="healthBand(health.score) === 'good'"
+              [class.warn]="healthBand(health.score) === 'warn'"
+              [class.error]="healthBand(health.score) === 'error'"
+              >{{ health.score | number: '1.0-0' }}</span
+            >
+            <span class="text-xs text-muted">/ 100</span>
+            <span
+              class="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+              [class.good]="healthBand(health.score) === 'good'"
+              [class.warn]="healthBand(health.score) === 'warn'"
+              [class.error]="healthBand(health.score) === 'error'"
+              [style.background]="
+                healthBand(health.score) === 'good'
+                  ? 'color-mix(in srgb, var(--accent) 15%, transparent)'
+                  : healthBand(health.score) === 'warn'
+                    ? 'color-mix(in srgb, var(--warn) 15%, transparent)'
+                    : 'color-mix(in srgb, var(--danger) 15%, transparent)'
+              "
+              >{{ healthBandLabel(health.score) }}</span
+            >
+          </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          <button
+            type="button"
+            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
+            (click)="toggleHealthInfo()"
+          >
+            <div class="text-xs text-muted mb-0.5">Concentração</div>
+            <div
+              class="text-sm font-semibold"
+              [class.good]="healthBand(health.concentration_score) === 'good'"
+              [class.warn]="healthBand(health.concentration_score) === 'warn'"
+              [class.error]="healthBand(health.concentration_score) === 'error'"
+            >
+              {{ health.concentration_score | number: '1.0-0' }}
+            </div>
+            <div class="text-[10px] text-muted">{{ healthBandLabel(health.concentration_score) }}</div>
+          </button>
+          <button
+            type="button"
+            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
+            (click)="toggleHealthInfo()"
+          >
+            <div class="text-xs text-muted mb-0.5">Setor</div>
+            <div
+              class="text-sm font-semibold"
+              [class.good]="healthBand(health.sector_concentration_score) === 'good'"
+              [class.warn]="healthBand(health.sector_concentration_score) === 'warn'"
+              [class.error]="healthBand(health.sector_concentration_score) === 'error'"
+            >
+              {{ health.sector_concentration_score | number: '1.0-0' }}
+            </div>
+            <div class="text-[10px] text-muted">{{ healthBandLabel(health.sector_concentration_score) }}</div>
+          </button>
+          <button
+            type="button"
+            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
+            (click)="toggleHealthInfo()"
+          >
+            <div class="text-xs text-muted mb-0.5">Diversificação</div>
+            <div
+              class="text-sm font-semibold"
+              [class.good]="healthBand(health.diversification_score) === 'good'"
+              [class.warn]="healthBand(health.diversification_score) === 'warn'"
+              [class.error]="healthBand(health.diversification_score) === 'error'"
+            >
+              {{ health.diversification_score | number: '1.0-0' }}
+            </div>
+            <div class="text-[10px] text-muted">{{ healthBandLabel(health.diversification_score) }}</div>
+          </button>
+          <button
+            type="button"
+            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
+            (click)="toggleHealthInfo()"
+          >
+            <div class="text-xs text-muted mb-0.5">Risco</div>
+            <div
+              class="text-sm font-semibold"
+              [class.good]="healthBand(health.risk_score) === 'good'"
+              [class.warn]="healthBand(health.risk_score) === 'warn'"
+              [class.error]="healthBand(health.risk_score) === 'error'"
+            >
+              {{ health.risk_score | number: '1.0-0' }}
+            </div>
+            <div class="text-[10px] text-muted">{{ healthBandLabel(health.risk_score) }}</div>
+          </button>
+        </div>
+        @if (showHealthInfo()) {
+          <div class="p-3 rounded-lg bg-panel-2 text-xs text-muted mb-3 flex flex-col gap-2.5">
+            <div class="flex items-center gap-3 text-[11px] pb-2 border-b border-border">
+              <span class="flex items-center gap-1"
+                ><span
+                  class="w-2 h-2 rounded-full"
+                  style="background: var(--accent)"
+                ></span
+                >≥70 bom</span
+              >
+              <span class="flex items-center gap-1"
+                ><span class="w-2 h-2 rounded-full" style="background: var(--warn)"></span>40–69
+                atenção</span
+              >
+              <span class="flex items-center gap-1"
+                ><span
+                  class="w-2 h-2 rounded-full"
+                  style="background: var(--danger)"
+                ></span
+                >&lt;40 ruim</span
+              >
+            </div>
+            <div>
+              <strong class="text-tx">Concentração:</strong> o quanto seu maior ativo pesa na
+              carteira. Nota boa = nenhum ativo domina muito o total; nota ruim = um único papel
+              concentra boa parte do patrimônio.
+            </div>
+            <div>
+              <strong class="text-tx">Setor:</strong> o quanto suas ações/BDRs dependem de um único
+              setor da economia. Nota boa = exposição espalhada entre setores; nota ruim = carteira
+              muito presa a um setor só.
+            </div>
+            <div>
+              <strong class="text-tx">Diversificação:</strong> a variedade entre categorias (renda
+              fixa, ações BR, BDRs, FIIs, ETFs) e o número de ativos. Nota boa = carteira cobrindo
+              várias categorias; nota ruim = tudo concentrado em 1-2 categorias.
+            </div>
+            <div>
+              <strong class="text-tx">Risco:</strong> a fatia da carteira em ativos com sinal de
+              venda hoje. Nota boa = pouca ou nenhuma exposição a esses ativos; nota ruim = parte
+              relevante da carteira pede atenção.
+            </div>
+          </div>
+        }
+        @if (health.warnings.length > 0) {
+          <div class="flex flex-col gap-1.5">
+            @for (w of health.warnings; track w) {
+              <div class="flex items-start gap-2 text-xs text-muted">
+                <lucide-icon
+                  name="circle-alert"
+                  size="13"
+                  class="text-warn flex-shrink-0 mt-0.5"
+                ></lucide-icon>
+                {{ w }}
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="text-xs text-muted">Sem pontos de atenção identificados.</div>
+        }
+      </div>
+    }
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
@@ -260,6 +420,125 @@
       </div>
     </div>
 
+    @if (benchmark(); as bm) {
+      @if (bm.points.length >= 2) {
+        <div class="p-5 rounded-xl bg-panel border border-border">
+          <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+            <lucide-icon name="chart-column" size="16"></lucide-icon> Carteira vs Benchmarks
+          </h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">Carteira</div>
+              <div
+                class="text-sm font-semibold"
+                [class.good]="bm.portfolio_return_pct >= 0"
+                [class.warn]="bm.portfolio_return_pct < 0"
+              >
+                {{ bm.portfolio_return_pct >= 0 ? '+' : ''
+                }}{{ bm.portfolio_return_pct | number: '1.1-1' }}%
+              </div>
+            </div>
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">CDI</div>
+              <div class="text-sm font-semibold text-tx">
+                {{ bm.cdi_return_pct >= 0 ? '+' : '' }}{{ bm.cdi_return_pct | number: '1.1-1' }}%
+              </div>
+            </div>
+            @if (bm.ibov_available) {
+              <div class="text-center p-3 rounded-lg bg-panel-2">
+                <div class="text-xs text-muted mb-0.5">Ibovespa</div>
+                <div class="text-sm font-semibold text-tx">
+                  {{ (bm.ibov_return_pct ?? 0) >= 0 ? '+' : ''
+                  }}{{ bm.ibov_return_pct | number: '1.1-1' }}%
+                </div>
+              </div>
+            }
+          </div>
+          <app-benchmark-chart
+            [points]="bm.points"
+            [ibovAvailable]="bm.ibov_available"
+          ></app-benchmark-chart>
+        </div>
+      }
+    }
+
+    @if (d.snapshots.length >= 1) {
+      <div class="p-5 rounded-xl bg-panel border border-border">
+        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+          <lucide-icon name="chart-column" size="16"></lucide-icon> Evolução do Patrimônio
+        </h2>
+
+        @if (d.snapshots.length >= 2) {
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">Início</div>
+              <div class="text-sm font-semibold text-tx">
+                R$ {{ d.snapshots[0].total_current | number: '1.0-0' }}
+              </div>
+              <div class="text-xs text-muted">{{ formatDate(d.snapshots[0].captured_at) }}</div>
+            </div>
+            <div class="text-center p-3 rounded-lg bg-panel-2">
+              <div class="text-xs text-muted mb-0.5">Variação total</div>
+              <div
+                class="text-sm font-semibold"
+                [class.good]="
+                  d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
+                "
+                [class.warn]="
+                  d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
+                "
+              >
+                {{
+                  d.snapshots[d.snapshots.length - 1].total_current -
+                    d.snapshots[0].total_current >=
+                  0
+                    ? '+'
+                    : ''
+                }}R$
+                {{
+                  d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current
+                    | number: '1.0-0'
+                }}
+              </div>
+              <div
+                class="text-xs"
+                [class.good]="
+                  d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
+                "
+                [class.warn]="
+                  d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
+                "
+              >
+                {{
+                  (d.snapshots[d.snapshots.length - 1].total_current /
+                    d.snapshots[0].total_current -
+                    1) *
+                    100 | number: '1.2-2'
+                }}%
+              </div>
+            </div>
+          </div>
+        }
+
+        <app-patrimony-chart [snapshots]="d.snapshots"></app-patrimony-chart>
+
+        @if (d.snapshots.length >= 2) {
+          <div class="flex items-center justify-between mt-2 text-xs text-muted">
+            <span>{{ d.snapshots.length }} registros</span>
+            <span
+              >{{
+                Math.ceil(
+                  (d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) /
+                    86400
+                )
+              }}
+              dias</span
+            >
+          </div>
+        }
+      </div>
+    }
+
     @if (d.positions.length > 0) {
       <div class="p-5 rounded-xl bg-panel border border-border">
         <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
@@ -311,232 +590,6 @@
             </tbody>
           </table>
         </div>
-      </div>
-    }
-
-    @if (d.health; as health) {
-      <div class="p-5 rounded-xl bg-panel border border-border">
-        <div class="flex items-center justify-between gap-3 mb-4">
-          <h2 class="flex items-center gap-2 text-base font-bold m-0 text-tx">
-            <lucide-icon name="shield-check" size="16"></lucide-icon> Saúde da Carteira
-          </h2>
-          <div class="flex items-center gap-2">
-            <span
-              class="text-2xl font-bold leading-none"
-              [class.good]="health.score >= 70"
-              [class.warn]="health.score >= 40 && health.score < 70"
-              [class.error]="health.score < 40"
-              >{{ health.score | number: '1.0-0' }}</span
-            >
-            <span class="text-xs text-muted">/ 100</span>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-          <button
-            type="button"
-            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
-            (click)="toggleHealthInfo()"
-          >
-            <div class="text-xs text-muted mb-0.5">Concentração</div>
-            <div class="text-sm font-semibold text-tx">
-              {{ health.concentration_score | number: '1.0-0' }}
-            </div>
-          </button>
-          <button
-            type="button"
-            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
-            (click)="toggleHealthInfo()"
-          >
-            <div class="text-xs text-muted mb-0.5">Setor</div>
-            <div class="text-sm font-semibold text-tx">
-              {{ health.sector_concentration_score | number: '1.0-0' }}
-            </div>
-          </button>
-          <button
-            type="button"
-            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
-            (click)="toggleHealthInfo()"
-          >
-            <div class="text-xs text-muted mb-0.5">Diversificação</div>
-            <div class="text-sm font-semibold text-tx">
-              {{ health.diversification_score | number: '1.0-0' }}
-            </div>
-          </button>
-          <button
-            type="button"
-            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
-            (click)="toggleHealthInfo()"
-          >
-            <div class="text-xs text-muted mb-0.5">Risco</div>
-            <div class="text-sm font-semibold text-tx">
-              {{ health.risk_score | number: '1.0-0' }}
-            </div>
-          </button>
-        </div>
-        @if (showHealthInfo()) {
-          <div class="p-3 rounded-lg bg-panel-2 text-xs text-muted mb-3 flex flex-col gap-2">
-            <div>
-              <strong class="text-tx">Concentração:</strong> quanto do valor da carteira está
-              concentrado nos poucos ativos de maior peso — quanto mais espalhado, maior a nota.
-            </div>
-            <div>
-              <strong class="text-tx">Setor:</strong> quanto as ações/BDRs estão concentradas em
-              poucos setores da economia.
-            </div>
-            <div>
-              <strong class="text-tx">Diversificação:</strong> variedade entre categorias (renda
-              fixa, ações BR, BDRs, FIIs, ETFs) e número total de ativos.
-            </div>
-            <div>
-              <strong class="text-tx">Risco:</strong> percentual da carteira em ativos com sinal de
-              venda (Vender/Venda Forte) na avaliação atual.
-            </div>
-          </div>
-        }
-        @if (health.warnings.length > 0) {
-          <div class="flex flex-col gap-1.5">
-            @for (w of health.warnings; track w) {
-              <div class="flex items-start gap-2 text-xs text-muted">
-                <lucide-icon
-                  name="circle-alert"
-                  size="13"
-                  class="text-warn flex-shrink-0 mt-0.5"
-                ></lucide-icon>
-                {{ w }}
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="text-xs text-muted">Sem pontos de atenção identificados.</div>
-        }
-      </div>
-    }
-
-    @if (benchmark(); as bm) {
-      @if (bm.points.length >= 2) {
-        <div class="p-5 rounded-xl bg-panel border border-border">
-          <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
-            <lucide-icon name="chart-column" size="16"></lucide-icon> Carteira vs Benchmarks
-          </h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">Carteira</div>
-              <div
-                class="text-sm font-semibold"
-                [class.good]="bm.portfolio_return_pct >= 0"
-                [class.warn]="bm.portfolio_return_pct < 0"
-              >
-                {{ bm.portfolio_return_pct >= 0 ? '+' : ''
-                }}{{ bm.portfolio_return_pct | number: '1.1-1' }}%
-              </div>
-            </div>
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">CDI</div>
-              <div class="text-sm font-semibold text-tx">
-                {{ bm.cdi_return_pct >= 0 ? '+' : '' }}{{ bm.cdi_return_pct | number: '1.1-1' }}%
-              </div>
-            </div>
-            @if (bm.ibov_available) {
-              <div class="text-center p-3 rounded-lg bg-panel-2">
-                <div class="text-xs text-muted mb-0.5">Ibovespa</div>
-                <div class="text-sm font-semibold text-tx">
-                  {{ (bm.ibov_return_pct ?? 0) >= 0 ? '+' : ''
-                  }}{{ bm.ibov_return_pct | number: '1.1-1' }}%
-                </div>
-              </div>
-            }
-          </div>
-          <app-benchmark-chart
-            [points]="bm.points"
-            [ibovAvailable]="bm.ibov_available"
-          ></app-benchmark-chart>
-        </div>
-      }
-    }
-
-    @if (d.snapshots.length >= 1) {
-      <div class="p-5 rounded-xl bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="chart-column" size="16"></lucide-icon> Evolução do Patrimônio
-        </h2>
-
-        @if (d.snapshots.length >= 2) {
-          <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">Início</div>
-              <div class="text-sm font-semibold text-tx">
-                R$ {{ d.snapshots[0].total_current | number: '1.0-0' }}
-              </div>
-              <div class="text-xs text-muted">{{ formatDate(d.snapshots[0].captured_at) }}</div>
-            </div>
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">Variação total</div>
-              <div
-                class="text-sm font-semibold"
-                [class.good]="
-                  d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
-                "
-                [class.warn]="
-                  d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
-                "
-              >
-                {{
-                  d.snapshots[d.snapshots.length - 1].total_current -
-                    d.snapshots[0].total_current >=
-                  0
-                    ? '+'
-                    : ''
-                }}R$
-                {{
-                  d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current
-                    | number: '1.0-0'
-                }}
-              </div>
-              <div
-                class="text-xs"
-                [class.good]="
-                  d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
-                "
-                [class.warn]="
-                  d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
-                "
-              >
-                {{
-                  (d.snapshots[d.snapshots.length - 1].total_current /
-                    d.snapshots[0].total_current -
-                    1) *
-                    100 | number: '1.2-2'
-                }}%
-              </div>
-            </div>
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">Atual</div>
-              <div class="text-sm font-semibold text-tx">
-                R$ {{ d.snapshots[d.snapshots.length - 1].total_current | number: '1.0-0' }}
-              </div>
-              <div class="text-xs text-muted">
-                {{ formatDate(d.snapshots[d.snapshots.length - 1].captured_at) }}
-              </div>
-            </div>
-          </div>
-        }
-
-        <app-patrimony-chart [snapshots]="d.snapshots"></app-patrimony-chart>
-
-        @if (d.snapshots.length >= 2) {
-          <div class="flex items-center justify-between mt-2 text-xs text-muted">
-            <span>{{ d.snapshots.length }} registros</span>
-            <span
-              >{{
-                Math.ceil(
-                  (d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) /
-                    86400
-                )
-              }}
-              dias</span
-            >
-          </div>
-        }
       </div>
     }
 

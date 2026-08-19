@@ -75,7 +75,11 @@ class ApiRepository {
     return ClosedTradesResponse.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<List<Opportunity>> getOpportunities({String search = ''}) async {
+  Future<List<Opportunity>> getOpportunities({
+    String search = '',
+    String assetType = '',
+    bool onlyInteresting = false,
+  }) async {
     final res = await _dio.get(
       '/opportunities',
       queryParameters: {
@@ -83,6 +87,8 @@ class ApiRepository {
         'sort_by': 'score',
         'sort_order': 'desc',
         if (search.isNotEmpty) 'search': search,
+        if (assetType.isNotEmpty) 'asset_type': assetType,
+        if (onlyInteresting) 'only_interesting': true,
       },
     );
     return (res.data['items'] as List)

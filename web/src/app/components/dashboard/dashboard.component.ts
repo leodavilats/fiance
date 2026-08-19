@@ -34,6 +34,17 @@ export class DashboardComponent implements OnInit {
     this.showHealthInfo.update(v => !v);
   }
 
+  healthBand(score: number): 'good' | 'warn' | 'error' {
+    if (score >= 70) return 'good';
+    if (score >= 40) return 'warn';
+    return 'error';
+  }
+
+  healthBandLabel(score: number): string {
+    const band = this.healthBand(score);
+    return band === 'good' ? 'Bom' : band === 'warn' ? 'Atenção' : 'Ruim';
+  }
+
   ngOnInit(): void {
     this.loadDashboard();
   }

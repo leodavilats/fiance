@@ -25,29 +25,33 @@ class _FerramentasTabState extends State<FerramentasTab> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          child: GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 2.4,
             children: [
-              _ToolModeChip(
+              _ToolModeCard(
                 label: 'Analisar',
                 icon: Icons.search,
                 selected: _mode == _ToolMode.analisar,
                 onSelected: () => setState(() => _mode = _ToolMode.analisar),
               ),
-              _ToolModeChip(
+              _ToolModeCard(
                 label: 'Simulador RF',
                 icon: Icons.account_balance_outlined,
                 selected: _mode == _ToolMode.rendaFixa,
                 onSelected: () => setState(() => _mode = _ToolMode.rendaFixa),
               ),
-              _ToolModeChip(
+              _ToolModeCard(
                 label: 'Comparar',
                 icon: Icons.compare_arrows,
                 selected: _mode == _ToolMode.comparar,
                 onSelected: () => setState(() => _mode = _ToolMode.comparar),
               ),
-              _ToolModeChip(
+              _ToolModeCard(
                 label: 'Aportes',
                 icon: Icons.savings_outlined,
                 selected: _mode == _ToolMode.aportes,
@@ -69,8 +73,8 @@ class _FerramentasTabState extends State<FerramentasTab> {
   }
 }
 
-class _ToolModeChip extends StatelessWidget {
-  const _ToolModeChip({
+class _ToolModeCard extends StatelessWidget {
+  const _ToolModeCard({
     required this.label,
     required this.icon,
     required this.selected,
@@ -84,11 +88,43 @@ class _ToolModeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      avatar: Icon(icon, size: 16),
-      selected: selected,
-      onSelected: (_) => onSelected(),
+    final scheme = Theme.of(context).colorScheme;
+    final borderColor = selected ? scheme.primary : scheme.outlineVariant;
+    final bgColor = selected ? scheme.primary.withValues(alpha: 0.14) : scheme.surface;
+    final fgColor = selected ? scheme.primary : scheme.onSurface;
+
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(appRadius),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(appRadius),
+        onTap: onSelected,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(appRadius),
+            border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: fgColor),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: fgColor,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -473,6 +509,7 @@ class _OptionForm extends StatelessWidget {
                   ),
               ],
             ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(

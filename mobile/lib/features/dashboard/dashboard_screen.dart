@@ -26,28 +26,6 @@ class DashboardScreen extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
               _SummaryCard(summary: data.summary),
-              if (data.snapshots.length > 1) ...[
-                const SizedBox(height: 20),
-                const _SectionTitle(
-                  icon: Icons.show_chart,
-                  title: 'Evolução do patrimônio',
-                ),
-                _EvolutionChart(snapshots: data.snapshots),
-              ],
-              if (data.health != null) ...[
-                const SizedBox(height: 20),
-                const _SectionTitle(
-                  icon: Icons.health_and_safety_outlined,
-                  title: 'Saúde da carteira',
-                ),
-                _HealthCard(health: data.health!),
-              ],
-              const SizedBox(height: 20),
-              const _SectionTitle(
-                icon: Icons.bar_chart_outlined,
-                title: 'Carteira vs benchmarks',
-              ),
-              const _BenchmarkSection(),
               if (data.alerts.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 const _SectionTitle(
@@ -56,13 +34,13 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 ...data.alerts.map((a) => _AlertTile(alert: a)),
               ],
-              if (data.positions.isNotEmpty) ...[
+              if (data.health != null) ...[
                 const SizedBox(height: 20),
                 const _SectionTitle(
-                  icon: Icons.account_balance_wallet_outlined,
-                  title: 'Carteira',
+                  icon: Icons.health_and_safety_outlined,
+                  title: 'Saúde da carteira',
                 ),
-                ...data.positions.map((p) => _PositionRow(position: p)),
+                _HealthCard(health: data.health!),
               ],
               if (data.topBuys.isNotEmpty) ...[
                 const SizedBox(height: 20),
@@ -79,6 +57,28 @@ class DashboardScreen extends ConsumerWidget {
                   title: 'Atenção (sinal de venda)',
                 ),
                 ...data.topSells.map((p) => _PositionRow(position: p)),
+              ],
+              const SizedBox(height: 20),
+              const _SectionTitle(
+                icon: Icons.bar_chart_outlined,
+                title: 'Carteira vs benchmarks',
+              ),
+              const _BenchmarkSection(),
+              if (data.snapshots.length > 1) ...[
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.show_chart,
+                  title: 'Evolução do patrimônio',
+                ),
+                _EvolutionChart(snapshots: data.snapshots),
+              ],
+              if (data.positions.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const _SectionTitle(
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: 'Carteira',
+                ),
+                ...data.positions.map((p) => _PositionRow(position: p)),
               ],
             ],
           ),
@@ -567,14 +567,20 @@ class _EvolutionChartState extends State<_EvolutionChart> {
 
 const _healthMetricExplanations = {
   'Concentração':
-      'Quanto do valor da carteira está concentrado nos poucos ativos de maior peso — quanto mais espalhado, maior a nota.',
+      'O quanto seu maior ativo pesa na carteira. Nota boa = nenhum ativo domina muito o total; nota ruim = um único papel concentra boa parte do patrimônio.',
   'Setor':
-      'Quanto as ações/BDRs estão concentradas em poucos setores da economia.',
+      'O quanto suas ações/BDRs dependem de um único setor da economia. Nota boa = exposição espalhada entre setores; nota ruim = carteira muito presa a um setor só.',
   'Diversificação':
-      'Variedade entre categorias (renda fixa, ações BR, BDRs, FIIs, ETFs) e número total de ativos.',
+      'A variedade entre categorias (renda fixa, ações BR, BDRs, FIIs, ETFs) e o número de ativos. Nota boa = carteira cobrindo várias categorias; nota ruim = tudo concentrado em 1-2 categorias.',
   'Risco':
-      'Percentual da carteira em ativos com sinal de venda (Vender/Venda Forte) na avaliação atual.',
+      'A fatia da carteira em ativos com sinal de venda hoje. Nota boa = pouca ou nenhuma exposição a esses ativos; nota ruim = parte relevante da carteira pede atenção.',
 };
+
+String _healthBandLabel(double score) {
+  if (score >= 70) return 'Bom';
+  if (score >= 40) return 'Atenção';
+  return 'Ruim';
+}
 
 class _HealthCard extends StatefulWidget {
   const _HealthCard({required this.health});
@@ -614,13 +620,36 @@ class _HealthCardState extends State<_HealthCard> {
                   'Score geral',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                Text(
-                  '${health.score.round()}/100',
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      '${health.score.round()}/100',
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        _healthBandLabel(health.score),
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -633,13 +662,22 @@ class _HealthCardState extends State<_HealthCard> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _HealthMetric(label: 'Concentração', value: health.concentrationScore),
+                      child: _HealthMetric(
+                        label: 'Concentração',
+                        value: health.concentrationScore,
+                      ),
                     ),
                     Expanded(
-                      child: _HealthMetric(label: 'Setor', value: health.sectorConcentrationScore),
+                      child: _HealthMetric(
+                        label: 'Setor',
+                        value: health.sectorConcentrationScore,
+                      ),
                     ),
                     Expanded(
-                      child: _HealthMetric(label: 'Diversif.', value: health.diversificationScore),
+                      child: _HealthMetric(
+                        label: 'Diversif.',
+                        value: health.diversificationScore,
+                      ),
                     ),
                     Expanded(
                       child: _HealthMetric(label: 'Risco', value: health.riskScore),
@@ -659,6 +697,18 @@ class _HealthCardState extends State<_HealthCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Wrap(
+                        spacing: 12,
+                        runSpacing: 4,
+                        children: [
+                          _LegendDot(color: gainColor(brightness), label: '≥70 bom'),
+                          _LegendDot(color: warnColor(brightness), label: '40–69 atenção'),
+                          _LegendDot(color: lossColor(brightness), label: '<40 ruim'),
+                        ],
+                      ),
+                    ),
                     for (final entry in _healthMetricExplanations.entries)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
@@ -706,24 +756,59 @@ class _HealthCardState extends State<_HealthCard> {
   }
 }
 
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+      ],
+    );
+  }
+}
+
 class _HealthMetric extends StatelessWidget {
   const _HealthMetric({required this.label, required this.value});
 
   final String label;
   final double value;
 
+  Color _color(Brightness brightness) {
+    if (value >= 70) return gainColor(brightness);
+    if (value >= 40) return warnColor(brightness);
+    return lossColor(brightness);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final color = _color(Theme.of(context).brightness);
     return Column(
       children: [
         Text(
           value.round().toString(),
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15),
         ),
         Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
+        ),
+        Text(
+          _healthBandLabel(value),
+          textAlign: TextAlign.center,
+          style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 9),
         ),
       ],
     );
