@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.models import CategoryAllocation, PortfolioHealth, PortfolioPosition
+from app.models.enums import AssetType
 
 _WEIGHTS = {
     "concentration": 0.30,
@@ -18,7 +19,9 @@ def compute_portfolio_health(
     positions: list[PortfolioPosition],
     allocations: list[CategoryAllocation],
 ) -> PortfolioHealth | None:
-    real_positions = [p for p in positions if not p.ticker.startswith("RF_")]
+    # Saúde de carteira mede concentração e risco de mercado; renda fixa não
+    # entra na conta (não tem veredito nem setor de bolsa).
+    real_positions = [p for p in positions if p.asset_type != AssetType.renda_fixa]
     if not real_positions:
         return None
 

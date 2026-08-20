@@ -5,16 +5,15 @@
   >
     <lucide-icon name="triangle-alert" size="20" class="text-red-400 mt-0.5"></lucide-icon>
     <div class="flex-1">
-      <div class="font-semibold text-tx">Não conseguimos carregar sua carteira</div>
+      <div class="font-semibold text-tx">Não conseguimos carregar toda a sua carteira</div>
       <div class="text-sm text-muted mt-1">
-        A edição está bloqueada para não sobrescrever seus ativos com uma lista vazia. Tente
-        carregar de novo.
+        Os números abaixo podem estar incompletos. Tente carregar de novo.
       </div>
     </div>
     <button
       type="button"
-      class="px-3 py-1.5 rounded-md border border-border text-sm hover:bg-panel"
-      (click)="reloadPortfolio()"
+      class="px-3 py-1.5 rounded-md border border-border text-sm hover:bg-panel-2"
+      (click)="reload()"
     >
       Tentar de novo
     </button>
@@ -24,25 +23,45 @@
 <div
   class="p-6 rounded-lg bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 mb-5"
 >
-  <h2 class="flex items-center gap-2 text-2xl font-bold m-0 mb-4 text-tx">
-    <lucide-icon name="wallet" size="24"></lucide-icon> Resumo Geral
-  </h2>
+  <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+    <h2 class="flex items-center gap-2 text-2xl font-bold m-0 text-tx">
+      <lucide-icon name="wallet" size="24"></lucide-icon> Resumo Geral
+    </h2>
+    <div class="flex items-center gap-2">
+      @if (evaluating()) {
+        <span class="flex items-center gap-1.5 text-xs text-muted">
+          <lucide-icon name="loader-circle" size="12" class="animate-spin"></lucide-icon>
+          Atualizando cotações…
+        </span>
+      } @else if (lastEvaluatedLabel()) {
+        <span class="text-xs text-muted">Atualizado às {{ lastEvaluatedLabel() }}</span>
+      }
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-tx hover:bg-panel-2 transition-colors cursor-pointer bg-transparent flex items-center gap-1.5"
+        (click)="reload()"
+      >
+        <lucide-icon name="refresh-cw" size="14"></lucide-icon> Atualizar
+      </button>
+      <a
+        routerLink="/assets/cadastro"
+        class="px-3 py-1.5 rounded-lg text-sm font-medium bg-accent text-white hover:opacity-90 transition-opacity flex items-center gap-1.5 no-underline"
+      >
+        <lucide-icon name="pencil" size="14"></lucide-icon> Cadastrar / editar
+      </a>
+    </div>
+  </div>
+
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <div class="p-4 rounded-lg bg-panel border border-border">
       <div class="text-xs text-muted mb-1 uppercase tracking-wide">Total Investido</div>
       <div class="text-2xl font-bold text-tx">R$ {{ totalInvestido() | number: '1.2-2' }}</div>
-      <div class="text-xs text-muted mt-1">Todos os ativos</div>
+      <div class="text-xs text-muted mt-1">Ativos negociados + renda fixa</div>
     </div>
     <div class="p-4 rounded-lg bg-panel border border-border">
       <div class="text-xs text-muted mb-1 uppercase tracking-wide">Valor Atual</div>
       <div class="text-2xl font-bold text-tx">R$ {{ valorAtual() | number: '1.2-2' }}</div>
-      <div class="text-xs text-muted mt-1">
-        @if (result()) {
-          Cotação atualizada
-        } @else {
-          Clique em "Avaliar" para atualizar
-        }
-      </div>
+      <div class="text-xs text-muted mt-1">Cotação de bolsa + renda fixa marcada a mercado</div>
     </div>
     <div
       class="p-4 rounded-lg bg-panel border border-border"
@@ -61,703 +80,326 @@
       <div class="text-xs text-muted mb-1 uppercase tracking-wide">Ativos</div>
       <div class="text-2xl font-bold text-tx">{{ totalAtivos() }}</div>
       <div class="text-xs text-muted mt-1">
-        {{ negociadosCount() }} negociados + {{ rendaFixaItems.length }} RF
+        {{ negociadosCount() }} negociados + {{ rendaFixaCount() }} de renda fixa
       </div>
     </div>
   </div>
 </div>
 
-<div class="p-5 rounded-lg bg-panel border border-border mb-5">
-  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
-    <lucide-icon name="chart-pie" size="20"></lucide-icon> Composição da Carteira
-  </h2>
-  <p class="text-sm text-muted mb-4">
-    Quanto do seu dinheiro está em cada tipo de investimento ou, no caso de ações/BDRs, em cada
-    setor.
-  </p>
-
-  @if (alocacaoPorTipo().length === 0) {
-    <p class="text-sm text-muted italic">
-      Adicione ativos e clique em "Avaliar" para ver a composição da carteira.
+@if (isEmpty()) {
+  <div class="p-8 rounded-lg bg-panel border border-border text-center">
+    <lucide-icon name="inbox" size="40" class="text-muted mb-3"></lucide-icon>
+    <h3 class="text-lg font-bold text-tx m-0 mb-2">Sua carteira está vazia</h3>
+    <p class="text-sm text-muted mb-5 max-w-md mx-auto">
+      Cadastre seus ativos negociados e suas aplicações de renda fixa para acompanhar patrimônio,
+      composição e renda passiva.
     </p>
-  } @else {
-    <div class="flex gap-2 mb-5">
-      <button
-        type="button"
-        class="px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer border border-border transition-colors"
-        [class.bg-accent]="composicaoMode() === 'ativo'"
-        [class.text-white]="composicaoMode() === 'ativo'"
-        [class.bg-panel-2]="composicaoMode() !== 'ativo'"
-        [class.text-tx]="composicaoMode() !== 'ativo'"
-        (click)="setComposicaoMode('ativo')"
-      >
-        Por ativo
-      </button>
-      <button
-        type="button"
-        class="px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer border border-border transition-colors"
-        [class.bg-accent]="composicaoMode() === 'setor'"
-        [class.text-white]="composicaoMode() === 'setor'"
-        [class.bg-panel-2]="composicaoMode() !== 'setor'"
-        [class.text-tx]="composicaoMode() !== 'setor'"
-        (click)="setComposicaoMode('setor')"
-      >
-        Por setor (ações)
-      </button>
-    </div>
-
-    @if (composicaoMode() === 'setor' && alocacaoPorSetor().length === 0) {
-      <p class="text-sm text-muted italic">
-        Nenhuma ação ou BDR avaliada ainda. Avalie os ativos negociados para ver os setores.
-      </p>
-    } @else {
-      <div class="flex flex-col sm:flex-row items-center gap-8">
-        <div class="w-40 h-40 rounded-full shrink-0" [style.background]="conicGradient()"></div>
-        <div class="flex flex-col gap-2 w-full">
-          @for (s of composicaoSlices(); track s.label) {
-            <div class="flex items-center justify-between gap-3 text-sm">
-              <span class="flex items-center gap-2 text-tx">
-                <span
-                  class="w-2.5 h-2.5 rounded-full inline-block shrink-0"
-                  [style.background]="s.color"
-                ></span>
-                <lucide-icon [name]="s.icon" size="14" class="text-muted shrink-0"></lucide-icon>
-                {{ s.label }}
-              </span>
-              <span class="flex items-center gap-3 shrink-0">
-                <span class="text-muted text-xs">R$ {{ s.valor | number: '1.2-2' }}</span>
-                <span class="font-semibold text-tx w-14 text-right"
-                  >{{ s.pct | number: '1.1-1' }}%</span
-                >
-              </span>
-            </div>
-          }
-        </div>
-      </div>
-    }
-  }
-</div>
-
-<div class="p-5 rounded-lg bg-panel border border-border mb-5">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
-      <lucide-icon name="trending-up" size="20"></lucide-icon> Ativos Negociados
-      <span class="text-base font-normal text-muted ml-2">({{ negociadosCount() }})</span>
-    </h2>
-    <div class="flex items-center gap-3">
-      @if (saveState() === 'saving') {
-        <span class="flex items-center gap-1.5 text-xs text-muted">
-          <lucide-icon name="loader-circle" size="12" class="animate-spin"></lucide-icon>
-          Salvando...
-        </span>
-      } @else if (saveState() === 'saved') {
-        <span class="flex items-center gap-1.5 text-xs text-accent">
-          <lucide-icon name="check" size="12"></lucide-icon>
-          Salvo
-        </span>
-      } @else if (saveState() === 'error') {
-        <span class="flex items-center gap-1.5 text-xs text-red-400">
-          <lucide-icon name="triangle-alert" size="12"></lucide-icon>
-          Erro ao salvar
-        </span>
-      }
-      <button
-        type="button"
-        class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1"
-        (click)="toggleSection('negociados')"
-      >
-        <lucide-icon
-          [name]="expandedSections.negociados ? 'chevron-up' : 'chevron-down'"
-          size="16"
-        ></lucide-icon>
-        {{ expandedSections.negociados ? 'Recolher' : 'Expandir' }}
-      </button>
-    </div>
-  </div>
-
-  @if (expandedSections.negociados) {
-    <p class="text-sm text-muted mb-4">
-      Ações, FIIs, BDRs, ETFs e outros ativos com ticker/cotação em bolsa.
-    </p>
-
-    <form [formGroup]="form">
-      <div class="flex flex-col gap-3" formArrayName="items">
-        @for (item of portfolioItems.controls; track item; let i = $index) {
-          <div
-            class="p-3 rounded-lg bg-panel-2 border border-border grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_1.5fr_2.25rem] gap-3 sm:gap-2 sm:items-end"
-            [formGroupName]="i"
-          >
-            <div class="relative flex flex-col gap-1">
-              <span class="text-xs font-medium text-muted"
-                >Ticker <span class="opacity-70">(ex.: PETR4)</span></span
-              >
-              <input
-                type="text"
-                formControlName="ticker"
-                placeholder="ex.: PETR4"
-                autocomplete="off"
-                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent uppercase"
-                (input)="onTickerInput(i, $any($event.target).value)"
-                (focus)="onTickerInput(i, $any($event.target).value)"
-                (focusout)="closeTickerSuggestions()"
-              />
-              @if (tickerSuggestionsRow() === i && tickerSuggestions().length > 0) {
-                <ul
-                  class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-border bg-panel shadow-xl max-h-56 overflow-y-auto text-sm"
-                >
-                  @for (s of tickerSuggestions(); track s.ticker) {
-                    <li>
-                      <button
-                        type="button"
-                        class="w-full text-left px-3 py-2 hover:bg-panel-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
-                        (mousedown)="$event.preventDefault(); selectTickerSuggestion(i, s)"
-                      >
-                        <span class="font-semibold text-tx">{{ s.ticker }}</span>
-                        <span class="text-muted text-xs truncate">{{ s.name }}</span>
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-muted">Quantidade</span>
-              <input
-                type="number"
-                formControlName="quantity"
-                placeholder="qtd"
-                step="0.0001"
-                min="0"
-                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-muted">Preço médio</span>
-              <input
-                type="number"
-                formControlName="avg_price"
-                placeholder="preço"
-                step="0.01"
-                min="0"
-                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-muted">Categoria</span>
-              <select
-                formControlName="category"
-                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
-              >
-                <option value="auto">Auto (detectar)</option>
-                <option value="acoes_br">Ações BR</option>
-                <option value="bdrs">BDRs</option>
-                <option value="fiis">FIIs</option>
-                <option value="etfs">ETFs</option>
-              </select>
-            </div>
-
-            <div class="flex sm:justify-center">
-              <button
-                type="button"
-                class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border text-danger hover:bg-danger hover:text-white transition-colors"
-                (click)="removeItem(item)"
-                title="Remover"
-              >
-                <lucide-icon name="x" size="16"></lucide-icon>
-              </button>
-            </div>
-          </div>
-        }
-      </div>
-      @if (portfolioItems.length === 0) {
-        <div
-          class="text-center py-8 text-muted text-sm bg-bg-2 rounded-lg border border-dashed border-border"
-        >
-          <lucide-icon name="inbox" size="32" class="mx-auto mb-2 opacity-50"></lucide-icon>
-          <p>Nenhum ativo negociado cadastrado.</p>
-          <p class="text-xs mt-1">Clique em "Adicionar ativo" para começar.</p>
-        </div>
-      }
-      <div class="flex items-center gap-3 mt-4 flex-wrap">
-        <button
-          type="button"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-          (click)="addItem()"
-        >
-          <lucide-icon name="plus" size="16"></lucide-icon> Adicionar ativo
-        </button>
-        <div class="flex items-center gap-2 text-sm ml-auto">
-          @if (evaluating()) {
-            <lucide-icon
-              name="loader-circle"
-              class="animate-spin text-muted"
-              size="16"
-            ></lucide-icon>
-            <span class="text-muted">Avaliando…</span>
-          } @else if (lastEvaluatedAt()) {
-            <lucide-icon name="circle-check" size="16" class="text-accent"></lucide-icon>
-            <span class="text-muted">Avaliação automática · {{ lastEvaluatedLabel() }}</span>
-          } @else {
-            <span class="text-muted">A avaliação é automática ao editar.</span>
-          }
-        </div>
-      </div>
-    </form>
-  }
-</div>
-
-<div class="p-5 rounded-lg bg-panel border border-border mb-5">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
-      <lucide-icon name="landmark" size="20"></lucide-icon> Renda Fixa
-      <span class="text-base font-normal text-muted ml-2">({{ rendaFixaItems.length }})</span>
-    </h2>
-    <button
-      type="button"
-      class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1"
-      (click)="toggleSection('rendaFixa')"
+    <a
+      routerLink="/assets/cadastro"
+      class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-white hover:opacity-90 transition-opacity no-underline"
     >
-      <lucide-icon
-        [name]="expandedSections.rendaFixa ? 'chevron-up' : 'chevron-down'"
-        size="16"
-      ></lucide-icon>
-      {{ expandedSections.rendaFixa ? 'Recolher' : 'Expandir' }}
-    </button>
+      <lucide-icon name="plus" size="16"></lucide-icon> Cadastrar primeiro ativo
+    </a>
   </div>
+}
 
-  @if (rendaFixaItems.length > 0) {
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
-      <div class="p-3 rounded-lg bg-bg-2 border border-border">
-        <div class="text-xs text-muted mb-1 uppercase tracking-wide">Investido</div>
-        <div class="text-lg font-bold text-tx">R$ {{ totalRendaFixa() | number: '1.2-2' }}</div>
-      </div>
-      <div class="p-3 rounded-lg bg-bg-2 border border-border good">
-        <div class="text-xs text-muted mb-1 uppercase tracking-wide">Rendimento Atual</div>
-        <div class="text-lg font-bold">+R$ {{ totalRendimentoRF() | number: '1.2-2' }}</div>
-        <div class="text-xs text-muted mt-1">Proporcional</div>
-      </div>
-      <div class="p-3 rounded-lg bg-bg-2 border border-border">
-        <div class="text-xs text-muted mb-1 uppercase tracking-wide">Valor Atual</div>
-        <div class="text-lg font-bold text-tx">R$ {{ totalValorAtualRF() | number: '1.2-2' }}</div>
-        <div class="text-xs text-muted mt-1">Hoje</div>
-      </div>
-      <div class="p-3 rounded-lg bg-bg-2 border border-border">
-        <div class="text-xs text-muted mb-1 uppercase tracking-wide">Valor Futuro</div>
-        <div class="text-lg font-bold text-tx">R$ {{ totalValorFuturoRF() | number: '1.2-2' }}</div>
-        <div class="text-xs text-muted mt-1">No vencimento</div>
-      </div>
-      <div class="p-3 rounded-lg bg-bg-2 border border-border">
-        <div class="text-xs text-muted mb-1 uppercase tracking-wide">Taxa Média</div>
-        <div class="text-lg font-bold text-tx">{{ avgTaxaRF() | number: '1.2-2' }}% a.a.</div>
+@if (vencimentosProximos().length > 0) {
+  <div class="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/40 mb-5">
+    <div class="flex items-start gap-3">
+      <lucide-icon name="calendar-clock" size="20" class="text-yellow-400 mt-0.5"></lucide-icon>
+      <div>
+        <div class="font-semibold text-tx">
+          {{ vencimentosProximos().length === 1 ? 'Uma aplicação vence' : 'Aplicações vencem' }} nos
+          próximos 30 dias
+        </div>
+        <ul class="list-disc pl-4 text-sm text-muted mt-1 m-0">
+          @for (v of vencimentosProximos(); track v.id) {
+            <li>
+              <span class="text-tx font-medium">{{ v.nome }}</span> —
+              {{ v.dias_para_vencimento }} dias (R$
+              {{ v.valor_no_vencimento ?? v.valor_atual | number: '1.2-2' }} no vencimento)
+            </li>
+          }
+        </ul>
       </div>
     </div>
-  }
+  </div>
+}
 
-  @if (expandedSections.rendaFixa) {
+@if (!isEmpty()) {
+  <div class="p-5 rounded-lg bg-panel border border-border mb-5">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+      <lucide-icon name="chart-pie" size="20"></lucide-icon> Composição da Carteira
+    </h2>
     <p class="text-sm text-muted mb-4">
-      CDB, LCI, LCA, Tesouro Direto e outros títulos de renda fixa.
+      Quanto do seu dinheiro está em cada tipo de investimento ou, no caso de ações/BDRs, em cada
+      setor.
     </p>
 
-    <div class="p-3 rounded-lg bg-info/5 border border-info/20 mb-4 text-xs text-muted">
-      <div class="flex items-start gap-2">
-        <lucide-icon name="info" size="14" class="mt-0.5 flex-shrink-0 text-info"></lucide-icon>
-        <div>
-          <strong class="text-tx">Cálculo de rendimentos:</strong> O rendimento atual é proporcional
-          ao tempo decorrido desde a aplicação. O valor futuro mostra o esperado no vencimento.
-          <br /><br />
-          <strong class="text-tx">IR:</strong> Todos os valores são líquidos (já descontados o IR).
-          Alíquotas: 22,5% (até 180d), 20% (181-360d), 17,5% (361-720d), 15% (>720d).
-          <strong class="text-tx">LCI, LCA, CRI e CRA são isentos</strong> de imposto de renda.
-        </div>
-      </div>
-    </div>
-
-    <form [formGroup]="form">
-      <div class="flex flex-col gap-3" formArrayName="renda_fixa">
-        @for (rf of rendaFixaItems.controls; track rf; let i = $index) {
-          <div
-            class="p-3 rounded-lg bg-panel-2 border border-border transition-opacity"
-            [formGroupName]="i"
-            [class.opacity-40]="rf.controls.oculto.value"
-          >
-            <div class="flex justify-between gap-3 mb-3">
-              <div class="flex-1 min-w-0">
-                <span class="text-xs font-medium text-muted">Nome/Banco</span>
-                <input
-                  type="text"
-                  formControlName="nome"
-                  placeholder="ex.: Banco Inter"
-                  class="mt-1 w-full px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                />
-              </div>
-              <div class="flex items-end gap-2 flex-shrink-0">
-                <button
-                  type="button"
-                  class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border transition-colors"
-                  [class.text-warning]="rf.controls.oculto.value"
-                  [class.text-muted]="!rf.controls.oculto.value"
-                  (click)="toggleOcultarRF(rf)"
-                  [title]="
-                    rf.controls.oculto.value
-                      ? 'Incluir no montante'
-                      : 'Ocultar do montante (simulação)'
-                  "
-                >
-                  <lucide-icon
-                    [name]="rf.controls.oculto.value ? 'eye-off' : 'eye'"
-                    size="16"
-                  ></lucide-icon>
-                </button>
-                <button
-                  type="button"
-                  class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel border border-border text-danger hover:bg-danger hover:text-white transition-colors"
-                  (click)="removeRF(rf)"
-                  title="Remover"
-                >
-                  <lucide-icon name="x" size="16"></lucide-icon>
-                </button>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-              <div class="flex flex-col gap-1">
-                <span class="text-xs font-medium text-muted">Tipo</span>
-                <select
-                  formControlName="tipo"
-                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
-                >
-                  <option value="cdb">CDB</option>
-                  <option value="lci">LCI</option>
-                  <option value="lca">LCA</option>
-                  <option value="tesouro_selic">Tesouro Selic</option>
-                  <option value="tesouro_ipca">Tesouro IPCA+</option>
-                  <option value="tesouro_pre">Tesouro Pré</option>
-                  <option value="lc">LC</option>
-                  <option value="cri">CRI</option>
-                  <option value="cra">CRA</option>
-                </select>
-              </div>
-
-              <div class="flex flex-col gap-1">
-                <span class="text-xs font-medium text-muted">Tipo Taxa</span>
-                <select
-                  formControlName="tipo_taxa"
-                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
-                >
-                  <option value="pre_fixado">Pré</option>
-                  <option value="pos_fixado">Pós (CDI)</option>
-                  <option value="hibrido">Híbrido</option>
-                </select>
-              </div>
-
-              <div class="flex flex-col gap-1">
-                <span class="text-xs font-medium text-muted">Valor (R$)</span>
-                <input
-                  type="number"
-                  formControlName="valor_investido"
-                  placeholder="10000"
-                  min="0"
-                  step="100"
-                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                />
-              </div>
-
-              <div class="flex flex-col gap-1">
-                <span class="text-xs font-medium text-muted">{{
-                  rf.controls.tipo_taxa.value === 'pos_fixado' ? '% do CDI' : 'Taxa (% a.a.)'
-                }}</span>
-                @if (rf.controls.tipo_taxa.value === 'pos_fixado') {
-                  <input
-                    type="number"
-                    formControlName="percentual_cdi"
-                    placeholder="110"
-                    min="0"
-                    step="1"
-                    class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                } @else {
-                  <input
-                    type="number"
-                    formControlName="taxa"
-                    placeholder="12.5"
-                    min="0"
-                    step="0.1"
-                    class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                }
-              </div>
-
-              <div class="flex flex-col gap-1">
-                <span class="text-xs font-medium text-muted">Prazo (meses)</span>
-                <input
-                  type="number"
-                  formControlName="prazo_meses"
-                  placeholder="12"
-                  min="1"
-                  step="1"
-                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                />
-              </div>
-
-              <div class="flex flex-col gap-1">
-                <span class="text-xs font-medium text-muted">Data da aplicação</span>
-                <input
-                  type="date"
-                  formControlName="data_aplicacao"
-                  class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-                />
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-      @if (rendaFixaItems.length === 0) {
-        <div
-          class="text-center py-8 text-muted text-sm bg-bg-2 rounded-lg border border-dashed border-border"
-        >
-          <lucide-icon name="landmark" size="32" class="mx-auto mb-2 opacity-50"></lucide-icon>
-          <p>Nenhum ativo de renda fixa cadastrado.</p>
-          <p class="text-xs mt-1">Clique em "Adicionar RF" para começar.</p>
-        </div>
-      }
-      <div class="flex items-center gap-3 mt-4 flex-wrap">
+    @if (alocacaoPorTipo().length === 0) {
+      <p class="text-sm text-muted italic">Carregando a composição da carteira…</p>
+    } @else {
+      <div class="flex gap-2 mb-5">
         <button
           type="button"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
-          (click)="addRF()"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer border border-border transition-colors"
+          [class.bg-accent]="composicaoMode() === 'ativo'"
+          [class.text-white]="composicaoMode() === 'ativo'"
+          [class.bg-panel-2]="composicaoMode() !== 'ativo'"
+          [class.text-tx]="composicaoMode() !== 'ativo'"
+          (click)="setComposicaoMode('ativo')"
         >
-          <lucide-icon name="plus" size="16"></lucide-icon> Adicionar RF
+          Por ativo
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer border border-border transition-colors"
+          [class.bg-accent]="composicaoMode() === 'setor'"
+          [class.text-white]="composicaoMode() === 'setor'"
+          [class.bg-panel-2]="composicaoMode() !== 'setor'"
+          [class.text-tx]="composicaoMode() !== 'setor'"
+          (click)="setComposicaoMode('setor')"
+        >
+          Por setor (ações)
         </button>
       </div>
-    </form>
-  }
 
-  @if (rendaFixaItems.length > 0) {
-    <div class="mt-4 pt-4 border-t border-border">
-      <button
-        type="button"
-        class="flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors"
-        [class.text-muted]="!expandedSections.detalhamentoRF"
-        [class.text-tx]="expandedSections.detalhamentoRF"
-        (click)="toggleSection('detalhamentoRF')"
-      >
-        <lucide-icon
-          [name]="expandedSections.detalhamentoRF ? 'chevron-up' : 'list'"
-          size="16"
-        ></lucide-icon>
-        {{ expandedSections.detalhamentoRF ? 'Ocultar detalhamento' : 'Ver detalhamento' }}
-      </button>
+      @if (composicaoMode() === 'setor' && alocacaoPorSetor().length === 0) {
+        <p class="text-sm text-muted italic">
+          Nenhuma ação ou BDR na carteira ainda — a visão por setor cobre só esses tipos.
+        </p>
+      } @else {
+        <div class="flex flex-col sm:flex-row items-center gap-8">
+          <div class="w-40 h-40 rounded-full shrink-0" [style.background]="conicGradient()"></div>
+          <div class="flex flex-col gap-2 w-full">
+            @for (s of composicaoSlices(); track s.label) {
+              <div class="flex items-center justify-between gap-3 text-sm">
+                <span class="flex items-center gap-2 text-tx">
+                  <span
+                    class="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                    [style.background]="s.color"
+                  ></span>
+                  <lucide-icon [name]="s.icon" size="14" class="text-muted shrink-0"></lucide-icon>
+                  {{ s.label }}
+                </span>
+                <span class="flex items-center gap-3 shrink-0">
+                  <span class="text-muted text-xs">R$ {{ s.valor | number: '1.2-2' }}</span>
+                  <span class="font-semibold text-tx w-14 text-right"
+                    >{{ s.pct | number: '1.1-1' }}%</span
+                  >
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+}
 
-      @if (expandedSections.detalhamentoRF) {
-        <div class="mt-4" style="overflow-x: auto">
+@if (fixedIncome(); as fi) {
+  @if (fixedIncomePositions().length > 0) {
+    <div class="p-5 rounded-lg bg-panel border border-border mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
+          <lucide-icon name="landmark" size="20"></lucide-icon> Renda Fixa
+          <span class="text-base font-normal text-muted">({{ fixedIncomePositions().length }})</span>
+        </h2>
+        <button
+          type="button"
+          class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0"
+          (click)="showFixedIncomeDetail.set(!showFixedIncomeDetail())"
+        >
+          <lucide-icon
+            [name]="showFixedIncomeDetail() ? 'chevron-up' : 'chevron-down'"
+            size="16"
+          ></lucide-icon>
+          {{ showFixedIncomeDetail() ? 'Recolher' : 'Detalhar' }}
+        </button>
+      </div>
+      <p class="text-sm text-muted mb-4">
+        Rendimento calculado no servidor pela mesma regra do comparador de renda fixa — CDI de
+        referência {{ fi.cdi_referencia | number: '1.2-2' }}%
+        <span class="opacity-70">({{ fi.fonte_taxas === 'bcb' ? 'BCB' : 'estimativa' }})</span>.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div class="p-4 rounded-lg bg-bg-2 border border-border">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Aplicado</div>
+          <div class="text-xl font-bold text-tx">R$ {{ fi.total_investido | number: '1.2-2' }}</div>
+        </div>
+        <div class="p-4 rounded-lg bg-bg-2 border border-border">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Valor hoje</div>
+          <div class="text-xl font-bold text-tx">R$ {{ fi.total_atual | number: '1.2-2' }}</div>
+        </div>
+        <div class="p-4 rounded-lg bg-bg-2 border border-border good">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Rendimento líquido</div>
+          <div class="text-xl font-bold text-tx">
+            R$ {{ fi.total_rendimento | number: '1.2-2' }}
+            <span class="text-sm font-normal text-muted"
+              >({{ fi.rendimento_pct | number: '1.2-2' }}%)</span
+            >
+          </div>
+        </div>
+      </div>
+
+      @if (showFixedIncomeDetail()) {
+        <div style="overflow-x: auto">
           <table class="w-full border-collapse text-sm">
             <thead>
               <tr class="border-b border-border">
-                <th class="text-left py-2 px-2 font-medium text-muted">Nome</th>
-                <th class="text-left py-2 px-2 font-medium text-muted">Tipo</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">Investido</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">Taxa</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">Prazo</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">Rend. Atual</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">Valor no Vencimento</th>
                 <th class="text-left py-2 px-2 font-medium text-muted">Aplicação</th>
+                <th class="text-left py-2 px-2 font-medium text-muted">Tipo</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Taxa efetiva</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Aplicado</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Hoje</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Rend.</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">No vencimento</th>
+                <th class="text-left py-2 px-2 font-medium text-muted">Liquidez</th>
               </tr>
             </thead>
             <tbody>
-              @for (rf of rendaFixaItems.controls; track $index; let i = $index) {
-                <tr
-                  class="border-b border-border hover:bg-bg-2 transition-colors"
-                  [class.opacity-40]="rf.controls.oculto.value"
-                >
-                  <td class="py-2 px-2 text-tx font-medium">{{ rf.controls.nome.value }}</td>
-                  <td class="py-2 px-2">
-                    <div class="flex items-center gap-2">
-                      <span class="tag">{{ rfTipoLabel(rf.controls.tipo.value) }}</span>
-                      @if (isIsentoIR(rf.controls.tipo.value)) {
-                        <span
-                          class="text-xs px-2 py-0.5 rounded bg-success/10 text-success border border-success/20"
-                          >Isento IR</span
-                        >
-                      }
-                    </div>
-                  </td>
-                  <td class="text-right py-2 px-2 text-tx">
-                    R$ {{ rf.controls.valor_investido.value | number: '1.2-2' }}
-                  </td>
-                  <td class="text-right py-2 px-2 text-tx">
-                    @if (rf.controls.tipo_taxa.value === 'pos_fixado') {
-                      {{ rf.controls.percentual_cdi.value }}% CDI
-                    } @else {
-                      {{ rf.controls.taxa.value }}% a.a.
+              @for (item of fixedIncomePositions(); track trackFixedIncome($index, item)) {
+                <tr class="border-b border-border hover:bg-bg-2 transition-colors">
+                  <td class="py-2 px-2 font-semibold text-tx">
+                    {{ item.nome }}
+                    @if (item.isento_ir) {
+                      <span class="ml-1 text-xs text-accent">isento de IR</span>
                     }
                   </td>
-                  <td class="text-right py-2 px-2 text-tx">{{ rf.controls.prazo_meses.value }}m</td>
-                  <td class="text-right py-2 px-2" [class.good]="!rf.controls.oculto.value">
-                    +R$ {{ calcularRendimento(i) | number: '1.2-2' }}
+                  <td class="py-2 px-2 text-tx">{{ rfTipoLabel(item.tipo) }}</td>
+                  <td class="text-right py-2 px-2 text-tx">
+                    {{ item.taxa_anual_efetiva_pct | number: '1.2-2' }}% a.a.
                   </td>
-                  <td class="text-right py-2 px-2 text-tx font-semibold">
-                    R$ {{ calcularValorFinal(i) | number: '1.2-2' }}
+                  <td class="text-right py-2 px-2 text-tx">
+                    {{ item.valor_investido | number: '1.2-2' }}
                   </td>
-                  <td class="py-2 px-2 text-muted text-xs">
-                    {{ rf.controls.data_aplicacao.value | date: 'dd/MM/yyyy' }}
+                  <td class="text-right py-2 px-2 text-tx">
+                    {{ item.valor_atual | number: '1.2-2' }}
                   </td>
+                  <td class="text-right py-2 px-2 good">
+                    +{{ item.rendimento_pct | number: '1.2-2' }}%
+                  </td>
+                  <td class="text-right py-2 px-2 text-muted">
+                    {{
+                      item.valor_no_vencimento != null
+                        ? (item.valor_no_vencimento | number: '1.2-2')
+                        : '—'
+                    }}
+                  </td>
+                  <td class="py-2 px-2 text-muted">{{ liquidezLabel(item.liquidez) }}</td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
+
+        @if (hiddenFixedIncome().length > 0) {
+          <p class="text-xs text-muted mt-3 m-0">
+            {{ hiddenFixedIncome().length }} aplicação(ões) oculta(s), fora dos totais.
+          </p>
+        }
       }
     </div>
   }
-</div>
+}
 
-@if (result(); as r) {
+@if (tradedPositions().length > 0) {
   <div class="p-5 rounded-lg bg-panel border border-border mb-5">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
-        <lucide-icon name="chart-bar" size="20"></lucide-icon> Análise - Ativos Negociados
-      </h2>
-      <button
-        type="button"
-        class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1"
-        (click)="toggleSection('avaliacao')"
-      >
-        <lucide-icon
-          [name]="expandedSections.avaliacao ? 'chevron-up' : 'chevron-down'"
-          size="16"
-        ></lucide-icon>
-        {{ expandedSections.avaliacao ? 'Recolher' : 'Expandir' }}
-      </button>
-    </div>
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+      <lucide-icon name="trending-up" size="20"></lucide-icon> Ativos Negociados
+      <span class="text-base font-normal text-muted">({{ negociadosCount() }})</span>
+    </h2>
+    <p class="text-sm text-muted mb-4">
+      Ações, FIIs, BDRs e ETFs com cotação em bolsa. O veredito compara o preço atual com o preço
+      justo estimado.
+      <app-help-tooltip [text]="ui.glossary['ms']"></app-help-tooltip>
+    </p>
 
-    @if (expandedSections.avaliacao) {
-      <p class="leading-relaxed text-sm text-tx mb-4">
-        {{ ui.portfolioSummary(r.positions, r.total_pnl, r.total_pnl_pct) }}
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-        <div class="p-4 rounded-lg bg-bg-2 border border-border info">
-          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Investido</div>
-          <div class="text-xl font-bold text-tx">R$ {{ r.total_invested | number: '1.2-2' }}</div>
-        </div>
-        <div
-          class="p-4 rounded-lg bg-bg-2 border border-border"
-          [class.good]="r.total_pnl >= 0"
-          [class.warn]="r.total_pnl < 0"
-        >
-          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Valor atual</div>
-          <div class="text-xl font-bold text-tx">R$ {{ r.total_current | number: '1.2-2' }}</div>
-        </div>
-        <div
-          class="p-4 rounded-lg bg-bg-2 border border-border"
-          [class.good]="r.total_pnl >= 0"
-          [class.warn]="r.total_pnl < 0"
-        >
-          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Resultado</div>
-          <div class="text-xl font-bold text-tx">
-            {{ r.total_pnl >= 0 ? '+' : '' }}R$ {{ r.total_pnl | number: '1.2-2' }}
-          </div>
-          <div class="text-sm mt-1">
-            {{ r.total_pnl >= 0 ? '+' : '' }}{{ r.total_pnl_pct | number: '1.2-2' }}%
-          </div>
-        </div>
-      </div>
-
-      <div style="overflow-x: auto">
-        <table class="w-full border-collapse text-sm">
-          <thead>
-            <tr class="border-b border-border">
-              <th class="text-left py-2 px-2 font-medium text-muted">Ativo</th>
-              <th class="text-left py-2 px-2 font-medium text-muted">Categoria</th>
-              <th class="text-right py-2 px-2 font-medium text-muted">Qtd</th>
-              <th class="text-right py-2 px-2 font-medium text-muted">P. médio</th>
-              <th class="text-right py-2 px-2 font-medium text-muted">P. atual</th>
-              <th class="text-right py-2 px-2 font-medium text-muted">
-                P. justo <app-help-tooltip [text]="ui.glossary['bazin']"></app-help-tooltip>
-              </th>
-              <th class="text-right py-2 px-2 font-medium text-muted">PnL</th>
-              <th class="text-left py-2 px-2 font-medium text-muted">Decisão</th>
-              <th class="text-right py-2 px-2 font-medium text-muted"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of r.positions; track p.ticker) {
-              <tr class="border-b border-border hover:bg-bg-2 transition-colors">
-                <td class="py-2 px-2">
-                  <div class="font-semibold text-tx">{{ p.ticker }}</div>
+    <div style="overflow-x: auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-2 px-2 font-medium text-muted">Ativo</th>
+            <th class="text-left py-2 px-2 font-medium text-muted">Tipo</th>
+            <th class="text-right py-2 px-2 font-medium text-muted">Qtd</th>
+            <th class="text-right py-2 px-2 font-medium text-muted">P. médio</th>
+            <th class="text-right py-2 px-2 font-medium text-muted">Atual</th>
+            <th class="text-right py-2 px-2 font-medium text-muted">Justo</th>
+            <th class="text-right py-2 px-2 font-medium text-muted">Rend.</th>
+            <th class="text-left py-2 px-2 font-medium text-muted">Veredito</th>
+            <th class="text-right py-2 px-2 font-medium text-muted"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of tradedPositions(); track p.ticker) {
+            <tr class="border-b border-border hover:bg-bg-2 transition-colors">
+              <td class="py-2 px-2">
+                <div class="font-semibold text-tx">{{ p.ticker }}</div>
+                @if (p.name) {
                   <div class="text-xs text-muted">{{ p.name }}</div>
-                </td>
-                <td class="py-2 px-2">
-                  <span class="tag tag-cat" [class]="'cat-' + p.category_resolved">{{
-                    ui.categoryLabel(p.category_resolved)
-                  }}</span>
-                </td>
-                <td class="text-right py-2 px-2 text-tx">{{ p.quantity }}</td>
-                <td class="text-right py-2 px-2 text-tx">
-                  {{ p.avg_price | number: '1.2-2' }}
-                </td>
-                <td class="text-right py-2 px-2 text-tx">
-                  {{ p.current_price != null ? (p.current_price | number: '1.2-2') : '—' }}
-                </td>
-                <td class="text-right py-2 px-2 text-tx">
-                  {{ p.fair_price != null ? (p.fair_price | number: '1.2-2') : '—' }}
-                </td>
-                <td
-                  class="text-right py-2 px-2"
-                  [class.good]="(p.pnl_pct || 0) >= 0"
-                  [class.warn]="(p.pnl_pct || 0) < 0"
+                }
+              </td>
+              <td class="py-2 px-2 text-muted">{{ ui.assetTypeLabel(p.asset_type) }}</td>
+              <td class="text-right py-2 px-2 text-tx">{{ p.quantity }}</td>
+              <td class="text-right py-2 px-2 text-tx">{{ p.avg_price | number: '1.2-2' }}</td>
+              <td class="text-right py-2 px-2 text-tx">
+                {{ p.current_price != null ? (p.current_price | number: '1.2-2') : '—' }}
+              </td>
+              <td class="text-right py-2 px-2 text-tx">
+                {{ p.fair_price != null ? (p.fair_price | number: '1.2-2') : '—' }}
+              </td>
+              <td
+                class="text-right py-2 px-2"
+                [class.good]="(p.pnl_pct || 0) >= 0"
+                [class.warn]="(p.pnl_pct || 0) < 0"
+              >
+                {{ p.pnl_pct != null ? (p.pnl_pct | number: '1.2-2') + '%' : '—' }}
+              </td>
+              <td class="py-2 px-2">
+                <button
+                  type="button"
+                  class="verdict-pill cursor-pointer border-0"
+                  [class]="ui.verdictClass(p.verdict)"
+                  [title]="p.reasons.length ? 'Ver motivos' : ''"
+                  (click)="toggleReasons(p.ticker)"
                 >
-                  {{ p.pnl_pct != null ? (p.pnl_pct | number: '1.2-2') + '%' : '—' }}
-                </td>
-                <td class="py-2 px-2">
-                  <button
-                    type="button"
-                    class="verdict-pill cursor-pointer border-0"
-                    [class]="ui.verdictClass(p.verdict)"
-                    [title]="p.reasons.length ? 'Ver motivos' : ''"
-                    (click)="toggleReasons(p.ticker)"
-                  >
-                    {{ p.label }}
-                    @if (p.reasons.length) {
-                      <lucide-icon
-                        [name]="
-                          expandedReasonsTicker() === p.ticker ? 'chevron-up' : 'chevron-down'
-                        "
-                        size="12"
-                        class="ml-1 inline-block align-middle"
-                      ></lucide-icon>
+                  {{ p.label }}
+                  @if (p.reasons.length) {
+                    <lucide-icon
+                      [name]="expandedReasonsTicker() === p.ticker ? 'chevron-up' : 'chevron-down'"
+                      size="12"
+                      class="ml-1 inline-block align-middle"
+                    ></lucide-icon>
+                  }
+                </button>
+              </td>
+              <td class="text-right py-2 px-2">
+                <button
+                  type="button"
+                  class="text-xs px-2 py-1 rounded-md border border-border text-muted hover:text-accent hover:border-accent transition-colors cursor-pointer bg-transparent"
+                  title="Vender"
+                  (click)="openSellModal(p)"
+                >
+                  Vender
+                </button>
+              </td>
+            </tr>
+            @if (expandedReasonsTicker() === p.ticker && p.reasons.length) {
+              <tr class="border-b border-border bg-bg-2">
+                <td colspan="9" class="py-2 px-4">
+                  <ul class="list-disc pl-4 text-xs text-muted leading-relaxed m-0">
+                    @for (reason of p.reasons; track reason) {
+                      <li>{{ reason }}</li>
                     }
-                  </button>
-                </td>
-                <td class="text-right py-2 px-2">
-                  <button
-                    type="button"
-                    class="text-xs px-2 py-1 rounded-md border border-border text-muted hover:text-accent hover:border-accent transition-colors cursor-pointer bg-transparent"
-                    title="Vender"
-                    (click)="openSellModal(p)"
-                  >
-                    Vender
-                  </button>
+                  </ul>
                 </td>
               </tr>
-              @if (expandedReasonsTicker() === p.ticker && p.reasons.length) {
-                <tr class="border-b border-border bg-bg-2">
-                  <td colspan="9" class="py-2 px-4">
-                    <ul class="list-disc pl-4 text-xs text-muted leading-relaxed m-0">
-                      @for (reason of p.reasons; track reason) {
-                        <li>{{ reason }}</li>
-                      }
-                    </ul>
-                  </td>
-                </tr>
-              }
             }
-          </tbody>
-        </table>
-      </div>
-    }
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 }
 
@@ -835,7 +477,7 @@
         </h2>
         <button
           type="button"
-          class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1"
+          class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0"
           (click)="showClosedTrades.set(!showClosedTrades())"
         >
           <lucide-icon

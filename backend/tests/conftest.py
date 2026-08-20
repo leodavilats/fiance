@@ -174,3 +174,22 @@ def _stub_market_data(monkeypatch):
     monkeypatch.setattr(cache_mod, "delete", lambda key: fake_store.pop(key, None))
     monkeypatch.setattr(cache_mod, "clear_all", lambda: fake_store.clear())
     monkeypatch.setattr(cache_mod, "delete_pattern", lambda pattern: 0)
+
+    # get_rates() bate no BCB por HTTP. Sem stub, cada teste que toca renda
+    # fixa espera a rede (ou o timeout de 6 s) — e o resultado do cálculo
+    # mudaria conforme o CDI do dia.
+    fake_rates = {
+        "cdi_anual": 14.40,
+        "selic_anual": 14.40,
+        "ipca_anual": 5.00,
+        "source": "estimativa",
+    }
+    import app.analysis.renda_fixa_analysis as rf_mod
+    import app.collectors.rates as rates_mod
+    import app.services.benchmark_service as bench_mod
+    import app.services.fixed_income_service as fi_mod
+
+    monkeypatch.setattr(rates_mod, "get_rates", lambda: dict(fake_rates))
+    monkeypatch.setattr(rf_mod, "get_rates", lambda: dict(fake_rates))
+    monkeypatch.setattr(fi_mod, "get_rates", lambda: dict(fake_rates))
+    monkeypatch.setattr(bench_mod, "get_rates", lambda: dict(fake_rates))

@@ -13,3 +13,4 @@ export { ProfileModalComponent } from './profile-modal/profile-modal.component';
 export { SkeletonComponent } from './skeleton/skeleton.component';
 export { SnackbarComponent } from './snackbar/snackbar.component';
 export { StrategyComponent } from './strategy/strategy.component';
+export * from './portfolio-editor/portfolio-editor.component';

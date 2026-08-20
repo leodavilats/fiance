@@ -334,29 +334,27 @@ export class ConfigComponent implements OnInit, OnDestroy {
     this.message.set('');
 
     forkJoin({
-      prefs: this.svc.savePreferences(
-        passive_income_goal ?? undefined,
-        {
-          stock: yield_stock / 100,
-          fii: yield_fii / 100,
-          bdr: yield_bdr / 100,
-          etf: yield_etf / 100,
-        },
-        {
-          notifyPriceAlerts: notify_price_alerts,
-          opportunitiesFrequency: opportunities_frequency,
-          riskProfile: risk_profile,
-          preferredCategories: preferred_categories,
-          preferredSectors: preferred_sectors
-            .split(',')
-            .map(s => s.trim())
-            .filter(Boolean),
-          excludedTickers: excluded_tickers
-            .split(',')
-            .map(s => s.trim().toUpperCase())
-            .filter(Boolean),
-        }
-      ),
+      // Sem `cash_available` no payload: esta tela não edita o caixa, e o PUT
+      // parcial preserva o valor salvo em vez de zerá-lo.
+      prefs: this.svc.savePreferences({
+        passive_income_goal: passive_income_goal ?? null,
+        desired_yield_stock: yield_stock / 100,
+        desired_yield_fii: yield_fii / 100,
+        desired_yield_bdr: yield_bdr / 100,
+        desired_yield_etf: yield_etf / 100,
+        notify_price_alerts: notify_price_alerts,
+        opportunities_frequency: opportunities_frequency,
+        risk_profile: risk_profile,
+        preferred_categories: preferred_categories,
+        preferred_sectors: preferred_sectors
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean),
+        excluded_tickers: excluded_tickers
+          .split(',')
+          .map(s => s.trim().toUpperCase())
+          .filter(Boolean),
+      }),
       goals: this.svc.saveGoals(goalsPayload),
       sectorGoals: this.svc.saveSectorGoals(sectorGoalsPayload),
     }).subscribe({

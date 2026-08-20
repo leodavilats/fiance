@@ -6,6 +6,7 @@ from app.models.quick_invest import (
 )
 from app.repositories import AssetRepository, PortfolioRepository
 from app.services import GoalService, OpportunityService
+from app.services.fixed_income_service import FixedIncomeService
 
 
 class QuickInvestService:
@@ -14,6 +15,7 @@ class QuickInvestService:
         self.asset_repo = AssetRepository()
         self.goal_service = GoalService()
         self.opportunity_service = OpportunityService()
+        self.fixed_income = FixedIncomeService()
 
     async def quick_invest(self, req: QuickInvestRequest) -> QuickInvestResponse:
 
@@ -34,6 +36,16 @@ class QuickInvestService:
 
             cat = auto_category(snap.asset_type, snap.dividend_yield)
             category_values[cat] = category_values.get(cat, 0) + value
+
+        # Sem contar a renda fixa já aplicada, o gap de `renda_fixa` vinha
+        # sempre cheio e o Quick Invest sugeria reforçar uma categoria que já
+        # estava na meta.
+        rf_total = sum(
+            (p.current_value or p.invested) for p in self.fixed_income.as_portfolio_positions()
+        )
+        if rf_total > 0:
+            total_portfolio += rf_total
+            category_values["renda_fixa"] = category_values.get("renda_fixa", 0.0) + rf_total
 
         goals = self.goal_service.get_goals() if req.use_current_goals else []
         goal_map = {g.category: g.target_pct for g in goals}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 
-from sqlalchemy import Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -135,3 +135,35 @@ class PriceAlertDb(Base):
     note: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[float] = mapped_column(Float)
     triggered_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+class FixedIncomePositionDb(Base):
+    """Renda fixa como entidade de primeira classe.
+
+    Antes taxa, prazo, data de aplicação e % do CDI viviam só no localStorage
+    do navegador e o servidor só conhecia o valor investido, num ticker
+    sintético RF_<tipo>_<índice>. Consequências diretas: trocar de navegador
+    zerava os rendimentos, o mobile nunca via os detalhes, o patrimônio total
+    subestimava sistematicamente e não havia como alertar vencimento próximo
+    porque a data de vencimento não existia em lugar nenhum do servidor.
+    """
+
+    __tablename__ = "fixed_income_positions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    nome: Mapped[str] = mapped_column(String)
+    tipo: Mapped[str] = mapped_column(String)
+    valor_investido: Mapped[float] = mapped_column(Float)
+    taxa: Mapped[float] = mapped_column(Float)
+    tipo_taxa: Mapped[str] = mapped_column(String, default="pre_fixado")
+    percentual_cdi: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Datas em ISO (YYYY-MM-DD): comparáveis por string e portáveis entre
+    # SQLite e Postgres sem depender do dialeto de DATE.
+    data_aplicacao: Mapped[str] = mapped_column(String)
+    vencimento: Mapped[str | None] = mapped_column(String, nullable=True)
+    liquidez: Mapped[str] = mapped_column(String, default="no_vencimento")
+    isento_ir: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    oculto: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[float] = mapped_column(Float)
+    updated_at: Mapped[float] = mapped_column(Float)

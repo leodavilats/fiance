@@ -175,9 +175,20 @@
       <lucide-icon name="info" size="14"></lucide-icon
       ><span
         >CDI usado: <strong>{{ result.cdi_referencia }}%</strong> — Selic:
-        <strong>{{ result.selic_referencia }}%</strong></span
+        <strong>{{ result.selic_referencia }}%</strong> — IPCA:
+        <strong>{{ result.ipca_referencia }}%</strong>
+        <span class="opacity-70"
+          >({{ result.fonte_taxas === 'bcb' ? 'dados do BCB' : 'estimativa' }})</span
+        ></span
       >
     </div>
+    @if (result.melhor_opcao_motivo) {
+      <p class="text-sm text-tx bg-accent/10 border border-accent/30 rounded-lg px-3 py-2 mb-4 m-0">
+        <lucide-icon name="trophy" size="14" class="text-accent inline-block mr-1"></lucide-icon>
+        {{ result.melhor_opcao_motivo }}
+      </p>
+    }
+
     <div class="flex flex-col gap-4">
       @for (r of result.resultados; track $index) {
         <div
@@ -218,9 +229,18 @@
               </div>
               @if (r.taxa_equivalente_cdi_pct) {
                 <div class="text-xs text-muted">
-                  ≈ {{ r.taxa_equivalente_cdi_pct | number: '1.1-1' }}% do CDI líquido
+                  {{ r.taxa_equivalente_cdi_pct | number: '1.1-1' }}% do CDI, líquido
                 </div>
               }
+              @if (r.isento_ir && r.pct_cdi_bruto_equivalente) {
+                <div class="text-xs text-muted">
+                  equivale a um CDB de
+                  {{ r.pct_cdi_bruto_equivalente | number: '1.1-1' }}% do CDI
+                </div>
+              }
+              <div class="text-xs text-muted">
+                taxa contratada: {{ r.taxa_anual_efetiva_pct | number: '1.2-2' }}% a.a.
+              </div>
             </div>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">

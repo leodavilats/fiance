@@ -1,0 +1,383 @@
+<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+  <div>
+    <h1 class="flex items-center gap-2 text-2xl font-bold m-0 text-tx">
+      <lucide-icon name="pencil" size="24"></lucide-icon> Cadastro da carteira
+    </h1>
+    <p class="text-sm text-muted m-0 mt-1">
+      Cada linha é salva quando você clica em salvar — nada é gravado enquanto você digita.
+    </p>
+  </div>
+  <a
+    routerLink="/assets"
+    class="px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-tx hover:bg-panel-2 transition-colors no-underline flex items-center gap-1.5"
+  >
+    <lucide-icon name="arrow-left" size="14"></lucide-icon> Voltar para a análise
+  </a>
+</div>
+
+@if (loadFailed()) {
+  <div
+    class="p-4 rounded-lg bg-red-500/10 border border-red-500/40 mb-5 flex items-start gap-3"
+    role="alert"
+  >
+    <lucide-icon name="triangle-alert" size="20" class="text-red-400 mt-0.5"></lucide-icon>
+    <div class="flex-1">
+      <div class="font-semibold text-tx">Não conseguimos carregar sua carteira</div>
+      <div class="text-sm text-muted mt-1">
+        A edição está bloqueada para não sobrescrever seus dados. Tente carregar de novo.
+      </div>
+    </div>
+    <button
+      type="button"
+      class="px-3 py-1.5 rounded-md border border-border text-sm hover:bg-panel-2"
+      (click)="reload()"
+    >
+      Tentar de novo
+    </button>
+  </div>
+}
+
+<!-- Ativos negociados -->
+<div class="p-5 rounded-lg bg-panel border border-border mb-5">
+  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+    <lucide-icon name="trending-up" size="20"></lucide-icon> Ativos negociados
+  </h2>
+  <p class="text-sm text-muted mb-4">
+    Ações, FIIs, BDRs e ETFs da B3, pelo ticker (ex.: PETR4, HGLG11, AAPL34).
+  </p>
+
+  @if (!assetsLoaded() && !loadFailed()) {
+    <p class="text-sm text-muted italic">Carregando…</p>
+  } @else if (assetsLoaded()) {
+    <div class="flex flex-col gap-3">
+      @for (form of assetForms(); track $index; let i = $index) {
+        <div
+          class="p-3 rounded-lg bg-panel-2 border border-border"
+          [class.border-red-500]="assetRowState(i) === 'error'"
+          [formGroup]="form"
+        >
+          <div
+            class="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto_2.25rem] gap-3 sm:gap-2 sm:items-end"
+          >
+            <div class="relative flex flex-col gap-1">
+              <span class="text-xs font-medium text-muted">Ticker</span>
+              <input
+                type="text"
+                formControlName="ticker"
+                placeholder="ex.: PETR4"
+                autocomplete="off"
+                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent uppercase"
+                (input)="onTickerInput(i, $any($event.target).value)"
+                (blur)="closeTickerSuggestions()"
+              />
+              @if (tickerSuggestionsRow() === i && tickerSuggestions().length > 0) {
+                <ul
+                  class="absolute top-full left-0 right-0 z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-panel shadow-xl list-none p-0 m-0"
+                >
+                  @for (s of tickerSuggestions(); track s.ticker) {
+                    <li>
+                      <button
+                        type="button"
+                        class="w-full text-left px-3 py-2 text-sm text-tx hover:bg-panel-2 bg-transparent border-0 cursor-pointer"
+                        (mousedown)="selectTickerSuggestion(i, s)"
+                      >
+                        <span class="font-semibold">{{ s.ticker }}</span>
+                        <span class="text-muted text-xs ml-2">{{ s.name }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+
+            <label class="flex flex-col gap-1">
+              <span class="text-xs font-medium text-muted">Quantidade</span>
+              <input
+                type="number"
+                formControlName="quantity"
+                min="0"
+                step="any"
+                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+            </label>
+
+            <label class="flex flex-col gap-1">
+              <span class="text-xs font-medium text-muted">Preço médio (R$)</span>
+              <input
+                type="number"
+                formControlName="avg_price"
+                min="0"
+                step="0.01"
+                class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+            </label>
+
+            <button
+              type="button"
+              class="h-[42px] px-4 rounded-lg text-sm font-medium bg-accent text-white border-0 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5 justify-center"
+              [disabled]="assetRowState(i) === 'saving'"
+              (click)="saveAssetRow(i)"
+            >
+              @switch (assetRowState(i)) {
+                @case ('saving') {
+                  <lucide-icon name="loader-circle" size="14" class="animate-spin"></lucide-icon>
+                  Salvando
+                }
+                @case ('saved') {
+                  <lucide-icon name="check" size="14"></lucide-icon> Salvo
+                }
+                @default {
+                  <lucide-icon name="save" size="14"></lucide-icon> Salvar
+                }
+              }
+            </button>
+
+            <button
+              type="button"
+              class="h-[42px] w-[42px] rounded-lg border border-border text-muted hover:text-red-400 hover:border-red-400 transition-colors cursor-pointer bg-transparent flex items-center justify-center"
+              title="Remover"
+              (click)="removeAssetRow(i)"
+            >
+              <lucide-icon name="trash-2" size="16"></lucide-icon>
+            </button>
+          </div>
+
+          @if (assetRowError(i)) {
+            <p class="text-xs text-red-400 mt-2 m-0">{{ assetRowError(i) }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="mt-4 px-3 py-2 rounded-lg text-sm font-medium border border-border text-tx hover:bg-panel-2 transition-colors cursor-pointer bg-transparent flex items-center gap-1.5"
+      (click)="addAssetRow()"
+    >
+      <lucide-icon name="plus" size="14"></lucide-icon> Adicionar ativo
+    </button>
+  }
+</div>
+
+<!-- Renda fixa -->
+<div class="p-5 rounded-lg bg-panel border border-border mb-5">
+  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+    <lucide-icon name="landmark" size="20"></lucide-icon> Renda fixa
+  </h2>
+  <p class="text-sm text-muted mb-4">
+    CDB, LCI/LCA, Tesouro e afins. Os dados ficam na sua conta no servidor, então aparecem em
+    qualquer navegador e também no app — e o rendimento é calculado pela mesma regra do comparador.
+  </p>
+
+  <form
+    [formGroup]="fixedIncomeForm"
+    class="p-4 rounded-lg bg-panel-2 border border-border mb-5"
+    (ngSubmit)="saveFixedIncome()"
+  >
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <label class="flex flex-col gap-1 sm:col-span-2">
+        <span class="text-xs font-medium text-muted">Nome / banco emissor</span>
+        <input
+          type="text"
+          formControlName="nome"
+          placeholder="ex.: CDB Banco Inter 2027"
+          class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-muted">Tipo</span>
+        <select
+          formControlName="tipo"
+          class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          @for (t of rendaFixaTipos; track t.value) {
+            <option [value]="t.value">{{ t.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-muted">Valor aplicado (R$)</span>
+        <input
+          type="number"
+          formControlName="valor_investido"
+          min="0"
+          step="0.01"
+          class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-muted">Tipo de taxa</span>
+        <select
+          formControlName="tipo_taxa"
+          class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          <option value="pre_fixado">Pré-fixado</option>
+          <option value="pos_fixado">Pós-fixado (% do CDI)</option>
+          <option value="hibrido">Híbrido (IPCA + taxa)</option>
+        </select>
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-muted">
+          {{ isPosFixado() ? 'Taxa de referência (% a.a.)' : 'Taxa (% a.a.)' }}
+        </span>
+        <input
+          type="number"
+          formControlName="taxa"
+          min="0"
+          step="0.01"
+          class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </label>
+
+      @if (isPosFixado()) {
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium text-muted">% do CDI</span>
+          <input
+            type="number"
+            formControlName="percentual_cdi"
+            min="0"
+            step="1"
+            placeholder="ex.: 110"
+            class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </label>
+      }
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-muted">Data de aplicação</span>
+        <input
+          type="date"
+          formControlName="data_aplicacao"
+          class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-muted">Vencimento (opcional)</span>
+        <input
+          type="date"
+          formControlName="vencimento"
+          class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-muted">Liquidez</span>
+        <select
+          formControlName="liquidez"
+          class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          <option value="no_vencimento">No vencimento</option>
+          <option value="diaria">Diária</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+      <label class="flex items-center gap-2 text-sm text-muted cursor-pointer">
+        <input type="checkbox" formControlName="oculto" class="accent-accent" />
+        Não somar na carteira (reserva à parte)
+      </label>
+
+      <div class="flex items-center gap-2">
+        @if (editingFixedIncomeId()) {
+          <button
+            type="button"
+            class="px-4 h-[42px] rounded-lg text-sm font-medium border border-border text-tx hover:bg-panel transition-colors cursor-pointer bg-transparent"
+            (click)="cancelFixedIncomeEdit()"
+          >
+            Cancelar edição
+          </button>
+        }
+        <button
+          type="submit"
+          class="px-4 h-[42px] rounded-lg text-sm font-medium bg-accent text-white border-0 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+          [disabled]="savingFixedIncome()"
+        >
+          <lucide-icon name="save" size="14"></lucide-icon>
+          {{
+            savingFixedIncome()
+              ? 'Salvando…'
+              : editingFixedIncomeId()
+                ? 'Salvar alterações'
+                : 'Adicionar aplicação'
+          }}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  @if (fixedIncome().length === 0) {
+    <p class="text-sm text-muted italic m-0">Nenhuma aplicação de renda fixa cadastrada ainda.</p>
+  } @else {
+    <div style="overflow-x: auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left py-2 px-2 font-medium text-muted">Aplicação</th>
+            <th class="text-left py-2 px-2 font-medium text-muted">Tipo</th>
+            <th class="text-right py-2 px-2 font-medium text-muted">Aplicado</th>
+            <th class="text-right py-2 px-2 font-medium text-muted">Taxa efetiva</th>
+            <th class="text-right py-2 px-2 font-medium text-muted">Hoje</th>
+            <th class="text-right py-2 px-2 font-medium text-muted"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of fixedIncome(); track trackFixedIncome($index, item)) {
+            <tr
+              class="border-b border-border hover:bg-bg-2 transition-colors"
+              [class.opacity-50]="item.oculto"
+            >
+              <td class="py-2 px-2 font-semibold text-tx">
+                {{ item.nome }}
+                @if (item.oculto) {
+                  <span class="ml-1 text-xs text-muted">(fora da carteira)</span>
+                }
+              </td>
+              <td class="py-2 px-2 text-muted">{{ rfTipoLabel(item.tipo) }}</td>
+              <td class="text-right py-2 px-2 text-tx">
+                {{ item.valor_investido | number: '1.2-2' }}
+              </td>
+              <td class="text-right py-2 px-2 text-tx">
+                {{ item.taxa_anual_efetiva_pct | number: '1.2-2' }}%
+              </td>
+              <td class="text-right py-2 px-2 text-tx">{{ item.valor_atual | number: '1.2-2' }}</td>
+              <td class="py-2 px-2">
+                <div class="flex items-center gap-1 justify-end">
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-md border border-border text-muted hover:text-accent hover:border-accent transition-colors cursor-pointer bg-transparent"
+                    title="Editar"
+                    (click)="editFixedIncome(item)"
+                  >
+                    <lucide-icon name="pencil" size="14"></lucide-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-md border border-border text-muted hover:text-tx transition-colors cursor-pointer bg-transparent"
+                    [title]="item.oculto ? 'Somar na carteira' : 'Não somar na carteira'"
+                    (click)="toggleFixedIncomeHidden(item)"
+                  >
+                    <lucide-icon [name]="item.oculto ? 'eye' : 'eye-off'" size="14"></lucide-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-md border border-border text-muted hover:text-red-400 hover:border-red-400 transition-colors cursor-pointer bg-transparent"
+                    title="Remover"
+                    (click)="deleteFixedIncome(item)"
+                  >
+                    <lucide-icon name="trash-2" size="14"></lucide-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

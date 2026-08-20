@@ -1,123 +1,72 @@
 from __future__ import annotations
 
 import math
-import statistics
 
-from app.collectors.universal import detect_type
-from app.models.company import CompanyFundamentals, ScoredCompany
 from app.models.enums import RiskProfile
 
-PROFILE_WEIGHTS: dict[RiskProfile, dict[str, float]] = {
-    RiskProfile.conservative: {
-        "value": 0.20,
-        "quality": 0.30,
-        "dividend": 0.30,
-        "leverage": 0.15,
-        "growth": 0.05,
-    },
-    RiskProfile.moderate: {
-        "value": 0.20,
-        "quality": 0.30,
-        "dividend": 0.15,
-        "leverage": 0.15,
-        "growth": 0.20,
-    },
-    RiskProfile.aggressive: {
-        "value": 0.10,
-        "quality": 0.25,
-        "dividend": 0.05,
-        "leverage": 0.10,
-        "growth": 0.50,
-    },
-}
+# Este arquivo tinha ~200 linhas mortas: `score_company`, `rank`,
+# `PROFILE_WEIGHTS`, `_score_value`, `_score_pvp`, `_compute_sector_medians`,
+# `_score_fii`, `_score_etf` e `_rationale` — um modelo alternativo baseado em
+# P/L·P/VP, sem nenhum consumidor, convivendo com o modelo real baseado em
+# margem de segurança. Foram removidos: o risco não era desperdício de linhas,
+# era um dev futuro corrigir o arquivo errado.
 
 
 def _clip(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
-
     return max(lo, min(hi, v))
 
 
-def _score_relative(value: float, sector_median: float) -> float:
-    ratio = value / sector_median
-    return _clip(150 - ratio * 100)
+# --- dimensões ------------------------------------------------------------
+#
+# Cada dimensão devolve `None` quando o insumo não existe. Antes a ausência era
+# codificada como número: _score_dividend(None) -> 0.0 (indistinguível de
+# "péssimo") enquanto _score_leverage(None) -> 50.0 e _score_growth(None) ->
+# 30.0 (chutes silenciosos). Com peso 0.40 em dividendos, um FII sem dado na
+# BRAPI era indistinguível de um FII ruim.
 
 
-def _score_value(
-    pe: float | None,
-    pb: float | None,
-    sector_pe_median: float | None = None,
-    sector_pb_median: float | None = None,
-) -> float:
-
-    if pe is not None and pe > 0:
-        score_pe = _clip(100 - (pe - 5) * 5)
-        if sector_pe_median and sector_pe_median > 0:
-            score_pe = (score_pe + _score_relative(pe, sector_pe_median)) / 2
-
-    else:
-        score_pe = 30.0
-
-    if pb is not None and pb > 0:
-        score_pb = _clip(100 - (pb - 0.5) * 28.5)
-        if sector_pb_median and sector_pb_median > 0:
-            score_pb = (score_pb + _score_relative(pb, sector_pb_median)) / 2
-
-    else:
-        score_pb = 30.0
-
-    return (score_pe + score_pb) / 2
+def _score_quality(roe: float | None, margin: float | None) -> float | None:
+    """ROE e margem em **percentual** (20.0 = 20%)."""
+    parts = []
+    if roe is not None:
+        parts.append(_clip(roe * 4))
+    if margin is not None:
+        parts.append(_clip(margin * 5))
+    if not parts:
+        return None
+    return sum(parts) / len(parts)
 
 
-def _score_quality(roe: float | None, margin: float | None) -> float:
-
-    score_roe = _clip((roe or 0) * 4)
-
-    score_margin = _clip((margin or 0) * 5)
-
-    return (score_roe + score_margin) / 2
-
-
-def _score_dividend(dy: float | None) -> float:
-
+def _score_dividend(dy: float | None) -> float | None:
     if dy is None:
-        return 0.0
-
+        return None
     return _clip(dy * 12.5)
 
 
-def _score_leverage(de: float | None) -> float:
-
+def _score_leverage(de: float | None) -> float | None:
+    """D/E em percentual (60.0 = dívida de 60% do patrimônio)."""
     if de is None:
-        return 50.0
-
+        return None
     return _clip(100 - de / 2)
 
 
-def _score_growth(rev_growth: float | None) -> float:
-
+def _score_growth(rev_growth: float | None) -> float | None:
     if rev_growth is None:
-        return 30.0
-
+        return None
     return _clip((rev_growth + 10) * (100 / 30))
 
 
-def _score_pvp(pvp: float | None) -> float:
-    if pvp is None or pvp <= 0:
-        return 50.0
-
-    return _clip(100 - (pvp - 0.7) * 100)
-
-
-def _score_liquidity(market_cap: float | None) -> float:
+def _score_liquidity(market_cap: float | None) -> float | None:
     if not market_cap or market_cap <= 0:
-        return 50.0
-
+        return None
     return _clip((math.log10(market_cap) - 7) * 30)
 
 
-def _score_technical(rsi_14: float | None, trend: str) -> float:
-    rsi = rsi_14 if rsi_14 is not None else 50.0
+def _score_technical(rsi_14: float | None, trend: str) -> float | None:
+    if rsi_14 is None and trend in ("unknown", ""):
+        return None
 
+    rsi = rsi_14 if rsi_14 is not None else 50.0
     score = 50.0 + (60.0 - rsi) * 0.5
 
     if trend == "uptrend":
@@ -128,8 +77,10 @@ def _score_technical(rsi_14: float | None, trend: str) -> float:
     return _clip(score)
 
 
-def _score_mos(margin_of_safety: float | None) -> float:
-    return _clip(50 + (margin_of_safety or 0.0) * 100)
+def _score_mos(margin_of_safety: float | None) -> float | None:
+    if margin_of_safety is None:
+        return None
+    return _clip(50 + margin_of_safety * 100)
 
 
 OPPORTUNITY_WEIGHTS: dict[RiskProfile, dict[str, float]] = {
@@ -162,6 +113,10 @@ OPPORTUNITY_WEIGHTS: dict[RiskProfile, dict[str, float]] = {
 _FII_WEIGHTS = {"mos": 0.45, "dividend": 0.40, "liquidity": 0.15}
 _ETF_WEIGHTS = {"mos": 0.55, "dividend": 0.30, "liquidity": 0.15}
 
+# Abaixo disso o score é chute, não medida: a UI deve apresentá-lo como
+# "sem dado suficiente" em vez de colorir uma nota.
+MIN_DATA_COMPLETENESS = 0.5
+
 
 def score_opportunity(
     asset_type: str,
@@ -176,205 +131,48 @@ def score_opportunity(
     trend: str,
     profile: RiskProfile = RiskProfile.moderate,
 ) -> tuple[float, dict[str, float]]:
-    """Score composto 0-100 de oportunidade: margem de segurança (preço justo) +
-    fundamentos (qualidade, endividamento, crescimento) + dividendos + técnico,
-    ponderados pelo perfil de risco do usuário. FII/ETF usam um subconjunto
-    (sem EPS/ROE/dívida de empresa aplicável)."""
+    """Score composto 0-100 de oportunidade.
 
-    mos_score = _score_mos(margin_of_safety)
-    dividend_score = _score_dividend(dividend_yield)
+    Margem de segurança (preço justo) + fundamentos (qualidade, endividamento,
+    crescimento) + dividendos + técnico, ponderados pelo perfil de risco.
+    FII/ETF usam um subconjunto (sem LPA/ROE/dívida de empresa aplicável).
 
+    Os pesos são **renormalizados sobre as dimensões disponíveis**: um ativo sem
+    dado de dividendo é pontuado pelo que se sabe dele, e o breakdown carrega
+    `data_completeness` para a UI poder dizer "não sei" em vez de "ruim".
+    """
     if asset_type in ("fii", "etf"):
-        liquidity_score = _score_liquidity(market_cap)
-        breakdown = {"mos": mos_score, "dividend": dividend_score, "liquidity": liquidity_score}
+        dimensions: dict[str, float | None] = {
+            "mos": _score_mos(margin_of_safety),
+            "dividend": _score_dividend(dividend_yield),
+            "liquidity": _score_liquidity(market_cap),
+        }
         weights = _FII_WEIGHTS if asset_type == "fii" else _ETF_WEIGHTS
     else:
-        breakdown = {
-            "mos": mos_score,
+        dimensions = {
+            "mos": _score_mos(margin_of_safety),
             "quality": _score_quality(roe, profit_margin),
-            "dividend": dividend_score,
+            "dividend": _score_dividend(dividend_yield),
             "leverage": _score_leverage(debt_to_equity),
             "growth": _score_growth(revenue_growth),
             "technical": _score_technical(rsi_14, trend),
         }
         weights = OPPORTUNITY_WEIGHTS[profile]
 
-    total = sum(weights[k] * breakdown[k] for k in weights)
+    available = {k: v for k, v in dimensions.items() if v is not None}
+    available_weight = sum(weights[k] for k in available)
+    total_weight = sum(weights.values())
 
-    return round(total, 2), {k: round(v, 2) for k, v in breakdown.items()}
+    data_completeness = round(available_weight / total_weight, 4) if total_weight else 0.0
 
+    if not available or available_weight <= 0:
+        return 0.0, {"data_completeness": 0.0}
 
-def _score_fii(f: CompanyFundamentals) -> ScoredCompany:
-    breakdown = {
-        "dividend": _score_dividend(f.dividend_yield),
-        "value": _score_pvp(f.pb_ratio),
-        "liquidity": _score_liquidity(f.market_cap),
-    }
-    weights = {"dividend": 0.50, "value": 0.35, "liquidity": 0.15}
+    # Renormaliza: sem isso, cada dimensão faltante puxava o score para baixo
+    # com peso cheio e valor arbitrário.
+    total = sum(weights[k] * available[k] for k in available) / available_weight
 
-    total = sum(weights[k] * breakdown[k] for k in weights)
+    breakdown = {k: round(v, 2) for k, v in available.items()}
+    breakdown["data_completeness"] = data_completeness
 
-    tags: list[str] = []
-    if f.dividend_yield:
-        tags.append(f"DY {f.dividend_yield:.1f}% a.a.")
-    if f.pb_ratio:
-        tags.append(f"P/VP {f.pb_ratio:.2f}" + (" (desconto)" if f.pb_ratio < 1 else ""))
-    if not tags:
-        tags.append("Fundo imobiliário")
-
-    return ScoredCompany(
-        fundamentals=f,
-        score=round(total, 2),
-        breakdown={k: round(v, 2) for k, v in breakdown.items()},
-        rationale=" · ".join(tags[:3]),
-    )
-
-
-def _score_etf(f: CompanyFundamentals) -> ScoredCompany:
-    # ETF é uma cota de fundo, não uma empresa — sem EPS/ROE/margem, então o
-    # score usa dividend yield (quando o ETF distribui) e liquidez como proxy de qualidade.
-    breakdown = {
-        "dividend": _score_dividend(f.dividend_yield),
-        "liquidity": _score_liquidity(f.market_cap),
-    }
-    weights = {"dividend": 0.5, "liquidity": 0.5}
-
-    total = sum(weights[k] * breakdown[k] for k in weights)
-
-    tags: list[str] = []
-    if f.dividend_yield:
-        tags.append(f"DY {f.dividend_yield:.1f}% a.a.")
-    tags.append(
-        "ETF — avaliação por dividend yield e liquidez, fora do modelo fundamentalista de empresa."
-    )
-
-    return ScoredCompany(
-        fundamentals=f,
-        score=round(total, 2),
-        breakdown={k: round(v, 2) for k, v in breakdown.items()},
-        rationale=" · ".join(tags[:3]),
-    )
-
-
-def _rationale(f: CompanyFundamentals, breakdown: dict[str, float]) -> str:
-
-    tags: list[str] = []
-
-    if breakdown.get("dividend", 0) >= 70 and f.dividend_yield:
-        tags.append(f"Boa pagadora de dividendos ({f.dividend_yield:.1f}% a.a.)")
-
-    elif f.dividend_yield and f.dividend_yield >= 4:
-        tags.append(f"Paga dividendos ({f.dividend_yield:.1f}% a.a.)")
-
-    if breakdown.get("quality", 0) >= 70:
-        tags.append("Empresa muito lucrativa")
-
-    elif breakdown.get("quality", 0) >= 50:
-        tags.append("Boa lucratividade")
-
-    if breakdown.get("value", 0) >= 70:
-        tags.append("Preço atrativo frente aos lucros")
-
-    if breakdown.get("growth", 0) >= 70:
-        tags.append("Em forte crescimento")
-
-    elif breakdown.get("growth", 0) <= 25:
-        tags.append("Crescimento fraco")
-
-    if breakdown.get("leverage", 0) >= 70:
-        tags.append("Pouco endividada")
-
-    elif breakdown.get("leverage", 0) <= 25:
-        tags.append("Bastante endividada")
-
-    if not tags:
-        tags.append("Perfil equilibrado")
-
-    return " · ".join(tags[:3])
-
-
-def score_company(
-    f: CompanyFundamentals,
-    profile: RiskProfile,
-    asset_type: str | None = None,
-    sector_medians: dict[str, tuple[float, float]] | None = None,
-) -> ScoredCompany:
-
-    at = asset_type or detect_type(f.ticker)
-
-    if at == "fii":
-        return _score_fii(f)
-
-    if at == "etf":
-        return _score_etf(f)
-
-    weights = PROFILE_WEIGHTS[profile]
-
-    sector_pe_median, sector_pb_median = (sector_medians or {}).get(
-        (f.sector or "").lower(), (None, None)
-    )
-
-    breakdown = {
-        "value": _score_value(f.pe_ratio, f.pb_ratio, sector_pe_median, sector_pb_median),
-        "quality": _score_quality(f.roe, f.profit_margin),
-        "dividend": _score_dividend(f.dividend_yield),
-        "leverage": _score_leverage(f.debt_to_equity),
-        "growth": _score_growth(f.revenue_growth),
-    }
-
-    total = sum(weights[k] * breakdown[k] for k in weights)
-
-    return ScoredCompany(
-        fundamentals=f,
-        score=round(total, 2),
-        breakdown={k: round(v, 2) for k, v in breakdown.items()},
-        rationale=_rationale(f, breakdown),
-    )
-
-
-def _compute_sector_medians(
-    companies: list[CompanyFundamentals],
-) -> dict[str, tuple[float, float]]:
-    pe_by_sector: dict[str, list[float]] = {}
-    pb_by_sector: dict[str, list[float]] = {}
-
-    for c in companies:
-        sector = (c.sector or "").lower()
-        if not sector:
-            continue
-        if c.pe_ratio and c.pe_ratio > 0:
-            pe_by_sector.setdefault(sector, []).append(c.pe_ratio)
-        if c.pb_ratio and c.pb_ratio > 0:
-            pb_by_sector.setdefault(sector, []).append(c.pb_ratio)
-
-    sectors = set(pe_by_sector) | set(pb_by_sector)
-    medians = {}
-    for sector in sectors:
-        pe_values = pe_by_sector.get(sector, [])
-        pb_values = pb_by_sector.get(sector, [])
-        pe_median = statistics.median(pe_values) if len(pe_values) >= 3 else None
-        pb_median = statistics.median(pb_values) if len(pb_values) >= 3 else None
-        medians[sector] = (pe_median, pb_median)
-
-    return medians
-
-
-def rank(
-    companies: list[CompanyFundamentals],
-    profile: RiskProfile,
-    exclude_sectors: list[str] | None = None,
-) -> list[ScoredCompany]:
-
-    excluded = {s.lower() for s in (exclude_sectors or [])}
-
-    eligible = [
-        c for c in companies if c.price and c.price > 0 and (c.sector or "").lower() not in excluded
-    ]
-
-    sector_medians = _compute_sector_medians(eligible)
-
-    scored = [score_company(c, profile, sector_medians=sector_medians) for c in eligible]
-
-    scored.sort(key=lambda s: s.score, reverse=True)
-
-    return scored
+    return round(total, 2), breakdown

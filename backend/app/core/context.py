@@ -2,12 +2,35 @@ from __future__ import annotations
 
 import contextvars
 
-_current_user_id: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "current_user_id", default="default"
+from app.core.errors import DomainError
+
+# Default None, não "default": com um default utilizável, todo caminho que
+# esquecesse `set_current_user_id` escrevia silenciosamente num tenant fantasma
+# chamado "default" — e o `_ensure_user` do store criava um usuário
+# `default@local` para hospedar esse dado. Falhar alto é a única opção segura
+# num sistema multi-tenant.
+_current_user_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "current_user_id", default=None
 )
 
 
+class MissingUserContextError(DomainError):
+    """Operação de tenant sem usuário no contexto."""
+
+    status_code = 401
+
+
 def get_current_user_id() -> str:
+    user_id = _current_user_id.get()
+    if not user_id:
+        raise MissingUserContextError(
+            "Nenhum usuário no contexto da requisição — operação de tenant abortada."
+        )
+    return user_id
+
+
+def get_current_user_id_or_none() -> str | None:
+    """Para jobs de background, que legitimamente rodam fora de uma requisição."""
     return _current_user_id.get()
 
 

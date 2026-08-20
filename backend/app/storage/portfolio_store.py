@@ -12,6 +12,7 @@ from app.core.database import SessionLocal, init_db
 from app.models.db_models import (
     ClosedTradeDb,
     DeviceTokenDb,
+    FixedIncomePositionDb,
     GoalDb,
     NotifiedOpportunityDb,
     PortfolioPosition,
@@ -22,8 +23,6 @@ from app.models.db_models import (
     User,
     WatchlistItemDb,
 )
-
-DEFAULT_USER = "default"
 
 _initialized = False
 
@@ -123,7 +122,14 @@ def _ensure_user(session, user_id: str) -> None:
 
 
 @contextmanager
-def _session(user_id: str | None):
+def _session(user_id: str | None, ensure_user: bool = False):
+    """Sessão de banco escopada a um tenant.
+
+    `ensure_user` só é necessário em caminhos que **criam** linha para o
+    usuário (a FK exige que ele exista no Postgres). Antes todo `_session`
+    fazia um SELECT em users: `generate_dashboard` sozinho abria 3–4 sessões e
+    o request inteiro passava de 8, cada uma com esse SELECT extra.
+    """
     global _initialized
     if not _initialized:
         init_db()
@@ -132,8 +138,28 @@ def _session(user_id: str | None):
     uid = user_id or get_current_user_id()
     session = SessionLocal()
     try:
-        _ensure_user(session, uid)
+        if ensure_user:
+            _ensure_user(session, uid)
         yield session, uid
+        session.commit()
+    finally:
+        session.close()
+
+
+@contextmanager
+def _session_global():
+    """Sessão sem tenant, para manutenção e jobs cross-usuário.
+
+    Nunca usar em caminho de requisição: não há filtro por `user_id` aqui.
+    """
+    global _initialized
+    if not _initialized:
+        init_db()
+        _initialized = True
+
+    session = SessionLocal()
+    try:
+        yield session
         session.commit()
     finally:
         session.close()
@@ -167,7 +193,7 @@ def upsert_position(
 ) -> None:
     now = time.time()
     t = ticker.strip().upper()
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         row = session.get(PortfolioPosition, (uid, t))
         if row is None:
             row = PortfolioPosition(
@@ -188,7 +214,7 @@ def upsert_position(
 
 
 def update_category(ticker: str, category: str, user_id: str | None = None) -> None:
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         row = session.get(PortfolioPosition, (uid, ticker.strip().upper()))
         if row is not None:
             row.category = category
@@ -203,7 +229,7 @@ def replace_all(items: list[StoredItem], user_id: str | None = None) -> None:
         return
 
     now = time.time()
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         session.execute(delete(PortfolioPosition).where(PortfolioPosition.user_id == uid))
         for it in validated:
             session.add(
@@ -294,7 +320,7 @@ def create_closed_trade(
     user_id: str | None = None,
 ) -> ClosedTrade:
     now = time.time()
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         row = ClosedTradeDb(
             user_id=uid,
             ticker=ticker.strip().upper(),
@@ -362,7 +388,7 @@ def record_snapshot(
     day_key = int(now // 86400) * 86400
     cutoff = now - (365 * 86400)
 
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         row = session.get(PortfolioSnapshot, (uid, day_key))
         if row is None:
             session.add(
@@ -433,7 +459,7 @@ def list_goals(user_id: str | None = None) -> list[Goal]:
 
 
 def replace_goals(goals: list[Goal], user_id: str | None = None) -> None:
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         session.execute(delete(GoalDb).where(GoalDb.user_id == uid))
         for g in goals:
             session.add(
@@ -514,7 +540,7 @@ def set_preferences(user_id: str | None = None, **fields) -> None:
         raise ValueError(f"Campos de preferência desconhecidos: {sorted(unknown)}")
 
     now = time.time()
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         row = session.get(PreferencesDb, uid)
         if row is None:
             values = dict(_PREF_DEFAULTS)
@@ -538,7 +564,7 @@ def get_last_digest_sent_at(user_id: str | None = None) -> float | None:
 
 
 def mark_digest_sent(sent_at: float, user_id: str | None = None) -> None:
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         row = session.get(PreferencesDb, uid)
         if row is None:
             row = PreferencesDb(user_id=uid, last_digest_sent_at=sent_at, updated_at=sent_at)
@@ -551,7 +577,7 @@ def register_device_token(
     token: str, platform: str = "android", user_id: str | None = None
 ) -> None:
     # reatribui o token ao usuário atual mesmo se já pertencia a outro (troca de conta no mesmo aparelho)
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         existing = session.scalar(select(DeviceTokenDb).where(DeviceTokenDb.token == token))
         if existing is not None:
             existing.user_id = uid
@@ -570,7 +596,13 @@ def unregister_device_token(token: str, user_id: str | None = None) -> None:
 
 
 def list_all_device_tokens() -> list[DeviceToken]:
-    with _session(DEFAULT_USER) as (session, _uid):
+    """Todos os tokens, de todos os tenants — usado pelo ciclo de notificação.
+
+    Roda fora de uma requisição, então não há tenant no contexto. Antes usava
+    `_session(DEFAULT_USER)`, e o `_ensure_user` criava um usuário
+    `default@local` a cada ciclo de notificação.
+    """
+    with _session_global() as session:
         rows = session.scalars(select(DeviceTokenDb)).all()
         return [
             DeviceToken(id=r.id, user_id=r.user_id, token=r.token, platform=r.platform)
@@ -597,7 +629,7 @@ def get_notified_opportunity_tickers(user_id: str) -> set[str]:
 
 def mark_opportunities_notified(user_id: str, tickers: list[str]) -> None:
     now = time.time()
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         for ticker in tickers:
             if session.get(NotifiedOpportunityDb, (uid, ticker)) is None:
                 session.add(NotifiedOpportunityDb(user_id=uid, ticker=ticker, notified_at=now))
@@ -612,7 +644,7 @@ def list_sector_goals(user_id: str | None = None) -> list[SectorGoal]:
 
 
 def replace_sector_goals(goals: list[SectorGoal], user_id: str | None = None) -> None:
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         session.execute(delete(SectorGoalDb).where(SectorGoalDb.user_id == uid))
         for g in goals:
             session.add(
@@ -635,7 +667,7 @@ def list_watchlist(user_id: str | None = None) -> list[WatchlistItemRow]:
 
 def replace_watchlist(items: list[dict], user_id: str | None = None) -> None:
     now = time.time()
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         session.execute(delete(WatchlistItemDb).where(WatchlistItemDb.user_id == uid))
         for it in items:
             ticker = str(it.get("ticker", "")).strip().upper()
@@ -687,7 +719,7 @@ def create_price_alert(
     user_id: str | None = None,
 ) -> int:
     now = time.time()
-    with _session(user_id) as (session, uid):
+    with _session(user_id, ensure_user=True) as (session, uid):
         row = PriceAlertDb(
             user_id=uid,
             ticker=ticker.strip().upper(),
@@ -714,3 +746,129 @@ def mark_alert_triggered(alert_id: int, user_id: str | None = None) -> None:
         row = session.get(PriceAlertDb, alert_id)
         if row is not None and row.user_id == uid:
             row.triggered_at = time.time()
+
+
+class FixedIncomeRow(TypedDict):
+    id: int
+    nome: str
+    tipo: str
+    valor_investido: float
+    taxa: float
+    tipo_taxa: str
+    percentual_cdi: float | None
+    data_aplicacao: str
+    vencimento: str | None
+    liquidez: str
+    isento_ir: bool | None
+    oculto: bool
+    created_at: float
+    updated_at: float
+
+
+_FIXED_INCOME_FIELDS = (
+    "nome",
+    "tipo",
+    "valor_investido",
+    "taxa",
+    "tipo_taxa",
+    "percentual_cdi",
+    "data_aplicacao",
+    "vencimento",
+    "liquidez",
+    "isento_ir",
+    "oculto",
+)
+
+
+def _fixed_income_row(row: FixedIncomePositionDb) -> FixedIncomeRow:
+    return FixedIncomeRow(
+        id=row.id,
+        nome=row.nome,
+        tipo=row.tipo,
+        valor_investido=row.valor_investido,
+        taxa=row.taxa,
+        tipo_taxa=row.tipo_taxa,
+        percentual_cdi=row.percentual_cdi,
+        data_aplicacao=row.data_aplicacao,
+        vencimento=row.vencimento,
+        liquidez=row.liquidez,
+        isento_ir=row.isento_ir,
+        oculto=bool(row.oculto),
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
+
+
+def list_fixed_income(user_id: str | None = None) -> list[FixedIncomeRow]:
+    with _session(user_id) as (session, uid):
+        rows = session.scalars(
+            select(FixedIncomePositionDb)
+            .where(FixedIncomePositionDb.user_id == uid)
+            .order_by(FixedIncomePositionDb.data_aplicacao.desc(), FixedIncomePositionDb.id)
+        ).all()
+        return [_fixed_income_row(r) for r in rows]
+
+
+def get_fixed_income(position_id: int, user_id: str | None = None) -> FixedIncomeRow | None:
+    with _session(user_id) as (session, uid):
+        row = session.get(FixedIncomePositionDb, position_id)
+        if row is None or row.user_id != uid:
+            return None
+        return _fixed_income_row(row)
+
+
+def create_fixed_income(user_id: str | None = None, **fields) -> FixedIncomeRow:
+    unknown = set(fields) - set(_FIXED_INCOME_FIELDS)
+    if unknown:
+        raise ValueError(f"Campos de renda fixa desconhecidos: {sorted(unknown)}")
+
+    now = time.time()
+    with _session(user_id, ensure_user=True) as (session, uid):
+        row = FixedIncomePositionDb(user_id=uid, created_at=now, updated_at=now, **fields)
+        session.add(row)
+        session.flush()
+        return _fixed_income_row(row)
+
+
+def update_fixed_income(
+    position_id: int, user_id: str | None = None, **fields
+) -> FixedIncomeRow | None:
+    unknown = set(fields) - set(_FIXED_INCOME_FIELDS)
+    if unknown:
+        raise ValueError(f"Campos de renda fixa desconhecidos: {sorted(unknown)}")
+
+    with _session(user_id) as (session, uid):
+        row = session.get(FixedIncomePositionDb, position_id)
+        if row is None or row.user_id != uid:
+            return None
+        for key, value in fields.items():
+            setattr(row, key, value)
+        row.updated_at = time.time()
+        session.flush()
+        return _fixed_income_row(row)
+
+
+def delete_fixed_income(position_id: int, user_id: str | None = None) -> bool:
+    with _session(user_id) as (session, uid):
+        result = session.execute(
+            delete(FixedIncomePositionDb).where(
+                FixedIncomePositionDb.id == position_id,
+                FixedIncomePositionDb.user_id == uid,
+            )
+        )
+        return result.rowcount > 0
+
+
+def purge_legacy_fixed_income_tickers() -> int:
+    """Remove as posições `RF_*` do tempo em que renda fixa era um ticker.
+
+    Aqueles registros só carregavam o valor investido — taxa, prazo e data
+    viviam no localStorage do navegador e não são recuperáveis no servidor.
+    Mantê-los produziria linhas de renda fixa sem rendimento convivendo com a
+    tabela nova. Roda em todos os tenants, uma vez, no startup.
+    """
+    with _session_global() as session:
+        result = session.execute(
+            delete(PortfolioPosition).where(PortfolioPosition.ticker.like("RF!_%", escape="!"))
+        )
+        return result.rowcount or 0

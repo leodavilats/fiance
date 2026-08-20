@@ -1,4 +1,10 @@
-import { AssetType, Verdict, PortfolioCategory } from './common.model';
+import {
+  AllocationCategory,
+  AssetType,
+  LegacyPortfolioCategory,
+  PortfolioCategory,
+  Verdict,
+} from './common.model';
 
 export interface PortfolioItem {
   ticker: string;
@@ -27,8 +33,8 @@ export interface PortfolioPosition {
   verdict: Verdict;
   label: string;
   reasons: string[];
-  category: 'auto' | 'renda' | 'trade';
-  category_resolved: 'renda' | 'trade';
+  category: LegacyPortfolioCategory;
+  category_resolved: AllocationCategory;
   dividend_yield: number | null;
   sector: string | null;
 }
@@ -46,7 +52,7 @@ export interface StoredPortfolioItem {
   ticker: string;
   quantity: number;
   avg_price: number;
-  category: 'auto' | 'renda' | 'trade';
+  category: LegacyPortfolioCategory;
   updated_at: number | null;
 }
 

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/labels.dart';
@@ -218,8 +219,19 @@ class AssetsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(dashboardProvider);
 
+    final fixedIncome = ref.watch(fixedIncomeProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Meus Ativos')),
+      appBar: AppBar(
+        title: const Text('Meus Ativos'),
+        actions: [
+          IconButton(
+            tooltip: 'Renda fixa',
+            icon: const Icon(Icons.account_balance_outlined),
+            onPressed: () => context.go('/assets/renda-fixa'),
+          ),
+        ],
+      ),
       // O FAB só aparece quando a carteira carregou: cadastrar em cima de um
       // estado de erro/loading é o que abria o caminho de perda de dado.
       floatingActionButton: dashboard.hasValue
@@ -229,7 +241,10 @@ class AssetsScreen extends ConsumerWidget {
             )
           : null,
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(dashboardProvider),
+        onRefresh: () async {
+          ref.invalidate(dashboardProvider);
+          ref.invalidate(fixedIncomeProvider);
+        },
         child: dashboard.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(child: Text('Erro: $err')),
@@ -262,6 +277,17 @@ class AssetsScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
               children: [
                 _SummaryGrid(summary: data.summary),
+                // Renda fixa é entidade própria; o resumo aqui é um atalho
+                // para a tela dedicada, que também permite editar.
+                fixedIncome.maybeWhen(
+                  data: (fi) => fi.visiveis.isEmpty
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(top: 20),
+                          child: _FixedIncomeSummaryCard(data: fi),
+                        ),
+                  orElse: () => const SizedBox.shrink(),
+                ),
                 if (data.allocations.isNotEmpty) ...[
                   const SizedBox(height: 20),
                   const _SectionTitle(
@@ -1143,6 +1169,63 @@ class _MiniInfo extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
         ),
       ],
+    );
+  }
+}
+
+
+/// Resumo da renda fixa na aba de ativos, com atalho para a tela dedicada.
+class _FixedIncomeSummaryCard extends StatelessWidget {
+  const _FixedIncomeSummaryCard({required this.data});
+
+  final FixedIncomeList data;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final vencendo = data.visiveis.where((i) => i.vencimentoProximo).length;
+
+    return Card(
+      child: InkWell(
+        onTap: () => context.go('/assets/renda-fixa'),
+        borderRadius: BorderRadius.circular(appRadius),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.account_balance_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Renda fixa (${data.visiveis.length})',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${formatCurrency(data.totalAtual)} hoje · rendimento de '
+                '${formatCurrency(data.totalRendimento)} '
+                '(${data.rendimentoPct.toStringAsFixed(2)}%)',
+              ),
+              if (vencendo > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    '$vencendo ${vencendo == 1 ? 'aplicação vence' : 'aplicações vencem'} '
+                    'nos próximos 30 dias',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

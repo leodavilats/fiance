@@ -10,6 +10,7 @@ from . import (
     benchmark,
     dashboard,
     dip_scanner,
+    fixed_income,
     goals,
     notifications,
     opportunities,
@@ -38,6 +39,7 @@ protected.include_router(opportunities.router, tags=["Opportunities"])
 protected.include_router(dashboard.router, tags=["Dashboard"])
 protected.include_router(strategy.router, tags=["Strategy"])
 protected.include_router(renda_fixa.router, tags=["Renda Fixa"])
+protected.include_router(fixed_income.router, tags=["Renda Fixa"])
 protected.include_router(projection.router, tags=["Projection"])
 protected.include_router(quick_invest.router, tags=["Quick Invest"])
 protected.include_router(benchmark.router, tags=["Benchmark"])

@@ -10,6 +10,7 @@ from app.models import (
     PortfolioPosition,
     PortfolioSnapshot,
 )
+from app.models.enums import AssetType
 from app.repositories import PortfolioRepository
 
 REBALANCE_THRESHOLD_PCT = 5.0
@@ -158,8 +159,8 @@ class DashboardService:
         goals: list[Goal],
     ) -> DashboardResponse:
 
-        real_positions = [p for p in positions if not p.ticker.startswith("RF_")]
-        rf_positions = [p for p in positions if p.ticker.startswith("RF_")]
+        real_positions = [p for p in positions if p.asset_type != AssetType.renda_fixa]
+        rf_positions = [p for p in positions if p.asset_type == AssetType.renda_fixa]
 
         top_sells = sorted(
             [p for p in real_positions if p.verdict in ("SELL", "STRONG_SELL")],
@@ -197,7 +198,7 @@ class DashboardService:
 
         snaps = self.portfolio_repo.list_snapshots(limit=90)
 
-        real_positions_count = len([p for p in positions if not p.ticker.startswith("RF_")])
+        real_positions_count = len(real_positions)
         health = compute_portfolio_health(positions, allocations)
 
         return DashboardResponse(

@@ -6,7 +6,6 @@ from .analysis import (
     TechnicalBlock,
 )
 from .benchmark import BenchmarkPoint, BenchmarkResponse
-from .company import CompanyFundamentals, ScoredCompany
 from .dashboard import (
     Alert,
     CategoryAllocation,
@@ -57,6 +56,10 @@ from .quick_invest import (
     QuickInvestResponse,
 )
 from .renda_fixa import (
+    FixedIncomeCreateRequest,
+    FixedIncomeListResponse,
+    FixedIncomePosition,
+    FixedIncomeUpdateRequest,
     ReferenceRates,
     RendaFixaAnalysisResult,
     RendaFixaAsset,
@@ -72,8 +75,6 @@ __all__ = [
     "RendaFixaType",
     "RiskProfile",
     "TaxType",
-    "CompanyFundamentals",
-    "ScoredCompany",
     "AssetAnalysis",
     "CompareResponse",
     "DecisionBlock",
@@ -115,6 +116,10 @@ __all__ = [
     "RendaFixaCompareRequest",
     "RendaFixaCompareResponse",
     "ReferenceRates",
+    "FixedIncomeCreateRequest",
+    "FixedIncomeUpdateRequest",
+    "FixedIncomePosition",
+    "FixedIncomeListResponse",
     "PassiveIncomeMonth",
     "PassiveIncomeProjectionRequest",
     "PassiveIncomeProjectionResponse",

@@ -181,6 +181,7 @@ class OpportunityService:
             ),
             score=score,
             score_breakdown=breakdown,
+            data_completeness=breakdown.get("data_completeness", 1.0),
             reasons=dec.reasons,
         )
 

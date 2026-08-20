@@ -44,9 +44,24 @@ async def _notification_loop() -> None:
         await asyncio.sleep(15 * 60)
 
 
+def _purge_legacy_fixed_income() -> None:
+    from app.storage import portfolio_store
+
+    try:
+        removed = portfolio_store.purge_legacy_fixed_income_tickers()
+        if removed:
+            logger.info(
+                "Renda fixa migrou para tabela própria: %d posição(ões) RF_* legadas removidas.",
+                removed,
+            )
+    except Exception:
+        logger.warning("Falha ao limpar posições RF_* legadas", exc_info=True)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
+    _purge_legacy_fixed_income()
 
     tasks = [
         asyncio.create_task(_warm_up_opportunities(), name="warm-up-opportunities"),

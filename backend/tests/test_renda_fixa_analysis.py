@@ -59,3 +59,135 @@ def test_explicit_isento_ir_overrides_tipo():
     result = analyze_one(_asset(isento_ir=True))
     assert result.isento_ir is True
     assert result.ir.valor_ir == 0.0
+
+
+# --- D9: divergências entre o backend e o cálculo que vivia no Angular ------
+
+
+def test_percentual_cdi_is_multiplicative_not_exponential():
+    """ "110% do CDI" é 1,10 × CDI, não (1+CDI)^1,10.
+
+    A forma exponencial não é a convenção de mercado; a 200% do CDI a
+    diferença chegava a ~2 p.p. ao ano.
+    """
+    cdi = 14.4
+    result = analyze_one(
+        _asset(tipo_taxa=TaxType.pos_fixado, percentual_cdi=110.0, taxa=1.0, prazo_meses=12),
+        cdi_anual=cdi,
+    )
+    assert result.taxa_anual_efetiva_pct == round(cdi * 1.10, 2)
+
+
+def test_hundred_percent_of_cdi_equals_the_cdi():
+    cdi = 14.4
+    result = analyze_one(
+        _asset(tipo_taxa=TaxType.pos_fixado, percentual_cdi=100.0, taxa=1.0),
+        cdi_anual=cdi,
+    )
+    assert result.taxa_anual_efetiva_pct == cdi
+
+
+def test_double_cdi_does_not_explode_exponentially():
+    cdi = 14.4
+    result = analyze_one(
+        _asset(tipo_taxa=TaxType.pos_fixado, percentual_cdi=200.0, taxa=1.0),
+        cdi_anual=cdi,
+    )
+    # Exponencial daria (1,144)^2 - 1 = 30,9%; multiplicativo dá 28,8%.
+    assert result.taxa_anual_efetiva_pct == round(cdi * 2, 2)
+
+
+def test_ipca_plus_composes_inflation_with_the_real_rate():
+    """IPCA+6% rendia 6%, sem inflação — `tesouro_ipca` só existia no enum."""
+    result = analyze_one(
+        _asset(tipo=RendaFixaType.tesouro_ipca, taxa=6.0, tipo_taxa=TaxType.pre_fixado),
+        ipca_anual=5.0,
+    )
+    esperado = round(((1.05 * 1.06) - 1) * 100, 2)
+    assert result.taxa_anual_efetiva_pct == esperado
+    assert result.taxa_anual_efetiva_pct > 6.0
+
+
+def test_hibrido_also_composes_inflation():
+    result = analyze_one(_asset(taxa=4.0, tipo_taxa=TaxType.hibrido), ipca_anual=5.0)
+    assert result.taxa_anual_efetiva_pct == round(((1.05 * 1.04) - 1) * 100, 2)
+
+
+def test_pct_of_cdi_is_not_inflated_by_a_hardcoded_benchmark():
+    """Uma LCI a 100% do CDI era exibida como ~117% do CDI.
+
+    A causa era comparar contra `cdi_anual × 0.85` hardcoded. Agora há dois
+    números explícitos: quanto do CDI se fica líquido, e o equivalente bruto.
+    """
+    cdi = 14.4
+    lci = analyze_one(
+        _asset(
+            tipo=RendaFixaType.lci,
+            tipo_taxa=TaxType.pos_fixado,
+            percentual_cdi=100.0,
+            taxa=1.0,
+            prazo_meses=12,
+        ),
+        cdi_anual=cdi,
+    )
+
+    # Isenta e a 100% do CDI: fica com ~100% do CDI líquido.
+    assert 99.0 <= lci.taxa_equivalente_cdi_pct <= 101.0
+    # E equivale a um CDB de mesmo prazo rendendo ~125% do CDI (IR de 20%).
+    assert lci.pct_cdi_bruto_equivalente > 120.0
+
+
+def test_twenty_four_month_term_lands_on_the_fifteen_percent_bracket():
+    """O web usava meses × 30 (720 d -> 17,5%) e o backend × 30,44 (730 d -> 15%).
+
+    Com uma constante única de dias por mês, 24 meses passa de 720 dias e cai
+    em 15% dos dois lados.
+    """
+    result = analyze_one(_asset(prazo_meses=24))
+    assert result.ir.prazo_dias > 720
+    assert result.ir.aliquota_pct == 15.0
+
+
+def test_mark_to_market_uses_the_elapsed_term():
+    """`prazo_meses_override` é o que permite marcar a posição a mercado."""
+    cinco_meses = analyze_one(_asset(prazo_meses=24), prazo_meses_override=5)
+    doze_meses = analyze_one(_asset(prazo_meses=24), prazo_meses_override=12)
+
+    assert cinco_meses.rendimento_liquido < doze_meses.rendimento_liquido
+    # Resgate em 5 meses paga a alíquota da faixa curta, não a do contrato
+    # (que, em 24 meses, seria de 15%).
+    assert cinco_meses.ir.aliquota_pct == 22.5
+    assert analyze_one(_asset(prazo_meses=24)).ir.aliquota_pct == 15.0
+
+
+def test_daily_liquidity_wins_when_the_rate_is_nearly_the_same():
+    from app.analysis.renda_fixa_analysis import compare_options
+    from app.models.renda_fixa import RendaFixaCompareRequest
+
+    travado = _asset(nome="CDB 5 anos", taxa=13.1, prazo_meses=60)
+    liquido = _asset(
+        nome="CDB liquidez diária", taxa=13.0, prazo_meses=60, liquidez=Liquidez.diaria
+    )
+
+    resp = compare_options(
+        RendaFixaCompareRequest(ativos=[travado, liquido], cdi_anual=14.4, ipca_anual=5.0)
+    )
+
+    assert resp.resultados[resp.melhor_opcao_index].nome == "CDB liquidez diária"
+    assert "liquidez" in resp.melhor_opcao_motivo.lower()
+
+
+def test_much_better_rate_still_wins_over_liquidity():
+    from app.analysis.renda_fixa_analysis import compare_options
+    from app.models.renda_fixa import RendaFixaCompareRequest
+
+    travado = _asset(nome="CDB 5 anos", taxa=18.0, prazo_meses=60)
+    liquido = _asset(
+        nome="CDB liquidez diária", taxa=11.0, prazo_meses=60, liquidez=Liquidez.diaria
+    )
+
+    resp = compare_options(
+        RendaFixaCompareRequest(ativos=[travado, liquido], cdi_anual=14.4, ipca_anual=5.0)
+    )
+
+    assert resp.resultados[resp.melhor_opcao_index].nome == "CDB 5 anos"

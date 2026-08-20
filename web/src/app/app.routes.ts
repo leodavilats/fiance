@@ -27,6 +27,15 @@ export const routes: Routes = [
     title: 'Meus Ativos - fiance',
   },
   {
+    path: 'assets/cadastro',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/portfolio-editor/portfolio-editor.component').then(
+        m => m.PortfolioEditorComponent
+      ),
+    title: 'Cadastro da carteira - fiance',
+  },
+  {
     path: 'market',
     canActivate: [authGuard],
     loadComponent: () =>

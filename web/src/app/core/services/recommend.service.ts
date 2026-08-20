@@ -11,6 +11,9 @@ import {
   DashboardResponse,
   DipAnalysisResponse,
   DipScannerResponse,
+  FixedIncomeListResponse,
+  FixedIncomePayload,
+  FixedIncomePosition,
   Goal,
   InvestmentStrategy,
   OpportunitiesFrequency,
@@ -73,14 +76,44 @@ export class RecommendService {
     return this.http.get<PortfolioStateResponse>(`${this.base}/portfolio`);
   }
 
+  /**
+   * Importação explícita: substitui a carteira inteira. Escrita destrutiva —
+   * use `upsertPosition`/`deletePosition` para o cadastro do dia a dia.
+   */
   savePortfolio(items: PortfolioItem[]): Observable<PortfolioStateResponse> {
     return this.http.put<PortfolioStateResponse>(`${this.base}/portfolio`, { items });
   }
 
-  deletePosition(ticker: string): Observable<{ deleted: string }> {
-    return this.http.delete<{ deleted: string }>(
-      `${this.base}/portfolio/${encodeURIComponent(ticker)}`
+  /** Cria ou atualiza uma posição sem tocar nas outras. */
+  upsertPosition(item: PortfolioItem): Observable<PortfolioStateResponse> {
+    return this.http.post<PortfolioStateResponse>(`${this.base}/portfolio/position`, item);
+  }
+
+  deletePosition(ticker: string): Observable<PortfolioStateResponse> {
+    return this.http.delete<PortfolioStateResponse>(
+      `${this.base}/portfolio/position/${encodeURIComponent(ticker)}`
     );
+  }
+
+  // --- renda fixa (entidade persistida no servidor) ---
+
+  getFixedIncome(): Observable<FixedIncomeListResponse> {
+    return this.http.get<FixedIncomeListResponse>(`${this.base}/fixed-income`);
+  }
+
+  createFixedIncome(payload: FixedIncomePayload): Observable<FixedIncomePosition> {
+    return this.http.post<FixedIncomePosition>(`${this.base}/fixed-income`, payload);
+  }
+
+  updateFixedIncome(
+    id: number,
+    payload: Partial<FixedIncomePayload>
+  ): Observable<FixedIncomePosition> {
+    return this.http.put<FixedIncomePosition>(`${this.base}/fixed-income/${id}`, payload);
+  }
+
+  deleteFixedIncome(id: number): Observable<{ deleted: number }> {
+    return this.http.delete<{ deleted: number }>(`${this.base}/fixed-income/${id}`);
   }
 
   sellPosition(req: SellRequest): Observable<ClosedTrade> {
@@ -143,31 +176,22 @@ export class RecommendService {
     return this.http.get<Preferences>(`${this.base}/preferences`);
   }
 
-  savePreferences(
-    passiveIncomeGoal?: number,
-    yields?: { stock?: number; fii?: number; bdr?: number; etf?: number },
-    recommendation?: {
-      notifyPriceAlerts?: boolean;
-      opportunitiesFrequency?: OpportunitiesFrequency;
-      riskProfile?: RiskProfile;
-      preferredCategories?: AllocationCategory[];
-      preferredSectors?: string[];
-      excludedTickers?: string[];
+  /**
+   * PUT parcial: só o que vier definido é enviado, e só o que for enviado é
+   * gravado. Mandar o objeto inteiro era o que apagava `cash_available` a
+   * cada salvamento da tela de Configurações.
+   */
+  savePreferences(patch: Partial<Preferences>): Observable<Preferences> {
+    const body: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(patch)) {
+      if (value !== undefined) body[key] = value;
     }
-  ): Observable<Preferences> {
-    return this.http.put<Preferences>(`${this.base}/preferences`, {
-      passive_income_goal: passiveIncomeGoal ?? null,
-      desired_yield_stock: yields?.stock ?? null,
-      desired_yield_fii: yields?.fii ?? null,
-      desired_yield_bdr: yields?.bdr ?? null,
-      desired_yield_etf: yields?.etf ?? null,
-      notify_price_alerts: recommendation?.notifyPriceAlerts ?? null,
-      opportunities_frequency: recommendation?.opportunitiesFrequency ?? null,
-      risk_profile: recommendation?.riskProfile ?? null,
-      preferred_categories: recommendation?.preferredCategories ?? null,
-      preferred_sectors: recommendation?.preferredSectors ?? null,
-      excluded_tickers: recommendation?.excludedTickers ?? null,
-    });
+    return this.http.put<Preferences>(`${this.base}/preferences`, body);
+  }
+
+  /** Atalho para a única preferência que Estratégia/Quick Invest escrevem. */
+  saveCashAvailable(cashAvailable: number): Observable<Preferences> {
+    return this.savePreferences({ cash_available: cashAvailable });
   }
 
   getStrategy(cashAvailable = 0): Observable<InvestmentStrategy> {

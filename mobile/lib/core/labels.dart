@@ -14,7 +14,28 @@ const _assetTypeLabels = {
   'bdr': 'BDR',
   'fii': 'FII',
   'etf': 'ETF',
+  'renda_fixa': 'Renda Fixa',
 };
+
+const _rendaFixaTipoLabels = {
+  'cdb': 'CDB',
+  'lci': 'LCI',
+  'lca': 'LCA',
+  'lc': 'LC',
+  'cri': 'CRI',
+  'cra': 'CRA',
+  'tesouro_selic': 'Tesouro Selic',
+  'tesouro_ipca': 'Tesouro IPCA+',
+  'tesouro_pre': 'Tesouro Pré',
+};
+
+String rendaFixaTipoLabel(String? tipo) {
+  if (tipo == null) return '—';
+  return _rendaFixaTipoLabels[tipo] ?? tipo;
+}
+
+String liquidezLabel(String? liquidez) =>
+    liquidez == 'diaria' ? 'Liquidez diária' : 'No vencimento';
 
 String categoryLabel(String? category) {
   if (category == null) return '—';

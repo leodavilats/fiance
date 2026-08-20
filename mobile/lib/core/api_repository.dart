@@ -69,6 +69,30 @@ class ApiRepository {
     await _dio.delete('/portfolio/position/$ticker');
   }
 
+  // --- renda fixa (entidade persistida no servidor) ---
+
+  Future<FixedIncomeList> getFixedIncome() async {
+    final res = await _dio.get('/fixed-income');
+    return FixedIncomeList.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<FixedIncomePosition> createFixedIncome(Map<String, dynamic> payload) async {
+    final res = await _dio.post('/fixed-income', data: payload);
+    return FixedIncomePosition.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<FixedIncomePosition> updateFixedIncome(
+    int id,
+    Map<String, dynamic> payload,
+  ) async {
+    final res = await _dio.put('/fixed-income/$id', data: payload);
+    return FixedIncomePosition.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteFixedIncome(int id) async {
+    await _dio.delete('/fixed-income/$id');
+  }
+
   Future<List<TickerSuggestion>> searchTickers(String query, {int limit = 8}) async {
     if (query.trim().isEmpty) return [];
     final res = await _dio.get(

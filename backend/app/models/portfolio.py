@@ -8,8 +8,9 @@ from .enums import AssetType
 MAX_PORTFOLIO_ITEMS = 500
 
 # Ticker da B3: radical de 4 caracteres (pode conter dígito, ex. M1TA34) +
-# 1 ou 2 dígitos. RF_<tipo>_<n> é o ticker sintético legado de renda fixa.
-TICKER_PATTERN = r"^(RF_[a-z_]+_\d+|[A-Za-z][A-Za-z0-9]{3}\d{1,2})$"
+# 1 ou 2 dígitos. Renda fixa não passa por aqui — tem tabela própria
+# (fixed_income_positions) em vez do ticker sintético RF_<tipo>_<n>.
+TICKER_PATTERN = r"^[A-Za-z][A-Za-z0-9]{3}\d{1,2}$"
 
 
 class PortfolioItem(BaseModel):
@@ -50,7 +51,7 @@ class PortfolioPosition(BaseModel):
     label: str
     reasons: list[str] = Field(default_factory=list)
     category: str = "auto"
-    category_resolved: str = "trade"
+    category_resolved: str = "acoes_br"
     dividend_yield: float | None = None
     sector: str | None = None
 

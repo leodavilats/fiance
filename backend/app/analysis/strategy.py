@@ -4,6 +4,15 @@ from ..models.goal import Goal
 from ..models.opportunity import Opportunity
 from ..models.portfolio import PortfolioItem
 
+# Categorias que geram renda previsível vs. as que dependem de valorização.
+# `_analyze_investor_profile` lia normalized_goals["renda"] e ["trade"] — nomes
+# que não existem mais em VALID_CATEGORIES. Consequência verificável: os dois
+# eram sempre 0, então o perfil exibido na página de Estratégia era sempre
+# "Moderado" e a tolerância a risco sempre "Baixo", quaisquer que fossem as
+# metas do usuário.
+_INCOME_CATEGORIES = ("renda_fixa", "fiis")
+_GROWTH_CATEGORIES = ("acoes_br", "bdrs", "etfs")
+
 
 def _analyze_investor_profile(goals: list[Goal]) -> dict[str, Any]:
     total_pct = sum(g.target_pct for g in goals)
@@ -12,13 +21,13 @@ def _analyze_investor_profile(goals: list[Goal]) -> dict[str, Any]:
     for g in goals:
         normalized_goals[g.category] = (g.target_pct / total_pct * 100) if total_pct > 0 else 0
 
-    renda_pct = normalized_goals.get("renda", 0)
-    trade_pct = normalized_goals.get("trade", 0)
+    income_pct = sum(normalized_goals.get(c, 0) for c in _INCOME_CATEGORIES)
+    growth_pct = sum(normalized_goals.get(c, 0) for c in _GROWTH_CATEGORIES)
 
-    if renda_pct >= 60:
+    if income_pct >= 60:
         profile_type = "Conservador"
         description = "Foco em renda passiva e preservação de capital."
-    elif trade_pct >= 50:
+    elif growth_pct >= 70:
         profile_type = "Agressivo"
         description = "Foco em crescimento e valorização de capital."
     else:
@@ -29,16 +38,16 @@ def _analyze_investor_profile(goals: list[Goal]) -> dict[str, Any]:
         "type": profile_type,
         "description": description,
         "goals": normalized_goals,
-        "risk_tolerance": _assess_risk_tolerance(trade_pct),
+        "income_pct": round(income_pct, 1),
+        "growth_pct": round(growth_pct, 1),
+        "risk_tolerance": _assess_risk_tolerance(growth_pct),
     }
 
 
-def _assess_risk_tolerance(trade_pct: float) -> str:
-    risk_score = trade_pct * 0.5
-
-    if risk_score >= 40:
+def _assess_risk_tolerance(growth_pct: float) -> str:
+    if growth_pct >= 70:
         return "Alto"
-    elif risk_score >= 20:
+    elif growth_pct >= 45:
         return "Médio"
     else:
         return "Baixo"
@@ -54,7 +63,7 @@ def _calculate_current_allocation(
 
     allocation = {}
     for pos in evaluation["positions"]:
-        cat = pos.get("category_resolved", "trade")
+        cat = pos.get("category_resolved", "acoes_br")
         current_value = pos.get("current_price", 0) * pos.get("quantity", 0)
 
         if cat not in allocation:
@@ -238,11 +247,14 @@ def _generate_investment_suggestions(
 
 
 def _generate_investment_objective(opp: Opportunity, category: str) -> str:
+    # As chaves eram renda/trade/caixa: só `etfs` casava, e praticamente toda
+    # sugestão recebia o texto genérico de fallback.
     objectives = {
-        "renda": "Geração de renda passiva através de dividendos",
-        "trade": "Crescimento de capital através de valorização",
+        "renda_fixa": "Preservação de capital e liquidez com rendimento previsível",
+        "fiis": "Geração de renda passiva através de dividendos mensais",
+        "acoes_br": "Crescimento de capital através de valorização e dividendos",
+        "bdrs": "Exposição a empresas globais sem sair da B3",
         "etfs": "Diversificação de baixo custo via ETF",
-        "caixa": "Preservação de capital e liquidez",
     }
 
     base = objectives.get(category, "Diversificação de portfólio")

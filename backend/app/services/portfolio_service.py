@@ -41,30 +41,6 @@ class PortfolioService:
 
         async def _one(item: PortfolioItem) -> PortfolioPosition:
 
-            if item.ticker.startswith("RF_"):
-                invested = round(item.quantity * item.avg_price, 2)
-                return PortfolioPosition(
-                    ticker=item.ticker.upper(),
-                    name="Renda Fixa",
-                    asset_type=AssetType.br_stock,
-                    quantity=item.quantity,
-                    avg_price=item.avg_price,
-                    current_price=item.avg_price,
-                    invested=invested,
-                    current_value=invested,
-                    pnl=0.0,
-                    pnl_pct=0.0,
-                    fair_price=None,
-                    margin_of_safety=None,
-                    verdict="HOLD",
-                    label="Renda Fixa",
-                    reasons=["Investimento em renda fixa"],
-                    category="renda_fixa",
-                    category_resolved="renda_fixa",
-                    dividend_yield=None,
-                    sector="Renda Fixa",
-                )
-
             try:
                 snap = await self.asset_repo.get_asset(item.ticker)
             except Exception:
@@ -88,7 +64,7 @@ class PortfolioService:
                     label="Sem dados",
                     reasons=[f"Não conseguimos coletar dados de {item.ticker}."],
                     category=item.category,
-                    category_resolved=resolve_category(item.category, "trade"),
+                    category_resolved=resolve_category(item.category, "acoes_br"),
                 )
 
             history, dividends = await asyncio.gather(

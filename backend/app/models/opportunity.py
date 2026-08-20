@@ -27,6 +27,9 @@ class Opportunity(BaseModel):
     category_resolved: str = "acoes_br"
     score: float = 0.0
     score_breakdown: dict[str, float] = Field(default_factory=dict)
+    # Fração do peso do score que tinha dado de verdade (0..1). Score com
+    # dado incompleto deve sair cinza com o motivo, não colorido com a nota.
+    data_completeness: float = 1.0
     in_portfolio: bool = False
     is_interesting: bool = False
     reasons: list[str] = Field(default_factory=list)

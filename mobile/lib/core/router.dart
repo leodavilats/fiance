@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../features/assets/assets_screen.dart';
+import '../features/assets/fixed_income_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
@@ -33,6 +34,12 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/assets',
               builder: (context, state) => const AssetsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'renda-fixa',
+                  builder: (context, state) => const FixedIncomeScreen(),
+                ),
+              ],
             ),
           ],
         ),

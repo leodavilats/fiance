@@ -2,6 +2,7 @@ class PortfolioPosition {
   PortfolioPosition({
     required this.ticker,
     required this.name,
+    required this.assetType,
     required this.quantity,
     required this.avgPrice,
     required this.currentPrice,
@@ -19,6 +20,7 @@ class PortfolioPosition {
 
   final String ticker;
   final String? name;
+  final String assetType;
   final double quantity;
   final double avgPrice;
   final double? currentPrice;
@@ -37,6 +39,9 @@ class PortfolioPosition {
       PortfolioPosition(
         ticker: j['ticker'] as String,
         name: j['name'] as String?,
+        // Posições de renda fixa vinham como 'br_stock', contaminando
+        // qualquer agrupamento por tipo de ativo.
+        assetType: j['asset_type'] as String? ?? 'br_stock',
         quantity: (j['quantity'] as num).toDouble(),
         avgPrice: (j['avg_price'] as num).toDouble(),
         currentPrice: (j['current_price'] as num?)?.toDouble(),
@@ -46,7 +51,7 @@ class PortfolioPosition {
         pnlPct: (j['pnl_pct'] as num?)?.toDouble(),
         verdict: j['verdict'] as String? ?? '',
         label: j['label'] as String? ?? '',
-        categoryResolved: j['category_resolved'] as String? ?? 'trade',
+        categoryResolved: j['category_resolved'] as String? ?? 'acoes_br',
         dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
         sector: j['sector'] as String?,
         reasons:
@@ -882,5 +887,124 @@ class PassiveIncomeProjection {
     targetMonthlyIncome: (j['target_monthly_income'] as num?)?.toDouble(),
     monthsToTarget: (j['months_to_target'] as num?)?.toInt(),
     targetDate: j['target_date'] as String?,
+  );
+}
+
+
+/// Posição de renda fixa marcada a mercado pelo backend.
+///
+/// Antes taxa, prazo, data de aplicação e % do CDI viviam só no localStorage do
+/// web e o mobile nunca via nada disso: as posições apareciam como um ativo
+/// chamado "Renda Fixa", sem rendimento e sem possibilidade de editar.
+class FixedIncomePosition {
+  FixedIncomePosition({
+    required this.id,
+    required this.nome,
+    required this.tipo,
+    required this.valorInvestido,
+    required this.taxa,
+    required this.tipoTaxa,
+    required this.percentualCdi,
+    required this.dataAplicacao,
+    required this.vencimento,
+    required this.liquidez,
+    required this.isentoIr,
+    required this.oculto,
+    required this.valorAtual,
+    required this.rendimentoAcumulado,
+    required this.rendimentoPct,
+    required this.mesesDecorridos,
+    required this.taxaAnualEfetivaPct,
+    required this.yieldEquivalentePct,
+    required this.valorNoVencimento,
+    required this.diasParaVencimento,
+    required this.vencimentoProximo,
+  });
+
+  final int id;
+  final String nome;
+  final String tipo;
+  final double valorInvestido;
+  final double taxa;
+  final String tipoTaxa;
+  final double? percentualCdi;
+  final String dataAplicacao;
+  final String? vencimento;
+  final String liquidez;
+  final bool? isentoIr;
+  final bool oculto;
+
+  final double valorAtual;
+  final double rendimentoAcumulado;
+  final double rendimentoPct;
+  final double mesesDecorridos;
+  final double taxaAnualEfetivaPct;
+  final double yieldEquivalentePct;
+
+  final double? valorNoVencimento;
+  final int? diasParaVencimento;
+  final bool vencimentoProximo;
+
+  factory FixedIncomePosition.fromJson(Map<String, dynamic> j) =>
+      FixedIncomePosition(
+        id: j['id'] as int,
+        nome: j['nome'] as String,
+        tipo: j['tipo'] as String,
+        valorInvestido: (j['valor_investido'] as num).toDouble(),
+        taxa: (j['taxa'] as num).toDouble(),
+        tipoTaxa: j['tipo_taxa'] as String? ?? 'pre_fixado',
+        percentualCdi: (j['percentual_cdi'] as num?)?.toDouble(),
+        dataAplicacao: j['data_aplicacao'] as String,
+        vencimento: j['vencimento'] as String?,
+        liquidez: j['liquidez'] as String? ?? 'no_vencimento',
+        isentoIr: j['isento_ir'] as bool?,
+        oculto: j['oculto'] as bool? ?? false,
+        valorAtual: (j['valor_atual'] as num).toDouble(),
+        rendimentoAcumulado: (j['rendimento_acumulado'] as num).toDouble(),
+        rendimentoPct: (j['rendimento_pct'] as num).toDouble(),
+        mesesDecorridos: (j['meses_decorridos'] as num).toDouble(),
+        taxaAnualEfetivaPct: (j['taxa_anual_efetiva_pct'] as num).toDouble(),
+        yieldEquivalentePct: (j['yield_equivalente_pct'] as num).toDouble(),
+        valorNoVencimento: (j['valor_no_vencimento'] as num?)?.toDouble(),
+        diasParaVencimento: j['dias_para_vencimento'] as int?,
+        vencimentoProximo: j['vencimento_proximo'] as bool? ?? false,
+      );
+}
+
+class FixedIncomeList {
+  FixedIncomeList({
+    required this.items,
+    required this.totalInvestido,
+    required this.totalAtual,
+    required this.totalRendimento,
+    required this.rendimentoPct,
+    required this.taxaMediaAa,
+    required this.cdiReferencia,
+    required this.fonteTaxas,
+  });
+
+  final List<FixedIncomePosition> items;
+  final double totalInvestido;
+  final double totalAtual;
+  final double totalRendimento;
+  final double rendimentoPct;
+  final double taxaMediaAa;
+  final double cdiReferencia;
+  final String fonteTaxas;
+
+  List<FixedIncomePosition> get visiveis =>
+      items.where((i) => !i.oculto).toList(growable: false);
+
+  factory FixedIncomeList.fromJson(Map<String, dynamic> j) => FixedIncomeList(
+    items: (j['items'] as List)
+        .map((e) => FixedIncomePosition.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    totalInvestido: (j['total_investido'] as num).toDouble(),
+    totalAtual: (j['total_atual'] as num).toDouble(),
+    totalRendimento: (j['total_rendimento'] as num).toDouble(),
+    rendimentoPct: (j['rendimento_pct'] as num).toDouble(),
+    taxaMediaAa: (j['taxa_media_aa'] as num).toDouble(),
+    cdiReferencia: (j['cdi_referencia'] as num).toDouble(),
+    fonteTaxas: j['fonte_taxas'] as String? ?? 'estimativa',
   );
 }

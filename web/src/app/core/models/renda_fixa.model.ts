@@ -40,7 +40,12 @@ export interface RendaFixaAnalysisResult {
   valor_liquido: number;
   rendimento_liquido: number;
   taxa_liquida_aa: number;
+  /** Taxa nominal resolvida a partir do indexador (% do CDI, IPCA+ etc.). */
+  taxa_anual_efetiva_pct: number;
+  /** Quanto do CDI bruto o título entrega líquido. */
   taxa_equivalente_cdi_pct: number | null;
+  /** % do CDI que um título tributado de mesmo prazo precisaria render. */
+  pct_cdi_bruto_equivalente: number | null;
   isento_ir: boolean;
   liquidez: string;
   prazo_meses: number;
@@ -51,13 +56,76 @@ export interface RendaFixaCompareRequest {
   ativos: RendaFixaAsset[];
   cdi_anual?: number | null;
   selic_anual?: number | null;
+  ipca_anual?: number | null;
 }
 
 export interface RendaFixaCompareResponse {
   resultados: RendaFixaAnalysisResult[];
   cdi_referencia: number;
   selic_referencia: number;
+  ipca_referencia: number;
   melhor_opcao_index: number;
+  melhor_opcao_motivo: string;
+  fonte_taxas: string;
+}
+
+/**
+ * Posição de renda fixa persistida e marcada a mercado pelo backend.
+ *
+ * Antes taxa, prazo, data de aplicação e % do CDI viviam só no localStorage,
+ * e o cálculo de rendimento era duplicado em `assets.component`. Trocar de
+ * navegador zerava os rendimentos e o mobile nunca via nada disso.
+ */
+export interface FixedIncomePosition {
+  id: number;
+  nome: string;
+  tipo: RendaFixaTipo;
+  valor_investido: number;
+  taxa: number;
+  tipo_taxa: TaxaTipo;
+  percentual_cdi: number | null;
+  data_aplicacao: string;
+  vencimento: string | null;
+  liquidez: Liquidez;
+  isento_ir: boolean | null;
+  oculto: boolean;
+
+  valor_atual: number;
+  rendimento_acumulado: number;
+  rendimento_pct: number;
+  meses_decorridos: number;
+  taxa_anual_efetiva_pct: number;
+  yield_equivalente_pct: number;
+
+  valor_no_vencimento: number | null;
+  rendimento_no_vencimento: number | null;
+  dias_para_vencimento: number | null;
+  vencimento_proximo: boolean;
+}
+
+export interface FixedIncomeListResponse {
+  items: FixedIncomePosition[];
+  total_investido: number;
+  total_atual: number;
+  total_rendimento: number;
+  rendimento_pct: number;
+  taxa_media_aa: number;
+  cdi_referencia: number;
+  fonte_taxas: string;
+}
+
+export interface FixedIncomePayload {
+  nome: string;
+  tipo: RendaFixaTipo;
+  valor_investido: number;
+  taxa: number;
+  tipo_taxa: TaxaTipo;
+  percentual_cdi?: number | null;
+  data_aplicacao: string;
+  vencimento?: string | null;
+  liquidez: Liquidez;
+  isento_ir?: boolean | null;
+  oculto?: boolean;
 }
 
 export interface ReferenceRates {

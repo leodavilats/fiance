@@ -7,12 +7,14 @@ from app.models.projection import (
     PassiveIncomeProjectionResponse,
 )
 from app.repositories import AssetRepository, PortfolioRepository
+from app.services.fixed_income_service import FixedIncomeService
 
 
 class ProjectionService:
     def __init__(self):
         self.portfolio_repo = PortfolioRepository()
         self.asset_repo = AssetRepository()
+        self.fixed_income = FixedIncomeService()
 
     async def project_passive_income(
         self, req: PassiveIncomeProjectionRequest
@@ -44,6 +46,14 @@ class ProjectionService:
 
             if snap.dividend_yield:
                 current_dividends_yearly += position_value * (snap.dividend_yield / 100)
+
+        # A projeção ignorava 100% da renda fixa: um investidor conservador via
+        # a renda futura projetada só sobre o aporte mensal.
+        for rf in self.fixed_income.as_portfolio_positions():
+            rf_value = rf.current_value or rf.invested
+            current_value += rf_value
+            if rf.dividend_yield:
+                current_dividends_yearly += rf_value * (rf.dividend_yield / 100)
 
         current_dy_avg = (
             (current_dividends_yearly / current_value * 100) if current_value > 0 else 0

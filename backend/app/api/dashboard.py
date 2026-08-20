@@ -2,7 +2,13 @@ from fastapi import APIRouter
 
 from app.models import DashboardResponse, PortfolioEvaluationRequest, PortfolioItem
 from app.repositories import PortfolioRepository
-from app.services import DashboardService, GoalService, OpportunityService, PortfolioService
+from app.services import (
+    DashboardService,
+    FixedIncomeService,
+    GoalService,
+    OpportunityService,
+    PortfolioService,
+)
 
 router = APIRouter()
 
@@ -11,6 +17,7 @@ opportunity_service = OpportunityService()
 portfolio_service = PortfolioService()
 portfolio_repo = PortfolioRepository()
 goal_service = GoalService()
+fixed_income_service = FixedIncomeService()
 
 
 @router.get("/dashboard", response_model=DashboardResponse)
@@ -32,6 +39,11 @@ async def dashboard() -> DashboardResponse:
         )
         evaluation = await portfolio_service.evaluate_portfolio(req)
         positions = evaluation.positions
+
+    # Renda fixa entra marcada a mercado, junto das posições negociadas: é o
+    # que faz patrimônio total, P&L e projeção de renda passiva pararem de
+    # ignorar metade da carteira de um investidor conservador.
+    positions = positions + fixed_income_service.as_portfolio_positions()
 
     opps_resp = await opportunity_service.get_opportunities(
         include_held=False, page=1, page_size=10, sort_by="score", sort_order="desc"
