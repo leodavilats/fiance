@@ -484,69 +484,50 @@ def get_preferences(user_id: str | None = None) -> Preferences:
     )
 
 
-def set_preferences(
-    cash_available: float,
-    passive_income_goal: float | None = None,
-    desired_yield_stock: float | None = None,
-    desired_yield_fii: float | None = None,
-    desired_yield_bdr: float | None = None,
-    desired_yield_etf: float | None = None,
-    notify_price_alerts: bool | None = None,
-    opportunities_frequency: str | None = None,
-    risk_profile: str | None = None,
-    preferred_categories: list[str] | None = None,
-    preferred_sectors: list[str] | None = None,
-    excluded_tickers: list[str] | None = None,
-    user_id: str | None = None,
-) -> None:
+_PREF_DEFAULTS: dict[str, object] = {
+    "cash_available": 0.0,
+    "passive_income_goal": None,
+    "desired_yield_stock": 0.06,
+    "desired_yield_fii": 0.10,
+    "desired_yield_bdr": 0.04,
+    "desired_yield_etf": 0.04,
+    "notify_price_alerts": True,
+    "opportunities_frequency": "weekly",
+    "risk_profile": "moderate",
+    "preferred_categories": [],
+    "preferred_sectors": [],
+    "excluded_tickers": [],
+}
+
+_PREF_CSV_FIELDS = {"preferred_categories", "preferred_sectors", "excluded_tickers"}
+
+
+def set_preferences(user_id: str | None = None, **fields) -> None:
+    """Grava só os campos presentes em `fields`.
+
+    Só o que o chamador passou explicitamente é escrito — um PUT que não
+    menciona `cash_available` preserva o valor no banco em vez de sobrescrever
+    com o default. Passar `None` explicitamente limpa um campo anulável.
+    """
+    unknown = set(fields) - set(_PREF_DEFAULTS)
+    if unknown:
+        raise ValueError(f"Campos de preferência desconhecidos: {sorted(unknown)}")
+
     now = time.time()
     with _session(user_id) as (session, uid):
         row = session.get(PreferencesDb, uid)
         if row is None:
+            values = dict(_PREF_DEFAULTS)
+            values.update(fields)
             row = PreferencesDb(
                 user_id=uid,
-                cash_available=float(cash_available),
-                passive_income_goal=passive_income_goal,
-                desired_yield_stock=desired_yield_stock
-                if desired_yield_stock is not None
-                else 0.06,
-                desired_yield_fii=desired_yield_fii if desired_yield_fii is not None else 0.10,
-                desired_yield_bdr=desired_yield_bdr if desired_yield_bdr is not None else 0.04,
-                desired_yield_etf=desired_yield_etf if desired_yield_etf is not None else 0.04,
-                notify_price_alerts=notify_price_alerts
-                if notify_price_alerts is not None
-                else True,
-                opportunities_frequency=opportunities_frequency or "weekly",
-                risk_profile=risk_profile or "moderate",
-                preferred_categories=_list_to_csv(preferred_categories),
-                preferred_sectors=_list_to_csv(preferred_sectors),
-                excluded_tickers=_list_to_csv(excluded_tickers),
                 updated_at=now,
+                **{k: (_list_to_csv(v) if k in _PREF_CSV_FIELDS else v) for k, v in values.items()},
             )
             session.add(row)
         else:
-            row.cash_available = float(cash_available)
-            row.passive_income_goal = passive_income_goal
-            if desired_yield_stock is not None:
-                row.desired_yield_stock = desired_yield_stock
-            if desired_yield_fii is not None:
-                row.desired_yield_fii = desired_yield_fii
-            if desired_yield_bdr is not None:
-                row.desired_yield_bdr = desired_yield_bdr
-            if desired_yield_etf is not None:
-                row.desired_yield_etf = desired_yield_etf
-            if notify_price_alerts is not None:
-                row.notify_price_alerts = notify_price_alerts
-            if opportunities_frequency is not None:
-                row.opportunities_frequency = opportunities_frequency
-            if risk_profile is not None:
-                row.risk_profile = risk_profile
-            if preferred_categories is not None:
-                row.preferred_categories = _list_to_csv(preferred_categories)
-            if preferred_sectors is not None:
-                row.preferred_sectors = _list_to_csv(preferred_sectors)
-            if excluded_tickers is not None:
-                row.excluded_tickers = _list_to_csv(excluded_tickers)
+            for k, v in fields.items():
+                setattr(row, k, _list_to_csv(v) if k in _PREF_CSV_FIELDS else v)
             row.updated_at = now
 
 

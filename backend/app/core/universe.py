@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
+import time
 
 import httpx
 
@@ -20,8 +22,8 @@ _UNIVERSE_TTL = 24 * 3600
 _FRACTIONAL_LOT = re.compile(r"^[A-Z]{4}\d{1,2}F$")
 
 # ETFs líquidos da B3 usados como seed/fallback quando o subType retornado
-# pela BRAPI não vier marcado corretamente (mesmo papel de KNOWN_ETFS em
-# app.collectors.universal, mantido em sincronia manualmente).
+# pela BRAPI não vier marcado corretamente. Fonte única — antes havia uma
+# segunda cópia em app.collectors.universal mantida em sincronia à mão.
 KNOWN_ETFS = {
     "BOVA11",
     "BOVV11",
@@ -61,9 +63,60 @@ def _get_brapi_stocks_cached() -> list[dict]:
     return stocks
 
 
+# Índices derivados da lista da BRAPI, memoizados em processo. Sem isso um
+# scan completo fazia ~280 leituras do blob no SQLite + 280 json.loads + 280
+# construções de dict (get_sector_map é chamado por ticker), e cada tecla do
+# autocomplete desserializava a lista inteira.
+_MEMO_TTL = 15 * 60
+_memo_lock = threading.Lock()
+_memo: dict[str, tuple[float, object]] = {}
+
+
+def _memoized(key: str, build):
+    now = time.monotonic()
+    cached = _memo.get(key)
+    if cached is not None and (now - cached[0]) < _MEMO_TTL:
+        return cached[1]
+
+    with _memo_lock:
+        cached = _memo.get(key)
+        if cached is not None and (time.monotonic() - cached[0]) < _MEMO_TTL:
+            return cached[1]
+        value = build()
+        _memo[key] = (time.monotonic(), value)
+        return value
+
+
+def invalidate_universe_memo() -> None:
+    """Descarta os índices em processo (chamado ao limpar o cache)."""
+    with _memo_lock:
+        _memo.clear()
+
+
 def get_sector_map() -> dict[str, str]:
-    stocks = _get_brapi_stocks_cached()
-    return {s["stock"]: s["sector"] for s in stocks if s.get("stock") and s.get("sector")}
+    def _build() -> dict[str, str]:
+        stocks = _get_brapi_stocks_cached()
+        return {s["stock"]: s["sector"] for s in stocks if s.get("stock") and s.get("sector")}
+
+    return _memoized("sector_map", _build)
+
+
+def _get_search_index() -> list[tuple[str, str, str]]:
+    """(ticker, nome, NOME_UPPER) de cada papel elegível, construído uma vez."""
+
+    def _build() -> list[tuple[str, str, str]]:
+        seen: set[str] = set()
+        index: list[tuple[str, str, str]] = []
+        for s in _get_brapi_stocks_cached():
+            ticker = (s.get("stock") or "").upper()
+            if not ticker or ticker in seen or _FRACTIONAL_LOT.match(ticker):
+                continue
+            seen.add(ticker)
+            name = s.get("name") or ""
+            index.append((ticker, name, name.upper()))
+        return index
+
+    return _memoized("search_index", _build)
 
 
 def _build_brapi_universe(
@@ -117,17 +170,11 @@ def search_universe(query: str, limit: int = 10) -> list[dict]:
     if not q:
         return []
 
-    seen: set[str] = set()
-    results: list[dict] = []
-
-    for s in _get_brapi_stocks_cached():
-        ticker = (s.get("stock") or "").upper()
-        name = s.get("name") or ""
-        if not ticker or ticker in seen or _FRACTIONAL_LOT.match(ticker):
-            continue
-        if q in ticker or q in name.upper():
-            seen.add(ticker)
-            results.append({"ticker": ticker, "name": name})
+    results = [
+        {"ticker": ticker, "name": name}
+        for ticker, name, name_upper in _get_search_index()
+        if q in ticker or q in name_upper
+    ]
 
     results.sort(key=lambda r: (not r["ticker"].startswith(q), r["ticker"]))
     return results[:limit]

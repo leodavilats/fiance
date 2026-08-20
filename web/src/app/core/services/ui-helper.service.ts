@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AssetType, Verdict } from '../models';
+import { SCORE_GLOSSARY, ScoreBand, scoreBand } from '../score-ruler';
 
 @Injectable({ providedIn: 'root' })
 export class UiHelperService {
@@ -300,20 +301,57 @@ export class UiHelperService {
     return map[verdict] || 'verdict-neutro';
   }
 
-  scoreLabel(score: number): { text: string; cls: string } {
-    if (score >= 75) return { text: 'Excelente entrada', cls: 'text-green-400' };
-    if (score >= 60) return { text: 'Boa oportunidade', cls: 'text-accent' };
-    if (score >= 40) return { text: 'Neutro', cls: 'text-yellow-400' };
-    return { text: 'Evitar agora', cls: 'text-red-400' };
+  /** Delegado à régua única (core/score-ruler.ts). */
+  scoreLabel(score: number): ScoreBand {
+    return scoreBand(score);
+  }
+
+  /**
+   * Rótulo da base da tendência. Com histórico curto (plano gratuito da BRAPI
+   * só devolve ranges curtos) a SMA200 não existe e a tendência é de curto
+   * prazo — dizer isso é mais honesto que apresentar as duas como iguais.
+   */
+  trendBasisLabel(basis: string | null | undefined): string {
+    const map: Record<string, string> = {
+      long: 'médias de 50 e 200 dias',
+      short: 'médias de 20 e 50 dias (histórico curto)',
+      none: 'sem histórico suficiente',
+    };
+    return map[basis ?? 'none'] ?? '';
+  }
+
+  /** Proveniência do preço justo, ao lado de todo veredito. */
+  dataYearsLabel(dataYears: number | null | undefined): string {
+    if (!dataYears) return 'sem histórico de proventos';
+    return `${dataYears} ${dataYears === 1 ? 'ano' : 'anos'} de proventos`;
+  }
+
+  consensusLabel(methods: number | null | undefined): string {
+    if (!methods) return 'sem método aplicável';
+    return `${methods} ${methods === 1 ? 'método' : 'métodos'} no consenso`;
+  }
+
+  confidenceLabel(confidence: number | null | undefined): string {
+    if (confidence == null) return '';
+    return `confiança ${Math.round(confidence * 100)}%`;
   }
 
   readonly glossary: Record<string, string> = {
     dy: 'Dividend Yield — percentual do preço atual pago em dividendos nos últimos 12 meses. Acima de 6% é considerado bom para ações; acima de 8% para FIIs.',
     ms: 'Margem de Segurança — desconto do preço atual em relação ao preço justo calculado. Quanto maior, mais "barato" está o ativo em relação ao seu valor intrínseco.',
-    score:
-      'Pontuação 0–100 calculada pelo sistema combinando valuation, histórico de dividendos e qualidade do ativo. Acima de 70 = oportunidade; 40–70 = neutro; abaixo de 40 = cuidado.',
+    score: SCORE_GLOSSARY,
     bazin:
-      'Método Décio Bazin — define o Preço Teto como o dividendo anual dividido pela meta de yield: 6% (ações BR), 10% (FIIs) ou 4% (ETFs, quando distribuem dividendos). Comprar abaixo do teto garante um DY mínimo. Não se aplica a BDRs (avaliados por Graham/DCF).',
+      'Método Décio Bazin — define o Preço Teto como o dividendo médio anual dividido pela sua meta de yield, configurável por classe em Configurações (padrão: 6% ações BR, 10% FIIs, 4% ETFs). A média usa os anos-calendário completos disponíveis, excluindo o ano corrente. Comprar abaixo do teto garante um DY mínimo. Não se aplica a BDRs (avaliados por Graham/DCF).',
+    dcf: 'Fluxo de Caixa Descontado simplificado — projeta o lucro por ação por 5 anos usando o crescimento de receita do ativo (8% a.a. quando o dado não está disponível ou é implausível), desconta a 13% a.a. e soma um valor terminal a P/L 15. Usado em BDRs e em ações sem histórico de dividendos.',
+    rsi: 'Índice de Força Relativa (14 dias) — mede se o ativo subiu ou caiu rápido demais no curto prazo. Acima de 70 indica sobrecompra (risco de correção); abaixo de 30, sobrevenda (possível ponto de entrada). É sinal de timing, não de qualidade.',
+    tendencia:
+      'Comparação entre a média móvel curta e a longa do preço. Com histórico de 2 anos usa as médias de 50 e 200 dias; com histórico curto cai para 20 e 50 dias e a tela sinaliza isso — tendência de curto prazo é mais ruidosa.',
+    roe: 'Retorno sobre o Patrimônio Líquido — quanto de lucro a empresa gera para cada R$ 1 de patrimônio dos acionistas. Acima de 15% a.a. é considerado bom. Não se aplica a FIIs nem ETFs.',
+    de: 'Dívida / Patrimônio Líquido — quanto a empresa deve em relação ao próprio patrimônio. Abaixo de 100% é confortável; muito acima disso, o lucro fica sensível a juros.',
+    consenso:
+      'Média dos métodos de preço justo aplicáveis ao ativo (Bazin, Graham, DCF, valor patrimonial). A tela mostra quantos métodos entraram na conta: um consenso de um único método é bem menos confiável que de três.',
+    data_years:
+      'Quantos anos-calendário de proventos o sistema encontrou para o ativo. Menos de 3 anos torna o Bazin pouco confiável — o número aparece ao lado do veredito justamente para você poder descontar isso.',
     graham:
       'Fórmula Benjamin Graham — Preço Intrínseco = √(22,5 × LPA × VPA). Válido para empresas com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização.',
     pvp: 'Preço / Valor Patrimonial — quanto se paga por cada R$ 1 de patrimônio. P/VP < 1 indica desconto (comum em FIIs atrativos); > 1 indica ágio.',

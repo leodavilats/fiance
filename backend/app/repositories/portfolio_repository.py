@@ -11,6 +11,12 @@ class PortfolioRepository:
         portfolio_store.replace_all(items)
 
     @staticmethod
+    def upsert_position(
+        ticker: str, quantity: float, avg_price: float, category: str = "auto"
+    ) -> None:
+        portfolio_store.upsert_position(ticker, quantity, avg_price, category)
+
+    @staticmethod
     def delete_position(ticker: str) -> None:
         portfolio_store.delete_position(ticker)
 
@@ -69,34 +75,9 @@ class PortfolioRepository:
         return portfolio_store.get_preferences()
 
     @staticmethod
-    def set_preferences(
-        cash_available: float = 0.0,
-        passive_income_goal: float | None = None,
-        desired_yield_stock: float | None = None,
-        desired_yield_fii: float | None = None,
-        desired_yield_bdr: float | None = None,
-        desired_yield_etf: float | None = None,
-        notify_price_alerts: bool | None = None,
-        opportunities_frequency: str | None = None,
-        risk_profile: str | None = None,
-        preferred_categories: list[str] | None = None,
-        preferred_sectors: list[str] | None = None,
-        excluded_tickers: list[str] | None = None,
-    ) -> None:
-        portfolio_store.set_preferences(
-            cash_available,
-            passive_income_goal,
-            desired_yield_stock,
-            desired_yield_fii,
-            desired_yield_bdr,
-            desired_yield_etf,
-            notify_price_alerts,
-            opportunities_frequency,
-            risk_profile,
-            preferred_categories,
-            preferred_sectors,
-            excluded_tickers,
-        )
+    def set_preferences(**fields) -> None:
+        """Repassa só os campos presentes — ver portfolio_store.set_preferences."""
+        portfolio_store.set_preferences(**fields)
 
     @staticmethod
     def get_last_digest_sent_at(user_id: str | None = None) -> float | None:

@@ -6,6 +6,7 @@ OpportunitiesFrequency = str  # "off" | "daily" | "weekly" | "monthly"
 
 
 class Preferences(BaseModel):
+    cash_available: float = 0.0
     passive_income_goal: float | None = None
     desired_yield_stock: float = 0.06
     desired_yield_fii: float = 0.10
@@ -21,6 +22,14 @@ class Preferences(BaseModel):
 
 
 class PreferencesRequest(BaseModel):
+    """Só os campos enviados são gravados (ver api/preferences.py).
+
+    `cash_available` faltava aqui — o resultado é que todo PUT /preferences
+    reescrevia o caixa disponível com 0.0, e o usuário redigitava o valor a
+    cada visita a Estratégia/Quick Invest.
+    """
+
+    cash_available: float | None = Field(None, ge=0)
     passive_income_goal: float | None = Field(None, ge=0)
     desired_yield_stock: float | None = Field(None, gt=0, le=1)
     desired_yield_fii: float | None = Field(None, gt=0, le=1)
@@ -29,6 +38,6 @@ class PreferencesRequest(BaseModel):
     notify_price_alerts: bool | None = None
     opportunities_frequency: OpportunitiesFrequency | None = None
     risk_profile: RiskProfile | None = None
-    preferred_categories: list[AssetCategory] | None = None
-    preferred_sectors: list[str] | None = None
-    excluded_tickers: list[str] | None = None
+    preferred_categories: list[AssetCategory] | None = Field(None, max_length=10)
+    preferred_sectors: list[str] | None = Field(None, max_length=50)
+    excluded_tickers: list[str] | None = Field(None, max_length=500)

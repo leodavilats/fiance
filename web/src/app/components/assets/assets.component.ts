@@ -14,6 +14,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, switchMap } from 'rxjs/operators';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import {
+  AuthService,
   ClosedTradesResponse,
   Goal,
   LoadingService,
@@ -28,6 +29,9 @@ import {
   TickerSuggestion,
   UiHelperService,
 } from '../../core';
+
+/** Base da chave; a chave real é escopada por usuário via AuthService. */
+const RENDA_FIXA_STORAGE_BASE = 'portfolio_renda_fixa';
 
 interface PortfolioItemForm {
   ticker: FormControl<string>;
@@ -70,6 +74,7 @@ export class AssetsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly svc = inject(RecommendService);
   private readonly snackbar = inject(SnackbarService);
+  private readonly auth = inject(AuthService);
   readonly loading = inject(LoadingService);
   readonly ui = inject(UiHelperService);
 
@@ -129,6 +134,9 @@ export class AssetsComponent implements OnInit {
   tickerSuggestions = signal<TickerSuggestion[]>([]);
   tickerSuggestionsRow = signal<number | null>(null);
   private tickerSearch$ = new Subject<{ index: number; query: string }>();
+
+  /** Carregamento inicial falhou: edição e autosave ficam bloqueados. */
+  loadFailed = signal(false);
 
   private _initialized = false;
   private saveDebounce = new Subject<void>();
@@ -667,8 +675,16 @@ export class AssetsComponent implements OnInit {
     return item.valor_investido + rendimentoBruto * (1 - aliquotaIR);
   }
 
+  private get rendaFixaStorageKey(): string {
+    return this.auth.scopedKey(RENDA_FIXA_STORAGE_BASE);
+  }
+
   private loadStoredRendaFixa(): void {
-    const stored = localStorage.getItem('portfolio_renda_fixa');
+    const stored =
+      localStorage.getItem(this.rendaFixaStorageKey) ??
+      // Migração da chave global antiga, que era compartilhada entre contas
+      // no mesmo navegador.
+      localStorage.getItem(RENDA_FIXA_STORAGE_BASE);
     if (!stored) return;
 
     try {
@@ -709,7 +725,8 @@ export class AssetsComponent implements OnInit {
 
   private persistRendaFixa(): void {
     const items = this.rendaFixaItems.getRawValue();
-    localStorage.setItem('portfolio_renda_fixa', JSON.stringify(items));
+    localStorage.setItem(this.rendaFixaStorageKey, JSON.stringify(items));
+    localStorage.removeItem(RENDA_FIXA_STORAGE_BASE);
   }
 
   private loadStoredPortfolioItems(): void {
@@ -773,9 +790,22 @@ export class AssetsComponent implements OnInit {
         }
       },
       error: () => {
-        this.addItem();
-        this._initialized = true;
+        // Nunca marcar _initialized aqui: o autosave por debounce dispara um
+        // PUT /portfolio destrutivo, e a lista em memória está vazia porque o
+        // GET falhou — não porque a carteira esteja vazia. Falha de rede na
+        // abertura + um cadastro substituía a carteira por um único ativo.
+        this.loadFailed.set(true);
+        this.snackbar.showError(
+          'Não conseguimos carregar sua carteira. Recarregue a página antes de editar — ' +
+            'nada será salvo até o carregamento funcionar.'
+        );
       },
     });
+  }
+
+  reloadPortfolio(): void {
+    this.loadFailed.set(false);
+    this.portfolioItems.clear();
+    this.loadStoredPortfolioItems();
   }
 }

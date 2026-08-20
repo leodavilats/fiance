@@ -21,21 +21,7 @@ async def dip_scanner(
         None, description="Filtrar por categoria: acoes_br | bdrs | fiis | etfs"
     ),
 ) -> DipScannerResponse:
-    result = await dip_service.scan_dips(universe, min_score, top)
-
-    if category:
-        from app.analysis.classify import auto_category
-
-        result.items = [
-            item
-            for item in result.items
-            if auto_category(
-                item.asset_type.value
-                if hasattr(item.asset_type, "value")
-                else str(item.asset_type),
-                None,
-            )
-            == category
-        ]
-
-    return result
+    # A categoria precisa filtrar antes do corte de `top`: filtrar depois
+    # devolvia "o que sobrou dos 12 maiores dips do universo inteiro" em vez
+    # dos 12 maiores dips da categoria pedida.
+    return await dip_service.scan_dips(universe, min_score, top, category=category)

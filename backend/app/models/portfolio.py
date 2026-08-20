@@ -2,16 +2,35 @@ from pydantic import BaseModel, Field
 
 from .enums import AssetType
 
+# Uma carteira real não passa de algumas centenas de posições. Sem limite, um
+# POST /portfolio/evaluate com 10 000 itens virava 10 000 resoluções de ativo —
+# o vetor de abuso mais barato do sistema.
+MAX_PORTFOLIO_ITEMS = 500
+
+# Ticker da B3: radical de 4 caracteres (pode conter dígito, ex. M1TA34) +
+# 1 ou 2 dígitos. RF_<tipo>_<n> é o ticker sintético legado de renda fixa.
+TICKER_PATTERN = r"^(RF_[a-z_]+_\d+|[A-Za-z][A-Za-z0-9]{3}\d{1,2})$"
+
 
 class PortfolioItem(BaseModel):
-    ticker: str = Field(..., description="Ex.: PETR4, AAPL, BTC, HGLG11")
+    ticker: str = Field(
+        ...,
+        min_length=4,
+        max_length=32,
+        pattern=TICKER_PATTERN,
+        description="Ex.: PETR4, HGLG11, AAPL34",
+    )
     quantity: float = Field(..., gt=0)
     avg_price: float = Field(..., gt=0, description="Preço médio pago")
-    category: str = Field("auto", description="'renda', 'trade' ou 'auto'")
+    category: str = Field(
+        "auto",
+        max_length=32,
+        description="renda_fixa | acoes_br | bdrs | fiis | etfs | auto",
+    )
 
 
 class PortfolioEvaluationRequest(BaseModel):
-    items: list[PortfolioItem]
+    items: list[PortfolioItem] = Field(..., max_length=MAX_PORTFOLIO_ITEMS)
 
 
 class PortfolioPosition(BaseModel):
@@ -54,7 +73,13 @@ class StoredPortfolioItem(BaseModel):
 
 
 class SavePortfolioRequest(BaseModel):
-    items: list[PortfolioItem]
+    """Importação explícita: substitui a carteira inteira.
+
+    Escrita destrutiva — use POST /portfolio/position e
+    DELETE /portfolio/position/{ticker} para operações do dia a dia.
+    """
+
+    items: list[PortfolioItem] = Field(..., min_length=1, max_length=MAX_PORTFOLIO_ITEMS)
 
 
 class PortfolioSnapshot(BaseModel):
@@ -72,10 +97,16 @@ class PortfolioStateResponse(BaseModel):
 
 
 class SellRequest(BaseModel):
-    ticker: str
+    ticker: str = Field(..., min_length=4, max_length=32, pattern=TICKER_PATTERN)
     quantity: float = Field(..., gt=0)
     sell_price: float = Field(..., gt=0)
-    sold_at: float | None = Field(None, description="Timestamp da venda; default = agora")
+    # Datar a venda livremente muda o balde da isenção mensal de R$ 20 mil e a
+    # alíquota de IR calculada. Aceita só data passada, dentro de uma janela
+    # curta (retroativo de lançamento esquecido), nunca futura — validado em
+    # PortfolioService.sell_position.
+    sold_at: float | None = Field(
+        None, description="Timestamp da venda (passado, até 90 dias atrás); default = agora"
+    )
 
 
 class ClosedTrade(BaseModel):

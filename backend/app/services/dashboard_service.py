@@ -1,4 +1,5 @@
 from app.analysis.portfolio_health import compute_portfolio_health
+from app.analysis.sectors import translate_sector
 from app.models import (
     Alert,
     CategoryAllocation,
@@ -83,7 +84,7 @@ class DashboardService:
                     Alert(
                         severity="warning",
                         kind="concentration",
-                        title=f"Setor {sector} concentrado",
+                        title=f"Setor {translate_sector(sector)} concentrado",
                         detail=f"{pct:.1f}% da carteira em um único setor. Considere diversificar.",
                     )
                 )

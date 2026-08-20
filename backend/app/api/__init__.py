@@ -28,6 +28,7 @@ router.include_router(basic.router, tags=["Basic"])
 router.include_router(auth.router, tags=["Auth"])
 
 protected = APIRouter(dependencies=[Depends(get_current_user)])
+protected.include_router(basic.admin_router, tags=["Maintenance"])
 protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])
 protected.include_router(portfolio_routes.router, tags=["Portfolio"])

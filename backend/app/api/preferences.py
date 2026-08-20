@@ -15,19 +15,8 @@ async def get_preferences() -> Preferences:
 
 @router.put("/preferences", response_model=Preferences)
 async def save_preferences(req: PreferencesRequest) -> Preferences:
-    portfolio_repo.set_preferences(
-        passive_income_goal=req.passive_income_goal,
-        desired_yield_stock=req.desired_yield_stock,
-        desired_yield_fii=req.desired_yield_fii,
-        desired_yield_bdr=req.desired_yield_bdr,
-        desired_yield_etf=req.desired_yield_etf,
-        notify_price_alerts=req.notify_price_alerts,
-        opportunities_frequency=req.opportunities_frequency,
-        risk_profile=req.risk_profile.value if req.risk_profile else None,
-        preferred_categories=[c.value for c in req.preferred_categories]
-        if req.preferred_categories is not None
-        else None,
-        preferred_sectors=req.preferred_sectors,
-        excluded_tickers=req.excluded_tickers,
-    )
+    # exclude_unset: um PUT parcial não zera o que não veio no corpo. Enviar
+    # `null` explicitamente continua limpando o campo (ex.: passive_income_goal).
+    fields = req.model_dump(exclude_unset=True, mode="json")
+    portfolio_repo.set_preferences(**fields)
     return Preferences(**portfolio_repo.get_preferences())

@@ -1,9 +1,11 @@
 import asyncio
 import logging
 
+from app.analysis.classify import auto_category
 from app.analysis.dip_analysis import compute_dip_analysis
-from app.analysis.fair_price import compute_fair_price, compute_technical
+from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
 from app.collectors.news import analyze_news_with_ai, news_sentiment_summary
+from app.core.errors import NotFoundError
 from app.core.universe import get_universe
 from app.models import (
     AssetType,
@@ -28,7 +30,9 @@ class DipService:
     async def analyze_dip(self, symbol: str) -> DipAnalysisResponse:
         snap = await self.asset_repo.get_asset(symbol)
         if not snap:
-            raise ValueError(f"Ativo '{symbol}' não encontrado ou sem dados.")
+            raise NotFoundError(f"Ativo '{symbol}' não encontrado ou sem dados.")
+
+        prefs = self.portfolio_repo.get_preferences()
 
         history, dividends, news_items = await asyncio.gather(
             self.asset_repo.get_history(symbol, period="2y"),
@@ -47,6 +51,9 @@ class DipService:
             week52_high=snap.fifty_two_week_high,
             pb_ratio=snap.pb_ratio,
             revenue_growth_rate=snap.revenue_growth,
+            # Sem isso, "Analisar queda" e "Analisar ativo" mostravam preços
+            # justos diferentes para o mesmo ativo.
+            desired_yield=desired_yield_for(snap.asset_type, prefs),
         )
 
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
@@ -125,12 +132,14 @@ class DipService:
         universe: str | None = None,
         min_score: float = 40.0,
         top: int = 12,
+        category: str | None = None,
     ) -> DipScannerResponse:
         if universe:
             tickers = [t.strip().upper() for t in universe.split(",") if t.strip()]
         else:
             tickers = await asyncio.to_thread(get_universe)
 
+        prefs = self.portfolio_repo.get_preferences()
         sem = asyncio.Semaphore(5)
 
         async def _scan_one(ticker: str) -> DipScanItem | None:
@@ -154,6 +163,7 @@ class DipService:
                         week52_high=snap.fifty_two_week_high,
                         pb_ratio=snap.pb_ratio,
                         revenue_growth_rate=snap.revenue_growth,
+                        desired_yield=desired_yield_for(snap.asset_type, prefs),
                     )
 
                     tech = compute_technical(
@@ -208,6 +218,15 @@ class DipService:
 
         results = await asyncio.gather(*[_scan_one(t) for t in tickers])
         items = [r for r in results if r is not None]
+
+        if category:
+            items = [
+                item
+                for item in items
+                if auto_category(str(getattr(item.asset_type, "value", item.asset_type)))
+                == category
+            ]
+
         items.sort(key=lambda x: x.dip_score, reverse=True)
 
         return DipScannerResponse(

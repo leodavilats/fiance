@@ -124,7 +124,10 @@ def test_portfolio_sell_unknown_ticker_returns_4xx(client):
 
 def test_portfolio_endpoints_require_auth(client):
     assert client.get("/api/portfolio").status_code == 401
-    assert client.put("/api/portfolio", json={"items": []}).status_code == 401
+    valid_item = {"ticker": "PETR4", "quantity": 1, "avg_price": 1.0, "category": "auto"}
+    assert client.put("/api/portfolio", json={"items": [valid_item]}).status_code == 401
+    assert client.post("/api/portfolio/position", json=valid_item).status_code == 401
+    assert client.delete("/api/portfolio/position/PETR4").status_code == 401
     assert client.delete("/api/portfolio/PETR4").status_code == 401
     assert (
         client.post(

@@ -2,13 +2,20 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 DESIRED_YIELD_STOCK = 0.06
 DESIRED_YIELD_FII = 0.10
 DESIRED_YIELD_BDR = 0.04
 DESIRED_YIELD_ETF = 0.04
 DEFAULT_DESIRED_YIELD = DESIRED_YIELD_STOCK
+
+# Janela padrão do Bazin: 5 anos-calendário completos.
+DIVIDEND_WINDOW_YEARS = 5
+
+# Acima disso o "dividendo médio" é quase certamente um evento extraordinário
+# (bonificação, redução de capital) e não uma distribuição recorrente.
+_IMPLIED_DY_OUTLIER = 0.30
 
 
 def desired_yield_for(asset_type: str, prefs: dict | None = None) -> float:
@@ -60,72 +67,118 @@ class FairPriceResult:
     details: dict[str, float | None] = field(default_factory=dict)
 
 
+def _now() -> datetime:
+    return datetime.now(UTC)
+
+
+def _dividends_by_year(dividends: list[dict[str, float]]) -> dict[int, float]:
+    by_year: dict[int, float] = {}
+    for d in dividends:
+        try:
+            year = int(str(d["date"])[:4])
+        except (KeyError, TypeError, ValueError):
+            continue
+        try:
+            value = float(d.get("value", 0.0))
+        except (TypeError, ValueError):
+            continue
+        by_year[year] = by_year.get(year, 0.0) + value
+    return by_year
+
+
 def average_dividend_last_12m(
     dividends: list[dict[str, float]],
+    reference: datetime | None = None,
 ) -> float | None:
     if not dividends:
         return None
 
-    today = datetime.utcnow()
+    today = reference or _now()
     cutoff_str = f"{today.year - 1}-{today.month:02d}-{today.day:02d}"
+    horizon_str = today.strftime("%Y-%m-%d")
 
     total = 0.0
     found = False
     for d in dividends:
         try:
-            date_str = d["date"][:10]
-        except Exception:
+            date_str = str(d["date"])[:10]
+        except (KeyError, TypeError):
             continue
-        if date_str >= cutoff_str:
-            total += float(d.get("value", 0.0))
+        # Provento com data futura já anunciado não é renda dos últimos 12 meses.
+        if cutoff_str <= date_str <= horizon_str:
+            try:
+                total += float(d.get("value", 0.0))
+            except (TypeError, ValueError):
+                continue
             found = True
 
     return round(total, 4) if found else None
 
 
 def average_dividend_last_n_years(
-    dividends: list[dict[str, float]], years: int = 5, use_median: bool = False
+    dividends: list[dict[str, float]],
+    years: int = DIVIDEND_WINDOW_YEARS,
+    use_median: bool = False,
+    reference: datetime | None = None,
 ) -> float | None:
+    """Dividendo médio anual sobre anos-calendário **completos**.
 
+    Duas correções em relação à versão anterior, que somava e dividia por
+    `years` fixo incluindo o ano corrente parcial:
+
+    - o ano corrente é excluído: contá-lo como cheio subestimava a média de
+      todo ativo, com o viés crescendo ao longo do ano;
+    - o denominador é o número de anos *cobertos pelo histórico* (do primeiro
+      ano com dado até o último ano completo), não `years` fixo. Uma empresa
+      com 3 anos de histórico tinha a média subestimada em ~40%.
+
+    Anos sem pagamento *dentro* do intervalo coberto contam como zero — são
+    ausência real de provento, não ausência de dado.
+    """
     if not dividends:
         return None
 
-    today = datetime.utcnow()
+    today = reference or _now()
+    by_year = _dividends_by_year(dividends)
 
-    by_year: dict[int, float] = {}
+    oldest_allowed = today.year - years
+    last_complete_year = today.year - 1
 
-    cutoff = today.year - years
+    covered = {
+        year: value
+        for year, value in by_year.items()
+        if oldest_allowed <= year <= last_complete_year
+    }
 
-    for d in dividends:
-        try:
-            y = int(d["date"][:4])
+    if not covered:
+        # Nenhum ano-calendário completo na janela (ex.: IPO recente). Usar os
+        # últimos 12 meses é mais honesto que devolver None e apagar o Bazin.
+        return average_dividend_last_12m(dividends, reference=today)
 
-        except Exception:
-            continue
-
-        if y <= cutoff or y > today.year:
-            continue
-
-        by_year[y] = by_year.get(y, 0.0) + float(d.get("value", 0.0))
-
-    if not by_year:
-        return None
-
-    values = list(by_year.values())
+    first_year_with_data = min(covered)
+    values = [
+        covered.get(year, 0.0) for year in range(first_year_with_data, last_complete_year + 1)
+    ]
 
     if use_median:
         values_sorted = sorted(values)
-
         n = len(values_sorted)
-
         if n % 2 == 0:
             return (values_sorted[n // 2 - 1] + values_sorted[n // 2]) / 2
+        return values_sorted[n // 2]
 
-        else:
-            return values_sorted[n // 2]
+    return sum(values) / len(values)
 
-    else:
-        return sum(values) / years
+
+def dividend_data_years(
+    dividends: list[dict[str, float]],
+    years: int = DIVIDEND_WINDOW_YEARS,
+    reference: datetime | None = None,
+) -> int:
+    """Quantos anos-calendário distintos da janela têm provento registrado."""
+    today = reference or _now()
+    by_year = _dividends_by_year(dividends)
+    return len([y for y in by_year if today.year - years <= y <= today.year])
 
 
 def bazin_fair_price(
@@ -146,26 +199,38 @@ def graham_fair_price(eps: float | None, book_value: float | None) -> float | No
     return round(math.sqrt(22.5 * eps * book_value), 2)
 
 
+DCF_DEFAULT_GROWTH_PCT = 8.0
+DCF_MAX_GROWTH_PCT = 25.0
+
+
 def dcf_fair_price(
     eps: float | None,
-    revenue_growth_rate: float | None = None,
+    revenue_growth_pct: float | None = None,
     discount_rate: float = 0.13,
     growth_years: int = 5,
     terminal_pe: float = 15.0,
 ) -> float | None:
+    """DCF simplificado sobre o LPA.
+
+    `revenue_growth_pct` é **percentual** (12.0 = 12% a.a.) — a mesma unidade
+    que o collector produz. A versão anterior declarava a fração e checava
+    `0 < rate < 1`, condição que um percentual nunca satisfazia: o DCF caía
+    sempre no crescimento default de 8%.
+    """
     if eps is None or eps <= 0:
         return None
 
-    growth = (
-        revenue_growth_rate
-        if (revenue_growth_rate is not None and 0 < revenue_growth_rate < 1)
-        else 0.08
-    )
+    growth_pct = DCF_DEFAULT_GROWTH_PCT
+    if revenue_growth_pct is not None and 0 < revenue_growth_pct <= DCF_MAX_GROWTH_PCT:
+        # Crescimento negativo ou implausivelmente alto (outlier de base
+        # comparativa) não é projetável por 5 anos — cai no default.
+        growth_pct = revenue_growth_pct
+
+    growth = growth_pct / 100.0
 
     pv_earnings = 0.0
-    current_eps = eps
     for year in range(1, growth_years + 1):
-        projected_eps = current_eps * (1 + growth) ** year
+        projected_eps = eps * (1 + growth) ** year
         pv_earnings += projected_eps / (1 + discount_rate) ** year
 
     terminal_eps = eps * (1 + growth) ** growth_years
@@ -175,54 +240,54 @@ def dcf_fair_price(
     return round(fair, 2) if fair > 0 else None
 
 
-def compute_fair_price(
+@dataclass
+class FairPriceInputs:
+    """Parcela do preço justo que **não** depende das preferências do usuário.
+
+    Separar isso permite cachear o resultado do scan globalmente (é dado de
+    mercado, igual para todos) e calcular o que depende de `desired_yield` por
+    request — que é CPU pura e barata. Antes, o cache global guardava o
+    resultado já personalizado e o primeiro usuário a aquecê-lo definia o preço
+    justo que todos os outros viam.
+    """
+
+    asset_type: str
+    price: float | None
+    eps: float | None
+    book_value: float | None
+    avg_dividend: float | None
+    dividend_12m: float | None
+    data_years: int
+    graham: float | None
+    dcf: float | None
+    pvp: float | None
+    pvp_fair: float | None
+    used_median: bool
+
+    def to_dict(self) -> dict:
+        return self.__dict__.copy()
+
+
+def compute_fair_price_inputs(
     price: float | None,
     eps: float | None,
     book_value: float | None,
     dividends: list[dict[str, float]],
     asset_type: str = "br_stock",
-    week52_high: float | None = None,
-    desired_yield: float | None = None,
-    revenue_growth_rate: float | None = None,
+    revenue_growth_pct: float | None = None,
     pb_ratio: float | None = None,
-) -> FairPriceResult:
-
+    reference: datetime | None = None,
+) -> FairPriceInputs:
     is_fii = asset_type == "fii"
     is_etf = asset_type == "etf"
-    is_bdr = asset_type == "bdr"
 
-    if desired_yield and desired_yield > 0:
-        effective_yield = desired_yield
-    elif is_fii:
-        effective_yield = DESIRED_YIELD_FII
-    elif is_etf:
-        effective_yield = DESIRED_YIELD_ETF
-    elif is_bdr:
-        effective_yield = DESIRED_YIELD_BDR
-    else:
-        effective_yield = DESIRED_YIELD_STOCK
+    today = reference or _now()
 
-    today = datetime.utcnow()
-    years_with_data: set[int] = set()
-    for d in dividends:
-        try:
-            y = int(d["date"][:4])
-        except Exception:
-            continue
-        if y <= today.year and y > today.year - 6:
-            years_with_data.add(y)
-    data_years = len(years_with_data)
-
-    avg_div = average_dividend_last_n_years(dividends, years=5, use_median=False)
-    use_median = False
-
-    if avg_div and price and price > 0:
-        implied_dy = avg_div / price
-        if implied_dy > 0.30:
-            avg_div = average_dividend_last_n_years(dividends, years=5, use_median=True)
-            use_median = True
-
-    bazin = bazin_fair_price(avg_div, effective_yield)
+    avg_div = average_dividend_last_n_years(dividends, reference=today)
+    used_median = False
+    if avg_div and price and price > 0 and (avg_div / price) > _IMPLIED_DY_OUTLIER:
+        avg_div = average_dividend_last_n_years(dividends, use_median=True, reference=today)
+        used_median = True
 
     pvp: float | None = None
     pvp_fair: float | None = None
@@ -235,37 +300,82 @@ def compute_fair_price(
 
     graham: float | None = None
     dcf: float | None = None
+    if not is_fii and not is_etf:
+        # FII/ETF são cotas de fundo: sem LPA/VPA de empresa, Graham e DCF não
+        # se aplicam. Para ação e BDR os dois são calculados aqui (independem
+        # de preferência); a seleção do que entra no consenso fica adiante.
+        graham = graham_fair_price(eps, book_value)
+        if eps is not None and eps > 0:
+            dcf = dcf_fair_price(eps, revenue_growth_pct)
+
+    return FairPriceInputs(
+        asset_type=asset_type,
+        price=price,
+        eps=eps,
+        book_value=book_value,
+        avg_dividend=round(avg_div, 6) if avg_div else None,
+        dividend_12m=average_dividend_last_12m(dividends, reference=today),
+        data_years=dividend_data_years(dividends, reference=today),
+        graham=graham,
+        dcf=dcf,
+        pvp=pvp,
+        pvp_fair=pvp_fair,
+        used_median=used_median,
+    )
+
+
+def fair_price_from_inputs(
+    inputs: FairPriceInputs,
+    desired_yield: float | None = None,
+) -> FairPriceResult:
+    asset_type = inputs.asset_type
+    is_fii = asset_type == "fii"
+    is_etf = asset_type == "etf"
+    is_bdr = asset_type == "bdr"
+
+    if desired_yield and desired_yield > 0:
+        effective_yield = desired_yield
+    else:
+        effective_yield = desired_yield_for(asset_type)
+
+    price = inputs.price
+    bazin = bazin_fair_price(inputs.avg_dividend, effective_yield)
+    graham = inputs.graham
+    dcf = inputs.dcf
 
     if is_fii:
-        candidates = [v for v in (bazin, pvp_fair) if v is not None]
+        candidates = [v for v in (bazin, inputs.pvp_fair) if v is not None]
     elif is_etf:
         # ETF é cota de fundo, sem EPS/book_value de empresa — Graham/DCF não
         # se aplicam; fair price fica só no dividend yield histórico (Bazin).
         candidates = [v for v in (bazin,) if v is not None]
     elif is_bdr:
         bazin = None
-        graham = graham_fair_price(eps, book_value)
-        if eps is not None and eps > 0:
-            dcf = dcf_fair_price(eps, revenue_growth_rate)
         candidates = [v for v in (graham, dcf) if v is not None]
     else:
-        graham = graham_fair_price(eps, book_value)
-        if eps is not None and eps > 0 and bazin is None:
-            dcf = dcf_fair_price(eps, revenue_growth_rate)
+        # DCF entra como terceiro método só quando não há histórico de
+        # dividendos para o Bazin — evita dupla contagem do mesmo lucro.
+        if bazin is not None:
+            dcf = None
         candidates = [v for v in (bazin, graham, dcf) if v is not None]
 
     consensus = round(sum(candidates) / len(candidates), 2) if candidates else None
     consensus_methods = len(candidates)
 
     mos = None
-
     if consensus and price and price > 0:
         mos = round((consensus - price) / consensus, 4)
 
-    div_12m = average_dividend_last_12m(dividends)
-    dy_12m = round(div_12m / price, 4) if (div_12m is not None and price and price > 0) else None
-
-    dy_5y = round(avg_div / price, 4) if (avg_div is not None and price and price > 0) else None
+    dy_12m = (
+        round(inputs.dividend_12m / price, 4)
+        if (inputs.dividend_12m is not None and price and price > 0)
+        else None
+    )
+    dy_5y = (
+        round(inputs.avg_dividend / price, 4)
+        if (inputs.avg_dividend is not None and price and price > 0)
+        else None
+    )
 
     return FairPriceResult(
         bazin=bazin,
@@ -274,20 +384,57 @@ def compute_fair_price(
         consensus=consensus,
         consensus_methods=consensus_methods,
         margin_of_safety=mos,
-        avg_dividend_5y=round(avg_div, 4) if avg_div else None,
+        avg_dividend_5y=round(inputs.avg_dividend, 4) if inputs.avg_dividend else None,
         dy_12m=dy_12m,
         dy_5y=dy_5y,
-        data_years=data_years,
+        data_years=inputs.data_years,
         desired_yield_used=effective_yield,
-        pvp=pvp,
+        pvp=inputs.pvp,
         details={
-            "eps": eps,
-            "book_value": book_value,
+            "eps": inputs.eps,
+            "book_value": inputs.book_value,
             "desired_yield_pct": effective_yield * 100,
-            "used_median": use_median,
-            "pvp_fair": pvp_fair,
+            "used_median": inputs.used_median,
+            "pvp_fair": inputs.pvp_fair,
         },
     )
+
+
+def compute_fair_price(
+    price: float | None,
+    eps: float | None,
+    book_value: float | None,
+    dividends: list[dict[str, float]],
+    asset_type: str = "br_stock",
+    week52_high: float | None = None,
+    desired_yield: float | None = None,
+    revenue_growth_rate: float | None = None,
+    pb_ratio: float | None = None,
+    reference: datetime | None = None,
+) -> FairPriceResult:
+    """Atalho de uma chamada: monta os inputs e aplica o desired_yield.
+
+    `revenue_growth_rate` é percentual (12.0 = 12% a.a.).
+    """
+    inputs = compute_fair_price_inputs(
+        price=price,
+        eps=eps,
+        book_value=book_value,
+        dividends=dividends,
+        asset_type=asset_type,
+        revenue_growth_pct=revenue_growth_rate,
+        pb_ratio=pb_ratio,
+        reference=reference,
+    )
+    return fair_price_from_inputs(inputs, desired_yield=desired_yield)
+
+
+# Tendência de longo prazo exige SMA200; com histórico curto (o plano gratuito
+# da BRAPI só devolve ranges curtos) a alternativa honesta é uma tendência de
+# curto prazo rotulada como tal, em vez de "unknown" permanente.
+TREND_BASIS_LONG = "long"
+TREND_BASIS_SHORT = "short"
+TREND_BASIS_NONE = "none"
 
 
 @dataclass
@@ -305,6 +452,15 @@ class TechnicalSnapshot:
     distance_from_52w_high_pct: float | None
 
     distance_from_52w_low_pct: float | None
+
+    sma_20: float | None = None
+
+    trend_basis: str = TREND_BASIS_NONE
+
+    data_points: int = 0
+
+    def to_dict(self) -> dict:
+        return self.__dict__.copy()
 
 
 def _series_from_history(history: dict[str, float]) -> list[tuple[str, float]]:
@@ -346,6 +502,14 @@ def rsi(values: list[float], period: int = 14) -> float | None:
     return round(100 - (100 / (1 + rs)), 2)
 
 
+def _classify_trend(fast: float, slow: float) -> str:
+    if fast > slow * 1.01:
+        return "uptrend"
+    if fast < slow * 0.99:
+        return "downtrend"
+    return "sideways"
+
+
 def compute_technical(
     history: dict[str, float],
     week52_high: float | None = None,
@@ -358,23 +522,21 @@ def compute_technical(
 
     last = closes[-1] if closes else None
 
+    s20 = sma(closes, 20)
     s50 = sma(closes, 50)
-
     s200 = sma(closes, 200)
 
     r14 = rsi(closes, 14)
 
     trend = "unknown"
+    trend_basis = TREND_BASIS_NONE
 
     if s50 and s200:
-        if s50 > s200 * 1.01:
-            trend = "uptrend"
-
-        elif s50 < s200 * 0.99:
-            trend = "downtrend"
-
-        else:
-            trend = "sideways"
+        trend = _classify_trend(s50, s200)
+        trend_basis = TREND_BASIS_LONG
+    elif s20 and s50:
+        trend = _classify_trend(s20, s50)
+        trend_basis = TREND_BASIS_SHORT
 
     d_high = None
 
@@ -394,4 +556,7 @@ def compute_technical(
         last_price=last,
         distance_from_52w_high_pct=d_high,
         distance_from_52w_low_pct=d_low,
+        sma_20=s20,
+        trend_basis=trend_basis,
+        data_points=len(closes),
     )

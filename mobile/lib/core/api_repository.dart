@@ -25,6 +25,28 @@ class ApiRepository {
         .toList();
   }
 
+  /// Cria ou atualiza uma posição sem tocar nas outras.
+  ///
+  /// `savePortfolio` (PUT /portfolio) é destrutivo: apaga a carteira inteira
+  /// antes de reinserir. Cadastro do dia a dia usa esta operação.
+  Future<void> upsertPosition({
+    required String ticker,
+    required double quantity,
+    required double avgPrice,
+    String category = 'auto',
+  }) async {
+    await _dio.post(
+      '/portfolio/position',
+      data: {
+        'ticker': ticker,
+        'quantity': quantity,
+        'avg_price': avgPrice,
+        'category': category,
+      },
+    );
+  }
+
+  /// Importação explícita — substitui a carteira inteira.
   Future<void> savePortfolio(List<StoredPortfolioItem> items) async {
     await _dio.put(
       '/portfolio',
@@ -44,7 +66,7 @@ class ApiRepository {
   }
 
   Future<void> deletePosition(String ticker) async {
-    await _dio.delete('/portfolio/$ticker');
+    await _dio.delete('/portfolio/position/$ticker');
   }
 
   Future<List<TickerSuggestion>> searchTickers(String query, {int limit = 8}) async {

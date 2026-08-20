@@ -1,9 +1,18 @@
 import asyncio
 import logging
+from dataclasses import dataclass
 
 from app.analysis.classify import auto_category
 from app.analysis.decision import decide
-from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.analysis.fair_price import (
+    FairPriceInputs,
+    TechnicalSnapshot,
+    compute_fair_price_inputs,
+    compute_technical,
+    desired_yield_for,
+    fair_price_from_inputs,
+)
+from app.analysis.score_ruler import is_highlight
 from app.analysis.scoring import score_opportunity
 from app.core import cache
 from app.core.universe import get_universe
@@ -13,9 +22,47 @@ from app.repositories import AssetRepository, PortfolioRepository
 
 logger = logging.getLogger(__name__)
 
-_SCAN_CACHE_KEY = "opps_full_scan"
+# v2: o cache guarda **dado de mercado** por ticker, não o resultado já
+# personalizado. Antes a chave era global (`opps_full_scan`) mas o valor
+# cacheado dependia de desired_yield/risk_profile do primeiro usuário a
+# aquecê-la: as metas de yield da tela de Configurações não tinham efeito e o
+# usuário B via preço justo e score calculados com as preferências do usuário A.
+_SCAN_CACHE_KEY = "opps_market_scan_v2"
 _SCAN_TTL = 20 * 60
 _scan_lock = asyncio.Lock()
+
+
+@dataclass
+class _MarketRecord:
+    """Insumos de um ticker que não dependem de preferência do usuário."""
+
+    ticker: str
+    name: str | None
+    asset_type: str
+    sector: str | None
+    price: float
+    dividend_yield: float | None
+    roe: float | None
+    profit_margin: float | None
+    debt_to_equity: float | None
+    revenue_growth: float | None
+    market_cap: float | None
+    has_dividend_history: bool
+    fair_inputs: FairPriceInputs
+    technical: TechnicalSnapshot
+
+    def to_dict(self) -> dict:
+        data = self.__dict__.copy()
+        data["fair_inputs"] = self.fair_inputs.to_dict()
+        data["technical"] = self.technical.to_dict()
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "_MarketRecord":
+        data = dict(data)
+        data["fair_inputs"] = FairPriceInputs(**data["fair_inputs"])
+        data["technical"] = TechnicalSnapshot(**data["technical"])
+        return cls(**data)
 
 
 class OpportunityService:
@@ -23,9 +70,7 @@ class OpportunityService:
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
 
-    async def _build_opportunity(
-        self, symbol: str, prefs: dict | None = None
-    ) -> Opportunity | None:
+    async def _fetch_market_record(self, symbol: str) -> _MarketRecord | None:
         try:
             snap = await self.asset_repo.get_asset(symbol)
         except Exception as exc:
@@ -35,37 +80,64 @@ class OpportunityService:
         if not snap or not snap.price:
             return None
 
-        dividends = await self.asset_repo.get_dividends(symbol)
-        history = await self.asset_repo.get_history(symbol, period="1y")
+        # get_dividends e get_history derivam do mesmo payload bruto da BRAPI e
+        # não dependem um do outro — em série pagavam 3x a latência de cache miss.
+        try:
+            dividends, history = await asyncio.gather(
+                self.asset_repo.get_dividends(symbol),
+                self.asset_repo.get_history(symbol, period="2y"),
+            )
+        except Exception as exc:
+            logger.warning("Falha ao buscar histórico de %s: %s", symbol, exc)
+            return None
 
-        fair = compute_fair_price(
+        return _MarketRecord(
+            ticker=snap.symbol,
+            name=snap.name,
+            asset_type=str(snap.asset_type),
+            sector=snap.sector,
             price=snap.price,
-            eps=snap.eps,
-            book_value=snap.book_value,
-            dividends=dividends,
-            asset_type=snap.asset_type,
-            week52_high=snap.fifty_two_week_high,
-            pb_ratio=snap.pb_ratio,
-            revenue_growth_rate=snap.revenue_growth,
-            desired_yield=desired_yield_for(snap.asset_type, prefs),
-        )
-
-        tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
-        dec = decide(fair, tech, current_price=snap.price)
-
-        auto = auto_category(snap.asset_type, snap.dividend_yield, bool(dividends))
-
-        profile = RiskProfile(prefs.get("risk_profile") or "moderate")
-
-        score, breakdown = score_opportunity(
-            asset_type=snap.asset_type,
-            margin_of_safety=fair.margin_of_safety,
             dividend_yield=snap.dividend_yield,
             roe=snap.roe,
             profit_margin=snap.profit_margin,
             debt_to_equity=snap.debt_to_equity,
             revenue_growth=snap.revenue_growth,
             market_cap=snap.market_cap,
+            has_dividend_history=bool(dividends),
+            fair_inputs=compute_fair_price_inputs(
+                price=snap.price,
+                eps=snap.eps,
+                book_value=snap.book_value,
+                dividends=dividends,
+                asset_type=snap.asset_type,
+                revenue_growth_pct=snap.revenue_growth,
+                pb_ratio=snap.pb_ratio,
+            ),
+            technical=compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low),
+        )
+
+    def _build_opportunity(self, record: _MarketRecord, prefs: dict | None = None) -> Opportunity:
+        """Aplica preferências sobre dado de mercado já coletado. CPU pura."""
+        prefs = prefs or {}
+
+        fair = fair_price_from_inputs(
+            record.fair_inputs,
+            desired_yield=desired_yield_for(record.asset_type, prefs),
+        )
+        tech = record.technical
+        dec = decide(fair, tech, current_price=record.price)
+
+        profile = RiskProfile(prefs.get("risk_profile") or "moderate")
+
+        score, breakdown = score_opportunity(
+            asset_type=record.asset_type,
+            margin_of_safety=fair.margin_of_safety,
+            dividend_yield=record.dividend_yield,
+            roe=record.roe,
+            profit_margin=record.profit_margin,
+            debt_to_equity=record.debt_to_equity,
+            revenue_growth=record.revenue_growth,
+            market_cap=record.market_cap,
             rsi_14=tech.rsi_14,
             trend=tech.trend,
             profile=profile,
@@ -74,7 +146,7 @@ class OpportunityService:
         verdict = dec.verdict
         label = dec.label
 
-        if snap.asset_type == "etf" and verdict == "UNKNOWN" and tech.rsi_14 is not None:
+        if record.asset_type == "etf" and verdict == "UNKNOWN" and tech.rsi_14 is not None:
             if tech.trend == "uptrend" and tech.rsi_14 < 70:
                 verdict, label = "BUY", "Comprar (momentum)"
             elif tech.trend == "downtrend" and tech.rsi_14 > 30:
@@ -87,43 +159,59 @@ class OpportunityService:
                 verdict, label = "HOLD", "Manter"
 
         return Opportunity(
-            ticker=snap.symbol,
-            name=snap.name,
-            asset_type=AssetType(snap.asset_type),
-            sector=snap.sector,
-            price=snap.price,
+            ticker=record.ticker,
+            name=record.name,
+            asset_type=AssetType(record.asset_type),
+            sector=record.sector,
+            price=record.price,
             fair_price=fair.consensus,
             bazin=fair.bazin,
             graham=fair.graham,
             pvp=fair.pvp,
             margin_of_safety=fair.margin_of_safety,
-            dividend_yield=snap.dividend_yield,
+            dividend_yield=record.dividend_yield,
             verdict=verdict,
             label=label,
-            category_resolved=auto,
+            confidence=dec.confidence,
+            data_years=fair.data_years,
+            consensus_methods=fair.consensus_methods,
+            trend_basis=tech.trend_basis,
+            category_resolved=auto_category(
+                record.asset_type, record.dividend_yield, record.has_dividend_history
+            ),
             score=score,
             score_breakdown=breakdown,
             reasons=dec.reasons,
         )
 
-    async def _scan_universe(self, prefs: dict) -> tuple[list[Opportunity], int]:
+    async def _scan_market(self) -> tuple[list[_MarketRecord], int]:
         cached = cache.get(_SCAN_CACHE_KEY)
         if cached is not None:
-            opps = [Opportunity(**o) for o in cached["items"]]
-            return opps, cached["universe_size"]
+            records = [_MarketRecord.from_dict(r) for r in cached["items"]]
+            return records, cached["universe_size"]
 
         async with _scan_lock:
             # revalida: outra request pode ter preenchido o cache enquanto esperávamos o lock
             cached = cache.get(_SCAN_CACHE_KEY)
             if cached is not None:
-                opps = [Opportunity(**o) for o in cached["items"]]
-                return opps, cached["universe_size"]
+                records = [_MarketRecord.from_dict(r) for r in cached["items"]]
+                return records, cached["universe_size"]
 
-            universe = set(await asyncio.to_thread(get_universe))
+            universe = sorted(set(await asyncio.to_thread(get_universe)))
             universe_size = len(universe)
-            raws = await asyncio.gather(*[self._build_opportunity(t, prefs) for t in universe])
-            opps = [o for o in raws if o is not None]
-            failed_count = universe_size - len(opps)
+            raws = await asyncio.gather(
+                *[self._fetch_market_record(t) for t in universe],
+                return_exceptions=True,
+            )
+
+            records = []
+            for ticker, result in zip(universe, raws, strict=True):
+                if isinstance(result, _MarketRecord):
+                    records.append(result)
+                elif isinstance(result, Exception):
+                    logger.warning("Scan falhou para %s: %s", ticker, result)
+
+            failed_count = universe_size - len(records)
             if failed_count > 0:
                 logger.info(
                     "Análise de oportunidades: %d/%d ativos falharam na coleta",
@@ -134,12 +222,17 @@ class OpportunityService:
             cache.set(
                 _SCAN_CACHE_KEY,
                 {
-                    "items": [o.model_dump(mode="json") for o in opps],
+                    "items": [r.to_dict() for r in records],
                     "universe_size": universe_size,
                 },
                 _SCAN_TTL,
             )
-            return opps, universe_size
+            return records, universe_size
+
+    async def _scan_universe(self, prefs: dict) -> tuple[list[Opportunity], int]:
+        """Oportunidades já personalizadas para `prefs`."""
+        records, universe_size = await self._scan_market()
+        return [self._build_opportunity(r, prefs) for r in records], universe_size
 
     async def get_opportunities(
         self,
@@ -160,8 +253,8 @@ class OpportunityService:
 
         held = {p["ticker"].upper() for p in self.portfolio_repo.list_positions()}
 
-        scanned, universe_size = await self._scan_universe(prefs)
-        opps: list[Opportunity] = [o.model_copy() for o in scanned]
+        opps, universe_size = await self._scan_universe(prefs)
+        scanned_count = len(opps)
 
         if not include_held and not search:
             opps = [o for o in opps if o.ticker.upper() not in held]
@@ -184,9 +277,7 @@ class OpportunityService:
 
         for o in opps:
             o.in_portfolio = o.ticker.upper() in held
-            o.is_interesting = o.verdict == "STRONG_BUY" or (
-                o.score >= 75 and (o.dividend_yield or 0) >= 6.0
-            )
+            o.is_interesting = is_highlight(o.verdict, o.score, o.dividend_yield)
 
         if search:
             search_lower = search.lower()
@@ -239,5 +330,5 @@ class OpportunityService:
             current_page=page,
             page_size=page_size,
             universe_size=universe_size,
-            failed_count=universe_size - len(scanned),
+            failed_count=universe_size - scanned_count,
         )

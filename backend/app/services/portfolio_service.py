@@ -4,6 +4,7 @@ import time
 from app.analysis.classify import auto_category, resolve_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.core.errors import DomainError, NotFoundError
 from app.models import (
     AssetType,
     ClosedTrade,
@@ -20,6 +21,9 @@ from app.models import (
 )
 from app.optimizer.cost_calculator import calculate_sell_cost
 from app.repositories import AssetRepository, PortfolioRepository
+
+_SOLD_AT_CLOCK_SKEW_SECONDS = 5 * 60
+_SOLD_AT_MAX_BACKDATE_SECONDS = 90 * 24 * 3600
 
 
 class PortfolioService:
@@ -172,6 +176,22 @@ class PortfolioService:
             snapshots=[PortfolioSnapshot(**s) for s in snaps],
         )
 
+    def upsert_position(self, item: PortfolioItem) -> PortfolioStateResponse:
+        """Cria ou atualiza uma posição, sem tocar nas outras.
+
+        Escrita não destrutiva: é esta que o cadastro do dia a dia usa. O
+        PUT /portfolio (replace_all) apaga a carteira inteira antes de
+        reinserir, então um cadastro feito sobre uma lista vazia — carregada
+        com erro de rede — substituía tudo por um único ativo.
+        """
+        self.portfolio_repo.upsert_position(
+            ticker=item.ticker,
+            quantity=item.quantity,
+            avg_price=item.avg_price,
+            category=item.category or "auto",
+        )
+        return self.get_portfolio()
+
     def save_portfolio(self, req: SavePortfolioRequest) -> PortfolioStateResponse:
         self.portfolio_repo.replace_all(
             [
@@ -201,9 +221,9 @@ class PortfolioService:
     async def sell_position(self, req: SellRequest) -> ClosedTrade:
         pos = self.portfolio_repo.get_position(req.ticker)
         if pos is None:
-            raise ValueError(f"Posição {req.ticker.upper()} não encontrada na carteira.")
+            raise NotFoundError(f"Posição {req.ticker.upper()} não encontrada na carteira.")
         if req.quantity > pos["quantity"] + 1e-9:
-            raise ValueError(
+            raise DomainError(
                 f"Quantidade de venda ({req.quantity}) maior que a quantidade em carteira "
                 f"({pos['quantity']})."
             )
@@ -217,7 +237,7 @@ class PortfolioService:
         auto = auto_category(asset_type) if asset_type else "acoes_br"
         category = resolve_category(pos["category"], auto)
 
-        sold_at = req.sold_at or time.time()
+        sold_at = self._validate_sold_at(req.sold_at)
         month_before = self.portfolio_repo.sum_gross_sales_this_month(category)
 
         cost = calculate_sell_cost(
@@ -242,6 +262,26 @@ class PortfolioService:
         )
         self.portfolio_repo.reduce_position_quantity(req.ticker, req.quantity)
         return ClosedTrade(**trade)
+
+    @staticmethod
+    def _validate_sold_at(sold_at: float | None) -> float:
+        """Data de venda controlada pelo cliente, com janela fechada.
+
+        `sold_at` livre permitia datar a venda em outro mês, mudando o balde da
+        isenção de R$ 20 mil e a alíquota de IR calculada.
+        """
+        now = time.time()
+        if sold_at is None:
+            return now
+
+        if sold_at > now + _SOLD_AT_CLOCK_SKEW_SECONDS:
+            raise DomainError("A data da venda não pode estar no futuro.")
+        if sold_at < now - _SOLD_AT_MAX_BACKDATE_SECONDS:
+            raise DomainError(
+                "A data da venda não pode ser anterior a 90 dias — a isenção mensal de "
+                "IR e a alíquota dependem do mês da operação."
+            )
+        return sold_at
 
     def get_closed_trades(self) -> ClosedTradesResponse:
         trades = self.portfolio_repo.list_closed_trades()

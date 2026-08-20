@@ -36,6 +36,25 @@ interface LoginResponse {
 const TOKEN_KEY = 'fiance_access_token';
 const USER_KEY = 'fiance_user';
 
+/** Chaves de dado por usuário no localStorage, limpas no logout. */
+const SCOPED_KEY_PREFIXES = ['portfolio_renda_fixa'];
+
+interface JwtPayload {
+  sub?: string;
+  exp?: number;
+}
+
+function decodeJwt(token: string): JwtPayload | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(payload)) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
@@ -46,12 +65,44 @@ export class AuthService {
 
   private _gisInitialized = false;
 
+  /**
+   * Sessão utilizável: token presente **e** não expirado.
+   *
+   * Antes só a presença do token era checada. Com um JWT de 30 dias vencido o
+   * usuário entrava no dashboard, via o skeleton e era expulso pelo primeiro
+   * 401 — sem entender que a sessão havia acabado.
+   */
   isAuthenticated(): boolean {
-    return !!this.token();
+    const token = this.token();
+    if (!token) return false;
+
+    const payload = decodeJwt(token);
+    if (!payload?.exp) return true; // sem exp legível: deixa o backend decidir
+
+    return payload.exp * 1000 > Date.now();
   }
 
   token(): string | null {
     return localStorage.getItem(TOKEN_KEY);
+  }
+
+  /** Identificador do usuário logado, para chavear dado local por conta. */
+  userId(): string | null {
+    const fromUser = this._user()?.id;
+    if (fromUser) return fromUser;
+
+    const token = this.token();
+    return token ? (decodeJwt(token)?.sub ?? null) : null;
+  }
+
+  /**
+   * Chave de localStorage escopada ao usuário atual.
+   *
+   * `portfolio_renda_fixa` era global: duas contas no mesmo navegador liam os
+   * detalhes de renda fixa uma da outra.
+   */
+  scopedKey(base: string): string {
+    return `${base}:${this.userId() ?? 'anon'}`;
   }
 
   private _loadUser(): AppUser | null {
@@ -93,9 +144,21 @@ export class AuthService {
   }
 
   logout(): void {
+    this._clearScopedData();
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this._user.set(null);
     window.google?.accounts.id.disableAutoSelect();
+  }
+
+  private _clearScopedData(): void {
+    // Sem isso o dado local da conta anterior fica no navegador esperando a
+    // próxima conta abrir a mesma tela.
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && SCOPED_KEY_PREFIXES.some(prefix => key.startsWith(prefix))) {
+        localStorage.removeItem(key);
+      }
+    }
   }
 }

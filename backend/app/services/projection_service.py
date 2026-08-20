@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 
 from app.models.projection import (
@@ -22,20 +23,27 @@ class ProjectionService:
         current_value = 0.0
         current_dividends_yearly = 0.0
 
-        for item in stored:
+        # list_positions() devolve dicts (TypedDict). O acesso por atributo
+        # (`item.ticker`) levantava AttributeError, capturado pelo except logo
+        # abaixo e transformado em `continue` — o endpoint reportava, em
+        # silêncio, patrimônio atual R$ 0 e renda atual R$ 0 para todo mundo.
+        async def _snapshot(ticker: str):
             try:
-                snap = await self.asset_repo.get_asset(item.ticker)
+                return await self.asset_repo.get_asset(ticker)
             except Exception:
-                snap = None
+                return None
+
+        snaps = await asyncio.gather(*[_snapshot(item["ticker"]) for item in stored])
+
+        for item, snap in zip(stored, snaps, strict=True):
             if not snap or not snap.price:
                 continue
 
-            position_value = item.quantity * snap.price
+            position_value = item["quantity"] * snap.price
             current_value += position_value
 
             if snap.dividend_yield:
-                position_dividends = position_value * (snap.dividend_yield / 100)
-                current_dividends_yearly += position_dividends
+                current_dividends_yearly += position_value * (snap.dividend_yield / 100)
 
         current_dy_avg = (
             (current_dividends_yearly / current_value * 100) if current_value > 0 else 0

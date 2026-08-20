@@ -19,11 +19,7 @@ final _assetGroupModeProvider = StateProvider.autoDispose<_AssetGroupMode>(
 class AssetsScreen extends ConsumerWidget {
   const AssetsScreen({super.key});
 
-  Future<void> _openAddDialog(
-    BuildContext context,
-    WidgetRef ref,
-    List<PortfolioPosition> current,
-  ) async {
+  Future<void> _openAddDialog(BuildContext context, WidgetRef ref) async {
     final tickerCtrl = TextEditingController();
     final qtyCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
@@ -87,27 +83,25 @@ class AssetsScreen extends ConsumerWidget {
       return;
     }
 
-    final updated = [
-      ...current
-          .where((i) => i.ticker != ticker)
-          .map(
-            (i) => StoredPortfolioItem(
-              ticker: i.ticker,
-              quantity: i.quantity,
-              avgPrice: i.avgPrice,
-              category: i.categoryResolved,
-            ),
-          ),
-      StoredPortfolioItem(
+    // Escrita por item: antes o cadastro montava a carteira inteira a partir
+    // de `dashboard.valueOrNull?.positions ?? []` e mandava um PUT destrutivo.
+    // Em erro ou loading essa lista era [], então um cadastro com internet
+    // ruim substituía a carteira por um único ativo.
+    try {
+      await ref.read(apiRepositoryProvider).upsertPosition(
         ticker: ticker,
         quantity: quantity,
         avgPrice: avgPrice,
-        category: 'auto',
-      ),
-    ];
-    await ref.read(apiRepositoryProvider).savePortfolio(updated);
-    ref.invalidate(dashboardProvider);
-    ref.invalidate(portfolioProvider);
+      );
+      ref.invalidate(dashboardProvider);
+      ref.invalidate(portfolioProvider);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao salvar ativo: $e')));
+      }
+    }
   }
 
   Future<void> _delete(WidgetRef ref, String ticker) async {
@@ -226,14 +220,14 @@ class AssetsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Meus Ativos')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAddDialog(
-          context,
-          ref,
-          dashboard.valueOrNull?.positions ?? [],
-        ),
-        child: const Icon(Icons.add),
-      ),
+      // O FAB só aparece quando a carteira carregou: cadastrar em cima de um
+      // estado de erro/loading é o que abria o caminho de perda de dado.
+      floatingActionButton: dashboard.hasValue
+          ? FloatingActionButton(
+              onPressed: () => _openAddDialog(context, ref),
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(dashboardProvider),
         child: dashboard.when(

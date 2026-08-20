@@ -4,6 +4,14 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Sentinela do segredo de JWT: qualquer ambiente que não seja development
+# aborta o startup se o valor real for este (ver validate_for_startup).
+DEFAULT_JWT_SECRET = "change-me"
+
+
+class InsecureConfigurationError(RuntimeError):
+    """Configuração insegura para o ambiente — startup deve abortar."""
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -18,9 +26,15 @@ class Settings(BaseSettings):
 
     google_client_id: str = ""
 
-    jwt_secret: str = "change-me"
+    jwt_secret: str = DEFAULT_JWT_SECRET
 
     brapi_token: str = ""
+
+    # Plano gratuito da BRAPI só aceita 1d/5d/1mo/3mo. Com "3mo" a SMA200 é
+    # estruturalmente incalculável; quem tem plano pago deve setar "2y" para
+    # habilitar tendência de longo prazo. Há degradação automática se a API
+    # recusar o valor (ver collectors/universal._brapi_raw).
+    brapi_history_range: str = "3mo"
 
     firebase_service_account_json: str = ""
 
@@ -78,10 +92,42 @@ class Settings(BaseSettings):
         return [t.strip().upper() for t in self.default_universe.split(",") if t.strip()]
 
     @property
+    def is_development(self) -> bool:
+        return self.app_env.strip().lower() == "development"
+
+    @property
     def cors_origins(self) -> list[str]:
-        if self.app_env == "development":
+        if self.is_development:
             return ["*"]
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+    @property
+    def cors_allow_credentials(self) -> bool:
+        # allow_origins=["*"] + allow_credentials=True é uma combinação que o
+        # navegador rejeita; com wildcard não faz sentido enviar credenciais.
+        return "*" not in self.cors_origins
+
+    def validate_for_startup(self) -> None:
+        """Falha alto em configuração que só é aceitável em desenvolvimento.
+
+        Um jwt_secret default em produção permite forjar um JWT com `sub`
+        arbitrário — e o provisionamento automático de tenant transforma isso
+        em acesso a um tenant novo com um token feito à mão.
+        """
+        if self.is_development:
+            return
+
+        if self.jwt_secret == DEFAULT_JWT_SECRET or not self.jwt_secret.strip():
+            raise InsecureConfigurationError(
+                "JWT_SECRET não configurado (ainda está no valor default 'change-me'). "
+                f"Defina JWT_SECRET no ambiente antes de subir com APP_ENV={self.app_env!r}."
+            )
+
+        if not self.cors_origins:
+            raise InsecureConfigurationError(
+                "ALLOWED_ORIGINS vazio fora de development — nenhuma origem poderia "
+                "consumir a API. Configure ALLOWED_ORIGINS."
+            )
 
     @property
     def google_client_ids(self) -> list[str]:

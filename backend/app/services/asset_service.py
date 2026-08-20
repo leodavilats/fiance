@@ -2,6 +2,7 @@ import asyncio
 
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.core.errors import NotFoundError
 from app.models import (
     AssetAnalysis,
     AssetType,
@@ -20,7 +21,7 @@ class AssetService:
     async def analyze_asset(self, symbol: str) -> AssetAnalysis:
         snap = await self.asset_repo.get_asset(symbol)
         if not snap:
-            raise ValueError(f"Ativo '{symbol}' não encontrado ou sem dados.")
+            raise NotFoundError(f"Ativo '{symbol}' não encontrado ou sem dados.")
 
         history, dividends = await asyncio.gather(
             self.asset_repo.get_history(symbol, period="2y"),

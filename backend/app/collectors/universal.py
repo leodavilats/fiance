@@ -4,13 +4,13 @@ import asyncio
 import logging
 import re
 from dataclasses import dataclass
-from datetime import UTC
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
 from app.core import cache
 from app.core.config import get_settings
-from app.core.universe import get_sector_map
+from app.core.universe import KNOWN_ETFS, get_sector_map
 from app.models.enums import AssetType
 
 logger = logging.getLogger(__name__)
@@ -39,27 +39,13 @@ KNOWN_UNITS = {
     "BRBI11",
 }
 
-# ETFs líquidos da B3 usados como rede de segurança quando o subType da BRAPI
-# não vier marcado corretamente (mesmo papel que KNOWN_UNITS tem para units).
-KNOWN_ETFS = {
-    "BOVA11",
-    "BOVV11",
-    "SMAL11",
-    "IVVB11",
-    "PIBB11",
-    "DIVO11",
-    "GOVE11",
-    "MATB11",
-    "FIND11",
-    "ISUS11",
-    "ECOO11",
-    "HASH11",
-    "BITH11",
-}
-
-_BDR = re.compile(r"^[A-Z]{4}3\d$")
-_ENDS_11 = re.compile(r"^[A-Z]{4}11$")
-_BR_STOCK = re.compile(r"^[A-Z]{4}\d{1,2}$")
+# O radical de 4 caracteres pode conter dígito (M1TA34, A1MD34, W1BD34,
+# INBR32) — `[A-Z]{4}` rejeitava esses BDRs, que subiam UnsupportedTickerError
+# e eram engolidos como falha silenciosa no scan.
+_ROOT = r"[A-Z][A-Z0-9]{3}"
+_BDR = re.compile(rf"^{_ROOT}3\d$")
+_ENDS_11 = re.compile(rf"^{_ROOT}11$")
+_BR_STOCK = re.compile(rf"^{_ROOT}\d{{1,2}}$")
 
 _BRAPI_BASE = "https://brapi.dev/api"
 
@@ -95,20 +81,9 @@ def _base_symbol(symbol: str) -> str:
     return s
 
 
-def to_yf_symbol(symbol: str, asset_type: AssetType | None = None) -> str:
-    s = symbol.strip().upper()
-    t = asset_type or detect_type(s)
-
-    if t in ("br_stock", "fii", "bdr", "etf"):
-        return s if s.endswith(".SA") else f"{s}.SA"
-
-    return s
-
-
 @dataclass
 class AssetSnapshot:
     symbol: str
-    yf_symbol: str
     asset_type: AssetType
     name: str | None
     sector: str | None
@@ -138,16 +113,53 @@ def _safe_float(v) -> float | None:
         return None
 
 
-def _safe_pct(v) -> float | None:
+def _ratio_to_pct(v) -> float | None:
+    """Converte razão decimal da BRAPI para percentual (0.2039 -> 20.39).
+
+    A versão anterior decidia a escala por heurística (`if f > 1.0: return f`):
+    um ROE real de 1,2 (120%) era lido como 1,2% e um de 0,005 (0,5%) como 50%.
+    A BRAPI entrega esses campos como razão, então a conversão é sempre ×100 —
+    unidade única, sem adivinhação. Todo consumidor (scoring, fair price, UI)
+    passa a receber percentual.
+    """
     try:
         if v is None:
             return None
-        f = float(v)
-        if f > 1.0:
-            return f
-        return f * 100.0
+        return round(float(v) * 100.0, 4)
     except (ValueError, TypeError):
         return None
+
+
+def _cash_dividends(raw: dict) -> list[dict]:
+    return (raw.get("dividendsData") or {}).get("cashDividends") or []
+
+
+def _dividend_date(d: dict) -> str | None:
+    raw_date = d.get("paymentDate") or d.get("approvedOn")
+    return str(raw_date)[:10] if raw_date else None
+
+
+def _sum_dividends_last_12m(raw: dict, reference: datetime | None = None) -> float:
+    """Soma os proventos dos últimos 12 meses **por data de pagamento**.
+
+    A versão anterior somava `cashDividends[:12]` — os 12 *primeiros* registros
+    da lista. Para um FII (pagamento mensal) isso equivalia a ~1 ano por
+    coincidência; para uma ação que paga trimestralmente eram ~3 anos tratados
+    como 12 meses, inflando o DY em cerca de 3x.
+    """
+    today = reference or datetime.now(UTC)
+    cutoff = (today - timedelta(days=365)).strftime("%Y-%m-%d")
+    horizon = today.strftime("%Y-%m-%d")
+
+    total = 0.0
+    for d in _cash_dividends(raw):
+        date_str = _dividend_date(d)
+        # Proventos já anunciados com data futura não são renda dos últimos
+        # 12 meses — incluí-los infla o DY.
+        if date_str is None or date_str < cutoff or date_str > horizon:
+            continue
+        total += _safe_float(d.get("rate")) or 0.0
+    return total
 
 
 def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> float | None:
@@ -165,6 +177,14 @@ def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> flo
 _BRAPI_RAW_TTL = FUND_TTL
 
 
+# Ranges curtos (1d/5d/1mo/3mo) são os únicos aceitos no plano gratuito da
+# BRAPI; um plano pago aceita 1y/2y e é o que a SMA200 precisa. O range fica
+# configurável e há degradação automática para "3mo" quando a API recusa —
+# assim quem tem plano pago passa a ter tendência de longo prazo de fato, em
+# vez de trend="unknown" permanente desligando todo o bloco técnico.
+_FALLBACK_HISTORY_RANGE = "3mo"
+
+
 def _brapi_raw(base: str) -> dict:
     ck = f"brapi_raw:{base}"
     cached = cache.get(ck)
@@ -172,26 +192,48 @@ def _brapi_raw(base: str) -> dict:
         return cached
 
     settings = get_settings()
-    try:
-        resp = httpx.get(
-            f"{_BRAPI_BASE}/quote/{base}",
-            params={
-                "token": settings.brapi_token,
-                "fundamental": "true",
-                # "dividends": "true" bloqueado no plano gratuito (403 FEATURE_NOT_AVAILABLE);
-                # plano gratuito também só aceita ranges curtos (1d/5d/1mo/3mo), outro valor = 400.
-                "range": "3mo",
-                "interval": "1d",
-            },
-            timeout=15,
-        )
-        resp.raise_for_status()
-        results = resp.json().get("results") or []
-        if not results:
+    ranges = [settings.brapi_history_range]
+    if _FALLBACK_HISTORY_RANGE not in ranges:
+        ranges.append(_FALLBACK_HISTORY_RANGE)
+
+    r: dict | None = None
+    for range_param in ranges:
+        try:
+            resp = httpx.get(
+                f"{_BRAPI_BASE}/quote/{base}",
+                params={
+                    "token": settings.brapi_token,
+                    "fundamental": "true",
+                    # "dividends": "true" é bloqueado no plano gratuito
+                    # (403 FEATURE_NOT_AVAILABLE); dividendsData vem junto de
+                    # fundamental=true quando o plano permite.
+                    "range": range_param,
+                    "interval": "1d",
+                },
+                timeout=15,
+            )
+            resp.raise_for_status()
+            results = resp.json().get("results") or []
+            if not results:
+                return {}
+            r = results[0]
+            break
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 400 and range_param != ranges[-1]:
+                logger.info(
+                    "brapi rejeitou range=%s para %s; degradando para %s",
+                    range_param,
+                    base,
+                    _FALLBACK_HISTORY_RANGE,
+                )
+                continue
+            logger.warning("brapi falhou %s: %s", base, e)
             return {}
-        r = results[0]
-    except Exception as e:
-        logger.warning("brapi falhou %s: %s", base, e)
+        except Exception as e:
+            logger.warning("brapi falhou %s: %s", base, e)
+            return {}
+
+    if r is None:
         return {}
 
     cache.set(ck, r, _BRAPI_RAW_TTL)
@@ -214,21 +256,18 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         t = "br_stock"
 
     dividend_yield = None
-    div_data = r.get("dividendsData") or {}
-    cash_divs = div_data.get("cashDividends") or []
     try:
-        total_12m = sum(_safe_float(d.get("rate")) or 0 for d in cash_divs[:12])
+        total_12m = _sum_dividends_last_12m(r)
         if total_12m > 0:
             dividend_yield = _calculate_dividend_yield(total_12m, price)
     except Exception:
-        pass
+        logger.debug("Falha ao calcular DY de %s", base, exc_info=True)
 
     # /quote não devolve `sector` no plano gratuito; usa mapa do /quote/list.
     sector = r.get("sector") or get_sector_map().get(base)
 
     return AssetSnapshot(
         symbol=symbol.upper(),
-        yf_symbol=to_yf_symbol(symbol, t),
         asset_type=t,
         name=name,
         sector=sector,
@@ -239,11 +278,13 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         pb_ratio=_safe_float(r.get("priceToBook") or r.get("pvp")),
         eps=_safe_float(r.get("earningsPerShare")),
         book_value=_safe_float(r.get("bookValue")),
-        roe=_safe_pct(r.get("returnOnEquity")),
+        roe=_ratio_to_pct(r.get("returnOnEquity")),
         dividend_yield=dividend_yield,
-        debt_to_equity=_safe_float(r.get("debtToEquity")),
-        profit_margin=_safe_pct(r.get("profitMargins")),
-        revenue_growth=_safe_pct(r.get("revenueGrowth")),
+        # D/E também vem como razão; _score_leverage espera percentual
+        # (D/E 0.6 -> 60), então normaliza na mesma escala de ROE/margem.
+        debt_to_equity=_ratio_to_pct(r.get("debtToEquity")),
+        profit_margin=_ratio_to_pct(r.get("profitMargins")),
+        revenue_growth=_ratio_to_pct(r.get("revenueGrowth")),
         fifty_two_week_high=_safe_float(r.get("fiftyTwoWeekHigh")),
         fifty_two_week_low=_safe_float(r.get("fiftyTwoWeekLow")),
     )
@@ -254,10 +295,20 @@ def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
     r = _brapi_raw(base)
     prices = r.get("historicalDataPrice") or []
 
-    days_map = {"5d": 5, "6mo": 182, "1y": 365, "2y": 730, "max": 10_000}
+    days_map = {
+        "1d": 1,
+        "5d": 5,
+        "1mo": 31,
+        "3mo": 92,
+        "6mo": 182,
+        "1y": 365,
+        "2y": 730,
+        "max": 10_000,
+    }
     max_days = days_map.get(period, 365)
-    if max_days < 730:
-        prices = prices[-max_days:]
+    # `historicalDataPrice` já vem limitado pelo range pedido à BRAPI; aqui só
+    # recortamos quando o chamador quer uma janela menor que a disponível.
+    prices = prices[-max_days:]
 
     out: dict[str, float] = {}
     for p in prices:
@@ -278,14 +329,13 @@ def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
 def _dividends_brapi(symbol: str) -> list[dict[str, float]]:
     base = _base_symbol(symbol)
     r = _brapi_raw(base)
-    cash_divs = (r.get("dividendsData") or {}).get("cashDividends") or []
 
     out: list[dict[str, float]] = []
-    for d in cash_divs:
-        date = d.get("paymentDate") or d.get("approvedOn")
+    for d in _cash_dividends(r):
+        date = _dividend_date(d)
         value = _safe_float(d.get("rate"))
         if date and value is not None:
-            out.append({"date": str(date)[:10], "value": value})
+            out.append({"date": date, "value": value})
     return sorted(out, key=lambda x: x["date"])
 
 

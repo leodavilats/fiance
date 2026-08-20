@@ -35,9 +35,28 @@ def test_dcf_fair_price_none_when_no_eps():
 
 
 def test_dcf_fair_price_positive_with_eps():
-    result = dcf_fair_price(2.0, revenue_growth_rate=0.10)
+    result = dcf_fair_price(2.0, revenue_growth_pct=10.0)
     assert result is not None
     assert result > 0
+
+
+def test_dcf_uses_the_growth_it_receives_not_the_default():
+    """Regressão do guard `0 < rate < 1` sobre um valor percentual.
+
+    O collector entrega crescimento em percentual (12.0 = 12%); a condição
+    antiga nunca era verdadeira e o DCF caía sempre nos 8% default.
+    """
+    default = dcf_fair_price(2.0)
+    faster = dcf_fair_price(2.0, revenue_growth_pct=20.0)
+    slower = dcf_fair_price(2.0, revenue_growth_pct=2.0)
+
+    assert faster > default > slower
+
+
+def test_dcf_ignores_negative_and_absurd_growth():
+    default = dcf_fair_price(2.0)
+    assert dcf_fair_price(2.0, revenue_growth_pct=-15.0) == default
+    assert dcf_fair_price(2.0, revenue_growth_pct=900.0) == default
 
 
 def test_compute_fair_price_fii_never_uses_graham():
