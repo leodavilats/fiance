@@ -39,16 +39,16 @@ async def sectors_summary(
         description="Filtrar por categoria: acoes_br | fiis | bdrs | etfs",
     ),
 ) -> SectorsSummaryResponse:
-    response = await _service.get_opportunities(
-        page=1,
-        page_size=1000,
-        category=category,
-        sort_by="score",
-    )
+    # Antes pedia page_size=1000 e materializava até 1000 Opportunity completos
+    # (com breakdown, motivos etc.) só para usar 5 por setor. Aqui o scan
+    # memoizado do request é agregado direto, sem paginação intermediária.
+    scanned, _universe_size = await _service.scan_for_current_user()
+    items = [o for o in scanned if not category or o.category_resolved == category]
+    failed_count = _universe_size - len(scanned)
 
     sectors_map: dict[str, dict] = {}
 
-    for opp in response.items:
+    for opp in items:
         sector = opp.sector or "Outros"
         if sector not in sectors_map:
             sectors_map[sector] = {"assets": [], "scores": [], "dys": []}
@@ -86,6 +86,6 @@ async def sectors_summary(
 
     return SectorsSummaryResponse(
         sectors=result,
-        total_assets=response.total_items,
-        failed_count=response.failed_count,
+        total_assets=len(items),
+        failed_count=failed_count,
     )

@@ -4,6 +4,7 @@ import time
 from app.analysis.classify import auto_category, resolve_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.core.context import memoize_request
 from app.core.errors import DomainError, NotFoundError
 from app.models import (
     AssetType,
@@ -35,7 +36,7 @@ class PortfolioService:
         self, req: PortfolioEvaluationRequest
     ) -> PortfolioEvaluationResponse:
         if not req.items:
-            raise ValueError("Carteira vazia.")
+            raise DomainError("Carteira vazia.")
 
         prefs = self.portfolio_repo.get_preferences()
 
@@ -123,16 +124,11 @@ class PortfolioService:
         total_pnl = total_cur - total_inv
         total_pnl_pct = (total_pnl / total_inv * 100) if total_inv > 0 else 0.0
 
-        if any(p.current_value is not None for p in positions):
-            try:
-                self.portfolio_repo.record_snapshot(
-                    total_invested=round(total_inv, 2),
-                    total_current=round(total_cur, 2),
-                    total_pnl=round(total_pnl, 2),
-                    total_pnl_pct=round(total_pnl_pct, 2),
-                )
-            except Exception:
-                pass
+        # A escrita de snapshot saiu daqui: no caminho de request, o total
+        # gravado dependia de quem chamou (o web mandava a lista sem renda
+        # fixa; o dashboard mandava com ela) e o último a escrever ganhava.
+        # Agora é `services/snapshot_job`, uma vez por dia, sempre sobre
+        # list_positions() + renda fixa.
 
         return PortfolioEvaluationResponse(
             positions=positions,
@@ -141,6 +137,41 @@ class PortfolioService:
             total_pnl=round(total_pnl, 2),
             total_pnl_pct=round(total_pnl_pct, 2),
         )
+
+    async def evaluate_stored_for_current_user(self) -> PortfolioEvaluationResponse:
+        """Avalia a carteira salva, memoizado por request.
+
+        /dashboard, /strategy e /rebalance-suggestions precisavam do mesmo
+        resultado; a tela de Estratégia chamava as duas últimas e pagava o
+        pipeline duas vezes.
+        """
+
+        async def _build() -> PortfolioEvaluationResponse:
+            stored = self.portfolio_repo.list_positions()
+            if not stored:
+                return PortfolioEvaluationResponse(
+                    positions=[],
+                    total_invested=0.0,
+                    total_current=0.0,
+                    total_pnl=0.0,
+                    total_pnl_pct=0.0,
+                )
+
+            return await self.evaluate_portfolio(
+                PortfolioEvaluationRequest(
+                    items=[
+                        PortfolioItem(
+                            ticker=i["ticker"],
+                            quantity=i["quantity"],
+                            avg_price=i["avg_price"],
+                            category=i.get("category", "auto"),
+                        )
+                        for i in stored
+                    ]
+                )
+            )
+
+        return await memoize_request("portfolio.evaluate_stored", _build)
 
     def get_portfolio(self) -> PortfolioStateResponse:
         items = self.portfolio_repo.list_positions()

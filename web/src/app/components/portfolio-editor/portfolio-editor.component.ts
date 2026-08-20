@@ -93,7 +93,9 @@ export class PortfolioEditorComponent implements OnInit {
         debounceTime(250),
         switchMap(({ index, query }) => {
           if (query.trim().length < 1) return [{ index, items: [] as TickerSuggestion[] }];
-          return this.svc.searchTickers(query).pipe(switchMap(res => [{ index, items: res.items }]));
+          return this.svc
+            .searchTickers(query)
+            .pipe(switchMap(res => [{ index, items: res.items }]));
         })
       )
       .subscribe(({ index, items }) => {

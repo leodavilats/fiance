@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.models import PortfolioEvaluationRequest, PortfolioItem
+from app.models import PortfolioItem
 from app.repositories import PortfolioRepository
 from app.services import GoalService, OpportunityService, PortfolioService, StrategyService
 
@@ -40,10 +40,9 @@ async def get_investment_strategy(cash_available: float = 0.0) -> dict:
 
     portfolio_evaluation = None
     if stored:
-        req = PortfolioEvaluationRequest(items=current_portfolio)
-        eval_resp = await portfolio_service.evaluate_portfolio(req)
+        eval_resp = await portfolio_service.evaluate_stored_for_current_user()
         portfolio_evaluation = {
-            "positions": [p.dict() for p in eval_resp.positions],
+            "positions": [p.model_dump() for p in eval_resp.positions],
             "total_invested": eval_resp.total_invested,
             "total_current": eval_resp.total_current,
             "total_pnl": eval_resp.total_pnl,
@@ -87,9 +86,8 @@ async def get_rebalance_suggestions() -> dict:
         sort_order="desc",
     )
 
-    req = PortfolioEvaluationRequest(items=current_portfolio)
-    eval_resp = await portfolio_service.evaluate_portfolio(req)
-    portfolio_evaluation = {"positions": [p.dict() for p in eval_resp.positions]}
+    eval_resp = await portfolio_service.evaluate_stored_for_current_user()
+    portfolio_evaluation = {"positions": [p.model_dump() for p in eval_resp.positions]}
 
     return strategy_service.generate_rebalance_suggestions(
         current_portfolio=current_portfolio,

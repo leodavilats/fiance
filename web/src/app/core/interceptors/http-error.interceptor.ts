@@ -8,6 +8,17 @@ import { SnackbarService } from '../services/snackbar.service';
 
 const RETRYABLE_METHODS = ['GET'];
 const MAX_RETRIES = 1;
+
+/**
+ * Rotas que dependem do scan do universo.
+ *
+ * O timeout aqui era de 300 s — cinco minutos de LoadingService cobrindo a tela
+ * sem progresso nem resultado parcial. Era confissão, não solução: o backend
+ * disparava o scan completo dentro do request. Com stale-while-revalidate no
+ * `/opportunities` (o scan agora roda em background e a request devolve o
+ * último resultado conhecido), 45 s é folga suficiente — e um estouro passa a
+ * ser sinal de problema real, não o comportamento esperado.
+ */
 const LONG_TIMEOUT_PATTERNS = [
   '/dip-scanner',
   '/opportunities',
@@ -17,6 +28,9 @@ const LONG_TIMEOUT_PATTERNS = [
   '/quick-invest',
 ];
 
+const LONG_TIMEOUT_MS = 45_000;
+const DEFAULT_TIMEOUT_MS = 20_000;
+
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const loading = inject(LoadingService);
   const snackbar = inject(SnackbarService);
@@ -24,7 +38,7 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
 
   const isLongRequest = LONG_TIMEOUT_PATTERNS.some(p => req.url.includes(p));
-  const requestTimeout = isLongRequest ? 300_000 : 90_000;
+  const requestTimeout = isLongRequest ? LONG_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
   const canRetry = RETRYABLE_METHODS.includes(req.method) && !isLongRequest;
 
   loading.show();

@@ -15,6 +15,7 @@ from app.analysis.fair_price import (
 from app.analysis.score_ruler import is_highlight
 from app.analysis.scoring import score_opportunity
 from app.core import cache
+from app.core.context import memoize_request
 from app.core.universe import get_universe
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.models.enums import RiskProfile
@@ -29,7 +30,17 @@ logger = logging.getLogger(__name__)
 # usuário B via preço justo e score calculados com as preferências do usuário A.
 _SCAN_CACHE_KEY = "opps_market_scan_v2"
 _SCAN_TTL = 20 * 60
+
+# Até quanto tempo depois do vencimento vale servir o scan antigo enquanto um
+# novo roda em background. Um scan são ~280 tickers × httpx com timeout de 15 s:
+# fazer o usuário esperar por isso dentro de um GET /dashboard é a diferença
+# entre a tela abrir em milissegundos e abrir em minutos. Dado de mercado com
+# algumas horas de atraso é muito melhor que um dashboard travado.
+_SCAN_STALE_TOLERANCE = 12 * 3600
+
 _scan_lock = asyncio.Lock()
+_refresh_lock = asyncio.Lock()
+_refresh_task: asyncio.Task | None = None
 
 
 @dataclass
@@ -185,18 +196,54 @@ class OpportunityService:
             reasons=dec.reasons,
         )
 
-    async def _scan_market(self) -> tuple[list[_MarketRecord], int]:
-        cached = cache.get(_SCAN_CACHE_KEY)
-        if cached is not None:
-            records = [_MarketRecord.from_dict(r) for r in cached["items"]]
-            return records, cached["universe_size"]
+    @staticmethod
+    def _decode(cached: dict) -> tuple[list[_MarketRecord], int]:
+        return (
+            [_MarketRecord.from_dict(r) for r in cached["items"]],
+            cached["universe_size"],
+        )
 
+    async def _scan_market(self) -> tuple[list[_MarketRecord], int]:
+        """Dado de mercado do universo, com stale-while-revalidate.
+
+        Fresco: devolve na hora. Vencido mas ainda utilizável: devolve o antigo
+        e dispara o recálculo em background. Sem nada em cache: aí sim paga o
+        scan (primeiro acesso após um deploy, ou cache limpo).
+        """
+        cached, stale_by = cache.get_with_age(_SCAN_CACHE_KEY)
+
+        if cached is not None and stale_by == 0:
+            return self._decode(cached)
+
+        if cached is not None and stale_by is not None and stale_by <= _SCAN_STALE_TOLERANCE:
+            await self._schedule_refresh()
+            logger.info("Servindo scan vencido há %.0f s enquanto recalcula.", stale_by)
+            return self._decode(cached)
+
+        return await self._refresh_market()
+
+    async def _schedule_refresh(self) -> None:
+        """Garante no máximo um recálculo em background por vez."""
+        global _refresh_task
+
+        async with _refresh_lock:
+            if _refresh_task is not None and not _refresh_task.done():
+                return
+
+            async def _run() -> None:
+                try:
+                    await self._refresh_market()
+                except Exception:
+                    logger.warning("Falha ao revalidar scan em background", exc_info=True)
+
+            _refresh_task = asyncio.create_task(_run(), name="opps-scan-refresh")
+
+    async def _refresh_market(self) -> tuple[list[_MarketRecord], int]:
         async with _scan_lock:
             # revalida: outra request pode ter preenchido o cache enquanto esperávamos o lock
-            cached = cache.get(_SCAN_CACHE_KEY)
-            if cached is not None:
-                records = [_MarketRecord.from_dict(r) for r in cached["items"]]
-                return records, cached["universe_size"]
+            cached, stale_by = cache.get_with_age(_SCAN_CACHE_KEY)
+            if cached is not None and stale_by == 0:
+                return self._decode(cached)
 
             universe = sorted(set(await asyncio.to_thread(get_universe)))
             universe_size = len(universe)
@@ -235,6 +282,19 @@ class OpportunityService:
         records, universe_size = await self._scan_market()
         return [self._build_opportunity(r, prefs) for r in records], universe_size
 
+    async def scan_for_current_user(self) -> tuple[list[Opportunity], int]:
+        """Scan personalizado, memoizado por request.
+
+        /dashboard, /strategy e /rebalance-suggestions passam por aqui; a tela
+        de Estratégia chamava duas rotas que rodavam o pipeline cada uma.
+        """
+
+        async def _build() -> tuple[list[Opportunity], int]:
+            prefs = self.portfolio_repo.get_preferences()
+            return await self._scan_universe(prefs)
+
+        return await memoize_request("opportunities.scan", _build)
+
     async def get_opportunities(
         self,
         include_held: bool = False,
@@ -254,8 +314,11 @@ class OpportunityService:
 
         held = {p["ticker"].upper() for p in self.portfolio_repo.list_positions()}
 
-        opps, universe_size = await self._scan_universe(prefs)
-        scanned_count = len(opps)
+        scanned, universe_size = await self.scan_for_current_user()
+        scanned_count = len(scanned)
+        # Copia: os filtros e o boost por preferência mutam `score`, e o
+        # resultado memoizado é compartilhado com as outras rotas do request.
+        opps = [o.model_copy() for o in scanned]
 
         if not include_held and not search:
             opps = [o for o in opps if o.ticker.upper() not in held]

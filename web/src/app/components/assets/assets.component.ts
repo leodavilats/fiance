@@ -73,9 +73,7 @@ export class AssetsComponent implements OnInit {
   /** Posições negociadas (a renda fixa vem da própria tabela). */
   tradedPositions = computed(() => this.evaluation()?.positions ?? []);
 
-  fixedIncomePositions = computed(() =>
-    (this.fixedIncome()?.items ?? []).filter(i => !i.oculto)
-  );
+  fixedIncomePositions = computed(() => (this.fixedIncome()?.items ?? []).filter(i => !i.oculto));
 
   hiddenFixedIncome = computed(() => (this.fixedIncome()?.items ?? []).filter(i => i.oculto));
 

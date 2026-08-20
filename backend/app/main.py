@@ -15,33 +15,10 @@ from app.api import router
 from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.errors import DomainError
+from app.core.jobs import start_background_jobs
+from app.core.observability import observability_middleware
 
 logger = logging.getLogger("fiance")
-
-
-async def _warm_up_opportunities() -> None:
-    from app.services import OpportunityService
-
-    try:
-        # Aquece só o dado de mercado (independe de preferência) — a
-        # personalização é calculada por request.
-        await OpportunityService()._scan_market()
-        logger.info("Cache de oportunidades aquecido no startup.")
-    except Exception:
-        logger.warning("Falha ao aquecer cache de oportunidades no startup", exc_info=True)
-
-
-async def _notification_loop() -> None:
-    from app.services.notification_job import run_notification_cycle
-
-    # Espera o warm-up preencher o cache pra não pagar o scan completo 2x.
-    await asyncio.sleep(60)
-    while True:
-        try:
-            await run_notification_cycle()
-        except Exception:
-            logger.warning("Falha no ciclo de notificações", exc_info=True)
-        await asyncio.sleep(15 * 60)
 
 
 def _purge_legacy_fixed_income() -> None:
@@ -63,10 +40,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
     _purge_legacy_fixed_income()
 
-    tasks = [
-        asyncio.create_task(_warm_up_opportunities(), name="warm-up-opportunities"),
-        asyncio.create_task(_notification_loop(), name="notification-loop"),
-    ]
+    tasks = start_background_jobs()
     try:
         yield
     finally:
@@ -94,6 +68,10 @@ def create_app() -> FastAPI:
         description="Análise fundamentalista e recomendação de carteira (B3).",
         lifespan=lifespan,
     )
+
+    # Registrado antes do CORS para que ele fique mais externo na pilha e
+    # os headers de CORS sejam aplicados também à resposta instrumentada.
+    app.middleware("http")(observability_middleware)
 
     app.add_middleware(
         CORSMiddleware,

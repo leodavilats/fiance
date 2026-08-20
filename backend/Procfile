@@ -1,1 +1,7 @@
-web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# Um worker por processo. O cache é um SQLite local (.cache/http_cache.db):
+# com mais de um worker na mesma máquina, cada um manteria a própria cópia e
+# refaria o scan do universo. Para escalar horizontalmente, aponte
+# CACHE_DB_PATH para um volume compartilhado ou troque a camada de cache por
+# Redis — os jobs de background já são protegidos por lock no banco
+# (app/core/jobs.py), então múltiplos workers não duplicam notificação.
+web: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1

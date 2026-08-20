@@ -167,3 +167,20 @@ class FixedIncomePositionDb(Base):
     oculto: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[float] = mapped_column(Float)
     updated_at: Mapped[float] = mapped_column(Float)
+
+
+class JobLockDb(Base):
+    """Lock cooperativo para jobs de background.
+
+    Os dois `asyncio.create_task` do startup rodavam em todo worker: com mais
+    de um dyno/worker, cada um executava o ciclo de notificação — pushes
+    duplicados para o mesmo usuário. Um lock no banco (que é compartilhado) é o
+    mínimo para tornar os jobs idempotentes entre processos.
+    """
+
+    __tablename__ = "job_locks"
+
+    name: Mapped[str] = mapped_column(String, primary_key=True)
+    holder: Mapped[str] = mapped_column(String)
+    acquired_at: Mapped[float] = mapped_column(Float)
+    expires_at: Mapped[float] = mapped_column(Float)

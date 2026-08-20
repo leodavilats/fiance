@@ -10,6 +10,7 @@ import httpx
 
 from app.core import cache
 from app.core.config import get_settings
+from app.core.observability import record_external_call
 from app.core.universe import KNOWN_ETFS, get_sector_map
 from app.models.enums import AssetType
 
@@ -213,12 +214,14 @@ def _brapi_raw(base: str) -> dict:
                 timeout=15,
             )
             resp.raise_for_status()
+            record_external_call("brapi", ok=True)
             results = resp.json().get("results") or []
             if not results:
                 return {}
             r = results[0]
             break
         except httpx.HTTPStatusError as e:
+            record_external_call("brapi", ok=False)
             if e.response.status_code == 400 and range_param != ranges[-1]:
                 logger.info(
                     "brapi rejeitou range=%s para %s; degradando para %s",
@@ -230,6 +233,7 @@ def _brapi_raw(base: str) -> dict:
             logger.warning("brapi falhou %s: %s", base, e)
             return {}
         except Exception as e:
+            record_external_call("brapi", ok=False)
             logger.warning("brapi falhou %s: %s", base, e)
             return {}
 

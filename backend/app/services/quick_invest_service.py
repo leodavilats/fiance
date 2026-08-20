@@ -1,3 +1,5 @@
+import asyncio
+
 from app.analysis.classify import auto_category
 from app.models.quick_invest import (
     QuickInvestAllocation,
@@ -23,11 +25,17 @@ class QuickInvestService:
         category_values: dict[str, float] = {}
         total_portfolio = 0.0
 
-        for item in stored:
+        # Em série, cada posição esperava a anterior; num cache miss isso é a
+        # latência da BRAPI multiplicada pelo tamanho da carteira.
+        async def _snapshot(ticker: str):
             try:
-                snap = await self.asset_repo.get_asset(item["ticker"])
+                return await self.asset_repo.get_asset(ticker)
             except Exception:
-                snap = None
+                return None
+
+        snaps = await asyncio.gather(*[_snapshot(item["ticker"]) for item in stored])
+
+        for item, snap in zip(stored, snaps, strict=True):
             if not snap or not snap.price:
                 continue
 

@@ -7,13 +7,14 @@ from typing import TypedDict
 
 from sqlalchemy import delete, func, select
 
-from app.core.context import get_current_user_id
+from app.core.context import get_current_user_id, get_request_session
 from app.core.database import SessionLocal, init_db
 from app.models.db_models import (
     ClosedTradeDb,
     DeviceTokenDb,
     FixedIncomePositionDb,
     GoalDb,
+    JobLockDb,
     NotifiedOpportunityDb,
     PortfolioPosition,
     PortfolioSnapshot,
@@ -136,6 +137,17 @@ def _session(user_id: str | None, ensure_user: bool = False):
         _initialized = True
 
     uid = user_id or get_current_user_id()
+
+    ambient = get_request_session()
+    if ambient is not None:
+        # Sessão do request: o middleware commita/fecha no fim. Um flush
+        # mantém o comportamento de quem lê de volta o que acabou de escrever.
+        if ensure_user:
+            _ensure_user(ambient, uid)
+        yield ambient, uid
+        ambient.flush()
+        return
+
     session = SessionLocal()
     try:
         if ensure_user:
@@ -872,3 +884,40 @@ def purge_legacy_fixed_income_tickers() -> int:
             delete(PortfolioPosition).where(PortfolioPosition.ticker.like("RF!_%", escape="!"))
         )
         return result.rowcount or 0
+
+
+def list_all_user_ids() -> list[str]:
+    """Todos os tenants — usado pelos jobs de background."""
+    with _session_global() as session:
+        return list(session.scalars(select(User.id)))
+
+
+def try_acquire_job_lock(name: str, holder: str, ttl_seconds: float) -> bool:
+    """Tenta tomar o lock de um job. Idempotente entre processos.
+
+    O lock expira sozinho (`ttl_seconds`), então um worker que morra no meio do
+    ciclo não bloqueia o job para sempre.
+    """
+    now = time.time()
+    with _session_global() as session:
+        row = session.get(JobLockDb, name)
+        if row is None:
+            session.add(
+                JobLockDb(name=name, holder=holder, acquired_at=now, expires_at=now + ttl_seconds)
+            )
+            return True
+
+        if row.expires_at > now and row.holder != holder:
+            return False
+
+        row.holder = holder
+        row.acquired_at = now
+        row.expires_at = now + ttl_seconds
+        return True
+
+
+def release_job_lock(name: str, holder: str) -> None:
+    with _session_global() as session:
+        row = session.get(JobLockDb, name)
+        if row is not None and row.holder == holder:
+            session.execute(delete(JobLockDb).where(JobLockDb.name == name))

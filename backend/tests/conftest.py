@@ -124,8 +124,20 @@ _FAKE_DIVIDENDS = {"PETR4": build_quarterly_dividends()}
 _FAKE_HISTORY = {"PETR4": build_daily_history(260)}
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "real_cache: usa a implementação real de cache em vez do dicionário em memória",
+    )
+
+
+@pytest.fixture()
+def anyio_backend():
+    return "asyncio"
+
+
 @pytest.fixture(autouse=True)
-def _stub_market_data(monkeypatch):
+def _stub_market_data(monkeypatch, request):
     """Isola os testes de qualquer chamada de rede real para dados de mercado.
 
     Vale para todos os testes: faz um universo fixo e pequeno (PETR4, VALE3)
@@ -162,12 +174,24 @@ def _stub_market_data(monkeypatch):
 
     invalidate_universe_memo()
 
-    # Cache de oportunidades/universo é um sqlite em disco compartilhado com o
-    # ambiente de dev — troca por um dicionário em memória isolado por teste.
+    # Cache de oportunidades/universo é um sqlite em disco — troca por um
+    # dicionário em memória isolado por teste. Testes marcados com `real_cache`
+    # exercitam a implementação de verdade (WAL, TTL, purge).
     import app.core.cache as cache_mod
+
+    if request.node.get_closest_marker("real_cache"):
+        return
 
     fake_store: dict = {}
     monkeypatch.setattr(cache_mod, "get", lambda key: fake_store.get(key))
+    # (valor, atraso): 0 = fresco. O dicionário em memória nunca "vence", então
+    # o caminho de stale-while-revalidate não dispara nos testes de contrato —
+    # ele tem teste próprio em test_scan_cache.py.
+    monkeypatch.setattr(
+        cache_mod,
+        "get_with_age",
+        lambda key: (fake_store.get(key), 0.0 if key in fake_store else None),
+    )
     monkeypatch.setattr(
         cache_mod, "set", lambda key, value, ttl_seconds: fake_store.__setitem__(key, value)
     )
