@@ -36,7 +36,14 @@ interface LoginResponse {
 const TOKEN_KEY = 'fiance_access_token';
 const USER_KEY = 'fiance_user';
 
-/** Chaves de dado por usuário no localStorage, limpas no logout. */
+/**
+ * Chaves de dado local limpas no logout.
+ *
+ * `portfolio_renda_fixa` era onde taxa, prazo e data das aplicações viviam —
+ * global, então duas contas no mesmo navegador liam os dados financeiras uma
+ * da outra. A renda fixa hoje é um recurso do servidor; a chave continua aqui
+ * só para limpar o resíduo de instalações antigas.
+ */
 const SCOPED_KEY_PREFIXES = ['portfolio_renda_fixa'];
 
 interface JwtPayload {
