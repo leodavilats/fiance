@@ -39,6 +39,7 @@ import {
   SellRequest,
   ClosedTrade,
   TickerSuggestion,
+  WhatsNewResponse,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -126,6 +127,11 @@ export class RecommendService {
 
   dashboard(): Observable<DashboardResponse> {
     return this.http.get<DashboardResponse>(`${this.base}/dashboard`);
+  }
+
+  /** O que mudou desde a última visita, com uma ação por linha. */
+  whatsNew(): Observable<WhatsNewResponse> {
+    return this.http.get<WhatsNewResponse>(`${this.base}/whats-new`);
   }
 
   opportunities(

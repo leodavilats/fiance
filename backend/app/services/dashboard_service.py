@@ -5,6 +5,7 @@ from app.models import (
     CategoryAllocation,
     DashboardResponse,
     DashboardSummary,
+    DataFreshness,
     Goal,
     Opportunity,
     PortfolioPosition,
@@ -14,6 +15,13 @@ from app.models.enums import AssetType
 from app.repositories import PortfolioRepository
 
 REBALANCE_THRESHOLD_PCT = 5.0
+
+# Concentração setorial que vale um alerta.
+SECTOR_CONCENTRATION_PCT = 30.0
+
+# Teto de alertas na tela. Antes não havia limite nem deduplicação, e a
+# carga cognitiva crescia com o tamanho da carteira.
+MAX_ALERTS = 4
 
 _ASSET_TYPE_TO_CATEGORY = {
     "br_stock": "acoes_br",
@@ -43,72 +51,179 @@ class DashboardService:
         top_buys: list[Opportunity],
         allocations: list[CategoryAllocation],
     ) -> list[Alert]:
+        """Alertas agrupados por tipo, com contagem, limite e uma ação cada.
+
+        Antes era uma linha por posição SELL, uma por setor concentrado e uma
+        por categoria fora da meta, sem limite: uma carteira de 20 ativos podia
+        produzir dezenas de alertas, todos oferecendo a mesma (única) ação.
+        """
         alerts: list[Alert] = []
 
-        for p in positions:
-            if p.verdict in ("SELL", "STRONG_SELL"):
-                alerts.append(
-                    Alert(
-                        severity="critical" if p.verdict == "STRONG_SELL" else "warning",
-                        kind="sell_target",
-                        title=f"{p.ticker}: sinal de venda",
-                        detail=f"{p.label}. Preço atual R$ {p.current_price or 0:.2f}, justo R$ {p.fair_price or 0:.2f}.",
-                        ticker=p.ticker,
-                    )
-                )
+        alerts += self._sell_alert(positions)
+        alerts += self._opportunity_alert(top_buys)
+        alerts += self._concentration_alert(positions)
+        alerts += self._rebalance_alert(allocations)
 
-        for o in top_buys[:5]:
-            if (o.margin_of_safety or 0) >= 0.30:
-                alerts.append(
-                    Alert(
-                        severity="info",
-                        kind="opportunity",
-                        title=f"{o.ticker}: oportunidade forte",
-                        detail=f"Margem de segurança {(o.margin_of_safety or 0) * 100:.0f}%. {o.label}.",
-                        ticker=o.ticker,
-                    )
-                )
+        severity_order = {"critical": 0, "warning": 1, "info": 2}
+        alerts.sort(key=lambda a: severity_order.get(a.severity, 3))
 
-        sector_totals: dict[str, float] = {}
+        return alerts[:MAX_ALERTS]
+
+    @staticmethod
+    def _sell_alert(positions: list[PortfolioPosition]) -> list[Alert]:
+        to_sell = [p for p in positions if p.verdict in ("SELL", "STRONG_SELL")]
+        if not to_sell:
+            return []
+
+        to_sell.sort(key=lambda p: 0 if p.verdict == "STRONG_SELL" else 1)
+        strong = [p for p in to_sell if p.verdict == "STRONG_SELL"]
+
+        if len(to_sell) == 1:
+            position = to_sell[0]
+            return [
+                Alert(
+                    severity="critical" if strong else "warning",
+                    kind="sell_target",
+                    title=f"{position.ticker}: sinal de venda",
+                    detail=(
+                        f"{position.label}. Preço atual R$ {position.current_price or 0:.2f}, "
+                        f"justo R$ {position.fair_price or 0:.2f}."
+                    ),
+                    ticker=position.ticker,
+                    count=1,
+                    tickers=[position.ticker],
+                    action="sell",
+                    action_label="Simular venda",
+                )
+            ]
+
+        names = ", ".join(p.ticker for p in to_sell[:4])
+        extra = f" e outros {len(to_sell) - 4}" if len(to_sell) > 4 else ""
+        return [
+            Alert(
+                severity="critical" if strong else "warning",
+                kind="sell_target",
+                title=f"{len(to_sell)} posições com sinal de venda",
+                detail=f"{names}{extra} — o preço passou do preço justo estimado.",
+                count=len(to_sell),
+                tickers=[p.ticker for p in to_sell],
+                action="rebalance",
+                action_label="Ver sugestões de ajuste",
+            )
+        ]
+
+    @staticmethod
+    def _opportunity_alert(top_buys: list[Opportunity]) -> list[Alert]:
+        strong = [o for o in top_buys[:5] if (o.margin_of_safety or 0) >= 0.30]
+        if not strong:
+            return []
+
+        best = strong[0]
+        if len(strong) == 1:
+            detail = f"Margem de segurança {(best.margin_of_safety or 0) * 100:.0f}%. {best.label}."
+            title = f"{best.ticker}: oportunidade forte"
+        else:
+            names = ", ".join(o.ticker for o in strong)
+            title = f"{len(strong)} oportunidades com desconto acima de 30%"
+            detail = f"{names}. A maior margem é de {best.ticker}."
+
+        return [
+            Alert(
+                severity="info",
+                kind="opportunity",
+                title=title,
+                detail=detail,
+                ticker=best.ticker if len(strong) == 1 else None,
+                count=len(strong),
+                tickers=[o.ticker for o in strong],
+                action="analyze",
+                action_label="Ver análise",
+            )
+        ]
+
+    @staticmethod
+    def _concentration_alert(positions: list[PortfolioPosition]) -> list[Alert]:
         total = sum(p.current_value or p.invested for p in positions) or 1.0
 
+        sector_totals: dict[str, float] = {}
         for p in positions:
             if p.sector:
                 sector_totals[p.sector] = sector_totals.get(p.sector, 0.0) + (
                     p.current_value or p.invested
                 )
 
-        for sector, value in sector_totals.items():
-            pct = value / total * 100
-            if pct > 30:
-                alerts.append(
-                    Alert(
-                        severity="warning",
-                        kind="concentration",
-                        title=f"Setor {translate_sector(sector)} concentrado",
-                        detail=f"{pct:.1f}% da carteira em um único setor. Considere diversificar.",
-                    )
-                )
+        concentrated = [
+            (sector, value / total * 100)
+            for sector, value in sector_totals.items()
+            if value / total * 100 > SECTOR_CONCENTRATION_PCT
+        ]
+        if not concentrated:
+            return []
 
-        for a in allocations:
-            if a.target_pct is None or a.delta_pct is None:
-                continue
-            if abs(a.delta_pct) >= REBALANCE_THRESHOLD_PCT:
-                direction = "acima" if a.delta_pct > 0 else "abaixo"
-                label = _CATEGORY_LABELS.get(a.category, a.category)
-                alerts.append(
-                    Alert(
-                        severity="warning",
-                        kind="rebalance",
-                        title=f"{label}: {direction} da meta",
-                        detail=(
-                            f"Atual {a.current_pct:.1f}% vs meta {a.target_pct:.1f}% "
-                            f"({a.delta_pct:+.1f}pp)."
-                        ),
-                    )
-                )
+        concentrated.sort(key=lambda item: -item[1])
+        worst_sector, worst_pct = concentrated[0]
+        label = translate_sector(worst_sector)
 
-        return alerts
+        if len(concentrated) == 1:
+            title = f"Setor {label} concentrado"
+            detail = f"{worst_pct:.1f}% da carteira em um único setor. Considere diversificar."
+        else:
+            title = f"{len(concentrated)} setores concentrados"
+            detail = f"O maior é {label}, com {worst_pct:.1f}% da carteira. Considere diversificar."
+
+        return [
+            Alert(
+                severity="warning",
+                kind="concentration",
+                title=title,
+                detail=detail,
+                count=len(concentrated),
+                action="rebalance",
+                action_label="Rebalancear",
+            )
+        ]
+
+    @staticmethod
+    def _rebalance_alert(allocations: list[CategoryAllocation]) -> list[Alert]:
+        off_target = [
+            a
+            for a in allocations
+            if a.target_pct is not None
+            and a.delta_pct is not None
+            and abs(a.delta_pct) >= REBALANCE_THRESHOLD_PCT
+        ]
+        if not off_target:
+            return []
+
+        off_target.sort(key=lambda a: -abs(a.delta_pct or 0))
+        worst = off_target[0]
+        label = _CATEGORY_LABELS.get(worst.category, worst.category)
+        direction = "acima" if (worst.delta_pct or 0) > 0 else "abaixo"
+
+        if len(off_target) == 1:
+            title = f"{label}: {direction} da meta"
+            detail = (
+                f"Atual {worst.current_pct:.1f}% vs meta {worst.target_pct:.1f}% "
+                f"({worst.delta_pct:+.1f}pp)."
+            )
+        else:
+            title = f"{len(off_target)} categorias fora da meta"
+            detail = (
+                f"A maior diferença é {label}: {worst.current_pct:.1f}% contra meta de "
+                f"{worst.target_pct:.1f}% ({worst.delta_pct:+.1f}pp)."
+            )
+
+        return [
+            Alert(
+                severity="warning",
+                kind="rebalance",
+                title=title,
+                detail=detail,
+                count=len(off_target),
+                action="goals",
+                action_label="Ajustar meta",
+            )
+        ]
 
     def calculate_category_allocations(
         self,
@@ -157,6 +272,7 @@ class DashboardService:
         positions: list[PortfolioPosition],
         top_buys: list[Opportunity],
         goals: list[Goal],
+        freshness: DataFreshness | None = None,
     ) -> DashboardResponse:
 
         real_positions = [p for p in positions if p.asset_type != AssetType.renda_fixa]
@@ -223,5 +339,6 @@ class DashboardService:
             allocations=allocations,
             snapshots=[PortfolioSnapshot(**s) for s in snaps],
             health=health,
+            freshness=freshness,
             last_updated=self.portfolio_repo.last_updated(),
         )

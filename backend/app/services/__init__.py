@@ -9,6 +9,7 @@ from .portfolio_service import PortfolioService
 from .projection_service import ProjectionService
 from .quick_invest_service import QuickInvestService
 from .strategy_service import StrategyService
+from .whats_new_service import WhatsNewService
 
 __all__ = [
     "AssetService",
@@ -22,4 +23,5 @@ __all__ = [
     "GoalService",
     "ProjectionService",
     "QuickInvestService",
+    "WhatsNewService",
 ]

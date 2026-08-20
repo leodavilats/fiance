@@ -49,6 +49,13 @@ class PortfolioPosition(BaseModel):
     margin_of_safety: float | None
     verdict: str
     label: str
+    # Proveniência do veredito, ao lado dele: sem isso não havia como o usuário
+    # saber se um veredito fraco vem de análise ou de falta de dado.
+    confidence: float = 0.0
+    data_years: int = 0
+    consensus_methods: int = 0
+    trend_basis: str = "none"
+    as_of: float | None = None
     reasons: list[str] = Field(default_factory=list)
     category: str = "auto"
     category_resolved: str = "acoes_br"

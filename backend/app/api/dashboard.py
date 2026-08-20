@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 
-from app.models import DashboardResponse
+from app.collectors.rates import get_rates
+from app.collectors.universal import FUND_TTL
+from app.models import DashboardResponse, DataFreshness
 from app.services import (
     DashboardService,
     FixedIncomeService,
@@ -34,4 +36,12 @@ async def dashboard() -> DashboardResponse:
 
     goals = goal_service.get_goals()
 
-    return await dashboard_service.generate_dashboard(positions, top_buys, goals)
+    age = await opportunity_service.market_data_age_seconds()
+    freshness = DataFreshness(
+        rates_source=get_rates()["source"],
+        market_data_age_seconds=round(age, 1) if age is not None else None,
+        market_data_stale=age is not None and age > FUND_TTL,
+        quotes_ttl_seconds=FUND_TTL,
+    )
+
+    return await dashboard_service.generate_dashboard(positions, top_buys, goals, freshness)

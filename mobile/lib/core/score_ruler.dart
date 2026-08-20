@@ -12,6 +12,11 @@ const double kScoreNeutral = 40;
 /// DY mínimo (%) para um score alto contar como destaque de renda.
 const double kHighlightMinDy = 6;
 
+/// Abaixo disso o score é chute, não medida: a UI apresenta como "dado
+/// insuficiente" em vez de colorir a nota. Espelha
+/// `scoring.MIN_DATA_COMPLETENESS` no backend.
+const double kMinDataCompleteness = 0.5;
+
 class ScoreBand {
   const ScoreBand(this.text, this.color);
 
@@ -30,6 +35,26 @@ ScoreBand scoreBand(double score) {
     return const ScoreBand('Neutro', Color(0xFFFACC15));
   }
   return const ScoreBand('Evitar agora', Color(0xFFF87171));
+}
+
+/// Score com dado incompleto não pode parecer nota baixa.
+///
+/// A ausência de dado era codificada como número: não havia como saber se o 32
+/// de um FII significava "ruim" ou "não sei".
+bool scoreIsReliable(double? dataCompleteness) =>
+    (dataCompleteness ?? 1) >= kMinDataCompleteness;
+
+ScoreBand scoreBandFor(double score, double? dataCompleteness) {
+  if (!scoreIsReliable(dataCompleteness)) {
+    return const ScoreBand('Dado insuficiente', Color(0xFF9CA3AF));
+  }
+  return scoreBand(score);
+}
+
+String dataCompletenessLabel(double? dataCompleteness) {
+  final value = dataCompleteness ?? 1;
+  if (value >= 1) return '';
+  return '${(value * 100).round()}% dos indicadores disponíveis';
 }
 
 /// Texto do glossário derivado dos próprios limiares — não pode divergir.

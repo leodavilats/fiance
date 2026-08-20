@@ -18,6 +18,11 @@ class ApiRepository {
     return DashboardData.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<WhatsNew> getWhatsNew() async {
+    final res = await _dio.get('/whats-new');
+    return WhatsNew.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<List<StoredPortfolioItem>> getPortfolio() async {
     final res = await _dio.get('/portfolio');
     return (res.data['items'] as List)

@@ -57,9 +57,7 @@ async def test_stale_cache_is_served_immediately_and_revalidated(service, monkey
     }
 
     # Cache vencido há 1 h, dentro da tolerância de stale.
-    monkeypatch.setattr(
-        opp_mod.cache, "get_with_age", lambda key: (stale_payload, 3600.0)
-    )
+    monkeypatch.setattr(opp_mod.cache, "get_with_age", lambda key: (stale_payload, 3600.0))
 
     refreshed = asyncio.Event()
 

@@ -12,3 +12,4 @@ export * from './quick-invest.model';
 export * from './renda_fixa.model';
 export * from './sectors.model';
 export * from './strategy.model';
+export * from './whats-new.model';

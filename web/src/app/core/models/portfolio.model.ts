@@ -3,6 +3,7 @@ import {
   AssetType,
   LegacyPortfolioCategory,
   PortfolioCategory,
+  TrendBasis,
   Verdict,
 } from './common.model';
 
@@ -32,6 +33,12 @@ export interface PortfolioPosition {
   margin_of_safety: number | null;
   verdict: Verdict;
   label: string;
+  /** Proveniência do veredito — antes calculada e descartada. */
+  confidence: number;
+  data_years: number;
+  consensus_methods: number;
+  trend_basis: TrendBasis;
+  as_of: number | null;
   reasons: string[];
   category: LegacyPortfolioCategory;
   category_resolved: AllocationCategory;

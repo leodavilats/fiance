@@ -16,6 +16,10 @@ class PortfolioPosition {
     required this.dividendYield,
     required this.sector,
     this.reasons = const [],
+    this.confidence = 0,
+    this.dataYears = 0,
+    this.consensusMethods = 0,
+    this.trendBasis = 'none',
   });
 
   final String ticker;
@@ -34,6 +38,10 @@ class PortfolioPosition {
   final double? dividendYield;
   final String? sector;
   final List<String> reasons;
+  final double confidence;
+  final int dataYears;
+  final int consensusMethods;
+  final String trendBasis;
 
   factory PortfolioPosition.fromJson(Map<String, dynamic> j) =>
       PortfolioPosition(
@@ -57,6 +65,10 @@ class PortfolioPosition {
         reasons:
             (j['reasons'] as List?)?.map((e) => e as String).toList() ??
             const [],
+        confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
+        dataYears: j['data_years'] as int? ?? 0,
+        consensusMethods: j['consensus_methods'] as int? ?? 0,
+        trendBasis: j['trend_basis'] as String? ?? 'none',
       );
 }
 
@@ -220,24 +232,119 @@ class CategoryAllocation {
       );
 }
 
+/// Alerta agrupado, com um desfecho.
+///
+/// Antes o dashboard emitia alertas sem limite nem deduplicacao (um por posicao
+/// SELL, um por setor concentrado, um por categoria fora da meta) e a unica
+/// acao oferecida na tela era ir para Mercado.
 class PortfolioAlert {
   PortfolioAlert({
+    required this.severity,
+    required this.kind,
+    required this.title,
+    required this.detail,
+    required this.ticker,
+    required this.count,
+    required this.action,
+    required this.actionLabel,
+  });
+
+  final String severity;
+  final String kind;
+  final String title;
+  final String detail;
+  final String? ticker;
+  final int count;
+  final String? action;
+  final String? actionLabel;
+
+  factory PortfolioAlert.fromJson(Map<String, dynamic> j) => PortfolioAlert(
+    severity: j['severity'] as String? ?? 'info',
+    kind: j['kind'] as String? ?? '',
+    title: j['title'] as String? ?? '',
+    detail: j['detail'] as String? ?? '',
+    ticker: j['ticker'] as String?,
+    count: j['count'] as int? ?? 1,
+    action: j['action'] as String?,
+    actionLabel: j['action_label'] as String?,
+  );
+}
+
+/// Frescor e origem do dado que alimentou a tela.
+///
+/// `get_rates()` ja devolvia `bcb | estimativa` -- o unico indicador de
+/// proveniencia do sistema -- e nenhuma tela o mostrava.
+class DataFreshness {
+  DataFreshness({
+    required this.ratesSource,
+    required this.marketDataAgeSeconds,
+    required this.marketDataStale,
+  });
+
+  final String ratesSource;
+  final double? marketDataAgeSeconds;
+  final bool marketDataStale;
+
+  factory DataFreshness.fromJson(Map<String, dynamic> j) => DataFreshness(
+    ratesSource: j['rates_source'] as String? ?? 'estimativa',
+    marketDataAgeSeconds: (j['market_data_age_seconds'] as num?)?.toDouble(),
+    marketDataStale: j['market_data_stale'] as bool? ?? false,
+  );
+
+  String get label {
+    final age = marketDataAgeSeconds;
+    if (age == null) return 'cotacoes sem carimbo de tempo';
+    if (age < 120) return 'cotacoes de agora';
+    if (age < 3600) return 'cotacoes de ${(age / 60).round()} min atras';
+    return 'cotacoes de ${(age / 3600).round()} h atras';
+  }
+
+  String get ratesLabel =>
+      ratesSource == 'bcb' ? 'CDI/Selic do Banco Central' : 'CDI/Selic estimados';
+}
+
+/// Uma linha de "o que mudou desde a sua ultima visita".
+class WhatsNewItem {
+  WhatsNewItem({
+    required this.kind,
     required this.severity,
     required this.title,
     required this.detail,
     required this.ticker,
+    required this.action,
+    required this.actionLabel,
   });
 
+  final String kind;
   final String severity;
   final String title;
   final String detail;
   final String? ticker;
+  final String? action;
+  final String? actionLabel;
 
-  factory PortfolioAlert.fromJson(Map<String, dynamic> j) => PortfolioAlert(
+  factory WhatsNewItem.fromJson(Map<String, dynamic> j) => WhatsNewItem(
+    kind: j['kind'] as String? ?? '',
     severity: j['severity'] as String? ?? 'info',
     title: j['title'] as String? ?? '',
     detail: j['detail'] as String? ?? '',
     ticker: j['ticker'] as String?,
+    action: j['action'] as String?,
+    actionLabel: j['action_label'] as String?,
+  );
+}
+
+class WhatsNew {
+  WhatsNew({required this.items, required this.daysSince});
+
+  final List<WhatsNewItem> items;
+  final double? daysSince;
+
+  factory WhatsNew.fromJson(Map<String, dynamic> j) => WhatsNew(
+    items: (j['items'] as List? ?? const [])
+        .map((e) => WhatsNewItem.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    daysSince: (j['days_since'] as num?)?.toDouble(),
   );
 }
 
@@ -276,6 +383,7 @@ class DashboardData {
     required this.alerts,
     this.snapshots = const [],
     this.health,
+    this.freshness,
   });
 
   final DashboardSummary summary;
@@ -286,6 +394,7 @@ class DashboardData {
   final List<PortfolioAlert> alerts;
   final List<PortfolioSnapshot> snapshots;
   final PortfolioHealth? health;
+  final DataFreshness? freshness;
 
   factory DashboardData.fromJson(Map<String, dynamic> j) => DashboardData(
     summary: DashboardSummary.fromJson(j['summary'] as Map<String, dynamic>),
@@ -311,6 +420,9 @@ class DashboardData {
             ?.map((e) => PortfolioSnapshot.fromJson(e as Map<String, dynamic>))
             .toList() ??
         const [],
+    freshness: j['freshness'] != null
+        ? DataFreshness.fromJson(j['freshness'] as Map<String, dynamic>)
+        : null,
   );
 }
 
@@ -326,6 +438,11 @@ class Opportunity {
     required this.label,
     required this.sector,
     required this.score,
+    this.confidence = 0,
+    this.dataYears = 0,
+    this.consensusMethods = 0,
+    this.trendBasis = 'none',
+    this.dataCompleteness = 1,
   });
 
   final String ticker;
@@ -338,6 +455,12 @@ class Opportunity {
   final String label;
   final String? sector;
   final double score;
+  // Proveniencia do veredito -- antes calculada e descartada no backend.
+  final double confidence;
+  final int dataYears;
+  final int consensusMethods;
+  final String trendBasis;
+  final double dataCompleteness;
 
   factory Opportunity.fromJson(Map<String, dynamic> j) => Opportunity(
     ticker: j['ticker'] as String,
@@ -350,6 +473,11 @@ class Opportunity {
     label: j['label'] as String? ?? '',
     sector: j['sector'] as String?,
     score: (j['score'] as num?)?.toDouble() ?? 0,
+    confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
+    dataYears: j['data_years'] as int? ?? 0,
+    consensusMethods: j['consensus_methods'] as int? ?? 0,
+    trendBasis: j['trend_basis'] as String? ?? 'none',
+    dataCompleteness: (j['data_completeness'] as num?)?.toDouble() ?? 1,
   );
 }
 

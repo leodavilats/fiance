@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -102,6 +103,12 @@ class AssetSnapshot:
     revenue_growth: float | None
     fifty_two_week_high: float | None
     fifty_two_week_low: float | None
+
+    # Proveniência: quando o dado foi coletado e de onde. Nada carregava `as_of`,
+    # então o usuário não distinguia cotação de agora de cotação de 2 h atrás
+    # (TTL de fundamentos) ou de 24 h (dividendos).
+    as_of: float = 0.0
+    source: str = "brapi"
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()
@@ -272,6 +279,8 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
 
     return AssetSnapshot(
         symbol=symbol.upper(),
+        as_of=time.time(),
+        source="brapi",
         asset_type=t,
         name=name,
         sector=sector,

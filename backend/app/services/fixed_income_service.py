@@ -234,6 +234,9 @@ def _to_portfolio_position(item: FixedIncomePosition) -> PortfolioPosition:
         margin_of_safety=None,
         verdict="HOLD",
         label=label,
+        # Renda fixa não depende de estimativa de preço justo: taxa e prazo são
+        # contratuais, então a "confiança" é total e não há consenso de métodos.
+        confidence=1.0,
         reasons=reasons,
         category="renda_fixa",
         category_resolved="renda_fixa",

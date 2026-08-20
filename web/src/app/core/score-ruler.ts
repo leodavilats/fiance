@@ -13,6 +13,13 @@ export const SCORE_NEUTRAL = 40;
 /** DY mínimo (%) para um score alto ser tratado como destaque de renda. */
 export const HIGHLIGHT_MIN_DY = 6;
 
+/**
+ * Abaixo disso o score é chute, não medida: a UI apresenta como
+ * "dado insuficiente" em vez de colorir a nota. Espelha
+ * `scoring.MIN_DATA_COMPLETENESS` no backend.
+ */
+export const MIN_DATA_COMPLETENESS = 0.5;
+
 export interface ScoreBand {
   text: string;
   cls: string;

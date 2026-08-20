@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from dataclasses import dataclass
 
 from app.analysis.classify import auto_category
@@ -61,6 +62,7 @@ class _MarketRecord:
     has_dividend_history: bool
     fair_inputs: FairPriceInputs
     technical: TechnicalSnapshot
+    as_of: float = 0.0
 
     def to_dict(self) -> dict:
         data = self.__dict__.copy()
@@ -115,6 +117,7 @@ class OpportunityService:
             revenue_growth=snap.revenue_growth,
             market_cap=snap.market_cap,
             has_dividend_history=bool(dividends),
+            as_of=snap.as_of,
             fair_inputs=compute_fair_price_inputs(
                 price=snap.price,
                 eps=snap.eps,
@@ -281,6 +284,18 @@ class OpportunityService:
         """Oportunidades já personalizadas para `prefs`."""
         records, universe_size = await self._scan_market()
         return [self._build_opportunity(r, prefs) for r in records], universe_size
+
+    async def market_data_age_seconds(self) -> float | None:
+        """Idade do dado de mercado mais antigo do último scan.
+
+        É o que permite a UI dizer "cotações de 2 h atrás" em vez de deixar o
+        usuário supor que tudo é de agora.
+        """
+        records, _ = await self._scan_market()
+        stamps = [r.as_of for r in records if r.as_of]
+        if not stamps:
+            return None
+        return max(0.0, time.time() - min(stamps))
 
     async def scan_for_current_user(self) -> tuple[list[Opportunity], int]:
         """Scan personalizado, memoizado por request.

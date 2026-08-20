@@ -1,31 +1,85 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/score_ruler.dart';
 import '../../core/theme.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
+  /// Leva cada alerta/novidade ao seu desfecho.
+  ///
+  /// Antes a unica acao oferecida na tela era ir para Mercado: muita
+  /// informacao, nenhum desfecho.
+  static void runAction(BuildContext context, String? action, String? ticker) {
+    switch (action) {
+      case 'analyze':
+      case 'sell':
+        context.go('/assets');
+        break;
+      case 'fixed_income':
+        context.go('/assets/renda-fixa');
+        break;
+      case 'goals':
+        context.go('/config');
+        break;
+      case 'rebalance':
+      case 'market':
+      default:
+        context.go('/market');
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(dashboardProvider);
+    final whatsNew = ref.watch(whatsNewProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard')),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(dashboardProvider),
+        onRefresh: () async {
+          ref.invalidate(dashboardProvider);
+          ref.invalidate(whatsNewProvider);
+        },
         child: dashboard.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => _ErrorView(message: '$err'),
           data: (data) => ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
+              // Primeiro bloco da tela: responde "o que mudou desde a sua
+              // ultima visita", que era a pergunta sem resposta no produto.
+              whatsNew.maybeWhen(
+                data: (wn) => wn.items.isEmpty
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _SectionTitle(
+                              icon: Icons.auto_awesome_outlined,
+                              title: 'O que mudou',
+                            ),
+                            ...wn.items.map((item) => _WhatsNewTile(item: item)),
+                          ],
+                        ),
+                      ),
+                orElse: () => const SizedBox.shrink(),
+              ),
               _SummaryCard(summary: data.summary),
+              if (data.freshness != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: _FreshnessLine(freshness: data.freshness!),
+                ),
               if (data.alerts.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 const _SectionTitle(
@@ -106,6 +160,21 @@ class _AlertTile extends StatelessWidget {
     }
   }
 
+  IconData _icon() {
+    switch (alert.kind) {
+      case 'sell_target':
+        return Icons.trending_down;
+      case 'opportunity':
+        return Icons.trending_up;
+      case 'concentration':
+        return Icons.donut_small_outlined;
+      case 'rebalance':
+        return Icons.balance_outlined;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _color(Theme.of(context).brightness);
@@ -114,14 +183,126 @@ class _AlertTile extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.12),
-          child: Icon(Icons.info_outline, color: color, size: 20),
+          child: Icon(_icon(), color: color, size: 20),
         ),
         title: Text(
-          alert.title,
+          alert.count > 1 ? '${alert.title} (${alert.count})' : alert.title,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(alert.detail),
+        trailing: alert.actionLabel == null
+            ? null
+            : TextButton(
+                onPressed: () => DashboardScreen.runAction(
+                  context,
+                  alert.action,
+                  alert.ticker,
+                ),
+                child: Text(alert.actionLabel!),
+              ),
       ),
+    );
+  }
+}
+
+/// Uma linha de "o que mudou", com a acao que fecha o ciclo.
+class _WhatsNewTile extends StatelessWidget {
+  const _WhatsNewTile({required this.item});
+
+  final WhatsNewItem item;
+
+  IconData _icon() {
+    switch (item.kind) {
+      case 'patrimony':
+        return Icons.show_chart;
+      case 'verdict_change':
+        return Icons.trending_down;
+      case 'allocation':
+        return Icons.balance_outlined;
+      case 'maturity':
+        return Icons.event_available_outlined;
+      case 'new_opportunity':
+        return Icons.auto_awesome_outlined;
+      case 'tax':
+        return Icons.receipt_long_outlined;
+      default:
+        return Icons.check_circle_outline;
+    }
+  }
+
+  Color _color(Brightness brightness) {
+    switch (item.severity) {
+      case 'critical':
+        return lossColor(brightness);
+      case 'warning':
+        return warnColor(brightness);
+      case 'positive':
+        return gainColor(brightness);
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color(Theme.of(context).brightness);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.12),
+          child: Icon(_icon(), color: color, size: 20),
+        ),
+        title: Text(
+          item.title,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(item.detail),
+        trailing: item.actionLabel == null
+            ? null
+            : TextButton(
+                onPressed: () => DashboardScreen.runAction(
+                  context,
+                  item.action,
+                  item.ticker,
+                ),
+                child: Text(item.actionLabel!),
+              ),
+      ),
+    );
+  }
+}
+
+/// Frescor e origem do dado, de forma discreta.
+class _FreshnessLine extends StatelessWidget {
+  const _FreshnessLine({required this.freshness});
+
+  final DataFreshness freshness;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = freshness.marketDataStale
+        ? warnColor(theme.brightness)
+        : theme.textTheme.bodySmall?.color;
+
+    return Row(
+      children: [
+        Icon(
+          freshness.marketDataStale
+              ? Icons.schedule_outlined
+              : Icons.check_circle_outline,
+          size: 14,
+          color: color,
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            '${freshness.label} - ${freshness.ratesLabel}',
+            style: theme.textTheme.bodySmall?.copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -974,7 +1155,19 @@ class _OpportunityTile extends StatelessWidget {
           opportunity.ticker,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(opportunity.name ?? ''),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(opportunity.name ?? ''),
+            // Proveniência ao lado do veredito: anos de provento, métodos no
+            // consenso e confiança eram calculados e descartados.
+            Text(
+              '${dataYearsLabel(opportunity.dataYears)} · '
+              '${consensusLabel(opportunity.consensusMethods)}',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+            ),
+          ],
+        ),
         trailing: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -983,6 +1176,19 @@ class _OpportunityTile extends StatelessWidget {
             Text(
               'DY ${formatPercent(opportunity.dividendYield)}',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            ),
+            Text(
+              scoreBandFor(
+                opportunity.score,
+                opportunity.dataCompleteness,
+              ).text,
+              style: TextStyle(
+                color: scoreBandFor(
+                  opportunity.score,
+                  opportunity.dataCompleteness,
+                ).color,
+                fontSize: 11,
+              ),
             ),
           ],
         ),

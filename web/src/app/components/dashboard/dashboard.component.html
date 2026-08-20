@@ -5,6 +5,20 @@
       <span class="text-xs text-muted" *ngIf="data()?.last_updated">
         Atualizado {{ ui.formatTimestamp(data()!.last_updated!) }}
       </span>
+      <!-- Proveniência do dado: get_rates() já devolvia bcb|estimativa e
+           nenhuma tela mostrava. -->
+      @if (data()?.freshness) {
+        <div class="flex items-center gap-1.5 text-xs mt-0.5">
+          <lucide-icon
+            [name]="data()!.freshness!.market_data_stale ? 'clock-alert' : 'clock'"
+            size="12"
+            [class]="data()!.freshness!.market_data_stale ? 'text-yellow-400' : 'text-muted'"
+          ></lucide-icon>
+          <span [class]="data()!.freshness!.market_data_stale ? 'text-yellow-400' : 'text-muted'">
+            {{ freshnessLabel() }} · {{ ratesSourceLabel() }}
+          </span>
+        </div>
+      }
     </div>
     <div class="flex items-center gap-2">
       <button
@@ -27,6 +41,47 @@
       </button>
     </div>
   </div>
+
+  @if (whatsNew(); as wn) {
+    <div class="p-5 rounded-xl bg-panel border border-border">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h2 class="flex items-center gap-2 text-base font-bold m-0 text-tx">
+          <lucide-icon name="sparkles" size="16"></lucide-icon> O que mudou
+        </h2>
+        @if (wn.days_since) {
+          <span class="text-xs text-muted">últimos {{ wn.days_since }} dias</span>
+        }
+      </div>
+
+      <div class="flex flex-col gap-2">
+        @for (item of wn.items; track item.title) {
+          <div
+            class="p-3 rounded-lg border flex items-start gap-3"
+            [class]="whatsNewToneClass(item.severity)"
+          >
+            <lucide-icon
+              [name]="whatsNewIcon(item.kind)"
+              size="16"
+              class="mt-0.5 shrink-0 text-muted"
+            ></lucide-icon>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm text-tx">{{ item.title }}</div>
+              <div class="text-sm text-muted mt-0.5">{{ item.detail }}</div>
+            </div>
+            @if (item.action_label) {
+              <button
+                type="button"
+                class="shrink-0 px-3 py-1.5 rounded-md border border-border text-xs text-tx hover:bg-panel transition-colors cursor-pointer bg-transparent"
+                (click)="runAction(item.action, item.ticker)"
+              >
+                {{ item.action_label }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
 
   @if (isInitialLoad() && loading.loading()) {
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -156,11 +211,25 @@
         </h2>
         <div class="flex flex-col gap-2">
           @for (a of d.alerts; track a.title) {
-            <div class="alert" [class]="'alert-' + a.severity">
-              <div class="flex items-center gap-2 font-medium text-sm">
-                <lucide-icon [name]="ui.alertIcon(a.kind)" size="14"></lucide-icon> {{ a.title }}
+            <div class="alert flex items-start gap-3" [class]="'alert-' + a.severity">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 font-medium text-sm">
+                  <lucide-icon [name]="ui.alertIcon(a.kind)" size="14"></lucide-icon> {{ a.title }}
+                  @if (a.count > 1) {
+                    <span class="text-xs font-normal text-muted">({{ a.count }})</span>
+                  }
+                </div>
+                <div class="text-sm text-muted mt-0.5">{{ a.detail }}</div>
               </div>
-              <div class="text-sm text-muted mt-0.5">{{ a.detail }}</div>
+              @if (a.action_label) {
+                <button
+                  type="button"
+                  class="shrink-0 px-3 py-1.5 rounded-md border border-border text-xs text-tx hover:bg-panel transition-colors cursor-pointer bg-transparent"
+                  (click)="runAction(a.action, a.ticker)"
+                >
+                  {{ a.action_label }}
+                </button>
+              }
             </div>
           }
         </div>

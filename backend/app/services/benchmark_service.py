@@ -8,6 +8,40 @@ from app.models import BenchmarkPoint, BenchmarkResponse
 from app.repositories import PortfolioRepository
 
 
+def _twr_series(snapshots: list[dict]) -> list[float]:
+    """Retorno acumulado ponderado no tempo (TWR), em %, ponto a ponto.
+
+    A versão anterior calculava `total_current / base_value - 1`, que trata
+    **aporte como rentabilidade**: depositar R$ 10 mil aparecia como ganho, e o
+    gráfico dizia que o usuário estava batendo o CDI sempre que ele investisse
+    mais. É a pior classe de erro num produto financeiro — convence o usuário
+    de algo falso, e erra na direção que agrada.
+
+    O TWR neutraliza o efeito do fluxo de caixa: a variação de
+    `total_invested` entre dois pontos é o aporte (ou retirada) do período e
+    sai do numerador antes da divisão.
+    """
+    cumulative = 1.0
+    out = [0.0]
+
+    for previous, current in zip(snapshots, snapshots[1:], strict=False):
+        opening = previous["total_current"]
+        flow = current["total_invested"] - previous["total_invested"]
+        closing = current["total_current"]
+
+        if opening <= 0:
+            # Carteira começou vazia (ou sem cotação): o primeiro aporte não é
+            # retorno, então o período contribui com 0%.
+            cumulative *= 1.0
+        else:
+            period_return = (closing - flow) / opening - 1
+            cumulative *= 1 + period_return
+
+        out.append(round((cumulative - 1) * 100, 4))
+
+    return out
+
+
 class BenchmarkService:
     def __init__(self):
         self.portfolio_repo = PortfolioRepository()
@@ -18,10 +52,7 @@ class BenchmarkService:
         if len(snapshots) < 2:
             return BenchmarkResponse(points=[], ibov_available=False)
 
-        base_value = snapshots[0]["total_current"]
         base_ts = snapshots[0]["captured_at"]
-        if base_value <= 0:
-            return BenchmarkResponse(points=[], ibov_available=False)
 
         rates = get_rates()
         # Aproximação: aplica a taxa CDI anual atual composta pelo número de dias
@@ -38,12 +69,13 @@ class BenchmarkService:
             ibov_base = ibov_series.get(first_day) or next(iter(ibov_series.values()), None)
             ibov_available = ibov_base is not None and ibov_base > 0
 
+        portfolio_series = _twr_series(snapshots)
+
         points: list[BenchmarkPoint] = []
-        for snap in snapshots:
+        for snap, portfolio_pct in zip(snapshots, portfolio_series, strict=True):
             day_str = datetime.fromtimestamp(snap["captured_at"], tz=UTC).strftime("%Y-%m-%d")
             days_elapsed = (snap["captured_at"] - base_ts) / 86400
 
-            portfolio_pct = (snap["total_current"] / base_value - 1) * 100
             cdi_pct = ((1 + cdi_daily_rate) ** days_elapsed - 1) * 100
 
             ibov_pct = None
@@ -58,8 +90,14 @@ class BenchmarkService:
                     portfolio_pct=round(portfolio_pct, 2),
                     cdi_pct=round(cdi_pct, 2),
                     ibov_pct=round(ibov_pct, 2) if ibov_pct is not None else None,
+                    invested=round(snap["total_invested"], 2),
+                    patrimony=round(snap["total_current"], 2),
                 )
             )
+
+        first = snapshots[0]
+        last_snap = snapshots[-1]
+        net_contributions = round(last_snap["total_invested"] - first["total_invested"], 2)
 
         last = points[-1]
         return BenchmarkResponse(
@@ -68,4 +106,6 @@ class BenchmarkService:
             portfolio_return_pct=last.portfolio_pct,
             cdi_return_pct=last.cdi_pct,
             ibov_return_pct=last.ibov_pct,
+            net_contributions=net_contributions,
+            method="twr",
         )

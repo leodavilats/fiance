@@ -55,6 +55,10 @@ final portfolioProvider = FutureProvider.autoDispose<List<StoredPortfolioItem>>(
   },
 );
 
+final whatsNewProvider = FutureProvider.autoDispose<WhatsNew>((ref) {
+  return ref.watch(apiRepositoryProvider).getWhatsNew();
+});
+
 final fixedIncomeProvider = FutureProvider.autoDispose<FixedIncomeList>((ref) {
   return ref.watch(apiRepositoryProvider).getFixedIncome();
 });

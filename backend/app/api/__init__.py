@@ -21,6 +21,7 @@ from . import (
     renda_fixa,
     sectors,
     strategy,
+    whats_new,
 )
 
 router = APIRouter()
@@ -46,6 +47,7 @@ protected.include_router(benchmark.router, tags=["Benchmark"])
 protected.include_router(alerts.router, tags=["Alerts"])
 protected.include_router(sectors.router, tags=["Sectors"])
 protected.include_router(notifications.router, tags=["Notifications"])
+protected.include_router(whats_new.router, tags=["Dashboard"])
 
 router.include_router(protected)
 

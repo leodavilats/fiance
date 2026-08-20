@@ -3,11 +3,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import {
+  ActionKind,
   BenchmarkResponse,
   DashboardResponse,
   LoadingService,
   RecommendService,
   UiHelperService,
+  WhatsNewResponse,
 } from '../../core';
 import { BenchmarkChartComponent, PatrimonyChartComponent } from '../index';
 
@@ -26,6 +28,7 @@ export class DashboardComponent implements OnInit {
 
   data = signal<DashboardResponse | null>(null);
   benchmark = signal<BenchmarkResponse | null>(null);
+  whatsNew = signal<WhatsNewResponse | null>(null);
   isInitialLoad = signal(true);
   hasError = signal(false);
   showHealthInfo = signal(false);
@@ -67,6 +70,84 @@ export class DashboardComponent implements OnInit {
       next: res => this.benchmark.set(res),
       error: () => this.benchmark.set(null),
     });
+
+    this.svc.whatsNew().subscribe({
+      next: res => this.whatsNew.set(res),
+      error: () => this.whatsNew.set(null),
+    });
+  }
+
+  /**
+   * Leva cada alerta/novidade ao seu desfecho.
+   *
+   * A única ação oferecida na tela era `goToMarket()`: alta carga cognitiva,
+   * nenhum desfecho.
+   */
+  runAction(action: ActionKind | null, ticker?: string | null): void {
+    switch (action) {
+      case 'analyze':
+        this.router.navigate(['/assets']);
+        break;
+      case 'sell':
+        this.router.navigate(['/assets']);
+        break;
+      case 'rebalance':
+        this.router.navigate(['/market'], { queryParams: { tab: 'rebalance' } });
+        break;
+      case 'goals':
+        this.router.navigate(['/config']);
+        break;
+      case 'fixed_income':
+        this.router.navigate(['/assets/cadastro']);
+        break;
+      case 'market':
+      default:
+        this.router.navigate(['/market'], ticker ? { queryParams: { ticker } } : {});
+    }
+  }
+
+  whatsNewIcon(kind: string): string {
+    const map: Record<string, string> = {
+      patrimony: 'trending-up',
+      verdict_change: 'trending-down',
+      allocation: 'scale',
+      maturity: 'calendar-clock',
+      new_opportunity: 'sparkles',
+      tax: 'receipt',
+      empty: 'check',
+    };
+    return map[kind] || 'info';
+  }
+
+  whatsNewToneClass(severity: string): string {
+    const map: Record<string, string> = {
+      positive: 'border-green-500/40 bg-green-500/5',
+      warning: 'border-yellow-500/40 bg-yellow-500/5',
+      critical: 'border-red-500/40 bg-red-500/5',
+      info: 'border-border bg-panel-2',
+    };
+    return map[severity] || 'border-border bg-panel-2';
+  }
+
+  /** Idade do dado de mercado em linguagem de gente. */
+  freshnessLabel(): string {
+    const freshness = this.data()?.freshness;
+    if (!freshness) return '';
+
+    const age = freshness.market_data_age_seconds;
+    if (age == null) return 'cotações sem carimbo de tempo';
+
+    if (age < 120) return 'cotações de agora';
+    if (age < 3600) return `cotações de ${Math.round(age / 60)} min atrás`;
+
+    const hours = Math.round(age / 3600);
+    return `cotações de ${hours} h atrás`;
+  }
+
+  ratesSourceLabel(): string {
+    const source = this.data()?.freshness?.rates_source;
+    if (!source) return '';
+    return source === 'bcb' ? 'CDI/Selic do Banco Central' : 'CDI/Selic estimados';
   }
 
   goToMarket(): void {

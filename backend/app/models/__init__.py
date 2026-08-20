@@ -11,6 +11,7 @@ from .dashboard import (
     CategoryAllocation,
     DashboardResponse,
     DashboardSummary,
+    DataFreshness,
     PortfolioHealth,
 )
 from .dip import (
@@ -66,6 +67,7 @@ from .renda_fixa import (
     RendaFixaCompareRequest,
     RendaFixaCompareResponse,
 )
+from .whats_new import WhatsNewItem, WhatsNewResponse
 
 __all__ = [
     "AssetCategory",
@@ -106,6 +108,7 @@ __all__ = [
     "CategoryAllocation",
     "DashboardResponse",
     "DashboardSummary",
+    "DataFreshness",
     "DipAnalysisResponse",
     "DipScanItem",
     "DipScannerResponse",
@@ -116,6 +119,8 @@ __all__ = [
     "RendaFixaCompareRequest",
     "RendaFixaCompareResponse",
     "ReferenceRates",
+    "WhatsNewItem",
+    "WhatsNewResponse",
     "FixedIncomeCreateRequest",
     "FixedIncomeUpdateRequest",
     "FixedIncomePosition",

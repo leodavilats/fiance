@@ -177,9 +177,17 @@
               </div>
               <p class="text-xs text-muted mt-0.5">{{ opp.name || '—' }}</p>
             </div>
-            <span [class]="helper.verdictClass(opp.verdict)" class="text-xs flex-shrink-0">{{
-              opp.label
-            }}</span>
+            <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
+              <span [class]="helper.verdictClass(opp.verdict)" class="text-xs">{{
+                opp.label
+              }}</span>
+              <!-- Proveniência ao lado do veredito: confidence, anos de
+                   provento e métodos no consenso eram calculados e descartados. -->
+              <span class="text-[10px] text-muted text-right leading-tight">
+                {{ helper.dataYearsLabel(opp.data_years) }} ·
+                {{ helper.consensusLabel(opp.consensus_methods) }}
+              </span>
+            </div>
           </div>
           <div class="flex items-end justify-between mb-3">
             <div>
@@ -192,17 +200,23 @@
               <div class="flex items-center justify-end gap-1">
                 <div
                   class="text-lg font-bold"
-                  [class.good]="opp.score >= 70"
-                  [class.warn]="opp.score < 70 && opp.score >= 40"
-                  [class.text-muted]="opp.score < 40"
+                  [ngClass]="helper.scoreColorClass(opp.score, opp.data_completeness)"
                 >
                   {{ opp.score | number: '1.0-0' }}
                 </div>
                 <app-help-tooltip [text]="helper.glossary['score']"></app-help-tooltip>
               </div>
-              <div class="text-xs mt-0.5" [ngClass]="helper.scoreLabel(opp.score).cls">
-                {{ helper.scoreLabel(opp.score).text }}
+              <div
+                class="text-xs mt-0.5"
+                [ngClass]="helper.scoreBandFor(opp.score, opp.data_completeness).cls"
+              >
+                {{ helper.scoreBandFor(opp.score, opp.data_completeness).text }}
               </div>
+              @if (!helper.scoreIsReliable(opp.data_completeness)) {
+                <div class="text-[10px] text-muted mt-0.5">
+                  {{ helper.dataCompletenessLabel(opp.data_completeness) }}
+                </div>
+              }
             </div>
           </div>
           <div class="border-t border-border mb-3"></div>

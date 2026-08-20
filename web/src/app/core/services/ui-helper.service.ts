@@ -1,6 +1,13 @@
 import { Injectable } from '@angular/core';
 import { AssetType, Verdict } from '../models';
-import { SCORE_GLOSSARY, ScoreBand, scoreBand } from '../score-ruler';
+import {
+  MIN_DATA_COMPLETENESS,
+  SCORE_GLOSSARY,
+  SCORE_NEUTRAL,
+  SCORE_STRONG,
+  ScoreBand,
+  scoreBand,
+} from '../score-ruler';
 
 @Injectable({ providedIn: 'root' })
 export class UiHelperService {
@@ -304,6 +311,35 @@ export class UiHelperService {
   /** Delegado à régua única (core/score-ruler.ts). */
   scoreLabel(score: number): ScoreBand {
     return scoreBand(score);
+  }
+
+  /**
+   * Score com dado incompleto sai cinza, com o motivo — não colorido com a
+   * nota. Antes não havia como saber se o 32 de um FII significava "ruim" ou
+   * "não sei": a ausência de dado era codificada como número baixo.
+   */
+  scoreIsReliable(dataCompleteness: number | null | undefined): boolean {
+    return (dataCompleteness ?? 1) >= MIN_DATA_COMPLETENESS;
+  }
+
+  scoreBandFor(score: number, dataCompleteness: number | null | undefined): ScoreBand {
+    if (!this.scoreIsReliable(dataCompleteness)) {
+      return { text: 'Dado insuficiente', cls: 'text-muted' };
+    }
+    return scoreBand(score);
+  }
+
+  scoreColorClass(score: number, dataCompleteness: number | null | undefined): string {
+    if (!this.scoreIsReliable(dataCompleteness)) return 'text-muted';
+    if (score >= SCORE_STRONG) return 'good';
+    if (score >= SCORE_NEUTRAL) return 'warn';
+    return 'text-muted';
+  }
+
+  dataCompletenessLabel(dataCompleteness: number | null | undefined): string {
+    const value = dataCompleteness ?? 1;
+    if (value >= 1) return '';
+    return `${Math.round(value * 100)}% dos indicadores disponíveis`;
   }
 
   /**
