@@ -314,28 +314,108 @@
     </h2>
     <p class="text-sm text-muted mb-4">
       Ações, FIIs, BDRs e ETFs com cotação em bolsa. O veredito compara o preço atual com o preço
-      justo estimado.
+      justo estimado. Clique nos títulos para ordenar.
       <app-help-tooltip [text]="ui.glossary['ms']"></app-help-tooltip>
     </p>
+
+    <!-- Desktop subaproveitado: não havia ordenação, seleção múltipla para
+         comparar nem exportação, apesar de /compare já aceitar 4 tickers. -->
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+      @if (selectedTickers().length > 0) {
+        <span class="text-sm text-muted">
+          {{ selectedTickers().length }}/{{ maxCompare }} selecionados
+        </span>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium bg-accent text-white border-0 hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1.5"
+          (click)="compareSelected()"
+        >
+          <lucide-icon name="git-compare" size="14"></lucide-icon> Comparar
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg text-sm border border-border text-muted hover:text-tx transition-colors cursor-pointer bg-transparent"
+          (click)="clearSelection()"
+        >
+          Limpar
+        </button>
+      }
+      <button
+        type="button"
+        class="ml-auto px-3 py-1.5 rounded-lg text-sm border border-border text-tx hover:bg-panel-2 transition-colors cursor-pointer bg-transparent flex items-center gap-1.5"
+        (click)="exportCsv()"
+      >
+        <lucide-icon name="download" size="14"></lucide-icon> Exportar CSV
+      </button>
+    </div>
 
     <div style="overflow-x: auto">
       <table class="w-full border-collapse text-sm">
         <thead>
           <tr class="border-b border-border">
-            <th class="text-left py-2 px-2 font-medium text-muted">Ativo</th>
-            <th class="text-left py-2 px-2 font-medium text-muted">Tipo</th>
-            <th class="text-right py-2 px-2 font-medium text-muted">Qtd</th>
-            <th class="text-right py-2 px-2 font-medium text-muted">P. médio</th>
-            <th class="text-right py-2 px-2 font-medium text-muted">Atual</th>
-            <th class="text-right py-2 px-2 font-medium text-muted">Justo</th>
-            <th class="text-right py-2 px-2 font-medium text-muted">Rend.</th>
-            <th class="text-left py-2 px-2 font-medium text-muted">Veredito</th>
+            <th class="py-2 px-2 w-8"></th>
+            <th class="text-left py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort" (click)="toggleSort('ticker')">
+                Ativo <lucide-icon [name]="sortIcon('ticker')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-left py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort" (click)="toggleSort('asset_type')">
+                Tipo <lucide-icon [name]="sortIcon('asset_type')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort justify-end" (click)="toggleSort('quantity')">
+                Qtd <lucide-icon [name]="sortIcon('quantity')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort justify-end" (click)="toggleSort('avg_price')">
+                P. médio <lucide-icon [name]="sortIcon('avg_price')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button
+                type="button"
+                class="th-sort justify-end"
+                (click)="toggleSort('current_price')"
+              >
+                Atual <lucide-icon [name]="sortIcon('current_price')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort justify-end" (click)="toggleSort('fair_price')">
+                Justo <lucide-icon [name]="sortIcon('fair_price')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort justify-end" (click)="toggleSort('pnl_pct')">
+                Rend. <lucide-icon [name]="sortIcon('pnl_pct')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-left py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort" (click)="toggleSort('verdict')">
+                Veredito <lucide-icon [name]="sortIcon('verdict')" size="12"></lucide-icon>
+              </button>
+            </th>
             <th class="text-right py-2 px-2 font-medium text-muted"></th>
           </tr>
         </thead>
         <tbody>
           @for (p of tradedPositions(); track p.ticker) {
-            <tr class="border-b border-border hover:bg-bg-2 transition-colors">
+            <tr
+              class="border-b border-border hover:bg-bg-2 transition-colors"
+              [class.bg-accent-5]="isSelected(p.ticker)"
+            >
+              <td class="py-2 px-2">
+                <input
+                  type="checkbox"
+                  class="accent-accent cursor-pointer"
+                  [checked]="isSelected(p.ticker)"
+                  (change)="toggleSelection(p.ticker)"
+                  [attr.aria-label]="'Selecionar ' + p.ticker + ' para comparar'"
+                />
+              </td>
               <td class="py-2 px-2">
                 <div class="font-semibold text-tx">{{ p.ticker }}</div>
                 @if (p.name) {
@@ -375,6 +455,12 @@
                     ></lucide-icon>
                   }
                 </button>
+                <!-- Proveniência ao lado do veredito: sem isso não havia como
+                     distinguir análise fraca de falta de dado. -->
+                <div class="text-[10px] text-muted mt-0.5 leading-tight">
+                  {{ ui.dataYearsLabel(p.data_years) }} ·
+                  {{ ui.consensusLabel(p.consensus_methods) }}
+                </div>
               </td>
               <td class="text-right py-2 px-2">
                 <button
@@ -389,7 +475,7 @@
             </tr>
             @if (expandedReasonsTicker() === p.ticker && p.reasons.length) {
               <tr class="border-b border-border bg-bg-2">
-                <td colspan="9" class="py-2 px-4">
+                <td colspan="10" class="py-2 px-4">
                   <ul class="list-disc pl-4 text-xs text-muted leading-relaxed m-0">
                     @for (reason of p.reasons; track reason) {
                       <li>{{ reason }}</li>
@@ -470,6 +556,161 @@
   </div>
 }
 
+@if (dividends(); as dv) {
+  <div class="p-5 rounded-lg bg-panel border border-border mb-5">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
+        <lucide-icon name="hand-coins" size="20"></lucide-icon> Proventos recebidos
+      </h2>
+      <button
+        type="button"
+        class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0"
+        (click)="showDividends.set(!showDividends())"
+      >
+        <lucide-icon
+          [name]="showDividends() ? 'chevron-up' : 'chevron-down'"
+          size="16"
+        ></lucide-icon>
+        {{ showDividends() ? 'Recolher' : 'Lançar / detalhar' }}
+      </button>
+    </div>
+    <p class="text-sm text-muted mb-4">
+      O que caiu na sua conta de fato. Todo o resto da tela é estimativa derivada de dividend yield
+      — aqui o número é o real, e serve para conferir a estimativa.
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="p-4 rounded-lg bg-bg-2 border border-border">
+        <div class="text-xs text-muted mb-1 uppercase tracking-wide">Este mês</div>
+        <div class="text-xl font-bold text-tx">
+          R$ {{ dv.received_this_month | number: '1.2-2' }}
+        </div>
+      </div>
+      <div class="p-4 rounded-lg bg-bg-2 border border-border">
+        <div class="text-xs text-muted mb-1 uppercase tracking-wide">Últimos 12 meses</div>
+        <div class="text-xl font-bold text-tx">R$ {{ dv.received_last_12m | number: '1.2-2' }}</div>
+        <div class="text-xs text-muted mt-1">
+          média de R$ {{ dv.monthly_average_12m | number: '1.2-2' }}/mês
+        </div>
+      </div>
+      <div class="p-4 rounded-lg bg-bg-2 border border-border">
+        <div class="text-xs text-muted mb-1 uppercase tracking-wide">Estimativa do app</div>
+        <div class="text-xl font-bold text-tx">
+          {{
+            dv.estimated_monthly != null ? 'R$ ' + (dv.estimated_monthly | number: '1.2-2') : '—'
+          }}
+        </div>
+        @if (estimateAccuracyLabel()) {
+          <div class="text-xs text-muted mt-1">{{ estimateAccuracyLabel() }}</div>
+        }
+      </div>
+    </div>
+
+    @if (showDividends()) {
+      <div class="mt-5 p-4 rounded-lg bg-panel-2 border border-border">
+        <div class="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_1.2fr_auto] gap-3 sm:items-end">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Ativo</span>
+            <input
+              type="text"
+              [value]="dividendForm().ticker"
+              (input)="updateDividendField({ ticker: $any($event.target).value })"
+              placeholder="ex.: HGLG11"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm uppercase focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Data do crédito</span>
+            <input
+              type="date"
+              [value]="dividendForm().paid_at"
+              (input)="updateDividendField({ paid_at: $any($event.target).value })"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Valor (R$)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="dividendForm().amount"
+              (input)="updateDividendField({ amount: +$any($event.target).value })"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Tipo</span>
+            <select
+              [value]="dividendForm().kind"
+              (change)="updateDividendField({ kind: $any($event.target).value })"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              <option value="dividendo">Dividendo</option>
+              <option value="jcp">JCP</option>
+              <option value="rendimento">Rendimento (FII)</option>
+              <option value="amortizacao">Amortização</option>
+              <option value="outro">Outro</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            class="h-[42px] px-4 rounded-lg text-sm font-medium bg-accent text-white border-0 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5 justify-center"
+            [disabled]="savingDividend()"
+            (click)="saveDividend()"
+          >
+            <lucide-icon name="plus" size="14"></lucide-icon>
+            {{ savingDividend() ? 'Salvando…' : 'Lançar' }}
+          </button>
+        </div>
+      </div>
+
+      @if (dv.items.length > 0) {
+        <div class="mt-4" style="overflow-x: auto">
+          <table class="w-full border-collapse text-sm">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left py-2 px-2 font-medium text-muted">Ativo</th>
+                <th class="text-left py-2 px-2 font-medium text-muted">Data</th>
+                <th class="text-left py-2 px-2 font-medium text-muted">Tipo</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Valor</th>
+                <th class="text-right py-2 px-2 font-medium text-muted"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of dv.items; track item.id) {
+                <tr class="border-b border-border hover:bg-bg-2 transition-colors">
+                  <td class="py-2 px-2 font-semibold text-tx">{{ item.ticker }}</td>
+                  <td class="py-2 px-2 text-tx">{{ item.paid_at }}</td>
+                  <td class="py-2 px-2 text-muted">{{ item.kind }}</td>
+                  <td class="text-right py-2 px-2 text-tx">
+                    R$ {{ item.amount | number: '1.2-2' }}
+                  </td>
+                  <td class="text-right py-2 px-2">
+                    <button
+                      type="button"
+                      class="p-1.5 rounded-md border border-border text-muted hover:text-red-400 hover:border-red-400 transition-colors cursor-pointer bg-transparent"
+                      title="Remover"
+                      (click)="deleteDividend(item.id)"
+                    >
+                      <lucide-icon name="trash-2" size="14"></lucide-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="text-sm text-muted italic mt-4 m-0">
+          Nenhum provento lançado ainda. Registre o que você recebeu para o app parar de depender só
+          de estimativa.
+        </p>
+      }
+    }
+  </div>
+}
+
 @if (closedTrades(); as ct) {
   @if (ct.trades.length > 0) {
     <div class="mt-6 p-4 sm:p-5 rounded-xl border border-border" style="background: var(--panel)">
@@ -510,6 +751,41 @@
           </div>
         </div>
 
+        <!-- Prejuízo acumulado: a legislação permite abater de ganhos futuros
+             da mesma categoria, e o saldo não era guardado — o app
+             superestimava o IR devido de quem já realizou prejuízo. -->
+        @if (ct.total_tax_loss_available > 0) {
+          <div class="p-4 rounded-lg bg-accent/10 border border-accent/30 mb-4">
+            <div class="flex items-start gap-3">
+              <lucide-icon name="receipt" size="18" class="text-accent mt-0.5"></lucide-icon>
+              <div>
+                <div class="font-semibold text-tx">
+                  R$ {{ ct.total_tax_loss_available | number: '1.2-2' }} de prejuízo disponível para
+                  compensar IR
+                </div>
+                <div class="text-sm text-muted mt-1">
+                  Já é considerado automaticamente ao estimar o IR das próximas vendas.
+                </div>
+                <ul class="list-disc pl-4 text-xs text-muted mt-2 m-0">
+                  @for (balance of ct.tax_loss_balances; track balance.category) {
+                    @if (balance.available > 0) {
+                      <li>
+                        {{ categoryLabel(balance.category) }}: R$
+                        {{ balance.available | number: '1.2-2' }}
+                        @if (balance.offset_used > 0) {
+                          <span class="opacity-70">
+                            (R$ {{ balance.offset_used | number: '1.2-2' }} já usados)
+                          </span>
+                        }
+                      </li>
+                    }
+                  }
+                </ul>
+              </div>
+            </div>
+          </div>
+        }
+
         <div style="overflow-x: auto">
           <table class="w-full border-collapse text-sm">
             <thead>
@@ -519,6 +795,7 @@
                 <th class="text-right py-2 px-2 font-medium text-muted">Qtd</th>
                 <th class="text-right py-2 px-2 font-medium text-muted">P. médio</th>
                 <th class="text-right py-2 px-2 font-medium text-muted">P. venda</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Compensado</th>
                 <th class="text-right py-2 px-2 font-medium text-muted">IR</th>
                 <th class="text-right py-2 px-2 font-medium text-muted">Lucro líquido</th>
               </tr>
@@ -531,6 +808,9 @@
                   <td class="text-right py-2 px-2 text-tx">{{ t.quantity }}</td>
                   <td class="text-right py-2 px-2 text-tx">{{ t.avg_price | number: '1.2-2' }}</td>
                   <td class="text-right py-2 px-2 text-tx">{{ t.sell_price | number: '1.2-2' }}</td>
+                  <td class="text-right py-2 px-2 text-muted">
+                    {{ t.loss_offset_used > 0 ? (t.loss_offset_used | number: '1.2-2') : '—' }}
+                  </td>
                   <td class="text-right py-2 px-2 text-tx">{{ t.ir_amount | number: '1.2-2' }}</td>
                   <td
                     class="text-right py-2 px-2 font-semibold"

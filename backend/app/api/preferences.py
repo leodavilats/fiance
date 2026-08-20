@@ -8,9 +8,18 @@ router = APIRouter()
 portfolio_repo = PortfolioRepository()
 
 
+def _with_push_status(prefs: dict) -> Preferences:
+    devices = portfolio_repo.list_device_tokens()
+    return Preferences(
+        **prefs,
+        registered_devices=len(devices),
+        push_enabled=bool(devices),
+    )
+
+
 @router.get("/preferences", response_model=Preferences)
 async def get_preferences() -> Preferences:
-    return Preferences(**portfolio_repo.get_preferences())
+    return _with_push_status(portfolio_repo.get_preferences())
 
 
 @router.put("/preferences", response_model=Preferences)
@@ -19,4 +28,4 @@ async def save_preferences(req: PreferencesRequest) -> Preferences:
     # `null` explicitamente continua limpando o campo (ex.: passive_income_goal).
     fields = req.model_dump(exclude_unset=True, mode="json")
     portfolio_repo.set_preferences(**fields)
-    return Preferences(**portfolio_repo.get_preferences())
+    return _with_push_status(portfolio_repo.get_preferences())

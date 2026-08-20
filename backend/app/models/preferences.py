@@ -6,6 +6,13 @@ OpportunitiesFrequency = str  # "off" | "daily" | "weekly" | "monthly"
 
 
 class Preferences(BaseModel):
+    # Push depende de um token de dispositivo, que só o app registra. A tela de
+    # Configurações do web oferecia opportunities_frequency e
+    # notify_price_alerts sem efeito algum para quem usa só o navegador; agora o
+    # backend informa se há dispositivo registrado e a UI pode dizer a verdade.
+    push_enabled: bool = False
+    registered_devices: int = 0
+
     cash_available: float = 0.0
     passive_income_goal: float | None = None
     desired_yield_stock: float = 0.06

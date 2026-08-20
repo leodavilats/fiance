@@ -102,6 +102,11 @@ class ClosedTradeDb(Base):
     ir_rate: Mapped[float] = mapped_column(Float)
     ir_amount: Mapped[float] = mapped_column(Float)
     net_profit: Mapped[float] = mapped_column(Float)
+    # Quanto de prejuízo acumulado foi consumido por esta venda. Persistido (em
+    # vez de recalculado) para que o saldo de compensação seja auditável e não
+    # mude retroativamente quando a regra evoluir.
+    loss_offset_used: Mapped[float] = mapped_column(Float, default=0.0)
+    taxable_profit: Mapped[float] = mapped_column(Float, default=0.0)
     sold_at: Mapped[float] = mapped_column(Float)
     created_at: Mapped[float] = mapped_column(Float)
 
@@ -184,3 +189,51 @@ class JobLockDb(Base):
     holder: Mapped[str] = mapped_column(String)
     acquired_at: Mapped[float] = mapped_column(Float)
     expires_at: Mapped[float] = mapped_column(Float)
+
+
+class DividendReceivedDb(Base):
+    """Provento efetivamente creditado.
+
+    Todo número de renda no produto era estimativa derivada de DY; o histórico
+    real de proventos não existia em tabela nenhuma, então "quanto eu recebi
+    este mês" não tinha resposta.
+    """
+
+    __tablename__ = "dividends_received"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    ticker: Mapped[str] = mapped_column(String, index=True)
+    # Data em ISO (YYYY-MM-DD): comparável por string e portável entre SQLite e
+    # Postgres sem depender do dialeto de DATE.
+    paid_at: Mapped[str] = mapped_column(String, index=True)
+    amount: Mapped[float] = mapped_column(Float)
+    kind: Mapped[str] = mapped_column(String, default="dividendo")
+    note: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[float] = mapped_column(Float)
+    updated_at: Mapped[float] = mapped_column(Float)
+
+
+class FollowedSuggestionDb(Base):
+    """Sugestão que o usuário declarou ter seguido.
+
+    Fechava-se metade do ciclo: o produto sugeria e nunca sabia o que aconteceu
+    depois. Com isto, o resultado das sugestões fica auditável pelo próprio
+    usuário — histórico verificável em vez de argumento de autoridade.
+    """
+
+    __tablename__ = "followed_suggestions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    ticker: Mapped[str] = mapped_column(String, index=True)
+    source: Mapped[str] = mapped_column(String, default="opportunities")
+    action: Mapped[str] = mapped_column(String, default="comprar")
+    quantity: Mapped[float] = mapped_column(Float)
+    price: Mapped[float] = mapped_column(Float)
+    # ISO YYYY-MM-DD, comparável por string e portável entre dialetos.
+    followed_on: Mapped[str] = mapped_column(String, index=True)
+    score_at_suggestion: Mapped[float | None] = mapped_column(Float, nullable=True)
+    verdict_at_suggestion: Mapped[str | None] = mapped_column(String, nullable=True)
+    note: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[float] = mapped_column(Float)

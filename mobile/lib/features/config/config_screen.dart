@@ -47,6 +47,11 @@ class ConfigScreen extends ConsumerWidget {
                 leading: const Icon(Icons.logout),
                 title: const Text('Sair'),
                 onTap: () async {
+                  // Antes do signOut: depois dele o token de autenticação
+                  // já não existe para autorizar o DELETE.
+                  await ref
+                      .read(notificationsServiceProvider)
+                      .unregisterToken();
                   await ref.read(authServiceProvider).signOut();
                   ref.read(currentUserProvider.notifier).state = null;
                   if (context.mounted) context.go('/login');

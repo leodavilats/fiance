@@ -61,12 +61,18 @@
 
   @if (activeTab() === 'rebalance') {
     <app-rebalance-suggestions />
+    <!-- Fecha o ciclo: sugerir e nunca saber o que aconteceu depois deixava a
+         confiança sem base verificável. -->
+    <div class="mt-5">
+      <app-followed-suggestions />
+    </div>
   }
 
   @if (activeTab() === 'ferramentas') {
     <div>
       <p class="text-xs text-muted mb-1.5">
-        Investigue um ativo específico ou compare opções de renda fixa.
+        Investigue um ativo específico, compare opções de renda fixa ou coloque renda fixa e bolsa
+        na mesma conta.
       </p>
       <div class="subtab-group">
         <button
@@ -84,6 +90,14 @@
           class="subtab-btn"
         >
           <lucide-icon name="landmark" size="14"></lucide-icon> Simulador de RF
+        </button>
+        <button
+          type="button"
+          (click)="toolMode.set('rf_vs_bolsa')"
+          [class.active]="toolMode() === 'rf_vs_bolsa'"
+          class="subtab-btn"
+        >
+          <lucide-icon name="scale" size="14"></lucide-icon> RF x Bolsa
         </button>
         <button
           type="button"
@@ -119,6 +133,10 @@
 
   @if (activeTab() === 'ferramentas' && toolMode() === 'renda_fixa') {
     <app-renda-fixa />
+  }
+
+  @if (activeTab() === 'ferramentas' && toolMode() === 'rf_vs_bolsa') {
+    <app-income-compare />
   }
 
   @if (showAnalysis()) {

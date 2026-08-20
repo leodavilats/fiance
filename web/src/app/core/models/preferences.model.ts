@@ -10,6 +10,9 @@ export interface Goal {
 export type OpportunitiesFrequency = 'off' | 'daily' | 'weekly' | 'monthly';
 
 export interface Preferences {
+  /** Push depende de token de dispositivo, que só o app registra. */
+  push_enabled?: boolean;
+  registered_devices?: number;
   cash_available: number;
   passive_income_goal?: number | null;
   desired_yield_stock?: number;

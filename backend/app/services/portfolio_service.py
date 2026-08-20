@@ -19,6 +19,7 @@ from app.models import (
     SavePortfolioRequest,
     SellRequest,
     StoredPortfolioItem,
+    TaxLossCategoryBalance,
 )
 from app.optimizer.cost_calculator import calculate_sell_cost
 from app.repositories import AssetRepository, PortfolioRepository
@@ -252,12 +253,17 @@ class PortfolioService:
         sold_at = self._validate_sold_at(req.sold_at)
         month_before = self.portfolio_repo.sum_gross_sales_this_month(category)
 
+        # Prejuízo já realizado na categoria abate o ganho desta venda —
+        # sem isso o IR devido era superestimado.
+        accumulated_loss = self.portfolio_repo.available_tax_loss(category)
+
         cost = calculate_sell_cost(
             category,
             req.quantity,
             req.sell_price,
             pos["avg_price"],
             gross_value_month_before=month_before,
+            accumulated_loss=accumulated_loss,
         )
 
         trade = self.portfolio_repo.create_closed_trade(
@@ -270,6 +276,8 @@ class PortfolioService:
             ir_rate=cost.ir_rate,
             ir_amount=cost.ir_amount,
             net_profit=cost.net_profit,
+            loss_offset_used=cost.loss_offset_used,
+            taxable_profit=cost.taxable_profit,
             sold_at=sold_at,
         )
         self.portfolio_repo.reduce_position_quantity(req.ticker, req.quantity)
@@ -299,8 +307,12 @@ class PortfolioService:
         trades = self.portfolio_repo.list_closed_trades()
         total_realized = sum(t["net_profit"] for t in trades)
         total_ir = sum(t["ir_amount"] for t in trades)
+        balances = self.portfolio_repo.tax_loss_balances()
+
         return ClosedTradesResponse(
             trades=[ClosedTrade(**t) for t in trades],
             total_realized_pnl=round(total_realized, 2),
             total_ir_paid=round(total_ir, 2),
+            tax_loss_balances=[TaxLossCategoryBalance(**b) for b in balances],
+            total_tax_loss_available=round(sum(b["available"] for b in balances), 2),
         )

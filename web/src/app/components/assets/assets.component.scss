@@ -37,3 +37,22 @@
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* Cabeçalho ordenável: o botão herda a cor do th e só ganha destaque no hover,
+   para a tabela não parecer cheia de links. */
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+
+  &:hover {
+    color: var(--tx);
+  }
+}

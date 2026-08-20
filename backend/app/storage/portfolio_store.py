@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import time
 from contextlib import contextmanager
-from datetime import UTC
 from typing import TypedDict
 
 from sqlalchemy import delete, func, select
 
+from app.core.brt import month_start_timestamp
 from app.core.context import get_current_user_id, get_request_session
 from app.core.database import SessionLocal, init_db
 from app.models.db_models import (
     ClosedTradeDb,
     DeviceTokenDb,
+    DividendReceivedDb,
     FixedIncomePositionDb,
+    FollowedSuggestionDb,
     GoalDb,
     JobLockDb,
     NotifiedOpportunityDb,
@@ -114,6 +116,8 @@ class ClosedTrade(TypedDict):
     ir_rate: float
     ir_amount: float
     net_profit: float
+    loss_offset_used: float
+    taxable_profit: float
     sold_at: float
 
 
@@ -300,12 +304,13 @@ def reduce_position_quantity(ticker: str, sold_qty: float, user_id: str | None =
 
 
 def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None) -> float:
-    # usado para aplicar a isenção mensal de IR (R$20k ações BR) sobre o acumulado do mês
-    now = time.time()
-    from datetime import datetime
+    """Vendas brutas do mês na categoria, para a isenção de R$ 20 mil.
 
-    dt = datetime.fromtimestamp(now, tz=UTC)
-    month_start = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp()
+    O mês é o mês calendário **brasileiro**: apurar em fronteira UTC fazia uma
+    venda no último dia do mês depois das 21 h BRT cair no mês seguinte,
+    mudando o balde da isenção e a alíquota aplicada.
+    """
+    month_start = month_start_timestamp()
 
     with _session(user_id) as (session, uid):
         rows = session.scalars(
@@ -329,6 +334,8 @@ def create_closed_trade(
     ir_amount: float,
     net_profit: float,
     sold_at: float,
+    loss_offset_used: float = 0.0,
+    taxable_profit: float = 0.0,
     user_id: str | None = None,
 ) -> ClosedTrade:
     now = time.time()
@@ -344,6 +351,8 @@ def create_closed_trade(
             ir_rate=ir_rate,
             ir_amount=ir_amount,
             net_profit=net_profit,
+            loss_offset_used=loss_offset_used,
+            taxable_profit=taxable_profit,
             sold_at=sold_at,
             created_at=now,
         )
@@ -360,6 +369,8 @@ def create_closed_trade(
             ir_rate=row.ir_rate,
             ir_amount=row.ir_amount,
             net_profit=row.net_profit,
+            loss_offset_used=row.loss_offset_used or 0.0,
+            taxable_profit=row.taxable_profit or 0.0,
             sold_at=row.sold_at,
         )
 
@@ -383,6 +394,8 @@ def list_closed_trades(user_id: str | None = None) -> list[ClosedTrade]:
                 ir_rate=r.ir_rate,
                 ir_amount=r.ir_amount,
                 net_profit=r.net_profit,
+                loss_offset_used=r.loss_offset_used or 0.0,
+                taxable_profit=r.taxable_profit or 0.0,
                 sold_at=r.sold_at,
             )
             for r in rows
@@ -921,3 +934,204 @@ def release_job_lock(name: str, holder: str) -> None:
         row = session.get(JobLockDb, name)
         if row is not None and row.holder == holder:
             session.execute(delete(JobLockDb).where(JobLockDb.name == name))
+
+
+class TaxLossBalance(TypedDict):
+    category: str
+    realized_loss: float
+    offset_used: float
+    available: float
+
+
+def tax_loss_balances(user_id: str | None = None) -> list[TaxLossBalance]:
+    """Saldo de prejuízo realizado disponível para compensação, por categoria.
+
+    A legislação permite abater prejuízo de ganhos futuros da mesma categoria.
+    `calculate_sell_cost` devolvia IR zero quando havia prejuízo mas não
+    guardava o saldo negativo: o app superestimava o IR devido de qualquer
+    usuário que já tivesse realizado prejuízo.
+    """
+    by_category: dict[str, dict[str, float]] = {}
+
+    # Agrega dentro da sessão: fora dela as instâncias ficam desanexadas e
+    # qualquer acesso a atributo levanta DetachedInstanceError.
+    with _session(user_id) as (session, uid):
+        rows = session.execute(
+            select(
+                ClosedTradeDb.category,
+                ClosedTradeDb.gross_profit,
+                ClosedTradeDb.loss_offset_used,
+            ).where(ClosedTradeDb.user_id == uid)
+        ).all()
+
+        for category, gross_profit, offset_used in rows:
+            bucket = by_category.setdefault(category, {"realized_loss": 0.0, "offset_used": 0.0})
+            if gross_profit < 0:
+                bucket["realized_loss"] += abs(gross_profit)
+            bucket["offset_used"] += offset_used or 0.0
+
+    return [
+        TaxLossBalance(
+            category=category,
+            realized_loss=round(values["realized_loss"], 2),
+            offset_used=round(values["offset_used"], 2),
+            available=round(max(values["realized_loss"] - values["offset_used"], 0.0), 2),
+        )
+        for category, values in sorted(by_category.items())
+    ]
+
+
+def available_tax_loss(category: str, user_id: str | None = None) -> float:
+    for balance in tax_loss_balances(user_id=user_id):
+        if balance["category"] == category:
+            return balance["available"]
+    return 0.0
+
+
+class DividendReceivedRow(TypedDict):
+    id: int
+    ticker: str
+    paid_at: str
+    amount: float
+    kind: str
+    note: str | None
+
+
+_DIVIDEND_FIELDS = ("ticker", "paid_at", "amount", "kind", "note")
+
+
+def _dividend_row(row: DividendReceivedDb) -> DividendReceivedRow:
+    return DividendReceivedRow(
+        id=row.id,
+        ticker=row.ticker,
+        paid_at=row.paid_at,
+        amount=row.amount,
+        kind=row.kind,
+        note=row.note,
+    )
+
+
+def list_dividends_received(user_id: str | None = None) -> list[DividendReceivedRow]:
+    with _session(user_id) as (session, uid):
+        rows = session.scalars(
+            select(DividendReceivedDb)
+            .where(DividendReceivedDb.user_id == uid)
+            .order_by(DividendReceivedDb.paid_at.desc(), DividendReceivedDb.id.desc())
+        ).all()
+        return [_dividend_row(r) for r in rows]
+
+
+def create_dividend_received(user_id: str | None = None, **fields) -> DividendReceivedRow:
+    unknown = set(fields) - set(_DIVIDEND_FIELDS)
+    if unknown:
+        raise ValueError(f"Campos de provento desconhecidos: {sorted(unknown)}")
+
+    now = time.time()
+    with _session(user_id, ensure_user=True) as (session, uid):
+        row = DividendReceivedDb(user_id=uid, created_at=now, updated_at=now, **fields)
+        session.add(row)
+        session.flush()
+        return _dividend_row(row)
+
+
+def update_dividend_received(
+    dividend_id: int, user_id: str | None = None, **fields
+) -> DividendReceivedRow | None:
+    unknown = set(fields) - set(_DIVIDEND_FIELDS)
+    if unknown:
+        raise ValueError(f"Campos de provento desconhecidos: {sorted(unknown)}")
+
+    with _session(user_id) as (session, uid):
+        row = session.get(DividendReceivedDb, dividend_id)
+        if row is None or row.user_id != uid:
+            return None
+        for key, value in fields.items():
+            setattr(row, key, value)
+        row.updated_at = time.time()
+        session.flush()
+        return _dividend_row(row)
+
+
+def delete_dividend_received(dividend_id: int, user_id: str | None = None) -> bool:
+    with _session(user_id) as (session, uid):
+        result = session.execute(
+            delete(DividendReceivedDb).where(
+                DividendReceivedDb.id == dividend_id,
+                DividendReceivedDb.user_id == uid,
+            )
+        )
+        return result.rowcount > 0
+
+
+class FollowedSuggestionRow(TypedDict):
+    id: int
+    ticker: str
+    source: str
+    action: str
+    quantity: float
+    price: float
+    followed_on: str
+    score_at_suggestion: float | None
+    verdict_at_suggestion: str | None
+    note: str | None
+
+
+_FOLLOWED_FIELDS = (
+    "ticker",
+    "source",
+    "action",
+    "quantity",
+    "price",
+    "followed_on",
+    "score_at_suggestion",
+    "verdict_at_suggestion",
+    "note",
+)
+
+
+def _followed_row(row: FollowedSuggestionDb) -> FollowedSuggestionRow:
+    return FollowedSuggestionRow(
+        id=row.id,
+        ticker=row.ticker,
+        source=row.source,
+        action=row.action,
+        quantity=row.quantity,
+        price=row.price,
+        followed_on=row.followed_on,
+        score_at_suggestion=row.score_at_suggestion,
+        verdict_at_suggestion=row.verdict_at_suggestion,
+        note=row.note,
+    )
+
+
+def list_followed_suggestions(user_id: str | None = None) -> list[FollowedSuggestionRow]:
+    with _session(user_id) as (session, uid):
+        rows = session.scalars(
+            select(FollowedSuggestionDb)
+            .where(FollowedSuggestionDb.user_id == uid)
+            .order_by(FollowedSuggestionDb.followed_on.desc(), FollowedSuggestionDb.id.desc())
+        ).all()
+        return [_followed_row(r) for r in rows]
+
+
+def create_followed_suggestion(user_id: str | None = None, **fields) -> FollowedSuggestionRow:
+    unknown = set(fields) - set(_FOLLOWED_FIELDS)
+    if unknown:
+        raise ValueError(f"Campos de sugestão seguida desconhecidos: {sorted(unknown)}")
+
+    with _session(user_id, ensure_user=True) as (session, uid):
+        row = FollowedSuggestionDb(user_id=uid, created_at=time.time(), **fields)
+        session.add(row)
+        session.flush()
+        return _followed_row(row)
+
+
+def delete_followed_suggestion(suggestion_id: int, user_id: str | None = None) -> bool:
+    with _session(user_id) as (session, uid):
+        result = session.execute(
+            delete(FollowedSuggestionDb).where(
+                FollowedSuggestionDb.id == suggestion_id,
+                FollowedSuggestionDb.user_id == uid,
+            )
+        )
+        return result.rowcount > 0

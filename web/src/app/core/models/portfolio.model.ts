@@ -95,11 +95,29 @@ export interface ClosedTrade {
   ir_rate: number;
   ir_amount: number;
   net_profit: number;
+  /** Compensação de prejuízo aplicada nesta venda. */
+  loss_offset_used: number;
+  taxable_profit: number;
   sold_at: number;
+}
+
+/**
+ * Saldo de prejuízo realizado por categoria.
+ *
+ * A legislação permite abater prejuízo de ganhos futuros da mesma categoria; o
+ * saldo não era guardado, então o IR devido era superestimado.
+ */
+export interface TaxLossCategoryBalance {
+  category: string;
+  realized_loss: number;
+  offset_used: number;
+  available: number;
 }
 
 export interface ClosedTradesResponse {
   trades: ClosedTrade[];
   total_realized_pnl: number;
   total_ir_paid: number;
+  tax_loss_balances: TaxLossCategoryBalance[];
+  total_tax_loss_available: number;
 }

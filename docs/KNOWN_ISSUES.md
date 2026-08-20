@@ -1,6 +1,10 @@
 # fiance — Limitações conhecidas e débito técnico
 
 > Gerado por varredura completa em 2026-08-10.
+>
+> **Leia primeiro a seção final** ("Auditoria de produto e engenharia", 2026-08-20): ela
+> substitui vários itens abaixo, que ficaram obsoletos com a implementação do roadmap da
+> auditoria.
 
 ## Limitações históricas — status atual
 
@@ -129,3 +133,95 @@ Pedido do usuário: usar todos os indicadores calculáveis no score de oportunid
 - **`market.component` quebrado em subcomponentes** — ver item 4 da lista de débito técnico, acima.
 - **`opportunities.component` (web) removido** — código morto confirmado (só era exportado pelo barrel `components/index.ts`, sem nenhum consumidor real nas rotas ativas).
 - **Gráfico de evolução de patrimônio**: dado já existia (`PortfolioSnapshot`, embutido em `GET /dashboard`/`GET /portfolio`, sem endpoint novo). Web trocou o SVG manual (`snapshotPath()`/`snapshotAreaPath()` em `ui-helper.service.ts`, removidos) por `PatrimonyChartComponent` (segue a skill `dataviz`: crosshair, tooltip, tabela alternativa para acessibilidade, cores 100% via tokens de tema). Mobile ganhou a mesma visualização do zero (não existia nada antes) via `fl_chart` em `dashboard_screen.dart`.
+
+---
+
+# Auditoria de produto e engenharia (19/08/2026) — implementação completa em 20/08/2026
+
+A auditoria mapeou 7 achados P0, 9 erros de cálculo, dois caminhos de perda de dados e um
+endpoint de manutenção aberto. **Todas as cinco fases do roadmap foram implementadas.** Esta
+seção substitui, para os itens que toca, o que está registrado acima.
+
+## Correção de premissa
+
+O documento anterior (e o `CLAUDE.md`) afirmava que não havia testes automatizados relevantes.
+Havia — e agora são **206**, rodando em CI (`.github/workflows/ci.yml`: ruff + pytest no backend,
+build e formatação no web, analyze + test no mobile) em todo push. O `conftest` também deixou de
+stubar `get_dividends → []` e `get_history → {}`: PETR4 traz histórico de proventos e série de
+preços, então a bateria passa pelo caminho onde os bugs de valuation moravam.
+
+## Achados P0 — todos resolvidos
+
+| Achado | Resolução |
+|---|---|
+| D1/D2 — renda fixa sem rendimento e presa ao `localStorage` | Tabela `fixed_income_positions` + CRUD `/fixed-income`, marcada a mercado no backend reusando `analyze_one()`. `AssetType.renda_fixa` criado (as posições apareciam como `br_stock`). Posições `RF_*` legadas removidas pela migração `0002`. |
+| D3 — dois caminhos de perda da carteira inteira | `POST /portfolio/position` e `DELETE /portfolio/position/{ticker}` como escrita por item; `PUT /portfolio` fica só para importação e **rejeita lista vazia**. Mobile: FAB só com `dashboard.hasValue` e cadastro por item. Web: o branch de erro não marca `_initialized`, mostra banner e bloqueia edição. |
+| D4 — quatro erros de unidade/janela no preço justo | Média de dividendos sobre anos-calendário completos com denominador correto; DY somando os últimos 12 meses **por data**; guard do DCF aceitando percentual; `range` do histórico configurável com degradação, e tendência de curto prazo rotulada quando falta série para a SMA200. |
+| D5 — cache global com cálculo personalizado | O cache passou a guardar **dado de mercado** por ticker; preço justo e score são calculados por request. As metas de yield voltaram a ter efeito e o cálculo deixou de vazar entre tenants. |
+| POST `/api/cache/clear` público | Movido para o `admin_router`, dentro do router protegido. `jwt_secret` default agora aborta o startup fora de `development`. |
+| `cash_available` destruído a cada salvamento | Campo entrou em `PreferencesRequest` e o PUT passou a ser parcial (`exclude_unset`). |
+| `/projection/passive-income` devolvendo zero | Era `item.ticker` sobre um dict; o `AttributeError` caía num `except` e virava `continue`. Corrigido, com `gather` sobre as posições. |
+
+## Demais dores (D6–D10)
+
+- **D6** — benchmark passou a usar retorno **ponderado no tempo**: aporte não é mais
+  rentabilidade. A resposta expõe `method` e `net_contributions`.
+- **D7** — a escrita de snapshot saiu do caminho de request (`services/snapshot_job.py`, job
+  diário com lock), sempre sobre `list_positions()` + renda fixa. O cliente não controla mais o
+  que entra na série histórica.
+- **D8** — pesos do score renormalizados sobre as dimensões disponíveis, com
+  `data_completeness` na resposta; a UI mostra score incompleto em cinza com o motivo.
+- **D9** — % do CDI multiplicativo, IPCA+ compondo inflação, constante única de dias por mês,
+  benchmark `0.85` substituído por dois números explícitos, liquidez no critério de melhor
+  opção, e o cálculo duplicado no Angular **apagado**.
+- **D10** — alertas agrupados com contagem, teto e uma ação cada; régua única de score nas três
+  plataformas; setor traduzido nos alertas do backend; `confidence`/`data_years`/
+  `consensus_methods` expostos ao lado de todo veredito.
+
+## Itens acima que ficaram obsoletos
+
+- **Item 1 (testes)** — ver "Correção de premissa".
+- **Item 3 (duplicação de regra de RF)** — resolvido: `calcularRendimento()`/
+  `calcularValorFinal()` foram removidos do Angular. A cadeia de `computed()` que dependia deles
+  foi reescrita sobre `GET /fixed-income`, que já devolve tudo marcado a mercado.
+- **Item 8 (labels duplicados)** — segue estrutural (TS↔Dart), mas os pontos que mais divergiam
+  ganharam fonte única de referência: régua de score e tradução de setor existem nos três lados
+  com o mesmo valor, e o backend deixou de emitir setor cru.
+- **Item 14 (`create_all` não migra colunas)** — obsoleto: **Alembic** foi introduzido
+  (`backend/migrations/`). `init_db()` marca bancos pré-Alembic na revisão baseline e aplica as
+  migrações. A ressalva sobre "default simples" não vale mais — migração com backfill agora é
+  suportada (a `0004` faz isso).
+- **Item 16, último bullet (`DELETE /notifications/register-token`)** — a rota **voltou**, agora
+  com consumidor: o logout do mobile desregistra o aparelho. Sem isso, depois do logout o
+  aparelho continuava recebendo o resumo de carteira da conta anterior.
+
+## Débito técnico remanescente
+
+1. **Cache é um SQLite local, não compartilhado.** Ganhou arquivo dedicado
+   (`.cache/http_cache.db`, sobrescrevível por `CACHE_DB_PATH`), WAL, `busy_timeout` e conexão
+   reaproveitada por thread — o que resolveu o `database is locked` causado por compartilhar
+   arquivo com o banco do usuário. Mas continua **local ao processo**: com mais de um worker na
+   mesma máquina, cada um mantém a própria cópia e refaz o scan. Os jobs de background já são
+   protegidos por lock no banco, então múltiplos workers não duplicam notificação. Escalar
+   horizontalmente exige um volume compartilhado para `CACHE_DB_PATH` ou trocar a camada por
+   Redis — a decisão foi manter SQLite por ora, sem provisionar infra nova.
+2. **`brapi_history_range` default `3mo`.** O plano gratuito da BRAPI só aceita ranges curtos, e
+   com 3 meses a SMA200 é estruturalmente incalculável. O sistema passou a ser honesto sobre
+   isso (tendência de curto prazo rotulada como tal, e `GET /data-quality` reporta a cobertura),
+   mas a tendência de longo prazo só existe de fato com plano pago e `BRAPI_HISTORY_RANGE=2y`.
+3. **Unidade dos fundamentos da BRAPI não foi confirmada com chamada real.** `_ratio_to_pct`
+   assume que `returnOnEquity`/`profitMargins`/`revenueGrowth`/`debtToEquity` vêm como razão
+   decimal e multiplica por 100 — contrato explícito, no lugar da heurística
+   `if f > 1.0: return f` que lia um ROE de 120% como 1,2%. Vale confirmar contra uma resposta
+   real da API; `GET /data-quality` dá a visibilidade para isso.
+4. **Universo hardcoded como fallback** (`config.default_universe`, ~400 tickers) — segue como
+   estava: fallback defensivo intencional, mas extenso.
+5. **Sem testes no web.** O mobile ganhou testes de régua de score e de tela de login (e o
+   `widget_test.dart` que falhava por timeout em `pumpAndSettle` foi corrigido); o web continua
+   sem `*.spec.ts`. A auditoria recomendava não investir aí antes de fechar as lacunas de regra
+   financeira e isolamento — que agora estão fechadas, então este é o próximo alvo natural.
+6. **Sparklines feitas à mão** em `ui-helper.service.ts` — inalterado.
+7. **Proventos e sugestões seguidas são lançamento manual.** `/dividends/received` e
+   `/suggestions/followed` dependem do usuário registrar. O caminho automático (calendário de
+   proventos da BRAPI × quantidade em carteira, com confirmação) não foi implementado — a base
+   de dados para ele já existe.

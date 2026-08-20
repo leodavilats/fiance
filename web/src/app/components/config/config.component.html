@@ -262,9 +262,34 @@
   </div>
 
   <div class="p-5 rounded-lg bg-panel border border-border">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-tx">
       <lucide-icon name="bell" size="18"></lucide-icon> Notificações e Recomendação
     </h2>
+
+    <!-- Antes esta seção oferecia cadência de resumo e alerta de preço sem
+         efeito nenhum para quem usa só o navegador: o registro de token de
+         push é feito apenas pelo app. Agora a tela diz a verdade. -->
+    @if (!pushEnabled()) {
+      <div class="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/40 mb-4 flex gap-3">
+        <lucide-icon name="smartphone" size="18" class="text-yellow-400 mt-0.5"></lucide-icon>
+        <div class="text-sm">
+          <div class="font-semibold text-tx">As notificações requerem o app instalado</div>
+          <div class="text-muted mt-0.5">
+            Nenhum aparelho registrado nesta conta. As preferências abaixo ficam salvas e passam a
+            valer assim que você entrar pelo app — no navegador elas não disparam nada.
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="p-3 rounded-lg bg-panel-2 border border-border mb-4 flex gap-3">
+        <lucide-icon name="smartphone" size="18" class="text-accent mt-0.5"></lucide-icon>
+        <div class="text-sm text-muted">
+          {{ registeredDevices() }}
+          {{ registeredDevices() === 1 ? 'aparelho recebendo' : 'aparelhos recebendo' }}
+          notificações desta conta.
+        </div>
+      </div>
+    }
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>

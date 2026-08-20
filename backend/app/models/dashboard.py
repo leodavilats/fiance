@@ -57,6 +57,10 @@ class DashboardSummary(BaseModel):
 
     monthly_dividends_estimate: float
     yearly_dividends_estimate: float = 0.0
+    # Recebido de fato, do cadastro de proventos. Todo número de renda no
+    # produto era estimativa derivada de DY; agora a estimativa é confrontável.
+    dividends_received_this_month: float = 0.0
+    dividends_received_last_12m: float = 0.0
     portfolio_yield: float | None = None
     passive_income_goal: float | None = None
     passive_income_progress: float | None = None

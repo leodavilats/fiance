@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
@@ -20,6 +21,7 @@ const MAX_TICKERS = 4;
 })
 export class CompareAssetsComponent implements OnInit, OnDestroy {
   private api = inject(RecommendService);
+  private route = inject(ActivatedRoute);
   readonly ui = inject(UiHelperService);
 
   private destroy$ = new Subject<void>();
@@ -47,6 +49,22 @@ export class CompareAssetsComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe(items => this.suggestions.set(items));
+
+    // Seleção múltipla feita na tabela de posições chega por query param — é o
+    // que faz o botão "Comparar" da carteira levar a algo pronto em vez de a um
+    // formulário vazio.
+    const fromQuery = this.route.snapshot.queryParamMap.get('tickers');
+    if (fromQuery) {
+      const tickers = fromQuery
+        .split(',')
+        .map(t => t.trim().toUpperCase())
+        .filter(Boolean)
+        .slice(0, MAX_TICKERS);
+      if (tickers.length > 0) {
+        this.tickers.set(tickers);
+        this.compare();
+      }
+    }
   }
 
   ngOnDestroy(): void {

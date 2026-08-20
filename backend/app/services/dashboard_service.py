@@ -273,6 +273,8 @@ class DashboardService:
         top_buys: list[Opportunity],
         goals: list[Goal],
         freshness: DataFreshness | None = None,
+        dividends_received_this_month: float = 0.0,
+        dividends_received_last_12m: float = 0.0,
     ) -> DashboardResponse:
 
         real_positions = [p for p in positions if p.asset_type != AssetType.renda_fixa]
@@ -325,6 +327,8 @@ class DashboardService:
                 total_pnl_pct=round(total_pnl_pct, 2),
                 monthly_dividends_estimate=round(monthly_dividends, 2),
                 yearly_dividends_estimate=round(total_yearly_dividends, 2),
+                dividends_received_this_month=dividends_received_this_month,
+                dividends_received_last_12m=dividends_received_last_12m,
                 portfolio_yield=round(portfolio_yield, 2) if portfolio_yield > 0 else None,
                 passive_income_goal=passive_income_goal,
                 passive_income_progress=round(passive_income_progress, 2)

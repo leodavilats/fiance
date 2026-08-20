@@ -5,6 +5,7 @@ from app.collectors.universal import FUND_TTL
 from app.models import DashboardResponse, DataFreshness
 from app.services import (
     DashboardService,
+    DividendsService,
     FixedIncomeService,
     GoalService,
     OpportunityService,
@@ -18,6 +19,7 @@ opportunity_service = OpportunityService()
 portfolio_service = PortfolioService()
 goal_service = GoalService()
 fixed_income_service = FixedIncomeService()
+dividends_service = DividendsService()
 
 
 @router.get("/dashboard", response_model=DashboardResponse)
@@ -44,4 +46,13 @@ async def dashboard() -> DashboardResponse:
         quotes_ttl_seconds=FUND_TTL,
     )
 
-    return await dashboard_service.generate_dashboard(positions, top_buys, goals, freshness)
+    received = dividends_service.list_received()
+
+    return await dashboard_service.generate_dashboard(
+        positions,
+        top_buys,
+        goals,
+        freshness,
+        dividends_received_this_month=received.received_this_month,
+        dividends_received_last_12m=received.received_last_12m,
+    )

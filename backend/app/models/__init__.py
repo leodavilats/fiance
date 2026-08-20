@@ -44,6 +44,7 @@ from .portfolio import (
     SavePortfolioRequest,
     SellRequest,
     StoredPortfolioItem,
+    TaxLossCategoryBalance,
 )
 from .preferences import Preferences, PreferencesRequest
 from .projection import (
@@ -96,6 +97,7 @@ __all__ = [
     "SellRequest",
     "ClosedTrade",
     "ClosedTradesResponse",
+    "TaxLossCategoryBalance",
     "Goal",
     "GoalsRequest",
     "SectorGoal",

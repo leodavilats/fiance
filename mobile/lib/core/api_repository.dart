@@ -18,6 +18,25 @@ class ApiRepository {
     return DashboardData.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// "Recebi meu salário, onde aporto" — antes só existia no web.
+  Future<QuickInvestResult> quickInvest({
+    required double cashAvailable,
+    bool useCurrentGoals = true,
+    bool prioritizeRebalance = true,
+    double minOrderValue = 100,
+  }) async {
+    final res = await _dio.post(
+      '/quick-invest',
+      data: {
+        'cash_available': cashAvailable,
+        'use_current_goals': useCurrentGoals,
+        'prioritize_rebalance': prioritizeRebalance,
+        'min_order_value': minOrderValue,
+      },
+    );
+    return QuickInvestResult.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<WhatsNew> getWhatsNew() async {
     final res = await _dio.get('/whats-new');
     return WhatsNew.fromJson(res.data as Map<String, dynamic>);
@@ -297,6 +316,17 @@ class ApiRepository {
 
   Future<void> deleteAlert(int id) async {
     await _dio.delete('/alerts/$id');
+  }
+
+  /// Desassocia o token deste aparelho da conta atual.
+  ///
+  /// Sem isto, depois do logout o aparelho continuava recebendo o resumo de
+  /// carteira da conta anterior até que alguém registrasse o token de novo.
+  Future<void> unregisterDeviceToken(String token) async {
+    await _dio.delete(
+      '/notifications/register-token',
+      queryParameters: {'token': token},
+    );
   }
 
   Future<void> registerDeviceToken({

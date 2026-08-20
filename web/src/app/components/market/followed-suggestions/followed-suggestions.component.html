@@ -1,0 +1,223 @@
+@if (data(); as d) {
+  <div class="p-5 rounded-lg bg-panel border border-border">
+    <div class="flex flex-wrap items-start justify-between gap-3 mb-1">
+      <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
+        <lucide-icon name="target" size="20"></lucide-icon> Sugestões que você seguiu
+      </h2>
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-tx hover:bg-panel-2 transition-colors cursor-pointer bg-transparent flex items-center gap-1.5"
+        (click)="showForm.set(!showForm())"
+      >
+        <lucide-icon [name]="showForm() ? 'x' : 'plus'" size="14"></lucide-icon>
+        {{ showForm() ? 'Cancelar' : 'Registrar execução' }}
+      </button>
+    </div>
+    <p class="text-sm text-muted mb-4">
+      Registre o que você de fato executou a partir de uma sugestão do app. É assim que o produto
+      fica auditável por você: o resultado abaixo é histórico verificável, não promessa.
+    </p>
+
+    @if (showForm()) {
+      <div class="p-4 rounded-lg bg-panel-2 border border-border mb-5">
+        <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:items-end">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Ativo</span>
+            <input
+              type="text"
+              [ngModel]="form().ticker"
+              (ngModelChange)="updateField({ ticker: $event })"
+              placeholder="ex.: PETR4"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm uppercase focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Veio de</span>
+            <select
+              [ngModel]="form().source"
+              (ngModelChange)="updateField({ source: $event })"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              @for (s of sources; track s.value) {
+                <option [value]="s.value">{{ s.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Quantidade</span>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              [ngModel]="form().quantity"
+              (ngModelChange)="updateField({ quantity: $event })"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Preço executado (R$)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [ngModel]="form().price"
+              (ngModelChange)="updateField({ price: $event })"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-muted">Data</span>
+            <input
+              type="date"
+              [ngModel]="form().followed_on"
+              (ngModelChange)="updateField({ followed_on: $event })"
+              class="px-3 h-[42px] rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </label>
+        </div>
+
+        <button
+          type="button"
+          class="mt-4 h-[42px] px-4 rounded-lg text-sm font-medium bg-accent text-white border-0 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+          [disabled]="saving()"
+          (click)="save()"
+        >
+          <lucide-icon name="save" size="14"></lucide-icon>
+          {{ saving() ? 'Salvando…' : 'Registrar' }}
+        </button>
+      </div>
+    }
+
+    @if (d.items.length === 0) {
+      <p class="text-sm text-muted italic m-0">{{ d.summary }}</p>
+    } @else {
+      <div
+        class="p-4 rounded-lg mb-4 border"
+        [class.border-green-500]="d.beat_ibov ?? false"
+        [class.bg-green-500\/5]="d.beat_ibov ?? false"
+        [class.border-border]="!(d.beat_ibov ?? false)"
+        [class.bg-panel-2]="!(d.beat_ibov ?? false)"
+      >
+        <div class="font-semibold text-tx">{{ d.summary }}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+          <div>
+            <div class="text-xs text-muted uppercase tracking-wide">Investido</div>
+            <div class="font-bold text-tx">R$ {{ d.total_invested | number: '1.2-2' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-muted uppercase tracking-wide">Valor hoje</div>
+            <div class="font-bold text-tx">R$ {{ d.total_current_value | number: '1.2-2' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-muted uppercase tracking-wide">Resultado</div>
+            <div class="font-bold" [class.good]="d.total_pnl >= 0" [class.warn]="d.total_pnl < 0">
+              {{ d.total_pnl >= 0 ? '+' : '' }}R$ {{ d.total_pnl | number: '1.2-2' }} ({{
+                d.total_pnl_pct | number: '1.2-2'
+              }}%)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      @if (d.by_source.length > 1) {
+        <div class="mb-4">
+          <div class="text-xs text-muted uppercase tracking-wide mb-2">Por origem da sugestão</div>
+          <div class="flex flex-col gap-2">
+            @for (group of d.by_source; track group.source) {
+              <div class="flex items-center justify-between gap-3 text-sm">
+                <span class="text-tx">
+                  {{ group.source }}
+                  <span class="text-muted text-xs">({{ group.count }})</span>
+                </span>
+                <span class="flex items-center gap-3 shrink-0">
+                  <span
+                    class="font-semibold"
+                    [class.good]="group.pnl_pct >= 0"
+                    [class.warn]="group.pnl_pct < 0"
+                  >
+                    {{ group.pnl_pct >= 0 ? '+' : '' }}{{ group.pnl_pct | number: '1.1-1' }}%
+                  </span>
+                  @if (group.ibov_pct != null) {
+                    <span class="text-muted text-xs">
+                      Ibov {{ group.ibov_pct >= 0 ? '+' : ''
+                      }}{{ group.ibov_pct | number: '1.1-1' }}%
+                    </span>
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div style="overflow-x: auto">
+        <table class="w-full border-collapse text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left py-2 px-2 font-medium text-muted">Ativo</th>
+              <th class="text-left py-2 px-2 font-medium text-muted">Origem</th>
+              <th class="text-left py-2 px-2 font-medium text-muted">Data</th>
+              <th class="text-right py-2 px-2 font-medium text-muted">Investido</th>
+              <th class="text-right py-2 px-2 font-medium text-muted">Hoje</th>
+              <th class="text-right py-2 px-2 font-medium text-muted">Resultado</th>
+              <th class="text-right py-2 px-2 font-medium text-muted">vs Ibov</th>
+              <th class="text-right py-2 px-2 font-medium text-muted"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of d.items; track item.id) {
+              <tr class="border-b border-border hover:bg-bg-2 transition-colors">
+                <td class="py-2 px-2">
+                  <div class="font-semibold text-tx">{{ item.ticker }}</div>
+                  @if (item.score_at_suggestion != null) {
+                    <div class="text-xs text-muted">
+                      score {{ item.score_at_suggestion | number: '1.0-0' }} na sugestão
+                    </div>
+                  }
+                </td>
+                <td class="py-2 px-2 text-muted">{{ sourceLabel(item.source) }}</td>
+                <td class="py-2 px-2 text-tx">
+                  {{ item.followed_on }}
+                  <div class="text-xs text-muted">{{ item.days_held }} dias</div>
+                </td>
+                <td class="text-right py-2 px-2 text-tx">
+                  {{ item.invested | number: '1.2-2' }}
+                </td>
+                <td class="text-right py-2 px-2 text-tx">
+                  {{ item.current_value != null ? (item.current_value | number: '1.2-2') : '—' }}
+                </td>
+                <td
+                  class="text-right py-2 px-2 font-semibold"
+                  [class.good]="(item.pnl_pct ?? 0) >= 0"
+                  [class.warn]="(item.pnl_pct ?? 0) < 0"
+                >
+                  {{ item.pnl_pct != null ? (item.pnl_pct | number: '1.2-2') + '%' : '—' }}
+                </td>
+                <td class="text-right py-2 px-2">
+                  @if (item.ibov_pct_since != null) {
+                    <span [class.good]="item.beat_ibov" [class.text-muted]="!item.beat_ibov">
+                      {{ item.ibov_pct_since >= 0 ? '+' : ''
+                      }}{{ item.ibov_pct_since | number: '1.1-1' }}%
+                    </span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td class="text-right py-2 px-2">
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-md border border-border text-muted hover:text-red-400 hover:border-red-400 transition-colors cursor-pointer bg-transparent"
+                    title="Remover registro"
+                    (click)="remove(item.id)"
+                  >
+                    <lucide-icon name="trash-2" size="14"></lucide-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}

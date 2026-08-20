@@ -95,6 +95,14 @@ export class ConfigComponent implements OnInit, OnDestroy {
   readonly frequencyOptions = FREQUENCY_OPTIONS;
   readonly riskProfileOptions = RISK_PROFILE_OPTIONS;
   saving = signal(false);
+
+  /**
+   * Push só funciona com o app instalado: `/notifications/register-token`
+   * é chamado apenas pelo mobile. A tela oferecia cadência de resumo e
+   * alerta de preço sem efeito algum para quem usa só o navegador.
+   */
+  pushEnabled = signal(false);
+  registeredDevices = signal(0);
   message = signal('');
   clearing = signal(false);
   cacheMessage = signal('');
@@ -259,6 +267,9 @@ export class ConfigComponent implements OnInit, OnDestroy {
       sectorGoals: this.svc.getSectorGoals(),
     }).subscribe({
       next: ({ prefs, goals, sectorGoals }) => {
+        // Push depende de um token de dispositivo, que só o app registra.
+        this.pushEnabled.set(prefs.push_enabled ?? false);
+        this.registeredDevices.set(prefs.registered_devices ?? 0);
         this.form.patchValue({
           passive_income_goal: prefs.passive_income_goal ?? null,
           yield_stock: Math.round((prefs.desired_yield_stock ?? 0.06) * 1000) / 10,

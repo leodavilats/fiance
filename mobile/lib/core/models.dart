@@ -1136,3 +1136,74 @@ class FixedIncomeList {
     fonteTaxas: j['fonte_taxas'] as String? ?? 'estimativa',
   );
 }
+
+
+/// Sugestão de aporte do Quick Invest.
+///
+/// A feature existia só no web, e "recebi meu salário, onde aporto" é um caso de
+/// uso mais de celular que de desktop — aqui a lacuna custava.
+class QuickInvestAllocation {
+  QuickInvestAllocation({
+    required this.ticker,
+    required this.name,
+    required this.category,
+    required this.sector,
+    required this.currentPrice,
+    required this.suggestedQuantity,
+    required this.suggestedInvestment,
+    required this.rationale,
+    required this.score,
+    required this.dividendYield,
+  });
+
+  final String ticker;
+  final String? name;
+  final String category;
+  final String? sector;
+  final double currentPrice;
+  final int suggestedQuantity;
+  final double suggestedInvestment;
+  final String rationale;
+  final double? score;
+  final double? dividendYield;
+
+  factory QuickInvestAllocation.fromJson(Map<String, dynamic> j) =>
+      QuickInvestAllocation(
+        ticker: j['ticker'] as String,
+        name: j['name'] as String?,
+        category: j['category'] as String? ?? '',
+        sector: j['sector'] as String?,
+        currentPrice: (j['current_price'] as num).toDouble(),
+        suggestedQuantity: j['suggested_quantity'] as int,
+        suggestedInvestment: (j['suggested_investment'] as num).toDouble(),
+        rationale: j['rationale'] as String? ?? '',
+        score: (j['score'] as num?)?.toDouble(),
+        dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
+      );
+}
+
+class QuickInvestResult {
+  QuickInvestResult({
+    required this.totalCash,
+    required this.allocatedCash,
+    required this.remainingCash,
+    required this.allocations,
+    required this.summary,
+  });
+
+  final double totalCash;
+  final double allocatedCash;
+  final double remainingCash;
+  final List<QuickInvestAllocation> allocations;
+  final String summary;
+
+  factory QuickInvestResult.fromJson(Map<String, dynamic> j) => QuickInvestResult(
+    totalCash: (j['total_cash'] as num).toDouble(),
+    allocatedCash: (j['allocated_cash'] as num).toDouble(),
+    remainingCash: (j['remaining_cash'] as num).toDouble(),
+    allocations: (j['allocations'] as List)
+        .map((e) => QuickInvestAllocation.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    summary: j['summary'] as String? ?? '',
+  );
+}

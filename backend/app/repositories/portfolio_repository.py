@@ -19,6 +19,7 @@ from app.storage.portfolio_store import (
     SectorGoal,
     Snapshot,
     StoredItem,
+    TaxLossBalance,
     WatchlistItemRow,
 )
 
@@ -65,6 +66,14 @@ class PortfolioRepository:
     @staticmethod
     def list_closed_trades() -> list[ClosedTrade]:
         return portfolio_store.list_closed_trades()
+
+    @staticmethod
+    def tax_loss_balances() -> list[TaxLossBalance]:
+        return portfolio_store.tax_loss_balances()
+
+    @staticmethod
+    def available_tax_loss(category: str) -> float:
+        return portfolio_store.available_tax_loss(category)
 
     # --- histórico de patrimônio -----------------------------------------
 

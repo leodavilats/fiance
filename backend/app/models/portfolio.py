@@ -128,10 +128,28 @@ class ClosedTrade(BaseModel):
     ir_rate: float
     ir_amount: float
     net_profit: float
+    # Compensação de prejuízo aplicada nesta venda.
+    loss_offset_used: float = 0.0
+    taxable_profit: float = 0.0
     sold_at: float
+
+
+class TaxLossCategoryBalance(BaseModel):
+    """Saldo de prejuízo realizado por categoria, disponível para compensar.
+
+    A legislação permite abater prejuízo de ganhos futuros da mesma categoria.
+    O saldo negativo não era guardado, então o IR devido era superestimado.
+    """
+
+    category: str
+    realized_loss: float
+    offset_used: float
+    available: float
 
 
 class ClosedTradesResponse(BaseModel):
     trades: list[ClosedTrade]
     total_realized_pnl: float
     total_ir_paid: float
+    tax_loss_balances: list[TaxLossCategoryBalance] = Field(default_factory=list)
+    total_tax_loss_available: float = 0.0

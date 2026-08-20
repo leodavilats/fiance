@@ -6,6 +6,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
+import 'quick_invest_view.dart';
 
 class FerramentasTab extends StatefulWidget {
   const FerramentasTab({super.key});
@@ -14,7 +15,7 @@ class FerramentasTab extends StatefulWidget {
   State<FerramentasTab> createState() => _FerramentasTabState();
 }
 
-enum _ToolMode { analisar, rendaFixa, comparar, aportes }
+enum _ToolMode { analisar, rendaFixa, comparar, aportes, quickInvest }
 
 class _FerramentasTabState extends State<FerramentasTab> {
   _ToolMode _mode = _ToolMode.rendaFixa;
@@ -57,6 +58,14 @@ class _FerramentasTabState extends State<FerramentasTab> {
                 selected: _mode == _ToolMode.aportes,
                 onSelected: () => setState(() => _mode = _ToolMode.aportes),
               ),
+              // "Recebi meu salário, onde aporto" existia só no web, apesar de
+              // ser um caso de uso mais de celular que de desktop.
+              _ToolModeCard(
+                label: 'Quick Invest',
+                icon: Icons.bolt_outlined,
+                selected: _mode == _ToolMode.quickInvest,
+                onSelected: () => setState(() => _mode = _ToolMode.quickInvest),
+              ),
             ],
           ),
         ),
@@ -66,6 +75,7 @@ class _FerramentasTabState extends State<FerramentasTab> {
             _ToolMode.rendaFixa => const _RendaFixaSimulator(),
             _ToolMode.comparar => const _CompareAssetsView(),
             _ToolMode.aportes => const _ContributionSimulatorView(),
+            _ToolMode.quickInvest => const QuickInvestView(),
           },
         ),
       ],

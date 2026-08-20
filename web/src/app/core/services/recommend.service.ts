@@ -11,10 +11,17 @@ import {
   DashboardResponse,
   DipAnalysisResponse,
   DipScannerResponse,
+  DividendPayload,
+  DividendReceived,
+  DividendsReceivedResponse,
   FixedIncomeListResponse,
   FixedIncomePayload,
   FixedIncomePosition,
+  FollowedSuggestionPayload,
+  FollowedSuggestion,
+  FollowedSuggestionsResponse,
   Goal,
+  IncomeCompareResponse,
   InvestmentStrategy,
   OpportunitiesFrequency,
   OpportunitiesResponse,
@@ -115,6 +122,54 @@ export class RecommendService {
 
   deleteFixedIncome(id: number): Observable<{ deleted: number }> {
     return this.http.delete<{ deleted: number }>(`${this.base}/fixed-income/${id}`);
+  }
+
+  // --- proventos recebidos (fato, não estimativa) ---
+
+  getDividendsReceived(estimatedMonthly?: number): Observable<DividendsReceivedResponse> {
+    let params = new HttpParams();
+    if (estimatedMonthly != null) {
+      params = params.set('estimated_monthly', estimatedMonthly);
+    }
+    return this.http.get<DividendsReceivedResponse>(`${this.base}/dividends/received`, {
+      params,
+    });
+  }
+
+  createDividendReceived(payload: DividendPayload): Observable<DividendReceived> {
+    return this.http.post<DividendReceived>(`${this.base}/dividends/received`, payload);
+  }
+
+  updateDividendReceived(
+    id: number,
+    payload: Partial<DividendPayload>
+  ): Observable<DividendReceived> {
+    return this.http.put<DividendReceived>(`${this.base}/dividends/received/${id}`, payload);
+  }
+
+  deleteDividendReceived(id: number): Observable<{ deleted: number }> {
+    return this.http.delete<{ deleted: number }>(`${this.base}/dividends/received/${id}`);
+  }
+
+  // --- renda fixa x ativos na mesma conta ---
+
+  incomeCompare(amount = 10_000, horizonMonths = 12): Observable<IncomeCompareResponse> {
+    const params = new HttpParams().set('amount', amount).set('horizon_months', horizonMonths);
+    return this.http.get<IncomeCompareResponse>(`${this.base}/income-compare`, { params });
+  }
+
+  // --- ciclo decisão -> execução -> resultado ---
+
+  getFollowedSuggestions(): Observable<FollowedSuggestionsResponse> {
+    return this.http.get<FollowedSuggestionsResponse>(`${this.base}/suggestions/followed`);
+  }
+
+  registerFollowedSuggestion(payload: FollowedSuggestionPayload): Observable<FollowedSuggestion> {
+    return this.http.post<FollowedSuggestion>(`${this.base}/suggestions/followed`, payload);
+  }
+
+  deleteFollowedSuggestion(id: number): Observable<{ deleted: number }> {
+    return this.http.delete<{ deleted: number }>(`${this.base}/suggestions/followed/${id}`);
   }
 
   sellPosition(req: SellRequest): Observable<ClosedTrade> {

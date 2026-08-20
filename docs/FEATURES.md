@@ -1,6 +1,8 @@
 # fiance — Inventário de features por tela
 
-> Gerado por varredura completa em 2026-08-10. Web (Angular) e Mobile (Flutter) têm paridade quase total de navegação (4 abas espelhadas) e consomem a mesma API.
+> Gerado por varredura completa em 2026-08-10; **revisado em 2026-08-20** após a
+> implementação da auditoria. Web (Angular) e Mobile (Flutter) têm paridade quase total de
+> navegação (4 abas espelhadas) e consomem a mesma API.
 
 ## Dashboard
 Tela inicial consolidada: resumo de carteira, alertas de preço, indicadores gerais e "Saúde da carteira" (score 0–100 com sub-métricas Concentração/Setor/Diversificação/Risco — clicável para exibir o que cada uma considera). (`web/.../dashboard/`, `mobile/.../dashboard/dashboard_screen.dart`)
@@ -36,3 +38,73 @@ Metas de dividend yield por categoria (ações/FII/BDR/ETF), preferências de pe
 
 ## Autenticação
 Login via Google (mesmo fluxo web e mobile, JWT emitido pelo backend).
+
+
+---
+
+## Novidades da implementação da auditoria (2026-08-20)
+
+### "O que mudou" — primeiro bloco do Dashboard
+`GET /whats-new` compara o estado atual com o anterior e devolve até 5 linhas: variação de
+patrimônio (já descontando aportes), posições com sinal de venda, vencimento de renda fixa
+próximo, categoria fora da meta, prejuízo disponível para compensar IR e destaque de
+oportunidade. **Cada linha tem uma ação** que leva à tela onde a decisão acontece. Sem nada a
+dizer, o bloco diz isso — em vez de sumir. Web e mobile.
+
+### Renda fixa de verdade (`/fixed-income`)
+Tabela própria no servidor com tipo, valor, taxa, tipo de taxa, % do CDI, data de aplicação,
+vencimento, liquidez e isenção. **Marcada a mercado no backend**: rendimento acumulado, valor
+hoje, projeção até o vencimento e aviso de vencimento próximo. Entra no patrimônio total, no
+P&L, na alocação, na saúde da carteira, na projeção de renda passiva e no Quick Invest.
+Cadastro no web (`/assets/cadastro`) e tela dedicada no mobile.
+
+### Proventos recebidos
+Antes todo número de renda era estimativa derivada de dividend yield. Agora dá para lançar o
+que caiu na conta (`/dividends/received`), ver total do mês, dos últimos 12 meses, média
+mensal, quebra por ativo — e **confrontar com a estimativa do próprio app**.
+
+### Renda fixa × bolsa na mesma tela (Mercado → Ferramentas → RF x Bolsa)
+"Com a Selic a 14,4%, vale mais o CDB ou o FII?" — ambos os lados na mesma unidade (renda
+recorrente líquida a.a.), com valorização potencial mostrada **separada** (renda fixa não tem, e
+a tela diz isso) e um veredito em texto.
+
+### Resultado das sugestões seguidas (Mercado → Rebalanceamento)
+Registre o que você executou a partir de uma sugestão e o app mostra o resultado contra o
+Ibovespa, agregado por origem da sugestão. Torna o produto auditável por quem usa.
+
+### Compensação de prejuízo de IR
+Prejuízo realizado passa a abater ganho futuro da mesma categoria, como a legislação permite —
+o app superestimava o IR devido de quem já havia realizado prejuízo. O saldo por categoria
+aparece em Operações Encerradas, e cada venda mostra quanto foi compensado.
+
+### Proveniência e frescor do dado
+Ao lado de cada veredito: anos de proventos encontrados, quantos métodos entraram no consenso e
+confiança. Score com dado incompleto sai **cinza** e rotulado "dado insuficiente" em vez de
+colorido com a nota. O dashboard mostra a idade das cotações e se o CDI/Selic vem do BCB ou é
+estimativa.
+
+### Alertas com desfecho
+Agrupados por tipo, com contagem e teto de 4 — e cada um com uma ação (ver análise, simular
+venda, rebalancear, ajustar meta). Antes eram alertas sem limite e a única ação da tela era ir
+para Mercado.
+
+### Cadastro separado de análise (web)
+`/assets` é leitura (o retorno diário); `/assets/cadastro` é escrita (tarefa rara), com
+salvamento explícito por linha. O autosave por debounce sobre um PUT destrutivo saiu.
+
+### Desktop mais aproveitado
+Tabela de posições ordenável por qualquer coluna, seleção de até 4 ativos para comparar (leva
+direto ao comparador) e exportação CSV da carteira.
+
+### Quick Invest no mobile
+"Recebi meu salário, onde aporto" existia só no web, apesar de ser um caso de uso mais de
+celular. Disponível em Mercado → Ferramentas.
+
+### Push honesto no web
+A tela de Configurações agora informa que notificações requerem o app instalado, em vez de
+oferecer cadência e alerta sem efeito para quem usa só o navegador. E o logout no app
+desregistra o aparelho, que antes continuava recebendo o resumo da conta anterior.
+
+### Qualidade de dado (`GET /data-quality`)
+Taxa de preenchimento por campo no universo, com o impacto de cada ausência descrito — a
+instrumentação que faltava para distinguir "o modelo está errado" de "o dado não chegou".

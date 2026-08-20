@@ -9,9 +9,13 @@ from . import (
     basic,
     benchmark,
     dashboard,
+    data_quality,
     dip_scanner,
+    dividends,
     fixed_income,
+    followed,
     goals,
+    income_compare,
     notifications,
     opportunities,
     portfolio_routes,
@@ -31,6 +35,7 @@ router.include_router(auth.router, tags=["Auth"])
 
 protected = APIRouter(dependencies=[Depends(get_current_user)])
 protected.include_router(basic.admin_router, tags=["Maintenance"])
+protected.include_router(data_quality.router, tags=["Maintenance"])
 protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])
 protected.include_router(portfolio_routes.router, tags=["Portfolio"])
@@ -41,6 +46,9 @@ protected.include_router(dashboard.router, tags=["Dashboard"])
 protected.include_router(strategy.router, tags=["Strategy"])
 protected.include_router(renda_fixa.router, tags=["Renda Fixa"])
 protected.include_router(fixed_income.router, tags=["Renda Fixa"])
+protected.include_router(dividends.router, tags=["Dividendos"])
+protected.include_router(income_compare.router, tags=["Renda Fixa"])
+protected.include_router(followed.router, tags=["Sugestões"])
 protected.include_router(projection.router, tags=["Projection"])
 protected.include_router(quick_invest.router, tags=["Quick Invest"])
 protected.include_router(benchmark.router, tags=["Benchmark"])
