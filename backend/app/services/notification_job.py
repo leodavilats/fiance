@@ -10,8 +10,6 @@ from app.storage import portfolio_store
 
 logger = logging.getLogger("fiance.notification_job")
 
-# Plataforma é para investimento, não day trade — cadência mínima é diária.
-# Intervalos um pouco menores que o período nominal absorvem o drift do ciclo de 15 min.
 _FREQUENCY_SECONDS = {
     "daily": 20 * 3600,
     "weekly": 6 * 24 * 3600,
@@ -98,8 +96,6 @@ async def _send_opportunities_digest(
 
     already_notified = portfolio_store.get_notified_opportunity_tickers(user_id)
     new_ones = [o for o in interesting if o.ticker.upper() not in already_notified]
-    # Se nada é literalmente novo desde o último resumo, ainda reforça as melhores atuais —
-    # o objetivo é um resumo periódico, não só alertar sobre estreias no ranking.
     highlighted = sorted(new_ones or interesting, key=lambda o: o.score, reverse=True)[:5]
 
     body_parts = []

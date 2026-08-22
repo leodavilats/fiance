@@ -23,15 +23,8 @@ def _cdb(**overrides) -> dict:
     return body
 
 
-# --- D6: aporte não é rentabilidade ---------------------------------------
-
-
 def test_pure_contribution_yields_zero_return():
-    """ "Estou ganhando do CDI!" — não, você só aportou.
-
-    A versão anterior calculava `total_current / base_value - 1`: depositar
-    R$ 10 mil aparecia como 100% de rentabilidade.
-    """
+    """ "Estou ganhando do CDI!" — não, você só aportou."""
     snapshots = [
         {"total_invested": 10_000.0, "total_current": 10_000.0},
         {"total_invested": 20_000.0, "total_current": 20_000.0},
@@ -44,7 +37,6 @@ def test_pure_contribution_yields_zero_return():
 def test_real_gain_is_captured_even_with_a_contribution():
     snapshots = [
         {"total_invested": 10_000.0, "total_current": 10_000.0},
-        # Aportou 10 mil e o patrimônio foi a 21 mil: 10% de ganho real.
         {"total_invested": 20_000.0, "total_current": 21_000.0},
     ]
 
@@ -86,7 +78,6 @@ async def test_benchmark_endpoint_reports_the_method_and_contributions(client):
     headers = make_auth_headers(uid)
     client.put("/api/portfolio", headers=headers, json={"items": [ITEM]})
 
-    # Duas capturas com aporte entre elas, em dias diferentes.
     portfolio_store.record_snapshot(
         total_invested=1000.0, total_current=1000.0, total_pnl=0.0, total_pnl_pct=0.0, user_id=uid
     )
@@ -105,9 +96,6 @@ async def test_benchmark_endpoint_reports_the_method_and_contributions(client):
     assert len(body["points"]) == 2
     assert "net_contributions" in body
     assert body["points"][0]["invested"] == 1000.0
-
-
-# --- /whats-new -----------------------------------------------------------
 
 
 def test_whats_new_requires_auth(client):
@@ -163,7 +151,6 @@ def test_whats_new_surfaces_upcoming_maturity(client):
 def test_whats_new_surfaces_realized_losses_for_tax_offset(client):
     headers = make_auth_headers("whats_new_tax")
     client.post("/api/portfolio/position", headers=headers, json=ITEM)
-    # Vende com prejuízo.
     client.post(
         "/api/portfolio/sell",
         headers=headers,
@@ -185,9 +172,6 @@ def test_whats_new_caps_the_number_of_lines(client):
     assert 1 <= len(body["items"]) <= 5
 
 
-# --- alertas agrupados com ação (D10) ------------------------------------
-
-
 def test_alerts_are_grouped_capped_and_actionable(client):
     headers = make_auth_headers("alerts_grouped")
     client.put(
@@ -206,8 +190,6 @@ def test_alerts_are_grouped_capped_and_actionable(client):
 
     for alert in alerts:
         assert alert["count"] >= 1
-        # Cada alerta precisa oferecer um desfecho — antes a única ação da tela
-        # era "ir para Mercado".
         assert alert["action"], f"alerta sem ação: {alert['kind']}"
         assert alert["action_label"]
 
@@ -220,9 +202,6 @@ def test_dashboard_reports_data_freshness(client):
     assert freshness is not None
     assert freshness["rates_source"] in ("bcb", "estimativa")
     assert freshness["quotes_ttl_seconds"] > 0
-
-
-# --- proveniência ao lado do veredito ------------------------------------
 
 
 def test_positions_carry_verdict_provenance(client):
@@ -251,6 +230,5 @@ def test_score_reports_data_completeness(client):
         assert 0.0 <= item["data_completeness"] <= 1.0
         assert "data_completeness" in item["score_breakdown"]
 
-    # VALE3 não tem dividendos nem histórico no stub; PETR4 tem os dois.
     by_ticker = {i["ticker"]: i for i in items}
     assert by_ticker["VALE3"]["data_completeness"] < by_ticker["PETR4"]["data_completeness"]

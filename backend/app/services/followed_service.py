@@ -27,12 +27,7 @@ _SOURCE_LABELS = {
 
 
 class FollowedService:
-    """Resultado das sugestões que o usuário seguiu.
-
-    Fecha o ciclo decisão → execução → resultado: sem isso o produto sugeria e
-    nunca sabia o que aconteceu depois, e a única resposta ao cético era
-    argumento de autoridade.
-    """
+    """Resultado das sugestões que o usuário seguiu."""
 
     def __init__(self):
         self.asset_repo = AssetRepository()
@@ -119,7 +114,6 @@ class FollowedService:
         total_pnl = total_current - total_invested
         total_pnl_pct = (total_pnl / total_invested * 100) if total_invested > 0 else 0.0
 
-        # Ibovespa desde a sugestão mais antiga: é o benchmark do mesmo período.
         oldest = min((i.followed_on for i in items), default=None)
         ibov_pct = self._ibov_change(ibov, oldest) if oldest else None
 
@@ -137,8 +131,6 @@ class FollowedService:
             summary=self._summary(len(priced), total_pnl_pct, ibov_pct),
         )
 
-    # --- interno ---------------------------------------------------------
-
     async def _current_prices(self, tickers: list[str]) -> dict[str, float]:
         async def _one(ticker: str):
             try:
@@ -155,7 +147,6 @@ class FollowedService:
             return None
 
         target = since.isoformat()
-        # Primeiro fechamento a partir da data (o dia pode ser fim de semana).
         base = next((v for day, v in sorted(series.items()) if day >= target), None)
         last = series[max(series)] if series else None
 

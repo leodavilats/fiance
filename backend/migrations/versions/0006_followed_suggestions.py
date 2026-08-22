@@ -1,12 +1,4 @@
-"""Sugestões seguidas
-
-Ja existiam ClosedTradeDb (com IR realizado), /rebalance-suggestions e
-reduce_suggestions. Faltava registrar qual sugestao o usuario seguiu e mostrar o
-resultado depois — o mecanismo de confianca mais forte disponivel.
-
-Revision ID: 0006_followed
-Revises: 0005_dividends
-"""
+"""Sugestões seguidas Ja existiam ClosedTradeDb (com IR realizado), /rebalance-suggestions e reduce_suggestions."""
 
 from __future__ import annotations
 

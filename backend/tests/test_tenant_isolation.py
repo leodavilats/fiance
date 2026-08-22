@@ -1,8 +1,4 @@
-"""Isolamento entre tenants — a garantia central do produto.
-
-Cada teste da suíte usava um user_id distinto, mas nenhum verificava que o
-usuário A não vê o dado de B, nem que B não consegue apagar recurso de A.
-"""
+"""Isolamento entre tenants — a garantia central do produto."""
 
 from tests.conftest import make_auth_headers
 
@@ -37,7 +33,6 @@ def test_user_b_sees_none_of_user_a_data(client):
     assert client.get("/api/portfolio/trades", headers=headers_b).json()["trades"] == []
     assert client.get("/api/preferences", headers=headers_b).json()["cash_available"] == 0.0
 
-    # A continua vendo o que cadastrou.
     items_a = client.get("/api/portfolio", headers=headers_a).json()["items"]
     assert [i["ticker"] for i in items_a] == ["PETR4"]
 
@@ -50,7 +45,6 @@ def test_user_b_cannot_delete_alert_of_user_a(client):
 
     assert client.delete(f"/api/alerts/{alert_id}", headers=headers_b).status_code == 404
 
-    # O alerta de A segue existindo depois da tentativa de B.
     ids_a = [a["id"] for a in client.get("/api/alerts", headers=headers_a).json()]
     assert alert_id in ids_a
 
@@ -61,7 +55,6 @@ def test_user_b_cannot_delete_or_sell_position_of_user_a(client):
 
     _seed_user_a(client, headers_a)
 
-    # DELETE é idempotente, mas não pode alcançar a linha de outro tenant.
     client.delete("/api/portfolio/position/PETR4", headers=headers_b)
     assert (
         client.post(

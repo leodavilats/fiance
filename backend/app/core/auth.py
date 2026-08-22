@@ -36,8 +36,6 @@ def verify_google_id_token(token: str) -> GoogleUser:
         raise HTTPException(status_code=500, detail="GOOGLE_CLIENT_ID não configurado")
 
     try:
-        # audience=None pula a checagem automática; validamos o aud manualmente
-        # abaixo pois há client IDs diferentes para Android e iOS.
         payload = google_id_token.verify_oauth2_token(token, google_requests.Request())
     except Exception as exc:
         raise HTTPException(status_code=401, detail=f"Token do Google inválido: {exc}") from exc

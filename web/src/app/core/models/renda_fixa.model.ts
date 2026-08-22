@@ -40,11 +40,8 @@ export interface RendaFixaAnalysisResult {
   valor_liquido: number;
   rendimento_liquido: number;
   taxa_liquida_aa: number;
-  /** Taxa nominal resolvida a partir do indexador (% do CDI, IPCA+ etc.). */
   taxa_anual_efetiva_pct: number;
-  /** Quanto do CDI bruto o título entrega líquido. */
   taxa_equivalente_cdi_pct: number | null;
-  /** % do CDI que um título tributado de mesmo prazo precisaria render. */
   pct_cdi_bruto_equivalente: number | null;
   isento_ir: boolean;
   liquidez: string;
@@ -69,13 +66,6 @@ export interface RendaFixaCompareResponse {
   fonte_taxas: string;
 }
 
-/**
- * Posição de renda fixa persistida e marcada a mercado pelo backend.
- *
- * Antes taxa, prazo, data de aplicação e % do CDI viviam só no localStorage,
- * e o cálculo de rendimento era duplicado em `assets.component`. Trocar de
- * navegador zerava os rendimentos e o mobile nunca via nada disso.
- */
 export interface FixedIncomePosition {
   id: number;
   nome: string;

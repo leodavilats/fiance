@@ -28,8 +28,6 @@ def test_sell_partial_reduces_quantity(monkeypatch):
 
     req = SellRequest(ticker="PETR4", quantity=40, sell_price=15.0)
 
-    # sell_position resolve o user_id via contexto de request
-    # (get_current_user_id) — simulamos isso com set_current_user_id.
     from app.core.context import reset_current_user_id, set_current_user_id
 
     token = set_current_user_id(uid)

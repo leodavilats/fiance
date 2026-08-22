@@ -9,14 +9,6 @@ import {
   UiHelperService,
 } from '../../../core';
 
-/**
- * "Com a Selic a 14,4%, vale mais o CDB ou o FII?"
- *
- * O comparador de renda fixa e o de ativos eram universos separados: o produto
- * tinha `taxa_liquida_aa` de um lado e DY + margem de segurança do outro, e
- * nunca colocava os dois na mesma tela — apesar de essa ser a pergunta que
- * define a alocação de quase todo investidor brasileiro.
- */
 @Component({
   selector: 'app-income-compare',
   standalone: true,
@@ -33,7 +25,6 @@ export class IncomeCompareComponent implements OnInit {
   result = signal<IncomeCompareResponse | null>(null);
   loading = signal(false);
 
-  /** Todas as opções na mesma escala, para o ranking direto. */
   ranked = computed<IncomeOption[]>(() => {
     const data = this.result();
     if (!data) return [];

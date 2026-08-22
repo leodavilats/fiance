@@ -51,8 +51,6 @@ class DipService:
             week52_high=snap.fifty_two_week_high,
             pb_ratio=snap.pb_ratio,
             revenue_growth_rate=snap.revenue_growth,
-            # Sem isso, "Analisar queda" e "Analisar ativo" mostravam preços
-            # justos diferentes para o mesmo ativo.
             desired_yield=desired_yield_for(snap.asset_type, prefs),
         )
 

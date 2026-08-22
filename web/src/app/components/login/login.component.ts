@@ -27,7 +27,7 @@ export class LoginComponent implements AfterViewInit {
   constructor() {
     effect(() => {
       if (this.auth.user()) {
-        this.router.navigateByUrl('/dashboard');
+        this.router.navigateByUrl('/hoje');
       }
     });
   }

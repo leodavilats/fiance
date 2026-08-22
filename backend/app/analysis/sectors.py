@@ -1,16 +1,8 @@
 from __future__ import annotations
 
-"""Tradução dos setores crus da BRAPI para português.
-
-O backend emitia setor cru nos alertas do dashboard ("Setor Financial Services
-concentrado") enquanto o web traduzia setores em todo o resto — a inconsistência
-aparecia justamente na tela principal. Mantido em paridade com
-`web/src/app/core/services/ui-helper.service.ts` e
-`mobile/lib/core/sector_translations.dart`.
-"""
+"""Tradução dos setores crus da BRAPI para português."""
 
 _SECTOR_PT: dict[str, str] = {
-    # Taxonomia da BRAPI (/quote/list)
     "Finance": "Financeiro",
     "Miscellaneous": "Outros",
     "Technology Services": "Tecnologia",
@@ -31,7 +23,6 @@ _SECTOR_PT: dict[str, str] = {
     "Energy Minerals": "Energia",
     "Utilities": "Utilidades Públicas",
     "Communications": "Telecomunicações",
-    # Taxonomia herdada (aparece em respostas antigas em cache)
     "Financial Services": "Financeiro",
     "Technology": "Tecnologia",
     "Healthcare": "Saúde",

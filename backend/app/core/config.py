@@ -4,8 +4,6 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Sentinela do segredo de JWT: qualquer ambiente que não seja development
-# aborta o startup se o valor real for este (ver validate_for_startup).
 DEFAULT_JWT_SECRET = "change-me"
 
 
@@ -30,10 +28,6 @@ class Settings(BaseSettings):
 
     brapi_token: str = ""
 
-    # Plano gratuito da BRAPI só aceita 1d/5d/1mo/3mo. Com "3mo" a SMA200 é
-    # estruturalmente incalculável; quem tem plano pago deve setar "2y" para
-    # habilitar tendência de longo prazo. Há degradação automática se a API
-    # recusar o valor (ver collectors/universal._brapi_raw).
     brapi_history_range: str = "3mo"
 
     firebase_service_account_json: str = ""
@@ -103,17 +97,10 @@ class Settings(BaseSettings):
 
     @property
     def cors_allow_credentials(self) -> bool:
-        # allow_origins=["*"] + allow_credentials=True é uma combinação que o
-        # navegador rejeita; com wildcard não faz sentido enviar credenciais.
         return "*" not in self.cors_origins
 
     def validate_for_startup(self) -> None:
-        """Falha alto em configuração que só é aceitável em desenvolvimento.
-
-        Um jwt_secret default em produção permite forjar um JWT com `sub`
-        arbitrário — e o provisionamento automático de tenant transforma isso
-        em acesso a um tenant novo com um token feito à mão.
-        """
+        """Falha alto em configuração que só é aceitável em desenvolvimento."""
         if self.is_development:
             return
 

@@ -17,9 +17,6 @@ class Opportunity(BaseModel):
     dividend_yield: float | None = None
     verdict: str
     label: str
-    # Proveniência do veredito: confidence era calculado em Decision e
-    # descartado, e data_years/consensus_methods viviam só em FairPriceResult —
-    # nenhuma tela conseguia dizer se um score baixo era "ruim" ou "sem dado".
     confidence: float = 0.0
     data_years: int = 0
     consensus_methods: int = 0
@@ -27,8 +24,6 @@ class Opportunity(BaseModel):
     category_resolved: str = "acoes_br"
     score: float = 0.0
     score_breakdown: dict[str, float] = Field(default_factory=dict)
-    # Fração do peso do score que tinha dado de verdade (0..1). Score com
-    # dado incompleto deve sair cinza com o motivo, não colorido com a nota.
     data_completeness: float = 1.0
     in_portfolio: bool = False
     is_interesting: bool = False

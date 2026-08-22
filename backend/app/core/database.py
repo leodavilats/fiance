@@ -13,9 +13,6 @@ logger = logging.getLogger("fiance.database")
 BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
 ALEMBIC_INI = BACKEND_ROOT / "alembic.ini"
 
-# Revisão que representa o schema no momento em que o Alembic foi introduzido.
-# Bancos criados antes disso são marcados aqui e seguem em frente pelas
-# migrações, em vez de serem recriados.
 BASELINE_REVISION = "0001_baseline"
 
 
@@ -46,17 +43,7 @@ def _alembic_config():
 
 
 def init_db() -> None:
-    """Deixa o banco no schema mais recente.
-
-    Três caminhos, para que a introdução do Alembic não exija passo manual:
-
-    - **banco novo**: `create_all` cria tudo e marcamos como já migrado
-      (`stamp head`) — mais rápido que rodar a cadeia toda, e é o caminho dos
-      testes;
-    - **banco pré-Alembic** (tem tabelas, não tem `alembic_version`): marcamos
-      na revisão baseline e aplicamos as migrações a partir dela;
-    - **banco já versionado**: `upgrade head`.
-    """
+    """Deixa o banco no schema mais recente."""
     from alembic import command
 
     from app.models import db_models  # noqa: F401 — registra os modelos no Base

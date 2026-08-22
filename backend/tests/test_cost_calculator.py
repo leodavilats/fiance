@@ -8,15 +8,12 @@ def test_no_ir_when_no_profit():
 
 
 def test_acoes_br_isento_ate_20k_no_mes():
-    # venda de R$15k, sem vendas anteriores no mês -> ainda dentro da isenção
     result = calculate_sell_cost("acoes_br", 1000, 15.0, 10.0, gross_value_month_before=0)
     assert result.ir_rate == 0.0
     assert result.ir_amount == 0.0
 
 
 def test_acoes_br_perde_isencao_por_acumulado_mensal():
-    # sozinha essa venda de R$15k ficaria isenta, mas já houve R$10k vendidos
-    # antes no mês -> acumulado R$25k > 20k -> IR incide
     result = calculate_sell_cost("acoes_br", 1000, 15.0, 10.0, gross_value_month_before=10_000)
     assert result.ir_rate == 0.15
     assert result.ir_amount > 0

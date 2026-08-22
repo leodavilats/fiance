@@ -1,0 +1,110 @@
+<div class="flex flex-col gap-5">
+  <div class="p-5 rounded-lg bg-panel border border-border">
+    <h3 class="text-base font-semibold mb-1 text-tx flex items-center gap-2">
+      <lucide-icon name="database" size="16"></lucide-icon> Cache de Dados
+    </h3>
+    <p class="text-xs text-muted mb-3">Limpe o cache para forçar atualização das cotações.</p>
+    <div class="flex items-center gap-3 flex-wrap">
+      <button
+        type="button"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-bg text-tx border border-border hover:bg-border disabled:opacity-50 transition-colors"
+        (click)="clearAssetsCache()"
+        [disabled]="clearing()"
+      >
+        <lucide-icon [name]="clearing() ? 'loader-circle' : 'refresh-cw'" size="16"></lucide-icon>
+        {{ clearing() ? 'Limpando...' : 'Limpar cache de ativos' }}
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-bg text-tx border border-border hover:bg-border disabled:opacity-50 transition-colors"
+        (click)="clearAllCache()"
+        [disabled]="clearing()"
+      >
+        <lucide-icon [name]="clearing() ? 'loader-circle' : 'trash2'" size="16"></lucide-icon>
+        {{ clearing() ? 'Limpando...' : 'Limpar todo cache' }}
+      </button>
+      <span class="text-sm text-muted" *ngIf="cacheMessage()">{{ cacheMessage() }}</span>
+
+      <div class="p-5 rounded-lg bg-panel border border-border">
+        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+          <lucide-icon name="shield-check" size="18"></lucide-icon> De onde vêm os dados
+        </h2>
+        <p class="text-xs text-muted mb-4">
+          Num produto financeiro, a origem do número faz parte da informação.
+        </p>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 m-0 text-sm">
+          <div>
+            <dt class="text-xs text-muted mb-0.5">Cotações e fundamentos</dt>
+            <dd class="m-0 text-tx">BRAPI — ações da B3, FIIs, BDRs e ETFs.</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted mb-0.5">CDI, Selic e IPCA</dt>
+            <dd class="m-0 text-tx">
+              Banco Central (séries SGS). Quando o BCB não responde, o app usa uma estimativa e
+              sinaliza isso ao lado do número.
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted mb-0.5">Preço justo</dt>
+            <dd class="m-0 text-tx">
+              Bazin, Graham e fluxo de caixa descontado, aplicados conforme o tipo de ativo. Cada
+              método aparece separado, com o insumo que usou.
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted mb-0.5">Score</dt>
+            <dd class="m-0 text-tx">
+              Margem de segurança, qualidade, endividamento, crescimento, dividendos e técnico,
+              ponderados pelo seu perfil de risco. Com indicadores faltando, o score sai como "dado
+              insuficiente" em vez de nota baixa.
+            </dd>
+          </div>
+        </dl>
+        <p class="text-xs text-muted mt-4 mb-0 pt-4 border-t border-border">
+          Tudo o que o fiance mostra é estimativa a partir de dado público, para estudo da sua
+          própria carteira. Não é recomendação de investimento e não há garantia de retorno.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="p-5 rounded-lg bg-panel border border-border">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+      <lucide-icon name="shield-check" size="18"></lucide-icon> De onde vêm os dados
+    </h2>
+    <p class="text-xs text-muted mb-4">
+      Num produto financeiro, a origem do número faz parte da informação.
+    </p>
+    <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 m-0 text-sm">
+      <div>
+        <dt class="text-xs text-muted mb-0.5">Cotações e fundamentos</dt>
+        <dd class="m-0 text-tx">BRAPI — ações da B3, FIIs, BDRs e ETFs.</dd>
+      </div>
+      <div>
+        <dt class="text-xs text-muted mb-0.5">CDI, Selic e IPCA</dt>
+        <dd class="m-0 text-tx">
+          Banco Central (séries SGS). Quando o BCB não responde, o app usa uma estimativa e sinaliza
+          isso ao lado do número.
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs text-muted mb-0.5">Preço justo</dt>
+        <dd class="m-0 text-tx">
+          Bazin, Graham e fluxo de caixa descontado, aplicados conforme o tipo de ativo. Cada método
+          aparece separado, com o insumo que usou.
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs text-muted mb-0.5">Score</dt>
+        <dd class="m-0 text-tx">
+          Margem de segurança, qualidade, endividamento, crescimento, dividendos e técnico,
+          ponderados pelo seu perfil de risco. Com indicadores faltando, o score sai como "dado
+          insuficiente" em vez de nota baixa.
+        </dd>
+      </div>
+    </dl>
+    <p class="text-xs text-muted mt-4 mb-0 pt-4 border-t border-border">
+      Tudo o que o fiance mostra é estimativa a partir de dado público, para estudo da sua própria
+      carteira. Não é recomendação de investimento e não há garantia de retorno.
+    </p>
+  </div>
+</div>

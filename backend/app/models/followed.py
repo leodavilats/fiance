@@ -4,17 +4,8 @@ from pydantic import BaseModel, Field
 
 from .portfolio import TICKER_PATTERN
 
-"""Ciclo decisão → execução → resultado.
+"""Ciclo decisão → execução → resultado."""
 
-Já existiam `ClosedTradeDb` (com IR realizado), `/rebalance-suggestions` e
-`reduce_suggestions`. O que faltava era registrar **qual sugestão o usuário
-seguiu** e mostrar o resultado depois. É o mecanismo de confiança mais forte
-disponível: o produto passa a ser auditável pelo próprio usuário, e a resposta
-ao cético deixa de ser argumento de autoridade e passa a ser histórico
-verificável.
-"""
-
-# Onde a sugestão apareceu, para o resultado poder ser atribuído à origem certa.
 SUGGESTION_SOURCES = (
     "opportunities",
     "rebalance",
@@ -32,8 +23,6 @@ class FollowedSuggestionCreate(BaseModel):
     quantity: float = Field(..., gt=0)
     price: float = Field(..., gt=0, description="Preço executado")
     followed_on: date | None = Field(None, description="Default: hoje")
-    # Score e veredito no momento da sugestão: sem eles não há como auditar se a
-    # recomendação era boa ou se o resultado foi sorte.
     score_at_suggestion: float | None = Field(None, ge=0, le=100)
     verdict_at_suggestion: str | None = Field(None, max_length=32)
     note: str | None = Field(None, max_length=200)
@@ -51,7 +40,6 @@ class FollowedSuggestion(BaseModel):
     verdict_at_suggestion: str | None = None
     note: str | None = None
 
-    # Resultado, apurado a preço de hoje.
     invested: float = 0.0
     current_value: float | None = None
     pnl: float | None = None

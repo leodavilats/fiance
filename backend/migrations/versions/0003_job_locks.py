@@ -1,11 +1,4 @@
-"""Lock cooperativo para jobs de background
-
-Os jobs do startup rodavam em todo worker: com mais de um worker/dyno, cada um
-executava o ciclo de notificação, gerando pushes duplicados.
-
-Revision ID: 0003_job_locks
-Revises: 0002_fixed_income
-"""
+"""Lock cooperativo para jobs de background Os jobs do startup rodavam em todo worker: com mais de um worker/dyno, cada um executava o ciclo de notificação, gerando pushes duplicados."""
 
 from __future__ import annotations
 

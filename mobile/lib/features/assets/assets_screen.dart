@@ -10,6 +10,7 @@ import '../../core/providers.dart';
 import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
+import '../../core/widgets/error_state.dart';
 
 enum _AssetGroupMode { value, category, sector }
 
@@ -84,10 +85,7 @@ class AssetsScreen extends ConsumerWidget {
       return;
     }
 
-    // Escrita por item: antes o cadastro montava a carteira inteira a partir
-    // de `dashboard.valueOrNull?.positions ?? []` e mandava um PUT destrutivo.
-    // Em erro ou loading essa lista era [], então um cadastro com internet
-    // ruim substituía a carteira por um único ativo.
+    // Escrita por item: antes o cadastro montava a carteira inteira a partir de `dashboard.valueOrNull?.positions ??
     try {
       await ref.read(apiRepositoryProvider).upsertPosition(
         ticker: ticker,
@@ -100,7 +98,7 @@ class AssetsScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao salvar ativo: $e')));
+        ).showSnackBar(SnackBar(content: Text(fiErrorMessage(e, action: 'salvar este ativo'))));
       }
     }
   }
@@ -210,7 +208,7 @@ class AssetsScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao vender: $e')));
+        ).showSnackBar(SnackBar(content: Text(fiErrorMessage(e, action: 'registrar esta venda'))));
       }
     }
   }
@@ -232,8 +230,6 @@ class AssetsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // O FAB só aparece quando a carteira carregou: cadastrar em cima de um
-      // estado de erro/loading é o que abria o caminho de perda de dado.
       floatingActionButton: dashboard.hasValue
           ? FloatingActionButton(
               onPressed: () => _openAddDialog(context, ref),
@@ -247,7 +243,11 @@ class AssetsScreen extends ConsumerWidget {
         },
         child: dashboard.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('Erro: $err')),
+          error: (err, _) => FiErrorState(
+            error: err,
+            title: 'Não conseguimos carregar sua carteira',
+            action: 'carregar sua carteira',
+          ),
           data: (data) {
             if (data.positions.isEmpty) {
               return ListView(
@@ -277,8 +277,6 @@ class AssetsScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
               children: [
                 _SummaryGrid(summary: data.summary),
-                // Renda fixa é entidade própria; o resumo aqui é um atalho
-                // para a tela dedicada, que também permite editar.
                 fixedIncome.maybeWhen(
                   data: (fi) => fi.visiveis.isEmpty
                       ? const SizedBox.shrink()
@@ -1174,7 +1172,6 @@ class _MiniInfo extends StatelessWidget {
 }
 
 
-/// Resumo da renda fixa na aba de ativos, com atalho para a tela dedicada.
 class _FixedIncomeSummaryCard extends StatelessWidget {
   const _FixedIncomeSummaryCard({required this.data});
 

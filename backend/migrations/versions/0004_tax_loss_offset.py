@@ -1,12 +1,4 @@
-"""Compensação de prejuízo realizado
-
-`calculate_sell_cost` devolvia IR zero quando havia prejuízo mas não guardava o
-saldo negativo para compensar ganhos futuros, como a legislação permite: o app
-superestimava o IR devido de qualquer usuário que já tivesse realizado prejuízo.
-
-Revision ID: 0004_tax_loss
-Revises: 0003_job_locks
-"""
+"""Compensação de prejuízo realizado `calculate_sell_cost` devolvia IR zero quando havia prejuízo mas não guardava o saldo negativo para compensar ganhos futuros, como a legislação permite: o app superestimava o IR devido de qualquer usuário que já tivesse realizado prejuízo."""
 
 from __future__ import annotations
 
@@ -28,8 +20,6 @@ def upgrade() -> None:
             sa.Column("taxable_profit", sa.Float(), nullable=False, server_default="0")
         )
 
-    # Backfill: vendas antigas não tiveram compensação aplicada, então o lucro
-    # tributável é o lucro bruto quando houve IR.
     op.execute(
         "UPDATE closed_trades SET taxable_profit = "
         "CASE WHEN gross_profit > 0 THEN gross_profit ELSE 0 END"

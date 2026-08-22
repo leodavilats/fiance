@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Régua única do score de oportunidade (0–100).
-///
-/// Espelha `backend/app/analysis/score_ruler.py` e
-/// `web/src/app/core/score-ruler.ts`. O mesmo número tinha três réguas
-/// diferentes; ao mudar um limiar, mudar os três.
 const double kScoreStrong = 75;
 const double kScoreGood = 60;
 const double kScoreNeutral = 40;
 
-/// DY mínimo (%) para um score alto contar como destaque de renda.
 const double kHighlightMinDy = 6;
 
-/// Abaixo disso o score é chute, não medida: a UI apresenta como "dado
-/// insuficiente" em vez de colorir a nota. Espelha
-/// `scoring.MIN_DATA_COMPLETENESS` no backend.
 const double kMinDataCompleteness = 0.5;
 
 class ScoreBand {
@@ -37,10 +28,6 @@ ScoreBand scoreBand(double score) {
   return const ScoreBand('Evitar agora', Color(0xFFF87171));
 }
 
-/// Score com dado incompleto não pode parecer nota baixa.
-///
-/// A ausência de dado era codificada como número: não havia como saber se o 32
-/// de um FII significava "ruim" ou "não sei".
 bool scoreIsReliable(double? dataCompleteness) =>
     (dataCompleteness ?? 1) >= kMinDataCompleteness;
 
@@ -57,7 +44,6 @@ String dataCompletenessLabel(double? dataCompleteness) {
   return '${(value * 100).round()}% dos indicadores disponíveis';
 }
 
-/// Texto do glossário derivado dos próprios limiares — não pode divergir.
 final String scoreGlossary =
     'Pontuação 0–100 calculada pelo sistema combinando margem de segurança '
     '(preço justo), dividendos, qualidade e endividamento, ponderados pelo seu '
@@ -66,7 +52,6 @@ final String scoreGlossary =
     '${kScoreNeutral.toInt()}–${kScoreGood.toInt() - 1} = neutro; abaixo de '
     '${kScoreNeutral.toInt()} = evitar agora.';
 
-/// Base da tendência: com histórico curto a SMA200 não existe.
 String trendBasisLabel(String? basis) {
   switch (basis) {
     case 'long':

@@ -7,7 +7,6 @@ from app.analysis.fair_price import (
 
 
 def test_bazin_fair_price_basic():
-    # dividend 2/share, desired yield 10% -> fair price 20
     assert bazin_fair_price(2.0, 0.10) == 20.0
 
 
@@ -17,12 +16,10 @@ def test_bazin_fair_price_none_when_no_dividend():
 
 
 def test_graham_fair_price_basic():
-    # sqrt(22.5 * eps * book_value)
     assert graham_fair_price(2.0, 8.0) == 18.97
 
 
 def test_graham_fair_price_none_when_missing_book_value():
-    # regression: BDRs frequently have no book_value from BRAPI — must not crash
     assert graham_fair_price(2.0, None) is None
 
 
@@ -41,11 +38,7 @@ def test_dcf_fair_price_positive_with_eps():
 
 
 def test_dcf_uses_the_growth_it_receives_not_the_default():
-    """Regressão do guard `0 < rate < 1` sobre um valor percentual.
-
-    O collector entrega crescimento em percentual (12.0 = 12%); a condição
-    antiga nunca era verdadeira e o DCF caía sempre nos 8% default.
-    """
+    """Regressão do guard `0 < rate < 1` sobre um valor percentual."""
     default = dcf_fair_price(2.0)
     faster = dcf_fair_price(2.0, revenue_growth_pct=20.0)
     slower = dcf_fair_price(2.0, revenue_growth_pct=2.0)
@@ -60,7 +53,6 @@ def test_dcf_ignores_negative_and_absurd_growth():
 
 
 def test_compute_fair_price_fii_never_uses_graham():
-    # regression: FII fair price must consist only of bazin + P/VP, never Graham/DCF
     result = compute_fair_price(
         price=100.0,
         eps=5.0,
@@ -84,8 +76,6 @@ def test_compute_fair_price_bdr_never_uses_bazin():
 
 
 def test_compute_fair_price_bdr_survives_missing_book_value():
-    # regression: BDRs from BRAPI often lack book_value — Graham should
-    # gracefully become None while DCF (eps-only) still computes.
     result = compute_fair_price(
         price=78.33,
         eps=2.3184,
@@ -98,8 +88,6 @@ def test_compute_fair_price_bdr_survives_missing_book_value():
 
 
 def test_compute_fair_price_etf_never_uses_graham_or_dcf():
-    # ETF é cota de fundo, sem EPS/book_value de empresa — só bazin (dividend
-    # yield histórico) pode formar o consenso.
     result = compute_fair_price(
         price=100.0,
         eps=None,
@@ -122,3 +110,34 @@ def test_compute_fair_price_etf_without_dividends_has_no_candidates():
     )
     assert result.consensus is None
     assert result.consensus_methods == 0
+
+
+def test_fair_price_block_keeps_consensus_methods():
+    """Regressão: `FairPriceBlock(**fair.__dict__)` descartava campos não declarados."""
+    from app.models import FairPriceBlock
+
+    fair = compute_fair_price(
+        price=20.0,
+        eps=2.0,
+        book_value=8.0,
+        dividends=[{"date": "2024-03-01", "amount": 1.0}],
+        asset_type="br_stock",
+    )
+    block = FairPriceBlock(**fair.__dict__)
+
+    assert block.consensus_methods == fair.consensus_methods
+    assert block.consensus_methods >= 1, "ao menos um método deve entrar no consenso"
+    assert block.dcf == fair.dcf
+
+
+def test_technical_block_keeps_trend_basis():
+    """Regressão do mesmo tipo: a tendência chegava sem dizer sobre o que foi medida."""
+    from app.analysis.fair_price import compute_technical
+    from app.models import TechnicalBlock
+
+    history = {f"2024-{1 + i // 28:02d}-{1 + i % 28:02d}": 10.0 + i * 0.1 for i in range(260)}
+    tech = compute_technical(history)
+    block = TechnicalBlock(**tech.__dict__)
+
+    assert block.trend_basis == tech.trend_basis
+    assert block.trend_basis in {"long", "short", "none"}

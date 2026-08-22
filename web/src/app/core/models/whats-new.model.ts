@@ -1,4 +1,3 @@
-/** "O que mudou desde a sua última visita" — cada linha com um desfecho. */
 export type WhatsNewKind =
   | 'patrimony'
   | 'verdict_change'
@@ -10,7 +9,6 @@ export type WhatsNewKind =
 
 export type WhatsNewSeverity = 'info' | 'warning' | 'critical' | 'positive';
 
-/** Vocabulário de ação compartilhado com os alertas do dashboard. */
 export type ActionKind = 'analyze' | 'sell' | 'rebalance' | 'goals' | 'market' | 'fixed_income';
 
 export interface WhatsNewItem {

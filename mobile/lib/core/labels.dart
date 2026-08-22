@@ -47,7 +47,6 @@ String assetTypeLabel(String? assetType) {
   return _assetTypeLabels[assetType] ?? assetType;
 }
 
-// Espelha exatamente UiHelperService.categoryColor/-BarClass/-BgClass do web.
 Color categoryColor(String? category) {
   const colors = {
     'renda_fixa': Color(0xFF60A5FA),
@@ -70,8 +69,6 @@ IconData categoryIcon(String? category) {
   return icons[category] ?? Icons.category_outlined;
 }
 
-// Mesma paleta categórica fixa das séries do web (--series-N), pra manter
-// paridade visual entre plataformas nos gráficos por setor.
 const _sectorPalette = [
   Color(0xFF60A5FA),
   Color(0xFF4ADE80),

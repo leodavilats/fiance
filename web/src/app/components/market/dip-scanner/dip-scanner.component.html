@@ -66,6 +66,22 @@
             </div>
           </div>
           <p class="text-xs text-muted mt-2">{{ dip.top_reason }}</p>
+          <div class="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 transition-opacity"
+              (click)="$event.stopPropagation(); showDipAnalysis(dip.symbol)"
+            >
+              <lucide-icon name="stethoscope" size="13"></lucide-icon> Entender esta queda
+            </button>
+            <a
+              [routerLink]="['/ativo', dip.symbol]"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-transparent border border-border text-tx no-underline hover:bg-panel-2 transition-colors"
+              (click)="$event.stopPropagation()"
+            >
+              Ver ativo <lucide-icon name="arrow-right" size="13"></lucide-icon>
+            </a>
+          </div>
         </div>
       }
     </div>

@@ -11,12 +11,7 @@ target_metadata = Base.metadata
 
 
 def _engine():
-    """Engine da migração.
-
-    Usa a URL do config quando ela aponta para outro banco (testes de migração,
-    `alembic upgrade` apontado para outro ambiente); cai no engine da aplicação
-    no caso normal, que é o que já resolve DATABASE_URL.
-    """
+    """Engine da migração."""
     configured = context.config.get_main_option("sqlalchemy.url", None)
     if configured and configured != str(app_engine.url):
         connect_args = {"check_same_thread": False} if configured.startswith("sqlite") else {}
@@ -31,7 +26,6 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        # SQLite não faz ALTER de coluna: batch mode reescreve a tabela.
         render_as_batch=engine.dialect.name == "sqlite",
     )
     with context.begin_transaction():

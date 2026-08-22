@@ -14,11 +14,7 @@ service = FollowedService()
 
 @router.get("/suggestions/followed", response_model=FollowedSuggestionsResponse)
 async def followed_outcomes() -> FollowedSuggestionsResponse:
-    """Resultado das sugestões que o usuário seguiu, contra o Ibovespa.
-
-    Fecha o ciclo decisão -> execução -> resultado: o produto passa a ser
-    auditável pelo próprio usuário.
-    """
+    """Resultado das sugestões que o usuário seguiu, contra o Ibovespa."""
     return await service.outcomes()
 
 

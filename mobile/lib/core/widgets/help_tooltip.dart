@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../glossary.dart';
 
-// Toque em vez de hover, pois é a interação natural em touch.
 class HelpTooltip extends StatelessWidget {
   const HelpTooltip({super.key, required this.termKey});
 

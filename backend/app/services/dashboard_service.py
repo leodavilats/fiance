@@ -16,11 +16,8 @@ from app.repositories import PortfolioRepository
 
 REBALANCE_THRESHOLD_PCT = 5.0
 
-# Concentração setorial que vale um alerta.
 SECTOR_CONCENTRATION_PCT = 30.0
 
-# Teto de alertas na tela. Antes não havia limite nem deduplicação, e a
-# carga cognitiva crescia com o tamanho da carteira.
 MAX_ALERTS = 4
 
 _ASSET_TYPE_TO_CATEGORY = {
@@ -51,12 +48,7 @@ class DashboardService:
         top_buys: list[Opportunity],
         allocations: list[CategoryAllocation],
     ) -> list[Alert]:
-        """Alertas agrupados por tipo, com contagem, limite e uma ação cada.
-
-        Antes era uma linha por posição SELL, uma por setor concentrado e uma
-        por categoria fora da meta, sem limite: uma carteira de 20 ativos podia
-        produzir dezenas de alertas, todos oferecendo a mesma (única) ação.
-        """
+        """Alertas agrupados por tipo, com contagem, limite e uma ação cada."""
         alerts: list[Alert] = []
 
         alerts += self._sell_alert(positions)

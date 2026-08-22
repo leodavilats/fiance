@@ -7,8 +7,7 @@ from app.models.enums import AssetCategory
 IR_ACOES = 0.15
 IR_FIIS = 0.20
 
-# Isenção mensal de ganho de capital em ações BR (vendas do mês, não por
-# operação isolada).
+# Isenção mensal de ganho de capital em ações BR (vendas do mês, não por operação isolada).
 ISENCAO_MENSAL_ACOES = 20_000.0
 
 
@@ -20,9 +19,7 @@ class TransactionCost:
     ir_rate: float
     net_profit: float
     observation: str = ""
-    # Quanto de prejuízo acumulado foi usado para abater o ganho desta venda.
     loss_offset_used: float = 0.0
-    # Lucro que efetivamente sofreu tributação, após a compensação.
     taxable_profit: float = 0.0
 
 
@@ -34,17 +31,7 @@ def calculate_sell_cost(
     gross_value_month_before: float = 0.0,
     accumulated_loss: float = 0.0,
 ) -> TransactionCost:
-    """Custo fiscal de uma venda.
-
-    `gross_value_month_before` é o acumulado bruto de vendas já feitas no mês
-    nesta categoria — a isenção de R$ 20 mil (ações BR) vale sobre o total do
-    mês, não por transação isolada.
-
-    `accumulated_loss` é o saldo de prejuízo realizado disponível na categoria.
-    A legislação permite abater prejuízo de ganhos futuros da mesma categoria, e
-    o app não guardava esse saldo: **superestimava o IR devido** de qualquer
-    usuário que já tivesse realizado prejuízo.
-    """
+    """Custo fiscal de uma venda."""
     gross_value = quantity * sell_price
     cost_basis = quantity * avg_price
     gross_profit = gross_value - cost_basis

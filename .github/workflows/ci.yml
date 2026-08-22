@@ -10,6 +10,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  design-tokens:
+    name: Design tokens (sincronia web/mobile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # A régua de score já divergiu entre web e mobile por ser mantida à mão em
+      # três arquivos. Token gerado só vale se a divergência falhar o build.
+      - name: Verificar tokens gerados
+        run: node design-tokens/build.mjs --check
+
   backend:
     name: Backend (ruff + pytest)
     runs-on: ubuntu-latest

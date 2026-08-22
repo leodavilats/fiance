@@ -5,15 +5,8 @@ import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/widgets/error_state.dart';
 
-/// Renda fixa no app.
-///
-/// Antes não existia: nenhuma ocorrência de renda fixa em
-/// `features/assets/`. As posições criadas no web apareciam aqui como um ativo
-/// chamado "Renda Fixa" com `asset_type = br_stock`, sem rendimento e sem
-/// possibilidade de editar — porque taxa, prazo e data viviam no localStorage
-/// do navegador. Com a tabela `fixed_income_positions` no servidor, as duas
-/// plataformas leem o mesmo dado e o mesmo cálculo.
 class FixedIncomeScreen extends ConsumerWidget {
   const FixedIncomeScreen({super.key});
 
@@ -71,7 +64,7 @@ class FixedIncomeScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao remover: $e')));
+        ).showSnackBar(SnackBar(content: Text(fiErrorMessage(e, action: 'remover esta aplicação'))));
       }
     }
   }
@@ -90,7 +83,12 @@ class FixedIncomeScreen extends ConsumerWidget {
         onRefresh: () async => ref.invalidate(fixedIncomeProvider),
         child: listing.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('Erro: $err')),
+          error: (err, _) => FiErrorState(
+            error: err,
+            title: 'Não conseguimos carregar sua renda fixa',
+            action: 'carregar suas aplicações',
+            onRetry: () => ref.invalidate(fixedIncomeProvider),
+          ),
           data: (data) {
             if (data.items.isEmpty) {
               return ListView(
@@ -405,8 +403,6 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
       'valor_investido': valor,
       'taxa': taxa,
       'tipo_taxa': _tipoTaxa,
-      // % do CDI só existe em pós-fixado; mandar em pré-fixado faria o
-      // servidor resolver a taxa pelo indexador errado.
       'percentual_cdi': _tipoTaxa == 'pos_fixado'
           ? double.tryParse(_percentualCdi.text.replaceAll(',', '.'))
           : null,

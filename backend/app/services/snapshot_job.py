@@ -11,23 +11,7 @@ logger = logging.getLogger("fiance.snapshot_job")
 
 
 async def record_snapshot_for_user(user_id: str) -> bool:
-    """Grava o snapshot diário de patrimônio de um usuário.
-
-    Antes `record_snapshot` era chamado dentro de `evaluate_portfolio`, no
-    caminho de request, e sobrescrevia o registro do dia. Consequências:
-
-    - o web chamava `POST /portfolio/evaluate` com `this.portfolioItems` (sem
-      os itens de renda fixa) e o `GET /dashboard` chamava o mesmo serviço com
-      `list_positions()` (com renda fixa) — dois totais diferentes no mesmo
-      dia, e o último a escrever ganhava;
-    - o histórico de patrimônio, e o benchmark que o lê, oscilava conforme a
-      navegação, não conforme o mercado;
-    - o cliente controlava o que entrava no histórico: um POST com itens
-      fabricados poluía a série.
-
-    Aqui a série é sempre construída a partir de `list_positions()` +
-    renda fixa, uma vez por dia, fora de qualquer request.
-    """
+    """Grava o snapshot diário de patrimônio de um usuário."""
     from app.services import FixedIncomeService, PortfolioService
 
     token = set_current_user_id(user_id)
@@ -56,8 +40,6 @@ async def record_snapshot_for_user(user_id: str) -> bool:
         if not positions:
             return False
 
-        # Uma carteira em que nenhuma cotação resolveu não deve virar um ponto
-        # na série: seria um degrau artificial no gráfico de patrimônio.
         priced = [
             p
             for p in positions

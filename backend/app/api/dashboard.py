@@ -26,9 +26,6 @@ dividends_service = DividendsService()
 async def dashboard() -> DashboardResponse:
     evaluation = await portfolio_service.evaluate_stored_for_current_user()
 
-    # Renda fixa entra marcada a mercado, junto das posições negociadas: é o
-    # que faz patrimônio total, P&L e projeção de renda passiva pararem de
-    # ignorar metade da carteira de um investidor conservador.
     positions = list(evaluation.positions) + fixed_income_service.as_portfolio_positions()
 
     opps_resp = await opportunity_service.get_opportunities(

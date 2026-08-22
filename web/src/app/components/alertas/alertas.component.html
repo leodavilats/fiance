@@ -1,0 +1,121 @@
+<div class="p-5 rounded-lg bg-panel border border-border mt-5">
+  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+    <lucide-icon name="bell" size="18"></lucide-icon> Alertas de Preco
+  </h2>
+  <p class="text-xs text-muted mb-4">
+    Ao abrir o sistema, um modal aparece automaticamente se algum ativo atingir a condicao definida.
+  </p>
+
+  <form [formGroup]="alertForm" (ngSubmit)="addAlert()" class="flex flex-col gap-3 mb-4">
+    <div class="relative flex-1 min-w-[120px]">
+      <input
+        formControlName="ticker"
+        type="text"
+        placeholder="Ticker (ex: PETR4)"
+        class="input w-full"
+        style="text-transform: uppercase"
+        autocomplete="off"
+        (input)="onAlertTickerInput($any($event.target).value)"
+        (focus)="onAlertTickerInput($any($event.target).value)"
+        (focusout)="closeAlertTickerSuggestions()"
+      />
+      @if (alertTickerSuggestionsOpen() && alertTickerSuggestions().length > 0) {
+        <ul
+          class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-border bg-panel shadow-xl max-h-56 overflow-y-auto text-sm"
+        >
+          @for (s of alertTickerSuggestions(); track s.ticker) {
+            <li>
+              <button
+                type="button"
+                class="w-full text-left px-3 py-2 hover:bg-panel-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                (mousedown)="$event.preventDefault(); selectAlertTickerSuggestion(s)"
+              >
+                <span class="font-semibold text-tx">{{ s.ticker }}</span>
+                <span class="text-muted text-xs truncate">{{ s.name }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+    <select formControlName="condition" class="input w-32">
+      <option value="below">Abaixo de</option>
+      <option value="above">Acima de</option>
+    </select>
+    <input
+      formControlName="target_price"
+      type="number"
+      step="0.01"
+      min="0.01"
+      placeholder="Preco alvo"
+      class="input w-32"
+    />
+    <input
+      formControlName="note"
+      type="text"
+      placeholder="Nota (opcional)"
+      class="input flex-1 min-w-[120px]"
+    />
+    <button
+      type="submit"
+      [disabled]="alertForm.invalid"
+      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 disabled:opacity-50 transition-opacity"
+    >
+      <lucide-icon name="plus" size="16"></lucide-icon> Adicionar
+    </button>
+  </form>
+
+  @if (alertMessage()) {
+    <p
+      class="text-sm mb-3"
+      [class.text-accent]="alertMessage().startsWith('check')"
+      [class.text-red-400]="alertMessage().startsWith('x')"
+    >
+      {{ alertMessage() }}
+    </p>
+  }
+
+  @if (alerts().length === 0) {
+    <p class="text-sm text-muted">Nenhum alerta configurado.</p>
+  } @else {
+    <div class="flex flex-col gap-2">
+      @for (a of alerts(); track a.id) {
+        <div
+          class="flex items-center justify-between gap-3 p-3 rounded-lg border"
+          [class.border-accent]="!!a.triggered_at"
+          [class.border-border]="!a.triggered_at"
+          [class.opacity-60]="!!a.triggered_at"
+          style="background: var(--panel-2)"
+        >
+          <div class="flex items-center gap-3 flex-wrap text-sm">
+            <span class="font-bold text-tx">{{ a.ticker }}</span>
+            <span
+              class="px-2 py-0.5 rounded-full text-xs font-medium border"
+              [class.text-accent]="a.condition === 'above'"
+              [class.border-accent]="a.condition === 'above'"
+              [class.text-warn]="a.condition === 'below'"
+              [class.border-warn]="a.condition === 'below'"
+            >
+              {{ a.condition === 'below' ? 'Abaixo de' : 'Acima de' }}
+            </span>
+            <span class="text-tx font-medium">R$ {{ a.target_price | number: '1.2-2' }}</span>
+            @if (a.note) {
+              <span class="text-xs text-muted">-- {{ a.note }}</span>
+            }
+            @if (a.triggered_at) {
+              <span class="text-xs font-medium text-accent">Disparado</span>
+            }
+          </div>
+          <button
+            type="button"
+            (click)="removeAlert(a.id)"
+            class="text-muted hover:text-red-400 transition-colors p-1 cursor-pointer border-0 bg-transparent"
+            title="Remover alerta"
+          >
+            <lucide-icon name="trash2" size="16"></lucide-icon>
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

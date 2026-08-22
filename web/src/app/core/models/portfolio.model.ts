@@ -33,7 +33,6 @@ export interface PortfolioPosition {
   margin_of_safety: number | null;
   verdict: Verdict;
   label: string;
-  /** Proveniência do veredito — antes calculada e descartada. */
   confidence: number;
   data_years: number;
   consensus_methods: number;
@@ -95,18 +94,11 @@ export interface ClosedTrade {
   ir_rate: number;
   ir_amount: number;
   net_profit: number;
-  /** Compensação de prejuízo aplicada nesta venda. */
   loss_offset_used: number;
   taxable_profit: number;
   sold_at: number;
 }
 
-/**
- * Saldo de prejuízo realizado por categoria.
- *
- * A legislação permite abater prejuízo de ganhos futuros da mesma categoria; o
- * saldo não era guardado, então o IR devido era superestimado.
- */
 export interface TaxLossCategoryBalance {
   category: string;
   realized_loss: number;

@@ -47,8 +47,6 @@ class NotificationsService {
     messaging.onTokenRefresh.listen((_) => _registerToken());
   }
 
-  /// Chamado no logout: o token continua válido no aparelho, então ele
-  /// precisa deixar de estar associado à conta que saiu.
   Future<void> unregisterToken() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
@@ -56,7 +54,6 @@ class NotificationsService {
       await _repo.unregisterDeviceToken(token);
       tokenRegistered = false;
     } catch (e) {
-      // Melhor esforço: falhar aqui não deve impedir o logout.
       lastError = e.toString();
       if (kDebugMode) {
         debugPrint('Falha ao desregistrar token de push: $e');
@@ -72,7 +69,6 @@ class NotificationsService {
       tokenRegistered = true;
       lastError = null;
     } catch (e) {
-      // Push é um extra, não deve derrubar o app se falhar.
       tokenRegistered = false;
       lastError = e.toString();
       debugPrint('Falha ao registrar token de notificação: $e');

@@ -6,6 +6,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/error_state.dart';
 
 void showAssetDetailSheet(BuildContext context, String ticker) {
   showModalBottomSheet(
@@ -39,7 +40,7 @@ class _AssetDetailContent extends ConsumerWidget {
 
     return analysisFuture.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Erro ao analisar $ticker: $err')),
+      error: (err, _) => FiErrorState(error: err, action: 'analisar $ticker'),
       data: (a) => ListView(
         controller: scrollController,
         padding: const EdgeInsets.all(20),

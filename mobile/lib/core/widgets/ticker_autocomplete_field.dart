@@ -6,8 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models.dart';
 import '../providers.dart';
 
-// Mostra a lista de sugestões inline (não em overlay) para evitar problemas
-// de posicionamento quando usado dentro de um AlertDialog.
 class TickerAutocompleteField extends ConsumerStatefulWidget {
   const TickerAutocompleteField({
     super.key,

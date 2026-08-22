@@ -1,10 +1,3 @@
-/**
- * Ciclo decisão → execução → resultado.
- *
- * O produto sugeria e nunca sabia o que aconteceu depois. Registrar a sugestão
- * seguida e mostrar o resultado torna o produto auditável pelo próprio usuário
- * — histórico verificável em vez de argumento de autoridade.
- */
 export interface FollowedSuggestion {
   id: number;
   ticker: string;

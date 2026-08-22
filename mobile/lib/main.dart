@@ -12,8 +12,6 @@ void main() async {
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   } catch (e) {
-    // Sem google-services.json (build local sem Firebase), o app deve
-    // continuar funcionando normalmente, só sem push.
     debugPrint('Firebase não inicializado: $e');
   }
   runApp(const ProviderScope(child: FianceApp()));

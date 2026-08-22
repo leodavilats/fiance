@@ -10,17 +10,12 @@ from app.services.opportunity_service import OpportunityService
 
 MAX_ASSETS = 8
 
-# Ofertas de referência do mercado, para o comparativo existir mesmo antes de o
-# usuário cadastrar qualquer aplicação.
 _REFERENCE_OFFERS = [
     ("CDB 100% do CDI (liquidez diária)", 100.0, RendaFixaType.cdb, Liquidez.diaria),
     ("CDB 110% do CDI (no vencimento)", 110.0, RendaFixaType.cdb, Liquidez.no_vencimento),
     ("LCI 90% do CDI (isenta de IR)", 90.0, RendaFixaType.lci, Liquidez.no_vencimento),
 ]
 
-# FII distribui rendimento isento para pessoa física; dividendo de ação também
-# é isento hoje. Por isso o DY é comparável direto com a taxa **líquida** da
-# renda fixa, sem novo desconto.
 _EXEMPT_INCOME_TYPES = {"fii", "br_stock"}
 
 
@@ -49,8 +44,6 @@ class IncomeCompareService:
             best_income_option=best,
             verdict=self._verdict(fixed_income, assets, best),
         )
-
-    # --- renda fixa ------------------------------------------------------
 
     def _fixed_income_options(
         self, amount: float, horizon_months: int, rates: dict
@@ -93,8 +86,6 @@ class IncomeCompareService:
                 )
             )
 
-        # As aplicações que o usuário já tem entram no comparativo: é o retorno
-        # dele, não uma oferta hipotética.
         for position in self.fixed_income.list_positions().items:
             if position.oculto:
                 continue
@@ -120,8 +111,6 @@ class IncomeCompareService:
 
         options.sort(key=lambda o: -o.net_income_yield_pct)
         return options
-
-    # --- ativos de bolsa -------------------------------------------------
 
     async def _asset_options(self, amount: float) -> list[IncomeOption]:
         scanned, _universe = await self.opportunities.scan_for_current_user()

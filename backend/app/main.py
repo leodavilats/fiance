@@ -69,8 +69,6 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Registrado antes do CORS para que ele fique mais externo na pilha e
-    # os headers de CORS sejam aplicados também à resposta instrumentada.
     app.middleware("http")(observability_middleware)
 
     app.add_middleware(
@@ -93,8 +91,6 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
-        # Só o path e o traceback — o corpo da request pode carregar dado
-        # financeiro do usuário e não deve entrar no log.
         logger.error(
             "Erro inesperado em %s: %s\n%s",
             request.url.path,

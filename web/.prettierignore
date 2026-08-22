@@ -11,3 +11,8 @@ coverage/
 angular.json
 package-lock.json
 tsconfig*.json
+
+# Gerados por design-tokens/build.mjs (fonte: design-tokens/tokens.json).
+# A sincronia e verificada por `node design-tokens/build.mjs --check` no CI.
+src/tokens.css
+src/app/core/design-tokens.ts

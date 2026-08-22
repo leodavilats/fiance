@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _themeModePrefKey = 'theme_mode';
 
-// Espelha o comportamento de theme.service.ts no web: dark por padrão.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {

@@ -2,11 +2,18 @@
 
 Plataforma multi-tenant de análise de investimentos focada na B3. Stack: FastAPI+Postgres (backend/), Angular 22 (web/), Flutter (mobile/).
 
-**Documentação técnica completa em `docs/`** — leia antes de trabalhar em qualquer parte não trivial do sistema:
+**Documentação em [docs/](docs/)** — comece pelo [índice](docs/README.md), que diz qual arquivo
+responde o quê. Em resumo:
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — estrutura de camadas, algoritmos de valuation/scoring, endpoints da API, fluxo de dados entre web/mobile/backend.
-- [docs/FEATURES.md](docs/FEATURES.md) — inventário de features por tela (Dashboard, Meus Ativos, Mercado, Configurações).
-- [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) — limitações conhecidas e débito técnico (verificar antes de assumir que um bug antigo já foi corrigido ou não).
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — como o sistema é montado: camadas, algoritmos de
+  valuation/scoring, endpoints, estrutura de pastas do web e do mobile.
+- [docs/FEATURES.md](docs/FEATURES.md) — o que cada tela faz, pela navegação atual (5 destinos).
+- [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) — **só o que está aberto**, verificado contra o
+  código. Leia antes de assumir que algo é bug novo.
+- [docs/CHANGELOG.md](docs/CHANGELOG.md) — histórico datado e o **por quê** das decisões, incluindo
+  as revertidas. Nada ali é pendência.
+- [docs/design/](docs/design/) — o redesign de UX/UI: auditoria, arquitetura de informação,
+  wireframes, design system, e o log do que já está no ar.
 
 Setup/instalação/variáveis de ambiente: ver [README.md](README.md) (já atualizado e não duplicado aqui).
 
@@ -19,7 +26,9 @@ Setup/instalação/variáveis de ambiente: ver [README.md](README.md) (já atual
 - **Renda fixa é entidade de primeira classe** (tabela `fixed_income_positions`, CRUD em `/fixed-income`), marcada a mercado no backend. Nada de RF vive em `localStorage`, e o ticker sintético `RF_*` não existe mais.
 - Escrita de carteira: use `POST /portfolio/position` e `DELETE /portfolio/position/{ticker}`. `PUT /portfolio` é **destrutivo** (substitui tudo) e existe só para importação explícita.
 - Unidades: `roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` chegam do collector em **percentual** (ver `collectors/universal._ratio_to_pct`). Crescimento no DCF também é percentual.
-- Régua de score em um único lugar por plataforma: `backend/app/analysis/score_ruler.py`, `web/src/app/core/score-ruler.ts`, `mobile/lib/core/score_ruler.dart`. Mudar um limiar exige mudar os três.
+- Régua de score em um único lugar por plataforma: `backend/app/analysis/score_ruler.py`, `web/src/app/core/score-ruler.ts`, `mobile/lib/core/score_ruler.dart`. Mudar um limiar exige mudar os três — e o Python é o primeiro.
+- **Tokens de design são gerados, não escritos.** Cor, tipografia, espaço, raio, motion e as bandas da régua saem de `design-tokens/tokens.json` via `node design-tokens/build.mjs`, que emite `web/src/tokens.css`, `web/src/app/core/design-tokens.ts` e `mobile/lib/core/design_tokens.dart`. Nunca edite os gerados nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou `theme.dart` — o job `design-tokens` do CI falha se divergirem.
 - Fuso fiscal: isenção mensal de IR e faixas de alíquota usam mês calendário **brasileiro** (`core/brt.py`), não UTC.
-- Web e mobile espelham a mesma navegação de 4 abas e as mesmas sub-abas de Mercado — ao adicionar uma feature em uma tela, considerar replicar na outra plataforma. Duas assimetrias são **decisão declarada**, não lacuna: Estratégia é web-only (leitura longa e densa) e push exige o app instalado (o web sinaliza isso na tela de Configurações).
+- **A navegação do web mudou em 2026-08-21.** São 5 destinos por intenção (`/hoje`, `/carteira`, `/descobrir`, `/estrategia`, `/voce`) com 19 rotas endereçáveis, mais `/ativo/:ticker` como camada; `/market` foi dissolvido e as tabs em `signal` viraram rotas. As URLs antigas seguem como redirect. O mobile seguiu a mesma IA em 2026-08-22: 5 destinos, 19 rotas, `market_screen`/`rebalance_tab` removidos e Estratégia criada (não existia em nenhuma plataforma). Metas no mobile ainda vivem em Configurações e RF × Bolsa não tem cliente Dart. Ver [docs/design/](docs/design/) antes de adicionar tela ou rota. Push exige o app instalado e isso é **decisão declarada** (o web sinaliza em `/voce/alertas`). A assimetria de Estratégia era bug, não decisão: `strategy.component` nunca tinha sido roteado. **Corrigido em 2026-08-21** — Estratégia é `/estrategia` e Quick Invest é `/estrategia/aporte`. No mobile, Estratégia ainda não existe.
+- **Ícone do Lucide precisa ser registrado à mão** em `LucideAngularModule.pick({...})` (`web/src/main.ts`). Nome ausente ou errado **não quebra o build** — quebra a tela em runtime (`The "x" icon has not been provided...`). Ao adicionar um `<lucide-icon>`, registre o import e abra a tela.
 - Testes: `cd backend && python -m pytest -q` (206 testes) e `python -m ruff check app tests migrations`. Mobile: `flutter analyze && flutter test`. Web: `npm run format:check && npx ng build`. Tudo roda no CI (`.github/workflows/ci.yml`) em todo push — mudança que quebra a suíte não deve ser mergeada.

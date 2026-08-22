@@ -12,21 +12,13 @@ from app.services.portfolio_service import PortfolioService
 
 MAX_ITEMS = 5
 
-# Variação de patrimônio abaixo disso não é notícia.
 _PATRIMONY_NOISE_PCT = 0.5
 
-# Desvio de alocação que vale mencionar (mesma régua do alerta de rebalanceamento).
 _ALLOCATION_THRESHOLD_PCT = 5.0
 
 
 class WhatsNewService:
-    """ "O que mudou desde a sua última visita".
-
-    Os ingredientes já existiam — PortfolioSnapshot diário,
-    NotifiedOpportunityDb para deduplicação, vereditos por posição, IR
-    realizado, gaps de alocação — mas nenhuma tela respondia a pergunta que o
-    usuário tem ao abrir o app, e por isso não havia motivo para voltar amanhã.
-    """
+    """ "O que mudou desde a sua última visita"."""
 
     def __init__(self):
         self.portfolio_repo = PortfolioRepository()
@@ -74,8 +66,6 @@ class WhatsNewService:
             generated_at=time.time(),
         )
 
-    # --- blocos ----------------------------------------------------------
-
     def _patrimony_item(self, snapshots: list[dict]) -> list[WhatsNewItem]:
         if len(snapshots) < 2:
             return []
@@ -85,7 +75,6 @@ class WhatsNewService:
         if opening <= 0:
             return []
 
-        # Aporte não é rentabilidade — o mesmo cuidado do benchmark (D6).
         flow = last["total_invested"] - first["total_invested"]
         change_pct = ((last["total_current"] - flow) / opening - 1) * 100
 

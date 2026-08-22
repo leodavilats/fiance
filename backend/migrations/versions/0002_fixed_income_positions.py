@@ -1,13 +1,4 @@
-"""Renda fixa como entidade de primeira classe
-
-Antes taxa, prazo, data de aplicação e % do CDI viviam só no localStorage do
-navegador; o servidor conhecia apenas o valor investido, num ticker sintético
-`RF_<tipo>_<índice>`. Trocar de navegador zerava os rendimentos e o mobile
-nunca via nada disso.
-
-Revision ID: 0002_fixed_income
-Revises: 0001_baseline
-"""
+"""Renda fixa como entidade de primeira classe Antes taxa, prazo, data de aplicação e % do CDI viviam só no localStorage do navegador; o servidor conhecia apenas o valor investido, num ticker sintético `RF_<tipo>_<índice>`."""
 
 from __future__ import annotations
 
@@ -49,10 +40,6 @@ def upgrade() -> None:
             batch_op.f("ix_fixed_income_positions_user_id"), ["user_id"], unique=False
         )
 
-    # As posições RF_* legadas carregavam só o valor investido: taxa, prazo e
-    # data viviam no navegador e não são recuperáveis no servidor. Mantê-las
-    # produziria linhas de renda fixa sem rendimento convivendo com a tabela
-    # nova, então são removidas.
     op.execute("DELETE FROM portfolio WHERE ticker LIKE 'RF!_%' ESCAPE '!'")
 
 

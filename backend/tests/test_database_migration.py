@@ -1,9 +1,4 @@
-"""Migrações versionadas (Alembic).
-
-Substitui os testes do migrador caseiro `_add_missing_columns`, que só sabia
-adicionar coluna: não renomeava, não mudava tipo, não fazia backfill de dado
-derivado e interpolava defaults em SQL por string.
-"""
+"""Migrações versionadas (Alembic)."""
 
 import os
 import tempfile
@@ -58,11 +53,7 @@ def test_downgrade_then_upgrade_round_trips(sqlite_url):
 
 
 def test_pre_alembic_database_is_stamped_and_migrated(sqlite_url):
-    """Banco criado antes do Alembic não pode ser recriado nem quebrar.
-
-    Simula o estado real: tabelas do baseline presentes, sem
-    `alembic_version` e sem a tabela nova de renda fixa.
-    """
+    """Banco criado antes do Alembic não pode ser recriado nem quebrar."""
     config = _config_for(sqlite_url)
     command.upgrade(config, BASELINE_REVISION)
 

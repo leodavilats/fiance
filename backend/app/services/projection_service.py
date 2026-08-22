@@ -25,10 +25,6 @@ class ProjectionService:
         current_value = 0.0
         current_dividends_yearly = 0.0
 
-        # list_positions() devolve dicts (TypedDict). O acesso por atributo
-        # (`item.ticker`) levantava AttributeError, capturado pelo except logo
-        # abaixo e transformado em `continue` — o endpoint reportava, em
-        # silêncio, patrimônio atual R$ 0 e renda atual R$ 0 para todo mundo.
         async def _snapshot(ticker: str):
             try:
                 return await self.asset_repo.get_asset(ticker)
@@ -47,8 +43,6 @@ class ProjectionService:
             if snap.dividend_yield:
                 current_dividends_yearly += position_value * (snap.dividend_yield / 100)
 
-        # A projeção ignorava 100% da renda fixa: um investidor conservador via
-        # a renda futura projetada só sobre o aporte mensal.
         for rf in self.fixed_income.as_portfolio_positions():
             rf_value = rf.current_value or rf.invested
             current_value += rf_value

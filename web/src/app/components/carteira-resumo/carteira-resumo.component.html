@@ -1,0 +1,212 @@
+@if (store.loadFailed()) {
+  <div class="p-4 rounded-md border border-hairline mb-6" role="alert">
+    <p class="fi-verdict-sm text-ink m-0 mb-1">Não conseguimos carregar toda a sua carteira</p>
+    <p class="fi-body text-ink-2 m-0 mb-3">
+      Parte dos dados pode estar faltando abaixo. Seus lançamentos estão salvos.
+    </p>
+    <button type="button" class="btn-secondary" (click)="store.reload()">Tentar de novo</button>
+  </div>
+}
+
+@if (store.isEmpty()) {
+  <section class="max-w-reading">
+    <h1 class="fi-verdict text-ink m-0 mb-2">Sua carteira ainda está vazia</h1>
+    <p class="fi-body text-ink-2 m-0 mb-5">
+      Adicione uma posição — ações, FIIs, BDRs, ETFs ou renda fixa — e o fiance passa a marcar tudo
+      a mercado, calcular preço justo e avaliar a saúde da carteira.
+    </p>
+    <a routerLink="/carteira/editar" class="btn-primary no-underline">Adicionar primeira posição</a>
+  </section>
+} @else {
+  <div class="flex flex-col gap-8">
+    <section>
+      <p class="fi-eyebrow text-ink-3 m-0 mb-2">Valor da carteira</p>
+      <p class="fi-money-lg text-ink m-0">R$ {{ store.valorAtual() | number: '1.2-2' }}</p>
+
+      <p
+        class="fi-body m-0 mt-2 flex items-center gap-1.5 flex-wrap"
+        [class]="resultDirectionClass()"
+      >
+        <lucide-icon
+          [name]="store.rendimentoTotal() >= 0 ? 'arrow-up-right' : 'arrow-down-right'"
+          size="15"
+          aria-hidden="true"
+        ></lucide-icon>
+        <span class="fi-num">
+          {{ store.rendimentoTotal() >= 0 ? '+' : '−' }}R$ {{ absResult() | number: '1.2-2' }}
+        </span>
+        <span class="fi-num">({{ store.rendimentoPct() | number: '1.2-2' }}%)</span>
+        <span class="text-ink-3"
+          >sobre R$ {{ store.totalInvestido() | number: '1.0-0' }} aportados</span
+        >
+      </p>
+
+      <p class="fi-caption text-ink-3 m-0 mt-3">
+        <span class="fi-num">{{ store.negociadosCount() }}</span>
+        {{ store.negociadosCount() === 1 ? 'ativo negociado' : 'ativos negociados' }}
+        @if (store.rendaFixaCount() > 0) {
+          · <span class="fi-num">{{ store.rendaFixaCount() }}</span>
+          {{ store.rendaFixaCount() === 1 ? 'aplicação' : 'aplicações' }} de renda fixa
+        }
+        @if (store.evaluating()) {
+          · atualizando…
+        } @else if (store.lastEvaluatedLabel()) {
+          · avaliada às {{ store.lastEvaluatedLabel() }}
+        }
+      </p>
+    </section>
+
+    <section class="pt-6 border-t border-hairline">
+      <div class="flex items-baseline justify-between gap-3 mb-4">
+        <p class="fi-eyebrow text-ink-3 m-0">Alocação × meta</p>
+        <a routerLink="/estrategia/metas" class="fi-caption text-brand no-underline">
+          Ajustar metas →
+        </a>
+      </div>
+
+      @if (hasGoals()) {
+        <ul class="list-none m-0 p-0 flex flex-col gap-3">
+          @for (gap of gaps(); track gap.label) {
+            <li class="flex items-center gap-4">
+              <span class="fi-label text-ink w-[100px] shrink-0">{{ gap.label }}</span>
+
+              <div class="relative flex-1 h-2 rounded-sm bg-ground-2 min-w-[80px]">
+                <div
+                  class="absolute inset-y-0 left-0 rounded-sm bg-ink-3"
+                  [style.width.%]="gap.currentPct > 100 ? 100 : gap.currentPct"
+                ></div>
+                <div
+                  class="absolute inset-y-[-3px] w-[2px] bg-brand"
+                  [style.left]="'calc(' + (gap.targetPct > 100 ? 100 : gap.targetPct) + '% - 1px)'"
+                  [title]="'Meta: ' + gap.targetPct + '%'"
+                ></div>
+              </div>
+
+              <span class="fi-metric-sm text-ink w-[56px] text-right shrink-0">
+                {{ gap.currentPct | number: '1.0-0' }}%
+              </span>
+              <span class="fi-caption text-ink-3 w-[60px] text-right shrink-0">
+                meta {{ gap.targetPct | number: '1.0-0' }}%
+              </span>
+              <span
+                class="fi-metric-sm w-[64px] text-right shrink-0"
+                [class.text-attention]="gap.deltaPct <= -2 || gap.deltaPct >= 2"
+                [class.text-ink-3]="gap.deltaPct > -2 && gap.deltaPct < 2"
+              >
+                {{ gap.deltaPct > 0 ? '+' : '' }}{{ gap.deltaPct | number: '1.1-1' }} p.p.
+              </span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="fi-body text-ink-2 m-0">
+          Você ainda não definiu metas de alocação. Sem elas, o fiance mostra a composição mas não
+          tem contra o que comparar.
+          <a routerLink="/estrategia/metas" class="text-brand">Definir metas</a>.
+        </p>
+      }
+    </section>
+
+    @if (health(); as h) {
+      <section class="pt-6 border-t border-hairline">
+        <div class="flex items-start justify-between gap-6 flex-wrap mb-4">
+          <p class="fi-eyebrow text-ink-3 m-0">Saúde da carteira</p>
+          <div class="w-full sm:w-[240px]">
+            <app-score-ruler
+              [score]="h.score"
+              [bands]="healthBands"
+              [dataCompleteness]="healthReliable() ? 1 : 0"
+              subject="Saúde da carteira"
+              size="card"
+              [showScale]="true"
+            />
+          </div>
+        </div>
+
+        @if (!healthReliable()) {
+          <p class="fi-body text-ink-2 m-0">
+            Com {{ store.negociadosCount() }}
+            {{ store.negociadosCount() === 1 ? 'ativo' : 'ativos' }}, concentração e diversificação
+            ainda não dizem muito — a leitura fica confiável a partir de quatro.
+          </p>
+        } @else {
+          <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 m-0">
+            @for (dim of healthDimensions(); track dim.label) {
+              <div>
+                <dt class="fi-caption text-ink-3">{{ dim.label }}</dt>
+                <dd class="m-0 mt-1">
+                  <app-score-ruler
+                    [score]="dim.score"
+                    [bands]="healthBands"
+                    [subject]="dim.label"
+                    size="list"
+                  />
+                </dd>
+              </div>
+            }
+          </dl>
+
+          <button
+            type="button"
+            class="flex items-center gap-2 bg-transparent border-0 p-0 mt-4 cursor-pointer fi-label text-brand"
+            (click)="toggleHealthDetail()"
+            [attr.aria-expanded]="showHealthDetail()"
+          >
+            <lucide-icon
+              [name]="showHealthDetail() ? 'chevron-down' : 'chevron-right'"
+              size="16"
+            ></lucide-icon>
+            O que cada dimensão considera
+          </button>
+
+          @if (showHealthDetail()) {
+            <dl class="flex flex-col gap-3 mt-3 max-w-reading m-0">
+              @for (dim of healthDimensions(); track dim.label) {
+                <div>
+                  <dt class="fi-label text-ink">{{ dim.label }}</dt>
+                  <dd class="fi-body text-ink-2 m-0">{{ dim.explains }}</dd>
+                </div>
+              }
+            </dl>
+          }
+
+          @if (h.warnings.length > 0) {
+            <ul class="list-none m-0 p-0 mt-4 flex flex-col gap-1.5 max-w-reading">
+              @for (warning of h.warnings; track warning) {
+                <li class="fi-body text-ink-2 pl-3 border-l-2 border-hairline-strong">
+                  {{ warning }}
+                </li>
+              }
+            </ul>
+          }
+        }
+      </section>
+    }
+
+    <nav class="pt-6 border-t border-hairline" aria-label="Detalhes da carteira">
+      <p class="fi-eyebrow text-ink-3 m-0 mb-3">Ver em detalhe</p>
+      <ul class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <li>
+          <a routerLink="/carteira/composicao" class="fi-body text-brand no-underline">
+            Onde meu dinheiro está concentrado →
+          </a>
+        </li>
+        <li>
+          <a routerLink="/carteira/desempenho" class="fi-body text-brand no-underline">
+            Estou rendendo mais que o CDI →
+          </a>
+        </li>
+        <li>
+          <a routerLink="/carteira/proventos" class="fi-body text-brand no-underline">
+            Quanto de provento entrou →
+          </a>
+        </li>
+        <li>
+          <a routerLink="/carteira/posicoes" class="fi-body text-brand no-underline">
+            Todas as posições →
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+}

@@ -130,12 +130,6 @@ class PortfolioService:
         total_pnl = total_cur - total_inv
         total_pnl_pct = (total_pnl / total_inv * 100) if total_inv > 0 else 0.0
 
-        # A escrita de snapshot saiu daqui: no caminho de request, o total
-        # gravado dependia de quem chamou (o web mandava a lista sem renda
-        # fixa; o dashboard mandava com ela) e o último a escrever ganhava.
-        # Agora é `services/snapshot_job`, uma vez por dia, sempre sobre
-        # list_positions() + renda fixa.
-
         return PortfolioEvaluationResponse(
             positions=positions,
             total_invested=round(total_inv, 2),
@@ -145,12 +139,7 @@ class PortfolioService:
         )
 
     async def evaluate_stored_for_current_user(self) -> PortfolioEvaluationResponse:
-        """Avalia a carteira salva, memoizado por request.
-
-        /dashboard, /strategy e /rebalance-suggestions precisavam do mesmo
-        resultado; a tela de Estratégia chamava as duas últimas e pagava o
-        pipeline duas vezes.
-        """
+        """Avalia a carteira salva, memoizado por request."""
 
         async def _build() -> PortfolioEvaluationResponse:
             stored = self.portfolio_repo.list_positions()
@@ -190,13 +179,7 @@ class PortfolioService:
         )
 
     def upsert_position(self, item: PortfolioItem) -> PortfolioStateResponse:
-        """Cria ou atualiza uma posição, sem tocar nas outras.
-
-        Escrita não destrutiva: é esta que o cadastro do dia a dia usa. O
-        PUT /portfolio (replace_all) apaga a carteira inteira antes de
-        reinserir, então um cadastro feito sobre uma lista vazia — carregada
-        com erro de rede — substituía tudo por um único ativo.
-        """
+        """Cria ou atualiza uma posição, sem tocar nas outras."""
         self.portfolio_repo.upsert_position(
             ticker=item.ticker,
             quantity=item.quantity,
@@ -253,8 +236,6 @@ class PortfolioService:
         sold_at = self._validate_sold_at(req.sold_at)
         month_before = self.portfolio_repo.sum_gross_sales_this_month(category)
 
-        # Prejuízo já realizado na categoria abate o ganho desta venda —
-        # sem isso o IR devido era superestimado.
         accumulated_loss = self.portfolio_repo.available_tax_loss(category)
 
         cost = calculate_sell_cost(
@@ -285,11 +266,7 @@ class PortfolioService:
 
     @staticmethod
     def _validate_sold_at(sold_at: float | None) -> float:
-        """Data de venda controlada pelo cliente, com janela fechada.
-
-        `sold_at` livre permitia datar a venda em outro mês, mudando o balde da
-        isenção de R$ 20 mil e a alíquota de IR calculada.
-        """
+        """Data de venda controlada pelo cliente, com janela fechada."""
         now = time.time()
         if sold_at is None:
             return now

@@ -1,13 +1,6 @@
 from pydantic import BaseModel, Field
 
-"""Comparação de renda: renda fixa e ativos de bolsa na mesma tela.
-
-O comparador de RF (`/renda-fixa/comparar`) e o de ativos (`/opportunities`)
-eram universos separados. Com `taxa_liquida_aa` de um lado e DY + margem de
-segurança do outro, dava para responder "com a Selic a 14,4%, vale mais o CDB ou
-o FII?" — a pergunta que define a alocação de quase todo investidor brasileiro —
-e o produto nunca colocava os dois lados na mesma conta.
-"""
+"""Comparação de renda: renda fixa e ativos de bolsa na mesma tela."""
 
 
 class IncomeOption(BaseModel):
@@ -15,15 +8,11 @@ class IncomeOption(BaseModel):
     label: str
     ticker: str | None = None
 
-    # Eixo 1: renda recorrente líquida esperada, em % a.a. É o único número
-    # comparável diretamente entre renda fixa e ativos de bolsa.
     net_income_yield_pct: float
     income_basis: str = Field(
         ..., description="Como o rendimento foi apurado (taxa contratada, DY dos últimos 12m…)"
     )
 
-    # Eixo 2: valorização potencial. Renda fixa não tem — deixar explícito
-    # evita a comparação errada de somar as duas coisas.
     upside_pct: float | None = None
     has_upside: bool = False
 

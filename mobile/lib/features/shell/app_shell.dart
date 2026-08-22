@@ -17,8 +17,6 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void initState() {
     super.initState();
-    // Chega aqui só com usuário autenticado — momento certo para registrar
-    // o token de push.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationsServiceProvider).init();
     });
@@ -37,20 +35,29 @@ class _AppShellState extends ConsumerState<AppShell> {
         ),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            label: 'Dashboard',
+            icon: Icon(Icons.wb_twilight_outlined),
+            selectedIcon: Icon(Icons.wb_twilight),
+            label: 'Hoje',
           ),
           NavigationDestination(
-            icon: Icon(Icons.work_outline),
-            label: 'Meus Ativos',
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Carteira',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore),
+            label: 'Descobrir',
           ),
           NavigationDestination(
             icon: Icon(Icons.track_changes_outlined),
-            label: 'Mercado',
+            selectedIcon: Icon(Icons.track_changes),
+            label: 'Estratégia',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            label: 'Config',
+            icon: Icon(Icons.tune_outlined),
+            selectedIcon: Icon(Icons.tune),
+            label: 'Você',
           ),
         ],
       ),

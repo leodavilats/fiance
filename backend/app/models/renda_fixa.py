@@ -40,12 +40,8 @@ class RendaFixaAnalysisResult(BaseModel):
     valor_liquido: float
     rendimento_liquido: float
     taxa_liquida_aa: float
-    # Taxa nominal resolvida a partir do indexador (% do CDI, IPCA+ etc.).
     taxa_anual_efetiva_pct: float = 0.0
-    # Quanto do CDI bruto o título entrega líquido.
     taxa_equivalente_cdi_pct: float | None = None
-    # Que % do CDI um título tributado de mesmo prazo precisaria render para
-    # empatar — o número usado para comparar LCI/LCA com CDB.
     pct_cdi_bruto_equivalente: float | None = None
     isento_ir: bool
     liquidez: str
@@ -81,14 +77,6 @@ class ReferenceRates(BaseModel):
     selic_anual: float
     ipca_anual: float
     source: str = "estimativa"
-
-
-# --- Renda fixa como entidade de primeira classe ---------------------------
-#
-# Antes taxa, prazo, data de aplicação e % do CDI viviam só no localStorage do
-# navegador; o backend recebia apenas o valor investido num ticker sintético
-# RF_<tipo>_<índice>. Trocar de navegador zerava os rendimentos e o mobile
-# nunca via nada disso.
 
 
 class FixedIncomeBase(BaseModel):
@@ -138,17 +126,13 @@ class FixedIncomePosition(FixedIncomeBase):
 
     id: int
 
-    # Marcação a mercado: rendimento acumulado do aporte até hoje.
     valor_atual: float
     rendimento_acumulado: float
     rendimento_pct: float
     meses_decorridos: float
     taxa_anual_efetiva_pct: float
-    # Dividend yield equivalente, para a posição entrar na projeção de renda
-    # passiva do dashboard em pé de igualdade com ações e FIIs.
     yield_equivalente_pct: float
 
-    # Projeção até o vencimento (None quando não há vencimento definido).
     valor_no_vencimento: float | None = None
     rendimento_no_vencimento: float | None = None
     dias_para_vencimento: int | None = None

@@ -1,9 +1,4 @@
-"""Regressões da janela de dividendos (D4).
-
-O stub de rede devolvia `get_dividends -> []`, então nenhum teste passava por
-`average_dividend_last_n_years` com dado real — exatamente onde estavam os
-bugs. Aqui a série é construída com datas explícitas.
-"""
+"""Regressões da janela de dividendos (D4)."""
 
 from datetime import UTC, datetime
 
@@ -28,16 +23,11 @@ def test_average_over_six_years_of_data_uses_the_five_year_window():
     for year in range(2019, 2026):
         dividends += _yearly(year, 4.0)
 
-    # 2021..2025 = 5 anos completos a R$4 -> média 4.0
     assert average_dividend_last_n_years(dividends, reference=REFERENCE) == 4.0
 
 
 def test_average_with_three_years_of_history_is_not_diluted_by_fixed_denominator():
-    """Uma empresa com 3 anos de histórico tinha a média subestimada em ~40%.
-
-    A versão anterior fazia `sum(values) / 5` independentemente de quantos anos
-    existiam: R$4/ano por 3 anos virava R$2,40.
-    """
+    """Uma empresa com 3 anos de histórico tinha a média subestimada em ~40%."""
     dividends = _yearly(2023, 4.0) + _yearly(2024, 4.0) + _yearly(2025, 4.0)
 
     assert average_dividend_last_n_years(dividends, reference=REFERENCE) == 4.0
@@ -59,7 +49,6 @@ def test_year_without_payment_inside_the_covered_span_counts_as_zero():
     """Buraco no meio do histórico é ausência real de provento, não de dado."""
     dividends = _yearly(2023, 6.0) + _yearly(2025, 6.0)
 
-    # Cobertura 2023..2025 = 3 anos, um deles zerado -> 12/3 = 4.0
     assert average_dividend_last_n_years(dividends, reference=REFERENCE) == 4.0
 
 
@@ -101,11 +90,7 @@ def test_bazin_reflects_the_corrected_average():
 
 
 def test_collector_dy_uses_last_12_months_not_first_12_records():
-    """Regressão do `cashDividends[:12]`.
-
-    Uma ação que paga trimestralmente tinha ~3 anos de proventos somados como
-    se fossem 12 meses, inflando o DY em cerca de 3x.
-    """
+    """Regressão do `cashDividends[:12]`."""
     raw = {
         "dividendsData": {
             "cashDividends": [
@@ -118,5 +103,4 @@ def test_collector_dy_uses_last_12_months_not_first_12_records():
 
     total = _sum_dividends_last_12m(raw, reference=REFERENCE)
 
-    # Últimos 12 meses a partir de 2026-07-01: 2025-08, 2025-11, 2026-02, 2026-05
     assert total == 4.0

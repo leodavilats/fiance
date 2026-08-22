@@ -3,10 +3,11 @@ import { AssetType, Verdict } from '../models';
 import {
   MIN_DATA_COMPLETENESS,
   SCORE_GLOSSARY,
-  SCORE_NEUTRAL,
-  SCORE_STRONG,
   ScoreBand,
   scoreBand,
+  dataCompletenessLabel,
+  scoreBandFor,
+  stateTextClass,
 } from '../score-ruler';
 
 @Injectable({ providedIn: 'root' })
@@ -37,7 +38,6 @@ export class UiHelperService {
     return map[t] || 'circle';
   }
 
-  // Cores categóricas fixas (não ciclam) — mesma cor sempre representa o mesmo tipo/segmento.
   assetTypeSeriesColor(t: string): string {
     const map: Record<string, string> = {
       renda_fixa: 'var(--series-1)',
@@ -126,8 +126,6 @@ export class UiHelperService {
   }
 
   categoryBarColor(c: string): string {
-    // Mantido em paridade com categoryBarClass/categoryBgClass/categoryColor
-    // (fiis=laranja, etfs=amarelo) — fonte da verdade também usada pelo mobile.
     const map: Record<string, string> = {
       renda_fixa: 'rgba(59, 130, 246, 0.6)',
       acoes_br: 'rgba(34, 197, 94, 0.6)',
@@ -203,8 +201,6 @@ export class UiHelperService {
       materials: 'Materiais Básicos',
       'real-estate': 'Imobiliário',
       telecommunications: 'Telecomunicações',
-      // Taxonomia da BRAPI (/quote/list) — diferente da usada pelo
-      // yfinance acima, mapeada pras mesmas categorias em português.
       Miscellaneous: 'Outros',
       Finance: 'Financeiro',
       'Technology Services': 'Tecnologia',
@@ -308,45 +304,26 @@ export class UiHelperService {
     return map[verdict] || 'verdict-neutro';
   }
 
-  /** Delegado à régua única (core/score-ruler.ts). */
   scoreLabel(score: number): ScoreBand {
     return scoreBand(score);
   }
 
-  /**
-   * Score com dado incompleto sai cinza, com o motivo — não colorido com a
-   * nota. Antes não havia como saber se o 32 de um FII significava "ruim" ou
-   * "não sei": a ausência de dado era codificada como número baixo.
-   */
   scoreIsReliable(dataCompleteness: number | null | undefined): boolean {
     return (dataCompleteness ?? 1) >= MIN_DATA_COMPLETENESS;
   }
 
   scoreBandFor(score: number, dataCompleteness: number | null | undefined): ScoreBand {
-    if (!this.scoreIsReliable(dataCompleteness)) {
-      return { text: 'Dado insuficiente', cls: 'text-muted' };
-    }
-    return scoreBand(score);
+    return scoreBandFor(score, dataCompleteness);
   }
 
   scoreColorClass(score: number, dataCompleteness: number | null | undefined): string {
-    if (!this.scoreIsReliable(dataCompleteness)) return 'text-muted';
-    if (score >= SCORE_STRONG) return 'good';
-    if (score >= SCORE_NEUTRAL) return 'warn';
-    return 'text-muted';
+    return stateTextClass(scoreBandFor(score, dataCompleteness).state);
   }
 
   dataCompletenessLabel(dataCompleteness: number | null | undefined): string {
-    const value = dataCompleteness ?? 1;
-    if (value >= 1) return '';
-    return `${Math.round(value * 100)}% dos indicadores disponíveis`;
+    return dataCompletenessLabel(dataCompleteness);
   }
 
-  /**
-   * Rótulo da base da tendência. Com histórico curto (plano gratuito da BRAPI
-   * só devolve ranges curtos) a SMA200 não existe e a tendência é de curto
-   * prazo — dizer isso é mais honesto que apresentar as duas como iguais.
-   */
   trendBasisLabel(basis: string | null | undefined): string {
     const map: Record<string, string> = {
       long: 'médias de 50 e 200 dias',
@@ -356,7 +333,6 @@ export class UiHelperService {
     return map[basis ?? 'none'] ?? '';
   }
 
-  /** Proveniência do preço justo, ao lado de todo veredito. */
   dataYearsLabel(dataYears: number | null | undefined): string {
     if (!dataYears) return 'sem histórico de proventos';
     return `${dataYears} ${dataYears === 1 ? 'ano' : 'anos'} de proventos`;

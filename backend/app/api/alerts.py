@@ -55,12 +55,7 @@ async def list_alerts() -> list[AlertResponse]:
 @router.post("/alerts/check", response_model=list[AlertTriggered])
 @router.get("/alerts/check", response_model=list[AlertTriggered])
 async def check_alerts() -> list[AlertTriggered]:
-    """Verifica alertas e marca os disparados, igual ao job de notificação.
-
-    Antes havia dois caminhos independentes: o /check do web **não** marcava
-    como disparado e o job do backend marcava. O web via o alerta como ativo
-    até o job rodar, e depois ele desaparecia sem explicação.
-    """
+    """Verifica alertas e marca os disparados, igual ao job de notificação."""
     alerts = portfolio_store.list_price_alerts()
     active = [a for a in alerts if a["triggered_at"] is None]
     if not active:

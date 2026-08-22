@@ -4,13 +4,7 @@ from pydantic import BaseModel, Field
 
 from .portfolio import TICKER_PATTERN
 
-"""Proventos recebidos.
-
-Todo número de renda no produto era **estimativa** derivada de DY
-(`monthly_dividends_estimate`), e o histórico real não era armazenado em tabela
-nenhuma. "Quanto eu recebi este mês" é a pergunta mais frequente de quem vive de
-renda passiva, e o produto não podia responder.
-"""
+"""Proventos recebidos."""
 
 
 class DividendReceivedBase(BaseModel):
@@ -61,14 +55,10 @@ class DividendsReceivedResponse(BaseModel):
     total_received: float = 0.0
     received_this_month: float = 0.0
     received_last_12m: float = 0.0
-    # Média mensal dos últimos 12 meses — o número que a projeção de renda
-    # passa a poder confrontar com a estimativa derivada de DY.
     monthly_average_12m: float = 0.0
 
     by_month: list[DividendMonth] = Field(default_factory=list)
     by_ticker: list[DividendTickerTotal] = Field(default_factory=list)
 
-    # Comparação entre o recebido de fato e a estimativa do dashboard: é o que
-    # transforma estimativa em fato verificável.
     estimated_monthly: float | None = None
     estimate_accuracy_pct: float | None = None

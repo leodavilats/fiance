@@ -33,7 +33,6 @@ def test_lci_is_tax_exempt():
 
 
 def test_ir_rate_tiers_by_prazo():
-    # prazo_dias = meses * 30.44, thresholds at 180/360/720 days
     curto = analyze_one(_asset(prazo_meses=5))  # ~152 dias -> 22.5%
     medio = analyze_one(_asset(prazo_meses=10))  # ~304 dias -> 20%
     longo = analyze_one(_asset(prazo_meses=20))  # ~609 dias -> 17.5%
@@ -54,22 +53,13 @@ def test_pos_fixado_uses_cdi_percentual():
 
 
 def test_explicit_isento_ir_overrides_tipo():
-    # a CDB explicitly marked isento_ir=True must not be taxed even though
-    # its tipo is not in ISENTOS_IR
     result = analyze_one(_asset(isento_ir=True))
     assert result.isento_ir is True
     assert result.ir.valor_ir == 0.0
 
 
-# --- D9: divergências entre o backend e o cálculo que vivia no Angular ------
-
-
 def test_percentual_cdi_is_multiplicative_not_exponential():
-    """ "110% do CDI" é 1,10 × CDI, não (1+CDI)^1,10.
-
-    A forma exponencial não é a convenção de mercado; a 200% do CDI a
-    diferença chegava a ~2 p.p. ao ano.
-    """
+    """ "110% do CDI" é 1,10 × CDI, não (1+CDI)^1,10."""
     cdi = 14.4
     result = analyze_one(
         _asset(tipo_taxa=TaxType.pos_fixado, percentual_cdi=110.0, taxa=1.0, prazo_meses=12),
@@ -114,11 +104,7 @@ def test_hibrido_also_composes_inflation():
 
 
 def test_pct_of_cdi_is_not_inflated_by_a_hardcoded_benchmark():
-    """Uma LCI a 100% do CDI era exibida como ~117% do CDI.
-
-    A causa era comparar contra `cdi_anual × 0.85` hardcoded. Agora há dois
-    números explícitos: quanto do CDI se fica líquido, e o equivalente bruto.
-    """
+    """Uma LCI a 100% do CDI era exibida como ~117% do CDI."""
     cdi = 14.4
     lci = analyze_one(
         _asset(
@@ -131,18 +117,12 @@ def test_pct_of_cdi_is_not_inflated_by_a_hardcoded_benchmark():
         cdi_anual=cdi,
     )
 
-    # Isenta e a 100% do CDI: fica com ~100% do CDI líquido.
     assert 99.0 <= lci.taxa_equivalente_cdi_pct <= 101.0
-    # E equivale a um CDB de mesmo prazo rendendo ~125% do CDI (IR de 20%).
     assert lci.pct_cdi_bruto_equivalente > 120.0
 
 
 def test_twenty_four_month_term_lands_on_the_fifteen_percent_bracket():
-    """O web usava meses × 30 (720 d -> 17,5%) e o backend × 30,44 (730 d -> 15%).
-
-    Com uma constante única de dias por mês, 24 meses passa de 720 dias e cai
-    em 15% dos dois lados.
-    """
+    """O web usava meses × 30 (720 d -> 17,5%) e o backend × 30,44 (730 d -> 15%)."""
     result = analyze_one(_asset(prazo_meses=24))
     assert result.ir.prazo_dias > 720
     assert result.ir.aliquota_pct == 15.0
@@ -154,8 +134,6 @@ def test_mark_to_market_uses_the_elapsed_term():
     doze_meses = analyze_one(_asset(prazo_meses=24), prazo_meses_override=12)
 
     assert cinco_meses.rendimento_liquido < doze_meses.rendimento_liquido
-    # Resgate em 5 meses paga a alíquota da faixa curta, não a do contrato
-    # (que, em 24 meses, seria de 15%).
     assert cinco_meses.ir.aliquota_pct == 22.5
     assert analyze_one(_asset(prazo_meses=24)).ir.aliquota_pct == 15.0
 

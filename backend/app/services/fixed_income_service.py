@@ -16,13 +16,8 @@ from app.models.renda_fixa import (
 )
 from app.storage import portfolio_store
 
-# Um vencimento dentro dessa janela merece aviso: é o prazo em que o investidor
-# precisa decidir onde reaplicar.
 VENCIMENTO_PROXIMO_DIAS = 30
 
-# Ticker sintético das posições de renda fixa dentro da carteira. Só existe
-# para dar identidade estável à linha na UI — o dado real vive na tabela
-# fixed_income_positions, não no ticker.
 FIXED_INCOME_TICKER_PREFIX = "RF-"
 
 
@@ -40,14 +35,7 @@ def _parse_date(value: str | None) -> date | None:
 
 
 class FixedIncomeService:
-    """Marcação a mercado da renda fixa, no backend.
-
-    `portfolio_service` fixava `current_price = avg_price`, `pnl = 0` e
-    `dividend_yield = None` para todo ticker `RF_*`: metade da carteira de um
-    investidor conservador aparecia congelada e a projeção de renda passiva do
-    dashboard ignorava 100% da renda fixa. A fórmula já existia e já era
-    testada em `renda_fixa_analysis.analyze_one` — aqui ela é finalmente usada.
-    """
+    """Marcação a mercado da renda fixa, no backend."""
 
     def list_positions(self) -> FixedIncomeListResponse:
         rates = get_rates()
@@ -96,8 +84,6 @@ class FixedIncomeService:
             raise NotFoundError(f"Posição de renda fixa {position_id} não encontrada.")
         return {"deleted": position_id}
 
-    # --- interno ---------------------------------------------------------
-
     @staticmethod
     def _to_storage(fields: dict) -> dict:
         """Serializa enums e datas para as colunas de texto do banco."""
@@ -139,8 +125,6 @@ class FixedIncomeService:
 
         asset = self._as_asset(row, int(round(prazo_total_meses or meses_decorridos or 1)))
 
-        # Marcação a mercado: rende pelo prazo já decorrido. Um resgate hoje
-        # paga IR pela faixa do tempo decorrido, não pela do prazo contratado.
         atual = analyze_one(
             asset,
             cdi_anual=rates["cdi_anual"],
@@ -184,8 +168,6 @@ class FixedIncomeService:
             else 0.0,
             meses_decorridos=round(meses_decorridos, 2),
             taxa_anual_efetiva_pct=atual.taxa_anual_efetiva_pct,
-            # A renda fixa não distribui provento, mas a taxa líquida anual é o
-            # equivalente honesto de DY para somar na projeção de renda passiva.
             yield_equivalente_pct=max(atual.taxa_liquida_aa, 0.0),
             valor_no_vencimento=round(no_vencimento.valor_liquido, 2) if no_vencimento else None,
             rendimento_no_vencimento=round(no_vencimento.rendimento_liquido, 2)
@@ -198,14 +180,8 @@ class FixedIncomeService:
             ),
         )
 
-    # --- integração com a carteira ---------------------------------------
-
     def as_portfolio_positions(self) -> list[PortfolioPosition]:
-        """Renda fixa no mesmo formato das outras posições da carteira.
-
-        É isto que faz o patrimônio total, o P&L e a projeção de renda passiva
-        pararem de ignorar a renda fixa.
-        """
+        """Renda fixa no mesmo formato das outras posições da carteira."""
         listing = self.list_positions()
         return [_to_portfolio_position(item) for item in listing.items if not item.oculto]
 
@@ -234,8 +210,6 @@ def _to_portfolio_position(item: FixedIncomePosition) -> PortfolioPosition:
         margin_of_safety=None,
         verdict="HOLD",
         label=label,
-        # Renda fixa não depende de estimativa de preço justo: taxa e prazo são
-        # contratuais, então a "confiança" é total e não há consenso de métodos.
         confidence=1.0,
         reasons=reasons,
         category="renda_fixa",

@@ -1,9 +1,10 @@
 # fiance — Arquitetura Técnica
 
-> Gerado por varredura completa em 2026-08-10; **revisado em 2026-08-20** após a
-> implementação completa da auditoria de produto e engenharia (19/08/2026).
-> Complementa o README.md (setup/instalação) com detalhes de arquitetura,
-> algoritmos e estrutura interna.
+> Referência de **como o sistema é montado por dentro**: camadas, algoritmos, endpoints e
+> estrutura de pastas. Revisado em 2026-08-22, após o redesign de UX/UI.
+>
+> Setup e variáveis de ambiente ficam no [README.md](../README.md). O que cada tela faz fica em
+> [FEATURES.md](FEATURES.md). O histórico das decisões fica em [CHANGELOG.md](CHANGELOG.md).
 
 ## Visão geral
 
@@ -47,7 +48,7 @@ fiance é uma plataforma multi-tenant de análise de investimentos focada na B3,
 
 Públicos: `GET /health`, `GET /universe`, `GET /universe/search` (autocomplete de ticker por prefixo/nome) em `basic.py`, e `POST /auth/google` (`auth.py`).
 
-`POST /cache/clear` e `GET /metrics` deixaram de ser públicos em 2026-08-20 — estão no `admin_router`, dentro do router protegido.
+`POST /cache/clear` e `GET /metrics` **não** são públicos: vivem no `admin_router`, dentro do router protegido.
 
 Autenticados (JWT obrigatório via `Depends(get_current_user)`):
 
@@ -80,36 +81,94 @@ Autenticados (JWT obrigatório via `Depends(get_current_user)`):
 | GET | `/data-quality` | `data_quality.py` |
 | POST/GET | `/cache/clear`, `/metrics`, `POST /metrics/reset` | `basic.py` (admin_router) |
 
-Removidos em 2026-08-19 por não terem consumidor real em web/mobile (ver KNOWN_ISSUES.md item 16): `GET /dividends/ranking` (nem chegava a ser importável), `GET /dip-scanner/stream` (SSE), `POST /recommend`, `POST /analyze`, `GET /rebalance`, `POST /projection/sector-allocation`, `POST /renda-fixa/analisar`, `POST /portfolio/refresh`, `DELETE /notifications/register-token`, `GET/PUT /watchlist`, `DELETE /watchlist/{ticker}`.
+Onze rotas foram removidas em 2026-08-19 por não terem consumidor real — a lista e o motivo de
+cada uma estão em [CHANGELOG.md](CHANGELOG.md). Vale a regra que saiu dali: **wrapper de client
+não conta como uso, só chamada de tela conta.**
+
+Dois campos são calculados internamente e **precisam estar declarados** no modelo de resposta para
+chegarem ao cliente: `consensus_methods` em `FairPriceBlock` e `trend_basis` em `TechnicalBlock`.
+`Modelo(**resultado.__dict__)` descarta chave não declarada em silêncio — foi assim que os dois
+ficaram invisíveis até 2026-08-21. `test_fair_price.py` tem regressão para ambos.
 
 ---
 
 ## Web (`web/src/app/`)
 
-Angular 22 standalone components, lazy-loaded. Rotas (`app.routes.ts`): `/login` (público), `/dashboard`, `/assets`, `/assets/cadastro`, `/market`, `/config` (atrás de `authGuard`), fallback → `/dashboard`. O `authGuard` valida o `exp` do JWT, não só a presença do token.
+Angular 22, standalone components, todas as rotas lazy-loaded. **36 entradas em
+`app.routes.ts`**: 19 rotas de conteúdo, os layouts de seção e os redirects das URLs antigas. O
+`authGuard` valida o `exp` do JWT, não só a presença do token.
 
-- **`components/dashboard/`** — tela inicial consolidada.
-- **`components/assets/`** ("Meus Ativos") — **análise**, somente leitura: resumo, composição, renda fixa marcada a mercado, posições (tabela ordenável, seleção múltipla para comparar, exportação CSV), proventos recebidos, venda e histórico. Não há mais cálculo de RF no cliente.
-- **`components/portfolio-editor/`** — **cadastro** (`/assets/cadastro`): CRUD de posições e de renda fixa, com salvamento explícito por linha. Antes tudo convivia em `assets` com autosave por debounce sobre um PUT destrutivo.
-- **`components/market/`** — maior tela do app. Reduzida a 2 abas em 2026-08-19 (`activeTab`: `opportunities` | `ferramentas` — abas "Segmentos" e "Investir" removidas de Mercado nessa data; ficha de Estratégia de Investimento continua existindo só como página própria em `components/strategy/`). `market.component.ts/html` ficou reduzido a navegação de tabs (`activeTab`/`oppMode`/`toolMode`) + o modal compartilhado de análise de queda; cada sub-aba é um subcomponente próprio em `components/market/` (`opportunities-list`, `dip-scanner`, `analyze-asset`, `renda-fixa`, `compare-assets`, `contribution-simulator`, `dip-analysis-modal`). `components/sectors/`, `market/quick-invest/` e `market/investment-strategy/` foram removidos por ficarem sem nenhum consumidor.
-- **`components/opportunities/`, `dip/`, `strategy/`** — abas/telas de análise. `strategy.component` (página própria de Estratégia de Investimento) ainda usa `quickInvest()` de `recommend.service.ts`. `getRebalancePlan()` (mesmo service, endpoint `/rebalance`) ficou sem nenhum consumidor no web após a remoção do rebalanceamento de Meus Ativos — ver Débito Técnico.
-- **`components/config/`** — configurações e metas de yield por categoria.
-- **`core/services/ui-helper.service.ts`** — labels/ícones/cores de AssetType, categoria e setor, glossário de termos (inclui DCF, RSI, tendência, ROE, D/E, consenso e anos de provento), rótulos de proveniência do veredito e apresentação do score (cinza + "dado insuficiente" quando `data_completeness` é baixo). A régua de score em si vive em `core/score-ruler.ts`.
-- **`core/interceptors/`** — `auth.interceptor.ts` (Bearer token), `http-error.interceptor.ts`.
-- **`core/guards/auth.guard.ts`**.
-- **`core/models/`** — um `.model.ts` por domínio.
+Cinco destinos por intenção, mais o ativo como camada — o racional está em
+[design/02-INFORMATION-ARCHITECTURE.md](design/02-INFORMATION-ARCHITECTURE.md):
+
+| Rota | Componente |
+|---|---|
+| `/hoje` | `dashboard/` — central de decisão em 3 níveis |
+| `/carteira` + 6 sub-rotas | `carteira-resumo/`, `composicao/`, `desempenho/`, `proventos/`, `posicoes/`, `encerradas/`, `portfolio-editor/` |
+| `/descobrir` + 3 | `market/opportunities-list/`, `market/dip-scanner/`, `market/compare-assets/` |
+| `/estrategia` + 4 | `strategy/`, `quick-invest/`, `metas/`, `shell/renda-fixa-page` (une `market/renda-fixa` e `market/income-compare`), `market/contribution-simulator/` |
+| `/ativo/:ticker` | `ativo/` — página de research |
+| `/voce` + 3 | `preferencias/`, `alertas/`, `conta/` |
+
+- **`components/shell/`** — layouts de seção (`carteira`, `descobrir`, `estrategia`, `voce`), cada
+  um com `SectionNavComponent` + `router-outlet`. A sub-navegação é feita de links roteados, não de
+  tabs com estado local: cada destino tem URL, deep link e botão voltar.
+- **`components/score-ruler/`** — a régua, elemento-assinatura do produto. Aceita um conjunto de
+  bandas, então serve tanto o score de um ativo quanto a saúde da carteira.
+- **`components/insight/`** — o padrão único de insight: o que aconteceu → por que importa → o que
+  sustenta → o que fazer.
+- **`core/services/carteira-store.service.ts`** — estado da carteira compartilhado pelas sete
+  sub-rotas de `/carteira`. Sem ele, cada troca de sub-aba refaria `POST /portfolio/evaluate`, que
+  é a chamada mais caras do produto.
+- **`core/services/dip-analysis.service.ts`** — estado do drawer de diagnóstico de queda,
+  compartilhado dentro de Descobrir. Vive num serviço porque um layout com `router-outlet` não
+  recebe `output` de filho roteado.
+- **`core/design-tokens.ts`** — **gerado** de `design-tokens/tokens.json`. Não editar.
+- **`core/score-ruler.ts`** — apresentação da régua; os limiares vêm dos tokens gerados, que
+  espelham `analysis/score_ruler.py`.
+- **`core/services/ui-helper.service.ts`** — labels, ícones e cores de AssetType/categoria/setor,
+  glossário e rótulos de proveniência.
+- **`core/interceptors/`** — `auth.interceptor.ts` (Bearer), `http-error.interceptor.ts`.
+- **`src/tokens.css`** — **gerado**. `styles.css` é uma camada de compatibilidade: os nomes antigos
+  (`--accent`, `--panel`…) apontam para `--fi-*` e não carregam valor próprio.
+
+**Pegadinha:** ícone do Lucide precisa ser registrado à mão em `LucideAngularModule.pick({...})`
+(`src/main.ts`). Nome ausente não quebra o build — quebra a tela em runtime.
 
 ---
 
 ## Mobile (`mobile/`) — Flutter
 
-Dart SDK `^3.10.7`. Dependências-chave: `dio`, `google_sign_in`, `flutter_riverpod`, `flutter_secure_storage` (JWT), `go_router` (com `StatefulShellRoute.indexedStack` de 4 branches espelhando as rotas web), `fl_chart`, `flutter_launcher_icons`.
+Dart SDK `^3.10.7`. Dependências-chave: `dio`, `google_sign_in`, `flutter_riverpod`,
+`flutter_secure_storage` (JWT), `go_router`, `fl_chart`, `google_fonts`.
+
+`StatefulShellRoute.indexedStack` com **5 branches**, espelhando os destinos do web: `/hoje`,
+`/carteira` (+ `renda-fixa`), `/descobrir` (+ `quedas`, `comparar`), `/estrategia` (+ `aporte`,
+`metas`, `renda-fixa`, `projecao`), `/voce`. `/ativo/:ticker` fica fora do shell de abas. URLs
+antigas seguem como redirect.
 
 Estrutura `lib/`:
-- **`core/`** — `api_client.dart` (Dio + interceptor Bearer token), `api_repository.dart` (chamadas HTTP tipadas), `auth_service.dart` (Google Sign-In com `serverClientId` fixo = Client ID Web, para audience do idToken ser validável cross-platform), `models.dart` (DTOs espelhando os do backend), `providers.dart` (Riverpod), `router.dart`, `labels.dart` (equivalente ao `ui-helper.service.ts`, mas em Dart).
-- **`features/`** — `auth/`, `dashboard/`, `assets/`, `market/` (reduzido a `opportunities_tab`, `ferramentas_tab`, `asset_detail_sheet` em 2026-08-19 — `sectors_tab.dart` e `investir_tab.dart` removidos por ficarem sem consumidor), `config/`, `shell/app_shell.dart` (NavigationBar com 4 destinos).
+- **`core/`** — `api_client.dart` (Dio + Bearer), `api_repository.dart` (chamadas tipadas),
+  `auth_service.dart` (Google Sign-In com `serverClientId` = Client ID Web, para o `aud` do idToken
+  ser validável cross-platform), `models.dart` (DTOs), `providers.dart` (Riverpod), `router.dart`,
+  `labels.dart` (equivalente ao `ui-helper.service.ts`), `theme.dart`.
+- **`core/design_tokens.dart`** — **gerado** de `design-tokens/tokens.json`. Não editar.
+  `theme.dart` é camada de compatibilidade: `AppColors` e `appRadius` apontam para os tokens.
+- **`core/widgets/`** — `score_ruler.dart` (a régua, espelhando o web), `error_state.dart`
+  (`FiErrorState` + `fiErrorMessage`, que traduz exceção em causa humana),
+  `ticker_autocomplete_field.dart`, `help_tooltip.dart`, `brand_background.dart`.
+- **`features/`** — `auth/`, `dashboard/`, `assets/`, `estrategia/`, `market/`
+  (`opportunities_tab`, `quick_invest_view`, `asset_detail_sheet`), `tools/tools_views.dart` (as
+  views de ferramenta, cada uma roteada), `config/`, `shell/` (`app_shell`, `tool_screen`).
 
-**Paridade com o web**: alta e ativamente mantida. O mobile consome a MESMA API — sem lógica de cálculo de negócio duplicada (fair price, score, RF e IR ficam 100% no backend). Renda fixa (`features/assets/fixed_income_screen.dart`) e Quick Invest (`features/market/quick_invest_view.dart`) foram adicionados em 2026-08-20, fechando as duas lacunas que custavam. Duas assimetrias restantes são **decisão declarada**: Estratégia é web-only (leitura longa e densa) e push exige o app (o web sinaliza isso em Configurações em vez de oferecer um controle sem efeito).
+**Paridade com o web.** O mobile consome a MESMA API, sem regra de cálculo duplicada — fair price,
+score, renda fixa e IR ficam 100% no backend. Cores, tipografia e réguas semânticas são geradas da
+mesma fonte, então não podem divergir.
+
+Assimetrias abertas e declaradas: metas ainda vivem em Configurações, RF × Bolsa não tem cliente
+Dart, e o conteúdo de Hoje e Carteira ainda não foi reestruturado. Push exigir o app instalado
+**não** é lacuna — é decisão, sinalizada em `/voce/alertas`. Lista completa em
+[KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ---
 

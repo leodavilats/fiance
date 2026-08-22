@@ -10,11 +10,8 @@ DESIRED_YIELD_BDR = 0.04
 DESIRED_YIELD_ETF = 0.04
 DEFAULT_DESIRED_YIELD = DESIRED_YIELD_STOCK
 
-# Janela padrão do Bazin: 5 anos-calendário completos.
 DIVIDEND_WINDOW_YEARS = 5
 
-# Acima disso o "dividendo médio" é quase certamente um evento extraordinário
-# (bonificação, redução de capital) e não uma distribuição recorrente.
 _IMPLIED_DY_OUTLIER = 0.30
 
 
@@ -104,7 +101,6 @@ def average_dividend_last_12m(
             date_str = str(d["date"])[:10]
         except (KeyError, TypeError):
             continue
-        # Provento com data futura já anunciado não é renda dos últimos 12 meses.
         if cutoff_str <= date_str <= horizon_str:
             try:
                 total += float(d.get("value", 0.0))
@@ -121,20 +117,7 @@ def average_dividend_last_n_years(
     use_median: bool = False,
     reference: datetime | None = None,
 ) -> float | None:
-    """Dividendo médio anual sobre anos-calendário **completos**.
-
-    Duas correções em relação à versão anterior, que somava e dividia por
-    `years` fixo incluindo o ano corrente parcial:
-
-    - o ano corrente é excluído: contá-lo como cheio subestimava a média de
-      todo ativo, com o viés crescendo ao longo do ano;
-    - o denominador é o número de anos *cobertos pelo histórico* (do primeiro
-      ano com dado até o último ano completo), não `years` fixo. Uma empresa
-      com 3 anos de histórico tinha a média subestimada em ~40%.
-
-    Anos sem pagamento *dentro* do intervalo coberto contam como zero — são
-    ausência real de provento, não ausência de dado.
-    """
+    """Dividendo médio anual sobre anos-calendário **completos**."""
     if not dividends:
         return None
 
@@ -151,8 +134,6 @@ def average_dividend_last_n_years(
     }
 
     if not covered:
-        # Nenhum ano-calendário completo na janela (ex.: IPO recente). Usar os
-        # últimos 12 meses é mais honesto que devolver None e apagar o Bazin.
         return average_dividend_last_12m(dividends, reference=today)
 
     first_year_with_data = min(covered)
@@ -210,20 +191,12 @@ def dcf_fair_price(
     growth_years: int = 5,
     terminal_pe: float = 15.0,
 ) -> float | None:
-    """DCF simplificado sobre o LPA.
-
-    `revenue_growth_pct` é **percentual** (12.0 = 12% a.a.) — a mesma unidade
-    que o collector produz. A versão anterior declarava a fração e checava
-    `0 < rate < 1`, condição que um percentual nunca satisfazia: o DCF caía
-    sempre no crescimento default de 8%.
-    """
+    """DCF simplificado sobre o LPA."""
     if eps is None or eps <= 0:
         return None
 
     growth_pct = DCF_DEFAULT_GROWTH_PCT
     if revenue_growth_pct is not None and 0 < revenue_growth_pct <= DCF_MAX_GROWTH_PCT:
-        # Crescimento negativo ou implausivelmente alto (outlier de base
-        # comparativa) não é projetável por 5 anos — cai no default.
         growth_pct = revenue_growth_pct
 
     growth = growth_pct / 100.0
@@ -242,14 +215,7 @@ def dcf_fair_price(
 
 @dataclass
 class FairPriceInputs:
-    """Parcela do preço justo que **não** depende das preferências do usuário.
-
-    Separar isso permite cachear o resultado do scan globalmente (é dado de
-    mercado, igual para todos) e calcular o que depende de `desired_yield` por
-    request — que é CPU pura e barata. Antes, o cache global guardava o
-    resultado já personalizado e o primeiro usuário a aquecê-lo definia o preço
-    justo que todos os outros viam.
-    """
+    """Parcela do preço justo que **não** depende das preferências do usuário."""
 
     asset_type: str
     price: float | None
@@ -301,9 +267,6 @@ def compute_fair_price_inputs(
     graham: float | None = None
     dcf: float | None = None
     if not is_fii and not is_etf:
-        # FII/ETF são cotas de fundo: sem LPA/VPA de empresa, Graham e DCF não
-        # se aplicam. Para ação e BDR os dois são calculados aqui (independem
-        # de preferência); a seleção do que entra no consenso fica adiante.
         graham = graham_fair_price(eps, book_value)
         if eps is not None and eps > 0:
             dcf = dcf_fair_price(eps, revenue_growth_pct)
@@ -346,15 +309,11 @@ def fair_price_from_inputs(
     if is_fii:
         candidates = [v for v in (bazin, inputs.pvp_fair) if v is not None]
     elif is_etf:
-        # ETF é cota de fundo, sem EPS/book_value de empresa — Graham/DCF não
-        # se aplicam; fair price fica só no dividend yield histórico (Bazin).
         candidates = [v for v in (bazin,) if v is not None]
     elif is_bdr:
         bazin = None
         candidates = [v for v in (graham, dcf) if v is not None]
     else:
-        # DCF entra como terceiro método só quando não há histórico de
-        # dividendos para o Bazin — evita dupla contagem do mesmo lucro.
         if bazin is not None:
             dcf = None
         candidates = [v for v in (bazin, graham, dcf) if v is not None]
@@ -412,10 +371,7 @@ def compute_fair_price(
     pb_ratio: float | None = None,
     reference: datetime | None = None,
 ) -> FairPriceResult:
-    """Atalho de uma chamada: monta os inputs e aplica o desired_yield.
-
-    `revenue_growth_rate` é percentual (12.0 = 12% a.a.).
-    """
+    """Atalho de uma chamada: monta os inputs e aplica o desired_yield."""
     inputs = compute_fair_price_inputs(
         price=price,
         eps=eps,
@@ -429,9 +385,6 @@ def compute_fair_price(
     return fair_price_from_inputs(inputs, desired_yield=desired_yield)
 
 
-# Tendência de longo prazo exige SMA200; com histórico curto (o plano gratuito
-# da BRAPI só devolve ranges curtos) a alternativa honesta é uma tendência de
-# curto prazo rotulada como tal, em vez de "unknown" permanente.
 TREND_BASIS_LONG = "long"
 TREND_BASIS_SHORT = "short"
 TREND_BASIS_NONE = "none"

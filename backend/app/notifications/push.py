@@ -12,7 +12,6 @@ _init_attempted = False
 
 
 def _get_firebase_app():
-    # Sem credencial configurada, send_push() só loga em vez de enviar de verdade.
     global _firebase_app, _init_attempted
     if _firebase_app is not None or _init_attempted:
         return _firebase_app
@@ -50,9 +49,6 @@ def send_push(
     body: str,
     data: dict[str, str] | None = None,
 ) -> list[str]:
-    # Retorna [] quando o Firebase não está configurado, mesmo sem erro de
-    # token — é limitação de ambiente, não invalidez do token; o chamador não
-    # deve desregistrar tokens nesse caso.
     if not tokens:
         return []
 

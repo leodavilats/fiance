@@ -17,8 +17,6 @@ def test_quick_invest_with_valid_cash_returns_allocations(client):
     assert "allocations" in body
     assert "remaining_cash" in body
     assert "allocated_cash" in body
-    # com PETR4/VALE3 disponíveis no universo fake e caixa suficiente,
-    # esperamos ao menos uma alocação sugerida.
     assert isinstance(body["allocations"], list)
 
 

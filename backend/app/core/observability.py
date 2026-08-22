@@ -15,13 +15,7 @@ from app.core.context import (
 )
 from app.core.database import SessionLocal
 
-"""Instrumentação mínima.
-
-Não havia métrica, tracing nem ID de correlação: era impossível saber quantas
-chamadas à BRAPI foram feitas, qual a taxa de cache hit ou qual endpoint está
-lento em produção — e é exatamente essa informação que decide as prioridades de
-performance. Contadores em processo, expostos em `GET /metrics`.
-"""
+"""Instrumentação mínima."""
 
 
 @dataclass
@@ -99,9 +93,6 @@ def record_cache_lookup(hit: bool) -> None:
     metrics.incr("cache.hit" if hit else "cache.miss")
 
 
-# --- middleware -----------------------------------------------------------
-
-
 def _route_label(request) -> str:
     """Rota sem os parâmetros de path, para não explodir a cardinalidade."""
     route = request.scope.get("route")
@@ -121,8 +112,6 @@ async def observability_middleware(request, call_next):
     memo_token = set_request_memo()
     try:
         response = await call_next(request)
-        # Só commita quando a resposta saiu sem exceção: um handler que falhou
-        # no meio não deve deixar escrita parcial no banco.
         if get_request_session() is session:
             session.commit()
     except BaseException:

@@ -2,14 +2,8 @@ from pydantic import BaseModel, Field
 
 from .enums import AssetType
 
-# Uma carteira real não passa de algumas centenas de posições. Sem limite, um
-# POST /portfolio/evaluate com 10 000 itens virava 10 000 resoluções de ativo —
-# o vetor de abuso mais barato do sistema.
 MAX_PORTFOLIO_ITEMS = 500
 
-# Ticker da B3: radical de 4 caracteres (pode conter dígito, ex. M1TA34) +
-# 1 ou 2 dígitos. Renda fixa não passa por aqui — tem tabela própria
-# (fixed_income_positions) em vez do ticker sintético RF_<tipo>_<n>.
 TICKER_PATTERN = r"^[A-Za-z][A-Za-z0-9]{3}\d{1,2}$"
 
 
@@ -49,8 +43,6 @@ class PortfolioPosition(BaseModel):
     margin_of_safety: float | None
     verdict: str
     label: str
-    # Proveniência do veredito, ao lado dele: sem isso não havia como o usuário
-    # saber se um veredito fraco vem de análise ou de falta de dado.
     confidence: float = 0.0
     data_years: int = 0
     consensus_methods: int = 0
@@ -81,11 +73,7 @@ class StoredPortfolioItem(BaseModel):
 
 
 class SavePortfolioRequest(BaseModel):
-    """Importação explícita: substitui a carteira inteira.
-
-    Escrita destrutiva — use POST /portfolio/position e
-    DELETE /portfolio/position/{ticker} para operações do dia a dia.
-    """
+    """Importação explícita: substitui a carteira inteira."""
 
     items: list[PortfolioItem] = Field(..., min_length=1, max_length=MAX_PORTFOLIO_ITEMS)
 
@@ -108,10 +96,7 @@ class SellRequest(BaseModel):
     ticker: str = Field(..., min_length=4, max_length=32, pattern=TICKER_PATTERN)
     quantity: float = Field(..., gt=0)
     sell_price: float = Field(..., gt=0)
-    # Datar a venda livremente muda o balde da isenção mensal de R$ 20 mil e a
-    # alíquota de IR calculada. Aceita só data passada, dentro de uma janela
-    # curta (retroativo de lançamento esquecido), nunca futura — validado em
-    # PortfolioService.sell_position.
+    # Datar a venda livremente muda o balde da isenção mensal de R$ 20 mil e a alíquota de IR calculada.
     sold_at: float | None = Field(
         None, description="Timestamp da venda (passado, até 90 dias atrás); default = agora"
     )
@@ -128,18 +113,13 @@ class ClosedTrade(BaseModel):
     ir_rate: float
     ir_amount: float
     net_profit: float
-    # Compensação de prejuízo aplicada nesta venda.
     loss_offset_used: float = 0.0
     taxable_profit: float = 0.0
     sold_at: float
 
 
 class TaxLossCategoryBalance(BaseModel):
-    """Saldo de prejuízo realizado por categoria, disponível para compensar.
-
-    A legislação permite abater prejuízo de ganhos futuros da mesma categoria.
-    O saldo negativo não era guardado, então o IR devido era superestimado.
-    """
+    """Saldo de prejuízo realizado por categoria, disponível para compensar."""
 
     category: str
     realized_loss: float

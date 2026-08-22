@@ -1,9 +1,4 @@
-"""Stale-while-revalidate no scan do universo.
-
-`GET /dashboard` em cache frio disparava o scan do universo inteiro **dentro do
-request**: ~280 tickers × httpx com timeout de 15 s. O usuário pagava o scan, e
-o interceptor do web precisava de um timeout de 300 s para acomodar isso.
-"""
+"""Stale-while-revalidate no scan do universo."""
 
 import asyncio
 
@@ -47,7 +42,6 @@ async def test_fresh_cache_is_served_without_refetching(service, monkeypatch):
 
 @pytest.mark.anyio
 async def test_stale_cache_is_served_immediately_and_revalidated(service, monkeypatch):
-    # Primeiro scan popula o cache.
     records, universe_size = await service._scan_market()
     assert records
 
@@ -56,7 +50,6 @@ async def test_stale_cache_is_served_immediately_and_revalidated(service, monkey
         "universe_size": universe_size,
     }
 
-    # Cache vencido há 1 h, dentro da tolerância de stale.
     monkeypatch.setattr(opp_mod.cache, "get_with_age", lambda key: (stale_payload, 3600.0))
 
     refreshed = asyncio.Event()
@@ -69,7 +62,6 @@ async def test_stale_cache_is_served_immediately_and_revalidated(service, monkey
 
     served, size = await service._scan_market()
 
-    # Serviu o valor antigo sem esperar o recálculo.
     assert len(served) == len(records)
     assert size == universe_size
 
@@ -81,7 +73,6 @@ async def test_too_stale_cache_is_recalculated_synchronously(service, monkeypatc
     records, universe_size = await service._scan_market()
     payload = {"items": [r.to_dict() for r in records], "universe_size": universe_size}
 
-    # Muito além da tolerância: não vale servir dado tão velho.
     monkeypatch.setattr(
         opp_mod.cache,
         "get_with_age",
@@ -126,7 +117,6 @@ async def test_only_one_background_refresh_runs_at_a_time(service, monkeypatch):
     if opp_mod._refresh_task is not None:
         await opp_mod._refresh_task
 
-    # Cinco requests simultâneas em cache vencido não devem virar cinco scans.
     assert calls["n"] == 1
 
 

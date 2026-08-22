@@ -4,14 +4,11 @@ from app.collectors.universal import UnsupportedTickerError, detect_type
 
 
 def test_bdr_detected_before_fii_check():
-    # AAPL34 must never be classified as br_stock/fii — regression test for the
-    # bug where BDRs (ending in 3<digit>) were misdetected.
     assert detect_type("AAPL34") == "bdr"
     assert detect_type("AAPL34.SA") == "bdr"
 
 
 def test_known_units_are_br_stock_not_fii():
-    # Units ending in 11 that are known stocks (not FIIs) — regression test.
     for ticker in ["SANB11", "TAEE11", "BPAC11", "KLBN11", "SAPR11"]:
         assert detect_type(ticker) == "br_stock"
 

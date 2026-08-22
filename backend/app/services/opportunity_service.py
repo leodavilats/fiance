@@ -24,19 +24,9 @@ from app.repositories import AssetRepository, PortfolioRepository
 
 logger = logging.getLogger(__name__)
 
-# v2: o cache guarda **dado de mercado** por ticker, não o resultado já
-# personalizado. Antes a chave era global (`opps_full_scan`) mas o valor
-# cacheado dependia de desired_yield/risk_profile do primeiro usuário a
-# aquecê-la: as metas de yield da tela de Configurações não tinham efeito e o
-# usuário B via preço justo e score calculados com as preferências do usuário A.
 _SCAN_CACHE_KEY = "opps_market_scan_v2"
 _SCAN_TTL = 20 * 60
 
-# Até quanto tempo depois do vencimento vale servir o scan antigo enquanto um
-# novo roda em background. Um scan são ~280 tickers × httpx com timeout de 15 s:
-# fazer o usuário esperar por isso dentro de um GET /dashboard é a diferença
-# entre a tela abrir em milissegundos e abrir em minutos. Dado de mercado com
-# algumas horas de atraso é muito melhor que um dashboard travado.
 _SCAN_STALE_TOLERANCE = 12 * 3600
 
 _scan_lock = asyncio.Lock()
@@ -93,8 +83,6 @@ class OpportunityService:
         if not snap or not snap.price:
             return None
 
-        # get_dividends e get_history derivam do mesmo payload bruto da BRAPI e
-        # não dependem um do outro — em série pagavam 3x a latência de cache miss.
         try:
             dividends, history = await asyncio.gather(
                 self.asset_repo.get_dividends(symbol),
@@ -207,12 +195,7 @@ class OpportunityService:
         )
 
     async def _scan_market(self) -> tuple[list[_MarketRecord], int]:
-        """Dado de mercado do universo, com stale-while-revalidate.
-
-        Fresco: devolve na hora. Vencido mas ainda utilizável: devolve o antigo
-        e dispara o recálculo em background. Sem nada em cache: aí sim paga o
-        scan (primeiro acesso após um deploy, ou cache limpo).
-        """
+        """Dado de mercado do universo, com stale-while-revalidate."""
         cached, stale_by = cache.get_with_age(_SCAN_CACHE_KEY)
 
         if cached is not None and stale_by == 0:
@@ -243,7 +226,6 @@ class OpportunityService:
 
     async def _refresh_market(self) -> tuple[list[_MarketRecord], int]:
         async with _scan_lock:
-            # revalida: outra request pode ter preenchido o cache enquanto esperávamos o lock
             cached, stale_by = cache.get_with_age(_SCAN_CACHE_KEY)
             if cached is not None and stale_by == 0:
                 return self._decode(cached)
@@ -286,11 +268,7 @@ class OpportunityService:
         return [self._build_opportunity(r, prefs) for r in records], universe_size
 
     async def market_data_age_seconds(self) -> float | None:
-        """Idade do dado de mercado mais antigo do último scan.
-
-        É o que permite a UI dizer "cotações de 2 h atrás" em vez de deixar o
-        usuário supor que tudo é de agora.
-        """
+        """Idade do dado de mercado mais antigo do último scan."""
         records, _ = await self._scan_market()
         stamps = [r.as_of for r in records if r.as_of]
         if not stamps:
@@ -298,11 +276,7 @@ class OpportunityService:
         return max(0.0, time.time() - min(stamps))
 
     async def scan_for_current_user(self) -> tuple[list[Opportunity], int]:
-        """Scan personalizado, memoizado por request.
-
-        /dashboard, /strategy e /rebalance-suggestions passam por aqui; a tela
-        de Estratégia chamava duas rotas que rodavam o pipeline cada uma.
-        """
+        """Scan personalizado, memoizado por request."""
 
         async def _build() -> tuple[list[Opportunity], int]:
             prefs = self.portfolio_repo.get_preferences()
@@ -331,8 +305,6 @@ class OpportunityService:
 
         scanned, universe_size = await self.scan_for_current_user()
         scanned_count = len(scanned)
-        # Copia: os filtros e o boost por preferência mutam `score`, e o
-        # resultado memoizado é compartilhado com as outras rotas do request.
         opps = [o.model_copy() for o in scanned]
 
         if not include_held and not search:

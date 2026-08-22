@@ -1,12 +1,4 @@
-"""Proventos recebidos
-
-Todo número de renda no produto era estimativa derivada de DY
-(`monthly_dividends_estimate`) e o histórico real não era armazenado em tabela
-nenhuma: "quanto eu recebi este mês" não tinha resposta.
-
-Revision ID: 0005_dividends
-Revises: 0004_tax_loss
-"""
+"""Proventos recebidos Todo número de renda no produto era estimativa derivada de DY (`monthly_dividends_estimate`) e o histórico real não era armazenado em tabela nenhuma: "quanto eu recebi este mês" não tinha resposta."""
 
 from __future__ import annotations
 

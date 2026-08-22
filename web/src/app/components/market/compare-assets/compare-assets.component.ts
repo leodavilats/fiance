@@ -5,6 +5,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AssetAnalysis,
+  AssetFundamentals,
   CompareResponse,
   RecommendService,
   TickerSuggestion,
@@ -50,9 +51,6 @@ export class CompareAssetsComponent implements OnInit, OnDestroy {
       )
       .subscribe(items => this.suggestions.set(items));
 
-    // Seleção múltipla feita na tabela de posições chega por query param — é o
-    // que faz o botão "Comparar" da carteira levar a algo pronto em vez de a um
-    // formulário vazio.
     const fromQuery = this.route.snapshot.queryParamMap.get('tickers');
     if (fromQuery) {
       const tickers = fromQuery
@@ -114,7 +112,7 @@ export class CompareAssetsComponent implements OnInit, OnDestroy {
     });
   }
 
-  fundamental(item: AssetAnalysis, key: string): number | null {
+  fundamental(item: AssetAnalysis, key: keyof AssetFundamentals): number | null {
     return item.fundamentals[key] ?? null;
   }
 }

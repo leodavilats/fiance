@@ -17,7 +17,6 @@ def test_search_by_ticker_prefix(monkeypatch):
     tickers = [r["ticker"] for r in results]
     assert "PETR4" in tickers
     assert "PETR3" in tickers
-    # Lotes fracionários não devem aparecer no autocomplete.
     assert "PETR4F" not in tickers
 
 
@@ -35,8 +34,6 @@ def test_search_empty_query_returns_nothing(monkeypatch):
 def test_search_prioritizes_prefix_match(monkeypatch):
     monkeypatch.setattr(universe, "_get_brapi_stocks_cached", _fake_stocks)
     results = universe.search_universe("PETR")
-    # PETR3/PETR4 começam com a busca — devem vir antes de qualquer match
-    # que só contenha "PETR" no meio do nome/ticker.
     assert results[0]["ticker"].startswith("PETR")
 
 

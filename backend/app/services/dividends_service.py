@@ -17,12 +17,7 @@ from app.storage import portfolio_store
 
 
 class DividendsService:
-    """Histórico real de proventos recebidos.
-
-    A projeção de renda passiva era construída inteiramente sobre estimativa
-    derivada de DY. Com o recebido de fato registrado, a estimativa passa a ser
-    confrontável — e "quanto eu recebi este mês" ganha resposta.
-    """
+    """Histórico real de proventos recebidos."""
 
     def list_received(self, estimated_monthly: float | None = None) -> DividendsReceivedResponse:
         rows = portfolio_store.list_dividends_received()
@@ -52,9 +47,6 @@ class DividendsService:
             by_month[item.paid_at.strftime("%Y-%m")].append(item.amount)
             by_ticker[item.ticker].append(item.amount)
 
-        # Média sobre os meses efetivamente cobertos, não sobre 12 fixos: uma
-        # carteira com 3 meses de histórico não deve ter a média diluída — o
-        # mesmo erro que existia no cálculo do Bazin.
         months_with_data = [m for m in by_month if m >= cutoff_12m.strftime("%Y-%m")]
         monthly_average = last_12m / len(months_with_data) if months_with_data else 0.0
 

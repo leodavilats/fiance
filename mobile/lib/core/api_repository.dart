@@ -18,7 +18,6 @@ class ApiRepository {
     return DashboardData.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// "Recebi meu salário, onde aporto" — antes só existia no web.
   Future<QuickInvestResult> quickInvest({
     required double cashAvailable,
     bool useCurrentGoals = true,
@@ -50,9 +49,6 @@ class ApiRepository {
   }
 
   /// Cria ou atualiza uma posição sem tocar nas outras.
-  ///
-  /// `savePortfolio` (PUT /portfolio) é destrutivo: apaga a carteira inteira
-  /// antes de reinserir. Cadastro do dia a dia usa esta operação.
   Future<void> upsertPosition({
     required String ticker,
     required double quantity,
@@ -70,7 +66,6 @@ class ApiRepository {
     );
   }
 
-  /// Importação explícita — substitui a carteira inteira.
   Future<void> savePortfolio(List<StoredPortfolioItem> items) async {
     await _dio.put(
       '/portfolio',
@@ -93,7 +88,6 @@ class ApiRepository {
     await _dio.delete('/portfolio/position/$ticker');
   }
 
-  // --- renda fixa (entidade persistida no servidor) ---
 
   Future<FixedIncomeList> getFixedIncome() async {
     final res = await _dio.get('/fixed-income');
@@ -318,10 +312,6 @@ class ApiRepository {
     await _dio.delete('/alerts/$id');
   }
 
-  /// Desassocia o token deste aparelho da conta atual.
-  ///
-  /// Sem isto, depois do logout o aparelho continuava recebendo o resumo de
-  /// carteira da conta anterior até que alguém registrasse o token de novo.
   Future<void> unregisterDeviceToken(String token) async {
     await _dio.delete(
       '/notifications/register-token',

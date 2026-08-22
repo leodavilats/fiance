@@ -21,7 +21,4 @@ async def dip_scanner(
         None, description="Filtrar por categoria: acoes_br | bdrs | fiis | etfs"
     ),
 ) -> DipScannerResponse:
-    # A categoria precisa filtrar antes do corte de `top`: filtrar depois
-    # devolvia "o que sobrou dos 12 maiores dips do universo inteiro" em vez
-    # dos 12 maiores dips da categoria pedida.
     return await dip_service.scan_dips(universe, min_score, top, category=category)

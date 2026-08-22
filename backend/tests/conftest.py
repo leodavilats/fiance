@@ -1,9 +1,6 @@
 import os
 import tempfile
 
-# Usa um arquivo SQLite temporário isolado para os testes, para nunca tocar
-# o banco de desenvolvimento (.cache/fiance.db). Precisa ser setado antes
-# de qualquer import de app.core.database (que cria o engine no import).
 _tmp_db = os.path.join(tempfile.mkdtemp(prefix="fiance_test_"), "test.db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp_db}"
 
@@ -25,9 +22,7 @@ def client():
 
 
 def make_auth_headers(user_id: str) -> dict:
-    """Gera um header Authorization válido usando o mesmo emissor de tokens
-    usado em produção (app.core.auth.issue_access_token), para que as
-    requisições de teste passem de fato pelo Depends(get_current_user)."""
+    """Gera um header Authorization válido usando o mesmo emissor de tokens usado em produção (app.core.auth.issue_access_token), para que as requisições de teste passem de fato pelo Depends(get_current_user)."""
     token = issue_access_token(user_id)
     return {"Authorization": f"Bearer {token}"}
 
@@ -37,12 +32,7 @@ def auth_headers():
     return make_auth_headers("test_http_user")
 
 
-# Snapshots fake para os tickers usados nos testes de API — evita qualquer
-# chamada de rede real (BRAPI) durante os testes HTTP.
-#
-# Unidades: roe / profit_margin / revenue_growth / debt_to_equity vêm do
-# collector já em **percentual** (ver collectors.universal._ratio_to_pct), e é
-# nessa escala que scoring e fair price esperam receber.
+# Snapshots fake para os tickers usados nos testes de API — evita qualquer chamada de rede real (BRAPI) durante os testes HTTP.
 def _fake_snapshot(symbol: str):
     from app.collectors.universal import AssetSnapshot
 
@@ -96,12 +86,7 @@ def build_quarterly_dividends(
     per_payment: float = 0.75,
     reference: datetime | None = None,
 ) -> list[dict]:
-    """Histórico trimestral de proventos terminando no ano completo anterior.
-
-    O stub original devolvia `[]` para todos os tickers, então nenhum teste
-    passava por average_dividend_last_n_years com dado real nem pelo cálculo de
-    DY do collector — exatamente onde estavam os bugs de valuation.
-    """
+    """Histórico trimestral de proventos terminando no ano completo anterior."""
     today = reference or datetime.now(UTC)
     out: list[dict] = []
     for year_offset in range(1, years + 1):
@@ -138,14 +123,7 @@ def anyio_backend():
 
 @pytest.fixture(autouse=True)
 def _stub_market_data(monkeypatch, request):
-    """Isola os testes de qualquer chamada de rede real para dados de mercado.
-
-    Vale para todos os testes: faz um universo fixo e pequeno (PETR4, VALE3)
-    responder com dados determinísticos, e qualquer outro ticker responder com
-    None/[] (equivalente a "sem dados" — já tratado com fallback pelo código de
-    produção). PETR4 traz histórico de dividendos e série de preços; VALE3 fica
-    sem nenhum dos dois, cobrindo os dois caminhos.
-    """
+    """Isola os testes de qualquer chamada de rede real para dados de mercado."""
 
     async def _fake_get_asset(symbol: str):
         return _fake_snapshot(symbol)
@@ -168,15 +146,10 @@ def _stub_market_data(monkeypatch, request):
 
     monkeypatch.setattr(opp_mod, "get_universe", lambda: ["PETR4", "VALE3"])
 
-    # Índices de setor/autocomplete são memoizados em processo — sem limpar,
-    # um teste herda o índice construído pelo anterior.
     from app.core.universe import invalidate_universe_memo
 
     invalidate_universe_memo()
 
-    # Cache de oportunidades/universo é um sqlite em disco — troca por um
-    # dicionário em memória isolado por teste. Testes marcados com `real_cache`
-    # exercitam a implementação de verdade (WAL, TTL, purge).
     import app.core.cache as cache_mod
 
     if request.node.get_closest_marker("real_cache"):
@@ -184,9 +157,6 @@ def _stub_market_data(monkeypatch, request):
 
     fake_store: dict = {}
     monkeypatch.setattr(cache_mod, "get", lambda key: fake_store.get(key))
-    # (valor, atraso): 0 = fresco. O dicionário em memória nunca "vence", então
-    # o caminho de stale-while-revalidate não dispara nos testes de contrato —
-    # ele tem teste próprio em test_scan_cache.py.
     monkeypatch.setattr(
         cache_mod,
         "get_with_age",
@@ -199,9 +169,6 @@ def _stub_market_data(monkeypatch, request):
     monkeypatch.setattr(cache_mod, "clear_all", lambda: fake_store.clear())
     monkeypatch.setattr(cache_mod, "delete_pattern", lambda pattern: 0)
 
-    # get_rates() bate no BCB por HTTP. Sem stub, cada teste que toca renda
-    # fixa espera a rede (ou o timeout de 6 s) — e o resultado do cálculo
-    # mudaria conforme o CDI do dia.
     fake_rates = {
         "cdi_anual": 14.40,
         "selic_anual": 14.40,

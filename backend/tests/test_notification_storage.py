@@ -12,8 +12,6 @@ def test_register_and_list_device_token():
 
 
 def test_register_same_token_reassigns_user():
-    # Regression: se o mesmo token FCM aparecer para outro usuário (ex.: troca
-    # de conta no aparelho), o registro deve realocar, não duplicar.
     portfolio_store.register_device_token("shared-token", "android", user_id="user_a")
     portfolio_store.register_device_token("shared-token", "android", user_id="user_b")
 
@@ -47,7 +45,6 @@ def test_notified_opportunities_roundtrip():
     portfolio_store.mark_opportunities_notified(uid, ["PETR4", "VALE3"])
     assert portfolio_store.get_notified_opportunity_tickers(uid) == {"PETR4", "VALE3"}
 
-    # Idempotente: marcar de novo não duplica nem quebra.
     portfolio_store.mark_opportunities_notified(uid, ["PETR4"])
     assert portfolio_store.get_notified_opportunity_tickers(uid) == {"PETR4", "VALE3"}
 

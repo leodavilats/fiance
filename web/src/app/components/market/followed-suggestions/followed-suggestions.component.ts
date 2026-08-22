@@ -9,14 +9,6 @@ import {
   SnackbarService,
 } from '../../../core';
 
-/**
- * Resultado das sugestões que o usuário seguiu.
- *
- * Já existiam `ClosedTradeDb` (com IR realizado), `/rebalance-suggestions` e
- * `reduce_suggestions` — mas o produto sugeria e nunca sabia o que aconteceu
- * depois. Com o registro e o resultado, ele passa a ser auditável pelo próprio
- * usuário: histórico verificável em vez de argumento de autoridade.
- */
 @Component({
   selector: 'app-followed-suggestions',
   standalone: true,

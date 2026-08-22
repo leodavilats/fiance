@@ -5,24 +5,15 @@ from .portfolio import PortfolioPosition, PortfolioSnapshot
 
 
 class Alert(BaseModel):
-    """Alerta do dashboard, agrupado e com um desfecho.
-
-    Antes o dashboard emitia alertas sem limite nem deduplicação — um por
-    posição SELL, um por setor acima de 30%, um por categoria fora da meta — e a
-    única ação oferecida na tela era "ir para Mercado". Muita carga cognitiva,
-    nenhum desfecho.
-    """
+    """Alerta do dashboard, agrupado e com um desfecho."""
 
     severity: str
     kind: str
     title: str
     detail: str
     ticker: str | None = None
-    # Quantos itens o alerta representa (3 posições com sinal de venda vira uma
-    # linha, não três).
     count: int = 1
     tickers: list[str] = Field(default_factory=list)
-    # Ação sugerida: analyze | sell | rebalance | goals | market | fixed_income
     action: str | None = None
     action_label: str | None = None
 
@@ -57,8 +48,6 @@ class DashboardSummary(BaseModel):
 
     monthly_dividends_estimate: float
     yearly_dividends_estimate: float = 0.0
-    # Recebido de fato, do cadastro de proventos. Todo número de renda no
-    # produto era estimativa derivada de DY; agora a estimativa é confrontável.
     dividends_received_this_month: float = 0.0
     dividends_received_last_12m: float = 0.0
     portfolio_yield: float | None = None
@@ -69,12 +58,7 @@ class DashboardSummary(BaseModel):
 
 
 class DataFreshness(BaseModel):
-    """Frescor e origem do dado que alimentou a tela.
-
-    `get_rates()` já devolvia `source: bcb | estimativa` — o único indicador de
-    proveniência do sistema — e nenhuma tela o mostrava. O usuário não
-    distinguia cotação de agora de cotação de 2 h atrás.
-    """
+    """Frescor e origem do dado que alimentou a tela."""
 
     rates_source: str = "estimativa"
     market_data_age_seconds: float | None = None

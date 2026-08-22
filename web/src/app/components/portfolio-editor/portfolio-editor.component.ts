@@ -19,26 +19,12 @@ import {
 type RowState = 'idle' | 'saving' | 'saved' | 'error';
 
 interface AssetRow {
-  /** Ticker já salvo no servidor; null enquanto é uma linha nova. */
   savedTicker: string | null;
   state: RowState;
   error: string | null;
 }
 
-/**
- * "Meus Ativos" — **cadastro**.
- *
- * Três problemas do cadastro anterior, todos resolvidos aqui:
- *
- * - **autosave por debounce sobre PUT destrutivo**: digitar uma quantidade
- *   disparava reescrita completa da carteira depois de 1 s, e uma linha meio
- *   preenchida podia ser persistida. Agora o salvamento é explícito, por linha,
- *   via `POST /portfolio/position` (não destrutivo).
- * - **renda fixa em localStorage**: taxa, prazo, data e % do CDI viviam só no
- *   navegador. Agora são um recurso do servidor (`/fixed-income`).
- * - **cálculo de rendimento duplicado no cliente**: divergia do backend em % do
- *   CDI, dias por mês e IPCA+. O rendimento agora vem calculado do servidor.
- */
+/** "Meus Ativos" — **cadastro**. */
 @Component({
   selector: 'app-portfolio-editor',
   standalone: true,
@@ -51,8 +37,6 @@ export class PortfolioEditorComponent implements OnInit {
   private readonly snackbar = inject(SnackbarService);
   readonly loading = inject(LoadingService);
 
-  // --- ativos negociados -------------------------------------------------
-
   assetForms = signal<FormGroup[]>([]);
   assetMeta = signal<AssetRow[]>([]);
   assetsLoaded = signal(false);
@@ -61,8 +45,6 @@ export class PortfolioEditorComponent implements OnInit {
   tickerSuggestions = signal<TickerSuggestion[]>([]);
   tickerSuggestionsRow = signal<number | null>(null);
   private tickerSearch$ = new Subject<{ index: number; query: string }>();
-
-  // --- renda fixa --------------------------------------------------------
 
   fixedIncome = signal<FixedIncomePosition[]>([]);
   fixedIncomeForm!: FormGroup;
@@ -104,8 +86,6 @@ export class PortfolioEditorComponent implements OnInit {
       });
   }
 
-  // --- ativos negociados -------------------------------------------------
-
   private newAssetForm(item?: StoredPortfolioItem): FormGroup {
     return this.fb.group({
       ticker: this.fb.control(item?.ticker ?? '', {
@@ -133,8 +113,6 @@ export class PortfolioEditorComponent implements OnInit {
         this.assetsLoaded.set(true);
       },
       error: () => {
-        // Nada de habilitar edição sobre uma lista vazia que só está vazia
-        // porque o GET falhou.
         this.loadFailed.set(true);
       },
     });
@@ -179,8 +157,6 @@ export class PortfolioEditorComponent implements OnInit {
       .upsertPosition({ ticker, quantity: value.quantity, avg_price: value.avg_price })
       .subscribe({
         next: () => {
-          // Ticker renomeado na linha: a posição antiga precisa sair, senão a
-          // carteira fica com as duas.
           if (previous && previous !== ticker) {
             this.svc.deletePosition(previous).subscribe({ error: () => {} });
           }
@@ -243,8 +219,6 @@ export class PortfolioEditorComponent implements OnInit {
     return this.assetMeta()[index]?.error ?? null;
   }
 
-  // --- renda fixa --------------------------------------------------------
-
   private buildFixedIncomeForm(position?: FixedIncomePosition): void {
     this.fixedIncomeForm = this.fb.group({
       nome: this.fb.control(position?.nome ?? '', {
@@ -303,8 +277,6 @@ export class PortfolioEditorComponent implements OnInit {
       valor_investido: raw.valor_investido,
       taxa: raw.taxa,
       tipo_taxa: raw.tipo_taxa,
-      // % do CDI só faz sentido em pós-fixado; enviar em pré-fixado faria o
-      // servidor resolver a taxa pelo indexador errado.
       percentual_cdi: raw.tipo_taxa === 'pos_fixado' ? raw.percentual_cdi : null,
       data_aplicacao: raw.data_aplicacao,
       vencimento: raw.vencimento || null,

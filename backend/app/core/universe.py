@@ -17,13 +17,8 @@ _UNIVERSE_CACHE_KEY = "brapi_universe_v1"
 _STOCKS_RAW_CACHE_KEY = "brapi_stocks_raw_v1"
 _UNIVERSE_TTL = 24 * 3600
 
-# PETR4F etc. são lotes fracionários do mesmo ativo "cheio" (PETR4); sem
-# filtrar, competem pelas vagas do top-N como se fossem ativos distintos.
 _FRACTIONAL_LOT = re.compile(r"^[A-Z]{4}\d{1,2}F$")
 
-# ETFs líquidos da B3 usados como seed/fallback quando o subType retornado
-# pela BRAPI não vier marcado corretamente. Fonte única — antes havia uma
-# segunda cópia em app.collectors.universal mantida em sincronia à mão.
 KNOWN_ETFS = {
     "BOVA11",
     "BOVV11",
@@ -63,10 +58,6 @@ def _get_brapi_stocks_cached() -> list[dict]:
     return stocks
 
 
-# Índices derivados da lista da BRAPI, memoizados em processo. Sem isso um
-# scan completo fazia ~280 leituras do blob no SQLite + 280 json.loads + 280
-# construções de dict (get_sector_map é chamado por ticker), e cada tecla do
-# autocomplete desserializava a lista inteira.
 _MEMO_TTL = 15 * 60
 _memo_lock = threading.Lock()
 _memo: dict[str, tuple[float, object]] = {}

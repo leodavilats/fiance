@@ -128,13 +128,7 @@ def _ensure_user(session, user_id: str) -> None:
 
 @contextmanager
 def _session(user_id: str | None, ensure_user: bool = False):
-    """Sessão de banco escopada a um tenant.
-
-    `ensure_user` só é necessário em caminhos que **criam** linha para o
-    usuário (a FK exige que ele exista no Postgres). Antes todo `_session`
-    fazia um SELECT em users: `generate_dashboard` sozinho abria 3–4 sessões e
-    o request inteiro passava de 8, cada uma com esse SELECT extra.
-    """
+    """Sessão de banco escopada a um tenant."""
     global _initialized
     if not _initialized:
         init_db()
@@ -144,8 +138,6 @@ def _session(user_id: str | None, ensure_user: bool = False):
 
     ambient = get_request_session()
     if ambient is not None:
-        # Sessão do request: o middleware commita/fecha no fim. Um flush
-        # mantém o comportamento de quem lê de volta o que acabou de escrever.
         if ensure_user:
             _ensure_user(ambient, uid)
         yield ambient, uid
@@ -164,10 +156,7 @@ def _session(user_id: str | None, ensure_user: bool = False):
 
 @contextmanager
 def _session_global():
-    """Sessão sem tenant, para manutenção e jobs cross-usuário.
-
-    Nunca usar em caminho de requisição: não há filtro por `user_id` aqui.
-    """
+    """Sessão sem tenant, para manutenção e jobs cross-usuário."""
     global _initialized
     if not _initialized:
         init_db()
@@ -304,12 +293,7 @@ def reduce_position_quantity(ticker: str, sold_qty: float, user_id: str | None =
 
 
 def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None) -> float:
-    """Vendas brutas do mês na categoria, para a isenção de R$ 20 mil.
-
-    O mês é o mês calendário **brasileiro**: apurar em fronteira UTC fazia uma
-    venda no último dia do mês depois das 21 h BRT cair no mês seguinte,
-    mudando o balde da isenção e a alíquota aplicada.
-    """
+    """Vendas brutas do mês na categoria, para a isenção de R$ 20 mil."""
     month_start = month_start_timestamp()
 
     with _session(user_id) as (session, uid):
@@ -554,12 +538,7 @@ _PREF_CSV_FIELDS = {"preferred_categories", "preferred_sectors", "excluded_ticke
 
 
 def set_preferences(user_id: str | None = None, **fields) -> None:
-    """Grava só os campos presentes em `fields`.
-
-    Só o que o chamador passou explicitamente é escrito — um PUT que não
-    menciona `cash_available` preserva o valor no banco em vez de sobrescrever
-    com o default. Passar `None` explicitamente limpa um campo anulável.
-    """
+    """Grava só os campos presentes em `fields`."""
     unknown = set(fields) - set(_PREF_DEFAULTS)
     if unknown:
         raise ValueError(f"Campos de preferência desconhecidos: {sorted(unknown)}")
@@ -601,7 +580,6 @@ def mark_digest_sent(sent_at: float, user_id: str | None = None) -> None:
 def register_device_token(
     token: str, platform: str = "android", user_id: str | None = None
 ) -> None:
-    # reatribui o token ao usuário atual mesmo se já pertencia a outro (troca de conta no mesmo aparelho)
     with _session(user_id, ensure_user=True) as (session, uid):
         existing = session.scalar(select(DeviceTokenDb).where(DeviceTokenDb.token == token))
         if existing is not None:
@@ -621,12 +599,7 @@ def unregister_device_token(token: str, user_id: str | None = None) -> None:
 
 
 def list_all_device_tokens() -> list[DeviceToken]:
-    """Todos os tokens, de todos os tenants — usado pelo ciclo de notificação.
-
-    Roda fora de uma requisição, então não há tenant no contexto. Antes usava
-    `_session(DEFAULT_USER)`, e o `_ensure_user` criava um usuário
-    `default@local` a cada ciclo de notificação.
-    """
+    """Todos os tokens, de todos os tenants — usado pelo ciclo de notificação."""
     with _session_global() as session:
         rows = session.scalars(select(DeviceTokenDb)).all()
         return [
@@ -885,13 +858,7 @@ def delete_fixed_income(position_id: int, user_id: str | None = None) -> bool:
 
 
 def purge_legacy_fixed_income_tickers() -> int:
-    """Remove as posições `RF_*` do tempo em que renda fixa era um ticker.
-
-    Aqueles registros só carregavam o valor investido — taxa, prazo e data
-    viviam no localStorage do navegador e não são recuperáveis no servidor.
-    Mantê-los produziria linhas de renda fixa sem rendimento convivendo com a
-    tabela nova. Roda em todos os tenants, uma vez, no startup.
-    """
+    """Remove as posições `RF_*` do tempo em que renda fixa era um ticker."""
     with _session_global() as session:
         result = session.execute(
             delete(PortfolioPosition).where(PortfolioPosition.ticker.like("RF!_%", escape="!"))
@@ -906,11 +873,7 @@ def list_all_user_ids() -> list[str]:
 
 
 def try_acquire_job_lock(name: str, holder: str, ttl_seconds: float) -> bool:
-    """Tenta tomar o lock de um job. Idempotente entre processos.
-
-    O lock expira sozinho (`ttl_seconds`), então um worker que morra no meio do
-    ciclo não bloqueia o job para sempre.
-    """
+    """Tenta tomar o lock de um job."""
     now = time.time()
     with _session_global() as session:
         row = session.get(JobLockDb, name)
@@ -944,17 +907,9 @@ class TaxLossBalance(TypedDict):
 
 
 def tax_loss_balances(user_id: str | None = None) -> list[TaxLossBalance]:
-    """Saldo de prejuízo realizado disponível para compensação, por categoria.
-
-    A legislação permite abater prejuízo de ganhos futuros da mesma categoria.
-    `calculate_sell_cost` devolvia IR zero quando havia prejuízo mas não
-    guardava o saldo negativo: o app superestimava o IR devido de qualquer
-    usuário que já tivesse realizado prejuízo.
-    """
+    """Saldo de prejuízo realizado disponível para compensação, por categoria."""
     by_category: dict[str, dict[str, float]] = {}
 
-    # Agrega dentro da sessão: fora dela as instâncias ficam desanexadas e
-    # qualquer acesso a atributo levanta DetachedInstanceError.
     with _session(user_id) as (session, uid):
         rows = session.execute(
             select(

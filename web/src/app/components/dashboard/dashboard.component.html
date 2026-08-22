@@ -1,732 +1,225 @@
-<div class="flex flex-col gap-5">
-  <div class="flex items-center justify-between gap-3 flex-wrap">
-    <div>
-      <h2 class="text-lg font-bold text-tx m-0">Visão Geral</h2>
-      <span class="text-xs text-muted" *ngIf="data()?.last_updated">
-        Atualizado {{ ui.formatTimestamp(data()!.last_updated!) }}
-      </span>
-      <!-- Proveniência do dado: get_rates() já devolvia bcb|estimativa e
-           nenhuma tela mostrava. -->
-      @if (data()?.freshness) {
-        <div class="flex items-center gap-1.5 text-xs mt-0.5">
-          <lucide-icon
-            [name]="data()!.freshness!.market_data_stale ? 'clock-alert' : 'clock'"
-            size="12"
-            [class]="data()!.freshness!.market_data_stale ? 'text-yellow-400' : 'text-muted'"
-          ></lucide-icon>
-          <span [class]="data()!.freshness!.market_data_stale ? 'text-yellow-400' : 'text-muted'">
-            {{ freshnessLabel() }} · {{ ratesSourceLabel() }}
-          </span>
-        </div>
-      }
-    </div>
-    <div class="flex items-center gap-2">
-      <button
-        type="button"
-        (click)="goToMarket()"
-        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-[#0b0e14] hover:opacity-90 transition-opacity"
-      >
-        <lucide-icon name="trending-up" size="15"></lucide-icon> Estratégia
-      </button>
-      <button
-        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        (click)="loadDashboard()"
-        [disabled]="loading.loading()"
-      >
-        <lucide-icon
-          [name]="loading.loading() ? 'loader-circle' : 'refresh-cw'"
-          size="16"
-        ></lucide-icon>
-        {{ loading.loading() ? 'Atualizando...' : 'Atualizar' }}
-      </button>
-    </div>
+@if (errored() && !data()) {
+  <div class="p-5 rounded-md border border-hairline">
+    <h2 class="fi-verdict text-ink m-0 mb-1">Não conseguimos carregar sua carteira</h2>
+    <p class="fi-body text-ink-2 m-0 mb-4">
+      Pode ser a conexão ou uma instabilidade na fonte de cotações. Seus dados estão salvos.
+    </p>
+    <button type="button" class="btn-primary" (click)="loadDashboard()">Tentar de novo</button>
   </div>
+}
 
-  @if (whatsNew(); as wn) {
-    <div class="p-5 rounded-xl bg-panel border border-border">
-      <div class="flex items-center justify-between gap-3 mb-3">
-        <h2 class="flex items-center gap-2 text-base font-bold m-0 text-tx">
-          <lucide-icon name="sparkles" size="16"></lucide-icon> O que mudou
-        </h2>
-        @if (wn.days_since) {
-          <span class="text-xs text-muted">últimos {{ wn.days_since }} dias</span>
-        }
+@if (isInitialLoad() && loading.loading()) {
+  <div class="animate-pulse">
+    <div class="h-3 w-24 rounded bg-ground-2 mb-3"></div>
+    <div class="h-12 w-72 max-w-full rounded bg-ground-2 mb-3"></div>
+    <div class="h-4 w-48 rounded bg-ground-2 mb-8"></div>
+    <div class="h-6 w-56 rounded bg-ground-2 mb-4"></div>
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="h-5 w-full rounded bg-ground-2 mb-3"></div>
+    }
+  </div>
+}
+
+@if (data(); as d) {
+  @if (isEmptyPortfolio()) {
+    <section class="max-w-reading">
+      <h1 class="fi-verdict text-ink m-0 mb-2">Sua carteira ainda está vazia</h1>
+      <p class="fi-body text-ink-2 m-0 mb-5">
+        Adicione uma posição — uma basta — e o fiance começa a calcular preço justo, score e saúde
+        da carteira em cima dela.
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <a routerLink="/carteira/editar" class="btn-primary no-underline">
+          Adicionar primeira posição
+        </a>
+        <a routerLink="/descobrir/oportunidades" class="btn-secondary no-underline">
+          Ou explorar o mercado
+        </a>
       </div>
+    </section>
+  } @else {
+    <div class="flex flex-col gap-8">
+      <section>
+        <p class="fi-eyebrow text-ink-3 m-0 mb-2">Patrimônio</p>
 
-      <div class="flex flex-col gap-2">
-        @for (item of wn.items; track item.title) {
-          <div
-            class="p-3 rounded-lg border flex items-start gap-3"
-            [class]="whatsNewToneClass(item.severity)"
-          >
-            <lucide-icon
-              [name]="whatsNewIcon(item.kind)"
-              size="16"
-              class="mt-0.5 shrink-0 text-muted"
-            ></lucide-icon>
-            <div class="flex-1 min-w-0">
-              <div class="font-medium text-sm text-tx">{{ item.title }}</div>
-              <div class="text-sm text-muted mt-0.5">{{ item.detail }}</div>
-            </div>
-            @if (item.action_label) {
-              <button
-                type="button"
-                class="shrink-0 px-3 py-1.5 rounded-md border border-border text-xs text-tx hover:bg-panel transition-colors cursor-pointer bg-transparent"
-                (click)="runAction(item.action, item.ticker)"
-              >
-                {{ item.action_label }}
-              </button>
-            }
-          </div>
-        }
-      </div>
-    </div>
-  }
+        <p class="fi-money-xl text-ink m-0">R$ {{ d.summary.total_current | number: '1.2-2' }}</p>
 
-  @if (isInitialLoad() && loading.loading()) {
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      @for (i of [1, 2, 3, 4]; track i) {
-        <div class="p-4 rounded-xl bg-panel border border-border">
-          <div class="h-3 w-24 bg-border rounded mb-3"></div>
-          <div class="h-8 w-32 bg-border rounded mb-2"></div>
-          <div class="h-3 w-20 bg-border rounded"></div>
-        </div>
-      }
-    </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      @for (i of [1, 2]; track i) {
-        <div class="p-5 rounded-xl bg-panel border border-border">
-          <div class="h-5 w-40 bg-border rounded mb-4"></div>
-          @for (j of [1, 2, 3]; track j) {
-            <div class="h-14 bg-border rounded mb-2"></div>
-          }
-        </div>
-      }
-    </div>
-  }
-
-  @if (data(); as d) {
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <div class="p-4 rounded-xl bg-panel border border-border relative overflow-hidden">
-        <div
-          class="absolute top-0 right-0 w-16 h-16 rounded-bl-3xl opacity-10"
-          [class.bg-green-400]="d.summary.total_pnl >= 0"
-          [class.bg-red-400]="d.summary.total_pnl < 0"
-        ></div>
-        <div class="flex items-center gap-2 text-xs text-muted mb-2">
-          <lucide-icon name="wallet" size="13"></lucide-icon> Patrimônio
-        </div>
-        <div class="text-2xl font-bold text-tx leading-none mb-1">
-          R$ {{ d.summary.total_current | number: '1.0-0' }}
-        </div>
-        <div
-          class="flex items-center gap-1 text-xs font-medium mt-1"
-          [class.good]="d.summary.total_pnl >= 0"
-          [class.warn]="d.summary.total_pnl < 0"
+        <p
+          class="fi-body m-0 mt-2 flex items-center gap-1.5 flex-wrap"
+          [class]="pnlDirectionClass()"
         >
           <lucide-icon
-            [name]="d.summary.total_pnl >= 0 ? 'trending-up' : 'trending-down'"
-            size="12"
+            [name]="d.summary.total_pnl >= 0 ? 'arrow-up-right' : 'arrow-down-right'"
+            size="15"
+            aria-hidden="true"
           ></lucide-icon>
-          {{ d.summary.total_pnl >= 0 ? '+' : '' }}R$
-          {{ d.summary.total_pnl | number: '1.0-0' }} ({{
-            d.summary.total_pnl_pct | number: '1.2-2'
-          }}%)
-        </div>
-      </div>
+          <span class="fi-num">
+            {{ d.summary.total_pnl >= 0 ? '+' : '−' }}R$ {{ absPnl() | number: '1.2-2' }}
+          </span>
+          <span class="fi-num">({{ d.summary.total_pnl_pct | number: '1.2-2' }}%)</span>
+          <span class="text-ink-3">desde o aporte</span>
+        </p>
 
-      <div class="p-4 rounded-xl bg-panel border border-border">
-        <div class="flex items-center gap-2 text-xs text-muted mb-2">
-          <lucide-icon name="chart-column" size="13"></lucide-icon> Investido
-        </div>
-        <div class="text-2xl font-bold text-tx leading-none mb-1">
-          R$ {{ d.summary.total_invested | number: '1.0-0' }}
-        </div>
-        <div class="text-xs text-muted">{{ d.summary.positions_count }} posições</div>
-      </div>
-
-      <div class="p-4 rounded-xl bg-panel border border-border">
-        <div class="flex items-center gap-2 text-xs text-muted mb-2">
-          <lucide-icon name="percent" size="13"></lucide-icon> DY médio
-        </div>
-        <div class="text-2xl font-bold text-tx leading-none mb-1">
-          {{
-            d.summary.portfolio_yield != null
-              ? (d.summary.portfolio_yield | number: '1.2-2') + '%'
-              : '—'
-          }}
-        </div>
-        <div class="text-xs text-muted">Dividend yield ponderado</div>
-      </div>
-    </div>
-
-    @if (d.summary.monthly_dividends_estimate > 0) {
-      <div
-        class="p-5 rounded-xl bg-gradient-to-r from-accent/15 to-accent-2/10 border border-accent/30"
-      >
-        <div class="mb-3">
-          <div
-            class="flex items-center gap-2 text-xs font-semibold text-accent mb-2 uppercase tracking-wider"
-          >
-            <lucide-icon name="coins" size="14"></lucide-icon> Renda Passiva Estimada
-          </div>
-          <div class="flex items-baseline gap-3 flex-wrap">
-            <span class="text-3xl font-bold text-tx"
-              >R$ {{ d.summary.monthly_dividends_estimate | number: '1.2-2' }}</span
+        <p class="fi-caption text-ink-3 m-0 mt-3">
+          <span class="fi-num">R$ {{ d.summary.total_invested | number: '1.0-0' }}</span>
+          investidos ·
+          <span class="fi-num">{{ d.summary.positions_count }}</span>
+          {{ d.summary.positions_count === 1 ? 'posição' : 'posições' }}
+          @if (d.summary.portfolio_yield != null) {
+            · DY <span class="fi-num">{{ d.summary.portfolio_yield | number: '1.1-1' }}%</span>
+          }
+          @if (d.summary.monthly_dividends_estimate > 0) {
+            ·
+            <span class="fi-num"
+              >R$ {{ d.summary.monthly_dividends_estimate | number: '1.0-0' }}</span
             >
-            <span class="text-sm text-muted"
-              >/mês · R$ {{ d.summary.yearly_dividends_estimate | number: '1.0-0' }}/ano</span
-            >
-          </div>
-        </div>
-        @if (d.summary.passive_income_goal && d.summary.passive_income_goal > 0) {
-          <div>
-            <div class="flex items-center justify-between text-xs mb-1">
-              <span class="text-muted">Progresso da meta mensal</span>
-              <span class="font-semibold text-tx"
-                >{{ d.summary.passive_income_progress | number: '1.0-0' }}%</span
-              >
-            </div>
-            <div class="relative h-2.5 rounded-full bg-bg-2 overflow-hidden">
-              <div
-                class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-accent to-accent-2 transition-all"
-                [style.width.%]="Math.min(d.summary.passive_income_progress || 0, 100)"
-              ></div>
-            </div>
-            <div class="text-xs text-muted text-right mt-1">
-              Meta: R$ {{ d.summary.passive_income_goal | number: '1.2-2' }}/mês
-            </div>
-          </div>
-        }
-      </div>
-    }
+            de renda estimada por mês
+          }
+        </p>
+      </section>
 
-    @if (d.alerts.length > 0) {
-      <div class="p-5 rounded-xl bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-3 text-tx">
-          <lucide-icon name="triangle-alert" size="16"></lucide-icon> Alertas
-          <span class="ml-auto text-xs font-normal bg-warn/20 text-warn px-2 py-0.5 rounded-full">{{
-            d.alerts.length
-          }}</span>
-        </h2>
-        <div class="flex flex-col gap-2">
-          @for (a of d.alerts; track a.title) {
-            <div class="alert flex items-start gap-3" [class]="'alert-' + a.severity">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 font-medium text-sm">
-                  <lucide-icon [name]="ui.alertIcon(a.kind)" size="14"></lucide-icon> {{ a.title }}
-                  @if (a.count > 1) {
-                    <span class="text-xs font-normal text-muted">({{ a.count }})</span>
+      @if (d.health; as h) {
+        <section class="pt-6 border-t border-hairline">
+          <div class="flex items-start justify-between gap-6 flex-wrap">
+            <div class="flex-1 min-w-[260px]">
+              <h2 class="fi-verdict text-ink m-0 mb-3">{{ healthVerdict() }}</h2>
+
+              @if (healthReasons().length > 0) {
+                <ul class="list-none m-0 p-0 flex flex-col gap-1.5">
+                  @for (reason of healthReasons(); track reason) {
+                    <li class="fi-body text-ink-2 pl-3 border-l-2 border-hairline-strong">
+                      {{ reason }}
+                    </li>
                   }
-                </div>
-                <div class="text-sm text-muted mt-0.5">{{ a.detail }}</div>
-              </div>
-              @if (a.action_label) {
-                <button
-                  type="button"
-                  class="shrink-0 px-3 py-1.5 rounded-md border border-border text-xs text-tx hover:bg-panel transition-colors cursor-pointer bg-transparent"
-                  (click)="runAction(a.action, a.ticker)"
-                >
-                  {{ a.action_label }}
-                </button>
+                </ul>
               }
+
+              <a
+                routerLink="/carteira"
+                class="fi-caption text-brand no-underline inline-block mt-3"
+              >
+                Ver a carteira inteira →
+              </a>
             </div>
+
+            <div class="w-full sm:w-[220px]">
+              <app-score-ruler
+                [score]="h.score"
+                [bands]="healthBands"
+                [dataCompleteness]="healthReliability()"
+                subject="Saúde da carteira"
+                size="card"
+                [showScale]="true"
+              />
+            </div>
+          </div>
+        </section>
+      }
+
+      <section class="pt-6 border-t border-hairline">
+        <div class="flex items-baseline justify-between gap-3 mb-1">
+          <p class="fi-eyebrow text-ink-3 m-0">O que mudou</p>
+          @if (whatsNew()?.days_since) {
+            <span class="fi-caption text-ink-3">últimos {{ whatsNew()!.days_since }} dias</span>
           }
         </div>
-      </div>
-    } @else if (d.positions.length > 0) {
-      <div
-        class="flex items-center gap-2 p-3 rounded-lg bg-panel border border-border text-muted text-sm"
-      >
-        <lucide-icon name="check" size="14"></lucide-icon> Nenhum alerta. Sua carteira está dentro
-        dos parâmetros.
-      </div>
-    }
 
-    @if (d.health; as health) {
-      <div class="p-5 rounded-xl bg-panel border border-border">
-        <div class="flex items-center justify-between gap-3 mb-4">
-          <h2 class="flex items-center gap-2 text-base font-bold m-0 text-tx">
-            <lucide-icon name="shield-check" size="16"></lucide-icon> Saúde da Carteira
-          </h2>
-          <div class="flex items-center gap-2">
-            <span
-              class="text-2xl font-bold leading-none"
-              [class.good]="healthBand(health.score) === 'good'"
-              [class.warn]="healthBand(health.score) === 'warn'"
-              [class.error]="healthBand(health.score) === 'error'"
-              >{{ health.score | number: '1.0-0' }}</span
-            >
-            <span class="text-xs text-muted">/ 100</span>
-            <span
-              class="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-              [class.good]="healthBand(health.score) === 'good'"
-              [class.warn]="healthBand(health.score) === 'warn'"
-              [class.error]="healthBand(health.score) === 'error'"
-              [style.background]="
-                healthBand(health.score) === 'good'
-                  ? 'color-mix(in srgb, var(--accent) 15%, transparent)'
-                  : healthBand(health.score) === 'warn'
-                    ? 'color-mix(in srgb, var(--warn) 15%, transparent)'
-                    : 'color-mix(in srgb, var(--danger) 15%, transparent)'
-              "
-              >{{ healthBandLabel(health.score) }}</span
-            >
-          </div>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-          <button
-            type="button"
-            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
-            (click)="toggleHealthInfo()"
-          >
-            <div class="text-xs text-muted mb-0.5">Concentração</div>
-            <div
-              class="text-sm font-semibold"
-              [class.good]="healthBand(health.concentration_score) === 'good'"
-              [class.warn]="healthBand(health.concentration_score) === 'warn'"
-              [class.error]="healthBand(health.concentration_score) === 'error'"
-            >
-              {{ health.concentration_score | number: '1.0-0' }}
-            </div>
-            <div class="text-[10px] text-muted">
-              {{ healthBandLabel(health.concentration_score) }}
-            </div>
-          </button>
-          <button
-            type="button"
-            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
-            (click)="toggleHealthInfo()"
-          >
-            <div class="text-xs text-muted mb-0.5">Setor</div>
-            <div
-              class="text-sm font-semibold"
-              [class.good]="healthBand(health.sector_concentration_score) === 'good'"
-              [class.warn]="healthBand(health.sector_concentration_score) === 'warn'"
-              [class.error]="healthBand(health.sector_concentration_score) === 'error'"
-            >
-              {{ health.sector_concentration_score | number: '1.0-0' }}
-            </div>
-            <div class="text-[10px] text-muted">
-              {{ healthBandLabel(health.sector_concentration_score) }}
-            </div>
-          </button>
-          <button
-            type="button"
-            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
-            (click)="toggleHealthInfo()"
-          >
-            <div class="text-xs text-muted mb-0.5">Diversificação</div>
-            <div
-              class="text-sm font-semibold"
-              [class.good]="healthBand(health.diversification_score) === 'good'"
-              [class.warn]="healthBand(health.diversification_score) === 'warn'"
-              [class.error]="healthBand(health.diversification_score) === 'error'"
-            >
-              {{ health.diversification_score | number: '1.0-0' }}
-            </div>
-            <div class="text-[10px] text-muted">
-              {{ healthBandLabel(health.diversification_score) }}
-            </div>
-          </button>
-          <button
-            type="button"
-            class="text-center p-2 rounded-lg bg-panel-2 cursor-pointer border-0 hover:bg-panel transition-colors"
-            (click)="toggleHealthInfo()"
-          >
-            <div class="text-xs text-muted mb-0.5">Risco</div>
-            <div
-              class="text-sm font-semibold"
-              [class.good]="healthBand(health.risk_score) === 'good'"
-              [class.warn]="healthBand(health.risk_score) === 'warn'"
-              [class.error]="healthBand(health.risk_score) === 'error'"
-            >
-              {{ health.risk_score | number: '1.0-0' }}
-            </div>
-            <div class="text-[10px] text-muted">{{ healthBandLabel(health.risk_score) }}</div>
-          </button>
-        </div>
-        @if (showHealthInfo()) {
-          <div class="p-3 rounded-lg bg-panel-2 text-xs text-muted mb-3 flex flex-col gap-2.5">
-            <div class="flex items-center gap-3 text-[11px] pb-2 border-b border-border">
-              <span class="flex items-center gap-1"
-                ><span class="w-2 h-2 rounded-full" style="background: var(--accent)"></span>≥70
-                bom</span
-              >
-              <span class="flex items-center gap-1"
-                ><span class="w-2 h-2 rounded-full" style="background: var(--warn)"></span>40–69
-                atenção</span
-              >
-              <span class="flex items-center gap-1"
-                ><span class="w-2 h-2 rounded-full" style="background: var(--danger)"></span>&lt;40
-                ruim</span
-              >
-            </div>
-            <div>
-              <strong class="text-tx">Concentração:</strong> o quanto seu maior ativo pesa na
-              carteira. Nota boa = nenhum ativo domina muito o total; nota ruim = um único papel
-              concentra boa parte do patrimônio.
-            </div>
-            <div>
-              <strong class="text-tx">Setor:</strong> o quanto suas ações/BDRs dependem de um único
-              setor da economia. Nota boa = exposição espalhada entre setores; nota ruim = carteira
-              muito presa a um setor só.
-            </div>
-            <div>
-              <strong class="text-tx">Diversificação:</strong> a variedade entre categorias (renda
-              fixa, ações BR, BDRs, FIIs, ETFs) e o número de ativos. Nota boa = carteira cobrindo
-              várias categorias; nota ruim = tudo concentrado em 1-2 categorias.
-            </div>
-            <div>
-              <strong class="text-tx">Risco:</strong> a fatia da carteira em ativos com sinal de
-              venda hoje. Nota boa = pouca ou nenhuma exposição a esses ativos; nota ruim = parte
-              relevante da carteira pede atenção.
-            </div>
-          </div>
-        }
-        @if (health.warnings.length > 0) {
-          <div class="flex flex-col gap-1.5">
-            @for (w of health.warnings; track w) {
-              <div class="flex items-start gap-2 text-xs text-muted">
-                <lucide-icon
-                  name="circle-alert"
-                  size="13"
-                  class="text-warn flex-shrink-0 mt-0.5"
-                ></lucide-icon>
-                {{ w }}
-              </div>
+        @if (feed().length > 0) {
+          <div>
+            @for (item of feed(); track item.title; let first = $first) {
+              <app-insight
+                [title]="item.title"
+                [detail]="item.detail"
+                [state]="item.state"
+                [actionLabel]="item.actionLabel"
+                [divided]="!first"
+                (action)="runAction(item.action, item.ticker)"
+              />
             }
           </div>
         } @else {
-          <div class="text-xs text-muted">Sem pontos de atenção identificados.</div>
+          <p class="fi-body text-ink-2 m-0 py-3">Nada mudou desde ontem.</p>
         }
-      </div>
-    }
+      </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="p-5 rounded-xl bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="trending-up" size="16"></lucide-icon> Oportunidades de compra
-        </h2>
-        @if (d.top_buys.length === 0) {
-          <div class="text-sm text-muted py-3">Nenhuma oportunidade clara no momento.</div>
-        } @else {
-          <div class="flex flex-col gap-2">
-            @for (o of d.top_buys; track o.ticker) {
-              <div
-                class="flex justify-between items-center gap-3 p-3 rounded-lg bg-panel-2 border border-border hover:border-accent/30 transition-colors"
+      @if (biggestGap(); as gap) {
+        <section class="pt-6 border-t border-hairline">
+          <p class="fi-eyebrow text-ink-3 m-0 mb-3">Próxima ação</p>
+          <div class="p-5 rounded-md border border-hairline">
+            <h3 class="fi-verdict-sm text-ink m-0 mb-1">
+              {{ gap.label }} está {{ gap.below ? 'abaixo' : 'acima' }} da sua meta
+            </h3>
+            <p class="fi-body text-ink-2 m-0 mb-1">
+              Sua exposição está
+              <span class="fi-num">{{ gap.absDelta | number: '1.1-1' }}</span> pontos percentuais
+              {{ gap.below ? 'abaixo' : 'acima' }} do objetivo (<span class="fi-num"
+                >{{ gap.currentPct | number: '1.1-1' }}%</span
               >
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <div class="font-semibold text-sm text-tx">{{ o.ticker }}</div>
-                    <span class="verdict-pill text-[10px]" [class]="ui.verdictClass(o.verdict)">{{
-                      o.label
-                    }}</span>
-                  </div>
-                  <div class="text-xs text-muted truncate">{{ o.name }}</div>
-                  <div class="flex items-center gap-2 mt-0.5 text-xs text-muted">
-                    <span *ngIf="o.margin_of_safety != null"
-                      >MS: {{ o.margin_of_safety * 100 | number: '1.0-0' }}%</span
-                    >
-                    <span *ngIf="o.dividend_yield"
-                      >DY: {{ o.dividend_yield | number: '1.1-1' }}%</span
-                    >
-                  </div>
-                </div>
-                <div class="text-right flex-shrink-0">
-                  <div class="font-bold text-sm text-tx">R$ {{ o.price | number: '1.2-2' }}</div>
-                  <div class="text-xs text-muted" *ngIf="o.fair_price">
-                    justo: {{ o.fair_price | number: '1.2-2' }}
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        }
-      </div>
-
-      <div class="p-5 rounded-xl bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="trending-down" size="16"></lucide-icon> Atenção (sinal de venda)
-        </h2>
-        @if (d.top_sells.length === 0) {
-          <div class="text-sm text-muted py-3">Nenhum ativo com sinal de venda.</div>
-        } @else {
-          <div class="flex flex-col gap-2">
-            @for (p of d.top_sells; track p.ticker) {
-              <div
-                class="flex justify-between items-center gap-3 p-3 rounded-lg bg-panel-2 border border-border hover:border-warn/30 transition-colors"
-              >
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <div class="font-semibold text-sm text-tx">{{ p.ticker }}</div>
-                    <span class="verdict-pill text-[10px]" [class]="ui.verdictClass(p.verdict)">{{
-                      p.label
-                    }}</span>
-                  </div>
-                  <div class="text-xs text-muted truncate">{{ p.name }}</div>
-                </div>
-                <div class="text-right flex-shrink-0">
-                  <div class="font-bold text-sm text-tx">
-                    R$ {{ p.current_price | number: '1.2-2' }}
-                  </div>
-                  <div
-                    class="text-xs"
-                    *ngIf="p.pnl_pct != null"
-                    [class.good]="p.pnl_pct >= 0"
-                    [class.warn]="p.pnl_pct < 0"
-                  >
-                    PnL: {{ p.pnl_pct | number: '1.2-2' }}%
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        }
-      </div>
-    </div>
-
-    @if (benchmark(); as bm) {
-      @if (bm.points.length >= 2) {
-        <div class="p-5 rounded-xl bg-panel border border-border">
-          <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
-            <lucide-icon name="chart-column" size="16"></lucide-icon> Carteira vs Benchmarks
-          </h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">Carteira</div>
-              <div
-                class="text-sm font-semibold"
-                [class.good]="bm.portfolio_return_pct >= 0"
-                [class.warn]="bm.portfolio_return_pct < 0"
-              >
-                {{ bm.portfolio_return_pct >= 0 ? '+' : ''
-                }}{{ bm.portfolio_return_pct | number: '1.1-1' }}%
-              </div>
-            </div>
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">CDI</div>
-              <div class="text-sm font-semibold text-tx">
-                {{ bm.cdi_return_pct >= 0 ? '+' : '' }}{{ bm.cdi_return_pct | number: '1.1-1' }}%
-              </div>
-            </div>
-            @if (bm.ibov_available) {
-              <div class="text-center p-3 rounded-lg bg-panel-2">
-                <div class="text-xs text-muted mb-0.5">Ibovespa</div>
-                <div class="text-sm font-semibold text-tx">
-                  {{ (bm.ibov_return_pct ?? 0) >= 0 ? '+' : ''
-                  }}{{ bm.ibov_return_pct | number: '1.1-1' }}%
-                </div>
-              </div>
-            }
-          </div>
-          <app-benchmark-chart
-            [points]="bm.points"
-            [ibovAvailable]="bm.ibov_available"
-          ></app-benchmark-chart>
-        </div>
-      }
-    }
-
-    @if (d.snapshots.length >= 1) {
-      <div class="p-5 rounded-xl bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="chart-column" size="16"></lucide-icon> Evolução do Patrimônio
-        </h2>
-
-        @if (d.snapshots.length >= 2) {
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">Início</div>
-              <div class="text-sm font-semibold text-tx">
-                R$ {{ d.snapshots[0].total_current | number: '1.0-0' }}
-              </div>
-              <div class="text-xs text-muted">{{ formatDate(d.snapshots[0].captured_at) }}</div>
-            </div>
-            <div class="text-center p-3 rounded-lg bg-panel-2">
-              <div class="text-xs text-muted mb-0.5">Variação total</div>
-              <div
-                class="text-sm font-semibold"
-                [class.good]="
-                  d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
-                "
-                [class.warn]="
-                  d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
-                "
-              >
-                {{
-                  d.snapshots[d.snapshots.length - 1].total_current -
-                    d.snapshots[0].total_current >=
-                  0
-                    ? '+'
-                    : ''
-                }}R$
-                {{
-                  d.snapshots[d.snapshots.length - 1].total_current - d.snapshots[0].total_current
-                    | number: '1.0-0'
-                }}
-              </div>
-              <div
-                class="text-xs"
-                [class.good]="
-                  d.snapshots[d.snapshots.length - 1].total_current >= d.snapshots[0].total_current
-                "
-                [class.warn]="
-                  d.snapshots[d.snapshots.length - 1].total_current < d.snapshots[0].total_current
-                "
-              >
-                {{
-                  (d.snapshots[d.snapshots.length - 1].total_current /
-                    d.snapshots[0].total_current -
-                    1) *
-                    100 | number: '1.2-2'
-                }}%
-              </div>
-            </div>
-          </div>
-        }
-
-        <app-patrimony-chart [snapshots]="d.snapshots"></app-patrimony-chart>
-
-        @if (d.snapshots.length >= 2) {
-          <div class="flex items-center justify-between mt-2 text-xs text-muted">
-            <span>{{ d.snapshots.length }} registros</span>
-            <span
-              >{{
-                Math.ceil(
-                  (d.snapshots[d.snapshots.length - 1].captured_at - d.snapshots[0].captured_at) /
-                    86400
-                )
-              }}
-              dias</span
-            >
-          </div>
-        }
-      </div>
-    }
-
-    @if (d.positions.length > 0) {
-      <div class="p-5 rounded-xl bg-panel border border-border">
-        <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
-          <lucide-icon name="briefcase" size="16"></lucide-icon> Carteira
-          <span class="ml-auto text-xs font-normal text-muted"
-            >{{ d.positions.length }} ativos</span
-          >
-        </h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-border text-xs text-muted">
-                <th class="text-left py-2 pr-4 font-medium">Ativo</th>
-                <th class="text-right py-2 px-2 font-medium hidden sm:table-cell">Qtd</th>
-                <th class="text-right py-2 px-2 font-medium hidden md:table-cell">PM</th>
-                <th class="text-right py-2 px-2 font-medium">Atual</th>
-                <th class="text-right py-2 pl-2 font-medium">P&L</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (pos of d.positions; track pos.ticker) {
-                <tr class="border-b border-border/50 hover:bg-panel-2 transition-colors">
-                  <td class="py-2 pr-4">
-                    <div class="font-semibold text-tx">{{ pos.ticker }}</div>
-                    <div class="text-xs text-muted">{{ pos.name }}</div>
-                  </td>
-                  <td class="py-2 px-2 text-right text-muted hidden sm:table-cell">
-                    {{ pos.quantity }}
-                  </td>
-                  <td class="py-2 px-2 text-right text-muted hidden md:table-cell">
-                    R$ {{ pos.avg_price | number: '1.2-2' }}
-                  </td>
-                  <td class="py-2 px-2 text-right font-medium text-tx">
-                    {{ pos.current_price ? 'R$ ' + (pos.current_price | number: '1.2-2') : '—' }}
-                  </td>
-                  <td
-                    class="py-2 pl-2 text-right font-semibold"
-                    [class.good]="(pos.pnl_pct ?? 0) >= 0"
-                    [class.warn]="(pos.pnl_pct ?? 0) < 0"
-                  >
-                    {{
-                      pos.pnl_pct != null
-                        ? (pos.pnl_pct >= 0 ? '+' : '') + (pos.pnl_pct | number: '1.2-2') + '%'
-                        : '—'
-                    }}
-                  </td>
-                </tr>
+              contra <span class="fi-num">{{ gap.targetPct | number: '1.1-1' }}%</span>).
+            </p>
+            <p class="fi-caption text-ink-3 m-0 mb-4">É o maior desvio da sua carteira hoje.</p>
+            <div class="flex flex-wrap gap-2">
+              <a routerLink="/estrategia" class="btn-primary no-underline">Ver estratégia</a>
+              @if (gap.below) {
+                <a routerLink="/estrategia/aporte" class="btn-secondary no-underline">
+                  Tenho dinheiro para aportar
+                </a>
               }
-            </tbody>
-          </table>
-        </div>
-      </div>
-    }
+            </div>
+          </div>
+        </section>
+      }
 
-    <div class="p-4 rounded-lg bg-panel-2 border border-border text-xs text-muted leading-relaxed">
-      {{ d.disclaimer }}
-    </div>
-  } @else if (hasError()) {
-    <div class="p-6 rounded-xl bg-panel border border-border">
-      <div class="flex items-center gap-3 mb-3">
-        <lucide-icon name="triangle-alert" size="20" class="text-warn flex-shrink-0"></lucide-icon>
-        <h3 class="text-base font-semibold m-0 text-tx">Não foi possível carregar o dashboard</h3>
-      </div>
-      <p class="text-sm text-muted m-0 mb-4">
-        Verifique se o backend está rodando e tente novamente.
-      </p>
-      <button
-        type="button"
-        (click)="loadDashboard()"
-        class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 transition-opacity"
-      >
-        <lucide-icon name="refresh-cw" size="14"></lucide-icon> Tentar novamente
-      </button>
-    </div>
-  } @else if (!loading.loading()) {
-    <div class="p-6 rounded-xl bg-panel border border-border">
-      <div class="flex items-center gap-3 mb-5">
-        <div class="w-10 h-10 rounded-full bg-accent/20 grid place-items-center flex-shrink-0">
-          <lucide-icon name="sparkles" size="20" class="text-accent"></lucide-icon>
-        </div>
-        <div>
-          <h3 class="text-lg font-bold m-0 text-tx">Bem-vindo ao fiance</h3>
-          <p class="text-sm text-muted m-0">
-            Siga os 3 passos para começar a monitorar sua carteira
-          </p>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl font-black text-accent/30 leading-none">01</span
-            ><lucide-icon name="wallet" size="18" class="text-accent"></lucide-icon>
+      @if (topBuys().length > 0) {
+        <section class="pt-6 border-t border-hairline">
+          <div class="flex items-baseline justify-between gap-3 mb-2">
+            <p class="fi-eyebrow text-ink-3 m-0">Em destaque</p>
+            <a routerLink="/descobrir/oportunidades" class="fi-caption text-brand no-underline">
+              Ver todas →
+            </a>
           </div>
-          <div class="font-semibold text-sm text-tx">Cadastre seus ativos</div>
-          <p class="text-xs text-muted m-0 leading-relaxed">
-            Vá em <strong>Meus Ativos</strong> e adicione suas ações, FIIs e renda fixa com
-            quantidade e preço médio.
-          </p>
-        </div>
-        <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl font-black text-accent/30 leading-none">02</span
-            ><lucide-icon name="settings" size="18" class="text-accent"></lucide-icon>
-          </div>
-          <div class="font-semibold text-sm text-tx">Defina suas metas</div>
-          <p class="text-xs text-muted m-0 leading-relaxed">
-            Vá em <strong>Configurações</strong> para definir suas metas de alocação e sua meta de
-            renda passiva mensal.
-          </p>
-        </div>
-        <div class="flex flex-col gap-2 p-4 rounded-lg bg-panel-2 border border-border">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl font-black text-accent/30 leading-none">03</span
-            ><lucide-icon name="target" size="18" class="text-accent"></lucide-icon>
-          </div>
-          <div class="font-semibold text-sm text-tx">Explore o mercado</div>
-          <p class="text-xs text-muted m-0 leading-relaxed">
-            Vá em <strong>Mercado</strong> para ver oportunidades, analisar ativos e obter sugestões
-            de compra personalizadas.
-          </p>
-        </div>
-      </div>
+          <ul class="list-none m-0 p-0">
+            @for (opp of topBuys(); track opp.ticker; let first = $first) {
+              <li
+                class="py-3 flex items-center gap-4"
+                [class.border-t]="!first"
+                [class.border-hairline]="!first"
+              >
+                <a
+                  [routerLink]="['/ativo', opp.ticker]"
+                  class="fi-ticker text-ink no-underline hover:text-brand transition-colors w-[70px] shrink-0"
+                >
+                  {{ opp.ticker }}
+                </a>
+                <p class="fi-body text-ink-2 m-0 flex-1 min-w-0 truncate">
+                  {{ opportunityReason(opp) }}
+                </p>
+                <div class="w-[130px] shrink-0">
+                  <app-score-ruler
+                    [score]="opp.score"
+                    [dataCompleteness]="opp.data_completeness"
+                    [subject]="'Score de ' + opp.ticker"
+                    size="list"
+                  />
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      <footer class="pt-5 border-t border-hairline fi-caption text-ink-3">
+        @if (d.last_updated) {
+          Cotações de {{ ui.formatTimestamp(d.last_updated) }}
+        }
+        @if (d.freshness) {
+          · {{ ratesSourceLabel() }}
+          @if (d.freshness.market_data_stale) {
+            · <span class="text-attention">{{ freshnessLabel() }}</span>
+          }
+        }
+        · Estimativas a partir de dado público. Não é recomendação de investimento.
+      </footer>
     </div>
   }
-</div>
+}

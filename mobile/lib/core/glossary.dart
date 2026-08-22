@@ -1,6 +1,5 @@
 import 'score_ruler.dart';
 
-// Espelha 1:1 UiHelperService.glossary do web — manter os dois em sincronia.
 final Map<String, String> glossary = {
   'dy':
       'Dividend Yield — percentual do preço atual pago em dividendos nos últimos 12 meses. '

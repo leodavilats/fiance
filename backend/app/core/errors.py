@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-# Exceções de domínio tipadas. Antes o mapeamento para status HTTP era feito
-# por busca de substring na mensagem ("não encontrado" in msg), o que acoplava
-# texto de erro em português a código de status.
-
 
 class DomainError(ValueError):
     """Erro de regra de negócio. Vira HTTP 400 por padrão."""

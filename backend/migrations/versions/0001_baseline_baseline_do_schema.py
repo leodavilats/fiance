@@ -1,12 +1,4 @@
-"""Baseline do schema
-
-Estado do banco no momento em que o Alembic foi introduzido, para que bancos
-já existentes possam ser marcados (`stamp`) nesta revisão em vez de recriados.
-
-Revision ID: 0001_baseline
-Revises:
-Create Date: 2026-08-20 09:15:21.643931
-"""
+"""Baseline do schema Estado do banco no momento em que o Alembic foi introduzido, para que bancos já existentes possam ser marcados (`stamp`) nesta revisão em vez de recriados."""
 
 from __future__ import annotations
 

@@ -25,8 +25,6 @@ class QuickInvestService:
         category_values: dict[str, float] = {}
         total_portfolio = 0.0
 
-        # Em série, cada posição esperava a anterior; num cache miss isso é a
-        # latência da BRAPI multiplicada pelo tamanho da carteira.
         async def _snapshot(ticker: str):
             try:
                 return await self.asset_repo.get_asset(ticker)
@@ -45,9 +43,6 @@ class QuickInvestService:
             cat = auto_category(snap.asset_type, snap.dividend_yield)
             category_values[cat] = category_values.get(cat, 0) + value
 
-        # Sem contar a renda fixa já aplicada, o gap de `renda_fixa` vinha
-        # sempre cheio e o Quick Invest sugeria reforçar uma categoria que já
-        # estava na meta.
         rf_total = sum(
             (p.current_value or p.invested) for p in self.fixed_income.as_portfolio_positions()
         )

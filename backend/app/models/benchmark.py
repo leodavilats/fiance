@@ -8,8 +8,6 @@ class BenchmarkPoint(BaseModel):
     )
     cdi_pct: float = Field(..., description="Retorno acumulado do CDI no período (%)")
     ibov_pct: float | None = Field(None, description="Retorno acumulado do Ibovespa (%)")
-    # Expostos para a UI poder separar "meu patrimônio cresceu" de "eu aportei":
-    # antes o gráfico misturava as duas coisas numa única linha.
     invested: float = Field(0.0, description="Total aportado até a data")
     patrimony: float = Field(0.0, description="Patrimônio na data")
 

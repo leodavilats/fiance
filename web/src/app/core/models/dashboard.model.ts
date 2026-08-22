@@ -2,27 +2,18 @@ import { PortfolioPosition, PortfolioSnapshot } from './portfolio.model';
 import { Opportunity } from './opportunity.model';
 import { ActionKind } from './whats-new.model';
 
-/**
- * Alerta agrupado, com um desfecho.
- *
- * Antes eram alertas sem limite nem deduplicação — um por posição SELL, um por
- * setor concentrado, um por categoria fora da meta — e a única ação da tela era
- * "ir para Mercado".
- */
 export interface Alert {
   severity: 'info' | 'warning' | 'critical';
   kind: 'sell_target' | 'opportunity' | 'concentration' | 'rebalance';
   title: string;
   detail: string;
   ticker?: string | null;
-  /** Quantos itens o alerta representa. */
   count: number;
   tickers: string[];
   action: ActionKind | null;
   action_label: string | null;
 }
 
-/** Frescor e origem do dado que alimentou a tela. */
 export interface DataFreshness {
   rates_source: string;
   market_data_age_seconds: number | null;

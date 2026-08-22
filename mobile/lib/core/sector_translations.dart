@@ -1,4 +1,3 @@
-// Espelha 1:1 UiHelperService.translateSector() do web — manter em sincronia.
 const Map<String, String> _sectorTranslations = {
   'Financial Services': 'Financeiro',
   'Technology': 'Tecnologia',
@@ -22,8 +21,6 @@ const Map<String, String> _sectorTranslations = {
   'materials': 'Materiais Básicos',
   'real-estate': 'Imobiliário',
   'telecommunications': 'Telecomunicações',
-  // Chaves abaixo usam a taxonomia da BRAPI (/quote/list), diferente da
-  // usada acima — mapeadas pras mesmas categorias em português.
   'Miscellaneous': 'Outros',
   'Finance': 'Financeiro',
   'Technology Services': 'Tecnologia',

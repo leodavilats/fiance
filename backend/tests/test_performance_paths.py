@@ -10,16 +10,8 @@ from tests.conftest import make_auth_headers
 ITEM = {"ticker": "PETR4", "quantity": 100, "avg_price": 30.0, "category": "auto"}
 
 
-# --- D7: escrita de snapshot sai do caminho de request --------------------
-
-
 def test_evaluate_does_not_write_snapshots(client):
-    """O cliente controlava o que entrava no histórico de patrimônio.
-
-    Um POST /portfolio/evaluate com itens fabricados poluía a série, e o web
-    (que mandava a lista sem renda fixa) competia com o dashboard (que mandava
-    com ela) pelo registro do dia.
-    """
+    """O cliente controlava o que entrava no histórico de patrimônio."""
     headers = make_auth_headers("snap_no_write")
     client.put("/api/portfolio", headers=headers, json={"items": [ITEM]})
 
@@ -62,7 +54,6 @@ async def test_snapshot_job_records_stored_positions_plus_fixed_income(client):
 
     snapshots = client.get("/api/portfolio", headers=headers).json()["snapshots"]
     assert len(snapshots) == 1
-    # Carteira negociada (100 × 38 = 3800) + renda fixa marcada a mercado.
     assert snapshots[0]["total_current"] > 3800 + 5000
 
 
@@ -96,13 +87,9 @@ async def test_snapshot_cycle_covers_every_tenant(client):
         assert len(snaps) == 1
 
 
-# --- lock de job entre workers -------------------------------------------
-
-
 def test_job_lock_excludes_a_second_worker():
     assert portfolio_store.try_acquire_job_lock("test_job", "worker-a", 60) is True
     assert portfolio_store.try_acquire_job_lock("test_job", "worker-b", 60) is False
-    # O mesmo dono renova sem se bloquear.
     assert portfolio_store.try_acquire_job_lock("test_job", "worker-a", 60) is True
 
     portfolio_store.release_job_lock("test_job", "worker-a")
@@ -114,14 +101,8 @@ def test_job_lock_expires_so_a_dead_worker_does_not_block_forever():
     assert portfolio_store.try_acquire_job_lock("expiring_job", "worker-alive", 60) is True
 
 
-# --- cache dedicado, WAL e stale-while-revalidate ------------------------
-
-
 def test_cache_file_is_separate_from_the_user_database():
-    """DB_PATH apontava para o mesmo arquivo do banco de dev.
-
-    O churn de cache travava as escritas de dado do usuário.
-    """
+    """DB_PATH apontava para o mesmo arquivo do banco de dev."""
     assert cache_mod.DB_PATH.name != "fiance.db"
 
 
@@ -152,8 +133,6 @@ def test_get_with_age_reports_staleness(tmp_path, monkeypatch):
 
     cache_mod.set("old", {"v": 2}, -120)
     value, stale_by = cache_mod.get_with_age("old")
-    # Vencido, mas ainda disponível: é o que permite servir stale enquanto
-    # revalida em vez de fazer o usuário pagar o scan do universo.
     assert value == {"v": 2}
     assert stale_by > 100
 
@@ -178,9 +157,6 @@ def test_purge_expired_removes_only_stale_entries(tmp_path, monkeypatch):
     cache_mod.reset_connection()
 
 
-# --- observabilidade ------------------------------------------------------
-
-
 def test_metrics_endpoint_reports_latency_and_requires_auth(client):
     assert client.get("/api/metrics").status_code == 401
 
@@ -199,9 +175,6 @@ def test_responses_carry_a_correlation_id(client):
 
     echoed = client.get("/api/portfolio", headers={**headers, "X-Request-Id": "abc123"})
     assert echoed.headers["X-Request-Id"] == "abc123"
-
-
-# --- memoização por request ----------------------------------------------
 
 
 def test_strategy_evaluates_the_portfolio_once_per_request(client, monkeypatch):

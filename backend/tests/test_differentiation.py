@@ -11,14 +11,8 @@ from tests.conftest import make_auth_headers
 ITEM = {"ticker": "PETR4", "quantity": 100, "avg_price": 30.0, "category": "auto"}
 
 
-# --- compensação de prejuízo para IR -------------------------------------
-
-
 def test_loss_is_available_to_offset_future_gains():
-    """`calculate_sell_cost` devolvia IR zero no prejuízo mas não guardava o saldo.
-
-    Consequência: o app superestimava o IR devido de quem já realizou prejuízo.
-    """
+    """`calculate_sell_cost` devolvia IR zero no prejuízo mas não guardava o saldo."""
     loss = calculate_sell_cost("fiis", quantity=100, sell_price=8.0, avg_price=10.0)
     assert loss.gross_profit == -200.0
     assert loss.ir_amount == 0.0
@@ -30,7 +24,6 @@ def test_accumulated_loss_reduces_the_tax_due():
     com_compensacao = calculate_sell_cost("fiis", 100, 12.0, 10.0, accumulated_loss=150.0)
 
     assert sem_compensacao.ir_amount == pytest.approx(40.0)  # 20% de 200
-    # Abate 150 do lucro de 200: imposto sobre 50.
     assert com_compensacao.loss_offset_used == 150.0
     assert com_compensacao.taxable_profit == 50.0
     assert com_compensacao.ir_amount == pytest.approx(10.0)
@@ -54,7 +47,6 @@ def test_exempt_month_preserves_the_loss_balance():
 def test_tax_loss_balance_flows_through_the_api(client):
     headers = make_auth_headers("tax_offset_user")
 
-    # Realiza prejuízo em FII.
     client.post(
         "/api/portfolio/position",
         headers=headers,
@@ -72,15 +64,11 @@ def test_tax_loss_balance_flows_through_the_api(client):
     assert trades["total_tax_loss_available"] == 200.0
 
 
-# --- fronteira de mês em horário de Brasília ------------------------------
-
-
 def test_month_boundary_uses_brasilia_not_utc():
     """Venda no último dia do mês depois das 21 h BRT caía no mês seguinte."""
     late_night = datetime(2026, 3, 31, 22, 30, tzinfo=BRT)
     assert month_key(late_night.timestamp()) == "2026-03"
 
-    # O mesmo instante já é 1º de abril em UTC.
     assert late_night.astimezone(UTC).strftime("%Y-%m-%d") == "2026-04-01"
 
 
@@ -90,9 +78,6 @@ def test_month_start_is_the_first_day_in_brt():
 
     assert (start.year, start.month, start.day) == (2026, 3, 1)
     assert (start.hour, start.minute) == (0, 0)
-
-
-# --- proventos recebidos --------------------------------------------------
 
 
 def _dividend(**overrides) -> dict:
@@ -152,8 +137,6 @@ def test_dividends_compare_reality_with_the_estimate(client):
         "/api/dividends/received", headers=headers, params={"estimated_monthly": 200.0}
     ).json()
 
-    # Recebeu metade do estimado: a estimativa derivada de DY passa a ser
-    # confrontável com o fato.
     assert body["estimated_monthly"] == 200.0
     assert body["estimate_accuracy_pct"] == 50.0
 
@@ -186,9 +169,6 @@ def test_dividends_are_isolated_between_tenants(client):
     )
 
 
-# --- renda fixa no comparador de oportunidades ---------------------------
-
-
 def test_income_compare_puts_both_sides_on_the_same_screen(client):
     headers = make_auth_headers("income_compare_user")
 
@@ -200,14 +180,11 @@ def test_income_compare_puts_both_sides_on_the_same_screen(client):
     assert body["assets"], "esperava ativos pagadores de dividendo"
     assert body["verdict"]
 
-    # Toda opção precisa expor a mesma unidade comparável.
     for option in body["fixed_income"] + body["assets"]:
         assert option["net_income_yield_pct"] >= 0
         assert option["income_basis"]
         assert option["monthly_income_estimate"] >= 0
 
-    # Renda fixa não tem valorização — deixar explícito evita somar as coisas
-    # erradas.
     assert all(o["has_upside"] is False for o in body["fixed_income"])
     assert all(o["has_upside"] is True for o in body["assets"])
 
@@ -235,9 +212,6 @@ def test_income_compare_requires_auth(client):
     assert client.get("/api/income-compare").status_code == 401
 
 
-# --- ciclo decisão -> execução -> resultado -------------------------------
-
-
 def test_followed_suggestions_report_outcome_against_ibov(client):
     headers = make_auth_headers("followed_user")
     today = datetime.now(BRT).date()
@@ -261,7 +235,6 @@ def test_followed_suggestions_report_outcome_against_ibov(client):
     body = client.get("/api/suggestions/followed", headers=headers).json()
     item = body["items"][0]
 
-    # PETR4 vale 38 no stub: 100 x 38 = 3800 contra 3000 investidos.
     assert item["current_value"] == 3800.0
     assert item["pnl"] == 800.0
     assert item["pnl_pct"] == pytest.approx(26.67, abs=0.01)
@@ -299,9 +272,6 @@ def test_followed_suggestions_are_isolated_between_tenants(client):
     )
 
 
-# --- qualidade do dado ----------------------------------------------------
-
-
 def test_data_quality_reports_coverage_per_field(client):
     headers = make_auth_headers("data_quality_user")
     body = client.get("/api/data-quality", headers=headers).json()
@@ -310,20 +280,14 @@ def test_data_quality_reports_coverage_per_field(client):
     fields = {f["field"]: f for f in body["fields"]}
 
     assert fields["price"]["coverage_pct"] == 100.0
-    # Cada campo explica o que a ausência dele quebra — é o que transforma o
-    # relatório em decisão.
     for field in body["fields"]:
         assert field["impact"]
 
-    # VALE3 não tem proventos no stub, PETR4 tem: cobertura parcial.
     assert 0 < fields["avg_dividend"]["coverage_pct"] < 100
 
 
 def test_data_quality_requires_auth(client):
     assert client.get("/api/data-quality").status_code == 401
-
-
-# --- notificações ---------------------------------------------------------
 
 
 def test_device_token_can_be_unregistered_on_logout(client):
@@ -355,20 +319,13 @@ def test_preferences_report_whether_push_can_work(client):
     assert prefs["registered_devices"] == 0
 
 
-# --- alertas de preço -----------------------------------------------------
-
-
 def test_alert_check_marks_triggered_like_the_job(client):
-    """O /check do web não marcava como disparado; o job do backend marcava.
-
-    O alerta aparecia ativo até o job rodar e depois desaparecia sem explicação.
-    """
+    """O /check do web não marcava como disparado; o job do backend marcava."""
     headers = make_auth_headers("alert_check_user")
 
     created = client.post(
         "/api/alerts",
         headers=headers,
-        # PETR4 vale 38 no stub, então o alerta dispara na hora.
         json={"ticker": "PETR4", "condition": "above", "target_price": 10.0},
     ).json()
 
@@ -378,5 +335,4 @@ def test_alert_check_marks_triggered_like_the_job(client):
     alerts = client.get("/api/alerts", headers=headers).json()
     assert alerts[0]["triggered_at"] is not None
 
-    # Já marcado: não dispara de novo.
     assert client.get("/api/alerts/check", headers=headers).json() == []

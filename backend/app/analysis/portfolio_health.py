@@ -19,8 +19,6 @@ def compute_portfolio_health(
     positions: list[PortfolioPosition],
     allocations: list[CategoryAllocation],
 ) -> PortfolioHealth | None:
-    # Saúde de carteira mede concentração e risco de mercado; renda fixa não
-    # entra na conta (não tem veredito nem setor de bolsa).
     real_positions = [p for p in positions if p.asset_type != AssetType.renda_fixa]
     if not real_positions:
         return None
@@ -30,8 +28,6 @@ def compute_portfolio_health(
 
     top_ticker, top_value = max(values, key=lambda x: x[1])
     top_pct = top_value / total * 100
-    # acima de 40% num único ativo já é considerado risco alto (score 0);
-    # abaixo de 10% é considerado bem diluído (score 100).
     concentration_score = _clip(100 - (top_pct - 10) * (100 / 30))
 
     sector_totals: dict[str, float] = {}
@@ -47,8 +43,6 @@ def compute_portfolio_health(
     if sector_totals:
         top_sector, top_sector_value = max(sector_totals.items(), key=lambda x: x[1])
         top_sector_pct = top_sector_value / total * 100
-        # mesma régua da concentração por ativo, só que com teto mais alto
-        # (é normal um setor pesar mais que um ativo isolado).
         sector_concentration_score = _clip(100 - (top_sector_pct - 20) * (100 / 40))
 
     categories_present = {a.category for a in allocations if a.current_value > 0}

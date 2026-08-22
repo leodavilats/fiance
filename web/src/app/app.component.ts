@@ -20,6 +20,19 @@ import {
   SnackbarComponent,
 } from './components';
 
+interface NavDestination {
+  readonly path: string;
+  readonly label: string;
+  readonly icon: string;
+}
+
+const DESTINATIONS: readonly NavDestination[] = [
+  { path: '/hoje', label: 'Hoje', icon: 'sunrise' },
+  { path: '/carteira', label: 'Carteira', icon: 'wallet' },
+  { path: '/descobrir', label: 'Descobrir', icon: 'compass' },
+  { path: '/estrategia', label: 'Estratégia', icon: 'target' },
+];
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -45,24 +58,40 @@ import {
       (close)="showProfile.set(false)"
       (logout)="logout()"
     />
-    <div class="max-w-[1180px] mx-auto px-3 sm:px-5 pt-4 sm:pt-6 pb-20 sm:pb-10">
-      @if (auth.user(); as user) {
-        <header class="flex justify-between items-center gap-4 py-2 px-1 pb-[14px] sm:pb-[18px]">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <app-logo />
-            <div>
-              <h1 class="text-[1.3rem] sm:text-[1.7rem] font-bold m-0 text-tx">fiance</h1>
-              <p class="m-0 text-xs sm:text-sm text-muted hidden sm:block">
-                Sistema de gestão de ativos — descubra o que comprar, manter ou vender.
-              </p>
-            </div>
-          </div>
+
+    @if (auth.user(); as user) {
+      <header class="border-b border-hairline">
+        <div
+          class="max-w-dense mx-auto px-3 sm:px-5 flex items-center justify-between gap-4 h-14 sm:h-16"
+        >
+          <a routerLink="/hoje" class="flex items-center gap-2.5 no-underline" title="fiance">
+            <app-logo [size]="30" />
+            <span class="text-lg font-bold text-ink tracking-tight">fiance</span>
+          </a>
+
+          <!-- Nav primária: some no mobile, onde a bottom nav assume. -->
+          <nav class="hidden md:block" aria-label="Navegação principal">
+            <ul class="flex items-center gap-1 list-none m-0 p-0">
+              @for (d of destinations; track d.path) {
+                <li>
+                  <a [routerLink]="d.path" routerLinkActive="nav-active" class="nav-link">
+                    <lucide-icon [name]="d.icon" size="16"></lucide-icon>
+                    {{ d.label }}
+                  </a>
+                </li>
+              }
+            </ul>
+          </nav>
+
           <div class="flex items-center gap-2">
             <button
-              class="w-9 h-9 grid place-items-center rounded-lg cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel hover:opacity-90 transition-opacity"
+              class="w-9 h-9 grid place-items-center rounded-md cursor-pointer bg-transparent border border-hairline text-ink hover:bg-ground-2 transition-colors"
               type="button"
               (click)="theme.toggle()"
               [title]="theme.theme() === 'dark' ? 'Modo claro' : 'Modo escuro'"
+              [attr.aria-label]="
+                theme.theme() === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'
+              "
             >
               <lucide-icon
                 [name]="theme.theme() === 'dark' ? 'sun' : 'moon'"
@@ -74,104 +103,87 @@ import {
               class="cursor-pointer border-0 bg-transparent p-0 rounded-full"
               (click)="showProfile.set(true)"
               title="Sua conta"
+              aria-label="Abrir sua conta"
             >
               <img
                 [src]="user.picture"
                 [alt]="user.name"
-                class="w-9 h-9 rounded-full border border-border hover:opacity-80 transition-opacity"
+                class="w-9 h-9 rounded-full border border-hairline hover:opacity-80 transition-opacity"
                 referrerpolicy="no-referrer"
               />
             </button>
           </div>
-        </header>
+        </div>
+      </header>
+    }
 
-        <nav class="hidden sm:flex flex-wrap gap-2 mb-6">
-          <a
-            routerLink="/dashboard"
-            routerLinkActive="active"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
-          >
-            <lucide-icon name="layout-dashboard" size="16"></lucide-icon> Dashboard
-          </a>
-          <a
-            routerLink="/assets"
-            routerLinkActive="active"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
-          >
-            <lucide-icon name="briefcase" size="16"></lucide-icon> Meus Ativos
-          </a>
-          <a
-            routerLink="/market"
-            routerLinkActive="active"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
-          >
-            <lucide-icon name="target" size="16"></lucide-icon> Mercado
-          </a>
-          <a
-            routerLink="/config"
-            routerLinkActive="active"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all no-underline"
-          >
-            <lucide-icon name="settings" size="16"></lucide-icon> Configurações
-          </a>
-        </nav>
-      }
-
+    <main class="max-w-dense mx-auto px-3 sm:px-5 pt-5 sm:pt-6 pb-24 md:pb-10">
       <router-outlet />
-    </div>
+    </main>
 
     @if (auth.user()) {
+      <!-- Bottom nav de 5: os 4 destinos de trabalho + Você. -->
       <nav
-        class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-border"
-        style="background: var(--panel); padding-bottom: env(safe-area-inset-bottom);"
+        class="md:hidden fixed bottom-0 left-0 right-0 border-t border-hairline bg-panel"
+        style="padding-bottom: env(safe-area-inset-bottom); z-index: var(--fi-z-nav);"
+        aria-label="Navegação principal"
       >
-        <div class="flex items-stretch justify-around h-14">
-          <a
-            routerLink="/dashboard"
-            routerLinkActive="active-mob"
-            class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
-          >
-            <lucide-icon name="layout-dashboard" size="20"></lucide-icon>
-            <span>Início</span>
-          </a>
-          <a
-            routerLink="/assets"
-            routerLinkActive="active-mob"
-            class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
-          >
-            <lucide-icon name="briefcase" size="20"></lucide-icon>
-            <span>Ativos</span>
-          </a>
-          <a
-            routerLink="/market"
-            routerLinkActive="active-mob"
-            class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
-          >
-            <lucide-icon name="target" size="20"></lucide-icon>
-            <span>Mercado</span>
-          </a>
-          <a
-            routerLink="/config"
-            routerLinkActive="active-mob"
-            class="flex flex-col items-center justify-center gap-0.5 px-2 flex-1 text-muted no-underline text-[10px] font-medium transition-colors"
-          >
-            <lucide-icon name="settings" size="20"></lucide-icon>
-            <span>Config</span>
-          </a>
-        </div>
+        <ul class="flex items-stretch justify-around h-14 list-none m-0 p-0">
+          @for (d of destinations; track d.path) {
+            <li class="flex-1 flex">
+              <a
+                [routerLink]="d.path"
+                routerLinkActive="nav-active-mob"
+                class="flex flex-col items-center justify-center gap-0.5 px-1 flex-1 text-ink-2 no-underline text-xs font-medium transition-colors"
+              >
+                <lucide-icon [name]="d.icon" size="20"></lucide-icon>
+                <span>{{ d.label }}</span>
+              </a>
+            </li>
+          }
+          <li class="flex-1 flex">
+            <a
+              routerLink="/voce"
+              routerLinkActive="nav-active-mob"
+              class="flex flex-col items-center justify-center gap-0.5 px-1 flex-1 text-ink-2 no-underline text-xs font-medium transition-colors"
+            >
+              <lucide-icon name="sliders-horizontal" size="20"></lucide-icon>
+              <span>Você</span>
+            </a>
+          </li>
+        </ul>
       </nav>
     }
   `,
   styles: [
     `
-      :host ::ng-deep a.active {
-        background: linear-gradient(135deg, #4ade80, #22d3ee);
-        color: #0b0e14;
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(34, 211, 238, 0.3);
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--fi-radius-md);
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--fi-ink-2);
+        text-decoration: none;
+        transition: color var(--fi-motion-fast) ease;
       }
-      :host ::ng-deep a.active-mob {
-        color: var(--accent);
+      .nav-link:hover {
+        color: var(--fi-ink-1);
+      }
+      :host ::ng-deep a.nav-active {
+        color: var(--fi-ink-1);
+        font-weight: 600;
+        box-shadow: inset 0 -2px 0 var(--fi-brand);
+      }
+      :host ::ng-deep a.nav-active-mob {
+        color: var(--fi-brand);
+      }
+      :host ::ng-deep a:focus-visible,
+      :host ::ng-deep button:focus-visible {
+        outline: var(--fi-focus-ring) solid var(--fi-brand);
+        outline-offset: var(--fi-focus-offset);
       }
       a {
         text-decoration: none !important;
@@ -183,6 +195,8 @@ export class AppComponent {
   readonly theme = inject(ThemeService);
   readonly auth = inject(AuthService);
   readonly showProfile = signal(false);
+  readonly destinations = DESTINATIONS;
+
   private readonly router = inject(Router);
   private readonly loading = inject(LoadingService);
 

@@ -1,0 +1,382 @@
+@if (vencimentosProximos().length > 0) {
+  <div class="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/40 mb-5">
+    <div class="flex items-start gap-3">
+      <lucide-icon name="calendar-clock" size="20" class="text-yellow-400 mt-0.5"></lucide-icon>
+      <div>
+        <div class="font-semibold text-tx">
+          {{ vencimentosProximos().length === 1 ? 'Uma aplicação vence' : 'Aplicações vencem' }} nos
+          próximos 30 dias
+        </div>
+        <ul class="list-disc pl-4 text-sm text-muted mt-1 m-0">
+          @for (v of vencimentosProximos(); track v.id) {
+            <li>
+              <span class="text-tx font-medium">{{ v.nome }}</span> —
+              {{ v.dias_para_vencimento }} dias (R$
+              {{ v.valor_no_vencimento ?? v.valor_atual | number: '1.2-2' }} no vencimento)
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+}
+
+@if (fixedIncome(); as fi) {
+  @if (fixedIncomePositions().length > 0) {
+    <div class="p-5 rounded-lg bg-panel border border-border mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
+          <lucide-icon name="landmark" size="20"></lucide-icon> Renda Fixa
+          <span class="text-base font-normal text-muted"
+            >({{ fixedIncomePositions().length }})</span
+          >
+        </h2>
+        <button
+          type="button"
+          class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0"
+          (click)="showFixedIncomeDetail.set(!showFixedIncomeDetail())"
+        >
+          <lucide-icon
+            [name]="showFixedIncomeDetail() ? 'chevron-up' : 'chevron-down'"
+            size="16"
+          ></lucide-icon>
+          {{ showFixedIncomeDetail() ? 'Recolher' : 'Detalhar' }}
+        </button>
+      </div>
+      <p class="text-sm text-muted mb-4">
+        Rendimento calculado no servidor pela mesma regra do comparador de renda fixa — CDI de
+        referência {{ fi.cdi_referencia | number: '1.2-2' }}%
+        <span class="opacity-70">({{ fi.fonte_taxas === 'bcb' ? 'BCB' : 'estimativa' }})</span>.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div class="p-4 rounded-lg bg-bg-2 border border-border">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Aplicado</div>
+          <div class="text-xl font-bold text-tx">R$ {{ fi.total_investido | number: '1.2-2' }}</div>
+        </div>
+        <div class="p-4 rounded-lg bg-bg-2 border border-border">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Valor hoje</div>
+          <div class="text-xl font-bold text-tx">R$ {{ fi.total_atual | number: '1.2-2' }}</div>
+        </div>
+        <div class="p-4 rounded-lg bg-bg-2 border border-border good">
+          <div class="text-xs text-muted mb-1 uppercase tracking-wide">Rendimento líquido</div>
+          <div class="text-xl font-bold text-tx">
+            R$ {{ fi.total_rendimento | number: '1.2-2' }}
+            <span class="text-sm font-normal text-muted"
+              >({{ fi.rendimento_pct | number: '1.2-2' }}%)</span
+            >
+          </div>
+        </div>
+      </div>
+
+      @if (showFixedIncomeDetail()) {
+        <div style="overflow-x: auto">
+          <table class="w-full border-collapse text-sm">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="text-left py-2 px-2 font-medium text-muted">Aplicação</th>
+                <th class="text-left py-2 px-2 font-medium text-muted">Tipo</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Taxa efetiva</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Aplicado</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Hoje</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">Rend.</th>
+                <th class="text-right py-2 px-2 font-medium text-muted">No vencimento</th>
+                <th class="text-left py-2 px-2 font-medium text-muted">Liquidez</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of fixedIncomePositions(); track trackFixedIncome($index, item)) {
+                <tr class="border-b border-border hover:bg-bg-2 transition-colors">
+                  <td class="py-2 px-2 font-semibold text-tx">
+                    {{ item.nome }}
+                    @if (item.isento_ir) {
+                      <span class="ml-1 text-xs text-accent">isento de IR</span>
+                    }
+                  </td>
+                  <td class="py-2 px-2 text-tx">{{ rfTipoLabel(item.tipo) }}</td>
+                  <td class="text-right py-2 px-2 text-tx">
+                    {{ item.taxa_anual_efetiva_pct | number: '1.2-2' }}% a.a.
+                  </td>
+                  <td class="text-right py-2 px-2 text-tx">
+                    {{ item.valor_investido | number: '1.2-2' }}
+                  </td>
+                  <td class="text-right py-2 px-2 text-tx">
+                    {{ item.valor_atual | number: '1.2-2' }}
+                  </td>
+                  <td class="text-right py-2 px-2 good">
+                    +{{ item.rendimento_pct | number: '1.2-2' }}%
+                  </td>
+                  <td class="text-right py-2 px-2 text-muted">
+                    {{
+                      item.valor_no_vencimento != null
+                        ? (item.valor_no_vencimento | number: '1.2-2')
+                        : '—'
+                    }}
+                  </td>
+                  <td class="py-2 px-2 text-muted">{{ liquidezLabel(item.liquidez) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (hiddenFixedIncome().length > 0) {
+          <p class="text-xs text-muted mt-3 m-0">
+            {{ hiddenFixedIncome().length }} aplicação(ões) oculta(s), fora dos totais.
+          </p>
+        }
+      }
+    </div>
+  }
+}
+
+@if (tradedPositions().length > 0) {
+  <div class="p-5 rounded-lg bg-panel border border-border mb-5">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+      <lucide-icon name="trending-up" size="20"></lucide-icon> Ativos Negociados
+      <span class="text-base font-normal text-muted">({{ negociadosCount() }})</span>
+    </h2>
+    <p class="text-sm text-muted mb-4">
+      Ações, FIIs, BDRs e ETFs com cotação em bolsa. O veredito compara o preço atual com o preço
+      justo estimado. Clique nos títulos para ordenar.
+      <app-help-tooltip [text]="ui.glossary['ms']"></app-help-tooltip>
+    </p>
+
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+      @if (selectedTickers().length > 0) {
+        <span class="text-sm text-muted">
+          {{ selectedTickers().length }}/{{ maxCompare }} selecionados
+        </span>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium bg-accent text-white border-0 hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-1.5"
+          (click)="compareSelected()"
+        >
+          <lucide-icon name="git-compare" size="14"></lucide-icon> Comparar
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg text-sm border border-border text-muted hover:text-tx transition-colors cursor-pointer bg-transparent"
+          (click)="clearSelection()"
+        >
+          Limpar
+        </button>
+      }
+      <button
+        type="button"
+        class="ml-auto px-3 py-1.5 rounded-lg text-sm border border-border text-tx hover:bg-panel-2 transition-colors cursor-pointer bg-transparent flex items-center gap-1.5"
+        (click)="exportCsv()"
+      >
+        <lucide-icon name="download" size="14"></lucide-icon> Exportar CSV
+      </button>
+    </div>
+
+    <div style="overflow-x: auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="py-2 px-2 w-8"></th>
+            <th class="text-left py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort" (click)="toggleSort('ticker')">
+                Ativo <lucide-icon [name]="sortIcon('ticker')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-left py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort" (click)="toggleSort('asset_type')">
+                Tipo <lucide-icon [name]="sortIcon('asset_type')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort justify-end" (click)="toggleSort('quantity')">
+                Qtd <lucide-icon [name]="sortIcon('quantity')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort justify-end" (click)="toggleSort('avg_price')">
+                P. médio <lucide-icon [name]="sortIcon('avg_price')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button
+                type="button"
+                class="th-sort justify-end"
+                (click)="toggleSort('current_price')"
+              >
+                Atual <lucide-icon [name]="sortIcon('current_price')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort justify-end" (click)="toggleSort('fair_price')">
+                Justo <lucide-icon [name]="sortIcon('fair_price')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort justify-end" (click)="toggleSort('pnl_pct')">
+                Rend. <lucide-icon [name]="sortIcon('pnl_pct')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-left py-2 px-2 font-medium text-muted">
+              <button type="button" class="th-sort" (click)="toggleSort('verdict')">
+                Veredito <lucide-icon [name]="sortIcon('verdict')" size="12"></lucide-icon>
+              </button>
+            </th>
+            <th class="text-right py-2 px-2 font-medium text-muted"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of tradedPositions(); track p.ticker) {
+            <tr
+              class="border-b border-border hover:bg-bg-2 transition-colors"
+              [class.bg-accent-5]="isSelected(p.ticker)"
+            >
+              <td class="py-2 px-2">
+                <input
+                  type="checkbox"
+                  class="accent-accent cursor-pointer"
+                  [checked]="isSelected(p.ticker)"
+                  (change)="toggleSelection(p.ticker)"
+                  [attr.aria-label]="'Selecionar ' + p.ticker + ' para comparar'"
+                />
+              </td>
+              <td class="py-2 px-2">
+                <a
+                  [routerLink]="['/ativo', p.ticker]"
+                  class="fi-ticker text-ink no-underline hover:text-brand transition-colors"
+                  >{{ p.ticker }}</a
+                >
+                @if (p.name) {
+                  <div class="text-xs text-muted">{{ p.name }}</div>
+                }
+              </td>
+              <td class="py-2 px-2 text-muted">{{ ui.assetTypeLabel(p.asset_type) }}</td>
+              <td class="text-right py-2 px-2 text-tx">{{ p.quantity }}</td>
+              <td class="text-right py-2 px-2 text-tx">{{ p.avg_price | number: '1.2-2' }}</td>
+              <td class="text-right py-2 px-2 text-tx">
+                {{ p.current_price != null ? (p.current_price | number: '1.2-2') : '—' }}
+              </td>
+              <td class="text-right py-2 px-2 text-tx">
+                {{ p.fair_price != null ? (p.fair_price | number: '1.2-2') : '—' }}
+              </td>
+              <td
+                class="text-right py-2 px-2"
+                [class.good]="(p.pnl_pct || 0) >= 0"
+                [class.warn]="(p.pnl_pct || 0) < 0"
+              >
+                {{ p.pnl_pct != null ? (p.pnl_pct | number: '1.2-2') + '%' : '—' }}
+              </td>
+              <td class="py-2 px-2">
+                <button
+                  type="button"
+                  class="verdict-pill cursor-pointer border-0"
+                  [class]="ui.verdictClass(p.verdict)"
+                  [title]="p.reasons.length ? 'Ver motivos' : ''"
+                  (click)="toggleReasons(p.ticker)"
+                >
+                  {{ p.label }}
+                  @if (p.reasons.length) {
+                    <lucide-icon
+                      [name]="expandedReasonsTicker() === p.ticker ? 'chevron-up' : 'chevron-down'"
+                      size="12"
+                      class="ml-1 inline-block align-middle"
+                    ></lucide-icon>
+                  }
+                </button>
+
+                <div class="text-[10px] text-muted mt-0.5 leading-tight">
+                  {{ ui.dataYearsLabel(p.data_years) }} ·
+                  {{ ui.consensusLabel(p.consensus_methods) }}
+                </div>
+              </td>
+              <td class="text-right py-2 px-2">
+                <button
+                  type="button"
+                  class="text-xs px-2 py-1 rounded-md border border-border text-muted hover:text-accent hover:border-accent transition-colors cursor-pointer bg-transparent"
+                  title="Vender"
+                  (click)="openSellModal(p)"
+                >
+                  Vender
+                </button>
+              </td>
+            </tr>
+            @if (expandedReasonsTicker() === p.ticker && p.reasons.length) {
+              <tr class="border-b border-border bg-bg-2">
+                <td colspan="10" class="py-2 px-4">
+                  <ul class="list-disc pl-4 text-xs text-muted leading-relaxed m-0">
+                    @for (reason of p.reasons; track reason) {
+                      <li>{{ reason }}</li>
+                    }
+                  </ul>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+@if (sellModal(); as modal) {
+  <div
+    class="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4"
+    (click)="closeSellModal()"
+  >
+    <div
+      class="relative w-full max-w-sm rounded-xl border border-border shadow-2xl p-5"
+      style="background: var(--panel)"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 class="flex items-center gap-2 text-base font-bold m-0 mb-4 text-tx">
+        <lucide-icon name="hand-coins" size="18" class="text-accent"></lucide-icon>
+        Vender {{ modal.position.ticker }}
+      </h2>
+
+      <div class="flex flex-col gap-3">
+        <label class="flex flex-col gap-1 text-sm text-muted">
+          Quantidade (máx. {{ modal.position.quantity }})
+          <input
+            type="number"
+            class="px-3 py-2 rounded-lg border border-border bg-bg text-tx"
+            [ngModel]="modal.quantity"
+            (ngModelChange)="updateSellQuantity($event)"
+            [max]="modal.position.quantity"
+            min="0"
+          />
+        </label>
+        <label class="flex flex-col gap-1 text-sm text-muted">
+          Preço de venda (R$)
+          <input
+            type="number"
+            class="px-3 py-2 rounded-lg border border-border bg-bg text-tx"
+            [ngModel]="modal.price"
+            (ngModelChange)="updateSellPrice($event)"
+            min="0"
+            step="0.01"
+          />
+        </label>
+        <p class="text-xs text-muted m-0">
+          Lucro/prejuízo, imposto de renda e histórico serão calculados automaticamente.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 mt-5">
+        <button
+          type="button"
+          class="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer bg-transparent border border-border text-tx hover:bg-panel-2 transition-colors"
+          (click)="closeSellModal()"
+          [disabled]="sellingInProgress()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer bg-accent text-white border-0 hover:opacity-90 transition-opacity disabled:opacity-50"
+          (click)="confirmSell()"
+          [disabled]="sellingInProgress()"
+        >
+          {{ sellingInProgress() ? 'Registrando…' : 'Confirmar venda' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

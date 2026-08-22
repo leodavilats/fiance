@@ -7,10 +7,6 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/score_ruler.dart';
 
-/// Quick Invest no app.
-///
-/// A feature existia só no web. O caso de uso — "recebi meu salário, onde
-/// aporto" — é mais de celular que de desktop: aqui a lacuna custava.
 class QuickInvestView extends ConsumerStatefulWidget {
   const QuickInvestView({super.key});
 

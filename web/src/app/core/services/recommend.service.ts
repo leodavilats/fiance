@@ -84,15 +84,11 @@ export class RecommendService {
     return this.http.get<PortfolioStateResponse>(`${this.base}/portfolio`);
   }
 
-  /**
-   * Importação explícita: substitui a carteira inteira. Escrita destrutiva —
-   * use `upsertPosition`/`deletePosition` para o cadastro do dia a dia.
-   */
+  /** Importação explícita: substitui a carteira inteira. */
   savePortfolio(items: PortfolioItem[]): Observable<PortfolioStateResponse> {
     return this.http.put<PortfolioStateResponse>(`${this.base}/portfolio`, { items });
   }
 
-  /** Cria ou atualiza uma posição sem tocar nas outras. */
   upsertPosition(item: PortfolioItem): Observable<PortfolioStateResponse> {
     return this.http.post<PortfolioStateResponse>(`${this.base}/portfolio/position`, item);
   }
@@ -102,8 +98,6 @@ export class RecommendService {
       `${this.base}/portfolio/position/${encodeURIComponent(ticker)}`
     );
   }
-
-  // --- renda fixa (entidade persistida no servidor) ---
 
   getFixedIncome(): Observable<FixedIncomeListResponse> {
     return this.http.get<FixedIncomeListResponse>(`${this.base}/fixed-income`);
@@ -123,8 +117,6 @@ export class RecommendService {
   deleteFixedIncome(id: number): Observable<{ deleted: number }> {
     return this.http.delete<{ deleted: number }>(`${this.base}/fixed-income/${id}`);
   }
-
-  // --- proventos recebidos (fato, não estimativa) ---
 
   getDividendsReceived(estimatedMonthly?: number): Observable<DividendsReceivedResponse> {
     let params = new HttpParams();
@@ -151,14 +143,10 @@ export class RecommendService {
     return this.http.delete<{ deleted: number }>(`${this.base}/dividends/received/${id}`);
   }
 
-  // --- renda fixa x ativos na mesma conta ---
-
   incomeCompare(amount = 10_000, horizonMonths = 12): Observable<IncomeCompareResponse> {
     const params = new HttpParams().set('amount', amount).set('horizon_months', horizonMonths);
     return this.http.get<IncomeCompareResponse>(`${this.base}/income-compare`, { params });
   }
-
-  // --- ciclo decisão -> execução -> resultado ---
 
   getFollowedSuggestions(): Observable<FollowedSuggestionsResponse> {
     return this.http.get<FollowedSuggestionsResponse>(`${this.base}/suggestions/followed`);
@@ -184,7 +172,6 @@ export class RecommendService {
     return this.http.get<DashboardResponse>(`${this.base}/dashboard`);
   }
 
-  /** O que mudou desde a última visita, com uma ação por linha. */
   whatsNew(): Observable<WhatsNewResponse> {
     return this.http.get<WhatsNewResponse>(`${this.base}/whats-new`);
   }
@@ -237,11 +224,6 @@ export class RecommendService {
     return this.http.get<Preferences>(`${this.base}/preferences`);
   }
 
-  /**
-   * PUT parcial: só o que vier definido é enviado, e só o que for enviado é
-   * gravado. Mandar o objeto inteiro era o que apagava `cash_available` a
-   * cada salvamento da tela de Configurações.
-   */
   savePreferences(patch: Partial<Preferences>): Observable<Preferences> {
     const body: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(patch)) {
@@ -250,7 +232,6 @@ export class RecommendService {
     return this.http.put<Preferences>(`${this.base}/preferences`, body);
   }
 
-  /** Atalho para a única preferência que Estratégia/Quick Invest escrevem. */
   saveCashAvailable(cashAvailable: number): Observable<Preferences> {
     return this.savePreferences({ cash_available: cashAvailable });
   }

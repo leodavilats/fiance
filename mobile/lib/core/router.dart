@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/assets/assets_screen.dart';
@@ -6,33 +7,35 @@ import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
-import '../features/market/market_screen.dart';
+import '../features/estrategia/estrategia_screen.dart';
+import '../features/market/opportunities_tab.dart';
+import '../features/market/quick_invest_view.dart';
 import '../features/shell/app_shell.dart';
+import '../features/shell/tool_screen.dart';
+import '../features/tools/tools_views.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
   routes: [
-    GoRoute(
-      path: '/splash',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+
+    GoRoute(path: '/dashboard', redirect: (_, _) => '/hoje'),
+    GoRoute(path: '/assets', redirect: (_, _) => '/carteira'),
+    GoRoute(path: '/market', redirect: (_, _) => '/descobrir'),
+    GoRoute(path: '/config', redirect: (_, _) => '/voce'),
+
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) =>
-          AppShell(navigationShell: navigationShell),
+      builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
       branches: [
         StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/dashboard',
-              builder: (context, state) => const DashboardScreen(),
-            ),
-          ],
+          routes: [GoRoute(path: '/hoje', builder: (context, state) => const DashboardScreen())],
         ),
+
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/assets',
+              path: '/carteira',
               builder: (context, state) => const AssetsScreen(),
               routes: [
                 GoRoute(
@@ -43,23 +46,120 @@ final appRouter = GoRouter(
             ),
           ],
         ),
+
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/market',
-              builder: (context, state) => const MarketScreen(),
+              path: '/descobrir',
+              builder: (context, state) => const _DescobrirScreen(),
+              routes: [
+                GoRoute(
+                  path: 'quedas',
+                  builder: (context, state) => const ToolScreen(
+                    title: 'Quedas',
+                    question: 'Caiu por quê — e os fundamentos seguem de pé?',
+                    child: OpportunitiesTab(initialOnlyDip: true),
+                  ),
+                ),
+                GoRoute(
+                  path: 'comparar',
+                  builder: (context, state) => const ToolScreen(
+                    title: 'Comparar ativos',
+                    question: 'Entre estes ativos, qual está melhor posicionado?',
+                    child: CompareAssetsView(),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/config',
-              builder: (context, state) => const ConfigScreen(),
+              path: '/estrategia',
+              builder: (context, state) => const EstrategiaScreen(),
+              routes: [
+                GoRoute(
+                  path: 'aporte',
+                  builder: (context, state) => const ToolScreen(
+                    title: 'Onde aportar',
+                    question: 'Recebi dinheiro — onde ele faz mais diferença agora?',
+                    child: QuickInvestView(),
+                  ),
+                ),
+                GoRoute(
+                  path: 'metas',
+                  builder: (context, state) => const _MetasScreen(),
+                ),
+                GoRoute(
+                  path: 'renda-fixa',
+                  builder: (context, state) => const ToolScreen(
+                    title: 'Renda fixa',
+                    question: 'Entre estes títulos, qual rende mais depois do IR?',
+                    child: RendaFixaSimulatorView(),
+                  ),
+                ),
+                GoRoute(
+                  path: 'projecao',
+                  builder: (context, state) => const ToolScreen(
+                    title: 'Projeção',
+                    question: 'Aportando assim, onde eu chego?',
+                    child: ContributionSimulatorView(),
+                  ),
+                ),
+              ],
             ),
           ],
+        ),
+
+        StatefulShellBranch(
+          routes: [GoRoute(path: '/voce', builder: (context, state) => const ConfigScreen())],
         ),
       ],
     ),
+
+    GoRoute(
+      path: '/ativo/:ticker',
+      builder: (context, state) => ToolScreen(
+        title: state.pathParameters['ticker']?.toUpperCase() ?? 'Ativo',
+        child: AnalyzeAssetView(initialTicker: state.pathParameters['ticker']),
+      ),
+    ),
   ],
 );
+
+class _DescobrirScreen extends StatelessWidget {
+  const _DescobrirScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Descobrir'),
+        actions: [
+          IconButton(
+            tooltip: 'Quedas',
+            icon: const Icon(Icons.trending_down),
+            onPressed: () => context.go('/descobrir/quedas'),
+          ),
+          IconButton(
+            tooltip: 'Comparar ativos',
+            icon: const Icon(Icons.compare_arrows),
+            onPressed: () => context.go('/descobrir/comparar'),
+          ),
+        ],
+      ),
+      body: const OpportunitiesTab(),
+    );
+  }
+}
+
+class _MetasScreen extends StatelessWidget {
+  const _MetasScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ConfigScreen();
+  }
+}

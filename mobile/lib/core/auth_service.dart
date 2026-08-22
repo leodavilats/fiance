@@ -28,8 +28,6 @@ class AuthService {
     : _dio = Dio(BaseOptions(baseUrl: apiBaseUrl)),
       _googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
-        // Client ID Web necessário p/ o plugin devolver idToken no Android
-        // (o client ID Android sozinho não gera idToken).
         serverClientId:
             '113865070204-6lkq31ahsk3ihgshrecggp6l1kiu93tc.apps.googleusercontent.com',
       );

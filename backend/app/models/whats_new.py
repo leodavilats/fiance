@@ -2,13 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class WhatsNewItem(BaseModel):
-    """Uma linha de "o que mudou desde a sua última visita".
-
-    O produto calculava saúde de carteira, gaps de alocação, vereditos, IR
-    realizado e sugestões de redução — e nenhuma tela respondia a pergunta que
-    o usuário tem ao abrir o app. Cada item aqui carrega a ação que fecha o
-    ciclo, em vez de só informar.
-    """
+    """Uma linha de "o que mudou desde a sua última visita"."""
 
     kind: str = Field(
         ...,
@@ -20,8 +14,6 @@ class WhatsNewItem(BaseModel):
     title: str
     detail: str
     ticker: str | None = None
-    # Ação sugerida, no vocabulário da UI: analyze | sell | rebalance |
-    # fixed_income | market | goals
     action: str | None = None
     action_label: str | None = None
 

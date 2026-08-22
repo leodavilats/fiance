@@ -15,6 +15,8 @@ class FairPriceBlock(BaseModel):
     data_years: int = 0
     desired_yield_used: float = 0.06
     pvp: float | None = None
+    # `compute_fair_price` já calculava isto e o modelo de resposta não declarava o campo — `FairPriceBlock(**fair.__dict__)` descartava em silêncio.
+    consensus_methods: int = 0
     details: dict = Field(default_factory=dict)
 
 
@@ -23,6 +25,7 @@ class TechnicalBlock(BaseModel):
     sma_200: float | None = None
     rsi_14: float | None = None
     trend: str = "unknown"
+    trend_basis: str = "none"
     last_price: float | None = None
     distance_from_52w_high_pct: float | None = None
     distance_from_52w_low_pct: float | None = None

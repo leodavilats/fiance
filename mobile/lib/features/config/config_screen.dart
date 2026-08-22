@@ -10,6 +10,7 @@ import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/theme_provider.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
+import '../../core/widgets/error_state.dart';
 
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
@@ -47,8 +48,6 @@ class ConfigScreen extends ConsumerWidget {
                 leading: const Icon(Icons.logout),
                 title: const Text('Sair'),
                 onTap: () async {
-                  // Antes do signOut: depois dele o token de autenticação
-                  // já não existe para autorizar o DELETE.
                   await ref
                       .read(notificationsServiceProvider)
                       .unregisterToken();
@@ -83,7 +82,7 @@ class ConfigScreen extends ConsumerWidget {
             ),
             error: (err, _) => Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Erro ao carregar preferências: $err'),
+              child: FiErrorState(error: err, action: 'carregar suas preferências'),
             ),
             data: (prefs) => Column(
               children: [
@@ -514,7 +513,10 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
         child: LinearProgressIndicator(),
       ),
       error: (err, _) =>
-          Padding(padding: const EdgeInsets.all(16), child: Text('Erro: $err')),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: FiErrorState(error: err, action: 'carregar suas metas'),
+          ),
       data: (data) {
         final items = _editing ?? data;
         final total = items.fold<double>(0, (sum, g) => sum + g.targetPct);
@@ -622,7 +624,10 @@ class _SectorGoalsSectionState extends ConsumerState<_SectorGoalsSection> {
         child: LinearProgressIndicator(),
       ),
       error: (err, _) =>
-          Padding(padding: const EdgeInsets.all(16), child: Text('Erro: $err')),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: FiErrorState(error: err, action: 'carregar suas metas'),
+          ),
       data: (data) {
         final items = data.isNotEmpty
             ? data
@@ -779,7 +784,7 @@ class _AlertsSection extends ConsumerWidget {
           ),
           error: (err, _) => Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('Erro: $err'),
+            child: FiErrorState(error: err, action: 'carregar seus alertas'),
           ),
           data: (items) {
             if (items.isEmpty) {

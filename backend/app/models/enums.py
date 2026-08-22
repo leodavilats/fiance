@@ -19,9 +19,6 @@ class AssetType(StrEnum):
     bdr = "bdr"
     fii = "fii"
     etf = "etf"
-    # Renda fixa não é resolvida por `detect_type` (não é papel negociado em
-    # bolsa), mas precisa existir aqui: posições de RF apareciam como
-    # `br_stock`, contaminando qualquer agrupamento por tipo de ativo.
     renda_fixa = "renda_fixa"
 
 

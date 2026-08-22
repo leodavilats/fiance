@@ -1,148 +1,165 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Espelham 1:1 as CSS custom properties de web/src/styles.css
-// (:root[data-theme='dark'|'light']) — mudança de cor de marca precisa ser
-// feita nos dois lugares.
-abstract class AppColors {
-  static const darkBg = Color(0xFF0B0E14);
-  static const darkPanel = Color(0xFF161B25);
-  static const darkPanel2 = Color(0xFF1B2230);
-  static const darkText = Color(0xFFECEDEE);
-  static const darkMuted = Color(0xFF9BA3B4);
-  static const darkBorder = Color(0xFF232A36);
-  static const darkAccent = Color(0xFF4ADE80);
-  static const darkAccent2 = Color(0xFF22D3EE);
-  static const darkWarn = Color(0xFFFBBF24);
-  static const darkDanger = Color(0xFFF87171);
+import 'design_tokens.dart';
 
-  static const lightBg = Color(0xFFF4F6FB);
-  static const lightPanel = Color(0xFFFFFFFF);
-  static const lightPanel2 = Color(0xFFF5F7FB);
-  static const lightText = Color(0xFF1A202C);
-  static const lightMuted = Color(0xFF4A5568);
-  static const lightBorder = Color(0xFFD6DCE6);
-  static const lightAccent = Color(0xFF16A34A);
-  static const lightAccent2 = Color(0xFF0891B2);
-  static const lightWarn = Color(0xFFD97706);
-  static const lightDanger = Color(0xFFDC2626);
+export 'design_tokens.dart';
+
+abstract final class AppColors {
+  static const darkBg = FiColors.darkGround0;
+  static const darkPanel = FiColors.darkGround1;
+  static const darkPanel2 = FiColors.darkGround2;
+  static const darkText = FiColors.darkInk1;
+  static const darkMuted = FiColors.darkInk2;
+  static const darkBorder = FiColors.darkHairline;
+  static const darkAccent = FiColors.darkBrand;
+  static const darkAccent2 = FiColors.darkBrand;
+  static const darkWarn = FiColors.darkStateAttention;
+  static const darkDanger = FiColors.darkStateAdverse;
+
+  static const lightBg = FiColors.lightGround0;
+  static const lightPanel = FiColors.lightGround1;
+  static const lightPanel2 = FiColors.lightGround2;
+  static const lightText = FiColors.lightInk1;
+  static const lightMuted = FiColors.lightInk2;
+  static const lightBorder = FiColors.lightHairline;
+  static const lightAccent = FiColors.lightBrand;
+  static const lightAccent2 = FiColors.lightBrand;
+  static const lightWarn = FiColors.lightStateAttention;
+  static const lightDanger = FiColors.lightStateAdverse;
 }
 
-Color gainColor(Brightness b) => b == Brightness.dark ? AppColors.darkAccent : AppColors.lightAccent;
+Color gainColor(Brightness b) => fiStateColor(FiState.favorable, b);
 
-Color lossColor(Brightness b) => b == Brightness.dark ? AppColors.darkDanger : AppColors.lightDanger;
+Color lossColor(Brightness b) => fiStateColor(FiState.adverse, b);
 
-Color warnColor(Brightness b) => b == Brightness.dark ? AppColors.darkWarn : AppColors.lightWarn;
+Color warnColor(Brightness b) => fiStateColor(FiState.attention, b);
 
-const double appRadius = 14;
+const double appRadius = FiRadius.md;
+
+TextStyle fiSerif(TextStyle base) => GoogleFonts.sourceSerif4(textStyle: base);
+
+TextStyle fiSans(TextStyle base) => GoogleFonts.inter(textStyle: base);
 
 ThemeData buildAppTheme(Brightness brightness) {
   final isDark = brightness == Brightness.dark;
-  final accent = isDark ? AppColors.darkAccent : AppColors.lightAccent;
-  final accent2 = isDark ? AppColors.darkAccent2 : AppColors.lightAccent2;
-  final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
-  final panel = isDark ? AppColors.darkPanel : AppColors.lightPanel;
-  final text = isDark ? AppColors.darkText : AppColors.lightText;
-  final muted = isDark ? AppColors.darkMuted : AppColors.lightMuted;
-  final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-  final danger = isDark ? AppColors.darkDanger : AppColors.lightDanger;
-  final warn = isDark ? AppColors.darkWarn : AppColors.lightWarn;
+
+  final ground0 = isDark ? FiColors.darkGround0 : FiColors.lightGround0;
+  final ground1 = isDark ? FiColors.darkGround1 : FiColors.lightGround1;
+  final ground2 = isDark ? FiColors.darkGround2 : FiColors.lightGround2;
+  final hairline = isDark ? FiColors.darkHairline : FiColors.lightHairline;
+  final ink1 = isDark ? FiColors.darkInk1 : FiColors.lightInk1;
+  final ink2 = isDark ? FiColors.darkInk2 : FiColors.lightInk2;
+  final brand = isDark ? FiColors.darkBrand : FiColors.lightBrand;
+  final inkOnBrand = isDark ? FiColors.darkInkOnBrand : FiColors.lightInkOnBrand;
+  final favorable = fiStateColor(FiState.favorable, brightness);
+  final attention = fiStateColor(FiState.attention, brightness);
+  final adverse = fiStateColor(FiState.adverse, brightness);
 
   final colorScheme = ColorScheme(
     brightness: brightness,
-    primary: accent,
-    onPrimary: isDark ? const Color(0xFF06210F) : Colors.white,
-    secondary: accent2,
-    onSecondary: isDark ? const Color(0xFF062125) : Colors.white,
-    error: danger,
-    onError: Colors.white,
-    surface: panel,
-    onSurface: text,
-    tertiary: warn,
-    onTertiary: isDark ? const Color(0xFF2B1D02) : Colors.white,
-    outline: border,
+    primary: brand,
+    onPrimary: inkOnBrand,
+    secondary: favorable,
+    onSecondary: inkOnBrand,
+    error: adverse,
+    onError: isDark ? FiColors.darkInk1 : FiColors.lightGround1,
+    surface: ground1,
+    onSurface: ink1,
+    surfaceContainerHighest: ground2,
+    tertiary: attention,
+    onTertiary: isDark ? FiColors.darkInk1 : FiColors.lightGround1,
+    outline: hairline,
+    outlineVariant: isDark ? FiColors.darkHairlineStrong : FiColors.lightHairlineStrong,
   );
 
+  final baseTextTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
   final textTheme = GoogleFonts.interTextTheme(
-    isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
-  ).apply(bodyColor: text, displayColor: text);
+    baseTextTheme,
+  ).apply(bodyColor: ink1, displayColor: ink1);
 
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: bg,
-    canvasColor: bg,
+    scaffoldBackgroundColor: ground0,
+    canvasColor: ground0,
     fontFamily: GoogleFonts.inter().fontFamily,
     textTheme: textTheme,
     cardTheme: CardThemeData(
-      color: panel,
+      color: ground1,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(appRadius),
-        side: BorderSide(color: border),
+        borderRadius: BorderRadius.circular(FiRadius.md),
+        side: BorderSide(color: hairline),
       ),
       margin: EdgeInsets.zero,
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: bg,
-      foregroundColor: text,
+      backgroundColor: ground0,
+      foregroundColor: ink1,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: panel,
-      indicatorColor: accent.withValues(alpha: 0.18),
+      backgroundColor: ground1,
+      indicatorColor: brand.withValues(alpha: 0.18),
       labelTextStyle: WidgetStateProperty.resolveWith(
         (states) => TextStyle(
           fontSize: 12,
           fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w400,
-          color: states.contains(WidgetState.selected) ? accent : muted,
+          color: states.contains(WidgetState.selected) ? brand : ink2,
         ),
       ),
       iconTheme: WidgetStateProperty.resolveWith(
-        (states) => IconThemeData(
-          color: states.contains(WidgetState.selected) ? accent : muted,
-        ),
+        (states) => IconThemeData(color: states.contains(WidgetState.selected) ? brand : ink2),
       ),
     ),
-    dividerTheme: DividerThemeData(color: border, space: 1),
+    dividerTheme: DividerThemeData(color: hairline, space: 1),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: isDark ? AppColors.darkPanel2 : AppColors.lightPanel2,
+      fillColor: ground2,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(appRadius),
-        borderSide: BorderSide(color: border),
+        borderRadius: BorderRadius.circular(FiRadius.md),
+        borderSide: BorderSide(color: hairline),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(appRadius),
-        borderSide: BorderSide(color: border),
+        borderRadius: BorderRadius.circular(FiRadius.md),
+        borderSide: BorderSide(color: hairline),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(appRadius),
-        borderSide: BorderSide(color: accent, width: 1.5),
+        borderRadius: BorderRadius.circular(FiRadius.md),
+        borderSide: BorderSide(color: brand, width: 1.5),
       ),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: panel,
+      backgroundColor: ground1,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appRadius)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FiRadius.lg)),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: ground1,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(FiRadius.lg)),
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: accent,
-        foregroundColor: isDark ? const Color(0xFF06210F) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(appRadius)),
+        backgroundColor: brand,
+        foregroundColor: inkOnBrand,
+        // Alvo mínimo de toque: 44px.
+        minimumSize: const Size(0, FiLayout.minTouchTarget),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FiRadius.md)),
       ),
     ),
-    // Sem isso, o Material3 deriva a trilha inativa de colorScheme.surfaceVariant,
-    // que em light mode fica quase idêntica ao fundo dos cards e some visualmente.
     sliderTheme: SliderThemeData(
-      activeTrackColor: accent,
-      inactiveTrackColor: border,
-      thumbColor: accent,
-      overlayColor: accent.withValues(alpha: 0.12),
+      activeTrackColor: brand,
+      inactiveTrackColor: hairline,
+      thumbColor: brand,
+      overlayColor: brand.withValues(alpha: 0.12),
     ),
+    focusColor: brand.withValues(alpha: 0.16),
   );
 }

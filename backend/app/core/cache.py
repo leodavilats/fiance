@@ -13,16 +13,9 @@ from typing import Any
 
 logger = logging.getLogger("fiance.cache")
 
-# Arquivo **dedicado** ao cache. Antes DB_PATH resolvia para
-# `backend/.cache/fiance.db` — o mesmo arquivo do `database_url` default em
-# desenvolvimento. Com 30 threads de coleta (_FETCH_SEMAPHORE) escrevendo cache
-# nele, o churn travava as escritas de dado do usuário com "database is
-# locked". Sobrescrevível por CACHE_DB_PATH.
 _DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent.parent / ".cache" / "http_cache.db"
 DB_PATH = Path(os.environ.get("CACHE_DB_PATH") or _DEFAULT_DB_PATH)
 
-# Uma conexão por thread, reaproveitada: abrir/fechar por operação custava um
-# handshake de arquivo em cada get/set, e um scan completo faz milhares deles.
 _local = threading.local()
 _init_lock = threading.Lock()
 _initialized = False
@@ -31,8 +24,6 @@ _BUSY_TIMEOUT_MS = 5_000
 
 
 def _record_lookup(hit: bool) -> None:
-    # Import tardio: observability importa database, que importa config —
-    # importar no topo criaria ciclo com quem usa cache no import.
     try:
         from app.core.observability import record_cache_lookup
 
@@ -51,8 +42,6 @@ def _ensure_db() -> None:
             return
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(DB_PATH) as cx:
-            # WAL: leitores não bloqueiam o escritor nem vice-versa — é o que
-            # torna o cache utilizável sob concorrência.
             cx.execute("PRAGMA journal_mode=WAL")
             cx.execute("PRAGMA synchronous=NORMAL")
             cx.execute(
@@ -85,8 +74,6 @@ def _conn() -> Iterator[sqlite3.Connection]:
     try:
         yield cx
     except sqlite3.Error:
-        # Conexão possivelmente inutilizável: descarta para a próxima chamada
-        # reabrir em vez de reusar um handle quebrado.
         _local.cx = None
         try:
             cx.close()
@@ -133,15 +120,7 @@ def get(key: str) -> Any | None:
 
 
 def get_with_age(key: str) -> tuple[Any | None, float | None]:
-    """Valor e segundos desde o vencimento, **mesmo vencido**.
-
-    É o que permite servir stale-while-revalidate: devolver o último scan
-    conhecido na hora e recalcular em background, em vez de fazer o usuário
-    pagar o scan do universo inteiro dentro do request.
-
-    Retorna `(valor, segundos_de_atraso)`. `segundos_de_atraso` é 0 quando o
-    valor ainda está fresco e `None` quando não há valor nenhum.
-    """
+    """Valor e segundos desde o vencimento, **mesmo vencido**."""
     try:
         with _conn() as cx:
             row = cx.execute("SELECT v, expires_at FROM cache WHERE k = ?", (key,)).fetchone()
@@ -169,8 +148,6 @@ def set(key: str, value: Any, ttl_seconds: int) -> None:
                 (key, json.dumps(value, default=str), time.time() + ttl_seconds),
             )
     except sqlite3.Error as exc:
-        # Cache indisponível degrada performance, não corretude — nunca deve
-        # derrubar o request.
         logger.warning("Falha ao gravar cache %s: %s", key, exc)
 
 

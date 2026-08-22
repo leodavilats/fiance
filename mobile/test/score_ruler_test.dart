@@ -15,7 +15,6 @@ void main() {
     });
 
     test('glossário cita os mesmos limiares da régua', () {
-      // Antes o texto dizia "acima de 70" enquanto o código usava 75/60/40.
       expect(scoreGlossary, contains('${kScoreStrong.toInt()}'));
       expect(scoreGlossary, contains('${kScoreGood.toInt()}'));
       expect(scoreGlossary, contains('${kScoreNeutral.toInt()}'));

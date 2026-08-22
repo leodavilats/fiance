@@ -47,8 +47,6 @@ class PortfolioPosition {
       PortfolioPosition(
         ticker: j['ticker'] as String,
         name: j['name'] as String?,
-        // Posições de renda fixa vinham como 'br_stock', contaminando
-        // qualquer agrupamento por tipo de ativo.
         assetType: j['asset_type'] as String? ?? 'br_stock',
         quantity: (j['quantity'] as num).toDouble(),
         avgPrice: (j['avg_price'] as num).toDouble(),
@@ -232,11 +230,6 @@ class CategoryAllocation {
       );
 }
 
-/// Alerta agrupado, com um desfecho.
-///
-/// Antes o dashboard emitia alertas sem limite nem deduplicacao (um por posicao
-/// SELL, um por setor concentrado, um por categoria fora da meta) e a unica
-/// acao oferecida na tela era ir para Mercado.
 class PortfolioAlert {
   PortfolioAlert({
     required this.severity,
@@ -270,10 +263,6 @@ class PortfolioAlert {
   );
 }
 
-/// Frescor e origem do dado que alimentou a tela.
-///
-/// `get_rates()` ja devolvia `bcb | estimativa` -- o unico indicador de
-/// proveniencia do sistema -- e nenhuma tela o mostrava.
 class DataFreshness {
   DataFreshness({
     required this.ratesSource,
@@ -303,7 +292,6 @@ class DataFreshness {
       ratesSource == 'bcb' ? 'CDI/Selic do Banco Central' : 'CDI/Selic estimados';
 }
 
-/// Uma linha de "o que mudou desde a sua ultima visita".
 class WhatsNewItem {
   WhatsNewItem({
     required this.kind,
@@ -455,7 +443,6 @@ class Opportunity {
   final String label;
   final String? sector;
   final double score;
-  // Proveniencia do veredito -- antes calculada e descartada no backend.
   final double confidence;
   final int dataYears;
   final int consensusMethods;
@@ -478,6 +465,41 @@ class Opportunity {
     consensusMethods: j['consensus_methods'] as int? ?? 0,
     trendBasis: j['trend_basis'] as String? ?? 'none',
     dataCompleteness: (j['data_completeness'] as num?)?.toDouble() ?? 1,
+  );
+}
+
+class AllocationGap {
+  AllocationGap({
+    required this.category,
+    required this.targetPct,
+    required this.currentPct,
+    required this.gapPct,
+    required this.targetValue,
+    required this.currentValue,
+    required this.gapValue,
+    required this.action,
+  });
+
+  final String category;
+  final double targetPct;
+  final double currentPct;
+  final double gapPct;
+  final double targetValue;
+  final double currentValue;
+  final double gapValue;
+  final String action;
+
+  bool get isBelowTarget => gapPct > 0;
+
+  factory AllocationGap.fromJson(Map<String, dynamic> j) => AllocationGap(
+    category: j['category'] as String? ?? '',
+    targetPct: (j['target_pct'] as num?)?.toDouble() ?? 0,
+    currentPct: (j['current_pct'] as num?)?.toDouble() ?? 0,
+    gapPct: (j['gap_pct'] as num?)?.toDouble() ?? 0,
+    targetValue: (j['target_value'] as num?)?.toDouble() ?? 0,
+    currentValue: (j['current_value'] as num?)?.toDouble() ?? 0,
+    gapValue: (j['gap_value'] as num?)?.toDouble() ?? 0,
+    action: j['action'] as String? ?? '',
   );
 }
 
@@ -552,13 +574,28 @@ class RebalanceItem {
 }
 
 class RebalanceSuggestions {
-  RebalanceSuggestions({required this.items, required this.taxDisclaimer});
+  RebalanceSuggestions({
+    required this.allocationGaps,
+    required this.items,
+    required this.taxDisclaimer,
+  });
 
+  final List<AllocationGap> allocationGaps;
   final List<RebalanceItem> items;
   final String? taxDisclaimer;
 
+  AllocationGap? get biggestGap {
+    if (allocationGaps.isEmpty) return null;
+    final sorted = [...allocationGaps]
+      ..sort((a, b) => b.gapPct.abs().compareTo(a.gapPct.abs()));
+    return sorted.first;
+  }
+
   factory RebalanceSuggestions.fromJson(Map<String, dynamic> j) =>
       RebalanceSuggestions(
+        allocationGaps: (j['allocation_gaps'] as List? ?? const [])
+            .map((e) => AllocationGap.fromJson(e as Map<String, dynamic>))
+            .toList(),
         items: (j['items'] as List? ?? const [])
             .map((e) => RebalanceItem.fromJson(e as Map<String, dynamic>))
             .toList(),
@@ -1019,11 +1056,6 @@ class PassiveIncomeProjection {
 }
 
 
-/// Posição de renda fixa marcada a mercado pelo backend.
-///
-/// Antes taxa, prazo, data de aplicação e % do CDI viviam só no localStorage do
-/// web e o mobile nunca via nada disso: as posições apareciam como um ativo
-/// chamado "Renda Fixa", sem rendimento e sem possibilidade de editar.
 class FixedIncomePosition {
   FixedIncomePosition({
     required this.id,
@@ -1138,10 +1170,6 @@ class FixedIncomeList {
 }
 
 
-/// Sugestão de aporte do Quick Invest.
-///
-/// A feature existia só no web, e "recebi meu salário, onde aporto" é um caso de
-/// uso mais de celular que de desktop — aqui a lacuna custava.
 class QuickInvestAllocation {
   QuickInvestAllocation({
     required this.ticker,

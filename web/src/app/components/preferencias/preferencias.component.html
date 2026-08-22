@@ -1,0 +1,187 @@
+<form [formGroup]="form" class="flex flex-col gap-5">
+  <div class="p-5 rounded-lg bg-panel border border-border">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
+      <lucide-icon name="sliders-horizontal" size="18"></lucide-icon> Como o fiance te avalia
+    </h2>
+    <label class="block text-xs font-medium text-muted mb-2">
+      Meta de dividend yield (preço-teto de Bazin) — por tipo de ativo
+    </label>
+    <div class="grid grid-cols-4 gap-4">
+      <div>
+        <label class="block text-[11px] text-muted mb-1">Ações BR (%)</label>
+        <input
+          type="number"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          formControlName="yield_stock"
+          min="0.5"
+          max="30"
+          step="0.5"
+        />
+      </div>
+      <div>
+        <label class="block text-[11px] text-muted mb-1">FIIs (%)</label>
+        <input
+          type="number"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          formControlName="yield_fii"
+          min="0.5"
+          max="30"
+          step="0.5"
+        />
+      </div>
+      <div>
+        <label class="block text-[11px] text-muted mb-1">BDRs (%)</label>
+        <input
+          type="number"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          formControlName="yield_bdr"
+          min="0.5"
+          max="30"
+          step="0.5"
+        />
+      </div>
+      <div>
+        <label class="block text-[11px] text-muted mb-1">ETFs (%)</label>
+        <input
+          type="number"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          formControlName="yield_etf"
+          min="0.5"
+          max="30"
+          step="0.5"
+        />
+      </div>
+    </div>
+    <p class="text-xs text-muted mt-1.5">
+      Usada no preço justo de Bazin (dividendo anual ÷ meta). BDRs são avaliadas por Graham/DCF;
+      ETFs usam só dividend yield (sem Graham/DCF, que exigem fundamentos de empresa).
+    </p>
+  </div>
+  <div class="p-5 rounded-lg bg-panel border border-border">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-tx">
+      <lucide-icon name="bell" size="18"></lucide-icon> Notificações e Recomendação
+    </h2>
+
+    @if (!pushEnabled()) {
+      <div class="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/40 mb-4 flex gap-3">
+        <lucide-icon name="smartphone" size="18" class="text-yellow-400 mt-0.5"></lucide-icon>
+        <div class="text-sm">
+          <div class="font-semibold text-tx">As notificações requerem o app instalado</div>
+          <div class="text-muted mt-0.5">
+            Nenhum aparelho registrado nesta conta. As preferências abaixo ficam salvas e passam a
+            valer assim que você entrar pelo app — no navegador elas não disparam nada.
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="p-3 rounded-lg bg-panel-2 border border-border mb-4 flex gap-3">
+        <lucide-icon name="smartphone" size="18" class="text-accent mt-0.5"></lucide-icon>
+        <div class="text-sm text-muted">
+          {{ registeredDevices() }}
+          {{ registeredDevices() === 1 ? 'aparelho recebendo' : 'aparelhos recebendo' }}
+          notificações desta conta.
+        </div>
+      </div>
+    }
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5">Alertas de preço</label>
+        <label
+          class="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm cursor-pointer"
+        >
+          <input type="checkbox" formControlName="notify_price_alerts" class="accent-accent" />
+          Notificar (imediato)
+        </label>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5">
+          Resumo de oportunidades — cadência
+        </label>
+        <select
+          formControlName="opportunities_frequency"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          @for (f of frequencyOptions; track f.key) {
+            <option [value]="f.key">{{ f.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5">Perfil de risco</label>
+        <select
+          formControlName="risk_profile"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          @for (r of riskProfileOptions; track r.key) {
+            <option [value]="r.key">{{ r.label }}</option>
+          }
+        </select>
+        <p class="text-xs text-muted mt-1">
+          Ajusta o peso de cada indicador no score de oportunidade.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-4 pt-4 border-t border-border">
+      <label class="block text-xs font-medium text-muted mb-2">Categorias preferidas</label>
+      <div class="flex flex-wrap gap-3">
+        @for (cat of categories; track cat.key) {
+          <label class="flex items-center gap-1.5 text-sm text-tx">
+            <input
+              type="checkbox"
+              class="accent-accent"
+              [checked]="isPreferredCategory(cat.key)"
+              (change)="togglePreferredCategory(cat.key, $any($event.target).checked)"
+            />
+            {{ cat.label }}
+          </label>
+        }
+      </div>
+      <p class="text-xs text-muted mt-1.5">
+        Ativos dessas categorias ganham um pequeno boost no score de oportunidade.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5">Setores preferidos</label>
+        <input
+          type="text"
+          formControlName="preferred_sectors"
+          placeholder="Ex.: Energia, Bancos, Varejo"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-muted mb-1.5">Ativos excluídos</label>
+        <input
+          type="text"
+          formControlName="excluded_tickers"
+          placeholder="Ex.: MGLU3, IRBR3"
+          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-end gap-3 mt-1">
+    <span
+      class="text-sm"
+      [class.text-favorable]="message().startsWith('✓')"
+      [class.text-adverse]="message().startsWith('✗')"
+      *ngIf="message()"
+      >{{ message() }}</span
+    >
+    <button
+      type="button"
+      class="flex items-center gap-2 px-4 h-11 rounded-lg font-medium text-sm cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+      (click)="savePreferencias()"
+      [disabled]="saving()"
+    >
+      <lucide-icon [name]="saving() ? 'loader-circle' : 'check'" size="16"></lucide-icon>
+      {{ saving() ? 'Salvando...' : 'Salvar' }}
+    </button>
+  </div>
+</form>

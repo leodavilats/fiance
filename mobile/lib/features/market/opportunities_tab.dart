@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/help_tooltip.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
+import '../../core/widgets/error_state.dart';
 import 'asset_detail_sheet.dart';
 
 const _categoryToAssetType = {
@@ -82,7 +83,9 @@ final dipScanResultProvider = FutureProvider.autoDispose<List<DipScanItem>>((
 });
 
 class OpportunitiesTab extends ConsumerStatefulWidget {
-  const OpportunitiesTab({super.key});
+  const OpportunitiesTab({super.key, this.initialOnlyDip = false});
+
+  final bool initialOnlyDip;
 
   @override
   ConsumerState<OpportunitiesTab> createState() => _OpportunitiesTabState();
@@ -108,6 +111,19 @@ int _activeFilterCount(OpportunitiesFilters f) {
 
 class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
   final _searchCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final current = ref.read(opportunitiesFiltersProvider);
+      if (current.onlyDip != widget.initialOnlyDip) {
+        ref.read(opportunitiesFiltersProvider.notifier).state = current.copyWith(
+          onlyDip: widget.initialOnlyDip,
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -402,7 +418,7 @@ class _DipScannerView extends ConsumerWidget {
       onRefresh: () async => ref.invalidate(dipScanResultProvider),
       child: result.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro: $err')),
+        error: (err, _) => FiErrorState(error: err, action: 'varrer o mercado'),
         data: (items) {
           if (items.isEmpty) {
             return ListView(
@@ -512,7 +528,7 @@ class _AllOpportunitiesView extends ConsumerWidget {
       onRefresh: () async => ref.invalidate(filteredOpportunitiesProvider),
       child: opportunities.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Erro: $err')),
+        error: (err, _) => FiErrorState(error: err, action: 'varrer o mercado'),
         data: (_) {
           if (items.isEmpty) {
             return ListView(

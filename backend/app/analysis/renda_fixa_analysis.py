@@ -15,14 +15,9 @@ DEFAULT_CDI_ANUAL = 14.40
 DEFAULT_SELIC_ANUAL = 14.40
 DEFAULT_IPCA_ANUAL = 5.0
 
-# Dias corridos por mês (365,25/12). O web usava 30 e o backend 30,44: um CDB de
-# 24 meses caía em 15% de IR no backend (730 d) e 17,5% no web (720 d).
 DIAS_POR_MES = 30.4375
 
-# Tolerância para preferir liquidez diária no "melhor opção": abrir mão de até
-# meio ponto percentual ao ano em troca de poder resgatar quando precisar é a
-# escolha certa para a maioria — recomendar um CDB de 5 anos travado por causa
-# de 0,1 p.p. não é.
+# Tolerância para preferir liquidez diária no "melhor opção": abrir mão de até meio ponto percentual ao ano em troca de poder resgatar quando precisar é a escolha certa para a maioria — recomendar um CDB de 5 anos travado por causa de 0,1 p.p.
 LIQUIDEZ_TOLERANCIA_PP = 0.5
 
 
@@ -33,7 +28,6 @@ ISENTOS_IR = {
     RendaFixaType.cra,
 }
 
-# Tipos cuja taxa contratada é **real** (acima da inflação).
 INDEXADOS_IPCA = {RendaFixaType.tesouro_ipca}
 
 
@@ -58,24 +52,12 @@ def taxa_anual_efetiva(
     cdi_anual: float,
     ipca_anual: float,
 ) -> float:
-    """Taxa nominal anual em %, resolvendo o indexador do ativo.
-
-    Três correções em relação à versão anterior:
-
-    - **% do CDI é multiplicativo**, não exponencial. `(1+cdi)^(pct/100)` não é
-      a convenção de mercado: "110% do CDI" significa 1,10 × CDI. A 200% do CDI
-      a diferença chegava a ~2 p.p. ao ano.
-    - **IPCA+ deixa de ser tratado como nominal.** `tesouro_ipca` existia no
-      enum mas `analyze_one` só ramificava em pós-fixado: um IPCA+6% rendia 6%,
-      sem inflação, apesar de `ipca_anual` já estar disponível em `get_rates()`.
-    - **híbrido** (taxa real + índice) usa a mesma composição do IPCA+.
-    """
+    """Taxa nominal anual em %, resolvendo o indexador do ativo."""
     if ativo.tipo_taxa == TaxType.pos_fixado and ativo.percentual_cdi:
         return cdi_anual * (ativo.percentual_cdi / 100.0)
 
     indexado_ipca = ativo.tipo in INDEXADOS_IPCA or ativo.tipo_taxa == TaxType.hibrido
     if indexado_ipca:
-        # Taxa contratada é real: o retorno nominal compõe inflação e juro real.
         return ((1 + ipca_anual / 100.0) * (1 + ativo.taxa / 100.0) - 1) * 100.0
 
     return ativo.taxa
@@ -88,11 +70,7 @@ def analyze_one(
     ipca_anual: float = DEFAULT_IPCA_ANUAL,
     prazo_meses_override: float | None = None,
 ) -> RendaFixaAnalysisResult:
-    """Rendimento líquido de um título de renda fixa.
-
-    `prazo_meses_override` permite marcar uma posição a mercado: o prazo
-    decorrido desde a aplicação em vez do prazo até o vencimento.
-    """
+    """Rendimento líquido de um título de renda fixa."""
     prazo_meses = ativo.prazo_meses if prazo_meses_override is None else prazo_meses_override
     prazo_dias = int(round(prazo_meses * DIAS_POR_MES))
 
@@ -122,13 +100,6 @@ def analyze_one(
     else:
         taxa_liq_aa = 0.0
 
-    # Duas leituras explícitas em vez de um único número contra `cdi × 0.85`
-    # hardcoded (que fazia uma LCI a 100% do CDI aparecer como ~117%):
-    #
-    # - pct do CDI líquido: quanto do CDI bruto você fica de fato.
-    # - equivalente bruto: que % do CDI um título tributado do mesmo prazo
-    #   precisaria render para empatar — usa a alíquota real da faixa, não 15%
-    #   fixos. É o número usado para comparar LCI/LCA com CDB.
     pct_cdi_liquido: float | None = None
     pct_cdi_bruto_equivalente: float | None = None
     if cdi_anual > 0:
@@ -162,12 +133,7 @@ def analyze_one(
 
 
 def _escolher_melhor(resultados: list[RendaFixaAnalysisResult]) -> tuple[int, str]:
-    """Melhor opção por taxa líquida, com liquidez como critério de desempate.
-
-    Antes a escolha era só `max(taxa_liquida_aa)`, ignorando liquidez: o
-    comparador recomendava um CDB de 5 anos sem resgate sobre um de liquidez
-    diária que rendia praticamente o mesmo.
-    """
+    """Melhor opção por taxa líquida, com liquidez como critério de desempate."""
     melhor_taxa_idx = max(range(len(resultados)), key=lambda i: resultados[i].taxa_liquida_aa)
     melhor_taxa = resultados[melhor_taxa_idx].taxa_liquida_aa
 

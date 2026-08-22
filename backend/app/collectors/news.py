@@ -115,8 +115,6 @@ def _fetch_news_sync(
 async def fetch_news(
     symbol: str, asset_type: str = "br_stock", company_name: str = "", max_items: int = 8
 ) -> list[NewsItem]:
-    # Todos os asset_types suportados (br_stock/fii/bdr/etf) são negociados na
-    # B3 — busca de notícias sempre em português.
     loop = asyncio.get_event_loop()
 
     items = await loop.run_in_executor(

@@ -163,7 +163,7 @@
         <div
           class="card hover:shadow-lg transition-shadow cursor-pointer"
           [class.border-accent]="opp.is_interesting"
-          (click)="showOpportunityDetails(opp.ticker)"
+          (click)="openAsset(opp.ticker)"
         >
           <div class="flex items-start justify-between mb-3">
             <div>
@@ -181,8 +181,7 @@
               <span [class]="helper.verdictClass(opp.verdict)" class="text-xs">{{
                 opp.label
               }}</span>
-              <!-- Proveniência ao lado do veredito: confidence, anos de
-                   provento e métodos no consenso eram calculados e descartados. -->
+
               <span class="text-[10px] text-muted text-right leading-tight">
                 {{ helper.dataYearsLabel(opp.data_years) }} ·
                 {{ helper.consensusLabel(opp.consensus_methods) }}
@@ -327,6 +326,22 @@
                 helper.translateSector(opp.sector)
               }}</span>
             }
+          </div>
+          <div class="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+            <a
+              [routerLink]="['/ativo', opp.ticker]"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-brand text-on-brand no-underline hover:opacity-90 transition-opacity"
+              (click)="$event.stopPropagation()"
+            >
+              Ver ativo <lucide-icon name="arrow-right" size="13"></lucide-icon>
+            </a>
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer bg-transparent border border-border text-tx hover:bg-panel-2 transition-colors"
+              (click)="$event.stopPropagation(); showOpportunityDetails(opp.ticker)"
+            >
+              <lucide-icon name="trending-down" size="13"></lucide-icon> Entender queda
+            </button>
           </div>
         </div>
       }

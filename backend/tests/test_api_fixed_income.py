@@ -1,10 +1,4 @@
-"""Renda fixa como entidade de primeira classe (D1, D2, D9).
-
-Antes: taxa, prazo, data de aplicação e % do CDI viviam só no localStorage do
-navegador; o servidor conhecia apenas o valor investido num ticker sintético
-`RF_<tipo>_<índice>`, com `current_price = avg_price`, `pnl = 0` e
-`dividend_yield = None`.
-"""
+"""Renda fixa como entidade de primeira classe (D1, D2, D9)."""
 
 from datetime import UTC, date, datetime, timedelta
 
@@ -51,7 +45,6 @@ def test_crud_round_trip(client):
     )
     assert updated.status_code == 200
     assert updated.json()["taxa"] == 14.5
-    # Atualização parcial não apaga o resto.
     assert updated.json()["nome"] == "CDB Banco X"
 
     assert client.delete(f"/api/fixed-income/{position['id']}", headers=headers).status_code == 200
@@ -67,7 +60,6 @@ def test_position_is_marked_to_market_not_frozen(client):
     assert position["valor_atual"] > position["valor_investido"]
     assert position["rendimento_acumulado"] > 0
     assert position["rendimento_pct"] > 0
-    # Entra na projeção de renda passiva em pé de igualdade com ações e FIIs.
     assert position["yield_equivalente_pct"] > 0
     assert position["meses_decorridos"] > 11
 
@@ -82,7 +74,6 @@ def test_details_survive_a_new_client(client):
         json=_cdb(tipo_taxa="pos_fixado", percentual_cdi=110.0),
     )
 
-    # Um cliente novo (sem localStorage) lê os mesmos detalhes do servidor.
     reread = client.get("/api/fixed-income", headers=headers).json()["items"][0]
     assert reread["percentual_cdi"] == 110.0
     assert reread["taxa"] == 13.0
@@ -136,7 +127,6 @@ def test_fixed_income_reaches_the_dashboard_totals(client):
     assert after["total_invested"] == before["total_invested"] + 40000.0
     assert after["total_current"] > after["total_invested"]
     assert after["total_pnl"] > before["total_pnl"]
-    # A renda fixa deixa de declarar 0% e passa a contribuir com renda.
     assert after["yearly_dividends_estimate"] > before["yearly_dividends_estimate"]
 
 

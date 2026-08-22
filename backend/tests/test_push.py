@@ -7,10 +7,6 @@ def _reset_firebase_app_cache():
 
 
 def test_send_push_without_credentials_is_noop(monkeypatch):
-    # Força a ausência de credencial independente do .env real da máquina
-    # (dev pode ter configurado FIREBASE_SERVICE_ACCOUNT_JSON de verdade) —
-    # sem ela, o envio deve apenas logar e retornar sem erro nem chamada de
-    # rede real, nunca derrubar o chamador.
     class _FakeSettings:
         firebase_service_account_json = ""
 

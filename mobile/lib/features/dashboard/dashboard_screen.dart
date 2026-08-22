@@ -9,14 +9,11 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/score_ruler.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/error_state.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
-  /// Leva cada alerta/novidade ao seu desfecho.
-  ///
-  /// Antes a unica acao oferecida na tela era ir para Mercado: muita
-  /// informacao, nenhum desfecho.
   static void runAction(BuildContext context, String? action, String? ticker) {
     switch (action) {
       case 'analyze':
@@ -50,12 +47,18 @@ class DashboardScreen extends ConsumerWidget {
         },
         child: dashboard.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => _ErrorView(message: '$err'),
+          error: (err, _) => FiErrorState(
+            error: err,
+            title: 'Não conseguimos carregar seu resumo',
+            action: 'carregar seu resumo',
+            onRetry: () {
+              ref.invalidate(dashboardProvider);
+              ref.invalidate(whatsNewProvider);
+            },
+          ),
           data: (data) => ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
-              // Primeiro bloco da tela: responde "o que mudou desde a sua
-              // ultima visita", que era a pergunta sem resposta no produto.
               whatsNew.maybeWhen(
                 data: (wn) => wn.items.isEmpty
                     ? const SizedBox.shrink()
@@ -205,7 +208,6 @@ class _AlertTile extends StatelessWidget {
   }
 }
 
-/// Uma linha de "o que mudou", com a acao que fecha o ciclo.
 class _WhatsNewTile extends StatelessWidget {
   const _WhatsNewTile({required this.item});
 
@@ -273,7 +275,6 @@ class _WhatsNewTile extends StatelessWidget {
   }
 }
 
-/// Frescor e origem do dado, de forma discreta.
 class _FreshnessLine extends StatelessWidget {
   const _FreshnessLine({required this.freshness});
 
@@ -1159,8 +1160,6 @@ class _OpportunityTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(opportunity.name ?? ''),
-            // Proveniência ao lado do veredito: anos de provento, métodos no
-            // consenso e confiança eram calculados e descartados.
             Text(
               '${dataYearsLabel(opportunity.dataYears)} · '
               '${consensusLabel(opportunity.consensusMethods)}',
@@ -1197,18 +1196,4 @@ class _OpportunityTile extends StatelessWidget {
   }
 }
 
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message});
 
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text('Erro ao carregar: $message', textAlign: TextAlign.center),
-      ),
-    );
-  }
-}

@@ -41,9 +41,6 @@ KNOWN_UNITS = {
     "BRBI11",
 }
 
-# O radical de 4 caracteres pode conter dígito (M1TA34, A1MD34, W1BD34,
-# INBR32) — `[A-Z]{4}` rejeitava esses BDRs, que subiam UnsupportedTickerError
-# e eram engolidos como falha silenciosa no scan.
 _ROOT = r"[A-Z][A-Z0-9]{3}"
 _BDR = re.compile(rf"^{_ROOT}3\d$")
 _ENDS_11 = re.compile(rf"^{_ROOT}11$")
@@ -104,9 +101,6 @@ class AssetSnapshot:
     fifty_two_week_high: float | None
     fifty_two_week_low: float | None
 
-    # Proveniência: quando o dado foi coletado e de onde. Nada carregava `as_of`,
-    # então o usuário não distinguia cotação de agora de cotação de 2 h atrás
-    # (TTL de fundamentos) ou de 24 h (dividendos).
     as_of: float = 0.0
     source: str = "brapi"
 
@@ -122,14 +116,7 @@ def _safe_float(v) -> float | None:
 
 
 def _ratio_to_pct(v) -> float | None:
-    """Converte razão decimal da BRAPI para percentual (0.2039 -> 20.39).
-
-    A versão anterior decidia a escala por heurística (`if f > 1.0: return f`):
-    um ROE real de 1,2 (120%) era lido como 1,2% e um de 0,005 (0,5%) como 50%.
-    A BRAPI entrega esses campos como razão, então a conversão é sempre ×100 —
-    unidade única, sem adivinhação. Todo consumidor (scoring, fair price, UI)
-    passa a receber percentual.
-    """
+    """Converte razão decimal da BRAPI para percentual (0.2039 -> 20.39)."""
     try:
         if v is None:
             return None
@@ -148,13 +135,7 @@ def _dividend_date(d: dict) -> str | None:
 
 
 def _sum_dividends_last_12m(raw: dict, reference: datetime | None = None) -> float:
-    """Soma os proventos dos últimos 12 meses **por data de pagamento**.
-
-    A versão anterior somava `cashDividends[:12]` — os 12 *primeiros* registros
-    da lista. Para um FII (pagamento mensal) isso equivalia a ~1 ano por
-    coincidência; para uma ação que paga trimestralmente eram ~3 anos tratados
-    como 12 meses, inflando o DY em cerca de 3x.
-    """
+    """Soma os proventos dos últimos 12 meses **por data de pagamento**."""
     today = reference or datetime.now(UTC)
     cutoff = (today - timedelta(days=365)).strftime("%Y-%m-%d")
     horizon = today.strftime("%Y-%m-%d")
@@ -162,8 +143,6 @@ def _sum_dividends_last_12m(raw: dict, reference: datetime | None = None) -> flo
     total = 0.0
     for d in _cash_dividends(raw):
         date_str = _dividend_date(d)
-        # Proventos já anunciados com data futura não são renda dos últimos
-        # 12 meses — incluí-los infla o DY.
         if date_str is None or date_str < cutoff or date_str > horizon:
             continue
         total += _safe_float(d.get("rate")) or 0.0
@@ -179,17 +158,9 @@ def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> flo
         return None
 
 
-# Uma única chamada combinada (fundamental+dividends+range) evita 3 requisições
-# HTTP separadas por ticker; o resultado bruto é reaproveitado por fetch_asset/
-# fetch_dividends/fetch_history_universal via cache.
 _BRAPI_RAW_TTL = FUND_TTL
 
 
-# Ranges curtos (1d/5d/1mo/3mo) são os únicos aceitos no plano gratuito da
-# BRAPI; um plano pago aceita 1y/2y e é o que a SMA200 precisa. O range fica
-# configurável e há degradação automática para "3mo" quando a API recusa —
-# assim quem tem plano pago passa a ter tendência de longo prazo de fato, em
-# vez de trend="unknown" permanente desligando todo o bloco técnico.
 _FALLBACK_HISTORY_RANGE = "3mo"
 
 
@@ -212,9 +183,6 @@ def _brapi_raw(base: str) -> dict:
                 params={
                     "token": settings.brapi_token,
                     "fundamental": "true",
-                    # "dividends": "true" é bloqueado no plano gratuito
-                    # (403 FEATURE_NOT_AVAILABLE); dividendsData vem junto de
-                    # fundamental=true quando o plano permite.
                     "range": range_param,
                     "interval": "1d",
                 },
@@ -274,7 +242,6 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
     except Exception:
         logger.debug("Falha ao calcular DY de %s", base, exc_info=True)
 
-    # /quote não devolve `sector` no plano gratuito; usa mapa do /quote/list.
     sector = r.get("sector") or get_sector_map().get(base)
 
     return AssetSnapshot(
@@ -293,8 +260,7 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         book_value=_safe_float(r.get("bookValue")),
         roe=_ratio_to_pct(r.get("returnOnEquity")),
         dividend_yield=dividend_yield,
-        # D/E também vem como razão; _score_leverage espera percentual
-        # (D/E 0.6 -> 60), então normaliza na mesma escala de ROE/margem.
+        # D/E também vem como razão; _score_leverage espera percentual (D/E 0.6 -> 60), então normaliza na mesma escala de ROE/margem.
         debt_to_equity=_ratio_to_pct(r.get("debtToEquity")),
         profit_margin=_ratio_to_pct(r.get("profitMargins")),
         revenue_growth=_ratio_to_pct(r.get("revenueGrowth")),
@@ -319,8 +285,6 @@ def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
         "max": 10_000,
     }
     max_days = days_map.get(period, 365)
-    # `historicalDataPrice` já vem limitado pelo range pedido à BRAPI; aqui só
-    # recortamos quando o chamador quer uma janela menor que a disponível.
     prices = prices[-max_days:]
 
     out: dict[str, float] = {}
@@ -471,11 +435,7 @@ def _fetch_ibov_history_sync(days: int) -> dict[str, float]:
 
 
 async def fetch_ibov_history(days: int = 365) -> dict[str, float]:
-    """Histórico diário do Ibovespa (fechamento por dia, YYYY-MM-DD).
-
-    Usado só para o comparativo de benchmark — se a BRAPI não suportar o
-    índice no plano em uso, retorna {} e o benchmark segue só com o CDI.
-    """
+    """Histórico diário do Ibovespa (fechamento por dia, YYYY-MM-DD)."""
     ck = f"uhist:{_IBOV_SYMBOL}:{days}"
     cached = cache.get(ck)
     if cached is not None:

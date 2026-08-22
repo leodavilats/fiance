@@ -6,10 +6,6 @@ OpportunitiesFrequency = str  # "off" | "daily" | "weekly" | "monthly"
 
 
 class Preferences(BaseModel):
-    # Push depende de um token de dispositivo, que só o app registra. A tela de
-    # Configurações do web oferecia opportunities_frequency e
-    # notify_price_alerts sem efeito algum para quem usa só o navegador; agora o
-    # backend informa se há dispositivo registrado e a UI pode dizer a verdade.
     push_enabled: bool = False
     registered_devices: int = 0
 
@@ -29,12 +25,7 @@ class Preferences(BaseModel):
 
 
 class PreferencesRequest(BaseModel):
-    """Só os campos enviados são gravados (ver api/preferences.py).
-
-    `cash_available` faltava aqui — o resultado é que todo PUT /preferences
-    reescrevia o caixa disponível com 0.0, e o usuário redigitava o valor a
-    cada visita a Estratégia/Quick Invest.
-    """
+    """Só os campos enviados são gravados (ver api/preferences.py)."""
 
     cash_available: float | None = Field(None, ge=0)
     passive_income_goal: float | None = Field(None, ge=0)

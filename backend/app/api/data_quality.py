@@ -7,16 +7,8 @@ router = APIRouter()
 
 _service = OpportunityService()
 
-"""Instrumentação de qualidade do dado.
+"""Instrumentação de qualidade do dado."""
 
-Não havia como distinguir "o modelo está errado" de "o dado não chegou": se
-`dividendsData` não vier no plano da BRAPI, `bazin` fica None, o que deixa todo
-ETF sem preço justo (é o único método permitido para ETF) e FIIs dependendo
-apenas de `book_value`. Este endpoint reporta, por campo, a taxa de
-preenchimento no universo — é a medida que faltava para decidir.
-"""
-
-# Campos cuja ausência muda o resultado da análise, e por quê.
 _FIELD_IMPACT = {
     "price": "sem preço não há análise nenhuma",
     "dividend_yield": "sem DY o score de dividendos fica indefinido",
@@ -93,8 +85,6 @@ async def data_quality() -> DataQualityResponse:
             "technical_trend": record.technical.trend_basis
             if record.technical.trend_basis != "none"
             else None,
-            # `fair_price` aqui é "há método aplicável", que é o que de fato
-            # importa: sem consenso não há veredito.
             "fair_price": True
             if (inputs.avg_dividend or inputs.graham or inputs.dcf or inputs.pvp_fair)
             else None,

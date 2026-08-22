@@ -2,16 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-"""Fuso de referência fiscal: horário de Brasília.
-
-A isenção mensal de R$ 20 mil e as faixas de IR são apuradas por **mês
-calendário brasileiro**. O cálculo era feito em fronteira de mês UTC: uma venda
-no último dia do mês depois das 21 h BRT caía no mês seguinte, mudando o balde
-da isenção e a alíquota.
-
-O Brasil não usa horário de verão desde 2019, então um offset fixo de UTC-3 é
-exato e evita depender do pacote `tzdata` (ausente por padrão no Windows).
-"""
+"""Fuso de referência fiscal: horário de Brasília."""
 
 BRT = timezone(timedelta(hours=-3), name="BRT")
 

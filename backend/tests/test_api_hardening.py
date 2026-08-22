@@ -8,9 +8,6 @@ from tests.conftest import make_auth_headers
 ITEM = {"ticker": "PETR4", "quantity": 10, "avg_price": 30.0, "category": "auto"}
 
 
-# --- POST /api/cache/clear estava fora do router protegido ---
-
-
 def test_cache_clear_requires_authentication(client):
     assert client.post("/api/cache/clear").status_code == 401
 
@@ -18,9 +15,6 @@ def test_cache_clear_requires_authentication(client):
 def test_cache_clear_works_when_authenticated(client):
     headers = make_auth_headers("cache_clear_user")
     assert client.post("/api/cache/clear", headers=headers).status_code == 200
-
-
-# --- jwt_secret default fora de development ---
 
 
 def test_startup_validation_rejects_default_jwt_secret_outside_development():
@@ -47,15 +41,11 @@ def test_wildcard_cors_never_allows_credentials():
     assert dev.cors_allow_credentials is False
 
 
-# --- PUT /preferences não pode zerar cash_available ---
-
-
 def test_put_preferences_preserves_cash_available(client):
     headers = make_auth_headers("prefs_cash_user")
 
     client.put("/api/preferences", headers=headers, json={"cash_available": 7500.0})
 
-    # Salvamento vindo da tela de Configurações, que não menciona o caixa.
     resp = client.put("/api/preferences", headers=headers, json={"desired_yield_fii": 0.12})
     assert resp.status_code == 200
     assert resp.json()["cash_available"] == 7500.0
@@ -137,9 +127,6 @@ def test_portfolio_rejects_malformed_ticker(client):
         json={"ticker": "../../etc/passwd", "quantity": 1, "avg_price": 1.0},
     )
     assert resp.status_code == 422
-
-
-# --- venda datada pelo cliente ---
 
 
 def test_sell_rejects_future_sold_at(client):

@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { DipScanItem, RecommendService } from '../../../core';
+import { DipAnalysisService, DipScanItem, RecommendService } from '../../../core';
 
 @Component({
   selector: 'app-dip-scanner',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, RouterLink],
   templateUrl: './dip-scanner.component.html',
   styleUrls: ['./dip-scanner.component.scss'],
 })
@@ -15,7 +16,7 @@ export class DipScannerComponent {
   private api = inject(RecommendService);
   private fb = inject(FormBuilder);
 
-  readonly analyze = output<string>();
+  private readonly dip = inject(DipAnalysisService);
 
   readonly dipResults = signal<{ items: DipScanItem[] } | null>(null);
 
@@ -34,6 +35,6 @@ export class DipScannerComponent {
   }
 
   showDipAnalysis(ticker: string) {
-    this.analyze.emit(ticker);
+    this.dip.show(ticker);
   }
 }

@@ -110,8 +110,6 @@ export class RendaFixaComponent implements OnInit {
       };
     });
     const rates = this.referenceRates();
-    // IPCA passa a ser enviado: sem ele o backend não conseguia compor a taxa
-    // real dos indexados (um IPCA+6% rendia 6%, sem inflação).
     this.api
       .compareRendaFixa({
         ativos,

@@ -1,0 +1,70 @@
+@if (!isEmpty()) {
+  <div class="p-5 rounded-lg bg-panel border border-border mb-5">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+      <lucide-icon name="chart-pie" size="20"></lucide-icon> Composição da Carteira
+    </h2>
+    <p class="text-sm text-muted mb-4">
+      Quanto do seu dinheiro está em cada tipo de investimento ou, no caso de ações/BDRs, em cada
+      setor.
+    </p>
+
+    @if (alocacaoPorTipo().length === 0) {
+      <p class="text-sm text-muted italic">Carregando a composição da carteira…</p>
+    } @else {
+      <div class="flex gap-2 mb-5">
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer border border-border transition-colors"
+          [class.bg-accent]="composicaoMode() === 'ativo'"
+          [class.text-white]="composicaoMode() === 'ativo'"
+          [class.bg-panel-2]="composicaoMode() !== 'ativo'"
+          [class.text-tx]="composicaoMode() !== 'ativo'"
+          (click)="setComposicaoMode('ativo')"
+        >
+          Por ativo
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer border border-border transition-colors"
+          [class.bg-accent]="composicaoMode() === 'setor'"
+          [class.text-white]="composicaoMode() === 'setor'"
+          [class.bg-panel-2]="composicaoMode() !== 'setor'"
+          [class.text-tx]="composicaoMode() !== 'setor'"
+          (click)="setComposicaoMode('setor')"
+        >
+          Por setor (ações)
+        </button>
+      </div>
+
+      @if (composicaoMode() === 'setor' && alocacaoPorSetor().length === 0) {
+        <p class="text-sm text-muted italic">
+          Nenhuma ação ou BDR na carteira ainda — a visão por setor cobre só esses tipos.
+        </p>
+      } @else {
+        <div class="flex flex-col sm:flex-row items-center gap-8">
+          <div class="w-40 h-40 rounded-full shrink-0" [style.background]="conicGradient()"></div>
+          <div class="flex flex-col gap-2 w-full">
+            @for (s of composicaoSlices(); track s.label) {
+              <div class="flex items-center justify-between gap-3 text-sm">
+                <span class="flex items-center gap-2 text-tx">
+                  <span
+                    class="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                    [style.background]="s.color"
+                  ></span>
+                  <lucide-icon [name]="s.icon" size="14" class="text-muted shrink-0"></lucide-icon>
+                  {{ s.label }}
+                </span>
+                <span class="flex items-center gap-3 shrink-0">
+                  <span class="text-muted text-xs">R$ {{ s.valor | number: '1.2-2' }}</span>
+                  <span class="font-semibold text-tx w-14 text-right"
+                    >{{ s.pct | number: '1.1-1' }}%</span
+                  >
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+}

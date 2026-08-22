@@ -1,110 +1,136 @@
-# fiance — Inventário de features por tela
+# fiance — features por tela
 
-> Gerado por varredura completa em 2026-08-10; **revisado em 2026-08-20** após a
-> implementação da auditoria. Web (Angular) e Mobile (Flutter) têm paridade quase total de
-> navegação (4 abas espelhadas) e consomem a mesma API.
+> Inventário do que cada tela faz, organizado pela navegação **atual**. Revisado em 2026-08-22.
+>
+> Até esta revisão, este arquivo descrevia quatro telas — Dashboard, Meus Ativos (`/assets`),
+> Mercado (`/market`) e Configurações (`/config`) — e nenhuma dessas rotas existe mais no web.
+> Também carregava um changelog de 65 linhas no fim, que foi para [CHANGELOG.md](CHANGELOG.md).
+>
+> Estrutura, wireframes e o racional de cada decisão em [design/](design/).
 
-## Dashboard
-Tela inicial consolidada: resumo de carteira, alertas de preço, indicadores gerais e "Saúde da carteira" (score 0–100 com sub-métricas Concentração/Setor/Diversificação/Risco — clicável para exibir o que cada uma considera). (`web/.../dashboard/`, `mobile/.../dashboard/dashboard_screen.dart`)
+## Navegação
 
-**Ajustes 2026-08-19:** removida a seção "Alocação por categoria" do dashboard (redundante com a composição por ativo/setor em Meus Ativos); alertas de rebalanceamento passaram a exibir o rótulo traduzido da categoria (ex.: "Renda Fixa") em vez da chave crua (`renda_fixa`).
+Cinco destinos, agrupados por intenção do usuário — não pela topologia do backend.
 
-## Meus Ativos (`/assets`)
-CRUD de posições da carteira (ações, FIIs, BDRs, ETFs) e formulário de Renda Fixa. No web, inclui preview client-side de rendimento RF (calculado no navegador antes de salvar). No mobile, o preview vem sempre do backend.
+| Destino | Pergunta que responde | Web | Mobile |
+|---|---|---|---|
+| **Hoje** | o que mudou e o que merece minha atenção? | `/hoje` | ✅ |
+| **Carteira** | como está meu patrimônio? | `/carteira` | ✅ |
+| **Descobrir** | o que eu poderia comprar? | `/descobrir` | ✅ |
+| **Estratégia** | o que eu faço com o próximo aporte? | `/estrategia` | ✅ |
+| **Você** | quero mudar como o app me trata | `/voce` | ✅ |
+| **Ativo** | este ativo específico vale? | `/ativo/:ticker` | ✅ |
 
-**Composição da carteira (2026-08-19):** gráfico de pizza com alternância entre "Por ativo" (categoria) e "Por setor" (ações/BDRs), web e mobile. A funcionalidade de rebalanceamento de carteira foi removida dessa tela (e da API de suporte a ela, `/rebalance`, no cliente mobile).
-
-**Venda de ativos e histórico (2026-08-10):** cada posição pode ser vendida parcial ou totalmente (botão "Vender" no web e no mobile), gerando automaticamente lucro/prejuízo realizado e o imposto de renda devido (alíquotas por categoria, com isenção mensal acumulada só para ações BR — BDR/FII/ETF são tributados sem isenção). Toda venda vira um registro em "Operações Encerradas", com totais de lucro realizado e IR pago.
-
-**Explicações de decisão:** cada posição mostra os motivos (`reasons`) por trás do veredito de compra/venda/manutenção — no web, expansível ao clicar na pill de Decisão; no mobile, num botão "Por quê?". Tooltips de glossário (DY, MS, P/VP, Bazin, Graham, Score) disponíveis no web (Meus Ativos e Mercado) e no mobile (Oportunidades).
-
-**Autocomplete de ticker (2026-08-11):** o campo de ticker (Meus Ativos, web e mobile) sugere ticker+nome da empresa enquanto o usuário digita, via `GET /universe/search` (busca por prefixo/substring em toda a lista de ações/FIIs/BDRs/ETFs da B3 — não só o universo limitado usado no scanner de oportunidades). Tickers não suportados pelo sistema (ex.: ação US pura, cripto) não aparecem nas sugestões.
-
-**Notificações push (Fase 3, 2026-08-11; cadência configurável, 2026-08-19):** alertas de preço disparados continuam imediatos via FCM (toggle em Configurações). O antigo toggle "novas oportunidades" foi substituído por uma cadência (`off`/diária/semanal/mensal, em Configurações) — o job periódico só envia o resumo agregado de oportunidades quando o intervalo escolhido já venceu, alinhado à filosofia de investimento (não day trade) da plataforma.
-
-## Mercado (`/market`)
-Maior área do app, reduzida a 2 abas (2026-08-19, removidas "Segmentos" e "Investir" de ambas as plataformas — o quick-invest e a visão por setor não tinham uso comprovado nessa tela):
-- **Oportunidades** — varredura do universo de ativos com score/fair price, com sub-modo "Em queda" (scanner de dip). Score (2026-08-19) combina margem de segurança + qualidade (ROE/margem) + endividamento + crescimento + dividend yield + técnico, ponderados pelo perfil de risco configurado em Preferências; categorias/setores marcados como preferidos recebem um pequeno boost, e tickers em `excluded_tickers` somem da lista.
-- **Ferramentas** — Analisar (ficha de um ativo), Simulador de Renda Fixa, Comparar Ativos, Simulador de Aportes.
-
-A "Estratégia de Investimento" (`/strategy`, motor de decisão/alocação sugerida via IA) permanece como página própria fora de Mercado — não afetada por essa mudança.
-
-**Correções 2026-08-19:** simulador de aportes no mobile aceitava só teclado numérico inteiro (sem separador decimal) nos campos de percentual/valor — corrigido para `numberWithOptions(decimal: true)` com normalização de vírgula/ponto. Espaçamento dos campos do Simulador de RF (web) alinhado ao do Simulador de Aportes. Sub-abas de Oportunidades/Ferramentas (mobile) passaram de rolagem horizontal para wrap.
-
-## Configurações (`/config`)
-Metas de dividend yield por categoria (ações/FII/BDR/ETF), preferências de perfil de risco e alertas de preço. (Nota: a API tinha um endpoint de watchlist — `GET/PUT /watchlist`, `DELETE /watchlist/{ticker}` — mas nunca existiu tela para ele em nenhuma plataforma; removido em 2026-08-19, ver KNOWN_ISSUES.md.)
-
-**Correção 2026-08-19:** sliders de meta de alocação por categoria/setor tinham a trilha (parte não preenchida) invisível em light mode, tanto no web (CSS só definia `accent-color`, sem cor de track) quanto no mobile (Material3 derivava a cor de `colorScheme.surfaceVariant`, próxima da cor do painel). Corrigido com CSS de track explícito no web e `SliderThemeData` explícito no tema mobile.
-
-## Autenticação
-Login via Google (mesmo fluxo web e mobile, JWT emitido pelo backend).
-
+`/ativo/:ticker` é **camada, não destino**: não aparece na navegação e é alcançável de qualquer
+lista. URLs antigas (`/dashboard`, `/assets`, `/market`, `/config`, `/strategy`) seguem como
+redirect nas duas plataformas.
 
 ---
 
-## Novidades da implementação da auditoria (2026-08-20)
+## Hoje
 
-### "O que mudou" — primeiro bloco do Dashboard
-`GET /whats-new` compara o estado atual com o anterior e devolve até 5 linhas: variação de
-patrimônio (já descontando aportes), posições com sinal de venda, vencimento de renda fixa
-próximo, categoria fora da meta, prejuízo disponível para compensar IR e destaque de
-oportunidade. **Cada linha tem uma ação** que leva à tela onde a decisão acontece. Sem nada a
-dizer, o bloco diz isso — em vez de sumir. Web e mobile.
+A central de decisão, em três níveis.
 
-### Renda fixa de verdade (`/fixed-income`)
-Tabela própria no servidor com tipo, valor, taxa, tipo de taxa, % do CDI, data de aplicação,
-vencimento, liquidez e isenção. **Marcada a mercado no backend**: rendimento acumulado, valor
-hoje, projeção até o vencimento e aviso de vencimento próximo. Entra no patrimônio total, no
-P&L, na alocação, na saúde da carteira, na projeção de renda passiva e no Quick Invest.
-Cadastro no web (`/assets/cadastro`) e tela dedicada no mobile.
+- **N1 — patrimônio:** valor atual, variação em R$ e %, e uma linha de apoio com investido, número
+  de posições, DY médio e renda mensal estimada.
+- **N1 — veredito de saúde:** uma frase ("Carteira saudável") mais 2–3 motivos em texto, ao lado da
+  régua. Carteira com menos de 4 ativos **não** recebe leitura de risco — a régua sai indeterminada
+  e o texto explica por quê.
+- **N2 — o que mudou:** feed único ordenado por urgência, alimentado por `GET /whats-new` e pelos
+  alertas de `GET /dashboard`, com uma ação por linha. Sem novidade, o bloco diz isso em vez de
+  desaparecer.
+- **N3 — próxima ação:** o maior desvio de alocação, com o cálculo visível antes da sugestão.
+  Derivado de `allocations`, sem chamada extra.
+- **N3 — em destaque:** as 3 melhores oportunidades, com o motivo antes dos números.
+- **Rodapé:** idade da cotação, origem do CDI/Selic (BCB ou estimativa) e o aviso de estimativa.
 
-### Proventos recebidos
-Antes todo número de renda era estimativa derivada de dividend yield. Agora dá para lançar o
-que caiu na conta (`/dividends/received`), ver total do mês, dos últimos 12 meses, média
-mensal, quebra por ativo — e **confrontar com a estimativa do próprio app**.
+Estados projetados: carga inicial (skeleton com a forma do conteúdo), atualização (dado antigo
+preservado), carteira vazia, carteira pequena, nada mudou, dado velho, erro.
 
-### Renda fixa × bolsa na mesma tela (Mercado → Ferramentas → RF x Bolsa)
-"Com a Selic a 14,4%, vale mais o CDB ou o FII?" — ambos os lados na mesma unidade (renda
-recorrente líquida a.a.), com valorização potencial mostrada **separada** (renda fixa não tem, e
-a tela diz isso) e um veredito em texto.
+## Carteira
 
-### Resultado das sugestões seguidas (Mercado → Rebalanceamento)
-Registre o que você executou a partir de uma sugestão e o app mostra o resultado contra o
-Ibovespa, agregado por origem da sugestão. Torna o produto auditável por quem usa.
+Sete sub-rotas, cada uma respondendo uma pergunta.
 
-### Compensação de prejuízo de IR
-Prejuízo realizado passa a abater ganho futuro da mesma categoria, como a legislação permite —
-o app superestimava o IR devido de quem já havia realizado prejuízo. O saldo por categoria
-aparece em Operações Encerradas, e cada venda mostra quanto foi compensado.
+| Rota | Conteúdo |
+|---|---|
+| `/carteira` | valor, resultado, **alocação × meta** (trilha com o atual preenchido e a meta marcada) e as 4 dimensões de saúde |
+| `/carteira/composicao` | pizza por classe ou por setor, sempre com a lista ao lado |
+| `/carteira/desempenho` | evolução do patrimônio e carteira × CDI × Ibovespa (TWR), cada gráfico com a pergunta no título |
+| `/carteira/proventos` | recebido no mês / 12 meses / média, quebra por ativo, e o confronto com a estimativa do app |
+| `/carteira/posicoes` | tabela ordenável, seleção de até 4 para comparar, exportação CSV, renda fixa como classe par, venda parcial ou total |
+| `/carteira/encerradas` | lucro realizado, IR pago e prejuízo disponível para compensar |
+| `/carteira/editar` | escrita: CRUD de posições e de renda fixa, salvamento explícito por linha |
 
-### Proveniência e frescor do dado
-Ao lado de cada veredito: anos de proventos encontrados, quantos métodos entraram no consenso e
-confiança. Score com dado incompleto sai **cinza** e rotulado "dado insuficiente" em vez de
-colorido com a nota. O dashboard mostra a idade das cotações e se o CDI/Selic vem do BCB ou é
-estimativa.
+Renda fixa entra **na mesma tabela** das outras posições, falando a língua dela (taxa efetiva,
+% do CDI, vencimento, liquidez) em vez de receber colunas de ação vazias. Marcada a mercado no
+backend; aviso de vencimento em até 30 dias.
 
-### Alertas com desfecho
-Agrupados por tipo, com contagem e teto de 4 — e cada um com uma ação (ver análise, simular
-venda, rebalancear, ajustar meta). Antes eram alertas sem limite e a única ação da tela era ir
-para Mercado.
+As sete rotas compartilham `CarteiraStore` — trocar de sub-aba não refaz
+`POST /portfolio/evaluate`, que é a chamada mais caras do produto.
 
-### Cadastro separado de análise (web)
-`/assets` é leitura (o retorno diário); `/assets/cadastro` é escrita (tarefa rara), com
-salvamento explícito por linha. O autosave por debounce sobre um PUT destrutivo saiu.
+## Descobrir
 
-### Desktop mais aproveitado
-Tabela de posições ordenável por qualquer coluna, seleção de até 4 ativos para comparar (leva
-direto ao comparador) e exportação CSV da carteira.
+- **Oportunidades** (`/descobrir/oportunidades`) — varredura do universo com score e preço justo.
+  Cada item responde **por que apareceu** antes de mostrar números. Filtros na URL. Clicar leva ao
+  ativo; "Entender queda" abre o diagnóstico.
+- **Quedas** (`/descobrir/quedas`) — scanner de dip com drawer de diagnóstico: a queda, a leitura,
+  as evidências (breakdown do score), o valuation e a conclusão.
+- **Comparar** (`/descobrir/comparar`) — até 4 ativos lado a lado. Aceita `?tickers=` para chegar
+  preenchido da carteira ou da página do ativo.
 
-### Quick Invest no mobile
-"Recebi meu salário, onde aporto" existia só no web, apesar de ser um caso de uso mais de
-celular. Disponível em Mercado → Ferramentas.
+## Estratégia
 
-### Push honesto no web
-A tela de Configurações agora informa que notificações requerem o app instalado, em vez de
-oferecer cadência e alerta sem efeito para quem usa só o navegador. E o logout no app
-desregistra o aparelho, que antes continuava recebendo o resumo da conta anterior.
+- **Plano** (`/estrategia`) — "onde você está × onde deveria estar". Quatro camadas visualmente
+  distintas: informação (tabela de gaps), cálculo (a frase do maior desvio), sugestão (rotulada) e
+  ação (o botão). Inclui sugestões por categoria, posições para revisar, alocação projetada e o
+  resultado do que você seguiu.
+- **Aporte** (`/estrategia/aporte`) — Quick Invest: quanto, ordem mínima, e o app responde o que
+  está abaixo da meta. Persiste o caixa em `/preferences`, que o plano lê.
+- **Metas** (`/estrategia/metas`) — renda passiva mensal, alocação por categoria e por setor. Fica
+  aqui, e não em Configurações, porque meta é insumo de decisão: ao lado do gap que ela gera.
+- **Renda fixa** (`/estrategia/renda-fixa`) — duas perguntas na mesma tela: comparar títulos entre
+  si, e renda fixa × bolsa na mesma unidade (renda recorrente líquida a.a.), com a valorização
+  potencial mostrada **separada** — renda fixa não tem, e a tela diz isso.
+- **Projeção** (`/estrategia/projecao`) — simulador de aportes e renda passiva.
 
-### Qualidade de dado (`GET /data-quality`)
-Taxa de preenchimento por campo no universo, com o impacto de cada ausência descrito — a
-instrumentação que faltava para distinguir "o modelo está errado" de "o dado não chegou".
+## Ativo
+
+`/ativo/:ticker` — página de research. O ticker vive na rota: recarregar mantém, o link é
+compartilhável.
+
+- **Cabeçalho:** ticker, nome, tipo, preço, distância do topo de 52 semanas, e as ações
+  contextuais (comparar, criar alerta com o ticker preenchido, adicionar à carteira).
+- **N1:** a leitura em uma frase, o veredito no vocabulário único (Interessante / Neutro / Atenção
+  / Evitar / Sem leitura), a régua de confiança e os `reasons` do backend.
+- **N2:** preço atual × consenso × margem de segurança, com a proveniência (quantos métodos, quantos
+  anos de provento, qual confiança).
+- **N3 — valuation:** **um bloco por método** (Bazin, Graham, DCF, e P/VP justo em FII), cada um com
+  preço estimado, distância do atual e o insumo que usou. Método que não se aplica **diz por quê**
+  ("Graham não se aplica a fundo imobiliário") em vez de deixar campo vazio. O roteamento por tipo
+  é do backend; a UI reflete e explica.
+- **N3:** fundamentos (só os que existem), tendência (com a base sobre a qual foi medida),
+  proventos.
+- **N4:** "Como calculamos" — meta de yield usada, LPA, VPA, P/VP, base da tendência.
+
+## Você
+
+- **Preferências** (`/voce/preferencias`) — yields desejados por classe (entram no preço-teto de
+  Bazin), perfil de risco (pondera o score), categorias e setores preferidos, tickers excluídos.
+  Cada controle diz o **efeito**, não só o nome.
+- **Alertas** (`/voce/alertas`) — CRUD de alertas de preço; aceita `?ticker=` para chegar
+  preenchido da página do ativo. Alertas de preço são imediatos; o resumo de oportunidades tem
+  cadência configurável. Push exige o app instalado, e a tela diz isso.
+- **Conta e dados** (`/voce/conta`) — origem de cada dado (BRAPI, BCB SGS), como o preço justo e o
+  score são calculados, o aviso de que tudo é estimativa, e a limpeza de cache.
+
+## Autenticação
+
+Login via Google nas duas plataformas, JWT emitido pelo backend (TTL 30 dias). O `authGuard` do
+web valida o `exp`, não só a presença do token.
+
+## Notificações
+
+Alertas de preço disparados são imediatos via FCM. O resumo de oportunidades (`STRONG_BUY`, ou
+score ≥ 75 com DY ≥ 6%, excluindo o que já está na carteira e os tickers excluídos) sai por
+cadência configurável — off, diária, semanal ou mensal. O mesmo push lista posições com veredito de
+venda. Requer o app instalado.

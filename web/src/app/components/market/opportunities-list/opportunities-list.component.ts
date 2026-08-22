@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, output, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
+  DipAnalysisService,
   OpportunitiesResponse,
   RecommendService,
   TickerSuggestion,
@@ -18,7 +20,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 @Component({
   selector: 'app-opportunities-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, HelpTooltipComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink, HelpTooltipComponent],
   templateUrl: './opportunities-list.component.html',
   styleUrls: ['./opportunities-list.component.scss'],
 })
@@ -26,7 +28,8 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
   private api = inject(RecommendService);
   readonly helper = inject(UiHelperService);
 
-  readonly analyze = output<string>();
+  private readonly dip = inject(DipAnalysisService);
+  private readonly router = inject(Router);
 
   private filterDebounce$ = new Subject<void>();
   private tickerSearch$ = new Subject<string>();
@@ -173,7 +176,11 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
       });
   }
 
+  openAsset(ticker: string): void {
+    this.router.navigate(['/ativo', ticker]);
+  }
+
   showOpportunityDetails(ticker: string) {
-    this.analyze.emit(ticker);
+    this.dip.show(ticker);
   }
 }

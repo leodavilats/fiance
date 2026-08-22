@@ -1,11 +1,4 @@
-"""Fachada tipada sobre `storage.portfolio_store`.
-
-A camada anterior era passthrough puro anotado como `-> list[dict]`, o que
-**apagava** os TypedDicts que o store já devolvia. Foi exatamente isso que
-produziu o bug de `item.ticker` vs `item["ticker"]` entre dois serviços sobre a
-mesma função: um dev leu `dict` e assumiu objeto. Aqui os tipos do store são
-repassados, então o type checker pega esse erro.
-"""
+"""Fachada tipada sobre `storage.portfolio_store`."""
 
 from __future__ import annotations
 
@@ -25,8 +18,6 @@ from app.storage.portfolio_store import (
 
 
 class PortfolioRepository:
-    # --- posições ---------------------------------------------------------
-
     @staticmethod
     def list_positions() -> list[StoredItem]:
         return portfolio_store.list_positions()
@@ -53,8 +44,6 @@ class PortfolioRepository:
     def reduce_position_quantity(ticker: str, sold_qty: float) -> None:
         portfolio_store.reduce_position_quantity(ticker, sold_qty)
 
-    # --- vendas realizadas ------------------------------------------------
-
     @staticmethod
     def sum_gross_sales_this_month(category: str) -> float:
         return portfolio_store.sum_gross_sales_this_month(category)
@@ -74,8 +63,6 @@ class PortfolioRepository:
     @staticmethod
     def available_tax_loss(category: str) -> float:
         return portfolio_store.available_tax_loss(category)
-
-    # --- histórico de patrimônio -----------------------------------------
 
     @staticmethod
     def record_snapshot(
@@ -99,8 +86,6 @@ class PortfolioRepository:
     def last_updated() -> float | None:
         return portfolio_store.last_updated()
 
-    # --- metas ------------------------------------------------------------
-
     @staticmethod
     def list_goals() -> list[Goal]:
         return portfolio_store.list_goals()
@@ -117,8 +102,6 @@ class PortfolioRepository:
     def replace_sector_goals(goals: list[SectorGoal]) -> None:
         portfolio_store.replace_sector_goals(goals)
 
-    # --- preferências -----------------------------------------------------
-
     @staticmethod
     def get_preferences() -> Preferences:
         return portfolio_store.get_preferences()
@@ -128,13 +111,9 @@ class PortfolioRepository:
         """Repassa só os campos presentes — ver portfolio_store.set_preferences."""
         portfolio_store.set_preferences(**fields)
 
-    # --- renda fixa -------------------------------------------------------
-
     @staticmethod
     def list_fixed_income() -> list[FixedIncomeRow]:
         return portfolio_store.list_fixed_income()
-
-    # --- notificações -----------------------------------------------------
 
     @staticmethod
     def get_last_digest_sent_at(user_id: str | None = None) -> float | None:
@@ -167,8 +146,6 @@ class PortfolioRepository:
     @staticmethod
     def mark_opportunities_notified(user_id: str, tickers: list[str]) -> None:
         portfolio_store.mark_opportunities_notified(user_id, tickers)
-
-    # --- watchlist --------------------------------------------------------
 
     @staticmethod
     def list_watchlist() -> list[WatchlistItemRow]:

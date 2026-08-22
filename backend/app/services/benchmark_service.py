@@ -9,18 +9,7 @@ from app.repositories import PortfolioRepository
 
 
 def _twr_series(snapshots: list[dict]) -> list[float]:
-    """Retorno acumulado ponderado no tempo (TWR), em %, ponto a ponto.
-
-    A versão anterior calculava `total_current / base_value - 1`, que trata
-    **aporte como rentabilidade**: depositar R$ 10 mil aparecia como ganho, e o
-    gráfico dizia que o usuário estava batendo o CDI sempre que ele investisse
-    mais. É a pior classe de erro num produto financeiro — convence o usuário
-    de algo falso, e erra na direção que agrada.
-
-    O TWR neutraliza o efeito do fluxo de caixa: a variação de
-    `total_invested` entre dois pontos é o aporte (ou retirada) do período e
-    sai do numerador antes da divisão.
-    """
+    """Retorno acumulado ponderado no tempo (TWR), em %, ponto a ponto."""
     cumulative = 1.0
     out = [0.0]
 
@@ -30,8 +19,6 @@ def _twr_series(snapshots: list[dict]) -> list[float]:
         closing = current["total_current"]
 
         if opening <= 0:
-            # Carteira começou vazia (ou sem cotação): o primeiro aporte não é
-            # retorno, então o período contribui com 0%.
             cumulative *= 1.0
         else:
             period_return = (closing - flow) / opening - 1
@@ -55,10 +42,6 @@ class BenchmarkService:
         base_ts = snapshots[0]["captured_at"]
 
         rates = get_rates()
-        # Aproximação: aplica a taxa CDI anual atual composta pelo número de dias
-        # corridos desde o início da série. Não é o CDI histórico dia a dia (que
-        # exigiria uma segunda fonte de dados), mas é a mesma taxa de referência
-        # usada no resto do sistema (renda_fixa, projeções).
         cdi_daily_rate = (1 + rates["cdi_anual"] / 100) ** (1 / 365) - 1
 
         ibov_series = await fetch_ibov_history(days=400)
