@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, require_admin
 
 from . import (
     alerts,
@@ -34,7 +34,9 @@ router.include_router(basic.router, tags=["Basic"])
 router.include_router(auth.router, tags=["Auth"])
 
 protected = APIRouter(dependencies=[Depends(get_current_user)])
-protected.include_router(basic.admin_router, tags=["Maintenance"])
+protected.include_router(
+    basic.admin_router, tags=["Maintenance"], dependencies=[Depends(require_admin)]
+)
 protected.include_router(data_quality.router, tags=["Maintenance"])
 protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])

@@ -26,6 +26,8 @@ class Settings(BaseSettings):
 
     jwt_secret: str = DEFAULT_JWT_SECRET
 
+    admin_user_ids: str = ""
+
     brapi_token: str = ""
 
     brapi_history_range: str = "3mo"
@@ -115,6 +117,10 @@ class Settings(BaseSettings):
                 "ALLOWED_ORIGINS vazio fora de development — nenhuma origem poderia "
                 "consumir a API. Configure ALLOWED_ORIGINS."
             )
+
+    @property
+    def admin_ids(self) -> list[str]:
+        return [a.strip() for a in self.admin_user_ids.split(",") if a.strip()]
 
     @property
     def google_client_ids(self) -> list[str]:

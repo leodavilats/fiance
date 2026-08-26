@@ -287,7 +287,7 @@ export class RecommendService {
   }
 
   checkAlerts(): Observable<PriceAlertTriggered[]> {
-    return this.http.get<PriceAlertTriggered[]>(`${this.base}/alerts/check`);
+    return this.http.post<PriceAlertTriggered[]>(`${this.base}/alerts/check`, {});
   }
 
   createAlert(alert: {

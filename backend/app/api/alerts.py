@@ -1,14 +1,17 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.collectors.universal import fetch_many
+from app.models.portfolio import TICKER_PATTERN
 from app.storage import portfolio_store
 
 router = APIRouter()
 
+MAX_ALERTS_PER_USER = 100
+
 
 class AlertCreate(BaseModel):
-    ticker: str
+    ticker: str = Field(..., min_length=4, max_length=32, pattern=TICKER_PATTERN)
     condition: str
     target_price: float
     note: str | None = None
@@ -25,6 +28,15 @@ class AlertCreate(BaseModel):
     def validate_price(cls, v: float) -> float:
         if v <= 0:
             raise ValueError("target_price must be positive")
+        if v > 1_000_000:
+            raise ValueError("target_price implausível para um ativo da B3")
+        return v
+
+    @field_validator("note")
+    @classmethod
+    def validate_note(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 500:
+            raise ValueError("note excede 500 caracteres")
         return v
 
 
@@ -53,7 +65,7 @@ async def list_alerts() -> list[AlertResponse]:
 
 
 @router.post("/alerts/check", response_model=list[AlertTriggered])
-@router.get("/alerts/check", response_model=list[AlertTriggered])
+@router.get("/alerts/check", response_model=list[AlertTriggered], deprecated=True)
 async def check_alerts() -> list[AlertTriggered]:
     """Verifica alertas e marca os disparados, igual ao job de notificação."""
     alerts = portfolio_store.list_price_alerts()
@@ -93,6 +105,15 @@ async def check_alerts() -> list[AlertTriggered]:
 
 @router.post("/alerts", response_model=AlertResponse, status_code=201)
 async def create_alert(body: AlertCreate) -> AlertResponse:
+    if len(portfolio_store.list_price_alerts()) >= MAX_ALERTS_PER_USER:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Limite de {MAX_ALERTS_PER_USER} alertas por usuário atingido. "
+                "Remova alertas já disparados antes de criar novos."
+            ),
+        )
+
     alert_id = portfolio_store.create_price_alert(
         ticker=body.ticker,
         condition=body.condition,

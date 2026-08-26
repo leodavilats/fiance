@@ -6,7 +6,7 @@ from typing import TypedDict
 
 from sqlalchemy import delete, func, select
 
-from app.core.brt import month_start_timestamp
+from app.core.brt import month_bounds
 from app.core.context import get_current_user_id, get_request_session
 from app.core.database import SessionLocal, init_db
 from app.models.db_models import (
@@ -118,6 +118,7 @@ class ClosedTrade(TypedDict):
     net_profit: float
     loss_offset_used: float
     taxable_profit: float
+    loss_compensable: bool
     sold_at: float
 
 
@@ -292,9 +293,31 @@ def reduce_position_quantity(ticker: str, sold_qty: float, user_id: str | None =
             row.updated_at = time.time()
 
 
-def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None) -> float:
-    """Vendas brutas do mês na categoria, para a isenção de R$ 20 mil."""
-    month_start = month_start_timestamp()
+def realized_gross_profit_between(start: float, end: float, user_id: str | None = None) -> float:
+    with _session(user_id) as (session, uid):
+        total = session.scalar(
+            select(func.sum(ClosedTradeDb.gross_profit)).where(
+                ClosedTradeDb.user_id == uid,
+                ClosedTradeDb.sold_at >= start,
+                ClosedTradeDb.sold_at < end,
+            )
+        )
+        return float(total or 0.0)
+
+
+def lock_tenant(user_id: str | None = None) -> None:
+    with _session(user_id, ensure_user=True) as (session, uid):
+        stmt = select(User).where(User.id == uid)
+        if session.bind is not None and session.bind.dialect.name != "sqlite":
+            stmt = stmt.with_for_update()
+        session.scalars(stmt).first()
+
+
+def sum_gross_sales_in_month(
+    ticker_category: str, at: float | None = None, user_id: str | None = None
+) -> float:
+    """Vendas brutas da categoria no mês de `at`, para a isenção de R$ 20 mil."""
+    month_start, month_end = month_bounds(at)
 
     with _session(user_id) as (session, uid):
         rows = session.scalars(
@@ -302,9 +325,14 @@ def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None)
                 ClosedTradeDb.user_id == uid,
                 ClosedTradeDb.category == ticker_category,
                 ClosedTradeDb.sold_at >= month_start,
+                ClosedTradeDb.sold_at < month_end,
             )
         ).all()
         return sum(r.quantity * r.sell_price for r in rows)
+
+
+def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None) -> float:
+    return sum_gross_sales_in_month(ticker_category, at=None, user_id=user_id)
 
 
 def create_closed_trade(
@@ -320,6 +348,7 @@ def create_closed_trade(
     sold_at: float,
     loss_offset_used: float = 0.0,
     taxable_profit: float = 0.0,
+    loss_compensable: bool = True,
     user_id: str | None = None,
 ) -> ClosedTrade:
     now = time.time()
@@ -337,6 +366,7 @@ def create_closed_trade(
             net_profit=net_profit,
             loss_offset_used=loss_offset_used,
             taxable_profit=taxable_profit,
+            loss_compensable=loss_compensable,
             sold_at=sold_at,
             created_at=now,
         )
@@ -355,6 +385,7 @@ def create_closed_trade(
             net_profit=row.net_profit,
             loss_offset_used=row.loss_offset_used or 0.0,
             taxable_profit=row.taxable_profit or 0.0,
+            loss_compensable=bool(row.loss_compensable),
             sold_at=row.sold_at,
         )
 
@@ -380,6 +411,7 @@ def list_closed_trades(user_id: str | None = None) -> list[ClosedTrade]:
                 net_profit=r.net_profit,
                 loss_offset_used=r.loss_offset_used or 0.0,
                 taxable_profit=r.taxable_profit or 0.0,
+                loss_compensable=bool(r.loss_compensable),
                 sold_at=r.sold_at,
             )
             for r in rows
@@ -916,12 +948,13 @@ def tax_loss_balances(user_id: str | None = None) -> list[TaxLossBalance]:
                 ClosedTradeDb.category,
                 ClosedTradeDb.gross_profit,
                 ClosedTradeDb.loss_offset_used,
+                ClosedTradeDb.loss_compensable,
             ).where(ClosedTradeDb.user_id == uid)
         ).all()
 
-        for category, gross_profit, offset_used in rows:
+        for category, gross_profit, offset_used, compensable in rows:
             bucket = by_category.setdefault(category, {"realized_loss": 0.0, "offset_used": 0.0})
-            if gross_profit < 0:
+            if gross_profit < 0 and compensable:
                 bucket["realized_loss"] += abs(gross_profit)
             bucket["offset_used"] += offset_used or 0.0
 

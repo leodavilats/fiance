@@ -8,14 +8,16 @@ from app.models import BenchmarkPoint, BenchmarkResponse
 from app.repositories import PortfolioRepository
 
 
-def _twr_series(snapshots: list[dict]) -> list[float]:
+def _twr_series(snapshots: list[dict], realized: list[float] | None = None) -> list[float]:
     """Retorno acumulado ponderado no tempo (TWR), em %, ponto a ponto."""
     cumulative = 1.0
     out = [0.0]
+    realized = realized or [0.0] * max(len(snapshots) - 1, 0)
 
-    for previous, current in zip(snapshots, snapshots[1:], strict=False):
+    for index, (previous, current) in enumerate(zip(snapshots, snapshots[1:], strict=False)):
         opening = previous["total_current"]
-        flow = current["total_invested"] - previous["total_invested"]
+        invested_delta = current["total_invested"] - previous["total_invested"]
+        flow = invested_delta - (realized[index] if index < len(realized) else 0.0)
         closing = current["total_current"]
 
         if opening <= 0:
@@ -52,7 +54,13 @@ class BenchmarkService:
             ibov_base = ibov_series.get(first_day) or next(iter(ibov_series.values()), None)
             ibov_available = ibov_base is not None and ibov_base > 0
 
-        portfolio_series = _twr_series(snapshots)
+        realized = [
+            self.portfolio_repo.realized_gross_profit_between(
+                previous["captured_at"], current["captured_at"]
+            )
+            for previous, current in zip(snapshots, snapshots[1:], strict=False)
+        ]
+        portfolio_series = _twr_series(snapshots, realized)
 
         points: list[BenchmarkPoint] = []
         for snap, portfolio_pct in zip(snapshots, portfolio_series, strict=True):

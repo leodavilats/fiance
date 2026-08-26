@@ -25,3 +25,13 @@ def month_start_timestamp(timestamp: float | None = None) -> float:
 def month_key(timestamp: float) -> str:
     """Chave YYYY-MM no fuso brasileiro."""
     return to_brt(timestamp).strftime("%Y-%m")
+
+
+def month_bounds(timestamp: float | None = None) -> tuple[float, float]:
+    moment = to_brt(timestamp) if timestamp is not None else now_brt()
+    start = moment.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if start.month == 12:
+        end = start.replace(year=start.year + 1, month=1)
+    else:
+        end = start.replace(month=start.month + 1)
+    return start.timestamp(), end.timestamp()

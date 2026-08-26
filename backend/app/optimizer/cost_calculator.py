@@ -20,6 +20,7 @@ class TransactionCost:
     observation: str = ""
     loss_offset_used: float = 0.0
     taxable_profit: float = 0.0
+    loss_compensable: bool = True
 
 
 def calculate_sell_cost(
@@ -36,21 +37,37 @@ def calculate_sell_cost(
     gross_profit = gross_value - cost_basis
     gross_value_month_total = gross_value_month_before + gross_value
 
+    exempt_month = (
+        asset_category == AssetCategory.acoes_br.value
+        and gross_value_month_total <= ISENCAO_MENSAL_ACOES
+    )
+
     if gross_profit <= 0:
+        if exempt_month:
+            observation = (
+                f"Sem lucro e vendas do mês ≤ R$ {ISENCAO_MENSAL_ACOES:,.0f} → operação "
+                "isenta. Prejuízo apurado em operação isenta **não** pode compensar "
+                "ganhos futuros."
+            )
+        else:
+            observation = (
+                "Sem lucro — IR não incide. O prejuízo fica disponível "
+                "para compensar ganhos futuros da mesma categoria."
+            )
         return TransactionCost(
             asset_category=asset_category,
             gross_profit=round(gross_profit, 2),
             ir_amount=0.0,
             ir_rate=0.0,
             net_profit=round(gross_profit, 2),
-            observation="Sem lucro — IR não incide. O prejuízo fica disponível "
-            "para compensar ganhos futuros da mesma categoria.",
+            observation=observation,
             loss_offset_used=0.0,
             taxable_profit=0.0,
+            loss_compensable=not exempt_month,
         )
 
     if asset_category == AssetCategory.acoes_br.value:
-        if gross_value_month_total <= ISENCAO_MENSAL_ACOES:
+        if exempt_month:
             return TransactionCost(
                 asset_category=asset_category,
                 gross_profit=round(gross_profit, 2),

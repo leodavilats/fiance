@@ -114,6 +114,7 @@ class ClosedTrade(BaseModel):
     net_profit: float
     loss_offset_used: float = 0.0
     taxable_profit: float = 0.0
+    loss_compensable: bool = True
     sold_at: float
 
 

@@ -12,6 +12,64 @@
 
 ---
 
+## Auditoria adversarial de segurança e integridade financeira (2026-08-26)
+
+Varredura procurando ativamente o que estava errado, não confirmação do que estava certo. O
+isolamento multi-tenant passou no exame — todo caminho de escrita e leitura resolve o tenant em
+`storage/portfolio_store.py`, e os recursos com id inteiro na URL (renda fixa, proventos, sugestões
+seguidas) filtram por `user_id` na cláusula, não depois. O que não passou foi a apuração fiscal e
+o cálculo de retorno.
+
+**A isenção de IR era apurada no mês errado.** `sum_gross_sales_this_month()` somava as vendas do
+mês **corrente**, mas a API aceita `sold_at` retroativo em até 90 dias. Uma venda registrada hoje
+com data do mês passado era conferida contra um mês que não é o dela: se o mês passado já tinha
+estourado os R$ 20 mil, a venda aparecia isenta; e a partir do momento em que existisse venda
+retroativa, os dois meses se contaminavam. Virou `sum_gross_sales_in_month(categoria, at=sold_at)`,
+com limite superior no mês (`core/brt.month_bounds()`), porque o mês relevante é o **da operação**.
+
+**Prejuízo de operação isenta entrava no saldo compensável.** A IN RFB 1.585 não deixa abater ganho
+futuro com perda apurada em operação isenta — venda de ações BR dentro do limite mensal. O código
+somava toda perda em `tax_loss_balances()`, então o saldo de compensação era maior do que a lei
+permite e o IR devido saía **subestimado**. `calculate_sell_cost()` agora devolve
+`loss_compensable`, gravado em `closed_trades.loss_compensable` (migração `0007`). Linhas antigas
+recebem `true` de propósito: reapurar mês a mês o histórico e mexer em saldo fiscal retroativamente
+é pior do que carregar o dado como está — a regra vale das próximas vendas em diante.
+
+**Duas vendas simultâneas gastavam o mesmo saldo de prejuízo.** A isenção do mês e o prejuízo
+disponível eram lidos, usados e só então gravados, sem trava. `portfolio_store.lock_tenant()` trava
+a linha do usuário (`SELECT ... FOR UPDATE` no Postgres; no SQLite a escrita já é serializada) no
+começo de `sell_position`.
+
+**O TWR tratava venda como se só o custo tivesse saído da carteira.** `total_invested` é custo
+(Σ quantidade × preço médio), então numa venda ele cai pelo custo baixado — mas o dinheiro que
+saiu é o **produto** da venda. Sendo `ΔI = compras − custo_das_vendas`, o fluxo externo correto é
+`ΔI − lucro_bruto_realizado`. Usar `ΔI` fazia venda com lucro virar retorno negativo e venda com
+prejuízo, retorno positivo. Corrigido com `realized_gross_profit_between()`. Proventos ainda não
+entram no fluxo — ver [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+
+**`/cache/clear` estava aberto a qualquer sessão autenticada.** O cache de mercado é global e
+compartilhado entre tenants: uma chamada esvaziava tudo e forçava o universo inteiro a ser
+recoletado da BRAPI, para todo mundo. `admin_router` ganhou `Depends(require_admin)`, com allowlist
+em `ADMIN_USER_IDS` — sem allowlist, libera em `development` e nega em produção.
+
+**`GET /alerts/check` escrevia.** Marcava `triggered_at`, e um GET que muda estado é disparado por
+prefetch de navegador e por retry de proxy. O POST virou o caminho do web; o GET segue registrado
+como `deprecated` por compatibilidade. Alertas também ganharam validação de ticker contra o padrão
+da B3, teto de preço plausível e limite de 100 por usuário — cada alerta ativo é uma cotação
+buscada a cada ciclo de 15 minutos.
+
+**O resumo de oportunidades reiniciava o relógio sem enviar nada.** `mark_digest_sent()` rodava
+mesmo quando o ciclo não achava nada para notificar, empurrando o próximo resumo por uma semana
+inteira. Agora só marca se o push saiu.
+
+Testes: 215 → 250. Três arquivos novos — `test_tax_compliance.py` (mês fiscal, isenção, prejuízo
+compensável), `test_twr_flows.py` (fluxo de venda contra casos de retorno conhecidos) e
+`test_tenant_isolation_resources.py` (cada recurso com id na URL, em GET/PUT/POST/DELETE, mais
+token forjado e token expirado). Os testes de apuração e de TWR foram verificados contra o código
+anterior: eles reprovam sem a correção.
+
+---
+
 ## Redesign de UX/UI (2026-08-21 e 2026-08-22)
 
 Auditoria completa de experiência e reformulação da arquitetura de informação nas duas

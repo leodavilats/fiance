@@ -67,7 +67,7 @@ async def _send_opportunities_digest(
     tokens: list[str],
     service: OpportunityService,
     prefs: dict,
-) -> None:
+) -> bool:
     scanned, _universe_size = await service._scan_universe(prefs)  # noqa: SLF001
 
     excluded = {t.upper() for t in prefs.get("excluded_tickers", [])}
@@ -92,7 +92,7 @@ async def _send_opportunities_digest(
     ]
 
     if not interesting and not to_review:
-        return
+        return False
 
     already_notified = portfolio_store.get_notified_opportunity_tickers(user_id)
     new_ones = [o for o in interesting if o.ticker.upper() not in already_notified]
@@ -124,6 +124,8 @@ async def _send_opportunities_digest(
             user_id, [o.ticker.upper() for o in highlighted]
         )
 
+    return True
+
 
 async def run_notification_cycle() -> None:
     tokens_by_user: dict[str, list[str]] = {}
@@ -134,7 +136,6 @@ async def run_notification_cycle() -> None:
         return
 
     opportunity_service = OpportunityService()
-    now = time.time()
 
     for user_id, tokens in tokens_by_user.items():
         try:
@@ -146,7 +147,8 @@ async def run_notification_cycle() -> None:
             frequency = prefs.get("opportunities_frequency", "weekly")
             last_sent = portfolio_store.get_last_digest_sent_at(user_id=user_id)
             if _digest_due(frequency, last_sent):
-                await _send_opportunities_digest(user_id, tokens, opportunity_service, prefs)
-                portfolio_store.mark_digest_sent(now, user_id=user_id)
+                sent = await _send_opportunities_digest(user_id, tokens, opportunity_service, prefs)
+                if sent:
+                    portfolio_store.mark_digest_sent(time.time(), user_id=user_id)
         except Exception:
             logger.exception("Falha no ciclo de notificações do usuário %s", user_id)

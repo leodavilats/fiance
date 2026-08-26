@@ -162,3 +162,70 @@ def test_sell_rejects_far_backdated_sold_at(client):
         },
     )
     assert resp.status_code == 400
+
+
+def test_cache_clear_is_open_to_any_session_only_in_development(monkeypatch):
+    import pytest as _pytest
+    from fastapi import HTTPException
+
+    from app.core import auth as auth_mod
+    from app.core.config import Settings
+
+    async def _call(settings: Settings, user_id: str) -> str:
+        monkeypatch.setattr(auth_mod, "get_settings", lambda: settings)
+        return await auth_mod.require_admin(user_id)
+
+    import asyncio
+
+    dev = Settings(app_env="development")
+    assert asyncio.run(_call(dev, "qualquer_um")) == "qualquer_um"
+
+    prod = Settings(app_env="production", jwt_secret="s" * 40, allowed_origins="https://x.com")
+    with _pytest.raises(HTTPException) as exc:
+        asyncio.run(_call(prod, "qualquer_um"))
+    assert exc.value.status_code == 403
+
+    with_allowlist = Settings(
+        app_env="production",
+        jwt_secret="s" * 40,
+        allowed_origins="https://x.com",
+        admin_user_ids="operador_1, operador_2",
+    )
+    assert asyncio.run(_call(with_allowlist, "operador_2")) == "operador_2"
+    with _pytest.raises(HTTPException) as exc:
+        asyncio.run(_call(with_allowlist, "operador_3"))
+    assert exc.value.status_code == 403
+
+
+def test_alert_rejects_ticker_that_is_not_a_b3_symbol(client):
+    headers = make_auth_headers("alert_ticker_user")
+    resp = client.post(
+        "/api/alerts",
+        headers=headers,
+        json={"ticker": "../../etc/passwd", "condition": "below", "target_price": 10.0},
+    )
+    assert resp.status_code == 422
+
+
+def test_alert_rejects_implausible_target_price(client):
+    headers = make_auth_headers("alert_price_user")
+    resp = client.post(
+        "/api/alerts",
+        headers=headers,
+        json={"ticker": "PETR4", "condition": "below", "target_price": 1e12},
+    )
+    assert resp.status_code == 422
+
+
+def test_alert_creation_stops_at_the_per_user_ceiling(client):
+    from app.api.alerts import MAX_ALERTS_PER_USER
+
+    headers = make_auth_headers("alert_ceiling_user")
+    body = {"ticker": "PETR4", "condition": "below", "target_price": 10.0}
+
+    for _ in range(MAX_ALERTS_PER_USER):
+        assert client.post("/api/alerts", headers=headers, json=body).status_code == 201
+
+    resp = client.post("/api/alerts", headers=headers, json=body)
+    assert resp.status_code == 409
+    assert "Limite" in resp.json()["detail"]

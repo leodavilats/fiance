@@ -234,7 +234,10 @@ class PortfolioService:
         category = resolve_category(pos["category"], auto)
 
         sold_at = self._validate_sold_at(req.sold_at)
-        month_before = self.portfolio_repo.sum_gross_sales_this_month(category)
+
+        self.portfolio_repo.lock_tenant()
+
+        month_before = self.portfolio_repo.sum_gross_sales_in_month(category, at=sold_at)
 
         accumulated_loss = self.portfolio_repo.available_tax_loss(category)
 
@@ -259,6 +262,7 @@ class PortfolioService:
             net_profit=cost.net_profit,
             loss_offset_used=cost.loss_offset_used,
             taxable_profit=cost.taxable_profit,
+            loss_compensable=cost.loss_compensable,
             sold_at=sold_at,
         )
         self.portfolio_repo.reduce_position_quantity(req.ticker, req.quantity)

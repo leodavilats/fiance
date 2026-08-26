@@ -104,6 +104,7 @@ class ClosedTradeDb(Base):
     net_profit: Mapped[float] = mapped_column(Float)
     loss_offset_used: Mapped[float] = mapped_column(Float, default=0.0)
     taxable_profit: Mapped[float] = mapped_column(Float, default=0.0)
+    loss_compensable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     sold_at: Mapped[float] = mapped_column(Float)
     created_at: Mapped[float] = mapped_column(Float)
 

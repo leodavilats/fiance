@@ -45,8 +45,16 @@ class PortfolioRepository:
         portfolio_store.reduce_position_quantity(ticker, sold_qty)
 
     @staticmethod
-    def sum_gross_sales_this_month(category: str) -> float:
-        return portfolio_store.sum_gross_sales_this_month(category)
+    def realized_gross_profit_between(start: float, end: float) -> float:
+        return portfolio_store.realized_gross_profit_between(start, end)
+
+    @staticmethod
+    def lock_tenant() -> None:
+        portfolio_store.lock_tenant()
+
+    @staticmethod
+    def sum_gross_sales_in_month(category: str, at: float | None = None) -> float:
+        return portfolio_store.sum_gross_sales_in_month(category, at=at)
 
     @staticmethod
     def create_closed_trade(**kwargs) -> ClosedTrade:

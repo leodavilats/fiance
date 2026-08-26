@@ -105,3 +105,23 @@ async def get_current_user(
     user_id = payload["sub"]
     set_current_user_id(user_id)
     return user_id
+
+
+async def require_admin(user_id: str = Depends(get_current_user)) -> str:
+    settings = get_settings()
+    admins = settings.admin_ids
+
+    if not admins:
+        if settings.is_development:
+            return user_id
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Rota de manutenção indisponível: ADMIN_USER_IDS não configurado.",
+        )
+
+    if user_id not in admins:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Rota restrita a operadores.",
+        )
+    return user_id
