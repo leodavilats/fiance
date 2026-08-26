@@ -1,13 +1,16 @@
 @if (closedTrades(); as ct) {
   @if (ct.trades.length > 0) {
-    <div class="mt-6 p-4 sm:p-5 rounded-xl border border-border" style="background: var(--panel)">
+    <div
+      class="mt-6 p-4 sm:p-5 rounded-xl border border-hairline"
+      style="background: var(--fi-ground-1)"
+    >
       <div class="flex items-center justify-between mb-3">
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
+        <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-ink">
           <lucide-icon name="receipt" size="20"></lucide-icon> Operações Encerradas
         </h2>
         <button
           type="button"
-          class="text-sm text-muted hover:text-tx transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0"
+          class="text-sm text-ink-2 hover:text-ink transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0"
           (click)="showClosedTrades.set(!showClosedTrades())"
         >
           <lucide-icon
@@ -21,36 +24,38 @@
       @if (showClosedTrades()) {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div
-            class="p-4 rounded-lg bg-bg-2 border border-border"
+            class="p-4 rounded-lg bg-ground-2 border border-hairline"
             [class.good]="ct.total_realized_pnl >= 0"
             [class.warn]="ct.total_realized_pnl < 0"
           >
-            <div class="text-xs text-muted mb-1 uppercase tracking-wide">
+            <div class="text-xs text-ink-2 mb-1 uppercase tracking-wide">
               Lucro/prejuízo realizado
             </div>
-            <div class="text-xl font-bold text-tx">
+            <div class="text-xl font-bold text-ink">
               R$ {{ ct.total_realized_pnl | number: '1.2-2' }}
             </div>
           </div>
-          <div class="p-4 rounded-lg bg-bg-2 border border-border">
-            <div class="text-xs text-muted mb-1 uppercase tracking-wide">IR pago (estimado)</div>
-            <div class="text-xl font-bold text-tx">R$ {{ ct.total_ir_paid | number: '1.2-2' }}</div>
+          <div class="p-4 rounded-lg bg-ground-2 border border-hairline">
+            <div class="text-xs text-ink-2 mb-1 uppercase tracking-wide">IR pago (estimado)</div>
+            <div class="text-xl font-bold text-ink">
+              R$ {{ ct.total_ir_paid | number: '1.2-2' }}
+            </div>
           </div>
         </div>
 
         @if (ct.total_tax_loss_available > 0) {
-          <div class="p-4 rounded-lg bg-accent/10 border border-accent/30 mb-4">
+          <div class="p-4 rounded-lg bg-brand/10 border border-brand/30 mb-4">
             <div class="flex items-start gap-3">
-              <lucide-icon name="receipt" size="18" class="text-accent mt-0.5"></lucide-icon>
+              <lucide-icon name="receipt" size="18" class="text-brand mt-0.5"></lucide-icon>
               <div>
-                <div class="font-semibold text-tx">
+                <div class="font-semibold text-ink">
                   R$ {{ ct.total_tax_loss_available | number: '1.2-2' }} de prejuízo disponível para
                   compensar IR
                 </div>
-                <div class="text-sm text-muted mt-1">
+                <div class="text-sm text-ink-2 mt-1">
                   Já é considerado automaticamente ao estimar o IR das próximas vendas.
                 </div>
-                <ul class="list-disc pl-4 text-xs text-muted mt-2 m-0">
+                <ul class="list-disc pl-4 text-xs text-ink-2 mt-2 m-0">
                   @for (balance of ct.tax_loss_balances; track balance.category) {
                     @if (balance.available > 0) {
                       <li>
@@ -73,29 +78,31 @@
         <div style="overflow-x: auto">
           <table class="w-full border-collapse text-sm">
             <thead>
-              <tr class="border-b border-border">
-                <th class="text-left py-2 px-2 font-medium text-muted">Ativo</th>
-                <th class="text-left py-2 px-2 font-medium text-muted">Data</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">Qtd</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">P. médio</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">P. venda</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">Compensado</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">IR</th>
-                <th class="text-right py-2 px-2 font-medium text-muted">Lucro líquido</th>
+              <tr class="border-b border-hairline">
+                <th class="text-left py-2 px-2 font-medium text-ink-2">Ativo</th>
+                <th class="text-left py-2 px-2 font-medium text-ink-2">Data</th>
+                <th class="text-right py-2 px-2 font-medium text-ink-2">Qtd</th>
+                <th class="text-right py-2 px-2 font-medium text-ink-2">P. médio</th>
+                <th class="text-right py-2 px-2 font-medium text-ink-2">P. venda</th>
+                <th class="text-right py-2 px-2 font-medium text-ink-2">Compensado</th>
+                <th class="text-right py-2 px-2 font-medium text-ink-2">IR</th>
+                <th class="text-right py-2 px-2 font-medium text-ink-2">Lucro líquido</th>
               </tr>
             </thead>
             <tbody>
               @for (t of ct.trades; track t.id) {
-                <tr class="border-b border-border hover:bg-bg-2 transition-colors">
-                  <td class="py-2 px-2 font-semibold text-tx">{{ t.ticker }}</td>
-                  <td class="py-2 px-2 text-tx">{{ t.sold_at * 1000 | date: 'dd/MM/yyyy' }}</td>
-                  <td class="text-right py-2 px-2 text-tx">{{ t.quantity }}</td>
-                  <td class="text-right py-2 px-2 text-tx">{{ t.avg_price | number: '1.2-2' }}</td>
-                  <td class="text-right py-2 px-2 text-tx">{{ t.sell_price | number: '1.2-2' }}</td>
-                  <td class="text-right py-2 px-2 text-muted">
+                <tr class="border-b border-hairline hover:bg-ground-2 transition-colors">
+                  <td class="py-2 px-2 font-semibold text-ink">{{ t.ticker }}</td>
+                  <td class="py-2 px-2 text-ink">{{ t.sold_at * 1000 | date: 'dd/MM/yyyy' }}</td>
+                  <td class="text-right py-2 px-2 text-ink">{{ t.quantity }}</td>
+                  <td class="text-right py-2 px-2 text-ink">{{ t.avg_price | number: '1.2-2' }}</td>
+                  <td class="text-right py-2 px-2 text-ink">
+                    {{ t.sell_price | number: '1.2-2' }}
+                  </td>
+                  <td class="text-right py-2 px-2 text-ink-2">
                     {{ t.loss_offset_used > 0 ? (t.loss_offset_used | number: '1.2-2') : '—' }}
                   </td>
-                  <td class="text-right py-2 px-2 text-tx">{{ t.ir_amount | number: '1.2-2' }}</td>
+                  <td class="text-right py-2 px-2 text-ink">{{ t.ir_amount | number: '1.2-2' }}</td>
                   <td
                     class="text-right py-2 px-2 font-semibold"
                     [class.good]="t.net_profit >= 0"

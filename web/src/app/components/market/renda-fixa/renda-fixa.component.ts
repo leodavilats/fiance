@@ -16,6 +16,7 @@ import {
   RendaFixaCompareResponse,
   ReferenceRates,
 } from '../../../core';
+import { FixedIncomeRateComponent } from '../../fixed-income-rate/fixed-income-rate.component';
 
 interface RendaFixaForm {
   tipo: FormControl<string>;
@@ -31,7 +32,7 @@ interface RendaFixaForm {
 @Component({
   selector: 'app-renda-fixa',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, FixedIncomeRateComponent, LucideAngularModule, ReactiveFormsModule],
   templateUrl: './renda-fixa.component.html',
 })
 export class RendaFixaComponent implements OnInit {
@@ -121,6 +122,23 @@ export class RendaFixaComponent implements OnInit {
         next: r => this.rfResult.set(r),
         error: () => {},
       });
+  }
+
+  /**
+   * O que foi *contratado* na linha `i` do formulário.
+   *
+   * O backend devolve a taxa efetiva, não o indexador — e "112% do CDI" só faz
+   * sentido para pós-fixado. Os resultados voltam na mesma ordem em que os
+   * ativos foram enviados, então o índice é o vínculo.
+   */
+  rateKindAt(i: number): string {
+    return this.rfForms.controls[i]?.getRawValue().tipo_taxa ?? '';
+  }
+
+  contractedRateAt(i: number): number | null {
+    const v = this.rfForms.controls[i]?.getRawValue();
+    if (!v) return null;
+    return v.tipo_taxa === 'pos_fixado' ? (v.percentual_cdi ?? null) : v.taxa;
   }
 
   rfTipoLabel(tipo: string): string {

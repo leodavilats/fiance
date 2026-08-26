@@ -1,3 +1,8 @@
+export { AssetPriceChartComponent } from './asset-price-chart/asset-price-chart.component';
+export { ActivityDrawerComponent } from './activity/activity-drawer.component';
+export { ActivityFeedComponent } from './activity/activity-feed.component';
+export { AtividadePageComponent } from './activity/atividade-page.component';
+export { GlobalSearchComponent } from './global-search/global-search.component';
 export { AlertModalComponent } from './alert-modal/alert-modal.component';
 export { AlertasComponent } from './alertas/alertas.component';
 export { AtivoComponent } from './ativo/ativo.component';
@@ -19,6 +24,16 @@ export { PatrimonyChartComponent } from './patrimony-chart/patrimony-chart.compo
 export { PreferenciasComponent } from './preferencias/preferencias.component';
 export { ProfileModalComponent } from './profile-modal/profile-modal.component';
 export { QuickInvestComponent } from './quick-invest/quick-invest.component';
+export { AllocationGapComponent } from './allocation-gap/allocation-gap.component';
+export { DipDiagnosisComponent } from './dip-diagnosis/dip-diagnosis.component';
+export { EmptyStateComponent } from './empty-state/empty-state.component';
+export { FixedIncomeRateComponent } from './fixed-income-rate/fixed-income-rate.component';
+export { GoalProgressComponent } from './goal-progress/goal-progress.component';
+export { MarginOfSafetyComponent } from './margin-of-safety/margin-of-safety.component';
+export { MetricWithContextComponent } from './metric-with-context/metric-with-context.component';
+export { ProvenanceComponent } from './provenance/provenance.component';
+export { RulerTrackComponent } from './ruler-track/ruler-track.component';
+export { SkeletonComponent } from './skeleton/skeleton.component';
 export { ScoreRulerComponent } from './score-ruler/score-ruler.component';
 export { SnackbarComponent } from './snackbar/snackbar.component';
 export { StrategyComponent } from './strategy/strategy.component';

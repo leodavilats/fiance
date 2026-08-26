@@ -62,11 +62,11 @@ export class RebalanceSuggestionsComponent implements OnInit {
   actionClass(action: RebalanceAction): string {
     return (
       {
-        comprar_mais: 'bg-accent/20 text-accent border-accent/30',
-        vender: 'bg-red-500/20 text-red-400 border-red-500/30',
-        realocar: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-        manter: 'bg-panel-2 text-muted border-border',
-      }[action] || 'bg-panel-2 text-muted border-border'
+        comprar_mais: 'bg-brand/20 text-brand border-brand/30',
+        vender: 'bg-adverse/20 text-adverse border-adverse/30',
+        realocar: 'bg-attention/20 text-attention border-attention/30',
+        manter: 'bg-ground-2 text-ink-2 border-hairline',
+      }[action] || 'bg-ground-2 text-ink-2 border-hairline'
     );
   }
 }

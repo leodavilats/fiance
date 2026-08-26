@@ -92,7 +92,7 @@ class AnalyzeAssetViewState extends ConsumerState<AnalyzeAssetView> {
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(_error!, style: TextStyle(color: lossColor(Theme.of(context).brightness))),
+            child: Text(_error!, style: TextStyle(color: fiStateColor(FiState.adverse, Theme.of(context).brightness))),
           ),
         if (_result != null) _AssetAnalysisCard(analysis: _result!),
       ],
@@ -132,7 +132,7 @@ class _AssetAnalysisCard extends StatelessWidget {
                       if (a.name != null)
                         Text(
                           a.name!,
-                          style: TextStyle(color: Colors.grey.shade600),
+                          style: TextStyle(color: fiInk2(context)),
                         ),
                     ],
                   ),
@@ -190,7 +190,7 @@ class _Stat extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 11, color: fiInk2(context)),
         ),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
@@ -316,14 +316,14 @@ class RendaFixaSimulatorViewState extends ConsumerState<RendaFixaSimulatorView> 
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(_error!, style: TextStyle(color: lossColor(Theme.of(context).brightness))),
+            child: Text(_error!, style: TextStyle(color: fiStateColor(FiState.adverse, Theme.of(context).brightness))),
           ),
         if (_results != null) ...[
           const SizedBox(height: 16),
           ..._results!.map(
             (r) => Card(
               color: r.melhorOpcao
-                  ? gainColor(Theme.of(context).brightness).withValues(alpha: 0.12)
+                  ? fiStateColor(FiState.favorable, Theme.of(context).brightness).withValues(alpha: 0.12)
                   : null,
               child: ListTile(
                 title: Text(
@@ -333,7 +333,7 @@ class RendaFixaSimulatorViewState extends ConsumerState<RendaFixaSimulatorView> 
                   'Líquido: ${formatCurrency(r.valorLiquido)} · Taxa líq: ${formatPercent(r.taxaLiquidaAa)}',
                 ),
                 trailing: r.melhorOpcao
-                    ? Icon(Icons.star, color: gainColor(Theme.of(context).brightness))
+                    ? Icon(Icons.star, color: fiStateColor(FiState.favorable, Theme.of(context).brightness))
                     : null,
               ),
             ),
@@ -508,7 +508,7 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
       children: [
         Text(
           'Compare até $_maxCompareTickers ativos lado a lado.',
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+          style: TextStyle(color: fiInk2(context), fontSize: 12),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -545,14 +545,14 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(_error!, style: TextStyle(color: lossColor(Theme.of(context).brightness))),
+            child: Text(_error!, style: TextStyle(color: fiStateColor(FiState.adverse, Theme.of(context).brightness))),
           ),
         if (_result != null) ...[
           const SizedBox(height: 16),
           if (_result!.errors.isNotEmpty)
             Text(
               'Não foi possível buscar: ${_result!.errors.join(', ')}',
-              style: TextStyle(color: warnColor(Theme.of(context).brightness), fontSize: 12),
+              style: TextStyle(color: fiStateColor(FiState.attention, Theme.of(context).brightness), fontSize: 12),
             ),
           if (_result!.items.isNotEmpty) _CompareTable(items: _result!.items),
         ],
@@ -654,7 +654,7 @@ class ContributionSimulatorViewState
       children: [
         Text(
           'Simule um aporte mensal recorrente e veja a evolução da sua carteira e renda passiva.',
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+          style: TextStyle(color: fiInk2(context), fontSize: 12),
         ),
         const SizedBox(height: 12),
         Row(
@@ -765,13 +765,13 @@ class ContributionSimulatorViewState
         else
           Text(
             'Meta de ${formatCurrency(r.targetMonthlyIncome)}/mês não atingida no período simulado.',
-            style: TextStyle(color: Colors.grey.shade600),
+            style: TextStyle(color: fiInk2(context)),
           ),
       ],
       const SizedBox(height: 12),
       Text(
         'Projeção educativa, não é garantia de rentabilidade futura.',
-        style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+        style: TextStyle(color: fiInk3(context), fontSize: 11),
       ),
     ];
   }

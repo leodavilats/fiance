@@ -260,7 +260,6 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         book_value=_safe_float(r.get("bookValue")),
         roe=_ratio_to_pct(r.get("returnOnEquity")),
         dividend_yield=dividend_yield,
-        # D/E também vem como razão; _score_leverage espera percentual (D/E 0.6 -> 60), então normaliza na mesma escala de ROE/margem.
         debt_to_equity=_ratio_to_pct(r.get("debtToEquity")),
         profit_margin=_ratio_to_pct(r.get("profitMargins")),
         revenue_growth=_ratio_to_pct(r.get("revenueGrowth")),

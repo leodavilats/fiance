@@ -32,7 +32,8 @@ async def compare_assets(
         raise HTTPException(400, "Informe ao menos um ticker.")
 
     results = await asyncio.gather(
-        *(asset_service.analyze_asset(s) for s in symbols), return_exceptions=True
+        *(asset_service.analyze_asset(s, include_history=False) for s in symbols),
+        return_exceptions=True,
     )
 
     items: list[AssetAnalysis] = []

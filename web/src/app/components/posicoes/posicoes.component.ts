@@ -1,18 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import {
   CarteiraStore,
+  FiDensity,
   FixedIncomePosition,
   MAX_COMPARE,
+  POSITION_COLUMNS,
   PortfolioPosition,
   PositionSortColumn,
   RecommendService,
   RendaFixaTipo,
   SnackbarService,
   UiHelperService,
+  parseColumns,
 } from '../../core';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 
@@ -21,7 +24,6 @@ import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink, HelpTooltipComponent],
   templateUrl: './posicoes.component.html',
-  styleUrls: ['./posicoes.component.scss'],
 })
 export class PosicoesComponent implements OnInit {
   private readonly store = inject(CarteiraStore);
@@ -40,6 +42,19 @@ export class PosicoesComponent implements OnInit {
 
   readonly maxCompare = MAX_COMPARE;
 
+  /**
+   * Colunas e densidade moram na URL junto com a ordenação: a tabela de maior
+   * densidade do produto é justamente a que se compartilha por link, e um
+   * recorte que não sobrevive ao recarregar não é um recorte (§45).
+   */
+  readonly allColumns = POSITION_COLUMNS;
+  readonly visibleColumns = signal<string[]>([]);
+  readonly density = signal<FiDensity>('comfortable');
+
+  readonly columns = computed(() =>
+    POSITION_COLUMNS.filter(c => this.visibleColumns().includes(c.id as string))
+  );
+
   readonly showFixedIncomeDetail = signal(true);
   readonly expandedReasonsTicker = signal<string | null>(null);
   readonly sellModal = signal<{
@@ -49,8 +64,84 @@ export class PosicoesComponent implements OnInit {
   } | null>(null);
   readonly sellingInProgress = signal(false);
 
+  private readonly route = inject(ActivatedRoute);
+
   ngOnInit(): void {
     this.store.ensureLoaded();
+
+    const q = this.route.snapshot.queryParamMap;
+    this.visibleColumns.set(parseColumns(q.get('cols')));
+    this.density.set(q.get('d') === 'compact' ? 'compact' : 'comfortable');
+  }
+
+  private syncUrl(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        cols: this.visibleColumns().join(','),
+        d: this.density() === 'compact' ? 'compact' : null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  setDensity(density: FiDensity): void {
+    this.density.set(density);
+    this.syncUrl();
+  }
+
+  isColumnVisible(id: string): boolean {
+    return this.visibleColumns().includes(id);
+  }
+
+  toggleColumn(id: string): void {
+    const column = POSITION_COLUMNS.find(c => c.id === id);
+    if (!column || column.essential) return;
+    const next = this.isColumnVisible(id)
+      ? this.visibleColumns().filter(c => c !== id)
+      : [...this.visibleColumns(), id];
+    this.visibleColumns.set(parseColumns(next.join(',')));
+    this.syncUrl();
+  }
+
+  /**
+   * `weight` e `margin` são derivadas e não têm coluna correspondente na
+   * ordenação do store; caem no eixo mais próximo em vez de virar um `if` no
+   * template.
+   */
+  sortableId(id: string): PositionSortColumn {
+    if (id === 'weight') return 'current_value';
+    if (id === 'margin') return 'fair_price';
+    return id as PositionSortColumn;
+  }
+
+  ariaSort(id: string): 'ascending' | 'descending' | 'none' {
+    if (this.store.sortColumn() !== this.sortableId(id)) return 'none';
+    return this.store.sortDirection() === 'asc' ? 'ascending' : 'descending';
+  }
+
+  dash(value: number | null | undefined): string {
+    return value == null
+      ? '—'
+      : value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  /** Peso da posição no total negociado. Sem total, não há peso — não há zero. */
+  weightLabel(p: PortfolioPosition): string {
+    const total = this.tradedPositions().reduce((sum, x) => sum + (x.current_value ?? 0), 0);
+    if (total <= 0 || p.current_value == null) return '—';
+    return `${((p.current_value / total) * 100).toFixed(1)}%`;
+  }
+
+  /**
+   * Quanto o papel rende, comparado ao CDI quando o backend souber dizer.
+   * Taxa nua não é resposta (§16).
+   */
+  rendeLabel(item: FixedIncomePosition): string {
+    const pct = item.pct_cdi_equivalente;
+    if (pct != null) return `~${pct.toFixed(0)}% do CDI`;
+    return `${item.taxa_anual_efetiva_pct.toFixed(2)}% a.a.`;
   }
 
   toggleSort(column: PositionSortColumn): void {

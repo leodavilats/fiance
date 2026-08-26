@@ -17,7 +17,6 @@ DEFAULT_IPCA_ANUAL = 5.0
 
 DIAS_POR_MES = 30.4375
 
-# Tolerância para preferir liquidez diária no "melhor opção": abrir mão de até meio ponto percentual ao ano em troca de poder resgatar quando precisar é a escolha certa para a maioria — recomendar um CDB de 5 anos travado por causa de 0,1 p.p.
 LIQUIDEZ_TOLERANCIA_PP = 0.5
 
 

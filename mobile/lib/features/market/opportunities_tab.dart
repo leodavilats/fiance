@@ -460,9 +460,12 @@ class _DipScannerView extends ConsumerWidget {
                             ),
                             Text(
                               'score ${item.dipScore.toStringAsFixed(0)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.orange,
+                                color: fiStateColor(
+                                  FiState.attention,
+                                  Theme.of(context).brightness,
+                                ),
                               ),
                             ),
                           ],
@@ -471,7 +474,7 @@ class _DipScannerView extends ConsumerWidget {
                           Text(
                             item.name!,
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: fiInk2(context),
                               fontSize: 12,
                             ),
                           ),
@@ -565,12 +568,12 @@ class _OpportunityCard extends StatelessWidget {
     switch (opportunity.verdict) {
       case 'STRONG_BUY':
       case 'BUY':
-        return gainColor(brightness);
+        return fiStateColor(FiState.favorable, brightness);
       case 'STRONG_SELL':
       case 'SELL':
-        return lossColor(brightness);
+        return fiStateColor(FiState.adverse, brightness);
       default:
-        return Colors.grey.shade700;
+        return fiStateColor(FiState.indeterminate, brightness);
     }
   }
 
@@ -605,7 +608,7 @@ class _OpportunityCard extends StatelessWidget {
                           Text(
                             opportunity.name!,
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: fiInk2(context),
                               fontSize: 12,
                             ),
                           ),
@@ -681,7 +684,7 @@ class _Stat extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+              style: TextStyle(color: fiInk2(context), fontSize: 11),
             ),
             if (glossaryKey != null) HelpTooltip(termKey: glossaryKey!),
           ],

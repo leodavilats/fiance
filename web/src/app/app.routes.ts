@@ -16,6 +16,13 @@ export const routes: Routes = [
       import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
     title: 'Hoje - fiance',
   },
+  {
+    path: 'hoje/atividade',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/activity/atividade-page.component').then(m => m.AtividadePageComponent),
+    title: 'Atividade - fiance',
+  },
 
   {
     path: 'carteira',

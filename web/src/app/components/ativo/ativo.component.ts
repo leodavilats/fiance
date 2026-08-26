@@ -8,6 +8,7 @@ import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AssetAnalysis,
   AssetType,
+  CarteiraStore,
   FiState,
   LoadingService,
   RecommendService,
@@ -15,6 +16,9 @@ import {
   UiHelperService,
   fiDecision,
 } from '../../core';
+import { AssetPriceChartComponent } from '../asset-price-chart/asset-price-chart.component';
+import { MetricWithContextComponent } from '../metric-with-context/metric-with-context.component';
+import { MarginOfSafetyComponent } from '../margin-of-safety/margin-of-safety.component';
 import { ScoreRulerComponent } from '../score-ruler/score-ruler.component';
 
 export interface ValuationMethod {
@@ -27,17 +31,28 @@ export interface ValuationMethod {
 
 interface Fundamental {
   readonly label: string;
-  readonly value: string;
+  /** Já formatado. `null` quando a fonte não trouxe o indicador. */
+  readonly value: string | null;
   readonly hint: string;
+  /**
+   * A referência que torna o número interpretável, quando ela existe.
+   *
+   * Sai das mesmas frases do glossário do produto — não são limiares novos, e
+   * indicador sem referência declarada simplesmente não ganha uma (§206).
+   */
+  readonly anchor: string;
 }
 
 @Component({
   selector: 'app-ativo',
   standalone: true,
   imports: [
+    AssetPriceChartComponent,
     CommonModule,
-    ReactiveFormsModule,
     LucideAngularModule,
+    MarginOfSafetyComponent,
+    MetricWithContextComponent,
+    ReactiveFormsModule,
     RouterLink,
     ScoreRulerComponent,
   ],
@@ -50,6 +65,7 @@ export class AtivoComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   readonly ui = inject(UiHelperService);
   readonly loading = inject(LoadingService);
+  private readonly carteira = inject(CarteiraStore);
 
   private readonly destroy$ = new Subject<void>();
   private readonly search$ = new Subject<string>();
@@ -77,6 +93,7 @@ export class AtivoComponent implements OnInit, OnDestroy {
       const symbol = ticker.toUpperCase();
       this.searchForm.controls.symbol.setValue(symbol);
       this.fetch(symbol);
+      this.carteira.ensureLoaded();
     });
 
     this.search$
@@ -280,6 +297,26 @@ export class AtivoComponent implements OnInit, OnDestroy {
       : 'Fluxo de caixa descontado';
   }
 
+  /** O backend devolve a margem como fração; a régua lê percentual. */
+  readonly marginPct = computed(() => {
+    const m = this.analysis()?.fair_price.margin_of_safety;
+    return m == null ? null : m * 100;
+  });
+
+  /**
+   * Preço médio da posição, quando o ativo está na carteira — a linha que
+   * transforma "está barato?" em "está barato **para mim**?". Sem posição, a
+   * linha simplesmente não existe: nada de desenhar zero.
+   */
+  readonly averagePrice = computed(() => {
+    const symbol = this.analysis()?.symbol;
+    if (!symbol) return null;
+    const position = this.carteira
+      .tradedPositions()
+      .find(p => p.ticker.toUpperCase() === symbol.toUpperCase());
+    return position?.avg_price ?? null;
+  });
+
   readonly consensusProvenance = computed(() => {
     const a = this.analysis();
     if (!a) return '';
@@ -302,20 +339,38 @@ export class AtivoComponent implements OnInit, OnDestroy {
       label: string,
       value: number | null | undefined,
       fmt: (v: number) => string,
-      hint: string
+      hint: string,
+      anchor = ''
     ) => {
-      if (value == null) return;
-      rows.push({ label, value: fmt(value), hint });
+      rows.push({ label, value: value == null ? null : fmt(value), hint, anchor });
     };
 
     const pct = (v: number) => `${v.toFixed(1)}%`;
     const num = (v: number) => v.toFixed(2);
 
     push('P/L', f.pe_ratio, num, 'Preço sobre lucro por ação.');
-    push('P/VP', f.pb_ratio, num, 'Preço sobre valor patrimonial.');
-    push('ROE', f.roe, pct, 'Retorno sobre o patrimônio líquido.');
+    push(
+      'P/VP',
+      f.pb_ratio,
+      num,
+      'Preço sobre valor patrimonial.',
+      'abaixo de 1 é desconto patrimonial'
+    );
+    push(
+      'ROE',
+      f.roe,
+      pct,
+      'Retorno sobre o patrimônio líquido.',
+      'acima de 15% a.a. é considerado bom'
+    );
     push('Margem líquida', f.profit_margin, pct, 'Quanto da receita sobra como lucro.');
-    push('Dívida/Patrimônio', f.debt_to_equity, num, 'Endividamento sobre o patrimônio.');
+    push(
+      'Dívida/Patrimônio',
+      f.debt_to_equity,
+      num,
+      'Endividamento sobre o patrimônio.',
+      'abaixo de 100% é confortável'
+    );
     push('Crescimento de receita', f.revenue_growth, pct, 'Variação da receita.');
     return rows;
   });

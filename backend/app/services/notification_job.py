@@ -19,7 +19,7 @@ _FREQUENCY_SECONDS = {
 
 def _digest_due(frequency: str, last_sent_at: float | None) -> bool:
     interval = _FREQUENCY_SECONDS.get(frequency)
-    if interval is None:  # "off" ou valor desconhecido
+    if interval is None:
         return False
     if last_sent_at is None:
         return True
@@ -68,7 +68,7 @@ async def _send_opportunities_digest(
     service: OpportunityService,
     prefs: dict,
 ) -> None:
-    scanned, _universe_size = await service._scan_universe(prefs)  # noqa: SLF001 — reuso interno
+    scanned, _universe_size = await service._scan_universe(prefs)  # noqa: SLF001
 
     excluded = {t.upper() for t in prefs.get("excluded_tickers", [])}
     by_ticker = {o.ticker.upper(): o for o in scanned}

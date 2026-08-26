@@ -34,7 +34,6 @@ def test_etfs_sempre_tributado_sem_isencao():
     result = calculate_sell_cost("etfs", 10, 200.0, 100.0, gross_value_month_before=0)
     assert result.ir_rate == 0.15
 
-    # sem isenção mensal, mesmo com acumulado alto no mês
     result_high_volume = calculate_sell_cost(
         "etfs", 10, 200.0, 100.0, gross_value_month_before=100_000
     )

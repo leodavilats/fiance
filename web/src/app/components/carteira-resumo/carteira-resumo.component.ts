@@ -9,6 +9,8 @@ import {
   UiHelperService,
   fiHealthBands,
 } from '../../core';
+import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
+import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { ScoreRulerComponent } from '../score-ruler/score-ruler.component';
 
 interface HealthDimension {
@@ -22,7 +24,14 @@ const MIN_POSITIONS_FOR_HEALTH = 4;
 @Component({
   selector: 'app-carteira-resumo',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink, ScoreRulerComponent],
+  imports: [
+    AllocationGapComponent,
+    CommonModule,
+    EmptyStateComponent,
+    LucideAngularModule,
+    RouterLink,
+    ScoreRulerComponent,
+  ],
   templateUrl: './carteira-resumo.component.html',
 })
 export class CarteiraResumoComponent implements OnInit {
@@ -91,6 +100,7 @@ export class CarteiraResumoComponent implements OnInit {
         currentPct: a.pct,
         targetPct: a.targetPct as number,
         deltaPct: a.pct - (a.targetPct as number),
+        barColor: this.ui.categoryBarColor(a.tipo),
       }))
       .sort((a, b) => Math.abs(b.deltaPct) - Math.abs(a.deltaPct))
   );

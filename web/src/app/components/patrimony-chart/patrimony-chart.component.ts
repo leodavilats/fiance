@@ -23,17 +23,17 @@ const PAD_BOTTOM = 34;
   imports: [CommonModule, LucideAngularModule],
   template: `
     @if (snapshots().length === 0) {
-      <div class="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted">
+      <div class="flex flex-col items-center justify-center gap-2 py-10 text-center text-ink-2">
         <lucide-icon name="chart-column" size="28" class="opacity-40"></lucide-icon>
         <p class="text-sm m-0">Ainda não há histórico suficiente para exibir a evolução.</p>
       </div>
     } @else if (snapshots().length === 1) {
       <div class="flex flex-col items-center justify-center gap-1 py-8 text-center">
-        <div class="text-xs text-muted">Único registro até o momento</div>
-        <div class="text-lg font-bold text-tx">
+        <div class="text-xs text-ink-2">Único registro até o momento</div>
+        <div class="text-lg font-bold text-ink">
           R$ {{ snapshots()[0].total_current | number: '1.0-0' }}
         </div>
-        <div class="text-xs text-muted">{{ formatDate(snapshots()[0].captured_at) }}</div>
+        <div class="text-xs text-ink-2">{{ formatDate(snapshots()[0].captured_at) }}</div>
       </div>
     } @else {
       <div class="relative select-none">
@@ -51,20 +51,13 @@ const PAD_BOTTOM = 34;
           role="img"
           [attr.aria-label]="ariaLabel()"
         >
-          <defs>
-            <linearGradient id="patrimonyAreaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28" />
-              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02" />
-            </linearGradient>
-          </defs>
-
           @for (gy of gridLines(); track gy.y) {
             <line
               [attr.x1]="padLeft"
               [attr.y1]="gy.y"
               [attr.x2]="vbWidth - padRight"
               [attr.y2]="gy.y"
-              stroke="var(--border)"
+              stroke="var(--fi-hairline)"
               stroke-opacity="0.6"
               stroke-width="1"
             />
@@ -73,7 +66,7 @@ const PAD_BOTTOM = 34;
               [attr.y]="gy.y + 3"
               text-anchor="end"
               class="text-[9px]"
-              fill="var(--muted)"
+              fill="var(--fi-ink-2)"
             >
               {{ gy.value | number: '1.0-0' }}
             </text>
@@ -83,16 +76,16 @@ const PAD_BOTTOM = 34;
             [attr.y1]="vbHeight - padBottom"
             [attr.x2]="vbWidth - padRight"
             [attr.y2]="vbHeight - padBottom"
-            stroke="var(--soft)"
+            stroke="var(--fi-ink-3)"
             stroke-opacity="0.5"
             stroke-width="1"
           />
 
-          <path [attr.d]="areaPath()" fill="url(#patrimonyAreaGradient)" />
+          <path [attr.d]="areaPath()" fill="color-mix(in srgb, var(--fi-brand) 12%, transparent)" />
 
           <path
             [attr.d]="linePath()"
-            stroke="var(--accent)"
+            stroke="var(--fi-brand)"
             stroke-width="2"
             fill="none"
             stroke-linecap="round"
@@ -105,7 +98,7 @@ const PAD_BOTTOM = 34;
               [attr.y1]="padTop"
               [attr.x2]="points()[hoverIndex()!].x"
               [attr.y2]="vbHeight - padBottom"
-              stroke="var(--muted)"
+              stroke="var(--fi-ink-2)"
               stroke-opacity="0.45"
               stroke-width="1"
               stroke-dasharray="3,3"
@@ -118,8 +111,8 @@ const PAD_BOTTOM = 34;
                 [attr.cx]="p.x"
                 [attr.cy]="p.y"
                 r="3"
-                fill="var(--accent)"
-                stroke="var(--panel)"
+                fill="var(--fi-brand)"
+                stroke="var(--fi-ground-1)"
                 stroke-width="1.5"
               />
             }
@@ -128,8 +121,8 @@ const PAD_BOTTOM = 34;
                 [attr.cx]="p.x"
                 [attr.cy]="p.y"
                 r="5"
-                fill="var(--accent)"
-                stroke="var(--panel)"
+                fill="var(--fi-brand)"
+                stroke="var(--fi-ground-1)"
                 stroke-width="2"
               />
             }
@@ -140,7 +133,7 @@ const PAD_BOTTOM = 34;
             [attr.y]="vbHeight - 10"
             text-anchor="start"
             class="text-[9px]"
-            fill="var(--muted)"
+            fill="var(--fi-ink-2)"
           >
             {{ formatDate(snapshots()[0].captured_at) }}
           </text>
@@ -149,7 +142,7 @@ const PAD_BOTTOM = 34;
             [attr.y]="vbHeight - 10"
             text-anchor="end"
             class="text-[9px]"
-            fill="var(--muted)"
+            fill="var(--fi-ink-2)"
           >
             {{ formatDate(snapshots()[snapshots().length - 1].captured_at) }}
           </text>
@@ -157,18 +150,18 @@ const PAD_BOTTOM = 34;
 
         @if (hoverIndex() !== null) {
           <div
-            class="pointer-events-none absolute z-10 rounded-lg border border-border bg-panel px-3 py-2 text-xs shadow-lg"
+            class="pointer-events-none absolute z-10 rounded-lg border border-hairline bg-ground-1 px-3 py-2 text-xs shadow-popover"
             [style.left.%]="tooltipLeftPct()"
             [style.top.%]="tooltipTopPct()"
             [style.transform]="tooltipTransform()"
           >
-            <div class="text-muted mb-0.5">
+            <div class="text-ink-2 mb-0.5">
               {{ formatDate(points()[hoverIndex()!].capturedAt) }}
             </div>
-            <div class="flex items-center gap-1.5 font-semibold text-tx">
+            <div class="flex items-center gap-1.5 font-semibold text-ink">
               <span
                 class="inline-block w-2.5 h-0.5 rounded"
-                style="background: var(--accent)"
+                style="background: var(--fi-brand)"
               ></span>
               R$ {{ points()[hoverIndex()!].value | number: '1.0-0' }}
             </div>
@@ -179,25 +172,25 @@ const PAD_BOTTOM = 34;
       <div class="mt-2">
         <button
           type="button"
-          class="text-xs text-muted hover:text-tx underline decoration-dotted cursor-pointer bg-transparent border-0 p-0"
+          class="text-xs text-ink-2 hover:text-ink underline decoration-dotted cursor-pointer bg-transparent border-0 p-0"
           (click)="showTable.set(!showTable())"
         >
           {{ showTable() ? 'Ocultar dados em tabela' : 'Ver dados em tabela' }}
         </button>
         @if (showTable()) {
-          <div class="mt-2 max-h-48 overflow-y-auto rounded-lg border border-border">
+          <div class="mt-2 max-h-48 overflow-y-auto rounded-lg border border-hairline">
             <table class="w-full text-xs">
               <thead>
-                <tr class="bg-panel-2 text-muted">
+                <tr class="bg-ground-2 text-ink-2">
                   <th class="text-left px-2 py-1 font-medium">Data</th>
                   <th class="text-right px-2 py-1 font-medium">Patrimônio</th>
                 </tr>
               </thead>
               <tbody>
                 @for (snap of snapshots(); track snap.captured_at) {
-                  <tr class="border-t border-border">
-                    <td class="px-2 py-1 text-tx">{{ formatDate(snap.captured_at) }}</td>
-                    <td class="px-2 py-1 text-right text-tx">
+                  <tr class="border-t border-hairline">
+                    <td class="px-2 py-1 text-ink">{{ formatDate(snap.captured_at) }}</td>
+                    <td class="px-2 py-1 text-right text-ink">
                       R$ {{ snap.total_current | number: '1.0-0' }}
                     </td>
                   </tr>

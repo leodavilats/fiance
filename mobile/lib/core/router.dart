@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/assets/assets_screen.dart';
+import '../features/carteira/carteira_screen.dart';
 import '../features/assets/fixed_income_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
-import '../features/dashboard/dashboard_screen.dart';
+import '../features/hoje/hoje_screen.dart';
 import '../features/estrategia/estrategia_screen.dart';
 import '../features/market/opportunities_tab.dart';
 import '../features/market/quick_invest_view.dart';
@@ -29,14 +29,14 @@ final appRouter = GoRouter(
       builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
       branches: [
         StatefulShellBranch(
-          routes: [GoRoute(path: '/hoje', builder: (context, state) => const DashboardScreen())],
+          routes: [GoRoute(path: '/hoje', builder: (context, state) => const HojeScreen())],
         ),
 
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/carteira',
-              builder: (context, state) => const AssetsScreen(),
+              builder: (context, state) => const CarteiraScreen(),
               routes: [
                 GoRoute(
                   path: 'renda-fixa',

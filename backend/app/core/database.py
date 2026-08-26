@@ -46,7 +46,7 @@ def init_db() -> None:
     """Deixa o banco no schema mais recente."""
     from alembic import command
 
-    from app.models import db_models  # noqa: F401 — registra os modelos no Base
+    from app.models import db_models  # noqa: F401
 
     inspector = inspect(engine)
     existing_tables = set(inspector.get_table_names())

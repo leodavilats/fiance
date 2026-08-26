@@ -56,8 +56,8 @@
   --fi-motion-fast: 120ms;
   --fi-motion-base: 180ms;
   --fi-motion-slow: 240ms;
-  --fi-motion-easeEnter: cubic-bezier(0.2, 0, 0, 1);
-  --fi-motion-easeExit: cubic-bezier(0.4, 0, 1, 1);
+  --fi-motion-ease-enter: cubic-bezier(0.2, 0, 0, 1);
+  --fi-motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --fi-layout-reading-max-width: 1120px;
   --fi-layout-dense-max-width: 1600px;
   --fi-layout-drawer-width: 600px;
@@ -110,12 +110,12 @@
   --fi-shadow-popover: 0 4px 16px rgba(28,31,30,0.12);
 }
 
-:root[data-density="comfortable"] {
+[data-density="comfortable"] {
   --fi-row-height: 48px;
   --fi-section-gap: 32px;
   --fi-block-padding: 20px;
 }
-:root[data-density="compact"] {
+[data-density="compact"] {
   --fi-row-height: 36px;
   --fi-section-gap: 24px;
   --fi-block-padding: 14px;

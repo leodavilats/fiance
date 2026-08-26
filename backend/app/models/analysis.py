@@ -15,7 +15,6 @@ class FairPriceBlock(BaseModel):
     data_years: int = 0
     desired_yield_used: float = 0.06
     pvp: float | None = None
-    # `compute_fair_price` já calculava isto e o modelo de resposta não declarava o campo — `FairPriceBlock(**fair.__dict__)` descartava em silêncio.
     consensus_methods: int = 0
     details: dict = Field(default_factory=dict)
 
@@ -38,6 +37,13 @@ class DecisionBlock(BaseModel):
     reasons: list[str] = Field(default_factory=list)
 
 
+class PricePoint(BaseModel):
+    """Um fechamento diário. `date` em ISO (AAAA-MM-DD)."""
+
+    date: str
+    close: float
+
+
 class AssetAnalysis(BaseModel):
     symbol: str
     asset_type: AssetType
@@ -49,6 +55,15 @@ class AssetAnalysis(BaseModel):
     fair_price: FairPriceBlock
     technical: TechnicalBlock
     decision: DecisionBlock
+    price_history: list[PricePoint] = Field(
+        default_factory=list,
+        description=(
+            "Fechamentos diários usados no bloco técnico. Já eram buscados para calcular "
+            "médias móveis e descartados em seguida — sem eles o cliente não tem como "
+            "desenhar preço contra preço justo. Vem preenchido só no endpoint de um ativo; "
+            "em /compare fica vazio, porque N séries completas não cabem numa comparação."
+        ),
+    )
 
 
 class CompareResponse(BaseModel):

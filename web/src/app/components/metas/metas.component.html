@@ -1,47 +1,53 @@
 <form [formGroup]="form" class="flex flex-col gap-5">
-  <div class="p-5 rounded-lg bg-panel border border-border">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-tx">
+  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-ink">
       <lucide-icon name="flag" size="18"></lucide-icon> Meta de renda
     </h2>
-    <div class="grid grid-cols-1 gap-4">
+    <div class="grid grid-cols-1 gap-5">
       <div>
-        <label class="block text-xs font-medium text-muted mb-1.5"
-          >Meta de renda passiva mensal (R$)</label
-        >
+        <label for="meta-renda" class="fi-caption text-ink-3 block mb-1.5">
+          Meta de renda passiva mensal (R$)
+        </label>
         <input
+          id="meta-renda"
           type="number"
-          class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          class="input max-w-[240px]"
           formControlName="passive_income_goal"
           min="0"
           step="100"
           placeholder="Ex: 5000"
         />
-        <p class="text-xs text-muted mt-1">Exibe progresso no dashboard.</p>
       </div>
+
+      <app-goal-progress
+        label="Renda passiva estimada"
+        [current]="currentMonthlyIncome()"
+        [target]="passiveIncomeTarget()"
+      />
     </div>
   </div>
-  <div class="p-5 rounded-lg bg-panel border border-border">
+  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
     <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
       <div>
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-ink">
           <lucide-icon name="chart-pie" size="18"></lucide-icon> Alocação Alvo
         </h2>
-        <p class="text-xs text-muted m-0">
+        <p class="text-xs text-ink-2 m-0">
           Defina quanto (%) cada categoria deve ter na sua carteira.
         </p>
       </div>
       <div class="flex items-center gap-2">
         <span
           class="text-sm font-medium"
-          [class.text-accent]="goalSum() === 100"
-          [class.text-red-400]="goalSum() !== 100"
+          [class.text-brand]="goalSum() === 100"
+          [class.text-adverse]="goalSum() !== 100"
         >
           Soma: <strong>{{ goalSum() }}%</strong>
         </span>
         @if (goalSum() !== 100) {
-          <span class="text-xs text-red-400">(deve ser 100%)</span>
+          <span class="text-xs text-adverse">(deve ser 100%)</span>
         } @else {
-          <lucide-icon name="circle-check" size="16" class="text-accent"></lucide-icon>
+          <lucide-icon name="circle-check" size="16" class="text-brand"></lucide-icon>
         }
       </div>
     </div>
@@ -61,36 +67,40 @@
 
     <div formArrayName="goals" class="flex flex-col gap-4">
       @for (g of goalItems.controls; track $index; let i = $index) {
-        <div class="p-4 rounded-lg bg-panel-2 border border-border" [formGroupName]="i">
+        <div class="p-4 rounded-lg bg-ground-2 border border-hairline" [formGroupName]="i">
           <div class="flex items-center gap-3 mb-3 flex-wrap">
             <div class="flex items-center gap-2 flex-1 min-w-[160px]">
               <div
                 class="w-8 h-8 grid place-items-center rounded-lg"
                 [class]="catBgColor(categories[i].key)"
               >
-                <lucide-icon [name]="categories[i].icon" size="16" class="text-white"></lucide-icon>
+                <lucide-icon
+                  [name]="categories[i].icon"
+                  size="16"
+                  [class]="catColor(categories[i].key)"
+                ></lucide-icon>
               </div>
               <div>
-                <div class="font-semibold text-sm text-tx">{{ categories[i].label }}</div>
-                <div class="text-xs text-muted">{{ categories[i].desc }}</div>
+                <div class="font-semibold text-sm text-ink">{{ categories[i].label }}</div>
+                <div class="text-xs text-ink-2">{{ categories[i].desc }}</div>
               </div>
             </div>
             <div class="flex items-center gap-2">
               <input
                 type="number"
-                class="w-20 px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent text-center font-bold"
+                class="w-20 px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand text-center font-bold"
                 formControlName="target_pct"
                 min="0"
                 max="100"
                 step="1"
               />
-              <span class="text-muted text-sm font-medium">%</span>
+              <span class="text-ink-2 text-sm font-medium">%</span>
             </div>
           </div>
 
           <input
             type="range"
-            class="range-slider w-full accent-accent h-1.5 rounded-full cursor-pointer"
+            class="range-slider w-full accent-brand h-1.5 rounded-full cursor-pointer"
             [min]="0"
             [max]="100"
             [step]="1"
@@ -101,10 +111,10 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
             <div>
-              <label class="block text-xs text-muted mb-1">Meta em R$ (opcional)</label>
+              <label class="block text-xs text-ink-2 mb-1">Meta em R$ (opcional)</label>
               <input
                 type="number"
-                class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-xs focus:outline-none focus:ring-2 focus:ring-accent"
+                class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-xs focus:outline-none focus:ring-2 focus:ring-brand"
                 formControlName="target_value"
                 min="0"
                 step="100"
@@ -112,10 +122,10 @@
               />
             </div>
             <div>
-              <label class="block text-xs text-muted mb-1">Prazo (opcional)</label>
+              <label class="block text-xs text-ink-2 mb-1">Prazo (opcional)</label>
               <input
                 type="date"
-                class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-xs focus:outline-none focus:ring-2 focus:ring-accent"
+                class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-xs focus:outline-none focus:ring-2 focus:ring-brand"
                 formControlName="deadline"
               />
             </div>
@@ -124,54 +134,54 @@
       }
     </div>
   </div>
-  <div class="p-5 rounded-lg bg-panel border border-border">
+  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
     <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
       <div>
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-tx">
+        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-ink">
           <lucide-icon name="git-compare" size="18"></lucide-icon> Alocação Setorial
         </h2>
-        <p class="text-xs text-muted m-0">
+        <p class="text-xs text-ink-2 m-0">
           Defina quanto (%) de cada setor você quer dentro do total de ações.
         </p>
       </div>
       <div class="flex items-center gap-2">
         <span
           class="text-sm font-medium"
-          [class.text-accent]="sectorGoalSum() === 100"
-          [class.text-warn]="sectorGoalSum() !== 100"
+          [class.text-brand]="sectorGoalSum() === 100"
+          [class.text-attention]="sectorGoalSum() !== 100"
         >
           Soma: <strong>{{ sectorGoalSum() }}%</strong>
         </span>
         @if (sectorGoalSum() !== 100) {
-          <span class="text-xs text-warn">(deve ser 100%)</span>
+          <span class="text-xs text-attention">(deve ser 100%)</span>
         } @else {
-          <lucide-icon name="circle-check" size="16" class="text-accent"></lucide-icon>
+          <lucide-icon name="circle-check" size="16" class="text-brand"></lucide-icon>
         }
       </div>
     </div>
 
     <div formArrayName="sector_goals" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
       @for (sg of sectorGoalItems.controls; track $index; let i = $index) {
-        <div class="p-3 rounded-lg bg-panel-2 border border-border" [formGroupName]="i">
+        <div class="p-3 rounded-lg bg-ground-2 border border-hairline" [formGroupName]="i">
           <div class="flex items-center justify-between gap-2 mb-2">
-            <div class="font-semibold text-sm text-tx">
+            <div class="font-semibold text-sm text-ink">
               {{ sectorGoalItems.at(i).controls.sector.value }}
             </div>
             <div class="flex items-center gap-2">
               <input
                 type="number"
-                class="w-16 px-2 py-1 rounded bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent text-center font-bold"
+                class="w-16 px-2 py-1 rounded bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand text-center font-bold"
                 formControlName="target_pct"
                 min="0"
                 max="100"
                 step="5"
               />
-              <span class="text-muted text-xs">%</span>
+              <span class="text-ink-2 text-xs">%</span>
             </div>
           </div>
           <input
             type="range"
-            class="range-slider w-full accent-accent h-1.5 rounded-full cursor-pointer"
+            class="range-slider w-full accent-brand h-1.5 rounded-full cursor-pointer"
             [min]="0"
             [max]="100"
             [step]="5"

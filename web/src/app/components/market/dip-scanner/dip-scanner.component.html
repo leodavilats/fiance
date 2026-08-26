@@ -1,95 +1,140 @@
-<div class="space-y-4">
-  <form [formGroup]="scanForm" (ngSubmit)="runScan()" class="card">
-    <h3 class="text-lg font-semibold mb-3 text-tx">Configuração do Scanner</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+<div class="max-w-reading">
+  <section>
+    <h1 class="fi-title text-ink m-0">Quedas recentes</h1>
+    <p class="fi-body text-ink-2 m-0 mt-1">
+      Queda não é oportunidade por si. Cada item abaixo diz o que caiu, quanto, e se o fundamento
+      caiu junto.
+    </p>
+
+    <form [formGroup]="scanForm" (ngSubmit)="runScan()" class="flex flex-wrap items-end gap-3 mt-4">
       <div>
-        <label class="label">Score Mínimo</label
-        ><input type="number" formControlName="min_score" class="input" />
+        <label for="dip-min-score" class="fi-caption text-ink-3 block mb-1">Score mínimo</label>
+        <input
+          id="dip-min-score"
+          type="number"
+          formControlName="min_score"
+          class="input w-[110px]"
+        />
       </div>
       <div>
-        <label class="label">Top N</label
-        ><input type="number" formControlName="top" class="input" />
+        <label for="dip-top" class="fi-caption text-ink-3 block mb-1">Quantos ativos</label>
+        <input id="dip-top" type="number" formControlName="top" class="input w-[110px]" />
       </div>
       <div>
-        <label class="label">Categoria</label>
-        <select formControlName="category" class="input">
+        <label for="dip-category" class="fi-caption text-ink-3 block mb-1">Categoria</label>
+        <select id="dip-category" formControlName="category" class="input w-[160px]">
           <option value="">Todas</option>
           <option value="acoes_br">Ações BR</option>
           <option value="fiis">FIIs</option>
         </select>
       </div>
-    </div>
-    <button type="submit" class="btn-primary mt-3">
-      <lucide-icon name="scan" size="18"></lucide-icon> Escanear Mercado
-    </button>
-  </form>
+      <button type="submit" class="btn-primary" [disabled]="scanning()">
+        <lucide-icon
+          [name]="scanning() ? 'loader-circle' : 'search'"
+          size="14"
+          [class.spin]="scanning()"
+        ></lucide-icon>
+        {{ scanning() ? 'Varrendo…' : 'Buscar quedas' }}
+      </button>
+    </form>
+  </section>
 
-  @if (dipResults(); as dips) {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (dip of dips.items; track dip.symbol) {
-        <div
-          class="card hover:shadow-lg transition-shadow cursor-pointer"
-          (click)="showDipAnalysis(dip.symbol)"
-        >
-          <div class="flex items-start justify-between mb-2">
-            <div>
-              <h4 class="font-bold text-tx text-lg">{{ dip.symbol }}</h4>
-              <p class="text-xs text-muted">{{ dip.name || 'N/A' }}</p>
-            </div>
-            <div class="text-right">
-              <div class="text-2xl font-bold text-accent">{{ dip.dip_score }}</div>
-              <div class="text-xs text-muted">Score DIP</div>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span class="text-muted">Queda do topo:</span
-              ><span class="font-semibold text-warn ml-1">{{
-                dip.drop_from_52w_high_pct
-                  ? (dip.drop_from_52w_high_pct | number: '1.1-1') + '%'
-                  : 'N/A'
-              }}</span>
-            </div>
-            <div>
-              <span class="text-muted">RSI:</span
-              ><span class="font-semibold text-tx ml-1">{{ dip.rsi_14 || 'N/A' }}</span>
-            </div>
-            <div>
-              <span class="text-muted">MS:</span
-              ><span class="font-semibold text-accent ml-1">{{
-                dip.margin_of_safety ? (dip.margin_of_safety * 100 | number: '1.0-0') + '%' : 'N/A'
-              }}</span>
-            </div>
-            <div>
-              <span class="text-muted">Confiança:</span
-              ><span class="font-semibold text-tx ml-1">{{ dip.confidence || 'N/A' }}</span>
-            </div>
-          </div>
-          <p class="text-xs text-muted mt-2">{{ dip.top_reason }}</p>
-          <div class="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-            <button
-              type="button"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 transition-opacity"
-              (click)="$event.stopPropagation(); showDipAnalysis(dip.symbol)"
-            >
-              <lucide-icon name="stethoscope" size="13"></lucide-icon> Entender esta queda
-            </button>
-            <a
-              [routerLink]="['/ativo', dip.symbol]"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-transparent border border-border text-tx no-underline hover:bg-panel-2 transition-colors"
-              (click)="$event.stopPropagation()"
-            >
-              Ver ativo <lucide-icon name="arrow-right" size="13"></lucide-icon>
-            </a>
-          </div>
-        </div>
-      }
+  @if (scanning()) {
+    <div class="mt-8 flex flex-col gap-6">
+      <app-skeleton shape="verdict" />
+      <app-skeleton shape="row" [count]="5" />
     </div>
+  } @else if (dipResults(); as dips) {
     @if (dips.items.length === 0) {
-      <div class="card text-center py-8">
-        <lucide-icon name="trending-down" size="48" class="text-muted mx-auto mb-3"></lucide-icon>
-        <p class="text-muted">Nenhum ativo em baixa encontrado com os critérios atuais.</p>
+      <div class="mt-6">
+        <app-empty-state
+          icon="search-x"
+          title="Nenhuma queda passou pelo filtro"
+          reason="Com score mínimo de {{
+            minScore()
+          }}, nenhum ativo do universo varrido chegou até aqui — o que normalmente significa que não há queda com fundamento preservado no momento."
+          nextStep="Baixar o score mínimo mostra quedas mais duvidosas, que exigem leitura mais cuidadosa."
+          actionLabel="Buscar com score 25"
+          (action)="relaxFilter()"
+          secondaryLabel="Ver oportunidades"
+          secondaryRoute="/descobrir/oportunidades"
+        />
       </div>
+    } @else {
+      <section class="mt-8">
+        <p class="fi-eyebrow text-ink-3 m-0 mb-2">
+          {{ dips.items.length }} {{ dips.items.length === 1 ? 'ativo' : 'ativos' }} em baixa
+        </p>
+
+        <ul class="list-none m-0 p-0">
+          @for (dip of dips.items; track dip.symbol) {
+            <li class="py-4 border-t border-hairline">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <a
+                      [routerLink]="['/ativo', dip.symbol]"
+                      class="fi-ticker text-ink no-underline hover:text-brand"
+                    >
+                      {{ dip.symbol }}
+                    </a>
+                    <span class="verdict-pill" [class]="dipClass(dip.verdict)">
+                      <lucide-icon
+                        [name]="dipIcon(dip.verdict)"
+                        size="12"
+                        aria-hidden="true"
+                      ></lucide-icon>
+                      {{ dipLabel(dip.verdict) }}
+                    </span>
+                  </div>
+                  @if (dip.name) {
+                    <p class="fi-caption text-ink-3 m-0 mt-0.5">{{ dip.name }}</p>
+                  }
+
+                  <p class="fi-body text-ink m-0 mt-2">{{ dip.top_reason }}</p>
+
+                  <div class="flex items-center gap-4 mt-2 flex-wrap fi-caption text-ink-3">
+                    @if (dip.drop_from_52w_high_pct != null) {
+                      <span>
+                        Caiu
+                        <strong class="fi-num text-ink"
+                          >{{ dip.drop_from_52w_high_pct | number: '1.1-1' }}%</strong
+                        >
+                        do topo de 52 semanas
+                      </span>
+                    }
+                    @if (dip.margin_of_safety != null) {
+                      <span>
+                        Margem
+                        <strong class="fi-num text-ink"
+                          >{{ dip.margin_of_safety * 100 | number: '1.0-0' }}%</strong
+                        >
+                      </span>
+                    } @else {
+                      <span class="text-indeterminate">Sem preço justo calculável</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="shrink-0 w-[132px]">
+                  <app-score-ruler [score]="dip.dip_score" size="list" subject="Leitura da queda" />
+                  <button
+                    type="button"
+                    class="mt-2 w-full px-3 py-1.5 rounded-md border border-hairline fi-caption text-ink hover:bg-ground-2 transition-colors cursor-pointer bg-transparent"
+                    (click)="showDipAnalysis(dip.symbol)"
+                  >
+                    Por que caiu?
+                  </button>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <p class="fi-caption text-ink-3 m-0 mt-4 pt-4 border-t border-hairline">
+          Leitura do sistema sobre dados públicos, não recomendação de compra.
+        </p>
+      </section>
     }
   }
 </div>

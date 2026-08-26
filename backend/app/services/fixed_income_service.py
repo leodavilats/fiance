@@ -169,6 +169,7 @@ class FixedIncomeService:
             meses_decorridos=round(meses_decorridos, 2),
             taxa_anual_efetiva_pct=atual.taxa_anual_efetiva_pct,
             yield_equivalente_pct=max(atual.taxa_liquida_aa, 0.0),
+            pct_cdi_equivalente=atual.taxa_equivalente_cdi_pct,
             valor_no_vencimento=round(no_vencimento.valor_liquido, 2) if no_vencimento else None,
             rendimento_no_vencimento=round(no_vencimento.rendimento_liquido, 2)
             if no_vencimento

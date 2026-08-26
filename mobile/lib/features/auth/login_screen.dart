@@ -58,28 +58,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accent.withValues(alpha: 0.35),
-                            blurRadius: 32,
-                            spreadRadius: -8,
-                          ),
-                        ],
                       ),
                       child: const AppLogo(size: 88),
                     ),
                     const SizedBox(height: 24),
-                    ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: [accent, accent2],
-                      ).createShader(bounds),
-                      child: const Text(
-                        'fiance',
-                        style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                    Text(
+                      'fiance',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -127,7 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: lossColor(Theme.of(context).brightness)),
+                          style: TextStyle(color: fiStateColor(FiState.adverse, Theme.of(context).brightness)),
                         ),
                       ),
                     SizedBox(
@@ -146,8 +134,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isDark ? Colors.white : Colors.black87,
-                          foregroundColor: isDark ? Colors.black87 : Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(appRadius),

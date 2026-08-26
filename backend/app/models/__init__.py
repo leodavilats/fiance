@@ -3,6 +3,7 @@ from .analysis import (
     CompareResponse,
     DecisionBlock,
     FairPriceBlock,
+    PricePoint,
     TechnicalBlock,
 )
 from .benchmark import BenchmarkPoint, BenchmarkResponse
@@ -79,6 +80,7 @@ __all__ = [
     "RiskProfile",
     "TaxType",
     "AssetAnalysis",
+    "PricePoint",
     "CompareResponse",
     "DecisionBlock",
     "FairPriceBlock",

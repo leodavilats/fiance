@@ -183,6 +183,34 @@ export const fiHealthBands: readonly FiScoreBand[] = [
   { id: 'insufficient', min: null, max: null, label: 'Carteira pequena demais para avaliar', state: 'indeterminate', emphasis: 'muted' },
 ] as const;
 
+export const fiMarginOfSafetyBands: readonly FiScoreBand[] = [
+  { id: 'wide', min: 25, max: 50, label: 'Desconto amplo', state: 'favorable', emphasis: 'strong' },
+  { id: 'some', min: 10, max: 24, label: 'Algum desconto', state: 'favorable', emphasis: 'muted' },
+  { id: 'fair', min: 0, max: 9, label: 'Perto do justo', state: 'neutral', emphasis: 'muted' },
+  { id: 'above', min: -50, max: -1, label: 'Acima do justo', state: 'attention', emphasis: 'strong' },
+  { id: 'insufficient', min: null, max: null, label: 'Sem preço justo', state: 'indeterminate', emphasis: 'muted' },
+] as const;
+
+export const fiMarginOfSafetyDomain = { min: -50, max: 50 } as const;
+
+export const fiAllocationGapBands: readonly FiScoreBand[] = [
+  { id: 'relevant', min: 5, max: 20, label: 'Desvio relevante', state: 'attention', emphasis: 'strong' },
+  { id: 'drift', min: 2, max: 4, label: 'Desvio', state: 'neutral', emphasis: 'muted' },
+  { id: 'on-target', min: 0, max: 1, label: 'Na meta', state: 'favorable', emphasis: 'muted' },
+  { id: 'insufficient', min: null, max: null, label: 'Sem meta definida', state: 'indeterminate', emphasis: 'muted' },
+] as const;
+
+export const fiAllocationGapDomain = { min: 0, max: 20 } as const;
+
+export const fiGoalProgressBands: readonly FiScoreBand[] = [
+  { id: 'reached', min: 100, max: 100, label: 'Meta atingida', state: 'favorable', emphasis: 'strong' },
+  { id: 'advancing', min: 50, max: 99, label: 'Mais da metade', state: 'favorable', emphasis: 'muted' },
+  { id: 'starting', min: 0, max: 49, label: 'No começo', state: 'neutral', emphasis: 'muted' },
+  { id: 'insufficient', min: null, max: null, label: 'Sem meta definida', state: 'indeterminate', emphasis: 'muted' },
+] as const;
+
+export const fiGoalProgressDomain = { min: 0, max: 100 } as const;
+
 export function fiBandFor(
   value: number,
   bands: readonly FiScoreBand[],

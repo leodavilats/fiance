@@ -1,28 +1,43 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   DipAnalysisService,
   OpportunitiesResponse,
+  Opportunity,
   RecommendService,
   TickerSuggestion,
   UiHelperService,
 } from '../../../core';
+import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { HelpTooltipComponent } from '../../help-tooltip/help-tooltip.component';
+import { MarginOfSafetyComponent } from '../../margin-of-safety/margin-of-safety.component';
+import { ProvenanceComponent } from '../../provenance/provenance.component';
+import { ScoreRulerComponent } from '../../score-ruler/score-ruler.component';
+import { SkeletonComponent } from '../../skeleton/skeleton.component';
 
-const FILTER_STORAGE_KEY = 'market_filters';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 @Component({
   selector: 'app-opportunities-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink, HelpTooltipComponent],
+  imports: [
+    CommonModule,
+    EmptyStateComponent,
+    FormsModule,
+    HelpTooltipComponent,
+    LucideAngularModule,
+    MarginOfSafetyComponent,
+    ProvenanceComponent,
+    RouterLink,
+    ScoreRulerComponent,
+    SkeletonComponent,
+  ],
   templateUrl: './opportunities-list.component.html',
-  styleUrls: ['./opportunities-list.component.scss'],
 })
 export class OpportunitiesListComponent implements OnInit, OnDestroy {
   private api = inject(RecommendService);
@@ -30,6 +45,7 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
 
   private readonly dip = inject(DipAnalysisService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   private filterDebounce$ = new Subject<void>();
   private tickerSearch$ = new Subject<string>();
@@ -89,29 +105,76 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
     });
   }
 
-  private _saveFilters(): void {
-    try {
-      sessionStorage.setItem(FILTER_STORAGE_KEY, this._filterKey());
-    } catch {}
+  /**
+   * O recorte mora na URL, não em `sessionStorage`.
+   *
+   * Antes o filtro sobrevivia à navegação mas não ao link: colar o endereço
+   * para outra pessoa mandava a lista sem filtro nenhum, e o botão voltar não
+   * desfazia a busca. Filtro é estado de navegação (§45).
+   */
+  private _syncFilters(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: this.filterText || null,
+        dy: this.filterMinDy ?? null,
+        mos: this.filterMinMos ?? null,
+        cat: this.filterCategory || null,
+        destaque: this.onlyInteresting ? '1' : null,
+        p: this.currentPage() > 1 ? this.currentPage() : null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   private _restoreFilters(): void {
-    try {
-      const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
-      if (!raw) return;
-      const f = JSON.parse(raw);
-      this.filterText = f.t ?? '';
-      this.filterMinDy = f.dy ?? null;
-      this.filterMinMos = f.mos ?? null;
-      this.filterCategory = f.cat ?? '';
-      this.onlyInteresting = f.int ?? false;
-    } catch {}
+    const q = this.route.snapshot.queryParamMap;
+    this.filterText = q.get('q') ?? '';
+    this.filterMinDy = q.get('dy') != null ? Number(q.get('dy')) : null;
+    this.filterMinMos = q.get('mos') != null ? Number(q.get('mos')) : null;
+    this.filterCategory = q.get('cat') ?? '';
+    this.onlyInteresting = q.get('destaque') === '1';
+    const page = Number(q.get('p') ?? 1);
+    if (Number.isFinite(page) && page > 1) this.currentPage.set(page);
   }
 
   onFilterChange() {
-    this._saveFilters();
     this.currentPage.set(1);
+    this._syncFilters();
     this.filterDebounce$.next();
+  }
+
+  clearFilters(): void {
+    this.filterText = '';
+    this.filterMinDy = null;
+    this.filterMinMos = null;
+    this.filterCategory = '';
+    this.onlyInteresting = false;
+    this.onFilterChange();
+    this.loadOpportunities(true);
+  }
+
+  /**
+   * A frase que explica por que o ativo está na lista.
+   *
+   * Prefere o primeiro motivo que o backend mandou; só cai numa descrição
+   * derivada da margem quando não veio nenhum — e, sem margem, admite que a
+   * presença é por score, em vez de inventar uma justificativa.
+   */
+  reasonFor(opp: Opportunity): string {
+    const first = opp.reasons[0];
+    if (first) return first;
+    if (opp.margin_of_safety != null && opp.margin_of_safety > 0) {
+      const pct = Math.round(opp.margin_of_safety * 100);
+      return `Negocia ${pct}% abaixo do preço justo estimado, com dados suficientes para avaliar.`;
+    }
+    return 'Aparece pela leitura combinada de preço, proventos e qualidade.';
+  }
+
+  /** O backend devolve a margem como fração; a régua lê percentual. */
+  marginPct(opp: Opportunity): number | null {
+    return opp.margin_of_safety == null ? null : opp.margin_of_safety * 100;
   }
 
   onFilterTextInput(value: string): void {
@@ -134,6 +197,7 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
 
   goToPage(page: number) {
     this.currentPage.set(page);
+    this._syncFilters();
     this.loadOpportunities(true);
   }
 

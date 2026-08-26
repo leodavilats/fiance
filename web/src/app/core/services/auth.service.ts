@@ -69,7 +69,7 @@ export class AuthService {
     if (!token) return false;
 
     const payload = decodeJwt(token);
-    if (!payload?.exp) return true; // sem exp legível: deixa o backend decidir
+    if (!payload?.exp) return true;
 
     return payload.exp * 1000 > Date.now();
   }

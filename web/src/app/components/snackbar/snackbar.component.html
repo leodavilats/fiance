@@ -1,25 +1,30 @@
-<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md">
+<div
+  class="fixed bottom-4 right-4 z-[400] flex flex-col gap-2 max-w-md"
+  role="status"
+  aria-live="polite"
+>
   @for (msg of snackbar.messages(); track msg.id) {
     <div
-      class="flex items-center gap-3 p-4 rounded-lg shadow-lg border animate-slide-in"
-      [class.bg-danger]="msg.type === 'error'"
-      [class.bg-success]="msg.type === 'success'"
-      [class.bg-info]="msg.type === 'info'"
-      [class.border-danger]="msg.type === 'error'"
-      [class.border-success]="msg.type === 'success'"
-      [class.border-info]="msg.type === 'info'"
-      [class.text-white]="true"
+      class="fi-toast flex items-center gap-3 p-4 rounded-md shadow-popover animate-slide-in"
+      [class.fi-toast-error]="msg.type === 'error'"
+      [class.fi-toast-success]="msg.type === 'success'"
+      [class.fi-toast-info]="msg.type === 'info'"
     >
       <lucide-icon
         [name]="
           msg.type === 'error' ? 'circle-x' : msg.type === 'success' ? 'circle-check' : 'info'
         "
         size="20"
+        class="flex-shrink-0"
+        [class.text-adverse]="msg.type === 'error'"
+        [class.text-favorable]="msg.type === 'success'"
+        [class.text-brand]="msg.type === 'info'"
       ></lucide-icon>
-      <p class="flex-1 m-0 text-sm font-medium">{{ msg.message }}</p>
+      <p class="flex-1 m-0 text-sm">{{ msg.message }}</p>
       <button
         type="button"
-        class="w-6 h-6 grid place-items-center rounded hover:bg-white/20 transition-colors cursor-pointer bg-transparent border-0 text-white"
+        class="w-6 h-6 grid place-items-center rounded-sm hover:bg-ground-2 transition-colors cursor-pointer bg-transparent border-0 text-ink-2"
+        [attr.aria-label]="'Dispensar aviso'"
         (click)="snackbar.remove(msg.id)"
       >
         <lucide-icon name="x" size="16"></lucide-icon>

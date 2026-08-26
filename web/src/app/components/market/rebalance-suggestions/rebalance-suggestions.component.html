@@ -1,6 +1,6 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between gap-2">
-    <p class="text-sm text-muted m-0">
+    <p class="text-sm text-ink-2 m-0">
       Para cada ativo já na sua carteira: comprar mais, vender, realocar para outro ativo ou não
       fazer nada — considerando seu perfil de risco, preferências e ativos excluídos configurados em
       Configurações.
@@ -17,8 +17,8 @@
   </div>
 
   @if (error()) {
-    <div class="p-4 rounded-lg bg-panel border border-danger/40">
-      <p class="text-sm text-danger m-0">
+    <div class="p-4 rounded-lg bg-ground-1 border border-adverse/40">
+      <p class="text-sm text-adverse m-0">
         Não foi possível carregar as sugestões. Verifique se sua carteira está configurada.
       </p>
     </div>
@@ -26,44 +26,44 @@
 
   @if (rebalance(); as reb) {
     @if (reb.tax_disclaimer) {
-      <div class="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 flex gap-2">
+      <div class="p-3 rounded-lg bg-attention/10 border border-attention/30 flex gap-2">
         <lucide-icon
           name="triangle-alert"
           size="16"
-          class="text-orange-400 flex-shrink-0 mt-0.5"
+          class="text-attention flex-shrink-0 mt-0.5"
         ></lucide-icon>
-        <p class="text-xs text-orange-200 m-0">{{ reb.tax_disclaimer }}</p>
+        <p class="text-xs text-attention m-0">{{ reb.tax_disclaimer }}</p>
       </div>
     }
 
     @if (reb.items.length > 0) {
       <div class="flex flex-col gap-3">
         @for (item of reb.items; track item.ticker) {
-          <div class="p-4 rounded-lg bg-panel border border-border">
+          <div class="p-4 rounded-lg bg-ground-1 border border-hairline">
             <div class="flex justify-between items-start gap-4 mb-2">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap mb-1">
-                  <div class="font-bold text-lg text-tx">{{ item.ticker }}</div>
+                  <div class="font-bold text-lg text-ink">{{ item.ticker }}</div>
                   <span class="verdict-pill" [class]="verdictClass(item.verdict)">{{
                     item.verdict
                   }}</span>
-                  <span class="tag tag-cat" [class]="'cat-' + item.category">{{
+                  <span class="tag" [class]="ui.categoryColor(item.category)">{{
                     ui.categoryLabel(item.category)
                   }}</span>
                   <span class="tag" [class]="actionClass(item.action)">{{
                     actionLabel(item.action)
                   }}</span>
                 </div>
-                <div class="text-sm text-muted">{{ item.name }}</div>
+                <div class="text-sm text-ink-2">{{ item.name }}</div>
               </div>
               <div class="text-right flex-shrink-0">
-                <div class="text-xs text-muted mb-1">Posição atual</div>
-                <div class="font-bold text-tx">R$ {{ item.current_value | number: '1.2-2' }}</div>
+                <div class="text-xs text-ink-2 mb-1">Posição atual</div>
+                <div class="font-bold text-ink">R$ {{ item.current_value | number: '1.2-2' }}</div>
                 @if (item.pnl_pct != null) {
                   <div
                     class="text-xs mt-1"
-                    [class.text-accent]="item.pnl_pct >= 0"
-                    [class.text-red-400]="item.pnl_pct < 0"
+                    [class.text-brand]="item.pnl_pct >= 0"
+                    [class.text-down]="item.pnl_pct < 0"
                   >
                     {{ item.pnl_pct >= 0 ? '+' : '' }}{{ item.pnl_pct | number: '1.1-1' }}%
                   </div>
@@ -73,10 +73,10 @@
 
             @if (item.realocar_para; as target) {
               <div
-                class="flex items-center gap-2 text-xs mb-2 p-2 rounded-md bg-panel-2 border border-border"
+                class="flex items-center gap-2 text-xs mb-2 p-2 rounded-md bg-ground-2 border border-hairline"
               >
-                <lucide-icon name="arrow-right" size="12" class="text-accent"></lucide-icon>
-                <span class="text-tx"
+                <lucide-icon name="arrow-right" size="12" class="text-brand"></lucide-icon>
+                <span class="text-ink"
                   >Realocar para <strong>{{ target.ticker }}</strong> ({{
                     ui.categoryLabel(target.category)
                   }}, score {{ target.score | number: '1.0-0' }})</span
@@ -90,9 +90,9 @@
                   <lucide-icon
                     name="info"
                     size="12"
-                    class="text-accent flex-shrink-0 mt-0.5"
+                    class="text-brand flex-shrink-0 mt-0.5"
                   ></lucide-icon>
-                  <span class="text-tx">{{ reason }}</span>
+                  <span class="text-ink">{{ reason }}</span>
                 </div>
               }
             </div>
@@ -101,8 +101,8 @@
       </div>
     } @else {
       <div class="card text-center py-6">
-        <lucide-icon name="inbox" size="32" class="text-muted mx-auto mb-2"></lucide-icon>
-        <p class="text-sm text-muted m-0">
+        <lucide-icon name="inbox" size="32" class="text-ink-2 mx-auto mb-2"></lucide-icon>
+        <p class="text-sm text-ink-2 m-0">
           Nenhum ativo na carteira para avaliar. Cadastre posições em Meus Ativos.
         </p>
       </div>

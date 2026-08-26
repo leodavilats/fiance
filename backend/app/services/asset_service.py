@@ -8,6 +8,7 @@ from app.models import (
     AssetType,
     DecisionBlock,
     FairPriceBlock,
+    PricePoint,
     TechnicalBlock,
 )
 from app.repositories import AssetRepository, PortfolioRepository
@@ -18,7 +19,13 @@ class AssetService:
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
 
-    async def analyze_asset(self, symbol: str) -> AssetAnalysis:
+    async def analyze_asset(self, symbol: str, *, include_history: bool = True) -> AssetAnalysis:
+        """Análise completa de um ativo.
+
+        `include_history` existe para `/compare`: N séries diárias de 2 anos numa
+        única resposta são payload puro, e a comparação não desenha gráfico.
+        """
+
         snap = await self.asset_repo.get_asset(symbol)
         if not snap:
             raise NotFoundError(f"Ativo '{symbol}' não encontrado ou sem dados.")
@@ -73,5 +80,14 @@ class AssetService:
                 label=dec.label,
                 confidence=dec.confidence,
                 reasons=dec.reasons,
+            ),
+            price_history=(
+                [
+                    PricePoint(date=day, close=close)
+                    for day, close in sorted(history.items())
+                    if close is not None
+                ]
+                if include_history
+                else []
             ),
         )

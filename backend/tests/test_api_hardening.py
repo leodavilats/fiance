@@ -60,9 +60,6 @@ def test_put_preferences_round_trips_cash_available(client):
     assert client.get("/api/preferences", headers=headers).json()["cash_available"] == 100.5
 
 
-# --- escrita destrutiva da carteira ---
-
-
 def test_put_portfolio_rejects_empty_list_instead_of_wiping(client):
     headers = make_auth_headers("wipe_guard_user")
     client.put("/api/portfolio", headers=headers, json={"items": [ITEM]})

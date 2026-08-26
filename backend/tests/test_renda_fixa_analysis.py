@@ -33,10 +33,10 @@ def test_lci_is_tax_exempt():
 
 
 def test_ir_rate_tiers_by_prazo():
-    curto = analyze_one(_asset(prazo_meses=5))  # ~152 dias -> 22.5%
-    medio = analyze_one(_asset(prazo_meses=10))  # ~304 dias -> 20%
-    longo = analyze_one(_asset(prazo_meses=20))  # ~609 dias -> 17.5%
-    muito_longo = analyze_one(_asset(prazo_meses=30))  # ~913 dias -> 15%
+    curto = analyze_one(_asset(prazo_meses=5))
+    medio = analyze_one(_asset(prazo_meses=10))
+    longo = analyze_one(_asset(prazo_meses=20))
+    muito_longo = analyze_one(_asset(prazo_meses=30))
 
     assert curto.ir.aliquota_pct == 22.5
     assert medio.ir.aliquota_pct == 20.0
@@ -83,7 +83,6 @@ def test_double_cdi_does_not_explode_exponentially():
         _asset(tipo_taxa=TaxType.pos_fixado, percentual_cdi=200.0, taxa=1.0),
         cdi_anual=cdi,
     )
-    # Exponencial daria (1,144)^2 - 1 = 30,9%; multiplicativo dá 28,8%.
     assert result.taxa_anual_efetiva_pct == round(cdi * 2, 2)
 
 

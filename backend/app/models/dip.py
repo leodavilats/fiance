@@ -36,6 +36,14 @@ class DipAnalysisResponse(BaseModel):
     verdict_label: str
     confidence: float
     reasons: list[str] = Field(default_factory=list)
+    reason_groups: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description=(
+            "Os mesmos motivos de `reasons`, agrupados pela dimensão que os gerou "
+            "(value, quality, technical, dividend, news). Permite ao cliente separar "
+            "queda aritmética de deterioração de fundamento."
+        ),
+    )
     drop_from_52w_high_pct: float | None = None
     drop_from_fair_price_pct: float | None = None
     news: list[NewsItemSchema] = Field(default_factory=list)

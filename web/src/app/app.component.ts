@@ -11,10 +11,18 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { AuthService, LoadingService, ThemeService } from './core';
 import {
+  ActivityService,
+  AuthService,
+  GlobalSearchService,
+  LoadingService,
+  ThemeService,
+} from './core';
+import {
+  ActivityDrawerComponent,
   AlertModalComponent,
   GlobalLoaderComponent,
+  GlobalSearchComponent,
   LogoComponent,
   ProfileModalComponent,
   SnackbarComponent,
@@ -42,7 +50,9 @@ const DESTINATIONS: readonly NavDestination[] = [
     RouterLink,
     RouterLinkActive,
     LucideAngularModule,
+    ActivityDrawerComponent,
     GlobalLoaderComponent,
+    GlobalSearchComponent,
     SnackbarComponent,
     AlertModalComponent,
     LogoComponent,
@@ -52,6 +62,8 @@ const DESTINATIONS: readonly NavDestination[] = [
     <app-global-loader />
     <app-snackbar />
     <app-alert-modal />
+    <app-global-search />
+    <app-activity-drawer />
     <app-profile-modal
       [open]="showProfile()"
       [user]="auth.user()"
@@ -69,7 +81,6 @@ const DESTINATIONS: readonly NavDestination[] = [
             <span class="text-lg font-bold text-ink tracking-tight">fiance</span>
           </a>
 
-          <!-- Nav primária: some no mobile, onde a bottom nav assume. -->
           <nav class="hidden md:block" aria-label="Navegação principal">
             <ul class="flex items-center gap-1 list-none m-0 p-0">
               @for (d of destinations; track d.path) {
@@ -84,6 +95,24 @@ const DESTINATIONS: readonly NavDestination[] = [
           </nav>
 
           <div class="flex items-center gap-2">
+            <button
+              class="hidden sm:flex items-center gap-2 h-9 px-2.5 rounded-md cursor-pointer bg-transparent border border-hairline text-ink-2 hover:text-ink hover:bg-ground-2 transition-colors"
+              type="button"
+              (click)="search.show()"
+              aria-label="Buscar tela ou ativo"
+            >
+              <lucide-icon name="search" size="16"></lucide-icon>
+              <kbd class="fi-caption border border-hairline rounded-sm px-1">{{ searchHint }}</kbd>
+            </button>
+            <button
+              class="w-9 h-9 grid place-items-center rounded-md cursor-pointer bg-transparent border border-hairline text-ink hover:bg-ground-2 transition-colors"
+              type="button"
+              (click)="activity.show()"
+              title="Atividade recente"
+              aria-label="Abrir atividade recente"
+            >
+              <lucide-icon name="history" size="18"></lucide-icon>
+            </button>
             <button
               class="w-9 h-9 grid place-items-center rounded-md cursor-pointer bg-transparent border border-hairline text-ink hover:bg-ground-2 transition-colors"
               type="button"
@@ -122,9 +151,8 @@ const DESTINATIONS: readonly NavDestination[] = [
     </main>
 
     @if (auth.user()) {
-      <!-- Bottom nav de 5: os 4 destinos de trabalho + Você. -->
       <nav
-        class="md:hidden fixed bottom-0 left-0 right-0 border-t border-hairline bg-panel"
+        class="md:hidden fixed bottom-0 left-0 right-0 border-t border-hairline bg-ground-1"
         style="padding-bottom: env(safe-area-inset-bottom); z-index: var(--fi-z-nav);"
         aria-label="Navegação principal"
       >
@@ -194,6 +222,11 @@ const DESTINATIONS: readonly NavDestination[] = [
 export class AppComponent {
   readonly theme = inject(ThemeService);
   readonly auth = inject(AuthService);
+  readonly search = inject(GlobalSearchService);
+  readonly activity = inject(ActivityService);
+
+  /** O atalho muda de tecla por plataforma; o rótulo tem que acompanhar. */
+  readonly searchHint = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
   readonly showProfile = signal(false);
   readonly destinations = DESTINATIONS;
 

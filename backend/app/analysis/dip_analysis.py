@@ -28,6 +28,7 @@ class DipResult:
     verdict_label: str
     confidence: float
     reasons: list[str]
+    reason_groups: dict[str, list[str]]
     drop_from_52w_high_pct: float | None
     drop_from_fair_price_pct: float | None
     news_sentiment_summary: str
@@ -290,6 +291,14 @@ def compute_dip_analysis(
     d_pts, d_reasons = _dividend_score(dividend_yield, avg_dividend_5y)
     n_pts, n_reasons = _news_score(news_items)
 
+    reason_groups = {
+        "value": v_reasons,
+        "quality": q_reasons,
+        "technical": t_reasons,
+        "dividend": d_reasons,
+        "news": n_reasons,
+    }
+
     all_reasons.extend(v_reasons)
     all_reasons.extend(q_reasons)
     all_reasons.extend(t_reasons)
@@ -336,6 +345,7 @@ def compute_dip_analysis(
         verdict_label=verdict_label,
         confidence=round(confidence, 3),
         reasons=all_reasons,
+        reason_groups=reason_groups,
         drop_from_52w_high_pct=drop_52w,
         drop_from_fair_price_pct=drop_fair,
         news_sentiment_summary=news_sentiment_summary,

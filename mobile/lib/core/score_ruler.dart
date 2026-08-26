@@ -1,13 +1,32 @@
 import 'package:flutter/material.dart';
 
-const double kScoreStrong = 75;
-const double kScoreGood = 60;
-const double kScoreNeutral = 40;
+import 'design_tokens.dart';
 
-const double kHighlightMinDy = 6;
+export 'design_tokens.dart'
+    show
+        FiScoreBand,
+        fiBandFor,
+        fiHealthBands,
+        fiScoreBandFor,
+        fiScoreBands,
+        fiScoreIsReliable,
+        kHighlightMinDy,
+        kMinDataCompleteness,
+        kScoreGood,
+        kScoreNeutral,
+        kScoreStrong;
 
-const double kMinDataCompleteness = 0.5;
-
+/// A leitura do score, em texto e cor.
+///
+/// Este arquivo mantinha **a própria** cópia dos limiares e, pior, a própria
+/// paleta: verde/ciano/amarelo/vermelho em hexadecimal, com o vocabulário
+/// antigo — "Excelente entrada", "Boa oportunidade", "Evitar agora". O widget
+/// `ScoreRuler` já lia de `fiScoreBands`, então a mesma pontuação aparecia com
+/// dois nomes e duas cores dependendo da tela.
+///
+/// Agora só delega. Rótulo, limiar e estado saem de `design-tokens/tokens.json`
+/// — e o job `design-tokens` do CI garante que web, mobile e backend não voltem
+/// a divergir.
 class ScoreBand {
   const ScoreBand(this.text, this.color);
 
@@ -15,28 +34,16 @@ class ScoreBand {
   final Color color;
 }
 
-ScoreBand scoreBand(double score) {
-  if (score >= kScoreStrong) {
-    return const ScoreBand('Excelente entrada', Color(0xFF4ADE80));
-  }
-  if (score >= kScoreGood) {
-    return const ScoreBand('Boa oportunidade', Color(0xFF38BDF8));
-  }
-  if (score >= kScoreNeutral) {
-    return const ScoreBand('Neutro', Color(0xFFFACC15));
-  }
-  return const ScoreBand('Evitar agora', Color(0xFFF87171));
-}
+ScoreBand _fromToken(FiScoreBand band, Brightness brightness) =>
+    ScoreBand(band.label, fiStateColor(band.state, brightness));
 
-bool scoreIsReliable(double? dataCompleteness) =>
-    (dataCompleteness ?? 1) >= kMinDataCompleteness;
+ScoreBand scoreBand(double score, Brightness brightness) =>
+    _fromToken(fiScoreBandFor(score, null), brightness);
 
-ScoreBand scoreBandFor(double score, double? dataCompleteness) {
-  if (!scoreIsReliable(dataCompleteness)) {
-    return const ScoreBand('Dado insuficiente', Color(0xFF9CA3AF));
-  }
-  return scoreBand(score);
-}
+bool scoreIsReliable(double? dataCompleteness) => fiScoreIsReliable(dataCompleteness);
+
+ScoreBand scoreBandFor(double score, double? dataCompleteness, Brightness brightness) =>
+    _fromToken(fiScoreBandFor(score, dataCompleteness), brightness);
 
 String dataCompletenessLabel(double? dataCompleteness) {
   final value = dataCompleteness ?? 1;
@@ -44,13 +51,13 @@ String dataCompletenessLabel(double? dataCompleteness) {
   return '${(value * 100).round()}% dos indicadores disponíveis';
 }
 
+/// O glossário cita as mesmas faixas da régua, montado a partir delas.
 final String scoreGlossary =
     'Pontuação 0–100 calculada pelo sistema combinando margem de segurança '
     '(preço justo), dividendos, qualidade e endividamento, ponderados pelo seu '
-    'perfil de risco. A partir de ${kScoreStrong.toInt()} = excelente entrada; '
-    '${kScoreGood.toInt()}–${kScoreStrong.toInt() - 1} = boa oportunidade; '
-    '${kScoreNeutral.toInt()}–${kScoreGood.toInt() - 1} = neutro; abaixo de '
-    '${kScoreNeutral.toInt()} = evitar agora.';
+    'perfil de risco. '
+    '${fiScoreBands.where((b) => b.min != null).map((b) => b.max == 100 ? '${b.min!.toInt()} ou mais: leitura ${b.label.toLowerCase()}' : '${b.min!.toInt()}–${b.max!.toInt()}: leitura ${b.label.toLowerCase()}').join('; ')}'
+    '. É uma leitura do sistema, não recomendação de compra.';
 
 String trendBasisLabel(String? basis) {
   switch (basis) {

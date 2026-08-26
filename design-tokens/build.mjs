@@ -24,6 +24,21 @@ const kebabToPascal = s => {
 };
 const camelToKebab = s => s.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`);
 
+/**
+ * As réguas derivadas do `scoreRuler`: mesma mecânica (valor numa escala com
+ * zonas nomeadas), leituras diferentes. `scoreRuler` fica de fora porque é o
+ * único cujos limiares espelham o backend — os demais são apresentação.
+ */
+const derivedRulers = () =>
+  Object.keys(tokens)
+    .filter(k => k.endsWith('Ruler') && k !== 'scoreRuler' && !isMeta(k))
+    .map(key => ({
+      key,
+      /** `healthRuler` → `Health`, `marginOfSafetyRuler` → `MarginOfSafety`. */
+      name: key.slice(0, -'Ruler'.length).replace(/^./, c => c.toUpperCase()),
+      spec: tokens[key],
+    }));
+
 
 function buildCss() {
   const out = [];
@@ -49,7 +64,7 @@ function buildCss() {
     stable.push(`  --fi-radius-${name}: ${name === 'pill' ? '999px' : `${v}px`};`);
   }
   for (const [name, v] of entries(tokens.motion)) {
-    stable.push(`  --fi-motion-${name}: ${typeof v === 'number' ? `${v}ms` : v};`);
+    stable.push(`  --fi-motion-${camelToKebab(name)}: ${typeof v === 'number' ? `${v}ms` : v};`);
   }
   for (const [name, v] of entries(tokens.layout)) {
     stable.push(`  --fi-layout-${camelToKebab(name)}: ${v}px;`);
@@ -70,7 +85,7 @@ function buildCss() {
   out.push('}', '');
 
   for (const [mode, v] of entries(tokens.density)) {
-    out.push(`:root[data-density="${mode}"] {`);
+    out.push(`[data-density="${mode}"] {`);
     for (const [name, value] of entries(v)) {
       out.push(`  --fi-${camelToKebab(name)}: ${value}px;`);
     }
@@ -204,13 +219,21 @@ function buildTs() {
   out.push("    fiScoreBands.find(b => b.id === 'weak')!");
   out.push('  );');
   out.push('}', '');
-  out.push('export const fiHealthBands: readonly FiScoreBand[] = [');
-  for (const b of tokens.healthRuler.bands) {
-    out.push(
-      `  { id: '${b.id}', min: ${b.min}, max: ${b.max}, label: '${b.label}', state: '${b.state}', emphasis: '${b.emphasis}' },`
-    );
+  for (const { name, spec } of derivedRulers()) {
+    out.push(`export const fi${name}Bands: readonly FiScoreBand[] = [`);
+    for (const b of spec.bands) {
+      out.push(
+        `  { id: '${b.id}', min: ${b.min}, max: ${b.max}, label: '${b.label}', state: '${b.state}', emphasis: '${b.emphasis}' },`
+      );
+    }
+    out.push('] as const;', '');
+    if (spec.domain) {
+      out.push(
+        `export const fi${name}Domain = { min: ${spec.domain.min}, max: ${spec.domain.max} } as const;`,
+        ''
+      );
+    }
   }
-  out.push('] as const;', '');
   out.push('export function fiBandFor(');
   out.push('  value: number,');
   out.push('  bands: readonly FiScoreBand[],');
@@ -285,6 +308,25 @@ function buildDart() {
     '  if (delta < 0) return dark ? FiColors.darkDirectionDown : FiColors.lightDirectionDown;'
   );
   out.push('  return dark ? FiColors.darkInk2 : FiColors.lightInk2;');
+  out.push('}', '');
+
+  const seriesCount = entries(tokens.color.dark).filter(([k]) =>
+    /^series-\d+$/.test(k)
+  ).length;
+  out.push('/// Identidade de série (1..N). Mesmo setor/classe = mesma cor sempre.');
+  out.push('///');
+  out.push('/// Fora da faixa cai em `series-other`, que é o balde de "Outros" — não');
+  out.push('/// uma cor de erro.');
+  out.push('Color fiSeriesColor(int index, Brightness brightness) {');
+  out.push('  final dark = brightness == Brightness.dark;');
+  out.push('  switch (index) {');
+  for (let i = 1; i <= seriesCount; i += 1) {
+    out.push(`    case ${i}:`);
+    out.push(`      return dark ? FiColors.darkSeries${i} : FiColors.lightSeries${i};`);
+  }
+  out.push('    default:');
+  out.push('      return dark ? FiColors.darkSeriesOther : FiColors.lightSeriesOther;');
+  out.push('  }');
   out.push('}', '');
 
   out.push('abstract final class FiSpace {');
@@ -407,13 +449,22 @@ function buildDart() {
   out.push("    orElse: () => fiScoreBands.firstWhere((b) => b.id == 'weak'),");
   out.push('  );');
   out.push('}', '');
-  out.push('const List<FiScoreBand> fiHealthBands = [');
-  for (const b of tokens.healthRuler.bands) {
-    out.push(
-      `  FiScoreBand(id: '${b.id}', min: ${b.min === null ? 'null' : `${b.min}`}, max: ${b.max === null ? 'null' : `${b.max}`}, label: '${b.label}', state: FiState.${b.state}, emphasis: '${b.emphasis}'),`
-    );
+  for (const { name, spec } of derivedRulers()) {
+    const lower = name.charAt(0).toLowerCase() + name.slice(1);
+    out.push(`const List<FiScoreBand> fi${name}Bands = [`);
+    for (const b of spec.bands) {
+      out.push(
+        `  FiScoreBand(id: '${b.id}', min: ${b.min === null ? 'null' : `${b.min}`}, max: ${b.max === null ? 'null' : `${b.max}`}, label: '${b.label}', state: FiState.${b.state}, emphasis: '${b.emphasis}'),`
+      );
+    }
+    out.push('];', '');
+    if (spec.domain) {
+      out.push(
+        `const ({double min, double max}) fi${name}Domain = (min: ${spec.domain.min}, max: ${spec.domain.max});`,
+        ''
+      );
+    }
   }
-  out.push('];', '');
   out.push('FiScoreBand fiBandFor(');
   out.push('  double value,');
   out.push('  List<FiScoreBand> bands, [');

@@ -16,7 +16,7 @@
 
     @if (suggestionsOpen() && suggestions().length > 0) {
       <ul
-        class="absolute top-full left-0 right-0 mt-1 z-30 rounded-md border border-hairline bg-panel shadow-popover max-h-60 overflow-y-auto list-none p-0 m-0"
+        class="absolute top-full left-0 right-0 mt-1 z-30 rounded-md border border-hairline bg-ground-1 shadow-popover max-h-60 overflow-y-auto list-none p-0 m-0"
       >
         @for (s of suggestions(); track s.ticker) {
           <li>
@@ -162,19 +162,17 @@
             <p class="fi-caption text-ink-3 m-0">Consenso</p>
             <p class="fi-metric text-ink m-0">R$ {{ a.fair_price.consensus | number: '1.2-2' }}</p>
           </div>
-          @if (a.fair_price.margin_of_safety != null) {
-            <div>
-              <p class="fi-caption text-ink-3 m-0">Margem de segurança</p>
-              <p
-                class="fi-metric m-0"
-                [class.text-favorable]="a.fair_price.margin_of_safety > 0"
-                [class.text-adverse]="a.fair_price.margin_of_safety < 0"
-              >
-                {{ a.fair_price.margin_of_safety * 100 | number: '1.0-0' }}%
-              </p>
-            </div>
-          }
         </div>
+
+        <div class="mt-4 max-w-[420px]">
+          <p class="fi-caption text-ink-3 m-0 mb-1">Margem de segurança</p>
+          <app-margin-of-safety
+            [marginPct]="marginPct()"
+            [showScale]="true"
+            reason="Nenhum método de valuation se aplica a este ativo."
+          />
+        </div>
+
         <p class="fi-caption text-ink-3 m-0 mt-3">{{ consensusProvenance() }}</p>
       </section>
     }
@@ -235,17 +233,28 @@
       </div>
     </section>
 
+    <section class="pt-6 border-t border-hairline">
+      <app-asset-price-chart
+        [history]="a.price_history"
+        [fairPrice]="a.fair_price.consensus"
+        [averagePrice]="averagePrice()"
+      />
+    </section>
+
     @if (fundamentals().length > 0) {
       <section class="pt-6 border-t border-hairline">
         <p class="fi-eyebrow text-ink-3 m-0 mb-3">Fundamentos</p>
-        <dl class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 m-0">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
           @for (f of fundamentals(); track f.label) {
-            <div>
-              <dt class="fi-caption text-ink-3" [title]="f.hint">{{ f.label }}</dt>
-              <dd class="fi-metric-sm text-ink m-0 mt-0.5">{{ f.value }}</dd>
-            </div>
+            <app-metric-with-context
+              [label]="f.label"
+              [value]="f.value"
+              [anchor]="f.anchor"
+              missingReason="A fonte não trouxe este indicador"
+              [title]="f.hint"
+            />
           }
-        </dl>
+        </div>
       </section>
     }
 

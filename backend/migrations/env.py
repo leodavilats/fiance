@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 
 from app.core.database import Base
 from app.core.database import engine as app_engine
-from app.models import db_models  # noqa: F401 — registra os modelos no Base
+from app.models import db_models  # noqa: F401
 
 target_metadata = Base.metadata
 

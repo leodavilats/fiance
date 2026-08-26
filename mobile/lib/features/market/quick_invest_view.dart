@@ -207,7 +207,9 @@ class _AllocationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final band = allocation.score != null ? scoreBand(allocation.score!) : null;
+    final band = allocation.score != null
+        ? scoreBand(allocation.score!, theme.brightness)
+        : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

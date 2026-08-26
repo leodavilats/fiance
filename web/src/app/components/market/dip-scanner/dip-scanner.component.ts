@@ -1,40 +1,130 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { DipAnalysisService, DipScanItem, RecommendService } from '../../../core';
+import {
+  DipAnalysisService,
+  DipScanItem,
+  DipVerdict,
+  FiState,
+  RecommendService,
+  fiDipDiagnosis,
+  stateTextClass,
+} from '../../../core';
+import { EmptyStateComponent } from '../../empty-state/empty-state.component';
+import { ScoreRulerComponent } from '../../score-ruler/score-ruler.component';
+import { SkeletonComponent } from '../../skeleton/skeleton.component';
+
+/** O vocabulário do backend traduzido para as classes de queda do design system. */
+const DIAGNOSIS: Record<DipVerdict, keyof typeof fiDipDiagnosis> = {
+  OPORTUNIDADE: 'healthy',
+  NEUTRO: 'investigate',
+  ARMADILHA: 'structural',
+};
+
+const RELAXED_MIN_SCORE = 25;
 
 @Component({
   selector: 'app-dip-scanner',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, RouterLink],
+  imports: [
+    CommonModule,
+    EmptyStateComponent,
+    LucideAngularModule,
+    ReactiveFormsModule,
+    RouterLink,
+    ScoreRulerComponent,
+    SkeletonComponent,
+  ],
   templateUrl: './dip-scanner.component.html',
-  styleUrls: ['./dip-scanner.component.scss'],
 })
-export class DipScannerComponent {
-  private api = inject(RecommendService);
-  private fb = inject(FormBuilder);
-
+export class DipScannerComponent implements OnInit {
+  private readonly api = inject(RecommendService);
+  private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly dip = inject(DipAnalysisService);
 
   readonly dipResults = signal<{ items: DipScanItem[] } | null>(null);
+  readonly scanning = signal(false);
 
-  scanForm = this.fb.nonNullable.group({
+  readonly scanForm = this.fb.nonNullable.group({
     min_score: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
     top: [12, [Validators.required, Validators.min(1), Validators.max(30)]],
     category: [''],
   });
 
-  runScan() {
-    if (this.scanForm.invalid) return;
-    const { min_score, top, category } = this.scanForm.getRawValue();
-    this.api
-      .dipScanner(min_score, top, undefined, category || undefined)
-      .subscribe(data => this.dipResults.set(data));
+  readonly minScore = computed(() => this.scanForm.getRawValue().min_score);
+
+  /**
+   * O filtro nasce da URL e volta para ela a cada busca: link salvo, botão
+   * voltar e recarregar preservam a mesma varredura (§45).
+   */
+  ngOnInit(): void {
+    const q = this.route.snapshot.queryParamMap;
+    this.scanForm.patchValue({
+      min_score: Number(q.get('min_score') ?? 40),
+      top: Number(q.get('top') ?? 12),
+      category: q.get('category') ?? '',
+    });
+    if (q.keys.length > 0) this.runScan();
   }
 
-  showDipAnalysis(ticker: string) {
+  runScan(): void {
+    if (this.scanForm.invalid) return;
+    const { min_score, top, category } = this.scanForm.getRawValue();
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { min_score, top, category: category || null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+
+    this.scanning.set(true);
+    this.api.dipScanner(min_score, top, undefined, category || undefined).subscribe({
+      next: data => {
+        this.dipResults.set(data);
+        this.scanning.set(false);
+      },
+      error: () => this.scanning.set(false),
+    });
+  }
+
+  /** A ação do vazio: mesma busca, exigência menor — declarada, não silenciosa. */
+  relaxFilter(): void {
+    this.scanForm.patchValue({ min_score: RELAXED_MIN_SCORE });
+    this.runScan();
+  }
+
+  showDipAnalysis(ticker: string): void {
     this.dip.show(ticker);
+  }
+
+  dipLabel(verdict: DipVerdict): string {
+    return fiDipDiagnosis[DIAGNOSIS[verdict]].label;
+  }
+
+  dipClass(verdict: DipVerdict): string {
+    const map: Record<FiState, string> = {
+      favorable: 'v-buy',
+      attention: 'v-hold',
+      adverse: 'v-sell',
+      neutral: 'v-unknown',
+      indeterminate: 'v-unknown',
+    };
+    return map[fiDipDiagnosis[DIAGNOSIS[verdict]].state];
+  }
+
+  dipIcon(verdict: DipVerdict): string {
+    const state = fiDipDiagnosis[DIAGNOSIS[verdict]].state;
+    if (state === 'favorable') return 'circle-check';
+    if (state === 'attention') return 'triangle-alert';
+    return 'circle-alert';
+  }
+
+  stateClass(verdict: DipVerdict): string {
+    return stateTextClass(fiDipDiagnosis[DIAGNOSIS[verdict]].state);
   }
 }

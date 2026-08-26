@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, inject, OnInit, signal } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -18,6 +18,7 @@ import {
   SectorGoal,
   UiHelperService,
 } from '../../core';
+import { GoalProgressComponent } from '../goal-progress/goal-progress.component';
 
 interface GoalForm {
   category: FormControl<AllocationCategory>;
@@ -36,7 +37,7 @@ const DEFAULT_SECTORS = ['Financeiro', 'Energia', 'Varejo', 'Tecnologia', 'Saúd
 @Component({
   selector: 'app-metas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, GoalProgressComponent, LucideAngularModule, ReactiveFormsModule],
   templateUrl: './metas.component.html',
 })
 export class MetasComponent implements OnInit {
@@ -48,6 +49,19 @@ export class MetasComponent implements OnInit {
   readonly categories = ALLOCATION_CATEGORIES;
   readonly saving = signal(false);
   readonly message = signal('');
+
+  /**
+   * A renda que a carteira já produz, estimada pelo backend em `GET /dashboard`.
+   * `null` enquanto não carregou — o progresso não desenha nada nesse meio-tempo
+   * em vez de mostrar zero.
+   */
+  readonly currentIncome = signal<number | null>(null);
+
+  readonly currentMonthlyIncome = computed(() => this.currentIncome() ?? 0);
+
+  readonly passiveIncomeTarget = computed(
+    () => this.form.controls.passive_income_goal.value ?? null
+  );
 
   readonly form = this.fb.group({
     passive_income_goal: this.fb.control<number | null>(null, { validators: Validators.min(0) }),
@@ -92,6 +106,11 @@ export class MetasComponent implements OnInit {
   }
 
   private load(): void {
+    this.svc.dashboard().subscribe({
+      next: d => this.currentIncome.set(d.summary.monthly_dividends_estimate ?? 0),
+      error: () => this.currentIncome.set(null),
+    });
+
     forkJoin({
       prefs: this.svc.getPreferences(),
       goals: this.svc.getGoals(),
@@ -153,6 +172,10 @@ export class MetasComponent implements OnInit {
 
   catBgColor(cat: AllocationCategory): string {
     return this.ui.categoryBgClass(cat);
+  }
+
+  catColor(cat: AllocationCategory): string {
+    return this.ui.categoryColor(cat);
   }
 
   saveMetas(): void {

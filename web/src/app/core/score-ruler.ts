@@ -1,4 +1,5 @@
 import {
+  FiDensity,
   FiScoreBand,
   FiState,
   MIN_DATA_COMPLETENESS as GENERATED_MIN_DATA_COMPLETENESS,
@@ -10,6 +11,12 @@ import {
   fiDecision,
   fiDipDiagnosis,
   fiHealthBands,
+  fiAllocationGapBands,
+  fiAllocationGapDomain,
+  fiGoalProgressBands,
+  fiGoalProgressDomain,
+  fiMarginOfSafetyBands,
+  fiMarginOfSafetyDomain,
   fiScoreBandFor,
   fiScoreBands,
   fiScoreIsReliable,
@@ -26,11 +33,18 @@ export {
   fiDecision,
   fiDipDiagnosis,
   fiHealthBands,
+  fiAllocationGapBands,
+  fiAllocationGapDomain,
+  fiGoalProgressBands,
+  fiGoalProgressDomain,
+  fiMarginOfSafetyBands,
+  fiMarginOfSafetyDomain,
   fiScoreBandFor,
   fiScoreBands,
   fiScoreIsReliable,
 };
-export type { FiScoreBand, FiState };
+export { fiDensity } from './design-tokens';
+export type { FiDensity, FiScoreBand, FiState };
 
 export function stateTextClass(state: FiState): string {
   switch (state) {

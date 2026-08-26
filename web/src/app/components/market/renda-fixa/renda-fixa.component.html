@@ -1,47 +1,47 @@
 @if (referenceRates()) {
   <div
-    class="flex items-center gap-4 p-4 rounded-lg bg-panel border border-border mb-5 flex-wrap text-sm"
+    class="flex items-center gap-4 p-4 rounded-lg bg-ground-1 border border-hairline mb-5 flex-wrap text-sm"
   >
-    <lucide-icon name="info" size="16" class="text-muted"></lucide-icon>
-    <span class="text-muted">Taxas de referência:</span>
-    <span class="font-medium text-tx"
-      >CDI: <strong class="text-accent">{{ referenceRates()!.cdi_anual }}% a.a.</strong></span
+    <lucide-icon name="info" size="16" class="text-ink-2"></lucide-icon>
+    <span class="text-ink-2">Taxas de referência:</span>
+    <span class="font-medium text-ink"
+      >CDI: <strong class="text-brand">{{ referenceRates()!.cdi_anual }}% a.a.</strong></span
     >
-    <span class="font-medium text-tx"
-      >Selic: <strong class="text-accent">{{ referenceRates()!.selic_anual }}% a.a.</strong></span
+    <span class="font-medium text-ink"
+      >Selic: <strong class="text-brand">{{ referenceRates()!.selic_anual }}% a.a.</strong></span
     >
-    <span class="font-medium text-tx"
-      >IPCA: <strong class="text-accent">{{ referenceRates()!.ipca_anual }}% a.a.</strong></span
+    <span class="font-medium text-ink"
+      >IPCA: <strong class="text-brand">{{ referenceRates()!.ipca_anual }}% a.a.</strong></span
     >
   </div>
 }
 
-<div class="p-5 rounded-lg bg-panel border border-border mb-5">
+<div class="p-5 rounded-lg bg-ground-1 border border-hairline mb-5">
   <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-tx">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-ink">
       <lucide-icon name="landmark" size="18"></lucide-icon> Simulador de Renda Fixa
     </h2>
     <button
       type="button"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-panel-2 border border-border text-tx hover:bg-panel transition-all"
+      class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-ground-2 border border-hairline text-ink hover:bg-ground-1 transition-all"
       (click)="addRFAtivo()"
     >
       <lucide-icon name="plus" size="15"></lucide-icon> Adicionar opção
     </button>
   </div>
-  <p class="text-sm text-muted mb-4">
+  <p class="text-sm text-ink-2 mb-4">
     Insira uma ou mais opções para comparar. Identifica a melhor taxa líquida.
   </p>
 
   <div class="flex flex-col gap-4">
     @for (ctrl of rfForms.controls; track $index; let i = $index) {
-      <div class="p-4 rounded-lg bg-panel-2 border border-border" [formGroup]="ctrl">
+      <div class="p-4 rounded-lg bg-ground-2 border border-hairline" [formGroup]="ctrl">
         <div class="flex items-center justify-between mb-3">
-          <div class="font-medium text-sm text-tx">Opção {{ i + 1 }}</div>
+          <div class="font-medium text-sm text-ink">Opção {{ i + 1 }}</div>
           @if (rfForms.length > 1) {
             <button
               type="button"
-              class="w-7 h-7 grid place-items-center rounded-lg text-muted hover:text-red-400 hover:bg-red-400/10 transition-all cursor-pointer"
+              class="w-7 h-7 grid place-items-center rounded-lg text-ink-2 hover:text-adverse hover:bg-adverse/10 transition-all cursor-pointer"
               (click)="removeRFAtivo(i)"
             >
               <lucide-icon name="x" size="14"></lucide-icon>
@@ -50,18 +50,18 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-5">
           <div>
-            <label class="block text-xs text-muted mb-1.5">Nome / Banco (opcional)</label>
+            <label class="block text-xs text-ink-2 mb-1.5">Nome / Banco (opcional)</label>
             <input
               type="text"
-              class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               formControlName="nome"
               placeholder="ex.: Nubank"
             />
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1.5">Tipo</label>
+            <label class="block text-xs text-ink-2 mb-1.5">Tipo</label>
             <select
-              class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
               formControlName="tipo"
               (change)="onTipoChange(i)"
             >
@@ -77,9 +77,9 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1.5">Tipo de taxa</label>
+            <label class="block text-xs text-ink-2 mb-1.5">Tipo de taxa</label>
             <select
-              class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
               formControlName="tipo_taxa"
               (change)="onTaxaTipoChange(i)"
             >
@@ -89,17 +89,17 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1.5">Valor investido (R$)</label>
+            <label class="block text-xs text-ink-2 mb-1.5">Valor investido (R$)</label>
             <input
               type="number"
-              class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               formControlName="valor_investido"
               min="100"
               step="100"
             />
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1.5">
+            <label class="block text-xs text-ink-2 mb-1.5">
               @if (ctrl.controls['tipo_taxa'].value === 'pos_fixado') {
                 % do CDI
               } @else {
@@ -108,7 +108,7 @@
             </label>
             <input
               type="number"
-              class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               [formControlName]="
                 ctrl.controls['tipo_taxa'].value === 'pos_fixado' ? 'percentual_cdi' : 'taxa'
               "
@@ -120,19 +120,19 @@
             />
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1.5">Prazo (meses)</label>
+            <label class="block text-xs text-ink-2 mb-1.5">Prazo (meses)</label>
             <input
               type="number"
-              class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               formControlName="prazo_meses"
               min="1"
               step="1"
             />
           </div>
           <div>
-            <label class="block text-xs text-muted mb-1.5">Liquidez</label>
+            <label class="block text-xs text-ink-2 mb-1.5">Liquidez</label>
             <select
-              class="w-full px-3 py-2 rounded-lg bg-bg border border-border text-tx text-sm focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
               formControlName="liquidez"
             >
               <option value="no_vencimento">No vencimento</option>
@@ -147,7 +147,7 @@
   <div class="flex items-center gap-3 mt-4">
     <button
       type="button"
-      class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-accent text-white border-0 hover:opacity-90 disabled:opacity-50 transition-opacity"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 disabled:opacity-50 transition-opacity"
       (click)="compareRF()"
       [disabled]="loading.loading()"
     >
@@ -167,11 +167,11 @@
 </div>
 
 @if (rfResult(); as result) {
-  <div class="p-5 rounded-lg bg-panel border border-border">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-tx">
+  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-ink">
       <lucide-icon name="chart-bar" size="18"></lucide-icon> Resultado da Análise
     </h2>
-    <div class="flex items-center gap-3 mb-4 text-sm text-muted">
+    <div class="flex items-center gap-3 mb-4 text-sm text-ink-2">
       <lucide-icon name="info" size="14"></lucide-icon
       ><span
         >CDI usado: <strong>{{ result.cdi_referencia }}%</strong> — Selic:
@@ -183,97 +183,92 @@
       >
     </div>
     @if (result.melhor_opcao_motivo) {
-      <p class="text-sm text-tx bg-accent/10 border border-accent/30 rounded-lg px-3 py-2 mb-4 m-0">
-        <lucide-icon name="trophy" size="14" class="text-accent inline-block mr-1"></lucide-icon>
+      <p class="text-sm text-ink bg-brand/10 border border-brand/30 rounded-lg px-3 py-2 mb-4 m-0">
+        <lucide-icon name="trophy" size="14" class="text-brand inline-block mr-1"></lucide-icon>
         {{ result.melhor_opcao_motivo }}
       </p>
     }
 
     <div class="flex flex-col gap-4">
-      @for (r of result.resultados; track $index) {
+      @for (r of result.resultados; track $index; let idx = $index) {
         <div
           class="p-4 rounded-lg border-2 transition-all"
-          [class.border-accent]="r.melhor_opcao"
-          [class.bg-accent-5]="r.melhor_opcao"
-          [class.border-border]="!r.melhor_opcao"
-          [class.bg-panel-2]="!r.melhor_opcao"
+          [class.border-brand]="r.melhor_opcao"
+          [class.row-highlight]="r.melhor_opcao"
+          [class.border-hairline]="!r.melhor_opcao"
+          [class.bg-ground-2]="!r.melhor_opcao"
         >
           <div class="flex items-start justify-between gap-4 flex-wrap">
             <div class="flex items-center gap-2 flex-wrap mb-2">
-              <span class="font-bold text-base text-tx">{{ r.nome || rfTipoLabel(r.tipo) }}</span>
+              <span class="font-bold text-base text-ink">{{ r.nome || rfTipoLabel(r.tipo) }}</span>
               <span class="tag">{{ rfTipoLabel(r.tipo) }}</span>
               @if (r.isento_ir) {
-                <span class="tag bg-green-500/20 text-green-400 border-green-500/30"
+                <span class="tag bg-favorable/20 text-favorable border-favorable/30"
                   >Isento IR</span
                 >
               }
               @if (r.liquidez === 'diaria') {
-                <span class="tag bg-blue-500/20 text-blue-400 border-blue-500/30"
-                  >Liquidez D+1</span
-                >
+                <span class="tag bg-brand/20 text-brand border-brand/30">Liquidez D+1</span>
               }
               @if (r.melhor_opcao) {
-                <span class="tag bg-accent/20 text-accent border-accent/30"
+                <span class="tag bg-brand/20 text-brand border-brand/30"
                   ><lucide-icon name="trophy" size="11"></lucide-icon> Melhor opção</span
                 >
               }
             </div>
-            <div class="text-right">
-              <div class="text-xs text-muted">Taxa líquida a.a.</div>
-              <div
-                class="text-2xl font-bold"
-                [class.text-accent]="r.melhor_opcao"
-                [class.text-tx]="!r.melhor_opcao"
-              >
-                {{ r.taxa_liquida_aa | number: '1.2-2' }}%
-              </div>
-              @if (r.taxa_equivalente_cdi_pct) {
-                <div class="text-xs text-muted">
-                  {{ r.taxa_equivalente_cdi_pct | number: '1.1-1' }}% do CDI, líquido
-                </div>
-              }
+            <div class="text-right min-w-[200px]">
+              <app-fixed-income-rate
+                label="Rende"
+                [netRatePct]="r.taxa_liquida_aa"
+                [pctOfCdi]="r.taxa_equivalente_cdi_pct"
+                [rateKind]="rateKindAt(idx)"
+                [contractedRate]="contractedRateAt(idx)"
+                [prazoMeses]="r.prazo_meses"
+                [liquidez]="r.liquidez"
+                [isentoIr]="r.isento_ir"
+                [irAliquotaPct]="r.ir.aliquota_pct"
+              />
               @if (r.isento_ir && r.pct_cdi_bruto_equivalente) {
-                <div class="text-xs text-muted">
-                  equivale a um CDB de
-                  {{ r.pct_cdi_bruto_equivalente | number: '1.1-1' }}% do CDI
-                </div>
+                <p class="fi-caption text-ink-3 m-0 mt-1">
+                  Equivale a um CDB de
+                  <span class="fi-num">{{ r.pct_cdi_bruto_equivalente | number: '1.1-1' }}</span
+                  >% do CDI.
+                </p>
               }
-              <div class="text-xs text-muted">
-                taxa contratada: {{ r.taxa_anual_efetiva_pct | number: '1.2-2' }}% a.a.
-              </div>
             </div>
           </div>
+
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-            <div class="p-3 rounded-lg bg-bg border border-border text-center">
-              <div class="text-xs text-muted mb-0.5">Investido</div>
-              <div class="font-semibold text-sm text-tx">
+            <div class="p-3 rounded-lg bg-ground border border-hairline text-center">
+              <div class="text-xs text-ink-2 mb-0.5">Investido</div>
+              <div class="font-semibold text-sm text-ink">
                 R$ {{ r.valor_investido | number: '1.2-2' }}
               </div>
             </div>
-            <div class="p-3 rounded-lg bg-bg border border-border text-center">
-              <div class="text-xs text-muted mb-0.5">Rendimento bruto</div>
-              <div class="font-semibold text-sm text-tx good">
+            <div class="p-3 rounded-lg bg-ground border border-hairline text-center">
+              <div class="text-xs text-ink-2 mb-0.5">Rendimento bruto</div>
+              <div class="font-semibold text-sm text-ink good">
                 +R$ {{ r.rendimento_bruto | number: '1.2-2' }}
               </div>
             </div>
             @if (!r.isento_ir) {
-              <div class="p-3 rounded-lg bg-bg border border-border text-center">
-                <div class="text-xs text-muted mb-0.5">IR ({{ r.ir.aliquota_pct }}%)</div>
+              <div class="p-3 rounded-lg bg-ground border border-hairline text-center">
+                <div class="text-xs text-ink-2 mb-0.5">IR ({{ r.ir.aliquota_pct }}%)</div>
                 <div class="font-semibold text-sm warn">
                   -R$ {{ r.ir.valor_ir | number: '1.2-2' }}
                 </div>
               </div>
             }
             <div
-              class="p-3 rounded-lg bg-bg border border-border text-center"
+              class="p-3 rounded-lg bg-ground border border-hairline text-center"
               [class.col-span-1]="!r.isento_ir"
               [class.col-span-2]="r.isento_ir"
             >
-              <div class="text-xs text-muted mb-0.5">Valor líquido em {{ r.prazo_meses }}m</div>
+              <div class="text-xs text-ink-2 mb-0.5">Valor líquido em {{ r.prazo_meses }}m</div>
               <div
                 class="font-bold text-base"
-                [class.text-accent]="r.melhor_opcao"
-                [class.text-tx]="!r.melhor_opcao"
+                [class.text-brand]="r.melhor_opcao"
+                [class.text-ink]="!r.melhor_opcao"
               >
                 R$ {{ r.valor_liquido | number: '1.2-2' }}
               </div>

@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 from .enums import AssetCategory, RiskProfile
 
-OpportunitiesFrequency = str  # "off" | "daily" | "weekly" | "monthly"
+OpportunitiesFrequency = str
 
 
 class Preferences(BaseModel):

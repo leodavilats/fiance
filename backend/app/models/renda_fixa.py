@@ -132,6 +132,14 @@ class FixedIncomePosition(FixedIncomeBase):
     meses_decorridos: float
     taxa_anual_efetiva_pct: float
     yield_equivalente_pct: float
+    pct_cdi_equivalente: float | None = Field(
+        None,
+        description=(
+            "Quanto o papel rende em relação ao CDI, em %. Calculado pela mesma regra do "
+            "comparador (`analysis/renda_fixa_analysis.py`) e devolvido pronto porque taxa "
+            "nua não é resposta: 13,8% a.a. só significa algo ao lado do CDI do dia."
+        ),
+    )
 
     valor_no_vencimento: float | None = None
     rendimento_no_vencimento: float | None = None

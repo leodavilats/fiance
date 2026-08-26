@@ -20,7 +20,7 @@ const PAD_BOTTOM = 30;
   imports: [CommonModule],
   template: `
     @if (points().length < 2) {
-      <div class="flex flex-col items-center justify-center gap-2 py-8 text-center text-muted">
+      <div class="flex flex-col items-center justify-center gap-2 py-8 text-center text-ink-2">
         <p class="text-sm m-0">Ainda não há histórico suficiente para comparar com benchmarks.</p>
       </div>
     } @else {
@@ -41,7 +41,7 @@ const PAD_BOTTOM = 30;
               [attr.y1]="gy.y"
               [attr.x2]="vbWidth - padRight"
               [attr.y2]="gy.y"
-              stroke="var(--border)"
+              stroke="var(--fi-hairline)"
               stroke-opacity="0.6"
               stroke-width="1"
             />
@@ -50,7 +50,7 @@ const PAD_BOTTOM = 30;
               [attr.y]="gy.y + 3"
               text-anchor="end"
               class="text-[9px]"
-              fill="var(--muted)"
+              fill="var(--fi-ink-2)"
             >
               {{ gy.value | number: '1.0-1' }}%
             </text>
@@ -58,7 +58,7 @@ const PAD_BOTTOM = 30;
 
           <path
             [attr.d]="pathFor(cdiSeries())"
-            stroke="var(--muted)"
+            stroke="var(--fi-ink-2)"
             stroke-width="1.5"
             fill="none"
             stroke-dasharray="4,3"
@@ -66,14 +66,14 @@ const PAD_BOTTOM = 30;
           @if (ibovAvailable()) {
             <path
               [attr.d]="pathFor(ibovSeries())"
-              stroke="var(--warn)"
+              stroke="var(--fi-state-attention)"
               stroke-width="1.5"
               fill="none"
             />
           }
           <path
             [attr.d]="pathFor(portfolioSeries())"
-            stroke="var(--accent)"
+            stroke="var(--fi-brand)"
             stroke-width="2.5"
             fill="none"
           />
@@ -84,7 +84,7 @@ const PAD_BOTTOM = 30;
               [attr.y1]="padTop"
               [attr.x2]="portfolioSeries()[hoverIndex()!].x"
               [attr.y2]="vbHeight - padBottom"
-              stroke="var(--muted)"
+              stroke="var(--fi-ink-2)"
               stroke-opacity="0.45"
               stroke-width="1"
               stroke-dasharray="3,3"
@@ -93,8 +93,8 @@ const PAD_BOTTOM = 30;
               [attr.cx]="portfolioSeries()[hoverIndex()!].x"
               [attr.cy]="portfolioSeries()[hoverIndex()!].y"
               r="4"
-              fill="var(--accent)"
-              stroke="var(--panel)"
+              fill="var(--fi-brand)"
+              stroke="var(--fi-ground-1)"
               stroke-width="2"
             />
           }
@@ -102,31 +102,31 @@ const PAD_BOTTOM = 30;
 
         @if (hoverIndex() !== null) {
           <div
-            class="pointer-events-none absolute z-10 rounded-lg border border-border bg-panel px-3 py-2 text-xs shadow-lg"
+            class="pointer-events-none absolute z-10 rounded-lg border border-hairline bg-ground-1 px-3 py-2 text-xs shadow-popover"
             [style.left.%]="tooltipLeftPct()"
             [style.top]="'8%'"
             [style.transform]="tooltipTransform()"
           >
-            <div class="text-muted mb-1">{{ points()[hoverIndex()!].date }}</div>
-            <div class="flex items-center gap-1.5 text-tx font-semibold">
+            <div class="text-ink-2 mb-1">{{ points()[hoverIndex()!].date }}</div>
+            <div class="flex items-center gap-1.5 text-ink font-semibold">
               <span
                 class="inline-block w-2.5 h-0.5 rounded"
-                style="background: var(--accent)"
+                style="background: var(--fi-brand)"
               ></span>
               Carteira: {{ points()[hoverIndex()!].portfolio_pct | number: '1.1-1' }}%
             </div>
-            <div class="flex items-center gap-1.5 text-tx">
+            <div class="flex items-center gap-1.5 text-ink">
               <span
                 class="inline-block w-2.5 h-0.5 rounded"
-                style="background: var(--muted)"
+                style="background: var(--fi-ink-2)"
               ></span>
               CDI: {{ points()[hoverIndex()!].cdi_pct | number: '1.1-1' }}%
             </div>
             @if (points()[hoverIndex()!].ibov_pct != null) {
-              <div class="flex items-center gap-1.5 text-tx">
+              <div class="flex items-center gap-1.5 text-ink">
                 <span
                   class="inline-block w-2.5 h-0.5 rounded"
-                  style="background: var(--warn)"
+                  style="background: var(--fi-state-attention)"
                 ></span>
                 Ibovespa: {{ points()[hoverIndex()!].ibov_pct | number: '1.1-1' }}%
               </div>
@@ -135,18 +135,21 @@ const PAD_BOTTOM = 30;
         }
       </div>
 
-      <div class="flex items-center gap-4 mt-3 text-xs text-muted flex-wrap">
+      <div class="flex items-center gap-4 mt-3 text-xs text-ink-2 flex-wrap">
         <span class="flex items-center gap-1.5"
-          ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--accent)"></span>
+          ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--fi-brand)"></span>
           Carteira</span
         >
         <span class="flex items-center gap-1.5"
-          ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--muted)"></span>
+          ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--fi-ink-2)"></span>
           CDI</span
         >
         @if (ibovAvailable()) {
           <span class="flex items-center gap-1.5"
-            ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--warn)"></span>
+            ><span
+              class="inline-block w-3 h-0.5 rounded"
+              style="background: var(--fi-state-attention)"
+            ></span>
             Ibovespa</span
           >
         } @else {

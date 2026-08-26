@@ -62,7 +62,7 @@ class _AssetDetailContent extends ConsumerWidget {
                     if (a.name != null)
                       Text(
                         a.name!,
-                        style: TextStyle(color: Colors.grey.shade600),
+                        style: TextStyle(color: fiInk2(context)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -147,9 +147,9 @@ class _VerdictPill extends StatelessWidget {
   final String label;
 
   Color _color(Brightness brightness) {
-    if (verdict.contains('BUY')) return gainColor(brightness);
-    if (verdict.contains('SELL')) return lossColor(brightness);
-    return Colors.grey.shade700;
+    if (verdict.contains('BUY')) return fiStateColor(FiState.favorable, brightness);
+    if (verdict.contains('SELL')) return fiStateColor(FiState.adverse, brightness);
+    return fiStateColor(FiState.indeterminate, brightness);
   }
 
   @override

@@ -1,28 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
-import { FiScoreBand, FiState, fiBandFor, fiScoreBands, stateTextClass } from '../../core';
+import { FiScoreBand, fiBandFor, fiScoreBands, stateTextClass } from '../../core';
+import { markerPct, rulerTicks, rulerZones } from '../../core/ruler';
+import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 
 export type ScoreRulerSize = 'inline' | 'list' | 'card' | 'page';
 
-interface Zone {
-  readonly id: string;
-  readonly label: string;
-  readonly widthPct: number;
-  readonly background: string;
-}
-
-const STATE_VAR: Record<FiState, string> = {
-  favorable: '--fi-state-favorable',
-  attention: '--fi-state-attention',
-  adverse: '--fi-state-adverse',
-  indeterminate: '--fi-state-indeterminate',
-  neutral: '--fi-ink-2',
-};
+/** Escala do score e da saúde: 0 a 100. */
+const SCORE_DOMAIN = { min: 0, max: 100 } as const;
 
 @Component({
   selector: 'app-score-ruler',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RulerTrackComponent],
   template: `
     <div
       class="flex items-center gap-3"
@@ -31,26 +21,12 @@ const STATE_VAR: Record<FiState, string> = {
       [title]="ariaLabel()"
     >
       <div class="flex-1 min-w-[72px]">
-        <div
-          class="relative w-full rounded-sm overflow-hidden flex gap-px"
-          [style.height.px]="trackHeight()"
-        >
-          @for (z of zones(); track z.id) {
-            <div
-              class="h-full"
-              [style.width.%]="z.widthPct"
-              [style.background]="z.background"
-            ></div>
-          }
-          @if (reliable()) {
-            <!-- A marca do valor: um fio fino e preciso, não uma bolha. -->
-            <div
-              class="absolute top-0 bottom-0 w-[2px]"
-              [style.background]="'var(--fi-ink-1)'"
-              [style.left]="'calc(' + clamped() + '% - 1px)'"
-            ></div>
-          }
-        </div>
+        <app-ruler-track
+          [zones]="zones()"
+          [markerPct]="reliable() ? marker() : null"
+          [height]="trackHeight()"
+          [insufficient]="!reliable()"
+        />
 
         @if (showScale()) {
           <div class="flex justify-between mt-1 fi-caption text-ink-3">
@@ -81,42 +57,16 @@ export class ScoreRulerComponent {
   readonly subject = input('Score');
   readonly bands = input<readonly FiScoreBand[]>(fiScoreBands);
 
-  private readonly numeric = computed(() =>
-    this.bands().filter(b => b.min !== null && b.max !== null)
-  );
-
-  readonly thresholds = computed(() =>
-    this.numeric()
-      .map(b => b.min as number)
-      .filter(min => min > 0)
-      .sort((a, b) => a - b)
-  );
-
+  readonly thresholds = computed(() => rulerTicks(this.bands(), SCORE_DOMAIN));
   readonly band = computed(() => fiBandFor(this.clamped(), this.bands(), this.dataCompleteness()));
   readonly reliable = computed(() => this.band().state !== 'indeterminate');
   readonly clamped = computed(() => Math.max(0, Math.min(100, this.score())));
   readonly trackHeight = computed(() => (this.size() === 'inline' ? 6 : 8));
+  readonly marker = computed(() => markerPct(this.clamped(), SCORE_DOMAIN));
 
-  readonly zones = computed<Zone[]>(() => {
-    const activeId = this.reliable() ? this.activeBandId() : null;
-    return [...this.numeric()]
-      .sort((a, b) => (a.min as number) - (b.min as number))
-      .map(b => ({
-        id: b.id,
-        label: b.label,
-        widthPct: (((b.max as number) + 1 - (b.min as number)) / 101) * 100,
-        background:
-          b.id === activeId
-            ? `var(${STATE_VAR[b.state]})`
-            : 'color-mix(in srgb, var(--fi-ink-3) 20%, transparent)',
-      }));
-  });
-
-  private activeBandId(): string | null {
-    const s = this.clamped();
-    const hit = this.numeric().find(b => s >= (b.min as number) && s <= (b.max as number));
-    return hit?.id ?? null;
-  }
+  readonly zones = computed(() =>
+    rulerZones(this.bands(), SCORE_DOMAIN, this.clamped(), this.reliable())
+  );
 
   bandClass(): string {
     return stateTextClass(this.band().state);

@@ -4,10 +4,8 @@ import {
   MIN_DATA_COMPLETENESS,
   SCORE_GLOSSARY,
   ScoreBand,
-  scoreBand,
   dataCompletenessLabel,
   scoreBandFor,
-  stateTextClass,
 } from '../score-ruler';
 
 @Injectable({ providedIn: 'root' })
@@ -27,43 +25,21 @@ export class UiHelperService {
     return map[t] || t;
   }
 
-  assetTypeIcon(t: string): string {
-    const map: Record<string, string> = {
-      renda_fixa: 'landmark',
-      br_stock: 'trending-up',
-      bdr: 'globe',
-      fii: 'building-2',
-      etf: 'layers',
-    };
-    return map[t] || 'circle';
-  }
-
-  assetTypeSeriesColor(t: string): string {
-    const map: Record<string, string> = {
-      renda_fixa: 'var(--series-1)',
-      br_stock: 'var(--series-2)',
-      fii: 'var(--series-3)',
-      bdr: 'var(--series-5)',
-      etf: 'var(--series-8)',
-    };
-    return map[t] || 'var(--series-muted)';
-  }
-
   sectorSeriesColor(sectorLabel: string): string {
     const map: Record<string, string> = {
-      Financeiro: 'var(--series-1)',
-      Tecnologia: 'var(--series-2)',
-      Energia: 'var(--series-3)',
-      'Consumo Cíclico': 'var(--series-4)',
-      Saúde: 'var(--series-5)',
-      Industrial: 'var(--series-6)',
-      Imobiliário: 'var(--series-7)',
-      'Consumo Básico': 'var(--series-8)',
-      'Materiais Básicos': 'var(--series-9)',
-      'Utilidades Públicas': 'var(--series-10)',
-      Telecomunicações: 'var(--series-11)',
+      Financeiro: 'var(--fi-series-1)',
+      Tecnologia: 'var(--fi-series-2)',
+      Energia: 'var(--fi-series-3)',
+      'Consumo Cíclico': 'var(--fi-series-4)',
+      Saúde: 'var(--fi-series-5)',
+      Industrial: 'var(--fi-series-6)',
+      Imobiliário: 'var(--fi-series-7)',
+      'Consumo Básico': 'var(--fi-series-8)',
+      'Materiais Básicos': 'var(--fi-series-9)',
+      'Utilidades Públicas': 'var(--fi-series-10)',
+      Telecomunicações: 'var(--fi-series-11)',
     };
-    return map[sectorLabel] || 'var(--series-muted)';
+    return map[sectorLabel] || 'var(--fi-series-other)';
   }
 
   categoryLabel(c: string): string {
@@ -92,60 +68,79 @@ export class UiHelperService {
     return map[c] || 'circle';
   }
 
+  /**
+   * Identidade de série da categoria de alocação — a mesma que
+   * `assetTypeSeriesColor` dá para o tipo de ativo correspondente. Categoria e
+   * tipo são a mesma coisa vista de dois lados; antes cada um tinha a própria
+   * paleta, então "FIIs" era laranja na meta e ocre no gráfico.
+   *
+   * Estas classes são literais de propósito: o scanner do Tailwind não resolve
+   * interpolação.
+   */
+  private static readonly CATEGORY_SERIES: Record<string, string> = {
+    renda_fixa: '1',
+    acoes_br: '2',
+    fiis: '3',
+    bdrs: '5',
+    etfs: '8',
+  };
+
   categoryColor(c: string): string {
     const map: Record<string, string> = {
-      renda_fixa: 'text-blue-400',
-      acoes_br: 'text-green-400',
-      bdrs: 'text-purple-400',
-      fiis: 'text-orange-400',
-      etfs: 'text-yellow-400',
+      renda_fixa: 'text-series-1',
+      acoes_br: 'text-series-2',
+      fiis: 'text-series-3',
+      bdrs: 'text-series-5',
+      etfs: 'text-series-8',
     };
-    return map[c] || 'text-muted';
+    return map[c] || 'text-series-other';
   }
 
   categoryBarClass(c: string): string {
     const map: Record<string, string> = {
-      renda_fixa: 'bg-blue-400',
-      acoes_br: 'bg-green-400',
-      bdrs: 'bg-purple-400',
-      fiis: 'bg-orange-400',
-      etfs: 'bg-yellow-400',
+      renda_fixa: 'bg-series-1',
+      acoes_br: 'bg-series-2',
+      fiis: 'bg-series-3',
+      bdrs: 'bg-series-5',
+      etfs: 'bg-series-8',
     };
-    return map[c] || 'bg-muted';
+    return map[c] || 'bg-series-other';
   }
 
+  /** Fundo de chip: tinta de série a 14%, não a cor cheia (§60). */
   categoryBgClass(c: string): string {
     const map: Record<string, string> = {
-      renda_fixa: 'bg-blue-500',
-      acoes_br: 'bg-green-500',
-      bdrs: 'bg-purple-500',
-      fiis: 'bg-orange-500',
-      etfs: 'bg-yellow-500',
+      renda_fixa: 'bg-series-1/15',
+      acoes_br: 'bg-series-2/15',
+      fiis: 'bg-series-3/15',
+      bdrs: 'bg-series-5/15',
+      etfs: 'bg-series-8/15',
     };
-    return map[c] || 'bg-muted';
+    return map[c] || 'bg-series-other/15';
   }
 
   categoryBarColor(c: string): string {
-    const map: Record<string, string> = {
-      renda_fixa: 'rgba(59, 130, 246, 0.6)',
-      acoes_br: 'rgba(34, 197, 94, 0.6)',
-      bdrs: 'rgba(168, 85, 247, 0.6)',
-      fiis: 'rgba(251, 146, 60, 0.6)',
-      etfs: 'rgba(250, 204, 21, 0.6)',
-    };
-    return map[c] || 'rgba(148, 163, 184, 0.5)';
+    const n = UiHelperService.CATEGORY_SERIES[c];
+    return n ? `var(--fi-series-${n})` : 'var(--fi-series-other)';
   }
 
+  /**
+   * A classe de cor do selo de veredito.
+   *
+   * Devolvia `verdict-strong-buy` e companhia — nomes que não existiam em CSS
+   * nenhum, então o selo saía sem cor de estado em sete telas. Passa a devolver
+   * as classes `v-*`, que são as definidas e as que `verdict-pill` espera.
+   */
   verdictClass(v: Verdict): string {
     const map: Record<Verdict, string> = {
-      STRONG_BUY: 'verdict-strong-buy',
-      BUY: 'verdict-buy',
-      HOLD: 'verdict-hold',
-      SELL: 'verdict-sell',
-      STRONG_SELL: 'verdict-strong-sell',
-      UNKNOWN: 'verdict-unknown',
+      STRONG_BUY: 'v-buy',
+      BUY: 'v-buy',
+      HOLD: 'v-hold',
+      SELL: 'v-sell',
+      STRONG_SELL: 'v-sell',
+      UNKNOWN: 'v-unknown',
     };
-    return map[v] || 'verdict-unknown';
+    return map[v] || 'v-unknown';
   }
 
   trendLabel(t: string): string {
@@ -155,25 +150,6 @@ export class UiHelperService {
       sideways: '→ Lateral',
     };
     return map[t] || t;
-  }
-
-  rsiLabel(v: number | null): string {
-    if (v == null) return '';
-    if (v >= 70) return '(sobrecomprado)';
-    if (v <= 30) return '(sobrevendido)';
-    return '';
-  }
-
-  dyClass(dy: number | null): string {
-    if (dy == null) return '';
-    if (dy >= 8) return 'dy-high';
-    if (dy >= 5) return 'dy-mid';
-    return 'dy-low';
-  }
-
-  fmtNum(v: number | null): string {
-    if (v == null) return '—';
-    return v.toFixed(2);
   }
 
   translateSector(s: string | null): string {
@@ -253,59 +229,11 @@ export class UiHelperService {
     return map[s] || 'chart-bar';
   }
 
-  alertIcon(kind: string): string {
-    const map: Record<string, string> = {
-      sell_target: 'trending-down',
-      opportunity: 'trending-up',
-      concentration: 'chart-pie',
-      rebalance: 'scale',
-    };
-    return map[kind] || 'info';
-  }
-
-  portfolioSummary(positions: any[], totalPnl: number, totalPnlPct: number): string {
-    const count = positions.length;
-    const signal = totalPnl >= 0 ? 'lucro' : 'prejuízo';
-    return `Você tem ${count} ${count === 1 ? 'posição' : 'posições'} com ${signal} de ${Math.abs(totalPnlPct).toFixed(2)}%.`;
-  }
-
   toNum(v: string | number | null): number | null {
     if (typeof v === 'number') return v;
     if (!v || v.trim() === '') return null;
     const parsed = parseFloat(v);
     return isNaN(parsed) ? null : parsed;
-  }
-
-  verdictFromLabel(label: string): Verdict {
-    const map: Record<string, Verdict> = {
-      'Compra Forte': 'STRONG_BUY',
-      Compra: 'BUY',
-      Manter: 'HOLD',
-      Vender: 'SELL',
-      'Venda Forte': 'STRONG_SELL',
-    };
-    return map[label] || 'UNKNOWN';
-  }
-
-  dipBarClass(score: number, max: number): string {
-    const pct = (score / max) * 100;
-    if (pct >= 75) return 'bg-accent';
-    if (pct >= 50) return 'bg-accent/70';
-    if (pct >= 25) return 'bg-accent/40';
-    return 'bg-border';
-  }
-
-  dipVerdictClass(verdict: string): string {
-    const map: Record<string, string> = {
-      OPORTUNIDADE: 'verdict-oportunidade',
-      NEUTRO: 'verdict-neutro',
-      ARMADILHA: 'verdict-armadilha',
-    };
-    return map[verdict] || 'verdict-neutro';
-  }
-
-  scoreLabel(score: number): ScoreBand {
-    return scoreBand(score);
   }
 
   scoreIsReliable(dataCompleteness: number | null | undefined): boolean {
@@ -314,10 +242,6 @@ export class UiHelperService {
 
   scoreBandFor(score: number, dataCompleteness: number | null | undefined): ScoreBand {
     return scoreBandFor(score, dataCompleteness);
-  }
-
-  scoreColorClass(score: number, dataCompleteness: number | null | undefined): string {
-    return stateTextClass(scoreBandFor(score, dataCompleteness).state);
   }
 
   dataCompletenessLabel(dataCompleteness: number | null | undefined): string {

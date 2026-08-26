@@ -1,12 +1,19 @@
-<div class="space-y-4">
-  <div class="card">
-    <h3 class="text-lg font-semibold mb-3 text-tx">Filtros</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+<div class="max-w-reading">
+  <section>
+    <h1 class="fi-title text-ink m-0">O que eu poderia comprar</h1>
+    <p class="fi-body text-ink-2 m-0 mt-1">
+      Ativos da B3 que o sistema conseguiu avaliar e que aparecem por um motivo declarado — não é a
+      lista do mercado inteiro.
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
       <div class="relative">
+        <label for="opp-search" class="fi-caption text-ink-3 block mb-1">Ticker ou nome</label>
         <input
+          id="opp-search"
           type="text"
-          placeholder="Buscar ticker/nome..."
-          class="input w-full"
+          placeholder="PETR4, Vale…"
+          class="input"
           autocomplete="off"
           [(ngModel)]="filterText"
           (ngModelChange)="onFilterTextInput(filterText)"
@@ -15,401 +22,279 @@
         />
         @if (tickerSuggestionsOpen() && tickerSuggestions().length > 0) {
           <ul
-            class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-border bg-panel shadow-xl max-h-56 overflow-y-auto text-sm"
+            class="absolute top-full left-0 right-0 mt-1 z-[300] list-none m-0 p-0 rounded-md border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto"
           >
             @for (s of tickerSuggestions(); track s.ticker) {
               <li>
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-2 hover:bg-panel-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                  class="w-full text-left px-3 py-2 hover:bg-ground-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
                   (mousedown)="$event.preventDefault(); selectTickerSuggestion(s)"
                 >
-                  <span class="font-semibold text-tx">{{ s.ticker }}</span>
-                  <span class="text-muted text-xs truncate">{{ s.name }}</span>
+                  <span class="fi-ticker text-ink">{{ s.ticker }}</span>
+                  <span class="fi-caption text-ink-3 truncate">{{ s.name }}</span>
                 </button>
               </li>
             }
           </ul>
         }
       </div>
-      <input
-        type="number"
-        placeholder="DY mínimo (%)"
-        class="input"
-        [(ngModel)]="filterMinDy"
-        (ngModelChange)="onFilterChange()"
-      />
-      <input
-        type="number"
-        placeholder="MS mínima (%)"
-        class="input"
-        [(ngModel)]="filterMinMos"
-        (ngModelChange)="onFilterChange()"
-      />
-      <select class="input" [(ngModel)]="filterCategory" (ngModelChange)="onFilterChange()">
-        <option value="">Todas categorias</option>
-        <option value="acoes_br">Ações BR</option>
-        <option value="bdrs">BDRs</option>
-        <option value="fiis">FIIs</option>
-        <option value="etfs">ETFs</option>
-      </select>
+
+      <div>
+        <label for="opp-dy" class="fi-caption text-ink-3 block mb-1">DY mínimo (%)</label>
+        <input
+          id="opp-dy"
+          type="number"
+          class="input"
+          [(ngModel)]="filterMinDy"
+          (ngModelChange)="onFilterChange()"
+        />
+      </div>
+
+      <div>
+        <label for="opp-mos" class="fi-caption text-ink-3 block mb-1">Margem mínima (%)</label>
+        <input
+          id="opp-mos"
+          type="number"
+          class="input"
+          [(ngModel)]="filterMinMos"
+          (ngModelChange)="onFilterChange()"
+        />
+      </div>
+
+      <div>
+        <label for="opp-cat" class="fi-caption text-ink-3 block mb-1">Categoria</label>
+        <select
+          id="opp-cat"
+          class="input"
+          [(ngModel)]="filterCategory"
+          (ngModelChange)="onFilterChange()"
+        >
+          <option value="">Todas</option>
+          <option value="acoes_br">Ações BR</option>
+          <option value="bdrs">BDRs</option>
+          <option value="fiis">FIIs</option>
+          <option value="etfs">ETFs</option>
+        </select>
+      </div>
     </div>
-    <div class="flex items-center gap-4 mt-3">
-      <label class="flex items-center gap-2 cursor-pointer text-sm text-tx">
+
+    <div class="flex items-center gap-4 mt-3 flex-wrap">
+      <label class="flex items-center gap-2 cursor-pointer fi-label text-ink">
         <input
           type="checkbox"
+          class="accent-brand cursor-pointer"
           [(ngModel)]="onlyInteresting"
           (ngModelChange)="onFilterChange()"
-          class="cursor-pointer"
         />
-        Apenas Destaques
+        Só o que o sistema destacou
       </label>
-      <button type="button" (click)="loadOpportunities(true)" class="btn-secondary text-sm">
-        <lucide-icon name="refresh-cw" size="16"></lucide-icon> Atualizar
+      <button type="button" class="btn-secondary compact-btn" (click)="loadOpportunities(true)">
+        <lucide-icon name="refresh-cw" size="14"></lucide-icon> Atualizar
       </button>
     </div>
-  </div>
-
-  <div class="card py-3 px-4">
-    <div class="flex items-center gap-2 mb-2">
-      <lucide-icon name="info" size="14" class="text-muted flex-shrink-0"></lucide-icon>
-      <span class="text-xs font-semibold text-muted uppercase tracking-wide"
-        >Referências de valuation B3</span
-      >
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted">
-      <div class="flex flex-col gap-1">
-        <div class="flex items-center gap-1.5">
-          <span class="inline-block w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span>
-          <span
-            ><strong class="text-tx">Bazin (Preço Teto)</strong> — Dividendo anual ÷ 6% (ações) ou ÷
-            10% (FIIs).</span
-          >
-          <app-help-tooltip [text]="helper.glossary['bazin']"></app-help-tooltip>
-        </div>
-        <div class="pl-3.5 text-muted leading-relaxed">
-          Preço abaixo do Bazin = DY acima do mínimo aceitável.
-        </div>
-      </div>
-      <div class="flex flex-col gap-1">
-        <div class="flex items-center gap-1.5">
-          <span class="inline-block w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
-          <span
-            ><strong class="text-tx">Graham (Preço Intrínseco)</strong> — √(22,5 × LPA × VPA).</span
-          >
-          <app-help-tooltip [text]="helper.glossary['graham']"></app-help-tooltip>
-        </div>
-        <div class="pl-3.5 text-muted leading-relaxed">Válido para P/L ≤ 15 e P/VP ≤ 1,5.</div>
-      </div>
-    </div>
-  </div>
+  </section>
 
   @if (loadingOpportunities()) {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (i of skeletonItems; track i) {
-        <div class="card animate-pulse">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <div class="h-6 w-20 bg-border rounded mb-1.5"></div>
-              <div class="h-3 w-32 bg-border rounded"></div>
-            </div>
-            <div class="h-5 w-16 bg-border rounded-full"></div>
-          </div>
-          <div class="flex items-end justify-between mb-3">
-            <div>
-              <div class="h-7 w-24 bg-border rounded mb-1"></div>
-              <div class="h-3 w-16 bg-border rounded"></div>
-            </div>
-            <div class="text-right">
-              <div class="h-6 w-8 bg-border rounded mb-1 ml-auto"></div>
-              <div class="h-3 w-14 bg-border rounded ml-auto"></div>
-            </div>
-          </div>
-          <div class="border-t border-border mb-3"></div>
-          <div class="grid grid-cols-2 gap-2 mb-3">
-            <div class="rounded-md px-2.5 py-2 bg-panel-2">
-              <div class="h-3 w-10 bg-border rounded mb-2"></div>
-              <div class="h-5 w-16 bg-border rounded mb-1"></div>
-              <div class="h-3 w-20 bg-border rounded"></div>
-            </div>
-            <div class="rounded-md px-2.5 py-2 bg-panel-2">
-              <div class="h-3 w-12 bg-border rounded mb-2"></div>
-              <div class="h-5 w-16 bg-border rounded mb-1"></div>
-              <div class="h-3 w-20 bg-border rounded"></div>
-            </div>
-          </div>
-          <div class="flex items-center justify-between">
-            <div class="h-4 w-16 bg-border rounded"></div>
-            <div class="h-3 w-20 bg-border rounded"></div>
-          </div>
-        </div>
-      }
+    <div class="mt-8 flex flex-col gap-6">
+      <app-skeleton shape="title" />
+      <app-skeleton shape="row" [count]="6" />
     </div>
-  }
-
-  @if (!loadingOpportunities() && opportunities(); as opps) {
-    <div class="flex items-center justify-between text-xs text-muted mb-1">
-      <span
-        >{{ opps.items.length }} de {{ opps.total_items }} ativo{{
-          opps.total_items !== 1 ? 's' : ''
-        }}</span
-      >
-      @if (_cacheTime) {
-        <span>Atualizado {{ helper.formatTimestamp(_cacheTime / 1000) }}</span>
-      }
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (opp of opps.items; track opp.ticker) {
-        <div
-          class="card hover:shadow-lg transition-shadow cursor-pointer"
-          [class.border-accent]="opp.is_interesting"
-          (click)="openAsset(opp.ticker)"
-        >
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <div class="flex items-center gap-2">
-                <h4 class="font-bold text-tx text-lg leading-none">{{ opp.ticker }}</h4>
-                @if (opp.is_interesting) {
-                  <span class="text-xs px-1.5 py-0.5 rounded bg-accent/20 text-accent font-medium"
-                    >Destaque</span
-                  >
-                }
-              </div>
-              <p class="text-xs text-muted mt-0.5">{{ opp.name || '—' }}</p>
-            </div>
-            <div class="flex flex-col items-end gap-0.5 flex-shrink-0">
-              <span [class]="helper.verdictClass(opp.verdict)" class="text-xs">{{
-                opp.label
-              }}</span>
-
-              <span class="text-[10px] text-muted text-right leading-tight">
-                {{ helper.dataYearsLabel(opp.data_years) }} ·
-                {{ helper.consensusLabel(opp.consensus_methods) }}
-              </span>
-            </div>
-          </div>
-          <div class="flex items-end justify-between mb-3">
-            <div>
-              <div class="text-xl font-bold text-tx leading-none">
-                {{ opp.price ? 'R$ ' + (opp.price | number: '1.2-2') : '—' }}
-              </div>
-              <div class="text-xs text-muted mt-0.5">preço atual</div>
-            </div>
-            <div class="text-right">
-              <div class="flex items-center justify-end gap-1">
-                <div
-                  class="text-lg font-bold"
-                  [ngClass]="helper.scoreColorClass(opp.score, opp.data_completeness)"
-                >
-                  {{ opp.score | number: '1.0-0' }}
-                </div>
-                <app-help-tooltip [text]="helper.glossary['score']"></app-help-tooltip>
-              </div>
-              <div
-                class="text-xs mt-0.5"
-                [ngClass]="helper.scoreBandFor(opp.score, opp.data_completeness).cls"
-              >
-                {{ helper.scoreBandFor(opp.score, opp.data_completeness).text }}
-              </div>
-              @if (!helper.scoreIsReliable(opp.data_completeness)) {
-                <div class="text-[10px] text-muted mt-0.5">
-                  {{ helper.dataCompletenessLabel(opp.data_completeness) }}
-                </div>
-              }
-            </div>
-          </div>
-          <div class="border-t border-border mb-3"></div>
-          <div class="grid grid-cols-2 gap-2 mb-3">
-            <div
-              class="rounded-md px-2.5 py-2"
-              [ngClass]="
-                opp.bazin && opp.price
-                  ? opp.price <= opp.bazin
-                    ? 'bazin-below'
-                    : 'bazin-above'
-                  : 'bg-panel-2'
-              "
-            >
-              <div class="flex items-center gap-1 mb-0.5">
-                <span
-                  class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  [class.bg-green-400]="opp.bazin && opp.price && opp.price <= opp.bazin"
-                  [class.bg-red-400]="opp.bazin && opp.price && opp.price > opp.bazin"
-                  [class.bg-muted]="!opp.bazin || !opp.price"
-                ></span>
-                <span class="text-xs text-muted font-medium">Bazin</span>
-              </div>
-              @if (opp.bazin) {
-                <div class="font-semibold text-sm text-tx">
-                  R$ {{ opp.bazin | number: '1.2-2' }}
-                </div>
-                @if (opp.price) {
-                  <div
-                    class="text-xs mt-0.5"
-                    [class.text-green-400]="opp.price <= opp.bazin"
-                    [class.text-red-400]="opp.price > opp.bazin"
-                  >
-                    {{ opp.price <= opp.bazin ? '▼ abaixo do teto' : '▲ acima do teto' }}
-                  </div>
-                }
-              } @else {
-                <div class="text-sm text-muted">—</div>
-                <div class="text-xs text-muted">sem histórico de div.</div>
-              }
-            </div>
-            <div class="rounded-md px-2.5 py-2" [class.bg-panel-2]="!opp.graham && !opp.pvp">
-              <div class="flex items-center gap-1 mb-0.5">
-                <span
-                  class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  [class.bg-blue-400]="opp.graham && opp.price && opp.price <= opp.graham"
-                  [class.bg-orange-400]="opp.graham && opp.price && opp.price > opp.graham"
-                  [class.bg-green-400]="!opp.graham && opp.pvp && opp.pvp < 1"
-                  [class.bg-yellow-400]="!opp.graham && opp.pvp && opp.pvp >= 1"
-                  [class.bg-muted]="!opp.graham && !opp.pvp"
-                ></span>
-                <span class="text-xs text-muted font-medium">{{
-                  !opp.graham && opp.pvp ? 'P/VP' : 'Graham'
-                }}</span>
-              </div>
-              @if (opp.graham) {
-                <div class="font-semibold text-sm text-tx">
-                  R$ {{ opp.graham | number: '1.2-2' }}
-                </div>
-                @if (opp.price) {
-                  <div
-                    class="text-xs mt-0.5"
-                    [class.text-blue-400]="opp.price <= opp.graham"
-                    [class.text-orange-400]="opp.price > opp.graham"
-                  >
-                    {{
-                      opp.price <= opp.graham ? '▼ abaixo do intrínseco' : '▲ acima do intrínseco'
-                    }}
-                  </div>
-                }
-              } @else if (opp.pvp) {
-                <div class="font-semibold text-sm text-tx">
-                  {{ opp.pvp | number: '1.2-2' }}
-                </div>
-                <div
-                  class="text-xs mt-0.5"
-                  [class.text-green-400]="opp.pvp < 1"
-                  [class.text-orange-400]="opp.pvp >= 1"
-                >
-                  {{ opp.pvp < 1 ? '▼ desconto patrimonial' : '▲ ágio patrimonial' }}
-                </div>
-              } @else {
-                <div class="text-sm text-muted">—</div>
-                <div class="text-xs text-muted">sem dados</div>
-              }
-            </div>
-          </div>
-          <div class="flex items-center justify-between text-xs">
-            <div class="flex items-center gap-3">
-              @if (opp.dividend_yield) {
-                <span class="flex items-center">
-                  <span [class]="helper.dyClass(opp.dividend_yield)" class="font-semibold"
-                    >DY {{ opp.dividend_yield | number: '1.1-1' }}%</span
-                  >
-                  <app-help-tooltip [text]="helper.glossary['dy']"></app-help-tooltip>
-                </span>
-              }
-              @if (opp.margin_of_safety != null) {
-                <span class="flex items-center text-muted"
-                  >MS {{ opp.margin_of_safety * 100 | number: '1.0-0' }}%<app-help-tooltip
-                    [text]="helper.glossary['ms']"
-                  ></app-help-tooltip
-                ></span>
-              }
-            </div>
-            @if (opp.sector) {
-              <span class="text-muted truncate max-w-[100px]">{{
-                helper.translateSector(opp.sector)
-              }}</span>
-            }
-          </div>
-          <div class="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-            <a
-              [routerLink]="['/ativo', opp.ticker]"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-brand text-on-brand no-underline hover:opacity-90 transition-opacity"
-              (click)="$event.stopPropagation()"
-            >
-              Ver ativo <lucide-icon name="arrow-right" size="13"></lucide-icon>
-            </a>
-            <button
-              type="button"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer bg-transparent border border-border text-tx hover:bg-panel-2 transition-colors"
-              (click)="$event.stopPropagation(); showOpportunityDetails(opp.ticker)"
-            >
-              <lucide-icon name="trending-down" size="13"></lucide-icon> Entender queda
-            </button>
-          </div>
-        </div>
-      }
-    </div>
-
+  } @else if (opportunities(); as opps) {
     @if (opps.items.length === 0) {
-      <div class="card text-center py-8">
-        <lucide-icon name="search" size="48" class="text-muted mx-auto mb-3"></lucide-icon>
-        <p class="text-muted">Nenhuma oportunidade encontrada com os filtros atuais.</p>
+      <div class="mt-6">
+        <app-empty-state
+          icon="search-x"
+          title="Nenhum ativo passou por estes filtros"
+          reason="Os critérios atuais não deixaram passar nenhum ativo do universo varrido. Filtro estreito não é ausência de oportunidade — é ausência de resultado para essa combinação."
+          nextStep="Limpar os filtros mostra a lista completa, ordenada pela leitura do sistema."
+          actionLabel="Limpar filtros"
+          (action)="clearFilters()"
+          secondaryLabel="Ver quedas recentes"
+          secondaryRoute="/descobrir/quedas"
+        />
       </div>
-    }
-
-    @if (opps.total_pages > 1) {
-      <div class="flex items-center justify-center gap-2 pt-2">
-        <button
-          type="button"
-          class="btn-secondary text-sm px-3 py-1.5"
-          [disabled]="opps.current_page <= 1"
-          (click)="goToPage(opps.current_page - 1)"
-        >
-          <lucide-icon name="chevron-left" size="16"></lucide-icon> Anterior
-        </button>
-        <div class="flex items-center gap-1">
-          @if (opps.current_page > 3) {
-            <button type="button" class="pagination-btn" (click)="goToPage(1)">1</button>
-            @if (opps.current_page > 4) {
-              <span class="text-muted px-1">…</span>
-            }
-          }
-          @for (
-            page of [
-              opps.current_page - 2,
-              opps.current_page - 1,
-              opps.current_page,
-              opps.current_page + 1,
-              opps.current_page + 2,
-            ];
-            track page
-          ) {
-            @if (page >= 1 && page <= opps.total_pages) {
-              <button
-                type="button"
-                class="pagination-btn"
-                [class.active]="page === opps.current_page"
-                (click)="goToPage(page)"
-              >
-                {{ page }}
-              </button>
-            }
-          }
-          @if (opps.current_page < opps.total_pages - 2) {
-            @if (opps.current_page < opps.total_pages - 3) {
-              <span class="text-muted px-1">…</span>
-            }
-            <button type="button" class="pagination-btn" (click)="goToPage(opps.total_pages)">
-              {{ opps.total_pages }}
-            </button>
+    } @else {
+      <section class="mt-8">
+        <div class="flex items-baseline justify-between gap-3 mb-2">
+          <p class="fi-eyebrow text-ink-3 m-0">
+            <span class="fi-num">{{ opps.items.length }}</span> de
+            <span class="fi-num">{{ opps.total_items }}</span> ativos avaliados
+          </p>
+          @if (_cacheTime) {
+            <p class="fi-caption text-ink-3 m-0">
+              Atualizado {{ helper.formatTimestamp(_cacheTime / 1000) }}
+            </p>
           }
         </div>
-        <button
-          type="button"
-          class="btn-secondary text-sm px-3 py-1.5"
-          [disabled]="opps.current_page >= opps.total_pages"
-          (click)="goToPage(opps.current_page + 1)"
-        >
-          Próxima <lucide-icon name="chevron-right" size="16"></lucide-icon>
-        </button>
-      </div>
+
+        <ul class="list-none m-0 p-0">
+          @for (opp of opps.items; track opp.ticker) {
+            <li class="py-5 border-t border-hairline">
+              <div class="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <a
+                      [routerLink]="['/ativo', opp.ticker]"
+                      class="fi-ticker text-ink no-underline hover:text-brand"
+                    >
+                      {{ opp.ticker }}
+                    </a>
+                    <span class="verdict-pill" [class]="helper.verdictClass(opp.verdict)">
+                      {{ opp.label }}
+                    </span>
+                    @if (opp.in_portfolio) {
+                      <span class="tag tag-brand">Já na carteira</span>
+                    }
+                  </div>
+
+                  @if (opp.name) {
+                    <p class="fi-caption text-ink-3 m-0 mt-0.5">
+                      {{ opp.name }}
+                      @if (opp.sector) {
+                        · {{ helper.translateSector(opp.sector) }}
+                      }
+                    </p>
+                  }
+
+                  <p class="fi-verdict-sm text-ink m-0 mt-2">{{ reasonFor(opp) }}</p>
+
+                  @if (opp.reasons.length > 0) {
+                    <details class="mt-2">
+                      <summary class="fi-caption text-ink-3 cursor-pointer fi-focusable rounded-sm">
+                        O que sustenta ({{ opp.reasons.length }})
+                      </summary>
+                      <ul class="list-none m-0 mt-1 p-0 flex flex-col gap-1">
+                        @for (reason of opp.reasons; track reason) {
+                          <li class="fi-caption text-ink-2">{{ reason }}</li>
+                        }
+                      </ul>
+                    </details>
+                  }
+
+                  <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-5 gap-y-2 m-0 mt-3">
+                    <div>
+                      <dt class="fi-caption text-ink-3">Preço</dt>
+                      <dd class="fi-metric-sm text-ink m-0 fi-num">
+                        {{ opp.price != null ? (opp.price | currency: 'BRL') : '—' }}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt class="fi-caption text-ink-3">Bazin</dt>
+                      @if (opp.bazin) {
+                        <dd class="fi-metric-sm text-ink m-0 fi-num">
+                          {{ opp.bazin | currency: 'BRL' }}
+                        </dd>
+                      } @else {
+                        <dd class="fi-caption text-indeterminate m-0">sem histórico</dd>
+                      }
+                    </div>
+                    <div>
+                      <dt class="fi-caption text-ink-3">
+                        {{ !opp.graham && opp.pvp ? 'P/VP' : 'Graham' }}
+                      </dt>
+                      @if (opp.graham) {
+                        <dd class="fi-metric-sm text-ink m-0 fi-num">
+                          {{ opp.graham | currency: 'BRL' }}
+                        </dd>
+                      } @else if (opp.pvp) {
+                        <dd class="fi-metric-sm text-ink m-0 fi-num">
+                          {{ opp.pvp | number: '1.2-2' }}
+                        </dd>
+                      } @else {
+                        <dd class="fi-caption text-indeterminate m-0">não se aplica</dd>
+                      }
+                    </div>
+                    <div>
+                      <dt class="fi-caption text-ink-3">
+                        DY <app-help-tooltip [text]="helper.glossary['dy']"></app-help-tooltip>
+                      </dt>
+                      @if (opp.dividend_yield) {
+                        <dd class="fi-metric-sm text-ink m-0 fi-num">
+                          {{ opp.dividend_yield | number: '1.1-1' }}%
+                        </dd>
+                      } @else {
+                        <dd class="fi-caption text-indeterminate m-0">sem proventos</dd>
+                      }
+                    </div>
+                  </dl>
+
+                  <div class="mt-3 max-w-[320px]">
+                    <p class="fi-caption text-ink-3 m-0 mb-1">
+                      Margem de segurança
+                      <app-help-tooltip [text]="helper.glossary['ms']"></app-help-tooltip>
+                    </p>
+                    <app-margin-of-safety
+                      [marginPct]="marginPct(opp)"
+                      reason="Nenhum método de valuation se aplica a este ativo."
+                    />
+                  </div>
+                </div>
+
+                <div class="shrink-0 w-[150px]">
+                  <app-score-ruler
+                    [score]="opp.score"
+                    [dataCompleteness]="opp.data_completeness"
+                    size="list"
+                    subject="Leitura de {{ opp.ticker }}"
+                  />
+                  <p class="fi-caption text-ink-3 m-0 mt-1">
+                    {{ helper.dataYearsLabel(opp.data_years) }} ·
+                    {{ helper.consensusLabel(opp.consensus_methods) }}
+                  </p>
+
+                  <div class="flex flex-col gap-2 mt-3">
+                    <a
+                      [routerLink]="['/ativo', opp.ticker]"
+                      class="btn-secondary compact-btn no-underline"
+                    >
+                      Ver ativo
+                    </a>
+                    <button
+                      type="button"
+                      class="btn-secondary compact-btn"
+                      (click)="showOpportunityDetails(opp.ticker)"
+                    >
+                      Por que caiu?
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+
+      @if (opps.total_pages > 1) {
+        <nav class="flex items-center justify-center gap-2 mt-6" aria-label="Paginação">
+          <button
+            type="button"
+            class="btn-secondary compact-btn"
+            [disabled]="opps.current_page <= 1"
+            (click)="goToPage(opps.current_page - 1)"
+          >
+            <lucide-icon name="chevron-left" size="14"></lucide-icon> Anterior
+          </button>
+          <span class="fi-caption text-ink-2">
+            Página <span class="fi-num">{{ opps.current_page }}</span> de
+            <span class="fi-num">{{ opps.total_pages }}</span>
+          </span>
+          <button
+            type="button"
+            class="btn-secondary compact-btn"
+            [disabled]="opps.current_page >= opps.total_pages"
+            (click)="goToPage(opps.current_page + 1)"
+          >
+            Próxima <lucide-icon name="chevron-right" size="14"></lucide-icon>
+          </button>
+        </nav>
+      }
+
+      <app-provenance
+        method="Score 0–100 combinando margem de segurança, proventos, qualidade e endividamento, ponderados pelo seu perfil (backend/app/analysis/scoring.py). Bazin, Graham e P/VP são calculados separadamente e nunca somados num número único."
+        source="Cotações e fundamentos via BRAPI."
+        limitation="Leitura do sistema sobre dados públicos, não recomendação de compra. Universo limitado à B3."
+      />
     }
   }
 </div>

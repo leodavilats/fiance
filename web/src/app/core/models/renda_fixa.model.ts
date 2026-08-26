@@ -86,6 +86,8 @@ export interface FixedIncomePosition {
   meses_decorridos: number;
   taxa_anual_efetiva_pct: number;
   yield_equivalente_pct: number;
+  /** Quanto rende em relação ao CDI, em %, calculado no backend. */
+  pct_cdi_equivalente: number | null;
 
   valor_no_vencimento: number | null;
   rendimento_no_vencimento: number | null;

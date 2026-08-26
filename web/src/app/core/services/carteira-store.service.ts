@@ -270,6 +270,7 @@ export class CarteiraStore {
             label: this.ui.categoryLabel(t.tipo),
             valor: t.valor,
             pct: t.pct,
+            targetPct: t.targetPct,
             color: this.ui.categoryBarColor(t.tipo),
             icon: this.ui.categoryIcon(t.tipo),
           }))
@@ -277,6 +278,7 @@ export class CarteiraStore {
             label: s.setor,
             valor: s.valor,
             pct: s.pct,
+            targetPct: s.targetPct,
             color: this.ui.sectorSeriesColor(s.setor),
             icon: this.ui.sectorIcon(s.setor),
           }));
@@ -287,12 +289,6 @@ export class CarteiraStore {
       acc += r.pct;
       return { ...r, start, end: acc };
     });
-  });
-
-  readonly conicGradient = computed(() => {
-    const slices = this.composicaoSlices();
-    if (slices.length === 0) return 'none';
-    return `conic-gradient(${slices.map(s => `${s.color} ${s.start}% ${s.end}%`).join(', ')})`;
   });
 
   readonly vencimentosProximos = computed(() =>

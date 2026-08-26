@@ -1,5 +1,11 @@
 import { AssetType, TrendBasis, Verdict } from './common.model';
 
+/** Um fechamento diário da série que o backend usa no bloco técnico. */
+export interface PricePoint {
+  date: string;
+  close: number;
+}
+
 export interface FairPriceBlock {
   bazin: number | null;
   graham: number | null;
@@ -60,6 +66,8 @@ export interface AssetAnalysis {
   fair_price: FairPriceBlock;
   technical: TechnicalBlock;
   decision: DecisionBlock;
+  /** Vem preenchido em `/asset/{symbol}`; vazio em `/compare`. */
+  price_history: PricePoint[];
 }
 
 export interface CompareResponse {

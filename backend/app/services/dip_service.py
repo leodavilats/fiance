@@ -106,6 +106,7 @@ class DipService:
             verdict_label=dip.verdict_label,
             confidence=dip.confidence,
             reasons=dip.reasons,
+            reason_groups=dip.reason_groups,
             drop_from_52w_high_pct=dip.drop_from_52w_high_pct,
             drop_from_fair_price_pct=dip.drop_from_fair_price_pct,
             news=[

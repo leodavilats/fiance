@@ -6,10 +6,13 @@
 > responde "o que já está no ar e o que ainda não". As fases de projeto (1–7) estão nos
 > documentos numerados; aqui é só execução.
 >
-> **Estado resumido:** o web tem a nova arquitetura de informação completa (5 destinos, 36
-> rotas) e três telas redesenhadas de fato (`/hoje`, `/ativo/:ticker`, `/carteira`). O mobile tem
-> tokens, shell de 5 destinos, Estratégia e a régua; o conteúdo de Hoje e Carteira ainda é o
-> antigo.
+> **Estado resumido:** o web tem a nova arquitetura de informação completa (5 destinos, 37
+> rotas), os componentes de domínio construídos e as telas de decisão redesenhadas. O mobile tem
+> tokens, shell de 5 destinos, os dois eixos de cor separados e Hoje e Carteira reestruturados —
+> os dois arquivos monolíticos deixaram de existir.
+>
+> **Zero hexadecimal, zero `rgba()` literal e zero classe de paleta crua fora dos tokens**, nas
+> duas plataformas.
 
 ---
 
@@ -276,3 +279,158 @@ confiança fora do runtime, e a versão precisa o bastante para não virar ruíd
 brechas. Ao adicionar um `<lucide-icon>`, registre o import PascalCase em
 `LucideAngularModule.pick({...})` de `web/src/main.ts` e **abra a tela** — o build passa mesmo
 com o nome errado.
+
+---
+
+## Etapa 7 — a camada de tinta: aliases mortos e o alfa que nunca existiu
+
+A Fase 8 dizia que os ~130 `bg-accent`/`text-accent` seriam trocados junto com os templates. Ao
+reescrevê-los, o que apareceu foi maior do que um alias.
+
+| | Antes | Agora |
+|---|---|---|
+| Aliases legados (`accent`, `panel`, `tx`, `muted`, `warn`, `danger`, `border`) | ~1000 usos | 0 — a camada saiu de `tailwind.config.js` e de `styles.css` |
+| Paleta crua do Tailwind (`red-400`, `orange-500`, `grey`, `white`, `black`) | 120 usos, a maioria **fora** de qualquer token | 0 |
+| `rgba()` literal em CSS | 14 | 0 — opacidade sai de `color-mix` sobre um token |
+| Gradiente decorativo | 4 (2 no web, 2 no mobile) + o selo da marca no mobile | 0 |
+| Sombra | `shadow-lg`/`xl`/`2xl` em 8 templates | só `drawer` e `popover` |
+
+### O alfa que o Tailwind descartava em silêncio
+
+Uma cor declarada como a string `'var(--fi-brand)'` faz o Tailwind v3 **ignorar todo modificador
+de opacidade**: `bg-brand/20` não emitia regra nenhuma. Confirmado no CSS compilado — `.bg-accent`
+existia, `.bg-accent\/20` não. Dezenas de fundos tênues, bordas suaves e chips de estado estavam
+simplesmente **invisíveis** desde que a paleta virou token.
+
+As cores da config passaram a ser funções que devolvem `color-mix(in srgb, var(--fi-x) N%,
+transparent)` quando há modificador. Nenhum token novo, nenhum RGB duplicado.
+
+### Classes que nunca existiram
+
+O padrão de `.card`/`.btn-primary` (achado da Etapa 3) tinha mais casos:
+
+| Classe | Onde era usada | O que acontecia |
+|---|---|---|
+| `verdict-strong-buy` … `verdict-unknown` | `ui.verdictClass()`, **7 telas** | o selo de veredito saía sem cor de estado |
+| `verdict-pill` | 4 telas | as cores de `.v-*` pegavam, a forma não |
+| `.tag` | 5 componentes | definida só no `.scss` de `posicoes` — nas outras, um `span` sem estilo |
+| `tag-cat` / `cat-*` | selo de categoria | sem identidade de cor |
+| `bg-success` / `bg-info` | snackbar | aviso de sucesso e de informação sem fundo |
+| `dy-high/mid/low` | `ui.dyClass()` | classe sem CSS — e sem consumidor |
+
+Doze métodos de `UiHelperService` sem nenhum consumidor foram removidos junto.
+
+---
+
+## Etapa 8 — as quatro leituras da mesma régua
+
+`ScoreRuler` era o único instrumento construído. Os outros três da especificação viraram código,
+e os quatro passaram a compartilhar **o mesmo traço** (`app-ruler-track` / `core/ruler.ts`): o
+componente que desenha zonas e marca não sabe o que o número significa.
+
+| Componente | Escala | De onde vêm as bandas |
+|---|---|---|
+| `ScoreRuler` | 0–100 | `fiScoreBands` — espelha `score_ruler.py` |
+| `MarginOfSafety` | −50% … +50% | `fiMarginOfSafetyBands` (novo em `tokens.json`) |
+| `AllocationGap` | 0–20 p.p. | `fiAllocationGapBands` (novo) |
+| `GoalProgress` | 0–100% da meta | `fiGoalProgressBands` (novo) |
+
+O gerador deixou de tratar `healthRuler` como caso especial: qualquer chave `*Ruler` em
+`tokens.json` emite `fi<Nome>Bands` e `fi<Nome>Domain` nas duas plataformas.
+
+Três decisões ficaram declaradas nos próprios tokens:
+
+- **Desvio de alocação nunca é `adverse`.** O pior estado é "atenção" — estar fora da meta não é
+  perda. Um teste no mobile trava isso.
+- **`GoalProgress` não tem zona "no ritmo".** O produto sabe o alvo e o prazo, mas não a data em
+  que a meta começou; qualquer ritmo seria inventado (§57). O prazo aparece como contexto.
+- **Margem de segurança trunca em ±50%.** Margem maior que isso quase sempre é dado ruim, não
+  pechincha, e a régua não deve premiar isso com a barra cheia.
+
+Também nasceram: `Skeleton` (na forma do conteúdo, não retângulo genérico), `EmptyState` (com CTA
+obrigatório por construção), `Provenance`, `MetricWithContext`, `DipDiagnosis`, `FixedIncomeRate`,
+`AssetPriceChart`, `GlobalSearch` e o drawer de `Activity`. Todos com consumidor real — foi
+exatamente a ausência de consumidor que matou as versões anteriores de `Skeleton` e `EmptyState`.
+
+`/hoje/atividade` passou a existir como rota, ao lado do drawer: a arquitetura de informação
+declara Atividade como sub-rota de Hoje, e o drawer é conveniência, não substituto.
+
+---
+
+## Etapa 9 — mais quatro campos que o backend calculava e descartava
+
+Mesmo padrão das Etapas 4 e 6, em quatro lugares novos. Todas as mudanças são **aditivas**.
+
+| Campo | Situação | Por que fazia diferença |
+|---|---|---|
+| `AssetAnalysis.price_history` | a série diária de 2 anos era buscada para calcular médias móveis e **descartada** | sem ela a página do ativo não tinha como desenhar preço contra preço justo |
+| `DipAnalysisResponse.reason_groups` | `reasons` chegava achatada | o cliente não conseguia separar "caiu 30% do topo" (aritmética) de "a margem encolheu" (fundamento) — a diferença que decide se a queda é saudável ou estrutural |
+| `FixedIncomePosition.pct_cdi_equivalente` | a equivalência ao CDI existia só no comparador | a lista de posições mostrava taxa nua, que não é resposta (§16) |
+| `PricePoint` | — | tipo novo, com `date` e `close` |
+
+`/compare` recebe `include_history=False`: N séries diárias completas numa comparação são payload
+puro, e a comparação não desenha gráfico. Sete testes travam as três mudanças (a suíte foi de 208
+para 215).
+
+---
+
+## Etapa 10 — o mobile: dois eixos, dois monólitos e uma régua duplicada
+
+### Estado e direção deixaram de ser a mesma coisa
+
+`gainColor`/`lossColor`/`warnColor` **foram removidos**. A Etapa 1 os manteve de propósito,
+declarando que a separação viria com o redesenho de cada tela — é esta etapa. Os 40 pontos de
+chamada foram reclassificados um a um:
+
+- **direção** (`fiDirectionColor`) — P&L de posição, linha do gráfico de patrimônio;
+- **estado** (`fiStateColor`) — veredito, saúde, severidade de alerta, dado obsoleto, erro de
+  formulário, ação destrutiva.
+
+Um teste compara a saturação das duas famílias: direção **tem** que ter croma menor que estado.
+
+### A régua que ainda falava a língua antiga
+
+`lib/core/score_ruler.dart` mantinha a própria cópia dos limiares **e** a própria paleta:
+verde/ciano/amarelo/vermelho em hexadecimal, com o vocabulário anterior — "Excelente entrada",
+"Boa oportunidade", "Evitar agora". O widget `ScoreRuler` já lia de `fiScoreBands`, então **a
+mesma pontuação aparecia com dois nomes e duas cores dependendo da tela**. O arquivo agora só
+delega.
+
+Na mesma linha: `categoryColor` e `sectorColor` tinham paleta própria, e `sectorColor` sorteava a
+cor por `hashCode`. Passaram a usar `fiSeriesColor`, com o mesmo mapa do web — "FIIs" é a mesma
+cor nas duas plataformas. E `AppLogo` ainda trazia o gradiente verde→ciano da marca antiga, que o
+web abandonou na Etapa 1: o mesmo produto tinha duas marcas.
+
+### Os dois monólitos
+
+| Antes | Agora |
+|---|---|
+| `dashboard_screen.dart`, 1199 linhas, 20 widgets privados, 10 blocos de peso igual | `features/hoje/` — tela em três níveis, `widgets/` (patrimônio, saúde, gráficos, tiles) e `hoje_actions.dart` |
+| `assets_screen.dart`, 1228 linhas, 18 declarações | `features/carteira/` — tela, `widgets/` (resumo, composição, posições, encerradas) e `carteira_actions.dart` |
+
+`/hoje` no mobile passou a ter a mesma hierarquia do web: patrimônio e saúde primeiro, feed único
+ordenado por urgência (antes eram dois blocos com formatos diferentes dizendo a mesma coisa),
+próxima ação com a conta à vista, e três destaques. Gráfico de evolução, benchmark e a lista
+completa de posições **mudaram de tela**: a pergunta que respondem é de patrimônio, e agora vivem
+em `/carteira`.
+
+A composição virou barra com o fio da meta (`FiAllocationGap`, espelhando o web), no lugar da
+pizza — ângulo é a forma mais difícil de comparar que existe (§26).
+
+`runHojeAction` também apontava para `/assets`, `/market` e `/config`: rotas que hoje só existem
+como redirect. Funcionava por acidente, com um salto a mais em cada toque.
+
+---
+
+## O que ainda não foi feito
+
+Declarado, não esquecido:
+
+- **Web** — `/descobrir/comparar` ainda não separa decisão de evidência (§33); `/carteira/proventos`
+  não usa `DividendTimeline`; `/estrategia/projecao` não declara premissas e cenários como a §37
+  pede; a densidade compacta existe só na tabela de posições, não como preferência do usuário.
+- **Mobile** — `config_screen.dart` (837 linhas) é o próximo monólito; Metas continuam dentro de
+  Configurações; `/income-compare` (RF × Bolsa) segue sem cliente Dart; não há busca global nem
+  drawer de atividade.
+- **Ambos** — não há teste visual automatizado. A varredura de ícone do Lucide continua manual:
+  nome ausente não quebra o build, quebra a tela.

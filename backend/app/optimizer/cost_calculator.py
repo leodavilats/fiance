@@ -7,7 +7,6 @@ from app.models.enums import AssetCategory
 IR_ACOES = 0.15
 IR_FIIS = 0.20
 
-# Isenção mensal de ganho de capital em ações BR (vendas do mês, não por operação isolada).
 ISENCAO_MENSAL_ACOES = 20_000.0
 
 

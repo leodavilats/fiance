@@ -360,7 +360,6 @@ class _ToolLink extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      // Alvo mínimo de toque.
       minVerticalPadding: FiSpace.s3,
       leading: Icon(icon, size: 20),
       title: Text(label, style: FiType.body),

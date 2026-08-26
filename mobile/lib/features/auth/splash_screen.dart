@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
+import '../../core/theme.dart';
 import '../../core/widgets/brand_background.dart';
 import '../../core/widgets/brand_loading_indicator.dart';
 
@@ -45,7 +46,7 @@ class SplashScreen extends ConsumerWidget {
                     'Ações, FIIs, BDRs, ETFs e renda fixa — tudo em um só assistente',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: fiInk2(context),
                       fontSize: 13,
                       height: 1.4,
                     ),

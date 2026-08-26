@@ -96,7 +96,6 @@ class SellRequest(BaseModel):
     ticker: str = Field(..., min_length=4, max_length=32, pattern=TICKER_PATTERN)
     quantity: float = Field(..., gt=0)
     sell_price: float = Field(..., gt=0)
-    # Datar a venda livremente muda o balde da isenção mensal de R$ 20 mil e a alíquota de IR calculada.
     sold_at: float | None = Field(
         None, description="Timestamp da venda (passado, até 90 dias atrás); default = agora"
     )

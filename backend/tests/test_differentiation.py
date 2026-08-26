@@ -23,7 +23,7 @@ def test_accumulated_loss_reduces_the_tax_due():
     sem_compensacao = calculate_sell_cost("fiis", 100, 12.0, 10.0)
     com_compensacao = calculate_sell_cost("fiis", 100, 12.0, 10.0, accumulated_loss=150.0)
 
-    assert sem_compensacao.ir_amount == pytest.approx(40.0)  # 20% de 200
+    assert sem_compensacao.ir_amount == pytest.approx(40.0)
     assert com_compensacao.loss_offset_used == 150.0
     assert com_compensacao.taxable_profit == 50.0
     assert com_compensacao.ir_amount == pytest.approx(10.0)

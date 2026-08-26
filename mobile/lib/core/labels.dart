@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'design_tokens.dart';
+
 const _categoryLabels = {
   'renda_fixa': 'Renda Fixa',
   'acoes_br': 'Ações BR',
@@ -47,16 +49,20 @@ String assetTypeLabel(String? assetType) {
   return _assetTypeLabels[assetType] ?? assetType;
 }
 
-Color categoryColor(String? category) {
-  const colors = {
-    'renda_fixa': Color(0xFF60A5FA),
-    'acoes_br': Color(0xFF4ADE80),
-    'bdrs': Color(0xFFC084FC),
-    'fiis': Color(0xFFFB923C),
-    'etfs': Color(0xFFFACC15),
-  };
-  return colors[category] ?? const Color(0xFF9CA3AF);
-}
+/// Índice de série por categoria — o mesmo mapa do web
+/// (`UiHelperService.categoryColor`), para que "FIIs" tenha a mesma cor nas
+/// duas plataformas. Antes eram duas paletas independentes, ambas fora dos
+/// tokens.
+const _categorySeries = {
+  'renda_fixa': 1,
+  'acoes_br': 2,
+  'fiis': 3,
+  'bdrs': 5,
+  'etfs': 8,
+};
+
+Color categoryColor(String? category, Brightness brightness) =>
+    fiSeriesColor(_categorySeries[category] ?? 0, brightness);
 
 IconData categoryIcon(String? category) {
   const icons = {
@@ -69,21 +75,25 @@ IconData categoryIcon(String? category) {
   return icons[category] ?? Icons.category_outlined;
 }
 
-const _sectorPalette = [
-  Color(0xFF60A5FA),
-  Color(0xFF4ADE80),
-  Color(0xFFC084FC),
-  Color(0xFFFB923C),
-  Color(0xFFFACC15),
-  Color(0xFFF472B6),
-  Color(0xFF34D399),
-  Color(0xFF818CF8),
-  Color(0xFFFB7185),
-  Color(0xFFA3E635),
-  Color(0xFF22D3EE),
-];
+/// Setor → série, espelhando `UiHelperService.sectorSeriesColor`.
+///
+/// Antes a cor saía de `sector.hashCode % paleta.length`: estável dentro de uma
+/// sessão, mas arbitrária, diferente do web e sem relação com o significado.
+/// Setor fora do mapa cai em "outros", que é uma resposta — não uma cor
+/// sorteada.
+const _sectorSeries = {
+  'Financeiro': 1,
+  'Tecnologia': 2,
+  'Energia': 3,
+  'Consumo Cíclico': 4,
+  'Saúde': 5,
+  'Industrial': 6,
+  'Imobiliário': 7,
+  'Consumo Básico': 8,
+  'Materiais Básicos': 9,
+  'Utilidades Públicas': 10,
+  'Telecomunicações': 11,
+};
 
-Color sectorColor(String sector) {
-  final index = sector.hashCode.abs() % _sectorPalette.length;
-  return _sectorPalette[index];
-}
+Color sectorColor(String sector, Brightness brightness) =>
+    fiSeriesColor(_sectorSeries[sector] ?? 0, brightness);

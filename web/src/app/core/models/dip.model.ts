@@ -36,6 +36,8 @@ export interface DipAnalysisResponse {
   verdict_label: string;
   confidence: number;
   reasons: string[];
+  /** Os mesmos motivos, agrupados pela dimensão que os gerou (value, quality, technical, dividend, news). */
+  reason_groups: Record<string, string[]>;
   drop_from_52w_high_pct: number | null;
   drop_from_fair_price_pct: number | null;
   news: NewsItem[];

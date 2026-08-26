@@ -3,18 +3,31 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { InvestmentStrategy, LoadingService, RecommendService, UiHelperService } from '../../core';
+import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
+import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { FollowedSuggestionsComponent } from '../market/followed-suggestions/followed-suggestions.component';
 import { RebalanceSuggestionsComponent } from '../market/rebalance-suggestions/rebalance-suggestions.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
+
+/** Uma linha da comparação atual × projetada, já pareada por categoria. */
+interface ProjectionRow {
+  readonly category: string;
+  readonly currentPct: number;
+  readonly projectedPct: number;
+}
 
 @Component({
   selector: 'app-strategy',
   standalone: true,
   imports: [
+    AllocationGapComponent,
     CommonModule,
-    LucideAngularModule,
-    RouterLink,
-    RebalanceSuggestionsComponent,
+    EmptyStateComponent,
     FollowedSuggestionsComponent,
+    LucideAngularModule,
+    RebalanceSuggestionsComponent,
+    RouterLink,
+    SkeletonComponent,
   ],
   templateUrl: './strategy.component.html',
 })
@@ -44,11 +57,42 @@ export class StrategyComponent implements OnInit {
   }
 
   riskClass(risk: string): string {
-    return { Baixo: 'tag-success', Médio: 'tag-warning', Alto: 'tag-danger' }[risk] || 'tag-muted';
+    return (
+      { Baixo: 'tag-favorable', Médio: 'tag-attention', Alto: 'tag-adverse' }[risk] || 'tag-neutral'
+    );
   }
 
   totalToInvest(s: InvestmentStrategy): number {
     return s.suggestions.reduce((sum, x) => sum + x.invest_amount, 0);
+  }
+
+  cashPct(s: InvestmentStrategy): number {
+    return s.total_capital > 0 ? (s.cash_available / s.total_capital) * 100 : 0;
+  }
+
+  absValue(v: number): number {
+    return Math.abs(v);
+  }
+
+  /**
+   * Atual e projetada na mesma linha, por categoria.
+   *
+   * Antes eram duas colunas independentes, o que obrigava o olho a procurar a
+   * mesma categoria nos dois lados para responder "mudou quanto?". Categoria
+   * que só existe de um lado entra com 0 no outro — é informação, não ausência.
+   */
+  projection(s: InvestmentStrategy): ProjectionRow[] {
+    const current = new Map(s.current_allocation.map(a => [a.category, a.current_pct]));
+    const projected = new Map(s.projected_allocation.map(a => [a.category, a.projected_pct]));
+    const categories = [...new Set([...current.keys(), ...projected.keys()])];
+
+    return categories
+      .map(category => ({
+        category,
+        currentPct: current.get(category) ?? 0,
+        projectedPct: projected.get(category) ?? 0,
+      }))
+      .sort((a, b) => b.projectedPct - a.projectedPct);
   }
 
   verdictClassFromString(v: string): string {
@@ -63,10 +107,6 @@ export class StrategyComponent implements OnInit {
   }
 
   getCategoryBarColor(category: string): string {
-    return this.ui.assetTypeSeriesColor(
-      { acoes_br: 'br_stock', bdrs: 'bdr', fiis: 'fii', etfs: 'etf', renda_fixa: 'renda_fixa' }[
-        category
-      ] ?? category
-    );
+    return this.ui.categoryBarColor(category);
   }
 }

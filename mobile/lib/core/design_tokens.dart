@@ -94,6 +94,40 @@ Color fiDirectionColor(double delta, Brightness brightness) {
   return dark ? FiColors.darkInk2 : FiColors.lightInk2;
 }
 
+/// Identidade de série (1..N). Mesmo setor/classe = mesma cor sempre.
+///
+/// Fora da faixa cai em `series-other`, que é o balde de "Outros" — não
+/// uma cor de erro.
+Color fiSeriesColor(int index, Brightness brightness) {
+  final dark = brightness == Brightness.dark;
+  switch (index) {
+    case 1:
+      return dark ? FiColors.darkSeries1 : FiColors.lightSeries1;
+    case 2:
+      return dark ? FiColors.darkSeries2 : FiColors.lightSeries2;
+    case 3:
+      return dark ? FiColors.darkSeries3 : FiColors.lightSeries3;
+    case 4:
+      return dark ? FiColors.darkSeries4 : FiColors.lightSeries4;
+    case 5:
+      return dark ? FiColors.darkSeries5 : FiColors.lightSeries5;
+    case 6:
+      return dark ? FiColors.darkSeries6 : FiColors.lightSeries6;
+    case 7:
+      return dark ? FiColors.darkSeries7 : FiColors.lightSeries7;
+    case 8:
+      return dark ? FiColors.darkSeries8 : FiColors.lightSeries8;
+    case 9:
+      return dark ? FiColors.darkSeries9 : FiColors.lightSeries9;
+    case 10:
+      return dark ? FiColors.darkSeries10 : FiColors.lightSeries10;
+    case 11:
+      return dark ? FiColors.darkSeries11 : FiColors.lightSeries11;
+    default:
+      return dark ? FiColors.darkSeriesOther : FiColors.lightSeriesOther;
+  }
+}
+
 abstract final class FiSpace {
   static const s0 = 0.0;
   static const s1 = 4.0;
@@ -320,6 +354,34 @@ const List<FiScoreBand> fiHealthBands = [
   FiScoreBand(id: 'fragile', min: 0, max: 39, label: 'Frágil', state: FiState.adverse, emphasis: 'strong'),
   FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Carteira pequena demais para avaliar', state: FiState.indeterminate, emphasis: 'muted'),
 ];
+
+const List<FiScoreBand> fiMarginOfSafetyBands = [
+  FiScoreBand(id: 'wide', min: 25, max: 50, label: 'Desconto amplo', state: FiState.favorable, emphasis: 'strong'),
+  FiScoreBand(id: 'some', min: 10, max: 24, label: 'Algum desconto', state: FiState.favorable, emphasis: 'muted'),
+  FiScoreBand(id: 'fair', min: 0, max: 9, label: 'Perto do justo', state: FiState.neutral, emphasis: 'muted'),
+  FiScoreBand(id: 'above', min: -50, max: -1, label: 'Acima do justo', state: FiState.attention, emphasis: 'strong'),
+  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem preço justo', state: FiState.indeterminate, emphasis: 'muted'),
+];
+
+const ({double min, double max}) fiMarginOfSafetyDomain = (min: -50, max: 50);
+
+const List<FiScoreBand> fiAllocationGapBands = [
+  FiScoreBand(id: 'relevant', min: 5, max: 20, label: 'Desvio relevante', state: FiState.attention, emphasis: 'strong'),
+  FiScoreBand(id: 'drift', min: 2, max: 4, label: 'Desvio', state: FiState.neutral, emphasis: 'muted'),
+  FiScoreBand(id: 'on-target', min: 0, max: 1, label: 'Na meta', state: FiState.favorable, emphasis: 'muted'),
+  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem meta definida', state: FiState.indeterminate, emphasis: 'muted'),
+];
+
+const ({double min, double max}) fiAllocationGapDomain = (min: 0, max: 20);
+
+const List<FiScoreBand> fiGoalProgressBands = [
+  FiScoreBand(id: 'reached', min: 100, max: 100, label: 'Meta atingida', state: FiState.favorable, emphasis: 'strong'),
+  FiScoreBand(id: 'advancing', min: 50, max: 99, label: 'Mais da metade', state: FiState.favorable, emphasis: 'muted'),
+  FiScoreBand(id: 'starting', min: 0, max: 49, label: 'No começo', state: FiState.neutral, emphasis: 'muted'),
+  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem meta definida', state: FiState.indeterminate, emphasis: 'muted'),
+];
+
+const ({double min, double max}) fiGoalProgressDomain = (min: 0, max: 100);
 
 FiScoreBand fiBandFor(
   double value,

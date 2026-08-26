@@ -22,21 +22,17 @@ import { FiState } from '../../core';
       ></lucide-icon>
 
       <div class="flex-1 min-w-0">
-        <!-- O que aconteceu -->
         <div class="fi-verdict-sm text-ink">{{ title() }}</div>
 
-        <!-- Por que importa -->
         @if (detail()) {
           <div class="fi-body text-ink-2 mt-0.5">{{ detail() }}</div>
         }
 
-        <!-- O que sustenta a leitura -->
         @if (evidence()) {
           <div class="fi-caption text-ink-3 mt-1">{{ evidence() }}</div>
         }
       </div>
 
-      <!-- O que posso fazer -->
       @if (actionLabel()) {
         <button
           type="button"

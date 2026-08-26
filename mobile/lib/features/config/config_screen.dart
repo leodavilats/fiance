@@ -476,7 +476,7 @@ class _SettingsCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, size: 18, color: Colors.grey.shade600),
+                Icon(icon, size: 18, color: fiInk2(context)),
                 const SizedBox(width: 8),
                 Text(
                   title,
@@ -567,8 +567,8 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
                     'Total: ${total.toStringAsFixed(0)}%',
                     style: TextStyle(
                       color: (total - 100).abs() < 0.5
-                          ? gainColor(Theme.of(context).brightness)
-                          : lossColor(Theme.of(context).brightness),
+                          ? fiStateColor(FiState.favorable, Theme.of(context).brightness)
+                          : fiStateColor(FiState.adverse, Theme.of(context).brightness),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -788,11 +788,11 @@ class _AlertsSection extends ConsumerWidget {
           ),
           data: (items) {
             if (items.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
                   'Nenhum alerta configurado',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: fiInk2(context)),
                 ),
               );
             }

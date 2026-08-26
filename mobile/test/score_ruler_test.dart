@@ -1,17 +1,24 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
 import 'package:fiance/core/glossary.dart';
 import 'package:fiance/core/score_ruler.dart';
-import 'package:flutter_test/flutter_test.dart';
+
+/// Rótulos e cor saem de `design-tokens/tokens.json` — o vocabulário mudou de
+/// "Excelente entrada / Boa oportunidade / Evitar agora" para
+/// "Forte / Boa / Neutra / Fraca" (§13). Os limiares não mudaram.
 
 void main() {
   group('régua de score', () {
     test('faixas seguem os limiares compartilhados', () {
-      expect(scoreBand(90).text, 'Excelente entrada');
-      expect(scoreBand(kScoreStrong).text, 'Excelente entrada');
-      expect(scoreBand(kScoreStrong - 1).text, 'Boa oportunidade');
-      expect(scoreBand(kScoreGood).text, 'Boa oportunidade');
-      expect(scoreBand(kScoreGood - 1).text, 'Neutro');
-      expect(scoreBand(kScoreNeutral).text, 'Neutro');
-      expect(scoreBand(kScoreNeutral - 1).text, 'Evitar agora');
+      const dark = Brightness.dark;
+      expect(scoreBand(90, dark).text, 'Forte');
+      expect(scoreBand(kScoreStrong, dark).text, 'Forte');
+      expect(scoreBand(kScoreStrong - 1, dark).text, 'Boa');
+      expect(scoreBand(kScoreGood, dark).text, 'Boa');
+      expect(scoreBand(kScoreGood - 1, dark).text, 'Neutra');
+      expect(scoreBand(kScoreNeutral, dark).text, 'Neutra');
+      expect(scoreBand(kScoreNeutral - 1, dark).text, 'Fraca');
     });
 
     test('glossário cita os mesmos limiares da régua', () {

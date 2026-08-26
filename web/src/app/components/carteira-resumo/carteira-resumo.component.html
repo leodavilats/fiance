@@ -67,43 +67,25 @@
       @if (hasGoals()) {
         <ul class="list-none m-0 p-0 flex flex-col gap-3">
           @for (gap of gaps(); track gap.label) {
-            <li class="flex items-center gap-4">
-              <span class="fi-label text-ink w-[100px] shrink-0">{{ gap.label }}</span>
-
-              <div class="relative flex-1 h-2 rounded-sm bg-ground-2 min-w-[80px]">
-                <div
-                  class="absolute inset-y-0 left-0 rounded-sm bg-ink-3"
-                  [style.width.%]="gap.currentPct > 100 ? 100 : gap.currentPct"
-                ></div>
-                <div
-                  class="absolute inset-y-[-3px] w-[2px] bg-brand"
-                  [style.left]="'calc(' + (gap.targetPct > 100 ? 100 : gap.targetPct) + '% - 1px)'"
-                  [title]="'Meta: ' + gap.targetPct + '%'"
-                ></div>
-              </div>
-
-              <span class="fi-metric-sm text-ink w-[56px] text-right shrink-0">
-                {{ gap.currentPct | number: '1.0-0' }}%
-              </span>
-              <span class="fi-caption text-ink-3 w-[60px] text-right shrink-0">
-                meta {{ gap.targetPct | number: '1.0-0' }}%
-              </span>
-              <span
-                class="fi-metric-sm w-[64px] text-right shrink-0"
-                [class.text-attention]="gap.deltaPct <= -2 || gap.deltaPct >= 2"
-                [class.text-ink-3]="gap.deltaPct > -2 && gap.deltaPct < 2"
-              >
-                {{ gap.deltaPct > 0 ? '+' : '' }}{{ gap.deltaPct | number: '1.1-1' }} p.p.
-              </span>
+            <li>
+              <app-allocation-gap
+                [label]="gap.label"
+                [currentPct]="gap.currentPct"
+                [targetPct]="gap.targetPct"
+                [barColor]="gap.barColor"
+              />
             </li>
           }
         </ul>
       } @else {
-        <p class="fi-body text-ink-2 m-0">
-          Você ainda não definiu metas de alocação. Sem elas, o fiance mostra a composição mas não
-          tem contra o que comparar.
-          <a routerLink="/estrategia/metas" class="text-brand">Definir metas</a>.
-        </p>
+        <app-empty-state
+          icon="target"
+          title="Nenhuma meta de alocação definida"
+          reason="Sem meta, o fiance mostra onde seu dinheiro está, mas não tem contra o que comparar — e desvio de uma meta que não existe seria número inventado."
+          nextStep="Defina o peso que cada classe deveria ter na carteira. Leva um minuto e passa a valer para Hoje, Estratégia e o aporte."
+          actionLabel="Definir metas"
+          actionRoute="/estrategia/metas"
+        />
       }
     </section>
 
