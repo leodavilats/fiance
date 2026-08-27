@@ -25,6 +25,18 @@ jobs:
       - name: Verificar tokens gerados
         run: node design-tokens/build.mjs --check
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Instalar Pillow
+        run: pip install --quiet Pillow
+
+      # Favicon e launcher ja carregaram a marca antiga por uma versao inteira:
+      # eram escritos a mao e ninguem os regerava quando a cor mudava.
+      - name: Verificar marca (favicon e icones)
+        run: python design-tokens/build-icons.py --check
+
   backend:
     name: Backend (ruff + pytest)
     runs-on: ubuntu-latest

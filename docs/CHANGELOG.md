@@ -12,6 +12,42 @@
 
 ---
 
+## A marca nos ícones: favicon que nunca subiu e launcher com a cor antiga (2026-08-27)
+
+Ao alinhar `mobile/assets/icon` com `web/public/favicon.svg` apareceram três coisas, e nenhuma era
+estética.
+
+**O favicon nunca chegou ao build.** `angular.json` tinha `"assets": []`, então `web/public/` não
+era copiado para `dist/`. O `<link rel="icon" href="/favicon.svg">` no `index.html` apontava para um
+404 em toda build publicada — o arquivo existia no repo e em lugar nenhum além dele.
+
+**Favicon e launcher ainda traziam a marca abandonada.** Os dois carregavam o gradiente verde→ciano
+(`#4ade80` → `#22d3ee`) com glifo escuro, a marca que o web largou na Etapa 1 e que o `AppLogo` do
+mobile deixou de usar na Etapa 10. O `adaptive_icon_background` no `pubspec.yaml` era `#1CB899`, um
+terceiro verde que não corresponde a token nenhum. Ou seja: o mesmo produto tinha três marcas — a
+dos logos em app (`brand`, hoje `#2C6485`), a dos ícones e a do fundo adaptativo.
+
+Pior, o glifo era escuro. Sobre o `brand` atual, cujo `ink-on-brand` é branco, o contraste estava
+invertido.
+
+**A causa era não haver gerador.** Os artefatos eram escritos à mão, então não havia o que
+regerar quando a cor mudou — e ninguém percebeu. `design-tokens/build-icons.py` passa a emitir os
+cinco a partir de `tokens.json`, com a mesma marca dos logos em app: quadrado arredondado,
+`brand` de fundo, `trending-up` do Lucide em `ink-on-brand`.
+
+Decisões de formato ficaram no script: `icon.png` e `apple-touch-icon.png` vão full-bleed e sem
+alfa, porque launcher e iOS aplicam a própria máscara; a camada adaptativa do Android usa glifo
+menor (42% contra 58%), porque só os 66% centrais são garantidos contra o recorte circular.
+
+O `--check` do CI confere o favicon (texto, determinístico) e os dois hex que não cabem em token
+— `theme-color` e `adaptive_icon_background`. **Não** compara PNG byte a byte: a rasterização muda
+com a versão do Pillow e o job ficaria intermitente. O que precisa não divergir é a cor.
+
+Junto, `index.html` ganhou fallback PNG, `apple-touch-icon` (iOS ignora favicon SVG na tela de
+início) e `theme-color`.
+
+---
+
 ## Paridade web/mobile: o quinto destino, o trilho de seção e a comparação por classe (2026-08-27)
 
 Auditoria de UX/UI do web contra o mobile. Três coisas apareceram, e duas delas eram divergência
