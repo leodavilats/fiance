@@ -128,13 +128,24 @@ FAVICON = 'web/public/favicon.svg'
 def check_derived(brand_hex):
     """Confere os dois hex que precisam existir fora do token.
 
-    `theme-color` e um meta e `adaptive_icon_background` e YAML: nenhum dos dois
-    aceita `var(--fi-brand)`. Como a marca ja mudou uma vez sem que estes
+    `theme-color` e um meta, `adaptive_icon_background` e YAML e
+    `ic_launcher_background` e recurso Android: nenhum dos tres aceita
+    `var(--fi-brand)`. Como a marca ja mudou uma vez sem que estes
     acompanhassem, a divergencia falha aqui em vez de aparecer no launcher.
+
+    `colors.xml` e os PNG sob `mobile/android/.../mipmap-*` e
+    `mobile/ios/.../AppIcon.appiconset` nao sao emitidos por este script: quem
+    os gera e `dart run flutter_launcher_icons` (dentro de `mobile/`), a partir
+    de `assets/icon/`. Eles ficaram verdes por duas versoes depois da marca
+    virar azul justamente porque nada conferia. `colors.xml` e o unico dos tres
+    artefatos que e texto, entao e ele que denuncia o atraso do conjunto:
+    quando falhar aqui, rode o flutter_launcher_icons.
     """
     targets = [
         ('web/src/index.html', '<meta name="theme-color" content="%s" />' % brand_hex),
         ('mobile/pubspec.yaml', 'adaptive_icon_background: "%s"' % brand_hex),
+        ('mobile/android/app/src/main/res/values/colors.xml',
+         '<color name="ic_launcher_background">%s</color>' % brand_hex),
     ]
     bad = []
     for rel, needle in targets:
@@ -143,7 +154,8 @@ def check_derived(brand_hex):
                 bad.append('%s nao contem %r' % (rel, needle))
     if bad:
         raise SystemExit('marca divergente:\n  ' + '\n  '.join(bad))
-    print('conferido: theme-color e adaptive_icon_background em %s' % brand_hex)
+    print('conferido: theme-color, adaptive_icon_background e '
+          'ic_launcher_background em %s' % brand_hex)
 
 
 def check(brand_hex, on_brand_hex):

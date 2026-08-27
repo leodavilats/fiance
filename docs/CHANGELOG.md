@@ -12,6 +12,36 @@
 
 ---
 
+## O launcher continuava verde: o gerador para em `assets/icon/` (2026-08-27)
+
+A entrada anterior gerou a marca azul e conferiu os hex — e o ícone do app continuou verde. O
+gerador nunca esteve errado; ele simplesmente não alcança os artefatos que o sistema operacional
+usa.
+
+`build-icons.py` emite as **fontes**: `mobile/assets/icon/icon.png` e `icon_foreground.png`. Quem
+transforma essas fontes nos ícones instalados é o `flutter_launcher_icons`, e ele só roda quando
+alguém o chama. Ninguém chamou. Então os PNGs versionados de
+`android/app/src/main/res/mipmap-*` e de `ios/Runner/Assets.xcassets/AppIcon.appiconset` (28
+arquivos) seguiram com o gradiente verde→ciano e glifo escuro `#0B0E14`, e o
+`values/colors.xml` seguiu com `ic_launcher_background: #1CB899` — o terceiro verde, que a entrada
+anterior corrigiu no `pubspec.yaml` mas não no recurso Android que o `pubspec` alimenta.
+
+`cd mobile && dart run flutter_launcher_icons` resolveu os 28 PNGs e o `colors.xml`, todos agora em
+`#2C6485` com glifo branco.
+
+**O `--check` passava porque olhava para o lugar errado.** Conferia `theme-color` e
+`adaptive_icon_background`, que são entrada do gerador nativo, e nada da saída. Agora confere
+também `ic_launcher_background` no `colors.xml`: dos três artefatos nativos ele é o único que é
+texto, então é ele que denuncia o atraso do conjunto — se o `colors.xml` está na cor velha, os
+PNGs ao lado dele também estão. Os PNGs continuam fora da comparação byte a byte, pelo mesmo
+motivo de antes.
+
+A lição é a mesma da entrada anterior, um nível acima: **gerar não é publicar.** Da primeira vez o
+artefato existia no repo e não no `dist/`; desta vez existia em `assets/` e não no `res/`. Marca
+muda em dois passos, e o segundo está escrito no CLAUDE.md.
+
+---
+
 ## A marca nos ícones: favicon que nunca subiu e launcher com a cor antiga (2026-08-27)
 
 Ao alinhar `mobile/assets/icon` com `web/public/favicon.svg` apareceram três coisas, e nenhuma era
