@@ -12,6 +12,60 @@
 
 ---
 
+## Paridade web/mobile: o quinto destino, o trilho de seção e a comparação por classe (2026-08-27)
+
+Auditoria de UX/UI do web contra o mobile. Três coisas apareceram, e duas delas eram divergência
+declarada de identidade, não estética.
+
+**`/voce` não existia no desktop.** O header trazia quatro destinos; o bottom nav do mobile trazia
+cinco. O avatar abria um modal com nome, e-mail e "sair" — nenhum caminho para Preferências,
+Alertas ou Conta e dados. Na prática, um dos cinco destinos da arquitetura de informação só era
+alcançável por URL digitada, pela busca global (Ctrl+K) ou por link vindo de outra tela. O mesmo
+produto tinha quatro destinos num dispositivo e cinco no outro. `Você` entrou na navegação
+principal e o modal do avatar ganhou as três sub-rotas — o bottom nav do mobile deixou de repetir
+o item à mão e passa a ler a mesma lista.
+
+**O desktop era o mobile esticado.** `layout.subnavWidth: 200` estava em `tokens.json` desde o
+redesign, sem nenhum consumidor: a navegação de seção era pill horizontal em qualquer largura, e
+Carteira, com sete seções, quebrava em duas linhas. Agora `SectionNav` projeta o conteúdo e vira
+**trilho vertical a partir de 1024px**, consumindo o token. No trilho o item ativo é marcado por
+posição (fundo `ground-2` e fio de marca à esquerda), não por preenchimento sólido — uma coluna de
+blocos cheios competiria com o conteúdo ao lado. Abaixo de 1024px nada muda: a leitura no toque
+continua sendo a de pills.
+
+Na mesma linha, `/hoje` deixou de ser uma coluna única esticada até 1600px. A partir de 1280px a
+narrativa (patrimônio → saúde → o que mudou → próxima ação) fica em coluna de largura de leitura e
+**"Em destaque" vira painel complementar** à direita, separado por fio. A ordem de leitura da
+narrativa não foi partida em duas colunas de propósito: ela é uma sequência, e coluna dupla a
+embaralharia.
+
+**A comparação tratava FII como ação.** `/descobrir/comparar` era uma tabela achatada em que
+"Decisão" era só mais uma linha entre P/L e P/VP, e em que P/L e ROE de um FII apareciam como "—"
+— indistinguível de dado que a fonte não trouxe. Agora a tela separa **decisão de evidência**: o
+veredito, a classe e a régua de margem de segurança de cada ativo vêm primeiro, lado a lado; os
+indicadores vêm depois, agrupados por Valuation, Qualidade, Risco e Proventos.
+
+A diferença que importa é semântica: cada indicador declara **em que classe tem significado**.
+Fora dela a célula diz "não se aplica a FII" por extenso, em vez de um traço. O melhor valor de
+cada linha ganha um ponto de marca — comparação visual sem gráfico — mas só quando há direção
+declarada e ao menos dois valores comparáveis: marcar o "melhor" entre um só é ruído, e empate não
+tem vencedor. O recorte também passou a viver na URL (`?tickers=`), que a tela lia na entrada mas
+nunca escrevia: uma comparação tem que ser um link salvável.
+
+O mobile recebeu a mesma mudança conceitual — decisão acima, evidência agrupada, "não se aplica"
+por extenso — mantendo a tabela com rolagem horizontal, que é a forma certa no estreito. A tabela
+de significados virou `mobile/lib/core/compare_metrics.dart`, espelhando
+`web/.../compare-metrics.ts`, e cinco testes travam a regra: P/L e ROE não se aplicam a FII nem a
+ETF, P/VP se aplica a FII porque FII tem patrimônio, e nenhum indicador é declarado sem classe em
+que valha. `AssetAnalysis` no Dart ganhou `assetType` — o backend já mandava `asset_type`, e o
+cliente descartava.
+
+**Score continua fora da comparação.** `/compare` devolve `AssetAnalysis`, que não carrega score —
+ele vive em `Opportunity`. Mostrá-lo exigiria calcular no cliente, o que a arquitetura proíbe, ou
+mudar o backend. Ficou declarado, não improvisado.
+
+---
+
 ## Auditoria adversarial de segurança e integridade financeira (2026-08-26)
 
 Varredura procurando ativamente o que estava errado, não confirmação do que estava certo. O

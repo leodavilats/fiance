@@ -426,11 +426,15 @@ como redirect. Funcionava por acidente, com um salto a mais em cada toque.
 
 Declarado, não esquecido:
 
-- **Web** — `/descobrir/comparar` ainda não separa decisão de evidência (§33); `/carteira/proventos`
-  não usa `DividendTimeline`; `/estrategia/projecao` não declara premissas e cenários como a §37
-  pede; a densidade compacta existe só na tabela de posições, não como preferência do usuário.
+- **Web** — `/carteira/proventos` não usa `DividendTimeline`; `/estrategia/projecao` não declara
+  premissas e cenários como a §37 pede; a densidade compacta existe só na tabela de posições, não
+  como preferência do usuário. `/descobrir/comparar` separa decisão de evidência desde 2026-08-27,
+  mas ainda não mostra **score** — `/compare` devolve `AssetAnalysis`, que não o carrega, e
+  calculá-lo no cliente está fora de questão.
 - **Mobile** — `config_screen.dart` (837 linhas) é o próximo monólito; Metas continuam dentro de
   Configurações; `/income-compare` (RF × Bolsa) segue sem cliente Dart; não há busca global nem
   drawer de atividade.
+- **Web** — a largura de leitura (`max-w-reading`) foi aplicada em `/hoje` e no cabeçalho de
+  Comparar, mas as telas de formulário de `/voce` e `/estrategia` ainda renderizam até 1600px.
 - **Ambos** — não há teste visual automatizado. A varredura de ícone do Lucide continua manual:
   nome ausente não quebra o build, quebra a tela.

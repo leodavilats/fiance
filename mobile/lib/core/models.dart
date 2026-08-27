@@ -687,6 +687,7 @@ class AssetAnalysis {
   AssetAnalysis({
     required this.symbol,
     required this.name,
+    required this.assetType,
     required this.sector,
     required this.price,
     required this.bazin,
@@ -703,6 +704,7 @@ class AssetAnalysis {
 
   final String symbol;
   final String? name;
+  final String assetType;
   final String? sector;
   final double? price;
   final double? bazin;
@@ -724,6 +726,7 @@ class AssetAnalysis {
     return AssetAnalysis(
       symbol: j['symbol'] as String,
       name: j['name'] as String?,
+      assetType: j['asset_type'] as String? ?? 'br_stock',
       sector: j['sector'] as String?,
       price: (j['price'] as num?)?.toDouble(),
       bazin: (fp['bazin'] as num?)?.toDouble(),

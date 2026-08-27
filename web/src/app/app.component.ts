@@ -39,6 +39,7 @@ const DESTINATIONS: readonly NavDestination[] = [
   { path: '/carteira', label: 'Carteira', icon: 'wallet' },
   { path: '/descobrir', label: 'Descobrir', icon: 'compass' },
   { path: '/estrategia', label: 'Estratégia', icon: 'target' },
+  { path: '/voce', label: 'Você', icon: 'sliders-horizontal' },
 ];
 
 @Component({
@@ -81,11 +82,17 @@ const DESTINATIONS: readonly NavDestination[] = [
             <span class="text-lg font-bold text-ink tracking-tight">fiance</span>
           </a>
 
-          <nav class="hidden md:block" aria-label="Navegação principal">
+          <nav class="hidden lg:block" aria-label="Navegação principal">
             <ul class="flex items-center gap-1 list-none m-0 p-0">
               @for (d of destinations; track d.path) {
                 <li>
-                  <a [routerLink]="d.path" routerLinkActive="nav-active" class="nav-link">
+                  <a
+                    [routerLink]="d.path"
+                    routerLinkActive="nav-active"
+                    #rla="routerLinkActive"
+                    [attr.aria-current]="rla.isActive ? 'page' : null"
+                    class="nav-link"
+                  >
                     <lucide-icon [name]="d.icon" size="16"></lucide-icon>
                     {{ d.label }}
                   </a>
@@ -146,13 +153,13 @@ const DESTINATIONS: readonly NavDestination[] = [
       </header>
     }
 
-    <main class="max-w-dense mx-auto px-3 sm:px-5 pt-5 sm:pt-6 pb-24 md:pb-10">
+    <main class="max-w-dense mx-auto px-3 sm:px-5 pt-5 sm:pt-6 pb-24 lg:pb-10">
       <router-outlet />
     </main>
 
     @if (auth.user()) {
       <nav
-        class="md:hidden fixed bottom-0 left-0 right-0 border-t border-hairline bg-ground-1"
+        class="lg:hidden fixed bottom-0 left-0 right-0 border-t border-hairline bg-ground-1"
         style="padding-bottom: env(safe-area-inset-bottom); z-index: var(--fi-z-nav);"
         aria-label="Navegação principal"
       >
@@ -162,6 +169,8 @@ const DESTINATIONS: readonly NavDestination[] = [
               <a
                 [routerLink]="d.path"
                 routerLinkActive="nav-active-mob"
+                #rlaMob="routerLinkActive"
+                [attr.aria-current]="rlaMob.isActive ? 'page' : null"
                 class="flex flex-col items-center justify-center gap-0.5 px-1 flex-1 text-ink-2 no-underline text-xs font-medium transition-colors"
               >
                 <lucide-icon [name]="d.icon" size="20"></lucide-icon>
@@ -169,16 +178,6 @@ const DESTINATIONS: readonly NavDestination[] = [
               </a>
             </li>
           }
-          <li class="flex-1 flex">
-            <a
-              routerLink="/voce"
-              routerLinkActive="nav-active-mob"
-              class="flex flex-col items-center justify-center gap-0.5 px-1 flex-1 text-ink-2 no-underline text-xs font-medium transition-colors"
-            >
-              <lucide-icon name="sliders-horizontal" size="20"></lucide-icon>
-              <span>Você</span>
-            </a>
-          </li>
         </ul>
       </nav>
     }

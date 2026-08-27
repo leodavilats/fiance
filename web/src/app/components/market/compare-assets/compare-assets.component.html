@@ -1,20 +1,20 @@
-<div class="space-y-4">
-  <p class="text-xs text-ink-2 m-0">
-    Compare até {{ maxTickers }} ativos lado a lado: preço justo, margem de segurança e indicadores
-    principais.
-  </p>
+<div class="flex flex-col gap-8">
+  <section>
+    <p class="fi-eyebrow text-ink-3 m-0 mb-2">Comparar</p>
+    <p class="fi-body text-ink-2 m-0 mb-4 max-w-reading">
+      Até {{ maxTickers }} ativos lado a lado. A decisão de cada um vem primeiro; os indicadores que
+      a sustentam vêm depois, agrupados pela pergunta que respondem.
+    </p>
 
-  <div class="p-4 rounded-lg bg-ground-1 border border-hairline">
-    <div class="flex items-center gap-2 flex-wrap mb-3">
+    <div class="flex flex-wrap items-center gap-2 mb-3">
       @for (t of tickers(); track t) {
-        <span
-          class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ground-2 border border-hairline text-xs font-medium text-ink"
-        >
+        <span class="tag tag-neutral flex items-center gap-1.5">
           {{ t }}
           <button
             type="button"
             (click)="removeTicker(t)"
-            class="bg-transparent border-0 cursor-pointer text-ink-2 hover:text-ink p-0 leading-none"
+            class="bg-transparent border-0 cursor-pointer text-ink-3 hover:text-ink p-0 leading-none"
+            [attr.aria-label]="'Remover ' + t + ' da comparação'"
           >
             ×
           </button>
@@ -22,186 +22,196 @@
       }
     </div>
 
-    @if (tickers().length < maxTickers) {
-      <div class="relative">
-        <input
-          type="text"
-          [value]="tickerInput()"
-          (input)="onTickerInput($any($event.target).value)"
-          (focus)="onTickerInput(tickerInput())"
-          (focusout)="closeSuggestions()"
-          (keydown.enter)="addTicker(tickerInput())"
-          placeholder="Adicionar ticker (ex.: PETR4)"
-          autocomplete="off"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand uppercase"
-        />
-        @if (suggestionsOpen() && suggestions().length > 0) {
-          <ul
-            class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto text-sm"
-          >
-            @for (s of suggestions(); track s.ticker) {
-              <li>
-                <button
-                  type="button"
-                  class="w-full text-left px-3 py-2 hover:bg-ground-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
-                  (mousedown)="$event.preventDefault(); addTicker(s.ticker)"
-                >
-                  <span class="font-semibold text-ink">{{ s.ticker }}</span>
-                  <span class="text-ink-2 text-xs truncate">{{ s.name }}</span>
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </div>
-    }
+    <div class="flex flex-wrap items-start gap-2">
+      @if (tickers().length < maxTickers) {
+        <div class="relative w-full sm:w-[280px]">
+          <label class="sr-only" for="compare-ticker">Adicionar ticker à comparação</label>
+          <input
+            id="compare-ticker"
+            type="text"
+            class="input uppercase"
+            [value]="tickerInput()"
+            (input)="onTickerInput($any($event.target).value)"
+            (focus)="onTickerInput(tickerInput())"
+            (focusout)="closeSuggestions()"
+            (keydown.enter)="addTicker(tickerInput())"
+            placeholder="Adicionar ticker (ex.: PETR4)"
+            autocomplete="off"
+          />
+          @if (suggestionsOpen() && suggestions().length > 0) {
+            <ul
+              class="absolute top-full left-0 right-0 mt-1 rounded-md border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto list-none m-0 p-0"
+              style="z-index: var(--fi-z-popover)"
+            >
+              @for (s of suggestions(); track s.ticker) {
+                <li>
+                  <button
+                    type="button"
+                    class="w-full text-left px-3 py-2 hover:bg-ground-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                    (mousedown)="$event.preventDefault(); addTicker(s.ticker)"
+                  >
+                    <span class="fi-ticker text-ink">{{ s.ticker }}</span>
+                    <span class="fi-caption text-ink-3 truncate">{{ s.name }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
 
-    <button
-      type="button"
-      (click)="compare()"
-      [disabled]="loading() || tickers().length < 2"
-      class="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 disabled:opacity-50 transition-opacity"
-    >
-      {{ loading() ? 'Comparando...' : 'Comparar' }}
-    </button>
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="compare()"
+        [disabled]="loading() || tickers().length < 2"
+      >
+        {{ loading() ? 'Comparando…' : 'Comparar' }}
+      </button>
+    </div>
 
     @if (error()) {
-      <div class="text-xs text-attention mt-2">{{ error() }}</div>
+      <p class="fi-caption text-attention m-0 mt-2">{{ error() }}</p>
     }
-  </div>
+  </section>
 
-  @if (result(); as r) {
+  @if (loading()) {
+    <div class="animate-pulse flex flex-col gap-3" aria-hidden="true">
+      <div class="h-4 w-32 rounded bg-ground-2"></div>
+      <div class="h-24 w-full rounded bg-ground-2"></div>
+      <div class="h-4 w-24 rounded bg-ground-2 mt-3"></div>
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="h-5 w-full rounded bg-ground-2"></div>
+      }
+    </div>
+  } @else if (result(); as r) {
     @if (r.errors.length > 0) {
-      <div class="text-xs text-attention">Não foi possível buscar: {{ r.errors.join(', ') }}</div>
+      <p class="fi-caption text-attention m-0">
+        Não foi possível buscar: {{ r.errors.join(', ') }}
+      </p>
     }
 
     @if (r.items.length > 0) {
-      <div class="overflow-x-auto rounded-lg border border-hairline">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="bg-ground-2 text-ink-2 text-xs">
-              <th class="text-left px-3 py-2 font-medium">Indicador</th>
-              @for (item of r.items; track item.symbol) {
-                <th class="text-right px-3 py-2 font-medium text-ink">{{ item.symbol }}</th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="border-t border-hairline">
-              <td class="px-3 py-2 text-ink-2">Preço</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right text-ink">
-                  {{ item.price != null ? (item.price | number: '1.2-2') : '—' }}
-                </td>
-              }
-            </tr>
-            <tr class="border-t border-hairline bg-ground-2/50">
-              <td class="px-3 py-2 text-ink-2">Preço justo (consenso)</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right text-ink">
-                  {{
-                    item.fair_price.consensus != null
-                      ? (item.fair_price.consensus | number: '1.2-2')
-                      : '—'
-                  }}
-                </td>
-              }
-            </tr>
-            <tr class="border-t border-hairline">
-              <td class="px-3 py-2 text-ink-2">Margem de segurança</td>
-              @for (item of r.items; track item.symbol) {
-                <td
-                  class="px-3 py-2 text-right font-medium"
-                  [class.good]="(item.fair_price.margin_of_safety ?? 0) >= 0"
-                  [class.warn]="(item.fair_price.margin_of_safety ?? 0) < 0"
+      <section class="pt-6 border-t border-hairline">
+        <p class="fi-eyebrow text-ink-3 m-0 mb-4">Decisão</p>
+        <div
+          class="grid gap-x-6 gap-y-6 grid-cols-1 sm:grid-cols-2"
+          [class.lg:grid-cols-3]="r.items.length === 3"
+          [class.lg:grid-cols-4]="r.items.length >= 4"
+        >
+          @for (item of r.items; track item.symbol) {
+            <div class="flex flex-col gap-2 min-w-0">
+              <div class="flex items-baseline gap-2 flex-wrap">
+                <a
+                  [routerLink]="['/ativo', item.symbol]"
+                  class="fi-ticker text-ink no-underline hover:text-brand transition-colors"
                 >
-                  {{
-                    item.fair_price.margin_of_safety != null
-                      ? (item.fair_price.margin_of_safety * 100 | number: '1.0-0') + '%'
-                      : '—'
-                  }}
-                </td>
+                  {{ item.symbol }}
+                </a>
+                <span class="fi-caption text-ink-3">{{ typeLabel(item.asset_type) }}</span>
+              </div>
+
+              @if (item.name) {
+                <p class="fi-caption text-ink-3 m-0 truncate">{{ item.name }}</p>
               }
-            </tr>
-            <tr class="border-t border-hairline bg-ground-2/50">
-              <td class="px-3 py-2 text-ink-2">Decisão</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right">
-                  <span
-                    class="verdict-pill text-[10px]"
-                    [class]="ui.verdictClass(item.decision.verdict)"
-                    >{{ item.decision.label }}</span
+
+              <span
+                class="verdict-pill self-start"
+                [class]="ui.verdictClass(item.decision.verdict)"
+              >
+                {{ item.decision.label }}
+              </span>
+
+              <app-margin-of-safety [marginPct]="marginPct(item)" [reason]="marginReason" />
+
+              @if (item.decision.reasons.length > 0) {
+                <p class="fi-caption text-ink-2 m-0">{{ item.decision.reasons[0] }}</p>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="pt-6 border-t border-hairline">
+        <div class="flex items-baseline justify-between gap-3 mb-1">
+          <p class="fi-eyebrow text-ink-3 m-0">Evidência</p>
+          <span class="fi-caption text-ink-3">
+            <span class="text-brand">•</span> marca o melhor da linha
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <caption class="sr-only">
+              Indicadores comparados entre
+              {{
+                tickers().join(', ')
+              }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" class="text-left fi-caption text-ink-3 font-medium py-2 pr-3">
+                  Indicador
+                </th>
+                @for (item of r.items; track item.symbol) {
+                  <th scope="col" class="text-right fi-ticker text-ink py-2 pl-3 whitespace-nowrap">
+                    {{ item.symbol }}
+                  </th>
+                }
+              </tr>
+            </thead>
+            @for (group of visibleGroups(); track group) {
+              <tbody>
+                <tr>
+                  <th
+                    [attr.colspan]="r.items.length + 1"
+                    scope="colgroup"
+                    class="text-left fi-eyebrow text-ink-3 font-medium pt-5 pb-2 border-b border-hairline"
                   >
-                </td>
-              }
-            </tr>
-            <tr class="border-t border-hairline">
-              <td class="px-3 py-2 text-ink-2">P/L</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right text-ink">
-                  {{
-                    fundamental(item, 'pe_ratio') != null
-                      ? (fundamental(item, 'pe_ratio') | number: '1.1-1')
-                      : '—'
-                  }}
-                </td>
-              }
-            </tr>
-            <tr class="border-t border-hairline bg-ground-2/50">
-              <td class="px-3 py-2 text-ink-2">P/VP</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right text-ink">
-                  {{
-                    fundamental(item, 'pb_ratio') != null
-                      ? (fundamental(item, 'pb_ratio') | number: '1.2-2')
-                      : '—'
-                  }}
-                </td>
-              }
-            </tr>
-            <tr class="border-t border-hairline">
-              <td class="px-3 py-2 text-ink-2">Dividend Yield</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right text-ink">
-                  {{
-                    fundamental(item, 'dividend_yield') != null
-                      ? (fundamental(item, 'dividend_yield') | number: '1.1-1') + '%'
-                      : '—'
-                  }}
-                </td>
-              }
-            </tr>
-            <tr class="border-t border-hairline bg-ground-2/50">
-              <td class="px-3 py-2 text-ink-2">ROE</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right text-ink">
-                  {{
-                    fundamental(item, 'roe') != null
-                      ? (fundamental(item, 'roe') | number: '1.1-1') + '%'
-                      : '—'
-                  }}
-                </td>
-              }
-            </tr>
-            <tr class="border-t border-hairline">
-              <td class="px-3 py-2 text-ink-2">RSI (14)</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right text-ink">
-                  {{
-                    item.technical.rsi_14 != null ? (item.technical.rsi_14 | number: '1.0-0') : '—'
-                  }}
-                </td>
-              }
-            </tr>
-            <tr class="border-t border-hairline bg-ground-2/50">
-              <td class="px-3 py-2 text-ink-2">Tendência</td>
-              @for (item of r.items; track item.symbol) {
-                <td class="px-3 py-2 text-right text-ink capitalize">{{ item.technical.trend }}</td>
-              }
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                    {{ group }}
+                  </th>
+                </tr>
+                @for (metric of metricsOf(group); track metric.id) {
+                  <tr class="border-b border-hairline">
+                    <th scope="row" class="text-left fi-body text-ink-2 font-normal py-2 pr-3">
+                      {{ metric.label }}
+                    </th>
+                    @for (item of r.items; track item.symbol) {
+                      @if (applies(metric, item)) {
+                        <td class="text-right fi-num text-ink py-2 pl-3 whitespace-nowrap">
+                          @if (bestSymbol(metric) === item.symbol) {
+                            <span class="text-brand" aria-hidden="true">•</span>
+                            <span class="sr-only">melhor valor:</span>
+                          }
+                          {{ formatted(metric, item) }}
+                        </td>
+                      } @else {
+                        <td class="text-right fi-caption text-ink-3 py-2 pl-3">
+                          {{ notApplicableLabel(item) }}
+                        </td>
+                      }
+                    }
+                  </tr>
+                }
+              </tbody>
+            }
+          </table>
+        </div>
+
+        <p class="fi-caption text-ink-3 m-0 mt-4">
+          Indicador ausente na fonte aparece como “—”. Indicador que não existe para a classe do
+          ativo aparece dito por extenso — não é dado faltando, é pergunta que não se faz.
+        </p>
+      </section>
     }
+  } @else {
+    <app-empty-state
+      icon="git-compare"
+      title="Nenhuma comparação ainda"
+      reason="A comparação precisa de ao menos dois ativos para existir: ela é sobre a diferença entre eles, não sobre cada um."
+      nextStep="Adicione dois ou mais tickers acima. O recorte fica na URL, então o link pode ser salvo."
+      actionLabel="Ver oportunidades"
+      actionRoute="/descobrir/oportunidades"
+    />
   }
 </div>

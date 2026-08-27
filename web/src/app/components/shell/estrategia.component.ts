@@ -7,8 +7,9 @@ import { SectionNavComponent, SectionNavItem } from './section-nav.component';
   standalone: true,
   imports: [RouterOutlet, SectionNavComponent],
   template: `
-    <app-section-nav [items]="items" label="Estratégia" />
-    <router-outlet />
+    <app-section-nav [items]="items" label="Estratégia">
+      <router-outlet />
+    </app-section-nav>
   `,
 })
 export class EstrategiaComponent {

@@ -9,8 +9,9 @@ import { SectionNavComponent, SectionNavItem } from './section-nav.component';
   standalone: true,
   imports: [RouterOutlet, SectionNavComponent, DipAnalysisModalComponent],
   template: `
-    <app-section-nav [items]="items" label="Descobrir" />
-    <router-outlet />
+    <app-section-nav [items]="items" label="Descobrir">
+      <router-outlet />
+    </app-section-nav>
     @if (dip.open()) {
       <app-dip-analysis-modal [analysis]="dip.analysis()" (close)="dip.close()" />
     }

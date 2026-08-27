@@ -400,3 +400,46 @@ select.input {
   background: var(--fi-brand);
   cursor: pointer;
 }
+
+.fi-section-shell {
+  display: block;
+}
+.fi-section-body {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .fi-section-shell {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fi-space-8);
+  }
+  .fi-section-rail {
+    width: var(--fi-layout-subnav-width);
+    flex: 0 0 auto;
+    position: sticky;
+    top: var(--fi-space-6);
+    margin-bottom: 0;
+  }
+  .fi-section-rail > ul {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 2px;
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+  .fi-section-rail .subtab-btn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--fi-radius-md);
+  }
+  .fi-section-rail .subtab-btn.active {
+    background: var(--fi-ground-2);
+    color: var(--fi-ink-1);
+    box-shadow: inset 2px 0 0 var(--fi-brand);
+  }
+  .fi-section-body {
+    flex: 1 1 auto;
+  }
+}

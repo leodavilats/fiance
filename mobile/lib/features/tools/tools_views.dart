@@ -8,7 +8,9 @@ import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/compare_metrics.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
+import '../hoje/widgets/hoje_tiles.dart';
 
 class AnalyzeAssetView extends ConsumerStatefulWidget {
   const AnalyzeAssetView({super.key, this.initialTicker});
@@ -561,6 +563,63 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
   }
 }
 
+class _CompareDecisions extends StatelessWidget {
+  const _CompareDecisions({required this.items});
+
+  final List<AssetAnalysis> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Decisão', style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 8),
+        ...items.map(
+          (a) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 92,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        a.symbol,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        fiAssetTypeLabel[a.assetType] ?? a.assetType,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FiVerdictChip(verdict: a.verdict, label: a.label),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Margem de segurança ${formatPercent(a.marginOfSafety)}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _CompareTable extends StatelessWidget {
   const _CompareTable({required this.items});
 
@@ -568,41 +627,70 @@ class _CompareTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rows = <(String, String Function(AssetAnalysis))>[
-      ('Preço', (a) => formatCurrency(a.price)),
-      ('Preço justo', (a) => formatCurrency(a.consensus)),
-      ('Margem de segurança', (a) => formatPercent(a.marginOfSafety)),
-      ('Decisão', (a) => a.label),
-      ('P/L', (a) => a.fundamentals['pe_ratio']?.toStringAsFixed(1) ?? '—'),
-      ('P/VP', (a) => a.fundamentals['pb_ratio']?.toStringAsFixed(2) ?? '—'),
-      (
-        'Dividend Yield',
-        (a) => a.fundamentals['dividend_yield'] != null
-            ? '${a.fundamentals['dividend_yield']!.toStringAsFixed(1)}%'
-            : '—',
-      ),
-      ('RSI (14)', (a) => a.rsi14?.toStringAsFixed(0) ?? '—'),
-      ('Tendência', (a) => a.trend),
-    ];
+    final groups = ['Valuation', 'Qualidade', 'Risco', 'Proventos'];
+    final muted = Theme.of(context).textTheme.bodySmall;
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: [
-          const DataColumn(label: Text('Indicador')),
-          ...items.map((a) => DataColumn(label: Text(a.symbol))),
-        ],
-        rows: rows
-            .map(
-              (r) => DataRow(
-                cells: [
-                  DataCell(Text(r.$1)),
-                  ...items.map((a) => DataCell(Text(r.$2(a)))),
-                ],
+    final rows = <DataRow>[];
+    for (final group in groups) {
+      final metrics = fiCompareMetrics.where((m) => m.group == group).toList();
+      if (metrics.isEmpty) continue;
+      rows.add(
+        DataRow(
+          cells: [
+            DataCell(
+              Text(
+                group,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
               ),
-            )
-            .toList(),
-      ),
+            ),
+            ...items.map((_) => const DataCell(Text(''))),
+          ],
+        ),
+      );
+      for (final m in metrics) {
+        rows.add(
+          DataRow(
+            cells: [
+              DataCell(Text(m.label)),
+              ...items.map((a) {
+                final applies = m.appliesTo.contains(a.assetType);
+                if (!applies) {
+                  return DataCell(
+                    Text(
+                      'não se aplica a ${fiAssetTypeLabel[a.assetType] ?? a.assetType}',
+                      style: muted,
+                    ),
+                  );
+                }
+                return DataCell(Text(m.render(a)));
+              }),
+            ],
+          ),
+        );
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _CompareDecisions(items: items),
+        const SizedBox(height: 16),
+        Text('Evidência', style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 4),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: [
+              const DataColumn(label: Text('Indicador')),
+              ...items.map((a) => DataColumn(label: Text(a.symbol))),
+            ],
+            rows: rows,
+          ),
+        ),
+      ],
     );
   }
 }

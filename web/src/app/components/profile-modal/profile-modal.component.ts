@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AppUser } from '../../core';
 
 @Component({
   selector: 'app-profile-modal',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
     @if (open()) {
       <div
@@ -42,7 +43,38 @@ import { AppUser } from '../../core';
               </div>
             }
           </div>
-          <div class="px-5 pb-5">
+          <nav class="px-5 pb-4" aria-label="Sua área">
+            <ul class="list-none m-0 p-0 flex flex-col">
+              @for (item of shortcuts; track item.path) {
+                <li>
+                  <a
+                    [routerLink]="item.path"
+                    (click)="close.emit()"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-md no-underline text-ink hover:bg-ground-2 transition-colors"
+                  >
+                    <lucide-icon
+                      [name]="item.icon"
+                      size="16"
+                      class="text-ink-3"
+                      aria-hidden="true"
+                    ></lucide-icon>
+                    <span class="flex-1 min-w-0">
+                      <span class="fi-body block">{{ item.label }}</span>
+                      <span class="fi-caption text-ink-3 block">{{ item.hint }}</span>
+                    </span>
+                    <lucide-icon
+                      name="chevron-right"
+                      size="14"
+                      class="text-ink-3 shrink-0"
+                      aria-hidden="true"
+                    ></lucide-icon>
+                  </a>
+                </li>
+              }
+            </ul>
+          </nav>
+
+          <div class="px-5 pb-5 pt-1 border-t border-hairline mt-1">
             <button
               type="button"
               class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm cursor-pointer bg-ground-2 border border-hairline text-adverse hover:bg-adverse hover:text-on-brand transition-colors"
@@ -60,5 +92,21 @@ export class ProfileModalComponent {
   readonly open = input(false);
   readonly user = input<AppUser | null>(null);
   readonly close = output<void>();
+
+  readonly shortcuts = [
+    {
+      path: '/voce/preferencias',
+      label: 'Preferências',
+      hint: 'Perfil de risco, categorias e exclusões',
+      icon: 'sliders-horizontal',
+    },
+    { path: '/voce/alertas', label: 'Alertas', hint: 'Preço-alvo e avisos', icon: 'bell' },
+    {
+      path: '/voce/conta',
+      label: 'Conta e dados',
+      hint: 'Proveniência das cotações e cache',
+      icon: 'shield-check',
+    },
+  ] as const;
   readonly logout = output<void>();
 }
