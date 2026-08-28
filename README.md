@@ -252,6 +252,35 @@ carteira, quando já foi atribuída antes, e quando o código é da própria pes
 Uma recusa **não** derruba o login: quem digitou um código errado ainda assim
 quer entrar.
 
+## Cache
+
+Com um nó, o cache é um arquivo SQLite local — sem operação, sem dependência,
+sem rede. É o padrão e é a escolha certa nessa escala.
+
+Com **mais de um nó** ele deixa de ser desempenho e vira correção: cada nó
+guarda a própria cópia, e a mesma pessoa recarregando a página vê preços
+diferentes conforme o balanceador. "Subiu 2% ou caiu 1%?" passa a depender de
+qual máquina atendeu, e isso mina a confiança no número muito além do que
+algumas chamadas externas a mais custariam.
+
+| Variável | Efeito |
+| --- | --- |
+| _(nenhuma)_ | Cache em arquivo local (`CACHE_DB_PATH`, opcional) |
+| `REDIS_URL` | Cache compartilhado entre todos os nós |
+
+`GET /metrics` (rota de operador) diz onde o cache está morando e se ele é
+compartilhado. Descobrir que os nós não compartilham cache olhando gráfico de
+latência é caro; a resposta é uma palavra.
+
+Se `REDIS_URL` estiver configurado e o pacote `redis` faltar, a aplicação
+**falha alto** em vez de cair para cache por nó — o sintoma silencioso seria
+preço divergente entre nós, que ninguém atribui a um pacote faltando.
+
+O contrato do cache é escrito uma vez (`tests/test_cache_backends.py`) e rodado
+contra os dois backends. O do Redis precisa de um servidor: no CI ele sobe como
+serviço; localmente, exporte `REDIS_TEST_URL` (sem isso os testes do Redis são
+**pulados com o motivo escrito**, não silenciosamente ignorados).
+
 ## Documentação da API
 
 Com o backend rodando, acesse a documentação interativa:

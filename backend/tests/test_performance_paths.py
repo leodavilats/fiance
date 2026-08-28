@@ -3,6 +3,7 @@
 import pytest
 
 from app.core import cache as cache_mod
+from app.core import cache_backends
 from app.services.snapshot_job import record_snapshot_for_user, run_snapshot_cycle
 from app.storage import portfolio_store
 from tests.conftest import make_auth_headers
@@ -107,13 +108,22 @@ def test_cache_file_is_separate_from_the_user_database():
 
 
 @pytest.mark.real_cache
-def test_cache_uses_wal(tmp_path, monkeypatch):
-    monkeypatch.setattr(cache_mod, "DB_PATH", tmp_path / "probe.db")
-    monkeypatch.setattr(cache_mod, "_initialized", False)
+def _cache_em(tmp_path, monkeypatch, nome: str):
+    """Aponta o cache de disco para um arquivo do teste.
+
+    `DB_PATH` mora em `cache_backends` desde que o backend virou trocável — é a
+    implementação, e ela se move junto.
+    """
+    monkeypatch.setattr(cache_backends, "DB_PATH", tmp_path / nome)
     cache_mod.reset_connection()
+    return cache_mod._sqlite_backend_for_tests()
+
+
+def test_cache_uses_wal(tmp_path, monkeypatch):
+    backend = _cache_em(tmp_path, monkeypatch, "probe.db")
 
     cache_mod.set("k", {"v": 1}, 60)
-    with cache_mod._conn() as cx:
+    with backend._conn() as cx:
         mode = cx.execute("PRAGMA journal_mode").fetchone()[0]
 
     assert mode.lower() == "wal"
@@ -122,9 +132,7 @@ def test_cache_uses_wal(tmp_path, monkeypatch):
 
 @pytest.mark.real_cache
 def test_get_with_age_reports_staleness(tmp_path, monkeypatch):
-    monkeypatch.setattr(cache_mod, "DB_PATH", tmp_path / "age.db")
-    monkeypatch.setattr(cache_mod, "_initialized", False)
-    cache_mod.reset_connection()
+    _cache_em(tmp_path, monkeypatch, "age.db")
 
     cache_mod.set("fresh", {"v": 1}, 600)
     value, stale_by = cache_mod.get_with_age("fresh")
@@ -144,9 +152,7 @@ def test_get_with_age_reports_staleness(tmp_path, monkeypatch):
 
 @pytest.mark.real_cache
 def test_purge_expired_removes_only_stale_entries(tmp_path, monkeypatch):
-    monkeypatch.setattr(cache_mod, "DB_PATH", tmp_path / "purge.db")
-    monkeypatch.setattr(cache_mod, "_initialized", False)
-    cache_mod.reset_connection()
+    _cache_em(tmp_path, monkeypatch, "purge.db")
 
     cache_mod.set("keep", 1, 600)
     cache_mod.set("drop", 2, -1)

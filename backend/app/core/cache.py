@@ -1,26 +1,54 @@
+"""Cache de respostas externas.
+
+A serialização, o TTL e a contabilidade de acerto vivem aqui; **onde o dado
+mora** vive em `cache_backends`. A separação existe porque a resposta certa
+muda com o número de nós: com um, arquivo local é o certo — sem operação, sem
+dependência; com dois, cada nó guardaria a própria cópia e a mesma pessoa
+recarregando a página veria preços diferentes conforme o balanceador.
+
+Quem chama não sabe de nada disso, e é esse o ponto: trocar de backend é
+configurar `REDIS_URL`, não reescrever quem consulta.
+"""
+
 from __future__ import annotations
 
 import json
 import logging
-import os
-import sqlite3
-import threading
 import time
-from collections.abc import Iterator
-from contextlib import contextmanager
-from pathlib import Path
 from typing import Any
+
+from app.core.cache_backends import DB_PATH, CacheBackend, SqliteBackend, build_backend
 
 logger = logging.getLogger("fiance.cache")
 
-_DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent.parent / ".cache" / "http_cache.db"
-DB_PATH = Path(os.environ.get("CACHE_DB_PATH") or _DEFAULT_DB_PATH)
+__all__ = [
+    "DB_PATH",
+    "backend",
+    "clear_all",
+    "delete",
+    "delete_pattern",
+    "get",
+    "get_with_age",
+    "purge_expired",
+    "reset_connection",
+    "set",
+    "set_backend",
+]
 
-_local = threading.local()
-_init_lock = threading.Lock()
-_initialized = False
+_backend: CacheBackend | None = None
 
-_BUSY_TIMEOUT_MS = 5_000
+
+def backend() -> CacheBackend:
+    global _backend
+    if _backend is None:
+        _backend = build_backend()
+    return _backend
+
+
+def set_backend(novo: CacheBackend | None) -> None:
+    """Troca o backend. Usado na inicialização e nos testes."""
+    global _backend
+    _backend = novo
 
 
 def _record_lookup(hit: bool) -> None:
@@ -32,74 +60,18 @@ def _record_lookup(hit: bool) -> None:
         pass
 
 
-def _ensure_db() -> None:
-    global _initialized
-    if _initialized:
-        return
-
-    with _init_lock:
-        if _initialized:
-            return
-        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(DB_PATH) as cx:
-            cx.execute("PRAGMA journal_mode=WAL")
-            cx.execute("PRAGMA synchronous=NORMAL")
-            cx.execute(
-                "CREATE TABLE IF NOT EXISTS cache ("
-                "  k TEXT PRIMARY KEY,"
-                "  v TEXT NOT NULL,"
-                "  expires_at REAL NOT NULL"
-                ")"
-            )
-            cx.execute("CREATE INDEX IF NOT EXISTS ix_cache_expires ON cache(expires_at)")
-        _initialized = True
-
-
-def _connection() -> sqlite3.Connection:
-    _ensure_db()
-
-    cx = getattr(_local, "cx", None)
-    if cx is None:
-        cx = sqlite3.connect(DB_PATH, check_same_thread=False, isolation_level=None)
-        cx.execute(f"PRAGMA busy_timeout={_BUSY_TIMEOUT_MS}")
-        cx.execute("PRAGMA journal_mode=WAL")
-        cx.execute("PRAGMA synchronous=NORMAL")
-        _local.cx = cx
-    return cx
-
-
-@contextmanager
-def _conn() -> Iterator[sqlite3.Connection]:
-    cx = _connection()
-    try:
-        yield cx
-    except sqlite3.Error:
-        _local.cx = None
-        try:
-            cx.close()
-        except sqlite3.Error:
-            pass
-        raise
-
-
 def reset_connection() -> None:
     """Fecha a conexão desta thread (usado em testes e após trocar DB_PATH)."""
-    cx = getattr(_local, "cx", None)
-    if cx is not None:
-        try:
-            cx.close()
-        except sqlite3.Error:
-            pass
-        _local.cx = None
+    atual = _backend
+    if atual is not None and hasattr(atual, "reset_connection"):
+        atual.reset_connection()
+    # O backend é reconstruído na próxima chamada: `DB_PATH` pode ter mudado, e
+    # o de disco guarda o caminho com que foi criado.
+    set_backend(None)
 
 
 def get(key: str) -> Any | None:
-    try:
-        with _conn() as cx:
-            row = cx.execute("SELECT v, expires_at FROM cache WHERE k = ?", (key,)).fetchone()
-    except sqlite3.Error as exc:
-        logger.warning("Falha ao ler cache %s: %s", key, exc)
-        return None
+    row = backend().get_raw(key)
 
     if not row:
         _record_lookup(hit=False)
@@ -120,14 +92,13 @@ def get(key: str) -> Any | None:
 
 
 def get_with_age(key: str) -> tuple[Any | None, float | None]:
-    """Valor e segundos desde o vencimento, **mesmo vencido**."""
-    try:
-        with _conn() as cx:
-            row = cx.execute("SELECT v, expires_at FROM cache WHERE k = ?", (key,)).fetchone()
-    except sqlite3.Error as exc:
-        logger.warning("Falha ao ler cache %s: %s", key, exc)
-        return None, None
+    """Valor e segundos desde o vencimento, **mesmo vencido**.
 
+    É o que sustenta a degradação do disjuntor: com a fonte fora do ar, mostrar
+    o preço de vinte minutos atrás **dizendo** que ele é de vinte minutos atrás
+    é melhor do que não mostrar nada.
+    """
+    row = backend().get_raw(key)
     if not row:
         return None, None
 
@@ -141,38 +112,47 @@ def get_with_age(key: str) -> tuple[Any | None, float | None]:
 
 
 def set(key: str, value: Any, ttl_seconds: int) -> None:
-    try:
-        with _conn() as cx:
-            cx.execute(
-                "INSERT OR REPLACE INTO cache(k, v, expires_at) VALUES (?, ?, ?)",
-                (key, json.dumps(value, default=str), time.time() + ttl_seconds),
-            )
-    except sqlite3.Error as exc:
-        logger.warning("Falha ao gravar cache %s: %s", key, exc)
+    backend().set_raw(key, json.dumps(value, default=str), time.time() + ttl_seconds)
 
 
 def delete(key: str) -> None:
-    try:
-        with _conn() as cx:
-            cx.execute("DELETE FROM cache WHERE k = ?", (key,))
-    except sqlite3.Error as exc:
-        logger.warning("Falha ao apagar cache %s: %s", key, exc)
+    backend().delete(key)
 
 
 def delete_pattern(pattern: str) -> int:
-    with _conn() as cx:
-        cursor = cx.execute("DELETE FROM cache WHERE k LIKE ?", (pattern,))
-        return cursor.rowcount
+    return backend().delete_pattern(pattern)
 
 
 def clear_all() -> int:
-    with _conn() as cx:
-        cursor = cx.execute("DELETE FROM cache")
-        return cursor.rowcount
+    return backend().clear_all()
 
 
 def purge_expired() -> int:
     """Remove entradas vencidas. Chamado pelo ciclo de manutenção."""
-    with _conn() as cx:
-        cursor = cx.execute("DELETE FROM cache WHERE expires_at < ?", (time.time(),))
-        return cursor.rowcount
+    return backend().purge_expired()
+
+
+def describe() -> dict:
+    """Onde o cache está morando agora.
+
+    Existe para a rota de diagnóstico: descobrir que os nós não compartilham
+    cache olhando gráfico de latência é caro, e a resposta é uma palavra.
+    """
+    atual = backend()
+    return {
+        "backend": atual.name,
+        "shared": atual.name != "sqlite",
+        "note": (
+            "Cache por nó. Com mais de um nó, a mesma pessoa pode ver preços "
+            "diferentes conforme o balanceador — configure REDIS_URL."
+            if atual.name == "sqlite"
+            else "Cache compartilhado entre os nós."
+        ),
+    }
+
+
+def _sqlite_backend_for_tests() -> SqliteBackend:
+    """Backend de disco explícito, para o teste que inspeciona o arquivo."""
+    novo = SqliteBackend()
+    set_backend(novo)
+    return novo

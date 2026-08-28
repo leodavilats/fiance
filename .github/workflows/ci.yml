@@ -49,6 +49,20 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      # O contrato do cache compartilhado é o mesmo para os dois backends, mas
+      # só o de disco roda sem infraestrutura. Sem este serviço, metade do
+      # contrato ficaria pulada para sempre — e a metade pulada é justamente a
+      # que existe para o dia em que houver mais de um nó.
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -72,6 +86,10 @@ jobs:
           # A suíte não deve depender de rede nem de segredo real; o conftest
           # já isola o banco e stuba a BRAPI.
           APP_ENV: development
+          # Só o teste de contrato do cache usa isto. `REDIS_URL` continua
+          # ausente de propósito: o padrão do produto é o cache local, e é ele
+          # que o resto da suíte tem que exercitar.
+          REDIS_TEST_URL: redis://localhost:6379/0
 
   web:
     name: Web (build + format)

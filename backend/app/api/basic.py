@@ -42,8 +42,14 @@ async def clear_cache(pattern: str = "*") -> dict:
 
 @admin_router.get("/metrics")
 async def read_metrics() -> dict:
-    """Contadores em processo: chamadas externas, cache hit rate, latência."""
-    return metrics.snapshot()
+    """Contadores em processo: chamadas externas, cache hit rate, latência.
+
+    Traz junto **onde o cache mora**. Descobrir que os nós não compartilham
+    cache olhando gráfico de latência é caro, e a resposta é uma palavra: com
+    cache por nó, a mesma pessoa pode ver preços diferentes conforme o
+    balanceador.
+    """
+    return {**metrics.snapshot(), "cache": cache.describe()}
 
 
 @admin_router.post("/metrics/reset")

@@ -10,12 +10,12 @@
 
 ## Limitações de dado e infraestrutura
 
-1. **Cache é um SQLite local, não compartilhado.** Tem arquivo dedicado (`.cache/http_cache.db`,
-   sobrescrevível por `CACHE_DB_PATH`), WAL, `busy_timeout` e conexão por thread. Mas continua
-   **local ao processo**: com mais de um worker na mesma máquina, cada um mantém a própria cópia e
-   refaz o scan. Os jobs de background já são protegidos por lock no banco, então múltiplos
-   workers não duplicam notificação. Escalar horizontalmente exige volume compartilhado para
-   `CACHE_DB_PATH` ou trocar por Redis — decisão consciente de manter SQLite por ora.
+1. **O caminho do Redis não foi exercitado contra um servidor real fora do CI.** Desde
+   2026-08-28 o cache tem backend trocável (`core/cache_backends.py`): arquivo local por padrão,
+   Redis quando `REDIS_URL` existir. O contrato é escrito uma vez e rodado contra os dois, e o CI
+   sobe um Redis de serviço — mas **em produção ele nunca rodou**, porque ainda há um nó só. O que
+   está coberto é o contrato e a tradução do adaptador (prefixo, envelope, padrão SQL virando
+   glob); o que não está é o comportamento sob rede instável, reconexão e failover.
 
 2. **`brapi_history_range` default `3mo` torna a SMA200 incalculável.** O plano gratuito da BRAPI
    só aceita ranges curtos. O sistema é honesto sobre isso (`trend_basis` = `short` e rotulado como
@@ -46,7 +46,7 @@
 
 ## Cobertura de testes
 
-7. **Nenhum teste roda no navegador.** Backend tem 701 (`pytest`), web tem 90 (Vitest) e mobile
+7. **Nenhum teste roda no navegador.** Backend tem 723 (`pytest`), web tem 90 (Vitest) e mobile
    49 (`flutter test`), e `backend/tests/test_jornadas.py` atravessa as jornadas críticas —
    primeira posição → trial → teto → checkout → webhook → cancelamento → exportação → exclusão —
    pelo app real, com HTTP, autenticação e banco. O que **não** é exercitado é a interface: nenhum

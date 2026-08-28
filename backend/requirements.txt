@@ -10,6 +10,12 @@ feedparser>=6.0,<7
 sqlalchemy>=2.0,<3
 alembic>=1.13,<2
 psycopg[binary]>=3.2,<4
+# Cache compartilhado entre nós. Só é usado quando REDIS_URL está configurado —
+# com um nó só, o cache continua sendo o arquivo local. Está aqui, e não como
+# extra opcional, porque a alternativa é `REDIS_URL` configurado e ignorado: o
+# sintoma seria preços diferentes por nó, que ninguém atribui a um pacote
+# faltando.
+redis>=5.0,<7
 google-auth>=2.34,<3
 pyjwt>=2.9,<3
 firebase-admin>=6.5,<7
