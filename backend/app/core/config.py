@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     # por suitability não andam juntos.
     suitability_personalization_allowed: bool = False
 
+    # Segredo de verificação do webhook de cobrança. Sem chave real da
+    # Stripe, o provedor em uso é o de desenvolvimento — que assina com o
+    # mesmo HMAC, para que o caminho de verificação seja exercitado.
+    billing_webhook_secret: str = "segredo-de-desenvolvimento"
+
     brapi_token: str = ""
 
     brapi_history_range: str = "3mo"

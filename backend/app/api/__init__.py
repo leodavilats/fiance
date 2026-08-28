@@ -10,6 +10,7 @@ from . import (
     auth,
     basic,
     benchmark,
+    billing,
     dashboard,
     data_quality,
     demo,
@@ -43,6 +44,9 @@ router.include_router(auth.router, tags=["Auth"])
 # Fora do router protegido de propósito: é a leitura sem titular que o robô
 # de busca precisa ver, e é o único canal de aquisição que o modelo comporta.
 router.include_router(public.router, tags=["Público"])
+# O webhook é chamado pelo gateway, não por um usuário com sessão: quem o
+# autentica é a assinatura HMAC do corpo.
+router.include_router(billing.public_router, tags=["Cobrança"])
 
 # `rate_limit` depende de `get_current_user`, então a ordem aqui é só
 # legibilidade: o resolvedor de dependências já garante que a autenticação
@@ -57,6 +61,10 @@ protected.include_router(
 protected.include_router(data_quality.router, tags=["Maintenance"])
 protected.include_router(account.router, tags=["Account"])
 protected.include_router(entitlements.router, tags=["Entitlement"])
+protected.include_router(billing.router, tags=["Cobrança"])
+protected.include_router(
+    billing.admin_router, tags=["Cobrança"], dependencies=[Depends(require_admin)]
+)
 protected.include_router(events.router, tags=["Analytics"])
 protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])

@@ -191,6 +191,38 @@ a última chave lida, `(ordenação, id)` — e não offset: com offset, inserir
 registro entre duas páginas empurra tudo para baixo e o item da borda aparece
 duas vezes.
 
+## Cobrança
+
+O direito de Premium mora no backend, ligado ao `user_id`; o gateway é **detalhe
+de canal**. É isso que permite vender na web (Pix 1,19%, cartão 3,99% + R$ 0,39)
+e liberar no app sem migrar assinante quando a compra in-app entrar — 14 pontos
+de diferença de taxa sobre R$ 179,90, que em mil assinantes anuais são ~R$ 25
+mil por ano.
+
+Quatro peças: catálogo (`GET /billing/plans`), checkout
+(`POST /billing/checkout`, que **não** concede nada), webhook
+(`POST /billing/webhook`, idempotente por id de evento) e reconciliação
+(`GET /billing/reconciliation`, rota de operador).
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| `BILLING_WEBHOOK_SECRET` | **Em produção** | Segredo HMAC de verificação do webhook |
+
+**A integração com a Stripe ainda não existe.** O provedor em uso é o de
+desenvolvimento (`FakeProvider`), que assina com o mesmo HMAC — de propósito,
+para que o caminho de verificação seja exercitado. O contrato à volta está
+testado: sessão criada sem conceder, webhook idempotente, assinatura verificada
+em tempo constante, corpo adulterado recusado, reconciliação nos dois sentidos.
+
+Para ligar a Stripe de verdade:
+
+1. Implementar `StripeProvider` com o mesmo protocolo de `payments/provider.py`
+   (`create_checkout`, `verify`, `parse`, `active_subscriptions`).
+2. Trocar o retorno de `payments.billing.provider()`.
+3. Configurar `BILLING_WEBHOOK_SECRET` com o *signing secret* do endpoint.
+4. Testar de ponta a ponta com chave de teste — **isto não é verificável na
+   suíte**, porque depende de infraestrutura externa.
+
 ## Documentação da API
 
 Com o backend rodando, acesse a documentação interativa:
