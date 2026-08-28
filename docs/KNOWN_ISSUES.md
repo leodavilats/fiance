@@ -100,73 +100,51 @@ Detalhe e justificativa em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATIO
     veredito atual não sustentar, são dois grupos, não três — verificar antes de desenhar o
     terceiro.
 
-## Dívida de integridade financeira (aberta em 2026-08-26 pela auditoria adversarial)
+## Dívida de integridade financeira (aberta em 2026-08-26, revisada em 2026-08-27)
 
-> O que a auditoria de 2026-08-26 encontrou e **não** corrigiu. O que foi corrigido está no
-> [CHANGELOG.md](CHANGELOG.md).
+> O que a auditoria de 2026-08-26 encontrou e ainda **não** foi corrigido. Oito dos doze itens
+> originais saíram nos portões G0 e G1 de 2026-08-27; o que saiu está no
+> [CHANGELOG.md](CHANGELOG.md), com o porquê.
 
-18. **Dinheiro é `float` em todo o backend.** Preço, quantidade, patrimônio, IR e proventos usam
-    ponto flutuante binário, e cada módulo arredonda por conta própria com `round(x, 2)`. Para
-    apoio à decisão o erro é irrelevante; para um extrato fiscal somado ao longo de centenas de
-    operações, não é. Migrar para `Decimal` com escala e modo de arredondamento declarados em um
-    único lugar é um refactor grande e precisa de testes de propriedade antes, não depois.
+18. **A posição corrente ainda não é a projeção do razão.** O livro-razão existe e a escrita é
+    espelhada nele, mas `PortfolioPosition` continua sendo a fonte de leitura. É o passo 2 de 3 do
+    plano, deliberado: `GET /transactions/reconciliation` compara os dois lado a lado e o teste de
+    integração cobre o caminho, mas trocar a fonte é uma entrega própria. Enquanto isso, o razão
+    grava `adjust` quando o usuário declara estado na tela — quando a importação de nota e CSV
+    chegar (G2), ela grava `buy` de verdade e `adjust` vira exceção.
 
-19. **Proventos não entram no fluxo do TWR.** O fluxo externo já desconta o lucro realizado das
-    vendas (corrigido), mas um provento pago sai da carteira sem ser contabilizado como
-    distribuição: o preço cai na data-ex e o retorno absorve a queda como se fosse perda de
-    mercado. `DividendReceivedDb.paid_at` é uma **data**, não um timestamp, e os snapshots têm
-    hora arbitrária — casar os dois exige decidir a convenção de borda antes de implementar.
+19. **Decimal cobre o caminho fiscal, não o schema.** A projeção do razão e a apuração de IR rodam
+    em `Decimal` com escala e arredondamento em `app/core/money.py`. As **colunas do banco**
+    continuam `Float`, e preço, patrimônio e indicadores de tela seguem em float — o que é
+    adequado para apoio à decisão e não para um extrato somado. Migrar as colunas monetárias para
+    `Numeric` é uma migração grande e ainda não foi feita.
 
-20. **`benchmark_service` monta as chaves de dia em UTC.** `datetime.fromtimestamp(ts, tz=UTC)`,
-    enquanto o fuso fiscal do produto é BRT (`core/brt.py`). Entre 21h e 24h de Brasília o dia
-    calculado é o seguinte, então o pareamento snapshot ↔ fechamento do Ibovespa pode escorregar
-    um dia. Não afeta IR; afeta o alinhamento do gráfico.
+20. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
+    vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo
+    faria o worker seguinte repetir o mesmo trabalho segundos depois. O custo é real e continua
+    aberto: se um worker morre logo após adquirir, o snapshot diário fica bloqueado por até 5,4h.
+    A correção certa é heartbeat no lock, não release no `finally`. (O warm-up do scan é caso
+    diferente — roda uma vez e **libera** no `finally`, corrigido em 2026-08-27.)
 
-21. **A carteira não é um ledger.** `PortfolioPosition` guarda só quantidade e preço médio
-    correntes; `ClosedTradeDb` guarda vendas. Não existe registro de compra, então preço médio,
-    custo e histórico não podem ser reconstruídos nem auditados — e evento corporativo
-    (grupamento, desdobramento, bonificação, subscrição) não é modelado: o usuário corrige o preço
-    médio na mão. Além disso o **ticker é a identidade** do instrumento (PK composta
-    `user_id + ticker`), então mudança ou reúso de ticker mistura histórico. Uma tabela de
-    transações com identidade interna do instrumento é a correção estrutural.
-
-22. **Não existe rate limiting em lugar nenhum.** `/opportunities`, `/dip-scanner`, `/compare`,
-    `/quick-invest` e `/strategy` disparam trabalho caro e podem ser chamados em paralelo sem teto.
-    O scan tem cache com stale-while-revalidate, o que absorve o grosso, mas não há limite por
-    usuário nem por rota. Limitador em processo não resolve com mais de um worker — a decisão real
-    é onde o contador vive (Redis, ou a mesma tabela `job_locks`).
-
-23. **`warm_up_market_scan()` roda em todo worker, sem lock.** Os outros jobs de background pegam
-    lock no banco antes de rodar; o warm-up de startup não. Com N workers, N varreduras completas
-    do universo saem contra a BRAPI ao mesmo tempo. `_scan_lock` e `_refresh_lock` são
-    `asyncio.Lock`, ou seja, coordenam dentro do processo e não entre processos.
-
-24. **O lock de job não é liberado ao terminar, só expira.** `_run_guarded` adquire e deixa o TTL
-    vencer. Funciona como agendador distribuído, mas se um worker morre logo depois de adquirir, o
-    snapshot diário fica bloqueado por até 5,4h. E se o corpo demorar mais que o TTL, dois workers
-    rodam junto.
-
-25. **Sessão de 30 dias sem revogação.** O JWT é HS256 com TTL de 30 dias e não há lista de
-    revogação nem logout do lado do servidor: token vazado vale até expirar. `jwt.decode()`
-    também não exige as claims (`options={"require": [...]}`) — um token assinado sem `sub`
-    levanta `KeyError` em vez de 401.
-
-26. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token
+21. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token
     para o usuário da sessão se ele já existir — necessário para troca de dono do aparelho, mas
     significa que quem conhecer um token FCM alheio redireciona os alertas daquele aparelho para
     si. Entropia do token é a única proteção hoje.
 
-27. **Dado externo não tem faixa de plausibilidade.** A BRAPI é validada por tipo
+22. **Dado externo não tem faixa de plausibilidade.** A BRAPI é validada por tipo
     (`_safe_float`), não por magnitude: preço, market cap, ROE ou dividend yield absurdos entram
     no cálculo e no patrimônio sem barreira. Falta um teto/piso declarado por campo, e um caminho
-    para rejeitar o snapshot inteiro em vez de aceitar o número.
+    para rejeitar o snapshot inteiro em vez de aceitar o número. Está no portão G2.
 
-28. **Não existe audit log.** Login, criação e venda de posição, mudança de meta e disparo de
-    alerta não deixam registro de quem/quando/o quê. Para um produto que mexe em patrimônio, é o
-    que falta para responder "por que meu preço médio mudou".
+23. **Listas sem paginação.** `/portfolio/trades`, `/dividends/received`, `/fixed-income`,
+    `/suggestions/followed` e agora `/transactions` devolvem tudo (o razão tem teto de 2000, que é
+    limite, não cursor). Crescem com o uso. Versão da API e paginação por cursor estão no G2.
 
-29. **Listas sem paginação.** `/portfolio/trades`, `/dividends/received`, `/fixed-income` e
-    `/suggestions/followed` devolvem tudo. Crescem com o uso e não têm teto nem cursor.
+24. **Não existe canal de aquisição orgânico.** As rotas `/ativo/:ticker` são renderizadas no
+    cliente e portanto invisíveis para busca. O modelo de receita não comporta mídia paga — teto
+    de CAC de R$ 72 contra R$ 500–1.500 de instalação qualificada em finanças no Brasil —, então
+    renderização no servidor deixa de ser refinamento técnico e vira pré-requisito de negócio.
+    Está no portão G2 e é o item de maior risco de execução do plano.
 
 ## Armadilhas conhecidas (não são bugs, mas mordem)
 

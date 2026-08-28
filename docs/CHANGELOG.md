@@ -12,6 +12,144 @@
 
 ---
 
+## Do redesign à primeira cobrança: portões G0 e G1 (2026-08-27)
+
+O redesign está no ar e o modelo de receita foi decidido — freemium, R$ 19,90/mês, sem anúncio.
+A consequência que reordena o plano é que **cobrar não é uma feature no fim da fila, é uma
+restrição de projeto**: o Premium vendável inteiro roda sobre uma tabela de transações que não
+existia, e aquisição orgânica vira decisão de arquitetura. O plano tem cinco portões; estes são
+os dois primeiros.
+
+### G0 — o que bloqueia publicar
+
+Nada visível ao usuário, tudo pré-requisito de loja ou de medição.
+
+**Sessão.** O JWT tinha TTL de 30 dias e nenhuma revogação: token vazado valia até expirar. E
+`jwt.decode()` não exigia claim nenhuma — um token sem `sub` levantava `KeyError` e virava 500,
+quando erro de autenticação tem que ser 401. Agora `sub`, `exp` e `iat` são obrigatórios; o token
+ganhou `typ` e `jti`, de modo que refresh não passa por acesso nem o contrário; o acesso caiu para
+1 hora com refresh rotacionado, e reapresentar um refresh já usado cai na denylist.
+
+"Sair" ganhou efeito de servidor por duas vias, porque são dois problemas: `jti` em denylist para
+este dispositivo, e um corte em `session_cuts` para todos. O corte mora em tabela própria e não em
+`users` por dois motivos concretos — precisa existir para quem ainda não tem linha de titular
+(conta criada implicitamente por escrita) e precisa sobreviver à exclusão da conta, que anonimiza
+`users`.
+
+`iat` passou a ser emitido com fração de segundo. Truncado ao segundo, o corte de revogação fazia
+um token emitido logo depois de um "sair de todos" nascer morto — o teste pegou isso na primeira
+execução.
+
+Tokens legados de 30 dias sem `typ` continuam valendo até expirar: derrubá-los deslogaria a base
+inteira num deploy.
+
+**Conta.** Exportação e exclusão nos dois planos, nunca atrás de gate — é direito do titular e
+exigência das duas lojas. A exclusão apaga tudo que é do titular e deixa `users` como lápide
+anonimizada; apagar a linha inteira ressuscitaria a conta, porque `_ensure_user` recria o titular
+na primeira escrita. A lista de tabelas é explícita e há um teste que falha quando uma tabela nova
+com `user_id` não aparece nela — ele já pegou `transactions` e `audit_log` no commit seguinte.
+
+**Contadores.** `usage_counters` é uma primitiva só para dois tetos que sempre foram o mesmo
+problema: abuso (por rota e minuto) e plano (5 páginas de ativo por mês, que chega no G3). A
+granularidade mora no formato de `window_key`, não no schema, e o mês é o brasileiro — pelo mesmo
+motivo que a isenção de IR é.
+
+**Eventos.** Dicionário fechado de 27 eventos, cada um respondendo uma das seis perguntas do
+funil; nome fora do dicionário e propriedade com ticker ou valor devolvem 422. Ativação é gravada
+pelo servidor e não pelo cliente: é a métrica que decide o portão G2 e não pode depender de qual
+app disparou. O funil e a correlação de *aha* contra D30 são endpoints de operador — funil que
+ninguém vê não é consultado, e analytics que ninguém olha custa privacidade sem produzir decisão.
+
+**Warm-up.** Rodava em todo worker sem lock: subir três réplicas disparava três varreduras do
+universo ao mesmo tempo, que é o pico de consumo de cota mais caro do produto. Agora roda sob lock
+e o libera no `finally`. O lock dos jobs periódicos continua expirando por TTL de propósito — ali
+o TTL é o intervalo, e liberar faria o worker seguinte repetir o ciclo.
+
+**Clientes.** O TTL curto obrigou web e mobile a saber renovar. Os dois guardam o refresh, renovam
+uma vez ao levar 401 e repetem a requisição, com a renovação compartilhada: duas chamadas que
+falham juntas não podem disparar dois refreshes, porque o servidor rotaciona e o segundo
+apresentaria um token já queimado.
+
+A ordem dos interceptors do Angular estava invertida para isso — o de erro era o mais interno e
+deslogava o usuário antes de o de autenticação tentar renovar.
+
+**Lint e testes do web.** Ícone do Lucide não registrado e classe CSS inexistente não quebram o
+build; quebram a tela. `web/tools/lint-ui.mjs` reprova os dois, e a fonte de verdade das classes
+não é lista escrita à mão: é o CSS que o build de fato emitiu. Para os ícones, o lint reimplementa
+o mesmo `toPascalCase` do lucide-angular — um kebab ingênuo reprovaria `trash2`, que funciona.
+E `ng test` sobre Vitest com 35 testes na régua de score, no store da carteira e nos cálculos de
+Hoje: a camada que mais mudou em agosto era a única sem teste.
+
+### G1 — o livro-razão
+
+**Por que é pré-requisito de receita e não fundação genérica.** Extrato fiscal, importação de CSV
+e nota, histórico completo de desempenho e eventos corporativos — todo o Premium vendável — rodam
+sobre uma tabela de transações. Sem ela, o Premium é uma promessa com três telas vazias.
+
+A matemática mora em `app/ledger`, que não conhece banco, sessão nem usuário. É o que permite
+conferir uma carteira sintética de cinco anos contra valores calculados à mão, sem rede. O preço
+médio segue a convenção brasileira — venda reduz quantidade e custo, nunca a média — e a
+corretagem entra no custo de aquisição, porque ignorá-la infla o lucro tributável.
+
+Evento corporativo virou lançamento, não correção manual. Desdobramento 1:2 dobra a quantidade e
+deixa o custo total intacto, então a média cai pela metade. O teste de contraste mostra o tamanho
+do erro: sem o ajuste, uma venda pós-desdobramento apareceria como prejuízo de R$ 1.000 onde houve
+lucro de R$ 1.000 — e é esse número que vai para a declaração.
+
+Instrumentos ganharam identidade separada do ticker, com janela de validade, porque a B3
+reaproveita código: somar o histórico de duas companhias sob o mesmo ticker daria preço médio de
+ninguém.
+
+`adjust` existe porque a tela de posição declara estado, não operação. A pessoa diz "eu tenho 100
+a 10,00", e inventar uma compra que não aconteceu seria mentir sobre a origem do número.
+
+A escrita é **espelhada, não substituída** — passo 1 de 3. A posição corrente segue sendo a fonte
+de leitura e o razão corre em paralelo; `GET /transactions/reconciliation` compara os dois lado a
+lado. Trocar a fonte antes de a comparação estar verde é como se perde a confiança no número. O
+backfill semeia contas anteriores ao razão, senão o alarme tocaria para todo mundo — e alarme
+assim acaba desligado.
+
+**Decimal veio depois, nunca junto.** Dois refactors de escrita ao mesmo tempo em código
+financeiro é exatamente como se perde a confiança no número. `app/core/money.py` é o único lugar
+com escala e convenção, e tem duas regras que são o motivo de ele existir: nunca construir
+`Decimal` a partir de `float` sem passar por texto (`Decimal(0.1)` carrega o erro do binário, e
+trocar float por Decimal assim só muda o lugar onde o erro aparece), e arredondar só na borda.
+O arredondamento é meio para cima, que é a convenção da apuração brasileira e não o bancário do
+`round()` do Python, que devolve 2 para 2,5.
+
+Os 39 testes do razão passaram sem uma linha alterada na troca — a borda em float segurou.
+
+O contraste em float dos testes usa cem parcelas de R$ 0,07 e não mil de R$ 0,01: em mil os erros
+de binário se cancelam por acaso, e um teste que depende desse acaso não prova nada. É assim que o
+erro chega ao extrato — em alguns totais e não em outros, sem aviso.
+
+**Dois erros que se escondiam bem.** `datetime.fromtimestamp(ts, tz=UTC)` num snapshot das 22h de
+Brasília devolve o dia seguinte, então a busca do fechamento do Ibovespa errava a chave e devolvia
+`None` — o gráfico simplesmente não mostrava o índice, sem erro nenhum. E provento pago saía da
+carteira sem ser contabilizado: o preço cai no ex-dividendo, o patrimônio cai junto, e o dinheiro
+não está em `total_current` — o TWR mostrava a carteira perdendo exatamente o que tinha ganhado,
+punindo justamente o segmento de renda, que é quem mais olha esse gráfico.
+
+A convenção de borda ficou escrita e não implícita: `paid_at` é dia, `captured_at` é instante,
+então um provento pago no dia D pertence ao primeiro período cujo snapshot de fechamento caia em D
+ou depois, em BRT. Sem isso, o mesmo provento entra ou sai do período conforme a hora arbitrária em
+que o job rodou.
+
+**Log append-only** sem update e sem delete na camada de escrita; a única saída é a exclusão de
+conta. Falha de auditoria nunca derruba a operação que a originou — perder um registro é ruim,
+perder o aporte do usuário é inaceitável.
+
+**A tela.** `/carteira/transacoes` mostra todo movimento e refaz a conta do preço médio passo a
+passo, em número e em frase. Preço médio que ninguém consegue conferir é preço médio em que
+ninguém confia. Divergência entre a posição salva e a projeção aparece na própria tela, dizendo
+qual número está valendo — esconder seria pior, já que dado errado em produto pago é a reclamação
+número 1 dos concorrentes brasileiros.
+
+`book-open` não estava registrado no `LucideAngularModule.pick`; o lint que entrou no G0 pegou
+antes de a tela quebrar, que era o propósito.
+
+---
+
 ## O launcher continuava verde: o gerador para em `assets/icon/` (2026-08-27)
 
 A entrada anterior gerou a marca azul e conferiu os hex — e o ícone do app continuou verde. O
