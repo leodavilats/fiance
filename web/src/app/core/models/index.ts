@@ -16,3 +16,4 @@ export * from './dividends.model';
 export * from './followed.model';
 export * from './income-compare.model';
 export * from './whats-new.model';
+export * from './ledger.model';

@@ -57,6 +57,12 @@ export const routes: Routes = [
         title: 'Posições - fiance',
       },
       {
+        path: 'transacoes',
+        loadComponent: () =>
+          import('./components/transacoes/transacoes.component').then(m => m.TransacoesComponent),
+        title: 'Lançamentos - fiance',
+      },
+      {
         path: 'encerradas',
         loadComponent: () =>
           import('./components/encerradas/encerradas.component').then(m => m.EncerradasComponent),

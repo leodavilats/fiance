@@ -47,6 +47,9 @@ import {
   ClosedTrade,
   TickerSuggestion,
   WhatsNewResponse,
+  TransactionListResponse,
+  DerivationResponse,
+  ReconciliationResponse,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -166,6 +169,21 @@ export class RecommendService {
 
   getClosedTrades(): Observable<ClosedTradesResponse> {
     return this.http.get<ClosedTradesResponse>(`${this.base}/portfolio/trades`);
+  }
+
+  getTransactions(symbol?: string): Observable<TransactionListResponse> {
+    let params = new HttpParams();
+    if (symbol) params = params.set('symbol', symbol);
+    return this.http.get<TransactionListResponse>(`${this.base}/transactions`, { params });
+  }
+
+  /** A conta que produziu o preço médio, passo a passo. */
+  getDerivation(symbol: string): Observable<DerivationResponse> {
+    return this.http.get<DerivationResponse>(`${this.base}/transactions/derivation/${symbol}`);
+  }
+
+  getReconciliation(): Observable<ReconciliationResponse> {
+    return this.http.get<ReconciliationResponse>(`${this.base}/transactions/reconciliation`);
   }
 
   dashboard(): Observable<DashboardResponse> {

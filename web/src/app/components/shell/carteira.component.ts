@@ -19,6 +19,7 @@ export class CarteiraComponent {
     { path: '/carteira/desempenho', label: 'Desempenho', icon: 'chart-line' },
     { path: '/carteira/proventos', label: 'Proventos', icon: 'coins' },
     { path: '/carteira/posicoes', label: 'Posições', icon: 'table' },
+    { path: '/carteira/transacoes', label: 'Lançamentos', icon: 'book-open' },
     { path: '/carteira/encerradas', label: 'Encerradas', icon: 'receipt' },
     { path: '/carteira/editar', label: 'Editar', icon: 'pencil' },
   ];

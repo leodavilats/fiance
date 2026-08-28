@@ -1,0 +1,173 @@
+<div class="mt-6">
+  <div class="flex items-start justify-between gap-4 mb-1">
+    <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-ink">
+      <lucide-icon name="book-open" size="20"></lucide-icon> Lançamentos
+    </h2>
+  </div>
+  <p class="text-sm text-ink-2 m-0 mb-5 max-w-prose">
+    Todo movimento da carteira, na ordem em que aconteceu. É daqui que sai o preço médio — e é o
+    preço médio que vai para a sua declaração.
+  </p>
+
+  @if (errored()) {
+    <div class="p-4 rounded-lg border border-hairline bg-ground-1 text-ink-2 text-sm">
+      Não foi possível carregar os lançamentos agora. Tente novamente em instantes.
+    </div>
+  } @else if (transactions() === null) {
+    <div class="p-4 rounded-lg border border-hairline bg-ground-1 text-ink-2 text-sm">
+      Carregando lançamentos…
+    </div>
+  } @else if (isEmpty()) {
+    <div class="p-5 rounded-xl border border-hairline bg-ground-1">
+      <p class="m-0 text-ink font-medium">Nenhum lançamento ainda.</p>
+      <p class="m-0 mt-1 text-sm text-ink-2 max-w-prose">
+        Assim que você salvar uma posição ou registrar uma venda, o movimento aparece aqui.
+      </p>
+    </div>
+  } @else {
+    @if (reconciliation(); as rec) {
+      @if (!rec.in_sync) {
+        <div class="p-4 mb-5 rounded-lg border border-hairline bg-ground-1">
+          <div class="flex items-center gap-2 text-attention font-medium text-sm">
+            <lucide-icon name="triangle-alert" size="16"></lucide-icon>
+            {{ rec.differences.length }}
+            {{ rec.differences.length === 1 ? 'ativo divergente' : 'ativos divergentes' }}
+          </div>
+          <p class="m-0 mt-1 text-sm text-ink-2 max-w-prose">
+            A posição salva e a conta dos lançamentos não batem nestes ativos. O número da carteira
+            continua sendo o salvo; a diferença está listada para você conferir.
+          </p>
+          <ul class="mt-2 mb-0 pl-5 text-sm text-ink-2">
+            @for (diff of rec.differences; track diff.ticker) {
+              <li>
+                <span class="text-ink font-medium">{{ diff.ticker }}</span
+                >: carteira
+                {{ diff.stored ? (diff.stored.quantity | number: '1.0-8') : 'sem posição' }} ×
+                lançamentos
+                {{ diff.projected ? (diff.projected.quantity | number: '1.0-8') : 'nenhum' }}
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
+
+    <div class="flex flex-col gap-4">
+      @for (group of bySymbol(); track group.symbol) {
+        <div class="rounded-xl border border-hairline bg-ground-1 overflow-hidden">
+          <div class="flex items-center justify-between gap-3 p-4 border-b border-hairline">
+            <div>
+              <div class="text-ink font-bold">{{ group.symbol }}</div>
+              <div class="text-xs text-ink-2">
+                {{ group.items.length }}
+                {{ group.items.length === 1 ? 'lançamento' : 'lançamentos' }}
+              </div>
+            </div>
+            <button
+              type="button"
+              class="text-sm text-ink-2 hover:text-ink transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0"
+              [attr.aria-expanded]="openSymbol() === group.symbol"
+              (click)="toggleDerivation(group.symbol)"
+            >
+              <lucide-icon
+                [name]="openSymbol() === group.symbol ? 'chevron-up' : 'chevron-down'"
+                size="16"
+              ></lucide-icon>
+              Como o preço médio foi calculado
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs uppercase tracking-wide text-ink-3">
+                  <th scope="col" class="p-3 font-medium">Data</th>
+                  <th scope="col" class="p-3 font-medium">Movimento</th>
+                  <th scope="col" class="p-3 font-medium text-right">Quantidade</th>
+                  <th scope="col" class="p-3 font-medium text-right">Preço</th>
+                  <th scope="col" class="p-3 font-medium text-right">Custos</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of group.items; track item.id) {
+                  <tr class="border-t border-hairline">
+                    <td class="p-3 text-ink-2 whitespace-nowrap">{{ item.traded_on }}</td>
+                    <td class="p-3">
+                      <span [class]="kindDirectionClass(item.kind)">{{
+                        kindLabel(item.kind)
+                      }}</span>
+                      @if (item.kind === 'split') {
+                        <span class="text-ink-2">
+                          {{ item.ratio_from | number: '1.0-4' }}:{{
+                            item.ratio_to | number: '1.0-4'
+                          }}</span
+                        >
+                      }
+                    </td>
+                    <td class="p-3 text-right text-ink">
+                      @if (item.kind === 'split') {
+                        —
+                      } @else if (item.kind === 'amortization') {
+                        —
+                      } @else {
+                        {{ item.quantity | number: '1.0-8' }}
+                      }
+                    </td>
+                    <td class="p-3 text-right text-ink">
+                      @if (item.kind === 'amortization') {
+                        R$ {{ item.amount | number: '1.2-2' }}
+                      } @else if (item.price > 0) {
+                        R$ {{ item.price | number: '1.2-2' }}
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td class="p-3 text-right text-ink-2">
+                      @if (item.fees > 0) {
+                        R$ {{ item.fees | number: '1.2-2' }}
+                      } @else {
+                        —
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (openSymbol() === group.symbol) {
+            <div class="p-4 border-t border-hairline bg-ground-2">
+              @if (derivationLoading()) {
+                <p class="m-0 text-sm text-ink-2">Refazendo a conta…</p>
+              } @else if (derivation(); as d) {
+                <ol class="m-0 pl-5 flex flex-col gap-3">
+                  @for (step of d.steps; track $index) {
+                    <li class="text-sm">
+                      <div class="text-ink">{{ step.description }}</div>
+                      <div class="text-xs text-ink-2 mt-0.5">
+                        {{ step.traded_on }} · fica com
+                        {{ step.quantity_after | number: '1.0-8' }} ao custo total de R$
+                        {{ step.total_cost_after | number: '1.2-2' }} — preço médio R$
+                        {{ step.avg_price_after | number: '1.2-4' }}
+                      </div>
+                    </li>
+                  }
+                </ol>
+                <p class="m-0 mt-4 pt-3 border-t border-hairline text-sm text-ink">
+                  Preço médio atual:
+                  <strong>R$ {{ d.position.avg_price | number: '1.2-4' }}</strong>
+                  sobre {{ d.position.quantity | number: '1.0-8' }} unidades.
+                  @if (d.position.realized_pnl !== 0) {
+                    Lucro já realizado: R$ {{ d.position.realized_pnl | number: '1.2-2' }}.
+                  }
+                </p>
+              } @else {
+                <p class="m-0 text-sm text-ink-2">Não foi possível refazer a conta agora.</p>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
