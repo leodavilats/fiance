@@ -15,6 +15,7 @@ import {
   ActivityService,
   AuthService,
   DensityService,
+  EntitlementService,
   GlobalSearchService,
   LoadingService,
   ThemeService,
@@ -243,11 +244,15 @@ export class AppComponent {
   private _navTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly densidade = inject(DensityService);
+  private readonly direitos = inject(EntitlementService);
 
   constructor() {
     // A densidade é preferência da conta: aplicá-la no shell garante que
     // toda rota nasça com o atributo, em vez de cada tela lembrar disso.
     this.densidade.ensureLoaded();
+    // Os direitos chegam uma vez e o shell os distribui: cada tela
+    // perguntando por conta própria multiplicaria a chamada por rota.
+    this.direitos.ensureLoaded();
 
     this.router.events.subscribe(e => {
       if (e instanceof NavigationStart) {

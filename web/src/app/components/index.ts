@@ -47,3 +47,4 @@ export { EstrategiaComponent } from './shell/estrategia.component';
 export { RendaFixaPageComponent } from './shell/renda-fixa-page.component';
 export { SectionNavComponent } from './shell/section-nav.component';
 export { VoceComponent } from './shell/voce.component';
+export * from './gate/gate.component';

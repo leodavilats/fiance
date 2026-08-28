@@ -360,7 +360,12 @@ function report(title, problems, hint) {
 }
 
 function main() {
-  const templates = [...walk(SRC, /\.html$/), ...walk(SRC, /\.ts$/)];
+  // Fixture de teste não é tela: ela existe para exercitar um componente, e
+  // cobrar dela ícone registrado ou classe emitida produz falso positivo — que
+  // é como um lint acaba desligado.
+  const templates = [...walk(SRC, /\.html$/), ...walk(SRC, /\.ts$/)].filter(
+    file => !file.endsWith('.spec.ts')
+  );
 
   const tsFiles = templates.filter(file => file.endsWith('.ts'));
   const registered = registeredIcons(tsFiles);
