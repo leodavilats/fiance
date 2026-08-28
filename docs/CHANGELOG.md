@@ -12,6 +12,104 @@
 
 ---
 
+## G2, segunda metade: contrato, entrada e explicabilidade (2026-08-28)
+
+Três itens que têm a mesma natureza: transformam uma regra que estava escrita
+em prosa numa regra que o sistema garante.
+
+### Paginação por cursor e versão no caminho
+
+As duas coisas andam juntas porque paginar muda a forma da resposta, e mudar a
+forma sem versionar o caminho só tem dois destinos ruins: quebrar cliente
+publicado, ou nunca mais mudar nada.
+
+O cursor é keyset — a última chave lida, `(ordenação, id)` — e não offset.
+`OFFSET n` relê e descarta n linhas a cada página e, pior, **pula ou repete**
+itens quando algo é inserido no meio: numa lista por data decrescente, registrar
+um provento enquanto se folheia empurra tudo para baixo e o item da borda
+aparece duas vezes. O `id` está lá como desempate; sem ele, dois registros do
+mesmo dia fariam a paginação travar ou pular, e há teste para os dois casos.
+
+**Onde o corte acontece é decisão, não detalhe.** `/portfolio/trades` e
+`/transactions` cortam no banco, porque não há agregado sobre a lista — e para
+isso os totais de operações encerradas passaram a vir de `SUM`. Proventos, renda
+fixa e sugestões seguidas cortam só o payload: os totais por mês, a marcação a
+mercado e a comparação com o Ibovespa precisam do conjunto inteiro por
+definição, e cortar a consulta faria o total falar apenas da página. Um total que
+encolhe conforme a rolagem é pior que uma lista longa — é o número que a pessoa
+leva para a declaração. A limitação ficou registrada como pendência, não
+disfarçada.
+
+O padrão não trunca quem cabe numa página: 200 itens, teto de 500, `has_more`
+dizendo a verdade sobre o resto. Nos clientes, o campo chegou aos modelos e ao
+store, e a tela de encerradas diz quantas está mostrando de quantas — lista
+truncada em silêncio é indistinguível de operações perdidas, e é essa a
+conclusão que o usuário tira.
+
+`/api/v1` é canônico e `/api` segue como alias, porque derrubar os apps
+instalados num deploy seria trocar um problema por outro. É a **mesma** montagem
+do router: duas cópias divergiriam na primeira mudança, e há teste comparando as
+respostas. `X-API-Deprecation` existe para ser medido — é o que dirá quando o
+alias pode sair.
+
+Erro no caminho: o cabeçalho de aviso tinha "sairá" com acento, e cabeçalho HTTP
+é latin-1. Derrubou 162 testes de uma vez com `UnicodeDecodeError`. Agora é
+ASCII, com teste que falha se voltar a não ser.
+
+### Onboarding em três passos e carteira de demonstração
+
+O critério é chegar ao primeiro diagnóstico em menos de três minutos, e isso só
+funciona se pular for barato e se pular levar a uma tela com conteúdo.
+
+**O passo é derivado, não guardado.** Não existe contador: o passo sai do que a
+pessoa já fez — tem posição? tem meta? Um contador criaria uma segunda verdade
+que diverge da primeira no primeiro caso interessante, que é alguém importar a
+carteira pelo CSV e o onboarding continuar pedindo isso. Tem teste que importa
+por fora e confirma que o passo avança sozinho.
+
+O estado é do servidor: progresso em `localStorage` recomeçaria a cada aparelho
+e faria a métrica de ativação medir dispositivo em vez de pessoa.
+
+O recorte mora na URL (`?passo=2`), como todo recorte neste produto — refresh no
+passo 2 volta ao passo 2. A URL manda sobre o servidor: ele diz onde a pessoa
+*deveria* estar, a URL diz onde ela *está olhando*. Passo fora da faixa ou
+não-numérico cai no estado do servidor em vez de virar NaN na barra.
+
+Pular também conclui. O carimbo serve para não repetir a sequência, e insistir
+com quem já disse não é o caminho curto para a desinstalação. Falha ao carimbar
+também não prende ninguém.
+
+A demonstração roda a análise de verdade, pelo mesmo caminho da carteira real —
+um cálculo simplificado mostraria uma tela que o produto não entrega. Nunca é
+gravada, porque semear exemplo na conta de alguém depois aparece na declaração.
+E os cinco ativos são declarados, não sorteados: uma seleção aleatória poderia
+montar cinco bancos, e o veredito de risco sobre isso ensinaria a coisa errada.
+
+### Explicabilidade exigida por lint
+
+Score, veredito, preço justo e sugestão são opinião do sistema sobre o dinheiro
+de alguém. Opinião sem método à vista é fé, e essa regra escrita só na
+documentação se perde na terceira tela nova.
+
+O lint reprova template que **renderiza** julgamento sem oferecer como conferir
+a conta. A distinção entre renderizar e mencionar é o que faz a regra ser
+seguida em vez de contornada: a tela de preferências fala sobre o score sem
+exibir nenhum, e reprová-la ensinaria a ignorar o lint. A detecção olha
+interpolação, binding e `@if` — não a prosa.
+
+Ele encontrou cinco telas sem explicação: Quick Invest, rebalanceamento, RF ×
+Bolsa, sugestões seguidas e diagnóstico de queda. Todas ganharam método, fonte e
+— a parte que importa — a limitação. Quick Invest e rebalanceamento não
+descontam corretagem nem imposto; RF × Bolsa compara rendimento contratado com
+estimativa; sugestões seguidas só contam o que foi registrado, então sobrando os
+acertos o número fica otimista; e o diagnóstico de queda pode estar olhando um
+fundamento que ainda não mudou, porque o balanço sai semanas depois.
+
+O escape existe e exige motivo escrito. Escape sem justificativa não é escape, é
+esquecimento com sintaxe.
+
+---
+
 ## G2, primeira metade: aquisição, importação e integridade do dado (2026-08-27)
 
 Quatro itens do portão de retenção. O primeiro é o que o plano identificou como
