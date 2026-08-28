@@ -52,6 +52,8 @@ import {
   ReconciliationResponse,
   ImportPreview,
   ImportResult,
+  OnboardingState,
+  DemoPortfolioResponse,
 } from '../models';
 import { AuthService } from './auth.service';
 
@@ -205,6 +207,18 @@ export class RecommendService {
       content,
       include_duplicates: includeDuplicates,
     });
+  }
+
+  getOnboarding(): Observable<OnboardingState> {
+    return this.http.get<OnboardingState>(`${this.base}/onboarding`);
+  }
+
+  completeOnboarding(skipped: boolean): Observable<OnboardingState> {
+    return this.http.post<OnboardingState>(`${this.base}/onboarding/complete`, { skipped });
+  }
+
+  demoPortfolio(): Observable<DemoPortfolioResponse> {
+    return this.http.get<DemoPortfolioResponse>(`${this.base}/demo/portfolio`);
   }
 
   getReconciliation(): Observable<ReconciliationResponse> {

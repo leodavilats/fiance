@@ -12,6 +12,7 @@ from . import (
     benchmark,
     dashboard,
     data_quality,
+    demo,
     dip_scanner,
     dividends,
     events,
@@ -20,6 +21,7 @@ from . import (
     goals,
     income_compare,
     notifications,
+    onboarding,
     opportunities,
     portfolio_routes,
     preferences,
@@ -59,6 +61,8 @@ protected.include_router(dip_scanner.router, tags=["Dip Scanner"])
 protected.include_router(portfolio_routes.router, tags=["Portfolio"])
 protected.include_router(transactions.router, tags=["Livro-razão"])
 protected.include_router(goals.router, tags=["Goals"])
+protected.include_router(onboarding.router, tags=["Onboarding"])
+protected.include_router(demo.router, tags=["Onboarding"])
 protected.include_router(preferences.router, tags=["Preferences"])
 protected.include_router(opportunities.router, tags=["Opportunities"])
 protected.include_router(dashboard.router, tags=["Dashboard"])

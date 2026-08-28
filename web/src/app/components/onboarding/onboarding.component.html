@@ -1,0 +1,70 @@
+<div class="max-w-2xl mx-auto mt-8 px-4">
+  <div class="flex items-center justify-between mb-6">
+    <span class="text-sm text-ink-2"> Passo {{ passoAtual() }} de {{ passos.length }} </span>
+    <button
+      type="button"
+      class="text-sm text-ink-2 hover:text-ink transition-colors cursor-pointer bg-transparent border-0"
+      [disabled]="finalizando()"
+      (click)="concluir(true)"
+    >
+      Pular e ver um exemplo
+    </button>
+  </div>
+
+  <div
+    class="h-1 rounded-full bg-ground-2 mb-8 overflow-hidden"
+    role="progressbar"
+    [attr.aria-valuenow]="passoAtual()"
+    aria-valuemin="1"
+    [attr.aria-valuemax]="passos.length"
+    [attr.aria-label]="'Progresso do onboarding'"
+  >
+    <div class="h-full bg-brand transition-all" [style.width.%]="progresso()"></div>
+  </div>
+
+  <div class="p-6 rounded-xl border border-hairline bg-ground-1">
+    <div class="flex items-start gap-4">
+      <div class="p-3 rounded-lg bg-ground-2 text-brand shrink-0">
+        <lucide-icon [name]="passo().icone" size="24"></lucide-icon>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-xl font-bold m-0 mb-2 text-ink">{{ passo().titulo }}</h1>
+        <p class="text-sm text-ink-2 m-0">{{ passo().descricao }}</p>
+
+        @if (passoConcluido() && passoAtual() > 1) {
+          <p class="flex items-center gap-2 text-sm text-favorable m-0 mt-3">
+            <lucide-icon name="circle-check" size="16"></lucide-icon>
+            Já está feito.
+          </p>
+        } @else if (estado(); as e) {
+          <p class="text-sm text-ink-3 m-0 mt-3">{{ e.reason }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 mt-6">
+      @if (passoAtual() > 1) {
+        <button type="button" class="btn-secondary" (click)="anterior()">Voltar</button>
+      }
+
+      @if (passo().acaoRota) {
+        <a class="btn-secondary" [routerLink]="passo().acaoRota">
+          {{ passo().acaoLabel }}
+        </a>
+      }
+
+      <button type="button" class="btn-primary" [disabled]="finalizando()" (click)="proximo()">
+        @if (passoAtual() >= passos.length) {
+          Concluir
+        } @else {
+          Continuar
+        }
+      </button>
+    </div>
+  </div>
+
+  <p class="text-xs text-ink-3 text-center mt-6">
+    Nenhum passo é obrigatório. O produto funciona a partir de agora — pular só significa que você
+    verá a análise sobre uma carteira de exemplo até cadastrar a sua.
+  </p>
+</div>

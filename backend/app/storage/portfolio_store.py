@@ -128,6 +128,17 @@ def _ensure_user(session, user_id: str) -> None:
         session.merge(User(id=user_id, email=f"{user_id}@local", name=user_id))
 
 
+def ensure_user(session, user_id: str) -> None:
+    """Cria a linha de titular se ela ainda não existe.
+
+    A conta é criada de forma preguiçosa na primeira escrita de carteira, então
+    quem só olhou o produto pode não ter linha em `users`. Quem precisa carimbar
+    algo nela — o onboarding, por exemplo — chama isto antes.
+    """
+    _ensure_user(session, user_id)
+    session.flush()
+
+
 @contextmanager
 def _session(user_id: str | None, ensure_user: bool = False):
     """Sessão de banco escopada a um tenant."""
