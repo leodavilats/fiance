@@ -76,3 +76,33 @@ def peek(feature: Feature) -> Callable:
         return check(feature, user_id, cost=0)
 
     return _peek
+
+
+def requires_asset_page() -> Callable:
+    """Teto de páginas de ativo, com a exceção que dá sentido à cerca.
+
+    **Ativo da própria carteira nunca conta.** Não se cobra por olhar o que já é
+    do usuário — e sem essa exceção o teto puniria exatamente quem tem carteira
+    grande, que é quem paga. A cerca existe para limitar pesquisa exploratória,
+    não para racionar o acesso ao próprio patrimônio.
+    """
+
+    async def _guard(
+        symbol: str,
+        request: Request,
+        user_id: str = Depends(get_current_user),
+    ) -> Decision:
+        from app.storage import portfolio_store
+
+        alvo = symbol.strip().upper()
+        na_carteira = any(
+            item["ticker"].upper() == alvo for item in portfolio_store.list_positions(user_id)
+        )
+
+        decision = check(Feature.ASSET_PAGE, user_id, cost=0 if na_carteira else 1)
+        if not decision.allowed:
+            _record_limit_event(user_id, decision, origin=request.url.path)
+            raise PaymentRequired(decision)
+        return decision
+
+    return _guard

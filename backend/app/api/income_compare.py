@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.entitlement import Feature, requires
 from app.models.income_compare import IncomeCompareResponse
 from app.services.income_compare_service import IncomeCompareService
 
@@ -8,7 +9,11 @@ router = APIRouter()
 service = IncomeCompareService()
 
 
-@router.get("/income-compare", response_model=IncomeCompareResponse)
+@router.get(
+    "/income-compare",
+    response_model=IncomeCompareResponse,
+    dependencies=[Depends(requires(Feature.RF_VS_STOCKS))],
+)
 async def income_compare(
     amount: float = Query(10_000.0, gt=0, le=1e9, description="Valor a comparar (R$)"),
     horizon_months: int = Query(

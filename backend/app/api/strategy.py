@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.entitlement import Feature, requires
 from app.models import PortfolioItem
 from app.repositories import PortfolioRepository
 from app.services import GoalService, OpportunityService, PortfolioService, StrategyService
@@ -13,7 +14,7 @@ portfolio_repo = PortfolioRepository()
 goal_service = GoalService()
 
 
-@router.get("/strategy")
+@router.get("/strategy", dependencies=[Depends(requires(Feature.STRATEGY))])
 async def get_investment_strategy(cash_available: float = 0.0) -> dict:
     cash = cash_available
 
@@ -58,7 +59,7 @@ async def get_investment_strategy(cash_available: float = 0.0) -> dict:
     )
 
 
-@router.get("/rebalance-suggestions")
+@router.get("/rebalance-suggestions", dependencies=[Depends(requires(Feature.STRATEGY, cost=0))])
 async def get_rebalance_suggestions() -> dict:
     stored = portfolio_repo.list_positions()
     if not stored:

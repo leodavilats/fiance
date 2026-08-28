@@ -13,7 +13,7 @@ Duas regras de arquitetura, ambas com teste:
   independência do algoritmo vira promessa em vez de propriedade.
 """
 
-from .guard import PaymentRequired, peek, requires
+from .guard import PaymentRequired, peek, requires, requires_asset_page
 from .plans import Feature, Plan, Rule, allows, limit_for, rule_for
 from .resolve import TRIAL_DAYS, Decision, Entitlements, check, resolve
 
@@ -30,6 +30,7 @@ __all__ = [
     "limit_for",
     "peek",
     "requires",
+    "requires_asset_page",
     "resolve",
     "rule_for",
 ]

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from app.core.auth import get_current_user
 from app.core.errors import DomainError
 from app.core.pagination import MAX_PAGE_SIZE, clamp_limit, paginate
+from app.entitlement import Feature, requires
 from app.importing import parse_import
 from app.ledger import LedgerEntry, TransactionKind
 from app.services import ledger_service
@@ -196,7 +197,10 @@ class ImportRejected(DomainError):
     status_code = 422
 
 
-@router.post("/transactions/import")
+@router.post(
+    "/transactions/import",
+    dependencies=[Depends(requires(Feature.LEDGER_IMPORT))],
+)
 async def commit_import(body: ImportCommitRequest) -> dict:
     """Grava a importação. Tudo ou nada.
 
