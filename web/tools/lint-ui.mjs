@@ -301,6 +301,45 @@ function missingChartAlternatives(files) {
 }
 
 // --------------------------------------------------------------------------
+// 5. Nome acessível
+// --------------------------------------------------------------------------
+
+/**
+ * Botão só com ícone precisa dizer o que faz.
+ *
+ * Sem nome acessível, o leitor de tela anuncia "botão" — e a pessoa tem que
+ * adivinhar se aquilo apaga a posição ou fecha o modal. O ícone comunica para
+ * quem enxerga; o `aria-label` comunica para o resto.
+ *
+ * A checagem é por ausência de **texto**: um botão com palavra dentro já se
+ * anuncia sozinho e não precisa de rótulo — repetir ali seria ruído duplicado
+ * no leitor de tela.
+ */
+function missingAccessibleNames(files) {
+  const problems = [];
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+
+    for (const match of source.matchAll(/<button([^>]*)>([\s\S]*?)<\/button>/g)) {
+      const [, attrs, body] = match;
+      if (/aria-label|aria-labelledby/.test(attrs)) continue;
+
+      // Texto visível, incluindo o que vem de interpolação.
+      const semTags = body.replace(/<[^>]+>/g, ' ');
+      if (/[A-Za-zÀ-ÿ]{2,}/.test(semTags)) continue;
+
+      problems.push({
+        file,
+        name: `${relative(WEB_ROOT, file)}: ${body.trim().slice(0, 48).replace(/\s+/g, ' ')}`,
+      });
+    }
+  }
+
+  return problems;
+}
+
+// --------------------------------------------------------------------------
 
 function report(title, problems, hint) {
   if (problems.length === 0) return 0;
@@ -332,6 +371,7 @@ function main() {
 
   const semExplicacao = missingExplainers(templates.filter(file => file.endsWith('.html')));
   const semTabela = missingChartAlternatives(templates);
+  const semNome = missingAccessibleNames(templates);
 
   const problems =
     report(
@@ -357,6 +397,12 @@ function main() {
       semTabela,
       'Adicione uma <table> com a série. aria-label resume, e resumo não é o dado: ' +
         'quem usa leitor de tela precisa comparar ponto a ponto.'
+    ) +
+    report(
+      'Botão sem nome acessível',
+      semNome,
+      'Adicione aria-label. Sem ele o leitor de tela anuncia só "botão", e a ' +
+        'pessoa tem que adivinhar se aquilo apaga a posição ou fecha o modal.'
     );
 
   if (problems > 0) {
@@ -364,9 +410,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log(
-    '✓ Ícones registrados, classes emitidas, julgamentos explicados e gráficos legíveis.'
-  );
+  console.log('✓ Ícones, classes, explicabilidade, gráficos e nomes acessíveis conferidos.');
 }
 
 main();

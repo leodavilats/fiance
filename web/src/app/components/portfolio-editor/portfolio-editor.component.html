@@ -136,6 +136,7 @@
               class="h-[42px] w-[42px] rounded-lg border border-hairline text-ink-2 hover:text-adverse hover:border-adverse transition-colors cursor-pointer bg-transparent flex items-center justify-center"
               title="Remover"
               (click)="removeAssetRow(i)"
+              aria-label="Remover posição"
             >
               <lucide-icon name="trash-2" size="16"></lucide-icon>
             </button>
@@ -353,6 +354,7 @@
                     class="p-1.5 rounded-md border border-hairline text-ink-2 hover:text-brand hover:border-brand transition-colors cursor-pointer bg-transparent"
                     title="Editar"
                     (click)="editFixedIncome(item)"
+                    aria-label="Editar posição de renda fixa"
                   >
                     <lucide-icon name="pencil" size="14"></lucide-icon>
                   </button>
@@ -361,6 +363,7 @@
                     class="p-1.5 rounded-md border border-hairline text-ink-2 hover:text-ink transition-colors cursor-pointer bg-transparent"
                     [title]="item.oculto ? 'Somar na carteira' : 'Não somar na carteira'"
                     (click)="toggleFixedIncomeHidden(item)"
+                    aria-label="Mostrar ou ocultar esta posição"
                   >
                     <lucide-icon [name]="item.oculto ? 'eye' : 'eye-off'" size="14"></lucide-icon>
                   </button>
@@ -369,6 +372,7 @@
                     class="p-1.5 rounded-md border border-hairline text-ink-2 hover:text-adverse hover:border-adverse transition-colors cursor-pointer bg-transparent"
                     title="Remover"
                     (click)="deleteFixedIncome(item)"
+                    aria-label="Remover posição de renda fixa"
                   >
                     <lucide-icon name="trash-2" size="14"></lucide-icon>
                   </button>

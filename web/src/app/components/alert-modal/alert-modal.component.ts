@@ -30,6 +30,7 @@ const SESSION_KEY = 'fiance_alerts_dismissed';
               type="button"
               class="w-8 h-8 grid place-items-center rounded-lg text-ink-2 hover:text-ink hover:bg-ground-2 transition-colors cursor-pointer border-0 bg-transparent"
               (click)="dismiss()"
+              aria-label="Fechar"
             >
               <lucide-icon name="x" size="16"></lucide-icon>
             </button>
