@@ -28,6 +28,15 @@ class Settings(BaseSettings):
 
     admin_user_ids: str = ""
 
+    # Teto de abuso. Desligável porque a suíte dispara centenas de chamadas por
+    # segundo com o mesmo usuário — e um teto que a suíte tem que contornar
+    # acaba sendo um teto que ninguém consegue calibrar.
+    rate_limit_enabled: bool = True
+
+    # Multiplicador sobre os tetos por rota, para apertar ou afrouxar em
+    # produção sem deploy de código.
+    rate_limit_factor: float = 1.0
+
     brapi_token: str = ""
 
     brapi_history_range: str = "3mo"

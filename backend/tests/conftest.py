@@ -3,6 +3,9 @@ import tempfile
 
 _tmp_db = os.path.join(tempfile.mkdtemp(prefix="fiance_test_"), "test.db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp_db}"
+# A suíte dispara centenas de chamadas por segundo com o mesmo usuário. O teto
+# de abuso tem testes próprios (test_rate_limit.py), que o ligam explicitamente.
+os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 from datetime import UTC, datetime, timedelta  # noqa: E402
 

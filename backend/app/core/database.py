@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+from contextlib import contextmanager
 from pathlib import Path
 
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.config import get_settings
+from app.core.context import get_request_session
 
 logger = logging.getLogger("fiance.database")
 
@@ -65,3 +67,38 @@ def init_db() -> None:
         )
 
     command.upgrade(config, "head")
+
+
+_initialized = False
+
+
+def ensure_initialized() -> None:
+    """Migra o banco uma vez por processo, sob demanda."""
+    global _initialized
+    if not _initialized:
+        init_db()
+        _initialized = True
+
+
+@contextmanager
+def db_session():
+    """Sessão de banco sem tenant, reaproveitando a da requisição quando existe.
+
+    Fora de uma requisição (jobs, scripts) abre e fecha a própria sessão. Dentro,
+    devolve a mesma sessão que o middleware já vai commitar — não abrir uma
+    segunda conexão por request é o ponto: a validação de token roda em todas.
+    """
+    ensure_initialized()
+
+    ambient = get_request_session()
+    if ambient is not None:
+        yield ambient
+        ambient.flush()
+        return
+
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    finally:
+        session.close()

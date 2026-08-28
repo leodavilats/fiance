@@ -23,6 +23,7 @@ from app.models import (
 )
 from app.optimizer.cost_calculator import calculate_sell_cost
 from app.repositories import AssetRepository, PortfolioRepository
+from app.services.milestones import record_portfolio_milestones
 
 _SOLD_AT_CLOCK_SKEW_SECONDS = 5 * 60
 _SOLD_AT_MAX_BACKDATE_SECONDS = 90 * 24 * 3600
@@ -186,7 +187,9 @@ class PortfolioService:
             avg_price=item.avg_price,
             category=item.category or "auto",
         )
-        return self.get_portfolio()
+        state = self.get_portfolio()
+        record_portfolio_milestones(len(state.items))
+        return state
 
     def save_portfolio(self, req: SavePortfolioRequest) -> PortfolioStateResponse:
         self.portfolio_repo.replace_all(
@@ -202,6 +205,7 @@ class PortfolioService:
         )
 
         items = self.portfolio_repo.list_positions()
+        record_portfolio_milestones(len(items))
         snaps = self.portfolio_repo.list_snapshots(limit=90)
 
         return PortfolioStateResponse(

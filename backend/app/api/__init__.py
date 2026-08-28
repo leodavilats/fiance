@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends
 
 from app.core.auth import get_current_user, require_admin
+from app.core.ratelimit import rate_limit
 
 from . import (
+    account,
     alerts,
     assets,
     auth,
@@ -12,6 +14,7 @@ from . import (
     data_quality,
     dip_scanner,
     dividends,
+    events,
     fixed_income,
     followed,
     goals,
@@ -33,11 +36,19 @@ router = APIRouter()
 router.include_router(basic.router, tags=["Basic"])
 router.include_router(auth.router, tags=["Auth"])
 
-protected = APIRouter(dependencies=[Depends(get_current_user)])
+# `rate_limit` depende de `get_current_user`, então a ordem aqui é só
+# legibilidade: o resolvedor de dependências já garante que a autenticação
+# aconteça antes da contagem.
+protected = APIRouter(dependencies=[Depends(get_current_user), Depends(rate_limit)])
 protected.include_router(
     basic.admin_router, tags=["Maintenance"], dependencies=[Depends(require_admin)]
 )
+protected.include_router(
+    events.admin_router, tags=["Analytics"], dependencies=[Depends(require_admin)]
+)
 protected.include_router(data_quality.router, tags=["Maintenance"])
+protected.include_router(account.router, tags=["Account"])
+protected.include_router(events.router, tags=["Analytics"])
 protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])
 protected.include_router(portfolio_routes.router, tags=["Portfolio"])
