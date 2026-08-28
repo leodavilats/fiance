@@ -103,8 +103,8 @@ Detalhe e justificativa em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATIO
 ## Dívida aberta (auditoria de 2026-08-26, revisada em 2026-08-27)
 
 > O que a auditoria de 2026-08-26 encontrou e ainda **não** foi corrigido, mais o que o plano
-> dos cinco portões deixou em aberto. Onze dos doze itens originais saíram nos portões G0, G1 e
-> no G2; o que saiu está no [CHANGELOG.md](CHANGELOG.md), com o porquê.
+> dos cinco portões deixou em aberto. G0, G1 e G2 estão fechados — só a indicação ficou, e por
+> dependência declarada do G3. O que saiu está no [CHANGELOG.md](CHANGELOG.md), com o porquê.
 
 18. **A posição corrente ainda não é a projeção do razão.** O livro-razão existe e a escrita é
     espelhada nele, mas `PortfolioPosition` continua sendo a fonte de leitura. É o passo 2 de 3 do
@@ -131,20 +131,22 @@ Detalhe e justificativa em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATIO
     significa que quem conhecer um token FCM alheio redireciona os alertas daquele aparelho para
     si. Entropia do token é a única proteção hoje.
 
-22. **Acessibilidade e densidade seguem abertas.** Foco visível em todo fluxo, ARIA nas camadas,
-    alternativa textual de gráfico, verificação de contraste no CI e densidade configurável ponta
-    a ponta ainda não foram feitos. É o que resta do G2 junto com proventos automáticos por
-    calendário e o gráfico de preço com preço médio e preço justo como referências.
+22. **Indicação não existe.** O programa de indicação — código, atribuição no cadastro, crédito de
+    meses — é o segundo canal de aquisição previsto e depende do módulo de entitlement, que é do
+    G3. É o único item do G2 que ainda não foi feito, e está bloqueado por dependência declarada,
+    não por esquecimento.
 
-23. **Indicação não existe.** O programa de indicação (código, atribuição no cadastro, crédito de
-    meses como direito de entitlement) é o segundo canal de aquisição previsto e depende do módulo
-    de entitlement, que é do G3.
-
-24. **A paginação das listas com agregado limita o payload, não a consulta.** Proventos, renda
+23. **A paginação das listas com agregado limita o payload, não a consulta.** Proventos, renda
     fixa e sugestões seguidas ainda leem o conjunto inteiro do banco, porque os totais por mês, a
     marcação a mercado e a comparação com o Ibovespa precisam de todos os registros por definição.
     O que atravessa a rede está limitado; a consulta não. Resolver de verdade exige mover esses
     agregados para SQL — o que, no caso da renda fixa, significa mover a marcação a mercado junto.
+
+24. **A acessibilidade foi coberta por verificação, não por auditoria.** Contraste (CI), nome
+    acessível de botão (lint), alternativa textual de gráfico (lint) e foco visível estão de pé.
+    O que **não** foi feito é percorrer cada fluxo só com teclado e com leitor de tela de verdade:
+    ordem de foco em camadas empilhadas, anúncio de mudança de rota e armadilha de foco em modal
+    ainda não têm cobertura automática nem verificação manual registrada.
 
 ## Armadilhas conhecidas (não são bugs, mas mordem)
 

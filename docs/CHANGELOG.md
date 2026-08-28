@@ -12,6 +12,91 @@
 
 ---
 
+## G2 fechado: proventos por calendário, contraste e densidade (2026-08-28)
+
+Os três últimos itens do portão de retenção que não dependiam do entitlement.
+Sobrou só a indicação, bloqueada por dependência declarada do G3.
+
+### Proventos sugeridos pelo calendário
+
+Provento é a coisa mais fácil de esquecer de lançar: chega no extrato da
+corretora, não no app. O calendário da fonte sabe o que foi pago, a carteira
+sabe quanto a pessoa tinha — cruzar os dois produz "isto provavelmente entrou na
+sua conta".
+
+Nada é gravado sem confirmação, e isso não é cautela: é correção. Três fontes de
+erro, e as três erram o valor **para mais**. A fonte publica `paymentDate` e não
+a data-com, então quem comprou entre uma e outra aparece com direito que não
+tem. A quantidade vem do razão, que pode estar incompleto. E JCP tem 15% retidos
+na origem, enquanto a fonte publica o bruto.
+
+Provento inventado infla renda passiva, distorce a meta de renda e vira número
+errado na declaração. Então cada linha mostra a conta — quantidade × valor por
+ação — e as ressalvas daquela linha; nada vem pré-selecionado; e não existe
+"aceitar todos", que seria o caminho curto para lançar o que não se recebeu.
+
+É aqui que o livro-razão paga a conta de existir: a quantidade na data sai da
+projeção dos lançamentos anteriores àquele dia. Sem ele, a única resposta
+possível seria a quantidade de hoje, que erra todo provento anterior ao último
+aporte.
+
+### Contraste verificado, não recomendado
+
+Cor é gerada de `tokens.json`, então contraste também pode ser verificado de lá.
+A diferença entre 4,4 e 4,6 não se enxerga numa revisão visual, mas separa quem
+lê a tela de quem não lê.
+
+O verificador encontrou sete pares abaixo do mínimo, todos sobre `ground-2`, que
+é a superfície mais profunda — mais `series-other`, o cinza do balde "Outros",
+abaixo de 3:1 nos dois temas. **A paleta foi corrigida, não o limiar.** Os
+ajustes preservam matiz e croma: só a luminosidade se move, o mínimo para cruzar
+com folga de 0,05. Como os tokens são gerados, web e mobile receberam a correção
+juntos.
+
+Os limiares seguem a WCAG 2.1 AA aplicada ao que cada papel de fato é. `ink-3`
+entra como texto e não como decoração, porque legenda é texto pequeno — e a
+regra para texto pequeno é mais rígida, não menos. Séries de gráfico entram como
+forma (1.4.11), e podem, porque nunca são a única informação. `hairline` fica de
+fora: é separador decorativo, e exigir 3:1 dele produziria uma borda que grita
+numa interface que depende de silêncio.
+
+### Duas verificações novas no lint de runtime
+
+O gráfico de benchmark ganhou tabela de dados — os outros dois já tinham. Ele
+tinha só `aria-label`, que resume, e resumo não é o dado: quem usa leitor de
+tela precisa comparar ponto a ponto. Ícone não conta como gráfico, senão a regra
+vira ruído que se aprende a ignorar.
+
+Dez botões só de ícone não diziam o que faziam, e três deles apagavam alguma
+coisa. Ganharam rótulo descrevendo a ação sobre o objeto certo — "Remover
+provento", não "Excluir": o problema não é a falta de rótulo, é não saber o que
+some. A checagem é por ausência de **texto**, não por presença de ícone, porque
+exigir `aria-label` em botão com palavra dentro produziria anúncio duplicado —
+que é como uma regra de acessibilidade acaba piorando a acessibilidade.
+
+### Densidade ponta a ponta
+
+A densidade existia só na tabela de posições. Os tokens já definiam os perfis e
+o CSS já reagia a `[data-density]`; faltava alguém escrever o atributo a partir
+de uma fonte que fizesse sentido.
+
+A preferência mora na conta e não no navegador: densidade é apetite por
+informação, e isso acompanha a pessoa — quem lê tabela densa lê densa no
+notebook e no celular. É o oposto do tema, que é preferência do dispositivo.
+
+Na tabela de posições a URL vence a preferência quando o parâmetro existe: link
+salvo é contrato, e quem compartilhou a tabela compacta espera que ela chegue
+compacta do outro lado.
+
+### Um item do backlog que já estava pronto
+
+"Gráfico de preço com preço médio e preço justo como referências" já existia:
+`asset-price-chart` tem as duas linhas com semântica visual distinta — justo
+tracejado porque é estimativa, preço médio pontilhado porque é fato mas é seu —
+e a tela de ativo as passa. Não foi refeito.
+
+---
+
 ## G2, segunda metade: contrato, entrada e explicabilidade (2026-08-28)
 
 Três itens que têm a mesma natureza: transformam uma regra que estava escrita
