@@ -129,6 +129,22 @@ class _AssetDetailContent extends ConsumerWidget {
               ),
             ),
           ],
+          if (a.falsifiers.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            // Um veredito sem condição de queda é fé: explica como se chegou
+            // ali, mas não diz o que precisaria acontecer para deixar de valer.
+            const Text(
+              'O que faria a tese mudar',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...a.falsifiers.map(
+              (f) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text('• ${f.condition} → ${f.becomesLabel}'),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -147,8 +163,12 @@ class _VerdictPill extends StatelessWidget {
   final String label;
 
   Color _color(Brightness brightness) {
-    if (verdict.contains('BUY')) return fiStateColor(FiState.favorable, brightness);
-    if (verdict.contains('SELL')) return fiStateColor(FiState.adverse, brightness);
+    if (verdict.contains('BUY')) {
+      return fiStateColor(FiState.favorable, brightness);
+    }
+    if (verdict.contains('SELL')) {
+      return fiStateColor(FiState.adverse, brightness);
+    }
     return fiStateColor(FiState.indeterminate, brightness);
   }
 
@@ -198,7 +218,10 @@ class _StatCard extends StatelessWidget {
           ),
           Text(
             value,
-            style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: scheme.onSurface,
+            ),
           ),
         ],
       ),

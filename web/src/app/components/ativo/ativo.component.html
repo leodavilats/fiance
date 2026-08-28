@@ -148,6 +148,25 @@
           }
         </ul>
       }
+
+      @if (a.decision.falsifiers.length > 0) {
+        <!-- Um veredito sem condição de queda é fé: explica como se chegou ali,
+             mas não diz o que precisaria acontecer para deixar de valer. Estas
+             condições não são opinião nova — são a mesma régua lida ao
+             contrário, e por isso vêm com o valor de hoje ao lado, para a
+             distância ser visível. -->
+        <div class="mt-6 max-w-reading">
+          <h3 class="fi-title text-ink m-0 mb-2">O que faria a tese mudar</h3>
+          <ul class="list-none m-0 p-0 flex flex-col gap-2">
+            @for (f of a.decision.falsifiers; track f.condition) {
+              <li class="fi-body text-ink-2 pl-3 border-l-2 border-hairline-strong">
+                {{ f.condition }} →
+                <span class="text-ink">{{ f.becomes_label }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
     </section>
 
     @if (a.fair_price.consensus != null && a.price != null) {

@@ -2,6 +2,7 @@ import asyncio
 
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.analysis.falsifiers import falsifiers
 from app.core.errors import NotFoundError
 from app.models import (
     AssetAnalysis,
@@ -88,6 +89,17 @@ class AssetService:
                 label=dec.label,
                 confidence=dec.confidence,
                 reasons=dec.reasons,
+                falsifiers=falsifiers(
+                    verdict=dec.verdict,
+                    price=snap.price,
+                    consensus=fair.consensus,
+                    bazin=fair.bazin,
+                    consensus_methods=fair.consensus_methods,
+                    avg_dividend=fair.avg_dividend_5y,
+                    trend=tech.trend,
+                    sma_50=tech.sma_50,
+                    sma_200=tech.sma_200,
+                ),
             ),
             price_history=(
                 [

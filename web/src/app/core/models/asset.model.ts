@@ -33,11 +33,27 @@ export interface TechnicalBlock {
   distance_from_52w_low_pct: number | null;
 }
 
+/**
+ * Uma condição verificável que muda o veredito. Vem do backend derivada da
+ * mesma régua que produziu o veredito — não é texto editorial, e por isso traz
+ * o valor de hoje (`current`) ao lado do limiar.
+ */
+export interface Falsifier {
+  metric: string;
+  condition: string;
+  becomes: Verdict | string;
+  becomes_label: string;
+  current: number;
+  threshold: number;
+  unit: string;
+}
+
 export interface DecisionBlock {
   verdict: Verdict;
   label: string;
   confidence: number;
   reasons: string[];
+  falsifiers: Falsifier[];
 }
 
 export interface AssetFundamentals {

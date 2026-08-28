@@ -685,6 +685,35 @@ class DipScanItem {
   );
 }
 
+/// Uma condição verificável que muda o veredito.
+///
+/// Vem pronta do backend, derivada da mesma régua que produziu o veredito. Não
+/// é texto editorial: por isso carrega o valor de hoje ao lado do limiar, para
+/// a distância ser visível.
+class Falsifier {
+  Falsifier({
+    required this.metric,
+    required this.condition,
+    required this.becomesLabel,
+    required this.current,
+    required this.threshold,
+  });
+
+  final String metric;
+  final String condition;
+  final String becomesLabel;
+  final double current;
+  final double threshold;
+
+  factory Falsifier.fromJson(Map<String, dynamic> j) => Falsifier(
+    metric: j['metric'] as String? ?? '',
+    condition: j['condition'] as String? ?? '',
+    becomesLabel: j['becomes_label'] as String? ?? '',
+    current: (j['current'] as num?)?.toDouble() ?? 0,
+    threshold: (j['threshold'] as num?)?.toDouble() ?? 0,
+  );
+}
+
 class AssetAnalysis {
   AssetAnalysis({
     required this.symbol,
@@ -701,6 +730,7 @@ class AssetAnalysis {
     required this.verdict,
     required this.label,
     required this.reasons,
+    this.falsifiers = const [],
     this.fundamentals = const {},
   });
 
@@ -718,6 +748,10 @@ class AssetAnalysis {
   final String verdict;
   final String label;
   final List<String> reasons;
+
+  /// O que faria a tese mudar. Lista vazia é resposta legítima: sem preço
+  /// justo não há régua para ler ao contrário.
+  final List<Falsifier> falsifiers;
   final Map<String, double?> fundamentals;
 
   factory AssetAnalysis.fromJson(Map<String, dynamic> j) {
@@ -741,6 +775,11 @@ class AssetAnalysis {
       label: dec['label'] as String? ?? '',
       reasons:
           (dec['reasons'] as List?)?.map((e) => e as String).toList() ?? [],
+      falsifiers:
+          (dec['falsifiers'] as List?)
+              ?.map((e) => Falsifier.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       fundamentals: fund.map((k, v) => MapEntry(k, (v as num?)?.toDouble())),
     );
   }

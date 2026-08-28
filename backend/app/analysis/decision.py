@@ -46,7 +46,9 @@ def _verdict_from_mos(mos: float | None) -> Verdict:
     return "HOLD"
 
 
-_LABELS = {
+#: Público: o módulo de falsificadores lê os mesmos rótulos, para que o
+#: "vira Comprar" da explicação nunca discorde do rótulo do veredito.
+LABELS = {
     "STRONG_BUY": "Comprar com convicção",
     "BUY": "Comprar",
     "HOLD": "Manter",
@@ -156,7 +158,7 @@ def decide(
 
     return Decision(
         verdict=verdict,
-        label=_LABELS.get(verdict, "Manter"),
+        label=LABELS.get(verdict, "Manter"),
         confidence=confidence,
         reasons=reasons,
     )

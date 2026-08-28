@@ -35,6 +35,15 @@ class DecisionBlock(BaseModel):
     label: str
     confidence: float
     reasons: list[str] = Field(default_factory=list)
+    falsifiers: list[dict] = Field(
+        default_factory=list,
+        description=(
+            "O que faria a tese mudar: condições verificáveis, derivadas da mesma régua "
+            "lida ao contrário. Lista vazia é resposta legítima — sem preço justo não há "
+            "o que ler ao contrário, e inventar uma condição plausível ensinaria a pessoa "
+            "a ignorar a seção."
+        ),
+    )
 
 
 class PricePoint(BaseModel):
