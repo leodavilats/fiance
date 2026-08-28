@@ -1,24 +1,38 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 from app.collectors.rates import get_rates
 from app.collectors.universal import fetch_ibov_history
+from app.core.brt import to_brt
 from app.models import BenchmarkPoint, BenchmarkResponse
 from app.repositories import PortfolioRepository
 
 
-def _twr_series(snapshots: list[dict], realized: list[float] | None = None) -> list[float]:
-    """Retorno acumulado ponderado no tempo (TWR), em %, ponto a ponto."""
+def _twr_series(
+    snapshots: list[dict],
+    realized: list[float] | None = None,
+    dividends: list[float] | None = None,
+) -> list[float]:
+    """Retorno acumulado ponderado no tempo (TWR), em %, ponto a ponto.
+
+    Provento entra como valor distribuído, somado ao fechamento do período em
+    que foi pago. Sem isso o TWR pune quem recebe dividendo: o preço cai no
+    ex-dividendo, o patrimônio em carteira cai junto, e o dinheiro que
+    compensaria a queda não está em `total_current` — a carteira apareceria
+    perdendo exatamente o que ganhou.
+    """
     cumulative = 1.0
     out = [0.0]
-    realized = realized or [0.0] * max(len(snapshots) - 1, 0)
+    periods = max(len(snapshots) - 1, 0)
+    realized = realized or [0.0] * periods
+    dividends = dividends or [0.0] * periods
 
     for index, (previous, current) in enumerate(zip(snapshots, snapshots[1:], strict=False)):
         opening = previous["total_current"]
         invested_delta = current["total_invested"] - previous["total_invested"]
         flow = invested_delta - (realized[index] if index < len(realized) else 0.0)
-        closing = current["total_current"]
+        closing = current["total_current"] + (
+            dividends[index] if index < len(dividends) else 0.0
+        )
 
         if opening <= 0:
             cumulative *= 1.0
@@ -29,6 +43,47 @@ def _twr_series(snapshots: list[dict], realized: list[float] | None = None) -> l
         out.append(round((cumulative - 1) * 100, 4))
 
     return out
+
+
+def _dividends_per_period(snapshots: list[dict], received: list[dict]) -> list[float]:
+    """Soma dos proventos de cada período entre snapshots.
+
+    **Convenção de borda, declarada:** `paid_at` é dia, `captured_at` é
+    instante. Um provento pago no dia D pertence ao primeiro período cujo
+    snapshot de fechamento caia em D ou depois, com o dia lido no fuso
+    brasileiro. Sem uma convenção escrita, o mesmo provento entra ou sai do
+    período conforme a hora arbitrária em que o job de snapshot rodou.
+    """
+    periods = max(len(snapshots) - 1, 0)
+    if periods == 0 or not received:
+        return []
+
+    closing_days = [_brt_day(snap["captured_at"]) for snap in snapshots[1:]]
+    opening_day = _brt_day(snapshots[0]["captured_at"])
+
+    out = [0.0] * periods
+    for row in received:
+        paid_at = row.get("paid_at")
+        amount = float(row.get("amount") or 0.0)
+        if not paid_at or amount == 0.0:
+            continue
+        if paid_at <= opening_day:
+            continue
+        for index, closing_day in enumerate(closing_days):
+            if paid_at <= closing_day:
+                out[index] += amount
+                break
+
+    return out
+
+
+def _brt_day(timestamp: float) -> str:
+    """O dia da B3 é o dia brasileiro.
+
+    Lido em UTC, um snapshot das 22h de Brasília vira o dia seguinte e a busca
+    do fechamento do Ibovespa erra a chave — devolvendo `None` em silêncio.
+    """
+    return to_brt(timestamp).strftime("%Y-%m-%d")
 
 
 class BenchmarkService:
@@ -50,7 +105,7 @@ class BenchmarkService:
         ibov_available = bool(ibov_series)
         ibov_base = None
         if ibov_available:
-            first_day = datetime.fromtimestamp(base_ts, tz=UTC).strftime("%Y-%m-%d")
+            first_day = _brt_day(base_ts)
             ibov_base = ibov_series.get(first_day) or next(iter(ibov_series.values()), None)
             ibov_available = ibov_base is not None and ibov_base > 0
 
@@ -60,11 +115,14 @@ class BenchmarkService:
             )
             for previous, current in zip(snapshots, snapshots[1:], strict=False)
         ]
-        portfolio_series = _twr_series(snapshots, realized)
+        dividends = _dividends_per_period(
+            snapshots, self.portfolio_repo.list_dividends_received()
+        )
+        portfolio_series = _twr_series(snapshots, realized, dividends)
 
         points: list[BenchmarkPoint] = []
         for snap, portfolio_pct in zip(snapshots, portfolio_series, strict=True):
-            day_str = datetime.fromtimestamp(snap["captured_at"], tz=UTC).strftime("%Y-%m-%d")
+            day_str = _brt_day(snap["captured_at"])
             days_elapsed = (snap["captured_at"] - base_ts) / 86400
 
             cdi_pct = ((1 + cdi_daily_rate) ** days_elapsed - 1) * 100

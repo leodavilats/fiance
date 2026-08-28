@@ -49,6 +49,10 @@ class PortfolioRepository:
         return portfolio_store.realized_gross_profit_between(start, end)
 
     @staticmethod
+    def list_dividends_received() -> list:
+        return portfolio_store.list_dividends_received()
+
+    @staticmethod
     def lock_tenant() -> None:
         portfolio_store.lock_tenant()
 
