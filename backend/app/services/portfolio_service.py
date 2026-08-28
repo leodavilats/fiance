@@ -7,6 +7,7 @@ from app.analysis.fair_price import compute_fair_price, compute_technical, desir
 from app.core.brt import to_brt
 from app.core.context import memoize_request
 from app.core.errors import DomainError, NotFoundError
+from app.core.pagination import clamp_limit, paginate
 from app.models import (
     AssetType,
     ClosedTrade,
@@ -345,10 +346,28 @@ class PortfolioService:
             )
         return sold_at
 
-    def get_closed_trades(self) -> ClosedTradesResponse:
-        trades = self.portfolio_repo.list_closed_trades()
-        total_realized = sum(t["net_profit"] for t in trades)
-        total_ir = sum(t["ir_amount"] for t in trades)
+    def get_closed_trades(
+        self, limit: int | None = None, cursor: str | None = None
+    ) -> ClosedTradesResponse:
+        """Operações encerradas, paginadas no banco.
+
+        Os totais vêm de `SUM` sobre a tabela inteira, e não da soma da página:
+        um total que encolhe conforme o usuário rola é pior que uma lista longa
+        — e é o número que ele leva para a declaração.
+        """
+        page_size = clamp_limit(limit)
+        rows = self.portfolio_repo.list_closed_trades(limit=page_size, cursor=cursor)
+        page = paginate(
+            rows,
+            page_size,
+            key=lambda t: t["sold_at"],
+            identity=lambda t: t["id"],
+        )
+        trades = page.items
+
+        totals = self.portfolio_repo.closed_trades_totals()
+        total_realized = totals["total_realized_pnl"]
+        total_ir = totals["total_ir_paid"]
         balances = self.portfolio_repo.tax_loss_balances()
 
         return ClosedTradesResponse(
@@ -357,4 +376,7 @@ class PortfolioService:
             total_ir_paid=round(total_ir, 2),
             tax_loss_balances=[TaxLossCategoryBalance(**b) for b in balances],
             total_tax_loss_available=round(sum(b["available"] for b in balances), 2),
+            next_cursor=page.next_cursor,
+            has_more=page.has_more,
+            total_count=totals["count"],
         )

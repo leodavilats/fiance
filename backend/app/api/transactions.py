@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from app.core.auth import get_current_user
 from app.core.errors import DomainError
+from app.core.pagination import MAX_PAGE_SIZE, clamp_limit, paginate
 from app.importing import parse_import
 from app.ledger import LedgerEntry, TransactionKind
 from app.services import ledger_service
@@ -46,8 +47,21 @@ class TransactionBatch(BaseModel):
 
 
 @router.get("/transactions")
-async def list_transactions(symbol: str | None = None, limit: int = 500) -> dict:
-    entries = ledger_store.list_entries(symbol=symbol, limit=max(1, min(limit, 2000)))
+async def list_transactions(
+    symbol: str | None = None,
+    limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
+    cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
+) -> dict:
+    """Lançamentos em ordem de leitura, do mais recente para o mais antigo.
+
+    Aqui a paginação corta no banco de verdade: não há agregado sobre a lista,
+    então limitar a consulta não distorce número nenhum.
+    """
+    page_size = clamp_limit(limit)
+    rows = ledger_store.list_entries(symbol=symbol, limit=page_size, cursor=cursor, descending=True)
+    page = paginate(rows, page_size, key=lambda e: e.traded_on, identity=lambda e: e.id)
+    entries = page.items
+
     return {
         "items": [
             {
@@ -66,6 +80,8 @@ async def list_transactions(symbol: str | None = None, limit: int = 500) -> dict
             for e in entries
         ],
         "count": len(entries),
+        "next_cursor": page.next_cursor,
+        "has_more": page.has_more,
     }
 
 

@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from app.analysis.renda_fixa_analysis import DIAS_POR_MES, analyze_one
 from app.collectors.rates import get_rates
 from app.core.errors import NotFoundError
+from app.core.pagination import clamp_limit, slice_after
 from app.models.enums import AssetType, Liquidez, RendaFixaType, TaxType
 from app.models.portfolio import PortfolioPosition
 from app.models.renda_fixa import (
@@ -37,10 +38,25 @@ def _parse_date(value: str | None) -> date | None:
 class FixedIncomeService:
     """Marcação a mercado da renda fixa, no backend."""
 
-    def list_positions(self) -> FixedIncomeListResponse:
+    def list_positions(
+        self, limit: int | None = None, cursor: str | None = None
+    ) -> FixedIncomeListResponse:
+        """Renda fixa marcada a mercado, com totais sobre o conjunto inteiro.
+
+        A marcação a mercado é por linha, então os totais precisam de todas as
+        posições. A paginação limita o payload, não a consulta.
+        """
         rates = get_rates()
         rows = portfolio_store.list_fixed_income()
         items = [self._mark_to_market(row, rates) for row in rows]
+
+        page = slice_after(
+            items,
+            cursor,
+            clamp_limit(limit),
+            key=lambda i: i.data_aplicacao,
+            identity=lambda i: i.id,
+        )
 
         visiveis = [i for i in items if not i.oculto]
         total_investido = sum(i.valor_investido for i in visiveis)
@@ -58,7 +74,10 @@ class FixedIncomeService:
             taxa_media = 0.0
 
         return FixedIncomeListResponse(
-            items=items,
+            items=page.items,
+            next_cursor=page.next_cursor,
+            has_more=page.has_more,
+            total_count=len(items),
             total_investido=round(total_investido, 2),
             total_atual=round(total_atual, 2),
             total_rendimento=round(total_rendimento, 2),

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query
 
+from app.core.pagination import MAX_PAGE_SIZE
 from app.models.dividends import (
     DividendReceived,
     DividendReceivedCreate,
@@ -20,9 +21,11 @@ async def list_received(
         ge=0,
         description="Estimativa mensal do dashboard, para comparar com o recebido de fato",
     ),
+    limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
+    cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
 ) -> DividendsReceivedResponse:
     """Proventos efetivamente creditados, com totais por mês e por ativo."""
-    return service.list_received(estimated_monthly=estimated_monthly)
+    return service.list_received(estimated_monthly=estimated_monthly, limit=limit, cursor=cursor)
 
 
 @router.post("/dividends/received", response_model=DividendReceived, status_code=201)

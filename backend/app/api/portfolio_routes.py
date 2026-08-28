@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
+from app.core.pagination import MAX_PAGE_SIZE
 from app.models import (
     ClosedTrade,
     ClosedTradesResponse,
@@ -57,5 +58,8 @@ async def sell_position(req: SellRequest) -> ClosedTrade:
 
 
 @router.get("/portfolio/trades", response_model=ClosedTradesResponse)
-async def get_closed_trades() -> ClosedTradesResponse:
-    return portfolio_service.get_closed_trades()
+async def get_closed_trades(
+    limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
+    cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
+) -> ClosedTradesResponse:
+    return portfolio_service.get_closed_trades(limit=limit, cursor=cursor)

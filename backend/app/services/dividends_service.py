@@ -5,6 +5,7 @@ from datetime import date, timedelta
 
 from app.core.brt import month_key, now_brt
 from app.core.errors import NotFoundError
+from app.core.pagination import clamp_limit, slice_after
 from app.models.dividends import (
     DividendMonth,
     DividendReceived,
@@ -19,7 +20,20 @@ from app.storage import portfolio_store
 class DividendsService:
     """Histórico real de proventos recebidos."""
 
-    def list_received(self, estimated_monthly: float | None = None) -> DividendsReceivedResponse:
+    def list_received(
+        self,
+        estimated_monthly: float | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
+    ) -> DividendsReceivedResponse:
+        """Proventos creditados, com totais sobre o conjunto inteiro.
+
+        **A paginação aqui limita o payload, não a consulta.** Os totais por mês
+        e por ativo precisam de todos os registros por definição, então a leitura
+        continua completa; o que fica limitado é o que atravessa a rede e é
+        renderizado. Cortar a consulta faria os totais falarem só da página, e um
+        total errado é pior que uma lista longa.
+        """
         rows = portfolio_store.list_dividends_received()
         items = [
             DividendReceived(
@@ -32,6 +46,14 @@ class DividendsService:
             )
             for r in rows
         ]
+
+        page = slice_after(
+            items,
+            cursor,
+            clamp_limit(limit),
+            key=lambda i: i.paid_at.isoformat(),
+            identity=lambda i: i.id,
+        )
 
         today = now_brt().date()
         current_month = today.strftime("%Y-%m")
@@ -55,7 +77,10 @@ class DividendsService:
             accuracy = round(monthly_average / estimated_monthly * 100, 1)
 
         return DividendsReceivedResponse(
-            items=items,
+            items=page.items,
+            next_cursor=page.next_cursor,
+            has_more=page.has_more,
+            total_count=len(items),
             total_received=round(total, 2),
             received_this_month=round(this_month, 2),
             received_last_12m=round(last_12m, 2),

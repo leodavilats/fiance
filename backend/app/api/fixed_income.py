@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
+from app.core.pagination import MAX_PAGE_SIZE
 from app.models.renda_fixa import (
     FixedIncomeCreateRequest,
     FixedIncomeListResponse,
@@ -14,9 +15,12 @@ service = FixedIncomeService()
 
 
 @router.get("/fixed-income", response_model=FixedIncomeListResponse)
-async def list_fixed_income() -> FixedIncomeListResponse:
+async def list_fixed_income(
+    limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
+    cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
+) -> FixedIncomeListResponse:
     """Posições de renda fixa marcadas a mercado pelo backend."""
-    return service.list_positions()
+    return service.list_positions(limit=limit, cursor=cursor)
 
 
 @router.post("/fixed-income", response_model=FixedIncomePosition, status_code=201)

@@ -129,7 +129,17 @@ class TaxLossCategoryBalance(BaseModel):
 
 class ClosedTradesResponse(BaseModel):
     trades: list[ClosedTrade]
+
+    #: Totais sobre a tabela inteira, **não** sobre a página. Um total que
+    #: encolhe conforme o usuário rola é pior que uma lista longa.
     total_realized_pnl: float
     total_ir_paid: float
     tax_loss_balances: list[TaxLossCategoryBalance] = Field(default_factory=list)
     total_tax_loss_available: float = 0.0
+
+    next_cursor: str | None = Field(
+        default=None,
+        description="Passe em `cursor` para a próxima página. `null` quando acabou.",
+    )
+    has_more: bool = False
+    total_count: int = 0

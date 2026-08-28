@@ -156,3 +156,8 @@ class FixedIncomeListResponse(BaseModel):
     taxa_media_aa: float
     cdi_referencia: float
     fonte_taxas: str = "estimativa"
+
+    #: Os totais cobrem todas as posições; `items` é só a página.
+    next_cursor: str | None = None
+    has_more: bool = False
+    total_count: int = 0

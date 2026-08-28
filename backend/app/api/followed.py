@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
+from app.core.pagination import MAX_PAGE_SIZE
 from app.models.followed import (
     FollowedSuggestion,
     FollowedSuggestionCreate,
@@ -13,9 +14,12 @@ service = FollowedService()
 
 
 @router.get("/suggestions/followed", response_model=FollowedSuggestionsResponse)
-async def followed_outcomes() -> FollowedSuggestionsResponse:
+async def followed_outcomes(
+    limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
+    cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
+) -> FollowedSuggestionsResponse:
     """Resultado das sugestões que o usuário seguiu, contra o Ibovespa."""
-    return await service.outcomes()
+    return await service.outcomes(limit=limit, cursor=cursor)
 
 
 @router.post("/suggestions/followed", response_model=FollowedSuggestion, status_code=201)

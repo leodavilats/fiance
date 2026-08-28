@@ -155,6 +155,39 @@ O backend expõe a leitura **sem titular** em `/api/public/asset/{ticker}` e
 mesmo conteúdo ao robô e a quem chega pelo link. O teto de abuso dessas rotas é
 por IP, não por usuário.
 
+## Versão da API e paginação
+
+O caminho canônico é `/api/v1`. `/api` continua respondendo — os apps instalados
+apontam para lá e derrubá-los num deploy seria trocar um problema por outro —
+mas é transição: toda resposta carrega `X-API-Version`, e as que chegam pelo
+caminho sem versão carregam também `X-API-Deprecation`. O alias sai quando a
+telemetria mostrar que não há mais cliente antigo chamando.
+
+A versão muda quando uma resposta deixa de ser retrocompatível: campo removido
+ou renomeado, semântica alterada. Campo **adicionado** não muda a versão —
+cliente que não o conhece o ignora.
+
+As listas que crescem com o uso aceitam `limit` e `cursor`:
+
+| Rota | Corte |
+| --- | --- |
+| `/portfolio/trades` | no banco |
+| `/transactions` | no banco |
+| `/dividends/received` | no payload |
+| `/fixed-income` | no payload |
+| `/suggestions/followed` | no payload |
+
+A distinção importa. Onde há agregado sobre a lista — total por mês, marcação a
+mercado, comparação contra o Ibovespa — a **consulta** continua completa e só o
+payload é limitado: cortar no banco faria o total falar apenas da página, e um
+total que encolhe conforme a rolagem é pior que uma lista longa. Onde não há
+agregado, o corte é no banco de verdade.
+
+A resposta ganha `next_cursor`, `has_more` e `total_count`. O cursor é keyset —
+a última chave lida, `(ordenação, id)` — e não offset: com offset, inserir um
+registro entre duas páginas empurra tudo para baixo e o item da borda aparece
+duas vezes.
+
 ## Documentação da API
 
 Com o backend rodando, acesse a documentação interativa:

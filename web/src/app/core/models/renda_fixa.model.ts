@@ -96,6 +96,14 @@ export interface FixedIncomeListResponse {
   taxa_media_aa: number;
   cdi_referencia: number;
   fonte_taxas: string;
+  /**
+   * Paginação. `items` é a página; os totais acima cobrem o conjunto inteiro.
+   * Ignorar `has_more` faria a tela truncar em silêncio — que é o modo de falha
+   * que este produto não pode ter numa lista que vira declaração.
+   */
+  next_cursor: string | null;
+  has_more: boolean;
+  total_count: number;
 }
 
 export interface FixedIncomePayload {

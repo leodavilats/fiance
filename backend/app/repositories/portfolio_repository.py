@@ -53,6 +53,10 @@ class PortfolioRepository:
         return portfolio_store.list_dividends_received()
 
     @staticmethod
+    def closed_trades_totals() -> dict:
+        return portfolio_store.closed_trades_totals()
+
+    @staticmethod
     def lock_tenant() -> None:
         portfolio_store.lock_tenant()
 
@@ -65,8 +69,10 @@ class PortfolioRepository:
         return portfolio_store.create_closed_trade(**kwargs)
 
     @staticmethod
-    def list_closed_trades() -> list[ClosedTrade]:
-        return portfolio_store.list_closed_trades()
+    def list_closed_trades(
+        limit: int | None = None, cursor: str | None = None
+    ) -> list[ClosedTrade]:
+        return portfolio_store.list_closed_trades(limit=limit, cursor=cursor)
 
     @staticmethod
     def tax_loss_balances() -> list[TaxLossBalance]:

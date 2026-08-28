@@ -21,6 +21,13 @@
         </button>
       </div>
 
+      @if (ct.has_more) {
+        <p class="text-sm text-ink-2 m-0 mb-3">
+          Mostrando {{ ct.trades.length }} de {{ ct.total_count }} operações. Os totais acima cobrem
+          todas — só a lista está cortada.
+        </p>
+      }
+
       @if (showClosedTrades()) {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div

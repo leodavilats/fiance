@@ -7,6 +7,7 @@ from datetime import date
 from app.collectors.universal import fetch_ibov_history
 from app.core.brt import now_brt
 from app.core.errors import NotFoundError
+from app.core.pagination import clamp_limit, slice_after
 from app.models.followed import (
     FollowedSuggestion,
     FollowedSuggestionCreate,
@@ -54,7 +55,14 @@ class FollowedService:
             raise NotFoundError(f"Sugestão seguida {suggestion_id} não encontrada.")
         return {"deleted": suggestion_id}
 
-    async def outcomes(self) -> FollowedSuggestionsResponse:
+    async def outcomes(
+        self, limit: int | None = None, cursor: str | None = None
+    ) -> FollowedSuggestionsResponse:
+        """Resultado das sugestões seguidas, com totais sobre o conjunto inteiro.
+
+        A comparação contra o Ibovespa e o agrupamento por origem precisam de
+        todas as sugestões, então a paginação limita o payload e não a consulta.
+        """
         rows = portfolio_store.list_followed_suggestions()
         if not rows:
             return FollowedSuggestionsResponse(
@@ -118,9 +126,19 @@ class FollowedService:
         ibov_pct = self._ibov_change(ibov, oldest) if oldest else None
 
         by_source = self._group_by_source(priced, ibov)
+        page = slice_after(
+            items,
+            cursor,
+            clamp_limit(limit),
+            key=lambda i: str(i.followed_on),
+            identity=lambda i: i.id,
+        )
 
         return FollowedSuggestionsResponse(
-            items=items,
+            items=page.items,
+            next_cursor=page.next_cursor,
+            has_more=page.has_more,
+            total_count=len(items),
             total_invested=round(total_invested, 2),
             total_current_value=round(total_current, 2),
             total_pnl=round(total_pnl, 2),

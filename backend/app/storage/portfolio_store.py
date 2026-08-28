@@ -9,6 +9,7 @@ from sqlalchemy import delete, func, select
 from app.core.brt import month_bounds
 from app.core.context import get_current_user_id, get_request_session
 from app.core.database import SessionLocal, init_db
+from app.core.pagination import apply_keyset
 from app.models.db_models import (
     ClosedTradeDb,
     DeviceTokenDb,
@@ -390,13 +391,26 @@ def create_closed_trade(
         )
 
 
-def list_closed_trades(user_id: str | None = None) -> list[ClosedTrade]:
+def list_closed_trades(
+    user_id: str | None = None,
+    limit: int | None = None,
+    cursor: str | None = None,
+) -> list[ClosedTrade]:
+    """Operações encerradas, mais recentes primeiro.
+
+    Busca `limit + 1` de propósito: a linha extra é como se descobre que há
+    próxima página sem um `COUNT(*)` sobre a tabela inteira. Quem chama corta.
+    """
     with _session(user_id) as (session, uid):
-        rows = session.scalars(
-            select(ClosedTradeDb)
-            .where(ClosedTradeDb.user_id == uid)
-            .order_by(ClosedTradeDb.sold_at.desc())
-        ).all()
+        stmt = apply_keyset(
+            select(ClosedTradeDb).where(ClosedTradeDb.user_id == uid),
+            ClosedTradeDb.sold_at,
+            ClosedTradeDb.id,
+            cursor,
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit + 1)
+        rows = session.scalars(stmt).all()
         return [
             ClosedTrade(
                 id=r.id,
@@ -416,6 +430,30 @@ def list_closed_trades(user_id: str | None = None) -> list[ClosedTrade]:
             )
             for r in rows
         ]
+
+
+def closed_trades_totals(user_id: str | None = None) -> dict:
+    """Totais das operações encerradas, direto em SQL.
+
+    Existe para que `/portfolio/trades` possa paginar de verdade: com os totais
+    vindo de `SUM`, a lista pode ser cortada no banco sem que o número no topo
+    da tela passe a falar só da primeira página. Total que muda conforme a
+    rolagem é pior que lista longa.
+    """
+    with _session(user_id) as (session, uid):
+        row = session.execute(
+            select(
+                func.coalesce(func.sum(ClosedTradeDb.net_profit), 0.0),
+                func.coalesce(func.sum(ClosedTradeDb.ir_amount), 0.0),
+                func.count(ClosedTradeDb.id),
+            ).where(ClosedTradeDb.user_id == uid)
+        ).one()
+
+        return {
+            "total_realized_pnl": float(row[0] or 0.0),
+            "total_ir_paid": float(row[1] or 0.0),
+            "count": int(row[2] or 0),
+        }
 
 
 def record_snapshot(
@@ -829,14 +867,21 @@ def _fixed_income_row(row: FixedIncomePositionDb) -> FixedIncomeRow:
     )
 
 
-def list_fixed_income(user_id: str | None = None) -> list[FixedIncomeRow]:
+def list_fixed_income(
+    user_id: str | None = None,
+    limit: int | None = None,
+    cursor: str | None = None,
+) -> list[FixedIncomeRow]:
     with _session(user_id) as (session, uid):
-        rows = session.scalars(
-            select(FixedIncomePositionDb)
-            .where(FixedIncomePositionDb.user_id == uid)
-            .order_by(FixedIncomePositionDb.data_aplicacao.desc(), FixedIncomePositionDb.id)
-        ).all()
-        return [_fixed_income_row(r) for r in rows]
+        stmt = apply_keyset(
+            select(FixedIncomePositionDb).where(FixedIncomePositionDb.user_id == uid),
+            FixedIncomePositionDb.data_aplicacao,
+            FixedIncomePositionDb.id,
+            cursor,
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit + 1)
+        return [_fixed_income_row(r) for r in session.scalars(stmt).all()]
 
 
 def get_fixed_income(position_id: int, user_id: str | None = None) -> FixedIncomeRow | None:
@@ -999,14 +1044,21 @@ def _dividend_row(row: DividendReceivedDb) -> DividendReceivedRow:
     )
 
 
-def list_dividends_received(user_id: str | None = None) -> list[DividendReceivedRow]:
+def list_dividends_received(
+    user_id: str | None = None,
+    limit: int | None = None,
+    cursor: str | None = None,
+) -> list[DividendReceivedRow]:
     with _session(user_id) as (session, uid):
-        rows = session.scalars(
-            select(DividendReceivedDb)
-            .where(DividendReceivedDb.user_id == uid)
-            .order_by(DividendReceivedDb.paid_at.desc(), DividendReceivedDb.id.desc())
-        ).all()
-        return [_dividend_row(r) for r in rows]
+        stmt = apply_keyset(
+            select(DividendReceivedDb).where(DividendReceivedDb.user_id == uid),
+            DividendReceivedDb.paid_at,
+            DividendReceivedDb.id,
+            cursor,
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit + 1)
+        return [_dividend_row(r) for r in session.scalars(stmt).all()]
 
 
 def create_dividend_received(user_id: str | None = None, **fields) -> DividendReceivedRow:
@@ -1092,14 +1144,21 @@ def _followed_row(row: FollowedSuggestionDb) -> FollowedSuggestionRow:
     )
 
 
-def list_followed_suggestions(user_id: str | None = None) -> list[FollowedSuggestionRow]:
+def list_followed_suggestions(
+    user_id: str | None = None,
+    limit: int | None = None,
+    cursor: str | None = None,
+) -> list[FollowedSuggestionRow]:
     with _session(user_id) as (session, uid):
-        rows = session.scalars(
-            select(FollowedSuggestionDb)
-            .where(FollowedSuggestionDb.user_id == uid)
-            .order_by(FollowedSuggestionDb.followed_on.desc(), FollowedSuggestionDb.id.desc())
-        ).all()
-        return [_followed_row(r) for r in rows]
+        stmt = apply_keyset(
+            select(FollowedSuggestionDb).where(FollowedSuggestionDb.user_id == uid),
+            FollowedSuggestionDb.followed_on,
+            FollowedSuggestionDb.id,
+            cursor,
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit + 1)
+        return [_followed_row(r) for r in session.scalars(stmt).all()]
 
 
 def create_followed_suggestion(user_id: str | None = None, **fields) -> FollowedSuggestionRow:

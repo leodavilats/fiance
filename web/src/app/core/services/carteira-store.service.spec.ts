@@ -185,4 +185,38 @@ describe('CarteiraStore', () => {
   it('sem rendimento nenhum, a estimativa é nula em vez de zero', () => {
     expect(store.estimatedMonthlyIncome()).toBeNull();
   });
+
+  describe('lista cortada pela paginação', () => {
+    it('nada cortado não vira aviso', () => {
+      store.fixedIncome.set({
+        items: [],
+        total_investido: 0,
+        total_atual: 0,
+        has_more: false,
+      } as unknown as FixedIncomeListResponse);
+
+      expect(store.truncated()).toEqual([]);
+    });
+
+    it('cada lista cortada aparece pelo nome', () => {
+      // Truncar em silêncio é indistinguível de ter perdido operações — e é
+      // exatamente a conclusão que o usuário tira.
+      store.fixedIncome.set({
+        items: [],
+        total_investido: 0,
+        total_atual: 0,
+        has_more: true,
+      } as unknown as FixedIncomeListResponse);
+      store.closedTrades.set({ trades: [], has_more: true } as never);
+
+      expect(store.truncated()).toEqual(['operações encerradas', 'renda fixa']);
+    });
+
+    it('resposta sem o campo não é tratada como cortada', () => {
+      // Backend antigo respondendo a cliente novo: ausência não é truncagem.
+      store.closedTrades.set({ trades: [] } as never);
+
+      expect(store.truncated()).toEqual([]);
+    });
+  });
 });

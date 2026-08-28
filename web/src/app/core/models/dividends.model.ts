@@ -31,6 +31,14 @@ export interface DividendsReceivedResponse {
   by_ticker: DividendTickerTotal[];
   estimated_monthly: number | null;
   estimate_accuracy_pct: number | null;
+  /**
+   * Paginação. `items` é a página; os totais acima cobrem o conjunto inteiro.
+   * Ignorar `has_more` faria a tela truncar em silêncio — que é o modo de falha
+   * que este produto não pode ter numa lista que vira declaração.
+   */
+  next_cursor: string | null;
+  has_more: boolean;
+  total_count: number;
 }
 
 export interface DividendPayload {

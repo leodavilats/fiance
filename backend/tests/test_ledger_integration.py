@@ -66,7 +66,9 @@ class TestEspelhamento:
         tipos = [
             i["kind"] for i in client.get("/api/transactions", headers=headers).json()["items"]
         ]
-        assert tipos == ["adjust", "sell"]
+        # A listagem vem em ordem de leitura, do mais recente para o mais antigo.
+        # A projeção usa a ordem inversa, que é a em que as operações aconteceram.
+        assert tipos == ["sell", "adjust"]
 
     def test_apagar_posicao_zera_o_razao_em_vez_de_deixar_fantasma(self, client):
         headers = make_auth_headers("u_ledger_del")

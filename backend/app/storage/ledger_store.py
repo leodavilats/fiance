@@ -14,6 +14,7 @@ from sqlalchemy import delete, select
 from app.core.context import get_current_user_id, get_request_session
 from app.core.database import SessionLocal, ensure_initialized
 from app.core.errors import NotFoundError
+from app.core.pagination import apply_keyset
 from app.ledger import LedgerEntry, TransactionKind
 from app.models.db_models import InstrumentDb, TransactionDb
 
@@ -210,14 +211,26 @@ def list_entries(
     symbol: str | None = None,
     user_id: str | None = None,
     limit: int | None = None,
+    cursor: str | None = None,
+    descending: bool = False,
 ) -> list[LedgerEntry]:
+    """Lançamentos do usuário.
+
+    A ordem padrão é **crescente** porque a projeção do razão depende dela: o
+    preço médio é uma dobra na ordem em que as operações aconteceram. A listagem
+    de tela pede `descending=True`, que é a ordem de leitura.
+
+    Devolve `limit + 1` quando há limite — a linha extra é como quem chama
+    descobre que existe próxima página.
+    """
+
     def body(session, uid: str) -> list[LedgerEntry]:
         stmt = select(TransactionDb).where(TransactionDb.user_id == uid)
         if symbol:
             stmt = stmt.where(TransactionDb.symbol == symbol.strip().upper())
-        stmt = stmt.order_by(TransactionDb.traded_on, TransactionDb.id)
+        stmt = apply_keyset(stmt, TransactionDb.traded_on, TransactionDb.id, cursor, descending)
         if limit:
-            stmt = stmt.limit(limit)
+            stmt = stmt.limit(limit + 1)
         return [_to_entry(row) for row in session.execute(stmt).scalars()]
 
     return _with_session(body, user_id)

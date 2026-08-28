@@ -185,6 +185,21 @@ export class CarteiraStore {
     return invested === 0 ? 0 : (this.rendimentoTotal() / invested) * 100;
   });
 
+  /**
+   * Listas que o backend cortou por paginação.
+   *
+   * A tela precisa dizer isso em voz alta: uma lista truncada em silêncio é
+   * indistinguível de uma lista completa, e a pessoa conclui que operações
+   * sumiram. Os totais continuam corretos — quem foi cortado é `items`.
+   */
+  readonly truncated = computed(() => {
+    const cortadas: string[] = [];
+    if (this.closedTrades()?.has_more) cortadas.push('operações encerradas');
+    if (this.dividends()?.has_more) cortadas.push('proventos');
+    if (this.fixedIncome()?.has_more) cortadas.push('renda fixa');
+    return cortadas;
+  });
+
   readonly negociadosCount = computed(() => this.tradedPositions().length);
   readonly rendaFixaCount = computed(() => this.fixedIncomePositions().length);
   readonly totalAtivos = computed(() => this.negociadosCount() + this.rendaFixaCount());

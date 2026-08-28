@@ -62,3 +62,8 @@ class DividendsReceivedResponse(BaseModel):
 
     estimated_monthly: float | None = None
     estimate_accuracy_pct: float | None = None
+
+    #: Os totais acima cobrem o conjunto inteiro; `items` é só a página.
+    next_cursor: str | None = None
+    has_more: bool = False
+    total_count: int = 0
