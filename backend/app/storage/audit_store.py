@@ -33,6 +33,9 @@ GOAL_WRITE = "goal.write"
 ALERT_WRITE = "alert.write"
 ALERT_DELETE = "alert.delete"
 ACCOUNT_EXPORT = "account.export"
+SUBSCRIPTION_TRIAL = "subscription.trial"
+SUBSCRIPTION_GRANT = "subscription.grant"
+SUBSCRIPTION_CANCEL = "subscription.cancel"
 ACCOUNT_DELETE = "account.delete"
 
 

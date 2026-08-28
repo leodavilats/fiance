@@ -15,6 +15,7 @@ from . import (
     demo,
     dip_scanner,
     dividends,
+    entitlements,
     events,
     fixed_income,
     followed,
@@ -55,6 +56,7 @@ protected.include_router(
 )
 protected.include_router(data_quality.router, tags=["Maintenance"])
 protected.include_router(account.router, tags=["Account"])
+protected.include_router(entitlements.router, tags=["Entitlement"])
 protected.include_router(events.router, tags=["Analytics"])
 protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])

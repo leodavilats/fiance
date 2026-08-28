@@ -358,3 +358,60 @@ class AuditLogDb(Base):
     summary: Mapped[str] = mapped_column(String, default="")
     detail: Mapped[str] = mapped_column(String, default="{}")
     occurred_at: Mapped[float] = mapped_column(Float, index=True)
+
+
+class SubscriptionDb(Base):
+    """A assinatura, com **preço e plano versionados**.
+
+    Preço travado de fundador é promessa pública, então tem que ser dado e não
+    convenção: `price_cents` guarda o que a pessoa contratou e `locked` diz que
+    um reajuste da tabela não a alcança. Sem isso, a única forma de cumprir a
+    promessa seria lembrar dela — e reajuste é exatamente o momento em que
+    ninguém lembra.
+
+    `provider` e `external_id` existem desde já porque o direito mora aqui e o
+    canal é detalhe: trocar de gateway não pode exigir migrar assinante.
+    """
+
+    __tablename__ = "subscriptions"
+
+    user_id: Mapped[str] = mapped_column(String, primary_key=True)
+
+    plan_code: Mapped[str] = mapped_column(String, default="free")
+    status: Mapped[str] = mapped_column(String, default="none", index=True)
+
+    #: O que a pessoa paga, em centavos. Nunca derivado da tabela vigente.
+    price_cents: Mapped[int] = mapped_column(Integer, default=0)
+    currency: Mapped[str] = mapped_column(String, default="BRL")
+    interval: Mapped[str] = mapped_column(String, default="monthly")
+
+    #: Reajuste da tabela não alcança quem está travado.
+    locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    granted_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    trial_started_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+    trial_ends_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+    current_period_end: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cancelled_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    provider: Mapped[str] = mapped_column(String, default="none")
+    external_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+    updated_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+
+class ProcessedWebhookDb(Base):
+    """Eventos de gateway já processados, por id do provedor.
+
+    Webhook chega mais de uma vez por desenho — o provedor reenvia até receber
+    200. Conceder direito duas vezes é o modo de falha óbvio; a tabela é o que
+    torna o processamento idempotente sem depender de o gateway se comportar.
+    """
+
+    __tablename__ = "processed_webhooks"
+
+    provider: Mapped[str] = mapped_column(String, primary_key=True)
+    event_id: Mapped[str] = mapped_column(String, primary_key=True)
+    processed_at: Mapped[float] = mapped_column(Float)
+    summary: Mapped[str] = mapped_column(String, default="")

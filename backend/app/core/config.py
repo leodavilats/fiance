@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # produção sem deploy de código.
     rate_limit_factor: float = 1.0
 
+    # A régua de plano existe em produção antes de a cobrança existir, atrás
+    # desta flag. Desligada, todo mundo tem tudo — que é o estado de hoje.
+    # Ligar passa a ser decisão, não entrega; e o código de gate não precisa
+    # ser descoberto durante o lançamento.
+    entitlements_enabled: bool = False
+
     brapi_token: str = ""
 
     brapi_history_range: str = "3mo"

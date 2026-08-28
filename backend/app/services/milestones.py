@@ -41,7 +41,15 @@ def record_portfolio_milestones(position_count: int, user_id: str | None = None)
 
     try:
         if position_count >= 1:
-            _record_once(uid, "portfolio_first_position_added")
+            primeira = _record_once(uid, "portfolio_first_position_added")
+            if primeira:
+                # O trial começa aqui, e não no cadastro: trial que expira
+                # antes de a pessoa ter uma carteira para analisar é trial
+                # desperdiçado — ela nunca chega a ver o que estaria comprando.
+                from app.services import subscription_service
+
+                subscription_service.start_trial(uid)
+
         if position_count >= READABLE_PORTFOLIO_SIZE:
             _record_once(uid, "portfolio_reached_4_assets")
     except Exception:
