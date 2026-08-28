@@ -8,7 +8,9 @@ import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/hoje/hoje_screen.dart';
 import '../features/estrategia/estrategia_screen.dart';
+import '../features/busca/busca_screen.dart';
 import '../features/estrategia/metas_screen.dart';
+import '../features/hoje/atividade_screen.dart';
 import '../features/tools/income_compare_view.dart';
 import '../features/market/opportunities_tab.dart';
 import '../features/market/quick_invest_view.dart';
@@ -26,6 +28,10 @@ final appRouter = GoRouter(
     GoRoute(path: '/assets', redirect: (_, _) => '/carteira'),
     GoRoute(path: '/market', redirect: (_, _) => '/descobrir'),
     GoRoute(path: '/config', redirect: (_, _) => '/voce'),
+    // Busca é camada, não destino: ela abre por cima de onde a pessoa está e
+    // some. Colocá-la no bottom nav gastaria um dos cinco lugares com algo que
+    // não é um lugar.
+    GoRoute(path: '/busca', builder: (context, state) => const BuscaScreen()),
 
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
@@ -36,6 +42,12 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/hoje',
               builder: (context, state) => const HojeScreen(),
+              routes: [
+                GoRoute(
+                  path: 'atividade',
+                  builder: (context, state) => const AtividadeScreen(),
+                ),
+              ],
             ),
           ],
         ),

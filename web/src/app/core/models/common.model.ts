@@ -14,3 +14,29 @@ export interface TickerSuggestion {
   ticker: string;
   name: string;
 }
+
+/**
+ * Um achado da busca global.
+ *
+ * `ref` é o identificador — ticker, ou id da posição de renda fixa. O servidor
+ * não manda rota de propósito: as árvores do web e do app diferem, e um
+ * catálogo de rotas no servidor seria uma segunda verdade sobre a arquitetura
+ * de informação.
+ */
+export interface GlobalSearchItem {
+  kind: 'position' | 'fixed_income' | 'asset';
+  title: string;
+  subtitle: string;
+  ref: string;
+}
+
+export interface GlobalSearchGroup {
+  label: string;
+  items: GlobalSearchItem[];
+}
+
+export interface GlobalSearchResponse {
+  query: string;
+  groups: GlobalSearchGroup[];
+  total: number;
+}

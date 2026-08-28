@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  GlobalSearchResponse,
   AllocationCategory,
   AssetAnalysis,
   BenchmarkResponse,
@@ -376,6 +377,17 @@ export class RecommendService {
   sectorsSummary(category = 'acoes_br'): Observable<SectorsSummaryResponse> {
     const params = new HttpParams().set('category', category);
     return this.http.get<SectorsSummaryResponse>(`${this.base}/sectors-summary`, { params });
+  }
+
+  /**
+   * Busca global: carteira, renda fixa e universo numa chamada só.
+   *
+   * O servidor devolve o que só ele sabe — a posição com a quantidade, o CDB
+   * pelo nome — e nunca rota: a árvore de navegação é do cliente.
+   */
+  searchEverything(query: string): Observable<GlobalSearchResponse> {
+    const params = new HttpParams().set('q', query);
+    return this.http.get<GlobalSearchResponse>(`${this.base}/search`, { params });
   }
 
   searchTickers(query: string, limit = 8): Observable<{ items: TickerSuggestion[] }> {

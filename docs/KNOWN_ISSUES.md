@@ -46,8 +46,8 @@
 
 ## Cobertura de testes
 
-7. **Nenhum teste roda no navegador.** Backend tem 681 (`pytest`), web tem 84 (Vitest) e mobile
-   27 (`flutter test`), e `backend/tests/test_jornadas.py` atravessa as jornadas críticas —
+7. **Nenhum teste roda no navegador.** Backend tem 701 (`pytest`), web tem 90 (Vitest) e mobile
+   49 (`flutter test`), e `backend/tests/test_jornadas.py` atravessa as jornadas críticas —
    primeira posição → trial → teto → checkout → webhook → cancelamento → exportação → exclusão —
    pelo app real, com HTTP, autenticação e banco. O que **não** é exercitado é a interface: nenhum
    teste abre o Angular num navegador, então quebras de renderização, foco, rota e formulário só

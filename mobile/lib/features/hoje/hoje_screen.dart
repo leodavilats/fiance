@@ -41,7 +41,21 @@ class HojeScreen extends ConsumerWidget {
     final whatsNew = ref.watch(whatsNewProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Hoje')),
+      appBar: AppBar(
+        title: const Text('Hoje'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Buscar ativo, título ou tela',
+            onPressed: () => context.push('/busca'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'O que aconteceu',
+            onPressed: () => context.go('/hoje/atividade'),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(dashboardProvider);

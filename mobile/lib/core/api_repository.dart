@@ -379,6 +379,11 @@ class ApiRepository {
     return IncomeCompare.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<SearchResults> search(String query) async {
+    final res = await _dio.get('/search', queryParameters: {'q': query});
+    return SearchResults.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<ReferralStatus> referralStatus() async {
     final res = await _dio.get('/referral');
     return ReferralStatus.fromJson(res.data as Map<String, dynamic>);

@@ -1,5 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
+import { GlobalSearchGroup } from '../models';
 import { RecommendService } from './recommend.service';
 
 /**
@@ -178,6 +179,15 @@ export class GlobalSearchService {
   readonly open = signal(false);
   readonly query = signal('');
   readonly tickers = signal<{ ticker: string; name: string }[]>([]);
+
+  /**
+   * O que só o servidor sabe: a posição com a quantidade, o CDB pelo nome.
+   *
+   * Os destinos de tela continuam no cliente e filtram sem rede — eles são a
+   * parte instantânea da busca, e mandá-los ao servidor tornaria a navegação
+   * refém de conexão.
+   */
+  readonly mine = signal<GlobalSearchGroup[]>([]);
   readonly searching = signal(false);
 
   private readonly queries = new Subject<string>();
@@ -189,16 +199,22 @@ export class GlobalSearchService {
         distinctUntilChanged(),
         switchMap(q => {
           this.searching.set(true);
-          return this.api.searchTickers(q, 6);
+          return this.api.searchEverything(q);
         })
       )
       .subscribe({
         next: r => {
-          this.tickers.set(r.items);
+          const ativos = r.groups.find(g => g.label === 'Ativos');
+          this.tickers.set((ativos?.items ?? []).map(i => ({ ticker: i.title, name: i.subtitle })));
+          this.mine.set(r.groups.filter(g => g.label !== 'Ativos'));
           this.searching.set(false);
         },
         error: () => {
+          // Busca é atalho: sem rede, os destinos do cliente continuam
+          // funcionando, e é melhor perder metade do resultado do que a caixa
+          // inteira.
           this.tickers.set([]);
+          this.mine.set([]);
           this.searching.set(false);
         },
       });
@@ -212,6 +228,7 @@ export class GlobalSearchService {
     this.open.set(false);
     this.query.set('');
     this.tickers.set([]);
+    this.mine.set([]);
   }
 
   toggle(): void {
@@ -221,8 +238,12 @@ export class GlobalSearchService {
   setQuery(value: string): void {
     this.query.set(value);
     const q = value.trim();
-    if (q.length >= 2) this.queries.next(q);
-    else this.tickers.set([]);
+    if (q.length >= 2) {
+      this.queries.next(q);
+    } else {
+      this.tickers.set([]);
+      this.mine.set([]);
+    }
   }
 
   /** Destinos que casam com o termo — por rótulo, seção ou sinônimo. */

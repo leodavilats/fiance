@@ -14,7 +14,9 @@ import { LucideAngularModule } from 'lucide-angular';
 import { GlobalSearchService, SearchDestination } from '../../core';
 
 interface Row {
-  readonly kind: 'destination' | 'ticker';
+  readonly kind: 'destination' | 'mine' | 'ticker';
+  /** Cabeçalho da seção. Vem do servidor no caso do que é da pessoa. */
+  readonly group: string;
   readonly label: string;
   readonly detail: string;
   readonly icon: string;
@@ -24,8 +26,13 @@ interface Row {
 /**
  * Busca global — `⌘K` no Mac, `Ctrl+K` no resto.
  *
- * É ferramenta de navegação, não tela de pesquisa: abre por cima, responde em
- * duas categorias (telas e ativos) e some. Teclado é o caminho principal —
+ * É ferramenta de navegação, não tela de pesquisa: abre por cima, responde e
+ * some.
+ *
+ * O que é da pessoa vem primeiro — quem digita "PETR" e tem PETR4 na carteira
+ * quer a própria posição, não a página do ativo. Depois as telas, que filtram
+ * sem rede e por isso continuam funcionando quando a chamada falha. Por último
+ * o mercado. Teclado é o caminho principal —
  * setas movem, Enter vai, Esc fecha —, e por isso a lista é uma única sequência
  * navegável, mesmo dividida em seções na tela.
  */
@@ -125,9 +132,26 @@ export class GlobalSearchComponent {
     });
   }
 
+  /** A rota de um achado do servidor. O `ref` é o identificador; o caminho é nosso. */
+  private routeFor(kind: string, ref: string): string {
+    return kind === 'fixed_income' ? '/carteira/posicoes' : `/ativo/${ref}`;
+  }
+
   readonly rows = computed<Row[]>(() => {
+    const mine: Row[] = this.search.mine().flatMap(group =>
+      group.items.map(item => ({
+        kind: 'mine' as const,
+        group: group.label,
+        label: item.title,
+        detail: item.subtitle,
+        icon: item.kind === 'fixed_income' ? 'landmark' : 'wallet',
+        route: this.routeFor(item.kind, item.ref),
+      }))
+    );
+
     const destinations: Row[] = this.search.destinations().map((d: SearchDestination) => ({
       kind: 'destination' as const,
+      group: 'Telas',
       label: d.label,
       detail: d.section,
       icon: d.icon,
@@ -136,21 +160,22 @@ export class GlobalSearchComponent {
 
     const tickers: Row[] = this.search.tickers().map(t => ({
       kind: 'ticker' as const,
+      group: 'Ativos',
       label: t.ticker,
       detail: t.name,
       icon: 'chart-candlestick',
       route: `/ativo/${t.ticker}`,
     }));
 
-    return [...destinations, ...tickers];
+    return [...mine, ...destinations, ...tickers];
   });
 
   readonly groups = computed(() => {
-    const all = this.rows();
-    return [
-      { title: 'Telas', rows: all.filter(r => r.kind === 'destination') },
-      { title: 'Ativos', rows: all.filter(r => r.kind === 'ticker') },
-    ].filter(g => g.rows.length > 0);
+    const ordem = new Map<string, Row[]>();
+    for (const row of this.rows()) {
+      ordem.set(row.group, [...(ordem.get(row.group) ?? []), row]);
+    }
+    return [...ordem].map(([title, rows]) => ({ title, rows }));
   });
 
   readonly active = computed(() => this.rows()[Math.min(this.cursor(), this.rows().length - 1)]);

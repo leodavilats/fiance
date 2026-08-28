@@ -1488,3 +1488,58 @@ class IncomeCompare {
     disclaimer: j['disclaimer'] as String? ?? '',
   );
 }
+
+/// Um achado da busca global.
+///
+/// `ref` é o identificador — ticker, ou id da posição de renda fixa. O servidor
+/// **não** manda rota: a árvore do web e a do app diferem, e um catálogo de
+/// rotas no servidor seria uma segunda verdade sobre a arquitetura de
+/// informação. Quem decide o caminho é o cliente.
+class SearchHit {
+  SearchHit({
+    required this.kind,
+    required this.title,
+    required this.subtitle,
+    required this.ref,
+  });
+
+  final String kind;
+  final String title;
+  final String subtitle;
+  final String ref;
+
+  factory SearchHit.fromJson(Map<String, dynamic> j) => SearchHit(
+    kind: j['kind'] as String? ?? '',
+    title: j['title'] as String? ?? '',
+    subtitle: j['subtitle'] as String? ?? '',
+    ref: j['ref'] as String? ?? '',
+  );
+}
+
+class SearchGroup {
+  SearchGroup({required this.label, required this.items});
+
+  final String label;
+  final List<SearchHit> items;
+
+  factory SearchGroup.fromJson(Map<String, dynamic> j) => SearchGroup(
+    label: j['label'] as String? ?? '',
+    items: ((j['items'] as List?) ?? const [])
+        .map((e) => SearchHit.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
+}
+
+class SearchResults {
+  SearchResults({required this.groups, required this.total});
+
+  final List<SearchGroup> groups;
+  final int total;
+
+  factory SearchResults.fromJson(Map<String, dynamic> j) => SearchResults(
+    groups: ((j['groups'] as List?) ?? const [])
+        .map((e) => SearchGroup.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    total: (j['total'] as num?)?.toInt() ?? 0,
+  );
+}
