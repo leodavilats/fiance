@@ -268,6 +268,39 @@ function missingExplainers(htmlFiles) {
 }
 
 // --------------------------------------------------------------------------
+// 4. Alternativa textual de gráfico
+// --------------------------------------------------------------------------
+
+/**
+ * Todo SVG que desenha dado precisa de uma forma de ler o dado sem enxergá-lo.
+ *
+ * `aria-label` resume — "a carteira foi de 3% a 11%" — e resumo não é o dado.
+ * A alternativa que serve é a tabela: quem usa leitor de tela compara ponto a
+ * ponto, e quem enxerga também quer o número exato de vez em quando.
+ *
+ * Ícone não conta como gráfico: ele é decoração, e exigir tabela dele
+ * transformaria a regra em ruído que se aprende a ignorar.
+ */
+function missingChartAlternatives(files) {
+  const problems = [];
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+
+    // `<svg` com `<path`/`<line`/`<circle` gerado em laço é gráfico de dado;
+    // ícone é um `<svg>` estático, e o Lucide nem chega ao template.
+    const desenhaDado = /<svg[\s\S]*?@for[\s\S]*?<\/svg>/.test(source);
+    if (!desenhaDado) continue;
+
+    if (/<table/.test(source)) continue;
+
+    problems.push({ file, name: relative(WEB_ROOT, file) });
+  }
+
+  return problems;
+}
+
+// --------------------------------------------------------------------------
 
 function report(title, problems, hint) {
   if (problems.length === 0) return 0;
@@ -298,6 +331,7 @@ function main() {
   const missingClasses = usedClasses(templates).filter(use => !known.has(use.name));
 
   const semExplicacao = missingExplainers(templates.filter(file => file.endsWith('.html')));
+  const semTabela = missingChartAlternatives(templates);
 
   const problems =
     report(
@@ -317,6 +351,12 @@ function main() {
       'Adicione <app-provenance>, <app-help-tooltip> ou outro explicador. Se a ' +
         'tela realmente não precisa, declare o motivo: ' +
         '<!-- sem-explicabilidade: o número já vem explicado no card pai -->'
+    ) +
+    report(
+      'Gráfico sem alternativa textual',
+      semTabela,
+      'Adicione uma <table> com a série. aria-label resume, e resumo não é o dado: ' +
+        'quem usa leitor de tela precisa comparar ponto a ponto.'
     );
 
   if (problems > 0) {
@@ -324,7 +364,9 @@ function main() {
     process.exit(1);
   }
 
-  console.log('✓ Ícones registrados, classes emitidas e julgamentos explicados.');
+  console.log(
+    '✓ Ícones registrados, classes emitidas, julgamentos explicados e gráficos legíveis.'
+  );
 }
 
 main();

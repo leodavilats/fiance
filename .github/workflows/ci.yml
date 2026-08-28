@@ -25,6 +25,12 @@ jobs:
       - name: Verificar tokens gerados
         run: node design-tokens/build.mjs --check
 
+      # Contraste é gerado da mesma fonte que a cor, então também é verificável
+      # de lá. A diferença entre 4,4 e 4,6 não se enxerga em revisão visual, mas
+      # separa quem lê a tela de quem não lê.
+      - name: Verificar contraste (WCAG AA)
+        run: node design-tokens/check-contrast.mjs
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'

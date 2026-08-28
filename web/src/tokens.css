@@ -11,16 +11,16 @@
   --fi-hairline-strong: #333B38;
   --fi-ink-1: #E9EAE9;
   --fi-ink-2: #A5ACA9;
-  --fi-ink-3: #7B8380;
+  --fi-ink-3: #808885;
   --fi-ink-on-brand: #08131A;
   --fi-brand: #5B9DC0;
   --fi-brand-quiet: #1D3140;
   --fi-state-favorable: #4FB286;
   --fi-state-attention: #D9A23B;
   --fi-state-adverse: #D9705F;
-  --fi-state-indeterminate: #7B8380;
-  --fi-direction-up: #5E8F79;
-  --fi-direction-down: #A8756B;
+  --fi-state-indeterminate: #808885;
+  --fi-direction-up: #60917B;
+  --fi-direction-down: #AC7B71;
   --fi-series-1: #5B9DC0;
   --fi-series-2: #4FB286;
   --fi-series-3: #D9A23B;
@@ -32,7 +32,7 @@
   --fi-series-9: #96A94F;
   --fi-series-10: #6E8FD6;
   --fi-series-11: #B5849B;
-  --fi-series-other: #5A6360;
+  --fi-series-other: #636D69;
   --fi-shadow-drawer: 0 0 40px rgba(0,0,0,0.55);
   --fi-shadow-popover: 0 4px 16px rgba(0,0,0,0.45);
   --fi-font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -88,11 +88,11 @@
   --fi-ink-on-brand: #FFFFFF;
   --fi-brand: #2C6485;
   --fi-brand-quiet: #E4EDF2;
-  --fi-state-favorable: #157F58;
+  --fi-state-favorable: #147B56;
   --fi-state-attention: #8C5C10;
   --fi-state-adverse: #B04434;
   --fi-state-indeterminate: #656F6A;
-  --fi-direction-up: #3F7A61;
+  --fi-direction-up: #3E775F;
   --fi-direction-down: #8E5A4C;
   --fi-series-1: #2C6485;
   --fi-series-2: #157F58;
@@ -105,7 +105,7 @@
   --fi-series-9: #5C6B1E;
   --fi-series-10: #3B5AA8;
   --fi-series-11: #7A4E62;
-  --fi-series-other: #8A938E;
+  --fi-series-other: #828B86;
   --fi-shadow-drawer: 0 0 40px rgba(28,31,30,0.16);
   --fi-shadow-popover: 0 4px 16px rgba(28,31,30,0.12);
 }

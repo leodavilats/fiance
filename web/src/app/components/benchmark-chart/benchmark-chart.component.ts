@@ -156,6 +156,63 @@ const PAD_BOTTOM = 30;
           <span class="text-[11px] opacity-70">Ibovespa indisponível no momento</span>
         }
       </div>
+
+      <!--
+        A alternativa textual do gráfico.
+
+        O aria-label do SVG resume — diz que a carteira foi de X a Y — mas
+        resumo não é o dado. Quem usa leitor de tela precisa poder comparar
+        ponto a ponto, e quem enxerga também quer o número exato de vez em
+        quando. A mesma tabela serve aos dois.
+      -->
+      <button
+        type="button"
+        class="text-xs text-ink-2 hover:text-ink mt-3 cursor-pointer bg-transparent border-0 p-0 underline decoration-dotted"
+        [attr.aria-expanded]="showTable()"
+        (click)="showTable.set(!showTable())"
+      >
+        {{ showTable() ? 'Ocultar a série em tabela' : 'Ver a série em tabela' }}
+      </button>
+
+      @if (showTable()) {
+        <div class="mt-2 max-h-64 overflow-y-auto rounded-lg border border-hairline">
+          <table class="w-full text-xs">
+            <caption class="sr-only">
+              Retorno acumulado da carteira, do CDI e do Ibovespa em cada data
+            </caption>
+            <thead class="sticky top-0 bg-ground-2">
+              <tr>
+                <th scope="col" class="text-left px-2 py-1 font-medium text-ink-2">Data</th>
+                <th scope="col" class="text-right px-2 py-1 font-medium text-ink-2">Carteira</th>
+                <th scope="col" class="text-right px-2 py-1 font-medium text-ink-2">CDI</th>
+                @if (ibovAvailable()) {
+                  <th scope="col" class="text-right px-2 py-1 font-medium text-ink-2">Ibovespa</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of points(); track p.date) {
+                <tr class="border-t border-hairline">
+                  <td class="px-2 py-1 text-ink-2">{{ p.date }}</td>
+                  <td class="px-2 py-1 text-right text-ink">
+                    {{ p.portfolio_pct | number: '1.1-1' }}%
+                  </td>
+                  <td class="px-2 py-1 text-right text-ink">{{ p.cdi_pct | number: '1.1-1' }}%</td>
+                  @if (ibovAvailable()) {
+                    <td class="px-2 py-1 text-right text-ink">
+                      @if (p.ibov_pct != null) {
+                        {{ p.ibov_pct | number: '1.1-1' }}%
+                      } @else {
+                        —
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     }
   `,
 })
@@ -173,6 +230,7 @@ export class BenchmarkChartComponent {
   readonly padBottom = PAD_BOTTOM;
 
   hoverIndex = signal<number | null>(null);
+  readonly showTable = signal(false);
 
   private plotWidth = VB_WIDTH - PAD_LEFT - PAD_RIGHT;
   private plotHeight = VB_HEIGHT - PAD_TOP - PAD_BOTTOM;

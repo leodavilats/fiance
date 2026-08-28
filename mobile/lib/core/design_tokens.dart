@@ -14,16 +14,16 @@ abstract final class FiColors {
   static const darkHairlineStrong = Color(0xFF333B38);
   static const darkInk1 = Color(0xFFE9EAE9);
   static const darkInk2 = Color(0xFFA5ACA9);
-  static const darkInk3 = Color(0xFF7B8380);
+  static const darkInk3 = Color(0xFF808885);
   static const darkInkOnBrand = Color(0xFF08131A);
   static const darkBrand = Color(0xFF5B9DC0);
   static const darkBrandQuiet = Color(0xFF1D3140);
   static const darkStateFavorable = Color(0xFF4FB286);
   static const darkStateAttention = Color(0xFFD9A23B);
   static const darkStateAdverse = Color(0xFFD9705F);
-  static const darkStateIndeterminate = Color(0xFF7B8380);
-  static const darkDirectionUp = Color(0xFF5E8F79);
-  static const darkDirectionDown = Color(0xFFA8756B);
+  static const darkStateIndeterminate = Color(0xFF808885);
+  static const darkDirectionUp = Color(0xFF60917B);
+  static const darkDirectionDown = Color(0xFFAC7B71);
   static const darkSeries1 = Color(0xFF5B9DC0);
   static const darkSeries2 = Color(0xFF4FB286);
   static const darkSeries3 = Color(0xFFD9A23B);
@@ -35,7 +35,7 @@ abstract final class FiColors {
   static const darkSeries9 = Color(0xFF96A94F);
   static const darkSeries10 = Color(0xFF6E8FD6);
   static const darkSeries11 = Color(0xFFB5849B);
-  static const darkSeriesOther = Color(0xFF5A6360);
+  static const darkSeriesOther = Color(0xFF636D69);
 
   static const lightGround0 = Color(0xFFFAF8F5);
   static const lightGround1 = Color(0xFFFFFFFF);
@@ -48,11 +48,11 @@ abstract final class FiColors {
   static const lightInkOnBrand = Color(0xFFFFFFFF);
   static const lightBrand = Color(0xFF2C6485);
   static const lightBrandQuiet = Color(0xFFE4EDF2);
-  static const lightStateFavorable = Color(0xFF157F58);
+  static const lightStateFavorable = Color(0xFF147B56);
   static const lightStateAttention = Color(0xFF8C5C10);
   static const lightStateAdverse = Color(0xFFB04434);
   static const lightStateIndeterminate = Color(0xFF656F6A);
-  static const lightDirectionUp = Color(0xFF3F7A61);
+  static const lightDirectionUp = Color(0xFF3E775F);
   static const lightDirectionDown = Color(0xFF8E5A4C);
   static const lightSeries1 = Color(0xFF2C6485);
   static const lightSeries2 = Color(0xFF157F58);
@@ -65,7 +65,7 @@ abstract final class FiColors {
   static const lightSeries9 = Color(0xFF5C6B1E);
   static const lightSeries10 = Color(0xFF3B5AA8);
   static const lightSeries11 = Color(0xFF7A4E62);
-  static const lightSeriesOther = Color(0xFF8A938E);
+  static const lightSeriesOther = Color(0xFF828B86);
 
 }
 
