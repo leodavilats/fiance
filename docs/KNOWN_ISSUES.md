@@ -100,11 +100,11 @@ Detalhe e justificativa em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATIO
     veredito atual não sustentar, são dois grupos, não três — verificar antes de desenhar o
     terceiro.
 
-## Dívida de integridade financeira (aberta em 2026-08-26, revisada em 2026-08-27)
+## Dívida aberta (auditoria de 2026-08-26, revisada em 2026-08-27)
 
-> O que a auditoria de 2026-08-26 encontrou e ainda **não** foi corrigido. Oito dos doze itens
-> originais saíram nos portões G0 e G1 de 2026-08-27; o que saiu está no
-> [CHANGELOG.md](CHANGELOG.md), com o porquê.
+> O que a auditoria de 2026-08-26 encontrou e ainda **não** foi corrigido, mais o que o plano
+> dos cinco portões deixou em aberto. Dez dos doze itens originais saíram nos portões G0, G1 e
+> na primeira metade do G2; o que saiu está no [CHANGELOG.md](CHANGELOG.md), com o porquê.
 
 18. **A posição corrente ainda não é a projeção do razão.** O livro-razão existe e a escrita é
     espelhada nele, mas `PortfolioPosition` continua sendo a fonte de leitura. É o passo 2 de 3 do
@@ -131,20 +131,18 @@ Detalhe e justificativa em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATIO
     significa que quem conhecer um token FCM alheio redireciona os alertas daquele aparelho para
     si. Entropia do token é a única proteção hoje.
 
-22. **Dado externo não tem faixa de plausibilidade.** A BRAPI é validada por tipo
-    (`_safe_float`), não por magnitude: preço, market cap, ROE ou dividend yield absurdos entram
-    no cálculo e no patrimônio sem barreira. Falta um teto/piso declarado por campo, e um caminho
-    para rejeitar o snapshot inteiro em vez de aceitar o número. Está no portão G2.
+22. **Listas sem paginação.** `/portfolio/trades`, `/dividends/received`, `/fixed-income`,
+    `/suggestions/followed` e `/transactions` devolvem tudo (o razão tem teto de 2000, que é
+    limite, não cursor). Crescem com o uso. Versão da API e paginação por cursor seguem no G2.
 
-23. **Listas sem paginação.** `/portfolio/trades`, `/dividends/received`, `/fixed-income`,
-    `/suggestions/followed` e agora `/transactions` devolvem tudo (o razão tem teto de 2000, que é
-    limite, não cursor). Crescem com o uso. Versão da API e paginação por cursor estão no G2.
+23. **Onboarding, explicabilidade universal e acessibilidade seguem no G2.** Onboarding em três
+    passos com progresso na URL, carteira de demonstração no estado vazio, painel de
+    explicabilidade exigido por lint, densidade configurável e verificação de contraste no CI
+    ainda não foram feitos.
 
-24. **Não existe canal de aquisição orgânico.** As rotas `/ativo/:ticker` são renderizadas no
-    cliente e portanto invisíveis para busca. O modelo de receita não comporta mídia paga — teto
-    de CAC de R$ 72 contra R$ 500–1.500 de instalação qualificada em finanças no Brasil —, então
-    renderização no servidor deixa de ser refinamento técnico e vira pré-requisito de negócio.
-    Está no portão G2 e é o item de maior risco de execução do plano.
+24. **Indicação não existe.** O programa de indicação (código, atribuição no cadastro, crédito de
+    meses como direito de entitlement) é o segundo canal de aquisição previsto e depende do módulo
+    de entitlement, que é do G3.
 
 ## Armadilhas conhecidas (não são bugs, mas mordem)
 

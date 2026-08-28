@@ -12,6 +12,121 @@
 
 ---
 
+## G2, primeira metade: aquisição, importação e integridade do dado (2026-08-27)
+
+Quatro itens do portão de retenção. O primeiro é o que o plano identificou como
+maior risco de execução — e não é técnico.
+
+### Renderização no servidor: o canal de aquisição
+
+O modelo financeiro fecha com folga: margem de ~92%, break-even em 93
+assinantes. Mas fecha **desde que os usuários apareçam de graça**. Com LTV
+líquido de R$ 288 e razão saudável de 4:1, o teto de CAC é R$ 72, e instalação
+qualificada em finanças no Brasil custa entre R$ 500 e R$ 1.500. Mídia paga está
+fora do alcance, e isso transforma "página indexável" de refinamento técnico em
+pré-requisito de negócio.
+
+`/ativo/:ticker` passou a ser renderizada no servidor; todo o resto continua no
+cliente. A fronteira é regra de negócio escrita como código, com teste: renderizar
+no servidor uma tela de carteira significaria buscar dado de titular durante o
+SSR, e é assim que se serve a carteira de uma pessoa para outra assim que
+houver um cache na frente. O teste também falha se alguém recolocar o
+`authGuard` na rota do ativo — o que derrubaria a indexação sem quebrar nenhum
+teste de tela.
+
+O backend ganhou uma leitura sem titular. `analyze_asset(personalized=False)`
+roda sem o yield desejado de ninguém, porque a mesma URL precisa devolver o
+mesmo conteúdo ao robô e a quem chega pelo link: se o preço justo variasse com a
+preferência de quem pediu, o que o Google indexasse não seria o que o visitante
+encontraria. O teto de abuso dessas rotas é por IP, sobre a mesma primitiva do
+teto por usuário — `usage.increment` não precisou saber a diferença.
+
+Metadados por ticker: título, descrição, Open Graph e canônica saem do próprio
+ativo. É o que separa "uma página indexada" de "seiscentas páginas iguais", que a
+busca trata como duplicado e não indexa. A canônica é `<link>` e não `<meta>` —
+o `Meta` do Angular só gerencia meta tags, e pedir a ele um rel=canonical produz
+uma tag que nenhum buscador lê.
+
+Verificado de ponta a ponta e não por inspeção: backend local mais servidor de
+renderização, `curl` sem JavaScript devolvendo a análise completa em HTML, com
+título e canônica próprios e zero erro no log.
+
+Três coisas apareceram ao ligar. `document is not defined` no drawer de
+atividade, que roda no shell da página pública — passou a injetar `DOCUMENT`. O
+Angular 22 recusa `Host` desconhecido para não virar proxy de SSRF, e o domínio
+é fato de deploy e não de build, então vem de `ALLOWED_HOSTS`. E sitemap
+indisponível responde 503 em vez de um sitemap vazio: vazio o robô lê como "o
+site encolheu" e desindexa.
+
+Nas dependências, o tree misturava framework 22.1.2 com ferramental 22.1.4 — só
+apareceu porque `@angular/ssr` tem peer exato. Alinhado em 22.1.4.
+
+### Importação: colar lista ou CSV
+
+O livro-razão existia sem porta de entrada em volume. O parser é tolerante com
+**forma** e intolerante com **ambiguidade**, e a assimetria tem motivo: adivinhar
+errado a forma custa uma mensagem de erro; adivinhar errado o valor custa o
+preço médio, que é o IR.
+
+Aceita vírgula ou ponto no decimal, três separadores de campo, data em três
+formatos e cabeçalho em português ou inglês. Recusa `1.234`, porque com três
+casas depois do ponto não dá para saber se é milhar ou decimal — e um fator de
+mil no preço médio é um extrato errado.
+
+O erro diz a linha e o que corrigir; "formato inválido" não ajuda quem tem
+trezentas linhas. A prévia devolve as boas e as ruins ao mesmo tempo, porque
+parar no primeiro erro faria corrigir uma linha por vez. E a gravação é tudo ou
+nada: num produto que calcula IR, meia importação é pior que nenhuma.
+
+Duplicidade é apresentada, nunca silenciada. Reimportar a mesma nota é o engano
+mais comum, mas duas compras iguais no mesmo dia acontecem — a decisão fica com
+quem sabe o que aconteceu, e o padrão é deixar de fora. A chave de duplicidade
+ignora taxas de propósito: a mesma nota vinda de outra fonte pode trazer a
+corretagem arredondada diferente e ainda ser a mesma operação.
+
+O teste achou um bug: `40/13/2024` passava, porque eu validava o formato da data
+e não o calendário. `2024-13-40` ordena depois de tudo, jogaria a operação para
+o fim do razão e mudaria o preço médio de todas as que vieram depois dela de
+verdade.
+
+### Plausibilidade e disjuntor
+
+A validação do dado externo era por tipo, não por magnitude: um ROE de 12.000%
+ou um preço de R$ 0,0001 passam pelo `float()` e viram patrimônio. O modo de
+falha é o pior possível — o número absurdo não levanta exceção, vira um veredito.
+
+Duas severidades. Campo implausível vira `None`, porque o produto sabe conviver
+com indicador ausente e não sabe conviver com número errado. Preço implausível
+rejeita o snapshot inteiro, porque sem preço não há tela nenhuma.
+
+Os limites são largos: o alvo é o absurdo — erro de unidade, campo trocado,
+valor sentinela — e não o extremo legítimo. A B3 tem empresa com ROE de 80% e
+ação de R$ 0,90, e rejeitá-las seria trocar um erro por outro.
+
+O disjuntor troca "lento e quebrado" por "rápido e explícito": aberto, nem tenta,
+e quem chama cai no cache vencido. Duas calibrações que valem registrar — 400 por
+range **não** abre o circuito, porque é limitação do plano gratuito e não fonte
+fora do ar; e voltar do aberto exige dois sucessos, porque uma resposta boa
+isolada durante uma queda parcial reabriria a torneira cedo demais.
+
+`GET /data-quality/source` responde a saúde sem varrer o universo: quando a
+fonte caiu, disparar o scan completo é justamente o que não se quer fazer para
+descobrir isso.
+
+### O scanner deixou de ser custo marginal
+
+O scanner é a única feature cujo custo cresceria com o uso. A correção não é
+cobrar por ela: um job periódico recalcula o scan **antes** do TTL vencer, de
+modo que a varredura aconteça N vezes por dia, sempre a mesma quantidade, e
+nenhuma requisição de usuário espere por ela. O intervalo é menor que o TTL de
+propósito, e há teste para essa relação — invertê-la reabriria a janela que o
+job veio fechar.
+
+Feito isso, o Free pode ter prévia sem medo e o Premium pode ter filtro sem teto:
+nenhum dos dois é o que custa.
+
+---
+
 ## Do redesign à primeira cobrança: portões G0 e G1 (2026-08-27)
 
 O redesign está no ar e o modelo de receita foi decidido — freemium, R$ 19,90/mês, sem anúncio.
