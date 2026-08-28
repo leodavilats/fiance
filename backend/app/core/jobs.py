@@ -64,6 +64,20 @@ async def _snapshot_body() -> None:
     await run_snapshot_cycle()
 
 
+async def _market_scan_body() -> None:
+    """Recalcula o scan do universo antes de o cache vencer.
+
+    É o que troca custo marginal por custo fixo. Sem o job, a primeira
+    requisição depois do TTL paga a varredura inteira — então o custo do
+    scanner cresce com o número de usuários e com o horário em que eles abrem o
+    app. Com ele, a varredura acontece N vezes por dia, sempre a mesma
+    quantidade, e nenhuma requisição de usuário espera por ela.
+    """
+    from app.services import OpportunityService
+
+    await OpportunityService()._refresh_market()
+
+
 async def _maintenance_body() -> None:
     from app.core import sessions, usage
     from app.storage import event_store
@@ -117,6 +131,10 @@ NOTIFICATION_INTERVAL = 15 * 60
 SNAPSHOT_INTERVAL = 6 * 3600
 MAINTENANCE_INTERVAL = 6 * 3600
 
+# Menor que o TTL do scan (20 min) de propósito: o job tem que chegar antes do
+# vencimento, senão sobra uma janela em que o usuário paga a varredura.
+MARKET_SCAN_INTERVAL = 15 * 60
+
 
 def start_background_jobs() -> list[asyncio.Task]:
     return [
@@ -140,6 +158,16 @@ def start_background_jobs() -> list[asyncio.Task]:
                 initial_delay_seconds=120,
             ),
             name="snapshot-loop",
+        ),
+        asyncio.create_task(
+            _run_guarded(
+                "market_scan",
+                interval_seconds=MARKET_SCAN_INTERVAL,
+                lock_ttl_seconds=MARKET_SCAN_INTERVAL * 0.9,
+                body=_market_scan_body,
+                initial_delay_seconds=MARKET_SCAN_INTERVAL,
+            ),
+            name="market-scan-loop",
         ),
         asyncio.create_task(
             _run_guarded(
