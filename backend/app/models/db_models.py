@@ -281,3 +281,76 @@ class ProductEventDb(Base):
 
 
 Index("ix_product_events_user_name", ProductEventDb.user_id, ProductEventDb.name)
+
+
+class InstrumentDb(Base):
+    """Identidade interna do ativo, separada do ticker.
+
+    A B3 reaproveita código: um ticker aposentado pode voltar em outra empresa
+    anos depois. Somar os dois históricos daria preço médio de duas companhias
+    diferentes — e preço médio errado é IR errado. Por isso o símbolo tem
+    janela de validade e o lançamento aponta para o instrumento, não para o
+    texto do ticker.
+    """
+
+    __tablename__ = "instruments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String, index=True)
+    asset_type: Mapped[str] = mapped_column(String, default="br_stock")
+    name: Mapped[str] = mapped_column(String, default="")
+    isin: Mapped[str | None] = mapped_column(String, nullable=True)
+    #: Janela em que este símbolo pertenceu a este instrumento, em dia BRT.
+    #: `valid_to` nulo significa "é o dono atual do código".
+    valid_from: Mapped[str] = mapped_column(String, default="1900-01-01")
+    valid_to: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+
+class TransactionDb(Base):
+    """Um lançamento do livro-razão. É a fonte de verdade da carteira."""
+
+    __tablename__ = "transactions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String, index=True)
+    instrument_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    #: Denormalizado para leitura e para o caso de o instrumento não ter sido
+    #: resolvido ainda. A identidade que vale é `instrument_id`.
+    symbol: Mapped[str] = mapped_column(String, index=True)
+    kind: Mapped[str] = mapped_column(String, index=True)
+    quantity: Mapped[float] = mapped_column(Float, default=0.0)
+    price: Mapped[float] = mapped_column(Float, default=0.0)
+    fees: Mapped[float] = mapped_column(Float, default=0.0)
+    ratio_from: Mapped[float] = mapped_column(Float, default=1.0)
+    ratio_to: Mapped[float] = mapped_column(Float, default=1.0)
+    amount: Mapped[float] = mapped_column(Float, default=0.0)
+    #: Dia da operação no fuso brasileiro. É data, não instante: nota de
+    #: corretagem tem dia, não hora.
+    traded_on: Mapped[str] = mapped_column(String, index=True)
+    source: Mapped[str] = mapped_column(String, default="manual")
+    note: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[float] = mapped_column(Float)
+
+
+Index("ix_transactions_user_symbol", TransactionDb.user_id, TransactionDb.symbol)
+Index("ix_transactions_user_traded_on", TransactionDb.user_id, TransactionDb.traded_on)
+
+
+class AuditLogDb(Base):
+    """Registro append-only do que aconteceu na conta.
+
+    Responde ao usuário e ao auditor com a mesma frase. Não tem update nem
+    delete na camada de escrita — só a exclusão de conta o remove.
+    """
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String, index=True)
+    action: Mapped[str] = mapped_column(String, index=True)
+    entity: Mapped[str] = mapped_column(String, default="")
+    entity_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    summary: Mapped[str] = mapped_column(String, default="")
+    detail: Mapped[str] = mapped_column(String, default="{}")
+    occurred_at: Mapped[float] = mapped_column(Float, index=True)

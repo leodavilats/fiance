@@ -14,6 +14,7 @@ from sqlalchemy import delete, inspect, select
 
 from app.core.database import db_session, engine
 from app.models.db_models import (
+    AuditLogDb,
     ClosedTradeDb,
     DeviceTokenDb,
     DividendReceivedDb,
@@ -28,6 +29,7 @@ from app.models.db_models import (
     ProductEventDb,
     RevokedTokenDb,
     SectorGoalDb,
+    TransactionDb,
     UsageCounterDb,
     User,
     WatchlistItemDb,
@@ -52,6 +54,8 @@ USER_SCOPED_MODELS = (
     ("fixed_income_positions", FixedIncomePositionDb),
     ("dividends_received", DividendReceivedDb),
     ("followed_suggestions", FollowedSuggestionDb),
+    ("transactions", TransactionDb),
+    ("audit_log", AuditLogDb),
     ("usage_counters", UsageCounterDb),
     ("product_events", ProductEventDb),
     ("revoked_tokens", RevokedTokenDb),
@@ -59,7 +63,8 @@ USER_SCOPED_MODELS = (
 
 # Tabelas sem `user_id` — não pertencem a ninguém e por isso não entram nem na
 # exportação nem na exclusão.
-GLOBAL_TABLES = frozenset({"users", "job_locks", "cache_entries", "alembic_version"})
+# `instruments` é catálogo, não conta: o código da B3 não pertence a ninguém.
+GLOBAL_TABLES = frozenset({"users", "job_locks", "cache_entries", "alembic_version", "instruments"})
 
 # `session_cuts` guarda exatamente uma linha por titular e é o que mantém as
 # sessões mortas depois da exclusão. Apagá-la junto reabriria a porta que a

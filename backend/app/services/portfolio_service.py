@@ -4,6 +4,7 @@ import time
 from app.analysis.classify import auto_category, resolve_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.core.brt import to_brt
 from app.core.context import memoize_request
 from app.core.errors import DomainError, NotFoundError
 from app.models import (
@@ -23,7 +24,9 @@ from app.models import (
 )
 from app.optimizer.cost_calculator import calculate_sell_cost
 from app.repositories import AssetRepository, PortfolioRepository
+from app.services import ledger_service
 from app.services.milestones import record_portfolio_milestones
+from app.storage import audit_store
 
 _SOLD_AT_CLOCK_SKEW_SECONDS = 5 * 60
 _SOLD_AT_MAX_BACKDATE_SECONDS = 90 * 24 * 3600
@@ -187,6 +190,19 @@ class PortfolioService:
             avg_price=item.avg_price,
             category=item.category or "auto",
         )
+        # Escrita espelhada no razão: a posição corrente ainda é a fonte de
+        # leitura, mas o razão passa a existir em paralelo desde já. É o
+        # primeiro dos três passos do G1 — trocar a fonte antes de a
+        # reconciliação estar verde é como se perde a confiança no número.
+        ledger_service.mirror_position_state(item.ticker, item.quantity, item.avg_price)
+        audit_store.write(
+            audit_store.POSITION_WRITE,
+            entity="position",
+            entity_id=item.ticker.upper(),
+            summary=f"{item.ticker.upper()}: {item.quantity:g} a {item.avg_price:.2f}.",
+            detail={"quantity": item.quantity, "avg_price": item.avg_price},
+        )
+
         state = self.get_portfolio()
         record_portfolio_milestones(len(state.items))
         return state
@@ -205,7 +221,16 @@ class PortfolioService:
         )
 
         items = self.portfolio_repo.list_positions()
+        for item in items:
+            ledger_service.mirror_position_state(
+                item["ticker"], item["quantity"], item["avg_price"]
+            )
         record_portfolio_milestones(len(items))
+        audit_store.write(
+            audit_store.POSITION_WRITE,
+            entity="portfolio",
+            summary=f"Importação substituiu a carteira por {len(items)} posição(ões).",
+        )
         snaps = self.portfolio_repo.list_snapshots(limit=90)
 
         return PortfolioStateResponse(
@@ -216,6 +241,13 @@ class PortfolioService:
 
     def delete_position(self, ticker: str) -> dict:
         self.portfolio_repo.delete_position(ticker)
+        ledger_service.mirror_removal(ticker)
+        audit_store.write(
+            audit_store.POSITION_DELETE,
+            entity="position",
+            entity_id=ticker.upper(),
+            summary=f"{ticker.upper()} removida da carteira.",
+        )
         return {"deleted": ticker.upper()}
 
     async def sell_position(self, req: SellRequest) -> ClosedTrade:
@@ -270,6 +302,31 @@ class PortfolioService:
             sold_at=sold_at,
         )
         self.portfolio_repo.reduce_position_quantity(req.ticker, req.quantity)
+
+        ledger_service.mirror_sale(
+            req.ticker,
+            req.quantity,
+            req.sell_price,
+            # A venda ainda não captura corretagem — `TransactionCost` só
+            # modela o lado fiscal. Quando a nota entrar (G2), a taxa vem dela.
+            fees=0.0,
+            traded_on=to_brt(sold_at).strftime("%Y-%m-%d"),
+        )
+        audit_store.write(
+            audit_store.POSITION_SELL,
+            entity="position",
+            entity_id=req.ticker.upper(),
+            summary=(
+                f"Venda de {req.quantity:g} {req.ticker.upper()} a "
+                f"{req.sell_price:.2f} — lucro bruto {cost.gross_profit:.2f}."
+            ),
+            detail={
+                "quantity": req.quantity,
+                "sell_price": req.sell_price,
+                "gross_profit": cost.gross_profit,
+                "ir_amount": cost.ir_amount,
+            },
+        )
         return ClosedTrade(**trade)
 
     @staticmethod

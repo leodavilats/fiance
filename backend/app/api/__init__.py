@@ -28,6 +28,7 @@ from . import (
     renda_fixa,
     sectors,
     strategy,
+    transactions,
     whats_new,
 )
 
@@ -52,6 +53,7 @@ protected.include_router(events.router, tags=["Analytics"])
 protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])
 protected.include_router(portfolio_routes.router, tags=["Portfolio"])
+protected.include_router(transactions.router, tags=["Livro-razão"])
 protected.include_router(goals.router, tags=["Goals"])
 protected.include_router(preferences.router, tags=["Preferences"])
 protected.include_router(opportunities.router, tags=["Opportunities"])
