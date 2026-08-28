@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ProvenanceComponent } from '../../provenance/provenance.component';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -12,7 +13,7 @@ import {
 @Component({
   selector: 'app-followed-suggestions',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ProvenanceComponent],
   templateUrl: './followed-suggestions.component.html',
 })
 export class FollowedSuggestionsComponent implements OnInit {

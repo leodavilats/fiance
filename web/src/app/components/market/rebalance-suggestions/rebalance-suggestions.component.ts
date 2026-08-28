@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ProvenanceComponent } from '../../provenance/provenance.component';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import {
@@ -11,7 +12,7 @@ import {
 @Component({
   selector: 'app-rebalance-suggestions',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, ProvenanceComponent],
   templateUrl: './rebalance-suggestions.component.html',
 })
 export class RebalanceSuggestionsComponent implements OnInit {

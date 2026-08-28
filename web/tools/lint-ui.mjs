@@ -13,6 +13,11 @@
  *    inexistente) ou ninguém a definiu — e nos dois casos a tela fica sem
  *    estilo em silêncio.
  *
+ * 3. **Julgamento exibido sem como conferir a conta.** Score, veredito, preço
+ *    justo e sugestão são opinião do sistema sobre o dinheiro de alguém.
+ *    Opinião sem método à vista é fé, e essa regra escrita só na documentação
+ *    se perde na terceira tela nova.
+ *
  * Uso: `node tools/lint-ui.mjs` depois de `npm run build`.
  */
 
@@ -196,6 +201,73 @@ function usedClasses(files) {
 }
 
 // --------------------------------------------------------------------------
+// 3. Explicabilidade
+// --------------------------------------------------------------------------
+
+/**
+ * Todo julgamento **renderizado** precisa de uma forma de conferir a conta.
+ *
+ * A regra é de produto: score, veredito, preço justo e sugestão são opinião do
+ * sistema sobre o dinheiro de alguém, e opinião sem método à vista é fé. Vira
+ * regra de código porque, escrita só na documentação, ela se perde na terceira
+ * tela nova — foi o que aconteceu com três campos calculados que nunca
+ * chegaram ao cliente.
+ *
+ * A detecção olha o que é **interpolado ou vinculado**, não o que aparece em
+ * prosa: a tela de preferências fala sobre o score sem exibir nenhum, e
+ * reprová-la ensinaria a ignorar o lint.
+ */
+const JUDGMENT_TERMS = [
+  'verdict',
+  'fair_price',
+  'score',
+  'margin_of_safety',
+  'dip_score',
+  'recommendation',
+];
+
+/** O que conta como "dá para conferir": painel, tooltip, régua ou `<details>`. */
+const EXPLAINERS = [
+  'app-provenance',
+  'app-help-tooltip',
+  'app-metric-with-context',
+  'app-score-ruler',
+  'app-margin-of-safety',
+  'app-insight',
+  'app-ruler-track',
+  '<details',
+];
+
+/** Escape declarado, com motivo obrigatório. Sem motivo, não é escape. */
+const OPT_OUT = /<!--\s*sem-explicabilidade:\s*\S[^>]*-->/;
+
+function rendersJudgment(source) {
+  // Interpolação `{{ ... }}` e binding `[x]="..."` / `@if (...)`.
+  const dynamic = [
+    ...source.matchAll(/\{\{([^}]*)\}\}/g),
+    ...source.matchAll(/\[[\w.-]+\]="([^"]*)"/g),
+    ...source.matchAll(/@(?:if|for)\s*\(([^)]*)\)/g),
+  ].map(match => match[1]);
+
+  return dynamic.some(expr => JUDGMENT_TERMS.some(term => expr.includes(term)));
+}
+
+function missingExplainers(htmlFiles) {
+  const problems = [];
+
+  for (const file of htmlFiles) {
+    const source = readFileSync(file, 'utf8');
+    if (!rendersJudgment(source)) continue;
+    if (OPT_OUT.test(source)) continue;
+    if (EXPLAINERS.some(marker => source.includes(marker))) continue;
+
+    problems.push({ file, name: relative(WEB_ROOT, file) });
+  }
+
+  return problems;
+}
+
+// --------------------------------------------------------------------------
 
 function report(title, problems, hint) {
   if (problems.length === 0) return 0;
@@ -208,7 +280,8 @@ function report(title, problems, hint) {
     byName.set(problem.name, list);
   }
   for (const [name, files] of [...byName].sort()) {
-    console.error(`  ${name}  —  ${[...new Set(files)].join(', ')}`);
+    const onde = [...new Set(files)].filter(caminho => caminho !== name);
+    console.error(onde.length ? `  ${name}  —  ${onde.join(', ')}` : `  ${name}`);
   }
   console.error(`  ${hint}`);
   return byName.size;
@@ -224,6 +297,8 @@ function main() {
   const known = knownClasses(tsFiles);
   const missingClasses = usedClasses(templates).filter(use => !known.has(use.name));
 
+  const semExplicacao = missingExplainers(templates.filter(file => file.endsWith('.html')));
+
   const problems =
     report(
       'Ícone do Lucide usado sem registro em src/main.ts',
@@ -235,6 +310,13 @@ function main() {
       missingClasses,
       'Ou defina a classe em src/styles.css, ou corrija o nome: papel de cor ' +
         'inexistente faz o Tailwind descartar a utilitária em silêncio.'
+    ) +
+    report(
+      'Tela exibe julgamento sem como conferir a conta',
+      semExplicacao,
+      'Adicione <app-provenance>, <app-help-tooltip> ou outro explicador. Se a ' +
+        'tela realmente não precisa, declare o motivo: ' +
+        '<!-- sem-explicabilidade: o número já vem explicado no card pai -->'
     );
 
   if (problems > 0) {
@@ -242,7 +324,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log('✓ Ícones registrados e classes emitidas.');
+  console.log('✓ Ícones registrados, classes emitidas e julgamentos explicados.');
 }
 
 main();

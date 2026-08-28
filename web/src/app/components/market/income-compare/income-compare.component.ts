@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ProvenanceComponent } from '../../provenance/provenance.component';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -12,7 +13,7 @@ import {
 @Component({
   selector: 'app-income-compare',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ProvenanceComponent],
   templateUrl: './income-compare.component.html',
 })
 export class IncomeCompareComponent implements OnInit {

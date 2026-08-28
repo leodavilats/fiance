@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ProvenanceComponent } from '../../provenance/provenance.component';
 import {
   AfterViewInit,
   Component,
@@ -25,7 +26,13 @@ import { DipDiagnosisComponent } from '../../dip-diagnosis/dip-diagnosis.compone
 @Component({
   selector: 'app-dip-analysis-modal',
   standalone: true,
-  imports: [CommonModule, DipDiagnosisComponent, LucideAngularModule, RouterLink],
+  imports: [
+    CommonModule,
+    DipDiagnosisComponent,
+    LucideAngularModule,
+    RouterLink,
+    ProvenanceComponent,
+  ],
   templateUrl: './dip-analysis-modal.component.html',
 })
 export class DipAnalysisModalComponent implements AfterViewInit, OnDestroy {
