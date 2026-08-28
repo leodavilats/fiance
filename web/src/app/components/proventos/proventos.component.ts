@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { ProventosPendentesComponent } from '../proventos-pendentes/proventos-pendentes.component';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -7,7 +8,7 @@ import { CarteiraStore, DividendPayload, RecommendService, SnackbarService } fro
 @Component({
   selector: 'app-proventos',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ProventosPendentesComponent],
   templateUrl: './proventos.component.html',
 })
 export class ProventosComponent implements OnInit {

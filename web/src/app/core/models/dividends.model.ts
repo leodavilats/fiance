@@ -48,3 +48,23 @@ export interface DividendPayload {
   kind?: string;
   note?: string | null;
 }
+
+/** Provento que o calendário sugere, ainda não lançado. */
+export interface PendingDividend {
+  ticker: string;
+  paid_at: string;
+  quantity_at_date: number;
+  rate_per_share: number;
+  amount: number;
+  kind: string;
+  /** Por que este número pode estar errado, nesta linha. */
+  caveats: string[];
+  /** `true` quando a quantidade é a de hoje, não a da data do provento. */
+  quantity_is_current: boolean;
+}
+
+export interface PendingDividendsResponse {
+  items: PendingDividend[];
+  count: number;
+  note: string;
+}

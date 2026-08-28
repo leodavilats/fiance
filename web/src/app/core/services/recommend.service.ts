@@ -54,6 +54,7 @@ import {
   ImportResult,
   OnboardingState,
   DemoPortfolioResponse,
+  PendingDividendsResponse,
 } from '../models';
 import { AuthService } from './auth.service';
 
@@ -206,6 +207,18 @@ export class RecommendService {
     return this.http.post<ImportResult>(`${this.base}/transactions/import`, {
       content,
       include_duplicates: includeDuplicates,
+    });
+  }
+
+  getPendingDividends(): Observable<PendingDividendsResponse> {
+    return this.http.get<PendingDividendsResponse>(`${this.base}/dividends/pending`);
+  }
+
+  confirmPendingDividends(
+    items: { ticker: string; paid_at: string; amount: number; kind: string }[]
+  ): Observable<{ created: number }> {
+    return this.http.post<{ created: number }>(`${this.base}/dividends/pending/confirm`, {
+      items,
     });
   }
 

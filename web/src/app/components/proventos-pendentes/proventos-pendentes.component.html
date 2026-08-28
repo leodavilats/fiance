@@ -1,0 +1,79 @@
+@if (loading()) {
+  <p class="text-sm text-ink-2 m-0 mt-6">Conferindo o calendário de proventos…</p>
+} @else if (hasPending()) {
+  <div class="mt-6 p-4 sm:p-5 rounded-xl border border-hairline bg-ground-1">
+    <h3 class="flex items-center gap-2 text-lg font-bold m-0 mb-1 text-ink">
+      <lucide-icon name="calendar-clock" size="18"></lucide-icon>
+      {{ pending().length }}
+      {{ pending().length === 1 ? 'provento a conferir' : 'proventos a conferir' }}
+    </h3>
+    <p class="text-sm text-ink-2 m-0 mb-4 max-w-prose">{{ note() }}</p>
+
+    <ul class="m-0 p-0 list-none flex flex-col gap-2">
+      @for (item of pending(); track keyOf(item)) {
+        <li class="rounded-lg border border-hairline bg-ground-2 p-3">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              class="mt-1 shrink-0"
+              [checked]="isSelected(item)"
+              (change)="toggle(item)"
+              [attr.aria-label]="'Confirmar ' + item.ticker + ' de ' + item.paid_at"
+            />
+            <span class="min-w-0 flex-1">
+              <span class="flex flex-wrap items-baseline gap-x-2">
+                <span class="text-ink font-medium">{{ item.ticker }}</span>
+                <span class="text-ink-2 text-sm">{{ item.paid_at }}</span>
+                @if (item.kind === 'jcp') {
+                  <span class="text-xs text-ink-3 uppercase tracking-wide">JCP</span>
+                }
+              </span>
+
+              <span class="block text-sm text-ink mt-0.5">
+                R$ {{ item.amount | number: '1.2-2' }}
+                <span class="text-ink-3">
+                  = {{ item.quantity_at_date | number: '1.0-8' }} × R$
+                  {{ item.rate_per_share | number: '1.2-4' }}
+                </span>
+              </span>
+
+              @if (item.caveats.length > 0) {
+                <ul class="m-0 mt-2 pl-4 text-xs text-ink-3 flex flex-col gap-1">
+                  @for (caveat of item.caveats; track $index) {
+                    <li>{{ caveat }}</li>
+                  }
+                </ul>
+              }
+            </span>
+          </label>
+        </li>
+      }
+    </ul>
+
+    <div class="flex flex-wrap items-center gap-3 mt-4">
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="selectedCount() === 0 || confirming()"
+        (click)="confirm()"
+      >
+        <lucide-icon name="check" size="16"></lucide-icon>
+        @if (confirming()) {
+          Lançando…
+        } @else {
+          Lançar {{ selectedCount() }} selecionado(s)
+        }
+      </button>
+
+      @if (selectedCount() > 0) {
+        <span class="text-sm text-ink-2"> Total: R$ {{ selectedTotal() | number: '1.2-2' }} </span>
+      }
+    </div>
+
+    <app-provenance
+      method="Cruza o calendário de proventos da fonte com a quantidade que o livro-razão diz que você tinha na data."
+      source="Calendário de proventos da BRAPI; seus lançamentos e posições."
+      limitation="A fonte publica a data de pagamento, não a data-com, e JCP aparece bruto. Toda ressalva aqui erra o valor para mais — confira contra o extrato antes de lançar."
+    ></app-provenance>
+  </div>
+}
