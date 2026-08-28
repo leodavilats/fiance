@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -37,10 +39,18 @@ class AuthService {
   final _storage = const FlutterSecureStorage();
 
   static const _tokenKey = 'fiance_access_token';
+  static const _refreshKey = 'fiance_refresh_token';
+
+  Future<bool>? _refreshInFlight;
 
   Future<String?> readToken() => _storage.read(key: _tokenKey);
 
-  Future<bool> isLoggedIn() async => (await readToken()) != null;
+  Future<String?> readRefreshToken() => _storage.read(key: _refreshKey);
+
+  /// Sessão viva é ter refresh: o acesso expira em uma hora e vencer não é
+  /// estar deslogado — é ter que renovar.
+  Future<bool> isLoggedIn() async =>
+      (await readRefreshToken()) != null || (await readToken()) != null;
 
   Future<AppUser> signInWithGoogle() async {
     final account = await _googleSignIn.signIn();
@@ -58,14 +68,81 @@ class AuthService {
       '/auth/google',
       data: {'id_token': idToken},
     );
-    final accessToken = response.data['access_token'] as String;
-    await _storage.write(key: _tokenKey, value: accessToken);
+    await _storeTokens(response.data as Map<String, dynamic>);
 
     return AppUser.fromJson(response.data['user'] as Map<String, dynamic>);
   }
 
-  Future<void> signOut() async {
+  /// Troca o refresh por um par novo.
+  ///
+  /// O servidor rotaciona e queima o refresh usado, então a chamada é
+  /// compartilhada: duas requisições que levam 401 ao mesmo tempo não podem
+  /// disparar dois refreshes — o segundo apresentaria um token já queimado e
+  /// derrubaria a sessão inteira.
+  Future<bool> refreshSession() {
+    final pending = _refreshInFlight;
+    if (pending != null) return pending;
+
+    final future = _doRefresh().whenComplete(() {
+      _refreshInFlight = null;
+    });
+    _refreshInFlight = future;
+    return future;
+  }
+
+  Future<bool> _doRefresh() async {
+    final refresh = await readRefreshToken();
+    if (refresh == null) return false;
+
+    try {
+      final response = await _dio.post(
+        '/auth/refresh',
+        data: {'refresh_token': refresh},
+      );
+      await _storeTokens(response.data as Map<String, dynamic>);
+      return true;
+    } on DioException {
+      return false;
+    }
+  }
+
+  Future<void> _storeTokens(Map<String, dynamic> data) async {
+    await _storage.write(
+      key: _tokenKey,
+      value: data['access_token'] as String,
+    );
+    final refresh = data['refresh_token'] as String?;
+    if (refresh != null) {
+      await _storage.write(key: _refreshKey, value: refresh);
+    }
+  }
+
+  /// Encerra no servidor antes de limpar o dispositivo: sem isso o token
+  /// seguiria válido até expirar, e sair seria só apagar a chave local.
+  Future<void> signOut({bool allDevices = false}) async {
+    final token = await readToken();
+    if (token != null) {
+      try {
+        await _dio.post(
+          '/auth/logout',
+          data: {
+            'refresh_token': await readRefreshToken(),
+            'all_devices': allDevices,
+          },
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
+      } on DioException {
+        // Servidor indisponível não pode impedir a saída local.
+      }
+    }
+
     await _googleSignIn.signOut();
+    await clearSession();
+  }
+
+  Future<void> clearSession() async {
+    _refreshInFlight = null;
     await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _refreshKey);
   }
 }

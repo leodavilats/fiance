@@ -234,7 +234,7 @@ export class AppComponent {
 
   logout(): void {
     this.showProfile.set(false);
-    this.auth.logout();
+    void this.auth.logout();
     this.router.navigateByUrl('/login');
   }
 

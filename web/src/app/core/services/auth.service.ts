@@ -28,12 +28,18 @@ export interface AppUser {
   picture: string;
 }
 
-interface LoginResponse {
+interface TokenResponse {
   access_token: string;
+  refresh_token: string;
+  expires_in: number;
+}
+
+interface LoginResponse extends TokenResponse {
   user: AppUser;
 }
 
 const TOKEN_KEY = 'fiance_access_token';
+const REFRESH_KEY = 'fiance_refresh_token';
 const USER_KEY = 'fiance_user';
 
 const SCOPED_KEY_PREFIXES = ['portfolio_renda_fixa'];
@@ -63,8 +69,16 @@ export class AuthService {
   readonly user = this._user.asReadonly();
 
   private _gisInitialized = false;
+  private _refreshInFlight: Promise<boolean> | null = null;
 
+  /**
+   * O acesso expira em uma hora; o refresh, em trinta dias. Ter só o acesso
+   * vencido não é estar deslogado — é ter que renovar, e o guard de rota não
+   * pode confundir as duas coisas.
+   */
   isAuthenticated(): boolean {
+    if (this.refreshToken()) return true;
+
     const token = this.token();
     if (!token) return false;
 
@@ -76,6 +90,42 @@ export class AuthService {
 
   token(): string | null {
     return localStorage.getItem(TOKEN_KEY);
+  }
+
+  refreshToken(): string | null {
+    return localStorage.getItem(REFRESH_KEY);
+  }
+
+  /**
+   * Troca o refresh por um par novo. O servidor rotaciona e queima o refresh
+   * usado, então a chamada tem que ser compartilhada: duas requisições que
+   * levam 401 ao mesmo tempo não podem disparar dois refreshes — o segundo
+   * apresentaria um token já queimado e derrubaria a sessão.
+   */
+  refreshSession(): Promise<boolean> {
+    if (this._refreshInFlight) return this._refreshInFlight;
+
+    const refresh = this.refreshToken();
+    if (!refresh) return Promise.resolve(false);
+
+    this._refreshInFlight = firstValueFrom(
+      this.http.post<TokenResponse>(`${this.base}/auth/refresh`, { refresh_token: refresh })
+    )
+      .then(res => {
+        this._storeTokens(res);
+        return true;
+      })
+      .catch(() => false)
+      .finally(() => {
+        this._refreshInFlight = null;
+      });
+
+    return this._refreshInFlight;
+  }
+
+  private _storeTokens(res: TokenResponse): void {
+    localStorage.setItem(TOKEN_KEY, res.access_token);
+    localStorage.setItem(REFRESH_KEY, res.refresh_token);
   }
 
   userId(): string | null {
@@ -122,16 +172,39 @@ export class AuthService {
     const res = await firstValueFrom(
       this.http.post<LoginResponse>(`${this.base}/auth/google`, { id_token: idToken })
     );
-    localStorage.setItem(TOKEN_KEY, res.access_token);
+    this._storeTokens(res);
     localStorage.setItem(USER_KEY, JSON.stringify(res.user));
     this._user.set(res.user);
   }
 
-  logout(): void {
+  /**
+   * Encerra no servidor antes de limpar o local: sem isso o token continuaria
+   * válido até expirar, e "sair" seria só apagar a chave do navegador.
+   */
+  async logout(allDevices = false): Promise<void> {
+    const token = this.token();
+    if (token) {
+      try {
+        await firstValueFrom(
+          this.http.post(`${this.base}/auth/logout`, {
+            refresh_token: this.refreshToken(),
+            all_devices: allDevices,
+          })
+        );
+      } catch {
+        // Servidor fora do ar não pode impedir a saída local.
+      }
+    }
+    this.clearSession();
+  }
+
+  clearSession(): void {
     this._clearScopedData();
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USER_KEY);
     this._user.set(null);
+    this._refreshInFlight = null;
     window.google?.accounts.id.disableAutoSelect();
   }
 

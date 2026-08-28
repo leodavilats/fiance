@@ -124,7 +124,10 @@ import { httpErrorInterceptor } from './app/core/interceptors/http-error.interce
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
-    provideHttpClient(withInterceptors([authInterceptor, httpErrorInterceptor])),
+    // Ordem importa: o de erro precisa ser o mais externo para só ver o 401
+    // depois de o de autenticação ter tentado renovar a sessão. Invertido, o
+    // usuário era jogado no login antes de o refresh sequer rodar.
+    provideHttpClient(withInterceptors([httpErrorInterceptor, authInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({
         ArrowDown,

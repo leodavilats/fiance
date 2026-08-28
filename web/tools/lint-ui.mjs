@@ -1,0 +1,238 @@
+#!/usr/bin/env node
+/**
+ * Lint das duas coisas que quebram a tela sem quebrar o build.
+ *
+ * 1. **Ícone do Lucide não registrado.** `LucideAngularModule.pick({...})` é
+ *    manual. Nome ausente ou errado compila e só falha em runtime, com
+ *    `The "x" icon has not been provided`. Já aconteceu.
+ *
+ * 2. **Classe CSS que não existe.** Já aconteceu com `.card`, `.btn-primary`,
+ *    `.tag`, `.verdict-pill`, `verdict-*` e `bg-success`. A fonte de verdade
+ *    aqui não é uma lista escrita à mão: é o CSS que o build realmente emitiu.
+ *    Se a classe não está lá, ou o Tailwind não a reconheceu (papel de cor
+ *    inexistente) ou ninguém a definiu — e nos dois casos a tela fica sem
+ *    estilo em silêncio.
+ *
+ * Uso: `node tools/lint-ui.mjs` depois de `npm run build`.
+ */
+
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+
+const WEB_ROOT = resolve(import.meta.dirname, '..');
+const SRC = join(WEB_ROOT, 'src');
+const MAIN_TS = join(SRC, 'main.ts');
+const DIST = join(WEB_ROOT, 'dist', 'fiance');
+
+/** Classes aplicadas por JS ou por bibliotecas, que não passam pelo scanner. */
+const CLASS_ALLOWLIST = new Set(['ng-star-inserted', 'lucide', 'lucide-icon']);
+
+function walk(dir, match, out = []) {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      walk(full, match, out);
+    } else if (match.test(entry)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+/**
+ * A mesma transformação que `LucideAngularComponent.toPascalCase` faz antes de
+ * procurar a chave no objeto do `pick`. Reimplementar o kebab ao contrário daria
+ * respostas erradas em nomes com dígito: `trash2` e `trash-2` resolvem os dois
+ * para `Trash2`, e um lint que não soubesse disso reprovaria código que funciona.
+ */
+function toPascalCase(name) {
+  return name.replace(
+    /(\w)([a-z0-9]*)(_|-|\s*)/g,
+    (_all, head, tail) => head.toUpperCase() + tail.toLowerCase()
+  );
+}
+
+// --------------------------------------------------------------------------
+// 1. Ícones
+// --------------------------------------------------------------------------
+
+function registeredIcons() {
+  const source = readFileSync(MAIN_TS, 'utf8');
+  const pick = source.match(/LucideAngularModule\.pick\(\{([\s\S]*?)\}\)/);
+  if (!pick) {
+    throw new Error('Não encontrei LucideAngularModule.pick({...}) em src/main.ts.');
+  }
+
+  const names = new Set();
+  for (const raw of pick[1].split(',')) {
+    const name = raw
+      .trim()
+      .replace(/\/\/.*$/, '')
+      .trim();
+    if (name) names.add(name);
+  }
+  return names;
+}
+
+/**
+ * Nomes usados. Três formas cobrem o uso real do repo: atributo estático,
+ * literal dentro de um binding `[name]`, e a chave `icon:` de um objeto de
+ * configuração (é assim que a navegação e a busca global declaram o ícone).
+ */
+function usedIcons(files) {
+  const found = [];
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+
+    for (const match of source.matchAll(/<lucide-icon\b[^>]*?\sname="([a-z0-9-]+)"/g)) {
+      found.push({ file, name: match[1] });
+    }
+
+    for (const binding of source.matchAll(/\[name\]="([^"]*)"/g)) {
+      // Num ternário, o literal comparado não é nome de ícone — em
+      // `type === 'error' ? 'circle-x' : 'info'` só os dois últimos são.
+      const results = binding[1].replace(/[!=]==?\s*'[^']*'/g, '');
+      for (const literal of results.matchAll(/'([a-z][a-z0-9-]*)'/g)) {
+        found.push({ file, name: literal[1] });
+      }
+    }
+
+    for (const match of source.matchAll(/\bicon:\s*'([a-z][a-z0-9-]*)'/g)) {
+      found.push({ file, name: match[1] });
+    }
+  }
+
+  return found;
+}
+
+// --------------------------------------------------------------------------
+// 2. Classes
+// --------------------------------------------------------------------------
+
+/** Seletores de classe de um texto CSS, desfazendo os escapes do Tailwind. */
+function classesFromCss(css, into = new Set()) {
+  // `\.` cobre `w-1\/2` e `bg-brand\/20`, que o Tailwind emite escapados.
+  for (const match of css.matchAll(/\.((?:[\w-]|\\.)+)/g)) {
+    into.add(match[1].replace(/\\(.)/g, '$1'));
+  }
+  return into;
+}
+
+/**
+ * Classes definidas em estilo inline de componente.
+ *
+ * O Angular embute o CSS do componente no bundle JS, não no `.css` — então o
+ * arquivo emitido não as contém e elas precisam vir da fonte. Um literal de
+ * crase só é tratado como CSS se tiver bloco de declaração; assim o template
+ * inline, que também é literal de crase, fica de fora.
+ */
+function inlineStyleClasses(files, into = new Set()) {
+  for (const file of files) {
+    for (const literal of readFileSync(file, 'utf8').matchAll(/`([^`]*)`/g)) {
+      if (/[.#:[][^;{}]*\{/.test(literal[1])) classesFromCss(literal[1], into);
+    }
+  }
+  return into;
+}
+
+function knownClasses(tsFiles) {
+  const built = walk(DIST, /\.css$/);
+  if (built.length === 0) {
+    throw new Error(
+      `Nenhum CSS em ${relative(WEB_ROOT, DIST)}. Rode "npm run build" antes de "npm run lint:ui".`
+    );
+  }
+
+  const classes = new Set(CLASS_ALLOWLIST);
+  for (const file of [...built, ...walk(SRC, /\.(css|scss)$/)]) {
+    classesFromCss(readFileSync(file, 'utf8'), classes);
+  }
+  inlineStyleClasses(tsFiles, classes);
+  return classes;
+}
+
+/** Tokens de classe escritos no template, incluindo os de `[class.x]` e `ngClass`. */
+function usedClasses(files) {
+  const found = [];
+
+  const push = (file, raw) => {
+    for (const token of raw.split(/\s+/)) {
+      const clean = token.trim();
+      if (!clean || clean.includes('{{') || clean.includes('$')) continue;
+      found.push({ file, name: clean });
+    }
+  };
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+
+    for (const match of source.matchAll(/\sclass="([^"{}]*)"/g)) {
+      push(file, match[1]);
+    }
+
+    for (const match of source.matchAll(/\[class\.([\w-]+)\]/g)) {
+      found.push({ file, name: match[1] });
+    }
+
+    // `[ngClass]` e `[class]` com objeto ou ternário: só os literais.
+    for (const binding of source.matchAll(/\[(?:ngClass|class)\]="([^"]*)"/g)) {
+      for (const literal of binding[1].matchAll(/'([^']*)'/g)) {
+        push(file, literal[1]);
+      }
+    }
+  }
+
+  return found;
+}
+
+// --------------------------------------------------------------------------
+
+function report(title, problems, hint) {
+  if (problems.length === 0) return 0;
+
+  console.error(`\n✗ ${title}`);
+  const byName = new Map();
+  for (const problem of problems) {
+    const list = byName.get(problem.name) ?? [];
+    list.push(relative(WEB_ROOT, problem.file));
+    byName.set(problem.name, list);
+  }
+  for (const [name, files] of [...byName].sort()) {
+    console.error(`  ${name}  —  ${[...new Set(files)].join(', ')}`);
+  }
+  console.error(`  ${hint}`);
+  return byName.size;
+}
+
+function main() {
+  const templates = [...walk(SRC, /\.html$/), ...walk(SRC, /\.ts$/)];
+
+  const registered = registeredIcons();
+  const missingIcons = usedIcons(templates).filter(use => !registered.has(toPascalCase(use.name)));
+
+  const known = knownClasses(templates.filter(file => file.endsWith('.ts')));
+  const missingClasses = usedClasses(templates).filter(use => !known.has(use.name));
+
+  const problems =
+    report(
+      'Ícone do Lucide usado sem registro em src/main.ts',
+      missingIcons,
+      'Importe o ícone e adicione-o a LucideAngularModule.pick({...}).'
+    ) +
+    report(
+      'Classe CSS usada e não emitida pelo build',
+      missingClasses,
+      'Ou defina a classe em src/styles.css, ou corrija o nome: papel de cor ' +
+        'inexistente faz o Tailwind descartar a utilitária em silêncio.'
+    );
+
+  if (problems > 0) {
+    console.error(`\n${problems} problema(s) que quebram a tela sem quebrar o build.\n`);
+    process.exit(1);
+  }
+
+  console.log('✓ Ícones registrados e classes emitidas.');
+}
+
+main();
