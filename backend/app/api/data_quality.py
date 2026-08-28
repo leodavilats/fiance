@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from app.collectors import circuit, plausibility
 from app.services import OpportunityService
 
 router = APIRouter()
@@ -48,18 +49,48 @@ class DataQualityResponse(BaseModel):
     fields: list[FieldCoverage] = Field(default_factory=list)
     by_asset_type: list[AssetTypeCoverage] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    source: dict = Field(
+        default_factory=dict,
+        description="Estado do disjuntor da fonte de cotação.",
+    )
+    plausibility: list[dict] = Field(
+        default_factory=list,
+        description="Faixa aceita por campo — o que está sendo barrado, e por quê.",
+    )
+
+
+@router.get("/data-quality/source")
+async def source_health() -> dict:
+    """Saúde da fonte, sem varrer o universo.
+
+    Separado de `/data-quality` de propósito: quando a fonte está fora do ar,
+    o scan completo é justamente o que não se quer disparar para descobrir isso.
+    """
+    return {
+        "circuit": circuit.status("brapi"),
+        "plausibility_ranges": plausibility.describe_ranges(),
+    }
 
 
 @router.get("/data-quality", response_model=DataQualityResponse)
 async def data_quality() -> DataQualityResponse:
     records, universe_size = await _service._scan_market()
+    disjuntor = circuit.status("brapi")
 
     if not records:
+        nota = (
+            "Nenhum ativo coletado — o disjuntor da fonte está aberto, "
+            "então as chamadas nem estão sendo tentadas."
+            if disjuntor["state"] != "fechado"
+            else "Nenhum ativo coletado — verifique o token da BRAPI e a conectividade."
+        )
         return DataQualityResponse(
             universe_size=universe_size,
             scanned=0,
             failed=universe_size,
-            notes=["Nenhum ativo coletado — verifique o token da BRAPI e a conectividade."],
+            notes=[nota],
+            source=disjuntor,
+            plausibility=plausibility.describe_ranges(),
         )
 
     total = len(records)
@@ -143,6 +174,13 @@ async def data_quality() -> DataQualityResponse:
             "(precisa de plano pago) para habilitar a SMA200."
         )
 
+    if disjuntor["state"] != "fechado":
+        notes.insert(
+            0,
+            f"Disjuntor da fonte em {disjuntor['state']}: as cotações vêm do cache, "
+            "podem estar desatualizadas.",
+        )
+
     return DataQualityResponse(
         universe_size=universe_size,
         scanned=total,
@@ -150,4 +188,6 @@ async def data_quality() -> DataQualityResponse:
         fields=fields,
         by_asset_type=by_asset_type,
         notes=notes,
+        source=disjuntor,
+        plausibility=plausibility.describe_ranges(),
     )

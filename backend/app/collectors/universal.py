@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 
+from app.collectors import circuit, plausibility
 from app.core import cache
 from app.core.config import get_settings
 from app.core.observability import record_external_call
@@ -164,11 +165,20 @@ _BRAPI_RAW_TTL = FUND_TTL
 _FALLBACK_HISTORY_RANGE = "3mo"
 
 
+_BRAPI_PROVIDER = "brapi"
+
+
 def _brapi_raw(base: str) -> dict:
     ck = f"brapi_raw:{base}"
     cached = cache.get(ck)
     if cached is not None:
         return cached
+
+    # Fonte fora do ar: nem tenta. Esperar o timeout em cada requisição de
+    # usuário deixa o app lento em vez de honesto — e quem chama aqui cai no
+    # cache vencido, que é dado antigo mas é dado, com a idade visível na tela.
+    if not circuit.allows(_BRAPI_PROVIDER):
+        return {}
 
     settings = get_settings()
     ranges = [settings.brapi_history_range]
@@ -190,6 +200,7 @@ def _brapi_raw(base: str) -> dict:
             )
             resp.raise_for_status()
             record_external_call("brapi", ok=True)
+            circuit.record_success(_BRAPI_PROVIDER)
             results = resp.json().get("results") or []
             if not results:
                 return {}
@@ -197,6 +208,9 @@ def _brapi_raw(base: str) -> dict:
             break
         except httpx.HTTPStatusError as e:
             record_external_call("brapi", ok=False)
+            # 400 por range é limitação do plano, não fonte fora do ar: o
+            # disjuntor não deve abrir por isso, senão o plano gratuito
+            # derrubaria a integração inteira.
             if e.response.status_code == 400 and range_param != ranges[-1]:
                 logger.info(
                     "brapi rejeitou range=%s para %s; degradando para %s",
@@ -205,10 +219,12 @@ def _brapi_raw(base: str) -> dict:
                     _FALLBACK_HISTORY_RANGE,
                 )
                 continue
+            circuit.record_failure(_BRAPI_PROVIDER, f"HTTP {e.response.status_code}")
             logger.warning("brapi falhou %s: %s", base, e)
             return {}
         except Exception as e:
             record_external_call("brapi", ok=False)
+            circuit.record_failure(_BRAPI_PROVIDER, type(e).__name__)
             logger.warning("brapi falhou %s: %s", base, e)
             return {}
 
@@ -244,6 +260,31 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
 
     sector = r.get("sector") or get_sector_map().get(base)
 
+    numeros = {
+        "price": price,
+        "market_cap": _safe_float(r.get("marketCap")),
+        "pe_ratio": _safe_float(r.get("priceEarnings")),
+        "pb_ratio": _safe_float(r.get("priceToBook") or r.get("pvp")),
+        "eps": _safe_float(r.get("earningsPerShare")),
+        "book_value": _safe_float(r.get("bookValue")),
+        "roe": _ratio_to_pct(r.get("returnOnEquity")),
+        "dividend_yield": dividend_yield,
+        "debt_to_equity": _ratio_to_pct(r.get("debtToEquity")),
+        "profit_margin": _ratio_to_pct(r.get("profitMargins")),
+        "revenue_growth": _ratio_to_pct(r.get("revenueGrowth")),
+        "fifty_two_week_high": _safe_float(r.get("fiftyTwoWeekHigh")),
+        "fifty_two_week_low": _safe_float(r.get("fiftyTwoWeekLow")),
+    }
+
+    # Validação por magnitude, e não só por tipo: um ROE de 12.000% ou um preço
+    # de R$ 0,0001 passam pelo `float()` e viram veredito. Campo implausível é
+    # zerado — o produto sabe conviver com indicador ausente; preço implausível
+    # rejeita o snapshot inteiro, porque sem preço não há tela nenhuma.
+    numeros, veredito = plausibility.screen(numeros, symbol=symbol.upper())
+    if not veredito.accepted:
+        record_external_call("brapi.plausibility", ok=False)
+        return None
+
     return AssetSnapshot(
         symbol=symbol.upper(),
         as_of=time.time(),
@@ -252,19 +293,7 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         name=name,
         sector=sector,
         currency=r.get("currency") or "BRL",
-        price=price,
-        market_cap=_safe_float(r.get("marketCap")),
-        pe_ratio=_safe_float(r.get("priceEarnings")),
-        pb_ratio=_safe_float(r.get("priceToBook") or r.get("pvp")),
-        eps=_safe_float(r.get("earningsPerShare")),
-        book_value=_safe_float(r.get("bookValue")),
-        roe=_ratio_to_pct(r.get("returnOnEquity")),
-        dividend_yield=dividend_yield,
-        debt_to_equity=_ratio_to_pct(r.get("debtToEquity")),
-        profit_margin=_ratio_to_pct(r.get("profitMargins")),
-        revenue_growth=_ratio_to_pct(r.get("revenueGrowth")),
-        fifty_two_week_high=_safe_float(r.get("fiftyTwoWeekHigh")),
-        fifty_two_week_low=_safe_float(r.get("fiftyTwoWeekLow")),
+        **numeros,
     )
 
 
