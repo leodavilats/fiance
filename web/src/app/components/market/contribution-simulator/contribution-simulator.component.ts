@@ -59,6 +59,10 @@ export class ContributionSimulatorComponent {
       });
   }
 
+  ultimo(res: PassiveIncomeProjectionResponse) {
+    return res.projections[res.projections.length - 1];
+  }
+
   milestones(res: PassiveIncomeProjectionResponse) {
     const step = Math.max(1, Math.round(res.projections.length / 8));
     return res.projections.filter((_, i) => i % step === 0 || i === res.projections.length - 1);

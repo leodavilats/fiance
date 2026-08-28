@@ -94,7 +94,15 @@ class AnalyzeAssetViewState extends ConsumerState<AnalyzeAssetView> {
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(_error!, style: TextStyle(color: fiStateColor(FiState.adverse, Theme.of(context).brightness))),
+            child: Text(
+              _error!,
+              style: TextStyle(
+                color: fiStateColor(
+                  FiState.adverse,
+                  Theme.of(context).brightness,
+                ),
+              ),
+            ),
           ),
         if (_result != null) _AssetAnalysisCard(analysis: _result!),
       ],
@@ -132,10 +140,7 @@ class _AssetAnalysisCard extends StatelessWidget {
                         ),
                       ),
                       if (a.name != null)
-                        Text(
-                          a.name!,
-                          style: TextStyle(color: fiInk2(context)),
-                        ),
+                        Text(a.name!, style: TextStyle(color: fiInk2(context))),
                     ],
                   ),
                   Text(
@@ -190,10 +195,7 @@ class _Stat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, color: fiInk2(context)),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: fiInk2(context))),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
     );
@@ -217,7 +219,8 @@ class RendaFixaSimulatorView extends ConsumerStatefulWidget {
       RendaFixaSimulatorViewState();
 }
 
-class RendaFixaSimulatorViewState extends ConsumerState<RendaFixaSimulatorView> {
+class RendaFixaSimulatorViewState
+    extends ConsumerState<RendaFixaSimulatorView> {
   final List<_RendaFixaOption> _options = [_RendaFixaOption()];
   List<RendaFixaResult>? _results;
   bool _loading = false;
@@ -318,14 +321,25 @@ class RendaFixaSimulatorViewState extends ConsumerState<RendaFixaSimulatorView> 
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(_error!, style: TextStyle(color: fiStateColor(FiState.adverse, Theme.of(context).brightness))),
+            child: Text(
+              _error!,
+              style: TextStyle(
+                color: fiStateColor(
+                  FiState.adverse,
+                  Theme.of(context).brightness,
+                ),
+              ),
+            ),
           ),
         if (_results != null) ...[
           const SizedBox(height: 16),
           ..._results!.map(
             (r) => Card(
               color: r.melhorOpcao
-                  ? fiStateColor(FiState.favorable, Theme.of(context).brightness).withValues(alpha: 0.12)
+                  ? fiStateColor(
+                      FiState.favorable,
+                      Theme.of(context).brightness,
+                    ).withValues(alpha: 0.12)
                   : null,
               child: ListTile(
                 title: Text(
@@ -335,7 +349,13 @@ class RendaFixaSimulatorViewState extends ConsumerState<RendaFixaSimulatorView> 
                   'Líquido: ${formatCurrency(r.valorLiquido)} · Taxa líq: ${formatPercent(r.taxaLiquidaAa)}',
                 ),
                 trailing: r.melhorOpcao
-                    ? Icon(Icons.star, color: fiStateColor(FiState.favorable, Theme.of(context).brightness))
+                    ? Icon(
+                        Icons.star,
+                        color: fiStateColor(
+                          FiState.favorable,
+                          Theme.of(context).brightness,
+                        ),
+                      )
                     : null,
               ),
             ),
@@ -477,7 +497,11 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
 
   void _addTicker(String ticker) {
     final t = ticker.trim().toUpperCase();
-    if (t.isEmpty || _tickers.contains(t) || _tickers.length >= _maxCompareTickers) return;
+    if (t.isEmpty ||
+        _tickers.contains(t) ||
+        _tickers.length >= _maxCompareTickers) {
+      return;
+    }
     setState(() {
       _tickers.add(t);
       _tickerCtrl.clear();
@@ -494,7 +518,9 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
       _error = null;
     });
     try {
-      final result = await ref.read(apiRepositoryProvider).compareAssets(_tickers);
+      final result = await ref
+          .read(apiRepositoryProvider)
+          .compareAssets(_tickers);
       setState(() => _result = result);
     } catch (e) {
       setState(() => _error = 'Não foi possível comparar os ativos agora.');
@@ -547,14 +573,28 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: 12),
-            child: Text(_error!, style: TextStyle(color: fiStateColor(FiState.adverse, Theme.of(context).brightness))),
+            child: Text(
+              _error!,
+              style: TextStyle(
+                color: fiStateColor(
+                  FiState.adverse,
+                  Theme.of(context).brightness,
+                ),
+              ),
+            ),
           ),
         if (_result != null) ...[
           const SizedBox(height: 16),
           if (_result!.errors.isNotEmpty)
             Text(
               'Não foi possível buscar: ${_result!.errors.join(', ')}',
-              style: TextStyle(color: fiStateColor(FiState.attention, Theme.of(context).brightness), fontSize: 12),
+              style: TextStyle(
+                color: fiStateColor(
+                  FiState.attention,
+                  Theme.of(context).brightness,
+                ),
+                fontSize: 12,
+              ),
             ),
           if (_result!.items.isNotEmpty) _CompareTable(items: _result!.items),
         ],
@@ -714,7 +754,8 @@ class ContributionSimulatorViewState
   bool _loading = false;
   PassiveIncomeProjection? _result;
 
-  double? _parseDecimal(String text) => double.tryParse(text.trim().replaceAll(',', '.'));
+  double? _parseDecimal(String text) =>
+      double.tryParse(text.trim().replaceAll(',', '.'));
 
   Future<void> _simulate() async {
     setState(() => _loading = true);
@@ -750,8 +791,12 @@ class ContributionSimulatorViewState
             Expanded(
               child: TextField(
                 controller: _contributionCtrl,
-                decoration: const InputDecoration(labelText: 'Aporte mensal (R\$)'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Aporte mensal (R\$)',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -770,16 +815,24 @@ class ContributionSimulatorViewState
             Expanded(
               child: TextField(
                 controller: _growthCtrl,
-                decoration: const InputDecoration(labelText: 'Valorização anual (%)'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Valorização anual (%)',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
                 controller: _divGrowthCtrl,
-                decoration: const InputDecoration(labelText: 'Crescimento dividendos (%)'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Crescimento dividendos (%)',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
             ),
           ],
@@ -787,7 +840,9 @@ class ContributionSimulatorViewState
         const SizedBox(height: 8),
         TextField(
           controller: _targetCtrl,
-          decoration: const InputDecoration(labelText: 'Meta de renda passiva/mês (opcional)'),
+          decoration: const InputDecoration(
+            labelText: 'Meta de renda passiva/mês (opcional)',
+          ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
         CheckboxListTile(
@@ -815,46 +870,65 @@ class ContributionSimulatorViewState
 
   List<Widget> _buildResult(PassiveIncomeProjection r) {
     final last = r.projections.last;
+
+    /// "entre X e Y", não "X". O meio não ganha destaque sobre a faixa: se
+    /// ganhasse, a faixa viraria legenda de um número único, que é o problema
+    /// que ela existe para resolver.
+    String faixa(double piso, double teto) =>
+        'entre ${formatCurrency(piso)} e ${formatCurrency(teto)}';
+
     return [
       const SizedBox(height: 16),
+      if (r.disclaimer.isNotEmpty)
+        Text(
+          r.disclaimer,
+          style: TextStyle(color: fiInk2(context), fontSize: 12),
+        ),
+      const SizedBox(height: 12),
       Row(
         children: [
           Expanded(
-            child: _Stat(label: 'Carteira hoje', value: formatCurrency(r.currentPortfolioValue)),
+            child: _Stat(
+              label: 'Carteira hoje',
+              value: formatCurrency(r.currentPortfolioValue),
+            ),
           ),
-          Expanded(
-            child: _Stat(label: 'Carteira no fim', value: formatCurrency(last.portfolioValue)),
-          ),
-        ],
-      ),
-      const SizedBox(height: 8),
-      Row(
-        children: [
           Expanded(
             child: _Stat(
               label: 'Renda passiva hoje',
               value: formatCurrency(r.currentPassiveIncomeMonthly),
             ),
           ),
-          Expanded(
-            child: _Stat(
-              label: 'Renda passiva no fim',
-              value: formatCurrency(last.passiveIncomeMonthly),
-            ),
-          ),
         ],
       ),
-      if (r.targetMonthlyIncome != null) ...[
-        const SizedBox(height: 12),
-        if (r.monthsToTarget != null)
-          Text(
-            '🎯 Meta de ${formatCurrency(r.targetMonthlyIncome)}/mês atingida em ${r.monthsToTarget} meses (${r.targetDate}).',
-          )
-        else
-          Text(
-            'Meta de ${formatCurrency(r.targetMonthlyIncome)}/mês não atingida no período simulado.',
-            style: TextStyle(color: fiInk2(context)),
-          ),
+      const SizedBox(height: 12),
+      _Stat(
+        label: 'Carteira no fim',
+        value: faixa(last.portfolioValueLow, last.portfolioValueHigh),
+      ),
+      const SizedBox(height: 8),
+      _Stat(
+        label: 'Renda passiva/mês no fim',
+        value: faixa(
+          last.passiveIncomeMonthlyLow,
+          last.passiveIncomeMonthlyHigh,
+        ),
+      ),
+      const SizedBox(height: 16),
+      for (final cenario in r.scenarios) ...[
+        Text(
+          '${cenario.label}: ${formatCurrency(cenario.finalPassiveIncomeMonthly)}/mês',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        Text(
+          cenario.rationale,
+          style: TextStyle(color: fiInk2(context), fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+      ],
+      if (r.target != null) ...[
+        const SizedBox(height: 4),
+        Text(_textoDaMeta(r.target!)),
       ],
       const SizedBox(height: 12),
       Text(
@@ -862,5 +936,20 @@ class ContributionSimulatorViewState
         style: TextStyle(color: fiInk3(context), fontSize: 11),
       ),
     ];
+  }
+
+  String _textoDaMeta(ProjectionTarget meta) {
+    final valor = formatCurrency(meta.monthlyIncome);
+    if (meta.reachedInAllScenarios) {
+      return 'Meta de $valor/mês: alcançada entre ${meta.earliestMonths} e '
+          '${meta.latestMonths} meses. No cenário base, ${meta.expectedMonths} meses.';
+    }
+    if (meta.expectedMonths != null) {
+      return 'Meta de $valor/mês: ${meta.expectedMonths} meses no cenário base, mas não '
+          'alcançada no cenário conservador dentro do período simulado.';
+    }
+    return 'Meta de $valor/mês: não alcançada em nenhum dos três cenários dentro do '
+        'período simulado. Aumentar o aporte ou o prazo muda isso; mudar a premissa '
+        'de valorização não.';
   }
 }

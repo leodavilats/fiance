@@ -72,60 +72,85 @@
   </form>
 
   @if (result(); as r) {
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div class="text-center p-3 rounded-lg bg-ground-1 border border-hairline">
-        <div class="text-xs text-ink-2 mb-0.5">Carteira hoje</div>
+    <p class="text-xs text-ink-2 m-0">{{ r.disclaimer }}</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="p-3 rounded-lg bg-ground-1 border border-hairline">
+        <div class="text-xs text-ink-2 mb-0.5">Hoje</div>
         <div class="text-sm font-semibold text-ink">
           R$ {{ r.current_portfolio_value | number: '1.0-0' }}
         </div>
+        <div class="text-xs text-ink-2">
+          R$ {{ r.current_passive_income_monthly | number: '1.2-2' }}/mês
+        </div>
       </div>
-      <div class="text-center p-3 rounded-lg bg-ground-1 border border-hairline">
+      <div class="p-3 rounded-lg bg-ground-1 border border-hairline">
         <div class="text-xs text-ink-2 mb-0.5">
           Carteira em {{ form.getRawValue().months_ahead }} meses
         </div>
-        <div class="text-sm font-semibold good">
-          R$ {{ r.projections[r.projections.length - 1].portfolio_value | number: '1.0-0' }}
-        </div>
-      </div>
-      <div class="text-center p-3 rounded-lg bg-ground-1 border border-hairline">
-        <div class="text-xs text-ink-2 mb-0.5">Renda passiva/mês hoje</div>
+        <!-- "Entre", não "é": o meio não ganha destaque tipográfico sobre a
+             faixa, senão a faixa vira legenda de um número único. -->
         <div class="text-sm font-semibold text-ink">
-          R$ {{ r.current_passive_income_monthly | number: '1.2-2' }}
+          entre R$ {{ ultimo(r).portfolio_value_low | number: '1.0-0' }} e R$
+          {{ ultimo(r).portfolio_value_high | number: '1.0-0' }}
+        </div>
+        <div class="text-xs text-ink-2">
+          cenário base: R$ {{ ultimo(r).portfolio_value | number: '1.0-0' }}
         </div>
       </div>
-      <div class="text-center p-3 rounded-lg bg-ground-1 border border-hairline">
+      <div class="p-3 rounded-lg bg-ground-1 border border-hairline">
         <div class="text-xs text-ink-2 mb-0.5">Renda passiva/mês no fim</div>
-        <div class="text-sm font-semibold good">
-          R$
-          {{ r.projections[r.projections.length - 1].passive_income_monthly | number: '1.2-2' }}
+        <div class="text-sm font-semibold text-ink">
+          entre R$ {{ ultimo(r).passive_income_monthly_low | number: '1.2-2' }} e R$
+          {{ ultimo(r).passive_income_monthly_high | number: '1.2-2' }}
+        </div>
+        <div class="text-xs text-ink-2">
+          cenário base: R$ {{ ultimo(r).passive_income_monthly | number: '1.2-2' }}
         </div>
       </div>
     </div>
 
-    @if (r.target_monthly_income) {
-      <div class="p-4 rounded-lg bg-ground-1 border border-hairline">
-        @if (r.months_to_target) {
-          <div class="text-sm text-ink">
-            🎯 Você atinge a meta de
-            <strong>R$ {{ r.target_monthly_income | number: '1.2-2' }}/mês</strong> em
-            <strong>{{ r.months_to_target }} meses</strong> ({{ r.target_date }}).
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      @for (s of r.scenarios; track s.code) {
+        <div class="p-3 rounded-lg bg-ground-1 border border-hairline">
+          <div class="text-xs font-medium text-ink mb-1">{{ s.label }}</div>
+          <div class="text-sm font-semibold text-ink">
+            R$ {{ s.final_passive_income_monthly | number: '1.2-2' }}/mês
           </div>
+          <!-- A premissa fica ao lado do número, sempre. Um cenário sem a
+               conta que o gerou é só um número maior ou menor. -->
+          <p class="text-xs text-ink-2 mt-1 mb-0">{{ s.rationale }}</p>
+        </div>
+      }
+    </div>
+
+    @if (r.target; as meta) {
+      <div class="p-4 rounded-lg bg-ground-1 border border-hairline text-sm text-ink">
+        Meta de <strong>R$ {{ meta.monthly_income | number: '1.2-2' }}/mês</strong>:
+        @if (meta.reached_in_all_scenarios) {
+          alcançada entre <strong>{{ meta.earliest_months }}</strong> e
+          <strong>{{ meta.latest_months }} meses</strong> ({{ meta.earliest_date }} a
+          {{ meta.latest_date }}). No cenário base, {{ meta.expected_months }} meses.
+        } @else if (meta.expected_months) {
+          alcançada em <strong>{{ meta.expected_months }} meses</strong> no cenário base, mas
+          <strong>não é alcançada no cenário conservador</strong> dentro do período simulado.
         } @else {
-          <div class="text-sm text-ink-2">
-            Com essas premissas, a meta de R$ {{ r.target_monthly_income | number: '1.2-2' }}/mês
-            não é atingida dentro do período simulado. Tente aumentar o aporte mensal ou o período.
-          </div>
+          não é alcançada em nenhum dos três cenários dentro do período simulado. Aumentar o aporte
+          mensal ou o prazo muda isso; mudar a premissa de valorização não.
         }
       </div>
     }
 
     <div class="overflow-x-auto rounded-lg border border-hairline">
       <table class="w-full text-sm">
+        <caption class="sr-only">
+          Projeção mês a mês, com piso e teto entre os três cenários.
+        </caption>
         <thead>
           <tr class="bg-ground-2 text-ink-2 text-xs">
-            <th class="text-left px-3 py-2 font-medium">Mês</th>
-            <th class="text-right px-3 py-2 font-medium">Valor da carteira</th>
-            <th class="text-right px-3 py-2 font-medium">Renda passiva/mês</th>
+            <th scope="col" class="text-left px-3 py-2 font-medium">Mês</th>
+            <th scope="col" class="text-right px-3 py-2 font-medium">Carteira (faixa)</th>
+            <th scope="col" class="text-right px-3 py-2 font-medium">Renda/mês (faixa)</th>
           </tr>
         </thead>
         <tbody>
@@ -133,10 +158,12 @@
             <tr class="border-t border-hairline">
               <td class="px-3 py-2 text-ink">{{ m.month }}</td>
               <td class="px-3 py-2 text-right text-ink">
-                R$ {{ m.portfolio_value | number: '1.0-0' }}
+                R$ {{ m.portfolio_value_low | number: '1.0-0' }} – R$
+                {{ m.portfolio_value_high | number: '1.0-0' }}
               </td>
               <td class="px-3 py-2 text-right text-ink">
-                R$ {{ m.passive_income_monthly | number: '1.2-2' }}
+                R$ {{ m.passive_income_monthly_low | number: '1.2-2' }} – R$
+                {{ m.passive_income_monthly_high | number: '1.2-2' }}
               </td>
             </tr>
           }
@@ -145,10 +172,7 @@
     </div>
 
     <div class="text-xs text-ink-2">
-      Premissas: valorização de
-      {{ r.assumptions['portfolio_growth_rate_yearly'] * 100 | number: '1.0-0' }}%/ano, dividendos
-      crescendo {{ r.assumptions['dividend_growth_rate_yearly'] * 100 | number: '1.0-0' }}%/ano.
-      Projeção educativa, não é garantia de rentabilidade futura.
+      {{ r.assumptions['scenario_spread'] }}
     </div>
   }
 </div>

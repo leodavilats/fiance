@@ -288,8 +288,9 @@ class DataFreshness {
     return 'cotacoes de ${(age / 3600).round()} h atras';
   }
 
-  String get ratesLabel =>
-      ratesSource == 'bcb' ? 'CDI/Selic do Banco Central' : 'CDI/Selic estimados';
+  String get ratesLabel => ratesSource == 'bcb'
+      ? 'CDI/Selic do Banco Central'
+      : 'CDI/Selic estimados';
 }
 
 class WhatsNewItem {
@@ -404,7 +405,8 @@ class DashboardData {
     alerts: (j['alerts'] as List)
         .map((e) => PortfolioAlert.fromJson(e as Map<String, dynamic>))
         .toList(),
-    snapshots: (j['snapshots'] as List?)
+    snapshots:
+        (j['snapshots'] as List?)
             ?.map((e) => PortfolioSnapshot.fromJson(e as Map<String, dynamic>))
             .toList() ??
         const [],
@@ -739,9 +741,7 @@ class AssetAnalysis {
       label: dec['label'] as String? ?? '',
       reasons:
           (dec['reasons'] as List?)?.map((e) => e as String).toList() ?? [],
-      fundamentals: fund.map(
-        (k, v) => MapEntry(k, (v as num?)?.toDouble()),
-      ),
+      fundamentals: fund.map((k, v) => MapEntry(k, (v as num?)?.toDouble())),
     );
   }
 }
@@ -899,8 +899,7 @@ class Preferences {
     desiredYieldBdr: (j['desired_yield_bdr'] as num).toDouble(),
     desiredYieldEtf: (j['desired_yield_etf'] as num?)?.toDouble() ?? 0.04,
     notifyPriceAlerts: j['notify_price_alerts'] as bool? ?? true,
-    opportunitiesFrequency:
-        j['opportunities_frequency'] as String? ?? 'weekly',
+    opportunitiesFrequency: j['opportunities_frequency'] as String? ?? 'weekly',
     riskProfile: j['risk_profile'] as String? ?? 'moderate',
     preferredCategories:
         (j['preferred_categories'] as List?)?.cast<String>() ?? const [],
@@ -939,7 +938,8 @@ class PortfolioHealth {
   factory PortfolioHealth.fromJson(Map<String, dynamic> j) => PortfolioHealth(
     score: (j['score'] as num).toDouble(),
     concentrationScore: (j['concentration_score'] as num).toDouble(),
-    sectorConcentrationScore: (j['sector_concentration_score'] as num).toDouble(),
+    sectorConcentrationScore: (j['sector_concentration_score'] as num)
+        .toDouble(),
     diversificationScore: (j['diversification_score'] as num).toDouble(),
     riskScore: (j['risk_score'] as num).toDouble(),
     topPositionTicker: j['top_position_ticker'] as String?,
@@ -986,15 +986,17 @@ class BenchmarkResponse {
   final double cdiReturnPct;
   final double? ibovReturnPct;
 
-  factory BenchmarkResponse.fromJson(Map<String, dynamic> j) => BenchmarkResponse(
-    points: (j['points'] as List)
-        .map((e) => BenchmarkPoint.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    ibovAvailable: j['ibov_available'] as bool? ?? false,
-    portfolioReturnPct: (j['portfolio_return_pct'] as num?)?.toDouble() ?? 0,
-    cdiReturnPct: (j['cdi_return_pct'] as num?)?.toDouble() ?? 0,
-    ibovReturnPct: (j['ibov_return_pct'] as num?)?.toDouble(),
-  );
+  factory BenchmarkResponse.fromJson(Map<String, dynamic> j) =>
+      BenchmarkResponse(
+        points: (j['points'] as List)
+            .map((e) => BenchmarkPoint.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        ibovAvailable: j['ibov_available'] as bool? ?? false,
+        portfolioReturnPct:
+            (j['portfolio_return_pct'] as num?)?.toDouble() ?? 0,
+        cdiReturnPct: (j['cdi_return_pct'] as num?)?.toDouble() ?? 0,
+        ibovReturnPct: (j['ibov_return_pct'] as num?)?.toDouble(),
+      );
 }
 
 class CompareResponse {
@@ -1015,17 +1017,91 @@ class PassiveIncomeMonth {
   PassiveIncomeMonth({
     required this.month,
     required this.portfolioValue,
+    required this.portfolioValueLow,
+    required this.portfolioValueHigh,
     required this.passiveIncomeMonthly,
+    required this.passiveIncomeMonthlyLow,
+    required this.passiveIncomeMonthlyHigh,
   });
 
   final String month;
   final double portfolioValue;
+  final double portfolioValueLow;
+  final double portfolioValueHigh;
   final double passiveIncomeMonthly;
+  final double passiveIncomeMonthlyLow;
+  final double passiveIncomeMonthlyHigh;
 
-  factory PassiveIncomeMonth.fromJson(Map<String, dynamic> j) => PassiveIncomeMonth(
-    month: j['month'] as String,
-    portfolioValue: (j['portfolio_value'] as num).toDouble(),
-    passiveIncomeMonthly: (j['passive_income_monthly'] as num).toDouble(),
+  factory PassiveIncomeMonth.fromJson(Map<String, dynamic> j) =>
+      PassiveIncomeMonth(
+        month: j['month'] as String,
+        portfolioValue: (j['portfolio_value'] as num).toDouble(),
+        portfolioValueLow: (j['portfolio_value_low'] as num).toDouble(),
+        portfolioValueHigh: (j['portfolio_value_high'] as num).toDouble(),
+        passiveIncomeMonthly: (j['passive_income_monthly'] as num).toDouble(),
+        passiveIncomeMonthlyLow: (j['passive_income_monthly_low'] as num)
+            .toDouble(),
+        passiveIncomeMonthlyHigh: (j['passive_income_monthly_high'] as num)
+            .toDouble(),
+      );
+}
+
+class ProjectionScenario {
+  ProjectionScenario({
+    required this.code,
+    required this.label,
+    required this.rationale,
+    required this.finalPassiveIncomeMonthly,
+    required this.finalPortfolioValue,
+    required this.monthsToTarget,
+  });
+
+  final String code;
+  final String label;
+
+  /// A premissa que gerou o número. Não é campo opcional de tela: um cenário
+  /// sem a conta que o produziu é só um número maior ou menor.
+  final String rationale;
+  final double finalPassiveIncomeMonthly;
+  final double finalPortfolioValue;
+  final int? monthsToTarget;
+
+  factory ProjectionScenario.fromJson(Map<String, dynamic> j) =>
+      ProjectionScenario(
+        code: j['code'] as String,
+        label: j['label'] as String,
+        rationale: j['rationale'] as String,
+        finalPassiveIncomeMonthly: (j['final_passive_income_monthly'] as num)
+            .toDouble(),
+        finalPortfolioValue: (j['final_portfolio_value'] as num).toDouble(),
+        monthsToTarget: (j['months_to_target'] as num?)?.toInt(),
+      );
+}
+
+class ProjectionTarget {
+  ProjectionTarget({
+    required this.monthlyIncome,
+    required this.earliestMonths,
+    required this.expectedMonths,
+    required this.latestMonths,
+    required this.reachedInAllScenarios,
+  });
+
+  final double monthlyIncome;
+  final int? earliestMonths;
+  final int? expectedMonths;
+
+  /// Nulo significa "não chega no horizonte projetado" — e isso é resposta,
+  /// não falha. Omitir o cenário que não chega faria a meta parecer garantida.
+  final int? latestMonths;
+  final bool reachedInAllScenarios;
+
+  factory ProjectionTarget.fromJson(Map<String, dynamic> j) => ProjectionTarget(
+    monthlyIncome: (j['monthly_income'] as num).toDouble(),
+    earliestMonths: (j['earliest_months'] as num?)?.toInt(),
+    expectedMonths: (j['expected_months'] as num?)?.toInt(),
+    latestMonths: (j['latest_months'] as num?)?.toInt(),
+    reachedInAllScenarios: j['reached_in_all_scenarios'] as bool? ?? false,
   );
 }
 
@@ -1034,30 +1110,38 @@ class PassiveIncomeProjection {
     required this.currentPortfolioValue,
     required this.currentPassiveIncomeMonthly,
     required this.projections,
+    required this.scenarios,
+    required this.target,
     required this.targetMonthlyIncome,
-    required this.monthsToTarget,
-    required this.targetDate,
+    required this.disclaimer,
   });
 
   final double currentPortfolioValue;
   final double currentPassiveIncomeMonthly;
   final List<PassiveIncomeMonth> projections;
+  final List<ProjectionScenario> scenarios;
+  final ProjectionTarget? target;
   final double? targetMonthlyIncome;
-  final int? monthsToTarget;
-  final String? targetDate;
+  final String disclaimer;
 
-  factory PassiveIncomeProjection.fromJson(Map<String, dynamic> j) => PassiveIncomeProjection(
-    currentPortfolioValue: (j['current_portfolio_value'] as num).toDouble(),
-    currentPassiveIncomeMonthly: (j['current_passive_income_monthly'] as num).toDouble(),
-    projections: (j['projections'] as List)
-        .map((e) => PassiveIncomeMonth.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    targetMonthlyIncome: (j['target_monthly_income'] as num?)?.toDouble(),
-    monthsToTarget: (j['months_to_target'] as num?)?.toInt(),
-    targetDate: j['target_date'] as String?,
-  );
+  factory PassiveIncomeProjection.fromJson(Map<String, dynamic> j) =>
+      PassiveIncomeProjection(
+        currentPortfolioValue: (j['current_portfolio_value'] as num).toDouble(),
+        currentPassiveIncomeMonthly:
+            (j['current_passive_income_monthly'] as num).toDouble(),
+        projections: (j['projections'] as List)
+            .map((e) => PassiveIncomeMonth.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        scenarios: ((j['scenarios'] as List?) ?? const [])
+            .map((e) => ProjectionScenario.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        target: j['target'] == null
+            ? null
+            : ProjectionTarget.fromJson(j['target'] as Map<String, dynamic>),
+        targetMonthlyIncome: (j['target_monthly_income'] as num?)?.toDouble(),
+        disclaimer: j['disclaimer'] as String? ?? '',
+      );
 }
-
 
 class FixedIncomePosition {
   FixedIncomePosition({
@@ -1172,7 +1256,6 @@ class FixedIncomeList {
   );
 }
 
-
 class QuickInvestAllocation {
   QuickInvestAllocation({
     required this.ticker,
@@ -1228,13 +1311,16 @@ class QuickInvestResult {
   final List<QuickInvestAllocation> allocations;
   final String summary;
 
-  factory QuickInvestResult.fromJson(Map<String, dynamic> j) => QuickInvestResult(
-    totalCash: (j['total_cash'] as num).toDouble(),
-    allocatedCash: (j['allocated_cash'] as num).toDouble(),
-    remainingCash: (j['remaining_cash'] as num).toDouble(),
-    allocations: (j['allocations'] as List)
-        .map((e) => QuickInvestAllocation.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    summary: j['summary'] as String? ?? '',
-  );
+  factory QuickInvestResult.fromJson(Map<String, dynamic> j) =>
+      QuickInvestResult(
+        totalCash: (j['total_cash'] as num).toDouble(),
+        allocatedCash: (j['allocated_cash'] as num).toDouble(),
+        remainingCash: (j['remaining_cash'] as num).toDouble(),
+        allocations: (j['allocations'] as List)
+            .map(
+              (e) => QuickInvestAllocation.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
+        summary: j['summary'] as String? ?? '',
+      );
 }

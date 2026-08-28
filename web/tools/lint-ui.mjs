@@ -340,6 +340,48 @@ function missingAccessibleNames(files) {
 }
 
 // --------------------------------------------------------------------------
+// 6. Projeção sem faixa
+// --------------------------------------------------------------------------
+
+/** Os campos projetados que nunca devem aparecer sozinhos. */
+const PROJECTED_FIELDS = ['portfolio_value', 'passive_income_monthly'];
+
+/**
+ * Número projetado sem piso e teto.
+ *
+ * Uma projeção a cinco anos é a multiplicação de três chutes. Exibi-la como
+ * `R$ 3.847,21` empresta a essa pilha uma precisão de centavo que ela não tem,
+ * e a pessoa decide quanto poupar em cima disso.
+ *
+ * A checagem é por arquivo, não por linha, de propósito: mostrar o cenário base
+ * como linha secundária ao lado da faixa é legítimo, e cobrar por linha
+ * proibiria isso. O que ela pega é o caso que importa — a faixa sumir da tela
+ * inteira, sobrando o número do meio sozinho.
+ *
+ * O gatilho são os nomes dos campos, não a presença da palavra `projections`:
+ * o template acessa o mês por um método do componente e nunca escreve
+ * `projections`, então uma guarda por essa palavra desligaria a regra
+ * justamente na única tela que ela precisa cobrir.
+ */
+function projectionsWithoutBand(files) {
+  const problems = [];
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+
+    for (const field of PROJECTED_FIELDS) {
+      const usaBase = new RegExp(String.raw`\.${field}(?!_)`).test(source);
+      if (!usaBase) continue;
+      if (source.includes(`${field}_low`) && source.includes(`${field}_high`)) continue;
+
+      problems.push({ file, name: `${relative(WEB_ROOT, file)}: ${field} sem faixa` });
+    }
+  }
+
+  return problems;
+}
+
+// --------------------------------------------------------------------------
 
 function report(title, problems, hint) {
   if (problems.length === 0) return 0;
@@ -377,6 +419,7 @@ function main() {
   const semExplicacao = missingExplainers(templates.filter(file => file.endsWith('.html')));
   const semTabela = missingChartAlternatives(templates);
   const semNome = missingAccessibleNames(templates);
+  const semFaixa = projectionsWithoutBand(templates);
 
   const problems =
     report(
@@ -408,6 +451,13 @@ function main() {
       semNome,
       'Adicione aria-label. Sem ele o leitor de tela anuncia só "botão", e a ' +
         'pessoa tem que adivinhar se aquilo apaga a posição ou fecha o modal.'
+    ) +
+    report(
+      'Número projetado exibido sem faixa',
+      semFaixa,
+      'Mostre piso e teto (os campos _low e _high). Um valor único a cinco anos ' +
+        'empresta precisão de centavo a uma pilha de premissas — e é em cima dele ' +
+        'que a pessoa decide quanto poupar.'
     );
 
   if (problems > 0) {
@@ -415,7 +465,9 @@ function main() {
     process.exit(1);
   }
 
-  console.log('✓ Ícones, classes, explicabilidade, gráficos e nomes acessíveis conferidos.');
+  console.log(
+    '✓ Ícones, classes, explicabilidade, gráficos, nomes acessíveis e faixas conferidos.'
+  );
 }
 
 main();
