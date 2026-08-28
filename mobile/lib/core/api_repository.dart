@@ -368,6 +368,17 @@ class ApiRepository {
     return PassiveIncomeProjection.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<IncomeCompare> incomeCompare({
+    required double amount,
+    required int horizonMonths,
+  }) async {
+    final res = await _dio.get(
+      '/income-compare',
+      queryParameters: {'amount': amount, 'horizon_months': horizonMonths},
+    );
+    return IncomeCompare.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<ReferralStatus> referralStatus() async {
     final res = await _dio.get('/referral');
     return ReferralStatus.fromJson(res.data as Map<String, dynamic>);

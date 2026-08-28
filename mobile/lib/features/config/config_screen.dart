@@ -7,7 +7,6 @@ import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
-import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/theme_provider.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
@@ -258,15 +257,23 @@ class ConfigScreen extends ConsumerWidget {
               ],
             ),
           ),
+          // Meta não é preferência: é a referência contra a qual a carteira é
+          // comparada, e o desvio que ela produz vive em Estratégia. Deixar as
+          // duas coisas em telas diferentes obrigava a pessoa a sair do lugar
+          // onde o problema aparece para ir consertá-lo.
           _SettingsCard(
             icon: Icons.pie_chart_outline,
-            title: 'Metas de alocação por categoria',
-            children: const [_GoalsSection()],
-          ),
-          _SettingsCard(
-            icon: Icons.donut_small_outlined,
-            title: 'Metas de alocação por setor',
-            children: const [_SectorGoalsSection()],
+            title: 'Metas de alocação',
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('Ajustar minhas metas'),
+                subtitle: const Text('Em Estratégia, junto do desvio'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.go('/estrategia/metas'),
+              ),
+            ],
           ),
           _SettingsCard(
             icon: Icons.notifications_none,
@@ -578,224 +585,6 @@ class _SettingsCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _GoalsSection extends ConsumerStatefulWidget {
-  const _GoalsSection();
-
-  @override
-  ConsumerState<_GoalsSection> createState() => _GoalsSectionState();
-}
-
-class _GoalsSectionState extends ConsumerState<_GoalsSection> {
-  List<Goal>? _editing;
-
-  @override
-  Widget build(BuildContext context) {
-    final goals = ref.watch(goalsProvider);
-
-    return goals.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(16),
-        child: LinearProgressIndicator(),
-      ),
-      error: (err, _) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: FiErrorState(error: err, action: 'carregar suas metas'),
-      ),
-      data: (data) {
-        final items = _editing ?? data;
-        final total = items.fold<double>(0, (sum, g) => sum + g.targetPct);
-
-        return Column(
-          children: [
-            ...items.map(
-              (g) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(categoryLabel(g.category))),
-                    SizedBox(
-                      width: 160,
-                      child: Slider(
-                        value: g.targetPct.clamp(0, 100),
-                        max: 100,
-                        divisions: 100,
-                        label: '${g.targetPct.toStringAsFixed(0)}%',
-                        onChanged: (v) => setState(() {
-                          _editing = items
-                              .map(
-                                (it) => it.category == g.category
-                                    ? it.copyWith(targetPct: v)
-                                    : it,
-                              )
-                              .toList();
-                        }),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 44,
-                      child: Text('${g.targetPct.toStringAsFixed(0)}%'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total: ${total.toStringAsFixed(0)}%',
-                    style: TextStyle(
-                      color: (total - 100).abs() < 0.5
-                          ? fiStateColor(
-                              FiState.favorable,
-                              Theme.of(context).brightness,
-                            )
-                          : fiStateColor(
-                              FiState.adverse,
-                              Theme.of(context).brightness,
-                            ),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: _editing == null || (total - 100).abs() >= 0.5
-                        ? null
-                        : () async {
-                            await ref
-                                .read(apiRepositoryProvider)
-                                .saveGoals(_editing!);
-                            ref.invalidate(goalsProvider);
-                            setState(() => _editing = null);
-                          },
-                    child: const Text('Salvar'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-const _sectorFallbackList = [
-  'Financeiro',
-  'Energia',
-  'Varejo',
-  'Tecnologia',
-  'Saúde',
-  'Outros',
-];
-
-class _SectorGoalsSection extends ConsumerStatefulWidget {
-  const _SectorGoalsSection();
-
-  @override
-  ConsumerState<_SectorGoalsSection> createState() =>
-      _SectorGoalsSectionState();
-}
-
-class _SectorGoalsSectionState extends ConsumerState<_SectorGoalsSection> {
-  List<SectorGoal>? _editing;
-
-  @override
-  Widget build(BuildContext context) {
-    final goals = ref.watch(sectorGoalsProvider);
-
-    return goals.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(16),
-        child: LinearProgressIndicator(),
-      ),
-      error: (err, _) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: FiErrorState(error: err, action: 'carregar suas metas'),
-      ),
-      data: (data) {
-        final items = data.isNotEmpty
-            ? data
-            : _sectorFallbackList
-                  .map(
-                    (s) => SectorGoal(
-                      sector: s,
-                      targetPct: 100 / _sectorFallbackList.length,
-                    ),
-                  )
-                  .toList();
-        final current = _editing ?? items;
-        final total = current.fold<double>(0, (sum, g) => sum + g.targetPct);
-
-        return Column(
-          children: [
-            ...current.map(
-              (g) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(translateSector(g.sector))),
-                    SizedBox(
-                      width: 160,
-                      child: Slider(
-                        value: g.targetPct.clamp(0, 100),
-                        max: 100,
-                        divisions: 100,
-                        label: '${g.targetPct.toStringAsFixed(0)}%',
-                        onChanged: (v) => setState(() {
-                          _editing = current
-                              .map(
-                                (it) => it.sector == g.sector
-                                    ? it.copyWith(targetPct: v)
-                                    : it,
-                              )
-                              .toList();
-                        }),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 44,
-                      child: Text('${g.targetPct.toStringAsFixed(0)}%'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total: ${total.toStringAsFixed(0)}%'),
-                  FilledButton(
-                    onPressed: _editing == null
-                        ? null
-                        : () async {
-                            await ref
-                                .read(apiRepositoryProvider)
-                                .saveSectorGoals(_editing!);
-                            ref.invalidate(sectorGoalsProvider);
-                            setState(() => _editing = null);
-                          },
-                    child: const Text('Salvar'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }

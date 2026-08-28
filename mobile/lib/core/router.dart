@@ -8,6 +8,8 @@ import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/hoje/hoje_screen.dart';
 import '../features/estrategia/estrategia_screen.dart';
+import '../features/estrategia/metas_screen.dart';
+import '../features/tools/income_compare_view.dart';
 import '../features/market/opportunities_tab.dart';
 import '../features/market/quick_invest_view.dart';
 import '../features/shell/app_shell.dart';
@@ -26,10 +28,16 @@ final appRouter = GoRouter(
     GoRoute(path: '/config', redirect: (_, _) => '/voce'),
 
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+      builder: (context, state, navigationShell) =>
+          AppShell(navigationShell: navigationShell),
       branches: [
         StatefulShellBranch(
-          routes: [GoRoute(path: '/hoje', builder: (context, state) => const HojeScreen())],
+          routes: [
+            GoRoute(
+              path: '/hoje',
+              builder: (context, state) => const HojeScreen(),
+            ),
+          ],
         ),
 
         StatefulShellBranch(
@@ -65,7 +73,8 @@ final appRouter = GoRouter(
                   path: 'comparar',
                   builder: (context, state) => const ToolScreen(
                     title: 'Comparar ativos',
-                    question: 'Entre estes ativos, qual está melhor posicionado?',
+                    question:
+                        'Entre estes ativos, qual está melhor posicionado?',
                     child: CompareAssetsView(),
                   ),
                 ),
@@ -84,20 +93,31 @@ final appRouter = GoRouter(
                   path: 'aporte',
                   builder: (context, state) => const ToolScreen(
                     title: 'Onde aportar',
-                    question: 'Recebi dinheiro — onde ele faz mais diferença agora?',
+                    question:
+                        'Recebi dinheiro — onde ele faz mais diferença agora?',
                     child: QuickInvestView(),
                   ),
                 ),
                 GoRoute(
                   path: 'metas',
-                  builder: (context, state) => const _MetasScreen(),
+                  builder: (context, state) => const MetasScreen(),
                 ),
                 GoRoute(
                   path: 'renda-fixa',
                   builder: (context, state) => const ToolScreen(
                     title: 'Renda fixa',
-                    question: 'Entre estes títulos, qual rende mais depois do IR?',
+                    question:
+                        'Entre estes títulos, qual rende mais depois do IR?',
                     child: RendaFixaSimulatorView(),
+                  ),
+                ),
+                GoRoute(
+                  path: 'renda-fixa-vs-bolsa',
+                  builder: (context, state) => const ToolScreen(
+                    title: 'Renda fixa × bolsa',
+                    question:
+                        'Com a Selic nesse patamar, vale mais o CDB ou o FII?',
+                    child: IncomeCompareView(),
                   ),
                 ),
                 GoRoute(
@@ -114,7 +134,12 @@ final appRouter = GoRouter(
         ),
 
         StatefulShellBranch(
-          routes: [GoRoute(path: '/voce', builder: (context, state) => const ConfigScreen())],
+          routes: [
+            GoRoute(
+              path: '/voce',
+              builder: (context, state) => const ConfigScreen(),
+            ),
+          ],
         ),
       ],
     ),
@@ -152,14 +177,5 @@ class _DescobrirScreen extends StatelessWidget {
       ),
       body: const OpportunitiesTab(),
     );
-  }
-}
-
-class _MetasScreen extends StatelessWidget {
-  const _MetasScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const ConfigScreen();
   }
 }

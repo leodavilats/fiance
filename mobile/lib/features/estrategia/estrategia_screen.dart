@@ -48,7 +48,8 @@ class EstrategiaScreen extends ConsumerWidget {
                   ...gaps.map(
                     (gap) => _GapRow(
                       gap: gap,
-                      isBiggest: biggest != null && gap.category == biggest.category,
+                      isBiggest:
+                          biggest != null && gap.category == biggest.category,
                     ),
                   ),
 
@@ -84,7 +85,10 @@ class EstrategiaScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('SUGESTÃO', style: FiType.eyebrow.copyWith(color: ink3)),
+                          Text(
+                            'SUGESTÃO',
+                            style: FiType.eyebrow.copyWith(color: ink3),
+                          ),
                           const SizedBox(height: FiSpace.s2),
                           Text(
                             biggest.isBelowTarget
@@ -130,7 +134,10 @@ class EstrategiaScreen extends ConsumerWidget {
                 const SizedBox(height: FiSpace.s6),
                 Divider(color: hairline, height: 1),
                 const SizedBox(height: FiSpace.s5),
-                Text('FERRAMENTAS', style: FiType.eyebrow.copyWith(color: ink3)),
+                Text(
+                  'FERRAMENTAS',
+                  style: FiType.eyebrow.copyWith(color: ink3),
+                ),
                 const SizedBox(height: FiSpace.s2),
                 _ToolLink(
                   label: 'Ajustar minhas metas',
@@ -141,6 +148,11 @@ class EstrategiaScreen extends ConsumerWidget {
                   label: 'Comparar títulos de renda fixa',
                   icon: Icons.account_balance_outlined,
                   onTap: () => context.go('/estrategia/renda-fixa'),
+                ),
+                _ToolLink(
+                  label: 'Renda fixa × bolsa',
+                  icon: Icons.compare_arrows_outlined,
+                  onTap: () => context.go('/estrategia/renda-fixa-vs-bolsa'),
                 ),
                 _ToolLink(
                   label: 'Projetar renda passiva',
@@ -194,7 +206,10 @@ class _GapRow extends StatelessWidget {
                   ),
                 ),
               ),
-              Text('${gap.currentPct.toStringAsFixed(0)}%', style: FiType.metricSm.copyWith(color: ink1)),
+              Text(
+                '${gap.currentPct.toStringAsFixed(0)}%',
+                style: FiType.metricSm.copyWith(color: ink1),
+              ),
               const SizedBox(width: FiSpace.s2),
               Text(
                 'meta ${gap.targetPct.toStringAsFixed(0)}%',
@@ -207,7 +222,9 @@ class _GapRow extends StatelessWidget {
                   '${gap.gapPct > 0 ? '−' : '+'}${gap.gapPct.abs().toStringAsFixed(1)} p.p.',
                   textAlign: TextAlign.end,
                   style: FiType.metricSm.copyWith(
-                    color: relevante ? fiStateColor(FiState.attention, brightness) : ink3,
+                    color: relevante
+                        ? fiStateColor(FiState.attention, brightness)
+                        : ink3,
                   ),
                 ),
               ),
@@ -238,7 +255,8 @@ class _GapRow extends StatelessWidget {
                       ),
                     ),
                     Positioned(
-                      left: (width * (gap.targetPct / 100).clamp(0, 1) - 1).clamp(0, width - 2),
+                      left: (width * (gap.targetPct / 100).clamp(0, 1) - 1)
+                          .clamp(0, width - 2),
                       top: -2,
                       bottom: -2,
                       child: Container(width: 2, color: brand),
@@ -280,7 +298,10 @@ class _RebalanceTile extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(item.ticker, style: FiType.ticker.copyWith(color: ink1)),
+                child: Text(
+                  item.ticker,
+                  style: FiType.ticker.copyWith(color: ink1),
+                ),
               ),
               Text(
                 _actionLabel(item.action),
@@ -349,7 +370,11 @@ class _NoGoals extends StatelessWidget {
 }
 
 class _ToolLink extends StatelessWidget {
-  const _ToolLink({required this.label, required this.icon, required this.onTap});
+  const _ToolLink({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   final String label;
   final IconData icon;
@@ -383,7 +408,10 @@ class _Skeleton extends StatelessWidget {
       width: width,
       height: height,
       margin: const EdgeInsets.only(bottom: FiSpace.s3),
-      decoration: BoxDecoration(color: block, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(
+        color: block,
+        borderRadius: BorderRadius.circular(4),
+      ),
     );
 
     return ListView(
@@ -424,7 +452,10 @@ class _ErrorState extends StatelessWidget {
         const SizedBox(height: FiSpace.s4),
         Align(
           alignment: Alignment.centerLeft,
-          child: FilledButton(onPressed: onRetry, child: const Text('Tentar de novo')),
+          child: FilledButton(
+            onPressed: onRetry,
+            child: const Text('Tentar de novo'),
+          ),
         ),
       ],
     );

@@ -94,10 +94,10 @@ Detalhe e justificativa em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATIO
     e `assets_screen.dart` (1231) não foram reestruturados nos três níveis, e `/carteira` não foi
     fatiada como no web. A régua e o `FiErrorState` já estão disponíveis para isso.
 
-16. **Assimetrias mobile↔web declaradas:** metas no mobile ainda vivem em Configurações
-    (`/estrategia/metas` redireciona para lá); RF × Bolsa (`GET /income-compare`) não tem cliente
-    Dart. Push exigir o app instalado **não** é pendência — é decisão, e o web sinaliza isso em
-    `/voce/alertas`.
+16. **Assimetria mobile↔web declarada:** push exigir o app instalado **não** é pendência — é
+    decisão, e o web sinaliza isso em `/voce/alertas`. As duas outras assimetrias fecharam em
+    2026-08-28: metas ganharam tela própria (`MetasScreen`) e RF × Bolsa ganhou cliente Dart
+    (`IncomeCompareView`).
 
 17. **As três classes de diagnóstico de queda não foram validadas.** "Queda saudável / para
     investigar / estrutural" pressupõe que `dip_analysis.py` permita separar as duas últimas. Se o

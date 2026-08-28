@@ -1397,3 +1397,94 @@ class ReferralStatus {
     daysEarned: (j['days_earned'] as num?)?.toInt() ?? 0,
   );
 }
+
+/// Uma linha da comparação de renda: um CDB e um FII lado a lado.
+///
+/// `incomeBasis` e `hasUpside` viajam junto do número de propósito. Comparar o
+/// rendimento contratado de um CDB com o dividend yield dos últimos doze meses
+/// de um FII é comparar uma promessa com uma medição do passado — omitir de
+/// onde cada número veio faria a tabela mentir por omissão.
+class IncomeOption {
+  IncomeOption({
+    required this.kind,
+    required this.label,
+    required this.ticker,
+    required this.netIncomeYieldPct,
+    required this.incomeBasis,
+    required this.hasUpside,
+    required this.liquidity,
+    required this.taxNote,
+    required this.riskNote,
+    required this.monthlyIncomeEstimate,
+  });
+
+  final String kind;
+  final String label;
+  final String? ticker;
+  final double netIncomeYieldPct;
+  final String incomeBasis;
+  final bool hasUpside;
+  final String liquidity;
+  final String taxNote;
+  final String riskNote;
+  final double monthlyIncomeEstimate;
+
+  factory IncomeOption.fromJson(Map<String, dynamic> j) => IncomeOption(
+    kind: j['kind'] as String? ?? '',
+    label: j['label'] as String? ?? '',
+    ticker: j['ticker'] as String?,
+    netIncomeYieldPct: (j['net_income_yield_pct'] as num?)?.toDouble() ?? 0,
+    incomeBasis: j['income_basis'] as String? ?? '',
+    hasUpside: j['has_upside'] as bool? ?? false,
+    liquidity: j['liquidity'] as String? ?? '',
+    taxNote: j['tax_note'] as String? ?? '',
+    riskNote: j['risk_note'] as String? ?? '',
+    monthlyIncomeEstimate:
+        (j['monthly_income_estimate'] as num?)?.toDouble() ?? 0,
+  );
+}
+
+class IncomeCompare {
+  IncomeCompare({
+    required this.amount,
+    required this.horizonMonths,
+    required this.cdiAnual,
+    required this.fixedIncome,
+    required this.assets,
+    required this.bestIncomeOption,
+    required this.verdict,
+    required this.disclaimer,
+  });
+
+  final double amount;
+  final int horizonMonths;
+  final double cdiAnual;
+  final List<IncomeOption> fixedIncome;
+  final List<IncomeOption> assets;
+  final IncomeOption? bestIncomeOption;
+  final String verdict;
+
+  /// Renda fixa tem retorno contratado; bolsa oscila. A ressalva não é
+  /// rodapé jurídico: é a diferença entre as duas colunas.
+  final String disclaimer;
+
+  static List<IncomeOption> _lista(dynamic bruto) =>
+      ((bruto as List?) ?? const [])
+          .map((e) => IncomeOption.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+  factory IncomeCompare.fromJson(Map<String, dynamic> j) => IncomeCompare(
+    amount: (j['amount'] as num?)?.toDouble() ?? 0,
+    horizonMonths: (j['horizon_months'] as num?)?.toInt() ?? 12,
+    cdiAnual: (j['cdi_anual'] as num?)?.toDouble() ?? 0,
+    fixedIncome: _lista(j['fixed_income']),
+    assets: _lista(j['assets']),
+    bestIncomeOption: j['best_income_option'] == null
+        ? null
+        : IncomeOption.fromJson(
+            j['best_income_option'] as Map<String, dynamic>,
+          ),
+    verdict: j['verdict'] as String? ?? '',
+    disclaimer: j['disclaimer'] as String? ?? '',
+  );
+}
