@@ -123,6 +123,35 @@
           Ajusta o peso de cada indicador no score de oportunidade.
         </p>
       </div>
+
+      <div>
+        <span class="block text-xs font-medium text-ink-2 mb-1.5" id="rotulo-densidade">
+          Densidade da tela
+        </span>
+        <div class="flex items-center gap-2" role="group" aria-labelledby="rotulo-densidade">
+          <button
+            type="button"
+            class="subtab-btn"
+            [class.active]="densidade.density() === 'comfortable'"
+            [attr.aria-pressed]="densidade.density() === 'comfortable'"
+            (click)="densidade.set('comfortable')"
+          >
+            Confortável
+          </button>
+          <button
+            type="button"
+            class="subtab-btn"
+            [class.active]="densidade.density() === 'compact'"
+            [attr.aria-pressed]="densidade.density() === 'compact'"
+            (click)="densidade.set('compact')"
+          >
+            Compacta
+          </button>
+        </div>
+        <p class="text-xs text-ink-2 mt-1">
+          Vale em todas as telas e acompanha a sua conta, não este aparelho.
+        </p>
+      </div>
     </div>
 
     <div class="mt-4 pt-4 border-t border-hairline">

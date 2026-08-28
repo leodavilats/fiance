@@ -2,6 +2,7 @@ export * from './activity.service';
 export * from './global-search.service';
 export * from './auth.service';
 export * from './carteira-store.service';
+export * from './density.service';
 export * from './dip-analysis.service';
 export * from './loading.service';
 export * from './recommend.service';

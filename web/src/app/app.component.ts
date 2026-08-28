@@ -14,6 +14,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import {
   ActivityService,
   AuthService,
+  DensityService,
   GlobalSearchService,
   LoadingService,
   ThemeService,
@@ -241,7 +242,13 @@ export class AppComponent {
   private _navShown = false;
   private _navTimer: ReturnType<typeof setTimeout> | null = null;
 
+  private readonly densidade = inject(DensityService);
+
   constructor() {
+    // A densidade é preferência da conta: aplicá-la no shell garante que
+    // toda rota nasça com o atributo, em vez de cada tela lembrar disso.
+    this.densidade.ensureLoaded();
+
     this.router.events.subscribe(e => {
       if (e instanceof NavigationStart) {
         if (this._navShown || this._navTimer) return;

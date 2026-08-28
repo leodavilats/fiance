@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import {
   CarteiraStore,
+  DensityService,
   FiDensity,
   FixedIncomePosition,
   MAX_COMPARE,
@@ -26,6 +27,7 @@ import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
   templateUrl: './posicoes.component.html',
 })
 export class PosicoesComponent implements OnInit {
+  private readonly densidade = inject(DensityService);
   private readonly store = inject(CarteiraStore);
   private readonly svc = inject(RecommendService);
   private readonly snackbar = inject(SnackbarService);
@@ -71,7 +73,14 @@ export class PosicoesComponent implements OnInit {
 
     const q = this.route.snapshot.queryParamMap;
     this.visibleColumns.set(parseColumns(q.get('cols')));
-    this.density.set(q.get('d') === 'compact' ? 'compact' : 'comfortable');
+
+    // A URL vence a preferência da conta quando ela existe — link salvo é
+    // contrato, e quem compartilhou a tabela compacta espera que ela chegue
+    // compacta do outro lado. Sem `d` na URL, vale a densidade da pessoa.
+    const daUrl = q.get('d');
+    this.density.set(
+      daUrl === 'compact' || daUrl === 'comfortable' ? daUrl : this.densidade.density()
+    );
   }
 
   private syncUrl(): void {

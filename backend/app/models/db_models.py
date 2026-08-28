@@ -86,6 +86,10 @@ class PreferencesDb(Base):
     notify_price_alerts: Mapped[bool] = mapped_column(default=True)
     opportunities_frequency: Mapped[str] = mapped_column(String, default="weekly")
     risk_profile: Mapped[str] = mapped_column(String, default="moderate")
+    #: Apetite por informação na tela, não acessibilidade de contraste.
+    #: Fica na conta e não no navegador porque acompanha a pessoa, não o
+    #: aparelho — quem lê tabela densa lê densa em qualquer tela.
+    density: Mapped[str] = mapped_column(String, default="comfortable")
     preferred_categories: Mapped[str] = mapped_column(String, default="")
     preferred_sectors: Mapped[str] = mapped_column(String, default="")
     excluded_tickers: Mapped[str] = mapped_column(String, default="")

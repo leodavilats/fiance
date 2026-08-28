@@ -5,6 +5,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import {
   ALLOCATION_CATEGORIES,
   AllocationCategory,
+  DensityService,
   OpportunitiesFrequency,
   RecommendService,
   RiskProfile,
@@ -31,6 +32,7 @@ const RISK_PROFILE_OPTIONS: { key: RiskProfile; label: string }[] = [
   templateUrl: './preferencias.component.html',
 })
 export class PreferenciasComponent implements OnInit {
+  readonly densidade = inject(DensityService);
   private readonly fb = inject(FormBuilder);
   private readonly svc = inject(RecommendService);
   private readonly cdr = inject(ChangeDetectorRef);

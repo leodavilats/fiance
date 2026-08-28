@@ -77,6 +77,7 @@ class Preferences(TypedDict):
     notify_price_alerts: bool
     opportunities_frequency: str
     risk_profile: str
+    density: str
     preferred_categories: list[str]
     preferred_sectors: list[str]
     excluded_tickers: list[str]
@@ -577,6 +578,7 @@ def get_preferences(user_id: str | None = None) -> Preferences:
                 notify_price_alerts=row.notify_price_alerts,
                 opportunities_frequency=row.opportunities_frequency,
                 risk_profile=row.risk_profile,
+                density=row.density or "comfortable",
                 preferred_categories=_csv_to_list(row.preferred_categories),
                 preferred_sectors=_csv_to_list(row.preferred_sectors),
                 excluded_tickers=_csv_to_list(row.excluded_tickers),
@@ -593,6 +595,7 @@ def get_preferences(user_id: str | None = None) -> Preferences:
         notify_price_alerts=True,
         opportunities_frequency="weekly",
         risk_profile="moderate",
+        density="comfortable",
         preferred_categories=[],
         preferred_sectors=[],
         excluded_tickers=[],
@@ -610,6 +613,7 @@ _PREF_DEFAULTS: dict[str, object] = {
     "notify_price_alerts": True,
     "opportunities_frequency": "weekly",
     "risk_profile": "moderate",
+    "density": "comfortable",
     "preferred_categories": [],
     "preferred_sectors": [],
     "excluded_tickers": [],

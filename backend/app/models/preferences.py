@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from .enums import AssetCategory, RiskProfile
@@ -18,6 +20,7 @@ class Preferences(BaseModel):
     notify_price_alerts: bool = True
     opportunities_frequency: OpportunitiesFrequency = "weekly"
     risk_profile: RiskProfile = RiskProfile.moderate
+    density: str = "comfortable"
     preferred_categories: list[AssetCategory] = Field(default_factory=list)
     preferred_sectors: list[str] = Field(default_factory=list)
     excluded_tickers: list[str] = Field(default_factory=list)
@@ -36,6 +39,7 @@ class PreferencesRequest(BaseModel):
     notify_price_alerts: bool | None = None
     opportunities_frequency: OpportunitiesFrequency | None = None
     risk_profile: RiskProfile | None = None
+    density: Literal["comfortable", "compact"] | None = None
     preferred_categories: list[AssetCategory] | None = Field(None, max_length=10)
     preferred_sectors: list[str] | None = Field(None, max_length=50)
     excluded_tickers: list[str] | None = Field(None, max_length=500)
