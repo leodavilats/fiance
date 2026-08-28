@@ -1,14 +1,7 @@
 /** Livro-razão: os lançamentos e a conta que eles produzem. */
 
 export type TransactionKind =
-  | 'buy'
-  | 'sell'
-  | 'split'
-  | 'bonus'
-  | 'transfer_in'
-  | 'transfer_out'
-  | 'amortization'
-  | 'adjust';
+  'buy' | 'sell' | 'split' | 'bonus' | 'transfer_in' | 'transfer_out' | 'amortization' | 'adjust';
 
 export interface Transaction {
   id: number;

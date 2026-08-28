@@ -1,13 +1,5 @@
 export type RendaFixaTipo =
-  | 'cdb'
-  | 'lci'
-  | 'lca'
-  | 'tesouro_selic'
-  | 'tesouro_ipca'
-  | 'tesouro_pre'
-  | 'lc'
-  | 'cri'
-  | 'cra';
+  'cdb' | 'lci' | 'lca' | 'tesouro_selic' | 'tesouro_ipca' | 'tesouro_pre' | 'lc' | 'cri' | 'cra';
 
 export type TaxaTipo = 'pre_fixado' | 'pos_fixado' | 'hibrido';
 export type Liquidez = 'diaria' | 'no_vencimento';

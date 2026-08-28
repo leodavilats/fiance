@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -65,6 +66,14 @@ export class AuthService {
   private http = inject(HttpClient);
   private base = environment.apiBaseUrl;
 
+  /**
+   * No servidor não há sessão: a renderização é sempre anônima, de propósito.
+   * A página de ativo tem que sair igual para o robô e para quem chega pelo
+   * link — e ler token durante o SSR seria o caminho para servir a carteira de
+   * uma pessoa a outra assim que houvesse cache na frente.
+   */
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
   private readonly _user = signal<AppUser | null>(this._loadUser());
   readonly user = this._user.asReadonly();
 
@@ -89,11 +98,11 @@ export class AuthService {
   }
 
   token(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return this.isBrowser ? localStorage.getItem(TOKEN_KEY) : null;
   }
 
   refreshToken(): string | null {
-    return localStorage.getItem(REFRESH_KEY);
+    return this.isBrowser ? localStorage.getItem(REFRESH_KEY) : null;
   }
 
   /**
@@ -124,6 +133,7 @@ export class AuthService {
   }
 
   private _storeTokens(res: TokenResponse): void {
+    if (!this.isBrowser) return;
     localStorage.setItem(TOKEN_KEY, res.access_token);
     localStorage.setItem(REFRESH_KEY, res.refresh_token);
   }
@@ -141,6 +151,7 @@ export class AuthService {
   }
 
   private _loadUser(): AppUser | null {
+    if (!this.isBrowser) return null;
     const raw = localStorage.getItem(USER_KEY);
     return raw ? (JSON.parse(raw) as AppUser) : null;
   }
@@ -173,7 +184,7 @@ export class AuthService {
       this.http.post<LoginResponse>(`${this.base}/auth/google`, { id_token: idToken })
     );
     this._storeTokens(res);
-    localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+    if (this.isBrowser) localStorage.setItem(USER_KEY, JSON.stringify(res.user));
     this._user.set(res.user);
   }
 
@@ -199,12 +210,14 @@ export class AuthService {
   }
 
   clearSession(): void {
+    this._refreshInFlight = null;
+    if (!this.isBrowser) return;
+
     this._clearScopedData();
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USER_KEY);
     this._user.set(null);
-    this._refreshInFlight = null;
     window.google?.accounts.id.disableAutoSelect();
   }
 

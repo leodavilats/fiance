@@ -165,8 +165,10 @@ export const routes: Routes = [
   },
 
   {
+    // Pública de propósito, e é a única. É o canal de aquisição do produto: o
+    // modelo não comporta mídia paga, então a página de ativo precisa ser
+    // legível por um robô de busca — e robô não faz login.
     path: 'ativo/:ticker',
-    canActivate: [authGuard],
     loadComponent: () => import('./components/ativo/ativo.component').then(m => m.AtivoComponent),
     title: 'Ativo - fiance',
   },

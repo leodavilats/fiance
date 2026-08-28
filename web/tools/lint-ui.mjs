@@ -21,7 +21,6 @@ import { join, relative, resolve } from 'node:path';
 
 const WEB_ROOT = resolve(import.meta.dirname, '..');
 const SRC = join(WEB_ROOT, 'src');
-const MAIN_TS = join(SRC, 'main.ts');
 const DIST = join(WEB_ROOT, 'dist', 'fiance');
 
 /** Classes aplicadas por JS ou por bibliotecas, que não passam pelo scanner. */
@@ -56,20 +55,30 @@ function toPascalCase(name) {
 // 1. Ícones
 // --------------------------------------------------------------------------
 
-function registeredIcons() {
-  const source = readFileSync(MAIN_TS, 'utf8');
-  const pick = source.match(/LucideAngularModule\.pick\(\{([\s\S]*?)\}\)/);
-  if (!pick) {
-    throw new Error('Não encontrei LucideAngularModule.pick({...}) em src/main.ts.');
+/**
+ * O registro é procurado onde ele estiver, e não num caminho fixo: ele já mudou
+ * de `main.ts` para `app.config.ts` quando a renderização no servidor entrou, e
+ * um lint que quebra ao mover arquivo acaba desligado.
+ */
+function registeredIcons(tsFiles) {
+  const names = new Set();
+  let found = false;
+
+  for (const file of tsFiles) {
+    const pick = readFileSync(file, 'utf8').match(/LucideAngularModule\.pick\(\{([\s\S]*?)\}\)/);
+    if (!pick) continue;
+    found = true;
+    for (const raw of pick[1].split(',')) {
+      const name = raw
+        .trim()
+        .replace(/\/\/.*$/, '')
+        .trim();
+      if (name) names.add(name);
+    }
   }
 
-  const names = new Set();
-  for (const raw of pick[1].split(',')) {
-    const name = raw
-      .trim()
-      .replace(/\/\/.*$/, '')
-      .trim();
-    if (name) names.add(name);
+  if (!found) {
+    throw new Error('Não encontrei LucideAngularModule.pick({...}) em nenhum arquivo de src/.');
   }
   return names;
 }
@@ -208,10 +217,11 @@ function report(title, problems, hint) {
 function main() {
   const templates = [...walk(SRC, /\.html$/), ...walk(SRC, /\.ts$/)];
 
-  const registered = registeredIcons();
+  const tsFiles = templates.filter(file => file.endsWith('.ts'));
+  const registered = registeredIcons(tsFiles);
   const missingIcons = usedIcons(templates).filter(use => !registered.has(toPascalCase(use.name)));
 
-  const known = knownClasses(templates.filter(file => file.endsWith('.ts')));
+  const known = knownClasses(tsFiles);
   const missingClasses = usedClasses(templates).filter(use => !known.has(use.name));
 
   const problems =

@@ -19,8 +19,16 @@ class AssetService:
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
 
-    async def analyze_asset(self, symbol: str, *, include_history: bool = True) -> AssetAnalysis:
+    async def analyze_asset(
+        self, symbol: str, *, include_history: bool = True, personalized: bool = True
+    ) -> AssetAnalysis:
         """Análise completa de um ativo.
+
+        `personalized=False` é a análise **impessoal**: sem o yield desejado do
+        usuário, portanto sem tocar em preferência nenhuma. É o que a página
+        pública renderiza no servidor — ela não tem titular, e a mesma URL
+        precisa devolver o mesmo HTML para o robô de busca e para quem chega
+        pelo link.
 
         `include_history` existe para `/compare`: N séries diárias de 2 anos numa
         única resposta são payload puro, e a comparação não desenha gráfico.
@@ -35,7 +43,7 @@ class AssetService:
             self.asset_repo.get_dividends(symbol),
         )
 
-        prefs = self.portfolio_repo.get_preferences()
+        prefs = self.portfolio_repo.get_preferences() if personalized else None
 
         fair = compute_fair_price(
             price=snap.price,

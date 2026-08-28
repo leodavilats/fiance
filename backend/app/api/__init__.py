@@ -24,6 +24,7 @@ from . import (
     portfolio_routes,
     preferences,
     projection,
+    public,
     quick_invest,
     renda_fixa,
     sectors,
@@ -36,6 +37,9 @@ router = APIRouter()
 
 router.include_router(basic.router, tags=["Basic"])
 router.include_router(auth.router, tags=["Auth"])
+# Fora do router protegido de propósito: é a leitura sem titular que o robô
+# de busca precisa ver, e é o único canal de aquisição que o modelo comporta.
+router.include_router(public.router, tags=["Público"])
 
 # `rate_limit` depende de `get_current_user`, então a ordem aqui é só
 # legibilidade: o resolvedor de dependências já garante que a autenticação

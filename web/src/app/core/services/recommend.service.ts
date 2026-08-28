@@ -51,14 +51,26 @@ import {
   DerivationResponse,
   ReconciliationResponse,
 } from '../models';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class RecommendService {
   private http = inject(HttpClient);
+  private auth = inject(AuthService);
   private base = environment.apiBaseUrl;
 
+  /**
+   * A análise de um ativo, personalizada quando há sessão e impessoal quando
+   * não há.
+   *
+   * A escolha mora aqui e não no componente porque é a mesma tela nos dois
+   * casos: quem chega pela busca do Google vê a página pública, e quem entra
+   * depois vê a mesma página com o preço justo ajustado ao yield que declarou.
+   * Espalhar essa decisão pelos componentes seria criar duas telas de ativo.
+   */
   analyzeAsset(symbol: string): Observable<AssetAnalysis> {
-    return this.http.get<AssetAnalysis>(`${this.base}/asset/${encodeURIComponent(symbol)}`);
+    const path = this.auth.isAuthenticated() ? 'asset' : 'public/asset';
+    return this.http.get<AssetAnalysis>(`${this.base}/${path}/${encodeURIComponent(symbol)}`);
   }
 
   dipAnalysis(symbol: string): Observable<DipAnalysisResponse> {

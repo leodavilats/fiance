@@ -115,9 +115,10 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8000/api  # iOS simulato
 ### Build de Produção
 
 ```bash
-# Web
+# Web — o build gera navegador **e** servidor de renderização
 cd web
-npm run build   # saída em dist/
+npm run build                        # dist/fiance/browser + dist/fiance/server
+node dist/fiance/server/server.mjs   # sobe o servidor (porta 4000 por padrão)
 
 # Backend — Railway usa o Procfile (uvicorn) automaticamente.
 # Root Directory do serviço no Railway deve ser "backend".
@@ -131,6 +132,28 @@ flutter build appbundle --release
 ```
 
 Por padrão, o app mobile aponta para o backend em produção (`https://fiance.up.railway.app/api`), configurado em `mobile/lib/core/api_client.dart`.
+
+## Renderização no servidor
+
+A rota `/ativo/:ticker` é renderizada no servidor; todo o resto continua no
+cliente. Não é refinamento técnico: é o canal de aquisição do produto — página
+renderizada no cliente é invisível para busca, e o modelo de receita não
+comporta mídia paga para compensar. A fronteira está declarada em
+`web/src/app/app.routes.server.ts` e tem teste.
+
+O servidor também serve `/sitemap.xml` (montado a partir de
+`GET /api/public/universe`, com cache de 6h) e `/robots.txt`.
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| `PORT` | Não | Porta do servidor de renderização (padrão: `4000`) |
+| `ALLOWED_HOSTS` | **Em produção** | Hosts aceitos no cabeçalho `Host`, separados por vírgula. O Angular recusa host desconhecido para não virar proxy de SSRF; sem configurar, só `localhost` e `127.0.0.1` respondem. |
+| `SITE_URL` | Sim | Base pública, usada nas URLs absolutas do sitemap (padrão: `https://fiance.app`) |
+
+O backend expõe a leitura **sem titular** em `/api/public/asset/{ticker}` e
+`/api/public/universe` — impessoal de propósito, para que a mesma URL devolva o
+mesmo conteúdo ao robô e a quem chega pelo link. O teto de abuso dessas rotas é
+por IP, não por usuário.
 
 ## Documentação da API
 
@@ -213,7 +236,9 @@ ruff check --fix .
 
 # Web
 npm start           # servidor dev
-npm run build       # build de produção
+npm run build       # build de produção (navegador + servidor)
+npm test            # testes (Vitest)
+npm run lint:ui     # ícone não registrado e classe CSS inexistente
 npm run format      # formatar código com Prettier
 npm run format:check # verificar formatação
 

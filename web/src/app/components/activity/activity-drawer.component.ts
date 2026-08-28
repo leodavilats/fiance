@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import {
   AfterViewInit,
   Component,
@@ -75,11 +75,15 @@ import { ActivityFeedComponent } from './activity-feed.component';
 export class ActivityDrawerComponent implements AfterViewInit, OnDestroy {
   readonly activity = inject(ActivityService);
 
+  // `DOCUMENT` e não o global: no servidor o global não existe, e o drawer é
+  // construído junto com o resto do shell na página pública de ativo.
+  private readonly doc = inject(DOCUMENT);
+
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private openedFrom: HTMLElement | null = null;
 
   ngAfterViewInit(): void {
-    this.openedFrom = document.activeElement as HTMLElement | null;
+    this.openedFrom = this.doc.activeElement as HTMLElement | null;
     this.panel()?.nativeElement.focus();
   }
 

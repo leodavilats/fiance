@@ -13,14 +13,7 @@ import { Component, computed, input } from '@angular/core';
  * Respeita `prefers-reduced-motion`: sem pulso, só a superfície.
  */
 export type SkeletonShape =
-  | 'money-xl'
-  | 'verdict'
-  | 'metric'
-  | 'title'
-  | 'body'
-  | 'caption'
-  | 'ruler'
-  | 'row';
+  'money-xl' | 'verdict' | 'metric' | 'title' | 'body' | 'caption' | 'ruler' | 'row';
 
 @Component({
   selector: 'app-skeleton',

@@ -1,11 +1,5 @@
 export type WhatsNewKind =
-  | 'patrimony'
-  | 'verdict_change'
-  | 'allocation'
-  | 'maturity'
-  | 'new_opportunity'
-  | 'tax'
-  | 'empty';
+  'patrimony' | 'verdict_change' | 'allocation' | 'maturity' | 'new_opportunity' | 'tax' | 'empty';
 
 export type WhatsNewSeverity = 'info' | 'warning' | 'critical' | 'positive';
 

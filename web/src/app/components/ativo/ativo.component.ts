@@ -1,13 +1,15 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Meta, Title } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AssetAnalysis,
   AssetType,
+  AuthService,
   CarteiraStore,
   FiState,
   LoadingService,
@@ -66,6 +68,13 @@ export class AtivoComponent implements OnInit, OnDestroy {
   readonly ui = inject(UiHelperService);
   readonly loading = inject(LoadingService);
   private readonly carteira = inject(CarteiraStore);
+  private readonly auth = inject(AuthService);
+  private readonly title = inject(Title);
+  private readonly meta = inject(Meta);
+  private readonly doc = inject(DOCUMENT);
+
+  /** Se há sessão, a página é a do usuário; se não, é a página pública. */
+  readonly isAnonymous = computed(() => !this.auth.isAuthenticated());
 
   private readonly destroy$ = new Subject<void>();
   private readonly search$ = new Subject<string>();
@@ -93,7 +102,9 @@ export class AtivoComponent implements OnInit, OnDestroy {
       const symbol = ticker.toUpperCase();
       this.searchForm.controls.symbol.setValue(symbol);
       this.fetch(symbol);
-      this.carteira.ensureLoaded();
+      // Visitante anônimo não tem carteira para carregar, e pedir a dele seria
+      // uma sequência de 401 na página que serve justamente para convertê-lo.
+      if (this.auth.isAuthenticated()) this.carteira.ensureLoaded();
     });
 
     this.search$
@@ -106,6 +117,55 @@ export class AtivoComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe(items => this.suggestions.set(items));
+  }
+
+  /**
+   * Título e descrição por ticker.
+   *
+   * É o que separa "uma página indexada" de "seiscentas páginas iguais": sem
+   * conteúdo próprio por ticker, a busca trata o conjunto como duplicado e não
+   * indexa nenhuma. O veredito e o preço justo entram no resumo porque são a
+   * resposta que a pessoa foi procurar.
+   */
+  private describePage(asset: AssetAnalysis): void {
+    const nome = asset.name ? `${asset.name} (${asset.symbol})` : asset.symbol;
+    this.title.setTitle(`${nome} — preço justo, valuation e score | fiance`);
+
+    const justo = asset.fair_price?.consensus;
+    const trecho = justo
+      ? `Preço justo estimado de R$ ${justo.toFixed(2)} contra R$ ${(asset.price ?? 0).toFixed(2)} de mercado.`
+      : 'Valuation por múltiplos métodos, com a metodologia à vista.';
+
+    const descricao =
+      `${nome}: ${asset.decision.label.toLowerCase()}. ${trecho} ` +
+      `Score, margem de segurança e histórico de proventos, com o cálculo explicado.`;
+
+    this.meta.updateTag({ name: 'description', content: descricao });
+    this.meta.updateTag({ property: 'og:title', content: `${nome} | fiance` });
+    this.meta.updateTag({ property: 'og:description', content: descricao });
+    this.meta.updateTag({ property: 'og:type', content: 'article' });
+    // Sem canônica, a mesma análise sob /ativo/PETR4 e /ativo/petr4 vira
+    // conteúdo duplicado e as duas perdem posição.
+    this.setCanonical(`/ativo/${asset.symbol}`);
+  }
+
+  /**
+   * Canônica é `<link>`, não `<meta>` — o `Meta` do Angular só gerencia meta
+   * tags, e pedir a ele um rel=canonical produz uma tag que nenhum buscador lê.
+   *
+   * Sem ela, `/ativo/PETR4` e `/ativo/petr4` viram conteúdo duplicado e as duas
+   * perdem posição.
+   */
+  private setCanonical(href: string): void {
+    const existing = this.doc.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (existing) {
+      existing.href = href;
+      return;
+    }
+    const link = this.doc.createElement('link');
+    link.rel = 'canonical';
+    link.href = href;
+    this.doc.head.appendChild(link);
   }
 
   ngOnDestroy(): void {
@@ -121,6 +181,7 @@ export class AtivoComponent implements OnInit, OnDestroy {
       next: res => {
         this.analysis.set(res);
         this.fetching.set(false);
+        this.describePage(res);
       },
       error: err => {
         this.analysis.set(null);
