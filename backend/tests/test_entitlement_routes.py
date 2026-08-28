@@ -16,7 +16,7 @@ from tests.conftest import make_auth_headers
 
 ROTAS_PREMIUM = [
     ("get", "/api/strategy", None),
-    ("post", "/api/quick-invest", {"amount": 1000}),
+    ("post", "/api/quick-invest", {"cash_available": 1000}),
     ("post", "/api/projection/passive-income", {"monthly_contribution": 500}),
     ("get", "/api/income-compare", None),
 ]

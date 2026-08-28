@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 
+from app import affirmation
 from app.entitlement import Feature, requires
 from app.models import PortfolioItem
 from app.repositories import PortfolioRepository
@@ -50,20 +51,21 @@ async def get_investment_strategy(cash_available: float = 0.0) -> dict:
             "total_pnl_pct": eval_resp.total_pnl_pct,
         }
 
-    return strategy_service.generate_strategy(
+    plano = strategy_service.generate_strategy(
         cash_available=cash,
         current_portfolio=current_portfolio,
         goals=goals,
         opportunities=opps_resp.items,
         portfolio_evaluation=portfolio_evaluation,
     )
+    return affirmation.apply(plano)
 
 
 @router.get("/rebalance-suggestions", dependencies=[Depends(requires(Feature.STRATEGY, cost=0))])
 async def get_rebalance_suggestions() -> dict:
     stored = portfolio_repo.list_positions()
     if not stored:
-        return {"allocation_gaps": [], "items": [], "tax_disclaimer": None}
+        return affirmation.apply({"allocation_gaps": [], "items": [], "tax_disclaimer": None})
 
     current_portfolio = [
         PortfolioItem(
@@ -90,10 +92,11 @@ async def get_rebalance_suggestions() -> dict:
     eval_resp = await portfolio_service.evaluate_stored_for_current_user()
     portfolio_evaluation = {"positions": [p.model_dump() for p in eval_resp.positions]}
 
-    return strategy_service.generate_rebalance_suggestions(
+    sugestoes = strategy_service.generate_rebalance_suggestions(
         current_portfolio=current_portfolio,
         goals=goals,
         opportunities=opps_resp.items,
         portfolio_evaluation=portfolio_evaluation,
         excluded_tickers=excluded_tickers,
     )
+    return affirmation.apply(sugestoes)

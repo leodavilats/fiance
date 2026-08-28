@@ -43,6 +43,18 @@ class Settings(BaseSettings):
     # ser descoberto durante o lançamento.
     entitlements_enabled: bool = False
 
+    # Modo de afirmação: 1 descritivo, 2 analítico (padrão), 3 prescritivo.
+    # Existe para que a resposta da consulta jurídica sobre CVM 19/20 seja
+    # configuração, e não um refactor sob pressão. Valor fora da faixa cai no
+    # analítico — variável digitada errada não pode ligar o modo mais
+    # comprometido.
+    affirmation_level: int = 2
+
+    # Instrução individualizada por perfil de investidor é o que a norma trata
+    # como consultoria. Enquanto não houver parecer, nível 3 e personalização
+    # por suitability não andam juntos.
+    suitability_personalization_allowed: bool = False
+
     brapi_token: str = ""
 
     brapi_history_range: str = "3mo"
