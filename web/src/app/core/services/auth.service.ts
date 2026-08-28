@@ -41,6 +41,7 @@ interface LoginResponse extends TokenResponse {
 
 const TOKEN_KEY = 'fiance_access_token';
 const REFRESH_KEY = 'fiance_refresh_token';
+const REFERRAL_KEY = 'fiance_referral';
 const USER_KEY = 'fiance_user';
 
 const SCOPED_KEY_PREFIXES = ['portfolio_renda_fixa'];
@@ -179,10 +180,43 @@ export class AuthService {
     });
   }
 
+  /**
+   * O código de indicação da URL, se houver.
+   *
+   * Fica em `sessionStorage` entre o clique no link e o fim do login com o
+   * Google, que sai do site e volta: guardar em memória perderia o código
+   * exatamente no caminho em que ele é usado. É o único uso de armazenamento
+   * aqui, e ele se apaga sozinho ao fechar a aba.
+   */
+  private _pendingReferral(): string | null {
+    if (!this.isBrowser) return null;
+    try {
+      const daUrl = new URLSearchParams(location.search).get('indicacao');
+      if (daUrl) sessionStorage.setItem(REFERRAL_KEY, daUrl);
+      return sessionStorage.getItem(REFERRAL_KEY);
+    } catch {
+      return null;
+    }
+  }
+
   private async _handleCredential(idToken: string): Promise<void> {
+    const indicacao = this._pendingReferral();
     const res = await firstValueFrom(
-      this.http.post<LoginResponse>(`${this.base}/auth/google`, { id_token: idToken })
+      this.http.post<LoginResponse>(`${this.base}/auth/google`, {
+        id_token: idToken,
+        // O servidor recusa em silêncio quando o código não vale ou a conta já
+        // tem carteira. Um código ruim nunca derruba o login.
+        ...(indicacao ? { referral_code: indicacao } : {}),
+      })
     );
+    if (this.isBrowser) {
+      try {
+        sessionStorage.removeItem(REFERRAL_KEY);
+      } catch {
+        // Sem armazenamento a atribuição simplesmente não acontece — é um
+        // brinde, não parte do login.
+      }
+    }
     this._storeTokens(res);
     if (this.isBrowser) localStorage.setItem(USER_KEY, JSON.stringify(res.user));
     this._user.set(res.user);

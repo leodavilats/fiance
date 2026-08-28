@@ -1,0 +1,71 @@
+<div class="space-y-6 max-w-reading">
+  <div>
+    <h2 class="text-xl font-bold m-0 mb-1 text-ink">Indicação</h2>
+    <p class="fi-body text-ink-2 mt-1 mb-0">
+      Quem entra pelo seu link ganha
+      {{ referral.status()?.reward_days ?? 30 }} dias de Premium — e você também, quando essa pessoa
+      salvar a primeira posição.
+    </p>
+  </div>
+
+  @if (referral.status(); as r) {
+    <section class="p-4 rounded-lg bg-ground-1 border border-hairline">
+      <div class="text-xs text-ink-2 mb-1">Seu link</div>
+      <div class="flex flex-wrap items-center gap-2">
+        <code class="fi-body text-ink break-all">{{ link(r.code) }}</code>
+        <button
+          type="button"
+          (click)="copiar(r.code)"
+          class="px-3 py-1.5 rounded-lg text-sm cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 transition-opacity"
+        >
+          {{ copiado() ? 'Copiado' : 'Copiar' }}
+        </button>
+      </div>
+      <p class="text-xs text-ink-2 mt-2 mb-0">
+        O código é <strong>{{ r.code }}</strong> — dá para ditar por telefone.
+      </p>
+    </section>
+
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="p-3 rounded-lg bg-ground-1 border border-hairline">
+        <div class="text-xs text-ink-2 mb-0.5">Chegaram pelo seu link</div>
+        <div class="fi-title text-ink">{{ r.attributed }}</div>
+      </div>
+      <div class="p-3 rounded-lg bg-ground-1 border border-hairline">
+        <div class="text-xs text-ink-2 mb-0.5">Já montaram carteira</div>
+        <div class="fi-title text-ink">{{ r.qualified }}</div>
+      </div>
+      <div class="p-3 rounded-lg bg-ground-1 border border-hairline">
+        <div class="text-xs text-ink-2 mb-0.5">Dias de Premium ganhos</div>
+        <div class="fi-title text-ink">{{ r.days_earned }}</div>
+      </div>
+    </section>
+
+    @if (r.pending > 0) {
+      <!-- A diferença entre as duas contagens é a informação útil, e é dita
+           sem nomes: quem clicou não escolheu aparecer numa tela de outra
+           pessoa. -->
+      <p class="fi-body text-ink-2 m-0">
+        {{ r.pending }}
+        {{ r.pending === 1 ? 'pessoa entrou' : 'pessoas entraram' }} pelo seu link mas ainda não
+        montaram carteira. O crédito sai quando elas salvarem a primeira posição.
+      </p>
+    }
+
+    <section class="pt-4 border-t border-hairline">
+      <p class="text-xs text-ink-2 m-0 mb-2">
+        O crédito é de {{ r.reward_days }} dias por indicação, até {{ r.max_credited_days }} dias
+        acumulados. Trocar o link não afeta as indicações que já contaram.
+      </p>
+      <button
+        type="button"
+        (click)="referral.rotate()"
+        class="px-3 py-1.5 rounded-lg text-sm cursor-pointer bg-ground-2 text-ink border border-hairline hover:opacity-90 transition-opacity"
+      >
+        Gerar outro link
+      </button>
+    </section>
+  } @else {
+    <p class="fi-body text-ink-2">Carregando seu link…</p>
+  }
+</div>

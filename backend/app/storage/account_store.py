@@ -27,6 +27,8 @@ from app.models.db_models import (
     PreferencesDb,
     PriceAlertDb,
     ProductEventDb,
+    ReferralCodeDb,
+    ReferralDb,
     RevokedTokenDb,
     SectorGoalDb,
     SubscriptionDb,
@@ -61,6 +63,11 @@ USER_SCOPED_MODELS = (
     ("usage_counters", UsageCounterDb),
     ("product_events", ProductEventDb),
     ("revoked_tokens", RevokedTokenDb),
+    ("referral_code", ReferralCodeDb),
+    # As indicações **feitas** pela pessoa. As recebidas ficam de fora: a linha
+    # é do titular que indicou, e apagá-la junto com a conta indicada tiraria de
+    # outra pessoa um crédito que ela já ganhou.
+    ("referrals_made", ReferralDb),
 )
 
 # Tabelas sem `user_id` — não pertencem a ninguém e por isso não entram nem na

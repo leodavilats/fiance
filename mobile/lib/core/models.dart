@@ -1363,3 +1363,37 @@ class QuickInvestResult {
         summary: j['summary'] as String? ?? '',
       );
 }
+
+/// O que a pessoa vê do programa de indicação.
+///
+/// Sem a lista de quem foi indicado, de propósito: quem clicou no link de
+/// alguém não escolheu aparecer numa tela dessa pessoa. As contagens bastam.
+class ReferralStatus {
+  ReferralStatus({
+    required this.code,
+    required this.rewardDays,
+    required this.maxCreditedDays,
+    required this.attributed,
+    required this.qualified,
+    required this.pending,
+    required this.daysEarned,
+  });
+
+  final String code;
+  final int rewardDays;
+  final int maxCreditedDays;
+  final int attributed;
+  final int qualified;
+  final int pending;
+  final int daysEarned;
+
+  factory ReferralStatus.fromJson(Map<String, dynamic> j) => ReferralStatus(
+    code: j['code'] as String,
+    rewardDays: (j['reward_days'] as num?)?.toInt() ?? 0,
+    maxCreditedDays: (j['max_credited_days'] as num?)?.toInt() ?? 0,
+    attributed: (j['attributed'] as num?)?.toInt() ?? 0,
+    qualified: (j['qualified'] as num?)?.toInt() ?? 0,
+    pending: (j['pending'] as num?)?.toInt() ?? 0,
+    daysEarned: (j['days_earned'] as num?)?.toInt() ?? 0,
+  );
+}

@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -16,12 +18,17 @@ from app.core.auth import (
 )
 from app.core.database import SessionLocal
 from app.models.db_models import User
+from app.services import referral_service
+
+logger = logging.getLogger("fiance.auth")
 
 router = APIRouter()
 
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
+    #: Código de indicação, quando a pessoa chegou por um link.
+    referral_code: str | None = None
 
 
 class RefreshRequest(BaseModel):
@@ -52,6 +59,17 @@ class TokenResponse(BaseModel):
 async def login_with_google(body: GoogleLoginRequest) -> LoginResponse:
     google_user = verify_google_id_token(body.id_token)
     user = upsert_user_from_google(google_user)
+
+    if body.referral_code:
+        # Atribuição só acontece aqui, e o serviço recusa quem já tem carteira.
+        # Uma recusa **não** derruba o login: quem digitou um código errado ou
+        # já usado ainda assim quer entrar, e trocar isso por um 4xx faria a
+        # pessoa perder a conta por causa de um brinde.
+        try:
+            referral_service.attribute(user.id, body.referral_code)
+        except referral_service.ReferralError as erro:
+            logger.info("Indicação recusada para %s: %s", user.id, erro)
+
     return LoginResponse(
         access_token=issue_access_token(user.id),
         refresh_token=issue_refresh_token(user.id),

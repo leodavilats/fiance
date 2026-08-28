@@ -36,6 +36,7 @@ ACCOUNT_EXPORT = "account.export"
 SUBSCRIPTION_TRIAL = "subscription.trial"
 SUBSCRIPTION_GRANT = "subscription.grant"
 SUBSCRIPTION_CANCEL = "subscription.cancel"
+REFERRAL_REWARD = "referral.reward"
 ACCOUNT_DELETE = "account.delete"
 
 

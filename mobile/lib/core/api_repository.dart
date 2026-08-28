@@ -88,13 +88,14 @@ class ApiRepository {
     await _dio.delete('/portfolio/position/$ticker');
   }
 
-
   Future<FixedIncomeList> getFixedIncome() async {
     final res = await _dio.get('/fixed-income');
     return FixedIncomeList.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<FixedIncomePosition> createFixedIncome(Map<String, dynamic> payload) async {
+  Future<FixedIncomePosition> createFixedIncome(
+    Map<String, dynamic> payload,
+  ) async {
     final res = await _dio.post('/fixed-income', data: payload);
     return FixedIncomePosition.fromJson(res.data as Map<String, dynamic>);
   }
@@ -111,7 +112,10 @@ class ApiRepository {
     await _dio.delete('/fixed-income/$id');
   }
 
-  Future<List<TickerSuggestion>> searchTickers(String query, {int limit = 8}) async {
+  Future<List<TickerSuggestion>> searchTickers(
+    String query, {
+    int limit = 8,
+  }) async {
     if (query.trim().isEmpty) return [];
     final res = await _dio.get(
       '/universe/search',
@@ -362,5 +366,15 @@ class ApiRepository {
       },
     );
     return PassiveIncomeProjection.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<ReferralStatus> referralStatus() async {
+    final res = await _dio.get('/referral');
+    return ReferralStatus.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<String> rotateReferralCode() async {
+    final res = await _dio.post('/referral/rotate');
+    return (res.data as Map<String, dynamic>)['code'] as String;
   }
 }

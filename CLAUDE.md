@@ -51,6 +51,13 @@ Setup/instalação/variáveis de ambiente: ver [README.md](README.md) (já atual
 - **Proventos por calendário são sugestão, nunca lançamento** (`/dividends/pending`). Toda ressalva ali erra o valor para mais (data-com que a fonte não publica, razão incompleto, JCP bruto), então nada vem pré-selecionado e não existe "aceitar todos". A quantidade na data vem da projeção do razão.
 - **Cerca de plano mora só em `backend/app/entitlement/`** e entra desligada (`ENTITLEMENTS_ENABLED=false`, o padrão: todo mundo tem tudo). A régua é dado em `plans.py`, com a justificativa de cada linha; aplicar é `Depends(requires(Feature.X))`; bloqueio é 402 com corpo que a UI usa para montar o gate. Dois testes de arquitetura travam isso: nenhuma condicional de plano fora do módulo, e `analysis`/`optimizer`/`collectors`/`ledger` não importam nada dele — se o cálculo souber quem paga, a independência do algoritmo vira promessa. Ativo da própria carteira **nunca** consome cota, e a rota pública também não.
 - **Assinatura carrega o próprio preço** (`price_cents`, `locked`): preço travado de fundador é promessa pública, então é dado e não memória — reajustar a tabela não pode alcançar quem contratou antes. Webhook é idempotente por `processed_webhooks`; o provedor reenvia até receber 200. O trial de 14 dias começa na **primeira posição salva**, não no cadastro.
+- **Indicação credita na qualificação, nunca no cadastro** (`services/referral_service.py`).
+  Conta é grátis de fabricar aos milhares; carteira não é — creditar no cadastro faria do
+  programa uma máquina de imprimir Premium. O gatilho é o mesmo marco do trial. A atribuição
+  acontece **só no login** (`referral_code` em `/auth/google`) e é recusada para quem já tem
+  carteira, já foi atribuído, ou usou o próprio código; recusa não derruba o login. Crédito é
+  `subscriptions.credited_until`, separado de `trial_ends_at` para não reabrir trial gasto, com
+  teto declarado. A rota nunca devolve quem foi indicado.
 - **O modo de afirmação é configuração, não código** (backend/app/affirmation.py, AFFIRMATION_LEVEL). Três níveis: descritivo, analítico (padrão) e prescritivo. A diferença é **estrutural** — o que sai fora do nível 3 é o valor por ativo, que é o que instrui; a análise que o sustentava fica. Existe para que a resposta sobre CVM 19/20 seja uma variável, e não um refactor sob pressão. Nível 3 e personalização por perfil não andam juntos sem parecer.
 - **Veredito vem com o que o derrubaria.** `analysis/falsifiers.py` lê a mesma régua ao
   contrário: os limiares de margem de segurança dão, por álgebra, o preço em que o veredito

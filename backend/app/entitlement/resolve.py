@@ -48,6 +48,8 @@ class Entitlements:
     unrestricted: bool = False
     trial_ends_at: float | None = None
     in_trial: bool = False
+    #: Fim do Premium concedido sem pagamento (crédito de indicação).
+    credited_until: float | None = None
     price_cents: int = 0
     locked_price: bool = False
     features: dict[str, bool] = field(default_factory=dict)
@@ -66,6 +68,7 @@ class Entitlements:
             "in_trial": self.in_trial,
             "trial_ends_at": self.trial_ends_at,
             "trial_days_left": self.days_left_in_trial,
+            "credited_until": self.credited_until,
             "price_cents": self.price_cents,
             "locked_price": self.locked_price,
             "features": dict(self.features),
@@ -84,6 +87,7 @@ class _Snapshot:
 
     status: str
     trial_ends_at: float | None
+    credited_until: float | None
     current_period_end: float | None
     price_cents: int
     locked: bool
@@ -97,6 +101,7 @@ def _subscription(user_id: str) -> _Snapshot | None:
         return _Snapshot(
             status=row.status,
             trial_ends_at=row.trial_ends_at,
+            credited_until=row.credited_until,
             current_period_end=row.current_period_end,
             price_cents=row.price_cents,
             locked=bool(row.locked),
@@ -122,11 +127,13 @@ def resolve(user_id: str, now: float | None = None) -> Entitlements:
     plan = Plan.FREE
     in_trial = False
     trial_ends_at = None
+    credited_until = None
     price_cents = 0
     locked = False
 
     if row is not None:
         trial_ends_at = row.trial_ends_at
+        credited_until = row.credited_until
         price_cents = row.price_cents
         locked = row.locked
 
@@ -139,7 +146,12 @@ def resolve(user_id: str, now: float | None = None) -> Entitlements:
             row.current_period_end is None or moment < row.current_period_end
         )
 
-        if assinatura_vale or in_trial:
+        # Crédito de indicação concede como assinatura concede. Fica separado
+        # do trial porque são coisas diferentes: o trial é uma vez na vida e o
+        # crédito acumula — somá-los reabriria o trial de quem já o gastou.
+        com_credito = row.credited_until is not None and moment < row.credited_until
+
+        if assinatura_vale or in_trial or com_credito:
             plan = Plan.PREMIUM
 
     features = {f.value: allows(f, plan) for f in Feature}
@@ -149,6 +161,7 @@ def resolve(user_id: str, now: float | None = None) -> Entitlements:
         plan=plan,
         trial_ends_at=trial_ends_at,
         in_trial=in_trial,
+        credited_until=credited_until,
         price_cents=price_cents,
         locked_price=locked,
         features=features,

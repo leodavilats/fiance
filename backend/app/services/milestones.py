@@ -46,9 +46,13 @@ def record_portfolio_milestones(position_count: int, user_id: str | None = None)
                 # O trial começa aqui, e não no cadastro: trial que expira
                 # antes de a pessoa ter uma carteira para analisar é trial
                 # desperdiçado — ela nunca chega a ver o que estaria comprando.
-                from app.services import subscription_service
+                from app.services import referral_service, subscription_service
 
                 subscription_service.start_trial(uid)
+                # A indicação vira crédito **aqui**, e não no cadastro: conta
+                # é grátis de fabricar aos milhares, carteira não é. Sair no
+                # cadastro faria do programa uma máquina de imprimir Premium.
+                referral_service.qualify(uid)
 
         if position_count >= READABLE_PORTFOLIO_SIZE:
             _record_once(uid, "portfolio_reached_4_assets")

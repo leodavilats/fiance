@@ -16,6 +16,7 @@ export class VoceComponent {
   readonly items: readonly SectionNavItem[] = [
     { path: '/voce/preferencias', label: 'Preferências', icon: 'sliders-horizontal' },
     { path: '/voce/alertas', label: 'Alertas', icon: 'bell' },
+    { path: '/voce/indicacao', label: 'Indicação', icon: 'gift' },
     { path: '/voce/conta', label: 'Conta e dados', icon: 'shield-check' },
   ];
 }

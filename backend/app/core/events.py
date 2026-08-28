@@ -86,6 +86,11 @@ _SPECS: tuple[EventSpec, ...] = (
     EventSpec("subscription_started", QUESTION_PAY, "Assinatura ativa (props: plan, channel)."),
     EventSpec("subscription_cancelled", QUESTION_PAY, "Cancelamento (prop: reason)."),
     EventSpec("refund_requested", QUESTION_PAY, "Reembolso pedido (prop: reason)."),
+    # Indicação: o único canal de aquisição que cabe na aritmética deste
+    # produto. As duas etapas são separadas porque a distância entre elas é a
+    # medida que importa — atribuir é barato, qualificar é que custa.
+    EventSpec("referral_attributed", QUESTION_PAY, "Conta chegou por um código de indicação."),
+    EventSpec("referral_qualified", QUESTION_PAY, "Indicação virou crédito (1ª posição salva)."),
 )
 
 CATALOG: dict[str, EventSpec] = {spec.name: spec for spec in _SPECS}

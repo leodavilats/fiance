@@ -389,6 +389,13 @@ class SubscriptionDb(Base):
     locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     granted_at: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    #: Premium concedido sem pagamento — hoje, crédito de indicação. Fica
+    #: separado de `trial_ends_at` porque são coisas diferentes: o trial é
+    #: uma vez na vida e o crédito acumula. Misturá-los faria uma indicação
+    #: reabrir o trial de quem já o gastou.
+    credited_until: Mapped[float | None] = mapped_column(Float, nullable=True)
+    credited_days_total: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     trial_started_at: Mapped[float | None] = mapped_column(Float, nullable=True)
     trial_ends_at: Mapped[float | None] = mapped_column(Float, nullable=True)
     current_period_end: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -415,3 +422,44 @@ class ProcessedWebhookDb(Base):
     event_id: Mapped[str] = mapped_column(String, primary_key=True)
     processed_at: Mapped[float] = mapped_column(Float)
     summary: Mapped[str] = mapped_column(String, default="")
+
+
+class ReferralCodeDb(Base):
+    """O código que a pessoa compartilha.
+
+    Tabela própria e não coluna em `users` porque o código é **rotacionável**:
+    quem publicou o link num grupo que virou spam precisa poder queimar o
+    antigo sem perder a conta.
+    """
+
+    __tablename__ = "referral_codes"
+
+    user_id: Mapped[str] = mapped_column(String, primary_key=True)
+    code: Mapped[str] = mapped_column(String, unique=True, index=True)
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+
+class ReferralDb(Base):
+    """Uma indicação atribuída, e o que ela rendeu.
+
+    `user_id` é quem **indicou** — é dele a recompensa, e é por isso que a
+    tabela pertence a ele na exportação. `referred_user_id` é único: uma pessoa
+    é atribuída no máximo uma vez na vida, senão a mesma conta renderia crédito
+    a cada amigo que reivindicasse.
+
+    `qualified_at` é o que separa esta tabela de uma máquina de imprimir
+    Premium. O crédito não sai no cadastro: sai quando a pessoa indicada salva
+    a primeira posição. Cadastro é grátis de fazer aos milhares; carteira, não.
+    """
+
+    __tablename__ = "referrals"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String, index=True)
+    referred_user_id: Mapped[str] = mapped_column(String, unique=True, index=True)
+    code: Mapped[str] = mapped_column(String, index=True)
+
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+    qualified_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+    rewarded_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reward_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

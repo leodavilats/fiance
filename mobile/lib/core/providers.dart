@@ -45,6 +45,10 @@ final authStatusProvider = FutureProvider<AppUser?>((ref) async {
   }
 });
 
+final referralProvider = FutureProvider.autoDispose<ReferralStatus>((ref) {
+  return ref.watch(apiRepositoryProvider).referralStatus();
+});
+
 final dashboardProvider = FutureProvider.autoDispose<DashboardData>((ref) {
   return ref.watch(apiRepositoryProvider).getDashboard();
 });

@@ -223,6 +223,35 @@ Para ligar a Stripe de verdade:
 4. Testar de ponta a ponta com chave de teste — **isto não é verificável na
    suíte**, porque depende de infraestrutura externa.
 
+## Indicação
+
+Mídia paga está fora de alcance por aritmética: R$ 500 a R$ 1.500 por
+instalação qualificada em finanças no Brasil, contra um teto de CAC de R$ 72. O
+canal que sobra é alguém contando para alguém, e o programa existe para tornar
+isso um pouco mais provável — não para comprar cadastro.
+
+A regra que importa é **quando** o crédito sai, não quanto ele vale. Conta é
+grátis de fabricar aos milhares; carteira, não. Por isso o crédito só aparece
+quando a pessoa indicada salva a primeira posição — o mesmo marco que dispara o
+trial.
+
+| Rota | O que faz |
+| --- | --- |
+| `GET /referral` | Código, contagens e crédito. Nunca a lista de quem foi indicado. |
+| `POST /referral/rotate` | Queima o código atual. Indicações já atribuídas seguem valendo. |
+| `POST /auth/google` | Aceita `referral_code`. É o **único** ponto de atribuição. |
+
+São 30 dias por indicação qualificada, para os dois lados, com teto de 365 dias
+acumulados por pessoa. Crédito sem teto é passivo sem teto, e quem traz duzentas
+pessoas precisa de uma conversa de parceria, não de dezesseis anos de Premium.
+
+Não existe rota para aplicar um código depois. Ela seria a porta de entrada para
+reivindicar usuários que já estavam no produto — crédito por uma aquisição que
+não aconteceu. Pelo mesmo motivo a atribuição é recusada quando a conta já tem
+carteira, quando já foi atribuída antes, e quando o código é da própria pessoa.
+Uma recusa **não** derruba o login: quem digitou um código errado ainda assim
+quer entrar.
+
 ## Documentação da API
 
 Com o backend rodando, acesse a documentação interativa:

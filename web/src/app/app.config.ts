@@ -30,8 +30,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   ChevronsUpDown,
+  ChevronUp,
   Circle,
   CircleAlert,
   CircleArrowDown,
@@ -57,6 +57,7 @@ import {
   FileUp,
   Flag,
   Gem,
+  Gift,
   GitCompare,
   Globe,
   HandCoins,
@@ -131,6 +132,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([httpErrorInterceptor, authInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({
+        Gift,
         ArrowDown,
         ArrowDownRight,
         ArrowLeft,

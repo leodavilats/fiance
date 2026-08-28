@@ -30,6 +30,7 @@ from . import (
     projection,
     public,
     quick_invest,
+    referral,
     renda_fixa,
     sectors,
     strategy,
@@ -62,6 +63,7 @@ protected.include_router(data_quality.router, tags=["Maintenance"])
 protected.include_router(account.router, tags=["Account"])
 protected.include_router(entitlements.router, tags=["Entitlement"])
 protected.include_router(billing.router, tags=["Cobrança"])
+protected.include_router(referral.router, tags=["Indicação"])
 protected.include_router(
     billing.admin_router, tags=["Cobrança"], dependencies=[Depends(require_admin)]
 )

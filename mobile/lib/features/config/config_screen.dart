@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -58,6 +59,7 @@ class ConfigScreen extends ConsumerWidget {
               ),
             ],
           ),
+          const _ReferralCard(),
           _SettingsCard(
             icon: Icons.palette_outlined,
             title: 'Aparência',
@@ -82,7 +84,10 @@ class ConfigScreen extends ConsumerWidget {
             ),
             error: (err, _) => Padding(
               padding: const EdgeInsets.all(16),
-              child: FiErrorState(error: err, action: 'carregar suas preferências'),
+              child: FiErrorState(
+                error: err,
+                action: 'carregar suas preferências',
+              ),
             ),
             data: (prefs) => Column(
               children: [
@@ -143,7 +148,9 @@ class ConfigScreen extends ConsumerWidget {
                         Icons.notifications_active_outlined,
                       ),
                       title: const Text('Notificar alertas de preço'),
-                      subtitle: const Text('Sempre imediato, é um alerta de risco'),
+                      subtitle: const Text(
+                        'Sempre imediato, é um alerta de risco',
+                      ),
                       value: prefs.notifyPriceAlerts,
                       onChanged: (v) async {
                         await ref
@@ -191,7 +198,8 @@ class ConfigScreen extends ConsumerWidget {
                                   .join(', '),
                       ),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _pickPreferredCategories(context, ref, prefs),
+                      onTap: () =>
+                          _pickPreferredCategories(context, ref, prefs),
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -288,7 +296,13 @@ const _riskProfileLabels = {
 
 String _riskProfileLabel(String value) => _riskProfileLabels[value] ?? value;
 
-const _preferenceCategories = ['acoes_br', 'bdrs', 'fiis', 'etfs', 'renda_fixa'];
+const _preferenceCategories = [
+  'acoes_br',
+  'bdrs',
+  'fiis',
+  'etfs',
+  'renda_fixa',
+];
 
 Future<void> _pickFrequency(
   BuildContext context,
@@ -306,7 +320,10 @@ Future<void> _pickFrequency(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: _frequencyLabels.entries
-                .map((e) => RadioListTile<String>(value: e.key, title: Text(e.value)))
+                .map(
+                  (e) =>
+                      RadioListTile<String>(value: e.key, title: Text(e.value)),
+                )
                 .toList(),
           ),
         ),
@@ -340,7 +357,10 @@ Future<void> _pickRiskProfile(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: _riskProfileLabels.entries
-                .map((e) => RadioListTile<String>(value: e.key, title: Text(e.value)))
+                .map(
+                  (e) =>
+                      RadioListTile<String>(value: e.key, title: Text(e.value)),
+                )
                 .toList(),
           ),
         ),
@@ -454,6 +474,75 @@ Future<void> _editCsvList(
   ref.invalidate(preferencesProvider);
 }
 
+/// Indicação: o único canal de aquisição que cabe na aritmética deste produto.
+///
+/// Mostra as contagens e o código, nunca a lista de quem foi indicado — quem
+/// clicou no link de alguém não escolheu aparecer numa tela dessa pessoa.
+class _ReferralCard extends ConsumerWidget {
+  const _ReferralCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final indicacao = ref.watch(referralProvider);
+
+    return indicacao.when(
+      // Sem esqueleto e sem mensagem de erro: indicação é um brinde, e uma
+      // falha aqui não deve ocupar a tela de configurações com um alarme.
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (r) => _SettingsCard(
+        icon: Icons.card_giftcard_outlined,
+        title: 'Indicação',
+        children: [
+          Text(
+            'Quem entra pelo seu link ganha ${r.rewardDays} dias de Premium — '
+            'e você também, quando essa pessoa salvar a primeira posição.',
+            style: TextStyle(color: fiInk2(context)),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              r.code,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text('Seu código'),
+            trailing: IconButton(
+              icon: const Icon(Icons.copy),
+              tooltip: 'Copiar link de indicação',
+              onPressed: () async {
+                await Clipboard.setData(
+                  ClipboardData(
+                    text: 'https://fiance.app/?indicacao=${r.code}',
+                  ),
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Link copiado')));
+                }
+              },
+            ),
+          ),
+          Text(
+            '${r.attributed} chegaram pelo seu link · ${r.qualified} montaram carteira · '
+            '${r.daysEarned} dias ganhos',
+            style: TextStyle(color: fiInk2(context), fontSize: 12),
+          ),
+          if (r.pending > 0) ...[
+            const SizedBox(height: 4),
+            Text(
+              '${r.pending} ainda não montaram carteira. O crédito sai quando elas '
+              'salvarem a primeira posição.',
+              style: TextStyle(color: fiInk3(context), fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _SettingsCard extends StatelessWidget {
   const _SettingsCard({
     required this.icon,
@@ -512,11 +601,10 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
         padding: EdgeInsets.all(16),
         child: LinearProgressIndicator(),
       ),
-      error: (err, _) =>
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: FiErrorState(error: err, action: 'carregar suas metas'),
-          ),
+      error: (err, _) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: FiErrorState(error: err, action: 'carregar suas metas'),
+      ),
       data: (data) {
         final items = _editing ?? data;
         final total = items.fold<double>(0, (sum, g) => sum + g.targetPct);
@@ -567,8 +655,14 @@ class _GoalsSectionState extends ConsumerState<_GoalsSection> {
                     'Total: ${total.toStringAsFixed(0)}%',
                     style: TextStyle(
                       color: (total - 100).abs() < 0.5
-                          ? fiStateColor(FiState.favorable, Theme.of(context).brightness)
-                          : fiStateColor(FiState.adverse, Theme.of(context).brightness),
+                          ? fiStateColor(
+                              FiState.favorable,
+                              Theme.of(context).brightness,
+                            )
+                          : fiStateColor(
+                              FiState.adverse,
+                              Theme.of(context).brightness,
+                            ),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -623,11 +717,10 @@ class _SectorGoalsSectionState extends ConsumerState<_SectorGoalsSection> {
         padding: EdgeInsets.all(16),
         child: LinearProgressIndicator(),
       ),
-      error: (err, _) =>
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: FiErrorState(error: err, action: 'carregar suas metas'),
-          ),
+      error: (err, _) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: FiErrorState(error: err, action: 'carregar suas metas'),
+      ),
       data: (data) {
         final items = data.isNotEmpty
             ? data
@@ -789,7 +882,10 @@ class _AlertsSection extends ConsumerWidget {
           data: (items) {
             if (items.isEmpty) {
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Text(
                   'Nenhum alerta configurado',
                   style: TextStyle(color: fiInk2(context)),

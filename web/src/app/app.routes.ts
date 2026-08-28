@@ -206,6 +206,12 @@ export const routes: Routes = [
         title: 'Alertas - fiance',
       },
       {
+        path: 'indicacao',
+        loadComponent: () =>
+          import('./components/indicacao/indicacao.component').then(m => m.IndicacaoComponent),
+        title: 'Indicação - fiance',
+      },
+      {
         path: 'conta',
         loadComponent: () =>
           import('./components/conta/conta.component').then(m => m.ContaComponent),
