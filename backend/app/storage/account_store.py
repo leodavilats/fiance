@@ -131,7 +131,13 @@ def delete_account(user_id: str, now: float | None = None) -> dict:
 
         user = session.get(User, user_id)
         if user is not None:
-            user.email = ""
+            # `users.email` é único, então a lápide **não pode** ser uma
+            # constante: zerar o campo funciona na primeira exclusão do sistema
+            # e estoura em todas as seguintes, com 500 numa rota que é
+            # obrigação legal. O endereço é derivado do id, que a lápide já
+            # guarda de propósito, e usa um domínio reservado pela RFC 2606
+            # para nunca coincidir com um e-mail real.
+            user.email = f"apagado+{user_id}@invalid"
             user.name = ""
             user.picture = ""
             user.onboarded_at = None

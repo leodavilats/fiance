@@ -46,10 +46,14 @@
 
 ## Cobertura de testes
 
-7. **O web não tem nenhum teste.** Backend tem 208 (`pytest`), mobile tem 13
-   (`flutter test`), web tem zero `*.spec.ts`. Com a arquitetura de informação recém-reescrita e
-   três telas novas, é o alvo natural — em especial `CarteiraStore`, `ScoreRuler` e os `computed`
-   de `/hoje`, que carregam regra de apresentação de verdade.
+7. **Nenhum teste roda no navegador.** Backend tem 681 (`pytest`), web tem 84 (Vitest) e mobile
+   27 (`flutter test`), e `backend/tests/test_jornadas.py` atravessa as jornadas críticas —
+   primeira posição → trial → teto → checkout → webhook → cancelamento → exportação → exclusão —
+   pelo app real, com HTTP, autenticação e banco. O que **não** é exercitado é a interface: nenhum
+   teste abre o Angular num navegador, então quebras de renderização, foco, rota e formulário só
+   aparecem em uso. Vitest roda componentes em jsdom, o que não é a mesma coisa. Ligar Playwright
+   exige backend e web servidos no CI e download de navegador — é trabalho de infraestrutura, não
+   de teste, e por isso está aqui e não fingido no nome de um arquivo.
 
 ## Automação que não existe
 
@@ -151,7 +155,7 @@ Detalhe e justificativa em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATIO
 ## Armadilhas conhecidas (não são bugs, mas mordem)
 
 - **Ícone do Lucide precisa ser registrado à mão** em `LucideAngularModule.pick({...})`
-  (`web/src/main.ts`). Nome ausente ou errado **não quebra o build** — quebra a tela em runtime.
+  (`web/src/app/app.config.ts`). Nome ausente ou errado **não quebra o build** — quebra a tela em runtime.
   Ao adicionar um `<lucide-icon>`, registre o import e abra a tela.
 - **Construtor que ignora chave não declarada.** `Modelo(**resultado.__dict__)` no Pydantic e
   `fromJson` no Dart descartam campo não declarado **em silêncio**. Três campos calculados nunca

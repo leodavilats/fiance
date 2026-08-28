@@ -92,6 +92,52 @@ def test_exclusao_apaga_tudo_e_encerra_a_sessao(client):
     assert client.get("/api/alerts", headers=novo).json() == []
 
 
+def test_a_segunda_exclusao_do_sistema_tambem_funciona(client):
+    """A lápide não pode ser uma constante.
+
+    `users.email` é único. Zerar o campo na anonimização funciona para a
+    primeira pessoa que exclui a conta e estoura para todas as seguintes — 500
+    numa rota que é obrigação legal, e que ninguém testa duas vezes seguidas
+    porque "já passou".
+    """
+    for quem in ("u_delete_um", "u_delete_dois", "u_delete_tres"):
+        headers = make_auth_headers(quem)
+        _seed(client, headers)
+
+        resposta = client.request(
+            "DELETE", "/api/account", json={"confirm": "EXCLUIR"}, headers=headers
+        )
+
+        assert resposta.status_code == 200, f"a exclusão de {quem} falhou"
+
+
+def test_a_lapide_nao_guarda_dado_pessoal(client):
+    """Sobra o identificador pseudônimo e a data; e-mail, nome e foto vão
+    embora."""
+    from app.core.database import db_session
+    from app.models.db_models import User
+
+    headers = make_auth_headers("u_delete_lapide")
+    _seed(client, headers)
+    client.request("DELETE", "/api/account", json={"confirm": "EXCLUIR"}, headers=headers)
+
+    with db_session() as session:
+        lapide = session.get(User, "u_delete_lapide")
+        email, nome, foto, apagado_em = (
+            lapide.email,
+            lapide.name,
+            lapide.picture,
+            lapide.deleted_at,
+        )
+
+    assert nome == ""
+    assert foto == ""
+    assert apagado_em is not None
+    # O domínio `.invalid` é reservado pela RFC 2606: nunca coincide com um
+    # endereço real, e por isso não pode reencontrar a pessoa por engano.
+    assert email.endswith("@invalid")
+
+
 def test_politica_de_exclusao_e_publica_e_declara_prazo(client):
     headers = make_auth_headers("u_policy")
 

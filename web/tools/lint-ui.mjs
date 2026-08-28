@@ -423,7 +423,7 @@ function main() {
 
   const problems =
     report(
-      'Ícone do Lucide usado sem registro em src/main.ts',
+      'Ícone do Lucide usado sem registro em src/app/app.config.ts',
       missingIcons,
       'Importe o ícone e adicione-o a LucideAngularModule.pick({...}).'
     ) +
