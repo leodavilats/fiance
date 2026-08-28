@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.core.auth import get_current_user
+from app.core.errors import DomainError
+from app.importing import parse_import
 from app.ledger import LedgerEntry, TransactionKind
 from app.services import ledger_service
 from app.services.ledger_service import derivation_for
@@ -138,3 +140,69 @@ async def backfill(user_id: str = Depends(get_current_user)) -> dict:
 async def read_activity(action: str | None = None, limit: int = 100) -> dict:
     """O log append-only, do ponto de vista do titular."""
     return {"items": audit_store.read(action=action, limit=limit)}
+
+
+class ImportPreviewRequest(BaseModel):
+    content: str = Field(description="Texto colado ou conteúdo do arquivo CSV.")
+    format: str | None = Field(
+        default=None, description="'csv' ou 'list'. Omitido, é detectado pelo cabeçalho."
+    )
+
+
+class ImportCommitRequest(BaseModel):
+    content: str
+    format: str | None = None
+    include_duplicates: bool = Field(
+        default=False,
+        description=(
+            "Quando falso, linhas idênticas a lançamentos já existentes ficam de fora. "
+            "A escolha é do usuário porque duas compras iguais no mesmo dia acontecem."
+        ),
+    )
+
+
+@router.post("/transactions/import/preview")
+async def preview_import(body: ImportPreviewRequest) -> dict:
+    """Lê sem gravar: mostra o que entrou, o que falhou e o que é repetido.
+
+    A prévia devolve as linhas boas **e** os problemas ao mesmo tempo, de
+    propósito: parar no primeiro erro faria o usuário corrigir um arquivo de
+    trezentas linhas uma linha por vez.
+    """
+    parsed = parse_import(
+        body.content, default_day=ledger_service.today_brt(), force_format=body.format
+    )
+    ledger_service.mark_duplicates(parsed)
+    return parsed.as_dict()
+
+
+class ImportRejected(DomainError):
+    status_code = 422
+
+
+@router.post("/transactions/import")
+async def commit_import(body: ImportCommitRequest) -> dict:
+    """Grava a importação. Tudo ou nada.
+
+    Validar linha a linha e gravar o que passou deixaria a carteira num estado
+    que o usuário não pediu e não consegue desfazer — e num produto que calcula
+    IR, meia importação é pior que nenhuma.
+    """
+    parsed = parse_import(
+        body.content, default_day=ledger_service.today_brt(), force_format=body.format
+    )
+
+    if parsed.issues:
+        raise ImportRejected(
+            f"{len(parsed.issues)} linha(s) com problema. Corrija antes de importar: "
+            + "; ".join(f"linha {i.line}: {i.message}" for i in parsed.issues[:3])
+        )
+
+    ledger_service.mark_duplicates(parsed)
+    selecionadas = [
+        row.entry for row in parsed.rows if body.include_duplicates or row.duplicate_of is None
+    ]
+    ignoradas = len(parsed.rows) - len(selecionadas)
+
+    ids = ledger_service.import_entries(selecionadas)
+    return {"imported": len(ids), "skipped_duplicates": ignoradas, "ids": ids}

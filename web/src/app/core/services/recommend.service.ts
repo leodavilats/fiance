@@ -50,6 +50,8 @@ import {
   TransactionListResponse,
   DerivationResponse,
   ReconciliationResponse,
+  ImportPreview,
+  ImportResult,
 } from '../models';
 import { AuthService } from './auth.service';
 
@@ -192,6 +194,17 @@ export class RecommendService {
   /** A conta que produziu o preço médio, passo a passo. */
   getDerivation(symbol: string): Observable<DerivationResponse> {
     return this.http.get<DerivationResponse>(`${this.base}/transactions/derivation/${symbol}`);
+  }
+
+  previewImport(content: string): Observable<ImportPreview> {
+    return this.http.post<ImportPreview>(`${this.base}/transactions/import/preview`, { content });
+  }
+
+  commitImport(content: string, includeDuplicates: boolean): Observable<ImportResult> {
+    return this.http.post<ImportResult>(`${this.base}/transactions/import`, {
+      content,
+      include_duplicates: includeDuplicates,
+    });
   }
 
   getReconciliation(): Observable<ReconciliationResponse> {

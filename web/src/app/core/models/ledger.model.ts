@@ -64,3 +64,41 @@ export interface ReconciliationResponse {
   differences: ReconciliationDifference[];
   in_sync: boolean;
 }
+
+/** Um problema de importação, com endereço: linha, campo e o que corrigir. */
+export interface ImportIssue {
+  line: number;
+  message: string;
+  field: string | null;
+  raw: string;
+}
+
+export interface ImportRow {
+  line: number;
+  kind: TransactionKind;
+  symbol: string;
+  traded_on: string;
+  quantity: number;
+  price: number;
+  fees: number;
+  ratio_from: number;
+  ratio_to: number;
+  amount: number;
+  note: string | null;
+  /** Id do lançamento igual que já existe. `null` quando é novo. */
+  duplicate_of: number | null;
+}
+
+export interface ImportPreview {
+  format: string;
+  rows: ImportRow[];
+  issues: ImportIssue[];
+  ok: boolean;
+  duplicates: number;
+}
+
+export interface ImportResult {
+  imported: number;
+  skipped_duplicates: number;
+  ids: number[];
+}

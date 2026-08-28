@@ -219,3 +219,56 @@ def derivation_for(symbol: str, user_id: str | None = None) -> dict:
     """A conta do preço médio de um ativo, passo a passo."""
     entries = ledger_store.list_entries(symbol=symbol, user_id=user_id)
     return explain_position(entries, symbol=symbol.strip().upper())
+
+
+# --------------------------------------------------------------------------
+# Importação
+# --------------------------------------------------------------------------
+
+
+def _duplicate_key(entry: LedgerEntry) -> tuple:
+    """O que faz dois lançamentos serem "a mesma operação".
+
+    Ativo, tipo, dia, quantidade e preço. Taxas ficam de fora porque a mesma
+    nota reimportada de outra fonte pode trazer a corretagem arredondada
+    diferente — e ainda assim é a mesma operação.
+    """
+    return (
+        entry.symbol.strip().upper(),
+        entry.kind.value,
+        entry.traded_on,
+        round(entry.quantity, 8),
+        round(entry.price, 6),
+    )
+
+
+def mark_duplicates(parsed, user_id: str | None = None) -> None:
+    """Anota, em cada linha lida, se ela já existe no razão.
+
+    Não remove nada: reimportar a mesma nota é o erro mais comum da importação,
+    mas duas compras idênticas no mesmo dia também acontecem. Quem decide é o
+    usuário — silenciar a segunda cópia apagaria uma operação legítima.
+    """
+    existentes: dict[tuple, int] = {}
+    for entry in ledger_store.list_entries(user_id=user_id):
+        if entry.id is not None:
+            existentes.setdefault(_duplicate_key(entry), entry.id)
+
+    for row in parsed.rows:
+        row.duplicate_of = existentes.get(_duplicate_key(row.entry))
+
+
+def import_entries(entries: list[LedgerEntry], user_id: str | None = None) -> list[int]:
+    """Grava o lote inteiro ou nenhum, e registra na auditoria."""
+    if not entries:
+        return []
+
+    ids = ledger_store.record_many(entries, source="import", user_id=user_id)
+    audit_store.write(
+        audit_store.LEDGER_WRITE,
+        entity="import",
+        summary=f"{len(ids)} operação(ões) importadas.",
+        detail={"symbols": sorted({e.symbol for e in entries})},
+        user_id=user_id,
+    )
+    return ids

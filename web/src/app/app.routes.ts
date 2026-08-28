@@ -57,6 +57,12 @@ export const routes: Routes = [
         title: 'Posições - fiance',
       },
       {
+        path: 'importar',
+        loadComponent: () =>
+          import('./components/importar/importar.component').then(m => m.ImportarComponent),
+        title: 'Importar operações - fiance',
+      },
+      {
         path: 'transacoes',
         loadComponent: () =>
           import('./components/transacoes/transacoes.component').then(m => m.TransacoesComponent),

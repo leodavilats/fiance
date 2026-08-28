@@ -1,0 +1,173 @@
+<div class="mt-6 max-w-4xl">
+  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-ink">
+    <lucide-icon name="upload" size="20"></lucide-icon> Importar operações
+  </h2>
+  <p class="text-sm text-ink-2 m-0 mb-5 max-w-prose">
+    Cole a lista ou suba o CSV que sua corretora exporta. Nada é gravado antes de você conferir a
+    revisão — e a importação é tudo ou nada.
+  </p>
+
+  <div class="p-4 sm:p-5 rounded-xl border border-hairline bg-ground-1">
+    <label for="conteudo" class="block text-sm font-medium text-ink mb-2">
+      Cole aqui, ou envie um arquivo
+    </label>
+    <textarea
+      id="conteudo"
+      rows="8"
+      class="input w-full font-mono text-sm"
+      placeholder="PETR4 100 30,50&#10;VALE3 50 62,10 15/03/2024&#10;&#10;— ou —&#10;&#10;Data;Ativo;Tipo;Quantidade;Preço;Taxas"
+      [ngModel]="content()"
+      (ngModelChange)="content.set($event)"
+      aria-describedby="formatos"
+    ></textarea>
+
+    <p id="formatos" class="text-xs text-ink-3 mt-2 mb-0">
+      Aceita vírgula ou ponto no decimal, data em DD/MM/AAAA ou AAAA-MM-DD, e cabeçalho em português
+      ou inglês. Sem data, a operação entra como de hoje.
+    </p>
+
+    <div class="flex flex-wrap items-center gap-3 mt-4">
+      <label class="btn-secondary cursor-pointer">
+        <input
+          type="file"
+          accept=".csv,.txt,text/csv,text/plain"
+          class="sr-only"
+          (change)="onFile($event)"
+        />
+        <lucide-icon name="file-up" size="16"></lucide-icon> Escolher arquivo
+      </label>
+
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="!hasContent() || checking()"
+        (click)="check()"
+      >
+        <lucide-icon name="search" size="16"></lucide-icon>
+        {{ checking() ? 'Conferindo…' : 'Conferir' }}
+      </button>
+
+      @if (hasContent()) {
+        <button type="button" class="btn-secondary" (click)="clear()">Limpar</button>
+      }
+    </div>
+  </div>
+
+  @if (preview(); as p) {
+    <div class="mt-5 p-4 sm:p-5 rounded-xl border border-hairline bg-ground-1">
+      <h3 class="text-lg font-bold m-0 mb-3 text-ink">Revisão</h3>
+
+      @if (p.issues.length > 0) {
+        <div class="mb-4">
+          <p class="text-sm text-adverse font-medium m-0 mb-2">
+            {{ p.issues.length }}
+            {{
+              p.issues.length === 1 ? 'linha precisa de correção' : 'linhas precisam de correção'
+            }}
+            — nada será importado enquanto houver erro.
+          </p>
+          <ul class="m-0 pl-5 text-sm text-ink-2 flex flex-col gap-2">
+            @for (issue of p.issues; track issue.line) {
+              <li>
+                <span class="text-ink font-medium">Linha {{ issue.line }}:</span>
+                {{ issue.message }}
+                @if (issue.raw) {
+                  <div class="font-mono text-xs text-ink-3 mt-0.5">{{ issue.raw }}</div>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (p.rows.length > 0) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          <div class="p-3 rounded-lg bg-ground-2 border border-hairline">
+            <div class="text-xs text-ink-2 uppercase tracking-wide mb-1">Operações novas</div>
+            <div class="text-xl font-bold text-ink">{{ novas().length }}</div>
+          </div>
+          <div class="p-3 rounded-lg bg-ground-2 border border-hairline">
+            <div class="text-xs text-ink-2 uppercase tracking-wide mb-1">Já existem no razão</div>
+            <div class="text-xl font-bold text-ink">{{ repetidas().length }}</div>
+          </div>
+        </div>
+
+        @if (repetidas().length > 0) {
+          <div class="p-3 mb-4 rounded-lg border border-hairline bg-ground-2">
+            <label class="flex items-start gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                class="mt-1"
+                [ngModel]="includeDuplicates()"
+                (ngModelChange)="includeDuplicates.set($event)"
+              />
+              <span class="text-ink-2">
+                <span class="text-ink font-medium">Importar mesmo as que já existem.</span>
+                Por padrão elas ficam de fora, porque reimportar a mesma nota é o engano mais comum.
+                Marque se foram operações diferentes que por acaso coincidem em ativo, dia,
+                quantidade e preço.
+              </span>
+            </label>
+          </div>
+        }
+
+        <div class="overflow-x-auto rounded-lg border border-hairline">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs uppercase tracking-wide text-ink-3 bg-ground-2">
+                <th scope="col" class="p-3 font-medium">Linha</th>
+                <th scope="col" class="p-3 font-medium">Data</th>
+                <th scope="col" class="p-3 font-medium">Ativo</th>
+                <th scope="col" class="p-3 font-medium">Movimento</th>
+                <th scope="col" class="p-3 font-medium text-right">Quantidade</th>
+                <th scope="col" class="p-3 font-medium text-right">Preço</th>
+                <th scope="col" class="p-3 font-medium">Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of p.rows; track row.line) {
+                <tr class="border-t border-hairline">
+                  <td class="p-3 text-ink-3">{{ row.line }}</td>
+                  <td class="p-3 text-ink-2 whitespace-nowrap">{{ row.traded_on }}</td>
+                  <td class="p-3 text-ink font-medium">{{ row.symbol }}</td>
+                  <td class="p-3 text-ink-2">{{ kindLabel(row.kind) }}</td>
+                  <td class="p-3 text-right text-ink">{{ row.quantity | number: '1.0-8' }}</td>
+                  <td class="p-3 text-right text-ink">
+                    @if (row.price > 0) {
+                      R$ {{ row.price | number: '1.2-2' }}
+                    } @else if (row.amount > 0) {
+                      R$ {{ row.amount | number: '1.2-2' }}
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td class="p-3">
+                    @if (row.duplicate_of !== null) {
+                      <span class="text-attention">Já existe</span>
+                    } @else {
+                      <span class="text-ink-3">Nova</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 mt-4">
+          <button type="button" class="btn-primary" [disabled]="!podeImportar()" (click)="commit()">
+            <lucide-icon name="check" size="16"></lucide-icon>
+            {{ importing() ? 'Importando…' : 'Importar ' + aImportar() + ' operação(ões)' }}
+          </button>
+          @if (!p.ok) {
+            <span class="text-sm text-ink-2"
+              >Corrija as linhas acima para liberar a importação.</span
+            >
+          }
+        </div>
+      } @else if (p.issues.length === 0) {
+        <p class="text-sm text-ink-2 m-0">Nada reconhecido no texto enviado.</p>
+      }
+    </div>
+  }
+</div>

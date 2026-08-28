@@ -21,6 +21,7 @@ export class CarteiraComponent {
     { path: '/carteira/posicoes', label: 'Posições', icon: 'table' },
     { path: '/carteira/transacoes', label: 'Lançamentos', icon: 'book-open' },
     { path: '/carteira/encerradas', label: 'Encerradas', icon: 'receipt' },
+    { path: '/carteira/importar', label: 'Importar', icon: 'upload' },
     { path: '/carteira/editar', label: 'Editar', icon: 'pencil' },
   ];
 }
