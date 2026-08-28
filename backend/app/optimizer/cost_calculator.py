@@ -1,13 +1,27 @@
+"""Custo fiscal de uma venda.
+
+A conta roda em `Decimal` e arredonda só na saída. É o número que o usuário
+digita na declaração: em float, `round()` usa arredondamento bancário — 2,5 vira
+2 — e o resíduo de centenas de operações desloca o imposto devido. Escala e
+convenção vivem em `app/core/money.py`.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 
+from app.core.money import ZERO, money, quantize, to_float
 from app.models.enums import AssetCategory
 
 IR_ACOES = 0.15
 IR_FIIS = 0.20
 
+_IR_ACOES = Decimal("0.15")
+_IR_FIIS = Decimal("0.20")
+
 ISENCAO_MENSAL_ACOES = 20_000.0
+_ISENCAO_MENSAL_ACOES = Decimal("20000")
 
 
 @dataclass
@@ -32,17 +46,17 @@ def calculate_sell_cost(
     accumulated_loss: float = 0.0,
 ) -> TransactionCost:
     """Custo fiscal de uma venda."""
-    gross_value = quantity * sell_price
-    cost_basis = quantity * avg_price
+    gross_value = money(quantity) * money(sell_price)
+    cost_basis = money(quantity) * money(avg_price)
     gross_profit = gross_value - cost_basis
-    gross_value_month_total = gross_value_month_before + gross_value
+    gross_value_month_total = money(gross_value_month_before) + gross_value
 
     exempt_month = (
         asset_category == AssetCategory.acoes_br.value
-        and gross_value_month_total <= ISENCAO_MENSAL_ACOES
+        and gross_value_month_total <= _ISENCAO_MENSAL_ACOES
     )
 
-    if gross_profit <= 0:
+    if gross_profit <= ZERO:
         if exempt_month:
             observation = (
                 f"Sem lucro e vendas do mês ≤ R$ {ISENCAO_MENSAL_ACOES:,.0f} → operação "
@@ -56,10 +70,10 @@ def calculate_sell_cost(
             )
         return TransactionCost(
             asset_category=asset_category,
-            gross_profit=round(gross_profit, 2),
+            gross_profit=to_float(quantize(gross_profit)),
             ir_amount=0.0,
             ir_rate=0.0,
-            net_profit=round(gross_profit, 2),
+            net_profit=to_float(quantize(gross_profit)),
             observation=observation,
             loss_offset_used=0.0,
             taxable_profit=0.0,
@@ -70,10 +84,10 @@ def calculate_sell_cost(
         if exempt_month:
             return TransactionCost(
                 asset_category=asset_category,
-                gross_profit=round(gross_profit, 2),
+                gross_profit=to_float(quantize(gross_profit)),
                 ir_amount=0.0,
                 ir_rate=0.0,
-                net_profit=round(gross_profit, 2),
+                net_profit=to_float(quantize(gross_profit)),
                 observation=(
                     f"Vendas do mês ≤ R$ {ISENCAO_MENSAL_ACOES:,.0f} → isento de IR "
                     "(ações BR). O prejuízo acumulado fica preservado."
@@ -81,49 +95,52 @@ def calculate_sell_cost(
                 loss_offset_used=0.0,
                 taxable_profit=0.0,
             )
-        ir_rate = IR_ACOES
-        base_obs = f"IR {ir_rate * 100:.0f}% sobre ganho de capital."
+        rate = _IR_ACOES
+        base_obs = f"IR {rate * 100:.0f}% sobre ganho de capital."
 
     elif asset_category == AssetCategory.bdrs.value:
-        ir_rate = IR_ACOES
-        base_obs = f"IR {ir_rate * 100:.0f}% sobre ganho de capital (BDR), sem isenção mensal."
+        rate = _IR_ACOES
+        base_obs = f"IR {rate * 100:.0f}% sobre ganho de capital (BDR), sem isenção mensal."
 
     elif asset_category == AssetCategory.fiis.value:
-        ir_rate = IR_FIIS
-        base_obs = f"IR {ir_rate * 100:.0f}% sobre lucro na venda de FII."
+        rate = _IR_FIIS
+        base_obs = f"IR {rate * 100:.0f}% sobre lucro na venda de FII."
 
     elif asset_category == AssetCategory.etfs.value:
-        ir_rate = IR_ACOES
-        base_obs = f"IR {ir_rate * 100:.0f}% sobre ganho de capital (ETF), sem isenção mensal."
+        rate = _IR_ACOES
+        base_obs = f"IR {rate * 100:.0f}% sobre ganho de capital (ETF), sem isenção mensal."
 
     else:
         return TransactionCost(
             asset_category=asset_category,
-            gross_profit=round(gross_profit, 2),
+            gross_profit=to_float(quantize(gross_profit)),
             ir_amount=0.0,
             ir_rate=0.0,
-            net_profit=round(gross_profit, 2),
+            net_profit=to_float(quantize(gross_profit)),
             observation="IR calculado separadamente para renda fixa.",
         )
 
-    offset = min(max(accumulated_loss, 0.0), gross_profit)
+    offset = min(max(money(accumulated_loss), ZERO), gross_profit)
     taxable_profit = gross_profit - offset
-    ir_amount = taxable_profit * ir_rate
+    ir_amount = taxable_profit * rate
 
     observation = base_obs
-    if offset > 0:
+    if offset > ZERO:
         observation += (
             f" R$ {offset:,.2f} de prejuízo acumulado abatidos; "
             f"imposto sobre R$ {taxable_profit:,.2f}."
         )
 
+    # Arredonda uma vez, na borda. O líquido sai da diferença dos valores
+    # exatos e não da subtração dos já arredondados — senão o centavo do
+    # arredondamento aparece como divergência no extrato.
     return TransactionCost(
         asset_category=asset_category,
-        gross_profit=round(gross_profit, 2),
-        ir_amount=round(ir_amount, 2),
-        ir_rate=ir_rate,
-        net_profit=round(gross_profit - ir_amount, 2),
+        gross_profit=to_float(quantize(gross_profit)),
+        ir_amount=to_float(quantize(ir_amount)),
+        ir_rate=float(rate),
+        net_profit=to_float(quantize(gross_profit - ir_amount)),
         observation=observation,
-        loss_offset_used=round(offset, 2),
-        taxable_profit=round(taxable_profit, 2),
+        loss_offset_used=to_float(quantize(offset)),
+        taxable_profit=to_float(quantize(taxable_profit)),
     )

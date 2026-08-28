@@ -4,53 +4,83 @@ O preço médio segue a convenção brasileira, que é a que a Receita usa: vend
 não altera o preço médio, apenas reduz quantidade e custo proporcionalmente.
 O lucro da venda sai da diferença contra esse preço médio — e é por isso que um
 desdobramento não ajustado vira IR errado.
+
+**A conta roda em `Decimal`, a saída é `float`.** O número que o usuário leva
+para a declaração é somado ao longo de centenas de operações: em float o
+resíduo acumula e o extrato deixa de fechar com a nota. Escala e arredondamento
+vivem em `app/core/money.py` e em nenhum outro lugar. Os atributos `*_exact`
+expõem o valor sem perda; os de sempre continuam em float, para a API e a tela.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from decimal import Decimal
+
+from app.core.money import ZERO, money, quantize
 
 from .entries import LedgerEntry, LedgerError, TransactionKind
 
-#: Abaixo disto a posição é considerada zerada. Existe porque quantidade
-#: fracionária vinda de desdobramento acumula resíduo de ponto flutuante — e a
-#: troca por Decimal é um refactor à parte, deliberadamente separado deste.
-QUANTITY_EPSILON = 1e-9
+#: Abaixo disto a posição é considerada zerada. Com Decimal o resíduo não vem
+#: mais do binário, mas divisão exata nem sempre é possível (1/3 de uma
+#: quantidade) e a tolerância continua sendo o jeito honesto de dizer "zerou".
+QUANTITY_EPSILON = Decimal("0.00000001")
 
 
 @dataclass
 class PositionProjection:
     symbol: str
-    quantity: float = 0.0
+    quantity_exact: Decimal = ZERO
     #: Custo total da posição em aberto. O preço médio é derivado dele, nunca
     #: guardado — guardar os dois é criar duas fontes de verdade que divergem.
-    total_cost: float = 0.0
-    realized_pnl: float = 0.0
-    total_fees: float = 0.0
+    total_cost_exact: Decimal = ZERO
+    realized_pnl_exact: Decimal = ZERO
+    total_fees_exact: Decimal = ZERO
     first_traded_on: str | None = None
     last_traded_on: str | None = None
     entries_applied: int = 0
     warnings: list[str] = field(default_factory=list)
 
     @property
+    def avg_price_exact(self) -> Decimal:
+        if abs(self.quantity_exact) < QUANTITY_EPSILON:
+            return ZERO
+        return self.total_cost_exact / self.quantity_exact
+
+    @property
+    def quantity(self) -> float:
+        return float(self.quantity_exact)
+
+    @property
+    def total_cost(self) -> float:
+        return float(self.total_cost_exact)
+
+    @property
+    def realized_pnl(self) -> float:
+        return float(self.realized_pnl_exact)
+
+    @property
+    def total_fees(self) -> float:
+        return float(self.total_fees_exact)
+
+    @property
     def avg_price(self) -> float:
-        if abs(self.quantity) < QUANTITY_EPSILON:
-            return 0.0
-        return self.total_cost / self.quantity
+        return float(self.avg_price_exact)
 
     @property
     def is_open(self) -> bool:
-        return self.quantity > QUANTITY_EPSILON
+        return self.quantity_exact > QUANTITY_EPSILON
 
     def as_dict(self) -> dict:
+        """Saída da API: arredondada na borda, uma vez só."""
         return {
             "symbol": self.symbol,
             "quantity": self.quantity,
             "avg_price": self.avg_price,
-            "total_cost": self.total_cost,
-            "realized_pnl": self.realized_pnl,
-            "total_fees": self.total_fees,
+            "total_cost": float(quantize(self.total_cost_exact)),
+            "realized_pnl": float(quantize(self.realized_pnl_exact)),
+            "total_fees": float(quantize(self.total_fees_exact)),
             "first_traded_on": self.first_traded_on,
             "last_traded_on": self.last_traded_on,
             "entries_applied": self.entries_applied,
@@ -60,78 +90,80 @@ class PositionProjection:
 
 def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
     kind = entry.kind
+    quantity = money(entry.quantity)
+    price = money(entry.price)
+    fees = money(entry.fees)
 
     if kind is TransactionKind.ADJUST:
         # Estado declarado: substitui, não soma. As taxas já pagas continuam
         # somadas porque são fato histórico, não parte da posição.
-        state.quantity = entry.quantity
-        state.total_cost = entry.quantity * entry.price
+        state.quantity_exact = quantity
+        state.total_cost_exact = quantity * price
         return
 
     if kind is TransactionKind.BUY:
         # Corretagem entra no custo de aquisição — é assim que a Receita
         # calcula o preço médio, e ignorá-la infla o lucro tributável.
-        state.quantity += entry.quantity
-        state.total_cost += entry.quantity * entry.price + entry.fees
-        state.total_fees += entry.fees
+        state.quantity_exact += quantity
+        state.total_cost_exact += quantity * price + fees
+        state.total_fees_exact += fees
         return
 
     if kind is TransactionKind.SELL:
-        if entry.quantity > state.quantity + QUANTITY_EPSILON:
+        if quantity > state.quantity_exact + QUANTITY_EPSILON:
             raise LedgerError(
                 f"Venda de {entry.quantity:g} {entry.symbol} em {entry.traded_on} sem posição: "
                 f"o razão tem {state.quantity:g}."
             )
-        avg = state.avg_price
-        sold_cost = avg * entry.quantity
-        state.realized_pnl += entry.quantity * entry.price - sold_cost - entry.fees
-        state.quantity -= entry.quantity
-        state.total_cost -= sold_cost
-        state.total_fees += entry.fees
-        if abs(state.quantity) < QUANTITY_EPSILON:
-            state.quantity = 0.0
-            state.total_cost = 0.0
+        sold_cost = state.avg_price_exact * quantity
+        state.realized_pnl_exact += quantity * price - sold_cost - fees
+        state.quantity_exact -= quantity
+        state.total_cost_exact -= sold_cost
+        state.total_fees_exact += fees
+        if abs(state.quantity_exact) < QUANTITY_EPSILON:
+            state.quantity_exact = ZERO
+            state.total_cost_exact = ZERO
         return
 
     if kind is TransactionKind.SPLIT:
         # Custo total intacto de propósito: desdobrar não custa nem rende nada.
         # A quantidade muda, e o preço médio cai (ou sobe, no grupamento) na
         # mesma proporção — que é exatamente o ajuste que a Receita espera.
-        factor = entry.ratio_to / entry.ratio_from
-        state.quantity *= factor
+        state.quantity_exact = (
+            state.quantity_exact * money(entry.ratio_to) / money(entry.ratio_from)
+        )
         return
 
     if kind is TransactionKind.BONUS:
-        state.quantity += entry.quantity
-        state.total_cost += entry.quantity * entry.price
+        state.quantity_exact += quantity
+        state.total_cost_exact += quantity * price
         return
 
     if kind is TransactionKind.AMORTIZATION:
         # Devolução de capital: reduz o custo, não a quantidade. Custo não
         # desce de zero — o excedente já é rendimento, não devolução.
-        state.total_cost = max(0.0, state.total_cost - entry.amount)
+        state.total_cost_exact = max(ZERO, state.total_cost_exact - money(entry.amount))
         return
 
     if kind is TransactionKind.TRANSFER_IN:
-        state.quantity += entry.quantity
-        state.total_cost += entry.quantity * entry.price
+        state.quantity_exact += quantity
+        state.total_cost_exact += quantity * price
         return
 
     if kind is TransactionKind.TRANSFER_OUT:
-        if entry.quantity > state.quantity + QUANTITY_EPSILON:
+        if quantity > state.quantity_exact + QUANTITY_EPSILON:
             raise LedgerError(
                 f"Transferência de saída de {entry.quantity:g} {entry.symbol} maior que a posição."
             )
-        avg = state.avg_price
-        state.quantity -= entry.quantity
-        state.total_cost -= avg * entry.quantity
+        avg = state.avg_price_exact
+        state.quantity_exact -= quantity
+        state.total_cost_exact -= avg * quantity
         return
 
     raise LedgerError(f"Tipo de lançamento sem projeção definida: {kind!r}.")
 
 
-def project_position(entries: Iterable[LedgerEntry], symbol: str = "") -> PositionProjection:
-    """Dobra os lançamentos de um ativo na posição que eles produzem."""
+def _fold(entries: Iterable[LedgerEntry], symbol: str, on_step=None) -> PositionProjection:
     ordered = sorted(entries, key=lambda e: e.sort_key)
     state = PositionProjection(symbol=symbol or (ordered[0].symbol if ordered else ""))
 
@@ -141,8 +173,15 @@ def project_position(entries: Iterable[LedgerEntry], symbol: str = "") -> Positi
         if state.first_traded_on is None:
             state.first_traded_on = entry.traded_on
         state.last_traded_on = entry.traded_on
+        if on_step is not None:
+            on_step(entry, state)
 
     return state
+
+
+def project_position(entries: Iterable[LedgerEntry], symbol: str = "") -> PositionProjection:
+    """Dobra os lançamentos de um ativo na posição que eles produzem."""
+    return _fold(entries, symbol)
 
 
 def project_positions(entries: Iterable[LedgerEntry]) -> dict[str, PositionProjection]:
@@ -221,17 +260,9 @@ def explain_position(entries: Iterable[LedgerEntry], symbol: str = "") -> dict:
     Preço médio que ninguém consegue conferir é preço médio em que ninguém
     confia — e é o número que vai para a declaração de IR.
     """
-    ordered = sorted(entries, key=lambda e: e.sort_key)
-    state = PositionProjection(symbol=symbol or (ordered[0].symbol if ordered else ""))
     steps: list[DerivationStep] = []
 
-    for entry in ordered:
-        _apply(state, entry)
-        state.entries_applied += 1
-        if state.first_traded_on is None:
-            state.first_traded_on = entry.traded_on
-        state.last_traded_on = entry.traded_on
-
+    def record(entry: LedgerEntry, state: PositionProjection) -> None:
         steps.append(
             DerivationStep(
                 traded_on=entry.traded_on,
@@ -242,6 +273,8 @@ def explain_position(entries: Iterable[LedgerEntry], symbol: str = "") -> dict:
                 avg_price_after=state.avg_price,
             )
         )
+
+    state = _fold(entries, symbol, on_step=record)
 
     return {
         "symbol": state.symbol,

@@ -30,9 +30,7 @@ def _twr_series(
         opening = previous["total_current"]
         invested_delta = current["total_invested"] - previous["total_invested"]
         flow = invested_delta - (realized[index] if index < len(realized) else 0.0)
-        closing = current["total_current"] + (
-            dividends[index] if index < len(dividends) else 0.0
-        )
+        closing = current["total_current"] + (dividends[index] if index < len(dividends) else 0.0)
 
         if opening <= 0:
             cumulative *= 1.0
@@ -115,9 +113,7 @@ class BenchmarkService:
             )
             for previous, current in zip(snapshots, snapshots[1:], strict=False)
         ]
-        dividends = _dividends_per_period(
-            snapshots, self.portfolio_repo.list_dividends_received()
-        )
+        dividends = _dividends_per_period(snapshots, self.portfolio_repo.list_dividends_received())
         portfolio_series = _twr_series(snapshots, realized, dividends)
 
         points: list[BenchmarkPoint] = []
