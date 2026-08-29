@@ -294,7 +294,7 @@ function missingAccessibleNames(files) {
   for (const file of files) {
     const source = readFileSync(file, 'utf8');
 
-    for (const match of source.matchAll(/<button([^>]*)>([\s\S]*?)<\/button>/g)) {
+    for (const match of source.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)) {
       const [, attrs, body] = match;
       if (/aria-label|aria-labelledby/.test(attrs)) continue;
 
@@ -349,6 +349,44 @@ function projectionsWithoutBand(files) {
   return problems;
 }
 
+const CERTEZA = [
+  /\bvai\s+(subir|cair|render|valorizar|desvalorizar)\b/gi,
+  /\bcertamente\b/gi,
+  /\bcom\s+certeza\b/gi,
+  /\bgarantid[oa]s?\b/gi,
+  /\bgarante\s+(retorno|lucro|rendimento)\b/gi,
+  /\blucro\s+cert[oa]\b/gi,
+  /\bsem\s+risco\b/gi,
+  /\bsempre\s+(sobe|cai|rende)\b/gi,
+  /\bnunca\s+(cai|perde)\b/gi,
+];
+
+const NEGACAO = /\b(n[ãa]o|nem|sem|jamais)\b[^.;]{0,24}$/i;
+
+function certaintyLanguage(files) {
+  const problems = [];
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+
+    for (const padrao of CERTEZA) {
+      padrao.lastIndex = 0;
+      for (const match of source.matchAll(padrao)) {
+        const antes = source.slice(Math.max(0, match.index - 60), match.index);
+        if (NEGACAO.test(antes.replace(/\s+/g, ' '))) continue;
+
+        const trecho = source
+          .slice(Math.max(0, match.index - 30), match.index + match[0].length + 20)
+          .replace(/\s+/g, ' ')
+          .trim();
+        problems.push({ file, name: `${relative(WEB_ROOT, file)}: …${trecho}…` });
+      }
+    }
+  }
+
+  return problems;
+}
+
 function report(title, problems, hint) {
   if (problems.length === 0) return 0;
 
@@ -383,6 +421,7 @@ function main() {
   const semTabela = missingChartAlternatives(templates);
   const semNome = missingAccessibleNames(templates);
   const semFaixa = projectionsWithoutBand(templates);
+  const comCerteza = certaintyLanguage(templates.filter(f => f.endsWith('.html')));
 
   const problems =
     report(
@@ -421,6 +460,12 @@ function main() {
       'Mostre piso e teto (os campos _low e _high). Um valor único a cinco anos ' +
         'empresta precisão de centavo a uma pilha de premissas — e é em cima dele ' +
         'que a pessoa decide quanto poupar.'
+    ) +
+    report(
+      'Tela promete o futuro',
+      comCerteza,
+      'Preço futuro não se afirma. Troque por linguagem condicional, ou negue ' +
+        'explicitamente (“não há garantia de retorno” passa; “retorno garantido” não).'
     );
 
   if (problems > 0) {
@@ -429,7 +474,7 @@ function main() {
   }
 
   console.log(
-    '✓ Ícones, classes, explicabilidade, gráficos, nomes acessíveis e faixas conferidos.'
+    '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas e linguagem conferidos.'
   );
 }
 

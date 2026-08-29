@@ -25,7 +25,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 765 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 771 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd mobile  && flutter analyze && flutter test      # 0 issues, 49 testes
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 98 testes
@@ -72,8 +72,10 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
 - **`_session_global()` em caminho de request** — não filtra por usuário. É para job cross-tenant.
 - **Dois refreshes simultâneos** derrubam a sessão: o refresh é rotacionado e queimado no uso.
 
-O `npm run lint:ui` cobre cinco dessas: ícone não registrado, classe inexistente, julgamento sem
-explicabilidade, gráfico sem tabela e botão de ícone sem `aria-label`.
+O `npm run lint:ui` cobre sete dessas: ícone não registrado, classe inexistente, julgamento sem
+explicabilidade, gráfico sem tabela, botão de ícone sem `aria-label`, número projetado sem faixa e
+promessa sobre o futuro — este último poupa a negação, porque "não há garantia de retorno" é a
+frase certa e "retorno garantido" é a errada.
 
 ---
 
@@ -153,6 +155,11 @@ explicabilidade, gráfico sem tabela e botão de ícone sem `aria-label`.
 
 ### API
 
+- **Campo de resposta que some é pego por contrato:** `tests/contrato_das_rotas.json` registra os
+  campos de cada rota `/api/v1`, e o teste falha dizendo a rota e o campo. O FastAPI descarta em
+  silêncio o que o `response_model` não declara. Regravar é `python -m tests.contrato_das_rotas`, e
+  o diff entra no mesmo commit. Metade das rotas ainda devolve `dict` solto e não tem contrato
+  nenhum; `SEM_MODELO_HOJE` é a catraca que impede esse número de crescer.
 - **Versão no caminho:** `/api/v1` é canônico; `/api` responde como alias em transição e carimba
   `X-API-Deprecation`.
 - **Listas paginam por cursor keyset** (`core/pagination.py`), nunca offset. Onde há agregado

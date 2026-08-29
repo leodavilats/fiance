@@ -1,0 +1,419 @@
+{
+  "DELETE /api/v1/portfolio/position/{ticker}": [
+    "items",
+    "last_updated",
+    "snapshots"
+  ],
+  "GET /api/v1/alerts": [
+    "condition",
+    "created_at",
+    "id",
+    "note",
+    "target_price",
+    "ticker",
+    "triggered_at"
+  ],
+  "GET /api/v1/alerts/check": [
+    "condition",
+    "current_price",
+    "id",
+    "note",
+    "target_price",
+    "ticker"
+  ],
+  "GET /api/v1/asset/{symbol}": [
+    "asset_type",
+    "currency",
+    "decision",
+    "fair_price",
+    "fundamentals",
+    "name",
+    "price",
+    "price_history",
+    "sector",
+    "symbol",
+    "technical"
+  ],
+  "GET /api/v1/asset/{symbol}/dip-analysis": [
+    "asset_type",
+    "breakdown",
+    "confidence",
+    "currency",
+    "dip_score",
+    "disclaimer",
+    "drop_from_52w_high_pct",
+    "drop_from_fair_price_pct",
+    "fair_price",
+    "fundamentals",
+    "name",
+    "news",
+    "news_ai_score",
+    "news_ai_summary",
+    "news_impact",
+    "news_key_topics",
+    "news_sentiment_summary",
+    "price",
+    "reason_groups",
+    "reasons",
+    "sector",
+    "symbol",
+    "technical",
+    "verdict",
+    "verdict_label"
+  ],
+  "GET /api/v1/auth/me": [
+    "email",
+    "id",
+    "name",
+    "picture"
+  ],
+  "GET /api/v1/benchmark": [
+    "cdi_return_pct",
+    "ibov_available",
+    "ibov_return_pct",
+    "method",
+    "net_contributions",
+    "points",
+    "portfolio_return_pct"
+  ],
+  "GET /api/v1/compare": [
+    "errors",
+    "items"
+  ],
+  "GET /api/v1/dashboard": [
+    "alerts",
+    "allocations",
+    "disclaimer",
+    "freshness",
+    "health",
+    "last_updated",
+    "positions",
+    "snapshots",
+    "summary",
+    "top_buys",
+    "top_sells"
+  ],
+  "GET /api/v1/data-quality": [
+    "by_asset_type",
+    "failed",
+    "fields",
+    "notes",
+    "plausibility",
+    "scanned",
+    "source",
+    "universe_size"
+  ],
+  "GET /api/v1/dip-scanner": [
+    "disclaimer",
+    "items",
+    "scanned",
+    "universe_used"
+  ],
+  "GET /api/v1/dividends/received": [
+    "by_month",
+    "by_ticker",
+    "estimate_accuracy_pct",
+    "estimated_monthly",
+    "has_more",
+    "items",
+    "monthly_average_12m",
+    "next_cursor",
+    "received_last_12m",
+    "received_this_month",
+    "total_count",
+    "total_received"
+  ],
+  "GET /api/v1/fixed-income": [
+    "cdi_referencia",
+    "fonte_taxas",
+    "has_more",
+    "items",
+    "next_cursor",
+    "rendimento_pct",
+    "taxa_media_aa",
+    "total_atual",
+    "total_count",
+    "total_investido",
+    "total_rendimento"
+  ],
+  "GET /api/v1/goals": [
+    "category",
+    "deadline",
+    "target_pct",
+    "target_value"
+  ],
+  "GET /api/v1/income-compare": [
+    "amount",
+    "assets",
+    "best_income_option",
+    "cdi_anual",
+    "disclaimer",
+    "fixed_income",
+    "horizon_months",
+    "ipca_anual",
+    "rates_source",
+    "verdict"
+  ],
+  "GET /api/v1/onboarding": [
+    "completed",
+    "has_goals",
+    "onboarded_at",
+    "positions",
+    "reason",
+    "step",
+    "total_steps"
+  ],
+  "GET /api/v1/opportunities": [
+    "current_page",
+    "failed_count",
+    "items",
+    "page_size",
+    "total_items",
+    "total_pages",
+    "universe_size"
+  ],
+  "GET /api/v1/portfolio": [
+    "items",
+    "last_updated",
+    "snapshots"
+  ],
+  "GET /api/v1/portfolio/trades": [
+    "has_more",
+    "next_cursor",
+    "tax_loss_balances",
+    "total_count",
+    "total_ir_paid",
+    "total_realized_pnl",
+    "total_tax_loss_available",
+    "trades"
+  ],
+  "GET /api/v1/preferences": [
+    "cash_available",
+    "density",
+    "desired_yield_bdr",
+    "desired_yield_etf",
+    "desired_yield_fii",
+    "desired_yield_stock",
+    "excluded_tickers",
+    "notify_price_alerts",
+    "opportunities_frequency",
+    "passive_income_goal",
+    "preferred_categories",
+    "preferred_sectors",
+    "push_enabled",
+    "registered_devices",
+    "risk_profile",
+    "updated_at"
+  ],
+  "GET /api/v1/public/asset/{symbol}": [
+    "asset_type",
+    "currency",
+    "decision",
+    "fair_price",
+    "fundamentals",
+    "name",
+    "price",
+    "price_history",
+    "sector",
+    "symbol",
+    "technical"
+  ],
+  "GET /api/v1/referral": [
+    "attributed",
+    "code",
+    "credited_days_total",
+    "credited_until",
+    "days_earned",
+    "max_credited_days",
+    "pending",
+    "qualified",
+    "reward_days"
+  ],
+  "GET /api/v1/renda-fixa/taxas": [
+    "cdi_anual",
+    "ipca_anual",
+    "selic_anual",
+    "source"
+  ],
+  "GET /api/v1/search": [
+    "groups",
+    "query",
+    "total"
+  ],
+  "GET /api/v1/sector-goals": [
+    "sector",
+    "target_pct"
+  ],
+  "GET /api/v1/sectors-summary": [
+    "failed_count",
+    "sectors",
+    "total_assets"
+  ],
+  "GET /api/v1/suggestions/followed": [
+    "beat_ibov",
+    "by_source",
+    "has_more",
+    "ibov_pct_same_period",
+    "items",
+    "next_cursor",
+    "summary",
+    "total_count",
+    "total_current_value",
+    "total_invested",
+    "total_pnl",
+    "total_pnl_pct"
+  ],
+  "GET /api/v1/whats-new": [
+    "days_since",
+    "generated_at",
+    "items",
+    "since"
+  ],
+  "POST /api/v1/alerts/check": [
+    "condition",
+    "current_price",
+    "id",
+    "note",
+    "target_price",
+    "ticker"
+  ],
+  "POST /api/v1/auth/google": [
+    "access_token",
+    "expires_in",
+    "refresh_token",
+    "user"
+  ],
+  "POST /api/v1/auth/refresh": [
+    "access_token",
+    "expires_in",
+    "refresh_token"
+  ],
+  "POST /api/v1/onboarding/complete": [
+    "completed",
+    "has_goals",
+    "onboarded_at",
+    "positions",
+    "reason",
+    "step",
+    "total_steps"
+  ],
+  "POST /api/v1/portfolio/evaluate": [
+    "disclaimer",
+    "positions",
+    "total_current",
+    "total_invested",
+    "total_pnl",
+    "total_pnl_pct"
+  ],
+  "POST /api/v1/portfolio/position": [
+    "items",
+    "last_updated",
+    "snapshots"
+  ],
+  "POST /api/v1/portfolio/sell": [
+    "avg_price",
+    "category",
+    "gross_profit",
+    "id",
+    "ir_amount",
+    "ir_rate",
+    "loss_compensable",
+    "loss_offset_used",
+    "net_profit",
+    "quantity",
+    "sell_price",
+    "sold_at",
+    "taxable_profit",
+    "ticker"
+  ],
+  "POST /api/v1/projection/passive-income": [
+    "assumptions",
+    "current_dividend_yield_avg",
+    "current_passive_income_monthly",
+    "current_passive_income_yearly",
+    "current_portfolio_value",
+    "disclaimer",
+    "projections",
+    "scenarios",
+    "target",
+    "target_monthly_income"
+  ],
+  "POST /api/v1/referral/rotate": [
+    "code"
+  ],
+  "POST /api/v1/renda-fixa/comparar": [
+    "cdi_referencia",
+    "fonte_taxas",
+    "ipca_referencia",
+    "melhor_opcao_index",
+    "melhor_opcao_motivo",
+    "resultados",
+    "selic_referencia"
+  ],
+  "PUT /api/v1/dividends/received/{dividend_id}": [
+    "amount",
+    "id",
+    "kind",
+    "note",
+    "paid_at",
+    "ticker"
+  ],
+  "PUT /api/v1/fixed-income/{position_id}": [
+    "data_aplicacao",
+    "dias_para_vencimento",
+    "id",
+    "isento_ir",
+    "liquidez",
+    "meses_decorridos",
+    "nome",
+    "oculto",
+    "pct_cdi_equivalente",
+    "percentual_cdi",
+    "rendimento_acumulado",
+    "rendimento_no_vencimento",
+    "rendimento_pct",
+    "taxa",
+    "taxa_anual_efetiva_pct",
+    "tipo",
+    "tipo_taxa",
+    "valor_atual",
+    "valor_investido",
+    "valor_no_vencimento",
+    "vencimento",
+    "vencimento_proximo",
+    "yield_equivalente_pct"
+  ],
+  "PUT /api/v1/goals": [
+    "category",
+    "deadline",
+    "target_pct",
+    "target_value"
+  ],
+  "PUT /api/v1/portfolio": [
+    "items",
+    "last_updated",
+    "snapshots"
+  ],
+  "PUT /api/v1/preferences": [
+    "cash_available",
+    "density",
+    "desired_yield_bdr",
+    "desired_yield_etf",
+    "desired_yield_fii",
+    "desired_yield_stock",
+    "excluded_tickers",
+    "notify_price_alerts",
+    "opportunities_frequency",
+    "passive_income_goal",
+    "preferred_categories",
+    "preferred_sectors",
+    "push_enabled",
+    "registered_devices",
+    "risk_profile",
+    "updated_at"
+  ],
+  "PUT /api/v1/sector-goals": [
+    "sector",
+    "target_pct"
+  ]
+}
