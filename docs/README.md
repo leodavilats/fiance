@@ -5,6 +5,7 @@ Cada arquivo responde **uma** pergunta. Se você não sabe onde procurar, comece
 | Quero saber… | Leia |
 |---|---|
 | Como rodar o projeto, variáveis de ambiente | [../README.md](../README.md) |
+| O que não pode ser violado — invariantes, armadilhas, checklists | [../CLAUDE.md](../CLAUDE.md) |
 | Como o sistema é montado por dentro — camadas, algoritmos, endpoints | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | O que cada tela faz | [FEATURES.md](FEATURES.md) |
 | O que está quebrado, faltando ou pendente **agora** | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
@@ -33,6 +34,9 @@ porque ela invalidava as anteriores. Seis itens contradiziam o código.
 - **Navegação e telas** seguem a arquitetura de informação em
   [design/02-INFORMATION-ARCHITECTURE.md](design/02-INFORMATION-ARCHITECTURE.md). O que já está
   construído está em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATION.md).
-- **Suíte verde é pré-requisito de merge.** `cd backend && python -m pytest -q` ·
-  `flutter analyze && flutter test` · `npm run format:check && npx ng build` ·
+- **Suíte verde é pré-requisito de merge.** Os comandos exatos, com as contagens esperadas,
+  estão em [CLAUDE.md](../CLAUDE.md#como-trabalhar-aqui). Em resumo: `pytest` (724) ·
+  `flutter analyze && flutter test` (49) · `npm test && npm run build && npm run lint:ui` (90) ·
   `node design-tokens/build.mjs --check`. Tudo roda no CI a cada push.
+- **Invariantes e armadilhas** — o que não pode ser violado e o que quebra em silêncio — estão em
+  [CLAUDE.md](../CLAUDE.md), não aqui.

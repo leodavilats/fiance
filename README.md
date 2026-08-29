@@ -1,6 +1,20 @@
 # fiance
 
-Plataforma de inteligência de investimentos com análise fundamentalista, varredura de oportunidades e recomendações orientadas por IA, focada no mercado brasileiro (B3). Disponível como app web e mobile (iOS/Android), com login por conta Google e dados isolados por usuário.
+Plataforma de inteligência de investimentos com análise fundamentalista, varredura de oportunidades e sugestões determinísticas de alocação, focada no mercado brasileiro (B3). Disponível como app web e mobile (iOS/Android), com login por conta Google e dados isolados por usuário.
+
+## Documentação
+
+Este README cobre **instalação, execução e operação**. O resto tem lugar próprio —
+comece pelo [índice](docs/README.md), que diz qual arquivo responde o quê.
+
+| Quero saber | Leia |
+|---|---|
+| Invariantes, armadilhas e checklists de contribuição | [CLAUDE.md](CLAUDE.md) |
+| Como o sistema é montado por dentro | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| O que cada tela faz | [docs/FEATURES.md](docs/FEATURES.md) |
+| O que está aberto agora | [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) |
+| Por que uma decisão foi tomada | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
+| Por que a interface é assim | [docs/design/](docs/design/) |
 
 ## Visão Geral
 
@@ -11,7 +25,7 @@ O fiance integra dados de mercado em tempo real e métodos clássicos de valuati
 - Login com Google (multi-usuário, dados isolados por conta)
 - Dashboard com posições, P&L e metas de alocação
 - Scanner de oportunidades com pontuação fundamentalista e técnica
-- Scanner de quedas ("dip") com streaming em tempo real (SSE)
+- Scanner de quedas ("dip") com diagnóstico por ativo
 - Visão por segmento de mercado: score médio, DY médio e top ativos por setor
 - Histórico e análise de dividendos (DY, projeções)
 - Alertas de preço configuráveis por ativo
@@ -25,7 +39,7 @@ O fiance integra dados de mercado em tempo real e métodos clássicos de valuati
 | Backend | Python 3.11+, FastAPI, Uvicorn, SQLAlchemy |
 | Banco de dados | PostgreSQL (produção, via Railway) / SQLite (fallback local) |
 | Autenticação | Login com Google (OAuth) + JWT de sessão próprio |
-| Web | Angular 18, TypeScript 5.5, Tailwind CSS |
+| Web | Angular 22 (standalone, SSR), TypeScript, Tailwind CSS |
 | Mobile | Flutter (iOS/Android), Riverpod, go_router |
 | Dados de mercado — B3/FIIs/BDRs/ETFs | [BRAPI](https://brapi.dev) |
 | Dados de renda fixa — CDI/Selic/IPCA | [BCB SGS](https://www3.bcb.gov.br/sgspub/) |
@@ -93,6 +107,12 @@ cp backend/.env.example backend/.env
 | `SUITABILITY_PERSONALIZATION_ALLOWED` | Não | Libera personalização por perfil **no nível 3**. Só com parecer jurídico (padrão: `false`) |
 | `ADMIN_USER_IDS` | Não | IDs (o `sub` do Google) liberados em `/cache/clear` e `/metrics`, separados por vírgula. Vazio libera em `development` e **nega** em produção |
 | `DEFAULT_UNIVERSE` | Não | Tickers monitorados, separados por vírgula |
+| `BRAPI_HISTORY_RANGE` | Não | Janela de histórico da BRAPI. O padrão `3mo` (plano gratuito) **torna a SMA200 incalculável** — a tendência sai como `short` e é rotulada como tal. `2y` exige plano pago |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Não | Credencial do Firebase Admin para push. Sem ela, o envio apenas loga em vez de falhar |
+| `REDIS_URL` | Não | Cache compartilhado entre nós. Sem ela, cache em arquivo local. Ver [Cache](#cache) |
+| `CACHE_DB_PATH` | Não | Caminho do cache em arquivo (padrão: `backend/.cache/http_cache.db`) |
+| `RATE_LIMIT_ENABLED` | Não | Liga o teto de requisições (padrão: `true`) |
+| `RATE_LIMIT_FACTOR` | Não | Multiplicador dos tetos, para afrouxar em dev |
 
 No app mobile (`mobile/lib/core/auth_service.dart`), o login com Google usa um `serverClientId` (o Client ID **Web**) — é ele que faz o `idToken` ter uma audience validável pelo backend, independente da plataforma (Android/iOS).
 
@@ -290,26 +310,41 @@ Com o backend rodando, acesse a documentação interativa:
 
 ### Endpoints principais
 
+O caminho canônico é **`/api/v1`**; `/api` responde como alias em transição (ver
+[Versão da API](#versão-da-api-e-paginação)). São 33 routers — a lista completa, com o arquivo de
+cada rota, está em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| `GET` | `/api/health` | Health check (público) |
-| `POST` | `/api/auth/google` | Login: troca o `id_token` do Google por um JWT de sessão (público) |
-| `GET` | `/api/dashboard` | Dados consolidados do dashboard |
-| `GET/PUT` | `/api/portfolio` | Gerenciar posições |
-| `POST` | `/api/portfolio/evaluate` | Calcular P&L e alocação |
-| `GET` | `/api/opportunities` | Oportunidades de investimento com score |
-| `GET` | `/api/dip-scanner` | Ativos abaixo do preço justo |
-| `GET` | `/api/dip-scanner/stream` | Varredura de quedas em tempo real (SSE) |
-| `GET` | `/api/sectors-summary` | Agrupamento por setor: score médio, DY médio, top ativos |
-| `GET` | `/api/strategy` | Estratégia de alocação gerada por IA |
-| `GET/POST` | `/api/alerts` | Alertas de preço |
-| `GET/PUT` | `/api/watchlist` | Lista de acompanhamento |
-| `GET/PUT` | `/api/goals` , `/api/sector-goals` | Metas de alocação por categoria/setor |
-| `GET/PUT` | `/api/preferences` | Caixa disponível, yields desejados, meta de renda passiva |
-| `GET` | `/api/dividends` | Histórico de dividendos |
-| `GET` | `/api/recommendations` | Top recomendações de compra |
+| `GET` | `/health` | Health check (público) |
+| `POST` | `/auth/google` | Login: troca o `id_token` do Google por um JWT de sessão (público) |
+| `GET` | `/public/asset/{ticker}` , `/public/universe` | Leitura **sem titular**, com teto por IP (público) |
+| `GET` | `/dashboard` | Dados consolidados do dashboard |
+| `GET/PUT` | `/portfolio` | Ler carteira · `PUT` é **importação destrutiva** |
+| `POST/DELETE` | `/portfolio/position` , `/portfolio/position/{ticker}` | Escrita por item — o caminho normal |
+| `POST` | `/portfolio/evaluate` | Calcular P&L e alocação |
+| `GET/POST` | `/transactions` , `/transactions/import` | Lançamentos e importação (prévia + commit) |
+| `GET` | `/transactions/reconciliation` | Compara posição corrente com a projeção do razão |
+| `GET` | `/opportunities` | Oportunidades com score |
+| `GET` | `/dip-scanner` | Ativos abaixo do preço justo |
+| `GET` | `/asset/{ticker}` , `/asset/{ticker}/dip-analysis` , `/compare` | Análise de ativo |
+| `GET` | `/sectors-summary` | Agrupamento por setor |
+| `GET` | `/strategy` , `/rebalance-suggestions` | Estratégia de alocação e rebalanceamento |
+| `POST` | `/quick-invest` | Distribuição de um aporte |
+| `GET` | `/search` | Busca global: carteira, renda fixa e universo |
+| `GET` | `/onboarding` | Passo derivado do que a pessoa já fez |
+| `GET/POST/PUT/DELETE` | `/fixed-income` | Renda fixa, marcada a mercado |
+| `GET` | `/dividends/received` , `/dividends/pending` | Proventos lançados e sugeridos pelo calendário |
+| `GET/POST` | `/alerts` | Alertas de preço |
+| `GET/PUT` | `/goals` , `/sector-goals` , `/preferences` | Metas e preferências |
+| `GET` | `/benchmark` , `/income-compare` , `/projection/passive-income` | Comparações e projeção |
+| `GET` | `/billing/plans` · `POST` `/billing/checkout` , `/billing/webhook` | Cobrança |
+| `GET` | `/referral` · `POST` `/referral/rotate` | Indicação |
+| `GET` | `/account/export` · `DELETE` `/account` | Exportação e exclusão — nunca atrás de plano |
+| `GET` | `/data-quality` , `/data-quality/source` | Cobertura do dado e estado do disjuntor |
+| `GET` | `/metrics` · `POST` `/cache/clear` | Rotas de operador (`ADMIN_USER_IDS`) |
 
-Todas as rotas acima (exceto `/health` e `/auth/google`) exigem `Authorization: Bearer <token>` e retornam dados isolados por usuário.
+Todas as rotas acima (exceto `/health`, `/auth/google` e `/public/*`) exigem `Authorization: Bearer <token>` e retornam dados isolados por usuário.
 
 ## Estrutura do Projeto
 
@@ -317,30 +352,46 @@ Todas as rotas acima (exceto `/health` e `/auth/google`) exigem `Authorization: 
 fiance/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # Ponto de entrada FastAPI
-│   │   ├── analysis/            # Algoritmos: Bazin, Graham, DCF, scoring
-│   │   ├── api/                 # Rotas REST (auth, dashboard, portfolio, ...)
-│   │   ├── collectors/          # Coleta de dados (BRAPI, RSS)
-│   │   ├── services/            # Regras de negócio
-│   │   ├── models/              # Schemas Pydantic + modelos ORM (SQLAlchemy)
-│   │   ├── repositories/        # Camada de persistência
-│   │   ├── storage/             # Acesso ao banco (portfolio, goals, preferences...)
-│   │   ├── core/                # Config, banco de dados, autenticação, cache
-│   │   └── optimizer/           # Otimização de carteira
-│   ├── Procfile                 # Comando de start usado pelo Railway
-│   ├── requirements.txt
-│   └── .env.example
+│   │   ├── main.py              # App FastAPI, CORS, observabilidade, lifespan
+│   │   ├── analysis/            # Cálculo puro, sem I/O: Bazin, Graham, DCF, score,
+│   │   │                        #   falsificadores, cenários, renda fixa
+│   │   ├── optimizer/           # Custo de venda e IR (com compensação de prejuízo)
+│   │   ├── ledger/              # Livro-razão: lançamentos e projeção (não conhece banco)
+│   │   ├── importing/           # Importação de operações: prévia + commit
+│   │   ├── entitlement/         # Cerca de plano — o ÚNICO lugar com condicional de plano
+│   │   ├── payments/            # Catálogo, checkout, webhook idempotente
+│   │   ├── api/                 # 33 routers REST
+│   │   ├── collectors/          # BRAPI e BCB SGS, com plausibilidade e disjuntor
+│   │   ├── services/            # Orquestração de negócio
+│   │   ├── models/              # Schemas Pydantic + ORM SQLAlchemy
+│   │   ├── repositories/        # Fachada tipada sobre storage/
+│   │   ├── storage/             # Persistência — onde o multi-tenant é aplicado
+│   │   ├── notifications/       # Push via Firebase (degrada sem credencial)
+│   │   ├── affirmation.py       # Modo de afirmação (CVM 19/20) como configuração
+│   │   └── core/                # Config, banco, auth, sessões, cache, dinheiro,
+│   │                            #   paginação, eventos, uso, jobs, fuso fiscal
+│   ├── migrations/              # Alembic — coluna nova exige migração
+│   ├── tests/                   # 724 testes
+│   └── requirements.txt
 │
-├── web/
-│   └── src/
-│       └── app/
-│           ├── components/      # Dashboard, Assets, Market, Strategy, Dip, Sectors…
-│           └── core/            # Serviços HTTP, interceptors, tema
+├── web/                         # Angular 22, standalone, rotas lazy
+│   ├── tools/lint-ui.mjs        # 5 verificações que o build não faz
+│   └── src/app/
+│       ├── components/          # 5 destinos: hoje, carteira, descobrir, estrategia, voce
+│       │                        #   + ativo/ (rota pública, renderizada no servidor)
+│       └── core/                # Serviços HTTP, interceptors, régua, tokens (gerado)
 │
-└── mobile/                      # App Flutter (iOS/Android)
-    └── lib/
-        ├── core/                # API client, auth (Google), providers, modelos
-        └── features/            # Login, Dashboard, Meus Ativos, Mercado, Config
+├── mobile/                      # Flutter — mesma IA de 5 destinos
+│   └── lib/
+│       ├── core/                # API client, auth, providers, router, tokens (gerado)
+│       └── features/            # hoje, carteira, descobrir(market), estrategia,
+│                                #   config, busca, ativo, auth, shell, tools
+│
+└── design-tokens/               # Fonte única de cor, tipografia, régua e marca
+    ├── tokens.json              # Editar AQUI
+    ├── build.mjs                # Gera os tokens das duas plataformas
+    ├── build-icons.py           # Gera favicon e ícones do app
+    └── check-contrast.mjs       # Falha o build se um par cair abaixo de AA
 ```
 
 ## Métodos de Valuation
@@ -350,29 +401,46 @@ fiance/
 | **Bazin** | `Preço justo = DPA médio / Yield desejado` | Ações com dividendos consistentes, FIIs |
 | **Graham** | `Preço justo = √(22,5 × LPA × VPA)` | Ações de valor, BDRs |
 | **DCF** | Fluxo de caixa descontado | Crescimento futuro |
-| **Consenso** | Média dos métodos disponíveis (1–3) | Visão geral; `consensus_methods` indica quantos métodos foram usados |
+| **P/VP justo** | `Preço justo = VPA × P/VP alvo` | FIIs, no consenso com Bazin |
+| **Consenso** | Média dos métodos aplicáveis ao tipo | `consensus_methods` diz quantos entraram |
+
+O roteamento é por tipo de ativo: **FII** → Bazin + P/VP (nunca Graham); **BDR** → Graham + DCF;
+**ETF** → só Bazin (não tem LPA nem VPA de empresa); **ação BR** → Bazin + Graham + DCF.
 
 ## Scripts Disponíveis
 
 ```bash
 # Backend
-uvicorn app.main:app --reload    # servidor dev
-ruff format .
-ruff check --fix .
+uvicorn app.main:app --reload            # servidor dev
+python -m pytest -q                      # 724 testes (11 pulam sem Redis)
+python -m ruff check app tests migrations
+python -m ruff format app tests migrations
+alembic upgrade head                     # aplicar migrações
 
 # Web
-npm start           # servidor dev
-npm run build       # build de produção (navegador + servidor)
-npm test            # testes (Vitest)
-npm run lint:ui     # ícone não registrado e classe CSS inexistente
-npm run format      # formatar código com Prettier
-npm run format:check # verificar formatação
+npm start            # servidor dev
+npm run build        # produção (navegador + servidor de renderização)
+npm test             # 90 testes (Vitest)
+npm run lint:ui      # ícone, classe CSS, explicabilidade, gráfico, aria-label
+npm run format       # Prettier
+npm run format:check
 
 # Mobile
-flutter analyze         # lint
-flutter test             # testes
-flutter build apk         # build de release (Android)
+flutter analyze
+flutter test         # 49 testes
+flutter build apk --release
+
+# Design tokens — a partir da raiz
+node design-tokens/build.mjs             # regenerar tokens
+node design-tokens/build.mjs --check     # falha se web/mobile divergirem
+node design-tokens/check-contrast.mjs    # falha se um par cair abaixo de AA
+python design-tokens/build-icons.py      # regenerar favicon e ícones
+cd mobile && dart run flutter_launcher_icons   # ícones nativos (segundo passo)
 ```
+
+> `npm run lint:ui` deve rodar **depois** do build: a fonte de verdade das classes é o CSS emitido.
+> E confira o **código de saída** do build — ele imprime erro como `X [ERROR] TS…`, que um
+> `grep -i error` ingênuo não pega.
 
 ## Licença
 

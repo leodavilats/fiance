@@ -1,26 +1,28 @@
 # fiance — o que está aberto
 
-> **Só pendências.** Todo item aqui foi verificado contra o código em 2026-08-22; nada de
-> histórico, nada de ✅. O que já foi resolvido — e por quê — está em
-> [CHANGELOG.md](CHANGELOG.md).
+> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-08-28**; nada de
+> histórico, nada de ✅. O que já foi resolvido — e por quê — está em [CHANGELOG.md](CHANGELOG.md).
 >
-> Antes deste arquivo existir nesta forma, ele misturava as duas coisas: 227 linhas em que a
-> maioria dos itens estava marcada como corrigida, com um aviso no topo dizendo "leia a seção
-> final, ela substitui vários itens abaixo". Seis itens contradiziam o código atual.
+> Este arquivo tem uma tendência conhecida a apodrecer. Na revisão de 2026-08-28, **oito dos 24
+> itens já estavam feitos** — onboarding, busca global, drawer de atividade, gráfico de preço,
+> reestruturação das telas mobile e indicação estavam descritos como inexistentes, e três outros
+> descreviam um escopo maior do que o que ainda falta. É a mesma doença que motivou a reescrita de
+> 2026-08-22, seis dias antes. **Ao fechar um item, apague-o daqui** e registre no CHANGELOG; item
+> resolvido que fica é pior que item ausente, porque manda trabalho refazer o que existe.
 
 ## Limitações de dado e infraestrutura
 
-1. **O caminho do Redis não foi exercitado contra um servidor real fora do CI.** Desde
-   2026-08-28 o cache tem backend trocável (`core/cache_backends.py`): arquivo local por padrão,
-   Redis quando `REDIS_URL` existir. O contrato é escrito uma vez e rodado contra os dois, e o CI
-   sobe um Redis de serviço — mas **em produção ele nunca rodou**, porque ainda há um nó só. O que
-   está coberto é o contrato e a tradução do adaptador (prefixo, envelope, padrão SQL virando
-   glob); o que não está é o comportamento sob rede instável, reconexão e failover.
+1. **O caminho do Redis não foi exercitado contra um servidor real fora do CI.** O cache tem
+   backend trocável (`core/cache_backends.py`): arquivo local por padrão, Redis quando `REDIS_URL`
+   existir. O contrato é escrito uma vez e rodado contra os dois, e o CI sobe um Redis de serviço —
+   mas **em produção ele nunca rodou**, porque ainda há um nó só. Coberto: o contrato e a tradução
+   do adaptador (prefixo, envelope, padrão SQL virando glob). Não coberto: rede instável,
+   reconexão e failover.
 
-2. **`brapi_history_range` default `3mo` torna a SMA200 incalculável.** O plano gratuito da BRAPI
-   só aceita ranges curtos. O sistema é honesto sobre isso (`trend_basis` = `short` e rotulado como
-   tal na UI; `GET /data-quality` reporta a cobertura), mas tendência de longo prazo só existe de
-   fato com plano pago e `BRAPI_HISTORY_RANGE=2y`.
+2. **`BRAPI_HISTORY_RANGE` default `3mo` torna a SMA200 incalculável.** O plano gratuito da BRAPI
+   só aceita ranges curtos. O sistema é honesto sobre isso (`trend_basis` = `short`, rotulado na UI;
+   `GET /data-quality` reporta a cobertura), mas tendência de longo prazo só existe de fato com
+   plano pago e `BRAPI_HISTORY_RANGE=2y`.
 
 3. **Unidade dos fundamentos da BRAPI não confirmada com chamada real.**
    `collectors/universal._ratio_to_pct` assume que `returnOnEquity` / `profitMargins` /
@@ -32,133 +34,106 @@
    apesar de já existir universo dinâmico via BRAPI (`core/universe.py`). Fallback defensivo
    intencional, mas extenso.
 
-5. **`WatchlistItemDb` existe sem rota nem tela.** A feature de watchlist nunca teve interface; a
-   rota foi removida em 2026-08-19 e a tabela ficou de propósito, para que reativar não exija
-   migração. É schema sem consumidor.
+5. **`WatchlistItemDb` existe sem rota nem tela.** A feature nunca teve interface; a rota foi
+   removida em 2026-08-19 e a tabela ficou de propósito, para que reativar não exija migração. É
+   schema sem consumidor.
 
 ## Duplicação estrutural entre plataformas
 
-6. **Labels e ícones duplicados** entre `web/.../ui-helper.service.ts` (393 linhas) e
-   `mobile/lib/core/labels.dart` (92). Cores, tipografia, espaçamento e as réguas semânticas já
-   são **geradas** de `design-tokens/tokens.json` e não podem mais divergir; rótulo de setor,
+6. **Labels e ícones duplicados** entre `web/src/app/core/services/ui-helper.service.ts` (297
+   linhas) e `mobile/lib/core/labels.dart` (99). Cor, tipografia, espaçamento e as réguas semânticas
+   já são **geradas** de `design-tokens/tokens.json` e não podem divergir; rótulo de setor,
    glossário e mapa de ícone continuam manuais nos dois lados. Adicionar um `AssetType` ou setor
    exige tocar os dois arquivos.
 
 ## Cobertura de testes
 
-7. **Nenhum teste roda no navegador.** Backend tem 723 (`pytest`), web tem 90 (Vitest) e mobile
-   49 (`flutter test`), e `backend/tests/test_jornadas.py` atravessa as jornadas críticas —
-   primeira posição → trial → teto → checkout → webhook → cancelamento → exportação → exclusão —
-   pelo app real, com HTTP, autenticação e banco. O que **não** é exercitado é a interface: nenhum
-   teste abre o Angular num navegador, então quebras de renderização, foco, rota e formulário só
-   aparecem em uso. Vitest roda componentes em jsdom, o que não é a mesma coisa. Ligar Playwright
-   exige backend e web servidos no CI e download de navegador — é trabalho de infraestrutura, não
-   de teste, e por isso está aqui e não fingido no nome de um arquivo.
+7. **Nenhum teste roda no navegador.** Backend tem 724 (`pytest`), web 90 (Vitest) e mobile 49
+   (`flutter test`), e `backend/tests/test_jornadas.py` atravessa as jornadas críticas — primeira
+   posição → trial → teto → checkout → webhook → cancelamento → exportação → exclusão — pelo app
+   real, com HTTP, autenticação e banco. O que **não** é exercitado é a interface: nenhum teste abre
+   o Angular num navegador, então quebra de renderização, foco, rota e formulário só aparece em uso.
+   Vitest roda componentes em jsdom, o que não é a mesma coisa. Ligar Playwright exige backend e web
+   servidos no CI e download de navegador — é trabalho de infraestrutura, não de teste.
 
 ## Automação que não existe
 
-8. **Proventos e sugestões seguidas dependem de lançamento manual.**
-   `/dividends/received` e `/suggestions/followed` só têm o que o usuário registra. O caminho
-   automático (calendário de proventos da BRAPI × quantidade em carteira, com confirmação) não foi
-   implementado — a base de dados para ele já existe.
+8. **Sugestões seguidas dependem de lançamento manual.** `/suggestions/followed` só tem o que a
+   pessoa registra. O caminho automático — reconhecer que uma sugestão virou compra a partir do
+   razão — não foi implementado, e a base para ele já existe. *(A metade dos proventos foi
+   resolvida: `/dividends/pending` cruza o calendário da BRAPI com a projeção do razão. Como toda
+   ressalva ali erra o valor para mais, nada vem pré-selecionado e não existe "aceitar todos".)*
 
 ## Pendências do redesign de UX/UI
 
 Detalhe e justificativa em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATION.md).
 
-9. **`detail_level` (Essencial / Completo / Avançado) não existe no backend.** É a alavanca única
-   que atende os três perfis de senioridade sem construir três produtos — densidade, número de
-   métricas e verbosidade. Exige coluna em `PreferencesDb`, campo em `GET/PUT /preferences` e
-   migração Alembic. Sem ela, todo usuário recebe a mesma densidade.
+9. **`detail_level` (Essencial / Completo / Avançado) não existe no backend.** É a alavanca que
+   atenderia os três perfis de senioridade sem construir três produtos — número de métricas e
+   verbosidade, além da densidade. **Densidade já existe** (`preferences.density`, aplicada como
+   `[data-density]`), mas ela resolve só o espaçamento: quantas métricas aparecer e com quanto texto
+   continua igual para todo mundo. Exige coluna em `PreferencesDb`, campo em `GET/PUT /preferences`
+   e migração Alembic.
 
-10. **Onboarding não existe, e precisa de um marcador de conclusão.** O primeiro acesso cai numa
-    tela vazia. O fluxo de 3 passos está especificado e usa endpoints existentes, mas sem um
-    `onboarded_at` (ou equivalente) ele reapareceria a cada login.
+10. **Falta o componente `FairPrice`.** `MarginOfSafety`, `AllocationGap`, `GoalProgress`,
+    `DipDiagnosis`, `ScoreRuler` e `Insight` existem, e a tabela profissional de posições também
+    (colunas configuráveis e densidade, com o recorte na URL). Preço justo continua reimplementado
+    caso a caso nas telas.
 
-11. **Busca global não existe.** `GET /universe/search` só alimenta autocomplete de campo. Para
-    ativo o backend já serve; setores e telas seriam índice de cliente.
+11. **As três classes de diagnóstico de queda não foram validadas.** "Queda saudável / para
+    investigar / estrutural" pressupõe que `analysis/dip_analysis.py` permita separar as duas
+    últimas. Se o veredito atual não sustentar, são dois grupos, não três — verificar antes de
+    desenhar o terceiro.
 
-12. **Drawer de Atividade não existe.** Alertas e eventos entram hoje no feed de `/hoje`; o
-    histórico agrupado por urgência (Agora / Hoje / Informativo) está especificado e não construído.
+> **Não é pendência:** push exigir o app instalado é **decisão**, e o web sinaliza isso em
+> `/voce/alertas`. As demais assimetrias entre mobile e web fecharam em 2026-08-28 — metas ganharam
+> tela própria e RF × Bolsa ganhou cliente Dart.
 
-13. **Componentes de domínio pendentes:** `MarginOfSafety`, `AllocationGap`, `GoalProgress`,
-    `DipDiagnosis`, `FairPrice` e a tabela profissional (colunas configuráveis, densidade
-    compacta, fixar coluna). A régua (`ScoreRuler`) e o `Insight` existem; os outros são
-    reimplementados caso a caso nas telas.
+## Dívida aberta (auditoria de 2026-08-26)
 
-14. **Gráfico de preço na página do ativo.** `/ativo/:ticker` mostra valuation por método, mas não
-    a série de preço com preço médio e preço justo como linhas de referência — o elemento visual
-    central que o wireframe pede.
-
-15. **Mobile: Hoje e Carteira ainda têm o conteúdo antigo.** `dashboard_screen.dart` (1214 linhas)
-    e `assets_screen.dart` (1231) não foram reestruturados nos três níveis, e `/carteira` não foi
-    fatiada como no web. A régua e o `FiErrorState` já estão disponíveis para isso.
-
-16. **Assimetria mobile↔web declarada:** push exigir o app instalado **não** é pendência — é
-    decisão, e o web sinaliza isso em `/voce/alertas`. As duas outras assimetrias fecharam em
-    2026-08-28: metas ganharam tela própria (`MetasScreen`) e RF × Bolsa ganhou cliente Dart
-    (`IncomeCompareView`).
-
-17. **As três classes de diagnóstico de queda não foram validadas.** "Queda saudável / para
-    investigar / estrutural" pressupõe que `dip_analysis.py` permita separar as duas últimas. Se o
-    veredito atual não sustentar, são dois grupos, não três — verificar antes de desenhar o
-    terceiro.
-
-## Dívida aberta (auditoria de 2026-08-26, revisada em 2026-08-27)
-
-> O que a auditoria de 2026-08-26 encontrou e ainda **não** foi corrigido, mais o que o plano
-> dos cinco portões deixou em aberto. G0, G1 e G2 estão fechados — só a indicação ficou, e por
-> dependência declarada do G3. O que saiu está no [CHANGELOG.md](CHANGELOG.md), com o porquê.
-
-18. **A posição corrente ainda não é a projeção do razão.** O livro-razão existe e a escrita é
+12. **A posição corrente ainda não é a projeção do razão.** O livro-razão existe e a escrita é
     espelhada nele, mas `PortfolioPosition` continua sendo a fonte de leitura. É o passo 2 de 3 do
     plano, deliberado: `GET /transactions/reconciliation` compara os dois lado a lado e o teste de
-    integração cobre o caminho, mas trocar a fonte é uma entrega própria. Enquanto isso, o razão
-    grava `adjust` quando o usuário declara estado na tela — quando a importação de nota e CSV
-    chegar (G2), ela grava `buy` de verdade e `adjust` vira exceção.
+    integração cobre o caminho, mas trocar a fonte é uma entrega própria. A importação de operações
+    já grava `buy` de verdade (`importing/`, `/transactions/import`); `adjust` ficou para quando a
+    pessoa declara estado direto na tela.
 
-19. **Decimal cobre o caminho fiscal, não o schema.** A projeção do razão e a apuração de IR rodam
-    em `Decimal` com escala e arredondamento em `app/core/money.py`. As **colunas do banco**
-    continuam `Float`, e preço, patrimônio e indicadores de tela seguem em float — o que é
-    adequado para apoio à decisão e não para um extrato somado. Migrar as colunas monetárias para
-    `Numeric` é uma migração grande e ainda não foi feita.
+13. **Decimal cobre o caminho fiscal, não o schema.** A projeção do razão e a apuração de IR rodam
+    em `Decimal` com escala e arredondamento em `core/money.py`. As **colunas do banco** continuam
+    `Float`, e preço, patrimônio e indicadores de tela seguem em float — adequado para apoio à
+    decisão, não para um extrato somado. Migrar as colunas monetárias para `Numeric` é uma migração
+    grande e ainda não foi feita.
 
-20. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
+14. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
     vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo
-    faria o worker seguinte repetir o mesmo trabalho segundos depois. O custo é real e continua
-    aberto: se um worker morre logo após adquirir, o snapshot diário fica bloqueado por até 5,4h.
-    A correção certa é heartbeat no lock, não release no `finally`. (O warm-up do scan é caso
-    diferente — roda uma vez e **libera** no `finally`, corrigido em 2026-08-27.)
+    faria o worker seguinte repetir o trabalho segundos depois. O custo é real e continua aberto: se
+    um worker morre logo após adquirir, o snapshot diário fica bloqueado por até 5,4h. A correção
+    certa é heartbeat no lock, não release no `finally`. (O warm-up do scan é caso diferente — roda
+    uma vez e **libera** no `finally`.)
 
-21. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token
-    para o usuário da sessão se ele já existir — necessário para troca de dono do aparelho, mas
-    significa que quem conhecer um token FCM alheio redireciona os alertas daquele aparelho para
-    si. Entropia do token é a única proteção hoje.
+15. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token para
+    o usuário da sessão se ele já existir — necessário para troca de dono do aparelho, mas significa
+    que quem conhecer um token FCM alheio redireciona os alertas daquele aparelho para si. Entropia
+    do token é a única proteção hoje.
 
-22. **Indicação não existe.** O programa de indicação — código, atribuição no cadastro, crédito de
-    meses — é o segundo canal de aquisição previsto e depende do módulo de entitlement, que é do
-    G3. É o único item do G2 que ainda não foi feito, e está bloqueado por dependência declarada,
-    não por esquecimento.
+16. **A paginação das listas com agregado limita o payload, não a consulta.** Proventos, renda fixa
+    e sugestões seguidas ainda leem o conjunto inteiro do banco, porque os totais por mês, a marcação
+    a mercado e a comparação com o Ibovespa precisam de todos os registros por definição. O que
+    atravessa a rede está limitado; a consulta não. Resolver de verdade exige mover esses agregados
+    para SQL — o que, no caso da renda fixa, significa mover a marcação a mercado junto.
 
-23. **A paginação das listas com agregado limita o payload, não a consulta.** Proventos, renda
-    fixa e sugestões seguidas ainda leem o conjunto inteiro do banco, porque os totais por mês, a
-    marcação a mercado e a comparação com o Ibovespa precisam de todos os registros por definição.
-    O que atravessa a rede está limitado; a consulta não. Resolver de verdade exige mover esses
-    agregados para SQL — o que, no caso da renda fixa, significa mover a marcação a mercado junto.
-
-24. **A acessibilidade foi coberta por verificação, não por auditoria.** Contraste (CI), nome
-    acessível de botão (lint), alternativa textual de gráfico (lint) e foco visível estão de pé.
-    O que **não** foi feito é percorrer cada fluxo só com teclado e com leitor de tela de verdade:
+17. **A acessibilidade foi coberta por verificação, não por auditoria.** Contraste (CI), nome
+    acessível de botão (lint), alternativa textual de gráfico (lint) e foco visível estão de pé. O
+    que **não** foi feito é percorrer cada fluxo só com teclado e com leitor de tela de verdade:
     ordem de foco em camadas empilhadas, anúncio de mudança de rota e armadilha de foco em modal
     ainda não têm cobertura automática nem verificação manual registrada.
 
-## Armadilhas conhecidas (não são bugs, mas mordem)
+## Armadilhas conhecidas
 
-- **Ícone do Lucide precisa ser registrado à mão** em `LucideAngularModule.pick({...})`
-  (`web/src/app/app.config.ts`). Nome ausente ou errado **não quebra o build** — quebra a tela em runtime.
-  Ao adicionar um `<lucide-icon>`, registre o import e abra a tela.
-- **Construtor que ignora chave não declarada.** `Modelo(**resultado.__dict__)` no Pydantic e
-  `fromJson` no Dart descartam campo não declarado **em silêncio**. Três campos calculados nunca
-  chegaram ao cliente por causa disso (`consensus_methods`, `trend_basis`, `allocation_gaps`). Ao
-  adicionar campo a um resultado interno, verifique se o modelo de resposta o declara.
-- **Coluna nova exige migração Alembic.** Mexer no model não basta.
+Não são bugs, mas mordem. A lista completa, com o que cada uma já quebrou, está em
+[CLAUDE.md](../CLAUDE.md#armadilhas-que-não-quebram-o-build).
+
+- Ícone do Lucide não registrado quebra a tela em runtime, não o build.
+- Classe CSS inexistente quebra a tela em silêncio.
+- `Modelo(**resultado.__dict__)` e `fromJson` descartam campo não declarado sem avisar.
+- Coluna nova exige migração Alembic — mexer no model não basta.

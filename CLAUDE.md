@@ -1,80 +1,232 @@
 # fiance
 
-Plataforma multi-tenant de análise de investimentos focada na B3. Stack: FastAPI+Postgres (backend/), Angular 22 (web/), Flutter (mobile/).
+Plataforma multi-tenant de análise de investimentos focada na B3.
+**FastAPI + Postgres** (`backend/`) · **Angular 22** (`web/`) · **Flutter** (`mobile/`).
 
-**Documentação em [docs/](docs/)** — comece pelo [índice](docs/README.md), que diz qual arquivo
-responde o quê. Em resumo:
+Este arquivo é o **contrato de trabalho**: invariantes, armadilhas e checklists. Ele não descreve
+o sistema — isso é [docs/](docs/), e o [índice](docs/README.md) diz qual arquivo responde o quê:
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — como o sistema é montado: camadas, algoritmos de
-  valuation/scoring, endpoints, estrutura de pastas do web e do mobile.
-- [docs/FEATURES.md](docs/FEATURES.md) — o que cada tela faz, pela navegação atual (5 destinos).
-- [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) — **só o que está aberto**, verificado contra o
-  código. Leia antes de assumir que algo é bug novo.
-- [docs/CHANGELOG.md](docs/CHANGELOG.md) — histórico datado e o **por quê** das decisões, incluindo
-  as revertidas. Nada ali é pendência.
-- [docs/design/](docs/design/) — o redesign de UX/UI: auditoria, arquitetura de informação,
-  wireframes, design system, e o log do que já está no ar.
+| Quero saber | Leia |
+|---|---|
+| Rodar, instalar, variáveis de ambiente | [README.md](README.md) |
+| Como o sistema é montado — camadas, algoritmos, endpoints | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| O que cada tela faz | [docs/FEATURES.md](docs/FEATURES.md) |
+| O que está aberto **agora** | [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) |
+| Por que uma decisão foi tomada, e quando | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
+| Por que a interface é assim | [docs/design/](docs/design/) |
 
-Setup/instalação/variáveis de ambiente: ver [README.md](README.md) (já atualizado e não duplicado aqui).
+**Histórico não é pendência.** Nada no CHANGELOG é trabalho a fazer, mesmo quando descreve um
+problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 
-## Notas rápidas para trabalhar neste repo
+---
 
-- Fontes de dados: **BRAPI** (ações BR/FIIs/BDRs/ETFs) e **BCB SGS** (CDI/Selic/IPCA reais). Finnhub (ações US), CoinGecko (cripto), Gemini (IA) e yfinance/Alpha Vantage foram descontinuados — o sistema não trabalha mais com ações internacionais fora de BDR nem com criptomoedas.
-- Classes de ativo suportadas: `br_stock` | `bdr` | `fii` | `etf` | `renda_fixa` (asset type) → categorias de alocação `acoes_br` | `bdrs` | `fiis` | `etfs` | `renda_fixa`.
-- Persistência: SQLAlchemy sobre Postgres (produção) / SQLite (dev). Multi-tenant por `user_id`, aplicado na camada `storage/portfolio_store.py`. **Migrações são versionadas com Alembic** (`backend/migrations/`). O histórico foi colapsado em 2026-08-28 numa única `0001_esquema_inicial`, quando o banco ainda não tinha titular — e o ramo que carimbava bancos pré-Alembic saiu junto, porque aquele estado deixou de poder existir. Coluna nova exige uma migração, e agora isso é **verificado**: `test_database_migration.py` sobe um banco pela cadeia e outro por `Base.metadata` e compara tabela, coluna e chave primária.
-- Regras de negócio (fair price, scoring, RF, IR) vivem **só no backend** (`analysis/`, `optimizer/`). Web e mobile delegam: não há mais cálculo de renda fixa duplicado no Angular.
-- **Renda fixa é entidade de primeira classe** (tabela `fixed_income_positions`, CRUD em `/fixed-income`), marcada a mercado no backend. Nada de RF vive em `localStorage`, e o ticker sintético `RF_*` não existe mais.
-- Escrita de carteira: use `POST /portfolio/position` e `DELETE /portfolio/position/{ticker}`. `PUT /portfolio` é **destrutivo** (substitui tudo) e existe só para importação explícita.
-- Unidades: `roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` chegam do collector em **percentual** (ver `collectors/universal._ratio_to_pct`). Crescimento no DCF também é percentual.
-- Régua de score em um único lugar por plataforma: `backend/app/analysis/score_ruler.py`, `web/src/app/core/score-ruler.ts`, `mobile/lib/core/score_ruler.dart`. Mudar um limiar exige mudar os três — e o Python é o primeiro.
-- **Tokens de design são gerados, não escritos.** Cor, tipografia, espaço, raio, motion e as bandas das réguas saem de `design-tokens/tokens.json` via `node design-tokens/build.mjs`, que emite `web/src/tokens.css`, `web/src/app/core/design-tokens.ts` e `mobile/lib/core/design_tokens.dart`. Nunca edite os gerados nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou `theme.dart` — o job `design-tokens` do CI falha se divergirem. Qualquer chave `*Ruler` em `tokens.json` vira `fi<Nome>Bands`/`fi<Nome>Domain` nas duas plataformas automaticamente.
-- **Ícone e favicon também são gerados.** A marca (quadrado arredondado + `trending-up` do Lucide) sai de `tokens.json` via `python design-tokens/build-icons.py`, que emite `web/public/favicon.svg`, `favicon-512.png`, `apple-touch-icon.png` e os dois PNGs de `mobile/assets/icon/`. Requer Pillow. Nunca edite esses arquivos à mão — eles já carregaram a marca antiga por uma versão inteira. Os três hex que não cabem em token (`theme-color` no `index.html`, `adaptive_icon_background` no `pubspec.yaml` e `ic_launcher_background` em `mobile/android/app/src/main/res/values/colors.xml`) são conferidos pelo `--check`, que roda no CI. **O launcher nativo é um segundo passo**: os PNGs de `mipmap-*` e do `AppIcon.appiconset`, mais o `colors.xml`, saem de `cd mobile && dart run flutter_launcher_icons` a partir de `assets/icon/` — rode-o sempre que a marca mudar, ou os ícones do app continuam com a cor antiga mesmo com `tokens.json` correto (foi o que aconteceu até 2026-08-27).
-- **Não existe alias de cor.** Não use `bg-accent`, `text-tx`, `bg-panel`, `text-muted` nem paleta crua do Tailwind (`red-400`, `grey`, `white`): a camada foi removida. Os papéis são `ground`/`ground-1`/`ground-2`, `hairline`, `ink`/`ink-2`/`ink-3`, `brand`/`on-brand`, os estados `favorable`/`attention`/`adverse`/`indeterminate`, a direção `up`/`down` e as séries `series-1..11`/`series-other`. Opacidade funciona (`bg-brand/20`) porque as cores da config são funções que emitem `color-mix` — declará-las como string faz o Tailwind **descartar o modificador em silêncio**.
-- **Estado ≠ direção, nas duas plataformas.** Estado é julgamento (veredito, saúde, severidade) e tem prioridade cromática; direção é a aritmética de um número (P&L, linha de gráfico) e tem croma baixo. No mobile use `fiStateColor(FiState.x, brightness)` e `fiDirectionColor(delta, brightness)` — `gainColor`/`lossColor`/`warnColor` não existem mais.
-- **Classe CSS que não existe não quebra o build** — quebra a tela em silêncio, do mesmo jeito que um ícone Lucide não registrado. Já aconteceu com `.card`, `.btn-primary`, `.tag`, `.verdict-pill`, `verdict-*` e `bg-success`. Ao usar uma classe global, confirme que ela está em `web/src/styles.css`.
-- **O livro-razão é a fonte de verdade da carteira — mas ainda não é a fonte de leitura.** A matemática vive em `backend/app/ledger/`, que não conhece banco: `project_position` dobra os lançamentos na posição. A escrita é **espelhada** (`ledger_service.mirror_*`) e `GET /transactions/reconciliation` compara os dois lado a lado; trocar a fonte antes de a comparação estar verde é passo 3 de 3 e ainda não foi dado. Preço médio segue a convenção brasileira: venda reduz quantidade e custo, nunca a média. Evento corporativo é lançamento (`split`, `bonus`, `amortization`), não correção manual — desdobramento sem ajuste é IR errado.
-- **Dinheiro fiscal é `Decimal`; dinheiro de tela é `float`.** Escala e arredondamento vivem só em `backend/app/core/money.py` (meio para cima, não bancário). Nunca construa `Decimal` a partir de `float` sem passar por texto — use `money()`. As colunas do banco ainda são `Float`: a migração para `Numeric` está aberta.
-- **Sessão tem TTL curto e refresh rotacionado.** Acesso de 1h, refresh de 30 dias que é queimado ao ser usado. Revogação por `jti` (este dispositivo) e por `session_cuts` (todos). Os clientes renovam **uma vez** ao levar 401, com a renovação compartilhada — dois refreshes simultâneos derrubam a sessão. No web, `httpErrorInterceptor` tem que ser o mais externo.
-- **Contador de uso é uma primitiva só** (`backend/app/core/usage.py`): serve ao rate limiting e servirá ao teto de plano. A granularidade mora no formato de `window_key`, não no schema.
-- **Evento de produto tem dicionário fechado** (`backend/app/core/events.py`). Nome fora dele e propriedade com ticker ou valor devolvem 422 — dado de carteira não sai do produto. Marcos de ativação são gravados pelo **servidor** (`services/milestones.py`), não pelo cliente.
-- **Tabela nova com `user_id` tem que entrar em `account_store.USER_SCOPED_MODELS`** ou o teste `test_export_cobre_toda_tabela_com_dono` falha. Exportação e exclusão de conta nunca ficam atrás de plano.
-- **O plano de monetização está em [docs/CHANGELOG.md](docs/CHANGELOG.md)**, na entrada de 2026-08-27: cinco portões (G0 publicável, G1 livro-razão, G2 retenção, G3 dinheiro real, G4 preço cheio). G0, G1 e G2 estão fechados; o que falta está em [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).
-- **A página de ativo é renderizada no servidor e é a única rota pública.** É o canal de aquisição: robô de busca não faz login, e o modelo não comporta mídia paga. A fronteira mora em `web/src/app/app.routes.server.ts` e tem teste — renderizar no servidor uma tela de sessão buscaria dado de titular durante o SSR. No backend, `analyze_asset(personalized=False)` e as rotas `/api/public/*` são a leitura **sem titular**, com teto por IP. Ao mexer no web, lembre que o código roda também no Node: use `DOCUMENT` e `isPlatformBrowser`, nunca `document`/`localStorage` direto.
-- **Dado externo passa por faixa de plausibilidade** (`collectors/plausibility.py`): campo absurdo vira `None`, preço absurdo rejeita o snapshot inteiro. E a fonte tem disjuntor (`collectors/circuit.py`) — aberto, nem tenta, e quem chama cai no cache vencido. `GET /data-quality/source` mostra os dois sem varrer o universo.
-- **Importação de operações é prévia + commit** (`app/importing/`, `/transactions/import`). Tolerante com forma, intolerante com ambiguidade; erro diz a linha; gravação é atômica; duplicidade é apresentada para decisão, nunca silenciada.
-- **A API tem versão no caminho e as listas paginam por cursor.** `/api/v1` é canônico; `/api` responde como alias em transição e carimba `X-API-Deprecation`. Nas listas com agregado (proventos, renda fixa, sugestões) o corte é **do payload**, não da consulta — o total tem que cobrir o conjunto, senão encolhe conforme a rolagem. Onde não há agregado (`/portfolio/trades`, `/transactions`) o corte é no banco. Cursor é keyset (`backend/app/core/pagination.py`), nunca offset.
-- **Onde o cache mora é trocável** (`core/cache_backends.py`): arquivo local por padrão, Redis quando `REDIS_URL` existir. Não é desempenho, é correção — com dois nós e cache por nó, a mesma pessoa vê preços diferentes conforme o balanceador. O vencimento vai **dentro** do valor mesmo no Redis, porque `get_with_age` precisa do dado vencido para o disjuntor degradar; TTL nativo o apagaria no instante em que ele começa a servir. `REDIS_URL` sem o pacote instalado **falha alto**. O contrato é escrito uma vez e rodado contra os dois backends; o do Redis pula com motivo escrito quando não há servidor, e o CI sobe um.
-- **Busca global: o servidor devolve o que é da pessoa; a rota é do cliente.** `/search` (`services/search_service.py`) procura na carteira, na renda fixa e no universo, e devolve `ref` — ticker ou id — nunca caminho. Destino de tela também é resultado de busca, mas a lista deles vive em cada cliente (`SEARCH_DESTINATIONS` no web, `buscaDestinos` no mobile): as árvores diferem, e um catálogo de rotas no servidor seria uma segunda verdade sobre a IA. Por isso também os destinos filtram sem rede — a busca degrada perdendo metade do resultado, nunca a caixa inteira. O que é da pessoa vem primeiro na ordem dos grupos.
-- **Onboarding é derivado, não guardado.** O passo sai do que a pessoa já fez (tem posição? tem meta?), em `/onboarding` — um contador criaria uma segunda verdade que diverge quando alguém importa a carteira por outro caminho. O recorte mora na URL (`?passo=2`) e nada bloqueia: pular também carimba `users.onboarded_at`, e a carteira de demonstração (`/demo/portfolio`) roda a análise de verdade sem gravar nada.
-- **Julgamento renderizado exige explicabilidade, e o lint cobra** (`web/tools/lint-ui.mjs`). Score, veredito, preço justo e sugestão precisam de `<app-provenance>`, `<app-help-tooltip>` ou equivalente. Mencionar em prosa não conta como renderizar — a detecção olha interpolação, binding e `@if`. Há escape, e ele exige motivo escrito: `<!-- sem-explicabilidade: ... -->`.
-- **Densidade é preferência da conta; tema é do aparelho.** Densidade acompanha a pessoa (apetite por informação) e vive em `preferences.density`, aplicada pelo `DensityService` como `[data-density]` no `<html>`; tema vive em `localStorage`. Na tabela de posições a URL vence a preferência — link salvo é contrato.
-- **Contraste é verificado, não recomendado** (`design-tokens/check-contrast.mjs`, no CI). Ajuste de cor que derrube um par abaixo de AA falha o build. `ink-3` conta como texto (4,5:1) porque legenda é texto pequeno; série de gráfico conta como forma (3:1) porque nunca é a única informação; `hairline` fica de fora, é decoração.
-- **`npm run lint:ui` cobre cinco coisas** que não quebram o build e quebram a tela: ícone não registrado, classe inexistente, julgamento sem explicabilidade, gráfico sem tabela e botão de ícone sem `aria-label`. Rode-o **depois** do build — a fonte de verdade das classes é o CSS emitido.
-- **Proventos por calendário são sugestão, nunca lançamento** (`/dividends/pending`). Toda ressalva ali erra o valor para mais (data-com que a fonte não publica, razão incompleto, JCP bruto), então nada vem pré-selecionado e não existe "aceitar todos". A quantidade na data vem da projeção do razão.
-- **Cerca de plano mora só em `backend/app/entitlement/`** e entra desligada (`ENTITLEMENTS_ENABLED=false`, o padrão: todo mundo tem tudo). A régua é dado em `plans.py`, com a justificativa de cada linha; aplicar é `Depends(requires(Feature.X))`; bloqueio é 402 com corpo que a UI usa para montar o gate. Dois testes de arquitetura travam isso: nenhuma condicional de plano fora do módulo, e `analysis`/`optimizer`/`collectors`/`ledger` não importam nada dele — se o cálculo souber quem paga, a independência do algoritmo vira promessa. Ativo da própria carteira **nunca** consome cota, e a rota pública também não.
-- **Assinatura carrega o próprio preço** (`price_cents`, `locked`): preço travado de fundador é promessa pública, então é dado e não memória — reajustar a tabela não pode alcançar quem contratou antes. Webhook é idempotente por `processed_webhooks`; o provedor reenvia até receber 200. O trial de 14 dias começa na **primeira posição salva**, não no cadastro.
-- **Indicação credita na qualificação, nunca no cadastro** (`services/referral_service.py`).
-  Conta é grátis de fabricar aos milhares; carteira não é — creditar no cadastro faria do
-  programa uma máquina de imprimir Premium. O gatilho é o mesmo marco do trial. A atribuição
-  acontece **só no login** (`referral_code` em `/auth/google`) e é recusada para quem já tem
-  carteira, já foi atribuído, ou usou o próprio código; recusa não derruba o login. Crédito é
-  `subscriptions.credited_until`, separado de `trial_ends_at` para não reabrir trial gasto, com
-  teto declarado. A rota nunca devolve quem foi indicado.
-- **O modo de afirmação é configuração, não código** (backend/app/affirmation.py, AFFIRMATION_LEVEL). Três níveis: descritivo, analítico (padrão) e prescritivo. A diferença é **estrutural** — o que sai fora do nível 3 é o valor por ativo, que é o que instrui; a análise que o sustentava fica. Existe para que a resposta sobre CVM 19/20 seja uma variável, e não um refactor sob pressão. Nível 3 e personalização por perfil não andam juntos sem parecer.
-- **Veredito vem com o que o derrubaria.** `analysis/falsifiers.py` lê a mesma régua ao
-  contrário: os limiares de margem de segurança dão, por álgebra, o preço em que o veredito
-  muda, e o Bazin dá o corte de dividendo que apaga o desconto. Não há falsificador genérico —
-  sem preço justo a lista sai vazia, e "fique de olho nos resultados" seria almanaque ocupando
-  o lugar de uma condição conferível. O teste que importa fecha o círculo: passa o preço
-  anunciado de volta pelo `decide` e confere que o veredito vira o prometido.
-- **Projeção sai como faixa, nunca como número único.** Os três cenários vivem em
-  `analysis/scenarios.py`; o conservador zera o crescimento (só o aporte trabalha) e o otimista
-  multiplica as premissas por um fator **declarado**, não estimado. `_low`/`_high` são campos
-  obrigatórios de `PassiveIncomeMonth`: com default existiria um caminho em que o número sai
-  sozinho. O `lint:ui` recusa tela que exiba `portfolio_value`/`passive_income_monthly` sem a
-  faixa ao lado. Meta é faixa de datas, e o cenário que não alcança é dito, não omitido.
-- Fuso fiscal: isenção mensal de IR e faixas de alíquota usam mês calendário **brasileiro** (`core/brt.py`), não UTC.
-- **A navegação do web mudou em 2026-08-21.** São 5 destinos por intenção (`/hoje`, `/carteira`, `/descobrir`, `/estrategia`, `/voce`), os cinco na navegação principal desde 2026-08-27 — antes `/voce` só existia no bottom nav do mobile com 20 rotas endereçáveis (`/hoje/atividade` entrou em 2026-08-26), mais `/ativo/:ticker` como camada; `/market` foi dissolvido e as tabs em `signal` viraram rotas. As URLs antigas seguem como redirect. O mobile seguiu a mesma IA em 2026-08-22: 5 destinos, 19 rotas, `market_screen`/`rebalance_tab` removidos e Estratégia criada (não existia em nenhuma plataforma). A paridade fechou em 2026-08-28: metas ganharam tela própria em `/estrategia/metas` (a rota renderizava a tela de Configurações inteira, então o link prometia metas e entregava preferências) e RF × Bolsa ganhou cliente Dart em `/estrategia/renda-fixa-vs-bolsa`. Meta mora em Estratégia porque é a referência que produz o desvio — em Configurações, obrigava a sair de onde o problema aparece. As telas de Hoje e Carteira no mobile foram reestruturadas em 2026-08-26 (`features/hoje/`, `features/carteira/`); `dashboard_screen.dart` e `assets_screen.dart` não existem mais. Ver [docs/design/](docs/design/) antes de adicionar tela ou rota. Push exige o app instalado e isso é **decisão declarada** (o web sinaliza em `/voce/alertas`). A assimetria de Estratégia era bug, não decisão: `strategy.component` nunca tinha sido roteado. **Corrigido em 2026-08-21** — Estratégia é `/estrategia` e Quick Invest é `/estrategia/aporte`; no mobile, desde 2026-08-22.
-- **Ícone do Lucide precisa ser registrado à mão** em `LucideAngularModule.pick({...})` (`web/src/app/app.config.ts`). Nome ausente ou errado **não quebra o build** — quebra a tela em runtime (`The "x" icon has not been provided...`). Ao adicionar um `<lucide-icon>`, registre o import e abra a tela.
-- Filtro e recorte de tela vivem **na URL**, não em `sessionStorage`/`signal`: oportunidades (`q`, `dy`, `mos`, `cat`, `destaque`, `p`), quedas (`min_score`, `top`, `category`) e a tabela de posições (`cols`, `d`). Link salvo é contrato.
-- Testes: `cd backend && python -m pytest -q` (724 testes, 11 pulados sem Redis) e `python -m ruff check app tests migrations`. Mobile: `flutter analyze && flutter test` (49 testes). Web: `npm run format:check && npm test && npm run build && npm run lint:ui` (90 testes em Vitest) — **confira o código de saída**: o build imprime os erros como `X [ERROR] TS…`, então um `grep -i error` ingênuo passa reto por eles. Tudo roda no CI (`.github/workflows/ci.yml`) em todo push — mudança que quebra a suíte não deve ser mergeada.
+## Como trabalhar aqui
+
+**Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
+
+```bash
+cd backend && python -m pytest -q                  # 724 passam, 11 pulam sem Redis
+cd backend && python -m ruff check app tests migrations
+cd mobile  && flutter analyze && flutter test      # 0 issues, 49 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 90 testes
+node design-tokens/build.mjs --check               # tokens sincronizados
+node design-tokens/check-contrast.mjs              # contraste AA
+python design-tokens/build-icons.py --check        # marca sincronizada
+```
+
+Duas ressalvas que já custaram tempo:
+
+- **Confira o código de saída, não o texto.** O build do Angular imprime erro como
+  `X [ERROR] TS…`; um `grep -i error` ingênuo passa reto.
+- **`lint:ui` roda depois do build** — a fonte de verdade das classes é o CSS emitido.
+- **Não rode `dart format`.** O CI do mobile é `flutter analyze && flutter test`. O formatter
+  reescreve o `design_tokens.dart` gerado e quebra `if`s de uma linha que o repo mantém.
+
+### Ao adicionar…
+
+| O quê | Faça também | Senão |
+|---|---|---|
+| Coluna no model | Migração Alembic (`backend/migrations/`) | `test_database_migration.py` falha |
+| Tabela com `user_id` | Entrar em `account_store.USER_SCOPED_MODELS` | `test_export_cobre_toda_tabela_com_dono` falha |
+| Campo calculado numa resposta | Declarar no modelo Pydantic / `fromJson` do Dart | Some **em silêncio** |
+| `<lucide-icon>` | Registrar em `LucideAngularModule.pick({...})` ([app.config.ts](web/src/app/app.config.ts)) | Quebra a tela em runtime |
+| Classe CSS global | Confirmar que existe em [styles.css](web/src/styles.css) | Quebra a tela em silêncio |
+| Limiar de score | Mudar nas três plataformas, Python primeiro | Réguas divergem |
+| Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
+| Cor, tipografia, espaço | Editar `design-tokens/tokens.json` e rodar o gerador | Job `design-tokens` falha |
+
+---
+
+## Armadilhas que não quebram o build
+
+Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde**.
+
+- **Ícone Lucide não registrado** — `The "x" icon has not been provided...` em runtime.
+- **Classe CSS inexistente** — já aconteceu com `.card`, `.btn-primary`, `.tag`, `.verdict-pill`,
+  `verdict-*`, `bg-success`.
+- **Construtor que ignora chave não declarada** — `Modelo(**resultado.__dict__)` no Pydantic e
+  `fromJson` no Dart descartam campo não declarado sem avisar. Três campos calculados nunca
+  chegaram ao cliente assim: `consensus_methods`, `trend_basis`, `allocation_gaps`.
+- **Cor do Tailwind declarada como string** — o modificador de opacidade (`bg-brand/20`) é
+  **descartado em silêncio**. As cores da config são funções que emitem `color-mix` por isso.
+- **`_session_global()` em caminho de request** — não filtra por usuário. É para job cross-tenant.
+- **Dois refreshes simultâneos** derrubam a sessão: o refresh é rotacionado e queimado no uso.
+
+O `npm run lint:ui` cobre cinco dessas: ícone não registrado, classe inexistente, julgamento sem
+explicabilidade, gráfico sem tabela e botão de ícone sem `aria-label`.
+
+---
+
+## Invariantes
+
+### Domínio e cálculo
+
+- **Regra de negócio vive só no backend** (`analysis/`, `optimizer/`). Web e mobile delegam — não
+  há cálculo de renda fixa duplicado no Angular.
+- **Régua de score em um lugar por plataforma:** `analysis/score_ruler.py`,
+  `web/src/app/core/score-ruler.ts`, `mobile/lib/core/score_ruler.dart`. Mudar um limiar exige os
+  três, e o Python é o primeiro.
+- **Unidades:** `roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` chegam do collector em
+  **percentual** (`collectors/universal._ratio_to_pct`). Crescimento no DCF também.
+- **Dinheiro fiscal é `Decimal`; dinheiro de tela é `float`.** Escala e arredondamento só em
+  `core/money.py` (meio para cima, não bancário). Nunca construa `Decimal` de `float` sem passar
+  por texto — use `money()`. As colunas do banco ainda são `Float`; migrar para `Numeric` está
+  aberto.
+- **Fuso fiscal é brasileiro** (`core/brt.py`), não UTC — isenção mensal de IR e faixas de alíquota
+  usam mês calendário BRT.
+- **Veredito vem com o que o derrubaria** (`analysis/falsifiers.py`). Os limiares de margem de
+  segurança dão, por álgebra, o preço em que o veredito muda. Sem preço justo a lista sai vazia —
+  "fique de olho nos resultados" seria almanaque no lugar de uma condição conferível.
+- **Projeção sai como faixa, nunca número único** (`analysis/scenarios.py`). `_low`/`_high` são
+  campos obrigatórios de `PassiveIncomeMonth`: com default existiria caminho em que o número sai
+  sozinho. O `lint:ui` recusa tela que exiba `portfolio_value`/`passive_income_monthly` sem a faixa.
+- **Modo de afirmação é configuração, não código** (`affirmation.py`, `AFFIRMATION_LEVEL`).
+  Descritivo / analítico (padrão) / prescritivo. O que sai fora do nível 3 é o **valor por ativo**,
+  que é o que instrui; a análise que o sustentava fica. Existe para que a resposta sobre CVM 19/20
+  seja variável, e não refactor sob pressão.
+
+### Carteira e livro-razão
+
+- **O livro-razão é a fonte de verdade — mas ainda não é a fonte de leitura.** A matemática vive em
+  `ledger/`, que não conhece banco. A escrita é **espelhada** (`ledger_service.mirror_*`) e
+  `GET /transactions/reconciliation` compara os dois. Trocar a fonte é passo 3 de 3, ainda não dado.
+- **Preço médio segue a convenção brasileira:** venda reduz quantidade e custo, nunca a média.
+- **Evento corporativo é lançamento** (`split`, `bonus`, `amortization`), não correção manual —
+  desdobramento sem ajuste é IR errado.
+- **Escrita de carteira:** `POST /portfolio/position` e `DELETE /portfolio/position/{ticker}`.
+  `PUT /portfolio` é **destrutivo** e existe só para importação explícita.
+- **Renda fixa é entidade de primeira classe** (`fixed_income_positions`, `/fixed-income`), marcada
+  a mercado no backend. Nada de RF em `localStorage`; o ticker sintético `RF_*` não existe mais.
+- **Classes de ativo:** `br_stock` | `bdr` | `fii` | `etf` | `renda_fixa` → categorias `acoes_br` |
+  `bdrs` | `fiis` | `etfs` | `renda_fixa`.
+- **Importação é prévia + commit** (`importing/`, `/transactions/import`): tolerante com forma,
+  intolerante com ambiguidade; erro diz a linha; gravação atômica; duplicidade é apresentada para
+  decisão, nunca silenciada.
+- **Proventos por calendário são sugestão, nunca lançamento** (`/dividends/pending`). Toda ressalva
+  ali erra para mais, então nada vem pré-selecionado e não existe "aceitar todos".
+
+### Dados externos
+
+- **Fontes:** BRAPI (ações BR/FIIs/BDRs/ETFs) e BCB SGS (CDI/Selic/IPCA). Finnhub, CoinGecko,
+  Gemini e yfinance/Alpha Vantage foram descontinuados — sem ações internacionais fora de BDR, sem
+  cripto, sem IA externa.
+- **Dado externo passa por faixa de plausibilidade** (`collectors/plausibility.py`): campo absurdo
+  vira `None`, preço absurdo rejeita o snapshot inteiro.
+- **Fonte tem disjuntor** (`collectors/circuit.py`) — aberto, nem tenta, e quem chama cai no cache
+  vencido. `GET /data-quality/source` mostra os dois sem varrer o universo.
+- **Onde o cache mora é trocável** (`core/cache_backends.py`): arquivo local por padrão, Redis
+  quando `REDIS_URL` existir. Não é desempenho, é correção — com dois nós e cache por nó, a mesma
+  pessoa vê preços diferentes conforme o balanceador. O vencimento vai **dentro** do valor mesmo no
+  Redis, porque `get_with_age` precisa do dado vencido para o disjuntor degradar. `REDIS_URL` sem o
+  pacote instalado **falha alto**.
+
+### API
+
+- **Versão no caminho:** `/api/v1` é canônico; `/api` responde como alias em transição e carimba
+  `X-API-Deprecation`.
+- **Listas paginam por cursor keyset** (`core/pagination.py`), nunca offset. Onde há agregado
+  (proventos, renda fixa, sugestões) o corte é **do payload**, não da consulta — senão o total
+  encolhe conforme a rolagem. Onde não há (`/portfolio/trades`, `/transactions`), corta no banco.
+- **A página de ativo é a única rota pública, e é renderizada no servidor.** É o canal de
+  aquisição: robô não faz login e o modelo não comporta mídia paga. A fronteira está em
+  `web/src/app/app.routes.server.ts` e tem teste. No backend, `analyze_asset(personalized=False)` e
+  `/api/public/*` são a leitura **sem titular**, com teto por IP.
+- **O código do web roda também no Node.** Use `DOCUMENT` e `isPlatformBrowser`; nunca `document`
+  ou `localStorage` direto.
+- **Busca global: o servidor devolve o que é da pessoa; a rota é do cliente.** `/search` procura
+  carteira, renda fixa e universo e devolve `ref` — ticker ou id, nunca caminho. Destino de tela
+  também é resultado, mas a lista vive em cada cliente (`SEARCH_DESTINATIONS` no web,
+  `buscaDestinos` no mobile): as árvores diferem, e um catálogo de rotas no servidor seria segunda
+  verdade sobre a IA. Por isso os destinos filtram sem rede.
+- **Onboarding é derivado, não guardado.** O passo sai do que a pessoa já fez (tem posição? tem
+  meta?), em `/onboarding` — um contador criaria segunda verdade. O recorte mora na URL
+  (`?passo=2`) e nada bloqueia.
+
+### Sessão, conta e privacidade
+
+- **Multi-tenant por `user_id`**, aplicado em `storage/portfolio_store.py`.
+- **Sessão tem TTL curto e refresh rotacionado.** Acesso 1h, refresh 30 dias queimado no uso.
+  Revogação por `jti` (este dispositivo) e `session_cuts` (todos). Os clientes renovam **uma vez**
+  ao levar 401, com a renovação compartilhada. No web, `httpErrorInterceptor` é o mais externo.
+- **Evento de produto tem dicionário fechado** (`core/events.py`). Nome fora dele, ou propriedade
+  com ticker ou valor, devolve 422 — dado de carteira não sai do produto. Marcos de ativação são
+  gravados pelo **servidor** (`services/milestones.py`), não pelo cliente.
+- **Exportação e exclusão de conta nunca ficam atrás de plano.**
+- **Contador de uso é uma primitiva só** (`core/usage.py`): serve ao rate limiting e ao teto de
+  plano. A granularidade mora no formato de `window_key`, não no schema.
+
+### Monetização
+
+O plano de cinco portões (G0 publicável → G4 preço cheio) está no
+[CHANGELOG](docs/CHANGELOG.md), entrada de 2026-08-27.
+
+- **Cerca de plano mora só em `entitlement/`** e entra desligada (`ENTITLEMENTS_ENABLED=false`).
+  A régua é dado em `plans.py`; aplicar é `Depends(requires(Feature.X))`; bloqueio é 402 com corpo
+  que a UI usa para montar o gate. Dois testes de arquitetura travam isso: nenhuma condicional de
+  plano fora do módulo, e `analysis`/`optimizer`/`collectors`/`ledger` não importam nada dele — se
+  o cálculo souber quem paga, a independência do algoritmo vira promessa. Ativo da própria carteira
+  **nunca** consome cota; a rota pública também não.
+- **Assinatura carrega o próprio preço** (`price_cents`, `locked`): preço travado de fundador é
+  promessa pública, então é dado e não memória. Webhook é idempotente por `processed_webhooks`.
+  O trial de 14 dias começa na **primeira posição salva**, não no cadastro.
+- **Indicação credita na qualificação, nunca no cadastro** (`services/referral_service.py`). Conta
+  é grátis de fabricar aos milhares; carteira não é. A atribuição acontece **só no login**
+  (`referral_code` em `/auth/google`) e é recusada para quem já tem carteira, já foi atribuído, ou
+  usou o próprio código; recusa não derruba o login. Crédito é `subscriptions.credited_until`,
+  separado de `trial_ends_at` para não reabrir trial gasto, com teto declarado. A rota nunca devolve
+  quem foi indicado.
+
+### Interface — web e mobile
+
+- **Cinco destinos por intenção**, iguais nas duas plataformas: `/hoje`, `/carteira`, `/descobrir`,
+  `/estrategia`, `/voce`, mais `/ativo/:ticker` como camada. URLs antigas seguem como redirect.
+  Meta mora em Estratégia porque é a referência que produz o desvio.
+- **Tokens de design são gerados, não escritos.** Cor, tipografia, espaço, raio, motion e as bandas
+  das réguas saem de `design-tokens/tokens.json` via `node design-tokens/build.mjs`, que emite
+  `web/src/tokens.css`, `web/src/app/core/design-tokens.ts` e `mobile/lib/core/design_tokens.dart`.
+  Nunca edite os gerados nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou
+  `theme.dart`. Qualquer chave `*Ruler` vira `fi<Nome>Bands`/`fi<Nome>Domain` automaticamente.
+- **Ícone e favicon também são gerados**, de `tokens.json` via `python design-tokens/build-icons.py`
+  (requer Pillow). **O launcher nativo é um segundo passo**: `cd mobile && dart run
+  flutter_launcher_icons` — sem ele os ícones do app ficam com a cor antiga mesmo com `tokens.json`
+  correto.
+- **Não existe alias de cor.** Nada de `bg-accent`, `text-tx`, `bg-panel`, `text-muted`, nem paleta
+  crua do Tailwind. Os papéis são `ground`/`ground-1`/`ground-2`, `hairline`, `ink`/`ink-2`/`ink-3`,
+  `brand`/`on-brand`, os estados `favorable`/`attention`/`adverse`/`indeterminate`, a direção
+  `up`/`down` e as séries `series-1..11`/`series-other`.
+- **Estado ≠ direção.** Estado é julgamento (veredito, saúde, severidade) e tem prioridade
+  cromática; direção é a aritmética de um número (P&L, linha de gráfico) e tem croma baixo. No
+  mobile: `fiStateColor(FiState.x, brightness)` e `fiDirectionColor(delta, brightness)`.
+- **Julgamento renderizado exige explicabilidade, e o lint cobra.** Score, veredito, preço justo e
+  sugestão precisam de `<app-provenance>`, `<app-help-tooltip>` ou equivalente. Mencionar em prosa
+  não conta. O escape exige motivo escrito: `<!-- sem-explicabilidade: ... -->`.
+- **Contraste é verificado, não recomendado** (`design-tokens/check-contrast.mjs`, no CI). `ink-3`
+  conta como texto (4,5:1) porque legenda é texto pequeno; série de gráfico conta como forma (3:1)
+  porque nunca é a única informação; `hairline` fica de fora, é decoração.
+- **Filtro e recorte vivem na URL**, não em `sessionStorage`/`signal` — link salvo é contrato.
+  Oportunidades (`q`, `dy`, `mos`, `cat`, `destaque`, `p`), quedas (`min_score`, `top`, `category`),
+  tabela de posições (`cols`, `d`).
+- **Densidade é preferência da conta; tema é do aparelho.** Densidade vive em `preferences.density`,
+  aplicada pelo `DensityService` como `[data-density]` no `<html>`; tema vive em `localStorage`. Na
+  tabela de posições a URL vence a preferência.
+- **Push exige o app instalado, e isso é decisão declarada** — o web sinaliza em `/voce/alertas`.

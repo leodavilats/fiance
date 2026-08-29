@@ -1,7 +1,7 @@
 # fiance — Arquitetura Técnica
 
 > Referência de **como o sistema é montado por dentro**: camadas, algoritmos, endpoints e
-> estrutura de pastas. Revisado em 2026-08-22, após o redesign de UX/UI.
+> estrutura de pastas. Revisado em **2026-08-28**.
 >
 > Setup e variáveis de ambiente ficam no [README.md](../README.md). O que cada tela faz fica em
 > [FEATURES.md](FEATURES.md). O histórico das decisões fica em [CHANGELOG.md](CHANGELOG.md).
@@ -30,23 +30,97 @@ fiance é uma plataforma multi-tenant de análise de investimentos focada na B3,
   - `renda_fixa_analysis.py` — % do CDI **multiplicativo** (110% do CDI = 1,10 × CDI), IPCA+ compondo inflação com juro real, constante única de dias por mês, e dois números explícitos de comparação com CDI (líquido e equivalente bruto por faixa de IR) no lugar do benchmark `cdi × 0.85` hardcoded. `analyze_one(prazo_meses_override=...)` é o que permite marcar uma posição a mercado.
   - `classify.py` — `auto_category()` mapeia AssetType → categoria canônica (fii→fiis, etf→etfs, bdr→bdrs, resto→acoes_br); `resolve_category()` trata categorias legadas (`renda`/`trade`/`caixa`). Categoria `bdrs` (antes `acoes_int`) foi renomeada de verdade em 2026-08-19, sem alias — sistema ainda sem usuários em produção, então sem dado real para migrar.
   - `dip_analysis.py`, `decision.py`, `strategy.py` — análise de quedas, motor de decisão de compra/venda, estratégias de alocação. `strategy.py::build_investment_strategy()` (consumido por `GET /strategy`) já usava `opportunity_service.get_opportunities()` para sugerir compras por gap de alocação — herda automaticamente o score/boost de preferências novos. Ganhou também `reduce_suggestions` (2026-08-19): posições já na carteira com veredito `SELL`/`STRONG_SELL` (via `PortfolioService.evaluate_portfolio`), sinalizando também se a categoria está acima da meta.
-- **`api/`** — 19 routers FastAPI (ver seção Endpoints). `basic.py` separa `router` (público: health/universe) de `admin_router` (protegido: `/cache/clear`, `/metrics`) — deixar `/cache/clear` público era DoS aberto.
+  - `falsifiers.py` — lê a régua **ao contrário**: os limiares de margem de segurança dão, por
+    álgebra, o preço em que o veredito muda, e o Bazin dá o corte de dividendo que apaga o desconto.
+    Não há falsificador genérico — sem preço justo a lista sai vazia, porque "fique de olho nos
+    resultados" seria almanaque no lugar de uma condição conferível. O teste fecha o círculo: passa
+    o preço anunciado de volta pelo `decide` e confere que o veredito vira o prometido.
+  - `scenarios.py` — os três cenários da projeção. O conservador zera o crescimento (só o aporte
+    trabalha) e o otimista multiplica as premissas por um fator **declarado**, não estimado.
+    `_low`/`_high` são obrigatórios em `PassiveIncomeMonth`: com default existiria um caminho em que
+    o número sai sozinho.
+  - `portfolio_health.py` — saúde da carteira na mesma régua do score de ativo.
+- **`api/`** — 33 routers FastAPI (ver seção Endpoints). `basic.py` separa `router` (público: health/universe) de `admin_router` (protegido: `/cache/clear`, `/metrics`) — deixar `/cache/clear` público era DoS aberto.
 - **`collectors/`** — integrações externas:
   - `universal.py` — `detect_type(symbol)` classifica em `br_stock|bdr|fii|etf`. Dispatcher: BR/FII/BDR/ETF → BRAPI (única fonte de cotação hoje). ETF detectado via lista curada `KNOWN_ETFS` (mesmo padrão de `KNOWN_UNITS`) além do `subType` da BRAPI. Ticker não suportado (ex.: ação US pura, cripto) levanta `UnsupportedTickerError` em vez de um asset_type — não há mais fallback "internacional genérico". Cache em camadas (fundamentals 2h, histórico 12h, dividendos 24h) + semáforo de 30 chamadas concorrentes.
   - `rates.py` — CDI/Selic/IPCA reais via BCB SGS (séries 4389/432/13522), cache 24h, fallback `14.40`/`14.40`/`5.0`.
   - `news.py` — coleta de notícias (RSS, sempre pt-BR/BR — todos os asset_types suportados são negociados na B3); `analyze_news_with_ai()` hoje é só o resumo determinístico (contagem de sentimento por item), sem IA externa.
+  - `plausibility.py` — faixa de plausibilidade sobre todo dado externo: campo absurdo vira `None`,
+    preço absurdo **rejeita o snapshot inteiro**. Dado errado que entra silenciosamente é pior que
+    dado ausente, porque vira veredito.
+  - `circuit.py` — disjuntor por fonte. Aberto, nem tenta, e quem chama cai no cache vencido.
+    `GET /data-quality/source` mostra plausibilidade e disjuntor sem varrer o universo.
 - **`core/`** — `config.py` (Pydantic Settings, universo hardcoded de fallback), `database.py` (engine SQLAlchemy, `init_db()`), `auth.py` (validação de ID token Google contra múltiplos `aud` permitidos, emissão de JWT HS256 próprio com TTL 30 dias), `cache.py`, `context.py` (contexto do usuário da request), `universe.py` (universo dinâmico via BRAPI `/quote/list`, com bucket próprio de ETFs).
-- **`models/db_models.py`** — ORM: `User`, `PortfolioPosition` (PK composta `user_id+ticker`), `PortfolioSnapshot` (histórico diário, purga após 365 dias), `WatchlistItemDb` (sem rota HTTP desde 2026-08-19 — feature nunca teve tela; mantido só o schema, ver KNOWN_ISSUES item 16), `GoalDb`, `SectorGoalDb`, `PreferencesDb` (inclui `desired_yield_stock/fii/int/etf`, `notify_price_alerts` — imediato, alertas de risco —, `opportunities_frequency` (`off|daily|weekly|monthly`, substituiu o antigo `notify_new_opportunities` booleano), `risk_profile`, `preferred_categories`/`preferred_sectors`/`excluded_tickers` (CSV) e `last_digest_sent_at`), `PriceAlertDb`, `ClosedTradeDb` (histórico de vendas — lucro/prejuízo realizado, IR), `DeviceTokenDb` (token FCM por usuário), `NotifiedOpportunityDb` (dedupe de notificações de oportunidade).
+  Acrescentados desde a revisão anterior:
+  - `money.py` — dinheiro fiscal em `Decimal`, com escala e arredondamento (meio para cima, não
+    bancário) num lugar só. `money()` constrói a partir de texto: `Decimal(0.1)` é
+    `0.1000000000000000055…`. Dinheiro de tela continua `float`, e continua certo.
+  - `sessions.py` — sessão com TTL curto e refresh **rotacionado**: acesso de 1h, refresh de 30 dias
+    queimado ao ser usado, revogação por `jti` (um dispositivo) e `session_cuts` (todos).
+  - `pagination.py` — cursor **keyset**, `(ordenação, id)`, nunca offset: com offset, inserir um
+    registro entre duas páginas empurra tudo e o item da borda aparece duas vezes.
+  - `cache_backends.py` — onde o cache mora é trocável: arquivo local por padrão, Redis com
+    `REDIS_URL`. O vencimento vai **dentro** do valor mesmo no Redis, porque `get_with_age` precisa
+    do dado vencido para o disjuntor degradar; TTL nativo o apagaria justo quando ele começa a
+    servir. `REDIS_URL` sem o pacote instalado falha alto.
+  - `usage.py` — contador de uso como primitiva única, servindo rate limiting e teto de plano. A
+    granularidade mora no formato de `window_key`, não no schema.
+  - `ratelimit.py` — tetos por usuário e por IP, sobre `usage.py`.
+  - `events.py` — evento de produto com **dicionário fechado**: nome fora dele, ou propriedade com
+    ticker ou valor, devolve 422. Dado de carteira não sai do produto.
+- **`models/db_models.py`** — ORM: `User`, `PortfolioPosition` (PK composta `user_id+ticker`), `PortfolioSnapshot` (histórico diário, purga após 365 dias), `WatchlistItemDb` (sem rota HTTP desde 2026-08-19 — feature nunca teve tela; mantido só o schema, ver KNOWN_ISSUES item 5), `GoalDb`, `SectorGoalDb`, `PreferencesDb` (inclui `desired_yield_stock/fii/int/etf`, `notify_price_alerts` — imediato, alertas de risco —, `opportunities_frequency` (`off|daily|weekly|monthly`, substituiu o antigo `notify_new_opportunities` booleano), `risk_profile`, `preferred_categories`/`preferred_sectors`/`excluded_tickers` (CSV) e `last_digest_sent_at`), `PriceAlertDb`, `ClosedTradeDb` (histórico de vendas — lucro/prejuízo realizado, IR), `DeviceTokenDb` (token FCM por usuário), `NotifiedOpportunityDb` (dedupe de notificações de oportunidade).
 - **`notifications/push.py`** — encapsula o Firebase Admin SDK; sem `FIREBASE_SERVICE_ACCOUNT_JSON` configurado, apenas loga em vez de enviar (degradação graciosa).
 - **`services/notification_job.py`** — job periódico (chamado a cada 15min por um loop em `main.py`, sem scheduler externo). Alertas de preço continuam imediatos a cada ciclo (`notify_price_alerts`). O resumo de oportunidades (`STRONG_BUY` ou score≥75+DY≥6%, excluindo posições já na carteira e `excluded_tickers`) só dispara quando a cadência configurada em `opportunities_frequency` já venceu desde `last_digest_sent_at` (`_digest_due()`), agregando as melhores em um único push por ciclo. O mesmo push também lista tickers já na carteira com veredito `SELL`/`STRONG_SELL` (reaproveitando o scan já feito, sem chamada extra), como aviso de que vale revisar — a análise completa de por quê fica em `/strategy`.
 - **`optimizer/`** — só `cost_calculator.py` (custo de venda/IR). Desde 2026-08-20 aplica **compensação de prejuízo acumulado** por categoria (a legislação permite abater prejuízo de ganhos futuros; sem isso o IR devido era superestimado) e devolve `loss_offset_used`/`taxable_profit` para o saldo ficar auditável. `allocator.py` e `portfolio.py` (HRP/min-vol/max-Sharpe via scipy) foram removidos em 2026-08-19 — existiam só para `/recommend`, removido no mesmo dia por falta de consumidor.
+- **`ledger/`** — o livro-razão, e a **fonte de verdade** da carteira. Não conhece banco:
+  `entries.py` define os lançamentos (`buy`, `sell`, `split`, `bonus`, `amortization`) e
+  `projection.py::project_position` dobra os lançamentos na posição. Preço médio segue a convenção
+  brasileira — venda reduz quantidade e custo, **nunca** a média. Evento corporativo é lançamento,
+  não correção manual: desdobramento sem ajuste é IR errado. A escrita hoje é **espelhada**
+  (`services/ledger_service.mirror_*`) e `GET /transactions/reconciliation` compara os dois lados;
+  trocar a fonte de leitura é o passo 3 de 3 e ainda não foi dado (KNOWN_ISSUES item 12).
+- **`importing/`** — importação de operações (`parser.py`, rota `/transactions/import`), em duas
+  fases: prévia e commit. Tolerante com a forma do arquivo, intolerante com ambiguidade; o erro diz
+  a linha; a gravação é atômica; duplicidade é **apresentada para decisão**, nunca silenciada.
+- **`entitlement/`** — a cerca de plano, e o **único** lugar do código com condicional de plano.
+  Entra desligada (`ENTITLEMENTS_ENABLED=false`: todo mundo tem tudo). `plans.py` é a régua como
+  **dado**, com a justificativa de cada linha; `guard.py` aplica via `Depends(requires(Feature.X))`;
+  bloqueio é 402 com corpo que a UI usa para montar o gate; `meter.py` conta consumo sobre
+  `core/usage.py`. Dois testes de arquitetura travam isso: nenhuma condicional de plano fora do
+  módulo, e `analysis`/`optimizer`/`collectors`/`ledger` não importam nada dele — se o cálculo
+  souber quem paga, a independência do algoritmo vira promessa. Ativo da própria carteira nunca
+  consome cota; a rota pública também não.
+- **`payments/`** — `billing.py` (catálogo, checkout que **não** concede nada, webhook idempotente
+  por `processed_webhooks`, reconciliação) e `provider.py` (protocolo do provedor). A assinatura
+  carrega o **próprio preço** (`price_cents`, `locked`): preço travado de fundador é promessa
+  pública, então é dado e não memória — reajustar a tabela não alcança quem contratou antes. O
+  provedor real ainda não existe; o de desenvolvimento assina com o mesmo HMAC de propósito, para
+  que o caminho de verificação seja exercitado.
+- **`affirmation.py`** — o modo de afirmação como **configuração** (`AFFIRMATION_LEVEL`):
+  descritivo, analítico (padrão) e prescritivo. A diferença é estrutural — o que sai fora do nível 3
+  é o **valor por ativo**, que é o que instrui; a análise que o sustentava fica. Existe para que a
+  resposta sobre CVM 19/20 seja uma variável, e não um refactor sob pressão.
 - **`repositories/`** — fachada **tipada** (`PortfolioRepository`, `AssetRepository`) sobre `storage/portfolio_store.py`. Antes anotava tudo como `-> list[dict]`, apagando os TypedDicts do store — foi assim que nasceu o bug de `item.ticker` vs `item["ticker"]`.
 - **`storage/portfolio_store.py`** — persistência real via SQLAlchemy `Session`. Todo método resolve `user_id` via `_session()` — é aqui que o multi-tenancy é aplicado. `_ensure_user` roda **só em caminhos de escrita** (`ensure_user=True`); leitura não paga o SELECT extra. Quando há sessão de request ativa, `_session()` a reutiliza em vez de abrir outra. `_session_global()` existe para jobs cross-tenant e **não** filtra por usuário — nunca usar em caminho de requisição.
-- **`services/`** — orquestração de negócio: `asset_service`, `benchmark_service` (retorno **ponderado no tempo**, para aporte não virar rentabilidade), `dashboard_service` (alertas agrupados com ação e teto), `dip_service`, `dividends_service` (proventos recebidos de fato), `fixed_income_service` (marcação a mercado da RF), `followed_service` (resultado das sugestões seguidas vs Ibovespa), `goal_service`, `income_compare_service` (renda fixa × bolsa na mesma unidade), `opportunity_service` (scan com stale-while-revalidate), `portfolio_service`, `projection_service`, `quick_invest_service`, `snapshot_job` (snapshot diário fora do caminho de request), `strategy_service`, `whats_new_service`.
+- **`services/`** — orquestração de negócio: `asset_service`, `benchmark_service` (retorno **ponderado no tempo**, para aporte não virar rentabilidade), `dashboard_service` (alertas agrupados com ação e teto), `dip_service`, `dividends_service` (proventos recebidos de fato), `fixed_income_service` (marcação a mercado da RF), `followed_service` (resultado das sugestões seguidas vs Ibovespa), `goal_service`, `income_compare_service` (renda fixa × bolsa na mesma unidade), `opportunity_service` (scan com stale-while-revalidate), `portfolio_service`, `projection_service`, `quick_invest_service`, `snapshot_job` (snapshot diário fora do caminho de request), `strategy_service`, `whats_new_service`. Acrescentados desde a revisão anterior:
+  `ledger_service` (espelha a escrita no razão), `search_service` (busca global — devolve `ref`,
+  ticker ou id, **nunca** caminho de rota), `milestones` (marcos de ativação gravados pelo
+  **servidor**, não pelo cliente), `referral_service` (indicação — crédito na qualificação, nunca
+  no cadastro), `subscription_service`, `analytics_service` e `dividend_calendar_service`
+  (calendário de proventos → `/dividends/pending`, sempre **sugestão**, nunca lançamento).
 
-### Endpoints (`/api/...`)
+### Endpoints (`/api/v1/...`)
 
-Públicos: `GET /health`, `GET /universe`, `GET /universe/search` (autocomplete de ticker por prefixo/nome) em `basic.py`, e `POST /auth/google` (`auth.py`).
+O caminho canônico é **`/api/v1`**. `/api` continua respondendo como alias em transição — os apps
+instalados apontam para lá — e carimba `X-API-Deprecation`; toda resposta carrega `X-API-Version`.
+A versão muda quando uma resposta deixa de ser retrocompatível; campo **adicionado** não muda a
+versão.
+
+Públicos: `GET /health`, `GET /universe`, `GET /universe/search` (autocomplete de ticker por
+prefixo/nome) em `basic.py`, `POST /auth/google` (`auth.py`) e as rotas **sem titular**
+`GET /public/asset/{ticker}` e `GET /public/universe` (`public.py`) — leitura impessoal de
+propósito, para que a mesma URL devolva o mesmo conteúdo ao robô e a quem chega pelo link, com teto
+por IP em vez de por usuário.
 
 `POST /cache/clear` e `GET /metrics` **não** são públicos: vivem no `admin_router`, dentro do router protegido.
 
@@ -79,6 +153,19 @@ Autenticados (JWT obrigatório via `Depends(get_current_user)`):
 | GET/POST/DELETE | `/suggestions/followed`, `/suggestions/followed/{id}` | `followed.py` |
 | GET | `/rebalance-suggestions` | `strategy.py` |
 | GET | `/data-quality` | `data_quality.py` |
+| GET/POST | `/transactions`, `POST /transactions/import` (prévia + commit) | `transactions.py` |
+| GET | `/transactions/reconciliation` (razão × posição corrente) | `transactions.py` |
+| GET | `/search` (carteira, renda fixa e universo; devolve `ref`) | `search.py` |
+| GET | `/onboarding` (passo **derivado**, não guardado) | `onboarding.py` |
+| GET | `/dividends/pending` (calendário → sugestão, nunca lançamento) | `dividends.py` |
+| GET | `/demo/portfolio` (análise real, sem gravar nada) | `demo.py` |
+| GET | `/account/export`, `DELETE /account` (nunca atrás de plano) | `account.py` |
+| GET | `/entitlements` (o que o plano libera) | `entitlements.py` |
+| POST | `/events` (dicionário fechado; 422 fora dele) | `events.py` |
+| GET | `/billing/plans`, `POST /billing/checkout`, `/billing/webhook` | `billing.py` |
+| GET | `/billing/reconciliation` (rota de operador) | `billing.py` |
+| GET | `/referral`, `POST /referral/rotate` | `referral.py` |
+| GET | `/data-quality/source` (plausibilidade e disjuntor) | `data_quality.py` |
 | POST/GET | `/cache/clear`, `/metrics`, `POST /metrics/reset` | `basic.py` (admin_router) |
 
 Onze rotas foram removidas em 2026-08-19 por não terem consumidor real — a lista e o motivo de
@@ -94,8 +181,8 @@ ficaram invisíveis até 2026-08-21. `test_fair_price.py` tem regressão para am
 
 ## Web (`web/src/app/`)
 
-Angular 22, standalone components, todas as rotas lazy-loaded. **36 entradas em
-`app.routes.ts`**: 19 rotas de conteúdo, os layouts de seção e os redirects das URLs antigas. O
+Angular 22, standalone components, todas as rotas lazy-loaded. **40 entradas em
+`app.routes.ts`**: as rotas de conteúdo, os layouts de seção e os redirects das URLs antigas. O
 `authGuard` valida o `exp` do JWT, não só a presença do token.
 
 Cinco destinos por intenção, mais o ativo como camada — o racional está em
@@ -133,7 +220,7 @@ Cinco destinos por intenção, mais o ativo como camada — o racional está em
   (`--accent`, `--panel`…) apontam para `--fi-*` e não carregam valor próprio.
 
 **Pegadinha:** ícone do Lucide precisa ser registrado à mão em `LucideAngularModule.pick({...})`
-(`src/main.ts`). Nome ausente não quebra o build — quebra a tela em runtime.
+(`src/app/app.config.ts`). Nome ausente não quebra o build — quebra a tela em runtime.
 
 ---
 
@@ -157,18 +244,20 @@ Estrutura `lib/`:
 - **`core/widgets/`** — `score_ruler.dart` (a régua, espelhando o web), `error_state.dart`
   (`FiErrorState` + `fiErrorMessage`, que traduz exceção em causa humana),
   `ticker_autocomplete_field.dart`, `help_tooltip.dart`, `brand_background.dart`.
-- **`features/`** — `auth/`, `dashboard/`, `assets/`, `estrategia/`, `market/`
-  (`opportunities_tab`, `quick_invest_view`, `asset_detail_sheet`), `tools/tools_views.dart` (as
-  views de ferramenta, cada uma roteada), `config/`, `shell/` (`app_shell`, `tool_screen`).
+- **`features/`** — `hoje/`, `carteira/`, `market/` (Descobrir: `opportunities_tab`,
+  `quick_invest_view`, `asset_detail_sheet`), `estrategia/`, `config/`, `busca/`, `assets/`,
+  `auth/`, `tools/tools_views.dart` (views de ferramenta, cada uma roteada) e `shell/`
+  (`app_shell`, `tool_screen`). `dashboard_screen.dart` e `assets_screen.dart` foram
+  reestruturados em 2026-08-26 e **não existem mais**.
 
 **Paridade com o web.** O mobile consome a MESMA API, sem regra de cálculo duplicada — fair price,
 score, renda fixa e IR ficam 100% no backend. Cores, tipografia e réguas semânticas são geradas da
 mesma fonte, então não podem divergir.
 
-Assimetrias abertas e declaradas: metas ainda vivem em Configurações, RF × Bolsa não tem cliente
-Dart, e o conteúdo de Hoje e Carteira ainda não foi reestruturado. Push exigir o app instalado
-**não** é lacuna — é decisão, sinalizada em `/voce/alertas`. Lista completa em
-[KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+A paridade fechou em **2026-08-28**: metas têm tela própria (`/estrategia/metas`) e RF × Bolsa
+ganhou cliente Dart (`/estrategia/renda-fixa-vs-bolsa`). A única assimetria que resta é **decisão,
+não lacuna**: push exige o app instalado, e o web sinaliza isso em `/voce/alertas`. O que continua
+aberto está em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ---
 
