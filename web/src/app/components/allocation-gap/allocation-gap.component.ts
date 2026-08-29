@@ -5,16 +5,6 @@ import { fiAllocationGapBands, fiAllocationGapDomain, fiBandFor, stateTextClass 
 import { rulerZones } from '../../core/ruler';
 import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 
-/**
- * Terceira leitura da régua: **onde estou diferente do que planejei**.
- *
- * A barra é a alocação atual; o fio vertical é a meta. A distância entre as
- * duas é o número que decide, e é ele que ganha estado — não o tamanho da
- * barra. Desvio não é perda: o pior estado possível aqui é "atenção" (§10).
- *
- * Sem meta definida a linha não julga nada. Comparar contra uma meta que não
- * existe seria inventar o número (§57).
- */
 @Component({
   selector: 'app-allocation-gap',
   standalone: true,
@@ -26,6 +16,14 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
       </span>
 
       <div class="relative flex-1 h-2 rounded-sm bg-ground-2 min-w-[80px]">
+        @if (hasTarget()) {
+          <div
+            class="absolute inset-y-0 rounded-sm"
+            [style.left.%]="deviationStartPct()"
+            [style.width.%]="deviationWidthPct()"
+            [style.background]="deviationColor()"
+          ></div>
+        }
         <div
           class="absolute inset-y-0 left-0 rounded-sm"
           [style.width.%]="barPct()"
@@ -33,7 +31,7 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
         ></div>
         @if (hasTarget()) {
           <div
-            class="absolute inset-y-[-3px] w-[2px] bg-brand"
+            class="absolute inset-y-[-3px] w-[2px] bg-ink"
             [style.left]="'calc(' + tickPct() + '% - 1px)'"
             [title]="'Meta: ' + targetPct() + '%'"
           ></div>
@@ -70,18 +68,28 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 export class AllocationGapComponent {
   readonly label = input.required<string>();
   readonly currentPct = input.required<number>();
-  /** Meta em %, ou `null` quando o usuário não definiu meta para a categoria. */
   readonly targetPct = input<number | null>(null);
-  /** Identidade de série da categoria, quando a lista mistura categorias. */
   readonly barColor = input<string>('');
-  /** Mostra a régua de desvio embaixo — só na leitura de página, não em lista. */
   readonly showRuler = input(false);
-
+  readonly scalePct = input(100);
   readonly hasTarget = computed(() => this.targetPct() !== null);
   readonly delta = computed(() => this.currentPct() - (this.targetPct() ?? 0));
   readonly absDelta = computed(() => Math.abs(this.delta()));
-  readonly barPct = computed(() => Math.min(100, Math.max(0, this.currentPct())));
-  readonly tickPct = computed(() => Math.min(100, Math.max(0, this.targetPct() ?? 0)));
+
+  private readonly scale = computed(() => Math.min(100, Math.max(10, this.scalePct())));
+  private readonly onScale = (value: number) =>
+    Math.min(100, Math.max(0, (value / this.scale()) * 100));
+
+  readonly barPct = computed(() => this.onScale(this.currentPct()));
+  readonly tickPct = computed(() => this.onScale(this.targetPct() ?? 0));
+
+  readonly deviationStartPct = computed(() => Math.min(this.barPct(), this.tickPct()));
+  readonly deviationWidthPct = computed(() => Math.abs(this.barPct() - this.tickPct()));
+  readonly deviationColor = computed(() =>
+    this.absDelta() < 2
+      ? 'color-mix(in srgb, var(--fi-ink-3) 25%, transparent)'
+      : 'color-mix(in srgb, var(--fi-state-attention) 30%, transparent)'
+  );
 
   readonly band = computed(() =>
     fiBandFor(this.absDelta(), fiAllocationGapBands, this.hasTarget() ? 1 : 0)

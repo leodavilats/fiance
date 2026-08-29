@@ -63,6 +63,7 @@
                   [currentPct]="s.pct"
                   [targetPct]="targetFor(s.label)"
                   [barColor]="s.color"
+                  [scalePct]="gapScalePct()"
                 />
                 <p class="fi-caption text-ink-3 m-0 mt-1 ml-[104px] sm:ml-[116px] fi-num">
                   {{ s.valor | currency: 'BRL' }}

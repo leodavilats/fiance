@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/sector_translations.dart';
@@ -110,7 +111,7 @@ class _AssetDetailContent extends ConsumerWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          _KeyValueRow(label: 'Tendência', value: a.trend),
+          _KeyValueRow(label: 'Tendência', value: trendLabel(a.trend)),
           _KeyValueRow(
             label: 'RSI (14)',
             value: a.rsi14?.toStringAsFixed(1) ?? '—',

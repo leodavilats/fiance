@@ -48,6 +48,7 @@ class EstrategiaScreen extends ConsumerWidget {
                   ...gaps.map(
                     (gap) => _GapRow(
                       gap: gap,
+                      escala: escalaDosGaps(gaps),
                       isBiggest:
                           biggest != null && gap.category == biggest.category,
                     ),
@@ -173,11 +174,26 @@ class EstrategiaScreen extends ConsumerWidget {
   }
 }
 
+double escalaDosGaps(List<AllocationGap> gaps) {
+  var maior = 0.0;
+  for (final gap in gaps) {
+    if (gap.currentPct > maior) maior = gap.currentPct;
+    if (gap.targetPct > maior) maior = gap.targetPct;
+  }
+  if (maior <= 0) return 100;
+  return (maior * 1.15).clamp(10, 100);
+}
+
 class _GapRow extends StatelessWidget {
-  const _GapRow({required this.gap, required this.isBiggest});
+  const _GapRow({
+    required this.gap,
+    required this.isBiggest,
+    required this.escala,
+  });
 
   final AllocationGap gap;
   final bool isBiggest;
+  final double escala;
 
   @override
   Widget build(BuildContext context) {
@@ -186,87 +202,126 @@ class _GapRow extends StatelessWidget {
     final ink1 = isDark ? FiColors.darkInk1 : FiColors.lightInk1;
     final ink3 = isDark ? FiColors.darkInk3 : FiColors.lightInk3;
     final ground2 = isDark ? FiColors.darkGround2 : FiColors.lightGround2;
-    final brand = isDark ? FiColors.darkBrand : FiColors.lightBrand;
 
     final relevante = gap.gapPct.abs() >= 2;
+    final falta = gap.gapPct > 0;
+    final corDaCategoria = categoryColor(gap.category, brightness);
+    final corDoDesvio = relevante
+        ? fiStateColor(FiState.attention, brightness)
+        : ink3;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: FiSpace.s3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  categoryLabel(gap.category),
-                  style: FiType.label.copyWith(
-                    color: ink1,
-                    fontWeight: isBiggest ? FontWeight.w600 : FontWeight.w500,
-                  ),
-                ),
-              ),
-              Text(
-                '${gap.currentPct.toStringAsFixed(0)}%',
-                style: FiType.metricSm.copyWith(color: ink1),
-              ),
-              const SizedBox(width: FiSpace.s2),
-              Text(
-                'meta ${gap.targetPct.toStringAsFixed(0)}%',
-                style: FiType.caption.copyWith(color: ink3),
-              ),
-              const SizedBox(width: FiSpace.s2),
-              SizedBox(
-                width: 62,
-                child: Text(
-                  '${gap.gapPct > 0 ? '−' : '+'}${gap.gapPct.abs().toStringAsFixed(1)} p.p.',
-                  textAlign: TextAlign.end,
-                  style: FiType.metricSm.copyWith(
-                    color: relevante
-                        ? fiStateColor(FiState.attention, brightness)
-                        : ink3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: FiSpace.s1),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              return SizedBox(
-                height: 8,
-                child: Stack(
-                  children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: ground2,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: const SizedBox(width: double.infinity),
+    final atual = (gap.currentPct / escala).clamp(0.0, 1.0);
+    final meta = (gap.targetPct / escala).clamp(0.0, 1.0);
+    final inicioDoDesvio = atual < meta ? atual : meta;
+    final fimDoDesvio = atual < meta ? meta : atual;
+
+    return Semantics(
+      label:
+          '${categoryLabel(gap.category)}: '
+          '${gap.currentPct.toStringAsFixed(1)}% da carteira contra meta de '
+          '${gap.targetPct.toStringAsFixed(1)}% — '
+          '${gap.gapPct.abs().toStringAsFixed(1)} pontos percentuais '
+          '${falta ? 'abaixo' : 'acima'}',
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: FiSpace.s4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    categoryLabel(gap.category),
+                    style: FiType.label.copyWith(
+                      color: ink1,
+                      fontWeight: isBiggest ? FontWeight.w600 : FontWeight.w500,
                     ),
-                    FractionallySizedBox(
-                      widthFactor: (gap.currentPct / 100).clamp(0, 1),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: ink3,
-                          borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Text(
+                  '${gap.currentPct.toStringAsFixed(0)}%',
+                  style: FiType.metricSm.copyWith(color: ink1),
+                ),
+                Text(
+                  ' de ${gap.targetPct.toStringAsFixed(0)}%',
+                  style: FiType.caption.copyWith(color: ink3),
+                ),
+              ],
+            ),
+            const SizedBox(height: FiSpace.s2),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final largura = constraints.maxWidth;
+                return SizedBox(
+                  height: 14,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 3,
+                        height: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: ground2,
+                            borderRadius: BorderRadius.circular(FiRadius.sm),
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      left: (width * (gap.targetPct / 100).clamp(0, 1) - 1)
-                          .clamp(0, width - 2),
-                      top: -2,
-                      bottom: -2,
-                      child: Container(width: 2, color: brand),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
+                      Positioned(
+                        left: largura * inicioDoDesvio,
+                        width: largura * (fimDoDesvio - inicioDoDesvio),
+                        top: 3,
+                        height: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: corDoDesvio.withValues(alpha: falta ? 0.22 : 0.32),
+                            borderRadius: BorderRadius.circular(FiRadius.sm),
+                          ),
+                        ),
+                      ),
+
+                      Positioned(
+                        left: 0,
+                        width: largura * atual,
+                        top: 3,
+                        height: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: corDaCategoria,
+                            borderRadius: BorderRadius.circular(FiRadius.sm),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: (largura * meta - 1).clamp(0.0, largura - 2),
+                        top: 0,
+                        bottom: 0,
+                        width: 2,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: ink1,
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: FiSpace.s1),
+            Text(
+              relevante
+                  ? (falta
+                        ? 'faltam ${gap.gapPct.abs().toStringAsFixed(1)} p.p. para a meta'
+                        : '${gap.gapPct.abs().toStringAsFixed(1)} p.p. acima da meta')
+                  : 'dentro da meta',
+              style: FiType.caption.copyWith(color: corDoDesvio),
+            ),
+          ],
+        ),
       ),
     );
   }

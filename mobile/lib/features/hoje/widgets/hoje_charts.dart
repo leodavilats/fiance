@@ -8,6 +8,7 @@ import '../../../core/models.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme.dart';
 import 'hoje_patrimony.dart';
+import 'hoje_tiles.dart';
 
 class FiEvolutionChart extends StatefulWidget {
   const FiEvolutionChart({super.key, required this.snapshots});
@@ -236,44 +237,53 @@ class FiBenchmarkSection extends ConsumerWidget {
       error: (_, _) => const SizedBox.shrink(),
       data: (data) {
         if (data.points.length < 2) return const SizedBox.shrink();
-        return Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const FiSectionTitle(
+              icon: Icons.bar_chart_outlined,
+              title: 'Estou rendendo mais que o CDI?',
+            ),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _FiBenchmarkStat(
-                      label: 'Carteira',
-                      pct: data.portfolioReturnPct,
-                      color: Theme.of(context).colorScheme.primary,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _FiBenchmarkStat(
+                          label: 'Carteira',
+                          pct: data.portfolioReturnPct,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        _FiBenchmarkStat(
+                          label: 'CDI',
+                          pct: data.cdiReturnPct,
+                          color: fiInk3(context),
+                        ),
+                        if (data.ibovAvailable)
+                          _FiBenchmarkStat(
+                            label: 'Ibovespa',
+                            pct: data.ibovReturnPct ?? 0,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                      ],
                     ),
-                    _FiBenchmarkStat(
-                      label: 'CDI',
-                      pct: data.cdiReturnPct,
-                      color: fiInk3(context),
-                    ),
-                    if (data.ibovAvailable)
-                      _FiBenchmarkStat(
-                        label: 'Ibovespa',
-                        pct: data.ibovReturnPct ?? 0,
-                        color: Theme.of(context).colorScheme.primary,
+                    if (!data.ibovAvailable) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Ibovespa indisponível no momento.',
+                        style: TextStyle(color: fiInk3(context), fontSize: 11),
                       ),
+                    ],
                   ],
                 ),
-                if (!data.ibovAvailable) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Ibovespa indisponível no momento.',
-                    style: TextStyle(color: fiInk3(context), fontSize: 11),
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
+          ],
         );
       },
     );

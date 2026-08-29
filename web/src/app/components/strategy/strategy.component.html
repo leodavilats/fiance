@@ -64,6 +64,7 @@
                 [currentPct]="gap.current_pct"
                 [targetPct]="gap.target_pct"
                 [barColor]="getCategoryBarColor(gap.category)"
+                [scalePct]="gapScalePct(s.allocation_gaps)"
               />
               <p class="fi-caption text-ink-3 m-0 mt-1 ml-[104px] sm:ml-[116px]">
                 {{ gap.action }} ·

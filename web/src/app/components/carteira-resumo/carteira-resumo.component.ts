@@ -7,6 +7,7 @@ import {
   PortfolioHealth,
   RecommendService,
   UiHelperService,
+  allocationScalePct,
   fiHealthBands,
 } from '../../core';
 import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
@@ -104,6 +105,8 @@ export class CarteiraResumoComponent implements OnInit {
       }))
       .sort((a, b) => Math.abs(b.deltaPct) - Math.abs(a.deltaPct))
   );
+
+  readonly gapScalePct = computed(() => allocationScalePct(this.gaps()));
 
   readonly hasGoals = computed(() => this.gaps().length > 0);
 

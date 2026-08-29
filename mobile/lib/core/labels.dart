@@ -34,3 +34,16 @@ IconData categoryIcon(String? category) {
 
 Color sectorColor(String sector, Brightness brightness) =>
     fiSeriesColor(fiSetorSeriePorRotulo[sector] ?? 0, brightness);
+
+String trendLabel(String? trend) {
+  switch (trend) {
+    case 'uptrend':
+      return '↗ Alta';
+    case 'downtrend':
+      return '↘ Baixa';
+    case 'sideways':
+      return '→ Lateral';
+    default:
+      return 'sem histórico suficiente';
+  }
+}

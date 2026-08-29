@@ -47,6 +47,18 @@ def _assess_risk_tolerance(growth_pct: float) -> str:
         return "Baixo"
 
 
+def _capital_investido(
+    portfolio: list[PortfolioItem],
+    evaluation: dict[str, Any] | None,
+) -> float:
+    posicoes = (evaluation or {}).get("positions") or []
+    if posicoes:
+        return sum(
+            (p.get("current_price") or 0) * (p.get("quantity") or 0) for p in posicoes
+        )
+    return sum(item.quantity * item.avg_price for item in portfolio)
+
+
 def _calculate_current_allocation(
     portfolio: list[PortfolioItem],
     evaluation: dict[str, Any] | None,
@@ -374,7 +386,7 @@ def build_rebalance_suggestions(
 ) -> dict[str, Any]:
     excluded_tickers = excluded_tickers or set()
 
-    total_capital = sum(item.quantity * item.avg_price for item in current_portfolio)
+    total_capital = _capital_investido(current_portfolio, portfolio_evaluation)
 
     current_allocation = _calculate_current_allocation(
         current_portfolio, portfolio_evaluation, total_capital
@@ -512,7 +524,7 @@ def build_investment_strategy(
     portfolio_evaluation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
 
-    total_invested = sum(item.quantity * item.avg_price for item in current_portfolio)
+    total_invested = _capital_investido(current_portfolio, portfolio_evaluation)
     total_capital = total_invested + cash_available
 
     profile = _analyze_investor_profile(goals)

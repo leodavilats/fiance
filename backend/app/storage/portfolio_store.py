@@ -602,11 +602,15 @@ _PREF_DEFAULTS: dict[str, object] = {
 
 _PREF_CSV_FIELDS = {"preferred_categories", "preferred_sectors", "excluded_tickers"}
 
+_PREF_ANULAVEIS = {"passive_income_goal"}
+
 
 def set_preferences(user_id: str | None = None, **fields) -> None:
     unknown = set(fields) - set(_PREF_DEFAULTS)
     if unknown:
         raise ValueError(f"Campos de preferência desconhecidos: {sorted(unknown)}")
+
+    fields = {k: v for k, v in fields.items() if v is not None or k in _PREF_ANULAVEIS}
 
     now = time.time()
     with _session(user_id, ensure_user=True) as (session, uid):

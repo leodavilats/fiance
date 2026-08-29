@@ -24,11 +24,14 @@
    `GET /data-quality` reporta a cobertura), mas tendência de longo prazo só existe de fato com
    plano pago e `BRAPI_HISTORY_RANGE=2y`.
 
-3. **Unidade dos fundamentos da BRAPI não confirmada com chamada real.**
-   `collectors/universal._ratio_to_pct` assume que `returnOnEquity` / `profitMargins` /
-   `revenueGrowth` / `debtToEquity` vêm como razão decimal e multiplica por 100 — contrato
-   explícito, no lugar da heurística antiga que lia um ROE de 120% como 1,2%. Vale confirmar contra
-   uma resposta real; `GET /data-quality` dá a visibilidade.
+3. **Metade dos fundamentos não chega da BRAPI.** `returnOnEquity`, `profitMargins`,
+   `revenueGrowth` e `debtToEquity` voltam ausentes para **todo** ativo no plano atual —
+   conferido em 2026-08-29 contra a API real, com ações, FII e BDR. O que chega é
+   `priceEarnings` e `earningsPerShare`. Então `roe`, `profit_margin`, `revenue_growth` e
+   `debt_to_equity` são sempre `null`, e as dimensões de qualidade e endividamento do score
+   caem no caminho de dado ausente. Isso encerra a dúvida antiga sobre a **unidade** desses
+   campos: `_ratio_to_pct` está correto e nunca é exercitado. Só sai daqui com plano pago ou
+   segunda fonte; `GET /data-quality` dá a visibilidade.
 
 4. **Universo hardcoded como fallback.** `core/config.py::default_universe` mantém ~400 tickers,
    apesar de já existir universo dinâmico via BRAPI (`core/universe.py`). Fallback defensivo

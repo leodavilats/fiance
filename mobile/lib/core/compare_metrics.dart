@@ -1,3 +1,4 @@
+import 'labels.dart';
 import 'models.dart';
 import 'format.dart';
 
@@ -73,7 +74,7 @@ final fiCompareMetrics = <FiCompareMetric>[
     fiCompareTodas,
     (a) => a.rsi14?.toStringAsFixed(0) ?? '—',
   ),
-  FiCompareMetric('Tendência', 'Risco', fiCompareTodas, (a) => a.trend),
+  FiCompareMetric('Tendência', 'Risco', fiCompareTodas, (a) => trendLabel(a.trend)),
   FiCompareMetric(
     'Dividend Yield',
     'Proventos',

@@ -186,6 +186,7 @@ def _brapi_raw(base: str) -> dict:
                 params={
                     "token": settings.brapi_token,
                     "fundamental": "true",
+                    "dividends": "true",
                     "range": range_param,
                     "interval": "1d",
                 },

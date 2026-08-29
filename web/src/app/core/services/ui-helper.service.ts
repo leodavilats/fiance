@@ -88,7 +88,7 @@ export class UiHelperService {
       downtrend: '↘ Baixa',
       sideways: '→ Lateral',
     };
-    return map[t] || t;
+    return map[t] || 'sem histórico suficiente';
   }
 
   translateSector(s: string | null): string {

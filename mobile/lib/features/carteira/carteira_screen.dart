@@ -98,10 +98,6 @@ class CarteiraScreen extends ConsumerWidget {
                 ],
 
                 const SizedBox(height: 24),
-                const FiSectionTitle(
-                  icon: Icons.bar_chart_outlined,
-                  title: 'Estou rendendo mais que o CDI?',
-                ),
                 const FiBenchmarkSection(),
                 if (data.snapshots.length > 1) ...[
                   const SizedBox(height: 20),

@@ -86,3 +86,11 @@ export function rulerTicks(bands: readonly FiScoreBand[], domain: RulerDomain): 
     .map(b => b.min as number)
     .filter(min => min > domain.min);
 }
+
+export function allocationScalePct(
+  rows: readonly { currentPct: number; targetPct: number | null }[]
+): number {
+  const maior = rows.reduce((max, r) => Math.max(max, r.currentPct, r.targetPct ?? 0), 0);
+  if (maior <= 0) return 100;
+  return Math.min(100, Math.max(10, maior * 1.15));
+}

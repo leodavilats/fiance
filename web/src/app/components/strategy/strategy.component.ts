@@ -2,7 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { InvestmentStrategy, LoadingService, RecommendService, UiHelperService } from '../../core';
+import {
+  InvestmentStrategy,
+  LoadingService,
+  RecommendService,
+  UiHelperService,
+  allocationScalePct,
+} from '../../core';
 import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { FollowedSuggestionsComponent } from '../market/followed-suggestions/followed-suggestions.component';
@@ -104,6 +110,12 @@ export class StrategyComponent implements OnInit {
 
   assetLabel(type: string): string {
     return { br_stock: 'Ação BR', fii: 'FII', bdr: 'BDR', etf: 'ETF' }[type] || type;
+  }
+
+  gapScalePct(gaps: { current_pct: number; target_pct: number }[]): number {
+    return allocationScalePct(
+      gaps.map(g => ({ currentPct: g.current_pct, targetPct: g.target_pct }))
+    );
   }
 
   getCategoryBarColor(category: string): string {

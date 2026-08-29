@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
@@ -164,7 +165,7 @@ class _AssetAnalysisCard extends StatelessWidget {
                     label: 'RSI(14)',
                     value: a.rsi14?.toStringAsFixed(1) ?? '—',
                   ),
-                  _Stat(label: 'Tendência', value: a.trend),
+                  _Stat(label: 'Tendência', value: trendLabel(a.trend)),
                 ],
               ),
               if (a.reasons.isNotEmpty) ...[

@@ -12,6 +12,117 @@
 
 ---
 
+## Seis defeitos achados usando o produto (2026-08-29)
+
+Vieram de uso real do mobile, não de teste. Cinco eram defeito; um era desenho.
+Todos ganharam teste que reprova a volta.
+
+### A renda fixa não entrava na Estratégia
+
+`/strategy` e `/rebalance-suggestions` montavam a carteira só com
+`portfolio_repo.list_positions()`, que é a tabela `portfolio`. Renda fixa é
+entidade de primeira classe desde a fase 2 da auditoria e mora em
+`fixed_income_positions` — nunca chegava lá. A meta de `renda_fixa` lia sempre
+0%, que foi o sintoma relatado.
+
+**O estrago maior não era esse.** `total_capital` também saía menor que a
+carteira real, então o alvo **em reais de todas as outras categorias** vinha
+subestimado: o gap estava errado para todo mundo, não só para a renda fixa.
+
+Consertar expôs um segundo erro no mesmo lugar. O denominador era **custo**
+(`quantity * avg_price`) enquanto a alocação de cada categoria era medida a
+**valor de mercado** — com a carteira valorizada os percentuais não fechavam em
+100. Agora as duas pontas usam a mesma régua: `_capital_investido` tira o total
+da avaliação, que já traz a renda fixa e já está a mercado, e cai no custo só
+quando não há avaliação.
+
+A renda fixa viaja pela avaliação, não como `PortfolioItem`. A primeira
+tentativa foi essa e o teste reprovou: o ticker sintético `RF-*` não é ticker de
+B3 e não passa no padrão do modelo.
+
+### Salvar uma preferência derrubava as outras — com 500
+
+O cliente do mobile montava o corpo do `PUT /preferences` com **todas** as
+chaves, mandando `null` nas que a tela não editou. O `exclude_unset=True` do
+endpoint não descarta isso: `null` explícito *foi* enviado, então conta como
+set. O `set_preferences` então fazia `setattr` de `None` em coluna `NOT NULL`.
+
+Só não quebrou antes porque o primeiro salvamento é `INSERT`, e aí o SQLAlchemy
+aplica o default da coluna no lugar do `None`. **Do segundo em diante é
+`UPDATE`, que não aplica default** — e aí 500 sempre. Era o que impedia salvar
+as categorias preferidas.
+
+Corrigido dos dois lados de propósito: o cliente só manda o que a tela editou, e
+o servidor descarta `null` de campo não-anulável. Um lado sozinho deixaria o
+outro errado por contrato. `passive_income_goal` continua limpável — é o único
+campo anulável de verdade, e `_PREF_ANULAVEIS` diz isso por extenso.
+
+### Nenhum ativo tinha dividend yield
+
+`_brapi_raw` mandava `fundamental=true`, `range` e `interval` — e não
+`dividends=true`. Sem esse parâmetro a BRAPI não devolve `dividendsData`.
+Conferido contra a API real: sem ele, ausente; com ele, 175 pagamentos para
+PETR4.
+
+Como `_brapi_raw` é a chamada única que alimenta o snapshot **e** o
+`fetch_dividends`, o efeito era duplo e silencioso: `dividend_yield` `None` em
+todo ativo, lista de proventos vazia, `monthly_dividends_estimate` zero por
+aritmética — e **sem Bazin**, que é um dos métodos do preço justo.
+
+**Achado junto, sem conserto de código:** `roe`, `profit_margin`,
+`revenue_growth` e `debt_to_equity` voltam `null` para todo ativo. A BRAPI só
+devolve `priceEarnings` e `earningsPerShare` neste plano. Isso responde o item 3
+do KNOWN_ISSUES, que perguntava a *unidade* desses campos: a resposta é que eles
+não chegam.
+
+### Título sem seção embaixo
+
+"Estou rendendo mais que o CDI?" era renderizado pela tela da Carteira, e o
+`FiBenchmarkSection` devolvia `SizedBox.shrink()` com menos de dois pontos de
+histórico. Sobrava o título colado em "Ativos negociados". O título mudou-se
+para dentro do widget: some junto com o conteúdo. A seção vizinha já fazia
+assim (`if (data.snapshots.length > 1)`), então era esquecimento, não desenho.
+
+### `unknown` na tendência era a tela, não o cálculo
+
+O backend nunca devolveu `unknown` para os 16 tickers testados em produção —
+incluindo FII, BDR e small cap de liquidez fina. O que havia era **divergência
+entre plataformas**: o web traduzia (`trendLabel`), o mobile mostrava o valor
+cru em três lugares. Com histórico aparecia "downtrend"; sem, "unknown".
+
+O web também vazava, por outro caminho: `return map[t] || t` devolvia o valor
+cru no fallback. Aparecia menos porque a tendência ocupa menos lugares lá.
+
+Nos dois, ausência de histórico virou **"sem histórico suficiente"** — a mesma
+frase que `trendBasisLabel` já usava. `unknown` não é uma quarta direção, e a
+palavra crua fazia a tela afirmar o que o sistema não sabe.
+
+### A barra de meta: o problema era a escala, não o desenho
+
+O relato foi "fica um ponto solto e uns números". A barra existia — track,
+preenchimento e um fio de 2px na meta — mas a régua ia de **0 a 100%**. Com
+metas reais de 10% a 30%, cada barra ocupava um sétimo da faixa e o desvio de
+3 p.p. que a linha existe para mostrar virava dois pixels entre a ponta cinza e
+o fio. Lia como marca solta, não como medida.
+
+Duas mudanças, nas duas plataformas:
+
+- **Escala compartilhada.** A lista inteira usa uma régua que sobe até o maior
+  valor presente (atual ou meta, com 15% de folga, no mínimo 10 e no máximo
+  100). As linhas continuam comparáveis entre si — que era o ponto da escala
+  fixa — e param de se espremer à esquerda.
+- **O desvio virou área.** A faixa entre onde você está e a meta é desenhada,
+  em cor de atenção quando relevante, em vez de ser distância a medir no olho.
+  É o número que decide o aporte; agora é ele que ocupa espaço.
+
+A barra cheia usa a identidade de série da categoria, a meta é um fio de `ink`
+atravessando a faixa, e embaixo vai a leitura em palavras ("faltam 8,0 p.p. para
+a meta" / "dentro da meta").
+
+O `AllocationGapComponent` do web tinha exatamente a mesma régua e serve três
+telas, então mudou junto — a paridade entre plataformas é invariante, e o
+`unknown` da tendência acabou de mostrar o que custa deixá-la escorrer.
+
 ## O banco publicado ficou para trás do colapso de migrações (2026-08-29)
 
 O deploy do Railway estava em `● Crashed` desde o colapso do histórico de migrações

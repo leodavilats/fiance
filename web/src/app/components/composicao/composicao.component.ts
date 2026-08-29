@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CarteiraStore, UiHelperService } from '../../core';
+import { CarteiraStore, UiHelperService, allocationScalePct } from '../../core';
 import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
@@ -40,6 +40,12 @@ export class ComposicaoComponent implements OnInit {
   targetFor(label: string): number | null {
     return this.composicaoSlices().find(s => s.label === label)?.targetPct ?? null;
   }
+
+  readonly gapScalePct = computed(() =>
+    allocationScalePct(
+      this.composicaoSlices().map(s => ({ currentPct: s.pct, targetPct: s.targetPct ?? null }))
+    )
+  );
 
   readonly hasAnyTarget = computed(() => this.composicaoSlices().some(s => s.targetPct != null));
 }

@@ -187,18 +187,17 @@ class ApiRepository {
     List<String>? preferredSectors,
     List<String>? excludedTickers,
   }) async {
-    final res = await _dio.put(
-      '/preferences',
-      data: {
-        'passive_income_goal': passiveIncomeGoal,
-        'notify_price_alerts': notifyPriceAlerts,
-        'opportunities_frequency': opportunitiesFrequency,
-        'risk_profile': riskProfile,
-        'preferred_categories': preferredCategories,
-        'preferred_sectors': preferredSectors,
-        'excluded_tickers': excludedTickers,
-      },
-    );
+    final data = <String, dynamic>{
+      'passive_income_goal': passiveIncomeGoal,
+      'notify_price_alerts': notifyPriceAlerts,
+      'opportunities_frequency': opportunitiesFrequency,
+      'risk_profile': riskProfile,
+      'preferred_categories': preferredCategories,
+      'preferred_sectors': preferredSectors,
+      'excluded_tickers': excludedTickers,
+    }..removeWhere((_, v) => v == null);
+
+    final res = await _dio.put('/preferences', data: data);
     return Preferences.fromJson(res.data as Map<String, dynamic>);
   }
 
