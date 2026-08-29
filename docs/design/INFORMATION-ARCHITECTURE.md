@@ -1,4 +1,4 @@
-# Fase 3 — Arquitetura de informação
+# Arquitetura de informação
 
 > Decorre dos achados 1–6 da auditoria de UX (documento removido em 2026-08-28; ver
 > [CHANGELOG](../CHANGELOG.md)). Esta é a decisão estrutural: **nada

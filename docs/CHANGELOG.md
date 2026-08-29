@@ -30,11 +30,16 @@ a reestruturação de Hoje e Carteira, todos construídos. É a mesma doença qu
 do KNOWN_ISSUES em 2026-08-22 e a de 2026-08-28: **arquivo que registra status apodrece, arquivo
 que registra decisão não.**
 
-O que sobra em `docs/design/` é especificação, e é por isso que sobra: `02-INFORMATION-ARCHITECTURE`
+O que sobra em `docs/design/` é especificação, e é por isso que sobra: `INFORMATION-ARCHITECTURE`
 é a autoridade da navegação — quando web e mobile divergem, é contra ele que se confere, e foi
-assim que a Estratégia sem rota apareceu —, `04-WIREFRAMES` é a estrutura de cada tela,
-`05-VISUAL-LANGUAGE` o racional da identidade e `06-DESIGN-SYSTEM` o contrato dos componentes.
+assim que a Estratégia sem rota apareceu —, `WIREFRAMES` é a estrutura de cada tela,
+`VISUAL-LANGUAGE` o racional da identidade e `DESIGN-SYSTEM` o contrato dos componentes.
 Nenhum deles afirma o que está construído.
+
+Os quatro perderam o prefixo numérico na mesma passagem. O número indicava a fase do processo de
+redesign, e sem as fases ele numerava uma sequência que ninguém segue — a pasta não se lê em ordem,
+lê-se o documento que corresponde ao que se está fazendo. Ele também já não batia: o arquivo `02`
+era a "Fase 3" e o `04` a "Fase 5". O resto de `docs/` nunca usou número.
 
 ### Decisões que estavam só no 07, preservadas aqui
 

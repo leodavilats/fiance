@@ -66,8 +66,8 @@
 
 ## Pendências do redesign de UX/UI
 
-Estrutura de cada tela em [design/04-WIREFRAMES.md](design/04-WIREFRAMES.md); o contrato dos
-componentes em [design/06-DESIGN-SYSTEM.md](design/06-DESIGN-SYSTEM.md).
+Estrutura de cada tela em [design/WIREFRAMES.md](design/WIREFRAMES.md); o contrato dos
+componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
 
 9. **`detail_level` (Essencial / Completo / Avançado) não existe no backend.** É a alavanca que
    atenderia os três perfis de senioridade sem construir três produtos — número de métricas e

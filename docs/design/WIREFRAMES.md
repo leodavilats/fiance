@@ -1,8 +1,8 @@
-# Fase 5 — Wireframes
+# Wireframes
 
 > Estrutura antes de visual. Aqui não há cor, ícone nem tipografia — só hierarquia, ordem de
 > leitura e estados. Cada bloco anota o **nível** de disclosure (N1–N4, ver
-> [02](02-INFORMATION-ARCHITECTURE.md)) e o **endpoint** que o alimenta.
+> [arquitetura de informação](INFORMATION-ARCHITECTURE.md)) e o **endpoint** que o alimenta.
 >
 > Notação: `[Botão]` · `(link)` · `▸` acordeão fechado · `▾` aberto · `░` skeleton ·
 > `│` hairline · `·····` limite de dobra em 900px de altura.

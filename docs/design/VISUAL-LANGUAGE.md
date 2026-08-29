@@ -1,6 +1,6 @@
-# Fase 6 — Identidade visual
+# Identidade visual
 
-> A estrutura já está resolvida em [04-WIREFRAMES.md](04-WIREFRAMES.md). Aqui se decide como o
+> A estrutura já está resolvida em [WIREFRAMES.md](WIREFRAMES.md). Aqui se decide como o
 > fiance **parece** — e o critério é ter identidade própria, não parecer template de dashboard,
 > clone de corretora ou protótipo gerado por IA.
 

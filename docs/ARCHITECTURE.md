@@ -186,7 +186,7 @@ Angular 22, standalone components, todas as rotas lazy-loaded. **40 entradas em
 `authGuard` valida o `exp` do JWT, não só a presença do token.
 
 Cinco destinos por intenção, mais o ativo como camada — o racional está em
-[design/02-INFORMATION-ARCHITECTURE.md](design/02-INFORMATION-ARCHITECTURE.md):
+[design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md):
 
 | Rota | Componente |
 |---|---|

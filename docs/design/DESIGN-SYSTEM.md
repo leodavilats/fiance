@@ -1,6 +1,6 @@
-# Fase 7 — Design system
+# Design system
 
-> Traduz [05-VISUAL-LANGUAGE.md](05-VISUAL-LANGUAGE.md) em tokens e componentes.
+> Traduz [VISUAL-LANGUAGE.md](VISUAL-LANGUAGE.md) em tokens e componentes.
 > Os tokens **não são documentação**: são código gerado, já no repositório.
 
 ## Tokens: uma fonte, três alvos
@@ -76,7 +76,7 @@ Três regras de uso, verificáveis em revisão:
 
 `Inter` mede, `Source Serif 4` conclui. Papéis: `money-xl` · `money-lg` · `metric` ·
 `metric-sm` · `verdict` · `verdict-sm` · `title` · `eyebrow` · `body` · `label` · `caption` ·
-`ticker` (tabela completa em [05](05-VISUAL-LANGUAGE.md#tipografia)).
+`ticker` (tabela completa em [identidade visual](VISUAL-LANGUAGE.md#tipografia)).
 
 - No web, um papel = uma classe: `.fi-money-xl`, `.fi-verdict`, `.fi-eyebrow`…
 - No mobile, um papel = um `TextStyle` em `FiType` + a família em `fiTypeFamily` (resolvida via
@@ -110,7 +110,7 @@ Camadas: nav 100 · drawer/sheet 200 · popover 300 · toast 400.
 ### Breakpoints
 
 `mobile-sm` 0 · `mobile-lg` 420 · `tablet` 768 · `desktop-sm` 1024 · `desktop` 1280 ·
-`desktop-lg` 1440. Comportamento por faixa em [04](04-WIREFRAMES.md#10-responsividade).
+`desktop-lg` 1440. Comportamento por faixa em [wireframes](WIREFRAMES.md#10-responsividade).
 Largura de leitura 1120px, densa 1600px — o `max-w-[1180px]` global sai.
 
 ---

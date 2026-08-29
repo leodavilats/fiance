@@ -32,7 +32,7 @@ porque ela invalidava as anteriores. Seis itens contradiziam o código.
 - **Token de design** é gerado, não escrito: edite `design-tokens/tokens.json` e rode
   `node design-tokens/build.mjs`. O CI falha se web e mobile divergirem.
 - **Navegação e telas** seguem a arquitetura de informação em
-  [design/02-INFORMATION-ARCHITECTURE.md](design/02-INFORMATION-ARCHITECTURE.md). O que já está
+  [design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md). O que já está
   construído está no código; o que **não** está, em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 - **Suíte verde é pré-requisito de merge.** Os comandos exatos, com as contagens esperadas,
   estão em [CLAUDE.md](../CLAUDE.md#como-trabalhar-aqui). Em resumo: `pytest` (724) ·
