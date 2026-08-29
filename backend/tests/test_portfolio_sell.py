@@ -3,6 +3,7 @@ import asyncio
 import pytest
 
 from app.models import SellRequest
+from app.services import ledger_service
 from app.services.portfolio_service import PortfolioService
 from app.storage import portfolio_store
 
@@ -23,7 +24,7 @@ def _new_service(monkeypatch, asset_type="br_stock"):
 
 def test_sell_partial_reduces_quantity(monkeypatch):
     uid = "test_sell_partial"
-    portfolio_store.upsert_position("PETR4", quantity=100, avg_price=10.0, user_id=uid)
+    ledger_service.record_position_state("PETR4", quantity=100, avg_price=10.0, user_id=uid)
     service = _new_service(monkeypatch)
 
     req = SellRequest(ticker="PETR4", quantity=40, sell_price=15.0)
@@ -46,7 +47,7 @@ def test_sell_partial_reduces_quantity(monkeypatch):
 
 def test_sell_all_removes_position(monkeypatch):
     uid = "test_sell_all"
-    portfolio_store.upsert_position("VALE3", quantity=50, avg_price=20.0, user_id=uid)
+    ledger_service.record_position_state("VALE3", quantity=50, avg_price=20.0, user_id=uid)
     service = _new_service(monkeypatch)
 
     from app.core.context import reset_current_user_id, set_current_user_id
@@ -63,7 +64,7 @@ def test_sell_all_removes_position(monkeypatch):
 
 def test_sell_more_than_owned_raises(monkeypatch):
     uid = "test_sell_too_much"
-    portfolio_store.upsert_position("ITUB4", quantity=10, avg_price=20.0, user_id=uid)
+    ledger_service.record_position_state("ITUB4", quantity=10, avg_price=20.0, user_id=uid)
     service = _new_service(monkeypatch)
 
     from app.core.context import reset_current_user_id, set_current_user_id
@@ -94,7 +95,7 @@ def test_sell_unknown_ticker_raises(monkeypatch):
 
 def test_closed_trades_totals(monkeypatch):
     uid = "test_closed_trades_totals"
-    portfolio_store.upsert_position("BBAS3", quantity=100, avg_price=10.0, user_id=uid)
+    ledger_service.record_position_state("BBAS3", quantity=100, avg_price=10.0, user_id=uid)
     service = _new_service(monkeypatch)
 
     from app.core.context import reset_current_user_id, set_current_user_id

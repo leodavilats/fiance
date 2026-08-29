@@ -183,13 +183,12 @@ class PortfolioService:
         )
 
     def upsert_position(self, item: PortfolioItem) -> PortfolioStateResponse:
-        self.portfolio_repo.upsert_position(
-            ticker=item.ticker,
-            quantity=item.quantity,
-            avg_price=item.avg_price,
+        ledger_service.record_position_state(
+            item.ticker,
+            item.quantity,
+            item.avg_price,
             category=item.category or "auto",
         )
-        ledger_service.mirror_position_state(item.ticker, item.quantity, item.avg_price)
         audit_store.write(
             audit_store.POSITION_WRITE,
             entity="position",
@@ -203,23 +202,16 @@ class PortfolioService:
         return state
 
     def save_portfolio(self, req: SavePortfolioRequest) -> PortfolioStateResponse:
-        self.portfolio_repo.replace_all(
-            [
-                {
-                    "ticker": i.ticker,
-                    "quantity": i.quantity,
-                    "avg_price": i.avg_price,
-                    "category": i.category or "auto",
-                }
-                for i in req.items
-            ]
-        )
+        for antigo in self.portfolio_repo.list_positions():
+            if antigo["ticker"] not in {i.ticker.strip().upper() for i in req.items}:
+                ledger_service.record_removal(antigo["ticker"])
+
+        for i in req.items:
+            ledger_service.record_position_state(
+                i.ticker, i.quantity, i.avg_price, category=i.category or "auto"
+            )
 
         items = self.portfolio_repo.list_positions()
-        for item in items:
-            ledger_service.mirror_position_state(
-                item["ticker"], item["quantity"], item["avg_price"]
-            )
         record_portfolio_milestones(len(items))
         audit_store.write(
             audit_store.POSITION_WRITE,
@@ -235,8 +227,7 @@ class PortfolioService:
         )
 
     def delete_position(self, ticker: str) -> dict:
-        self.portfolio_repo.delete_position(ticker)
-        ledger_service.mirror_removal(ticker)
+        ledger_service.record_removal(ticker)
         audit_store.write(
             audit_store.POSITION_DELETE,
             entity="position",
@@ -296,9 +287,7 @@ class PortfolioService:
             loss_compensable=cost.loss_compensable,
             sold_at=sold_at,
         )
-        self.portfolio_repo.reduce_position_quantity(req.ticker, req.quantity)
-
-        ledger_service.mirror_sale(
+        ledger_service.record_sale(
             req.ticker,
             req.quantity,
             req.sell_price,

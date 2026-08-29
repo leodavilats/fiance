@@ -25,7 +25,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 733 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 740 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd mobile  && flutter analyze && flutter test      # 0 issues, 49 testes
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 90 testes
@@ -111,9 +111,16 @@ explicabilidade, gráfico sem tabela e botão de ícone sem `aria-label`.
 
 ### Carteira e livro-razão
 
-- **O livro-razão é a fonte de verdade — mas ainda não é a fonte de leitura.** A matemática vive em
-  `ledger/`, que não conhece banco. A escrita é **espelhada** (`ledger_service.mirror_*`) e
-  `GET /transactions/reconciliation` compara os dois. Trocar a fonte é passo 3 de 3, ainda não dado.
+- **O livro-razão é a fonte da carteira; a posição é projeção dele.** A matemática vive em
+  `ledger/`, que não conhece banco. A escrita grava **só lançamento**
+  (`ledger_service.record_position_state`, `record_sale`, `record_removal`) e reconstrói a linha de
+  `portfolio` a partir dele — não há mais espelhamento. `rebuild_projection` refaz tudo do zero
+  (`POST /transactions/rebuild`), e `GET /transactions/reconciliation` deixou de comparar duas
+  verdades: agora confere a projeção contra a fonte. Categoria não é derivável do razão, então
+  viaja junto com a escrita.
+- **Uma declaração de posição ancora a linha do tempo.** O que vier depois dela se aplica em cima,
+  na ordem das datas; o que veio antes é irrelevante, porque ela já o substituiu. É o que permite
+  registrar venda retroativa contra posição declarada hoje sem fabricar histórico.
 - **Preço médio segue a convenção brasileira:** venda reduz quantidade e custo, nunca a média.
 - **Evento corporativo é lançamento** (`split`, `bonus`, `amortization`), não correção manual —
   desdobramento sem ajuste é IR errado.

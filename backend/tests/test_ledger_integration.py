@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from app.core.context import reset_current_user_id, set_current_user_id
 from app.ledger import LedgerEntry, TransactionKind
 from app.services import ledger_service
-from app.storage import audit_store, ledger_store
+from app.storage import audit_store, ledger_store, portfolio_store
 from tests.conftest import make_auth_headers
 
 
@@ -319,3 +321,116 @@ class TestAuditoria:
         )
 
         assert resposta.status_code == 200
+
+
+class TestPosicaoEProjecao:
+    def test_apagar_a_projecao_inteira_e_reconstruir_da_no_mesmo_lugar(self, client, como):
+        uid = como("u_projecao_rebuild")
+        headers = make_auth_headers(uid)
+        for ticker, qtd, preco in (("PETR4", 100, 30.0), ("VALE3", 50, 60.0)):
+            client.post(
+                "/api/portfolio/position",
+                json={"ticker": ticker, "quantity": qtd, "avg_price": preco},
+                headers=headers,
+            )
+        antes = {i["ticker"]: i["quantity"] for i in portfolio_store.list_positions(uid)}
+
+        for ticker in list(antes):
+            portfolio_store.delete_position(ticker, user_id=uid)
+        assert portfolio_store.list_positions(uid) == []
+
+        ledger_service.rebuild_projection(user_id=uid)
+
+        depois = {i["ticker"]: i["quantity"] for i in portfolio_store.list_positions(uid)}
+        assert depois == antes
+
+    def test_a_categoria_sobrevive_a_reconstrucao(self, client, como):
+        uid = como("u_projecao_categoria")
+        client.post(
+            "/api/portfolio/position",
+            json={
+                "ticker": "HGLG11",
+                "quantity": 10,
+                "avg_price": 150.0,
+                "category": "fiis",
+            },
+            headers=make_auth_headers(uid),
+        )
+
+        ledger_service.rebuild_projection(user_id=uid)
+
+        posicao = portfolio_store.get_position("HGLG11", user_id=uid)
+        assert posicao["category"] == "fiis"
+
+    def test_escrever_posicao_grava_lancamento(self, client, como):
+        uid = como("u_projecao_lancamento")
+        client.post(
+            "/api/portfolio/position",
+            json={"ticker": "ITUB4", "quantity": 80, "avg_price": 25.0},
+            headers=make_auth_headers(uid),
+        )
+
+        assert "ITUB4" in set(ledger_store.symbols(user_id=uid))
+
+    def test_a_reconciliacao_fica_verde_depois_de_escrever(self, client, como):
+        uid = como("u_projecao_verde")
+        headers = make_auth_headers(uid)
+        client.post(
+            "/api/portfolio/position",
+            json={"ticker": "BBAS3", "quantity": 300, "avg_price": 22.0},
+            headers=headers,
+        )
+        client.post(
+            "/api/portfolio/sell",
+            json={"ticker": "BBAS3", "quantity": 100, "sell_price": 30.0},
+            headers=headers,
+        )
+
+        assert client.get("/api/transactions/reconciliation", headers=headers).json()["in_sync"]
+
+    def test_remover_posicao_apaga_a_projecao(self, client, como):
+        uid = como("u_projecao_remocao")
+        headers = make_auth_headers(uid)
+        client.post(
+            "/api/portfolio/position",
+            json={"ticker": "MGLU3", "quantity": 500, "avg_price": 3.0},
+            headers=headers,
+        )
+        client.delete("/api/portfolio/position/MGLU3", headers=headers)
+
+        assert portfolio_store.get_position("MGLU3", user_id=uid) is None
+
+
+class TestDeclaracaoAncoraALinhaDoTempo:
+    def test_venda_retroativa_se_aplica_a_posicao_declarada(self, client, como):
+        uid = como("u_ancora_retroativa")
+        headers = make_auth_headers(uid)
+        client.post(
+            "/api/portfolio/position",
+            json={"ticker": "PETR4", "quantity": 200, "avg_price": 10.0},
+            headers=headers,
+        )
+
+        resposta = client.post(
+            "/api/portfolio/sell",
+            json={
+                "ticker": "PETR4",
+                "quantity": 100,
+                "sell_price": 30.0,
+                "sold_at": time.time() - 40 * 86400,
+            },
+            headers=headers,
+        )
+
+        assert resposta.status_code == 200, resposta.text
+        assert portfolio_store.get_position("PETR4", user_id=uid)["quantity"] == 100
+
+    def test_a_declaracao_apaga_o_que_veio_antes(self, como):
+        uid = como("u_ancora_substitui")
+        ledger_service.record_position_state("VALE3", 100, 50.0, user_id=uid)
+        ledger_service.record_position_state("VALE3", 30, 60.0, user_id=uid)
+
+        projetado = ledger_service.project(uid)["VALE3"]
+
+        assert projetado.quantity == 30
+        assert projetado.avg_price == 60.0

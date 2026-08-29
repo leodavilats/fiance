@@ -134,8 +134,22 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
     raise LedgerError(f"Tipo de lançamento sem projeção definida: {kind!r}.")
 
 
+def _sequence(entries: Iterable[LedgerEntry]) -> list[LedgerEntry]:
+    por_registro = sorted(entries, key=lambda e: e.id if e.id is not None else 0)
+
+    corte = 0
+    for indice, entry in enumerate(por_registro):
+        if entry.kind is TransactionKind.ADJUST:
+            corte = indice
+
+    relevantes = por_registro[corte:]
+    if relevantes and relevantes[0].kind is TransactionKind.ADJUST:
+        return [relevantes[0]] + sorted(relevantes[1:], key=lambda e: e.sort_key)
+    return sorted(relevantes, key=lambda e: e.sort_key)
+
+
 def _fold(entries: Iterable[LedgerEntry], symbol: str, on_step=None) -> PositionProjection:
-    ordered = sorted(entries, key=lambda e: e.sort_key)
+    ordered = _sequence(entries)
     state = PositionProjection(symbol=symbol or (ordered[0].symbol if ordered else ""))
 
     for entry in ordered:

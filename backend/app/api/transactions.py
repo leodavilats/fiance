@@ -135,6 +135,12 @@ async def backfill(user_id: str = Depends(get_current_user)) -> dict:
     return {"seeded": seeded}
 
 
+@router.post("/transactions/rebuild")
+async def rebuild(user_id: str = Depends(get_current_user)) -> dict:
+    rebuilt = ledger_service.rebuild_projection(user_id=user_id)
+    return {"rebuilt": rebuilt, "reconciliation": ledger_service.reconcile(user_id)}
+
+
 @router.get("/activity")
 async def read_activity(action: str | None = None, limit: int = 100) -> dict:
     return {"items": audit_store.read(action=action, limit=limit)}

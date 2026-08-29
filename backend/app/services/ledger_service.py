@@ -17,30 +17,29 @@ def today_brt() -> str:
     return now_brt().strftime("%Y-%m-%d")
 
 
-def mirror_position_state(
+def record_position_state(
     ticker: str,
     quantity: float,
     avg_price: float,
     traded_on: str | None = None,
+    category: str | None = None,
     user_id: str | None = None,
 ) -> None:
-    try:
-        ledger_store.record(
-            LedgerEntry(
-                kind=TransactionKind.ADJUST,
-                symbol=ticker,
-                traded_on=traded_on or today_brt(),
-                quantity=quantity,
-                price=avg_price,
-            ),
-            source="position_editor",
-            user_id=user_id,
-        )
-    except Exception:
-        logger.warning("Falha ao espelhar posição %s no razão", ticker, exc_info=True)
+    ledger_store.record(
+        LedgerEntry(
+            kind=TransactionKind.ADJUST,
+            symbol=ticker,
+            traded_on=traded_on or today_brt(),
+            quantity=quantity,
+            price=avg_price,
+        ),
+        source="position_editor",
+        user_id=user_id,
+    )
+    rebuild_projection(symbol=ticker, category=category, user_id=user_id)
 
 
-def mirror_sale(
+def record_sale(
     ticker: str,
     quantity: float,
     price: float,
@@ -48,38 +47,73 @@ def mirror_sale(
     traded_on: str | None = None,
     user_id: str | None = None,
 ) -> None:
-    try:
-        ledger_store.record(
-            LedgerEntry(
-                kind=TransactionKind.SELL,
-                symbol=ticker,
-                traded_on=traded_on or today_brt(),
-                quantity=quantity,
-                price=price,
-                fees=max(0.0, fees),
-            ),
-            source="sell",
-            user_id=user_id,
-        )
-    except Exception:
-        logger.warning("Falha ao espelhar venda de %s no razão", ticker, exc_info=True)
+    ledger_store.record(
+        LedgerEntry(
+            kind=TransactionKind.SELL,
+            symbol=ticker,
+            traded_on=traded_on or today_brt(),
+            quantity=quantity,
+            price=price,
+            fees=max(0.0, fees),
+        ),
+        source="sell",
+        user_id=user_id,
+    )
+    rebuild_projection(symbol=ticker, user_id=user_id)
 
 
-def mirror_removal(ticker: str, user_id: str | None = None) -> None:
-    try:
-        ledger_store.record(
-            LedgerEntry(
-                kind=TransactionKind.ADJUST,
-                symbol=ticker,
-                traded_on=today_brt(),
-                quantity=0.0,
-                price=0.0,
-            ),
-            source="position_editor",
-            user_id=user_id,
-        )
-    except Exception:
-        logger.warning("Falha ao espelhar remoção de %s no razão", ticker, exc_info=True)
+def record_removal(ticker: str, user_id: str | None = None) -> None:
+    ledger_store.record(
+        LedgerEntry(
+            kind=TransactionKind.ADJUST,
+            symbol=ticker,
+            traded_on=today_brt(),
+            quantity=0.0,
+            price=0.0,
+        ),
+        source="position_editor",
+        user_id=user_id,
+    )
+    rebuild_projection(symbol=ticker, user_id=user_id)
+
+
+def rebuild_projection(
+    symbol: str | None = None,
+    category: str | None = None,
+    user_id: str | None = None,
+) -> int:
+    alvo = symbol.strip().upper() if symbol else None
+    projetadas = project(user_id)
+    categorias = {
+        item["ticker"]: item["category"] for item in portfolio_store.list_positions(user_id)
+    }
+    if alvo and category:
+        categorias[alvo] = category
+
+    escritas = 0
+    for ticker, estado in projetadas.items():
+        if alvo and ticker != alvo:
+            continue
+        if estado.is_open:
+            portfolio_store.upsert_position(
+                ticker=ticker,
+                quantity=estado.quantity,
+                avg_price=estado.avg_price,
+                category=categorias.get(ticker, "auto"),
+                user_id=user_id,
+            )
+        else:
+            portfolio_store.delete_position(ticker, user_id=user_id)
+        escritas += 1
+
+    for ticker in categorias:
+        if alvo and ticker != alvo:
+            continue
+        if ticker not in projetadas:
+            portfolio_store.delete_position(ticker, user_id=user_id)
+            escritas += 1
+
+    return escritas
 
 
 def project(user_id: str | None = None) -> dict[str, PositionProjection]:
