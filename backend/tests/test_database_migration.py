@@ -4,9 +4,15 @@ import tempfile
 import pytest
 from alembic import command
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 
-from app.core.database import Base, _alembic_config, engine, init_db
+from app.core.database import (
+    Base,
+    RevisaoDesconhecida,
+    _alembic_config,
+    engine,
+    init_db,
+)
 from app.models import db_models  # noqa: F401  (registra os modelos no metadata)
 
 
@@ -116,3 +122,43 @@ class TestACadeiaRoda:
         init_db()
 
         assert "alembic_version" in set(inspect(engine).get_table_names())
+
+
+class TestOPontoDePartidaEConferido:
+    @pytest.fixture()
+    def banco_migrado(self, sqlite_url, monkeypatch):
+        command.upgrade(_config_for(sqlite_url), "head")
+        motor = create_engine(sqlite_url)
+        monkeypatch.setattr("app.core.database.engine", motor)
+        return motor
+
+    def _carimbar(self, motor, revisao):
+        with motor.begin() as conexao:
+            conexao.execute(text("delete from alembic_version"))
+            if revisao is not None:
+                conexao.execute(
+                    text("insert into alembic_version (version_num) values (:r)"),
+                    {"r": revisao},
+                )
+
+    def test_revisao_que_nao_existe_mais_diz_qual_e(self, banco_migrado):
+        self._carimbar(banco_migrado, "0007_loss_compensable")
+
+        with pytest.raises(RevisaoDesconhecida) as erro:
+            init_db()
+
+        assert "0007_loss_compensable" in str(erro.value)
+
+    def test_banco_com_tabelas_e_sem_carimbo_falha_alto(self, banco_migrado):
+        self._carimbar(banco_migrado, None)
+
+        with pytest.raises(RevisaoDesconhecida):
+            init_db()
+
+    def test_revisao_conhecida_passa(self, banco_migrado):
+        (head,) = ScriptDirectory.from_config(_alembic_config()).get_heads()
+        self._carimbar(banco_migrado, head)
+
+        init_db()
+
+        assert "users" in _tabelas(inspect(banco_migrado))

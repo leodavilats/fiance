@@ -12,6 +12,63 @@
 
 ---
 
+## O banco publicado ficou para trás do colapso de migrações (2026-08-29)
+
+O deploy do Railway estava em `● Crashed` desde o colapso do histórico de migrações
+(`51a9461`, no dia anterior). O Postgres estava carimbado em `0007_loss_compensable`,
+revisão que deixou de existir quando as doze migrações viraram uma; o `init_db`
+encontrava tabelas, chamava `upgrade(head)` e o Alembic morria com
+`Can't locate revision identified by` no meio do lifespan.
+
+O commit do colapso registrou ter renomeado o banco de **desenvolvimento** para
+`.antes-do-squash`. O publicado não foi tocado — e ninguém percebeu, porque a única
+forma de descobrir era um deploy, e não houve nenhum entre o colapso e o dia seguinte.
+
+**O banco estava em `0007` de verdade, não só de nome.** Faltavam nele todas as tabelas
+de `0008` a `0012` — `subscriptions`, `referrals`, `instruments`, `ledger_entries`,
+`audit_log`, sessões, contadores e eventos — e ainda existia `watchlist`, removida em
+`5b3219f`. Carimbar a revisão atual por cima seria mentir: o Alembic passaria a acreditar
+em 26 tabelas onde havia 16, e o erro voltaria como coluna inexistente em runtime.
+
+Havia dois caminhos. Trazer o banco para a frente pela cadeia antiga — recuperável no git,
+`0008`→`0012`, depois `stamp 0001_esquema_inicial` e `upgrade head` — ou recriar o schema.
+Como não havia dado a preservar, foi `DROP SCHEMA public CASCADE`. As quatro contas que
+existiam eram de teste. **Se houvesse assinante, o caminho teria sido o outro**, e o passo
+delicado seria a `0002_dinheiro_exato`, que reescreve as colunas monetárias para `Numeric`.
+
+### O guarda, que é o que sobra disso
+
+O conserto do banco não deixa nada no código; o que ficou foi a verificação que faltava.
+`init_db` agora confere de onde vai migrar **antes** de tentar, e falha com uma frase:
+
+- banco carimbado em revisão que a cadeia não conhece — a mensagem **nomeia a revisão** e
+  diz que o histórico foi colapsado depois do último deploy daquele banco;
+- banco com tabelas e sem `alembic_version` — o estado que o próprio commit do colapso
+  queria que falhasse alto, mas que até aqui falhava como "tabela já existe" três camadas
+  abaixo do que interessa.
+
+O ramo do banco vazio (`create_all` + `stamp head`) não mudou: é por ele que o Railway
+subiu depois do reset.
+
+## Segredo em URL não chega mais ao log (2026-08-29)
+
+Nos logs do deploy recuperado, o token da BRAPI aparecia em claro em **toda** requisição —
+o `httpx` loga a URL inteira em INFO, e a BRAPI põe a chave na query string. Eram ~286
+linhas com o segredo a cada aquecimento de cache, retidas por quem tivesse acesso ao painel.
+
+A correção é um `logging.Filter` nos handlers da raiz, e não um `setLevel` no logger do
+`httpx`. Calar o `httpx` resolveria o vazamento de hoje e deixaria o de amanhã em pé: o
+mesmo token também sai por `core/universe.py`, e qualquer biblioteca nova que logue uma URL
+reintroduziria o problema. Em handler, vale para todo logger. `token`, `api_key`, `apikey`,
+`access_token`, `refresh_token`, `secret`, `password` e `senha` viram `[redigido]`; o resto
+da linha sobrevive, porque URL sem o segredo ainda é diagnóstico.
+
+O `httpx` desceu para WARNING **também**, mas por outro motivo — 286 linhas por aquecimento
+é ruído, não risco.
+
+A redação impede vazamento novo; não desfaz o antigo. **O token que já vazou precisa ser
+rotacionado** — está nos logs retidos do Railway desde sempre.
+
 ## `docs/design/` deixa de ter status e passa a ter só especificação (2026-08-28)
 
 Quatro dos nove documentos do redesign foram removidos: `00-DISCOVERY`, `01-UX-AUDIT`,

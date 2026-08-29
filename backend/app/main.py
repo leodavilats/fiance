@@ -16,7 +16,7 @@ from app.core.config import get_settings
 from app.core.database import init_db
 from app.core.errors import DomainError
 from app.core.jobs import start_background_jobs
-from app.core.observability import observability_middleware
+from app.core.observability import instalar_redacao, observability_middleware
 
 logger = logging.getLogger("fiance")
 
@@ -63,6 +63,7 @@ def create_app() -> FastAPI:
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         datefmt="%Y-%m-%dT%H:%M:%S",
     )
+    instalar_redacao()
 
     app = FastAPI(
         title="fiance",

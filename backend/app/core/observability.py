@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import re
 import threading
 import time
 import uuid
@@ -16,6 +18,38 @@ from app.core.context import (
 from app.core.database import SessionLocal
 
 """Instrumentação mínima."""
+
+
+PARAMETROS_SIGILOSOS = (
+    "token",
+    "api_key",
+    "apikey",
+    "access_token",
+    "refresh_token",
+    "secret",
+    "password",
+    "senha",
+)
+
+_SIGILO_NA_URL = re.compile(
+    r"(?i)\b(" + "|".join(PARAMETROS_SIGILOSOS) + r")=([^&\s\"'>]+)"
+)
+
+
+class RedigeSegredoEmURL(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.args:
+            record.msg = record.getMessage()
+            record.args = ()
+        record.msg = _SIGILO_NA_URL.sub(r"\1=[redigido]", str(record.msg))
+        return True
+
+
+def instalar_redacao(nivel_httpx: int = logging.WARNING) -> None:
+    for handler in logging.getLogger().handlers:
+        if not any(isinstance(f, RedigeSegredoEmURL) for f in handler.filters):
+            handler.addFilter(RedigeSegredoEmURL())
+    logging.getLogger("httpx").setLevel(nivel_httpx)
 
 
 @dataclass

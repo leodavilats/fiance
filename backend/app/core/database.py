@@ -42,6 +42,43 @@ def _alembic_config():
     return config
 
 
+class RevisaoDesconhecida(RuntimeError):
+    pass
+
+
+def _revisoes_conhecidas(config) -> set[str]:
+    from alembic.script import ScriptDirectory
+
+    return {revisao.revision for revisao in ScriptDirectory.from_config(config).walk_revisions()}
+
+
+def _revisoes_do_banco() -> set[str]:
+    from alembic.runtime.migration import MigrationContext
+
+    with engine.connect() as connection:
+        return set(MigrationContext.configure(connection).get_current_heads())
+
+
+def _conferir_ponto_de_partida(config) -> None:
+    carimbadas = _revisoes_do_banco()
+
+    if not carimbadas:
+        raise RevisaoDesconhecida(
+            "O banco tem tabelas e não tem alembic_version: não dá para saber de onde migrar. "
+            "Se não houver dado a preservar, recrie o schema — o boot num banco vazio o cria e "
+            "carimba sozinho."
+        )
+
+    desconhecidas = carimbadas - _revisoes_conhecidas(config)
+    if desconhecidas:
+        raise RevisaoDesconhecida(
+            f"O banco está carimbado em {', '.join(sorted(desconhecidas))}, que não existe mais "
+            "nesta cadeia de migrações. O histórico foi colapsado depois que esse banco foi "
+            "migrado pela última vez. Recriar o schema (se não houver dado) ou trazer o banco "
+            "para a frente pela cadeia antiga, recuperável no git, antes de carimbar a atual."
+        )
+
+
 def init_db() -> None:
     from alembic import command
 
@@ -57,6 +94,7 @@ def init_db() -> None:
         logger.info("Banco criado do zero e marcado na revisão mais recente.")
         return
 
+    _conferir_ponto_de_partida(config)
     command.upgrade(config, "head")
 
 
