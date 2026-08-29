@@ -92,6 +92,8 @@ class TestDoLimiteAoPagamento:
     def test_free_encosta_no_teto_e_o_402_traz_o_que_a_ui_precisa(self, client, regua_ligada):
         uid = "j_teto"
         headers = make_auth_headers(uid)
+        salvar_posicao(client, uid)
+        subscription_service.cancel(uid, reason="fim do trial")
 
         respostas = [client.get(f"/api/asset/ATIVO{i}", headers=headers) for i in range(7)]
         bloqueadas = [r for r in respostas if r.status_code == 402]
@@ -103,6 +105,8 @@ class TestDoLimiteAoPagamento:
     def test_a_compra_derruba_o_teto(self, client, gateway, regua_ligada):
         uid = "j_compra"
         headers = make_auth_headers(uid)
+        salvar_posicao(client, uid)
+        subscription_service.cancel(uid, reason="fim do trial")
         for i in range(7):
             client.get(f"/api/asset/ANTES{i}", headers=headers)
 

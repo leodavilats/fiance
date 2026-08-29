@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from importlib import import_module
 
 import pytest
 
@@ -10,11 +11,21 @@ from app.entitlement.resolve import TRIAL_DAYS
 from app.services import subscription_service
 from tests.conftest import make_auth_headers
 
+resolve_mod = import_module("app.entitlement.resolve")
+
 DAY = 86400.0
 
 
 @pytest.fixture()
 def regua_ligada(monkeypatch):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "entitlements_enabled", True, raising=False)
+    monkeypatch.setattr(resolve_mod, "_ainda_nao_comecou", lambda _user_id: False)
+    return settings
+
+
+@pytest.fixture()
+def sem_carteira(monkeypatch):
     settings = get_settings()
     monkeypatch.setattr(settings, "entitlements_enabled", True, raising=False)
     return settings

@@ -28,6 +28,17 @@ def regua_ligada(monkeypatch):
     return settings
 
 
+def free_de_verdade(client, user_id: str) -> dict:
+    headers = make_auth_headers(user_id)
+    client.post(
+        "/api/portfolio/position",
+        json={"ticker": "PETR4", "quantity": 100, "avg_price": 30.0},
+        headers=headers,
+    )
+    subscription_service.cancel(user_id, reason="fim do trial")
+    return headers
+
+
 class TestFlagDesligada:
     @pytest.mark.parametrize(("metodo", "url", "corpo"), ROTAS_PREMIUM)
     def test_nenhuma_rota_cobra_com_a_regua_desligada(self, client, metodo, url, corpo):
@@ -41,14 +52,14 @@ class TestFlagDesligada:
 class TestRotasPremium:
     @pytest.mark.parametrize(("metodo", "url", "corpo"), ROTAS_PREMIUM)
     def test_free_leva_402_nas_rotas_premium(self, client, regua_ligada, metodo, url, corpo):
-        headers = make_auth_headers("u_rota_free")
+        headers = free_de_verdade(client, "u_rota_free")
 
         resposta = _chamar(client, metodo, url, corpo, headers)
 
         assert resposta.status_code == 402
 
     def test_o_corpo_do_402_diz_o_que_falta(self, client, regua_ligada):
-        headers = make_auth_headers("u_rota_corpo")
+        headers = free_de_verdade(client, "u_rota_corpo")
 
         corpo = client.get("/api/strategy", headers=headers).json()["detail"]
 
@@ -67,7 +78,7 @@ class TestRotasPremium:
         assert resposta.status_code != 402
 
     def test_importar_operacoes_e_premium(self, client, regua_ligada):
-        headers = make_auth_headers("u_rota_import")
+        headers = free_de_verdade(client, "u_rota_import")
 
         bloqueado = client.post(
             "/api/transactions/import",
@@ -81,13 +92,13 @@ class TestRotasPremium:
 
 class TestPaginaDeAtivo:
     def test_o_teto_bloqueia_depois_de_consumido(self, client, regua_ligada):
-        headers = make_auth_headers("u_ativo_teto")
+        headers = free_de_verdade(client, "u_ativo_teto")
         limite = plans.limit_for(Feature.ASSET_PAGE, Plan.FREE)
 
         for _ in range(limite):
-            assert client.get("/api/asset/PETR4", headers=headers).status_code == 200
+            assert client.get("/api/asset/VALE3", headers=headers).status_code == 200
 
-        bloqueado = client.get("/api/asset/PETR4", headers=headers)
+        bloqueado = client.get("/api/asset/VALE3", headers=headers)
 
         assert bloqueado.status_code == 402
         assert bloqueado.json()["detail"]["limit_reached"] is True
@@ -158,7 +169,7 @@ class TestTelemetriaDaCerca:
     def test_bater_no_teto_deixa_registro(self, client, regua_ligada):
         from app.storage import event_store
 
-        headers = make_auth_headers("u_cerca_evento")
+        headers = free_de_verdade(client, "u_cerca_evento")
         client.get("/api/strategy", headers=headers)
 
         assert event_store.has_event("u_cerca_evento", "paywall_viewed")
@@ -172,3 +183,32 @@ class TestTelemetriaDaCerca:
         origens = event_store.counts_by_prop("paywall_viewed", "feature")
 
         assert origens.get("strategy", 0) >= 1
+
+
+class TestNadaEBloqueadoAntesDeComecar:
+    def test_conta_sem_carteira_nao_ve_gate(self, client, regua_ligada):
+        headers = make_auth_headers("u_antes_de_comecar")
+
+        assert client.get("/api/strategy", headers=headers).status_code != 402
+
+    def test_a_primeira_posicao_e_o_que_liga_a_cerca(self, client, regua_ligada):
+        headers = make_auth_headers("u_liga_a_cerca")
+        antes = client.get("/api/strategy", headers=headers).status_code
+
+        client.post(
+            "/api/portfolio/position",
+            json={"ticker": "PETR4", "quantity": 100, "avg_price": 30.0},
+            headers=headers,
+        )
+        subscription_service.cancel("u_liga_a_cerca", reason="fim do trial")
+        depois = client.get("/api/strategy", headers=headers).status_code
+
+        assert (antes, depois) == (200, 402)
+
+    def test_sem_carteira_nem_evento_de_paywall_e_gravado(self, client, regua_ligada):
+        from app.storage import event_store
+
+        headers = make_auth_headers("u_antes_sem_evento")
+        client.get("/api/strategy", headers=headers)
+
+        assert not event_store.has_event("u_antes_sem_evento", "paywall_viewed")

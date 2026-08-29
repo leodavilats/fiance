@@ -104,6 +104,19 @@ const DESTINATIONS: readonly NavDestination[] = [
           </nav>
 
           <div class="flex items-center gap-2">
+            @if (direitos.inTrial() && direitos.trialDaysLeft() !== null) {
+              <a
+                routerLink="/voce/conta"
+                class="hidden sm:inline-flex items-center h-9 px-2.5 rounded-md no-underline border fi-caption"
+                [class.border-hairline]="!direitos.trialEndingSoon()"
+                [class.text-ink-2]="!direitos.trialEndingSoon()"
+                [class.border-attention]="direitos.trialEndingSoon()"
+                [class.text-attention]="direitos.trialEndingSoon()"
+                [attr.aria-label]="rotuloDoTrial()"
+              >
+                {{ rotuloDoTrial() }}
+              </a>
+            }
             <button
               class="hidden sm:flex items-center gap-2 h-9 px-2.5 rounded-md cursor-pointer bg-transparent border border-hairline text-ink-2 hover:text-ink hover:bg-ground-2 transition-colors"
               type="button"
@@ -244,7 +257,15 @@ export class AppComponent {
   private _navTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly densidade = inject(DensityService);
-  private readonly direitos = inject(EntitlementService);
+  readonly direitos = inject(EntitlementService);
+
+  rotuloDoTrial(): string {
+    const dias = this.direitos.trialDaysLeft();
+    if (dias === null) return '';
+    if (dias <= 0) return 'Teste acaba hoje';
+    if (dias === 1) return 'Teste acaba amanhã';
+    return `Teste: ${dias} dias`;
+  }
 
   constructor() {
     this.densidade.ensureLoaded();

@@ -14,6 +14,8 @@ TRIAL_DAYS = 14
 
 ACTIVE_STATUSES = frozenset({"active", "past_due"})
 
+BEFORE_FIRST_POSITION = "Antes da primeira posição salva não há o que cercar."
+
 
 @dataclass
 class Entitlements:
@@ -148,11 +150,23 @@ class Decision:
         }
 
 
+def _ainda_nao_comecou(user_id: str) -> bool:
+    from app.storage import portfolio_store
+
+    try:
+        return not portfolio_store.list_positions(user_id)
+    except Exception:
+        return False
+
+
 def check(feature: Feature, user_id: str, cost: int = 0) -> Decision:
     direitos = resolve(user_id)
 
     if direitos.unrestricted:
         return Decision(True, feature, direitos.plan)
+
+    if _ainda_nao_comecou(user_id):
+        return Decision(True, feature, direitos.plan, reason=BEFORE_FIRST_POSITION)
 
     regra = rule_for(feature)
 

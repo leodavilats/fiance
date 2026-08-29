@@ -25,10 +25,10 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 740 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 765 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd mobile  && flutter analyze && flutter test      # 0 issues, 49 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 90 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 98 testes
 node design-tokens/build.mjs --check               # tokens sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA
 python design-tokens/build-icons.py --check        # marca sincronizada
@@ -191,6 +191,10 @@ explicabilidade, gráfico sem tabela e botão de ícone sem `aria-label`.
 O plano de cinco portões (G0 publicável → G4 preço cheio) está no
 [CHANGELOG](docs/CHANGELOG.md), entrada de 2026-08-27.
 
+- **Nada é cercado antes da primeira posição salva.** `entitlement.check` libera tudo enquanto a
+  carteira estiver vazia, e nem grava evento de paywall: gate para quem ainda não tem o que
+  analisar cobra antes de entregar. Como a primeira posição também dispara o trial, "Free com
+  carteira" só existe depois de o trial acabar — é assim que os testes de cerca semeiam o estado.
 - **Cerca de plano mora só em `entitlement/`** e entra desligada (`ENTITLEMENTS_ENABLED=false`).
   A régua é dado em `plans.py`; aplicar é `Depends(requires(Feature.X))`; bloqueio é 402 com corpo
   que a UI usa para montar o gate. Dois testes de arquitetura travam isso: nenhuma condicional de
