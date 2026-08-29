@@ -25,7 +25,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 724 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 733 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd mobile  && flutter analyze && flutter test      # 0 issues, 49 testes
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 90 testes
@@ -90,8 +90,12 @@ explicabilidade, gráfico sem tabela e botão de ícone sem `aria-label`.
   **percentual** (`collectors/universal._ratio_to_pct`). Crescimento no DCF também.
 - **Dinheiro fiscal é `Decimal`; dinheiro de tela é `float`.** Escala e arredondamento só em
   `core/money.py` (meio para cima, não bancário). Nunca construa `Decimal` de `float` sem passar
-  por texto — use `money()`. As colunas do banco ainda são `Float`; migrar para `Numeric` está
-  aberto.
+  por texto — use `money()`. **As colunas monetárias são `Money`** (`ExactNumeric`): inteiro
+  escalado por 10^8 no SQLite, `Numeric` no Postgres — o `NUMERIC` do SQLite é `real` por baixo, e
+  somar `ir_amount` em float erra o número que vai para a declaração. A conversão para `float`
+  acontece na fronteira do store; agregação de dinheiro é `sum_money()` em Python, nunca
+  `func.sum()`. `tests/test_money_columns.py` reprova campo de dinheiro fora do tipo, e `Float`
+  novo precisa ser declarado como carimbo de tempo ou percentual.
 - **Fuso fiscal é brasileiro** (`core/brt.py`), não UTC — isenção mensal de IR e faixas de alíquota
   usam mês calendário BRT.
 - **Veredito vem com o que o derrubaria** (`analysis/falsifiers.py`). Os limiares de margem de

@@ -63,6 +63,22 @@ class TestACadeiaBateComOsModelos:
 
         assert divergencias == {}
 
+    def test_os_mesmos_tipos_de_coluna(self, esquemas):
+        migrado, modelado = esquemas
+
+        divergencias = {}
+        for tabela in sorted(_tabelas(migrado) & _tabelas(modelado)):
+            na_migracao = {c["name"]: str(c["type"]) for c in migrado.get_columns(tabela)}
+            no_modelo = {c["name"]: str(c["type"]) for c in modelado.get_columns(tabela)}
+            for nome, tipo in no_modelo.items():
+                if nome in na_migracao and na_migracao[nome] != tipo:
+                    divergencias[f"{tabela}.{nome}"] = {
+                        "migração": na_migracao[nome],
+                        "modelo": tipo,
+                    }
+
+        assert divergencias == {}
+
     def test_a_chave_primaria_e_a_mesma(self, esquemas):
         migrado, modelado = esquemas
 

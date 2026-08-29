@@ -7,6 +7,7 @@ from sqlalchemy import delete, select
 from app.core.context import get_current_user_id, get_request_session
 from app.core.database import SessionLocal, ensure_initialized
 from app.core.errors import NotFoundError
+from app.core.money import to_float
 from app.core.pagination import apply_keyset
 from app.ledger import LedgerEntry, TransactionKind
 from app.models.db_models import InstrumentDb, TransactionDb
@@ -101,12 +102,12 @@ def _to_entry(row: TransactionDb) -> LedgerEntry:
         kind=TransactionKind(row.kind),
         symbol=row.symbol,
         traded_on=row.traded_on,
-        quantity=row.quantity,
-        price=row.price,
-        fees=row.fees,
+        quantity=to_float(row.quantity),
+        price=to_float(row.price),
+        fees=to_float(row.fees),
         ratio_from=row.ratio_from,
         ratio_to=row.ratio_to,
-        amount=row.amount,
+        amount=to_float(row.amount),
         id=row.id,
         instrument_id=row.instrument_id,
         note=row.note,
