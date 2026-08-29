@@ -1,48 +1,6 @@
-const Map<String, String> _sectorTranslations = {
-  'Financial Services': 'Financeiro',
-  'Technology': 'Tecnologia',
-  'Healthcare': 'Saúde',
-  'Energy': 'Energia',
-  'Basic Materials': 'Materiais Básicos',
-  'Industrials': 'Industrial',
-  'Consumer Cyclical': 'Consumo Cíclico',
-  'Consumer Defensive': 'Consumo Básico',
-  'Real Estate': 'Imobiliário',
-  'Utilities': 'Utilidades Públicas',
-  'Communication Services': 'Telecomunicações',
-  'technology': 'Tecnologia',
-  'finance': 'Financeiro',
-  'healthcare': 'Saúde',
-  'energy': 'Energia',
-  'utilities': 'Utilidades Públicas',
-  'consumer-discretionary': 'Consumo Cíclico',
-  'consumer-staples': 'Consumo Básico',
-  'industrials': 'Industrial',
-  'materials': 'Materiais Básicos',
-  'real-estate': 'Imobiliário',
-  'telecommunications': 'Telecomunicações',
-  'Miscellaneous': 'Outros',
-  'Finance': 'Financeiro',
-  'Technology Services': 'Tecnologia',
-  'Electronic Technology': 'Tecnologia',
-  'Producer Manufacturing': 'Industrial',
-  'Industrial Services': 'Industrial',
-  'Retail Trade': 'Consumo Cíclico',
-  'Consumer Services': 'Consumo Cíclico',
-  'Consumer Durables': 'Consumo Cíclico',
-  'Process Industries': 'Materiais Básicos',
-  'Non-Energy Minerals': 'Materiais Básicos',
-  'Health Technology': 'Saúde',
-  'Health Services': 'Saúde',
-  'Consumer Non-Durables': 'Consumo Básico',
-  'Commercial Services': 'Industrial',
-  'Transportation': 'Industrial',
-  'Energy Minerals': 'Energia',
-  'Communications': 'Telecomunicações',
-  'Distribution Services': 'Industrial',
-};
+import 'vocabulary.dart';
 
 String translateSector(String? sector) {
   if (sector == null || sector.isEmpty) return '—';
-  return _sectorTranslations[sector] ?? sector;
+  return fiSetores[sector] ?? fiSetorApelidos[sector] ?? sector;
 }

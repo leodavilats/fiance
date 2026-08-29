@@ -28,7 +28,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 cd backend && python -m pytest -q                  # 771 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd mobile  && flutter analyze && flutter test      # 0 issues, 49 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 98 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 106 testes
 cd web     && npm run e2e                          # 10 testes em navegador
 node design-tokens/build.mjs --check               # tokens sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA
@@ -227,11 +227,14 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
 - **Cinco destinos por intenção**, iguais nas duas plataformas: `/hoje`, `/carteira`, `/descobrir`,
   `/estrategia`, `/voce`, mais `/ativo/:ticker` como camada. URLs antigas seguem como redirect.
   Meta mora em Estratégia porque é a referência que produz o desvio.
-- **Tokens de design são gerados, não escritos.** Cor, tipografia, espaço, raio, motion e as bandas
-  das réguas saem de `design-tokens/tokens.json` via `node design-tokens/build.mjs`, que emite
-  `web/src/tokens.css`, `web/src/app/core/design-tokens.ts` e `mobile/lib/core/design_tokens.dart`.
-  Nunca edite os gerados nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou
-  `theme.dart`. Qualquer chave `*Ruler` vira `fi<Nome>Bands`/`fi<Nome>Domain` automaticamente.
+- **Tokens de design são gerados, não escritos.** Cor, tipografia, espaço, raio, motion e as
+  bandas das réguas saem de `design-tokens/tokens.json` via `node design-tokens/build.mjs`, que
+  emite `web/src/tokens.css`, `web/src/app/core/design-tokens.ts` e
+  `mobile/lib/core/design_tokens.dart`. **O vocabulário também**: rótulo, ícone e identidade de
+  série de categoria, tipo de ativo, setor, tipo de renda fixa e liquidez saem do mesmo arquivo
+  para `web/src/app/core/vocabulary.ts` e `mobile/lib/core/vocabulary.dart`. Nunca edite os
+  gerados nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou `theme.dart`.
+  Qualquer chave `*Ruler` vira `fi<Nome>Bands`/`fi<Nome>Domain` automaticamente.
 - **Ícone e favicon também são gerados**, de `tokens.json` via `python design-tokens/build-icons.py`
   (requer Pillow). **O launcher nativo é um segundo passo**: `cd mobile && dart run
   flutter_launcher_icons` — sem ele os ícones do app ficam com a cor antiga mesmo com `tokens.json`

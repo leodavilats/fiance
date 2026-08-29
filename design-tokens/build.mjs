@@ -494,10 +494,166 @@ function buildDart() {
   return out.join('\n');
 }
 
+const aspas = v => `'${String(v).replace(/'/g, "\'")}'`;
+
+const chave = k => (/^[\p{L}_$][\p{L}\p{N}_$]*$/u.test(k) ? k : aspas(k));
+
+function buildVocabTs() {
+  const v = tokens.vocabulary;
+  const linhas = [];
+
+  linhas.push(...BANNER_LINES.map(l => `// ${l}`), '');
+
+  linhas.push('export interface FiCategoria {');
+  linhas.push('  readonly label: string;');
+  linhas.push('  readonly series: number;');
+  linhas.push('  readonly icon: string;');
+  linhas.push('}');
+  linhas.push('');
+
+  linhas.push('export const fiCategorias: Readonly<Record<string, FiCategoria>> = {');
+  for (const [id, c] of entries(v.categories)) {
+    linhas.push(`  ${id}: { label: ${aspas(c.label)}, series: ${c.series}, icon: ${aspas(c.web)} },`);
+  }
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('export const fiCategoriaApelidos: Readonly<Record<string, string>> = {');
+  for (const [de, para] of entries(v.categoryAliases)) linhas.push(`  ${de}: ${aspas(para)},`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('export const fiTiposDeAtivo: Readonly<Record<string, { label: string; category: string }>> = {');
+  for (const [id, t] of entries(v.assetTypes)) {
+    linhas.push(`  ${id}: { label: ${aspas(t.label)}, category: ${aspas(t.category)} },`);
+  }
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('export const fiSetores: Readonly<Record<string, { label: string; series: number }>> = {');
+  for (const [id, sec] of entries(v.sectors)) {
+    linhas.push(`  ${chave(id)}: { label: ${aspas(sec.label)}, series: ${sec.series} },`);
+  }
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('export const fiSetorApelidos: Readonly<Record<string, string>> = {');
+  for (const [de, para] of entries(v.sectorAliases)) {
+    linhas.push(`  ${chave(de)}: ${aspas(para)},`);
+  }
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('export const fiSetorSeriePorRotulo: Readonly<Record<string, number>> = {');
+  for (const [, sec] of entries(v.sectors)) {
+    linhas.push(`  ${chave(sec.label)}: ${sec.series},`);
+  }
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('export const fiTiposDeRendaFixa: Readonly<Record<string, string>> = {');
+  for (const [id, label] of entries(v.fixedIncomeTypes)) linhas.push(`  ${id}: ${aspas(label)},`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('export const fiLiquidez: Readonly<Record<string, string>> = {');
+  for (const [id, label] of entries(v.liquidity)) linhas.push(`  ${id}: ${aspas(label)},`);
+  linhas.push('};');
+  linhas.push('');
+
+  const seriesUsadas = [...new Set(entries(v.categories).map(([, c]) => c.series))].sort((a, b) => a - b);
+  const mapasDeClasse = [
+    ['fiClasseTextoDaSerie', 'text-series-', ''],
+    ['fiClasseFundoDaSerie', 'bg-series-', ''],
+    ['fiClasseBarraDaSerie', 'bg-series-', ''],
+    ['fiClasseChipDaSerie', 'bg-series-', '/15'],
+  ];
+
+  for (const [nome, prefixo, sufixo] of mapasDeClasse) {
+    linhas.push(`export const ${nome}: Readonly<Record<number, string>> = {`);
+    for (const n of seriesUsadas) {
+      linhas.push(`  ${n}: '${prefixo}${n === 0 ? 'other' : n}${sufixo}',`);
+    }
+    linhas.push('};');
+    linhas.push('');
+  }
+
+  return linhas.join('\n');
+}
+
+const dartIcone = nome => `Icons.${nome}`;
+
+function buildVocabDart() {
+  const v = tokens.vocabulary;
+  const linhas = [];
+
+  linhas.push(...BANNER_LINES.map(l => `// ${l}`), '');
+  linhas.push("import 'package:flutter/material.dart';", '');
+
+  linhas.push('class FiCategoria {');
+  linhas.push('  const FiCategoria(this.label, this.series, this.icon);');
+  linhas.push('');
+  linhas.push('  final String label;');
+  linhas.push('  final int series;');
+  linhas.push('  final IconData icon;');
+  linhas.push('}');
+  linhas.push('');
+
+  linhas.push('const Map<String, FiCategoria> fiCategorias = {');
+  for (const [id, c] of entries(v.categories)) {
+    linhas.push(`  '${id}': FiCategoria('${c.label}', ${c.series}, ${dartIcone(c.mobile)}),`);
+  }
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('const Map<String, String> fiCategoriaApelidos = {');
+  for (const [de, para] of entries(v.categoryAliases)) linhas.push(`  '${de}': '${para}',`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('const Map<String, String> fiTiposDeAtivo = {');
+  for (const [id, t] of entries(v.assetTypes)) linhas.push(`  '${id}': '${t.label}',`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('const Map<String, String> fiTipoDeAtivoParaCategoria = {');
+  for (const [id, t] of entries(v.assetTypes)) linhas.push(`  '${id}': '${t.category}',`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('const Map<String, String> fiSetores = {');
+  for (const [id, sec] of entries(v.sectors)) linhas.push(`  '${id}': '${sec.label}',`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('const Map<String, String> fiSetorApelidos = {');
+  for (const [de, para] of entries(v.sectorAliases)) linhas.push(`  '${de}': '${para}',`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('const Map<String, int> fiSetorSeriePorRotulo = {');
+  for (const [, sec] of entries(v.sectors)) linhas.push(`  '${sec.label}': ${sec.series},`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('const Map<String, String> fiTiposDeRendaFixa = {');
+  for (const [id, label] of entries(v.fixedIncomeTypes)) linhas.push(`  '${id}': '${label}',`);
+  linhas.push('};');
+  linhas.push('');
+
+  linhas.push('const Map<String, String> fiLiquidez = {');
+  for (const [id, label] of entries(v.liquidity)) linhas.push(`  '${id}': '${label}',`);
+  linhas.push('};');
+
+  return linhas.join('\n');
+}
+
 const artifacts = [
   { path: join(repo, 'web', 'src', 'tokens.css'), content: buildCss() },
   { path: join(repo, 'web', 'src', 'app', 'core', 'design-tokens.ts'), content: buildTs() },
   { path: join(repo, 'mobile', 'lib', 'core', 'design_tokens.dart'), content: buildDart() },
+  { path: join(repo, 'web', 'src', 'app', 'core', 'vocabulary.ts'), content: buildVocabTs() },
+  { path: join(repo, 'mobile', 'lib', 'core', 'vocabulary.dart'), content: buildVocabDart() },
 ];
 
 let drift = 0;

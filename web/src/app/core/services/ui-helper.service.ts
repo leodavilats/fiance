@@ -7,6 +7,17 @@ import {
   dataCompletenessLabel,
   scoreBandFor,
 } from '../score-ruler';
+import {
+  fiCategoriaApelidos,
+  fiCategorias,
+  fiClasseBarraDaSerie,
+  fiClasseChipDaSerie,
+  fiClasseTextoDaSerie,
+  fiSetorApelidos,
+  fiSetorSeriePorRotulo,
+  fiSetores,
+  fiTiposDeAtivo,
+} from '../vocabulary';
 
 @Injectable({ providedIn: 'root' })
 export class UiHelperService {
@@ -15,122 +26,50 @@ export class UiHelperService {
   }
 
   assetTypeLabel(t: AssetType | string): string {
-    const map: Record<string, string> = {
-      br_stock: 'Ação BR',
-      bdr: 'BDR',
-      fii: 'FII',
-      etf: 'ETF',
-      renda_fixa: 'Renda Fixa',
-    };
-    return map[t] || t;
+    return fiTiposDeAtivo[t]?.label ?? String(t);
+  }
+
+  sectorLabel(setor: string): string {
+    return fiSetores[setor]?.label ?? fiSetorApelidos[setor] ?? setor;
   }
 
   sectorSeriesColor(sectorLabel: string): string {
-    const map: Record<string, string> = {
-      Financeiro: 'var(--fi-series-1)',
-      Tecnologia: 'var(--fi-series-2)',
-      Energia: 'var(--fi-series-3)',
-      'Consumo Cíclico': 'var(--fi-series-4)',
-      Saúde: 'var(--fi-series-5)',
-      Industrial: 'var(--fi-series-6)',
-      Imobiliário: 'var(--fi-series-7)',
-      'Consumo Básico': 'var(--fi-series-8)',
-      'Materiais Básicos': 'var(--fi-series-9)',
-      'Utilidades Públicas': 'var(--fi-series-10)',
-      Telecomunicações: 'var(--fi-series-11)',
-    };
-    return map[sectorLabel] || 'var(--fi-series-other)';
+    const serie = fiSetorSeriePorRotulo[sectorLabel];
+    return serie ? `var(--fi-series-${serie})` : 'var(--fi-series-other)';
+  }
+
+  private serieDaCategoria(c: string): number {
+    const chave = fiCategoriaApelidos[c] ?? c;
+    return fiCategorias[chave]?.series ?? 0;
   }
 
   categoryLabel(c: string): string {
-    const map: Record<string, string> = {
-      renda_fixa: 'Renda Fixa',
-      acoes_br: 'Ações BR',
-      bdrs: 'BDRs',
-      fiis: 'FIIs',
-      etfs: 'ETFs',
-      renda: 'Renda Fixa',
-      trade: 'Ações BR',
-      caixa: 'Renda Fixa',
-      auto: 'Auto',
-    };
-    return map[c] || c;
+    const chave = fiCategoriaApelidos[c] ?? c;
+    return fiCategorias[chave]?.label ?? c;
   }
 
   categoryIcon(c: string): string {
-    const map: Record<string, string> = {
-      renda_fixa: 'landmark',
-      acoes_br: 'trending-up',
-      bdrs: 'globe',
-      fiis: 'building-2',
-      etfs: 'layers',
-    };
-    return map[c] || 'circle';
+    const chave = fiCategoriaApelidos[c] ?? c;
+    return fiCategorias[chave]?.icon ?? 'circle';
   }
 
-  /**
-   * Identidade de série da categoria de alocação — a mesma que
-   * `assetTypeSeriesColor` dá para o tipo de ativo correspondente. Categoria e
-   * tipo são a mesma coisa vista de dois lados; antes cada um tinha a própria
-   * paleta, então "FIIs" era laranja na meta e ocre no gráfico.
-   *
-   * Estas classes são literais de propósito: o scanner do Tailwind não resolve
-   * interpolação.
-   */
-  private static readonly CATEGORY_SERIES: Record<string, string> = {
-    renda_fixa: '1',
-    acoes_br: '2',
-    fiis: '3',
-    bdrs: '5',
-    etfs: '8',
-  };
-
   categoryColor(c: string): string {
-    const map: Record<string, string> = {
-      renda_fixa: 'text-series-1',
-      acoes_br: 'text-series-2',
-      fiis: 'text-series-3',
-      bdrs: 'text-series-5',
-      etfs: 'text-series-8',
-    };
-    return map[c] || 'text-series-other';
+    return fiClasseTextoDaSerie[this.serieDaCategoria(c)] ?? 'text-series-other';
   }
 
   categoryBarClass(c: string): string {
-    const map: Record<string, string> = {
-      renda_fixa: 'bg-series-1',
-      acoes_br: 'bg-series-2',
-      fiis: 'bg-series-3',
-      bdrs: 'bg-series-5',
-      etfs: 'bg-series-8',
-    };
-    return map[c] || 'bg-series-other';
+    return fiClasseBarraDaSerie[this.serieDaCategoria(c)] ?? 'bg-series-other';
   }
 
-  /** Fundo de chip: tinta de série a 14%, não a cor cheia (§60). */
   categoryBgClass(c: string): string {
-    const map: Record<string, string> = {
-      renda_fixa: 'bg-series-1/15',
-      acoes_br: 'bg-series-2/15',
-      fiis: 'bg-series-3/15',
-      bdrs: 'bg-series-5/15',
-      etfs: 'bg-series-8/15',
-    };
-    return map[c] || 'bg-series-other/15';
+    return fiClasseChipDaSerie[this.serieDaCategoria(c)] ?? 'bg-series-other/15';
   }
 
   categoryBarColor(c: string): string {
-    const n = UiHelperService.CATEGORY_SERIES[c];
+    const n = this.serieDaCategoria(c);
     return n ? `var(--fi-series-${n})` : 'var(--fi-series-other)';
   }
 
-  /**
-   * A classe de cor do selo de veredito.
-   *
-   * Devolvia `verdict-strong-buy` e companhia — nomes que não existiam em CSS
-   * nenhum, então o selo saía sem cor de estado em sete telas. Passa a devolver
-   * as classes `v-*`, que são as definidas e as que `verdict-pill` espera.
-   */
   verdictClass(v: Verdict): string {
     const map: Record<Verdict, string> = {
       STRONG_BUY: 'v-buy',

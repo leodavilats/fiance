@@ -40,11 +40,11 @@
 
 ## Duplicação estrutural entre plataformas
 
-6. **Labels e ícones duplicados** entre `web/src/app/core/services/ui-helper.service.ts` (297
-   linhas) e `mobile/lib/core/labels.dart` (99). Cor, tipografia, espaçamento e as réguas semânticas
-   já são **geradas** de `design-tokens/tokens.json` e não podem divergir; rótulo de setor,
-   glossário e mapa de ícone continuam manuais nos dois lados. Adicionar um `AssetType` ou setor
-   exige tocar os dois arquivos.
+6. **Sobra o glossário e os rótulos de veredito.** Rótulo, ícone e cor de categoria, tipo de
+   ativo, setor, tipo de renda fixa e liquidez passaram a ser **gerados** de `tokens.json`
+   (2026-08-29), e o `--check` do CI reprova divergência. O que continua manual nos dois lados é
+   o glossário de score e os rótulos de veredito, que são texto longo e não cabem bem num arquivo
+   de tokens.
 
 ## Cobertura de testes
 
