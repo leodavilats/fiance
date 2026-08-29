@@ -125,7 +125,7 @@ No app mobile (`mobile/lib/core/auth_service.dart`), o login com Google usa um `
 cd backend
 uvicorn app.main:app --reload --port 8000
 
-# Terminal 2 — Web (http://localhost:4200)
+# Terminal 2 — Web (http://localhost:4200, já apontando pro backend local)
 cd web
 npm start
 
@@ -134,6 +134,12 @@ cd mobile
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api   # emulador Android
 flutter run --dart-define=API_BASE_URL=http://localhost:8000/api  # iOS simulator
 ```
+
+`npm start` usa a configuração `development`, que troca o arquivo de ambiente por
+`environment.development.ts` (`http://localhost:8000/api`). **Não edite
+`environment.ts`** — ele é o publicado, e apontá-lo para `localhost` quebra o app
+no ar sem quebrar teste nenhum. Há uma trava para isso em
+`src/environments/environment.spec.ts`.
 
 ### Build de Produção
 

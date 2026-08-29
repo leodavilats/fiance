@@ -44,6 +44,16 @@
                   "with": "src/environments/environment.e2e.ts"
                 }
               ]
+            },
+            "development": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.development.ts"
+                }
+              ],
+              "optimization": false,
+              "sourceMap": true
             }
           }
         },
@@ -56,8 +66,12 @@
           "configurations": {
             "e2e": {
               "buildTarget": "fiance:build:e2e"
+            },
+            "development": {
+              "buildTarget": "fiance:build:development"
             }
-          }
+          },
+          "defaultConfiguration": "development"
         },
         "test": {
           "builder": "@angular/build:unit-test",
