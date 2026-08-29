@@ -45,15 +45,6 @@ class PortfolioSnapshot(Base):
     total_pnl_pct: Mapped[float] = mapped_column(Float)
 
 
-class WatchlistItemDb(Base):
-    __tablename__ = "watchlist"
-
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    ticker: Mapped[str] = mapped_column(String, primary_key=True)
-    note: Mapped[str] = mapped_column(String, default="")
-    created_at: Mapped[float] = mapped_column(Float)
-
-
 class GoalDb(Base):
     __tablename__ = "goals"
 

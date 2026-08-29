@@ -27,7 +27,6 @@ from app.models.db_models import (
     PriceAlertDb,
     SectorGoalDb,
     User,
-    WatchlistItemDb,
 )
 
 _initialized = False
@@ -91,12 +90,6 @@ class DeviceToken(TypedDict):
     user_id: str
     token: str
     platform: str
-
-
-class WatchlistItemRow(TypedDict):
-    ticker: str
-    note: str
-    created_at: float
 
 
 class PriceAlert(TypedDict):
@@ -719,44 +712,6 @@ def replace_sector_goals(goals: list[SectorGoal], user_id: str | None = None) ->
             session.add(
                 SectorGoalDb(user_id=uid, sector=g["sector"], target_pct=float(g["target_pct"]))
             )
-
-
-def list_watchlist(user_id: str | None = None) -> list[WatchlistItemRow]:
-    with _session(user_id) as (session, uid):
-        rows = session.scalars(
-            select(WatchlistItemDb)
-            .where(WatchlistItemDb.user_id == uid)
-            .order_by(WatchlistItemDb.created_at.desc())
-        ).all()
-        return [
-            WatchlistItemRow(ticker=r.ticker, note=r.note or "", created_at=r.created_at)
-            for r in rows
-        ]
-
-
-def replace_watchlist(items: list[dict], user_id: str | None = None) -> None:
-    now = time.time()
-    with _session(user_id, ensure_user=True) as (session, uid):
-        session.execute(delete(WatchlistItemDb).where(WatchlistItemDb.user_id == uid))
-        for it in items:
-            ticker = str(it.get("ticker", "")).strip().upper()
-            if not ticker:
-                continue
-            session.add(
-                WatchlistItemDb(
-                    user_id=uid, ticker=ticker, note=it.get("note") or "", created_at=now
-                )
-            )
-
-
-def remove_watchlist(ticker: str, user_id: str | None = None) -> None:
-    with _session(user_id) as (session, uid):
-        session.execute(
-            delete(WatchlistItemDb).where(
-                WatchlistItemDb.user_id == uid,
-                WatchlistItemDb.ticker == ticker.strip().upper(),
-            )
-        )
 
 
 def list_price_alerts(user_id: str | None = None) -> list[PriceAlert]:

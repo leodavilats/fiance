@@ -34,13 +34,9 @@
    apesar de já existir universo dinâmico via BRAPI (`core/universe.py`). Fallback defensivo
    intencional, mas extenso.
 
-5. **`WatchlistItemDb` existe sem rota nem tela.** A feature nunca teve interface; a rota foi
-   removida em 2026-08-19 e a tabela ficou de propósito, para que reativar não exija migração. É
-   schema sem consumidor.
-
 ## Duplicação estrutural entre plataformas
 
-6. **Sobra o glossário e os rótulos de veredito.** Rótulo, ícone e cor de categoria, tipo de
+5. **Sobra o glossário e os rótulos de veredito.** Rótulo, ícone e cor de categoria, tipo de
    ativo, setor, tipo de renda fixa e liquidez passaram a ser **gerados** de `tokens.json`
    (2026-08-29), e o `--check` do CI reprova divergência. O que continua manual nos dois lados é
    o glossário de score e os rótulos de veredito, que são texto longo e não cabem bem num arquivo
@@ -48,14 +44,14 @@
 
 ## Cobertura de testes
 
-7. **O E2E cobre o esqueleto, não os fluxos.** `web/e2e/` roda Playwright contra o backend real e
+6. **O E2E cobre o esqueleto, não os fluxos.** `web/e2e/` roda Playwright contra o backend real e
    o build de produção com SSR, e cobre o que o resto da suíte não alcança: redirecionamento sem
    sessão, as cinco rotas principais e três aninhadas abrindo por **link direto**, e uma posição
    salva no servidor chegando à tela. O que **não** está coberto é o miolo — importar operações,
    passar pelo checkout, ver o gate aparecer, degradar de plano. São os fluxos que o plano lista, e
    eles dependem de cotação externa, que no ambiente de teste não é determinística.
 
-8. **SQLite tranca sob concorrência de navegador.** Durante o E2E o backend loga
+7. **SQLite tranca sob concorrência de navegador.** Durante o E2E o backend loga
    `database is locked` em requisições paralelas. Não derruba os testes e não afeta produção, que é
    Postgres — mas torna o E2E local mais lento e potencialmente instável se ele crescer.
 

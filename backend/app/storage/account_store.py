@@ -27,7 +27,6 @@ from app.models.db_models import (
     TransactionDb,
     UsageCounterDb,
     User,
-    WatchlistItemDb,
 )
 
 DELETION_SLA_DAYS = 30
@@ -35,7 +34,6 @@ DELETION_SLA_DAYS = 30
 USER_SCOPED_MODELS = (
     ("positions", PortfolioPosition),
     ("snapshots", PortfolioSnapshot),
-    ("watchlist", WatchlistItemDb),
     ("goals", GoalDb),
     ("sector_goals", SectorGoalDb),
     ("preferences", PreferencesDb),

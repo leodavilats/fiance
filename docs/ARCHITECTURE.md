@@ -68,7 +68,7 @@ fiance é uma plataforma multi-tenant de análise de investimentos focada na B3,
   - `ratelimit.py` — tetos por usuário e por IP, sobre `usage.py`.
   - `events.py` — evento de produto com **dicionário fechado**: nome fora dele, ou propriedade com
     ticker ou valor, devolve 422. Dado de carteira não sai do produto.
-- **`models/db_models.py`** — ORM: `User`, `PortfolioPosition` (PK composta `user_id+ticker`), `PortfolioSnapshot` (histórico diário, purga após 365 dias), `WatchlistItemDb` (sem rota HTTP desde 2026-08-19 — feature nunca teve tela; mantido só o schema, ver KNOWN_ISSUES item 5), `GoalDb`, `SectorGoalDb`, `PreferencesDb` (inclui `desired_yield_stock/fii/int/etf`, `notify_price_alerts` — imediato, alertas de risco —, `opportunities_frequency` (`off|daily|weekly|monthly`, substituiu o antigo `notify_new_opportunities` booleano), `risk_profile`, `preferred_categories`/`preferred_sectors`/`excluded_tickers` (CSV) e `last_digest_sent_at`), `PriceAlertDb`, `ClosedTradeDb` (histórico de vendas — lucro/prejuízo realizado, IR), `DeviceTokenDb` (token FCM por usuário), `NotifiedOpportunityDb` (dedupe de notificações de oportunidade).
+- **`models/db_models.py`** — ORM: `User`, `PortfolioPosition` (PK composta `user_id+ticker`), `PortfolioSnapshot` (histórico diário, purga após 365 dias), `GoalDb`, `SectorGoalDb`, `PreferencesDb` (inclui `desired_yield_stock/fii/int/etf`, `notify_price_alerts` — imediato, alertas de risco —, `opportunities_frequency` (`off|daily|weekly|monthly`, substituiu o antigo `notify_new_opportunities` booleano), `risk_profile`, `preferred_categories`/`preferred_sectors`/`excluded_tickers` (CSV) e `last_digest_sent_at`), `PriceAlertDb`, `ClosedTradeDb` (histórico de vendas — lucro/prejuízo realizado, IR), `DeviceTokenDb` (token FCM por usuário), `NotifiedOpportunityDb` (dedupe de notificações de oportunidade).
 - **`notifications/push.py`** — encapsula o Firebase Admin SDK; sem `FIREBASE_SERVICE_ACCOUNT_JSON` configurado, apenas loga em vez de enviar (degradação graciosa).
 - **`services/notification_job.py`** — job periódico (chamado a cada 15min por um loop em `main.py`, sem scheduler externo). Alertas de preço continuam imediatos a cada ciclo (`notify_price_alerts`). O resumo de oportunidades (`STRONG_BUY` ou score≥75+DY≥6%, excluindo posições já na carteira e `excluded_tickers`) só dispara quando a cadência configurada em `opportunities_frequency` já venceu desde `last_digest_sent_at` (`_digest_due()`), agregando as melhores em um único push por ciclo. O mesmo push também lista tickers já na carteira com veredito `SELL`/`STRONG_SELL` (reaproveitando o scan já feito, sem chamada extra), como aviso de que vale revisar — a análise completa de por quê fica em `/strategy`.
 - **`optimizer/`** — só `cost_calculator.py` (custo de venda/IR). Desde 2026-08-20 aplica **compensação de prejuízo acumulado** por categoria (a legislação permite abater prejuízo de ganhos futuros; sem isso o IR devido era superestimado) e devolve `loss_offset_used`/`taxable_profit` para o saldo ficar auditável. `allocator.py` e `portfolio.py` (HRP/min-vol/max-Sharpe via scipy) foram removidos em 2026-08-19 — existiam só para `/recommend`, removido no mesmo dia por falta de consumidor.
@@ -76,9 +76,11 @@ fiance é uma plataforma multi-tenant de análise de investimentos focada na B3,
   `entries.py` define os lançamentos (`buy`, `sell`, `split`, `bonus`, `amortization`) e
   `projection.py::project_position` dobra os lançamentos na posição. Preço médio segue a convenção
   brasileira — venda reduz quantidade e custo, **nunca** a média. Evento corporativo é lançamento,
-  não correção manual: desdobramento sem ajuste é IR errado. A escrita hoje é **espelhada**
-  (`services/ledger_service.mirror_*`) e `GET /transactions/reconciliation` compara os dois lados;
-  trocar a fonte de leitura é o passo 3 de 3 e ainda não foi dado (KNOWN_ISSUES item 12).
+  não correção manual: desdobramento sem ajuste é IR errado. A escrita grava **só lançamento**
+  (`services/ledger_service.record_position_state`, `record_sale`, `record_removal`) e reconstrói a
+  linha de `portfolio` a partir dele — a posição é projeção, não fonte. `rebuild_projection` refaz
+  tudo do zero (`POST /transactions/rebuild`) e `GET /transactions/reconciliation` confere a
+  projeção contra a fonte, em vez de comparar duas verdades.
 - **`importing/`** — importação de operações (`parser.py`, rota `/transactions/import`), em duas
   fases: prévia e commit. Tolerante com a forma do arquivo, intolerante com ambiguidade; o erro diz
   a linha; a gravação é atômica; duplicidade é **apresentada para decisão**, nunca silenciada.

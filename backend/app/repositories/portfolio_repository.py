@@ -11,7 +11,6 @@ from app.storage.portfolio_store import (
     Snapshot,
     StoredItem,
     TaxLossBalance,
-    WatchlistItemRow,
 )
 
 
@@ -161,15 +160,3 @@ class PortfolioRepository:
     @staticmethod
     def mark_opportunities_notified(user_id: str, tickers: list[str]) -> None:
         portfolio_store.mark_opportunities_notified(user_id, tickers)
-
-    @staticmethod
-    def list_watchlist() -> list[WatchlistItemRow]:
-        return portfolio_store.list_watchlist()
-
-    @staticmethod
-    def replace_watchlist(items: list[dict]) -> None:
-        portfolio_store.replace_watchlist(items)
-
-    @staticmethod
-    def remove_watchlist(ticker: str) -> None:
-        portfolio_store.remove_watchlist(ticker)
