@@ -50,7 +50,7 @@ import { ActivityFeedComponent } from './activity-feed.component';
           <button
             type="button"
             (click)="activity.hide()"
-            class="shrink-0 w-11 h-11 grid place-items-center rounded-md text-ink-2 hover:bg-ground-2 transition-colors cursor-pointer bg-transparent border-0"
+            class="btn-icon btn-icon-quiet"
             aria-label="Fechar atividade"
           >
             <lucide-icon name="x" size="18"></lucide-icon>

@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { ProvenanceComponent } from '../provenance/provenance.component';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -8,7 +9,13 @@ import { QuickInvestResponse, RecommendService, UiHelperService } from '../../co
 @Component({
   selector: 'app-quick-invest',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, ProvenanceComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    LucideAngularModule,
+    EmptyStateComponent,
+    ProvenanceComponent,
+  ],
   templateUrl: './quick-invest.component.html',
 })
 export class QuickInvestComponent {

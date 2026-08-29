@@ -14,6 +14,7 @@ import {
   SnackbarService,
   StoredPortfolioItem,
   TickerSuggestion,
+  UiHelperService,
 } from '../../core';
 
 type RowState = 'idle' | 'saving' | 'saved' | 'error';
@@ -51,17 +52,12 @@ export class PortfolioEditorComponent implements OnInit {
   editingFixedIncomeId = signal<number | null>(null);
   savingFixedIncome = signal(false);
 
-  readonly rendaFixaTipos: { value: RendaFixaTipo; label: string }[] = [
-    { value: 'cdb', label: 'CDB' },
-    { value: 'lci', label: 'LCI (isento de IR)' },
-    { value: 'lca', label: 'LCA (isento de IR)' },
-    { value: 'lc', label: 'LC' },
-    { value: 'cri', label: 'CRI (isento de IR)' },
-    { value: 'cra', label: 'CRA (isento de IR)' },
-    { value: 'tesouro_selic', label: 'Tesouro Selic' },
-    { value: 'tesouro_ipca', label: 'Tesouro IPCA+' },
-    { value: 'tesouro_pre', label: 'Tesouro Pré' },
-  ];
+  private static readonly ISENTOS = new Set(['lci', 'lca', 'cri', 'cra']);
+
+  readonly rendaFixaTipos = inject(UiHelperService).fixedIncomeTypes.map(t => ({
+    value: t.value as RendaFixaTipo,
+    label: PortfolioEditorComponent.ISENTOS.has(t.value) ? `${t.label} (isento de IR)` : t.label,
+  }));
 
   isPosFixado = computed(() => this.fixedIncomeForm?.get('tipo_taxa')?.value === 'pos_fixado');
 

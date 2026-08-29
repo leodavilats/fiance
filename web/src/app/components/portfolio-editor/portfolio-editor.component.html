@@ -1,57 +1,46 @@
 <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
   <div>
-    <h1 class="flex items-center gap-2 text-2xl font-bold m-0 text-ink">
-      <lucide-icon name="pencil" size="24"></lucide-icon> Cadastro da carteira
-    </h1>
-    <p class="text-sm text-ink-2 m-0 mt-1">
+    <h1 class="fi-verdict m-0 text-ink">Cadastro da carteira</h1>
+    <p class="fi-body text-ink-2 m-0 mt-1">
       Cada linha é salva quando você clica em salvar — nada é gravado enquanto você digita.
     </p>
   </div>
-  <a
-    routerLink="/assets"
-    class="px-3 py-1.5 rounded-lg text-sm font-medium border border-hairline text-ink hover:bg-ground-2 transition-colors no-underline flex items-center gap-1.5"
-  >
-    <lucide-icon name="arrow-left" size="14"></lucide-icon> Voltar para a análise
+  <a routerLink="/carteira" class="btn-secondary">
+    <lucide-icon name="arrow-left" size="14"></lucide-icon> Voltar para a carteira
   </a>
 </div>
 
 @if (loadFailed()) {
   <div
-    class="p-4 rounded-lg bg-adverse/10 border border-adverse/40 mb-5 flex items-start gap-3"
+    class="p-4 rounded-md bg-adverse/10 border border-adverse/40 mb-5 flex items-start gap-3"
     role="alert"
   >
     <lucide-icon name="triangle-alert" size="20" class="text-adverse mt-0.5"></lucide-icon>
     <div class="flex-1">
-      <div class="font-semibold text-ink">Não conseguimos carregar sua carteira</div>
-      <div class="text-sm text-ink-2 mt-1">
+      <div class="fi-label text-ink">Não conseguimos carregar sua carteira</div>
+      <div class="fi-body text-ink-2 mt-1">
         A edição está bloqueada para não sobrescrever seus dados. Tente carregar de novo.
       </div>
     </div>
-    <button
-      type="button"
-      class="px-3 py-1.5 rounded-md border border-hairline text-sm hover:bg-ground-2"
-      (click)="reload()"
-    >
+    <button type="button" class="btn-secondary compact-btn" (click)="reload()">
       Tentar de novo
     </button>
   </div>
 }
 
-<div class="p-5 rounded-lg bg-ground-1 border border-hairline mb-5">
-  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-ink">
-    <lucide-icon name="trending-up" size="20"></lucide-icon> Ativos negociados
-  </h2>
-  <p class="text-sm text-ink-2 mb-4">
+<div class="fi-block">
+  <h2 class="fi-verdict m-0 mb-1 text-ink">Ativos negociados</h2>
+  <p class="fi-body text-ink-2 mb-4">
     Ações, FIIs, BDRs e ETFs da B3, pelo ticker (ex.: PETR4, HGLG11, AAPL34).
   </p>
 
   @if (!assetsLoaded() && !loadFailed()) {
-    <p class="text-sm text-ink-2 italic">Carregando…</p>
+    <p class="fi-body text-ink-2 italic">Carregando…</p>
   } @else if (assetsLoaded()) {
     <div class="flex flex-col gap-3">
       @for (form of assetForms(); track $index; let i = $index) {
         <div
-          class="p-3 rounded-lg bg-ground-2 border border-hairline"
+          class="card p-3"
           [class.border-adverse]="assetRowState(i) === 'error'"
           [formGroup]="form"
         >
@@ -59,13 +48,13 @@
             class="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto_2.25rem] gap-3 sm:gap-2 sm:items-end"
           >
             <div class="relative flex flex-col gap-1">
-              <span class="text-xs font-medium text-ink-2">Ticker</span>
+              <span class="fi-label text-ink-2">Ticker</span>
               <input
                 type="text"
                 formControlName="ticker"
                 placeholder="ex.: PETR4"
                 autocomplete="off"
-                class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand uppercase"
+                class="input uppercase"
                 (input)="onTickerInput(i, $any($event.target).value)"
                 (blur)="closeTickerSuggestions()"
               />
@@ -77,11 +66,11 @@
                     <li>
                       <button
                         type="button"
-                        class="w-full text-left px-3 py-2 text-sm text-ink hover:bg-ground-2 bg-transparent border-0 cursor-pointer"
+                        class="menu-item"
                         (mousedown)="selectTickerSuggestion(i, s)"
                       >
-                        <span class="font-semibold">{{ s.ticker }}</span>
-                        <span class="text-ink-2 text-xs ml-2">{{ s.name }}</span>
+                        <span class="fi-label">{{ s.ticker }}</span>
+                        <span class="fi-caption text-ink-2 ml-2">{{ s.name }}</span>
                       </button>
                     </li>
                   }
@@ -90,30 +79,18 @@
             </div>
 
             <label class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-ink-2">Quantidade</span>
-              <input
-                type="number"
-                formControlName="quantity"
-                min="0"
-                step="any"
-                class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-              />
+              <span class="fi-label text-ink-2">Quantidade</span>
+              <input type="number" formControlName="quantity" min="0" step="any" class="input" />
             </label>
 
             <label class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-ink-2">Preço médio (R$)</span>
-              <input
-                type="number"
-                formControlName="avg_price"
-                min="0"
-                step="0.01"
-                class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-              />
+              <span class="fi-label text-ink-2">Preço médio (R$)</span>
+              <input type="number" formControlName="avg_price" min="0" step="0.01" class="input" />
             </label>
 
             <button
               type="button"
-              class="h-[42px] px-4 rounded-lg text-sm font-medium bg-brand text-on-brand border-0 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5 justify-center"
+              class="btn-primary"
               [disabled]="assetRowState(i) === 'saving'"
               (click)="saveAssetRow(i)"
             >
@@ -133,7 +110,7 @@
 
             <button
               type="button"
-              class="h-[42px] w-[42px] rounded-lg border border-hairline text-ink-2 hover:text-adverse hover:border-adverse transition-colors cursor-pointer bg-transparent flex items-center justify-center"
+              class="btn-icon btn-icon-danger"
               title="Remover"
               (click)="removeAssetRow(i)"
               aria-label="Remover posição"
@@ -143,53 +120,40 @@
           </div>
 
           @if (assetRowError(i)) {
-            <p class="text-xs text-adverse mt-2 m-0">{{ assetRowError(i) }}</p>
+            <p class="fi-caption text-adverse mt-2 m-0">{{ assetRowError(i) }}</p>
           }
         </div>
       }
     </div>
 
-    <button
-      type="button"
-      class="mt-4 px-3 py-2 rounded-lg text-sm font-medium border border-hairline text-ink hover:bg-ground-2 transition-colors cursor-pointer bg-transparent flex items-center gap-1.5"
-      (click)="addAssetRow()"
-    >
+    <button type="button" class="btn-secondary" (click)="addAssetRow()">
       <lucide-icon name="plus" size="14"></lucide-icon> Adicionar ativo
     </button>
   }
 </div>
 
-<div class="p-5 rounded-lg bg-ground-1 border border-hairline mb-5">
-  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-ink">
-    <lucide-icon name="landmark" size="20"></lucide-icon> Renda fixa
-  </h2>
-  <p class="text-sm text-ink-2 mb-4">
+<div class="fi-block">
+  <h2 class="fi-verdict m-0 mb-1 text-ink">Renda fixa</h2>
+  <p class="fi-body text-ink-2 mb-4">
     CDB, LCI/LCA, Tesouro e afins. Os dados ficam na sua conta no servidor, então aparecem em
     qualquer navegador e também no app — e o rendimento é calculado pela mesma regra do comparador.
   </p>
 
-  <form
-    [formGroup]="fixedIncomeForm"
-    class="p-4 rounded-lg bg-ground-2 border border-hairline mb-5"
-    (ngSubmit)="saveFixedIncome()"
-  >
+  <form [formGroup]="fixedIncomeForm" class="card mb-5" (ngSubmit)="saveFixedIncome()">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       <label class="flex flex-col gap-1 sm:col-span-2">
-        <span class="text-xs font-medium text-ink-2">Nome / banco emissor</span>
+        <span class="fi-label text-ink-2">Nome / banco emissor</span>
         <input
           type="text"
           formControlName="nome"
           placeholder="ex.: CDB Banco Inter 2027"
-          class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          class="input"
         />
       </label>
 
       <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-ink-2">Tipo</span>
-        <select
-          formControlName="tipo"
-          class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        >
+        <span class="fi-label text-ink-2">Tipo</span>
+        <select formControlName="tipo" class="input">
           @for (t of rendaFixaTipos; track t.value) {
             <option [value]="t.value">{{ t.label }}</option>
           }
@@ -197,22 +161,13 @@
       </label>
 
       <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-ink-2">Valor aplicado (R$)</span>
-        <input
-          type="number"
-          formControlName="valor_investido"
-          min="0"
-          step="0.01"
-          class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+        <span class="fi-label text-ink-2">Valor aplicado (R$)</span>
+        <input type="number" formControlName="valor_investido" min="0" step="0.01" class="input" />
       </label>
 
       <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-ink-2">Tipo de taxa</span>
-        <select
-          formControlName="tipo_taxa"
-          class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        >
+        <span class="fi-label text-ink-2">Tipo de taxa</span>
+        <select formControlName="tipo_taxa" class="input">
           <option value="pre_fixado">Pré-fixado</option>
           <option value="pos_fixado">Pós-fixado (% do CDI)</option>
           <option value="hibrido">Híbrido (IPCA + taxa)</option>
@@ -220,56 +175,39 @@
       </label>
 
       <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-ink-2">
+        <span class="fi-label text-ink-2">
           {{ isPosFixado() ? 'Taxa de referência (% a.a.)' : 'Taxa (% a.a.)' }}
         </span>
-        <input
-          type="number"
-          formControlName="taxa"
-          min="0"
-          step="0.01"
-          class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+        <input type="number" formControlName="taxa" min="0" step="0.01" class="input" />
       </label>
 
       @if (isPosFixado()) {
         <label class="flex flex-col gap-1">
-          <span class="text-xs font-medium text-ink-2">% do CDI</span>
+          <span class="fi-label text-ink-2">% do CDI</span>
           <input
             type="number"
             formControlName="percentual_cdi"
             min="0"
             step="1"
             placeholder="ex.: 110"
-            class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            class="input"
           />
         </label>
       }
 
       <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-ink-2">Data de aplicação</span>
-        <input
-          type="date"
-          formControlName="data_aplicacao"
-          class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+        <span class="fi-label text-ink-2">Data de aplicação</span>
+        <input type="date" formControlName="data_aplicacao" class="input" />
       </label>
 
       <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-ink-2">Vencimento (opcional)</span>
-        <input
-          type="date"
-          formControlName="vencimento"
-          class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        />
+        <span class="fi-label text-ink-2">Vencimento (opcional)</span>
+        <input type="date" formControlName="vencimento" class="input" />
       </label>
 
       <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-ink-2">Liquidez</span>
-        <select
-          formControlName="liquidez"
-          class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        >
+        <span class="fi-label text-ink-2">Liquidez</span>
+        <select formControlName="liquidez" class="input">
           <option value="no_vencimento">No vencimento</option>
           <option value="diaria">Diária</option>
         </select>
@@ -277,26 +215,18 @@
     </div>
 
     <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
-      <label class="flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
+      <label class="fi-body flex items-center gap-2 text-ink-2 cursor-pointer">
         <input type="checkbox" formControlName="oculto" class="accent-brand" />
         Não somar na carteira (reserva à parte)
       </label>
 
       <div class="flex items-center gap-2">
         @if (editingFixedIncomeId()) {
-          <button
-            type="button"
-            class="px-4 h-[42px] rounded-lg text-sm font-medium border border-hairline text-ink hover:bg-ground-1 transition-colors cursor-pointer bg-transparent"
-            (click)="cancelFixedIncomeEdit()"
-          >
+          <button type="button" class="btn-secondary" (click)="cancelFixedIncomeEdit()">
             Cancelar edição
           </button>
         }
-        <button
-          type="submit"
-          class="px-4 h-[42px] rounded-lg text-sm font-medium bg-brand text-on-brand border-0 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-          [disabled]="savingFixedIncome()"
-        >
+        <button type="submit" class="btn-primary" [disabled]="savingFixedIncome()">
           <lucide-icon name="save" size="14"></lucide-icon>
           {{
             savingFixedIncome()
@@ -311,18 +241,18 @@
   </form>
 
   @if (fixedIncome().length === 0) {
-    <p class="text-sm text-ink-2 italic m-0">Nenhuma aplicação de renda fixa cadastrada ainda.</p>
+    <p class="fi-body text-ink-2 italic m-0">Nenhuma aplicação de renda fixa cadastrada ainda.</p>
   } @else {
     <div style="overflow-x: auto">
-      <table class="w-full border-collapse text-sm">
+      <table class="fi-body w-full border-collapse">
         <thead>
           <tr class="border-b border-hairline">
-            <th class="text-left py-2 px-2 font-medium text-ink-2">Aplicação</th>
-            <th class="text-left py-2 px-2 font-medium text-ink-2">Tipo</th>
-            <th class="text-right py-2 px-2 font-medium text-ink-2">Aplicado</th>
-            <th class="text-right py-2 px-2 font-medium text-ink-2">Taxa efetiva</th>
-            <th class="text-right py-2 px-2 font-medium text-ink-2">Hoje</th>
-            <th class="text-right py-2 px-2 font-medium text-ink-2"></th>
+            <th class="fi-label text-left py-2 px-2 text-ink-2">Aplicação</th>
+            <th class="fi-label text-left py-2 px-2 text-ink-2">Tipo</th>
+            <th class="fi-label text-right py-2 px-2 text-ink-2">Aplicado</th>
+            <th class="fi-label text-right py-2 px-2 text-ink-2">Taxa efetiva</th>
+            <th class="fi-label text-right py-2 px-2 text-ink-2">Hoje</th>
+            <th class="fi-label text-right py-2 px-2 text-ink-2"></th>
           </tr>
         </thead>
         <tbody>
@@ -331,10 +261,10 @@
               class="border-b border-hairline hover:bg-ground-2 transition-colors"
               [class.opacity-50]="item.oculto"
             >
-              <td class="py-2 px-2 font-semibold text-ink">
+              <td class="fi-label py-2 px-2 text-ink">
                 {{ item.nome }}
                 @if (item.oculto) {
-                  <span class="ml-1 text-xs text-ink-2">(fora da carteira)</span>
+                  <span class="fi-caption ml-1 text-ink-2">(fora da carteira)</span>
                 }
               </td>
               <td class="py-2 px-2 text-ink-2">{{ rfTipoLabel(item.tipo) }}</td>
@@ -351,7 +281,7 @@
                 <div class="flex items-center gap-1 justify-end">
                   <button
                     type="button"
-                    class="p-1.5 rounded-md border border-hairline text-ink-2 hover:text-brand hover:border-brand transition-colors cursor-pointer bg-transparent"
+                    class="btn-icon"
                     title="Editar"
                     (click)="editFixedIncome(item)"
                     aria-label="Editar posição de renda fixa"
@@ -360,7 +290,7 @@
                   </button>
                   <button
                     type="button"
-                    class="p-1.5 rounded-md border border-hairline text-ink-2 hover:text-ink transition-colors cursor-pointer bg-transparent"
+                    class="btn-icon"
                     [title]="item.oculto ? 'Somar na carteira' : 'Não somar na carteira'"
                     (click)="toggleFixedIncomeHidden(item)"
                     aria-label="Mostrar ou ocultar esta posição"
@@ -369,7 +299,7 @@
                   </button>
                   <button
                     type="button"
-                    class="p-1.5 rounded-md border border-hairline text-ink-2 hover:text-adverse hover:border-adverse transition-colors cursor-pointer bg-transparent"
+                    class="btn-icon btn-icon-danger"
                     title="Remover"
                     (click)="deleteFixedIncome(item)"
                     aria-label="Remover posição de renda fixa"

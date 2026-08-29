@@ -3,14 +3,6 @@ import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 
-/**
- * Vazio que responde quatro perguntas: **o que está vazio, por quê, o que
- * fazer e qual é a ação** (§42).
- *
- * A versão anterior foi removida porque tinha CTA opcional — e um vazio sem
- * próximo passo é um beco. Aqui a ação é obrigatória por construção: ou vem
- * `actionRoute`, ou vem `actionLabel` com o evento. Exatamente uma primária.
- */
 @Component({
   selector: 'app-empty-state',
   standalone: true,
@@ -37,20 +29,22 @@ import { LucideAngularModule } from 'lucide-angular';
         <div class="mb-4"></div>
       }
 
-      <div class="flex flex-wrap items-center gap-3">
-        @if (actionRoute()) {
-          <a [routerLink]="actionRoute()" class="btn-primary no-underline">{{ actionLabel() }}</a>
-        } @else {
-          <button type="button" class="btn-primary" (click)="action.emit()">
-            {{ actionLabel() }}
-          </button>
-        }
-        @if (secondaryLabel() && secondaryRoute()) {
-          <a [routerLink]="secondaryRoute()" class="fi-caption text-brand no-underline">
-            {{ secondaryLabel() }} →
-          </a>
-        }
-      </div>
+      @if (actionLabel()) {
+        <div class="flex flex-wrap items-center gap-3">
+          @if (actionRoute()) {
+            <a [routerLink]="actionRoute()" class="btn-primary no-underline">{{ actionLabel() }}</a>
+          } @else {
+            <button type="button" class="btn-primary" (click)="action.emit()">
+              {{ actionLabel() }}
+            </button>
+          }
+          @if (secondaryLabel() && secondaryRoute()) {
+            <a [routerLink]="secondaryRoute()" class="fi-caption text-brand no-underline">
+              {{ secondaryLabel() }} →
+            </a>
+          }
+        </div>
+      }
     </div>
   `,
 })
@@ -58,10 +52,13 @@ export class EmptyStateComponent {
   readonly title = input.required<string>();
   readonly reason = input.required<string>();
   readonly nextStep = input<string>('');
-  readonly actionLabel = input.required<string>();
-  /** Rota da ação primária. Sem ela, o clique vira o evento `action`. */
+  /**
+   * O rótulo do botão. Vazio significa que não há nada a fazer aqui — e uma
+   * tela vazia sem próximo passo é um estado legítimo. Era obrigatório, o que
+   * obrigava a inventar um botão só para satisfazer o componente.
+   */
+  readonly actionLabel = input<string>('');
   readonly actionRoute = input<string | null>(null);
-  /** Um caminho alternativo, discreto — nunca uma segunda primária. */
   readonly secondaryLabel = input<string>('');
   readonly secondaryRoute = input<string | null>(null);
   readonly icon = input<string>('');

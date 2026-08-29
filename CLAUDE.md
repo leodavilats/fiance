@@ -25,10 +25,10 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 771 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 797 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
-cd mobile  && flutter analyze && flutter test      # 0 issues, 49 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 106 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 57 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 126 testes
 cd web     && npm run e2e                          # 10 testes em navegador
 node design-tokens/build.mjs --check               # tokens sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA
@@ -52,6 +52,8 @@ Duas ressalvas que já custaram tempo:
 | Campo calculado numa resposta | Declarar no modelo Pydantic / `fromJson` do Dart | Some **em silêncio** |
 | `<lucide-icon>` | Registrar em `LucideAngularModule.pick({...})` ([app.config.ts](web/src/app/app.config.ts)) | Quebra a tela em runtime |
 | Classe CSS global | Confirmar que existe em [styles.css](web/src/styles.css) | Quebra a tela em silêncio |
+| Botão, campo ou tabela | Usar `.btn-*`, `.input`, `.field-label`, `.data-table` de [styles.css](web/src/styles.css) | `lint:ui` reprova controle montado à mão |
+| Tipo numa tela | Escolher o **papel** (`fi-body`, `fi-caption`, `fi-metric`…), nunca `text-sm` | `lint:ui` reprova tamanho solto |
 | Limiar de score | Mudar nas três plataformas, Python primeiro | Réguas divergem |
 | Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
 | Cor, tipografia, espaço | Editar `design-tokens/tokens.json` e rodar o gerador | Job `design-tokens` falha |
@@ -76,10 +78,32 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
 - **`_session_global()` em caminho de request** — não filtra por usuário. É para job cross-tenant.
 - **Dois refreshes simultâneos** derrubam a sessão: o refresh é rotacionado e queimado no uso.
 
-O `npm run lint:ui` cobre sete dessas: ícone não registrado, classe inexistente, julgamento sem
-explicabilidade, gráfico sem tabela, botão de ícone sem `aria-label`, número projetado sem faixa e
-promessa sobre o futuro — este último poupa a negação, porque "não há garantia de retorno" é a
-frase certa e "retorno garantido" é a errada.
+- **Papel de cor usado como o outro papel** — `.good`/`.warn` pintavam P&L, que é **direção**, com
+  os tokens de **estado**. O verde passava a significar marca, lucro e veredito favorável ao mesmo
+  tempo, e uma perda aparecia como aviso. As classes foram removidas: direção é `text-up` /
+  `text-down`; estado é `text-favorable` / `text-attention` / `text-adverse` / `text-indeterminate`.
+- **Vocabulário gerado sem consumidor** — `fiTiposDeRendaFixa` e `fiLiquidez` saíam de
+  `tokens.json` e não eram importados por ninguém no web, enquanto quatro telas reescreviam o mapa
+  à mão. O mobile fazia certo desde sempre (`core/labels.dart`). Ao gerar um vocabulário novo,
+  confira se ele chega a uma tela — gerado e ignorado é pior que não gerado, porque parece
+  resolvido.
+
+O `npm run lint:ui` cobre doze dessas.
+
+Sete são de tela quebrada ou informação escondida: ícone não registrado, classe inexistente,
+julgamento sem explicabilidade, gráfico sem tabela, botão de ícone sem `aria-label`, número
+projetado sem faixa e promessa sobre o futuro — este último poupa a negação, porque "não há
+garantia de retorno" é a frase certa e "retorno garantido" é a errada.
+
+Cinco são de coerência do sistema, e existem porque o produto já as perdeu por inteiro:
+
+| Regra | O que reprova | Por quê |
+|---|---|---|
+| Escala de papéis | `text-sm`, `font-bold` e afins no template | 384 utilitárias de tamanho conviviam com 372 papéis, dando dois corpos para a mesma coisa em telas vizinhas — e é no papel que "serifa decide, sans mede" vive |
+| Quatro raios | `rounded-xl`, `rounded-full`, `rounded-lg` sem sombra | `sm` marca, `md` assentado, `lg` **só o que flutua** (flutuar é ter sombra), `pill`. Havia três raios para a mesma caixa |
+| Um foco só | `focus:ring*`, `focus:outline-none` | O anel é `outline` na cor da marca e já vem em `.input`/`.btn-*`/`.fi-focusable`; o do Tailwind desenhava outra coisa, e `outline-none` sem substituto apaga o foco |
+| Controle do sistema | `<button>`/`<input>`/`<select>` sem classe do sistema | Havia nove grafias de botão só de ícone, com cinco alturas. Escape: `<!-- controle-proprio: motivo -->` |
+| Título sem ícone | `<lucide-icon>` dentro de `<h1..h4>` | Ao lado de um título o ícone não acrescenta informação — faz a seção parecer cabeçalho de card de painel. Ficam de fora os três em que o ícone é o dado |
 
 ---
 
@@ -246,6 +270,17 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
 - **Estado ≠ direção.** Estado é julgamento (veredito, saúde, severidade) e tem prioridade
   cromática; direção é a aritmética de um número (P&L, linha de gráfico) e tem croma baixo. No
   mobile: `fiStateColor(FiState.x, brightness)` e `fiDirectionColor(delta, brightness)`.
+- **Fio + chão, não card + card.** A hierarquia de uma página nasce de espaço, tipo e uma regra
+  horizontal — `.fi-block` é isso. A caixa (`.card`) fica reservada ao que é **objeto**: uma
+  posição, uma opção de renda fixa, uma sugestão. Card dentro de card dentro de card era a forma
+  mais reconhecível de o produto virar painel de BI, e havia três níveis em `renda-fixa`.
+- **Controle vem do sistema, não do template.** `.btn-primary`, `.btn-secondary`, `.btn-icon`
+  (`-quiet`, `-danger`), `.btn-link`, `.btn-quiet` (`.btn-explain`), `.menu-item`, `.input`
+  (`.input-bare`), `.field-label`, `.data-table`, `.notice` (`-attention`/`-adverse`/`-brand`).
+  Remontar um deles com utilitárias produz alvo de toque, raio e foco diferentes a cada tela.
+- **Grade de KPI é o cheiro de painel.** Três a quatro caixas centralizadas com um número dentro
+  não são informação organizada, são widgets. A alternativa é uma linha de cifras sob um fio
+  (`<dl>`) quando são poucas, ou `.data-table` quando o que importa é comparar.
 - **Julgamento renderizado exige explicabilidade, e o lint cobra.** Score, veredito, preço justo e
   sugestão precisam de `<app-provenance>`, `<app-help-tooltip>` ou equivalente. Mencionar em prosa
   não conta. O escape exige motivo escrito: `<!-- sem-explicabilidade: ... -->`.

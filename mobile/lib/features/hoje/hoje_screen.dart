@@ -228,7 +228,7 @@ class HojeScreen extends ConsumerWidget {
               const SizedBox(height: 4),
               Text(
                 'É o maior desvio da sua carteira hoje.',
-                style: TextStyle(color: fiInk3(context), fontSize: 12),
+                style: FiType.caption.copyWith(color: fiInk3(context)),
               ),
               const SizedBox(height: 14),
               FilledButton(

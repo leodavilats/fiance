@@ -34,23 +34,23 @@ import { EntitlementService } from '../../core';
   template: `
     @if (visible()) {
       <section
-        class="p-5 rounded-xl border border-hairline bg-ground-1"
+        class="p-5 rounded-md border border-hairline bg-ground-1"
         role="region"
         [attr.aria-label]="'Recurso do plano Premium: ' + title()"
       >
-        <h3 class="flex items-center gap-2 text-base font-bold m-0 mb-1 text-ink">
+        <h3 class="fi-metric-sm flex items-center gap-2 m-0 mb-1 text-ink">
           <lucide-icon name="lock" size="16" aria-hidden="true"></lucide-icon>
           {{ title() }}
         </h3>
 
         @if (preview()) {
-          <p class="text-sm text-ink m-0 mb-2">{{ preview() }}</p>
+          <p class="fi-body text-ink m-0 mb-2">{{ preview() }}</p>
         }
 
-        <p class="text-sm text-ink-2 m-0 max-w-prose">{{ reason() }}</p>
+        <p class="fi-body text-ink-2 m-0 max-w-prose">{{ reason() }}</p>
 
         @if (limitReached()) {
-          <p class="text-xs text-ink-3 m-0 mt-2">
+          <p class="fi-caption text-ink-3 m-0 mt-2">
             O teto reinicia no começo do mês. Ativos da sua carteira nunca contam.
           </p>
         }
@@ -60,7 +60,7 @@ import { EntitlementService } from '../../core';
             Ver o plano Premium
           </a>
           @if (secondaryLabel()) {
-            <span class="text-sm text-ink-3">{{ secondaryLabel() }}</span>
+            <span class="fi-body text-ink-3">{{ secondaryLabel() }}</span>
           }
         </div>
       </section>

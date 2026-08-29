@@ -63,8 +63,7 @@ interface Row {
             <input
               #field
               type="text"
-              class="flex-1 bg-transparent border-0 outline-none text-ink py-4 fi-body"
-              style="height: auto; padding: 16px 0; background: transparent !important; border: 0 !important;"
+              class="input-bare flex-1"
               placeholder="Buscar tela ou ativo…"
               aria-label="Buscar tela ou ativo"
               [value]="search.query()"
@@ -89,7 +88,7 @@ interface Row {
               @for (row of group.rows; track row.route) {
                 <button
                   type="button"
-                  class="w-full flex items-center gap-3 px-4 py-2.5 text-left bg-transparent border-0 cursor-pointer transition-colors"
+                  class="menu-item"
                   [class.bg-ground-2]="row === active()"
                   [attr.aria-selected]="row === active()"
                   role="option"

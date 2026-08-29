@@ -1,17 +1,15 @@
-<form [formGroup]="form" class="flex flex-col gap-5">
-  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-ink">
-      <lucide-icon name="sliders-horizontal" size="18"></lucide-icon> Como o fiance te avalia
-    </h2>
-    <label class="block text-xs font-medium text-ink-2 mb-2">
+<form [formGroup]="form" class="flex flex-col gap-8">
+  <div class="fi-block">
+    <h2 class="fi-verdict m-0 mb-4 text-ink">Como o fiance te avalia</h2>
+    <label class="field-label block mb-2">
       Meta de dividend yield (preço-teto de Bazin) — por tipo de ativo
     </label>
     <div class="grid grid-cols-4 gap-4">
       <div>
-        <label class="block text-[11px] text-ink-2 mb-1">Ações BR (%)</label>
+        <label class="field-label block mb-1">Ações BR (%)</label>
         <input
           type="number"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          class="input"
           formControlName="yield_stock"
           min="0.5"
           max="30"
@@ -19,10 +17,10 @@
         />
       </div>
       <div>
-        <label class="block text-[11px] text-ink-2 mb-1">FIIs (%)</label>
+        <label class="field-label block mb-1">FIIs (%)</label>
         <input
           type="number"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          class="input"
           formControlName="yield_fii"
           min="0.5"
           max="30"
@@ -30,10 +28,10 @@
         />
       </div>
       <div>
-        <label class="block text-[11px] text-ink-2 mb-1">BDRs (%)</label>
+        <label class="field-label block mb-1">BDRs (%)</label>
         <input
           type="number"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          class="input"
           formControlName="yield_bdr"
           min="0.5"
           max="30"
@@ -41,10 +39,10 @@
         />
       </div>
       <div>
-        <label class="block text-[11px] text-ink-2 mb-1">ETFs (%)</label>
+        <label class="field-label block mb-1">ETFs (%)</label>
         <input
           type="number"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          class="input"
           formControlName="yield_etf"
           min="0.5"
           max="30"
@@ -52,21 +50,19 @@
         />
       </div>
     </div>
-    <p class="text-xs text-ink-2 mt-1.5">
+    <p class="fi-caption text-ink-2 mt-1.5">
       Usada no preço justo de Bazin (dividendo anual ÷ meta). BDRs são avaliadas por Graham/DCF;
       ETFs usam só dividend yield (sem Graham/DCF, que exigem fundamentos de empresa).
     </p>
   </div>
-  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-ink">
-      <lucide-icon name="bell" size="18"></lucide-icon> Notificações e Recomendação
-    </h2>
+  <div class="fi-block">
+    <h2 class="fi-verdict m-0 mb-2 text-ink">Notificações e recomendação</h2>
 
     @if (!pushEnabled()) {
-      <div class="p-3 rounded-lg bg-attention/10 border border-attention/40 mb-4 flex gap-3">
+      <div class="p-3 rounded-md bg-attention/10 border border-attention/40 mb-4 flex gap-3">
         <lucide-icon name="smartphone" size="18" class="text-attention mt-0.5"></lucide-icon>
-        <div class="text-sm">
-          <div class="font-semibold text-ink">As notificações requerem o app instalado</div>
+        <div class="fi-body">
+          <div class="fi-label text-ink">As notificações requerem o app instalado</div>
           <div class="text-ink-2 mt-0.5">
             Nenhum aparelho registrado nesta conta. As preferências abaixo ficam salvas e passam a
             valer assim que você entrar pelo app — no navegador elas não disparam nada.
@@ -74,9 +70,9 @@
         </div>
       </div>
     } @else {
-      <div class="p-3 rounded-lg bg-ground-2 border border-hairline mb-4 flex gap-3">
+      <div class="p-3 rounded-md bg-ground-2 border border-hairline mb-4 flex gap-3">
         <lucide-icon name="smartphone" size="18" class="text-brand mt-0.5"></lucide-icon>
-        <div class="text-sm text-ink-2">
+        <div class="fi-body text-ink-2">
           {{ registeredDevices() }}
           {{ registeredDevices() === 1 ? 'aparelho recebendo' : 'aparelhos recebendo' }}
           notificações desta conta.
@@ -86,9 +82,9 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label class="block text-xs font-medium text-ink-2 mb-1.5">Alertas de preço</label>
+        <label class="field-label block mb-1.5">Alertas de preço</label>
         <label
-          class="flex items-center gap-2 px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm cursor-pointer"
+          class="fi-body flex items-center gap-2 px-3 py-2 rounded-md bg-ground border border-hairline text-ink cursor-pointer"
         >
           <input type="checkbox" formControlName="notify_price_alerts" class="accent-brand" />
           Notificar (imediato)
@@ -96,13 +92,8 @@
       </div>
 
       <div>
-        <label class="block text-xs font-medium text-ink-2 mb-1.5">
-          Resumo de oportunidades — cadência
-        </label>
-        <select
-          formControlName="opportunities_frequency"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        >
+        <label class="field-label block mb-1.5"> Resumo de oportunidades — cadência </label>
+        <select formControlName="opportunities_frequency" class="input">
           @for (f of frequencyOptions; track f.key) {
             <option [value]="f.key">{{ f.label }}</option>
           }
@@ -110,22 +101,19 @@
       </div>
 
       <div>
-        <label class="block text-xs font-medium text-ink-2 mb-1.5">Perfil de risco</label>
-        <select
-          formControlName="risk_profile"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-        >
+        <label class="field-label block mb-1.5">Perfil de risco</label>
+        <select formControlName="risk_profile" class="input">
           @for (r of riskProfileOptions; track r.key) {
             <option [value]="r.key">{{ r.label }}</option>
           }
         </select>
-        <p class="text-xs text-ink-2 mt-1">
+        <p class="fi-caption text-ink-2 mt-1">
           Ajusta o peso de cada indicador no score de oportunidade.
         </p>
       </div>
 
       <div>
-        <span class="block text-xs font-medium text-ink-2 mb-1.5" id="rotulo-densidade">
+        <span class="fi-label block text-ink-2 mb-1.5" id="rotulo-densidade">
           Densidade da tela
         </span>
         <div class="flex items-center gap-2" role="group" aria-labelledby="rotulo-densidade">
@@ -148,17 +136,17 @@
             Compacta
           </button>
         </div>
-        <p class="text-xs text-ink-2 mt-1">
+        <p class="fi-caption text-ink-2 mt-1">
           Vale em todas as telas e acompanha a sua conta, não este aparelho.
         </p>
       </div>
     </div>
 
     <div class="mt-4 pt-4 border-t border-hairline">
-      <label class="block text-xs font-medium text-ink-2 mb-2">Categorias preferidas</label>
+      <label class="field-label block mb-2">Categorias preferidas</label>
       <div class="flex flex-wrap gap-3">
         @for (cat of categories; track cat.key) {
-          <label class="flex items-center gap-1.5 text-sm text-ink">
+          <label class="fi-body flex items-center gap-1.5 text-ink">
             <input
               type="checkbox"
               class="accent-brand"
@@ -169,46 +157,41 @@
           </label>
         }
       </div>
-      <p class="text-xs text-ink-2 mt-1.5">
+      <p class="fi-caption text-ink-2 mt-1.5">
         Ativos dessas categorias ganham um pequeno boost no score de oportunidade.
       </p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
       <div>
-        <label class="block text-xs font-medium text-ink-2 mb-1.5">Setores preferidos</label>
+        <label class="field-label block mb-1.5">Setores preferidos</label>
         <input
           type="text"
           formControlName="preferred_sectors"
           placeholder="Ex.: Energia, Bancos, Varejo"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          class="input"
         />
       </div>
       <div>
-        <label class="block text-xs font-medium text-ink-2 mb-1.5">Ativos excluídos</label>
+        <label class="field-label block mb-1.5">Ativos excluídos</label>
         <input
           type="text"
           formControlName="excluded_tickers"
           placeholder="Ex.: MGLU3, IRBR3"
-          class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          class="input"
         />
       </div>
     </div>
   </div>
   <div class="flex items-center justify-end gap-3 mt-1">
     <span
-      class="text-sm"
+      class="fi-body"
       [class.text-favorable]="message().startsWith('✓')"
       [class.text-adverse]="message().startsWith('✗')"
       *ngIf="message()"
       >{{ message() }}</span
     >
-    <button
-      type="button"
-      class="flex items-center gap-2 px-4 h-11 rounded-lg font-medium text-sm cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-      (click)="savePreferencias()"
-      [disabled]="saving()"
-    >
+    <button type="button" class="btn-primary" (click)="savePreferencias()" [disabled]="saving()">
       <lucide-icon [name]="saving() ? 'loader-circle' : 'check'" size="16"></lucide-icon>
       {{ saving() ? 'Salvando...' : 'Salvar' }}
     </button>

@@ -86,10 +86,7 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                               ),
                               Text(
                                 '${t.quantity} un. · venda ${formatCurrency(t.sellPrice)}',
-                                style: TextStyle(
-                                  color: fiInk2(context),
-                                  fontSize: 12,
-                                ),
+                                style: FiType.caption.copyWith(color: fiInk2(context)),
                               ),
                             ],
                           ),

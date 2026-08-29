@@ -204,7 +204,7 @@ const MIN_POINTS = 5;
 
           @if (hovered(); as h) {
             <div
-              class="pointer-events-none absolute rounded-md border border-hairline bg-ground-1 px-3 py-2 shadow-popover"
+              class="pointer-events-none absolute rounded-lg border border-hairline bg-ground-1 px-3 py-2 shadow-popover"
               [style.left.%]="(h.x / vbWidth) * 100"
               [style.top.%]="(h.y / vbHeight) * 100"
               style="transform: translate(-50%, -120%)"
@@ -241,7 +241,7 @@ const MIN_POINTS = 5;
 
         <button
           type="button"
-          class="fi-caption text-ink-3 hover:text-ink-2 mt-3 cursor-pointer bg-transparent border-0 p-0 underline decoration-dotted"
+          class="btn-quiet btn-explain mt-3"
           (click)="showTable.set(!showTable())"
         >
           {{ showTable() ? 'Ocultar a série em tabela' : 'Ver a série em tabela' }}
@@ -255,10 +255,8 @@ const MIN_POINTS = 5;
               </caption>
               <thead class="sticky top-0 bg-ground-2">
                 <tr>
-                  <th class="text-left px-3 py-1.5 fi-caption text-ink-3 font-medium">Data</th>
-                  <th class="text-right px-3 py-1.5 fi-caption text-ink-3 font-medium">
-                    Fechamento
-                  </th>
+                  <th class="text-left px-3 py-1.5 fi-caption text-ink-3">Data</th>
+                  <th class="text-right px-3 py-1.5 fi-caption text-ink-3">Fechamento</th>
                 </tr>
               </thead>
               <tbody>

@@ -1,47 +1,32 @@
-@if (referenceRates()) {
-  <div
-    class="flex items-center gap-4 p-4 rounded-lg bg-ground-1 border border-hairline mb-5 flex-wrap text-sm"
-  >
-    <lucide-icon name="info" size="16" class="text-ink-2"></lucide-icon>
-    <span class="text-ink-2">Taxas de referência:</span>
-    <span class="font-medium text-ink"
-      >CDI: <strong class="text-brand">{{ referenceRates()!.cdi_anual }}% a.a.</strong></span
-    >
-    <span class="font-medium text-ink"
-      >Selic: <strong class="text-brand">{{ referenceRates()!.selic_anual }}% a.a.</strong></span
-    >
-    <span class="font-medium text-ink"
-      >IPCA: <strong class="text-brand">{{ referenceRates()!.ipca_anual }}% a.a.</strong></span
-    >
-  </div>
+@if (referenceRates(); as taxas) {
+  <p class="fi-caption text-ink-3 m-0 mb-6">
+    Taxas de referência hoje — CDI
+    <span class="fi-num text-ink-2">{{ taxas.cdi_anual | number: '1.2-2' }}%</span>, Selic
+    <span class="fi-num text-ink-2">{{ taxas.selic_anual | number: '1.2-2' }}%</span>, IPCA
+    <span class="fi-num text-ink-2">{{ taxas.ipca_anual | number: '1.2-2' }}%</span> ao ano.
+  </p>
 }
 
-<div class="p-5 rounded-lg bg-ground-1 border border-hairline mb-5">
+<div class="fi-block">
   <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-ink">
-      <lucide-icon name="landmark" size="18"></lucide-icon> Simulador de Renda Fixa
-    </h2>
-    <button
-      type="button"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium cursor-pointer bg-ground-2 border border-hairline text-ink hover:bg-ground-1 transition-all"
-      (click)="addRFAtivo()"
-    >
+    <h2 class="fi-verdict m-0 text-ink">Simulador de renda fixa</h2>
+    <button type="button" class="btn-secondary compact-btn" (click)="addRFAtivo()">
       <lucide-icon name="plus" size="15"></lucide-icon> Adicionar opção
     </button>
   </div>
-  <p class="text-sm text-ink-2 mb-4">
+  <p class="fi-body text-ink-2 mb-4">
     Insira uma ou mais opções para comparar. Identifica a melhor taxa líquida.
   </p>
 
   <div class="flex flex-col gap-4">
     @for (ctrl of rfForms.controls; track $index; let i = $index) {
-      <div class="p-4 rounded-lg bg-ground-2 border border-hairline" [formGroup]="ctrl">
+      <div class="card" [formGroup]="ctrl">
         <div class="flex items-center justify-between mb-3">
-          <div class="font-medium text-sm text-ink">Opção {{ i + 1 }}</div>
+          <div class="fi-label text-ink">Opção {{ i + 1 }}</div>
           @if (rfForms.length > 1) {
             <button
               type="button"
-              class="w-7 h-7 grid place-items-center rounded-lg text-ink-2 hover:text-adverse hover:bg-adverse/10 transition-all cursor-pointer"
+              class="btn-icon btn-icon-quiet btn-icon-danger"
               (click)="removeRFAtivo(i)"
               aria-label="Remover esta simulação"
             >
@@ -51,36 +36,21 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 gap-y-5">
           <div>
-            <label class="block text-xs text-ink-2 mb-1.5">Nome / Banco (opcional)</label>
-            <input
-              type="text"
-              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-              formControlName="nome"
-              placeholder="ex.: Nubank"
-            />
+            <label class="field-label block mb-1.5">Nome / Banco (opcional)</label>
+            <input type="text" class="input" formControlName="nome" placeholder="ex.: Nubank" />
           </div>
           <div>
-            <label class="block text-xs text-ink-2 mb-1.5">Tipo</label>
-            <select
-              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
-              formControlName="tipo"
-              (change)="onTipoChange(i)"
-            >
-              <option value="cdb">CDB</option>
-              <option value="lci">LCI</option>
-              <option value="lca">LCA</option>
-              <option value="lc">LC</option>
-              <option value="cri">CRI</option>
-              <option value="cra">CRA</option>
-              <option value="tesouro_selic">Tesouro Selic</option>
-              <option value="tesouro_ipca">Tesouro IPCA+</option>
-              <option value="tesouro_pre">Tesouro Pré</option>
+            <label class="field-label block mb-1.5">Tipo</label>
+            <select class="input cursor-pointer" formControlName="tipo" (change)="onTipoChange(i)">
+              @for (t of ui.fixedIncomeTypes; track t.value) {
+                <option [value]="t.value">{{ t.label }}</option>
+              }
             </select>
           </div>
           <div>
-            <label class="block text-xs text-ink-2 mb-1.5">Tipo de taxa</label>
+            <label class="field-label block mb-1.5">Tipo de taxa</label>
             <select
-              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
+              class="input cursor-pointer"
               formControlName="tipo_taxa"
               (change)="onTaxaTipoChange(i)"
             >
@@ -90,17 +60,17 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs text-ink-2 mb-1.5">Valor investido (R$)</label>
+            <label class="field-label block mb-1.5">Valor investido (R$)</label>
             <input
               type="number"
-              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              class="input"
               formControlName="valor_investido"
               min="100"
               step="100"
             />
           </div>
           <div>
-            <label class="block text-xs text-ink-2 mb-1.5">
+            <label class="field-label block mb-1.5">
               @if (ctrl.controls['tipo_taxa'].value === 'pos_fixado') {
                 % do CDI
               } @else {
@@ -109,7 +79,7 @@
             </label>
             <input
               type="number"
-              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              class="input"
               [formControlName]="
                 ctrl.controls['tipo_taxa'].value === 'pos_fixado' ? 'percentual_cdi' : 'taxa'
               "
@@ -121,23 +91,15 @@
             />
           </div>
           <div>
-            <label class="block text-xs text-ink-2 mb-1.5">Prazo (meses)</label>
-            <input
-              type="number"
-              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
-              formControlName="prazo_meses"
-              min="1"
-              step="1"
-            />
+            <label class="field-label block mb-1.5">Prazo (meses)</label>
+            <input type="number" class="input" formControlName="prazo_meses" min="1" step="1" />
           </div>
           <div>
-            <label class="block text-xs text-ink-2 mb-1.5">Liquidez</label>
-            <select
-              class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
-              formControlName="liquidez"
-            >
-              <option value="no_vencimento">No vencimento</option>
-              <option value="diaria">Diária (D+1)</option>
+            <label class="field-label block mb-1.5">Liquidez</label>
+            <select class="input cursor-pointer" formControlName="liquidez">
+              @for (l of ui.liquidityOptions; track l.value) {
+                <option [value]="l.value">{{ l.label }}</option>
+              }
             </select>
           </div>
         </div>
@@ -146,12 +108,7 @@
   </div>
 
   <div class="flex items-center gap-3 mt-4">
-    <button
-      type="button"
-      class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 disabled:opacity-50 transition-opacity"
-      (click)="compareRF()"
-      [disabled]="loading.loading()"
-    >
+    <button type="button" class="btn-primary" (click)="compareRF()" [disabled]="loading.loading()">
       <lucide-icon
         [name]="loading.loading() ? 'loader-circle' : 'calculator'"
         size="16"
@@ -168,56 +125,55 @@
 </div>
 
 @if (rfResult(); as result) {
-  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-2 text-ink">
-      <lucide-icon name="chart-bar" size="18"></lucide-icon> Resultado da Análise
-    </h2>
-    <div class="flex items-center gap-3 mb-4 text-sm text-ink-2">
-      <lucide-icon name="info" size="14"></lucide-icon
-      ><span
-        >CDI usado: <strong>{{ result.cdi_referencia }}%</strong> — Selic:
-        <strong>{{ result.selic_referencia }}%</strong> — IPCA:
-        <strong>{{ result.ipca_referencia }}%</strong>
-        <span class="opacity-70"
-          >({{ result.fonte_taxas === 'bcb' ? 'dados do BCB' : 'estimativa' }})</span
-        ></span
-      >
-    </div>
+  <div class="fi-block">
+    <h2 class="fi-verdict m-0 mb-1 text-ink">Resultado da análise</h2>
+    <p class="fi-caption text-ink-3 m-0 mb-5">
+      Calculado sobre CDI
+      <span class="fi-num">{{ result.cdi_referencia | number: '1.2-2' }}%</span>, Selic
+      <span class="fi-num">{{ result.selic_referencia | number: '1.2-2' }}%</span> e IPCA
+      <span class="fi-num">{{ result.ipca_referencia | number: '1.2-2' }}%</span> ao ano —
+      {{
+        result.fonte_taxas === 'bcb' ? 'séries do Banco Central' : 'estimativa, sem série do BCB'
+      }}. Rendimento passado de um indexador não é promessa sobre o futuro dele.
+    </p>
+
     @if (result.melhor_opcao_motivo) {
-      <p class="text-sm text-ink bg-brand/10 border border-brand/30 rounded-lg px-3 py-2 mb-4 m-0">
-        <lucide-icon name="trophy" size="14" class="text-brand inline-block mr-1"></lucide-icon>
+      <p class="notice notice-brand fi-body text-ink m-0 mb-5">
         {{ result.melhor_opcao_motivo }}
       </p>
     }
 
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-6">
       @for (r of result.resultados; track $index; let idx = $index) {
         <div
-          class="p-4 rounded-lg border-2 transition-all"
+          class="pt-5 border-t"
           [class.border-brand]="r.melhor_opcao"
-          [class.row-highlight]="r.melhor_opcao"
           [class.border-hairline]="!r.melhor_opcao"
-          [class.bg-ground-2]="!r.melhor_opcao"
         >
-          <div class="flex items-start justify-between gap-4 flex-wrap">
-            <div class="flex items-center gap-2 flex-wrap mb-2">
-              <span class="font-bold text-base text-ink">{{ r.nome || rfTipoLabel(r.tipo) }}</span>
-              <span class="tag">{{ rfTipoLabel(r.tipo) }}</span>
-              @if (r.isento_ir) {
-                <span class="tag bg-favorable/20 text-favorable border-favorable/30"
-                  >Isento IR</span
-                >
-              }
-              @if (r.liquidez === 'diaria') {
-                <span class="tag bg-brand/20 text-brand border-brand/30">Liquidez D+1</span>
-              }
-              @if (r.melhor_opcao) {
-                <span class="tag bg-brand/20 text-brand border-brand/30"
-                  ><lucide-icon name="trophy" size="11"></lucide-icon> Melhor opção</span
-                >
+          <div class="flex items-start justify-between gap-4 flex-wrap mb-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="fi-metric-sm text-ink">{{ r.nome || rfTipoLabel(r.tipo) }}</span>
+                <span class="tag tag-neutral">{{ rfTipoLabel(r.tipo) }}</span>
+                @if (r.isento_ir) {
+                  <span class="tag tag-neutral">Isento de IR</span>
+                }
+                @if (r.liquidez === 'diaria') {
+                  <span class="tag tag-neutral">Liquidez D+1</span>
+                }
+                @if (r.melhor_opcao) {
+                  <span class="tag tag-brand">Melhor taxa líquida</span>
+                }
+              </div>
+              @if (r.isento_ir && r.pct_cdi_bruto_equivalente) {
+                <p class="fi-caption text-ink-3 m-0 mt-1.5">
+                  Sem IR, equivale a um CDB de
+                  <span class="fi-num">{{ r.pct_cdi_bruto_equivalente | number: '1.1-1' }}</span
+                  >% do CDI.
+                </p>
               }
             </div>
-            <div class="text-right min-w-[200px]">
+            <div class="text-right shrink-0">
               <app-fixed-income-rate
                 label="Rende"
                 [netRatePct]="r.taxa_liquida_aa"
@@ -229,52 +185,49 @@
                 [isentoIr]="r.isento_ir"
                 [irAliquotaPct]="r.ir.aliquota_pct"
               />
-              @if (r.isento_ir && r.pct_cdi_bruto_equivalente) {
-                <p class="fi-caption text-ink-3 m-0 mt-1">
-                  Equivale a um CDB de
-                  <span class="fi-num">{{ r.pct_cdi_bruto_equivalente | number: '1.1-1' }}</span
-                  >% do CDI.
-                </p>
-              }
             </div>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-            <div class="p-3 rounded-lg bg-ground border border-hairline text-center">
-              <div class="text-xs text-ink-2 mb-0.5">Investido</div>
-              <div class="font-semibold text-sm text-ink">
-                R$ {{ r.valor_investido | number: '1.2-2' }}
-              </div>
-            </div>
-            <div class="p-3 rounded-lg bg-ground border border-hairline text-center">
-              <div class="text-xs text-ink-2 mb-0.5">Rendimento bruto</div>
-              <div class="font-semibold text-sm text-ink good">
-                +R$ {{ r.rendimento_bruto | number: '1.2-2' }}
-              </div>
-            </div>
-            @if (!r.isento_ir) {
-              <div class="p-3 rounded-lg bg-ground border border-hairline text-center">
-                <div class="text-xs text-ink-2 mb-0.5">IR ({{ r.ir.aliquota_pct }}%)</div>
-                <div class="font-semibold text-sm warn">
-                  -R$ {{ r.ir.valor_ir | number: '1.2-2' }}
-                </div>
-              </div>
-            }
-            <div
-              class="p-3 rounded-lg bg-ground border border-hairline text-center"
-              [class.col-span-1]="!r.isento_ir"
-              [class.col-span-2]="r.isento_ir"
-            >
-              <div class="text-xs text-ink-2 mb-0.5">Valor líquido em {{ r.prazo_meses }}m</div>
-              <div
-                class="font-bold text-base"
-                [class.text-brand]="r.melhor_opcao"
-                [class.text-ink]="!r.melhor_opcao"
-              >
-                R$ {{ r.valor_liquido | number: '1.2-2' }}
-              </div>
-            </div>
-          </div>
+          <table class="data-table">
+            <caption class="sr-only">
+              Como
+              {{
+                r.nome || rfTipoLabel(r.tipo)
+              }}
+              chega ao valor líquido em
+              {{
+                r.prazo_meses
+              }}
+              meses
+            </caption>
+            <tbody>
+              <tr>
+                <td class="text-ink-2">Investido</td>
+                <td class="num">R$ {{ r.valor_investido | number: '1.2-2' }}</td>
+              </tr>
+              <tr>
+                <td class="text-ink-2">Rendimento bruto</td>
+                <td class="num text-up">+R$ {{ r.rendimento_bruto | number: '1.2-2' }}</td>
+              </tr>
+              @if (!r.isento_ir) {
+                <tr>
+                  <td class="text-ink-2">
+                    IR na faixa de <span class="fi-num">{{ r.ir.aliquota_pct }}</span
+                    >%
+                  </td>
+                  <td class="num text-down">−R$ {{ r.ir.valor_ir | number: '1.2-2' }}</td>
+                </tr>
+              }
+              <tr>
+                <td class="fi-label text-ink">
+                  Líquido em <span class="fi-num">{{ r.prazo_meses }}</span> meses
+                </td>
+                <td class="num fi-metric-sm" [class.text-brand]="r.melhor_opcao">
+                  R$ {{ r.valor_liquido | number: '1.2-2' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       }
     </div>

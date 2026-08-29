@@ -528,14 +528,14 @@ class _ReferralCard extends ConsumerWidget {
           Text(
             '${r.attributed} chegaram pelo seu link · ${r.qualified} montaram carteira · '
             '${r.daysEarned} dias ganhos',
-            style: TextStyle(color: fiInk2(context), fontSize: 12),
+            style: FiType.caption.copyWith(color: fiInk2(context)),
           ),
           if (r.pending > 0) ...[
             const SizedBox(height: 4),
             Text(
               '${r.pending} ainda não montaram carteira. O crédito sai quando elas '
               'salvarem a primeira posição.',
-              style: TextStyle(color: fiInk3(context), fontSize: 12),
+              style: FiType.caption.copyWith(color: fiInk3(context)),
             ),
           ],
         ],

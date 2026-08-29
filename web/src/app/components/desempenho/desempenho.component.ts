@@ -35,11 +35,7 @@ import { PatrimonyChartComponent } from '../patrimony-chart/patrimony-chart.comp
         } @else {
           <p class="fi-body text-ink-2 m-0">
             Não conseguimos montar a comparação agora.
-            <button
-              type="button"
-              class="underline cursor-pointer bg-transparent border-0 p-0 text-brand"
-              (click)="load()"
-            >
+            <button type="button" class="btn-link underline" (click)="load()">
               Tentar de novo
             </button>
           </p>

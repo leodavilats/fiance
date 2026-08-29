@@ -168,7 +168,7 @@ class _FiGroupHeader extends StatelessWidget {
             metaPct != null
                 ? 'atual ${formatPercent(atualPct)} · meta ${formatPercent(metaPct)}'
                 : 'atual ${formatPercent(atualPct)}',
-            style: TextStyle(color: fiInk2(context), fontSize: 12),
+            style: FiType.caption.copyWith(color: fiInk2(context)),
           ),
         ],
       ),
@@ -270,10 +270,7 @@ class _FiAssetCard extends StatelessWidget {
                           children: [
                             Text(
                               p.ticker,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
+                              style: FiType.title,
                             ),
                             const SizedBox(width: 6),
                             Container(
@@ -306,10 +303,7 @@ class _FiAssetCard extends StatelessWidget {
                               p.name!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: fiInk2(context),
-                                fontSize: 12,
-                              ),
+                              style: FiType.caption.copyWith(color: fiInk2(context)),
                             ),
                           ),
                       ],

@@ -25,15 +25,15 @@ const PAD_BOTTOM = 34;
     @if (snapshots().length === 0) {
       <div class="flex flex-col items-center justify-center gap-2 py-10 text-center text-ink-2">
         <lucide-icon name="chart-column" size="28" class="opacity-40"></lucide-icon>
-        <p class="text-sm m-0">Ainda não há histórico suficiente para exibir a evolução.</p>
+        <p class="fi-body m-0">Ainda não há histórico suficiente para exibir a evolução.</p>
       </div>
     } @else if (snapshots().length === 1) {
       <div class="flex flex-col items-center justify-center gap-1 py-8 text-center">
-        <div class="text-xs text-ink-2">Único registro até o momento</div>
-        <div class="text-lg font-bold text-ink">
+        <div class="fi-caption text-ink-2">Único registro até o momento</div>
+        <div class="fi-verdict-sm text-ink">
           R$ {{ snapshots()[0].total_current | number: '1.0-0' }}
         </div>
-        <div class="text-xs text-ink-2">{{ formatDate(snapshots()[0].captured_at) }}</div>
+        <div class="fi-caption text-ink-2">{{ formatDate(snapshots()[0].captured_at) }}</div>
       </div>
     } @else {
       <div class="relative select-none">
@@ -150,7 +150,7 @@ const PAD_BOTTOM = 34;
 
         @if (hoverIndex() !== null) {
           <div
-            class="pointer-events-none absolute z-10 rounded-lg border border-hairline bg-ground-1 px-3 py-2 text-xs shadow-popover"
+            class="fi-caption pointer-events-none absolute z-10 rounded-lg border border-hairline bg-ground-1 px-3 py-2 shadow-popover"
             [style.left.%]="tooltipLeftPct()"
             [style.top.%]="tooltipTopPct()"
             [style.transform]="tooltipTransform()"
@@ -158,7 +158,7 @@ const PAD_BOTTOM = 34;
             <div class="text-ink-2 mb-0.5">
               {{ formatDate(points()[hoverIndex()!].capturedAt) }}
             </div>
-            <div class="flex items-center gap-1.5 font-semibold text-ink">
+            <div class="fi-label flex items-center gap-1.5 text-ink">
               <span
                 class="inline-block w-2.5 h-0.5 rounded"
                 style="background: var(--fi-brand)"
@@ -170,20 +170,16 @@ const PAD_BOTTOM = 34;
       </div>
 
       <div class="mt-2">
-        <button
-          type="button"
-          class="text-xs text-ink-2 hover:text-ink underline decoration-dotted cursor-pointer bg-transparent border-0 p-0"
-          (click)="showTable.set(!showTable())"
-        >
+        <button type="button" class="btn-quiet btn-explain" (click)="showTable.set(!showTable())">
           {{ showTable() ? 'Ocultar dados em tabela' : 'Ver dados em tabela' }}
         </button>
         @if (showTable()) {
-          <div class="mt-2 max-h-48 overflow-y-auto rounded-lg border border-hairline">
-            <table class="w-full text-xs">
+          <div class="mt-2 max-h-48 overflow-y-auto rounded-md border border-hairline">
+            <table class="fi-caption w-full">
               <thead>
                 <tr class="bg-ground-2 text-ink-2">
-                  <th class="text-left px-2 py-1 font-medium">Data</th>
-                  <th class="text-right px-2 py-1 font-medium">Patrimônio</th>
+                  <th class="fi-label text-left px-2 py-1">Data</th>
+                  <th class="fi-label text-right px-2 py-1">Patrimônio</th>
                 </tr>
               </thead>
               <tbody>

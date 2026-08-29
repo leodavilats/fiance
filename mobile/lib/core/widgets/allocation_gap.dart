@@ -56,7 +56,7 @@ class FiAllocationGap extends StatelessWidget {
                 if (trailing != null) ...[
                   Text(
                     trailing!,
-                    style: TextStyle(color: fiInk2(context), fontSize: 12),
+                    style: FiType.caption.copyWith(color: fiInk2(context)),
                   ),
                   const SizedBox(width: 8),
                 ],

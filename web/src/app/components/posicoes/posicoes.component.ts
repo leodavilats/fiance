@@ -186,22 +186,11 @@ export class PosicoesComponent implements OnInit {
   }
 
   rfTipoLabel(tipo: RendaFixaTipo | string): string {
-    const labels: Record<string, string> = {
-      cdb: 'CDB',
-      lci: 'LCI',
-      lca: 'LCA',
-      tesouro_selic: 'Tesouro Selic',
-      tesouro_ipca: 'Tesouro IPCA+',
-      tesouro_pre: 'Tesouro Pré',
-      lc: 'LC',
-      cri: 'CRI',
-      cra: 'CRA',
-    };
-    return labels[tipo] || tipo;
+    return this.ui.fixedIncomeTypeLabel(tipo);
   }
 
   liquidezLabel(liquidez: string): string {
-    return liquidez === 'diaria' ? 'Liquidez diária' : 'No vencimento';
+    return this.ui.liquidityLabel(liquidez);
   }
 
   trackFixedIncome(_: number, item: FixedIncomePosition): number {

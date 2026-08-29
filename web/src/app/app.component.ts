@@ -81,7 +81,7 @@ const DESTINATIONS: readonly NavDestination[] = [
         >
           <a routerLink="/hoje" class="flex items-center gap-2.5 no-underline" title="fiance">
             <app-logo [size]="30" />
-            <span class="text-lg font-bold text-ink tracking-tight">fiance</span>
+            <span class="fi-wordmark">fiance</span>
           </a>
 
           <nav class="hidden lg:block" aria-label="Navegação principal">
@@ -118,7 +118,7 @@ const DESTINATIONS: readonly NavDestination[] = [
               </a>
             }
             <button
-              class="hidden sm:flex items-center gap-2 h-9 px-2.5 rounded-md cursor-pointer bg-transparent border border-hairline text-ink-2 hover:text-ink hover:bg-ground-2 transition-colors"
+              class="btn-secondary compact-btn hidden sm:inline-flex"
               type="button"
               (click)="search.show()"
               aria-label="Buscar tela ou ativo"
@@ -127,7 +127,7 @@ const DESTINATIONS: readonly NavDestination[] = [
               <kbd class="fi-caption border border-hairline rounded-sm px-1">{{ searchHint }}</kbd>
             </button>
             <button
-              class="w-9 h-9 grid place-items-center rounded-md cursor-pointer bg-transparent border border-hairline text-ink hover:bg-ground-2 transition-colors"
+              class="btn-icon"
               type="button"
               (click)="activity.show()"
               title="Atividade recente"
@@ -136,7 +136,7 @@ const DESTINATIONS: readonly NavDestination[] = [
               <lucide-icon name="history" size="18"></lucide-icon>
             </button>
             <button
-              class="w-9 h-9 grid place-items-center rounded-md cursor-pointer bg-transparent border border-hairline text-ink hover:bg-ground-2 transition-colors"
+              class="btn-icon"
               type="button"
               (click)="theme.toggle()"
               [title]="theme.theme() === 'dark' ? 'Modo claro' : 'Modo escuro'"
@@ -151,7 +151,7 @@ const DESTINATIONS: readonly NavDestination[] = [
             </button>
             <button
               type="button"
-              class="cursor-pointer border-0 bg-transparent p-0 rounded-full"
+              class="btn-icon btn-icon-quiet overflow-hidden rounded-pill p-0"
               (click)="showProfile.set(true)"
               title="Sua conta"
               aria-label="Abrir sua conta"
@@ -159,7 +159,7 @@ const DESTINATIONS: readonly NavDestination[] = [
               <img
                 [src]="user.picture"
                 [alt]="user.name"
-                class="w-9 h-9 rounded-full border border-hairline hover:opacity-80 transition-opacity"
+                class="w-full h-full rounded-pill object-cover"
                 referrerpolicy="no-referrer"
               />
             </button>
@@ -186,7 +186,7 @@ const DESTINATIONS: readonly NavDestination[] = [
                 routerLinkActive="nav-active-mob"
                 #rlaMob="routerLinkActive"
                 [attr.aria-current]="rlaMob.isActive ? 'page' : null"
-                class="flex flex-col items-center justify-center gap-0.5 px-1 flex-1 text-ink-2 no-underline text-xs font-medium transition-colors"
+                class="fi-label flex flex-col items-center justify-center gap-0.5 px-1 flex-1 text-ink-2 no-underline transition-colors"
               >
                 <lucide-icon [name]="d.icon" size="20"></lucide-icon>
                 <span>{{ d.label }}</span>

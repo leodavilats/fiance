@@ -260,7 +260,7 @@ class _ActiveFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InputChip(
-      label: Text(label, style: const TextStyle(fontSize: 12)),
+      label: Text(label, style: FiType.caption),
       onDeleted: onDeleted,
       visualDensity: VisualDensity.compact,
     );
@@ -473,25 +473,19 @@ class _DipScannerView extends ConsumerWidget {
                         if (item.name != null)
                           Text(
                             item.name!,
-                            style: TextStyle(
-                              color: fiInk2(context),
-                              fontSize: 12,
-                            ),
+                            style: FiType.caption.copyWith(color: fiInk2(context)),
                           ),
                         const SizedBox(height: 6),
                         Text(
                           'Queda do topo: ${formatPercent(item.dropFromHighPct)} · MS: ${formatPercent(item.marginOfSafety)}',
-                          style: const TextStyle(fontSize: 12),
+                          style: FiType.caption,
                         ),
                         if (item.topReason.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
                               item.topReason,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                              ),
+                              style: FiType.caption.copyWith(fontStyle: FontStyle.italic),
                             ),
                           ),
                       ],
@@ -607,10 +601,7 @@ class _OpportunityCard extends StatelessWidget {
                         if (opportunity.name != null)
                           Text(
                             opportunity.name!,
-                            style: TextStyle(
-                              color: fiInk2(context),
-                              fontSize: 12,
-                            ),
+                            style: FiType.caption.copyWith(color: fiInk2(context)),
                           ),
                       ],
                     ),
@@ -691,7 +682,7 @@ class _Stat extends StatelessWidget {
         ),
         Text(
           value,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          style: FiType.label,
         ),
       ],
     );

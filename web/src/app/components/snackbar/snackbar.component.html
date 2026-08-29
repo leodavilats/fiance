@@ -5,7 +5,7 @@
 >
   @for (msg of snackbar.messages(); track msg.id) {
     <div
-      class="fi-toast flex items-center gap-3 p-4 rounded-md shadow-popover animate-slide-in"
+      class="fi-toast flex items-center gap-3 p-4 rounded-lg shadow-popover animate-slide-in"
       [class.fi-toast-error]="msg.type === 'error'"
       [class.fi-toast-success]="msg.type === 'success'"
       [class.fi-toast-info]="msg.type === 'info'"
@@ -20,10 +20,10 @@
         [class.text-favorable]="msg.type === 'success'"
         [class.text-brand]="msg.type === 'info'"
       ></lucide-icon>
-      <p class="flex-1 m-0 text-sm">{{ msg.message }}</p>
+      <p class="fi-body flex-1 m-0">{{ msg.message }}</p>
       <button
         type="button"
-        class="w-6 h-6 grid place-items-center rounded-sm hover:bg-ground-2 transition-colors cursor-pointer bg-transparent border-0 text-ink-2"
+        class="btn-icon btn-icon-quiet"
         [attr.aria-label]="'Dispensar aviso'"
         (click)="snackbar.remove(msg.id)"
       >

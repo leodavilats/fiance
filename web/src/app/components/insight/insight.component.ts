@@ -34,11 +34,7 @@ import { FiState } from '../../core';
       </div>
 
       @if (actionLabel()) {
-        <button
-          type="button"
-          class="shrink-0 px-3 py-1.5 rounded-md border border-hairline fi-caption text-ink hover:bg-ground-2 transition-colors cursor-pointer bg-transparent"
-          (click)="action.emit()"
-        >
+        <button type="button" class="btn-secondary compact-btn shrink-0" (click)="action.emit()">
           {{ actionLabel() }}
         </button>
       }

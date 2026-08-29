@@ -1,8 +1,6 @@
-<div class="p-5 rounded-lg bg-ground-1 border border-hairline mt-5">
-  <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-ink">
-    <lucide-icon name="bell" size="18"></lucide-icon> Alertas de Preco
-  </h2>
-  <p class="text-xs text-ink-2 mb-4">
+<div class="fi-block">
+  <h2 class="fi-verdict m-0 mb-1 text-ink">Alertas de preço</h2>
+  <p class="fi-caption text-ink-2 mb-4">
     Ao abrir o sistema, um modal aparece automaticamente se algum ativo atingir a condicao definida.
   </p>
 
@@ -21,17 +19,17 @@
       />
       @if (alertTickerSuggestionsOpen() && alertTickerSuggestions().length > 0) {
         <ul
-          class="absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto text-sm"
+          class="fi-body absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto"
         >
           @for (s of alertTickerSuggestions(); track s.ticker) {
             <li>
               <button
                 type="button"
-                class="w-full text-left px-3 py-2 hover:bg-ground-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                class="menu-item justify-between"
                 (mousedown)="$event.preventDefault(); selectAlertTickerSuggestion(s)"
               >
-                <span class="font-semibold text-ink">{{ s.ticker }}</span>
-                <span class="text-ink-2 text-xs truncate">{{ s.name }}</span>
+                <span class="fi-label text-ink">{{ s.ticker }}</span>
+                <span class="fi-caption text-ink-2 truncate">{{ s.name }}</span>
               </button>
             </li>
           }
@@ -56,18 +54,14 @@
       placeholder="Nota (opcional)"
       class="input flex-1 min-w-[120px]"
     />
-    <button
-      type="submit"
-      [disabled]="alertForm.invalid"
-      class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 disabled:opacity-50 transition-opacity"
-    >
+    <button type="submit" [disabled]="alertForm.invalid" class="btn-primary">
       <lucide-icon name="plus" size="16"></lucide-icon> Adicionar
     </button>
   </form>
 
   @if (alertMessage()) {
     <p
-      class="text-sm mb-3"
+      class="fi-body mb-3"
       [class.text-brand]="alertMessage().startsWith('check')"
       [class.text-adverse]="alertMessage().startsWith('x')"
     >
@@ -76,21 +70,21 @@
   }
 
   @if (alerts().length === 0) {
-    <p class="text-sm text-ink-2">Nenhum alerta configurado.</p>
+    <p class="fi-body text-ink-2">Nenhum alerta configurado.</p>
   } @else {
     <div class="flex flex-col gap-2">
       @for (a of alerts(); track a.id) {
         <div
-          class="flex items-center justify-between gap-3 p-3 rounded-lg border"
+          class="flex items-center justify-between gap-3 p-3 rounded-md border"
           [class.border-brand]="!!a.triggered_at"
           [class.border-hairline]="!a.triggered_at"
           [class.opacity-60]="!!a.triggered_at"
           style="background: var(--fi-ground-2)"
         >
-          <div class="flex items-center gap-3 flex-wrap text-sm">
-            <span class="font-bold text-ink">{{ a.ticker }}</span>
+          <div class="fi-body flex items-center gap-3 flex-wrap">
+            <span class="fi-label text-ink">{{ a.ticker }}</span>
             <span
-              class="px-2 py-0.5 rounded-full text-xs font-medium border"
+              class="fi-label px-2 py-0.5 rounded-pill border"
               [class.text-brand]="a.condition === 'above'"
               [class.border-brand]="a.condition === 'above'"
               [class.text-attention]="a.condition === 'below'"
@@ -98,18 +92,18 @@
             >
               {{ a.condition === 'below' ? 'Abaixo de' : 'Acima de' }}
             </span>
-            <span class="text-ink font-medium">R$ {{ a.target_price | number: '1.2-2' }}</span>
+            <span class="fi-label text-ink">R$ {{ a.target_price | number: '1.2-2' }}</span>
             @if (a.note) {
-              <span class="text-xs text-ink-2">-- {{ a.note }}</span>
+              <span class="fi-caption text-ink-2">-- {{ a.note }}</span>
             }
             @if (a.triggered_at) {
-              <span class="text-xs font-medium text-brand">Disparado</span>
+              <span class="fi-label text-brand">Disparado</span>
             }
           </div>
           <button
             type="button"
             (click)="removeAlert(a.id)"
-            class="text-ink-2 hover:text-adverse transition-colors p-1 cursor-pointer border-0 bg-transparent"
+            class="btn-icon btn-icon-quiet btn-icon-danger"
             title="Remover alerta"
             aria-label="Remover alerta"
           >

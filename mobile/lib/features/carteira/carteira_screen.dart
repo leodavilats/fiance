@@ -179,7 +179,7 @@ class _EmptyCarteira extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Cadastre o que você já tem — ticker, quantidade e preço médio.',
-          style: TextStyle(color: fiInk3(context), fontSize: 12),
+          style: FiType.caption.copyWith(color: fiInk3(context)),
         ),
         const SizedBox(height: 20),
         FilledButton(onPressed: onAdd, child: const Text('Adicionar ativo')),

@@ -1,5 +1,5 @@
 <form class="mb-6 max-w-[420px]" [formGroup]="searchForm" (ngSubmit)="submitSearch()">
-  <label class="fi-label text-ink-2 block mb-1.5" for="ativo-busca">Ver outro ativo</label>
+  <label class="field-label block mb-1.5" for="ativo-busca">Ver outro ativo</label>
   <div class="relative flex gap-2">
     <input
       id="ativo-busca"
@@ -16,13 +16,13 @@
 
     @if (suggestionsOpen() && suggestions().length > 0) {
       <ul
-        class="absolute top-full left-0 right-0 mt-1 z-30 rounded-md border border-hairline bg-ground-1 shadow-popover max-h-60 overflow-y-auto list-none p-0 m-0"
+        class="absolute top-full left-0 right-0 mt-1 z-30 rounded-lg border border-hairline bg-ground-1 shadow-popover max-h-60 overflow-y-auto list-none p-0 m-0"
       >
         @for (s of suggestions(); track s.ticker) {
           <li>
             <button
               type="button"
-              class="w-full text-left px-3 py-2 hover:bg-ground-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+              class="menu-item justify-between"
               (mousedown)="$event.preventDefault(); selectSuggestion(s)"
             >
               <span class="fi-ticker text-ink">{{ s.ticker }}</span>
@@ -123,7 +123,7 @@
           @if (decision(); as d) {
             <p class="fi-body m-0 mt-3 flex items-center gap-2">
               <span class="fi-caption text-ink-3">Leitura do sistema:</span>
-              <span class="inline-flex items-center gap-1.5 font-medium" [class]="decisionClass()">
+              <span class="fi-label inline-flex items-center gap-1.5" [class]="decisionClass()">
                 <lucide-icon name="circle-dot" size="13" aria-hidden="true"></lucide-icon>
                 {{ d.label }}
               </span>
@@ -205,16 +205,16 @@
           </caption>
           <thead>
             <tr class="border-b border-hairline">
-              <th class="fi-label text-ink-3 text-left py-2 pr-4 font-medium">Método</th>
-              <th class="fi-label text-ink-3 text-right py-2 px-3 font-medium">Estimado</th>
-              <th class="fi-label text-ink-3 text-right py-2 px-3 font-medium">vs. atual</th>
-              <th class="fi-label text-ink-3 text-left py-2 pl-3 font-medium">Como é calculado</th>
+              <th class="fi-label text-ink-3 text-left py-2 pr-4">Método</th>
+              <th class="fi-label text-ink-3 text-right py-2 px-3">Estimado</th>
+              <th class="fi-label text-ink-3 text-right py-2 px-3">vs. atual</th>
+              <th class="fi-label text-ink-3 text-left py-2 pl-3">Como é calculado</th>
             </tr>
           </thead>
           <tbody>
             @for (m of methods(); track m.name) {
               <tr class="border-b border-hairline">
-                <th scope="row" class="fi-metric-sm text-ink text-left py-3 pr-4 font-semibold">
+                <th scope="row" class="fi-metric-sm text-ink text-left py-3 pr-4">
                   {{ m.name }}
                 </th>
 
@@ -343,7 +343,7 @@
     <section class="pt-6 border-t border-hairline">
       <button
         type="button"
-        class="flex items-center gap-2 bg-transparent border-0 p-0 cursor-pointer fi-label text-brand"
+        class="btn-link"
         (click)="toggleMethod()"
         [attr.aria-expanded]="showMethod()"
       >

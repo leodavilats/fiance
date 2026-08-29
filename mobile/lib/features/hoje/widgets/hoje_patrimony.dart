@@ -50,11 +50,7 @@ class FiPatrimonyBlock extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   '${formatCurrency(summary.totalPnl)} (${formatPercent(summary.totalPnlPct)})',
-                  style: TextStyle(
-                    color: pnlColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
+                  style: FiType.label.copyWith(color: pnlColor),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -89,7 +85,7 @@ class FiPatrimonyBlock extends StatelessWidget {
                 children: [
                   Text(
                     'Meta de renda passiva',
-                    style: TextStyle(color: fiInk2(context), fontSize: 12),
+                    style: FiType.caption.copyWith(color: fiInk2(context)),
                   ),
                   Text(
                     '${formatCurrency(summary.passiveIncomeGoal)}/mês',
@@ -146,7 +142,7 @@ class FiMiniStat extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           value,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          style: FiType.label,
         ),
       ],
     );

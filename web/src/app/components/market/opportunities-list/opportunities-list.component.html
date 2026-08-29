@@ -22,13 +22,13 @@
         />
         @if (tickerSuggestionsOpen() && tickerSuggestions().length > 0) {
           <ul
-            class="absolute top-full left-0 right-0 mt-1 z-[300] list-none m-0 p-0 rounded-md border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto"
+            class="absolute top-full left-0 right-0 mt-1 z-[300] list-none m-0 p-0 rounded-lg border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto"
           >
             @for (s of tickerSuggestions(); track s.ticker) {
               <li>
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-2 hover:bg-ground-2 cursor-pointer bg-transparent border-0 flex items-center justify-between gap-2"
+                  class="menu-item justify-between"
                   (mousedown)="$event.preventDefault(); selectTickerSuggestion(s)"
                 >
                   <span class="fi-ticker text-ink">{{ s.ticker }}</span>

@@ -72,7 +72,7 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
                     const SizedBox(width: 8),
                     Text(
                       _dateFormat.format(_dateAt(_touchedIndex!)),
-                      style: TextStyle(color: fiInk2(context), fontSize: 12),
+                      style: FiType.caption.copyWith(color: fiInk2(context)),
                     ),
                   ],
                 ),

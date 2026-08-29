@@ -138,7 +138,7 @@ Future<void> openSellDialog(
           const SizedBox(height: 8),
           Text(
             'Lucro/prejuízo, IR e histórico serão calculados automaticamente.',
-            style: TextStyle(fontSize: 12, color: fiInk2(context)),
+            style: FiType.caption.copyWith(color: fiInk2(context)),
           ),
         ],
       ),

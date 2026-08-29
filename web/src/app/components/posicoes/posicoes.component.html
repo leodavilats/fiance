@@ -38,7 +38,7 @@
         </h2>
         <button
           type="button"
-          class="fi-caption text-ink-2 hover:text-ink transition-colors cursor-pointer bg-transparent border-0 p-0 flex items-center gap-1"
+          class="btn-quiet"
           [attr.aria-expanded]="showFixedIncomeDetail()"
           (click)="showFixedIncomeDetail.set(!showFixedIncomeDetail())"
         >
@@ -85,14 +85,14 @@
             </caption>
             <thead>
               <tr class="border-b border-hairline">
-                <th class="text-left py-2 px-2 fi-label text-ink-3 font-medium">Aplicação</th>
-                <th class="text-left py-2 px-2 fi-label text-ink-3 font-medium">Tipo</th>
-                <th class="text-right py-2 px-2 fi-label text-ink-3 font-medium">Rende</th>
-                <th class="text-right py-2 px-2 fi-label text-ink-3 font-medium">Aplicado</th>
-                <th class="text-right py-2 px-2 fi-label text-ink-3 font-medium">Hoje</th>
-                <th class="text-right py-2 px-2 fi-label text-ink-3 font-medium">Rend.</th>
-                <th class="text-right py-2 px-2 fi-label text-ink-3 font-medium">No vencimento</th>
-                <th class="text-left py-2 px-2 fi-label text-ink-3 font-medium">Liquidez</th>
+                <th class="text-left py-2 px-2 fi-label text-ink-3">Aplicação</th>
+                <th class="text-left py-2 px-2 fi-label text-ink-3">Tipo</th>
+                <th class="text-right py-2 px-2 fi-label text-ink-3">Rende</th>
+                <th class="text-right py-2 px-2 fi-label text-ink-3">Aplicado</th>
+                <th class="text-right py-2 px-2 fi-label text-ink-3">Hoje</th>
+                <th class="text-right py-2 px-2 fi-label text-ink-3">Rend.</th>
+                <th class="text-right py-2 px-2 fi-label text-ink-3">No vencimento</th>
+                <th class="text-left py-2 px-2 fi-label text-ink-3">Liquidez</th>
               </tr>
             </thead>
             <tbody>
@@ -206,7 +206,7 @@
             >)
           </summary>
           <div
-            class="absolute right-0 top-full mt-1 z-[300] w-[250px] bg-ground-1 border border-hairline rounded-md shadow-popover p-2"
+            class="absolute right-0 top-full mt-1 z-[300] w-[250px] bg-ground-1 border border-hairline rounded-lg shadow-popover p-2"
           >
             @for (col of allColumns; track col.id) {
               <label
@@ -245,7 +245,7 @@
             <th class="py-2 px-2 w-8"><span class="sr-only">Selecionar para comparar</span></th>
             @for (col of columns(); track col.id) {
               <th
-                class="py-2 px-2 fi-label text-ink-3 font-medium sticky top-0 bg-ground z-10"
+                class="py-2 px-2 fi-label text-ink-3 sticky top-0 bg-ground z-10"
                 [class.text-left]="col.align === 'left'"
                 [class.text-right]="col.align === 'right'"
                 [attr.aria-sort]="ariaSort(col.id)"
@@ -381,11 +381,7 @@
               }
 
               <td class="text-right px-2">
-                <button
-                  type="button"
-                  class="fi-caption px-2 py-1 rounded-sm border border-hairline text-ink-2 hover:text-brand hover:border-brand transition-colors cursor-pointer bg-transparent"
-                  (click)="openSellModal(p)"
-                >
+                <button type="button" class="btn-secondary compact-btn" (click)="openSellModal(p)">
                   Vender
                 </button>
               </td>

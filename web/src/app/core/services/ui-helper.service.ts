@@ -16,7 +16,9 @@ import {
   fiSetorApelidos,
   fiSetorSeriePorRotulo,
   fiSetores,
+  fiLiquidez,
   fiTiposDeAtivo,
+  fiTiposDeRendaFixa,
 } from '../vocabulary';
 
 @Injectable({ providedIn: 'root' })
@@ -28,6 +30,29 @@ export class UiHelperService {
   assetTypeLabel(t: AssetType | string): string {
     return fiTiposDeAtivo[t]?.label ?? String(t);
   }
+
+  /**
+   * Rótulo do tipo de renda fixa, do vocabulário gerado.
+   *
+   * Existia escrito à mão em quatro telas — e numa delas "Tesouro Pré" já
+   * estava com acento diferente. O mapa sai de `design-tokens/tokens.json`.
+   */
+  fixedIncomeTypeLabel(tipo: string): string {
+    return fiTiposDeRendaFixa[tipo] ?? String(tipo).toUpperCase();
+  }
+
+  /** Os tipos de renda fixa na ordem do vocabulário, para montar um `<select>`. */
+  readonly fixedIncomeTypes: readonly { value: string; label: string }[] = Object.entries(
+    fiTiposDeRendaFixa
+  ).map(([value, label]) => ({ value, label }));
+
+  liquidityLabel(liquidez: string): string {
+    return fiLiquidez[liquidez] ?? String(liquidez);
+  }
+
+  readonly liquidityOptions: readonly { value: string; label: string }[] = Object.entries(
+    fiLiquidez
+  ).map(([value, label]) => ({ value, label }));
 
   sectorLabel(setor: string): string {
     return fiSetores[setor]?.label ?? fiSetorApelidos[setor] ?? setor;

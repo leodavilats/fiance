@@ -51,7 +51,7 @@ class FiCarteiraSummary extends StatelessWidget {
           children: [
             const Text(
               'Resumo geral',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              style: FiType.title,
             ),
             const SizedBox(height: 14),
             Row(
@@ -138,7 +138,7 @@ class _FiStatBlock extends StatelessWidget {
             ),
             if (caption != null) ...[
               const SizedBox(width: 6),
-              Text(caption!, style: TextStyle(color: valueColor, fontSize: 12)),
+              Text(caption!, style: FiType.caption.copyWith(color: valueColor)),
             ],
           ],
         ),

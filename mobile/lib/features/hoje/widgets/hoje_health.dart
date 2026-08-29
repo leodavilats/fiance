@@ -152,7 +152,7 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
                         padding: const EdgeInsets.only(bottom: 6),
                         child: RichText(
                           text: TextSpan(
-                            style: TextStyle(color: fiInk2(context), fontSize: 12),
+                            style: FiType.caption.copyWith(color: fiInk2(context)),
                             children: [
                               TextSpan(
                                 text: '${entry.key}: ',
@@ -180,7 +180,7 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
                       Expanded(
                         child: Text(
                           w,
-                          style: TextStyle(color: fiInk2(context), fontSize: 12),
+                          style: FiType.caption.copyWith(color: fiInk2(context)),
                         ),
                       ),
                     ],
@@ -236,7 +236,7 @@ class _FiHealthMetric extends StatelessWidget {
       children: [
         Text(
           value.round().toString(),
-          style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15),
+          style: FiType.title.copyWith(color: color),
         ),
         Text(
           label,

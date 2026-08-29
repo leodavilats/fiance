@@ -1,16 +1,10 @@
 <app-proventos-pendentes />
 
 @if (dividends(); as dv) {
-  <div class="p-5 rounded-lg bg-ground-1 border border-hairline mb-5">
+  <div class="fi-block">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-      <h2 class="flex items-center gap-2 text-xl font-bold m-0 text-ink">
-        <lucide-icon name="hand-coins" size="20"></lucide-icon> Proventos recebidos
-      </h2>
-      <button
-        type="button"
-        class="text-sm text-ink-2 hover:text-ink transition-colors cursor-pointer flex items-center gap-1 bg-transparent border-0"
-        (click)="showDividends.set(!showDividends())"
-      >
+      <h2 class="fi-verdict m-0 text-ink">Proventos recebidos</h2>
+      <button type="button" class="btn-quiet" (click)="showDividends.set(!showDividends())">
         <lucide-icon
           [name]="showDividends() ? 'chevron-up' : 'chevron-down'"
           size="16"
@@ -18,79 +12,75 @@
         {{ showDividends() ? 'Recolher' : 'Lançar / detalhar' }}
       </button>
     </div>
-    <p class="text-sm text-ink-2 mb-4">
+    <p class="fi-body text-ink-2 mb-4">
       O que caiu na sua conta de fato. Todo o resto da tela é estimativa derivada de dividend yield
       — aqui o número é o real, e serve para conferir a estimativa.
     </p>
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="p-4 rounded-lg bg-ground-2 border border-hairline">
-        <div class="text-xs text-ink-2 mb-1 uppercase tracking-wide">Este mês</div>
-        <div class="text-xl font-bold text-ink">
-          R$ {{ dv.received_this_month | number: '1.2-2' }}
-        </div>
+      <div class="card">
+        <div class="fi-eyebrow text-ink-2 mb-1">Este mês</div>
+        <div class="fi-verdict text-ink">R$ {{ dv.received_this_month | number: '1.2-2' }}</div>
       </div>
-      <div class="p-4 rounded-lg bg-ground-2 border border-hairline">
-        <div class="text-xs text-ink-2 mb-1 uppercase tracking-wide">Últimos 12 meses</div>
-        <div class="text-xl font-bold text-ink">
-          R$ {{ dv.received_last_12m | number: '1.2-2' }}
-        </div>
-        <div class="text-xs text-ink-2 mt-1">
+      <div class="card">
+        <div class="fi-eyebrow text-ink-2 mb-1">Últimos 12 meses</div>
+        <div class="fi-verdict text-ink">R$ {{ dv.received_last_12m | number: '1.2-2' }}</div>
+        <div class="fi-caption text-ink-2 mt-1">
           média de R$ {{ dv.monthly_average_12m | number: '1.2-2' }}/mês
         </div>
       </div>
-      <div class="p-4 rounded-lg bg-ground-2 border border-hairline">
-        <div class="text-xs text-ink-2 mb-1 uppercase tracking-wide">Estimativa do app</div>
-        <div class="text-xl font-bold text-ink">
+      <div class="card">
+        <div class="fi-eyebrow text-ink-2 mb-1">Estimativa do app</div>
+        <div class="fi-verdict text-ink">
           {{
             dv.estimated_monthly != null ? 'R$ ' + (dv.estimated_monthly | number: '1.2-2') : '—'
           }}
         </div>
         @if (estimateAccuracyLabel()) {
-          <div class="text-xs text-ink-2 mt-1">{{ estimateAccuracyLabel() }}</div>
+          <div class="fi-caption text-ink-2 mt-1">{{ estimateAccuracyLabel() }}</div>
         }
       </div>
     </div>
 
     @if (showDividends()) {
-      <div class="mt-5 p-4 rounded-lg bg-ground-2 border border-hairline">
+      <div class="mt-5 p-4 rounded-md bg-ground-2 border border-hairline">
         <div class="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_1.2fr_auto] gap-3 sm:items-end">
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-ink-2">Ativo</span>
+            <span class="fi-label text-ink-2">Ativo</span>
             <input
               type="text"
               [value]="dividendForm().ticker"
               (input)="updateDividendField({ ticker: $any($event.target).value })"
               placeholder="ex.: HGLG11"
-              class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm uppercase focus:outline-none focus:ring-2 focus:ring-brand"
+              class="input uppercase"
             />
           </label>
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-ink-2">Data do crédito</span>
+            <span class="fi-label text-ink-2">Data do crédito</span>
             <input
               type="date"
               [value]="dividendForm().paid_at"
               (input)="updateDividendField({ paid_at: $any($event.target).value })"
-              class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              class="input"
             />
           </label>
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-ink-2">Valor (R$)</span>
+            <span class="fi-label text-ink-2">Valor (R$)</span>
             <input
               type="number"
               min="0"
               step="0.01"
               [value]="dividendForm().amount"
               (input)="updateDividendField({ amount: +$any($event.target).value })"
-              class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              class="input"
             />
           </label>
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-ink-2">Tipo</span>
+            <span class="fi-label text-ink-2">Tipo</span>
             <select
               [value]="dividendForm().kind"
               (change)="updateDividendField({ kind: $any($event.target).value })"
-              class="px-3 h-[42px] rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              class="input"
             >
               <option value="dividendo">Dividendo</option>
               <option value="jcp">JCP</option>
@@ -101,7 +91,7 @@
           </label>
           <button
             type="button"
-            class="h-[42px] px-4 rounded-lg text-sm font-medium bg-brand text-on-brand border-0 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5 justify-center"
+            class="btn-primary"
             [disabled]="savingDividend()"
             (click)="saveDividend()"
           >
@@ -113,20 +103,20 @@
 
       @if (dv.items.length > 0) {
         <div class="mt-4" style="overflow-x: auto">
-          <table class="w-full border-collapse text-sm">
+          <table class="fi-body w-full border-collapse">
             <thead>
               <tr class="border-b border-hairline">
-                <th class="text-left py-2 px-2 font-medium text-ink-2">Ativo</th>
-                <th class="text-left py-2 px-2 font-medium text-ink-2">Data</th>
-                <th class="text-left py-2 px-2 font-medium text-ink-2">Tipo</th>
-                <th class="text-right py-2 px-2 font-medium text-ink-2">Valor</th>
-                <th class="text-right py-2 px-2 font-medium text-ink-2"></th>
+                <th class="fi-label text-left py-2 px-2 text-ink-2">Ativo</th>
+                <th class="fi-label text-left py-2 px-2 text-ink-2">Data</th>
+                <th class="fi-label text-left py-2 px-2 text-ink-2">Tipo</th>
+                <th class="fi-label text-right py-2 px-2 text-ink-2">Valor</th>
+                <th class="fi-label text-right py-2 px-2 text-ink-2"></th>
               </tr>
             </thead>
             <tbody>
               @for (item of dv.items; track item.id) {
                 <tr class="border-b border-hairline hover:bg-ground-2 transition-colors">
-                  <td class="py-2 px-2 font-semibold text-ink">{{ item.ticker }}</td>
+                  <td class="fi-label py-2 px-2 text-ink">{{ item.ticker }}</td>
                   <td class="py-2 px-2 text-ink">{{ item.paid_at }}</td>
                   <td class="py-2 px-2 text-ink-2">{{ item.kind }}</td>
                   <td class="text-right py-2 px-2 text-ink">
@@ -135,7 +125,7 @@
                   <td class="text-right py-2 px-2">
                     <button
                       type="button"
-                      class="p-1.5 rounded-md border border-hairline text-ink-2 hover:text-adverse hover:border-adverse transition-colors cursor-pointer bg-transparent"
+                      class="btn-icon btn-icon-danger"
                       title="Remover"
                       (click)="deleteDividend(item.id)"
                       aria-label="Remover provento"
@@ -149,7 +139,7 @@
           </table>
         </div>
       } @else {
-        <p class="text-sm text-ink-2 italic mt-4 m-0">
+        <p class="fi-body text-ink-2 italic mt-4 m-0">
           Nenhum provento lançado ainda. Registre o que você recebeu para o app parar de depender só
           de estimativa.
         </p>

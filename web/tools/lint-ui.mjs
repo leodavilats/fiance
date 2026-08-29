@@ -1,25 +1,4 @@
 #!/usr/bin/env node
-/**
- * Lint das duas coisas que quebram a tela sem quebrar o build.
- *
- * 1. **Ícone do Lucide não registrado.** `LucideAngularModule.pick({...})` é
- *    manual. Nome ausente ou errado compila e só falha em runtime, com
- *    `The "x" icon has not been provided`. Já aconteceu.
- *
- * 2. **Classe CSS que não existe.** Já aconteceu com `.card`, `.btn-primary`,
- *    `.tag`, `.verdict-pill`, `verdict-*` e `bg-success`. A fonte de verdade
- *    aqui não é uma lista escrita à mão: é o CSS que o build realmente emitiu.
- *    Se a classe não está lá, ou o Tailwind não a reconheceu (papel de cor
- *    inexistente) ou ninguém a definiu — e nos dois casos a tela fica sem
- *    estilo em silêncio.
- *
- * 3. **Julgamento exibido sem como conferir a conta.** Score, veredito, preço
- *    justo e sugestão são opinião do sistema sobre o dinheiro de alguém.
- *    Opinião sem método à vista é fé, e essa regra escrita só na documentação
- *    se perde na terceira tela nova.
- *
- * Uso: `node tools/lint-ui.mjs` depois de `npm run build`.
- */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
@@ -28,7 +7,6 @@ const WEB_ROOT = resolve(import.meta.dirname, '..');
 const SRC = join(WEB_ROOT, 'src');
 const DIST = join(WEB_ROOT, 'dist', 'fiance');
 
-/** Classes aplicadas por JS ou por bibliotecas, que não passam pelo scanner. */
 const CLASS_ALLOWLIST = new Set(['ng-star-inserted', 'lucide', 'lucide-icon']);
 
 function walk(dir, match, out = []) {
@@ -43,12 +21,6 @@ function walk(dir, match, out = []) {
   return out;
 }
 
-/**
- * A mesma transformação que `LucideAngularComponent.toPascalCase` faz antes de
- * procurar a chave no objeto do `pick`. Reimplementar o kebab ao contrário daria
- * respostas erradas em nomes com dígito: `trash2` e `trash-2` resolvem os dois
- * para `Trash2`, e um lint que não soubesse disso reprovaria código que funciona.
- */
 function toPascalCase(name) {
   return name.replace(
     /(\w)([a-z0-9]*)(_|-|\s*)/g,
@@ -56,11 +28,6 @@ function toPascalCase(name) {
   );
 }
 
-/**
- * O registro é procurado onde ele estiver, e não num caminho fixo: ele já mudou
- * de `main.ts` para `app.config.ts` quando a renderização no servidor entrou, e
- * um lint que quebra ao mover arquivo acaba desligado.
- */
 function registeredIcons(tsFiles) {
   const names = new Set();
   let found = false;
@@ -84,11 +51,6 @@ function registeredIcons(tsFiles) {
   return names;
 }
 
-/**
- * Nomes usados. Três formas cobrem o uso real do repo: atributo estático,
- * literal dentro de um binding `[name]`, e a chave `icon:` de um objeto de
- * configuração (é assim que a navegação e a busca global declaram o ícone).
- */
 function usedIcons(files) {
   const found = [];
 
@@ -114,7 +76,6 @@ function usedIcons(files) {
   return found;
 }
 
-/** Seletores de classe de um texto CSS, desfazendo os escapes do Tailwind. */
 function classesFromCss(css, into = new Set()) {
   for (const match of css.matchAll(/\.((?:[\w-]|\\.)+)/g)) {
     into.add(match[1].replace(/\\(.)/g, '$1'));
@@ -122,14 +83,6 @@ function classesFromCss(css, into = new Set()) {
   return into;
 }
 
-/**
- * Classes definidas em estilo inline de componente.
- *
- * O Angular embute o CSS do componente no bundle JS, não no `.css` — então o
- * arquivo emitido não as contém e elas precisam vir da fonte. Um literal de
- * crase só é tratado como CSS se tiver bloco de declaração; assim o template
- * inline, que também é literal de crase, fica de fora.
- */
 function inlineStyleClasses(files, into = new Set()) {
   for (const file of files) {
     for (const literal of readFileSync(file, 'utf8').matchAll(/`([^`]*)`/g)) {
@@ -155,7 +108,6 @@ function knownClasses(tsFiles) {
   return classes;
 }
 
-/** Tokens de classe escritos no template, incluindo os de `[class.x]` e `ngClass`. */
 function usedClasses(files) {
   const found = [];
 
@@ -188,19 +140,6 @@ function usedClasses(files) {
   return found;
 }
 
-/**
- * Todo julgamento **renderizado** precisa de uma forma de conferir a conta.
- *
- * A regra é de produto: score, veredito, preço justo e sugestão são opinião do
- * sistema sobre o dinheiro de alguém, e opinião sem método à vista é fé. Vira
- * regra de código porque, escrita só na documentação, ela se perde na terceira
- * tela nova — foi o que aconteceu com três campos calculados que nunca
- * chegaram ao cliente.
- *
- * A detecção olha o que é **interpolado ou vinculado**, não o que aparece em
- * prosa: a tela de preferências fala sobre o score sem exibir nenhum, e
- * reprová-la ensinaria a ignorar o lint.
- */
 const JUDGMENT_TERMS = [
   'verdict',
   'fair_price',
@@ -210,7 +149,6 @@ const JUDGMENT_TERMS = [
   'recommendation',
 ];
 
-/** O que conta como "dá para conferir": painel, tooltip, régua ou `<details>`. */
 const EXPLAINERS = [
   'app-provenance',
   'app-help-tooltip',
@@ -222,7 +160,6 @@ const EXPLAINERS = [
   '<details',
 ];
 
-/** Escape declarado, com motivo obrigatório. Sem motivo, não é escape. */
 const OPT_OUT = /<!--\s*sem-explicabilidade:\s*\S[^>]*-->/;
 
 function rendersJudgment(source) {
@@ -250,16 +187,6 @@ function missingExplainers(htmlFiles) {
   return problems;
 }
 
-/**
- * Todo SVG que desenha dado precisa de uma forma de ler o dado sem enxergá-lo.
- *
- * `aria-label` resume — "a carteira foi de 3% a 11%" — e resumo não é o dado.
- * A alternativa que serve é a tabela: quem usa leitor de tela compara ponto a
- * ponto, e quem enxerga também quer o número exato de vez em quando.
- *
- * Ícone não conta como gráfico: ele é decoração, e exigir tabela dele
- * transformaria a regra em ruído que se aprende a ignorar.
- */
 function missingChartAlternatives(files) {
   const problems = [];
 
@@ -277,17 +204,6 @@ function missingChartAlternatives(files) {
   return problems;
 }
 
-/**
- * Botão só com ícone precisa dizer o que faz.
- *
- * Sem nome acessível, o leitor de tela anuncia "botão" — e a pessoa tem que
- * adivinhar se aquilo apaga a posição ou fecha o modal. O ícone comunica para
- * quem enxerga; o `aria-label` comunica para o resto.
- *
- * A checagem é por ausência de **texto**: um botão com palavra dentro já se
- * anuncia sozinho e não precisa de rótulo — repetir ali seria ruído duplicado
- * no leitor de tela.
- */
 function missingAccessibleNames(files) {
   const problems = [];
 
@@ -311,26 +227,8 @@ function missingAccessibleNames(files) {
   return problems;
 }
 
-/** Os campos projetados que nunca devem aparecer sozinhos. */
 const PROJECTED_FIELDS = ['portfolio_value', 'passive_income_monthly'];
 
-/**
- * Número projetado sem piso e teto.
- *
- * Uma projeção a cinco anos é a multiplicação de três chutes. Exibi-la como
- * `R$ 3.847,21` empresta a essa pilha uma precisão de centavo que ela não tem,
- * e a pessoa decide quanto poupar em cima disso.
- *
- * A checagem é por arquivo, não por linha, de propósito: mostrar o cenário base
- * como linha secundária ao lado da faixa é legítimo, e cobrar por linha
- * proibiria isso. O que ela pega é o caso que importa — a faixa sumir da tela
- * inteira, sobrando o número do meio sozinho.
- *
- * O gatilho são os nomes dos campos, não a presença da palavra `projections`:
- * o template acessa o mês por um método do componente e nunca escreve
- * `projections`, então uma guarda por essa palavra desligaria a regra
- * justamente na única tela que ela precisa cobrir.
- */
 function projectionsWithoutBand(files) {
   const problems = [];
 
@@ -387,6 +285,153 @@ function certaintyLanguage(files) {
   return problems;
 }
 
+/**
+ * Tipografia fora da escala de papéis.
+ *
+ * A escala é por papel, não por tamanho: `fi-body`, `fi-caption`, `fi-label`,
+ * `fi-metric`, `fi-verdict`. Escrever `text-sm font-medium` no template reabre
+ * a decisão a cada tela — e foi assim que o produto acabou com 384 utilitárias
+ * de tamanho convivendo com 372 papéis, dando dois corpos diferentes para a
+ * mesma coisa em telas vizinhas.
+ *
+ * É também onde "serifa decide, sans mede" se sustenta: o papel diz qual
+ * família usar, o utilitário de tamanho não diz nada.
+ */
+const TIPO_CRU =
+  /\b(?:text-(?:xs|sm|base|lg|xl|[2-9]xl)|font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black))\b/g;
+
+function tipografiaCrua(files) {
+  const problems = [];
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    for (const match of source.matchAll(/\sclass="([^"{}]*)"/g)) {
+      for (const cru of match[1].matchAll(TIPO_CRU)) {
+        problems.push({ file, name: `${relative(WEB_ROOT, file)}: ${cru[0]}` });
+      }
+    }
+  }
+  return problems;
+}
+
+/**
+ * Raio fora do repertório, ou raio grande no que não flutua.
+ *
+ * São quatro raios: `sm` para marca dentro de instrumento, `md` para tudo que
+ * está assentado no chão, `lg` só para o que flutua por cima da página, e
+ * `pill`. `rounded-xl` e `rounded-full` são do Tailwind, não dos tokens — e o
+ * produto chegou a ter três raios diferentes para a mesma caixa.
+ *
+ * O que separa "flutua" de "assentado" é a sombra: só quem flutua tem uma.
+ */
+function raioForaDaEscala(files) {
+  const problems = [];
+  for (const file of files) {
+    for (const [n, line] of readFileSync(file, 'utf8').split('\n').entries()) {
+      for (const match of line.matchAll(/\brounded-(?:xl|[2-9]xl|full)\b/g)) {
+        problems.push({ file, name: `${relative(WEB_ROOT, file)}:${n + 1}: ${match[0]}` });
+      }
+      if (/\brounded-lg\b/.test(line) && !/shadow-(?:popover|drawer)/.test(line)) {
+        problems.push({
+          file,
+          name: `${relative(WEB_ROOT, file)}:${n + 1}: rounded-lg sem sombra`,
+        });
+      }
+    }
+  }
+  return problems;
+}
+
+/**
+ * Dois sistemas de foco no mesmo produto.
+ *
+ * O anel de foco é `outline` na cor da marca, com a espessura e o afastamento
+ * dos tokens, e vem de graça em `.input`, `.btn-*` e `.fi-focusable`. O
+ * `focus:ring` do Tailwind desenha outra coisa — e `focus:outline-none` sem
+ * substituto apaga o foco por inteiro, que é o pior dos casos.
+ */
+function focoConcorrente(files) {
+  const problems = [];
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    for (const match of source.matchAll(/\bfocus:(?:ring[\w/-]*|outline-none)\b/g)) {
+      problems.push({ file, name: `${relative(WEB_ROOT, file)}: ${match[0]}` });
+    }
+  }
+  return problems;
+}
+
+/**
+ * Controle montado à mão.
+ *
+ * `.btn-primary`, `.btn-secondary`, `.btn-icon`, `.btn-link`, `.btn-quiet`,
+ * `.menu-item` e `.input` existem. Remontar um deles com utilitárias produz um
+ * alvo de toque, um raio e um foco diferentes a cada tela — foi o que
+ * aconteceu: nove grafias de botão só de ícone, com cinco alturas.
+ *
+ * Ficam de fora os controles que o navegador desenha sozinho (caixa de
+ * seleção, rádio, faixa, arquivo) e o arquivo que declara o motivo por escrito.
+ */
+const CLASSES_DE_CONTROLE = [
+  'btn-primary',
+  'btn-secondary',
+  'btn-icon',
+  'btn-link',
+  'btn-quiet',
+  'menu-item',
+  'pagination-btn',
+  'subtab-btn',
+  'th-sort',
+  'nav-link',
+  'verdict-pill',
+  'input',
+  'range-slider',
+  'input-bare',
+];
+const TIPOS_NATIVOS = /type="(?:checkbox|radio|range|file|hidden)"/;
+const ESCAPE_CONTROLE = /<!--\s*controle-proprio:\s*\S/;
+
+function controleForaDoSistema(files) {
+  const problems = [];
+  for (const file of files) {
+    const bruto = readFileSync(file, 'utf8');
+    if (ESCAPE_CONTROLE.test(bruto)) continue;
+    // `<select>` citado num comentário de documentação não é um controle.
+    const source = bruto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+    for (const match of source.matchAll(/<(button|input|select|textarea)\b([^>]*)>/g)) {
+      const [, tag, attrs] = match;
+      if (TIPOS_NATIVOS.test(attrs)) continue;
+      const classe = attrs.match(/\sclass="([^"]*)"/)?.[1] ?? '';
+      if (CLASSES_DE_CONTROLE.some(c => new RegExp(`\\b${c}\\b`).test(classe))) continue;
+      problems.push({
+        file,
+        name: `${relative(WEB_ROOT, file)}: <${tag}> sem classe do sistema`,
+      });
+    }
+  }
+  return problems;
+}
+
+/**
+ * Ícone decorando um título.
+ *
+ * Um ícone ao lado de "Lançamentos" não acrescenta informação: ele faz cada
+ * seção parecer o cabeçalho de um card de painel. Onde o ícone é o dado — o
+ * estado de um diagnóstico, o cadeado de um recurso fechado — ele fica, e a
+ * checagem pula esses arquivos por nome.
+ */
+function iconeDecorativoEmTitulo(files) {
+  const problems = [];
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    for (const match of source.matchAll(/<(h[1-4])\b[^>]*>([\s\S]*?)<\/\1>/g)) {
+      if (!/<lucide-icon\b[^>]*name="[a-z0-9-]+"/.test(match[2])) continue;
+      problems.push({ file, name: `${relative(WEB_ROOT, file)}: <${match[1]}> com ícone` });
+    }
+  }
+  return problems;
+}
+
 function report(title, problems, hint) {
   if (problems.length === 0) return 0;
 
@@ -405,6 +450,13 @@ function report(title, problems, hint) {
   return byName.size;
 }
 
+/** Onde o ícone do título é o próprio dado, e não decoração. */
+const TITULO_COM_ICONE_LEGITIMO = [
+  'dip-diagnosis.component.ts',
+  'empty-state.component.ts',
+  'gate.component.ts',
+];
+
 function main() {
   const templates = [...walk(SRC, /\.html$/), ...walk(SRC, /\.ts$/)].filter(
     file => !file.endsWith('.spec.ts')
@@ -422,6 +474,13 @@ function main() {
   const semNome = missingAccessibleNames(templates);
   const semFaixa = projectionsWithoutBand(templates);
   const comCerteza = certaintyLanguage(templates.filter(f => f.endsWith('.html')));
+  const tipoCru = tipografiaCrua(templates);
+  const raioSolto = raioForaDaEscala(templates);
+  const focoDuplo = focoConcorrente(templates);
+  const controleSolto = controleForaDoSistema(templates);
+  const tituloDecorado = iconeDecorativoEmTitulo(
+    templates.filter(f => !TITULO_COM_ICONE_LEGITIMO.some(nome => f.endsWith(nome)))
+  );
 
   const problems =
     report(
@@ -466,6 +525,40 @@ function main() {
       comCerteza,
       'Preço futuro não se afirma. Troque por linguagem condicional, ou negue ' +
         'explicitamente (“não há garantia de retorno” passa; “retorno garantido” não).'
+    ) +
+    report(
+      'Tipografia fora da escala de papéis',
+      tipoCru,
+      'Use o papel: fi-body, fi-caption, fi-label, fi-title, fi-eyebrow, fi-metric, ' +
+        'fi-metric-sm, fi-money-lg, fi-money-xl, fi-verdict, fi-verdict-sm, fi-ticker. ' +
+        'Tamanho solto reabre a decisão a cada tela.'
+    ) +
+    report(
+      'Raio fora da escala, ou raio de flutuante no que está no chão',
+      raioSolto,
+      'São quatro: rounded-sm (marca), rounded-md (assentado), rounded-lg (só o que ' +
+        'flutua, e flutuar é ter sombra) e rounded-pill. rounded-xl e rounded-full são ' +
+        'do Tailwind, não dos tokens.'
+    ) +
+    report(
+      'Segundo sistema de foco',
+      focoDuplo,
+      'O anel de foco é outline na cor da marca, com espessura e afastamento dos ' +
+        'tokens, e já vem em .input, .btn-* e .fi-focusable. focus:outline-none sem ' +
+        'substituto apaga o foco.'
+    ) +
+    report(
+      'Controle montado à mão',
+      controleSolto,
+      'Use .btn-primary, .btn-secondary, .btn-icon, .btn-link, .btn-quiet, .menu-item ' +
+        'ou .input. Se este controle é mesmo único, declare o motivo no arquivo: ' +
+        '<!-- controle-proprio: ... -->'
+    ) +
+    report(
+      'Ícone decorando título',
+      tituloDecorado,
+      'Tire o ícone do <h*>. Ao lado de um título ele não acrescenta informação — ' +
+        'faz a seção parecer cabeçalho de card de painel.'
     );
 
   if (problems > 0) {
@@ -474,7 +567,8 @@ function main() {
   }
 
   console.log(
-    '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas e linguagem conferidos.'
+    '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas, linguagem, ' +
+      'tipografia, raio, foco, controles e títulos conferidos.'
   );
 }
 

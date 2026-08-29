@@ -201,7 +201,7 @@ class FiPositionRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${position.quantity} un. · PM ${formatCurrency(position.avgPrice)}',
-                    style: TextStyle(color: fiInk2(context), fontSize: 12),
+                    style: FiType.caption.copyWith(color: fiInk2(context)),
                   ),
                 ],
               ),
@@ -262,7 +262,7 @@ class FiOpportunityTile extends StatelessWidget {
             Text(formatCurrency(opportunity.price)),
             Text(
               'DY ${formatPercent(opportunity.dividendYield)}',
-              style: TextStyle(color: fiInk2(context), fontSize: 12),
+              style: FiType.caption.copyWith(color: fiInk2(context)),
             ),
             Builder(
               builder: (context) {

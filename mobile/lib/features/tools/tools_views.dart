@@ -537,7 +537,7 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
       children: [
         Text(
           'Compare até $_maxCompareTickers ativos lado a lado.',
-          style: TextStyle(color: fiInk2(context), fontSize: 12),
+          style: FiType.caption.copyWith(color: fiInk2(context)),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -589,13 +589,10 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
           if (_result!.errors.isNotEmpty)
             Text(
               'Não foi possível buscar: ${_result!.errors.join(', ')}',
-              style: TextStyle(
-                color: fiStateColor(
+              style: FiType.caption.copyWith(color: fiStateColor(
                   FiState.attention,
                   Theme.of(context).brightness,
-                ),
-                fontSize: 12,
-              ),
+                )),
             ),
           if (_result!.items.isNotEmpty) _CompareTable(items: _result!.items),
         ],
@@ -784,7 +781,7 @@ class ContributionSimulatorViewState
       children: [
         Text(
           'Simule um aporte mensal recorrente e veja a evolução da sua carteira e renda passiva.',
-          style: TextStyle(color: fiInk2(context), fontSize: 12),
+          style: FiType.caption.copyWith(color: fiInk2(context)),
         ),
         const SizedBox(height: 12),
         Row(
@@ -883,7 +880,7 @@ class ContributionSimulatorViewState
       if (r.disclaimer.isNotEmpty)
         Text(
           r.disclaimer,
-          style: TextStyle(color: fiInk2(context), fontSize: 12),
+          style: FiType.caption.copyWith(color: fiInk2(context)),
         ),
       const SizedBox(height: 12),
       Row(
@@ -923,7 +920,7 @@ class ContributionSimulatorViewState
         ),
         Text(
           cenario.rationale,
-          style: TextStyle(color: fiInk2(context), fontSize: 12),
+          style: FiType.caption.copyWith(color: fiInk2(context)),
         ),
         const SizedBox(height: 8),
       ],

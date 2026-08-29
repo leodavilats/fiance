@@ -1,8 +1,6 @@
-<form [formGroup]="form" class="flex flex-col gap-5">
-  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
-    <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-4 text-ink">
-      <lucide-icon name="flag" size="18"></lucide-icon> Meta de renda
-    </h2>
+<form [formGroup]="form" class="flex flex-col gap-8">
+  <div class="fi-block">
+    <h2 class="fi-verdict m-0 mb-4 text-ink">Meta de renda</h2>
     <div class="grid grid-cols-1 gap-5">
       <div>
         <label for="meta-renda" class="fi-caption text-ink-3 block mb-1.5">
@@ -26,37 +24,36 @@
       />
     </div>
   </div>
-  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
+  <div class="fi-block">
     <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
       <div>
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-ink">
-          <lucide-icon name="chart-pie" size="18"></lucide-icon> Alocação Alvo
-        </h2>
-        <p class="text-xs text-ink-2 m-0">
+        <h2 class="fi-verdict m-0 mb-1 text-ink">Alocação alvo</h2>
+        <p class="fi-caption text-ink-2 m-0">
           Defina quanto (%) cada categoria deve ter na sua carteira.
         </p>
       </div>
       <div class="flex items-center gap-2">
         <span
-          class="text-sm font-medium"
+          class="fi-label"
           [class.text-brand]="goalSum() === 100"
           [class.text-adverse]="goalSum() !== 100"
         >
-          Soma: <strong>{{ goalSum() }}%</strong>
+          Soma <span class="fi-num">{{ goalSum() }}</span
+          >%
         </span>
         @if (goalSum() !== 100) {
-          <span class="text-xs text-adverse">(deve ser 100%)</span>
+          <span class="fi-caption text-adverse">(deve ser 100%)</span>
         } @else {
           <lucide-icon name="circle-check" size="16" class="text-brand"></lucide-icon>
         }
       </div>
     </div>
 
-    <div class="flex h-3 rounded-full overflow-hidden mb-5 gap-0.5">
+    <div class="flex h-3 rounded-pill overflow-hidden mb-5 gap-0.5">
       @for (cat of categories; track cat.key; let i = $index) {
         @if (goalPct(i) > 0) {
           <div
-            class="transition-all"
+            class="transition-[width] duration-base ease-enter"
             [class]="catBarColor(cat.key)"
             [style.width.%]="goalPct(i)"
             [title]="cat.label + ': ' + goalPct(i) + '%'"
@@ -67,11 +64,11 @@
 
     <div formArrayName="goals" class="flex flex-col gap-4">
       @for (g of goalItems.controls; track $index; let i = $index) {
-        <div class="p-4 rounded-lg bg-ground-2 border border-hairline" [formGroupName]="i">
+        <div class="card" [formGroupName]="i">
           <div class="flex items-center gap-3 mb-3 flex-wrap">
             <div class="flex items-center gap-2 flex-1 min-w-[160px]">
               <div
-                class="w-8 h-8 grid place-items-center rounded-lg"
+                class="w-8 h-8 grid place-items-center rounded-md"
                 [class]="catBgColor(categories[i].key)"
               >
                 <lucide-icon
@@ -81,26 +78,26 @@
                 ></lucide-icon>
               </div>
               <div>
-                <div class="font-semibold text-sm text-ink">{{ categories[i].label }}</div>
-                <div class="text-xs text-ink-2">{{ categories[i].desc }}</div>
+                <div class="fi-label text-ink">{{ categories[i].label }}</div>
+                <div class="fi-caption text-ink-2">{{ categories[i].desc }}</div>
               </div>
             </div>
             <div class="flex items-center gap-2">
               <input
                 type="number"
-                class="w-20 px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand text-center font-bold"
+                class="input text-center"
                 formControlName="target_pct"
                 min="0"
                 max="100"
                 step="1"
               />
-              <span class="text-ink-2 text-sm font-medium">%</span>
+              <span class="fi-label text-ink-2">%</span>
             </div>
           </div>
 
           <input
             type="range"
-            class="range-slider w-full accent-brand h-1.5 rounded-full cursor-pointer"
+            class="range-slider w-full accent-brand h-1.5 rounded-pill cursor-pointer"
             [min]="0"
             [max]="100"
             [step]="1"
@@ -111,10 +108,10 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
             <div>
-              <label class="block text-xs text-ink-2 mb-1">Meta em R$ (opcional)</label>
+              <label class="field-label block mb-1">Meta em R$ (opcional)</label>
               <input
                 type="number"
-                class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-xs focus:outline-none focus:ring-2 focus:ring-brand"
+                class="input"
                 formControlName="target_value"
                 min="0"
                 step="100"
@@ -122,38 +119,32 @@
               />
             </div>
             <div>
-              <label class="block text-xs text-ink-2 mb-1">Prazo (opcional)</label>
-              <input
-                type="date"
-                class="w-full px-3 py-2 rounded-lg bg-ground border border-hairline text-ink text-xs focus:outline-none focus:ring-2 focus:ring-brand"
-                formControlName="deadline"
-              />
+              <label class="field-label block mb-1">Prazo (opcional)</label>
+              <input type="date" class="input" formControlName="deadline" />
             </div>
           </div>
         </div>
       }
     </div>
   </div>
-  <div class="p-5 rounded-lg bg-ground-1 border border-hairline">
+  <div class="fi-block">
     <div class="flex items-start justify-between gap-4 mb-4 flex-wrap">
       <div>
-        <h2 class="flex items-center gap-2 text-xl font-bold m-0 mb-1 text-ink">
-          <lucide-icon name="git-compare" size="18"></lucide-icon> Alocação Setorial
-        </h2>
-        <p class="text-xs text-ink-2 m-0">
+        <h2 class="fi-verdict m-0 mb-1 text-ink">Alocação setorial</h2>
+        <p class="fi-caption text-ink-2 m-0">
           Defina quanto (%) de cada setor você quer dentro do total de ações.
         </p>
       </div>
       <div class="flex items-center gap-2">
         <span
-          class="text-sm font-medium"
+          class="fi-label"
           [class.text-brand]="sectorGoalSum() === 100"
           [class.text-attention]="sectorGoalSum() !== 100"
         >
           Soma: <strong>{{ sectorGoalSum() }}%</strong>
         </span>
         @if (sectorGoalSum() !== 100) {
-          <span class="text-xs text-attention">(deve ser 100%)</span>
+          <span class="fi-caption text-attention">(deve ser 100%)</span>
         } @else {
           <lucide-icon name="circle-check" size="16" class="text-brand"></lucide-icon>
         }
@@ -162,26 +153,26 @@
 
     <div formArrayName="sector_goals" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
       @for (sg of sectorGoalItems.controls; track $index; let i = $index) {
-        <div class="p-3 rounded-lg bg-ground-2 border border-hairline" [formGroupName]="i">
+        <div class="card p-3" [formGroupName]="i">
           <div class="flex items-center justify-between gap-2 mb-2">
-            <div class="font-semibold text-sm text-ink">
+            <div class="fi-label text-ink">
               {{ sectorGoalItems.at(i).controls.sector.value }}
             </div>
             <div class="flex items-center gap-2">
               <input
                 type="number"
-                class="w-16 px-2 py-1 rounded bg-ground border border-hairline text-ink text-sm focus:outline-none focus:ring-2 focus:ring-brand text-center font-bold"
+                class="input text-center"
                 formControlName="target_pct"
                 min="0"
                 max="100"
                 step="5"
               />
-              <span class="text-ink-2 text-xs">%</span>
+              <span class="fi-caption text-ink-2">%</span>
             </div>
           </div>
           <input
             type="range"
-            class="range-slider w-full accent-brand h-1.5 rounded-full cursor-pointer"
+            class="range-slider w-full accent-brand h-1.5 rounded-pill cursor-pointer"
             [min]="0"
             [max]="100"
             [step]="5"
@@ -195,7 +186,7 @@
   </div>
   <div class="flex items-center justify-end gap-3 mt-1">
     <span
-      class="text-sm"
+      class="fi-body"
       [class.text-favorable]="message().startsWith('✓')"
       [class.text-adverse]="message().startsWith('✗')"
       *ngIf="message()"
@@ -203,7 +194,7 @@
     >
     <button
       type="button"
-      class="flex items-center gap-2 px-4 h-11 rounded-lg font-medium text-sm cursor-pointer bg-brand text-on-brand border-0 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+      class="btn-primary"
       (click)="saveMetas()"
       [disabled]="saving() || goalSum() !== 100"
     >

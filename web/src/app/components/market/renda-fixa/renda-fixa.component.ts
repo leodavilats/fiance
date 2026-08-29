@@ -15,6 +15,7 @@ import {
   RendaFixaAsset,
   RendaFixaCompareResponse,
   ReferenceRates,
+  UiHelperService,
 } from '../../../core';
 import { FixedIncomeRateComponent } from '../../fixed-income-rate/fixed-income-rate.component';
 
@@ -39,6 +40,7 @@ export class RendaFixaComponent implements OnInit {
   private api = inject(RecommendService);
   readonly loading = inject(LoadingService);
   private fb = inject(FormBuilder);
+  readonly ui = inject(UiHelperService);
 
   rfResult = signal<RendaFixaCompareResponse | null>(null);
   referenceRates = signal<ReferenceRates | null>(null);
@@ -142,18 +144,6 @@ export class RendaFixaComponent implements OnInit {
   }
 
   rfTipoLabel(tipo: string): string {
-    return (
-      {
-        cdb: 'CDB',
-        lci: 'LCI',
-        lca: 'LCA',
-        tesouro_selic: 'Tesouro Selic',
-        tesouro_ipca: 'Tesouro IPCA+',
-        tesouro_pre: 'Tesouro Pré',
-        lc: 'LC',
-        cri: 'CRI',
-        cra: 'CRA',
-      }[tipo] || tipo.toUpperCase()
-    );
+    return this.ui.fixedIncomeTypeLabel(tipo);
   }
 }
