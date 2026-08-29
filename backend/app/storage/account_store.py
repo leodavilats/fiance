@@ -1,11 +1,3 @@
-"""Portabilidade e eliminação — os dois direitos do titular, num lugar só.
-
-A lista de tabelas é explícita e não derivada por reflexão de propósito: uma
-tabela nova com `user_id` tem que aparecer aqui, e o teste
-`test_account_covers_every_user_table` falha enquanto não aparecer. Esquecer de
-apagar é o modo de falha que ninguém percebe até ser tarde.
-"""
-
 from __future__ import annotations
 
 import time
@@ -38,11 +30,8 @@ from app.models.db_models import (
     WatchlistItemDb,
 )
 
-# Prazo declarado ao usuário na tela de exclusão. A remoção é síncrona; o prazo
-# existe para backup e réplica, que é onde o dado ainda pode estar.
 DELETION_SLA_DAYS = 30
 
-# Ordem importa: dependentes antes de `users`.
 USER_SCOPED_MODELS = (
     ("positions", PortfolioPosition),
     ("snapshots", PortfolioSnapshot),
@@ -64,24 +53,13 @@ USER_SCOPED_MODELS = (
     ("product_events", ProductEventDb),
     ("revoked_tokens", RevokedTokenDb),
     ("referral_code", ReferralCodeDb),
-    # As indicações **feitas** pela pessoa. As recebidas ficam de fora: a linha
-    # é do titular que indicou, e apagá-la junto com a conta indicada tiraria de
-    # outra pessoa um crédito que ela já ganhou.
     ("referrals_made", ReferralDb),
 )
 
-# Tabelas sem `user_id` — não pertencem a ninguém e por isso não entram nem na
-# exportação nem na exclusão.
-# `instruments` é catálogo, não conta: o código da B3 não pertence a ninguém.
 GLOBAL_TABLES = frozenset({"users", "job_locks", "cache_entries", "alembic_version", "instruments"})
 
-# `session_cuts` guarda exatamente uma linha por titular e é o que mantém as
-# sessões mortas depois da exclusão. Apagá-la junto reabriria a porta que a
-# exclusão acabou de fechar, então ela fica — e não tem dado pessoal nenhum.
 DELETION_EXCLUDED = frozenset({"session_cuts"})
 
-# O que existe por operação e não por titular: a denylist de sessão é apagada
-# junto, mas exportá-la não diria nada ao usuário.
 EXPORT_EXCLUDED = frozenset({"revoked_tokens", "usage_counters"})
 
 
@@ -90,11 +68,6 @@ def _row_to_dict(row, model) -> dict:
 
 
 def export_account(user_id: str) -> dict:
-    """Tudo que é do usuário, em JSON, sem gate de plano.
-
-    Portabilidade é direito do titular e exigência de loja: nunca atrás de
-    assinatura, nunca parcial.
-    """
     with db_session() as session:
         user = session.get(User, user_id)
         payload: dict = {
@@ -114,14 +87,6 @@ def export_account(user_id: str) -> dict:
 
 
 def delete_account(user_id: str, now: float | None = None) -> dict:
-    """Apaga tudo que é do titular e deixa a linha de `users` como lápide.
-
-    Apagar a linha inteira ressuscitaria a conta: `_ensure_user` recria o
-    titular na primeira escrita, e sem lápide não haveria como distinguir uma
-    conta excluída de uma nunca criada. Então o dado pessoal some — e-mail, nome,
-    foto — e sobra o identificador pseudônimo do Google com a data da exclusão.
-    O corte de sessão vive em `session_cuts` e não é tocado aqui.
-    """
     moment = now if now is not None else time.time()
     removed: dict[str, int] = {}
     with db_session() as session:
@@ -131,12 +96,6 @@ def delete_account(user_id: str, now: float | None = None) -> dict:
 
         user = session.get(User, user_id)
         if user is not None:
-            # `users.email` é único, então a lápide **não pode** ser uma
-            # constante: zerar o campo funciona na primeira exclusão do sistema
-            # e estoura em todas as seguintes, com 500 numa rota que é
-            # obrigação legal. O endereço é derivado do id, que a lápide já
-            # guarda de propósito, e usa um domínio reservado pela RFC 2606
-            # para nunca coincidir com um e-mail real.
             user.email = f"apagado+{user_id}@invalid"
             user.name = ""
             user.picture = ""
@@ -154,7 +113,6 @@ def user_scoped_table_names() -> set[str]:
 
 
 def tables_with_user_column() -> set[str]:
-    """Tabelas do schema real que têm coluna de titular — a fonte do teste."""
     inspector = inspect(engine)
     out = set()
     for table in inspector.get_table_names():

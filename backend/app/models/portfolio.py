@@ -73,8 +73,6 @@ class StoredPortfolioItem(BaseModel):
 
 
 class SavePortfolioRequest(BaseModel):
-    """Importação explícita: substitui a carteira inteira."""
-
     items: list[PortfolioItem] = Field(..., min_length=1, max_length=MAX_PORTFOLIO_ITEMS)
 
 
@@ -119,8 +117,6 @@ class ClosedTrade(BaseModel):
 
 
 class TaxLossCategoryBalance(BaseModel):
-    """Saldo de prejuízo realizado por categoria, disponível para compensar."""
-
     category: str
     realized_loss: float
     offset_used: float
@@ -130,8 +126,6 @@ class TaxLossCategoryBalance(BaseModel):
 class ClosedTradesResponse(BaseModel):
     trades: list[ClosedTrade]
 
-    #: Totais sobre a tabela inteira, **não** sobre a página. Um total que
-    #: encolhe conforme o usuário rola é pior que uma lista longa.
     total_realized_pnl: float
     total_ir_paid: float
     tax_loss_balances: list[TaxLossCategoryBalance] = Field(default_factory=list)

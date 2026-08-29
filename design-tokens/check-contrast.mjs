@@ -71,8 +71,6 @@ function check(theme, colors) {
 
   for (const [role, value] of Object.entries(colors)) {
     if (role.startsWith('$') || GROUNDS.includes(role)) continue;
-    // `*-quiet` é fundo de destaque, não primeiro plano: ele é verificado do
-    // outro lado, como superfície de `ink-1`.
     if (role.endsWith('-quiet') || role === 'ink-on-brand') continue;
     if (role.startsWith('hairline')) continue;
 
@@ -93,7 +91,6 @@ function check(theme, colors) {
     }
   }
 
-  // Texto sobre superfície de marca, dos dois lados.
   const sobreMarca = contrast(colors['ink-on-brand'], colors.brand);
   if (sobreMarca + 1e-9 < AA_TEXT) {
     failures.push({

@@ -1,25 +1,3 @@
-"""Faixa de plausibilidade por campo do dado externo.
-
-A validação de hoje é por **tipo** (`_safe_float`), não por **magnitude**: um
-ROE de 12.000% ou um preço de R$ 0,0001 passam, entram no cálculo e viram
-patrimônio. Dado errado em produto pago é a reclamação número 1 dos
-concorrentes brasileiros — e o modo de falha aqui é o pior possível, porque o
-número absurdo não gera erro, gera um veredito.
-
-Duas severidades, e a diferença é deliberada:
-
-* **Campo implausível vira `None`.** O produto já sabe conviver com indicador
-  ausente — a régua de score baixa a confiança e a tela diz que falta dado.
-  Continuar com o número errado é que não tem defesa.
-* **Preço implausível rejeita o snapshot inteiro.** Sem preço não há posição,
-  patrimônio nem veredito; aceitar o resto seria montar uma tela inteira sobre
-  o campo que falhou.
-
-Os limites são largos de propósito. O alvo é o absurdo — erro de unidade, campo
-trocado, valor sentinela —, não o extremo legítimo: a B3 tem empresa com ROE de
-80% e ação de R$ 0,90, e rejeitá-las seria trocar um erro por outro.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -30,22 +8,15 @@ logger = logging.getLogger("fiance.plausibility")
 
 @dataclass(frozen=True)
 class Range:
-    """Faixa aceita de um campo, com o motivo do limite."""
-
     low: float
     high: float
     reason: str
-    #: Quando verdadeiro, valor fora da faixa invalida o snapshot inteiro em vez
-    #: de apenas zerar o campo.
     critical: bool = False
 
     def accepts(self, value: float) -> bool:
         return self.low <= value <= self.high
 
 
-#: Faixa por campo do `AssetSnapshot`. Campo ausente daqui não é verificado —
-#: a lista é explícita para que adicionar um campo seja uma decisão, e não um
-#: esquecimento silencioso.
 RANGES: dict[str, Range] = {
     "price": Range(
         0.01,
@@ -70,8 +41,6 @@ RANGES: dict[str, Range] = {
     ),
     "eps": Range(-100_000.0, 100_000.0, "Lucro por ação em ordem de grandeza plausível."),
     "book_value": Range(-100_000.0, 1_000_000.0, "Valor patrimonial por ação em ordem plausível."),
-    # Os quatro abaixo chegam em **percentual** (ver `_ratio_to_pct`). Um valor
-    # de 2.039 aqui é o sinal clássico de dupla conversão.
     "roe": Range(-1_000.0, 1_000.0, "ROE em percentual; acima de 1.000% é erro de unidade."),
     "dividend_yield": Range(
         0.0,
@@ -94,8 +63,6 @@ RANGES: dict[str, Range] = {
 
 @dataclass
 class Verdict:
-    """O que sobrou do snapshot, e o que foi descartado."""
-
     accepted: bool
     dropped: dict[str, float]
     reason: str = ""
@@ -105,7 +72,6 @@ class Verdict:
 
 
 def check_field(name: str, value: float | None) -> bool:
-    """`True` quando o campo é aceitável — ou quando não há faixa declarada."""
     if value is None:
         return True
     faixa = RANGES.get(name)
@@ -113,11 +79,6 @@ def check_field(name: str, value: float | None) -> bool:
 
 
 def screen(values: dict[str, float | None], symbol: str = "") -> tuple[dict, Verdict]:
-    """Filtra os campos implausíveis e diz se o snapshot ainda serve.
-
-    Devolve uma cópia dos valores: o dicionário de entrada não é mutado, porque
-    quem chama costuma querer registrar o original ao lado do que sobrou.
-    """
     clean = dict(values)
     dropped: dict[str, float] = {}
 
@@ -156,7 +117,6 @@ def screen(values: dict[str, float | None], symbol: str = "") -> tuple[dict, Ver
 
 
 def describe_ranges() -> list[dict]:
-    """As faixas publicadas — o `/data-quality` mostra o que está sendo cobrado."""
     return [
         {
             "field": name,

@@ -210,9 +210,6 @@ export class GlobalSearchService {
           this.searching.set(false);
         },
         error: () => {
-          // Busca é atalho: sem rede, os destinos do cliente continuam
-          // funcionando, e é melhor perder metade do resultado do que a caixa
-          // inteira.
           this.tickers.set([]);
           this.mine.set([]);
           this.searching.set(false);

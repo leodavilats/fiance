@@ -1,11 +1,3 @@
-"""Rotas de indicação.
-
-A atribuição não tem rota própria de "aplicar código depois": ela acontece no
-login, e só enquanto a conta ainda não tem carteira. Uma rota livre para
-atribuir a qualquer momento seria a porta de entrada para reivindicar usuários
-que já estavam no produto.
-"""
-
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -35,17 +27,11 @@ class RotateResponse(BaseModel):
 
 @router.get("/referral", response_model=ReferralStatus)
 async def get_referral(user_id: str = Depends(get_current_user)) -> ReferralStatus:
-    """O código e o que ele já rendeu.
-
-    Sem a lista de quem foi indicado: quem clicou no link de alguém não
-    escolheu aparecer numa tela dessa pessoa, e a contagem basta.
-    """
     return ReferralStatus(**referral_service.status(user_id))
 
 
 @router.post("/referral/rotate", response_model=RotateResponse)
 async def rotate_referral(user_id: str = Depends(get_current_user)) -> RotateResponse:
-    """Queima o código atual. As indicações já atribuídas continuam valendo."""
     try:
         return RotateResponse(code=referral_service.rotate_code(user_id))
     except referral_service.ReferralError as erro:

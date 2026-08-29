@@ -1,11 +1,3 @@
-"""O diagnóstico de queda precisa dizer *por que* caiu, não só *quanto*.
-
-Uma queda com fundamento preservado e uma queda com fundamento deteriorado são
-decisões opostas, e a lista achatada de `reasons` não permitia distingui-las no
-cliente. Estes testes travam o agrupamento e garantem que ele continua sendo a
-mesma informação — nenhum motivo criado, nenhum perdido.
-"""
-
 from __future__ import annotations
 
 from app.analysis.dip_analysis import compute_dip_analysis
@@ -43,7 +35,6 @@ def test_reason_groups_cover_every_dimension():
 
 
 def test_reason_groups_are_the_same_reasons_not_new_ones():
-    """Agrupar é apresentação: nenhum texto novo, nenhum texto perdido."""
     result = _analyze()
 
     flattened = [r for group in result.reason_groups.values() for r in group]
@@ -57,7 +48,6 @@ def test_reason_groups_are_the_same_reasons_not_new_ones():
 
 
 def test_quality_dimension_separates_fundamento_de_preco():
-    """A queda aritmética vive em `technical`; a deterioração, em `quality`."""
     deteriorated = _analyze(roe=3.0, profit_margin=1.0, debt_to_equity=2.5)
 
     quality = " ".join(deteriorated.reason_groups["quality"])
@@ -70,7 +60,6 @@ def test_quality_dimension_separates_fundamento_de_preco():
 
 
 def test_missing_inputs_land_as_indisponivel_not_as_bad_score():
-    """Dado ausente é estado, não nota ruim (§11)."""
     blind = _analyze(roe=None, profit_margin=None, debt_to_equity=None)
 
     quality = blind.reason_groups["quality"]

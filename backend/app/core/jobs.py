@@ -23,7 +23,6 @@ async def _run_guarded(
     body: Callable[[], Awaitable[None]],
     initial_delay_seconds: float = 0.0,
 ) -> None:
-    """Roda `body` em intervalos, com lock cooperativo entre workers."""
     if initial_delay_seconds:
         await asyncio.sleep(initial_delay_seconds)
 
@@ -41,9 +40,6 @@ async def _run_guarded(
             raise
         except Exception:
             logger.warning("Falha no job %s", name, exc_info=True)
-        # O lock do job periódico NÃO é liberado no fim do ciclo de propósito: o
-        # TTL é o próprio intervalo. Liberar deixaria o worker seguinte rodar o
-        # mesmo ciclo segundos depois — que é exatamente o que o lock evita.
 
         if not interval_seconds:
             return
@@ -65,14 +61,6 @@ async def _snapshot_body() -> None:
 
 
 async def _market_scan_body() -> None:
-    """Recalcula o scan do universo antes de o cache vencer.
-
-    É o que troca custo marginal por custo fixo. Sem o job, a primeira
-    requisição depois do TTL paga a varredura inteira — então o custo do
-    scanner cresce com o número de usuários e com o horário em que eles abrem o
-    app. Com ele, a varredura acontece N vezes por dia, sempre a mesma
-    quantidade, e nenhuma requisição de usuário espera por ela.
-    """
     from app.services import OpportunityService
 
     await OpportunityService()._refresh_market()
@@ -101,11 +89,6 @@ WARM_UP_LOCK_TTL = 10 * 60
 
 
 async def warm_up_market_scan() -> None:
-    """Aquece o cache de oportunidades — uma vez por frota, não uma por worker.
-
-    Sem lock, subir três réplicas disparava três varreduras do universo inteiro
-    ao mesmo tempo, que é o pico de consumo de cota mais caro que o produto tem.
-    """
     from app.services import OpportunityService
 
     acquired = await asyncio.to_thread(
@@ -131,8 +114,6 @@ NOTIFICATION_INTERVAL = 15 * 60
 SNAPSHOT_INTERVAL = 6 * 3600
 MAINTENANCE_INTERVAL = 6 * 3600
 
-# Menor que o TTL do scan (20 min) de propósito: o job tem que chegar antes do
-# vencimento, senão sobra uma janela em que o usuário paga a varredura.
 MARKET_SCAN_INTERVAL = 15 * 60
 
 

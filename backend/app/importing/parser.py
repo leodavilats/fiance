@@ -1,15 +1,3 @@
-"""Leitura de operações em texto: CSV com cabeçalho ou lista colada.
-
-O parser é deliberadamente tolerante com **forma** e intolerante com
-**ambiguidade**. Aceita vírgula ou ponto como decimal, `;` ou `,` como separador,
-data em três formatos e cabeçalho em português ou inglês — porque o usuário cola
-o que a corretora dele exporta. Mas recusa qualquer linha em que o número possa
-significar duas coisas, com o número da linha e o que corrigir.
-
-O motivo é assimétrico: adivinhar errado a forma custa uma mensagem de erro;
-adivinhar errado o valor custa o preço médio, que é o IR.
-"""
-
 from __future__ import annotations
 
 import csv
@@ -22,8 +10,6 @@ from app.ledger import LedgerEntry, LedgerError, TransactionKind
 
 MAX_ROWS = 2000
 
-# Sinônimos de cabeçalho. A chave é o campo interno; os valores são o que as
-# corretoras e planilhas brasileiras costumam escrever.
 _HEADER_ALIASES: dict[str, set[str]] = {
     "symbol": {"ticker", "ativo", "codigo", "código", "papel", "symbol", "ação", "acao"},
     "kind": {"tipo", "operacao", "operação", "movimento", "kind", "type", "c/v"},
@@ -52,7 +38,6 @@ _HEADER_ALIASES: dict[str, set[str]] = {
     "note": {"observacao", "observação", "nota", "note", "obs"},
 }
 
-# Como cada corretora escreve compra e venda.
 _KIND_ALIASES: dict[str, TransactionKind] = {
     "c": TransactionKind.BUY,
     "compra": TransactionKind.BUY,
@@ -84,8 +69,6 @@ _TICKER = re.compile(r"^[A-Z]{4}[0-9]{1,2}$")
 
 @dataclass(frozen=True)
 class ImportIssue:
-    """Um problema com endereço: a linha, o campo e o que fazer."""
-
     line: int
     message: str
     field: str | None = None
@@ -97,12 +80,8 @@ class ImportIssue:
 
 @dataclass
 class ImportRow:
-    """Uma linha lida com sucesso, ainda não gravada."""
-
     line: int
     entry: LedgerEntry
-    #: Preenchido quando um lançamento igual já existe no razão. A decisão de
-    #: importar ou não é do usuário, então isto é informação e não recusa.
     duplicate_of: int | None = None
 
     def as_dict(self) -> dict:
@@ -142,11 +121,6 @@ class ParsedImport:
         }
 
 
-# --------------------------------------------------------------------------
-# Conversões de campo
-# --------------------------------------------------------------------------
-
-
 def _normalize_header(value: str) -> str | None:
     cleaned = value.strip().lower().strip('"').strip("'")
     for field_name, aliases in _HEADER_ALIASES.items():
@@ -156,13 +130,6 @@ def _normalize_header(value: str) -> str | None:
 
 
 def parse_decimal(raw: str, line: int, field_name: str) -> float:
-    """Número com vírgula ou ponto decimal, sem adivinhar o ambíguo.
-
-    `1.234,56` é inequívoco (ponto de milhar, vírgula decimal) e `1234.56`
-    também. `1.234` não é: pode ser mil duzentos e trinta e quatro ou um inteiro
-    com três casas. Aqui ele é recusado com a instrução de escrever qual dos
-    dois — porque um fator de mil no preço médio é um extrato fiscal errado.
-    """
     text = raw.strip().replace("R$", "").replace(" ", "").replace("\xa0", "")
     if not text:
         raise ValueError("valor vazio")
@@ -174,7 +141,6 @@ def parse_decimal(raw: str, line: int, field_name: str) -> float:
     has_dot = "." in text
 
     if has_comma and has_dot:
-        # O separador decimal é o último a aparecer.
         if text.rfind(",") > text.rfind("."):
             text = text.replace(".", "").replace(",", ".")
         else:
@@ -198,13 +164,6 @@ def parse_decimal(raw: str, line: int, field_name: str) -> float:
 
 
 def parse_day(raw: str, line: int) -> str:
-    """Data em `DD/MM/AAAA`, `AAAA-MM-DD` ou `DD-MM-AAAA`, sempre dia brasileiro.
-
-    Valida o **calendário**, não só o formato. `40/13/2024` casa com qualquer
-    regex razoável e produziria `2024-13-40`, que ordena depois de tudo e joga a
-    operação para o fim do razão — mudando o preço médio de todas as que
-    vieram depois dela de verdade.
-    """
     text = raw.strip()
     if not text:
         raise ValueError("data vazia")
@@ -248,13 +207,7 @@ def parse_symbol(raw: str) -> str:
     return text
 
 
-# --------------------------------------------------------------------------
-# Formatos
-# --------------------------------------------------------------------------
-
-
 def _detect_delimiter(sample: str) -> str:
-    """`;` é o padrão do Excel em português; `,` o do resto do mundo."""
     primeira = sample.splitlines()[0] if sample.splitlines() else ""
     if primeira.count(";") > primeira.count(","):
         return ";"
@@ -282,8 +235,6 @@ def _row_to_entry(values: dict[str, str], line: int) -> LedgerEntry:
 
     amount = 0.0
     if kind is TransactionKind.AMORTIZATION:
-        # Amortização não tem quantidade nem preço: tem valor devolvido, e ele
-        # costuma vir na coluna de preço ou de quantidade dependendo da fonte.
         amount = price or quantity
         quantity = 0.0
         price = 0.0
@@ -334,12 +285,6 @@ def _parse_csv(text: str, result: ParsedImport) -> None:
         _consume(values, index, delimiter.join(row), result)
 
 
-#: `PETR4 100 30,50` ou `compra PETR4 100 30,50 10/01/2024`.
-#:
-#: A vírgula **não** separa token aqui: na lista colada ela é o separador
-#: decimal do português, e usá-la para partir a linha transformaria `30,50` em
-#: dois campos. Quando o espaço não produz campos suficientes, a vírgula é
-#: tentada como separador — nessa ordem, e não ao contrário.
 _LIST_TOKENS = re.compile(r"[\s;]+")
 _LIST_TOKENS_FALLBACK = re.compile(r"[\s,;]+")
 
@@ -400,11 +345,6 @@ def _consume(values: dict[str, str], line: int, raw: str, result: ParsedImport) 
 
 
 def parse_import(text: str, default_day: str, force_format: str | None = None) -> ParsedImport:
-    """Lê o texto colado ou o conteúdo do arquivo.
-
-    `default_day` é usado só na lista colada sem data — é a forma de aceitar
-    "PETR4 100 30,50" sem inventar uma data no passado.
-    """
     result = ParsedImport()
 
     content = text.strip()

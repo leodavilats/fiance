@@ -9,7 +9,6 @@ import '../../../core/providers.dart';
 import '../../../core/theme.dart';
 import 'hoje_patrimony.dart';
 
-
 class FiEvolutionChart extends StatefulWidget {
   const FiEvolutionChart({super.key, required this.snapshots});
 

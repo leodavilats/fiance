@@ -8,5 +8,4 @@ router = APIRouter()
 
 @router.get("/whats-new", response_model=WhatsNewResponse)
 async def whats_new() -> WhatsNewResponse:
-    """O que mudou desde a última visita, com uma ação por linha."""
     return await WhatsNewService().build()

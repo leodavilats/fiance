@@ -36,16 +36,9 @@ def _parse_date(value: str | None) -> date | None:
 
 
 class FixedIncomeService:
-    """Marcação a mercado da renda fixa, no backend."""
-
     def list_positions(
         self, limit: int | None = None, cursor: str | None = None
     ) -> FixedIncomeListResponse:
-        """Renda fixa marcada a mercado, com totais sobre o conjunto inteiro.
-
-        A marcação a mercado é por linha, então os totais precisam de todas as
-        posições. A paginação limita o payload, não a consulta.
-        """
         rates = get_rates()
         rows = portfolio_store.list_fixed_income()
         items = [self._mark_to_market(row, rates) for row in rows]
@@ -105,7 +98,6 @@ class FixedIncomeService:
 
     @staticmethod
     def _to_storage(fields: dict) -> dict:
-        """Serializa enums e datas para as colunas de texto do banco."""
         out: dict = {}
         for key, value in fields.items():
             if isinstance(value, date):
@@ -201,7 +193,6 @@ class FixedIncomeService:
         )
 
     def as_portfolio_positions(self) -> list[PortfolioPosition]:
-        """Renda fixa no mesmo formato das outras posições da carteira."""
         listing = self.list_positions()
         return [_to_portfolio_position(item) for item in listing.items if not item.oculto]
 

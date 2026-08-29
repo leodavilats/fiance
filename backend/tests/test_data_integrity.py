@@ -1,10 +1,3 @@
-"""Plausibilidade do dado externo e disjuntor da fonte.
-
-Dado errado em produto pago é a reclamação número 1 dos concorrentes
-brasileiros, e o modo de falha é o pior possível: o número absurdo não levanta
-exceção — vira um veredito.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -22,7 +15,6 @@ def _circuito_limpo():
 
 class TestPlausibilidade:
     def test_campo_implausivel_vira_ausente_e_nao_derruba_o_resto(self):
-        """O produto sabe conviver com indicador ausente; com número errado, não."""
         limpo, veredito = plausibility.screen(
             {"price": 30.0, "roe": 12_000.0, "pe_ratio": 8.0}, symbol="PETR4"
         )
@@ -34,7 +26,6 @@ class TestPlausibilidade:
         assert veredito.dropped == {"roe": 12_000.0}
 
     def test_preco_implausivel_rejeita_o_snapshot_inteiro(self):
-        """Sem preço não há posição, patrimônio nem veredito."""
         _, veredito = plausibility.screen({"price": 0.0001, "roe": 15.0}, symbol="XPTO3")
 
         assert veredito.accepted is False
@@ -42,8 +33,6 @@ class TestPlausibilidade:
         assert "não há veredito possível" in veredito.reason
 
     def test_o_extremo_legitimo_da_b3_continua_passando(self):
-        """Existe empresa com ROE de 80% e ação de R$ 0,90. Rejeitá-las seria
-        trocar um erro por outro."""
         limpo, veredito = plausibility.screen(
             {"price": 0.90, "roe": 80.0, "dividend_yield": 18.0, "pb_ratio": 0.3}
         )
@@ -53,7 +42,6 @@ class TestPlausibilidade:
         assert limpo["price"] == 0.90
 
     def test_dupla_conversao_de_unidade_e_barrada(self):
-        """`_ratio_to_pct` aplicado duas vezes dá 2.039 onde deveria dar 20,39."""
         limpo, _ = plausibility.screen({"price": 30.0, "roe": 2039.0})
 
         assert limpo["roe"] is None
@@ -98,7 +86,6 @@ class TestDisjuntor:
         assert circuit.status("brapi")["state"] == "aberto"
 
     def test_sucesso_no_meio_zera_a_contagem(self):
-        """Soluço de rede não pode abrir o disjuntor."""
         for _ in range(circuit.FAILURE_THRESHOLD - 1):
             circuit.record_failure("brapi", "timeout")
         circuit.record_success("brapi")
@@ -162,7 +149,6 @@ class TestDisjuntor:
 
 class TestSaudeDaFonte:
     def test_a_rota_de_saude_nao_varre_o_universo(self, client):
-        """Quando a fonte caiu, disparar o scan é o que menos se quer fazer."""
         headers = make_auth_headers("u_source_health")
 
         corpo = client.get("/api/data-quality/source", headers=headers).json()

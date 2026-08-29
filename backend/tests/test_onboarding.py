@@ -1,9 +1,3 @@
-"""Onboarding não bloqueante e carteira de demonstração.
-
-O critério é chegar ao primeiro diagnóstico em menos de três minutos. Isso só
-funciona se pular for barato e se pular levar a uma tela com conteúdo.
-"""
-
 from __future__ import annotations
 
 from app.api.demo import DEMO_POSITIONS
@@ -24,11 +18,6 @@ class TestEstadoDerivado:
         assert "primeira posição" in corpo["reason"]
 
     def test_o_passo_avanca_sozinho_quando_a_pessoa_faz_o_que_falta(self, client):
-        """O passo é derivado do que ela fez, não de um contador guardado.
-
-        Guardar o contador criaria uma segunda verdade: alguém importa a
-        carteira por outro caminho e o onboarding continua pedindo isso.
-        """
         headers = make_auth_headers("u_onb_avanca")
 
         client.post(
@@ -61,7 +50,6 @@ class TestEstadoDerivado:
         assert corpo["has_goals"] is True
 
     def test_importar_por_fora_tambem_avanca_o_onboarding(self, client):
-        """Prova de que o estado é derivado: o caminho não importa."""
         headers = make_auth_headers("u_onb_import")
 
         client.post(
@@ -78,7 +66,6 @@ class TestEstadoDerivado:
         assert client.get("/api/onboarding", headers=headers).json()["step"] == STEP_GOALS
 
     def test_o_estado_e_o_mesmo_em_outro_aparelho(self, client):
-        """Progresso em `localStorage` recomeçaria a cada login."""
         primeiro = make_auth_headers("u_onb_multi")
         client.post(
             "/api/portfolio/position",
@@ -104,7 +91,6 @@ class TestConclusao:
         assert corpo["onboarded_at"] is not None
 
     def test_pular_tambem_conclui(self, client):
-        """Insistir com quem disse não é o caminho curto para a desinstalação."""
         headers = make_auth_headers("u_onb_pula")
 
         corpo = client.post(
@@ -122,7 +108,6 @@ class TestConclusao:
         assert primeiro["onboarded_at"] == segundo["onboarded_at"]
 
     def test_o_evento_de_conclusao_e_gravado_pelo_servidor(self, client):
-        """A métrica de ativação não pode depender de qual app disparou."""
         headers = make_auth_headers("u_onb_evento")
 
         client.post("/api/onboarding/complete", json={}, headers=headers)
@@ -148,7 +133,6 @@ class TestConclusao:
 
 class TestCarteiraDeDemonstracao:
     def test_a_demonstracao_roda_a_analise_de_verdade(self, client):
-        """Cálculo simplificado mostraria uma tela que o produto não entrega."""
         headers = make_auth_headers("u_demo")
 
         corpo = client.get("/api/demo/portfolio", headers=headers).json()
@@ -159,7 +143,6 @@ class TestCarteiraDeDemonstracao:
         assert posicoes[0]["verdict"]
 
     def test_a_demonstracao_nao_grava_nada_na_conta(self, client):
-        """Semear exemplo na conta de alguém depois aparece na declaração."""
         headers = make_auth_headers("u_demo_limpo")
 
         client.get("/api/demo/portfolio", headers=headers)
@@ -175,11 +158,9 @@ class TestCarteiraDeDemonstracao:
         assert "recomendação" in corpo["disclaimer"].lower()
 
     def test_a_carteira_de_exemplo_e_grande_o_bastante_para_o_veredito(self):
-        """Menos de quatro ativos e a demonstração não mostraria a análise de risco."""
         assert len(DEMO_POSITIONS) >= READABLE_PORTFOLIO_SIZE
 
     def test_a_carteira_de_exemplo_e_diversificada(self):
-        """Cinco bancos ensinariam a coisa errada."""
         categorias = {p["category"] for p in DEMO_POSITIONS}
 
         assert len(categorias) >= 3

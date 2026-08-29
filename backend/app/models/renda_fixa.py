@@ -106,8 +106,6 @@ class FixedIncomeCreateRequest(FixedIncomeBase):
 
 
 class FixedIncomeUpdateRequest(BaseModel):
-    """Atualização parcial: só os campos enviados são gravados."""
-
     nome: str | None = Field(None, min_length=1, max_length=120)
     tipo: RendaFixaType | None = None
     valor_investido: float | None = Field(None, gt=0, le=1e11)
@@ -122,8 +120,6 @@ class FixedIncomeUpdateRequest(BaseModel):
 
 
 class FixedIncomePosition(FixedIncomeBase):
-    """Posição de renda fixa marcada a mercado pelo backend."""
-
     id: int
 
     valor_atual: float
@@ -157,7 +153,6 @@ class FixedIncomeListResponse(BaseModel):
     cdi_referencia: float
     fonte_taxas: str = "estimativa"
 
-    #: Os totais cobrem todas as posições; `items` é só a página.
     next_cursor: str | None = None
     has_more: bool = False
     total_count: int = 0

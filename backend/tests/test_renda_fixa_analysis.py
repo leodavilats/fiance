@@ -59,7 +59,6 @@ def test_explicit_isento_ir_overrides_tipo():
 
 
 def test_percentual_cdi_is_multiplicative_not_exponential():
-    """ "110% do CDI" é 1,10 × CDI, não (1+CDI)^1,10."""
     cdi = 14.4
     result = analyze_one(
         _asset(tipo_taxa=TaxType.pos_fixado, percentual_cdi=110.0, taxa=1.0, prazo_meses=12),
@@ -87,7 +86,6 @@ def test_double_cdi_does_not_explode_exponentially():
 
 
 def test_ipca_plus_composes_inflation_with_the_real_rate():
-    """IPCA+6% rendia 6%, sem inflação — `tesouro_ipca` só existia no enum."""
     result = analyze_one(
         _asset(tipo=RendaFixaType.tesouro_ipca, taxa=6.0, tipo_taxa=TaxType.pre_fixado),
         ipca_anual=5.0,
@@ -103,7 +101,6 @@ def test_hibrido_also_composes_inflation():
 
 
 def test_pct_of_cdi_is_not_inflated_by_a_hardcoded_benchmark():
-    """Uma LCI a 100% do CDI era exibida como ~117% do CDI."""
     cdi = 14.4
     lci = analyze_one(
         _asset(
@@ -121,14 +118,12 @@ def test_pct_of_cdi_is_not_inflated_by_a_hardcoded_benchmark():
 
 
 def test_twenty_four_month_term_lands_on_the_fifteen_percent_bracket():
-    """O web usava meses × 30 (720 d -> 17,5%) e o backend × 30,44 (730 d -> 15%)."""
     result = analyze_one(_asset(prazo_meses=24))
     assert result.ir.prazo_dias > 720
     assert result.ir.aliquota_pct == 15.0
 
 
 def test_mark_to_market_uses_the_elapsed_term():
-    """`prazo_meses_override` é o que permite marcar a posição a mercado."""
     cinco_meses = analyze_one(_asset(prazo_meses=24), prazo_meses_override=5)
     doze_meses = analyze_one(_asset(prazo_meses=24), prazo_meses_override=12)
 

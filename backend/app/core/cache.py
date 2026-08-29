@@ -1,15 +1,3 @@
-"""Cache de respostas externas.
-
-A serialização, o TTL e a contabilidade de acerto vivem aqui; **onde o dado
-mora** vive em `cache_backends`. A separação existe porque a resposta certa
-muda com o número de nós: com um, arquivo local é o certo — sem operação, sem
-dependência; com dois, cada nó guardaria a própria cópia e a mesma pessoa
-recarregando a página veria preços diferentes conforme o balanceador.
-
-Quem chama não sabe de nada disso, e é esse o ponto: trocar de backend é
-configurar `REDIS_URL`, não reescrever quem consulta.
-"""
-
 from __future__ import annotations
 
 import json
@@ -46,7 +34,6 @@ def backend() -> CacheBackend:
 
 
 def set_backend(novo: CacheBackend | None) -> None:
-    """Troca o backend. Usado na inicialização e nos testes."""
     global _backend
     _backend = novo
 
@@ -61,12 +48,9 @@ def _record_lookup(hit: bool) -> None:
 
 
 def reset_connection() -> None:
-    """Fecha a conexão desta thread (usado em testes e após trocar DB_PATH)."""
     atual = _backend
     if atual is not None and hasattr(atual, "reset_connection"):
         atual.reset_connection()
-    # O backend é reconstruído na próxima chamada: `DB_PATH` pode ter mudado, e
-    # o de disco guarda o caminho com que foi criado.
     set_backend(None)
 
 
@@ -92,12 +76,6 @@ def get(key: str) -> Any | None:
 
 
 def get_with_age(key: str) -> tuple[Any | None, float | None]:
-    """Valor e segundos desde o vencimento, **mesmo vencido**.
-
-    É o que sustenta a degradação do disjuntor: com a fonte fora do ar, mostrar
-    o preço de vinte minutos atrás **dizendo** que ele é de vinte minutos atrás
-    é melhor do que não mostrar nada.
-    """
     row = backend().get_raw(key)
     if not row:
         return None, None
@@ -128,16 +106,10 @@ def clear_all() -> int:
 
 
 def purge_expired() -> int:
-    """Remove entradas vencidas. Chamado pelo ciclo de manutenção."""
     return backend().purge_expired()
 
 
 def describe() -> dict:
-    """Onde o cache está morando agora.
-
-    Existe para a rota de diagnóstico: descobrir que os nós não compartilham
-    cache olhando gráfico de latência é caro, e a resposta é uma palavra.
-    """
     atual = backend()
     return {
         "backend": atual.name,
@@ -152,7 +124,6 @@ def describe() -> dict:
 
 
 def _sqlite_backend_for_tests() -> SqliteBackend:
-    """Backend de disco explícito, para o teste que inspeciona o arquivo."""
     novo = SqliteBackend()
     set_backend(novo)
     return novo

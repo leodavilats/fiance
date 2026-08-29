@@ -1,5 +1,3 @@
-"""Fase 5 — o que as alternativas gratuitas não respondem."""
-
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -12,7 +10,6 @@ ITEM = {"ticker": "PETR4", "quantity": 100, "avg_price": 30.0, "category": "auto
 
 
 def test_loss_is_available_to_offset_future_gains():
-    """`calculate_sell_cost` devolvia IR zero no prejuízo mas não guardava o saldo."""
     loss = calculate_sell_cost("fiis", quantity=100, sell_price=8.0, avg_price=10.0)
     assert loss.gross_profit == -200.0
     assert loss.ir_amount == 0.0
@@ -38,7 +35,6 @@ def test_offset_never_exceeds_the_gain():
 
 
 def test_exempt_month_preserves_the_loss_balance():
-    """Venda isenta não deve consumir o saldo de prejuízo."""
     cost = calculate_sell_cost("acoes_br", 100, 12.0, 10.0, accumulated_loss=500.0)
     assert cost.ir_amount == 0.0
     assert cost.loss_offset_used == 0.0
@@ -65,7 +61,6 @@ def test_tax_loss_balance_flows_through_the_api(client):
 
 
 def test_month_boundary_uses_brasilia_not_utc():
-    """Venda no último dia do mês depois das 21 h BRT caía no mês seguinte."""
     late_night = datetime(2026, 3, 31, 22, 30, tzinfo=BRT)
     assert month_key(late_night.timestamp()) == "2026-03"
 
@@ -291,7 +286,6 @@ def test_data_quality_requires_auth(client):
 
 
 def test_device_token_can_be_unregistered_on_logout(client):
-    """Depois do logout o aparelho seguia recebendo o resumo da conta anterior."""
     headers = make_auth_headers("push_user")
 
     client.post(
@@ -311,7 +305,6 @@ def test_device_token_can_be_unregistered_on_logout(client):
 
 
 def test_preferences_report_whether_push_can_work(client):
-    """Web configurava frequência de push sem nunca registrar token."""
     headers = make_auth_headers("push_status_user")
     prefs = client.get("/api/preferences", headers=headers).json()
 
@@ -320,7 +313,6 @@ def test_preferences_report_whether_push_can_work(client):
 
 
 def test_alert_check_marks_triggered_like_the_job(client):
-    """O /check do web não marcava como disparado; o job do backend marcava."""
     headers = make_auth_headers("alert_check_user")
 
     created = client.post(

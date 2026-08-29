@@ -24,8 +24,6 @@ class DividendReceivedCreate(DividendReceivedBase):
 
 
 class DividendReceivedUpdate(BaseModel):
-    """Atualização parcial: só os campos enviados são gravados."""
-
     ticker: str | None = Field(None, min_length=4, max_length=32, pattern=TICKER_PATTERN)
     paid_at: date | None = None
     amount: float | None = Field(None, gt=0, le=1e9)
@@ -63,7 +61,6 @@ class DividendsReceivedResponse(BaseModel):
     estimated_monthly: float | None = None
     estimate_accuracy_pct: float | None = None
 
-    #: Os totais acima cobrem o conjunto inteiro; `items` é só a página.
     next_cursor: str | None = None
     has_more: bool = False
     total_count: int = 0

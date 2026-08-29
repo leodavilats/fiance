@@ -10,7 +10,6 @@ def _clip(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
 
 
 def _score_quality(roe: float | None, margin: float | None) -> float | None:
-    """ROE e margem em **percentual** (20.0 = 20%)."""
     parts = []
     if roe is not None:
         parts.append(_clip(roe * 4))
@@ -28,7 +27,6 @@ def _score_dividend(dy: float | None) -> float | None:
 
 
 def _score_leverage(de: float | None) -> float | None:
-    """D/E em percentual (60.0 = dívida de 60% do patrimônio)."""
     if de is None:
         return None
     return _clip(100 - de / 2)
@@ -113,7 +111,6 @@ def score_opportunity(
     trend: str,
     profile: RiskProfile = RiskProfile.moderate,
 ) -> tuple[float, dict[str, float]]:
-    """Score composto 0-100 de oportunidade."""
     if asset_type in ("fii", "etf"):
         dimensions: dict[str, float | None] = {
             "mos": _score_mos(margin_of_safety),

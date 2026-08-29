@@ -23,17 +23,6 @@ class AssetService:
     async def analyze_asset(
         self, symbol: str, *, include_history: bool = True, personalized: bool = True
     ) -> AssetAnalysis:
-        """Análise completa de um ativo.
-
-        `personalized=False` é a análise **impessoal**: sem o yield desejado do
-        usuário, portanto sem tocar em preferência nenhuma. É o que a página
-        pública renderiza no servidor — ela não tem titular, e a mesma URL
-        precisa devolver o mesmo HTML para o robô de busca e para quem chega
-        pelo link.
-
-        `include_history` existe para `/compare`: N séries diárias de 2 anos numa
-        única resposta são payload puro, e a comparação não desenha gráfico.
-        """
 
         snap = await self.asset_repo.get_asset(symbol)
         if not snap:

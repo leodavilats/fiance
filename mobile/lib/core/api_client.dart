@@ -20,9 +20,6 @@ class ApiClient {
           handler.next(options);
         },
         onError: (error, handler) async {
-          // O acesso vale uma hora. Um 401 aqui quase sempre é token vencido,
-          // não sessão encerrada — renovar uma vez e repetir evita mandar o
-          // usuário para o login no meio de uma navegação.
           if (error.response?.statusCode != 401 || _isAuthRoute(error)) {
             return handler.next(error);
           }

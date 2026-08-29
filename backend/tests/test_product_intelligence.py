@@ -1,5 +1,3 @@
-"""Fase 4 — cálculo virando decisão: benchmark honesto, /whats-new, alertas com ação."""
-
 import pytest
 
 from app.services.benchmark_service import _twr_series
@@ -24,7 +22,6 @@ def _cdb(**overrides) -> dict:
 
 
 def test_pure_contribution_yields_zero_return():
-    """ "Estou ganhando do CDI!" — não, você só aportou."""
     snapshots = [
         {"total_invested": 10_000.0, "total_current": 10_000.0},
         {"total_invested": 20_000.0, "total_current": 20_000.0},
@@ -103,7 +100,6 @@ def test_whats_new_requires_auth(client):
 
 
 def test_whats_new_always_answers_with_an_action(client):
-    """A tela precisa responder algo — e cada linha tem um desfecho."""
     headers = make_auth_headers("whats_new_empty")
     body = client.get("/api/whats-new", headers=headers).json()
 
@@ -115,7 +111,6 @@ def test_whats_new_always_answers_with_an_action(client):
 
 
 def test_whats_new_falls_back_to_an_explicit_empty_line(client, monkeypatch):
-    """Sem nada a dizer, diz isso — em vez de devolver uma lista vazia."""
     from app.services.whats_new_service import WhatsNewService
 
     async def no_opportunities(self, positions):
@@ -219,7 +214,6 @@ def test_positions_carry_verdict_provenance(client):
 
 
 def test_score_reports_data_completeness(client):
-    """ "Sem dado" não pode pontuar igual a "ruim"."""
     headers = make_auth_headers("completeness_user")
     items = client.get(
         "/api/opportunities", headers=headers, params={"include_held": "true"}

@@ -47,8 +47,6 @@ class DecisionBlock(BaseModel):
 
 
 class PricePoint(BaseModel):
-    """Um fechamento diário. `date` em ISO (AAAA-MM-DD)."""
-
     date: str
     close: float
 

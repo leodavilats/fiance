@@ -5,8 +5,6 @@ from .portfolio import PortfolioPosition, PortfolioSnapshot
 
 
 class Alert(BaseModel):
-    """Alerta do dashboard, agrupado e com um desfecho."""
-
     severity: str
     kind: str
     title: str
@@ -58,8 +56,6 @@ class DashboardSummary(BaseModel):
 
 
 class DataFreshness(BaseModel):
-    """Frescor e origem do dado que alimentou a tela."""
-
     rates_source: str = "estimativa"
     market_data_age_seconds: float | None = None
     market_data_stale: bool = False

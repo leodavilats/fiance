@@ -193,8 +193,6 @@ class _OptionRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: FiSpace.s1),
-          // De onde o número veio, sempre colado nele: rendimento contratado e
-          // dividend yield medido não são a mesma espécie de número.
           Text(option.incomeBasis, style: FiType.caption.copyWith(color: ink2)),
           const SizedBox(height: FiSpace.s1),
           Text(
@@ -207,8 +205,6 @@ class _OptionRow extends StatelessWidget {
             style: FiType.caption.copyWith(color: ink3),
           ),
           if (option.hasUpside)
-            // A renda fixa não tem isso, e é a diferença que o percentual
-            // sozinho esconde.
             Text(
               'Pode valorizar além da renda — e pode desvalorizar.',
               style: FiType.caption.copyWith(color: ink3),

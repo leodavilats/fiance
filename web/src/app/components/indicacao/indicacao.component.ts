@@ -40,9 +40,6 @@ export class IndicacaoComponent implements OnInit {
       this.copiado.set(true);
       setTimeout(() => this.copiado.set(false), 2000);
     } catch {
-      // Copiar pode ser negado pelo navegador. O link continua visível e
-      // selecionável na tela, então não há nada a consertar aqui — só não
-      // mentir dizendo que copiou.
       this.copiado.set(false);
     }
   }

@@ -20,5 +20,4 @@ async def register_token(req: DeviceTokenRequest) -> None:
 
 @router.delete("/notifications/register-token", status_code=204)
 async def unregister_token(token: str = Query(..., min_length=8, max_length=512)) -> None:
-    """Desassocia o token deste aparelho do usuário atual."""
     portfolio_repo.unregister_device_token(token)

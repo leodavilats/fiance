@@ -36,8 +36,6 @@ _refresh_task: asyncio.Task | None = None
 
 @dataclass
 class _MarketRecord:
-    """Insumos de um ticker que não dependem de preferência do usuário."""
-
     ticker: str
     name: str | None
     asset_type: str
@@ -119,7 +117,6 @@ class OpportunityService:
         )
 
     def _build_opportunity(self, record: _MarketRecord, prefs: dict | None = None) -> Opportunity:
-        """Aplica preferências sobre dado de mercado já coletado. CPU pura."""
         prefs = prefs or {}
 
         fair = fair_price_from_inputs(
@@ -195,7 +192,6 @@ class OpportunityService:
         )
 
     async def _scan_market(self) -> tuple[list[_MarketRecord], int]:
-        """Dado de mercado do universo, com stale-while-revalidate."""
         cached, stale_by = cache.get_with_age(_SCAN_CACHE_KEY)
 
         if cached is not None and stale_by == 0:
@@ -209,7 +205,6 @@ class OpportunityService:
         return await self._refresh_market()
 
     async def _schedule_refresh(self) -> None:
-        """Garante no máximo um recálculo em background por vez."""
         global _refresh_task
 
         async with _refresh_lock:
@@ -263,12 +258,10 @@ class OpportunityService:
             return records, universe_size
 
     async def _scan_universe(self, prefs: dict) -> tuple[list[Opportunity], int]:
-        """Oportunidades já personalizadas para `prefs`."""
         records, universe_size = await self._scan_market()
         return [self._build_opportunity(r, prefs) for r in records], universe_size
 
     async def market_data_age_seconds(self) -> float | None:
-        """Idade do dado de mercado mais antigo do último scan."""
         records, _ = await self._scan_market()
         stamps = [r.as_of for r in records if r.as_of]
         if not stamps:
@@ -276,7 +269,6 @@ class OpportunityService:
         return max(0.0, time.time() - min(stamps))
 
     async def scan_for_current_user(self) -> tuple[list[Opportunity], int]:
-        """Scan personalizado, memoizado por request."""
 
         async def _build() -> tuple[list[Opportunity], int]:
             prefs = self.portfolio_repo.get_preferences()

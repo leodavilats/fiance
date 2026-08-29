@@ -131,8 +131,6 @@ class _AssetDetailContent extends ConsumerWidget {
           ],
           if (a.falsifiers.isNotEmpty) ...[
             const SizedBox(height: 16),
-            // Um veredito sem condição de queda é fé: explica como se chegou
-            // ali, mas não diz o que precisaria acontecer para deixar de valer.
             const Text(
               'O que faria a tese mudar',
               style: TextStyle(fontWeight: FontWeight.bold),

@@ -42,9 +42,6 @@
     </section>
 
     @if (r.pending > 0) {
-      <!-- A diferença entre as duas contagens é a informação útil, e é dita
-           sem nomes: quem clicou não escolheu aparecer numa tela de outra
-           pessoa. -->
       <p class="fi-body text-ink-2 m-0">
         {{ r.pending }}
         {{ r.pending === 1 ? 'pessoa entrou' : 'pessoas entraram' }} pelo seu link mas ainda não

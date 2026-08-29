@@ -204,18 +204,13 @@ export class AuthService {
     const res = await firstValueFrom(
       this.http.post<LoginResponse>(`${this.base}/auth/google`, {
         id_token: idToken,
-        // O servidor recusa em silêncio quando o código não vale ou a conta já
-        // tem carteira. Um código ruim nunca derruba o login.
         ...(indicacao ? { referral_code: indicacao } : {}),
       })
     );
     if (this.isBrowser) {
       try {
         sessionStorage.removeItem(REFERRAL_KEY);
-      } catch {
-        // Sem armazenamento a atribuição simplesmente não acontece — é um
-        // brinde, não parte do login.
-      }
+      } catch {}
     }
     this._storeTokens(res);
     if (this.isBrowser) localStorage.setItem(USER_KEY, JSON.stringify(res.user));
@@ -236,9 +231,7 @@ export class AuthService {
             all_devices: allDevices,
           })
         );
-      } catch {
-        // Servidor fora do ar não pode impedir a saída local.
-      }
+      } catch {}
     }
     this.clearSession();
   }

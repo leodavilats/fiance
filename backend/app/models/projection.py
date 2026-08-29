@@ -2,13 +2,6 @@ from pydantic import BaseModel, Field
 
 
 class PassiveIncomeMonth(BaseModel):
-    """Um mês da projeção consolidada — sempre com a faixa junto.
-
-    Os campos ``_low`` e ``_high`` são obrigatórios de propósito. Se tivessem
-    default, existiria um caminho em que o número sai sozinho, e é exatamente
-    esse caminho que empresta precisão de centavo a uma pilha de premissas.
-    """
-
     month: str = Field(..., description="Formato YYYY-MM")
 
     portfolio_value: float = Field(..., description="Valor da carteira no cenário base (R$)")
@@ -24,9 +17,6 @@ class PassiveIncomeMonth(BaseModel):
 
 
 class ScenarioMonth(BaseModel):
-    """Um mês dentro de um cenário. Carrega o código do cenário para não haver
-    número sem a premissa que o gerou."""
-
     scenario: str = Field(..., description="Código do cenário que produziu o número")
     month: str = Field(..., description="Formato YYYY-MM")
     portfolio_value: float = Field(..., description="Valor total da carteira (R$)")
@@ -47,13 +37,6 @@ class ScenarioSeries(BaseModel):
 
 
 class TargetEstimate(BaseModel):
-    """A data da meta como faixa.
-
-    ``latest_months`` nulo significa "não chega dentro do horizonte projetado" —
-    e essa é uma resposta útil, não uma falha. Omitir o cenário que não chega
-    faria a meta parecer garantida.
-    """
-
     monthly_income: float = Field(..., description="Meta de renda passiva mensal (R$)")
     earliest_months: int | None = Field(None, description="No cenário mais favorável")
     expected_months: int | None = Field(None, description="No cenário base")

@@ -1,10 +1,3 @@
-"""O interruptor de afirmação.
-
-Existe para que a resposta à questão regulatória (CVM 19 e 20) seja
-configuração, e não um refactor sob pressão. Estes testes cobrem a propriedade
-que dá valor a isso: rebaixar o modo tira a **instrução** e mantém a análise.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -48,12 +41,9 @@ PAYLOAD = {
 
 class TestPadrao:
     def test_o_padrao_e_analitico(self):
-        """Nem o mais tímido nem o mais comprometido: o do meio, por decisão."""
         assert current().level is Affirmation.ANALYTICAL
 
     def test_valor_invalido_cai_no_analitico_e_nao_estoura(self, nivel):
-        """Variável digitada errada não pode ligar o modo mais comprometido
-        nem derrubar o produto."""
         for valor in ("banana", None, 9, -1, 0):
             assert nivel(valor).level is Affirmation.ANALYTICAL
 
@@ -73,18 +63,12 @@ class TestNivelPrescritivo:
 
 class TestNivelAnalitico:
     def test_o_valor_por_ativo_sai(self, nivel):
-        """É o número que instrui: 'ponha tanto aqui'."""
         resultado = apply(PAYLOAD, nivel(2))
 
         assert resultado["allocations"][0]["amount"] is None
         assert resultado["allocated_cash"] is None
 
     def test_a_analise_que_sustentava_o_numero_fica(self, nivel):
-        """Rebaixar não pode esvaziar a tela.
-
-        Uma implementação que escondesse a análise inteira obrigaria a manter o
-        nível 3 ligado por razões de produto — o oposto de um interruptor útil.
-        """
         resultado = apply(PAYLOAD, nivel(2))
         alocacao = resultado["allocations"][0]
 
@@ -112,7 +96,6 @@ class TestNivelDescritivo:
         assert resultado["allocations"] == []
 
     def test_o_estado_da_carteira_continua(self, nivel):
-        """O nível 1 descreve a situação; descrever não é avaliar."""
         resultado = apply(PAYLOAD, nivel(1))
 
         assert resultado["portfolio_balance"]["acoes_br"]["current_pct"] == 40.0
@@ -123,17 +106,12 @@ class TestNivelDescritivo:
 
 class TestSuitability:
     def test_prescritivo_desliga_personalizacao_por_perfil(self, nivel):
-        """Instrução individualizada por perfil é o que a norma trata como
-        consultoria. Os dois juntos ficam bloqueados no código."""
         assert nivel(3, suitability=False).personalized is False
 
     def test_a_liberacao_e_explicita_e_separada(self, nivel):
-        """Quando houver parecer, ligar é uma segunda decisão — não um efeito
-        colateral de ligar o nível 3."""
         assert nivel(3, suitability=True).personalized is True
 
     def test_niveis_menores_nao_sao_afetados(self, nivel):
-        """Personalizar análise não é instruir; a restrição é do nível 3."""
         assert nivel(2).personalized is True
         assert nivel(1).personalized is True
 
@@ -157,7 +135,6 @@ class TestRespostaDaApi:
         assert "affirmation" in corpo
 
     def test_rebalanceamento_com_carteira_vazia_tambem_carrega(self, client):
-        """O caminho de saída antecipada é onde o aviso costuma sumir."""
         headers = make_auth_headers("u_afirm_vazio")
 
         corpo = client.get("/api/rebalance-suggestions", headers=headers).json()
@@ -165,7 +142,6 @@ class TestRespostaDaApi:
         assert "affirmation" in corpo
 
     def test_ligar_o_nivel_3_e_so_uma_variavel(self, client, nivel):
-        """A propriedade que justifica o interruptor: nenhuma linha de código."""
         headers = make_auth_headers("u_afirm_switch")
 
         nivel(3)
@@ -185,11 +161,6 @@ class TestRespostaDaApi:
 
 class TestEstruturalNaoTextual:
     def test_o_resumo_nao_e_reescrito(self, nivel):
-        """A diferença entre os modos é estrutural.
-
-        Reescrever verbo por verbo produz frase ruim e não muda o que importa:
-        o que caracteriza instrução é o valor por ativo, não o modo verbal.
-        """
         resultado = apply(PAYLOAD, nivel(2))
 
         assert resultado["summary"] == PAYLOAD["summary"]

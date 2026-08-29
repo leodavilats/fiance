@@ -1,5 +1,3 @@
-"""Stale-while-revalidate no scan do universo."""
-
 import asyncio
 
 import pytest

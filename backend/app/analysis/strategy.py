@@ -121,7 +121,6 @@ def _rank_category_opportunities(
     budget: float,
     category_opps: list[Opportunity],
 ) -> tuple[list[Opportunity], dict[str, str]]:
-    """Ordena as oportunidades candidatas de um gap por score (determinístico — sem dependência de IA externa)."""
     by_score = sorted(category_opps, key=lambda x: x.score, reverse=True)
     return by_score, {}
 
@@ -289,7 +288,6 @@ def _generate_reduce_suggestions(
     portfolio_evaluation: dict[str, Any] | None,
     allocation_gaps: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Aponta posições já na carteira com veredito de venda — carteira só cresce se o que já está nela ainda faz sentido, não só o que falta comprar."""
     if not portfolio_evaluation or not portfolio_evaluation.get("positions"):
         return []
 
@@ -374,7 +372,6 @@ def build_rebalance_suggestions(
     portfolio_evaluation: dict[str, Any] | None,
     excluded_tickers: set[str] | None = None,
 ) -> dict[str, Any]:
-    """Avalia cada ativo já investido e sugere uma ação (comprar mais / vender / realocar / manter), cruzando o gap de alocação por categoria com o score de oportunidade — mesma lógica do gap engine de `build_investment_strategy`, mas aplicada à carteira existente em vez de dinheiro novo."""
     excluded_tickers = excluded_tickers or set()
 
     total_capital = sum(item.quantity * item.avg_price for item in current_portfolio)

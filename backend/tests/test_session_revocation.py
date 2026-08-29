@@ -1,5 +1,3 @@
-"""Sessão: claims obrigatórias, revogação de servidor e rotação de refresh."""
-
 from __future__ import annotations
 
 import time
@@ -27,7 +25,6 @@ def _headers(token: str) -> dict:
 
 
 def test_token_sem_sub_devolve_401_e_nao_500(client):
-    """Antes disso o KeyError virava erro interno — e erro de auth é 401."""
     now = int(time.time())
     token = _sign({"iat": now, "exp": now + 600})
 
@@ -48,7 +45,6 @@ def test_token_sem_claim_obrigatoria_e_rejeitado(client, missing):
 
 
 def test_refresh_nao_serve_como_acesso(client):
-    """Trocar o tipo de token não pode virar escalada de sessão."""
     response = client.get("/api/auth/me", headers=_headers(issue_refresh_token("u_typ")))
 
     assert response.status_code == 401
@@ -89,7 +85,6 @@ def test_refresh_rotaciona_e_queima_o_refresh_usado(client):
 
 
 def test_logout_de_todos_os_dispositivos_corta_sessoes_antigas(client):
-    """O carimbo em `tokens_valid_from` mata token que a denylist nem conhece."""
     dispositivo_a = make_auth_headers("u_all")
     time.sleep(1.1)
     dispositivo_b = make_auth_headers("u_all")
@@ -106,7 +101,6 @@ def test_logout_de_todos_os_dispositivos_corta_sessoes_antigas(client):
 
 
 def test_token_legado_de_30_dias_continua_valendo(client):
-    """O emissor antigo não punha `typ` nem `jti`; derrubá-lo deslogaria a base."""
     now = int(time.time())
     legado = _sign({"sub": "u_legado", "iat": now, "exp": now + REFRESH_TTL_SECONDS})
 
@@ -116,6 +110,5 @@ def test_token_legado_de_30_dias_continua_valendo(client):
 
 
 def test_ttl_do_acesso_e_curto():
-    """TTL curto é o que dá efeito prático à revogação — uma hora, não um mês."""
     assert ACCESS_TTL_SECONDS <= 3600
     assert REFRESH_TTL_SECONDS >= 7 * 24 * 3600

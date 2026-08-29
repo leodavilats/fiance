@@ -1,5 +1,3 @@
-"""Apuração de IR: mês da operação, isenção e prejuízo compensável."""
-
 import time
 
 from app.core.brt import month_bounds, to_brt

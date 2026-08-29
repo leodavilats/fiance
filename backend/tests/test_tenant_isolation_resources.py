@@ -1,5 +1,3 @@
-"""Isolamento por recurso, verbo a verbo."""
-
 import pytest
 
 from tests.conftest import make_auth_headers

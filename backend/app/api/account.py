@@ -25,7 +25,6 @@ class DeletionNotConfirmed(DomainError):
 
 @router.get("/account/export")
 async def export_account(user_id: str = Depends(get_current_user)) -> Response:
-    """Baixa tudo que é do usuário. Sem gate: nos dois planos, sempre."""
     payload = account_store.export_account(user_id)
     stamp = now_brt().strftime("%Y-%m-%d")
     body = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
@@ -38,7 +37,6 @@ async def export_account(user_id: str = Depends(get_current_user)) -> Response:
 
 @router.get("/account/deletion-policy")
 async def deletion_policy() -> dict:
-    """O que a exclusão remove e em quanto tempo — dito antes de perguntar."""
     return {
         "sla_days": account_store.DELETION_SLA_DAYS,
         "removes": sorted(label for label, _ in account_store.USER_SCOPED_MODELS),
@@ -56,16 +54,12 @@ async def delete_account(
     body: ConfirmDeletion | None = None,
     user_id: str = Depends(get_current_user),
 ) -> dict:
-    """Exclui a conta. Exige confirmação escrita e encerra toda sessão viva."""
     body = body or ConfirmDeletion()
     if body.confirm.strip().upper() != "EXCLUIR":
         raise DeletionNotConfirmed(
             'Envie {"confirm": "EXCLUIR"} para confirmar a exclusão definitiva da conta.'
         )
 
-    # `delete_account` já carimba o corte de sessão na lápide; a chamada
-    # explícita cobre o caso de a linha de `users` não existir (conta criada
-    # implicitamente por escrita, sem login pelo Google).
     sessions.revoke_all_for_user(user_id)
     removed = account_store.delete_account(user_id)
 

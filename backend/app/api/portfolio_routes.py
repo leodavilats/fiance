@@ -30,13 +30,11 @@ async def get_portfolio() -> PortfolioStateResponse:
 
 @router.put("/portfolio", response_model=PortfolioStateResponse)
 async def save_portfolio(req: SavePortfolioRequest) -> PortfolioStateResponse:
-    """Importação explícita: substitui a carteira inteira (destrutivo)."""
     return portfolio_service.save_portfolio(req)
 
 
 @router.post("/portfolio/position", response_model=PortfolioStateResponse)
 async def upsert_position(item: PortfolioItem) -> PortfolioStateResponse:
-    """Cria/atualiza uma posição sem tocar nas outras."""
     return portfolio_service.upsert_position(item)
 
 
@@ -48,7 +46,6 @@ async def delete_position_by_item(ticker: str) -> PortfolioStateResponse:
 
 @router.delete("/portfolio/{ticker}")
 async def delete_position(ticker: str) -> dict:
-    """Compatibilidade: prefira DELETE /portfolio/position/{ticker}."""
     return portfolio_service.delete_position(ticker)
 
 

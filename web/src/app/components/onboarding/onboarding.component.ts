@@ -95,8 +95,6 @@ export class OnboardingComponent implements OnInit {
     this.api.getOnboarding().subscribe({
       next: estado => {
         this.estado.set(estado);
-        // Sem `passo` na URL, entra onde o servidor diz que a pessoa parou —
-        // e escreve isso na URL, para o refresh não mudar de lugar.
         if (!this.route.snapshot.queryParamMap.has('passo')) {
           void this.irPara(estado.step);
         }
@@ -137,7 +135,6 @@ export class OnboardingComponent implements OnInit {
     this.api.completeOnboarding(pulou).subscribe({
       next: () => void this.router.navigateByUrl('/hoje'),
       error: () => {
-        // Falha em carimbar não pode prender ninguém na tela de boas-vindas.
         this.finalizando.set(false);
         void this.router.navigateByUrl('/hoje');
       },

@@ -1,5 +1,3 @@
-"""Teto de abuso sobre a mesma primitiva que servirá ao teto de plano."""
-
 from __future__ import annotations
 
 import pytest
@@ -33,7 +31,6 @@ def test_contador_e_por_usuario():
 
 
 def test_janela_mensal_usa_mes_brasileiro():
-    """1º de setembro às 00h30 BRT é setembro, mesmo sendo 03h30 em UTC."""
     from datetime import datetime
 
     from app.core.brt import BRT

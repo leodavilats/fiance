@@ -1,11 +1,3 @@
-"""Custo fiscal de uma venda.
-
-A conta roda em `Decimal` e arredonda só na saída. É o número que o usuário
-digita na declaração: em float, `round()` usa arredondamento bancário — 2,5 vira
-2 — e o resíduo de centenas de operações desloca o imposto devido. Escala e
-convenção vivem em `app/core/money.py`.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -45,7 +37,6 @@ def calculate_sell_cost(
     gross_value_month_before: float = 0.0,
     accumulated_loss: float = 0.0,
 ) -> TransactionCost:
-    """Custo fiscal de uma venda."""
     gross_value = money(quantity) * money(sell_price)
     cost_basis = money(quantity) * money(avg_price)
     gross_profit = gross_value - cost_basis
@@ -131,9 +122,6 @@ def calculate_sell_cost(
             f"imposto sobre R$ {taxable_profit:,.2f}."
         )
 
-    # Arredonda uma vez, na borda. O líquido sai da diferença dos valores
-    # exatos e não da subtração dos já arredondados — senão o centavo do
-    # arredondamento aparece como divergência no extrato.
     return TransactionCost(
         asset_category=asset_category,
         gross_profit=to_float(quantize(gross_profit)),

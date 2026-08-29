@@ -1,10 +1,3 @@
-"""A projeção do livro-razão, contra valores calculados à mão.
-
-O módulo é puro de propósito: dá para conferir cinco anos de carteira sem banco,
-sem rede e sem usuário. É caro de escrever uma vez e é o que impede a regressão
-que ninguém vê — preço médio errado só aparece em março, na declaração.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -31,14 +24,12 @@ class TestPrecoMedio:
         assert posicao.total_cost == pytest.approx(7000.0)
 
     def test_corretagem_entra_no_custo_de_aquisicao(self):
-        """Ignorar a taxa infla o lucro tributável — é IR pago a mais."""
         posicao = project_position([entry("buy", "2024-01-10", quantity=100, price=30.0, fees=9.9)])
 
         assert posicao.total_cost == pytest.approx(3009.9)
         assert posicao.avg_price == pytest.approx(30.099)
 
     def test_venda_nao_altera_o_preco_medio(self):
-        """Convenção brasileira: vender reduz quantidade e custo, não a média."""
         posicao = project_position(
             [
                 entry("buy", "2024-01-10", quantity=100, price=30.0),
@@ -77,7 +68,6 @@ class TestPrecoMedio:
 
 class TestEventosCorporativos:
     def test_desdobramento_1_para_2_dobra_quantidade_sem_mudar_custo(self):
-        """O critério de aceite, literal: custo total intacto, média pela metade."""
         posicao = project_position(
             [
                 entry("buy", "2024-01-10", quantity=100, price=30.0),
@@ -102,7 +92,6 @@ class TestEventosCorporativos:
         assert posicao.avg_price == pytest.approx(12.0)
 
     def test_desdobramento_nao_ajustado_seria_ir_errado(self):
-        """Prova por contraste do porquê de o evento ser lançamento de razão."""
         com_ajuste = project_position(
             [
                 entry("buy", "2024-01-10", quantity=100, price=30.0),
@@ -111,8 +100,6 @@ class TestEventosCorporativos:
             ]
         )
 
-        # Sem o ajuste, a mesma venda pareceria prejuízo de 1000 em vez de
-        # lucro de 1000 — e o usuário declararia o número errado.
         assert com_ajuste.realized_pnl == pytest.approx(1000.0)
 
     def test_bonificacao_soma_quantidade_pelo_custo_declarado(self):
@@ -185,7 +172,6 @@ class TestEventosCorporativos:
 
 class TestOrdemEValidacao:
     def test_a_ordem_e_por_dia_e_desempatada_pelo_id(self):
-        """Vender antes de comprar no mesmo dia daria posição negativa."""
         compra = LedgerEntry(
             kind=TransactionKind.BUY,
             symbol="PETR4",
@@ -231,40 +217,17 @@ class TestOrdemEValidacao:
 
 
 class TestCarteiraSinteticaDeCincoAnos:
-    """Cinco anos de operações com o resultado conferido à mão.
-
-    Caro de escrever uma vez; é o que impede a regressão invisível.
-    """
-
     ENTRIES = [
-        # 2021 — montagem
         entry("buy", "2021-02-15", quantity=100, price=20.00, fees=10.00, id=1),
         entry("buy", "2021-08-20", quantity=200, price=25.00, fees=10.00, id=2),
-        # 2022 — desdobramento 1:2 e realização parcial
         entry("split", "2022-04-01", ratio_from=1, ratio_to=2, id=3),
         entry("sell", "2022-09-15", quantity=200, price=18.00, fees=10.00, id=4),
-        # 2023 — bonificação e novo aporte
         entry("bonus", "2023-03-10", quantity=40, price=9.00, id=5),
         entry("buy", "2023-11-05", quantity=100, price=22.00, fees=10.00, id=6),
-        # 2024 — grupamento 2:1
         entry("split", "2024-06-03", ratio_from=2, ratio_to=1, id=7),
-        # 2025 — realização final parcial
         entry("sell", "2025-10-20", quantity=100, price=45.00, fees=10.00, id=8),
     ]
 
-    # Conta feita à mão, passo a passo:
-    #  1. +100 @ 20 + 10        → qty 100, custo 2.010,00
-    #  2. +200 @ 25 + 10        → qty 300, custo 7.020,00   (média 23,40)
-    #  3. split 1:2             → qty 600, custo 7.020,00   (média 11,70)
-    #  4. -200 @ 18, taxa 10    → custo baixa 200 × 11,70 = 2.340,00
-    #                             qty 400, custo 4.680,00
-    #                             lucro 200 × 18 − 2.340 − 10 = 1.250,00
-    #  5. +40 bonificadas @ 9   → qty 440, custo 5.040,00   (média ≈ 11,4545)
-    #  6. +100 @ 22 + 10        → qty 540, custo 7.250,00   (média ≈ 13,4259)
-    #  7. grupamento 2:1        → qty 270, custo 7.250,00   (média ≈ 26,8518)
-    #  8. -100 @ 45, taxa 10    → custo baixa 100 × 26,851851… = 2.685,185…
-    #                             qty 170, custo 4.564,814…
-    #                             lucro += 100 × 45 − 2.685,185… − 10 = 1.804,814…
     EXPECTED_QUANTITY = 170.0
     EXPECTED_TOTAL_COST = 7250.0 - (7250.0 / 270.0) * 100.0
     EXPECTED_REALIZED = 1250.0 + (4500.0 - (7250.0 / 270.0) * 100.0 - 10.0)
@@ -285,7 +248,6 @@ class TestCarteiraSinteticaDeCincoAnos:
         assert project_position(self.ENTRIES).total_fees == pytest.approx(50.0)
 
     def test_a_ordem_de_entrada_nao_altera_o_resultado(self):
-        """Reordenar a lista não pode mudar o número: a ordem é do razão."""
         embaralhado = list(reversed(self.ENTRIES))
 
         assert project_position(embaralhado).total_cost == pytest.approx(
@@ -332,7 +294,6 @@ class TestCarteiraInteira:
         assert posicoes["VALE3"].quantity == 50
 
     def test_posicao_encerrada_continua_na_projecao_com_o_lucro(self):
-        """A apuração de IR consome exatamente isto."""
         posicoes = project_positions(
             [
                 LedgerEntry(

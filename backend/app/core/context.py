@@ -10,8 +10,6 @@ _current_user_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 
 
 class MissingUserContextError(DomainError):
-    """Operação de tenant sem usuário no contexto."""
-
     status_code = 401
 
 
@@ -25,7 +23,6 @@ def get_current_user_id() -> str:
 
 
 def get_current_user_id_or_none() -> str | None:
-    """Para jobs de background, que legitimamente rodam fora de uma requisição."""
     return _current_user_id.get()
 
 
@@ -68,7 +65,6 @@ def reset_request_memo(token: contextvars.Token) -> None:
 
 
 async def memoize_request(key: str, factory):
-    """Executa `factory()` uma vez por request, memoizando por `key`."""
     memo = _request_memo.get()
     if memo is None:
         return await factory()

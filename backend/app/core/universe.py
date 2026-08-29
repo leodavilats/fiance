@@ -79,7 +79,6 @@ def _memoized(key: str, build):
 
 
 def invalidate_universe_memo() -> None:
-    """Descarta os índices em processo (chamado ao limpar o cache)."""
     with _memo_lock:
         _memo.clear()
 
@@ -93,7 +92,6 @@ def get_sector_map() -> dict[str, str]:
 
 
 def _get_search_index() -> list[tuple[str, str, str]]:
-    """(ticker, nome, NOME_UPPER) de cada papel elegível, construído uma vez."""
 
     def _build() -> list[tuple[str, str, str]]:
         seen: set[str] = set()

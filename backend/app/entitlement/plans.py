@@ -1,21 +1,3 @@
-"""A régua de plano, como dado declarativo.
-
-A composição do Premium é a decisão mais provável de ser revista depois dos
-primeiros experimentos — e é a mais difícil de reverter depois de publicada. Por
-isso ela é uma **tabela**, não uma sequência de condicionais: mudar a régua tem
-que ser mudar um valor, não caçar `if premium` por vinte arquivos.
-
-A linha que separa os planos tem uma frase só: **o Free mostra o que aconteceu;
-o Premium diz o que fazer a respeito.** Toda dúvida de fronteira se resolve com
-ela, e a coluna `rationale` existe para que a decisão possa ser defendida depois
-— e reaberta com argumento, não com apetite.
-
-Cercas proibidas, que este módulo não sabe expressar de propósito: número de
-ativos na carteira, desfoque de dado do próprio usuário, exportação e exclusão
-de conta. Não são "ainda não implementadas": não têm representação aqui porque
-não devem existir.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -27,34 +9,27 @@ class Plan(StrEnum):
     PREMIUM = "premium"
 
 
-#: Ordem de precedência. Um plano dá acesso a tudo que os anteriores dão.
 PLAN_ORDER: tuple[Plan, ...] = (Plan.FREE, Plan.PREMIUM)
 
 
 class Feature(StrEnum):
-    """O que pode ser cercado. Nome estável: vira chave de evento e de gate."""
-
-    # Sempre livre — declarado para que o gate saiba dizer "isto nunca é pago".
     PORTFOLIO = "portfolio"
     PORTFOLIO_SUMMARY = "portfolio_summary"
     TODAY_STATUS = "today_status"
     DIVIDENDS_RECEIVED = "dividends_received"
     ACCOUNT_EXPORT = "account_export"
 
-    # Cercado por nível de intenção: N1/N2 dizem "como estou", N3 diz "o que faço".
     TODAY_NEXT_ACTION = "today_next_action"
     STRATEGY = "strategy"
     QUICK_INVEST = "quick_invest"
     RF_VS_STOCKS = "rf_vs_stocks"
     PROJECTION = "projection"
 
-    # Cercado por profundidade.
     PERFORMANCE_HISTORY = "performance_history"
     DIVIDENDS_PROJECTED = "dividends_projected"
     TAX_REPORT = "tax_report"
     LEDGER_IMPORT = "ledger_import"
 
-    # Cercado por quantidade.
     ASSET_PAGE = "asset_page"
     OPPORTUNITY_FILTERS = "opportunity_filters"
     DIP_DIAGNOSIS = "dip_diagnosis"
@@ -65,26 +40,16 @@ class Feature(StrEnum):
 
 @dataclass(frozen=True)
 class Rule:
-    """O que cada plano pode fazer com uma feature."""
-
     feature: Feature
-    #: Plano mínimo. `FREE` significa "livre para todo mundo".
     min_plan: Plan
-    #: Teto mensal no Free. `None` = sem teto. `0` = bloqueado.
     free_limit: int | None = None
-    #: Teto mensal no Premium. `None` = sem teto.
     premium_limit: int | None = None
-    #: Unidade do teto, para a mensagem do gate ficar legível.
     unit: str = "usos"
-    #: Por que a linha passa aqui. Existe para ser discutida, não decorada.
     rationale: str = ""
-    #: Recursos cujo teto reinicia todo mês; os demais são contagem absoluta
-    #: (três alertas são três alertas, não três por mês).
     monthly: bool = True
 
 
 RULES: dict[Feature, Rule] = {
-    # ---------------------------------------------------------------- livres
     Feature.PORTFOLIO: Rule(
         Feature.PORTFOLIO,
         Plan.FREE,
@@ -116,7 +81,6 @@ RULES: dict[Feature, Rule] = {
             "em nenhuma hipótese."
         ),
     ),
-    # ------------------------------------------------- cercados por intenção
     Feature.TODAY_NEXT_ACTION: Rule(
         Feature.TODAY_NEXT_ACTION,
         Plan.PREMIUM,
@@ -150,7 +114,6 @@ RULES: dict[Feature, Rule] = {
         free_limit=0,
         rationale="Projeção é julgamento sobre o futuro, não histórico.",
     ),
-    # ------------------------------------------------ cercados por profundidade
     Feature.PERFORMANCE_HISTORY: Rule(
         Feature.PERFORMANCE_HISTORY,
         Plan.FREE,
@@ -183,7 +146,6 @@ RULES: dict[Feature, Rule] = {
         free_limit=0,
         rationale="Ler os próprios lançamentos é direito; importar em massa é trabalho do produto.",
     ),
-    # -------------------------------------------------- cercados por quantidade
     Feature.ASSET_PAGE: Rule(
         Feature.ASSET_PAGE,
         Plan.FREE,
@@ -254,13 +216,11 @@ def limit_for(feature: Feature, plan: Plan) -> int | None:
 
 
 def allows(feature: Feature, plan: Plan) -> bool:
-    """`True` quando o plano alcança a feature, ignorando teto de uso."""
     rule = RULES[feature]
     return PLAN_ORDER.index(plan) >= PLAN_ORDER.index(rule.min_plan)
 
 
 def as_dicts() -> list[dict]:
-    """A régua publicada. A UI monta o texto do gate a partir disto."""
     return [
         {
             "feature": rule.feature.value,

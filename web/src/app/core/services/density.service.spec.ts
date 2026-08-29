@@ -35,8 +35,6 @@ describe('densidade', () => {
   });
 
   it('a preferência da conta chega ao documento', () => {
-    // O CSS já sabe reagir a [data-density]; o que faltava era escrever o
-    // atributo a partir de uma fonte que faça sentido.
     const { service } = setup({ density: 'compact' });
 
     service.ensureLoaded();
@@ -54,8 +52,6 @@ describe('densidade', () => {
   });
 
   it('backend fora do ar não deixa a tela sem densidade', () => {
-    // Densidade errada é uma tela mais larga do que a pessoa queria; derrubar
-    // a navegação por isso seria desproporcional.
     const { service } = setup({ falha: true });
 
     service.ensureLoaded();

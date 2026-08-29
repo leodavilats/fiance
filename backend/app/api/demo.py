@@ -1,20 +1,3 @@
-"""Carteira de demonstração para o estado vazio.
-
-Tela vazia com um convite não ensina nada: a pessoa não sabe o que o produto faz
-até ver o produto fazendo. A demonstração mostra a análise funcionando sobre uma
-carteira plausível, com a faixa "isto é exemplo" **inescapável** — em todo item,
-não só no topo, porque quem rola perde o aviso do topo.
-
-Duas regras que o desenho garante:
-
-* **Nunca é gravada.** A demonstração não toca a carteira do usuário nem cria
-  posição nenhuma; é resposta de leitura. Semear dado de exemplo na conta de
-  alguém é o tipo de coisa que depois aparece na declaração.
-* **Os ativos são declarados aqui**, e não sorteados do universo. Uma seleção
-  aleatória poderia montar uma carteira absurda — cinco bancos, ou tudo em
-  micro cap — e o veredito de risco sobre ela ensinaria a coisa errada.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -28,10 +11,6 @@ router = APIRouter()
 
 portfolio_service = PortfolioService()
 
-#: Carteira de exemplo: diversificada o bastante para o veredito de risco ser
-#: emitido (quatro ativos é o mínimo) e para a composição ter mais de uma cor.
-#: Os preços médios são redondos de propósito — número quebrado aqui sugere que
-#: veio de algum lugar real.
 DEMO_POSITIONS: list[dict] = [
     {"ticker": "PETR4", "quantity": 200, "avg_price": 32.00, "category": "acoes_br"},
     {"ticker": "ITUB4", "quantity": 300, "avg_price": 28.00, "category": "acoes_br"},
@@ -49,12 +28,6 @@ DISCLAIMER = (
 
 @router.get("/demo/portfolio")
 async def demo_portfolio() -> dict:
-    """A análise real rodando sobre uma carteira de exemplo.
-
-    Usa exatamente o mesmo caminho de avaliação da carteira de verdade: uma
-    demonstração que passasse por um cálculo simplificado mostraria uma tela que
-    o produto não entrega.
-    """
     request = PortfolioEvaluationRequest(
         items=[
             PortfolioItem(
@@ -78,7 +51,6 @@ async def demo_portfolio() -> dict:
 
 @router.get("/demo/assets")
 async def demo_assets() -> dict:
-    """Só a lista, para telas que não precisam da avaliação inteira."""
     await asyncio.sleep(0)
     return {
         "is_demo": True,

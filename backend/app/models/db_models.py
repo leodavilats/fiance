@@ -17,9 +17,6 @@ class User(Base):
     picture: Mapped[str] = mapped_column(String, default="")
     created_at: Mapped[float] = mapped_column(Float, default=time.time)
     onboarded_at: Mapped[float | None] = mapped_column(Float, nullable=True)
-    # Lápide da exclusão. A linha sobrevive anonimizada porque é ela que guarda
-    # o corte de sessão: apagá-la faria um token ainda vivo ressuscitar a conta
-    # na primeira escrita.
     deleted_at: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
@@ -86,9 +83,6 @@ class PreferencesDb(Base):
     notify_price_alerts: Mapped[bool] = mapped_column(default=True)
     opportunities_frequency: Mapped[str] = mapped_column(String, default="weekly")
     risk_profile: Mapped[str] = mapped_column(String, default="moderate")
-    #: Apetite por informação na tela, não acessibilidade de contraste.
-    #: Fica na conta e não no navegador porque acompanha a pessoa, não o
-    #: aparelho — quem lê tabela densa lê densa em qualquer tela.
     density: Mapped[str] = mapped_column(String, default="comfortable")
     preferred_categories: Mapped[str] = mapped_column(String, default="")
     preferred_sectors: Mapped[str] = mapped_column(String, default="")
@@ -150,8 +144,6 @@ class PriceAlertDb(Base):
 
 
 class FixedIncomePositionDb(Base):
-    """Renda fixa como entidade de primeira classe."""
-
     __tablename__ = "fixed_income_positions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -172,8 +164,6 @@ class FixedIncomePositionDb(Base):
 
 
 class JobLockDb(Base):
-    """Lock cooperativo para jobs de background."""
-
     __tablename__ = "job_locks"
 
     name: Mapped[str] = mapped_column(String, primary_key=True)
@@ -183,8 +173,6 @@ class JobLockDb(Base):
 
 
 class DividendReceivedDb(Base):
-    """Provento efetivamente creditado."""
-
     __tablename__ = "dividends_received"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -199,8 +187,6 @@ class DividendReceivedDb(Base):
 
 
 class FollowedSuggestionDb(Base):
-    """Sugestão que o usuário declarou ter seguido."""
-
     __tablename__ = "followed_suggestions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -218,12 +204,6 @@ class FollowedSuggestionDb(Base):
 
 
 class RevokedTokenDb(Base):
-    """Denylist de sessão por `jti`.
-
-    Guarda só o identificador do token, nunca o token. `expires_at` é o `exp`
-    do próprio token: passado ele, a entrada não tem mais função e é varrida.
-    """
-
     __tablename__ = "revoked_tokens"
 
     jti: Mapped[str] = mapped_column(String, primary_key=True)
@@ -233,13 +213,6 @@ class RevokedTokenDb(Base):
 
 
 class SessionCutDb(Base):
-    """Corte de revogação em bloco: token emitido antes disto não vale mais.
-
-    Tabela própria, e não coluna em `users`, porque o corte precisa existir para
-    quem ainda não tem linha de titular — conta criada implicitamente por escrita
-    — e precisa sobreviver à anonimização da conta.
-    """
-
     __tablename__ = "session_cuts"
 
     user_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -247,14 +220,6 @@ class SessionCutDb(Base):
 
 
 class UsageCounterDb(Base):
-    """Contador por usuário, recurso e janela.
-
-    Uma primitiva só para dois usos que sempre foram o mesmo problema: teto de
-    abuso (rate limiting por rota e minuto) e teto de plano (5 páginas de ativo
-    por mês). A granularidade mora em `window_key` — `2026-08-27T14:35` para o
-    minuto, `2026-08` para o mês calendário brasileiro.
-    """
-
     __tablename__ = "usage_counters"
 
     user_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -266,13 +231,6 @@ class UsageCounterDb(Base):
 
 
 class ProductEventDb(Base):
-    """Evento de produto — funil, ativação e retenção.
-
-    Nenhum valor monetário, ticker ou posição entra aqui: o dicionário de
-    eventos é fechado e as propriedades passam por uma lista de chaves
-    permitidas antes de gravar.
-    """
-
     __tablename__ = "product_events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -288,15 +246,6 @@ Index("ix_product_events_user_name", ProductEventDb.user_id, ProductEventDb.name
 
 
 class InstrumentDb(Base):
-    """Identidade interna do ativo, separada do ticker.
-
-    A B3 reaproveita código: um ticker aposentado pode voltar em outra empresa
-    anos depois. Somar os dois históricos daria preço médio de duas companhias
-    diferentes — e preço médio errado é IR errado. Por isso o símbolo tem
-    janela de validade e o lançamento aponta para o instrumento, não para o
-    texto do ticker.
-    """
-
     __tablename__ = "instruments"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -304,23 +253,17 @@ class InstrumentDb(Base):
     asset_type: Mapped[str] = mapped_column(String, default="br_stock")
     name: Mapped[str] = mapped_column(String, default="")
     isin: Mapped[str | None] = mapped_column(String, nullable=True)
-    #: Janela em que este símbolo pertenceu a este instrumento, em dia BRT.
-    #: `valid_to` nulo significa "é o dono atual do código".
     valid_from: Mapped[str] = mapped_column(String, default="1900-01-01")
     valid_to: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 
 class TransactionDb(Base):
-    """Um lançamento do livro-razão. É a fonte de verdade da carteira."""
-
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(String, index=True)
     instrument_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
-    #: Denormalizado para leitura e para o caso de o instrumento não ter sido
-    #: resolvido ainda. A identidade que vale é `instrument_id`.
     symbol: Mapped[str] = mapped_column(String, index=True)
     kind: Mapped[str] = mapped_column(String, index=True)
     quantity: Mapped[float] = mapped_column(Float, default=0.0)
@@ -329,8 +272,6 @@ class TransactionDb(Base):
     ratio_from: Mapped[float] = mapped_column(Float, default=1.0)
     ratio_to: Mapped[float] = mapped_column(Float, default=1.0)
     amount: Mapped[float] = mapped_column(Float, default=0.0)
-    #: Dia da operação no fuso brasileiro. É data, não instante: nota de
-    #: corretagem tem dia, não hora.
     traded_on: Mapped[str] = mapped_column(String, index=True)
     source: Mapped[str] = mapped_column(String, default="manual")
     note: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -342,12 +283,6 @@ Index("ix_transactions_user_traded_on", TransactionDb.user_id, TransactionDb.tra
 
 
 class AuditLogDb(Base):
-    """Registro append-only do que aconteceu na conta.
-
-    Responde ao usuário e ao auditor com a mesma frase. Não tem update nem
-    delete na camada de escrita — só a exclusão de conta o remove.
-    """
-
     __tablename__ = "audit_log"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -361,18 +296,6 @@ class AuditLogDb(Base):
 
 
 class SubscriptionDb(Base):
-    """A assinatura, com **preço e plano versionados**.
-
-    Preço travado de fundador é promessa pública, então tem que ser dado e não
-    convenção: `price_cents` guarda o que a pessoa contratou e `locked` diz que
-    um reajuste da tabela não a alcança. Sem isso, a única forma de cumprir a
-    promessa seria lembrar dela — e reajuste é exatamente o momento em que
-    ninguém lembra.
-
-    `provider` e `external_id` existem desde já porque o direito mora aqui e o
-    canal é detalhe: trocar de gateway não pode exigir migrar assinante.
-    """
-
     __tablename__ = "subscriptions"
 
     user_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -380,19 +303,13 @@ class SubscriptionDb(Base):
     plan_code: Mapped[str] = mapped_column(String, default="free")
     status: Mapped[str] = mapped_column(String, default="none", index=True)
 
-    #: O que a pessoa paga, em centavos. Nunca derivado da tabela vigente.
     price_cents: Mapped[int] = mapped_column(Integer, default=0)
     currency: Mapped[str] = mapped_column(String, default="BRL")
     interval: Mapped[str] = mapped_column(String, default="monthly")
 
-    #: Reajuste da tabela não alcança quem está travado.
     locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     granted_at: Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    #: Premium concedido sem pagamento — hoje, crédito de indicação. Fica
-    #: separado de `trial_ends_at` porque são coisas diferentes: o trial é
-    #: uma vez na vida e o crédito acumula. Misturá-los faria uma indicação
-    #: reabrir o trial de quem já o gastou.
     credited_until: Mapped[float | None] = mapped_column(Float, nullable=True)
     credited_days_total: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
@@ -409,13 +326,6 @@ class SubscriptionDb(Base):
 
 
 class ProcessedWebhookDb(Base):
-    """Eventos de gateway já processados, por id do provedor.
-
-    Webhook chega mais de uma vez por desenho — o provedor reenvia até receber
-    200. Conceder direito duas vezes é o modo de falha óbvio; a tabela é o que
-    torna o processamento idempotente sem depender de o gateway se comportar.
-    """
-
     __tablename__ = "processed_webhooks"
 
     provider: Mapped[str] = mapped_column(String, primary_key=True)
@@ -425,13 +335,6 @@ class ProcessedWebhookDb(Base):
 
 
 class ReferralCodeDb(Base):
-    """O código que a pessoa compartilha.
-
-    Tabela própria e não coluna em `users` porque o código é **rotacionável**:
-    quem publicou o link num grupo que virou spam precisa poder queimar o
-    antigo sem perder a conta.
-    """
-
     __tablename__ = "referral_codes"
 
     user_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -440,18 +343,6 @@ class ReferralCodeDb(Base):
 
 
 class ReferralDb(Base):
-    """Uma indicação atribuída, e o que ela rendeu.
-
-    `user_id` é quem **indicou** — é dele a recompensa, e é por isso que a
-    tabela pertence a ele na exportação. `referred_user_id` é único: uma pessoa
-    é atribuída no máximo uma vez na vida, senão a mesma conta renderia crédito
-    a cada amigo que reivindicasse.
-
-    `qualified_at` é o que separa esta tabela de uma máquina de imprimir
-    Premium. O crédito não sai no cadastro: sai quando a pessoa indicada salva
-    a primeira posição. Cadastro é grátis de fazer aos milhares; carteira, não.
-    """
-
     __tablename__ = "referrals"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)

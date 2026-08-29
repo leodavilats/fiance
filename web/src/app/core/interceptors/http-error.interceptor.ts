@@ -51,9 +51,6 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
             errorMessage = 'Sem conexão com o servidor. Verifique se o backend está rodando.';
             break;
           case 401:
-            // Chegar aqui significa que a renovação já foi tentada e falhou.
-            // `clearSession` e não `logout`: não há por que postar um logout
-            // com um token que o servidor acabou de recusar.
             errorMessage = 'Sessão expirada. Faça login novamente.';
             auth.clearSession();
             router.navigateByUrl('/login');

@@ -19,7 +19,6 @@ async def list_fixed_income(
     limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
     cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
 ) -> FixedIncomeListResponse:
-    """Posições de renda fixa marcadas a mercado pelo backend."""
     return service.list_positions(limit=limit, cursor=cursor)
 
 

@@ -1,10 +1,3 @@
-"""A régua aplicada nas rotas — e a prova de que ela some quando desligada.
-
-Um módulo de entitlement que ninguém chama é decoração. Estes testes são sobre
-a aplicação: quais rotas cobram, o que respondem quando bloqueiam, e a exceção
-que dá sentido ao teto da página de ativo.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -38,7 +31,6 @@ def regua_ligada(monkeypatch):
 class TestFlagDesligada:
     @pytest.mark.parametrize(("metodo", "url", "corpo"), ROTAS_PREMIUM)
     def test_nenhuma_rota_cobra_com_a_regua_desligada(self, client, metodo, url, corpo):
-        """É o estado de hoje: o gate existe no código e não na experiência."""
         headers = make_auth_headers("u_rota_off")
 
         resposta = _chamar(client, metodo, url, corpo, headers)
@@ -56,7 +48,6 @@ class TestRotasPremium:
         assert resposta.status_code == 402
 
     def test_o_corpo_do_402_diz_o_que_falta(self, client, regua_ligada):
-        """A UI monta o gate a partir da resposta, sem duplicar a régua."""
         headers = make_auth_headers("u_rota_corpo")
 
         corpo = client.get("/api/strategy", headers=headers).json()["detail"]
@@ -76,7 +67,6 @@ class TestRotasPremium:
         assert resposta.status_code != 402
 
     def test_importar_operacoes_e_premium(self, client, regua_ligada):
-        """Ler os próprios lançamentos é direito; importar em massa é produto."""
         headers = make_auth_headers("u_rota_import")
 
         bloqueado = client.post(
@@ -86,7 +76,6 @@ class TestRotasPremium:
         )
         assert bloqueado.status_code == 402
 
-        # Listar continua livre.
         assert client.get("/api/transactions", headers=headers).status_code == 200
 
 
@@ -104,8 +93,6 @@ class TestPaginaDeAtivo:
         assert bloqueado.json()["detail"]["limit_reached"] is True
 
     def test_ativo_da_propria_carteira_nunca_conta(self, client, regua_ligada):
-        """Sem esta exceção o teto puniria quem tem carteira grande — que é
-        exatamente quem paga."""
         headers = make_auth_headers("u_ativo_carteira")
         client.post(
             "/api/portfolio/position",
@@ -131,8 +118,6 @@ class TestPaginaDeAtivo:
         assert meter.used("u_ativo_fora", Feature.ASSET_PAGE) == 1
 
     def test_a_pagina_publica_nao_consome_cota(self, client, regua_ligada):
-        """A rota pública é o canal de aquisição: cobrar cota dela seria cercar
-        justamente quem ainda não tem conta."""
         make_auth_headers("u_ativo_publico")
 
         for _ in range(20):
@@ -153,7 +138,6 @@ class TestNadaProibidoFoiCercado:
         assert client.get("/api/portfolio", headers=headers).status_code == 200
 
     def test_exportacao_e_exclusao_nunca_ficam_atras_de_plano(self, client, regua_ligada):
-        """Direito do titular e exigência de loja, nos dois planos."""
         headers = make_auth_headers("u_livre_export")
 
         assert client.get("/api/account/export", headers=headers).status_code == 200
@@ -172,8 +156,6 @@ class TestNadaProibidoFoiCercado:
 
 class TestTelemetriaDaCerca:
     def test_bater_no_teto_deixa_registro(self, client, regua_ligada):
-        """Sem isto, a única informação sobre a cerca seria quantos pagaram —
-        e não quantos bateram nela e desistiram."""
         from app.storage import event_store
 
         headers = make_auth_headers("u_cerca_evento")

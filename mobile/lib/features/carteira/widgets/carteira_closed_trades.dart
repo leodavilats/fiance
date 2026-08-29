@@ -5,7 +5,6 @@ import '../../../core/format.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme.dart';
 
-
 class FiClosedTradesSection extends ConsumerStatefulWidget {
   const FiClosedTradesSection({super.key});
 

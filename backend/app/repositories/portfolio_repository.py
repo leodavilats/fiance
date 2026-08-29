@@ -1,5 +1,3 @@
-"""Fachada tipada sobre `storage.portfolio_store`."""
-
 from __future__ import annotations
 
 from app.storage import portfolio_store
@@ -126,7 +124,6 @@ class PortfolioRepository:
 
     @staticmethod
     def set_preferences(**fields) -> None:
-        """Repassa só os campos presentes — ver portfolio_store.set_preferences."""
         portfolio_store.set_preferences(**fields)
 
     @staticmethod

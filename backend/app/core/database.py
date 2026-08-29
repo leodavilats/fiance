@@ -43,7 +43,6 @@ def _alembic_config():
 
 
 def init_db() -> None:
-    """Deixa o banco no schema mais recente."""
     from alembic import command
 
     from app.models import db_models  # noqa: F401
@@ -58,11 +57,6 @@ def init_db() -> None:
         logger.info("Banco criado do zero e marcado na revisão mais recente.")
         return
 
-    # O ramo que carimbava bancos "pré-Alembic" saiu junto com o colapso do
-    # histórico: aquele estado não pode mais existir, e guarda de segurança para
-    # situação impossível é pior que nenhuma — ela sugere uma cobertura que não
-    # há. Banco com tabela e sem `alembic_version` agora falha alto no upgrade,
-    # que é o que se quer saber.
     command.upgrade(config, "head")
 
 
@@ -70,7 +64,6 @@ _initialized = False
 
 
 def ensure_initialized() -> None:
-    """Migra o banco uma vez por processo, sob demanda."""
     global _initialized
     if not _initialized:
         init_db()
@@ -79,12 +72,6 @@ def ensure_initialized() -> None:
 
 @contextmanager
 def db_session():
-    """Sessão de banco sem tenant, reaproveitando a da requisição quando existe.
-
-    Fora de uma requisição (jobs, scripts) abre e fecha a própria sessão. Dentro,
-    devolve a mesma sessão que o middleware já vai commitar — não abrir uma
-    segunda conexão por request é o ponto: a validação de token roda em todas.
-    """
     ensure_initialized()
 
     ambient = get_request_session()

@@ -28,8 +28,6 @@ class Preferences(BaseModel):
 
 
 class PreferencesRequest(BaseModel):
-    """Só os campos enviados são gravados (ver api/preferences.py)."""
-
     cash_available: float | None = Field(None, ge=0)
     passive_income_goal: float | None = Field(None, ge=0)
     desired_yield_stock: float | None = Field(None, gt=0, le=1)

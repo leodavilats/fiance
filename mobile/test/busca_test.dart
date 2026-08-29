@@ -5,8 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('dobramento de acento', () {
     test('"tesouro selic" acha "Tesouro Selic"', () {
-      // Em português isso não é refinamento: é o caso comum, e casar só o
-      // exato faria a busca parecer quebrada com os nomes mais frequentes.
       expect(dobrar('Tesouro Selic'), 'tesouro selic');
       expect(dobrar('AÇÃO'), 'acao');
       expect(dobrar('Projeção'), 'projecao');
@@ -19,14 +17,11 @@ void main() {
 
   group('destinos vivem no cliente', () {
     test('consulta vazia não devolve o catálogo inteiro', () {
-      // Uma caixa que despeja o produto ao ganhar foco ensina a pessoa a
-      // fechá-la.
       expect(destinosPara(''), isEmpty);
       expect(destinosPara('   '), isEmpty);
     });
 
     test('o vocabulário é o de quem procura, não o do código', () {
-      // "Provento" e "dividendo" são a mesma pergunta.
       final porProvento = destinosPara('provento').map((d) => d.route);
       final porDividendo = destinosPara('dividendo').map((d) => d.route);
 
@@ -53,8 +48,6 @@ void main() {
     });
 
     test('toda rota de destino começa com barra', () {
-      // Rota relativa no `go_router` navega para o lugar errado dependendo de
-      // onde a pessoa estiver quando buscar.
       for (final destino in buscaDestinos) {
         expect(destino.route.startsWith('/'), isTrue, reason: destino.title);
       }
@@ -76,7 +69,6 @@ void main() {
     test(
       'renda fixa leva à tela de renda fixa, não a um ativo inexistente',
       () {
-        // O `ref` da renda fixa é um id numérico: montar `/ativo/7` daria 404.
         expect(rotaDoAchado(hit('fixed_income', '7')), '/carteira/renda-fixa');
       },
     );

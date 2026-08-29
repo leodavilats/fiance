@@ -1,5 +1,3 @@
-"""D5 — o cache de oportunidades era global mas o cálculo é personalizado."""
-
 from tests.conftest import make_auth_headers
 
 
@@ -65,7 +63,6 @@ def test_risk_profile_changes_the_score(client):
 
 
 def test_opportunity_carries_its_own_provenance(client):
-    """confidence/data_years/consensus_methods eram calculados e descartados."""
     headers = make_auth_headers("provenance_user")
     resp = client.get("/api/opportunities", headers=headers, params={"include_held": "true"})
     items = resp.json()["items"]

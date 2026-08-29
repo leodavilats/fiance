@@ -1,19 +1,3 @@
-"""Cobrança: catálogo de preço, checkout, webhook e reconciliação.
-
-Quatro coisas, e a ordem delas é a ordem em que o dinheiro se perde quando
-alguma falha:
-
-* **Catálogo** — o preço de tabela. Quem já assinou não é alcançado por
-  mudanças aqui; a assinatura carrega o próprio preço.
-* **Checkout** — cria a sessão no provedor. Não concede nada: conceder no
-  checkout daria Premium a quem abandonou o pagamento.
-* **Webhook** — concede. Idempotente por id de evento, porque o provedor
-  reenvia até receber 200 e conceder duas vezes é o modo de falha óbvio.
-* **Reconciliação** — compara o que o gateway diz estar ativo com o que foi
-  concedido. Webhook perdido é silencioso dos dois lados: ninguém reclama de
-  ter pago e não ter recebido até tentar usar.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -37,7 +21,6 @@ class PlanOffer:
     label: str
     price_cents: int
     interval: str
-    #: Quanto sai por mês, para a comparação que o usuário faz de cabeça.
     monthly_equivalent_cents: int
     note: str = ""
     founder: bool = False
@@ -54,9 +37,6 @@ class PlanOffer:
         }
 
 
-#: O catálogo. O anual em destaque e o mensal sem fricção — desconto de ~25%
-#: bate a âncora do mercado e quebra a barreira dos R$ 15 sem sinalizar que o
-#: preço cheio é falso.
 OFFERS: tuple[PlanOffer, ...] = (
     PlanOffer(
         code="premium_monthly",
@@ -91,12 +71,6 @@ _provider: PaymentProvider | None = None
 
 
 def provider() -> PaymentProvider:
-    """O provedor em uso.
-
-    Enquanto não houver chave da Stripe, é o falso — e ele é o provedor de
-    desenvolvimento, não um andaime de teste. Trocar por Stripe é substituir
-    esta função, não reescrever o fluxo.
-    """
     global _provider
     if _provider is None:
         settings = get_settings()
@@ -114,15 +88,10 @@ def offers() -> list[dict]:
 
 
 class UnknownPlanError(ValueError):
-    """Código de plano que não existe no catálogo."""
+    pass
 
 
 def start_checkout(user_id: str, plan_code: str) -> dict:
-    """Cria a sessão. **Não concede nada.**
-
-    Conceder aqui daria Premium a quem abriu o checkout e desistiu — e é um
-    erro que só aparece na conciliação do mês seguinte.
-    """
     offer = OFFERS_BY_CODE.get(plan_code)
     if offer is None:
         raise UnknownPlanError(
@@ -153,12 +122,6 @@ def start_checkout(user_id: str, plan_code: str) -> dict:
 
 
 def handle_event(event: WebhookEvent) -> dict:
-    """Aplica o efeito de um evento do gateway. Idempotente.
-
-    A marca de processado é gravada **depois** do efeito: marcar antes e falhar
-    no meio perderia a concessão para sempre, porque a retentativa do provedor
-    encontraria o evento já marcado.
-    """
     nome = provider().name
 
     if subscription_service.already_processed(nome, event.id):
@@ -173,9 +136,6 @@ def handle_event(event: WebhookEvent) -> dict:
         subscription_service.grant(
             user_id=event.user_id,
             plan_code=event.plan_code,
-            # O preço vem do **evento**, não da tabela vigente: é o que a
-            # pessoa efetivamente contratou, e é o que a promessa de preço
-            # travado precisa preservar.
             price_cents=event.price_cents or (offer.price_cents if offer else 0),
             interval=event.interval,
             provider=nome,
@@ -227,13 +187,6 @@ class Divergence:
 
 
 def reconcile(now: float | None = None) -> dict:
-    """Compara o gateway com os direitos concedidos.
-
-    Webhook perdido é silencioso dos dois lados: o gateway acha que entregou, o
-    produto nunca soube, e o usuário só descobre quando tenta usar. Uma rotina
-    diária é a diferença entre descobrir isso em horas e descobrir por
-    reclamação.
-    """
     moment = now if now is not None else time.time()
 
     no_gateway = {row["user_id"]: row for row in provider().active_subscriptions()}

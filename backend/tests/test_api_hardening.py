@@ -1,5 +1,3 @@
-"""Regressões de segurança e de perda de dado (D3, D5, quick wins 1 e 2)."""
-
 import pytest
 
 from app.core.config import DEFAULT_JWT_SECRET, InsecureConfigurationError, Settings

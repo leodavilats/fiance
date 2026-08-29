@@ -4,7 +4,6 @@ import '../../../core/format.dart';
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
 
-
 class FiPatrimonyBlock extends StatelessWidget {
   const FiPatrimonyBlock({super.key, required this.summary});
 

@@ -53,8 +53,6 @@ describe('proventos pendentes', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('nada vem selecionado por padrão', () => {
-    // Não há "aceitar todos": lançar em massa é o caminho para registrar
-    // provento que a pessoa não recebeu.
     const { component } = setup([pendente(), pendente({ ticker: 'VALE3' })]);
 
     expect(component.selectedCount()).toBe(0);

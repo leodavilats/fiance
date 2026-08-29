@@ -23,9 +23,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(withToken(token)).pipe(
     catchError((error: unknown) => {
-      // O acesso vale uma hora. Um 401 aqui quase sempre é token vencido, não
-      // sessão encerrada — renovar uma vez e repetir evita jogar o usuário no
-      // login no meio de uma navegação.
       if (!(error instanceof HttpErrorResponse) || error.status !== 401) {
         return throwError(() => error);
       }

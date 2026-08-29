@@ -1,10 +1,3 @@
-"""Proventos sugeridos pelo calendário — nunca lançados sem confirmação.
-
-Cada fonte de erro desta lista erra o valor **para mais**: data-com que a fonte
-não publica, razão incompleto, JCP bruto. Provento inventado infla renda
-passiva, distorce a meta e vira número errado na declaração.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -15,7 +8,6 @@ from tests.conftest import make_auth_headers
 
 @pytest.fixture()
 def calendario(monkeypatch):
-    """Calendário controlado: duas datas, uma antiga e uma recente."""
     from datetime import timedelta
 
     from app.core.brt import now_brt
@@ -64,7 +56,6 @@ class TestSugestao:
         assert item["amount"] == 100.0
 
     def test_provento_antigo_demais_fica_de_fora(self, client, calendario):
-        """Lista que ninguém confere acaba confirmada no atacado."""
         headers = make_auth_headers("u_div_antigo")
         client.post(
             "/api/portfolio/position",
@@ -97,13 +88,7 @@ class TestSugestao:
 
 class TestQuantidadeNaData:
     def test_a_quantidade_vem_da_projecao_do_razao(self, client, calendario):
-        """É aqui que o livro-razão paga a conta de existir.
-
-        Sem ele, a única resposta possível seria a quantidade de hoje — que erra
-        todo provento anterior ao último aporte.
-        """
         headers = make_auth_headers("u_div_razao")
-        # Cem ações antes do provento, mais cem depois.
         client.post(
             "/api/transactions",
             json={
@@ -123,8 +108,6 @@ class TestQuantidadeNaData:
 
         item = client.get("/api/dividends/pending", headers=headers).json()["items"][0]
 
-        # A posição de hoje é 200, mas o razão diz que na data havia 100 —
-        # o `adjust` do editor de posição entrou com a data de hoje.
         assert item["quantity_at_date"] == 100
         assert item["quantity_is_current"] is False
         assert item["amount"] == 50.0
@@ -149,7 +132,6 @@ class TestQuantidadeNaData:
 
 class TestAvisos:
     def test_toda_sugestao_avisa_sobre_a_data_com(self, client, calendario):
-        """A fonte publica data de pagamento, não data-com."""
         headers = make_auth_headers("u_div_datacom")
         client.post(
             "/api/portfolio/position",
@@ -288,7 +270,6 @@ class TestConfirmacao:
 
 
 def test_falha_da_fonte_nao_derruba_a_lista(monkeypatch, client):
-    """Um ticker que falha não pode apagar as sugestões dos outros."""
     from app.repositories.asset_repository import AssetRepository
 
     async def _explode(symbol: str):

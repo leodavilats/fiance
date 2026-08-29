@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
 
-
 const fiHealthMetricExplanations = {
   'Concentração':
       'O quanto seu maior ativo pesa na carteira. Nota boa = nenhum ativo domina muito o total; nota ruim = um único papel concentra boa parte do patrimônio.',

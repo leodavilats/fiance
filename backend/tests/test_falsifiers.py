@@ -1,12 +1,3 @@
-"""O que faria a tese mudar.
-
-Um veredito sem condição de queda é fé. O teste que importa aqui não é o de
-formato: é o que fecha o círculo — pegar o preço que o falsificador anuncia,
-passá-lo de volta pelo `decide`, e conferir que o veredito realmente vira o que
-foi prometido. Sem isso a seção seria uma frase plausível sobre uma conta que
-ninguém confere.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -17,7 +8,6 @@ from app.analysis.falsifiers import falsifiers
 
 
 def fair(consensus: float, **kwargs) -> FairPriceResult:
-    """Um resultado mínimo: o veredito só depende da margem de segurança."""
     campos = {
         "bazin": None,
         "graham": None,
@@ -46,8 +36,6 @@ def _verdito(consensus: float, price: float) -> str:
 
 
 class TestOCirculoFecha:
-    """O preço anunciado tem que produzir, de fato, o veredito prometido."""
-
     @pytest.mark.parametrize("price", [50.0, 80.0, 95.0, 105.0, 130.0, 160.0])
     def test_o_preco_anunciado_produz_o_veredito_prometido(self, price):
         consensus = 100.0
@@ -57,13 +45,10 @@ class TestOCirculoFecha:
             if item["metric"] != "price":
                 continue
 
-            # Um centavo além do limiar, na direção que a frase indica.
             passo = -0.01 if "cair" in item["condition"] else 0.01
             assert _verdito(consensus, item["threshold"] + passo) == item["becomes"]
 
     def test_o_rotulo_prometido_e_o_rotulo_de_verdade(self):
-        """Se os rótulos divergissem, a explicação prometeria uma tela que não
-        existe."""
         consensus, price = 100.0, 90.0
         atual = _verdito(consensus, price)
 
@@ -108,7 +93,6 @@ class TestFronteirasDePreco:
         assert "cair" in itens[0]["condition"]
 
     def test_a_distancia_ate_o_limiar_e_visivel(self):
-        """Sem o valor de hoje ao lado, a condição não diz se está perto."""
         item = falsifiers(verdict="HOLD", price=95.0, consensus=100.0)[0]
 
         assert item["current"] == 95.0
@@ -117,7 +101,6 @@ class TestFronteirasDePreco:
 
 class TestCorteDeDividendo:
     def test_o_corte_anunciado_realmente_apaga_o_desconto(self):
-        """Fechando o círculo: aplicar o corte leva o consenso ao preço atual."""
         consensus, price, bazin, metodos = 100.0, 90.0, 120.0, 2
         outros = consensus * metodos - bazin
 
@@ -140,8 +123,6 @@ class TestCorteDeDividendo:
         assert novo_consenso == pytest.approx(price, abs=0.05)
 
     def test_sem_desconto_nao_ha_corte_a_anunciar(self):
-        """Se o ativo já está caro, a fronteira relevante é o preço, não o
-        dividendo."""
         itens = falsifiers(
             verdict="SELL",
             price=120.0,
@@ -154,8 +135,6 @@ class TestCorteDeDividendo:
         assert all(i["metric"] != "dividend" for i in itens)
 
     def test_quando_o_dividendo_teria_de_subir_o_item_nao_sai(self):
-        """Bazin pessimista: cortar dividendo não apaga o desconto, e dizer que
-        apagaria seria uma conta errada com cara de precisa."""
         itens = falsifiers(
             verdict="BUY",
             price=110.0,
@@ -168,8 +147,6 @@ class TestCorteDeDividendo:
         assert all(i["metric"] != "dividend" for i in itens)
 
     def test_corte_que_nao_bastaria_nao_e_anunciado(self):
-        """Aqui nem suspender o dividendo inteiro apaga o desconto. Aparar em
-        zero produziria "cair 100%" para um corte que não bastaria."""
         itens = falsifiers(
             verdict="BUY",
             price=70.0,
@@ -182,7 +159,6 @@ class TestCorteDeDividendo:
         assert all(i["metric"] != "dividend" for i in itens)
 
     def test_corte_total_e_chamado_de_suspensao(self):
-        """É o nome que a pessoa vai ver no noticiário."""
         itens = falsifiers(
             verdict="BUY",
             price=80.0,
@@ -232,8 +208,6 @@ class TestTendencia:
         assert "cruzar acima" in item["condition"]
 
     def test_sem_tendencia_nao_ha_enfeite(self):
-        """ "Fique de olho na tendência" sem tendência calculada é conselho de
-        almanaque ocupando o lugar de uma condição verificável."""
         itens = falsifiers(verdict="BUY", price=80.0, consensus=100.0, trend="unknown")
 
         assert all(i["metric"] != "trend" for i in itens)
@@ -247,8 +221,6 @@ class TestSilencioHonesto:
         assert falsifiers(verdict="BUY", price=None, consensus=100.0) == []
 
     def test_veredito_desconhecido_nao_ganha_condicao(self):
-        """Sem dados para o veredito, uma condição de mudança seria mudança de
-        quê?"""
         assert falsifiers(verdict="UNKNOWN", price=80.0, consensus=100.0) == []
 
 

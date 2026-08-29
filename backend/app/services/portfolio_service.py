@@ -144,7 +144,6 @@ class PortfolioService:
         )
 
     async def evaluate_stored_for_current_user(self) -> PortfolioEvaluationResponse:
-        """Avalia a carteira salva, memoizado por request."""
 
         async def _build() -> PortfolioEvaluationResponse:
             stored = self.portfolio_repo.list_positions()
@@ -184,17 +183,12 @@ class PortfolioService:
         )
 
     def upsert_position(self, item: PortfolioItem) -> PortfolioStateResponse:
-        """Cria ou atualiza uma posição, sem tocar nas outras."""
         self.portfolio_repo.upsert_position(
             ticker=item.ticker,
             quantity=item.quantity,
             avg_price=item.avg_price,
             category=item.category or "auto",
         )
-        # Escrita espelhada no razão: a posição corrente ainda é a fonte de
-        # leitura, mas o razão passa a existir em paralelo desde já. É o
-        # primeiro dos três passos do G1 — trocar a fonte antes de a
-        # reconciliação estar verde é como se perde a confiança no número.
         ledger_service.mirror_position_state(item.ticker, item.quantity, item.avg_price)
         audit_store.write(
             audit_store.POSITION_WRITE,
@@ -308,8 +302,6 @@ class PortfolioService:
             req.ticker,
             req.quantity,
             req.sell_price,
-            # A venda ainda não captura corretagem — `TransactionCost` só
-            # modela o lado fiscal. Quando a nota entrar (G2), a taxa vem dela.
             fees=0.0,
             traded_on=to_brt(sold_at).strftime("%Y-%m-%d"),
         )
@@ -332,7 +324,6 @@ class PortfolioService:
 
     @staticmethod
     def _validate_sold_at(sold_at: float | None) -> float:
-        """Data de venda controlada pelo cliente, com janela fechada."""
         now = time.time()
         if sold_at is None:
             return now
@@ -349,12 +340,6 @@ class PortfolioService:
     def get_closed_trades(
         self, limit: int | None = None, cursor: str | None = None
     ) -> ClosedTradesResponse:
-        """Operações encerradas, paginadas no banco.
-
-        Os totais vêm de `SUM` sobre a tabela inteira, e não da soma da página:
-        um total que encolhe conforme o usuário rola é pior que uma lista longa
-        — e é o número que ele leva para a declaração.
-        """
         page_size = clamp_limit(limit)
         rows = self.portfolio_repo.list_closed_trades(limit=page_size, cursor=cursor)
         page = paginate(

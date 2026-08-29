@@ -88,8 +88,7 @@
         <div class="text-xs text-ink-2 mb-0.5">
           Carteira em {{ form.getRawValue().months_ahead }} meses
         </div>
-        <!-- "Entre", não "é": o meio não ganha destaque tipográfico sobre a
-             faixa, senão a faixa vira legenda de um número único. -->
+
         <div class="text-sm font-semibold text-ink">
           entre R$ {{ ultimo(r).portfolio_value_low | number: '1.0-0' }} e R$
           {{ ultimo(r).portfolio_value_high | number: '1.0-0' }}
@@ -117,8 +116,7 @@
           <div class="text-sm font-semibold text-ink">
             R$ {{ s.final_passive_income_monthly | number: '1.2-2' }}/mês
           </div>
-          <!-- A premissa fica ao lado do número, sempre. Um cenário sem a
-               conta que o gerou é só um número maior ou menor. -->
+
           <p class="text-xs text-ink-2 mt-1 mb-0">{{ s.rationale }}</p>
         </div>
       }

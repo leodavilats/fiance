@@ -130,19 +130,12 @@ def _ensure_user(session, user_id: str) -> None:
 
 
 def ensure_user(session, user_id: str) -> None:
-    """Cria a linha de titular se ela ainda não existe.
-
-    A conta é criada de forma preguiçosa na primeira escrita de carteira, então
-    quem só olhou o produto pode não ter linha em `users`. Quem precisa carimbar
-    algo nela — o onboarding, por exemplo — chama isto antes.
-    """
     _ensure_user(session, user_id)
     session.flush()
 
 
 @contextmanager
 def _session(user_id: str | None, ensure_user: bool = False):
-    """Sessão de banco escopada a um tenant."""
     global _initialized
     if not _initialized:
         init_db()
@@ -170,7 +163,6 @@ def _session(user_id: str | None, ensure_user: bool = False):
 
 @contextmanager
 def _session_global():
-    """Sessão sem tenant, para manutenção e jobs cross-usuário."""
     global _initialized
     if not _initialized:
         init_db()
@@ -329,7 +321,6 @@ def lock_tenant(user_id: str | None = None) -> None:
 def sum_gross_sales_in_month(
     ticker_category: str, at: float | None = None, user_id: str | None = None
 ) -> float:
-    """Vendas brutas da categoria no mês de `at`, para a isenção de R$ 20 mil."""
     month_start, month_end = month_bounds(at)
 
     with _session(user_id) as (session, uid):
@@ -408,11 +399,6 @@ def list_closed_trades(
     limit: int | None = None,
     cursor: str | None = None,
 ) -> list[ClosedTrade]:
-    """Operações encerradas, mais recentes primeiro.
-
-    Busca `limit + 1` de propósito: a linha extra é como se descobre que há
-    próxima página sem um `COUNT(*)` sobre a tabela inteira. Quem chama corta.
-    """
     with _session(user_id) as (session, uid):
         stmt = apply_keyset(
             select(ClosedTradeDb).where(ClosedTradeDb.user_id == uid),
@@ -445,13 +431,6 @@ def list_closed_trades(
 
 
 def closed_trades_totals(user_id: str | None = None) -> dict:
-    """Totais das operações encerradas, direto em SQL.
-
-    Existe para que `/portfolio/trades` possa paginar de verdade: com os totais
-    vindo de `SUM`, a lista pode ser cortada no banco sem que o número no topo
-    da tela passe a falar só da primeira página. Total que muda conforme a
-    rolagem é pior que lista longa.
-    """
     with _session(user_id) as (session, uid):
         row = session.execute(
             select(
@@ -623,7 +602,6 @@ _PREF_CSV_FIELDS = {"preferred_categories", "preferred_sectors", "excluded_ticke
 
 
 def set_preferences(user_id: str | None = None, **fields) -> None:
-    """Grava só os campos presentes em `fields`."""
     unknown = set(fields) - set(_PREF_DEFAULTS)
     if unknown:
         raise ValueError(f"Campos de preferência desconhecidos: {sorted(unknown)}")
@@ -684,7 +662,6 @@ def unregister_device_token(token: str, user_id: str | None = None) -> None:
 
 
 def list_all_device_tokens() -> list[DeviceToken]:
-    """Todos os tokens, de todos os tenants — usado pelo ciclo de notificação."""
     with _session_global() as session:
         rows = session.scalars(select(DeviceTokenDb)).all()
         return [
@@ -950,7 +927,6 @@ def delete_fixed_income(position_id: int, user_id: str | None = None) -> bool:
 
 
 def purge_legacy_fixed_income_tickers() -> int:
-    """Remove as posições `RF_*` do tempo em que renda fixa era um ticker."""
     with _session_global() as session:
         result = session.execute(
             delete(PortfolioPosition).where(PortfolioPosition.ticker.like("RF!_%", escape="!"))
@@ -959,13 +935,11 @@ def purge_legacy_fixed_income_tickers() -> int:
 
 
 def list_all_user_ids() -> list[str]:
-    """Todos os tenants — usado pelos jobs de background."""
     with _session_global() as session:
         return list(session.scalars(select(User.id)))
 
 
 def try_acquire_job_lock(name: str, holder: str, ttl_seconds: float) -> bool:
-    """Tenta tomar o lock de um job."""
     now = time.time()
     with _session_global() as session:
         row = session.get(JobLockDb, name)
@@ -999,7 +973,6 @@ class TaxLossBalance(TypedDict):
 
 
 def tax_loss_balances(user_id: str | None = None) -> list[TaxLossBalance]:
-    """Saldo de prejuízo realizado disponível para compensação, por categoria."""
     by_category: dict[str, dict[str, float]] = {}
 
     with _session(user_id) as (session, uid):

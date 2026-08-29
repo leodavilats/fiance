@@ -1,11 +1,3 @@
-"""Ciclo de vida da assinatura: trial, concessão, degradação.
-
-O direito mora no backend, ligado ao `user_id`; os clientes só consultam.
-Nenhuma decisão de acesso acontece no dispositivo — cliente adulterado não pode
-virar assinante — e é isso que permite vender na web e liberar no app sem
-migrar ninguém quando o canal mudar.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -18,8 +10,6 @@ from app.storage import audit_store, event_store, portfolio_store
 
 logger = logging.getLogger("fiance.subscription")
 
-#: Preço de tabela, em centavos. Quem tem `locked` não é alcançado por mudanças
-#: aqui — é o que torna a promessa de preço travado verificável.
 PRICE_MONTHLY_CENTS = 1990
 PRICE_YEARLY_CENTS = 17990
 PRICE_FOUNDER_YEARLY_CENTS = 14990
@@ -36,12 +26,6 @@ def _row(session, user_id: str) -> SubscriptionDb:
 
 
 def start_trial(user_id: str, now: float | None = None) -> dict:
-    """Começa o trial de 14 dias. Idempotente.
-
-    O gatilho é a **primeira posição salva**, não a criação da conta: trial que
-    expira antes de a pessoa ter uma carteira para analisar é trial
-    desperdiçado — ela nunca chega a ver o que estaria comprando.
-    """
     moment = now if now is not None else time.time()
 
     with db_session() as session:
@@ -77,12 +61,6 @@ def grant(
     locked: bool = False,
     now: float | None = None,
 ) -> dict:
-    """Concede o direito. É o que o webhook e a concessão manual chamam.
-
-    `price_cents` é gravado, não derivado da tabela vigente: reajustar o preço
-    de tabela depois não pode alcançar quem contratou antes, e a única forma de
-    garantir isso é a assinatura carregar o próprio preço.
-    """
     moment = now if now is not None else time.time()
 
     with db_session() as session:
@@ -117,20 +95,12 @@ def grant(
 
 
 def cancel(user_id: str, reason: str = "", now: float | None = None) -> dict:
-    """Cancela sem apagar nada.
-
-    Assinatura expirada degrada para Free e a carteira continua acessível.
-    Cancelar Premium não é cancelar conta — tratar como se fosse produz pedido
-    de exclusão em massa no primeiro churn.
-    """
     moment = now if now is not None else time.time()
 
     with db_session() as session:
         row = _row(session, user_id)
         row.status = "cancelled"
         row.cancelled_at = moment
-        # Encerra o trial junto: cancelar significa "não quero", e deixar o
-        # trial correndo faria o cancelamento não cancelar nada por até 14 dias.
         if row.trial_ends_at is not None and row.trial_ends_at > moment:
             row.trial_ends_at = moment
         row.updated_at = moment
@@ -154,12 +124,6 @@ def already_processed(provider: str, event_id: str) -> bool:
 
 
 def mark_processed(provider: str, event_id: str, summary: str = "") -> None:
-    """Marca o evento como visto. Chamado **depois** de aplicar o efeito.
-
-    O provedor reenvia até receber 200, por desenho. Sem esta tabela, o reenvio
-    concederia direito duas vezes — e no caso de crédito de meses, daria meses
-    de graça a cada retentativa.
-    """
     with db_session() as session:
         if session.get(ProcessedWebhookDb, (provider, event_id)) is not None:
             return

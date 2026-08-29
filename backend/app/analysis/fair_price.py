@@ -117,7 +117,6 @@ def average_dividend_last_n_years(
     use_median: bool = False,
     reference: datetime | None = None,
 ) -> float | None:
-    """Dividendo médio anual sobre anos-calendário **completos**."""
     if not dividends:
         return None
 
@@ -156,7 +155,6 @@ def dividend_data_years(
     years: int = DIVIDEND_WINDOW_YEARS,
     reference: datetime | None = None,
 ) -> int:
-    """Quantos anos-calendário distintos da janela têm provento registrado."""
     today = reference or _now()
     by_year = _dividends_by_year(dividends)
     return len([y for y in by_year if today.year - years <= y <= today.year])
@@ -191,7 +189,6 @@ def dcf_fair_price(
     growth_years: int = 5,
     terminal_pe: float = 15.0,
 ) -> float | None:
-    """DCF simplificado sobre o LPA."""
     if eps is None or eps <= 0:
         return None
 
@@ -215,8 +212,6 @@ def dcf_fair_price(
 
 @dataclass
 class FairPriceInputs:
-    """Parcela do preço justo que **não** depende das preferências do usuário."""
-
     asset_type: str
     price: float | None
     eps: float | None
@@ -371,7 +366,6 @@ def compute_fair_price(
     pb_ratio: float | None = None,
     reference: datetime | None = None,
 ) -> FairPriceResult:
-    """Atalho de uma chamada: monta os inputs e aplica o desired_yield."""
     inputs = compute_fair_price_inputs(
         price=price,
         eps=eps,

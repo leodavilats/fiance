@@ -3,8 +3,6 @@ import tempfile
 
 _tmp_db = os.path.join(tempfile.mkdtemp(prefix="fiance_test_"), "test.db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp_db}"
-# A suíte dispara centenas de chamadas por segundo com o mesmo usuário. O teto
-# de abuso tem testes próprios (test_rate_limit.py), que o ligam explicitamente.
 os.environ["RATE_LIMIT_ENABLED"] = "false"
 
 from datetime import UTC, datetime, timedelta  # noqa: E402
@@ -20,12 +18,10 @@ from app.repositories.asset_repository import AssetRepository  # noqa: E402
 
 @pytest.fixture()
 def client():
-    """TestClient sobre a app FastAPI real (mesmos middlewares/handlers de erro)."""
     return TestClient(app)
 
 
 def make_auth_headers(user_id: str) -> dict:
-    """Gera um header Authorization válido usando o mesmo emissor de tokens usado em produção (app.core.auth.issue_access_token), para que as requisições de teste passem de fato pelo Depends(get_current_user)."""
     token = issue_access_token(user_id)
     return {"Authorization": f"Bearer {token}"}
 
@@ -88,7 +84,6 @@ def build_quarterly_dividends(
     per_payment: float = 0.75,
     reference: datetime | None = None,
 ) -> list[dict]:
-    """Histórico trimestral de proventos terminando no ano completo anterior."""
     today = reference or datetime.now(UTC)
     out: list[dict] = []
     for year_offset in range(1, years + 1):
@@ -99,7 +94,6 @@ def build_quarterly_dividends(
 
 
 def build_daily_history(days: int, start: float = 30.0, step: float = 0.05) -> dict[str, float]:
-    """Série diária sintética e monotônica — SMA/RSI determinísticos."""
     today = datetime.now(UTC)
     return {
         (today - timedelta(days=days - i)).strftime("%Y-%m-%d"): round(start + i * step, 4)
@@ -125,7 +119,6 @@ def anyio_backend():
 
 @pytest.fixture(autouse=True)
 def _stub_market_data(monkeypatch, request):
-    """Isola os testes de qualquer chamada de rede real para dados de mercado."""
 
     async def _fake_get_asset(symbol: str):
         return _fake_snapshot(symbol)

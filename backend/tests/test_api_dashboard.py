@@ -31,7 +31,6 @@ def test_dashboard_with_positions(client):
 
 
 def test_dashboard_contract_summary_fields(client):
-    """Contrato: web/mobile leem DashboardSummary sem 'cash_available' (removido deliberadamente — ver KNOWN_ISSUES/histórico)."""
     uid = "test_dash_contract"
     headers = make_auth_headers(uid)
 

@@ -8,7 +8,7 @@ DEFAULT_JWT_SECRET = "change-me"
 
 
 class InsecureConfigurationError(RuntimeError):
-    """Configuração insegura para o ambiente — startup deve abortar."""
+    pass
 
 
 class Settings(BaseSettings):
@@ -28,36 +28,16 @@ class Settings(BaseSettings):
 
     admin_user_ids: str = ""
 
-    # Teto de abuso. Desligável porque a suíte dispara centenas de chamadas por
-    # segundo com o mesmo usuário — e um teto que a suíte tem que contornar
-    # acaba sendo um teto que ninguém consegue calibrar.
     rate_limit_enabled: bool = True
 
-    # Multiplicador sobre os tetos por rota, para apertar ou afrouxar em
-    # produção sem deploy de código.
     rate_limit_factor: float = 1.0
 
-    # A régua de plano existe em produção antes de a cobrança existir, atrás
-    # desta flag. Desligada, todo mundo tem tudo — que é o estado de hoje.
-    # Ligar passa a ser decisão, não entrega; e o código de gate não precisa
-    # ser descoberto durante o lançamento.
     entitlements_enabled: bool = False
 
-    # Modo de afirmação: 1 descritivo, 2 analítico (padrão), 3 prescritivo.
-    # Existe para que a resposta da consulta jurídica sobre CVM 19/20 seja
-    # configuração, e não um refactor sob pressão. Valor fora da faixa cai no
-    # analítico — variável digitada errada não pode ligar o modo mais
-    # comprometido.
     affirmation_level: int = 2
 
-    # Instrução individualizada por perfil de investidor é o que a norma trata
-    # como consultoria. Enquanto não houver parecer, nível 3 e personalização
-    # por suitability não andam juntos.
     suitability_personalization_allowed: bool = False
 
-    # Segredo de verificação do webhook de cobrança. Sem chave real da
-    # Stripe, o provedor em uso é o de desenvolvimento — que assina com o
-    # mesmo HMAC, para que o caminho de verificação seja exercitado.
     billing_webhook_secret: str = "segredo-de-desenvolvimento"
 
     brapi_token: str = ""
@@ -134,7 +114,6 @@ class Settings(BaseSettings):
         return "*" not in self.cors_origins
 
     def validate_for_startup(self) -> None:
-        """Falha alto em configuração que só é aceitável em desenvolvimento."""
         if self.is_development:
             return
 

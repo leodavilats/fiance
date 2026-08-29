@@ -29,7 +29,6 @@ abstract final class AppColors {
   static const lightDanger = FiColors.lightStateAdverse;
 }
 
-
 /// Tinta secundaria e terciaria pelo tema corrente.
 ///
 /// Existem porque o codigo usava `Colors.grey.shade600` em ~40 lugares: cinza

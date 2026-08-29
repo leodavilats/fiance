@@ -59,8 +59,6 @@ function setup(options: { authenticated: boolean; asset: AssetAnalysis }) {
 
 describe('página de ativo', () => {
   beforeEach(() => {
-    // O `head` é global no jsdom e sobrevive entre testes; limpar aqui é o que
-    // faz "a canônica é única" medir o componente e não a ordem dos testes.
     document.head.querySelectorAll('link[rel="canonical"]').forEach(el => el.remove());
   });
 
@@ -87,8 +85,6 @@ describe('página de ativo', () => {
     });
 
     it('dois tickers produzem descrições diferentes', () => {
-      // É isto que separa "indexada" de "seiscentas páginas iguais": sem
-      // conteúdo próprio, a busca trata o conjunto como duplicado.
       setup({ authenticated: false, asset: analysis() });
       const primeira = TestBed.inject(Title).getTitle();
 

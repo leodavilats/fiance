@@ -61,11 +61,6 @@ class DataQualityResponse(BaseModel):
 
 @router.get("/data-quality/source")
 async def source_health() -> dict:
-    """Saúde da fonte, sem varrer o universo.
-
-    Separado de `/data-quality` de propósito: quando a fonte está fora do ar,
-    o scan completo é justamente o que não se quer disparar para descobrir isso.
-    """
     return {
         "circuit": circuit.status("brapi"),
         "plausibility_ranges": plausibility.describe_ranges(),

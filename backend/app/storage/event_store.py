@@ -1,5 +1,3 @@
-"""Persistência dos eventos de produto e as agregações do funil."""
-
 from __future__ import annotations
 
 import json
@@ -11,7 +9,6 @@ from app.core.brt import to_brt
 from app.core.database import db_session
 from app.models.db_models import ProductEventDb
 
-# Retenção do dado bruto. O funil é feito de coorte, não de histórico infinito.
 EVENT_RETENTION_DAYS = 400
 
 
@@ -59,7 +56,6 @@ def users_with(name: str, since: float | None = None) -> set[str]:
 
 
 def first_seen_by_user(since: float | None = None) -> dict[str, float]:
-    """Instante do primeiro evento de cada usuário — a âncora de toda coorte."""
     with db_session() as session:
         stmt = select(ProductEventDb.user_id, func.min(ProductEventDb.occurred_at)).group_by(
             ProductEventDb.user_id
@@ -101,7 +97,6 @@ def counts_by_name(since: float | None = None) -> dict[str, int]:
 
 
 def counts_by_prop(name: str, prop: str, since: float | None = None) -> dict[str, int]:
-    """Distribuição de uma propriedade — `paywall_viewed` por origem, por exemplo."""
     with db_session() as session:
         stmt = select(ProductEventDb.props).where(ProductEventDb.name == name)
         if since is not None:

@@ -1,10 +1,3 @@
-"""O funil, calculado — porque funil que ninguém vê não é consultado.
-
-Seis perguntas, uma métrica cada, com a meta do ano 1 ao lado. As metas vivem
-aqui e não numa planilha para que a distância entre o real e o alvo apareça na
-mesma resposta que o número.
-"""
-
 from __future__ import annotations
 
 import time
@@ -43,11 +36,6 @@ def _retention(
     window_days: int,
     now: float,
 ) -> tuple[int, int]:
-    """Quantos dos que entraram há ao menos `window_days` voltaram depois disso.
-
-    Só entra na coorte quem já teve tempo de bater a janela — do contrário a
-    retenção de 30 dias mediria gente com três dias de conta.
-    """
     from app.core.brt import to_brt
 
     eligible = 0
@@ -221,12 +209,6 @@ def build_funnel(days: int = 90, now: float | None = None) -> dict:
 
 
 def aha_correlation(now: float | None = None) -> list[dict]:
-    """Cada evento de aha contra D30 — qual deles é o momento de valor de fato.
-
-    Não é uma regressão: é a comparação de retenção entre quem bateu o evento na
-    primeira semana e quem não bateu. Com 60 dias de coorte, é o suficiente para
-    escolher em torno de qual evento montar o onboarding.
-    """
     moment = now if now is not None else time.time()
     first_seen = event_store.first_seen_by_user()
     active_days = event_store.active_days_by_user(moment - 400 * DAY)

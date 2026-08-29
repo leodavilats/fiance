@@ -73,7 +73,6 @@ class FollowedSuggestionsResponse(BaseModel):
     by_source: list[SuggestionOutcomeGroup] = Field(default_factory=list)
     summary: str = ""
 
-    #: Os totais e a comparação com o Ibovespa cobrem tudo; `items` é a página.
     next_cursor: str | None = None
     has_more: bool = False
     total_count: int = 0

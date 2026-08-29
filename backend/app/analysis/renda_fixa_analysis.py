@@ -19,7 +19,6 @@ DIAS_POR_MES = 30.4375
 
 LIQUIDEZ_TOLERANCIA_PP = 0.5
 
-
 ISENTOS_IR = {
     RendaFixaType.lci,
     RendaFixaType.lca,
@@ -42,7 +41,6 @@ def _aliquota_ir(prazo_dias: int) -> float:
 
 
 def _compor(taxa_anual_pct: float, meses: float) -> float:
-    """Taxa acumulada no período a partir de uma taxa anual em %."""
     return (1 + taxa_anual_pct / 100.0) ** (meses / 12.0) - 1
 
 
@@ -51,7 +49,6 @@ def taxa_anual_efetiva(
     cdi_anual: float,
     ipca_anual: float,
 ) -> float:
-    """Taxa nominal anual em %, resolvendo o indexador do ativo."""
     if ativo.tipo_taxa == TaxType.pos_fixado and ativo.percentual_cdi:
         return cdi_anual * (ativo.percentual_cdi / 100.0)
 
@@ -69,7 +66,6 @@ def analyze_one(
     ipca_anual: float = DEFAULT_IPCA_ANUAL,
     prazo_meses_override: float | None = None,
 ) -> RendaFixaAnalysisResult:
-    """Rendimento líquido de um título de renda fixa."""
     prazo_meses = ativo.prazo_meses if prazo_meses_override is None else prazo_meses_override
     prazo_dias = int(round(prazo_meses * DIAS_POR_MES))
 
@@ -132,7 +128,6 @@ def analyze_one(
 
 
 def _escolher_melhor(resultados: list[RendaFixaAnalysisResult]) -> tuple[int, str]:
-    """Melhor opção por taxa líquida, com liquidez como critério de desempate."""
     melhor_taxa_idx = max(range(len(resultados)), key=lambda i: resultados[i].taxa_liquida_aa)
     melhor_taxa = resultados[melhor_taxa_idx].taxa_liquida_aa
 

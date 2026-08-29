@@ -48,7 +48,6 @@ class DashboardService:
         top_buys: list[Opportunity],
         allocations: list[CategoryAllocation],
     ) -> list[Alert]:
-        """Alertas agrupados por tipo, com contagem, limite e uma ação cada."""
         alerts: list[Alert] = []
 
         alerts += self._sell_alert(positions)

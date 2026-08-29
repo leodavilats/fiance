@@ -7,7 +7,6 @@ import '../../../core/sector_translations.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/allocation_gap.dart';
 
-
 enum FiCompositionMode { asset, sector }
 
 const fiStockCategories = {'acoes_br', 'bdrs'};

@@ -1,10 +1,3 @@
-"""A superfície pública: sem titular, sem sessão e sem dado de ninguém.
-
-O canal de aquisição do produto é a página de ativo indexável. Se ela exigir
-autenticação, o robô de busca não a lê — e o modelo de receita não comporta
-mídia paga para compensar.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -35,17 +28,11 @@ class TestSemAutenticacao:
         assert client.get("/api/public/asset/NAOEXISTE99").status_code == 404
 
     def test_a_rota_autenticada_continua_exigindo_token(self, client):
-        """A pública não pode virar um contorno da protegida."""
         assert client.get("/api/asset/PETR4").status_code == 401
 
 
 class TestImpessoalidade:
     def test_a_mesma_url_devolve_o_mesmo_conteudo_com_e_sem_sessao(self, client):
-        """O robô e o usuário logado precisam ver a mesma página.
-
-        Se o preço justo mudasse conforme o yield desejado de quem pediu, o que
-        o Google indexasse não seria o que o visitante encontraria.
-        """
         anonimo = client.get("/api/public/asset/PETR4").json()
 
         headers = make_auth_headers("u_public_prefs")
@@ -59,7 +46,6 @@ class TestImpessoalidade:
         assert com_sessao["fair_price"] == anonimo["fair_price"]
 
     def test_a_analise_personalizada_continua_reagindo_a_preferencia(self, client):
-        """O contraste: sem isto o teste acima não distinguiria nada."""
         headers = make_auth_headers("u_public_contrast")
 
         client.put("/api/preferences", json={"desired_yield_stock": 0.03}, headers=headers)

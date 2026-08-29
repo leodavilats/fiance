@@ -18,8 +18,6 @@ _ALLOCATION_THRESHOLD_PCT = 5.0
 
 
 class WhatsNewService:
-    """ "O que mudou desde a sua última visita"."""
-
     def __init__(self):
         self.portfolio_repo = PortfolioRepository()
         self.portfolio_service = PortfolioService()
@@ -104,7 +102,6 @@ class WhatsNewService:
         ]
 
     def _verdict_items(self, positions: list) -> list[WhatsNewItem]:
-        """Posições que hoje pedem atenção, agrupadas — não uma linha por ativo."""
         to_review = [p for p in positions if p.verdict in ("SELL", "STRONG_SELL")]
         if not to_review:
             return []
@@ -206,7 +203,6 @@ class WhatsNewService:
         ]
 
     def _tax_item(self) -> list[WhatsNewItem]:
-        """Prejuízo realizado que pode compensar ganho futuro."""
         trades = self.portfolio_repo.list_closed_trades()
         if not trades:
             return []

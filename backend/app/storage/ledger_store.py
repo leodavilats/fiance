@@ -1,10 +1,3 @@
-"""Persistência do livro-razão, multi-tenant como o resto.
-
-Escreve e lê lançamentos; a matemática mora em `app/ledger`, que não conhece
-banco. A resolução de instrumento acontece aqui porque depende do estado do
-catálogo, não da conta.
-"""
-
 from __future__ import annotations
 
 import time
@@ -18,12 +11,10 @@ from app.core.pagination import apply_keyset
 from app.ledger import LedgerEntry, TransactionKind
 from app.models.db_models import InstrumentDb, TransactionDb
 
-# Fim de janela aberto: o dono atual do código.
 OPEN_ENDED = None
 
 
 def _with_session(fn, user_id: str | None = None):
-    """Reaproveita a sessão da requisição; fora dela, abre e commita a própria."""
     ensure_initialized()
     uid = user_id or get_current_user_id()
 
@@ -42,19 +33,7 @@ def _with_session(fn, user_id: str | None = None):
         session.close()
 
 
-# --------------------------------------------------------------------------
-# Instrumentos
-# --------------------------------------------------------------------------
-
-
 def resolve_instrument(session, symbol: str, traded_on: str) -> InstrumentDb:
-    """Instrumento dono do símbolo na data da operação.
-
-    Se ninguém reivindicou o código ainda, cria o dono atual. Um código
-    reaproveitado pela B3 é registrado fechando a janela do antigo e abrindo a
-    do novo — e aí operações antigas continuam apontando para o instrumento
-    certo, que é o ponto.
-    """
     normalized = symbol.strip().upper()
 
     rows = (
@@ -81,7 +60,6 @@ def resolve_instrument(session, symbol: str, traded_on: str) -> InstrumentDb:
 
 
 def reassign_symbol(symbol: str, from_day: str, name: str = "", asset_type: str = "br_stock"):
-    """Registra que a B3 passou o código para outra companhia em `from_day`."""
     ensure_initialized()
     session = get_request_session() or SessionLocal()
     owns_session = get_request_session() is None
@@ -118,11 +96,6 @@ def reassign_symbol(symbol: str, from_day: str, name: str = "", asset_type: str 
             session.close()
 
 
-# --------------------------------------------------------------------------
-# Lançamentos
-# --------------------------------------------------------------------------
-
-
 def _to_entry(row: TransactionDb) -> LedgerEntry:
     return LedgerEntry(
         kind=TransactionKind(row.kind),
@@ -141,7 +114,6 @@ def _to_entry(row: TransactionDb) -> LedgerEntry:
 
 
 def record(entry: LedgerEntry, source: str = "manual", user_id: str | None = None) -> int:
-    """Grava um lançamento e devolve o id."""
 
     def body(session, uid: str) -> int:
         from app.storage.portfolio_store import _ensure_user
@@ -174,7 +146,6 @@ def record(entry: LedgerEntry, source: str = "manual", user_id: str | None = Non
 def record_many(
     entries: list[LedgerEntry], source: str = "import", user_id: str | None = None
 ) -> list[int]:
-    """Grava um lote inteiro ou nenhum — importação é atômica."""
 
     def body(session, uid: str) -> list[int]:
         from app.storage.portfolio_store import _ensure_user
@@ -214,15 +185,6 @@ def list_entries(
     cursor: str | None = None,
     descending: bool = False,
 ) -> list[LedgerEntry]:
-    """Lançamentos do usuário.
-
-    A ordem padrão é **crescente** porque a projeção do razão depende dela: o
-    preço médio é uma dobra na ordem em que as operações aconteceram. A listagem
-    de tela pede `descending=True`, que é a ordem de leitura.
-
-    Devolve `limit + 1` quando há limite — a linha extra é como quem chama
-    descobre que existe próxima página.
-    """
 
     def body(session, uid: str) -> list[LedgerEntry]:
         stmt = select(TransactionDb).where(TransactionDb.user_id == uid)

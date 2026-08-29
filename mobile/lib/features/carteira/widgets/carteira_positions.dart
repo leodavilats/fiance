@@ -8,7 +8,6 @@ import '../../../core/sector_translations.dart';
 import '../../../core/theme.dart';
 import '../../../core/providers.dart';
 
-
 enum FiAssetGroupMode { value, category, sector }
 
 final fiAssetGroupModeProvider = StateProvider.autoDispose<FiAssetGroupMode>(

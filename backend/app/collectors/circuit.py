@@ -1,18 +1,3 @@
-"""Circuit breaker da fonte de cotação.
-
-Todo o produto pago depende de um fornecedor. Quando ele cai, o comportamento
-sem disjuntor é o pior possível: cada requisição de usuário espera o timeout
-inteiro, a fila do servidor enche, e o app fica lento em vez de ficar honesto.
-
-O disjuntor troca "lento e quebrado" por "rápido e explícito". Aberto, nem
-tenta: devolve vazio na hora, e quem chama cai no cache vencido — que é dado
-antigo, mas é dado, e a idade dele fica visível na tela.
-
-É por processo, como o resto da instrumentação. Com mais de um worker cada um
-descobre a queda por conta própria; isso custa algumas tentativas a mais e não
-justifica coordenar por banco enquanto não houver mais de um nó.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -22,16 +7,10 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger("fiance.circuit")
 
-#: Falhas seguidas para abrir. Baixo demais abre em soluço de rede; alto demais
-#: faz o usuário esperar o timeout várias vezes antes de o disjuntor agir.
 FAILURE_THRESHOLD = 5
 
-#: Quanto fica aberto antes de deixar uma tentativa passar.
 OPEN_SECONDS = 60.0
 
-#: Sucessos necessários em meia-abertura para voltar ao normal. Mais de um
-#: porque uma resposta boa isolada durante uma queda parcial reabriria a
-#: torneira cedo demais.
 RECOVERY_SUCCESSES = 2
 
 
@@ -57,7 +36,6 @@ def _state_for(provider: str) -> _State:
 
 
 def allows(provider: str, now: float | None = None) -> bool:
-    """`False` quando o disjuntor está aberto e o descanso ainda não passou."""
     moment = now if now is not None else time.time()
     state = _state_for(provider)
 
@@ -69,7 +47,6 @@ def allows(provider: str, now: float | None = None) -> bool:
             state.total_rejected += 1
             return False
 
-        # Meia-abertura: deixa passar para descobrir se voltou.
         return True
 
 
@@ -97,7 +74,6 @@ def record_failure(provider: str, reason: str = "", now: float | None = None) ->
         state.successes = 0
 
         if state.opened_at is not None:
-            # Falhou na meia-abertura: recomeça o descanso.
             state.opened_at = moment
             return
 
@@ -113,7 +89,6 @@ def record_failure(provider: str, reason: str = "", now: float | None = None) ->
 
 
 def status(provider: str, now: float | None = None) -> dict:
-    """Estado legível — vai para `/data-quality`, não para o usuário final."""
     moment = now if now is not None else time.time()
     state = _state_for(provider)
 
@@ -139,7 +114,6 @@ def status(provider: str, now: float | None = None) -> dict:
 
 
 def reset(provider: str | None = None) -> None:
-    """Fecha o disjuntor. Existe para teste e para a rota de manutenção."""
     with _registry_lock:
         alvos = [provider] if provider else list(_states)
         for nome in alvos:

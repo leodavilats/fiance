@@ -16,14 +16,12 @@ def to_brt(timestamp: float) -> datetime:
 
 
 def month_start_timestamp(timestamp: float | None = None) -> float:
-    """Início do mês calendário brasileiro que contém `timestamp`."""
     moment = to_brt(timestamp) if timestamp is not None else now_brt()
     start = moment.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     return start.timestamp()
 
 
 def month_key(timestamp: float) -> str:
-    """Chave YYYY-MM no fuso brasileiro."""
     return to_brt(timestamp).strftime("%Y-%m")
 
 

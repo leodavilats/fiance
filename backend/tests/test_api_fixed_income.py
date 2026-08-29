@@ -1,5 +1,3 @@
-"""Renda fixa como entidade de primeira classe (D1, D2, D9)."""
-
 from datetime import UTC, date, datetime, timedelta
 
 from tests.conftest import make_auth_headers
@@ -52,7 +50,6 @@ def test_crud_round_trip(client):
 
 
 def test_position_is_marked_to_market_not_frozen(client):
-    """ "Coloquei R$ 40 mil em CDB e o app diz que rendi zero"."""
     headers = make_auth_headers("fi_mark")
 
     position = client.post("/api/fixed-income", headers=headers, json=_cdb()).json()
@@ -65,7 +62,6 @@ def test_position_is_marked_to_market_not_frozen(client):
 
 
 def test_details_survive_a_new_client(client):
-    """ "Troquei de navegador e minha renda fixa virou R$ 0 de rendimento"."""
     headers = make_auth_headers("fi_persist")
 
     client.post(
@@ -115,7 +111,6 @@ def test_hidden_position_is_kept_but_excluded_from_totals(client):
 
 
 def test_fixed_income_reaches_the_dashboard_totals(client):
-    """O patrimônio total e a renda passiva paravam de contar a renda fixa."""
     headers = make_auth_headers("fi_dashboard")
 
     before = client.get("/api/dashboard", headers=headers).json()["summary"]
@@ -131,7 +126,6 @@ def test_fixed_income_reaches_the_dashboard_totals(client):
 
 
 def test_fixed_income_position_is_not_typed_as_a_stock(client):
-    """Posições RF apareciam com asset_type = br_stock no mobile."""
     headers = make_auth_headers("fi_asset_type")
     client.post("/api/fixed-income", headers=headers, json=_cdb())
 

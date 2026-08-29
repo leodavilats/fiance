@@ -82,7 +82,6 @@ describe('busca global', () => {
 
   describe('ordem da resposta', () => {
     it('o que é da pessoa vem antes das telas e do mercado', () => {
-      // Quem digita PETR e tem PETR4 na carteira quer a própria posição.
       const fixture = render({
         mine: [POSICAO],
         tickers: [{ ticker: 'PETR3', name: 'Petrobras' }],
@@ -103,7 +102,6 @@ describe('busca global', () => {
 
   describe('a rota é decidida no cliente', () => {
     it('posição leva à página do ativo', () => {
-      // O servidor manda `ref`, não rota: a árvore do web e a do app diferem.
       const fixture = render({ mine: [POSICAO] });
       const linha = fixture.componentInstance.rows()[0];
 
@@ -120,8 +118,6 @@ describe('busca global', () => {
 
   describe('degradação', () => {
     it('sem resposta do servidor, as telas continuam navegáveis', () => {
-      // Busca é atalho. Perder metade do resultado é melhor que perder a caixa,
-      // e os destinos filtram sem rede justamente por isso.
       const fixture = render({ mine: [], tickers: [] });
       const titulos = fixture.componentInstance.groups().map(g => g.title);
 
@@ -132,8 +128,6 @@ describe('busca global', () => {
 
   describe('teclado', () => {
     it('a lista é uma sequência única, mesmo dividida em seções', () => {
-      // Setas atravessam as seções: quem navega por teclado não deveria ter que
-      // saber onde uma acaba.
       const fixture = render({
         mine: [POSICAO],
         tickers: [{ ticker: 'PETR3', name: 'Petrobras' }],

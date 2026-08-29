@@ -11,7 +11,6 @@ target_metadata = Base.metadata
 
 
 def _engine():
-    """Engine da migração."""
     configured = context.config.get_main_option("sqlalchemy.url", None)
     if configured and configured != str(app_engine.url):
         connect_args = {"check_same_thread": False} if configured.startswith("sqlite") else {}

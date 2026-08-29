@@ -1,9 +1,3 @@
-"""Leitura de operações: tolerante com forma, intolerante com ambiguidade.
-
-Adivinhar errado a forma custa uma mensagem de erro; adivinhar errado o valor
-custa o preço médio, que é o IR. Os testes são organizados por essa assimetria.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -31,11 +25,6 @@ class TestNumero:
         assert parse_decimal(texto, 1, "preço") == pytest.approx(esperado)
 
     def test_ponto_com_tres_casas_e_recusado_por_ser_ambiguo(self):
-        """`1.234` pode ser mil duzentos e trinta e quatro ou 1,234.
-
-        Um fator de mil no preço médio é um extrato fiscal errado, então a
-        resposta certa é perguntar, não escolher.
-        """
         with pytest.raises(ValueError, match="ambíguo"):
             parse_decimal("1.234", 1, "preço")
 
@@ -100,7 +89,6 @@ class TestListaColada:
         assert problema.raw == "VALE3"
 
     def test_uma_linha_ruim_nao_descarta_as_boas_da_previa(self):
-        """A prévia mostra tudo; é a gravação que é atômica."""
         resultado = parse_import("PETR4 100 30,50\nlixo\nVALE3 50 60,00", default_day=HOJE)
 
         assert len(resultado.rows) == 2
@@ -139,7 +127,6 @@ class TestCsv:
         assert "Ticker" in resultado.issues[0].message
 
     def test_a_linha_do_erro_e_a_do_arquivo_e_nao_a_do_registro(self):
-        """Linha 1 é o cabeçalho — o usuário conta linhas no editor dele."""
         texto = "Data;Ativo;Quantidade;Preço\n10/01/2024;PETR4;100;30,50\n10/01/2024;XX;10;1,00\n"
 
         resultado = parse_import(texto, default_day=HOJE)
@@ -173,7 +160,6 @@ class TestRecusas:
         assert "compra" in resultado.issues[0].message
 
     def test_compra_sem_preco_e_recusada_pela_regra_do_razao(self):
-        """A validação do lançamento vale também na importação."""
         texto = "Data;Ativo;Tipo;Quantidade;Preço\n10/01/2024;PETR4;Compra;100;0\n"
 
         resultado = parse_import(texto, default_day=HOJE)

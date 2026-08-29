@@ -39,7 +39,6 @@ const derivedRulers = () =>
       spec: tokens[key],
     }));
 
-
 function buildCss() {
   const out = [];
   out.push(...BANNER_LINES.map(l => `/* ${l} */`), '');
@@ -121,7 +120,6 @@ function buildCss() {
 
   return out.join('\n');
 }
-
 
 function buildTs() {
   const out = [];
@@ -264,7 +262,6 @@ function buildTs() {
 
   return out.join('\n');
 }
-
 
 const dartColor = hex => `Color(0xFF${hex.replace('#', '').toUpperCase()})`;
 
@@ -496,7 +493,6 @@ function buildDart() {
 
   return out.join('\n');
 }
-
 
 const artifacts = [
   { path: join(repo, 'web', 'src', 'tokens.css'), content: buildCss() },

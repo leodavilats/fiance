@@ -12,14 +12,6 @@ def _twr_series(
     realized: list[float] | None = None,
     dividends: list[float] | None = None,
 ) -> list[float]:
-    """Retorno acumulado ponderado no tempo (TWR), em %, ponto a ponto.
-
-    Provento entra como valor distribuído, somado ao fechamento do período em
-    que foi pago. Sem isso o TWR pune quem recebe dividendo: o preço cai no
-    ex-dividendo, o patrimônio em carteira cai junto, e o dinheiro que
-    compensaria a queda não está em `total_current` — a carteira apareceria
-    perdendo exatamente o que ganhou.
-    """
     cumulative = 1.0
     out = [0.0]
     periods = max(len(snapshots) - 1, 0)
@@ -44,14 +36,6 @@ def _twr_series(
 
 
 def _dividends_per_period(snapshots: list[dict], received: list[dict]) -> list[float]:
-    """Soma dos proventos de cada período entre snapshots.
-
-    **Convenção de borda, declarada:** `paid_at` é dia, `captured_at` é
-    instante. Um provento pago no dia D pertence ao primeiro período cujo
-    snapshot de fechamento caia em D ou depois, com o dia lido no fuso
-    brasileiro. Sem uma convenção escrita, o mesmo provento entra ou sai do
-    período conforme a hora arbitrária em que o job de snapshot rodou.
-    """
     periods = max(len(snapshots) - 1, 0)
     if periods == 0 or not received:
         return []
@@ -76,11 +60,6 @@ def _dividends_per_period(snapshots: list[dict], received: list[dict]) -> list[f
 
 
 def _brt_day(timestamp: float) -> str:
-    """O dia da B3 é o dia brasileiro.
-
-    Lido em UTC, um snapshot das 22h de Brasília vira o dia seguinte e a busca
-    do fechamento do Ibovespa erra a chave — devolvendo `None` em silêncio.
-    """
     return to_brt(timestamp).strftime("%Y-%m-%d")
 
 

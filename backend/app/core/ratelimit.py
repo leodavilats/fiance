@@ -1,11 +1,3 @@
-"""Teto de abuso por usuário e rota, sobre o contador de uso.
-
-Não é a mesma coisa que teto de plano, mas é a mesma primitiva: `usage.increment`
-numa janela de um minuto. Rotas caras — as que varrem o universo — têm teto
-próprio, porque punir o usuário legítimo do dashboard pelo custo do scanner
-seria calibrar pelo pior caso.
-"""
-
 from __future__ import annotations
 
 import math
@@ -16,11 +8,8 @@ from app.core import usage
 from app.core.auth import get_current_user
 from app.core.config import get_settings
 
-# Teto largo por padrão: uma tela do produto dispara várias chamadas em série,
-# e o objetivo aqui é conter script, não navegação.
 DEFAULT_PER_MINUTE = 240
 
-# Rotas que varrem o universo ou recalculam a carteira inteira.
 EXPENSIVE_PER_MINUTE = 12
 EXPENSIVE_PREFIXES = (
     "/api/opportunities",
@@ -31,7 +20,6 @@ EXPENSIVE_PREFIXES = (
     "/api/sectors-summary",
 )
 
-# Escrita é mais barata de servir e mais cara de abusar.
 WRITE_PER_MINUTE = 60
 
 

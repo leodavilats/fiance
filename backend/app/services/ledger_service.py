@@ -1,15 +1,3 @@
-"""A ponte entre o livro-razão e a posição corrente.
-
-O portão G1 sai quando toda posição corrente é derivável do razão e um teste
-compara as duas em cada build. Este módulo é os dois lados dessa frase: escreve
-o razão em paralelo à posição (`mirror_*`), e sabe dizer onde os dois divergem
-(`reconcile`).
-
-A ordem importa e é a do plano: razão em paralelo, comparação lado a lado, e só
-então a posição vira projeção. Trocar a fonte antes de a comparação estar verde
-é como se perde a confiança no número.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -21,20 +9,12 @@ from app.storage import audit_store, ledger_store, portfolio_store
 
 logger = logging.getLogger("fiance.ledger")
 
-#: Tolerância da comparação. Quantidade fracionária de desdobramento e custo em
-#: float acumulam resíduo; a troca por Decimal é um refactor à parte,
-#: deliberadamente separado deste.
 QUANTITY_TOLERANCE = 1e-6
 PRICE_TOLERANCE = 1e-4
 
 
 def today_brt() -> str:
     return now_brt().strftime("%Y-%m-%d")
-
-
-# --------------------------------------------------------------------------
-# Escrita espelhada
-# --------------------------------------------------------------------------
 
 
 def mirror_position_state(
@@ -44,13 +24,6 @@ def mirror_position_state(
     traded_on: str | None = None,
     user_id: str | None = None,
 ) -> None:
-    """Registra no razão o estado que o usuário declarou na tela.
-
-    É `adjust`, não `buy`: a pessoa disse "eu tenho 100 a 10,00", e inventar uma
-    compra que não aconteceu seria mentir sobre a origem do número. Quando a
-    importação de nota e CSV chegar (G2), ela grava `buy` de verdade e este
-    caminho vira exceção em vez de regra.
-    """
     try:
         ledger_store.record(
             LedgerEntry(
@@ -64,8 +37,6 @@ def mirror_position_state(
             user_id=user_id,
         )
     except Exception:
-        # Espelhar não pode derrubar a escrita de carteira: a posição corrente
-        # ainda é a fonte de leitura. A divergência aparece na reconciliação.
         logger.warning("Falha ao espelhar posição %s no razão", ticker, exc_info=True)
 
 
@@ -77,7 +48,6 @@ def mirror_sale(
     traded_on: str | None = None,
     user_id: str | None = None,
 ) -> None:
-    """Venda é operação de verdade, então entra no razão como `sell`."""
     try:
         ledger_store.record(
             LedgerEntry(
@@ -96,7 +66,6 @@ def mirror_sale(
 
 
 def mirror_removal(ticker: str, user_id: str | None = None) -> None:
-    """Apagar a posição zera o razão daquele ativo, senão a projeção ressuscita."""
     try:
         ledger_store.record(
             LedgerEntry(
@@ -113,21 +82,11 @@ def mirror_removal(ticker: str, user_id: str | None = None) -> None:
         logger.warning("Falha ao espelhar remoção de %s no razão", ticker, exc_info=True)
 
 
-# --------------------------------------------------------------------------
-# Projeção e reconciliação
-# --------------------------------------------------------------------------
-
-
 def project(user_id: str | None = None) -> dict[str, PositionProjection]:
     return project_positions(ledger_store.list_entries(user_id=user_id))
 
 
 def reconcile(user_id: str | None = None) -> dict:
-    """Compara a posição corrente com a projeção do razão, ativo por ativo.
-
-    Devolve as divergências com os dois números à vista. É o critério de saída
-    do G1 escrito como verificação, não como intenção.
-    """
     stored = {item["ticker"]: item for item in portfolio_store.list_positions(user_id)}
     projected = {symbol: state for symbol, state in project(user_id).items() if state.is_open}
 
@@ -181,12 +140,6 @@ def reconcile(user_id: str | None = None) -> dict:
 
 
 def backfill_from_positions(user_id: str | None = None) -> int:
-    """Semeia o razão com o estado atual de quem já tinha carteira.
-
-    Sem isto, a reconciliação acusaria toda conta anterior ao razão como
-    divergente — e um alarme que toca para todo mundo é um alarme desligado.
-    Grava um `adjust` por posição, na data de hoje, com a origem declarada.
-    """
     existing = set(ledger_store.symbols(user_id=user_id))
     entries = [
         LedgerEntry(
@@ -216,23 +169,11 @@ def backfill_from_positions(user_id: str | None = None) -> int:
 
 
 def derivation_for(symbol: str, user_id: str | None = None) -> dict:
-    """A conta do preço médio de um ativo, passo a passo."""
     entries = ledger_store.list_entries(symbol=symbol, user_id=user_id)
     return explain_position(entries, symbol=symbol.strip().upper())
 
 
-# --------------------------------------------------------------------------
-# Importação
-# --------------------------------------------------------------------------
-
-
 def _duplicate_key(entry: LedgerEntry) -> tuple:
-    """O que faz dois lançamentos serem "a mesma operação".
-
-    Ativo, tipo, dia, quantidade e preço. Taxas ficam de fora porque a mesma
-    nota reimportada de outra fonte pode trazer a corretagem arredondada
-    diferente — e ainda assim é a mesma operação.
-    """
     return (
         entry.symbol.strip().upper(),
         entry.kind.value,
@@ -243,12 +184,6 @@ def _duplicate_key(entry: LedgerEntry) -> tuple:
 
 
 def mark_duplicates(parsed, user_id: str | None = None) -> None:
-    """Anota, em cada linha lida, se ela já existe no razão.
-
-    Não remove nada: reimportar a mesma nota é o erro mais comum da importação,
-    mas duas compras idênticas no mesmo dia também acontecem. Quem decide é o
-    usuário — silenciar a segunda cópia apagaria uma operação legítima.
-    """
     existentes: dict[tuple, int] = {}
     for entry in ledger_store.list_entries(user_id=user_id):
         if entry.id is not None:
@@ -259,7 +194,6 @@ def mark_duplicates(parsed, user_id: str | None = None) -> None:
 
 
 def import_entries(entries: list[LedgerEntry], user_id: str | None = None) -> list[int]:
-    """Grava o lote inteiro ou nenhum, e registra na auditoria."""
     if not entries:
         return []
 

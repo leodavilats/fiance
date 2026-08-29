@@ -1,9 +1,3 @@
-"""Busca global.
-
-Sem cerca de plano: procurar o que já é seu não é recurso premium, e uma caixa
-de busca que responde 402 é pior que uma que não existe.
-"""
-
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
@@ -51,5 +45,4 @@ async def global_search(
     q: str = Query("", max_length=64, description="O que a pessoa digitou"),
     user_id: str = Depends(get_current_user),
 ) -> SearchResponse:
-    """Busca na carteira, na renda fixa e no universo."""
     return SearchResponse(**search_service.search(q, user_id))

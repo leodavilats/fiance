@@ -1,5 +1,3 @@
-"""Isolamento entre tenants — a garantia central do produto."""
-
 from tests.conftest import make_auth_headers
 
 ITEM_A = {"ticker": "PETR4", "quantity": 100, "avg_price": 30.0, "category": "auto"}

@@ -1,18 +1,3 @@
-"""O contrato do gateway, e o gateway falso que o exercita.
-
-O direito mora no backend ligado ao `user_id`; o gateway é **detalhe de canal**.
-Essa não é uma afirmação de arquitetura bonita: é o que permite vender na web
-(1,19% no Pix, 3,99% no cartão) e liberar no app sem migrar assinante quando a
-compra in-app entrar — 14 pontos de diferença sobre R$ 179,90, que em mil
-assinantes anuais são ~R$ 25 mil por ano.
-
-Por isso o provedor é uma interface. O falso não é andaime de teste: é o
-provedor de desenvolvimento, e é ele que roda enquanto não houver conta. A
-integração real com a Stripe **não é verificável sem chave** — o que este
-módulo garante é que o contrato à volta dela esteja certo: sessão criada,
-webhook idempotente, assinatura verificada, reconciliação possível.
-"""
-
 from __future__ import annotations
 
 import hashlib
@@ -33,8 +18,6 @@ class CheckoutSession:
 
 @dataclass(frozen=True)
 class WebhookEvent:
-    """Um evento normalizado, já traduzido do vocabulário do provedor."""
-
     id: str
     type: str
     user_id: str
@@ -47,7 +30,7 @@ class WebhookEvent:
 
 
 class SignatureError(ValueError):
-    """Assinatura de webhook inválida — a requisição não veio do provedor."""
+    pass
 
 
 class PaymentProvider(Protocol):
@@ -66,14 +49,6 @@ class PaymentProvider(Protocol):
 
 @dataclass
 class FakeProvider:
-    """Provedor de desenvolvimento. Assina com HMAC como a Stripe faz.
-
-    Assinar de verdade importa: um falso que aceitasse qualquer requisição
-    deixaria o caminho de verificação sem exercício nenhum, e é justamente ele
-    que não pode estar errado — webhook sem verificação de assinatura é uma
-    rota pública que concede assinatura.
-    """
-
     name: str = "fake"
     secret: str = "segredo-de-desenvolvimento"
     sessions: dict[str, dict] = field(default_factory=dict)
@@ -101,9 +76,6 @@ class FakeProvider:
 
     def verify(self, payload: bytes, signature: str) -> None:
         esperado = self.sign(payload)
-        # Comparação em tempo constante: comparar com `==` vaza o prefixo
-        # correto pelo tempo de resposta, e o atacante precisa de um oráculo
-        # só para forjar a assinatura byte a byte.
         if not hmac.compare_digest(esperado, signature or ""):
             raise SignatureError("Assinatura do webhook não confere.")
 
@@ -121,7 +93,6 @@ class FakeProvider:
         )
 
     def active_subscriptions(self) -> list[dict]:
-        """O que o gateway considera ativo — a fonte da reconciliação."""
         return [
             {"user_id": uid, **dados}
             for uid, dados in self.granted.items()

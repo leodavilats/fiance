@@ -20,9 +20,6 @@ from app.core.observability import observability_middleware
 
 logger = logging.getLogger("fiance")
 
-#: Versão do contrato da API. Muda quando uma resposta deixa de ser
-#: retrocompatível — campo removido ou renomeado, semântica alterada. Campo
-#: **adicionado** não muda a versão: cliente que não o conhece o ignora.
 API_VERSION = "v1"
 
 
@@ -78,18 +75,10 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def stamp_api_version(request: Request, call_next):
-        """Carimba a versão e diz se o cliente veio pelo caminho sem versão.
-
-        `X-API-Deprecation` existe para ser medido, não para ser lido por
-        humano: é o que permite saber quando o alias `/api` pode sair sem
-        derrubar ninguém.
-        """
         response = await call_next(request)
         response.headers["X-API-Version"] = API_VERSION
         path = request.url.path
         if path.startswith("/api/") and not path.startswith(f"/api/{API_VERSION}/"):
-            # Sem acento de propósito: cabeçalho HTTP é latin-1, e um "á" aqui
-            # derruba a resposta inteira com UnicodeDecodeError.
             response.headers["X-API-Deprecation"] = f"deprecated; use /api/{API_VERSION}{path[4:]}"
         return response
 
@@ -124,16 +113,6 @@ def create_app() -> FastAPI:
             content={"detail": "Erro interno do servidor. Tente novamente mais tarde."},
         )
 
-    # Duas montagens do **mesmo** router, não duas cópias da API.
-    #
-    # `/api/v1` é o caminho canônico: sem versão no caminho, uma mudança de
-    # contrato só tem dois destinos ruins — quebrar cliente publicado ou nunca
-    # mudar. `/api` continua respondendo porque os apps instalados apontam para
-    # lá, e derrubá-los num deploy seria trocar um problema por outro.
-    #
-    # O alias não é permanente: sai quando a telemetria mostrar que não há mais
-    # cliente antigo chamando. Até lá, a resposta carrega `X-API-Version` para
-    # que dê para medir isso.
     app.include_router(router, prefix=f"/api/{API_VERSION}")
     app.include_router(router, prefix="/api", include_in_schema=False)
 

@@ -102,8 +102,6 @@ export class AtivoComponent implements OnInit, OnDestroy {
       const symbol = ticker.toUpperCase();
       this.searchForm.controls.symbol.setValue(symbol);
       this.fetch(symbol);
-      // Visitante anônimo não tem carteira para carregar, e pedir a dele seria
-      // uma sequência de 401 na página que serve justamente para convertê-lo.
       if (this.auth.isAuthenticated()) this.carteira.ensureLoaded();
     });
 
@@ -144,8 +142,6 @@ export class AtivoComponent implements OnInit, OnDestroy {
     this.meta.updateTag({ property: 'og:title', content: `${nome} | fiance` });
     this.meta.updateTag({ property: 'og:description', content: descricao });
     this.meta.updateTag({ property: 'og:type', content: 'article' });
-    // Sem canônica, a mesma análise sob /ativo/PETR4 e /ativo/petr4 vira
-    // conteúdo duplicado e as duas perdem posição.
     this.setCanonical(`/ativo/${asset.symbol}`);
   }
 

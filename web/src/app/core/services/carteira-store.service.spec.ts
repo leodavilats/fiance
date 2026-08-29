@@ -178,7 +178,6 @@ describe('CarteiraStore', () => {
       total_atual: 1000,
     } as unknown as FixedIncomeListResponse);
 
-    // 12% de 1200 = 144/ano; 12% de 1000 = 120/ano; (144 + 120) / 12 = 22.
     expect(store.estimatedMonthlyIncome()).toBe(22);
   });
 
@@ -199,8 +198,6 @@ describe('CarteiraStore', () => {
     });
 
     it('cada lista cortada aparece pelo nome', () => {
-      // Truncar em silêncio é indistinguível de ter perdido operações — e é
-      // exatamente a conclusão que o usuário tira.
       store.fixedIncome.set({
         items: [],
         total_investido: 0,
@@ -213,7 +210,6 @@ describe('CarteiraStore', () => {
     });
 
     it('resposta sem o campo não é tratada como cortada', () => {
-      // Backend antigo respondendo a cliente novo: ausência não é truncagem.
       store.closedTrades.set({ trades: [] } as never);
 
       expect(store.truncated()).toEqual([]);

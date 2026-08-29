@@ -28,9 +28,6 @@ final appRouter = GoRouter(
     GoRoute(path: '/assets', redirect: (_, _) => '/carteira'),
     GoRoute(path: '/market', redirect: (_, _) => '/descobrir'),
     GoRoute(path: '/config', redirect: (_, _) => '/voce'),
-    // Busca é camada, não destino: ela abre por cima de onde a pessoa está e
-    // some. Colocá-la no bottom nav gastaria um dos cinco lugares com algo que
-    // não é um lugar.
     GoRoute(path: '/busca', builder: (context, state) => const BuscaScreen()),
 
     StatefulShellRoute.indexedStack(

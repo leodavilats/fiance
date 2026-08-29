@@ -132,7 +132,7 @@ class AuthService {
           options: Options(headers: {'Authorization': 'Bearer $token'}),
         );
       } on DioException {
-        // Servidor indisponível não pode impedir a saída local.
+        // ignore: empty_catches
       }
     }
 

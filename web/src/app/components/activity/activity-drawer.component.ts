@@ -75,8 +75,6 @@ import { ActivityFeedComponent } from './activity-feed.component';
 export class ActivityDrawerComponent implements AfterViewInit, OnDestroy {
   readonly activity = inject(ActivityService);
 
-  // `DOCUMENT` e não o global: no servidor o global não existe, e o drawer é
-  // construído junto com o resto do shell na página pública de ativo.
   private readonly doc = inject(DOCUMENT);
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');

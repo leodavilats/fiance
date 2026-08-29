@@ -6,7 +6,6 @@ import '../../../core/theme.dart';
 import '../hoje_actions.dart';
 import '../../../core/score_ruler.dart';
 
-
 class FiAlertTile extends StatelessWidget {
   const FiAlertTile({super.key, required this.alert});
 

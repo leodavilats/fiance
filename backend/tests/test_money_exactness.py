@@ -1,11 +1,3 @@
-"""Dinheiro exato: escala, arredondamento e o erro que só aparece somado.
-
-Float é adequado para apoiar decisão. Deixa de ser quando o número é somado ao
-longo de centenas de operações e vira o valor que o usuário digita na
-declaração. Estes testes são a prova por contraste — cada um mostra o float
-errando e o Decimal fechando.
-"""
-
 from __future__ import annotations
 
 import random
@@ -20,7 +12,6 @@ from app.optimizer.cost_calculator import calculate_sell_cost
 
 class TestConversao:
     def test_float_vira_decimal_pelo_texto_e_nao_pelo_binario(self):
-        """`Decimal(0.1)` carrega o erro do binário; `money(0.1)` não."""
         assert money(0.1) == Decimal("0.1")
         assert Decimal(0.1) != Decimal("0.1")
 
@@ -28,7 +19,6 @@ class TestConversao:
         assert money(Decimal("1.005")) == Decimal("1.005")
 
     def test_arredondamento_e_meio_para_cima_nao_bancario(self):
-        """`round(2.5)` em Python devolve 2. A Receita não faz isso."""
         assert quantize("2.345") == Decimal("2.35")
         assert quantize("2.355") == Decimal("2.36")
         assert round(2.5) == 2, "o contraste: é este comportamento que não serve"
@@ -40,21 +30,12 @@ class TestConversao:
 
 class TestErroAcumulado:
     def test_mil_operacoes_fecham_com_erro_zero(self):
-        """Critério de aceite, literal.
-
-        O contraste usa cem parcelas de R$ 0,07 e não mil de R$ 0,01: em mil
-        parcelas os erros de binário se cancelam por acaso, e um teste que
-        depende desse acaso não prova nada. Em cem, sobra resíduo — e é
-        exatamente assim que o erro chega ao extrato: sem aviso, em alguns
-        totais e não em outros.
-        """
         assert sum_money(["0.01"] * 1000) == Decimal("10.00")
         assert sum_money(["0.07"] * 100) == Decimal("7.00")
 
         assert sum(0.07 for _ in range(100)) != 7.0, "o contraste, em float"
 
     def test_carteira_de_mil_compras_tem_custo_exato(self):
-        """Cada compra de R$ 0,07 — o preço que mais dói em binário."""
         entradas = [
             LedgerEntry(
                 kind=TransactionKind.BUY,
@@ -89,7 +70,6 @@ class TestErroAcumulado:
         assert project_position(entradas).total_fees_exact == Decimal("2900.00")
 
     def test_compra_e_venda_alternadas_zeram_o_custo_sem_residuo(self):
-        """Em float, comprar e vender mil vezes deixa poeira no custo."""
         entradas = []
         for i in range(500):
             entradas.append(
@@ -123,8 +103,6 @@ class TestErroAcumulado:
 
 
 class TestPropriedades:
-    """Propriedades que valem para qualquer sequência, não para um caso."""
-
     @staticmethod
     def _random_entries(seed: int, count: int) -> list[LedgerEntry]:
         rng = random.Random(seed)
@@ -170,7 +148,6 @@ class TestPropriedades:
 
     @pytest.mark.parametrize("seed", range(8))
     def test_custo_e_sempre_quantidade_vezes_preco_medio(self, seed):
-        """A identidade que sustenta o extrato inteiro."""
         posicao = project_position(self._random_entries(seed, 200))
 
         assert posicao.avg_price_exact * posicao.quantity_exact == pytest.approx(
@@ -202,7 +179,6 @@ class TestPropriedades:
 
 class TestApuracaoFiscal:
     def test_o_liquido_sai_dos_exatos_e_nao_dos_arredondados(self):
-        """Subtrair valores já arredondados desloca o centavo do extrato."""
         custo = calculate_sell_cost(
             "acoes_br",
             quantity=333,
@@ -219,7 +195,6 @@ class TestApuracaoFiscal:
         assert custo.net_profit == to_float(quantize(bruto - imposto))
 
     def test_a_isencao_mensal_e_comparada_com_valor_exato(self):
-        """No limite de R$ 20.000 exatos, a operação ainda é isenta."""
         custo = calculate_sell_cost(
             "acoes_br",
             quantity=1000,
@@ -243,7 +218,6 @@ class TestApuracaoFiscal:
 
 class TestSemFloatOndeImporta:
     def test_a_projecao_guarda_o_valor_fiscal_em_decimal(self):
-        """Verificado por teste, não por revisão."""
         posicao = project_position(
             [
                 LedgerEntry(
@@ -266,7 +240,6 @@ class TestSemFloatOndeImporta:
             assert isinstance(getattr(posicao, campo), Decimal), campo
 
     def test_a_borda_da_api_continua_em_float(self):
-        """Decimal não vaza para o JSON: a API responde número, não string."""
         posicao = project_position(
             [
                 LedgerEntry(

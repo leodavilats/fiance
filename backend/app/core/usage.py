@@ -1,14 +1,3 @@
-"""Contador por usuário, recurso e janela.
-
-Uma primitiva só para dois tetos que sempre foram o mesmo problema: abuso
-(N chamadas por minuto numa rota) e plano (5 páginas de ativo por mês). A
-granularidade não é uma coluna, é o formato de `window_key` — trocar de janela
-não muda o schema.
-
-O mês é o mês calendário **brasileiro**, pela mesma razão que a isenção de IR
-é: o usuário conta o mês dele, não o do UTC.
-"""
-
 from __future__ import annotations
 
 import time
@@ -51,7 +40,6 @@ def increment(
     ttl_seconds: float,
     amount: int = 1,
 ) -> int:
-    """Soma no contador da janela e devolve o valor já somado."""
     now = time.time()
     with db_session() as session:
         row = session.get(UsageCounterDb, (user_id, resource, window_key))
@@ -86,7 +74,6 @@ def current(user_id: str, resource: str, window_key: str) -> int:
 
 
 def reset(user_id: str, resource: str, window_key: str | None = None) -> int:
-    """Zera o contador — usado por manutenção e por concessão de cortesia."""
     with db_session() as session:
         stmt = delete(UsageCounterDb).where(
             UsageCounterDb.user_id == user_id,

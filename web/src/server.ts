@@ -77,15 +77,11 @@ app.get('/sitemap.xml', async (_req, res) => {
     }
     res.type('application/xml').send(sitemapCache.xml);
   } catch {
-    // Servir um sitemap vazio é pior que não servir: o robô o trata como
-    // "o site encolheu" e desindexa. 503 faz ele voltar depois.
     res.status(503).type('text/plain').send('sitemap indisponível');
   }
 });
 
 app.get('/robots.txt', (_req, res) => {
-  // Só a página de ativo é pública. As telas de sessão não têm o que indexar e
-  // apontar o robô para elas gasta orçamento de rastreio em redirect de login.
   res
     .type('text/plain')
     .send(

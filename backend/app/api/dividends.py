@@ -29,7 +29,6 @@ async def list_received(
     limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
     cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
 ) -> DividendsReceivedResponse:
-    """Proventos efetivamente creditados, com totais por mês e por ativo."""
     return service.list_received(estimated_monthly=estimated_monthly, limit=limit, cursor=cursor)
 
 
@@ -61,19 +60,11 @@ class DividendConfirmRequest(BaseModel):
 
 @router.get("/dividends/pending")
 async def pending_dividends() -> dict:
-    """Proventos que o calendário sugere, cruzados com a sua carteira.
-
-    Leitura pura: nada é gravado aqui. A confirmação é um passo separado de
-    propósito — cada fonte de erro possível nesta lista (data-com, razão
-    incompleto, JCP bruto) erra o valor **para mais**, e provento inventado
-    infla renda passiva e vira número errado na declaração.
-    """
     return await calendar_service.pending()
 
 
 @router.post("/dividends/pending/confirm")
 async def confirm_dividends(body: DividendConfirmRequest) -> dict:
-    """Grava os proventos que o usuário confirmou, e só esses."""
     if not body.items:
         return {"created": 0, "items": []}
 

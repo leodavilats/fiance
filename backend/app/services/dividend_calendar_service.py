@@ -1,25 +1,3 @@
-"""Proventos sugeridos pelo calendário — sempre com confirmação.
-
-O usuário lança provento à mão hoje, e provento é a coisa mais fácil de esquecer
-de lançar: chega no extrato da corretora, não no app. O calendário da fonte sabe
-o que foi pago; a carteira sabe quanto a pessoa tinha. Cruzar os dois produz uma
-lista de "isto provavelmente entrou na sua conta".
-
-**Nada é gravado sem confirmação, e isso não é cautela — é correção.** Três
-motivos concretos:
-
-* A quantidade na data vem da projeção do razão, e o razão pode estar incompleto
-  (quem ainda não importou o histórico tem só a posição atual).
-* A fonte publica `paymentDate`, não a data-com. Quem comprou entre uma e outra
-  aparece com direito que não tem.
-* Provento é lançado líquido pela corretora e bruto pela fonte; JCP tem 15% de
-  IR retido na origem.
-
-Cada um desses erra o valor **para mais**, e um provento inventado infla renda
-passiva, distorce a meta e vira número errado na declaração. A sugestão diz de
-onde veio e o que pode estar errado; a decisão é de quem viu o extrato.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -33,12 +11,8 @@ from app.storage import ledger_store
 
 logger = logging.getLogger("fiance.dividend_calendar")
 
-#: Quanto do passado é oferecido. Mais que isso vira uma lista que ninguém
-#: confere, e o que ninguém confere acaba confirmado no atacado.
 LOOKBACK_DAYS = 400
 
-#: JCP tem 15% retidos na fonte. A sugestão mostra o bruto e avisa — descontar
-#: por conta própria erraria quem já recebe líquido informado pela corretora.
 JCP_WITHHOLDING_PCT = 15.0
 
 _JCP_HINTS = ("jcp", "juros sobre capital", "juros s/ capital")
@@ -52,10 +26,7 @@ class DividendSuggestion:
     rate_per_share: float
     amount: float
     kind: str
-    #: Por que este número pode estar errado, nesta linha específica.
     caveats: list[str] = field(default_factory=list)
-    #: `True` quando a quantidade veio da posição atual e não do razão — nesse
-    #: caso ela é a de hoje, não a da data do provento.
     quantity_is_current: bool = False
 
     def as_dict(self) -> dict:
@@ -84,7 +55,6 @@ class DividendCalendarService:
         self.portfolio_repo = PortfolioRepository()
 
     async def pending(self, user_id: str | None = None) -> dict:
-        """Proventos do calendário que a carteira sugere ter recebido."""
         posicoes = self.portfolio_repo.list_positions()
         if not posicoes:
             return {"items": [], "note": "Sem posições na carteira — nada a sugerir."}
@@ -198,12 +168,6 @@ class DividendCalendarService:
 
     @staticmethod
     def _quantity_at(entries: list, day: str, posicao: dict) -> tuple[float, bool]:
-        """Quantidade na data, pela projeção do razão.
-
-        É aqui que o livro-razão paga a conta de existir: sem ele, a única
-        resposta possível seria a quantidade de hoje — que erra todo provento
-        anterior ao último aporte.
-        """
         anteriores = [e for e in entries if e.traded_on <= day]
         if not anteriores:
             return float(posicao["quantity"]), False

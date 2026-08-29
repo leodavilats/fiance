@@ -15,9 +15,6 @@ import { RenderMode, ServerRoute } from '@angular/ssr';
  */
 export const serverRoutes: ServerRoute[] = [
   {
-    // A página que é o canal de aquisição. Server e não Prerender porque o
-    // universo tem centenas de tickers e o conteúdo muda todo pregão — gerar
-    // tudo no build entregaria preço de ontem.
     path: 'ativo/:ticker',
     renderMode: RenderMode.Server,
   },

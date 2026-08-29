@@ -1,10 +1,3 @@
-"""Paginação por cursor e versão da API.
-
-As duas coisas andam juntas: paginar muda a forma da resposta, e mudar a forma
-da resposta sem versionar o caminho só tem dois destinos ruins — quebrar cliente
-publicado, ou nunca mais mudar nada.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -36,7 +29,6 @@ class TestCursor:
 
     @pytest.mark.parametrize("lixo", ["", "!!!", "YWJj", "nao-e-base64-valido!!"])
     def test_cursor_corrompido_e_400_e_nao_500(self, lixo):
-        """Cliente que guardou um cursor antigo tem que receber instrução."""
         with pytest.raises(InvalidCursorError, match="Recomece a listagem"):
             decode_cursor(lixo)
 
@@ -87,12 +79,6 @@ class TestFatiamento:
         assert pagina.next_cursor is None
 
     def test_insercao_entre_paginas_nao_desloca_o_que_ja_foi_lido(self):
-        """É o motivo de o cursor existir em vez de `OFFSET`.
-
-        Com offset, inserir no topo empurra tudo para baixo e o item da borda
-        aparece de novo na página seguinte. Com keyset, a âncora é o último item
-        lido — o que entrou depois simplesmente não está atrás dele.
-        """
         primeira = self._pagina(None)
 
         lista_crescida = [("2024-01-99", 999), *self.ITENS]
@@ -108,7 +94,6 @@ class TestFatiamento:
         assert ("2024-01-99", 999) not in segunda.items
 
     def test_dois_registros_do_mesmo_dia_nao_travam_a_paginacao(self):
-        """Sem o `id` como desempate, a paginação repetiria a borda para sempre."""
         mesma_data = [("2024-01-10", i) for i in range(6, 0, -1)]
         pagina = slice_after(mesma_data, None, 3, key=lambda i: i[0], identity=lambda i: i[1])
         seguinte = slice_after(
@@ -119,7 +104,6 @@ class TestFatiamento:
         assert seguinte.items == mesma_data[3:]
 
     def test_a_linha_extra_e_o_que_revela_a_proxima_pagina(self):
-        """`has_more` sai da linha a mais, não de um `COUNT(*)` na tabela."""
         pagina = paginate([1, 2, 3, 4], limit=3, key=lambda x: x, identity=lambda x: x)
 
         assert pagina.items == [1, 2, 3]
@@ -137,11 +121,6 @@ def _semear_proventos(client, headers, quantidade: int) -> None:
 
 class TestListasNaApi:
     def test_o_total_cobre_tudo_mesmo_com_a_lista_cortada(self, client):
-        """O número no topo da tela não pode encolher conforme a rolagem.
-
-        É o critério que separa paginar de truncar: `items` é a página,
-        `total_received` é o extrato.
-        """
         headers = make_auth_headers("u_pag_totais")
         _semear_proventos(client, headers, 8)
 
@@ -202,7 +181,6 @@ class TestListasNaApi:
         assert len(corpo["trades"]) == 2
         assert corpo["total_count"] == 4
         assert corpo["has_more"] is True
-        # Os totais vêm de SUM sobre a tabela, não da soma da página.
         assert corpo["total_realized_pnl"] > 0
 
     def test_lancamentos_paginam_e_vem_em_ordem_de_leitura(self, client):
@@ -226,7 +204,6 @@ class TestListasNaApi:
         assert corpo["has_more"] is True
 
     def test_sem_limite_a_resposta_continua_completa_para_carteira_normal(self, client):
-        """O padrão não pode truncar quem cabe numa página."""
         headers = make_auth_headers("u_pag_pequena")
         _semear_proventos(client, headers, 3)
 
@@ -246,7 +223,6 @@ class TestVersaoDaApi:
         assert resposta.status_code == 200
 
     def test_o_caminho_sem_versao_continua_respondendo(self, client):
-        """Derrubar os apps instalados num deploy seria trocar um problema por outro."""
         headers = make_auth_headers("u_ver_legado")
 
         assert client.get("/api/portfolio", headers=headers).status_code == 200
@@ -259,7 +235,6 @@ class TestVersaoDaApi:
         assert resposta.headers["X-API-Version"] == API_VERSION
 
     def test_o_caminho_sem_versao_se_declara_em_transicao(self, client):
-        """O aviso existe para ser medido: é o que dirá quando o alias pode sair."""
         headers = make_auth_headers("u_ver_aviso")
 
         legado = client.get("/api/portfolio", headers=headers)
@@ -270,7 +245,6 @@ class TestVersaoDaApi:
         assert "X-API-Deprecation" not in versionado.headers
 
     def test_o_cabecalho_e_ascii(self, client):
-        """Header HTTP é latin-1: um acento aqui derruba a resposta inteira."""
         headers = make_auth_headers("u_ver_ascii")
 
         aviso = client.get("/api/portfolio", headers=headers).headers["X-API-Deprecation"]
@@ -278,7 +252,6 @@ class TestVersaoDaApi:
         aviso.encode("ascii")
 
     def test_as_duas_montagens_sao_o_mesmo_router(self, client):
-        """Duas cópias da API divergiriam na primeira mudança."""
         headers = make_auth_headers("u_ver_mesmo")
         client.post(
             "/api/portfolio/position",

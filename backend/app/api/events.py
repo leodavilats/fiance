@@ -15,7 +15,6 @@ router = APIRouter()
 
 admin_router = APIRouter()
 
-# Um lote grande demais é sinal de cliente com fila represada, não de uso.
 MAX_BATCH = 40
 
 
@@ -36,12 +35,6 @@ class InvalidEventPayload(DomainError):
 
 @router.post("/events")
 async def ingest_events(body: EventBatch, user_id: str = Depends(get_current_user)) -> dict:
-    """Recebe eventos de produto do cliente.
-
-    Nome fora do dicionário e propriedade proibida devolvem 422 — falhar alto é
-    de propósito: um evento aceito e descartado em silêncio vira uma métrica que
-    ninguém sabe que está errada.
-    """
     if len(body.events) > MAX_BATCH:
         raise InvalidEventPayload(f"No máximo {MAX_BATCH} eventos por lote.")
 
@@ -53,8 +46,6 @@ async def ingest_events(body: EventBatch, user_id: str = Depends(get_current_use
         except event_catalog.InvalidEventError as exc:
             raise InvalidEventPayload(str(exc)) from exc
 
-        # Relógio do cliente não define o passado: aceita-se até 24h de atraso
-        # (fila offline do app) e nada no futuro.
         occurred_at = item.occurred_at or now
         occurred_at = min(max(occurred_at, now - 86400), now)
 
@@ -66,7 +57,6 @@ async def ingest_events(body: EventBatch, user_id: str = Depends(get_current_use
 
 @router.get("/events/catalog")
 async def read_catalog() -> dict:
-    """O dicionário publicado — o cliente não inventa nome de evento."""
     return {"questions": list(event_catalog.QUESTIONS), "events": event_catalog.catalog_as_dicts()}
 
 
@@ -78,5 +68,4 @@ async def read_funnel(days: int = 90) -> dict:
 
 @admin_router.get("/analytics/aha")
 async def read_aha() -> dict:
-    """Qual evento de aha prevê retenção — a pergunta que decide o paywall."""
     return {"candidates": aha_correlation()}

@@ -194,8 +194,6 @@ class _BuscaScreenState extends ConsumerState<BuscaScreen> {
       return;
     }
 
-    // Uma chamada por tecla digitada transformaria a busca num gerador de
-    // carga; 250ms é o intervalo entre teclas de quem está digitando de fato.
     _debounce = Timer(const Duration(milliseconds: 250), () async {
       try {
         final res = await ref.read(apiRepositoryProvider).search(value.trim());
@@ -206,8 +204,6 @@ class _BuscaScreenState extends ConsumerState<BuscaScreen> {
           });
         }
       } catch (err) {
-        // Sem rede, os destinos continuam navegáveis: é melhor perder metade do
-        // resultado do que a caixa inteira.
         if (mounted) {
           setState(() {
             _results = null;

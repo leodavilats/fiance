@@ -5,7 +5,6 @@ import '../../../core/models.dart';
 import '../../../core/theme.dart';
 import 'package:go_router/go_router.dart';
 
-
 class FiSectionTitle extends StatelessWidget {
   const FiSectionTitle({super.key, required this.icon, required this.title});
 

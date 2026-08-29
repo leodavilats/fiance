@@ -71,8 +71,6 @@ describe('onboarding', () => {
 
   describe('o passo mora na URL', () => {
     it('a URL manda sobre o estado do servidor', () => {
-      // Refresh no passo 2 tem que voltar ao passo 2, mesmo que o servidor
-      // ache que a pessoa já poderia estar no 3.
       const { component } = setup({ passo: '3', estado: estado({ step: 2 }) });
 
       expect(component.passoAtual()).toBe(3);

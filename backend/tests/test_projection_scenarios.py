@@ -1,10 +1,3 @@
-"""Projeção com faixa: nenhum número projetado sai sozinho.
-
-Uma projeção a cinco anos é a multiplicação de três chutes. Apresentá-la como
-``R$ 3.847,21`` empresta a essa pilha uma precisão de centavo que ela não tem —
-e a pessoa decide quanto poupar em cima disso.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -18,8 +11,6 @@ from app.services.projection_service import ProjectionService
 
 
 class _CarteiraFalsa:
-    """Uma posição só, preço e DY fixos — a conta a testar é a projeção."""
-
     def list_positions(self):
         return [{"ticker": "PETR4", "quantity": 1000.0}]
 
@@ -54,11 +45,6 @@ def projetar(servico, **kwargs):
 
 class TestNenhumNumeroSozinho:
     def test_o_modelo_recusa_um_mes_sem_faixa(self):
-        """A faixa é obrigatória no schema, não uma convenção de quem monta.
-
-        Com default, existiria um caminho em que o número sai sozinho — e é
-        justamente esse caminho que a tela acabaria usando.
-        """
         with pytest.raises(ValidationError):
             PassiveIncomeMonth(
                 month="2027-01",
@@ -100,8 +86,6 @@ class TestOsTresCenarios:
         assert all(len(s.rationale) > 20 for s in r.scenarios)
 
     def test_o_conservador_nao_depende_de_previsao_nenhuma(self, servico):
-        """Zero crescimento: só o aporte trabalha. É o que a pessoa precisa
-        conseguir suportar."""
         r = projetar(servico, monthly_contribution=1000, months_ahead=12)
         conservador = r.scenarios[0]
 
@@ -134,8 +118,6 @@ class TestOsTresCenarios:
         assert base.dividend_growth_rate == pytest.approx(0.04)
 
     def test_a_faixa_e_larga_o_bastante_para_ser_honesta(self, servico):
-        """Se piso e teto coincidissem, a faixa seria um enfeite em volta de um
-        número único — o problema que ela existe para resolver."""
         r = projetar(servico, monthly_contribution=500, months_ahead=60)
         ultimo = r.projections[-1]
 
@@ -157,7 +139,6 @@ class TestMetaComoFaixaDeDatas:
         assert r.target.earliest_months <= r.target.expected_months
 
     def test_o_cenario_que_nao_alcanca_e_dito_e_nao_omitido(self, servico):
-        """Omitir o cenário que não chega faria a meta parecer garantida."""
         r = projetar(
             servico, monthly_contribution=0, target_monthly_income=999_999, months_ahead=24
         )

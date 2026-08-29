@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class UnsupportedTickerError(ValueError):
-    """Ticker não corresponde a nenhum asset_type suportado (br_stock/bdr/fii/etf)."""
+    pass
 
 
 FUND_TTL = 2 * 3600
@@ -117,7 +117,6 @@ def _safe_float(v) -> float | None:
 
 
 def _ratio_to_pct(v) -> float | None:
-    """Converte razão decimal da BRAPI para percentual (0.2039 -> 20.39)."""
     try:
         if v is None:
             return None
@@ -136,7 +135,6 @@ def _dividend_date(d: dict) -> str | None:
 
 
 def _sum_dividends_last_12m(raw: dict, reference: datetime | None = None) -> float:
-    """Soma os proventos dos últimos 12 meses **por data de pagamento**."""
     today = reference or datetime.now(UTC)
     cutoff = (today - timedelta(days=365)).strftime("%Y-%m-%d")
     horizon = today.strftime("%Y-%m-%d")
@@ -161,9 +159,7 @@ def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> flo
 
 _BRAPI_RAW_TTL = FUND_TTL
 
-
 _FALLBACK_HISTORY_RANGE = "3mo"
-
 
 _BRAPI_PROVIDER = "brapi"
 
@@ -174,9 +170,6 @@ def _brapi_raw(base: str) -> dict:
     if cached is not None:
         return cached
 
-    # Fonte fora do ar: nem tenta. Esperar o timeout em cada requisição de
-    # usuário deixa o app lento em vez de honesto — e quem chama aqui cai no
-    # cache vencido, que é dado antigo mas é dado, com a idade visível na tela.
     if not circuit.allows(_BRAPI_PROVIDER):
         return {}
 
@@ -208,9 +201,6 @@ def _brapi_raw(base: str) -> dict:
             break
         except httpx.HTTPStatusError as e:
             record_external_call("brapi", ok=False)
-            # 400 por range é limitação do plano, não fonte fora do ar: o
-            # disjuntor não deve abrir por isso, senão o plano gratuito
-            # derrubaria a integração inteira.
             if e.response.status_code == 400 and range_param != ranges[-1]:
                 logger.info(
                     "brapi rejeitou range=%s para %s; degradando para %s",
@@ -276,10 +266,6 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         "fifty_two_week_low": _safe_float(r.get("fiftyTwoWeekLow")),
     }
 
-    # Validação por magnitude, e não só por tipo: um ROE de 12.000% ou um preço
-    # de R$ 0,0001 passam pelo `float()` e viram veredito. Campo implausível é
-    # zerado — o produto sabe conviver com indicador ausente; preço implausível
-    # rejeita o snapshot inteiro, porque sem preço não há tela nenhuma.
     numeros, veredito = plausibility.screen(numeros, symbol=symbol.upper())
     if not veredito.accepted:
         record_external_call("brapi.plausibility", ok=False)
@@ -463,7 +449,6 @@ def _fetch_ibov_history_sync(days: int) -> dict[str, float]:
 
 
 async def fetch_ibov_history(days: int = 365) -> dict[str, float]:
-    """Histórico diário do Ibovespa (fechamento por dia, YYYY-MM-DD)."""
     ck = f"uhist:{_IBOV_SYMBOL}:{days}"
     cached = cache.get(ck)
     if cached is not None:

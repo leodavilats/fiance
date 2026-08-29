@@ -18,22 +18,12 @@ from app.storage import portfolio_store
 
 
 class DividendsService:
-    """Histórico real de proventos recebidos."""
-
     def list_received(
         self,
         estimated_monthly: float | None = None,
         limit: int | None = None,
         cursor: str | None = None,
     ) -> DividendsReceivedResponse:
-        """Proventos creditados, com totais sobre o conjunto inteiro.
-
-        **A paginação aqui limita o payload, não a consulta.** Os totais por mês
-        e por ativo precisam de todos os registros por definição, então a leitura
-        continua completa; o que fica limitado é o que atravessa a rede e é
-        renderizado. Cortar a consulta faria os totais falarem só da página, e um
-        total errado é pior que uma lista longa.
-        """
         rows = portfolio_store.list_dividends_received()
         items = [
             DividendReceived(
@@ -127,7 +117,6 @@ class DividendsService:
         return {"deleted": dividend_id}
 
     def received_this_month(self) -> float:
-        """Total creditado no mês calendário brasileiro corrente."""
         current = now_brt().strftime("%Y-%m")
         return round(
             sum(

@@ -1,26 +1,3 @@
-"""Indicação: código, atribuição e crédito.
-
-Um programa de indicação é a única aquisição que cabe neste produto. Mídia paga
-está fora de alcance por aritmética — R$ 500 a R$ 1.500 por instalação
-qualificada em finanças no Brasil, contra um teto de CAC de R$ 72 —, então o
-canal que sobra é alguém contando para alguém. O programa existe para tornar
-isso um pouco mais provável, não para comprar cadastro.
-
-É por isso que a regra central deste módulo é **quando** o crédito sai, não
-quanto ele vale:
-
-* Cadastro é grátis de fabricar aos milhares. Se o crédito saísse na criação da
-  conta, o programa seria uma máquina de imprimir Premium apontada para o
-  próprio caixa, e a primeira pessoa a perceber isso não seria a gente.
-* Carteira salva, não. O crédito sai quando quem foi indicado salva a primeira
-  posição — o mesmo marco que dispara o trial, porque é o mesmo sinal de que
-  ali tem uma pessoa de verdade.
-
-O resto são cercas contra os abusos óbvios: ninguém se indica, ninguém é
-atribuído duas vezes, e ninguém é atribuído depois de já estar usando o
-produto.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -36,29 +13,16 @@ from app.storage import audit_store, event_store, portfolio_store
 
 logger = logging.getLogger("fiance.referral")
 
-#: Dias de Premium por indicação qualificada, para cada lado.
-#:
-#: Vale para os dois porque o convite precisa ser bom de fazer e bom de aceitar:
-#: um programa só para quem indica é um pedido de favor. Sessenta dias somados
-#: custam ~R$ 4 de infraestrutura contra um teto de CAC de R$ 72 — cabe com
-#: folga, e é o que torna este canal viável onde mídia paga não é.
 REWARD_DAYS = 30
 
-#: Teto de crédito acumulado por pessoa, em dias.
-#:
-#: Crédito sem teto é passivo sem teto. E quem traz duzentas pessoas não precisa
-#: de dezesseis anos de Premium: precisa de uma conversa de parceria, que é
-#: decisão comercial e não consequência automática de um contador.
 MAX_CREDITED_DAYS = 365
 
-#: Alfabeto sem os pares que se confundem lidos em voz alta ou copiados de uma
-#: captura de tela: O/0, I/1/L. Código de indicação é dito por WhatsApp.
 _ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 _CODE_LENGTH = 8
 
 
 class ReferralError(ValueError):
-    """Atribuição recusada, com o motivo já em português."""
+    pass
 
 
 def _generate_code() -> str:
@@ -66,7 +30,6 @@ def _generate_code() -> str:
 
 
 def code_for(user_id: str) -> str:
-    """O código da pessoa, criando-o na primeira vez. Idempotente."""
     with db_session() as session:
         row = session.get(ReferralCodeDb, user_id)
         if row is not None:
@@ -74,8 +37,6 @@ def code_for(user_id: str) -> str:
 
         portfolio_store.ensure_user(session, user_id)
 
-        # Colisão é improvável (31^8) mas não impossível, e um código duplicado
-        # atribuiria a indicação à pessoa errada — falha silenciosa e cara.
         for _ in range(10):
             candidato = _generate_code()
             existe = session.execute(
@@ -89,12 +50,6 @@ def code_for(user_id: str) -> str:
 
 
 def rotate_code(user_id: str) -> str:
-    """Queima o código atual e devolve outro.
-
-    Existe porque um link publicado em grupo que virou spam não deveria custar
-    a conta. As indicações já atribuídas guardam o código usado e não são
-    afetadas.
-    """
     with db_session() as session:
         row = session.get(ReferralCodeDb, user_id)
         if row is not None:
@@ -111,12 +66,6 @@ def _owner_of(session, code: str) -> str | None:
 
 
 def attribute(user_id: str, code: str, now: float | None = None) -> dict:
-    """Registra que ``user_id`` chegou pelo código de outra pessoa.
-
-    Não concede nada: a concessão é em `qualify`. Aqui só se decide de quem é o
-    crédito, e as recusas são todas do mesmo tipo — impedir que a atribuição
-    seja fabricada.
-    """
     moment = now if now is not None else time.time()
     limpo = (code or "").strip().upper()
     if not limpo:
@@ -128,8 +77,6 @@ def attribute(user_id: str, code: str, now: float | None = None) -> dict:
             raise ReferralError("Código de indicação não encontrado.")
 
         if dono == user_id:
-            # Auto-indicação é o primeiro abuso que qualquer pessoa tenta, e é
-            # o mais barato de bloquear.
             raise ReferralError("Você não pode usar o próprio código.")
 
         ja = session.execute(
@@ -138,9 +85,6 @@ def attribute(user_id: str, code: str, now: float | None = None) -> dict:
         if ja is not None:
             raise ReferralError("Esta conta já foi atribuída a uma indicação.")
 
-        # Atribuição só antes de a conta ter história. Aceitar depois deixaria
-        # qualquer pessoa reivindicar um usuário que já estava no produto — o
-        # crédito sairia de uma aquisição que não aconteceu.
         tem_carteira = session.execute(
             select(PortfolioPosition.ticker).where(PortfolioPosition.user_id == user_id).limit(1)
         ).first()
@@ -165,11 +109,6 @@ def attribute(user_id: str, code: str, now: float | None = None) -> dict:
 
 
 def _credit(session, user_id: str, days: int, moment: float) -> int:
-    """Soma dias de Premium a quem já pode ter crédito correndo.
-
-    Estende a partir do fim vigente, não de agora: creditar a partir de hoje
-    apagaria o saldo de quem indicou duas pessoas na mesma semana.
-    """
     row = session.get(SubscriptionDb, user_id)
     if row is None:
         portfolio_store.ensure_user(session, user_id)
@@ -190,11 +129,6 @@ def _credit(session, user_id: str, days: int, moment: float) -> int:
 
 
 def qualify(referred_user_id: str, now: float | None = None) -> dict | None:
-    """A indicação vira crédito. Chamado quando a pessoa salva a 1ª posição.
-
-    Idempotente: `rewarded_at` já preenchido significa que os dias já saíram, e
-    creditar de novo é o modo de falha que ninguém percebe até a fatura.
-    """
     moment = now if now is not None else time.time()
 
     with db_session() as session:
@@ -208,8 +142,6 @@ def qualify(referred_user_id: str, now: float | None = None) -> dict | None:
         registro.rewarded_at = moment
         registro.reward_days = REWARD_DAYS
 
-        # O id sai da sessão junto com os números: usar `registro` depois do
-        # `with` estouraria `DetachedInstanceError` na hora de gravar o evento.
         indicador = registro.user_id
         ao_indicador = _credit(session, indicador, REWARD_DAYS, moment)
         ao_indicado = _credit(session, referred_user_id, REWARD_DAYS, moment)
@@ -232,11 +164,6 @@ def qualify(referred_user_id: str, now: float | None = None) -> dict | None:
 
 
 def status(user_id: str) -> dict:
-    """O que a pessoa vê: o código, quantas indicações e quanto crédito.
-
-    Nunca a lista de quem foi indicado. Quem clicou no seu link não escolheu
-    aparecer numa tela sua, e a contagem já basta para o programa funcionar.
-    """
     codigo = code_for(user_id)
 
     with db_session() as session:
@@ -256,8 +183,6 @@ def status(user_id: str) -> dict:
         "reward_days": REWARD_DAYS,
         "max_credited_days": MAX_CREDITED_DAYS,
         "attributed": atribuidas,
-        # A diferença entre as duas contagens é a informação útil: quem clicou
-        # mas não montou carteira ainda é a pessoa a quem lembrar.
         "qualified": qualificadas,
         "pending": atribuidas - qualificadas,
         "days_earned": dias,

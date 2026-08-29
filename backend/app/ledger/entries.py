@@ -1,10 +1,3 @@
-"""Os tipos de lançamento e a validação de cada um.
-
-A lista é fechada. Lançamento cujo tipo o projetor não conhece não pode existir
-no banco: seria um buraco silencioso na posição corrente, que é justamente o
-que o livro-razão veio impedir.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -14,46 +7,29 @@ from app.core.errors import DomainError
 
 
 class LedgerError(DomainError):
-    """Lançamento que não pode existir."""
+    pass
 
 
 class TransactionKind(StrEnum):
     BUY = "buy"
     SELL = "sell"
 
-    #: Desdobramento e grupamento. Multiplicam a quantidade por `ratio_to /
-    #: ratio_from` e deixam o custo total intacto — logo o preço médio se ajusta
-    #: sozinho. Desdobramento sem ajuste é preço médio errado, que é IR errado.
     SPLIT = "split"
 
-    #: Bonificação em ações: quantidade nova com custo declarado (em geral o
-    #: valor patrimonial informado pela companhia, às vezes zero).
     BONUS = "bonus"
 
-    #: Transferência entre corretoras: muda de lugar, não muda custo nem
-    #: quantidade da carteira. Existe para o extrato bater com a nota.
     TRANSFER_IN = "transfer_in"
     TRANSFER_OUT = "transfer_out"
 
-    #: Amortização de FII e de renda fixa: devolve capital, reduz o custo sem
-    #: reduzir a quantidade.
     AMORTIZATION = "amortization"
 
-    #: Estado declarado pelo usuário na tela de posição. Não é uma operação: é
-    #: a pessoa dizendo "eu tenho 100 a 10,00". O projetor o trata como reset,
-    #: e é o que mantém a posição corrente derivável do razão enquanto a
-    #: importação de nota e CSV não existe.
     ADJUST = "adjust"
 
 
 LEDGER_KINDS = frozenset(kind.value for kind in TransactionKind)
 
-#: Tipos em que preço é obrigatório e precisa ser positivo.
 _PRICED = frozenset({TransactionKind.BUY, TransactionKind.SELL})
 
-#: Tipos que movimentam quantidade e por isso exigem quantidade positiva.
-#: `ADJUST` fica de fora: zero é um estado declarável — é como o usuário diz
-#: "não tenho mais este ativo", e é o que a remoção de posição registra.
 _QUANTITY_BEARING = frozenset(
     {
         TransactionKind.BUY,
@@ -67,8 +43,6 @@ _QUANTITY_BEARING = frozenset(
 
 @dataclass(frozen=True)
 class LedgerEntry:
-    """Um lançamento. `traded_on` é dia no fuso brasileiro, `YYYY-MM-DD`."""
-
     kind: TransactionKind
     symbol: str
     traded_on: str
@@ -115,10 +89,4 @@ class LedgerEntry:
 
     @property
     def sort_key(self) -> tuple:
-        """Ordem canônica: dia, depois id.
-
-        O id desempata dentro do mesmo dia porque é a ordem em que os
-        lançamentos entraram — e vender antes de comprar no mesmo dia dá
-        quantidade negativa por um instante, o que muda o preço médio.
-        """
         return (self.traded_on, self.id if self.id is not None else 0)

@@ -27,7 +27,6 @@ router = APIRouter()
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
-    #: Código de indicação, quando a pessoa chegou por um link.
     referral_code: str | None = None
 
 
@@ -61,10 +60,6 @@ async def login_with_google(body: GoogleLoginRequest) -> LoginResponse:
     user = upsert_user_from_google(google_user)
 
     if body.referral_code:
-        # Atribuição só acontece aqui, e o serviço recusa quem já tem carteira.
-        # Uma recusa **não** derruba o login: quem digitou um código errado ou
-        # já usado ainda assim quer entrar, e trocar isso por um 4xx faria a
-        # pessoa perder a conta por causa de um brinde.
         try:
             referral_service.attribute(user.id, body.referral_code)
         except referral_service.ReferralError as erro:
@@ -80,11 +75,6 @@ async def login_with_google(body: GoogleLoginRequest) -> LoginResponse:
 
 @router.post("/auth/refresh", response_model=TokenResponse)
 async def refresh_session(body: RefreshRequest) -> TokenResponse:
-    """Troca um refresh por um par novo, queimando o refresh usado.
-
-    Rotacionar em vez de reemitir é o que torna o roubo de um refresh detectável
-    e limitado: usado duas vezes, a segunda cai na denylist.
-    """
     payload = decode_token(body.refresh_token, TOKEN_TYPE_REFRESH)
     revoke_token(payload)
 
@@ -106,7 +96,6 @@ async def logout(
     body: LogoutRequest | None = None,
     payload: dict = Depends(get_access_payload),
 ) -> dict:
-    """Encerra a sessão no servidor. O token antigo passa a devolver 401."""
     body = body or LogoutRequest()
 
     if body.all_devices:
@@ -118,7 +107,6 @@ async def logout(
         try:
             revoke_token(decode_token(body.refresh_token, TOKEN_TYPE_REFRESH))
         except HTTPException:
-            # Refresh já inválido não é motivo para falhar um logout.
             pass
     return {"revoked": "session"}
 

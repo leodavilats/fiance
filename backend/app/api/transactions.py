@@ -53,11 +53,6 @@ async def list_transactions(
     limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
     cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
 ) -> dict:
-    """Lançamentos em ordem de leitura, do mais recente para o mais antigo.
-
-    Aqui a paginação corta no banco de verdade: não há agregado sobre a lista,
-    então limitar a consulta não distorce número nenhum.
-    """
     page_size = clamp_limit(limit)
     rows = ledger_store.list_entries(symbol=symbol, limit=page_size, cursor=cursor, descending=True)
     page = paginate(rows, page_size, key=lambda e: e.traded_on, identity=lambda e: e.id)
@@ -102,11 +97,6 @@ async def create_transaction(body: TransactionIn) -> dict:
 
 @router.post("/transactions/batch")
 async def create_transactions(body: TransactionBatch) -> dict:
-    """Importação é atômica: um lançamento inválido recusa o lote inteiro.
-
-    Validar item a item e gravar o que passou deixaria a carteira num estado
-    que o usuário não pediu e não consegue desfazer.
-    """
     entries = [item.to_entry() for item in body.transactions]
     ids = ledger_store.record_many(entries, source="import")
     audit_store.write(
@@ -131,31 +121,22 @@ async def delete_transaction(entry_id: int) -> dict:
 
 @router.get("/transactions/derivation/{symbol}")
 async def read_derivation(symbol: str) -> dict:
-    """A conta que produziu o preço médio, passo a passo.
-
-    Critério de aceite do G1: a tela expõe, em texto, como o número apareceu.
-    Preço médio que ninguém consegue conferir é preço médio em que ninguém
-    confia — e é o número que vai para a declaração.
-    """
     return derivation_for(symbol)
 
 
 @router.get("/transactions/reconciliation")
 async def read_reconciliation() -> dict:
-    """Onde a posição corrente e a projeção do razão discordam."""
     return ledger_service.reconcile()
 
 
 @router.post("/transactions/backfill")
 async def backfill(user_id: str = Depends(get_current_user)) -> dict:
-    """Semeia o razão com a carteira atual, para contas anteriores a ele."""
     seeded = ledger_service.backfill_from_positions(user_id=user_id)
     return {"seeded": seeded}
 
 
 @router.get("/activity")
 async def read_activity(action: str | None = None, limit: int = 100) -> dict:
-    """O log append-only, do ponto de vista do titular."""
     return {"items": audit_store.read(action=action, limit=limit)}
 
 
@@ -180,12 +161,6 @@ class ImportCommitRequest(BaseModel):
 
 @router.post("/transactions/import/preview")
 async def preview_import(body: ImportPreviewRequest) -> dict:
-    """Lê sem gravar: mostra o que entrou, o que falhou e o que é repetido.
-
-    A prévia devolve as linhas boas **e** os problemas ao mesmo tempo, de
-    propósito: parar no primeiro erro faria o usuário corrigir um arquivo de
-    trezentas linhas uma linha por vez.
-    """
     parsed = parse_import(
         body.content, default_day=ledger_service.today_brt(), force_format=body.format
     )
@@ -202,12 +177,6 @@ class ImportRejected(DomainError):
     dependencies=[Depends(requires(Feature.LEDGER_IMPORT))],
 )
 async def commit_import(body: ImportCommitRequest) -> dict:
-    """Grava a importação. Tudo ou nada.
-
-    Validar linha a linha e gravar o que passou deixaria a carteira num estado
-    que o usuário não pediu e não consegue desfazer — e num produto que calcula
-    IR, meia importação é pior que nenhuma.
-    """
     parsed = parse_import(
         body.content, default_day=ledger_service.today_brt(), force_format=body.format
     )

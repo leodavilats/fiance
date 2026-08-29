@@ -1,16 +1,3 @@
-"""Migrações versionadas (Alembic).
-
-O teste que importa aqui não é "a migração roda" — é **a migração produz o
-esquema que os modelos descrevem**. A regra do projeto sempre foi "coluna nova
-exige uma migração; não basta mexer no model", e até 2026-08-28 ela era cobrada
-por prosa: o teste antigo conferia que a cadeia criava oito tabelas nomeadas à
-mão, então um campo novo sem migração passava batido.
-
-Agora dois bancos vazios são levantados lado a lado — um pela cadeia, outro por
-`Base.metadata` — e comparados tabela por tabela e coluna por coluna. É o mesmo
-diff que se faria à mão antes de um deploy, rodando em todo build.
-"""
-
 import os
 import tempfile
 
@@ -44,11 +31,8 @@ def _tabelas(inspector) -> set[str]:
 
 
 class TestACadeiaBateComOsModelos:
-    """A verificação que substituiu a convenção escrita."""
-
     @pytest.fixture()
     def esquemas(self, sqlite_url):
-        """Um banco pela migração, outro pelos modelos."""
         command.upgrade(_config_for(sqlite_url), "head")
 
         url_modelos = _url("metadata")
@@ -65,8 +49,6 @@ class TestACadeiaBateComOsModelos:
         assert _tabelas(migrado) == _tabelas(modelado)
 
     def test_as_mesmas_colunas_em_cada_tabela(self, esquemas):
-        """O modo de falha que a lista fixa de tabelas não pegava: campo novo no
-        modelo, migração esquecida, esquema divergente só em produção."""
         migrado, modelado = esquemas
 
         divergencias = {}
@@ -82,8 +64,6 @@ class TestACadeiaBateComOsModelos:
         assert divergencias == {}
 
     def test_a_chave_primaria_e_a_mesma(self, esquemas):
-        """Chave primária divergente não aparece em contagem de coluna, e é o
-        tipo de erro que só quebra na primeira gravação concorrente."""
         migrado, modelado = esquemas
 
         for tabela in sorted(_tabelas(migrado) & _tabelas(modelado)):
@@ -111,15 +91,11 @@ class TestACadeiaRoda:
         assert _tabelas(inspect(create_engine(sqlite_url))) == antes
 
     def test_o_historico_e_linear(self):
-        """Duas cabeças significam que dois ramos criaram migração em paralelo,
-        e o upgrade escolhe uma delas em silêncio."""
         heads = ScriptDirectory.from_config(_alembic_config()).get_heads()
 
         assert len(heads) == 1, f"histórico de migração bifurcado: {heads}"
 
     def test_init_db_e_idempotente(self):
-        """O startup chama `init_db` em todo boot; rodar de novo não pode
-        falhar."""
         init_db()
         init_db()
 

@@ -2,8 +2,6 @@ from pydantic import BaseModel, Field
 
 
 class WhatsNewItem(BaseModel):
-    """Uma linha de "o que mudou desde a sua última visita"."""
-
     kind: str = Field(
         ...,
         description=(

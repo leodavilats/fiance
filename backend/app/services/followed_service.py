@@ -28,8 +28,6 @@ _SOURCE_LABELS = {
 
 
 class FollowedService:
-    """Resultado das sugestões que o usuário seguiu."""
-
     def __init__(self):
         self.asset_repo = AssetRepository()
 
@@ -58,11 +56,6 @@ class FollowedService:
     async def outcomes(
         self, limit: int | None = None, cursor: str | None = None
     ) -> FollowedSuggestionsResponse:
-        """Resultado das sugestões seguidas, com totais sobre o conjunto inteiro.
-
-        A comparação contra o Ibovespa e o agrupamento por origem precisam de
-        todas as sugestões, então a paginação limita o payload e não a consulta.
-        """
         rows = portfolio_store.list_followed_suggestions()
         if not rows:
             return FollowedSuggestionsResponse(

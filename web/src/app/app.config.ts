@@ -126,9 +126,6 @@ import { httpErrorInterceptor } from './core/interceptors/http-error.interceptor
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
-    // Ordem importa: o de erro precisa ser o mais externo para só ver o 401
-    // depois de o de autenticação ter tentado renovar a sessão. Invertido, o
-    // usuário era jogado no login antes de o refresh sequer rodar.
     provideHttpClient(withInterceptors([httpErrorInterceptor, authInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({

@@ -11,7 +11,6 @@ logger = logging.getLogger("fiance.snapshot_job")
 
 
 async def record_snapshot_for_user(user_id: str) -> bool:
-    """Grava o snapshot diário de patrimônio de um usuário."""
     from app.services import FixedIncomeService, PortfolioService
 
     token = set_current_user_id(user_id)
@@ -67,7 +66,6 @@ async def record_snapshot_for_user(user_id: str) -> bool:
 
 
 async def run_snapshot_cycle() -> int:
-    """Grava o snapshot do dia para todos os tenants. Retorna quantos gravou."""
     recorded = 0
     for user_id in portfolio_store.list_all_user_ids():
         try:

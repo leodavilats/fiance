@@ -1,16 +1,3 @@
-"""O contrato do cache, cobrado igual de cada backend.
-
-Com um nó, cache local é o certo. Com dois, ele deixa de ser desempenho e vira
-correção: cada nó guarda a própria cópia, e a mesma pessoa recarregando a página
-vê preços diferentes conforme o balanceador. "Subiu 2% ou caiu 1%?" passa a
-depender de qual máquina atendeu.
-
-O contrato é escrito **uma vez** e rodado contra cada implementação. O de disco
-roda sempre; o do Redis roda onde houver um Redis e é **pulado com motivo** onde
-não houver — declarar a lacuna vale mais do que um teste contra um dublê que
-concorda comigo por construção.
-"""
-
 from __future__ import annotations
 
 import json
@@ -27,7 +14,6 @@ REDIS_URL = os.environ.get("REDIS_TEST_URL", "").strip()
 
 
 def _redis_backend():
-    """Um Redis de verdade, ou o motivo pelo qual o teste não rodou."""
     if not REDIS_URL:
         pytest.skip(
             "REDIS_TEST_URL não configurado: o contrato do backend compartilhado "
@@ -71,12 +57,6 @@ class TestContratoDoBackend:
         assert backend.get_raw("k")[0] == "novo"
 
     def test_o_vencido_continua_legivel(self, backend):
-        """É o que sustenta a degradação do disjuntor.
-
-        Com a fonte fora do ar, mostrar o preço de vinte minutos atrás dizendo
-        que ele é de vinte minutos atrás é melhor que não mostrar nada — e um
-        TTL nativo apagaria justamente esse dado.
-        """
         backend.set_raw("velho", "valor", time.time() - 120)
 
         row = backend.get_raw("velho")
@@ -113,19 +93,11 @@ class TestContratoDoBackend:
         assert backend.get_raw("b") is None
 
     def test_o_backend_se_identifica(self, backend):
-        """A rota de diagnóstico responde com isto: descobrir que os nós não
-        compartilham cache por gráfico de latência é caro."""
         assert backend.name in {"sqlite", "redis"}
 
 
 class TestOQueSoOCompartilhadoResolve:
     def test_dois_nos_enxergam_a_mesma_gravacao(self, backend):
-        """A razão de o backend existir.
-
-        Dois processos, um cache. No de disco isto vale porque o arquivo é o
-        mesmo; no Redis, porque o servidor é o mesmo. Se um dia um backend novo
-        guardar estado em memória de processo, é aqui que ele falha.
-        """
         if backend.name == "sqlite":
             outro_no = SqliteBackend()
         else:
@@ -136,8 +108,6 @@ class TestOQueSoOCompartilhadoResolve:
         assert outro_no.get_raw("preco:PETR4")[0] == '{"p": 30.5}'
 
     def test_invalidar_num_no_invalida_no_outro(self, backend):
-        """Senão limpar o cache viraria uma operação por máquina, e alguém
-        sempre esqueceria uma."""
         if backend.name == "sqlite":
             outro_no = SqliteBackend()
         else:
@@ -151,7 +121,6 @@ class TestOQueSoOCompartilhadoResolve:
 
 class TestEscolhaDoBackend:
     def test_sem_redis_url_o_padrao_e_o_arquivo_local(self, monkeypatch):
-        """Com um nó só, é a escolha certa: sem operação e sem dependência."""
         monkeypatch.delenv("REDIS_URL", raising=False)
 
         assert cache_backends.build_backend().name == "sqlite"
@@ -162,9 +131,6 @@ class TestEscolhaDoBackend:
         try:
             escolhido = cache_backends.build_backend()
         except RuntimeError as erro:
-            # Sem o pacote instalado, a falha é **alta e explicada** em vez de
-            # silenciosa: cair para cache por nó em produção seria o pior
-            # resultado possível, e é justamente o que ninguém notaria.
             assert "redis" in str(erro).lower()
             return
 
@@ -182,14 +148,6 @@ class TestEscolhaDoBackend:
 
 
 class _ClienteFalso:
-    """Um Redis mínimo, só para conferir o que o adaptador **fala**.
-
-    Ele não prova nada sobre compartilhamento entre nós — isso é o teste de
-    contrato, que precisa de servidor. O que ele pega é a classe de erro que um
-    servidor real também pegaria, mas tarde: chave sem prefixo, padrão SQL
-    enviado como se fosse glob, vencimento perdido no caminho.
-    """
-
     def __init__(self) -> None:
         self.data: dict[str, str] = {}
         self.ttls: dict[str, int] = {}
@@ -218,16 +176,12 @@ def redis_falso():
 
 class TestTraducaoDoAdaptadorRedis:
     def test_a_chave_vai_prefixada(self, redis_falso):
-        """Sem prefixo, o cache dividiria espaço com qualquer outra coisa no
-        mesmo Redis."""
         backend, cliente = redis_falso
         backend.set_raw("uasset:PETR4", "v", time.time() + 60)
 
         assert "p:uasset:PETR4" in cliente.data
 
     def test_o_vencimento_viaja_no_valor(self, redis_falso):
-        """O TTL nativo apagaria o dado vencido, que é justamente o que o
-        disjuntor usa para degradar."""
         backend, cliente = redis_falso
         vence = time.time() + 60
         backend.set_raw("k", "conteudo", vence)
@@ -237,24 +191,18 @@ class TestTraducaoDoAdaptadorRedis:
         assert envelope["e"] == pytest.approx(vence)
 
     def test_o_ttl_nativo_e_maior_que_o_vencimento(self, redis_falso):
-        """A margem espelha o SQLite, onde a linha sobrevive até a faxina.
-        Sem ela, o mesmo código degradaria diferente conforme o backend."""
         backend, cliente = redis_falso
         backend.set_raw("k", "v", time.time() + 60)
 
         assert cliente.ttls["p:k"] > 60
 
     def test_entrada_ja_vencida_ainda_recebe_ttl_positivo(self, redis_falso):
-        """`set_raw` com TTL negativo acontece: é como o teste de degradação
-        fabrica dado velho. TTL zero ou negativo seria recusado pelo Redis."""
         backend, cliente = redis_falso
         backend.set_raw("k", "v", time.time() - 120)
 
         assert cliente.ttls["p:k"] >= 1
 
     def test_o_padrao_sql_vira_glob(self, redis_falso):
-        """O resto do produto fala `%` porque nasceu no SQLite. Mandar `%` para
-        o Redis não apagaria nada — e não apagar cache é uma falha silenciosa."""
         backend, _ = redis_falso
         backend.set_raw("uasset:PETR4", "a", time.time() + 60)
         backend.set_raw("uasset:VALE3", "b", time.time() + 60)
@@ -264,8 +212,6 @@ class TestTraducaoDoAdaptadorRedis:
         assert backend.get_raw("rates:cdi") is not None
 
     def test_limpar_tudo_nao_alcanca_chave_de_fora(self, redis_falso):
-        """O Redis pode ser compartilhado com outra coisa; `clear_all` limpa o
-        cache, não o servidor."""
         backend, cliente = redis_falso
         backend.set_raw("k", "v", time.time() + 60)
         cliente.data["outra-coisa"] = "nao mexer"
@@ -281,8 +227,6 @@ class TestTraducaoDoAdaptadorRedis:
         assert backend.get_raw("k") is None
 
     def test_purgar_nao_varre_a_base(self, redis_falso):
-        """O Redis já expira sozinho; varrer tudo para antecipar isso seria
-        trabalho por trabalho, e `keys` numa base grande trava o servidor."""
         backend, _ = redis_falso
 
         assert backend.purge_expired() == 0

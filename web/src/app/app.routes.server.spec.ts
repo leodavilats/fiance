@@ -36,8 +36,6 @@ describe('renderização no servidor', () => {
   });
 
   it('a rota do ativo não tem guarda de autenticação', () => {
-    // É o canal de aquisição: robô de busca não faz login. Recolocar o guard
-    // aqui derruba a indexação inteira sem quebrar teste nenhum de tela.
     const ativo = routes.find(route => route.path === 'ativo/:ticker');
 
     expect(ativo).toBeDefined();

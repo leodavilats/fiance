@@ -17,22 +17,14 @@ from app.models.db_models import User
 
 JWT_ALGORITHM = "HS256"
 
-# TTL curto no token de acesso e um refresh longo: é o que permite que
-# "sair" tenha efeito de servidor sem manter uma denylist do tamanho da base.
 ACCESS_TTL_SECONDS = 60 * 60
 REFRESH_TTL_SECONDS = 30 * 24 * 3600
 
-# Compatibilidade: o emissor antigo assinava 30 dias sem `typ` nem `jti`.
-# Esses tokens continuam valendo como acesso até expirarem — só não são
-# revogáveis individualmente, porque não têm identidade.
 LEGACY_ACCESS_TYP = "access"
 
 TOKEN_TYPE_ACCESS = "access"
 TOKEN_TYPE_REFRESH = "refresh"
 
-# Claims sem as quais o token não é sequer considerado. Antes disso, um token
-# sem `sub` estourava KeyError e virava 500 — erro de autenticação tem que
-# responder 401.
 REQUIRED_CLAIMS = ["sub", "exp", "iat"]
 
 _bearer = HTTPBearer(auto_error=False)
@@ -70,10 +62,6 @@ def verify_google_id_token(token: str) -> GoogleUser:
 
 def _issue(user_id: str, typ: str, ttl_seconds: int) -> str:
     settings = get_settings()
-    # `iat` com precisão fracionária de propósito: o corte de revogação em bloco
-    # compara contra ele, e truncar ao segundo faria um token emitido logo depois
-    # de um "sair de todos" nascer morto — ou um token emitido logo antes
-    # sobreviver. NumericDate admite fração; só nós lemos esta claim.
     now = time.time()
     payload = {
         "sub": user_id,
@@ -94,11 +82,6 @@ def issue_refresh_token(user_id: str) -> str:
 
 
 def decode_token(token: str, expected_typ: str) -> dict:
-    """Decodifica exigindo as claims obrigatórias e o tipo certo.
-
-    Levanta 401 em qualquer falha — inclusive claim ausente, tipo trocado,
-    `jti` revogado e token emitido antes de uma revogação em bloco.
-    """
     settings = get_settings()
     try:
         payload = jwt.decode(
@@ -130,7 +113,6 @@ def decode_token(token: str, expected_typ: str) -> dict:
 
 
 def revoke_token(payload: dict) -> None:
-    """Coloca o token do payload na denylist até o seu próprio `exp`."""
     jti = payload.get("jti")
     if not isinstance(jti, str) or not jti:
         return
@@ -155,8 +137,6 @@ def upsert_user_from_google(google_user: GoogleUser) -> User:
             user.email = google_user.email
             user.name = google_user.name
             user.picture = google_user.picture
-            # Voltar depois de excluir a conta é começar de novo, não recuperar:
-            # os dados já foram embora e a lápide sai do caminho.
             user.deleted_at = None
         session.commit()
         session.refresh(user)

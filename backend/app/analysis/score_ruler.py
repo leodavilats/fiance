@@ -16,7 +16,6 @@ _BANDS = (
 
 
 def score_band(score: float) -> str:
-    """Rótulo da faixa — igual em web, mobile e notificações."""
     for threshold, label in _BANDS:
         if score >= threshold:
             return label
@@ -24,7 +23,6 @@ def score_band(score: float) -> str:
 
 
 def is_highlight(verdict: str, score: float, dividend_yield: float | None) -> bool:
-    """Critério de destaque, usado pela lista de oportunidades e pelo digest."""
     if verdict == "STRONG_BUY":
         return True
     return score >= SCORE_STRONG and (dividend_yield or 0.0) >= HIGHLIGHT_MIN_DY

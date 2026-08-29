@@ -1,11 +1,3 @@
-"""Cobrança: checkout, webhook idempotente, assinatura e reconciliação.
-
-A integração real com a Stripe **não é verificável sem chave**. O que estes
-testes garantem é o contrato à volta dela — que é onde os erros custam dinheiro:
-conceder no checkout, conceder duas vezes, aceitar webhook forjado, ou perder
-uma concessão sem ninguém notar.
-"""
-
 from __future__ import annotations
 
 import json
@@ -20,7 +12,6 @@ from tests.conftest import make_auth_headers
 
 @pytest.fixture()
 def gateway(monkeypatch):
-    """Um provedor limpo por teste, para o estado não vazar entre eles."""
     falso = FakeProvider(secret="segredo-de-teste")
     billing.set_provider(falso)
     yield falso
@@ -46,7 +37,6 @@ def _enviar(client, gateway, payload: dict, assinatura: str | None = None):
 
 class TestCatalogo:
     def test_o_catalogo_traz_o_equivalente_mensal(self, client):
-        """É a comparação que a pessoa faz de cabeça."""
         headers = make_auth_headers("u_bill_catalogo")
 
         ofertas = {
@@ -69,7 +59,6 @@ class TestCatalogo:
 
 class TestCheckout:
     def test_checkout_cria_sessao_e_nao_concede_nada(self, client, gateway, regua_ligada):
-        """Conceder no checkout daria Premium a quem abandonou o pagamento."""
         headers = make_auth_headers("u_bill_checkout")
 
         corpo = client.post(
@@ -100,7 +89,6 @@ class TestCheckout:
 
 class TestAssinaturaDoWebhook:
     def test_assinatura_invalida_e_recusada(self, client, gateway):
-        """Webhook sem verificação é uma rota pública que concede assinatura."""
         resposta = _enviar(
             client,
             gateway,
@@ -117,7 +105,6 @@ class TestAssinaturaDoWebhook:
         assert resposta.status_code == 401
 
     def test_corpo_alterado_invalida_a_assinatura(self, client, gateway):
-        """A assinatura é do corpo, não do endereço."""
         original = json.dumps(
             {"id": "evt_1", "type": "checkout.completed", "user_id": "u_a"}
         ).encode()
@@ -134,7 +121,6 @@ class TestAssinaturaDoWebhook:
         assert resposta.status_code == 401
 
     def test_a_verificacao_e_em_tempo_constante(self):
-        """Comparar com `==` vaza o prefixo correto pelo tempo de resposta."""
         import inspect
 
         fonte = inspect.getsource(FakeProvider.verify)
@@ -159,7 +145,6 @@ class TestWebhookIdempotente:
         assert resolve("u_bill_grant").plan is Plan.PREMIUM
 
     def test_o_reenvio_nao_concede_duas_vezes(self, client, gateway, regua_ligada):
-        """O provedor reenvia até receber 200, por desenho."""
         payload = {
             "id": "evt_repetido",
             "type": "checkout.completed",
@@ -176,7 +161,6 @@ class TestWebhookIdempotente:
         assert segunda["reason"] == "already_processed"
 
     def test_o_reenvio_responde_200_e_nao_erro(self, client, gateway):
-        """Erro num reenvio legítimo faria o provedor tentar para sempre."""
         payload = {
             "id": "evt_200",
             "type": "checkout.completed",
@@ -193,13 +177,11 @@ class TestWebhookIdempotente:
         assert resposta.status_code == 400
 
     def test_evento_sem_id_e_recusado(self, client, gateway):
-        """Sem id não há como ser idempotente."""
         resposta = _enviar(client, gateway, {"type": "checkout.completed", "user_id": "u"})
 
         assert resposta.status_code == 400
 
     def test_tipo_desconhecido_e_ignorado_sem_quebrar(self, client, gateway):
-        """O provedor manda eventos que o produto não usa."""
         corpo = _enviar(
             client, gateway, {"id": "evt_estranho", "type": "invoice.upcoming", "user_id": "u_x"}
         ).json()
@@ -229,7 +211,6 @@ class TestWebhookIdempotente:
 
 class TestPrecoDoEvento:
     def test_o_preco_gravado_vem_do_evento_e_nao_da_tabela(self, client, gateway):
-        """É o que a pessoa efetivamente contratou."""
         _enviar(
             client,
             gateway,
@@ -297,7 +278,6 @@ class TestReconciliacao:
         assert divergencias == []
 
     def test_pagou_e_nao_recebeu_e_acusado(self, gateway):
-        """Webhook perdido é silencioso dos dois lados até alguém tentar usar."""
         gateway.granted["u_rec_pagou"] = {"status": "active"}
 
         divergencias = {d["user_id"]: d for d in billing.reconcile()["divergences"]}
@@ -319,11 +299,6 @@ class TestReconciliacao:
 
 class TestCanalTrocavel:
     def test_o_direito_nao_depende_do_provedor(self, gateway, regua_ligada):
-        """É o que permite vender na web e liberar no app sem migrar assinante.
-
-        Catorze pontos de diferença de taxa entre os dois canais — sobre mil
-        assinantes anuais, ~R$ 25 mil por ano.
-        """
         subscription_service.grant("u_canal", "premium", 1990, provider="play")
 
         assert resolve("u_canal").plan is Plan.PREMIUM

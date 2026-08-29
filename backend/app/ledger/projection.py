@@ -1,17 +1,3 @@
-"""A posição corrente como resultado dos lançamentos, e não como estado solto.
-
-O preço médio segue a convenção brasileira, que é a que a Receita usa: venda
-não altera o preço médio, apenas reduz quantidade e custo proporcionalmente.
-O lucro da venda sai da diferença contra esse preço médio — e é por isso que um
-desdobramento não ajustado vira IR errado.
-
-**A conta roda em `Decimal`, a saída é `float`.** O número que o usuário leva
-para a declaração é somado ao longo de centenas de operações: em float o
-resíduo acumula e o extrato deixa de fechar com a nota. Escala e arredondamento
-vivem em `app/core/money.py` e em nenhum outro lugar. Os atributos `*_exact`
-expõem o valor sem perda; os de sempre continuam em float, para a API e a tela.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -22,9 +8,6 @@ from app.core.money import ZERO, money, quantize
 
 from .entries import LedgerEntry, LedgerError, TransactionKind
 
-#: Abaixo disto a posição é considerada zerada. Com Decimal o resíduo não vem
-#: mais do binário, mas divisão exata nem sempre é possível (1/3 de uma
-#: quantidade) e a tolerância continua sendo o jeito honesto de dizer "zerou".
 QUANTITY_EPSILON = Decimal("0.00000001")
 
 
@@ -32,8 +15,6 @@ QUANTITY_EPSILON = Decimal("0.00000001")
 class PositionProjection:
     symbol: str
     quantity_exact: Decimal = ZERO
-    #: Custo total da posição em aberto. O preço médio é derivado dele, nunca
-    #: guardado — guardar os dois é criar duas fontes de verdade que divergem.
     total_cost_exact: Decimal = ZERO
     realized_pnl_exact: Decimal = ZERO
     total_fees_exact: Decimal = ZERO
@@ -73,7 +54,6 @@ class PositionProjection:
         return self.quantity_exact > QUANTITY_EPSILON
 
     def as_dict(self) -> dict:
-        """Saída da API: arredondada na borda, uma vez só."""
         return {
             "symbol": self.symbol,
             "quantity": self.quantity,
@@ -95,15 +75,11 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
     fees = money(entry.fees)
 
     if kind is TransactionKind.ADJUST:
-        # Estado declarado: substitui, não soma. As taxas já pagas continuam
-        # somadas porque são fato histórico, não parte da posição.
         state.quantity_exact = quantity
         state.total_cost_exact = quantity * price
         return
 
     if kind is TransactionKind.BUY:
-        # Corretagem entra no custo de aquisição — é assim que a Receita
-        # calcula o preço médio, e ignorá-la infla o lucro tributável.
         state.quantity_exact += quantity
         state.total_cost_exact += quantity * price + fees
         state.total_fees_exact += fees
@@ -126,9 +102,6 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
         return
 
     if kind is TransactionKind.SPLIT:
-        # Custo total intacto de propósito: desdobrar não custa nem rende nada.
-        # A quantidade muda, e o preço médio cai (ou sobe, no grupamento) na
-        # mesma proporção — que é exatamente o ajuste que a Receita espera.
         state.quantity_exact = (
             state.quantity_exact * money(entry.ratio_to) / money(entry.ratio_from)
         )
@@ -140,8 +113,6 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
         return
 
     if kind is TransactionKind.AMORTIZATION:
-        # Devolução de capital: reduz o custo, não a quantidade. Custo não
-        # desce de zero — o excedente já é rendimento, não devolução.
         state.total_cost_exact = max(ZERO, state.total_cost_exact - money(entry.amount))
         return
 
@@ -180,16 +151,10 @@ def _fold(entries: Iterable[LedgerEntry], symbol: str, on_step=None) -> Position
 
 
 def project_position(entries: Iterable[LedgerEntry], symbol: str = "") -> PositionProjection:
-    """Dobra os lançamentos de um ativo na posição que eles produzem."""
     return _fold(entries, symbol)
 
 
 def project_positions(entries: Iterable[LedgerEntry]) -> dict[str, PositionProjection]:
-    """Projeta a carteira inteira, um ativo por vez.
-
-    Devolve todos os ativos, inclusive os zerados: uma posição encerrada ainda
-    carrega lucro realizado, e é isso que a apuração de IR consome.
-    """
     by_symbol: dict[str, list[LedgerEntry]] = {}
     for entry in entries:
         by_symbol.setdefault(entry.symbol.strip().upper(), []).append(entry)
@@ -199,8 +164,6 @@ def project_positions(entries: Iterable[LedgerEntry]) -> dict[str, PositionProje
 
 @dataclass
 class DerivationStep:
-    """Um passo da conta, em número e em frase."""
-
     traded_on: str
     kind: str
     description: str
@@ -255,11 +218,6 @@ def _describe(entry: LedgerEntry, state: PositionProjection) -> str:
 
 
 def explain_position(entries: Iterable[LedgerEntry], symbol: str = "") -> dict:
-    """A conta do preço médio, passo a passo, em número e em frase.
-
-    Preço médio que ninguém consegue conferir é preço médio em que ninguém
-    confia — e é o número que vai para a declaração de IR.
-    """
     steps: list[DerivationStep] = []
 
     def record(entry: LedgerEntry, state: PositionProjection) -> None:

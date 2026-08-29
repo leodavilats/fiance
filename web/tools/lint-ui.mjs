@@ -56,10 +56,6 @@ function toPascalCase(name) {
   );
 }
 
-// --------------------------------------------------------------------------
-// 1. Ícones
-// --------------------------------------------------------------------------
-
 /**
  * O registro é procurado onde ele estiver, e não num caminho fixo: ele já mudou
  * de `main.ts` para `app.config.ts` quando a renderização no servidor entrou, e
@@ -104,8 +100,6 @@ function usedIcons(files) {
     }
 
     for (const binding of source.matchAll(/\[name\]="([^"]*)"/g)) {
-      // Num ternário, o literal comparado não é nome de ícone — em
-      // `type === 'error' ? 'circle-x' : 'info'` só os dois últimos são.
       const results = binding[1].replace(/[!=]==?\s*'[^']*'/g, '');
       for (const literal of results.matchAll(/'([a-z][a-z0-9-]*)'/g)) {
         found.push({ file, name: literal[1] });
@@ -120,13 +114,8 @@ function usedIcons(files) {
   return found;
 }
 
-// --------------------------------------------------------------------------
-// 2. Classes
-// --------------------------------------------------------------------------
-
 /** Seletores de classe de um texto CSS, desfazendo os escapes do Tailwind. */
 function classesFromCss(css, into = new Set()) {
-  // `\.` cobre `w-1\/2` e `bg-brand\/20`, que o Tailwind emite escapados.
   for (const match of css.matchAll(/\.((?:[\w-]|\\.)+)/g)) {
     into.add(match[1].replace(/\\(.)/g, '$1'));
   }
@@ -189,7 +178,6 @@ function usedClasses(files) {
       found.push({ file, name: match[1] });
     }
 
-    // `[ngClass]` e `[class]` com objeto ou ternário: só os literais.
     for (const binding of source.matchAll(/\[(?:ngClass|class)\]="([^"]*)"/g)) {
       for (const literal of binding[1].matchAll(/'([^']*)'/g)) {
         push(file, literal[1]);
@@ -199,10 +187,6 @@ function usedClasses(files) {
 
   return found;
 }
-
-// --------------------------------------------------------------------------
-// 3. Explicabilidade
-// --------------------------------------------------------------------------
 
 /**
  * Todo julgamento **renderizado** precisa de uma forma de conferir a conta.
@@ -242,7 +226,6 @@ const EXPLAINERS = [
 const OPT_OUT = /<!--\s*sem-explicabilidade:\s*\S[^>]*-->/;
 
 function rendersJudgment(source) {
-  // Interpolação `{{ ... }}` e binding `[x]="..."` / `@if (...)`.
   const dynamic = [
     ...source.matchAll(/\{\{([^}]*)\}\}/g),
     ...source.matchAll(/\[[\w.-]+\]="([^"]*)"/g),
@@ -267,10 +250,6 @@ function missingExplainers(htmlFiles) {
   return problems;
 }
 
-// --------------------------------------------------------------------------
-// 4. Alternativa textual de gráfico
-// --------------------------------------------------------------------------
-
 /**
  * Todo SVG que desenha dado precisa de uma forma de ler o dado sem enxergá-lo.
  *
@@ -287,8 +266,6 @@ function missingChartAlternatives(files) {
   for (const file of files) {
     const source = readFileSync(file, 'utf8');
 
-    // `<svg` com `<path`/`<line`/`<circle` gerado em laço é gráfico de dado;
-    // ícone é um `<svg>` estático, e o Lucide nem chega ao template.
     const desenhaDado = /<svg[\s\S]*?@for[\s\S]*?<\/svg>/.test(source);
     if (!desenhaDado) continue;
 
@@ -299,10 +276,6 @@ function missingChartAlternatives(files) {
 
   return problems;
 }
-
-// --------------------------------------------------------------------------
-// 5. Nome acessível
-// --------------------------------------------------------------------------
 
 /**
  * Botão só com ícone precisa dizer o que faz.
@@ -325,7 +298,6 @@ function missingAccessibleNames(files) {
       const [, attrs, body] = match;
       if (/aria-label|aria-labelledby/.test(attrs)) continue;
 
-      // Texto visível, incluindo o que vem de interpolação.
       const semTags = body.replace(/<[^>]+>/g, ' ');
       if (/[A-Za-zÀ-ÿ]{2,}/.test(semTags)) continue;
 
@@ -338,10 +310,6 @@ function missingAccessibleNames(files) {
 
   return problems;
 }
-
-// --------------------------------------------------------------------------
-// 6. Projeção sem faixa
-// --------------------------------------------------------------------------
 
 /** Os campos projetados que nunca devem aparecer sozinhos. */
 const PROJECTED_FIELDS = ['portfolio_value', 'passive_income_monthly'];
@@ -381,8 +349,6 @@ function projectionsWithoutBand(files) {
   return problems;
 }
 
-// --------------------------------------------------------------------------
-
 function report(title, problems, hint) {
   if (problems.length === 0) return 0;
 
@@ -402,9 +368,6 @@ function report(title, problems, hint) {
 }
 
 function main() {
-  // Fixture de teste não é tela: ela existe para exercitar um componente, e
-  // cobrar dela ícone registrado ou classe emitida produz falso positivo — que
-  // é como um lint acaba desligado.
   const templates = [...walk(SRC, /\.html$/), ...walk(SRC, /\.ts$/)].filter(
     file => !file.endsWith('.spec.ts')
   );

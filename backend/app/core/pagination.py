@@ -1,20 +1,3 @@
-"""Paginação por cursor (keyset), e não por offset.
-
-`OFFSET n` relê e descarta as n primeiras linhas a cada página — fica mais lento
-conforme o usuário avança — e, pior, **pula ou repete** itens quando algo é
-inserido entre duas páginas. Numa lista ordenada por data decrescente, registrar
-um provento novo enquanto se folheia empurra tudo para baixo e o item da borda
-aparece duas vezes. Num extrato que vira declaração, isso não é aceitável.
-
-O cursor aqui é a última chave lida: `(valor_de_ordenação, id)`. A página
-seguinte pede "o que vem depois desta chave", então inserção não desloca nada.
-O `id` está lá como desempate — sem ele, dois registros do mesmo dia fariam a
-paginação travar ou pular.
-
-O cursor é opaco de propósito: base64 de um JSON interno. Não é segredo — é para
-que a forma da chave possa mudar sem quebrar cliente que a tenha guardado.
-"""
-
 from __future__ import annotations
 
 import base64
@@ -26,19 +9,12 @@ from typing import Any, Generic, TypeVar
 
 from app.core.errors import DomainError
 
-#: Teto de segurança. Existe para que uma lista sem paginação no cliente não
-#: cresça sem limite com o uso — o `has_more` diz a verdade sobre o resto.
 MAX_PAGE_SIZE = 500
 
-#: Tamanho padrão quando o cliente não pede nada. Generoso porque a maioria das
-#: carteiras cabe numa página só, e apertar isso truncaria telas que hoje
-#: funcionam sem que ninguém percebesse.
 DEFAULT_PAGE_SIZE = 200
 
 
 class InvalidCursorError(DomainError):
-    """Cursor corrompido ou de outra listagem."""
-
     status_code = 400
 
 
@@ -48,7 +24,6 @@ def encode_cursor(sort_value: Any, row_id: Any) -> str:
 
 
 def decode_cursor(cursor: str) -> tuple[Any, Any]:
-    """Devolve `(valor_de_ordenação, id)`. Cursor inválido é 400, não 500."""
     try:
         padded = cursor + "=" * (-len(cursor) % 4)
         payload = json.loads(base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8"))
@@ -70,8 +45,6 @@ T = TypeVar("T")
 
 @dataclass
 class Page(Generic[T]):
-    """Uma fatia da lista, com o endereço da próxima."""
-
     items: list[T]
     next_cursor: str | None
     has_more: bool
@@ -86,12 +59,6 @@ def paginate(
     key: Callable[[T], Any],
     identity: Callable[[T], Any],
 ) -> Page[T]:
-    """Corta a lista no limite e monta o cursor a partir do último item.
-
-    Recebe **uma linha a mais** que o limite quando quem chama souber pedir
-    assim — é como se descobre que há próxima página sem um `COUNT(*)` extra
-    sobre a tabela inteira.
-    """
     has_more = len(rows) > limit
     page = rows[:limit]
 
@@ -104,12 +71,6 @@ def paginate(
 
 
 def apply_keyset(stmt, sort_column, id_column, cursor: str | None, descending: bool = True):
-    """Adiciona ordenação estável e o corte do cursor a um `select`.
-
-    A comparação é lexicográfica sobre a tupla `(ordenação, id)`, escrita à mão
-    porque nem todo banco suportado aceita comparação de tupla — e porque a
-    versão expandida deixa visível que o `id` só desempata.
-    """
     if descending:
         stmt = stmt.order_by(sort_column.desc(), id_column.desc())
     else:
@@ -137,16 +98,6 @@ def slice_after(
     identity: Callable[[T], Any],
     descending: bool = True,
 ) -> Page[T]:
-    """Pagina em memória uma lista já ordenada.
-
-    Existe para as listas cujo agregado precisa do conjunto inteiro por
-    definição — total por mês, marcação a mercado, comparação contra o Ibovespa.
-    Nesses casos a **consulta** continua completa e o que fica limitado é o
-    payload: cortar no banco faria o total falar só da página, e total errado é
-    pior que lista longa.
-
-    Onde não há agregado, use `apply_keyset` e corte no banco de verdade.
-    """
     if cursor is not None:
         anchor = decode_cursor(cursor)
         if descending:

@@ -31,9 +31,6 @@ function render(options: { unrestricted?: boolean; allows?: boolean } = {}) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
-      // O template renderiza de verdade aqui, então o Lucide precisa do
-      // provider — sem ele o ícone estoura em runtime, que é exatamente o que
-      // o lint de ícone existe para pegar em produção.
       importProvidersFrom(LucideAngularModule.pick({ Lock })),
       { provide: EntitlementService, useValue: fakeEntitlements(options) },
     ],
@@ -48,7 +45,6 @@ describe('gate contextual', () => {
 
   describe('quando aparece', () => {
     it('some com a régua desligada', () => {
-      // Nunca um botão que não faz nada.
       const fixture = render({ unrestricted: true });
 
       expect(fixture.nativeElement.querySelector('[role="region"]')).toBeNull();
@@ -69,9 +65,6 @@ describe('gate contextual', () => {
 
   describe('nunca desfoca dado do usuário', () => {
     it('não aplica desfoque a nada', () => {
-      // Borrar saldo, P&L ou composição é pegar o que já é da pessoa e
-      // escondê-lo até ela pagar. O que se esconde é o que o produto
-      // acrescenta, nunca o retrato do que é dela.
       const fixture = render();
       const html: string = fixture.nativeElement.innerHTML;
 
@@ -98,8 +91,6 @@ describe('gate contextual', () => {
 
   describe('a prévia é o argumento', () => {
     it('mostra o número verdadeiro da carteira quando ele existe', () => {
-      // Um gate que só diz "assine para ver" desperdiça a única coisa que o
-      // produto tem de diferente.
       const fixture = render();
 
       expect(fixture.nativeElement.textContent).toContain('8,4 pontos percentuais');

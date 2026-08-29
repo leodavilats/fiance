@@ -1,5 +1,3 @@
-"""Fase 3 — caminhos de performance e o snapshot fora do request (D7)."""
-
 import pytest
 
 from app.core import cache as cache_mod
@@ -12,7 +10,6 @@ ITEM = {"ticker": "PETR4", "quantity": 100, "avg_price": 30.0, "category": "auto
 
 
 def test_evaluate_does_not_write_snapshots(client):
-    """O cliente controlava o que entrava no histórico de patrimônio."""
     headers = make_auth_headers("snap_no_write")
     client.put("/api/portfolio", headers=headers, json={"items": [ITEM]})
 
@@ -103,17 +100,11 @@ def test_job_lock_expires_so_a_dead_worker_does_not_block_forever():
 
 
 def test_cache_file_is_separate_from_the_user_database():
-    """DB_PATH apontava para o mesmo arquivo do banco de dev."""
     assert cache_mod.DB_PATH.name != "fiance.db"
 
 
 @pytest.mark.real_cache
 def _cache_em(tmp_path, monkeypatch, nome: str):
-    """Aponta o cache de disco para um arquivo do teste.
-
-    `DB_PATH` mora em `cache_backends` desde que o backend virou trocável — é a
-    implementação, e ela se move junto.
-    """
     monkeypatch.setattr(cache_backends, "DB_PATH", tmp_path / nome)
     cache_mod.reset_connection()
     return cache_mod._sqlite_backend_for_tests()
@@ -184,7 +175,6 @@ def test_responses_carry_a_correlation_id(client):
 
 
 def test_strategy_evaluates_the_portfolio_once_per_request(client, monkeypatch):
-    """A tela de Estratégia chamava duas rotas que rodavam o pipeline cada uma."""
     from app.services.portfolio_service import PortfolioService
 
     calls = {"n": 0}

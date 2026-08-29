@@ -72,12 +72,6 @@ class ProjectionService:
             return (base_date + timedelta(days=30 * (indice + 1))).strftime("%Y-%m")
 
         def _rodar(cenario: Scenario) -> ScenarioSeries:
-            """Roda a projeção inteira sob um conjunto de premissas.
-
-            É a mesma conta de sempre, parametrizada. Duplicar o laço por
-            cenário seria a maneira mais fácil de os três divergirem em silêncio
-            depois da primeira manutenção.
-            """
             valorizacao_ano, dividendos_ano = cenario.rates(
                 req.portfolio_growth_rate, req.dividend_growth_rate
             )
@@ -162,8 +156,6 @@ class ProjectionService:
                 earliest_date=otimista.target_date,
                 expected_date=base.target_date,
                 latest_date=conservador.target_date,
-                # Um cenário que não chega no horizonte é resposta, não falha.
-                # Esconder isso faria a meta parecer garantida.
                 reached_in_all_scenarios=all(
                     s.months_to_target is not None for s in series.values()
                 ),

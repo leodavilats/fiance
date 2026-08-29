@@ -247,11 +247,7 @@ export class AppComponent {
   private readonly direitos = inject(EntitlementService);
 
   constructor() {
-    // A densidade é preferência da conta: aplicá-la no shell garante que
-    // toda rota nasça com o atributo, em vez de cada tela lembrar disso.
     this.densidade.ensureLoaded();
-    // Os direitos chegam uma vez e o shell os distribui: cada tela
-    // perguntando por conta própria multiplicaria a chamada por rota.
     this.direitos.ensureLoaded();
 
     this.router.events.subscribe(e => {

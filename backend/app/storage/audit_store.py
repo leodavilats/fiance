@@ -1,11 +1,3 @@
-"""Log append-only: o que aconteceu na conta, sem update e sem delete.
-
-A camada de escrita não expõe alteração nem remoção de propósito. Um log que
-pode ser corrigido responde uma coisa ao usuário e outra ao auditor, que é o
-oposto do motivo de existir. A única saída é a exclusão de conta, que varre
-`audit_log` junto com o resto em `account_store`.
-"""
-
 from __future__ import annotations
 
 import json
@@ -20,8 +12,6 @@ from app.models.db_models import AuditLogDb
 
 logger = logging.getLogger("fiance.audit")
 
-# Ações registradas. Fechada pelo mesmo motivo do dicionário de eventos: log
-# com nome livre vira log que ninguém consegue consultar.
 LOGIN = "login"
 LOGOUT = "logout"
 POSITION_WRITE = "position.write"
@@ -48,7 +38,6 @@ def write(
     detail: dict | None = None,
     user_id: str | None = None,
 ) -> None:
-    """Registra uma ação. Nunca derruba a operação que a originou."""
     uid = user_id or get_current_user_id_or_none()
     if not uid:
         return

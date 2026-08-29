@@ -94,14 +94,12 @@ def record_cache_lookup(hit: bool) -> None:
 
 
 def _route_label(request) -> str:
-    """Rota sem os parâmetros de path, para não explodir a cardinalidade."""
     route = request.scope.get("route")
     template = getattr(route, "path", None)
     return f"{request.method} {template or request.url.path}"
 
 
 async def observability_middleware(request, call_next):
-    """ID de correlação, latência por rota e sessão de banco por request."""
     correlation_id = request.headers.get("X-Request-Id") or uuid.uuid4().hex[:16]
     request.state.correlation_id = correlation_id
 

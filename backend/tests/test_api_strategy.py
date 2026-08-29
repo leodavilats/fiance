@@ -22,7 +22,6 @@ def test_strategy_with_cash_available_query_param(client):
 
 
 def test_strategy_uses_deterministic_ranking(client, monkeypatch):
-    """Gemini foi removido do projeto — /api/strategy ordena oportunidades por gap de alocação usando só ordenação determinística por score (sem dependência de IA externa)."""
     from app.core.config import get_settings
 
     get_settings.cache_clear() if hasattr(get_settings, "cache_clear") else None

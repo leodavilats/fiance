@@ -61,8 +61,6 @@ void main() {
     });
 
     test('a base do número viaja junto do número', () {
-      // Rendimento contratado e dividend yield medido não são a mesma espécie
-      // de número. Perder `income_basis` faria a tabela mentir por omissão.
       final r = IncomeCompare.fromJson(payload());
 
       expect(r.fixedIncome.first.incomeBasis, contains('contratada'));
@@ -109,9 +107,6 @@ void main() {
 
   group('rótulos de liquidez', () {
     test('cada forma de sair do investimento tem nome próprio', () {
-      // "no_vencimento" e "bolsa" são a diferença entre poder e não poder
-      // resgatar amanhã; deixá-los crus na tela empurra a tradução para o
-      // usuário.
       expect(liquidityLabel('diaria'), 'Resgate diário');
       expect(liquidityLabel('no_vencimento'), 'Só no vencimento');
       expect(liquidityLabel('bolsa'), 'Venda em bolsa (D+2)');

@@ -1,9 +1,3 @@
-"""O razão contra o banco: espelhamento, reconciliação e identidade de instrumento.
-
-O critério de saída do G1 é que toda posição corrente seja derivável do razão e
-que um teste compare as duas em cada build. `test_reconciliacao_*` é esse teste.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -17,7 +11,6 @@ from tests.conftest import make_auth_headers
 
 @pytest.fixture()
 def como(request):
-    """Roda o corpo do teste com um usuário no contexto, como uma requisição."""
     tokens = []
 
     def _enter(user_id: str):
@@ -66,8 +59,6 @@ class TestEspelhamento:
         tipos = [
             i["kind"] for i in client.get("/api/transactions", headers=headers).json()["items"]
         ]
-        # A listagem vem em ordem de leitura, do mais recente para o mais antigo.
-        # A projeção usa a ordem inversa, que é a em que as operações aconteceram.
         assert tipos == ["sell", "adjust"]
 
     def test_apagar_posicao_zera_o_razao_em_vez_de_deixar_fantasma(self, client):
@@ -85,7 +76,6 @@ class TestEspelhamento:
 
 class TestReconciliacao:
     def test_reconciliacao_verde_apos_uso_normal(self, client):
-        """Comprar, vender e apagar — e a projeção continua igual à posição."""
         headers = make_auth_headers("u_reconcile")
 
         for ticker, qty, price in [("PETR4", 100, 30.0), ("VALE3", 50, 60.0)]:
@@ -106,7 +96,6 @@ class TestReconciliacao:
         assert resultado["in_sync"] is True
 
     def test_reconciliacao_acusa_divergencia_com_os_dois_numeros_a_vista(self, client, como):
-        """Um lançamento fora do fluxo faz a projeção discordar — e ela avisa."""
         headers = make_auth_headers("u_reconcile_off")
         client.post(
             "/api/portfolio/position",
@@ -134,7 +123,6 @@ class TestReconciliacao:
         assert divergencia["projected"]["quantity"] == 150
 
     def test_backfill_semeia_carteira_anterior_ao_razao(self, como):
-        """Sem isto, toda conta antiga tocaria o alarme — e alarme assim é desligado."""
         from app.storage import portfolio_store
 
         uid = como("u_backfill")
@@ -160,7 +148,6 @@ class TestReconciliacao:
 
 class TestIdentidadeDeInstrumento:
     def test_ticker_reutilizado_pela_b3_nao_mistura_historicos(self, como):
-        """Critério de aceite: dois instrumentos distintos, um código só."""
         uid = como("u_instrument")
 
         antigo = ledger_store.record(
@@ -318,7 +305,6 @@ class TestAuditoria:
         assert client.get("/api/activity", headers=vizinho).json()["items"] == []
 
     def test_falha_de_auditoria_nao_derruba_a_operacao(self, monkeypatch, client):
-        """Perder um registro é ruim; perder o aporte do usuário é inaceitável."""
 
         def explode(*_args, **_kwargs):
             raise RuntimeError("banco de auditoria fora do ar")

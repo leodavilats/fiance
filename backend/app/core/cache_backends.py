@@ -1,24 +1,3 @@
-"""Onde o cache mora: um arquivo local, ou um Redis que todos os nós enxergam.
-
-Com um nó só, cache em SQLite no disco é a escolha certa: sem operação, sem
-dependência, sem rede. Com dois, ele deixa de ser um detalhe de desempenho e
-vira um problema de correção — cada nó guarda a própria cópia, e a mesma pessoa
-recarregando a página vê preços diferentes conforme o balanceador. "O ativo
-subiu 2% ou caiu 1%?" passa a depender de qual máquina atendeu, e isso mina a
-confiança no número muito além do que uma chamada externa a mais custaria.
-
-Por isso a fronteira é esta interface, e não um `if` espalhado por quem
-consulta. O padrão continua sendo o arquivo local; `REDIS_URL` troca a
-implementação e mais nada.
-
-**A entrada guarda o próprio vencimento**, mesmo no Redis, que sabe expirar
-sozinho. É o que permite `get_with_age` devolver valor vencido com a idade ao
-lado — o disjuntor da fonte de cotação depende disso: com a fonte fora do ar,
-mostrar o preço de vinte minutos atrás dizendo que ele é de vinte minutos atrás
-é melhor do que não mostrar nada. Um TTL nativo apagaria justamente o dado que
-serve para isso.
-"""
-
 from __future__ import annotations
 
 import json
@@ -34,20 +13,10 @@ from typing import Any, Protocol
 
 logger = logging.getLogger("fiance.cache")
 
-#: Quanto tempo a entrada vencida ainda existe no Redis.
-#:
-#: No SQLite ela sobrevive até a faxina periódica passar — é o que faz
-#: `get_with_age` conseguir devolver dado vencido para o disjuntor da fonte de
-#: cotação. O Redis expira sozinho, então sem esta margem o mesmo código teria
-#: comportamentos diferentes conforme o backend, que é o pior tipo de
-#: divergência: a que só aparece em produção. A margem espelha o intervalo de
-#: manutenção (`jobs.MAINTENANCE_INTERVAL`).
 STALE_MARGIN_SECONDS = 6 * 3600
 
 
 class CacheBackend(Protocol):
-    """O contrato. `get_raw` devolve (texto, vencimento) sem julgar validade."""
-
     name: str
 
     def get_raw(self, key: str) -> tuple[str, float] | None: ...
@@ -63,15 +32,11 @@ class CacheBackend(Protocol):
     def purge_expired(self) -> int: ...
 
 
-# --------------------------------------------------------------------- SQLite
-
 _DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent.parent / ".cache" / "http_cache.db"
 DB_PATH = Path(os.environ.get("CACHE_DB_PATH") or _DEFAULT_DB_PATH)
 
 
 class SqliteBackend:
-    """Arquivo local. O padrão, e o certo enquanto houver um nó só."""
-
     name = "sqlite"
 
     _BUSY_TIMEOUT_MS = 5_000
@@ -83,8 +48,6 @@ class SqliteBackend:
         self._path = DB_PATH
 
     def _ensure_db(self) -> None:
-        # O caminho pode mudar entre chamadas (os testes trocam `DB_PATH`), e
-        # nesse caso o esquema tem que ser criado de novo no arquivo novo.
         if self._initialized and self._path == DB_PATH:
             return
 
@@ -180,28 +143,13 @@ class SqliteBackend:
             return cx.execute("DELETE FROM cache WHERE expires_at < ?", (time.time(),)).rowcount
 
 
-# ---------------------------------------------------------------------- Redis
-
-
 class RedisBackend:
-    """Um cache que todos os nós enxergam.
-
-    O vencimento vai **no valor**, não só no TTL do Redis: `get_with_age`
-    precisa do dado vencido para o disjuntor, e um TTL nativo o apagaria no
-    instante em que ele começa a servir. O TTL nativo existe mesmo assim, com
-    uma margem — é faxina, não regra de negócio.
-    """
-
     name = "redis"
 
     def __init__(self, url: str, prefix: str = "fiance:cache:", client: Any = None) -> None:
         self._prefix = prefix
 
         if client is not None:
-            # Costura para testar a **tradução** sem servidor: prefixo de chave,
-            # envelope com o vencimento, padrão SQL virando glob. Não substitui
-            # o teste de contrato contra um Redis real — aquele responde outra
-            # pergunta, a de dois nós enxergarem a mesma gravação.
             self._client = client
             return
 
@@ -224,8 +172,6 @@ class RedisBackend:
         try:
             bruto = self._client.get(self._k(key))
         except Exception as exc:  # pragma: no cover - depende de servidor
-            # Redis fora do ar não pode derrubar a requisição: cache é
-            # aceleração, e um erro aqui vira "sem cache", não erro 500.
             logger.warning("Falha ao ler cache %s: %s", key, exc)
             return None
 
@@ -252,12 +198,9 @@ class RedisBackend:
             logger.warning("Falha ao apagar cache %s: %s", key, exc)
 
     def _scan(self, match: str) -> list[str]:
-        # `scan_iter` e não `keys`: `keys` trava o Redis inteiro enquanto varre,
-        # e numa base de produção isso é uma pausa visível para todos os nós.
         return list(self._client.scan_iter(match=match, count=500))
 
     def delete_pattern(self, pattern: str) -> int:
-        # O padrão chega no dialeto SQL (`%`); aqui ele é glob.
         glob = self._prefix + pattern.replace("%", "*")
         chaves = self._scan(glob)
         return int(self._client.delete(*chaves)) if chaves else 0
@@ -267,16 +210,10 @@ class RedisBackend:
         return int(self._client.delete(*chaves)) if chaves else 0
 
     def purge_expired(self) -> int:
-        # O Redis já expira sozinho pela sobrevida gravada em `set_raw`. Varrer
-        # a base inteira para antecipar isso seria trabalho por trabalho.
         return 0
 
 
-# --------------------------------------------------------------------- Seleção
-
-
 def build_backend() -> CacheBackend:
-    """O de disco por padrão; Redis quando `REDIS_URL` estiver configurado."""
     url = os.environ.get("REDIS_URL", "").strip()
     if url:
         logger.info("Cache compartilhado via Redis.")

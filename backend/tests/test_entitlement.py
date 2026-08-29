@@ -1,11 +1,3 @@
-"""Entitlement: a régua, o teto, o trial e as duas regras de arquitetura.
-
-A composição do plano é a decisão mais provável de ser revista depois dos
-primeiros experimentos — e a mais difícil de reverter depois de publicada. Estes
-testes cobrem menos o *conteúdo* da régua e mais a *propriedade* de que ela é
-um lugar só, mudável por configuração.
-"""
-
 from __future__ import annotations
 
 import time
@@ -23,7 +15,6 @@ DAY = 86400.0
 
 @pytest.fixture()
 def regua_ligada(monkeypatch):
-    """A régua roda desligada em produção hoje; ligá-la é uma decisão."""
     settings = get_settings()
     monkeypatch.setattr(settings, "entitlements_enabled", True, raising=False)
     return settings
@@ -31,7 +22,6 @@ def regua_ligada(monkeypatch):
 
 class TestFlagDesligada:
     def test_sem_a_flag_todo_mundo_tem_tudo(self):
-        """É o estado de hoje: o código existe, a cobrança não."""
         direitos = resolve("u_ent_off")
 
         assert direitos.unrestricted is True
@@ -43,7 +33,6 @@ class TestFlagDesligada:
             assert check(feature, "u_ent_off_all").allowed is True
 
     def test_sem_a_flag_o_contador_nao_roda(self):
-        """Perguntar não pode gastar cota que nem está sendo cobrada."""
         for _ in range(20):
             check(Feature.ASSET_PAGE, "u_ent_off_meter", cost=1)
 
@@ -59,7 +48,6 @@ class TestRegua:
         assert all(r["rationale"] for r in regras.values()), "toda linha precisa ser defensável"
 
     def test_o_que_nunca_e_pago_esta_declarado_como_livre(self):
-        """Não é 'ainda não cercado': é decisão registrada."""
         for feature in (
             Feature.PORTFOLIO,
             Feature.PORTFOLIO_SUMMARY,
@@ -69,11 +57,6 @@ class TestRegua:
             assert plans.allows(feature, Plan.FREE), feature
 
     def test_a_regua_nao_sabe_expressar_cerca_proibida(self):
-        """Número de ativos e exportação não têm representação aqui.
-
-        Não por esquecimento: uma cerca que não pode ser escrita é uma cerca que
-        não pode ser acidentalmente ligada.
-        """
         nomes = {f.value for f in Feature}
 
         assert "portfolio_max_assets" not in nomes
@@ -81,7 +64,6 @@ class TestRegua:
         assert plans.limit_for(Feature.ACCOUNT_EXPORT, Plan.FREE) is None
 
     def test_mudar_a_regua_e_mudar_um_valor(self, regua_ligada, monkeypatch):
-        """A propriedade que justifica o módulo existir."""
         assert check(Feature.STRATEGY, "u_ent_regua").allowed is False
 
         monkeypatch.setitem(
@@ -121,7 +103,6 @@ class TestPlanoEBloqueio:
         assert check(Feature.STRATEGY, "u_ent_pago").allowed is True
 
     def test_assinatura_cancelada_degrada_sem_apagar(self, regua_ligada, client):
-        """Cancelar Premium não é cancelar conta."""
         headers = make_auth_headers("u_ent_churn")
         client.post(
             "/api/portfolio/position",
@@ -153,7 +134,6 @@ class TestTeto:
         assert str(limite) in bloqueado.reason
 
     def test_perguntar_nao_consome(self, regua_ligada):
-        """A tela pergunta para saber se desenha o gate."""
         for _ in range(50):
             check(Feature.ASSET_PAGE, "u_ent_peek", cost=0)
 
@@ -167,7 +147,6 @@ class TestTeto:
         assert check(Feature.ASSET_PAGE, "u_ent_teto_b", cost=1).allowed is True
 
     def test_teto_permanente_libera_vaga_ao_devolver(self, regua_ligada):
-        """Três alertas são três alertas: apagar um libera o lugar."""
         limite = plans.limit_for(Feature.PRICE_ALERTS, Plan.FREE)
         for _ in range(limite):
             check(Feature.PRICE_ALERTS, "u_ent_alerta", cost=1)
@@ -179,7 +158,6 @@ class TestTeto:
         assert check(Feature.PRICE_ALERTS, "u_ent_alerta", cost=1).allowed is True
 
     def test_consumo_mensal_nao_devolve_vaga(self, regua_ligada):
-        """Devolver cota de página já vista daria acesso ilimitado a quem recarrega."""
         check(Feature.ASSET_PAGE, "u_ent_mensal", cost=1)
 
         meter.release("u_ent_mensal", Feature.ASSET_PAGE)
@@ -265,7 +243,6 @@ class TestPrecoTravado:
         assert assinatura["locked"] is True
 
     def test_reajuste_da_tabela_nao_alcanca_quem_esta_travado(self, monkeypatch):
-        """A promessa é pública, então tem que ser dado — não memória."""
         subscription_service.grant("u_ent_travado", "premium", 14990, locked=True)
 
         monkeypatch.setattr(subscription_service, "PRICE_MONTHLY_CENTS", 2990)
@@ -275,7 +252,6 @@ class TestPrecoTravado:
 
 class TestWebhookIdempotente:
     def test_o_mesmo_evento_so_e_processado_uma_vez(self):
-        """O provedor reenvia até receber 200, por desenho."""
         assert subscription_service.already_processed("stripe", "evt_1") is False
 
         subscription_service.mark_processed("stripe", "evt_1", "assinatura criada")
@@ -296,11 +272,6 @@ class TestWebhookIdempotente:
 
 class TestArquitetura:
     def test_analise_e_otimizador_nao_conhecem_entitlement(self):
-        """Se o cálculo souber quem paga, a independência vira promessa.
-
-        Nenhuma entrada comercial entra no score, no preço justo ou na
-        ordenação — e a forma de garantir isso é a dependência não existir.
-        """
         import pathlib
 
         raiz = pathlib.Path(__file__).resolve().parent.parent / "app"
@@ -315,7 +286,6 @@ class TestArquitetura:
         assert infratores == [], f"dependência comercial no cálculo: {infratores}"
 
     def test_nenhuma_condicional_de_plano_fora_do_modulo(self):
-        """Cerca espalhada é impossível de mudar depois."""
         import pathlib
         import re
 

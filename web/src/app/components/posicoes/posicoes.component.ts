@@ -74,9 +74,6 @@ export class PosicoesComponent implements OnInit {
     const q = this.route.snapshot.queryParamMap;
     this.visibleColumns.set(parseColumns(q.get('cols')));
 
-    // A URL vence a preferência da conta quando ela existe — link salvo é
-    // contrato, e quem compartilhou a tabela compacta espera que ela chegue
-    // compacta do outro lado. Sem `d` na URL, vale a densidade da pessoa.
     const daUrl = q.get('d');
     this.density.set(
       daUrl === 'compact' || daUrl === 'comfortable' ? daUrl : this.densidade.density()

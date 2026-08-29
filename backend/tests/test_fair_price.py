@@ -38,7 +38,6 @@ def test_dcf_fair_price_positive_with_eps():
 
 
 def test_dcf_uses_the_growth_it_receives_not_the_default():
-    """Regressão do guard `0 < rate < 1` sobre um valor percentual."""
     default = dcf_fair_price(2.0)
     faster = dcf_fair_price(2.0, revenue_growth_pct=20.0)
     slower = dcf_fair_price(2.0, revenue_growth_pct=2.0)
@@ -113,7 +112,6 @@ def test_compute_fair_price_etf_without_dividends_has_no_candidates():
 
 
 def test_fair_price_block_keeps_consensus_methods():
-    """Regressão: `FairPriceBlock(**fair.__dict__)` descartava campos não declarados."""
     from app.models import FairPriceBlock
 
     fair = compute_fair_price(
@@ -131,7 +129,6 @@ def test_fair_price_block_keeps_consensus_methods():
 
 
 def test_technical_block_keeps_trend_basis():
-    """Regressão do mesmo tipo: a tendência chegava sem dizer sobre o que foi medida."""
     from app.analysis.fair_price import compute_technical
     from app.models import TechnicalBlock
 

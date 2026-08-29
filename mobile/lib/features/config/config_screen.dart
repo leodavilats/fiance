@@ -257,10 +257,6 @@ class ConfigScreen extends ConsumerWidget {
               ],
             ),
           ),
-          // Meta não é preferência: é a referência contra a qual a carteira é
-          // comparada, e o desvio que ela produz vive em Estratégia. Deixar as
-          // duas coisas em telas diferentes obrigava a pessoa a sair do lugar
-          // onde o problema aparece para ir consertá-lo.
           _SettingsCard(
             icon: Icons.pie_chart_outline,
             title: 'Metas de alocação',
@@ -493,8 +489,6 @@ class _ReferralCard extends ConsumerWidget {
     final indicacao = ref.watch(referralProvider);
 
     return indicacao.when(
-      // Sem esqueleto e sem mensagem de erro: indicação é um brinde, e uma
-      // falha aqui não deve ocupar a tela de configurações com um alarme.
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
       data: (r) => _SettingsCard(

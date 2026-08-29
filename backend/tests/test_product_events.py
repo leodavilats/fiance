@@ -1,5 +1,3 @@
-"""Dicionário de eventos fechado e o funil que ele responde."""
-
 from __future__ import annotations
 
 import time
@@ -18,7 +16,6 @@ def _post(client, headers, *items) -> int:
 
 
 def test_todo_evento_do_dicionario_responde_uma_pergunta():
-    """Evento sem pergunta associada é dívida de dado, não instrumentação."""
     for spec in catalog.CATALOG.values():
         assert spec.question in catalog.QUESTIONS, spec.name
 
@@ -30,7 +27,6 @@ def test_evento_fora_do_dicionario_e_recusado(client):
 
 
 def test_propriedade_com_dado_de_carteira_e_recusada(client):
-    """Ticker e valor não vão para analytics — em nenhuma hipótese."""
     headers = make_auth_headers("u_ev_priv")
 
     assert _post(client, headers, {"name": "feed_item_opened", "props": {"ticker": "PETR4"}}) == 422
@@ -47,7 +43,6 @@ def test_propriedade_categorica_permitida_e_gravada(client):
 
 
 def test_evento_no_futuro_e_ancorado_no_agora(client):
-    """Relógio do cliente não escreve o futuro do funil."""
     headers = make_auth_headers("u_ev_clock")
     futuro = time.time() + 10 * DAY
 
@@ -75,7 +70,6 @@ def test_catalogo_e_publicado_para_o_cliente(client):
 
 
 def _seed_cohort(prefix: str, now: float) -> None:
-    """Dez contas com 40 dias, cinco delas ativas depois do dia 30."""
     entrada = now - 40 * DAY
     for i in range(10):
         user = f"{prefix}_{i}"
@@ -98,8 +92,6 @@ def test_funil_calcula_ativacao_e_d30():
     funil = build_funnel(days=90, now=now)
     por_metrica = {m["metric"]: m for m in funil["metrics"]}
 
-    # A suíte inteira compartilha o banco e outras rotas também emitem marcos,
-    # então a asserção é sobre a coorte semeada, não sobre o total.
     ativados = event_store.users_with("portfolio_first_position_added")
     assert {f"u_funnel_{i}" for i in range(7)} <= ativados
     assert "u_funnel_7" not in ativados

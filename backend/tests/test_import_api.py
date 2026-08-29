@@ -1,5 +1,3 @@
-"""Importação pela API: prévia, duplicidade e atomicidade."""
-
 from __future__ import annotations
 
 from tests.conftest import make_auth_headers
@@ -34,7 +32,6 @@ class TestPrevia:
         assert client.get("/api/transactions", headers=headers).json()["count"] == 0
 
     def test_a_previa_mostra_boas_e_ruins_ao_mesmo_tempo(self, client):
-        """Parar no primeiro erro faria corrigir 300 linhas uma por vez."""
         headers = make_auth_headers("u_import_mixed")
         texto = CSV_BOM + "40/13/2024;PETR4;Compra;10;1,00;0\n"
 
@@ -93,7 +90,6 @@ class TestDuplicidade:
         assert client.get("/api/transactions", headers=headers).json()["count"] == 2
 
     def test_o_usuario_pode_dizer_que_sao_duas_operacoes_de_verdade(self, client):
-        """Duas compras iguais no mesmo dia acontecem — a decisão é dele."""
         headers = make_auth_headers("u_import_dup_keep")
         _commit(client, headers, CSV_BOM)
 
@@ -121,8 +117,6 @@ class TestReconciliacaoAposImportar:
         resultado = client.get("/api/transactions/reconciliation", headers=headers).json()
         projetadas = {d["ticker"] for d in resultado["differences"]}
 
-        # A posição corrente ainda está vazia, então o razão diverge dela — e é
-        # exatamente isso que a reconciliação tem que dizer, em vez de calar.
         assert projetadas == {"PETR4", "VALE3"}
         assert all(d["reason"] == "no_razao_sem_posicao" for d in resultado["differences"])
 
@@ -132,6 +126,5 @@ class TestReconciliacaoAposImportar:
 
         corpo = client.get("/api/transactions/derivation/PETR4", headers=headers).json()
 
-        # 100 × 30,50 = 3.050,00 mais 9,90 de corretagem = 3.059,90 → média 30,599.
         assert corpo["position"]["total_cost"] == 3059.90
         assert corpo["position"]["avg_price"] == 30.599
