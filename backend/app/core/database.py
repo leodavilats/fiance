@@ -15,8 +15,6 @@ logger = logging.getLogger("fiance.database")
 BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
 ALEMBIC_INI = BACKEND_ROOT / "alembic.ini"
 
-BASELINE_REVISION = "0001_baseline"
-
 
 class Base(DeclarativeBase):
     pass
@@ -60,12 +58,11 @@ def init_db() -> None:
         logger.info("Banco criado do zero e marcado na revisão mais recente.")
         return
 
-    if "alembic_version" not in existing_tables:
-        command.stamp(config, BASELINE_REVISION)
-        logger.info(
-            "Banco pré-Alembic detectado: marcado em %s antes de migrar.", BASELINE_REVISION
-        )
-
+    # O ramo que carimbava bancos "pré-Alembic" saiu junto com o colapso do
+    # histórico: aquele estado não pode mais existir, e guarda de segurança para
+    # situação impossível é pior que nenhuma — ela sugere uma cobertura que não
+    # há. Banco com tabela e sem `alembic_version` agora falha alto no upgrade,
+    # que é o que se quer saber.
     command.upgrade(config, "head")
 
 

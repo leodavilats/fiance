@@ -1,4 +1,15 @@
-"""Migrações versionadas (Alembic)."""
+"""Migrações versionadas (Alembic).
+
+O teste que importa aqui não é "a migração roda" — é **a migração produz o
+esquema que os modelos descrevem**. A regra do projeto sempre foi "coluna nova
+exige uma migração; não basta mexer no model", e até 2026-08-28 ela era cobrada
+por prosa: o teste antigo conferia que a cadeia criava oito tabelas nomeadas à
+mão, então um campo novo sem migração passava batido.
+
+Agora dois bancos vazios são levantados lado a lado — um pela cadeia, outro por
+`Base.metadata` — e comparados tabela por tabela e coluna por coluna. É o mesmo
+diff que se faria à mão antes de um deploy, rodando em todo build.
+"""
 
 import os
 import tempfile
@@ -6,9 +17,10 @@ import tempfile
 import pytest
 from alembic import command
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, inspect
 
-from app.core.database import BASELINE_REVISION, _alembic_config, engine, init_db
+from app.core.database import Base, _alembic_config, engine, init_db
+from app.models import db_models  # noqa: F401  (registra os modelos no metadata)
 
 
 def _config_for(url: str):
@@ -17,101 +29,98 @@ def _config_for(url: str):
     return config
 
 
+def _url(prefixo: str) -> str:
+    caminho = os.path.join(tempfile.mkdtemp(prefix=f"fiance_{prefixo}_"), "mig.db")
+    return f"sqlite:///{caminho}"
+
+
 @pytest.fixture()
 def sqlite_url():
-    path = os.path.join(tempfile.mkdtemp(prefix="fiance_alembic_"), "mig.db")
-    yield f"sqlite:///{path}"
+    return _url("alembic")
 
 
-def test_upgrade_head_from_empty_database_creates_every_table(sqlite_url):
-    command.upgrade(_config_for(sqlite_url), "head")
-
-    tables = set(inspect(create_engine(sqlite_url)).get_table_names())
-    for expected in (
-        "users",
-        "portfolio",
-        "portfolio_snapshot",
-        "preferences",
-        "goals",
-        "closed_trades",
-        "fixed_income_positions",
-        "alembic_version",
-    ):
-        assert expected in tables
+def _tabelas(inspector) -> set[str]:
+    return set(inspector.get_table_names()) - {"alembic_version"}
 
 
-def test_downgrade_then_upgrade_round_trips(sqlite_url):
-    config = _config_for(sqlite_url)
-    command.upgrade(config, "head")
-    command.downgrade(config, "base")
+class TestACadeiaBateComOsModelos:
+    """A verificação que substituiu a convenção escrita."""
 
-    remaining = set(inspect(create_engine(sqlite_url)).get_table_names())
-    assert "portfolio" not in remaining
+    @pytest.fixture()
+    def esquemas(self, sqlite_url):
+        """Um banco pela migração, outro pelos modelos."""
+        command.upgrade(_config_for(sqlite_url), "head")
 
-    command.upgrade(config, "head")
-    assert "portfolio" in set(inspect(create_engine(sqlite_url)).get_table_names())
+        url_modelos = _url("metadata")
+        Base.metadata.create_all(create_engine(url_modelos))
 
-
-def test_pre_alembic_database_is_stamped_and_migrated(sqlite_url):
-    """Banco criado antes do Alembic não pode ser recriado nem quebrar."""
-    config = _config_for(sqlite_url)
-    command.upgrade(config, BASELINE_REVISION)
-
-    legacy_engine = create_engine(sqlite_url)
-    with legacy_engine.begin() as conn:
-        conn.execute(text("DROP TABLE alembic_version"))
-
-    assert "alembic_version" not in set(inspect(legacy_engine).get_table_names())
-    assert "fixed_income_positions" not in set(inspect(legacy_engine).get_table_names())
-
-    command.stamp(config, BASELINE_REVISION)
-    command.upgrade(config, "head")
-
-    tables = set(inspect(create_engine(sqlite_url)).get_table_names())
-    assert "fixed_income_positions" in tables
-    assert "portfolio" in tables
-
-
-def test_legacy_rf_positions_are_removed_by_the_fixed_income_migration(sqlite_url):
-    """As posições RF_* só tinham o valor investido; o resto vivia no navegador."""
-    config = _config_for(sqlite_url)
-    command.upgrade(config, BASELINE_REVISION)
-
-    legacy_engine = create_engine(sqlite_url)
-    with legacy_engine.begin() as conn:
-        conn.execute(
-            text(
-                "INSERT INTO users (id, email, name, picture, created_at) "
-                "VALUES ('u1', 'u1@local', 'u1', '', 0)"
-            )
+        return (
+            inspect(create_engine(sqlite_url)),
+            inspect(create_engine(url_modelos)),
         )
-        for ticker in ("RF_cdb_1", "PETR4"):
-            conn.execute(
-                text(
-                    "INSERT INTO portfolio "
-                    "(user_id, ticker, quantity, avg_price, category, created_at, updated_at) "
-                    "VALUES ('u1', :t, 1, 1000, 'auto', 0, 0)"
-                ),
-                {"t": ticker},
-            )
 
-    command.upgrade(config, "head")
+    def test_as_mesmas_tabelas(self, esquemas):
+        migrado, modelado = esquemas
 
-    with create_engine(sqlite_url).begin() as conn:
-        tickers = {row[0] for row in conn.execute(text("SELECT ticker FROM portfolio"))}
+        assert _tabelas(migrado) == _tabelas(modelado)
 
-    assert tickers == {"PETR4"}
+    def test_as_mesmas_colunas_em_cada_tabela(self, esquemas):
+        """O modo de falha que a lista fixa de tabelas não pegava: campo novo no
+        modelo, migração esquecida, esquema divergente só em produção."""
+        migrado, modelado = esquemas
+
+        divergencias = {}
+        for tabela in sorted(_tabelas(migrado) & _tabelas(modelado)):
+            na_migracao = {c["name"] for c in migrado.get_columns(tabela)}
+            no_modelo = {c["name"] for c in modelado.get_columns(tabela)}
+            if na_migracao != no_modelo:
+                divergencias[tabela] = {
+                    "só na migração": sorted(na_migracao - no_modelo),
+                    "só no modelo": sorted(no_modelo - na_migracao),
+                }
+
+        assert divergencias == {}
+
+    def test_a_chave_primaria_e_a_mesma(self, esquemas):
+        """Chave primária divergente não aparece em contagem de coluna, e é o
+        tipo de erro que só quebra na primeira gravação concorrente."""
+        migrado, modelado = esquemas
+
+        for tabela in sorted(_tabelas(migrado) & _tabelas(modelado)):
+            assert (
+                migrado.get_pk_constraint(tabela)["constrained_columns"]
+                == modelado.get_pk_constraint(tabela)["constrained_columns"]
+            ), tabela
 
 
-def test_migration_history_is_linear():
-    scripts = ScriptDirectory.from_config(_alembic_config())
-    heads = scripts.get_heads()
-    assert len(heads) == 1, f"histórico de migração bifurcado: {heads}"
+class TestACadeiaRoda:
+    def test_upgrade_a_partir_do_vazio(self, sqlite_url):
+        command.upgrade(_config_for(sqlite_url), "head")
 
+        assert "users" in _tabelas(inspect(create_engine(sqlite_url)))
 
-def test_init_db_is_idempotent():
-    """O startup chama init_db em todo boot; rodar de novo não pode falhar."""
-    init_db()
-    init_db()
+    def test_downgrade_e_upgrade_voltam_ao_mesmo_lugar(self, sqlite_url):
+        config = _config_for(sqlite_url)
+        command.upgrade(config, "head")
+        antes = _tabelas(inspect(create_engine(sqlite_url)))
 
-    assert "alembic_version" in set(inspect(engine).get_table_names())
+        command.downgrade(config, "base")
+        assert _tabelas(inspect(create_engine(sqlite_url))) == set()
+
+        command.upgrade(config, "head")
+        assert _tabelas(inspect(create_engine(sqlite_url))) == antes
+
+    def test_o_historico_e_linear(self):
+        """Duas cabeças significam que dois ramos criaram migração em paralelo,
+        e o upgrade escolhe uma delas em silêncio."""
+        heads = ScriptDirectory.from_config(_alembic_config()).get_heads()
+
+        assert len(heads) == 1, f"histórico de migração bifurcado: {heads}"
+
+    def test_init_db_e_idempotente(self):
+        """O startup chama `init_db` em todo boot; rodar de novo não pode
+        falhar."""
+        init_db()
+        init_db()
+
+        assert "alembic_version" in set(inspect(engine).get_table_names())
