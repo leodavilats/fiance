@@ -8,7 +8,8 @@
     "format": "prettier --write \"src/**/*.{ts,html,css,scss,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css,scss,json}\"",
     "lint:ui": "node tools/lint-ui.mjs",
-    "test": "ng test --watch=false"
+    "test": "ng test --watch=false",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@angular/animations": "^22.1.4",
@@ -31,6 +32,7 @@
     "@angular/build": "^22.1.4",
     "@angular/cli": "^22.1.4",
     "@angular/compiler-cli": "^22.1.4",
+    "@playwright/test": "^1.62.1",
     "@types/express": "^5.0.6",
     "@types/node": "^24.0.0",
     "autoprefixer": "^10.5.0",

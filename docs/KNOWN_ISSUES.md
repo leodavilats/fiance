@@ -48,13 +48,16 @@
 
 ## Cobertura de testes
 
-7. **Nenhum teste roda no navegador.** Backend tem 724 (`pytest`), web 90 (Vitest) e mobile 49
-   (`flutter test`), e `backend/tests/test_jornadas.py` atravessa as jornadas críticas — primeira
-   posição → trial → teto → checkout → webhook → cancelamento → exportação → exclusão — pelo app
-   real, com HTTP, autenticação e banco. O que **não** é exercitado é a interface: nenhum teste abre
-   o Angular num navegador, então quebra de renderização, foco, rota e formulário só aparece em uso.
-   Vitest roda componentes em jsdom, o que não é a mesma coisa. Ligar Playwright exige backend e web
-   servidos no CI e download de navegador — é trabalho de infraestrutura, não de teste.
+7. **O E2E cobre o esqueleto, não os fluxos.** `web/e2e/` roda Playwright contra o backend real e
+   o build de produção com SSR, e cobre o que o resto da suíte não alcança: redirecionamento sem
+   sessão, as cinco rotas principais e três aninhadas abrindo por **link direto**, e uma posição
+   salva no servidor chegando à tela. O que **não** está coberto é o miolo — importar operações,
+   passar pelo checkout, ver o gate aparecer, degradar de plano. São os fluxos que o plano lista, e
+   eles dependem de cotação externa, que no ambiente de teste não é determinística.
+
+8. **SQLite tranca sob concorrência de navegador.** Durante o E2E o backend loga
+   `database is locked` em requisições paralelas. Não derruba os testes e não afeta produção, que é
+   Postgres — mas torna o E2E local mais lento e potencialmente instável se ele crescer.
 
 ## Automação que não existe
 

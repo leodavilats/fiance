@@ -43,3 +43,9 @@ Thumbs.db
 # Storage/Data
 backend/app/storage/*.json
 !backend/app/storage/.gitkeep
+
+web/test-results/
+web/playwright-report/
+web/blob-report/
+backend/.cache/e2e.db
+backend/.cache/e2e_cache.db

@@ -29,6 +29,7 @@ cd backend && python -m pytest -q                  # 771 passam, 11 pulam sem Re
 cd backend && python -m ruff check app tests migrations
 cd mobile  && flutter analyze && flutter test      # 0 issues, 49 testes
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 98 testes
+cd web     && npm run e2e                          # 10 testes em navegador
 node design-tokens/build.mjs --check               # tokens sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA
 python design-tokens/build-icons.py --check        # marca sincronizada
@@ -61,6 +62,9 @@ Duas ressalvas que já custaram tempo:
 
 Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde**.
 
+- **`index.html` sem `<base href="/">`** deixa rota de dois segmentos (`/voce/preferencias`)
+  pedir os chunks em caminho relativo aninhado; o SSR devolve HTML, o módulo não carrega e a
+  tela abre **em branco** por link direto. Passa despercebido navegando por dentro do app.
 - **Ícone Lucide não registrado** — `The "x" icon has not been provided...` em runtime.
 - **Classe CSS inexistente** — já aconteceu com `.card`, `.btn-primary`, `.tag`, `.verdict-pill`,
   `verdict-*`, `bg-success`.
