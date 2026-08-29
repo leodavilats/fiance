@@ -1,6 +1,7 @@
 # Fase 3 — Arquitetura de informação
 
-> Decorre de [01-UX-AUDIT.md](01-UX-AUDIT.md) achados 1–6. Esta é a decisão estrutural: **nada
+> Decorre dos achados 1–6 da auditoria de UX (documento removido em 2026-08-28; ver
+> [CHANGELOG](../CHANGELOG.md)). Esta é a decisão estrutural: **nada
 > de visual é implementado antes de ela estar aceita**, porque ela define quais componentes
 > existem.
 

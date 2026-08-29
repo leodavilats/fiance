@@ -33,7 +33,7 @@ porque ela invalidava as anteriores. Seis itens contradiziam o código.
   `node design-tokens/build.mjs`. O CI falha se web e mobile divergirem.
 - **Navegação e telas** seguem a arquitetura de informação em
   [design/02-INFORMATION-ARCHITECTURE.md](design/02-INFORMATION-ARCHITECTURE.md). O que já está
-  construído está em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATION.md).
+  construído está no código; o que **não** está, em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 - **Suíte verde é pré-requisito de merge.** Os comandos exatos, com as contagens esperadas,
   estão em [CLAUDE.md](../CLAUDE.md#como-trabalhar-aqui). Em resumo: `pytest` (724) ·
   `flutter analyze && flutter test` (49) · `npm test && npm run build && npm run lint:ui` (90) ·

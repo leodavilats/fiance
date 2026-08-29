@@ -12,6 +12,58 @@
 
 ---
 
+## `docs/design/` deixa de ter status e passa a ter só especificação (2026-08-28)
+
+Quatro dos nove documentos do redesign foram removidos: `00-DISCOVERY`, `01-UX-AUDIT`,
+`03-USER-JOURNEYS` e `07-IMPLEMENTATION` — 1.078 das 2.342 linhas da pasta.
+
+Os três primeiros são **artefato de processo**: auditam o produto anterior, com evidência de
+arquivo e linha de um código que em boa parte não existe mais. Cumpriram a função — os 36 achados
+viraram trabalho, e o que restou deles está aqui e no KNOWN_ISSUES.
+
+O `07-IMPLEMENTATION` saiu por um motivo diferente, e mais importante: ele era uma **terceira
+fonte de verdade** sobre o que está no ar, ao lado do CHANGELOG e do KNOWN_ISSUES. E já tinha
+divergido das outras duas — declarava "19 rotas endereçáveis" e "36 rotas no `app.routes.ts`"
+(são 30 de conteúdo e 40 entradas), listava como assimetria aberta as metas e o RF × Bolsa do
+mobile que fecharam em 2026-08-28, e dava como não feitos a busca global, o drawer de Atividade e
+a reestruturação de Hoje e Carteira, todos construídos. É a mesma doença que motivou a reescrita
+do KNOWN_ISSUES em 2026-08-22 e a de 2026-08-28: **arquivo que registra status apodrece, arquivo
+que registra decisão não.**
+
+O que sobra em `docs/design/` é especificação, e é por isso que sobra: `02-INFORMATION-ARCHITECTURE`
+é a autoridade da navegação — quando web e mobile divergem, é contra ele que se confere, e foi
+assim que a Estratégia sem rota apareceu —, `04-WIREFRAMES` é a estrutura de cada tela,
+`05-VISUAL-LANGUAGE` o racional da identidade e `06-DESIGN-SYSTEM` o contrato dos componentes.
+Nenhum deles afirma o que está construído.
+
+### Decisões que estavam só no 07, preservadas aqui
+
+Sem isto registrado, as quatro seriam re-litigadas na próxima vez que alguém olhar as réguas:
+
+- **Desvio de alocação nunca é `adverse`.** O pior estado da régua `AllocationGap` é "atenção":
+  estar fora da meta não é perda. Um teste no mobile trava isso.
+- **`GoalProgress` não tem zona "no ritmo".** O produto sabe o alvo e o prazo, mas não a data em
+  que a meta começou — qualquer ritmo seria inventado. O prazo aparece como contexto, não como
+  julgamento.
+- **Margem de segurança trunca em ±50%.** Margem maior que isso quase sempre é dado ruim, não
+  pechincha, e a régua não deve premiar dado ruim com a barra cheia.
+- **Máximo de 6 séries por gráfico.** A agregação de setores é top-6 + "Outros", não top-8 —
+  alinhada à regra do design system.
+
+E duas de layout, que são não-mudanças deliberadas e por isso somem com mais facilidade:
+
+- **`screens.sm` continua 640px.** Remapear para 420px moveria o layout de todas as telas (46 usos
+  de `sm:`). As faixas novas entraram como `xs` (420) e `2xl` (1440).
+- **`EmptyState` tem CTA obrigatório por construção, e `Skeleton` tem a forma do conteúdo**, não um
+  retângulo genérico. As duas primeiras versões desses componentes foram removidas por não terem
+  consumidor **e** por contradizerem o próprio contrato; foram reconstruídas com consumidor real.
+
+Uma afirmação do 07 que já era falsa quando foi apagada, e que fica corrigida: ele dizia que **não
+há verificação automática de ícone do Lucide**, registrando que um checker estático fora escrito e
+removido. Hoje há — `npm run lint:ui` cobre ícone não registrado, entre outras quatro coisas.
+
+---
+
 ## G2 fechado: proventos por calendário, contraste e densidade (2026-08-28)
 
 Os três últimos itens do portão de retenção que não dependiam do entitlement.
@@ -629,8 +681,9 @@ anterior: eles reprovam sem a correção.
 ## Redesign de UX/UI (2026-08-21 e 2026-08-22)
 
 Auditoria completa de experiência e reformulação da arquitetura de informação nas duas
-plataformas. Os documentos de projeto estão em [design/](design/); o log de execução, com o que
-está no ar e o que não está, em [design/07-IMPLEMENTATION.md](design/07-IMPLEMENTATION.md).
+plataformas. Os documentos de projeto estão em [design/](design/). O log de execução que existia
+ao lado deles foi removido em 2026-08-28 — era uma terceira fonte de verdade sobre status, e tinha
+divergido; o que está aberto vive em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 O resumo do que mudou de contrato ou de estrutura:
 

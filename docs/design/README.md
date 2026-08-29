@@ -1,39 +1,46 @@
-# Redesign de UX/UI do fiance
+# Design do fiance — a especificação da interface
 
-Reformulação completa da experiência — não um retrabalho visual. A ordem dos documentos é a ordem
-do processo: **estrutura antes de pixel**.
+Esta pasta responde **como a interface deveria ser**, e só isso. Ela não diz o que está
+construído: isso é o código, e o que falta é o [KNOWN_ISSUES](../KNOWN_ISSUES.md).
+
+A separação é deliberada e custou um arquivo. Até 2026-08-28 havia aqui um `07-IMPLEMENTATION.md`
+que registrava status — e ele apodreceu, como todo arquivo de status apodrece: dava como
+inexistentes a busca global, o drawer de Atividade e a reestruturação das telas do mobile, todos
+prontos. Foi removido junto com os três documentos de processo (`00-DISCOVERY`, `01-UX-AUDIT`,
+`03-USER-JOURNEYS`), que auditavam um produto que em boa parte não existe mais. O porquê está no
+[CHANGELOG](../CHANGELOG.md), na entrada de 2026-08-28, junto das decisões que só viviam neles.
+
+Os números pulam por isso. São identificadores estáveis, não uma ordem — renumerar quebraria links
+em troca de nada.
 
 ## Os documentos
 
-| Fase | Documento | O que responde |
+| Documento | O que responde | Quando ler |
 |---|---|---|
-| 1 | [00-DISCOVERY.md](00-DISCOVERY.md) | O que existe hoje, com evidência de arquivo e linha |
-| 2 | [01-UX-AUDIT.md](01-UX-AUDIT.md) | O que está errado — 36 achados, P0 a P3 |
-| 3 | [02-INFORMATION-ARCHITECTURE.md](02-INFORMATION-ARCHITECTURE.md) | Como a navegação passa a ser organizada, e o destino de cada tela antiga |
-| 4 | [03-USER-JOURNEYS.md](03-USER-JOURNEYS.md) | Os 12 fluxos, para os três perfis de senioridade |
-| 5 | [04-WIREFRAMES.md](04-WIREFRAMES.md) | A estrutura de cada tela, seus estados e a responsividade — sem visual |
-| 6 | [05-VISUAL-LANGUAGE.md](05-VISUAL-LANGUAGE.md) | A identidade: "tinta e papel", paleta semântica, tipografia, a régua |
-| 7 | [06-DESIGN-SYSTEM.md](06-DESIGN-SYSTEM.md) | Tokens e componentes, e o contrato de cada um |
-| 8–9 | [07-IMPLEMENTATION.md](07-IMPLEMENTATION.md) | O que já está no ar, em ordem, e o que ainda não |
+| [02-INFORMATION-ARCHITECTURE.md](02-INFORMATION-ARCHITECTURE.md) | Como a navegação é organizada, e o destino de cada tela | **Antes de criar tela ou rota** |
+| [04-WIREFRAMES.md](04-WIREFRAMES.md) | A estrutura de cada tela, seus estados e a responsividade — sem visual | Ao mexer numa tela |
+| [05-VISUAL-LANGUAGE.md](05-VISUAL-LANGUAGE.md) | A identidade: "tinta e papel", paleta semântica, tipografia, a régua | Ao decidir aparência |
+| [06-DESIGN-SYSTEM.md](06-DESIGN-SYSTEM.md) | Tokens e componentes, e o contrato de cada um | Antes de construir componente |
 
-**Por onde começar:** para entender *por que* o produto mudou, leia 01 e 02. Para mexer numa tela,
-leia 04 (a estrutura dela) e 06 (os componentes disponíveis). Para saber o que já existe em
-código, leia 07.
+O **02 é a autoridade da navegação**. Quando web e mobile divergem, é contra ele que se confere —
+foi assim que a Estratégia apareceu: `strategy.component` tinha 1092 linhas de template e nenhuma
+rota, e `GET /strategy` rodava para ninguém.
 
-## Os três achados que governam tudo
-
-1. **`/strategy` não era rota.** 1092 linhas de template com Estratégia, Ajustes necessários,
-   Alocação projetada e Quick Invest estavam em `components/index.ts` e em lugar nenhum da
-   navegação. `GET /strategy` e `POST /quick-invest` rodavam para ninguém. **Corrigido.**
-2. **8 destinos escondidos em tabs sem URL** dentro de `/market`. Sem deep link, sem voltar, sem
-   restaurar estado. **Corrigido.**
-3. **O backend é honesto e a UI não aproveitava.** `data_completeness`, `freshness`, proveniência,
-   confiança e consenso de métodos já vinham da API, e a interface tratava a maior parte como
-   número comum. O diferencial do produto estava calculado e invisível.
+## O que o redesign descobriu, e vale lembrar
 
 O redesign **não exigiu nenhum algoritmo novo**. Exigiu tornar alcançável e legível o que já era
-calculado — e, no caminho, revelou três campos que a API calculava e descartava em silêncio
-(`consensus_methods`, `trend_basis`, `allocation_gaps`).
+calculado — e, no caminho, revelou um padrão que voltou a aparecer sete vezes: **campo que o
+backend calcula e o cliente descarta em silêncio**. `Modelo(**resultado.__dict__)` no Pydantic e
+`fromJson` no Dart ignoram chave não declarada sem erro nenhum. Foi assim com `consensus_methods`,
+`trend_basis`, `allocation_gaps`, `dcf`, `price_history`, `reason_groups` e
+`pct_cdi_equivalente`.
+
+O segundo padrão: **classe CSS que não existe não quebra o build, quebra a tela.** `.card`,
+`.btn-primary`, `.tag`, `verdict-*` e `bg-success` eram usadas em dezenas de templates sem estar
+definidas em CSS nenhum. Hoje o `npm run lint:ui` cobre isso, junto de ícone do Lucide não
+registrado.
+
+Os dois estão na lista de armadilhas do [CLAUDE.md](../../CLAUDE.md#armadilhas-que-não-quebram-o-build).
 
 ## Tokens
 
@@ -46,17 +53,20 @@ node design-tokens/build.mjs           # gera web/src/tokens.css,
 node design-tokens/build.mjs --check   # falha se divergir (job `design-tokens` no CI)
 ```
 
-## Regras que valem para todas as fases
+Qualquer chave `*Ruler` em `tokens.json` vira `fi<Nome>Bands` e `fi<Nome>Domain` nas duas
+plataformas automaticamente — não há caso especial por régua.
+
+## Regras que valem para toda a interface
 
 - **Nada de dado inventado.** Métrica, endpoint ou indicador que não existe não entra em wireframe.
-  Onde o dado falta, o entregável é um estado, não um número.
-- **Regra de negócio fica no backend.** `analysis/` e `optimizer/` seguem a única fonte de verdade.
-  A UI reflete e explica; não decide.
-- **Três alvos, uma linguagem.** Todo token e toda régua semântica (score, veredito, estado) nasce
-  numa fonte única e é gerada para CSS, TypeScript e Dart. A régua de score já divergiu entre web e
-  mobile por ser mantida à mão em três arquivos.
-- **Em conflito, clareza vence informação; decisão vence funcionalidade visível; facilidade vence
-  sofisticação técnica.**
-- Suíte verde é pré-requisito de merge:
-  `cd backend && python -m pytest -q` · `flutter analyze && flutter test` ·
-  `npm run format:check && npx ng build` · `node design-tokens/build.mjs --check`.
+  Onde o dado falta, o entregável é um **estado**, não um número.
+- **Regra de negócio fica no backend.** `analysis/` e `optimizer/` são a fonte única. A UI reflete
+  e explica; não decide.
+- **Três alvos, uma linguagem.** Todo token e toda régua semântica nasce numa fonte única e é
+  gerada para CSS, TypeScript e Dart. A régua de score já divergiu entre web e mobile por ser
+  mantida à mão em três arquivos.
+- **Em conflito:** clareza vence informação; decisão vence funcionalidade visível; facilidade vence
+  sofisticação técnica.
+
+Os comandos da suíte, com as contagens esperadas, estão em
+[CLAUDE.md](../../CLAUDE.md#como-trabalhar-aqui).
