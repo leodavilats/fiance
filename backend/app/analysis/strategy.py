@@ -487,25 +487,31 @@ def _generate_strategy_summary(
     suggestions: list[dict[str, Any]],
     gaps: list[dict[str, Any]],
 ) -> str:
+    """Resumo sem cifra de aporte.
+
+    Quanto aportar viaja em `invest_amount`, campo que `affirmation.apply` retira
+    fora do modo prescritivo. A régua retira campo e não reescreve texto, então
+    repetir o valor aqui a furava pela prosa. Fica contagem, concentração e a
+    prioridade — diagnóstico, não instrução.
+    """
     if not suggestions:
         return "Seu portfólio está bem balanceado. Considere aguardar novas oportunidades."
 
-    total_to_invest = sum(s["invest_amount"] for s in suggestions)
     n_suggestions = len(suggestions)
 
-    summary = f"Com base no seu perfil {profile['type']}, sugerimos investir "
-    summary += f"R$ {total_to_invest:,.2f} em {n_suggestions} "
-    summary += "ativo" if n_suggestions == 1 else "ativos"
-    summary += ". "
+    summary = f"Com base no seu perfil {profile['type']}, "
+    summary += f"{n_suggestions} "
+    summary += "ativo se encaixa" if n_suggestions == 1 else "ativos se encaixam"
+    summary += " nas suas metas de alocação. "
 
-    categories = {}
+    categories: dict[str, float] = {}
     for sug in suggestions:
         cat = sug["category"]
         categories[cat] = categories.get(cat, 0) + sug["invest_amount"]
 
     if categories:
         main_cat = max(categories.items(), key=lambda x: x[1])
-        summary += f"Maior alocação em {main_cat[0]} (R$ {main_cat[1]:,.2f}). "
+        summary += f"Maior concentração em {main_cat[0]}. "
 
     if gaps:
         critical_gap = gaps[0]

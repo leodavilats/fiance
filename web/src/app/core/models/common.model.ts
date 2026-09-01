@@ -40,3 +40,20 @@ export interface GlobalSearchResponse {
   groups: GlobalSearchGroup[];
   total: number;
 }
+
+/**
+ * O modo de afirmação sob o qual a resposta foi montada.
+ *
+ * Vem junto de toda rota que passa por `affirmation.apply`. Fora do modo
+ * prescritivo o servidor retira o valor que instrui — quanto aportar, quantas
+ * cotas — e a tela precisa dizer que ele foi retido, senão o traço no lugar do
+ * número lê como dado faltando.
+ */
+export interface AffirmationMode {
+  level: number;
+  name: string;
+  disclaimer: string;
+  prescriptive: boolean;
+  asset_level: boolean;
+  personalized: boolean;
+}

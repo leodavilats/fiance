@@ -170,7 +170,7 @@ class QuickInvestService:
             for cat, val in new_category_values.items()
         }
 
-        summary = self._build_summary(allocations, req.cash_available, allocated_total)
+        summary = self._build_summary(allocations)
 
         return QuickInvestResponse(
             total_cash=req.cash_available,
@@ -203,20 +203,22 @@ class QuickInvestService:
 
         return " | ".join(reasons)
 
-    def _build_summary(
-        self, allocations: list[QuickInvestAllocation], cash: float, allocated: float
-    ) -> str:
+    def _build_summary(self, allocations: list[QuickInvestAllocation]) -> str:
+        """Resumo sem cifra.
+
+        O quanto alocar sai em `allocated_cash`/`remaining_cash`, que passam pela
+        régua de afirmação. Repetir o número em prosa furava essa régua, porque
+        `affirmation.apply` retira campo e não reescreve texto.
+        """
         n = len(allocations)
 
         if n == 0:
             return "Não foi possível encontrar oportunidades adequadas no momento."
 
-        lines = [
-            f"Estratégia Quick Invest: {n} ativos selecionados.",
-            f"Utilizando {allocated / cash * 100:.1f}% do caixa disponível (R$ {allocated:.2f}).",
-        ]
+        ativos = "ativo selecionado" if n == 1 else "ativos selecionados"
+        lines = [f"Estratégia Quick Invest: {n} {ativos}."]
 
         cats = {a.category for a in allocations}
-        lines.append(f"Categorias: {', '.join(cats)}.")
+        lines.append(f"Categorias: {', '.join(sorted(cats))}.")
 
         return " ".join(lines)

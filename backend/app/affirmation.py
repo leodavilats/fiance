@@ -29,11 +29,18 @@ DISCLAIMERS: dict[Affirmation, str] = {
     ),
 }
 
+# A retirada é por nome de chave, então o nome tem de ser o que o payload real
+# usa — não o que ele deveria usar. `suggested_investment`, `suggested_quantity` e
+# `invest_amount` ficaram de fora por um tempo, e o valor por ativo saía no nível 2
+# enquanto o agregado era retido: o inverso do combinado.
 ACTION_FIELDS = frozenset(
     {
         "amount",
         "allocated_cash",
         "suggested_amount",
+        "suggested_investment",
+        "suggested_quantity",
+        "invest_amount",
         "quantity",
         "shares",
         "action",

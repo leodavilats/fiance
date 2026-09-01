@@ -1295,6 +1295,12 @@ class FixedIncomeList {
   );
 }
 
+/// Uma linha da sugestão de aporte.
+///
+/// Os números de ação — quanto, quantas cotas, a que preço — são anuláveis de
+/// propósito: a resposta passa por `affirmation.apply` no backend, que retira o
+/// valor que instrui quando o modo não é prescritivo. Ler qualquer um deles com
+/// cast não-nulo derruba a tela no modo padrão (analítico).
 class QuickInvestAllocation {
   QuickInvestAllocation({
     required this.ticker,
@@ -1313,9 +1319,9 @@ class QuickInvestAllocation {
   final String? name;
   final String category;
   final String? sector;
-  final double currentPrice;
-  final int suggestedQuantity;
-  final double suggestedInvestment;
+  final double? currentPrice;
+  final int? suggestedQuantity;
+  final double? suggestedInvestment;
   final String rationale;
   final double? score;
   final double? dividendYield;
@@ -1326,13 +1332,31 @@ class QuickInvestAllocation {
         name: j['name'] as String?,
         category: j['category'] as String? ?? '',
         sector: j['sector'] as String?,
-        currentPrice: (j['current_price'] as num).toDouble(),
-        suggestedQuantity: j['suggested_quantity'] as int,
-        suggestedInvestment: (j['suggested_investment'] as num).toDouble(),
+        currentPrice: (j['current_price'] as num?)?.toDouble(),
+        suggestedQuantity: (j['suggested_quantity'] as num?)?.toInt(),
+        suggestedInvestment: (j['suggested_investment'] as num?)?.toDouble(),
         rationale: j['rationale'] as String? ?? '',
         score: (j['score'] as num?)?.toDouble(),
         dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
       );
+}
+
+/// O modo de afirmação sob o qual a resposta foi montada.
+///
+/// Vem junto de toda rota que passa por `affirmation.apply`. Fora do modo
+/// prescritivo o servidor retira o valor que instrui — quanto aportar, quantas
+/// cotas — e a tela precisa dizer que ele foi retido, senão o traço no lugar do
+/// número lê como dado faltando.
+class AffirmationMode {
+  AffirmationMode({required this.disclaimer, required this.prescriptive});
+
+  final String disclaimer;
+  final bool prescriptive;
+
+  factory AffirmationMode.fromJson(Map<String, dynamic> j) => AffirmationMode(
+    disclaimer: j['disclaimer'] as String? ?? '',
+    prescriptive: j['prescriptive'] as bool? ?? false,
+  );
 }
 
 class QuickInvestResult {
@@ -1342,32 +1366,33 @@ class QuickInvestResult {
     required this.remainingCash,
     required this.allocations,
     required this.summary,
+    required this.affirmation,
   });
 
-  final double totalCash;
-  final double allocatedCash;
-  final double remainingCash;
+  final double? totalCash;
+  final double? allocatedCash;
+  final double? remainingCash;
   final List<QuickInvestAllocation> allocations;
   final String summary;
+  final AffirmationMode? affirmation;
 
   factory QuickInvestResult.fromJson(Map<String, dynamic> j) =>
       QuickInvestResult(
-        totalCash: (j['total_cash'] as num).toDouble(),
-        allocatedCash: (j['allocated_cash'] as num).toDouble(),
-        remainingCash: (j['remaining_cash'] as num).toDouble(),
-        allocations: (j['allocations'] as List)
+        totalCash: (j['total_cash'] as num?)?.toDouble(),
+        allocatedCash: (j['allocated_cash'] as num?)?.toDouble(),
+        remainingCash: (j['remaining_cash'] as num?)?.toDouble(),
+        allocations: (j['allocations'] as List? ?? const [])
             .map(
               (e) => QuickInvestAllocation.fromJson(e as Map<String, dynamic>),
             )
             .toList(),
         summary: j['summary'] as String? ?? '',
+        affirmation: j['affirmation'] != null
+            ? AffirmationMode.fromJson(j['affirmation'] as Map<String, dynamic>)
+            : null,
       );
 }
 
-/// O que a pessoa vê do programa de indicação.
-///
-/// Sem a lista de quem foi indicado, de propósito: quem clicou no link de
-/// alguém não escolheu aparecer numa tela dessa pessoa. As contagens bastam.
 class ReferralStatus {
   ReferralStatus({
     required this.code,
@@ -1398,12 +1423,6 @@ class ReferralStatus {
   );
 }
 
-/// Uma linha da comparação de renda: um CDB e um FII lado a lado.
-///
-/// `incomeBasis` e `hasUpside` viajam junto do número de propósito. Comparar o
-/// rendimento contratado de um CDB com o dividend yield dos últimos doze meses
-/// de um FII é comparar uma promessa com uma medição do passado — omitir de
-/// onde cada número veio faria a tabela mentir por omissão.
 class IncomeOption {
   IncomeOption({
     required this.kind,
@@ -1463,9 +1482,6 @@ class IncomeCompare {
   final List<IncomeOption> assets;
   final IncomeOption? bestIncomeOption;
   final String verdict;
-
-  /// Renda fixa tem retorno contratado; bolsa oscila. A ressalva não é
-  /// rodapé jurídico: é a diferença entre as duas colunas.
   final String disclaimer;
 
   static List<IncomeOption> _lista(dynamic bruto) =>
@@ -1489,12 +1505,6 @@ class IncomeCompare {
   );
 }
 
-/// Um achado da busca global.
-///
-/// `ref` é o identificador — ticker, ou id da posição de renda fixa. O servidor
-/// **não** manda rota: a árvore do web e a do app diferem, e um catálogo de
-/// rotas no servidor seria uma segunda verdade sobre a arquitetura de
-/// informação. Quem decide o caminho é o cliente.
 class SearchHit {
   SearchHit({
     required this.kind,

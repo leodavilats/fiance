@@ -6,6 +6,94 @@ import '../../../core/theme.dart';
 import '../hoje_actions.dart';
 import '../../../core/score_ruler.dart';
 
+/// Uma linha do feed de "O que mudou": o que aconteceu, por que importa, o que
+/// fazer — na ordem do padrão Insight, que é o mesmo do web.
+///
+/// A ação fica **abaixo** do texto, e não em `ListTile.trailing`. No trailing a
+/// largura vinha do rótulo: "Ver sugestões de ajuste" tomava metade da linha,
+/// quebrava em três e sobrava uma coluna estreita para o título — de modo que
+/// cada tile do feed ganhava uma largura de texto diferente, conforme o botão
+/// que tivesse. Abaixo, o alinhamento é o mesmo em todas as linhas e o rótulo
+/// pode ter o tamanho que precisar.
+class FiInsightTile extends StatelessWidget {
+  const FiInsightTile({
+    super.key,
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.detail,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String detail;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  /// Diâmetro do avatar mais o vão — o que alinha a ação à coluna de texto.
+  static const double _textColumnInset = 44;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: color.withValues(alpha: 0.12),
+                  child: Icon(icon, color: color, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(detail, style: TextStyle(color: fiInk2(context))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (actionLabel != null) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.only(left: _textColumnInset),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: onAction,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text('$actionLabel →'),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class FiAlertTile extends StatelessWidget {
   const FiAlertTile({super.key, required this.alert});
 
@@ -41,30 +129,13 @@ class FiAlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _color(Theme.of(context).brightness);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.12),
-          child: Icon(_icon(), color: color, size: 20),
-        ),
-        title: Text(
-          alert.count > 1 ? '${alert.title} (${alert.count})' : alert.title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(alert.detail),
-        trailing: alert.actionLabel == null
-            ? null
-            : TextButton(
-                onPressed: () => runHojeAction(
-                  context,
-                  alert.action,
-                  alert.ticker,
-                ),
-                child: Text(alert.actionLabel!),
-              ),
-      ),
+    return FiInsightTile(
+      icon: _icon(),
+      color: _color(Theme.of(context).brightness),
+      title: alert.count > 1 ? '${alert.title} (${alert.count})' : alert.title,
+      detail: alert.detail,
+      actionLabel: alert.actionLabel,
+      onAction: () => runHojeAction(context, alert.action, alert.ticker),
     );
   }
 }
@@ -108,30 +179,13 @@ class FiWhatsNewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _color(Theme.of(context).brightness);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.12),
-          child: Icon(_icon(), color: color, size: 20),
-        ),
-        title: Text(
-          item.title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(item.detail),
-        trailing: item.actionLabel == null
-            ? null
-            : TextButton(
-                onPressed: () => runHojeAction(
-                  context,
-                  item.action,
-                  item.ticker,
-                ),
-                child: Text(item.actionLabel!),
-              ),
-      ),
+    return FiInsightTile(
+      icon: _icon(),
+      color: _color(Theme.of(context).brightness),
+      title: item.title,
+      detail: item.detail,
+      actionLabel: item.actionLabel,
+      onAction: () => runHojeAction(context, item.action, item.ticker),
     );
   }
 }

@@ -1,3 +1,5 @@
+import { AffirmationMode } from './common.model';
+
 export interface InvestorProfile {
   type: string;
   description: string;
@@ -30,8 +32,13 @@ export interface InvestmentSuggestion {
   category: string;
   objective: string;
   price: number;
-  quantity: number;
-  invest_amount: number;
+  /**
+   * Quantidade e valor chegam anuláveis de propósito: `affirmation.apply` retira
+   * no backend o valor que instrui fora do modo prescritivo, e o padrão é o
+   * analítico. O preço fica — é dado de mercado, não instrução.
+   */
+  quantity: number | null;
+  invest_amount: number | null;
   score: number;
   dividend_yield: number | null;
   margin_of_safety: number | null;
@@ -47,7 +54,7 @@ export interface ReduceSuggestion {
   category: string;
   verdict: string;
   label: string;
-  quantity: number;
+  quantity: number | null;
   current_value: number | null;
   pnl_pct: number | null;
   overweight_category: boolean;
@@ -109,4 +116,5 @@ export interface InvestmentStrategy {
   reduce_suggestions: ReduceSuggestion[];
   projected_allocation: ProjectedAllocation[];
   summary: string;
+  affirmation?: AffirmationMode;
 }

@@ -79,11 +79,19 @@
     @if (s.suggestions.length > 0) {
       <section class="mt-8 pt-6 border-t border-hairline">
         <h2 class="fi-title text-ink m-0 mb-1">Para onde levar o próximo aporte</h2>
+        @if (s.affirmation && !s.affirmation.prescriptive) {
+          <p class="notice notice-indeterminate fi-caption text-ink-2 m-0 mb-4">
+            {{ s.affirmation.disclaimer }} Por isso o quanto aportar em cada destino aparece como
+            &mdash;.
+          </p>
+        }
         <p class="fi-caption text-ink-3 m-0 mb-4">
           <span class="fi-num">{{ s.suggestions.length }}</span>
-          {{ s.suggestions.length === 1 ? 'destino' : 'destinos' }}, somando
-          <span class="fi-num text-ink">{{ totalToInvest(s) | currency: 'BRL' }}</span> — uma
-          leitura do sistema, não uma ordem.
+          {{ s.suggestions.length === 1 ? 'destino' : 'destinos' }}
+          @if (totalToInvest(s); as total) {
+            , somando <span class="fi-num text-ink">{{ total | currency: 'BRL' }}</span>
+          }
+          — uma leitura do sistema, não uma ordem.
         </p>
 
         <ul class="list-none m-0 p-0">
@@ -170,7 +178,13 @@
 
                 <div class="shrink-0 text-right">
                   <p class="fi-eyebrow text-ink-3 m-0">Aportar</p>
-                  <p class="fi-metric text-ink m-0">{{ sug.invest_amount | currency: 'BRL' }}</p>
+                  <p class="fi-metric text-ink m-0">
+                    @if (sug.invest_amount !== null) {
+                      {{ sug.invest_amount | currency: 'BRL' }}
+                    } @else {
+                      &mdash;
+                    }
+                  </p>
                   @if (sug.ticker === 'RENDA_FIXA') {
                     <a
                       routerLink="/estrategia/renda-fixa"
@@ -180,7 +194,9 @@
                     </a>
                   } @else {
                     <p class="fi-caption text-ink-3 m-0 mt-1">
-                      <span class="fi-num">{{ sug.quantity }}</span> ×
+                      @if (sug.quantity !== null) {
+                        <span class="fi-num">{{ sug.quantity }}</span> ×
+                      }
                       <span class="fi-num">{{ sug.price | currency: 'BRL' }}</span>
                     </p>
                   }

@@ -133,6 +133,8 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
         ),
         if (_result != null) ...[
           const SizedBox(height: 16),
+          if (_result!.affirmation?.prescriptive == false)
+            _NotaDeAfirmacao(texto: _result!.affirmation!.disclaimer),
           _QuickInvestSummary(result: _result!),
           const SizedBox(height: 12),
           if (_result!.allocations.isEmpty)
@@ -153,6 +155,35 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
     );
   }
 }
+
+/// Diz por que o número não está na tela.
+///
+/// Fora do modo prescritivo o servidor retira o valor que instrui. Sem esta
+/// nota o traço leria como dado faltando, e não como retido de propósito.
+class _NotaDeAfirmacao extends StatelessWidget {
+  const _NotaDeAfirmacao({required this.texto});
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        '$texto Por isso o quanto aportar em cada ativo aparece como —.',
+        style: theme.textTheme.bodySmall,
+      ),
+    );
+  }
+}
+
+/// Dinheiro que o backend pode reter.
+///
+/// `affirmation.apply` anula o valor que instrui fora do modo prescritivo, e
+/// `formatCurrency(null)` diria R$ 0,00 — retido viraria zero na tela.
+String _dinheiroOuTraco(double? valor) =>
+    valor == null ? '—' : formatCurrency(valor);
 
 class _QuickInvestSummary extends StatelessWidget {
   const _QuickInvestSummary({required this.result});
@@ -177,7 +208,7 @@ class _QuickInvestSummary extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Alocado', style: theme.textTheme.labelSmall),
-                      Text(formatCurrency(result.allocatedCash)),
+                      Text(_dinheiroOuTraco(result.allocatedCash)),
                     ],
                   ),
                 ),
@@ -186,7 +217,7 @@ class _QuickInvestSummary extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Sobra em caixa', style: theme.textTheme.labelSmall),
-                      Text(formatCurrency(result.remainingCash)),
+                      Text(_dinheiroOuTraco(result.remainingCash)),
                     ],
                   ),
                 ),
@@ -252,7 +283,11 @@ class _AllocationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Comprar', style: theme.textTheme.labelSmall),
-                      Text('${allocation.suggestedQuantity} cota(s)'),
+                      Text(
+                        allocation.suggestedQuantity == null
+                            ? '—'
+                            : '${allocation.suggestedQuantity} cota(s)',
+                      ),
                     ],
                   ),
                 ),
@@ -261,7 +296,7 @@ class _AllocationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Preço', style: theme.textTheme.labelSmall),
-                      Text(formatCurrency(allocation.currentPrice)),
+                      Text(_dinheiroOuTraco(allocation.currentPrice)),
                     ],
                   ),
                 ),
@@ -270,7 +305,7 @@ class _AllocationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Total', style: theme.textTheme.labelSmall),
-                      Text(formatCurrency(allocation.suggestedInvestment)),
+                      Text(_dinheiroOuTraco(allocation.suggestedInvestment)),
                     ],
                   ),
                 ),

@@ -68,8 +68,16 @@ export class StrategyComponent implements OnInit {
     );
   }
 
-  totalToInvest(s: InvestmentStrategy): number {
-    return s.suggestions.reduce((sum, x) => sum + x.invest_amount, 0);
+  /**
+   * Soma dos aportes sugeridos, ou null quando o valor foi retido.
+   *
+   * `affirmation.apply` anula `invest_amount` fora do modo prescritivo. Somar
+   * com null daria NaN na tela, e tratar null como zero seria pior: afirmaria um
+   * total menor do que o que está sugerido logo abaixo.
+   */
+  totalToInvest(s: InvestmentStrategy): number | null {
+    if (s.suggestions.some(x => x.invest_amount === null)) return null;
+    return s.suggestions.reduce((sum, x) => sum + (x.invest_amount ?? 0), 0);
   }
 
   cashPct(s: InvestmentStrategy): number {
