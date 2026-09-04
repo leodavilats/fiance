@@ -191,6 +191,7 @@ const DESTINATIONS: readonly NavDestination[] = [
   styles: [
     `
       .nav-link {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 0.375rem;
@@ -200,6 +201,17 @@ const DESTINATIONS: readonly NavDestination[] = [
         color: var(--fi-ink-2);
         text-decoration: none;
         transition: color var(--fi-motion-base) var(--fi-motion-ease-enter);
+      }
+      .nav-link::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background: var(--fi-brand);
+        transform: scaleX(0);
+        transition: transform var(--fi-motion-base) var(--fi-motion-ease-enter);
       }
       .nav-link:hover {
         color: var(--fi-ink-1);
@@ -218,6 +230,9 @@ const DESTINATIONS: readonly NavDestination[] = [
       :host ::ng-deep a.nav-active {
         color: var(--fi-brand);
       }
+      :host ::ng-deep a.nav-active::after {
+        transform: scaleX(1);
+      }
       :host ::ng-deep a.nav-active .nav-label-text {
         font-weight: 600;
       }
@@ -232,6 +247,11 @@ const DESTINATIONS: readonly NavDestination[] = [
       }
       a {
         text-decoration: none !important;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .nav-link::after {
+          transition: none;
+        }
       }
     `,
   ],
