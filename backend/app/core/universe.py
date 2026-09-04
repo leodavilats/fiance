@@ -19,45 +19,6 @@ _UNIVERSE_TTL = 24 * 3600
 
 _FRACTIONAL_LOT = re.compile(r"^[A-Z]{4}\d{1,2}F$")
 
-KNOWN_ETFS = {
-    "BOVA11",
-    "BOVV11",
-    "SMAL11",
-    "IVVB11",
-    "PIBB11",
-    "DIVO11",
-    "GOVE11",
-    "MATB11",
-    "FIND11",
-    "ISUS11",
-    "ECOO11",
-    "HASH11",
-    "BITH11",
-    "NASD11",
-    "SPXI11",
-    "ACWI11",
-    "WRLD11",
-    "EURP11",
-    "XINA11",
-    "ASIA11",
-    "TECK11",
-    "USTK11",
-    "BDRX11",
-    "GOLD11",
-    "IMAB11",
-    "IB5M11",
-    "B5P211",
-    "IRFM11",
-    "LFTS11",
-    "FIXA11",
-    "DEBB11",
-    "QBTC11",
-    "QETH11",
-    "ETHE11",
-    "CRPT11",
-    "DEFI11",
-}
-
 
 def _fetch_brapi_list() -> list[dict]:
     settings = get_settings()
@@ -114,6 +75,14 @@ def get_sector_map() -> dict[str, str]:
     return _memoized("sector_map", _build)
 
 
+def get_type_map() -> dict[str, str]:
+    def _build() -> dict[str, str]:
+        stocks = _get_brapi_stocks_cached()
+        return {s["stock"]: s["subType"] for s in stocks if s.get("stock") and s.get("subType")}
+
+    return _memoized("type_map", _build)
+
+
 def _get_search_index() -> list[tuple[str, str, str]]:
 
     def _build() -> list[tuple[str, str, str]]:
@@ -152,7 +121,7 @@ def _build_brapi_universe(
     bdrs.sort(key=lambda s: s.get("market_cap") or 0, reverse=True)
     etfs.sort(key=lambda s: s.get("volume") or 0, reverse=True)
 
-    etf_tickers = {s["stock"] for s in etfs[:max_etfs]} | KNOWN_ETFS
+    etf_tickers = {s["stock"] for s in etfs[:max_etfs]}
 
     tickers = (
         [s["stock"] for s in br_stocks[:max_stocks]]
@@ -170,8 +139,8 @@ def get_universe() -> list[str]:
 
     brapi_tickers = _build_brapi_universe()
     if not brapi_tickers:
-        logger.warning("Usando DEFAULT_UNIVERSE estático — lista dinâmica da BRAPI falhou.")
-        return get_settings().universe
+        logger.warning("Lista dinâmica da BRAPI falhou — universo vazio neste ciclo.")
+        return []
 
     cache.set(_UNIVERSE_CACHE_KEY, brapi_tickers, _UNIVERSE_TTL)
     return brapi_tickers

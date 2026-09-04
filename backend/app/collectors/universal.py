@@ -14,7 +14,7 @@ from app.collectors import circuit, plausibility
 from app.core import cache
 from app.core.config import get_settings
 from app.core.observability import record_external_call
-from app.core.universe import KNOWN_ETFS, get_sector_map
+from app.core.universe import get_sector_map, get_type_map
 from app.models.enums import AssetType
 
 logger = logging.getLogger(__name__)
@@ -51,12 +51,21 @@ _BR_STOCK = re.compile(rf"^{_ROOT}\d{{1,2}}$")
 _BRAPI_BASE = "https://brapi.dev/api"
 
 
+_SUBTYPE_TO_ASSET_TYPE = {
+    "stock": AssetType.br_stock,
+    "fii": AssetType.fii,
+    "bdr": AssetType.bdr,
+    "etf": AssetType.etf,
+}
+
+
 def detect_type(symbol: str) -> AssetType:
     s = symbol.strip().upper()
     base = s[:-3] if s.endswith(".SA") else s
 
-    if base in KNOWN_ETFS:
-        return AssetType.etf
+    known_type = _SUBTYPE_TO_ASSET_TYPE.get(get_type_map().get(base))
+    if known_type:
+        return known_type
 
     if _BDR.match(base):
         return AssetType.bdr
