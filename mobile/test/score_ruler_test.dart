@@ -4,10 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fiance/core/glossary.dart';
 import 'package:fiance/core/score_ruler.dart';
 
-/// Rótulos e cor saem de `design-tokens/tokens.json` — o vocabulário mudou de
-/// "Excelente entrada / Boa oportunidade / Evitar agora" para
-/// "Forte / Boa / Neutra / Fraca" (§13). Os limiares não mudaram.
-
 void main() {
   group('régua de score', () {
     test('faixas seguem os limiares compartilhados', () {

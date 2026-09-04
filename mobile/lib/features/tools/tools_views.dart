@@ -869,9 +869,6 @@ class ContributionSimulatorViewState
   List<Widget> _buildResult(PassiveIncomeProjection r) {
     final last = r.projections.last;
 
-    /// "entre X e Y", não "X". O meio não ganha destaque sobre a faixa: se
-    /// ganhasse, a faixa viraria legenda de um número único, que é o problema
-    /// que ela existe para resolver.
     String faixa(double piso, double teto) =>
         'entre ${formatCurrency(piso)} e ${formatCurrency(teto)}';
 

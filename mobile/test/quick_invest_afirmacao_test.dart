@@ -1,10 +1,6 @@
 import 'package:fiance/core/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// O backend passa a resposta de aporte por `affirmation.apply`, que retira os
-/// campos de ação fora do modo prescritivo — e o modo padrão é o analítico.
-/// Ler qualquer um deles com cast não-nulo derrubava a tela com
-/// "Null is not a subtype of type 'num'".
 void main() {
   group('QuickInvestResult', () {
     test('sobrevive ao modo analítico, que retira o valor de ação', () {
@@ -43,12 +39,10 @@ void main() {
       expect(alocacao.suggestedQuantity, isNull);
       expect(alocacao.suggestedInvestment, isNull);
 
-      // A análise que sustentava o número fica.
       expect(alocacao.ticker, 'PETR4');
       expect(alocacao.score, 82.0);
       expect(alocacao.rationale, isNotEmpty);
 
-      // E o modo chega junto, para a tela poder dizer que o valor foi retido.
       expect(resultado.affirmation?.prescriptive, isFalse);
       expect(resultado.affirmation?.disclaimer, isNotEmpty);
     });

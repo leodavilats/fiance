@@ -29,11 +29,6 @@ abstract final class AppColors {
   static const lightDanger = FiColors.lightStateAdverse;
 }
 
-/// Tinta secundaria e terciaria pelo tema corrente.
-///
-/// Existem porque o codigo usava `Colors.grey.shade600` em ~40 lugares: cinza
-/// fixo e o mesmo em claro e escuro, entao o rotulo que fica legivel de dia
-/// some a noite. Estes dois leem o tema e saem dos tokens.
 Color fiInk2(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark ? FiColors.darkInk2 : FiColors.lightInk2;
 

@@ -27,7 +27,6 @@ class FiCompositionSlice {
   final Color color;
   final IconData? icon;
 
-  /// Meta declarada pelo usuário, quando existe. Sem ela a fatia não é julgada.
   final double? targetPct;
 }
 

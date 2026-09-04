@@ -2,10 +2,6 @@ import 'package:fiance/core/models.dart';
 import 'package:fiance/features/tools/income_compare_view.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// O payload é copiado do que `IncomeCompareResponse` emite de verdade, com as
-/// chaves e os nulos que o backend manda. Um fixture inventado testaria o
-/// parser contra a memória de quem o escreveu, que é justamente onde o campo
-/// errado passa.
 Map<String, dynamic> payload() => {
   'amount': 10000.0,
   'horizon_months': 12,

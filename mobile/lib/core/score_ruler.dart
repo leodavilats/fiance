@@ -16,17 +16,6 @@ export 'design_tokens.dart'
         kScoreNeutral,
         kScoreStrong;
 
-/// A leitura do score, em texto e cor.
-///
-/// Este arquivo mantinha **a própria** cópia dos limiares e, pior, a própria
-/// paleta: verde/ciano/amarelo/vermelho em hexadecimal, com o vocabulário
-/// antigo — "Excelente entrada", "Boa oportunidade", "Evitar agora". O widget
-/// `ScoreRuler` já lia de `fiScoreBands`, então a mesma pontuação aparecia com
-/// dois nomes e duas cores dependendo da tela.
-///
-/// Agora só delega. Rótulo, limiar e estado saem de `design-tokens/tokens.json`
-/// — e o job `design-tokens` do CI garante que web, mobile e backend não voltem
-/// a divergir.
 class ScoreBand {
   const ScoreBand(this.text, this.color);
 
@@ -51,7 +40,6 @@ String dataCompletenessLabel(double? dataCompleteness) {
   return '${(value * 100).round()}% dos indicadores disponíveis';
 }
 
-/// O glossário cita as mesmas faixas da régua, montado a partir delas.
 final String scoreGlossary =
     'Pontuação 0–100 calculada pelo sistema combinando margem de segurança '
     '(preço justo), dividendos, qualidade e endividamento, ponderados pelo seu '

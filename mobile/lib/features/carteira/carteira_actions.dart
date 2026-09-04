@@ -8,12 +8,6 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/format.dart';
 
-/// As três escritas de carteira: adicionar, remover e vender.
-///
-/// Viviam como métodos privados de `AssetsScreen`, o que amarrava o diálogo à
-/// tela. Como funções de topo, a mesma venda pode ser disparada da lista de
-/// posições ou da página do ativo sem duplicar formulário.
-
 Future<void> openAddPositionDialog(BuildContext context, WidgetRef ref) async {
   final tickerCtrl = TextEditingController();
   final qtyCtrl = TextEditingController();

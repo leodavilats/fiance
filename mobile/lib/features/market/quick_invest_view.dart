@@ -156,10 +156,6 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
   }
 }
 
-/// Diz por que o número não está na tela.
-///
-/// Fora do modo prescritivo o servidor retira o valor que instrui. Sem esta
-/// nota o traço leria como dado faltando, e não como retido de propósito.
 class _NotaDeAfirmacao extends StatelessWidget {
   const _NotaDeAfirmacao({required this.texto});
 
@@ -178,10 +174,6 @@ class _NotaDeAfirmacao extends StatelessWidget {
   }
 }
 
-/// Dinheiro que o backend pode reter.
-///
-/// `affirmation.apply` anula o valor que instrui fora do modo prescritivo, e
-/// `formatCurrency(null)` diria R$ 0,00 — retido viraria zero na tela.
 String _dinheiroOuTraco(double? valor) =>
     valor == null ? '—' : formatCurrency(valor);
 

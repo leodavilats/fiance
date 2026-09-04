@@ -48,7 +48,6 @@ class ApiRepository {
         .toList();
   }
 
-  /// Cria ou atualiza uma posição sem tocar nas outras.
   Future<void> upsertPosition({
     required String ticker,
     required double quantity,

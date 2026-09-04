@@ -6,15 +6,6 @@ import '../../../core/theme.dart';
 import '../hoje_actions.dart';
 import '../../../core/score_ruler.dart';
 
-/// Uma linha do feed de "O que mudou": o que aconteceu, por que importa, o que
-/// fazer — na ordem do padrão Insight, que é o mesmo do web.
-///
-/// A ação fica **abaixo** do texto, e não em `ListTile.trailing`. No trailing a
-/// largura vinha do rótulo: "Ver sugestões de ajuste" tomava metade da linha,
-/// quebrava em três e sobrava uma coluna estreita para o título — de modo que
-/// cada tile do feed ganhava uma largura de texto diferente, conforme o botão
-/// que tivesse. Abaixo, o alinhamento é o mesmo em todas as linhas e o rótulo
-/// pode ter o tamanho que precisar.
 class FiInsightTile extends StatelessWidget {
   const FiInsightTile({
     super.key,
@@ -33,7 +24,6 @@ class FiInsightTile extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  /// Diâmetro do avatar mais o vão — o que alinha a ação à coluna de texto.
   static const double _textColumnInset = 44;
 
   @override

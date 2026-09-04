@@ -685,11 +685,6 @@ class DipScanItem {
   );
 }
 
-/// Uma condição verificável que muda o veredito.
-///
-/// Vem pronta do backend, derivada da mesma régua que produziu o veredito. Não
-/// é texto editorial: por isso carrega o valor de hoje ao lado do limiar, para
-/// a distância ser visível.
 class Falsifier {
   Falsifier({
     required this.metric,
@@ -749,8 +744,6 @@ class AssetAnalysis {
   final String label;
   final List<String> reasons;
 
-  /// O que faria a tese mudar. Lista vazia é resposta legítima: sem preço
-  /// justo não há régua para ler ao contrário.
   final List<Falsifier> falsifiers;
   final Map<String, double?> fundamentals;
 
@@ -1098,8 +1091,6 @@ class ProjectionScenario {
   final String code;
   final String label;
 
-  /// A premissa que gerou o número. Não é campo opcional de tela: um cenário
-  /// sem a conta que o produziu é só um número maior ou menor.
   final String rationale;
   final double finalPassiveIncomeMonthly;
   final double finalPortfolioValue;
@@ -1130,8 +1121,6 @@ class ProjectionTarget {
   final int? earliestMonths;
   final int? expectedMonths;
 
-  /// Nulo significa "não chega no horizonte projetado" — e isso é resposta,
-  /// não falha. Omitir o cenário que não chega faria a meta parecer garantida.
   final int? latestMonths;
   final bool reachedInAllScenarios;
 
@@ -1295,12 +1284,6 @@ class FixedIncomeList {
   );
 }
 
-/// Uma linha da sugestão de aporte.
-///
-/// Os números de ação — quanto, quantas cotas, a que preço — são anuláveis de
-/// propósito: a resposta passa por `affirmation.apply` no backend, que retira o
-/// valor que instrui quando o modo não é prescritivo. Ler qualquer um deles com
-/// cast não-nulo derruba a tela no modo padrão (analítico).
 class QuickInvestAllocation {
   QuickInvestAllocation({
     required this.ticker,
@@ -1341,12 +1324,6 @@ class QuickInvestAllocation {
       );
 }
 
-/// O modo de afirmação sob o qual a resposta foi montada.
-///
-/// Vem junto de toda rota que passa por `affirmation.apply`. Fora do modo
-/// prescritivo o servidor retira o valor que instrui — quanto aportar, quantas
-/// cotas — e a tela precisa dizer que ele foi retido, senão o traço no lugar do
-/// número lê como dado faltando.
 class AffirmationMode {
   AffirmationMode({required this.disclaimer, required this.prescriptive});
 

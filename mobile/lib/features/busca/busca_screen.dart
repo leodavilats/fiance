@@ -10,13 +10,6 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 
-/// Um destino de tela. A lista vive no cliente, não no servidor.
-///
-/// Rota é assunto de cliente: as árvores do web e do app diferem, e um catálogo
-/// de rotas no servidor seria uma segunda verdade sobre a arquitetura de
-/// informação — que diverge no dia em que alguém renomeia uma tela. Os termos
-/// são o vocabulário de quem procura, não o do código: "provento" e "dividendo"
-/// levam ao mesmo lugar porque são a mesma pergunta.
 class BuscaDestino {
   const BuscaDestino({
     required this.title,
@@ -121,10 +114,6 @@ const buscaDestinos = <BuscaDestino>[
   ),
 ];
 
-/// Minúsculas sem acento.
-///
-/// Em português isso não é refinamento: "Tesouro Selic" e "tesouro selic" são a
-/// mesma coisa para quem digita com pressa.
 String dobrar(String texto) {
   const comAcento = 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ';
   const semAcento = 'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC';
@@ -150,16 +139,9 @@ List<BuscaDestino> destinosPara(String query) {
       .toList();
 }
 
-/// Rota de um achado do servidor. O `ref` é o identificador; o caminho é nosso.
 String rotaDoAchado(SearchHit hit) =>
     hit.kind == 'fixed_income' ? '/carteira/renda-fixa' : '/ativo/${hit.ref}';
 
-/// Busca global.
-///
-/// O que é da pessoa vem primeiro — quem digita "PETR" e tem PETR4 na carteira
-/// quer a própria posição, não a página do ativo. Depois as telas, que filtram
-/// sem rede e por isso continuam funcionando quando a chamada falha. Por último
-/// o mercado.
 class BuscaScreen extends ConsumerStatefulWidget {
   const BuscaScreen({super.key});
 

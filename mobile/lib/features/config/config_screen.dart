@@ -477,10 +477,6 @@ Future<void> _editCsvList(
   ref.invalidate(preferencesProvider);
 }
 
-/// Indicação: o único canal de aquisição que cabe na aritmética deste produto.
-///
-/// Mostra as contagens e o código, nunca a lista de quem foi indicado — quem
-/// clicou no link de alguém não escolheu aparecer numa tela dessa pessoa.
 class _ReferralCard extends ConsumerWidget {
   const _ReferralCard();
 

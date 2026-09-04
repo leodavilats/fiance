@@ -2,16 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// A terceira leitura da régua: **onde estou diferente do que planejei**.
-///
-/// Espelha `AllocationGapComponent` no web — mesma mecânica, mesmas bandas
-/// (`fiAllocationGapBands`, de `design-tokens/tokens.json`), mesma regra: a
-/// barra é a alocação atual, o fio é a meta, e quem ganha estado é a distância
-/// entre as duas, não o tamanho da barra.
-///
-/// Desvio não é perda: o pior estado possível aqui é "atenção". E sem meta
-/// definida não há julgamento nenhum — comparar contra uma meta que não existe
-/// seria inventar o número.
 class FiAllocationGap extends StatelessWidget {
   const FiAllocationGap({
     super.key,
@@ -27,7 +17,6 @@ class FiAllocationGap extends StatelessWidget {
   final double? targetPct;
   final Color? barColor;
 
-  /// Texto à direita — normalmente o valor em reais.
   final String? trailing;
 
   @override

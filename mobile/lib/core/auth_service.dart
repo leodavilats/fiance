@@ -47,8 +47,6 @@ class AuthService {
 
   Future<String?> readRefreshToken() => _storage.read(key: _refreshKey);
 
-  /// Sessão viva é ter refresh: o acesso expira em uma hora e vencer não é
-  /// estar deslogado — é ter que renovar.
   Future<bool> isLoggedIn() async =>
       (await readRefreshToken()) != null || (await readToken()) != null;
 
@@ -73,12 +71,6 @@ class AuthService {
     return AppUser.fromJson(response.data['user'] as Map<String, dynamic>);
   }
 
-  /// Troca o refresh por um par novo.
-  ///
-  /// O servidor rotaciona e queima o refresh usado, então a chamada é
-  /// compartilhada: duas requisições que levam 401 ao mesmo tempo não podem
-  /// disparar dois refreshes — o segundo apresentaria um token já queimado e
-  /// derrubaria a sessão inteira.
   Future<bool> refreshSession() {
     final pending = _refreshInFlight;
     if (pending != null) return pending;
@@ -117,8 +109,6 @@ class AuthService {
     }
   }
 
-  /// Encerra no servidor antes de limpar o dispositivo: sem isso o token
-  /// seguiria válido até expirar, e sair seria só apagar a chave local.
   Future<void> signOut({bool allDevices = false}) async {
     final token = await readToken();
     if (token != null) {

@@ -4,12 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fiance/core/design_tokens.dart';
 import 'package:fiance/core/labels.dart';
 
-/// Os dois eixos de cor do sistema não podem voltar a se misturar.
-///
-/// `gainColor`/`lossColor`/`warnColor` existiam e faziam os dois papéis ao
-/// mesmo tempo: P&L (aritmética) e veredito (julgamento) saíam da mesma função,
-/// com a mesma saturação. Estes testes travam a separação e a identidade de
-/// série compartilhada com o web.
 void main() {
   group('estado × direção', () {
     test('direção tem croma mais baixo que estado', () {

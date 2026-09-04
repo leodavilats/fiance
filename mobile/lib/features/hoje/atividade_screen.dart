@@ -7,13 +7,6 @@ import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 import 'widgets/hoje_tiles.dart';
 
-/// `/hoje/atividade` — a mesma leitura de Hoje, endereçável e completa.
-///
-/// Em Hoje os itens são recortados: a tela responde "o que exige atenção
-/// agora", e uma lista longa afogaria a resposta. Aqui não há recorte nem
-/// ordenação por severidade — a pergunta é outra, "o que aconteceu", e para
-/// essa a ordem cronológica é a resposta. A arquitetura de informação já
-/// declarava esta rota no web; o app não a tinha.
 class AtividadeScreen extends ConsumerWidget {
   const AtividadeScreen({super.key});
 

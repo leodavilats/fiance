@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
 
-/// O selo da marca: chapa sólida na cor de marca, sem gradiente.
-///
-/// A versão anterior mantinha o gradiente verde→ciano da paleta antiga, que o
-/// web já havia abandonado — o mesmo produto tinha duas marcas. Verde continua
-/// significando "favorável" no sistema, então usá-lo como identidade fazia a
-/// marca competir com o estado (§10).
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 44});
 

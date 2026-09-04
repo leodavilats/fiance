@@ -9,14 +9,6 @@ import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 
-/// Metas de alocação — a tela que a Estratégia promete.
-///
-/// Elas viviam dentro de Configurações, e `/estrategia/metas` renderizava a
-/// tela de Configurações inteira: o link "Ajustar minhas metas" e o botão
-/// "Definir metas" de quem ainda não tem nenhuma jogavam a pessoa num painel de
-/// preferências, onde ela tinha que procurar. Meta não é preferência — é a
-/// referência contra a qual a carteira é comparada, e é o que faz o desvio
-/// existir. Por isso ela mora aqui, junto do desvio que ela produz.
 class MetasScreen extends StatelessWidget {
   const MetasScreen({super.key});
 

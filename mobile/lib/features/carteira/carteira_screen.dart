@@ -12,21 +12,6 @@ import 'widgets/carteira_composition.dart';
 import 'widgets/carteira_positions.dart';
 import 'widgets/carteira_summary.dart';
 
-/// "Como está meu patrimônio?"
-///
-/// A leitura desce sempre na mesma ordem — **tamanho, qualidade, direção,
-/// detalhe**:
-///
-/// 1. quanto eu tenho (e quanto disso é renda fixa);
-/// 2. onde está concentrado, comparado à meta;
-/// 3. como vem rendendo, contra o CDI e o Ibovespa;
-/// 4. cada posição, uma a uma;
-/// 5. o que já foi encerrado.
-///
-/// A evolução do patrimônio e o comparativo com benchmark **mudaram de tela**:
-/// estavam em Hoje disputando espaço com a decisão do dia, e a pergunta que
-/// respondem ("estou rendendo mais que o CDI?") é de patrimônio, não de
-/// novidade.
 class CarteiraScreen extends ConsumerWidget {
   const CarteiraScreen({super.key});
 
@@ -153,7 +138,6 @@ class CarteiraScreen extends ConsumerWidget {
   }
 }
 
-/// Vazio que diz o que falta, por quê e qual é o próximo passo (§42).
 class _EmptyCarteira extends StatelessWidget {
   const _EmptyCarteira({required this.onAdd});
 

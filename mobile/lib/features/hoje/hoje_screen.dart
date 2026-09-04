@@ -11,27 +11,10 @@ import 'widgets/hoje_health.dart';
 import 'widgets/hoje_patrimony.dart';
 import 'widgets/hoje_tiles.dart';
 
-/// Desvio menor que isso não move um aporte — vira ruído na tela.
 const _minGapPp = 2.0;
 
-/// Quantos destaques cabem antes da lista virar catálogo.
 const _topBuysLimit = 3;
 
-/// "O que mudou e o que merece atenção?"
-///
-/// A versão anterior era um `ListView` de dez blocos de peso idêntico dentro de
-/// um arquivo de 1199 linhas: patrimônio, alertas, saúde, oportunidades, sinais
-/// de venda, benchmark, evolução e a carteira inteira, todos com o mesmo título
-/// e a mesma caixa. Nada dizia por onde começar.
-///
-/// Agora são três níveis, iguais aos de `/hoje` no web:
-///
-/// - **N1** — quanto eu tenho, e a carteira está saudável;
-/// - **N2** — o que mudou desde a última visita, em ordem de urgência;
-/// - **N3** — a próxima ação e o que vale olhar.
-///
-/// Tabela de posições, gráfico de evolução e benchmark saíram daqui: cada um
-/// tem tela dona. O que fica é a decisão.
 class HojeScreen extends ConsumerWidget {
   const HojeScreen({super.key});
 
@@ -124,9 +107,6 @@ class HojeScreen extends ConsumerWidget {
     );
   }
 
-  /// Um feed só: "o que mudou" e "alertas" eram dois blocos com formatos
-  /// diferentes dizendo a mesma coisa. Agora é uma sequência ordenada por
-  /// urgência — crítico primeiro, informativo por último.
   List<Widget> _feed(
     BuildContext context,
     DashboardData data,
@@ -176,11 +156,6 @@ class HojeScreen extends ConsumerWidget {
     }
   }
 
-  /// O maior desvio de alocação, com a conta à vista.
-  ///
-  /// Sai de `allocations`, que `GET /dashboard` já devolve — sem uma chamada
-  /// extra a `/strategy`. Categoria sem meta não entra: o desvio de uma meta
-  /// que não existe seria número inventado.
   List<Widget> _nextAction(BuildContext context, DashboardData data) {
     final candidates =
         data.allocations

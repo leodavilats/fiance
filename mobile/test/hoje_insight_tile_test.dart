@@ -3,9 +3,6 @@ import 'package:fiance/features/hoje/widgets/hoje_tiles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// A ação de um insight tem rótulo longo — "Ver sugestões de ajuste" vem assim
-/// do servidor. Em `ListTile.trailing` ela tomava a largura que quisesse e
-/// deixava para o título a sobra, diferente em cada linha do feed.
 void main() {
   const rotuloLongo = 'Ver sugestões de ajuste';
 
@@ -58,8 +55,6 @@ void main() {
       find.text('Um título comprido o bastante para encostar na margem direita'),
     );
 
-    // 360 de tela, 16+16 de padding do ListView do Hoje é responsabilidade da
-    // tela; aqui sobra a largura menos o padding do card e a coluna do ícone.
     expect(titulo.width, greaterThan(280));
   });
 

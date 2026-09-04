@@ -8,17 +8,6 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 
-/// Renda fixa × bolsa: os dois lados da conta na mesma tela.
-///
-/// O produto tinha o comparador de títulos e o de ativos como universos
-/// separados, e a pergunta que as pessoas fazem atravessa os dois: "com a Selic
-/// nesse patamar, vale mais o CDB ou o FII?".
-///
-/// A tabela não iguala as duas colunas. O rendimento de um CDB é contratado; o
-/// de um FII é o dividend yield dos últimos doze meses, que é medição do
-/// passado e não promessa. Por isso a base de cada número aparece embaixo dele,
-/// e a coluna de bolsa diz quando há valorização possível — que é o que a renda
-/// fixa não tem e o que não cabe no mesmo percentual.
 class IncomeCompareView extends ConsumerStatefulWidget {
   const IncomeCompareView({super.key});
 
