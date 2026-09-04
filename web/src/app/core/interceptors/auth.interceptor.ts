@@ -3,7 +3,6 @@ import { inject } from '@angular/core';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
-/** Rotas que não levam token e não devem tentar renovar sessão. */
 const ANONYMOUS = ['/auth/google', '/auth/refresh'];
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {

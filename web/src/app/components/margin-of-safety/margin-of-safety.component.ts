@@ -9,13 +9,6 @@ import {
 import { clampToDomain, markerPct, rulerZones } from '../../core/ruler';
 import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 
-/**
- * Segunda leitura da régua: **distância entre o preço atual e o preço justo**.
- *
- * O número vem pronto do backend (`analysis/fair_price.py`) — o componente não
- * calcula margem, não soma métodos e não decide limiar. Sem preço justo não há
- * régua: aparece o estado "Sem preço justo" e o motivo, nunca um zero.
- */
 @Component({
   selector: 'app-margin-of-safety',
   standalone: true,
@@ -51,9 +44,8 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
   `,
 })
 export class MarginOfSafetyComponent {
-  /** Margem de segurança em %, como o backend devolve. `null` = não calculável. */
   readonly marginPct = input.required<number | null>();
-  /** Por que não há margem — "sem método aplicável", "VPA ausente na fonte". */
+
   readonly reason = input<string>('');
   readonly showScale = input(false);
 

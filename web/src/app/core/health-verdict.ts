@@ -1,25 +1,7 @@
 import { fiBandFor, fiHealthBands } from './score-ruler';
 
-/**
- * Abaixo disto, concentração e diversificação não dizem nada.
- *
- * Vivia duplicado em `dashboard.component.ts` e `carteira-resumo.component.ts`
- * como duas constantes locais de mesmo valor.
- */
 export const MIN_POSICOES_PARA_SAUDE = 4;
 
-/**
- * A frase que o sistema usa para descrever a saúde da carteira.
- *
- * Existe uma só, e é a mesma em Hoje e na Carteira. Antes, Hoje dizia
- * "Carteira saudável" em serifa e a Carteira mostrava a mesma pontuação como
- * um eyebrow e uma régua, sem frase nenhuma — o mesmo objeto, duas gramáticas,
- * e nada dizia à pessoa que era a mesma leitura.
- *
- * Não recebe o score cru: recebe também quantas posições sustentam a conta,
- * porque "não temos base para avaliar" é um veredito legítimo e precisa sair
- * daqui, não de um `@if` em cada tela.
- */
 export function vereditoDeSaude(score: number, posicoes: number): string {
   if (posicoes < MIN_POSICOES_PARA_SAUDE) {
     return 'Sua carteira ainda é pequena para uma leitura de risco';
@@ -37,11 +19,6 @@ export function vereditoDeSaude(score: number, posicoes: number): string {
   }
 }
 
-/**
- * Por que o veredito é esse — no máximo três razões, a mais pesada primeiro.
- *
- * Recebe o que o backend já apurou; não classifica nada por conta própria.
- */
 export function razoesDaSaude(entrada: {
   readonly posicoes: number;
   readonly topPositionTicker: string | null;

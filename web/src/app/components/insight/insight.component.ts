@@ -3,19 +3,6 @@ import { Component, computed, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { FiState } from '../../core';
 
-/**
- * Quanto o insight diz antes de a pessoa pedir mais.
- *
- * `essencial` — conclusão e ação. É o que cabe numa lista longa.
- * `completo`  — mais o contexto que torna a conclusão interpretável (padrão).
- * `avancado`  — mais a evidência que a sustenta.
- *
- * Isto é **profundidade informacional**, e é deliberadamente separado de
- * densidade espacial (`preferences.density`, que só muda altura de linha e
- * espaçamento). Compactar a tela não é dizer menos, e dizer menos não é
- * compactar a tela — foi confundir as duas coisas que deixou o produto sem
- * resposta para "quanto detalhe esta pessoa quer".
- */
 export type InsightLevel = 'essencial' | 'completo' | 'avancado';
 
 @Component({

@@ -1,16 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 
-/**
- * "Rende quanto, **comparado a quê**?"
- *
- * 13,8% ao ano não significa nada sozinho: depende do CDI do dia, do imposto e
- * do prazo. A leitura primária é sempre a comparação — "~112% do CDI" —, e a
- * taxa contratada, o indexador, a liquidez e o IR ficam em disclosure (§16).
- *
- * Todos os números chegam prontos de `analysis/renda_fixa_analysis.py`: aqui não
- * se converte taxa, não se calcula imposto e não se estima equivalência.
- */
 @Component({
   selector: 'app-fixed-income-rate',
   standalone: true,
@@ -43,13 +33,13 @@ import { Component, computed, input } from '@angular/core';
 })
 export class FixedIncomeRateComponent {
   readonly label = input('Rendimento');
-  /** Taxa anual efetiva líquida, em % — do backend. */
+
   readonly netRatePct = input<number | null>(null);
-  /** Equivalência ao CDI já calculada pelo backend, em %. */
+
   readonly pctOfCdi = input<number | null>(null);
-  /** Indexador contratado: 'pre_fixado' | 'pos_fixado' | 'hibrido'. */
+
   readonly rateKind = input<string>('');
-  /** Taxa contratada em % (ou % do CDI, quando pós-fixado). */
+
   readonly contractedRate = input<number | null>(null);
   readonly prazoMeses = input<number>(0);
   readonly liquidez = input<string>('');
@@ -57,7 +47,6 @@ export class FixedIncomeRateComponent {
   readonly irAliquotaPct = input<number | null>(null);
   readonly showDetail = input(true);
 
-  /** A âncora vem antes do número absoluto — e some quando não existe. */
   readonly headline = computed(() => {
     const cdi = this.pctOfCdi();
     if (cdi !== null) return `~${cdi.toFixed(0)}% do CDI`;

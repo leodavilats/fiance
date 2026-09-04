@@ -2,13 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 
-/**
- * O rodapé N4: **fonte, momento, método e limitação**.
- *
- * Nasce fechado e é discreto por contrato — provenance que ocupa espaço nobre
- * vira ruído, e provenance que não existe vira fé (§44). O `<details>` nativo
- * já dá teclado, leitor de tela e estado sem uma linha de JavaScript.
- */
 @Component({
   selector: 'app-provenance',
   standalone: true,
@@ -62,7 +55,7 @@ export class ProvenanceComponent {
   readonly summary = input('Como calculamos');
   readonly method = input<string>('');
   readonly source = input<string>('');
-  /** Momento do dado, já formatado — o componente não decide fuso nem formato. */
+
   readonly asOf = input<string>('');
   readonly limitation = input<string>('');
 }

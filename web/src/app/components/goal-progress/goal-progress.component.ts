@@ -4,14 +4,6 @@ import { fiBandFor, fiGoalProgressBands, fiGoalProgressDomain, stateTextClass } 
 import { markerPct, rulerZones } from '../../core/ruler';
 import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 
-/**
- * Quarta leitura da régua: **quanto da meta já foi percorrido**.
- *
- * Deliberadamente não existe "no ritmo": o produto conhece o alvo e o prazo,
- * mas não a data em que a meta começou, então qualquer julgamento de ritmo
- * seria inventado (§57). O prazo aparece como contexto — "faltam 8 meses" —,
- * nunca como nota.
- */
 @Component({
   selector: 'app-goal-progress',
   standalone: true,
@@ -54,9 +46,9 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 export class GoalProgressComponent {
   readonly label = input.required<string>();
   readonly current = input.required<number>();
-  /** Alvo em reais. `null` quando a meta existe em % mas não em valor. */
+
   readonly target = input<number | null>(null);
-  /** Prazo declarado pelo usuário, em ISO. Vira contexto, não julgamento. */
+
   readonly deadline = input<string | null>(null);
 
   readonly hasTarget = computed(() => {

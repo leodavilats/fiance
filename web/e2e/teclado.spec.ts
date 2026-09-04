@@ -1,19 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { entrarComo, salvarPosicao } from './sessao';
 
-/**
- * O que o lint não alcança: a experiência de quem não usa mouse.
- *
- * A suíte de navegador tinha seis testes, todos de rota e SSR, e nenhum tocava
- * teclado, foco ou anúncio. O `lint:ui` cobre presença — que o botão tem nome,
- * que o julgamento tem explicação — e não cobre alcance: o glossário do
- * produto abria só em `:hover`, então existia em sete telas e era invisível
- * para quem navega por teclado.
- */
-
 const DESTINOS = ['/hoje', '/carteira', '/descobrir', '/estrategia', '/voce'];
 
-/** O que está focado agora, como o leitor de tela o anunciaria. */
 async function focoAtual(page: Page): Promise<{ tag: string; nome: string }> {
   return page.evaluate(() => {
     const el = document.activeElement as HTMLElement | null;
@@ -39,11 +28,6 @@ test.describe('navegação só por teclado', () => {
       for (let i = 0; i < 60; i++) {
         await page.keyboard.press('Tab');
 
-        /*
-          Marcar o nó, não o rótulo: dois links só de ícone têm o mesmo texto
-          vazio, e comparar por rótulo dava ciclo falso na primeira repetição.
-          `data-e2e-tab` volta `'novo'`, `'repetido'` ou `'fora'`.
-        */
         const estado = await page.evaluate(() => {
           const el = document.activeElement as HTMLElement | null;
           if (!el || el === document.body) return 'fora';
@@ -91,7 +75,6 @@ test.describe('a explicação alcança quem usa teclado', () => {
     await gatilho.focus();
     await expect(page.locator('[role="tooltip"]')).toBeVisible();
 
-    // O texto precisa estar associado ao gatilho, não só ao lado dele.
     const descrito = await gatilho.getAttribute('aria-describedby');
     expect(descrito, 'tooltip sem aria-describedby não é anunciado').toBeTruthy();
   });

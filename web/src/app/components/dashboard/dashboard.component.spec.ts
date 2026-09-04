@@ -4,12 +4,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { DashboardResponse, RecommendService, WhatsNewResponse } from '../../core';
 import { DashboardComponent } from './dashboard.component';
 
-/**
- * Hoje é a tela que define se a pessoa volta, e quase tudo nela é cálculo de
- * cliente: o veredito de saúde, os motivos, a ordem do feed e o maior desvio.
- * Era a camada que mais mudou em agosto e a que tinha zero teste.
- */
-
 const recommendStub = {
   getDashboard: () => ({ subscribe: () => undefined }),
   getWhatsNew: () => ({ subscribe: () => undefined }),

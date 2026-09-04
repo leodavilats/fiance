@@ -1,5 +1,3 @@
-/** Livro-razão: os lançamentos e a conta que eles produzem. */
-
 export type TransactionKind =
   'buy' | 'sell' | 'split' | 'bonus' | 'transfer_in' | 'transfer_out' | 'amortization' | 'adjust';
 
@@ -7,7 +5,7 @@ export interface Transaction {
   id: number;
   kind: TransactionKind;
   symbol: string;
-  /** Dia da operação no fuso brasileiro, `YYYY-MM-DD`. */
+
   traded_on: string;
   quantity: number;
   price: number;
@@ -23,7 +21,6 @@ export interface TransactionListResponse {
   count: number;
 }
 
-/** Um passo da conta do preço médio, em número e em frase. */
 export interface DerivationStep {
   traded_on: string;
   kind: TransactionKind;
@@ -65,7 +62,6 @@ export interface ReconciliationResponse {
   in_sync: boolean;
 }
 
-/** Um problema de importação, com endereço: linha, campo e o que corrigir. */
 export interface ImportIssue {
   line: number;
   message: string;
@@ -85,7 +81,7 @@ export interface ImportRow {
   ratio_to: number;
   amount: number;
   note: string | null;
-  /** Id do lançamento igual que já existe. `null` quando é novo. */
+
   duplicate_of: number | null;
 }
 

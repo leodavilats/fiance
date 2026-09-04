@@ -12,7 +12,6 @@ import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { InsightComponent } from '../insight/insight.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 
-/** Um grupo de acontecimentos com o mesmo carimbo de tempo. */
 interface ActivityGroup {
   readonly when: string;
   readonly note: string;
@@ -42,18 +41,6 @@ const KIND_LABEL: Record<string, string> = {
   outro: 'Provento',
 };
 
-/**
- * O histórico de acontecimentos relevantes — não um log técnico.
- *
- * Cada linha é um `Insight`: o que aconteceu, por que importa, o que sustenta.
- * Os eventos vêm agrupados por carimbo de tempo, e só existe carimbo quando o
- * dado tem data de verdade: o que o backend devolve como "mudou desde a sua
- * última visita" não tem hora por item, então aparece sob esse rótulo em vez de
- * ganhar um horário inventado (§57).
- *
- * Serve tanto ao drawer quanto à rota `/hoje/atividade` — mesma leitura, duas
- * embalagens.
- */
 @Component({
   selector: 'app-activity-feed',
   standalone: true,
@@ -180,7 +167,6 @@ export class ActivityFeedComponent implements OnInit {
     return `há ${days} ${days === 1 ? 'dia' : 'dias'}`;
   }
 
-  /** Agrupa por `AAAA-MM`, do mais recente para o mais antigo. */
   private byMonth(items: DividendReceived[]): [string, DividendReceived[]][] {
     const map = new Map<string, DividendReceived[]>();
     for (const d of items) {

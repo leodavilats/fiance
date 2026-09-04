@@ -15,17 +15,17 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
         {{ label() }}
       </span>
 
-      <div class="relative flex-1 h-2 rounded-sm bg-ground-2 min-w-[80px]">
+      <div class="relative flex-1 h-2 rounded-sm bg-ground-2 min-w-[80px] overflow-hidden">
         @if (hasTarget()) {
           <div
-            class="absolute inset-y-0 rounded-sm"
+            class="absolute inset-y-0"
             [style.left.%]="deviationStartPct()"
             [style.width.%]="deviationWidthPct()"
             [style.background]="deviationColor()"
           ></div>
         }
         <div
-          class="absolute inset-y-0 left-0 rounded-sm"
+          class="absolute inset-y-0 left-0"
           [style.width.%]="barPct()"
           [style.background]="barColor() || 'var(--fi-ink-3)'"
         ></div>

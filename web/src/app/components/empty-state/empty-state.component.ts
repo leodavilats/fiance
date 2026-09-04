@@ -53,11 +53,7 @@ export class EmptyStateComponent {
   readonly title = input.required<string>();
   readonly reason = input.required<string>();
   readonly nextStep = input<string>('');
-  /**
-   * O rótulo do botão. Vazio significa que não há nada a fazer aqui — e uma
-   * tela vazia sem próximo passo é um estado legítimo. Era obrigatório, o que
-   * obrigava a inventar um botão só para satisfazer o componente.
-   */
+
   readonly actionLabel = input<string>('');
   readonly actionRoute = input<string | null>(null);
   readonly secondaryLabel = input<string>('');

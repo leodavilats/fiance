@@ -3,19 +3,6 @@ import { Component, computed, ElementRef, input, signal, viewChild } from '@angu
 import { PricePoint } from '../../core';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 
-/**
- * "O preço está longe do justo?"
- *
- * É a pergunta que o gráfico existe para responder, e por isso ele nunca é só
- * a linha do preço: as duas linhas de referência — **preço justo** e **seu
- * preço médio** — são o que transforma uma curva em decisão. Cada uma tem
- * semântica visual própria: o justo é tracejado (é estimativa), o seu preço
- * médio é pontilhado (é fato, mas seu, não do mercado), e o preço é sólido.
- *
- * Sem série não há gráfico: aparece o estado de insuficiência, nunca uma linha
- * reta inventada.
- */
-
 interface Plotted {
   readonly x: number;
   readonly y: number;
@@ -43,7 +30,6 @@ const PAD_RIGHT = 64;
 const PAD_TOP = 16;
 const PAD_BOTTOM = 30;
 
-/** Abaixo disso não há forma: dois pontos são um segmento, não uma tendência. */
 const MIN_POINTS = 5;
 
 @Component({
@@ -294,9 +280,9 @@ const MIN_POINTS = 5;
 })
 export class AssetPriceChartComponent {
   readonly history = input.required<readonly PricePoint[]>();
-  /** Consenso de preço justo, do backend. `null` quando nenhum método se aplica. */
+
   readonly fairPrice = input<number | null>(null);
-  /** Preço médio da posição, quando o ativo está na carteira. */
+
   readonly averagePrice = input<number | null>(null);
 
   readonly periods = PERIODS;
@@ -324,10 +310,6 @@ export class AssetPriceChartComponent {
     return windowed.length >= MIN_POINTS ? windowed : all;
   });
 
-  /**
-   * A escala inclui as linhas de referência de propósito: um preço justo fora
-   * da faixa desenhada seria uma linha invisível — e a comparação some.
-   */
   private readonly scale = computed(() => {
     const closes = this.visible().map(p => p.close);
     const anchors = [this.fairPrice(), this.averagePrice()].filter(

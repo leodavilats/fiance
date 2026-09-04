@@ -9,24 +9,6 @@ import {
   inject,
 } from '@angular/core';
 
-/**
- * O comportamento de diálogo que seis superfícies faziam pela metade, ou não faziam.
- *
- * Quatro delas declaravam `role="dialog"` e `aria-modal="true"` e nenhuma
- * prendia o foco: Tab saía do diálogo para a página atrás, que não é inerte —
- * `aria-modal` prometia ao leitor de tela uma inércia que o DOM não tinha. E
- * nenhuma devolvia o foco ao elemento que a abriu, então fechar um modal
- * jogava o teclado no começo da página. Outras duas (o modal de alerta e o de
- * perfil) eram `div`s sobrepostas sem papel, sem foco inicial e sem Esc — e
- * passavam pelo lint porque ele cobra `aria-label` em botão de ícone, que elas
- * tinham.
- *
- * O que esta diretiva cobre: papel e modalidade, foco inicial no painel, ciclo
- * de Tab preso dentro dele, e devolução do foco ao fechar. O que ela não cobre:
- * inércia real do fundo para o cursor virtual do leitor de tela — isso exige
- * mover o diálogo para fora da árvore da aplicação, e está anotado como
- * pendência em vez de prometido aqui.
- */
 @Directive({
   selector: '[fiDialog]',
   standalone: true,
@@ -36,8 +18,9 @@ export class DialogDirective implements OnDestroy {
   private readonly doc = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  /** Nome acessível do diálogo. Ignorado se o template já declara aria-label. */
   @Input('fiDialog') label = '';
+
+  @Input() fiDialogFocus: 'primeiro' | 'painel' = 'primeiro';
 
   private anterior: HTMLElement | null = null;
 
@@ -55,8 +38,10 @@ export class DialogDirective implements OnDestroy {
       el.setAttribute('aria-label', this.label);
     }
 
-    // Microtask: o painel precisa estar no DOM e visível para receber foco.
-    queueMicrotask(() => (this.focaveis()[0] ?? el).focus());
+    queueMicrotask(() => {
+      const alvo = this.fiDialogFocus === 'painel' ? el : (this.focaveis()[0] ?? el);
+      alvo.focus();
+    });
   }
 
   @HostListener('keydown', ['$event'])
@@ -88,17 +73,6 @@ export class DialogDirective implements OnDestroy {
   ngOnDestroy(): void {
     if (!this.isBrowser) return;
 
-    /*
-      A condição precisa cobrir o caso normal, que é o mais comum e era
-      justamente o que falhava: quando o Angular remove o painel, o nó já saiu
-      da árvore antes de `ngOnDestroy` rodar, e o foco cai no `<body>`. O teste
-      `contains(activeElement)` dava falso aí, então fechar o drawer com Esc
-      deixava o teclado no começo da página — exatamente o que a diretiva
-      existe para evitar, e o que o comentário acima prometia resolver.
-
-      Se o foco está num elemento concreto fora do diálogo, a pessoa clicou em
-      outro lugar e roubá-lo de volta seria pior.
-    */
     const foco = this.doc.activeElement;
     const perdido = !foco || foco === this.doc.body;
 

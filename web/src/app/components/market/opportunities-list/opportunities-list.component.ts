@@ -66,13 +66,6 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
   filterCategory = '';
   onlyInteresting = false;
 
-  /**
-   * O que a lista concluiu, antes de a pessoa ler uma linha.
-   *
-   * A tela abria em filtros e listava vinte itens com doze sinais cada; nada
-   * dizia quantos passaram, de quantos, nem se algum valia a atenção. A
-   * pergunta de Descobrir é sobre a lista, não sobre cada ativo.
-   */
   readonly vereditoDaLista = computed<string | null>(() => {
     const res = this.opportunities();
     if (!res || res.items.length === 0) return null;
@@ -93,7 +86,6 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
     return `${base}, e nenhum com desconto amplo hoje.`;
   });
 
-  /** O recorte ativo em texto — o filtro legível sem abrir os campos. */
   readonly recorte = computed<string | null>(() => {
     const partes: string[] = [];
     if (this.filterText.trim()) partes.push(`busca "${this.filterText.trim()}"`);
@@ -104,12 +96,6 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
     return partes.length ? `Recorte: ${partes.join(' · ')}` : null;
   });
 
-  /**
-   * Houve queda relevante o bastante para a pergunta fazer sentido.
-   *
-   * "Por que caiu?" aparecia em toda linha, inclusive nas que não caíram — e
-   * um botão que pergunta sobre um fato inexistente ensina a ignorar botões.
-   */
   houveQueda(opp: Opportunity): boolean {
     return (opp.margin_of_safety ?? 0) > 0;
   }
@@ -154,13 +140,6 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * O recorte mora na URL, não em `sessionStorage`.
-   *
-   * Antes o filtro sobrevivia à navegação mas não ao link: colar o endereço
-   * para outra pessoa mandava a lista sem filtro nenhum, e o botão voltar não
-   * desfazia a busca. Filtro é estado de navegação (§45).
-   */
   private _syncFilters(): void {
     this.router.navigate([], {
       relativeTo: this.route,
@@ -204,13 +183,6 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
     this.loadOpportunities(true);
   }
 
-  /**
-   * A frase que explica por que o ativo está na lista.
-   *
-   * Prefere o primeiro motivo que o backend mandou; só cai numa descrição
-   * derivada da margem quando não veio nenhum — e, sem margem, admite que a
-   * presença é por score, em vez de inventar uma justificativa.
-   */
   reasonFor(opp: Opportunity): string {
     const first = opp.reasons[0];
     if (first) return first;
@@ -221,7 +193,6 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
     return 'Aparece pela leitura combinada de preço, proventos e qualidade.';
   }
 
-  /** O backend devolve a margem como fração; a régua lê percentual. */
   marginPct(opp: Opportunity): number | null {
     return opp.margin_of_safety == null ? null : opp.margin_of_safety * 100;
   }

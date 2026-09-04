@@ -3,19 +3,11 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { GlobalSearchGroup } from '../models';
 import { RecommendService } from './recommend.service';
 
-/**
- * O índice de navegação da busca global.
- *
- * Os destinos são estáticos de propósito: são as 19 rotas endereçáveis da
- * arquitetura de informação, e cada uma entra pela **pergunta que responde**,
- * não pelo nome técnico da tela. Quem procura "quanto rendeu" precisa achar
- * Desempenho sem saber que a rota se chama assim.
- */
 export interface SearchDestination {
   readonly route: string;
   readonly label: string;
   readonly section: string;
-  /** Sinônimos e a pergunta da tela — o que o usuário digitaria de verdade. */
+
   readonly keywords: string;
   readonly icon: string;
 }
@@ -163,7 +155,6 @@ export const SEARCH_DESTINATIONS: readonly SearchDestination[] = [
   },
 ];
 
-/** Remove acento e caixa: "projeção" e "projecao" precisam achar a mesma tela. */
 function normalize(text: string): string {
   return text
     .normalize('NFD')
@@ -180,13 +171,6 @@ export class GlobalSearchService {
   readonly query = signal('');
   readonly tickers = signal<{ ticker: string; name: string }[]>([]);
 
-  /**
-   * O que só o servidor sabe: a posição com a quantidade, o CDB pelo nome.
-   *
-   * Os destinos de tela continuam no cliente e filtram sem rede — eles são a
-   * parte instantânea da busca, e mandá-los ao servidor tornaria a navegação
-   * refém de conexão.
-   */
   readonly mine = signal<GlobalSearchGroup[]>([]);
   readonly searching = signal(false);
 
@@ -243,7 +227,6 @@ export class GlobalSearchService {
     }
   }
 
-  /** Destinos que casam com o termo — por rótulo, seção ou sinônimo. */
   destinations(): SearchDestination[] {
     const q = normalize(this.query());
     if (!q) return SEARCH_DESTINATIONS.slice(0, 6);

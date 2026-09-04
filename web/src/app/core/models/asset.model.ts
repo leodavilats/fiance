@@ -1,6 +1,5 @@
 import { AssetType, TrendBasis, Verdict } from './common.model';
 
-/** Um fechamento diário da série que o backend usa no bloco técnico. */
 export interface PricePoint {
   date: string;
   close: number;
@@ -33,11 +32,6 @@ export interface TechnicalBlock {
   distance_from_52w_low_pct: number | null;
 }
 
-/**
- * Uma condição verificável que muda o veredito. Vem do backend derivada da
- * mesma régua que produziu o veredito — não é texto editorial, e por isso traz
- * o valor de hoje (`current`) ao lado do limiar.
- */
 export interface Falsifier {
   metric: string;
   condition: string;
@@ -82,7 +76,7 @@ export interface AssetAnalysis {
   fair_price: FairPriceBlock;
   technical: TechnicalBlock;
   decision: DecisionBlock;
-  /** Vem preenchido em `/asset/{symbol}`; vazio em `/compare`. */
+
   price_history: PricePoint[];
 }
 

@@ -14,13 +14,6 @@ export interface ReferralStatus {
   credited_days_total: number;
 }
 
-/**
- * Indicação.
- *
- * O serviço não guarda quem foi indicado porque o servidor não devolve isso:
- * quem clicou no link de alguém não escolheu aparecer numa tela dessa pessoa.
- * As contagens bastam para o programa funcionar.
- */
 @Injectable({ providedIn: 'root' })
 export class ReferralService {
   private readonly http = inject(HttpClient);

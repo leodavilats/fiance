@@ -285,18 +285,6 @@ function certaintyLanguage(files) {
   return problems;
 }
 
-/**
- * Tipografia fora da escala de papéis.
- *
- * A escala é por papel, não por tamanho: `fi-body`, `fi-caption`, `fi-label`,
- * `fi-metric`, `fi-verdict`. Escrever `text-sm font-medium` no template reabre
- * a decisão a cada tela — e foi assim que o produto acabou com 384 utilitárias
- * de tamanho convivendo com 372 papéis, dando dois corpos diferentes para a
- * mesma coisa em telas vizinhas.
- *
- * É também onde "serifa decide, sans mede" se sustenta: o papel diz qual
- * família usar, o utilitário de tamanho não diz nada.
- */
 const TIPO_CRU =
   /\b(?:text-(?:xs|sm|base|lg|xl|[2-9]xl)|font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black))\b/g;
 
@@ -313,16 +301,6 @@ function tipografiaCrua(files) {
   return problems;
 }
 
-/**
- * Raio fora do repertório, ou raio grande no que não flutua.
- *
- * São quatro raios: `sm` para marca dentro de instrumento, `md` para tudo que
- * está assentado no chão, `lg` só para o que flutua por cima da página, e
- * `pill`. `rounded-xl` e `rounded-full` são do Tailwind, não dos tokens — e o
- * produto chegou a ter três raios diferentes para a mesma caixa.
- *
- * O que separa "flutua" de "assentado" é a sombra: só quem flutua tem uma.
- */
 function raioForaDaEscala(files) {
   const problems = [];
   for (const file of files) {
@@ -341,17 +319,6 @@ function raioForaDaEscala(files) {
   return problems;
 }
 
-/**
- * Camada escrita como número mágico.
- *
- * A escala sai de `tokens.json` e chega ao Tailwind por nome: `z-nav`,
- * `z-drawer`, `z-drawer-panel`, `z-sheet`, `z-popover`, `z-loader`, `z-toast`.
- * Onze templates escreviam `z-[100]`…`z-[400]` direto — mais um `z-[201]` que
- * não existia na escala — contra dois consumidores dos tokens. É a mesma
- * armadilha de "vocabulário gerado sem consumidor" já catalogada no CLAUDE.md,
- * e já tinha produzido um defeito: o indicador de carregamento em 100,
- * desenhado atrás de modais e drawers que ficam em 200–300.
- */
 function camadaForaDaEscala(files) {
   const problems = [];
   for (const file of files) {
@@ -364,14 +331,6 @@ function camadaForaDaEscala(files) {
   return problems;
 }
 
-/**
- * Dois sistemas de foco no mesmo produto.
- *
- * O anel de foco é `outline` na cor da marca, com a espessura e o afastamento
- * dos tokens, e vem de graça em `.input`, `.btn-*` e `.fi-focusable`. O
- * `focus:ring` do Tailwind desenha outra coisa — e `focus:outline-none` sem
- * substituto apaga o foco por inteiro, que é o pior dos casos.
- */
 function focoConcorrente(files) {
   const problems = [];
   for (const file of files) {
@@ -383,17 +342,6 @@ function focoConcorrente(files) {
   return problems;
 }
 
-/**
- * Controle montado à mão.
- *
- * `.btn-primary`, `.btn-secondary`, `.btn-icon`, `.btn-link`, `.btn-quiet`,
- * `.menu-item` e `.input` existem. Remontar um deles com utilitárias produz um
- * alvo de toque, um raio e um foco diferentes a cada tela — foi o que
- * aconteceu: nove grafias de botão só de ícone, com cinco alturas.
- *
- * Ficam de fora os controles que o navegador desenha sozinho (caixa de
- * seleção, rádio, faixa, arquivo) e o arquivo que declara o motivo por escrito.
- */
 const CLASSES_DE_CONTROLE = [
   'btn-primary',
   'btn-secondary',
@@ -418,7 +366,7 @@ function controleForaDoSistema(files) {
   for (const file of files) {
     const bruto = readFileSync(file, 'utf8');
     if (ESCAPE_CONTROLE.test(bruto)) continue;
-    // `<select>` citado num comentário de documentação não é um controle.
+
     const source = bruto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
     for (const match of source.matchAll(/<(button|input|select|textarea)\b([^>]*)>/g)) {
@@ -435,14 +383,6 @@ function controleForaDoSistema(files) {
   return problems;
 }
 
-/**
- * Ícone decorando um título.
- *
- * Um ícone ao lado de "Lançamentos" não acrescenta informação: ele faz cada
- * seção parecer o cabeçalho de um card de painel. Onde o ícone é o dado — o
- * estado de um diagnóstico, o cadeado de um recurso fechado — ele fica, e a
- * checagem pula esses arquivos por nome.
- */
 function iconeDecorativoEmTitulo(files) {
   const problems = [];
   for (const file of files) {
@@ -455,17 +395,6 @@ function iconeDecorativoEmTitulo(files) {
   return problems;
 }
 
-/**
- * Rota sem nome de tela.
- *
- * 15 das 21 rotas não tinham `<h1>` nenhum, e `/hoje` e `/carteira` só tinham
- * um dentro do ramo de carteira vazia: na operação normal os dois destinos
- * principais abriam sem cabeçalho de nível 1. "Onde estou?" só tinha resposta
- * na navegação, e a hierarquia de cabeçalho começava em `<h2>` ou `<h3>`.
- *
- * Uma rota é um lugar, e lugar tem nome — por isso não há escape. O papel é
- * `fi-title`, normalmente via `<app-page-header>`.
- */
 function rotaSemTitulo(files) {
   const rotas = files.filter(f => f.endsWith('app.routes.ts'));
   if (rotas.length === 0) return [];
@@ -489,12 +418,9 @@ function rotaSemTitulo(files) {
     if (url) {
       try {
         source += readFileSync(join(ts, '..', url[1]), 'utf8');
-      } catch {
-        /* template inline */
-      }
+      } catch {}
     }
 
-    // Layout de seção não é tela: quem carrega o <h1> é a rota filha.
     if (/<router-outlet/.test(source)) continue;
 
     const n =
@@ -508,44 +434,11 @@ function rotaSemTitulo(files) {
   return problems;
 }
 
-/**
- * Serifa fora de conclusão.
- *
- * "Serifa decide, sans mede" é o único sinal que ensina alguém a ler o produto
- * sem treinamento — e ele disparava em 43 dos 51 usos de `fi-verdict`, entre
- * títulos de seção, rótulos e cifras. Quando tudo é conclusão, nada é.
- *
- * Dois ramos, com regras diferentes de propósito:
- *
- * - **Dígito em serifa** não tem escape. `.fi-verdict` não declara
- *   `font-variant-numeric`, então toda cifra escrita nela sai em serifa
- *   proporcional e desalinha a coluna — o defeito tipográfico que
- *   `docs/design/VISUAL-LANGUAGE.md` chama de o mais visível num app de
- *   investimento. Número é `fi-metric`, `fi-money-*` ou `fi-metric-sm`.
- * - **Serifa em cabeçalho** aceita escape, porque existe cabeçalho que é
- *   mesmo uma conclusão — o veredito de saúde em Hoje, o diagnóstico de uma
- *   queda. Declare o motivo: `<!-- veredito: ... -->`.
- */
 const SERIFA = /\bfi-verdict(?:-sm)?\b/;
 const ESCAPE_VEREDITO = /<!--\s*veredito:\s*\S/;
-/**
- * O que conta como cifra: dinheiro e métrica renderizados, não numeral em prosa.
- *
- * A primeira versão casava qualquer dígito e reprovava "Uma aplicação vence nos
- * próximos 30 dias" — que é conclusão, e conclusão é justamente o lugar da
- * serifa. Os padrões abaixo são como o produto escreve um número.
- */
+
 const CIFRA = /\{\{[^}]*\|\s*(?:number|currency|percent)\b|R\$/;
 
-/**
- * O conteúdo de um elemento, respeitando aninhamento do mesmo nome.
- *
- * Sem a contagem de profundidade, `matchAll` com um grupo preguiçoso fecha o
- * primeiro `<div>` no primeiro `</div>` que encontra — que costuma ser de um
- * filho — e engole o resto do arquivo, deixando passar tudo o que vem depois.
- * Foi assim que a primeira versão desta regra não viu o veredito de saúde em
- * Hoje, que está a três `<div>` de profundidade.
- */
 function conteudoDe(source, tag, aberturaFim) {
   const marca = new RegExp(`<(/?)${tag}\\b`, 'g');
   marca.lastIndex = aberturaFim;
@@ -584,13 +477,6 @@ function serifaForaDeConclusao(files) {
   return problems;
 }
 
-/**
- * Cabeçalho fora de ordem.
- *
- * `/voce/conta` abria em `<h3>` "Cache de dados", antes de qualquer `<h2>` e
- * antes de exportar e excluir a conta. Salto de nível quebra a navegação por
- * cabeçalhos, que é como quem usa leitor de tela varre uma página.
- */
 function ordemDeCabecalho(files) {
   const problems = [];
   for (const file of files) {
@@ -610,18 +496,6 @@ function ordemDeCabecalho(files) {
   return problems;
 }
 
-/**
- * Camada escrita como utilitária numérica do Tailwind.
- *
- * A regra irmã cobria `z-[100]`, e sete templates escapavam com `z-10`,
- * `z-20`, `z-30` e `z-50` — todos **abaixo** de `z-nav`, que vale 100. As
- * listas de sugestão de Ativo e do editor de carteira renderizavam atrás do
- * cabeçalho fixo, e os dois tooltips de gráfico, atrás de qualquer coisa.
- *
- * Onde a camada é mesmo local — o cabeçalho grudado de uma tabela, que só
- * precisa cobrir as próprias células — declare:
- * `<!-- camada-local: ... -->`.
- */
 const ESCAPE_CAMADA_LOCAL = /<!--\s*camada-local:\s*\S/;
 
 function camadaNumerica(files) {
@@ -638,19 +512,6 @@ function camadaNumerica(files) {
   return problems;
 }
 
-/**
- * Caixa montada à mão.
- *
- * Havia 17 usos de `.card` contra 21 caixas escritas como
- * `rounded-md border border-hairline` — visualmente idênticas, em doze
- * arquivos. Com a mesma caixa servindo de erro, de moldura de gráfico, de
- * tile de número e de objeto real, "card = objeto com que se age" deixa de ser
- * legível: o card para de ser sinal.
- *
- * Há três destinos, e a escolha entre eles é a decisão que esta regra força:
- * `.card` para objeto, `.notice` para aviso, `.fi-block` para seção. Moldura
- * de tabela de gráfico não é nenhum dos três — é um fio.
- */
 const ESCAPE_CAIXA = /<!--\s*caixa-propria:\s*\S/;
 
 function caixaMontadaAMao(files) {
@@ -661,8 +522,6 @@ function caixaMontadaAMao(files) {
     for (const match of source.matchAll(/\sclass="([^"{}]*)"/g)) {
       const classes = match[1];
 
-      // `rounded-md` é o raio do que está assentado. O que flutua — popover,
-      // modal, drawer — usa `rounded-lg` com sombra, e é caixa por contrato.
       if (!/\brounded-md\b/.test(classes)) continue;
       if (!/\bborder-hairline\b/.test(classes)) continue;
       if (/\b(?:absolute|fixed|shadow-\w+)\b/.test(classes)) continue;
@@ -676,15 +535,6 @@ function caixaMontadaAMao(files) {
   return problems;
 }
 
-/**
- * Esqueleto improvisado.
- *
- * `<app-skeleton>` existe com contrato escrito — forma do conteúdo real,
- * altura do papel tipográfico, `prefers-reduced-motion` respeitado — e as duas
- * telas mais importantes do produto, Hoje e Ativo, desenhavam retângulos com
- * `animate-pulse` à mão. Carregar tinha aparência diferente nas telas em que
- * mais se carrega.
- */
 function esqueletoImprovisado(files) {
   const problems = [];
   for (const file of files) {
@@ -695,25 +545,13 @@ function esqueletoImprovisado(files) {
   return problems;
 }
 
-/**
- * Cor de direção fora de coluna de tabela.
- *
- * Direção é a aritmética de um número, e o sinal já a carrega: "+R$ 4.210
- * desde o aporte" não precisa de tinta para dizer que subiu. `text-up` e
- * `text-down` somavam 25 usos contra 9 de `text-favorable` — a aritmética
- * tinha quase três vezes mais cor que o julgamento, o inverso exato da regra
- * de aceite escrita em docs/design/VISUAL-LANGUAGE.md.
- *
- * Sobrevive num lugar só: a coluna numérica de uma tabela, onde trinta linhas
- * são varridas de relance e o sinal sozinho é pequeno demais.
- */
 function direcaoForaDeTabela(files) {
   const problems = [];
   for (const file of files) {
     const source = readFileSync(file, 'utf8');
     for (const match of source.matchAll(/\btext-(?:up|down)\b/g)) {
       const antes = source.slice(0, match.index);
-      // Dentro de uma célula se a última abertura vier depois do último fecho.
+
       if (antes.lastIndexOf('<td') > antes.lastIndexOf('</td>')) continue;
 
       const linha = antes.split('\n').length;
@@ -723,16 +561,6 @@ function direcaoForaDeTabela(files) {
   return problems;
 }
 
-/**
- * Controle desabilitado sem dizer por quê.
- *
- * Um botão a 50% de opacidade e sem explicação é um beco sem saída: a pessoa
- * não sabe se falta preencher um campo, se o plano não cobre, se o dado ainda
- * está carregando ou se o produto quebrou. O motivo pode viver no `title`, num
- * `aria-describedby`, ou no texto do próprio botão quando ele muda de rótulo
- * ("Salvando…", "Recalculando…") — o que já é a prática na maior parte do
- * produto, e é por isso que a regra cabe.
- */
 function desabilitadoSemMotivo(files) {
   const problems = [];
   for (const file of files) {
@@ -742,10 +570,13 @@ function desabilitadoSemMotivo(files) {
       if (!/\[disabled\]|(?:^|\s)disabled(?:[\s>=])/.test(bloco)) continue;
       if (/\[title\]|title="|aria-describedby|\[attr\.title\]/.test(bloco)) continue;
 
-      // Rótulo que muda com o estado já diz o motivo: "Salvando…", "Limpando…".
       if (/\{\{[^}]*\?[^}]*'/.test(bloco)) continue;
 
-      const rotulo = bloco.replace(/<[^>]*>/g, ' ').trim().replace(/\s+/g, ' ').slice(0, 40);
+      const rotulo = bloco
+        .replace(/<[^>]*>/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .slice(0, 40);
       problems.push({ file, name: `${relative(WEB_ROOT, file)}: ${rotulo || '<button>'}` });
     }
   }
@@ -770,7 +601,6 @@ function report(title, problems, hint) {
   return byName.size;
 }
 
-/** Onde o ícone do título é o próprio dado, e não decoração. */
 const TITULO_COM_ICONE_LEGITIMO = [
   'dip-diagnosis.component.ts',
   'empty-state.component.ts',

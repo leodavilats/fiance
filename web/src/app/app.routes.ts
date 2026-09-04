@@ -20,7 +20,7 @@ export const routes: Routes = [
     path: 'hoje/atividade',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/activity/atividade-page.component').then(m => m.AtividadePageComponent),
+      import('./components/activity/activity-page.component').then(m => m.ActivityPageComponent),
     title: 'Atividade - fiance',
   },
 
@@ -28,56 +28,66 @@ export const routes: Routes = [
     path: 'carteira',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/shell/carteira.component').then(m => m.CarteiraComponent),
+      import('./components/shell/portfolio-shell.component').then(m => m.PortfolioShellComponent),
     children: [
       {
         path: '',
         loadComponent: () =>
-          import('./components/carteira-resumo/carteira-resumo.component').then(
-            m => m.CarteiraResumoComponent
+          import('./components/portfolio-summary/portfolio-summary.component').then(
+            m => m.PortfolioSummaryComponent
           ),
         title: 'Carteira - fiance',
       },
       {
         path: 'composicao',
         loadComponent: () =>
-          import('./components/composicao/composicao.component').then(m => m.ComposicaoComponent),
+          import('./components/composition/composition.component').then(
+            m => m.CompositionComponent
+          ),
         title: 'Composição - fiance',
       },
       {
         path: 'proventos',
         loadComponent: () =>
-          import('./components/proventos/proventos.component').then(m => m.ProventosComponent),
+          import('./components/dividends/dividends.component').then(m => m.DividendsComponent),
         title: 'Proventos - fiance',
       },
       {
         path: 'posicoes',
         loadComponent: () =>
-          import('./components/posicoes/posicoes.component').then(m => m.PosicoesComponent),
+          import('./components/positions/positions.component').then(m => m.PositionsComponent),
         title: 'Posições - fiance',
       },
       {
         path: 'importar',
         loadComponent: () =>
-          import('./components/importar/importar.component').then(m => m.ImportarComponent),
+          import('./components/import-trades/import-trades.component').then(
+            m => m.ImportTradesComponent
+          ),
         title: 'Importar operações - fiance',
       },
       {
         path: 'transacoes',
         loadComponent: () =>
-          import('./components/transacoes/transacoes.component').then(m => m.TransacoesComponent),
+          import('./components/ledger-entries/ledger-entries.component').then(
+            m => m.LedgerEntriesComponent
+          ),
         title: 'Lançamentos - fiance',
       },
       {
         path: 'encerradas',
         loadComponent: () =>
-          import('./components/encerradas/encerradas.component').then(m => m.EncerradasComponent),
+          import('./components/closed-trades/closed-trades.component').then(
+            m => m.ClosedTradesComponent
+          ),
         title: 'Operações encerradas - fiance',
       },
       {
         path: 'desempenho',
         loadComponent: () =>
-          import('./components/desempenho/desempenho.component').then(m => m.DesempenhoComponent),
+          import('./components/performance/performance.component').then(
+            m => m.PerformanceComponent
+          ),
         title: 'Desempenho - fiance',
       },
       {
@@ -95,7 +105,7 @@ export const routes: Routes = [
     path: 'descobrir',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/shell/descobrir.component').then(m => m.DescobrirComponent),
+      import('./components/shell/discover-shell.component').then(m => m.DiscoverShellComponent),
     children: [
       { path: '', redirectTo: 'oportunidades', pathMatch: 'full' },
       {
@@ -129,7 +139,7 @@ export const routes: Routes = [
     path: 'estrategia',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/shell/estrategia.component').then(m => m.EstrategiaComponent),
+      import('./components/shell/strategy-shell.component').then(m => m.StrategyShellComponent),
     children: [
       {
         path: '',
@@ -148,14 +158,14 @@ export const routes: Routes = [
       {
         path: 'metas',
         loadComponent: () =>
-          import('./components/metas/metas.component').then(m => m.MetasComponent),
+          import('./components/goals/goals.component').then(m => m.GoalsComponent),
         title: 'Metas - fiance',
       },
       {
         path: 'renda-fixa',
         loadComponent: () =>
-          import('./components/shell/renda-fixa-page.component').then(
-            m => m.RendaFixaPageComponent
+          import('./components/shell/fixed-income-page.component').then(
+            m => m.FixedIncomePageComponent
           ),
         title: 'Renda fixa - fiance',
       },
@@ -172,46 +182,49 @@ export const routes: Routes = [
 
   {
     path: 'ativo/:ticker',
-    loadComponent: () => import('./components/ativo/ativo.component').then(m => m.AtivoComponent),
+    loadComponent: () => import('./components/asset/asset.component').then(m => m.AssetComponent),
     title: 'Ativo - fiance',
   },
   {
     path: 'ativo',
     canActivate: [authGuard],
-    loadComponent: () => import('./components/ativo/ativo.component').then(m => m.AtivoComponent),
+    loadComponent: () => import('./components/asset/asset.component').then(m => m.AssetComponent),
     title: 'Ativo - fiance',
   },
 
   {
     path: 'voce',
     canActivate: [authGuard],
-    loadComponent: () => import('./components/shell/voce.component').then(m => m.VoceComponent),
+    loadComponent: () =>
+      import('./components/shell/you-shell.component').then(m => m.YouShellComponent),
     children: [
       { path: '', redirectTo: 'preferencias', pathMatch: 'full' },
       {
         path: 'preferencias',
         loadComponent: () =>
-          import('./components/preferencias/preferencias.component').then(
-            m => m.PreferenciasComponent
+          import('./components/preferences/preferences.component').then(
+            m => m.PreferencesComponent
           ),
         title: 'Preferências - fiance',
       },
       {
         path: 'alertas',
         loadComponent: () =>
-          import('./components/alertas/alertas.component').then(m => m.AlertasComponent),
+          import('./components/price-alerts/price-alerts.component').then(
+            m => m.PriceAlertsComponent
+          ),
         title: 'Alertas - fiance',
       },
       {
         path: 'indicacao',
         loadComponent: () =>
-          import('./components/indicacao/indicacao.component').then(m => m.IndicacaoComponent),
+          import('./components/referral/referral.component').then(m => m.ReferralComponent),
         title: 'Indicação - fiance',
       },
       {
         path: 'conta',
         loadComponent: () =>
-          import('./components/conta/conta.component').then(m => m.ContaComponent),
+          import('./components/account/account.component').then(m => m.AccountComponent),
         title: 'Conta e dados - fiance',
       },
     ],

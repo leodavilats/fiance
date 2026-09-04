@@ -13,15 +13,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#2C6485" />
-    <!--
-      Tema antes da primeira pintura.
 
-      O CSS já cobre a preferência do sistema por @media; o que ele não sabe é
-      a escolha guardada no aparelho, que só o JavaScript lê. Sem este script,
-      quem escolheu claro num sistema escuro (ou o contrário) via o tema errado
-      até o Angular subir. Bloqueante de propósito: são microssegundos, e o
-      alternativo é um salto de cor em todo carregamento.
-    -->
     <script>
       (function () {
         try {
@@ -29,9 +21,7 @@
           if (escolhido === 'light' || escolhido === 'dark') {
             document.documentElement.setAttribute('data-theme', escolhido);
           }
-        } catch (e) {
-          /* storage bloqueado: o @media do CSS resolve sozinho */
-        }
+        } catch (e) {}
       })();
     </script>
 

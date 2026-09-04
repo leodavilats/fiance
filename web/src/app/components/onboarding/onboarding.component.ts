@@ -61,14 +61,6 @@ export class OnboardingComponent implements OnInit {
   readonly estado = signal<OnboardingState | null>(null);
   readonly finalizando = signal(false);
 
-  /**
-   * O passo corrente vem da URL.
-   *
-   * É a convenção do produto — recorte de tela mora na URL, não em `signal` —
-   * e aqui ela tem uma consequência concreta: dar refresh no passo 2 volta ao
-   * passo 2, e o link é compartilhável. O estado do servidor diz onde a pessoa
-   * *deveria* estar; a URL diz onde ela *está olhando*.
-   */
   readonly passoAtual = computed(() => {
     const daUrl = Number(this.route.snapshot.queryParamMap.get('passo'));
     if (daUrl >= 1 && daUrl <= PASSOS.length) return daUrl;
@@ -79,7 +71,6 @@ export class OnboardingComponent implements OnInit {
     () => this.passos.find(p => p.numero === this.passoAtual()) ?? this.passos[0]
   );
 
-  /** Um passo já satisfeito não pede nada — mostra que está feito. */
   readonly passoConcluido = computed(() => {
     const estado = this.estado();
     if (!estado) return false;
@@ -124,12 +115,6 @@ export class OnboardingComponent implements OnInit {
     void this.irPara(this.passoAtual() - 1);
   }
 
-  /**
-   * Pular também conclui.
-   *
-   * O carimbo serve para não repetir a sequência; insistir com quem já disse
-   * não é o caminho mais curto para a pessoa fechar o app.
-   */
   concluir(pulou: boolean): void {
     this.finalizando.set(true);
     this.api.completeOnboarding(pulou).subscribe({

@@ -62,12 +62,6 @@ const DESTINATIONS: readonly NavDestination[] = [
     ProfileModalComponent,
   ],
   template: `
-    <!--
-      Navegação em SPA é silenciosa para leitor de tela: a pessoa troca de tela
-      e nada é anunciado, porque não houve carregamento de documento. Esta
-      região diz o destino em voz alta, em modo polite para não cortar o que
-      estiver sendo lido.
-    -->
     <p class="sr-only" role="status" aria-live="polite">{{ rotaAnunciada() }}</p>
 
     <app-global-loader />
@@ -247,7 +241,6 @@ export class AppComponent {
   readonly search = inject(GlobalSearchService);
   readonly activity = inject(ActivityService);
 
-  /** O atalho muda de tecla por plataforma; o rótulo tem que acompanhar. */
   readonly searchHint = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
   readonly showProfile = signal(false);
   readonly destinations = DESTINATIONS;
@@ -312,22 +305,9 @@ export class AppComponent {
     });
   }
 
-  /**
-   * O foco vai para o título da tela que acabou de abrir.
-   *
-   * Em navegação de SPA o documento não recarrega: o foco fica onde estava —
-   * tipicamente no link da barra — e quem navega por teclado precisa
-   * atravessar a navegação inteira de novo a cada tela. A região `aria-live`
-   * já anunciava o destino; o foco não acompanhava.
-   *
-   * O `<h1>` tem `tabindex="-1"` para poder receber foco sem entrar na ordem
-   * de tabulação, que é o que se quer: ele é o ponto de partida, não uma
-   * parada.
-   */
   private moverFocoParaOTitulo(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // Depois da renderização da rota, não antes dela.
     queueMicrotask(() => {
       setTimeout(() => {
         const titulo = this.doc.querySelector<HTMLElement>('main h1');
@@ -336,13 +316,11 @@ export class AppComponent {
     });
   }
 
-  /** O nome da tela, dito depois de chegar nela. */
   private anunciarRota(url: string): void {
     const caminho = '/' + (url.split('?')[0].split('#')[0].split('/')[1] ?? '');
     const destino = DESTINATIONS.find(d => d.path === caminho);
     const nome = destino?.label ?? (caminho === '/ativo' ? 'Ativo' : 'fiance');
 
-    // Limpar antes força o leitor a reler quando o destino é o mesmo de antes.
     this.rotaAnunciada.set('');
     queueMicrotask(() => this.rotaAnunciada.set(`${nome}. Tela carregada.`));
   }

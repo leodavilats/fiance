@@ -1,14 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { entrarComo, salvarPosicao } from './sessao';
 
-/**
- * Os testes de experiência que o `lint:ui` não consegue fazer.
- *
- * O lint lê o código-fonte: sabe que existe uma tabela alternativa ao gráfico,
- * não sabe se ela contém os mesmos números; sabe que uma cor é token, não sabe
- * se a tela continua legível sem cor nenhuma. Estes rodam no navegador.
- */
-
 const DESTINOS = ['/hoje', '/carteira', '/descobrir', '/estrategia', '/voce'];
 
 test.describe('diálogo prende e devolve o foco', () => {
@@ -24,7 +16,6 @@ test.describe('diálogo prende e devolve o foco', () => {
     const painel = page.locator('[role="dialog"]').first();
     await expect(painel).toBeVisible();
 
-    // Vinte Tabs não podem levar o foco para fora do painel.
     for (let i = 0; i < 20; i++) {
       await page.keyboard.press('Tab');
       const dentro = await page.evaluate(() => {
@@ -64,7 +55,6 @@ test.describe('a tela se entende sem cor', () => {
 
       await page.addStyleTag({ content: 'html { filter: grayscale(1) !important; }' });
 
-      // Todo selo de estado carrega texto: cor + forma + palavra, nunca cor só.
       const selos = page.locator('.verdict-pill, .tag');
       const total = await selos.count();
       for (let i = 0; i < total; i++) {

@@ -15,7 +15,7 @@ export interface EntitlementDecision {
 
 export interface Entitlements {
   plan: string;
-  /** `true` quando a régua está desligada — nenhum gate deve aparecer. */
+
   unrestricted: boolean;
   in_trial: boolean;
   trial_ends_at: number | null;
@@ -24,13 +24,6 @@ export interface Entitlements {
   limits: Record<string, number | null>;
 }
 
-/**
- * Os direitos, consultados — nunca decididos aqui.
- *
- * O cliente usa isto para **não desenhar botão que não faz nada** e para
- * escolher entre a tela cheia e a prévia. A checagem que vale é a do servidor:
- * cliente adulterado não pode virar assinante, então nada aqui libera nada.
- */
 @Injectable({ providedIn: 'root' })
 export class EntitlementService {
   private readonly http = inject(HttpClient);
@@ -41,21 +34,11 @@ export class EntitlementService {
 
   readonly entitlements = this.state.asReadonly();
 
-  /**
-   * Enquanto a resposta não chega, o produto se comporta como se tudo fosse
-   * permitido.
-   *
-   * É o padrão certo: mostrar gate por um instante e depois removê-lo faria a
-   * tela piscar um paywall para quem já paga — e piscar cobrança em quem
-   * pagou é pior que demorar a mostrá-la para quem não pagou. O servidor
-   * bloqueia de qualquer forma.
-   */
   readonly unrestricted = computed(() => this.state()?.unrestricted ?? true);
   readonly plan = computed(() => this.state()?.plan ?? 'premium');
   readonly inTrial = computed(() => this.state()?.in_trial ?? false);
   readonly trialDaysLeft = computed(() => this.state()?.trial_days_left ?? null);
 
-  /** Avisa nos últimos dias, não durante as duas semanas inteiras. */
   readonly trialEndingSoon = computed(() => {
     const dias = this.trialDaysLeft();
     return dias !== null && dias <= 3;
@@ -71,7 +54,6 @@ export class EntitlementService {
     });
   }
 
-  /** `true` quando a feature está liberada — ou quando a régua está desligada. */
   allows(feature: string): boolean {
     const atual = this.state();
     if (!atual || atual.unrestricted) return true;
@@ -82,7 +64,6 @@ export class EntitlementService {
     return this.state()?.limits[feature] ?? null;
   }
 
-  /** Reconsulta depois de uma compra ou de um cancelamento. */
   refresh(): void {
     this.loaded = false;
     this.ensureLoaded();

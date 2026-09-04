@@ -4,29 +4,6 @@ import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { EntitlementService } from '../../core';
 
-/**
- * O gate contextual.
- *
- * Três regras que o componente **garante**, e não recomenda:
- *
- * 1. **Nunca desfoca dado do usuário.** Borrar saldo, P&L ou composição é
- *    hostil: é pegar o que já é da pessoa e escondê-lo até ela pagar. O que se
- *    esconde é projeção e sugestão — o que o produto acrescenta —, nunca o
- *    retrato do que é dela. Por isso o gate **substitui** um bloco, e não o
- *    cobre: não existe caminho no código em que ele fique por cima de conteúdo.
- *
- * 2. **A prévia é o argumento.** Quando quem chama sabe nomear o desvio real da
- *    carteira — "sua maior distância da meta é em FIIs: 8,4 pontos abaixo" —
- *    esse número é a melhor propaganda que existe, e é verdadeiro. Um gate que
- *    só diz "assine para ver" desperdiça a única coisa que o produto tem de
- *    diferente.
- *
- * 3. **Régua desligada, gate invisível.** Nunca um botão que não faz nada.
- *
- * A ordem de aparição é responsabilidade de quem usa o componente, mas há
- * teste do lado do backend: nenhum gate é alcançável antes de a pessoa ter
- * carteira, porque as rotas cercadas não existem sem ela.
- */
 @Component({
   selector: 'app-gate',
   standalone: true,
@@ -73,10 +50,6 @@ export class GateComponent {
   readonly feature = input.required<string>();
   readonly title = input('Disponível no Premium');
 
-  /**
-   * O número verdadeiro da carteira da pessoa, quando quem chama souber
-   * calculá-lo sem a feature cercada.
-   */
   readonly preview = input<string>('');
   readonly reason = input('Este recurso faz parte do plano Premium.');
   readonly limitReached = input(false);
@@ -84,7 +57,6 @@ export class GateComponent {
 
   readonly upgrade = output<void>();
 
-  /** Some quando a régua está desligada ou quando a pessoa já tem direito. */
   readonly visible = computed(
     () => !this.entitlements.unrestricted() && !this.entitlements.allows(this.feature())
   );

@@ -7,14 +7,6 @@ export interface QuickInvestRequest {
   min_order_value: number;
 }
 
-/**
- * Uma linha da sugestão de aporte.
- *
- * Os números de ação — quanto, quantas cotas, a que preço — chegam anuláveis de
- * propósito: a resposta passa por `affirmation.apply` no backend, que retira o
- * valor que instrui quando o modo não é prescritivo (o padrão é o analítico).
- * Tratá-los como sempre presentes imprimia "R$ " sozinho.
- */
 export interface QuickInvestAllocation {
   ticker: string;
   name: string | null;

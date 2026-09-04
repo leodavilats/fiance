@@ -46,7 +46,6 @@ const USER_KEY = 'fiance_user';
 
 const SCOPED_KEY_PREFIXES = ['portfolio_renda_fixa'];
 
-/** Nome do cadeado que serializa a renovação entre abas do mesmo navegador. */
 const REFRESH_LOCK = 'fiance_refresh';
 
 interface JwtPayload {
@@ -70,12 +69,6 @@ export class AuthService {
   private http = inject(HttpClient);
   private base = environment.apiBaseUrl;
 
-  /**
-   * No servidor não há sessão: a renderização é sempre anônima, de propósito.
-   * A página de ativo tem que sair igual para o robô e para quem chega pelo
-   * link — e ler token durante o SSR seria o caminho para servir a carteira de
-   * uma pessoa a outra assim que houvesse cache na frente.
-   */
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly _user = signal<AppUser | null>(this._loadUser());
@@ -84,11 +77,6 @@ export class AuthService {
   private _gisInitialized = false;
   private _refreshInFlight: Promise<boolean> | null = null;
 
-  /**
-   * O acesso expira em uma hora; o refresh, em trinta dias. Ter só o acesso
-   * vencido não é estar deslogado — é ter que renovar, e o guard de rota não
-   * pode confundir as duas coisas.
-   */
   isAuthenticated(): boolean {
     if (this.refreshToken()) return true;
 
@@ -109,19 +97,6 @@ export class AuthService {
     return this.isBrowser ? localStorage.getItem(REFRESH_KEY) : null;
   }
 
-  /**
-   * Troca o refresh por um par novo. O servidor rotaciona e queima o refresh
-   * usado, então a chamada tem que ser compartilhada: duas requisições que
-   * levam 401 ao mesmo tempo não podem disparar dois refreshes — o segundo
-   * apresentaria um token já queimado e derrubaria a sessão.
-   *
-   * `_refreshInFlight` resolve isso dentro de uma aba, e só dentro dela: duas
-   * abas têm dois serviços, dois nulos e o mesmo refresh no localStorage.
-   * Abrir o app em duas abas e deixar o access token de 1h expirar derrubava a
-   * sessão. O cadeado do navegador (Web Locks) serializa as abas, e quem entra
-   * depois encontra o token já rotacionado e aproveita — em vez de apresentar
-   * um queimado.
-   */
   refreshSession(): Promise<boolean> {
     if (this._refreshInFlight) return this._refreshInFlight;
 
@@ -139,9 +114,6 @@ export class AuthService {
     const atual = this.refreshToken();
     if (!atual) return Promise.resolve(false);
 
-    // Outra aba renovou enquanto esperávamos o cadeado. O refresh que
-    // tínhamos já foi queimado por ela; o que está guardado agora é válido, e
-    // apresentar o antigo é exatamente o que derrubava a sessão.
     if (atual !== refreshAoEntrar) return Promise.resolve(true);
 
     return firstValueFrom(
@@ -211,14 +183,6 @@ export class AuthService {
     });
   }
 
-  /**
-   * O código de indicação da URL, se houver.
-   *
-   * Fica em `sessionStorage` entre o clique no link e o fim do login com o
-   * Google, que sai do site e volta: guardar em memória perderia o código
-   * exatamente no caminho em que ele é usado. É o único uso de armazenamento
-   * aqui, e ele se apaga sozinho ao fechar a aba.
-   */
   private _pendingReferral(): string | null {
     if (!this.isBrowser) return null;
     try {
@@ -248,10 +212,6 @@ export class AuthService {
     this._user.set(res.user);
   }
 
-  /**
-   * Encerra no servidor antes de limpar o local: sem isso o token continuaria
-   * válido até expirar, e "sair" seria só apagar a chave do navegador.
-   */
   async logout(allDevices = false): Promise<void> {
     const token = this.token();
     if (token) {

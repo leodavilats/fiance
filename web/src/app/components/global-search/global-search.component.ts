@@ -15,7 +15,7 @@ import { DialogDirective, GlobalSearchService, SearchDestination } from '../../c
 
 interface Row {
   readonly kind: 'destination' | 'mine' | 'ticker';
-  /** Cabeçalho da seção. Vem do servidor no caso do que é da pessoa. */
+
   readonly group: string;
   readonly label: string;
   readonly detail: string;
@@ -23,19 +23,6 @@ interface Row {
   readonly route: string;
 }
 
-/**
- * Busca global — `⌘K` no Mac, `Ctrl+K` no resto.
- *
- * É ferramenta de navegação, não tela de pesquisa: abre por cima, responde e
- * some.
- *
- * O que é da pessoa vem primeiro — quem digita "PETR" e tem PETR4 na carteira
- * quer a própria posição, não a página do ativo. Depois as telas, que filtram
- * sem rede e por isso continuam funcionando quando a chamada falha. Por último
- * o mercado. Teclado é o caminho principal —
- * setas movem, Enter vai, Esc fecha —, e por isso a lista é uma única sequência
- * navegável, mesmo dividida em seções na tela.
- */
 @Component({
   selector: 'app-global-search',
   standalone: true,
@@ -48,6 +35,8 @@ interface Row {
       >
         <div
           fiDialog
+          fiDialogFocus="painel"
+          (keydown)="onKeydown($event)"
           class="w-full max-w-[560px] bg-ground-1 border border-hairline rounded-lg shadow-popover overflow-hidden"
           (click)="$event.stopPropagation()"
           role="dialog"
@@ -69,7 +58,6 @@ interface Row {
               aria-label="Buscar tela ou ativo"
               [value]="search.query()"
               (input)="onInput($event)"
-              (keydown)="onKeydown($event)"
             />
             <kbd class="fi-caption text-ink-3 border border-hairline rounded-sm px-1.5 py-0.5"
               >esc</kbd
@@ -124,15 +112,6 @@ export class GlobalSearchComponent {
 
   private readonly cursor = signal(0);
 
-  constructor() {
-    effect(() => {
-      if (this.search.open()) {
-        queueMicrotask(() => this.field()?.nativeElement.focus());
-      }
-    });
-  }
-
-  /** A rota de um achado do servidor. O `ref` é o identificador; o caminho é nosso. */
   private routeFor(kind: string, ref: string): string {
     return kind === 'fixed_income' ? '/carteira/posicoes' : `/ativo/${ref}`;
   }
@@ -180,7 +159,6 @@ export class GlobalSearchComponent {
 
   readonly active = computed(() => this.rows()[Math.min(this.cursor(), this.rows().length - 1)]);
 
-  /** O atalho vive na janela: a busca precisa abrir de qualquer tela. */
   @HostListener('window:keydown', ['$event'])
   onGlobalKeydown(event: KeyboardEvent): void {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {

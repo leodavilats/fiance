@@ -29,12 +29,6 @@ export const SCORE_NEUTRAL = GENERATED_SCORE_NEUTRAL;
 export const MIN_DATA_COMPLETENESS = GENERATED_MIN_DATA_COMPLETENESS;
 export const HIGHLIGHT_MIN_DY = GENERATED_HIGHLIGHT_MIN_DY;
 
-/**
- * Esta lista é manual e precisa crescer junto com `tokens.json`: uma régua nova
- * gera `fi<Nome>Bands` e, sem a linha aqui, ela nasce inalcançável — o mesmo
- * padrão de "vocabulário gerado sem consumidor" do CLAUDE.md. Aconteceu com
- * `fiDipScoreBands` no mesmo commit que a criou.
- */
 export {
   fiBandFor,
   fiDecision,

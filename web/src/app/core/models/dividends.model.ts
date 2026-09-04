@@ -31,11 +31,7 @@ export interface DividendsReceivedResponse {
   by_ticker: DividendTickerTotal[];
   estimated_monthly: number | null;
   estimate_accuracy_pct: number | null;
-  /**
-   * Paginação. `items` é a página; os totais acima cobrem o conjunto inteiro.
-   * Ignorar `has_more` faria a tela truncar em silêncio — que é o modo de falha
-   * que este produto não pode ter numa lista que vira declaração.
-   */
+
   next_cursor: string | null;
   has_more: boolean;
   total_count: number;
@@ -49,7 +45,6 @@ export interface DividendPayload {
   note?: string | null;
 }
 
-/** Provento que o calendário sugere, ainda não lançado. */
 export interface PendingDividend {
   ticker: string;
   paid_at: string;
@@ -57,9 +52,9 @@ export interface PendingDividend {
   rate_per_share: number;
   amount: number;
   kind: string;
-  /** Por que este número pode estar errado, nesta linha. */
+
   caveats: string[];
-  /** `true` quando a quantidade é a de hoje, não a da data do provento. */
+
   quantity_is_current: boolean;
 }
 

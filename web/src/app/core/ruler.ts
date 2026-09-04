@@ -1,15 +1,5 @@
 import { FiScoreBand, FiState } from './design-tokens';
 
-/**
- * A mecânica compartilhada das quatro réguas do produto.
- *
- * `ScoreRuler`, `MarginOfSafety`, `AllocationGap` e `GoalProgress` são leituras
- * diferentes do **mesmo instrumento**: um valor marcado numa escala de zonas
- * nomeadas. Escala e rótulos saem de `design-tokens/tokens.json`; o que vive
- * aqui é só a aritmética de transformar banda em largura e valor em posição —
- * nenhuma regra de negócio, nenhum limiar.
- */
-
 export interface RulerDomain {
   readonly min: number;
   readonly max: number;
@@ -31,22 +21,16 @@ const STATE_VAR: Record<FiState, string> = {
   neutral: '--fi-ink-2',
 };
 
-/** A cor de uma zona: tinta cheia só onde o valor caiu, cinza no resto (§13). */
 export function zoneBackground(zone: RulerZone): string {
   return zone.active
     ? `var(${STATE_VAR[zone.state]})`
     : 'color-mix(in srgb, var(--fi-ink-3) 20%, transparent)';
 }
 
-/**
- * As bandas cobrem o domínio em passos de 1 unidade (0–39, 40–59, …), então o
- * denominador é `max + 1 − min` — 101 células para uma escala de 0 a 100.
- */
 function cells(domain: RulerDomain): number {
   return domain.max + 1 - domain.min;
 }
 
-/** Bandas numéricas, da menor para a maior. As nulas (dado insuficiente) saem. */
 export function numericBands(bands: readonly FiScoreBand[]): FiScoreBand[] {
   return bands
     .filter(b => b.min !== null && b.max !== null)
@@ -74,13 +58,11 @@ export function clampToDomain(value: number, domain: RulerDomain): number {
   return Math.max(domain.min, Math.min(domain.max, value));
 }
 
-/** Posição da marca, no centro da célula do valor — alinha com as zonas. */
 export function markerPct(value: number, domain: RulerDomain): number {
   const clamped = clampToDomain(value, domain);
   return ((clamped - domain.min + 0.5) / cells(domain)) * 100;
 }
 
-/** Os limiares visíveis abaixo da régua: o início de cada banda, sem as pontas. */
 export function rulerTicks(bands: readonly FiScoreBand[], domain: RulerDomain): number[] {
   return numericBands(bands)
     .map(b => b.min as number)

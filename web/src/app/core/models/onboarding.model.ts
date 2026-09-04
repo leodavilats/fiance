@@ -1,4 +1,3 @@
-/** Estado do onboarding, derivado no servidor do que a pessoa já fez. */
 export interface OnboardingState {
   step: number;
   total_steps: number;
@@ -6,7 +5,7 @@ export interface OnboardingState {
   onboarded_at: number | null;
   positions: number;
   has_goals: boolean;
-  /** Por que o passo é este — a tela mostra em vez de só uma barra. */
+
   reason: string;
 }
 

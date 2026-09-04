@@ -18,11 +18,6 @@
         >%)
       </p>
 
-      <!--
-        O que a tela pode dizer neste modo é contexto do plano inteiro, não
-        nota de rodapé de uma lista: vinha depois do título das sugestões, e
-        quem lesse o travessão antes dele o leria como dado faltando.
-      -->
       @if (s.affirmation && !s.affirmation.prescriptive) {
         <p class="notice notice-indeterminate fi-caption text-ink-2 m-0 mt-4 max-w-reading">
           {{ s.affirmation.disclaimer }} Por isso o quanto aportar em cada destino aparece como
@@ -57,7 +52,7 @@
     </section>
 
     @if (s.allocation_gaps.length > 0) {
-      <section class="mt-8 pt-6 border-t border-hairline">
+      <section class="fi-block">
         <div class="flex items-baseline justify-between gap-3 mb-1">
           <h2 class="fi-title text-ink m-0">Onde você está fora da meta</h2>
           <a routerLink="/estrategia/metas" class="fi-caption text-brand no-underline">
@@ -89,7 +84,7 @@
     }
 
     @if (s.suggestions.length > 0) {
-      <section class="mt-8 pt-6 border-t border-hairline">
+      <section class="fi-block">
         <h2 class="fi-title text-ink m-0 mb-1">Para onde levar o próximo aporte</h2>
         <p class="fi-caption text-ink-3 m-0 mb-4">
           <span class="fi-num">{{ s.suggestions.length }}</span>
@@ -213,7 +208,7 @@
         </ul>
       </section>
     } @else if (s.cash_available < 100) {
-      <section class="mt-8 pt-6 border-t border-hairline">
+      <section class="fi-block">
         <app-empty-state
           icon="wallet"
           title="Sem caixa para distribuir"
@@ -224,7 +219,7 @@
         />
       </section>
     } @else {
-      <section class="mt-8 pt-6 border-t border-hairline">
+      <section class="fi-block">
         <p class="fi-verdict-sm text-ink m-0">A carteira está dentro das metas que você definiu.</p>
         <p class="fi-body text-ink-2 m-0 mt-1">
           Nenhum desvio relevante o bastante para redirecionar o próximo aporte.
@@ -233,7 +228,7 @@
     }
 
     @if (s.reduce_suggestions.length > 0) {
-      <section class="mt-8 pt-6 border-t border-hairline">
+      <section class="fi-block">
         <h2 class="fi-title text-ink m-0 mb-1">Posições para revisar</h2>
         <p class="fi-caption text-ink-3 m-0 mb-4">
           Ativos já na carteira com sinal de venda. Vale reavaliar — não é ordem automática.
@@ -281,7 +276,7 @@
     }
 
     @if (s.suggestions.length > 0 && s.projected_allocation.length > 0) {
-      <section class="mt-8 pt-6 border-t border-hairline">
+      <section class="fi-block">
         <h2 class="fi-title text-ink m-0 mb-1">Como a carteira ficaria</h2>
         <p class="fi-caption text-ink-3 m-0 mb-4">
           Atual em tinta neutra, projetada na cor da marca — a mesma barra, dois momentos.
@@ -294,11 +289,11 @@
                 {{ ui.categoryLabel(row.category) }}
               </span>
               <div class="relative flex-1 min-w-[80px] flex flex-col gap-1">
-                <div class="h-2 rounded-sm bg-ground-2">
-                  <div class="h-full rounded-sm bg-ink-3" [style.width.%]="row.currentPct"></div>
+                <div class="h-2 rounded-sm bg-ground-2 overflow-hidden">
+                  <div class="h-full bg-ink-3" [style.width.%]="row.currentPct"></div>
                 </div>
-                <div class="h-2 rounded-sm bg-ground-2">
-                  <div class="h-full rounded-sm bg-brand" [style.width.%]="row.projectedPct"></div>
+                <div class="h-2 rounded-sm bg-ground-2 overflow-hidden">
+                  <div class="h-full bg-brand" [style.width.%]="row.projectedPct"></div>
                 </div>
               </div>
               <span class="fi-caption text-ink-3 w-[52px] text-right shrink-0 fi-num">
@@ -329,7 +324,7 @@
     </div>
   }
 
-  <div class="mt-8 pt-6 border-t border-hairline">
+  <div class="fi-block">
     <app-rebalance-suggestions />
   </div>
 </div>

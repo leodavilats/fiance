@@ -31,17 +31,10 @@ export class UiHelperService {
     return fiTiposDeAtivo[t]?.label ?? String(t);
   }
 
-  /**
-   * Rótulo do tipo de renda fixa, do vocabulário gerado.
-   *
-   * Existia escrito à mão em quatro telas — e numa delas "Tesouro Pré" já
-   * estava com acento diferente. O mapa sai de `design-tokens/tokens.json`.
-   */
   fixedIncomeTypeLabel(tipo: string): string {
     return fiTiposDeRendaFixa[tipo] ?? String(tipo).toUpperCase();
   }
 
-  /** Os tipos de renda fixa na ordem do vocabulário, para montar um `<select>`. */
   readonly fixedIncomeTypes: readonly { value: string; label: string }[] = Object.entries(
     fiTiposDeRendaFixa
   ).map(([value, label]) => ({ value, label }));

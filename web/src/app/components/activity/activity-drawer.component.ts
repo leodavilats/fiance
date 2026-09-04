@@ -13,13 +13,6 @@ import { LucideAngularModule } from 'lucide-angular';
 import { ActivityService, DialogDirective } from '../../core';
 import { ActivityFeedComponent } from './activity-feed.component';
 
-/**
- * A camada de atividade: 600px à direita, Esc fecha, foco entra e volta.
- *
- * O conteúdo é o mesmo de `/hoje/atividade` — o drawer existe para ler o
- * histórico **sem sair da tela onde você estava**, que é justamente o motivo de
- * ele não ser um modal.
- */
 @Component({
   selector: 'app-activity-drawer',
   standalone: true,

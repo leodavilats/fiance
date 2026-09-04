@@ -15,14 +15,6 @@ import { LucideAngularModule } from 'lucide-angular';
 import { DialogDirective, DipAnalysisResponse } from '../../../core';
 import { DipDiagnosisComponent } from '../../dip-diagnosis/dip-diagnosis.component';
 
-/**
- * O drawer de "por que caiu".
- *
- * Antes era um modal com o score DIP em corpo 48 no centro e o breakdown numérico
- * logo abaixo — o número antes da pergunta. Agora o conteúdo é o `DipDiagnosis`,
- * e o drawer só cuida do que é comportamento de camada: Esc fecha, o foco entra
- * e volta para onde estava, e a lista continua visível atrás.
- */
 @Component({
   selector: 'app-dip-analysis-modal',
   standalone: true,
@@ -60,7 +52,6 @@ export class DipAnalysisModalComponent implements AfterViewInit, OnDestroy {
     this.close.emit();
   }
 
-  /** O backend devolve a margem como fração; a régua lê percentual. */
   marginPct(a: DipAnalysisResponse): number | null {
     const m = a.fair_price?.margin_of_safety;
     return m == null ? null : m * 100;

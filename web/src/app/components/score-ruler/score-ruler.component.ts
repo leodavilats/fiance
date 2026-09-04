@@ -6,7 +6,6 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 
 export type ScoreRulerSize = 'inline' | 'list' | 'card' | 'page';
 
-/** Escala do score e da saúde: 0 a 100. */
 const SCORE_DOMAIN = { min: 0, max: 100 } as const;
 
 @Component({
@@ -55,16 +54,7 @@ export class ScoreRulerComponent {
   readonly showScale = input(false);
   readonly showValue = input(true);
   readonly subject = input('Score');
-  /**
-   * As bandas em que o número é lido. **Obrigatório de propósito.**
-   *
-   * Havia um default silencioso (`fiScoreBands`), e ele produziu duas leituras
-   * erradas em telas vizinhas: `/ativo` desenhava `confidence * 100` com os
-   * rótulos Forte/Boa/Neutra/Fraca do score, e `/descobrir/quedas` desenhava
-   * `dip_score` nos limiares 40/60/75 quando o backend classifica a queda em
-   * 68/42 — a régua contradizia o veredito ao lado dela. Sem default, o
-   * compilador cobra a decisão de quem chama.
-   */
+
   readonly bands = input.required<readonly FiScoreBand[]>();
 
   readonly thresholds = computed(() => rulerTicks(this.bands(), SCORE_DOMAIN));

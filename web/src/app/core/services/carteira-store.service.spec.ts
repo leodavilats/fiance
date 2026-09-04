@@ -35,7 +35,6 @@ function evaluation(positions: PortfolioPosition[]): PortfolioEvaluationResponse
   } as PortfolioEvaluationResponse;
 }
 
-/** O serviço só é tocado no `reload`, que estes testes não exercitam. */
 const recommendStub = {
   getFixedIncome: () => of({ items: [], total_investido: 0, total_atual: 0 }),
   getClosedTrades: () => of({ trades: [] }),
@@ -105,14 +104,6 @@ describe('CarteiraStore', () => {
     expect(store.selectedTickers()).toHaveLength(MAX_COMPARE - 1);
   });
 
-  /**
-   * A alocação por categoria não é mais calculada aqui.
-   *
-   * O cliente somava as posições e dividia pelo total enquanto o backend fazia
-   * a mesma conta para /hoje e /estrategia — duas verdades sobre o mesmo
-   * número, e nada garantia que batessem. O store agora só ordena o que o
-   * servidor apurou, e é isso que estes testes cobrem.
-   */
   it('a alocação por tipo é a que o backend apurou, ordenada por valor', () => {
     store.alocacaoOficial.set([
       {

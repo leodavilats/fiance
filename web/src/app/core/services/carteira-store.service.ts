@@ -25,14 +25,6 @@ export type PositionSortColumn =
 
 export const MAX_COMPARE = 4;
 
-/**
- * Quantas séries um gráfico pode distinguir por cor.
- *
- * O `tokens.json` declara a regra em comentário — "NO MÁXIMO 6 séries por
- * gráfico, resolvida agregando a cauda em Outros" — e nada a implementava: os
- * onze setores da B3 mapeiam para `series-1..11`, então a composição setorial
- * podia render onze cores, e a sétima cor distinguível não existe.
- */
 const MAX_SERIES = 6;
 
 interface Fatia {
@@ -44,12 +36,6 @@ interface Fatia {
   readonly icon: string;
 }
 
-/**
- * Da sétima fatia em diante, tudo vira uma só.
- *
- * A cauda não ganha meta: somar metas de categorias diferentes produziria um
- * alvo que ninguém definiu.
- */
 function agregarCauda(fatias: readonly Fatia[]): Fatia[] {
   if (fatias.length <= MAX_SERIES) return [...fatias];
 
@@ -78,18 +64,7 @@ export class CarteiraStore {
   readonly fixedIncome = signal<FixedIncomeListResponse | null>(null);
   readonly closedTrades = signal<ClosedTradesResponse | null>(null);
   readonly dividends = signal<DividendsReceivedResponse | null>(null);
-  /**
-   * A alocação por categoria, **como o backend a calcula**.
-   *
-   * Antes o cliente somava as posições e dividia pelo total, enquanto o
-   * backend fazia a mesma conta para `/hoje` e `/estrategia`: duas verdades
-   * sobre o mesmo número, e nada garantia que batessem. Carteira mostrava uma,
-   * Estratégia mostrava outra, e a diferença aparecia na mesma visita.
-   *
-   * A conta agora vem de `/dashboard`, e o cliente só decide como desenhá-la.
-   * Setor continua no cliente porque não existe equivalente no servidor — e
-   * está declarado assim, não escondido.
-   */
+
   readonly alocacaoOficial = signal<CategoryAllocation[]>([]);
 
   readonly goals = signal<Goal[]>([]);
@@ -248,13 +223,6 @@ export class CarteiraStore {
     return invested === 0 ? 0 : (this.rendimentoTotal() / invested) * 100;
   });
 
-  /**
-   * Listas que o backend cortou por paginação.
-   *
-   * A tela precisa dizer isso em voz alta: uma lista truncada em silêncio é
-   * indistinguível de uma lista completa, e a pessoa conclui que operações
-   * sumiram. Os totais continuam corretos — quem foi cortado é `items`.
-   */
   readonly truncated = computed(() => {
     const cortadas: string[] = [];
     if (this.closedTrades()?.has_more) cortadas.push('operações encerradas');

@@ -3,12 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { routes } from './app.routes';
 import { serverRoutes } from './app.routes.server';
 
-/**
- * A fronteira da renderização no servidor é regra de negócio, não de técnica:
- * renderiza no servidor o que precisa ser indexado, e nada mais. Um teste
- * porque a regra é fácil de afrouxar sem ninguém notar — e afrouxá-la é como se
- * serve a carteira de uma pessoa para outra assim que houver cache na frente.
- */
 describe('renderização no servidor', () => {
   it('só a página de ativo é renderizada no servidor', () => {
     const noServidor = serverRoutes

@@ -5,21 +5,6 @@ import { DipVerdict, FiState, fiDipDiagnosis, stateTextClass } from '../../core'
 import { MarginOfSafetyComponent } from '../margin-of-safety/margin-of-safety.component';
 import { ProvenanceComponent } from '../provenance/provenance.component';
 
-/**
- * "Por que caiu?" — a pergunta que separa desconto de deterioração.
- *
- * Queda não é oportunidade por si. O componente separa deliberadamente:
- *
- * 1. **queda aritmética** — quanto o preço recuou do topo de 52 semanas;
- * 2. **valuation** — o preço ficou abaixo do justo, ou o justo é que caiu junto;
- * 3. **fundamento** — o que a qualidade da empresa diz;
- * 4. **conclusão** — a classe da queda, com o critério explícito;
- * 5. **insuficiência** — o que o sistema não conseguiu avaliar.
- *
- * Nada aqui é calculado: classe, motivos e pontuações vêm de
- * `analysis/dip_analysis.py`. O componente escolhe a ordem de leitura.
- */
-
 type DiagnosisKey = keyof typeof fiDipDiagnosis;
 
 const VERDICT_TO_DIAGNOSIS: Record<DipVerdict, DiagnosisKey> = {
@@ -28,7 +13,6 @@ const VERDICT_TO_DIAGNOSIS: Record<DipVerdict, DiagnosisKey> = {
   ARMADILHA: 'structural',
 };
 
-/** Ordem de leitura das dimensões — do preço para o fundamento. */
 const DIMENSIONS: readonly { key: string; label: string; question: string }[] = [
   { key: 'technical', label: 'Movimento do preço', question: 'quanto caiu, e de onde' },
   { key: 'value', label: 'Preço contra valor', question: 'ficou barato ou só ficou menor' },
@@ -127,9 +111,9 @@ const DIMENSIONS: readonly { key: string; label: string; question: string }[] = 
 })
 export class DipDiagnosisComponent {
   readonly verdict = input.required<DipVerdict>();
-  /** Queda em relação ao topo de 52 semanas, em % positivo. */
+
   readonly dropPct = input<number | null>(null);
-  /** Margem de segurança em %, do backend. */
+
   readonly marginPct = input<number | null>(null);
   readonly reasonGroups = input<Record<string, string[]>>({});
   readonly disclaimer = input(
@@ -144,7 +128,6 @@ export class DipDiagnosisComponent {
     )
   );
 
-  /** O que o sistema declarou não ter — some da evidência, vira estado (§11). */
   readonly unavailable = computed(() =>
     Object.values(this.reasonGroups())
       .flat()

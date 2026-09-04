@@ -2,16 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { RulerZone, zoneBackground } from '../../core/ruler';
 
-/**
- * O traço da régua — zonas nomeadas e uma marca fina no valor.
- *
- * Não é um componente de domínio: não sabe o que o número significa, só como
- * desenhá-lo. Quem dá sentido é `ScoreRuler`, `MarginOfSafety`, `AllocationGap`
- * e `GoalProgress`. Nunca vira gauge, velocímetro ou donut (§13).
- *
- * Sem leitura confiável a marca some e o traço fica tracejado e cinza: dado
- * insuficiente tem forma própria, não é nota baixa (§11).
- */
 @Component({
   selector: 'app-ruler-track',
   standalone: true,
@@ -41,7 +31,6 @@ import { RulerZone, zoneBackground } from '../../core/ruler';
   `,
   styles: [
     `
-      /* Zona sem valor: tinta fraca. Tracejada quando não há leitura confiável. */
       .ruler-zone-idle {
         background: color-mix(in srgb, var(--fi-ink-3) 20%, transparent);
       }
@@ -58,7 +47,7 @@ import { RulerZone, zoneBackground } from '../../core/ruler';
 })
 export class RulerTrackComponent {
   readonly zones = input.required<readonly RulerZone[]>();
-  /** Posição da marca em %, ou `null` quando não há leitura confiável. */
+
   readonly markerPct = input<number | null>(null);
   readonly height = input(8);
   readonly insufficient = input(false);

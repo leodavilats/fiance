@@ -15,7 +15,6 @@ import { RebalanceSuggestionsComponent } from '../market/rebalance-suggestions/r
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
-/** Uma linha da comparação atual × projetada, já pareada por categoria. */
 interface ProjectionRow {
   readonly category: string;
   readonly currentPct: number;
@@ -62,24 +61,10 @@ export class StrategyComponent implements OnInit {
     });
   }
 
-  /**
-   * O perfil de risco é uma escolha da pessoa, não um veredito sobre ela.
-   *
-   * "Alto" vinha em `tag-adverse`, vermelho — o produto pintando a preferência
-   * do usuário como problema. `.tag` passa a carregar só fato; julgamento é
-   * `verdict-pill`, e nenhum dos dois se aplica a uma configuração.
-   */
   riskClass(): string {
     return 'tag-neutral';
   }
 
-  /**
-   * Soma dos aportes sugeridos, ou null quando o valor foi retido.
-   *
-   * `affirmation.apply` anula `invest_amount` fora do modo prescritivo. Somar
-   * com null daria NaN na tela, e tratar null como zero seria pior: afirmaria um
-   * total menor do que o que está sugerido logo abaixo.
-   */
   totalToInvest(s: InvestmentStrategy): number | null {
     if (s.suggestions.some(x => x.invest_amount === null)) return null;
     return s.suggestions.reduce((sum, x) => sum + (x.invest_amount ?? 0), 0);
@@ -93,13 +78,6 @@ export class StrategyComponent implements OnInit {
     return Math.abs(v);
   }
 
-  /**
-   * Atual e projetada na mesma linha, por categoria.
-   *
-   * Antes eram duas colunas independentes, o que obrigava o olho a procurar a
-   * mesma categoria nos dois lados para responder "mudou quanto?". Categoria
-   * que só existe de um lado entra com 0 no outro — é informação, não ausência.
-   */
   projection(s: InvestmentStrategy): ProjectionRow[] {
     const current = new Map(s.current_allocation.map(a => [a.category, a.current_pct]));
     const projected = new Map(s.projected_allocation.map(a => [a.category, a.projected_pct]));

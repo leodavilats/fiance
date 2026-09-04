@@ -13,11 +13,6 @@ import {
   stateTextClass,
 } from './score-ruler';
 
-/**
- * A régua já divergiu entre web e mobile por ser mantida à mão em três
- * arquivos. Hoje ela é gerada de `design-tokens/tokens.json`; estes testes
- * garantem que a camada do Angular não reintroduza um limiar próprio.
- */
 describe('régua de score', () => {
   it('as faixas cobrem 0 a 100 sem buraco nem sobreposição', () => {
     const bands = fiScoreBands.filter(b => b.min !== null).sort((a, b) => a.min! - b.min!);

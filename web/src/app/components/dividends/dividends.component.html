@@ -1,0 +1,153 @@
+<app-page-header title="Proventos" question="Quanto de provento entrou, e quanto o app estimava?" />
+
+<app-pending-dividends />
+
+@if (dividends(); as dv) {
+  <div class="fi-block">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <h2 class="fi-title m-0 text-ink">Proventos recebidos</h2>
+      <button type="button" class="btn-quiet" (click)="showDividends.set(!showDividends())">
+        <lucide-icon
+          [name]="showDividends() ? 'chevron-up' : 'chevron-down'"
+          size="16"
+        ></lucide-icon>
+        {{ showDividends() ? 'Recolher' : 'Lançar / detalhar' }}
+      </button>
+    </div>
+    <p class="fi-body text-ink-2 mb-4">
+      O que caiu na sua conta de fato. Todo o resto da tela é estimativa derivada de dividend yield
+      — aqui o número é o real, e serve para conferir a estimativa.
+    </p>
+
+    <dl class="flex flex-wrap gap-x-12 gap-y-5 m-0 pt-4 border-t border-hairline">
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Este mês</dt>
+        <dd class="fi-metric text-ink m-0 mt-1">
+          R$ {{ dv.received_this_month | number: '1.2-2' }}
+        </dd>
+      </div>
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Últimos 12 meses</dt>
+        <dd class="fi-metric text-ink m-0 mt-1">R$ {{ dv.received_last_12m | number: '1.2-2' }}</dd>
+        <dd class="fi-caption text-ink-3 m-0">
+          média de R$ {{ dv.monthly_average_12m | number: '1.2-2' }}/mês
+        </dd>
+      </div>
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Estimativa do app</dt>
+        <dd class="fi-metric text-ink m-0 mt-1">
+          {{
+            dv.estimated_monthly != null ? 'R$ ' + (dv.estimated_monthly | number: '1.2-2') : '—'
+          }}
+        </dd>
+        @if (estimateAccuracyLabel()) {
+          <dd class="fi-caption text-ink-3 m-0">{{ estimateAccuracyLabel() }}</dd>
+        }
+      </div>
+    </dl>
+
+    @if (showDividends()) {
+      <div class="fi-block mt-5">
+        <div class="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_1.2fr_auto] gap-3 sm:items-end">
+          <label class="flex flex-col gap-1">
+            <span class="fi-label text-ink-2">Ativo</span>
+            <input
+              type="text"
+              [value]="dividendForm().ticker"
+              (input)="updateDividendField({ ticker: $any($event.target).value })"
+              placeholder="ex.: HGLG11"
+              class="input uppercase"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="fi-label text-ink-2">Data do crédito</span>
+            <input
+              type="date"
+              [value]="dividendForm().paid_at"
+              (input)="updateDividendField({ paid_at: $any($event.target).value })"
+              class="input"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="fi-label text-ink-2">Valor (R$)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="dividendForm().amount"
+              (input)="updateDividendField({ amount: +$any($event.target).value })"
+              class="input"
+            />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="fi-label text-ink-2">Tipo</span>
+            <select
+              [value]="dividendForm().kind"
+              (change)="updateDividendField({ kind: $any($event.target).value })"
+              class="input"
+            >
+              <option value="dividendo">Dividendo</option>
+              <option value="jcp">JCP</option>
+              <option value="rendimento">Rendimento (FII)</option>
+              <option value="amortizacao">Amortização</option>
+              <option value="outro">Outro</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="savingDividend()"
+            (click)="saveDividend()"
+          >
+            <lucide-icon name="plus" size="14"></lucide-icon>
+            {{ savingDividend() ? 'Salvando…' : 'Lançar' }}
+          </button>
+        </div>
+      </div>
+
+      @if (dv.items.length > 0) {
+        <div class="mt-4" style="overflow-x: auto">
+          <table class="fi-body w-full border-collapse">
+            <thead>
+              <tr class="border-b border-hairline">
+                <th class="fi-label text-left py-2 px-2 text-ink-2">Ativo</th>
+                <th class="fi-label text-left py-2 px-2 text-ink-2">Data</th>
+                <th class="fi-label text-left py-2 px-2 text-ink-2">Tipo</th>
+                <th class="fi-label text-right py-2 px-2 text-ink-2">Valor</th>
+                <th class="fi-label text-right py-2 px-2 text-ink-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of dv.items; track item.id) {
+                <tr class="border-b border-hairline hover:bg-ground-2 transition-colors">
+                  <td class="fi-label py-2 px-2 text-ink">{{ item.ticker }}</td>
+                  <td class="py-2 px-2 text-ink">{{ item.paid_at }}</td>
+                  <td class="py-2 px-2 text-ink-2">{{ item.kind }}</td>
+                  <td class="text-right py-2 px-2 text-ink">
+                    R$ {{ item.amount | number: '1.2-2' }}
+                  </td>
+                  <td class="text-right py-2 px-2">
+                    <button
+                      type="button"
+                      class="btn-icon btn-icon-danger"
+                      title="Remover"
+                      (click)="deleteDividend(item.id)"
+                      aria-label="Remover provento"
+                    >
+                      <lucide-icon name="trash-2" size="14"></lucide-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="fi-body text-ink-2 italic mt-4 m-0">
+          Nenhum provento lançado ainda. Registre o que você recebeu para o app parar de depender só
+          de estimativa.
+        </p>
+      }
+    }
+  </div>
+}

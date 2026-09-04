@@ -1,17 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 
-/**
- * Esqueleto **na forma do conteúdo real**, nunca um retângulo genérico.
- *
- * A versão anterior deste componente foi removida por contradizer o próprio
- * contrato: desenhava blocos cinzentos de tamanho arbitrário, então a página
- * saltava quando o dado chegava. Aqui cada forma corresponde a um papel
- * tipográfico real — `money-xl`, `verdict`, `metric`, linha de tabela —, e o
- * espaço que ocupa é o espaço que o conteúdo vai ocupar.
- *
- * Respeita `prefers-reduced-motion`: sem pulso, só a superfície.
- */
 export type SkeletonShape =
   'money-xl' | 'verdict' | 'metric' | 'title' | 'body' | 'caption' | 'ruler' | 'row';
 
@@ -56,10 +45,9 @@ export type SkeletonShape =
 })
 export class SkeletonComponent {
   readonly shape = input<SkeletonShape>('body');
-  /** Quantas linhas dessa forma. Para `row`, quantas linhas de tabela. */
+
   readonly count = input(1);
 
-  /** Altura em px por forma — a mesma altura de linha do papel tipográfico. */
   readonly height = computed(() => {
     switch (this.shape()) {
       case 'money-xl':
@@ -84,10 +72,6 @@ export class SkeletonComponent {
   readonly gap = computed(() => (this.shape() === 'row' ? 0 : 8));
   readonly rowGap = computed(() => 20);
 
-  /**
-   * Larguras irregulares de propósito: texto real não termina na mesma coluna,
-   * e um bloco perfeitamente retangular lê como caixa vazia, não como texto.
-   */
   readonly lines = computed(() => {
     const widths: Record<SkeletonShape, string[]> = {
       'money-xl': ['58%'],

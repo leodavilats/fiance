@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { UiHelperService } from './ui-helper.service';
 
-/**
- * O rótulo precisa casar com `trendLabel` do mobile
- * (`mobile/lib/core/labels.dart`). Foi a divergência entre os dois — o web
- * traduzindo e o mobile mostrando o valor cru — que pôs `unknown` na tela.
- */
 describe('rótulo de tendência', () => {
   const ui = new UiHelperService();
 

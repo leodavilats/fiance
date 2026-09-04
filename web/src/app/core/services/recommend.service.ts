@@ -66,15 +66,6 @@ export class RecommendService {
   private auth = inject(AuthService);
   private base = environment.apiBaseUrl;
 
-  /**
-   * A análise de um ativo, personalizada quando há sessão e impessoal quando
-   * não há.
-   *
-   * A escolha mora aqui e não no componente porque é a mesma tela nos dois
-   * casos: quem chega pela busca do Google vê a página pública, e quem entra
-   * depois vê a mesma página com o preço justo ajustado ao yield que declarou.
-   * Espalhar essa decisão pelos componentes seria criar duas telas de ativo.
-   */
   analyzeAsset(symbol: string): Observable<AssetAnalysis> {
     const path = this.auth.isAuthenticated() ? 'asset' : 'public/asset';
     return this.http.get<AssetAnalysis>(`${this.base}/${path}/${encodeURIComponent(symbol)}`);
@@ -106,7 +97,6 @@ export class RecommendService {
     return this.http.get<PortfolioStateResponse>(`${this.base}/portfolio`);
   }
 
-  /** Importação explícita: substitui a carteira inteira. */
   savePortfolio(items: PortfolioItem[]): Observable<PortfolioStateResponse> {
     return this.http.put<PortfolioStateResponse>(`${this.base}/portfolio`, { items });
   }
@@ -196,7 +186,6 @@ export class RecommendService {
     return this.http.get<TransactionListResponse>(`${this.base}/transactions`, { params });
   }
 
-  /** A conta que produziu o preço médio, passo a passo. */
   getDerivation(symbol: string): Observable<DerivationResponse> {
     return this.http.get<DerivationResponse>(`${this.base}/transactions/derivation/${symbol}`);
   }
@@ -321,12 +310,6 @@ export class RecommendService {
     });
   }
 
-  /**
-   * O arquivo com tudo o que é seu, como o servidor o monta.
-   *
-   * Vem como `Blob` porque a resposta é um anexo com nome de arquivo, não um
-   * JSON para a tela ler. Exportação e exclusão nunca ficam atrás de plano.
-   */
   exportAccount(): Observable<Blob> {
     return this.http.get(`${this.base}/account/export`, { responseType: 'blob' });
   }
@@ -335,7 +318,6 @@ export class RecommendService {
     return this.http.get<DeletionPolicy>(`${this.base}/account/deletion-policy`);
   }
 
-  /** A frase de confirmação é exigida pelo servidor, não só pela tela. */
   deleteAccount(confirmation: string): Observable<{ deleted: boolean; sla_days: number }> {
     return this.http.delete<{ deleted: boolean; sla_days: number }>(`${this.base}/account`, {
       body: { confirm: confirmation },
@@ -401,12 +383,6 @@ export class RecommendService {
     return this.http.get<SectorsSummaryResponse>(`${this.base}/sectors-summary`, { params });
   }
 
-  /**
-   * Busca global: carteira, renda fixa e universo numa chamada só.
-   *
-   * O servidor devolve o que só ele sabe — a posição com a quantidade, o CDB
-   * pelo nome — e nunca rota: a árvore de navegação é do cliente.
-   */
   searchEverything(query: string): Observable<GlobalSearchResponse> {
     const params = new HttpParams().set('q', query);
     return this.http.get<GlobalSearchResponse>(`${this.base}/search`, { params });

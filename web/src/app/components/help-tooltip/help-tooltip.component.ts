@@ -3,20 +3,6 @@ import { LucideAngularModule } from 'lucide-angular';
 
 let contador = 0;
 
-/**
- * A explicação de um termo, alcançável por teclado e por toque.
- *
- * A versão anterior abria só em `group-hover`: sem foco, sem `tabindex`, sem
- * `aria-describedby`. Nos sete lugares em que aparece — incluindo "DY" e
- * "Margem de segurança" em Descobrir — o glossário era invisível para quem
- * navega por teclado e para qualquer aparelho sem ponteiro. Num produto cuja
- * tese é explicabilidade, a explicação inalcançável é pior que a ausente:
- * parece resolvida.
- *
- * Agora é um `<button>` de verdade. Abre no foco e no clique, fecha em `Esc` e
- * ao sair, e o texto é anunciado pelo leitor de tela via `aria-describedby`. A
- * camada é `z-popover`, não `z-50` — que ficava abaixo do cabeçalho fixo.
- */
 @Component({
   selector: 'app-help-tooltip',
   standalone: true,
@@ -55,7 +41,7 @@ let contador = 0;
 })
 export class HelpTooltipComponent {
   readonly text = input.required<string>();
-  /** O termo explicado, para o nome acessível do gatilho. */
+
   readonly term = input<string>('este termo');
 
   readonly id = `fi-tooltip-${++contador}`;

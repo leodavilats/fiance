@@ -25,7 +25,6 @@ interface AssetRow {
   error: string | null;
 }
 
-/** "Meus Ativos" — **cadastro**. */
 @Component({
   selector: 'app-portfolio-editor',
   standalone: true,

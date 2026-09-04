@@ -56,13 +56,6 @@ const PAD_BOTTOM = 30;
             </text>
           }
 
-          <!--
-            Papéis de cor, como docs/design/VISUAL-LANGUAGE.md os define:
-            a linha da pessoa é a mais forte (tinta primária), e referência é a
-            cor da marca — é o sistema falando. O Ibovespa vinha pintado com
-            "state-attention", cor de julgamento, como se um índice de
-            referência pudesse estar "em atenção".
-          -->
           <path
             [attr.d]="pathFor(cdiSeries())"
             stroke="var(--fi-brand)"
@@ -165,14 +158,6 @@ const PAD_BOTTOM = 30;
         }
       </div>
 
-      <!--
-        A alternativa textual do gráfico.
-
-        O aria-label do SVG resume — diz que a carteira foi de X a Y — mas
-        resumo não é o dado. Quem usa leitor de tela precisa poder comparar
-        ponto a ponto, e quem enxerga também quer o número exato de vez em
-        quando. A mesma tabela serve aos dois.
-      -->
       <button
         type="button"
         class="btn-quiet btn-explain mt-3"

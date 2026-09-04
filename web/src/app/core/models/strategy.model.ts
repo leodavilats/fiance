@@ -32,11 +32,7 @@ export interface InvestmentSuggestion {
   category: string;
   objective: string;
   price: number;
-  /**
-   * Quantidade e valor chegam anuláveis de propósito: `affirmation.apply` retira
-   * no backend o valor que instrui fora do modo prescritivo, e o padrão é o
-   * analítico. O preço fica — é dado de mercado, não instrução.
-   */
+
   quantity: number | null;
   invest_amount: number | null;
   score: number;

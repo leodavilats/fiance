@@ -5,17 +5,10 @@ export type Theme = 'light' | 'dark';
 
 const STORAGE_KEY = 'fiance.theme';
 
-/** O tema do servidor. Escuro porque é o padrão do produto. */
 const SERVER_DEFAULT: Theme = 'dark';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  /**
-   * No servidor não existe `localStorage` nem `matchMedia`, e a preferência é
-   * do dispositivo — o HTML renderizado sai no padrão e o navegador corrige na
-   * hidratação. Ler storage aqui não daria erro só: daria o tema de outra
-   * pessoa se houvesse cache na frente.
-   */
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly theme = signal<Theme>(this.detectInitial());

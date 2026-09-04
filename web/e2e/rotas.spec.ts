@@ -46,14 +46,6 @@ test.describe('a carteira do servidor chega na tela', () => {
   });
 });
 
-/**
- * A rota de aquisição, anônima e renderizada no servidor.
- *
- * O E2E existe porque `/voce/preferencias` abria em branco por link direto — e
- * não tocava justamente a única rota com SSR, que é o canal de aquisição
- * inteiro do produto. Aqui ela é exercitada sem sessão, que é como o robô e o
- * visitante de link compartilhado chegam.
- */
 test.describe('a página pública de ativo', () => {
   test('abre sem sessão e traz o ticker no HTML do servidor', async ({ page }) => {
     const resposta = await page.goto('/ativo/PETR4');
@@ -66,9 +58,6 @@ test.describe('a página pública de ativo', () => {
   test('ticker inexistente devolve 404 e se marca como não indexável', async ({ page }) => {
     const resposta = await page.goto('/ativo/NAOEXISTE99');
 
-    // Antes era 200 com o título genérico do index.html — e o sitemap anuncia
-    // ~400 tickers, então uma queda da fonte produzia centenas de páginas
-    // idênticas, sem noindex para conter.
     expect(resposta?.status()).toBe(404);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/, {
       timeout: 30_000,

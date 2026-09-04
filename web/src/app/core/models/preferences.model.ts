@@ -20,7 +20,7 @@ export interface Preferences {
   desired_yield_etf?: number;
   notify_price_alerts?: boolean;
   opportunities_frequency?: OpportunitiesFrequency;
-  /** Apetite por informação na tela. Acompanha a pessoa, não o aparelho. */
+
   density?: 'comfortable' | 'compact';
   risk_profile?: RiskProfile;
   preferred_categories?: AllocationCategory[];

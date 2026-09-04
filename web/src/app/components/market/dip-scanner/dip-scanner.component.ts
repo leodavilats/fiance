@@ -17,7 +17,6 @@ import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { ScoreRulerComponent } from '../../score-ruler/score-ruler.component';
 import { SkeletonComponent } from '../../skeleton/skeleton.component';
 
-/** O vocabulário do backend traduzido para as classes de queda do design system. */
 const DIAGNOSIS: Record<DipVerdict, keyof typeof fiDipDiagnosis> = {
   OPORTUNIDADE: 'healthy',
   NEUTRO: 'investigate',
@@ -47,7 +46,6 @@ export class DipScannerComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly dip = inject(DipAnalysisService);
 
-  /** Limiares de dip_analysis.py (68/42), não os do score. */
   readonly dipBands = fiDipScoreBands;
 
   readonly dipResults = signal<{ items: DipScanItem[] } | null>(null);
@@ -61,10 +59,6 @@ export class DipScannerComponent implements OnInit {
 
   readonly minScore = computed(() => this.scanForm.getRawValue().min_score);
 
-  /**
-   * O filtro nasce da URL e volta para ela a cada busca: link salvo, botão
-   * voltar e recarregar preservam a mesma varredura (§45).
-   */
   ngOnInit(): void {
     const q = this.route.snapshot.queryParamMap;
     this.scanForm.patchValue({
@@ -96,7 +90,6 @@ export class DipScannerComponent implements OnInit {
     });
   }
 
-  /** A ação do vazio: mesma busca, exigência menor — declarada, não silenciosa. */
   relaxFilter(): void {
     this.scanForm.patchValue({ min_score: RELAXED_MIN_SCORE });
     this.runScan();
