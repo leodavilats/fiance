@@ -27,7 +27,10 @@ export interface SectionNavItem {
                 class="subtab-btn"
               >
                 <lucide-icon [name]="item.icon" size="14"></lucide-icon>
-                {{ item.label }}
+                <span class="subtab-label">
+                  <span class="subtab-label-text">{{ item.label }}</span>
+                  <span class="subtab-label-sizer" aria-hidden="true">{{ item.label }}</span>
+                </span>
               </a>
             </li>
           }

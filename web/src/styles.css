@@ -84,6 +84,9 @@ select.input {
   outline: var(--fi-focus-ring) solid var(--fi-brand) !important;
   outline-offset: calc(var(--fi-focus-offset) * -1) !important;
 }
+textarea.input {
+  height: auto !important;
+}
 
 .fi-block {
   display: block;
@@ -299,7 +302,8 @@ select.input {
   width: 100%;
   padding: var(--fi-space-2) var(--fi-space-3);
   border: 0;
-  background: transparent;
+  appearance: none;
+  background: color-mix(in srgb, var(--fi-ground-2) 55%, transparent);
   font-family: var(--fi-font-sans);
   font-size: 14px;
   line-height: 21px;
@@ -565,22 +569,51 @@ select.input {
 
 .subtab-btn {
   @apply flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer whitespace-nowrap;
+  position: relative;
   border-radius: 0;
   background: transparent;
   color: var(--fi-ink-2);
   border: none;
-  transition:
-    color var(--fi-motion-base) var(--fi-motion-ease-enter),
-    background-color var(--fi-motion-base) var(--fi-motion-ease-enter),
-    box-shadow var(--fi-motion-base) var(--fi-motion-ease-enter);
+  transition: color var(--fi-motion-base) var(--fi-motion-ease-enter);
+}
+.subtab-btn::after {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0;
+  height: 2px;
+  background: var(--fi-brand);
+  transform: scaleX(0);
+  transition: transform var(--fi-motion-base) var(--fi-motion-ease-enter);
 }
 .subtab-btn:hover {
   color: var(--fi-ink-1);
 }
-.subtab-btn.active {
-  background: var(--fi-brand);
-  color: var(--fi-ink-on-brand);
+.subtab-label {
+  display: inline-grid;
+}
+.subtab-label-text,
+.subtab-label-sizer {
+  grid-area: 1 / 1;
+}
+.subtab-label-sizer {
   font-weight: 600;
+  visibility: hidden;
+}
+.subtab-btn.active {
+  color: var(--fi-brand);
+}
+.subtab-btn.active::after {
+  transform: scaleX(1);
+}
+.subtab-btn.active .subtab-label-text {
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  .subtab-btn::after {
+    transition: none;
+  }
 }
 
 .range-slider {
@@ -660,10 +693,18 @@ select.input {
     padding: 0.5rem 0.75rem;
     border-radius: 0;
   }
-  .fi-section-rail .subtab-btn.active {
-    background: var(--fi-brand-quiet);
-    color: var(--fi-ink-1);
-    box-shadow: inset 2px 0 0 var(--fi-brand);
+  .fi-section-rail .subtab-btn::after {
+    left: 0;
+    right: auto;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    height: auto;
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  .fi-section-rail .subtab-btn.active::after {
+    transform: scaleY(1);
   }
   .fi-section-body {
     flex: 1 1 auto;
