@@ -433,21 +433,17 @@ select.input {
   background: color-mix(in srgb, var(--fi-ink-2) 12%, transparent);
   color: var(--fi-ink-2);
 }
-.tag-favorable {
-  background: color-mix(in srgb, var(--fi-state-favorable) 14%, transparent);
-  color: var(--fi-state-favorable);
-  border-color: color-mix(in srgb, var(--fi-state-favorable) 32%, transparent);
-}
-.tag-attention {
-  background: color-mix(in srgb, var(--fi-state-attention) 14%, transparent);
-  color: var(--fi-state-attention);
-  border-color: color-mix(in srgb, var(--fi-state-attention) 32%, transparent);
-}
-.tag-adverse {
-  background: color-mix(in srgb, var(--fi-state-adverse) 14%, transparent);
-  color: var(--fi-state-adverse);
-  border-color: color-mix(in srgb, var(--fi-state-adverse) 32%, transparent);
-}
+/*
+  Não existe tag de estado.
+
+  `.tag` carrega FATO — "Já na carteira", "FII", o nome de uma categoria.
+  JULGAMENTO é `verdict-pill`, e só ele. Havia `tag-favorable`,
+  `tag-attention` e `tag-adverse` pintando exatamente o que `v-buy`, `v-hold` e
+  `v-sell` já pintam: duas gramáticas para a mesma coisa, escolhidas por acaso
+  a cada tela. E a pior consequência não era a redundância — era `tag-adverse`
+  em "Alto" no perfil de risco, o produto pintando de vermelho uma preferência
+  que a pessoa escolheu.
+*/
 .tag-brand {
   background: color-mix(in srgb, var(--fi-brand) 14%, transparent);
   color: var(--fi-brand);
@@ -516,6 +512,18 @@ select.input {
 .spin {
   @apply inline-flex;
   animation: spin 0.9s linear infinite;
+}
+/*
+  Rotação contínua é exatamente o que `prefers-reduced-motion` existe para
+  desligar — e era a única animação do produto que escapava, porque a duração
+  está escrita aqui em vez de vir dos tokens de motion, que a media query já
+  zera. O ícone continua ao lado do rótulo que diz o que está acontecendo
+  ("Carregando…", "Recalculando…"), então nada de informação se perde.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
 }
 
 @keyframes fi-drawer-in {

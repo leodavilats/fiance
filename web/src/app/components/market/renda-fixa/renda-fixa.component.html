@@ -9,7 +9,7 @@
 
 <div class="fi-block">
   <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-    <h2 class="fi-verdict m-0 text-ink">Simulador de renda fixa</h2>
+    <h2 class="fi-title m-0 text-ink">Simulador de renda fixa</h2>
     <button type="button" class="btn-secondary compact-btn" (click)="addRFAtivo()">
       <lucide-icon name="plus" size="15"></lucide-icon> Adicionar opção
     </button>
@@ -126,7 +126,7 @@
 
 @if (rfResult(); as result) {
   <div class="fi-block">
-    <h2 class="fi-verdict m-0 mb-1 text-ink">Resultado da análise</h2>
+    <h2 class="fi-title m-0 mb-1 text-ink">Resultado da análise</h2>
     <p class="fi-caption text-ink-3 m-0 mb-5">
       Calculado sobre CDI
       <span class="fi-num">{{ result.cdi_referencia | number: '1.2-2' }}%</span>, Selic

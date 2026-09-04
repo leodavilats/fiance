@@ -1,11 +1,10 @@
 <div class="mt-6 max-w-4xl">
-  <h2 class="fi-verdict m-0 mb-1 text-ink">Importar operações</h2>
-  <p class="fi-body text-ink-2 m-0 mb-5 max-w-prose">
-    Cole a lista ou suba o CSV que sua corretora exporta. Nada é gravado antes de você conferir a
-    revisão — e a importação é tudo ou nada.
-  </p>
+  <app-page-header
+    title="Importar operações"
+    question="Cole a lista ou suba o CSV que sua corretora exporta. Nada é gravado antes de você conferir a revisão — e a importação é tudo ou nada."
+  />
 
-  <div class="p-4 sm:p-5 rounded-md border border-hairline bg-ground-1">
+  <div class="fi-block">
     <label for="conteudo" class="fi-label block text-ink mb-2">
       Cole aqui, ou envie um arquivo
     </label>
@@ -52,8 +51,8 @@
   </div>
 
   @if (preview(); as p) {
-    <div class="mt-5 p-4 sm:p-5 rounded-md border border-hairline bg-ground-1">
-      <h3 class="fi-verdict-sm m-0 mb-3 text-ink">Revisão</h3>
+    <div class="fi-block mt-5">
+      <h3 class="fi-title m-0 mb-3 text-ink">Revisão</h3>
 
       @if (p.issues.length > 0) {
         <div class="mb-4">
@@ -79,19 +78,18 @@
       }
 
       @if (p.rows.length > 0) {
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <div class="card p-3">
-            <div class="fi-eyebrow text-ink-2 mb-1">Operações novas</div>
-            <div class="fi-verdict text-ink">{{ novas().length }}</div>
-          </div>
-          <div class="card p-3">
-            <div class="fi-eyebrow text-ink-2 mb-1">Já existem no razão</div>
-            <div class="fi-verdict text-ink">{{ repetidas().length }}</div>
-          </div>
-        </div>
+        <p class="fi-body text-ink m-0 mb-4">
+          <span class="fi-num">{{ novas().length }}</span>
+          {{ novas().length === 1 ? 'operação nova' : 'operações novas' }}
+          @if (repetidas().length > 0) {
+            e <span class="fi-num">{{ repetidas().length }}</span>
+            {{ repetidas().length === 1 ? 'que já existe' : 'que já existem' }} no razão
+          }
+          &mdash; nada foi gravado ainda.
+        </p>
 
         @if (repetidas().length > 0) {
-          <div class="p-3 mb-4 rounded-md border border-hairline bg-ground-2">
+          <div class="notice notice-attention mb-4">
             <label class="fi-body flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -109,7 +107,7 @@
           </div>
         }
 
-        <div class="overflow-x-auto rounded-md border border-hairline">
+        <div class="overflow-x-auto border-t border-hairline">
           <table class="fi-body w-full">
             <thead>
               <tr class="fi-eyebrow text-left text-ink-3 bg-ground-2">

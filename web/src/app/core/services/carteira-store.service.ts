@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import {
+  CategoryAllocation,
   ClosedTradesResponse,
   DividendsReceivedResponse,
   FixedIncomeListResponse,
@@ -24,6 +25,50 @@ export type PositionSortColumn =
 
 export const MAX_COMPARE = 4;
 
+/**
+ * Quantas séries um gráfico pode distinguir por cor.
+ *
+ * O `tokens.json` declara a regra em comentário — "NO MÁXIMO 6 séries por
+ * gráfico, resolvida agregando a cauda em Outros" — e nada a implementava: os
+ * onze setores da B3 mapeiam para `series-1..11`, então a composição setorial
+ * podia render onze cores, e a sétima cor distinguível não existe.
+ */
+const MAX_SERIES = 6;
+
+interface Fatia {
+  readonly label: string;
+  readonly valor: number;
+  readonly pct: number;
+  readonly targetPct: number | null;
+  readonly color: string;
+  readonly icon: string;
+}
+
+/**
+ * Da sétima fatia em diante, tudo vira uma só.
+ *
+ * A cauda não ganha meta: somar metas de categorias diferentes produziria um
+ * alvo que ninguém definiu.
+ */
+function agregarCauda(fatias: readonly Fatia[]): Fatia[] {
+  if (fatias.length <= MAX_SERIES) return [...fatias];
+
+  const cabeca = fatias.slice(0, MAX_SERIES - 1);
+  const cauda = fatias.slice(MAX_SERIES - 1);
+
+  return [
+    ...cabeca,
+    {
+      label: `Outros (${cauda.length})`,
+      valor: cauda.reduce((soma, f) => soma + f.valor, 0),
+      pct: cauda.reduce((soma, f) => soma + f.pct, 0),
+      targetPct: null,
+      color: 'var(--fi-series-other)',
+      icon: 'circle-dot',
+    },
+  ];
+}
+
 @Injectable({ providedIn: 'root' })
 export class CarteiraStore {
   private readonly svc = inject(RecommendService);
@@ -33,6 +78,20 @@ export class CarteiraStore {
   readonly fixedIncome = signal<FixedIncomeListResponse | null>(null);
   readonly closedTrades = signal<ClosedTradesResponse | null>(null);
   readonly dividends = signal<DividendsReceivedResponse | null>(null);
+  /**
+   * A alocação por categoria, **como o backend a calcula**.
+   *
+   * Antes o cliente somava as posições e dividia pelo total, enquanto o
+   * backend fazia a mesma conta para `/hoje` e `/estrategia`: duas verdades
+   * sobre o mesmo número, e nada garantia que batessem. Carteira mostrava uma,
+   * Estratégia mostrava outra, e a diferença aparecia na mesma visita.
+   *
+   * A conta agora vem de `/dashboard`, e o cliente só decide como desenhá-la.
+   * Setor continua no cliente porque não existe equivalente no servidor — e
+   * está declarado assim, não escondido.
+   */
+  readonly alocacaoOficial = signal<CategoryAllocation[]>([]);
+
   readonly goals = signal<Goal[]>([]);
   readonly sectorGoals = signal<SectorGoal[]>([]);
 
@@ -59,6 +118,10 @@ export class CarteiraStore {
     this.loadFixedIncome();
     this.loadClosedTrades();
     this.loadDividends();
+    this.svc.dashboard().subscribe({
+      next: d => this.alocacaoOficial.set(d.allocations ?? []),
+      error: () => this.alocacaoOficial.set([]),
+    });
     this.svc.getGoals().subscribe({ next: g => this.goals.set(g), error: () => {} });
     this.svc.getSectorGoals().subscribe({ next: sg => this.sectorGoals.set(sg), error: () => {} });
     this.loadAndEvaluate();
@@ -205,41 +268,22 @@ export class CarteiraStore {
   readonly totalAtivos = computed(() => this.negociadosCount() + this.rendaFixaCount());
   readonly isEmpty = computed(() => !this.hasStoredAssets() && this.rendaFixaCount() === 0);
 
-  readonly goalTargetByCategory = computed(() => {
-    const map = new Map<string, number>();
-    for (const g of this.goals()) map.set(g.category, g.target_pct);
-    return map;
-  });
-
   readonly goalTargetBySector = computed(() => {
     const map = new Map<string, number>();
     for (const sg of this.sectorGoals()) map.set(sg.sector, sg.target_pct);
     return map;
   });
 
-  readonly alocacaoPorTipo = computed(() => {
-    const total = this.valorAtual();
-    if (total <= 0) return [];
-
-    const buckets = new Map<string, number>();
-    const rf = this.fixedIncome()?.total_atual ?? 0;
-    if (rf > 0) buckets.set('renda_fixa', rf);
-
-    for (const p of this.tradedPositions()) {
-      const valor = p.current_value ?? p.invested;
-      buckets.set(p.category_resolved, (buckets.get(p.category_resolved) || 0) + valor);
-    }
-
-    const targets = this.goalTargetByCategory();
-    return Array.from(buckets.entries())
-      .map(([tipo, valor]) => ({
-        tipo,
-        valor,
-        pct: (valor / total) * 100,
-        targetPct: targets.get(tipo) ?? null,
+  readonly alocacaoPorTipo = computed(() =>
+    this.alocacaoOficial()
+      .map(a => ({
+        tipo: a.category,
+        valor: a.current_value,
+        pct: a.current_pct,
+        targetPct: a.target_pct,
       }))
-      .sort((a, b) => b.valor - a.valor);
-  });
+      .sort((a, b) => b.valor - a.valor)
+  );
 
   readonly alocacaoPorSetor = computed(() => {
     const STOCK_TYPES = new Set(['br_stock', 'bdr']);
@@ -298,8 +342,10 @@ export class CarteiraStore {
             icon: this.ui.sectorIcon(s.setor),
           }));
 
+    const fatias = agregarCauda(raw);
+
     let acc = 0;
-    return raw.map(r => {
+    return fatias.map(r => {
       const start = acc;
       acc += r.pct;
       return { ...r, start, end: acc };

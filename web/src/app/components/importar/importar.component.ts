@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { ImportPreview, RecommendService, SnackbarService, TransactionKind } from '../../core';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 const KIND_LABEL: Record<TransactionKind, string> = {
   buy: 'Compra',
@@ -22,7 +23,7 @@ const MAX_FILE_BYTES = 2 * 1024 * 1024;
 @Component({
   selector: 'app-importar',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [PageHeaderComponent, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './importar.component.html',
 })
 export class ImportarComponent {

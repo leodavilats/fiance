@@ -1,6 +1,6 @@
 <div class="space-y-6 max-w-reading">
   <div>
-    <h2 class="fi-verdict m-0 mb-1 text-ink">Indicação</h2>
+    <app-page-header title="Indicação" />
     <p class="fi-body text-ink-2 mt-1 mb-0">
       Quem entra pelo seu link ganha
       {{ referral.status()?.reward_days ?? 30 }} dias de Premium — e você também, quando essa pessoa
@@ -9,7 +9,7 @@
   </div>
 
   @if (referral.status(); as r) {
-    <section class="p-4 rounded-md bg-ground-1 border border-hairline">
+    <section class="card">
       <div class="fi-caption text-ink-2 mb-1">Seu link</div>
       <div class="flex flex-wrap items-center gap-2">
         <code class="fi-body text-ink break-all">{{ link(r.code) }}</code>
@@ -22,20 +22,20 @@
       </p>
     </section>
 
-    <section class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div class="p-3 rounded-md bg-ground-1 border border-hairline">
-        <div class="fi-caption text-ink-2 mb-0.5">Chegaram pelo seu link</div>
-        <div class="fi-title text-ink">{{ r.attributed }}</div>
+    <dl class="flex flex-wrap gap-x-12 gap-y-5 m-0 pt-4 border-t border-hairline">
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Chegaram pelo seu link</dt>
+        <dd class="fi-metric text-ink m-0 mt-1 fi-num">{{ r.attributed }}</dd>
       </div>
-      <div class="p-3 rounded-md bg-ground-1 border border-hairline">
-        <div class="fi-caption text-ink-2 mb-0.5">Já montaram carteira</div>
-        <div class="fi-title text-ink">{{ r.qualified }}</div>
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Já montaram carteira</dt>
+        <dd class="fi-metric text-ink m-0 mt-1 fi-num">{{ r.qualified }}</dd>
       </div>
-      <div class="p-3 rounded-md bg-ground-1 border border-hairline">
-        <div class="fi-caption text-ink-2 mb-0.5">Dias de Premium ganhos</div>
-        <div class="fi-title text-ink">{{ r.days_earned }}</div>
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Dias de Premium ganhos</dt>
+        <dd class="fi-metric text-ink m-0 mt-1 fi-num">{{ r.days_earned }}</dd>
       </div>
-    </section>
+    </dl>
 
     @if (r.pending > 0) {
       <p class="fi-body text-ink-2 m-0">

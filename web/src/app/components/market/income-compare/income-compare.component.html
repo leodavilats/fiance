@@ -1,5 +1,5 @@
 <div class="fi-block">
-  <h2 class="fi-verdict m-0 mb-1 text-ink">Renda fixa ou bolsa?</h2>
+  <h2 class="fi-title m-0 mb-1 text-ink">Renda fixa ou bolsa?</h2>
   <p class="fi-body text-ink-2 mb-4">
     A mesma unidade dos dois lados: renda recorrente líquida ao ano. Renda fixa tem taxa contratada;
     ativos de bolsa oscilam e podem valorizar — as duas coisas aparecem separadas, porque somá-las
@@ -86,7 +86,7 @@
 
             <div class="text-right shrink-0">
               <div class="fi-caption text-ink-2">Renda líquida a.a.</div>
-              <div class="fi-verdict" [class.text-brand]="first" [class.text-ink]="!first">
+              <div class="fi-metric" [class.text-brand]="first" [class.text-ink]="!first">
                 {{ option.net_income_yield_pct | number: '1.2-2' }}%
               </div>
               <div class="fi-caption text-ink-2">

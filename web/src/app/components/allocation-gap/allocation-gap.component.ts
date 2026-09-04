@@ -49,7 +49,7 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
         <span class="flex items-center gap-1 w-[84px] justify-end shrink-0" [class]="stateClass()">
           <lucide-icon [name]="icon()" size="12" aria-hidden="true"></lucide-icon>
           <span class="fi-metric-sm">
-            {{ delta() > 0 ? '+' : '' }}{{ delta() | number: '1.1-1' }} p.p.
+            {{ delta() > 0 ? '+' : '' }}{{ delta() | number: '1.1-1' }} %
           </span>
         </span>
       } @else {

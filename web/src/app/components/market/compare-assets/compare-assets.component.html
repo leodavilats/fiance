@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-8">
   <section>
-    <p class="fi-eyebrow text-ink-3 m-0 mb-2">Comparar</p>
+    <app-page-header title="Comparar ativos" />
     <p class="fi-body text-ink-2 m-0 mb-4 max-w-reading">
       Até {{ maxTickers }} ativos lado a lado. A decisão de cada um vem primeiro; os indicadores que
       a sustentam vêm depois, agrupados pela pergunta que respondem.
@@ -76,13 +76,10 @@
   </section>
 
   @if (loading()) {
-    <div class="animate-pulse flex flex-col gap-3" aria-hidden="true">
-      <div class="h-4 w-32 rounded bg-ground-2"></div>
-      <div class="h-24 w-full rounded bg-ground-2"></div>
-      <div class="h-4 w-24 rounded bg-ground-2 mt-3"></div>
-      @for (i of [1, 2, 3, 4, 5]; track i) {
-        <div class="h-5 w-full rounded bg-ground-2"></div>
-      }
+    <div class="flex flex-col gap-5">
+      <app-skeleton shape="title" />
+      <app-skeleton shape="verdict" />
+      <app-skeleton shape="row" [count]="5" />
     </div>
   } @else if (result(); as r) {
     @if (r.errors.length > 0) {

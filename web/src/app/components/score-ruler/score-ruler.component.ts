@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
-import { FiScoreBand, fiBandFor, fiScoreBands, stateTextClass } from '../../core';
+import { FiScoreBand, fiBandFor, stateTextClass } from '../../core';
 import { markerPct, rulerTicks, rulerZones } from '../../core/ruler';
 import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 
@@ -55,7 +55,17 @@ export class ScoreRulerComponent {
   readonly showScale = input(false);
   readonly showValue = input(true);
   readonly subject = input('Score');
-  readonly bands = input<readonly FiScoreBand[]>(fiScoreBands);
+  /**
+   * As bandas em que o número é lido. **Obrigatório de propósito.**
+   *
+   * Havia um default silencioso (`fiScoreBands`), e ele produziu duas leituras
+   * erradas em telas vizinhas: `/ativo` desenhava `confidence * 100` com os
+   * rótulos Forte/Boa/Neutra/Fraca do score, e `/descobrir/quedas` desenhava
+   * `dip_score` nos limiares 40/60/75 quando o backend classifica a queda em
+   * 68/42 — a régua contradizia o veredito ao lado dela. Sem default, o
+   * compilador cobra a decisão de quem chama.
+   */
+  readonly bands = input.required<readonly FiScoreBand[]>();
 
   readonly thresholds = computed(() => rulerTicks(this.bands(), SCORE_DOMAIN));
   readonly band = computed(() => fiBandFor(this.clamped(), this.bands(), this.dataCompleteness()));

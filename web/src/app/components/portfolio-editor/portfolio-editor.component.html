@@ -1,6 +1,6 @@
 <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
   <div>
-    <h1 class="fi-verdict m-0 text-ink">Cadastro da carteira</h1>
+    <h1 class="fi-title m-0 text-ink">Cadastro da carteira</h1>
     <p class="fi-body text-ink-2 m-0 mt-1">
       Cada linha é salva quando você clica em salvar — nada é gravado enquanto você digita.
     </p>
@@ -29,7 +29,7 @@
 }
 
 <div class="fi-block">
-  <h2 class="fi-verdict m-0 mb-1 text-ink">Ativos negociados</h2>
+  <h2 class="fi-title m-0 mb-1 text-ink">Ativos negociados</h2>
   <p class="fi-body text-ink-2 mb-4">
     Ações, FIIs, BDRs e ETFs da B3, pelo ticker (ex.: PETR4, HGLG11, AAPL34).
   </p>
@@ -60,7 +60,7 @@
               />
               @if (tickerSuggestionsRow() === i && tickerSuggestions().length > 0) {
                 <ul
-                  class="absolute top-full left-0 right-0 z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-hairline bg-ground-1 shadow-popover list-none p-0 m-0"
+                  class="absolute top-full left-0 right-0 z-popover mt-1 max-h-56 overflow-y-auto rounded-lg border border-hairline bg-ground-1 shadow-popover list-none p-0 m-0"
                 >
                   @for (s of tickerSuggestions(); track s.ticker) {
                     <li>
@@ -133,7 +133,7 @@
 </div>
 
 <div class="fi-block">
-  <h2 class="fi-verdict m-0 mb-1 text-ink">Renda fixa</h2>
+  <h2 class="fi-title m-0 mb-1 text-ink">Renda fixa</h2>
   <p class="fi-body text-ink-2 mb-4">
     CDB, LCI/LCA, Tesouro e afins. Os dados ficam na sua conta no servidor, então aparecem em
     qualquer navegador e também no app — e o rendimento é calculado pela mesma regra do comparador.

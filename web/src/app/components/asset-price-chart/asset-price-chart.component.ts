@@ -248,7 +248,7 @@ const MIN_POINTS = 5;
         </button>
 
         @if (showTable()) {
-          <div class="mt-2 max-h-64 overflow-y-auto border border-hairline rounded-md">
+          <div class="mt-2 max-h-64 overflow-y-auto border-t border-hairline">
             <table class="w-full">
               <caption class="sr-only">
                 Fechamentos diários do período selecionado

@@ -1,7 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { FiState } from '../../core';
+
+/**
+ * Quanto o insight diz antes de a pessoa pedir mais.
+ *
+ * `essencial` — conclusão e ação. É o que cabe numa lista longa.
+ * `completo`  — mais o contexto que torna a conclusão interpretável (padrão).
+ * `avancado`  — mais a evidência que a sustenta.
+ *
+ * Isto é **profundidade informacional**, e é deliberadamente separado de
+ * densidade espacial (`preferences.density`, que só muda altura de linha e
+ * espaçamento). Compactar a tela não é dizer menos, e dizer menos não é
+ * compactar a tela — foi confundir as duas coisas que deixou o produto sem
+ * resposta para "quanto detalhe esta pessoa quer".
+ */
+export type InsightLevel = 'essencial' | 'completo' | 'avancado';
 
 @Component({
   selector: 'app-insight',
@@ -24,11 +39,11 @@ import { FiState } from '../../core';
       <div class="flex-1 min-w-0">
         <div class="fi-verdict-sm text-ink">{{ title() }}</div>
 
-        @if (detail()) {
+        @if (mostraDetalhe() && detail()) {
           <div class="fi-body text-ink-2 mt-0.5">{{ detail() }}</div>
         }
 
-        @if (evidence()) {
+        @if (mostraEvidencia() && evidence()) {
           <div class="fi-caption text-ink-3 mt-1">{{ evidence() }}</div>
         }
       </div>
@@ -48,8 +63,12 @@ export class InsightComponent {
   readonly actionLabel = input<string>('');
   readonly state = input<FiState>('neutral');
   readonly divided = input(false);
+  readonly level = input<InsightLevel>('completo');
 
   readonly action = output<void>();
+
+  readonly mostraDetalhe = computed(() => this.level() !== 'essencial');
+  readonly mostraEvidencia = computed(() => this.level() === 'avancado');
 
   icon(): string {
     switch (this.state()) {

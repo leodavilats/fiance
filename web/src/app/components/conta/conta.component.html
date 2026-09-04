@@ -1,33 +1,122 @@
+<app-page-header
+  title="Conta e dados"
+  question="O que é seu, como levá-lo embora e de onde vem cada número."
+/>
+
 <div class="flex flex-col gap-8">
   <div class="fi-block">
-    <h3 class="fi-title text-ink m-0 mb-1">Cache de dados</h3>
-    <p class="fi-body text-ink-2 m-0 mb-4">
-      As cotações ficam guardadas por um tempo para não pedir a mesma coisa à fonte a cada tela.
-      Limpar força a próxima leitura a ir buscar de novo.
+    <h2 class="fi-title text-ink m-0 mb-1">Levar seus dados</h2>
+    <p class="fi-body text-ink-2 m-0 mb-4 max-w-reading">
+      Um arquivo JSON com carteira, lançamentos, renda fixa, proventos, metas e preferências — tudo
+      o que está associado à sua conta, como o servidor o guarda. Não passa por plano.
     </p>
     <div class="flex items-center gap-3 flex-wrap">
       <button
         type="button"
         class="btn-secondary"
-        (click)="clearAssetsCache()"
-        [disabled]="clearing()"
+        (click)="exportarDados()"
+        [disabled]="exporting()"
       >
-        <lucide-icon [name]="clearing() ? 'loader-circle' : 'refresh-cw'" size="16"></lucide-icon>
-        {{ clearing() ? 'Limpando…' : 'Limpar cache de ativos' }}
+        <lucide-icon
+          [name]="exporting() ? 'loader-circle' : 'download'"
+          size="16"
+          [class.spin]="exporting()"
+        ></lucide-icon>
+        {{ exporting() ? 'Montando o arquivo…' : 'Exportar meus dados' }}
       </button>
-      <button type="button" class="btn-secondary" (click)="clearAllCache()" [disabled]="clearing()">
-        <lucide-icon [name]="clearing() ? 'loader-circle' : 'trash2'" size="16"></lucide-icon>
-        {{ clearing() ? 'Limpando…' : 'Limpar todo o cache' }}
-      </button>
-      @if (cacheMessage()) {
-        <span class="fi-body text-ink-2" role="status">{{ cacheMessage() }}</span>
+      @if (exportError()) {
+        <span class="fi-body text-adverse" role="status">{{ exportError() }}</span>
       }
     </div>
   </div>
 
   <div class="fi-block">
-    <h2 class="fi-verdict text-ink m-0 mb-1">De onde vêm os dados</h2>
-    <p class="fi-body text-ink-2 m-0 mb-5 max-w-prose">
+    <h2 class="fi-title text-ink m-0 mb-1">Excluir a conta</h2>
+    <p class="fi-body text-ink-2 m-0 mb-3 max-w-reading">
+      A remoção é imediata no banco e não tem desfazer. Exporte antes se quiser guardar o histórico.
+    </p>
+
+    @if (policy(); as p) {
+      <div class="notice notice-attention mb-4 max-w-reading">
+        <lucide-icon
+          name="triangle-alert"
+          size="16"
+          class="text-attention mt-0.5 shrink-0"
+          aria-hidden="true"
+        ></lucide-icon>
+        <div class="min-w-0">
+          <p class="fi-body text-ink m-0">
+            Apaga <span class="fi-num">{{ p.removes.length }}</span> conjuntos de dados:
+            {{ p.removes.join(', ') }}.
+          </p>
+          <p class="fi-caption text-ink-2 m-0 mt-1">{{ p.note }}</p>
+          <p class="fi-caption text-ink-3 m-0 mt-1">
+            Prazo declarado para backups e réplicas:
+            <span class="fi-num">{{ p.sla_days }}</span> dias.
+          </p>
+        </div>
+      </div>
+    }
+
+    @if (!confirming()) {
+      <button type="button" class="btn-secondary text-adverse" (click)="abrirConfirmacao()">
+        <lucide-icon name="trash2" size="16"></lucide-icon>
+        Excluir minha conta
+      </button>
+    } @else {
+      <div class="flex flex-col gap-3 max-w-reading">
+        <div class="field">
+          <label class="field-label" for="conta-confirmar">
+            Para confirmar, escreva {{ frase() }}
+          </label>
+          <input
+            id="conta-confirmar"
+            type="text"
+            class="input uppercase"
+            autocomplete="off"
+            [value]="confirmText()"
+            (input)="confirmText.set($any($event.target).value)"
+          />
+          <span class="field-hint">
+            A frase é exigida pelo servidor — a tela não consegue pular esta etapa.
+          </span>
+        </div>
+
+        @if (deleteError()) {
+          <p class="field-error m-0" role="alert">{{ deleteError() }}</p>
+        }
+
+        <div class="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            class="btn-secondary text-adverse"
+            [disabled]="!podeExcluir() || deleting()"
+            (click)="excluirConta()"
+          >
+            <lucide-icon
+              [name]="deleting() ? 'loader-circle' : 'trash2'"
+              size="16"
+              [class.spin]="deleting()"
+            ></lucide-icon>
+            {{ deleting() ? 'Excluindo…' : 'Excluir definitivamente' }}
+          </button>
+          <button
+            type="button"
+            class="btn-quiet"
+            (click)="cancelarExclusao()"
+            [disabled]="deleting()"
+            [title]="deleting() ? 'A exclusão já começou e não pode ser cancelada' : ''"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="fi-block">
+    <h2 class="fi-title text-ink m-0 mb-1">De onde vêm os dados</h2>
+    <p class="fi-body text-ink-2 m-0 mb-5 max-w-reading">
       Num produto financeiro, a origem do número faz parte da informação.
     </p>
     <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 m-0">
@@ -58,9 +147,35 @@
         </dd>
       </div>
     </dl>
-    <p class="fi-caption text-ink-3 m-0 mt-5 pt-4 border-t border-hairline max-w-prose">
+    <p class="fi-caption text-ink-3 m-0 mt-5 pt-4 border-t border-hairline max-w-reading">
       Tudo o que o fiance mostra é estimativa a partir de dado público, para estudo da sua própria
       carteira. Não é recomendação de investimento e não há garantia de retorno.
     </p>
+  </div>
+
+  <div class="fi-block">
+    <h2 class="fi-title text-ink m-0 mb-1">Cache de dados</h2>
+    <p class="fi-body text-ink-2 m-0 mb-4 max-w-reading">
+      As cotações ficam guardadas por um tempo para não pedir a mesma coisa à fonte a cada tela.
+      Limpar força a próxima leitura a ir buscar de novo.
+    </p>
+    <div class="flex items-center gap-3 flex-wrap">
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="clearAssetsCache()"
+        [disabled]="clearing()"
+      >
+        <lucide-icon [name]="clearing() ? 'loader-circle' : 'refresh-cw'" size="16"></lucide-icon>
+        {{ clearing() ? 'Limpando…' : 'Limpar cache de ativos' }}
+      </button>
+      <button type="button" class="btn-secondary" (click)="clearAllCache()" [disabled]="clearing()">
+        <lucide-icon [name]="clearing() ? 'loader-circle' : 'trash2'" size="16"></lucide-icon>
+        {{ clearing() ? 'Limpando…' : 'Limpar todo o cache' }}
+      </button>
+      @if (cacheMessage()) {
+        <span class="fi-body text-ink-2" role="status">{{ cacheMessage() }}</span>
+      }
+    </div>
   </div>
 </div>

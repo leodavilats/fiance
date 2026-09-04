@@ -12,11 +12,12 @@ import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import { PriceAlert, RecommendService, TickerSuggestion } from '../../core';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
   selector: 'app-alertas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './alertas.component.html',
 })
 export class AlertasComponent implements OnInit, OnDestroy {

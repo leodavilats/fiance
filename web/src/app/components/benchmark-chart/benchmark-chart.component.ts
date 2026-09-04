@@ -49,16 +49,23 @@ const PAD_BOTTOM = 30;
               [attr.x]="padLeft - 6"
               [attr.y]="gy.y + 3"
               text-anchor="end"
-              class="text-[9px]"
+              class="fi-caption"
               fill="var(--fi-ink-2)"
             >
               {{ gy.value | number: '1.0-1' }}%
             </text>
           }
 
+          <!--
+            Papéis de cor, como docs/design/VISUAL-LANGUAGE.md os define:
+            a linha da pessoa é a mais forte (tinta primária), e referência é a
+            cor da marca — é o sistema falando. O Ibovespa vinha pintado com
+            "state-attention", cor de julgamento, como se um índice de
+            referência pudesse estar "em atenção".
+          -->
           <path
             [attr.d]="pathFor(cdiSeries())"
-            stroke="var(--fi-ink-2)"
+            stroke="var(--fi-brand)"
             stroke-width="1.5"
             fill="none"
             stroke-dasharray="4,3"
@@ -66,14 +73,15 @@ const PAD_BOTTOM = 30;
           @if (ibovAvailable()) {
             <path
               [attr.d]="pathFor(ibovSeries())"
-              stroke="var(--fi-state-attention)"
+              stroke="var(--fi-brand)"
               stroke-width="1.5"
               fill="none"
+              stroke-dasharray="1,3"
             />
           }
           <path
             [attr.d]="pathFor(portfolioSeries())"
-            stroke="var(--fi-brand)"
+            stroke="var(--fi-ink-1)"
             stroke-width="2.5"
             fill="none"
           />
@@ -102,7 +110,7 @@ const PAD_BOTTOM = 30;
 
         @if (hoverIndex() !== null) {
           <div
-            class="fi-caption pointer-events-none absolute z-10 rounded-lg border border-hairline bg-ground-1 px-3 py-2 shadow-popover"
+            class="fi-caption pointer-events-none absolute z-popover rounded-lg border border-hairline bg-ground-1 px-3 py-2 shadow-popover"
             [style.left.%]="tooltipLeftPct()"
             [style.top]="'8%'"
             [style.transform]="tooltipTransform()"
@@ -111,14 +119,14 @@ const PAD_BOTTOM = 30;
             <div class="fi-label flex items-center gap-1.5 text-ink">
               <span
                 class="inline-block w-2.5 h-0.5 rounded"
-                style="background: var(--fi-brand)"
+                style="background: var(--fi-ink-1)"
               ></span>
               Carteira: {{ points()[hoverIndex()!].portfolio_pct | number: '1.1-1' }}%
             </div>
             <div class="flex items-center gap-1.5 text-ink">
               <span
                 class="inline-block w-2.5 h-0.5 rounded"
-                style="background: var(--fi-ink-2)"
+                style="background: var(--fi-brand)"
               ></span>
               CDI: {{ points()[hoverIndex()!].cdi_pct | number: '1.1-1' }}%
             </div>
@@ -126,7 +134,7 @@ const PAD_BOTTOM = 30;
               <div class="flex items-center gap-1.5 text-ink">
                 <span
                   class="inline-block w-2.5 h-0.5 rounded"
-                  style="background: var(--fi-state-attention)"
+                  style="background: var(--fi-brand); opacity: 0.55"
                 ></span>
                 Ibovespa: {{ points()[hoverIndex()!].ibov_pct | number: '1.1-1' }}%
               </div>
@@ -137,23 +145,23 @@ const PAD_BOTTOM = 30;
 
       <div class="fi-caption flex items-center gap-4 mt-3 text-ink-2 flex-wrap">
         <span class="flex items-center gap-1.5"
-          ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--fi-brand)"></span>
+          ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--fi-ink-1)"></span>
           Carteira</span
         >
         <span class="flex items-center gap-1.5"
-          ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--fi-ink-2)"></span>
-          CDI</span
+          ><span class="inline-block w-3 h-0.5 rounded" style="background: var(--fi-brand)"></span>
+          CDI (tracejado)</span
         >
         @if (ibovAvailable()) {
           <span class="flex items-center gap-1.5"
             ><span
               class="inline-block w-3 h-0.5 rounded"
-              style="background: var(--fi-state-attention)"
+              style="background: var(--fi-brand); opacity: 0.55"
             ></span>
-            Ibovespa</span
+            Ibovespa (pontilhado)</span
           >
         } @else {
-          <span class="text-[11px] opacity-70">Ibovespa indisponível no momento</span>
+          <span class="opacity-70">Ibovespa indisponível no momento</span>
         }
       </div>
 
@@ -175,7 +183,7 @@ const PAD_BOTTOM = 30;
       </button>
 
       @if (showTable()) {
-        <div class="mt-2 max-h-64 overflow-y-auto rounded-md border border-hairline">
+        <div class="mt-2 max-h-64 overflow-y-auto border-t border-hairline">
           <table class="fi-caption w-full">
             <caption class="sr-only">
               Retorno acumulado da carteira, do CDI e do Ibovespa em cada data

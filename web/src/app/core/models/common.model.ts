@@ -49,6 +49,21 @@ export interface GlobalSearchResponse {
  * cotas — e a tela precisa dizer que ele foi retido, senão o traço no lugar do
  * número lê como dado faltando.
  */
+/**
+ * O que a exclusão de conta apaga, e em quanto tempo.
+ *
+ * Vem do servidor (`GET /account/deletion-policy`) em vez de ser escrita na
+ * tela porque a lista de tabelas com dono é `account_store.USER_SCOPED_MODELS`
+ * — uma tabela nova entra ali e passa a ser declarada aqui sozinha. Uma lista
+ * copiada no cliente envelheceria calada, prometendo apagar menos do que apaga.
+ */
+export interface DeletionPolicy {
+  sla_days: number;
+  removes: string[];
+  note: string;
+  confirmation_phrase: string;
+}
+
 export interface AffirmationMode {
   level: number;
   name: string;

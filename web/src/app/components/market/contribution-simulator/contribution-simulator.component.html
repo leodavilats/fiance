@@ -1,14 +1,10 @@
 <div class="space-y-4">
-  <p class="fi-caption text-ink-2 m-0">
-    Simule um aporte mensal recorrente e veja como sua carteira e sua renda passiva evoluiriam ao
-    longo do tempo.
-  </p>
+  <app-page-header
+    title="Projeção"
+    question="Se eu aportar todo mês, como a carteira e a renda passiva evoluiriam?"
+  />
 
-  <form
-    [formGroup]="form"
-    (ngSubmit)="simulate()"
-    class="p-4 rounded-md bg-ground-1 border border-hairline"
-  >
+  <form [formGroup]="form" (ngSubmit)="simulate()" class="fi-block">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div>
         <label class="field-label block mb-1.5">Aporte mensal (R$)</label>
@@ -46,42 +42,43 @@
   @if (result(); as r) {
     <p class="fi-caption text-ink-2 m-0">{{ r.disclaimer }}</p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div class="p-3 rounded-md bg-ground-1 border border-hairline">
-        <div class="fi-caption text-ink-2 mb-0.5">Hoje</div>
-        <div class="fi-label text-ink">R$ {{ r.current_portfolio_value | number: '1.0-0' }}</div>
-        <div class="fi-caption text-ink-2">
+    <dl class="flex flex-wrap gap-x-12 gap-y-5 m-0 pt-4 border-t border-hairline">
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Hoje</dt>
+        <dd class="fi-metric-sm text-ink m-0 mt-1">
+          R$ {{ r.current_portfolio_value | number: '1.0-0' }}
+        </dd>
+        <dd class="fi-caption text-ink-3 m-0">
           R$ {{ r.current_passive_income_monthly | number: '1.2-2' }}/mês
-        </div>
+        </dd>
       </div>
-      <div class="p-3 rounded-md bg-ground-1 border border-hairline">
-        <div class="fi-caption text-ink-2 mb-0.5">
+      <div>
+        <dt class="fi-eyebrow text-ink-3">
           Carteira em {{ form.getRawValue().months_ahead }} meses
-        </div>
-
-        <div class="fi-label text-ink">
+        </dt>
+        <dd class="fi-metric-sm text-ink m-0 mt-1">
           entre R$ {{ ultimo(r).portfolio_value_low | number: '1.0-0' }} e R$
           {{ ultimo(r).portfolio_value_high | number: '1.0-0' }}
-        </div>
-        <div class="fi-caption text-ink-2">
+        </dd>
+        <dd class="fi-caption text-ink-3 m-0">
           cenário base: R$ {{ ultimo(r).portfolio_value | number: '1.0-0' }}
-        </div>
+        </dd>
       </div>
-      <div class="p-3 rounded-md bg-ground-1 border border-hairline">
-        <div class="fi-caption text-ink-2 mb-0.5">Renda passiva/mês no fim</div>
-        <div class="fi-label text-ink">
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Renda passiva/mês no fim</dt>
+        <dd class="fi-metric-sm text-ink m-0 mt-1">
           entre R$ {{ ultimo(r).passive_income_monthly_low | number: '1.2-2' }} e R$
           {{ ultimo(r).passive_income_monthly_high | number: '1.2-2' }}
-        </div>
-        <div class="fi-caption text-ink-2">
+        </dd>
+        <dd class="fi-caption text-ink-3 m-0">
           cenário base: R$ {{ ultimo(r).passive_income_monthly | number: '1.2-2' }}
-        </div>
+        </dd>
       </div>
-    </div>
+    </dl>
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
       @for (s of r.scenarios; track s.code) {
-        <div class="p-3 rounded-md bg-ground-1 border border-hairline">
+        <div class="card">
           <div class="fi-label text-ink mb-1">{{ s.label }}</div>
           <div class="fi-label text-ink">
             R$ {{ s.final_passive_income_monthly | number: '1.2-2' }}/mês
@@ -93,7 +90,7 @@
     </div>
 
     @if (r.target; as meta) {
-      <div class="fi-body p-4 rounded-md bg-ground-1 border border-hairline text-ink">
+      <div class="notice notice-brand fi-body text-ink">
         Meta de <strong>R$ {{ meta.monthly_income | number: '1.2-2' }}/mês</strong>:
         @if (meta.reached_in_all_scenarios) {
           alcançada entre <strong>{{ meta.earliest_months }}</strong> e
@@ -109,7 +106,7 @@
       </div>
     }
 
-    <div class="overflow-x-auto rounded-md border border-hairline">
+    <div class="overflow-x-auto border-t border-hairline">
       <table class="fi-body w-full">
         <caption class="sr-only">
           Projeção mês a mês, com piso e teto entre os três cenários.

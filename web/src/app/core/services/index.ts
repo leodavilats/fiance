@@ -7,6 +7,7 @@ export * from './entitlement.service';
 export * from './referral.service';
 export * from './dip-analysis.service';
 export * from './loading.service';
+export * from './navegacao.service';
 export * from './recommend.service';
 export * from './snackbar.service';
 export * from './theme.service';

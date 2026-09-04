@@ -9,6 +9,7 @@
       type="button"
       class="fi-body btn-secondary px-3 py-1.5 flex-shrink-0"
       [disabled]="loading()"
+      [title]="loading() ? 'Recalculando o rebalanceamento…' : ''"
       (click)="load()"
     >
       <lucide-icon [name]="loading() ? 'loader-circle' : 'refresh-cw'" size="16"></lucide-icon>
@@ -39,7 +40,7 @@
     @if (reb.items.length > 0) {
       <div class="flex flex-col gap-3">
         @for (item of reb.items; track item.ticker) {
-          <div class="p-4 rounded-md bg-ground-1 border border-hairline">
+          <div class="card">
             <div class="flex justify-between items-start gap-4 mb-2">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap mb-1">
@@ -60,11 +61,7 @@
                 <div class="fi-caption text-ink-2 mb-1">Posição atual</div>
                 <div class="fi-label text-ink">R$ {{ item.current_value | number: '1.2-2' }}</div>
                 @if (item.pnl_pct != null) {
-                  <div
-                    class="fi-caption mt-1"
-                    [class.text-brand]="item.pnl_pct >= 0"
-                    [class.text-down]="item.pnl_pct < 0"
-                  >
+                  <div class="fi-caption text-ink-2 mt-1">
                     {{ item.pnl_pct >= 0 ? '+' : '' }}{{ item.pnl_pct | number: '1.1-1' }}%
                   </div>
                 }
@@ -72,9 +69,7 @@
             </div>
 
             @if (item.realocar_para; as target) {
-              <div
-                class="fi-caption flex items-center gap-2 mb-2 p-2 rounded-md bg-ground-2 border border-hairline"
-              >
+              <div class="fi-caption flex items-center gap-2 mb-2 text-ink-2">
                 <lucide-icon name="arrow-right" size="12" class="text-brand"></lucide-icon>
                 <span class="text-ink"
                   >Realocar para <strong>{{ target.ticker }}</strong> ({{

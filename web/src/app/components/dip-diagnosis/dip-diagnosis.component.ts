@@ -42,6 +42,7 @@ const DIMENSIONS: readonly { key: string; label: string; question: string }[] = 
   standalone: true,
   imports: [CommonModule, LucideAngularModule, MarginOfSafetyComponent, ProvenanceComponent],
   template: `
+    <!-- veredito: a classe da queda é a conclusão que este componente existe para dar -->
     <section>
       <p class="fi-eyebrow text-ink-3 m-0 mb-2">Diagnóstico da queda</p>
       <h3 class="fi-verdict text-ink m-0 flex items-start gap-2">

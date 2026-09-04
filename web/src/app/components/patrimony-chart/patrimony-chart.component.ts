@@ -30,7 +30,7 @@ const PAD_BOTTOM = 34;
     } @else if (snapshots().length === 1) {
       <div class="flex flex-col items-center justify-center gap-1 py-8 text-center">
         <div class="fi-caption text-ink-2">Único registro até o momento</div>
-        <div class="fi-verdict-sm text-ink">
+        <div class="fi-metric-sm text-ink">
           R$ {{ snapshots()[0].total_current | number: '1.0-0' }}
         </div>
         <div class="fi-caption text-ink-2">{{ formatDate(snapshots()[0].captured_at) }}</div>
@@ -150,7 +150,7 @@ const PAD_BOTTOM = 34;
 
         @if (hoverIndex() !== null) {
           <div
-            class="fi-caption pointer-events-none absolute z-10 rounded-lg border border-hairline bg-ground-1 px-3 py-2 shadow-popover"
+            class="fi-caption pointer-events-none absolute z-popover rounded-lg border border-hairline bg-ground-1 px-3 py-2 shadow-popover"
             [style.left.%]="tooltipLeftPct()"
             [style.top.%]="tooltipTopPct()"
             [style.transform]="tooltipTransform()"
@@ -174,7 +174,7 @@ const PAD_BOTTOM = 34;
           {{ showTable() ? 'Ocultar dados em tabela' : 'Ver dados em tabela' }}
         </button>
         @if (showTable()) {
-          <div class="mt-2 max-h-48 overflow-y-auto rounded-md border border-hairline">
+          <div class="mt-2 max-h-48 overflow-y-auto border-t border-hairline">
             <table class="fi-caption w-full">
               <thead>
                 <tr class="bg-ground-2 text-ink-2">

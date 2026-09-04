@@ -1,31 +1,28 @@
 <div class="mt-6">
-  <div class="flex items-start justify-between gap-4 mb-1">
-    <h2 class="fi-verdict m-0 text-ink">Lançamentos</h2>
-  </div>
-  <p class="fi-body text-ink-2 m-0 mb-5 max-w-prose">
-    Todo movimento da carteira, na ordem em que aconteceu. É daqui que sai o preço médio — e é o
-    preço médio que vai para a sua declaração.
-  </p>
+  <app-page-header
+    title="Lançamentos"
+    question="Todo movimento da carteira, na ordem em que aconteceu. É daqui que sai o preço médio — e é o preço médio que vai para a sua declaração."
+  />
 
   @if (errored()) {
-    <div class="fi-body p-4 rounded-md border border-hairline bg-ground-1 text-ink-2">
-      Não foi possível carregar os lançamentos agora. Tente novamente em instantes.
+    <div class="notice notice-adverse fi-body text-ink-2" role="alert">
+      Não conseguimos carregar os lançamentos agora. Tente novamente em instantes.
     </div>
   } @else if (transactions() === null) {
-    <div class="fi-body p-4 rounded-md border border-hairline bg-ground-1 text-ink-2">
-      Carregando lançamentos…
-    </div>
+    <app-skeleton shape="row" [count]="5" />
   } @else if (isEmpty()) {
-    <div class="p-5 rounded-md border border-hairline bg-ground-1">
-      <p class="fi-label m-0 text-ink">Nenhum lançamento ainda.</p>
-      <p class="fi-body m-0 mt-1 text-ink-2 max-w-prose">
-        Assim que você salvar uma posição ou registrar uma venda, o movimento aparece aqui.
-      </p>
-    </div>
+    <app-empty-state
+      icon="book-open"
+      title="Nenhum lançamento ainda"
+      reason="O livro-razão registra todo movimento da carteira, e ainda não houve nenhum."
+      nextStep="Assim que você salvar uma posição ou registrar uma venda, o movimento aparece aqui."
+      actionLabel="Adicionar uma posição"
+      actionRoute="/carteira/editar"
+    />
   } @else {
     @if (reconciliation(); as rec) {
       @if (!rec.in_sync) {
-        <div class="p-4 mb-5 rounded-md border border-hairline bg-ground-1">
+        <div class="notice notice-attention flex-col mb-5">
           <div class="fi-label flex items-center gap-2 text-attention">
             <lucide-icon name="triangle-alert" size="16"></lucide-icon>
             {{ rec.differences.length }}
@@ -52,7 +49,7 @@
 
     <div class="flex flex-col gap-4">
       @for (group of bySymbol(); track group.symbol) {
-        <div class="rounded-md border border-hairline bg-ground-1 overflow-hidden">
+        <div class="border-t border-hairline overflow-hidden">
           <div class="flex items-center justify-between gap-3 p-4 border-b border-hairline">
             <div>
               <div class="fi-label text-ink">{{ group.symbol }}</div>

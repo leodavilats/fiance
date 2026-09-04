@@ -2,11 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PassiveIncomeProjectionResponse, RecommendService } from '../../../core';
+import { PageHeaderComponent } from '../../page-header/page-header.component';
 
 @Component({
   selector: 'app-contribution-simulator',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule],
   templateUrl: './contribution-simulator.component.html',
 })
 export class ContributionSimulatorComponent {

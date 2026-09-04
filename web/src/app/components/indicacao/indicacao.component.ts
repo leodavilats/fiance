@@ -2,11 +2,12 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { ReferralService } from '../../core';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
   selector: 'app-indicacao',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [PageHeaderComponent, CommonModule, LucideAngularModule],
   templateUrl: './indicacao.component.html',
 })
 export class IndicacaoComponent implements OnInit {

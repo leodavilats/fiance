@@ -34,7 +34,7 @@ import { EntitlementService } from '../../core';
   template: `
     @if (visible()) {
       <section
-        class="p-5 rounded-md border border-hairline bg-ground-1"
+        class="card"
         role="region"
         [attr.aria-label]="'Recurso do plano Premium: ' + title()"
       >

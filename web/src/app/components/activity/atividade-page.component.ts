@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
+import { FollowedSuggestionsComponent } from '../market/followed-suggestions/followed-suggestions.component';
 import { ActivityFeedComponent } from './activity-feed.component';
 
 /**
@@ -12,7 +13,7 @@ import { ActivityFeedComponent } from './activity-feed.component';
 @Component({
   selector: 'app-atividade-page',
   standalone: true,
-  imports: [ActivityFeedComponent, LucideAngularModule, RouterLink],
+  imports: [ActivityFeedComponent, FollowedSuggestionsComponent, LucideAngularModule, RouterLink],
   template: `
     <div class="max-w-reading">
       <a
@@ -30,6 +31,15 @@ import { ActivityFeedComponent } from './activity-feed.component';
       </p>
 
       <app-activity-feed />
+
+      <!--
+        "Sugestões que você seguiu" vivia no fim de Estratégia, depois do plano
+        e sem título de seção na estrutura da página. É histórico do que já
+        aconteceu, e o lugar do histórico é aqui.
+      -->
+      <div class="mt-8 pt-6 border-t border-hairline">
+        <app-followed-suggestions />
+      </div>
     </div>
   `,
 })

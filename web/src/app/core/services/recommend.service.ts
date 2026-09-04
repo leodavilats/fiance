@@ -10,6 +10,7 @@ import {
   ClosedTradesResponse,
   CompareResponse,
   DashboardResponse,
+  DeletionPolicy,
   DipAnalysisResponse,
   DipScannerResponse,
   DividendPayload,
@@ -317,6 +318,27 @@ export class RecommendService {
     const params = new HttpParams().set('pattern', pattern);
     return this.http.post<{ message: string; deleted: number }>(`${this.base}/cache/clear`, null, {
       params,
+    });
+  }
+
+  /**
+   * O arquivo com tudo o que é seu, como o servidor o monta.
+   *
+   * Vem como `Blob` porque a resposta é um anexo com nome de arquivo, não um
+   * JSON para a tela ler. Exportação e exclusão nunca ficam atrás de plano.
+   */
+  exportAccount(): Observable<Blob> {
+    return this.http.get(`${this.base}/account/export`, { responseType: 'blob' });
+  }
+
+  deletionPolicy(): Observable<DeletionPolicy> {
+    return this.http.get<DeletionPolicy>(`${this.base}/account/deletion-policy`);
+  }
+
+  /** A frase de confirmação é exigida pelo servidor, não só pela tela. */
+  deleteAccount(confirmation: string): Observable<{ deleted: boolean; sla_days: number }> {
+    return this.http.delete<{ deleted: boolean; sla_days: number }>(`${this.base}/account`, {
+      body: { confirm: confirmation },
     });
   }
 

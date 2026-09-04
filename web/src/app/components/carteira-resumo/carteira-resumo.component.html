@@ -1,5 +1,7 @@
+<app-page-header title="Carteira" question="Como está meu patrimônio?" />
+
 @if (store.loadFailed()) {
-  <div class="p-4 rounded-md border border-hairline mb-6" role="alert">
+  <div class="notice notice-adverse flex-col mb-6" role="alert">
     <p class="fi-verdict-sm text-ink m-0 mb-1">Não conseguimos carregar toda a sua carteira</p>
     <p class="fi-body text-ink-2 m-0 mb-3">
       Parte dos dados pode estar faltando abaixo. Seus lançamentos estão salvos.
@@ -10,7 +12,7 @@
 
 @if (store.isEmpty()) {
   <section class="max-w-reading">
-    <h1 class="fi-verdict text-ink m-0 mb-2">Sua carteira ainda está vazia</h1>
+    <p class="fi-verdict text-ink m-0 mb-2">Sua carteira ainda está vazia</p>
     <p class="fi-body text-ink-2 m-0 mb-5">
       Adicione uma posição — ações, FIIs, BDRs, ETFs ou renda fixa — e o fiance passa a marcar tudo
       a mercado, calcular preço justo e avaliar a saúde da carteira.
@@ -23,10 +25,7 @@
       <p class="fi-eyebrow text-ink-3 m-0 mb-2">Valor da carteira</p>
       <p class="fi-money-lg text-ink m-0">R$ {{ store.valorAtual() | number: '1.2-2' }}</p>
 
-      <p
-        class="fi-body m-0 mt-2 flex items-center gap-1.5 flex-wrap"
-        [class]="resultDirectionClass()"
-      >
+      <p class="fi-body text-ink m-0 mt-2 flex items-center gap-1.5 flex-wrap">
         <lucide-icon
           [name]="store.rendimentoTotal() >= 0 ? 'arrow-up-right' : 'arrow-down-right'"
           size="15"
@@ -93,7 +92,11 @@
     @if (health(); as h) {
       <section class="pt-6 border-t border-hairline">
         <div class="flex items-start justify-between gap-6 flex-wrap mb-4">
-          <p class="fi-eyebrow text-ink-3 m-0">Saúde da carteira</p>
+          <div class="flex-1 min-w-[260px]">
+            <p class="fi-eyebrow text-ink-3 m-0 mb-2">Saúde da carteira</p>
+            <!-- veredito: a mesma frase que Hoje exibe, vinda da mesma função -->
+            <h2 class="fi-verdict text-ink m-0">{{ healthVerdict() }}</h2>
+          </div>
           <div class="w-full sm:w-[240px]">
             <app-score-ruler
               [score]="h.score"
@@ -166,27 +169,41 @@
       </section>
     }
 
-    <nav class="pt-6 border-t border-hairline" aria-label="Detalhes da carteira">
+    <nav class="pt-6 border-t border-hairline" aria-label="Detalhe da carteira">
       <p class="fi-eyebrow text-ink-3 m-0 mb-3">Ver em detalhe</p>
       <ul class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
         <li>
-          <a routerLink="/carteira/composicao" class="fi-body text-brand no-underline">
-            Onde meu dinheiro está concentrado →
-          </a>
-        </li>
-        <li>
-          <a routerLink="/carteira/desempenho" class="fi-body text-brand no-underline">
-            Estou rendendo mais que o CDI →
-          </a>
-        </li>
-        <li>
-          <a routerLink="/carteira/proventos" class="fi-body text-brand no-underline">
-            Quanto de provento entrou →
-          </a>
-        </li>
-        <li>
           <a routerLink="/carteira/posicoes" class="fi-body text-brand no-underline">
-            Todas as posições →
+            Todas as posições, linha a linha →
+          </a>
+        </li>
+        <li>
+          <a routerLink="/carteira/encerradas" class="fi-body text-brand no-underline">
+            O que eu já vendi →
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <nav class="pt-6 border-t border-hairline" aria-label="Registro e manutenção">
+      <p class="fi-eyebrow text-ink-3 m-0 mb-1">Registro e manutenção</p>
+      <p class="fi-caption text-ink-3 m-0 mb-3 max-w-reading">
+        Operações sobre o livro-razão, não leituras do patrimônio.
+      </p>
+      <ul class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <li>
+          <a routerLink="/carteira/transacoes" class="fi-body text-brand no-underline">
+            Lançamentos →
+          </a>
+        </li>
+        <li>
+          <a routerLink="/carteira/importar" class="fi-body text-brand no-underline">
+            Importar operações →
+          </a>
+        </li>
+        <li>
+          <a routerLink="/carteira/editar" class="fi-body text-brand no-underline">
+            Editar a carteira →
           </a>
         </li>
       </ul>

@@ -11,6 +11,7 @@ import {
   RiskProfile,
   UiHelperService,
 } from '../../core';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 const FREQUENCY_OPTIONS: { key: OpportunitiesFrequency; label: string }[] = [
   { key: 'off', label: 'Desativado' },
@@ -28,7 +29,7 @@ const RISK_PROFILE_OPTIONS: { key: RiskProfile; label: string }[] = [
 @Component({
   selector: 'app-preferencias',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './preferencias.component.html',
 })
 export class PreferenciasComponent implements OnInit {

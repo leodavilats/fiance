@@ -383,6 +383,13 @@ const List<FiScoreBand> fiGoalProgressBands = [
 
 const ({double min, double max}) fiGoalProgressDomain = (min: 0, max: 100);
 
+const List<FiScoreBand> fiDipScoreBands = [
+  FiScoreBand(id: 'opportunity', min: 68, max: 100, label: 'Oportunidade na baixa', state: FiState.favorable, emphasis: 'strong'),
+  FiScoreBand(id: 'wait', min: 42, max: 67, label: 'Aguardar', state: FiState.neutral, emphasis: 'muted'),
+  FiScoreBand(id: 'trap', min: 0, max: 41, label: 'Armadilha', state: FiState.adverse, emphasis: 'strong'),
+  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem leitura', state: FiState.indeterminate, emphasis: 'muted'),
+];
+
 FiScoreBand fiBandFor(
   double value,
   List<FiScoreBand> bands, [

@@ -1,4 +1,6 @@
 <div class="max-w-reading">
+  <app-page-header title="Estratégia" question="Qual deveria ser meu próximo movimento?" />
+
   @if (strategy(); as s) {
     <section>
       <p class="fi-eyebrow text-ink-3 m-0 mb-2">O plano de hoje</p>
@@ -7,9 +9,7 @@
       <p class="fi-body text-ink-2 m-0 mt-3">
         Perfil <strong class="text-ink">{{ s.profile.type }}</strong
         >, risco
-        <span class="tag" [class]="riskClass(s.profile.risk_tolerance)">{{
-          s.profile.risk_tolerance
-        }}</span>
+        <span class="tag" [class]="riskClass()">{{ s.profile.risk_tolerance }}</span>
         · patrimônio de
         <span class="fi-num text-ink">{{ s.total_capital | currency: 'BRL' }}</span> · caixa de
         <span class="fi-num text-ink">{{ s.cash_available | currency: 'BRL' }}</span> (<span
@@ -17,6 +17,18 @@
           >{{ cashPct(s) | number: '1.1-1' }}</span
         >%)
       </p>
+
+      <!--
+        O que a tela pode dizer neste modo é contexto do plano inteiro, não
+        nota de rodapé de uma lista: vinha depois do título das sugestões, e
+        quem lesse o travessão antes dele o leria como dado faltando.
+      -->
+      @if (s.affirmation && !s.affirmation.prescriptive) {
+        <p class="notice notice-indeterminate fi-caption text-ink-2 m-0 mt-4 max-w-reading">
+          {{ s.affirmation.disclaimer }} Por isso o quanto aportar em cada destino aparece como
+          &mdash;.
+        </p>
+      }
 
       <div class="flex flex-wrap items-center gap-3 mt-4">
         @if (s.cash_available >= 100) {
@@ -79,12 +91,6 @@
     @if (s.suggestions.length > 0) {
       <section class="mt-8 pt-6 border-t border-hairline">
         <h2 class="fi-title text-ink m-0 mb-1">Para onde levar o próximo aporte</h2>
-        @if (s.affirmation && !s.affirmation.prescriptive) {
-          <p class="notice notice-indeterminate fi-caption text-ink-2 m-0 mb-4">
-            {{ s.affirmation.disclaimer }} Por isso o quanto aportar em cada destino aparece como
-            &mdash;.
-          </p>
-        }
         <p class="fi-caption text-ink-3 m-0 mb-4">
           <span class="fi-num">{{ s.suggestions.length }}</span>
           {{ s.suggestions.length === 1 ? 'destino' : 'destinos' }}
@@ -249,7 +255,7 @@
                       r.label || r.verdict
                     }}</span>
                     @if (r.overweight_category) {
-                      <span class="tag tag-attention">Categoria acima da meta</span>
+                      <span class="tag tag-neutral">Categoria acima da meta</span>
                     }
                   </div>
                   <ul class="list-none m-0 mt-2 p-0 flex flex-col gap-1">
@@ -262,11 +268,7 @@
                   <p class="fi-eyebrow text-ink-3 m-0">Posição</p>
                   <p class="fi-metric-sm text-ink m-0">{{ r.current_value | currency: 'BRL' }}</p>
                   @if (r.pnl_pct != null) {
-                    <p
-                      class="fi-caption m-0 mt-0.5 fi-num"
-                      [class.text-up]="r.pnl_pct >= 0"
-                      [class.text-down]="r.pnl_pct < 0"
-                    >
+                    <p class="fi-caption text-ink-2 m-0 mt-0.5 fi-num">
                       {{ r.pnl_pct >= 0 ? '+' : '' }}{{ r.pnl_pct | number: '1.1-1' }}%
                     </p>
                   }
@@ -330,5 +332,4 @@
   <div class="mt-8 pt-6 border-t border-hairline">
     <app-rebalance-suggestions />
   </div>
-  <app-followed-suggestions />
 </div>

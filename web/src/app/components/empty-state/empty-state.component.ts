@@ -8,6 +8,7 @@ import { LucideAngularModule } from 'lucide-angular';
   standalone: true,
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
+    <!-- veredito: o título de um estado vazio diz o que o sistema concluiu sobre a situação -->
     <div class="py-8 px-1 max-w-reading">
       <h3 class="fi-verdict-sm text-ink m-0 mb-1 flex items-center gap-2">
         @if (icon()) {

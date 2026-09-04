@@ -13,15 +13,20 @@ import { SectionNavComponent, SectionNavItem } from './section-nav.component';
   `,
 })
 export class CarteiraComponent {
+  /**
+   * Quatro leituras do patrimônio, não nove destinos.
+   *
+   * Eram nove abas de mesmo peso, e cinco delas não respondiam a uma pergunta
+   * sobre o patrimônio — Posições é o detalhe da tabela, e Lançamentos,
+   * Encerradas, Importar e Editar são operações sobre o livro-razão. Todas
+   * mantêm a rota; passam a ser alcançadas pelo fim do Resumo, onde estão
+   * agrupadas pelo que são. Nove chips numa faixa rolável no celular também
+   * significavam três itens que ninguém via.
+   */
   readonly items: readonly SectionNavItem[] = [
     { path: '/carteira', label: 'Resumo', icon: 'wallet' },
     { path: '/carteira/composicao', label: 'Composição', icon: 'chart-pie' },
     { path: '/carteira/desempenho', label: 'Desempenho', icon: 'chart-line' },
     { path: '/carteira/proventos', label: 'Proventos', icon: 'coins' },
-    { path: '/carteira/posicoes', label: 'Posições', icon: 'table' },
-    { path: '/carteira/transacoes', label: 'Lançamentos', icon: 'book-open' },
-    { path: '/carteira/encerradas', label: 'Encerradas', icon: 'receipt' },
-    { path: '/carteira/importar', label: 'Importar', icon: 'upload' },
-    { path: '/carteira/editar', label: 'Editar', icon: 'pencil' },
   ];
 }

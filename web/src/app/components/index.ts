@@ -21,6 +21,7 @@ export { InsightComponent } from './insight/insight.component';
 export { LogoComponent } from './logo/logo.component';
 export { MetasComponent } from './metas/metas.component';
 export { PatrimonyChartComponent } from './patrimony-chart/patrimony-chart.component';
+export { PageHeaderComponent } from './page-header/page-header.component';
 export { PreferenciasComponent } from './preferencias/preferencias.component';
 export { ProfileModalComponent } from './profile-modal/profile-modal.component';
 export { QuickInvestComponent } from './quick-invest/quick-invest.component';

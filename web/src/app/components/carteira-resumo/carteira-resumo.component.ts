@@ -7,12 +7,15 @@ import {
   PortfolioHealth,
   RecommendService,
   UiHelperService,
+  MIN_POSICOES_PARA_SAUDE,
   allocationScalePct,
   fiHealthBands,
+  vereditoDeSaude,
 } from '../../core';
 import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { ScoreRulerComponent } from '../score-ruler/score-ruler.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 interface HealthDimension {
   readonly label: string;
@@ -20,12 +23,11 @@ interface HealthDimension {
   readonly explains: string;
 }
 
-const MIN_POSITIONS_FOR_HEALTH = 4;
-
 @Component({
   selector: 'app-carteira-resumo',
   standalone: true,
   imports: [
+    PageHeaderComponent,
     AllocationGapComponent,
     CommonModule,
     EmptyStateComponent,
@@ -52,9 +54,19 @@ export class CarteiraResumoComponent implements OnInit {
     });
   }
 
-  readonly healthReliable = computed(
-    () => this.store.negociadosCount() >= MIN_POSITIONS_FOR_HEALTH
-  );
+  readonly healthReliable = computed(() => this.store.negociadosCount() >= MIN_POSICOES_PARA_SAUDE);
+
+  /**
+   * A mesma frase de Hoje, do mesmo lugar.
+   *
+   * A Carteira mostrava a pontuação de saúde como eyebrow e régua, sem
+   * concluir nada — o único destino do produto que exibia um julgamento sem
+   * dizê-lo em palavras.
+   */
+  readonly healthVerdict = computed(() => {
+    const h = this.health();
+    return h ? vereditoDeSaude(h.score, this.store.negociadosCount()) : '';
+  });
 
   readonly healthDimensions = computed<HealthDimension[]>(() => {
     const h = this.health();
@@ -81,13 +93,6 @@ export class CarteiraResumoComponent implements OnInit {
         explains: 'A fatia da carteira em ativos com sinal de venda.',
       },
     ];
-  });
-
-  readonly resultDirectionClass = computed(() => {
-    const value = this.store.rendimentoTotal();
-    if (value > 0) return 'text-up';
-    if (value < 0) return 'text-down';
-    return 'text-ink-2';
   });
 
   readonly absResult = computed(() => Math.abs(this.store.rendimentoTotal()));

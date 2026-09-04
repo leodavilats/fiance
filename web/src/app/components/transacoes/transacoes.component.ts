@@ -8,6 +8,9 @@ import {
   Transaction,
   TransactionKind,
 } from '../../core';
+import { EmptyStateComponent } from '../empty-state/empty-state.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 /** Rótulo de cada tipo de lançamento, na linguagem da nota de corretagem. */
 const KIND_LABEL: Record<TransactionKind, string> = {
@@ -24,7 +27,13 @@ const KIND_LABEL: Record<TransactionKind, string> = {
 @Component({
   selector: 'app-transacoes',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [
+    PageHeaderComponent,
+    CommonModule,
+    EmptyStateComponent,
+    LucideAngularModule,
+    SkeletonComponent,
+  ],
   templateUrl: './transacoes.component.html',
 })
 export class TransacoesComponent implements OnInit {
@@ -73,8 +82,10 @@ export class TransacoesComponent implements OnInit {
 
   /** Compra e venda são direção — croma baixo. Nada aqui é veredito. */
   kindDirectionClass(kind: TransactionKind): string {
-    if (kind === 'buy' || kind === 'transfer_in' || kind === 'bonus') return 'text-up';
-    if (kind === 'sell' || kind === 'transfer_out') return 'text-down';
+    // Entrada e saída não são "subiu" e "caiu": o tipo do lançamento é um fato,
+    // não a aritmética de um número. A seta e o rótulo já dizem a direção.
+    if (kind === 'buy' || kind === 'transfer_in' || kind === 'bonus') return 'text-ink';
+    if (kind === 'sell' || kind === 'transfer_out') return 'text-ink-2';
     return 'text-ink-2';
   }
 

@@ -10,6 +10,7 @@ import {
   FiState,
   RecommendService,
   fiDipDiagnosis,
+  fiDipScoreBands,
   stateTextClass,
 } from '../../../core';
 import { EmptyStateComponent } from '../../empty-state/empty-state.component';
@@ -45,6 +46,9 @@ export class DipScannerComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dip = inject(DipAnalysisService);
+
+  /** Limiares de dip_analysis.py (68/42), não os do score. */
+  readonly dipBands = fiDipScoreBands;
 
   readonly dipResults = signal<{ items: DipScanItem[] } | null>(null);
   readonly scanning = signal(false);

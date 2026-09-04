@@ -19,6 +19,7 @@ import {
   UiHelperService,
 } from '../../core';
 import { GoalProgressComponent } from '../goal-progress/goal-progress.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 interface GoalForm {
   category: FormControl<AllocationCategory>;
@@ -37,7 +38,13 @@ const DEFAULT_SECTORS = ['Financeiro', 'Energia', 'Varejo', 'Tecnologia', 'Saúd
 @Component({
   selector: 'app-metas',
   standalone: true,
-  imports: [CommonModule, GoalProgressComponent, LucideAngularModule, ReactiveFormsModule],
+  imports: [
+    PageHeaderComponent,
+    CommonModule,
+    GoalProgressComponent,
+    LucideAngularModule,
+    ReactiveFormsModule,
+  ],
   templateUrl: './metas.component.html',
 })
 export class MetasComponent implements OnInit {

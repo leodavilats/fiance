@@ -1,5 +1,8 @@
+<app-page-header title="Hoje" question="O que mudou e o que merece sua atenção?" />
+
+<!-- veredito: a saúde da carteira e o maior desvio de meta são conclusões do sistema -->
 @if (errored() && !data()) {
-  <div class="p-5 rounded-md border border-hairline">
+  <div class="notice notice-adverse flex-col" role="alert">
     <h2 class="fi-verdict text-ink m-0 mb-1">Não conseguimos carregar sua carteira</h2>
     <p class="fi-body text-ink-2 m-0 mb-4">
       Pode ser a conexão ou uma instabilidade na fonte de cotações. Seus dados estão salvos.
@@ -9,21 +12,20 @@
 }
 
 @if (isInitialLoad() && loading.loading()) {
-  <div class="animate-pulse">
-    <div class="h-3 w-24 rounded bg-ground-2 mb-3"></div>
-    <div class="h-12 w-72 max-w-full rounded bg-ground-2 mb-3"></div>
-    <div class="h-4 w-48 rounded bg-ground-2 mb-8"></div>
-    <div class="h-6 w-56 rounded bg-ground-2 mb-4"></div>
-    @for (i of [1, 2, 3, 4]; track i) {
-      <div class="h-5 w-full rounded bg-ground-2 mb-3"></div>
-    }
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <app-skeleton shape="caption" />
+      <app-skeleton shape="money-xl" />
+    </div>
+    <app-skeleton shape="verdict" />
+    <app-skeleton shape="row" [count]="4" />
   </div>
 }
 
 @if (data(); as d) {
   @if (isEmptyPortfolio()) {
     <section class="max-w-reading">
-      <h1 class="fi-verdict text-ink m-0 mb-2">Sua carteira ainda está vazia</h1>
+      <p class="fi-verdict text-ink m-0 mb-2">Sua carteira ainda está vazia</p>
       <p class="fi-body text-ink-2 m-0 mb-5">
         Adicione uma posição — uma basta — e o fiance começa a calcular preço justo, score e saúde
         da carteira em cima dela.
@@ -48,10 +50,7 @@
               R$ {{ d.summary.total_current | number: '1.2-2' }}
             </p>
 
-            <p
-              class="fi-body m-0 mt-2 flex items-center gap-1.5 flex-wrap"
-              [class]="pnlDirectionClass()"
-            >
+            <p class="fi-body text-ink m-0 mt-2 flex items-center gap-1.5 flex-wrap">
               <lucide-icon
                 [name]="d.summary.total_pnl >= 0 ? 'arrow-up-right' : 'arrow-down-right'"
                 size="15"
@@ -149,7 +148,7 @@
           @if (biggestGap(); as gap) {
             <section class="pt-6 border-t border-hairline">
               <p class="fi-eyebrow text-ink-3 m-0 mb-3">Próxima ação</p>
-              <div class="p-5 rounded-md border border-hairline">
+              <div class="card">
                 <h3 class="fi-verdict-sm text-ink m-0 mb-1">
                   {{ gap.label }} está {{ gap.below ? 'abaixo' : 'acima' }} da sua meta
                 </h3>
@@ -203,6 +202,7 @@
                       <div class="flex-1 min-w-0 max-w-[160px]">
                         <app-score-ruler
                           [score]="opp.score"
+                          [bands]="scoreBands"
                           [dataCompleteness]="opp.data_completeness"
                           [subject]="'Score de ' + opp.ticker"
                           size="list"

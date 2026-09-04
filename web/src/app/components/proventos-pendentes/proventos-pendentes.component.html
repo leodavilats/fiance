@@ -1,8 +1,8 @@
 @if (loading()) {
   <p class="fi-body text-ink-2 m-0 mt-6">Conferindo o calendário de proventos…</p>
 } @else if (hasPending()) {
-  <div class="mt-6 p-4 sm:p-5 rounded-md border border-hairline bg-ground-1">
-    <h3 class="fi-verdict-sm m-0 mb-1 text-ink">
+  <div class="fi-block mt-6">
+    <h3 class="fi-title m-0 mb-1 text-ink">
       {{ pending().length }}
       {{ pending().length === 1 ? 'provento a conferir' : 'proventos a conferir' }}
     </h3>
@@ -10,7 +10,7 @@
 
     <ul class="m-0 p-0 list-none flex flex-col gap-2">
       @for (item of pending(); track keyOf(item)) {
-        <li class="rounded-md border border-hairline bg-ground-2 p-3">
+        <li class="card">
           <label class="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -54,6 +54,7 @@
         type="button"
         class="btn-primary"
         [disabled]="selectedCount() === 0 || confirming()"
+        [title]="selectedCount() === 0 ? 'Marque ao menos um provento para lançar' : ''"
         (click)="confirm()"
       >
         <lucide-icon name="check" size="16"></lucide-icon>

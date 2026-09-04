@@ -87,9 +87,22 @@ export class DialogDirective implements OnDestroy {
 
   ngOnDestroy(): void {
     if (!this.isBrowser) return;
-    // Só devolve se o foco ainda estiver dentro do diálogo — senão a pessoa já
-    // clicou em outro lugar e roubar o foco de volta seria pior.
-    if (this.host.nativeElement.contains(this.doc.activeElement)) {
+
+    /*
+      A condição precisa cobrir o caso normal, que é o mais comum e era
+      justamente o que falhava: quando o Angular remove o painel, o nó já saiu
+      da árvore antes de `ngOnDestroy` rodar, e o foco cai no `<body>`. O teste
+      `contains(activeElement)` dava falso aí, então fechar o drawer com Esc
+      deixava o teclado no começo da página — exatamente o que a diretiva
+      existe para evitar, e o que o comentário acima prometia resolver.
+
+      Se o foco está num elemento concreto fora do diálogo, a pessoa clicou em
+      outro lugar e roubá-lo de volta seria pior.
+    */
+    const foco = this.doc.activeElement;
+    const perdido = !foco || foco === this.doc.body;
+
+    if (perdido || this.host.nativeElement.contains(foco)) {
       this.anterior?.focus?.();
     }
   }

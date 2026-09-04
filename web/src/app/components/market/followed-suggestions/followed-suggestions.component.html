@@ -1,7 +1,7 @@
 @if (data(); as d) {
   <div class="fi-block">
     <div class="flex flex-wrap items-start justify-between gap-3 mb-1">
-      <h2 class="fi-verdict m-0 text-ink">Sugestões que você seguiu</h2>
+      <h2 class="fi-title m-0 text-ink">Sugestões que você seguiu</h2>
       <button type="button" class="btn-secondary" (click)="showForm.set(!showForm())">
         <lucide-icon [name]="showForm() ? 'x' : 'plus'" size="14"></lucide-icon>
         {{ showForm() ? 'Cancelar' : 'Registrar execução' }}
@@ -99,11 +99,7 @@
           </div>
           <div>
             <div class="fi-eyebrow text-ink-2">Resultado</div>
-            <div
-              class="fi-label"
-              [class.text-up]="d.total_pnl >= 0"
-              [class.text-down]="d.total_pnl < 0"
-            >
+            <div class="fi-label text-ink">
               {{ d.total_pnl >= 0 ? '+' : '' }}R$ {{ d.total_pnl | number: '1.2-2' }} ({{
                 d.total_pnl_pct | number: '1.2-2'
               }}%)
@@ -123,11 +119,7 @@
                   <span class="fi-caption text-ink-2">({{ group.count }})</span>
                 </span>
                 <span class="flex items-center gap-3 shrink-0">
-                  <span
-                    class="fi-label"
-                    [class.text-up]="group.pnl_pct >= 0"
-                    [class.text-down]="group.pnl_pct < 0"
-                  >
+                  <span class="fi-label text-ink">
                     {{ group.pnl_pct >= 0 ? '+' : '' }}{{ group.pnl_pct | number: '1.1-1' }}%
                   </span>
                   @if (group.ibov_pct != null) {
@@ -188,7 +180,10 @@
                 </td>
                 <td class="text-right py-2 px-2">
                   @if (item.ibov_pct_since != null) {
-                    <span [class.text-up]="item.beat_ibov" [class.text-ink-2]="!item.beat_ibov">
+                    <span
+                      [class.text-favorable]="item.beat_ibov"
+                      [class.text-ink-2]="!item.beat_ibov"
+                    >
                       {{ item.ibov_pct_since >= 0 ? '+' : ''
                       }}{{ item.ibov_pct_since | number: '1.1-1' }}%
                     </span>

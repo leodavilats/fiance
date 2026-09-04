@@ -1,6 +1,8 @@
+<app-page-header title="Preferências" question="Como o fiance calcula, e o que ele te avisa." />
+
 <form [formGroup]="form" class="flex flex-col gap-8">
   <div class="fi-block">
-    <h2 class="fi-verdict m-0 mb-4 text-ink">Como o fiance te avalia</h2>
+    <h2 class="fi-title m-0 mb-4 text-ink">Como o fiance te avalia</h2>
     <label class="field-label block mb-2">
       Meta de dividend yield (preço-teto de Bazin) — por tipo de ativo
     </label>
@@ -56,7 +58,7 @@
     </p>
   </div>
   <div class="fi-block">
-    <h2 class="fi-verdict m-0 mb-2 text-ink">Notificações e recomendação</h2>
+    <h2 class="fi-title m-0 mb-2 text-ink">Notificações e recomendação</h2>
 
     @if (!pushEnabled()) {
       <div class="p-3 rounded-md bg-attention/10 border border-attention/40 mb-4 flex gap-3">
@@ -70,7 +72,7 @@
         </div>
       </div>
     } @else {
-      <div class="p-3 rounded-md bg-ground-2 border border-hairline mb-4 flex gap-3">
+      <div class="notice notice-brand mb-4">
         <lucide-icon name="smartphone" size="18" class="text-brand mt-0.5"></lucide-icon>
         <div class="fi-body text-ink-2">
           {{ registeredDevices() }}
@@ -83,9 +85,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <label class="field-label block mb-1.5">Alertas de preço</label>
-        <label
-          class="fi-body flex items-center gap-2 px-3 py-2 rounded-md bg-ground border border-hairline text-ink cursor-pointer"
-        >
+        <label class="fi-body flex items-center gap-2 py-2 text-ink cursor-pointer">
           <input type="checkbox" formControlName="notify_price_alerts" class="accent-brand" />
           Notificar (imediato)
         </label>

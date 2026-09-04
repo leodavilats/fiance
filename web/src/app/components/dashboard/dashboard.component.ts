@@ -11,12 +11,17 @@ import {
   Opportunity,
   RecommendService,
   UiHelperService,
+  MIN_POSICOES_PARA_SAUDE,
   WhatsNewResponse,
-  fiBandFor,
   fiHealthBands,
+  fiScoreBands,
+  razoesDaSaude,
+  vereditoDeSaude,
 } from '../../core';
 import { InsightComponent } from '../insight/insight.component';
 import { ScoreRulerComponent } from '../score-ruler/score-ruler.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 interface FeedItem {
   readonly title: string;
@@ -36,7 +41,6 @@ interface AllocationGap {
   readonly below: boolean;
 }
 
-const MIN_POSITIONS_FOR_HEALTH = 4;
 const MIN_GAP_PP = 2;
 const FEED_LIMIT = 6;
 const TOP_BUYS_LIMIT = 3;
@@ -44,7 +48,15 @@ const TOP_BUYS_LIMIT = 3;
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink, ScoreRulerComponent, InsightComponent],
+  imports: [
+    PageHeaderComponent,
+    CommonModule,
+    LucideAngularModule,
+    RouterLink,
+    ScoreRulerComponent,
+    SkeletonComponent,
+    InsightComponent,
+  ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
@@ -59,6 +71,7 @@ export class DashboardComponent implements OnInit {
   readonly errored = signal(false);
 
   readonly healthBands = fiHealthBands;
+  readonly scoreBands = fiScoreBands;
 
   ngOnInit(): void {
     this.loadDashboard();
@@ -91,70 +104,26 @@ export class DashboardComponent implements OnInit {
 
   readonly absPnl = computed(() => Math.abs(this.data()?.summary.total_pnl ?? 0));
 
-  pnlDirectionClass(): string {
-    const pnl = this.data()?.summary.total_pnl ?? 0;
-    if (pnl > 0) return 'text-up';
-    if (pnl < 0) return 'text-down';
-    return 'text-ink-2';
-  }
+  private readonly posicoes = computed(() => this.data()?.summary.positions_count ?? 0);
 
-  readonly healthReliability = computed(() => {
-    const count = this.data()?.summary.positions_count ?? 0;
-    return count >= MIN_POSITIONS_FOR_HEALTH ? 1 : 0;
-  });
+  readonly healthReliability = computed(() => (this.posicoes() >= MIN_POSICOES_PARA_SAUDE ? 1 : 0));
 
   readonly healthVerdict = computed(() => {
     const h = this.data()?.health;
-    if (!h) return '';
-    if (this.healthReliability() === 0) {
-      return 'Sua carteira ainda é pequena para uma leitura de risco';
-    }
-    const band = fiBandFor(h.score, fiHealthBands);
-    switch (band.id) {
-      case 'healthy':
-        return 'Carteira saudável';
-      case 'ok':
-        return 'Carteira em ordem, com pontos de atenção';
-      case 'watch':
-        return 'Sua carteira merece atenção';
-      default:
-        return 'Sua carteira precisa de ajustes';
-    }
+    return h ? vereditoDeSaude(h.score, this.posicoes()) : '';
   });
 
   readonly healthReasons = computed<string[]>(() => {
-    const d = this.data();
-    const h = d?.health;
+    const h = this.data()?.health;
     if (!h) return [];
-
-    if (this.healthReliability() === 0) {
-      return [
-        `Com ${d!.summary.positions_count} ${d!.summary.positions_count === 1 ? 'ativo' : 'ativos'}, concentração e diversificação ainda não dizem muito.`,
-      ];
-    }
-
-    const reasons: string[] = [];
-
-    if (h.top_position_ticker && h.top_position_pct != null && h.top_position_pct >= 15) {
-      reasons.push(
-        `${h.top_position_ticker} concentra ${h.top_position_pct.toFixed(1)}% da carteira.`
-      );
-    }
-    if (h.top_sector && h.top_sector_pct != null && h.top_sector_pct >= 40) {
-      reasons.push(
-        `${this.ui.translateSector(h.top_sector)} responde por ${h.top_sector_pct.toFixed(1)}% das ações e BDRs.`
-      );
-    }
-
-    for (const warning of h.warnings ?? []) {
-      if (reasons.length >= 3) break;
-      if (!reasons.includes(warning)) reasons.push(warning);
-    }
-
-    if (reasons.length === 0) {
-      reasons.push('Nenhum ponto de concentração ou risco relevante identificado.');
-    }
-    return reasons.slice(0, 3);
+    return razoesDaSaude({
+      posicoes: this.posicoes(),
+      topPositionTicker: h.top_position_ticker ?? null,
+      topPositionPct: h.top_position_pct ?? null,
+      topSectorLabel: h.top_sector ? this.ui.translateSector(h.top_sector) : null,
+      topSectorPct: h.top_sector_pct ?? null,
+      warnings: h.warnings ?? [],
+    });
   });
 
   readonly feed = computed<FeedItem[]>(() => {

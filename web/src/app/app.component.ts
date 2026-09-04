@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { Component, PLATFORM_ID, inject, signal } from '@angular/core';
 import {
   NavigationCancel,
   NavigationEnd,
@@ -253,6 +253,8 @@ export class AppComponent {
   readonly destinations = DESTINATIONS;
 
   private readonly router = inject(Router);
+  private readonly doc = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly loading = inject(LoadingService);
 
   logout(): void {
@@ -302,8 +304,35 @@ export class AppComponent {
           this._navShown = false;
           this.loading.hide();
         }
-        if (e instanceof NavigationEnd) this.anunciarRota(e.urlAfterRedirects);
+        if (e instanceof NavigationEnd) {
+          this.anunciarRota(e.urlAfterRedirects);
+          this.moverFocoParaOTitulo();
+        }
       }
+    });
+  }
+
+  /**
+   * O foco vai para o título da tela que acabou de abrir.
+   *
+   * Em navegação de SPA o documento não recarrega: o foco fica onde estava —
+   * tipicamente no link da barra — e quem navega por teclado precisa
+   * atravessar a navegação inteira de novo a cada tela. A região `aria-live`
+   * já anunciava o destino; o foco não acompanhava.
+   *
+   * O `<h1>` tem `tabindex="-1"` para poder receber foco sem entrar na ordem
+   * de tabulação, que é o que se quer: ele é o ponto de partida, não uma
+   * parada.
+   */
+  private moverFocoParaOTitulo(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    // Depois da renderização da rota, não antes dela.
+    queueMicrotask(() => {
+      setTimeout(() => {
+        const titulo = this.doc.querySelector<HTMLElement>('main h1');
+        titulo?.focus({ preventScroll: true });
+      }, 0);
     });
   }
 

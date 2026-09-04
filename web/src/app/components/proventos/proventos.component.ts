@@ -4,11 +4,18 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { CarteiraStore, DividendPayload, RecommendService, SnackbarService } from '../../core';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
   selector: 'app-proventos',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, ProventosPendentesComponent],
+  imports: [
+    PageHeaderComponent,
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    ProventosPendentesComponent,
+  ],
   templateUrl: './proventos.component.html',
 })
 export class ProventosComponent implements OnInit {

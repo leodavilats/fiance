@@ -105,26 +105,60 @@ describe('CarteiraStore', () => {
     expect(store.selectedTickers()).toHaveLength(MAX_COMPARE - 1);
   });
 
-  it('a alocação por tipo inclui renda fixa como uma categoria de verdade', () => {
-    store.evaluation.set(evaluation([position({ ticker: 'PETR4', current_value: 750 })]));
-    store.fixedIncome.set({
-      items: [],
-      total_investido: 250,
-      total_atual: 250,
-    } as unknown as FixedIncomeListResponse);
+  /**
+   * A alocação por categoria não é mais calculada aqui.
+   *
+   * O cliente somava as posições e dividia pelo total enquanto o backend fazia
+   * a mesma conta para /hoje e /estrategia — duas verdades sobre o mesmo
+   * número, e nada garantia que batessem. O store agora só ordena o que o
+   * servidor apurou, e é isso que estes testes cobrem.
+   */
+  it('a alocação por tipo é a que o backend apurou, ordenada por valor', () => {
+    store.alocacaoOficial.set([
+      {
+        category: 'renda_fixa',
+        current_value: 250,
+        current_pct: 25,
+        target_pct: null,
+        delta_pct: null,
+        delta_value: null,
+      },
+      {
+        category: 'acoes_br',
+        current_value: 750,
+        current_pct: 75,
+        target_pct: null,
+        delta_pct: null,
+        delta_value: null,
+      },
+    ]);
 
     const porTipo = store.alocacaoPorTipo();
-    const rf = porTipo.find(t => t.tipo === 'renda_fixa');
 
-    expect(rf?.pct).toBeCloseTo(25, 6);
+    expect(porTipo.map(t => t.tipo)).toEqual(['acoes_br', 'renda_fixa']);
+    expect(porTipo.find(t => t.tipo === 'renda_fixa')?.pct).toBeCloseTo(25, 6);
     expect(porTipo.reduce((s, t) => s + t.pct, 0)).toBeCloseTo(100, 6);
   });
 
-  it('a meta da categoria aparece ao lado do percentual atual', () => {
-    store.evaluation.set(evaluation([position({ ticker: 'PETR4' })]));
-    store.goals.set([{ category: 'acoes_br', target_pct: 60 } as never]);
+  it('a meta da categoria vem junto da alocação, não de uma segunda conta', () => {
+    store.alocacaoOficial.set([
+      {
+        category: 'acoes_br',
+        current_value: 1000,
+        current_pct: 100,
+        target_pct: 60,
+        delta_pct: 40,
+        delta_value: 400,
+      },
+    ]);
 
     expect(store.alocacaoPorTipo()[0].targetPct).toBe(60);
+  });
+
+  it('sem resposta do servidor a alocação fica vazia, não estimada', () => {
+    store.evaluation.set(evaluation([position({ ticker: 'PETR4', current_value: 750 })]));
+
+    expect(store.alocacaoPorTipo()).toEqual([]);
   });
 
   it('a composição por setor agrupa a cauda em Outros sem perder valor', () => {

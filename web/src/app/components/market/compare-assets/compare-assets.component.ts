@@ -19,13 +19,22 @@ import {
 } from './compare-metrics';
 import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { MarginOfSafetyComponent } from '../../margin-of-safety/margin-of-safety.component';
+import { PageHeaderComponent } from '../../page-header/page-header.component';
+import { SkeletonComponent } from '../../skeleton/skeleton.component';
 
 const MAX_TICKERS = 4;
 
 @Component({
   selector: 'app-compare-assets',
   standalone: true,
-  imports: [CommonModule, RouterLink, EmptyStateComponent, MarginOfSafetyComponent],
+  imports: [
+    PageHeaderComponent,
+    CommonModule,
+    RouterLink,
+    EmptyStateComponent,
+    MarginOfSafetyComponent,
+    SkeletonComponent,
+  ],
   templateUrl: './compare-assets.component.html',
 })
 export class CompareAssetsComponent implements OnInit, OnDestroy {

@@ -1,9 +1,11 @@
+<app-page-header title="Proventos" question="Quanto de provento entrou, e quanto o app estimava?" />
+
 <app-proventos-pendentes />
 
 @if (dividends(); as dv) {
   <div class="fi-block">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-      <h2 class="fi-verdict m-0 text-ink">Proventos recebidos</h2>
+      <h2 class="fi-title m-0 text-ink">Proventos recebidos</h2>
       <button type="button" class="btn-quiet" (click)="showDividends.set(!showDividends())">
         <lucide-icon
           [name]="showDividends() ? 'chevron-up' : 'chevron-down'"
@@ -17,33 +19,41 @@
       — aqui o número é o real, e serve para conferir a estimativa.
     </p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="card">
-        <div class="fi-eyebrow text-ink-2 mb-1">Este mês</div>
-        <div class="fi-verdict text-ink">R$ {{ dv.received_this_month | number: '1.2-2' }}</div>
+    <!--
+      Uma linha de cifras sob um fio, não três caixas centradas.
+      Três números com o mesmo peso dentro de três molduras iguais é a forma
+      mais reconhecível de um relatório virar painel de BI — e a moldura não
+      acrescenta nada, porque nenhum dos três é um objeto com que se age.
+    -->
+    <dl class="flex flex-wrap gap-x-12 gap-y-5 m-0 pt-4 border-t border-hairline">
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Este mês</dt>
+        <dd class="fi-metric text-ink m-0 mt-1">
+          R$ {{ dv.received_this_month | number: '1.2-2' }}
+        </dd>
       </div>
-      <div class="card">
-        <div class="fi-eyebrow text-ink-2 mb-1">Últimos 12 meses</div>
-        <div class="fi-verdict text-ink">R$ {{ dv.received_last_12m | number: '1.2-2' }}</div>
-        <div class="fi-caption text-ink-2 mt-1">
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Últimos 12 meses</dt>
+        <dd class="fi-metric text-ink m-0 mt-1">R$ {{ dv.received_last_12m | number: '1.2-2' }}</dd>
+        <dd class="fi-caption text-ink-3 m-0">
           média de R$ {{ dv.monthly_average_12m | number: '1.2-2' }}/mês
-        </div>
+        </dd>
       </div>
-      <div class="card">
-        <div class="fi-eyebrow text-ink-2 mb-1">Estimativa do app</div>
-        <div class="fi-verdict text-ink">
+      <div>
+        <dt class="fi-eyebrow text-ink-3">Estimativa do app</dt>
+        <dd class="fi-metric text-ink m-0 mt-1">
           {{
             dv.estimated_monthly != null ? 'R$ ' + (dv.estimated_monthly | number: '1.2-2') : '—'
           }}
-        </div>
+        </dd>
         @if (estimateAccuracyLabel()) {
-          <div class="fi-caption text-ink-2 mt-1">{{ estimateAccuracyLabel() }}</div>
+          <dd class="fi-caption text-ink-3 m-0">{{ estimateAccuracyLabel() }}</dd>
         }
       </div>
-    </div>
+    </dl>
 
     @if (showDividends()) {
-      <div class="mt-5 p-4 rounded-md bg-ground-2 border border-hairline">
+      <div class="fi-block mt-5">
         <div class="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_1.2fr_auto] gap-3 sm:items-end">
           <label class="flex flex-col gap-1">
             <span class="fi-label text-ink-2">Ativo</span>

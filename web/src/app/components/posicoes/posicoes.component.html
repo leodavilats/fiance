@@ -1,3 +1,5 @@
+<app-page-header title="Posições" question="O que exatamente eu tenho, linha a linha?" />
+
 @if (vencimentosProximos().length > 0) {
   <section class="mb-6">
     <div class="flex items-start gap-3 p-4 rounded-md border border-attention/40 bg-attention/10">
@@ -161,7 +163,7 @@
     <p class="fi-caption text-ink-3 m-0 mb-4">
       Ações, FIIs, BDRs e ETFs com cotação em bolsa. A leitura compara o preço atual com o preço
       justo estimado.
-      <app-help-tooltip [text]="ui.glossary['ms']"></app-help-tooltip>
+      <app-help-tooltip term="margem de segurança" [text]="ui.glossary['ms']" />
     </p>
 
     <div class="flex flex-wrap items-center gap-2 mb-3">
@@ -240,6 +242,7 @@
         <caption class="sr-only">
           Posições negociadas, com preço médio, cotação atual e leitura do sistema
         </caption>
+        <!-- camada-local: o cabecalho grudado precisa cobrir so as celulas da propria tabela -->
         <thead>
           <tr class="border-b border-hairline">
             <th class="py-2 px-2 w-8"><span class="sr-only">Selecionar para comparar</span></th>
@@ -456,6 +459,7 @@
           class="btn-secondary"
           (click)="closeSellModal()"
           [disabled]="sellingInProgress()"
+          [title]="sellingInProgress() ? 'A venda já está sendo registrada' : ''"
         >
           Cancelar
         </button>

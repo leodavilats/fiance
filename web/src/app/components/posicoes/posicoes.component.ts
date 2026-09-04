@@ -20,11 +20,13 @@ import {
   parseColumns,
 } from '../../core';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
   selector: 'app-posicoes',
   standalone: true,
   imports: [
+    PageHeaderComponent,
     CommonModule,
     DialogDirective,
     FormsModule,

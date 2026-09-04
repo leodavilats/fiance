@@ -1,8 +1,8 @@
 <div class="fi-block">
-  <h2 class="fi-verdict m-0 mb-1 text-ink">Alertas de preço</h2>
-  <p class="fi-caption text-ink-2 mb-4">
-    Ao abrir o sistema, um modal aparece automaticamente se algum ativo atingir a condicao definida.
-  </p>
+  <app-page-header
+    title="Alertas de preço"
+    question="Ao abrir o app, um aviso aparece se algum ativo atingir a condição que você definiu."
+  />
 
   <form [formGroup]="alertForm" (ngSubmit)="addAlert()" class="flex flex-col gap-3 mb-4">
     <div class="relative flex-1 min-w-[120px]">
@@ -19,7 +19,7 @@
       />
       @if (alertTickerSuggestionsOpen() && alertTickerSuggestions().length > 0) {
         <ul
-          class="fi-body absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto"
+          class="fi-body absolute top-full left-0 right-0 mt-1 z-popover rounded-lg border border-hairline bg-ground-1 shadow-popover max-h-56 overflow-y-auto"
         >
           @for (s of alertTickerSuggestions(); track s.ticker) {
             <li>
@@ -54,7 +54,12 @@
       placeholder="Nota (opcional)"
       class="input flex-1 min-w-[120px]"
     />
-    <button type="submit" [disabled]="alertForm.invalid" class="btn-primary">
+    <button
+      type="submit"
+      [disabled]="alertForm.invalid"
+      [title]="alertForm.invalid ? 'Informe o ticker e o preço-alvo para criar o alerta' : ''"
+      class="btn-primary"
+    >
       <lucide-icon name="plus" size="16"></lucide-icon> Adicionar
     </button>
   </form>

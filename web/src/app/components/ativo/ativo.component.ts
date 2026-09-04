@@ -22,6 +22,7 @@ import {
   CarteiraStore,
   FiState,
   LoadingService,
+  NavegacaoService,
   RecommendService,
   TickerSuggestion,
   UiHelperService,
@@ -31,7 +32,7 @@ import { environment } from '../../../environments/environment';
 import { AssetPriceChartComponent } from '../asset-price-chart/asset-price-chart.component';
 import { MetricWithContextComponent } from '../metric-with-context/metric-with-context.component';
 import { MarginOfSafetyComponent } from '../margin-of-safety/margin-of-safety.component';
-import { ScoreRulerComponent } from '../score-ruler/score-ruler.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 export interface ValuationMethod {
   readonly name: string;
@@ -66,7 +67,7 @@ interface Fundamental {
     MetricWithContextComponent,
     ReactiveFormsModule,
     RouterLink,
-    ScoreRulerComponent,
+    SkeletonComponent,
   ],
   templateUrl: './ativo.component.html',
 })
@@ -78,6 +79,7 @@ export class AtivoComponent implements OnInit, OnDestroy {
   readonly ui = inject(UiHelperService);
   readonly loading = inject(LoadingService);
   private readonly carteira = inject(CarteiraStore);
+  private readonly navegacao = inject(NavegacaoService);
   private readonly auth = inject(AuthService);
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
@@ -391,8 +393,6 @@ export class AtivoComponent implements OnInit, OnDestroy {
     }
   }
 
-  readonly confidenceScore = computed(() => (this.analysis()?.decision.confidence ?? 0) * 100);
-
   readonly methods = computed<ValuationMethod[]>(() => {
     const a = this.analysis();
     if (!a) return [];
@@ -485,14 +485,42 @@ export class AtivoComponent implements OnInit, OnDestroy {
    * transforma "está barato?" em "está barato **para mim**?". Sem posição, a
    * linha simplesmente não existe: nada de desenhar zero.
    */
-  readonly averagePrice = computed(() => {
+  /**
+   * A posição da pessoa neste ativo, quando existe.
+   *
+   * É o que faz a oportunidade vista em Descobrir e a posição vista na
+   * Carteira se reconhecerem aqui: sem isto, a camada de ativo é uma página
+   * sobre um papel qualquer, igual para quem tem 200 cotas e para quem nunca
+   * ouviu falar dele.
+   */
+  readonly posicao = computed(() => {
     const symbol = this.analysis()?.symbol;
     if (!symbol) return null;
-    const position = this.carteira
-      .tradedPositions()
-      .find(p => p.ticker.toUpperCase() === symbol.toUpperCase());
-    return position?.avg_price ?? null;
+    return (
+      this.carteira.tradedPositions().find(p => p.ticker.toUpperCase() === symbol.toUpperCase()) ??
+      null
+    );
   });
+
+  readonly carteiraCarregada = computed(() => this.carteira.tradedPositions().length > 0);
+
+  readonly averagePrice = computed(() => this.posicao()?.avg_price ?? null);
+
+  /** De onde a pessoa veio, quando veio de dentro do app. */
+  origem() {
+    return this.navegacao.origem();
+  }
+
+  /** Os filtros da lista de origem, preservados na volta. */
+  paramsDaOrigem(url: string): Record<string, string> {
+    const query = url.split('?')[1];
+    if (!query) return {};
+    return Object.fromEntries(new URLSearchParams(query));
+  }
+
+  absoluto(valor: number): number {
+    return Math.abs(valor);
+  }
 
   readonly consensusProvenance = computed(() => {
     const a = this.analysis();

@@ -1,11 +1,13 @@
+<app-page-header
+  title="Operações encerradas"
+  question="O que eu já vendi, com quanto de lucro e quanto de imposto?"
+/>
+
 @if (closedTrades(); as ct) {
   @if (ct.trades.length > 0) {
-    <div
-      class="mt-6 p-4 sm:p-5 rounded-md border border-hairline"
-      style="background: var(--fi-ground-1)"
-    >
+    <div class="fi-block mt-6">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="fi-verdict m-0 text-ink">Operações encerradas</h2>
+        <h2 class="fi-title m-0 text-ink">Total do período</h2>
         <button type="button" class="btn-quiet" (click)="showClosedTrades.set(!showClosedTrades())">
           <lucide-icon
             [name]="showClosedTrades() ? 'chevron-up' : 'chevron-down'"
@@ -23,20 +25,26 @@
       }
 
       @if (showClosedTrades()) {
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div
-            class="card"
-            [class.text-up]="ct.total_realized_pnl >= 0"
-            [class.text-down]="ct.total_realized_pnl < 0"
-          >
-            <div class="fi-eyebrow text-ink-2 mb-1">Lucro/prejuízo realizado</div>
-            <div class="fi-verdict text-ink">R$ {{ ct.total_realized_pnl | number: '1.2-2' }}</div>
+        <!--
+          A cor de direção estava no .card e o filho trazia text-ink, que a
+          sobrescrevia: o verde e o vermelho nunca chegaram à tela. O sinal e a
+          palavra dizem a mesma coisa sem depender de cor nenhuma.
+        -->
+        <dl class="flex flex-wrap gap-x-12 gap-y-5 m-0 mb-4 pt-4 border-t border-hairline">
+          <div>
+            <dt class="fi-eyebrow text-ink-3">
+              {{ ct.total_realized_pnl >= 0 ? 'Lucro realizado' : 'Prejuízo realizado' }}
+            </dt>
+            <dd class="fi-metric text-ink m-0 mt-1">
+              {{ ct.total_realized_pnl >= 0 ? '+' : '−' }}R$
+              {{ absoluto(ct.total_realized_pnl) | number: '1.2-2' }}
+            </dd>
           </div>
-          <div class="card">
-            <div class="fi-eyebrow text-ink-2 mb-1">IR pago (estimado)</div>
-            <div class="fi-verdict text-ink">R$ {{ ct.total_ir_paid | number: '1.2-2' }}</div>
+          <div>
+            <dt class="fi-eyebrow text-ink-3">IR pago (estimado)</dt>
+            <dd class="fi-metric text-ink m-0 mt-1">R$ {{ ct.total_ir_paid | number: '1.2-2' }}</dd>
           </div>
-        </div>
+        </dl>
 
         @if (ct.total_tax_loss_available > 0) {
           <div class="p-4 rounded-md bg-brand/10 border border-brand/30 mb-4">

@@ -211,6 +211,13 @@ export const fiGoalProgressBands: readonly FiScoreBand[] = [
 
 export const fiGoalProgressDomain = { min: 0, max: 100 } as const;
 
+export const fiDipScoreBands: readonly FiScoreBand[] = [
+  { id: 'opportunity', min: 68, max: 100, label: 'Oportunidade na baixa', state: 'favorable', emphasis: 'strong' },
+  { id: 'wait', min: 42, max: 67, label: 'Aguardar', state: 'neutral', emphasis: 'muted' },
+  { id: 'trap', min: 0, max: 41, label: 'Armadilha', state: 'adverse', emphasis: 'strong' },
+  { id: 'insufficient', min: null, max: null, label: 'Sem leitura', state: 'indeterminate', emphasis: 'muted' },
+] as const;
+
 export function fiBandFor(
   value: number,
   bands: readonly FiScoreBand[],

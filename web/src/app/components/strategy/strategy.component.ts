@@ -11,9 +11,9 @@ import {
 } from '../../core';
 import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
-import { FollowedSuggestionsComponent } from '../market/followed-suggestions/followed-suggestions.component';
 import { RebalanceSuggestionsComponent } from '../market/rebalance-suggestions/rebalance-suggestions.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { PageHeaderComponent } from '../page-header/page-header.component';
 
 /** Uma linha da comparação atual × projetada, já pareada por categoria. */
 interface ProjectionRow {
@@ -26,10 +26,10 @@ interface ProjectionRow {
   selector: 'app-strategy',
   standalone: true,
   imports: [
+    PageHeaderComponent,
     AllocationGapComponent,
     CommonModule,
     EmptyStateComponent,
-    FollowedSuggestionsComponent,
     LucideAngularModule,
     RebalanceSuggestionsComponent,
     RouterLink,
@@ -62,10 +62,15 @@ export class StrategyComponent implements OnInit {
     });
   }
 
-  riskClass(risk: string): string {
-    return (
-      { Baixo: 'tag-favorable', Médio: 'tag-attention', Alto: 'tag-adverse' }[risk] || 'tag-neutral'
-    );
+  /**
+   * O perfil de risco é uma escolha da pessoa, não um veredito sobre ela.
+   *
+   * "Alto" vinha em `tag-adverse`, vermelho — o produto pintando a preferência
+   * do usuário como problema. `.tag` passa a carregar só fato; julgamento é
+   * `verdict-pill`, e nenhum dos dois se aplica a uma configuração.
+   */
+  riskClass(): string {
+    return 'tag-neutral';
   }
 
   /**

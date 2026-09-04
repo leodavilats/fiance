@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -12,10 +12,10 @@ import {
   RecommendService,
   TickerSuggestion,
   UiHelperService,
+  fiScoreBands,
 } from '../../../core';
 import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { HelpTooltipComponent } from '../../help-tooltip/help-tooltip.component';
-import { MarginOfSafetyComponent } from '../../margin-of-safety/margin-of-safety.component';
 import { ProvenanceComponent } from '../../provenance/provenance.component';
 import { ScoreRulerComponent } from '../../score-ruler/score-ruler.component';
 import { SkeletonComponent } from '../../skeleton/skeleton.component';
@@ -31,7 +31,6 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
     FormsModule,
     HelpTooltipComponent,
     LucideAngularModule,
-    MarginOfSafetyComponent,
     ProvenanceComponent,
     RouterLink,
     ScoreRulerComponent,
@@ -40,6 +39,8 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
   templateUrl: './opportunities-list.component.html',
 })
 export class OpportunitiesListComponent implements OnInit, OnDestroy {
+  readonly scoreBands = fiScoreBands;
+
   private api = inject(RecommendService);
   readonly helper = inject(UiHelperService);
 
@@ -64,6 +65,54 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
   filterMinMos: number | null = null;
   filterCategory = '';
   onlyInteresting = false;
+
+  /**
+   * O que a lista concluiu, antes de a pessoa ler uma linha.
+   *
+   * A tela abria em filtros e listava vinte itens com doze sinais cada; nada
+   * dizia quantos passaram, de quantos, nem se algum valia a atenção. A
+   * pergunta de Descobrir é sobre a lista, não sobre cada ativo.
+   */
+  readonly vereditoDaLista = computed<string | null>(() => {
+    const res = this.opportunities();
+    if (!res || res.items.length === 0) return null;
+
+    const amplos = res.items.filter(o => (o.margin_of_safety ?? 0) >= 0.25).length;
+    const destacados = res.items.filter(o => o.is_interesting).length;
+
+    const base = `${res.total_items} de ${res.universe_size} ativos avaliados passaram pelos seus critérios`;
+
+    if (amplos > 0) {
+      const plural = amplos === 1 ? 'está' : 'estão';
+      return `${base}; ${amplos} ${plural} pelo menos 25% abaixo do preço justo estimado.`;
+    }
+    if (destacados > 0) {
+      const plural = destacados === 1 ? 'destacado' : 'destacados';
+      return `${base}; ${destacados} ${plural} pela leitura do sistema, nenhum com desconto amplo.`;
+    }
+    return `${base}, e nenhum com desconto amplo hoje.`;
+  });
+
+  /** O recorte ativo em texto — o filtro legível sem abrir os campos. */
+  readonly recorte = computed<string | null>(() => {
+    const partes: string[] = [];
+    if (this.filterText.trim()) partes.push(`busca "${this.filterText.trim()}"`);
+    if (this.filterCategory) partes.push(this.helper.categoryLabel(this.filterCategory));
+    if (this.filterMinDy != null) partes.push(`DY ≥ ${this.filterMinDy}%`);
+    if (this.filterMinMos != null) partes.push(`margem ≥ ${this.filterMinMos}%`);
+    if (this.onlyInteresting) partes.push('só o que o sistema destacou');
+    return partes.length ? `Recorte: ${partes.join(' · ')}` : null;
+  });
+
+  /**
+   * Houve queda relevante o bastante para a pergunta fazer sentido.
+   *
+   * "Por que caiu?" aparecia em toda linha, inclusive nas que não caíram — e
+   * um botão que pergunta sobre um fato inexistente ensina a ignorar botões.
+   */
+  houveQueda(opp: Opportunity): boolean {
+    return (opp.margin_of_safety ?? 0) > 0;
+  }
 
   readonly currentPage = signal(1);
   readonly pageSize = 24;
