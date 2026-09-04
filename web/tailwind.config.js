@@ -44,6 +44,8 @@ module.exports = {
         'ink-3': token('ink-3'),
         'on-brand': token('ink-on-brand'),
         brand: token('brand'),
+        'brand-strong': token('brand-strong'),
+        'brand-light': token('brand-light'),
         'brand-quiet': token('brand-quiet'),
 
         favorable: token('state-favorable'),

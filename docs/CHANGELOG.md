@@ -12,6 +12,49 @@
 
 ---
 
+## Os neutros saem do papel morno e entram na família da marca (2026-09-04)
+
+Decisão de produto, tomada contra a recomendação registrada em
+[VISUAL-LANGUAGE](design/VISUAL-LANGUAGE.md): a paleta clara era **papel morno** — a escolha mais
+incomum do sistema, feita para o produto ler como relatório impresso — e passou a ser **near-white
+frio**, derivada da marca. O escuro acompanhou, saindo do grafite verde-ardósia para o azul-ardósia.
+`brand` **não mudou**: `#295D7C` já era a identidade, e é o que a troca preserva.
+
+`brand-strong` e `brand-light` entraram como papéis novos (o "Primary Dark" e o "Primary Light" do
+briefing), disponíveis nas duas plataformas e no Tailwind.
+
+### O que não foi aceito do briefing, e por quê
+
+As **tintas** vieram propostas como `#667085` (secundária) e `#98A2B3` (legenda). Medidas contra o
+chão mais claro do tema, dão **4,97:1** e **2,58:1**, contra pisos declarados de 8:1 e 6:1 —
+`check-contrast.mjs` reprova as duas, e o próprio briefing pede contraste em §19. Foram derivadas na
+mesma família fria até cumprirem o piso: `#414956` e `#525B6C`. Afrouxar o limiar não entrou em
+discussão, e o briefing autoriza ajuste de valor.
+
+A distinção **estado ≠ direção** ficou de pé. O briefing pede "Positivo → Success, Negativo → Error"
+(§15), que é exatamente a conflação desfeita em 2026-08-xx: P&L é aritmética e usa `direction-*` com
+croma baixo; julgamento é `state-*` e tem prioridade cromática. Trocar isso reabriria o defeito em
+que uma perda aparecia como aviso, nas três plataformas.
+
+### O custo que a troca tem
+
+`ground-0` e `ground-1` ficaram a **1,06:1**. Isso já produziu queixa de usuário quando foram
+`#FAF8F5` e `#FFFFFF` — *"o plano de fundo se confunde com os componentes"*. O que segura a
+hierarquia é a estrutura não depender de card: a página se organiza por **fio e espaço**
+(`.fi-block`), e o card que resta tem `hairline` na borda. Se a separação incomodar, o conserto é
+aprofundar `ground-0` em `tokens.json` — uma linha, e o gerador propaga.
+
+### Limpeza que veio junto
+
+`AppColors`, no tema do mobile, era uma camada de **alias de cor** com o vocabulário que o
+[CLAUDE.md](../CLAUDE.md) proíbe (`panel`, `muted`, `border`, `accent`, `warn`, `danger`): 20
+declarações servindo 9 usos em três arquivos. Pior, `darkAccent2 == darkAccent`, então os três
+ícones da tela de login alternavam duas variáveis que pintavam **a mesma cor** — resquício da era em
+que a marca tinha duas. Removida; cada uso passou ao papel real do tema (`surface`, `outline`,
+`surfaceContainerHighest`, `primary`, `fiInk2()`), sem mudança de pixel.
+
+---
+
 ## A auditoria vira código: integridade, configuração e o canal de aquisição (2026-09-03)
 
 Uma auditoria conduzida contra `a1ee50a` levantou 48 achados. Esta entrada registra o que foi

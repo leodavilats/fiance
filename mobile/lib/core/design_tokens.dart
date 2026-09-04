@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
 abstract final class FiColors {
-  static const darkGround0 = Color(0xFF090C0B);
-  static const darkGround1 = Color(0xFF171E1B);
-  static const darkGround2 = Color(0xFF212927);
-  static const darkHairline = Color(0xFF323B38);
-  static const darkHairlineStrong = Color(0xFF45504C);
-  static const darkInk1 = Color(0xFFE9EAE9);
-  static const darkInk2 = Color(0xFFBBC0BE);
-  static const darkInk3 = Color(0xFFA1A6A5);
+  static const darkGround0 = Color(0xFF090C10);
+  static const darkGround1 = Color(0xFF161C23);
+  static const darkGround2 = Color(0xFF1F262F);
+  static const darkHairline = Color(0xFF2F3945);
+  static const darkHairlineStrong = Color(0xFF424E5C);
+  static const darkInk1 = Color(0xFFE8EAEE);
+  static const darkInk2 = Color(0xFFBABFC9);
+  static const darkInk3 = Color(0xFFA0A6B1);
   static const darkInkOnBrand = Color(0xFF08131A);
   static const darkBrand = Color(0xFF74ACC9);
+  static const darkBrandStrong = Color(0xFF3F7898);
+  static const darkBrandLight = Color(0xFF9CC6DC);
   static const darkBrandQuiet = Color(0xFF1D3140);
   static const darkStateFavorable = Color(0xFF58B68C);
   static const darkStateAttention = Color(0xFFD9A23B);
@@ -35,17 +37,19 @@ abstract final class FiColors {
   static const darkSeries11 = Color(0xFFC198AB);
   static const darkSeriesOther = Color(0xFF9FA5A2);
 
-  static const lightGround0 = Color(0xFFF0ECE4);
+  static const lightGround0 = Color(0xFFF7F9FA);
   static const lightGround1 = Color(0xFFFFFFFF);
-  static const lightGround2 = Color(0xFFF8F5F0);
-  static const lightHairline = Color(0xFFD8D0C3);
-  static const lightHairlineStrong = Color(0xFFBBB1A0);
-  static const lightInk1 = Color(0xFF1C1F1E);
-  static const lightInk2 = Color(0xFF3F4744);
-  static const lightInk3 = Color(0xFF515A55);
+  static const lightGround2 = Color(0xFFEFF3F6);
+  static const lightHairline = Color(0xFFD9E2E8);
+  static const lightHairlineStrong = Color(0xFFB6C2CC);
+  static const lightInk1 = Color(0xFF1F2933);
+  static const lightInk2 = Color(0xFF414956);
+  static const lightInk3 = Color(0xFF525B6C);
   static const lightInkOnBrand = Color(0xFFFFFFFF);
   static const lightBrand = Color(0xFF295D7C);
-  static const lightBrandQuiet = Color(0xFFE4EDF2);
+  static const lightBrandStrong = Color(0xFF1F465D);
+  static const lightBrandLight = Color(0xFF3F7898);
+  static const lightBrandQuiet = Color(0xFFEAF2F6);
   static const lightStateFavorable = Color(0xFF116446);
   static const lightStateAttention = Color(0xFF784F0E);
   static const lightStateAdverse = Color(0xFF973A2D);

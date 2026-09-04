@@ -61,12 +61,16 @@ favorável.
 
 ## Chão e tinta
 
-**Escuro (padrão)** — grafite com um leve desvio verde-ardósia. Não é o `#0B0E14` azul-preto
-onipresente; é quase neutro, e lê como tinta, não como tela.
+> **Trocado em 2026-09-04, por decisão de produto.** Os neutros eram mornos — papel impresso, o
+> desvio deliberado descrito abaixo. Passaram a ser **frios**, derivados da marca: azul como
+> identidade, neutros como estrutura. O que esta seção registra agora é a paleta em vigor, e o
+> parágrafo final guarda o que a troca custou, porque isso já foi uma queixa de usuário.
 
-**Claro** — **papel morno**, não branco-azulado. É a escolha mais incomum do sistema e a que mais
-diferencia: um produto financeiro em papel morno lê como documento impresso, não como planilha
-web. Tinta neutra-fria sobre papel morno cria a tensão exata de um relatório bem impresso.
+**Escuro (padrão)** — grafite azul-ardósia, na mesma família fria da marca. Não é o `#0B0E14`
+azul-preto onipresente: é dessaturado, e lê como tinta, não como tela.
+
+**Claro** — near-white frio sobre superfície branca. Os neutros saem da mesma família azul da
+marca, de modo que nenhum cinza da interface briga com `brand` por temperatura.
 
 | Papel | Token |
 |---|---|
@@ -84,9 +88,18 @@ web. Tinta neutra-fria sobre papel morno cria a tensão exata de um relatório b
 calada — a tabela anterior listava `#7A847F` para a tinta terciária clara, um valor que o produto
 nunca teve. O que este documento decide é o **papel**; o valor é do gerador.
 
-O chão da página é deliberadamente mais fundo que a superfície. Enquanto foram `#FAF8F5` e
-`#FFFFFF`, a diferença era de 2% de luminância: um card branco não tinha de onde subir, e a página
-lia como uma superfície só.
+**O custo conhecido da paleta fria.** O chão da página e a superfície voltaram a ficar perto:
+`ground-0` e `ground-1` estão a 1,06:1 de contraste. Isso já aconteceu com `#FAF8F5` sob branco e
+produziu uma queixa registrada — *"o plano de fundo se confunde com os componentes"*: um card
+branco não tem de onde subir, e a página lê como uma superfície só. Duas coisas seguram a
+hierarquia hoje, e é por isso que a troca não a derrubou: a estrutura da página nasce de **fio e
+espaço** (`.fi-block`), não de card, e o card sobrevivente tem `hairline` desenhando a borda. Se a
+separação voltar a incomodar, o conserto é uma linha — aprofundar `ground-0` em `tokens.json` —,
+não um redesenho.
+
+Já as **tintas** não são as do briefing: `#667085` como secundária dá 4,97:1 e `#98A2B3` como
+legenda dá 2,58:1, contra pisos de 8:1 e 6:1. Foram derivadas na mesma família fria até cumprirem
+o piso. Contraste é verificado, não recomendado, e afrouxar o limiar não estava em discussão.
 
 Sem gradiente. Os dois `radial-gradient` do fundo atual saem — não carregam informação e são
 metade do "AI dashboard aesthetic".
