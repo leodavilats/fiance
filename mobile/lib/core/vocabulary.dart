@@ -1,7 +1,3 @@
-// GERADO AUTOMATICAMENTE — NÃO EDITE ESTE ARQUIVO.
-// Fonte: design-tokens/tokens.json · Gerador: design-tokens/build.mjs
-// Regenerar: node design-tokens/build.mjs
-
 import 'package:flutter/material.dart';
 
 class FiCategoria {

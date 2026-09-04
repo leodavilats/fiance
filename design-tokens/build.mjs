@@ -41,7 +41,6 @@ const derivedRulers = () =>
 
 function buildCss() {
   const out = [];
-  out.push(...BANNER_LINES.map(l => `/* ${l} */`), '');
 
   const themeVars = theme => {
     const lines = [];
@@ -143,7 +142,6 @@ function buildCss() {
 
 function buildTs() {
   const out = [];
-  out.push(...BANNER_LINES.map(l => `// ${l}`), '');
 
   const theme = t =>
     entries(tokens.color[t])
@@ -192,7 +190,6 @@ function buildTs() {
   out.push('export type FiDensity = keyof typeof fiDensity;', '');
 
   const r = tokens.scoreRuler;
-  out.push('/** Limiares espelham backend/app/analysis/score_ruler.py. */');
   out.push(`export const SCORE_STRONG = ${r.thresholds.strong};`);
   out.push(`export const SCORE_GOOD = ${r.thresholds.good};`);
   out.push(`export const SCORE_NEUTRAL = ${r.thresholds.neutral};`);
@@ -220,7 +217,6 @@ function buildTs() {
   for (const [k, v] of entries(r.sizes)) out.push(`  ${k}: ${v},`);
   out.push('} as const;', '');
 
-  out.push('/** Dado incompleto não pode parecer nota baixa — sai cinza e rotulado. */');
   out.push('export function fiScoreIsReliable(dataCompleteness?: number | null): boolean {');
   out.push('  return (dataCompleteness ?? 1) >= MIN_DATA_COMPLETENESS;');
   out.push('}', '');
@@ -287,10 +283,7 @@ const dartColor = hex => `Color(0xFF${hex.replace('#', '').toUpperCase()})`;
 
 function buildDart() {
   const out = [];
-  out.push(...BANNER_LINES.map(l => `// ${l}`), '');
   out.push("import 'package:flutter/material.dart';", '');
-  out.push('/// Espelha `web/src/tokens.css` e `web/src/app/core/design-tokens.ts` — os três');
-  out.push('/// saem de `design-tokens/tokens.json`, então não podem divergir.');
   out.push('abstract final class FiColors {');
   for (const themeName of ['dark', 'light']) {
     for (const [name, value] of entries(tokens.color[themeName])) {
@@ -330,10 +323,6 @@ function buildDart() {
   const seriesCount = entries(tokens.color.dark).filter(([k]) =>
     /^series-\d+$/.test(k)
   ).length;
-  out.push('/// Identidade de série (1..N). Mesmo setor/classe = mesma cor sempre.');
-  out.push('///');
-  out.push('/// Fora da faixa cai em `series-other`, que é o balde de "Outros" — não');
-  out.push('/// uma cor de erro.');
   out.push('Color fiSeriesColor(int index, Brightness brightness) {');
   out.push('  final dark = brightness == Brightness.dark;');
   out.push('  switch (index) {');
@@ -416,7 +405,6 @@ function buildDart() {
   out.push(`const String fiFontSerif = '${tokens.font.serif}';`, '');
 
   const r = tokens.scoreRuler;
-  out.push('/// Régua do score — espelha `backend/app/analysis/score_ruler.py`.');
   out.push(`const double kScoreStrong = ${r.thresholds.strong};`);
   out.push(`const double kScoreGood = ${r.thresholds.good};`);
   out.push(`const double kScoreNeutral = ${r.thresholds.neutral};`);
@@ -453,7 +441,6 @@ function buildDart() {
   for (const [k, v] of entries(r.sizes)) out.push(`  static const ${k} = ${v}.0;`);
   out.push('}', '');
 
-  out.push('/// Dado incompleto não pode parecer nota baixa — sai cinza e rotulado.');
   out.push('bool fiScoreIsReliable(double? dataCompleteness) =>');
   out.push('    (dataCompleteness ?? 1) >= kMinDataCompleteness;', '');
 
@@ -522,7 +509,6 @@ function buildVocabTs() {
   const v = tokens.vocabulary;
   const linhas = [];
 
-  linhas.push(...BANNER_LINES.map(l => `// ${l}`), '');
 
   linhas.push('export interface FiCategoria {');
   linhas.push('  readonly label: string;');
@@ -607,7 +593,6 @@ function buildVocabDart() {
   const v = tokens.vocabulary;
   const linhas = [];
 
-  linhas.push(...BANNER_LINES.map(l => `// ${l}`), '');
   linhas.push("import 'package:flutter/material.dart';", '');
 
   linhas.push('class FiCategoria {');

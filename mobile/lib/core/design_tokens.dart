@@ -1,29 +1,23 @@
-// GERADO AUTOMATICAMENTE — NÃO EDITE ESTE ARQUIVO.
-// Fonte: design-tokens/tokens.json · Gerador: design-tokens/build.mjs
-// Regenerar: node design-tokens/build.mjs
-
 import 'package:flutter/material.dart';
 
-/// Espelha `web/src/tokens.css` e `web/src/app/core/design-tokens.ts` — os três
-/// saem de `design-tokens/tokens.json`, então não podem divergir.
 abstract final class FiColors {
-  static const darkGround0 = Color(0xFF0E1211);
-  static const darkGround1 = Color(0xFF141917);
-  static const darkGround2 = Color(0xFF1A201E);
-  static const darkHairline = Color(0xFF262D2A);
-  static const darkHairlineStrong = Color(0xFF333B38);
+  static const darkGround0 = Color(0xFF090C0B);
+  static const darkGround1 = Color(0xFF171E1B);
+  static const darkGround2 = Color(0xFF212927);
+  static const darkHairline = Color(0xFF323B38);
+  static const darkHairlineStrong = Color(0xFF45504C);
   static const darkInk1 = Color(0xFFE9EAE9);
   static const darkInk2 = Color(0xFFA5ACA9);
-  static const darkInk3 = Color(0xFF808885);
+  static const darkInk3 = Color(0xFF89908E);
   static const darkInkOnBrand = Color(0xFF08131A);
   static const darkBrand = Color(0xFF5B9DC0);
   static const darkBrandQuiet = Color(0xFF1D3140);
   static const darkStateFavorable = Color(0xFF4FB286);
   static const darkStateAttention = Color(0xFFD9A23B);
   static const darkStateAdverse = Color(0xFFD9705F);
-  static const darkStateIndeterminate = Color(0xFF808885);
-  static const darkDirectionUp = Color(0xFF60917B);
-  static const darkDirectionDown = Color(0xFFAC7B71);
+  static const darkStateIndeterminate = Color(0xFF89908E);
+  static const darkDirectionUp = Color(0xFF6B9984);
+  static const darkDirectionDown = Color(0xFFB2847B);
   static const darkSeries1 = Color(0xFF5B9DC0);
   static const darkSeries2 = Color(0xFF4FB286);
   static const darkSeries3 = Color(0xFFD9A23B);
@@ -35,24 +29,24 @@ abstract final class FiColors {
   static const darkSeries9 = Color(0xFF96A94F);
   static const darkSeries10 = Color(0xFF6E8FD6);
   static const darkSeries11 = Color(0xFFB5849B);
-  static const darkSeriesOther = Color(0xFF636D69);
+  static const darkSeriesOther = Color(0xFF6B7470);
 
-  static const lightGround0 = Color(0xFFFAF8F5);
+  static const lightGround0 = Color(0xFFF0ECE4);
   static const lightGround1 = Color(0xFFFFFFFF);
-  static const lightGround2 = Color(0xFFF3F0EB);
-  static const lightHairline = Color(0xFFE2DDD5);
-  static const lightHairlineStrong = Color(0xFFCFC8BD);
+  static const lightGround2 = Color(0xFFF8F5F0);
+  static const lightHairline = Color(0xFFD8D0C3);
+  static const lightHairlineStrong = Color(0xFFBBB1A0);
   static const lightInk1 = Color(0xFF1C1F1E);
   static const lightInk2 = Color(0xFF55605C);
-  static const lightInk3 = Color(0xFF656F6A);
+  static const lightInk3 = Color(0xFF626C67);
   static const lightInkOnBrand = Color(0xFFFFFFFF);
   static const lightBrand = Color(0xFF2C6485);
   static const lightBrandQuiet = Color(0xFFE4EDF2);
-  static const lightStateFavorable = Color(0xFF147B56);
+  static const lightStateFavorable = Color(0xFF147954);
   static const lightStateAttention = Color(0xFF8C5C10);
   static const lightStateAdverse = Color(0xFFB04434);
-  static const lightStateIndeterminate = Color(0xFF656F6A);
-  static const lightDirectionUp = Color(0xFF3E775F);
+  static const lightStateIndeterminate = Color(0xFF626C67);
+  static const lightDirectionUp = Color(0xFF3D755D);
   static const lightDirectionDown = Color(0xFF8E5A4C);
   static const lightSeries1 = Color(0xFF2C6485);
   static const lightSeries2 = Color(0xFF157F58);
@@ -65,7 +59,7 @@ abstract final class FiColors {
   static const lightSeries9 = Color(0xFF5C6B1E);
   static const lightSeries10 = Color(0xFF3B5AA8);
   static const lightSeries11 = Color(0xFF7A4E62);
-  static const lightSeriesOther = Color(0xFF828B86);
+  static const lightSeriesOther = Color(0xFF7F8883);
 
 }
 
@@ -94,10 +88,6 @@ Color fiDirectionColor(double delta, Brightness brightness) {
   return dark ? FiColors.darkInk2 : FiColors.lightInk2;
 }
 
-/// Identidade de série (1..N). Mesmo setor/classe = mesma cor sempre.
-///
-/// Fora da faixa cai em `series-other`, que é o balde de "Outros" — não
-/// uma cor de erro.
 Color fiSeriesColor(int index, Brightness brightness) {
   final dark = brightness == Brightness.dark;
   switch (index) {
@@ -293,7 +283,6 @@ const Map<String, String> fiTypeFamily = {
 const String fiFontSans = 'Inter';
 const String fiFontSerif = 'Source Serif 4';
 
-/// Régua do score — espelha `backend/app/analysis/score_ruler.py`.
 const double kScoreStrong = 75;
 const double kScoreGood = 60;
 const double kScoreNeutral = 40;
@@ -333,7 +322,6 @@ abstract final class FiScoreRulerSize {
   static const page = 64.0;
 }
 
-/// Dado incompleto não pode parecer nota baixa — sai cinza e rotulado.
 bool fiScoreIsReliable(double? dataCompleteness) =>
     (dataCompleteness ?? 1) >= kMinDataCompleteness;
 

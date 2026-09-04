@@ -1,7 +1,3 @@
-// GERADO AUTOMATICAMENTE — NÃO EDITE ESTE ARQUIVO.
-// Fonte: design-tokens/tokens.json · Gerador: design-tokens/build.mjs
-// Regenerar: node design-tokens/build.mjs
-
 export interface FiCategoria {
   readonly label: string;
   readonly series: number;
