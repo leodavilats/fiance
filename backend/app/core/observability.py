@@ -31,9 +31,7 @@ PARAMETROS_SIGILOSOS = (
     "senha",
 )
 
-_SIGILO_NA_URL = re.compile(
-    r"(?i)\b(" + "|".join(PARAMETROS_SIGILOSOS) + r")=([^&\s\"'>]+)"
-)
+_SIGILO_NA_URL = re.compile(r"(?i)\b(" + "|".join(PARAMETROS_SIGILOSOS) + r")=([^&\s\"'>]+)")
 
 
 class RedigeSegredoEmURL(logging.Filter):

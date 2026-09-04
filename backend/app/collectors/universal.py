@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import threading
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -163,10 +164,106 @@ _FALLBACK_HISTORY_RANGE = "3mo"
 
 _BRAPI_PROVIDER = "brapi"
 
+_BRAPI_LOTE = 20
+
+_AUSENTE_TTL = 30 * 60
+
+_AUSENTE = {"__ausente__": True}
+
+_prefetch_lock = threading.Lock()
+
+_PREFETCH_ESPERA = 5.0
+
+
+def _raw_key(base: str) -> str:
+    return f"brapi_raw:{base}"
+
+
+def _brapi_params(range_param: str) -> dict:
+    settings = get_settings()
+    return {
+        "token": settings.brapi_token,
+        "fundamental": "true",
+        "dividends": "true",
+        "range": range_param,
+        "interval": "1d",
+    }
+
+
+def _guardar_raw(base: str, r: dict | None) -> None:
+    cache.set(_raw_key(base), r if r else _AUSENTE, _BRAPI_RAW_TTL if r else _AUSENTE_TTL)
+
+
+def _ler_raw(base: str) -> dict | None:
+    cached = cache.get(_raw_key(base))
+    if cached is None:
+        return None
+    return {} if cached.get("__ausente__") else cached
+
+
+def prefetch_brapi_raw(symbols: list[str]) -> int:
+    bases = list(dict.fromkeys(_base_symbol(s) for s in symbols if s))
+    faltantes = [b for b in bases if _ler_raw(b) is None]
+    if not faltantes:
+        return 0
+
+    if not circuit.allows(_BRAPI_PROVIDER):
+        return 0
+
+    exclusivo = _prefetch_lock.acquire(timeout=_PREFETCH_ESPERA)
+    pedidos = 0
+    try:
+        for inicio in range(0, len(faltantes), _BRAPI_LOTE):
+            lote = [b for b in faltantes[inicio : inicio + _BRAPI_LOTE] if _ler_raw(b) is None]
+            if not lote:
+                continue
+            if not circuit.allows(_BRAPI_PROVIDER):
+                break
+            pedidos += 1
+            if not _buscar_lote(lote):
+                break
+    finally:
+        if exclusivo:
+            _prefetch_lock.release()
+
+    return pedidos
+
+
+def _buscar_lote(lote: list[str]) -> bool:
+    settings = get_settings()
+    try:
+        resp = httpx.get(
+            f"{_BRAPI_BASE}/quote/{','.join(lote)}",
+            params=_brapi_params(settings.brapi_history_range),
+            timeout=30,
+        )
+        resp.raise_for_status()
+        record_external_call("brapi", ok=True)
+        circuit.record_success(_BRAPI_PROVIDER)
+    except Exception as e:
+        record_external_call("brapi", ok=False)
+        circuit.record_failure(_BRAPI_PROVIDER, type(e).__name__)
+        logger.warning("brapi falhou no lote de %d tickers: %s", len(lote), e)
+        return False
+
+    results = resp.json().get("results") or []
+    vistos = set()
+    for r in results:
+        base = _base_symbol(str(r.get("symbol") or ""))
+        if not base:
+            continue
+        vistos.add(base)
+        _guardar_raw(base, r)
+
+    for base in lote:
+        if base not in vistos:
+            _guardar_raw(base, None)
+
+    return True
+
 
 def _brapi_raw(base: str) -> dict:
-    ck = f"brapi_raw:{base}"
-    cached = cache.get(ck)
+    cached = _ler_raw(base)
     if cached is not None:
         return cached
 
@@ -183,13 +280,7 @@ def _brapi_raw(base: str) -> dict:
         try:
             resp = httpx.get(
                 f"{_BRAPI_BASE}/quote/{base}",
-                params={
-                    "token": settings.brapi_token,
-                    "fundamental": "true",
-                    "dividends": "true",
-                    "range": range_param,
-                    "interval": "1d",
-                },
+                params=_brapi_params(range_param),
                 timeout=15,
             )
             resp.raise_for_status()
@@ -197,6 +288,7 @@ def _brapi_raw(base: str) -> dict:
             circuit.record_success(_BRAPI_PROVIDER)
             results = resp.json().get("results") or []
             if not results:
+                _guardar_raw(base, None)
                 return {}
             r = results[0]
             break
@@ -222,7 +314,7 @@ def _brapi_raw(base: str) -> dict:
     if r is None:
         return {}
 
-    cache.set(ck, r, _BRAPI_RAW_TTL)
+    _guardar_raw(base, r)
     return r
 
 
@@ -381,6 +473,10 @@ async def fetch_asset(symbol: str, asset_type: AssetType | None = None) -> Asset
 
 
 async def fetch_many(symbols: list[str]) -> list[AssetSnapshot]:
+    frios = [s for s in symbols if cache.get(f"uasset:{s.upper()}") is None]
+    if frios:
+        await asyncio.to_thread(prefetch_brapi_raw, frios)
+
     tasks = [fetch_asset(s) for s in symbols]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 

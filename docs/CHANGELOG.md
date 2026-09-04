@@ -12,6 +12,57 @@
 
 ---
 
+## O cache sai do disco e a coleta passa a ser em lote (2026-09-03)
+
+O teto da BRAPI é de 3.000 requisições por dia. A conta de quanto o produto gastava não fechava:
+o scan varre o universo inteiro — ~285 tickers — pedindo **um ticker por requisição**, e o dado cru
+vale 2h. São 12 varreduras por dia, ~3.420 requisições, com **zero usuários**. O teto era estourado
+pela linha de base, não pelo uso.
+
+Duas coisas pioravam isso, e ambas eram invisíveis:
+
+- **Falha não era guardada.** Ticker que a fonte recusa fazia `return {}` sem gravar nada. Como o
+  job roda de 15 em 15 minutos, cada ticker morto custava 96 requisições/dia para ouvir o mesmo
+  "não". Vinte deles são ~1.900 requisições jogadas fora.
+- **O cache morria a cada deploy.** O arquivo SQLite vive no disco do contêiner, que é efêmero.
+  Toda publicação reconstruía tudo do zero.
+
+### O que mudou
+
+**O cache passa a morar no banco.** `DatabaseBackend` grava em `cache_entries`, e o padrão agora é:
+se `DATABASE_URL` é Postgres, o cache vai para lá; se o banco também é local, segue em arquivo.
+`CACHE_BACKEND` força a escolha, e nome errado **falha alto** — cair em silêncio para cache por nó
+é defeito que só aparece num gráfico de latência semanas depois.
+
+Escolher o banco, e não Redis, foi decisão de operação: o Postgres já está de pé, já tem backup, já
+é alcançável por todos os nós. Redis seria mais rápido e um serviço a mais para manter; continua
+disponível por `REDIS_URL` para quando latência de cache virar o problema. A sessão do backend é
+sempre própria, nunca a do request — cache dentro da transação de quem chama faria um rollback de
+negócio apagar dado de mercado, e um erro de cache derrubar uma escrita de carteira.
+
+`cache_entries` já estava em `account_store.GLOBAL_TABLES` desde antes de existir. Agora existe.
+
+Um limite apareceu ao escrever o teste, e ficou documentado em vez de escondido: sobre **SQLite**
+o backend de banco sofre com *database is locked*, porque o SQLite serializa escritores e a
+gravação de cache é uma transação à parte por desenho. Falha assim é registrada e engolida — vira
+uma leitura externa a mais, não erro na tela. No Postgres o caso não existe. É mais um motivo para
+o padrão só escolher o banco quando ele é compartilhado.
+
+**A coleta passa a ser em lote.** `prefetch_brapi_raw` pede até 20 tickers por chamada. O ponto que
+fez isso caber em pouca linha é que tudo — cotação, fundamento, histórico, proventos — é derivado
+de `brapi_raw:{base}`: aquecer essa chave em lote faz o resto do módulo trabalhar sem tocar na
+rede, sem que nenhum caminho de leitura mude. A varredura do universo saiu de ~285 requisições para
+~15. O caminho avulso continua valendo para ticker fora do universo.
+
+**A ausência passa a ser lembrada**, por 30 minutos — TTL menor que o do dado bom, porque listagem
+muda mais devagar do que a fonte se recupera. E a distinção que o teste protege: **falha de rede
+não vira ausência**. Não saber se um ticker existe é diferente de saber que não existe; carimbar o
+primeiro como o segundo esconderia uma fonte fora do ar por meia hora, com preço velho na tela e
+ninguém avisado.
+
+Estimativa do efeito: ~3.420 requisições/dia → ~200. O número real sai de `external.brapi.*` em
+`GET /metrics`.
+
 ## Seis defeitos achados usando o produto (2026-08-29)
 
 Vieram de uso real do mobile, não de teste. Cinco eram defeito; um era desenho.

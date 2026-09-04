@@ -8,7 +8,7 @@ import pytest
 
 from app.core import cache as cache_mod
 from app.core import cache_backends
-from app.core.cache_backends import RedisBackend, SqliteBackend
+from app.core.cache_backends import DatabaseBackend, RedisBackend, SqliteBackend
 
 REDIS_URL = os.environ.get("REDIS_TEST_URL", "").strip()
 
@@ -28,17 +28,30 @@ def _redis_backend():
     return backend
 
 
-@pytest.fixture(params=["sqlite", "redis"])
+@pytest.fixture(params=["sqlite", "database", "redis"])
 def backend(request, tmp_path, monkeypatch):
     if request.param == "sqlite":
         monkeypatch.setattr(cache_backends, "DB_PATH", tmp_path / "contrato.db")
         cache_mod.reset_connection()
         yield SqliteBackend()
         cache_mod.reset_connection()
+    elif request.param == "database":
+        alvo = DatabaseBackend()
+        alvo.clear_all()
+        yield alvo
+        alvo.clear_all()
     else:
         alvo = _redis_backend()
         yield alvo
         alvo.clear_all()
+
+
+def _outro_no(backend):
+    if backend.name == "sqlite":
+        return SqliteBackend()
+    if backend.name == "database":
+        return DatabaseBackend()
+    return RedisBackend(REDIS_URL, prefix="fiance:test:")
 
 
 class TestContratoDoBackend:
@@ -93,25 +106,19 @@ class TestContratoDoBackend:
         assert backend.get_raw("b") is None
 
     def test_o_backend_se_identifica(self, backend):
-        assert backend.name in {"sqlite", "redis"}
+        assert backend.name in {"sqlite", "database", "redis"}
 
 
 class TestOQueSoOCompartilhadoResolve:
     def test_dois_nos_enxergam_a_mesma_gravacao(self, backend):
-        if backend.name == "sqlite":
-            outro_no = SqliteBackend()
-        else:
-            outro_no = RedisBackend(REDIS_URL, prefix="fiance:test:")
+        outro_no = _outro_no(backend)
 
         backend.set_raw("preco:PETR4", '{"p": 30.5}', time.time() + 60)
 
         assert outro_no.get_raw("preco:PETR4")[0] == '{"p": 30.5}'
 
     def test_invalidar_num_no_invalida_no_outro(self, backend):
-        if backend.name == "sqlite":
-            outro_no = SqliteBackend()
-        else:
-            outro_no = RedisBackend(REDIS_URL, prefix="fiance:test:")
+        outro_no = _outro_no(backend)
 
         backend.set_raw("preco:VALE3", "x", time.time() + 60)
         outro_no.delete("preco:VALE3")
@@ -122,8 +129,37 @@ class TestOQueSoOCompartilhadoResolve:
 class TestEscolhaDoBackend:
     def test_sem_redis_url_o_padrao_e_o_arquivo_local(self, monkeypatch):
         monkeypatch.delenv("REDIS_URL", raising=False)
+        monkeypatch.delenv("CACHE_BACKEND", raising=False)
+        monkeypatch.setattr(cache_backends, "_url_do_banco_e_compartilhada", lambda: False)
 
         assert cache_backends.build_backend().name == "sqlite"
+
+    def test_com_banco_compartilhado_o_padrao_e_o_banco(self, monkeypatch):
+        monkeypatch.delenv("REDIS_URL", raising=False)
+        monkeypatch.delenv("CACHE_BACKEND", raising=False)
+        monkeypatch.setattr(cache_backends, "_url_do_banco_e_compartilhada", lambda: True)
+
+        assert cache_backends.build_backend().name == "database"
+
+    def test_escolha_explicita_vence_o_padrao(self, monkeypatch):
+        monkeypatch.delenv("REDIS_URL", raising=False)
+        monkeypatch.setattr(cache_backends, "_url_do_banco_e_compartilhada", lambda: True)
+        monkeypatch.setenv("CACHE_BACKEND", "sqlite")
+
+        assert cache_backends.build_backend().name == "sqlite"
+
+    def test_nome_de_backend_errado_falha_alto(self, monkeypatch):
+        monkeypatch.setenv("CACHE_BACKEND", "postgress")
+
+        with pytest.raises(RuntimeError, match="CACHE_BACKEND"):
+            cache_backends.build_backend()
+
+    def test_redis_pedido_sem_url_falha_alto(self, monkeypatch):
+        monkeypatch.delenv("REDIS_URL", raising=False)
+        monkeypatch.setenv("CACHE_BACKEND", "redis")
+
+        with pytest.raises(RuntimeError, match="REDIS_URL"):
+            cache_backends.build_backend()
 
     def test_com_redis_url_o_backend_e_compartilhado(self, monkeypatch):
         monkeypatch.setenv("REDIS_URL", REDIS_URL or "redis://localhost:6379/0")
@@ -138,12 +174,34 @@ class TestEscolhaDoBackend:
 
     def test_a_fachada_diz_se_o_cache_e_compartilhado(self, monkeypatch):
         monkeypatch.delenv("REDIS_URL", raising=False)
+        monkeypatch.setenv("CACHE_BACKEND", "sqlite")
         cache_mod.set_backend(None)
 
         estado = cache_mod.describe()
 
         assert estado["shared"] is False
-        assert "REDIS_URL" in estado["note"]
+        assert "CACHE_BACKEND=database" in estado["note"]
+        cache_mod.set_backend(None)
+
+    def test_o_cache_no_banco_se_declara_compartilhado(self, monkeypatch):
+        monkeypatch.setenv("CACHE_BACKEND", "database")
+        monkeypatch.setattr(cache_backends, "_url_do_banco_e_compartilhada", lambda: True)
+        cache_mod.set_backend(None)
+
+        estado = cache_mod.describe()
+
+        assert estado["backend"] == "database"
+        assert estado["shared"] is True
+        cache_mod.set_backend(None)
+
+    def test_cache_no_banco_sobre_sqlite_nao_promete_compartilhamento(self, monkeypatch):
+        monkeypatch.setenv("CACHE_BACKEND", "database")
+        monkeypatch.setattr(cache_backends, "_url_do_banco_e_compartilhada", lambda: False)
+        cache_mod.set_backend(None)
+
+        estado = cache_mod.describe()
+
+        assert estado["shared"] is False
         cache_mod.set_backend(None)
 
 

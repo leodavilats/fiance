@@ -42,7 +42,7 @@ fiance é uma plataforma multi-tenant de análise de investimentos focada na B3,
   - `portfolio_health.py` — saúde da carteira na mesma régua do score de ativo.
 - **`api/`** — 33 routers FastAPI (ver seção Endpoints). `basic.py` separa `router` (público: health/universe) de `admin_router` (protegido: `/cache/clear`, `/metrics`) — deixar `/cache/clear` público era DoS aberto.
 - **`collectors/`** — integrações externas:
-  - `universal.py` — `detect_type(symbol)` classifica em `br_stock|bdr|fii|etf`. Dispatcher: BR/FII/BDR/ETF → BRAPI (única fonte de cotação hoje). ETF detectado via lista curada `KNOWN_ETFS` (mesmo padrão de `KNOWN_UNITS`) além do `subType` da BRAPI. Ticker não suportado (ex.: ação US pura, cripto) levanta `UnsupportedTickerError` em vez de um asset_type — não há mais fallback "internacional genérico". Cache em camadas (fundamentals 2h, histórico 12h, dividendos 24h) + semáforo de 30 chamadas concorrentes.
+  - `universal.py` — `detect_type(symbol)` classifica em `br_stock|bdr|fii|etf`. Dispatcher: BR/FII/BDR/ETF → BRAPI (única fonte de cotação hoje). ETF detectado via lista curada `KNOWN_ETFS` (mesmo padrão de `KNOWN_UNITS`) além do `subType` da BRAPI. Ticker não suportado (ex.: ação US pura, cripto) levanta `UnsupportedTickerError` em vez de um asset_type — não há mais fallback "internacional genérico". Cache em camadas (fundamentals 2h, histórico 12h, dividendos 24h) + semáforo de 30 chamadas concorrentes. **Coleta em lote**: `prefetch_brapi_raw` pede até 20 tickers por chamada e preenche `brapi_raw:{base}`, que é o gargalo por onde cotação, fundamento, histórico e proventos passam — aquecer essa chave basta para o resto do módulo não tocar na rede. Varrer o universo saiu de ~285 requisições para ~15, contra um teto de 3.000/dia na BRAPI. Ausência é lembrada por 30min (ticker morto era repedido 96×/dia), mas **falha de rede não vira ausência** — "não sei" e "não existe" são estados diferentes.
   - `rates.py` — CDI/Selic/IPCA reais via BCB SGS (séries 4389/432/13522), cache 24h, fallback `14.40`/`14.40`/`5.0`.
   - `news.py` — coleta de notícias (RSS, sempre pt-BR/BR — todos os asset_types suportados são negociados na B3); `analyze_news_with_ai()` hoje é só o resumo determinístico (contagem de sentimento por item), sem IA externa.
   - `plausibility.py` — faixa de plausibilidade sobre todo dado externo: campo absurdo vira `None`,
@@ -59,10 +59,15 @@ fiance é uma plataforma multi-tenant de análise de investimentos focada na B3,
     queimado ao ser usado, revogação por `jti` (um dispositivo) e `session_cuts` (todos).
   - `pagination.py` — cursor **keyset**, `(ordenação, id)`, nunca offset: com offset, inserir um
     registro entre duas páginas empurra tudo e o item da borda aparece duas vezes.
-  - `cache_backends.py` — onde o cache mora é trocável: arquivo local por padrão, Redis com
-    `REDIS_URL`. O vencimento vai **dentro** do valor mesmo no Redis, porque `get_with_age` precisa
-    do dado vencido para o disjuntor degradar; TTL nativo o apagaria justo quando ele começa a
-    servir. `REDIS_URL` sem o pacote instalado falha alto.
+  - `cache_backends.py` — onde o cache mora é trocável: **banco da aplicação** quando ele é
+    compartilhado (Postgres), arquivo local quando o banco também é local, Redis com `REDIS_URL`.
+    `CACHE_BACKEND` força a escolha e nome errado falha alto. O padrão é o banco porque o disco do
+    contêiner é efêmero: cache em arquivo nasce frio a cada deploy e a cota da fonte paga por isso —
+    e o Postgres já está de pé, com backup, alcançável por todos os nós. A sessão do
+    `DatabaseBackend` é sempre própria, nunca a do request: cache dentro da transação de quem chama
+    faria rollback de negócio apagar dado de mercado. O vencimento vai **dentro** do valor mesmo no
+    Redis, porque `get_with_age` precisa do dado vencido para o disjuntor degradar; TTL nativo o
+    apagaria justo quando ele começa a servir. `REDIS_URL` sem o pacote instalado falha alto.
   - `usage.py` — contador de uso como primitiva única, servindo rate limiting e teto de plano. A
     granularidade mora no formato de `window_key`, não no schema.
   - `ratelimit.py` — tetos por usuário e por IP, sobre `usage.py`.

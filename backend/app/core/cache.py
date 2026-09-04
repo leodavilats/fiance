@@ -111,14 +111,15 @@ def purge_expired() -> int:
 
 def describe() -> dict:
     atual = backend()
+    compartilhado = bool(getattr(atual, "shared", atual.name != "sqlite"))
     return {
         "backend": atual.name,
-        "shared": atual.name != "sqlite",
+        "shared": compartilhado,
         "note": (
-            "Cache por nó. Com mais de um nó, a mesma pessoa pode ver preços "
-            "diferentes conforme o balanceador — configure REDIS_URL."
-            if atual.name == "sqlite"
-            else "Cache compartilhado entre os nós."
+            "Cache compartilhado entre os nós."
+            if compartilhado
+            else "Cache por nó. Com mais de um nó, a mesma pessoa pode ver preços "
+            "diferentes conforme o balanceador — use CACHE_BACKEND=database ou REDIS_URL."
         ),
     }
 

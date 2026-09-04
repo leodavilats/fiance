@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Float, ForeignKey, Index, Integer, String
+from sqlalchemy import Boolean, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -347,3 +347,18 @@ class ReferralDb(Base):
     qualified_at: Mapped[float | None] = mapped_column(Float, nullable=True)
     rewarded_at: Mapped[float | None] = mapped_column(Float, nullable=True)
     reward_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class CacheEntryDb(Base):
+    """Cache de dado externo quando ele mora no banco da aplicação.
+
+    Não é dado de ninguém — é por ticker, e some sem perda. Está aqui, e não num
+    arquivo local, porque em produção o disco do contêiner é efêmero: o cache em
+    arquivo nasce frio a cada deploy e a cota da fonte paga por isso.
+    """
+
+    __tablename__ = "cache_entries"
+
+    k: Mapped[str] = mapped_column(String, primary_key=True)
+    v: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[float] = mapped_column(Float, nullable=False, index=True)

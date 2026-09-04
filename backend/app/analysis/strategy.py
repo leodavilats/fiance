@@ -53,9 +53,7 @@ def _capital_investido(
 ) -> float:
     posicoes = (evaluation or {}).get("positions") or []
     if posicoes:
-        return sum(
-            (p.get("current_price") or 0) * (p.get("quantity") or 0) for p in posicoes
-        )
+        return sum((p.get("current_price") or 0) * (p.get("quantity") or 0) for p in posicoes)
     return sum(item.quantity * item.avg_price for item in portfolio)
 
 

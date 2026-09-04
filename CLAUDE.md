@@ -175,11 +175,20 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   vira `None`, preço absurdo rejeita o snapshot inteiro.
 - **Fonte tem disjuntor** (`collectors/circuit.py`) — aberto, nem tenta, e quem chama cai no cache
   vencido. `GET /data-quality/source` mostra os dois sem varrer o universo.
-- **Onde o cache mora é trocável** (`core/cache_backends.py`): arquivo local por padrão, Redis
-  quando `REDIS_URL` existir. Não é desempenho, é correção — com dois nós e cache por nó, a mesma
-  pessoa vê preços diferentes conforme o balanceador. O vencimento vai **dentro** do valor mesmo no
-  Redis, porque `get_with_age` precisa do dado vencido para o disjuntor degradar. `REDIS_URL` sem o
-  pacote instalado **falha alto**.
+- **Onde o cache mora é trocável** (`core/cache_backends.py`): **banco da aplicação por padrão**
+  quando `DATABASE_URL` é Postgres, arquivo local quando o banco também é local, Redis quando
+  `REDIS_URL` existir. `CACHE_BACKEND` (`database`/`sqlite`/`redis`) força a escolha, e nome errado
+  **falha alto** — cair em silêncio para cache por nó é defeito que só aparece semanas depois. Não é
+  desempenho, é correção: com dois nós e cache por nó, a mesma pessoa vê preços diferentes conforme
+  o balanceador; e com disco efêmero, o cache em arquivo nasce frio a cada deploy e a cota da fonte
+  paga a conta. O vencimento vai **dentro** do valor mesmo no Redis, porque `get_with_age` precisa
+  do dado vencido para o disjuntor degradar. `REDIS_URL` sem o pacote instalado **falha alto**.
+  A tabela `cache_entries` não é de ninguém — está em `account_store.GLOBAL_TABLES`.
+- **Coleta em lote, e a ausência é lembrada** (`collectors/universal.prefetch_brapi_raw`). A BRAPI
+  dá 3.000 requisições/dia; varrer o universo um ticker por vez custava ~285 por rodada. O lote de
+  20 leva isso a ~15, e como tudo passa por `brapi_raw:{base}`, aquecer essa chave basta. Ticker que
+  a fonte não conhece fica marcado por 30min, senão o scan o repede 96 vezes por dia. **Falha de
+  rede não vira ausência** — confundir "não sei" com "não existe" esconde fonte caída por meia hora.
 
 ### API
 

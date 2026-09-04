@@ -109,7 +109,8 @@ cp backend/.env.example backend/.env
 | `DEFAULT_UNIVERSE` | Não | Tickers monitorados, separados por vírgula |
 | `BRAPI_HISTORY_RANGE` | Não | Janela de histórico da BRAPI. O padrão `3mo` (plano gratuito) **torna a SMA200 incalculável** — a tendência sai como `short` e é rotulada como tal. `2y` exige plano pago |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Não | Credencial do Firebase Admin para push. Sem ela, o envio apenas loga em vez de falhar |
-| `REDIS_URL` | Não | Cache compartilhado entre nós. Sem ela, cache em arquivo local. Ver [Cache](#cache) |
+| `REDIS_URL` | Não | Cache compartilhado via Redis. Ver [Cache](#cache) |
+| `CACHE_BACKEND` | Não | `database`, `sqlite` ou `redis`. Sem ela, o banco decide. Ver [Cache](#cache) |
 | `CACHE_DB_PATH` | Não | Caminho do cache em arquivo (padrão: `backend/.cache/http_cache.db`) |
 | `RATE_LIMIT_ENABLED` | Não | Liga o teto de requisições (padrão: `true`) |
 | `RATE_LIMIT_FACTOR` | Não | Multiplicador dos tetos, para afrouxar em dev |
@@ -280,19 +281,37 @@ quer entrar.
 
 ## Cache
 
-Com um nó, o cache é um arquivo SQLite local — sem operação, sem dependência,
-sem rede. É o padrão e é a escolha certa nessa escala.
+São três lugares onde o cache pode morar, e a escolha padrão é a do banco:
+**se existe Postgres, o cache vai para ele.** O arquivo local só é o padrão
+quando o banco também é local.
 
-Com **mais de um nó** ele deixa de ser desempenho e vira correção: cada nó
-guarda a própria cópia, e a mesma pessoa recarregando a página vê preços
+O motivo é o disco do contêiner: ele é efêmero. Cache em arquivo nasce frio a
+cada deploy, e a cota da fonte paga a conta de reconstruir o que já se sabia. O
+Postgres já está de pé, já tem backup e já é alcançável por todos os nós — o
+cache pega carona sem serviço novo para operar.
+
+Com **mais de um nó**, cache por nó deixa de ser desempenho e vira correção:
+cada nó guarda a própria cópia, e a mesma pessoa recarregando a página vê preços
 diferentes conforme o balanceador. "Subiu 2% ou caiu 1%?" passa a depender de
 qual máquina atendeu, e isso mina a confiança no número muito além do que
 algumas chamadas externas a mais custariam.
 
 | Variável | Efeito |
 | --- | --- |
-| _(nenhuma)_ | Cache em arquivo local (`CACHE_DB_PATH`, opcional) |
-| `REDIS_URL` | Cache compartilhado entre todos os nós |
+| _(nenhuma)_ | Banco se `DATABASE_URL` for Postgres; arquivo local se for SQLite |
+| `CACHE_BACKEND=database` | Tabela `cache_entries` no banco da aplicação |
+| `CACHE_BACKEND=sqlite` | Arquivo local (`CACHE_DB_PATH`, opcional) |
+| `REDIS_URL` | Cache compartilhado via Redis — a opção mais rápida |
+
+Nome errado em `CACHE_BACKEND` **falha alto**, pelo mesmo motivo que `REDIS_URL`
+sem o pacote falha: cair em silêncio para cache por nó é o tipo de defeito que
+só aparece num gráfico de latência, semanas depois.
+
+`CACHE_BACKEND=database` **sobre SQLite não é recomendado**: o SQLite serializa
+escritores, então uma gravação de cache durante uma escrita de carteira aberta
+falha com *database is locked* — ela é registrada e engolida, virando leitura
+externa a mais, não erro para o usuário. É por isso que o padrão só escolhe o
+banco quando ele é Postgres. Em dev, deixe no arquivo.
 
 `GET /metrics` (rota de operador) diz onde o cache está morando e se ele é
 compartilhado. Descobrir que os nós não compartilham cache olhando gráfico de
@@ -303,9 +322,29 @@ Se `REDIS_URL` estiver configurado e o pacote `redis` faltar, a aplicação
 preço divergente entre nós, que ninguém atribui a um pacote faltando.
 
 O contrato do cache é escrito uma vez (`tests/test_cache_backends.py`) e rodado
-contra os dois backends. O do Redis precisa de um servidor: no CI ele sobe como
+contra os três backends. O do Redis precisa de um servidor: no CI ele sobe como
 serviço; localmente, exporte `REDIS_TEST_URL` (sem isso os testes do Redis são
-**pulados com o motivo escrito**, não silenciosamente ignorados).
+**pulados com o motivo escrito**, não silenciosamente ignorados). O do banco roda
+sempre, porque roda contra o banco de teste.
+
+### Economia de cota
+
+A BRAPI cobra por requisição, e o plano gratuito dá 3.000 por dia. Duas decisões
+mantêm o consumo bem abaixo disso:
+
+**O universo é buscado em lote.** `prefetch_brapi_raw` pede até 20 tickers por
+chamada e preenche `brapi_raw:*` de uma vez; como todo caminho de leitura passa
+por essa chave, o resto do módulo trabalha sem tocar na rede. A varredura do
+universo caiu de ~285 requisições para ~15.
+
+**A ausência é lembrada.** Ticker que a fonte não conhece fica marcado por 30
+minutos. Antes, um ticker morto no universo era repedido a cada rodada do scan —
+96 vezes por dia, cada, para ouvir o mesmo "não". Falha de rede **não** vira
+ausência: não saber se o ticker existe é diferente de saber que não existe, e
+confundir os dois esconderia uma fonte fora do ar por meia hora.
+
+`GET /metrics` conta `external.brapi.ok` e `external.brapi.error`. Dois pontos
+separados por uma hora dão o consumo real.
 
 ## Documentação da API
 

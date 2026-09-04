@@ -63,17 +63,19 @@ class TestARendaFixaEntraNaEstrategia:
         gap = _gap_de(resposta, "renda_fixa")
 
         assert gap is not None, "a categoria renda_fixa sumiu dos gaps"
-        assert gap["current_value"] > 0, (
-            "renda fixa cadastrada continua lendo zero na Estratégia"
-        )
+        assert gap["current_value"] > 0, "renda fixa cadastrada continua lendo zero na Estratégia"
         assert gap["current_pct"] > 0
 
     def test_o_capital_total_inclui_a_renda_fixa(self, client):
         com = self._cenario(client, "estrat_rf_2", com_rf=True)
         sem = self._cenario(client, "estrat_rf_3", com_rf=False)
 
-        gap_com = _gap_de(client.get("/api/v1/rebalance-suggestions", headers=com).json(), "acoes_br")
-        gap_sem = _gap_de(client.get("/api/v1/rebalance-suggestions", headers=sem).json(), "acoes_br")
+        gap_com = _gap_de(
+            client.get("/api/v1/rebalance-suggestions", headers=com).json(), "acoes_br"
+        )
+        gap_sem = _gap_de(
+            client.get("/api/v1/rebalance-suggestions", headers=sem).json(), "acoes_br"
+        )
 
         assert gap_com is not None and gap_sem is not None
         assert gap_com["target_value"] > gap_sem["target_value"], (
