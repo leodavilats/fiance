@@ -18,7 +18,7 @@ const STATE_VAR: Record<FiState, string> = {
   attention: '--fi-state-attention',
   adverse: '--fi-state-adverse',
   indeterminate: '--fi-state-indeterminate',
-  neutral: '--fi-ink-2',
+  neutral: '--fi-brand',
 };
 
 export function zoneBackground(zone: RulerZone): string {

@@ -15,7 +15,7 @@ import { RulerZone, zoneBackground } from '../../core/ruler';
         <div
           class="h-full"
           [style.width.%]="z.widthPct"
-          [style.background]="z.active ? background(z) : 'transparent'"
+          [style.background]="z.active ? background(z) : null"
           [class.ruler-zone-idle]="!z.active"
           [attr.data-zone]="z.id"
         ></div>
