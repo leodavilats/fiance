@@ -8,7 +8,6 @@ router = APIRouter()
 
 _service = OpportunityService()
 
-
 _FIELD_IMPACT = {
     "price": "sem preço não há análise nenhuma",
     "dividend_yield": "sem DY o score de dividendos fica indefinido",

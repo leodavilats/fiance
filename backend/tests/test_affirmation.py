@@ -21,10 +21,6 @@ def nivel(monkeypatch):
     return _definir
 
 
-# Os nomes aqui são os do payload real das rotas — `suggested_investment` e
-# `suggested_quantity` no quick-invest, `invest_amount` na estratégia. Um payload
-# sintético com nomes genéricos deixou passar, por um tempo, que a régua não
-# alcançava nenhum campo de verdade.
 PAYLOAD = {
     "total_cash": 1000.0,
     "allocated_cash": 950.0,

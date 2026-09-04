@@ -35,7 +35,6 @@ def comprar(client, gateway, user_id: str, plano: str = "premium_monthly", event
         {
             "id": f"evt_{evento}_{user_id}",
             "type": "checkout.completed",
-            # O titular vem da sessão que nós emitimos; a rota é pública.
             "session_id": sessao,
         }
     ).encode()
