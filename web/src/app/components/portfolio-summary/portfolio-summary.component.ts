@@ -14,6 +14,8 @@ import {
 } from '../../core';
 import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
+import { ImportTradesComponent } from '../import-trades/import-trades.component';
+import { LedgerEntriesComponent } from '../ledger-entries/ledger-entries.component';
 import { ScoreRulerComponent } from '../score-ruler/score-ruler.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
@@ -31,6 +33,8 @@ interface HealthDimension {
     AllocationGapComponent,
     CommonModule,
     EmptyStateComponent,
+    ImportTradesComponent,
+    LedgerEntriesComponent,
     LucideAngularModule,
     RouterLink,
     ScoreRulerComponent,
@@ -45,6 +49,9 @@ export class PortfolioSummaryComponent implements OnInit {
   readonly health = signal<PortfolioHealth | null>(null);
   readonly healthBands = fiHealthBands;
   readonly showHealthDetail = signal(false);
+
+  readonly showImport = signal(false);
+  readonly showTransacoes = signal(false);
 
   ngOnInit(): void {
     this.store.ensureLoaded();
@@ -110,5 +117,11 @@ export class PortfolioSummaryComponent implements OnInit {
 
   toggleHealthDetail(): void {
     this.showHealthDetail.update(v => !v);
+  }
+
+  onImported(): void {
+    this.showImport.set(false);
+    this.showTransacoes.set(true);
+    this.store.reload();
   }
 }

@@ -208,26 +208,26 @@
         class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-hairline sm:divide-y-0"
       >
         <li>
-          <a routerLink="/carteira/transacoes" class="menu-item no-underline">
-            <span class="fi-body flex-1 min-w-0">Lançamentos</span>
+          <button type="button" class="menu-item" (click)="showTransacoes.set(true)">
+            <span class="fi-body flex-1 min-w-0 text-left">Lançamentos</span>
             <lucide-icon
               name="chevron-right"
               size="14"
               class="text-ink-3 shrink-0"
               aria-hidden="true"
             ></lucide-icon>
-          </a>
+          </button>
         </li>
         <li>
-          <a routerLink="/carteira/importar" class="menu-item no-underline">
-            <span class="fi-body flex-1 min-w-0">Importar operações</span>
+          <button type="button" class="menu-item" (click)="showImport.set(true)">
+            <span class="fi-body flex-1 min-w-0 text-left">Importar operações</span>
             <lucide-icon
               name="chevron-right"
               size="14"
               class="text-ink-3 shrink-0"
               aria-hidden="true"
             ></lucide-icon>
-          </a>
+          </button>
         </li>
         <li>
           <a routerLink="/carteira/editar" class="menu-item no-underline">
@@ -243,4 +243,11 @@
       </ul>
     </nav>
   </div>
+}
+
+@if (showImport()) {
+  <app-import-trades (close)="showImport.set(false)" (imported)="onImported()" />
+}
+@if (showTransacoes()) {
+  <app-ledger-entries (close)="showTransacoes.set(false)" />
 }

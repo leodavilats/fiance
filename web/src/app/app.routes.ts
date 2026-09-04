@@ -59,22 +59,6 @@ export const routes: Routes = [
         title: 'Posições - fiance',
       },
       {
-        path: 'importar',
-        loadComponent: () =>
-          import('./components/import-trades/import-trades.component').then(
-            m => m.ImportTradesComponent
-          ),
-        title: 'Importar operações - fiance',
-      },
-      {
-        path: 'transacoes',
-        loadComponent: () =>
-          import('./components/ledger-entries/ledger-entries.component').then(
-            m => m.LedgerEntriesComponent
-          ),
-        title: 'Lançamentos - fiance',
-      },
-      {
         path: 'encerradas',
         loadComponent: () =>
           import('./components/closed-trades/closed-trades.component').then(
@@ -231,6 +215,8 @@ export const routes: Routes = [
   },
 
   { path: 'dashboard', redirectTo: 'hoje', pathMatch: 'full' },
+  { path: 'carteira/importar', redirectTo: 'carteira', pathMatch: 'full' },
+  { path: 'carteira/transacoes', redirectTo: 'carteira', pathMatch: 'full' },
   { path: 'assets', redirectTo: 'carteira', pathMatch: 'full' },
   { path: 'assets/cadastro', redirectTo: 'carteira/editar', pathMatch: 'full' },
   { path: 'market', redirectTo: 'descobrir/oportunidades', pathMatch: 'full' },

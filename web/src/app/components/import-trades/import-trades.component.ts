@@ -1,10 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { ImportPreview, RecommendService, SnackbarService, TransactionKind } from '../../core';
-import { PageHeaderComponent } from '../page-header/page-header.component';
+import {
+  DialogDirective,
+  ImportPreview,
+  RecommendService,
+  SnackbarService,
+  TransactionKind,
+} from '../../core';
 
 const KIND_LABEL: Record<TransactionKind, string> = {
   buy: 'Compra',
@@ -22,13 +26,15 @@ const MAX_FILE_BYTES = 2 * 1024 * 1024;
 @Component({
   selector: 'app-import-trades',
   standalone: true,
-  imports: [PageHeaderComponent, CommonModule, FormsModule, LucideAngularModule],
+  imports: [DialogDirective, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './import-trades.component.html',
 })
 export class ImportTradesComponent {
   private readonly api = inject(RecommendService);
   private readonly snackbar = inject(SnackbarService);
-  private readonly router = inject(Router);
+
+  readonly close = output<void>();
+  readonly imported = output<void>();
 
   readonly content = signal('');
   readonly preview = signal<ImportPreview | null>(null);
@@ -105,7 +111,7 @@ export class ImportTradesComponent {
             ? ` ${res.skipped_duplicates} repetida(s) ficaram de fora.`
             : '';
         this.snackbar.showSuccess(`${res.imported} operação(ões) importadas.${parte}`);
-        void this.router.navigateByUrl('/carteira/transacoes');
+        this.imported.emit();
       },
       error: () => this.importing.set(false),
     });

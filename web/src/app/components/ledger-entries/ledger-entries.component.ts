@@ -1,15 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, output, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import {
   DerivationResponse,
+  DialogDirective,
   RecommendService,
   ReconciliationResponse,
   Transaction,
   TransactionKind,
 } from '../../core';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
-import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 const KIND_LABEL: Record<TransactionKind, string> = {
@@ -27,7 +27,7 @@ const KIND_LABEL: Record<TransactionKind, string> = {
   selector: 'app-ledger-entries',
   standalone: true,
   imports: [
-    PageHeaderComponent,
+    DialogDirective,
     CommonModule,
     EmptyStateComponent,
     LucideAngularModule,
@@ -37,6 +37,8 @@ const KIND_LABEL: Record<TransactionKind, string> = {
 })
 export class LedgerEntriesComponent implements OnInit {
   private readonly svc = inject(RecommendService);
+
+  readonly close = output<void>();
 
   readonly transactions = signal<Transaction[] | null>(null);
   readonly reconciliation = signal<ReconciliationResponse | null>(null);
