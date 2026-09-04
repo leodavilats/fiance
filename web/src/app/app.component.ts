@@ -98,7 +98,10 @@ const DESTINATIONS: readonly NavDestination[] = [
                     class="nav-link"
                   >
                     <lucide-icon [name]="d.icon" size="16"></lucide-icon>
-                    {{ d.label }}
+                    <span class="nav-label">
+                      <span class="nav-label-text">{{ d.label }}</span>
+                      <span class="nav-label-sizer" aria-hidden="true">{{ d.label }}</span>
+                    </span>
                   </a>
                 </li>
               }
@@ -174,7 +177,7 @@ const DESTINATIONS: readonly NavDestination[] = [
                 routerLinkActive="nav-active-mob"
                 #rlaMob="routerLinkActive"
                 [attr.aria-current]="rlaMob.isActive ? 'page' : null"
-                class="fi-label flex flex-col items-center justify-center gap-0.5 px-1 flex-1 text-ink-2 no-underline transition-colors"
+                class="fi-label flex flex-col items-center justify-center gap-0.5 px-1 flex-1 text-ink-2 no-underline transition-colors duration-base"
               >
                 <lucide-icon [name]="d.icon" size="20"></lucide-icon>
                 <span>{{ d.label }}</span>
@@ -192,23 +195,35 @@ const DESTINATIONS: readonly NavDestination[] = [
         align-items: center;
         gap: 0.375rem;
         padding: 0.5rem 0.75rem;
-        border-radius: var(--fi-radius-md);
         font-size: 0.875rem;
         font-weight: 500;
         color: var(--fi-ink-2);
         text-decoration: none;
-        transition: color var(--fi-motion-fast) ease;
+        transition: color var(--fi-motion-base) var(--fi-motion-ease-enter);
       }
       .nav-link:hover {
         color: var(--fi-ink-1);
       }
-      :host ::ng-deep a.nav-active {
-        color: var(--fi-ink-1);
+      .nav-label {
+        display: inline-grid;
+      }
+      .nav-label-text,
+      .nav-label-sizer {
+        grid-area: 1 / 1;
+      }
+      .nav-label-sizer {
         font-weight: 600;
-        box-shadow: inset 0 -2px 0 var(--fi-brand);
+        visibility: hidden;
+      }
+      :host ::ng-deep a.nav-active {
+        color: var(--fi-brand);
+      }
+      :host ::ng-deep a.nav-active .nav-label-text {
+        font-weight: 600;
       }
       :host ::ng-deep a.nav-active-mob {
         color: var(--fi-brand);
+        font-weight: 600;
       }
       :host ::ng-deep a:focus-visible,
       :host ::ng-deep button:focus-visible {
