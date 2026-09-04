@@ -18,5 +18,7 @@ export class PortfolioShellComponent {
     { path: '/carteira/composicao', label: 'Composição', icon: 'chart-pie' },
     { path: '/carteira/desempenho', label: 'Desempenho', icon: 'chart-line' },
     { path: '/carteira/proventos', label: 'Proventos', icon: 'coins' },
+    { path: '/carteira/posicoes', label: 'Posições', icon: 'table' },
+    { path: '/carteira/encerradas', label: 'Encerradas', icon: 'circle-check' },
   ];
 }

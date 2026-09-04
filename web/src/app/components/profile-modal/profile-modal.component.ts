@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { AppUser, DialogDirective } from '../../core';
+import { AppUser, DialogDirective, ThemeService } from '../../core';
 
 @Component({
   selector: 'app-profile-modal',
@@ -76,7 +76,31 @@ import { AppUser, DialogDirective } from '../../core';
             </ul>
           </nav>
 
-          <div class="px-5 pb-5 pt-1 border-t border-hairline mt-1">
+          <div class="px-5 py-2 border-t border-hairline">
+            <button
+              type="button"
+              class="menu-item"
+              (click)="theme.toggle()"
+              [attr.aria-label]="
+                theme.theme() === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'
+              "
+            >
+              <lucide-icon
+                [name]="theme.theme() === 'dark' ? 'sun' : 'moon'"
+                size="16"
+                class="text-ink-3"
+                aria-hidden="true"
+              ></lucide-icon>
+              <span class="flex-1 min-w-0">
+                <span class="fi-body block">Aparência</span>
+                <span class="fi-caption text-ink-3 block">
+                  {{ theme.theme() === 'dark' ? 'Modo escuro' : 'Modo claro' }}
+                </span>
+              </span>
+            </button>
+          </div>
+
+          <div class="px-5 pb-5 pt-1 border-t border-hairline">
             <button type="button" class="btn-secondary w-full text-adverse" (click)="logout.emit()">
               <lucide-icon name="log-out" size="16"></lucide-icon> Sair da conta
             </button>
@@ -87,6 +111,7 @@ import { AppUser, DialogDirective } from '../../core';
   `,
 })
 export class ProfileModalComponent {
+  readonly theme = inject(ThemeService);
   readonly open = input(false);
   readonly user = input<AppUser | null>(null);
   readonly close = output<void>();

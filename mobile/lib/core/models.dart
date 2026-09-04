@@ -282,10 +282,10 @@ class DataFreshness {
 
   String get label {
     final age = marketDataAgeSeconds;
-    if (age == null) return 'cotacoes sem carimbo de tempo';
-    if (age < 120) return 'cotacoes de agora';
-    if (age < 3600) return 'cotacoes de ${(age / 60).round()} min atras';
-    return 'cotacoes de ${(age / 3600).round()} h atras';
+    if (age == null) return 'Cotações sem carimbo de tempo';
+    if (age < 120) return 'Cotações de agora';
+    if (age < 3600) return 'Cotações de ${(age / 60).round()} min atrás';
+    return 'Cotações de ${(age / 3600).round()} h atrás';
   }
 
   String get ratesLabel => ratesSource == 'bcb'

@@ -138,20 +138,6 @@ const DESTINATIONS: readonly NavDestination[] = [
               <lucide-icon name="history" size="18"></lucide-icon>
             </button>
             <button
-              class="btn-icon"
-              type="button"
-              (click)="theme.toggle()"
-              [title]="theme.theme() === 'dark' ? 'Modo claro' : 'Modo escuro'"
-              [attr.aria-label]="
-                theme.theme() === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'
-              "
-            >
-              <lucide-icon
-                [name]="theme.theme() === 'dark' ? 'sun' : 'moon'"
-                size="18"
-              ></lucide-icon>
-            </button>
-            <button
               type="button"
               class="btn-icon btn-icon-quiet overflow-hidden rounded-pill p-0"
               (click)="showProfile.set(true)"

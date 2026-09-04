@@ -171,15 +171,29 @@
 
     <nav class="fi-block" aria-label="Detalhe da carteira">
       <p class="fi-eyebrow text-ink-3 m-0 mb-3">Ver em detalhe</p>
-      <ul class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <ul
+        class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-hairline sm:divide-y-0"
+      >
         <li>
-          <a routerLink="/carteira/posicoes" class="fi-body text-brand no-underline">
-            Todas as posições, linha a linha →
+          <a routerLink="/carteira/posicoes" class="menu-item no-underline">
+            <span class="fi-body flex-1 min-w-0">Todas as posições, linha a linha</span>
+            <lucide-icon
+              name="chevron-right"
+              size="14"
+              class="text-ink-3 shrink-0"
+              aria-hidden="true"
+            ></lucide-icon>
           </a>
         </li>
         <li>
-          <a routerLink="/carteira/encerradas" class="fi-body text-brand no-underline">
-            O que eu já vendi →
+          <a routerLink="/carteira/encerradas" class="menu-item no-underline">
+            <span class="fi-body flex-1 min-w-0">O que eu já vendi</span>
+            <lucide-icon
+              name="chevron-right"
+              size="14"
+              class="text-ink-3 shrink-0"
+              aria-hidden="true"
+            ></lucide-icon>
           </a>
         </li>
       </ul>
@@ -190,20 +204,40 @@
       <p class="fi-caption text-ink-3 m-0 mb-3 max-w-reading">
         Operações sobre o livro-razão, não leituras do patrimônio.
       </p>
-      <ul class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <ul
+        class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-hairline sm:divide-y-0"
+      >
         <li>
-          <a routerLink="/carteira/transacoes" class="fi-body text-brand no-underline">
-            Lançamentos →
+          <a routerLink="/carteira/transacoes" class="menu-item no-underline">
+            <span class="fi-body flex-1 min-w-0">Lançamentos</span>
+            <lucide-icon
+              name="chevron-right"
+              size="14"
+              class="text-ink-3 shrink-0"
+              aria-hidden="true"
+            ></lucide-icon>
           </a>
         </li>
         <li>
-          <a routerLink="/carteira/importar" class="fi-body text-brand no-underline">
-            Importar operações →
+          <a routerLink="/carteira/importar" class="menu-item no-underline">
+            <span class="fi-body flex-1 min-w-0">Importar operações</span>
+            <lucide-icon
+              name="chevron-right"
+              size="14"
+              class="text-ink-3 shrink-0"
+              aria-hidden="true"
+            ></lucide-icon>
           </a>
         </li>
         <li>
-          <a routerLink="/carteira/editar" class="fi-body text-brand no-underline">
-            Editar a carteira →
+          <a routerLink="/carteira/editar" class="menu-item no-underline">
+            <span class="fi-body flex-1 min-w-0">Editar a carteira</span>
+            <lucide-icon
+              name="chevron-right"
+              size="14"
+              class="text-ink-3 shrink-0"
+              aria-hidden="true"
+            ></lucide-icon>
           </a>
         </li>
       </ul>

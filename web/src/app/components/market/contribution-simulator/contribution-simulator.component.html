@@ -34,9 +34,11 @@
       </div>
     </div>
 
-    <button type="submit" [disabled]="loading() || form.invalid" class="btn-primary">
-      {{ loading() ? 'Simulando...' : 'Simular' }}
-    </button>
+    <div class="mt-6 pt-4 border-t border-hairline">
+      <button type="submit" [disabled]="loading() || form.invalid" class="btn-primary">
+        {{ loading() ? 'Simulando...' : 'Simular' }}
+      </button>
+    </div>
   </form>
 
   @if (result(); as r) {
