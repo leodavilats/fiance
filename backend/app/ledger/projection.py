@@ -113,7 +113,15 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
         return
 
     if kind is TransactionKind.AMORTIZATION:
-        state.total_cost_exact = max(ZERO, state.total_cost_exact - money(entry.amount))
+        amortizado = money(entry.amount)
+        excedente = amortizado - state.total_cost_exact
+        state.total_cost_exact = max(ZERO, state.total_cost_exact - amortizado)
+        if excedente > ZERO:
+            state.warnings.append(
+                f"Amortização de {entry.traded_on} excedeu o custo restante em "
+                f"R$ {float(excedente):.2f}. Esse excedente é ganho tributável e não "
+                f"está apurado aqui."
+            )
         return
 
     if kind is TransactionKind.TRANSFER_IN:
@@ -134,7 +142,12 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
     raise LedgerError(f"Tipo de lançamento sem projeção definida: {kind!r}.")
 
 
-def _sequence(entries: Iterable[LedgerEntry]) -> list[LedgerEntry]:
+_KINDS_QUE_SOMAM = frozenset(
+    {TransactionKind.BUY, TransactionKind.BONUS, TransactionKind.TRANSFER_IN}
+)
+
+
+def _sequence(entries: Iterable[LedgerEntry]) -> tuple[list[LedgerEntry], list[LedgerEntry]]:
     por_registro = sorted(entries, key=lambda e: e.id if e.id is not None else 0)
 
     corte = 0
@@ -143,14 +156,32 @@ def _sequence(entries: Iterable[LedgerEntry]) -> list[LedgerEntry]:
             corte = indice
 
     relevantes = por_registro[corte:]
-    if relevantes and relevantes[0].kind is TransactionKind.ADJUST:
-        return [relevantes[0]] + sorted(relevantes[1:], key=lambda e: e.sort_key)
-    return sorted(relevantes, key=lambda e: e.sort_key)
+    if not relevantes or relevantes[0].kind is not TransactionKind.ADJUST:
+        return sorted(relevantes, key=lambda e: e.sort_key), []
+
+    ancora = relevantes[0]
+
+    aplicaveis: list[LedgerEntry] = []
+    absorvidos: list[LedgerEntry] = []
+    for entry in relevantes[1:]:
+        if entry.traded_on < ancora.traded_on and entry.kind in _KINDS_QUE_SOMAM:
+            absorvidos.append(entry)
+        else:
+            aplicaveis.append(entry)
+
+    return [ancora] + sorted(aplicaveis, key=lambda e: e.sort_key), absorvidos
 
 
 def _fold(entries: Iterable[LedgerEntry], symbol: str, on_step=None) -> PositionProjection:
-    ordered = _sequence(entries)
+    ordered, ignorados = _sequence(entries)
     state = PositionProjection(symbol=symbol or (ordered[0].symbol if ordered else ""))
+
+    if ignorados:
+        ancora = ordered[0].traded_on if ordered else "?"
+        state.warnings.append(
+            f"{len(ignorados)} lançamento(s) de entrada anteriores à declaração de posição "
+            f"de {ancora} não foram somados: o que foi declarado já os contém."
+        )
 
     for entry in ordered:
         _apply(state, entry)

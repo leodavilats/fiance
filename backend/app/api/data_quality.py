@@ -8,7 +8,6 @@ router = APIRouter()
 
 _service = OpportunityService()
 
-"""Instrumentação de qualidade do dado."""
 
 _FIELD_IMPACT = {
     "price": "sem preço não há análise nenhuma",

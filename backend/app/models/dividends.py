@@ -4,8 +4,6 @@ from pydantic import BaseModel, Field
 
 from .portfolio import TICKER_PATTERN
 
-"""Proventos recebidos."""
-
 
 class DividendReceivedBase(BaseModel):
     ticker: str = Field(..., min_length=4, max_length=32, pattern=TICKER_PATTERN)

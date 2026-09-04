@@ -4,8 +4,6 @@ from pydantic import BaseModel, Field
 
 from .portfolio import TICKER_PATTERN
 
-"""Ciclo decisão → execução → resultado."""
-
 SUGGESTION_SOURCES = (
     "opportunities",
     "rebalance",

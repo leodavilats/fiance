@@ -17,9 +17,6 @@ from app.core.context import (
 )
 from app.core.database import SessionLocal
 
-"""Instrumentação mínima."""
-
-
 PARAMETROS_SIGILOSOS = (
     "token",
     "api_key",
@@ -142,8 +139,12 @@ async def observability_middleware(request, call_next):
     memo_token = set_request_memo()
     try:
         response = await call_next(request)
+
         if get_request_session() is session:
-            session.commit()
+            if response.status_code >= 400:
+                session.rollback()
+            else:
+                session.commit()
     except BaseException:
         session.rollback()
         raise

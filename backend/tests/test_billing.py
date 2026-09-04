@@ -26,6 +26,20 @@ def regua_ligada(monkeypatch):
     monkeypatch.setattr(settings, "entitlements_enabled", True, raising=False)
 
 
+def _abrir_checkout(client, user_id: str, plan_code: str = "premium_monthly") -> str:
+    """Abre um checkout de verdade e devolve o id da sessão.
+
+    É por aqui que o titular de um evento passa a ser conhecido: o webhook não
+    aceita mais quem o corpo mandar.
+    """
+    resposta = client.post(
+        "/api/billing/checkout",
+        json={"plan_code": plan_code},
+        headers=make_auth_headers(user_id),
+    )
+    return resposta.json()["session_id"]
+
+
 def _enviar(client, gateway, payload: dict, assinatura: str | None = None):
     corpo = json.dumps(payload).encode()
     return client.post(
@@ -136,9 +150,7 @@ class TestWebhookIdempotente:
             {
                 "id": "evt_grant",
                 "type": "checkout.completed",
-                "user_id": "u_bill_grant",
-                "plan_code": "premium_monthly",
-                "price_cents": 1990,
+                "session_id": _abrir_checkout(client, "u_bill_grant"),
             },
         )
 
@@ -148,9 +160,7 @@ class TestWebhookIdempotente:
         payload = {
             "id": "evt_repetido",
             "type": "checkout.completed",
-            "user_id": "u_bill_repetido",
-            "plan_code": "premium_monthly",
-            "price_cents": 1990,
+            "session_id": _abrir_checkout(client, "u_bill_repetido"),
         }
 
         primeira = _enviar(client, gateway, payload).json()
@@ -164,8 +174,7 @@ class TestWebhookIdempotente:
         payload = {
             "id": "evt_200",
             "type": "checkout.completed",
-            "user_id": "u_bill_200",
-            "plan_code": "premium_monthly",
+            "session_id": _abrir_checkout(client, "u_bill_200"),
         }
         _enviar(client, gateway, payload)
 
@@ -176,6 +185,40 @@ class TestWebhookIdempotente:
 
         assert resposta.status_code == 400
 
+    def test_o_titular_vem_da_sessao_e_nunca_do_corpo(self, client, gateway, regua_ligada):
+        """A rota é pública: o corpo diz o que quiser, e não é ele quem decide."""
+        sessao = _abrir_checkout(client, "u_bill_dono_real")
+
+        _enviar(
+            client,
+            gateway,
+            {
+                "id": "evt_sequestro",
+                "type": "checkout.completed",
+                "session_id": sessao,
+                "user_id": "u_bill_alvo",
+                "price_cents": 1,
+            },
+        )
+
+        assert resolve("u_bill_dono_real").plan is Plan.PREMIUM
+        assert resolve("u_bill_alvo").plan is Plan.FREE
+
+    def test_sessao_desconhecida_nao_concede(self, client, gateway, regua_ligada):
+        resposta = _enviar(
+            client,
+            gateway,
+            {
+                "id": "evt_sessao_inventada",
+                "type": "checkout.completed",
+                "session_id": "cs_fake_inventada",
+                "user_id": "u_bill_invasor",
+            },
+        )
+
+        assert resposta.status_code == 400
+        assert resolve("u_bill_invasor").plan is Plan.FREE
+
     def test_evento_sem_id_e_recusado(self, client, gateway):
         resposta = _enviar(client, gateway, {"type": "checkout.completed", "user_id": "u"})
 
@@ -183,7 +226,13 @@ class TestWebhookIdempotente:
 
     def test_tipo_desconhecido_e_ignorado_sem_quebrar(self, client, gateway):
         corpo = _enviar(
-            client, gateway, {"id": "evt_estranho", "type": "invoice.upcoming", "user_id": "u_x"}
+            client,
+            gateway,
+            {
+                "id": "evt_estranho",
+                "type": "invoice.upcoming",
+                "session_id": _abrir_checkout(client, "u_bill_estranho"),
+            },
         ).json()
 
         assert corpo["effect"] == "ignored"
@@ -195,35 +244,39 @@ class TestWebhookIdempotente:
             {
                 "id": "evt_c1",
                 "type": "checkout.completed",
-                "user_id": "u_bill_cancel",
-                "plan_code": "premium_monthly",
-                "price_cents": 1990,
+                "session_id": _abrir_checkout(client, "u_bill_cancel"),
             },
         )
         _enviar(
             client,
             gateway,
-            {"id": "evt_c2", "type": "subscription.cancelled", "user_id": "u_bill_cancel"},
+            {
+                "id": "evt_c2",
+                "type": "subscription.cancelled",
+                "session_id": _abrir_checkout(client, "u_bill_cancel"),
+            },
         )
 
         assert resolve("u_bill_cancel").plan is Plan.FREE
 
 
 class TestPrecoDoEvento:
-    def test_o_preco_gravado_vem_do_evento_e_nao_da_tabela(self, client, gateway):
+    def test_o_preco_gravado_vem_da_sessao_e_nao_do_corpo(self, client, gateway):
+        """Preço no corpo seria preço escolhido por quem chama a rota pública."""
+        sessao = _abrir_checkout(client, "u_bill_preco", "premium_monthly")
+
         _enviar(
             client,
             gateway,
             {
                 "id": "evt_preco",
                 "type": "checkout.completed",
-                "user_id": "u_bill_preco",
-                "plan_code": "premium_monthly",
-                "price_cents": 990,
+                "session_id": sessao,
+                "price_cents": 1,
             },
         )
 
-        assert subscription_service.get("u_bill_preco")["price_cents"] == 990
+        assert subscription_service.get("u_bill_preco")["price_cents"] == 1990
 
     def test_fundador_entra_travado(self, client, gateway):
         _enviar(
@@ -232,9 +285,7 @@ class TestPrecoDoEvento:
             {
                 "id": "evt_fund",
                 "type": "checkout.completed",
-                "user_id": "u_bill_fund",
-                "plan_code": "premium_founder",
-                "price_cents": 14990,
+                "session_id": _abrir_checkout(client, "u_bill_fund", "premium_founder"),
             },
         )
 
@@ -249,9 +300,7 @@ class TestPrecoDoEvento:
             {
                 "id": "evt_mensal",
                 "type": "checkout.completed",
-                "user_id": "u_bill_mensal",
-                "plan_code": "premium_monthly",
-                "price_cents": 1990,
+                "session_id": _abrir_checkout(client, "u_bill_mensal"),
             },
         )
 
@@ -267,9 +316,7 @@ class TestReconciliacao:
             {
                 "id": "evt_rec_ok",
                 "type": "checkout.completed",
-                "user_id": "u_rec_ok",
-                "plan_code": "premium_monthly",
-                "price_cents": 1990,
+                "session_id": _abrir_checkout(client, "u_rec_ok"),
             },
         )
 

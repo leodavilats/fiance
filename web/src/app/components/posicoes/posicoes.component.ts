@@ -6,6 +6,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import {
   CarteiraStore,
   DensityService,
+  DialogDirective,
   FiDensity,
   FixedIncomePosition,
   MAX_COMPARE,
@@ -23,7 +24,14 @@ import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 @Component({
   selector: 'app-posicoes',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink, HelpTooltipComponent],
+  imports: [
+    CommonModule,
+    DialogDirective,
+    FormsModule,
+    LucideAngularModule,
+    RouterLink,
+    HelpTooltipComponent,
+  ],
   templateUrl: './posicoes.component.html',
 })
 export class PosicoesComponent implements OnInit {

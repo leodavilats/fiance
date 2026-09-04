@@ -12,6 +12,183 @@
 
 ---
 
+## A auditoria vira código: integridade, configuração e o canal de aquisição (2026-09-03)
+
+Uma auditoria conduzida contra `a1ee50a` levantou 48 achados. Esta entrada registra o que foi
+fechado e — mais importante — por que cada correção tem a forma que tem. O que ficou aberto está no
+[KNOWN_ISSUES](KNOWN_ISSUES.md), e a maior massa pendente é a apuração fiscal mensal.
+
+### A falha que era de arquitetura, não de detalhe
+
+A sessão de banco nascia e commitava no **middleware de observabilidade**, e só o ramo
+`except BaseException` fazia rollback. Só que os handlers de `DomainError` e `ValueError` vivem no
+`ExceptionMiddleware` do Starlette, que é *interno* ao middleware de usuário: o erro nunca subia. O
+middleware via uma resposta 4xx normal e **commitava a escrita parcial**.
+
+O efeito onde mais dói: `sell_position` grava o `ClosedTradeDb` — com IR já apurado — e só depois
+chama o razão. Quando o razão recusava a venda, o usuário levava 400, o trade encerrado ficava
+gravado com imposto calculado, e a venda não existia no razão. Carteira e apuração fiscal saíam de
+sincronia permanentemente.
+
+A correção é uma linha de conceito, não de código: **quem decide commit ou rollback é o status da
+resposta**, não a ausência de exceção. E ela abriu um segundo problema que precisava de resposta
+própria — o contador que sustenta o teto de requisições e a marca de que alguém esbarrou na cerca
+*precisam* sobreviver ao 4xx que eles mesmos provocam. Daí `independent_session()` e
+`outside_request_transaction()`: transação própria para o que documenta a recusa, unidade de
+trabalho do request para todo o resto.
+
+Isso passou por 797 testes porque a suíte exercita rotas e confere respostas, não o estado do banco
+depois de um erro de domínio no meio de uma escrita composta. `test_atomicidade_da_escrita.py`
+existe para fechar essa classe, e foi escrito de forma a falhar com a correção revertida.
+
+### Uma porta só para o razão
+
+Três escritas passavam por `ledger_service` e reprojetavam a carteira; três iam direto ao
+`ledger_store` e não reprojetavam nada — `POST /transactions`, o lote, a importação e o `DELETE`. O
+desfecho era o pior possível para a confiança: a pessoa colava o extrato da corretora, o produto
+respondia com a contagem de importados, e a tela de Carteira não mudava. Nada avisava que faltava
+chamar `POST /transactions/rebuild`.
+
+Agora `record_entry`, `record_entries`, `delete_entry` e `import_entries` são a porta única, e
+`rebuild_projection` aceita um conjunto de símbolos para que uma escrita em lote custe **uma**
+passada de projeção em vez de uma por ticker.
+
+Um teste consagrava o defeito: `test_a_carteira_importada_aparece_na_projecao` afirmava que a
+reconciliação acusava divergência depois de importar. Foi reescrito para o comportamento certo.
+
+### A âncora de posição, e a assimetria que ela precisa ter
+
+`_sequence` cortava o razão no último `ADJUST` **por ordem de gravação**. Declarar hoje 100 PETR4 e
+depois importar o extrato do ano passado — que contém a compra dessas mesmas 100 — somava 200.
+Declarar primeiro e importar o histórico depois é exatamente o fluxo que o produto convida.
+
+A primeira tentativa cortou por data e quebrou a venda retroativa, que é comportamento declarado. A
+regra correta é assimétrica e agora está escrita como tal: lançamento **anterior** à declaração que
+*soma* posição (compra, bonificação, transferência de entrada) já está dentro do que foi declarado
+e é descartado com aviso; o que *reduz* continua valendo. O canal `PositionProjection.warnings`
+existia, era serializado e nunca era preenchido — passou a ser, aqui e na amortização que excede o
+custo restante.
+
+### Um default de ambiente que desarmava três defesas
+
+`app_env` tinha default `"development"`, e `validate_for_startup()` retorna cedo em development. Um
+deploy que esquecesse `APP_ENV` subia, em silêncio, com JWT `change-me`, CORS `*` e todo usuário
+autenticado virando operador. Não havia falha barulhenta: o produto funcionava.
+
+`APP_ENV` passou a **não ter default**. Vazio falha alto no startup e, se algo escapar, falha
+**fechado** — vazio não é development. A suíte declara o próprio ambiente como qualquer outro
+consumidor faria.
+
+### O webhook de cobrança
+
+Três defeitos empilhados: segredo default versionado no repositório, ausente da validação de
+startup, e `parse()` lendo o titular **do corpo**. Quem conhecesse o repositório concedia ou
+revogava plano de qualquer usuário.
+
+O segredo entrou na validação de startup com o mesmo rigor do JWT, a rota ganhou teto por IP — a
+assinatura é forçável offline sem custo se não houver —, e o titular passou a sair da tabela
+`checkout_sessions`, que guarda quem abriu o checkout. A assinatura protege a integridade da
+mensagem, não a autoridade sobre quem ela nomeia. `WebhookEvent` perdeu o campo de titular de
+propósito: um campo que não existe não pode ser confiado por engano.
+
+### O teto das rotas caras estava morto no caminho canônico
+
+`EXPENSIVE_PREFIXES` casava `/api/opportunities` por prefixo. No prefixo canônico o caminho é
+`/api/v1/opportunities`, que não casa. Hoje não morde porque nenhum cliente usa `/api/v1` — a
+armadilha é o inverso: no dia da migração, que é o objetivo declarado, a proteção das seis rotas
+mais caras sumiria sem teste vermelho. O casamento passou a ser por **sufixo**.
+
+Na mesma passada, `/auth/google`, `/auth/refresh` e o webhook ganharam teto por IP: `rate_limit`
+depende de `get_current_user` e por construção só limitava quem já entrou.
+
+### "Tem carteira" é uma pergunta só
+
+A cerca de plano, o início do trial e o marco de ativação perguntavam a `list_positions`, que lê só
+a tabela `portfolio`. Renda fixa é entidade de primeira classe desde que ganhou tabela própria —
+então quem tinha R$ 300 mil em CDB e nenhuma ação **nunca havia começado**: usava o produto inteiro
+sem cerca e sem nunca ganhar trial. Agora existe `has_holdings()`, e é ela que os três consultam.
+
+Junto: `POST /transactions/batch` aceitava a mesma lista de `/transactions/import` sem cerca
+nenhuma. A cerca estava no parser, não no direito de escrever em lote.
+
+### O sistema deixa de inventar CDI em silêncio
+
+`collectors/rates.py` não seguia nenhuma das três disciplinas aplicadas à BRAPI: sem disjuntor, sem
+cache vencido, sem faixa de plausibilidade. BCB fora do ar produzia 14,40% literal, carimbado
+`estimativa`, alimentando comparação de renda fixa, marcação a mercado, RF × Bolsa, painel e a
+linha de CDI do gráfico.
+
+Ganhou as três. A degradação agora é **cache vencido antes de constante**, e o rótulo de fonte
+distingue os dois (`bcb` / `bcb_cache_vencido` / `estimativa`). `BenchmarkResponse` ganhou
+`cdi_source` e `cdi_basis` — o primeiro por simetria com `ibov_available`, que existia "porque
+fonte externa pode falhar"; o segundo porque a curva é extrapolada da taxa de hoje e composta para
+trás, o que é referência e não o CDI acumulado histórico. A curva continua contrafactual; parou de
+mentir sobre a origem.
+
+### Duas afirmações falsas ao lado do veredito
+
+`decide()` escrevia "Tendência de alta (média 50 acima da 200)" sem consultar `trend_basis` — e com
+`BRAPI_HISTORY_RANGE=3mo`, que é o padrão de produção, a classificação sai de SMA 20/50. O produto
+tinha construído a honestidade certa (o campo existe, viaja no contrato, tem rótulo pronto nos dois
+clientes) e a camada de explicação não a usava.
+
+E `falsifiers()` derivava os preços-limite assumindo que o veredito era o da banda de margem de
+segurança, mas `decide()` o altera depois por tendência e RSI. Resultado: a tela mostrava "Manter.
+Isto vira Comprar se o preço cair para R$ 102,00" com o preço em R$ 100,00 — a condição já
+satisfeita, contradizendo o veredito, com os dois números no mesmo componente. Agora a álgebra sai
+da banda (`Decision.band_verdict`), uma condição já satisfeita não é emitida, e quando o técnico
+segura o veredito fora da banda é **ele** que aparece como o que o derrubaria.
+
+### O canal de aquisição
+
+`describePage()` só rodava dentro do `next` do subscribe. Um 404 de ticker ou uma queda da fonte
+devolvia **HTTP 200 com o título genérico do index.html** — e o sitemap anuncia ~400 tickers, então
+uma indisponibilidade durante uma varredura produzia centenas de páginas idênticas, sem `noindex`
+para conter. Exatamente o conteúdo duplicado que a canônica existe para evitar.
+
+Agora o status é real (404 ou 503, via `RESPONSE_INIT`), a página se marca `noindex`, a canônica é
+absoluta, há JSON-LD, e existe **imagem de compartilhamento por ticker**:
+`/public/asset/{symbol}/og.png`, 1200×630, com o ticker, o veredito e o preço justo contra o de
+mercado, nas cores de `tokens.json` e cacheada por seis horas. Num país onde a distribuição
+orgânica de conteúdo financeiro é WhatsApp, LinkedIn e X, todo link compartilhado saía como um
+retângulo de texto.
+
+O `robots.txt` passou de lista negra a lista branca — enumerar as rotas privadas faz toda rota nova
+nascer rastreável —, `SITE_URL` deixou de ter default silencioso, e o `fetch` do sitemap ganhou
+timeout. O E2E passou a tocar a rota SSR, que era justamente a que ele não cobria.
+
+### O que faltava no navegador
+
+- **Duas abas derrubavam a sessão.** O `_refreshInFlight` coalesce a renovação dentro de uma aba, e
+  o comentário explicava exatamente por quê; duas abas têm dois nulos e o mesmo refresh no
+  `localStorage`. Agora um Web Lock serializa, e quem entra depois encontra o token já rotacionado
+  e o aproveita em vez de apresentar um queimado.
+- **Cabeçalhos de segurança.** Não havia nenhum. Com o refresh de 30 dias em `localStorage`, a CSP
+  é a segunda linha que faltava.
+- **O tema só era aplicado depois do bootstrap.** Não existia `@media (prefers-color-scheme: light)`
+  em lugar nenhum: quem usa claro via flash escuro em todo carregamento, a rota SSR pública abria
+  sempre escura, e quem navega sem JavaScript via só o escuro. O gerador passou a emitir o bloco de
+  mídia, e um script inline lê a escolha guardada antes da primeira pintura.
+- **Tokens de camada gerados e ignorados.** Cinco `--fi-z-*` contra onze templates escrevendo o
+  número mágico direto — mais um valor fora da escala. Já tinha produzido um defeito: o indicador
+  de carregamento em 100, desenhado atrás de modais que ficam em 200–300. A escala virou utilitária
+  nomeada e o `lint:ui` ganhou a décima terceira regra.
+- **Nenhum diálogo prendia o foco**, e dois nem se anunciavam como diálogo. A diretiva `fiDialog`
+  dá papel, foco inicial, ciclo de Tab preso e devolução do foco às seis superfícies. A mudança de
+  rota passou a ser anunciada em região `aria-live`. A inércia real do fundo para o leitor de tela
+  continua aberta e está anotada como tal.
+- **402 virava um toast ilegível** — o corpo é o dicionário da decisão, e o `switch` não tinha caso
+  para ele. Não se manifestava só porque a cerca está desligada.
+
+### E a documentação
+
+O `KNOWN_ISSUES` tinha apodrecido de novo: os itens 12 e 13 afirmavam que a posição não era
+projeção do razão e que as colunas monetárias eram `Float` — as duas coisas já eram falsas. Foram
+substituídos pelo que ficou de fato aberto. O checklist do CLAUDE.md omitia `ruff format --check`,
+que o CI roda: quem seguia o contrato à risca não rodava o comando que reprovava.
+
+---
+
 ## O cache sai do disco e a coleta passa a ser em lote (2026-09-03)
 
 O teto da BRAPI é de 3.000 requisições por dia. A conta de quanto o produto gastava não fechava:

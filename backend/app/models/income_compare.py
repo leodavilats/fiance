@@ -1,7 +1,5 @@
 from pydantic import BaseModel, Field
 
-"""Comparação de renda: renda fixa e ativos de bolsa na mesma tela."""
-
 
 class IncomeOption(BaseModel):
     kind: str = Field(..., description="renda_fixa | acao | fii | bdr | etf")

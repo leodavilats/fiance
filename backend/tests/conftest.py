@@ -4,6 +4,9 @@ import tempfile
 _tmp_db = os.path.join(tempfile.mkdtemp(prefix="fiance_test_"), "test.db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp_db}"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
+# APP_ENV não tem default: a suíte declara o próprio ambiente como qualquer
+# outro consumidor faria.
+os.environ.setdefault("APP_ENV", "development")
 
 from datetime import UTC, datetime, timedelta  # noqa: E402
 

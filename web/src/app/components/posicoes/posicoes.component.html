@@ -206,7 +206,7 @@
             >)
           </summary>
           <div
-            class="absolute right-0 top-full mt-1 z-[300] w-[250px] bg-ground-1 border border-hairline rounded-lg shadow-popover p-2"
+            class="absolute right-0 top-full mt-1 z-popover w-[250px] bg-ground-1 border border-hairline rounded-lg shadow-popover p-2"
           >
             @for (col of allColumns; track col.id) {
               <label
@@ -407,10 +407,11 @@
 
 @if (sellModal(); as modal) {
   <div
-    class="fixed inset-0 z-[300] fi-overlay flex items-center justify-center p-4"
+    class="fixed inset-0 z-popover fi-overlay flex items-center justify-center p-4"
     (click)="closeSellModal()"
   >
     <div
+      fiDialog
       class="relative w-full max-w-sm rounded-lg border border-hairline bg-ground-1 shadow-popover p-5"
       role="dialog"
       aria-modal="true"

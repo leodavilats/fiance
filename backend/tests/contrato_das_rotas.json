@@ -68,7 +68,9 @@
     "picture"
   ],
   "GET /api/v1/benchmark": [
+    "cdi_basis",
     "cdi_return_pct",
+    "cdi_source",
     "ibov_available",
     "ibov_return_pct",
     "method",
@@ -141,6 +143,9 @@
     "deadline",
     "target_pct",
     "target_value"
+  ],
+  "GET /api/v1/health": [
+    "status"
   ],
   "GET /api/v1/income-compare": [
     "amount",
@@ -217,6 +222,11 @@
     "sector",
     "symbol",
     "technical"
+  ],
+  "GET /api/v1/ready": [
+    "checks",
+    "ready",
+    "sources"
   ],
   "GET /api/v1/referral": [
     "attributed",

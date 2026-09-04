@@ -318,6 +318,21 @@ class SubscriptionDb(Base):
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 
+class CheckoutSessionDb(Base):
+    __tablename__ = "checkout_sessions"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String, index=True)
+
+    provider: Mapped[str] = mapped_column(String, default="none")
+    plan_code: Mapped[str] = mapped_column(String, default="premium")
+    price_cents: Mapped[int] = mapped_column(Integer, default=0)
+    interval: Mapped[str] = mapped_column(String, default="monthly")
+
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+    expires_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
 class ProcessedWebhookDb(Base):
     __tablename__ = "processed_webhooks"
 
@@ -350,13 +365,6 @@ class ReferralDb(Base):
 
 
 class CacheEntryDb(Base):
-    """Cache de dado externo quando ele mora no banco da aplicação.
-
-    Não é dado de ninguém — é por ticker, e some sem perda. Está aqui, e não num
-    arquivo local, porque em produção o disco do contêiner é efêmero: o cache em
-    arquivo nasce frio a cada deploy e a cota da fonte paga por isso.
-    """
-
     __tablename__ = "cache_entries"
 
     k: Mapped[str] = mapped_column(String, primary_key=True)

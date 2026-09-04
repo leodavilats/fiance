@@ -199,14 +199,17 @@ def list_entries(
     return _with_session(body, user_id)
 
 
-def delete_entry(entry_id: int, user_id: str | None = None) -> None:
-    def body(session, uid: str) -> None:
+def delete_entry(entry_id: int, user_id: str | None = None) -> str:
+
+    def body(session, uid: str) -> str:
         row = session.get(TransactionDb, entry_id)
         if row is None or row.user_id != uid:
             raise NotFoundError("Lançamento não encontrado.")
+        symbol = row.symbol
         session.delete(row)
+        return symbol
 
-    _with_session(body, user_id)
+    return _with_session(body, user_id)
 
 
 def delete_symbol_entries(symbol: str, user_id: str | None = None) -> int:

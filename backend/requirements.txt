@@ -16,6 +16,12 @@ psycopg[binary]>=3.2,<4
 # sintoma seria preços diferentes por nó, que ninguém atribui a um pacote
 # faltando.
 redis>=5.0,<7
+# Imagem de compartilhamento por ticker (/public/asset/{symbol}/og.png). A rota
+# de ativo é o único canal de aquisição do produto e todo link compartilhado
+# saía como um retângulo de texto — num país onde a distribuição orgânica de
+# conteúdo financeiro é WhatsApp, LinkedIn e X. A mesma dependência que o
+# gerador de ícones já usa.
+pillow>=10.0,<12
 google-auth>=2.34,<3
 pyjwt>=2.9,<3
 firebase-admin>=6.5,<7

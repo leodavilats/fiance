@@ -96,13 +96,28 @@ describe('página de ativo', () => {
       expect(TestBed.inject(Title).getTitle()).not.toBe(primeira);
     });
 
-    it('a canônica é um link, e é única', () => {
+    it('a canônica é um link, é única e é absoluta', () => {
       setup({ authenticated: false, asset: analysis() });
 
       const canonicas = document.head.querySelectorAll('link[rel="canonical"]');
 
       expect(canonicas).toHaveLength(1);
-      expect(canonicas[0].getAttribute('href')).toBe('/ativo/PETR4');
+      // Absoluta de propósito: uma canônica relativa resolve, mas não
+      // normaliza host nem protocolo — que é o problema que ela existe para
+      // resolver.
+      expect(canonicas[0].getAttribute('href')).toBe(`${location.origin}/ativo/PETR4`);
+    });
+
+    it('o link compartilhado leva imagem e dado estruturado', () => {
+      setup({ authenticated: false, asset: analysis() });
+
+      const imagem = document.querySelector('meta[property="og:image"]')?.getAttribute('content');
+      const card = document.querySelector('meta[name="twitter:card"]')?.getAttribute('content');
+      const jsonld = document.head.querySelector('#fi-jsonld')?.textContent ?? '';
+
+      expect(imagem).toContain('/public/asset/PETR4/og.png');
+      expect(card).toBe('summary_large_image');
+      expect(JSON.parse(jsonld).about.tickerSymbol).toBe('PETR4');
     });
 
     it('ativo sem preço justo ainda produz descrição legível', () => {

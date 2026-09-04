@@ -110,15 +110,29 @@ class TestDuplicidade:
 
 class TestReconciliacaoAposImportar:
     def test_a_carteira_importada_aparece_na_projecao(self, client):
+        """Importar tem que mudar a Carteira, não só o razão.
+
+        Antes, a importação gravava com perfeição num lugar que a tela
+        principal não lê: o usuário colava o extrato, o produto respondia
+        `{"imported": 2}`, e nada mudava.
+        """
         headers = make_auth_headers("u_import_projection")
 
         _commit(client, headers, CSV_BOM)
 
-        resultado = client.get("/api/transactions/reconciliation", headers=headers).json()
-        projetadas = {d["ticker"] for d in resultado["differences"]}
+        posicoes = client.get("/api/portfolio", headers=headers).json()
+        tickers = {p["ticker"] for p in posicoes["items"]}
 
-        assert projetadas == {"PETR4", "VALE3"}
-        assert all(d["reason"] == "no_razao_sem_posicao" for d in resultado["differences"])
+        assert {"PETR4", "VALE3"} <= tickers
+
+    def test_apos_importar_a_projecao_nao_diverge_da_posicao(self, client):
+        headers = make_auth_headers("u_import_sem_divergencia")
+
+        _commit(client, headers, CSV_BOM)
+
+        resultado = client.get("/api/transactions/reconciliation", headers=headers).json()
+
+        assert resultado["in_sync"] is True, resultado["differences"]
 
     def test_o_preco_medio_importado_bate_com_a_nota(self, client):
         headers = make_auth_headers("u_import_avg")

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.core import usage
+from app.core import cache
 from app.core.brt import now_brt
-from app.core.config import get_settings
+from app.core.ratelimit import ip_rate_limit
 from app.core.universe import get_universe
 from app.models import AssetAnalysis
-from app.services import AssetService
+from app.services import AssetService, og_image
 
 router = APIRouter()
 
@@ -19,24 +20,7 @@ PUBLIC_PER_MINUTE = 60
 
 
 async def _ip_rate_limit(request: Request, cost: int = 1) -> None:
-    settings = get_settings()
-    if not settings.rate_limit_enabled:
-        return
-
-    client = request.client.host if request.client else "desconhecido"
-    count = usage.increment(
-        f"ip:{client}",
-        "public",
-        usage.minute_window(),
-        ttl_seconds=usage.MINUTE * 2,
-        amount=cost,
-    )
-    if count > PUBLIC_PER_MINUTE:
-        raise HTTPException(
-            status_code=429,
-            detail="Muitas requisições. Aguarde um minuto.",
-            headers={"Retry-After": "60"},
-        )
+    await ip_rate_limit(request, "public", PUBLIC_PER_MINUTE, cost=cost)
 
 
 @router.get("/public/asset/{symbol}", response_model=AssetAnalysis)
@@ -47,6 +31,52 @@ async def public_asset(symbol: str, request: Request) -> AssetAnalysis:
         return await asset_service.analyze_asset(symbol, personalized=False)
     except ValueError as exc:
         raise HTTPException(404, str(exc)) from exc
+
+
+OG_TTL = 6 * 3600
+
+
+@router.get(
+    "/public/asset/{symbol}/og.png",
+    response_class=Response,
+    responses={200: {"content": {"image/png": {}}, "description": "PNG de 1200×630."}},
+)
+async def public_asset_og(symbol: str, request: Request) -> Response:
+    await ip_rate_limit(request, "public-og", PUBLIC_PER_MINUTE)
+
+    alvo = symbol.strip().upper()
+    chave = f"og:asset:{alvo}"
+
+    guardada = cache.get(chave)
+    if guardada:
+        return Response(
+            content=base64.b64decode(guardada),
+            media_type="image/png",
+            headers={"Cache-Control": f"public, max-age={OG_TTL}"},
+        )
+
+    try:
+        analise = await asset_service.analyze_asset(alvo, personalized=False)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+    png = await asyncio.to_thread(
+        og_image.render,
+        analise.symbol,
+        analise.name,
+        analise.decision.verdict,
+        analise.decision.label,
+        analise.price,
+        analise.fair_price.consensus if analise.fair_price else None,
+    )
+
+    cache.set(chave, base64.b64encode(png).decode(), OG_TTL)
+
+    return Response(
+        content=png,
+        media_type="image/png",
+        headers={"Cache-Control": f"public, max-age={OG_TTL}"},
+    )
 
 
 @router.get("/public/universe")

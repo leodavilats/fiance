@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 
 from app.core.brt import now_brt
 from app.ledger import LedgerEntry, TransactionKind, explain_position, project_positions
@@ -77,22 +78,53 @@ def record_removal(ticker: str, user_id: str | None = None) -> None:
     rebuild_projection(symbol=ticker, user_id=user_id)
 
 
+def record_entry(entry: LedgerEntry, source: str = "manual", user_id: str | None = None) -> int:
+    entry_id = ledger_store.record(entry, source=source, user_id=user_id)
+    rebuild_projection(symbol=entry.symbol, user_id=user_id)
+    return entry_id
+
+
+def record_entries(
+    entries: list[LedgerEntry],
+    source: str = "manual",
+    user_id: str | None = None,
+) -> list[int]:
+    if not entries:
+        return []
+
+    ids = ledger_store.record_many(entries, source=source, user_id=user_id)
+    rebuild_projection(symbols={e.symbol for e in entries}, user_id=user_id)
+    return ids
+
+
+def delete_entry(entry_id: int, user_id: str | None = None) -> str:
+    symbol = ledger_store.delete_entry(entry_id, user_id=user_id)
+    rebuild_projection(symbol=symbol, user_id=user_id)
+    return symbol
+
+
 def rebuild_projection(
     symbol: str | None = None,
     category: str | None = None,
     user_id: str | None = None,
+    symbols: Iterable[str] | None = None,
 ) -> int:
-    alvo = symbol.strip().upper() if symbol else None
+    alvos: set[str] | None = None
+    if symbols is not None:
+        alvos = {s.strip().upper() for s in symbols if s and s.strip()}
+    elif symbol:
+        alvos = {symbol.strip().upper()}
+
     projetadas = project(user_id)
     categorias = {
         item["ticker"]: item["category"] for item in portfolio_store.list_positions(user_id)
     }
-    if alvo and category:
-        categorias[alvo] = category
+    if symbol and category:
+        categorias[symbol.strip().upper()] = category
 
     escritas = 0
     for ticker, estado in projetadas.items():
-        if alvo and ticker != alvo:
+        if alvos is not None and ticker not in alvos:
             continue
         if estado.is_open:
             portfolio_store.upsert_position(
@@ -107,7 +139,7 @@ def rebuild_projection(
         escritas += 1
 
     for ticker in categorias:
-        if alvo and ticker != alvo:
+        if alvos is not None and ticker not in alvos:
             continue
         if ticker not in projetadas:
             portfolio_store.delete_position(ticker, user_id=user_id)
@@ -232,6 +264,7 @@ def import_entries(entries: list[LedgerEntry], user_id: str | None = None) -> li
         return []
 
     ids = ledger_store.record_many(entries, source="import", user_id=user_id)
+    rebuild_projection(symbols={e.symbol for e in entries}, user_id=user_id)
     audit_store.write(
         audit_store.LEDGER_WRITE,
         entity="import",

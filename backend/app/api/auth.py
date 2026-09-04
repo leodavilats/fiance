@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.core import sessions
@@ -17,12 +17,15 @@ from app.core.auth import (
     verify_google_id_token,
 )
 from app.core.database import SessionLocal
+from app.core.ratelimit import ip_rate_limit
 from app.models.db_models import User
 from app.services import referral_service
 
 logger = logging.getLogger("fiance.auth")
 
 router = APIRouter()
+
+AUTH_PER_MINUTE = 20
 
 
 class GoogleLoginRequest(BaseModel):
@@ -55,7 +58,9 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/auth/google", response_model=LoginResponse)
-async def login_with_google(body: GoogleLoginRequest) -> LoginResponse:
+async def login_with_google(body: GoogleLoginRequest, request: Request) -> LoginResponse:
+    await ip_rate_limit(request, "auth", AUTH_PER_MINUTE)
+
     google_user = verify_google_id_token(body.id_token)
     user = upsert_user_from_google(google_user)
 
@@ -74,7 +79,9 @@ async def login_with_google(body: GoogleLoginRequest) -> LoginResponse:
 
 
 @router.post("/auth/refresh", response_model=TokenResponse)
-async def refresh_session(body: RefreshRequest) -> TokenResponse:
+async def refresh_session(body: RefreshRequest, request: Request) -> TokenResponse:
+    await ip_rate_limit(request, "auth", AUTH_PER_MINUTE)
+
     payload = decode_token(body.refresh_token, TOKEN_TYPE_REFRESH)
     revoke_token(payload)
 

@@ -1,6 +1,6 @@
 # fiance — o que está aberto
 
-> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-08-28**; nada de
+> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-09-03**; nada de
 > histórico, nada de ✅. O que já foi resolvido — e por quê — está em [CHANGELOG.md](CHANGELOG.md).
 >
 > Este arquivo tem uma tendência conhecida a apodrecer. Na revisão de 2026-08-28, **oito dos 24
@@ -92,20 +92,31 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
 > `/voce/alertas`. As demais assimetrias entre mobile e web fecharam em 2026-08-28 — metas ganharam
 > tela própria e RF × Bolsa ganhou cliente Dart.
 
-## Dívida aberta (auditoria de 2026-08-26)
+## Dívida aberta (auditoria de 2026-08-29, revista em 2026-09-03)
 
-12. **A posição corrente ainda não é a projeção do razão.** O livro-razão existe e a escrita é
-    espelhada nele, mas `PortfolioPosition` continua sendo a fonte de leitura. É o passo 2 de 3 do
-    plano, deliberado: `GET /transactions/reconciliation` compara os dois lado a lado e o teste de
-    integração cobre o caminho, mas trocar a fonte é uma entrega própria. A importação de operações
-    já grava `buy` de verdade (`importing/`, `/transactions/import`); `adjust` ficou para quando a
-    pessoa declara estado direto na tela.
+> Os antigos itens 12 e 13 foram removidos porque já eram falsos quando escritos de novo: a posição
+> **é** projeção do razão (`ledger_service.rebuild_projection`) e as colunas monetárias **são**
+> `Money = ExactNumeric`. Item resolvido que fica manda refazer o que existe — que é exatamente a
+> doença que o cabeçalho deste arquivo descreve. Os números foram reaproveitados pelo que ficou
+> aberto no lugar.
 
-13. **Decimal cobre o caminho fiscal, não o schema.** A projeção do razão e a apuração de IR rodam
-    em `Decimal` com escala e arredondamento em `core/money.py`. As **colunas do banco** continuam
-    `Float`, e preço, patrimônio e indicadores de tela seguem em float — adequado para apoio à
-    decisão, não para um extrato somado. Migrar as colunas monetárias para `Numeric` é uma migração
-    grande e ainda não foi feita.
+12. **A apuração de IR é por operação; a lei é por mês.** `optimizer/cost_calculator.py` trata cada
+    venda isoladamente: tributa o lucro na hora e só considera prejuízo já realizado e gravado
+    antes. A regra brasileira compensa ganhos e perdas **dentro do mês e da categoria** e incide
+    sobre o líquido do período. Vender com +R$ 10.000 no dia 5 e −R$ 10.000 no dia 20 informa
+    R$ 1.500 de imposto onde o correto é zero, e inverter as datas produz o número certo — a ordem
+    de registro dentro do mês muda o imposto informado. Consequências ligadas ao mesmo modelo:
+    passar dos R$ 20.000 no mês não reavalia as vendas já gravadas como isentas, e não há noção de
+    day trade nem de IOF em resgate de renda fixa com menos de 30 dias. Substituir "custo de uma
+    venda" por "resultado do mês por categoria" resolve os três de uma vez, e é o que destrava o
+    DARF.
+
+13. **Vendas do razão não geram apuração.** Toda a apuração se apoia em `ClosedTradeDb`, e a única
+    coisa que grava `ClosedTradeDb` é `POST /portfolio/sell`. Uma venda registrada por
+    `POST /transactions` (`kind=sell`) ou vinda da importação de extrato não apura imposto, não
+    conta para o teto mensal de R$ 20.000, não alimenta nem consome prejuízo compensável e não
+    aparece em Encerradas. A escrita e a projeção da carteira já foram unificadas; a origem da
+    apuração ainda não.
 
 14. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
     vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo
@@ -129,7 +140,47 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     acessível de botão (lint), alternativa textual de gráfico (lint) e foco visível estão de pé. O
     que **não** foi feito é percorrer cada fluxo só com teclado e com leitor de tela de verdade:
     ordem de foco em camadas empilhadas, anúncio de mudança de rota e armadilha de foco em modal
-    ainda não têm cobertura automática nem verificação manual registrada.
+    ainda não têm cobertura automática nem verificação manual registrada. **Parcialmente
+    endereçado:** a diretiva `fiDialog` (`core/directives/dialog.directive.ts`) prende o Tab,
+    devolve o foco a quem abriu e dá papel e modalidade às seis superfícies sobrepostas; a mudança
+    de rota é anunciada em região `aria-live`. O que continua aberto é a **inércia real do fundo**
+    para o cursor virtual do leitor de tela — `aria-modal` promete uma inércia que o DOM não tem, e
+    resolver isso exige tirar o diálogo da árvore da aplicação — e a verificação manual com leitor
+    de tela de verdade.
+
+18. **A aparência das telas nos dois temas nunca foi conferida em navegador.** O contraste é
+    verificado no CI, mas por par de token — e o verificador, por construção, não enxerga estado
+    composto por opacidade: `.btn-*:disabled` usa `opacity: 0.5` e o contraste real do botão
+    desabilitado difere entre os temas, sem nunca ter sido medido. Há também a suspeita, levantada
+    por análise de composição e **não confirmada no olho**, de que a elevação de modais e drawers é
+    fraca demais no tema claro: o painel e o véu ficam em 1,06:1 nos dois temas, então quem separa
+    é a sombra — e a do claro tem 27% da opacidade da do escuro.
+
+19. **A cobrança não tem caminho de ponta a ponta.** Existe backend, régua de plano, preço travado e
+    webhook idempotente; não existe tela de plano, exibição de preço, checkout, gestão de assinatura
+    nem cancelamento na interface — `billing` não aparece em `web/src` nem em `mobile/lib`, e o CTA
+    do `gate.component.ts` aponta para `/voce/plano`, que não existe em `app.routes.ts`. Some-se a
+    isto que o relógio do trial **já está correndo** com a cerca desligada: `start_trial()` é
+    chamado na primeira posição salva, então virar `ENTITLEMENTS_ENABLED` hoje derrubaria a base
+    inteira para Free no mesmo instante. O trial precisa ser reiniciado na ativação da cerca, antes
+    de virar a flag — não depois.
+
+20. **O ETF é estruturalmente mal avaliado, e o remendo tem consequência.** Para `asset_type ==
+    "etf"` o único candidato a consenso é Bazin (`dividendo / 0,04`); um ETF de índice distribui na
+    casa de 1% ao ano, então o preço justo sai em ~25% do preço e a margem de segurança em −300%,
+    sempre. `opportunity_service` sobrescreve o veredito por RSI e tendência quando ele sai
+    `UNKNOWN`, o que produz duas coisas ruins: o mesmo ETF recebe veredito diferente em
+    `/descobrir` e em `/ativo/:ticker`, e o veredito por momentum sai **sem falsificador**, porque
+    sem consenso não há preço-limite. Decidir o método — comparação com o índice, prêmio sobre o
+    valor patrimonial, ou abstenção explícita — vem antes de mexer no falsificador.
+
+21. **Três das seis dimensões do score nunca têm dado, e o perfil de risco fica quase inerte.** A
+    ausência de `roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` está no item 3; a
+    consequência sobre a personalização não estava. Com os pesos reais, sobra 0,60 de peso no
+    perfil conservador, 0,55 no moderado e 0,35 no agressivo — e o que resta em todos é margem de
+    segurança, dividendos e técnico, renormalizados. Crescimento vale 40% do peso agressivo e nunca
+    existe. O glossário descreve "qualidade e endividamento ponderados pelo seu perfil", que é o
+    produto que existirá quando houver segunda fonte.
 
 ## Armadilhas conhecidas
 

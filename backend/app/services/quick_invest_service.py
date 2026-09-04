@@ -204,12 +204,6 @@ class QuickInvestService:
         return " | ".join(reasons)
 
     def _build_summary(self, allocations: list[QuickInvestAllocation]) -> str:
-        """Resumo sem cifra.
-
-        O quanto alocar sai em `allocated_cash`/`remaining_cash`, que passam pela
-        régua de afirmação. Repetir o número em prosa furava essa régua, porque
-        `affirmation.apply` retira campo e não reescreve texto.
-        """
         n = len(allocations)
 
         if n == 0:

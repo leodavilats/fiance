@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-"""Fuso de referência fiscal: horário de Brasília."""
-
 BRT = timezone(timedelta(hours=-3), name="BRT")
 
 

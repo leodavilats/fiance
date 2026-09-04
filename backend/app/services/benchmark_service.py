@@ -71,7 +71,9 @@ class BenchmarkService:
         snapshots = self.portfolio_repo.list_snapshots(limit=365)
 
         if len(snapshots) < 2:
-            return BenchmarkResponse(points=[], ibov_available=False)
+            return BenchmarkResponse(
+                points=[], ibov_available=False, cdi_source=get_rates()["source"]
+            )
 
         base_ts = snapshots[0]["captured_at"]
 
@@ -132,4 +134,5 @@ class BenchmarkService:
             ibov_return_pct=last.ibov_pct,
             net_contributions=net_contributions,
             method="twr",
+            cdi_source=rates["source"],
         )

@@ -1,5 +1,14 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  REQUEST,
+  RESPONSE_INIT,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Meta, Title } from '@angular/platform-browser';
@@ -18,6 +27,7 @@ import {
   UiHelperService,
   fiDecision,
 } from '../../core';
+import { environment } from '../../../environments/environment';
 import { AssetPriceChartComponent } from '../asset-price-chart/asset-price-chart.component';
 import { MetricWithContextComponent } from '../metric-with-context/metric-with-context.component';
 import { MarginOfSafetyComponent } from '../margin-of-safety/margin-of-safety.component';
@@ -72,6 +82,9 @@ export class AtivoComponent implements OnInit, OnDestroy {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
   private readonly doc = inject(DOCUMENT);
+  /** Nulo no navegador; no SSR é o init da resposta que o Express vai devolver. */
+  private readonly responseInit = inject(RESPONSE_INIT, { optional: true });
+  private readonly request = inject(REQUEST, { optional: true });
 
   /** Se há sessão, a página é a do usuário; se não, é a página pública. */
   readonly isAnonymous = computed(() => !this.auth.isAuthenticated());
@@ -138,11 +151,116 @@ export class AtivoComponent implements OnInit, OnDestroy {
       `${nome}: ${asset.decision.label.toLowerCase()}. ${trecho} ` +
       `Score, margem de segurança e histórico de proventos, com o cálculo explicado.`;
 
+    const canonica = this.absoluta(`/ativo/${asset.symbol}`);
+
     this.meta.updateTag({ name: 'description', content: descricao });
     this.meta.updateTag({ property: 'og:title', content: `${nome} | fiance` });
     this.meta.updateTag({ property: 'og:description', content: descricao });
     this.meta.updateTag({ property: 'og:type', content: 'article' });
-    this.setCanonical(`/ativo/${asset.symbol}`);
+    this.meta.updateTag({ property: 'og:url', content: canonica });
+
+    // Sem imagem, todo link compartilhado sai como um retângulo de texto — e a
+    // distribuição orgânica de conteúdo financeiro no Brasil é WhatsApp,
+    // LinkedIn e X. A imagem é gerada por ticker no backend, com o preço justo
+    // e o veredito, que é a resposta que a pessoa foi procurar.
+    const imagem = `${environment.apiBaseUrl}/public/asset/${asset.symbol}/og.png`;
+    this.meta.updateTag({ property: 'og:image', content: imagem });
+    this.meta.updateTag({ property: 'og:image:width', content: '1200' });
+    this.meta.updateTag({ property: 'og:image:height', content: '630' });
+    this.meta.updateTag({ property: 'og:image:alt', content: `${nome}: ${asset.decision.label}` });
+    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.meta.updateTag({ name: 'twitter:title', content: `${nome} | fiance` });
+    this.meta.updateTag({ name: 'twitter:description', content: descricao });
+    this.meta.updateTag({ name: 'twitter:image', content: imagem });
+
+    this.permitirIndexacao();
+    this.setCanonical(canonica);
+    this.setDadoEstruturado(asset, descricao, canonica);
+  }
+
+  /**
+   * O que a página diz quando a análise não sai.
+   *
+   * `describePage` só rodava no caminho feliz. Um 404 de ticker ou uma queda da
+   * fonte devolvia HTTP 200 com o título genérico do index.html — e o sitemap
+   * anuncia ~400 tickers, então uma indisponibilidade durante uma varredura
+   * produzia centenas de páginas idênticas, que é exatamente o conteúdo
+   * duplicado que a canônica existe para evitar. Agora o status é real e a
+   * página se marca como não indexável.
+   */
+  private describeFailure(symbol: string, notFound: boolean): void {
+    const alvo = symbol.toUpperCase();
+
+    this.title.setTitle(
+      notFound ? `${alvo} não encontrado | fiance` : `${alvo} indisponível | fiance`
+    );
+    this.meta.updateTag({
+      name: 'description',
+      content: notFound
+        ? `Não encontramos o ativo ${alvo} na B3.`
+        : `A análise de ${alvo} está temporariamente indisponível.`,
+    });
+    this.meta.updateTag({ name: 'robots', content: 'noindex, follow' });
+    this.removerDadoEstruturado();
+
+    if (this.responseInit) this.responseInit.status = notFound ? 404 : 503;
+  }
+
+  private permitirIndexacao(): void {
+    this.meta.removeTag("name='robots'");
+    if (this.responseInit) this.responseInit.status = 200;
+  }
+
+  /**
+   * A origem pública, sem fixá-la em build.
+   *
+   * Uma canônica relativa resolve, mas não normaliza host nem protocolo — que é
+   * justamente o problema que uma canônica costuma existir para resolver.
+   */
+  private absoluta(path: string): string {
+    if (this.request) {
+      try {
+        return new URL(path, this.request.url).toString();
+      } catch {
+        /* cai no caminho de baixo */
+      }
+    }
+
+    const location = this.doc.defaultView?.location;
+    return location ? new URL(path, location.origin).toString() : path;
+  }
+
+  /**
+   * JSON-LD.
+   *
+   * Diz ao buscador que a página é uma análise de um instrumento financeiro
+   * nomeado, em vez de deixá-lo inferir de um bloco de texto.
+   */
+  private setDadoEstruturado(asset: AssetAnalysis, descricao: string, url: string): void {
+    const dados = {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: `${asset.name ?? asset.symbol} (${asset.symbol})`,
+      description: descricao,
+      url,
+      about: {
+        '@type': 'Corporation',
+        name: asset.name ?? asset.symbol,
+        tickerSymbol: asset.symbol,
+      },
+      isPartOf: { '@type': 'WebSite', name: 'fiance', url: this.absoluta('/') },
+    };
+
+    this.removerDadoEstruturado();
+    const script = this.doc.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'fi-jsonld';
+    script.textContent = JSON.stringify(dados);
+    this.doc.head.appendChild(script);
+  }
+
+  private removerDadoEstruturado(): void {
+    this.doc.head.querySelector('#fi-jsonld')?.remove();
   }
 
   /**
@@ -182,8 +300,10 @@ export class AtivoComponent implements OnInit, OnDestroy {
       error: err => {
         this.analysis.set(null);
         this.fetching.set(false);
-        if (err?.status === 404) this.notFound.set(symbol);
+        const naoExiste = err?.status === 404;
+        if (naoExiste) this.notFound.set(symbol);
         else this.failed.set(true);
+        this.describeFailure(symbol, naoExiste);
       },
     });
   }

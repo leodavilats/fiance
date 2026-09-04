@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.analysis.fair_price import FairPriceResult, TechnicalSnapshot
+from app.analysis.fair_price import (
+    TREND_BASIS_LONG,
+    TREND_BASIS_NONE,
+    TREND_BASIS_SHORT,
+    FairPriceResult,
+    TechnicalSnapshot,
+)
 
 MOS_STRONG_BUY = 0.30
 
@@ -25,6 +31,8 @@ class Decision:
 
     reasons: list[str] = field(default_factory=list)
 
+    band_verdict: Verdict = "UNKNOWN"
+
 
 def _verdict_from_mos(mos: float | None) -> Verdict:
 
@@ -44,6 +52,26 @@ def _verdict_from_mos(mos: float | None) -> Verdict:
         return "SELL"
 
     return "HOLD"
+
+
+_TREND_PHRASES = {
+    TREND_BASIS_LONG: {
+        "up": "média de 50 dias acima da de 200",
+        "down": "média de 50 dias abaixo da de 200",
+    },
+    TREND_BASIS_SHORT: {
+        "up": "média de 20 dias acima da de 50, histórico curto",
+        "down": "média de 20 dias abaixo da de 50, histórico curto",
+    },
+    TREND_BASIS_NONE: {
+        "up": "médias móveis do período disponível",
+        "down": "médias móveis do período disponível",
+    },
+}
+
+
+def _trend_phrase(basis: str | None) -> dict[str, str]:
+    return _TREND_PHRASES.get(basis or TREND_BASIS_NONE, _TREND_PHRASES[TREND_BASIS_NONE])
 
 
 LABELS = {
@@ -66,6 +94,7 @@ def decide(
     reasons: list[str] = []
 
     verdict = _verdict_from_mos(fair.margin_of_safety)
+    banda = verdict
 
     confidence = 0.4
 
@@ -104,14 +133,16 @@ def decide(
             reasons.append(f"P/VP {fair.pvp:.2f}: no valor patrimonial.")
 
     if tech:
+        base = _trend_phrase(getattr(tech, "trend_basis", TREND_BASIS_NONE))
+
         if tech.trend == "uptrend":
-            reasons.append("Tendência de alta (média 50 acima da 200).")
+            reasons.append(f"Tendência de alta ({base['up']}).")
 
             if verdict in ("HOLD", "SELL"):
                 confidence += 0.1
 
         elif tech.trend == "downtrend":
-            reasons.append("Tendência de baixa (média 50 abaixo da 200).")
+            reasons.append(f"Tendência de baixa ({base['down']}).")
 
             if verdict in ("BUY", "STRONG_BUY"):
                 verdict = "HOLD" if verdict == "BUY" else "BUY"
@@ -159,4 +190,5 @@ def decide(
         label=LABELS.get(verdict, "Manter"),
         confidence=confidence,
         reasons=reasons,
+        band_verdict=banda,
     )

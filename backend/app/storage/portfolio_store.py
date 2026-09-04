@@ -827,6 +827,20 @@ def _fixed_income_row(row: FixedIncomePositionDb) -> FixedIncomeRow:
     )
 
 
+def has_holdings(user_id: str | None = None) -> bool:
+    with _session(user_id) as (session, uid):
+        tem_variavel = session.scalar(
+            select(PortfolioPosition.ticker).where(PortfolioPosition.user_id == uid).limit(1)
+        )
+        if tem_variavel is not None:
+            return True
+
+        tem_fixa = session.scalar(
+            select(FixedIncomePositionDb.id).where(FixedIncomePositionDb.user_id == uid).limit(1)
+        )
+        return tem_fixa is not None
+
+
 def list_fixed_income(
     user_id: str | None = None,
     limit: int | None = None,

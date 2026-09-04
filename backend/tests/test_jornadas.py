@@ -28,16 +28,15 @@ def gateway():
 
 
 def comprar(client, gateway, user_id: str, plano: str = "premium_monthly", evento: str = "e"):
-    client.post(
+    sessao = client.post(
         "/api/billing/checkout", json={"plan_code": plano}, headers=make_auth_headers(user_id)
-    )
+    ).json()["session_id"]
     corpo = json.dumps(
         {
             "id": f"evt_{evento}_{user_id}",
             "type": "checkout.completed",
-            "user_id": user_id,
-            "plan_code": plano,
-            "price_cents": 1990,
+            # O titular vem da sessão que nós emitimos; a rota é pública.
+            "session_id": sessao,
         }
     ).encode()
     return client.post(

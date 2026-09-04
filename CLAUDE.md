@@ -25,8 +25,9 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 797 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 866 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
+cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 57 testes
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 126 testes
 cd web     && npm run e2e                          # 10 testes em navegador
@@ -40,6 +41,9 @@ Duas ressalvas que já custaram tempo:
 - **Confira o código de saída, não o texto.** O build do Angular imprime erro como
   `X [ERROR] TS…`; um `grep -i error` ingênuo passa reto.
 - **`lint:ui` roda depois do build** — a fonte de verdade das classes é o CSS emitido.
+- **A lista acima é a do CI, não um subconjunto dela.** O `ruff format --check` já esteve fora
+  daqui e dentro do `.github/workflows/ci.yml`: quem seguia o contrato à risca não rodava o comando
+  que reprovava, e o HEAD ficou vermelho sem ninguém ver.
 - **Não rode `dart format`.** O CI do mobile é `flutter analyze && flutter test`. O formatter
   reescreve o `design_tokens.dart` gerado e quebra `if`s de uma linha que o repo mantém.
 
@@ -57,6 +61,9 @@ Duas ressalvas que já custaram tempo:
 | Limiar de score | Mudar nas três plataformas, Python primeiro | Réguas divergem |
 | Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
 | Cor, tipografia, espaço | Editar `design-tokens/tokens.json` e rodar o gerador | Job `design-tokens` falha |
+| Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` |
+| Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
+| Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |
 
 ---
 
@@ -76,7 +83,17 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
 - **Cor do Tailwind declarada como string** — o modificador de opacidade (`bg-brand/20`) é
   **descartado em silêncio**. As cores da config são funções que emitem `color-mix` por isso.
 - **`_session_global()` em caminho de request** — não filtra por usuário. É para job cross-tenant.
-- **Dois refreshes simultâneos** derrubam a sessão: o refresh é rotacionado e queimado no uso.
+- **Dois refreshes simultâneos** derrubam a sessão: o refresh é rotacionado e queimado no uso. No
+  web isso é coordenado **entre abas** por Web Lock — `_refreshInFlight` sozinho vale só dentro de
+  uma aba, e duas abas têm dois nulos e o mesmo refresh no `localStorage`.
+- **Escrita seguida de 4xx** — os handlers de `DomainError` vivem no `ExceptionMiddleware` do
+  Starlette, que é *interno* ao middleware de observabilidade: a exceção nunca sobe. Quem decide
+  commit ou rollback é o **status da resposta**, não a ausência de exceção. O que precisa
+  sobreviver ao 4xx que provocou — contador de teto, marca de paywall — usa
+  `independent_session()` / `outside_request_transaction()`.
+- **Rota cara casada por prefixo com versão** — `/api/opportunities` casa, `/api/v1/opportunities`
+  não. O teto morre em silêncio no dia da migração para o caminho canônico. O casamento é por
+  **sufixo**.
 
 - **Papel de cor usado como o outro papel** — `.good`/`.warn` pintavam P&L, que é **direção**, com
   os tokens de **estado**. O verde passava a significar marca, lucro e veredito favorável ao mesmo
@@ -141,6 +158,10 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 
 ### Carteira e livro-razão
 
+- **Toda escrita do razão passa por `ledger_service` e reprojeta.** `POST /transactions`, o lote e a
+  importação escreviam direto no `ledger_store` e não reprojetavam: a pessoa colava o extrato, o
+  produto respondia `{"imported": 47}` e a Carteira não mudava. `record_entry`, `record_entries`,
+  `delete_entry` e `import_entries` são a porta única.
 - **O livro-razão é a fonte da carteira; a posição é projeção dele.** A matemática vive em
   `ledger/`, que não conhece banco. A escrita grava **só lançamento**
   (`ledger_service.record_position_state`, `record_sale`, `record_removal`) e reconstrói a linha de
@@ -148,9 +169,12 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   (`POST /transactions/rebuild`), e `GET /transactions/reconciliation` deixou de comparar duas
   verdades: agora confere a projeção contra a fonte. Categoria não é derivável do razão, então
   viaja junto com a escrita.
-- **Uma declaração de posição ancora a linha do tempo.** O que vier depois dela se aplica em cima,
-  na ordem das datas; o que veio antes é irrelevante, porque ela já o substituiu. É o que permite
-  registrar venda retroativa contra posição declarada hoje sem fabricar histórico.
+- **Uma declaração de posição ancora a linha do tempo, e a assimetria é de propósito.** O que vier
+  depois dela se aplica em cima, na ordem das datas. O que tem data **anterior** e *soma* posição
+  (compra, bonificação, transferência de entrada) já está dentro do que foi declarado e é
+  descartado, com aviso em `PositionProjection.warnings` — senão declarar 100 hoje e importar o
+  extrato do ano passado daria 200. O que tem data anterior e *reduz* continua valendo: é a venda
+  retroativa contra posição declarada hoje, que o produto suporta.
 - **Preço médio segue a convenção brasileira:** venda reduz quantidade e custo, nunca a média.
 - **Evento corporativo é lançamento** (`split`, `bonus`, `amortization`), não correção manual —
   desdobramento sem ajuste é IR errado.
@@ -173,6 +197,11 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   cripto, sem IA externa.
 - **Dado externo passa por faixa de plausibilidade** (`collectors/plausibility.py`): campo absurdo
   vira `None`, preço absurdo rejeita o snapshot inteiro.
+- **O BCB tem a mesma disciplina da BRAPI** — disjuntor, cache vencido e faixa de plausibilidade.
+  As constantes de `collectors/rates.py` são o **último** recurso, e o rótulo de fonte (`bcb` /
+  `bcb_cache_vencido` / `estimativa`) viaja até a tela, inclusive em `BenchmarkResponse.cdi_source`.
+  A curva de CDI é extrapolada da taxa de hoje (`cdi_basis`), então é referência, não o acumulado
+  histórico.
 - **Fonte tem disjuntor** (`collectors/circuit.py`) — aberto, nem tenta, e quem chama cai no cache
   vencido. `GET /data-quality/source` mostra os dois sem varrer o universo.
 - **Onde o cache mora é trocável** (`core/cache_backends.py`): **banco da aplicação por padrão**
@@ -202,6 +231,8 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 - **Listas paginam por cursor keyset** (`core/pagination.py`), nunca offset. Onde há agregado
   (proventos, renda fixa, sugestões) o corte é **do payload**, não da consulta — senão o total
   encolhe conforme a rolagem. Onde não há (`/portfolio/trades`, `/transactions`), corta no banco.
+- **`APP_ENV` não tem default.** Vazio falha alto no startup e, se algo escapar, falha **fechado**
+  (não é development): esquecer a variável desarmava JWT, CORS e a rota de operador de uma vez.
 - **A página de ativo é a única rota pública, e é renderizada no servidor.** É o canal de
   aquisição: robô não faz login e o modelo não comporta mídia paga. A fronteira está em
   `web/src/app/app.routes.server.ts` e tem teste. No backend, `analyze_asset(personalized=False)` e
@@ -220,6 +251,9 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 ### Sessão, conta e privacidade
 
 - **Multi-tenant por `user_id`**, aplicado em `storage/portfolio_store.py`.
+- **"Tem carteira" é uma pergunta só:** `portfolio_store.has_holdings()`, que olha posições **e**
+  renda fixa. A cerca de plano, o início do trial e o marco de ativação perguntavam a
+  `list_positions`, que lê só a tabela `portfolio` — quem chegava por CDB nunca "começava".
 - **Sessão tem TTL curto e refresh rotacionado.** Acesso 1h, refresh 30 dias queimado no uso.
   Revogação por `jti` (este dispositivo) e `session_cuts` (todos). Os clientes renovam **uma vez**
   ao levar 401, com a renovação compartilhada. No web, `httpErrorInterceptor` é o mais externo.
@@ -245,6 +279,10 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
   plano fora do módulo, e `analysis`/`optimizer`/`collectors`/`ledger` não importam nada dele — se
   o cálculo souber quem paga, a independência do algoritmo vira promessa. Ativo da própria carteira
   **nunca** consome cota; a rota pública também não.
+- **O titular de um evento de cobrança sai da sessão de checkout, nunca do corpo.** A rota do
+  webhook é pública: a assinatura protege a integridade da mensagem, não a autoridade sobre quem
+  ela nomeia. `checkout_sessions` guarda quem abriu o checkout, e `BILLING_WEBHOOK_SECRET` é
+  validado no startup com o mesmo rigor do JWT.
 - **Assinatura carrega o próprio preço** (`price_cents`, `locked`): preço travado de fundador é
   promessa pública, então é dado e não memória. Webhook é idempotente por `processed_webhooks`.
   O trial de 14 dias começa na **primeira posição salva**, não no cadastro.

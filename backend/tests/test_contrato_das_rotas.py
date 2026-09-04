@@ -11,7 +11,7 @@ GOLDEN = Path(__file__).parent / "contrato_das_rotas.json"
 
 METODOS = ("get", "post", "put", "patch", "delete")
 
-SEM_MODELO_HOJE = 52
+SEM_MODELO_HOJE = 51
 
 
 def _campos(schema: dict, componentes: dict, visitados: frozenset[str] = frozenset()) -> list[str]:
@@ -104,13 +104,32 @@ class TestNenhumCampoSomeEmSilencio:
         )
 
 
+def _devolve_json(operacao: dict) -> bool:
+    """Se a rota responde JSON — a única forma de resposta que tem campos.
+
+    Uma rota binária (a imagem de compartilhamento por ticker, por exemplo) não
+    tem campo nenhum a sumir em silêncio, que é a classe de bug que o contrato
+    existe para pegar. Contá-la como "rota sem modelo" faria a catraca subir por
+    um motivo que ela não mede.
+    """
+    respostas = operacao.get("responses", {})
+    for codigo, corpo in respostas.items():
+        if not str(codigo).startswith("2"):
+            continue
+        content = corpo.get("content", {})
+        if not content:
+            continue
+        return any(tipo.startswith("application/json") for tipo in content)
+    return True
+
+
 def rotas_declaradas() -> set[str]:
     todas: set[str] = set()
     for caminho, operacoes in app.openapi().get("paths", {}).items():
         if not caminho.startswith("/api/v1/"):
             continue
-        for metodo in operacoes:
-            if metodo in METODOS:
+        for metodo, operacao in operacoes.items():
+            if metodo in METODOS and _devolve_json(operacao):
                 todas.add(f"{metodo.upper()} {caminho}")
     return todas
 

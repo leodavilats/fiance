@@ -17,6 +17,21 @@ def _record_once(user_id: str, name: str, props: dict[str, str] | None = None) -
     return True
 
 
+def record_holdings_milestones(user_id: str | None = None) -> None:
+    record_portfolio_milestones(_holdings_count(user_id), user_id=user_id)
+
+
+def _holdings_count(user_id: str | None) -> int:
+    from app.storage import portfolio_store
+
+    try:
+        return len(portfolio_store.list_positions(user_id)) + len(
+            portfolio_store.list_fixed_income(user_id)
+        )
+    except Exception:
+        return 0
+
+
 def record_portfolio_milestones(position_count: int, user_id: str | None = None) -> None:
     uid = user_id or get_current_user_id_or_none()
     if not uid:

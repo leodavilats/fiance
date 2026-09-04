@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { DipAnalysisResponse } from '../../../core';
+import { DialogDirective, DipAnalysisResponse } from '../../../core';
 import { DipDiagnosisComponent } from '../../dip-diagnosis/dip-diagnosis.component';
 
 /**
@@ -28,6 +28,7 @@ import { DipDiagnosisComponent } from '../../dip-diagnosis/dip-diagnosis.compone
   standalone: true,
   imports: [
     CommonModule,
+    DialogDirective,
     DipDiagnosisComponent,
     LucideAngularModule,
     RouterLink,

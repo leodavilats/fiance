@@ -5,7 +5,7 @@ import time
 from sqlalchemy import delete, select
 
 from app.core.brt import month_key, to_brt
-from app.core.database import db_session
+from app.core.database import db_session, independent_session
 from app.models.db_models import UsageCounterDb
 
 MINUTE = 60.0
@@ -41,7 +41,7 @@ def increment(
     amount: int = 1,
 ) -> int:
     now = time.time()
-    with db_session() as session:
+    with independent_session() as session:
         row = session.get(UsageCounterDb, (user_id, resource, window_key))
         if row is None:
             row = UsageCounterDb(

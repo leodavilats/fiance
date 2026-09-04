@@ -46,6 +46,9 @@ const USER_KEY = 'fiance_user';
 
 const SCOPED_KEY_PREFIXES = ['portfolio_renda_fixa'];
 
+/** Nome do cadeado que serializa a renovação entre abas do mesmo navegador. */
+const REFRESH_LOCK = 'fiance_refresh';
+
 interface JwtPayload {
   sub?: string;
   exp?: number;
@@ -111,6 +114,13 @@ export class AuthService {
    * usado, então a chamada tem que ser compartilhada: duas requisições que
    * levam 401 ao mesmo tempo não podem disparar dois refreshes — o segundo
    * apresentaria um token já queimado e derrubaria a sessão.
+   *
+   * `_refreshInFlight` resolve isso dentro de uma aba, e só dentro dela: duas
+   * abas têm dois serviços, dois nulos e o mesmo refresh no localStorage.
+   * Abrir o app em duas abas e deixar o access token de 1h expirar derrubava a
+   * sessão. O cadeado do navegador (Web Locks) serializa as abas, e quem entra
+   * depois encontra o token já rotacionado e aproveita — em vez de apresentar
+   * um queimado.
    */
   refreshSession(): Promise<boolean> {
     if (this._refreshInFlight) return this._refreshInFlight;
@@ -118,19 +128,40 @@ export class AuthService {
     const refresh = this.refreshToken();
     if (!refresh) return Promise.resolve(false);
 
-    this._refreshInFlight = firstValueFrom(
-      this.http.post<TokenResponse>(`${this.base}/auth/refresh`, { refresh_token: refresh })
+    this._refreshInFlight = this._comCadeado(() => this._rotacionar(refresh)).finally(() => {
+      this._refreshInFlight = null;
+    });
+
+    return this._refreshInFlight;
+  }
+
+  private _rotacionar(refreshAoEntrar: string): Promise<boolean> {
+    const atual = this.refreshToken();
+    if (!atual) return Promise.resolve(false);
+
+    // Outra aba renovou enquanto esperávamos o cadeado. O refresh que
+    // tínhamos já foi queimado por ela; o que está guardado agora é válido, e
+    // apresentar o antigo é exatamente o que derrubava a sessão.
+    if (atual !== refreshAoEntrar) return Promise.resolve(true);
+
+    return firstValueFrom(
+      this.http.post<TokenResponse>(`${this.base}/auth/refresh`, { refresh_token: atual })
     )
       .then(res => {
         this._storeTokens(res);
         return true;
       })
-      .catch(() => false)
-      .finally(() => {
-        this._refreshInFlight = null;
-      });
+      .catch(() => false);
+  }
 
-    return this._refreshInFlight;
+  private _comCadeado(fn: () => Promise<boolean>): Promise<boolean> {
+    const locks = this.isBrowser
+      ? (navigator as Navigator & { locks?: LockManager }).locks
+      : undefined;
+
+    if (!locks) return fn();
+
+    return locks.request(REFRESH_LOCK, fn);
   }
 
   private _storeTokens(res: TokenResponse): void {

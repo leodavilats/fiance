@@ -342,6 +342,29 @@ function raioForaDaEscala(files) {
 }
 
 /**
+ * Camada escrita como número mágico.
+ *
+ * A escala sai de `tokens.json` e chega ao Tailwind por nome: `z-nav`,
+ * `z-drawer`, `z-drawer-panel`, `z-sheet`, `z-popover`, `z-loader`, `z-toast`.
+ * Onze templates escreviam `z-[100]`…`z-[400]` direto — mais um `z-[201]` que
+ * não existia na escala — contra dois consumidores dos tokens. É a mesma
+ * armadilha de "vocabulário gerado sem consumidor" já catalogada no CLAUDE.md,
+ * e já tinha produzido um defeito: o indicador de carregamento em 100,
+ * desenhado atrás de modais e drawers que ficam em 200–300.
+ */
+function camadaForaDaEscala(files) {
+  const problems = [];
+  for (const file of files) {
+    for (const [n, line] of readFileSync(file, 'utf8').split('\n').entries()) {
+      for (const match of line.matchAll(/z-\[[^\]]+\]/g)) {
+        problems.push({ file, name: `${relative(WEB_ROOT, file)}:${n + 1}: ${match[0]}` });
+      }
+    }
+  }
+  return problems;
+}
+
+/**
  * Dois sistemas de foco no mesmo produto.
  *
  * O anel de foco é `outline` na cor da marca, com a espessura e o afastamento
@@ -476,6 +499,7 @@ function main() {
   const comCerteza = certaintyLanguage(templates.filter(f => f.endsWith('.html')));
   const tipoCru = tipografiaCrua(templates);
   const raioSolto = raioForaDaEscala(templates);
+  const camadaSolta = camadaForaDaEscala(templates);
   const focoDuplo = focoConcorrente(templates);
   const controleSolto = controleForaDoSistema(templates);
   const tituloDecorado = iconeDecorativoEmTitulo(
@@ -541,6 +565,13 @@ function main() {
         'do Tailwind, não dos tokens.'
     ) +
     report(
+      'Camada escrita como número',
+      camadaSolta,
+      'Use o nome da camada: z-nav, z-drawer, z-drawer-panel, z-sheet, z-popover, ' +
+        'z-loader, z-toast. Número solto reabre a ordem de empilhamento a cada tela — ' +
+        'foi assim que o loader foi parar atrás dos modais.'
+    ) +
+    report(
       'Segundo sistema de foco',
       focoDuplo,
       'O anel de foco é outline na cor da marca, com espessura e afastamento dos ' +
@@ -568,7 +599,7 @@ function main() {
 
   console.log(
     '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas, linguagem, ' +
-      'tipografia, raio, foco, controles e títulos conferidos.'
+      'tipografia, raio, camada, foco, controles e títulos conferidos.'
   );
 }
 

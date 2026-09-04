@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-"""Régua única do score de oportunidade (0–100)."""
-
 SCORE_STRONG = 75.0
 SCORE_GOOD = 60.0
 SCORE_NEUTRAL = 40.0

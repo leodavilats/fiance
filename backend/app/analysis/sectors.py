@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-"""Tradução dos setores crus da BRAPI para português."""
-
 _SECTOR_PT: dict[str, str] = {
     "Finance": "Financeiro",
     "Miscellaneous": "Outros",

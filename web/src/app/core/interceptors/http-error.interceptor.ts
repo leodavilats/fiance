@@ -41,6 +41,13 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return pipeline.pipe(
     catchError((error: HttpErrorResponse | TimeoutError) => {
+      // 402 é o corpo da decisão de plano, não uma mensagem. Quem monta o
+      // gate é a tela que recebeu o erro; um toast com um objeto dentro seria
+      // ruído em cima de um bloqueio que já se explica sozinho.
+      if (error instanceof HttpErrorResponse && error.status === 402) {
+        return throwError(() => error);
+      }
+
       let errorMessage = 'Erro ao processar requisição';
 
       if (error instanceof TimeoutError) {

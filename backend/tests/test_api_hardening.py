@@ -1,6 +1,11 @@
 import pytest
 
-from app.core.config import DEFAULT_JWT_SECRET, InsecureConfigurationError, Settings
+from app.core.config import (
+    DEFAULT_JWT_SECRET,
+    DEFAULT_WEBHOOK_SECRET,
+    InsecureConfigurationError,
+    Settings,
+)
 from tests.conftest import make_auth_headers
 
 ITEM = {"ticker": "PETR4", "quantity": 10, "avg_price": 30.0, "category": "auto"}
@@ -30,7 +35,32 @@ def test_startup_validation_accepts_configured_secret():
         app_env="production",
         jwt_secret="um-segredo-de-verdade-com-tamanho-suficiente",
         allowed_origins="https://app.exemplo.com",
+        billing_webhook_secret="outro-segredo-de-verdade",
     ).validate_for_startup()
+
+
+def test_startup_validation_exige_app_env_declarado():
+    """Esquecer APP_ENV desarmava JWT, CORS e a rota de operador de uma vez."""
+    with pytest.raises(InsecureConfigurationError, match="APP_ENV"):
+        Settings(app_env="").validate_for_startup()
+
+
+def test_sem_app_env_nada_e_tratado_como_desenvolvimento():
+    vazio = Settings(app_env="")
+    assert vazio.is_development is False
+    assert vazio.cors_origins != ["*"]
+
+
+def test_startup_validation_rejects_default_webhook_secret_outside_development():
+    """O webhook é público: com o segredo do repositório, qualquer um concede plano."""
+    settings = Settings(
+        app_env="production",
+        jwt_secret="um-segredo-de-verdade-com-tamanho-suficiente",
+        allowed_origins="https://app.exemplo.com",
+        billing_webhook_secret=DEFAULT_WEBHOOK_SECRET,
+    )
+    with pytest.raises(InsecureConfigurationError, match="BILLING_WEBHOOK_SECRET"):
+        settings.validate_for_startup()
 
 
 def test_wildcard_cors_never_allows_credentials():

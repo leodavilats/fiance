@@ -1,7 +1,8 @@
-<div class="fixed inset-0 z-[200] fi-overlay" (click)="closeAnalysis()" aria-hidden="true"></div>
+<div class="fixed inset-0 z-drawer fi-overlay" (click)="closeAnalysis()" aria-hidden="true"></div>
 
 <div
-  class="fixed top-0 right-0 bottom-0 z-[201] w-full max-w-[600px] bg-ground-1 border-l border-hairline shadow-drawer overflow-y-auto fi-drawer-enter"
+  fiDialog
+  class="fixed top-0 right-0 bottom-0 z-drawer-panel w-full max-w-[600px] bg-ground-1 border-l border-hairline shadow-drawer overflow-y-auto fi-drawer-enter"
   role="dialog"
   aria-modal="true"
   [attr.aria-label]="'Diagnóstico da queda de ' + (analysis()?.symbol ?? '')"

@@ -64,6 +64,21 @@ module.exports = {
         drawer: 'var(--fi-shadow-drawer)',
         popover: 'var(--fi-shadow-popover)',
       },
+      // A escala de camadas, pelo nome. Onze templates escreviam o número
+      // mágico direto (`z-[100]`…`z-[400]`, mais um `z-[201]` que nem existia
+      // na escala) contra dois consumidores dos tokens — a mesma armadilha de
+      // "vocabulário gerado sem consumidor", viva e não detectada. Já tinha
+      // produzido um defeito: o loader ficava em 100 e desenhava atrás de
+      // modais e drawers, que ficam em 200–300.
+      zIndex: {
+        nav: 'var(--fi-z-nav)',
+        drawer: 'var(--fi-z-drawer)',
+        'drawer-panel': 'var(--fi-z-drawer-panel)',
+        sheet: 'var(--fi-z-sheet)',
+        popover: 'var(--fi-z-popover)',
+        loader: 'var(--fi-z-loader)',
+        toast: 'var(--fi-z-toast)',
+      },
       borderRadius: {
         sm: 'var(--fi-radius-sm)',
         md: 'var(--fi-radius-md)',

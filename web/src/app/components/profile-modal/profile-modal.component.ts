@@ -2,19 +2,20 @@ import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { AppUser } from '../../core';
+import { AppUser, DialogDirective } from '../../core';
 
 @Component({
   selector: 'app-profile-modal',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, DialogDirective, LucideAngularModule, RouterLink],
   template: `
     @if (open()) {
       <div
-        class="fixed inset-0 z-[300] fi-overlay flex items-center justify-center p-4"
+        class="fixed inset-0 z-popover fi-overlay flex items-center justify-center p-4"
         (click)="close.emit()"
       >
         <div
+          fiDialog="Sua conta"
           class="relative w-full max-w-sm rounded-lg border border-hairline shadow-popover"
           style="background: var(--fi-ground-1)"
           (click)="$event.stopPropagation()"

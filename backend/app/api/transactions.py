@@ -84,7 +84,7 @@ async def list_transactions(
 @router.post("/transactions")
 async def create_transaction(body: TransactionIn) -> dict:
     entry = body.to_entry()
-    entry_id = ledger_store.record(entry, source="manual")
+    entry_id = ledger_service.record_entry(entry, source="manual")
     audit_store.write(
         audit_store.LEDGER_WRITE,
         entity="transaction",
@@ -95,10 +95,13 @@ async def create_transaction(body: TransactionIn) -> dict:
     return {"id": entry_id}
 
 
-@router.post("/transactions/batch")
+@router.post(
+    "/transactions/batch",
+    dependencies=[Depends(requires(Feature.LEDGER_IMPORT))],
+)
 async def create_transactions(body: TransactionBatch) -> dict:
     entries = [item.to_entry() for item in body.transactions]
-    ids = ledger_store.record_many(entries, source="import")
+    ids = ledger_service.record_entries(entries, source="import")
     audit_store.write(
         audit_store.LEDGER_WRITE,
         entity="transaction",
@@ -109,7 +112,7 @@ async def create_transactions(body: TransactionBatch) -> dict:
 
 @router.delete("/transactions/{entry_id}")
 async def delete_transaction(entry_id: int) -> dict:
-    ledger_store.delete_entry(entry_id)
+    ledger_service.delete_entry(entry_id)
     audit_store.write(
         audit_store.LEDGER_DELETE,
         entity="transaction",

@@ -68,7 +68,9 @@ function buildCss() {
   for (const [name, v] of entries(tokens.layout)) {
     stable.push(`  --fi-layout-${camelToKebab(name)}: ${v}px;`);
   }
-  for (const [name, v] of entries(tokens.zIndex)) stable.push(`  --fi-z-${name}: ${v};`);
+  for (const [name, v] of entries(tokens.zIndex)) {
+    stable.push(`  --fi-z-${camelToKebab(name)}: ${v};`);
+  }
   stable.push(`  --fi-focus-ring: ${tokens.focus.ringWidth}px;`);
   stable.push(`  --fi-focus-offset: ${tokens.focus.ringOffset}px;`);
   for (const [name, v] of entries(tokens.density.comfortable)) {
@@ -79,6 +81,24 @@ function buildCss() {
   out.push(':root[data-theme="dark"] {');
   out.push(...themeVars('dark'), ...stable);
   out.push('}', '');
+
+  // A rede do tema claro, em CSS.
+  //
+  // A preferência do sistema era lida só em JavaScript, no construtor do
+  // ThemeService, que roda depois do bootstrap: quem usa tema claro via um
+  // flash escuro em todo carregamento, a rota SSR pública abria sempre escura
+  // (primeira impressão do canal de aquisição), e quem navega sem JavaScript —
+  // todo robô que não executa script — via só o escuro.
+  //
+  // Mesma especificidade do bloco explícito abaixo, então a escolha declarada
+  // vence por ordem de origem; `:not([data-theme="dark"])` garante que quem
+  // pediu escuro continua no escuro.
+  out.push('@media (prefers-color-scheme: light) {');
+  out.push('  :root:not([data-theme="dark"]) {');
+  out.push(...themeVars('light').map(line => `  ${line}`));
+  out.push('  }');
+  out.push('}', '');
+
   out.push(':root[data-theme="light"] {');
   out.push(...themeVars('light'));
   out.push('}', '');

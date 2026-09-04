@@ -154,7 +154,7 @@ def _ainda_nao_comecou(user_id: str) -> bool:
     from app.storage import portfolio_store
 
     try:
-        return not portfolio_store.list_positions(user_id)
+        return not portfolio_store.has_holdings(user_id)
     except Exception:
         return False
 

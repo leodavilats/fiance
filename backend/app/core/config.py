@@ -5,6 +5,7 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_JWT_SECRET = "change-me"
+DEFAULT_WEBHOOK_SECRET = "segredo-de-desenvolvimento"
 
 
 class InsecureConfigurationError(RuntimeError):
@@ -14,7 +15,7 @@ class InsecureConfigurationError(RuntimeError):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    app_env: str = "development"
+    app_env: str = ""
 
     log_level: str = "INFO"
 
@@ -32,13 +33,15 @@ class Settings(BaseSettings):
 
     rate_limit_factor: float = 1.0
 
+    trusted_proxy_count: int = 0
+
     entitlements_enabled: bool = False
 
     affirmation_level: int = 2
 
     suitability_personalization_allowed: bool = False
 
-    billing_webhook_secret: str = "segredo-de-desenvolvimento"
+    billing_webhook_secret: str = DEFAULT_WEBHOOK_SECRET
 
     brapi_token: str = ""
 
@@ -114,6 +117,13 @@ class Settings(BaseSettings):
         return "*" not in self.cors_origins
 
     def validate_for_startup(self) -> None:
+        if not self.app_env.strip():
+            raise InsecureConfigurationError(
+                "APP_ENV não definido. Declare explicitamente 'development' ou "
+                "'production' — sem isso não há como saber se o segredo de JWT, a "
+                "origem de CORS e a rota de operador estão configurados para valer."
+            )
+
         if self.is_development:
             return
 
@@ -127,6 +137,16 @@ class Settings(BaseSettings):
             raise InsecureConfigurationError(
                 "ALLOWED_ORIGINS vazio fora de development — nenhuma origem poderia "
                 "consumir a API. Configure ALLOWED_ORIGINS."
+            )
+
+        if (
+            self.billing_webhook_secret == DEFAULT_WEBHOOK_SECRET
+            or not self.billing_webhook_secret.strip()
+        ):
+            raise InsecureConfigurationError(
+                "BILLING_WEBHOOK_SECRET não configurado (ainda está no valor default "
+                "versionado no repositório). Defina BILLING_WEBHOOK_SECRET antes de "
+                f"subir com APP_ENV={self.app_env!r}."
             )
 
     @property

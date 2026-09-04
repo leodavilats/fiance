@@ -88,6 +88,8 @@ class AssetService:
                     trend=tech.trend,
                     sma_50=tech.sma_50,
                     sma_200=tech.sma_200,
+                    rsi_14=tech.rsi_14,
+                    band_verdict=dec.band_verdict,
                 ),
             ),
             price_history=(

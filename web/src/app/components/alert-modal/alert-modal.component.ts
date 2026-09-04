@@ -2,21 +2,22 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { AuthService, PriceAlertTriggered, RecommendService } from '../../core';
+import { AuthService, DialogDirective, PriceAlertTriggered, RecommendService } from '../../core';
 
 const SESSION_KEY = 'fiance_alerts_dismissed';
 
 @Component({
   selector: 'app-alert-modal',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, DialogDirective, LucideAngularModule, RouterLink],
   template: `
     @if (visible()) {
       <div
-        class="fixed inset-0 z-[300] fi-overlay flex items-center justify-center p-4"
+        class="fixed inset-0 z-popover fi-overlay flex items-center justify-center p-4"
         (click)="dismiss()"
       >
         <div
+          fiDialog="Alertas de preço atingidos"
           class="relative w-full max-w-md rounded-lg border border-hairline shadow-popover"
           style="background: var(--fi-ground-1)"
           (click)="$event.stopPropagation()"

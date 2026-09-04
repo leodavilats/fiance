@@ -15,6 +15,7 @@ from app.models.renda_fixa import (
     FixedIncomeUpdateRequest,
     RendaFixaAsset,
 )
+from app.services.milestones import record_holdings_milestones
 from app.storage import portfolio_store
 
 VENCIMENTO_PROXIMO_DIAS = 30
@@ -82,6 +83,7 @@ class FixedIncomeService:
 
     def create(self, req: FixedIncomeCreateRequest) -> FixedIncomePosition:
         row = portfolio_store.create_fixed_income(**self._to_storage(req.model_dump()))
+        record_holdings_milestones()
         return self._mark_to_market(row, get_rates())
 
     def update(self, position_id: int, req: FixedIncomeUpdateRequest) -> FixedIncomePosition:

@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.config import get_settings
-from app.core.context import get_request_session
+from app.core.context import get_request_session, reset_request_session, set_request_session
 
 logger = logging.getLogger("fiance.database")
 
@@ -124,3 +124,27 @@ def db_session():
         session.commit()
     finally:
         session.close()
+
+
+@contextmanager
+def independent_session():
+    ensure_initialized()
+
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except BaseException:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+@contextmanager
+def outside_request_transaction():
+    token = set_request_session(None)
+    try:
+        yield
+    finally:
+        reset_request_session(token)

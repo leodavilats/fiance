@@ -7,6 +7,7 @@ from sqlalchemy import delete, inspect, select
 from app.core.database import db_session, engine
 from app.models.db_models import (
     AuditLogDb,
+    CheckoutSessionDb,
     ClosedTradeDb,
     DeviceTokenDb,
     DividendReceivedDb,
@@ -47,6 +48,7 @@ USER_SCOPED_MODELS = (
     ("transactions", TransactionDb),
     ("audit_log", AuditLogDb),
     ("subscription", SubscriptionDb),
+    ("checkout_sessions", CheckoutSessionDb),
     ("usage_counters", UsageCounterDb),
     ("product_events", ProductEventDb),
     ("revoked_tokens", RevokedTokenDb),

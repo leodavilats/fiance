@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.core.auth import get_current_user, require_admin
 from app.core.errors import DomainError
+from app.core.ratelimit import ip_rate_limit
 from app.payments import SignatureError, UnknownPlanError, billing
 
 router = APIRouter()
@@ -20,6 +21,9 @@ class CheckoutRequest(BaseModel):
 
 class UnknownPlan(DomainError):
     status_code = 422
+
+
+WEBHOOK_PER_MINUTE = 30
 
 
 @router.get("/billing/plans")
@@ -40,6 +44,8 @@ async def receive_webhook(
     request: Request,
     signature: str = Header(default="", alias="X-Signature"),
 ) -> dict:
+    await ip_rate_limit(request, "billing-webhook", WEBHOOK_PER_MINUTE)
+
     corpo = await request.body()
 
     try:

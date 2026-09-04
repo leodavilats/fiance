@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { GlobalSearchService, SearchDestination } from '../../core';
+import { DialogDirective, GlobalSearchService, SearchDestination } from '../../core';
 
 interface Row {
   readonly kind: 'destination' | 'mine' | 'ticker';
@@ -39,14 +39,15 @@ interface Row {
 @Component({
   selector: 'app-global-search',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, DialogDirective, LucideAngularModule],
   template: `
     @if (search.open()) {
       <div
-        class="fixed inset-0 z-[300] fi-overlay flex items-start justify-center pt-[12vh] px-4"
+        class="fixed inset-0 z-popover fi-overlay flex items-start justify-center pt-[12vh] px-4"
         (click)="search.hide()"
       >
         <div
+          fiDialog
           class="w-full max-w-[560px] bg-ground-1 border border-hairline rounded-lg shadow-popover overflow-hidden"
           (click)="$event.stopPropagation()"
           role="dialog"

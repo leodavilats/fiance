@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from app.core.config import get_settings
 from app.core.database import db_session
-from app.models.db_models import SubscriptionDb
+from app.models.db_models import CheckoutSessionDb, SubscriptionDb
 from app.services import subscription_service
 from app.storage import event_store
 
@@ -105,6 +105,20 @@ def start_checkout(user_id: str, plan_code: str) -> dict:
         interval=offer.interval,
     )
 
+    with db_session() as session:
+        session.merge(
+            CheckoutSessionDb(
+                id=sessao.id,
+                user_id=user_id,
+                provider=sessao.provider,
+                plan_code=offer.code,
+                price_cents=offer.price_cents,
+                interval=offer.interval,
+                created_at=time.time(),
+                expires_at=sessao.expires_at,
+            )
+        )
+
     event_store.record(
         user_id,
         "upgrade_started",
@@ -121,6 +135,50 @@ def start_checkout(user_id: str, plan_code: str) -> dict:
     }
 
 
+class UnresolvedSubjectError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class _Subject:
+    user_id: str
+    plan_code: str
+    price_cents: int
+    interval: str
+
+
+def _resolve_subject(event: WebhookEvent) -> _Subject:
+    with db_session() as session:
+        if event.session_id:
+            sessao = session.get(CheckoutSessionDb, event.session_id)
+            if sessao is not None:
+                return _Subject(
+                    user_id=sessao.user_id,
+                    plan_code=sessao.plan_code,
+                    price_cents=sessao.price_cents,
+                    interval=sessao.interval,
+                )
+
+        if event.external_id:
+            assinatura = (
+                session.query(SubscriptionDb)
+                .filter(SubscriptionDb.external_id == event.external_id)
+                .first()
+            )
+            if assinatura is not None:
+                return _Subject(
+                    user_id=assinatura.user_id,
+                    plan_code=assinatura.plan_code,
+                    price_cents=assinatura.price_cents,
+                    interval=assinatura.interval,
+                )
+
+    raise UnresolvedSubjectError(
+        "Evento não corresponde a nenhuma sessão de checkout nem a assinatura "
+        "conhecida; não há a quem conceder."
+    )
+
+
 def handle_event(event: WebhookEvent) -> dict:
     nome = provider().name
 
@@ -128,16 +186,15 @@ def handle_event(event: WebhookEvent) -> dict:
         logger.info("Evento %s de %s já processado; ignorando reenvio.", event.id, nome)
         return {"applied": False, "reason": "already_processed"}
 
-    if not event.user_id:
-        raise ValueError("Evento sem usuário; não há a quem conceder.")
+    titular = _resolve_subject(event)
 
     if event.type in ("checkout.completed", "subscription.created", "subscription.renewed"):
-        offer = OFFERS_BY_CODE.get(event.plan_code)
+        offer = OFFERS_BY_CODE.get(titular.plan_code)
         subscription_service.grant(
-            user_id=event.user_id,
-            plan_code=event.plan_code,
-            price_cents=event.price_cents or (offer.price_cents if offer else 0),
-            interval=event.interval,
+            user_id=titular.user_id,
+            plan_code=titular.plan_code,
+            price_cents=titular.price_cents or (offer.price_cents if offer else 0),
+            interval=titular.interval,
             provider=nome,
             external_id=event.external_id,
             period_end=event.period_end,
@@ -145,17 +202,20 @@ def handle_event(event: WebhookEvent) -> dict:
         )
         if event.type == "checkout.completed":
             event_store.record(
-                event.user_id, "checkout_completed", {"plan": event.plan_code}, platform="server"
+                titular.user_id,
+                "checkout_completed",
+                {"plan": titular.plan_code},
+                platform="server",
             )
         aplicado = "granted"
 
     elif event.type in ("subscription.cancelled", "subscription.expired"):
-        subscription_service.cancel(event.user_id, reason=event.reason)
+        subscription_service.cancel(titular.user_id, reason=event.reason)
         aplicado = "cancelled"
 
     elif event.type == "refund.requested":
         event_store.record(
-            event.user_id,
+            titular.user_id,
             "refund_requested",
             {"reason": event.reason or "none"},
             platform="server",

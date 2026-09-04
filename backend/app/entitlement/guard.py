@@ -5,6 +5,7 @@ from collections.abc import Callable
 from fastapi import Depends, HTTPException, Request
 
 from app.core.auth import get_current_user
+from app.core.database import outside_request_transaction
 from app.storage import event_store
 
 from .plans import Feature
@@ -18,12 +19,13 @@ class PaymentRequired(HTTPException):
 
 def _record_limit_event(user_id: str, decision: Decision, origin: str) -> None:
     try:
-        event_store.record(
-            user_id,
-            "limit_reached" if decision.limit_reached else "paywall_viewed",
-            {"feature": decision.feature.value, "plan": decision.plan.value, "origin": origin},
-            platform="server",
-        )
+        with outside_request_transaction():
+            event_store.record(
+                user_id,
+                "limit_reached" if decision.limit_reached else "paywall_viewed",
+                {"feature": decision.feature.value, "plan": decision.plan.value, "origin": origin},
+                platform="server",
+            )
     except Exception:
         pass
 

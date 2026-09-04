@@ -62,6 +62,14 @@ const DESTINATIONS: readonly NavDestination[] = [
     ProfileModalComponent,
   ],
   template: `
+    <!--
+      Navegação em SPA é silenciosa para leitor de tela: a pessoa troca de tela
+      e nada é anunciado, porque não houve carregamento de documento. Esta
+      região diz o destino em voz alta, em modo polite para não cortar o que
+      estiver sendo lido.
+    -->
+    <p class="sr-only" role="status" aria-live="polite">{{ rotaAnunciada() }}</p>
+
     <app-global-loader />
     <app-snackbar />
     <app-alert-modal />
@@ -267,6 +275,8 @@ export class AppComponent {
     return `Teste: ${dias} dias`;
   }
 
+  readonly rotaAnunciada = signal('');
+
   constructor() {
     this.densidade.ensureLoaded();
     this.direitos.ensureLoaded();
@@ -292,7 +302,19 @@ export class AppComponent {
           this._navShown = false;
           this.loading.hide();
         }
+        if (e instanceof NavigationEnd) this.anunciarRota(e.urlAfterRedirects);
       }
     });
+  }
+
+  /** O nome da tela, dito depois de chegar nela. */
+  private anunciarRota(url: string): void {
+    const caminho = '/' + (url.split('?')[0].split('#')[0].split('/')[1] ?? '');
+    const destino = DESTINATIONS.find(d => d.path === caminho);
+    const nome = destino?.label ?? (caminho === '/ativo' ? 'Ativo' : 'fiance');
+
+    // Limpar antes força o leitor a reler quando o destino é o mesmo de antes.
+    this.rotaAnunciada.set('');
+    queueMicrotask(() => this.rotaAnunciada.set(`${nome}. Tela carregada.`));
   }
 }

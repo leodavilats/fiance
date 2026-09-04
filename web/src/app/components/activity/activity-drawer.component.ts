@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { ActivityService } from '../../core';
+import { ActivityService, DialogDirective } from '../../core';
 import { ActivityFeedComponent } from './activity-feed.component';
 
 /**
@@ -23,18 +23,19 @@ import { ActivityFeedComponent } from './activity-feed.component';
 @Component({
   selector: 'app-activity-drawer',
   standalone: true,
-  imports: [ActivityFeedComponent, CommonModule, LucideAngularModule, RouterLink],
+  imports: [ActivityFeedComponent, CommonModule, DialogDirective, LucideAngularModule, RouterLink],
   template: `
     @if (activity.open()) {
       <div
-        class="fixed inset-0 z-[200] fi-overlay"
+        class="fixed inset-0 z-drawer fi-overlay"
         (click)="activity.hide()"
         aria-hidden="true"
       ></div>
 
       <div
         #panel
-        class="fixed top-0 right-0 bottom-0 z-[201] w-full max-w-[600px] bg-ground-1 border-l border-hairline shadow-drawer overflow-y-auto fi-drawer-enter"
+        fiDialog
+        class="fixed top-0 right-0 bottom-0 z-drawer-panel w-full max-w-[600px] bg-ground-1 border-l border-hairline shadow-drawer overflow-y-auto fi-drawer-enter"
         role="dialog"
         aria-modal="true"
         aria-label="Atividade recente"
