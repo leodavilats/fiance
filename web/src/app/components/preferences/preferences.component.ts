@@ -52,6 +52,10 @@ export class PreferencesComponent implements OnInit {
   private readonly yieldValidators = [Validators.min(0.5), Validators.max(30)];
 
   readonly form = this.fb.group({
+    cash_available: this.fb.control(0, {
+      nonNullable: true,
+      validators: [Validators.min(0)],
+    }),
     yield_stock: this.fb.control(6, { nonNullable: true, validators: this.yieldValidators }),
     yield_fii: this.fb.control(10, { nonNullable: true, validators: this.yieldValidators }),
     yield_bdr: this.fb.control(4, { nonNullable: true, validators: this.yieldValidators }),
@@ -72,6 +76,7 @@ export class PreferencesComponent implements OnInit {
         this.pushEnabled.set(prefs.push_enabled ?? false);
         this.registeredDevices.set(prefs.registered_devices ?? 0);
         this.form.patchValue({
+          cash_available: prefs.cash_available ?? 0,
           yield_stock: Math.round((prefs.desired_yield_stock ?? 0.06) * 1000) / 10,
           yield_fii: Math.round((prefs.desired_yield_fii ?? 0.1) * 1000) / 10,
           yield_bdr: Math.round((prefs.desired_yield_bdr ?? 0.04) * 1000) / 10,
@@ -107,6 +112,7 @@ export class PreferencesComponent implements OnInit {
 
     this.svc
       .savePreferences({
+        cash_available: v.cash_available,
         desired_yield_stock: v.yield_stock / 100,
         desired_yield_fii: v.yield_fii / 100,
         desired_yield_bdr: v.yield_bdr / 100,
