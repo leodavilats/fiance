@@ -43,7 +43,7 @@ interface Row {
           aria-modal="true"
           aria-label="Busca global"
         >
-          <div class="flex items-center gap-3 px-4 border-b border-hairline">
+          <div class="flex items-center gap-3 p-4 border-b border-hairline">
             <lucide-icon
               name="search"
               size="16"

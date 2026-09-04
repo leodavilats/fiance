@@ -309,7 +309,7 @@
                       }
                     }
                     @case ('asset_type') {
-                      <span class="fi-caption text-ink-2">{{
+                      <span class="tag" [class]="ui.categoryChipClass(p.category_resolved)">{{
                         ui.assetTypeLabel(p.asset_type)
                       }}</span>
                     }

@@ -111,7 +111,7 @@
                         {{ sug.ticker }}
                       </a>
                     }
-                    <span class="tag" [class]="ui.categoryColor(sug.category)">{{
+                    <span class="tag" [class]="ui.categoryChipClass(sug.category)">{{
                       ui.categoryLabel(sug.category)
                     }}</span>
                     @if (sug.already_held) {
@@ -220,10 +220,14 @@
       </section>
     } @else {
       <section class="fi-block">
-        <p class="fi-verdict-sm text-ink m-0">A carteira está dentro das metas que você definiu.</p>
-        <p class="fi-body text-ink-2 m-0 mt-1">
-          Nenhum desvio relevante o bastante para redirecionar o próximo aporte.
-        </p>
+        <div class="notice notice-favorable flex-col max-w-reading">
+          <p class="fi-verdict-sm text-ink m-0">
+            A carteira está dentro das metas que você definiu.
+          </p>
+          <p class="fi-body text-ink-2 m-0 mt-1">
+            Nenhum desvio relevante o bastante para redirecionar o próximo aporte.
+          </p>
+        </div>
       </section>
     }
 

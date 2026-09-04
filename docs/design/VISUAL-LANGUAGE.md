@@ -68,31 +68,65 @@ onipresente; é quase neutro, e lê como tinta, não como tela.
 diferencia: um produto financeiro em papel morno lê como documento impresso, não como planilha
 web. Tinta neutra-fria sobre papel morno cria a tensão exata de um relatório bem impresso.
 
-| Papel | Escuro | Claro |
-|---|---|---|
-| chão da página | `#0E1211` | `#FAF8F5` |
-| superfície | `#141917` | `#FFFFFF` |
-| superfície elevada / campo | `#1A201E` | `#F3F0EB` |
-| fio | `#262D2A` | `#E2DDD5` |
-| fio forte | `#333B38` | `#CFC8BD` |
-| tinta primária | `#E9EAE9` | `#1C1F1E` |
-| tinta secundária | `#A5ACA9` | `#55605C` |
-| tinta terciária | `#7B8380` | `#7A847F` |
+| Papel | Token |
+|---|---|
+| chão da página | `ground-0` |
+| superfície | `ground-1` |
+| superfície elevada / campo | `ground-2` |
+| fio | `hairline` |
+| fio forte | `hairline-strong` |
+| tinta primária | `ink-1` |
+| tinta secundária | `ink-2` |
+| tinta terciária | `ink-3` |
+
+**Os valores não estão escritos aqui de propósito.** Eles vivem em
+`design-tokens/tokens.json`, e uma cópia neste arquivo seria uma segunda verdade que apodrece
+calada — a tabela anterior listava `#7A847F` para a tinta terciária clara, um valor que o produto
+nunca teve. O que este documento decide é o **papel**; o valor é do gerador.
+
+O chão da página é deliberadamente mais fundo que a superfície. Enquanto foram `#FAF8F5` e
+`#FFFFFF`, a diferença era de 2% de luminância: um card branco não tinha de onde subir, e a página
+lia como uma superfície só.
 
 Sem gradiente. Os dois `radial-gradient` do fundo atual saem — não carregam informação e são
 metade do "AI dashboard aesthetic".
 
 ## Cor semântica
 
-| Papel | Uso exclusivo | Escuro | Claro |
-|---|---|---|---|
-| **marca / interativo** | logo, ação primária, foco, nav ativa, linha de referência (CDI, meta, benchmark) | `#5B9DC0` | `#2C6485` |
-| **estado favorável** | veredito interessante, score forte, queda saudável, meta atingida | `#4FB286` | `#157F58` |
-| **estado atenção** | merece revisão, concentração alta, vencimento próximo | `#D9A23B` | `#A6701A` |
-| **estado adverso** | evitar, queda estrutural, sinal de venda | `#D9705F` | `#B04434` |
-| **estado indeterminado** | dado insuficiente, método não aplicável, sem histórico | `#7B8380` | `#6B7370` |
-| direção ↑ (aritmética) | número que subiu | `#5E8F79` | `#3F7A61` |
-| direção ↓ (aritmética) | número que caiu | `#A8756B` | `#8E5A4C` |
+| Papel | Uso exclusivo | Token |
+|---|---|---|
+| **marca / interativo** | logo, ação primária, foco, nav ativa, linha de referência (CDI, meta, benchmark) | `brand` |
+| **estado favorável** | veredito interessante, score forte, queda saudável, meta atingida | `state-favorable` |
+| **estado atenção** | merece revisão, concentração alta, vencimento próximo | `state-attention` |
+| **estado adverso** | evitar, queda estrutural, sinal de venda | `state-adverse` |
+| **estado indeterminado** | Sem dado, método não aplicável, sem histórico | `state-indeterminate` |
+| direção ↑ (aritmética) | número que subiu, **só em coluna de tabela** | `direction-up` |
+| direção ↓ (aritmética) | número que caiu, **só em coluna de tabela** | `direction-down` |
+
+Cada estado tem um **chão** correspondente — `state-*-surface` —, que é o fundo de um aviso ou de
+um selo, nunca a tinta dele. A quantidade de pigmento de cada um sai de uma busca por contraste,
+não do olho: é a maior que ainda deixa legíveis as duas coisas que ficam em cima, o rótulo na cor
+do estado e o corpo em tinta primária.
+
+### O piso de contraste
+
+A AA é o chão legal, não o alvo. `design-tokens/check-contrast.mjs` cobra uma folga declarada
+acima dela, e a escada de tinta é explícita — corpo, secundária e legenda precisam continuar
+distinguíveis **entre si**, senão hierarquia vira uniformidade:
+
+| Papel | Piso | Por quê |
+|---|---|---|
+| `ink-2` | 8:1 | texto secundário é lido, não olhado |
+| `ink-3` | 6:1 | legenda é texto pequeno, e a regra para texto pequeno é mais rígida |
+| `brand`, `state-*`, `direction-*` | 6:1 | carregam rótulo |
+| `series-*` | 4,5:1 | forma no gráfico, **e texto no chip de categoria** |
+| tinta sobre `*-surface` | 5,5:1 | o rótulo do selo |
+| `ink-1` sobre `*-surface` | 6:1 | o corpo do aviso |
+
+A linha das séries é a que menos parece óbvia e mais custou: enquanto série só desenhava barra e
+linha, 3:1 bastava, porque forma não é texto. No dia em que a mesma cor passou a escrever o rótulo
+do chip de categoria, o requisito mudou e nada percebeu — `series-other` escrevia a 3,1:1 sobre o
+próprio chip. O verificador agora conhece esse par.
 
 Duas coisas que essa tabela decide de propósito:
 
@@ -207,7 +241,7 @@ O score é a marca visual do fiance, e não pode ser "87/100" nem um gauge de da
 - Os limiares 40/60/75 são os do `score_ruler.py` — a régua é uma leitura da regra existente,
   não uma nova régua.
 - **`data_completeness` baixo:** a régua fica tracejada e cinza, o número sai, e o rótulo é
-  "dado insuficiente". A ausência de dado deixa de ser codificada como número baixo.
+  "sem dado". A ausência de dado deixa de ser codificada como número baixo.
 
 Quatro tamanhos: `inline` (16px, dentro de texto) · `list` (24px, linha de tabela) ·
 `card` (40px) · `page` (64px, cabeçalho do ativo).

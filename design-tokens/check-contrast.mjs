@@ -19,6 +19,11 @@
  *   texto, e a WCAG 1.4.11 é a regra que se aplica. Elas **nunca** são a única
  *   informação: o gráfico tem alternativa textual.
  *
+ * **Superfície de estado** (`state-*-surface`) não é medida contra o chão: ela
+ * É o chão de um aviso. O que se verifica é o que fica em cima dela — a cor do
+ * estado, que escreve o rótulo, e a tinta primária, que escreve o corpo. É a
+ * checagem que decide quanta tinta o fundo aguenta antes de comer o texto.
+ *
  * `hairline` fica de fora de propósito: é separador decorativo, e exigir 3:1
  * dele produziria uma borda que grita numa interface que depende de silêncio.
  *
@@ -32,6 +37,46 @@ const TOKENS = join(import.meta.dirname, 'tokens.json');
 
 const AA_TEXT = 4.5;
 const AA_NON_TEXT = 3.0;
+
+/**
+ * O piso do sistema, acima do minimo da norma.
+ *
+ * A AA e o chao legal, nao o alvo. A paleta chegou a raspar 4,5 em quase todo
+ * papel porque a escolha anterior otimizou o lado errado — pegou a maior
+ * quantidade de tinta que ainda passava. Aqui cada papel declara a folga que
+ * quer, e a escada de tinta e explicita: corpo, secundaria e legenda precisam
+ * continuar distinguiveis entre si, senao hierarquia vira uniformidade.
+ */
+const PISO = {
+  'ink-2': 8.0,
+  'ink-3': 6.0,
+  brand: 6.0,
+  'state-': 6.0,
+  'direction-': 6.0,
+  'series-': 4.5,
+};
+
+/** A serie escreve o rotulo do chip de categoria sobre a propria tinta a 15%. */
+const CHIP_ALPHA = 0.15;
+const CHIP_MIN = 4.5;
+
+function mix(a, b, t) {
+  const [ra, ga, ba] = channels(a);
+  const [rb, gb, bb] = channels(b);
+  const at = v => Math.round(v).toString(16).padStart(2, '0');
+  return `#${at(ra + (rb - ra) * t)}${at(ga + (gb - ga) * t)}${at(ba + (bb - ba) * t)}`;
+}
+
+function channels(hex) {
+  const clean = hex.replace('#', '');
+  return [0, 2, 4].map(i => parseInt(clean.slice(i, i + 2), 16));
+}
+
+function pisoDe(role) {
+  if (PISO[role] !== undefined) return PISO[role];
+  const prefixo = Object.keys(PISO).find(k => k.endsWith('-') && role.startsWith(k));
+  return prefixo ? PISO[prefixo] : null;
+}
 
 /** Superfícies sobre as quais tudo é desenhado. */
 const GROUNDS = ['ground-0', 'ground-1', 'ground-2'];
@@ -73,20 +118,35 @@ function check(theme, colors) {
     if (role.startsWith('$') || GROUNDS.includes(role)) continue;
     if (role.endsWith('-quiet') || role === 'ink-on-brand') continue;
     if (role.startsWith('hairline')) continue;
+    if (role.endsWith('-surface')) continue;
 
     const rule = requirementFor(role);
     if (!rule) continue;
 
+    const piso = pisoDe(role);
+    const min = piso ?? rule.min;
+    const why = piso ? `${rule.why}; o piso do sistema e ${piso}:1` : rule.why;
+
     for (const ground of GROUNDS) {
       const ratio = contrast(value, colors[ground]);
-      if (ratio + 1e-9 < rule.min) {
-        failures.push({
-          theme,
-          pair: `${role} sobre ${ground}`,
-          ratio,
-          min: rule.min,
-          why: rule.why,
-        });
+      if (ratio + 1e-9 < min) {
+        failures.push({ theme, pair: `${role} sobre ${ground}`, ratio, min, why });
+      }
+    }
+
+    if (role.startsWith('series-')) {
+      for (const ground of GROUNDS) {
+        const chip = mix(colors[ground], value, CHIP_ALPHA);
+        const ratio = contrast(value, chip);
+        if (ratio + 1e-9 < CHIP_MIN) {
+          failures.push({
+            theme,
+            pair: `${role} sobre o proprio chip`,
+            ratio,
+            min: CHIP_MIN,
+            why: 'a serie escreve o rotulo do chip de categoria, e ali ela e texto',
+          });
+        }
       }
     }
   }
@@ -100,6 +160,24 @@ function check(theme, colors) {
       min: AA_TEXT,
       why: 'é o texto do botão primário',
     });
+  }
+
+  for (const [role, value] of Object.entries(colors)) {
+    if (!role.endsWith('-surface')) continue;
+
+    const tinta = role.slice(0, -'-surface'.length);
+    const pares = [
+      [tinta, 'o rótulo do selo é a própria cor do estado'],
+      ['ink-1', 'o corpo do aviso é escrito em tinta primária'],
+    ];
+
+    for (const [sobre, why] of pares) {
+      const min = sobre === 'ink-1' ? 6.0 : 5.5;
+      const ratio = contrast(colors[sobre], value);
+      if (ratio + 1e-9 < min) {
+        failures.push({ theme, pair: `${sobre} sobre ${role}`, ratio, min, why });
+      }
+    }
   }
 
   const emQuiet = contrast(colors['ink-1'], colors['brand-quiet']);

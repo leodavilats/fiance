@@ -51,6 +51,19 @@ module.exports = {
         adverse: token('state-adverse'),
         indeterminate: token('state-indeterminate'),
 
+        /*
+         * O chão de um aviso, não a tinta dele.
+         *
+         * A quantidade de pigmento em cada uma foi escolhida por contraste, não
+         * a olho: é a maior que ainda deixa legíveis as duas coisas que ficam
+         * em cima — o rótulo, na cor do estado, e o corpo, em tinta primária.
+         * `check-contrast.mjs` verifica exatamente esses dois pares.
+         */
+        'favorable-surface': token('state-favorable-surface'),
+        'attention-surface': token('state-attention-surface'),
+        'adverse-surface': token('state-adverse-surface'),
+        'indeterminate-surface': token('state-indeterminate-surface'),
+
         up: token('direction-up'),
         down: token('direction-down'),
 

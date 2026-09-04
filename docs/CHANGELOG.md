@@ -1208,7 +1208,7 @@ aparece em Operações Encerradas, e cada venda mostra quanto foi compensado.
 
 #### Proveniência e frescor do dado
 Ao lado de cada veredito: anos de proventos encontrados, quantos métodos entraram no consenso e
-confiança. Score com dado incompleto sai **cinza** e rotulado "dado insuficiente" em vez de
+confiança. Score com dado incompleto sai **cinza** e rotulado "sem dado" em vez de
 colorido com a nota. O dashboard mostra a idade das cotações e se o CDI/Selic vem do BCB ou é
 estimativa.
 

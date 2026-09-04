@@ -7,29 +7,33 @@ abstract final class FiColors {
   static const darkHairline = Color(0xFF323B38);
   static const darkHairlineStrong = Color(0xFF45504C);
   static const darkInk1 = Color(0xFFE9EAE9);
-  static const darkInk2 = Color(0xFFA5ACA9);
-  static const darkInk3 = Color(0xFF89908E);
+  static const darkInk2 = Color(0xFFBBC0BE);
+  static const darkInk3 = Color(0xFFA1A6A5);
   static const darkInkOnBrand = Color(0xFF08131A);
-  static const darkBrand = Color(0xFF5B9DC0);
+  static const darkBrand = Color(0xFF74ACC9);
   static const darkBrandQuiet = Color(0xFF1D3140);
-  static const darkStateFavorable = Color(0xFF4FB286);
+  static const darkStateFavorable = Color(0xFF58B68C);
   static const darkStateAttention = Color(0xFFD9A23B);
-  static const darkStateAdverse = Color(0xFFD9705F);
-  static const darkStateIndeterminate = Color(0xFF89908E);
-  static const darkDirectionUp = Color(0xFF6B9984);
-  static const darkDirectionDown = Color(0xFFB2847B);
-  static const darkSeries1 = Color(0xFF5B9DC0);
-  static const darkSeries2 = Color(0xFF4FB286);
+  static const darkStateAdverse = Color(0xFFE29184);
+  static const darkStateIndeterminate = Color(0xFFA1A6A5);
+  static const darkStateFavorableSurface = Color(0xFF1D3229);
+  static const darkStateAttentionSurface = Color(0xFF3A321B);
+  static const darkStateAdverseSurface = Color(0xFF372C28);
+  static const darkStateIndeterminateSurface = Color(0xFF2A2F2D);
+  static const darkDirectionUp = Color(0xFF89AD9D);
+  static const darkDirectionDown = Color(0xFFC19D95);
+  static const darkSeries1 = Color(0xFF74ACC9);
+  static const darkSeries2 = Color(0xFF58B68C);
   static const darkSeries3 = Color(0xFFD9A23B);
-  static const darkSeries4 = Color(0xFFD9705F);
-  static const darkSeries5 = Color(0xFF9084C4);
-  static const darkSeries6 = Color(0xFF3FA3A3);
-  static const darkSeries7 = Color(0xFFD07FA8);
-  static const darkSeries8 = Color(0xFFD2874F);
-  static const darkSeries9 = Color(0xFF96A94F);
-  static const darkSeries10 = Color(0xFF6E8FD6);
-  static const darkSeries11 = Color(0xFFB5849B);
-  static const darkSeriesOther = Color(0xFF6B7470);
+  static const darkSeries4 = Color(0xFFE29184);
+  static const darkSeries5 = Color(0xFFA69DD0);
+  static const darkSeries6 = Color(0xFF5AB0B0);
+  static const darkSeries7 = Color(0xFFD58CB1);
+  static const darkSeries8 = Color(0xFFD69361);
+  static const darkSeries9 = Color(0xFF9AAD56);
+  static const darkSeries10 = Color(0xFF87A2DD);
+  static const darkSeries11 = Color(0xFFC198AB);
+  static const darkSeriesOther = Color(0xFF9FA5A2);
 
   static const lightGround0 = Color(0xFFF0ECE4);
   static const lightGround1 = Color(0xFFFFFFFF);
@@ -37,29 +41,33 @@ abstract final class FiColors {
   static const lightHairline = Color(0xFFD8D0C3);
   static const lightHairlineStrong = Color(0xFFBBB1A0);
   static const lightInk1 = Color(0xFF1C1F1E);
-  static const lightInk2 = Color(0xFF55605C);
-  static const lightInk3 = Color(0xFF626C67);
+  static const lightInk2 = Color(0xFF3F4744);
+  static const lightInk3 = Color(0xFF515A55);
   static const lightInkOnBrand = Color(0xFFFFFFFF);
-  static const lightBrand = Color(0xFF2C6485);
+  static const lightBrand = Color(0xFF295D7C);
   static const lightBrandQuiet = Color(0xFFE4EDF2);
-  static const lightStateFavorable = Color(0xFF147954);
-  static const lightStateAttention = Color(0xFF8C5C10);
-  static const lightStateAdverse = Color(0xFFB04434);
-  static const lightStateIndeterminate = Color(0xFF626C67);
-  static const lightDirectionUp = Color(0xFF3D755D);
-  static const lightDirectionDown = Color(0xFF8E5A4C);
-  static const lightSeries1 = Color(0xFF2C6485);
-  static const lightSeries2 = Color(0xFF157F58);
-  static const lightSeries3 = Color(0xFF8C5C10);
-  static const lightSeries4 = Color(0xFFB04434);
+  static const lightStateFavorable = Color(0xFF116446);
+  static const lightStateAttention = Color(0xFF784F0E);
+  static const lightStateAdverse = Color(0xFF973A2D);
+  static const lightStateIndeterminate = Color(0xFF515A55);
+  static const lightStateFavorableSurface = Color(0xFFD7E5E0);
+  static const lightStateAttentionSurface = Color(0xFFE8E1D6);
+  static const lightStateAdverseSurface = Color(0xFFEFE1E0);
+  static const lightStateIndeterminateSurface = Color(0xFFE1E3E2);
+  static const lightDirectionUp = Color(0xFF33614D);
+  static const lightDirectionDown = Color(0xFF7A4D41);
+  static const lightSeries1 = Color(0xFF295D7C);
+  static const lightSeries2 = Color(0xFF116446);
+  static const lightSeries3 = Color(0xFF784F0E);
+  static const lightSeries4 = Color(0xFF973A2D);
   static const lightSeries5 = Color(0xFF5C51A0);
-  static const lightSeries6 = Color(0xFF17706F);
-  static const lightSeries7 = Color(0xFF96436B);
-  static const lightSeries8 = Color(0xFFA05A1F);
-  static const lightSeries9 = Color(0xFF5C6B1E);
+  static const lightSeries6 = Color(0xFF156766);
+  static const lightSeries7 = Color(0xFF924168);
+  static const lightSeries8 = Color(0xFF8B4E1B);
+  static const lightSeries9 = Color(0xFF56641C);
   static const lightSeries10 = Color(0xFF3B5AA8);
   static const lightSeries11 = Color(0xFF7A4E62);
-  static const lightSeriesOther = Color(0xFF7F8883);
+  static const lightSeriesOther = Color(0xFF595F5C);
 
 }
 
@@ -78,6 +86,30 @@ Color fiStateColor(FiState state, Brightness brightness) {
       return dark ? FiColors.darkInk2 : FiColors.lightInk2;
     case FiState.indeterminate:
       return dark ? FiColors.darkStateIndeterminate : FiColors.lightStateIndeterminate;
+  }
+}
+
+Color fiStateSurface(FiState state, Brightness brightness) {
+  final dark = brightness == Brightness.dark;
+  switch (state) {
+    case FiState.favorable:
+      return dark
+          ? FiColors.darkStateFavorableSurface
+          : FiColors.lightStateFavorableSurface;
+    case FiState.attention:
+      return dark
+          ? FiColors.darkStateAttentionSurface
+          : FiColors.lightStateAttentionSurface;
+    case FiState.adverse:
+      return dark
+          ? FiColors.darkStateAdverseSurface
+          : FiColors.lightStateAdverseSurface;
+    case FiState.neutral:
+      return dark ? FiColors.darkGround2 : FiColors.lightGround2;
+    case FiState.indeterminate:
+      return dark
+          ? FiColors.darkStateIndeterminateSurface
+          : FiColors.lightStateIndeterminateSurface;
   }
 }
 
@@ -312,7 +344,7 @@ const List<FiScoreBand> fiScoreBands = [
   FiScoreBand(id: 'good', min: 60, max: 74, label: 'Boa', state: FiState.favorable, emphasis: 'muted'),
   FiScoreBand(id: 'neutral', min: 40, max: 59, label: 'Neutra', state: FiState.neutral, emphasis: 'muted'),
   FiScoreBand(id: 'weak', min: 0, max: 39, label: 'Fraca', state: FiState.adverse, emphasis: 'strong'),
-  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Dado insuficiente', state: FiState.indeterminate, emphasis: 'muted'),
+  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem dado', state: FiState.indeterminate, emphasis: 'muted'),
 ];
 
 abstract final class FiScoreRulerSize {

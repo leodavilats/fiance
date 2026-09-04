@@ -11,7 +11,8 @@ export type InsightLevel = 'essencial' | 'completo' | 'avancado';
   imports: [CommonModule, LucideAngularModule],
   template: `
     <div
-      class="flex items-start gap-3 py-3"
+      class="flex items-start gap-3 py-3 pl-3 border-l-2"
+      [class]="ruleClass()"
       [class.border-t]="divided()"
       [class.border-hairline]="divided()"
     >
@@ -69,6 +70,27 @@ export class InsightComponent {
         return 'circle-help';
       default:
         return 'circle-dot';
+    }
+  }
+
+  /**
+   * O fio da esquerda, na cor do estado.
+   *
+   * Neutro fica no fio de cabelo: se toda linha tivesse cor, a cor pararia de
+   * significar severidade e voltaria a ser decoracao.
+   */
+  ruleClass(): string {
+    switch (this.state()) {
+      case 'favorable':
+        return 'border-favorable';
+      case 'attention':
+        return 'border-attention';
+      case 'adverse':
+        return 'border-adverse';
+      case 'indeterminate':
+        return 'border-indeterminate';
+      default:
+        return 'border-hairline';
     }
   }
 

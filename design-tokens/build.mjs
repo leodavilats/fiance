@@ -311,6 +311,37 @@ function buildDart() {
   );
   out.push('  }');
   out.push('}', '');
+  out.push('Color fiStateSurface(FiState state, Brightness brightness) {');
+  out.push('  final dark = brightness == Brightness.dark;');
+  out.push('  switch (state) {');
+  out.push('    case FiState.favorable:');
+  out.push(
+    '      return dark',
+    '          ? FiColors.darkStateFavorableSurface',
+    '          : FiColors.lightStateFavorableSurface;'
+  );
+  out.push('    case FiState.attention:');
+  out.push(
+    '      return dark',
+    '          ? FiColors.darkStateAttentionSurface',
+    '          : FiColors.lightStateAttentionSurface;'
+  );
+  out.push('    case FiState.adverse:');
+  out.push(
+    '      return dark',
+    '          ? FiColors.darkStateAdverseSurface',
+    '          : FiColors.lightStateAdverseSurface;'
+  );
+  out.push('    case FiState.neutral:');
+  out.push('      return dark ? FiColors.darkGround2 : FiColors.lightGround2;');
+  out.push('    case FiState.indeterminate:');
+  out.push(
+    '      return dark',
+    '          ? FiColors.darkStateIndeterminateSurface',
+    '          : FiColors.lightStateIndeterminateSurface;'
+  );
+  out.push('  }');
+  out.push('}', '');
   out.push('Color fiDirectionColor(double delta, Brightness brightness) {');
   out.push('  final dark = brightness == Brightness.dark;');
   out.push('  if (delta > 0) return dark ? FiColors.darkDirectionUp : FiColors.lightDirectionUp;');
@@ -573,6 +604,7 @@ function buildVocabTs() {
     ['fiClasseFundoDaSerie', 'bg-series-', ''],
     ['fiClasseBarraDaSerie', 'bg-series-', ''],
     ['fiClasseChipDaSerie', 'bg-series-', '/15'],
+    ['fiClasseBordaDaSerie', 'border-series-', '/30'],
   ];
 
   for (const [nome, prefixo, sufixo] of mapasDeClasse) {

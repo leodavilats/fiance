@@ -32,11 +32,9 @@ class FiHealthBlock extends StatefulWidget {
 class _FiHealthBlockState extends State<FiHealthBlock> {
   bool _showInfo = false;
 
-  Color _scoreColor(Brightness brightness) {
-    if (widget.health.score >= 70) return fiStateColor(FiState.favorable, brightness);
-    if (widget.health.score >= 40) return fiStateColor(FiState.attention, brightness);
-    return fiStateColor(FiState.adverse, brightness);
-  }
+  FiState get _scoreState => fiBandFor(widget.health.score, fiHealthBands).state;
+
+  Color _scoreColor(Brightness brightness) => fiStateColor(_scoreState, brightness);
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +73,7 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
+                        color: fiStateSurface(_scoreState, brightness),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(

@@ -226,16 +226,29 @@ select.input {
   background: var(--fi-ground-1);
 }
 .notice-attention {
+  border-color: color-mix(in srgb, var(--fi-state-attention) 26%, transparent);
   border-left-color: var(--fi-state-attention);
+  background: var(--fi-state-attention-surface);
 }
 .notice-adverse {
+  border-color: color-mix(in srgb, var(--fi-state-adverse) 26%, transparent);
   border-left-color: var(--fi-state-adverse);
+  background: var(--fi-state-adverse-surface);
+}
+.notice-favorable {
+  border-color: color-mix(in srgb, var(--fi-state-favorable) 26%, transparent);
+  border-left-color: var(--fi-state-favorable);
+  background: var(--fi-state-favorable-surface);
 }
 .notice-brand {
+  border-color: color-mix(in srgb, var(--fi-brand) 26%, transparent);
   border-left-color: var(--fi-brand);
+  background: var(--fi-brand-quiet);
 }
 .notice-indeterminate {
+  border-color: color-mix(in srgb, var(--fi-state-indeterminate) 26%, transparent);
   border-left-color: var(--fi-state-indeterminate);
+  background: var(--fi-state-indeterminate-surface);
 }
 
 .floating {
@@ -461,28 +474,28 @@ select.input {
 }
 
 .v-buy {
-  background: color-mix(in srgb, var(--fi-state-favorable) 16%, transparent);
+  background: var(--fi-state-favorable-surface);
   color: var(--fi-state-favorable);
   border-color: color-mix(in srgb, var(--fi-state-favorable) 38%, transparent);
 }
 .v-sell {
-  background: color-mix(in srgb, var(--fi-state-adverse) 16%, transparent);
+  background: var(--fi-state-adverse-surface);
   color: var(--fi-state-adverse);
   border-color: color-mix(in srgb, var(--fi-state-adverse) 38%, transparent);
 }
 .v-hold {
-  background: color-mix(in srgb, var(--fi-state-attention) 16%, transparent);
+  background: var(--fi-state-attention-surface);
   color: var(--fi-state-attention);
   border-color: color-mix(in srgb, var(--fi-state-attention) 38%, transparent);
 }
 .v-unknown {
-  background: var(--fi-ground-2);
+  background: var(--fi-state-indeterminate-surface);
   color: var(--fi-state-indeterminate);
   border-color: var(--fi-hairline);
 }
 
 .row-highlight {
-  background: color-mix(in srgb, var(--fi-brand) 6%, transparent) !important;
+  background: var(--fi-brand-quiet) !important;
 }
 
 @keyframes spin {
@@ -626,7 +639,7 @@ select.input {
     border-radius: var(--fi-radius-md);
   }
   .fi-section-rail .subtab-btn.active {
-    background: var(--fi-ground-2);
+    background: var(--fi-brand-quiet);
     color: var(--fi-ink-1);
     box-shadow: inset 2px 0 0 var(--fi-brand);
   }

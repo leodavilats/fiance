@@ -83,7 +83,10 @@
 
           @if (d.health; as h) {
             <section class="fi-block">
-              <div class="flex items-start justify-between gap-6 flex-wrap">
+              <div
+                class="flex items-start justify-between gap-6 flex-wrap rounded-md p-4 border"
+                [class]="healthSurfaceClass()"
+              >
                 <div class="flex-1 min-w-[260px]">
                   <h2 class="fi-verdict text-ink m-0 mb-3">{{ healthVerdict() }}</h2>
 
@@ -148,7 +151,7 @@
           @if (biggestGap(); as gap) {
             <section class="fi-block">
               <p class="fi-eyebrow text-ink-3 m-0 mb-3">Próxima ação</p>
-              <div class="card">
+              <div class="notice notice-brand flex-col">
                 <h3 class="fi-verdict-sm text-ink m-0 mb-1">
                   {{ gap.label }} está {{ gap.below ? 'abaixo' : 'acima' }} da sua meta
                 </h3>

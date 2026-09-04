@@ -270,7 +270,7 @@ Regras que esta tela impõe:
 - Método não aplicável **diz por quê**: em FII, a linha Graham é substituída por
   "Graham não se aplica a fundo imobiliário" — nunca campo vazio. O roteamento por tipo vem de
   `fair_price.py`; a UI reflete.
-- `data_completeness < 0.5` → score em cinza + "dado insuficiente", nunca colorido como nota
+- `data_completeness < 0.5` → score em cinza + "sem dado", nunca colorido como nota
   baixa (regra que já existe no backend e no Dart e falta no web).
 - Sem posição na carteira, o cartão "Sua posição" vira `[Adicionar à carteira]`.
 

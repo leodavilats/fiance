@@ -39,7 +39,7 @@ class ScoreRuler extends StatelessWidget {
 
   String get _semantics => _reliable
       ? '$subject: ${_clamped.round()} de 100 — leitura ${_band.label.toLowerCase()}'
-      : '$subject: dado insuficiente para calcular';
+      : '$subject: sem dado para calcular';
 
   @override
   Widget build(BuildContext context) {

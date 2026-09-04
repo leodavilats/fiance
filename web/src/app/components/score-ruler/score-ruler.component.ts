@@ -79,7 +79,7 @@ export class ScoreRulerComponent {
 
   ariaLabel(): string {
     if (!this.reliable()) {
-      return `${this.subject()}: dado insuficiente para calcular`;
+      return `${this.subject()}: Sem dado para calcular`;
     }
     return `${this.subject()}: ${Math.round(this.score())} de 100 — leitura ${this.band().label.toLowerCase()}`;
   }

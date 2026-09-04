@@ -13,6 +13,7 @@ import {
   UiHelperService,
   MIN_POSICOES_PARA_SAUDE,
   WhatsNewResponse,
+  fiBandFor,
   fiHealthBands,
   fiScoreBands,
   razoesDaSaude,
@@ -111,6 +112,30 @@ export class DashboardComponent implements OnInit {
   readonly healthVerdict = computed(() => {
     const h = this.data()?.health;
     return h ? vereditoDeSaude(h.score, this.posicoes()) : '';
+  });
+
+  /**
+   * O chao do bloco de saude, na cor do que ele concluiu.
+   *
+   * E o unico julgamento de /hoje, e ate agora saia em tinta neutra sobre o
+   * mesmo chao de todo o resto: a tela dizia "carteira fragil" com a mesma cor
+   * com que dizia "carteira saudavel".
+   */
+  readonly healthSurfaceClass = computed(() => {
+    const h = this.data()?.health;
+    if (!h || this.healthReliability() === 0) {
+      return 'bg-indeterminate-surface border-indeterminate/25';
+    }
+    switch (fiBandFor(h.score, fiHealthBands).state) {
+      case 'favorable':
+        return 'bg-favorable-surface border-favorable/25';
+      case 'attention':
+        return 'bg-attention-surface border-attention/25';
+      case 'adverse':
+        return 'bg-adverse-surface border-adverse/25';
+      default:
+        return 'bg-indeterminate-surface border-indeterminate/25';
+    }
   });
 
   readonly healthReasons = computed<string[]>(() => {

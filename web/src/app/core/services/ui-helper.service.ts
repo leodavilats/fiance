@@ -11,6 +11,7 @@ import {
   fiCategoriaApelidos,
   fiCategorias,
   fiClasseBarraDaSerie,
+  fiClasseBordaDaSerie,
   fiClasseChipDaSerie,
   fiClasseTextoDaSerie,
   fiSetorApelidos,
@@ -81,6 +82,15 @@ export class UiHelperService {
 
   categoryBgClass(c: string): string {
     return fiClasseChipDaSerie[this.serieDaCategoria(c)] ?? 'bg-series-other/15';
+  }
+
+  categoryChipClass(c: string): string {
+    const n = this.serieDaCategoria(c);
+    return [
+      fiClasseTextoDaSerie[n] ?? 'text-series-other',
+      fiClasseChipDaSerie[n] ?? 'bg-series-other/15',
+      fiClasseBordaDaSerie[n] ?? 'border-series-other/30',
+    ].join(' ');
   }
 
   categoryBarColor(c: string): string {

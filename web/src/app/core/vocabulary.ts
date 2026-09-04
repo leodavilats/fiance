@@ -140,3 +140,12 @@ export const fiClasseChipDaSerie: Readonly<Record<number, string>> = {
   5: 'bg-series-5/15',
   8: 'bg-series-8/15',
 };
+
+export const fiClasseBordaDaSerie: Readonly<Record<number, string>> = {
+  0: 'border-series-other/30',
+  1: 'border-series-1/30',
+  2: 'border-series-2/30',
+  3: 'border-series-3/30',
+  5: 'border-series-5/30',
+  8: 'border-series-8/30',
+};

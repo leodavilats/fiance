@@ -165,7 +165,7 @@ Uma régua com zonas nomeadas e um valor marcado, não um gauge.
 - Tamanhos: `inline` 16 · `list` 24 · `card` 40 · `page` 64 (`fiScoreRulerSizes`).
 - Bandas, rótulos e estados vêm de `fiScoreBands` / `fiScoreBandFor()` — gerados.
 - `data_completeness < 0,5` → régua tracejada, cinza, número suprimido, rótulo
-  **"Dado insuficiente"**.
+  **"Sem dado"**.
 
 **Rótulos novos:** `Forte` · `Boa` · `Neutra` · `Fraca`, substituindo "Excelente entrada" /
 "Boa oportunidade" / "Neutro" / "Evitar agora". Os limiares não mudam; a linguagem deixa de dar
