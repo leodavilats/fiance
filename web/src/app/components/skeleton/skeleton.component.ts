@@ -23,7 +23,7 @@ export type SkeletonShape =
   styles: [
     `
       .fi-skeleton {
-        background: color-mix(in srgb, var(--fi-ink-3) 16%, transparent);
+        background: color-mix(in srgb, var(--fi-ink-3) 30%, transparent);
         animation: fi-skeleton-pulse 1.4s ease-in-out infinite;
       }
       @keyframes fi-skeleton-pulse {

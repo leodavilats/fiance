@@ -32,12 +32,12 @@ import { RulerZone, zoneBackground } from '../../core/ruler';
   styles: [
     `
       .ruler-zone-idle {
-        background: color-mix(in srgb, var(--fi-ink-3) 20%, transparent);
+        background: color-mix(in srgb, var(--fi-ink-3) 70%, transparent);
       }
       :host(.ruler-insufficient) .ruler-zone-idle {
         background: repeating-linear-gradient(
           90deg,
-          color-mix(in srgb, var(--fi-ink-3) 28%, transparent) 0 4px,
+          color-mix(in srgb, var(--fi-ink-3) 70%, transparent) 0 4px,
           transparent 4px 8px
         );
       }

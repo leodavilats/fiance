@@ -544,13 +544,35 @@ select.input {
   }
 }
 
+@keyframes fi-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.fi-section-body > * {
+  animation: fi-tab-in var(--fi-motion-base) var(--fi-motion-ease-enter);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fi-section-body > * {
+    animation: none;
+  }
+}
+
 .subtab-btn {
   @apply flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer whitespace-nowrap;
-  border-radius: var(--fi-radius-sm);
+  border-radius: 0;
   background: transparent;
   color: var(--fi-ink-2);
   border: none;
-  transition: color var(--fi-motion-fast) ease;
+  transition:
+    color var(--fi-motion-base) var(--fi-motion-ease-enter),
+    background-color var(--fi-motion-base) var(--fi-motion-ease-enter),
+    box-shadow var(--fi-motion-base) var(--fi-motion-ease-enter);
 }
 .subtab-btn:hover {
   color: var(--fi-ink-1);
@@ -573,13 +595,13 @@ select.input {
   background: linear-gradient(
     to right,
     var(--fi-brand) var(--range-pct),
-    var(--fi-hairline) var(--range-pct)
+    var(--fi-hairline-strong) var(--range-pct)
   );
 }
 .range-slider::-moz-range-track {
   height: 6px;
   border-radius: var(--fi-radius-pill);
-  background: var(--fi-hairline);
+  background: var(--fi-hairline-strong);
 }
 .range-slider::-moz-range-progress {
   height: 6px;
@@ -636,7 +658,7 @@ select.input {
     width: 100%;
     justify-content: flex-start;
     padding: 0.5rem 0.75rem;
-    border-radius: var(--fi-radius-md);
+    border-radius: 0;
   }
   .fi-section-rail .subtab-btn.active {
     background: var(--fi-brand-quiet);

@@ -24,7 +24,7 @@ const STATE_VAR: Record<FiState, string> = {
 export function zoneBackground(zone: RulerZone): string {
   return zone.active
     ? `var(${STATE_VAR[zone.state]})`
-    : 'color-mix(in srgb, var(--fi-ink-3) 20%, transparent)';
+    : 'color-mix(in srgb, var(--fi-ink-3) 70%, transparent)';
 }
 
 function cells(domain: RulerDomain): number {

@@ -15,7 +15,7 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
         {{ label() }}
       </span>
 
-      <div class="relative flex-1 h-2 rounded-sm bg-ground-2 min-w-[80px] overflow-hidden">
+      <div class="relative flex-1 h-2 rounded-sm bg-hairline-strong min-w-[80px] overflow-hidden">
         @if (hasTarget()) {
           <div
             class="absolute inset-y-0"
@@ -43,17 +43,20 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
       </span>
 
       @if (hasTarget()) {
-        <span class="fi-caption text-ink-3 w-[60px] text-right shrink-0 hidden sm:inline">
+        <span class="fi-caption text-ink-3 w-[60px] text-left shrink-0 hidden sm:inline">
           meta {{ targetPct() | number: '1.0-0' }}%
         </span>
-        <span class="flex items-center gap-1 w-[84px] justify-end shrink-0" [class]="stateClass()">
+        <span
+          class="flex items-center gap-1 w-[84px] justify-start shrink-0"
+          [class]="stateClass()"
+        >
           <lucide-icon [name]="icon()" size="12" aria-hidden="true"></lucide-icon>
           <span class="fi-metric-sm">
             {{ delta() > 0 ? '+' : '' }}{{ delta() | number: '1.1-1' }} %
           </span>
         </span>
       } @else {
-        <span class="fi-caption text-indeterminate w-[84px] text-right shrink-0">sem meta</span>
+        <span class="fi-caption text-indeterminate w-[84px] text-left shrink-0">sem meta</span>
       }
     </div>
 
