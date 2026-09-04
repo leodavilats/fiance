@@ -5,30 +5,6 @@ import 'design_tokens.dart';
 
 export 'design_tokens.dart';
 
-abstract final class AppColors {
-  static const darkBg = FiColors.darkGround0;
-  static const darkPanel = FiColors.darkGround1;
-  static const darkPanel2 = FiColors.darkGround2;
-  static const darkText = FiColors.darkInk1;
-  static const darkMuted = FiColors.darkInk2;
-  static const darkBorder = FiColors.darkHairline;
-  static const darkAccent = FiColors.darkBrand;
-  static const darkAccent2 = FiColors.darkBrand;
-  static const darkWarn = FiColors.darkStateAttention;
-  static const darkDanger = FiColors.darkStateAdverse;
-
-  static const lightBg = FiColors.lightGround0;
-  static const lightPanel = FiColors.lightGround1;
-  static const lightPanel2 = FiColors.lightGround2;
-  static const lightText = FiColors.lightInk1;
-  static const lightMuted = FiColors.lightInk2;
-  static const lightBorder = FiColors.lightHairline;
-  static const lightAccent = FiColors.lightBrand;
-  static const lightAccent2 = FiColors.lightBrand;
-  static const lightWarn = FiColors.lightStateAttention;
-  static const lightDanger = FiColors.lightStateAdverse;
-}
-
 Color fiInk2(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark ? FiColors.darkInk2 : FiColors.lightInk2;
 

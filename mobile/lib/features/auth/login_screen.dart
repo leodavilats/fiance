@@ -37,12 +37,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final panelColor = isDark ? AppColors.darkPanel : AppColors.lightPanel;
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
-    final accent = isDark ? AppColors.darkAccent : AppColors.lightAccent;
-    final accent2 = isDark ? AppColors.darkAccent2 : AppColors.lightAccent2;
+    final scheme = Theme.of(context).colorScheme;
+    final panelColor = scheme.surface;
+    final borderColor = scheme.outline;
+    final mutedColor = fiInk2(context);
+    final accent = scheme.primary;
 
     return Scaffold(
       body: BrandBackground(
@@ -98,7 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           _Feature(
                             icon: Icons.notifications_active_outlined,
                             label: 'Alertas',
-                            color: accent2,
+                            color: accent,
                           ),
                           _Feature(
                             icon: Icons.school_outlined,

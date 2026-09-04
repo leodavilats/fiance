@@ -15,9 +15,7 @@ class FiPatrimonyBlock extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final pnlColor = fiDirectionColor(positive ? 1 : -1, brightness);
     final scheme = Theme.of(context).colorScheme;
-    final mutedColor = brightness == Brightness.dark
-        ? AppColors.darkMuted
-        : AppColors.lightMuted;
+    final mutedColor = fiInk2(context);
 
     return Card(
       margin: EdgeInsets.zero,
