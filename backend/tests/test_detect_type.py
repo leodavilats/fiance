@@ -28,6 +28,16 @@ def test_known_etf_detected():
         assert detect_type(ticker) == "etf"
 
 
+def test_etf_internacional_nao_cai_como_fii():
+    for ticker in ["NASD11", "SPXI11", "ACWI11", "WRLD11", "XINA11", "GOLD11"]:
+        assert detect_type(ticker) == "etf"
+
+
+def test_etf_de_renda_fixa_nao_cai_como_fii():
+    for ticker in ["IMAB11", "IB5M11", "B5P211", "IRFM11", "LFTS11", "FIXA11"]:
+        assert detect_type(ticker) == "etf"
+
+
 def test_unsupported_ticker_raises():
     with pytest.raises(UnsupportedTickerError):
         detect_type("AAPL")
