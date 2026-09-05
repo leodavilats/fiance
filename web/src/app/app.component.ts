@@ -28,6 +28,7 @@ import {
   LogoComponent,
   ProfileModalComponent,
   SnackbarComponent,
+  WordmarkComponent,
 } from './components';
 
 interface NavDestination {
@@ -59,6 +60,7 @@ const DESTINATIONS: readonly NavDestination[] = [
     SnackbarComponent,
     AlertModalComponent,
     LogoComponent,
+    WordmarkComponent,
     ProfileModalComponent,
   ],
   template: `
@@ -83,7 +85,7 @@ const DESTINATIONS: readonly NavDestination[] = [
         >
           <a routerLink="/hoje" class="flex items-center gap-2.5 no-underline" title="fiance">
             <app-logo [size]="30" />
-            <span class="fi-wordmark">fiance</span>
+            <app-wordmark [height]="18" [decorative]="true" />
           </a>
 
           <nav class="hidden lg:block" aria-label="Navegação principal">

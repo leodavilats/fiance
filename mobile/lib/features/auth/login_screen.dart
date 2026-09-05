@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/app_logo.dart';
+import '../../core/app_wordmark.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brand_background.dart';
@@ -61,14 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: const AppLogo(size: 88),
                     ),
                     const SizedBox(height: 24),
-                    Text(
-                      'fiance',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
+                    AppWordmark(height: 32, color: Theme.of(context).colorScheme.onSurface),
                     const SizedBox(height: 10),
                     Text(
                       'Ações, FIIs, BDRs, ETFs e renda fixa — tudo em um só assistente',

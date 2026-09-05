@@ -112,9 +112,12 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/icon.png"
+  # ../assets/brand: pasta global na raiz do repo, gerada por
+  # design-tokens/build-icons.py e compartilhada com o web. Não é asset
+  # empacotado no app — só o build-time deste comando lê estes arquivos.
+  image_path: "../assets/brand/icon.png"
   # Igual a color.light.brand em design-tokens/tokens.json. Ver build-icons.py.
   adaptive_icon_background: "#295D7C"
-  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  adaptive_icon_foreground: "../assets/brand/icon_foreground.png"
   min_sdk_android: 21
   remove_alpha_ios: true

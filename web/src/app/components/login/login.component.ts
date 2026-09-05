@@ -3,16 +3,17 @@ import { AfterViewInit, Component, ElementRef, effect, inject, viewChild } from 
 import { Router } from '@angular/router';
 import { AuthService } from '../../core';
 import { LogoComponent } from '../logo/logo.component';
+import { WordmarkComponent } from '../logo/wordmark.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, LogoComponent],
+  imports: [CommonModule, LogoComponent, WordmarkComponent],
   template: `
     <div class="min-h-[80vh] flex items-center justify-center">
       <div class="flex flex-col items-center gap-4 text-center max-w-sm">
         <app-logo [size]="64" />
-        <h1 class="fi-wordmark text-ink m-0">fiance</h1>
+        <h1 class="m-0"><app-wordmark [height]="28" /></h1>
         <p class="fi-body text-ink-2 m-0">
           Preço justo, score e carteira — ações, FIIs, BDRs, ETFs e renda fixa da B3.
         </p>

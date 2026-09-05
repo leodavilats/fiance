@@ -19,6 +19,7 @@ export { GlobalLoaderComponent } from './global-loader/global-loader.component';
 export { HelpTooltipComponent } from './help-tooltip/help-tooltip.component';
 export { InsightComponent } from './insight/insight.component';
 export { LogoComponent } from './logo/logo.component';
+export { WordmarkComponent } from './logo/wordmark.component';
 export { GoalsComponent } from './goals/goals.component';
 export { PatrimonyChartComponent } from './patrimony-chart/patrimony-chart.component';
 export { PageHeaderComponent } from './page-header/page-header.component';

@@ -320,15 +320,6 @@ textarea.input {
   outline-offset: calc(var(--fi-focus-offset) * -1);
 }
 
-.fi-wordmark {
-  font-family: var(--fi-font-sans);
-  font-size: 18px;
-  line-height: 24px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--fi-ink-1);
-}
-
 .fi-overlay {
   background: color-mix(in srgb, var(--fi-ground-0) 72%, transparent);
 }

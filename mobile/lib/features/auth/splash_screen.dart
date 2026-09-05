@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_wordmark.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brand_background.dart';
@@ -37,10 +38,7 @@ class SplashScreen extends ConsumerWidget {
                 children: [
                   const BrandLoadingIndicator(size: 72),
                   const SizedBox(height: 20),
-                  const Text(
-                    'fiance',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
+                  const AppWordmark(height: 24),
                   const SizedBox(height: 8),
                   Text(
                     'Ações, FIIs, BDRs, ETFs e renda fixa — tudo em um só assistente',
