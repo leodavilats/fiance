@@ -203,15 +203,10 @@ class WhatsNewService:
         ]
 
     def _tax_item(self) -> list[WhatsNewItem]:
-        trades = self.portfolio_repo.list_closed_trades()
-        if not trades:
-            return []
+        from app.services import apuracao_service
 
-        losses = [t for t in trades if t["gross_profit"] < 0]
-        if not losses:
-            return []
-
-        total_loss = abs(sum(t["gross_profit"] for t in losses))
+        saldos = apuracao_service.saldos_de_prejuizo(apuracao_service.apuracao())
+        total_loss = sum(saldo["available"] for saldo in saldos)
         if total_loss < 1:
             return []
 

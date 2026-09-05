@@ -13,15 +13,27 @@ void main() {
     expect(find.text('Continuar com Google'), findsOneWidget);
   });
 
-  testWidgets('Login mostra o disclaimer educativo', (WidgetTester tester) async {
+  testWidgets('Login diz o que o produto é, antes de a pessoa entrar', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       const ProviderScope(child: MaterialApp(home: LoginScreen())),
     );
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(
-      find.textContaining('Não constitui recomendação formal'),
-      findsOneWidget,
+    expect(find.textContaining('não consultoria'), findsOneWidget);
+    expect(find.textContaining('Não há garantia'), findsOneWidget);
+  });
+
+  testWidgets('Login leva ao texto legal antes do consentimento', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: LoginScreen())),
     );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Termos'), findsOneWidget);
+    expect(find.text('Política de Privacidade'), findsOneWidget);
   });
 }

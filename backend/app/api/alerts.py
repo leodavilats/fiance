@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
-from app.collectors.universal import fetch_many
 from app.models.portfolio import TICKER_PATTERN
+from app.repositories.asset_repository import AssetRepository
 from app.storage import portfolio_store
 
 router = APIRouter()
@@ -73,7 +73,7 @@ async def check_alerts() -> list[AlertTriggered]:
         return []
 
     tickers = list({a["ticker"] for a in active})
-    snapshots = await fetch_many(tickers)
+    snapshots = await AssetRepository.get_universe(tickers)
     price_map: dict[str, float] = {
         s.symbol.upper(): s.price for s in snapshots if s.price is not None
     }

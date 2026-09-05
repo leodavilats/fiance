@@ -5,11 +5,12 @@ import base64
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app import affirmation
 from app.core import cache
 from app.core.brt import now_brt
 from app.core.ratelimit import ip_rate_limit
 from app.core.universe import get_universe
-from app.models import AssetAnalysis
+from app.models import AffirmationMode, AssetAnalysis
 from app.services import AssetService, og_image
 
 router = APIRouter()
@@ -89,3 +90,10 @@ async def public_universe(request: Request) -> dict:
         "count": len(tickers),
         "lastmod": now_brt().strftime("%Y-%m-%d"),
     }
+
+
+@router.get("/public/affirmation", response_model=AffirmationMode)
+async def public_affirmation(request: Request) -> AffirmationMode:
+    await _ip_rate_limit(request)
+
+    return AffirmationMode(**affirmation.current().as_dict())

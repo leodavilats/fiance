@@ -47,8 +47,8 @@ def record_sale(
     fees: float = 0.0,
     traded_on: str | None = None,
     user_id: str | None = None,
-) -> None:
-    ledger_store.record(
+) -> int:
+    entry_id = ledger_store.record(
         LedgerEntry(
             kind=TransactionKind.SELL,
             symbol=ticker,
@@ -61,6 +61,7 @@ def record_sale(
         user_id=user_id,
     )
     rebuild_projection(symbol=ticker, user_id=user_id)
+    return entry_id
 
 
 def record_removal(ticker: str, user_id: str | None = None) -> None:

@@ -1,0 +1,185 @@
+# Operação: subir, observar, reverter
+
+O que precisa existir **fora do repositório** para o produto ficar no ar de forma responsável, e o
+que fazer quando algo quebra. O código de cada peça já está pronto e desligado; o que falta aqui é
+conta, chave e um teste executado de verdade.
+
+> **Este arquivo é sobre a máquina, não sobre o produto.** O que cada tela faz está em
+> [FEATURES.md](FEATURES.md); como o sistema é montado, em [ARCHITECTURE.md](ARCHITECTURE.md); o
+> que está aberto, em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+
+---
+
+## Variáveis de ambiente
+
+`APP_ENV` **não tem default**: vazio derruba o startup, e se algo escapar ele falha fechado (não
+assume development). Esquecer essa variável desarmaria JWT, CORS e a rota de operador de uma vez.
+
+| Variável | Obrigatória | O que acontece se faltar |
+|---|---|---|
+| `APP_ENV` | **sim** | startup falha alto |
+| `DATABASE_URL` | sim em produção | cai para SQLite local — dado some no próximo deploy |
+| `JWT_SECRET` | sim fora de development | startup falha alto |
+| `ALLOWED_ORIGINS` | sim fora de development | startup falha alto |
+| `BILLING_WEBHOOK_SECRET` | sim fora de development | startup falha alto |
+| `SITE_URL` | sim | link de compartilhamento e OG apontam para lugar nenhum |
+| `BRAPI_TOKEN` | recomendada | cota anônima acaba rápido; o disjuntor abre |
+| `SENTRY_DSN` | não | telemetria desligada (o pacote nem inicializa) |
+| `RELEASE` | não | stack trace não aponta para o commit |
+| `CACHE_BACKEND` | não | escolhe sozinho: banco da aplicação em Postgres, arquivo local em SQLite |
+| `WEB_CONCURRENCY` | não | dois workers, que é o default do Procfile |
+
+`SENTRY_DSN` configurado **com o pacote faltando falha alto**, de propósito: um sistema que se acha
+observado e não está é pior que um assumidamente cego.
+
+---
+
+## Migração: é *release command*, não startup
+
+`app/core/database.py` separa as duas coisas:
+
+- **`migrate()`** aplica as migrações. É o que `python -m app.release` chama, e é o que o
+  `release:` do Procfile executa — **uma vez por deploy**.
+- **`conferir_revisao()`** é o que o startup do processo web faz: confere que a revisão do banco
+  bate com a do código e **falha alto** se não bater.
+
+Migrar no `lifespan` funcionava com `--workers 1` e mordia no primeiro dia com tráfego suficiente
+para escalar: duas réplicas subindo juntas começam duas migrações concorrentes, e o Alembic não
+coordena isso. Banco local em SQLite continua se criando sozinho — é de um processo só.
+
+**Se o startup falhar com `BancoAtrasado`:** rode `python -m app.release` contra aquele banco antes
+de subir o processo web. A mensagem do erro já diz isso.
+
+---
+
+## Deploy: homologação, promoção, rollback
+
+O fluxo está em [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) e é **acionado à
+mão**. Ele confere que o commit está verde, migra e sobe, e termina com um teste de fumaça em
+`/api/health` e `/api/public/asset/PETR4` — que exercita processo, banco, cache e fonte externa de
+uma vez.
+
+### O que falta configurar (uma vez)
+
+1. **Criar o ambiente de homologação no Railway**, com **banco próprio**. Homologação que aponta
+   para o banco de produção não é homologação — é produção com outro nome.
+2. No GitHub, em *Settings → Environments*, criar `staging` e `production`. Em `production`,
+   marcar *Required reviewers* — a confirmação escrita do fluxo é a segunda tranca, não a primeira.
+3. Em cada ambiente, definir:
+   - segredo `RAILWAY_TOKEN` (token de projeto do Railway);
+   - variável `RAILWAY_SERVICE` (nome do serviço);
+   - variável `SITE_URL` (a URL daquele ambiente, sem barra no fim).
+4. **Desligar o auto-deploy do `main`** no painel do Railway. Enquanto ele estiver ligado, o
+   fluxo acima é decorativo: `main` continua indo direto para produção.
+
+### Promover
+
+1. *Actions → Deploy → Run workflow*, ambiente `staging`.
+2. Abrir a URL de homologação e conferir o que mudou.
+3. Rodar de novo com ambiente `production`, digitando `produção` no campo de confirmação.
+
+### Rollback
+
+O Railway guarda os deploys anteriores: *Deployments → o último que funcionava → Redeploy*. Isso
+reverte **o código**, não o banco.
+
+**Migração não volta sozinha.** Antes de promover algo que apaga ou renomeia coluna, a regra é a de
+sempre: duas etapas. Primeiro sobe o código que funciona com as duas formas do schema; só depois,
+num deploy seguinte, sobe a migração que remove a forma antiga. Assim o rollback de código nunca
+precisa de rollback de banco.
+
+---
+
+## Observabilidade: o que ligar
+
+O código está pronto nas três plataformas e é inerte sem DSN. O que falta é conta.
+
+### 1. Sentry (erro)
+
+| Plataforma | Onde | Como ligar |
+|---|---|---|
+| Backend | `app/core/telemetry.py` | variável `SENTRY_DSN` |
+| Web | `src/app/core/telemetry.ts` | `sentryDsn` em `src/environments/environment*.ts` |
+| Mobile | `lib/core/telemetry.dart` | `--dart-define=SENTRY_DSN=…` no build |
+
+Crie um projeto por plataforma (`fiance-backend`, `fiance-web`, `fiance-mobile`) e cole cada DSN.
+O plano gratuito do Sentry cobre o volume desta fase com folga.
+
+**Não mexa no `before_send` sem ler o teste.** Ticker e valor são dado pessoal financeiro, e a
+Política de Privacidade promete que nenhum terceiro os recebe. A limpeza é **lista de permissão**:
+sai o que foi liberado, e não "tudo menos o que eu lembrei de proibir" — uma chave nova num payload
+nasce redigida. Os três testes que travam isso:
+
+- `backend/tests/test_telemetria_nao_vaza_carteira.py`
+- `web/src/app/core/telemetry.spec.ts`
+- `mobile/test/telemetry_test.dart`
+
+### 2. Disponibilidade
+
+Um monitor externo (BetterStack, Checkly ou UptimeRobot — todos com plano gratuito suficiente) em
+**duas** verificações:
+
+- `GET {SITE_URL}/api/health` — o processo está de pé;
+- `GET {SITE_URL}/api/public/asset/PETR4` — e o caminho inteiro funciona: banco, cache e fonte
+  externa. Só a primeira passa verde com a BRAPI fora do ar.
+
+### 3. Log que sobrevive ao restart
+
+O log do Railway é efêmero e as métricas de `app/core/observability.py` vivem **na memória do
+processo**: somem no restart, e com dois workers cada um tem as suas. Encaminhe para BetterStack
+Logs, Axiom ou Grafana Loki.
+
+### 4. Alerta em canal humano
+
+Sem isto, os três itens acima são painel que ninguém abre. O mínimo, para um canal que apita:
+
+- qualquer 5xx;
+- disjuntor da BRAPI ou do BCB aberto (`GET /api/data-quality/source` mostra os dois);
+- job periódico parado. Este é o que mais dói: um worker morto pode travar o snapshot diário por
+  até 5,4h e **ninguém saberia** (KI#14).
+
+---
+
+## Backup: restaurado, ou é só esperança
+
+Três documentos deste repositório usam "o Postgres já tem backup" como justificativa de decisão de
+arquitetura. **Backup nunca restaurado não é backup.**
+
+### O teste, uma vez por trimestre
+
+1. Criar um banco vazio novo (pode ser um serviço temporário no Railway).
+2. Restaurar o backup mais recente nele.
+3. Apontar uma instância da API para esse banco e rodar `python -m app.release` — a migração tem
+   que ser no-op, o que prova que o dump veio de um schema em dia.
+4. Conferir três coisas: `GET /api/health` responde; uma conta conhecida tem as posições que
+   deveria; `GET /api/portfolio/trades` devolve a mesma apuração de imposto de antes.
+5. Destruir o banco temporário.
+6. **Registrar a data aqui embaixo.** Um teste de restore que ninguém sabe quando rodou não conta.
+
+| Data do restore | Quem | Tempo até responder | Observação |
+|---|---|---|---|
+| — | — | — | nunca executado |
+
+### RPO e RTO propostos
+
+Números para esta fase, a confirmar no primeiro teste — declarar é o que transforma "temos backup"
+em compromisso conferível:
+
+- **RPO (quanto de dado se aceita perder): 24 horas.** É o intervalo do backup automático do
+  Postgres gerenciado. Um dado de carteira digitado à mão vale o retrabalho de um dia; se isso
+  deixar de ser verdade, o número muda.
+- **RTO (quanto tempo até voltar): 4 horas.** Restaurar, apontar e conferir, com uma pessoa só e
+  sem automação.
+
+---
+
+## Quando algo quebra
+
+| Sintoma | Onde olhar primeiro |
+|---|---|
+| 500 em rota específica | Sentry, agrupado pela rota — o caminho vem sem o ticker de propósito |
+| Preço velho ou faltando | `GET /api/data-quality/source` — disjuntor aberto e idade do cache |
+| Preços diferentes por acesso | `CACHE_BACKEND`: cache por nó com duas réplicas |
+| Startup falha com `BancoAtrasado` | rode `python -m app.release` contra aquele banco |
+| Startup falha com `InsecureConfigurationError` | a mensagem nomeia a variável que falta |
+| Snapshot diário parado | lock de job — KI#14; o TTL é o próprio intervalo do job |

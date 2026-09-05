@@ -4,12 +4,33 @@ import { routes } from './app.routes';
 import { serverRoutes } from './app.routes.server';
 
 describe('renderização no servidor', () => {
-  it('só a página de ativo é renderizada no servidor', () => {
+  it('a página de ativo e o texto jurídico são o que roda no servidor', () => {
     const noServidor = serverRoutes
       .filter(route => route.renderMode === RenderMode.Server)
       .map(route => route.path);
 
-    expect(noServidor).toEqual(['ativo/:ticker']);
+    expect(noServidor).toEqual(['ativo/:ticker', 'termos', 'privacidade', 'aviso-cvm']);
+  });
+
+  it('nenhuma rota pública do servidor tem guarda de autenticação', () => {
+    const publicas = serverRoutes
+      .filter(route => route.renderMode === RenderMode.Server)
+      .map(route => route.path);
+
+    for (const path of publicas) {
+      const route = routes.find(r => r.path === path);
+      expect(route, path).toBeDefined();
+      expect(route?.canActivate, path).toBeUndefined();
+    }
+  });
+
+  it('o texto jurídico existe como rota, senão a loja recebe URL quebrada', () => {
+    for (const path of ['termos', 'privacidade', 'aviso-cvm']) {
+      expect(
+        routes.some(route => route.path === path),
+        path
+      ).toBe(true);
+    }
   });
 
   it('todo o resto continua no cliente', () => {

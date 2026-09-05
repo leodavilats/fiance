@@ -8,6 +8,7 @@ os.environ.setdefault("APP_ENV", "development")
 
 from datetime import UTC, datetime, timedelta  # noqa: E402
 
+import httpx  # noqa: E402
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -106,6 +107,129 @@ _FAKE_DIVIDENDS = {"PETR4": build_quarterly_dividends()}
 _FAKE_HISTORY = {"PETR4": build_daily_history(260)}
 
 
+_FAKE_BRAPI_STOCKS = [
+    {
+        "stock": "PETR4",
+        "name": "Petrobras PN",
+        "sector": "Petróleo",
+        "subType": "stock",
+        "market_cap": 5.0e11,
+        "volume": 8.0e7,
+    },
+    {
+        "stock": "PETR3",
+        "name": "Petrobras ON",
+        "sector": "Petróleo",
+        "subType": "stock",
+        "market_cap": 4.8e11,
+        "volume": 2.0e7,
+    },
+    {
+        "stock": "VALE3",
+        "name": "Vale ON",
+        "sector": "Mineração",
+        "subType": "stock",
+        "market_cap": 2.5e11,
+        "volume": 5.0e7,
+    },
+    {
+        "stock": "ITUB4",
+        "name": "Itau Unibanco PN",
+        "sector": "Financeiro",
+        "subType": "stock",
+        "market_cap": 3.0e11,
+        "volume": 4.0e7,
+    },
+    {
+        "stock": "BBAS3",
+        "name": "Banco do Brasil ON",
+        "sector": "Financeiro",
+        "subType": "stock",
+        "market_cap": 1.5e11,
+        "volume": 2.5e7,
+    },
+    {
+        "stock": "PETR4F",
+        "name": "Petrobras PN (fracionário)",
+        "sector": "Petróleo",
+        "subType": "stock",
+        "market_cap": 5.0e11,
+        "volume": 1.0e5,
+    },
+    {
+        "stock": "HGLG11",
+        "name": "CSHG Logística",
+        "sector": "Fundos",
+        "subType": "fii",
+        "market_cap": 0,
+        "volume": 1.0e7,
+    },
+    {
+        "stock": "MXRF11",
+        "name": "Maxi Renda",
+        "sector": "Fundos",
+        "subType": "fii",
+        "market_cap": 0,
+        "volume": 1.2e7,
+    },
+    {
+        "stock": "BOVA11",
+        "name": "iShares Ibovespa",
+        "sector": "Fundos",
+        "subType": "etf",
+        "market_cap": 0,
+        "volume": 3.0e7,
+    },
+    {
+        "stock": "IVVB11",
+        "name": "iShares S&P 500",
+        "sector": "Fundos",
+        "subType": "etf",
+        "market_cap": 0,
+        "volume": 2.0e7,
+    },
+    {
+        "stock": "SMAL11",
+        "name": "iShares Small Cap",
+        "sector": "Fundos",
+        "subType": "etf",
+        "market_cap": 0,
+        "volume": 9.0e6,
+    },
+    {
+        "stock": "AAPL34",
+        "name": "Apple BDR",
+        "sector": "Tecnologia",
+        "subType": "bdr",
+        "market_cap": 3.0e12,
+        "volume": 5.0e6,
+    },
+    {
+        "stock": "MSFT34",
+        "name": "Microsoft BDR",
+        "sector": "Tecnologia",
+        "subType": "bdr",
+        "market_cap": 3.1e12,
+        "volume": 4.0e6,
+    },
+]
+
+
+@pytest.fixture(autouse=True)
+def _sem_rede(monkeypatch):
+    def _bloqueia(self, request, *args, **kwargs):
+        raise RuntimeError(
+            f"Chamada de rede na suíte: {request.method} {request.url}. "
+            "Stube esse caminho no conftest — o verde não pode depender da internet."
+        )
+
+    async def _bloqueia_async(self, request, *args, **kwargs):
+        _bloqueia(self, request)
+
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", _bloqueia)
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", _bloqueia_async)
+
+
 def pytest_configure(config):
     config.addinivalue_line(
         "markers",
@@ -142,9 +266,10 @@ def _stub_market_data(monkeypatch, request):
 
     monkeypatch.setattr(opp_mod, "get_universe", lambda: ["PETR4", "VALE3"])
 
-    from app.core.universe import invalidate_universe_memo
+    import app.core.universe as universe_mod
 
-    invalidate_universe_memo()
+    monkeypatch.setattr(universe_mod, "_fetch_brapi_list", lambda: list(_FAKE_BRAPI_STOCKS))
+    universe_mod.invalidate_universe_memo()
 
     import app.core.cache as cache_mod
 

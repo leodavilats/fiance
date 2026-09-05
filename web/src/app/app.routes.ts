@@ -214,6 +214,23 @@ export const routes: Routes = [
     ],
   },
 
+  {
+    path: 'termos',
+    loadComponent: () => import('./components/legal/terms.component').then(m => m.TermsComponent),
+    title: 'Termos de Uso - fiance',
+  },
+  {
+    path: 'privacidade',
+    loadComponent: () =>
+      import('./components/legal/privacy.component').then(m => m.PrivacyComponent),
+    title: 'Política de Privacidade - fiance',
+  },
+  {
+    path: 'aviso-cvm',
+    loadComponent: () => import('./components/legal/cvm.component').then(m => m.CvmNoticeComponent),
+    title: 'Aviso CVM - fiance',
+  },
+
   { path: 'dashboard', redirectTo: 'hoje', pathMatch: 'full' },
   { path: 'carteira/importar', redirectTo: 'carteira', pathMatch: 'full' },
   { path: 'carteira/transacoes', redirectTo: 'carteira', pathMatch: 'full' },

@@ -6,6 +6,18 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'termos',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'privacidade',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'aviso-cvm',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Client,
   },

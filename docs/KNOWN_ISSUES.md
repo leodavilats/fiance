@@ -100,23 +100,18 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
 > doença que o cabeçalho deste arquivo descreve. Os números foram reaproveitados pelo que ficou
 > aberto no lugar.
 
-12. **A apuração de IR é por operação; a lei é por mês.** `optimizer/cost_calculator.py` trata cada
-    venda isoladamente: tributa o lucro na hora e só considera prejuízo já realizado e gravado
-    antes. A regra brasileira compensa ganhos e perdas **dentro do mês e da categoria** e incide
-    sobre o líquido do período. Vender com +R$ 10.000 no dia 5 e −R$ 10.000 no dia 20 informa
-    R$ 1.500 de imposto onde o correto é zero, e inverter as datas produz o número certo — a ordem
-    de registro dentro do mês muda o imposto informado. Consequências ligadas ao mesmo modelo:
-    passar dos R$ 20.000 no mês não reavalia as vendas já gravadas como isentas, e não há noção de
-    day trade nem de IOF em resgate de renda fixa com menos de 30 dias. Substituir "custo de uma
-    venda" por "resultado do mês por categoria" resolve os três de uma vez, e é o que destrava o
-    DARF.
+12. **A apuração de IR não cobre day trade nem IOF de renda fixa.** A apuração passou a ser
+    projeção do razão, por mês e categoria (CHANGELOG de 2026-09-05), e isso fechou os defeitos de
+    ordem de registro, isenção não reavaliada e venda que não apurava. Duas lacunas continuam, e
+    estão declaradas nos Termos de Uso: o razão **não distingue day trade** de swing trade, e não
+    há IOF sobre resgate de renda fixa com menos de 30 dias. Enquanto isso durar, o número é
+    estimativa de apoio e não substitui a apuração oficial.
 
-13. **Vendas do razão não geram apuração.** Toda a apuração se apoia em `ClosedTradeDb`, e a única
-    coisa que grava `ClosedTradeDb` é `POST /portfolio/sell`. Uma venda registrada por
-    `POST /transactions` (`kind=sell`) ou vinda da importação de extrato não apura imposto, não
-    conta para o teto mensal de R$ 20.000, não alimenta nem consome prejuízo compensável e não
-    aparece em Encerradas. A escrita e a projeção da carteira já foram unificadas; a origem da
-    apuração ainda não.
+13. **A tabela `closed_trades` não é mais escrita, e continua no schema.** A apuração deixou de ter
+    campo gravado; nada escreve nessa tabela hoje. Ela ficou de pé porque apagá-la é migração
+    destrutiva e o item de Fase 0 do ROADMAP — confirmar que a base de produção não tem dado real —
+    ainda não foi respondido. Depois dessa confirmação, a migração que a remove é trabalho de
+    minutos. Enquanto isso, a tabela exporta vazia e não influencia número nenhum.
 
 14. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
     vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo

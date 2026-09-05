@@ -7,7 +7,18 @@ import { LoadingService } from '../../core';
   selector: 'app-global-loader',
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
-  templateUrl: './global-loader.component.html',
+  template: `
+    @if (loading.loading()) {
+      <div class="fixed inset-0 fi-overlay z-loader flex items-center justify-center">
+        <div
+          class="flex flex-col items-center gap-3 p-6 rounded-lg bg-ground-1 border border-hairline shadow-popover"
+        >
+          <lucide-icon name="loader-circle" size="32" class="animate-spin text-brand"></lucide-icon>
+          <p class="fi-label text-ink">Carregando...</p>
+        </div>
+      </div>
+    }
+  `,
   styleUrls: ['./global-loader.component.scss'],
 })
 export class GlobalLoaderComponent {

@@ -145,6 +145,25 @@ def test_whats_new_surfaces_upcoming_maturity(client):
 
 def test_whats_new_surfaces_realized_losses_for_tax_offset(client):
     headers = make_auth_headers("whats_new_tax")
+    client.post(
+        "/api/portfolio/position",
+        headers=headers,
+        json={"ticker": "HGLG11", "quantity": 100, "avg_price": 30.0, "category": "fiis"},
+    )
+    client.post(
+        "/api/portfolio/sell",
+        headers=headers,
+        json={"ticker": "HGLG11", "quantity": 100, "sell_price": 20.0},
+    )
+
+    items = client.get("/api/whats-new", headers=headers).json()["items"]
+    tax = [i for i in items if i["kind"] == "tax"]
+    assert tax
+    assert "compensar" in tax[0]["title"].lower()
+
+
+def test_whats_new_nao_anuncia_prejuizo_que_a_lei_nao_deixa_compensar(client):
+    headers = make_auth_headers("whats_new_tax_isento")
     client.post("/api/portfolio/position", headers=headers, json=ITEM)
     client.post(
         "/api/portfolio/sell",
@@ -153,9 +172,8 @@ def test_whats_new_surfaces_realized_losses_for_tax_offset(client):
     )
 
     items = client.get("/api/whats-new", headers=headers).json()["items"]
-    tax = [i for i in items if i["kind"] == "tax"]
-    assert tax
-    assert "compensar" in tax[0]["title"].lower()
+
+    assert not [i for i in items if i["kind"] == "tax"]
 
 
 def test_whats_new_caps_the_number_of_lines(client):

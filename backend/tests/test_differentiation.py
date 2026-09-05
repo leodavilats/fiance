@@ -3,41 +3,105 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.core.brt import BRT, month_key, month_start_timestamp
-from app.optimizer.cost_calculator import calculate_sell_cost
+from app.ledger.apuracao import apurar
+from app.ledger.entries import LedgerEntry, TransactionKind
 from tests.conftest import make_auth_headers
 
 ITEM = {"ticker": "PETR4", "quantity": 100, "avg_price": 30.0, "category": "auto"}
 
 
+FII = {"HGLG11": "fiis"}
+
+
+def _razao(*eventos) -> list[LedgerEntry]:
+    lancamentos = []
+    for indice, (kind, dia, quantidade, preco) in enumerate(eventos, start=1):
+        lancamentos.append(
+            LedgerEntry(
+                kind=kind,
+                symbol="HGLG11",
+                traded_on=dia,
+                quantity=quantidade,
+                price=preco,
+                id=indice,
+            )
+        )
+    return lancamentos
+
+
+C = TransactionKind.BUY
+V = TransactionKind.SELL
+
+
 def test_loss_is_available_to_offset_future_gains():
-    loss = calculate_sell_cost("fiis", quantity=100, sell_price=8.0, avg_price=10.0)
-    assert loss.gross_profit == -200.0
-    assert loss.ir_amount == 0.0
-    assert "compensar ganhos futuros" in loss.observation
+    apuracao = apurar(_razao((C, "2026-01-05", 100, 10.0), (V, "2026-02-10", 100, 8.0)), FII)
+    fevereiro = apuracao.mes("2026-02", "fiis")
+
+    assert fevereiro.result == -200
+    assert fevereiro.ir_amount == 0
+    assert "compensar ganho futuro" in fevereiro.observation
+    assert apuracao.saldo_de_prejuizo["fiis"] == 200
 
 
 def test_accumulated_loss_reduces_the_tax_due():
-    sem_compensacao = calculate_sell_cost("fiis", 100, 12.0, 10.0)
-    com_compensacao = calculate_sell_cost("fiis", 100, 12.0, 10.0, accumulated_loss=150.0)
+    sem_compensacao = apurar(
+        _razao((C, "2026-01-05", 100, 10.0), (V, "2026-03-10", 100, 12.0)), FII
+    )
+    com_compensacao = apurar(
+        _razao(
+            (C, "2026-01-05", 200, 10.0),
+            (V, "2026-02-10", 100, 8.5),
+            (V, "2026-03-10", 100, 12.0),
+        ),
+        FII,
+    )
 
-    assert sem_compensacao.ir_amount == pytest.approx(40.0)
-    assert com_compensacao.loss_offset_used == 150.0
-    assert com_compensacao.taxable_profit == 50.0
-    assert com_compensacao.ir_amount == pytest.approx(10.0)
-    assert com_compensacao.net_profit > sem_compensacao.net_profit
+    assert sem_compensacao.mes("2026-03", "fiis").ir_amount == pytest.approx(40.0)
+
+    marco = com_compensacao.mes("2026-03", "fiis")
+    assert marco.loss_offset_used == 150
+    assert marco.taxable_profit == 50
+    assert marco.ir_amount == pytest.approx(10.0)
 
 
 def test_offset_never_exceeds_the_gain():
-    cost = calculate_sell_cost("fiis", 100, 11.0, 10.0, accumulated_loss=5_000.0)
-    assert cost.loss_offset_used == 100.0
-    assert cost.taxable_profit == 0.0
-    assert cost.ir_amount == 0.0
+    apuracao = apurar(
+        _razao(
+            (C, "2026-01-05", 200, 10.0),
+            (V, "2026-02-10", 100, 0.01),
+            (V, "2026-03-10", 100, 11.0),
+        ),
+        FII,
+    )
+    marco = apuracao.mes("2026-03", "fiis")
+
+    assert marco.loss_offset_used == 100
+    assert marco.taxable_profit == 0
+    assert marco.ir_amount == 0
+    assert apuracao.saldo_de_prejuizo["fiis"] > 0, "o que sobrou do prejuízo continua disponível"
 
 
 def test_exempt_month_preserves_the_loss_balance():
-    cost = calculate_sell_cost("acoes_br", 100, 12.0, 10.0, accumulated_loss=500.0)
-    assert cost.ir_amount == 0.0
-    assert cost.loss_offset_used == 0.0
+    apuracao = apurar(
+        [
+            LedgerEntry(
+                kind=C, symbol="PETR4", traded_on="2026-01-05", quantity=3000, price=10.0, id=1
+            ),
+            LedgerEntry(
+                kind=V, symbol="PETR4", traded_on="2026-02-10", quantity=2900, price=8.0, id=2
+            ),
+            LedgerEntry(
+                kind=V, symbol="PETR4", traded_on="2026-03-10", quantity=100, price=12.0, id=3
+            ),
+        ],
+        {"PETR4": "acoes_br"},
+    )
+    marco = apuracao.mes("2026-03", "acoes_br")
+
+    assert marco.exempt is True
+    assert marco.ir_amount == 0
+    assert marco.loss_offset_used == 0
+    assert apuracao.saldo_de_prejuizo["acoes_br"] == 5800
 
 
 def test_tax_loss_balance_flows_through_the_api(client):

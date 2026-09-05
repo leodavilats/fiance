@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/app_logo.dart';
 import '../../core/app_wordmark.dart';
+import '../../core/legal_links.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brand_background.dart';
@@ -139,9 +140,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Conteúdo educativo. Não constitui recomendação formal de investimento.',
+                      'Ferramenta de análise, não consultoria. Não há garantia '
+                      'de retorno.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: mutedColor, fontSize: 11),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 4,
+                      children: [
+                        Text(
+                          'Ao entrar você aceita os',
+                          style: TextStyle(color: mutedColor, fontSize: 11),
+                        ),
+                        _LinkLegal(label: 'Termos', url: termsUrl),
+                        Text(
+                          'e a',
+                          style: TextStyle(color: mutedColor, fontSize: 11),
+                        ),
+                        _LinkLegal(
+                          label: 'Política de Privacidade',
+                          url: privacyUrl,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -169,6 +191,35 @@ class _Feature extends StatelessWidget {
         const SizedBox(height: 6),
         Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
       ],
+    );
+  }
+}
+
+
+class _LinkLegal extends StatelessWidget {
+  const _LinkLegal({required this.label, required this.url});
+
+  final String label;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: const TextStyle(fontSize: 11),
+      ),
+      onPressed: () async {
+        final abriu = await abrirNoNavegador(url);
+        if (!abriu && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Não foi possível abrir $url')),
+          );
+        }
+      },
+      child: Text(label),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/legal_links.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -276,6 +277,7 @@ class ConfigScreen extends ConsumerWidget {
             title: 'Alertas de preço',
             children: const [_AlertsSection()],
           ),
+          const _LegalCard(),
         ],
       ),
     );
@@ -707,6 +709,71 @@ class _AlertsSection extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+
+class _LegalCard extends StatelessWidget {
+  const _LegalCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsCard(
+      icon: Icons.gavel_outlined,
+      title: 'Termos e privacidade',
+      children: [
+        _LegalTile(
+          icon: Icons.description_outlined,
+          label: 'Termos de Uso',
+          url: termsUrl,
+        ),
+        _LegalTile(
+          icon: Icons.lock_outline,
+          label: 'Política de Privacidade',
+          subtitle: 'Que dado guardamos, e como você o leva embora',
+          url: privacyUrl,
+        ),
+        _LegalTile(
+          icon: Icons.balance_outlined,
+          label: 'Aviso CVM',
+          subtitle: 'Por que a análise não é recomendação',
+          url: cvmNoticeUrl,
+        ),
+      ],
+    );
+  }
+}
+
+class _LegalTile extends StatelessWidget {
+  const _LegalTile({
+    required this.icon,
+    required this.label,
+    required this.url,
+    this.subtitle,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(label),
+      subtitle: subtitle == null ? null : Text(subtitle!),
+      trailing: const Icon(Icons.open_in_new, size: 18),
+      onTap: () async {
+        final abriu = await abrirNoNavegador(url);
+        if (!abriu && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Não foi possível abrir $url')),
+          );
+        }
+      },
     );
   }
 }

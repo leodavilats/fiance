@@ -1,3 +1,4 @@
+from .affirmation import AffirmationMode
 from .analysis import (
     AssetAnalysis,
     CompareResponse,
@@ -36,6 +37,7 @@ from .opportunity import OpportunitiesResponse, Opportunity
 from .portfolio import (
     ClosedTrade,
     ClosedTradesResponse,
+    MonthlyTaxAssessment,
     PortfolioEvaluationRequest,
     PortfolioEvaluationResponse,
     PortfolioItem,
@@ -72,6 +74,7 @@ from .renda_fixa import (
 from .whats_new import WhatsNewItem, WhatsNewResponse
 
 __all__ = [
+    "AffirmationMode",
     "AssetCategory",
     "AssetType",
     "Liquidez",
@@ -99,6 +102,7 @@ __all__ = [
     "SellRequest",
     "ClosedTrade",
     "ClosedTradesResponse",
+    "MonthlyTaxAssessment",
     "TaxLossCategoryBalance",
     "Goal",
     "GoalsRequest",

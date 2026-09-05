@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from app.storage import portfolio_store
 from app.storage.portfolio_store import (
-    ClosedTrade,
     DeviceToken,
     FixedIncomeRow,
     Goal,
@@ -10,7 +9,6 @@ from app.storage.portfolio_store import (
     SectorGoal,
     Snapshot,
     StoredItem,
-    TaxLossBalance,
 )
 
 
@@ -43,41 +41,17 @@ class PortfolioRepository:
 
     @staticmethod
     def realized_gross_profit_between(start: float, end: float) -> float:
-        return portfolio_store.realized_gross_profit_between(start, end)
+        from app.services import apuracao_service
+
+        return apuracao_service.resultado_bruto_entre(start, end)
 
     @staticmethod
     def list_dividends_received() -> list:
         return portfolio_store.list_dividends_received()
 
     @staticmethod
-    def closed_trades_totals() -> dict:
-        return portfolio_store.closed_trades_totals()
-
-    @staticmethod
     def lock_tenant() -> None:
         portfolio_store.lock_tenant()
-
-    @staticmethod
-    def sum_gross_sales_in_month(category: str, at: float | None = None) -> float:
-        return portfolio_store.sum_gross_sales_in_month(category, at=at)
-
-    @staticmethod
-    def create_closed_trade(**kwargs) -> ClosedTrade:
-        return portfolio_store.create_closed_trade(**kwargs)
-
-    @staticmethod
-    def list_closed_trades(
-        limit: int | None = None, cursor: str | None = None
-    ) -> list[ClosedTrade]:
-        return portfolio_store.list_closed_trades(limit=limit, cursor=cursor)
-
-    @staticmethod
-    def tax_loss_balances() -> list[TaxLossBalance]:
-        return portfolio_store.tax_loss_balances()
-
-    @staticmethod
-    def available_tax_loss(category: str) -> float:
-        return portfolio_store.available_tax_loss(category)
 
     @staticmethod
     def record_snapshot(

@@ -184,6 +184,7 @@
   ],
   "GET /api/v1/portfolio/trades": [
     "has_more",
+    "months",
     "next_cursor",
     "tax_loss_balances",
     "total_count",
@@ -209,6 +210,14 @@
     "registered_devices",
     "risk_profile",
     "updated_at"
+  ],
+  "GET /api/v1/public/affirmation": [
+    "asset_level",
+    "disclaimer",
+    "level",
+    "name",
+    "personalized",
+    "prescriptive"
   ],
   "GET /api/v1/public/asset/{symbol}": [
     "asset_type",
@@ -326,9 +335,11 @@
     "gross_profit",
     "id",
     "ir_amount",
+    "ir_is_prorated",
     "ir_rate",
     "loss_compensable",
     "loss_offset_used",
+    "month",
     "net_profit",
     "quantity",
     "sell_price",

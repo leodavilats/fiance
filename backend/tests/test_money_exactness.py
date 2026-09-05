@@ -7,7 +7,7 @@ import pytest
 
 from app.core.money import cents, from_cents, money, quantize, sum_money, to_float
 from app.ledger import LedgerEntry, TransactionKind, project_position
-from app.optimizer.cost_calculator import calculate_sell_cost
+from app.ledger.apuracao import apurar
 
 
 class TestConversao:
@@ -177,43 +177,61 @@ class TestPropriedades:
         assert final.total_cost_exact == 0
 
 
+def _compra(ticker, dia, quantidade, preco, id_):
+    return LedgerEntry(
+        kind=TransactionKind.BUY,
+        symbol=ticker,
+        traded_on=dia,
+        quantity=quantidade,
+        price=preco,
+        id=id_,
+    )
+
+
+def _venda(ticker, dia, quantidade, preco, id_):
+    return LedgerEntry(
+        kind=TransactionKind.SELL,
+        symbol=ticker,
+        traded_on=dia,
+        quantity=quantidade,
+        price=preco,
+        id=id_,
+    )
+
+
 class TestApuracaoFiscal:
-    def test_o_liquido_sai_dos_exatos_e_nao_dos_arredondados(self):
-        custo = calculate_sell_cost(
-            "acoes_br",
-            quantity=333,
-            sell_price=30.335,
-            avg_price=10.115,
-            gross_value_month_before=25_000.0,
+    def test_o_imposto_sai_dos_exatos_e_nao_dos_arredondados(self):
+        apuracao = apurar(
+            [
+                _compra("PETR4", "2026-01-05", 333, 10.115, 1),
+                _venda("PETR4", "2026-02-10", 333, 30.335, 2),
+                _compra("VALE3", "2026-01-05", 1000, 20.0, 3),
+                _venda("VALE3", "2026-02-11", 1000, 20.0, 4),
+            ],
+            {"PETR4": "acoes_br", "VALE3": "acoes_br"},
         )
+        fevereiro = apuracao.mes("2026-02", "acoes_br")
 
         bruto = Decimal("333") * Decimal("30.335") - Decimal("333") * Decimal("10.115")
         imposto = bruto * Decimal("0.15")
 
-        assert custo.gross_profit == to_float(quantize(bruto))
-        assert custo.ir_amount == to_float(quantize(imposto))
-        assert custo.net_profit == to_float(quantize(bruto - imposto))
+        assert fevereiro.exempt is False
+        assert to_float(quantize(fevereiro.result)) == to_float(quantize(bruto))
+        assert to_float(quantize(fevereiro.ir_amount)) == to_float(quantize(imposto))
 
     def test_a_isencao_mensal_e_comparada_com_valor_exato(self):
-        custo = calculate_sell_cost(
-            "acoes_br",
-            quantity=1000,
-            sell_price=10.0,
-            avg_price=5.0,
-            gross_value_month_before=10_000.0,
-        )
+        def imposto_de(preco_de_venda: str) -> float:
+            apuracao = apurar(
+                [
+                    _compra("PETR4", "2026-01-05", 1000, 5.0, 1),
+                    _venda("PETR4", "2026-02-10", 1000, float(preco_de_venda), 2),
+                ],
+                {"PETR4": "acoes_br"},
+            )
+            return to_float(quantize(apuracao.mes("2026-02", "acoes_br").ir_amount))
 
-        assert custo.ir_amount == 0.0
-
-        acima = calculate_sell_cost(
-            "acoes_br",
-            quantity=1000,
-            sell_price=10.0,
-            avg_price=5.0,
-            gross_value_month_before=10_000.01,
-        )
-
-        assert acima.ir_amount > 0.0
+        assert imposto_de("20.0") == 0.0, "exatamente R$ 20.000 ainda é isento"
+        assert imposto_de("20.001") > 0.0, "um centésimo acima já tributa o mês inteiro"
 
 
 class TestSemFloatOndeImporta:

@@ -22,6 +22,10 @@ redis>=5.0,<7
 # conteúdo financeiro é WhatsApp, LinkedIn e X. A mesma dependência que o
 # gerador de ícones já usa.
 pillow>=10.0,<12
+# Telemetria de erro. Inerte sem SENTRY_DSN — está aqui, e não como extra opcional, porque a
+# alternativa é SENTRY_DSN configurado e ignorado: o sintoma seria um sistema que se acha
+# observado e não está, e ninguém descobre isso até o dia do incidente.
+sentry-sdk[fastapi]>=2.0,<3
 google-auth>=2.34,<3
 pyjwt>=2.9,<3
 firebase-admin>=6.5,<7

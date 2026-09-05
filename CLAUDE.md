@@ -25,12 +25,11 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 866 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 906 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 57 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 126 testes
-cd web     && npm run e2e                          # 10 testes em navegador
+cd mobile  && flutter analyze && flutter test      # 0 issues, 73 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 143 testes
 node design-tokens/build.mjs --check               # tokens sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA
 python design-tokens/build-icons.py --check        # marca sincronizada
@@ -60,10 +59,12 @@ Duas ressalvas que já custaram tempo:
 | Tipo numa tela | Escolher o **papel** (`fi-body`, `fi-caption`, `fi-metric`…), nunca `text-sm` | `lint:ui` reprova tamanho solto |
 | Limiar de score | Mudar nas três plataformas, Python primeiro | Réguas divergem |
 | Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
+| Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template |
 | Cor, tipografia, espaço | Editar `design-tokens/tokens.json` e rodar o gerador | Job `design-tokens` falha |
 | Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` |
 | Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
 | Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |
+| Componente Angular novo | Escrever o `template` no próprio `.ts` — não há `.html` separado em `web/src/app/components` | Divergência de padrão na mesma pasta |
 
 ---
 
@@ -169,6 +170,13 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   (`POST /transactions/rebuild`), e `GET /transactions/reconciliation` deixou de comparar duas
   verdades: agora confere a projeção contra a fonte. Categoria não é derivável do razão, então
   viaja junto com a escrita.
+- **A apuração de IR também é projeção do razão, e a unidade é o mês.** `ledger/apuracao.py` é a
+  matemática, sem banco; `apuracao_service` resolve a categoria de cada papel e liga à API. Não
+  existe campo de imposto gravado numa venda: guardá-lo é que fazia a ordem de registro dentro do
+  mês mudar o número, a isenção de R$ 20 mil não ser reavaliada e a venda vinda de
+  `POST /transactions` não apurar nada. O IR que aparece por linha em Encerradas é **rateio** do
+  mês, e diz isso; o número do DARF está em `months`. Isenção corta os dois lados — prejuízo em mês
+  isento não gera crédito compensável.
 - **Uma declaração de posição ancora a linha do tempo, e a assimetria é de propósito.** O que vier
   depois dela se aplica em cima, na ordem das datas. O que tem data **anterior** e *soma* posição
   (compra, bonificação, transferência de entrada) já está dentro do que foi declarado e é
@@ -231,12 +239,25 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 - **Listas paginam por cursor keyset** (`core/pagination.py`), nunca offset. Onde há agregado
   (proventos, renda fixa, sugestões) o corte é **do payload**, não da consulta — senão o total
   encolhe conforme a rolagem. Onde não há (`/portfolio/trades`, `/transactions`), corta no banco.
+- **Migração é *release command*, não startup.** `python -m app.release` (e o `release:` do
+  Procfile) aplica; o startup só chama `conferir_revisao()` e **falha alto** se o banco estiver
+  atrasado. Migrar no `lifespan` com duas réplicas são duas migrações concorrentes, e o Alembic não
+  coordena isso. Banco local em SQLite continua se criando sozinho, porque é de um processo só.
 - **`APP_ENV` não tem default.** Vazio falha alto no startup e, se algo escapar, falha **fechado**
   (não é development): esquecer a variável desarmava JWT, CORS e a rota de operador de uma vez.
-- **A página de ativo é a única rota pública, e é renderizada no servidor.** É o canal de
-  aquisição: robô não faz login e o modelo não comporta mídia paga. A fronteira está em
-  `web/src/app/app.routes.server.ts` e tem teste. No backend, `analyze_asset(personalized=False)` e
-  `/api/public/*` são a leitura **sem titular**, com teto por IP.
+- **Quatro rotas são públicas e renderizadas no servidor, e a lista é fechada.** A página de ativo
+  (`/ativo/:ticker`) é o canal de aquisição: robô não faz login e o modelo não comporta mídia paga.
+  O texto jurídico (`/termos`, `/privacidade`, `/aviso-cvm`) está lá por outro motivo: robô de loja
+  também não faz login, e a ficha de segurança de dados pede uma URL de privacidade que abre
+  sozinha. A fronteira está em `web/src/app/app.routes.server.ts`, o teste lista as quatro pelo
+  nome, e crescer essa lista é decisão registrada — não efeito colateral. No backend,
+  `analyze_asset(personalized=False)` e `/api/public/*` são a leitura **sem titular**, com teto por
+  IP.
+- **O texto jurídico não repete o que o produto afirma.** O Aviso CVM lê
+  `GET /api/public/affirmation`; `AFFIRMATION_LEVEL` é configuração, e uma segunda cópia da frase
+  acabaria desatualizada justamente onde a pessoa a lê. O nível publicável hoje é o **2**; o 3 fica
+  desligado até haver parecer. Enquanto o texto for minuta, `<app-legal-draft-notice>` diz isso —
+  e é um componente só, para sair de uma vez.
 - **O código do web roda também no Node.** Use `DOCUMENT` e `isPlatformBrowser`; nunca `document`
   ou `localStorage` direto.
 - **Busca global: o servidor devolve o que é da pessoa; a rota é do cliente.** `/search` procura
@@ -257,6 +278,12 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 - **Sessão tem TTL curto e refresh rotacionado.** Acesso 1h, refresh 30 dias queimado no uso.
   Revogação por `jti` (este dispositivo) e `session_cuts` (todos). Os clientes renovam **uma vez**
   ao levar 401, com a renovação compartilhada. No web, `httpErrorInterceptor` é o mais externo.
+- **Telemetria não leva carteira.** O `before_send` de cada plataforma
+  (`core/telemetry.py`/`.ts`/`.dart`) é **lista de permissão**: ticker no caminho vira `{id}`, valor
+  em reais e número citado em erro são redigidos, corpo de request e `extra` não saem, do usuário
+  sai só o identificador, e variável local de frame é descartada. Uma chave nova num payload nasce
+  redigida. Três suítes travam isso, e é a Política de Privacidade escrita como código.
+  `SENTRY_DSN` sem o pacote instalado **falha alto**.
 - **Evento de produto tem dicionário fechado** (`core/events.py`). Nome fora dele, ou propriedade
   com ticker ou valor, devolve 422 — dado de carteira não sai do produto. Marcos de ativação são
   gravados pelo **servidor** (`services/milestones.py`), não pelo cliente.

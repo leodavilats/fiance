@@ -7,11 +7,13 @@ from app.analysis.fair_price import compute_fair_price, compute_technical, desir
 from app.core.brt import to_brt
 from app.core.context import memoize_request
 from app.core.errors import DomainError, NotFoundError
-from app.core.pagination import clamp_limit, paginate
+from app.core.money import quantize, to_float
+from app.core.pagination import clamp_limit, slice_after
 from app.models import (
     AssetType,
     ClosedTrade,
     ClosedTradesResponse,
+    MonthlyTaxAssessment,
     PortfolioEvaluationRequest,
     PortfolioEvaluationResponse,
     PortfolioItem,
@@ -23,9 +25,8 @@ from app.models import (
     StoredPortfolioItem,
     TaxLossCategoryBalance,
 )
-from app.optimizer.cost_calculator import calculate_sell_cost
 from app.repositories import AssetRepository, PortfolioRepository
-from app.services import ledger_service
+from app.services import apuracao_service, ledger_service
 from app.services.milestones import record_portfolio_milestones
 from app.storage import audit_store
 
@@ -246,70 +247,45 @@ class PortfolioService:
                 f"({pos['quantity']})."
             )
 
-        try:
-            snap = await self.asset_repo.get_asset(req.ticker)
-            asset_type = snap.asset_type if snap else None
-        except Exception:
-            asset_type = None
-
-        auto = auto_category(asset_type) if asset_type else "acoes_br"
-        category = resolve_category(pos["category"], auto)
-
         sold_at = self._validate_sold_at(req.sold_at)
 
         self.portfolio_repo.lock_tenant()
 
-        month_before = self.portfolio_repo.sum_gross_sales_in_month(category, at=sold_at)
-
-        accumulated_loss = self.portfolio_repo.available_tax_loss(category)
-
-        cost = calculate_sell_cost(
-            category,
-            req.quantity,
-            req.sell_price,
-            pos["avg_price"],
-            gross_value_month_before=month_before,
-            accumulated_loss=accumulated_loss,
-        )
-
-        trade = self.portfolio_repo.create_closed_trade(
-            ticker=req.ticker.upper(),
-            category=category,
-            quantity=req.quantity,
-            avg_price=pos["avg_price"],
-            sell_price=req.sell_price,
-            gross_profit=cost.gross_profit,
-            ir_rate=cost.ir_rate,
-            ir_amount=cost.ir_amount,
-            net_profit=cost.net_profit,
-            loss_offset_used=cost.loss_offset_used,
-            taxable_profit=cost.taxable_profit,
-            loss_compensable=cost.loss_compensable,
-            sold_at=sold_at,
-        )
-        ledger_service.record_sale(
+        entry_id = ledger_service.record_sale(
             req.ticker,
             req.quantity,
             req.sell_price,
             fees=0.0,
             traded_on=to_brt(sold_at).strftime("%Y-%m-%d"),
         )
+
+        linhas, _ = apuracao_service.vendas_apuradas()
+        registrada = next(
+            (linha for linha in linhas if linha["id"] == entry_id),
+            None,
+        )
+        if registrada is None:
+            raise DomainError(
+                f"Venda de {req.ticker.upper()} gravada no razão mas não apurada — "
+                "o razão e a apuração estão fora de sincronia."
+            )
+
         audit_store.write(
             audit_store.POSITION_SELL,
             entity="position",
             entity_id=req.ticker.upper(),
             summary=(
                 f"Venda de {req.quantity:g} {req.ticker.upper()} a "
-                f"{req.sell_price:.2f} — lucro bruto {cost.gross_profit:.2f}."
+                f"{req.sell_price:.2f} — lucro bruto {registrada['gross_profit']:.2f}."
             ),
             detail={
                 "quantity": req.quantity,
                 "sell_price": req.sell_price,
-                "gross_profit": cost.gross_profit,
-                "ir_amount": cost.ir_amount,
+                "gross_profit": registrada["gross_profit"],
+                "ir_amount": registrada["ir_amount"],
             },
         )
-        return ClosedTrade(**trade)
+        return ClosedTrade(**registrada)
 
     @staticmethod
     def _validate_sold_at(sold_at: float | None) -> float:
@@ -330,27 +306,27 @@ class PortfolioService:
         self, limit: int | None = None, cursor: str | None = None
     ) -> ClosedTradesResponse:
         page_size = clamp_limit(limit)
-        rows = self.portfolio_repo.list_closed_trades(limit=page_size, cursor=cursor)
-        page = paginate(
-            rows,
+
+        linhas, apuracao = apuracao_service.vendas_apuradas()
+
+        page = slice_after(
+            linhas,
+            cursor,
             page_size,
             key=lambda t: t["sold_at"],
             identity=lambda t: t["id"],
         )
-        trades = page.items
 
-        totals = self.portfolio_repo.closed_trades_totals()
-        total_realized = totals["total_realized_pnl"]
-        total_ir = totals["total_ir_paid"]
-        balances = self.portfolio_repo.tax_loss_balances()
+        balances = apuracao_service.saldos_de_prejuizo(apuracao)
 
         return ClosedTradesResponse(
-            trades=[ClosedTrade(**t) for t in trades],
-            total_realized_pnl=round(total_realized, 2),
-            total_ir_paid=round(total_ir, 2),
+            trades=[ClosedTrade(**t) for t in page.items],
+            months=[MonthlyTaxAssessment(**m.as_dict()) for m in apuracao.meses],
+            total_realized_pnl=round(to_float(quantize(apuracao.resultado_total)), 2),
+            total_ir_paid=round(to_float(quantize(apuracao.ir_total)), 2),
             tax_loss_balances=[TaxLossCategoryBalance(**b) for b in balances],
             total_tax_loss_available=round(sum(b["available"] for b in balances), 2),
             next_cursor=page.next_cursor,
             has_more=page.has_more,
-            total_count=totals["count"],
+            total_count=len(linhas),
         )

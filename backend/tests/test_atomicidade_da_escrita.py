@@ -34,18 +34,7 @@ def como():
 
 
 class TestVendaRecusadaNaoDeixaRastro:
-    def test_venda_recusada_pelo_razao_nao_grava_trade_encerrado(self, client, como):
-        """O cenário exato de F-01, no caminho em que ele corrompe dinheiro.
-
-        `sell_position` valida contra a *posição*, grava o `ClosedTradeDb` —
-        com IR apurado — e só depois chama o razão. Quando projeção e posição
-        divergem, o razão recusa: o usuário levava 400, o trade encerrado
-        ficava gravado com imposto calculado, e a venda não existia no razão.
-        A carteira e a apuração fiscal saíam de sincronia para sempre.
-
-        A divergência é semeada apagando o razão por baixo — que é o que uma
-        escrita parcial anterior produziria na prática.
-        """
+    def test_venda_recusada_pelo_razao_nao_deixa_apuracao_nem_posicao_reduzida(self, client, como):
         uid = como("u_atomico_venda")
         headers = make_auth_headers(uid)
 
@@ -56,8 +45,6 @@ class TestVendaRecusadaNaoDeixaRastro:
         )
         ledger_store.delete_symbol_entries("PETR4", user_id=uid)
 
-        antes = len(portfolio_store.list_closed_trades(user_id=uid))
-
         resposta = client.post(
             "/api/portfolio/sell",
             json={"ticker": "PETR4", "quantity": 5, "sell_price": 30.0},
@@ -65,8 +52,12 @@ class TestVendaRecusadaNaoDeixaRastro:
         )
 
         assert resposta.status_code >= 400, "o razão precisa recusar para o cenário existir"
-        assert len(portfolio_store.list_closed_trades(user_id=uid)) == antes
+        assert ledger_store.list_entries(symbol="PETR4", user_id=uid) == []
         assert portfolio_store.get_position("PETR4", user_id=uid)["quantity"] == 10
+
+        encerradas = client.get("/api/portfolio/trades", headers=headers).json()
+        assert encerradas["total_count"] == 0
+        assert encerradas["total_ir_paid"] == 0.0
 
     def test_lancamento_invalido_nao_fica_no_razao(self, client, como):
         uid = como("u_atomico_razao")

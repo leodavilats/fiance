@@ -12,6 +12,115 @@
 
 ---
 
+## A trilha A do go-live: suíte honesta, imposto certo, texto legal e olhos abertos (2026-09-05)
+
+Cinco dos oito bloqueios de "colocar no ar" fechados de uma vez. O que liga os cinco é a mesma
+doença: **o produto declarava uma coisa e fazia outra**, e nada quebrava.
+
+### A suíte estava vermelha, e mentia nos dois sentidos
+
+O `ci.yml` declarava, em comentário, que "a suíte não depende de rede nem de segredo real". Era
+falso: `core/universe._fetch_brapi_list()` chamava `https://brapi.dev/api/quote/list` durante o
+pytest, e o verde do CI passava a depender de o que um terceiro publicou naquele dia — vermelho sem
+ninguém tocar em código, e verde com o código errado.
+
+A declaração virou verdade por bloqueio no **transporte** do httpx (o `TestClient` usa
+`ASGITransport` e continua funcionando), e o universo virou catálogo fixo no `conftest`. O bloqueio
+revelou um segundo caminho escondido na hora: `/alerts/check` e o job de notificação chamavam
+`fetch_many` direto, pulando o `AssetRepository` que é a costura que a suíte stuba — o teste de
+alerta **passava porque alcançava a internet**.
+
+Junto veio o defeito real que o teste vermelho apontava: **ETF de renda fixa era classificado como
+FII em produção.** A BRAPI simplesmente não lista IMAB11, IRFM11, LFTS11, FIXA11, B5P211 nem
+IB5M11; sem eles no mapa, `detect_type` caía no `_ENDS_11` e devolvia `fii`. Esses papéis entravam
+na categoria errada, contavam na alocação errada e eram avaliados por Bazin sobre a distribuição de
+um fundo de índice de renda fixa. `KNOWN_ETFS` resolve pelo mesmo padrão de `KNOWN_UNITS`, e vale
+também com a fonte fria — classificação não pode depender do dia da BRAPI.
+
+### A apuração de IR deixou de ser por operação
+
+Era o defeito mais caro do produto, e tinha três sintomas com uma causa só. `cost_calculator`
+tributava cada venda **no momento em que ela era gravada**: vender com +R$ 10.000 no dia 5 e
+−R$ 10.000 no dia 20 informava R$ 1.500 de imposto onde o correto é zero, e inverter as datas dava
+o número certo. Passar dos R$ 20.000 no mês não reavaliava as vendas já gravadas como isentas. E
+venda lançada por `POST /transactions` ou vinda da importação de extrato **não apurava nada** — a
+apuração só enxergava `POST /portfolio/sell`.
+
+A causa era guardar imposto num campo. A correção é a mesma que já valia para a carteira: **a
+apuração é projeção do livro-razão**, do mesmo jeito que a posição é. `ledger/apuracao.py` é a
+matemática — sem banco, sem sessão, sem usuário — e agrupa por **mês e categoria**, que é a unidade
+da lei. Os três sintomas somem por construção, porque não há mais momento em que o imposto seja
+gravado antes de o mês fechar.
+
+`ClosedTradeDb` deixou de ser escrita e `optimizer/cost_calculator.py` foi apagado: código morto que
+calcula imposto errado é armadilha, não histórico. A linha de Encerradas continua mostrando um valor
+de IR, mas agora **rateado** e rotulado como rateio; o número que vai para o DARF está na tabela de
+apuração mensal, que é nova nas duas plataformas.
+
+Um efeito colateral honesto: o "R$ X de prejuízo disponível para compensar IR" do feed somava toda
+venda com resultado negativo, **inclusive as de mês isento**, que a lei não deixa compensar. O
+produto anunciava um crédito que não existe. Agora ele lê o saldo compensável de verdade — e por
+isso o aviso deixou de aparecer em alguns casos em que aparecia antes.
+
+O que continua fora, e está escrito nos Termos: day trade (o razão não distingue) e IOF de resgate
+de renda fixa com menos de 30 dias.
+
+### A migração saiu do startup
+
+`init_db()` chamava `command.upgrade(config, "head")` dentro do `lifespan`. Com `--workers 1`
+funcionava; com duas réplicas subindo juntas, são duas migrações concorrentes, e o Alembic não
+coordena isso — quebrando no pior momento possível, o primeiro dia com tráfego suficiente para
+escalar. Agora `python -m app.release` é o *release command* e o startup apenas **confere** a
+revisão, falhando alto se o banco estiver atrasado. Banco local em SQLite continua se criando
+sozinho, porque é de um processo só.
+
+O `Procfile` justificava `--workers 1` com "o cache é um SQLite local". Deixou de ser verdade
+quando o cache passou a morar no banco da aplicação: o comentário mandava não escalar por um motivo
+já resolvido.
+
+### O texto jurídico passou a existir
+
+Zero ocorrência de "privacidade", "termos de uso" ou "LGPD" em todo o repositório. Agora há três
+páginas públicas e renderizadas no servidor — `/termos`, `/privacidade`, `/aviso-cvm` —, ligadas do
+login (antes do consentimento) e de Você → Conta, nas duas plataformas.
+
+**Isso muda um invariante de propósito:** a página de ativo deixou de ser a única rota pública com
+SSR. O motivo é diferente do dela — robô de loja não faz login, e a ficha de segurança de dados das
+lojas pede uma URL de privacidade que abre sozinha —, e o teste de fronteira foi atualizado
+listando as quatro, para que a próxima adição também seja deliberada.
+
+O texto está marcado como **minuta pendente de revisão jurídica**, num componente único que sai de
+uma vez quando o parecer chegar. Publicar minuta sem dizer que é minuta seria pior que não publicar.
+
+E o Aviso CVM **não repete o disclaimer à mão**: ele busca `GET /api/public/affirmation` e mostra a
+postura vigente. `AFFIRMATION_LEVEL` é configuração; uma segunda cópia da mesma frase acabaria
+desatualizada justamente onde a pessoa a lê. Fica registrado por escrito, atendendo A3 do
+PRE_PRODUCAO: **o nível publicável é o 2**, e o nível 3 permanece desligado até haver parecer.
+
+### O sistema deixou de operar cego
+
+Sentry nas três plataformas, inerte sem DSN, com `before_send` próprio em cada uma. A limpeza é
+**lista de permissão**, e não "tudo menos o que eu lembrei de proibir": ticker no caminho vira
+`{id}`, valor em reais e número citado em mensagem de erro são redigidos, corpo de request e
+`extra` não saem, do usuário sai só o identificador opaco, e variável local de stack frame é
+descartada. Três suítes travam isso — é a Política de Privacidade escrita como código.
+
+`SENTRY_DSN` configurado **com o pacote faltando falha alto**, pelo mesmo motivo de `REDIS_URL`:
+um sistema que se acha observado e não está é pior que um assumidamente cego.
+
+O resto de A5, A7 e A8 é conta e execução humana, e está em [OPERACAO.md](OPERACAO.md): monitor de
+disponibilidade, agregação de log, canal de alerta, o caminho de homologação → promoção → rollback
+(com `.github/workflows/deploy.yml`, manual de propósito) e o roteiro de restore de backup com
+RPO/RTO propostos. **Backup nunca restaurado não é backup**, e três documentos deste repositório o
+usavam como justificativa de arquitetura.
+
+### O template do Angular voltou para o componente
+
+Os 30 `.html` de `web/src/app/components` viraram `template` inline no próprio `.ts`. Decisão de
+padrão, a pedido: um componente, um arquivo.
+
+---
+
 ## Os neutros saem do papel morno e entram na família da marca (2026-09-04)
 
 Decisão de produto, tomada contra a recomendação registrada em

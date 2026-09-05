@@ -31,3 +31,8 @@ def month_bounds(timestamp: float | None = None) -> tuple[float, float]:
     else:
         end = start.replace(month=start.month + 1)
     return start.timestamp(), end.timestamp()
+
+
+def day_timestamp(day: str) -> float:
+    ano, mes, dia = (int(parte) for parte in day.split("-"))
+    return datetime(ano, mes, dia, tzinfo=BRT).timestamp()

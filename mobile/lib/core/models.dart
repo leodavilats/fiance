@@ -112,6 +112,8 @@ class ClosedTrade {
     required this.irAmount,
     required this.netProfit,
     required this.soldAt,
+    required this.month,
+    required this.irIsProrated,
   });
 
   final int id;
@@ -125,6 +127,8 @@ class ClosedTrade {
   final double irAmount;
   final double netProfit;
   final double soldAt;
+  final String month;
+  final bool irIsProrated;
 
   factory ClosedTrade.fromJson(Map<String, dynamic> j) => ClosedTrade(
     id: j['id'] as int,
@@ -138,17 +142,64 @@ class ClosedTrade {
     irAmount: (j['ir_amount'] as num).toDouble(),
     netProfit: (j['net_profit'] as num).toDouble(),
     soldAt: (j['sold_at'] as num).toDouble(),
+    month: j['month'] as String? ?? '',
+    irIsProrated: j['ir_is_prorated'] as bool? ?? false,
   );
+}
+
+class MonthlyTaxAssessment {
+  MonthlyTaxAssessment({
+    required this.month,
+    required this.category,
+    required this.grossSales,
+    required this.result,
+    required this.exempt,
+    required this.lossOffsetUsed,
+    required this.taxableProfit,
+    required this.irRate,
+    required this.irAmount,
+    required this.sales,
+    required this.observation,
+  });
+
+  final String month;
+  final String category;
+  final double grossSales;
+  final double result;
+  final bool exempt;
+  final double lossOffsetUsed;
+  final double taxableProfit;
+  final double irRate;
+  final double irAmount;
+  final int sales;
+  final String observation;
+
+  factory MonthlyTaxAssessment.fromJson(Map<String, dynamic> j) =>
+      MonthlyTaxAssessment(
+        month: j['month'] as String,
+        category: j['category'] as String,
+        grossSales: (j['gross_sales'] as num).toDouble(),
+        result: (j['result'] as num).toDouble(),
+        exempt: j['exempt'] as bool? ?? false,
+        lossOffsetUsed: (j['loss_offset_used'] as num?)?.toDouble() ?? 0,
+        taxableProfit: (j['taxable_profit'] as num?)?.toDouble() ?? 0,
+        irRate: (j['ir_rate'] as num?)?.toDouble() ?? 0,
+        irAmount: (j['ir_amount'] as num?)?.toDouble() ?? 0,
+        sales: (j['sales'] as num?)?.toInt() ?? 0,
+        observation: j['observation'] as String? ?? '',
+      );
 }
 
 class ClosedTradesResponse {
   ClosedTradesResponse({
     required this.trades,
+    required this.months,
     required this.totalRealizedPnl,
     required this.totalIrPaid,
   });
 
   final List<ClosedTrade> trades;
+  final List<MonthlyTaxAssessment> months;
   final double totalRealizedPnl;
   final double totalIrPaid;
 
@@ -156,6 +207,9 @@ class ClosedTradesResponse {
       ClosedTradesResponse(
         trades: (j['trades'] as List)
             .map((e) => ClosedTrade.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        months: ((j['months'] as List?) ?? const [])
+            .map((e) => MonthlyTaxAssessment.fromJson(e as Map<String, dynamic>))
             .toList(),
         totalRealizedPnl: (j['total_realized_pnl'] as num).toDouble(),
         totalIrPaid: (j['total_ir_paid'] as num).toDouble(),

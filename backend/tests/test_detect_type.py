@@ -43,3 +43,28 @@ def test_unsupported_ticker_raises():
         detect_type("AAPL")
     with pytest.raises(UnsupportedTickerError):
         detect_type("BTC-USD")
+
+
+def test_classificacao_nao_depende_da_fonte_estar_de_pe(monkeypatch):
+    import app.core.universe as universe_mod
+
+    monkeypatch.setattr(universe_mod, "_fetch_brapi_list", list)
+    universe_mod.invalidate_universe_memo()
+
+    assert detect_type("BOVA11") == "etf"
+    assert detect_type("IMAB11") == "etf"
+    assert detect_type("SANB11") == "br_stock"
+    assert detect_type("HGLG11") == "fii"
+
+
+def test_a_fonte_vence_a_lista_quando_ela_sabe(monkeypatch):
+    import app.core.universe as universe_mod
+
+    monkeypatch.setattr(
+        universe_mod,
+        "_fetch_brapi_list",
+        lambda: [{"stock": "XPTO11", "subType": "etf", "sector": "Fundos"}],
+    )
+    universe_mod.invalidate_universe_memo()
+
+    assert detect_type("XPTO11") == "etf"

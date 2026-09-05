@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import time
 
-from app.collectors.universal import fetch_many
 from app.notifications import send_push
+from app.repositories.asset_repository import AssetRepository
 from app.services.opportunity_service import OpportunityService
 from app.storage import portfolio_store
 
@@ -34,7 +34,7 @@ async def _check_price_alerts(user_id: str, tokens: list[str]) -> None:
         return
 
     tickers = list({a["ticker"] for a in alerts})
-    snapshots = await fetch_many(tickers)
+    snapshots = await AssetRepository.get_universe(tickers)
     price_map = {s.symbol.upper(): s.price for s in snapshots if s.price is not None}
 
     for alert in alerts:

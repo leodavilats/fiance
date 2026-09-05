@@ -11,6 +11,8 @@ Cada arquivo responde **uma** pergunta. Se você não sabe onde procurar, comece
 | O que está quebrado, faltando ou pendente **agora** | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
 | Por que uma decisão foi tomada, e quando | [CHANGELOG.md](CHANGELOG.md) |
 | Por que a interface é assim — auditoria, arquitetura de informação, design system | [design/](design/) |
+| Subir, observar e reverter — variáveis, deploy, Sentry, backup | [OPERACAO.md](OPERACAO.md) |
+| O que falta para subir, e para onde o produto pode ir | [../planejamento/](../planejamento/) |
 
 ## A divisão que importa
 

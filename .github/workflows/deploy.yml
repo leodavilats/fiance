@@ -1,0 +1,141 @@
+name: Deploy
+
+# Deploy é **acionado à mão**, e não por push. O motivo está no PRE_PRODUCAO (A7): hoje o `main`
+# vai direto para produção por auto-deploy do Railway, sem etapa intermediária — e `main` verde nem
+# sempre significa código certo. Este fluxo troca isso por: promover para homologação, olhar, e só
+# então promover para produção, com o rollback documentado no mesmo lugar.
+#
+# Enquanto `RAILWAY_TOKEN` não existir nos segredos do repositório, o fluxo **para com uma
+# mensagem** em vez de falhar por metade — e como o gatilho é manual, ele nunca deixa o CI
+# vermelho. O passo a passo de configuração está em docs/OPERACAO.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: 'Para onde promover'
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+      confirmo_producao:
+        description: 'Digite "produção" para confirmar quando o ambiente for production'
+        required: false
+        type: string
+
+concurrency:
+  # Dois deploys simultâneos no mesmo ambiente são duas migrações concorrentes — exatamente o que
+  # tirar a migração do startup existe para evitar. Aqui não se cancela o que está no meio.
+  group: deploy-${{ inputs.ambiente }}
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    name: Conferir antes de promover
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Produção exige confirmação escrita
+        if: inputs.ambiente == 'production'
+        run: |
+          if [ "${{ inputs.confirmo_producao }}" != "produção" ]; then
+            echo "::error::Promoção para produção exige digitar 'produção' no campo de confirmação."
+            exit 1
+          fi
+
+      - name: O commit precisa estar verde
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+            });
+            const ci = data.check_runs.filter(c => c.name !== 'Conferir antes de promover');
+            const falhas = ci.filter(c => c.conclusion && c.conclusion !== 'success');
+            if (ci.length === 0) {
+              core.setFailed('Nenhuma verificação encontrada para este commit — o CI rodou?');
+            } else if (falhas.length > 0) {
+              core.setFailed(`Verificações falhando: ${falhas.map(f => f.name).join(', ')}`);
+            }
+
+  migrar:
+    name: Migrar o banco (release command)
+    needs: verificar
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.ambiente }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sem token do Railway não há o que fazer
+        run: |
+          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
+            echo "::error::RAILWAY_TOKEN não configurado. Veja docs/OPERACAO.md § Deploy."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar a CLI do Railway
+        run: npm install -g @railway/cli
+
+      # A migração roda **uma vez**, aqui, antes de qualquer processo web novo subir. É o mesmo
+      # comando que o `release:` do Procfile chama; declará-lo nos dois lugares é de propósito,
+      # para que promover pelo painel do Railway também migre.
+      - name: Aplicar migrações
+        run: railway run --service "${{ vars.RAILWAY_SERVICE }}" python -m app.release
+        working-directory: backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_ENVIRONMENT: ${{ inputs.ambiente }}
+
+  publicar:
+    name: Publicar
+    needs: migrar
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.ambiente }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar a CLI do Railway
+        run: npm install -g @railway/cli
+
+      - name: Subir
+        run: railway up --service "${{ vars.RAILWAY_SERVICE }}" --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_ENVIRONMENT: ${{ inputs.ambiente }}
+
+      # Fumaça, não suíte: se `/api/health` e a rota pública respondem, o processo subiu, o banco
+      # respondeu e a fonte externa foi alcançada. É o mínimo que separa "deploy terminou" de
+      # "deploy funcionou".
+      - name: Teste de fumaça
+        run: |
+          set -e
+          base="${{ vars.SITE_URL }}"
+          if [ -z "$base" ]; then
+            echo "::error::Variável SITE_URL não configurada para o ambiente ${{ inputs.ambiente }}."
+            exit 1
+          fi
+          for tentativa in 1 2 3 4 5 6; do
+            if curl -fsS "$base/api/health" > /dev/null; then
+              echo "health respondeu na tentativa $tentativa"
+              curl -fsS "$base/api/public/asset/PETR4" > /dev/null
+              echo "rota pública respondeu"
+              exit 0
+            fi
+            echo "ainda subindo (tentativa $tentativa)…"
+            sleep 10
+          done
+          echo "::error::/api/health não respondeu. Reverta pelo painel do Railway — docs/OPERACAO.md § Rollback."
+          exit 1

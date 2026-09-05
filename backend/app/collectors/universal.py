@@ -43,6 +43,40 @@ KNOWN_UNITS = {
     "BRBI11",
 }
 
+KNOWN_ETFS = {
+    "BOVA11",
+    "BOVV11",
+    "BOVB11",
+    "BOAC11",
+    "XBOV11",
+    "PIBB11",
+    "SMAL11",
+    "SMAC11",
+    "DIVO11",
+    "BBSD11",
+    "ECOO11",
+    "GOVE11",
+    "ISUS11",
+    "MATB11",
+    "XFIX11",
+    "IVVB11",
+    "NASD11",
+    "SPXI11",
+    "ACWI11",
+    "WRLD11",
+    "XINA11",
+    "EURP11",
+    "JAPN11",
+    "BDRX11",
+    "GOLD11",
+    "IMAB11",
+    "IB5M11",
+    "B5P211",
+    "IRFM11",
+    "LFTS11",
+    "FIXA11",
+}
+
 _ROOT = r"[A-Z][A-Z0-9]{3}"
 _BDR = re.compile(rf"^{_ROOT}3\d$")
 _ENDS_11 = re.compile(rf"^{_ROOT}11$")
@@ -71,7 +105,11 @@ def detect_type(symbol: str) -> AssetType:
         return AssetType.bdr
 
     if _ENDS_11.match(base):
-        return AssetType.br_stock if base in KNOWN_UNITS else AssetType.fii
+        if base in KNOWN_UNITS:
+            return AssetType.br_stock
+        if base in KNOWN_ETFS:
+            return AssetType.etf
+        return AssetType.fii
 
     if _BR_STOCK.match(base):
         return AssetType.br_stock

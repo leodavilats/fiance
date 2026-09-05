@@ -3,18 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router.dart';
+import 'core/telemetry.dart';
 import 'core/theme.dart';
 import 'core/theme_provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  } catch (e) {
-    debugPrint('Firebase não inicializado: $e');
-  }
-  runApp(const ProviderScope(child: FianceApp()));
+  await rodarComTelemetria(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      debugPrint('Firebase não inicializado: $e');
+    }
+    runApp(const ProviderScope(child: FianceApp()));
+  });
 }
 
 class FianceApp extends ConsumerWidget {

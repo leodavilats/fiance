@@ -79,7 +79,21 @@ def _conferir_ponto_de_partida(config) -> None:
         )
 
 
-def init_db() -> None:
+class BancoAtrasado(RuntimeError):
+    pass
+
+
+def _revisoes_de_topo(config) -> set[str]:
+    from alembic.script import ScriptDirectory
+
+    return set(ScriptDirectory.from_config(config).get_heads())
+
+
+def banco_e_local() -> bool:
+    return str(engine.url).startswith("sqlite")
+
+
+def migrate() -> None:
     from alembic import command
 
     from app.models import db_models  # noqa: F401
@@ -96,6 +110,29 @@ def init_db() -> None:
 
     _conferir_ponto_de_partida(config)
     command.upgrade(config, "head")
+
+
+def conferir_revisao() -> None:
+    config = _alembic_config()
+    topo = _revisoes_de_topo(config)
+    carimbadas = _revisoes_do_banco()
+
+    if carimbadas == topo:
+        return
+
+    raise BancoAtrasado(
+        f"O banco está em {', '.join(sorted(carimbadas)) or '(nenhuma revisão)'} e o código espera "
+        f"{', '.join(sorted(topo))}. A migração é *release command*, não startup: rode "
+        "`python -m app.release` contra este banco antes de subir o processo web."
+    )
+
+
+def init_db() -> None:
+    if banco_e_local():
+        migrate()
+        return
+
+    conferir_revisao()
 
 
 _initialized = False

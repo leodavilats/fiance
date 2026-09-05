@@ -108,12 +108,38 @@ class ClosedTrade(BaseModel):
     sell_price: float
     gross_profit: float
     ir_rate: float
-    ir_amount: float
+    ir_amount: float = Field(
+        0.0,
+        description=(
+            "Rateio do imposto do mês por esta venda, proporcional ao lucro que ela trouxe. "
+            "O imposto existe por mês e categoria, não por operação — o número que vai para o "
+            "DARF está em `months`."
+        ),
+    )
     net_profit: float
     loss_offset_used: float = 0.0
     taxable_profit: float = 0.0
     loss_compensable: bool = True
     sold_at: float
+    month: str = Field("", description="Mês fiscal BRT (YYYY-MM) em que esta venda foi apurada.")
+    ir_is_prorated: bool = Field(
+        False,
+        description="Verdadeiro quando `ir_amount` é rateio de um imposto apurado no mês.",
+    )
+
+
+class MonthlyTaxAssessment(BaseModel):
+    month: str
+    category: str
+    gross_sales: float
+    result: float
+    exempt: bool
+    loss_offset_used: float
+    taxable_profit: float
+    ir_rate: float
+    ir_amount: float
+    sales: int
+    observation: str
 
 
 class TaxLossCategoryBalance(BaseModel):
@@ -125,6 +151,14 @@ class TaxLossCategoryBalance(BaseModel):
 
 class ClosedTradesResponse(BaseModel):
     trades: list[ClosedTrade]
+
+    months: list[MonthlyTaxAssessment] = Field(
+        default_factory=list,
+        description=(
+            "Apuração por mês e categoria, em ordem cronológica. É a fonte do imposto devido; "
+            "as linhas de `trades` mostram o rateio."
+        ),
+    )
 
     total_realized_pnl: float
     total_ir_paid: float

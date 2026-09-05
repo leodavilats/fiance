@@ -97,6 +97,22 @@ export interface ClosedTrade {
   loss_offset_used: number;
   taxable_profit: number;
   sold_at: number;
+  month: string;
+  ir_is_prorated: boolean;
+}
+
+export interface MonthlyTaxAssessment {
+  month: string;
+  category: string;
+  gross_sales: number;
+  result: number;
+  exempt: boolean;
+  loss_offset_used: number;
+  taxable_profit: number;
+  ir_rate: number;
+  ir_amount: number;
+  sales: number;
+  observation: string;
 }
 
 export interface TaxLossCategoryBalance {
@@ -108,6 +124,7 @@ export interface TaxLossCategoryBalance {
 
 export interface ClosedTradesResponse {
   trades: ClosedTrade[];
+  months: MonthlyTaxAssessment[];
   total_realized_pnl: number;
   total_ir_paid: number;
   tax_loss_balances: TaxLossCategoryBalance[];

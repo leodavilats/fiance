@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/format.dart';
+import '../../../core/labels.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme.dart';
 
@@ -11,6 +12,29 @@ class FiClosedTradesSection extends ConsumerStatefulWidget {
   @override
   ConsumerState<FiClosedTradesSection> createState() =>
       _FiClosedTradesSectionState();
+}
+
+const _mesesAbreviados = [
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
+];
+
+String _mesPorExtenso(String mes) {
+  final partes = mes.split('-');
+  if (partes.length != 2) return mes;
+  final numero = int.tryParse(partes[1]);
+  if (numero == null || numero < 1 || numero > 12) return mes;
+  return '${_mesesAbreviados[numero - 1]}/${partes[0]}';
 }
 
 class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
@@ -56,7 +80,9 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      TextSpan(text: ' · IR: ${formatCurrency(data.totalIrPaid)}'),
+                      TextSpan(
+                        text: ' · IR apurado: ${formatCurrency(data.totalIrPaid)}',
+                      ),
                     ],
                   ),
                 ),
@@ -65,6 +91,66 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                 ),
                 onTap: () => setState(() => _expanded = !_expanded),
               ),
+              if (_expanded && data.months.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Apuração por mês',
+                        style: FiType.label,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'O imposto é do mês, não da venda: lucros e prejuízos do '
+                        'mesmo mês e da mesma categoria se compensam.',
+                        style: FiType.caption.copyWith(color: fiInk2(context)),
+                      ),
+                    ],
+                  ),
+                ),
+                ...data.months.map(
+                  (m) => Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${_mesPorExtenso(m.month)} · '
+                                '${categoryLabel(m.category)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              formatCurrency(m.irAmount),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          m.observation,
+                          style: FiType.caption.copyWith(
+                            color: fiInk2(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Divider(height: 16),
+              ],
               if (_expanded)
                 ...data.trades.map(
                   (t) => Padding(

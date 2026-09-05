@@ -34,7 +34,348 @@ interface ProjectionRow {
     RouterLink,
     SkeletonComponent,
   ],
-  templateUrl: './strategy.component.html',
+  template: `
+    <div class="max-w-reading">
+      <app-page-header title="Estratégia" question="Qual deveria ser meu próximo movimento?" />
+
+      @if (strategy(); as s) {
+        <section>
+          <p class="fi-eyebrow text-ink-3 m-0 mb-2">O plano de hoje</p>
+          <p class="fi-verdict text-ink m-0">{{ s.summary }}</p>
+
+          <p class="fi-body text-ink-2 m-0 mt-3">
+            Perfil <strong class="text-ink">{{ s.profile.type }}</strong
+            >, risco
+            <span class="tag" [class]="riskClass()">{{ s.profile.risk_tolerance }}</span>
+            · patrimônio de
+            <span class="fi-num text-ink">{{ s.total_capital | currency: 'BRL' }}</span> · caixa de
+            <span class="fi-num text-ink">{{ s.cash_available | currency: 'BRL' }}</span> (<span
+              class="fi-num"
+              >{{ cashPct(s) | number: '1.1-1' }}</span
+            >%)
+          </p>
+
+          @if (s.affirmation && !s.affirmation.prescriptive) {
+            <p class="notice notice-indeterminate fi-caption text-ink-2 m-0 mt-4 max-w-reading">
+              {{ s.affirmation.disclaimer }} Por isso o quanto aportar em cada destino aparece como
+              &mdash;.
+            </p>
+          }
+
+          <div class="flex flex-wrap items-center gap-3 mt-4">
+            @if (s.cash_available >= 100) {
+              <a routerLink="/estrategia/aporte" class="btn-primary no-underline">
+                Distribuir este caixa
+              </a>
+            } @else {
+              <a routerLink="/voce/preferencias" class="btn-primary no-underline">
+                Informar quanto tenho em caixa
+              </a>
+            }
+            <button
+              type="button"
+              class="btn-secondary"
+              (click)="loadStrategy()"
+              [disabled]="loading.loading()"
+            >
+              <lucide-icon
+                [name]="loading.loading() ? 'loader-circle' : 'refresh-cw'"
+                size="14"
+                [class.spin]="loading.loading()"
+              ></lucide-icon>
+              {{ loading.loading() ? 'Recalculando…' : 'Recalcular' }}
+            </button>
+          </div>
+        </section>
+
+        @if (s.allocation_gaps.length > 0) {
+          <section class="fi-block">
+            <div class="flex items-baseline justify-between gap-3 mb-1">
+              <h2 class="fi-title text-ink m-0">Onde você está fora da meta</h2>
+              <a routerLink="/estrategia/metas" class="fi-caption text-brand no-underline">
+                Ajustar metas →
+              </a>
+            </div>
+            <p class="fi-caption text-ink-3 m-0 mb-4">
+              A barra é a alocação atual; o fio, a meta. O desvio é o que decide o aporte.
+            </p>
+
+            <ul class="list-none m-0 p-0 flex flex-col gap-3">
+              @for (gap of s.allocation_gaps; track gap.category) {
+                <li>
+                  <app-allocation-gap
+                    [label]="ui.categoryLabel(gap.category)"
+                    [currentPct]="gap.current_pct"
+                    [targetPct]="gap.target_pct"
+                    [barColor]="getCategoryBarColor(gap.category)"
+                    [scalePct]="gapScalePct(s.allocation_gaps)"
+                  />
+                  <p class="fi-caption text-ink-3 m-0 mt-1 ml-[104px] sm:ml-[116px]">
+                    {{ gap.action }} ·
+                    <span class="fi-num">{{ absValue(gap.gap_value) | currency: 'BRL' }}</span>
+                  </p>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (s.suggestions.length > 0) {
+          <section class="fi-block">
+            <h2 class="fi-title text-ink m-0 mb-1">Para onde levar o próximo aporte</h2>
+            <p class="fi-caption text-ink-3 m-0 mb-4">
+              <span class="fi-num">{{ s.suggestions.length }}</span>
+              {{ s.suggestions.length === 1 ? 'destino' : 'destinos' }}
+              @if (totalToInvest(s); as total) {
+                , somando <span class="fi-num text-ink">{{ total | currency: 'BRL' }}</span>
+              }
+              — uma leitura do sistema, não uma ordem.
+            </p>
+
+            <ul class="list-none m-0 p-0">
+              @for (sug of s.suggestions; track sug.ticker) {
+                <li class="py-4 border-t border-hairline first:border-t-0">
+                  <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        @if (sug.ticker === 'RENDA_FIXA') {
+                          <span class="fi-ticker text-ink">Renda fixa</span>
+                        } @else {
+                          <a
+                            [routerLink]="['/ativo', sug.ticker]"
+                            class="fi-ticker text-ink no-underline hover:text-brand"
+                          >
+                            {{ sug.ticker }}
+                          </a>
+                        }
+                        <span class="tag" [class]="ui.categoryChipClass(sug.category)">{{
+                          ui.categoryLabel(sug.category)
+                        }}</span>
+                        @if (sug.already_held) {
+                          <span class="tag tag-brand">Já na carteira</span>
+                        }
+                      </div>
+
+                      @if (sug.name) {
+                        <p class="fi-caption text-ink-3 m-0 mt-0.5">{{ sug.name }}</p>
+                      }
+
+                      <p class="fi-body text-ink m-0 mt-2">{{ sug.objective }}</p>
+
+                      @if (sug.reasons.length > 0) {
+                        <details class="mt-2">
+                          <summary
+                            class="fi-caption text-ink-3 cursor-pointer fi-focusable rounded-sm"
+                          >
+                            O que sustenta ({{ sug.reasons.length }})
+                          </summary>
+                          <ul class="list-none m-0 mt-1 p-0 flex flex-col gap-1">
+                            @for (reason of sug.reasons; track reason) {
+                              <li class="fi-caption text-ink-2">{{ reason }}</li>
+                            }
+                          </ul>
+                        </details>
+                      }
+
+                      @if (sug.ticker !== 'RENDA_FIXA') {
+                        <div class="flex items-center gap-4 mt-2 flex-wrap fi-caption text-ink-3">
+                          <span>
+                            Score
+                            <strong class="fi-num text-ink">{{
+                              sug.score | number: '1.0-0'
+                            }}</strong>
+                          </span>
+                          @if (sug.margin_of_safety != null) {
+                            <span>
+                              Margem
+                              <strong class="fi-num text-ink"
+                                >{{ sug.margin_of_safety * 100 | number: '1.0-0' }}%</strong
+                              >
+                            </span>
+                          }
+                          @if (sug.dividend_yield) {
+                            <span>
+                              DY
+                              <strong class="fi-num text-ink"
+                                >{{ sug.dividend_yield | number: '1.1-1' }}%</strong
+                              >
+                            </span>
+                          }
+                        </div>
+                      }
+
+                      @if (sug.transaction_cost) {
+                        <p class="fi-caption text-attention m-0 mt-2">
+                          <lucide-icon name="receipt" size="12" aria-hidden="true"></lucide-icon>
+                          {{ sug.transaction_cost.observation }}
+                          @if (sug.transaction_cost.ir_amount > 0) {
+                            · IR estimado
+                            <span class="fi-num">{{
+                              sug.transaction_cost.ir_amount | currency: 'BRL'
+                            }}</span>
+                          }
+                        </p>
+                      }
+                    </div>
+
+                    <div class="shrink-0 text-right">
+                      <p class="fi-eyebrow text-ink-3 m-0">Aportar</p>
+                      <p class="fi-metric text-ink m-0">
+                        @if (sug.invest_amount !== null) {
+                          {{ sug.invest_amount | currency: 'BRL' }}
+                        } @else {
+                          &mdash;
+                        }
+                      </p>
+                      @if (sug.ticker === 'RENDA_FIXA') {
+                        <a
+                          routerLink="/estrategia/renda-fixa"
+                          class="fi-caption text-brand no-underline"
+                        >
+                          Comparar títulos →
+                        </a>
+                      } @else {
+                        <p class="fi-caption text-ink-3 m-0 mt-1">
+                          @if (sug.quantity !== null) {
+                            <span class="fi-num">{{ sug.quantity }}</span> ×
+                          }
+                          <span class="fi-num">{{ sug.price | currency: 'BRL' }}</span>
+                        </p>
+                      }
+                    </div>
+                  </div>
+                </li>
+              }
+            </ul>
+          </section>
+        } @else if (s.cash_available < 100) {
+          <section class="fi-block">
+            <app-empty-state
+              icon="wallet"
+              title="Sem caixa para distribuir"
+              reason="O plano de aporte precisa saber quanto você tem disponível para investir; hoje esse valor está zerado."
+              nextStep="Informe o caixa em Preferências. Ele fica salvo e alimenta o Quick Invest."
+              actionLabel="Informar caixa"
+              actionRoute="/voce/preferencias"
+            />
+          </section>
+        } @else {
+          <section class="fi-block">
+            <div class="notice notice-favorable flex-col max-w-reading">
+              <p class="fi-verdict-sm text-ink m-0">
+                A carteira está dentro das metas que você definiu.
+              </p>
+              <p class="fi-body text-ink-2 m-0 mt-1">
+                Nenhum desvio relevante o bastante para redirecionar o próximo aporte.
+              </p>
+            </div>
+          </section>
+        }
+
+        @if (s.reduce_suggestions.length > 0) {
+          <section class="fi-block">
+            <h2 class="fi-title text-ink m-0 mb-1">Posições para revisar</h2>
+            <p class="fi-caption text-ink-3 m-0 mb-4">
+              Ativos já na carteira com sinal de venda. Vale reavaliar — não é ordem automática.
+            </p>
+
+            <ul class="list-none m-0 p-0">
+              @for (r of s.reduce_suggestions; track r.ticker) {
+                <li class="py-3 border-t border-hairline first:border-t-0">
+                  <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <a
+                          [routerLink]="['/ativo', r.ticker]"
+                          class="fi-ticker text-ink no-underline hover:text-brand"
+                        >
+                          {{ r.ticker }}
+                        </a>
+                        <span class="verdict-pill" [class]="verdictClassFromString(r.verdict)">{{
+                          r.label || r.verdict
+                        }}</span>
+                        @if (r.overweight_category) {
+                          <span class="tag tag-neutral">Categoria acima da meta</span>
+                        }
+                      </div>
+                      <ul class="list-none m-0 mt-2 p-0 flex flex-col gap-1">
+                        @for (reason of r.reasons; track reason) {
+                          <li class="fi-caption text-ink-2">{{ reason }}</li>
+                        }
+                      </ul>
+                    </div>
+                    <div class="shrink-0 text-right">
+                      <p class="fi-eyebrow text-ink-3 m-0">Posição</p>
+                      <p class="fi-metric-sm text-ink m-0">
+                        {{ r.current_value | currency: 'BRL' }}
+                      </p>
+                      @if (r.pnl_pct != null) {
+                        <p class="fi-caption text-ink-2 m-0 mt-0.5 fi-num">
+                          {{ r.pnl_pct >= 0 ? '+' : '' }}{{ r.pnl_pct | number: '1.1-1' }}%
+                        </p>
+                      }
+                    </div>
+                  </div>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (s.suggestions.length > 0 && s.projected_allocation.length > 0) {
+          <section class="fi-block">
+            <h2 class="fi-title text-ink m-0 mb-1">Como a carteira ficaria</h2>
+            <p class="fi-caption text-ink-3 m-0 mb-4">
+              Atual em tinta neutra, projetada na cor da marca — a mesma barra, dois momentos.
+            </p>
+
+            <ul class="list-none m-0 p-0 flex flex-col gap-4">
+              @for (row of projection(s); track row.category) {
+                <li class="flex items-center gap-4">
+                  <span class="fi-label text-ink w-[92px] sm:w-[100px] shrink-0 truncate">
+                    {{ ui.categoryLabel(row.category) }}
+                  </span>
+                  <div class="relative flex-1 min-w-[80px] flex flex-col gap-1">
+                    <div class="h-2 rounded-sm bg-hairline-strong overflow-hidden">
+                      <div class="h-full bg-ink-3" [style.width.%]="row.currentPct"></div>
+                    </div>
+                    <div class="h-2 rounded-sm bg-hairline-strong overflow-hidden">
+                      <div class="h-full bg-brand" [style.width.%]="row.projectedPct"></div>
+                    </div>
+                  </div>
+                  <span class="fi-caption text-ink-3 w-[52px] text-right shrink-0 fi-num">
+                    {{ row.currentPct | number: '1.1-1' }}%
+                  </span>
+                  <span class="fi-metric-sm text-brand w-[56px] text-right shrink-0">
+                    {{ row.projectedPct | number: '1.1-1' }}%
+                  </span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      } @else if (!loading.loading()) {
+        <app-empty-state
+          icon="target"
+          title="Nenhuma estratégia calculada ainda"
+          reason="O plano nasce das suas metas de alocação cruzadas com a carteira e o caixa atuais — e ainda não houve um cálculo nesta sessão."
+          nextStep="O cálculo usa o que já está cadastrado; nada é enviado para fora."
+          actionLabel="Calcular estratégia"
+          (action)="loadStrategy()"
+        />
+      } @else {
+        <div class="flex flex-col gap-6">
+          <app-skeleton shape="verdict" />
+          <app-skeleton shape="body" />
+          <app-skeleton shape="row" [count]="4" />
+        </div>
+      }
+
+      <div class="fi-block">
+        <app-rebalance-suggestions />
+      </div>
+    </div>
+  `,
 })
 export class StrategyComponent implements OnInit {
   private readonly svc = inject(RecommendService);

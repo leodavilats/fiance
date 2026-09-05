@@ -2,18 +2,15 @@ from __future__ import annotations
 
 import time
 from contextlib import contextmanager
-from decimal import Decimal
 from typing import TypedDict
 
 from sqlalchemy import delete, func, select
 
-from app.core.brt import month_bounds
 from app.core.context import get_current_user_id, get_request_session
 from app.core.database import SessionLocal, init_db
-from app.core.money import ZERO, money, quantize, sum_money, to_float
+from app.core.money import money, to_float
 from app.core.pagination import apply_keyset
 from app.models.db_models import (
-    ClosedTradeDb,
     DeviceTokenDb,
     DividendReceivedDb,
     FixedIncomePositionDb,
@@ -293,156 +290,12 @@ def reduce_position_quantity(ticker: str, sold_qty: float, user_id: str | None =
             row.updated_at = time.time()
 
 
-def realized_gross_profit_between(start: float, end: float, user_id: str | None = None) -> float:
-    with _session(user_id) as (session, uid):
-        lucros = session.scalars(
-            select(ClosedTradeDb.gross_profit).where(
-                ClosedTradeDb.user_id == uid,
-                ClosedTradeDb.sold_at >= start,
-                ClosedTradeDb.sold_at < end,
-            )
-        ).all()
-        return to_float(sum_money(lucros))
-
-
 def lock_tenant(user_id: str | None = None) -> None:
     with _session(user_id, ensure_user=True) as (session, uid):
         stmt = select(User).where(User.id == uid)
         if session.bind is not None and session.bind.dialect.name != "sqlite":
             stmt = stmt.with_for_update()
         session.scalars(stmt).first()
-
-
-def sum_gross_sales_in_month(
-    ticker_category: str, at: float | None = None, user_id: str | None = None
-) -> float:
-    month_start, month_end = month_bounds(at)
-
-    with _session(user_id) as (session, uid):
-        rows = session.scalars(
-            select(ClosedTradeDb).where(
-                ClosedTradeDb.user_id == uid,
-                ClosedTradeDb.category == ticker_category,
-                ClosedTradeDb.sold_at >= month_start,
-                ClosedTradeDb.sold_at < month_end,
-            )
-        ).all()
-        return to_float(sum_money(r.quantity * r.sell_price for r in rows))
-
-
-def sum_gross_sales_this_month(ticker_category: str, user_id: str | None = None) -> float:
-    return sum_gross_sales_in_month(ticker_category, at=None, user_id=user_id)
-
-
-def create_closed_trade(
-    ticker: str,
-    category: str,
-    quantity: float,
-    avg_price: float,
-    sell_price: float,
-    gross_profit: float,
-    ir_rate: float,
-    ir_amount: float,
-    net_profit: float,
-    sold_at: float,
-    loss_offset_used: float = 0.0,
-    taxable_profit: float = 0.0,
-    loss_compensable: bool = True,
-    user_id: str | None = None,
-) -> ClosedTrade:
-    now = time.time()
-    with _session(user_id, ensure_user=True) as (session, uid):
-        row = ClosedTradeDb(
-            user_id=uid,
-            ticker=ticker.strip().upper(),
-            category=category,
-            quantity=quantity,
-            avg_price=avg_price,
-            sell_price=sell_price,
-            gross_profit=gross_profit,
-            ir_rate=ir_rate,
-            ir_amount=ir_amount,
-            net_profit=net_profit,
-            loss_offset_used=loss_offset_used,
-            taxable_profit=taxable_profit,
-            loss_compensable=loss_compensable,
-            sold_at=sold_at,
-            created_at=now,
-        )
-        session.add(row)
-        session.flush()
-        return ClosedTrade(
-            id=row.id or 0,
-            ticker=row.ticker,
-            category=row.category,
-            quantity=to_float(row.quantity),
-            avg_price=to_float(row.avg_price),
-            sell_price=to_float(row.sell_price),
-            gross_profit=to_float(row.gross_profit),
-            ir_rate=row.ir_rate,
-            ir_amount=to_float(row.ir_amount),
-            net_profit=to_float(row.net_profit),
-            loss_offset_used=to_float(row.loss_offset_used or 0.0),
-            taxable_profit=to_float(row.taxable_profit or 0.0),
-            loss_compensable=bool(row.loss_compensable),
-            sold_at=row.sold_at,
-        )
-
-
-def list_closed_trades(
-    user_id: str | None = None,
-    limit: int | None = None,
-    cursor: str | None = None,
-) -> list[ClosedTrade]:
-    with _session(user_id) as (session, uid):
-        stmt = apply_keyset(
-            select(ClosedTradeDb).where(ClosedTradeDb.user_id == uid),
-            ClosedTradeDb.sold_at,
-            ClosedTradeDb.id,
-            cursor,
-        )
-        if limit is not None:
-            stmt = stmt.limit(limit + 1)
-        rows = session.scalars(stmt).all()
-        return [
-            ClosedTrade(
-                id=r.id,
-                ticker=r.ticker,
-                category=r.category,
-                quantity=to_float(r.quantity),
-                avg_price=to_float(r.avg_price),
-                sell_price=to_float(r.sell_price),
-                gross_profit=to_float(r.gross_profit),
-                ir_rate=r.ir_rate,
-                ir_amount=to_float(r.ir_amount),
-                net_profit=to_float(r.net_profit),
-                loss_offset_used=to_float(r.loss_offset_used or 0.0),
-                taxable_profit=to_float(r.taxable_profit or 0.0),
-                loss_compensable=bool(r.loss_compensable),
-                sold_at=r.sold_at,
-            )
-            for r in rows
-        ]
-
-
-def closed_trades_totals(user_id: str | None = None) -> dict:
-    with _session(user_id) as (session, uid):
-        linhas = session.execute(
-            select(ClosedTradeDb.net_profit, ClosedTradeDb.ir_amount).where(
-                ClosedTradeDb.user_id == uid
-            )
-        ).all()
-        row = (
-            sum_money(linha[0] for linha in linhas),
-            sum_money(linha[1] for linha in linhas),
-            len(linhas),
-        )
-
-        return {
-            "total_realized_pnl": float(row[0] or 0.0),
-            "total_ir_paid": float(row[1] or 0.0),
-            "count": int(row[2] or 0),
-        }
 
 
 def record_snapshot(
@@ -952,45 +805,6 @@ class TaxLossBalance(TypedDict):
     realized_loss: float
     offset_used: float
     available: float
-
-
-def tax_loss_balances(user_id: str | None = None) -> list[TaxLossBalance]:
-    by_category: dict[str, dict[str, Decimal]] = {}
-
-    with _session(user_id) as (session, uid):
-        rows = session.execute(
-            select(
-                ClosedTradeDb.category,
-                ClosedTradeDb.gross_profit,
-                ClosedTradeDb.loss_offset_used,
-                ClosedTradeDb.loss_compensable,
-            ).where(ClosedTradeDb.user_id == uid)
-        ).all()
-
-        for category, gross_profit, offset_used, compensable in rows:
-            bucket = by_category.setdefault(category, {"realized_loss": ZERO, "offset_used": ZERO})
-            if gross_profit < 0 and compensable:
-                bucket["realized_loss"] += abs(money(gross_profit))
-            bucket["offset_used"] += money(offset_used or 0)
-
-    return [
-        TaxLossBalance(
-            category=category,
-            realized_loss=to_float(quantize(values["realized_loss"])),
-            offset_used=to_float(quantize(values["offset_used"])),
-            available=to_float(
-                quantize(max(values["realized_loss"] - values["offset_used"], ZERO))
-            ),
-        )
-        for category, values in sorted(by_category.items())
-    ]
-
-
-def available_tax_loss(category: str, user_id: str | None = None) -> float:
-    for balance in tax_loss_balances(user_id=user_id):
-        if balance["category"] == category:
-            return balance["available"]
-    return 0.0
 
 
 class DividendReceivedRow(TypedDict):

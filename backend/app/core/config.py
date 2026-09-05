@@ -49,6 +49,12 @@ class Settings(BaseSettings):
 
     firebase_service_account_json: str = ""
 
+    sentry_dsn: str = ""
+
+    sentry_traces_sample_rate: float = 0.0
+
+    release: str = ""
+
     @property
     def is_development(self) -> bool:
         return self.app_env.strip().lower() == "development"
