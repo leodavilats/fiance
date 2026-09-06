@@ -161,6 +161,8 @@ export class AuthService {
   }
 
   renderGoogleButton(container: HTMLElement): void {
+    if (!this.isBrowser) return;
+
     if (!window.google) {
       setTimeout(() => this.renderGoogleButton(container), 200);
       return;

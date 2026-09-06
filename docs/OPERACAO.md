@@ -28,6 +28,14 @@ assume development). Esquecer essa variável desarmaria JWT, CORS e a rota de op
 | `CACHE_BACKEND` | não | escolhe sozinho: banco da aplicação em Postgres, arquivo local em SQLite |
 | `WEB_CONCURRENCY` | não | dois workers, que é o default do Procfile |
 
+O serviço **`fiance-web`** (SSR do Angular) tem variáveis próprias, e duas delas não são opcionais:
+
+| Variável | Obrigatória | O que acontece se faltar |
+|---|---|---|
+| `SITE_URL` | **sim** | o build falha: sitemap e canônicas apontariam para o domínio errado |
+| `ALLOWED_HOSTS` | **sim** | o SSR do Angular recusa a requisição por proteção contra SSRF — inclusive a do healthcheck do Railway, que chega como `healthcheck.railway.app` |
+| `NODE_ENV` | recomendada | sem `production`, `SITE_URL` cai no default de desenvolvimento |
+
 `SENTRY_DSN` configurado **com o pacote faltando falha alto**, de propósito: um sistema que se acha
 observado e não está é pior que um assumidamente cego.
 
