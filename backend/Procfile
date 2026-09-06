@@ -1,6 +1,12 @@
-# A migração roda uma vez por deploy, aqui — não no startup de cada processo. Com duas réplicas,
-# duas migrações concorrentes começariam juntas e o Alembic não coordena isso; o startup do web
-# apenas confere que a revisão bate e falha alto se não (app/core/database.conferir_revisao).
+# A migração roda uma vez por deploy, não no startup de cada processo: com duas réplicas, duas
+# migrações concorrentes começariam juntas e o Alembic não coordena isso. O startup do web apenas
+# confere que a revisão bate e falha alto se não (app/core/database.conferir_revisao).
+#
+# ATENÇÃO: no Railway quem executa isso é o campo **Pre-Deploy Command** do serviço, já apontado
+# para `python -m app.release`. O Railway NÃO roda a linha `release:` de um Procfile — ela fica
+# abaixo para plataformas que seguem a convenção do Heroku, e para deixar o comando declarado junto
+# do processo web. Trocar uma sem a outra faz a migração parar de rodar em silêncio, e o sintoma é
+# o startup falhando com BancoAtrasado no deploy seguinte.
 release: python -m app.release
 
 # O cache mora no banco da aplicação quando DATABASE_URL é Postgres (app/core/cache_backends.py),

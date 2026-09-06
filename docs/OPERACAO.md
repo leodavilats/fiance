@@ -22,7 +22,6 @@ assume development). Esquecer essa variável desarmaria JWT, CORS e a rota de op
 | `JWT_SECRET` | sim fora de development | startup falha alto |
 | `ALLOWED_ORIGINS` | sim fora de development | startup falha alto |
 | `BILLING_WEBHOOK_SECRET` | sim fora de development | startup falha alto |
-| `SITE_URL` | sim | link de compartilhamento e OG apontam para lugar nenhum |
 | `BRAPI_TOKEN` | recomendada | cota anônima acaba rápido; o disjuntor abre |
 | `SENTRY_DSN` | não | telemetria desligada (o pacote nem inicializa) |
 | `RELEASE` | não | stack trace não aponta para o commit |
@@ -46,6 +45,18 @@ observado e não está é pior que um assumidamente cego.
 Migrar no `lifespan` funcionava com `--workers 1` e mordia no primeiro dia com tráfego suficiente
 para escalar: duas réplicas subindo juntas começam duas migrações concorrentes, e o Alembic não
 coordena isso. Banco local em SQLite continua se criando sozinho — é de um processo só.
+
+**No Railway, quem executa isso é o campo Pre-Deploy Command do serviço**, já apontado para
+`python -m app.release`. O Railway **não** roda a linha `release:` de um Procfile — ela existe lá
+para plataformas que seguem a convenção do Heroku. Mexer numa sem a outra faz a migração parar de
+rodar em silêncio, e o sintoma aparece só no deploy seguinte, como `BancoAtrasado` no startup.
+
+Conferir a qualquer momento:
+
+```bash
+railway api 'query { project(id: "<PROJECT_ID>") { services { edges { node { name
+  serviceInstances { edges { node { preDeployCommand } } } } } } } }'
+```
 
 **Se o startup falhar com `BancoAtrasado`:** rode `python -m app.release` contra aquele banco antes
 de subir o processo web. A mensagem do erro já diz isso.
@@ -71,6 +82,10 @@ uma vez.
    - variável `SITE_URL` (a URL daquele ambiente, sem barra no fim).
 4. **Desligar o auto-deploy do `main`** no painel do Railway. Enquanto ele estiver ligado, o
    fluxo acima é decorativo: `main` continua indo direto para produção.
+
+   Enquanto ele ficar ligado, o mínimo é marcar **Wait for CI** no gatilho (*Settings → Source →
+   Wait for CI*). Hoje `checkSuites` está **false**: o Railway sobe o push para produção sem
+   esperar o CI, então um commit vermelho em `main` vai para produção do mesmo jeito.
 
 ### Promover
 

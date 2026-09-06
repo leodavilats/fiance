@@ -12,6 +12,41 @@
 
 ---
 
+## O `release:` do Procfile nunca teria rodado no Railway (2026-09-06)
+
+Com acesso à CLI do Railway, o estado real do serviço apareceu — e desmentiu duas coisas que
+estavam escritas como fato.
+
+**A migração não rodaria.** A correção de A6 tirou a migração do `lifespan` e a declarou em
+`release:` no Procfile. O Railway **não executa** essa linha: o mecanismo dele é o campo
+**Pre-Deploy Command** do serviço, que estava `null`. O startup, que agora só confere a revisão e
+falha alto, teria derrubado o processo com `BancoAtrasado` no primeiro deploy que carregasse
+migração — a `0006`, que apaga `closed_trades`. Ou seja: o conserto de ontem trocou "migração
+concorrente com duas réplicas" por "não migra, e o app não sobe". O campo foi apontado para
+`python -m app.release`, e o comentário do Procfile passou a dizer qual dos dois manda.
+
+**O Railway não espera o CI.** O gatilho de `main` tem `checkSuites: false`, então um commit
+vermelho vai para produção do mesmo jeito. Isso agrava o A7 do PRE_PRODUCAO, que descrevia o
+problema como "sem etapa intermediária": não é só a falta de homologação, é que nem o portão que já
+existe é consultado.
+
+### Três coisas que a leitura do ambiente revelou de passagem
+
+- **`SITE_URL` e `ALLOWED_HOSTS` estavam no checklist de go-live e o código não lê nenhuma das
+  duas.** Eram item falso desde que foram escritas. O `SITE_URL` do `deploy.yml` é outra coisa —
+  variável do GitHub Actions para o teste de fumaça —, e essa continua necessária.
+- **`FINNHUB_API_KEY` e `GEMINI_API_KEY` seguem no ambiente de produção.** As duas fontes foram
+  descontinuadas e nada no código lê as chaves: é segredo morto guardado, superfície sem dono.
+- **`ALLOWED_ORIGINS` aponta para `fiance-production.up.railway.app`, e o domínio é
+  `fiance.up.railway.app`.** Não morde hoje porque o front não está publicado (a raiz responde
+  404; só a API está no ar), e é exatamente o tipo de erro que só aparece no dia da publicação.
+  Junto disso, `http://localhost:4200` está liberado em produção com credenciais — uma página local
+  pode conversar com a API de produção.
+
+O DSN do Sentry e o `RELEASE` entraram no ambiente, sem disparar deploy.
+
+---
+
 ## O Sentry ligou, e o Angular não estava reportando nada (2026-09-06)
 
 Os três projetos foram criados e os DSN colados. Ao seguir o guia de onboarding do Sentry, ficou
