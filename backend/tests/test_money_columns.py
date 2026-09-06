@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.database import Base
 from app.core.money import ExactNumeric
 from app.models import db_models  # noqa: F401
-from app.models.db_models import ClosedTradeDb, PortfolioPosition
+from app.models.db_models import PortfolioPosition, TransactionDb
 
 CAMPOS_DE_DINHEIRO = frozenset(
     {
@@ -143,53 +143,34 @@ class TestExatidaoNoArmazenamento:
         assert lido == Decimal("0.07")
         assert isinstance(lido, Decimal)
 
-    def test_mil_lancamentos_de_sete_centavos_somam_setenta_reais(self, sessao):
+    def _mil_lancamentos_de_sete_centavos(self, sessao):
         for i in range(1000):
             sessao.add(
-                ClosedTradeDb(
+                TransactionDb(
                     id=i + 1,
                     user_id="u",
-                    ticker="PETR4",
-                    category="acoes_br",
+                    symbol="PETR4",
+                    kind="sell",
                     quantity=Decimal("1"),
-                    avg_price=Decimal("0"),
-                    sell_price=Decimal("0.07"),
-                    gross_profit=Decimal("0.07"),
-                    ir_rate=0.0,
-                    ir_amount=Decimal("0"),
-                    net_profit=Decimal("0.07"),
-                    sold_at=0.0,
+                    price=Decimal("0.07"),
+                    fees=Decimal("0.07"),
+                    traded_on="2026-01-05",
                     created_at=0.0,
                 )
             )
         sessao.flush()
 
-        total = sum(sessao.scalars(select(ClosedTradeDb.net_profit)).all())
+    def test_mil_lancamentos_de_sete_centavos_somam_setenta_reais(self, sessao):
+        self._mil_lancamentos_de_sete_centavos(sessao)
+
+        total = sum(sessao.scalars(select(TransactionDb.price)).all())
 
         assert total == Decimal("70.00")
 
     def test_a_soma_no_proprio_banco_tambem_fecha(self, sessao):
-        for i in range(1000):
-            sessao.add(
-                ClosedTradeDb(
-                    id=i + 1,
-                    user_id="u",
-                    ticker="PETR4",
-                    category="acoes_br",
-                    quantity=Decimal("1"),
-                    avg_price=Decimal("0"),
-                    sell_price=Decimal("0.07"),
-                    gross_profit=Decimal("0.07"),
-                    ir_rate=0.0,
-                    ir_amount=Decimal("0.07"),
-                    net_profit=Decimal("0"),
-                    sold_at=0.0,
-                    created_at=0.0,
-                )
-            )
-        sessao.flush()
+        self._mil_lancamentos_de_sete_centavos(sessao)
 
-        bruto = sessao.execute(text("SELECT SUM(ir_amount) FROM closed_trades")).scalar()
+        bruto = sessao.execute(text("SELECT SUM(fees) FROM transactions")).scalar()
 
         assert Decimal(bruto) / Decimal(10) ** 8 == Decimal("70.00000000")
 

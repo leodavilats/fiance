@@ -1,3 +1,6 @@
+import { ErrorHandler } from '@angular/core';
+import * as Sentry from '@sentry/angular';
+
 const CABECALHOS_PERMITIDOS = new Set(['x-request-id', 'content-type']);
 
 const SEGMENTO_IDENTIFICADOR = /^(?:[A-Z][A-Z0-9]{3}\d{1,2}|\d+|[0-9a-fA-F-]{16,})$/;
@@ -88,25 +91,24 @@ export function limparEvento(evento: EventoSentry): EventoSentry {
   return evento;
 }
 
-export async function configurarTelemetria(dsn: string, ambiente: string): Promise<boolean> {
+export function configurarTelemetria(dsn: string, ambiente: string): boolean {
   if (!dsn.trim()) return false;
 
-  try {
-    const Sentry = await import('@sentry/angular');
-    Sentry.init({
-      dsn,
-      environment: ambiente,
-      sendDefaultPii: false,
-      beforeSend: limparEvento as never,
-      beforeBreadcrumb: trilha => {
-        delete trilha.data;
-        if (typeof trilha.message === 'string') trilha.message = limparTexto(trilha.message);
-        return trilha;
-      },
-    });
-    return true;
-  } catch (erro) {
-    console.error('Telemetria não pôde ser ligada; o app segue sem ela.', erro);
-    return false;
-  }
+  Sentry.init({
+    dsn,
+    environment: ambiente,
+    sendDefaultPii: false,
+    beforeSend: limparEvento as never,
+    beforeBreadcrumb: trilha => {
+      delete trilha.data;
+      if (typeof trilha.message === 'string') trilha.message = limparTexto(trilha.message);
+      return trilha;
+    },
+  });
+
+  return true;
+}
+
+export function criarErrorHandler(): ErrorHandler {
+  return Sentry.createErrorHandler();
 }

@@ -4,9 +4,6 @@ import { AppComponent } from './app/app.component';
 import { configurarTelemetria } from './app/core/telemetry';
 import { environment } from './environments/environment';
 
-void configurarTelemetria(
-  environment.sentryDsn,
-  environment.production ? 'production' : 'development'
-);
+configurarTelemetria(environment.sentryDsn, environment.production ? 'production' : 'development');
 
 bootstrapApplication(AppComponent, appConfig).catch(err => console.error(err));

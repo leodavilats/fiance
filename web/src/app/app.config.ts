@@ -5,7 +5,7 @@ import {
   withComponentInputBinding,
   withPreloading,
 } from '@angular/router';
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, importProvidersFrom } from '@angular/core';
 import {
   ArrowDown,
   ArrowDownRight,
@@ -122,10 +122,12 @@ import {
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { httpErrorInterceptor } from './core/interceptors/http-error.interceptor';
+import { criarErrorHandler } from './core/telemetry';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
+    { provide: ErrorHandler, useFactory: criarErrorHandler },
     provideHttpClient(withInterceptors([httpErrorInterceptor, authInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({

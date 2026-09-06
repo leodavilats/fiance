@@ -12,6 +12,53 @@
 
 ---
 
+## O Sentry ligou, e o Angular não estava reportando nada (2026-09-06)
+
+Os três projetos foram criados e os DSN colados. Ao seguir o guia de onboarding do Sentry, ficou
+claro um defeito no que tinha sido entregue no dia anterior: **a integração do web chamava
+`Sentry.init()` e não registrava `ErrorHandler`.**
+
+Isso importa porque o Angular captura o que estoura dentro da própria zona e encaminha para o
+`ErrorHandler` dele. Sem `Sentry.createErrorHandler()` provido, `Sentry.init` sozinho só pega o que
+escapa para `window.onerror` — ou seja, quase nada do que de fato quebra numa tela. A integração
+teria subido parecendo pronta e reportando pouquíssimo, que é o pior modo de falha para
+observabilidade: o painel existe, fica vazio, e o vazio é lido como "não há erros".
+
+Junto disso, o `import()` dinâmico do SDK saiu. Ele existia para não baixar o pacote sem DSN, e
+`createErrorHandler` precisa do módulo no momento em que os providers são montados. Com DSN
+configurado — que é o caso agora — o pacote seria baixado de qualquer jeito; a troca custa o
+tamanho do SDK no bundle e paga com erro de Angular efetivamente capturado.
+
+### O que do guia do Sentry não foi adotado, e por quê
+
+O onboarding sugere `send_default_pii=True` no backend e deixa `dataCollection.httpBodies` ligado
+no web. Os dois são o oposto do que este produto pode fazer: ticker e valor são dado financeiro
+pessoal, e a Política de Privacidade promete que nenhum terceiro os recebe. Ficou `sendDefaultPii:
+false` nos três, com a limpeza por lista de permissão por cima.
+
+O guia do mobile propõe rodar `sentry-wizard`, que reescreve `main.dart` e o `pubspec.yaml`. Ele
+desfaria `rodarComTelemetria` e o `beforeSend` que redige ticker e valor. **Não rodar o wizard** —
+o mobile precisa só do DSN por `--dart-define`.
+
+### Verificar deixou de depender de esperar um erro real
+
+`POST /api/telemetry/verify` estoura de propósito, atrás de `require_admin`. O guia do Sentry
+sugere uma rota pública de divisão por zero; uma rota que devolve 500 para qualquer um é coisa que
+fica no ar e é encontrada. Atrás do gate de operador ela verifica o caminho inteiro em produção sem
+virar superfície de ataque.
+
+### `closed_trades` saiu do schema
+
+A consulta na base de produção confirmou o que a VISAO_NOVA assumia: duas contas, nove posições,
+treze lançamentos — tudo de teste. Com isso, a migração `0006` apaga a tabela que a apuração
+projetada tornou inútil, e o item de Fase 0 fecha. **Some junto o risco de B4**: não há base para
+o trial vencido derrubar.
+
+Os dois testes de exatidão monetária que usavam `closed_trades` como cobaia passaram a usar
+`transactions`, que é onde o dinheiro de verdade mora agora.
+
+---
+
 ## A trilha A do go-live: suíte honesta, imposto certo, texto legal e olhos abertos (2026-09-05)
 
 Cinco dos oito bloqueios de "colocar no ar" fechados de uma vez. O que liga os cinco é a mesma

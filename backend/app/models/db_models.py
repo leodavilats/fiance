@@ -84,27 +84,6 @@ class PreferencesDb(Base):
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 
-class ClosedTradeDb(Base):
-    __tablename__ = "closed_trades"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
-    ticker: Mapped[str] = mapped_column(String)
-    category: Mapped[str] = mapped_column(String)
-    quantity: Mapped[Decimal] = mapped_column(Quantity)
-    avg_price: Mapped[Decimal] = mapped_column(Money)
-    sell_price: Mapped[Decimal] = mapped_column(Money)
-    gross_profit: Mapped[Decimal] = mapped_column(Money)
-    ir_rate: Mapped[float] = mapped_column(Float)
-    ir_amount: Mapped[Decimal] = mapped_column(Money)
-    net_profit: Mapped[Decimal] = mapped_column(Money)
-    loss_offset_used: Mapped[Decimal] = mapped_column(Money, default=0.0)
-    taxable_profit: Mapped[Decimal] = mapped_column(Money, default=0.0)
-    loss_compensable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    sold_at: Mapped[float] = mapped_column(Float)
-    created_at: Mapped[float] = mapped_column(Float)
-
-
 class NotifiedOpportunityDb(Base):
     __tablename__ = "notified_opportunities"
 

@@ -107,11 +107,9 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     há IOF sobre resgate de renda fixa com menos de 30 dias. Enquanto isso durar, o número é
     estimativa de apoio e não substitui a apuração oficial.
 
-13. **A tabela `closed_trades` não é mais escrita, e continua no schema.** A apuração deixou de ter
-    campo gravado; nada escreve nessa tabela hoje. Ela ficou de pé porque apagá-la é migração
-    destrutiva e o item de Fase 0 do ROADMAP — confirmar que a base de produção não tem dado real —
-    ainda não foi respondido. Depois dessa confirmação, a migração que a remove é trabalho de
-    minutos. Enquanto isso, a tabela exporta vazia e não influencia número nenhum.
+13. **A telemetria do mobile ainda não foi ligada nem verificada.** Backend e web já têm DSN; o
+    mobile depende de `--dart-define=SENTRY_DSN=...` no build, e nenhum build assinado foi feito
+    ainda. O código está pronto e testado — o que falta é o DSN e um build real.
 
 14. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
     vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo

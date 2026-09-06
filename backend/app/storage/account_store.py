@@ -8,7 +8,6 @@ from app.core.database import db_session, engine
 from app.models.db_models import (
     AuditLogDb,
     CheckoutSessionDb,
-    ClosedTradeDb,
     DeviceTokenDb,
     DividendReceivedDb,
     FixedIncomePositionDb,
@@ -38,7 +37,6 @@ USER_SCOPED_MODELS = (
     ("goals", GoalDb),
     ("sector_goals", SectorGoalDb),
     ("preferences", PreferencesDb),
-    ("closed_trades", ClosedTradeDb),
     ("notified_opportunities", NotifiedOpportunityDb),
     ("device_tokens", DeviceTokenDb),
     ("price_alerts", PriceAlertDb),

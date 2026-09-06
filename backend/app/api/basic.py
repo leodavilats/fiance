@@ -114,3 +114,19 @@ async def read_metrics() -> dict:
 async def reset_metrics() -> dict:
     metrics.reset()
     return {"reset": True}
+
+
+class ErroDeVerificacao(RuntimeError):
+    pass
+
+
+class TelemetryCheck(BaseModel):
+    raised: bool
+
+
+@admin_router.post("/telemetry/verify", response_model=TelemetryCheck)
+async def verify_telemetry() -> TelemetryCheck:
+    raise ErroDeVerificacao(
+        "Erro proposital para conferir a telemetria. Se este texto apareceu no Sentry, "
+        "o caminho inteiro funciona."
+    )

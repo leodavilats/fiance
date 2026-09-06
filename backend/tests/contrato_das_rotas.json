@@ -371,6 +371,9 @@
     "resultados",
     "selic_referencia"
   ],
+  "POST /api/v1/telemetry/verify": [
+    "raised"
+  ],
   "PUT /api/v1/dividends/received/{dividend_id}": [
     "amount",
     "id",
