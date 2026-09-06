@@ -72,7 +72,7 @@ uma vez.
 
 ### O estado do projeto no Railway
 
-Projeto `fianceAI` (`70bc2a47-2a8e-417c-9231-fbdccf3579aa`), workspace pessoal, plano **Hobby**.
+Projeto `fiance` (`70bc2a47-2a8e-417c-9231-fbdccf3579aa`), workspace pessoal, plano **Hobby**.
 
 | | production | staging |
 |---|---|---|
@@ -92,14 +92,13 @@ próprio ambiente.
 
 ### O que falta configurar (uma vez)
 
-1. **Desligar o auto-deploy do `main` para produção** (*serviço `fiance` → Settings → Source*).
-   Hoje **os dois ambientes** têm gatilho em `main`, e produção sobe direto do push. Enquanto o
-   gatilho de produção existir, o fluxo manual abaixo é decorativo.
+1. ~~Desligar o auto-deploy do `main` para produção~~ — **feito em 2026-09-06**. Só resta o
+   gatilho `main` → `staging`, que é o arranjo desejado: o push publica homologação, e produção
+   sobe por ação explícita. A fonte do serviço de produção continua ligada ao repositório, então
+   deploy manual e *redeploy* de rollback seguem funcionando.
 
-   `main` → `staging` automático é um arranjo bom e pode ficar. `main` → produção não.
-
-   E, enquanto o de produção ficar ligado, marque no mínimo **Wait for CI**: hoje `checkSuites`
-   está **false**, então um commit vermelho em `main` vai para produção do mesmo jeito.
+   Opcional: o gatilho de staging está com `checkSuites: false`, ou seja, não espera o CI. Marcar
+   *Wait for CI* evita gastar um deploy de homologação num commit vermelho.
 
 2. No GitHub, em *Settings → Environments*, criar `staging` e `production`. Em `production`,
    marcar *Required reviewers* — a confirmação escrita do fluxo é a segunda tranca, não a primeira.
