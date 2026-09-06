@@ -227,6 +227,44 @@ sentry_sdk.flush(timeout=15)
 
 Na tela do Sentry, o valor e a quantidade devem aparecer como `[redigido]`.
 
+**`capture_exception` devolver um id não prova que o evento chegou.** O SDK é *fire-and-forget*:
+ele gera o id localmente, enfileira, e se o servidor recusar (DSN errado, projeto apagado, cota
+estourada) a falha morre num log de debug. O teste decisivo é falar com o endpoint na mão e ler o
+status:
+
+```bash
+python - <<'FIM'
+import json, time, urllib.request, uuid
+dsn = "<dsn>"
+chave = dsn.split("//")[1].split("@")[0]
+host = dsn.split("@")[1].split("/")[0]
+projeto = dsn.rsplit("/", 1)[1]
+eid = uuid.uuid4().hex
+envelope = (
+    json.dumps({"event_id": eid, "dsn": dsn}) + "
+"
+    + json.dumps({"type": "event", "content_type": "application/json"}) + "
+"
+    + json.dumps({"event_id": eid, "timestamp": time.time(), "platform": "python",
+                  "level": "error", "environment": "teste-de-dsn",
+                  "logentry": {"formatted": "teste de DSN"}})
+).encode()
+req = urllib.request.Request(
+    f"https://{host}/api/{projeto}/envelope/", data=envelope,
+    headers={"Content-Type": "application/x-sentry-envelope",
+             "X-Sentry-Auth": f"Sentry sentry_version=7, sentry_key={chave}, sentry_client=teste/1.0"})
+print(urllib.request.urlopen(req, timeout=30).status)
+FIM
+```
+
+`200` com um `id` no corpo é entrega confirmada. `403 ProjectId` significa que a chave não pertence
+ao projeto daquele DSN — recopie em *Settings → Projects → &lt;projeto&gt; → Client Keys (DSN)*.
+
+**O `@app.exception_handler(Exception)` de `main.py` não atrapalha.** Ele registra e devolve um 500
+limpo, o que poderia esconder a exceção do Sentry — mas a integração do Starlette embrulha os
+handlers e reporta antes de delegar. Verificado: o `ErroDeVerificacao` chega ao `before_send` mesmo
+com o handler no caminho.
+
 **Não mexa no `before_send` sem ler o teste.** Ticker e valor são dado pessoal financeiro, e a
 Política de Privacidade promete que nenhum terceiro os recebe. A limpeza é **lista de permissão**:
 sai o que foi liberado, e não "tudo menos o que eu lembrei de proibir" — uma chave nova num payload
