@@ -187,6 +187,31 @@ O código está pronto nas três plataformas e é inerte sem DSN. O que falta é
 Crie um projeto por plataforma (`fiance-backend`, `fiance-web`, `fiance-mobile`) e cole cada DSN.
 O plano gratuito do Sentry cobre o volume desta fase com folga.
 
+### Ver um evento chegar
+
+Em produção e homologação, `POST /api/telemetry/verify` estoura de propósito — exige sessão de
+operador (`require_admin`). O erro aparece em *Issues* do projeto `fiance-backend`, filtrando pelo
+ambiente.
+
+Sem sessão à mão, dá para exercitar o caminho inteiro localmente, o que também mostra o que a
+limpeza deixa passar:
+
+```bash
+cd backend
+SENTRY_DSN="<dsn do fiance-backend>" APP_ENV=verificacao-manual python -c "
+import sentry_sdk
+from app.core.telemetry import configurar_sentry
+configurar_sentry()
+try:
+    raise RuntimeError('teste de telemetria: lucro de R\$ 38.400,00 e quantidade (300)')
+except RuntimeError as e:
+    print(sentry_sdk.capture_exception(e))
+sentry_sdk.flush(timeout=15)
+"
+```
+
+Na tela do Sentry, o valor e a quantidade devem aparecer como `[redigido]`.
+
 **Não mexa no `before_send` sem ler o teste.** Ticker e valor são dado pessoal financeiro, e a
 Política de Privacidade promete que nenhum terceiro os recebe. A limpeza é **lista de permissão**:
 sai o que foi liberado, e não "tudo menos o que eu lembrei de proibir" — uma chave nova num payload
@@ -195,6 +220,17 @@ nasce redigida. Os três testes que travam isso:
 - `backend/tests/test_telemetria_nao_vaza_carteira.py`
 - `web/src/app/core/telemetry.spec.ts`
 - `mobile/test/telemetry_test.dart`
+
+**O que a limpeza não cobre, e por quê:** o Sentry envia as linhas de código-fonte ao redor do erro
+(`context_line`, `pre_context`, `post_context`). São o **código do repositório**, não dado de quem
+usa — em produção elas mostram `f"Quantidade de venda ({req.quantity})…"`, o molde, e não o valor.
+Ficam ligadas de propósito: sem elas a stack trace perde a maior parte do que a torna útil. A única
+forma de vazarem algo é alguém escrever segredo ou dado real como literal no código, que é problema
+maior que a telemetria.
+
+Vale notar que **nada no produto chama `set_user`**, nas três plataformas. O identificador de conta
+só chegaria ao Sentry se alguém passasse a chamá-lo — e nesse caso a limpeza reduz o objeto a
+`{id}`, sem nome nem e-mail.
 
 ### 2. Disponibilidade
 
