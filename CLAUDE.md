@@ -245,11 +245,12 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   coordena isso. Banco local em SQLite continua se criando sozinho, porque é de um processo só.
 - **`APP_ENV` não tem default.** Vazio falha alto no startup e, se algo escapar, falha **fechado**
   (não é development): esquecer a variável desarmava JWT, CORS e a rota de operador de uma vez.
-- **Quatro rotas são públicas e renderizadas no servidor, e a lista é fechada.** A página de ativo
-  (`/ativo/:ticker`) é o canal de aquisição: robô não faz login e o modelo não comporta mídia paga.
+- **Cinco rotas são públicas e renderizadas no servidor, e a lista é fechada.** A raiz (`/`) é a
+  landing de validação, e a página de ativo (`/ativo/:ticker`) é o canal de aquisição: robô não faz
+  login e o modelo não comporta mídia paga.
   O texto jurídico (`/termos`, `/privacidade`, `/aviso-cvm`) está lá por outro motivo: robô de loja
   também não faz login, e a ficha de segurança de dados pede uma URL de privacidade que abre
-  sozinha. A fronteira está em `web/src/app/app.routes.server.ts`, o teste lista as quatro pelo
+  sozinha. A fronteira está em `web/src/app/app.routes.server.ts`, o teste lista as cinco pelo
   nome, e crescer essa lista é decisão registrada — não efeito colateral. No backend,
   `analyze_asset(personalized=False)` e `/api/public/*` são a leitura **sem titular**, com teto por
   IP.

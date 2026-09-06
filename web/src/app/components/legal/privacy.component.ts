@@ -66,6 +66,11 @@ import { LegalDraftNoticeComponent } from './legal-draft-notice.component';
               <td>Segurança, limite de uso e diagnóstico de erro</td>
               <td>Legítimo interesse (art. 7º, IX)</td>
             </tr>
+            <tr>
+              <td>E-mail deixado na página inicial, sem conta</td>
+              <td>Avisar uma vez, quando a parte do mês for publicada</td>
+              <td>Consentimento (art. 7º, I)</td>
+            </tr>
           </tbody>
         </table>
 
@@ -136,6 +141,11 @@ import { LegalDraftNoticeComponent } from './legal-draft-notice.component';
           </li>
           <li>
             <strong>Log técnico</strong>: mantido pelo prazo necessário à segurança e diagnóstico.
+          </li>
+          <li>
+            <strong>E-mail de aviso de lançamento</strong>: guardado só até o aviso ser enviado. Ele
+            não vira conta, não é cruzado com nada e não vai para serviço de newsletter. Para sair
+            antes disso, escreva para o canal indicado abaixo.
           </li>
         </ul>
       </section>

@@ -54,7 +54,16 @@ USER_SCOPED_MODELS = (
     ("referrals_made", ReferralDb),
 )
 
-GLOBAL_TABLES = frozenset({"users", "job_locks", "cache_entries", "alembic_version", "instruments"})
+GLOBAL_TABLES = frozenset(
+    {
+        "users",
+        "job_locks",
+        "cache_entries",
+        "alembic_version",
+        "instruments",
+        "interest_signups",
+    }
+)
 
 DELETION_EXCLUDED = frozenset({"session_cuts"})
 

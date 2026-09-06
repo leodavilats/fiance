@@ -12,6 +12,61 @@
 
 ---
 
+## A IA nova, e a landing que testa a aposta (2026-09-06)
+
+Fase 2 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md) começou sem a Fase 1 ter fechado —
+decisão consciente, com uma ressalva registrada: o portão que protege de verdade é o da Fase 3,
+quando isso vira `cashflow/`. Design errado custa dias; módulo errado custa meses.
+
+### A navegação passa a ser o ciclo do dinheiro
+
+As três opções levantadas no planejamento (mexer no `Hoje`, criar um sexto destino, ou pôr abas
+dentro de `Carteira`) partiam todas de que a resposta era um arranjo dos cinco destinos atuais.
+Nenhuma questionava o princípio de agrupamento, e é ele que quebra: o caixa acrescenta três
+perguntas — quanto sobra, o que vence, a dívida é cara — e "um destino, uma pergunta" com oito
+perguntas dá oito destinos.
+
+A decisão em [INFORMATION-ARCHITECTURE](design/INFORMATION-ARCHITECTURE.md) é que **a navegação é
+o ciclo**: `Mês` → `Sobra` → `Patrimônio`, mais `Descobrir` e `Você`. Continuam cinco.
+
+Duas consequências não óbvias:
+
+**`Hoje` deixa de existir.** Ele responde "o que mudou e o que merece atenção", que é um feed, não
+um lugar — e o produto já sabia disso quando transformou `Atividade` em drawer, com o argumento de
+que uma central de notificações como destino seria uma sala vazia. Com um mês no produto, `Hoje` e
+a linha do tempo do mês disputam a mesma frase. Os quatro conteúdos de `Hoje` se distribuem sem
+sobra.
+
+**A ponte vira destino, e chama `Sobra`.** Não `Aporte`: a resposta nem sempre é aportar — com
+dívida cara a regra manda quitar antes, e um destino chamado `Aporte` embutiria no mapa uma
+conclusão que o produto contradiz. `Sobra` nomeia o insumo, que é o que a pessoa já diz.
+
+O risco que essa estrutura cria está declarado no documento: quem só investe cai numa tela vazia. A
+mitigação é **derivar o destino inicial** do que existe no razão do caixa, e não perguntar o perfil
+na entrada — a visão decidiu atender amplo e derivar por dentro.
+
+### A landing existe, e é uma demonstração
+
+`/` deixou de redirecionar para `/hoje` e passou a ser a landing de validação — quinta rota
+pública renderizada no servidor.
+
+O [AI-TELLS](design/AI-TELLS.md) avisava que essa é a maior chance de "cara de template gerado" do
+roadmap inteiro, e dava a saída: *"a frase do mês-corrente que já existe no produto tem mais força
+que qualquer headline genérica, e é verdadeira, o que uma headline de marketing raramente é"*. A
+página segue isso ao pé da letra — o centro dela é **um mês de exemplo que fecha na conta**, com a
+sobra saindo da soma, e a resposta do produto sendo *quitar o rotativo antes de aportar*. Sem hero
+com gradiente, sem grade de três colunas, sem número redondo.
+
+O e-mail é gravado em `interest_signups` — tabela **global**, porque quem deixa o e-mail ainda não
+tem conta e portanto não tem dono. Cadastrar duas vezes devolve `registered: false` e não erro:
+quem não lembra se já cadastrou tenta de novo, e isso não pode parecer falha.
+
+Coletar e-mail de quem não é usuário é tratamento de dado novo, então entrou na Política de
+Privacidade com base legal, finalidade e prazo — guardado só até o aviso ser enviado, sem virar
+conta e sem ir para serviço de newsletter.
+
+---
+
 ## O CSP bloqueava o próprio login, e o hash agora se calcula sozinho (2026-09-06)
 
 Com o front no ar, a tela de login apareceu quebrada no console: o CSP recusava três coisas de uma

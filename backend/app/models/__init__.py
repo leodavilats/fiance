@@ -1,4 +1,4 @@
-from .affirmation import AffirmationMode
+from .affirmation import AffirmationMode, InterestSignupRequest, InterestSignupResponse
 from .analysis import (
     AssetAnalysis,
     CompareResponse,
@@ -75,6 +75,8 @@ from .whats_new import WhatsNewItem, WhatsNewResponse
 
 __all__ = [
     "AffirmationMode",
+    "InterestSignupRequest",
+    "InterestSignupResponse",
     "AssetCategory",
     "AssetType",
     "Liquidez",

@@ -6,6 +6,7 @@ function dentroDoAppRoot(html: string): string {
 }
 
 const SERVIDAS = [
+  { rota: '/', contem: 'Quanto sobrou este m' },
   { rota: '/ativo/PETR4', contem: 'PETR4' },
   { rota: '/termos', contem: 'Termos de Uso' },
   { rota: '/privacidade', contem: 'Política de Privacidade' },

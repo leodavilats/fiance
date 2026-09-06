@@ -4,12 +4,12 @@ import { routes } from './app.routes';
 import { serverRoutes } from './app.routes.server';
 
 describe('renderização no servidor', () => {
-  it('a página de ativo e o texto jurídico são o que roda no servidor', () => {
+  it('a raiz, a página de ativo e o texto jurídico são o que roda no servidor', () => {
     const noServidor = serverRoutes
       .filter(route => route.renderMode === RenderMode.Server)
       .map(route => route.path);
 
-    expect(noServidor).toEqual(['ativo/:ticker', 'termos', 'privacidade', 'aviso-cvm']);
+    expect(noServidor).toEqual(['', 'ativo/:ticker', 'termos', 'privacidade', 'aviso-cvm']);
   });
 
   it('nenhuma rota pública do servidor tem guarda de autenticação', () => {

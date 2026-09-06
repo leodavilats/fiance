@@ -7,7 +7,13 @@ export const routes: Routes = [
     loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent),
     title: 'Entrar - fiance',
   },
-  { path: '', redirectTo: 'hoje', pathMatch: 'full' },
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./components/landing/landing.component').then(m => m.LandingComponent),
+    title: 'fiance — o seu mês e o seu investimento no mesmo lugar',
+  },
 
   {
     path: 'hoje',

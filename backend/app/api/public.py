@@ -10,8 +10,14 @@ from app.core import cache
 from app.core.brt import now_brt
 from app.core.ratelimit import ip_rate_limit
 from app.core.universe import get_universe
-from app.models import AffirmationMode, AssetAnalysis
+from app.models import (
+    AffirmationMode,
+    AssetAnalysis,
+    InterestSignupRequest,
+    InterestSignupResponse,
+)
 from app.services import AssetService, og_image
+from app.storage import interest_store
 
 router = APIRouter()
 
@@ -97,3 +103,12 @@ async def public_affirmation(request: Request) -> AffirmationMode:
     await _ip_rate_limit(request)
 
     return AffirmationMode(**affirmation.current().as_dict())
+
+
+@router.post("/public/interest", response_model=InterestSignupResponse)
+async def register_interest(
+    body: InterestSignupRequest, request: Request
+) -> InterestSignupResponse:
+    await ip_rate_limit(request, "interest", 5)
+
+    return InterestSignupResponse(registered=interest_store.register(body.email, body.source))
