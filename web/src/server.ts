@@ -5,6 +5,8 @@ import {
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
 import express from 'express';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { environment } from './environments/environment';
 
@@ -98,10 +100,25 @@ app.get('/robots.txt', (_req, res) => {
     );
 });
 
+const hashesDeScriptInline = (() => {
+  for (const arquivo of ['../server/index.server.html', '../browser/index.csr.html']) {
+    try {
+      const html = readFileSync(join(import.meta.dirname, arquivo), 'utf-8');
+      const hashes = [...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(
+        ([, corpo]) => `'sha256-${createHash('sha256').update(corpo).digest('base64')}'`
+      );
+      if (hashes.length) return hashes.join(' ');
+    } catch {
+      continue;
+    }
+  }
+  return '';
+})();
+
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' https://accounts.google.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  `script-src 'self' https://accounts.google.com ${hashesDeScriptInline}`.trim(),
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https:",
   `connect-src 'self' ${new URL(environment.apiBaseUrl).origin} https://accounts.google.com`,

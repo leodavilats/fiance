@@ -12,6 +12,40 @@
 
 ---
 
+## O CSP bloqueava o próprio login, e o hash agora se calcula sozinho (2026-09-06)
+
+Com o front no ar, a tela de login apareceu quebrada no console: o CSP recusava três coisas de uma
+vez.
+
+**A folha de estilo do Google.** O `style-src` liberava `fonts.googleapis.com` e não
+`accounts.google.com`, de onde o Google Identity Services carrega o próprio CSS. Sem ela o botão
+de entrar não se desenha.
+
+**O script inline do tema.** O `index.html` tem um `<script>` que lê `localStorage` e aplica o tema
+**antes da primeira pintura** — é o que evita o flash de claro para escuro. O `script-src` não
+tinha nem `'unsafe-inline'` nem hash, então o navegador o bloqueava e o flash acontecia em toda
+visita.
+
+A saída fácil seria `'unsafe-inline'`, que desarma o CSP inteiro para script. A saída certa é o
+hash — mas hash escrito à mão quebra **em silêncio** no dia em que alguém mexer no script: o CSP
+continua válido, o navegador só bloqueia, e o sintoma é um flash que ninguém associa a segurança.
+
+Por isso o hash é **derivado do arquivo construído**, no boot do servidor: `server.ts` lê o
+`index.server.html`, extrai todo `<script>` sem `src` e calcula o SHA-256 de cada um. Mexer no
+script passa a ajustar o CSP junto, sem ninguém lembrar.
+
+O teste em `e2e/ssr.spec.ts` fecha o laço pelo outro lado: pede `/login`, extrai os scripts inline
+do **HTML servido**, recalcula os hashes e exige que estejam no cabeçalho. Se as duas pontas
+divergirem, ele reprova.
+
+### O que não é código
+
+`[GSI_LOGGER]: The given origin is not allowed for the given client ID` — o domínio novo precisa
+entrar em *Authorized JavaScript origins* do cliente OAuth, no Google Cloud Console. É configuração
+de console, e sem ela o login não funciona por mais correto que o CSP esteja.
+
+---
+
 ## A renderização no servidor nunca tinha funcionado (2026-09-06)
 
 Ao publicar o front pela primeira vez, o healthcheck reprovou — e a investigação mostrou que o
