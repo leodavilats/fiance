@@ -77,6 +77,8 @@ Projeto `fiance` (`70bc2a47-2a8e-417c-9231-fbdccf3579aa`), workspace pessoal, pl
 | | production | staging |
 |---|---|---|
 | Serviços | `fiance` + `Postgres` | `fiance` + `Postgres` |
+| URL | `fiance.up.railway.app` | `fiance-staging.up.railway.app` |
+| Volume do banco | `postgres-volume` | `postgres-volume-WKva` (separado) |
 | Workers | 2 (`WEB_CONCURRENCY` default) | 1 |
 | Pre-Deploy Command | `python -m app.release` | `python -m app.release` |
 | App sleeping | não | **sim** |
@@ -86,9 +88,15 @@ Projeto `fiance` (`70bc2a47-2a8e-417c-9231-fbdccf3579aa`), workspace pessoal, pl
 O `JWT_SECRET` diferente não é detalhe: o ambiente novo nasce copiando as variáveis do de origem,
 e com o mesmo segredo um token emitido em homologação valeria em produção.
 
-O banco de homologação é outro de verdade — cada ambiente ganha a própria instância de volume no
-primeiro deploy. `DATABASE_URL` aponta para `postgres.railway.internal`, que resolve dentro do
-próprio ambiente.
+O banco de homologação é outro de verdade: volume próprio, e `DATABASE_URL` aponta para
+`postgres.railway.internal`, que resolve dentro do próprio ambiente.
+
+**Armadilha ao criar um ambiente com `skipInitialDeploys`:** o volume do Postgres **não** é
+provisionado junto, e o serviço falha com *"This service requires a volume to be mounted at
+/var/lib/postgresql/data"*. O backend falha antes disso, sem conseguir resolver
+`postgres.railway.internal` — o banco nunca subiu, então o nome não existe na rede privada. A ordem
+que funciona é: criar o volume (`volumeCreate` com `mountPath: /var/lib/postgresql/data`), subir o
+Postgres, e só então subir o backend.
 
 ### O que falta configurar (uma vez)
 
@@ -106,9 +114,13 @@ próprio ambiente.
    - segredo `RAILWAY_TOKEN` (token de projeto do Railway);
    - variável `RAILWAY_SERVICE` (`fiance`);
    - variável `SITE_URL` (a URL daquele ambiente, sem barra no fim).
-4. Depois do primeiro deploy de homologação, corrigir `ALLOWED_ORIGINS` nos dois ambientes: hoje
-   aponta para `fiance-production.up.railway.app`, e o domínio de produção é
-   `fiance.up.railway.app`.
+4. ~~Corrigir `ALLOWED_ORIGINS`~~ — feito em 2026-09-06. Produção aceita
+   `https://fiance.up.railway.app`; homologação, `https://fiance-staging.up.railway.app` mais
+   `http://localhost:4200`. `localhost` saiu de produção: com credenciais liberadas, ele deixava
+   uma página local conversar com a API de produção.
+
+   **Revisitar quando o web for publicado.** Hoje só a API está no ar (`/termos` responde 404 nos
+   dois ambientes), então a origem que vai de fato chamar a API ainda não existe.
 
 ### Quanto isso custa
 
