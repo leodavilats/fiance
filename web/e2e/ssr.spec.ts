@@ -1,6 +1,10 @@
 import { createHash } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 
+function dentroDoAppRoot(html: string): string {
+  return html.match(/<app-root[^>]*>([\s\S]*?)<\/app-root>/)?.[1] ?? '';
+}
+
 const SERVIDAS = [
   { rota: '/ativo/PETR4', contem: 'PETR4' },
   { rota: '/termos', contem: 'Termos de Uso' },
@@ -20,7 +24,10 @@ test.describe('renderização no servidor', () => {
       expect(html, `${rota} veio sem conteúdo — o robô receberia página em branco`).toContain(
         contem
       );
-      expect(html.length).toBeGreaterThan(25_000);
+      expect(
+        dentroDoAppRoot(html).length,
+        `${rota} tem <app-root> vazio: o HTML chegou, o conteúdo não`
+      ).toBeGreaterThan(1_000);
     });
   }
 
@@ -28,7 +35,7 @@ test.describe('renderização no servidor', () => {
     const html = await (await request.get('/hoje')).text();
 
     expect(html).not.toContain('Termos de Uso');
-    expect(html.length).toBeLessThan(25_000);
+    expect(dentroDoAppRoot(html), 'rota de sessão não pode renderizar no servidor').toBe('');
   });
 });
 
@@ -54,6 +61,20 @@ test.describe('política de segurança de conteúdo', () => {
         'script inline sem hash no CSP: o navegador o bloqueia e o tema pisca antes de assentar'
       ).toContain(`'sha256-${hash}'`);
     }
+  });
+
+  test('nada de handler inline: hash não vale para eles, e o CSP os bloqueia', async ({
+    request,
+  }) => {
+    const html = await (await request.get('/login')).text();
+
+    const handlers = html.match(/\son[a-z]+\s*=/gi) ?? [];
+
+    expect(
+      handlers,
+      'o Angular volta a injetar onload="this.media=..." se inlineCritical for religado, ' +
+        'e aí a folha de estilo completa nunca é aplicada'
+    ).toEqual([]);
   });
 
   test('o CSP libera o que o login do Google precisa', async ({ request }) => {

@@ -38,6 +38,32 @@ O teste em `e2e/ssr.spec.ts` fecha o laço pelo outro lado: pede `/login`, extra
 do **HTML servido**, recalcula os hashes e exige que estejam no cabeçalho. Se as duas pontas
 divergirem, ele reprova.
 
+### O CSS crítico do Angular também batia no CSP
+
+Sobrou um terceiro bloqueio, e o autor era o próprio Angular: com `inlineCritical` ligado, ele
+embute o CSS crítico e adia a folha completa com
+`<link media="print" onload="this.media='all'">`. Isso é **handler inline**, e para eles hash não
+vale — o CSP exigiria `'unsafe-hashes'`. Com o handler bloqueado, o `media="print"` nunca virava
+`all`: a folha de estilo completa **jamais era aplicada**, e a página ficava só com o crítico.
+
+Havia duas saídas. `'unsafe-hashes'` mantém o ganho de primeira pintura e cobra dois preços: afrouxa
+a diretiva e exige um hash escrito à mão que pode derivar numa atualização do Angular — silêncio de
+novo. Desligar `inlineCritical` custa uma folha de 42 KB (≈9 KB comprimidos) bloqueando a pintura,
+numa conexão já aberta.
+
+Para 42 KB o ganho do CSS crítico é marginal, e o que se compra desligando é uma diretiva que não
+precisa de exceção nenhuma e nada para manter. Ficou desligado.
+
+O teste que guarda isso não olha o CSP: olha o HTML servido e exige **zero** handler inline. Se
+alguém religar `inlineCritical`, ele reprova antes de o sintoma virar página sem estilo.
+
+### O tamanho da página deixou de ser o sinal
+
+Desligar o CSS crítico encolheu as páginas e reprovou um teste que media bytes totais — ele usava
+tamanho como proxy de "renderizou". A medida certa é estrutural: o conteúdo **dentro do
+`<app-root>`**. Rota servida tem de 3 a 6 KB ali; rota de sessão tem exatamente zero. Isso não se
+mexe quando a otimização muda.
+
 ### O que não é código
 
 `[GSI_LOGGER]: The given origin is not allowed for the given client ID` — o domínio novo precisa
