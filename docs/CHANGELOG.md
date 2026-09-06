@@ -12,6 +12,59 @@
 
 ---
 
+## A renderização no servidor nunca tinha funcionado (2026-09-06)
+
+Ao publicar o front pela primeira vez, o healthcheck reprovou — e a investigação mostrou que o
+invariante *"a página de ativo é a única rota pública, e é renderizada no servidor"* estava
+**configurado, não verdadeiro**. Contra o código commitado, antes de qualquer conserto:
+
+| Rota | Modo | O que devolvia |
+|---|---|---|
+| `/hoje` | cliente | 200, 20 KB — correto |
+| `/ativo/PETR4` | servidor | 200, **0 bytes** |
+| `/termos` | servidor | 302 para `/login` |
+
+A página que o produto chama de canal de aquisição entregava **corpo vazio** para qualquer robô. O
+defeito nunca apareceu porque nada o exercitava: o front jamais esteve publicado, e o `e2e` — que
+sobe o servidor SSR de verdade — navega com JavaScript ligado, então a página hidratava no
+navegador e os testes passavam sobre um HTML vazio.
+
+### Três violações da mesma armadilha
+
+O contrato de trabalho já registrava: *"o código do web roda também no Node. Use `DOCUMENT` e
+`isPlatformBrowser`; nunca `document` ou `localStorage` direto."* Faltava a guarda em três lugares,
+e `navigator` não estava na lista:
+
+- **`app.component.ts`** — `navigator.platform` num **inicializador de campo**. Roda em toda
+  construção do componente raiz, então derrubava o render de qualquer rota servida.
+- **`auth.service.ts`** — `renderGoogleButton` tocava `window` e, pior, reagendava a si mesma por
+  `setTimeout` enquanto `window.google` não existisse. No servidor isso é recursão infinita: o app
+  nunca estabiliza e o render nunca termina.
+- **`entitlement.service.ts`** — disparava HTTP no SSR sem guarda de plataforma, ao lado de
+  `density.service.ts`, que tem a guarda. Requisição de titular no servidor não tem titular:
+  responde 401 e ainda segura o render esperando a rede.
+
+E o 302 para `/login` vinha do `httpErrorInterceptor`, que trata 401 navegando para a tela de
+login — comportamento certo no navegador, sequestro do render no servidor.
+
+### O que passou a existir
+
+`e2e/ssr.spec.ts` pede as rotas com `request.get`, que **não executa JavaScript**, e exige conteúdo
+no HTML cru. É a única forma de o teste enxergar o que um robô enxerga. Conferido que ele reprova
+sem os consertos: quatro dos cinco falham.
+
+Depois: `/ativo/PETR4` saiu de 0 para 53 KB com o ticker no `<h1>`, e as três páginas legais
+passaram a chegar prontas, entre 32 e 35 KB.
+
+### O front foi publicado
+
+Serviço `fiance-web` no Railway, raiz `web`, com `SITE_URL` e `ALLOWED_HOSTS` — as duas
+obrigatórias, e a segunda precisa aceitar `healthcheck.railway.app`, senão a proteção contra SSRF
+do Angular recusa a sonda do próprio Railway. A API caiu para um worker: com um usuário, o segundo
+não compra nada e custa ~US$ 2,50/mês de RAM.
+
+---
+
 ## O `release:` do Procfile nunca teria rodado no Railway (2026-09-06)
 
 Com acesso à CLI do Railway, o estado real do serviço apareceu — e desmentiu duas coisas que

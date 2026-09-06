@@ -264,7 +264,11 @@ export class AppComponent {
   readonly search = inject(GlobalSearchService);
   readonly activity = inject(ActivityService);
 
-  readonly searchHint = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
+  readonly searchHint = isPlatformBrowser(inject(PLATFORM_ID))
+    ? /Mac|iPhone|iPad/.test(navigator.platform)
+      ? '⌘K'
+      : 'Ctrl K'
+    : 'Ctrl K';
   readonly showProfile = signal(false);
   readonly destinations = DESTINATIONS;
 

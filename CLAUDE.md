@@ -258,8 +258,12 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   acabaria desatualizada justamente onde a pessoa a lê. O nível publicável hoje é o **2**; o 3 fica
   desligado até haver parecer. Enquanto o texto for minuta, `<app-legal-draft-notice>` diz isso —
   e é um componente só, para sair de uma vez.
-- **O código do web roda também no Node.** Use `DOCUMENT` e `isPlatformBrowser`; nunca `document`
-  ou `localStorage` direto.
+- **O código do web roda também no Node.** Use `DOCUMENT` e `isPlatformBrowser`; nunca `document`,
+  `localStorage`, `window` ou `navigator` direto — nem em inicializador de campo, que é onde a
+  guarda mais escapa. Serviço que busca dado de titular também não roda no servidor: no SSR não há
+  titular, a chamada responde 401 e ainda segura o render esperando a rede. `e2e/ssr.spec.ts` pede
+  as rotas servidas **sem executar JavaScript** e exige conteúdo no HTML cru; sem ele o produto
+  passou meses entregando página vazia para robô, com o teste de navegador verde por hidratação.
 - **Busca global: o servidor devolve o que é da pessoa; a rota é do cliente.** `/search` procura
   carteira, renda fixa e universo e devolve `ref` — ticker ou id, nunca caminho. Destino de tela
   também é resultado, mas a lista vive em cada cliente (`SEARCH_DESTINATIONS` no web,

@@ -238,7 +238,7 @@ export class AuthService {
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USER_KEY);
     this._user.set(null);
-    window.google?.accounts.id.disableAutoSelect();
+    if (this.isBrowser) window.google?.accounts.id.disableAutoSelect();
   }
 
   private _clearScopedData(): void {

@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
 export interface EntitlementDecision {
@@ -44,8 +45,10 @@ export class EntitlementService {
     return dias !== null && dias <= 3;
   });
 
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
   ensureLoaded(): void {
-    if (this.loaded) return;
+    if (this.loaded || !this.isBrowser) return;
     this.loaded = true;
 
     this.http.get<Entitlements>(`${this.base}/entitlements`).subscribe({

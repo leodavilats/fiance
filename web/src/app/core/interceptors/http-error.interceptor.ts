@@ -1,5 +1,6 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { inject, PLATFORM_ID } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, finalize, retry, throwError, timeout, TimeoutError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
@@ -22,6 +23,7 @@ const LONG_TIMEOUT_MS = 45_000;
 const DEFAULT_TIMEOUT_MS = 20_000;
 
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
+  const noNavegador = isPlatformBrowser(inject(PLATFORM_ID));
   const loading = inject(LoadingService);
   const snackbar = inject(SnackbarService);
   const auth = inject(AuthService);
@@ -56,8 +58,10 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
             break;
           case 401:
             errorMessage = 'Sessão expirada. Faça login novamente.';
-            auth.clearSession();
-            router.navigateByUrl('/login');
+            if (noNavegador) {
+              auth.clearSession();
+              router.navigateByUrl('/login');
+            }
             break;
           case 429:
             errorMessage =
