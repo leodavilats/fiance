@@ -70,22 +70,78 @@ mão**. Ele confere que o commit está verde, migra e sobe, e termina com um tes
 `/api/health` e `/api/public/asset/PETR4` — que exercita processo, banco, cache e fonte externa de
 uma vez.
 
+### O estado do projeto no Railway
+
+Projeto `fianceAI` (`70bc2a47-2a8e-417c-9231-fbdccf3579aa`), workspace pessoal, plano **Hobby**.
+
+| | production | staging |
+|---|---|---|
+| Serviços | `fiance` + `Postgres` | `fiance` + `Postgres` |
+| Workers | 2 (`WEB_CONCURRENCY` default) | 1 |
+| Pre-Deploy Command | `python -m app.release` | `python -m app.release` |
+| App sleeping | não | **sim** |
+| `APP_ENV` | `production` | `staging` |
+| `JWT_SECRET` | próprio | **próprio, diferente** |
+
+O `JWT_SECRET` diferente não é detalhe: o ambiente novo nasce copiando as variáveis do de origem,
+e com o mesmo segredo um token emitido em homologação valeria em produção.
+
+O banco de homologação é outro de verdade — cada ambiente ganha a própria instância de volume no
+primeiro deploy. `DATABASE_URL` aponta para `postgres.railway.internal`, que resolve dentro do
+próprio ambiente.
+
 ### O que falta configurar (uma vez)
 
-1. **Criar o ambiente de homologação no Railway**, com **banco próprio**. Homologação que aponta
-   para o banco de produção não é homologação — é produção com outro nome.
+1. **Desligar o auto-deploy do `main` para produção** (*serviço `fiance` → Settings → Source*).
+   Hoje **os dois ambientes** têm gatilho em `main`, e produção sobe direto do push. Enquanto o
+   gatilho de produção existir, o fluxo manual abaixo é decorativo.
+
+   `main` → `staging` automático é um arranjo bom e pode ficar. `main` → produção não.
+
+   E, enquanto o de produção ficar ligado, marque no mínimo **Wait for CI**: hoje `checkSuites`
+   está **false**, então um commit vermelho em `main` vai para produção do mesmo jeito.
+
 2. No GitHub, em *Settings → Environments*, criar `staging` e `production`. Em `production`,
    marcar *Required reviewers* — a confirmação escrita do fluxo é a segunda tranca, não a primeira.
 3. Em cada ambiente, definir:
    - segredo `RAILWAY_TOKEN` (token de projeto do Railway);
-   - variável `RAILWAY_SERVICE` (nome do serviço);
+   - variável `RAILWAY_SERVICE` (`fiance`);
    - variável `SITE_URL` (a URL daquele ambiente, sem barra no fim).
-4. **Desligar o auto-deploy do `main`** no painel do Railway. Enquanto ele estiver ligado, o
-   fluxo acima é decorativo: `main` continua indo direto para produção.
+4. Depois do primeiro deploy de homologação, corrigir `ALLOWED_ORIGINS` nos dois ambientes: hoje
+   aponta para `fiance-production.up.railway.app`, e o domínio de produção é
+   `fiance.up.railway.app`.
 
-   Enquanto ele ficar ligado, o mínimo é marcar **Wait for CI** no gatilho (*Settings → Source →
-   Wait for CI*). Hoje `checkSuites` está **false**: o Railway sobe o push para produção sem
-   esperar o CI, então um commit vermelho em `main` vai para produção do mesmo jeito.
+### Quanto isso custa
+
+O Hobby é **US$ 5/mês incluindo US$ 5 de consumo**, e a cobrança é por **recurso**, não por
+ambiente — não existe taxa por ambiente criado. O que um ambiente novo faz é consumir RAM e CPU.
+
+Medido em 2026-09-06, produção com dois workers:
+
+| Serviço | RAM média | Custo/mês |
+|---|---|---|
+| `fiance` | 0,252 GB | US$ 2,52 |
+| `Postgres` | 0,099 GB | US$ 0,99 |
+| CPU (os dois) | 0,005 vCPU | US$ 0,10 |
+| **Total** | | **US$ 3,61** |
+
+As tarifas são US$ 10/GB/mês de RAM e US$ 20/vCPU/mês. Sobram ~US$ 1,40 do crédito.
+
+Homologação **dormindo** custa quase só o Postgres, que não dorme: ~US$ 1/mês. É o que cabe na
+folga, e é por isso que `sleepApplication` está ligado lá e `WEB_CONCURRENCY=1`. Sem dormir, seriam
+~US$ 2,50/mês e o crédito estouraria.
+
+Para conferir o consumo real a qualquer momento:
+
+```bash
+railway api 'query { metrics(projectId: "<PROJECT_ID>", startDate: "<ISO8601>",
+  measurements: [MEMORY_USAGE_GB, CPU_USAGE], sampleRateSeconds: 3600,
+  groupBy: [SERVICE_ID]) { measurement values { value } tags { serviceId } } }'
+```
+
+**`WEB_CONCURRENCY` é o botão de custo.** O Procfile subiu para 2 workers porque o cache saiu do
+disco local — isso torna dois workers *possíveis*, não obrigatórios. Num orçamento de US$ 5, cada
+worker a mais é ~US$ 2,50/mês de RAM.
 
 ### Promover
 
