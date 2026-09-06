@@ -84,11 +84,12 @@ Projeto `fiance` (`70bc2a47-2a8e-417c-9231-fbdccf3579aa`), workspace pessoal, pl
 
 | | production | staging |
 |---|---|---|
-| Serviços | `fiance` + `Postgres` | `fiance` + `Postgres` |
-| URL | `fiance.up.railway.app` | `fiance-staging.up.railway.app` |
+| Serviços | `fiance` + `fiance-web` + `Postgres` | `fiance` + `Postgres` |
+| URL da API | `fiance.up.railway.app` | `fiance-staging.up.railway.app` |
+| URL do front | `fiance-web-production.up.railway.app` | não publicado |
 | `ADMIN_USER_IDS` | definido | definido |
 | Volume do banco | `postgres-volume` | `postgres-volume-WKva` (separado) |
-| Workers | 2 (`WEB_CONCURRENCY` default) | 1 |
+| Workers da API | 1 (`WEB_CONCURRENCY`) | 1 |
 | Pre-Deploy Command | `python -m app.release` | `python -m app.release` |
 | App sleeping | não | **sim** |
 | `APP_ENV` | `production` | `staging` |
@@ -123,29 +124,45 @@ Postgres, e só então subir o backend.
    - segredo `RAILWAY_TOKEN` (token de projeto do Railway);
    - variável `RAILWAY_SERVICE` (`fiance`);
    - variável `SITE_URL` (a URL daquele ambiente, sem barra no fim).
-4. ~~Corrigir `ALLOWED_ORIGINS`~~ — feito em 2026-09-06. Produção aceita
-   `https://fiance.up.railway.app`; homologação, `https://fiance-staging.up.railway.app` mais
-   `http://localhost:4200`. `localhost` saiu de produção: com credenciais liberadas, ele deixava
-   uma página local conversar com a API de produção.
+4. ~~Corrigir `ALLOWED_ORIGINS`~~ — feito em 2026-09-06. Produção aceita o front
+   (`https://fiance-web-production.up.railway.app`) e o próprio domínio da API; homologação aceita
+   o dela mais `http://localhost:4200`. `localhost` saiu de produção: com credenciais liberadas, ele
+   deixava uma página local conversar com a API de produção.
 
-   **Revisitar quando o web for publicado.** Hoje só a API está no ar (`/termos` responde 404 nos
-   dois ambientes), então a origem que vai de fato chamar a API ainda não existe.
+### Domínio novo? São três cadastros, não um
+
+Trocar de domínio — ou publicar o front em outro lugar — exige mexer em três sistemas, e esquecer
+qualquer um quebra em silêncio ou no pior momento:
+
+1. **`ALLOWED_ORIGINS`** na API, senão o navegador barra a chamada por CORS;
+2. **`SITE_URL`** e **`ALLOWED_HOSTS`** no `fiance-web`, senão o build falha e o SSR recusa;
+3. **Authorized JavaScript origins** do cliente OAuth, no
+   [Google Cloud Console](https://console.cloud.google.com/apis/credentials) — sem isso o login
+   devolve `The given origin is not allowed for the given client ID` e nada mais funciona.
+
+O terceiro é o que menos se lembra, e é o único que não está em arquivo nenhum deste repositório.
 
 ### Quanto isso custa
 
 O Hobby é **US$ 5/mês incluindo US$ 5 de consumo**, e a cobrança é por **recurso**, não por
 ambiente — não existe taxa por ambiente criado. O que um ambiente novo faz é consumir RAM e CPU.
 
-Medido em 2026-09-06, produção com dois workers:
+Medido em 2026-09-06, em regime, já com o front publicado e a API em um worker:
 
 | Serviço | RAM média | Custo/mês |
 |---|---|---|
-| `fiance` | 0,252 GB | US$ 2,52 |
-| `Postgres` | 0,099 GB | US$ 0,99 |
-| CPU (os dois) | 0,005 vCPU | US$ 0,10 |
-| **Total** | | **US$ 3,61** |
+| `fiance` (API) | 0,334 GB | US$ 3,34 |
+| `Postgres` | 0,174 GB | US$ 1,74 |
+| `fiance-web` (SSR) | 0,099 GB | US$ 0,99 |
+| CPU (os três) | 0,011 vCPU | US$ 0,23 |
+| **Total** | | **US$ 6,30** |
 
-As tarifas são US$ 10/GB/mês de RAM e US$ 20/vCPU/mês. Sobram ~US$ 1,40 do crédito.
+As tarifas são US$ 10/GB/mês de RAM e US$ 20/vCPU/mês. **Isso passa do crédito em ~US$ 1,30/mês**
+— o Hobby cobra o excedente por cima da assinatura.
+
+Baixar a API para um worker **não** reduziu o consumo dela: ela saiu de 0,252 para 0,334 GB no
+mesmo período, porque o SDK do Sentry entrou junto. O worker a menos economizou; o observador a
+mais custou mais. Vale saber antes de puxar essa alavanca de novo esperando o resultado de antes.
 
 Homologação **dormindo** custa quase só o Postgres, que não dorme: ~US$ 1/mês. É o que cabe na
 folga, e é por isso que `sleepApplication` está ligado lá e `WEB_CONCURRENCY=1`. Sem dormir, seriam
