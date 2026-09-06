@@ -194,7 +194,9 @@ O código está pronto nas três plataformas e é inerte sem DSN. O que falta é
 | Web | `src/app/core/telemetry.ts` | `sentryDsn` em `src/environments/environment*.ts` |
 | Mobile | `lib/core/telemetry.dart` | DSN embutido; reporta em **release**, cala em debug |
 
-Os três DSN estão colados e **conferidos por entrega** (2026-09-06). O plano gratuito do Sentry
+Os três DSN estão colados e **conferidos por entrega**, com evento visto na tela de cada projeto
+(2026-09-06). Vale saber que a ingestão do Sentry não é instantânea: um evento aceito com `200`
+pode levar alguns minutos para aparecer em *Issues*, e a ausência imediata não é sinal de erro. O plano gratuito do Sentry
 cobre o volume desta fase com folga.
 
 DSN não é segredo — ele vai no bundle do navegador e no binário do app de qualquer forma; é um
