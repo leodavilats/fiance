@@ -53,6 +53,23 @@ void main() {
     });
   });
 
+  group('quando a telemetria reporta', () {
+    test('o DSN embutido aponta para o projeto do mobile', () {
+      expect(sentryDsn, contains('ingest.us.sentry.io'));
+      expect(sentryDsn.endsWith('/4512039720714240'), isTrue);
+    });
+
+    test('em teste, que roda em debug, o app sobe sem telemetria', () async {
+      var rodou = false;
+      final ligou = await rodarComTelemetria(() async {
+        rodou = true;
+      });
+
+      expect(ligou, isFalse, reason: 'build de debug nao reporta');
+      expect(rodou, isTrue, reason: 'o app roda de qualquer jeito');
+    });
+  });
+
   group('o evento inteiro', () {
     SentryEvent construir() => SentryEvent(
       user: SentryUser(id: 'u_123', email: 'alguem@exemplo.com'),

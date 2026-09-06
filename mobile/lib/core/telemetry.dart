@@ -1,7 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
+const String _dsnPadrao =
+    'https://824f6af34d9c061803a4fe16e9efa86a@o4512039699021824.ingest.us.sentry.io/4512039720714240';
+
+const bool _dsnVeioDoBuild = bool.hasEnvironment('SENTRY_DSN');
+
+const String sentryDsn = String.fromEnvironment(
+  'SENTRY_DSN',
+  defaultValue: _dsnPadrao,
+);
 
 const String ambiente = String.fromEnvironment(
   'APP_ENV',
@@ -78,7 +86,8 @@ SentryEvent? limparEvento(SentryEvent evento, Hint hint) {
 }
 
 Future<bool> rodarComTelemetria(Future<void> Function() app) async {
-  if (sentryDsn.trim().isEmpty) {
+  final reporta = (kReleaseMode || _dsnVeioDoBuild) && sentryDsn.trim().isNotEmpty;
+  if (!reporta) {
     await app();
     return false;
   }

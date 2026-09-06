@@ -192,10 +192,19 @@ O código está pronto nas três plataformas e é inerte sem DSN. O que falta é
 |---|---|---|
 | Backend | `app/core/telemetry.py` | variável `SENTRY_DSN` |
 | Web | `src/app/core/telemetry.ts` | `sentryDsn` em `src/environments/environment*.ts` |
-| Mobile | `lib/core/telemetry.dart` | `--dart-define=SENTRY_DSN=…` no build |
+| Mobile | `lib/core/telemetry.dart` | DSN embutido; reporta em **release**, cala em debug |
 
-Crie um projeto por plataforma (`fiance-backend`, `fiance-web`, `fiance-mobile`) e cole cada DSN.
-O plano gratuito do Sentry cobre o volume desta fase com folga.
+Os três DSN estão colados e **conferidos por entrega** (2026-09-06). O plano gratuito do Sentry
+cobre o volume desta fase com folga.
+
+DSN não é segredo — ele vai no bundle do navegador e no binário do app de qualquer forma; é um
+endereço de escrita, não uma credencial de leitura. Por isso os do web e do mobile moram no
+código, e só o do backend é variável de ambiente.
+
+No mobile, o build de **release** reporta sempre e o de **debug** cala. Isso é de propósito: um
+`--dart-define` que alguém esquece de passar produz um app que se acha observado e não está. Para
+exercitar a telemetria num build de debug, passe o DSN explicitamente —
+`--dart-define=SENTRY_DSN=…` — que aí ela liga.
 
 ### Ver um evento chegar
 
