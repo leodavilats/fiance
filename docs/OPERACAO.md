@@ -78,6 +78,7 @@ Projeto `fiance` (`70bc2a47-2a8e-417c-9231-fbdccf3579aa`), workspace pessoal, pl
 |---|---|---|
 | Serviços | `fiance` + `Postgres` | `fiance` + `Postgres` |
 | URL | `fiance.up.railway.app` | `fiance-staging.up.railway.app` |
+| `ADMIN_USER_IDS` | definido | definido |
 | Volume do banco | `postgres-volume` | `postgres-volume-WKva` (separado) |
 | Workers | 2 (`WEB_CONCURRENCY` default) | 1 |
 | Pre-Deploy Command | `python -m app.release` | `python -m app.release` |
@@ -165,6 +166,15 @@ worker a mais é ~US$ 2,50/mês de RAM.
 O Railway guarda os deploys anteriores: *Deployments → o último que funcionava → Redeploy*. Isso
 reverte **o código**, não o banco.
 
+**Sem gatilho de repositório, o Railway não segue o branch.** `serviceInstanceDeploy` sozinho
+reconstrói o **mesmo commit** que já estava no ar — o que é o comportamento certo para rollback e
+o errado para publicar. Para levar o topo do `main` a produção, é `latestCommit: true`:
+
+```bash
+railway api 'mutation { serviceInstanceDeploy(serviceId: "<SERVICE_ID>",
+  environmentId: "<ENV_ID>", latestCommit: true) }'
+```
+
 **Migração não volta sozinha.** Antes de promover algo que apaga ou renomeia coluna, a regra é a de
 sempre: duas etapas. Primeiro sobe o código que funciona com as duas formas do schema; só depois,
 num deploy seguinte, sobe a migração que remove a forma antiga. Assim o rollback de código nunca
@@ -191,7 +201,12 @@ O plano gratuito do Sentry cobre o volume desta fase com folga.
 
 Em produção e homologação, `POST /api/telemetry/verify` estoura de propósito — exige sessão de
 operador (`require_admin`). O erro aparece em *Issues* do projeto `fiance-backend`, filtrando pelo
-ambiente.
+ambiente. Exercitado em produção em 2026-09-06: devolve 500 e o log traz
+`app.api.basic.ErroDeVerificacao`.
+
+**`require_admin` depende de `ADMIN_USER_IDS`.** Sem ela, a rota devolve **403 mesmo com token
+válido** em qualquer ambiente que não seja `development` — o token não é o suficiente. Os dois
+ambientes têm a variável definida.
 
 Sem sessão à mão, dá para exercitar o caminho inteiro localmente, o que também mostra o que a
 limpeza deixa passar:
