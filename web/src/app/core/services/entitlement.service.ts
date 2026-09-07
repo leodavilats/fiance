@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface EntitlementDecision {
   allowed: boolean;
@@ -46,9 +47,10 @@ export class EntitlementService {
   });
 
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly auth = inject(AuthService);
 
   ensureLoaded(): void {
-    if (this.loaded || !this.isBrowser) return;
+    if (this.loaded || !this.isBrowser || !this.auth.isAuthenticated()) return;
     this.loaded = true;
 
     this.http.get<Entitlements>(`${this.base}/entitlements`).subscribe({

@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DensityService } from './density.service';
+import { AuthService } from './auth.service';
 import { RecommendService } from './recommend.service';
 
 function setup(options: { density?: string; falha?: boolean } = {}) {
@@ -10,6 +11,7 @@ function setup(options: { density?: string; falha?: boolean } = {}) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
+      { provide: AuthService, useValue: { isAuthenticated: () => true } },
       {
         provide: RecommendService,
         useValue: {
@@ -65,6 +67,7 @@ describe('densidade', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
+        { provide: AuthService, useValue: { isAuthenticated: () => true } },
         {
           provide: RecommendService,
           useValue: {

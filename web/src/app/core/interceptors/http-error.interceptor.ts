@@ -56,13 +56,17 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
           case 0:
             errorMessage = 'Sem conexão com o servidor. Verifique se o backend está rodando.';
             break;
-          case 401:
-            errorMessage = 'Sessão expirada. Faça login novamente.';
-            if (noNavegador) {
+          case 401: {
+            const tinhaSessao = !!(auth.token() || auth.refreshToken());
+            if (noNavegador && tinhaSessao) {
+              errorMessage = 'Sessão expirada. Faça login novamente.';
               auth.clearSession();
               router.navigateByUrl('/login');
+            } else {
+              errorMessage = '';
             }
             break;
+          }
           case 429:
             errorMessage =
               error.error?.detail || 'Muitas requisições em pouco tempo. Aguarde um minuto.';

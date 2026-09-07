@@ -2,12 +2,17 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { AuthService } from './auth.service';
 import { EntitlementService } from './entitlement.service';
 
 function comEstado(estado: Record<string, unknown>) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [provideHttpClient(), provideHttpClientTesting()],
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: AuthService, useValue: { isAuthenticated: () => true } },
+    ],
   });
   const service = TestBed.inject(EntitlementService);
   const http = TestBed.inject(HttpTestingController);
@@ -30,7 +35,11 @@ describe('direitos', () => {
   describe('enquanto a resposta não chega', () => {
     it('o produto se comporta como se tudo fosse permitido', () => {
       TestBed.configureTestingModule({
-        providers: [provideHttpClient(), provideHttpClientTesting()],
+        providers: [
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          { provide: AuthService, useValue: { isAuthenticated: () => true } },
+        ],
       });
       const service = TestBed.inject(EntitlementService);
 
