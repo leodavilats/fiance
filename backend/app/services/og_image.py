@@ -31,9 +31,7 @@ def _paleta() -> dict[str, str]:
     inicio = css.index(":root[data-theme='dark']")
     abre = css.index("{", inicio)
     fecha = css.index("\n}", abre)
-    escuro = dict(
-        re.findall(r"--fi-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;", css[abre + 1 : fecha])
-    )
+    escuro = dict(re.findall(r"--fi-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;", css[abre + 1 : fecha]))
 
     return {
         "ground": escuro["ground-0"],

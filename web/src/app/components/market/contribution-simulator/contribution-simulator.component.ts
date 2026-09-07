@@ -96,17 +96,28 @@ import { PageHeaderComponent } from '../../page-header/page-header.component';
           </div>
         </dl>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          @for (s of r.scenarios; track s.code) {
-            <div class="card">
-              <div class="fi-label text-ink mb-1">{{ s.label }}</div>
-              <div class="fi-label text-ink">
-                R$ {{ s.final_passive_income_monthly | number: '1.2-2' }}/mês
-              </div>
-
-              <p class="fi-caption text-ink-2 mt-1 mb-0">{{ s.rationale }}</p>
-            </div>
-          }
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <caption class="sr-only">
+              Renda passiva ao fim do período em cada cenário, com o motivo de cada um
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Cenário</th>
+                <th scope="col" class="num">Renda/mês no fim</th>
+                <th scope="col">Por quê</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of r.scenarios; track s.code) {
+                <tr>
+                  <th scope="row" class="fi-label text-ink">{{ s.label }}</th>
+                  <td class="num">R$ {{ s.final_passive_income_monthly | number: '1.2-2' }}</td>
+                  <td class="text-ink-2">{{ s.rationale }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
 
         @if (r.target; as meta) {

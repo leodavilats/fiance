@@ -97,34 +97,31 @@ import {
         @if (d.items.length === 0) {
           <p class="fi-body text-ink-2 italic m-0">{{ d.summary }}</p>
         } @else {
-          <div
-            class="p-4 rounded-md mb-4 border"
-            [class.border-favorable]="d.beat_ibov ?? false"
-            [class.bg-favorable/5]="d.beat_ibov ?? false"
-            [class.border-hairline]="!(d.beat_ibov ?? false)"
-            [class.bg-ground-2]="!(d.beat_ibov ?? false)"
-          >
-            <div class="fi-label text-ink">{{ d.summary }}</div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+          <div class="mb-4">
+            <p class="fi-verdict-sm text-ink m-0">{{ d.summary }}</p>
+
+            <dl class="flex flex-wrap gap-x-12 gap-y-5 m-0 mt-4 pt-4 border-t border-hairline">
               <div>
-                <div class="fi-eyebrow text-ink-2">Investido</div>
-                <div class="fi-label text-ink">R$ {{ d.total_invested | number: '1.2-2' }}</div>
+                <dt class="fi-eyebrow text-ink-3">Investido</dt>
+                <dd class="fi-metric-sm text-ink m-0 mt-1">
+                  R$ {{ d.total_invested | number: '1.2-2' }}
+                </dd>
               </div>
               <div>
-                <div class="fi-eyebrow text-ink-2">Valor hoje</div>
-                <div class="fi-label text-ink">
+                <dt class="fi-eyebrow text-ink-3">Valor hoje</dt>
+                <dd class="fi-metric-sm text-ink m-0 mt-1">
                   R$ {{ d.total_current_value | number: '1.2-2' }}
-                </div>
+                </dd>
               </div>
               <div>
-                <div class="fi-eyebrow text-ink-2">Resultado</div>
-                <div class="fi-label text-ink">
+                <dt class="fi-eyebrow text-ink-3">Resultado</dt>
+                <dd class="fi-metric-sm text-ink m-0 mt-1">
                   {{ d.total_pnl >= 0 ? '+' : '' }}R$ {{ d.total_pnl | number: '1.2-2' }} ({{
                     d.total_pnl_pct | number: '1.2-2'
                   }}%)
-                </div>
+                </dd>
               </div>
-            </div>
+            </dl>
           </div>
 
           @if (d.by_source.length > 1) {
@@ -201,13 +198,19 @@ import {
                     </td>
                     <td class="text-right py-2 px-2">
                       @if (item.ibov_pct_since != null) {
-                        <span
-                          [class.text-favorable]="item.beat_ibov"
-                          [class.text-ink-2]="!item.beat_ibov"
-                        >
+                        <span class="text-ink-2">
                           {{ item.ibov_pct_since >= 0 ? '+' : ''
                           }}{{ item.ibov_pct_since | number: '1.1-1' }}%
                         </span>
+                        @if (item.beat_ibov != null) {
+                          <span
+                            class="fi-caption block"
+                            [class.text-favorable]="item.beat_ibov"
+                            [class.text-ink-3]="!item.beat_ibov"
+                          >
+                            {{ item.beat_ibov ? 'acima' : 'abaixo' }}
+                          </span>
+                        }
                       } @else {
                         <span class="text-ink-2">—</span>
                       }

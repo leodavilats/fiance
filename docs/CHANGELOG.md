@@ -12,6 +12,125 @@
 
 ---
 
+## O sistema de design refeito, e as duas queixas que viraram número (2026-09-07)
+
+A direção veio em duas frases: *"o gerador de tokens e as automações no design limitaram muito"*
+e, da rodada anterior, *"botão que não parece ser botão. Barra de progresso que não deixa evidente
+o progresso"*. As duas estavam certas, e nenhuma pelo motivo que parecia.
+
+### `tokens.json` era dois arquivos num só
+
+Metade dele era design, e o schema fechava o vocabulário: doze papéis de tipo, quatro raios, duas
+sombras, e **nada para estado de interação**. Não havia como declarar contorno de controle,
+preenchimento pressionado ou poço de barra, porque o gerador não tinha essas chaves. Essa metade
+saiu para [foundation.css](../web/src/foundation.css), escrita à mão, com espelho à mão em
+`design_tokens.dart`.
+
+A outra metade é **dado de produto**, consumido por 48 arquivos do web: as bandas das cinco
+réguas, que espelham `score_ruler.py`, e o vocabulário de categoria, setor, tipo de ativo, renda
+fixa e liquidez. Essa continua gerada, de `product-rules.json`, porque limiar mantido à mão em N
+lugares diverge em N−1 deles e o sintoma é um **número errado**, não uma tela feia.
+
+O custo está aceito e registrado: a paridade com o mobile deixou de ter máquina. Foi decisão
+explícita, pedida com o resto da direção.
+
+O que ganhou máquina foi o contraste. `check-contrast.mjs` passou a ler o CSS e a cobrar três
+coisas que não existiam — e as três **reprovavam a paleta anterior**:
+
+| Regra nova | O que a paleta antiga marcava |
+|---|---|
+| contorno de controle ≥ 3:1 | **1,20:1** no claro, **1,67:1** no escuro |
+| preenchimento contra poço ≥ 3:1 | **2,28:1** |
+| papel declarado nos dois temas | — |
+
+E a paleta nova foi **derivada** de contraste-alvo, não escolhida de olho: 64 pares conferidos nos
+dois temas. `ground-0` claro aprofundou para `#EDF2F5`, que é o conserto de uma linha que o
+próprio [VISUAL-LANGUAGE](design/VISUAL-LANGUAGE.md) previa para a queixa *"o plano de fundo se
+confunde com os componentes"*. `ground-2` **não** pôde acompanhar: ele carrega texto, e os pisos
+do sistema o fixam em `#EFF3F5` — um passo mais fundo derruba `ink-2` de 8:1. É isso que justifica
+`control-fill-hover` e `control-fill-active` como papéis separados: eles carregam rótulo em tinta
+primária, que tem folga, e podem ir mais fundo do que qualquer superfície de corpo de texto.
+
+### O botão que não parecia botão
+
+O contorno de `.btn-secondary`, `.btn-icon` e `.input` saía em `hairline` — o **mesmo token do
+separador de linha de tabela**. E o secundário não tinha superfície nenhuma: `transparent` sobre o
+chão da página. Nenhuma revisão visual pegou porque a borda existia; ela só não era visível.
+
+Saiu também o `opacity: 0.5` do estado desabilitado, que derruba o contraste do texto junto com o
+do fundo, e entrou o estado pressionado — que **não existia em nenhum controle do produto**.
+
+### A barra de progresso não era uma barra de progresso
+
+`<app-goal-progress>` usava a régua, que pinta faixas de julgamento e crava um risco onde o valor
+caiu. Régua responde *"onde isto está na escala"*; progresso responde *"quanto do todo já foi"*.
+Não havia preenchimento de zero até o valor, então não havia o que ler como progresso.
+
+A régua ganhou duas leituras em vez de uma, mantendo o instrumento único: `marker` para valor numa
+escala, `fill` para proporção de um todo. E as zonas inativas deixaram de ser pintadas — saíam
+todas em `ink-3` a 70%, o que dava uma barra cinza sólida com um único bloco colorido: não se lia
+nem a escala nem o valor. As divisas agora são tiques finos sobre o poço, que é o *"zonas por peso
+de tinta"* que a identidade pedia e nunca teve.
+
+### Três defeitos que não eram de estilo
+
+**A classe de controle derrotava as utilitárias.** `styles.css` escrevia `.btn-*` e `.input`
+soltas **depois** de `@tailwind utilities`, e por ordem de cascata venciam:
+`class="btn-secondary hidden sm:inline-flex"` ficava **visível**. Valia para todo botão do produto
+— esconder controle por breakpoint não fazia nada, sem erro nenhum. O sintoma que denunciou foi
+outro: o cabeçalho vazando 3px em 320px, nas cinco rotas. A camada de controle passou para dentro
+de `@layer components`.
+
+**`passiveIncomeTarget` era um `computed()` lendo um `FormControl`.** Signal não rastreia form
+control: o valor era avaliado uma vez e ficava cacheado, e a régua dizia *"nenhum alvo definido"*
+com a meta preenchida no campo ao lado. Só apareceu porque o teste novo tentou declarar a meta
+pela tela.
+
+**`<img [src]="user.picture">` com foto vazia** desenha o texto alternativo dentro do botão: quem
+não tem foto no Google via uma imagem quebrada no cabeçalho, 41px numa caixa de 34. Conta sem foto
+passa a renderizar a inicial.
+
+### Hierarquia e escala
+
+O `h1` usava `fi-title`, que é o papel do título de **seção**: 15px de primeiro nível, do mesmo
+tamanho de cada `h2` abaixo dele — a página não tinha topo. Entrou `fi-page-title`, e como
+`app-page-header` cobre 20 telas, a troca alcança quase todo o produto de uma vez. O `h1` do
+`asset` fica de fora de propósito: ali o título é o **preço**, e é a única tela em que o dado é o
+título.
+
+`body` foi de 14 para 15 e `title` de 15 para 16. O que continuava escrito cru — 14px em célula de
+tabela, `0.875rem` na navegação de cima, `0.75rem` no selo — era tamanho sem papel. A folha global
+agora usa cinco tamanhos, e os cinco são papéis. A navegação de cima passou a usar `fi-label`, o
+mesmo papel da de baixo: cinco destinos iguais nas duas plataformas também no tipo.
+
+### O que o mobile recebeu, e o que ficou
+
+O tema do Flutter tinha os **mesmos** três defeitos, um a um: campo com borda `hairline`, trilho de
+deslizador em `hairline` e nenhum botão secundário declarado — o `OutlinedButton` caía no padrão do
+Material, com outra altura e outro contorno ao lado do primário do sistema. A camada de tema foi
+fechada junto, porque a correção é a mesma.
+
+A passada tela por tela do mobile ficou adiada, por decisão. O que **não** ficou adiado é o
+contrato: `mobile/test/contraste_test.dart` cobra em Dart os mesmos pisos que o
+`check-contrast.mjs` cobra no CSS. A paridade de **valor** continua sendo disciplina; a de **regra**
+passou a ser verificada.
+
+### As travas
+
+Cada uma foi conferida contra o defeito que a motivou, revertendo o conserto e vendo o teste
+acusar o número exato:
+
+- `e2e/afordancia.spec.ts` mede o que chega na tela, nos dois temas: contorno e preenchimento de
+  cada controle, o par preenchido/vazio da barra, e se uma utilitária de layout alcança um `.btn-*`
+- a regra `contornoDeSeparador` do `lint:ui` varre a folha inteira e pega o controle novo no dia em
+  que ele nascer. Nasceu larga demais, acusou os próprios blocos `:disabled`, e foi estreitada — a
+  WCAG isenta controle desabilitado, e o rótulo inerte já é cobrado a 3:1 no `check-contrast`
+- o teste de reflow **passava por sorte**: media assim que o cabeçalho ficava visível, antes de os
+  controles da direita resolverem. Só começou a falhar quando o botão ficou 3px mais largo, ou
+  seja, o vazamento já existia. Agora espera a rede assentar
+
+---
+
 ## A IA nova, e a landing que testa a aposta (2026-09-06)
 
 Fase 2 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md) começou sem a Fase 1 ter fechado —

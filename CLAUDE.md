@@ -25,11 +25,11 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 906 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 913 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 73 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 143 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 93 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 146 testes
 node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA
 python design-tokens/build-icons.py --check        # marca sincronizada
