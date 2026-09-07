@@ -42,7 +42,8 @@
                 "inlineCritical": false
               },
               "fonts": true
-            }
+            },
+            "outputHashing": "all"
           },
           "configurations": {
             "e2e": {
@@ -51,7 +52,8 @@
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.e2e.ts"
                 }
-              ]
+              ],
+              "outputHashing": "all"
             },
             "development": {
               "fileReplacements": [
@@ -61,7 +63,8 @@
                 }
               ],
               "optimization": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "outputHashing": "none"
             }
           }
         },

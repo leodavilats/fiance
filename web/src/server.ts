@@ -141,13 +141,27 @@ app.use((_req, res, next) => {
   next();
 });
 
+/*
+ * Estatico com hash no nome pode ser imutavel; HTML nunca pode.
+ *
+ * `main.js` e `styles.css` sairam sem hash e com `max-age=31536000`: quem ja tinha visitado o
+ * site guardava o bundle antigo por um ano, e todo deploy ficava invisivel. Com
+ * `outputHashing: all` o nome muda a cada build, e o cache longo passa a ser seguro -- desde
+ * que o HTML, que aponta para eles, seja sempre revalidado.
+ */
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
+    immutable: true,
     index: false,
     redirect: false,
   })
 );
+
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  next();
+});
 
 app.use((req, res, next) => {
   angularApp

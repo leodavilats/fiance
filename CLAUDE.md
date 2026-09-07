@@ -119,6 +119,11 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   nenhum. O sintoma que apareceu foi outro: o cabeçalho vazando 3px em 320px. Regra sem camada
   sempre vence regra em camada, então a camada de controle de [styles.css](web/src/styles.css)
   mora dentro de `@layer components`, e `e2e/afordancia.spec.ts` cobra isso.
+- **Bundle de entrada sem hash servido com cache longo** congela o deploy. `main.js`,
+  `polyfills.js` e `styles.css` saíam sem hash e com `max-age=31536000`: quem já tinha visitado o
+  site ficava com o bundle antigo por um ano, e nenhuma mudança aparecia — nem a reforma inteira
+  do design. `outputHashing: all` no build, `immutable` no estático e `no-cache` no HTML, que é
+  quem aponta para eles. `e2e/ssr.spec.ts` cobra os dois.
 - **`<img>` com `src` vazio** desenha o texto alternativo dentro da caixa e estoura o layout:
   o avatar de quem não tem foto ficava 41px numa caixa de 34. Conta sem foto renderiza a
   inicial, não um `<img>` sem fonte.

@@ -92,3 +92,31 @@ test.describe('política de segurança de conteúdo', () => {
     expect(frame).toContain('https://accounts.google.com');
   });
 });
+
+test.describe('o deploy chega em quem já visitou', () => {
+  test('os bundles de entrada têm hash no nome', async ({ request }) => {
+    const html = await (await request.get('/')).text();
+    const fontes = [...html.matchAll(/(?:src|href)="([^"]*\/?(?:main|polyfills|styles)[^"]*)"/g)].map(
+      m => m[1]
+    );
+
+    expect(fontes.length, 'a página tem de carregar main, polyfills e styles').toBeGreaterThan(0);
+
+    for (const fonte of fontes) {
+      expect(
+        fonte,
+        `${fonte} sem hash de conteúdo: servido com cache de um ano, ele congela o deploy para ` +
+          'quem já visitou o site — a mudança só aparece quando o cache expira'
+      ).toMatch(/-[A-Za-z0-9_]{8,}\.(js|css)$/);
+    }
+  });
+
+  test('o HTML é sempre revalidado, senão ele aponta para o bundle velho', async ({ request }) => {
+    const resposta = await request.get('/');
+    const cache = resposta.headers()['cache-control'] ?? '';
+
+    expect(cache, 'HTML com cache longo desfaz o hash: o índice fica preso no bundle antigo').toMatch(
+      /no-cache|no-store|max-age=0/
+    );
+  });
+});
