@@ -146,6 +146,82 @@ Largura de leitura 1120px, densa 1600px — o `max-w-[1180px]` global sai.
 
 ---
 
+---
+
+## O vocabulário do caixa — decidido, ainda não gerado
+
+Entregável da Fase 2 do [ROADMAP](../../planejamento/ROADMAP_TRANSFORMACAO.md). **Não está em
+`product-rules.json`**, e é decisão, não esquecimento: o CLAUDE.md registra que vocabulário gerado
+sem consumidor é pior que não gerado, porque *parece* resolvido. `fiTiposDeRendaFixa` e
+`fiLiquidez` já custaram isso — saíam do gerador e quatro telas reescreviam o mapa à mão.
+
+A entrada em `product-rules.json` acompanha o commit que constrói a primeira tela que a consome,
+na Fase 3.
+
+### Categoria de despesa
+
+Dez categorias, fechadas. O critério não é taxonômico — é **quantas a pessoa consegue escolher
+sem parar para pensar** ao lançar um gasto no celular. Acima de uma dúzia, lançar vira
+classificação e a pessoa desiste.
+
+| Categoria | Cobre | Por que separada |
+|---|---|---|
+| `moradia` | aluguel, condomínio, financiamento, IPTU | é o maior gasto fixo, e o mais estável |
+| `contas_da_casa` | energia, água, gás, internet, telefone | fixas mas variáveis no valor — é onde `A vencer` mais aparece |
+| `mercado` | supermercado, feira, açougue | o maior gasto **variável** da maioria; é a linha que colapsa na linha do tempo |
+| `transporte` | combustível, aplicativo, passagem, manutenção | varia com rotina, não com preço |
+| `saude` | plano, farmácia, consulta, exame | irregular e não postergável |
+| `educacao` | mensalidade, curso, material | fixa e de prazo longo |
+| `lazer` | restaurante, assinatura, viagem, bar | a categoria que a pessoa **quer** ver isolada |
+| `cuidados_pessoais` | vestuário, higiene, academia, salão | idem |
+| `divida` | pagamento de dívida, juros | **não é consumo**: sai do caixa mas não é gasto de vida, e misturar as duas coisas corrompe a leitura de quanto a rotina custa |
+| `outros` | o resto | existe para a pessoa não travar; se ela crescer demais, é sinal de que falta categoria, e isso se **mede** |
+
+Cada uma tem rótulo, ícone Lucide e identidade de série, no mesmo formato de
+`vocabulary.categories` — e, como as séries, a cor de despesa entra na régua de contraste como
+forma **e** como texto de chip.
+
+### Categoria de entrada
+
+| Categoria | Nota |
+|---|---|
+| `salario` | tem dia previsto; é o que ancora o calendário |
+| `decimo_terceiro` | evento de sobra maior, só para CLT |
+| `ferias` | idem |
+| `renda_variavel` | PJ, autônomo, comissão — sem data previsível |
+| `reembolso` | entra e não é renda; não deve inflar a média de renda |
+| `outros` | — |
+
+**`provento` não está nesta lista, e isso é uma decisão pendente, não um esquecimento.** Provento
+creditado é entrada de caixa **e** lançamento do razão, e o razão já é a fonte da carteira. Se as
+duas coisas coexistirem sem regra, o mesmo dinheiro conta duas vezes — infla a renda do mês e a
+sobra junto. As saídas possíveis são três: provento não entra no caixa e vive só no razão; entra
+no caixa e é excluído da média de renda; ou o caixa lê o razão e a entrada é derivada, não
+lançada. **É pergunta de domínio, e precisa de decisão antes de `cashflow/` existir** — a terceira
+opção é a única que não cria segunda verdade, e é também a que acopla os dois módulos.
+
+### Tipo de dívida — e o que ele deliberadamente **não** carrega
+
+| Tipo | Cobre |
+|---|---|
+| `rotativo_cartao` | saldo não pago da fatura |
+| `cheque_especial` | limite usado na conta |
+| `credito_pessoal` | empréstimo sem garantia, consignado |
+| `financiamento_imovel` | — |
+| `financiamento_veiculo` | — |
+| `parcelamento` | compra parcelada, parcelamento de fatura |
+| `outros` | — |
+
+**O tipo não diz se a dívida é cara.** A
+[regra](../../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) é explícita: *"classificar a dívida por
+custo, não por tipo"*. Cara e administrável são **derivados da taxa** contra o que a carteira da
+pessoa rende — e por isso não existe campo `caro: true` no vocabulário. Se existisse, o código
+classificaria por instrumento, que é exatamente o que a regra proíbe: consignado a 1,2% ao mês e
+consignado a 3,5% ao mês não são a mesma decisão.
+
+Consequência: **sem taxa informada não há classe**, e a tela diz isso. O produto não estima taxa
+de rotativo, porque varia por banco e por dia, e errar aqui é pior que não mostrar nada.
+
 ## Componentes base
 
 Contrato mínimo de cada um: **estados** (default/hover/focus/active/disabled/loading) ·

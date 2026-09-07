@@ -141,10 +141,19 @@ gastos?" é exatamente a presunção que ela recusa.
   **pedir** o valor do aporte a quem tem caixa lançado, a ponte não está construída. Fica em
   aberto de propósito a **reserva de emergência** — não há decisão de produto sobre quantos meses,
   contra qual base, e antes ou depois da dívida cara.
-- **Wireframe da linha do tempo do mês** (`/mes`) — ainda não feito. Não é portão da Fase 3, mas é
-  o que alimenta a `Sobra`.
-- **Vocabulário** de categoria de despesa e tipo de dívida em `tokens.json`, com consumidor
-  confirmado antes de considerar pronto.
+- **Wireframe da linha do tempo do mês — feito** (2026-09-07), em
+  [WIREFRAMES](WIREFRAMES.md#n2-mes--a-linha-do-tempo). Ele resolve o risco de `/mes` e `/sobra`
+  virarem dois resumos rivais: a cifra grande de `/mes` é **fato** (livre agora) e a de `/sobra` é
+  **projeção** (piso da sobra), e a diferença entre as duas é exatamente a estimativa de gasto
+  variável — o que dá uma frase que liga as telas sem repetir nada.
+- **Vocabulário do caixa — decidido** (2026-09-07), em
+  [DESIGN-SYSTEM](DESIGN-SYSTEM.md#o-vocabulário-do-caixa--decidido-ainda-não-gerado). Não entrou
+  em `product-rules.json` de propósito: vocabulário gerado sem consumidor é pior que não gerado, e
+  a entrada acompanha a primeira tela que o usa. O tipo de dívida **não** carrega se ela é cara —
+  isso é derivado da taxa, porque a regra manda classificar por custo, não por instrumento.
+- **`provento` no caixa é decisão de domínio pendente**, e bloqueia `cashflow/`: provento
+  creditado é entrada de caixa **e** lançamento do razão, e sem regra o mesmo dinheiro conta duas
+  vezes — inflando a renda do mês e a sobra junto.
 - **Mobile**: a barra inferior recebe os mesmos cinco. `Sobra` é o caso de uso mais móvel do
   produto — decidir o aporte é coisa de sofá, não de mesa.
 - **URLs antigas** viram redirect, como na transição anterior.

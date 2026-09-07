@@ -12,6 +12,61 @@
 
 ---
 
+## O mês desenhado, o vocabulário decidido, e duas perguntas que bloqueiam a Fase 3 (2026-09-07)
+
+Fecha a Fase 2 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md).
+
+### `/mes`: duas telas não podem liderar com a mesma cifra
+
+A [IA nova](design/INFORMATION-ARCHITECTURE.md) já havia recusado o sexto destino `/dinheiro` por
+criar "dois resumos rivais". `/mes` e `/sobra` correm o mesmo risco: se as duas liderarem com
+"quanto sobra", a segunda é decoração da primeira.
+
+A separação ficou por **natureza do número**, não por recorte de assunto. A cifra de `/mes` é
+**fato** — livre agora: o que entrou, menos o que saiu, menos o que já está comprometido e datado.
+A de `/sobra` é **projeção** — o mesmo número, menos o gasto variável ainda esperado. E a
+diferença entre as duas **é exatamente a estimativa**, o que dá uma frase que liga as telas sem
+repetir nada: *"livre agora R$ 2.047,32; descontando o que ainda deve sair, a sobra parte de
+R$ 1.647,32"*.
+
+Consequência: `/mes` não carrega faixa, porque fato não tem faixa. A faixa nasce em `/sobra`,
+junto com a estimativa que a cria. Um número que às vezes é fato e às vezes é projeção seria a
+pior das duas coisas.
+
+A ordem dos blocos é por **custo de não ver**, não por assunto: `Exige atenção` (a dívida a 14,9%
+ao mês) vem antes de `A vencer` (a conta de dois dias), e as duas antes da linha do tempo. E
+`hoje` é uma divisa desenhada dentro de uma lista só — duas listas escondem a coisa mais útil de
+um mês, que é a **sequência**: o salário cai no dia 5 e o aluguel sai no mesmo dia.
+
+### O vocabulário do caixa: decidido, e de propósito não gerado
+
+Dez categorias de despesa, seis de entrada, sete tipos de dívida, em
+[DESIGN-SYSTEM](design/DESIGN-SYSTEM.md#o-vocabulário-do-caixa--decidido-ainda-não-gerado). Não
+entrou em `product-rules.json`, e é decisão: o CLAUDE.md registra que vocabulário gerado sem
+consumidor é pior que não gerado, porque *parece* resolvido — `fiTiposDeRendaFixa` e `fiLiquidez`
+já custaram isso. A entrada acompanha o commit que constrói a primeira tela que a consome.
+
+**O tipo de dívida deliberadamente não carrega se ela é cara.** A
+[regra](../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) manda classificar por **custo, não por
+tipo**, e um campo `caro: true` no vocabulário faria o código classificar por instrumento —
+consignado a 1,2% ao mês e consignado a 3,5% ao mês não são a mesma decisão. Cara e administrável
+são derivadas da taxa contra o que a carteira rende, e sem taxa informada não há classe.
+
+### Duas perguntas de domínio que bloqueiam `cashflow/`
+
+Ficam declaradas em vez de decididas na surdina, porque as duas mudam o módulo:
+
+**`provento` no caixa.** Provento creditado é entrada de caixa **e** lançamento do razão — e o
+razão já é a fonte da carteira. Sem regra, o mesmo dinheiro conta duas vezes: infla a renda do mês
+e a sobra junto. Três saídas possíveis, e só uma não cria segunda verdade — o caixa **lê** o
+razão, e a entrada é derivada, não lançada. É também a que acopla os dois módulos, e por isso é
+decisão, não detalhe.
+
+**Reserva de emergência.** Não é passo da cascata da `Sobra` porque não há decisão sobre quantos
+meses, contra qual base, e antes ou depois da dívida cara.
+
+---
+
 ## A ponte desenhada, e o critério que diz se ela existe (2026-09-07)
 
 O portão da Fase 3 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md): a tela de `Sobra`, em

@@ -168,6 +168,114 @@ O contrato geral está na [matriz de estados](#9-matriz-de-estados--o-contrato-d
   período visíveis, no padrão de `<app-provenance>`. Sem carteira, o rótulo muda para CDI e a
   fonte passa a ser a do BCB, que já viaja até a tela.
 
+## N2. `/mes` — a linha do tempo
+
+A porta de entrada de quem tem caixa lançado, e o que alimenta a
+[ponte](#n1-sobra--a-ponte). Responde *"como estou agora, e o que exige atenção?"*.
+
+### O problema de projeto: duas telas, uma cifra
+
+`/mes` e `/sobra` correm o risco que a
+[IA nova](INFORMATION-ARCHITECTURE.md) já apontou para `Hoje`/`Dinheiro` — dois resumos rivais
+respondendo quase a mesma coisa em telas vizinhas. Se as duas liderarem com "quanto sobra", a
+segunda é decoração da primeira.
+
+A separação é por **natureza do número**, não por recorte de assunto:
+
+| Tela | A cifra grande | O que ela é |
+|---|---|---|
+| `/mes` | **livre agora** — R$ 2.047,32 | **fato**: o que entrou, menos o que saiu, menos o que já está comprometido e datado |
+| `/sobra` | **piso da sobra** — R$ 1.647,32 | **projeção**: o mesmo número, menos o gasto variável ainda esperado |
+
+E a diferença entre as duas **é exatamente a estimativa** — R$ 400,00 de mercado e dia a dia que
+ainda devem acontecer. Isso dá uma frase que liga as telas sem repetir nada: *"livre agora
+R$ 2.047,32; descontando o que ainda deve sair, a sobra parte de R$ 1.647,32"*.
+
+Por isso `/mes` não carrega faixa: fato não tem faixa. A faixa nasce em `/sobra`, junto com a
+estimativa que a cria.
+
+### Desktop
+
+```
+SETEMBRO · dia 20 de 30                               N1   GET /cashflow/month
+LIVRE AGORA
+R$ 2.047,32
+│ entrou R$ 6.418,73  ·  saiu R$ 4.054,07  ·  comprometido R$ 317,34 em 2 contas
+│ descontando o que ainda deve sair, a sobra parte de R$ 1.647,32   (decidir →)
+─────────────────────────────────────────────────────────────────────────────────
+EXIGE ATENÇÃO · 2                                     N1   ← era o feed do `Hoje`
+  ▪ Rotativo do cartão: R$ 890,00 a 14,9% ao mês        [Ver a dívida]
+  ▪ CDB Banco X vence em 12 dias                        [Ver posição]
+─────────────────────────────────────────────────────────────────────────────────
+A VENCER · 2                                          N1
+  dia 22   Energia                          R$ 187,44   [Marcar como paga]
+  dia 25   Internet                         R$ 129,90   [Marcar como paga]
+─────────────────────────────────────────────────────────────────────────────────
+O MÊS                                                 N2   ▾ setembro
+  05   Aluguel                  moradia          −2.150,00
+  05   Salário                  renda            +6.418,73
+  12   Fatura do cartão          cartão          −1.099,92
+  ···  Mercado e dia a dia       12 lançamentos    −804,15   ▸
+  ─────────────────────────── hoje, dia 20 ───────────────────────────
+  22   Energia                  casa              −187,44   a vencer
+  25   Internet                 casa              −129,90   a vencer
+                                                            [Lançar →]
+······································································ dobra
+COMO OS TRÊS ÚLTIMOS MESES FECHARAM                   N3   (nasce fechado)
+▸ jun R$ 1.982,44 · jul R$ 1.310,08 · ago R$ 1.771,60
+```
+
+### As decisões
+
+**1. "Livre agora" é fato, e por isso não tem faixa.** Ele desce de dado lançado: recebido menos
+pago menos comprometido-e-datado. Nada de estimativa entra nele — a estimativa é o que `/sobra`
+acrescenta, e é onde a faixa aparece. Um número que às vezes é fato e às vezes é projeção seria a
+pior das duas coisas.
+
+**2. `Exige atenção` vem antes de `A vencer`, e as duas antes da linha do tempo.** A ordem é por
+**custo de não ver**: uma dívida a 14,9% ao mês custa mais que uma conta que vence em dois dias, e
+as duas custam mais que a curiosidade sobre o que já aconteceu. A linha do tempo é o que a pessoa
+percorre quando quer conferir, não o que ela precisa ver ao abrir.
+
+**3. O gasto variável é uma linha, não doze.** `Mercado e dia a dia` colapsa por categoria com a
+contagem visível e um acordeão. Sem isso a linha do tempo de quem lança de verdade tem quarenta
+itens e a informação — o que exige atenção — fica abaixo de tudo.
+
+**4. `hoje` é uma divisa desenhada, não um filtro.** Passado e futuro na mesma lista, separados por
+um fio rotulado. Duas listas ("já aconteceu" / "vai acontecer") escondem a coisa mais útil de um
+mês, que é a **sequência** — o salário cai no dia 5 e o aluguel sai no mesmo dia.
+
+**5. A escrita mora em `/mes/lancar`.** Mesma disciplina de `/carteira/editar`: leitura e escrita
+separadas, porque a tela que se abre todo dia não pode ser um formulário. O único atalho de
+escrita na leitura é `[Marcar como paga]`, porque confirmar pagamento **é** um ato de leitura do
+mês — a pessoa está conferindo, não cadastrando.
+
+### Estados de `/mes`
+
+| Estado | O que a tela faz | Antipadrão |
+|---|---|---|
+| **Nenhum lançamento** | Porta de entrada única: as quatro perguntas do onboarding de caixa (dia do salário, valor recebido, regime, 2–3 maiores gastos fixos). Nada de tela vazia com instrução em texto | Dashboard vazio; "R$ 0,00" como se fosse saldo |
+| **Antes do salário cair** | `Livre agora` pode ser negativo, e a tela diz isso sem dramatizar: *"o salário do dia 5 ainda não entrou"* | Pintar de vermelho um mês que só começou |
+| **Salário atrasado** | A linha do previsto continua na lista, marcada como **não recebida**, e vira item de `Exige atenção` no dia seguinte ao previsto | Somar renda que não entrou |
+| **Mês fechado** | `Livre agora` passa a `Sobrou`, sem faixa e sem projeção. `A vencer` desaparece | Continuar chamando de "livre" o que já acabou |
+| **Renda variável (PJ/autônomo)** | Não há linha de salário previsto: o [regime muda o formato do calendário](../../planejamento/REGRAS_NOVO_DOMINIO.md#renda-líquida), não o cálculo. `Livre agora` continua sendo só o realizado | Projetar renda de quem não tem data de recebimento |
+| **Sem dívida** | `Exige atenção` pode ficar vazio, e então **não aparece** | Seção vazia com "nada a fazer" |
+
+### `/mes/lancar` e `/mes/dividas`
+
+Os dois são escrita, e por isso ficam fora da leitura. `/mes/lancar` segue a disciplina de
+**prévia + commit** que a importação de extrato já usa: tolerante com forma, intolerante com
+ambiguidade, erro que diz a linha.
+
+`/mes/dividas` é onde a régua de dívida vive por inteiro — saldo, taxa, e a comparação contra o
+que a carteira rende, com `<app-provenance>` na fonte e no período. A `Sobra` mostra só o passo da
+cascata; o cálculo completo mora aqui.
+
+**A taxa é obrigatória para a régua aparecer.** Sem ela o produto **não estima** — rotativo de
+cartão varia por banco e por dia, e errar aqui é pior que não mostrar nada.
+
+---
+
 ## Shell — desktop (≥1280px)
 
 ```
