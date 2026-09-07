@@ -358,3 +358,56 @@ class CacheEntryDb(Base):
     k: Mapped[str] = mapped_column(String, primary_key=True)
     v: Mapped[str] = mapped_column(Text, nullable=False)
     expires_at: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+
+
+class CashEntryDb(Base):
+    __tablename__ = "cash_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String, index=True)
+    category: Mapped[str] = mapped_column(String, index=True)
+    description: Mapped[str] = mapped_column(String)
+    amount: Mapped[Decimal] = mapped_column(Money)
+    due_on: Mapped[str] = mapped_column(String, index=True)
+    paid_on: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    recurrence_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    derived_from: Mapped[str | None] = mapped_column(String, nullable=True)
+    source: Mapped[str] = mapped_column(String, default="manual")
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+    updated_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+
+Index("ix_cash_entries_user_due", CashEntryDb.user_id, CashEntryDb.due_on)
+Index("ix_cash_entries_user_paid", CashEntryDb.user_id, CashEntryDb.paid_on)
+
+
+class CashRecurrenceDb(Base):
+    __tablename__ = "cash_recurrences"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String)
+    category: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+    amount: Mapped[Decimal] = mapped_column(Money)
+    day_of_month: Mapped[int] = mapped_column(Integer)
+    starts_on: Mapped[str] = mapped_column(String)
+    ends_on: Mapped[str | None] = mapped_column(String, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+    updated_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+
+class DebtDb(Base):
+    __tablename__ = "debts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+    balance: Mapped[Decimal] = mapped_column(Money)
+    monthly_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
+    settled_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[float] = mapped_column(Float, default=time.time)
+    updated_at: Mapped[float] = mapped_column(Float, default=time.time)

@@ -25,7 +25,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 950 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 964 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 93 testes
@@ -213,6 +213,18 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 
 ### Caixa
 
+- **Toda escrita do caixa passa por `cashflow_service`.** `registrar`, `marcar_paga` e `apagar`
+  são a porta única; nenhuma rota escreve em `cash_store` direto, do mesmo jeito que nenhuma
+  escreve em `ledger_store`.
+- **Entrada derivada é projeção, e projeção se reconstrói.** `sincronizar_proventos` apaga e
+  refaz tudo (`replace_derived`), nunca atualiza item a item — é o que impede a segunda leitura de
+  divergir da primeira em silêncio, mesmo padrão de `rebuild_projection`. Consequência: apagar ou
+  corrigir o provento no razão corrige o caixa, e o caixa **não** apaga lançamento derivado.
+- **`tem_caixa` ignora o derivado.** Quem só tem provento sincronizado não lançou caixa nenhum, e
+  mandá-lo para o `Mês` seria a tela vazia que a IA nova declarou como risco.
+- **Taxa anual vira mensal por juros compostos, nunca dividindo por doze.** Dividir superestima a
+  referência (12% ao ano dão 0,9489% ao mês, e 1,0% na conta ingênua) e **afrouxa** a régua de
+  dívida: 0,97% ao mês sairia como administrável. O erro cairia do lado de não avisar.
 - **`cashflow/` é irmão de `ledger/`, e não conhece banco.** Matemática pura: `entries.py` (o
   lançamento e o vocabulário fechado), `month.py` (a projeção do mês), `debt.py` (a régua de
   dívida), `cascata.py` (a ordem). Quem liga isso à API é `cashflow_service`, no mesmo padrão de

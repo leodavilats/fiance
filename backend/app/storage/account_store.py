@@ -7,7 +7,10 @@ from sqlalchemy import delete, inspect, select
 from app.core.database import db_session, engine
 from app.models.db_models import (
     AuditLogDb,
+    CashEntryDb,
+    CashRecurrenceDb,
     CheckoutSessionDb,
+    DebtDb,
     DeviceTokenDb,
     DividendReceivedDb,
     FixedIncomePositionDb,
@@ -52,6 +55,9 @@ USER_SCOPED_MODELS = (
     ("revoked_tokens", RevokedTokenDb),
     ("referral_code", ReferralCodeDb),
     ("referrals_made", ReferralDb),
+    ("cash_entries", CashEntryDb),
+    ("cash_recurrences", CashRecurrenceDb),
+    ("debts", DebtDb),
 )
 
 GLOBAL_TABLES = frozenset(
