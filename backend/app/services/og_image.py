@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import io
-import json
 import os
+import re
 from functools import lru_cache
 
 from PIL import Image, ImageDraw, ImageFont
@@ -13,15 +13,28 @@ ALTURA = 630
 _RAIZ = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
-_TOKENS = os.path.join(_RAIZ, "design-tokens", "tokens.json")
+_FOUNDATION = os.path.join(_RAIZ, "web", "src", "foundation.css")
 
 
 @lru_cache(maxsize=1)
 def _paleta() -> dict[str, str]:
-    with open(_TOKENS, encoding="utf-8") as arquivo:
-        tokens = json.load(arquivo)
+    """A paleta do tema escuro, lida de web/src/foundation.css.
 
-    escuro = tokens["color"]["dark"]
+    Era `design-tokens/tokens.json`, que deixou de existir quando a camada
+    visual passou a ser escrita a mao em CSS. O parser esta duplicado em
+    design-tokens/build-icons.py porque `design-tokens` tem hifen no nome e
+    nao da para importar como pacote -- a fonte, ainda assim, e uma so.
+    """
+    with open(_FOUNDATION, encoding="utf-8") as arquivo:
+        css = arquivo.read()
+
+    inicio = css.index(":root[data-theme='dark']")
+    abre = css.index("{", inicio)
+    fecha = css.index("\n}", abre)
+    escuro = dict(
+        re.findall(r"--fi-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;", css[abre + 1 : fecha])
+    )
+
     return {
         "ground": escuro["ground-0"],
         "ground-1": escuro["ground-1"],

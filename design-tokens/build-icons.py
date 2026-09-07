@@ -2,6 +2,7 @@
 import io
 import json
 import os
+import re
 import sys
 from PIL import Image, ImageDraw
 
@@ -57,9 +58,31 @@ SS = 4
 BRAND_DIR = 'assets/brand'
 
 
+FOUNDATION = os.path.join(ROOT, 'web', 'src', 'foundation.css')
+
+
 def tokens():
-    with io.open(os.path.join(ROOT, 'design-tokens', 'tokens.json'), encoding='utf-8') as fh:
-        return json.load(fh)
+    """A paleta, lida da fundacao visual escrita a mao.
+
+    Era `tokens.json`, que deixou de existir: cor passou a ser escrita em CSS.
+    O parser mora aqui e em backend/app/services/og_image.py -- duplicado de
+    proposito, porque `design-tokens` tem hifen e nao e importavel como pacote.
+    A fonte continua sendo uma so.
+    """
+    with io.open(FOUNDATION, encoding='utf-8') as fh:
+        css = fh.read()
+
+    def bloco(seletor):
+        i = css.index(seletor)
+        a = css.index('{', i)
+        f = css.index('\n}', a)
+        achados = re.findall(r'--fi-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;',
+                             css[a + 1:f])
+        # O CSS escreve minusculo; os SVG e os XML da marca, maiusculo.
+        return dict((nome, valor.upper()) for nome, valor in achados)
+
+    return {'color': {'dark': bloco(":root[data-theme='dark']"),
+                      'light': bloco(":root[data-theme='light']")}}
 
 
 def rgb(hex_color):

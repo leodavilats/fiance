@@ -6,13 +6,13 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..');
-const tokens = JSON.parse(readFileSync(join(here, 'tokens.json'), 'utf8'));
+const tokens = JSON.parse(readFileSync(join(here, 'product-rules.json'), 'utf8'));
 
 const CHECK = process.argv.includes('--check');
 const BANNER_LINES = [
   'GERADO AUTOMATICAMENTE — NÃO EDITE ESTE ARQUIVO.',
-  'Fonte: design-tokens/tokens.json · Gerador: design-tokens/build.mjs',
-  'Regenerar: node design-tokens/build.mjs',
+  'Fonte: design-tokens/product-rules.json · Gerador: design-tokens/build-rules.mjs',
+  'Regenerar: node design-tokens/build-rules.mjs',
 ];
 
 const isMeta = k => k.startsWith('$') || k === 'meta';
@@ -39,155 +39,13 @@ const derivedRulers = () =>
       spec: tokens[key],
     }));
 
-function buildCss() {
-  const out = [];
-
-  const themeVars = theme => {
-    const lines = [];
-    for (const [name, value] of entries(tokens.color[theme])) {
-      lines.push(`  --fi-${name}: ${value};`);
-    }
-    for (const [name, value] of entries(tokens.shadow[theme])) {
-      lines.push(`  --fi-shadow-${name}: ${value};`);
-    }
-    return lines;
-  };
-
-  const stable = [];
-  stable.push(`  --fi-font-sans: '${tokens.font.sans}', ui-sans-serif, system-ui, sans-serif;`);
-  stable.push(`  --fi-font-serif: '${tokens.font.serif}', ui-serif, Georgia, serif;`);
-  stable.push(`  --fi-numeric: ${tokens.font.numericFeatures};`);
-  for (const [name, v] of entries(tokens.space)) stable.push(`  --fi-space-${name}: ${v}px;`);
-  for (const [name, v] of entries(tokens.radius)) {
-    stable.push(`  --fi-radius-${name}: ${name === 'pill' ? '999px' : `${v}px`};`);
-  }
-  for (const [name, v] of entries(tokens.motion)) {
-    stable.push(`  --fi-motion-${camelToKebab(name)}: ${typeof v === 'number' ? `${v}ms` : v};`);
-  }
-  for (const [name, v] of entries(tokens.layout)) {
-    stable.push(`  --fi-layout-${camelToKebab(name)}: ${v}px;`);
-  }
-  for (const [name, v] of entries(tokens.zIndex)) {
-    stable.push(`  --fi-z-${camelToKebab(name)}: ${v};`);
-  }
-  stable.push(`  --fi-focus-ring: ${tokens.focus.ringWidth}px;`);
-  stable.push(`  --fi-focus-offset: ${tokens.focus.ringOffset}px;`);
-  for (const [name, v] of entries(tokens.density.comfortable)) {
-    stable.push(`  --fi-${camelToKebab(name)}: ${v}px;`);
-  }
-
-  out.push(':root,');
-  out.push(':root[data-theme="dark"] {');
-  out.push(...themeVars('dark'), ...stable);
-  out.push('}', '');
-
-  // A rede do tema claro, em CSS.
-  //
-  // A preferência do sistema era lida só em JavaScript, no construtor do
-  // ThemeService, que roda depois do bootstrap: quem usa tema claro via um
-  // flash escuro em todo carregamento, a rota SSR pública abria sempre escura
-  // (primeira impressão do canal de aquisição), e quem navega sem JavaScript —
-  // todo robô que não executa script — via só o escuro.
-  //
-  // Mesma especificidade do bloco explícito abaixo, então a escolha declarada
-  // vence por ordem de origem; `:not([data-theme="dark"])` garante que quem
-  // pediu escuro continua no escuro.
-  out.push('@media (prefers-color-scheme: light) {');
-  out.push('  :root:not([data-theme="dark"]) {');
-  out.push(...themeVars('light').map(line => `  ${line}`));
-  out.push('  }');
-  out.push('}', '');
-
-  out.push(':root[data-theme="light"] {');
-  out.push(...themeVars('light'));
-  out.push('}', '');
-
-  for (const [mode, v] of entries(tokens.density)) {
-    out.push(`[data-density="${mode}"] {`);
-    for (const [name, value] of entries(v)) {
-      out.push(`  --fi-${camelToKebab(name)}: ${value}px;`);
-    }
-    out.push('}');
-  }
-  out.push('');
-
-  for (const [name, t] of entries(tokens.type)) {
-    out.push(`.fi-${name} {`);
-    out.push(
-      `  font-family: var(--fi-font-${t.family});`,
-      `  font-size: ${t.size}px;`,
-      `  line-height: ${t.lineHeight}px;`,
-      `  font-weight: ${t.weight};`
-    );
-    if (t.tracking) out.push(`  letter-spacing: ${t.tracking}em;`);
-    if (t.uppercase) out.push('  text-transform: uppercase;');
-    if (t.numeric) out.push('  font-variant-numeric: var(--fi-numeric);');
-    out.push('}');
-  }
-  out.push('');
-
-  out.push('.fi-num { font-variant-numeric: var(--fi-numeric); }', '');
-
-  out.push('.fi-focusable:focus-visible {');
-  out.push('  outline: var(--fi-focus-ring) solid var(--fi-brand);');
-  out.push('  outline-offset: var(--fi-focus-offset);');
-  out.push('}', '');
-
-  out.push('@media (prefers-reduced-motion: reduce) {');
-  out.push('  :root { --fi-motion-fast: 1ms; --fi-motion-base: 1ms; --fi-motion-slow: 1ms; }');
-  out.push('}', '');
-
-  return out.join('\n');
-}
-
 function buildTs() {
   const out = [];
 
-  const theme = t =>
-    entries(tokens.color[t])
-      .map(([k, v]) => `  '${k}': '${v}',`)
-      .join('\n');
-  out.push('export const fiColor = {');
-  out.push(`  dark: {\n${theme('dark').replace(/^/gm, '  ')}\n  },`);
-  out.push(`  light: {\n${theme('light').replace(/^/gm, '  ')}\n  },`);
-  out.push('} as const;', '');
-  out.push('export type FiTheme = keyof typeof fiColor;');
-  out.push('export type FiColorToken = keyof typeof fiColor.dark;', '');
   out.push(
     "export type FiState = 'favorable' | 'attention' | 'adverse' | 'neutral' | 'indeterminate';",
     ''
   );
-
-  out.push('export const fiSpace = {');
-  for (const [k, v] of entries(tokens.space)) out.push(`  '${k}': ${v},`);
-  out.push('} as const;', '');
-
-  out.push('export const fiRadius = {');
-  for (const [k, v] of entries(tokens.radius)) out.push(`  ${k}: ${v},`);
-  out.push('} as const;', '');
-
-  out.push('export const fiMotion = {');
-  for (const [k, v] of entries(tokens.motion)) {
-    out.push(`  ${k}: ${typeof v === 'number' ? v : `'${v}'`},`);
-  }
-  out.push('} as const;', '');
-
-  out.push('export const fiBreakpoint = {');
-  for (const [k, v] of entries(tokens.breakpoint)) out.push(`  '${k}': ${v},`);
-  out.push('} as const;', '');
-
-  out.push('export const fiLayout = {');
-  for (const [k, v] of entries(tokens.layout)) out.push(`  ${k}: ${v},`);
-  out.push('} as const;', '');
-
-  out.push('export const fiDensity = {');
-  for (const [k, v] of entries(tokens.density)) {
-    out.push(
-      `  ${k}: { rowHeight: ${v.rowHeight}, sectionGap: ${v.sectionGap}, blockPadding: ${v.blockPadding} },`
-    );
-  }
-  out.push('} as const;', '');
-  out.push('export type FiDensity = keyof typeof fiDensity;', '');
 
   const r = tokens.scoreRuler;
   out.push(`export const SCORE_STRONG = ${r.thresholds.strong};`);
@@ -283,158 +141,7 @@ const dartColor = hex => `Color(0xFF${hex.replace('#', '').toUpperCase()})`;
 
 function buildDart() {
   const out = [];
-  out.push("import 'package:flutter/material.dart';", '');
-  out.push('abstract final class FiColors {');
-  for (const themeName of ['dark', 'light']) {
-    for (const [name, value] of entries(tokens.color[themeName])) {
-      out.push(`  static const ${kebabToCamel(themeName + '-' + name)} = ${dartColor(value)};`);
-    }
-    out.push('');
-  }
-  out.push('}', '');
-
   out.push('enum FiState { favorable, attention, adverse, neutral, indeterminate }', '');
-  out.push('Color fiStateColor(FiState state, Brightness brightness) {');
-  out.push('  final dark = brightness == Brightness.dark;');
-  out.push('  switch (state) {');
-  out.push('    case FiState.favorable:');
-  out.push('      return dark ? FiColors.darkStateFavorable : FiColors.lightStateFavorable;');
-  out.push('    case FiState.attention:');
-  out.push('      return dark ? FiColors.darkStateAttention : FiColors.lightStateAttention;');
-  out.push('    case FiState.adverse:');
-  out.push('      return dark ? FiColors.darkStateAdverse : FiColors.lightStateAdverse;');
-  out.push('    case FiState.neutral:');
-  out.push('      return dark ? FiColors.darkInk2 : FiColors.lightInk2;');
-  out.push('    case FiState.indeterminate:');
-  out.push(
-    '      return dark ? FiColors.darkStateIndeterminate : FiColors.lightStateIndeterminate;'
-  );
-  out.push('  }');
-  out.push('}', '');
-  out.push('Color fiStateSurface(FiState state, Brightness brightness) {');
-  out.push('  final dark = brightness == Brightness.dark;');
-  out.push('  switch (state) {');
-  out.push('    case FiState.favorable:');
-  out.push(
-    '      return dark',
-    '          ? FiColors.darkStateFavorableSurface',
-    '          : FiColors.lightStateFavorableSurface;'
-  );
-  out.push('    case FiState.attention:');
-  out.push(
-    '      return dark',
-    '          ? FiColors.darkStateAttentionSurface',
-    '          : FiColors.lightStateAttentionSurface;'
-  );
-  out.push('    case FiState.adverse:');
-  out.push(
-    '      return dark',
-    '          ? FiColors.darkStateAdverseSurface',
-    '          : FiColors.lightStateAdverseSurface;'
-  );
-  out.push('    case FiState.neutral:');
-  out.push('      return dark ? FiColors.darkGround2 : FiColors.lightGround2;');
-  out.push('    case FiState.indeterminate:');
-  out.push(
-    '      return dark',
-    '          ? FiColors.darkStateIndeterminateSurface',
-    '          : FiColors.lightStateIndeterminateSurface;'
-  );
-  out.push('  }');
-  out.push('}', '');
-  out.push('Color fiDirectionColor(double delta, Brightness brightness) {');
-  out.push('  final dark = brightness == Brightness.dark;');
-  out.push('  if (delta > 0) return dark ? FiColors.darkDirectionUp : FiColors.lightDirectionUp;');
-  out.push(
-    '  if (delta < 0) return dark ? FiColors.darkDirectionDown : FiColors.lightDirectionDown;'
-  );
-  out.push('  return dark ? FiColors.darkInk2 : FiColors.lightInk2;');
-  out.push('}', '');
-
-  const seriesCount = entries(tokens.color.dark).filter(([k]) =>
-    /^series-\d+$/.test(k)
-  ).length;
-  out.push('Color fiSeriesColor(int index, Brightness brightness) {');
-  out.push('  final dark = brightness == Brightness.dark;');
-  out.push('  switch (index) {');
-  for (let i = 1; i <= seriesCount; i += 1) {
-    out.push(`    case ${i}:`);
-    out.push(`      return dark ? FiColors.darkSeries${i} : FiColors.lightSeries${i};`);
-  }
-  out.push('    default:');
-  out.push('      return dark ? FiColors.darkSeriesOther : FiColors.lightSeriesOther;');
-  out.push('  }');
-  out.push('}', '');
-
-  out.push('abstract final class FiSpace {');
-  for (const [k, v] of entries(tokens.space)) out.push(`  static const s${k} = ${v}.0;`);
-  out.push('}', '');
-
-  out.push('abstract final class FiRadius {');
-  for (const [k, v] of entries(tokens.radius)) out.push(`  static const ${k} = ${v}.0;`);
-  out.push('}', '');
-
-  out.push('abstract final class FiMotion {');
-  for (const [k, v] of entries(tokens.motion)) {
-    if (typeof v === 'number') {
-      out.push(`  static const ${k} = Duration(milliseconds: ${v});`);
-    }
-  }
-  out.push('  static const easeEnter = Cubic(0.2, 0, 0, 1);');
-  out.push('  static const easeExit = Cubic(0.4, 0, 1, 1);');
-  out.push('}', '');
-
-  out.push('abstract final class FiBreakpoint {');
-  for (const [k, v] of entries(tokens.breakpoint)) {
-    out.push(`  static const ${kebabToCamel(k)} = ${v}.0;`);
-  }
-  out.push('}', '');
-
-  out.push('abstract final class FiLayout {');
-  for (const [k, v] of entries(tokens.layout)) out.push(`  static const ${k} = ${v}.0;`);
-  out.push('}', '');
-  out.push('enum FiDensity {');
-  for (const [k, v] of entries(tokens.density)) {
-    out.push(
-      `  ${k}(rowHeight: ${v.rowHeight}, sectionGap: ${v.sectionGap}, blockPadding: ${v.blockPadding}),`
-    );
-  }
-  out.push('  ;', '');
-  out.push('  const FiDensity({');
-  out.push('    required this.rowHeight,');
-  out.push('    required this.sectionGap,');
-  out.push('    required this.blockPadding,');
-  out.push('  });', '');
-  out.push('  final double rowHeight;');
-  out.push('  final double sectionGap;');
-  out.push('  final double blockPadding;');
-  out.push('}', '');
-  out.push('abstract final class FiType {');
-  for (const [name, t] of entries(tokens.type)) {
-    out.push(`  static const ${kebabToCamel(name)} = TextStyle(`);
-    out.push(`    fontSize: ${t.size},`);
-    out.push(`    height: ${(t.lineHeight / t.size).toFixed(3)},`);
-    out.push(`    fontWeight: FontWeight.w${t.weight},`);
-    if (t.tracking) {
-      out.push(`    letterSpacing: ${(t.tracking * t.size).toFixed(2)},`);
-    }
-    if (t.numeric) {
-      out.push('    fontFeatures: [');
-      out.push('      FontFeature.tabularFigures(),');
-      out.push('      FontFeature.slashedZero(),');
-      out.push('    ],');
-    }
-    out.push('  );');
-  }
-  out.push('}', '');
-  out.push('const Map<String, String> fiTypeFamily = {');
-  for (const [name, t] of entries(tokens.type)) {
-    out.push(`  '${name}': '${t.family}',`);
-  }
-  out.push('};', '');
-  out.push(`const String fiFontSans = '${tokens.font.sans}';`);
-  out.push(`const String fiFontSerif = '${tokens.font.serif}';`, '');
-
   const r = tokens.scoreRuler;
   out.push(`const double kScoreStrong = ${r.thresholds.strong};`);
   out.push(`const double kScoreGood = ${r.thresholds.good};`);
@@ -686,16 +393,24 @@ function buildVocabDart() {
 }
 
 const artifacts = [
-  { path: join(repo, 'web', 'src', 'tokens.css'), content: buildCss() },
-  { path: join(repo, 'web', 'src', 'app', 'core', 'design-tokens.ts'), content: buildTs() },
-  { path: join(repo, 'mobile', 'lib', 'core', 'design_tokens.dart'), content: buildDart() },
+  { path: join(repo, 'web', 'src', 'app', 'core', 'product-rules.ts'), content: buildTs() },
+  { path: join(repo, 'mobile', 'lib', 'core', 'product_rules.dart'), content: buildDart() },
   { path: join(repo, 'web', 'src', 'app', 'core', 'vocabulary.ts'), content: buildVocabTs() },
   { path: join(repo, 'mobile', 'lib', 'core', 'vocabulary.dart'), content: buildVocabDart() },
 ];
 
+/**
+ * O aviso de arquivo gerado.
+ *
+ * As quatro saidas nasceram sem marca nenhuma, e `BANNER_LINES` existia declarado e nao
+ * usado desde o primeiro commit do gerador. Arquivo gerado sem aviso e arquivo que alguem
+ * edita a mao, e a edicao volta no proximo `--check` como divergencia sem causa aparente.
+ */
+const banner = `${BANNER_LINES.map(l => `// ${l}`).join('\n')}\n\n`;
+
 let drift = 0;
 for (const { path, content } of artifacts) {
-  const body = content.endsWith('\n') ? content : `${content}\n`;
+  const body = `${banner}${content.endsWith('\n') ? content : `${content}\n`}`;
   const rel = path.slice(repo.length + 1).replace(/\\/g, '/');
   if (CHECK) {
     const current = existsSync(path) ? readFileSync(path, 'utf8') : null;
@@ -714,8 +429,8 @@ for (const { path, content } of artifacts) {
 
 if (CHECK && drift > 0) {
   console.error(
-    `\n${drift} arquivo(s) divergem de design-tokens/tokens.json.\n` +
-      'Rode `node design-tokens/build.mjs` e faça commit do resultado.'
+    `\n${drift} arquivo(s) divergem de design-tokens/product-rules.json.\n` +
+      'Rode `node design-tokens/build-rules.mjs` e faça commit do resultado.'
   );
   process.exit(1);
 }

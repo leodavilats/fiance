@@ -1,37 +1,68 @@
 # Design system
 
 > Traduz [VISUAL-LANGUAGE.md](VISUAL-LANGUAGE.md) em tokens e componentes.
-> Os tokens **não são documentação**: são código gerado, já no repositório.
 
-## Tokens: uma fonte, três alvos
+## Onde cada metade mora
+
+O sistema tem duas metades, e elas são mantidas de formas diferentes de propósito.
 
 ```
-design-tokens/tokens.json          ← fonte única. Só este arquivo se edita à mão.
-design-tokens/build.mjs            ← gerador (Node, sem dependências)
+web/src/foundation.css              ← ESCRITO. Cor, tipo, espaço, raio, motion, densidade.
+mobile/lib/core/design_tokens.dart  ← ESCRITO. O espelho da linha de cima, em Flutter.
+
+design-tokens/product-rules.json    ← fonte única do que é NÚMERO, não aparência.
+design-tokens/build-rules.mjs       ← gerador (Node, sem dependências)
         │
-        ├─→ web/src/tokens.css                      custom properties + classes de papel
-        ├─→ web/src/app/core/design-tokens.ts       consts tipadas + régua do score
-        └─→ mobile/lib/core/design_tokens.dart      Color/TextStyle/enums equivalentes
+        ├─→ web/src/app/core/product-rules.ts     bandas das réguas, veredito, diagnóstico
+        ├─→ mobile/lib/core/product_rules.dart    o mesmo, em Dart
+        ├─→ web/src/app/core/vocabulary.ts        rótulo, ícone e série de cada categoria
+        └─→ mobile/lib/core/vocabulary.dart       o mesmo, em Dart
 ```
 
 ```bash
-node design-tokens/build.mjs           # regenera os três alvos
-node design-tokens/build.mjs --check   # falha se algo divergir  (roda no CI)
+node design-tokens/build-rules.mjs           # regenera os quatro alvos
+node design-tokens/build-rules.mjs --check   # falha se algo divergir  (roda no CI)
+node design-tokens/check-contrast.mjs        # lê foundation.css e cobra os pisos  (roda no CI)
 ```
 
-**Por que gerar em vez de documentar.** A régua de score já divergiu: "Boa oportunidade" é verde
-no web e azul no mobile, apesar de os dois arquivos trazerem um comentário dizendo que devem
-andar juntos (achado #17). Token mantido à mão em N lugares diverge em N−1 deles. O job
-`design-tokens` no CI transforma divergência em build vermelho.
+**Por que a régua continua gerada.** Ela já divergiu: "Boa oportunidade" era verde no web e azul
+no mobile, apesar de os dois arquivos trazerem um comentário dizendo que deviam andar juntos
+(achado #17). Limiar mantido à mão em N lugares diverge em N−1 deles, e o sintoma é um número
+errado, não uma tela feia. Os quatro gerados dizem "não edite" no cabeçalho e estão em
+`web/.prettierignore`.
 
-Os arquivos gerados estão em `web/.prettierignore` — são artefatos, e a sincronia deles é
-verificada pelo `--check`, não pelo Prettier.
+**Por que a camada visual deixou de ser gerada.** O schema fechava o vocabulário: doze papéis de
+tipo, quatro raios, duas sombras, e nada para estado de interação — não havia como declarar
+contorno de controle, preenchimento pressionado ou poço de barra, porque o gerador não tinha
+essas chaves. O custo dessa escolha é conhecido e está aceito: **a paridade com o mobile não tem
+máquina**. Mudar um valor em `foundation.css` obriga a mudar em `design_tokens.dart`, e o
+contrário também.
+
+### O que continua verificado
+
+Contraste. `design-tokens/check-contrast.mjs` lê os dois blocos de tema do CSS e reprova:
+
+| O que | Piso | Por quê |
+|---|---|---|
+| `ink-2` / `ink-3` / `brand` / `state-*` / `direction-*` sobre os três chãos | 8 / 6 / 6 / 6 / 6 | a escada de tinta precisa continuar distinguível entre si |
+| `series-*` sobre o chão e **sobre o próprio chip** | 3 / 4,5 | forma no gráfico, texto no chip |
+| `control-border` e `control-border-hover` | 3 | é o contorno que faz um controle ser um controle (WCAG 1.4.11) |
+| `brand` sobre `track` | 3 | preenchido contra vazio: é o par que faz progresso ser legível |
+| `ink-on-brand` sobre `brand`, `-hover` e `-active` | 4,5 | o rótulo do botão primário nos três estados |
+| `ink-1` sobre `control-fill`, `-hover` e `-active` | 4,5 | o rótulo do botão secundário nos três estados |
+| `ink-disabled` sobre `control-fill` | 3 | controle inerte continua tendo de ser lido |
+| papel declarado só num tema | — | papel de cor existe nos dois ou em nenhum |
+
+`hairline` fica de fora: é separador decorativo. O que mudou é que **separador e contorno de
+controle deixaram de ser o mesmo token** — enquanto eram, `.btn-secondary` e `.btn-icon`
+desenhavam a borda inteira a 1,24:1, um quarto do mínimo, e nenhuma revisão visual pegou isso.
 
 ### O que os limiares NÃO são
 
-`tokens.json → scoreRuler.thresholds` **espelha** `backend/app/analysis/score_ruler.py`. A régua
-numérica continua sendo do backend; o design system só decide como ela é *lida*. Mudar um
-limiar: Python primeiro, depois `tokens.json`, depois regenerar.
+`product-rules.json → scoreRuler.thresholds` **espelha**
+`backend/app/analysis/score_ruler.py`. A régua numérica continua sendo do backend; o design
+system só decide como ela é *lida*. Mudar um limiar: Python primeiro, depois
+`product-rules.json`, depois regenerar.
 
 ---
 

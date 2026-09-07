@@ -84,18 +84,22 @@ marca, de modo que nenhum cinza da interface briga com `brand` por temperatura.
 | tinta terciária | `ink-3` |
 
 **Os valores não estão escritos aqui de propósito.** Eles vivem em
-`design-tokens/tokens.json`, e uma cópia neste arquivo seria uma segunda verdade que apodrece
+`web/src/foundation.css`, e uma cópia neste arquivo seria uma segunda verdade que apodrece
 calada — a tabela anterior listava `#7A847F` para a tinta terciária clara, um valor que o produto
-nunca teve. O que este documento decide é o **papel**; o valor é do gerador.
+nunca teve. O que este documento decide é o **papel**; o valor é da fundação.
 
-**O custo conhecido da paleta fria.** O chão da página e a superfície voltaram a ficar perto:
-`ground-0` e `ground-1` estão a 1,06:1 de contraste. Isso já aconteceu com `#FAF8F5` sob branco e
-produziu uma queixa registrada — *"o plano de fundo se confunde com os componentes"*: um card
-branco não tem de onde subir, e a página lê como uma superfície só. Duas coisas seguram a
-hierarquia hoje, e é por isso que a troca não a derrubou: a estrutura da página nasce de **fio e
-espaço** (`.fi-block`), não de card, e o card sobrevivente tem `hairline` desenhando a borda. Se a
-separação voltar a incomodar, o conserto é uma linha — aprofundar `ground-0` em `tokens.json` —,
-não um redesenho.
+**O custo conhecido da paleta fria, e o conserto que ele previu.** O chão da página e a
+superfície tinham ficado a 1,06:1 de contraste. Isso já havia acontecido com `#FAF8F5` sob branco
+e produziu uma queixa registrada — *"o plano de fundo se confunde com os componentes"*: um card
+branco não tem de onde subir, e a página lê como uma superfície só. O texto anterior desta seção
+dizia que o conserto era uma linha, aprofundar `ground-0`, e não um redesenho. Foi o que se fez:
+`ground-0` claro passou a `#EDF2F5`, e a superfície branca agora sobe a **1,13:1**.
+
+`ground-2` **não** pôde acompanhar. Ele carrega texto, e os pisos do próprio sistema o fixam em
+`#EFF3F5`: um passo mais fundo derruba `ink-2` de 8:1 e os estados de 6:1. É por isso que existem
+os preenchimentos de controle (`control-fill-hover`, `control-fill-active`) como papéis
+separados — eles carregam rótulo em tinta primária, que tem folga de sobra, e podem ir mais
+fundo do que qualquer superfície de corpo de texto.
 
 Já as **tintas** não são as do briefing: `#667085` como secundária dá 4,97:1 e `#98A2B3` como
 legenda dá 2,58:1, contra pisos de 8:1 e 6:1. Foram derivadas na mesma família fria até cumprirem

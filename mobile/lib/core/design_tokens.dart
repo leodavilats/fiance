@@ -1,4 +1,19 @@
+// ESCRITO A MAO. Espelho de web/src/foundation.css.
+//
+// A paleta e a escala deixaram de ser geradas: cor, tipografia, espaco, raio, motion e
+// densidade sao escritos — aqui e no CSS. O que continua gerado e product_rules.dart, e este
+// arquivo o reexporta para que quem importa design_tokens continue achando FiState,
+// FiScoreBand e FiDecision no mesmo lugar de antes.
+//
+// NAO ha maquina conferindo a paridade com o CSS. Mudar um valor aqui obriga a mudar la, e o
+// contrario tambem; a regra esta em docs/design/DESIGN-SYSTEM.md. Os contrastes sao cobrados
+// no lado do CSS por design-tokens/check-contrast.mjs.
+
 import 'package:flutter/material.dart';
+
+import 'product_rules.dart';
+
+export 'product_rules.dart';
 
 abstract final class FiColors {
   static const darkGround0 = Color(0xFF090C10);
@@ -6,12 +21,21 @@ abstract final class FiColors {
   static const darkGround2 = Color(0xFF1F262F);
   static const darkHairline = Color(0xFF2F3945);
   static const darkHairlineStrong = Color(0xFF424E5C);
+  static const darkControlBorder = Color(0xFF5A6B77);
+  static const darkControlBorderHover = Color(0xFF738796);
+  static const darkControlFill = Color(0xFF161C23);
+  static const darkControlFillHover = Color(0xFF1F262F);
+  static const darkControlFillActive = Color(0xFF2B3440);
+  static const darkTrack = Color(0xFF252D38);
   static const darkInk1 = Color(0xFFE8EAEE);
   static const darkInk2 = Color(0xFFBABFC9);
   static const darkInk3 = Color(0xFFA0A6B1);
+  static const darkInkDisabled = Color(0xFF6E7684);
   static const darkInkOnBrand = Color(0xFF08131A);
   static const darkBrand = Color(0xFF74ACC9);
-  static const darkBrandStrong = Color(0xFF3F7898);
+  static const darkBrandHover = Color(0xFF9CC6DC);
+  static const darkBrandActive = Color(0xFFB5D6E6);
+  static const darkBrandStrong = Color(0xFF9CC6DC);
   static const darkBrandLight = Color(0xFF9CC6DC);
   static const darkBrandQuiet = Color(0xFF1D3140);
   static const darkStateFavorable = Color(0xFF58B68C);
@@ -37,19 +61,28 @@ abstract final class FiColors {
   static const darkSeries11 = Color(0xFFC198AB);
   static const darkSeriesOther = Color(0xFF9FA5A2);
 
-  static const lightGround0 = Color(0xFFF7F9FA);
+  static const lightGround0 = Color(0xFFEDF2F5);
   static const lightGround1 = Color(0xFFFFFFFF);
-  static const lightGround2 = Color(0xFFEFF3F6);
-  static const lightHairline = Color(0xFFD9E2E8);
-  static const lightHairlineStrong = Color(0xFFB6C2CC);
+  static const lightGround2 = Color(0xFFEFF3F5);
+  static const lightHairline = Color(0xFFD7DEE4);
+  static const lightHairlineStrong = Color(0xFFA9B9C5);
+  static const lightControlBorder = Color(0xFF708B9F);
+  static const lightControlBorderHover = Color(0xFF577082);
+  static const lightControlFill = Color(0xFFFFFFFF);
+  static const lightControlFillHover = Color(0xFFE3EAEF);
+  static const lightControlFillActive = Color(0xFFD5DEE4);
+  static const lightTrack = Color(0xFFDCE3E9);
   static const lightInk1 = Color(0xFF1F2933);
   static const lightInk2 = Color(0xFF414956);
-  static const lightInk3 = Color(0xFF525B6C);
+  static const lightInk3 = Color(0xFF4B5764);
+  static const lightInkDisabled = Color(0xFF8493A1);
   static const lightInkOnBrand = Color(0xFFFFFFFF);
   static const lightBrand = Color(0xFF295D7C);
+  static const lightBrandHover = Color(0xFF1F465D);
+  static const lightBrandActive = Color(0xFF17364A);
   static const lightBrandStrong = Color(0xFF1F465D);
   static const lightBrandLight = Color(0xFF3F7898);
-  static const lightBrandQuiet = Color(0xFFEAF2F6);
+  static const lightBrandQuiet = Color(0xFFDCE9F0);
   static const lightStateFavorable = Color(0xFF116446);
   static const lightStateAttention = Color(0xFF784F0E);
   static const lightStateAdverse = Color(0xFF973A2D);
@@ -73,9 +106,11 @@ abstract final class FiColors {
   static const lightSeries11 = Color(0xFF7A4E62);
   static const lightSeriesOther = Color(0xFF595F5C);
 
+  // Veu sob drawer e sheet. No CSS e --fi-overlay; tem alfa, e por isso fica fora da
+  // varredura de contraste.
+  static const darkOverlay = Color(0xA8030508);
+  static const lightOverlay = Color(0x66151E26);
 }
-
-enum FiState { favorable, attention, adverse, neutral, indeterminate }
 
 Color fiStateColor(FiState state, Brightness brightness) {
   final dark = brightness == Brightness.dark;
@@ -86,10 +121,10 @@ Color fiStateColor(FiState state, Brightness brightness) {
       return dark ? FiColors.darkStateAttention : FiColors.lightStateAttention;
     case FiState.adverse:
       return dark ? FiColors.darkStateAdverse : FiColors.lightStateAdverse;
-    case FiState.neutral:
-      return dark ? FiColors.darkInk2 : FiColors.lightInk2;
     case FiState.indeterminate:
       return dark ? FiColors.darkStateIndeterminate : FiColors.lightStateIndeterminate;
+    case FiState.neutral:
+      return dark ? FiColors.darkInk2 : FiColors.lightInk2;
   }
 }
 
@@ -97,23 +132,15 @@ Color fiStateSurface(FiState state, Brightness brightness) {
   final dark = brightness == Brightness.dark;
   switch (state) {
     case FiState.favorable:
-      return dark
-          ? FiColors.darkStateFavorableSurface
-          : FiColors.lightStateFavorableSurface;
+      return dark ? FiColors.darkStateFavorableSurface : FiColors.lightStateFavorableSurface;
     case FiState.attention:
-      return dark
-          ? FiColors.darkStateAttentionSurface
-          : FiColors.lightStateAttentionSurface;
+      return dark ? FiColors.darkStateAttentionSurface : FiColors.lightStateAttentionSurface;
     case FiState.adverse:
-      return dark
-          ? FiColors.darkStateAdverseSurface
-          : FiColors.lightStateAdverseSurface;
+      return dark ? FiColors.darkStateAdverseSurface : FiColors.lightStateAdverseSurface;
+    case FiState.indeterminate:
+      return dark ? FiColors.darkStateIndeterminateSurface : FiColors.lightStateIndeterminateSurface;
     case FiState.neutral:
       return dark ? FiColors.darkGround2 : FiColors.lightGround2;
-    case FiState.indeterminate:
-      return dark
-          ? FiColors.darkStateIndeterminateSurface
-          : FiColors.lightStateIndeterminateSurface;
   }
 }
 
@@ -175,14 +202,6 @@ abstract final class FiRadius {
   static const pill = 999.0;
 }
 
-abstract final class FiMotion {
-  static const fast = Duration(milliseconds: 120);
-  static const base = Duration(milliseconds: 180);
-  static const slow = Duration(milliseconds: 240);
-  static const easeEnter = Cubic(0.2, 0, 0, 1);
-  static const easeExit = Cubic(0.4, 0, 1, 1);
-}
-
 abstract final class FiBreakpoint {
   static const mobileSm = 0.0;
   static const mobileLg = 420.0;
@@ -199,6 +218,14 @@ abstract final class FiLayout {
   static const subnavWidth = 200.0;
   static const navHeight = 56.0;
   static const minTouchTarget = 44.0;
+}
+
+abstract final class FiMotion {
+  static const fast = Duration(milliseconds: 120);
+  static const base = Duration(milliseconds: 180);
+  static const slow = Duration(milliseconds: 240);
+  static const easeEnter = Cubic(0.2, 0, 0, 1);
+  static const easeExit = Cubic(0.4, 0, 1, 1);
 }
 
 enum FiDensity {
@@ -266,11 +293,16 @@ abstract final class FiType {
     height: 1.500,
     fontWeight: FontWeight.w400,
   );
-  static const title = TextStyle(
-    fontSize: 15,
-    height: 1.333,
+  static const pageTitle = TextStyle(
+    fontSize: 26,
+    height: 1.231,
     fontWeight: FontWeight.w600,
-    letterSpacing: 0.15,
+    letterSpacing: -0.39,
+  );
+  static const title = TextStyle(
+    fontSize: 16,
+    height: 1.375,
+    fontWeight: FontWeight.w600,
   );
   static const eyebrow = TextStyle(
     fontSize: 11,
@@ -279,8 +311,13 @@ abstract final class FiType {
     letterSpacing: 0.88,
   );
   static const body = TextStyle(
-    fontSize: 14,
-    height: 1.500,
+    fontSize: 15,
+    height: 1.533,
+    fontWeight: FontWeight.w400,
+  );
+  static const bodyLg = TextStyle(
+    fontSize: 17,
+    height: 1.588,
     fontWeight: FontWeight.w400,
   );
   static const label = TextStyle(
@@ -308,9 +345,11 @@ const Map<String, String> fiTypeFamily = {
   'metric-sm': 'sans',
   'verdict': 'serif',
   'verdict-sm': 'serif',
+  'page-title': 'sans',
   'title': 'sans',
   'eyebrow': 'sans',
   'body': 'sans',
+  'body-lg': 'sans',
   'label': 'sans',
   'caption': 'sans',
   'ticker': 'sans',
@@ -318,126 +357,3 @@ const Map<String, String> fiTypeFamily = {
 
 const String fiFontSans = 'Inter';
 const String fiFontSerif = 'Source Serif 4';
-
-const double kScoreStrong = 75;
-const double kScoreGood = 60;
-const double kScoreNeutral = 40;
-const double kMinDataCompleteness = 0.5;
-const double kHighlightMinDy = 6;
-
-class FiScoreBand {
-  const FiScoreBand({
-    required this.id,
-    required this.min,
-    required this.max,
-    required this.label,
-    required this.state,
-    required this.emphasis,
-  });
-
-  final String id;
-  final double? min;
-  final double? max;
-  final String label;
-  final FiState state;
-  final String emphasis;
-}
-
-const List<FiScoreBand> fiScoreBands = [
-  FiScoreBand(id: 'strong', min: 75, max: 100, label: 'Forte', state: FiState.favorable, emphasis: 'strong'),
-  FiScoreBand(id: 'good', min: 60, max: 74, label: 'Boa', state: FiState.favorable, emphasis: 'muted'),
-  FiScoreBand(id: 'neutral', min: 40, max: 59, label: 'Neutra', state: FiState.neutral, emphasis: 'muted'),
-  FiScoreBand(id: 'weak', min: 0, max: 39, label: 'Fraca', state: FiState.adverse, emphasis: 'strong'),
-  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem dado', state: FiState.indeterminate, emphasis: 'muted'),
-];
-
-abstract final class FiScoreRulerSize {
-  static const inline = 16.0;
-  static const list = 24.0;
-  static const card = 40.0;
-  static const page = 64.0;
-}
-
-bool fiScoreIsReliable(double? dataCompleteness) =>
-    (dataCompleteness ?? 1) >= kMinDataCompleteness;
-
-FiScoreBand fiScoreBandFor(double score, double? dataCompleteness) {
-  if (!fiScoreIsReliable(dataCompleteness)) {
-    return fiScoreBands.firstWhere((b) => b.id == 'insufficient');
-  }
-  return fiScoreBands.firstWhere(
-    (b) => b.min != null && score >= b.min!,
-    orElse: () => fiScoreBands.firstWhere((b) => b.id == 'weak'),
-  );
-}
-
-const List<FiScoreBand> fiHealthBands = [
-  FiScoreBand(id: 'healthy', min: 75, max: 100, label: 'Saudável', state: FiState.favorable, emphasis: 'strong'),
-  FiScoreBand(id: 'ok', min: 60, max: 74, label: 'Em ordem', state: FiState.favorable, emphasis: 'muted'),
-  FiScoreBand(id: 'watch', min: 40, max: 59, label: 'Atenção', state: FiState.attention, emphasis: 'muted'),
-  FiScoreBand(id: 'fragile', min: 0, max: 39, label: 'Frágil', state: FiState.adverse, emphasis: 'strong'),
-  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Carteira pequena demais para avaliar', state: FiState.indeterminate, emphasis: 'muted'),
-];
-
-const List<FiScoreBand> fiMarginOfSafetyBands = [
-  FiScoreBand(id: 'wide', min: 25, max: 50, label: 'Desconto amplo', state: FiState.favorable, emphasis: 'strong'),
-  FiScoreBand(id: 'some', min: 10, max: 24, label: 'Algum desconto', state: FiState.favorable, emphasis: 'muted'),
-  FiScoreBand(id: 'fair', min: 0, max: 9, label: 'Perto do justo', state: FiState.neutral, emphasis: 'muted'),
-  FiScoreBand(id: 'above', min: -50, max: -1, label: 'Acima do justo', state: FiState.attention, emphasis: 'strong'),
-  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem preço justo', state: FiState.indeterminate, emphasis: 'muted'),
-];
-
-const ({double min, double max}) fiMarginOfSafetyDomain = (min: -50, max: 50);
-
-const List<FiScoreBand> fiAllocationGapBands = [
-  FiScoreBand(id: 'relevant', min: 5, max: 20, label: 'Desvio relevante', state: FiState.attention, emphasis: 'strong'),
-  FiScoreBand(id: 'drift', min: 2, max: 4, label: 'Desvio', state: FiState.neutral, emphasis: 'muted'),
-  FiScoreBand(id: 'on-target', min: 0, max: 1, label: 'Na meta', state: FiState.favorable, emphasis: 'muted'),
-  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem meta definida', state: FiState.indeterminate, emphasis: 'muted'),
-];
-
-const ({double min, double max}) fiAllocationGapDomain = (min: 0, max: 20);
-
-const List<FiScoreBand> fiGoalProgressBands = [
-  FiScoreBand(id: 'reached', min: 100, max: 100, label: 'Meta atingida', state: FiState.favorable, emphasis: 'strong'),
-  FiScoreBand(id: 'advancing', min: 50, max: 99, label: 'Mais da metade', state: FiState.favorable, emphasis: 'muted'),
-  FiScoreBand(id: 'starting', min: 0, max: 49, label: 'No começo', state: FiState.neutral, emphasis: 'muted'),
-  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem meta definida', state: FiState.indeterminate, emphasis: 'muted'),
-];
-
-const ({double min, double max}) fiGoalProgressDomain = (min: 0, max: 100);
-
-const List<FiScoreBand> fiDipScoreBands = [
-  FiScoreBand(id: 'opportunity', min: 68, max: 100, label: 'Oportunidade na baixa', state: FiState.favorable, emphasis: 'strong'),
-  FiScoreBand(id: 'wait', min: 42, max: 67, label: 'Aguardar', state: FiState.neutral, emphasis: 'muted'),
-  FiScoreBand(id: 'trap', min: 0, max: 41, label: 'Armadilha', state: FiState.adverse, emphasis: 'strong'),
-  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem leitura', state: FiState.indeterminate, emphasis: 'muted'),
-];
-
-FiScoreBand fiBandFor(
-  double value,
-  List<FiScoreBand> bands, [
-  double? dataCompleteness,
-]) {
-  if (!fiScoreIsReliable(dataCompleteness)) {
-    return bands.firstWhere((b) => b.min == null, orElse: () => bands.last);
-  }
-  return bands.firstWhere(
-    (b) => b.min != null && value >= b.min!,
-    orElse: () => bands.lastWhere((b) => b.min != null, orElse: () => bands.last),
-  );
-}
-
-abstract final class FiDecision {
-  static const interesting = (label: 'Interessante', state: FiState.favorable);
-  static const neutral = (label: 'Neutro', state: FiState.neutral);
-  static const attention = (label: 'Atenção', state: FiState.attention);
-  static const avoid = (label: 'Evitar', state: FiState.adverse);
-  static const unknown = (label: 'Sem leitura', state: FiState.indeterminate);
-}
-
-abstract final class FiDipDiagnosis {
-  static const healthy = (label: 'Queda saudável', criterion: 'preço caiu, fundamentos preservados', state: FiState.favorable);
-  static const investigate = (label: 'Queda para investigar', criterion: 'preço caiu e alguma métrica piorou', state: FiState.attention);
-  static const structural = (label: 'Queda estrutural', criterion: 'preço caiu junto de deterioração relevante', state: FiState.adverse);
-}

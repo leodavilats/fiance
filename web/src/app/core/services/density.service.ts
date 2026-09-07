@@ -1,8 +1,9 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
-import { FiDensity } from '../design-tokens';
 import { AuthService } from './auth.service';
 import { RecommendService } from './recommend.service';
+
+export type FiDensity = 'comfortable' | 'compact';
 
 const DEFAULT_DENSITY: FiDensity = 'comfortable';
 

@@ -30,7 +30,7 @@ cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 73 testes
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 143 testes
-node design-tokens/build.mjs --check               # tokens sincronizados
+node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA
 python design-tokens/build-icons.py --check        # marca sincronizada
 ```
@@ -60,7 +60,8 @@ Duas ressalvas que já custaram tempo:
 | Limiar de score | Mudar nas três plataformas, Python primeiro | Réguas divergem |
 | Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
 | Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template |
-| Cor, tipografia, espaço | Editar `design-tokens/tokens.json` e rodar o gerador | Job `design-tokens` falha |
+| Cor, tipografia, espaço | Editar [foundation.css](web/src/foundation.css) **e** o espelho em [design_tokens.dart](mobile/lib/core/design_tokens.dart) | Web e mobile divergem, e nenhuma máquina avisa |
+| Papel de cor novo | Declarar nos **dois** temas de `foundation.css` | `check-contrast.mjs` reprova papel que só existe num tema |
 | Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` |
 | Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
 | Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |
@@ -101,7 +102,7 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   tempo, e uma perda aparecia como aviso. As classes foram removidas: direção é `text-up` /
   `text-down`; estado é `text-favorable` / `text-attention` / `text-adverse` / `text-indeterminate`.
 - **Vocabulário gerado sem consumidor** — `fiTiposDeRendaFixa` e `fiLiquidez` saíam de
-  `tokens.json` e não eram importados por ninguém no web, enquanto quatro telas reescreviam o mapa
+  `product-rules.json` e não eram importados por ninguém no web, enquanto quatro telas reescreviam o mapa
   à mão. O mobile fazia certo desde sempre (`core/labels.dart`). Ao gerar um vocabulário novo,
   confira se ele chega a uma tela — gerado e ignorado é pior que não gerado, porque parece
   resolvido.
@@ -330,18 +331,24 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
 - **Cinco destinos por intenção**, iguais nas duas plataformas: `/hoje`, `/carteira`, `/descobrir`,
   `/estrategia`, `/voce`, mais `/ativo/:ticker` como camada. URLs antigas seguem como redirect.
   Meta mora em Estratégia porque é a referência que produz o desvio.
-- **Tokens de design são gerados, não escritos.** Cor, tipografia, espaço, raio, motion e as
-  bandas das réguas saem de `design-tokens/tokens.json` via `node design-tokens/build.mjs`, que
-  emite `web/src/tokens.css`, `web/src/app/core/design-tokens.ts` e
-  `mobile/lib/core/design_tokens.dart`. **O vocabulário também**: rótulo, ícone e identidade de
-  série de categoria, tipo de ativo, setor, tipo de renda fixa e liquidez saem do mesmo arquivo
-  para `web/src/app/core/vocabulary.ts` e `mobile/lib/core/vocabulary.dart`. Nunca edite os
-  gerados nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou `theme.dart`.
-  Qualquer chave `*Ruler` vira `fi<Nome>Bands`/`fi<Nome>Domain` automaticamente.
-- **Ícone e favicon também são gerados**, de `tokens.json` via `python design-tokens/build-icons.py`
-  (requer Pillow). **O launcher nativo é um segundo passo**: `cd mobile && dart run
-  flutter_launcher_icons` — sem ele os ícones do app ficam com a cor antiga mesmo com `tokens.json`
-  correto.
+- **A camada visual é escrita; a régua é gerada.** Cor, tipografia, espaço, raio, motion e
+  densidade vivem em [web/src/foundation.css](web/src/foundation.css), escrito à mão, com espelho
+  à mão em [mobile/lib/core/design_tokens.dart](mobile/lib/core/design_tokens.dart). O que continua
+  gerado é o que precisa ser **igual nas três plataformas por ser número, e não aparência**:
+  `design-tokens/product-rules.json` → `node design-tokens/build-rules.mjs` → as bandas das cinco
+  réguas (que espelham `score_ruler.py`), o vocabulário de veredito e os rótulos de categoria,
+  setor, tipo de ativo, tipo de renda fixa e liquidez. Qualquer chave `*Ruler` vira
+  `fi<Nome>Bands`/`fi<Nome>Domain` automaticamente. Nunca edite os quatro gerados — eles dizem
+  isso no cabeçalho — nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou `theme.dart`.
+- **A paridade entre web e mobile deixou de ter máquina, e por isso é regra escrita.** Mudar um
+  valor em `foundation.css` obriga a mudar em `design_tokens.dart`, e o contrário também. O que
+  continua verificado é o **contraste**: `design-tokens/check-contrast.mjs` lê o CSS e reprova
+  papel abaixo do piso, papel declarado só num tema, contorno de controle sob 3:1 e preenchimento
+  que não se distingue do próprio poço.
+- **Ícone e favicon são gerados**, do `brand` de `foundation.css` via
+  `python design-tokens/build-icons.py` (requer Pillow). **O launcher nativo é um segundo passo**:
+  `cd mobile && dart run flutter_launcher_icons` — sem ele os ícones do app ficam com a cor antiga
+  mesmo com a fundação correta.
 - **Não existe alias de cor.** Nada de `bg-accent`, `text-tx`, `bg-panel`, `text-muted`, nem paleta
   crua do Tailwind. Os papéis são `ground`/`ground-1`/`ground-2`, `hairline`, `ink`/`ink-2`/`ink-3`,
   `brand`/`on-brand`, os estados `favorable`/`attention`/`adverse`/`indeterminate`, a direção

@@ -221,7 +221,8 @@ Cinco destinos por intenção, mais o ativo como camada — o racional está em
 - **`core/services/dip-analysis.service.ts`** — estado do drawer de diagnóstico de queda,
   compartilhado dentro de Descobrir. Vive num serviço porque um layout com `router-outlet` não
   recebe `output` de filho roteado.
-- **`core/design-tokens.ts`** — **gerado** de `design-tokens/tokens.json`. Não editar.
+- **`core/product-rules.ts`** — **gerado** de `design-tokens/product-rules.json`. Não editar.
+  A camada visual não passa por aqui: ela é CSS escrito em `src/foundation.css`.
 - **`core/score-ruler.ts`** — apresentação da régua; os limiares vêm dos tokens gerados, que
   espelham `analysis/score_ruler.py`.
 - **`core/services/ui-helper.service.ts`** — labels, ícones e cores de AssetType/categoria/setor,

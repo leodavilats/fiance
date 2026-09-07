@@ -2,8 +2,8 @@
 /**
  * Contraste dos papéis de cor, nos dois temas.
  *
- * Cor é gerada de `tokens.json`, então contraste também pode ser **verificado**
- * de lá — e verificado é diferente de recomendado. Um ajuste de paleta que
+ * A paleta é escrita à mão em `web/src/foundation.css`, e é de lá que este
+ * verificador lê — verificado é diferente de recomendado. Um ajuste de paleta que
  * derruba um par abaixo do mínimo passa despercebido em revisão visual: a
  * diferença entre 4,4 e 4,6 não se enxerga, mas separa quem lê a tela de quem
  * não lê.
@@ -24,16 +24,49 @@
  * estado, que escreve o rótulo, e a tinta primária, que escreve o corpo. É a
  * checagem que decide quanta tinta o fundo aguenta antes de comer o texto.
  *
- * `hairline` fica de fora de propósito: é separador decorativo, e exigir 3:1
- * dele produziria uma borda que grita numa interface que depende de silêncio.
+ * **Contorno de controle** (`control-border`) precisa de 3:1 contra o chão e
+ * contra a superfície: é o que faz um botão ser um botão, e a WCAG 1.4.11 se
+ * aplica a ele. Esta regra não existia, e a consequência era mensurável — o
+ * contorno de `.btn-secondary` e `.btn-icon` desenhava a 1,24:1, um quarto do
+ * mínimo, porque era `hairline`.
+ *
+ * **Preenchimento contra poço** (`brand` sobre `track`) também precisa de 3:1:
+ * é o par que faz uma barra de progresso mostrar progresso. Sem ele o produto
+ * teve uma barra em que preenchido e vazio ficavam a 2,3:1.
+ *
+ * `hairline` continua de fora de propósito: é separador decorativo, e exigir
+ * 3:1 dele produziria uma borda que grita numa interface que depende de
+ * silêncio. O que mudou é que separador e contorno de controle deixaram de ser
+ * o mesmo token.
  *
  * Uso: `node design-tokens/check-contrast.mjs`
  */
 
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
-const TOKENS = join(import.meta.dirname, 'tokens.json');
+const FOUNDATION = resolve(import.meta.dirname, '..', 'web', 'src', 'foundation.css');
+
+/**
+ * Lê um bloco de custom properties do CSS escrito à mão.
+ *
+ * O seletor de tema é a chave: o bloco escuro responde por `:root` e por
+ * `[data-theme='dark']` juntos, e o claro aparece duas vezes — uma na consulta
+ * de mídia e uma no atributo. Ler o do atributo basta, e é o que o toggle usa.
+ */
+function lerTema(css, seletor) {
+  const inicio = css.indexOf(seletor);
+  if (inicio < 0) throw new Error(`seletor ausente em foundation.css: ${seletor}`);
+  const abre = css.indexOf('{', inicio);
+  const fecha = css.indexOf('\n}', abre);
+  const corpo = css.slice(abre + 1, fecha);
+
+  const cores = {};
+  for (const [, nome, valor] of corpo.matchAll(/--fi-([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)) {
+    cores[nome] = valor;
+  }
+  return cores;
+}
 
 const AA_TEXT = 4.5;
 const AA_NON_TEXT = 3.0;
@@ -117,7 +150,8 @@ function check(theme, colors) {
   for (const [role, value] of Object.entries(colors)) {
     if (role.startsWith('$') || GROUNDS.includes(role)) continue;
     if (role.endsWith('-quiet') || role === 'ink-on-brand') continue;
-    if (role.startsWith('hairline')) continue;
+    if (role.startsWith('hairline') || role.startsWith('control-')) continue;
+    if (role === 'track' || role === 'ink-disabled') continue;
     if (role.endsWith('-surface')) continue;
 
     const rule = requirementFor(role);
@@ -180,6 +214,83 @@ function check(theme, colors) {
     }
   }
 
+  /*
+   * Contorno, poco e preenchimento — o que a regua antiga nao cobria.
+   *
+   * As tres primeiras linhas existem porque a paleta reprovava nelas: o
+   * contorno de controle desenhava a 1,24:1 herdando `hairline`, e o
+   * preenchimento de uma barra ficava a 2,28:1 do proprio poco. Nenhuma
+   * revisao visual pega isso; a conta pega.
+   */
+  const naoTexto = [
+    ['control-border', 'ground-0', 'e o contorno que faz um controle ser um controle (WCAG 1.4.11)'],
+    ['control-border', 'ground-1', 'o mesmo contorno, sobre superficie'],
+    ['control-border-hover', 'ground-1', 'o contorno sob o ponteiro nao pode piorar'],
+    ['brand', 'track', 'preenchido contra vazio: e o par que faz progresso ser legivel'],
+  ];
+
+  /*
+   * O poco NAO e medido contra o chao de proposito.
+   *
+   * A extensao de uma regua ou de uma barra vem do contorno, que ja e cobrado
+   * acima; o poco e o vazio dentro dele. Exigir 3:1 do poco tambem obrigaria a
+   * escurecer o vazio ate ele competir com o preenchido, que e o oposto do que
+   * se quer ler.
+   */
+  for (const [papel, contra, why] of naoTexto) {
+    const ratio = contrast(colors[papel], colors[contra]);
+    if (ratio + 1e-9 < AA_NON_TEXT) {
+      failures.push({ theme, pair: `${papel} sobre ${contra}`, ratio, min: AA_NON_TEXT, why });
+    }
+  }
+
+  /* Rotulo sobre os preenchimentos de controle, nos tres estados. */
+  for (const fundo of ['control-fill', 'control-fill-hover', 'control-fill-active']) {
+    const ratio = contrast(colors['ink-1'], colors[fundo]);
+    if (ratio + 1e-9 < AA_TEXT) {
+      failures.push({
+        theme,
+        pair: `ink-1 sobre ${fundo}`,
+        ratio,
+        min: AA_TEXT,
+        why: 'e o rotulo do botao secundario, e ele nao muda de cor ao ser pressionado',
+      });
+    }
+  }
+
+  /* O texto do botao primario nos tres estados, nao so no de repouso. */
+  for (const fundo of ['brand', 'brand-hover', 'brand-active']) {
+    const ratio = contrast(colors['ink-on-brand'], colors[fundo]);
+    if (ratio + 1e-9 < AA_TEXT) {
+      failures.push({
+        theme,
+        pair: `ink-on-brand sobre ${fundo}`,
+        ratio,
+        min: AA_TEXT,
+        why: 'o rotulo do botao primario tem de continuar legivel sob ponteiro e ao ser pressionado',
+      });
+    }
+  }
+
+  /*
+   * Tinta desabilitada.
+   *
+   * `opacity: 0.5` era o truque anterior, e ele derruba o contraste do texto
+   * junto com o do fundo. A norma isenta controle desabilitado, e o produto
+   * nao: inerte tem de continuar legivel, senao a pessoa nao sabe o que o
+   * botao faria.
+   */
+  const inerte = contrast(colors['ink-disabled'], colors['control-fill']);
+  if (inerte + 1e-9 < AA_NON_TEXT) {
+    failures.push({
+      theme,
+      pair: 'ink-disabled sobre control-fill',
+      ratio: inerte,
+      min: AA_NON_TEXT,
+      why: 'controle inerte continua tendo de ser lido',
+    });
+  }
+
   const emQuiet = contrast(colors['ink-1'], colors['brand-quiet']);
   if (emQuiet + 1e-9 < AA_TEXT) {
     failures.push({
@@ -195,11 +306,40 @@ function check(theme, colors) {
 }
 
 function main() {
-  const tokens = JSON.parse(readFileSync(TOKENS, 'utf8'));
+  const css = readFileSync(FOUNDATION, 'utf8');
+  const paleta = {
+    dark: lerTema(css, ":root[data-theme='dark']"),
+    light: lerTema(css, ":root[data-theme='light']"),
+  };
+
   const failures = [];
 
+  /*
+   * Papel definido num tema e não no outro.
+   *
+   * Com a paleta gerada de um JSON com duas chaves irmãs isso era difícil de
+   * fazer; escrita à mão em três blocos, é a divergência mais provável — e o
+   * sintoma é uma cor que simplesmente não existe num dos temas.
+   */
+  const soNoEscuro = Object.keys(paleta.dark).filter(k => !(k in paleta.light));
+  const soNoClaro = Object.keys(paleta.light).filter(k => !(k in paleta.dark));
+  for (const [papeis, onde] of [
+    [soNoEscuro, 'escuro'],
+    [soNoClaro, 'claro'],
+  ]) {
+    for (const papel of papeis) {
+      failures.push({
+        theme: onde,
+        pair: papel,
+        ratio: 0,
+        min: 0,
+        why: `declarado só no tema ${onde}; papel de cor existe nos dois ou em nenhum`,
+      });
+    }
+  }
+
   for (const theme of ['dark', 'light']) {
-    failures.push(...check(theme, tokens.color[theme]));
+    failures.push(...check(theme, paleta[theme]));
   }
 
   if (failures.length > 0) {
@@ -210,7 +350,8 @@ function main() {
       );
     }
     console.error(
-      '\n  Ajuste a cor em design-tokens/tokens.json e rode `node design-tokens/build.mjs`.' +
+      '\n  Ajuste a cor em web/src/foundation.css — e no espelho em' +
+        '\n  mobile/lib/core/design_tokens.dart, que nenhuma maquina confere.' +
         '\n  Afrouxar o limiar não é opção: a diferença entre 4,4 e 4,6 não se enxerga' +
         '\n  em revisão, mas separa quem lê a tela de quem não lê.\n'
     );

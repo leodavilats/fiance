@@ -63,17 +63,17 @@ são `currentColor` — uma cor só, herdada de `color:` no elemento pai.
 
 ## Cor
 
-Tudo sai de `design-tokens/tokens.json`.
+Tudo sai de `web/src/foundation.css`.
 
 | Papel | Claro | Escuro | Sobre a marca |
 |---|---|---|---|
 | eixo e leitura | `brand #295D7C` | `brand #74ACC9` | `ink-on-brand #FFFFFF` |
-| chão | `ink-3 #525B6C` | `ink-3 #A0A6B1` | `#B4C6D1` |
+| chão | `ink-3 #4B5764` | `ink-3 #A0A6B1` | `#B4C6D1` |
 | logotipo | `ink-1 #1F2933` | `ink-1 #E8EAEE` | — |
 
 O chão é **neutro**, não um azul mais claro: ele é referência, e referência não julga. `#B4C6D1` é o
 único valor que não sai direto de um token — é `ink-on-brand` puxado 35% na direção de `brand`,
-calculado pelo gerador, porque não existe papel "secundário sobre a marca" no `tokens.json` e
+calculado pelo gerador, porque não existe papel "secundário sobre a marca" na fundação e
 inventar um criaria uma cor que nenhuma tela conhece.
 
 Nenhuma cor de **estado** (`favorable`, `attention`, `adverse`, `indeterminate`) nem de **direção**

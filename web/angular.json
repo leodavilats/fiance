@@ -26,7 +26,7 @@
               }
             ],
             "styles": [
-              "src/tokens.css",
+              "src/foundation.css",
               "src/styles.css"
             ],
             "scripts": [],

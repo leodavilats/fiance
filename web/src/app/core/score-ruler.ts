@@ -1,5 +1,4 @@
 import {
-  FiDensity,
   FiScoreBand,
   FiState,
   MIN_DATA_COMPLETENESS as GENERATED_MIN_DATA_COMPLETENESS,
@@ -21,7 +20,7 @@ import {
   fiScoreBandFor,
   fiScoreBands,
   fiScoreIsReliable,
-} from './design-tokens';
+} from './product-rules';
 
 export const SCORE_STRONG = GENERATED_SCORE_STRONG;
 export const SCORE_GOOD = GENERATED_SCORE_GOOD;
@@ -45,8 +44,7 @@ export {
   fiScoreBands,
   fiScoreIsReliable,
 };
-export { fiDensity } from './design-tokens';
-export type { FiDensity, FiScoreBand, FiState };
+export type { FiScoreBand, FiState };
 
 export function stateTextClass(state: FiState): string {
   switch (state) {

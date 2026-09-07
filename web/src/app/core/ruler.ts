@@ -1,4 +1,4 @@
-import { FiScoreBand, FiState } from './design-tokens';
+import { FiScoreBand, FiState } from './product-rules';
 
 export interface RulerDomain {
   readonly min: number;

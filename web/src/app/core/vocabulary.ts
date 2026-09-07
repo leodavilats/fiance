@@ -1,3 +1,7 @@
+// GERADO AUTOMATICAMENTE — NÃO EDITE ESTE ARQUIVO.
+// Fonte: design-tokens/product-rules.json · Gerador: design-tokens/build-rules.mjs
+// Regenerar: node design-tokens/build-rules.mjs
+
 export interface FiCategoria {
   readonly label: string;
   readonly series: number;
