@@ -16,14 +16,7 @@ export const routes: Routes = [
   },
 
   {
-    path: 'hoje',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
-    title: 'Hoje - fiance',
-  },
-  {
-    path: 'hoje/atividade',
+    path: 'mes/atividade',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./components/activity/activity-page.component').then(m => m.ActivityPageComponent),
@@ -51,14 +44,7 @@ export const routes: Routes = [
     title: 'Dívidas - fiance',
   },
   {
-    path: 'sobra',
-    canActivate: [authGuard],
-    loadComponent: () => import('./components/sobra/sobra.component').then(m => m.SobraComponent),
-    title: 'Sobra - fiance',
-  },
-
-  {
-    path: 'carteira',
+    path: 'patrimonio',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./components/shell/portfolio-shell.component').then(m => m.PortfolioShellComponent),
@@ -153,7 +139,7 @@ export const routes: Routes = [
   },
 
   {
-    path: 'estrategia',
+    path: 'sobra',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./components/shell/strategy-shell.component').then(m => m.StrategyShellComponent),
@@ -161,8 +147,14 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
+          import('./components/sobra/sobra.component').then(m => m.SobraComponent),
+        title: 'Sobra - fiance',
+      },
+      {
+        path: 'desvio',
+        loadComponent: () =>
           import('./components/strategy/strategy.component').then(m => m.StrategyComponent),
-        title: 'Estratégia - fiance',
+        title: 'Alocação × meta - fiance',
       },
       {
         path: 'aporte',
@@ -264,14 +256,37 @@ export const routes: Routes = [
     title: 'Aviso CVM - fiance',
   },
 
-  { path: 'dashboard', redirectTo: 'hoje', pathMatch: 'full' },
-  { path: 'carteira/importar', redirectTo: 'carteira', pathMatch: 'full' },
-  { path: 'carteira/transacoes', redirectTo: 'carteira', pathMatch: 'full' },
-  { path: 'assets', redirectTo: 'carteira', pathMatch: 'full' },
-  { path: 'assets/cadastro', redirectTo: 'carteira/editar', pathMatch: 'full' },
+  /*
+   * As URLs da IA anterior, como redirect.
+   *
+   * Link salvo é contrato, e a transição anterior (Mercado/Meus Ativos → cinco destinos) já
+   * seguiu esta regra. `hoje` vai para `mes` porque é onde o "agora" mora agora; `estrategia`
+   * vai para `patrimonio` porque, sem aporte, meta e projeção, o que sobrava dela era o desvio
+   * de alocação — leitura de patrimônio.
+   */
+  { path: 'hoje', redirectTo: 'mes', pathMatch: 'full' },
+  { path: 'hoje/atividade', redirectTo: 'mes/atividade', pathMatch: 'full' },
+  { path: 'carteira', redirectTo: 'patrimonio', pathMatch: 'full' },
+  { path: 'carteira/composicao', redirectTo: 'patrimonio/composicao', pathMatch: 'full' },
+  { path: 'carteira/proventos', redirectTo: 'patrimonio/proventos', pathMatch: 'full' },
+  { path: 'carteira/posicoes', redirectTo: 'patrimonio/posicoes', pathMatch: 'full' },
+  { path: 'carteira/encerradas', redirectTo: 'patrimonio/encerradas', pathMatch: 'full' },
+  { path: 'carteira/desempenho', redirectTo: 'patrimonio/desempenho', pathMatch: 'full' },
+  { path: 'carteira/editar', redirectTo: 'patrimonio/editar', pathMatch: 'full' },
+  { path: 'carteira/importar', redirectTo: 'patrimonio', pathMatch: 'full' },
+  { path: 'carteira/transacoes', redirectTo: 'patrimonio', pathMatch: 'full' },
+  { path: 'estrategia', redirectTo: 'sobra/desvio', pathMatch: 'full' },
+  { path: 'estrategia/aporte', redirectTo: 'sobra/aporte', pathMatch: 'full' },
+  { path: 'estrategia/metas', redirectTo: 'sobra/metas', pathMatch: 'full' },
+  { path: 'estrategia/renda-fixa', redirectTo: 'sobra/renda-fixa', pathMatch: 'full' },
+  { path: 'estrategia/projecao', redirectTo: 'sobra/projecao', pathMatch: 'full' },
+
+  { path: 'dashboard', redirectTo: 'mes', pathMatch: 'full' },
+  { path: 'assets', redirectTo: 'patrimonio', pathMatch: 'full' },
+  { path: 'assets/cadastro', redirectTo: 'patrimonio/editar', pathMatch: 'full' },
   { path: 'market', redirectTo: 'descobrir/oportunidades', pathMatch: 'full' },
   { path: 'config', redirectTo: 'voce/preferencias', pathMatch: 'full' },
-  { path: 'strategy', redirectTo: 'estrategia', pathMatch: 'full' },
+  { path: 'strategy', redirectTo: 'sobra/desvio', pathMatch: 'full' },
 
-  { path: '**', redirectTo: 'hoje' },
+  { path: '**', redirectTo: 'mes' },
 ];

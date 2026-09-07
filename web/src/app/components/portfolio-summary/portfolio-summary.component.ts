@@ -59,7 +59,7 @@ interface HealthDimension {
           Adicione uma posição — ações, FIIs, BDRs, ETFs ou renda fixa — e o fiance passa a marcar
           tudo a mercado, calcular preço justo e avaliar a saúde da carteira.
         </p>
-        <a routerLink="/carteira/editar" class="btn-primary no-underline"
+        <a routerLink="/patrimonio/editar" class="btn-primary no-underline"
           >Adicionar primeira posição</a
         >
       </section>
@@ -102,7 +102,7 @@ interface HealthDimension {
         <section class="fi-block">
           <div class="flex items-baseline justify-between gap-3 mb-4">
             <p class="fi-eyebrow text-ink-3 m-0">Alocação × meta</p>
-            <a routerLink="/estrategia/metas" class="fi-caption text-brand no-underline">
+            <a routerLink="/sobra/metas" class="fi-caption text-brand no-underline">
               Ajustar metas →
             </a>
           </div>
@@ -126,9 +126,9 @@ interface HealthDimension {
               icon="target"
               title="Nenhuma meta de alocação definida"
               reason="Sem meta, o fiance mostra onde seu dinheiro está, mas não tem contra o que comparar — e desvio de uma meta que não existe seria número inventado."
-              nextStep="Defina o peso que cada classe deveria ter na carteira. Leva um minuto e passa a valer para Hoje, Estratégia e o aporte."
+              nextStep="Defina o peso que cada classe deveria ter na carteira. Leva um minuto e passa a valer para o Mês, a Sobra e o aporte."
               actionLabel="Definir metas"
-              actionRoute="/estrategia/metas"
+              actionRoute="/sobra/metas"
             />
           }
         </section>
@@ -219,7 +219,7 @@ interface HealthDimension {
             class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-hairline sm:divide-y-0"
           >
             <li>
-              <a routerLink="/carteira/posicoes" class="menu-item no-underline">
+              <a routerLink="/patrimonio/posicoes" class="menu-item no-underline">
                 <span class="fi-body flex-1 min-w-0">Todas as posições, linha a linha</span>
                 <lucide-icon
                   name="chevron-right"
@@ -230,7 +230,7 @@ interface HealthDimension {
               </a>
             </li>
             <li>
-              <a routerLink="/carteira/encerradas" class="menu-item no-underline">
+              <a routerLink="/patrimonio/encerradas" class="menu-item no-underline">
                 <span class="fi-body flex-1 min-w-0">O que eu já vendi</span>
                 <lucide-icon
                   name="chevron-right"
@@ -274,7 +274,7 @@ interface HealthDimension {
               </button>
             </li>
             <li>
-              <a routerLink="/carteira/editar" class="menu-item no-underline">
+              <a routerLink="/patrimonio/editar" class="menu-item no-underline">
                 <span class="fi-body flex-1 min-w-0">Editar a carteira</span>
                 <lucide-icon
                   name="chevron-right"

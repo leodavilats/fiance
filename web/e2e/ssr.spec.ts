@@ -33,7 +33,7 @@ test.describe('renderização no servidor', () => {
   }
 
   test('rota de sessão continua sendo casca, e não vaza conteúdo', async ({ request }) => {
-    const html = await (await request.get('/hoje')).text();
+    const html = await (await request.get('/mes')).text();
 
     expect(html).not.toContain('Termos de Uso');
     expect(dentroDoAppRoot(html), 'rota de sessão não pode renderizar no servidor').toBe('');

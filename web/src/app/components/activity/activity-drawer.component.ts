@@ -55,7 +55,7 @@ import { ActivityFeedComponent } from './activity-feed.component';
           <app-activity-feed />
 
           <a
-            routerLink="/hoje/atividade"
+            routerLink="/mes/atividade"
             class="btn-secondary no-underline mt-6 w-full"
             (click)="activity.hide()"
           >

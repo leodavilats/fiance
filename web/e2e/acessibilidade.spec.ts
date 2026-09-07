@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { entrarComo, salvarPosicao } from './sessao';
 
-const DESTINOS = ['/hoje', '/carteira', '/descobrir', '/estrategia', '/voce'];
+const DESTINOS = ['/mes', '/sobra', '/patrimonio', '/descobrir', '/voce'];
 
 test.describe('diálogo prende e devolve o foco', () => {
   test('o drawer de atividade não deixa o Tab escapar, e devolve o foco ao gatilho', async ({
     page,
   }) => {
     await entrarComo(page, 'e2e_dialogo');
-    await page.goto('/hoje');
+    await page.goto('/mes');
 
     const gatilho = page.getByRole('button', { name: 'Abrir atividade recente' });
     await gatilho.click();
@@ -36,7 +36,7 @@ test.describe('diálogo prende e devolve o foco', () => {
 
   test('a busca global fecha no Esc sem perder o foco na página', async ({ page }) => {
     await entrarComo(page, 'e2e_busca');
-    await page.goto('/hoje');
+    await page.goto('/mes');
 
     await page.keyboard.press('Control+k');
     await expect(page.locator('[role="dialog"]').first()).toBeVisible();
@@ -70,7 +70,7 @@ test.describe('o gráfico e a tabela contam a mesma coisa', () => {
     await entrarComo(page, 'e2e_grafico');
     await salvarPosicao(page, 'e2e_grafico', 'PETR4', 100, 30);
 
-    await page.goto('/carteira/desempenho');
+    await page.goto('/patrimonio/desempenho');
 
     const abrir = page.getByRole('button', { name: /série em tabela/i });
     if ((await abrir.count()) === 0) test.skip();
@@ -109,7 +109,7 @@ test.describe('reflow', () => {
   test('com zoom de 200% o conteúdo continua na coluna', async ({ page }) => {
     await entrarComo(page, 'e2e_zoom');
     await page.setViewportSize({ width: 640, height: 512 });
-    await page.goto('/carteira');
+    await page.goto('/patrimonio');
     await expect(page.locator('header')).toBeVisible();
 
     const vaza = await page.evaluate(
@@ -125,7 +125,7 @@ test.describe('movimento reduzido', () => {
     const page = await contexto.newPage();
 
     await entrarComo(page, 'e2e_movimento');
-    await page.goto('/hoje');
+    await page.goto('/mes');
     await expect(page.locator('header')).toBeVisible();
 
     const animados = await page.evaluate(

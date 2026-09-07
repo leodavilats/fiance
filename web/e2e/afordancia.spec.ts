@@ -126,7 +126,7 @@ test('a barra de progresso distingue preenchido de vazio', async ({ page }) => {
   await instalarMedidor(page);
   await entrarComo(page, 'e2e_progresso');
   await salvarPosicao(page, 'e2e_progresso', 'PETR4', 100, 30);
-  await page.goto('/estrategia/metas');
+  await page.goto('/sobra/metas');
   await expect(page.locator('header')).toBeVisible();
   await page.waitForLoadState('networkidle');
 
@@ -181,7 +181,7 @@ test('a barra de progresso distingue preenchido de vazio', async ({ page }) => {
 test('utilitaria de layout vence a classe de controle', async ({ page }) => {
   await entrarComo(page, 'e2e_camada');
   await page.setViewportSize({ width: 320, height: 720 });
-  await page.goto('/hoje');
+  await page.goto('/mes');
   await expect(page.locator('header')).toBeVisible();
   await page.waitForLoadState('networkidle');
 

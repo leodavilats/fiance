@@ -58,7 +58,7 @@ const KIND_LABEL: Record<string, string> = {
         reason="A atividade reúne mudanças de veredito, proventos recebidos, desvios de meta e vencimentos — e nenhum desses eventos ocorreu desde que sua carteira foi cadastrada."
         nextStep="Assim que houver movimento de preço relevante ou um provento lançado, ele aparece aqui."
         actionLabel="Ver a carteira"
-        actionRoute="/carteira"
+        actionRoute="/patrimonio"
       />
     } @else {
       @for (group of groups(); track group.when) {
@@ -83,7 +83,7 @@ const KIND_LABEL: Record<string, string> = {
       <p class="fi-caption text-ink-3 m-0 mt-6 pt-4 border-t border-hairline">
         A atividade cobre o que o fiance consegue observar: veredito, alocação, vencimento e
         proventos lançados.
-        <a routerLink="/carteira/proventos" class="text-brand">Ver todos os proventos →</a>
+        <a routerLink="/patrimonio/proventos" class="text-brand">Ver todos os proventos →</a>
       </p>
     }
   `,

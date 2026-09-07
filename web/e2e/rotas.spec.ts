@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { entrarComo, salvarPosicao } from './sessao';
 
-const DESTINOS = ['/hoje', '/carteira', '/descobrir', '/estrategia', '/voce'];
+const DESTINOS = ['/mes', '/sobra', '/patrimonio', '/descobrir', '/voce'];
 
-const ANINHADAS = ['/carteira/posicoes', '/descobrir/oportunidades', '/voce/preferencias'];
+const ANINHADAS = ['/patrimonio/posicoes', '/descobrir/oportunidades', '/voce/preferencias'];
 
 test.describe('sem sessão', () => {
   test('a entrada é a tela de login', async ({ page }) => {
-    await page.goto('/hoje');
+    await page.goto('/mes');
 
     await expect(page).toHaveURL(/\/login/);
   });
@@ -40,7 +40,7 @@ test.describe('a carteira do servidor chega na tela', () => {
     await entrarComo(page, 'e2e_carteira');
     await salvarPosicao(page, 'e2e_carteira', 'PETR4', 100, 30);
 
-    await page.goto('/carteira/posicoes');
+    await page.goto('/patrimonio/posicoes');
 
     await expect(page.getByText('PETR4').first()).toBeVisible({ timeout: 30_000 });
   });

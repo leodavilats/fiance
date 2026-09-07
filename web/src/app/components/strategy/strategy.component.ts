@@ -36,7 +36,10 @@ interface ProjectionRow {
   ],
   template: `
     <div class="max-w-reading">
-      <app-page-header title="Estratégia" question="Qual deveria ser meu próximo movimento?" />
+      <app-page-header
+        title="Alocação × meta"
+        question="Onde minha carteira está longe do que eu declarei?"
+      />
 
       @if (strategy(); as s) {
         <section>
@@ -64,7 +67,7 @@ interface ProjectionRow {
 
           <div class="flex flex-wrap items-center gap-3 mt-4">
             @if (s.cash_available >= 100) {
-              <a routerLink="/estrategia/aporte" class="btn-primary no-underline">
+              <a routerLink="/sobra/aporte" class="btn-primary no-underline">
                 Distribuir este caixa
               </a>
             } @else {
@@ -92,7 +95,7 @@ interface ProjectionRow {
           <section class="fi-block">
             <div class="flex items-baseline justify-between gap-3 mb-1">
               <h2 class="fi-title text-ink m-0">Onde você está fora da meta</h2>
-              <a routerLink="/estrategia/metas" class="fi-caption text-brand no-underline">
+              <a routerLink="/sobra/metas" class="fi-caption text-brand no-underline">
                 Ajustar metas →
               </a>
             </div>
@@ -229,7 +232,7 @@ interface ProjectionRow {
                       </p>
                       @if (sug.ticker === 'RENDA_FIXA') {
                         <a
-                          routerLink="/estrategia/renda-fixa"
+                          routerLink="/sobra/renda-fixa"
                           class="fi-caption text-brand no-underline"
                         >
                           Comparar títulos →

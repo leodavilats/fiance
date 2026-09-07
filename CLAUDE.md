@@ -401,9 +401,13 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
 
 ### Interface — web e mobile
 
-- **Cinco destinos por intenção**, iguais nas duas plataformas: `/hoje`, `/carteira`, `/descobrir`,
-  `/estrategia`, `/voce`, mais `/ativo/:ticker` como camada. URLs antigas seguem como redirect.
-  Meta mora em Estratégia porque é a referência que produz o desvio.
+- **A navegação é o ciclo do dinheiro**: `/mes` → `/sobra` → `/patrimonio`, mais `/descobrir` e
+  `/voce`, e `/ativo/:ticker` como camada. Continuam cinco destinos, e as URLs antigas
+  (`/hoje`, `/carteira/*`, `/estrategia/*`) seguem como redirect — link salvo é contrato.
+  `Hoje` saiu porque respondia "o que mudou", e isso é feed, não lugar: o feed vive no `Mês`, e
+  o patrimônio e o veredito de saúde já existiam no `Patrimônio`. `Estratégia` se dissolveu —
+  sem aporte, meta e projeção, sobrava o desvio de alocação, que é leitura de patrimônio e vive
+  em `/sobra/desvio`.
 - **A camada visual é escrita; a régua é gerada.** Cor, tipografia, espaço, raio, motion e
   densidade vivem em [web/src/foundation.css](web/src/foundation.css), escrito à mão, com espelho
   à mão em [mobile/lib/core/design_tokens.dart](mobile/lib/core/design_tokens.dart). O que continua

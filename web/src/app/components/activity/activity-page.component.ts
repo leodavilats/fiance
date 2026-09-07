@@ -11,7 +11,7 @@ import { ActivityFeedComponent } from './activity-feed.component';
   template: `
     <div class="max-w-reading">
       <a
-        routerLink="/hoje"
+        routerLink="/mes"
         class="fi-caption text-ink-2 no-underline inline-flex items-center gap-1"
       >
         <lucide-icon name="arrow-left" size="12" aria-hidden="true"></lucide-icon>

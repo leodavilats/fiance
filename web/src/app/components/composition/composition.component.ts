@@ -24,7 +24,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
         reason="A composição mostra como o seu dinheiro está distribuído — e ainda não há posição cadastrada para distribuir."
         nextStep="Cadastre o que você já tem; a composição, a saúde e a estratégia passam a existir a partir disso."
         actionLabel="Cadastrar carteira"
-        actionRoute="/carteira/editar"
+        actionRoute="/patrimonio/editar"
       />
     } @else {
       <div class="max-w-reading">
@@ -99,7 +99,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
                 <p class="fi-caption text-ink-3 m-0 mt-5 pt-4 border-t border-hairline">
                   Nenhuma meta definida para estas classes — sem meta, a composição diz onde o
                   dinheiro está, mas não se está certo.
-                  <a routerLink="/estrategia/metas" class="text-brand">Definir metas →</a>
+                  <a routerLink="/sobra/metas" class="text-brand">Definir metas →</a>
                 </p>
               }
             }

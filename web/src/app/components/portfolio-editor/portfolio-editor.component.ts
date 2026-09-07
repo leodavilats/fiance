@@ -37,7 +37,7 @@ interface AssetRow {
           Cada linha é salva quando você clica em salvar — nada é gravado enquanto você digita.
         </p>
       </div>
-      <a routerLink="/carteira" class="btn-secondary">
+      <a routerLink="/patrimonio" class="btn-secondary">
         <lucide-icon name="arrow-left" size="14"></lucide-icon> Voltar para a carteira
       </a>
     </div>

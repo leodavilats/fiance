@@ -32,6 +32,19 @@ async function cadastrarDivida(
   }
 }
 
+/*
+ * Um titular por EXECUCAO, e nao so por teste.
+ *
+ * O banco do e2e persiste entre rodadas, entao um id fixo faz o lancamento da execucao
+ * anterior somar ao desta -- o teste passa na primeira vez e falha na segunda, que e a pior
+ * forma de falhar.
+ */
+const RODADA = Date.now().toString(36);
+
+function titular(nome: string): string {
+  return `e2e_${nome}_${RODADA}`;
+}
+
 function mesCorrente(): string {
   const agora = new Date();
   return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
@@ -43,7 +56,7 @@ function dia(n: number): string {
 
 test.describe('a ponte responde em vez de perguntar', () => {
   test('sem caixa lançado, a tela diz por que não pode responder', async ({ page }) => {
-    const uid = 'e2e_sobra_vazia';
+    const uid = titular('sobra_vazia');
     await entrarComo(page, uid);
     await page.goto('/sobra');
     await expect(page.locator('header')).toBeVisible();
@@ -59,7 +72,7 @@ test.describe('a ponte responde em vez de perguntar', () => {
   });
 
   test('com caixa lançado, a sobra sai sem nenhum campo a preencher', async ({ page }) => {
-    const uid = 'e2e_sobra_cheia';
+    const uid = titular('sobra_cheia');
     await entrarComo(page, uid);
     await lancar(page, uid, {
       kind: 'income',
@@ -90,7 +103,7 @@ test.describe('a ponte responde em vez de perguntar', () => {
   });
 
   test('dívida cara vem antes do aporte, e diz o que a derrubaria', async ({ page }) => {
-    const uid = 'e2e_sobra_divida';
+    const uid = titular('sobra_divida');
     await entrarComo(page, uid);
     await lancar(page, uid, {
       kind: 'income',
@@ -123,7 +136,7 @@ test.describe('a ponte responde em vez de perguntar', () => {
   test('dívida que come a sobra inteira termina sem aporte, e a tela diz que é resposta', async ({
     page,
   }) => {
-    const uid = 'e2e_sobra_sem_aporte';
+    const uid = titular('sobra_sem_aporte');
     await entrarComo(page, uid);
     await lancar(page, uid, {
       kind: 'income',
@@ -151,7 +164,7 @@ test.describe('a ponte responde em vez de perguntar', () => {
 
 test.describe('o mês separa fato de projeção', () => {
   test('livre agora não desconta estimativa, e a conta a vencer aparece', async ({ page }) => {
-    const uid = 'e2e_mes';
+    const uid = titular('mes');
     await entrarComo(page, uid);
     await lancar(page, uid, {
       kind: 'income',
@@ -179,7 +192,7 @@ test.describe('o mês separa fato de projeção', () => {
   });
 
   test('marcar como paga move a conta do comprometido para o pago', async ({ page }) => {
-    const uid = 'e2e_mes_pagar';
+    const uid = titular('mes_pagar');
     await entrarComo(page, uid);
     await lancar(page, uid, {
       kind: 'income',
@@ -207,7 +220,7 @@ test.describe('o mês separa fato de projeção', () => {
   });
 
   test('sem lançamento nenhum, o mês é a porta de entrada', async ({ page }) => {
-    await entrarComo(page, 'e2e_mes_vazio');
+    await entrarComo(page, titular('mes_vazio'));
     await page.goto('/mes');
     await expect(page.locator('header')).toBeVisible();
     await page.waitForLoadState('networkidle');
@@ -219,7 +232,7 @@ test.describe('o mês separa fato de projeção', () => {
 
 test.describe('a dívida se classifica por custo, não por tipo', () => {
   test('sem taxa informada não há classe, e a tela diz isso', async ({ page }) => {
-    const uid = 'e2e_divida_sem_taxa';
+    const uid = titular('divida_sem_taxa');
     await entrarComo(page, uid);
     await cadastrarDivida(page, uid, {
       kind: 'parcelamento',
@@ -236,7 +249,7 @@ test.describe('a dívida se classifica por custo, não por tipo', () => {
   });
 
   test('o mesmo tipo muda de leitura com a taxa', async ({ page }) => {
-    const uid = 'e2e_divida_por_custo';
+    const uid = titular('divida_por_custo');
     await entrarComo(page, uid);
     await cadastrarDivida(page, uid, {
       kind: 'credito_pessoal',
@@ -268,7 +281,7 @@ test.describe('a dívida se classifica por custo, não por tipo', () => {
 
 test.describe('lançar', () => {
   test('o formulário lança e o mês passa a mostrar', async ({ page }) => {
-    await entrarComo(page, 'e2e_lancar');
+    await entrarComo(page, titular('lancar'));
     await page.goto('/mes/lancar');
     await expect(page.locator('header')).toBeVisible();
     await page.waitForLoadState('networkidle');
@@ -289,7 +302,7 @@ test.describe('lançar', () => {
   });
 
   test('provento não está entre as categorias de entrada', async ({ page }) => {
-    await entrarComo(page, 'e2e_lancar_provento');
+    await entrarComo(page, titular('lancar_provento'));
     await page.goto('/mes/lancar');
     await expect(page.locator('header')).toBeVisible();
     await page.waitForLoadState('networkidle');

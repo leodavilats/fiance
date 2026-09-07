@@ -14,11 +14,11 @@ import { SectionNavComponent, SectionNavItem } from './section-nav.component';
 })
 export class PortfolioShellComponent {
   readonly items: readonly SectionNavItem[] = [
-    { path: '/carteira', label: 'Resumo', icon: 'wallet' },
-    { path: '/carteira/composicao', label: 'Composição', icon: 'chart-pie' },
-    { path: '/carteira/desempenho', label: 'Desempenho', icon: 'chart-line' },
-    { path: '/carteira/proventos', label: 'Proventos', icon: 'coins' },
-    { path: '/carteira/posicoes', label: 'Posições', icon: 'table' },
-    { path: '/carteira/encerradas', label: 'Encerradas', icon: 'circle-check' },
+    { path: '/patrimonio', label: 'Resumo', icon: 'wallet' },
+    { path: '/patrimonio/composicao', label: 'Composição', icon: 'chart-pie' },
+    { path: '/patrimonio/desempenho', label: 'Desempenho', icon: 'chart-line' },
+    { path: '/patrimonio/proventos', label: 'Proventos', icon: 'coins' },
+    { path: '/patrimonio/posicoes', label: 'Posições', icon: 'table' },
+    { path: '/patrimonio/encerradas', label: 'Encerradas', icon: 'circle-check' },
   ];
 }

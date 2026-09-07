@@ -113,7 +113,7 @@ export class GlobalSearchComponent {
   private readonly cursor = signal(0);
 
   private routeFor(kind: string, ref: string): string {
-    return kind === 'fixed_income' ? '/carteira/posicoes' : `/ativo/${ref}`;
+    return kind === 'fixed_income' ? '/patrimonio/posicoes' : `/ativo/${ref}`;
   }
 
   readonly rows = computed<Row[]>(() => {

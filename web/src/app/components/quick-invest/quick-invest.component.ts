@@ -186,7 +186,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
             <app-empty-state
               title="Nenhuma sugestão para este valor"
               reason="O valor informado não cobre o lote mínimo de nenhum ativo que se encaixe na sua alocação alvo."
-              nextStep="Tente um valor maior, ou revise a alocação alvo em Estratégia."
+              nextStep="Tente um valor maior, ou revise a alocação alvo em Sobra › Metas."
             />
           }
 

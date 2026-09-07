@@ -40,7 +40,7 @@ describe('renderização no servidor', () => {
   });
 
   it('nenhuma rota de sessão é renderizada no servidor', () => {
-    const deSessao = ['hoje', 'carteira', 'descobrir', 'estrategia', 'voce'];
+    const deSessao = ['mes', 'sobra', 'patrimonio', 'descobrir', 'voce'];
     const paths = serverRoutes
       .filter(route => route.renderMode === RenderMode.Server)
       .map(route => route.path);
@@ -58,11 +58,48 @@ describe('renderização no servidor', () => {
   });
 
   it('as demais rotas de topo continuam protegidas', () => {
-    const protegidas = ['hoje', 'carteira', 'descobrir', 'estrategia', 'voce'];
+    const protegidas = ['mes', 'sobra', 'patrimonio', 'descobrir', 'voce'];
 
     for (const path of protegidas) {
       const route = routes.find(r => r.path === path);
       expect(route?.canActivate, path).toBeDefined();
+    }
+  });
+
+  it('as URLs da IA anterior continuam resolvendo', () => {
+    /*
+     * Link salvo é contrato. A transição anterior (Mercado/Meus Ativos → cinco destinos por
+     * intenção) já seguiu esta regra, e quebrar agora significaria devolver 404 a quem tem a
+     * carteira nos favoritos.
+     */
+    const antigas: Record<string, string> = {
+      hoje: 'mes',
+      'hoje/atividade': 'mes/atividade',
+      carteira: 'patrimonio',
+      'carteira/posicoes': 'patrimonio/posicoes',
+      'carteira/editar': 'patrimonio/editar',
+      estrategia: 'sobra/desvio',
+      'estrategia/aporte': 'sobra/aporte',
+      'estrategia/metas': 'sobra/metas',
+      'estrategia/renda-fixa': 'sobra/renda-fixa',
+      'estrategia/projecao': 'sobra/projecao',
+    };
+
+    for (const [de, para] of Object.entries(antigas)) {
+      const route = routes.find(r => r.path === de);
+      expect(route, de).toBeDefined();
+      expect(route?.redirectTo, de).toBe(para);
+    }
+  });
+
+  it('nenhum destino da IA nova ficou sem tela', () => {
+    for (const destino of ['mes', 'sobra', 'patrimonio', 'descobrir', 'voce']) {
+      const route = routes.find(r => r.path === destino);
+      expect(route, destino).toBeDefined();
+      expect(
+        Boolean(route?.loadComponent || route?.children?.length),
+        `${destino} precisa de componente ou de filhos`
+      ).toBe(true);
     }
   });
 });

@@ -7,17 +7,18 @@ import { SectionNavComponent, SectionNavItem } from './section-nav.component';
   standalone: true,
   imports: [RouterOutlet, SectionNavComponent],
   template: `
-    <app-section-nav [items]="items" label="Estratégia">
+    <app-section-nav [items]="items" label="Sobra">
       <router-outlet />
     </app-section-nav>
   `,
 })
 export class StrategyShellComponent {
   readonly items: readonly SectionNavItem[] = [
-    { path: '/estrategia', label: 'Plano', icon: 'target' },
-    { path: '/estrategia/aporte', label: 'Aporte', icon: 'lightbulb' },
-    { path: '/estrategia/metas', label: 'Metas', icon: 'flag' },
-    { path: '/estrategia/renda-fixa', label: 'Renda fixa', icon: 'landmark' },
-    { path: '/estrategia/projecao', label: 'Projeção', icon: 'calendar-clock' },
+    { path: '/sobra', label: 'A ordem', icon: 'hand-coins' },
+    { path: '/sobra/aporte', label: 'Aporte', icon: 'lightbulb' },
+    { path: '/sobra/metas', label: 'Metas', icon: 'flag' },
+    { path: '/sobra/desvio', label: 'Alocação × meta', icon: 'target' },
+    { path: '/sobra/renda-fixa', label: 'Renda fixa', icon: 'landmark' },
+    { path: '/sobra/projecao', label: 'Projeção', icon: 'calendar-clock' },
   ];
 }

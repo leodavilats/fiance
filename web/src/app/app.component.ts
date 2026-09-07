@@ -37,11 +37,18 @@ interface NavDestination {
   readonly icon: string;
 }
 
+/**
+ * A navegação é o ciclo do dinheiro: renda → gasto → **sobra** → aporte → patrimônio.
+ *
+ * `Hoje` saiu porque respondia "o que mudou", e isso é um feed, não um lugar. `Estratégia` se
+ * dissolveu: sem aporte, meta e projeção, sobrava o desvio, que é leitura de patrimônio.
+ * Continuam cinco.
+ */
 const DESTINATIONS: readonly NavDestination[] = [
-  { path: '/hoje', label: 'Hoje', icon: 'sunrise' },
-  { path: '/carteira', label: 'Carteira', icon: 'wallet' },
+  { path: '/mes', label: 'Mês', icon: 'calendar-clock' },
+  { path: '/sobra', label: 'Sobra', icon: 'hand-coins' },
+  { path: '/patrimonio', label: 'Patrimônio', icon: 'wallet' },
   { path: '/descobrir', label: 'Descobrir', icon: 'compass' },
-  { path: '/estrategia', label: 'Estratégia', icon: 'target' },
   { path: '/voce', label: 'Você', icon: 'sliders-horizontal' },
 ];
 
@@ -83,7 +90,7 @@ const DESTINATIONS: readonly NavDestination[] = [
         <div
           class="max-w-dense mx-auto px-3 sm:px-5 flex items-center justify-between gap-4 h-14 sm:h-16"
         >
-          <a routerLink="/hoje" class="flex items-center gap-2.5 no-underline" title="fiance">
+          <a routerLink="/mes" class="flex items-center gap-2.5 no-underline" title="fiance">
             <app-logo [size]="30" />
             <app-wordmark [height]="18" [decorative]="true" />
           </a>

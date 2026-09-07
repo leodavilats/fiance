@@ -170,7 +170,7 @@ interface Fundamental {
             <button type="button" class="btn-secondary" (click)="createAlert()">
               <lucide-icon name="bell" size="15"></lucide-icon> Criar alerta
             </button>
-            <a routerLink="/carteira/editar" class="btn-secondary no-underline">
+            <a routerLink="/patrimonio/editar" class="btn-secondary no-underline">
               <lucide-icon [name]="posicao() ? 'pencil' : 'plus'" size="15"></lucide-icon>
               {{ posicao() ? 'Registrar operação' : 'Adicionar à carteira' }}
             </a>

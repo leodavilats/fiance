@@ -196,7 +196,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
           <h2 class="fi-title text-ink m-0">
             Ativos negociados <span class="text-ink-3 fi-num">({{ negociadosCount() }})</span>
           </h2>
-          <a routerLink="/carteira/editar" class="fi-caption text-brand no-underline">
+          <a routerLink="/patrimonio/editar" class="fi-caption text-brand no-underline">
             Editar carteira →
           </a>
         </div>

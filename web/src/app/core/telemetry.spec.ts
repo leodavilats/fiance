@@ -14,7 +14,7 @@ describe('telemetria não vaza carteira', () => {
     });
 
     it('a rota continua reconhecível, senão o erro não tem onde ser procurado', () => {
-      expect(limparCaminho('/carteira/encerradas')).toBe('/carteira/encerradas');
+      expect(limparCaminho('/patrimonio/encerradas')).toBe('/patrimonio/encerradas');
     });
 
     it('mantém o host e descarta query e âncora', () => {

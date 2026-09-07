@@ -31,7 +31,7 @@ const PASSOS: readonly Passo[] = [
       'Digite uma posição, cole a lista ou suba o CSV da corretora. Com quatro ativos o sistema ' +
       'já consegue emitir uma leitura de risco.',
     acaoLabel: 'Importar operações',
-    acaoRota: '/carteira/importar',
+    acaoRota: '/patrimonio/importar',
     icone: 'wallet',
   },
   {
@@ -41,7 +41,7 @@ const PASSOS: readonly Passo[] = [
       'Uma meta de alocação basta. É ela que transforma "como estou" em "o que faço" — sem ela ' +
       'não há desvio a apontar.',
     acaoLabel: 'Definir metas',
-    acaoRota: '/estrategia',
+    acaoRota: '/patrimonio',
     icone: 'target',
   },
 ];
@@ -199,10 +199,10 @@ export class OnboardingComponent implements OnInit {
   concluir(pulou: boolean): void {
     this.finalizando.set(true);
     this.api.completeOnboarding(pulou).subscribe({
-      next: () => void this.router.navigateByUrl('/hoje'),
+      next: () => void this.router.navigateByUrl('/mes'),
       error: () => {
         this.finalizando.set(false);
-        void this.router.navigateByUrl('/hoje');
+        void this.router.navigateByUrl('/mes');
       },
     });
   }

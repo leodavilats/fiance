@@ -10,6 +10,7 @@ import {
   fiCategoriasDeDespesa,
   fiCategoriasDeEntrada,
 } from '../../core';
+import { MudouFeedComponent } from '../mudou-feed/mudou-feed.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 
@@ -21,7 +22,14 @@ interface LinhaDoMes {
 @Component({
   selector: 'app-mes',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule, PageHeaderComponent, SkeletonComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    LucideAngularModule,
+    MudouFeedComponent,
+    PageHeaderComponent,
+    SkeletonComponent,
+  ],
   template: `
     <app-page-header title="Mês" question="Como estou agora, e o que exige atenção?" />
 
@@ -74,6 +82,11 @@ interface LinhaDoMes {
             }
             <a routerLink="/sobra" class="btn-link">decidir o que fazer com ela</a>
           </p>
+        </section>
+
+        <section class="fi-block">
+          <p class="fi-eyebrow text-ink-3 m-0">O que mudou</p>
+          <app-mudou-feed />
         </section>
 
         @if (atencao().length > 0) {

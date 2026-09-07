@@ -78,7 +78,7 @@ const KIND_LABEL: Record<TransactionKind, string> = {
             reason="O livro-razão registra todo movimento da carteira, e ainda não houve nenhum."
             nextStep="Assim que você salvar uma posição ou registrar uma venda, o movimento aparece aqui."
             actionLabel="Adicionar uma posição"
-            actionRoute="/carteira/editar"
+            actionRoute="/patrimonio/editar"
           />
         } @else {
           @if (reconciliation(); as rec) {

@@ -49,9 +49,8 @@ const RISK_PROFILE_OPTIONS: { key: RiskProfile; label: string }[] = [
           />
         </div>
         <p class="fi-caption text-ink-2 mt-1.5">
-          É o dinheiro que ainda não está investido. Fica salvo aqui e alimenta o plano em
-          Estratégia e a distribuição de aporte — não é lançamento na carteira, e nada é comprado
-          por você.
+          É o dinheiro que ainda não está investido. Fica salvo aqui e alimenta o plano em a Sobra e
+          a distribuição de aporte — não é lançamento na carteira, e nada é comprado por você.
         </p>
       </div>
       <div class="fi-block">

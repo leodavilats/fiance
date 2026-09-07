@@ -104,7 +104,7 @@ describe('onboarding', () => {
       component.concluir(true);
 
       expect(completou).toEqual([true]);
-      expect(navegacoes).toContain('/hoje');
+      expect(navegacoes).toContain('/mes');
     });
 
     it('falha ao carimbar não prende ninguém na tela de boas-vindas', () => {
@@ -114,7 +114,7 @@ describe('onboarding', () => {
 
       component.concluir(false);
 
-      expect(navegacoes).toContain('/hoje');
+      expect(navegacoes).toContain('/mes');
     });
 
     it('o backend fora do ar não deixa a tela sem passo', () => {

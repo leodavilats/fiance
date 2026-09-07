@@ -2,11 +2,11 @@ import { importProvidersFrom, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import {
+  CalendarClock,
   ChartCandlestick,
   Landmark,
   LucideAngularModule,
   Search,
-  Sunrise,
   Wallet,
 } from 'lucide-angular';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -28,7 +28,7 @@ function fakeSearch(
     mine: signal(options.mine ?? []),
     tickers: signal(options.tickers ?? []),
     destinations: () => [
-      { route: '/hoje', label: 'Hoje', section: 'Hoje', keywords: '', icon: 'sunrise' },
+      { route: '/mes', label: 'Mês', section: 'Mês', keywords: '', icon: 'calendar-clock' },
     ],
     show: () => undefined,
     hide: () => undefined,
@@ -43,7 +43,7 @@ function render(options: Parameters<typeof fakeSearch>[0] = {}) {
     providers: [
       provideRouter([]),
       importProvidersFrom(
-        LucideAngularModule.pick({ ChartCandlestick, Landmark, Search, Sunrise, Wallet })
+        LucideAngularModule.pick({ CalendarClock, ChartCandlestick, Landmark, Search, Wallet })
       ),
       { provide: GlobalSearchService, useValue: fakeSearch(options) },
     ],
@@ -112,7 +112,7 @@ describe('busca global', () => {
       const fixture = render({ mine: [RENDA_FIXA] });
       const linha = fixture.componentInstance.rows()[0];
 
-      expect(linha.route).toBe('/carteira/posicoes');
+      expect(linha.route).toBe('/patrimonio/posicoes');
     });
   });
 

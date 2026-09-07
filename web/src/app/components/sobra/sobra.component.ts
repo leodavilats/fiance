@@ -169,7 +169,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
                     <a routerLink="/mes/dividas" class="btn-link mt-3 inline-flex">Ver a dívida</a>
                   }
                   @if (passo.type === 'contribution') {
-                    <a routerLink="/estrategia/aporte" class="btn-link mt-3 inline-flex">
+                    <a routerLink="/sobra/aporte" class="btn-link mt-3 inline-flex">
                       Ver onde aportar
                     </a>
                   }

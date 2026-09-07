@@ -204,7 +204,7 @@ export class LandingComponent {
 
   constructor() {
     if (this.auth.isAuthenticated()) {
-      void this.router.navigateByUrl('/hoje');
+      void this.router.navigateByUrl('/mes');
     }
   }
 

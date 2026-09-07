@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { entrarComo, salvarPosicao } from './sessao';
 
-const DESTINOS = ['/hoje', '/carteira', '/descobrir', '/estrategia', '/voce'];
+const DESTINOS = ['/mes', '/sobra', '/patrimonio', '/descobrir', '/voce'];
 
 async function focoAtual(page: Page): Promise<{ tag: string; nome: string }> {
   return page.evaluate(() => {
@@ -74,7 +74,7 @@ test.describe('a explicação alcança quem usa teclado', () => {
     await entrarComo(page, 'e2e_glossario');
     await salvarPosicao(page, 'e2e_glossario', 'PETR4', 100, 30);
 
-    await page.goto('/carteira/posicoes');
+    await page.goto('/patrimonio/posicoes');
 
     const gatilho = page.locator('app-help-tooltip button').first();
     await expect(gatilho).toBeVisible();
@@ -105,11 +105,11 @@ test.describe('a explicação alcança quem usa teclado', () => {
 test.describe('o foco acompanha a navegação', () => {
   test('trocar de destino leva o foco para o título da tela', async ({ page }) => {
     await entrarComo(page, 'e2e_foco_rota');
-    await page.goto('/hoje');
+    await page.goto('/mes');
     await expect(page.locator('header')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Carteira', exact: true }).first().click();
-    await expect(page).toHaveURL(/\/carteira/);
+    await page.getByRole('link', { name: 'Patrimônio', exact: true }).first().click();
+    await expect(page).toHaveURL(/\/patrimonio/);
 
     const foco = await page.evaluate(() => document.activeElement?.tagName.toLowerCase() ?? '');
     expect(foco, 'depois de navegar o foco deve ir para o <h1> da rota').toBe('h1');
@@ -117,7 +117,7 @@ test.describe('o foco acompanha a navegação', () => {
 
   test('a mudança de tela é anunciada', async ({ page }) => {
     await entrarComo(page, 'e2e_anuncio');
-    await page.goto('/hoje');
+    await page.goto('/mes');
 
     const regiao = page.locator('[role="status"][aria-live="polite"]').first();
     await page.getByRole('link', { name: 'Descobrir', exact: true }).first().click();
