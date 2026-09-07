@@ -22,8 +22,12 @@ test.describe('navegação só por teclado', () => {
     test(`${rota} percorre sem armadilha e com foco sempre visível`, async ({ page }) => {
       await page.goto(rota);
       await expect(page.locator('header')).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
       let visitados = 0;
+      let voltas = 0;
 
       for (let i = 0; i < 60; i++) {
         await page.keyboard.press('Tab');
@@ -36,6 +40,11 @@ test.describe('navegação só por teclado', () => {
           return 'novo';
         });
 
+        if (estado === 'fora') {
+          voltas++;
+          if (voltas > 1) break;
+          continue;
+        }
         if (estado !== 'novo') break;
         visitados++;
 

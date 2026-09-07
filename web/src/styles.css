@@ -518,6 +518,10 @@ textarea.input {
   .spin {
     animation: none;
   }
+
+  [class*='animate-'] {
+    animation: none !important;
+  }
 }
 
 @keyframes fi-drawer-in {
