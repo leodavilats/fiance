@@ -48,3 +48,20 @@ export async function salvarPosicao(
     throw new Error(`falha ao semear ${ticker}: ${resposta.status()} ${await resposta.text()}`);
   }
 }
+
+export async function salvarMeta(
+  page: Page,
+  userId: string,
+  categoria: string,
+  alvoPct: number,
+  alvoValor: number
+): Promise<void> {
+  const resposta = await page.request.put(`${API}/api/goals`, {
+    headers: { Authorization: `Bearer ${tokenPara(userId)}` },
+    data: { goals: [{ category: categoria, target_pct: alvoPct, target_value: alvoValor }] },
+  });
+
+  if (!resposta.ok()) {
+    throw new Error(`falha ao semear meta: ${resposta.status()} ${await resposta.text()}`);
+  }
+}

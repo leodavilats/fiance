@@ -21,10 +21,15 @@ const STATE_VAR: Record<FiState, string> = {
   neutral: '--fi-brand',
 };
 
+/*
+ * A zona inativa deixa o poco aparecer, em vez de pintar tinta cinza.
+ *
+ * Antes toda zona nao-ativa saia em `ink-3` a 70%, o que dava uma barra cinza solida com um
+ * unico bloco colorido: nem se lia a escala nem se lia o valor. As divisas de zona agora sao
+ * tiques finos, que e o "zonas por peso de tinta" que o documento de identidade pedia.
+ */
 export function zoneBackground(zone: RulerZone): string {
-  return zone.active
-    ? `var(${STATE_VAR[zone.state]})`
-    : 'color-mix(in srgb, var(--fi-ink-3) 70%, transparent)';
+  return zone.active ? `var(${STATE_VAR[zone.state]})` : 'transparent';
 }
 
 function cells(domain: RulerDomain): number {

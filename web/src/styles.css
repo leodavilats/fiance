@@ -33,9 +33,9 @@
     @apply w-full font-[inherit];
     border-radius: var(--fi-radius-md);
     padding: 10px 12px;
-    font-size: 0.94rem;
-    background: var(--fi-ground-2);
-    border: 1px solid var(--fi-hairline);
+    font-size: 15px;
+    background: var(--fi-control-fill);
+    border: 1px solid var(--fi-control-border);
     color: var(--fi-ink-1);
     height: 44px;
     line-height: 1.5;
@@ -43,6 +43,31 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     box-sizing: border-box;
+    transition:
+      border-color var(--fi-motion-fast) ease,
+      background var(--fi-motion-fast) ease;
+  }
+
+  input[type='text']:hover:not(:disabled),
+  input[type='number']:hover:not(:disabled),
+  input[type='date']:hover:not(:disabled),
+  select:hover:not(:disabled),
+  textarea:hover:not(:disabled) {
+    border-color: var(--fi-control-border-hover);
+  }
+
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    background: var(--fi-control-fill-hover);
+    border-color: var(--fi-hairline-strong);
+    color: var(--fi-ink-disabled);
+    cursor: not-allowed;
+  }
+
+  ::placeholder {
+    color: var(--fi-ink-3);
+    opacity: 1;
   }
 
   select {
@@ -63,9 +88,9 @@
   @apply w-full font-[inherit];
   border-radius: var(--fi-radius-md) !important;
   padding: 10px 12px !important;
-  font-size: 0.94rem !important;
-  background: var(--fi-ground-2) !important;
-  border: 1px solid var(--fi-hairline) !important;
+  font-size: 15px !important;
+  background: var(--fi-control-fill) !important;
+  border: 1px solid var(--fi-control-border) !important;
   color: var(--fi-ink-1) !important;
   height: 44px !important;
   line-height: 1.5 !important;
@@ -73,6 +98,18 @@
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   box-sizing: border-box !important;
+  transition:
+    border-color var(--fi-motion-fast) ease,
+    background var(--fi-motion-fast) ease;
+}
+.input:hover:not(:disabled):not(:focus) {
+  border-color: var(--fi-control-border-hover) !important;
+}
+.input:disabled {
+  background: var(--fi-control-fill-hover) !important;
+  border-color: var(--fi-hairline-strong) !important;
+  color: var(--fi-ink-disabled) !important;
+  cursor: not-allowed;
 }
 select.input {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='currentColor' d='M6 8L2 4h8z'/%3E%3C/svg%3E") !important;
@@ -83,6 +120,7 @@ select.input {
 .input:focus-visible {
   outline: var(--fi-focus-ring) solid var(--fi-brand) !important;
   outline-offset: calc(var(--fi-focus-offset) * -1) !important;
+  border-color: var(--fi-brand) !important;
 }
 textarea.input {
   height: auto !important;
@@ -106,8 +144,8 @@ textarea.input {
   border: 0;
   background: transparent;
   font-family: var(--fi-font-sans);
-  font-size: 14px;
-  line-height: 21px;
+  font-size: 15px;
+  line-height: 23px;
   color: var(--fi-ink-1);
   outline: none;
 }
@@ -120,38 +158,64 @@ textarea.input {
 }
 
 .btn-icon {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 36px;
   height: 36px;
   flex: 0 0 auto;
   border-radius: var(--fi-radius-md);
-  border: 1px solid var(--fi-hairline);
-  background: transparent;
+  border: 1px solid var(--fi-control-border);
+  background: var(--fi-control-fill);
   color: var(--fi-ink-2);
   cursor: pointer;
-  transition: color var(--fi-motion-fast) ease;
+  transition:
+    color var(--fi-motion-fast) ease,
+    background var(--fi-motion-fast) ease,
+    border-color var(--fi-motion-fast) ease;
 }
+
+/* O desenho tem 36px; o alvo de toque, os 44px que o sistema declara. Crescer a caixa
+   reflowaria toda barra de ferramentas, então o que cresce é a área. */
+.btn-icon::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
 .btn-icon:hover:not(:disabled) {
   color: var(--fi-ink-1);
-  background: var(--fi-ground-2);
+  background: var(--fi-control-fill-hover);
+  border-color: var(--fi-control-border-hover);
+}
+.btn-icon:active:not(:disabled) {
+  background: var(--fi-control-fill-active);
 }
 .btn-icon:focus-visible {
   outline: var(--fi-focus-ring) solid var(--fi-brand);
   outline-offset: var(--fi-focus-offset);
 }
 .btn-icon:disabled {
-  opacity: 0.5;
+  background: var(--fi-control-fill-hover);
+  border-color: var(--fi-hairline-strong);
+  color: var(--fi-ink-disabled);
   cursor: not-allowed;
 }
 
 .btn-icon-danger:hover:not(:disabled) {
   color: var(--fi-state-adverse);
   border-color: var(--fi-state-adverse);
-  background: transparent;
+  background: var(--fi-state-adverse-surface);
 }
 
+/* Sem contorno, para barra densa em que a moldura de cada botão viraria grade. O
+   preenchimento no hover é o que restitui a afordância. */
 .btn-icon-quiet {
+  border-color: transparent;
+  background: transparent;
+}
+.btn-icon-quiet:disabled {
+  background: transparent;
   border-color: transparent;
 }
 
@@ -275,13 +339,25 @@ textarea.input {
   cursor: pointer;
   transition: color var(--fi-motion-fast) ease;
 }
+/* O sublinhado nao e enfeite: sem ele o papel de link se distingue do texto ao lado
+   apenas pela cor, e cor nunca e o unico canal. */
 .btn-link {
   color: var(--fi-brand);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.btn-link:hover {
+  color: var(--fi-brand-hover);
+}
+.btn-link:active {
+  color: var(--fi-brand-active);
 }
 .btn-quiet {
   color: var(--fi-ink-2);
 }
-.btn-quiet:hover {
+.btn-quiet:hover,
+.btn-quiet:active {
   color: var(--fi-ink-1);
 }
 .btn-explain {
@@ -332,15 +408,18 @@ textarea.input {
   justify-content: center;
   gap: 0.5rem;
   min-height: var(--fi-layout-min-touch-target);
-  padding: 0 1rem;
+  padding: 0 1.125rem;
   border-radius: var(--fi-radius-md);
   font-family: var(--fi-font-sans);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
   transition:
-    opacity var(--fi-motion-fast) ease,
-    background var(--fi-motion-fast) ease;
+    background var(--fi-motion-fast) ease,
+    border-color var(--fi-motion-fast) ease,
+    color var(--fi-motion-fast) ease;
 }
 
 .btn-primary {
@@ -348,19 +427,35 @@ textarea.input {
   color: var(--fi-ink-on-brand);
   border: 1px solid var(--fi-brand);
 }
+
+/* Antes era `opacity: 0.9`, que desbota o rótulo junto com o fundo e não diz nada sobre
+   pressionar. Agora hover e pressionado são dois tons declarados da marca, e o texto
+   sobre os três é conferido no CI. */
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--fi-brand-hover);
+  border-color: var(--fi-brand-hover);
+}
+.btn-primary:active:not(:disabled) {
+  background: var(--fi-brand-active);
+  border-color: var(--fi-brand-active);
 }
 
+/* `transparent` sobre `hairline` era o botão que não parecia botão: o contorno inteiro
+   desenhava a 1,24:1 e não havia superfície nenhuma sob o rótulo. */
 .btn-secondary,
 .pagination-btn {
-  background: transparent;
+  background: var(--fi-control-fill);
   color: var(--fi-ink-1);
-  border: 1px solid var(--fi-hairline);
+  border: 1px solid var(--fi-control-border);
 }
 .btn-secondary:hover:not(:disabled),
 .pagination-btn:hover:not(:disabled) {
-  background: var(--fi-ground-2);
+  background: var(--fi-control-fill-hover);
+  border-color: var(--fi-control-border-hover);
+}
+.btn-secondary:active:not(:disabled),
+.pagination-btn:active:not(:disabled) {
+  background: var(--fi-control-fill-active);
 }
 
 .pagination-btn {
@@ -378,7 +473,9 @@ textarea.input {
 .btn-primary:disabled,
 .btn-secondary:disabled,
 .pagination-btn:disabled {
-  opacity: 0.5;
+  background: var(--fi-control-fill-hover);
+  border-color: var(--fi-hairline-strong);
+  color: var(--fi-ink-disabled);
   cursor: not-allowed;
 }
 

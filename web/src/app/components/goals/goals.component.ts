@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   FormArray,
   FormBuilder,
@@ -9,7 +10,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { forkJoin } from 'rxjs';
+import { forkJoin, map, startWith } from 'rxjs';
 import {
   ALLOCATION_CATEGORIES,
   AllocationCategory,
@@ -275,15 +276,27 @@ export class GoalsComponent implements OnInit {
 
   readonly currentMonthlyIncome = computed(() => this.currentIncome() ?? 0);
 
-  readonly passiveIncomeTarget = computed(
-    () => this.form.controls.passive_income_goal.value ?? null
-  );
-
   readonly form = this.fb.group({
     passive_income_goal: this.fb.control<number | null>(null, { validators: Validators.min(0) }),
     goals: this.fb.array<FormGroup<GoalForm>>([]),
     sector_goals: this.fb.array<FormGroup<SectorGoalForm>>([]),
   });
+
+  /*
+   * O alvo vem do campo, e por isso precisa de um signal alimentado por `valueChanges`.
+   *
+   * Era um `computed()` lendo `this.form.controls.passive_income_goal.value` direto. Signal nao
+   * rastreia FormControl: o valor era avaliado uma vez e ficava cacheado para sempre, e a regua
+   * de progresso nunca reagia ao que a pessoa digitava — ela dizia "nenhum alvo definido" com a
+   * meta preenchida na tela ao lado.
+   */
+  readonly passiveIncomeTarget = toSignal(
+    this.form.controls.passive_income_goal.valueChanges.pipe(
+      startWith(this.form.controls.passive_income_goal.value),
+      map(valor => (valor === null ? null : Number(valor)))
+    ),
+    { initialValue: null }
+  );
 
   get goalItems(): FormArray<FormGroup<GoalForm>> {
     return this.form.controls.goals;

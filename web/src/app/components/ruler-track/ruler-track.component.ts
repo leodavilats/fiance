@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { RulerZone, zoneBackground } from '../../core/ruler';
 
 @Component({
@@ -7,39 +7,73 @@ import { RulerZone, zoneBackground } from '../../core/ruler';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div
-      class="relative w-full flex gap-px rounded-sm overflow-hidden"
-      [style.height.px]="height()"
-    >
-      @for (z of zones(); track z.id) {
+    <div class="fi-ruler" [style.height.px]="height()">
+      @if (modo() === 'fill') {
         <div
-          class="h-full"
-          [style.width.%]="z.widthPct"
-          [style.background]="z.active ? background(z) : null"
-          [class.ruler-zone-idle]="!z.active"
-          [attr.data-zone]="z.id"
+          class="fi-ruler-fill"
+          [style.width.%]="preenchidoPct()"
+          [style.background]="corDoValor()"
         ></div>
+      } @else {
+        @for (z of zones(); track z.id) {
+          <div
+            class="fi-ruler-zone"
+            [style.width.%]="z.widthPct"
+            [style.background]="background(z)"
+            [attr.data-zone]="z.id"
+          ></div>
+        }
+      }
+
+      @for (d of divisas(); track d) {
+        <div class="fi-ruler-tick" [style.left.%]="d"></div>
       }
 
       @if (markerPct() !== null) {
-        <div
-          class="absolute top-0 bottom-0 w-[2px] bg-ink"
-          [style.left]="'calc(' + markerPct() + '% - 1px)'"
-        ></div>
+        <div class="fi-ruler-marker" [style.left]="'calc(' + markerPct() + '% - 1px)'"></div>
       }
     </div>
   `,
   styles: [
     `
-      .ruler-zone-idle {
-        background: color-mix(in srgb, var(--fi-ink-3) 70%, transparent);
+      .fi-ruler {
+        position: relative;
+        display: flex;
+        width: 100%;
+        border-radius: var(--fi-radius-pill);
+        background: var(--fi-track);
+        border: 1px solid var(--fi-control-border);
+        overflow: hidden;
       }
-      :host(.ruler-insufficient) .ruler-zone-idle {
-        background: repeating-linear-gradient(
-          90deg,
-          color-mix(in srgb, var(--fi-ink-3) 70%, transparent) 0 4px,
-          transparent 4px 8px
-        );
+
+      .fi-ruler-zone,
+      .fi-ruler-fill {
+        height: 100%;
+      }
+
+      .fi-ruler-fill {
+        border-radius: inherit;
+        transition: width var(--fi-motion-base) var(--fi-motion-ease-enter);
+      }
+
+      .fi-ruler-tick {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--fi-control-border);
+      }
+
+      .fi-ruler-marker {
+        position: absolute;
+        top: -2px;
+        bottom: -2px;
+        width: 2px;
+        background: var(--fi-ink-1);
+      }
+
+      :host(.ruler-insufficient) .fi-ruler {
+        background: repeating-linear-gradient(90deg, var(--fi-track) 0 4px, transparent 4px 8px);
       }
     `,
   ],
@@ -51,6 +85,25 @@ export class RulerTrackComponent {
   readonly markerPct = input<number | null>(null);
   readonly height = input(8);
   readonly insufficient = input(false);
+
+  readonly modo = input<'marker' | 'fill'>('marker');
+  readonly preenchidoPct = input(0);
+
+  readonly divisas = computed(() => {
+    const acumulado: number[] = [];
+    let soma = 0;
+    for (const z of this.zones().slice(0, -1)) {
+      soma += z.widthPct;
+      acumulado.push(soma);
+    }
+    return acumulado;
+  });
+
+  readonly corDoValor = computed(() => {
+    if (this.insufficient()) return 'transparent';
+    const ativa = this.zones().find(z => z.active);
+    return ativa ? zoneBackground(ativa) : 'var(--fi-brand)';
+  });
 
   background(zone: RulerZone): string {
     return zoneBackground(zone);

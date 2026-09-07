@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { fiBandFor, fiGoalProgressBands, fiGoalProgressDomain, stateTextClass } from '../../core';
-import { markerPct, rulerZones } from '../../core/ruler';
+import { rulerZones } from '../../core/ruler';
 import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
 
 @Component({
@@ -16,9 +16,10 @@ import { RulerTrackComponent } from '../ruler-track/ruler-track.component';
       </div>
 
       <app-ruler-track
+        modo="fill"
         [zones]="zones()"
-        [markerPct]="hasTarget() ? marker() : null"
-        [height]="8"
+        [preenchidoPct]="pct()"
+        [height]="10"
         [insufficient]="!hasTarget()"
       />
 
@@ -67,8 +68,6 @@ export class GoalProgressComponent {
   readonly band = computed(() =>
     fiBandFor(this.pct(), fiGoalProgressBands, this.hasTarget() ? 1 : 0)
   );
-
-  readonly marker = computed(() => markerPct(this.pct(), fiGoalProgressDomain));
 
   readonly zones = computed(() =>
     rulerZones(fiGoalProgressBands, fiGoalProgressDomain, this.pct(), this.hasTarget())
