@@ -136,7 +136,13 @@ gastos?" é exatamente a presunção que ela recusa.
 
 ## O que fica pendente desta decisão
 
-- **Wireframes** da linha do tempo do mês e da tela de `Sobra` — a segunda é o portão da Fase 3.
+- **Wireframe da `Sobra` — feito** (2026-09-07), em [WIREFRAMES](WIREFRAMES.md#n1-sobra--a-ponte).
+  É o portão da Fase 3, e ele traz um critério de aceite: se em algum estado a tela voltar a
+  **pedir** o valor do aporte a quem tem caixa lançado, a ponte não está construída. Fica em
+  aberto de propósito a **reserva de emergência** — não há decisão de produto sobre quantos meses,
+  contra qual base, e antes ou depois da dívida cara.
+- **Wireframe da linha do tempo do mês** (`/mes`) — ainda não feito. Não é portão da Fase 3, mas é
+  o que alimenta a `Sobra`.
 - **Vocabulário** de categoria de despesa e tipo de dívida em `tokens.json`, com consumidor
   confirmado antes de considerar pronto.
 - **Mobile**: a barra inferior recebe os mesmos cinco. `Sobra` é o caso de uso mais móvel do

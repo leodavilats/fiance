@@ -12,6 +12,55 @@
 
 ---
 
+## A ponte desenhada, e o critério que diz se ela existe (2026-09-07)
+
+O portão da Fase 3 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md): a tela de `Sobra`, em
+[WIREFRAMES](design/WIREFRAMES.md#n1-sobra--a-ponte).
+
+**O achado que orientou o desenho** foi comparar o Quick Invest construído com o wireframe dele.
+O wireframe dizia *"três campos, uma resposta, a lógica atrás de um acordeão — a tela mais curta do
+produto"*; o que existe abre com um parágrafo explicativo, dois checkboxes e um botão "Gerar
+Sugestão". Ela **pergunta** em vez de responder, e a primeira pergunta — *"quanto você quer
+aportar?"* — é justamente a que a ponte torna desnecessária: a pessoa responde de cabeça, uma vez
+por mês, com o número errado, porque a sobra mora em outro app.
+
+Daí sai o critério de aceite, que ficou escrito na tela: **se em algum estado ela voltar a pedir o
+valor do aporte a quem tem caixa lançado, a ponte não está construída** — está desenhada em cima
+da mesma lacuna.
+
+Quatro decisões de projeto, e duas delas são de domínio, não de layout:
+
+**A ordem é o produto.** A tela não mostra "sua sobra e onde investir": mostra uma cascata em que
+cada passo consome parte da sobra e declara o que o derrubaria. É a
+[regra de dívida](../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) renderizada, com a comparação
+contra o que a carteira **da pessoa** rende. Consequência aceita: a tela pode terminar dizendo
+*não aporte este mês*, e isso é sucesso dela — um destino chamado `Aporte` não conseguiria dizer
+isso, e é por isso que ele se chama `Sobra`.
+
+**A cifra grande é o piso da faixa, e o aporte se calcula sobre ela.** Por assimetria de erro:
+comprar cota com dinheiro que talvez não chegue custa vender no prejuízo ou atrasar uma conta,
+enquanto aportar menos custa um mês de rendimento. O excedente vira um bloco N3 — não some, e
+também não é gasto antes de existir.
+
+O exemplo da tela é o **mesmo mês da landing** (salário de R$ 6.418,73, sobra de R$ 1.647,32),
+recortado no dia 20, com parte realizada e parte projetada. E ele fecha na conta: R$ 890,00 de
+dívida + R$ 464,40 + R$ 197,00 de ordens em cota inteira + R$ 95,92 que ficam abaixo da ordem
+mínima = R$ 1.647,32. Um exemplo de produto que não fecha é o tell que o
+[AI-TELLS](design/AI-TELLS.md) chama de valor redondo demais; a primeira versão deste wireframe
+tinha exatamente esse defeito e foi refeita.
+
+Oito estados estão especificados, e os quatro que mais importam são os de **ausência**: sem caixa
+lançado a tela vira o Quick Invest e **diz por que está pedindo o valor**; com sobra negativa a
+cascata não aparece; sem dívida cadastrada o passo 1 não existe, sem convite nem placeholder; e
+dívida sem taxa informada não vira régua, porque o produto não estima taxa de rotativo.
+
+**O que ficou aberto, declarado:** a reserva de emergência não é um passo da cascata, porque não
+há decisão de produto sobre ela — quantos meses, contra qual base, e antes ou depois da dívida
+cara. Uma ponte caixa→investimento sem esse passo é discutível, e a pergunta é de produto, não de
+design.
+
+---
+
 ## O sistema de design refeito, e as duas queixas que viraram número (2026-09-07)
 
 A direção veio em duas frases: *"o gerador de tokens e as automações no design limitaram muito"*

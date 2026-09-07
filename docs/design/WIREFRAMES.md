@@ -9,6 +9,165 @@
 
 ---
 
+---
+
+# Os wireframes da IA nova
+
+> **Duas IAs vivem neste arquivo**, como em
+> [INFORMATION-ARCHITECTURE](INFORMATION-ARCHITECTURE.md). Esta parte é a **decisão** para a
+> transformação; nada dela está implementado. A parte de baixo continua sendo a referência de
+> qualquer tela existente.
+
+## N1. `/sobra` — a ponte
+
+O portão da Fase 3 do [ROADMAP](../../planejamento/ROADMAP_TRANSFORMACAO.md), e a peça que
+sustenta a tese inteira: *"se a sobra não alimentar a decisão de investir, a ponte não existe e o
+produto é dois apps num só instalador"*.
+
+### A ideia, numa frase
+
+**O número que era uma pergunta passa a ser uma resposta.** O
+[Quick Invest de hoje](#estrategiaaporte--quick-invest) abre perguntando *"quanto você quer
+aportar?"* — e a pessoa responde de cabeça, uma vez por mês, com o número errado, porque a sobra
+mora em outro app. A ponte não pergunta: ela sabe.
+
+Isso também é o critério de aceite da tela. Se em algum estado ela voltar a **pedir** o valor do
+aporte a quem tem caixa lançado, a ponte não está construída — está desenhada em cima da mesma
+lacuna.
+
+### Desktop
+
+```
+SOBRA DE SETEMBRO                                     N1   GET /cashflow/month
+R$ 1.647,32                                                GET /cashflow/debts
+│                                                          POST /quick-invest
+│ é o piso — até R$ 1.984,32 se o mês fechar como os três últimos
+│ recebido R$ 6.418,73  ·  pago R$ 4.054,07  ·  a pagar R$ 317,34 (2 contas)
+│ ainda esperado em mercado e dia a dia: R$ 400,00
+│
+│ ▸ como esta faixa é calculada
+─────────────────────────────────────────────────────────────────────────────────
+A ORDEM                                               N1   ← o app responde;
+                                                              a ordem é o produto
+┌───────────────────────────────────────────────────────────────────────────────┐
+│ 1   ROTATIVO DO CARTÃO                    −R$ 890,00        14,9% ao mês      │
+│     Sua carteira rendeu 0,9% ao mês nos últimos 12 meses. Enquanto essa       │
+│     diferença existir, quitar rende mais que aportar.                         │
+│     ▸ o que derrubaria isto                                                   │
+│     [Marcar como quitado]                                    (ver a dívida →) │
+└───────────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────────────────────────────────────┐
+│ 2   APORTE                              R$ 757,32          do piso da faixa   │
+│     FIIs é a classe mais atrás — 4,1 p.p. abaixo do alvo que você declarou.   │
+│                                                                               │
+│     HGLG11   3 cotas a R$ 154,80   R$ 464,40   FII · score 78 · P/VP 0,88     │
+│     XPLG11   2 cotas a R$  98,50   R$ 197,00   FII · score 74 · DY 9,1%       │
+│     fica     R$ 95,92              abaixo da ordem mínima de R$ 200           │
+│     ▸ por que esta distribuição                                               │
+│     [Registrei o que executei]                              (ver a meta →)    │
+└───────────────────────────────────────────────────────────────────────────────┘
+
+······································································ dobra
+SE O MÊS FECHAR ACIMA DO PISO                         N3   (nasce fechado)
+▸ O que fazer com até R$ 337,00 de excedente
+```
+
+### As quatro decisões de projeto
+
+**1. A ordem é o produto, não a lista.** A tela não mostra "sua sobra e onde investir": mostra uma
+**cascata**, em que cada passo consome parte da sobra e declara o que o derrubaria. É a
+[regra de dívida](../../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) renderizada: dívida cara vem
+antes de aporte porque é aritmética de taxa, e a comparação é sempre contra o que **a carteira da
+pessoa** rende — nunca um número de mercado solto. Sem carteira, contra o CDI que o BCB já entrega.
+
+Consequência: a tela pode terminar dizendo **não aporte este mês**, e isso é sucesso dela, não
+falha. Um destino chamado `Aporte` não conseguiria dizer isso — é por isso que ele se chama
+`Sobra`.
+
+**2. A cifra grande é o piso da faixa, e o aporte se calcula sobre ela.** A sobra do mês corrente
+é projeção enquanto o mês não fecha, e a tela não escolhe entre mostrar um número e mostrar uma
+faixa: mostra a **ponta conservadora** como o número, com o teto ao lado como contexto. Publicar o
+ponto médio como se fosse a sobra é o que não vale — é a mesma disciplina de
+`analysis/scenarios.py`, onde `_low`/`_high` são obrigatórios justamente para não existir caminho
+em que o número sai sozinho.
+
+O motivo de decidir pelo piso é **assimetria de erro**: comprar cota com dinheiro que talvez não
+chegue custa vender no prejuízo ou atrasar uma conta, enquanto aportar menos custa um mês de
+rendimento. Os dois erros não têm o mesmo preço, então o número que vira ordem de compra é o
+conservador. O excedente, se o mês fechar acima, aparece num bloco N3 — não some, e também não é
+gasto antes de existir.
+
+E os números do exemplo **fecham**, que é como a tela precisa fechar: R$ 890,00 de dívida +
+R$ 464,40 + R$ 197,00 de ordens + R$ 95,92 que ficam = R$ 1.647,32, o piso. Ordem é em **cota
+inteira**, com o preço à vista, e o resto que não compra nada é dito em vez de escondido.
+
+**3. A tela não pergunta nada a quem tem caixa.** Os três campos do Quick Invest atual — valor,
+ordem mínima, dois checkboxes — saem da leitura. Ordem mínima passa a ser preferência da conta
+(`/voce/preferencias`), e "usar minhas metas" deixa de ser opção: a meta é a régua que produz o
+desvio, e desligá-la é pedir uma sugestão sem critério. Quem quiser aportar um valor diferente do
+sugerido edita o número **no lugar em que ele aparece**, não num formulário antes de vê-lo.
+
+**4. Uma cifra grande, e só uma.** A sobra é o único `money-xl` da tela. O valor do aporte é
+`metric`, subordinado — porque a resposta da tela é a **ordem**, e o aporte é o segundo passo dela.
+Se o aporte disputasse tamanho com a sobra, a tela estaria dizendo que o dinheiro é para investir,
+que é exatamente a conclusão que a cascata às vezes contradiz.
+
+### Mobile
+
+`Sobra` é o caso de uso mais móvel do produto — decidir o aporte é coisa de sofá. A ordem de
+leitura é a mesma; o que muda é que cada passo da cascata vira um bloco de largura cheia e a
+sugestão de compra vira lista, não tabela.
+
+```
+SOBRA DE SETEMBRO
+R$ 1.647,32
+até R$ 1.984,32
+▸ como esta faixa é calculada
+──────────────────────────────
+1  ROTATIVO         −R$ 890,00
+   14,9%/mês contra 0,9% da
+   sua carteira.
+   [Marcar como quitado]
+──────────────────────────────
+2  APORTE            R$ 757,32
+   FIIs, 4,1 p.p. atrás.
+   HGLG11  3 × 154,80   464,40
+   XPLG11  2 ×  98,50   197,00
+   fica 95,92, abaixo da
+   ordem mínima
+   [Registrei o que executei]
+```
+
+### Estados de `/sobra`
+
+O contrato geral está na [matriz de estados](#9-matriz-de-estados--o-contrato-de-toda-tela). O que
+é específico desta tela:
+
+| Estado | O que a tela faz | Antipadrão |
+|---|---|---|
+| **Sem caixa lançado, com carteira** | Vira o Quick Invest: pede o valor **e diz por que está pedindo** — "sem lançamento de caixa não há sobra para derivar". Um link para `/mes/lancar`, sem cobrança | Tela vazia; ou pedir o valor sem explicar que existe um jeito de não precisar |
+| **Sem caixa e sem carteira** | Porta de entrada única: lançar o primeiro mês. A ponte não tem nenhum dos dois lados | Formulário de aporte que não pode sugerir nada |
+| **Sobra negativa** | A cascata **não aparece**. A tela diz que o mês fecha negativo, em quanto, e mostra os dois maiores movimentos do mês — com link para o `Mês`. Nenhuma sugestão de aporte | Sugerir aporte de um valor que não existe; ou uma tela de erro |
+| **Sem dívida cadastrada** | O passo 1 simplesmente não existe. Sem convite, sem placeholder de "cadastre suas dívidas" | Passo vazio numerado; banner pedindo dado |
+| **Dívida administrável só** | Não vira passo da cascata: aparece como nota sob o aporte, dizendo a taxa e que ela está abaixo do que a carteira rende | Pedir quitação de financiamento imobiliário |
+| **Dívida sem taxa informada** | A régua não aparece, e a tela diz isso: "sem a taxa, não dá para comparar". O produto **não estima** taxa de rotativo | Estimar a taxa; ou ignorar a dívida em silêncio |
+| **Sem meta declarada** | O aporte ordena por score e **diz que está fazendo isso**, com link para declarar a meta | Ordenar por score fingindo que é desvio de meta |
+| **Mês fechado** | A faixa desaparece e a sobra passa a ser um número só, marcado como realizado | Continuar mostrando faixa sobre dado fechado |
+
+### O que este wireframe deixa aberto
+
+- **Reserva de emergência não é um passo da cascata**, porque não há decisão de produto sobre ela.
+  [REGRAS_NOVO_DOMINIO](../../planejamento/REGRAS_NOVO_DOMINIO.md) só a cita de passagem, como
+  analogia para o argumento de dívida. Uma ponte caixa→investimento sem esse passo é discutível, e
+  a pergunta é de produto, não de design: **quantos meses, contra qual base, e antes ou depois da
+  dívida cara**. Fica declarado como lacuna em vez de inventado aqui.
+- **Ordem mínima como preferência da conta** exige campo em `PreferencesDb` e migração — é
+  contrato, entra na Fase 3.
+- **A frase da comparação de dívida** ("sua carteira rendeu 0,9% ao mês") precisa de fonte e
+  período visíveis, no padrão de `<app-provenance>`. Sem carteira, o rótulo muda para CDI e a
+  fonte passa a ser a do BCB, que já viaja até a tela.
+
 ## Shell — desktop (≥1280px)
 
 ```
