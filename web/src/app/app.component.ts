@@ -149,12 +149,16 @@ const DESTINATIONS: readonly NavDestination[] = [
               title="Sua conta"
               aria-label="Abrir sua conta"
             >
-              <img
-                [src]="user.picture"
-                [alt]="user.name"
-                class="w-full h-full rounded-pill object-cover"
-                referrerpolicy="no-referrer"
-              />
+              @if (user.picture) {
+                <img
+                  [src]="user.picture"
+                  [alt]="user.name"
+                  class="w-full h-full max-w-full rounded-pill object-cover"
+                  referrerpolicy="no-referrer"
+                />
+              } @else {
+                <span class="fi-label text-ink-2" aria-hidden="true">{{ inicial(user.name) }}</span>
+              }
             </button>
           </div>
         </div>
@@ -198,7 +202,8 @@ const DESTINATIONS: readonly NavDestination[] = [
         align-items: center;
         gap: 0.375rem;
         padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
+        font-size: 13px;
+        line-height: 18px;
         font-weight: 500;
         color: var(--fi-ink-2);
         text-decoration: none;
@@ -271,6 +276,18 @@ export class AppComponent {
     : 'Ctrl K';
   readonly showProfile = signal(false);
   readonly destinations = DESTINATIONS;
+
+  /*
+   * Conta sem foto mostrava uma imagem quebrada.
+   *
+   * O `<img>` saia com `src` vazio, e o Chrome desenha o texto alternativo dentro do botao:
+   * o avatar ficava 41px de largura numa caixa de 34 e o cabecalho vazava 3px em 320px de
+   * viewport, nas cinco rotas. O teste de reflow nao pegava porque media antes de a imagem
+   * resolver.
+   */
+  inicial(nome: string): string {
+    return (nome || '?').trim().charAt(0).toUpperCase() || '?';
+  }
 
   private readonly router = inject(Router);
   private readonly doc = inject(DOCUMENT);

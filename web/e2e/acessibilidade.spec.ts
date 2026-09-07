@@ -93,6 +93,12 @@ test.describe('reflow', () => {
       await page.goto(rota);
       await expect(page.locator('header')).toBeVisible();
 
+      /*
+       * Medir logo que o cabecalho aparece deixava o teste passar por sorte: o avatar e os
+       * controles da direita ainda nao tinham resolvido, e o cabecalho vazava 3px depois.
+       */
+      await page.waitForLoadState('networkidle');
+
       const vaza = await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
       );

@@ -177,3 +177,29 @@ test('a barra de progresso distingue preenchido de vazio', async ({ page }) => {
       'era a queixa "barra de progresso que não deixa evidente o progresso"'
   ).toBeGreaterThanOrEqual(PISO);
 });
+
+test('utilitaria de layout vence a classe de controle', async ({ page }) => {
+  await entrarComo(page, 'e2e_camada');
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto('/hoje');
+  await expect(page.locator('header')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+
+  /*
+   * As classes de controle eram escritas soltas depois de `@tailwind utilities`, e por isso
+   * venciam as utilitarias: `class="btn-secondary hidden sm:inline-flex"` ficava VISIVEL,
+   * porque `.btn-secondary { display: inline-flex }` derrotava o `display: none` do `hidden`.
+   * Valia para todo .btn-* do produto, e nao havia erro nenhum -- esconder um botao por
+   * breakpoint simplesmente nao fazia nada. O sintoma que apareceu foi outro: o cabecalho
+   * vazando 3px em 320px, nas cinco rotas.
+   */
+  const escondido = page.locator('header .btn-secondary.hidden').first();
+  if ((await escondido.count()) === 0) test.skip();
+
+  const display = await escondido.evaluate(el => getComputedStyle(el).display);
+  expect(
+    display,
+    'um controle do sistema marcado com `hidden` tem de desaparecer: sem isto, nenhuma ' +
+      'utilitaria de layout alcanca .btn-*, e o produto esconde botao sem esconder nada'
+  ).toBe('none');
+});

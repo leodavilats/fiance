@@ -84,6 +84,17 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   chegaram ao cliente assim: `consensus_methods`, `trend_basis`, `allocation_gaps`.
 - **Cor do Tailwind declarada como string** — o modificador de opacidade (`bg-brand/20`) é
   **descartado em silêncio**. As cores da config são funções que emitem `color-mix` por isso.
+- **Classe de controle fora de `@layer components`** derrota as utilitárias. Escritas soltas
+  depois de `@tailwind utilities`, `.btn-*` e `.input` venciam por ordem de cascata:
+  `class="btn-secondary hidden sm:inline-flex"` ficava **visível**, porque
+  `.btn-secondary { display: inline-flex }` derrotava o `display: none` do `hidden`. Valia para
+  todo botão do produto — esconder controle por breakpoint não fazia nada, e não havia erro
+  nenhum. O sintoma que apareceu foi outro: o cabeçalho vazando 3px em 320px. Regra sem camada
+  sempre vence regra em camada, então a camada de controle de [styles.css](web/src/styles.css)
+  mora dentro de `@layer components`, e `e2e/afordancia.spec.ts` cobra isso.
+- **`<img>` com `src` vazio** desenha o texto alternativo dentro da caixa e estoura o layout:
+  o avatar de quem não tem foto ficava 41px numa caixa de 34. Conta sem foto renderiza a
+  inicial, não um `<img>` sem fonte.
 - **`_session_global()` em caminho de request** — não filtra por usuário. É para job cross-tenant.
 - **Dois refreshes simultâneos** derrubam a sessão: o refresh é rotacionado e queimado no uso. No
   web isso é coordenado **entre abas** por Web Lock — `_refreshInFlight` sozinho vale só dentro de
@@ -107,7 +118,7 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   confira se ele chega a uma tela — gerado e ignorado é pior que não gerado, porque parece
   resolvido.
 
-O `npm run lint:ui` cobre doze dessas.
+O `npm run lint:ui` cobre treze dessas.
 
 Sete são de tela quebrada ou informação escondida: ícone não registrado, classe inexistente,
 julgamento sem explicabilidade, gráfico sem tabela, botão de ícone sem `aria-label`, número
@@ -123,6 +134,7 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 | Um foco só | `focus:ring*`, `focus:outline-none` | O anel é `outline` na cor da marca e já vem em `.input`/`.btn-*`/`.fi-focusable`; o do Tailwind desenhava outra coisa, e `outline-none` sem substituto apaga o foco |
 | Controle do sistema | `<button>`/`<input>`/`<select>` sem classe do sistema | Havia nove grafias de botão só de ícone, com cinco alturas. Escape: `<!-- controle-proprio: motivo -->` |
 | Título sem ícone | `<lucide-icon>` dentro de `<h1..h4>` | Ao lado de um título o ícone não acrescenta informação — faz a seção parecer cabeçalho de card de painel. Ficam de fora os três em que o ícone é o dado |
+| Contorno de controle | `border: … var(--fi-hairline)` num seletor de controle | `hairline` é separador, e com ele a borda de `.btn-secondary` desenhava a **1,20:1** — um quarto dos 3:1 que a WCAG 1.4.11 pede. Controle desabilitado fica de fora, que a norma isenta |
 
 ---
 
