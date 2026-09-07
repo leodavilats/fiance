@@ -23,9 +23,6 @@ def upgrade() -> None:
         sa.Column("due_on", sa.String(), nullable=False),
         sa.Column("paid_on", sa.String(), nullable=True),
         sa.Column("recurrence_id", sa.Integer(), nullable=True),
-        # De onde a entrada derivada veio: `provento` sai do razão, e nunca é lançada à mão.
-        # Guardar a origem é o que permite reprojetar sem duplicar.
-        sa.Column("derived_from", sa.String(), nullable=True),
         sa.Column("source", sa.String(), nullable=False, server_default="manual"),
         sa.Column("created_at", sa.Float(), nullable=False),
         sa.Column("updated_at", sa.Float(), nullable=False),

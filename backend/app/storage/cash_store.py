@@ -41,7 +41,6 @@ def _para_dominio(row: CashEntryDb) -> CashEntry:
         paid_on=row.paid_on,
         id=row.id,
         recurrence_id=row.recurrence_id,
-        derived=row.derived_from is not None,
     )
 
 
@@ -67,7 +66,6 @@ def add_entry(entry: CashEntry, source: str = "manual", user_id: str | None = No
             due_on=entry.due_on,
             paid_on=entry.paid_on,
             recurrence_id=entry.recurrence_id,
-            derived_from=entry.metadata.get("derived_from") if entry.derived else None,
             source=source,
             created_at=agora,
             updated_at=agora,
@@ -101,57 +99,9 @@ def delete_entry(entry_id: int, user_id: str | None = None) -> None:
         if row is None:
             raise NotFoundError(f"Lançamento {entry_id} não existe.")
 
-        if row.derived_from is not None:
-            raise NotFoundError(
-                "Lançamento derivado do razão não se apaga aqui: ele é projeção, e some quando "
-                "o lançamento de origem sai."
-            )
-
         session.delete(row)
 
     _with_session(run, user_id)
-
-
-def replace_derived(entries: list[CashEntry], user_id: str | None = None) -> int:
-    """Reescreve as entradas derivadas do razão, do zero.
-
-    Derivado é projeção, e projeção se **reconstrói** — não se atualiza item a item. É o mesmo
-    padrão de `rebuild_projection` na carteira: apagar e refazer é a única forma de a segunda
-    leitura não divergir da primeira em silêncio.
-    """
-
-    def run(session, uid):
-        antigos = session.scalars(
-            select(CashEntryDb).where(
-                CashEntryDb.user_id == uid, CashEntryDb.derived_from.is_not(None)
-            )
-        ).all()
-        for row in antigos:
-            session.delete(row)
-        session.flush()
-
-        agora = time.time()
-        for e in entries:
-            session.add(
-                CashEntryDb(
-                    user_id=uid,
-                    kind=e.kind.value,
-                    category=e.category,
-                    description=e.description.strip(),
-                    amount=money(e.amount),
-                    due_on=e.due_on,
-                    paid_on=e.paid_on,
-                    recurrence_id=None,
-                    derived_from=e.metadata.get("derived_from", "ledger"),
-                    source="derived",
-                    created_at=agora,
-                    updated_at=agora,
-                )
-            )
-
-        return len(entries)
-
-    return _with_session(run, user_id)
 
 
 def _debt_para_dominio(row: DebtDb) -> Debt:

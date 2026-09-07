@@ -11,6 +11,7 @@ from . import (
     basic,
     benchmark,
     billing,
+    cashflow,
     dashboard,
     data_quality,
     demo,
@@ -67,6 +68,7 @@ protected.include_router(assets.router, tags=["Assets"])
 protected.include_router(dip_scanner.router, tags=["Dip Scanner"])
 protected.include_router(portfolio_routes.router, tags=["Portfolio"])
 protected.include_router(transactions.router, tags=["Livro-razão"])
+protected.include_router(cashflow.router, tags=["Caixa"])
 protected.include_router(goals.router, tags=["Goals"])
 protected.include_router(onboarding.router, tags=["Onboarding"])
 protected.include_router(demo.router, tags=["Onboarding"])

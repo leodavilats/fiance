@@ -6,7 +6,10 @@ from decimal import Decimal
 from app.cashflow import (
     Cascata,
     CashEntry,
+    CashError,
     CashKind,
+    Debt,
+    DividaClassificada,
     MonthProjection,
     classificar_todas,
     gasto_fixo_mensal,
@@ -29,19 +32,18 @@ def hoje() -> str:
     return now_brt().strftime("%Y-%m-%d")
 
 
-def sincronizar_proventos(user_id: str | None = None) -> int:
-    """Refaz as entradas de provento a partir do razão.
+def _proventos_derivados(user_id: str | None = None) -> list[CashEntry]:
+    """As entradas de provento, derivadas do razão **em memória**.
 
-    Provento creditado é lançamento do razão, e o razão já é a fonte da carteira. O caixa **lê**
-    esse dado em vez de receber um lançamento próprio — se as duas coisas coexistissem, o mesmo
-    dinheiro contaria duas vezes e inflaria a renda do mês e a sobra junto.
+    Provento creditado é lançamento do razão, e o razão já é a fonte da carteira. O caixa lê esse
+    dado em vez de guardar uma cópia — e derivar em memória é o que torna a duplicação impossível
+    por construção, em vez de possível e evitada por disciplina.
 
-    É reconstrução, não sincronização incremental: apagar e refazer é a única forma de a segunda
-    leitura não divergir da primeira em silêncio. Mesmo padrão de `rebuild_projection`.
+    A primeira versão disto gravava as entradas com uma coluna de origem e as reconstruía a cada
+    leitura. Funcionava, mas fazia a leitura **escrever**, e a exportação de conta sairia com o
+    mesmo provento duas vezes — uma em `dividends_received` e outra em `cash_entries`.
     """
-    recebidos = portfolio_store.list_dividends_received(user_id=user_id)
-
-    derivadas = [
+    return [
         CashEntry(
             kind=CashKind.INCOME,
             category="provento",
@@ -52,23 +54,18 @@ def sincronizar_proventos(user_id: str | None = None) -> int:
             derived=True,
             metadata={"derived_from": f"dividend:{row['id']}"},
         )
-        for row in recebidos
+        for row in portfolio_store.list_dividends_received(user_id=user_id)
         if row["amount"] > 0
     ]
 
-    return cash_store.replace_derived(derivadas, user_id=user_id)
+
+def entradas(user_id: str | None = None) -> list[CashEntry]:
+    """O caixa completo: o que foi lançado, mais o que é derivado do razão."""
+    return cash_store.list_entries(user_id=user_id) + _proventos_derivados(user_id=user_id)
 
 
-def mes(
-    referencia: str | None = None, user_id: str | None = None, sincronizar: bool = True
-) -> MonthProjection:
-    if sincronizar:
-        sincronizar_proventos(user_id=user_id)
-
-    return projetar_mes(
-        cash_store.list_entries(user_id=user_id),
-        referencia or mes_corrente(),
-    )
+def mes(referencia: str | None = None, user_id: str | None = None) -> MonthProjection:
+    return projetar_mes(entradas(user_id=user_id), referencia or mes_corrente())
 
 
 def registrar(entry: CashEntry, user_id: str | None = None) -> int:
@@ -78,6 +75,10 @@ def registrar(entry: CashEntry, user_id: str | None = None) -> int:
     — a validação mora no tipo, e não aqui. O que esta função acrescenta é a fronteira: nenhuma
     rota escreve em `cash_store` direto, do mesmo jeito que nenhuma escreve em `ledger_store`.
     """
+    if entry.derived:
+        raise CashError(
+            "Entrada derivada do razão não se grava: ela é projeção, montada na leitura."
+        )
     return cash_store.add_entry(entry, user_id=user_id)
 
 
@@ -89,6 +90,14 @@ def apagar(entry_id: int, user_id: str | None = None) -> None:
     cash_store.delete_entry(entry_id, user_id=user_id)
 
 
+def cadastrar_divida(debt: Debt, user_id: str | None = None) -> int:
+    return cash_store.add_debt(debt, user_id=user_id)
+
+
+def quitar_divida(debt_id: int, user_id: str | None = None) -> None:
+    cash_store.settle_debt(debt_id, user_id=user_id)
+
+
 def _mensal_de_anual(taxa_anual_pct: float) -> float:
     """Anual para mensal, por juros compostos — nunca dividindo por doze.
 
@@ -98,6 +107,39 @@ def _mensal_de_anual(taxa_anual_pct: float) -> float:
     avisar, que é o pior dos dois lados aqui.
     """
     return ((1.0 + taxa_anual_pct / 100.0) ** (1.0 / 12.0) - 1.0) * 100.0
+
+
+def dividas_lidas(
+    *,
+    referencia_mensal: float | None,
+    tem_carteira: bool,
+    cdi_anual: float | None = None,
+    user_id: str | None = None,
+) -> tuple[DividaClassificada, ...]:
+    cdi_mensal = None if cdi_anual is None else _mensal_de_anual(cdi_anual)
+    return classificar_todas(
+        cash_store.list_debts(user_id=user_id),
+        retorno_mensal_da_carteira=referencia_mensal if tem_carteira else None,
+        cdi_mensal=cdi_mensal,
+    )
+
+
+def dividas(
+    *,
+    referencia_mensal: float | None,
+    tem_carteira: bool,
+    cdi_anual: float | None = None,
+    user_id: str | None = None,
+) -> list[dict]:
+    return [
+        d.as_dict()
+        for d in dividas_lidas(
+            referencia_mensal=referencia_mensal,
+            tem_carteira=tem_carteira,
+            cdi_anual=cdi_anual,
+            user_id=user_id,
+        )
+    ]
 
 
 def sobra(
@@ -116,15 +158,14 @@ def sobra(
     `referencia_mensal` é o que **a carteira da pessoa** rende ao mês. Sem carteira, o CDI que o
     BCB já entrega entra no lugar — nunca um número de mercado solto.
     """
-    projecao = mes(referencia=mes_referencia, user_id=user_id)
-    entradas = cash_store.list_entries(user_id=user_id)
+    todas = entradas(user_id=user_id)
+    projecao = projetar_mes(todas, mes_referencia or mes_corrente())
 
-    cdi_mensal = None if cdi_anual is None else _mensal_de_anual(cdi_anual)
-
-    lidas = classificar_todas(
-        cash_store.list_debts(user_id=user_id),
-        retorno_mensal_da_carteira=referencia_mensal if tem_carteira else None,
-        cdi_mensal=cdi_mensal,
+    lidas = dividas_lidas(
+        referencia_mensal=referencia_mensal,
+        tem_carteira=tem_carteira,
+        cdi_anual=cdi_anual,
+        user_id=user_id,
     )
 
     cascata = montar(
@@ -132,37 +173,22 @@ def sobra(
         lidas,
         reserva_meses_alvo=reserva_meses_alvo,
         reserva_atual=reserva_atual if reserva_atual is not None else ZERO,
-        gasto_fixo=gasto_fixo_mensal(entradas),
+        gasto_fixo=gasto_fixo_mensal(todas),
         desvio_de_meta=desvio_de_meta,
     )
 
     return projecao, cascata
 
 
-def dividas(
-    *,
-    referencia_mensal: float | None,
-    tem_carteira: bool,
-    cdi_anual: float | None = None,
-    user_id: str | None = None,
-) -> list[dict]:
-    cdi_mensal = None if cdi_anual is None else _mensal_de_anual(cdi_anual)
-    lidas = classificar_todas(
-        cash_store.list_debts(user_id=user_id),
-        retorno_mensal_da_carteira=referencia_mensal if tem_carteira else None,
-        cdi_mensal=cdi_mensal,
-    )
-    return [d.as_dict() for d in lidas]
-
-
 def gasto_fixo(user_id: str | None = None) -> Decimal:
-    return gasto_fixo_mensal(cash_store.list_entries(user_id=user_id))
+    return gasto_fixo_mensal(entradas(user_id=user_id))
 
 
 def tem_caixa(user_id: str | None = None) -> bool:
     """Se existe caixa lançado — a pergunta que deriva a porta de entrada.
 
-    Entrada derivada do razão **não** conta: quem só tem provento sincronizado não lançou caixa
-    nenhum, e mandá-lo para o `Mês` seria a tela vazia que a IA nova declarou como risco.
+    Lê só a tabela, e por isso ignora o derivado naturalmente: quem tem provento no razão e
+    nenhum lançamento próprio não lançou caixa nenhum, e mandá-lo para o `Mês` seria a tela vazia
+    que a IA nova declarou como risco.
     """
-    return any(not e.derived for e in cash_store.list_entries(user_id=user_id))
+    return bool(cash_store.list_entries(user_id=user_id))

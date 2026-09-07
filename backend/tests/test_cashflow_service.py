@@ -4,8 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.cashflow import CashEntry, CashKind, Debt
-from app.core.errors import NotFoundError
+from app.cashflow import CashEntry, CashError, CashKind, Debt
 from app.services import cashflow_service
 from app.storage import cash_store, portfolio_store
 
@@ -81,20 +80,27 @@ class TestOCaixaLeORazaoESemContarDuasVezes:
             "provento entra no caixa e nao na base de renda: nao se repete por contrato"
         )
 
-    def test_sincronizar_tres_vezes_nao_duplica(self, semeado):
+    def test_o_provento_nao_existe_na_tabela_de_caixa(self, semeado):
         semear_provento(semeado)
 
-        cashflow_service.sincronizar_proventos(user_id=semeado)
-        cashflow_service.sincronizar_proventos(user_id=semeado)
-        cashflow_service.sincronizar_proventos(user_id=semeado)
+        na_tabela = cash_store.list_entries(user_id=semeado)
+        no_caixa = cashflow_service.entradas(user_id=semeado)
 
-        p = cashflow_service.mes(referencia="2026-09", user_id=semeado)
-        derivadas = [e for e in cash_store.list_entries(user_id=semeado) if e.derived]
-
-        assert len(derivadas) == 1, (
-            "derivado e projecao, e projecao se reconstroi: apagar e refazer e o que impede a "
-            "segunda leitura de divergir da primeira em silencio"
+        assert all(not e.derived for e in na_tabela), (
+            "derivado nao se grava: duplicar fica impossivel por construcao, e nao possivel e "
+            "evitado por disciplina"
         )
+        assert len([e for e in no_caixa if e.derived]) == 1
+
+    def test_ler_o_mes_muitas_vezes_nao_muda_nada(self, semeado):
+        semear_provento(semeado)
+
+        antes = len(cash_store.list_entries(user_id=semeado))
+        for _ in range(3):
+            p = cashflow_service.mes(referencia="2026-09", user_id=semeado)
+        depois = len(cash_store.list_entries(user_id=semeado))
+
+        assert antes == depois, "GET nao escreve"
         assert p.entrou == Decimal("6758.73")
 
     def test_provento_apagado_no_razao_desaparece_do_caixa(self, semeado):
@@ -111,24 +117,37 @@ class TestOCaixaLeORazaoESemContarDuasVezes:
 
     def test_provento_corrigido_no_razao_corrige_o_caixa(self, semeado):
         criada = semear_provento(semeado)
-        cashflow_service.sincronizar_proventos(user_id=semeado)
 
         portfolio_store.update_dividend_received(criada["id"], user_id=semeado, amount=412.55)
 
         p = cashflow_service.mes(referencia="2026-09", user_id=semeado)
         assert p.entrou == Decimal("6831.28"), "6418,73 + 412,55"
 
-    def test_entrada_derivada_nao_se_apaga_pelo_caixa(self, semeado):
+    def test_entrada_derivada_nao_tem_id_para_apagar(self, semeado):
         semear_provento(semeado)
-        cashflow_service.sincronizar_proventos(user_id=semeado)
-        derivada = next(e for e in cash_store.list_entries(user_id=semeado) if e.derived)
+        derivada = next(e for e in cashflow_service.entradas(user_id=semeado) if e.derived)
 
-        with pytest.raises(NotFoundError, match="derivado"):
-            cashflow_service.apagar(derivada.id, user_id=semeado)
+        assert derivada.id is None, (
+            "sem linha na tabela nao ha id, e sem id nao ha o que apagar — a guarda deixou de "
+            "precisar existir"
+        )
 
-    def test_so_provento_sincronizado_nao_conta_como_caixa_lancado(self, client, uid):
+    def test_gravar_entrada_derivada_e_recusado(self, semeado):
+        derivada = CashEntry(
+            kind=CashKind.INCOME,
+            category="provento",
+            description="PETR4",
+            amount=340.0,
+            due_on="2026-09-15",
+            paid_on="2026-09-15",
+            derived=True,
+        )
+
+        with pytest.raises(CashError, match="não se grava"):
+            cashflow_service.registrar(derivada, user_id=semeado)
+
+    def test_so_provento_no_razao_nao_conta_como_caixa_lancado(self, client, uid):
         semear_provento(uid)
-        cashflow_service.sincronizar_proventos(user_id=uid)
 
         assert cashflow_service.tem_caixa(user_id=uid) is False, (
             "quem so tem provento sincronizado nao lancou caixa nenhum; manda-lo para o Mes "

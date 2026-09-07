@@ -372,7 +372,6 @@ class CashEntryDb(Base):
     due_on: Mapped[str] = mapped_column(String, index=True)
     paid_on: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     recurrence_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
-    derived_from: Mapped[str | None] = mapped_column(String, nullable=True)
     source: Mapped[str] = mapped_column(String, default="manual")
     created_at: Mapped[float] = mapped_column(Float, default=time.time)
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)

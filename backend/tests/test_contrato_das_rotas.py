@@ -113,14 +113,21 @@ def _devolve_json(operacao: dict) -> bool:
     um motivo que ela não mede.
     """
     respostas = operacao.get("responses", {})
+    houve_2xx = False
+
     for codigo, corpo in respostas.items():
         if not str(codigo).startswith("2"):
             continue
+        houve_2xx = True
         content = corpo.get("content", {})
         if not content:
             continue
         return any(tipo.startswith("application/json") for tipo in content)
-    return True
+
+    # Rota de 204: teve resposta de sucesso e nenhuma delas declara corpo. Não há campo a
+    # sumir, pelo mesmo motivo da rota binária — contá-la faria a catraca subir por um motivo
+    # que ela não mede. Sem 2xx nenhum a resposta é desconhecida, e aí a catraca é estrita.
+    return not houve_2xx
 
 
 def rotas_declaradas() -> set[str]:

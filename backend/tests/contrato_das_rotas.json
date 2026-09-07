@@ -78,6 +78,45 @@
     "points",
     "portfolio_return_pct"
   ],
+  "GET /api/v1/cashflow/debts": [
+    "balance",
+    "class",
+    "description",
+    "flip_rate",
+    "id",
+    "kind",
+    "monthly_rate",
+    "reference_monthly",
+    "reference_source"
+  ],
+  "GET /api/v1/cashflow/entries": [
+    "amount",
+    "category",
+    "derived",
+    "description",
+    "due_on",
+    "id",
+    "kind",
+    "paid_on"
+  ],
+  "GET /api/v1/cashflow/month": [
+    "committed",
+    "due",
+    "estimate",
+    "free_now",
+    "has_range",
+    "income_baseline",
+    "month",
+    "paid",
+    "received",
+    "surplus_high",
+    "surplus_low"
+  ],
+  "GET /api/v1/cashflow/vocabulary": [
+    "debt_kinds",
+    "expense_categories",
+    "income_categories"
+  ],
   "GET /api/v1/compare": [
     "errors",
     "items"
@@ -281,6 +320,11 @@
     "total_invested",
     "total_pnl",
     "total_pnl_pct"
+  ],
+  "GET /api/v1/surplus": [
+    "cascade",
+    "has_cash",
+    "month"
   ],
   "GET /api/v1/whats-new": [
     "days_since",
