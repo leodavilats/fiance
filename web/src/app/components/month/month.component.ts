@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import {
   CashEntry,
   CashMonth,
   CashflowService,
   Debt,
+  mesCorrente,
+  nomeDoMes,
   fiCategoriasDeDespesa,
   fiCategoriasDeEntrada,
 } from '../../core';
@@ -31,7 +33,23 @@ interface LinhaDoMes {
     SkeletonComponent,
   ],
   template: `
-    <app-page-header title="Mês" question="Como estou agora, e o que exige atenção?" />
+    <app-page-header title="Mês" question="Como estou agora, e o que exige atenção?">
+      @if (mesesDisponiveis().length > 1) {
+        <div class="field mt-3 max-w-[16rem]">
+          <label class="field-label" for="mes-escolhido">Mês</label>
+          <select
+            id="mes-escolhido"
+            class="input"
+            [value]="mesEscolhido()"
+            (change)="escolherMes($any($event.target).value)"
+          >
+            @for (m of mesesDisponiveis(); track m) {
+              <option [value]="m">{{ nome(m) }}</option>
+            }
+          </select>
+        </div>
+      }
+    </app-page-header>
 
     @if (carregando()) {
       <app-skeleton shape="metric" />
@@ -53,7 +71,9 @@ interface LinhaDoMes {
         </div>
       } @else {
         <section class="fi-block">
-          <p class="fi-eyebrow text-ink-3 m-0">Livre agora</p>
+          <p class="fi-eyebrow text-ink-3 m-0">
+            {{ ehMesCorrente() ? 'Livre agora' : 'Sobrou em ' + nome(m.month) }}
+          </p>
           <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(m.free_now) }}</p>
 
           <dl class="flex flex-wrap gap-x-10 gap-y-4 m-0 mt-5">
@@ -167,6 +187,16 @@ interface LinhaDoMes {
                 </tr>
               </thead>
               <tbody>
+                @if (linhas().length === 0) {
+                  <tr>
+                    <td colspan="4" class="text-ink-2">
+                      Nada lançado em {{ nome(m.month) }}.
+                      @if (mesesDisponiveis().length > 1) {
+                        Você tem lançamentos em outros meses — troque no seletor acima.
+                      }
+                    </td>
+                  </tr>
+                }
                 @for (linha of linhas(); track linha.entry.id + linha.entry.due_on) {
                   <tr>
                     <td class="num">{{ dia(linha.entry.paid_on ?? linha.entry.due_on) }}</td>
@@ -199,8 +229,13 @@ interface LinhaDoMes {
 })
 export class MonthComponent implements OnInit {
   private readonly api = inject(CashflowService);
+  private readonly rota = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  readonly nome = nomeDoMes;
 
   readonly mes = signal<CashMonth | null>(null);
+  readonly mesEscolhido = signal<string>(mesCorrente());
   readonly entradas = signal<CashEntry[]>([]);
   readonly dividas = signal<Debt[]>([]);
   readonly carregando = signal(true);
@@ -209,6 +244,15 @@ export class MonthComponent implements OnInit {
   readonly semLancamento = computed(() => this.entradas().every(e => e.derived));
 
   readonly atencao = computed(() => this.dividas().filter(d => d.class === 'expensive'));
+
+  readonly ehMesCorrente = computed(() => this.mesEscolhido() === mesCorrente());
+
+  /** Os meses que a pessoa tem, mais o corrente. Nada de faixa inventada. */
+  readonly mesesDisponiveis = computed(() => {
+    const meses = new Set<string>([mesCorrente()]);
+    for (const e of this.entradas()) meses.add((e.paid_on ?? e.due_on).slice(0, 7));
+    return [...meses].sort().reverse();
+  });
 
   readonly linhas = computed<LinhaDoMes[]>(() => {
     const mes = this.mes()?.month;
@@ -223,13 +267,24 @@ export class MonthComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.carregar();
+    this.rota.queryParamMap.subscribe(params => {
+      this.mesEscolhido.set(params.get('mes') ?? mesCorrente());
+      this.carregar();
+    });
+  }
+
+  escolherMes(mes: string): void {
+    void this.router.navigate([], {
+      relativeTo: this.rota,
+      queryParams: { mes: mes === mesCorrente() ? null : mes },
+      queryParamsHandling: 'merge',
+    });
   }
 
   carregar(): void {
     this.carregando.set(true);
 
-    this.api.month().subscribe({
+    this.api.month(this.mesEscolhido()).subscribe({
       next: m => {
         this.mes.set(m);
         this.carregando.set(false);

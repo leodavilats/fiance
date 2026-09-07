@@ -7,6 +7,8 @@ import {
   CashKind,
   CashflowService,
   FiCategoria,
+  mesCorrente,
+  nomeDoMes,
   fiCategoriasDeDespesa,
   fiCategoriasDeEntrada,
 } from '../../core';
@@ -102,10 +104,20 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
       @if (erro()) {
         <p class="fi-caption text-adverse m-0 mt-4" role="alert">{{ erro() }}</p>
       }
-      @if (salvo()) {
+      @if (salvo(); as m) {
         <div class="notice notice-favorable mt-4">
           <lucide-icon name="check" size="18" aria-hidden="true"></lucide-icon>
-          <p class="fi-body m-0">Lançado. <a routerLink="/mes" class="btn-link">Ver o mês</a></p>
+          <p class="fi-body m-0">
+            Lançado em <strong>{{ nome(m) }}</strong
+            >.
+            <a
+              [routerLink]="['/mes']"
+              [queryParams]="{ mes: m === atual ? null : m }"
+              class="btn-link"
+            >
+              Ver {{ m === atual ? 'o mês' : nome(m) }}
+            </a>
+          </p>
         </div>
       }
 
@@ -120,11 +132,15 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
   `,
 })
 export class MonthEntryComponent {
+  readonly nome = nomeDoMes;
+  readonly atual = mesCorrente();
+
   private readonly api = inject(CashflowService);
   private readonly fb = inject(FormBuilder);
 
   readonly salvando = signal(false);
-  readonly salvo = signal(false);
+  /** O mês em que o último lançamento caiu, ou vazio. */
+  readonly salvo = signal('');
   readonly erro = signal('');
   readonly pagoMarcado = signal(true);
 
@@ -163,9 +179,10 @@ export class MonthEntryComponent {
     if (this.form.invalid || this.salvando()) return;
 
     const v = this.form.getRawValue();
+    const competencia = (v.pago ? v.paid_on : v.due_on).slice(0, 7);
     this.salvando.set(true);
     this.erro.set('');
-    this.salvo.set(false);
+    this.salvo.set('');
 
     this.api
       .addEntry({
@@ -179,7 +196,7 @@ export class MonthEntryComponent {
       .subscribe({
         next: () => {
           this.salvando.set(false);
-          this.salvo.set(true);
+          this.salvo.set(competencia);
           this.form.patchValue({ description: '', amount: null });
         },
         error: resposta => {

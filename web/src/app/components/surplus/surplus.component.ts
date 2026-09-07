@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
-import { CashflowService, Surplus } from '../../core';
+import { CashflowService, Surplus, nomeDoMes } from '../../core';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
@@ -52,7 +52,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
         </div>
       } @else {
         <section class="fi-block">
-          <p class="fi-eyebrow text-ink-3 m-0">Sobra de {{ nomeDoMes(d.month.month) }}</p>
+          <p class="fi-eyebrow text-ink-3 m-0">Sobra de {{ nome(d.month.month) }}</p>
           <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(d.month.surplus_low) }}</p>
 
           @if (d.month.has_range) {
@@ -190,6 +190,8 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
   `,
 })
 export class SurplusComponent implements OnInit {
+  readonly nome = nomeDoMes;
+
   private readonly api = inject(CashflowService);
 
   readonly dados = signal<Surplus | null>(null);
@@ -224,25 +226,6 @@ export class SurplusComponent implements OnInit {
     if (tipo === 'debt') return 'Dívida';
     if (tipo === 'reserve') return 'Reserva';
     return 'Aporte';
-  }
-
-  nomeDoMes(mes: string): string {
-    const [ano, m] = mes.split('-');
-    const nomes = [
-      'janeiro',
-      'fevereiro',
-      'março',
-      'abril',
-      'maio',
-      'junho',
-      'julho',
-      'agosto',
-      'setembro',
-      'outubro',
-      'novembro',
-      'dezembro',
-    ];
-    return `${nomes[Number(m) - 1] ?? mes} de ${ano}`;
   }
 
   reais(valor: number): string {

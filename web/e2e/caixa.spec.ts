@@ -283,7 +283,7 @@ test.describe('lançar', () => {
     await page.locator('#lanc-pagamento').fill(dia(5));
     await page.getByRole('button', { name: 'Lançar' }).click();
 
-    await expect(page.getByText('Lançado.')).toBeVisible();
+    await expect(page.getByText(/Lançado em/)).toBeVisible();
 
     await page.goto('/mes');
     await page.waitForLoadState('networkidle');
@@ -304,5 +304,56 @@ test.describe('lançar', () => {
       'provento é derivado do razão: oferecer a categoria aqui convidaria a contar o mesmo ' +
         'dinheiro duas vezes'
     ).not.toContain('Provento');
+  });
+});
+
+test.describe('lançamento fora do mês corrente', () => {
+  test('o formulário diz em que mês caiu, e o mês tem seletor para chegar lá', async ({ page }) => {
+    await entrarComo(page, titular('mes_anterior'));
+    await page.goto('/mes/lancar');
+    await expect(page.locator('header')).toBeVisible();
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('#lanc-descricao').fill('Mercado de agosto');
+    await page.locator('#lanc-valor').fill('231.47');
+    await page.locator('#lanc-vencimento').fill('2026-08-31');
+    await page.locator('#lanc-pagamento').fill('2026-08-31');
+    await page.getByRole('button', { name: 'Lançar' }).click();
+
+    await expect(
+      page.getByText('Lançado em agosto de 2026'),
+      'dizer só "Lançado." esconde que o lançamento foi para um mês que a pessoa não está vendo'
+    ).toBeVisible();
+
+    await page.getByRole('link', { name: /Ver agosto de 2026/ }).click();
+    await page.waitForLoadState('networkidle');
+
+    await expect(page).toHaveURL(/[?&]mes=2026-08/);
+    await expect(
+      page.locator('main'),
+      'o recorte mora na URL, e a tela do mês escolhido mostra o que foi lançado nele'
+    ).toContainText('Mercado de agosto');
+  });
+
+  test('o mês corrente vazio diz que há lançamento em outro mês', async ({ page }) => {
+    const uid = titular('mes_vazio_com_outro');
+    await entrarComo(page, uid);
+    await lancar(page, uid, {
+      kind: 'expense',
+      category: 'mercado',
+      description: 'Feira de agosto',
+      amount: 120.5,
+      due_on: '2026-08-20',
+      paid_on: '2026-08-20',
+    });
+
+    await page.goto('/mes');
+    await expect(page.locator('header')).toBeVisible();
+    await page.waitForLoadState('networkidle');
+
+    await expect(
+      page.locator('main'),
+      'mês corrente sem nada, com lançamento em outro mês, tem de dizer isso — e não ficar mudo'
+    ).toContainText('lançamentos em outros meses');
   });
 });
