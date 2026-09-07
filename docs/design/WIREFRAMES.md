@@ -41,7 +41,7 @@ lacuna.
 SOBRA DE SETEMBRO                                     N1   GET /cashflow/month
 R$ 1.647,32                                                GET /cashflow/debts
 │                                                          POST /quick-invest
-│ é o piso — até R$ 1.984,32 se o mês fechar como os três últimos
+│ é o piso — até R$ 1.788,19 se o mês fechar como o mais barato dos três últimos
 │ recebido R$ 6.418,73  ·  pago R$ 4.054,07  ·  a pagar R$ 317,34 (2 contas)
 │ ainda esperado em mercado e dia a dia: R$ 400,00
 │
@@ -70,7 +70,7 @@ A ORDEM                                               N1   ← o app responde;
 
 ······································································ dobra
 SE O MÊS FECHAR ACIMA DO PISO                         N3   (nasce fechado)
-▸ O que fazer com até R$ 337,00 de excedente
+▸ O que fazer com até R$ 140,87 de excedente
 ```
 
 ### As quatro decisões de projeto
@@ -102,6 +102,11 @@ E os números do exemplo **fecham**, que é como a tela precisa fechar: R$ 890,0
 R$ 464,40 + R$ 197,00 de ordens + R$ 95,92 que ficam = R$ 1.647,32, o piso. Ordem é em **cota
 inteira**, com o preço à vista, e o resto que não compra nada é dito em vez de escondido.
 
+Os números desta tela são conferidos por `tests/test_cashflow_month.py`, e a primeira versão
+deste wireframe trazia um teto de R$ 1.984,32 que era **inventado** — o teste derivou R$ 1.788,19
+do mesmo histórico e o documento se corrigiu. Número em wireframe que o código contradiz é
+segunda verdade, e envelhece calado.
+
 **3. A tela não pergunta nada a quem tem caixa.** Os três campos do Quick Invest atual — valor,
 ordem mínima, dois checkboxes — saem da leitura. Ordem mínima passa a ser preferência da conta
 (`/voce/preferencias`), e "usar minhas metas" deixa de ser opção: a meta é a régua que produz o
@@ -122,7 +127,7 @@ sugestão de compra vira lista, não tabela.
 ```
 SOBRA DE SETEMBRO
 R$ 1.647,32
-até R$ 1.984,32
+até R$ 1.788,19
 ▸ como esta faixa é calculada
 ──────────────────────────────
 1  ROTATIVO         −R$ 890,00

@@ -12,6 +12,57 @@
 
 ---
 
+## `cashflow/` nasce, e as duas perguntas pendentes viraram decisão (2026-09-07)
+
+Começo da Fase 3 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md): o módulo de caixa, como
+matemática pura e irmão de `ledger/` — não sabe que existe banco de dados. Quatro arquivos:
+o lançamento e o vocabulário fechado, a projeção do mês, a régua de dívida, e a cascata.
+
+### `provento` no caixa: o caixa **lê** o razão
+
+Das três saídas possíveis, é a única que não cria segunda verdade — e é a mesma forma que o
+produto já usa duas vezes (a posição é projeção do razão; a apuração de IR também). O que **não**
+se fez foi deixar a regra numa convenção de camada de serviço: ela vive no tipo. `CashEntry`
+recusa categoria `provento` sem `derived=True`, e recusa `derived` em qualquer outra categoria.
+
+`cashflow/` continua não importando `ledger/`: a leitura derivada é da camada de serviço, que é
+quem tem os dois lados. Os módulos puros seguem independentes, como `analysis` e `optimizer`.
+
+E `provento` e `reembolso` entram no caixa mas **não** entram na base de renda. Provento não se
+repete por contrato e reembolso é dinheiro que voltou, não dinheiro que se ganhou — somá-los à
+renda recorrente inflaria a projeção do mês seguinte.
+
+### Reserva de emergência: depois da dívida cara, e só com alvo declarado
+
+A ordem tem argumento: a reserva existe para a pessoa **não precisar tomar** dívida cara. Quem já
+tem a dívida não precisa se proteger do risco de contraí-la — pagá-la é o mesmo ato, com retorno
+garantido igual à taxa. Poupar a juros de poupança enquanto se paga 14,9% ao mês é perder nas duas
+pontas.
+
+E o alvo é **declarado**, em meses do próprio gasto fixo da pessoa, que o caixa agora conhece. O
+produto não inventa seis meses: número de mercado solto é exatamente o que a régua de dívida
+proíbe. Sem alvo declarado, ou sem mês fechado para medir o gasto fixo, o passo simplesmente não
+existe — a mesma disciplina de dívida sem taxa.
+
+### O que os testes provaram, e o que corrigiram
+
+Trinta e sete testes novos, e dois achados:
+
+**O wireframe tinha um número inventado.** Ele trazia um teto de sobra de R$ 1.984,32; a
+matemática, rodando sobre o mesmo histórico, derivou R$ 1.788,19. O documento se corrigiu — número
+em wireframe que o código contradiz é segunda verdade, e envelhece calado. O piso, o
+R$ 1.647,32, fechou exatamente como desenhado, e há um teste que confere a soma inteira: dívida +
+ordens em cota inteira + o resto que fica abaixo da ordem mínima.
+
+**Uma guarda minha era inalcançável.** `derived` com saída nunca poderia disparar, porque
+`provento` só existe em entradas e a checagem de categoria vem antes. Saiu: guarda que não pode
+falhar é ruído que parece proteção.
+
+A régua de dívida tem um teste que é o resumo dela: o **mesmo instrumento** muda de classe com a
+taxa. Se o tipo decidisse, consignado a 0,4% e a 3,5% sairiam iguais.
+
+---
+
 ## O mês desenhado, o vocabulário decidido, e duas perguntas que bloqueiam a Fase 3 (2026-09-07)
 
 Fecha a Fase 2 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md).

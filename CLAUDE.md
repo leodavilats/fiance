@@ -25,7 +25,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 913 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 950 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 93 testes
@@ -210,6 +210,49 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   decisão, nunca silenciada.
 - **Proventos por calendário são sugestão, nunca lançamento** (`/dividends/pending`). Toda ressalva
   ali erra para mais, então nada vem pré-selecionado e não existe "aceitar todos".
+
+### Caixa
+
+- **`cashflow/` é irmão de `ledger/`, e não conhece banco.** Matemática pura: `entries.py` (o
+  lançamento e o vocabulário fechado), `month.py` (a projeção do mês), `debt.py` (a régua de
+  dívida), `cascata.py` (a ordem). Quem liga isso à API é `cashflow_service`, no mesmo padrão de
+  `apuracao_service`.
+- **Provento não se lança no caixa — é derivado do razão.** O razão já é a fonte da carteira, e
+  provento creditado é lançamento dele. Se a pessoa também pudesse lançar o mesmo provento no
+  caixa, o dinheiro contaria duas vezes e inflaria a renda do mês **e** a sobra junto. A regra
+  vive no tipo: `CashEntry` recusa categoria `provento` sem `derived=True`, e recusa `derived`
+  em qualquer outra categoria. `cashflow/` não importa `ledger/` — a leitura derivada é da camada
+  de serviço, que é quem tem os dois lados.
+- **Valor de lançamento é sempre positivo.** Entrada e saída se distinguem por `kind`, nunca pelo
+  sinal — mesma disciplina de "quantidade negativa não é lançamento, é sinal trocado".
+- **A competência é o dia do pagamento, não do vencimento.** O caixa mede quando o dinheiro se
+  moveu; conta de agosto paga em setembro é de setembro. Conta não paga conta no mês do
+  vencimento, e é o que forma o `comprometido`.
+- **Fato e projeção são números diferentes, e não se misturam.** `livre_agora` é fato (entrou,
+  menos saiu, menos o comprometido e datado) e alimenta `/mes`; `sobra_piso`/`sobra_teto` são
+  projeção (o mesmo número, menos o gasto variável ainda esperado) e alimentam `/sobra`. A
+  diferença entre os dois **é** a estimativa. Um número que às vezes é fato e às vezes é projeção
+  seria a pior das duas coisas.
+- **Sem mês fechado não há estimativa, e ausência não vira zero.** Estimativa de gasto variável
+  sai só do histórico da própria pessoa (até 3 meses fechados). Sem base, `tem_faixa` é falso e a
+  sobra é o próprio `livre_agora` — tratar "não sei" como "não vai sair nada" daria uma sobra
+  otimista exatamente para quem acabou de começar a lançar.
+- **Pagamento de dívida sai do caixa e não é consumo.** `divida` está fora de
+  `CATEGORIAS_VARIAVEIS` e de `eh_consumo`: se entrasse na base, a estimativa diria que a rotina
+  custa o que a dívida custa.
+- **Dívida se classifica por custo, nunca por tipo.** Não existe campo "caro" no vocabulário de
+  dívida: a classe sai da taxa contra o que **a carteira da pessoa** rende (sem carteira, o CDI do
+  BCB). Consignado a 0,4% e consignado a 3,5% ao mês não são a mesma decisão. **Sem taxa
+  informada não há classe** — o produto não estima taxa de rotativo, que varia por banco e por
+  dia. E o veredito vem com `taxa_de_virada`, que é a taxa em que ele muda.
+- **A cascata pode terminar sem passo de aporte, e isso é sucesso.** Com dívida cara consumindo a
+  sobra inteira, a resposta certa é não aportar. É por isso que o destino se chama `Sobra`, e não
+  `Aporte`.
+- **A reserva vem depois da dívida cara, e só existe com alvo declarado.** A reserva existe para
+  a pessoa não precisar tomar dívida cara; quem já a tem não precisa se proteger do risco de
+  contraí-la, e poupar a juros de poupança enquanto paga 14,9% ao mês é perder nas duas pontas. O
+  alvo é em meses do **próprio** gasto fixo, declarado pela pessoa — o produto não inventa seis
+  meses, porque número de mercado solto é o que a régua de dívida proíbe.
 
 ### Dados externos
 
