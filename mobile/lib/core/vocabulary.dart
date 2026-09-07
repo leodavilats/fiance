@@ -120,3 +120,36 @@ const Map<String, String> fiLiquidez = {
   'diaria': 'Liquidez diária',
   'no_vencimento': 'No vencimento',
 };
+
+const Map<String, FiCategoria> fiCategoriasDeDespesa = {
+  'moradia': FiCategoria('Moradia', 1, Icons.home_outlined),
+  'contas_da_casa': FiCategoria('Contas da casa', 2, Icons.bolt_outlined),
+  'mercado': FiCategoria('Mercado', 3, Icons.shopping_basket_outlined),
+  'transporte': FiCategoria('Transporte', 4, Icons.directions_bus_outlined),
+  'saude': FiCategoria('Saúde', 5, Icons.favorite_outline),
+  'educacao': FiCategoria('Educação', 6, Icons.menu_book_outlined),
+  'lazer': FiCategoria('Lazer', 7, Icons.restaurant_outlined),
+  'cuidados_pessoais': FiCategoria('Cuidados pessoais', 8, Icons.person_outline),
+  'divida': FiCategoria('Dívida', 9, Icons.credit_card_outlined),
+  'outros': FiCategoria('Outros', 0, Icons.circle_outlined),
+};
+
+const Map<String, FiCategoria> fiCategoriasDeEntrada = {
+  'salario': FiCategoria('Salário', 1, Icons.wallet_outlined),
+  'decimo_terceiro': FiCategoria('13º salário', 2, Icons.card_giftcard_outlined),
+  'ferias': FiCategoria('Férias', 3, Icons.beach_access_outlined),
+  'renda_variavel': FiCategoria('Renda variável', 4, Icons.show_chart),
+  'provento': FiCategoria('Provento', 5, Icons.savings_outlined),
+  'reembolso': FiCategoria('Reembolso', 6, Icons.undo_outlined),
+  'outros': FiCategoria('Outros', 0, Icons.circle_outlined),
+};
+
+const Map<String, String> fiTiposDeDivida = {
+  'rotativo_cartao': 'Rotativo do cartão',
+  'cheque_especial': 'Cheque especial',
+  'credito_pessoal': 'Crédito pessoal',
+  'financiamento_imovel': 'Financiamento de imóvel',
+  'financiamento_veiculo': 'Financiamento de veículo',
+  'parcelamento': 'Parcelamento',
+  'outros': 'Outros',
+};

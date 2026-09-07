@@ -305,7 +305,39 @@ function buildVocabTs() {
   linhas.push('};');
   linhas.push('');
 
-  const seriesUsadas = [...new Set(entries(v.categories).map(([, c]) => c.series))].sort((a, b) => a - b);
+  for (const [bloco, nome] of [
+    ['expenseCategories', 'fiCategoriasDeDespesa'],
+    ['incomeCategories', 'fiCategoriasDeEntrada'],
+  ]) {
+    linhas.push(`export const ${nome}: Readonly<Record<string, FiCategoria>> = {`);
+    for (const [id, c] of entries(v[bloco])) {
+      linhas.push(`  ${id}: { label: ${aspas(c.label)}, series: ${c.series}, icon: ${aspas(c.web)} },`);
+    }
+    linhas.push('};');
+    linhas.push('');
+  }
+
+  linhas.push('export const fiTiposDeDivida: Readonly<Record<string, string>> = {');
+  for (const [id, label] of entries(v.debtKinds)) linhas.push(`  ${id}: ${aspas(label)},`);
+  linhas.push('};');
+  linhas.push('');
+
+  /*
+   * As series de TODO vocabulario entram nos mapas de classe.
+   *
+   * Antes so `categories` alimentava a lista, e uma categoria de despesa em `series: 4` pediria
+   * `fiClasseTextoDaSerie[4]` e receberia `undefined` -- a armadilha de "vocabulario gerado sem
+   * consumidor" na sua forma inversa: consumidor sem vocabulario.
+   */
+  const seriesUsadas = [
+    ...new Set(
+      [
+        ...entries(v.categories),
+        ...entries(v.expenseCategories),
+        ...entries(v.incomeCategories),
+      ].map(([, c]) => c.series)
+    ),
+  ].sort((a, b) => a - b);
   const mapasDeClasse = [
     ['fiClasseTextoDaSerie', 'text-series-', ''],
     ['fiClasseFundoDaSerie', 'bg-series-', ''],
@@ -387,6 +419,29 @@ function buildVocabDart() {
 
   linhas.push('const Map<String, String> fiLiquidez = {');
   for (const [id, label] of entries(v.liquidity)) linhas.push(`  '${id}': '${label}',`);
+  linhas.push('};');
+  linhas.push('');
+
+  /*
+   * O vocabulario do caixa sai para as duas plataformas mesmo com as telas do mobile ainda
+   * por fazer. E o motivo do gerador existir: quando elas chegarem, os rotulos ja sao os
+   * mesmos -- a alternativa e a regua de score, que divergiu com um comentario em cada
+   * arquivo dizendo que nao devia divergir.
+   */
+  for (const [bloco, nome] of [
+    ['expenseCategories', 'fiCategoriasDeDespesa'],
+    ['incomeCategories', 'fiCategoriasDeEntrada'],
+  ]) {
+    linhas.push(`const Map<String, FiCategoria> ${nome} = {`);
+    for (const [id, c] of entries(v[bloco])) {
+      linhas.push(`  '${id}': FiCategoria('${c.label}', ${c.series}, ${dartIcone(c.mobile)}),`);
+    }
+    linhas.push('};');
+    linhas.push('');
+  }
+
+  linhas.push('const Map<String, String> fiTiposDeDivida = {');
+  for (const [id, label] of entries(v.debtKinds)) linhas.push(`  '${id}': '${label}',`);
   linhas.push('};');
 
   return linhas.join('\n');

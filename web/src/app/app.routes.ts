@@ -31,6 +31,33 @@ export const routes: Routes = [
   },
 
   {
+    path: 'mes',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/mes/mes.component').then(m => m.MesComponent),
+    title: 'Mês - fiance',
+  },
+  {
+    path: 'mes/lancar',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/mes-lancar/mes-lancar.component').then(m => m.MesLancarComponent),
+    title: 'Lançar no mês - fiance',
+  },
+  {
+    path: 'mes/dividas',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/mes-dividas/mes-dividas.component').then(m => m.MesDividasComponent),
+    title: 'Dívidas - fiance',
+  },
+  {
+    path: 'sobra',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/sobra/sobra.component').then(m => m.SobraComponent),
+    title: 'Sobra - fiance',
+  },
+
+  {
     path: 'carteira',
     canActivate: [authGuard],
     loadComponent: () =>

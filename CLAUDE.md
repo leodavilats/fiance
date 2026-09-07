@@ -116,7 +116,12 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   `product-rules.json` e não eram importados por ninguém no web, enquanto quatro telas reescreviam o mapa
   à mão. O mobile fazia certo desde sempre (`core/labels.dart`). Ao gerar um vocabulário novo,
   confira se ele chega a uma tela — gerado e ignorado é pior que não gerado, porque parece
-  resolvido.
+  resolvido. **A causa era o barrel:** `core/vocabulary.ts` não estava em `core/index.ts`, então
+  a tela que quisesse usá-lo teria de importar por caminho. Agora está.
+- **Série nova no vocabulário sem entrar nos mapas de classe** — `fiClasseTextoDaSerie` e irmãos
+  eram montados só das séries de `categories`. Uma categoria de despesa em `series: 4` pedia
+  `fiClasseTextoDaSerie[4]` e recebia `undefined`: a armadilha acima na forma inversa, consumidor
+  sem vocabulário. O gerador agora varre os três blocos de categoria.
 
 O `npm run lint:ui` cobre treze dessas.
 

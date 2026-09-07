@@ -12,3 +12,4 @@ export * from './recommend.service';
 export * from './snackbar.service';
 export * from './theme.service';
 export * from './ui-helper.service';
+export * from './cashflow.service';

@@ -476,6 +476,121 @@
       "Energy Minerals": "Energia",
       "Communications": "Telecomunicações",
       "Distribution Services": "Industrial"
+    },
+    "expenseCategories": {
+      "moradia": {
+        "label": "Moradia",
+        "series": 1,
+        "web": "house",
+        "mobile": "home_outlined"
+      },
+      "contas_da_casa": {
+        "label": "Contas da casa",
+        "series": 2,
+        "web": "plug-zap",
+        "mobile": "bolt_outlined"
+      },
+      "mercado": {
+        "label": "Mercado",
+        "series": 3,
+        "web": "shopping-cart",
+        "mobile": "shopping_basket_outlined"
+      },
+      "transporte": {
+        "label": "Transporte",
+        "series": 4,
+        "web": "compass",
+        "mobile": "directions_bus_outlined"
+      },
+      "saude": {
+        "label": "Saúde",
+        "series": 5,
+        "web": "stethoscope",
+        "mobile": "favorite_outline"
+      },
+      "educacao": {
+        "label": "Educação",
+        "series": 6,
+        "web": "book-open",
+        "mobile": "menu_book_outlined"
+      },
+      "lazer": {
+        "label": "Lazer",
+        "series": 7,
+        "web": "shopping-bag",
+        "mobile": "restaurant_outlined"
+      },
+      "cuidados_pessoais": {
+        "label": "Cuidados pessoais",
+        "series": 8,
+        "web": "circle-user",
+        "mobile": "person_outline"
+      },
+      "divida": {
+        "label": "Dívida",
+        "series": 9,
+        "web": "receipt",
+        "mobile": "credit_card_outlined"
+      },
+      "outros": {
+        "label": "Outros",
+        "series": 0,
+        "web": "circle",
+        "mobile": "circle_outlined"
+      }
+    },
+    "incomeCategories": {
+      "salario": {
+        "label": "Salário",
+        "series": 1,
+        "web": "wallet",
+        "mobile": "wallet_outlined"
+      },
+      "decimo_terceiro": {
+        "label": "13º salário",
+        "series": 2,
+        "web": "gift",
+        "mobile": "card_giftcard_outlined"
+      },
+      "ferias": {
+        "label": "Férias",
+        "series": 3,
+        "web": "sunrise",
+        "mobile": "beach_access_outlined"
+      },
+      "renda_variavel": {
+        "label": "Renda variável",
+        "series": 4,
+        "web": "chart-line",
+        "mobile": "show_chart"
+      },
+      "provento": {
+        "label": "Provento",
+        "series": 5,
+        "web": "coins",
+        "mobile": "savings_outlined"
+      },
+      "reembolso": {
+        "label": "Reembolso",
+        "series": 6,
+        "web": "circle-arrow-down",
+        "mobile": "undo_outlined"
+      },
+      "outros": {
+        "label": "Outros",
+        "series": 0,
+        "web": "circle",
+        "mobile": "circle_outlined"
+      }
+    },
+    "debtKinds": {
+      "rotativo_cartao": "Rotativo do cartão",
+      "cheque_especial": "Cheque especial",
+      "credito_pessoal": "Crédito pessoal",
+      "financiamento_imovel": "Financiamento de imóvel",
+      "financiamento_veiculo": "Financiamento de veículo",
+      "parcelamento": "Parcelamento",
+      "outros": "Outros"
     }
   }
 }

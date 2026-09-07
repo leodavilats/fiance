@@ -109,13 +109,50 @@ export const fiLiquidez: Readonly<Record<string, string>> = {
   no_vencimento: 'No vencimento',
 };
 
+export const fiCategoriasDeDespesa: Readonly<Record<string, FiCategoria>> = {
+  moradia: { label: 'Moradia', series: 1, icon: 'house' },
+  contas_da_casa: { label: 'Contas da casa', series: 2, icon: 'plug-zap' },
+  mercado: { label: 'Mercado', series: 3, icon: 'shopping-cart' },
+  transporte: { label: 'Transporte', series: 4, icon: 'compass' },
+  saude: { label: 'Saúde', series: 5, icon: 'stethoscope' },
+  educacao: { label: 'Educação', series: 6, icon: 'book-open' },
+  lazer: { label: 'Lazer', series: 7, icon: 'shopping-bag' },
+  cuidados_pessoais: { label: 'Cuidados pessoais', series: 8, icon: 'circle-user' },
+  divida: { label: 'Dívida', series: 9, icon: 'receipt' },
+  outros: { label: 'Outros', series: 0, icon: 'circle' },
+};
+
+export const fiCategoriasDeEntrada: Readonly<Record<string, FiCategoria>> = {
+  salario: { label: 'Salário', series: 1, icon: 'wallet' },
+  decimo_terceiro: { label: '13º salário', series: 2, icon: 'gift' },
+  ferias: { label: 'Férias', series: 3, icon: 'sunrise' },
+  renda_variavel: { label: 'Renda variável', series: 4, icon: 'chart-line' },
+  provento: { label: 'Provento', series: 5, icon: 'coins' },
+  reembolso: { label: 'Reembolso', series: 6, icon: 'circle-arrow-down' },
+  outros: { label: 'Outros', series: 0, icon: 'circle' },
+};
+
+export const fiTiposDeDivida: Readonly<Record<string, string>> = {
+  rotativo_cartao: 'Rotativo do cartão',
+  cheque_especial: 'Cheque especial',
+  credito_pessoal: 'Crédito pessoal',
+  financiamento_imovel: 'Financiamento de imóvel',
+  financiamento_veiculo: 'Financiamento de veículo',
+  parcelamento: 'Parcelamento',
+  outros: 'Outros',
+};
+
 export const fiClasseTextoDaSerie: Readonly<Record<number, string>> = {
   0: 'text-series-other',
   1: 'text-series-1',
   2: 'text-series-2',
   3: 'text-series-3',
+  4: 'text-series-4',
   5: 'text-series-5',
+  6: 'text-series-6',
+  7: 'text-series-7',
   8: 'text-series-8',
+  9: 'text-series-9',
 };
 
 export const fiClasseFundoDaSerie: Readonly<Record<number, string>> = {
@@ -123,8 +160,12 @@ export const fiClasseFundoDaSerie: Readonly<Record<number, string>> = {
   1: 'bg-series-1',
   2: 'bg-series-2',
   3: 'bg-series-3',
+  4: 'bg-series-4',
   5: 'bg-series-5',
+  6: 'bg-series-6',
+  7: 'bg-series-7',
   8: 'bg-series-8',
+  9: 'bg-series-9',
 };
 
 export const fiClasseBarraDaSerie: Readonly<Record<number, string>> = {
@@ -132,8 +173,12 @@ export const fiClasseBarraDaSerie: Readonly<Record<number, string>> = {
   1: 'bg-series-1',
   2: 'bg-series-2',
   3: 'bg-series-3',
+  4: 'bg-series-4',
   5: 'bg-series-5',
+  6: 'bg-series-6',
+  7: 'bg-series-7',
   8: 'bg-series-8',
+  9: 'bg-series-9',
 };
 
 export const fiClasseChipDaSerie: Readonly<Record<number, string>> = {
@@ -141,8 +186,12 @@ export const fiClasseChipDaSerie: Readonly<Record<number, string>> = {
   1: 'bg-series-1/15',
   2: 'bg-series-2/15',
   3: 'bg-series-3/15',
+  4: 'bg-series-4/15',
   5: 'bg-series-5/15',
+  6: 'bg-series-6/15',
+  7: 'bg-series-7/15',
   8: 'bg-series-8/15',
+  9: 'bg-series-9/15',
 };
 
 export const fiClasseBordaDaSerie: Readonly<Record<number, string>> = {
@@ -150,6 +199,10 @@ export const fiClasseBordaDaSerie: Readonly<Record<number, string>> = {
   1: 'border-series-1/30',
   2: 'border-series-2/30',
   3: 'border-series-3/30',
+  4: 'border-series-4/30',
   5: 'border-series-5/30',
+  6: 'border-series-6/30',
+  7: 'border-series-7/30',
   8: 'border-series-8/30',
+  9: 'border-series-9/30',
 };
