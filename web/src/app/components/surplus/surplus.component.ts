@@ -8,7 +8,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 @Component({
-  selector: 'app-sobra',
+  selector: 'app-surplus',
   standalone: true,
   imports: [
     CommonModule,
@@ -189,7 +189,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
     }
   `,
 })
-export class SobraComponent implements OnInit {
+export class SurplusComponent implements OnInit {
   private readonly api = inject(CashflowService);
 
   readonly dados = signal<Surplus | null>(null);

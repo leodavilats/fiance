@@ -84,19 +84,7 @@
   }
 }
 
-/*
- * A camada de controle vive num @layer, e isso e correcao, nao arrumacao.
- *
- * Escritas soltas depois de `@tailwind utilities`, estas classes venciam as utilitarias:
- * `class="btn-secondary hidden sm:inline-flex"` ficava VISIVEL, porque
- * `.btn-secondary { display: inline-flex }` derrotava o `display: none` do `hidden`. Valia
- * para todo .btn-* do produto -- esconder botao por breakpoint nao fazia nada, sem erro
- * nenhum. O sintoma que apareceu foi o cabecalho vazando 3px em 320px, nas cinco rotas.
- *
- * Regra nativa sem camada sempre vence regra em camada, independente da ordem. Com o
- * @layer, utilitaria volta a poder ajustar um controle do sistema, que e o arranjo que o
- * Tailwind pressupoe.
- */
+/* A camada de controle vive num @layer para as utilitárias poderem vencê-la. */
 @layer components {
   .input {
     @apply w-full font-[inherit];

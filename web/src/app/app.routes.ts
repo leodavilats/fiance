@@ -26,21 +26,21 @@ export const routes: Routes = [
   {
     path: 'mes',
     canActivate: [authGuard],
-    loadComponent: () => import('./components/mes/mes.component').then(m => m.MesComponent),
+    loadComponent: () => import('./components/month/month.component').then(m => m.MonthComponent),
     title: 'Mês - fiance',
   },
   {
     path: 'mes/lancar',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/mes-lancar/mes-lancar.component').then(m => m.MesLancarComponent),
+      import('./components/month-entry/month-entry.component').then(m => m.MonthEntryComponent),
     title: 'Lançar no mês - fiance',
   },
   {
     path: 'mes/dividas',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/mes-dividas/mes-dividas.component').then(m => m.MesDividasComponent),
+      import('./components/month-debts/month-debts.component').then(m => m.MonthDebtsComponent),
     title: 'Dívidas - fiance',
   },
   {
@@ -147,7 +147,7 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./components/sobra/sobra.component').then(m => m.SobraComponent),
+          import('./components/surplus/surplus.component').then(m => m.SurplusComponent),
         title: 'Sobra - fiance',
       },
       {

@@ -1,14 +1,4 @@
-"""O caixa: matemática pura, sem banco.
-
-Módulo irmão de `ledger/`, e com a mesma disciplina — o que mora aqui não sabe que existe banco
-de dados. `cashflow_service` é quem liga isto à API e às tabelas, do mesmo jeito que
-`apuracao_service` liga `ledger/apuracao.py`.
-
-A fronteira que importa: **este módulo não conhece o razão**. Provento creditado é entrada de
-caixa e lançamento do razão ao mesmo tempo, e a regra de não contar duas vezes vive no tipo
-(`CashEntry` recusa provento que não venha marcado como derivado). Quem faz a leitura derivada é
-a camada de serviço, porque é ela que tem os dois lados.
-"""
+"""O caixa: matemática pura, sem banco. Módulo irmão de `ledger/`."""
 
 from .cascata import Cascata, Passo, TipoDePasso, gasto_fixo_mensal, montar
 from .debt import (

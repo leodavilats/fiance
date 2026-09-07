@@ -7,7 +7,7 @@ import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
-  selector: 'app-mes-dividas',
+  selector: 'app-month-debts',
   standalone: true,
   imports: [
     CommonModule,
@@ -155,7 +155,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
     </form>
   `,
 })
-export class MesDividasComponent implements OnInit {
+export class MonthDebtsComponent implements OnInit {
   private readonly api = inject(CashflowService);
   private readonly fb = inject(FormBuilder);
 

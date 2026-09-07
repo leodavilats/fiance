@@ -10,7 +10,7 @@ import {
   fiCategoriasDeDespesa,
   fiCategoriasDeEntrada,
 } from '../../core';
-import { MudouFeedComponent } from '../mudou-feed/mudou-feed.component';
+import { ChangesFeedComponent } from '../changes-feed/changes-feed.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 
@@ -20,13 +20,13 @@ interface LinhaDoMes {
 }
 
 @Component({
-  selector: 'app-mes',
+  selector: 'app-month',
   standalone: true,
   imports: [
     CommonModule,
     RouterLink,
     LucideAngularModule,
-    MudouFeedComponent,
+    ChangesFeedComponent,
     PageHeaderComponent,
     SkeletonComponent,
   ],
@@ -86,7 +86,7 @@ interface LinhaDoMes {
 
         <section class="fi-block">
           <p class="fi-eyebrow text-ink-3 m-0">O que mudou</p>
-          <app-mudou-feed />
+          <app-changes-feed />
         </section>
 
         @if (atencao().length > 0) {
@@ -197,7 +197,7 @@ interface LinhaDoMes {
     }
   `,
 })
-export class MesComponent implements OnInit {
+export class MonthComponent implements OnInit {
   private readonly api = inject(CashflowService);
 
   readonly mes = signal<CashMonth | null>(null);

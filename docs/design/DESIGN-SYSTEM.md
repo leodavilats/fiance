@@ -150,7 +150,7 @@ Largura de leitura 1120px, densa 1600px — o `max-w-[1180px]` global sai.
 
 ## O vocabulário do caixa — decidido, ainda não gerado
 
-Entregável da Fase 2 do [ROADMAP](../../planejamento/ROADMAP_TRANSFORMACAO.md). **Não está em
+Entregável da Fase 2 do [ROADMAP](../produto/ROADMAP.md). **Não está em
 `product-rules.json`**, e é decisão, não esquecimento: o CLAUDE.md registra que vocabulário gerado
 sem consumidor é pior que não gerado, porque *parece* resolvido. `fiTiposDeRendaFixa` e
 `fiLiquidez` já custaram isso — saíam do gerador e quatro telas reescreviam o mapa à mão.
@@ -213,7 +213,7 @@ opção é a única que não cria segunda verdade, e é também a que acopla os 
 | `outros` | — |
 
 **O tipo não diz se a dívida é cara.** A
-[regra](../../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) é explícita: *"classificar a dívida por
+[regra](../produto/REGRAS_DE_DOMINIO.md#dívida) é explícita: *"classificar a dívida por
 custo, não por tipo"*. Cara e administrável são **derivados da taxa** contra o que a carteira da
 pessoa rende — e por isso não existe campo `caro: true` no vocabulário. Se existisse, o código
 classificaria por instrumento, que é exatamente o que a regra proíbe: consignado a 1,2% ao mês e

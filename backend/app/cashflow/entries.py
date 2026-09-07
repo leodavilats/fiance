@@ -86,13 +86,6 @@ class CashEntry:
                 f"O vocabulário é fechado: {', '.join(validas)}."
             )
 
-        # Provento é derivado do razão, nunca lançado à mão.
-        #
-        # O razão já é a fonte da carteira, e provento creditado é lançamento dele. Se a pessoa
-        # também pudesse lançar o mesmo provento no caixa, o dinheiro contaria duas vezes e
-        # inflaria a renda do mês e a sobra junto. A regra vive aqui, no tipo, e não numa
-        # convenção de camada de serviço — é o único lugar em que ela não tem como ser
-        # esquecida.
         if self.category == "provento" and not self.derived:
             raise CashError(
                 "Provento não se lança no caixa: ele é derivado do razão, que já é a fonte da "
@@ -120,11 +113,7 @@ class CashEntry:
 
     @property
     def eh_consumo(self) -> bool:
-        """Saída que é custo de vida.
-
-        Pagamento de dívida sai do caixa e **não** é consumo: misturar as duas coisas corrompe
-        a leitura de quanto a rotina custa, que é a base da estimativa de gasto variável.
-        """
+        """Saída que é custo de vida — pagamento de dívida não é."""
         return self.kind is CashKind.EXPENSE and self.category not in CATEGORIAS_QUE_NAO_SAO_CONSUMO
 
     @property

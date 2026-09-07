@@ -32,13 +32,7 @@ async function cadastrarDivida(
   }
 }
 
-/*
- * Um titular por EXECUCAO, e nao so por teste.
- *
- * O banco do e2e persiste entre rodadas, entao um id fixo faz o lancamento da execucao
- * anterior somar ao desta -- o teste passa na primeira vez e falha na segunda, que e a pior
- * forma de falhar.
- */
+/* Um titular por execução: o banco do e2e persiste entre rodadas. */
 const RODADA = Date.now().toString(36);
 
 function titular(nome: string): string {
@@ -62,11 +56,6 @@ test.describe('a ponte responde em vez de perguntar', () => {
     await expect(page.locator('header')).toBeVisible();
     await page.waitForLoadState('networkidle');
 
-    /*
-     * O critério de aceite escrito no wireframe: se a tela voltar a PEDIR o valor do aporte a
-     * quem tem caixa lançado, a ponte não está construída. Sem caixa ela pede — mas tem de
-     * dizer que existe um jeito de não precisar pedir.
-     */
     await expect(page.getByText('Sem lançamento de caixa')).toBeVisible();
     await expect(page.getByRole('link', { name: /Lançar o mês/ })).toBeVisible();
   });

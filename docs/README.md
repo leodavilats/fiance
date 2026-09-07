@@ -10,35 +10,44 @@ Cada arquivo responde **uma** pergunta. Se você não sabe onde procurar, comece
 | O que cada tela faz | [FEATURES.md](FEATURES.md) |
 | O que está quebrado, faltando ou pendente **agora** | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
 | Por que uma decisão foi tomada, e quando | [CHANGELOG.md](CHANGELOG.md) |
-| Por que a interface é assim — auditoria, arquitetura de informação, design system | [design/](design/) |
+| Por que a interface é assim — identidade, design system, arquitetura de informação, wireframes | [design/](design/) |
+| Para onde o produto vai — visão, modelo de negócio, regras de domínio, roadmap | [produto/](produto/) |
 | Subir, observar e reverter — variáveis, deploy, Sentry, backup | [OPERACAO.md](OPERACAO.md) |
-| O que falta para subir, e para onde o produto pode ir | [../planejamento/](../planejamento/) |
 
-## A divisão que importa
+## As três naturezas de documento
 
-**Estado atual** vive em `ARCHITECTURE.md`, `FEATURES.md` e `KNOWN_ISSUES.md`. Se algo nesses três
-não corresponde ao código, é bug de documentação — corrija.
+A pasta tem três tipos de arquivo, e misturá-los é o que fez esta documentação apodrecer antes.
 
-**Histórico** vive em `CHANGELOG.md`. Nada lá deve ser lido como pendência, mesmo quando descreve
-um problema: é o registro de como o produto chegou aqui, incluindo decisões revertidas e código
-apagado de propósito.
+**O que o sistema É.** `ARCHITECTURE.md`, `FEATURES.md`, `KNOWN_ISSUES.md` e `design/`. Se algo
+aqui não corresponde ao código, é **bug de documentação** — corrija o documento, não o leitor.
 
-Essa separação existe porque não existia: `KNOWN_ISSUES.md` tinha 227 linhas em que a maioria dos
-itens estava marcada como resolvida, com um aviso no topo pedindo para ler a última seção primeiro
-porque ela invalidava as anteriores. Seis itens contradiziam o código.
+**Como o sistema chegou aqui.** `CHANGELOG.md`, e só ele. Nada lá é pendência, mesmo quando
+descreve um problema: é o registro de decisões, incluindo as revertidas e o código apagado de
+propósito.
+
+**Para onde o produto vai.** `produto/`. Nada ali está construído, e por isso todo arquivo tem
+prazo de validade: item fechado se apaga, direção que virou código vira entrada no `CHANGELOG` e
+sai de lá.
+
+Essa separação existe porque não existia. `KNOWN_ISSUES.md` já teve 227 linhas com a maioria dos
+itens marcada como resolvida e um aviso no topo pedindo para ler a última seção primeiro, porque
+ela invalidava as anteriores; seis itens contradiziam o código.
 
 ## Antes de mexer
 
-- **Regra de negócio** (fair price, score, renda fixa, IR) vive **só** no backend, em `analysis/` e
-  `optimizer/`. Web e mobile delegam.
-- **Token de design** é gerado, não escrito: edite `design-tokens/tokens.json` e rode
-  `node design-tokens/build.mjs`. O CI falha se web e mobile divergirem.
+- **Regra de negócio** (preço justo, score, renda fixa, IR, caixa) vive **só** no backend, em
+  `analysis/`, `optimizer/`, `ledger/` e `cashflow/`. Web e mobile delegam.
+- **A camada visual é escrita; a régua é gerada.** Cor, tipografia, espaço e motion vivem em
+  [web/src/foundation.css](../web/src/foundation.css), com espelho à mão em
+  `mobile/lib/core/design_tokens.dart`. O que continua gerado é o que precisa ser igual nas três
+  plataformas por ser **número**, e não aparência: `design-tokens/product-rules.json` →
+  `node design-tokens/build-rules.mjs`. O contraste é verificado no CI, não recomendado.
 - **Navegação e telas** seguem a arquitetura de informação em
   [design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md). O que já está
-  construído está no código; o que **não** está, em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
-- **Suíte verde é pré-requisito de merge.** Os comandos exatos, com as contagens esperadas,
-  estão em [CLAUDE.md](../CLAUDE.md#como-trabalhar-aqui). Em resumo: `pytest` (724) ·
-  `flutter analyze && flutter test` (49) · `npm test && npm run build && npm run lint:ui` (90) ·
-  `node design-tokens/build.mjs --check`. Tudo roda no CI a cada push.
+  construído está no código; o que **não** está, em [produto/ROADMAP.md](produto/ROADMAP.md).
+- **Suíte verde é pré-requisito de merge.** Os comandos exatos, com as contagens esperadas, estão
+  em [CLAUDE.md](../CLAUDE.md). Tudo roda no CI a cada push.
+- **Link quebrado é erro.** `node docs/checar-links.mjs` varre todo `.md` do repositório, arquivo
+  e âncora. Documentação reorganizada sem conferir link é refatoração sem teste.
 - **Invariantes e armadilhas** — o que não pode ser violado e o que quebra em silêncio — estão em
   [CLAUDE.md](../CLAUDE.md), não aqui.

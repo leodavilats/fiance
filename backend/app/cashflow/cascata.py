@@ -39,12 +39,7 @@ class Passo:
 
 @dataclass(frozen=True)
 class Cascata:
-    """A ordem, que é o produto desta tela.
-
-    Ela pode terminar **sem** passo de aporte, e isso é sucesso: com dívida cara consumindo a
-    sobra inteira, a resposta certa é não aportar. Um destino chamado `Aporte` não conseguiria
-    dizer isso — é por isso que ele se chama `Sobra`.
-    """
+    """A ordem. Pode terminar **sem** passo de aporte, e isso é resposta, não falha."""
 
     sobra_piso: Decimal
     passos: tuple[Passo, ...]
@@ -63,11 +58,7 @@ class Cascata:
 
 
 def gasto_fixo_mensal(entries: Iterable[CashEntry], meses: int = 3) -> Decimal:
-    """A média do gasto fixo dos meses fechados — a base da reserva.
-
-    Reserva se mede em meses do **próprio** custo fixo da pessoa, e não em número de mercado.
-    Sem mês fechado não há base, e então não há passo de reserva.
-    """
+    """A média do gasto fixo dos meses fechados. Zero quando não há mês fechado."""
     por_mes: dict[str, Decimal] = {}
     for e in entries:
         if e.kind is not CashKind.EXPENSE or e.category not in CATEGORIAS_FIXAS:
@@ -93,12 +84,7 @@ def montar(
     gasto_fixo: Decimal = ZERO,
     desvio_de_meta: str | None = None,
 ) -> Cascata:
-    """Monta a ordem sobre o **piso** da faixa, nunca sobre o meio.
-
-    Assimetria de erro: comprar cota com dinheiro que talvez não chegue custa vender no prejuízo
-    ou atrasar uma conta; aportar menos custa um mês de rendimento. Os dois erros não têm o mesmo
-    preço, então o número que vira ordem de compra é o conservador.
-    """
+    """Monta a ordem sobre o **piso** da faixa, nunca sobre o meio."""
     passos: list[Passo] = []
     disponivel = sobra_piso
 
@@ -134,12 +120,6 @@ def montar(
         )
         disponivel -= valor
 
-    # A reserva vem DEPOIS da dívida cara, e não antes.
-    #
-    # A reserva existe para a pessoa não precisar tomar dívida cara. Quem já tem a dívida não
-    # precisa se proteger do risco de contraí-la: pagá-la é o mesmo ato, com retorno garantido
-    # igual à taxa. Poupar a juros de poupança enquanto se paga 14,9% ao mês é perder nas duas
-    # pontas.
     if disponivel > ZERO and reserva_meses_alvo and gasto_fixo > ZERO and reserva_atual is not None:
         alvo = gasto_fixo * reserva_meses_alvo
         falta = alvo - reserva_atual

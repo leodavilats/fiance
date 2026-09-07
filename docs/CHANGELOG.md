@@ -14,7 +14,7 @@
 
 ## `cashflow/` nasce, e as duas perguntas pendentes viraram decisão (2026-09-07)
 
-Começo da Fase 3 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md): o módulo de caixa, como
+Começo da Fase 3 do [ROADMAP](produto/ROADMAP.md): o módulo de caixa, como
 matemática pura e irmão de `ledger/` — não sabe que existe banco de dados. Quatro arquivos:
 o lançamento e o vocabulário fechado, a projeção do mês, a régua de dívida, e a cascata.
 
@@ -65,7 +65,7 @@ taxa. Se o tipo decidisse, consignado a 0,4% e a 3,5% sairiam iguais.
 
 ## O mês desenhado, o vocabulário decidido, e duas perguntas que bloqueiam a Fase 3 (2026-09-07)
 
-Fecha a Fase 2 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md).
+Fecha a Fase 2 do [ROADMAP](produto/ROADMAP.md).
 
 ### `/mes`: duas telas não podem liderar com a mesma cifra
 
@@ -98,7 +98,7 @@ consumidor é pior que não gerado, porque *parece* resolvido — `fiTiposDeRend
 já custaram isso. A entrada acompanha o commit que constrói a primeira tela que a consome.
 
 **O tipo de dívida deliberadamente não carrega se ela é cara.** A
-[regra](../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) manda classificar por **custo, não por
+[regra](produto/REGRAS_DE_DOMINIO.md#dívida) manda classificar por **custo, não por
 tipo**, e um campo `caro: true` no vocabulário faria o código classificar por instrumento —
 consignado a 1,2% ao mês e consignado a 3,5% ao mês não são a mesma decisão. Cara e administrável
 são derivadas da taxa contra o que a carteira rende, e sem taxa informada não há classe.
@@ -120,7 +120,7 @@ meses, contra qual base, e antes ou depois da dívida cara.
 
 ## A ponte desenhada, e o critério que diz se ela existe (2026-09-07)
 
-O portão da Fase 3 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md): a tela de `Sobra`, em
+O portão da Fase 3 do [ROADMAP](produto/ROADMAP.md): a tela de `Sobra`, em
 [WIREFRAMES](design/WIREFRAMES.md#n1-sobra--a-ponte).
 
 **O achado que orientou o desenho** foi comparar o Quick Invest construído com o wireframe dele.
@@ -138,7 +138,7 @@ Quatro decisões de projeto, e duas delas são de domínio, não de layout:
 
 **A ordem é o produto.** A tela não mostra "sua sobra e onde investir": mostra uma cascata em que
 cada passo consome parte da sobra e declara o que o derrubaria. É a
-[regra de dívida](../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) renderizada, com a comparação
+[regra de dívida](produto/REGRAS_DE_DOMINIO.md#dívida) renderizada, com a comparação
 contra o que a carteira **da pessoa** rende. Consequência aceita: a tela pode terminar dizendo
 *não aporte este mês*, e isso é sucesso dela — um destino chamado `Aporte` não conseguiria dizer
 isso, e é por isso que ele se chama `Sobra`.
@@ -288,7 +288,7 @@ acusar o número exato:
 
 ## A IA nova, e a landing que testa a aposta (2026-09-06)
 
-Fase 2 do [ROADMAP](../planejamento/ROADMAP_TRANSFORMACAO.md) começou sem a Fase 1 ter fechado —
+Fase 2 do [ROADMAP](produto/ROADMAP.md) começou sem a Fase 1 ter fechado —
 decisão consciente, com uma ressalva registrada: o portão que protege de verdade é o da Fase 3,
 quando isso vira `cashflow/`. Design errado custa dias; módulo errado custa meses.
 

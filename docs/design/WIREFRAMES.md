@@ -20,7 +20,7 @@
 
 ## N1. `/sobra` — a ponte
 
-O portão da Fase 3 do [ROADMAP](../../planejamento/ROADMAP_TRANSFORMACAO.md), e a peça que
+O portão da Fase 3 do [ROADMAP](../produto/ROADMAP.md), e a peça que
 sustenta a tese inteira: *"se a sobra não alimentar a decisão de investir, a ponte não existe e o
 produto é dois apps num só instalador"*.
 
@@ -77,7 +77,7 @@ SE O MÊS FECHAR ACIMA DO PISO                         N3   (nasce fechado)
 
 **1. A ordem é o produto, não a lista.** A tela não mostra "sua sobra e onde investir": mostra uma
 **cascata**, em que cada passo consome parte da sobra e declara o que o derrubaria. É a
-[regra de dívida](../../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) renderizada: dívida cara vem
+[regra de dívida](../produto/REGRAS_DE_DOMINIO.md#dívida) renderizada: dívida cara vem
 antes de aporte porque é aritmética de taxa, e a comparação é sempre contra o que **a carteira da
 pessoa** rende — nunca um número de mercado solto. Sem carteira, contra o CDI que o BCB já entrega.
 
@@ -163,7 +163,7 @@ O contrato geral está na [matriz de estados](#9-matriz-de-estados--o-contrato-d
 ### O que este wireframe deixa aberto
 
 - **Reserva de emergência não é um passo da cascata**, porque não há decisão de produto sobre ela.
-  [REGRAS_NOVO_DOMINIO](../../planejamento/REGRAS_NOVO_DOMINIO.md) só a cita de passagem, como
+  [REGRAS_NOVO_DOMINIO](../produto/REGRAS_DE_DOMINIO.md) só a cita de passagem, como
   analogia para o argumento de dívida. Uma ponte caixa→investimento sem esse passo é discutível, e
   a pergunta é de produto, não de design: **quantos meses, contra qual base, e antes ou depois da
   dívida cara**. Fica declarado como lacuna em vez de inventado aqui.
@@ -263,7 +263,7 @@ mês — a pessoa está conferindo, não cadastrando.
 | **Antes do salário cair** | `Livre agora` pode ser negativo, e a tela diz isso sem dramatizar: *"o salário do dia 5 ainda não entrou"* | Pintar de vermelho um mês que só começou |
 | **Salário atrasado** | A linha do previsto continua na lista, marcada como **não recebida**, e vira item de `Exige atenção` no dia seguinte ao previsto | Somar renda que não entrou |
 | **Mês fechado** | `Livre agora` passa a `Sobrou`, sem faixa e sem projeção. `A vencer` desaparece | Continuar chamando de "livre" o que já acabou |
-| **Renda variável (PJ/autônomo)** | Não há linha de salário previsto: o [regime muda o formato do calendário](../../planejamento/REGRAS_NOVO_DOMINIO.md#renda-líquida), não o cálculo. `Livre agora` continua sendo só o realizado | Projetar renda de quem não tem data de recebimento |
+| **Renda variável (PJ/autônomo)** | Não há linha de salário previsto: o [regime muda o formato do calendário](../produto/REGRAS_DE_DOMINIO.md#renda-líquida), não o cálculo. `Livre agora` continua sendo só o realizado | Projetar renda de quem não tem data de recebimento |
 | **Sem dívida** | `Exige atenção` pode ficar vazio, e então **não aparece** | Seção vazia com "nada a fazer" |
 
 ### `/mes/lancar` e `/mes/dividas`

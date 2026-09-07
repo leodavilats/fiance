@@ -1,13 +1,5 @@
-// ESCRITO A MAO. Espelho de web/src/foundation.css.
-//
-// A paleta e a escala deixaram de ser geradas: cor, tipografia, espaco, raio, motion e
-// densidade sao escritos — aqui e no CSS. O que continua gerado e product_rules.dart, e este
-// arquivo o reexporta para que quem importa design_tokens continue achando FiState,
-// FiScoreBand e FiDecision no mesmo lugar de antes.
-//
-// NAO ha maquina conferindo a paridade com o CSS. Mudar um valor aqui obriga a mudar la, e o
-// contrario tambem; a regra esta em docs/design/DESIGN-SYSTEM.md. Os contrastes sao cobrados
-// no lado do CSS por design-tokens/check-contrast.mjs.
+// ESCRITO A MAO. Espelho de web/src/foundation.css, sem maquina conferindo a paridade.
+// A regra esta em docs/design/DESIGN-SYSTEM.md.
 
 import 'package:flutter/material.dart';
 

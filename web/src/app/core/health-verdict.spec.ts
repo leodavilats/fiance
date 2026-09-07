@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MIN_POSICOES_PARA_SAUDE, razoesDaSaude, vereditoDeSaude } from './health-verdict';
 
-/*
- * Estes casos moravam em `dashboard.component.spec.ts`, e vieram junto quando `/hoje` se
- * dissolveu. Testar as funções direto é melhor do que estava: elas são puras, e o veredito de
- * saúde continua vivo em `/patrimonio` — apagá-los com a tela teria sido perda de cobertura de
- * uma lógica que não saiu do produto.
- */
+/* Estes casos vieram de `dashboard.component.spec.ts`, quando `/hoje` se dissolveu. */
 
 function razoes(over: Partial<Parameters<typeof razoesDaSaude>[0]> = {}): string[] {
   return razoesDaSaude({

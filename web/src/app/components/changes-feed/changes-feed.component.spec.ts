@@ -2,13 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DashboardResponse, RecommendService, WhatsNewResponse } from '../../core';
-import { MudouFeedComponent } from './mudou-feed.component';
+import { ChangesFeedComponent } from './changes-feed.component';
 
-/*
- * Os casos do feed vieram de `dashboard.component.spec.ts`, e continuam valendo: a tela mudou de
- * lugar, a regra de ordenação e de estado não. Dissolver `/hoje` sem trazer estes testes junto
- * teria apagado a cobertura da única lógica que a tela tinha de próprio.
- */
+/* Os casos do feed vieram de `dashboard.component.spec.ts`. */
 
 const recommendStub = {
   dashboard: () => ({ subscribe: () => undefined }),
@@ -34,13 +30,13 @@ function dashboard(over: Partial<DashboardResponse> = {}): DashboardResponse {
 }
 
 describe('o feed do que mudou', () => {
-  let component: MudouFeedComponent;
+  let component: ChangesFeedComponent;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), { provide: RecommendService, useValue: recommendStub }],
     });
-    component = TestBed.createComponent(MudouFeedComponent).componentInstance;
+    component = TestBed.createComponent(ChangesFeedComponent).componentInstance;
   });
 
   it('o crítico vem antes do aviso, e o aviso antes do informativo', () => {

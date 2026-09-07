@@ -13,7 +13,7 @@ import {
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
-  selector: 'app-mes-lancar',
+  selector: 'app-month-entry',
   standalone: true,
   imports: [
     CommonModule,
@@ -119,7 +119,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
     </form>
   `,
 })
-export class MesLancarComponent {
+export class MonthEntryComponent {
   private readonly api = inject(CashflowService);
   private readonly fb = inject(FormBuilder);
 

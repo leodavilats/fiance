@@ -37,13 +37,7 @@ interface NavDestination {
   readonly icon: string;
 }
 
-/**
- * A navegação é o ciclo do dinheiro: renda → gasto → **sobra** → aporte → patrimônio.
- *
- * `Hoje` saiu porque respondia "o que mudou", e isso é um feed, não um lugar. `Estratégia` se
- * dissolveu: sem aporte, meta e projeção, sobrava o desvio, que é leitura de patrimônio.
- * Continuam cinco.
- */
+/** A navegação é o ciclo do dinheiro: renda → gasto → sobra → aporte → patrimônio. */
 const DESTINATIONS: readonly NavDestination[] = [
   { path: '/mes', label: 'Mês', icon: 'calendar-clock' },
   { path: '/sobra', label: 'Sobra', icon: 'hand-coins' },

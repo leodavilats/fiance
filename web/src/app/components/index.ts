@@ -49,4 +49,4 @@ export { FixedIncomePageComponent } from './shell/fixed-income-page.component';
 export { SectionNavComponent } from './shell/section-nav.component';
 export { YouShellComponent } from './shell/you-shell.component';
 export * from './gate/gate.component';
-export { MudouFeedComponent } from './mudou-feed/mudou-feed.component';
+export { ChangesFeedComponent } from './changes-feed/changes-feed.component';

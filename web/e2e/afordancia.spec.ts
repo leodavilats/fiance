@@ -2,15 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { entrarComo, salvarPosicao } from './sessao';
 
 /*
- * Um controle tem de se distinguir do que está atrás dele.
- *
- * A WCAG 1.4.11 pede 3:1 do contorno de um controle contra o fundo adjacente. O produto
- * desenhava o contorno de `.btn-secondary` e `.btn-icon` com `hairline`, o mesmo token do
- * separador de linha de tabela: 1,24:1 no tema claro. Foi a queixa "botão que não parece ser
- * botão", e nenhuma revisão visual a pegou porque a borda existia — ela só não era visível.
- *
- * `check-contrast.mjs` cobra os tokens. Este teste cobra o que chega na tela: a cor computada
- * do que o navegador realmente pintou, com os temas alternados pelo atributo que o produto usa.
+ * Um controle tem de se distinguir do que está atrás dele: a WCAG 1.4.11 pede 3:1 do
+ * contorno. Aqui a medida é a cor computada, e não o token.
  */
 
 const CONTROLES = ['.btn-primary', '.btn-secondary', '.btn-icon', '.input'];
@@ -73,11 +66,7 @@ for (const tema of ['light', 'dark'] as const) {
     test.beforeEach(async ({ page }) => {
       await instalarMedidor(page);
       await entrarComo(page, `e2e_afordancia_${tema}`);
-      /*
-       * O tema entra pelo mesmo canal do produto. Escrever `data-theme` direto no
-       * <html> nao funciona: o script de tema do index.html roda depois e reescreve o
-       * atributo a partir do localStorage — o que fazia os dois temas medirem o claro.
-       */
+      // O tema entra pelo localStorage: o script do index.html reescreve `data-theme`.
       await page.addInitScript(t => {
         localStorage.setItem('fiance.theme', t);
       }, tema);
@@ -100,11 +89,7 @@ for (const tema of ['light', 'dark'] as const) {
 
         const m = medida as { borda: number; fundo: number | null; rotulo: number };
 
-        /*
-         * Contorno OU preenchimento serve. Um botão primário se distingue pelo fundo cheio;
-         * um secundário, pelo contorno. Exigir os dois proibiria o preenchido, e exigir
-         * nenhum é o que produziu o defeito.
-         */
+        // Contorno OU preenchimento serve: o primário se distingue por um, o secundário pelo outro.
         const limite = Math.max(m.borda, m.fundo ?? 0);
         expect(
           limite,
@@ -130,11 +115,7 @@ test('a barra de progresso distingue preenchido de vazio', async ({ page }) => {
   await expect(page.locator('header')).toBeVisible();
   await page.waitForLoadState('networkidle');
 
-  /*
-   * O alvo vem do campo, e sem alvo a régua fica tracejada de propósito — "não sei" não é
-   * progresso zero. Declarar a meta pela tela é o que um titular faz, e é o estado em que a
-   * barra precisa mostrar quanto do caminho já foi.
-   */
+  // Sem alvo declarado a régua fica tracejada: "não sei" não é progresso zero.
   await page.locator('#meta-renda').fill('5000');
 
   /*
@@ -185,14 +166,7 @@ test('utilitaria de layout vence a classe de controle', async ({ page }) => {
   await expect(page.locator('header')).toBeVisible();
   await page.waitForLoadState('networkidle');
 
-  /*
-   * As classes de controle eram escritas soltas depois de `@tailwind utilities`, e por isso
-   * venciam as utilitarias: `class="btn-secondary hidden sm:inline-flex"` ficava VISIVEL,
-   * porque `.btn-secondary { display: inline-flex }` derrotava o `display: none` do `hidden`.
-   * Valia para todo .btn-* do produto, e nao havia erro nenhum -- esconder um botao por
-   * breakpoint simplesmente nao fazia nada. O sintoma que apareceu foi outro: o cabecalho
-   * vazando 3px em 320px, nas cinco rotas.
-   */
+  /* Utilitária de layout tem de alcançar um controle do sistema. */
   const escondido = page.locator('header .btn-secondary.hidden').first();
   if ((await escondido.count()) === 0) test.skip();
 

@@ -33,12 +33,7 @@ def entrada(categoria: str, valor: float, dia: str) -> CashEntry:
 
 @pytest.fixture
 def uid(request) -> str:
-    """Um titular por teste.
-
-    A suíte não reinicia o banco entre casos, então dado semeado vaza de um teste para o outro.
-    O nome do teste como `user_id` é o que outros arquivos da suíte já fazem, e é mais barato
-    que reconstruir o schema a cada caso.
-    """
+    """Um titular por teste."""
     return f"u_caixa_{request.node.name}"[:60]
 
 
@@ -217,12 +212,7 @@ class TestOCdiVemComposto:
         assert cashflow_service._mensal_de_anual(12.0) == pytest.approx(0.9489, abs=1e-4)
 
     def test_dividir_por_doze_afrouxaria_a_regua(self, semeado):
-        """Dividir por doze **superestima** a referência, e afrouxa o julgamento.
-
-        12% ao ano compostos dão 0,9489% ao mês; dividindo por doze daria 1,0%. Uma dívida a
-        0,97% ao mês é mais cara que o CDI real, e contra a referência inflada sairia como
-        administrável — o erro cairia do lado de **não avisar**.
-        """
+        """Dividir por doze **superestima** a referência, e afrouxa o julgamento."""
         cash_store.add_debt(
             Debt(
                 kind="credito_pessoal",

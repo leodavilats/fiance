@@ -23,19 +23,9 @@ interface FeedItem {
 
 const FEED_LIMIT = 6;
 
-/**
- * O feed do que mudou, que morava em `/hoje`.
- *
- * `Hoje` respondia "o que mudou e o que merece atenção", e isso é um feed, não um lugar — o
- * produto já sabia disso quando transformou `Atividade` em drawer. Com um mês no produto, o
- * "agora" é o mês, e o feed passa a viver dentro dele.
- *
- * Ele busca o próprio dado de propósito: o que sobrou de `/hoje` era um componente amarrado ao
- * `DashboardResponse` da tela, e desamarrá-lo é o que torna a distribuição possível sem levar a
- * tela inteira junto.
- */
+/** O feed do que mudou. Vive no `Mês`, porque é ali que o "agora" mora. */
 @Component({
-  selector: 'app-mudou-feed',
+  selector: 'app-changes-feed',
   standalone: true,
   imports: [CommonModule, InsightComponent],
   template: `
@@ -57,7 +47,7 @@ const FEED_LIMIT = 6;
     }
   `,
 })
-export class MudouFeedComponent implements OnInit {
+export class ChangesFeedComponent implements OnInit {
   private readonly svc = inject(RecommendService);
   private readonly router = inject(Router);
 

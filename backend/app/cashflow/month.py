@@ -18,13 +18,7 @@ MESES_DE_BASE = 3
 
 @dataclass(frozen=True)
 class Estimativa:
-    """O gasto variável que ainda deve acontecer no mês, em faixa.
-
-    Sai só do histórico da própria pessoa: os meses fechados mais recentes, no máximo
-    `MESES_DE_BASE`. Sem mês fechado não há estimativa — e isso não vira zero, vira ausência.
-    Confundir "não sei" com "não vai sair nada" produziria uma sobra otimista exatamente para
-    quem acabou de começar a lançar.
-    """
+    """O gasto variável que ainda deve acontecer no mês, em faixa."""
 
     meses_de_base: tuple[str, ...]
     esperado_baixo: Decimal
@@ -50,13 +44,7 @@ class Estimativa:
 
 @dataclass(frozen=True)
 class MonthProjection:
-    """O mês corrente, com o que é fato separado do que é projeção.
-
-    `livre_agora` é **fato**: entrou, menos saiu, menos o que já está comprometido e datado.
-    `sobra_piso` e `sobra_teto` são **projeção**: o mesmo número, menos o gasto variável que
-    ainda deve acontecer. A diferença entre os dois é exatamente a estimativa, e é por isso que
-    a tela do mês não carrega faixa e a tela da sobra carrega.
-    """
+    """O mês corrente. `livre_agora` é fato; `sobra_piso`/`sobra_teto` são projeção."""
 
     mes: str
     entrou: Decimal

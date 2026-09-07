@@ -31,12 +31,7 @@ class ClasseDaDivida(StrEnum):
 
 @dataclass(frozen=True)
 class Debt:
-    """Uma dívida declarada.
-
-    `monthly_rate` é percentual ao mês, e `None` quer dizer **não informada** — não zero. O
-    produto não estima taxa de rotativo: ela varia por banco e por dia, e errar aqui é pior que
-    não mostrar nada.
-    """
+    """Uma dívida declarada. `monthly_rate` em % ao mês; `None` é **não informada**."""
 
     kind: str
     description: str
@@ -63,12 +58,7 @@ class Debt:
 
 @dataclass(frozen=True)
 class DividaClassificada:
-    """A dívida com a leitura, e com o que derrubaria a leitura.
-
-    `taxa_de_virada` é o preço da conclusão: a taxa em que o veredito muda. É a mesma disciplina
-    de `analysis/falsifiers.py` — julgamento vem com a condição conferível que o desfaz, e aqui
-    ela sai por álgebra, não por opinião.
-    """
+    """A dívida com a leitura. `taxa_de_virada` é a taxa em que o veredito muda."""
 
     divida: Debt
     classe: ClasseDaDivida
@@ -107,12 +97,7 @@ def classificar(
     retorno_mensal_da_carteira: float | None,
     cdi_mensal: float | None = None,
 ) -> DividaClassificada:
-    """Classifica por **custo**, nunca por tipo.
-
-    Consignado a 1,2% ao mês e consignado a 3,5% ao mês não são a mesma decisão, então o
-    instrumento não decide nada — a taxa decide. A referência é o que a carteira **da pessoa**
-    rende; sem carteira, o CDI que o BCB já entrega. Nunca um número de mercado solto.
-    """
+    """Classifica por **custo**, nunca por tipo."""
     if divida.monthly_rate is None:
         return DividaClassificada(
             divida=divida,

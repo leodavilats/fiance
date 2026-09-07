@@ -32,11 +32,7 @@ def saida(categoria: str, valor: float, dia: str, pago: str | None = "mesmo") ->
 
 
 def mes_do_wireframe() -> list[CashEntry]:
-    """O mês de exemplo do wireframe da ponte, no dia 20.
-
-    Os números aqui são os mesmos que estão desenhados em
-    docs/design/WIREFRAMES.md — se a matemática não fechar neles, o desenho está errado.
-    """
+    """O mês de exemplo do wireframe da ponte, no dia 20."""
     return [
         entrada("salario", 6418.73, "2026-09-05"),
         saida("moradia", 2150.00, "2026-09-05"),

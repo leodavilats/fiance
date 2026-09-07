@@ -4,7 +4,7 @@
 > construída** hoje e continua sendo a referência de qualquer tela existente. A de cima é a
 > **decisão para a transformação** (caixa + investimento), tomada em 2026-09-06, e nada dela está
 > implementado. Quando a Fase 3 do
-> [ROADMAP](../../planejamento/ROADMAP_TRANSFORMACAO.md) terminar, a de baixo sai daqui.
+> [ROADMAP](../produto/ROADMAP.md) terminar, a de baixo sai daqui.
 
 ---
 
@@ -31,7 +31,7 @@ sobrevive ao produto dobrar de escopo**.
 ## O que foi considerado e recusado
 
 As três opções levantadas em
-[ARQUITETURA_INFORMACAO_NOVA](../../planejamento/ARQUITETURA_INFORMACAO_NOVA.md) partem todas de
+[ARQUITETURA_INFORMACAO_NOVA](../produto/ROADMAP.md) partem todas de
 que a resposta é um arranjo dos cinco destinos de hoje. Nenhuma questiona o princípio.
 
 | Caminho | Por que não |
@@ -39,7 +39,7 @@ que a resposta é um arranjo dos cinco destinos de hoje. Nenhuma questiona o pri
 | **A — `Hoje` abre pelo mês** | Resolve por acomodação: o mês vira conteúdo de uma tela que existe para outra coisa, e sobram duas leituras concorrentes de "o que merece atenção" na mesma casa |
 | **B — sexto destino `/dinheiro`** | Seis é o teto físico da barra inferior, e cria dois resumos rivais: `Hoje` ("o que mudou") e `Dinheiro` ("quanto sobrou") respondem quase a mesma coisa em telas vizinhas |
 | **C — `Carteira` vira `Patrimônio` com abas** | Enterra a ponte dois níveis. A tese é que o mês é a porta de entrada; ali ele vira aba dentro de patrimônio |
-| **Alternar entre dois mundos** (toggle no topo) | [VISAO_NOVA](../../planejamento/VISAO_NOVA.md) recusa: "não é dois apps num só instalador" |
+| **Alternar entre dois mundos** (toggle no topo) | [VISAO_NOVA](../produto/VISAO.md) recusa: "não é dois apps num só instalador" |
 | **Navegação por verbo** (Ver · Decidir · Ajustar) | Falha o critério de ser **objetiva**: ninguém abre um app de dinheiro pensando num verbo |
 
 ## A decisão: a navegação **é** o ciclo do dinheiro
@@ -89,7 +89,7 @@ por mês — e é exatamente o ritual que o produto quer criar.
 ### Por que o nome é `Sobra`, e não `Aporte`
 
 `Aporte` nomeia a resposta, e a resposta nem sempre é aportar: com dívida cara, a
-[regra de domínio](../../planejamento/REGRAS_NOVO_DOMINIO.md#dívida) manda quitar antes. Um destino
+[regra de domínio](../produto/REGRAS_DE_DOMINIO.md#dívida) manda quitar antes. Um destino
 chamado `Aporte` embutiria no mapa uma conclusão que o próprio produto contradiz.
 
 `Sobra` nomeia o **insumo** — o número que a pessoa já usa nessa frase, "quanto sobrou esse mês" —

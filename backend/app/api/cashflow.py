@@ -27,12 +27,7 @@ router = APIRouter()
 
 
 async def _referencia_de_rendimento() -> tuple[float | None, bool, float | None]:
-    """O que a carteira da pessoa rende ao mês, e o CDI como segunda opção.
-
-    A régua de dívida compara **sempre** contra o rendimento do titular; sem carteira, contra o
-    CDI que o BCB já entrega. Nunca um número de mercado solto. Se as duas fontes falharem, a
-    régua não aparece — e isso é melhor que classificar dívida contra um número inventado.
-    """
+    """O que a carteira da pessoa rende ao mês, e o CDI como segunda opção."""
     tem_carteira = portfolio_store.has_holdings()
 
     cdi_anual: float | None = None

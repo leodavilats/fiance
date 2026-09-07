@@ -39,7 +39,7 @@ frase da interface fala **sobre si mesma** ou hedgeia. Escreve-se a conclusão d
 este mês é R$ 640."
 
 **O produto não é um chatbot, mesmo na parte educativa.** O papel de educador que a nova direção
-assume (ver [DIRECAO_PRODUTO.md](../../planejamento/DIRECAO_PRODUTO.md)) não vira uma persona
+assume (ver [DIRECAO_PRODUTO.md](../produto/DIRECAO.md)) não vira uma persona
 conversacional com saudação ("Como posso te ajudar hoje?") e chips de sugestão. Educação é
 explicação contextual no momento em que o número aparece — `<app-provenance>`,
 `<app-help-tooltip>`, o texto de "Como calculamos" — nunca uma janela de chat com um avatar
@@ -52,7 +52,7 @@ deste produto, porque é exatamente o que um "assistente financeiro de IA" gené
 
 **Banir o hero de SaaS genérico.** Pill de badge + título gigante centralizado com gradiente +
 dois botões de CTA + fileira de logos de "confiado por" é o template mais reconhecível de landing
-page gerada — e a [Fase 1 do roadmap](../../planejamento/ROADMAP_TRANSFORMACAO.md#fase-1--validação-antes-de-qualquer-código-de-tela)
+page gerada — e a [Fase 1 do roadmap](../produto/ROADMAP.md#fase-1--validação-antes-de-qualquer-código-de-tela)
 inclui construir uma. Regra: **um ponto de vista específico** substitui o template — a frase do
 Hoje/mês-corrente que já existe no produto ("sua sobra este mês é R$ X") tem mais força que
 qualquer headline genérica, e é verdadeira, o que uma headline de marketing raramente é.

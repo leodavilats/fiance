@@ -93,10 +93,7 @@ test.describe('reflow', () => {
       await page.goto(rota);
       await expect(page.locator('header')).toBeVisible();
 
-      /*
-       * Medir logo que o cabecalho aparece deixava o teste passar por sorte: o avatar e os
-       * controles da direita ainda nao tinham resolvido, e o cabecalho vazava 3px depois.
-       */
+      // Medir antes de a rede assentar fazia o teste passar por sorte.
       await page.waitForLoadState('networkidle');
 
       const vaza = await page.evaluate(

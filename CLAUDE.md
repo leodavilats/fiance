@@ -14,6 +14,8 @@ o sistema — isso é [docs/](docs/), e o [índice](docs/README.md) diz qual arq
 | O que está aberto **agora** | [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) |
 | Por que uma decisão foi tomada, e quando | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
 | Por que a interface é assim | [docs/design/](docs/design/) |
+| Para onde o produto vai — visão, negócio, roadmap | [docs/produto/](docs/produto/) |
+| Subir, observar e reverter | [docs/OPERACAO.md](docs/OPERACAO.md) |
 
 **Histórico não é pendência.** Nada no CHANGELOG é trabalho a fazer, mesmo quando descreve um
 problema. O que está aberto está no KNOWN_ISSUES, e só lá.
@@ -45,6 +47,31 @@ Duas ressalvas que já custaram tempo:
   que reprovava, e o HEAD ficou vermelho sem ninguém ver.
 - **Não rode `dart format`.** O CI do mobile é `flutter analyze && flutter test`. O formatter
   reescreve o `design_tokens.dart` gerado e quebra `if`s de uma linha que o repo mantém.
+
+### Comentário: quase nunca
+
+**O porquê vive no [CHANGELOG](docs/CHANGELOG.md); o que não pode ser violado vive aqui.** O fonte
+não é o lugar de nenhum dos dois — comentário de justificativa envelhece calado, não é lido por
+quem mais precisa, e duplica o que já está escrito em lugar melhor.
+
+O que **não** entra no código:
+
+- narrativa histórica: "isto era X e virou Y", "esta versão era gerada e passou a ser escrita"
+- justificativa de decisão que já está no CHANGELOG ou nos invariantes acima
+- comentário que repete o que a linha faz, incluindo docstring que reescreve a assinatura
+- explicação de teste em docstring — a razão de um teste existir vai na **mensagem do assert**,
+  que é onde ela aparece quando ele falha
+
+O que fica:
+
+| Onde | Por quê |
+|---|---|
+| **Infra** — CI, migração, gerador, configuração de build, script de operação | Não tem CHANGELOG próprio, e quem lê está prestes a executar |
+| **Armadilha local**, em uma linha | O comentário evita o defeito ali, e o defeito não é óbvio na linha seguinte |
+| **Escape declarado** que o `lint:ui` exige | `<!-- controle-proprio: … -->`, `<!-- sem-explicabilidade: … -->` são contrato com a máquina |
+
+Se a explicação é boa demais para caber em uma linha, ela não é comentário: é entrada no
+CHANGELOG.
 
 ### Ao adicionar…
 

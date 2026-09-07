@@ -33,16 +33,7 @@ def hoje() -> str:
 
 
 def _proventos_derivados(user_id: str | None = None) -> list[CashEntry]:
-    """As entradas de provento, derivadas do razão **em memória**.
-
-    Provento creditado é lançamento do razão, e o razão já é a fonte da carteira. O caixa lê esse
-    dado em vez de guardar uma cópia — e derivar em memória é o que torna a duplicação impossível
-    por construção, em vez de possível e evitada por disciplina.
-
-    A primeira versão disto gravava as entradas com uma coluna de origem e as reconstruía a cada
-    leitura. Funcionava, mas fazia a leitura **escrever**, e a exportação de conta sairia com o
-    mesmo provento duas vezes — uma em `dividends_received` e outra em `cash_entries`.
-    """
+    """As entradas de provento, derivadas do razão **em memória**."""
     return [
         CashEntry(
             kind=CashKind.INCOME,
@@ -69,12 +60,7 @@ def mes(referencia: str | None = None, user_id: str | None = None) -> MonthProje
 
 
 def registrar(entry: CashEntry, user_id: str | None = None) -> int:
-    """A porta única de escrita do caixa.
-
-    `CashEntry` já recusa provento sem `derived`, valor negativo e categoria fora do vocabulário
-    — a validação mora no tipo, e não aqui. O que esta função acrescenta é a fronteira: nenhuma
-    rota escreve em `cash_store` direto, do mesmo jeito que nenhuma escreve em `ledger_store`.
-    """
+    """A porta única de escrita do caixa."""
     if entry.derived:
         raise CashError(
             "Entrada derivada do razão não se grava: ela é projeção, montada na leitura."
@@ -99,13 +85,7 @@ def quitar_divida(debt_id: int, user_id: str | None = None) -> None:
 
 
 def _mensal_de_anual(taxa_anual_pct: float) -> float:
-    """Anual para mensal, por juros compostos — nunca dividindo por doze.
-
-    Dividir por doze **superestima** a referência (12% ao ano dão 0,9489% ao mês compostos, e
-    1,0% na conta ingênua), e uma referência inflada **afrouxa** o julgamento: dívida a 0,97% ao
-    mês é mais cara que o CDI real e sairia como administrável. O erro cairia do lado de não
-    avisar, que é o pior dos dois lados aqui.
-    """
+    """Anual para mensal, por juros compostos — nunca dividindo por doze."""
     return ((1.0 + taxa_anual_pct / 100.0) ** (1.0 / 12.0) - 1.0) * 100.0
 
 
@@ -153,11 +133,7 @@ def sobra(
     mes_referencia: str | None = None,
     user_id: str | None = None,
 ) -> tuple[MonthProjection, Cascata]:
-    """A ponte: o mês projetado e a ordem do que fazer com o piso da sobra.
-
-    `referencia_mensal` é o que **a carteira da pessoa** rende ao mês. Sem carteira, o CDI que o
-    BCB já entrega entra no lugar — nunca um número de mercado solto.
-    """
+    """A ponte: o mês projetado e a ordem do que fazer com o piso da sobra."""
     todas = entradas(user_id=user_id)
     projecao = projetar_mes(todas, mes_referencia or mes_corrente())
 
@@ -185,10 +161,5 @@ def gasto_fixo(user_id: str | None = None) -> Decimal:
 
 
 def tem_caixa(user_id: str | None = None) -> bool:
-    """Se existe caixa lançado — a pergunta que deriva a porta de entrada.
-
-    Lê só a tabela, e por isso ignora o derivado naturalmente: quem tem provento no razão e
-    nenhum lançamento próprio não lançou caixa nenhum, e mandá-lo para o `Mês` seria a tela vazia
-    que a IA nova declarou como risco.
-    """
+    """Se existe caixa lançado — a pergunta que deriva a porta de entrada."""
     return bool(cash_store.list_entries(user_id=user_id))

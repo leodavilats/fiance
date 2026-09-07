@@ -67,11 +67,6 @@ describe('renderização no servidor', () => {
   });
 
   it('as URLs da IA anterior continuam resolvendo', () => {
-    /*
-     * Link salvo é contrato. A transição anterior (Mercado/Meus Ativos → cinco destinos por
-     * intenção) já seguiu esta regra, e quebrar agora significaria devolver 404 a quem tem a
-     * carteira nos favoritos.
-     */
     const antigas: Record<string, string> = {
       hoje: 'mes',
       'hoje/atividade': 'mes/atividade',
