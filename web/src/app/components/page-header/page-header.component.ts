@@ -5,7 +5,7 @@ import { Component, input } from '@angular/core';
   standalone: true,
   template: `
     <div class="mb-5">
-      <h1 class="fi-title text-ink m-0" tabindex="-1">{{ title() }}</h1>
+      <h1 class="fi-page-title text-ink m-0" tabindex="-1">{{ title() }}</h1>
 
       @if (question()) {
         <p class="fi-body text-ink-2 m-0 mt-1 max-w-reading">{{ question() }}</p>

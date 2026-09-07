@@ -301,6 +301,52 @@ function tipografiaCrua(files) {
   return problems;
 }
 
+/**
+ * Contorno de controle desenhado com o token de separador.
+ *
+ * `hairline` e decoracao: separa linha de tabela e fecha card. Quando desenha a borda de um
+ * controle, o controle deixa de ter limite visivel -- `.btn-secondary` e `.btn-icon` ficaram
+ * a 1,20:1 no tema claro, um quarto do que a WCAG 1.4.11 pede, e a revisao visual nao pegou
+ * porque a borda existia. Contorno de controle e `control-border`, cobrado a 3:1 pelo
+ * check-contrast.mjs.
+ *
+ * Le a folha escrita, nao a emitida: e no fonte que a escolha e feita. O e2e mede quatro
+ * controles numa tela; esta regra pega o controle novo no dia em que ele nascer.
+ */
+function contornoDeSeparador(arquivosCss) {
+  const problems = [];
+  const ABRE_CONTROLE =
+    /^\s*\.(?:btn-[a-z-]+|input|input-bare|menu-item|subtab-btn|range-slider|pagination-btn|compact-btn)\b/;
+
+  for (const file of arquivosCss) {
+    let dentro = false;
+    let seletor = '';
+
+    for (const [n, line] of readFileSync(file, 'utf8').split('\n').entries()) {
+      if (ABRE_CONTROLE.test(line)) {
+        dentro = true;
+        seletor = line;
+      } else if (/^\s*[.:*a-z[@]/.test(line) && /[{,]\s*$/.test(line)) {
+        dentro = false;
+      }
+      if (line.trim() === '}') dentro = false;
+      if (!dentro) continue;
+
+      /*
+       * Controle desabilitado fica de fora: a WCAG 1.4.11 o isenta, e um contorno inerte de
+       * baixo croma e justamente o sinal de que nao da para clicar. O que continua cobrado
+       * ali e o ROTULO, que o check-contrast.mjs mede em `ink-disabled` a 3:1.
+       */
+      if (/:disabled/.test(seletor)) continue;
+
+      if (/border(?:-[a-z]+)?(?:-color)?:[^;]*--fi-hairline/.test(line)) {
+        problems.push({ file, name: `${relative(WEB_ROOT, file)}:${n + 1}: ${line.trim()}` });
+      }
+    }
+  }
+  return problems;
+}
+
 function raioForaDaEscala(files) {
   const problems = [];
   for (const file of files) {
@@ -640,6 +686,7 @@ function main() {
   const esqueletoSolto = esqueletoImprovisado(templates);
   const direcaoSolta = direcaoForaDeTabela(templates);
   const becoSemSaida = desabilitadoSemMotivo(templates);
+  const contornoInvisivel = contornoDeSeparador(walk(SRC, /\.css$/));
 
   const problems =
     report(
@@ -779,6 +826,13 @@ function main() {
       'Use o nome da camada: z-popover, z-drawer, z-sheet, z-nav. z-10 e z-50 ' +
         'ficam abaixo de z-nav (100) e mandam o popover para trás do cabeçalho. ' +
         'Camada local de tabela declara o motivo: <!-- camada-local: ... -->'
+    ) +
+    report(
+      'Contorno de controle desenhado com o token de separador',
+      contornoInvisivel,
+      'Use --fi-control-border. hairline é decoração: com ele o contorno de ' +
+        '.btn-secondary ficou a 1,20:1 no tema claro, contra os 3:1 que a WCAG ' +
+        '1.4.11 pede do limite de um controle.'
     );
 
   if (problems > 0) {
@@ -789,8 +843,8 @@ function main() {
   console.log(
     '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas, linguagem, ' +
       'tipografia, raio, camada, foco, controles, títulos, nome de tela, serifa, ' +
-      'ordem de cabeçalho, camada numérica, caixa, esqueleto, direção e ' +
-      'estado desabilitado conferidos.'
+      'ordem de cabeçalho, camada numérica, caixa, esqueleto, direção, ' +
+      'estado desabilitado e contorno de controle conferidos.'
   );
 }
 

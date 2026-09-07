@@ -39,7 +39,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
   template: `
     <div class="max-w-reading">
       <section>
-        <h1 class="fi-title text-ink m-0">O que eu poderia comprar</h1>
+        <h1 class="fi-page-title text-ink m-0">O que eu poderia comprar</h1>
         <p class="fi-body text-ink-2 m-0 mt-1">
           Ativos da B3 que o sistema conseguiu avaliar e que aparecem por um motivo declarado — não
           é a lista do mercado inteiro.

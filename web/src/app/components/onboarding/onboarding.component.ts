@@ -85,7 +85,7 @@ const PASSOS: readonly Passo[] = [
             <lucide-icon [name]="passo().icone" size="24"></lucide-icon>
           </div>
           <div class="min-w-0">
-            <h1 class="fi-title m-0 mb-2 text-ink">{{ passo().titulo }}</h1>
+            <h1 class="fi-page-title m-0 mb-2 text-ink">{{ passo().titulo }}</h1>
             <p class="fi-body text-ink-2 m-0">{{ passo().descricao }}</p>
 
             @if (passoConcluido() && passoAtual() > 1) {

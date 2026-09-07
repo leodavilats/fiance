@@ -31,7 +31,7 @@ interface LinhaDoMes {
         <app-wordmark [height]="18" />
       </header>
 
-      <h1 class="fi-title text-ink m-0 mt-10 max-w-[34ch]">
+      <h1 class="fi-page-title text-ink m-0 mt-10 max-w-[34ch]">
         Quanto você tem investido, você sabe. Quanto sobrou este mês, provavelmente não.
       </h1>
 

@@ -388,6 +388,14 @@ textarea.input {
   cursor: pointer;
   transition: background var(--fi-motion-fast) ease;
 }
+.menu-item {
+  min-height: var(--fi-layout-min-touch-target);
+  font-size: 15px;
+  line-height: 23px;
+}
+.menu-item:active {
+  background: var(--fi-control-fill-active);
+}
 .menu-item:hover {
   background: var(--fi-ground-2);
 }
@@ -486,10 +494,18 @@ textarea.input {
   outline-offset: var(--fi-focus-offset);
 }
 
+/* A variante densa. Continua com 36px de desenho, e ganha os 44px de area; 13px e o papel
+   de rotulo, e nao os 12px de legenda que estavam aqui. */
 .compact-btn {
+  position: relative;
   min-height: 36px !important;
-  padding: 0 0.625rem !important;
-  font-size: 12px;
+  padding: 0 0.75rem !important;
+  font-size: 13px !important;
+}
+.compact-btn::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
 }
 
 .th-sort {
@@ -503,6 +519,9 @@ textarea.input {
   font: inherit;
   color: inherit;
   cursor: pointer;
+}
+.th-sort:active {
+  color: var(--fi-ink-1);
 }
 .th-sort:hover {
   color: var(--fi-ink-1);
@@ -660,13 +679,25 @@ textarea.input {
 }
 
 .subtab-btn {
-  @apply flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer whitespace-nowrap;
+  @apply flex items-center gap-1.5 px-3 cursor-pointer whitespace-nowrap;
   position: relative;
+  min-height: 38px;
   border-radius: 0;
   background: transparent;
+  font-family: var(--fi-font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
   color: var(--fi-ink-2);
   border: none;
   transition: color var(--fi-motion-base) var(--fi-motion-ease-enter);
+}
+
+/* Alvo de toque nos 44px sem engordar a barra de abas. */
+.subtab-btn::before {
+  content: '';
+  position: absolute;
+  inset: -3px 0;
 }
 .subtab-btn::after {
   content: '';
@@ -715,41 +746,55 @@ textarea.input {
   background: transparent;
 }
 .range-slider::-webkit-slider-runnable-track {
-  height: 6px;
+  height: 8px;
+  border: 1px solid var(--fi-control-border);
   border-radius: var(--fi-radius-pill);
   background: linear-gradient(
     to right,
     var(--fi-brand) var(--range-pct),
-    var(--fi-hairline-strong) var(--range-pct)
+    var(--fi-track) var(--range-pct)
   );
 }
 .range-slider::-moz-range-track {
-  height: 6px;
+  height: 8px;
+  border: 1px solid var(--fi-control-border);
   border-radius: var(--fi-radius-pill);
-  background: var(--fi-hairline-strong);
+  background: var(--fi-track);
 }
 .range-slider::-moz-range-progress {
-  height: 6px;
+  height: 8px;
   border-radius: var(--fi-radius-pill);
   background: var(--fi-brand);
 }
+
+/* O punho tem anel proprio: um circulo da cor da marca sobre o preenchimento da cor da
+   marca nao tem contorno visivel, e e justamente o punho que precisa ser achado. */
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  margin-top: -5px;
-  width: 16px;
-  height: 16px;
+  margin-top: -6px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--fi-ground-1);
+  box-sizing: border-box;
   border-radius: 50%;
   background: var(--fi-brand);
+  box-shadow: 0 0 0 1px var(--fi-control-border);
   cursor: pointer;
 }
 .range-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--fi-ground-1);
+  box-sizing: border-box;
   border-radius: 50%;
   background: var(--fi-brand);
+  box-shadow: 0 0 0 1px var(--fi-control-border);
   cursor: pointer;
+}
+.range-slider:focus-visible {
+  outline: var(--fi-focus-ring) solid var(--fi-brand);
+  outline-offset: var(--fi-focus-offset);
 }
 
 .fi-section-shell {

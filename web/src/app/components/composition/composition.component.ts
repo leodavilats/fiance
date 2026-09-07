@@ -29,7 +29,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
     } @else {
       <div class="max-w-reading">
         <section>
-          <h1 class="fi-title text-ink m-0">Onde meu dinheiro está concentrado</h1>
+          <h1 class="fi-page-title text-ink m-0">Onde meu dinheiro está concentrado</h1>
           <p class="fi-body text-ink-2 m-0 mt-1">
             A barra é o peso de cada posição no total. Quando existe meta para a classe, o fio marca
             onde ela deveria estar.

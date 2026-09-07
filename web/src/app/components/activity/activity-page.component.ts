@@ -18,7 +18,7 @@ import { ActivityFeedComponent } from './activity-feed.component';
         Hoje
       </a>
 
-      <h1 class="fi-title text-ink m-0 mt-3">O que aconteceu</h1>
+      <h1 class="fi-page-title text-ink m-0 mt-3">O que aconteceu</h1>
       <p class="fi-body text-ink-2 m-0 mt-1 mb-6">
         Mudanças de veredito, desvios de meta, vencimentos e proventos lançados — em ordem, do mais
         recente para o mais antigo.

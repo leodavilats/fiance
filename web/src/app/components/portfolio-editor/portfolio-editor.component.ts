@@ -32,7 +32,7 @@ interface AssetRow {
   template: `
     <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
       <div>
-        <h1 class="fi-title m-0 text-ink">Cadastro da carteira</h1>
+        <h1 class="fi-page-title m-0 text-ink">Cadastro da carteira</h1>
         <p class="fi-body text-ink-2 m-0 mt-1">
           Cada linha é salva quando você clica em salvar — nada é gravado enquanto você digita.
         </p>
