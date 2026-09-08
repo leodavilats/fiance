@@ -216,7 +216,7 @@ class TestEstruturalNaoTextual:
                 dividend_yield=12.0,
             )
         ]
-        resumo_aporte = QuickInvestService()._build_summary(alocacoes)
+        resumo_aporte = QuickInvestService()._resumo(alocacoes, None, "goals", [])
 
         resumo_estrategia = _generate_strategy_summary(
             {"type": "Moderado"},

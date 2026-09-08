@@ -34,9 +34,6 @@ cd mobile  && flutter analyze && flutter test      # 0 issues, 109 testes
                                                    #   inclui test/lint_ui_test.dart:
                                                    #   6 regras do lint:ui, no Dart
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 152 testes
-node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
-node design-tokens/check-contrast.mjs              # contraste AA, web e mobile
-node design-tokens/check-parity.mjs                # os cinco destinos existem nas duas
 python design-tokens/build-icons.py --check        # marca sincronizada
 ```
 
@@ -91,7 +88,7 @@ CHANGELOG.
 | Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
 | Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template |
 | Cor, tipografia, espaço | Editar [foundation.css](web/src/foundation.css) **e** o espelho em [design_tokens.dart](mobile/lib/core/design_tokens.dart) | Web e mobile divergem, e nenhuma máquina avisa |
-| Papel de cor novo | Declarar nos **dois** temas de `foundation.css` | `check-contrast.mjs` reprova papel que só existe num tema |
+| Papel de cor novo | Declarar nos **dois** temas de `foundation.css` | A cor não existe num dos temas, e a tela sai com texto de um tema no chão do outro |
 | Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` **e** `z-50` — uma regra, as duas grafias |
 | Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
 | Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |

@@ -68,10 +68,14 @@ quando a forma muda.
 
 ### Os números do domínio
 
-Banda de régua, limiar e rótulo de veredito nascem em
-[`product-rules.json`](../../design-tokens/product-rules.json) e são **gerados** para as duas
-plataformas. Isto é número, não aparência — e a régua de score já divergiu quando era mantida à
-mão em três arquivos.
+Banda de régua, limiar e rótulo de veredito. A fonte é
+`backend/app/analysis/score_ruler.py`; os clientes espelham em `core/product-rules.ts` e
+`core/product_rules.dart`, **escritos à mão**. Mudar um limiar exige mudar o Python primeiro.
+
+Isto é número, não aparência — e é a parte da paridade que mais custa quando escapa: a régua de
+score já divergiu assim antes, e em 2026-09-08 o mobile tinha uma régua de saúde em 70/40 contra
+75/60/40 do web, com a cor vindo de uma e o rótulo da outra na mesma tela. Score 65 saía favorável
+na cor e "Atenção" no texto.
 
 ---
 
@@ -103,36 +107,24 @@ impediria a correção.
 
 ---
 
-## As duas máquinas
+## O que a máquina ainda cobra
 
-O resto é revisão humana. Estas duas existem porque cobrem modos de falha que a revisão humana
-**já** falhou.
+**Quase nada, de propósito.** A verificação de contraste acima da norma e a catraca de paridade
+de conceito foram removidas em 2026-09-08, junto do gerador de réguas: a liberdade de UX/UI vale
+mais do que elas custavam, e a paridade passou a ser dirigida no desenvolvimento das telas.
 
-### `check-contrast.mjs`
+O que ficou:
 
-Mede as duas plataformas, cada uma **contra o piso** — não uma contra a outra. Reprova papel
-abaixo do piso, papel declarado só num tema, contorno de controle sob 3:1 e preenchimento que não
-se distingue do próprio poço.
+- **`mobile/test/contraste_test.dart`** — o mínimo da WCAG 2.1 AA, e nada além: 4,5:1 para texto,
+  3:1 para limite de controle. Não é design, é legibilidade;
+- **`web/tools/lint-ui.mjs`** e **`mobile/test/lint_ui_test.dart`** — as regras de **produto**:
+  julgamento sem explicabilidade, projeção sem faixa, promessa sobre o futuro, botão sem nome
+  acessível;
+- **`python design-tokens/build-icons.py --check`** — a marca, que é o único gerador que sobra.
 
-Confere também as **duas cópias do tema claro** do CSS. Eram 44 papéis sem guarda: quem editasse
-só a consulta de mídia quebrava o contraste de quem está no padrão do sistema — a maioria, que
-nunca tocou no seletor.
-
-### `check-parity.mjs`
-
-Responde se os cinco destinos existem nas duas plataformas. Não compara aparência, não compara
-valor, não gera nada.
-
-Ausência conhecida é **dívida registrada** em `DIVIDA_HOJE`, no mesmo padrão de
-`SEM_MODELO_HOJE` nos testes do backend: não conserta hoje, não deixa crescer. E a lista **só
-encolhe** — um item que passe a existir reprova, porque lista de dívida que não encolhe é a
-documentação mentindo de novo.
-
-**Hoje ela está vazia**, e foi ela quem cobrou a própria baixa: `mes` e `sobra` moraram em
-`DIVIDA_HOJE` até as telas do mobile existirem (2026-09-08), e no instante em que passaram a
-existir a verificação reprovou pedindo que as linhas saíssem.
-
----
+O que **saiu**, e o risco que veio com a escolha: a régua de score pode divergir entre as
+plataformas sem nada avisar, e um destino pode existir num lado e não no outro sem nada avisar. Os
+dois já aconteceram neste repositório. Revisão de PR é a única guarda.
 
 ## Revisão de PR
 

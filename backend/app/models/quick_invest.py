@@ -2,9 +2,14 @@ from pydantic import BaseModel, Field
 
 
 class QuickInvestRequest(BaseModel):
-    cash_available: float = Field(..., gt=0, description="Caixa disponível para investir (R$)")
-    use_current_goals: bool = Field(True, description="Usar metas de alocação salvas")
-    prioritize_rebalance: bool = Field(True, description="Priorizar rebalanceamento da carteira")
+    cash_available: float | None = Field(
+        None,
+        gt=0,
+        description=(
+            "Quanto aportar (R$). Nulo resolve da cascata do caixa: o que sobra depois da "
+            "dívida caseira e da reserva."
+        ),
+    )
     min_order_value: float = Field(100.0, ge=0, description="Valor mínimo por ordem (R$)")
 
 
@@ -16,20 +21,75 @@ class QuickInvestAllocation(BaseModel):
     current_price: float
     suggested_quantity: int
     suggested_investment: float
-    rationale: str = Field(..., description="Por que investir neste ativo")
+    rationale: str = Field(..., description="Por que este ativo, e não outro")
     score: float | None = None
     dividend_yield: float | None = None
 
 
+class FixedIncomeSlice(BaseModel):
+    """A fatia de renda fixa, sem nomear título.
+
+    O produto não tem catálogo de títulos à venda — tem taxas de referência e um comparador. Dizer
+    o nome de um CDB seria inventar oferta. O que se diz é quanto vai para a categoria e o que a
+    referência rende hoje, com o caminho para comparar.
+    """
+
+    amount: float
+    reference_monthly_pct: float | None = Field(
+        None, description="O que a referência rende ao mês, quando conhecida"
+    )
+    reference_source: str = Field(..., description="bcb, bcb_cache_vencido ou estimativa")
+    rationale: str
+
+
+class Unallocated(BaseModel):
+    """Dinheiro sem destino, e o motivo.
+
+    Existe porque `remaining_cash` sozinho é um número sem explicação: a pessoa vê R$ 310 sobrando
+    e não sabe se o sistema falhou, se o mercado não tem o que comprar, ou se é troco de cota
+    inteira.
+
+    O campo se chama `value`, e não `amount`, de propósito: `amount` está em
+    `affirmation.ACTION_FIELDS` e é anulado fora do nível prescritivo, porque instrui uma compra.
+    Este número não instrui nada — ele explica o que o sistema **não** fez, e essa é a análise que
+    fica em todos os níveis.
+    """
+
+    value: float
+    reason: str
+
+
 class QuickInvestResponse(BaseModel):
-    total_cash: float = Field(..., description="Caixa total disponível (R$)")
-    allocated_cash: float = Field(..., description="Caixa alocado nas sugestões (R$)")
-    remaining_cash: float = Field(..., description="Caixa restante (R$)")
+    total_cash: float = Field(..., description="Quanto entrou na conta (R$)")
 
-    allocations: list[QuickInvestAllocation] = Field(..., description="Sugestões de compra")
-
-    portfolio_balance: dict = Field(
-        default_factory=dict, description="Balanço da carteira após investimento"
+    cash_source: str = Field(
+        ...,
+        description=(
+            "'cascade' quando veio da sobra do mês; 'informed' quando a pessoa digitou o valor"
+        ),
     )
 
-    summary: str = Field(..., description="Resumo executivo da estratégia")
+    basis: str = Field(
+        ...,
+        description=(
+            "'goals' quando a distribuição sai da alocação-alvo declarada; 'score' quando não há "
+            "meta e a ordem é só por score"
+        ),
+    )
+
+    allocated_cash: float
+    remaining_cash: float
+
+    allocations: list[QuickInvestAllocation] = Field(default_factory=list)
+
+    fixed_income: FixedIncomeSlice | None = Field(
+        None, description="A fatia de renda fixa, quando a alocação-alvo pede uma"
+    )
+
+    unallocated: list[Unallocated] = Field(
+        default_factory=list, description="O que ficou sem destino, e por quê"
+    )
+
+    portfolio_balance: dict = Field(default_factory=dict)
+
+    summary: str

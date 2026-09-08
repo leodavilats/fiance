@@ -5,7 +5,6 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app.cashflow import CashEntry, CashKind, Debt
-from app.collectors import rates
 from app.models.cashflow import (
     CascadeResponse,
     CashEntryBatchRequest,
@@ -20,42 +19,11 @@ from app.models.cashflow import (
     SurplusResponse,
 )
 from app.services import cashflow_service
-from app.services.benchmark_service import BenchmarkService
-from app.storage import portfolio_store
+from app.services.rendimento_referencia import referencia_de_rendimento
 
 logger = logging.getLogger("fiance.api.cashflow")
 
 router = APIRouter()
-
-
-async def _referencia_de_rendimento() -> tuple[float | None, bool, float | None]:
-    """O que a carteira da pessoa rende ao mês, e o CDI como segunda opção."""
-    tem_carteira = portfolio_store.has_holdings()
-
-    cdi_anual: float | None = None
-    try:
-        cdi_anual = rates.get_rates().get("cdi_anual")
-    except Exception as exc:
-        logger.warning("CDI indisponível para a régua de dívida: %s", exc)
-
-    if not tem_carteira:
-        return None, False, cdi_anual
-
-    try:
-        benchmark = await BenchmarkService().get_benchmark()
-        total_pct = benchmark.portfolio_return_pct
-    except Exception as exc:
-        logger.warning("Retorno da carteira indisponível: %s", exc)
-        return None, False, cdi_anual
-
-    if not benchmark.points:
-        return None, False, cdi_anual
-
-    # O retorno vem acumulado na série. Mensalizar por composto, e não dividir pelo número de
-    # pontos: a série não tem passo mensal garantido.
-    meses = max(1.0, len(benchmark.points) / 21.0)
-    mensal = ((1.0 + total_pct / 100.0) ** (1.0 / meses) - 1.0) * 100.0
-    return mensal, True, cdi_anual
 
 
 def _entry_do_request(req: CashEntryRequest) -> CashEntry:
@@ -161,7 +129,7 @@ async def apagar(entry_id: int) -> None:
 
 @router.get("/cashflow/debts", response_model=list[DebtResponse])
 async def dividas() -> list[DebtResponse]:
-    mensal, tem_carteira, cdi_anual = await _referencia_de_rendimento()
+    mensal, tem_carteira, cdi_anual = await referencia_de_rendimento()
     lidas = cashflow_service.dividas(
         referencia_mensal=mensal, tem_carteira=tem_carteira, cdi_anual=cdi_anual
     )
@@ -182,7 +150,7 @@ async def cadastrar_divida(req: DebtRequest) -> DebtResponse:
 
     cashflow_service.cadastrar_divida(debt)
 
-    mensal, tem_carteira, cdi_anual = await _referencia_de_rendimento()
+    mensal, tem_carteira, cdi_anual = await referencia_de_rendimento()
     lidas = cashflow_service.dividas(
         referencia_mensal=mensal, tem_carteira=tem_carteira, cdi_anual=cdi_anual
     )
@@ -198,7 +166,7 @@ async def quitar_divida(debt_id: int) -> None:
 @router.get("/surplus", response_model=SurplusResponse)
 async def sobra(month: str | None = None) -> SurplusResponse:
     """A ponte: o mês projetado e a ordem do que fazer com o piso da sobra."""
-    mensal, tem_carteira, cdi_anual = await _referencia_de_rendimento()
+    mensal, tem_carteira, cdi_anual = await referencia_de_rendimento()
 
     projecao, cascata = cashflow_service.sobra(
         referencia_mensal=mensal,

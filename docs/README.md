@@ -40,8 +40,10 @@ ela invalidava as anteriores; seis itens contradiziam o código.
 - **A camada visual é escrita; a régua é gerada.** Cor, tipografia, espaço e motion vivem em
   [web/src/foundation.css](../web/src/foundation.css), com espelho à mão em
   `mobile/lib/core/design_tokens.dart`. O que continua gerado é o que precisa ser igual nas três
-  plataformas por ser **número**, e não aparência: `design-tokens/product-rules.json` →
-  `node design-tokens/build-rules.mjs`. O contraste é verificado no CI, não recomendado.
+  plataformas. **Não há gerador de design**: cor, tipografia, espaço e as réguas do produto
+  são escritos à mão, e a paridade entre web e mobile é dirigida no desenvolvimento das
+  telas. O que continua verificado por máquina é o mínimo da WCAG, nos testes de cada
+  plataforma.
 - **Navegação e telas** seguem a arquitetura de informação em
   [design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md). O que já está
   construído está no código; o que **não** está, em [produto/ROADMAP.md](produto/ROADMAP.md).

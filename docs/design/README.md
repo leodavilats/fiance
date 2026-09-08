@@ -49,24 +49,28 @@ registrado.
 
 Os dois estão na lista de armadilhas do [CLAUDE.md](../../CLAUDE.md#armadilhas-que-não-quebram-o-build).
 
-## A camada visual é escrita; a régua é gerada
+## Não há gerador de design
 
-Não há gerador de tokens visuais. Cor, tipografia, espaço, raio, motion e densidade são
-**escritos à mão** em [web/src/foundation.css](../../web/src/foundation.css), com espelho à mão em
-[mobile/lib/core/design_tokens.dart](../../mobile/lib/core/design_tokens.dart). Mudar um valor num
-lado obriga a mudar no outro — não há máquina conferindo isso.
+Cor, tipografia, espaço, raio, motion, densidade **e as réguas do produto** são escritos à mão:
 
-O que continua **gerado** é só o que precisa ser igual nas três plataformas por ser número, e não
-aparência:
+| O quê | Onde |
+|---|---|
+| Fundação visual do web | [`web/src/foundation.css`](../../web/src/foundation.css) |
+| Componentes do web | [`web/src/styles.css`](../../web/src/styles.css) |
+| Fundação visual do mobile | [`mobile/lib/core/design_tokens.dart`](../../mobile/lib/core/design_tokens.dart) |
+| Bandas de régua e vocabulário | `core/product-rules.ts` e `core/product_rules.dart` |
+| Favicon e ícones do app | `python design-tokens/build-icons.py` (o único gerador que sobra) |
 
-```bash
-node design-tokens/build-rules.mjs           # product-rules.json -> réguas e vocabulário
-node design-tokens/build-rules.mjs --check   # falha se divergir (roda no CI)
-node design-tokens/check-contrast.mjs        # falha se um par cair abaixo do piso
-```
+**A paridade entre web e mobile é dirigida no desenvolvimento das telas**, não por máquina. O que
+precisa ser igual está em [PARIDADE.md](PARIDADE.md): conceito, nome e hierarquia. Espaçamento,
+composição, navegação, gesto e cor são de cada plataforma.
 
-Qualquer chave `*Ruler` em `product-rules.json` vira `fi<Nome>Bands` e `fi<Nome>Domain` nas duas
-plataformas automaticamente — não há caso especial por régua.
+Os limiares de score espelham `backend/app/analysis/score_ruler.py`, que é a fonte. Mudar um
+limiar exige mudar o Python primeiro, e depois os dois clientes.
+
+O mínimo da WCAG continua verificado, e não é design: `mobile/test/contraste_test.dart` cobra
+4,5:1 para texto e 3:1 para limite de controle. Liberdade de UX/UI é escolher a cor, não publicar
+o que não se lê.
 
 ## Regras que valem para toda a interface
 

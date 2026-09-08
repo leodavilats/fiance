@@ -435,11 +435,8 @@ fiance/
 │       └── features/            # hoje, carteira, descobrir(market), estrategia,
 │                                #   config, busca, ativo, auth, shell, tools
 │
-└── design-tokens/               # O que é número, e não aparência
-    ├── product-rules.json       # Editar AQUI: réguas e vocabulário
-    ├── build-rules.mjs          # Gera as bandas e os rótulos para web e mobile
-    ├── build-icons.py           # Gera favicon e ícones do app
-    └── check-contrast.mjs       # Falha o build se um par cair abaixo do piso
+└── design-tokens/
+    └── build-icons.py           # Gera favicon e ícones do app da cor da marca
 ```
 
 ## Métodos de Valuation
@@ -478,13 +475,11 @@ flutter analyze
 flutter test         # 93 testes
 flutter build apk --release
 
-# Design — a partir da raiz
-# A camada visual é escrita à mão (foundation.css + design_tokens.dart); não há gerador.
-node design-tokens/build-rules.mjs           # regenerar réguas e vocabulário
-node design-tokens/build-rules.mjs --check   # falha se web/mobile divergirem
-node design-tokens/check-contrast.mjs        # falha se um par cair abaixo do piso
-node design-tokens/check-parity.mjs          # falha se um destino existir em só uma plataforma
-python design-tokens/build-icons.py          # regenerar favicon e ícones
+# Marca — a partir da raiz
+# Não há gerador de design. Cor, tipografia, espaço e as réguas do produto são escritos à mão
+# em web/src/foundation.css, web/src/app/core/ e mobile/lib/core/.
+python design-tokens/build-icons.py          # regenerar favicon e ícones da cor da marca
+python design-tokens/build-icons.py --check  # falha se a marca divergir
 cd mobile && dart run flutter_launcher_icons   # ícones nativos (segundo passo)
 ```
 

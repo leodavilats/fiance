@@ -1,6 +1,7 @@
-// GERADO AUTOMATICAMENTE — NÃO EDITE ESTE ARQUIVO.
-// Fonte: design-tokens/product-rules.json · Gerador: design-tokens/build-rules.mjs
-// Regenerar: node design-tokens/build-rules.mjs
+// As bandas de régua e o vocabulário do produto, escritos à mão.
+//
+// Os limiares de score espelham `backend/app/analysis/score_ruler.py`, que é a fonte: mudar um
+// limiar exige mudar o Python primeiro, e depois aqui e no espelho de `mobile/lib/core/`.
 
 export interface FiCategoria {
   readonly label: string;

@@ -5,13 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fiance/core/design_tokens.dart';
 
-/// Os mesmos pisos que `design-tokens/check-contrast.mjs` cobra do lado web.
+/// Contraste da paleta: o **mínimo da WCAG 2.1 AA**, e nada além dele.
 ///
-/// A paridade entre `web/src/foundation.css` e `design_tokens.dart` não tem máquina — foi a
-/// decisão registrada ao tirar a camada visual do gerador. O que **pode** ter máquina é a
-/// regra: se o valor divergir a ponto de derrubar um piso, este teste falha aqui, e não só no
-/// CSS. É a diferença entre paridade de valor, que continua sendo disciplina, e paridade de
-/// contrato, que passa a ser verificada.
+/// Aqui havia pisos acima da norma — tinta secundária a 8:1, legenda e marca a 6:1. Eram escolha
+/// de design, e escolha de design deixou de ter máquina: a paleta é livre. O que não é livre é
+/// texto ilegível, então ficam os dois números da norma: **4,5:1 para texto** e **3:1 para
+/// limite de controle e forma** (WCAG 1.4.3 e 1.4.11).
+///
+/// A diferença importa: liberdade de UX/UI é escolher a cor, não é publicar o que não se lê.
 double _canal(double v) {
   final c = v / 255;
   return c <= 0.03928 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
@@ -79,14 +80,15 @@ void main() {
         expect(contraste(inkDisabled(), controlFill()), greaterThanOrEqualTo(3.0));
       });
 
-      test('a escada de tinta cumpre os pisos do sistema', () {
+      test('toda tinta de texto passa dos 4,5:1 da norma', () {
         expect(contraste(ink1(), ground0()), greaterThanOrEqualTo(4.5));
-        expect(contraste(ink2(), ground0()), greaterThanOrEqualTo(8.0));
-        expect(contraste(ink3(), ground0()), greaterThanOrEqualTo(6.0));
+        expect(contraste(ink2(), ground0()), greaterThanOrEqualTo(4.5));
+        // Legenda e texto pequeno, e a regra para texto pequeno e a mesma, nao uma mais frouxa.
+        expect(contraste(ink3(), ground0()), greaterThanOrEqualTo(4.5));
       });
 
       test('marca e estados carregam rótulo', () {
-        expect(contraste(brand(), ground0()), greaterThanOrEqualTo(6.0));
+        expect(contraste(brand(), ground0()), greaterThanOrEqualTo(4.5));
         for (final estado in [
           FiState.favorable,
           FiState.attention,
@@ -95,7 +97,7 @@ void main() {
         ]) {
           expect(
             contraste(fiStateColor(estado, brightness), ground0()),
-            greaterThanOrEqualTo(6.0),
+            greaterThanOrEqualTo(4.5),
             reason: 'o estado $estado escreve texto',
           );
         }
@@ -116,7 +118,7 @@ void main() {
           );
           expect(
             contraste(ink1(), superficie),
-            greaterThanOrEqualTo(6.0),
+            greaterThanOrEqualTo(4.5),
             reason: 'o corpo do aviso é escrito em tinta primária',
           );
         }

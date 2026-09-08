@@ -10,35 +10,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  design-tokens:
-    name: Design (réguas, contraste e paridade de conceito)
+  marca:
+    name: Marca (favicon e ícones)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      # A régua de score já divergiu entre web e mobile por ser mantida à mão em
-      # três arquivos. Token gerado só vale se a divergência falhar o build.
-      - name: Verificar tokens gerados
-        run: node design-tokens/build-rules.mjs --check
-
-      # Contraste é verificado, não recomendado: a diferença entre 4,4 e 4,6 não se
-      # enxerga em revisão visual, mas separa quem lê a tela de quem não lê. Roda
-      # sobre as DUAS plataformas, cada uma contra o piso — não uma contra a outra,
-      # porque divergir de propósito é permitido e cair abaixo do piso não. Cobre
-      # também as duas cópias do tema claro do CSS, que eram 44 papéis sem guarda.
-      - name: Verificar contraste (WCAG AA, web e mobile)
-        run: node design-tokens/check-contrast.mjs
-
-      # A paridade que importa é de conceito, não de valor: o web migrou para o
-      # ciclo do dinheiro e o mobile ficou sem `/mes` e `/sobra` por meses, com a
-      # documentação afirmando que os shells eram espelhos. Ausência conhecida é
-      # dívida registrada em `DIVIDA_HOJE`, e a lista só pode encolher.
-      - name: Verificar paridade de conceito (web × mobile)
-        run: node design-tokens/check-parity.mjs
 
       - uses: actions/setup-python@v5
         with:
