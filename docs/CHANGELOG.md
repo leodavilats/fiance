@@ -12,6 +12,67 @@
 
 ---
 
+## As regras de produto passam a rodar no Dart (2026-09-08)
+
+O defeito das máquinas deste produto era **geográfico**: 22 regras no web, nenhuma no mobile. A
+consequência era medível e sempre na mesma direção — todo princípio que o web cobra por máquina,
+o mobile não embarcava.
+
+`mobile/test/lint_ui_test.dart` leva cinco delas para lá. Vive como **teste**, não como script
+próprio, porque `flutter test` já é o comando do CI: uma regra que exige mexer na esteira para
+rodar é uma regra que não roda.
+
+| Regra | O que cobra |
+|---|---|
+| Explicabilidade | Arquivo em `features/` que coloca um número numa faixa nomeada (`scoreBand`, `fiBandFor`, `fiDecision`, `fairPrice`) precisa de explicador |
+| Promessa sobre o futuro | Mesma lista do web; a negação explícita passa, a afirmação não |
+| Nome acessível | `IconButton` sem `tooltip:` nem `Semantics` |
+| Serifa no veredito | `FiType.verdict` sem `fiFontSerif`/`fiSerif` |
+| Tipo solto | Catraca em 49 linhas com `fontSize:` literal |
+
+Cada uma foi provada quebrando o código de propósito e conferindo que reprova. **A catraca não
+reprovou na primeira tentativa** e isso era o defeito dela: o teto estava em 65, que era a
+contagem de *ocorrências*, enquanto o teste conta *linhas* — 49. Teto folgado não é catraca, é
+decoração. Ajustado, e a camada de design (`design_tokens.dart` e `theme.dart`) ficou de fora,
+porque é ali que tamanho se declara.
+
+### Três coisas que as regras acharam de imediato
+
+**A tela "onde aportar" não explicava nada.** `quick_invest_view` mostra a ordem de aporte com o
+score de cada ativo numa faixa nomeada, e é o julgamento mais consequente do produto — onde pôr
+dinheiro. Zero explicador. Ganhou `FiProvenance` dizendo o método (compara alocação atual com as
+metas e distribui no que está mais abaixo do alvo, com o score como desempate), a fonte, e a
+limitação que importa: **é ordem de prioridade, não recomendação de compra**.
+
+**Dois botões de apagar anunciavam só "botão".** O de apagar alerta em `config_screen` e o de
+remover título da comparação em `tools_views` não tinham `tooltip`. É exatamente o caso que a
+regra do web cita — "a pessoa tem que adivinhar se aquilo apaga a posição ou fecha o modal" — e
+aqui os dois *apagavam*.
+
+**Um falso alarme, que vale registrar.** A auditoria de manhã apontou `FiType.verdict` sem serifa
+em `estrategia_screen.dart:65`. Não era: a família vinha na linha seguinte, dentro do `.copyWith(`.
+A regra por isso olha uma janela de quatro linhas, não a linha isolada — e os quatro usos do papel
+de veredito estão corretos.
+
+### O explicador do glossário sai de 14px e ganha semântica
+
+`HelpTooltip` era um `GestureDetector` sobre um ícone de 14px: sem `Semantics`, portanto invisível
+ao TalkBack, e com alvo de toque abaixo dos 44 que `FiLayout.minTouchTarget` declara no arquivo ao
+lado. Virou `InkWell` com `Semantics(button: true, label:)` e alvo de 32.
+
+**32, e não 44, de propósito.** O gatilho vive num `Row` ao lado de um rótulo de 11px, e 44 de
+altura dobraria a linha inteira. Chegar aos 44 é repensar aquela linha — fazer o rótulo todo ser o
+alvo, em vez de pendurar um ícone ao lado dele — e isso é decisão de layout, não de
+acessibilidade. Fica no KNOWN_ISSUES, junto da regra que só faz sentido escrever depois dela.
+
+### O contrato de link salvo, conferido de ponta a ponta
+
+Com o acesso à rede restabelecido, os **24 redirects** foram conferidos em produção, sem
+JavaScript: todos respondem 302 para o destino declarado, e todos os 17 destinos respondem 200. O
+defeito dos alvos relativos está fechado onde importa, que é no ar.
+
+---
+
 ## Sobra tinha seis subseções, e duas não eram sobra (2026-09-08)
 
 Segunda passagem da auditoria de design, agora na arquitetura de informação. Seis pares num subnav

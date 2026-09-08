@@ -64,30 +64,36 @@
    exige modelos, métodos em `api_repository`, providers e as telas — e é a maior pendência aberta
    do produto. Antes dela, trabalho visual no mobile é polir uma casa sem dois quartos.
 
-8. **A escala de tipo do mobile está invertida, e há 65 tamanhos soltos.** `FiType.caption` (12px)
-   é usada 44 vezes e `body` 14 — o aplicativo é dominado por legenda. O topo da escala
-   (`moneyXl`, `moneyLg`, `pageTitle`, `bodyLg`, `verdictSm`) soma **zero** usos: eram valores de
-   CSS transliterados para 360dp, grandes demais para caber. Em paralelo há 65 `fontSize:` soltos
-   em 15 tamanhos distintos — incluindo 22 ocorrências de 11px e uma de 9px — contra 83 usos de
-   papel. É a mesma doença que o web curou com uma regra de lint, e a regra só roda no web.
-   Consertar são duas coisas: **recalibrar** os papéis para telefone (`body` em 16 para `caption`
-   deixar de ser o corpo, `moneyXl` perto de 32) e **reatribuir** os 65 sítios soltos. A
-   recalibração muda o desenho de toda tela, então pede uma passagem visual em aparelho — não é
-   substituição mecânica.
+8. **A escala de tipo do mobile está invertida, e há 49 linhas com tamanho solto.**
+   `FiType.caption` (12px) é usada 44 vezes e `body` 14 — o aplicativo é dominado por legenda. O
+   topo da escala (`moneyXl`, `moneyLg`, `pageTitle`, `bodyLg`, `verdictSm`) soma **zero** usos:
+   eram valores de CSS transliterados para 360dp, grandes demais para caber. Em paralelo há 49
+   linhas com `fontSize:` solto, em 15 tamanhos distintos — incluindo 11px e 9px — contra 83 usos
+   de papel. O crescimento **está travado**: `test/lint_ui_test.dart` mantém uma catraca em 49, no
+   padrão de `SEM_MODELO_HOJE`, e o teto só desce. Consertar são duas coisas: **recalibrar** os
+   papéis para telefone (`body` em 16 para `caption` deixar de ser o corpo, `moneyXl` perto de 32)
+   e **reatribuir** os 49 sítios, baixando o teto a cada troca. A recalibração muda o desenho de
+   toda tela, então pede uma passagem visual em aparelho — não é substituição mecânica.
 
-9. **"Serifa decide" e "fio + chão" não embarcaram no mobile.** `fiSerif` aparece 3 vezes contra
-   20 usos de `fi-verdict` no web; e há 26 `Card(`, 36 `ListTile` e 150 `Icons.*` crus. O caso
-   exemplar é `FiInsightTile` — `Card` + `CircleAvatar` com ícone colorido + título + detalhe —,
-   que é a pilha inteira de cheiros de interface gerada e ainda se chama "Insight". Trocar exige
-   um `FiSection` e um `FiDataRow` no mobile, equivalentes ao `<app-section>` e ao `.data-table`
-   do web.
+9. **"Fio + chão" não embarcou no mobile.** Há 26 `Card(`, 36 `ListTile` e 150 `Icons.*` crus. O
+   caso exemplar é `FiInsightTile` — `Card` + `CircleAvatar` com ícone colorido + título +
+   detalhe —, que é a pilha inteira de cheiros de interface gerada e ainda se chama "Insight".
+   Trocar exige um `FiSection` e um `FiDataRow` no mobile, equivalentes ao `<app-section>` e ao
+   `.data-table` do web. *("Serifa decide" saiu daqui: os quatro usos de `FiType.verdict` aplicam
+   a família serifada, e `test/lint_ui_test.dart` reprova o papel de veredito que saia em sans —
+   declarar o papel não aplica a fonte.)*
 
-10. **Sete regras do `lint:ui` não têm equivalente no Dart.** As que protegem contrato de produto e
-   acessibilidade: explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro,
-   nome acessível em botão de ícone, tipografia fora da escala, serifa fora de conclusão e alvo de
-   toque. O mobile tem **3** chamadas de `Semantics(` em 12.745 linhas de Dart. `FiProvenance` já
-   existe e está ligado ao veredito de saúde; falta ligá-lo às outras oito telas que julgam, e
-   falta a máquina que cobre isso.
+10. **Duas das sete regras portadas para o Dart ainda faltam: faixa de projeção e alvo de toque.**
+    `test/lint_ui_test.dart` já cobra cinco — explicabilidade em julgamento, promessa sobre o
+    futuro, nome acessível em botão de ícone, serifa no papel de veredito e a catraca de tipo
+    solto. Faltam:
+    - **projeção sem faixa**, que exige primeiro descobrir como os campos `_low`/`_high` chegam ao
+      Dart e onde são exibidos; hoje nenhuma tela do mobile mostra projeção, então a regra
+      nasceria sem sujeito;
+    - **alvo de toque de 44dp**, que precisa de uma decisão de layout antes da regra.
+      `HelpTooltip` foi de 14 para 32 e ganhou `Semantics`, mas 44 dobraria a altura do `Row` de
+      rótulo de 11px onde ele vive. Chegar aos 44 é fazer o rótulo inteiro ser o alvo, em vez de
+      pendurar um ícone ao lado — e só depois a regra tem o que cobrar.
 
 11. **`/voce` ainda não está nos quatro eixos, e a home pública continua a antiga.** A
     reorganização de destinos foi feita — `/sobra` caiu de seis subseções para três,

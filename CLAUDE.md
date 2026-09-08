@@ -30,7 +30,9 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 93 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 98 testes
+                                                   #   inclui test/lint_ui_test.dart:
+                                                   #   5 regras do lint:ui, no Dart
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 152 testes
 node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA, web e mobile
@@ -94,7 +96,7 @@ CHANGELOG.
 | Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
 | Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |
 | Seção numa tela | Usar `<app-section title="…">`, que emite o `<h2>` | Seção sem cabeçalho: `/mes` tinha 5 seções e nenhuma parada de navegação |
-| Julgamento numa tela do mobile | `FiProvenance` — método, fonte, momento, limitação | O invariante de explicabilidade vale nas duas plataformas, e o `lint:ui` só roda no web |
+| Julgamento numa tela do mobile | `FiProvenance` — método, fonte, momento, limitação | `test/lint_ui_test.dart` reprova: o invariante de explicabilidade vale nas duas plataformas |
 | Componente Angular novo | Escrever o `template` no próprio `.ts` — não há `.html` separado em `web/src/app/components` | Divergência de padrão na mesma pasta |
 
 ---

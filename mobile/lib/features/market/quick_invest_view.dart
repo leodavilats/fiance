@@ -6,6 +6,7 @@ import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/score_ruler.dart';
+import '../../core/widgets/provenance.dart';
 
 class QuickInvestView extends ConsumerStatefulWidget {
   const QuickInvestView({super.key});
@@ -150,6 +151,18 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
           else
             for (final allocation in _result!.allocations)
               _AllocationCard(allocation: allocation),
+
+          const FiProvenance(
+            summary: 'Como chegamos nesta ordem',
+            method:
+                'Compara sua alocação atual com as metas por categoria e distribui o valor '
+                'informado no que está mais abaixo do alvo. O score de cada ativo entra como '
+                'desempate, na régua do sistema.',
+            source: 'Suas posições e renda fixa, com metas de alocação e preços da BRAPI.',
+            limitation:
+                'É uma ordem de prioridade, não uma recomendação de compra. Sem metas '
+                'declaradas não há alvo para comparar, e a distribuição sai vazia.',
+          ),
         ],
       ],
     );

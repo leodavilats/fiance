@@ -424,6 +424,7 @@ class _OptionForm extends StatelessWidget {
                 if (onRemove != null)
                   IconButton(
                     onPressed: onRemove,
+                    tooltip: 'Remover este título da comparação',
                     icon: const Icon(Icons.delete_outline),
                   ),
               ],

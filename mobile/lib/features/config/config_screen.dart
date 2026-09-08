@@ -684,6 +684,7 @@ class _AlertsSection extends ConsumerWidget {
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
+                        tooltip: 'Apagar alerta',
                         onPressed: () async {
                           await ref
                               .read(apiRepositoryProvider)
