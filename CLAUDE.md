@@ -31,7 +31,7 @@ cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem R
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 93 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 151 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 152 testes
 node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA, web e mobile
 node design-tokens/check-parity.mjs                # os cinco destinos existem nas duas
@@ -103,6 +103,12 @@ CHANGELOG.
 
 Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde**.
 
+- **`redirectTo` relativo em rota de dois segmentos** manda o link salvo para o curinga.
+  `{ path: 'carteira/posicoes', redirectTo: 'patrimonio/posicoes' }` resolve contra o primeiro
+  segmento casado e leva a `/carteira/patrimonio/posicoes`, que não existe — a pessoa cai em
+  `/mes` sem entender por quê. Valia para os oito redirects de dois segmentos do produto, e o
+  teste passava verde porque comparava a **string declarada**, não a resolução. Todo alvo de topo
+  é absoluto, e `app.routes.server.spec.ts` reprova o que não começa com `/`.
 - **`index.html` sem `<base href="/">`** deixa rota de dois segmentos (`/voce/preferencias`)
   pedir os chunks em caminho relativo aninhado; o SSR devolve HTML, o módulo não carrega e a
   tela abre **em branco** por link direto. Passa despercebido navegando por dentro do app.

@@ -211,7 +211,7 @@ export const routes: Routes = [
    * concorrendo com a busca global. Camada contextual se entra pelo contexto — o destino de
    * quem quer achar um ativo é Descobrir.
    */
-  { path: 'ativo', redirectTo: 'descobrir/oportunidades', pathMatch: 'full' },
+  { path: 'ativo', redirectTo: '/descobrir/oportunidades', pathMatch: 'full' },
 
   {
     path: 'voce',
@@ -277,34 +277,41 @@ export const routes: Routes = [
   /*
    * As URLs da IA anterior, como redirect.
    *
+   * **Todo alvo aqui e absoluto, e isso nao e estilo.** `redirectTo` relativo resolve contra o
+   * primeiro segmento do caminho casado, entao `carteira/posicoes` -> `patrimonio/posicoes`
+   * virava `/carteira/patrimonio/posicoes`: caminho que nao existe, cai no `**`, e quem tinha o
+   * link salvo ia parar em `/mes` sem entender por que. Valia para TODO redirect de dois
+   * segmentos do produto. O teste comparava a string declarada, nunca a resolucao, e por isso
+   * passava verde com o contrato quebrado em producao.
+   *
    * Link salvo é contrato, e a transição anterior (Mercado/Meus Ativos → cinco destinos) já
    * seguiu esta regra. `hoje` vai para `mes` porque é onde o "agora" mora agora; `estrategia`
    * vai para `patrimonio` porque, sem aporte, meta e projeção, o que sobrava dela era o desvio
    * de alocação — leitura de patrimônio.
    */
-  { path: 'hoje', redirectTo: 'mes', pathMatch: 'full' },
-  { path: 'hoje/atividade', redirectTo: 'mes/atividade', pathMatch: 'full' },
-  { path: 'carteira', redirectTo: 'patrimonio', pathMatch: 'full' },
-  { path: 'carteira/composicao', redirectTo: 'patrimonio/composicao', pathMatch: 'full' },
-  { path: 'carteira/proventos', redirectTo: 'patrimonio/proventos', pathMatch: 'full' },
-  { path: 'carteira/posicoes', redirectTo: 'patrimonio/posicoes', pathMatch: 'full' },
-  { path: 'carteira/encerradas', redirectTo: 'patrimonio/encerradas', pathMatch: 'full' },
-  { path: 'carteira/desempenho', redirectTo: 'patrimonio/desempenho', pathMatch: 'full' },
-  { path: 'carteira/editar', redirectTo: 'patrimonio/editar', pathMatch: 'full' },
-  { path: 'carteira/importar', redirectTo: 'patrimonio', pathMatch: 'full' },
-  { path: 'carteira/transacoes', redirectTo: 'patrimonio', pathMatch: 'full' },
-  { path: 'estrategia', redirectTo: 'sobra/desvio', pathMatch: 'full' },
-  { path: 'estrategia/aporte', redirectTo: 'sobra/aporte', pathMatch: 'full' },
-  { path: 'estrategia/metas', redirectTo: 'voce/objetivos', pathMatch: 'full' },
-  { path: 'estrategia/renda-fixa', redirectTo: 'descobrir/renda-fixa', pathMatch: 'full' },
-  { path: 'estrategia/projecao', redirectTo: 'patrimonio/projecao', pathMatch: 'full' },
+  { path: 'hoje', redirectTo: '/mes', pathMatch: 'full' },
+  { path: 'hoje/atividade', redirectTo: '/mes/atividade', pathMatch: 'full' },
+  { path: 'carteira', redirectTo: '/patrimonio', pathMatch: 'full' },
+  { path: 'carteira/composicao', redirectTo: '/patrimonio/composicao', pathMatch: 'full' },
+  { path: 'carteira/proventos', redirectTo: '/patrimonio/proventos', pathMatch: 'full' },
+  { path: 'carteira/posicoes', redirectTo: '/patrimonio/posicoes', pathMatch: 'full' },
+  { path: 'carteira/encerradas', redirectTo: '/patrimonio/encerradas', pathMatch: 'full' },
+  { path: 'carteira/desempenho', redirectTo: '/patrimonio/desempenho', pathMatch: 'full' },
+  { path: 'carteira/editar', redirectTo: '/patrimonio/editar', pathMatch: 'full' },
+  { path: 'carteira/importar', redirectTo: '/patrimonio', pathMatch: 'full' },
+  { path: 'carteira/transacoes', redirectTo: '/patrimonio', pathMatch: 'full' },
+  { path: 'estrategia', redirectTo: '/sobra/desvio', pathMatch: 'full' },
+  { path: 'estrategia/aporte', redirectTo: '/sobra/aporte', pathMatch: 'full' },
+  { path: 'estrategia/metas', redirectTo: '/voce/objetivos', pathMatch: 'full' },
+  { path: 'estrategia/renda-fixa', redirectTo: '/descobrir/renda-fixa', pathMatch: 'full' },
+  { path: 'estrategia/projecao', redirectTo: '/patrimonio/projecao', pathMatch: 'full' },
 
-  { path: 'dashboard', redirectTo: 'mes', pathMatch: 'full' },
-  { path: 'assets', redirectTo: 'patrimonio', pathMatch: 'full' },
-  { path: 'assets/cadastro', redirectTo: 'patrimonio/editar', pathMatch: 'full' },
-  { path: 'market', redirectTo: 'descobrir/oportunidades', pathMatch: 'full' },
-  { path: 'config', redirectTo: 'voce/preferencias', pathMatch: 'full' },
-  { path: 'strategy', redirectTo: 'sobra/desvio', pathMatch: 'full' },
+  { path: 'dashboard', redirectTo: '/mes', pathMatch: 'full' },
+  { path: 'assets', redirectTo: '/patrimonio', pathMatch: 'full' },
+  { path: 'assets/cadastro', redirectTo: '/patrimonio/editar', pathMatch: 'full' },
+  { path: 'market', redirectTo: '/descobrir/oportunidades', pathMatch: 'full' },
+  { path: 'config', redirectTo: '/voce/preferencias', pathMatch: 'full' },
+  { path: 'strategy', redirectTo: '/sobra/desvio', pathMatch: 'full' },
 
-  { path: '**', redirectTo: 'mes' },
+  { path: '**', redirectTo: '/mes' },
 ];

@@ -51,6 +51,33 @@ contrato, e foi corrigida para comparar como conjunto.
 com um inventário da forma corrente de cada destino. Documento de design responde *como a interface
 deveria ser*; o histórico é este arquivo.
 
+### Todo redirect de dois segmentos do produto estava quebrado
+
+Achado ao conferir em produção para onde os links antigos iam de fato — que é diferente de ler o
+que a rota declara. `redirectTo` **relativo** resolve contra o primeiro segmento do caminho
+casado, então:
+
+```text
+/carteira/posicoes  -> /carteira/patrimonio/posicoes   (não existe)
+/hoje/atividade     -> /hoje/mes/atividade             (não existe)
+/estrategia/aporte  -> /estrategia/sobra/aporte        (não existe)
+```
+
+Todos caíam no curinga e levavam a `/mes`. Quem tinha um link salvo para a tabela de posições
+abria o mês e não entendia por quê — e "link salvo é contrato" é invariante escrito deste
+repositório. Valia para os oito redirects de dois segmentos; os de um segmento (`/carteira`,
+`/hoje`) funcionavam por acidente da resolução, o que é pior, porque dava a impressão de que o
+bloco todo funcionava.
+
+Não veio da mudança de hoje: já era assim desde a migração dos cinco destinos. **O teste
+comparava a string declarada e nunca a resolução**, então passava verde com o contrato quebrado
+em produção. É o modo de falha mais caro que uma verificação pode ter: dar confiança onde não há.
+
+Os 24 alvos de topo — mais o próprio curinga — passaram a ser absolutos, e o teste ganhou um caso
+que reprova qualquer `redirectTo` de topo que não comece com `/`. Os dois relativos que sobram são
+os `''` de dentro dos shells, onde relativo é o certo. Conferido depois do deploy: os seis links
+antigos chegam ao destino declarado, sem JavaScript.
+
 ### O auto-deploy para produção estava desligado só na metade
 
 Conferido contra o Railway com um push real: o serviço `fiance` (API) sobe **homologação**, como

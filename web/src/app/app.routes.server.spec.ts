@@ -68,18 +68,18 @@ describe('renderização no servidor', () => {
 
   it('as URLs da IA anterior continuam resolvendo', () => {
     const antigas: Record<string, string> = {
-      hoje: 'mes',
-      'hoje/atividade': 'mes/atividade',
-      carteira: 'patrimonio',
-      'carteira/posicoes': 'patrimonio/posicoes',
-      'carteira/editar': 'patrimonio/editar',
-      estrategia: 'sobra/desvio',
-      'estrategia/aporte': 'sobra/aporte',
-      // Sobra encolheu de seis subsecoes para tres, e estas tres mudaram de casa. O link
-      // antigo continua resolvendo, e agora num salto so em vez de dois.
-      'estrategia/metas': 'voce/objetivos',
-      'estrategia/renda-fixa': 'descobrir/renda-fixa',
-      'estrategia/projecao': 'patrimonio/projecao',
+      hoje: '/mes',
+      'hoje/atividade': '/mes/atividade',
+      carteira: '/patrimonio',
+      'carteira/posicoes': '/patrimonio/posicoes',
+      'carteira/editar': '/patrimonio/editar',
+      estrategia: '/sobra/desvio',
+      'estrategia/aporte': '/sobra/aporte',
+      // Sobra encolheu de seis subseções para três, e estas três mudaram de casa. O link
+      // antigo continua resolvendo, e agora num salto só em vez de dois.
+      'estrategia/metas': '/voce/objetivos',
+      'estrategia/renda-fixa': '/descobrir/renda-fixa',
+      'estrategia/projecao': '/patrimonio/projecao',
     };
 
     for (const [de, para] of Object.entries(antigas)) {
@@ -87,6 +87,24 @@ describe('renderização no servidor', () => {
       expect(route, de).toBeDefined();
       expect(route?.redirectTo, de).toBe(para);
     }
+  });
+
+  /*
+   * A versão anterior deste arquivo comparava a string declarada e passava verde enquanto o
+   * contrato estava quebrado em produção: `redirectTo` relativo resolve contra o primeiro
+   * segmento do caminho casado, então `carteira/posicoes` -> `patrimonio/posicoes` levava a
+   * `/carteira/patrimonio/posicoes`, que cai no curinga. Valia para todo redirect de dois
+   * segmentos. O alvo absoluto é o que faz a resolução ser a declarada — e é isso que se cobra.
+   */
+  it('todo redirect de topo aponta para caminho absoluto', () => {
+    const relativos = routes
+      .filter(r => typeof r.redirectTo === 'string' && !r.redirectTo.startsWith('/'))
+      .map(r => `${r.path} -> ${r.redirectTo}`);
+
+    expect(
+      relativos,
+      'alvo relativo resolve contra o segmento casado e manda o link salvo para o curinga'
+    ).toEqual([]);
   });
 
   it('o que saiu de Sobra continua resolvendo de dentro dela', () => {
