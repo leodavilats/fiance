@@ -275,14 +275,8 @@ export const routes: Routes = [
   },
 
   /*
-   * As URLs da IA anterior, como redirect.
-   *
-   * **Todo alvo aqui e absoluto, e isso nao e estilo.** `redirectTo` relativo resolve contra o
-   * primeiro segmento do caminho casado, entao `carteira/posicoes` -> `patrimonio/posicoes`
-   * virava `/carteira/patrimonio/posicoes`: caminho que nao existe, cai no `**`, e quem tinha o
-   * link salvo ia parar em `/mes` sem entender por que. Valia para TODO redirect de dois
-   * segmentos do produto. O teste comparava a string declarada, nunca a resolucao, e por isso
-   * passava verde com o contrato quebrado em producao.
+   * As URLs antigas, como redirect. **Todo alvo e absoluto**: relativo resolve contra o primeiro
+   * segmento casado e manda o link salvo para o curinga.
    *
    * Link salvo é contrato, e a transição anterior (Mercado/Meus Ativos → cinco destinos) já
    * seguiu esta regra. `hoje` vai para `mes` porque é onde o "agora" mora agora; `estrategia`

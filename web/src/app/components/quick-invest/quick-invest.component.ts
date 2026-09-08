@@ -1,252 +1,230 @@
 import { CommonModule } from '@angular/common';
-import { EmptyStateComponent } from '../empty-state/empty-state.component';
-import { ProvenanceComponent } from '../provenance/provenance.component';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { QuickInvestResponse, RecommendService, UiHelperService } from '../../core';
 import { PageHeaderComponent } from '../page-header/page-header.component';
+import { ProvenanceComponent } from '../provenance/provenance.component';
+import { SectionComponent } from '../section/section.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 @Component({
   selector: 'app-quick-invest',
   standalone: true,
   imports: [
-    PageHeaderComponent,
     CommonModule,
     ReactiveFormsModule,
+    RouterLink,
     LucideAngularModule,
-    EmptyStateComponent,
+    PageHeaderComponent,
     ProvenanceComponent,
+    SectionComponent,
+    SkeletonComponent,
   ],
   template: `
     <app-page-header
       title="Onde aportar"
-      question="Tenho dinheiro para investir — para onde ele deveria ir?"
+      question="Recebi dinheiro — onde ele faz mais diferença agora?"
     />
 
-    <div class="space-y-5">
-      <div class="space-y-4">
-        <div class="card">
-          <h2 class="fi-title m-0 mb-2 text-ink">Sugestão de compra</h2>
-          <p class="fi-body text-ink-2 mb-4">
-            Com base nos seus objetivos e carteira atual, o sistema indica quais ativos comprar e em
-            que quantidade com o valor disponível.
+    @if (carregando()) {
+      <app-skeleton shape="metric" />
+    } @else if (erro()) {
+      <div class="notice notice-adverse">
+        <lucide-icon name="circle-alert" size="18" aria-hidden="true"></lucide-icon>
+        <div>
+          <p class="fi-label m-0">Não conseguimos montar a ordem agora</p>
+          <p class="fi-body m-0 mt-1">
+            Pode ser a fonte de cotações. Seus lançamentos e sua carteira continuam intactos.
           </p>
-          <form [formGroup]="quickInvestForm" (ngSubmit)="runQuickInvest()">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label class="field-label block mb-1.5">Valor disponível (R$)</label>
-                <input type="number" formControlName="cash_available" class="input" min="1" />
-              </div>
-              <div>
-                <label class="field-label block mb-1.5">Ordem mínima (R$)</label>
-                <input type="number" formControlName="min_order_value" class="input" min="1" />
-              </div>
-            </div>
-            <div class="flex flex-col gap-2 mb-4">
-              <label class="fi-body flex items-center gap-2 cursor-pointer text-ink">
-                <input type="checkbox" formControlName="use_current_goals" class="cursor-pointer" />
-                Usar meus objetivos de alocação configurados
-              </label>
-              <label class="fi-body flex items-center gap-2 cursor-pointer text-ink">
-                <input
-                  type="checkbox"
-                  formControlName="prioritize_rebalance"
-                  class="cursor-pointer"
-                />
-                Priorizar rebalanceamento da carteira atual
-              </label>
-            </div>
-            <button
-              type="submit"
-              class="btn-primary"
-              [disabled]="quickInvestLoading() || quickInvestForm.invalid"
-            >
-              <lucide-icon
-                [name]="quickInvestLoading() ? 'loader-circle' : 'lightbulb'"
-                size="18"
-              ></lucide-icon>
-              {{ quickInvestLoading() ? 'Analisando...' : 'Gerar Sugestão' }}
-            </button>
-          </form>
+          <button type="button" class="btn-secondary mt-3" (click)="montar(null)">
+            Tentar de novo
+          </button>
         </div>
-
-        @if (quickInvestError()) {
-          <div class="p-4 rounded-md bg-ground-1 border border-adverse/40">
-            <p class="fi-body text-adverse m-0">
-              Não foi possível gerar sugestão. Verifique se sua carteira e objetivos estão
-              configurados.
-            </p>
-          </div>
-        }
-
-        @if (quickInvestResult(); as result) {
-          @if (result.affirmation && !result.affirmation.prescriptive) {
-            <p class="notice notice-indeterminate fi-caption text-ink-2 m-0">
-              {{ result.affirmation.disclaimer }} Por isso o quanto aportar em cada ativo aparece
-              como &mdash;.
-            </p>
-          }
-
-          <dl class="flex flex-wrap gap-x-10 gap-y-3 m-0 pb-4 border-b border-hairline">
-            <div>
-              <dt class="fi-caption text-ink-3 m-0">Total disponível</dt>
-              <dd class="fi-metric-sm fi-num text-ink m-0">
-                @if (result.total_cash !== null) {
-                  R$ {{ result.total_cash | number: '1.2-2' }}
-                } @else {
-                  &mdash;
-                }
-              </dd>
-            </div>
-            <div>
-              <dt class="fi-caption text-ink-3 m-0">A alocar</dt>
-              <dd class="fi-metric-sm fi-num text-ink m-0">
-                @if (result.allocated_cash !== null) {
-                  R$ {{ result.allocated_cash | number: '1.2-2' }}
-                } @else {
-                  &mdash;
-                }
-              </dd>
-            </div>
-            <div>
-              <dt class="fi-caption text-ink-3 m-0">Sobra sem destino</dt>
-              <dd class="fi-metric-sm fi-num text-ink-2 m-0">
-                @if (result.remaining_cash !== null) {
-                  R$ {{ result.remaining_cash | number: '1.2-2' }}
-                } @else {
-                  &mdash;
-                }
-              </dd>
-            </div>
-          </dl>
-
-          @if (result.allocations.length > 0) {
-            <div>
-              <h3 class="fi-eyebrow text-ink-3 mb-3">
-                {{ result.allocations.length }} sugestão{{
-                  result.allocations.length > 1 ? 'ões' : ''
-                }}
-                de compra
-              </h3>
-              <div class="flex flex-col gap-3">
-                @for (alloc of result.allocations; track alloc.ticker) {
-                  <div class="card p-3">
-                    <div class="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 class="fi-metric-sm text-ink m-0">{{ alloc.ticker }}</h4>
-                        <p class="fi-caption text-ink-2 m-0">
-                          {{ alloc.name || ui.categoryLabel(alloc.category) }}
-                        </p>
-                      </div>
-                      <div class="text-right">
-                        <p class="fi-metric-sm fi-num text-ink m-0">
-                          @if (alloc.suggested_investment !== null) {
-                            R$ {{ alloc.suggested_investment | number: '1.2-2' }}
-                          } @else {
-                            &mdash;
-                          }
-                        </p>
-                        @if (alloc.suggested_quantity !== null) {
-                          <p class="fi-caption text-ink-2 m-0">
-                            {{ alloc.suggested_quantity }} cotas
-                          </p>
-                        }
-                      </div>
-                    </div>
-                    <div class="fi-caption flex flex-wrap gap-4 text-ink-2 mb-2">
-                      @if (alloc.current_price !== null) {
-                        <span
-                          >Preço
-                          <span class="fi-num"
-                            >R$ {{ alloc.current_price | number: '1.2-2' }}</span
-                          ></span
-                        >
-                      }
-                      @if (alloc.dividend_yield) {
-                        <span
-                          >DY
-                          <span class="fi-num">{{ alloc.dividend_yield | number: '1.1-1' }}</span
-                          >%</span
-                        >
-                      }
-                      @if (alloc.score) {
-                        <span
-                          >Score
-                          <span class="fi-num">{{ alloc.score | number: '1.0-0' }}</span></span
-                        >
-                      }
-                    </div>
-                    <p class="fi-caption text-ink-2 m-0">{{ alloc.rationale }}</p>
-                  </div>
-                }
-              </div>
-            </div>
-          } @else {
-            <app-empty-state
-              title="Nenhuma sugestão para este valor"
-              reason="O valor informado não cobre o lote mínimo de nenhum ativo que se encaixe na sua alocação alvo."
-              nextStep="Tente um valor maior, ou revise a alocação alvo em Sobra › Metas."
-            />
-          }
-
-          @if (result.summary) {
-            <div class="card">
-              <h3 class="fi-label text-ink mb-2">Resumo da estratégia</h3>
-              <p class="fi-body text-ink m-0 whitespace-pre-line">{{ result.summary }}</p>
-            </div>
-          }
-        }
       </div>
-    </div>
+    } @else if (resultado(); as r) {
+      <section class="fi-block">
+        <p class="fi-verdict text-ink m-0 max-w-reading">{{ r.summary }}</p>
 
-    <app-provenance
-      method="Distribui o aporte pelas categorias mais distantes da meta e, dentro de cada uma, ordena por score."
-      source="Preços e indicadores da BRAPI; suas metas e preferências."
-      limitation="É sugestão de alocação, não recomendação de compra — e não desconta corretagem nem imposto."
-    ></app-provenance>
+        <p class="fi-eyebrow text-ink-3 m-0 mt-6">
+          {{ r.cash_source === 'cascade' ? 'A sua sobra deste mês' : 'O valor que você informou' }}
+        </p>
+        <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(r.total_cash) }}</p>
+
+        @if (r.cash_source === 'cascade') {
+          <p class="fi-body text-ink-2 m-0 mt-2 max-w-reading">
+            É o que resta depois da dívida e da reserva, na ordem que a
+            <a routerLink="/sobra" class="btn-link">Sobra</a> calcula. Nada aqui foi digitado.
+          </p>
+        }
+
+        <app-provenance
+          summary="Como esta ordem foi montada"
+          [method]="metodo()"
+          source="Sua carteira e sua renda fixa, com preços da BRAPI e a alocação-alvo que você declarou."
+          limitation="É uma ordem de prioridade, não recomendação de compra. Preço muda entre montar a ordem e executá-la, e a quantidade é sempre cota inteira."
+        />
+
+        <div class="mt-5 pt-4 border-t border-hairline flex flex-wrap items-end gap-3">
+          <div class="field max-w-[12rem]">
+            <label class="field-label" for="outro-valor">Simular outro valor</label>
+            <input
+              id="outro-valor"
+              type="number"
+              class="input"
+              min="1"
+              [formControl]="valor"
+              placeholder="R$"
+            />
+          </div>
+          <button
+            type="button"
+            class="btn-secondary"
+            [disabled]="valor.invalid || valor.value === null"
+            [attr.title]="
+              valor.value === null
+                ? 'Informe um valor para recalcular'
+                : valor.invalid
+                  ? 'O valor precisa ser maior que zero'
+                  : null
+            "
+            (click)="montar(valor.value)"
+          >
+            Recalcular
+          </button>
+          @if (r.cash_source === 'informed') {
+            <button type="button" class="btn-link" (click)="usarASobra()">
+              Voltar para a sobra
+            </button>
+          }
+        </div>
+      </section>
+
+      @if (r.allocations.length > 0) {
+        <app-section title="A ordem" [count]="r.allocations.length">
+          <div class="overflow-x-auto mt-3">
+            <table class="data-table">
+              <caption class="sr-only">
+                Ativos da ordem, com quanto e por que cada um entrou
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Ativo</th>
+                  <th scope="col">Por que este</th>
+                  <th scope="col" class="num">Cotas</th>
+                  <th scope="col" class="num">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (a of r.allocations; track a.ticker) {
+                  <tr>
+                    <td>
+                      <a [routerLink]="['/ativo', a.ticker]" class="fi-ticker text-brand">{{
+                        a.ticker
+                      }}</a>
+                      <span class="fi-caption text-ink-3 block">{{
+                        a.name || ui.categoryLabel(a.category)
+                      }}</span>
+                    </td>
+                    <td class="text-ink-2">{{ a.rationale }}</td>
+                    <td class="num">{{ a.suggested_quantity ?? '—' }}</td>
+                    <td class="num">{{ reais(a.suggested_investment) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </app-section>
+      }
+
+      @if (r.fixed_income; as rf) {
+        <app-section title="Renda fixa">
+          <p class="fi-body text-ink m-0">{{ reais(rf.amount) }}</p>
+          <p class="fi-body text-ink-2 m-0 mt-1 max-w-reading">{{ rf.rationale }}</p>
+          <a routerLink="/descobrir/renda-fixa" class="btn-link mt-2 inline-block">
+            Comparar títulos
+          </a>
+        </app-section>
+      }
+
+      @if (r.unallocated.length > 0) {
+        <app-section title="Sem destino" hint="Todo real que não entrou na ordem tem um motivo.">
+          <ul class="list-none m-0 p-0 flex flex-col gap-2">
+            @for (u of r.unallocated; track u.reason) {
+              <li class="fi-body text-ink-2 flex items-baseline gap-3">
+                <span class="fi-num text-ink">{{ reais(u.value) }}</span>
+                <span>{{ u.reason }}</span>
+              </li>
+            }
+          </ul>
+        </app-section>
+      }
+
+      @if (r.basis === 'score') {
+        <app-section title="Sem alocação-alvo declarada">
+          <p class="fi-body text-ink-2 m-0 max-w-reading">
+            A ordem acima está por score, porque você ainda não disse quanto quer em cada categoria.
+            Sem isso o produto não sabe onde este dinheiro deveria ir — e não vai inventar um alvo.
+          </p>
+          <a routerLink="/voce/objetivos" class="btn-primary no-underline mt-3">
+            Declarar minha alocação-alvo
+          </a>
+        </app-section>
+      }
+    }
   `,
 })
-export class QuickInvestComponent {
+export class QuickInvestComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly svc = inject(RecommendService);
   readonly ui = inject(UiHelperService);
 
-  readonly quickInvestResult = signal<QuickInvestResponse | null>(null);
-  readonly quickInvestLoading = signal(false);
-  readonly quickInvestError = signal(false);
+  readonly resultado = signal<QuickInvestResponse | null>(null);
+  readonly carregando = signal(true);
+  readonly erro = signal(false);
 
-  readonly quickInvestForm = this.fb.nonNullable.group({
-    cash_available: [1000, [Validators.required, Validators.min(1)]],
-    min_order_value: [50, [Validators.required, Validators.min(1)]],
-    use_current_goals: [true],
-    prioritize_rebalance: [true],
+  readonly valor = this.fb.control<number | null>(null, [Validators.min(1)]);
+
+  readonly metodo = computed(() => {
+    const r = this.resultado();
+    if (r?.basis === 'goals') {
+      return 'Compara sua alocação atual com a alocação-alvo e distribui o valor no que está mais abaixo do alvo. O score de cada ativo entra como desempate.';
+    }
+    return 'Ordena o universo por score e distribui o valor nos melhores que couberem, porque não há alocação-alvo declarada para comparar.';
   });
 
-  runQuickInvest(): void {
-    if (this.quickInvestForm.invalid) return;
-    this.quickInvestLoading.set(true);
-    this.quickInvestError.set(false);
-    this.quickInvestResult.set(null);
+  ngOnInit(): void {
+    this.montar(null);
+  }
 
-    const v = this.quickInvestForm.getRawValue();
-    this.svc
-      .quickInvest({
-        cash_available: v.cash_available,
-        use_current_goals: v.use_current_goals,
-        prioritize_rebalance: v.prioritize_rebalance,
-        min_order_value: v.min_order_value,
-      })
-      .subscribe({
-        next: r => {
-          this.quickInvestResult.set(r);
-          this.quickInvestLoading.set(false);
-          this.svc.saveCashAvailable(v.cash_available).subscribe({ error: () => {} });
-        },
-        error: () => {
-          this.quickInvestError.set(true);
-          this.quickInvestLoading.set(false);
-        },
-      });
+  usarASobra(): void {
+    this.valor.reset();
+    this.montar(null);
+  }
+
+  montar(valor: number | null): void {
+    this.carregando.set(true);
+    this.erro.set(false);
+
+    this.svc.quickInvest({ cash_available: valor, min_order_value: 50 }).subscribe({
+      next: r => {
+        this.resultado.set(r);
+        this.carregando.set(false);
+      },
+      error: () => {
+        this.erro.set(true);
+        this.carregando.set(false);
+      },
+    });
+  }
+
+  reais(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined) return '—';
+    return valor.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+    });
   }
 }

@@ -392,10 +392,7 @@ class ApiRepository {
     final res = await _dio.post('/referral/rotate');
     return (res.data as Map<String, dynamic>)['code'] as String;
   }
-  // ---------------------------------------------------------------------------
-  // Caixa. Toda escrita passa por `cashflow_service` no backend, que reprojeta:
-  // nenhuma rota escreve em `cash_store` direto.
-  // ---------------------------------------------------------------------------
+  // Caixa.
 
   Future<CashMonth> getCashMonth({String? month}) async {
     final res = await _dio.get(
@@ -405,8 +402,7 @@ class ApiRepository {
     return CashMonth.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Os lancamentos, ja com o provento derivado do razao montado na leitura -- ele nao esta na
-  /// tabela, e e por isso que duplicar e impossivel por construcao.
+  /// Os lancamentos, com o provento derivado do razao montado na leitura.
   Future<List<CashEntry>> getCashEntries() async {
     final res = await _dio.get('/cashflow/entries');
     return (res.data as List)
@@ -507,9 +503,7 @@ class ApiRepository {
     return Surplus.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// O molde do mes: LE, nao grava. A gravacao e `createCashEntriesBatch`, e as duas metades
-  /// existem para que meio molde de mes nao seja possivel -- quem lancou nao teria como saber o
-  /// que entrou e o que ficou de fora.
+  /// O molde do mes: le, nao grava. A gravacao e `createCashEntriesBatch`.
   Future<CashMonthTemplate> getMonthTemplate({
     required String target,
     String? source,
@@ -539,7 +533,6 @@ class ApiRepository {
               'description': c.description,
               'amount': c.amount,
               'due_on': c.dueOn,
-              // O copiado nasce A VENCER: o valor do mes que passou e fato daquele mes.
               'paid_on': null,
             },
         ],

@@ -1,12 +1,7 @@
-/// Os modelos do caixa, espelhando o contrato de `backend/app/models/cashflow.py`.
+/// Os modelos do caixa, espelhando `backend/app/models/cashflow.py`.
 ///
-/// Vivem em arquivo proprio, e nao em `models.dart`, porque aquele ja tem 1586 linhas e o caixa
-/// e um modulo inteiro do produto -- `cashflow/` no backend e irmao de `ledger/`.
-///
-/// **Campo calculado que o cliente nao declara e descartado em silencio.** Ja aconteceu sete
-/// vezes neste repositorio (`consensus_methods`, `trend_basis`, `allocation_gaps`...): o
-/// `fromJson` ignora chave nao declarada sem erro nenhum. Por isso cada campo do contrato esta
-/// aqui, inclusive os que a primeira tela nao usa.
+/// Campo nao declarado aqui e descartado em silencio pelo `fromJson`, entao todo campo do
+/// contrato esta declarado -- inclusive os que nenhuma tela le ainda.
 enum CashKind {
   income,
   expense;
@@ -17,9 +12,7 @@ enum CashKind {
   String get json => name;
 }
 
-/// A classe sai do custo, nunca do tipo: consignado a 0,4% e consignado a 3,5% ao mes nao sao a
-/// mesma decisao. `noRate` existe porque sem taxa informada nao ha classe -- o produto nao
-/// estima taxa de rotativo.
+/// A classe sai do custo, nunca do tipo. Sem taxa informada nao ha classe.
 enum DebtClass {
   expensive,
   manageable,
@@ -64,8 +57,7 @@ class CashEntry {
   final String dueOn;
   final String? paidOn;
 
-  /// Derivado do razao -- provento creditado. Nao se lanca e nao se edita no caixa: o razao e a
-  /// fonte, e lancar o mesmo provento aqui contaria o dinheiro duas vezes.
+  /// Provento creditado, vindo do razao. Nao se lanca nem se edita no caixa.
   final bool derived;
 
   bool get futura => paidOn == null;
@@ -120,9 +112,7 @@ class CashEstimate {
     required this.remainingHigh,
   });
 
-  /// Os meses fechados que sustentam a estimativa. Vazio significa sem base -- e sem base nao ha
-  /// estimativa, porque tratar "nao sei" como "nao vai sair nada" daria uma sobra otimista
-  /// exatamente para quem acabou de comecar a lancar.
+  /// Os meses fechados que sustentam a estimativa. Vazio significa sem base para estimar.
   final List<String> baseMonths;
 
   final double expectedLow;
@@ -166,8 +156,8 @@ class CashMonth {
   /// **Fato**: entrou, menos saiu, menos o comprometido e datado. Nao tem faixa.
   final double freeNow;
 
-  /// **Projecao**: o mesmo numero, menos o gasto variavel ainda esperado. A diferenca entre
-  /// `freeNow` e este par *e* a estimativa, e por isso os dois nao se misturam.
+  /// **Projecao**: `freeNow` menos o gasto variavel ainda esperado. A diferenca entre os dois
+  /// e a estimativa.
   final double surplusLow;
   final double surplusHigh;
 
@@ -215,14 +205,13 @@ class Debt {
   final String description;
   final double balance;
 
-  /// Sem taxa informada nao ha classe. O produto nao estima taxa de rotativo, que varia por
-  /// banco e por dia.
+  /// Sem taxa informada nao ha classe: o produto nao estima taxa de rotativo.
   final double? monthlyRate;
 
   final DebtClass debtClass;
 
-  /// O que a carteira da pessoa rende -- ou o CDI do BCB, sem carteira. E a referencia contra a
-  /// qual a divida e caseira ou administravel.
+  /// O que a carteira rende ao mes -- ou o CDI, sem carteira. E contra ela que a divida se
+  /// classifica.
   final double? referenceMonthly;
   final String referenceSource;
 
@@ -281,8 +270,7 @@ class Cascade {
 
   final double surplusLow;
 
-  /// Pode terminar **sem passo de aporte**, e isso e sucesso: com divida caseira consumindo a
-  /// sobra inteira, a resposta certa e nao aportar. E por isso que o destino se chama Sobra.
+  /// Pode terminar **sem passo de aporte**, e isso e sucesso.
   final List<CascadeStep> steps;
 
   final double availableToInvest;
@@ -302,8 +290,7 @@ class Surplus {
   final CashMonth month;
   final Cascade cascade;
 
-  /// Falso quando nao ha lancamento proprio. `tem_caixa` le so a tabela, e por isso ignora o
-  /// provento derivado: quem tem provento no razao e nenhum lancamento nao lancou caixa nenhum.
+  /// Falso quando nao ha lancamento proprio. O provento derivado do razao nao conta.
   final bool hasCash;
 
   factory Surplus.fromJson(Map<String, dynamic> j) => Surplus(
@@ -360,8 +347,7 @@ class CashTemplateCandidate {
   /// Ja no mes de destino, preso ao ultimo dia quando o mes e mais curto.
   final String dueOn;
 
-  /// Se a categoria volta todo mes por natureza. Gasto variavel **nao** volta: ele e fato do mes
-  /// que passou, e copia-lo inventaria despesa. E por isso que so o que repete vem marcado.
+  /// Se a categoria volta todo mes por natureza. Gasto variavel nao volta.
   final bool repeats;
 
   final bool alreadyThere;

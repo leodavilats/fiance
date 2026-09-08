@@ -5,14 +5,8 @@ import '../theme.dart';
 
 /// O termo do glossario, num sheet.
 ///
-/// Era um `GestureDetector` sobre um icone de 14px: sem `Semantics`, portanto invisivel para
-/// quem usa leitor de tela, e com alvo de toque de 14 contra os 44 que `FiLayout.minTouchTarget`
-/// declara no arquivo ao lado. A semantica esta resolvida aqui.
-///
-/// O alvo ficou em 32, nao em 44: este gatilho vive num `Row` ao lado de um rotulo de 11px, e
-/// 44 de altura dobraria a linha inteira. Chegar aos 44 exige repensar aquela linha -- fazer o
-/// rotulo todo ser o alvo, em vez de pendurar um icone ao lado dele -- e isso e decisao de
-/// layout, nao de acessibilidade. Esta registrado no KNOWN_ISSUES.
+/// O alvo e 32, e nao os 44 de `FiLayout.minTouchTarget`: ele vive num `Row` de rotulo de 11px,
+/// e 44 dobraria a linha. Chegar aos 44 exige repensar a linha -- esta no KNOWN_ISSUES.
 class HelpTooltip extends StatelessWidget {
   const HelpTooltip({super.key, required this.termKey});
 

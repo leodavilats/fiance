@@ -1,11 +1,9 @@
 import 'cash_models.dart';
 import 'product_rules.dart';
 
-/// A leitura do mes, espelhando `web/src/app/core/month-verdict.ts`.
+/// A leitura do mes. Espelha `web/src/app/core/month-verdict.ts`.
 ///
-/// A banda sai de `fiMonthPressureBands`, gerado de `product-rules.json` -- os limiares sao os
-/// mesmos nas duas plataformas por construcao, e nao por disciplina. O que se escreve aqui e a
-/// apresentacao: nenhuma condicional de limiar em Dart.
+/// A banda sai de `fiMonthPressureBands`: nenhum limiar se decide aqui.
 class VereditoDoMes {
   const VereditoDoMes({
     required this.band,
@@ -16,19 +14,16 @@ class VereditoDoMes {
 
   final FiScoreBand band;
 
-  /// Quanto do que entrou ja esta comprometido, em %. `null` quando nao ha o que dividir.
+  /// Quanto do que entrou ja esta comprometido, em %. `null` sem o que dividir.
   final int? pressao;
 
   final String veredito;
   final String razao;
 }
 
-/// Sem entrada lancada nao ha razao a calcular, e a banda e a de leitura ausente -- dividir por
-/// zero daria 0% e "Mes folgado" para quem nao lancou nada.
+/// Sem entrada lancada a banda e a de leitura ausente: dividir por zero daria "Mes folgado".
 ///
-/// Divida caseira nao muda a banda: a regua mede pressao do mes, e a classe da divida ja e
-/// julgamento do backend sobre outra coisa. O que ela faz e assumir a razao, porque um mes
-/// folgado com divida a 14,9% ao mes nao e um mes resolvido.
+/// Divida caseira nao muda a banda, so assume a razao.
 VereditoDoMes vereditoDoMes({
   required double recebido,
   required double comprometido,
@@ -68,7 +63,7 @@ VereditoDoMes vereditoDoMes({
   );
 }
 
-/// `14.9` -> `14,9`; `2.0` -> `2`. Virgula decimal, e sem casa que nao informa.
+/// `14.9` -> `14,9`; `2.0` -> `2`.
 String _semZeroInutil(double v) {
   final texto = v == v.roundToDouble()
       ? v.toStringAsFixed(0)

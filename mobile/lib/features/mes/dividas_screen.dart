@@ -12,13 +12,6 @@ import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 
 /// As dividas: saldo, taxa, e a comparacao com o que a carteira rende.
-///
-/// **Divida se classifica por custo, nunca por tipo.** Nao existe campo "caro" no formulario: a
-/// classe sai da taxa contra o que a carteira da pessoa rende (sem carteira, o CDI do BCB).
-/// Consignado a 0,4% e consignado a 3,5% ao mes nao sao a mesma decisao.
-///
-/// **Sem taxa informada nao ha classe** -- o produto nao estima taxa de rotativo, que varia por
-/// banco e por dia. E o veredito vem com `taxa_de_virada`, que e a taxa em que ele muda.
 class DividasScreen extends ConsumerWidget {
   const DividasScreen({super.key});
 
@@ -166,14 +159,12 @@ class _LinhaDivida extends ConsumerWidget {
             children: [
               Text(
                 divida.monthlyRate == null
-                    // Ausencia tem nome: nao vira zero.
                     ? 'Taxa não informada, então não há classe.'
                     : 'Custa ${formatPercent(divida.monthlyRate)} ao mês.',
                 style: FiType.body.copyWith(color: fiInk2(context)),
               ),
               if (divida.flipRate != null)
                 Text(
-                  // O veredito vem com a taxa em que ele muda.
                   'Vira administrável a ${formatPercent(divida.flipRate)} ao mês.',
                   style: FiType.caption.copyWith(color: fiInk3(context)),
                 ),
@@ -195,7 +186,6 @@ class _LinhaDivida extends ConsumerWidget {
   }
 
   Future<void> _quitar(BuildContext context, WidgetRef ref, Debt d) async {
-    // Confirmacao modal so para destrutivo real, e o botao diz o que acontece.
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(

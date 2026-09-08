@@ -4,12 +4,8 @@ import '../theme.dart';
 
 /// Uma secao: fio e chao, nao card.
 ///
-/// Equivalente do `<app-section>` do web, e com a mesma razao de existir: a secao precisa emitir
-/// um **cabecalho**, e classe (ou convencao) nao obriga nada. `Semantics(header: true)` e o que
-/// da a quem usa leitor de tela a mesma navegacao por cabecalho que o `<h2>` da no web.
-///
-/// A caixa (`Card`) fica reservada ao que e **objeto** -- uma posicao, um titulo, uma sugestao.
-/// Secao e espaco, tipo e uma regra horizontal.
+/// `Semantics(header: true)` da a quem usa leitor de tela a navegacao por cabecalho que o `<h2>`
+/// da no web. `Card` fica reservado ao que e objeto.
 class FiSection extends StatelessWidget {
   const FiSection({
     super.key,
@@ -23,17 +19,16 @@ class FiSection extends StatelessWidget {
 
   final String title;
 
-  /// Sufixo `· N`, para secao cujo titulo carrega quantidade ("A vencer · 3").
+  /// Sufixo `· N`, para titulo que carrega quantidade.
   final int? count;
 
   final String? hint;
 
-  /// Acao a direita do titulo -- o equivalente do slot `sectionActions`.
   final Widget? trailing;
 
   final Widget child;
 
-  /// A primeira secao da tela nao desenha o fio de cima: ele separaria do titulo da tela.
+  /// A primeira secao nao desenha o fio de cima.
   final bool first;
 
   @override
@@ -84,14 +79,11 @@ class FiSection extends StatelessWidget {
   }
 }
 
-/// Uma cifra rotulada, sob um fio -- a alternativa a grade de KPI.
-///
-/// Tres a quatro caixas centralizadas com um numero dentro nao sao informacao organizada, sao
-/// widgets. Aqui as cifras dividem uma linha e o rotulo fica em cima, no papel de legenda.
+/// Cifras rotuladas sob um fio, no lugar de uma grade de KPI.
 class FiFigures extends StatelessWidget {
   const FiFigures({super.key, required this.figures});
 
-  /// Rotulo -> valor ja formatado. A ordem e a da leitura, nao a do modelo.
+  /// Rotulo -> valor ja formatado, na ordem da leitura.
   final Map<String, String> figures;
 
   @override

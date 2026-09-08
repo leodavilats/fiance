@@ -9,15 +9,9 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 
-/// Repetir o mes anterior: **previa e commit**, como a importacao de extrato.
+/// Repetir o mes anterior: previa e commit, e o lote grava inteiro ou nenhum.
 ///
-/// `GET /cashflow/month/template` le e nao grava; `POST /cashflow/entries/batch` grava o lote
-/// inteiro ou nenhum. Meio molde de mes e pior que molde nenhum, porque quem lancou nao teria
-/// como saber o que entrou e o que ficou de fora.
-///
-/// **Vem marcado so o que repete por natureza.** Gasto variavel fica visivel e desmarcado,
-/// porque o valor do mes que passou e fato daquele mes -- copia-lo inventaria despesa. E o
-/// copiado nasce a vencer.
+/// Vem marcado so o que repete por natureza; variavel fica visivel e desmarcado.
 Future<void> abrirMoldeSheet(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet<void>(
     context: context,
@@ -55,7 +49,6 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
       if (!mounted) return;
       setState(() {
         _molde = m;
-        // O que repete por natureza vem marcado; o que ja esta la nao se oferece de novo.
         _escolhidos = {
           for (var i = 0; i < m.candidates.length; i++)
             if (m.candidates[i].repeats && !m.candidates[i].alreadyThere) i,

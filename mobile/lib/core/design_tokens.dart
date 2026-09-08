@@ -1,9 +1,6 @@
-// ESCRITO A MAO. Nao ha gerador, e nao ha espelho obrigatorio: `check-contrast.mjs` mede esta
-// paleta contra o PISO do sistema, nao contra a do web. Divergir de proposito e permitido --
-// um telefone sob sol pode precisar de mais contraste que um monitor -- e cair abaixo do piso
-// nao. O que a maquina cobra e legibilidade e completude: todo papel existe nos dois temas.
-//
-// O contrato de paridade esta em docs/design/DESIGN-SYSTEM.md.
+// A fundacao visual do mobile, escrita a mao. Nao ha gerador nem espelho obrigatorio do web:
+// o contrato de paridade esta em docs/design/PARIDADE.md, e `test/contraste_test.dart` cobra o
+// minimo da WCAG.
 
 import 'package:flutter/material.dart';
 
@@ -102,8 +99,7 @@ abstract final class FiColors {
   static const lightSeries11 = Color(0xFF7A4E62);
   static const lightSeriesOther = Color(0xFF595F5C);
 
-  // Veu sob drawer e sheet. No CSS e --fi-overlay; tem alfa, e por isso fica fora da
-  // varredura de contraste.
+  // Veu sob drawer e sheet. Tem alfa, e por isso fica fora da varredura de contraste.
   static const darkOverlay = Color(0xA8030508);
   static const lightOverlay = Color(0x66151E26);
 }
@@ -199,9 +195,7 @@ abstract final class FiRadius {
 }
 
 abstract final class FiLayout {
-  // O unico numero de layout que atravessa: 44 e o alvo minimo de toque, e isso e norma de
-  // acessibilidade, nao aparencia. Largura de leitura, de gaveta e de subnav sairam daqui --
-  // eram medidas de desktop transliteradas, sem nenhum leitor no aplicativo.
+  // 44 e norma de acessibilidade, nao aparencia -- e o unico numero de layout que atravessa.
   static const minTouchTarget = 44.0;
 }
 

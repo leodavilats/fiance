@@ -2,16 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Como conferir a conta de um julgamento renderizado.
+/// Como conferir a conta de um julgamento renderizado: metodo, fonte, momento e limitacao.
 ///
-/// Mesmo conceito do `<app-provenance>` do web -- metodo, fonte, momento e limitacao -- em forma
-/// nativa: no web e uma gaveta `<details>`, aqui e um sheet, porque no telefone o que se abre
-/// para conferir volta para onde estava. O contrato de paridade e o conceito e a hierarquia,
-/// nao a implementacao.
-///
-/// O gatilho tem 44 de altura de proposito: o explicador que existia antes era um
-/// `GestureDetector` sobre um icone de 14, abaixo do minimo de toque declarado no arquivo ao
-/// lado, e sem `Semantics` -- invisivel para quem usa leitor de tela.
+/// No web e uma gaveta; aqui e um sheet, e o gatilho respeita `FiLayout.minTouchTarget`.
 class FiProvenance extends StatelessWidget {
   const FiProvenance({
     super.key,
@@ -26,8 +19,7 @@ class FiProvenance extends StatelessWidget {
   final String? method;
   final String? source;
 
-  /// Quando o dado foi coletado. Sobe de nivel quando envelhece: um preco de anteontem muda a
-  /// decisao, e nao a nota de rodape dela.
+  /// Quando o dado foi coletado.
   final String? asOf;
 
   final String? limitation;

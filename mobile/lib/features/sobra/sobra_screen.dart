@@ -12,17 +12,6 @@ import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 
 /// A Sobra: "o que devo fazer com o que ficou?"
-///
-/// A tela mais importante do produto, e a que mais facilmente vira conselho. A transicao e
-/// *disponivel -> contexto -> restricao -> possibilidade -> decisao*, e a decisao e de quem usa.
-///
-/// **E onde o mobile ganha do web.** A cascata e naturalmente uma sequencia vertical -- divida,
-/// reserva, aporte -- e rolar e o gesto certo para percorrer uma sequencia. No web ela compete
-/// com o subnav.
-///
-/// Tres coisas que esta tela nunca faz: dizer "compre", ordenar por "melhor", ou esconder que a
-/// cascata pode terminar **sem passo de aporte**. Com divida caseira consumindo a sobra inteira,
-/// nao aportar e a resposta certa -- e e por isso que o destino se chama Sobra, e nao Aporte.
 class SobraScreen extends ConsumerWidget {
   const SobraScreen({super.key});
 
@@ -63,8 +52,6 @@ class _Corpo extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          // 1. Quanto ha. Projecao sai como FAIXA, nunca numero unico: a diferenca entre o piso
-          //    e o teto *e* a estimativa de gasto variavel.
           Text(
             'SOBRA DE ${nomeDoMes(m.month).toUpperCase()}',
             style: FiType.eyebrow.copyWith(color: fiInk3(context)),
@@ -84,7 +71,6 @@ class _Corpo extends ConsumerWidget {
                 ? 'A faixa é o número: o piso desconta o gasto variável que ainda deve sair, '
                       'estimado a partir de ${m.estimate.baseMonths.length} '
                       '${m.estimate.baseMonths.length == 1 ? 'mês fechado' : 'meses fechados'} seus.'
-                // Sem mes fechado nao ha estimativa, e ausencia nao vira zero.
                 : 'Sem mês fechado ainda não há base para estimar o que falta sair, então a '
                       'sobra é o próprio livre agora.',
             style: FiType.body.copyWith(color: fiInk2(context)),
@@ -103,7 +89,6 @@ class _Corpo extends ConsumerWidget {
                 'rotina custa o que a dívida custa.',
           ),
 
-          // 2. A ordem, como sequencia.
           FiSection(
             title: 'A ordem',
             hint: 'Cada passo consome a sobra antes do seguinte.',
@@ -115,7 +100,6 @@ class _Corpo extends ConsumerWidget {
             ),
           ),
 
-          // 3. Onde, quando ha o que aportar.
           if (temAporte)
             FiSection(
               title: 'Onde',
@@ -164,7 +148,6 @@ class _Passo extends StatelessWidget {
     CascadeStepType.contribution: 'Aporte',
   };
 
-  /// Divida caseira e o unico passo que e julgamento adverso; reserva e aporte descrevem.
   FiState get _estado => passo.type == CascadeStepType.debt
       ? FiState.adverse
       : FiState.neutral;
@@ -178,7 +161,6 @@ class _Passo extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Fio de estado, não caixa: o passo é parte de uma sequência, não um objeto.
           Container(width: 3, height: 44, color: cor),
           const SizedBox(width: FiSpace.s3),
           Expanded(
@@ -200,7 +182,6 @@ class _Passo extends StatelessWidget {
                 Text(passo.reason, style: FiType.body),
                 if (passo.falsifier != null) ...[
                   const SizedBox(height: FiSpace.s1),
-                  // O falsificador nao e um aviso: e o raciocinio continuando.
                   Text(
                     passo.falsifier!,
                     style: FiType.caption.copyWith(color: fiInk3(context)),

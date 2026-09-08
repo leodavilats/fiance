@@ -3,8 +3,7 @@ import { Component, computed, input } from '@angular/core';
 @Component({
   selector: 'app-section',
   standalone: true,
-  // `fi-block` vai no host, não num <section> interno: `.fi-block:first-child` zera o fio de
-  // cima, e um wrapper faria o seletor passar a olhar o wrapper em vez do bloco.
+  // `fi-block` vai no host: um wrapper faria `.fi-block:first-child` olhar o wrapper.
   host: { class: 'fi-block' },
   template: `
     <div class="flex items-baseline justify-between gap-4 flex-wrap">
@@ -28,11 +27,7 @@ export class SectionComponent {
   /** Sufixo `· N`, para seção cujo título carrega quantidade ("A vencer · 3"). */
   readonly count = input<number | null>(null);
 
-  /**
-   * `eyebrow` é o padrão porque era a aparência que as seções já tinham em `<p>` — a correção
-   * aqui é semântica, não visual: quem varre por cabeçalho passava reto por cinco seções em
-   * `/mes` e por oito em `/ativo/:ticker`. `title` fica para a seção que é mesmo um título.
-   */
+  /** `eyebrow` mantém a aparência de rótulo; `title` fica para a seção que é mesmo um título. */
   readonly tone = input<'eyebrow' | 'title'>('eyebrow');
 
   protected readonly heading = computed(() => {

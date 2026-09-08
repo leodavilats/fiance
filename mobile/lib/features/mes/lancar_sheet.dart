@@ -8,15 +8,9 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 
-/// Lancar no caixa, num sheet.
+/// Lancar no caixa.
 ///
-/// No web e uma rota (`/mes/lancar`); aqui e sheet, porque o que se abre para escrever e volta
-/// para onde estava e sheet -- e lancar e a acao mais repetida do produto, a unica com cadencia
-/// diaria. O contrato de paridade e o conceito, nao a forma.
-///
-/// **A forma muda pelo `kind`, e isso e regra de dominio, nao economia de campo.** Vencimento e
-/// obrigacao a cumprir, e dinheiro que se recebe nao tem uma: com `income` o formulario pede um
-/// dia so, o do credito.
+/// A forma muda pelo `kind`: entrada nao tem vencimento, e por isso pede um dia so, o do credito.
 Future<void> abrirLancarSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -53,7 +47,6 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
   late String _categoria;
   late DateTime _dia;
 
-  /// Saida: `pago?`. Entrada: `recebido?`. O par continua, no mesmo interruptor.
   bool _liquidado = false;
 
   bool _salvando = false;
@@ -83,8 +76,7 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
   void _trocarKind(CashKind k) {
     setState(() {
       _kind = k;
-      // A categoria pertence ao vocabulario do kind: manter a antiga mandaria `moradia` como
-      // categoria de entrada, e o backend recusaria com 422 sem a pessoa entender por que.
+      // A categoria pertence ao vocabulario do kind, e o backend recusa a de outro.
       _categoria = cashCategoryKeys(k).first;
     });
   }
@@ -137,8 +129,6 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
       if (!mounted) return;
       final mesDoLancamento = _iso.substring(0, 7);
       Navigator.of(context).pop();
-      // Diz onde caiu: "Lancado." e verdade inutil quando a entrada cai num mes que a pessoa
-      // nao esta vendo.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lançado em ${nomeDoMes(mesDoLancamento)}'),
@@ -153,7 +143,6 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
     }
   }
 
-  /// Confirmacao modal so para destrutivo real, e o botao diz o que acontece -- nunca "OK".
   Future<void> _apagar() async {
     final e = widget.editar;
     if (e == null) return;
@@ -255,8 +244,6 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
                   final n = double.tryParse(
                     (v ?? '').replaceAll('.', '').replaceAll(',', '.'),
                   );
-                  // Valor de lancamento e sempre positivo: entrada e saida se distinguem por
-                  // `kind`, nunca pelo sinal.
                   if (n == null || n <= 0) return 'Um valor positivo';
                   return null;
                 },
@@ -310,7 +297,6 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
                 title: Text(_entrada ? 'Já recebi' : 'Já paguei', style: FiType.label),
                 subtitle: Text(
                   _liquidado
-                      // A competencia e o dia do pagamento, nao do vencimento.
                       ? 'Entra na competência deste dia.'
                       : 'Conta não paga conta no mês do vencimento, e é o que forma o comprometido.',
                   style: FiType.caption.copyWith(color: fiInk3(context)),

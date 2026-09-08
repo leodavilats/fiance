@@ -17,9 +17,8 @@ import 'molde_sheet.dart';
 
 /// O Mes: "o que aconteceu com meu dinheiro?"
 ///
-/// Mesma hierarquia do web -- veredito, evidencia, atencao, a vencer, o mes -- em forma nativa.
-/// O que muda de proposito: a linha do tempo e **lista com disclosure**, nao tabela, porque uma
-/// tabela de cinco colunas em 360dp e um scroll horizontal que esconde a coluna que decide.
+/// A linha do tempo e lista com disclosure, e nao tabela: cinco colunas em 360dp esconderiam a
+/// que decide.
 class MesScreen extends ConsumerWidget {
   const MesScreen({super.key});
 
@@ -63,7 +62,7 @@ class MesScreen extends ConsumerWidget {
     );
   }
 
-  /// Os meses que a pessoa tem, mais o corrente. Nada de faixa inventada.
+  /// Os meses que a pessoa tem, mais o corrente.
   Future<void> _escolherMes(
     BuildContext context,
     WidgetRef ref,
@@ -209,7 +208,6 @@ class _Veredito extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // A resposta da tela vem antes da cifra que a sustenta.
         Text(
           veredito.veredito,
           style: FiType.verdict.copyWith(
@@ -254,7 +252,6 @@ class _Veredito extends StatelessWidget {
         Divider(color: Theme.of(context).dividerColor, height: 1),
         const SizedBox(height: FiSpace.s4),
 
-        // Fato e projecao sao numeros diferentes, e a diferenca entre eles *e* a estimativa.
         Text(
           mes.hasRange
               ? 'Descontando o que ainda deve sair, a sobra parte de '
