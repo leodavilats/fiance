@@ -76,6 +76,21 @@
    e **reatribuir** os 49 sítios, baixando o teto a cada troca. A recalibração muda o desenho de
    toda tela, então pede uma passagem visual em aparelho — não é substituição mecânica.
 
+   **Os seis sítios abaixo de todo papel, para a passagem começar por eles.** A escala do sistema
+   começa em 11 (`eyebrow`); estes estão em 9 e 10, e são justamente os pontos mais apertados,
+   que é por que ninguém os subiu:
+   - `features/hoje/widgets/hoje_charts.dart:112` e `:136` — rótulo de eixo do gráfico. Subir
+     para `caption` (12) pode sobrepor o eixo, e o gráfico é onde a densidade importa;
+   - `features/hoje/widgets/hoje_health.dart:262` e `:267` — rótulo e faixa de dimensão, numa
+     linha de **quatro** colunas em 360dp. "Diversif." já é abreviação por falta de espaço;
+   - `features/carteira/widgets/carteira_positions.dart:291` e `:392` — rótulo de categoria numa
+     linha de posição.
+
+   Nos quatro primeiros a decisão é de layout antes de tipo: ou a linha passa a ter menos
+   colunas, ou o gráfico ganha mais espaço de eixo. Converter às cegas troca um defeito invisível
+   (texto pequeno demais) por um visível (texto sobreposto), e o visível é o que se conserta
+   correndo.
+
 8. **"Fio + chão" não embarcou no mobile.** Há 26 `Card(`, 36 `ListTile` e 150 `Icons.*` crus. O
    caso exemplar é `FiInsightTile` — `Card` + `CircleAvatar` com ícone colorido + título +
    detalhe —, que é a pilha inteira de cheiros de interface gerada e ainda se chama "Insight".
@@ -112,13 +127,7 @@
     níveis 3 e 4, mas **momento é nível 1** — um preço de anteontem muda a decisão, não a nota de
     rodapé dela.
 
-12. **`styles.css` tem grafias que se sobrepõem.** `.tag`/`.tag-brand`/`.tag-neutral` e
-    `.verdict-pill`/`.v-buy`/`.v-sell`/`.v-hold`/`.v-unknown` são a mesma ideia — uma coisa
-    pequena e rotulada, com cor de estado — em dois vocabulários; e `.pagination-btn` é
-    `.btn-secondary` com um estado ativo. Consolidar em `.chip` com modificador, e dobrar a
-    paginação no botão secundário, sem inventar controle novo.
-
-13. **Os nomes de arquivo não acompanharam os destinos.** No web, `/sobra` é servida por
+12. **Os nomes de arquivo não acompanharam os destinos.** No web, `/sobra` é servida por
     `strategy-shell.component` e `/patrimonio` por `portfolio-shell`. No mobile, a rota virou
     `/patrimonio` mas a pasta continua `features/carteira/`, e `features/hoje/` e
     `features/estrategia/` nomeiam destinos que o produto não tem mais. É a deriva de nome entre
@@ -126,20 +135,20 @@
 
 ## Cobertura de testes
 
-14. **O E2E cobre o esqueleto, não os fluxos.** `web/e2e/` roda Playwright contra o backend real e
+13. **O E2E cobre o esqueleto, não os fluxos.** `web/e2e/` roda Playwright contra o backend real e
    o build de produção com SSR, e cobre o que o resto da suíte não alcança: redirecionamento sem
    sessão, as cinco rotas principais e três aninhadas abrindo por **link direto**, e uma posição
    salva no servidor chegando à tela. O que **não** está coberto é o miolo — importar operações,
    passar pelo checkout, ver o gate aparecer, degradar de plano. São os fluxos que o plano lista, e
    eles dependem de cotação externa, que no ambiente de teste não é determinística.
 
-15. **SQLite tranca sob concorrência de navegador.** Durante o E2E o backend loga
+14. **SQLite tranca sob concorrência de navegador.** Durante o E2E o backend loga
    `database is locked` em requisições paralelas. Não derruba os testes e não afeta produção, que é
    Postgres — mas torna o E2E local mais lento e potencialmente instável se ele crescer.
 
 ## Automação que não existe
 
-16. **Sugestões seguidas dependem de lançamento manual.** `/suggestions/followed` só tem o que a
+15. **Sugestões seguidas dependem de lançamento manual.** `/suggestions/followed` só tem o que a
    pessoa registra. O caminho automático — reconhecer que uma sugestão virou compra a partir do
    razão — não foi implementado, e a base para ele já existe. *(A metade dos proventos foi
    resolvida: `/dividends/pending` cruza o calendário da BRAPI com a projeção do razão. Como toda
@@ -150,24 +159,24 @@
 Estrutura de cada tela em [design/WIREFRAMES.md](design/WIREFRAMES.md); o contrato dos
 componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
 
-17. **`detail_level` (Essencial / Completo / Avançado) não existe no backend.** É a alavanca que
+16. **`detail_level` (Essencial / Completo / Avançado) não existe no backend.** É a alavanca que
    atenderia os três perfis de senioridade sem construir três produtos — número de métricas e
    verbosidade, além da densidade. **Densidade já existe** (`preferences.density`, aplicada como
    `[data-density]`), mas ela resolve só o espaçamento: quantas métricas aparecer e com quanto texto
    continua igual para todo mundo. Exige coluna em `PreferencesDb`, campo em `GET/PUT /preferences`
    e migração Alembic.
 
-18. **Falta o componente `FairPrice`.** `MarginOfSafety`, `AllocationGap`, `GoalProgress`,
+17. **Falta o componente `FairPrice`.** `MarginOfSafety`, `AllocationGap`, `GoalProgress`,
     `DipDiagnosis`, `ScoreRuler` e `Insight` existem, e a tabela profissional de posições também
     (colunas configuráveis e densidade, com o recorte na URL). Preço justo continua reimplementado
     caso a caso nas telas.
 
-19. **[FEATURES.md](FEATURES.md) está uma revisão de navegação atrás.** Foi escrito quando os
+18. **[FEATURES.md](FEATURES.md) está uma revisão de navegação atrás.** Foi escrito quando os
     destinos eram Hoje e Estratégia, e não descreve as telas do caixa (`/mes`, `/mes/lancar`,
     `/mes/repetir`, `/mes/dividas`, `/sobra`). O que cada tela faz continua verdadeiro em
     [design/WIREFRAMES.md](design/WIREFRAMES.md) e no código; o inventário é que envelheceu.
 
-20. **As três classes de diagnóstico de queda não foram validadas.** "Queda saudável / para
+19. **As três classes de diagnóstico de queda não foram validadas.** "Queda saudável / para
     investigar / estrutural" pressupõe que `analysis/dip_analysis.py` permita separar as duas
     últimas. Se o veredito atual não sustentar, são dois grupos, não três — verificar antes de
     desenhar o terceiro.
@@ -184,36 +193,36 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
 > doença que o cabeçalho deste arquivo descreve. Os números foram reaproveitados pelo que ficou
 > aberto no lugar.
 
-21. **A apuração de IR não cobre day trade nem IOF de renda fixa.** A apuração passou a ser
+20. **A apuração de IR não cobre day trade nem IOF de renda fixa.** A apuração passou a ser
     projeção do razão, por mês e categoria (CHANGELOG de 2026-09-05), e isso fechou os defeitos de
     ordem de registro, isenção não reavaliada e venda que não apurava. Duas lacunas continuam, e
     estão declaradas nos Termos de Uso: o razão **não distingue day trade** de swing trade, e não
     há IOF sobre resgate de renda fixa com menos de 30 dias. Enquanto isso durar, o número é
     estimativa de apoio e não substitui a apuração oficial.
 
-22. **A telemetria do mobile ainda não foi ligada nem verificada.** Backend e web já têm DSN; o
+21. **A telemetria do mobile ainda não foi ligada nem verificada.** Backend e web já têm DSN; o
     mobile depende de `--dart-define=SENTRY_DSN=...` no build, e nenhum build assinado foi feito
     ainda. O código está pronto e testado — o que falta é o DSN e um build real.
 
-23. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
+22. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
     vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo
     faria o worker seguinte repetir o trabalho segundos depois. O custo é real e continua aberto: se
     um worker morre logo após adquirir, o snapshot diário fica bloqueado por até 5,4h. A correção
     certa é heartbeat no lock, não release no `finally`. (O warm-up do scan é caso diferente — roda
     uma vez e **libera** no `finally`.)
 
-24. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token para
+23. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token para
     o usuário da sessão se ele já existir — necessário para troca de dono do aparelho, mas significa
     que quem conhecer um token FCM alheio redireciona os alertas daquele aparelho para si. Entropia
     do token é a única proteção hoje.
 
-25. **A paginação das listas com agregado limita o payload, não a consulta.** Proventos, renda fixa
+24. **A paginação das listas com agregado limita o payload, não a consulta.** Proventos, renda fixa
     e sugestões seguidas ainda leem o conjunto inteiro do banco, porque os totais por mês, a marcação
     a mercado e a comparação com o Ibovespa precisam de todos os registros por definição. O que
     atravessa a rede está limitado; a consulta não. Resolver de verdade exige mover esses agregados
     para SQL — o que, no caso da renda fixa, significa mover a marcação a mercado junto.
 
-26. **A acessibilidade foi coberta por verificação, não por auditoria.** Contraste (CI), nome
+25. **A acessibilidade foi coberta por verificação, não por auditoria.** Contraste (CI), nome
     acessível de botão (lint), alternativa textual de gráfico (lint) e foco visível estão de pé. O
     que **não** foi feito é percorrer cada fluxo só com teclado e com leitor de tela de verdade:
     ordem de foco em camadas empilhadas, anúncio de mudança de rota e armadilha de foco em modal
@@ -225,7 +234,7 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     resolver isso exige tirar o diálogo da árvore da aplicação — e a verificação manual com leitor
     de tela de verdade.
 
-27. **A aparência das telas nos dois temas nunca foi conferida em navegador.** O contraste é
+26. **A aparência das telas nos dois temas nunca foi conferida em navegador.** O contraste é
     verificado no CI, mas por par de token — e o verificador, por construção, não enxerga estado
     composto por opacidade: `.btn-*:disabled` usa `opacity: 0.5` e o contraste real do botão
     desabilitado difere entre os temas, sem nunca ter sido medido. Há também a suspeita, levantada
@@ -233,7 +242,7 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     fraca demais no tema claro: o painel e o véu ficam em 1,06:1 nos dois temas, então quem separa
     é a sombra — e a do claro tem 27% da opacidade da do escuro.
 
-28. **A cobrança não tem caminho de ponta a ponta.** Existe backend, régua de plano, preço travado e
+27. **A cobrança não tem caminho de ponta a ponta.** Existe backend, régua de plano, preço travado e
     webhook idempotente; não existe tela de plano, exibição de preço, checkout, gestão de assinatura
     nem cancelamento na interface — `billing` não aparece em `web/src` nem em `mobile/lib`, e o CTA
     do `gate.component.ts` aponta para `/voce/plano`, que não existe em `app.routes.ts`. Some-se a
@@ -242,7 +251,7 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     inteira para Free no mesmo instante. O trial precisa ser reiniciado na ativação da cerca, antes
     de virar a flag — não depois.
 
-29. **O ETF é estruturalmente mal avaliado, e o remendo tem consequência.** Para `asset_type ==
+28. **O ETF é estruturalmente mal avaliado, e o remendo tem consequência.** Para `asset_type ==
     "etf"` o único candidato a consenso é Bazin (`dividendo / 0,04`); um ETF de índice distribui na
     casa de 1% ao ano, então o preço justo sai em ~25% do preço e a margem de segurança em −300%,
     sempre. `opportunity_service` sobrescreve o veredito por RSI e tendência quando ele sai
@@ -251,7 +260,7 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     sem consenso não há preço-limite. Decidir o método — comparação com o índice, prêmio sobre o
     valor patrimonial, ou abstenção explícita — vem antes de mexer no falsificador.
 
-30. **Três das seis dimensões do score nunca têm dado, e o perfil de risco fica quase inerte.** A
+29. **Três das seis dimensões do score nunca têm dado, e o perfil de risco fica quase inerte.** A
     ausência de `roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` está no item 3; a
     consequência sobre a personalização não estava. Com os pesos reais, sobra 0,60 de peso no
     perfil conservador, 0,55 no moderado e 0,35 no agressivo — e o que resta em todos é margem de

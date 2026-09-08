@@ -12,6 +12,41 @@
 
 ---
 
+## O `styles.css` estava certo, e a auditoria estava errada (2026-09-08)
+
+A auditoria de design afirmou que `styles.css` tinha "grafias que se sobrepõem": `.tag` e
+`.verdict-pill` seriam "a mesma ideia — uma coisa pequena e rotulada, com cor de estado — em dois
+vocabulários", e `.pagination-btn` seria `.btn-secondary` com um estado ativo. A recomendação era
+consolidar tudo em `.chip` com modificador.
+
+Medido, quase nada disso se sustenta.
+
+**`.tag` e `.verdict-pill` não são a mesma ideia.** `.tag` tem `radius-sm` e peso 500 e rotula uma
+**categoria**; `.verdict-pill` tem `radius-pill` e peso 600 e carrega um **veredito**. A diferença
+de forma é exatamente o que a régua dos quatro raios estabelece — `sm` marca, `pill` é outro papel
+— e fundir as duas em `.chip` perderia a distinção ou a recriaria como `-pill`, que é renomear e
+chamar de consolidação. Ficam como estão.
+
+**Varrendo as 50 classes declaradas contra todo o produto, 48 têm consumidor.** As duas mortas
+saíram:
+
+- **`.pagination-btn`** — 8 blocos de CSS, incluindo estados de hover, active, disabled e foco, e
+  **zero** usos. A paginação é por cursor keyset e não desenha número de página, então uma pilha
+  de botões numerados nunca teve onde aparecer;
+- **`.floating`** — era a caixa que flutua (raio `lg` + fio + chão), e o papel passou a ser
+  `.card` para o que está assentado, ou o próprio drawer e popover, que trazem a sombra consigo.
+
+`styles.css` foi de 854 para 830 linhas. Vinte e quatro linhas não é o achado; o achado é que a
+camada de componentes deste produto **não** virou um segundo framework CSS, que era o risco
+declarado. Quatro por cento de código morto em 50 classes é manutenção normal, não dívida.
+
+Vale registrar por que a auditoria errou aqui: ela leu os nomes e a forma dos seletores, e nomes
+parecidos sugerem duplicação. O que decide é o **papel** — e papel se descobre contando
+consumidores, não lendo CSS. A mesma auditoria acertou onde contou (a proveniência ausente no
+mobile, os 49 tamanhos soltos, os redirects relativos) e errou onde inferiu.
+
+---
+
 ## O mobile ganha caixa, e a catraca cobra a própria baixa (2026-09-08)
 
 A maior pendência do produto fecha. O web adotou o ciclo do dinheiro em agosto e o mobile ficou
