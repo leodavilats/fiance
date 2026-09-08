@@ -1,0 +1,117 @@
+import 'package:flutter/material.dart';
+
+import '../theme.dart';
+
+/// Como conferir a conta de um julgamento renderizado.
+///
+/// Mesmo conceito do `<app-provenance>` do web -- metodo, fonte, momento e limitacao -- em forma
+/// nativa: no web e uma gaveta `<details>`, aqui e um sheet, porque no telefone o que se abre
+/// para conferir volta para onde estava. O contrato de paridade e o conceito e a hierarquia,
+/// nao a implementacao.
+///
+/// O gatilho tem 44 de altura de proposito: o explicador que existia antes era um
+/// `GestureDetector` sobre um icone de 14, abaixo do minimo de toque declarado no arquivo ao
+/// lado, e sem `Semantics` -- invisivel para quem usa leitor de tela.
+class FiProvenance extends StatelessWidget {
+  const FiProvenance({
+    super.key,
+    this.summary = 'Como calculamos',
+    this.method,
+    this.source,
+    this.asOf,
+    this.limitation,
+  });
+
+  final String summary;
+  final String? method;
+  final String? source;
+
+  /// Quando o dado foi coletado. Sobe de nivel quando envelhece: um preco de anteontem muda a
+  /// decisao, e nao a nota de rodape dela.
+  final String? asOf;
+
+  final String? limitation;
+
+  bool get _temConteudo =>
+      (method ?? source ?? asOf ?? limitation) != null;
+
+  void _abrir(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(summary, style: FiType.title),
+              const SizedBox(height: FiSpace.s4),
+              _Campo(rotulo: 'Método', valor: method),
+              _Campo(rotulo: 'Fonte', valor: source),
+              _Campo(rotulo: 'Momento', valor: asOf),
+              _Campo(rotulo: 'Limitação', valor: limitation),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_temConteudo) return const SizedBox.shrink();
+
+    return Semantics(
+      button: true,
+      label: '$summary. Abre método, fonte e limitações.',
+      child: InkWell(
+        onTap: () => _abrir(context),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 14, color: fiInk3(context)),
+              const SizedBox(width: FiSpace.s2),
+              Expanded(
+                child: Text(
+                  summary,
+                  style: FiType.caption.copyWith(color: fiInk3(context)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Campo extends StatelessWidget {
+  const _Campo({required this.rotulo, required this.valor});
+
+  final String rotulo;
+  final String? valor;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = valor;
+    if (texto == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            rotulo,
+            style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+          ),
+          const SizedBox(height: FiSpace.s1),
+          Text(texto, style: FiType.body.copyWith(color: fiInk2(context))),
+        ],
+      ),
+    );
+  }
+}

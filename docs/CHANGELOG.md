@@ -12,6 +12,189 @@
 
 ---
 
+## A paridade deixa de ser de valor e passa a ser de conceito (2026-09-08)
+
+Uma auditoria de design leu as duas plataformas e achou a assimetria que organiza todo o resto:
+**os 176 valores de cor espelhados à mão entre `foundation.css` e `design_tokens.dart` não tinham
+uma única divergência — e o mobile não tinha `/mes` nem `/sobra`**, as duas telas no topo da
+navegação do web. Metade do produto sem cliente móvel, com `docs/ARCHITECTURE.md` afirmando que o
+shell do mobile espelhava os destinos do web.
+
+A camada que estava sendo mantida com disciplina perfeita era a que menos carregava significado.
+O gerador removido em agosto resolvia o problema errado, e o espelho escrito à mão que o
+substituiu herdou o mesmo escopo errado.
+
+### O padrão: todo princípio é cobrado por uma máquina que só roda no web
+
+| Princípio | Web | Mobile |
+|---|---:|---:|
+| Explicabilidade em julgamento renderizado | 15 | **0** |
+| Serifa carregando conclusão | 20 | 3 |
+| Tamanho de tipo escrito solto, fora dos papéis | 0 | **65** |
+
+A última linha é a doença que este arquivo registra como curada no web — "384 utilitárias de
+tamanho conviviam com 372 papéis". A cura foi uma regra de lint, a regra só roda no web, e a
+doença segue no mobile na mesma proporção. O defeito das máquinas deste produto é **geográfico**.
+
+### O contraste passa a medir as duas plataformas, cada uma contra o piso
+
+`check-contrast.mjs` lia só `foundation.css`, e dentro dele só a cópia do tema claro que está no
+atributo — decisão documentada, e que deixava **44 papéis sem guarda**: quem editasse a consulta
+de mídia e não o atributo quebrava o contraste de quem está no padrão do sistema, que é a maioria,
+sem nenhuma máquina reclamar. Agora ele lê os três blocos e exige que as duas cópias do claro
+sejam idênticas.
+
+E passou a ler `design_tokens.dart` também — **contra o piso, não contra o web**. Isto é o que
+permite o mobile divergir de propósito: um telefone sob sol pode precisar de mais contraste que um
+monitor, e exigir o mesmo hexadecimal impediria a correção. O contrato virou "cada plataforma é
+legível e completa", não "as duas são idênticas". É verificação, não geração — e por isso não
+reintroduz o gerador por outra porta.
+
+### `check-parity.mjs`: a única automação nova, e a justificativa é empírica
+
+Ela responde uma pergunta só: os cinco destinos existem nas duas plataformas? Não compara
+aparência, não compara valor, não gera nada. Existe porque a resposta já foi *não* por meses, e
+porque a revisão humana falhou justamente nela.
+
+Rodou pela primeira vez e achou uma terceira divergência que a auditoria tinha subestimado: o
+mobile chamava o destino de `/carteira` enquanto o web já o chamava de `/patrimonio`. Renomeado,
+com `/carteira` seguindo como redirect — link salvo é contrato.
+
+O que sobra é dívida registrada em `DIVIDA_HOJE`, no padrão de `SEM_MODELO_HOJE`: não conserta
+hoje, não deixa crescer, e **só encolhe**. Um item da lista que passe a existir reprova, porque
+lista de dívida que não encolhe é a documentação mentindo de novo.
+
+### A seção era uma classe, e classe não obriga cabeçalho
+
+`/mes` — a primeira tela depois do login — tinha **cinco seções e nenhuma parada de navegação**
+abaixo do título. `/ativo/:ticker`, a página mais importante do produto, tinha oito seções e um
+`<h2>`. Os títulos eram `<p class="fi-eyebrow">`: "Valuation", "Fundamentos", "Tendência" e
+"Proventos" eram parágrafos.
+
+A regra de lint não pegava, e não era bug dela — `ordemDeCabecalho` verifica que níveis não sejam
+pulados, e uma página com zero `<h2>` passa trivialmente. O que faltava era uma regra de
+**presença**, e a correção proporcional não era uma regra: era um componente. `.fi-block` é uma
+classe, então a seção do sistema era um *acordo* ("use `.fi-block` e ponha um eyebrow dentro"), e
+acordo não é verificado.
+
+`<app-section title="…">` emite o `<h2>`, e as 15 seções migradas se corrigiram por construção,
+sem nova regra e sem redesenhar tela nenhuma. O papel visual continua `fi-eyebrow` de propósito:
+a correção aqui é semântica, e mudar a aparência de toda seção do produto no mesmo commit
+misturaria duas decisões. `.fi-block` fica no host do componente, não num `<section>` interno,
+senão `.fi-block:first-child` passaria a olhar o wrapper.
+
+Sobreviveram como `<p>` os eyebrows que são **rótulo de valor**, não título de seção — "Livre
+agora", "Aplicado", "Valor da carteira". A distinção é a regra: eyebrow rotula uma cifra, título
+nomeia uma seção. E os dois `<nav class="fi-block">` de `/patrimonio` mantiveram o landmark e
+ganharam o cabeçalho, em vez de trocar um pelo outro.
+
+### `/mes` passa a julgar, e a ordem para de inverter importância
+
+A tela perguntava "como estou agora, e o que exige atenção?" e respondia com `free_now` em corpo
+grande. Não havia veredito: o produto interpretava patrimônio, ativo, dívida e alocação, e
+entregava o mês como extrato.
+
+O veredito é `monthPressureRuler` — sexta leitura da mesma régua, gerada para as duas plataformas
+como as outras cinco. Os limiares são escolha de apresentação, no mesmo precedente do
+`healthRuler`: o backend devolve `committed` e `received` sem faixas, e a razão entre os dois é
+aritmética, não regra nova. **Não** virou uma função de limiar em TypeScript, que seria regra de
+negócio no cliente.
+
+Sem entrada lançada a banda é a de leitura ausente: dividir por zero daria 0% e "Mês folgado" para
+quem não lançou nada. Dívida caseira não muda a banda — a régua mede pressão do mês, e
+`class === 'expensive'` já é julgamento do backend sobre outra coisa — mas assume a razão, porque
+um mês folgado com dívida a 14,9% ao mês não é um mês resolvido.
+
+E "O que mudou" foi para o fim. Um feed vinha antes de "Exige atenção", que é dívida com taxa
+mensal nomeada.
+
+### A régua de saúde do mobile tinha duas versões, e elas se contradiziam na mesma tela
+
+`hoje_health.dart` tinha `fiHealthBandLabel` escrita à mão com limiares 70/40, ao lado de um uso
+correto de `fiBandFor(score, fiHealthBands)`, que é a régua gerada em 75/60/40. A mesma classe
+usava a gerada para a **cor** e a escrita à mão para o **rótulo**: um score de 65 saía favorável
+na cor e "Atenção" no texto.
+
+O score de saúde passou a ler a banda gerada. A função à mão virou `fiDimensionBandLabel` e ficou
+só para as quatro dimensões, que são outro número e não têm faixa do backend — e ela compartilha
+os limiares com a cor da própria dimensão, que é por que as duas andam juntas.
+
+### Proveniência embarca no mobile
+
+"Julgamento renderizado exige explicabilidade" é invariante deste repositório, o `lint:ui` o cobra
+no web, e no mobile ele simplesmente não existia: nove telas renderizavam score, veredito ou preço
+justo sem como conferir a conta. O que havia era um `HelpTooltip` de glossário em três pontos —
+um `GestureDetector` sobre um ícone de 14px, abaixo do mínimo de toque declarado no arquivo ao
+lado, e sem `Semantics`, portanto invisível ao TalkBack.
+
+`FiProvenance` carrega os mesmos quatro campos do web — método, fonte, momento, limitação — em
+forma nativa: no web é uma gaveta `<details>`, aqui é um sheet, porque no telefone o que se abre
+para conferir volta para onde estava. É o contrato de paridade funcionando: mesmo conceito, forma
+de cada plataforma.
+
+### Os tokens de desktop saem do aplicativo
+
+`design_tokens.dart` carregava `readingMaxWidth: 1120`, `denseMaxWidth: 1600`, `drawerWidth: 600`,
+`subnavWidth: 200` e um `FiBreakpoint` que ia até `desktopLg: 1440`. Zero consumidores, todos —
+um telefone não tem subnav. `fiTypeFamily`, um mapa de string para string, também tinha zero.
+
+`FiDensity` era o caso que doía: densidade é preferência da conta no web, o enum estava declarado
+com os dois níveis e os três valores certos, e **nada no mobile o lia**. É a armadilha do
+"vocabulário gerado sem consumidor" viva no espelho escrito à mão — o gerador saiu, e a *forma*
+que ele impunha ficou. No telefone a régua equivalente pertence ao sistema operacional, e é de lá
+que ela deve vir.
+
+Ficou `minTouchTarget: 44`, que é norma de acessibilidade e não aparência.
+
+### O lint: 23 regras viram 22, e duas passam a avisar
+
+A leitura fácil era "são muitas regras". Não eram: cinco formas de escape estavam declaradas, três
+eram usadas, e o total de escapes no produto era **oito**. Um conjunto que quase não é escapado
+está calibrado, não inflado. Nenhuma regra foi removida.
+
+As duas de camada eram uma falha só — `z-[201]` e `z-50` erram igual, e os dois reabrem a ordem de
+empilhamento a cada tela. Uma regra, uma mensagem.
+
+Raio fora da escala e ícone decorando título passaram a **avisar sem reprovar**. Quatro raios é
+preferência bem fundamentada, não erro silencioso; e a regra de ícone mantém lista de exceção por
+nome de arquivo, que é revisão com passos extras disfarçada de regra. Bloquear o CI por gosto
+gasta a autoridade das dezesseis que valem. Descobriu-se no caminho que `rounded-xl` já era pego
+pela regra de classe não emitida — o tema só emite quatro raios — então a regra de raio era em
+boa parte redundante.
+
+Os cinco escapes viraram um: `<!-- design-exception: regra — motivo -->`. Nomear a regra mantém o
+escape estreito (escapar de cabeçalho não escapa de contraste) e exigir o motivo mantém a exceção
+visível. O objetivo nunca foi impedir exceções; é impedir exceção invisível.
+
+### A busca dentro da página de ativo sai, e `/ativo` sem ticker vira redirect
+
+Havia um campo de busca no fim de `/ativo/:ticker`, em paralelo à busca global — e o próprio bloco
+dizia isso ao leitor ("a busca do topo procura em qualquer tela"). Camada contextual se entra pelo
+contexto e se sai para ele. Com ele saíram o formulário, o `search$`, as sugestões e quatro
+métodos; `retry()` passou a ler o ticker da rota.
+
+A rota `/ativo` sem ticker era sustentada por esse campo — sem ele não havia como usá-la. Virou
+redirect para `/descobrir/oportunidades`, que é o destino de quem quer achar um ativo.
+
+O `<h1>` da página era `fi-money-lg`, o papel de **cifra**, sobre um ticker. A auditoria prescreveu
+`fi-ticker`, e a prescrição estava errada: `fi-ticker` tem 14px, e um `h1` desse tamanho
+reintroduziria o defeito que este arquivo já registra ("com 15px de `h1` a página não tinha
+primeiro nível"). Ficou `fi-page-title`, que é o papel do título de uma tela.
+
+### Documentação: quatro caminhos mortos que ainda instruíam
+
+`README.md` mandava rodar `node design-tokens/build.mjs`, que não existe desde agosto, descrevia
+os cinco destinos com os nomes antigos e trazia contagens de teste de 724/90/49.
+`docs/design/README.md` tinha uma seção "Tokens" inteira instruindo editar `tokens.json` — "uma
+fonte, três alvos", exatamente a arquitetura que foi abandonada. `web/tailwind.config.js` apontava
+para três caminhos mortos, incluindo um `docs/design/06-DESIGN-SYSTEM.md`.
+
+O contrato de paridade virou documento: [design/PARIDADE.md](design/PARIDADE.md). Este arquivo
+ficou intacto: aqui `tokens.json` é narrativa do que era verdade na época, e história não é
+pendência.
+
+---
+
 ## O mês vira editável, e o caixa deixa de ser digitado em dois lugares (2026-09-07)
 
 Cinco correções vindas do uso, todas na mesma superfície: o mês.

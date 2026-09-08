@@ -1,6 +1,6 @@
 # fiance — o que está aberto
 
-> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-09-03**; nada de
+> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-09-08**; nada de
 > histórico, nada de ✅. O que já foi resolvido — e por quê — está em [CHANGELOG.md](CHANGELOG.md).
 >
 > Este arquivo tem uma tendência conhecida a apodrecer. Na revisão de 2026-08-28, **oito dos 24
@@ -40,27 +40,90 @@
 ## Duplicação estrutural entre plataformas
 
 5. **Sobra o glossário e os rótulos de veredito.** Rótulo, ícone e cor de categoria, tipo de
-   ativo, setor, tipo de renda fixa e liquidez passaram a ser **gerados** de `tokens.json`
+   ativo, setor, tipo de renda fixa e liquidez passaram a ser **gerados** de `product-rules.json`
    (2026-08-29), e o `--check` do CI reprova divergência. O que continua manual nos dois lados é
    o glossário de score e os rótulos de veredito, que são texto longo e não cabem bem num arquivo
    de tokens.
 
+6. **O mobile não tem caixa: nem `/mes`, nem `/sobra`.** O web adotou o ciclo do dinheiro e o
+   mobile ficou sem as duas telas do topo da navegação — nenhum lançamento, nenhuma sobra, nenhuma
+   dívida, nenhum molde de mês. Metade do produto (`cashflow/`, `cashflow_service`, a régua de
+   dívida, a cascata) sem cliente móvel. A ausência **passou a ser cobrada**:
+   `design-tokens/check-parity.mjs` a registra em `DIVIDA_HOJE`, e a lista só encolhe. Construir
+   exige modelos, métodos em `api_repository`, providers e as telas — e é a maior pendência aberta
+   do produto. Antes dela, trabalho visual no mobile é polir uma casa sem dois quartos.
+
+7. **A escala de tipo do mobile está invertida, e há 65 tamanhos soltos.** `FiType.caption` (12px)
+   é usada 44 vezes e `body` 14 — o aplicativo é dominado por legenda. O topo da escala
+   (`moneyXl`, `moneyLg`, `pageTitle`, `bodyLg`, `verdictSm`) soma **zero** usos: eram valores de
+   CSS transliterados para 360dp, grandes demais para caber. Em paralelo há 65 `fontSize:` soltos
+   em 15 tamanhos distintos — incluindo 22 ocorrências de 11px e uma de 9px — contra 83 usos de
+   papel. É a mesma doença que o web curou com uma regra de lint, e a regra só roda no web.
+   Consertar são duas coisas: **recalibrar** os papéis para telefone (`body` em 16 para `caption`
+   deixar de ser o corpo, `moneyXl` perto de 32) e **reatribuir** os 65 sítios soltos. A
+   recalibração muda o desenho de toda tela, então pede uma passagem visual em aparelho — não é
+   substituição mecânica.
+
+8. **"Serifa decide" e "fio + chão" não embarcaram no mobile.** `fiSerif` aparece 3 vezes contra
+   20 usos de `fi-verdict` no web; e há 26 `Card(`, 36 `ListTile` e 150 `Icons.*` crus. O caso
+   exemplar é `FiInsightTile` — `Card` + `CircleAvatar` com ícone colorido + título + detalhe —,
+   que é a pilha inteira de cheiros de interface gerada e ainda se chama "Insight". Trocar exige
+   um `FiSection` e um `FiDataRow` no mobile, equivalentes ao `<app-section>` e ao `.data-table`
+   do web.
+
+9. **Sete regras do `lint:ui` não têm equivalente no Dart.** As que protegem contrato de produto e
+   acessibilidade: explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro,
+   nome acessível em botão de ícone, tipografia fora da escala, serifa fora de conclusão e alvo de
+   toque. O mobile tem **3** chamadas de `Semantics(` em 12.745 linhas de Dart. `FiProvenance` já
+   existe e está ligado ao veredito de saúde; falta ligá-lo às outras oito telas que julgam, e
+   falta a máquina que cobre isso.
+
+10. **A arquitetura de informação proposta não foi aplicada por inteiro.** Ficaram de fora:
+   `/sobra` de seis subseções para três (Metas vai para `/voce/objetivos`, Projeção para
+   `/patrimonio/projecao`, Renda fixa para `/descobrir/renda-fixa`); `/patrimonio` de seis para
+   quatro, com Posições, Encerradas e Proventos agrupadas em **Movimento**; `/descobrir` ganhando
+   renda fixa, que hoje é entidade de primeira classe no backend e não tem porta de descoberta;
+   `/voce` nos quatro eixos (Estratégia, Objetivos, Preferências, Conta); e a home pública
+   reescrita para deixar de ser herói-features-preço. O desenho está em
+   [design/PARIDADE.md](design/PARIDADE.md) e no diagnóstico de 2026-09-08 do
+   [CHANGELOG](CHANGELOG.md).
+
+11. **Três comportamentos essenciais não têm componente, e a proveniência está no nível errado.**
+    Faltam `Range` (piso, teto, hipóteses e horizonte — hoje a faixa é escrita à mão em cada
+    projeção), `Evidence` (o nível 2 da explicabilidade, entre conclusão e método) e `Decision`
+    (veredito + falsificador num objeto só, para que um não possa ser renderizado sem o outro).
+    E `<app-provenance>` funde quatro coisas de níveis diferentes numa gaveta: método e fonte são
+    níveis 3 e 4, mas **momento é nível 1** — um preço de anteontem muda a decisão, não a nota de
+    rodapé dela.
+
+12. **`styles.css` tem grafias que se sobrepõem.** `.tag`/`.tag-brand`/`.tag-neutral` e
+    `.verdict-pill`/`.v-buy`/`.v-sell`/`.v-hold`/`.v-unknown` são a mesma ideia — uma coisa
+    pequena e rotulada, com cor de estado — em dois vocabulários; e `.pagination-btn` é
+    `.btn-secondary` com um estado ativo. Consolidar em `.chip` com modificador, e dobrar a
+    paginação no botão secundário, sem inventar controle novo.
+
+13. **Os nomes de arquivo não acompanharam os destinos.** No web, `/sobra` é servida por
+    `strategy-shell.component` e `/patrimonio` por `portfolio-shell`. No mobile, a rota virou
+    `/patrimonio` mas a pasta continua `features/carteira/`, e `features/hoje/` e
+    `features/estrategia/` nomeiam destinos que o produto não tem mais. É a deriva de nome entre
+    rota e código — barata agora, confusa para sempre.
+
 ## Cobertura de testes
 
-6. **O E2E cobre o esqueleto, não os fluxos.** `web/e2e/` roda Playwright contra o backend real e
+14. **O E2E cobre o esqueleto, não os fluxos.** `web/e2e/` roda Playwright contra o backend real e
    o build de produção com SSR, e cobre o que o resto da suíte não alcança: redirecionamento sem
    sessão, as cinco rotas principais e três aninhadas abrindo por **link direto**, e uma posição
    salva no servidor chegando à tela. O que **não** está coberto é o miolo — importar operações,
    passar pelo checkout, ver o gate aparecer, degradar de plano. São os fluxos que o plano lista, e
    eles dependem de cotação externa, que no ambiente de teste não é determinística.
 
-7. **SQLite tranca sob concorrência de navegador.** Durante o E2E o backend loga
+15. **SQLite tranca sob concorrência de navegador.** Durante o E2E o backend loga
    `database is locked` em requisições paralelas. Não derruba os testes e não afeta produção, que é
    Postgres — mas torna o E2E local mais lento e potencialmente instável se ele crescer.
 
 ## Automação que não existe
 
-8. **Sugestões seguidas dependem de lançamento manual.** `/suggestions/followed` só tem o que a
+16. **Sugestões seguidas dependem de lançamento manual.** `/suggestions/followed` só tem o que a
    pessoa registra. O caminho automático — reconhecer que uma sugestão virou compra a partir do
    razão — não foi implementado, e a base para ele já existe. *(A metade dos proventos foi
    resolvida: `/dividends/pending` cruza o calendário da BRAPI com a projeção do razão. Como toda
@@ -71,24 +134,24 @@
 Estrutura de cada tela em [design/WIREFRAMES.md](design/WIREFRAMES.md); o contrato dos
 componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
 
-9. **`detail_level` (Essencial / Completo / Avançado) não existe no backend.** É a alavanca que
+17. **`detail_level` (Essencial / Completo / Avançado) não existe no backend.** É a alavanca que
    atenderia os três perfis de senioridade sem construir três produtos — número de métricas e
    verbosidade, além da densidade. **Densidade já existe** (`preferences.density`, aplicada como
    `[data-density]`), mas ela resolve só o espaçamento: quantas métricas aparecer e com quanto texto
    continua igual para todo mundo. Exige coluna em `PreferencesDb`, campo em `GET/PUT /preferences`
    e migração Alembic.
 
-10. **Falta o componente `FairPrice`.** `MarginOfSafety`, `AllocationGap`, `GoalProgress`,
+18. **Falta o componente `FairPrice`.** `MarginOfSafety`, `AllocationGap`, `GoalProgress`,
     `DipDiagnosis`, `ScoreRuler` e `Insight` existem, e a tabela profissional de posições também
     (colunas configuráveis e densidade, com o recorte na URL). Preço justo continua reimplementado
     caso a caso nas telas.
 
-11. **[FEATURES.md](FEATURES.md) está uma revisão de navegação atrás.** Foi escrito quando os
+19. **[FEATURES.md](FEATURES.md) está uma revisão de navegação atrás.** Foi escrito quando os
     destinos eram Hoje e Estratégia, e não descreve as telas do caixa (`/mes`, `/mes/lancar`,
     `/mes/repetir`, `/mes/dividas`, `/sobra`). O que cada tela faz continua verdadeiro em
     [design/WIREFRAMES.md](design/WIREFRAMES.md) e no código; o inventário é que envelheceu.
 
-12. **As três classes de diagnóstico de queda não foram validadas.** "Queda saudável / para
+20. **As três classes de diagnóstico de queda não foram validadas.** "Queda saudável / para
     investigar / estrutural" pressupõe que `analysis/dip_analysis.py` permita separar as duas
     últimas. Se o veredito atual não sustentar, são dois grupos, não três — verificar antes de
     desenhar o terceiro.
@@ -105,36 +168,36 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
 > doença que o cabeçalho deste arquivo descreve. Os números foram reaproveitados pelo que ficou
 > aberto no lugar.
 
-13. **A apuração de IR não cobre day trade nem IOF de renda fixa.** A apuração passou a ser
+21. **A apuração de IR não cobre day trade nem IOF de renda fixa.** A apuração passou a ser
     projeção do razão, por mês e categoria (CHANGELOG de 2026-09-05), e isso fechou os defeitos de
     ordem de registro, isenção não reavaliada e venda que não apurava. Duas lacunas continuam, e
     estão declaradas nos Termos de Uso: o razão **não distingue day trade** de swing trade, e não
     há IOF sobre resgate de renda fixa com menos de 30 dias. Enquanto isso durar, o número é
     estimativa de apoio e não substitui a apuração oficial.
 
-14. **A telemetria do mobile ainda não foi ligada nem verificada.** Backend e web já têm DSN; o
+22. **A telemetria do mobile ainda não foi ligada nem verificada.** Backend e web já têm DSN; o
     mobile depende de `--dart-define=SENTRY_DSN=...` no build, e nenhum build assinado foi feito
     ainda. O código está pronto e testado — o que falta é o DSN e um build real.
 
-15. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
+23. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
     vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo
     faria o worker seguinte repetir o trabalho segundos depois. O custo é real e continua aberto: se
     um worker morre logo após adquirir, o snapshot diário fica bloqueado por até 5,4h. A correção
     certa é heartbeat no lock, não release no `finally`. (O warm-up do scan é caso diferente — roda
     uma vez e **libera** no `finally`.)
 
-16. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token para
+24. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token para
     o usuário da sessão se ele já existir — necessário para troca de dono do aparelho, mas significa
     que quem conhecer um token FCM alheio redireciona os alertas daquele aparelho para si. Entropia
     do token é a única proteção hoje.
 
-17. **A paginação das listas com agregado limita o payload, não a consulta.** Proventos, renda fixa
+25. **A paginação das listas com agregado limita o payload, não a consulta.** Proventos, renda fixa
     e sugestões seguidas ainda leem o conjunto inteiro do banco, porque os totais por mês, a marcação
     a mercado e a comparação com o Ibovespa precisam de todos os registros por definição. O que
     atravessa a rede está limitado; a consulta não. Resolver de verdade exige mover esses agregados
     para SQL — o que, no caso da renda fixa, significa mover a marcação a mercado junto.
 
-18. **A acessibilidade foi coberta por verificação, não por auditoria.** Contraste (CI), nome
+26. **A acessibilidade foi coberta por verificação, não por auditoria.** Contraste (CI), nome
     acessível de botão (lint), alternativa textual de gráfico (lint) e foco visível estão de pé. O
     que **não** foi feito é percorrer cada fluxo só com teclado e com leitor de tela de verdade:
     ordem de foco em camadas empilhadas, anúncio de mudança de rota e armadilha de foco em modal
@@ -146,7 +209,7 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     resolver isso exige tirar o diálogo da árvore da aplicação — e a verificação manual com leitor
     de tela de verdade.
 
-19. **A aparência das telas nos dois temas nunca foi conferida em navegador.** O contraste é
+27. **A aparência das telas nos dois temas nunca foi conferida em navegador.** O contraste é
     verificado no CI, mas por par de token — e o verificador, por construção, não enxerga estado
     composto por opacidade: `.btn-*:disabled` usa `opacity: 0.5` e o contraste real do botão
     desabilitado difere entre os temas, sem nunca ter sido medido. Há também a suspeita, levantada
@@ -154,7 +217,7 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     fraca demais no tema claro: o painel e o véu ficam em 1,06:1 nos dois temas, então quem separa
     é a sombra — e a do claro tem 27% da opacidade da do escuro.
 
-20. **A cobrança não tem caminho de ponta a ponta.** Existe backend, régua de plano, preço travado e
+28. **A cobrança não tem caminho de ponta a ponta.** Existe backend, régua de plano, preço travado e
     webhook idempotente; não existe tela de plano, exibição de preço, checkout, gestão de assinatura
     nem cancelamento na interface — `billing` não aparece em `web/src` nem em `mobile/lib`, e o CTA
     do `gate.component.ts` aponta para `/voce/plano`, que não existe em `app.routes.ts`. Some-se a
@@ -163,7 +226,7 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     inteira para Free no mesmo instante. O trial precisa ser reiniciado na ativação da cerca, antes
     de virar a flag — não depois.
 
-21. **O ETF é estruturalmente mal avaliado, e o remendo tem consequência.** Para `asset_type ==
+29. **O ETF é estruturalmente mal avaliado, e o remendo tem consequência.** Para `asset_type ==
     "etf"` o único candidato a consenso é Bazin (`dividendo / 0,04`); um ETF de índice distribui na
     casa de 1% ao ano, então o preço justo sai em ~25% do preço e a margem de segurança em −300%,
     sempre. `opportunity_service` sobrescreve o veredito por RSI e tendência quando ele sai
@@ -172,7 +235,7 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     sem consenso não há preço-limite. Decidir o método — comparação com o índice, prêmio sobre o
     valor patrimonial, ou abstenção explícita — vem antes de mexer no falsificador.
 
-22. **Três das seis dimensões do score nunca têm dado, e o perfil de risco fica quase inerte.** A
+30. **Três das seis dimensões do score nunca têm dado, e o perfil de risco fica quase inerte.** A
     ausência de `roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` está no item 3; a
     consequência sobre a personalização não estava. Com os pesos reais, sobra 0,60 de peso no
     perfil conservador, 0,55 no moderado e 0,35 no agressivo — e o que resta em todos é margem de

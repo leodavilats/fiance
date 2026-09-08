@@ -42,9 +42,9 @@ const buscaDestinos = <BuscaDestino>[
     terms: ['atividade', 'historico', 'aconteceu', 'mudancas'],
   ),
   BuscaDestino(
-    title: 'Carteira',
+    title: 'Patrimônio',
     subtitle: 'Posições, composição e proventos',
-    route: '/carteira',
+    route: '/patrimonio',
     icon: Icons.pie_chart_outline,
     terms: [
       'carteira',
@@ -140,7 +140,7 @@ List<BuscaDestino> destinosPara(String query) {
 }
 
 String rotaDoAchado(SearchHit hit) =>
-    hit.kind == 'fixed_income' ? '/carteira/renda-fixa' : '/ativo/${hit.ref}';
+    hit.kind == 'fixed_income' ? '/patrimonio/renda-fixa' : '/ativo/${hit.ref}';
 
 class BuscaScreen extends ConsumerStatefulWidget {
   const BuscaScreen({super.key});

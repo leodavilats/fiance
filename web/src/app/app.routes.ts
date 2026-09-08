@@ -203,12 +203,12 @@ export const routes: Routes = [
     loadComponent: () => import('./components/asset/asset.component').then(m => m.AssetComponent),
     title: 'Ativo - fiance',
   },
-  {
-    path: 'ativo',
-    canActivate: [authGuard],
-    loadComponent: () => import('./components/asset/asset.component').then(m => m.AssetComponent),
-    title: 'Ativo - fiance',
-  },
+  /*
+   * `/ativo` sem ticker era sustentado por um campo de busca dentro da página de detalhe,
+   * concorrendo com a busca global. Camada contextual se entra pelo contexto — o destino de
+   * quem quer achar um ativo é Descobrir.
+   */
+  { path: 'ativo', redirectTo: 'descobrir/oportunidades', pathMatch: 'full' },
 
   {
     path: 'voce',

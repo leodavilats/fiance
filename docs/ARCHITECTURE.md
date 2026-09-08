@@ -228,8 +228,9 @@ Cinco destinos por intenção, mais o ativo como camada — o racional está em
 - **`core/services/ui-helper.service.ts`** — labels, ícones e cores de AssetType/categoria/setor,
   glossário e rótulos de proveniência.
 - **`core/interceptors/`** — `auth.interceptor.ts` (Bearer), `http-error.interceptor.ts`.
-- **`src/tokens.css`** — **gerado**. `styles.css` é uma camada de compatibilidade: os nomes antigos
-  (`--accent`, `--panel`…) apontam para `--fi-*` e não carregam valor próprio.
+- **`src/foundation.css`** — **escrito à mão**: cor (nos dois temas), tipografia por papel,
+  espaço, raio, motion, camada e densidade. `styles.css` é a camada de componentes (`.btn-*`,
+  `.input`, `.card`, `.notice`, `.data-table`), dentro de `@layer components`.
 
 **Pegadinha:** ícone do Lucide precisa ser registrado à mão em `LucideAngularModule.pick({...})`
 (`src/app/app.config.ts`). Nome ausente não quebra o build — quebra a tela em runtime.
@@ -241,18 +242,22 @@ Cinco destinos por intenção, mais o ativo como camada — o racional está em
 Dart SDK `^3.10.7`. Dependências-chave: `dio`, `google_sign_in`, `flutter_riverpod`,
 `flutter_secure_storage` (JWT), `go_router`, `fl_chart`, `google_fonts`.
 
-`StatefulShellRoute.indexedStack` com **5 branches**, espelhando os destinos do web: `/hoje`,
-`/carteira` (+ `renda-fixa`), `/descobrir` (+ `quedas`, `comparar`), `/estrategia` (+ `aporte`,
-`metas`, `renda-fixa`, `projecao`), `/voce`. `/ativo/:ticker` fica fora do shell de abas. URLs
-antigas seguem como redirect.
+`StatefulShellRoute.indexedStack` com **5 branches**: `/hoje`, `/carteira` (+ `renda-fixa`),
+`/descobrir` (+ `quedas`, `comparar`), `/estrategia` (+ `aporte`, `metas`, `renda-fixa`,
+`projecao`), `/voce`. `/ativo/:ticker` fica fora do shell de abas.
+
+**Estes não são os destinos do web.** O web migrou para o ciclo do dinheiro (`/mes` → `/sobra` →
+`/patrimonio`); o mobile ficou em `hoje`/`carteira`/`estrategia` e **não tem caixa nenhum** — nem
+`/mes`, nem `/sobra`. É a maior divergência aberta entre as plataformas.
 
 Estrutura `lib/`:
 - **`core/`** — `api_client.dart` (Dio + Bearer), `api_repository.dart` (chamadas tipadas),
   `auth_service.dart` (Google Sign-In com `serverClientId` = Client ID Web, para o `aud` do idToken
   ser validável cross-platform), `models.dart` (DTOs), `providers.dart` (Riverpod), `router.dart`,
   `labels.dart` (equivalente ao `ui-helper.service.ts`), `theme.dart`.
-- **`core/design_tokens.dart`** — **gerado** de `design-tokens/tokens.json`. Não editar.
-  `theme.dart` é camada de compatibilidade: `AppColors` e `appRadius` apontam para os tokens.
+- **`core/design_tokens.dart`** — **escrito à mão**, espelho de `web/src/foundation.css`. Não há
+  máquina conferindo a paridade: mudar um valor num lado obriga a mudar no outro. `theme.dart`
+  monta o `ThemeData` sobre esses valores.
 - **`core/widgets/`** — `score_ruler.dart` (a régua, espelhando o web), `error_state.dart`
   (`FiErrorState` + `fiErrorMessage`, que traduz exceção em causa humana),
   `ticker_autocomplete_field.dart`, `help_tooltip.dart`, `brand_background.dart`.

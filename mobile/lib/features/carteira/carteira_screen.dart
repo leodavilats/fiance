@@ -22,12 +22,12 @@ class CarteiraScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Carteira'),
+        title: const Text('Patrimônio'),
         actions: [
           IconButton(
             tooltip: 'Renda fixa',
             icon: const Icon(Icons.account_balance_outlined),
-            onPressed: () => context.go('/carteira/renda-fixa'),
+            onPressed: () => context.go('/patrimonio/renda-fixa'),
           ),
         ],
       ),

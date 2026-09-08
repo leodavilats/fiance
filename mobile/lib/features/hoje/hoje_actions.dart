@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 void runHojeAction(BuildContext context, String? action, String? ticker) {
   switch (action) {
     case 'analyze':
-      context.go(ticker != null ? '/ativo/$ticker' : '/carteira');
+      context.go(ticker != null ? '/ativo/$ticker' : '/patrimonio');
     case 'sell':
-      context.go('/carteira');
+      context.go('/patrimonio');
     case 'fixed_income':
-      context.go('/carteira/renda-fixa');
+      context.go('/patrimonio/renda-fixa');
     case 'goals':
       context.go('/estrategia/metas');
     case 'rebalance':

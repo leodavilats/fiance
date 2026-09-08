@@ -308,7 +308,7 @@ Ordem de grandeza, não estimativa fechada:
 |---|---|---|
 | **`cashflow/`** — razão de caixa (entrada, saída, transferência) | módulo **irmão** de `ledger/`, **não** dentro dele | grande |
 | Recorrência: salário no dia X, contas fixas, parcelas | expansão de série no tempo, em BRT, com "previsto × realizado" | média |
-| Categoria de despesa | **vocabulário gerado** em `tokens.json`, como as demais | pequena |
+| Categoria de despesa | **vocabulário gerado** em `product-rules.json`, como as demais | pequena |
 | Orçamento por categoria e **sobra projetada do mês** | é o insumo da ponte; sai como faixa quando a renda é variável | média |
 | Reserva de emergência | regra simples sobre gasto essencial; precede qualquer sugestão de aporte | pequena |
 | Dívida (rotativo, empréstimo) | **decisão de escopo**, ver §11 | média |

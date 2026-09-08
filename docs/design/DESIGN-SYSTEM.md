@@ -129,7 +129,7 @@ Três regras de uso, verificáveis em revisão:
 ### Motion
 
 `fast` 120ms · `base` 180ms · `slow` 240ms; entrada `cubic-bezier(0.2,0,0,1)`, saída
-`cubic-bezier(0.4,0,1,1)`. `prefers-reduced-motion` colapsa tudo para 1ms via `tokens.css`.
+`cubic-bezier(0.4,0,1,1)`. `prefers-reduced-motion` colapsa tudo para 1ms via `foundation.css`.
 **Números não animam contagem.**
 
 ### Foco, toque, z-index
@@ -277,7 +277,7 @@ Uma régua com zonas nomeadas e um valor marcado, não um gauge.
 **Rótulos novos:** `Forte` · `Boa` · `Neutra` · `Fraca`, substituindo "Excelente entrada" /
 "Boa oportunidade" / "Neutro" / "Evitar agora". Os limiares não mudam; a linguagem deixa de dar
 ordem e passa a descrever a leitura (briefing §10 e §43). Muda nas três plataformas de uma vez,
-porque sai de `tokens.json`.
+porque sai de `product-rules.json`.
 
 ### A régua reaproveitada
 
@@ -338,8 +338,8 @@ disponível, ele **não inventa** uma — mostra o valor e omite a comparação.
 | `detail_level` (Essencial/Completo/Avançado) | **contrato** | `PreferencesDb` + `GET/PUT /preferences` + migração Alembic |
 | marcador de onboarding concluído | **contrato** | idem |
 | Source Serif 4 | asset | `<link>` no `web/src/index.html`; `google_fonts` no mobile |
-| `tokens.css` no build do Angular | fiação | importar em `styles.css`, apontar `tailwind.config.js` para `--fi-*` |
-| `FiTheme` a partir de `design_tokens.dart` | fiação | reescrever `mobile/lib/core/theme.dart` sobre os tokens gerados |
+| `foundation.css` no build do Angular | fiação | importar em `styles.css`, apontar `tailwind.config.js` para `--fi-*` |
+| `FiTheme` a partir de `design_tokens.dart` | fiação | reescrever `mobile/lib/core/theme.dart` sobre os tokens escritos |
 | verificar as 3 classes de `dipDiagnosis` | verificação | `DipAnalysis` real precisa sustentar a separação; se não, ficam 2 |
 
 Nenhum algoritmo novo. O redesign consome o que o backend já calcula.

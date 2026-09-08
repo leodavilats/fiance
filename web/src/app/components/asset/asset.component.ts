@@ -9,7 +9,6 @@ import {
   RESPONSE_INIT,
   signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Meta, Title } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
@@ -24,7 +23,6 @@ import {
   LoadingService,
   NavegacaoService,
   RecommendService,
-  TickerSuggestion,
   UiHelperService,
   fiDecision,
 } from '../../core';
@@ -33,6 +31,7 @@ import { AssetPriceChartComponent } from '../asset-price-chart/asset-price-chart
 import { MetricWithContextComponent } from '../metric-with-context/metric-with-context.component';
 import { MarginOfSafetyComponent } from '../margin-of-safety/margin-of-safety.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { SectionComponent } from '../section/section.component';
 
 export interface ValuationMethod {
   readonly name: string;
@@ -60,9 +59,9 @@ interface Fundamental {
     LucideAngularModule,
     MarginOfSafetyComponent,
     MetricWithContextComponent,
-    ReactiveFormsModule,
     RouterLink,
     SkeletonComponent,
+    SectionComponent,
   ],
   template: `
     @if (fetching()) {
@@ -76,7 +75,7 @@ interface Fundamental {
       </div>
     }
 
-    <!-- veredito: o resumo do ativo e as frases de estado (não encontrado, indisponível)
+    <!-- design-exception: veredito — o resumo do ativo e as frases de estado (não encontrado, indisponível)
          são o que o sistema concluiu, não nomes de seção -->
     @if (notFound(); as symbol) {
       <div class="max-w-reading">
@@ -118,7 +117,7 @@ interface Fundamental {
           <div class="flex items-start justify-between gap-6 flex-wrap">
             <div>
               <div class="flex items-baseline gap-3 flex-wrap">
-                <h1 class="fi-money-lg text-ink m-0">{{ a.symbol }}</h1>
+                <h1 class="fi-page-title text-ink m-0">{{ a.symbol }}</h1>
                 <span class="fi-caption text-ink-3 uppercase tracking-wide">
                   {{ ui.assetTypeLabel(a.asset_type) }}
                 </span>
@@ -219,8 +218,7 @@ interface Fundamental {
         </section>
 
         @if (a.fair_price.consensus != null && a.price != null) {
-          <section class="fi-block">
-            <p class="fi-eyebrow text-ink-3 m-0 mb-3">Preço atual × preço justo estimado</p>
+          <app-section title="Preço atual × preço justo estimado">
             <div class="flex items-baseline gap-6 flex-wrap">
               <div>
                 <p class="fi-caption text-ink-3 m-0">Atual</p>
@@ -244,11 +242,10 @@ interface Fundamental {
             </div>
 
             <p class="fi-caption text-ink-3 m-0 mt-3">{{ consensusProvenance() }}</p>
-          </section>
+          </app-section>
         }
 
-        <section class="fi-block">
-          <p class="fi-eyebrow text-ink-3 m-0 mb-1">Valuation</p>
+        <app-section title="Valuation">
           <p class="fi-body text-ink-2 m-0 mb-4 max-w-reading">
             Cada método usa um insumo diferente e chega a um número diferente. Eles não são somados
             num "preço justo" único sem que se veja de onde cada um veio.
@@ -301,7 +298,7 @@ interface Fundamental {
               </tbody>
             </table>
           </div>
-        </section>
+        </app-section>
 
         <section class="fi-block">
           <app-asset-price-chart
@@ -312,8 +309,7 @@ interface Fundamental {
         </section>
 
         @if (fundamentals().length > 0) {
-          <section class="fi-block">
-            <p class="fi-eyebrow text-ink-3 m-0 mb-3">Fundamentos</p>
+          <app-section title="Fundamentos">
             <div class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
               @for (f of fundamentals(); track f.label) {
                 <app-metric-with-context
@@ -325,11 +321,10 @@ interface Fundamental {
                 />
               }
             </div>
-          </section>
+          </app-section>
         }
 
-        <section class="fi-block">
-          <p class="fi-eyebrow text-ink-3 m-0 mb-3">Tendência</p>
+        <app-section title="Tendência">
           <div class="flex items-baseline gap-6 flex-wrap">
             <div>
               <p class="fi-caption text-ink-3 m-0">Direção</p>
@@ -362,11 +357,10 @@ interface Fundamental {
           <p class="fi-caption text-ink-3 m-0 mt-3">
             Medida por {{ ui.trendBasisLabel(a.technical.trend_basis) }}.
           </p>
-        </section>
+        </app-section>
 
         @if (a.fair_price.dy_12m != null || a.fair_price.dy_5y != null) {
-          <section class="fi-block">
-            <p class="fi-eyebrow text-ink-3 m-0 mb-3">Proventos</p>
+          <app-section title="Proventos">
             <div class="flex items-baseline gap-6 flex-wrap">
               @if (a.fair_price.dy_12m != null) {
                 <div>
@@ -397,7 +391,7 @@ interface Fundamental {
               {{ ui.dataYearsLabel(a.fair_price.data_years) }}. Consistência é o que sustenta o
               Bazin: um ano bom isolado não vira preço-teto.
             </p>
-          </section>
+          </app-section>
         }
 
         <section class="fi-block">
@@ -467,55 +461,10 @@ interface Fundamental {
         </footer>
       </article>
     }
-
-    <section class="fi-block">
-      <p class="fi-eyebrow text-ink-3 m-0 mb-3">Ver outro ativo</p>
-      <form class="max-w-[420px]" [formGroup]="searchForm" (ngSubmit)="submitSearch()">
-        <label class="field-label block mb-1.5" for="ativo-busca">Ver outro ativo</label>
-        <div class="relative flex gap-2">
-          <input
-            id="ativo-busca"
-            type="text"
-            class="input uppercase"
-            formControlName="symbol"
-            placeholder="PETR4, HGLG11, AAPL34, BOVA11…"
-            autocomplete="off"
-            (input)="onSymbolInput($any($event.target).value)"
-            (focus)="onSymbolInput($any($event.target).value)"
-            (focusout)="closeSuggestions()"
-          />
-          <button type="submit" class="btn-secondary shrink-0">Ver</button>
-
-          @if (suggestionsOpen() && suggestions().length > 0) {
-            <ul
-              class="absolute top-full left-0 right-0 mt-1 z-popover rounded-lg border border-hairline bg-ground-1 shadow-popover max-h-60 overflow-y-auto list-none p-0 m-0"
-            >
-              @for (s of suggestions(); track s.ticker) {
-                <li>
-                  <button
-                    type="button"
-                    class="menu-item justify-between"
-                    (mousedown)="$event.preventDefault(); selectSuggestion(s)"
-                  >
-                    <span class="fi-ticker text-ink">{{ s.ticker }}</span>
-                    <span class="fi-caption text-ink-3 truncate">{{ s.name }}</span>
-                  </button>
-                </li>
-              }
-            </ul>
-          }
-        </div>
-      </form>
-      <p class="fi-caption text-ink-3 m-0 mt-2">
-        A busca do topo (<kbd class="fi-caption border border-hairline rounded-sm px-1">Ctrl K</kbd
-        >) procura em qualquer tela, inclusive na sua carteira.
-      </p>
-    </section>
   `,
 })
 export class AssetComponent implements OnInit, OnDestroy {
   private readonly api = inject(RecommendService);
-  private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly ui = inject(UiHelperService);
@@ -533,20 +482,12 @@ export class AssetComponent implements OnInit, OnDestroy {
   readonly isAnonymous = computed(() => !this.auth.isAuthenticated());
 
   private readonly destroy$ = new Subject<void>();
-  private readonly search$ = new Subject<string>();
 
   readonly analysis = signal<AssetAnalysis | null>(null);
   readonly fetching = signal(false);
   readonly notFound = signal<string | null>(null);
   readonly failed = signal(false);
   readonly showMethod = signal(false);
-
-  readonly suggestions = signal<TickerSuggestion[]>([]);
-  readonly suggestionsOpen = signal(false);
-
-  readonly searchForm = this.fb.nonNullable.group({
-    symbol: ['', Validators.required],
-  });
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
@@ -556,21 +497,9 @@ export class AssetComponent implements OnInit, OnDestroy {
         return;
       }
       const symbol = ticker.toUpperCase();
-      this.searchForm.controls.symbol.setValue(symbol);
       this.fetch(symbol);
       if (this.auth.isAuthenticated()) this.carteira.ensureLoaded();
     });
-
-    this.search$
-      .pipe(
-        debounceTime(250),
-        switchMap(query => {
-          if (query.trim().length < 1) return [[] as TickerSuggestion[]];
-          return this.api.searchTickers(query).pipe(switchMap(res => [res.items]));
-        }),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(items => this.suggestions.set(items));
   }
 
   private describePage(asset: AssetAnalysis): void {
@@ -706,28 +635,6 @@ export class AssetComponent implements OnInit, OnDestroy {
         this.describeFailure(symbol, naoExiste);
       },
     });
-  }
-
-  onSymbolInput(value: string): void {
-    this.suggestionsOpen.set(true);
-    this.search$.next(value);
-  }
-
-  selectSuggestion(s: TickerSuggestion): void {
-    this.closeSuggestions();
-    this.router.navigate(['/ativo', s.ticker]);
-  }
-
-  closeSuggestions(): void {
-    this.suggestionsOpen.set(false);
-    this.suggestions.set([]);
-  }
-
-  submitSearch(): void {
-    const symbol = this.searchForm.getRawValue().symbol.trim().toUpperCase();
-    if (!symbol) return;
-    this.closeSuggestions();
-    this.router.navigate(['/ativo', symbol]);
   }
 
   readonly summary = computed(() => {
@@ -981,7 +888,7 @@ export class AssetComponent implements OnInit, OnDestroy {
   }
 
   retry(): void {
-    const symbol = this.analysis()?.symbol ?? this.searchForm.getRawValue().symbol;
+    const symbol = this.analysis()?.symbol ?? this.route.snapshot.paramMap.get('ticker');
     if (symbol) this.fetch(symbol.toUpperCase());
   }
 

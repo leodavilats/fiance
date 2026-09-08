@@ -94,6 +94,16 @@ export const fiDipScoreBands: readonly FiScoreBand[] = [
   { id: 'insufficient', min: null, max: null, label: 'Sem leitura', state: 'indeterminate', emphasis: 'muted' },
 ] as const;
 
+export const fiMonthPressureBands: readonly FiScoreBand[] = [
+  { id: 'tight', min: 80, max: 100, label: 'Mês apertado', state: 'adverse', emphasis: 'strong' },
+  { id: 'pressured', min: 60, max: 79, label: 'Mês sob pressão', state: 'attention', emphasis: 'strong' },
+  { id: 'steady', min: 30, max: 59, label: 'Mês em ordem', state: 'favorable', emphasis: 'muted' },
+  { id: 'loose', min: 0, max: 29, label: 'Mês folgado', state: 'favorable', emphasis: 'strong' },
+  { id: 'insufficient', min: null, max: null, label: 'Sem leitura', state: 'indeterminate', emphasis: 'muted' },
+] as const;
+
+export const fiMonthPressureDomain = { min: 0, max: 100 } as const;
+
 export function fiBandFor(
   value: number,
   bands: readonly FiScoreBand[],

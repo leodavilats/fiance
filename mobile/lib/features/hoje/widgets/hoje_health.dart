@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/provenance.dart';
 
 const fiHealthMetricExplanations = {
   'Concentração':
@@ -14,9 +15,17 @@ const fiHealthMetricExplanations = {
       'A fatia da carteira em ativos com sinal de venda hoje. Nota boa = pouca ou nenhuma exposição a esses ativos; nota ruim = parte relevante da carteira pede atenção.',
 };
 
-String fiHealthBandLabel(double score) {
-  if (score >= 70) return 'Bom';
-  if (score >= 40) return 'Atenção';
+// A DIMENSAO tem regua propria: e outro numero -- 0-100 por eixo (concentracao, setor,
+// diversificacao, risco), nao o score de saude -- e o backend nao devolve faixa para ela.
+// A cor de `_FiHealthMetric` usa estes mesmos limiares, e e por isso que os dois andam juntos.
+//
+// O score de SAUDE nao passa por aqui: ele le `fiHealthBands`, gerado de product-rules.json.
+// Eram duas reguas para o mesmo numero -- 70/40 aqui contra 75/60/40 na gerada -- e a mesma
+// classe usava a gerada para a cor e esta para o rotulo: um score de 65 saia favoravel na cor
+// e "Atencao" no texto.
+String fiDimensionBandLabel(double value) {
+  if (value >= 70) return 'Bom';
+  if (value >= 40) return 'Atenção';
   return 'Ruim';
 }
 
@@ -77,7 +86,7 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        fiHealthBandLabel(health.score),
+                        fiBandFor(health.score, fiHealthBands).label,
                         style: TextStyle(
                           color: color,
                           fontWeight: FontWeight.w700,
@@ -185,6 +194,17 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
                   ),
                 ),
             ],
+            const SizedBox(height: FiSpace.s2),
+            FiProvenance(
+              summary: 'Como lemos a saúde da carteira',
+              method:
+                  'Quatro dimensões em 0-100 — concentração, setor, diversificação e risco — '
+                  'combinadas num score, lido na régua de saúde do sistema.',
+              source: 'Suas posições e renda fixa, com preços da BRAPI.',
+              limitation:
+                  'Com menos de quatro ativos concentração e diversificação não dizem muito, '
+                  'e a leitura sai como carteira pequena demais para avaliar.',
+            ),
           ],
         ),
       ),
@@ -242,7 +262,7 @@ class _FiHealthMetric extends StatelessWidget {
           style: TextStyle(color: fiInk2(context), fontSize: 10),
         ),
         Text(
-          fiHealthBandLabel(value),
+          fiDimensionBandLabel(value),
           textAlign: TextAlign.center,
           style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 9),
         ),

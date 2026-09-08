@@ -23,10 +23,15 @@ documento que corresponde ao que se está fazendo. O resto de `docs/` também n�
 | [VISUAL-LANGUAGE.md](VISUAL-LANGUAGE.md) | A identidade: "tinta e papel", paleta semântica, tipografia, a régua | Ao decidir aparência |
 | [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) | Tokens e componentes, e o contrato de cada um | Antes de construir componente |
 | [AI-TELLS.md](AI-TELLS.md) | O que faz uma tela parecer gerada por IA, e a regra contra cada coisa — texto, composição, dado de exemplo | Antes de aceitar qualquer tela como pronta |
+| [PARIDADE.md](PARIDADE.md) | O que precisa ser igual entre web e mobile, o que pode divergir, e o que nunca se copia | **Antes de mexer num conceito** |
 
 **INFORMATION-ARCHITECTURE é a autoridade da navegação.** Quando web e mobile divergem, é contra ele que se confere —
 foi assim que a Estratégia apareceu: `strategy.component` tinha 1092 linhas de template e nenhuma
 rota, e `GET /strategy` rodava para ninguém.
+
+**PARIDADE é a autoridade sobre o que precisa ser igual.** A resposta curta é: conceito, nome e
+hierarquia — não pixel, não hexadecimal. `design-tokens/check-parity.mjs` cobra a parte que a
+revisão humana já falhou em ver.
 
 ## O que o redesign descobriu, e vale lembrar
 
@@ -44,18 +49,23 @@ registrado.
 
 Os dois estão na lista de armadilhas do [CLAUDE.md](../../CLAUDE.md#armadilhas-que-não-quebram-o-build).
 
-## Tokens
+## A camada visual é escrita; a régua é gerada
 
-Uma fonte, três alvos. Editar só `design-tokens/tokens.json`:
+Não há gerador de tokens visuais. Cor, tipografia, espaço, raio, motion e densidade são
+**escritos à mão** em [web/src/foundation.css](../../web/src/foundation.css), com espelho à mão em
+[mobile/lib/core/design_tokens.dart](../../mobile/lib/core/design_tokens.dart). Mudar um valor num
+lado obriga a mudar no outro — não há máquina conferindo isso.
+
+O que continua **gerado** é só o que precisa ser igual nas três plataformas por ser número, e não
+aparência:
 
 ```bash
-node design-tokens/build.mjs           # gera web/src/tokens.css,
-                                       #      web/src/app/core/design-tokens.ts,
-                                       #      mobile/lib/core/design_tokens.dart
-node design-tokens/build.mjs --check   # falha se divergir (job `design-tokens` no CI)
+node design-tokens/build-rules.mjs           # product-rules.json -> réguas e vocabulário
+node design-tokens/build-rules.mjs --check   # falha se divergir (roda no CI)
+node design-tokens/check-contrast.mjs        # falha se um par cair abaixo do piso
 ```
 
-Qualquer chave `*Ruler` em `tokens.json` vira `fi<Nome>Bands` e `fi<Nome>Domain` nas duas
+Qualquer chave `*Ruler` em `product-rules.json` vira `fi<Nome>Bands` e `fi<Nome>Domain` nas duas
 plataformas automaticamente — não há caso especial por régua.
 
 ## Regras que valem para toda a interface
@@ -64,9 +74,10 @@ plataformas automaticamente — não há caso especial por régua.
   Onde o dado falta, o entregável é um **estado**, não um número.
 - **Regra de negócio fica no backend.** `analysis/` e `optimizer/` são a fonte única. A UI reflete
   e explica; não decide.
-- **Três alvos, uma linguagem.** Todo token e toda régua semântica nasce numa fonte única e é
-  gerada para CSS, TypeScript e Dart. A régua de score já divergiu entre web e mobile por ser
-  mantida à mão em três arquivos.
+- **Mesma intenção, não mesma implementação.** Conceito, vocabulário e hierarquia são iguais nas
+  plataformas; espaçamento, composição e navegação não precisam ser. O que é **número** — banda de
+  régua, rótulo de veredito — nasce em `product-rules.json` e é gerado, porque a régua de score já
+  divergiu entre web e mobile por ser mantida à mão em três arquivos.
 - **Em conflito:** clareza vence informação; decisão vence funcionalidade visível; facilidade vence
   sofisticação técnica.
 

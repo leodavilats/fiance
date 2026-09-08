@@ -42,7 +42,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Carteira',
+            label: 'Patrimônio',
           ),
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),

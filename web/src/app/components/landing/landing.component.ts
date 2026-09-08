@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import { LogoComponent } from '../logo/logo.component';
 import { WordmarkComponent } from '../logo/wordmark.component';
+import { SectionComponent } from '../section/section.component';
 
 interface LinhaDoMes {
   descricao: string;
@@ -23,6 +24,7 @@ interface LinhaDoMes {
     HelpTooltipComponent,
     LogoComponent,
     WordmarkComponent,
+    SectionComponent,
   ],
   template: `
     <div class="max-w-reading mx-auto px-4 py-12">
@@ -40,8 +42,7 @@ interface LinhaDoMes {
         então a decisão acontece de cabeça, uma vez por mês, com o número errado.
       </p>
 
-      <section class="fi-block mt-12">
-        <p class="fi-eyebrow text-ink-3 m-0">Um mês de exemplo</p>
+      <app-section title="Um mês de exemplo" class="mt-12">
         <h2 class="fi-title text-ink m-0 mt-1">O que o fiance passa a saber</h2>
 
         <div class="overflow-x-auto mt-4">
@@ -78,7 +79,7 @@ interface LinhaDoMes {
             <dd class="fi-money-xl text-ink m-0 mt-1">{{ reais(sobra()) }}</dd>
           </div>
         </dl>
-      </section>
+      </app-section>
 
       <section class="fi-block">
         <h2 class="fi-title text-ink m-0">

@@ -9,11 +9,15 @@ import {
   Debt,
   mesCorrente,
   nomeDoMes,
+  stateTextClass,
+  vereditoDoMes,
   fiCategoriasDeDespesa,
   fiCategoriasDeEntrada,
 } from '../../core';
 import { ChangesFeedComponent } from '../changes-feed/changes-feed.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
+import { ProvenanceComponent } from '../provenance/provenance.component';
+import { SectionComponent } from '../section/section.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 interface LinhaDoMes {
@@ -30,6 +34,8 @@ interface LinhaDoMes {
     LucideAngularModule,
     ChangesFeedComponent,
     PageHeaderComponent,
+    ProvenanceComponent,
+    SectionComponent,
     SkeletonComponent,
   ],
   template: `
@@ -70,8 +76,23 @@ interface LinhaDoMes {
           </div>
         </div>
       } @else {
+        <!-- Não é seção nomeada: é a resposta da tela, logo abaixo do título dela. -->
         <section class="fi-block">
-          <p class="fi-eyebrow text-ink-3 m-0">
+          @if (veredito(); as v) {
+            <p class="fi-verdict m-0 max-w-reading" [class]="classeDoEstado(v.band.state)">
+              {{ v.veredito }}
+            </p>
+            <p class="fi-body text-ink-2 m-0 mt-2 max-w-reading">{{ v.razao }}</p>
+
+            <app-provenance
+              summary="Como lemos seu mês"
+              method="Compara o que já está comprometido com o que entrou, na régua de pressão do mês."
+              source="Seus lançamentos de caixa, mais os proventos derivados do seu razão."
+              limitation="A leitura é do mês escolhido. Dívida sem taxa informada não entra na classe de dívida caseira."
+            />
+          }
+
+          <p class="fi-eyebrow text-ink-3 m-0 mt-6">
             {{ ehMesCorrente() ? 'Livre agora' : 'Sobrou em ' + nome(m.month) }}
           </p>
           <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(m.free_now) }}</p>
@@ -104,31 +125,31 @@ interface LinhaDoMes {
           </p>
         </section>
 
-        <section class="fi-block">
-          <p class="fi-eyebrow text-ink-3 m-0">O que mudou</p>
-          <app-changes-feed />
-        </section>
-
         @if (atencao().length > 0) {
-          <section class="fi-block">
-            <p class="fi-eyebrow text-ink-3 m-0">Exige atenção · {{ atencao().length }}</p>
+          <app-section title="Exige atenção" [count]="atencao().length">
             <ul class="list-none m-0 mt-3 p-0 flex flex-col gap-3">
               @for (d of atencao(); track d.id) {
                 <li class="flex items-baseline justify-between gap-4 flex-wrap">
                   <span class="fi-body text-ink">
                     {{ d.description }}: <span class="fi-num">{{ reais(d.balance) }}</span> a
-                    <span class="fi-num">{{ d.monthly_rate }}%</span> ao mês
+                    <span class="fi-num">{{ d.monthly_rate }}</span
+                    >% ao mês
+                    @if (d.flip_rate !== null) {
+                      <span class="fi-caption text-ink-3">
+                        · vira administrável a <span class="fi-num">{{ d.flip_rate }}</span
+                        >%
+                      </span>
+                    }
                   </span>
                   <a routerLink="/mes/dividas" class="btn-link">Ver a dívida</a>
                 </li>
               }
             </ul>
-          </section>
+          </app-section>
         }
 
         @if (m.due.length > 0) {
-          <section class="fi-block">
-            <p class="fi-eyebrow text-ink-3 m-0">A vencer · {{ m.due.length }}</p>
+          <app-section title="A vencer" [count]="m.due.length">
             <div class="overflow-x-auto mt-3">
               <table class="data-table">
                 <caption class="sr-only">
@@ -164,23 +185,20 @@ interface LinhaDoMes {
                 </tbody>
               </table>
             </div>
-          </section>
+          </app-section>
         }
 
-        <section class="fi-block">
-          <div class="flex items-baseline justify-between gap-4 flex-wrap">
-            <p class="fi-eyebrow text-ink-3 m-0">O mês</p>
-            <span class="flex items-baseline gap-4">
-              <a
-                [routerLink]="['/mes/repetir']"
-                [queryParams]="{ mes: ehMesCorrente() ? null : mesEscolhido() }"
-                class="btn-link"
-              >
-                Repetir {{ nome(mesAnterior()) }}
-              </a>
-              <a routerLink="/mes/lancar" class="btn-link">Lançar</a>
-            </span>
-          </div>
+        <app-section title="O mês">
+          <span sectionActions class="flex items-baseline gap-4">
+            <a
+              [routerLink]="['/mes/repetir']"
+              [queryParams]="{ mes: ehMesCorrente() ? null : mesEscolhido() }"
+              class="btn-link"
+            >
+              Repetir {{ nome(mesAnterior()) }}
+            </a>
+            <a routerLink="/mes/lancar" class="btn-link">Lançar</a>
+          </span>
 
           <div class="overflow-x-auto mt-3">
             <table class="data-table">
@@ -247,7 +265,12 @@ interface LinhaDoMes {
               </tbody>
             </table>
           </div>
-        </section>
+        </app-section>
+
+        <!-- Último de propósito: um feed é o menos decisivo do mês, e vinha antes da dívida. -->
+        <app-section title="O que mudou">
+          <app-changes-feed />
+        </app-section>
       }
     }
   `,
@@ -258,6 +281,7 @@ export class MonthComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly nome = nomeDoMes;
+  readonly classeDoEstado = stateTextClass;
 
   readonly mes = signal<CashMonth | null>(null);
   readonly mesEscolhido = signal<string>(mesCorrente());
@@ -269,6 +293,16 @@ export class MonthComponent implements OnInit {
   readonly semLancamento = computed(() => this.entradas().every(e => e.derived));
 
   readonly atencao = computed(() => this.dividas().filter(d => d.class === 'expensive'));
+
+  readonly veredito = computed(() => {
+    const m = this.mes();
+    if (!m) return null;
+    return vereditoDoMes({
+      recebido: m.received,
+      comprometido: m.committed,
+      dividaCara: this.atencao()[0] ?? null,
+    });
+  });
 
   readonly ehMesCorrente = computed(() => this.mesEscolhido() === mesCorrente());
 

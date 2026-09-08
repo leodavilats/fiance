@@ -1,8 +1,8 @@
 /**
- * Toda cor aqui é `var(--fi-*)`, gerada de `design-tokens/tokens.json` por
- * `design-tokens/build.mjs`. Não escreva hexadecimal neste arquivo.
+ * Toda cor aqui é `var(--fi-*)`, declarada à mão em `src/foundation.css`. Não escreva
+ * hexadecimal neste arquivo.
  *
- * Ver docs/design/06-DESIGN-SYSTEM.md.
+ * Ver docs/design/DESIGN-SYSTEM.md.
  */
 
 /**

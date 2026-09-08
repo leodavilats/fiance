@@ -6,6 +6,7 @@ import { CashflowService, Surplus, nomeDoMes } from '../../core';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { SectionComponent } from '../section/section.component';
 
 @Component({
   selector: 'app-surplus',
@@ -17,6 +18,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
     PageHeaderComponent,
     HelpTooltipComponent,
     SkeletonComponent,
+    SectionComponent,
   ],
   template: `
     <app-page-header title="Sobra" question="O que eu faço com o que sobrou?" />
@@ -51,8 +53,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
           </div>
         </div>
       } @else {
-        <section class="fi-block">
-          <p class="fi-eyebrow text-ink-3 m-0">Sobra de {{ nome(d.month.month) }}</p>
+        <app-section [title]="'Sobra de ' + nome(d.month.month)">
           <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(d.month.surplus_low) }}</p>
 
           @if (d.month.has_range) {
@@ -114,10 +115,9 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
               }
             </div>
           </details>
-        </section>
+        </app-section>
 
-        <section class="fi-block">
-          <p class="fi-eyebrow text-ink-3 m-0">A ordem</p>
+        <app-section title="A ordem">
           <h2 class="fi-title text-ink m-0 mt-1">
             O que fazer com isso
             <app-help-tooltip
@@ -184,7 +184,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
               </p>
             }
           }
-        </section>
+        </app-section>
       }
     }
   `,

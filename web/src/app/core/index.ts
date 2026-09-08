@@ -5,6 +5,7 @@ export * from './mes';
 export * from './ruler';
 export * from './table-columns';
 export * from './health-verdict';
+export * from './month-verdict';
 export * from './score-ruler';
 export * from './vocabulary';
 export * from './services';

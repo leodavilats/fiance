@@ -6,6 +6,7 @@ import { BenchmarkChartComponent } from '../benchmark-chart/benchmark-chart.comp
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { PatrimonyChartComponent } from '../patrimony-chart/patrimony-chart.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { SectionComponent } from '../section/section.component';
 
 @Component({
   selector: 'app-performance',
@@ -17,6 +18,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
     PatrimonyChartComponent,
     BenchmarkChartComponent,
     SkeletonComponent,
+    SectionComponent,
   ],
   template: `
     <app-page-header
@@ -28,7 +30,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
       <section>
         <p class="fi-eyebrow text-ink-3 m-0 mb-2">Evolução do patrimônio</p>
 
-        <!-- veredito: a leitura do período é a conclusão que esta tela existe para dar -->
+        <!-- design-exception: veredito — a leitura do período é a conclusão que esta tela existe para dar -->
         @if (vereditoPatrimonio(); as frase) {
           <p class="fi-verdict text-ink m-0 mb-4 max-w-reading">{{ frase }}</p>
         }
@@ -45,9 +47,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
         }
       </section>
 
-      <section class="fi-block">
-        <p class="fi-eyebrow text-ink-3 m-0 mb-2">Carteira, CDI e Ibovespa</p>
-
+      <app-section title="Carteira, CDI e Ibovespa">
         @if (benchmark(); as b) {
           <p class="fi-verdict text-ink m-0 mb-4 max-w-reading">{{ vereditoBenchmark(b) }}</p>
 
@@ -67,7 +67,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
             </button>
           </p>
         }
-      </section>
+      </app-section>
     </div>
   `,
 })

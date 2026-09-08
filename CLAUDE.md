@@ -31,9 +31,10 @@ cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem R
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 93 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 145 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 150 testes
 node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
-node design-tokens/check-contrast.mjs              # contraste AA
+node design-tokens/check-contrast.mjs              # contraste AA, web e mobile
+node design-tokens/check-parity.mjs                # os cinco destinos existem nas duas
 python design-tokens/build-icons.py --check        # marca sincronizada
 ```
 
@@ -68,7 +69,7 @@ O que fica:
 |---|---|
 | **Infra** — CI, migração, gerador, configuração de build, script de operação | Não tem CHANGELOG próprio, e quem lê está prestes a executar |
 | **Armadilha local**, em uma linha | O comentário evita o defeito ali, e o defeito não é óbvio na linha seguinte |
-| **Escape declarado** que o `lint:ui` exige | `<!-- controle-proprio: … -->`, `<!-- sem-explicabilidade: … -->` são contrato com a máquina |
+| **Escape declarado** que o `lint:ui` exige | `<!-- design-exception: regra — motivo -->` é contrato com a máquina |
 
 Se a explicação é boa demais para caber em uma linha, ela não é comentário: é entrada no
 CHANGELOG.
@@ -89,9 +90,11 @@ CHANGELOG.
 | Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template |
 | Cor, tipografia, espaço | Editar [foundation.css](web/src/foundation.css) **e** o espelho em [design_tokens.dart](mobile/lib/core/design_tokens.dart) | Web e mobile divergem, e nenhuma máquina avisa |
 | Papel de cor novo | Declarar nos **dois** temas de `foundation.css` | `check-contrast.mjs` reprova papel que só existe num tema |
-| Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` |
+| Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` **e** `z-50` — uma regra, as duas grafias |
 | Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
 | Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |
+| Seção numa tela | Usar `<app-section title="…">`, que emite o `<h2>` | Seção sem cabeçalho: `/mes` tinha 5 seções e nenhuma parada de navegação |
+| Julgamento numa tela do mobile | `FiProvenance` — método, fonte, momento, limitação | O invariante de explicabilidade vale nas duas plataformas, e o `lint:ui` só roda no web |
 | Componente Angular novo | Escrever o `template` no próprio `.ts` — não há `.html` separado em `web/src/app/components` | Divergência de padrão na mesma pasta |
 
 ---
@@ -159,7 +162,10 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   `fiClasseTextoDaSerie[4]` e recebia `undefined`: a armadilha acima na forma inversa, consumidor
   sem vocabulário. O gerador agora varre os três blocos de categoria.
 
-O `npm run lint:ui` cobre treze dessas.
+O `npm run lint:ui` cobre treze dessas, em **22 regras** — e a classificação importa: regra que
+protege acessibilidade, contrato de produto ou erro silencioso **reprova o CI**; regra que
+protege só preferência visual **avisa e não reprova**, porque bloquear por gosto gasta a
+autoridade das que valem. Raio fora da escala e ícone decorando título são as duas que avisam.
 
 Sete são de tela quebrada ou informação escondida: ícone não registrado, classe inexistente,
 julgamento sem explicabilidade, gráfico sem tabela, botão de ícone sem `aria-label`, número
@@ -171,10 +177,10 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 | Regra | O que reprova | Por quê |
 |---|---|---|
 | Escala de papéis | `text-sm`, `font-bold` e afins no template | 384 utilitárias de tamanho conviviam com 372 papéis, dando dois corpos para a mesma coisa em telas vizinhas — e é no papel que "serifa decide, sans mede" vive |
-| Quatro raios | `rounded-xl`, `rounded-full`, `rounded-lg` sem sombra | `sm` marca, `md` assentado, `lg` **só o que flutua** (flutuar é ter sombra), `pill`. Havia três raios para a mesma caixa |
+| Quatro raios *(avisa)* | `rounded-xl`, `rounded-full`, `rounded-lg` sem sombra | `sm` marca, `md` assentado, `lg` **só o que flutua** (flutuar é ter sombra), `pill`. Havia três raios para a mesma caixa. Preferência fundamentada, não erro silencioso — e o `rounded-xl` já é pego pela regra de classe não emitida |
 | Um foco só | `focus:ring*`, `focus:outline-none` | O anel é `outline` na cor da marca e já vem em `.input`/`.btn-*`/`.fi-focusable`; o do Tailwind desenhava outra coisa, e `outline-none` sem substituto apaga o foco |
-| Controle do sistema | `<button>`/`<input>`/`<select>` sem classe do sistema | Havia nove grafias de botão só de ícone, com cinco alturas. Escape: `<!-- controle-proprio: motivo -->` |
-| Título sem ícone | `<lucide-icon>` dentro de `<h1..h4>` | Ao lado de um título o ícone não acrescenta informação — faz a seção parecer cabeçalho de card de painel. Ficam de fora os três em que o ícone é o dado |
+| Controle do sistema | `<button>`/`<input>`/`<select>` sem classe do sistema | Havia nove grafias de botão só de ícone, com cinco alturas. Escape: `<!-- design-exception: controle — motivo -->` |
+| Título sem ícone *(avisa)* | `<lucide-icon>` dentro de `<h1..h4>` | Ao lado de um título o ícone não acrescenta informação — faz a seção parecer cabeçalho de card de painel. Mantém lista de exceção por nome de arquivo, e regra que precisa conhecer nomes de arquivo é revisão com passos extras |
 | Contorno de controle | `border: … var(--fi-hairline)` num seletor de controle | `hairline` é separador, e com ele a borda de `.btn-secondary` desenhava a **1,20:1** — um quarto dos 3:1 que a WCAG 1.4.11 pede. Controle desabilitado fica de fora, que a norma isenta |
 
 ---
@@ -463,11 +469,22 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
   setor, tipo de ativo, tipo de renda fixa e liquidez. Qualquer chave `*Ruler` vira
   `fi<Nome>Bands`/`fi<Nome>Domain` automaticamente. Nunca edite os quatro gerados — eles dizem
   isso no cabeçalho — nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou `theme.dart`.
-- **A paridade entre web e mobile deixou de ter máquina, e por isso é regra escrita.** Mudar um
-  valor em `foundation.css` obriga a mudar em `design_tokens.dart`, e o contrário também. O que
-  continua verificado é o **contraste**: `design-tokens/check-contrast.mjs` lê o CSS e reprova
-  papel abaixo do piso, papel declarado só num tema, contorno de controle sob 3:1 e preenchimento
-  que não se distingue do próprio poço.
+- **A paridade é de conceito, não de valor. Igualdade visual não é exigida.** O contrato é
+  *mesma intenção, não mesma implementação*: conceito, nome e hierarquia são iguais nas duas
+  plataformas; espaçamento, composição, navegação, gesto e **valor de cor** são livres. Um
+  telefone sob sol pode precisar de mais contraste que um monitor, e exigir o mesmo hexadecimal
+  impediria a correção. O que a máquina cobra são duas coisas:
+  - **`check-contrast.mjs`** mede `foundation.css` **e** `design_tokens.dart`, cada um contra o
+    **piso** — não um contra o outro. Reprova papel abaixo do piso, papel declarado só num tema,
+    contorno de controle sob 3:1 e preenchimento que não se distingue do próprio poço. Também
+    confere as **duas cópias do tema claro** do CSS: eram 44 papéis sem guarda, e quem editasse
+    só a consulta de mídia quebrava o contraste de quem está no padrão do sistema.
+  - **`check-parity.mjs`** responde se os cinco destinos existem nas duas plataformas. Existe
+    porque a resposta já foi *não* por meses — o web migrou para o ciclo do dinheiro e o mobile
+    ficou sem `/mes` e `/sobra`, com a documentação afirmando que os shells eram espelhos.
+    Ausência conhecida é **dívida registrada** em `DIVIDA_HOJE`, e a lista só encolhe: um item
+    que passe a existir reprova, porque lista de dívida que não encolhe é a documentação
+    mentindo de novo.
 - **Ícone e favicon são gerados**, do `brand` de `foundation.css` via
   `python design-tokens/build-icons.py` (requer Pillow). **O launcher nativo é um segundo passo**:
   `cd mobile && dart run flutter_launcher_icons` — sem ele os ícones do app ficam com a cor antiga
@@ -492,7 +509,9 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
   (`<dl>`) quando são poucas, ou `.data-table` quando o que importa é comparar.
 - **Julgamento renderizado exige explicabilidade, e o lint cobra.** Score, veredito, preço justo e
   sugestão precisam de `<app-provenance>`, `<app-help-tooltip>` ou equivalente. Mencionar em prosa
-  não conta. O escape exige motivo escrito: `<!-- sem-explicabilidade: ... -->`.
+  não conta. O escape exige motivo escrito: `<!-- design-exception: explicabilidade — ... -->`.
+  **Há uma forma só de escapar**, e ela nomeia a regra: escapar de cabeçalho não escapa de
+  contraste. Eram cinco grafias para a mesma ideia.
 - **Contraste é verificado, não recomendado** (`design-tokens/check-contrast.mjs`, no CI). `ink-3`
   conta como texto (4,5:1) porque legenda é texto pequeno; série de gráfico conta como forma (3:1)
   porque nunca é a única informação; `hairline` fica de fora, é decoração.

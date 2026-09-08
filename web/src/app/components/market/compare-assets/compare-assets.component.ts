@@ -21,6 +21,7 @@ import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { MarginOfSafetyComponent } from '../../margin-of-safety/margin-of-safety.component';
 import { PageHeaderComponent } from '../../page-header/page-header.component';
 import { SkeletonComponent } from '../../skeleton/skeleton.component';
+import { SectionComponent } from '../../section/section.component';
 
 const MAX_TICKERS = 4;
 
@@ -34,6 +35,7 @@ const MAX_TICKERS = 4;
     EmptyStateComponent,
     MarginOfSafetyComponent,
     SkeletonComponent,
+    SectionComponent,
   ],
   template: `
     <div class="flex flex-col gap-8">
@@ -127,8 +129,7 @@ const MAX_TICKERS = 4;
         }
 
         @if (r.items.length > 0) {
-          <section class="fi-block">
-            <p class="fi-eyebrow text-ink-3 m-0 mb-4">Decisão</p>
+          <app-section title="Decisão">
             <div
               class="grid gap-x-6 gap-y-6 grid-cols-1 sm:grid-cols-2"
               [class.lg:grid-cols-3]="r.items.length === 3"
@@ -165,15 +166,12 @@ const MAX_TICKERS = 4;
                 </div>
               }
             </div>
-          </section>
+          </app-section>
 
-          <section class="fi-block">
-            <div class="flex items-baseline justify-between gap-3 mb-1">
-              <p class="fi-eyebrow text-ink-3 m-0">Evidência</p>
-              <span class="fi-caption text-ink-3">
-                <span class="text-brand">•</span> marca o melhor da linha
-              </span>
-            </div>
+          <app-section title="Evidência">
+            <span sectionActions class="fi-caption text-ink-3">
+              <span class="text-brand">•</span> marca o melhor da linha
+            </span>
 
             <div class="overflow-x-auto">
               <table class="w-full border-collapse">
@@ -238,7 +236,7 @@ const MAX_TICKERS = 4;
               Indicador ausente na fonte aparece como “—”. Indicador que não existe para a classe do
               ativo aparece dito por extenso — não é dado faltando, é pergunta que não se faz.
             </p>
-          </section>
+          </app-section>
         }
       } @else {
         <app-empty-state

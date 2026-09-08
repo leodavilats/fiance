@@ -276,6 +276,55 @@
       }
     ]
   },
+  "monthPressureRuler": {
+    "$comment": "Sexta leitura da mesma régua: quanto do que entrou no mês já está comprometido, em %. Como o healthRuler, os limiares são escolha de apresentação — o backend devolve `committed` e `received` sem faixas, e a razão entre os dois é aritmética, não regra nova. Existe porque /mes era o único destino que não julgava: entregava `free_now` em corpo grande e deixava a pergunta \"meu mês está saudável?\" para a pessoa responder sozinha, enquanto o produto julgava patrimônio, ativo, dívida e alocação. Domínio truncado em 100 porque comprometido acima da renda já é o pior estado da régua — passar de 100 não piora a leitura, e uma barra que estoura não informa.",
+    "domain": {
+      "min": 0,
+      "max": 100
+    },
+    "bands": [
+      {
+        "id": "tight",
+        "min": 80,
+        "max": 100,
+        "label": "Mês apertado",
+        "state": "adverse",
+        "emphasis": "strong"
+      },
+      {
+        "id": "pressured",
+        "min": 60,
+        "max": 79,
+        "label": "Mês sob pressão",
+        "state": "attention",
+        "emphasis": "strong"
+      },
+      {
+        "id": "steady",
+        "min": 30,
+        "max": 59,
+        "label": "Mês em ordem",
+        "state": "favorable",
+        "emphasis": "muted"
+      },
+      {
+        "id": "loose",
+        "min": 0,
+        "max": 29,
+        "label": "Mês folgado",
+        "state": "favorable",
+        "emphasis": "strong"
+      },
+      {
+        "id": "insufficient",
+        "min": null,
+        "max": null,
+        "label": "Sem leitura",
+        "state": "indeterminate",
+        "emphasis": "muted"
+      }
+    ]
+  },
   "decision": {
     "$comment": "Vocabulário único de veredito. Descreve a leitura do sistema, nunca dá ordem — requisito §10 e §43 do briefing.",
     "interesting": {

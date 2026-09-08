@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 /**
- * Contraste dos papéis de cor, nos dois temas.
+ * Contraste dos papéis de cor, nos dois temas e nas duas plataformas.
  *
- * A paleta é escrita à mão em `web/src/foundation.css`, e é de lá que este
- * verificador lê — verificado é diferente de recomendado. Um ajuste de paleta que
- * derruba um par abaixo do mínimo passa despercebido em revisão visual: a
- * diferença entre 4,4 e 4,6 não se enxerga, mas separa quem lê a tela de quem
- * não lê.
+ * A paleta é escrita à mão — `web/src/foundation.css` no web,
+ * `mobile/lib/core/design_tokens.dart` no mobile — e é de lá que este verificador
+ * lê. Verificado é diferente de recomendado: um ajuste de paleta que derruba um
+ * par abaixo do mínimo passa despercebido em revisão visual, porque a diferença
+ * entre 4,4 e 4,6 não se enxerga, mas separa quem lê a tela de quem não lê.
+ *
+ * **Cada plataforma é medida contra o piso, não contra a outra.** O contrato não é
+ * "web e mobile têm a mesma cor" — é "cada uma é legível e completa". Um telefone
+ * sob sol pode precisar de mais contraste que um monitor, e exigir igualdade
+ * impediria a correção. O que não pode divergir é o piso e a completude.
  *
  * Os limiares são os da WCAG 2.1 AA, aplicados ao que cada papel de fato é:
  *
@@ -46,13 +51,47 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const FOUNDATION = resolve(import.meta.dirname, '..', 'web', 'src', 'foundation.css');
+const TOKENS_DART = resolve(
+  import.meta.dirname,
+  '..',
+  'mobile',
+  'lib',
+  'core',
+  'design_tokens.dart'
+);
+
+/**
+ * Lê a paleta do Flutter, na mesma forma que `lerTema` devolve.
+ *
+ * `static const darkStateFavorableSurface = Color(0xFF1D3229)` vira o papel
+ * `state-favorable-surface` do tema escuro. O véu de overlay fica de fora pelo
+ * próprio padrão: é `Color(0xA8...)`, tem alfa, e alfa não se mede contra um chão
+ * que ele deixa passar.
+ */
+const DART_COR = /static const (dark|light)([A-Za-z0-9]+) = Color\(0xFF([0-9a-fA-F]{6})\)/g;
+
+function lerTemasDart(dart) {
+  const temas = { dark: {}, light: {} };
+  for (const [, tema, nome, valor] of dart.matchAll(DART_COR)) {
+    const papel = nome
+      .replace(/([a-z])([A-Z])/g, '$1-$2')
+      .replace(/([A-Za-z])(\d)/g, '$1-$2')
+      .toLowerCase();
+    temas[tema][papel] = `#${valor.toLowerCase()}`;
+  }
+  return temas;
+}
 
 /**
  * Lê um bloco de custom properties do CSS escrito à mão.
  *
  * O seletor de tema é a chave: o bloco escuro responde por `:root` e por
- * `[data-theme='dark']` juntos, e o claro aparece duas vezes — uma na consulta
- * de mídia e uma no atributo. Ler o do atributo basta, e é o que o toggle usa.
+ * `[data-theme='dark']` juntos, e o claro aparece **duas vezes** — uma na consulta
+ * de mídia e uma no atributo. Ler só o do atributo era o que se fazia, e deixava
+ * 44 papéis sem guarda: quem editasse a consulta de mídia e não o atributo (ou o
+ * contrário) quebrava o contraste de quem está no padrão do sistema — a maioria,
+ * que nunca tocou no seletor — sem nenhuma máquina reclamar. Os dois são lidos, e
+ * `mesmaPaleta` exige que sejam idênticos.
  */
 function lerTema(css, seletor) {
   const inicio = css.indexOf(seletor);
@@ -305,22 +344,9 @@ function check(theme, colors) {
   return failures;
 }
 
-function main() {
-  const css = readFileSync(FOUNDATION, 'utf8');
-  const paleta = {
-    dark: lerTema(css, ":root[data-theme='dark']"),
-    light: lerTema(css, ":root[data-theme='light']"),
-  };
-
-  const failures = [];
-
-  /*
-   * Papel definido num tema e não no outro.
-   *
-   * Com a paleta gerada de um JSON com duas chaves irmãs isso era difícil de
-   * fazer; escrita à mão em três blocos, é a divergência mais provável — e o
-   * sintoma é uma cor que simplesmente não existe num dos temas.
-   */
+/** Papel declarado num tema e não no outro. O sintoma é uma cor que não existe. */
+function papeisIncompletos(paleta, plataforma) {
+  const falhas = [];
   const soNoEscuro = Object.keys(paleta.dark).filter(k => !(k in paleta.light));
   const soNoClaro = Object.keys(paleta.light).filter(k => !(k in paleta.dark));
   for (const [papeis, onde] of [
@@ -328,8 +354,8 @@ function main() {
     [soNoClaro, 'claro'],
   ]) {
     for (const papel of papeis) {
-      failures.push({
-        theme: onde,
+      falhas.push({
+        theme: `${plataforma}/${onde}`,
         pair: papel,
         ratio: 0,
         min: 0,
@@ -337,28 +363,86 @@ function main() {
       });
     }
   }
+  return falhas;
+}
 
-  for (const theme of ['dark', 'light']) {
-    failures.push(...check(theme, paleta[theme]));
+/**
+ * As duas cópias do tema claro do CSS têm de ser idênticas.
+ *
+ * Uma está na consulta de mídia e responde por quem está no padrão do sistema; a
+ * outra está no atributo e responde pelo seletor de tema. São a mesma paleta
+ * escrita duas vezes, e editar uma só quebra o contraste de metade dos usuários.
+ */
+function mesmaPaleta(mq, attr) {
+  const falhas = [];
+  for (const papel of new Set([...Object.keys(mq), ...Object.keys(attr)])) {
+    if (mq[papel] === attr[papel]) continue;
+    falhas.push({
+      theme: 'web/claro',
+      pair: papel,
+      ratio: 0,
+      min: 0,
+      why:
+        `o tema claro divergiu entre as duas cópias — ` +
+        `consulta de mídia ${mq[papel] ?? '(ausente)'}, ` +
+        `atributo ${attr[papel] ?? '(ausente)'}`,
+    });
+  }
+  return falhas;
+}
+
+function main() {
+  const css = readFileSync(FOUNDATION, 'utf8');
+  const dart = readFileSync(TOKENS_DART, 'utf8');
+
+  const web = {
+    dark: lerTema(css, ":root[data-theme='dark']"),
+    light: lerTema(css, ":root[data-theme='light']"),
+  };
+  const claroDaConsulta = lerTema(css, "@media (prefers-color-scheme: light)");
+  const mobile = lerTemasDart(dart);
+
+  const failures = [
+    ...mesmaPaleta(claroDaConsulta, web.light),
+    ...papeisIncompletos(web, 'web'),
+    ...papeisIncompletos(mobile, 'mobile'),
+  ];
+
+  for (const [plataforma, paleta] of [
+    ['web', web],
+    ['mobile', mobile],
+  ]) {
+    for (const theme of ['dark', 'light']) {
+      failures.push(
+        ...check(theme, paleta[theme]).map(f => ({ ...f, theme: `${plataforma}/${f.theme}` }))
+      );
+    }
   }
 
   if (failures.length > 0) {
-    console.error('\n✗ Contraste abaixo do mínimo WCAG AA\n');
+    console.error('');
+    console.error('✗ Contraste abaixo do mínimo WCAG AA');
+    console.error('');
     for (const f of failures) {
       console.error(
         `  [${f.theme}] ${f.pair}: ${f.ratio.toFixed(2)}:1, mínimo ${f.min}:1 — ${f.why}`
       );
     }
-    console.error(
-      '\n  Ajuste a cor em web/src/foundation.css — e no espelho em' +
-        '\n  mobile/lib/core/design_tokens.dart, que nenhuma maquina confere.' +
-        '\n  Afrouxar o limiar não é opção: a diferença entre 4,4 e 4,6 não se enxerga' +
-        '\n  em revisão, mas separa quem lê a tela de quem não lê.\n'
-    );
+    console.error('');
+    console.error('  Ajuste a cor na plataforma que falhou: web/src/foundation.css ou');
+    console.error('  mobile/lib/core/design_tokens.dart. As duas são medidas contra o piso,');
+    console.error('  não uma contra a outra — divergir de propósito é permitido, cair abaixo');
+    console.error('  do piso não. Afrouxar o limiar também não: a diferença entre 4,4 e 4,6');
+    console.error('  não se enxerga em revisão, mas separa quem lê a tela de quem não lê.');
+    console.error('');
     process.exit(1);
   }
 
-  console.log('✓ Contraste em AA nos dois temas.');
+  const papeis = Object.keys(web.dark).length;
+  console.log(
+    `✓ Contraste em AA — web e mobile, nos dois temas (${papeis} papéis por tema), ` +
+      'e as duas cópias do tema claro do CSS conferidas.'
+  );
 }
 
 main();

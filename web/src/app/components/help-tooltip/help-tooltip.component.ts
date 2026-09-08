@@ -9,7 +9,7 @@ let contador = 0;
   imports: [LucideAngularModule],
   template: `
     <span class="relative inline-flex items-center ml-1">
-      <!-- controle-proprio: gatilho de 16px dentro de um rótulo; um .btn-icon de
+      <!-- design-exception: controle — gatilho de 16px dentro de um rótulo; um .btn-icon de
            36px empurraria a linha de texto inteira -->
       <button
         type="button"

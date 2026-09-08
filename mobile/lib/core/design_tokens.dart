@@ -1,5 +1,9 @@
-// ESCRITO A MAO. Espelho de web/src/foundation.css, sem maquina conferindo a paridade.
-// A regra esta em docs/design/DESIGN-SYSTEM.md.
+// ESCRITO A MAO. Nao ha gerador, e nao ha espelho obrigatorio: `check-contrast.mjs` mede esta
+// paleta contra o PISO do sistema, nao contra a do web. Divergir de proposito e permitido --
+// um telefone sob sol pode precisar de mais contraste que um monitor -- e cair abaixo do piso
+// nao. O que a maquina cobra e legibilidade e completude: todo papel existe nos dois temas.
+//
+// O contrato de paridade esta em docs/design/DESIGN-SYSTEM.md.
 
 import 'package:flutter/material.dart';
 
@@ -194,21 +198,10 @@ abstract final class FiRadius {
   static const pill = 999.0;
 }
 
-abstract final class FiBreakpoint {
-  static const mobileSm = 0.0;
-  static const mobileLg = 420.0;
-  static const tablet = 768.0;
-  static const desktopSm = 1024.0;
-  static const desktop = 1280.0;
-  static const desktopLg = 1440.0;
-}
-
 abstract final class FiLayout {
-  static const readingMaxWidth = 1120.0;
-  static const denseMaxWidth = 1600.0;
-  static const drawerWidth = 600.0;
-  static const subnavWidth = 200.0;
-  static const navHeight = 56.0;
+  // O unico numero de layout que atravessa: 44 e o alvo minimo de toque, e isso e norma de
+  // acessibilidade, nao aparencia. Largura de leitura, de gaveta e de subnav sairam daqui --
+  // eram medidas de desktop transliteradas, sem nenhum leitor no aplicativo.
   static const minTouchTarget = 44.0;
 }
 
@@ -218,22 +211,6 @@ abstract final class FiMotion {
   static const slow = Duration(milliseconds: 240);
   static const easeEnter = Cubic(0.2, 0, 0, 1);
   static const easeExit = Cubic(0.4, 0, 1, 1);
-}
-
-enum FiDensity {
-  comfortable(rowHeight: 48, sectionGap: 32, blockPadding: 20),
-  compact(rowHeight: 36, sectionGap: 24, blockPadding: 14),
-  ;
-
-  const FiDensity({
-    required this.rowHeight,
-    required this.sectionGap,
-    required this.blockPadding,
-  });
-
-  final double rowHeight;
-  final double sectionGap;
-  final double blockPadding;
 }
 
 abstract final class FiType {
@@ -329,23 +306,6 @@ abstract final class FiType {
     letterSpacing: 0.56,
   );
 }
-
-const Map<String, String> fiTypeFamily = {
-  'money-xl': 'sans',
-  'money-lg': 'sans',
-  'metric': 'sans',
-  'metric-sm': 'sans',
-  'verdict': 'serif',
-  'verdict-sm': 'serif',
-  'page-title': 'sans',
-  'title': 'sans',
-  'eyebrow': 'sans',
-  'body': 'sans',
-  'body-lg': 'sans',
-  'label': 'sans',
-  'caption': 'sans',
-  'ticker': 'sans',
-};
 
 const String fiFontSans = 'Inter';
 const String fiFontSerif = 'Source Serif 4';

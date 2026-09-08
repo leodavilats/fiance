@@ -99,7 +99,7 @@ class HojeScreen extends ConsumerWidget {
               ],
 
               const SizedBox(height: 24),
-              _MoreLink(label: 'Abrir a carteira', route: '/carteira'),
+              _MoreLink(label: 'Abrir a carteira', route: '/patrimonio'),
             ],
           ),
         ),

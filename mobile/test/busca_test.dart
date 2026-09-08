@@ -25,8 +25,8 @@ void main() {
       final porProvento = destinosPara('provento').map((d) => d.route);
       final porDividendo = destinosPara('dividendo').map((d) => d.route);
 
-      expect(porProvento, contains('/carteira'));
-      expect(porDividendo, contains('/carteira'));
+      expect(porProvento, contains('/patrimonio'));
+      expect(porDividendo, contains('/patrimonio'));
     });
 
     test('acha metas pelo nome da tela', () {
@@ -69,7 +69,7 @@ void main() {
     test(
       'renda fixa leva à tela de renda fixa, não a um ativo inexistente',
       () {
-        expect(rotaDoAchado(hit('fixed_income', '7')), '/carteira/renda-fixa');
+        expect(rotaDoAchado(hit('fixed_income', '7')), '/patrimonio/renda-fixa');
       },
     );
   });

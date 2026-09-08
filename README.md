@@ -422,21 +422,24 @@ fiance/
 ├── web/                         # Angular 22, standalone, rotas lazy
 │   ├── tools/lint-ui.mjs        # 5 verificações que o build não faz
 │   └── src/app/
-│       ├── components/          # 5 destinos: hoje, carteira, descobrir, estrategia, voce
+│       ├── components/          # 5 destinos: mes, sobra, patrimonio, descobrir, voce
 │       │                        #   + ativo/ (rota pública, renderizada no servidor)
-│       └── core/                # Serviços HTTP, interceptors, régua, tokens (gerado)
+│       ├── foundation.css       # Camada visual — ESCRITA à mão (cor, tipo, espaço, motion)
+│       ├── styles.css           # Padrões de componente (.btn-*, .input, .card, .notice…)
+│       └── core/                # Serviços HTTP, interceptors, régua, vocabulário (gerado)
 │
-├── mobile/                      # Flutter — mesma IA de 5 destinos
+├── mobile/                      # Flutter
 │   └── lib/
-│       ├── core/                # API client, auth, providers, router, tokens (gerado)
+│       ├── core/                # API client, auth, providers, router,
+│       │                        #   design_tokens.dart (espelho à mão do foundation.css)
 │       └── features/            # hoje, carteira, descobrir(market), estrategia,
 │                                #   config, busca, ativo, auth, shell, tools
 │
-└── design-tokens/               # Fonte única de cor, tipografia, régua e marca
-    ├── tokens.json              # Editar AQUI
-    ├── build.mjs                # Gera os tokens das duas plataformas
+└── design-tokens/               # O que é número, e não aparência
+    ├── product-rules.json       # Editar AQUI: réguas e vocabulário
+    ├── build-rules.mjs          # Gera as bandas e os rótulos para web e mobile
     ├── build-icons.py           # Gera favicon e ícones do app
-    └── check-contrast.mjs       # Falha o build se um par cair abaixo de AA
+    └── check-contrast.mjs       # Falha o build se um par cair abaixo do piso
 ```
 
 ## Métodos de Valuation
@@ -457,7 +460,7 @@ O roteamento é por tipo de ativo: **FII** → Bazin + P/VP (nunca Graham); **BD
 ```bash
 # Backend
 uvicorn app.main:app --reload            # servidor dev
-python -m pytest -q                      # 724 testes (11 pulam sem Redis)
+python -m pytest -q                      # 1004 passam (11 pulam sem Redis)
 python -m ruff check app tests migrations
 python -m ruff format app tests migrations
 alembic upgrade head                     # aplicar migrações
@@ -465,21 +468,23 @@ alembic upgrade head                     # aplicar migrações
 # Web
 npm start            # servidor dev
 npm run build        # produção (navegador + servidor de renderização)
-npm test             # 90 testes (Vitest)
-npm run lint:ui      # ícone, classe CSS, explicabilidade, gráfico, aria-label
+npm test             # 145 testes (Vitest)
+npm run lint:ui      # 22 regras: ícone, classe CSS, explicabilidade, faixa, tipografia…
 npm run format       # Prettier
 npm run format:check
 
 # Mobile
 flutter analyze
-flutter test         # 49 testes
+flutter test         # 93 testes
 flutter build apk --release
 
-# Design tokens — a partir da raiz
-node design-tokens/build.mjs             # regenerar tokens
-node design-tokens/build.mjs --check     # falha se web/mobile divergirem
-node design-tokens/check-contrast.mjs    # falha se um par cair abaixo de AA
-python design-tokens/build-icons.py      # regenerar favicon e ícones
+# Design — a partir da raiz
+# A camada visual é escrita à mão (foundation.css + design_tokens.dart); não há gerador.
+node design-tokens/build-rules.mjs           # regenerar réguas e vocabulário
+node design-tokens/build-rules.mjs --check   # falha se web/mobile divergirem
+node design-tokens/check-contrast.mjs        # falha se um par cair abaixo do piso
+node design-tokens/check-parity.mjs          # falha se um destino existir em só uma plataforma
+python design-tokens/build-icons.py          # regenerar favicon e ícones
 cd mobile && dart run flutter_launcher_icons   # ícones nativos (segundo passo)
 ```
 

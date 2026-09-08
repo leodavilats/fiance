@@ -283,7 +283,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
             <caption class="sr-only">
               Posições negociadas, com preço médio, cotação atual e leitura do sistema
             </caption>
-            <!-- camada-local: o cabecalho grudado precisa cobrir so as celulas da propria tabela -->
+            <!-- design-exception: camada — o cabecalho grudado precisa cobrir so as celulas da propria tabela -->
             <thead>
               <tr class="border-b border-hairline">
                 <th class="py-2 px-2 w-8"><span class="sr-only">Selecionar para comparar</span></th>

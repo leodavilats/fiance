@@ -45,7 +45,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
           é a lista do mercado inteiro.
         </p>
 
-        <!-- veredito: a leitura do sistema sobre a lista inteira, antes de qualquer linha -->
+        <!-- design-exception: veredito — a leitura do sistema sobre a lista inteira, antes de qualquer linha -->
         @if (vereditoDaLista(); as frase) {
           <p class="fi-verdict text-ink m-0 mt-4 max-w-reading">{{ frase }}</p>
         }

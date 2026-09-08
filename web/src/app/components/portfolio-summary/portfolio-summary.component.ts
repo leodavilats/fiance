@@ -18,6 +18,7 @@ import { ImportTradesComponent } from '../import-trades/import-trades.component'
 import { LedgerEntriesComponent } from '../ledger-entries/ledger-entries.component';
 import { ScoreRulerComponent } from '../score-ruler/score-ruler.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
+import { SectionComponent } from '../section/section.component';
 
 interface HealthDimension {
   readonly label: string;
@@ -38,6 +39,7 @@ interface HealthDimension {
     LucideAngularModule,
     RouterLink,
     ScoreRulerComponent,
+    SectionComponent,
   ],
   template: `
     <app-page-header title="Carteira" question="Como está meu patrimônio?" />
@@ -99,13 +101,10 @@ interface HealthDimension {
           </p>
         </section>
 
-        <section class="fi-block">
-          <div class="flex items-baseline justify-between gap-3 mb-4">
-            <p class="fi-eyebrow text-ink-3 m-0">Alocação × meta</p>
-            <a routerLink="/sobra/metas" class="fi-caption text-brand no-underline">
-              Ajustar metas →
-            </a>
-          </div>
+        <app-section title="Alocação × meta">
+          <a sectionActions routerLink="/sobra/metas" class="fi-caption text-brand no-underline">
+            Ajustar metas →
+          </a>
 
           @if (hasGoals()) {
             <ul class="list-none m-0 p-0 flex flex-col gap-3">
@@ -131,14 +130,14 @@ interface HealthDimension {
               actionRoute="/sobra/metas"
             />
           }
-        </section>
+        </app-section>
 
         @if (health(); as h) {
           <section class="fi-block">
             <div class="flex items-start justify-between gap-6 flex-wrap mb-4">
               <div class="flex-1 min-w-[260px]">
                 <p class="fi-eyebrow text-ink-3 m-0 mb-2">Saúde da carteira</p>
-                <!-- veredito: a mesma frase que Hoje exibe, vinda da mesma função -->
+                <!-- design-exception: veredito — a mesma frase que Hoje exibe, vinda da mesma função -->
                 <h2 class="fi-verdict text-ink m-0">{{ healthVerdict() }}</h2>
               </div>
               <div class="w-full sm:w-[240px]">
@@ -214,7 +213,7 @@ interface HealthDimension {
         }
 
         <nav class="fi-block" aria-label="Detalhe da carteira">
-          <p class="fi-eyebrow text-ink-3 m-0 mb-3">Ver em detalhe</p>
+          <h2 class="fi-eyebrow text-ink-3 m-0 mb-3">Ver em detalhe</h2>
           <ul
             class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-hairline sm:divide-y-0"
           >
@@ -244,7 +243,7 @@ interface HealthDimension {
         </nav>
 
         <nav class="fi-block" aria-label="Registro e manutenção">
-          <p class="fi-eyebrow text-ink-3 m-0 mb-1">Registro e manutenção</p>
+          <h2 class="fi-eyebrow text-ink-3 m-0 mb-1">Registro e manutenção</h2>
           <p class="fi-caption text-ink-3 m-0 mb-3 max-w-reading">
             Operações sobre o livro-razão, não leituras do patrimônio.
           </p>

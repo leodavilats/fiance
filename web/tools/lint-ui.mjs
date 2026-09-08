@@ -160,7 +160,24 @@ const EXPLAINERS = [
   '<details',
 ];
 
-const OPT_OUT = /<!--\s*sem-explicabilidade:\s*\S[^>]*-->/;
+/**
+ * A forma única de escapar de uma regra: a regra pelo nome, e o motivo escrito.
+ *
+ * Eram cinco grafias diferentes (`sem-explicabilidade`, `controle-proprio`, `caixa-propria`,
+ * `camada-local`, `veredito`) para a mesma ideia. Nomear a regra mantém o escape estreito —
+ * escapar de cabeçalho não escapa de contraste — e exigir o motivo mantém a exceção visível.
+ * O objetivo nunca foi impedir exceções; é impedir exceção invisível.
+ */
+const DESIGN_EXCEPTION = /<!--\s*design-exception:\s*([a-z-]+)\s*(?:—|-{1,2})\s*\S[^>]*-->/g;
+
+const escapeDe = regra => ({
+  test: texto => {
+    for (const [, nome] of texto.matchAll(DESIGN_EXCEPTION)) if (nome === regra) return true;
+    return false;
+  },
+});
+
+const OPT_OUT = escapeDe('explicabilidade');
 
 function rendersJudgment(source) {
   const dynamic = [
@@ -365,12 +382,25 @@ function raioForaDaEscala(files) {
   return problems;
 }
 
+/**
+ * Camada escrita como número, nas duas grafias.
+ *
+ * Eram duas regras para a mesma falha: `z-[201]` (valor arbitrário) e `z-50` (escala do
+ * Tailwind) erram igual — os dois reabrem a ordem de empilhamento a cada tela, e foi assim que
+ * o loader foi parar atrás dos modais. Uma falha, uma regra, uma mensagem.
+ */
 function camadaForaDaEscala(files) {
   const problems = [];
   for (const file of files) {
-    for (const [n, line] of readFileSync(file, 'utf8').split('\n').entries()) {
-      for (const match of line.matchAll(/z-\[[^\]]+\]/g)) {
+    const source = readFileSync(file, 'utf8');
+    const escapada = ESCAPE_CAMADA_LOCAL.test(source);
+    for (const [n, line] of source.split(/\r?\n/).entries()) {
+      for (const match of line.matchAll(/z-\[[^\]]+\]/g)) {
         problems.push({ file, name: `${relative(WEB_ROOT, file)}:${n + 1}: ${match[0]}` });
+      }
+      if (escapada) continue;
+      for (const match of line.matchAll(/(?:^|["'\s])(z-\d+)/g)) {
+        problems.push({ file, name: `${relative(WEB_ROOT, file)}:${n + 1}: ${match[1]}` });
       }
     }
   }
@@ -405,7 +435,7 @@ const CLASSES_DE_CONTROLE = [
   'input-bare',
 ];
 const TIPOS_NATIVOS = /type="(?:checkbox|radio|range|file|hidden)"/;
-const ESCAPE_CONTROLE = /<!--\s*controle-proprio:\s*\S/;
+const ESCAPE_CONTROLE = escapeDe('controle');
 
 function controleForaDoSistema(files) {
   const problems = [];
@@ -481,7 +511,7 @@ function rotaSemTitulo(files) {
 }
 
 const SERIFA = /\bfi-verdict(?:-sm)?\b/;
-const ESCAPE_VEREDITO = /<!--\s*veredito:\s*\S/;
+const ESCAPE_VEREDITO = escapeDe('veredito');
 
 const CIFRA = /\{\{[^}]*\|\s*(?:number|currency|percent)\b|R\$/;
 
@@ -542,23 +572,10 @@ function ordemDeCabecalho(files) {
   return problems;
 }
 
-const ESCAPE_CAMADA_LOCAL = /<!--\s*camada-local:\s*\S/;
+const ESCAPE_CAMADA_LOCAL = escapeDe('camada');
 
-function camadaNumerica(files) {
-  const problems = [];
-  for (const file of files) {
-    const source = readFileSync(file, 'utf8');
-    if (ESCAPE_CAMADA_LOCAL.test(source)) continue;
-    for (const [n, line] of source.split('\n').entries()) {
-      for (const match of line.matchAll(/(?:^|["'\s])(z-\d+)\b/g)) {
-        problems.push({ file, name: `${relative(WEB_ROOT, file)}:${n + 1}: ${match[1]}` });
-      }
-    }
-  }
-  return problems;
-}
 
-const ESCAPE_CAIXA = /<!--\s*caixa-propria:\s*\S/;
+const ESCAPE_CAIXA = escapeDe('caixa');
 
 function caixaMontadaAMao(files) {
   const problems = [];
@@ -629,6 +646,21 @@ function desabilitadoSemMotivo(files) {
   return problems;
 }
 
+/**
+ * Aviso, não reprovação.
+ *
+ * Regra que protege acessibilidade, contrato de produto ou erro silencioso reprova o CI. Regra
+ * que protege só preferência visual entra em revisão de código — porque bloquear o CI por gosto
+ * gasta a autoridade das regras que valem, e a pessoa passa a ler a lista inteira como ruído.
+ */
+function aviso(title, problems, hint) {
+  if (problems.length === 0) return;
+  console.warn(`⚠ ${title} (aviso, não reprova)`);
+  const nomes = [...new Set(problems.map(p => p.name))].sort();
+  for (const nome of nomes) console.warn(`  ${nome}`);
+  console.warn(`  ${hint}`);
+}
+
 function report(title, problems, hint) {
   if (problems.length === 0) return 0;
 
@@ -681,12 +713,26 @@ function main() {
   const semTitulo = rotaSemTitulo(templates);
   const serifaSolta = serifaForaDeConclusao(templates);
   const cabecalhoTorto = ordemDeCabecalho(templates);
-  const camadaNumerada = camadaNumerica(templates);
   const caixaSolta = caixaMontadaAMao(templates);
   const esqueletoSolto = esqueletoImprovisado(templates);
   const direcaoSolta = direcaoForaDeTabela(templates);
   const becoSemSaida = desabilitadoSemMotivo(templates);
   const contornoInvisivel = contornoDeSeparador(walk(SRC, /\.css$/));
+
+  aviso(
+    'Raio fora da escala, ou raio de flutuante no que está no chão',
+    raioSolto,
+    'São quatro: rounded-sm (marca), rounded-md (assentado), rounded-lg (só o que flutua, ' +
+      'e flutuar é ter sombra) e rounded-pill. Quatro raios é preferência bem fundamentada, ' +
+      'não erro silencioso — por isso avisa e não reprova.'
+  );
+  aviso(
+    'Ícone decorando título',
+    tituloDecorado,
+    'Ao lado de um título o ícone não acrescenta informação — faz a seção parecer cabeçalho ' +
+      'de card de painel. Previne um cheiro real, mas mantém lista de exceção por nome de ' +
+      'arquivo, e regra que precisa conhecer nomes de arquivo é revisão com passos extras.'
+  );
 
   const problems =
     report(
@@ -705,7 +751,7 @@ function main() {
       semExplicacao,
       'Adicione <app-provenance>, <app-help-tooltip> ou outro explicador. Se a ' +
         'tela realmente não precisa, declare o motivo: ' +
-        '<!-- sem-explicabilidade: o número já vem explicado no card pai -->'
+        '<!-- design-exception: explicabilidade — o número já vem explicado no bloco pai -->'
     ) +
     report(
       'Gráfico sem alternativa textual',
@@ -740,18 +786,13 @@ function main() {
         'Tamanho solto reabre a decisão a cada tela.'
     ) +
     report(
-      'Raio fora da escala, ou raio de flutuante no que está no chão',
-      raioSolto,
-      'São quatro: rounded-sm (marca), rounded-md (assentado), rounded-lg (só o que ' +
-        'flutua, e flutuar é ter sombra) e rounded-pill. rounded-xl e rounded-full são ' +
-        'do Tailwind, não dos tokens.'
-    ) +
-    report(
       'Camada escrita como número',
       camadaSolta,
       'Use o nome da camada: z-nav, z-drawer, z-drawer-panel, z-sheet, z-popover, ' +
-        'z-loader, z-toast. Número solto reabre a ordem de empilhamento a cada tela — ' +
-        'foi assim que o loader foi parar atrás dos modais.'
+        'z-loader, z-toast. Número solto — arbitrário (z-[201]) ou da escala do Tailwind ' +
+        '(z-50, que fica abaixo de z-nav) — reabre a ordem de empilhamento a cada tela, e ' +
+        'foi assim que o loader foi parar atrás dos modais. Camada local declara o motivo: ' +
+        '<!-- design-exception: camada — motivo -->'
     ) +
     report(
       'Segundo sistema de foco',
@@ -765,13 +806,7 @@ function main() {
       controleSolto,
       'Use .btn-primary, .btn-secondary, .btn-icon, .btn-link, .btn-quiet, .menu-item ' +
         'ou .input. Se este controle é mesmo único, declare o motivo no arquivo: ' +
-        '<!-- controle-proprio: ... -->'
-    ) +
-    report(
-      'Ícone decorando título',
-      tituloDecorado,
-      'Tire o ícone do <h*>. Ao lado de um título ele não acrescenta informação — ' +
-        'faz a seção parecer cabeçalho de card de painel.'
+        '<!-- design-exception: controle — motivo -->'
     ) +
     report(
       'Rota sem nome de tela',
@@ -786,7 +821,7 @@ function main() {
       'fi-verdict carrega conclusão do sistema, não título nem número. Título é ' +
         'fi-title; cifra é fi-metric ou fi-money-* (fi-verdict não tem cifra ' +
         'tabular). Cabeçalho que é mesmo uma conclusão declara o motivo: ' +
-        '<!-- veredito: o veredito de saúde da carteira -->'
+        '<!-- design-exception: veredito — o veredito de saúde da carteira -->'
     ) +
     report(
       'Cabeçalho fora de ordem',
@@ -805,7 +840,7 @@ function main() {
       caixaSolta,
       'Escolha o papel: .card para objeto com que se age, .notice para aviso, ' +
         '.fi-block para seção. Moldura de tabela de gráfico é um fio, não uma ' +
-        'caixa. Se esta caixa é mesmo única: <!-- caixa-propria: ... -->'
+        'caixa. Se esta caixa é mesmo única: <!-- design-exception: caixa — motivo -->'
     ) +
     report(
       'Esqueleto improvisado',
@@ -819,13 +854,6 @@ function main() {
       'O sinal e a palavra já dizem que subiu ou caiu. text-up e text-down ' +
         'sobrevivem só em <td>, onde se varre trinta linhas de relance — em ' +
         'título, frase e card eles roubam a cor que pertence ao julgamento.'
-    ) +
-    report(
-      'Camada escrita como número do Tailwind',
-      camadaNumerada,
-      'Use o nome da camada: z-popover, z-drawer, z-sheet, z-nav. z-10 e z-50 ' +
-        'ficam abaixo de z-nav (100) e mandam o popover para trás do cabeçalho. ' +
-        'Camada local de tabela declara o motivo: <!-- camada-local: ... -->'
     ) +
     report(
       'Contorno de controle desenhado com o token de separador',
@@ -842,8 +870,8 @@ function main() {
 
   console.log(
     '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas, linguagem, ' +
-      'tipografia, raio, camada, foco, controles, títulos, nome de tela, serifa, ' +
-      'ordem de cabeçalho, camada numérica, caixa, esqueleto, direção, ' +
+      'tipografia, camada, foco, controles, nome de tela, serifa, ' +
+      'ordem de cabeçalho, caixa, esqueleto, direção, ' +
       'estado desabilitado e contorno de controle conferidos.'
   );
 }

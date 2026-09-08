@@ -99,6 +99,16 @@ const List<FiScoreBand> fiDipScoreBands = [
   FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem leitura', state: FiState.indeterminate, emphasis: 'muted'),
 ];
 
+const List<FiScoreBand> fiMonthPressureBands = [
+  FiScoreBand(id: 'tight', min: 80, max: 100, label: 'Mês apertado', state: FiState.adverse, emphasis: 'strong'),
+  FiScoreBand(id: 'pressured', min: 60, max: 79, label: 'Mês sob pressão', state: FiState.attention, emphasis: 'strong'),
+  FiScoreBand(id: 'steady', min: 30, max: 59, label: 'Mês em ordem', state: FiState.favorable, emphasis: 'muted'),
+  FiScoreBand(id: 'loose', min: 0, max: 29, label: 'Mês folgado', state: FiState.favorable, emphasis: 'strong'),
+  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem leitura', state: FiState.indeterminate, emphasis: 'muted'),
+];
+
+const ({double min, double max}) fiMonthPressureDomain = (min: 0, max: 100);
+
 FiScoreBand fiBandFor(
   double value,
   List<FiScoreBand> bands, [

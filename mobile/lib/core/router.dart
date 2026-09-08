@@ -25,7 +25,10 @@ final appRouter = GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
     GoRoute(path: '/dashboard', redirect: (_, _) => '/hoje'),
-    GoRoute(path: '/assets', redirect: (_, _) => '/carteira'),
+    GoRoute(path: '/assets', redirect: (_, _) => '/patrimonio'),
+    // O web renomeou este destino ao adotar o ciclo do dinheiro; o mobile ficou em
+    // `carteira` e a divergencia passou meses sem ser vista. Link salvo e contrato.
+    GoRoute(path: '/carteira', redirect: (_, _) => '/patrimonio'),
     GoRoute(path: '/market', redirect: (_, _) => '/descobrir'),
     GoRoute(path: '/config', redirect: (_, _) => '/voce'),
     GoRoute(path: '/busca', builder: (context, state) => const BuscaScreen()),
@@ -52,7 +55,7 @@ final appRouter = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/carteira',
+              path: '/patrimonio',
               builder: (context, state) => const CarteiraScreen(),
               routes: [
                 GoRoute(
