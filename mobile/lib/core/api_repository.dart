@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'auth_service.dart';
+import 'cash_models.dart';
 import 'models.dart';
 
 class ApiRepository {
@@ -390,5 +391,124 @@ class ApiRepository {
   Future<String> rotateReferralCode() async {
     final res = await _dio.post('/referral/rotate');
     return (res.data as Map<String, dynamic>)['code'] as String;
+  }
+  // ---------------------------------------------------------------------------
+  // Caixa. Toda escrita passa por `cashflow_service` no backend, que reprojeta:
+  // nenhuma rota escreve em `cash_store` direto.
+  // ---------------------------------------------------------------------------
+
+  Future<CashMonth> getCashMonth({String? month}) async {
+    final res = await _dio.get(
+      '/cashflow/month',
+      queryParameters: month == null ? null : {'month': month},
+    );
+    return CashMonth.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Os lancamentos, ja com o provento derivado do razao montado na leitura -- ele nao esta na
+  /// tabela, e e por isso que duplicar e impossivel por construcao.
+  Future<List<CashEntry>> getCashEntries() async {
+    final res = await _dio.get('/cashflow/entries');
+    return (res.data as List)
+        .map((e) => CashEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<CashEntry> createCashEntry({
+    required CashKind kind,
+    required String category,
+    required String description,
+    required double amount,
+    required String dueOn,
+    String? paidOn,
+  }) async {
+    final res = await _dio.post(
+      '/cashflow/entries',
+      data: {
+        'kind': kind.json,
+        'category': category,
+        'description': description,
+        'amount': amount,
+        'due_on': dueOn,
+        'paid_on': paidOn,
+      },
+    );
+    return CashEntry.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<CashEntry> updateCashEntry({
+    required int id,
+    required CashKind kind,
+    required String category,
+    required String description,
+    required double amount,
+    required String dueOn,
+    String? paidOn,
+  }) async {
+    final res = await _dio.put(
+      '/cashflow/entries/$id',
+      data: {
+        'kind': kind.json,
+        'category': category,
+        'description': description,
+        'amount': amount,
+        'due_on': dueOn,
+        'paid_on': paidOn,
+      },
+    );
+    return CashEntry.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> markCashEntryPaid(int id, {String? paidOn}) async {
+    await _dio.post(
+      '/cashflow/entries/$id/paid',
+      data: {'paid_on': paidOn},
+    );
+  }
+
+  Future<void> deleteCashEntry(int id) async {
+    await _dio.delete('/cashflow/entries/$id');
+  }
+
+  Future<List<Debt>> getDebts() async {
+    final res = await _dio.get('/cashflow/debts');
+    return (res.data as List)
+        .map((e) => Debt.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Debt> createDebt({
+    required String kind,
+    required String description,
+    required double balance,
+    double? monthlyRate,
+  }) async {
+    final res = await _dio.post(
+      '/cashflow/debts',
+      data: {
+        'kind': kind,
+        'description': description,
+        'balance': balance,
+        'monthly_rate': monthlyRate,
+      },
+    );
+    return Debt.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> settleDebt(int id) async {
+    await _dio.post('/cashflow/debts/$id/settled');
+  }
+
+  Future<Surplus> getSurplus({String? month}) async {
+    final res = await _dio.get(
+      '/surplus',
+      queryParameters: month == null ? null : {'month': month},
+    );
+    return Surplus.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<CashVocabulary> getCashVocabulary() async {
+    final res = await _dio.get('/cashflow/vocabulary');
+    return CashVocabulary.fromJson(res.data as Map<String, dynamic>);
   }
 }

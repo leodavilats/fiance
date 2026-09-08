@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_client.dart';
 import 'api_repository.dart';
 import 'auth_service.dart';
+import 'cash_models.dart';
+import 'mes.dart';
 import 'models.dart';
 import 'notifications_service.dart';
 
@@ -118,4 +120,35 @@ final closedTradesProvider = FutureProvider.autoDispose<ClosedTradesResponse>((
 
 final benchmarkProvider = FutureProvider.autoDispose<BenchmarkResponse>((ref) {
   return ref.watch(apiRepositoryProvider).getBenchmark();
+});
+
+
+// -----------------------------------------------------------------------------
+// Caixa
+// -----------------------------------------------------------------------------
+
+/// O recorte do mes vive num provider, nao no estado da tela: e o equivalente do `?mes=` na URL
+/// do web -- ali o recorte e link salvo, aqui ele sobrevive a troca de aba.
+final mesEscolhidoProvider = StateProvider<String>((ref) => mesCorrente());
+
+final cashMonthProvider = FutureProvider.autoDispose<CashMonth>((ref) {
+  final mes = ref.watch(mesEscolhidoProvider);
+  return ref.watch(apiRepositoryProvider).getCashMonth(month: mes);
+});
+
+final cashEntriesProvider = FutureProvider.autoDispose<List<CashEntry>>((ref) {
+  return ref.watch(apiRepositoryProvider).getCashEntries();
+});
+
+final debtsProvider = FutureProvider.autoDispose<List<Debt>>((ref) {
+  return ref.watch(apiRepositoryProvider).getDebts();
+});
+
+final surplusProvider = FutureProvider.autoDispose<Surplus>((ref) {
+  final mes = ref.watch(mesEscolhidoProvider);
+  return ref.watch(apiRepositoryProvider).getSurplus(month: mes);
+});
+
+final cashVocabularyProvider = FutureProvider<CashVocabulary>((ref) {
+  return ref.watch(apiRepositoryProvider).getCashVocabulary();
 });

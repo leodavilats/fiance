@@ -12,6 +12,93 @@
 
 ---
 
+## O mobile ganha caixa, e a catraca cobra a própria baixa (2026-09-08)
+
+A maior pendência do produto fecha. O web adotou o ciclo do dinheiro em agosto e o mobile ficou
+sem as duas telas do topo da navegação: nenhum lançamento, nenhuma sobra, nenhuma dívida. Metade
+do produto — `cashflow/`, `cashflow_service`, a régua de dívida, a cascata — sem cliente móvel.
+
+`/mes` e `/sobra` existem, e `DIVIDA_HOJE` do `check-parity.mjs` está vazia.
+
+### A catraca funcionou como catraca
+
+No instante em que as telas passaram a existir, a verificação **reprovou**:
+
+```text
+✗ mobile: "mes" está em DIVIDA_HOJE e existe — apague a linha,
+  lista de dívida que não encolhe é a documentação mentindo
+```
+
+É o comportamento que se queria dela quando foi escrita, e é o que separa uma catraca de um
+comentário: ela cobrou a própria baixa em vez de esperar que alguém lembrasse.
+
+### Camada de dados: o contrato inteiro, e não só o que a primeira tela usa
+
+`core/cash_models.dart` declara **todos** os campos de `models/cashflow.py`, inclusive os que
+nenhuma tela lê ainda. Campo calculado que o cliente não declara é descartado em silêncio pelo
+`fromJson` — já aconteceu sete vezes neste repositório, e nenhuma delas deu erro.
+
+`core/mes.dart` espelha `core/mes.ts`: mesmo conceito, mesmos nomes, implementação de cada
+plataforma. Sem `Intl` de propósito — seriam duas fontes para o nome do mês, e o web escreve a
+lista à mão.
+
+`core/month_verdict.dart` espelha `core/month-verdict.ts`, e a banda sai de
+`fiMonthPressureBands`, gerado de `product-rules.json`. Os limiares são iguais nas duas
+plataformas **por construção**, não por disciplina — o que se escreve nos dois lados é a
+apresentação. `test/month_verdict_test.dart` roda os mesmos casos do spec do web: paridade de
+conceito inclui paridade de verificação.
+
+### As telas usam a forma do telefone, não a do desktop estreito
+
+| Conceito | Web | Mobile |
+|---|---|---|
+| Linha do tempo do mês | `.data-table`, cinco colunas | lista com disclosure — cinco colunas em 360dp é scroll horizontal que esconde a coluna que decide |
+| Lançar | rota `/mes/lancar` | sheet, e volta para onde estava. É a ação mais repetida do produto |
+| Trocar de mês | `<select>` no cabeçalho | sheet de meses, e o recorte vive num provider |
+| A cascata | subnav com que competir | **sequência vertical** — é onde o mobile ganha do web, porque rolar é o gesto certo para percorrer uma sequência |
+| Seção | `<app-section>` → `<h2>` | `FiSection` → `Semantics(header: true)` |
+
+A hierarquia é a mesma: veredito, evidência, atenção, a vencer, o mês. E as regras de UX
+atravessaram inteiras — a sobra sai como **faixa**, o veredito vem com `FiProvenance`, e a
+cascata que termina sem passo de aporte diz que isso é a resposta certa, em serifa.
+
+O formulário muda de forma pelo `kind`, e isso é regra de domínio: com `income` ele pede um dia
+só, o do crédito, porque vencimento é obrigação a cumprir e dinheiro que se recebe não tem uma.
+Trocar de `kind` troca a categoria junto — manter a antiga mandaria `moradia` como categoria de
+entrada, e o backend recusaria com 422 sem a pessoa entender por quê.
+
+### A regra da faixa nasceu larga demais, e o próprio teste mostrou
+
+Com projeção existindo no mobile, a sétima regra do `lint:ui` passou a ter sujeito. A primeira
+versão vigiava `surplus` junto de `portfolioValue` e `passiveIncomeMonthly` — e reprovou o `/mes`
+que eu tinha acabado de escrever.
+
+Estava errada a regra, não a tela. "A sobra **parte de** X" nomeia o número como piso, e a faixa
+inteira vive na Sobra, onde é o assunto. O escopo ficou o mesmo do web: os dois números que estão
+a anos de distância. Vigiar o piso de sobra reprovaria uma frase correta, e regra que reprova o
+certo é pior que regra ausente — gasta a autoridade das outras seis.
+
+### Navegação: os cinco destinos, e todo redirect absoluto
+
+A barra inferior passou a ser `Mês · Sobra · Patrimônio · Descobrir · Você`. `/estrategia` se
+dissolveu como no web: aporte e desvio foram para `/sobra`, metas para `/voce/objetivos`, renda
+fixa para `/descobrir`, projeção para `/patrimonio`.
+
+Todos os alvos de redirect são **absolutos**, pela lição que a produção deu hoje mesmo: alvo
+relativo resolve contra o segmento casado e manda o link salvo para lugar nenhum.
+
+Cinco arquivos e os destinos da busca foram religados. Na busca, `Mês` e `Sobra` entraram como os
+dois primeiros destinos, e os termos antigos continuam buscáveis — quem procura "hoje" ou
+"estratégia" tem de achar a casa nova.
+
+### O que ficou de fora das duas telas
+
+O molde do mês, o cadastro de dívida e apagar lançamento. Os três têm rota no backend e método no
+repositório; o que falta é tela. Estão no KNOWN_ISSUES, com o motivo de cada um — o molde precisa
+das duas metades de uma vez, porque meio molde é pior que molde nenhum.
+
+---
+
 ## As regras de produto passam a rodar no Dart (2026-09-08)
 
 O defeito das máquinas deste produto era **geográfico**: 22 regras no web, nenhuma no mobile. A

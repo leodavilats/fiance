@@ -242,13 +242,15 @@ Cinco destinos por intenção, mais o ativo como camada — o racional está em
 Dart SDK `^3.10.7`. Dependências-chave: `dio`, `google_sign_in`, `flutter_riverpod`,
 `flutter_secure_storage` (JWT), `go_router`, `fl_chart`, `google_fonts`.
 
-`StatefulShellRoute.indexedStack` com **5 branches**: `/hoje`, `/carteira` (+ `renda-fixa`),
-`/descobrir` (+ `quedas`, `comparar`), `/estrategia` (+ `aporte`, `metas`, `renda-fixa`,
-`projecao`), `/voce`. `/ativo/:ticker` fica fora do shell de abas.
+`StatefulShellRoute.indexedStack` com **5 branches**, e são os mesmos cinco destinos do web:
+`/mes` (+ `atividade`, `feed`), `/sobra` (+ `aporte`, `desvio`), `/patrimonio` (+ `renda-fixa`,
+`projecao`), `/descobrir` (+ `quedas`, `comparar`, `renda-fixa`, `renda-fixa-vs-bolsa`), `/voce`
+(+ `objetivos`). `/ativo/:ticker` fica fora do shell de abas, como camada.
 
-**Estes não são os destinos do web.** O web migrou para o ciclo do dinheiro (`/mes` → `/sobra` →
-`/patrimonio`); o mobile ficou em `hoje`/`carteira`/`estrategia` e **não tem caixa nenhum** — nem
-`/mes`, nem `/sobra`. É a maior divergência aberta entre as plataformas.
+`design-tokens/check-parity.mjs` cobra essa igualdade — os cinco existem nos dois lados, ou a
+ausência está registrada. As URLs antigas (`/hoje`, `/carteira`, `/estrategia/*`) seguem como
+redirect, com **alvo absoluto**: relativo resolve contra o segmento casado e manda o link salvo
+para lugar nenhum.
 
 Estrutura `lib/`:
 - **`core/`** — `api_client.dart` (Dio + Bearer), `api_repository.dart` (chamadas tipadas),

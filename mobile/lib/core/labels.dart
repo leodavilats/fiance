@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'cash_models.dart';
 import 'design_tokens.dart';
 import 'vocabulary.dart';
 
@@ -46,4 +47,39 @@ String trendLabel(String? trend) {
     default:
       return 'sem histórico suficiente';
   }
+}
+
+
+// -----------------------------------------------------------------------------
+// Caixa. O vocabulario e gerado de product-rules.json; aqui so se escolhe o mapa.
+// -----------------------------------------------------------------------------
+
+Map<String, FiCategoria> _mapaDe(CashKind kind) =>
+    kind == CashKind.income ? fiCategoriasDeEntrada : fiCategoriasDeDespesa;
+
+String cashCategoryLabel(CashKind kind, String? category) {
+  if (category == null) return '—';
+  return _mapaDe(kind)[category]?.label ?? category;
+}
+
+IconData cashCategoryIcon(CashKind kind, String? category) =>
+    _mapaDe(kind)[category]?.icon ?? Icons.circle_outlined;
+
+/// As categorias na ordem de leitura do vocabulario, nao na do mapa.
+List<String> cashCategoryKeys(CashKind kind) {
+  final mapa = _mapaDe(kind);
+  return mapa.keys.toList()
+    ..sort((a, b) {
+      final sa = mapa[a]!.series;
+      final sb = mapa[b]!.series;
+      // `outros` tem serie 0 e fecha a lista, nao abre.
+      if (sa == 0) return 1;
+      if (sb == 0) return -1;
+      return sa.compareTo(sb);
+    });
+}
+
+String debtKindLabel(String? kind) {
+  if (kind == null) return '—';
+  return fiTiposDeDivida[kind] ?? kind;
 }

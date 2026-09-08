@@ -32,12 +32,18 @@ const DESTINOS = ['mes', 'sobra', 'patrimonio', 'descobrir', 'voce'];
 /**
  * Divergência conhecida, registrada, e que só pode encolher.
  *
- * O caixa do produto — `cashflow/`, `cashflow_service`, a régua de dívida, a cascata — não tem
- * tela no mobile. Enquanto não tiver, a ausência mora aqui, com nome. Ao construir a tela,
- * apague a linha: esta verificação reprova se um item daqui passar a existir.
+ * **Está vazia, e é assim que ela deve ficar.** O caixa do produto — `cashflow/`,
+ * `cashflow_service`, a régua de dívida, a cascata — não tinha tela no mobile quando esta
+ * verificação nasceu, e `mes` e `sobra` moraram aqui até as telas existirem (2026-09-08). A
+ * catraca cobrou a própria baixa: assim que os destinos passaram a existir, ela reprovou pedindo
+ * que as linhas saíssem.
+ *
+ * Ao registrar uma ausência nova, escreva o nome e o motivo. Ao construí-la, apague a linha —
+ * esta verificação reprova se um item daqui passar a existir, porque lista de dívida que não
+ * encolhe é a documentação mentindo de novo.
  */
 const DIVIDA_HOJE = {
-  mobile: ['mes', 'sobra'],
+  mobile: [],
   web: [],
 };
 

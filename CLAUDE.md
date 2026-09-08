@@ -30,9 +30,9 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 98 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 109 testes
                                                    #   inclui test/lint_ui_test.dart:
-                                                   #   5 regras do lint:ui, no Dart
+                                                   #   6 regras do lint:ui, no Dart
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 152 testes
 node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA, web e mobile
@@ -492,7 +492,7 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
     ficou sem `/mes` e `/sobra`, com a documentação afirmando que os shells eram espelhos.
     Ausência conhecida é **dívida registrada** em `DIVIDA_HOJE`, e a lista só encolhe: um item
     que passe a existir reprova, porque lista de dívida que não encolhe é a documentação
-    mentindo de novo.
+    mentindo de novo. **Hoje ela está vazia**, e foi ela quem cobrou a própria baixa.
 - **Ícone e favicon são gerados**, do `brand` de `foundation.css` via
   `python design-tokens/build-icons.py` (requer Pillow). **O launcher nativo é um segundo passo**:
   `cd mobile && dart run flutter_launcher_icons` — sem ele os ícones do app ficam com a cor antiga

@@ -7,6 +7,8 @@ import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/hoje/hoje_screen.dart';
+import '../features/mes/mes_screen.dart';
+import '../features/sobra/sobra_screen.dart';
 import '../features/estrategia/estrategia_screen.dart';
 import '../features/busca/busca_screen.dart';
 import '../features/estrategia/metas_screen.dart';
@@ -24,7 +26,24 @@ final appRouter = GoRouter(
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
 
-    GoRoute(path: '/dashboard', redirect: (_, _) => '/hoje'),
+    GoRoute(path: '/dashboard', redirect: (_, _) => '/mes'),
+    GoRoute(path: '/hoje', redirect: (_, _) => '/mes'),
+    GoRoute(path: '/hoje/atividade', redirect: (_, _) => '/mes/atividade'),
+    GoRoute(path: '/estrategia', redirect: (_, _) => '/sobra/desvio'),
+    GoRoute(path: '/estrategia/aporte', redirect: (_, _) => '/sobra/aporte'),
+    GoRoute(path: '/estrategia/metas', redirect: (_, _) => '/voce/objetivos'),
+    GoRoute(
+      path: '/estrategia/renda-fixa',
+      redirect: (_, _) => '/descobrir/renda-fixa',
+    ),
+    GoRoute(
+      path: '/estrategia/renda-fixa-vs-bolsa',
+      redirect: (_, _) => '/descobrir/renda-fixa-vs-bolsa',
+    ),
+    GoRoute(
+      path: '/estrategia/projecao',
+      redirect: (_, _) => '/patrimonio/projecao',
+    ),
     GoRoute(path: '/assets', redirect: (_, _) => '/patrimonio'),
     // O web renomeou este destino ao adotar o ciclo do dinheiro; o mobile ficou em
     // `carteira` e a divergencia passou meses sem ser vista. Link salvo e contrato.
@@ -40,12 +59,42 @@ final appRouter = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/hoje',
-              builder: (context, state) => const HojeScreen(),
+              path: '/mes',
+              builder: (context, state) => const MesScreen(),
               routes: [
                 GoRoute(
                   path: 'atividade',
                   builder: (context, state) => const AtividadeScreen(),
+                ),
+                // `Hoje` respondia "o que mudou", e isso e feed, nao lugar. A tela continua
+                // alcancavel enquanto o feed nao se dissolve dentro do Mes, como no web.
+                GoRoute(
+                  path: 'feed',
+                  builder: (context, state) => const HojeScreen(),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/sobra',
+              builder: (context, state) => const SobraScreen(),
+              routes: [
+                GoRoute(
+                  path: 'aporte',
+                  builder: (context, state) => const ToolScreen(
+                    title: 'Onde aportar',
+                    question:
+                        'Recebi dinheiro — onde ele faz mais diferença agora?',
+                    child: QuickInvestView(),
+                  ),
+                ),
+                GoRoute(
+                  path: 'desvio',
+                  builder: (context, state) => const EstrategiaScreen(),
                 ),
               ],
             ),
@@ -61,6 +110,14 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'renda-fixa',
                   builder: (context, state) => const FixedIncomeScreen(),
+                ),
+                GoRoute(
+                  path: 'projecao',
+                  builder: (context, state) => const ToolScreen(
+                    title: 'Projeção',
+                    question: 'Aportando assim, onde eu chego?',
+                    child: ContributionSimulatorView(),
+                  ),
                 ),
               ],
             ),
@@ -90,30 +147,6 @@ final appRouter = GoRouter(
                     child: CompareAssetsView(),
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
-
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/estrategia',
-              builder: (context, state) => const EstrategiaScreen(),
-              routes: [
-                GoRoute(
-                  path: 'aporte',
-                  builder: (context, state) => const ToolScreen(
-                    title: 'Onde aportar',
-                    question:
-                        'Recebi dinheiro — onde ele faz mais diferença agora?',
-                    child: QuickInvestView(),
-                  ),
-                ),
-                GoRoute(
-                  path: 'metas',
-                  builder: (context, state) => const MetasScreen(),
-                ),
                 GoRoute(
                   path: 'renda-fixa',
                   builder: (context, state) => const ToolScreen(
@@ -132,24 +165,23 @@ final appRouter = GoRouter(
                     child: IncomeCompareView(),
                   ),
                 ),
-                GoRoute(
-                  path: 'projecao',
-                  builder: (context, state) => const ToolScreen(
-                    title: 'Projeção',
-                    question: 'Aportando assim, onde eu chego?',
-                    child: ContributionSimulatorView(),
-                  ),
-                ),
               ],
             ),
           ],
         ),
+
 
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/voce',
               builder: (context, state) => const ConfigScreen(),
+              routes: [
+                GoRoute(
+                  path: 'objetivos',
+                  builder: (context, state) => const MetasScreen(),
+                ),
+              ],
             ),
           ],
         ),

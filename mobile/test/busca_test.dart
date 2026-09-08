@@ -32,14 +32,14 @@ void main() {
     test('acha metas pelo nome da tela', () {
       expect(
         destinosPara('metas').map((d) => d.route),
-        contains('/estrategia/metas'),
+        contains('/voce/objetivos'),
       );
     });
 
     test('acha a atividade por "histórico", com acento', () {
       expect(
         destinosPara('histórico').map((d) => d.route),
-        contains('/hoje/atividade'),
+        contains('/mes/atividade'),
       );
     });
 

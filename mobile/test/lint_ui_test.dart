@@ -100,6 +100,47 @@ void main() {
             'explicitamente',
       );
     });
+
+    /*
+     * Projecao sai como faixa, nunca numero unico.
+     *
+     * `_low`/`_high` sao campos obrigatorios de `PassiveIncomeMonth` no backend justamente para
+     * que nao exista caminho em que o numero saia sozinho: um valor unico a cinco anos empresta
+     * precisao de centavo a uma pilha de premissas, e e em cima dele que a pessoa decide quanto
+     * poupar.
+     *
+     * A regra e sobre PROJECAO, e o escopo e o mesmo do `lint:ui` do web: `portfolioValue` e
+     * `passiveIncomeMonthly`, que sao os numeros a anos de distancia. Duas coisas ficam fora, e
+     * por motivos diferentes:
+     *
+     * * **meta** (`passiveIncomeGoal`) e alvo declarado pela pessoa, e alvo nao tem faixa;
+     * * **piso de sobra** (`surplusLow`) aparece sozinho no Mes de proposito, porque a frase o
+     *   nomeia como piso -- "a sobra parte de X". A faixa inteira vive na Sobra, onde e o
+     *   assunto. Escrever a regra larga demais reprovaria essa frase, que esta certa; o teste
+     *   pegou exatamente isso na primeira vez que rodou.
+     */
+    test('projeção só aparece como faixa', () {
+      const projetados = ['portfolioValue', 'passiveIncomeMonthly'];
+
+      final semFaixa = <String>[];
+      for (final f in fontes.where((f) => f.path.contains('features'))) {
+        final fonte = f.readAsStringSync();
+        for (final campo in projetados) {
+          final piso = fonte.contains('${campo}Low');
+          final teto = fonte.contains('${campo}High');
+          if (piso == teto) continue;
+          semFaixa.add('${_curto(f)}: $campo tem ${piso ? 'piso' : 'teto'} e falta o outro lado');
+        }
+      }
+
+      expect(
+        semFaixa,
+        isEmpty,
+        reason:
+            'mostre piso e teto juntos. A faixa e o numero, nao a tolerancia dele -- e por isso '
+            'ela nao mora em tooltip',
+      );
+    });
   });
 
   group('regras de acessibilidade no mobile', () {

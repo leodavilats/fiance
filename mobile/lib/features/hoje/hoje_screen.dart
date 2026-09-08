@@ -35,7 +35,7 @@ class HojeScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'O que aconteceu',
-            onPressed: () => context.go('/hoje/atividade'),
+            onPressed: () => context.go('/mes/atividade'),
           ),
         ],
       ),
@@ -207,7 +207,7 @@ class HojeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 14),
               FilledButton(
-                onPressed: () => context.go('/estrategia'),
+                onPressed: () => context.go('/sobra/desvio'),
                 child: const Text('Ver estratégia'),
               ),
             ],

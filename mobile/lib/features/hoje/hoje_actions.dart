@@ -10,9 +10,9 @@ void runHojeAction(BuildContext context, String? action, String? ticker) {
     case 'fixed_income':
       context.go('/patrimonio/renda-fixa');
     case 'goals':
-      context.go('/estrategia/metas');
+      context.go('/voce/objetivos');
     case 'rebalance':
-      context.go('/estrategia');
+      context.go('/sobra/desvio');
     case 'market':
     default:
       context.go('/descobrir');

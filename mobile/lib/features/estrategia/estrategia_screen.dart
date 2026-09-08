@@ -106,7 +106,7 @@ class EstrategiaScreen extends ConsumerWidget {
                   ],
 
                   FilledButton.icon(
-                    onPressed: () => context.go('/estrategia/aporte'),
+                    onPressed: () => context.go('/sobra/aporte'),
                     icon: const Icon(Icons.savings_outlined, size: 18),
                     label: const Text('Tenho dinheiro para aportar'),
                   ),
@@ -143,22 +143,22 @@ class EstrategiaScreen extends ConsumerWidget {
                 _ToolLink(
                   label: 'Ajustar minhas metas',
                   icon: Icons.flag_outlined,
-                  onTap: () => context.go('/estrategia/metas'),
+                  onTap: () => context.go('/voce/objetivos'),
                 ),
                 _ToolLink(
                   label: 'Comparar títulos de renda fixa',
                   icon: Icons.account_balance_outlined,
-                  onTap: () => context.go('/estrategia/renda-fixa'),
+                  onTap: () => context.go('/descobrir/renda-fixa'),
                 ),
                 _ToolLink(
                   label: 'Renda fixa × bolsa',
                   icon: Icons.compare_arrows_outlined,
-                  onTap: () => context.go('/estrategia/renda-fixa-vs-bolsa'),
+                  onTap: () => context.go('/descobrir/renda-fixa-vs-bolsa'),
                 ),
                 _ToolLink(
                   label: 'Projetar renda passiva',
                   icon: Icons.timeline_outlined,
-                  onTap: () => context.go('/estrategia/projecao'),
+                  onTap: () => context.go('/patrimonio/projecao'),
                 ),
                 const SizedBox(height: FiSpace.s5),
                 Text(
@@ -416,7 +416,7 @@ class _NoGoals extends StatelessWidget {
         ),
         const SizedBox(height: FiSpace.s3),
         FilledButton(
-          onPressed: () => context.go('/estrategia/metas'),
+          onPressed: () => context.go('/voce/objetivos'),
           child: const Text('Definir metas'),
         ),
       ],

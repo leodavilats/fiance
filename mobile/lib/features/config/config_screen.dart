@@ -268,7 +268,7 @@ class ConfigScreen extends ConsumerWidget {
                 title: const Text('Ajustar minhas metas'),
                 subtitle: const Text('Em Estratégia, junto do desvio'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.go('/estrategia/metas'),
+                onTap: () => context.go('/voce/objetivos'),
               ),
             ],
           ),

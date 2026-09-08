@@ -26,14 +26,15 @@ conceito é.
 
 O mesmo padrão apareceu em tudo que o web cobra por máquina e o mobile não:
 
-| Princípio | Web | Mobile |
-|---|---:|---:|
-| Explicabilidade em julgamento renderizado | 15 | **0** |
-| Serifa carregando conclusão | 20 | 3 |
-| Tamanho de tipo escrito solto | 0 | **65** |
+| Princípio | Web | Mobile, em 2026-09-08 | Depois |
+|---|---:|---:|---|
+| Explicabilidade em julgamento renderizado | 15 | **0** | cobrado por `test/lint_ui_test.dart` |
+| Serifa carregando conclusão | 20 | 3 | cobrado: papel de veredito sem serifa reprova |
+| Tamanho de tipo escrito solto | 0 | **49 linhas** | catraca em 49, e o teto só desce |
 
-O web tem zero tamanho solto porque uma regra reprova `text-sm`. O mobile tem 65 porque a regra
-só roda no web. **O defeito das máquinas deste produto é geográfico.**
+O web tinha zero tamanho solto porque uma regra reprova `text-sm`; o mobile tinha 49 porque
+nenhuma regra rodava lá. **O defeito das máquinas deste produto era geográfico**, e a correção foi
+levar cinco delas para o Dart — não escrever mais regras no web.
 
 ---
 
@@ -127,7 +128,9 @@ Ausência conhecida é **dívida registrada** em `DIVIDA_HOJE`, no mesmo padrão
 encolhe** — um item que passe a existir reprova, porque lista de dívida que não encolhe é a
 documentação mentindo de novo.
 
-Hoje ela registra: **o mobile ainda não tem `mes` nem `sobra`.**
+**Hoje ela está vazia**, e foi ela quem cobrou a própria baixa: `mes` e `sobra` moraram em
+`DIVIDA_HOJE` até as telas do mobile existirem (2026-09-08), e no instante em que passaram a
+existir a verificação reprovou pedindo que as linhas saíssem.
 
 ---
 

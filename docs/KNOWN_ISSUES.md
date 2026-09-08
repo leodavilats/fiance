@@ -65,13 +65,18 @@
    o glossário de score e os rótulos de veredito, que são texto longo e não cabem bem num arquivo
    de tokens.
 
-7. **O mobile não tem caixa: nem `/mes`, nem `/sobra`.** O web adotou o ciclo do dinheiro e o
-   mobile ficou sem as duas telas do topo da navegação — nenhum lançamento, nenhuma sobra, nenhuma
-   dívida, nenhum molde de mês. Metade do produto (`cashflow/`, `cashflow_service`, a régua de
-   dívida, a cascata) sem cliente móvel. A ausência **passou a ser cobrada**:
-   `design-tokens/check-parity.mjs` a registra em `DIVIDA_HOJE`, e a lista só encolhe. Construir
-   exige modelos, métodos em `api_repository`, providers e as telas — e é a maior pendência aberta
-   do produto. Antes dela, trabalho visual no mobile é polir uma casa sem dois quartos.
+7. **O mobile tem caixa, mas não tem molde de mês nem cadastro de dívida.** `/mes` e `/sobra`
+   existem desde 2026-09-08, com veredito, faixa de sobra, cascata e lançamento em sheet — e
+   `DIVIDA_HOJE` do `check-parity.mjs` está vazia. O que ficou de fora das duas telas, e o
+   backend já serve:
+   - **molde do mês** (`GET /cashflow/month/template` + `POST /cashflow/entries/batch`): repetir
+     o mês anterior como prévia e commit. É prévia e lote no web, e meio molde é pior que molde
+     nenhum, então a tela precisa das duas metades de uma vez;
+   - **cadastro e quitação de dívida** (`POST /cashflow/debts`, `POST .../settled`): o mobile
+     *lê* a dívida e a mostra em "Exige atenção", mas não deixa cadastrar. Quem só usa o
+     telefone não consegue declarar a dívida que o veredito precisa para julgar;
+   - **apagar lançamento** (`DELETE /cashflow/entries/{id}`): o método está no repositório e
+     nenhuma tela o chama. Editar existe; apagar, não.
 
 8. **A escala de tipo do mobile está invertida, e há 49 linhas com tamanho solto.**
    `FiType.caption` (12px) é usada 44 vezes e `body` 14 — o aplicativo é dominado por legenda. O
@@ -92,17 +97,14 @@
    a família serifada, e `test/lint_ui_test.dart` reprova o papel de veredito que saia em sans —
    declarar o papel não aplica a fonte.)*
 
-10. **Duas das sete regras portadas para o Dart ainda faltam: faixa de projeção e alvo de toque.**
-    `test/lint_ui_test.dart` já cobra cinco — explicabilidade em julgamento, promessa sobre o
-    futuro, nome acessível em botão de ícone, serifa no papel de veredito e a catraca de tipo
-    solto. Faltam:
-    - **projeção sem faixa**, que exige primeiro descobrir como os campos `_low`/`_high` chegam ao
-      Dart e onde são exibidos; hoje nenhuma tela do mobile mostra projeção, então a regra
-      nasceria sem sujeito;
-    - **alvo de toque de 44dp**, que precisa de uma decisão de layout antes da regra.
-      `HelpTooltip` foi de 14 para 32 e ganhou `Semantics`, mas 44 dobraria a altura do `Row` de
-      rótulo de 11px onde ele vive. Chegar aos 44 é fazer o rótulo inteiro ser o alvo, em vez de
-      pendurar um ícone ao lado — e só depois a regra tem o que cobrar.
+10. **Falta uma das sete regras no Dart: o alvo de toque de 44dp.** `test/lint_ui_test.dart` já
+    cobra seis — explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro, nome
+    acessível em botão de ícone, serifa no papel de veredito e a catraca de tipo solto.
+
+    A que falta precisa de uma decisão de layout **antes** da regra. `HelpTooltip` foi de 14 para
+    32 e ganhou `Semantics`, mas 44 dobraria a altura do `Row` de rótulo de 11px onde ele vive.
+    Chegar aos 44 é fazer o rótulo inteiro ser o alvo, em vez de pendurar um ícone ao lado — e só
+    depois a regra tem o que cobrar.
 
 11. **`/voce` ainda não está nos quatro eixos, e a home pública continua a antiga.** A
     reorganização de destinos foi feita — `/sobra` caiu de seis subseções para três,
