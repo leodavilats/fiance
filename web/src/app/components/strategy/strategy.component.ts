@@ -110,7 +110,7 @@ interface ProjectionRow {
           <section class="fi-block">
             <div class="flex items-baseline justify-between gap-3 mb-1">
               <h2 class="fi-title text-ink m-0">Onde você está fora da meta</h2>
-              <a routerLink="/sobra/metas" class="fi-caption text-brand no-underline">
+              <a routerLink="/voce/objetivos" class="fi-caption text-brand no-underline">
                 Ajustar metas →
               </a>
             </div>
@@ -247,7 +247,7 @@ interface ProjectionRow {
                       </p>
                       @if (sug.ticker === 'RENDA_FIXA') {
                         <a
-                          routerLink="/sobra/renda-fixa"
+                          routerLink="/descobrir/renda-fixa"
                           class="fi-caption text-brand no-underline"
                         >
                           Comparar títulos →

@@ -162,7 +162,7 @@ export class ChangesFeedComponent implements OnInit {
         this.router.navigate(['/patrimonio']);
         break;
       case 'goals':
-        this.router.navigate(['/sobra/metas']);
+        this.router.navigate(['/voce/objetivos']);
         break;
       case 'fixed_income':
         this.router.navigate(['/patrimonio/editar']);

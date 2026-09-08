@@ -106,16 +106,32 @@ Mesmo vocabulário de fate da tabela mais abaixo.
 | `/hoje/atividade` (drawer) | **manter** | drawer, acionado do `Mês` | O argumento da sala vazia continua valendo |
 | `/carteira/*` | **mover** | `/patrimonio/*` | Muda o nome do destino; a sub-árvore fica inteira |
 | `/estrategia/aporte` (Quick Invest) | **fundir** | `/sobra` | Era a ponte sem o lado do caixa; agora tem os dois |
-| `/estrategia/metas` | **mover** | `/sobra/metas` | A meta é a régua que produz o desvio que a sobra preenche — fica onde é usada, não onde é configurada |
-| `/estrategia/projecao` | **mover** | `/sobra/projecao` | Projeção de renda passiva é a consequência do aporte |
-| `/estrategia/renda-fixa` | **mover** | `/sobra/renda-fixa` | "Onde ponho renda" é a mesma decisão |
+| `/estrategia/metas` | **mover** | `/voce/objetivos` | **Declarar** um objetivo é armar a estratégia; **ler** a distância até ele é leitura de sobra e de patrimônio. A declaração tem uma casa, a leitura aparece nas duas |
+| `/estrategia/projecao` | **mover** | `/patrimonio/projecao` | "Aportando assim, onde eu chego" é pergunta de patrimônio. Continua alcançável de `/sobra` como consequência do aporte escolhido |
+| `/estrategia/renda-fixa` | **mover** | `/descobrir/renda-fixa` | Comparar títulos à venda é descoberta. Sem isso, metade das aplicações do produto não tinha porta de entrada |
 | `/estrategia` (o destino) | **excluir** | dissolvido | Sem aporte, meta e projeção, sobra o desvio — que é leitura de patrimônio |
-| `/descobrir/*` | **manter** | — | Continua respondendo uma pergunta só |
-| `/voce/*` | **manter** | — | — |
+| `/descobrir/*` | **manter** | — | Continua respondendo uma pergunta só, agora cobrindo renda fixa também |
+| `/voce/*` | **manter** | — | Ganha `Objetivos` como eixo: como invisto · para onde vou · como o produto age · meus dados |
 | `/ativo/:ticker` | **manter** | — | Camada, e canal de aquisição |
 | — | **novo** | `/mes` | Linha do tempo: salário previsto/recebido, contas a vencer, gastos lançados, sobra projetada em faixa |
 | — | **novo** | `/mes/lancar` | Escrita do caixa, separada da leitura — mesma disciplina de `/carteira/editar` |
 | — | **novo** | `/mes/dividas` | Saldo, taxa, e a comparação com o que a carteira rende |
+
+### A forma de cada destino
+
+Cinco destinos, e o que cada um abre. Nenhum subnav passa de quatro entradas: seis pares não são
+hierarquia, são uma lista.
+
+| Destino | Subnav | Por quê assim |
+|---|---|---|
+| `/mes` | — | Uma tela só, em ordem de importância: veredito, atenção, a vencer, o mês, o que mudou |
+| `/sobra` | A ordem · Aporte · Alocação × meta | Os **três passos de uma decisão só**. Tinha seis, e duas não eram sobra |
+| `/patrimonio` | Resumo · Composição · Desempenho · Projeção, + **Movimento** (Posições · Encerradas · Proventos) | Movimento agrupa três leituras do **mesmo** razão — o agrupamento diz uma verdade da arquitetura |
+| `/descobrir` | Oportunidades · Quedas · Renda fixa · Comparar | Variável e fixa, agora as duas |
+| `/voce` | Preferências · Objetivos · Alertas · Indicação · Conta e dados | Área de conta: lista plana é o padrão natural. O eixo que faltava era `Objetivos` |
+
+Toda URL que saiu de casa continua resolvendo por redirect, num salto só — link salvo é contrato,
+e `app.routes.server.spec.ts` cobra isso pelo nome.
 
 **Saldo:** cinco destinos continuam cinco. Um sai (`Estratégia`), um entra (`Mês`), um é renomeado
 (`Carteira` → `Patrimônio`), e a ponte deixa de ser sub-rota para ser destino.

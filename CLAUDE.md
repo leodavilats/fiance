@@ -31,7 +31,7 @@ cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem R
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 93 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 150 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 151 testes
 node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA, web e mobile
 node design-tokens/check-parity.mjs                # os cinco destinos existem nas duas

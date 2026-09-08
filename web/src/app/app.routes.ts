@@ -103,6 +103,14 @@ export const routes: Routes = [
         title: 'Desempenho - fiance',
       },
       {
+        path: 'projecao',
+        loadComponent: () =>
+          import('./components/market/contribution-simulator/contribution-simulator.component').then(
+            m => m.ContributionSimulatorComponent
+          ),
+        title: 'Projeção - fiance',
+      },
+      {
         path: 'editar',
         loadComponent: () =>
           import('./components/portfolio-editor/portfolio-editor.component').then(
@@ -137,6 +145,14 @@ export const routes: Routes = [
         title: 'Quedas - fiance',
       },
       {
+        path: 'renda-fixa',
+        loadComponent: () =>
+          import('./components/shell/fixed-income-page.component').then(
+            m => m.FixedIncomePageComponent
+          ),
+        title: 'Renda fixa - fiance',
+      },
+      {
         path: 'comparar',
         loadComponent: () =>
           import('./components/market/compare-assets/compare-assets.component').then(
@@ -165,6 +181,15 @@ export const routes: Routes = [
           import('./components/strategy/strategy.component').then(m => m.StrategyComponent),
         title: 'Alocação × meta - fiance',
       },
+
+      /*
+       * Sobra tinha seis subseções, e duas não eram sobra. Declarar uma meta é armar a
+       * estratégia (`/voce`); "aportando assim, onde eu chego" é pergunta de patrimônio; e
+       * comparar títulos à venda é descobrir. Ficaram os três passos de uma decisão só.
+       */
+      { path: 'metas', redirectTo: '/voce/objetivos', pathMatch: 'full' },
+      { path: 'projecao', redirectTo: '/patrimonio/projecao', pathMatch: 'full' },
+      { path: 'renda-fixa', redirectTo: '/descobrir/renda-fixa', pathMatch: 'full' },
       {
         path: 'aporte',
         loadComponent: () =>
@@ -172,28 +197,6 @@ export const routes: Routes = [
             m => m.QuickInvestComponent
           ),
         title: 'Onde aportar - fiance',
-      },
-      {
-        path: 'metas',
-        loadComponent: () =>
-          import('./components/goals/goals.component').then(m => m.GoalsComponent),
-        title: 'Metas - fiance',
-      },
-      {
-        path: 'renda-fixa',
-        loadComponent: () =>
-          import('./components/shell/fixed-income-page.component').then(
-            m => m.FixedIncomePageComponent
-          ),
-        title: 'Renda fixa - fiance',
-      },
-      {
-        path: 'projecao',
-        loadComponent: () =>
-          import('./components/market/contribution-simulator/contribution-simulator.component').then(
-            m => m.ContributionSimulatorComponent
-          ),
-        title: 'Projeção - fiance',
       },
     ],
   },
@@ -224,6 +227,12 @@ export const routes: Routes = [
             m => m.PreferencesComponent
           ),
         title: 'Preferências - fiance',
+      },
+      {
+        path: 'objetivos',
+        loadComponent: () =>
+          import('./components/goals/goals.component').then(m => m.GoalsComponent),
+        title: 'Objetivos - fiance',
       },
       {
         path: 'alertas',
@@ -286,9 +295,9 @@ export const routes: Routes = [
   { path: 'carteira/transacoes', redirectTo: 'patrimonio', pathMatch: 'full' },
   { path: 'estrategia', redirectTo: 'sobra/desvio', pathMatch: 'full' },
   { path: 'estrategia/aporte', redirectTo: 'sobra/aporte', pathMatch: 'full' },
-  { path: 'estrategia/metas', redirectTo: 'sobra/metas', pathMatch: 'full' },
-  { path: 'estrategia/renda-fixa', redirectTo: 'sobra/renda-fixa', pathMatch: 'full' },
-  { path: 'estrategia/projecao', redirectTo: 'sobra/projecao', pathMatch: 'full' },
+  { path: 'estrategia/metas', redirectTo: 'voce/objetivos', pathMatch: 'full' },
+  { path: 'estrategia/renda-fixa', redirectTo: 'descobrir/renda-fixa', pathMatch: 'full' },
+  { path: 'estrategia/projecao', redirectTo: 'patrimonio/projecao', pathMatch: 'full' },
 
   { path: 'dashboard', redirectTo: 'mes', pathMatch: 'full' },
   { path: 'assets', redirectTo: 'patrimonio', pathMatch: 'full' },

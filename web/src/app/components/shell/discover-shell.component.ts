@@ -23,6 +23,7 @@ export class DiscoverShellComponent {
   readonly items: readonly SectionNavItem[] = [
     { path: '/descobrir/oportunidades', label: 'Oportunidades', icon: 'compass' },
     { path: '/descobrir/quedas', label: 'Quedas', icon: 'trending-down' },
+    { path: '/descobrir/renda-fixa', label: 'Renda fixa', icon: 'landmark' },
     { path: '/descobrir/comparar', label: 'Comparar', icon: 'git-compare' },
   ];
 }

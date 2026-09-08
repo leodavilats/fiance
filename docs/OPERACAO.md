@@ -110,16 +110,37 @@ Postgres, e só então subir o backend.
 
 ### O que falta configurar (uma vez)
 
-1. ~~Desligar o auto-deploy do `main` para produção~~ — **feito em 2026-09-06**. Só resta o
-   gatilho `main` → `staging`, que é o arranjo desejado: o push publica homologação, e produção
-   sobe por ação explícita. A fonte do serviço de produção continua ligada ao repositório, então
-   deploy manual e *redeploy* de rollback seguem funcionando.
+1. **Desligar o auto-deploy do `main` para produção — feito só na API.** Conferido contra o
+   Railway em 2026-09-08, com um push real:
+
+   | Serviço | O que o push no `main` faz | Confere com o combinado? |
+   |---|---|---|
+   | `fiance` (API) | sobe **homologação** | sim — produção sobe por ação explícita |
+   | `fiance-web` (front) | sobe **produção** | **não** |
+
+   O front **não tem serviço em homologação** (a tabela acima diz "URL do front: não publicado"),
+   então ele não tem para onde ir a não ser produção — e é onde mora toda a interface. A tranca
+   de "promover, olhar, e só então promover" protege hoje a metade do sistema que muda menos.
+
+   Duas saídas, e a segunda é a certa: desligar o auto-deploy do `fiance-web` e promovê-lo pelo
+   mesmo fluxo da API; ou criar o `fiance-web` em homologação e apontar o gatilho do `main` para
+   lá. Enquanto nenhuma das duas existir, **todo push no `main` publica interface em produção** —
+   e quem for mexer no front precisa saber disso antes, não depois.
+
+   Opcional: o gatilho de staging está com `checkSuites: false`, ou seja, não espera o CI. Marcar
+   *Wait for CI* evita gastar um deploy de homologação num commit vermelho.
 
    Opcional: o gatilho de staging está com `checkSuites: false`, ou seja, não espera o CI. Marcar
    *Wait for CI* evita gastar um deploy de homologação num commit vermelho.
 
 2. No GitHub, em *Settings → Environments*, criar `staging` e `production`. Em `production`,
    marcar *Required reviewers* — a confirmação escrita do fluxo é a segunda tranca, não a primeira.
+
+   **Ainda não existem** (conferido em 2026-09-08): a API lista `fiance / production` e
+   `fiance / staging`, que são os *deployment environments* criados pelo Railway, não os
+   *environments do Actions* que o `deploy.yml` referencia. Enquanto isso, `workflow_dispatch`
+   para com a mensagem de token ausente em vez de promover — o fluxo de promoção **não está
+   utilizável**, e produção depende do auto-deploy do item 1 e do botão do Railway.
 3. Em cada ambiente, definir:
    - segredo `RAILWAY_TOKEN` (token de projeto do Railway);
    - variável `RAILWAY_SERVICE` (`fiance`);

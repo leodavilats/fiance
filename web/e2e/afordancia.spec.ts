@@ -111,7 +111,7 @@ test('a barra de progresso distingue preenchido de vazio', async ({ page }) => {
   await instalarMedidor(page);
   await entrarComo(page, 'e2e_progresso');
   await salvarPosicao(page, 'e2e_progresso', 'PETR4', 100, 30);
-  await page.goto('/sobra/metas');
+  await page.goto('/voce/objetivos');
   await expect(page.locator('header')).toBeVisible();
   await page.waitForLoadState('networkidle');
 

@@ -17,8 +17,16 @@ export class PortfolioShellComponent {
     { path: '/patrimonio', label: 'Resumo', icon: 'wallet' },
     { path: '/patrimonio/composicao', label: 'Composição', icon: 'chart-pie' },
     { path: '/patrimonio/desempenho', label: 'Desempenho', icon: 'chart-line' },
-    { path: '/patrimonio/proventos', label: 'Proventos', icon: 'coins' },
-    { path: '/patrimonio/posicoes', label: 'Posições', icon: 'table' },
-    { path: '/patrimonio/encerradas', label: 'Encerradas', icon: 'circle-check' },
+    { path: '/patrimonio/projecao', label: 'Projeção', icon: 'calendar-clock' },
+
+    // Tres leituras do MESMO razao, e por isso um grupo em vez de tres pares soltos.
+    { path: '/patrimonio/posicoes', label: 'Posições', icon: 'table', group: 'Movimento' },
+    {
+      path: '/patrimonio/encerradas',
+      label: 'Encerradas',
+      icon: 'circle-check',
+      group: 'Movimento',
+    },
+    { path: '/patrimonio/proventos', label: 'Proventos', icon: 'coins', group: 'Movimento' },
   ];
 }

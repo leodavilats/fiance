@@ -12,6 +12,62 @@
 
 ---
 
+## Sobra tinha seis subseções, e duas não eram sobra (2026-09-08)
+
+Segunda passagem da auditoria de design, agora na arquitetura de informação. Seis pares num subnav
+não são hierarquia — são uma lista — e duas das seis de `/sobra` respondiam pergunta de outro
+destino.
+
+| Saiu de | Foi para | Por quê |
+|---|---|---|
+| `/sobra/metas` | `/voce/objetivos` | **Declarar** um objetivo é armar a estratégia; **ler** a distância até ele é leitura de sobra e de patrimônio. A declaração passa a ter uma casa, a leitura continua nas duas |
+| `/sobra/projecao` | `/patrimonio/projecao` | "Aportando assim, onde eu chego" é pergunta de patrimônio |
+| `/sobra/renda-fixa` | `/descobrir/renda-fixa` | Comparar títulos à venda é descoberta — e sem isso metade das aplicações do produto não tinha porta de entrada, embora renda fixa seja entidade de primeira classe no backend desde sempre |
+
+`/sobra` ficou com os **três passos de uma decisão só**: A ordem, Aporte, Alocação × meta.
+
+`/patrimonio` receberia Projeção e viraria uma lista de sete. Em vez disso, Posições, Encerradas e
+Proventos passaram a ser um **grupo**: são três leituras do *mesmo* razão, e agrupá-las diz uma
+verdade da arquitetura em vez de esconder o número de itens. `SectionNavItem` ganhou um `group`
+opcional, e o subnav desenha o grupo com um fio e um rótulo em `fi-eyebrow` — nenhum papel visual
+novo, e nenhum terceiro nível de URL, que é o sintoma de IA errada.
+
+`/voce` ganhou `Objetivos` como eixo. Não ficou nos quatro eixos do desenho porque Estratégia
+(perfil, yield, alocação-alvo) está dentro de Preferências e separá-la exige partir o componente,
+não mexer em rota — está no KNOWN_ISSUES.
+
+**Toda URL que mudou de casa continua resolvendo, num salto só.** As três de `/sobra` viraram
+redirect dentro do próprio shell, e as de `/estrategia/*` passaram a apontar direto para o destino
+final em vez de saltar duas vezes. Cinco componentes e a busca global foram religados para as
+rotas canônicas; na busca, o rótulo e a seção acompanharam a casa nova e o termo antigo continua
+buscável — quem procura "metas" acha `Objetivos`.
+
+O teste que guarda isso reprovou na hora, e foi um bom sinal: `app.routes.server.spec.ts` afirmava
+`estrategia/metas → sobra/metas`. Ganhou um caso irmão que cobra os redirects novos **e** que
+`/sobra` tenha exatamente os três passos — a primeira versão comparava a lista em ordem, que não é
+contrato, e foi corrigida para comparar como conjunto.
+
+`INFORMATION-ARCHITECTURE.md` é declarado a autoridade da navegação, então foi atualizado junto,
+com um inventário da forma corrente de cada destino. Documento de design responde *como a interface
+deveria ser*; o histórico é este arquivo.
+
+### O auto-deploy para produção estava desligado só na metade
+
+Conferido contra o Railway com um push real: o serviço `fiance` (API) sobe **homologação**, como
+o `OPERACAO.md` descreve — mas o `fiance-web` sobe **produção**. O front não tem serviço em
+homologação, então não tem para onde ir a não ser produção, e é onde mora toda a interface. A
+tranca de "promover, olhar, e só então promover" protegia a metade do sistema que muda menos.
+
+E o fluxo de promoção do `deploy.yml` **não está utilizável**: os environments do Actions
+(`staging`, `production`) não existem — o que a API do GitHub lista é `fiance / production` e
+`fiance / staging`, criados pelo Railway, que são outra coisa — e `RAILWAY_TOKEN` não está
+configurado, então o `workflow_dispatch` para com a mensagem de token ausente em vez de promover.
+
+O `OPERACAO.md` afirmava as duas coisas resolvidas. Corrigido, com as duas saídas escritas, e
+registrado no KNOWN_ISSUES.
+
+---
+
 ## A paridade deixa de ser de valor e passa a ser de conceito (2026-09-08)
 
 Uma auditoria de design leu as duas plataformas e achou a assimetria que organiza todo o resto:

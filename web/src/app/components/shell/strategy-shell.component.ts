@@ -16,9 +16,6 @@ export class StrategyShellComponent {
   readonly items: readonly SectionNavItem[] = [
     { path: '/sobra', label: 'A ordem', icon: 'hand-coins' },
     { path: '/sobra/aporte', label: 'Aporte', icon: 'lightbulb' },
-    { path: '/sobra/metas', label: 'Metas', icon: 'flag' },
     { path: '/sobra/desvio', label: 'Alocação × meta', icon: 'target' },
-    { path: '/sobra/renda-fixa', label: 'Renda fixa', icon: 'landmark' },
-    { path: '/sobra/projecao', label: 'Projeção', icon: 'calendar-clock' },
   ];
 }

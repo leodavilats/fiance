@@ -102,7 +102,7 @@ interface HealthDimension {
         </section>
 
         <app-section title="Alocação × meta">
-          <a sectionActions routerLink="/sobra/metas" class="fi-caption text-brand no-underline">
+          <a sectionActions routerLink="/voce/objetivos" class="fi-caption text-brand no-underline">
             Ajustar metas →
           </a>
 
@@ -127,7 +127,7 @@ interface HealthDimension {
               reason="Sem meta, o fiance mostra onde seu dinheiro está, mas não tem contra o que comparar — e desvio de uma meta que não existe seria número inventado."
               nextStep="Defina o peso que cada classe deveria ter na carteira. Leva um minuto e passa a valer para o Mês, a Sobra e o aporte."
               actionLabel="Definir metas"
-              actionRoute="/sobra/metas"
+              actionRoute="/voce/objetivos"
             />
           }
         </app-section>

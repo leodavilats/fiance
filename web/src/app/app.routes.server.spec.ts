@@ -75,9 +75,11 @@ describe('renderização no servidor', () => {
       'carteira/editar': 'patrimonio/editar',
       estrategia: 'sobra/desvio',
       'estrategia/aporte': 'sobra/aporte',
-      'estrategia/metas': 'sobra/metas',
-      'estrategia/renda-fixa': 'sobra/renda-fixa',
-      'estrategia/projecao': 'sobra/projecao',
+      // Sobra encolheu de seis subsecoes para tres, e estas tres mudaram de casa. O link
+      // antigo continua resolvendo, e agora num salto so em vez de dois.
+      'estrategia/metas': 'voce/objetivos',
+      'estrategia/renda-fixa': 'descobrir/renda-fixa',
+      'estrategia/projecao': 'patrimonio/projecao',
     };
 
     for (const [de, para] of Object.entries(antigas)) {
@@ -85,6 +87,33 @@ describe('renderização no servidor', () => {
       expect(route, de).toBeDefined();
       expect(route?.redirectTo, de).toBe(para);
     }
+  });
+
+  it('o que saiu de Sobra continua resolvendo de dentro dela', () => {
+    const sobra = routes.find(r => r.path === 'sobra');
+    const filhos = sobra?.children ?? [];
+
+    const mudaram: Record<string, string> = {
+      metas: '/voce/objetivos',
+      projecao: '/patrimonio/projecao',
+      'renda-fixa': '/descobrir/renda-fixa',
+    };
+
+    for (const [de, para] of Object.entries(mudaram)) {
+      const filho = filhos.find(r => r.path === de);
+      expect(filho, `sobra/${de} deixou de existir sem redirect`).toBeDefined();
+      expect(filho?.redirectTo, `sobra/${de}`).toBe(para);
+    }
+
+    const restantes = filhos
+      .filter(r => !r.redirectTo)
+      .map(r => r.path)
+      .sort();
+    expect(restantes, 'Sobra são os três passos de uma decisão só').toEqual([
+      '',
+      'aporte',
+      'desvio',
+    ]);
   });
 
   it('nenhum destino da IA nova ficou sem tela', () => {
