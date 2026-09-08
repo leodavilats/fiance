@@ -13,6 +13,7 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import 'lancar_sheet.dart';
+import 'molde_sheet.dart';
 
 /// O Mes: "o que aconteceu com meu dinheiro?"
 ///
@@ -146,6 +147,10 @@ class _Corpo extends ConsumerWidget {
             FiSection(
               title: 'Exige atenção',
               count: caras.length,
+              trailing: TextButton(
+                onPressed: () => GoRouter.of(context).go('/mes/dividas'),
+                child: const Text('Ver dívidas'),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [for (final d in caras) _LinhaDivida(divida: d)],
@@ -165,6 +170,10 @@ class _Corpo extends ConsumerWidget {
 
           FiSection(
             title: 'O mês',
+            trailing: TextButton(
+              onPressed: () => abrirMoldeSheet(context, ref),
+              child: Text('Repetir ${nomeDoMes(mesAnterior(mes.month)).split(' de ').first}'),
+            ),
             child: Column(
               children: [
                 if (doMes.isEmpty)
@@ -413,6 +422,14 @@ class _MesVazio extends StatelessWidget {
           onPressed: onLancar,
           icon: const Icon(Icons.add),
           label: const Text('Lançar o primeiro mês'),
+        ),
+        const SizedBox(height: FiSpace.s3),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: () => GoRouter.of(context).go('/mes/dividas'),
+            child: const Text('Cadastrar uma dívida'),
+          ),
         ),
       ],
     );

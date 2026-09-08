@@ -507,6 +507,49 @@ class ApiRepository {
     return Surplus.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// O molde do mes: LE, nao grava. A gravacao e `createCashEntriesBatch`, e as duas metades
+  /// existem para que meio molde de mes nao seja possivel -- quem lancou nao teria como saber o
+  /// que entrou e o que ficou de fora.
+  Future<CashMonthTemplate> getMonthTemplate({
+    required String target,
+    String? source,
+  }) async {
+    final res = await _dio.get(
+      '/cashflow/month/template',
+      queryParameters: {
+        'target': target,
+        'source': ?source,
+      },
+    );
+    return CashMonthTemplate.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Grava o lote inteiro ou nenhum.
+  Future<List<CashEntry>> createCashEntriesBatch(
+    List<CashTemplateCandidate> escolhidos,
+  ) async {
+    final res = await _dio.post(
+      '/cashflow/entries/batch',
+      data: {
+        'entries': [
+          for (final c in escolhidos)
+            {
+              'kind': c.kind.json,
+              'category': c.category,
+              'description': c.description,
+              'amount': c.amount,
+              'due_on': c.dueOn,
+              // O copiado nasce A VENCER: o valor do mes que passou e fato daquele mes.
+              'paid_on': null,
+            },
+        ],
+      },
+    );
+    return (res.data as List)
+        .map((e) => CashEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<CashVocabulary> getCashVocabulary() async {
     final res = await _dio.get('/cashflow/vocabulary');
     return CashVocabulary.fromJson(res.data as Map<String, dynamic>);

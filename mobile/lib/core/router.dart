@@ -7,6 +7,7 @@ import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/hoje/hoje_screen.dart';
+import '../features/mes/dividas_screen.dart';
 import '../features/mes/mes_screen.dart';
 import '../features/sobra/sobra_screen.dart';
 import '../features/estrategia/estrategia_screen.dart';
@@ -71,6 +72,10 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'feed',
                   builder: (context, state) => const HojeScreen(),
+                ),
+                GoRoute(
+                  path: 'dividas',
+                  builder: (context, state) => const DividasScreen(),
                 ),
               ],
             ),

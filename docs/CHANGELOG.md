@@ -91,11 +91,32 @@ Cinco arquivos e os destinos da busca foram religados. Na busca, `Mês` e `Sobra
 dois primeiros destinos, e os termos antigos continuam buscáveis — quem procura "hoje" ou
 "estratégia" tem de achar a casa nova.
 
-### O que ficou de fora das duas telas
+### O caixa do mobile fica completo, e o item fecha
 
-O molde do mês, o cadastro de dívida e apagar lançamento. Os três têm rota no backend e método no
-repositório; o que falta é tela. Estão no KNOWN_ISSUES, com o motivo de cada um — o molde precisa
-das duas metades de uma vez, porque meio molde é pior que molde nenhum.
+Na mesma passagem entraram as três metades que faltavam, e o item saiu do KNOWN_ISSUES:
+
+**Molde do mês** — prévia e commit, como a importação de extrato. `GET /cashflow/month/template`
+lê e não grava; `POST /cashflow/entries/batch` grava o lote inteiro ou nenhum. Vem marcado só o
+que repete por natureza; o gasto variável fica **visível e desmarcado**, porque o valor do mês que
+passou é fato daquele mês e copiá-lo inventaria despesa. O copiado nasce a vencer, e o que já está
+no mês de destino não se oferece de novo.
+
+**Cadastro e quitação de dívida** — o mobile *lia* a dívida e a mostrava em "Exige atenção", mas
+não deixava cadastrar: quem só usa o telefone não conseguia declarar a dívida que o veredito
+precisa para julgar. O formulário não tem campo "caro": a classe sai da taxa contra o que a
+carteira rende, e a taxa é **opcional** com o motivo escrito no campo — sem ela não há classe,
+porque o produto não estima taxa de rotativo. A tela vazia diz o que a ausência custa: "a ordem da
+sobra começa pela dívida que custa mais do que sua carteira rende".
+
+**Apagar lançamento** — o método estava no repositório e nenhuma tela o chamava. Editar existia;
+apagar, não. Entrou no sheet de edição, com confirmação modal porque é destrutivo real, e o botão
+diz o que acontece ("Apagar lançamento"), nunca "OK".
+
+E a regra de explicabilidade ganhou um sinal: `DebtClass` é julgamento do sistema sobre o custo da
+dívida — "caseira" contra "administrável" — e não estava na lista. Com ela dentro, a tela de
+dívidas precisa da proveniência que já tem; sem, a regra deixava passar exatamente a tela que
+classifica dinheiro alheio. Provado quebrando de propósito.
+
 
 ---
 

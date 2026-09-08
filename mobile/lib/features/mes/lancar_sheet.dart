@@ -153,6 +153,49 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
     }
   }
 
+  /// Confirmacao modal so para destrutivo real, e o botao diz o que acontece -- nunca "OK".
+  Future<void> _apagar() async {
+    final e = widget.editar;
+    if (e == null) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Apagar este lançamento?'),
+        content: Text(
+          '${e.description} sai do mês, e o livre agora e a sobra mudam junto.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Apagar lançamento'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+
+    setState(() => _salvando = true);
+    try {
+      await ref.read(apiRepositoryProvider).deleteCashEntry(e.id);
+      ref.invalidate(cashMonthProvider);
+      ref.invalidate(cashEntriesProvider);
+      ref.invalidate(surplusProvider);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (erro) {
+      if (!mounted) return;
+      setState(() {
+        _salvando = false;
+        _erro = fiErrorMessage(erro, action: 'apagar este lançamento');
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final categorias = cashCategoryKeys(_kind);
@@ -292,6 +335,15 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
                   child: Text(_salvando ? 'Salvando…' : 'Salvar'),
                 ),
               ),
+
+              if (widget.editar != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _salvando ? null : _apagar,
+                    child: const Text('Apagar lançamento'),
+                  ),
+                ),
             ],
           ),
         ),

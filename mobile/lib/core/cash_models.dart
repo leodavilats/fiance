@@ -340,3 +340,61 @@ class CashVocabulary {
         .toList(),
   );
 }
+
+class CashTemplateCandidate {
+  CashTemplateCandidate({
+    required this.kind,
+    required this.category,
+    required this.description,
+    required this.amount,
+    required this.dueOn,
+    required this.repeats,
+    required this.alreadyThere,
+  });
+
+  final CashKind kind;
+  final String category;
+  final String description;
+  final double amount;
+
+  /// Ja no mes de destino, preso ao ultimo dia quando o mes e mais curto.
+  final String dueOn;
+
+  /// Se a categoria volta todo mes por natureza. Gasto variavel **nao** volta: ele e fato do mes
+  /// que passou, e copia-lo inventaria despesa. E por isso que so o que repete vem marcado.
+  final bool repeats;
+
+  final bool alreadyThere;
+
+  factory CashTemplateCandidate.fromJson(Map<String, dynamic> j) =>
+      CashTemplateCandidate(
+        kind: CashKind.fromJson(j['kind'] as String),
+        category: j['category'] as String? ?? '',
+        description: j['description'] as String? ?? '',
+        amount: (j['amount'] as num?)?.toDouble() ?? 0,
+        dueOn: j['due_on'] as String? ?? '',
+        repeats: j['repeats'] as bool? ?? false,
+        alreadyThere: j['already_there'] as bool? ?? false,
+      );
+}
+
+class CashMonthTemplate {
+  CashMonthTemplate({
+    required this.source,
+    required this.target,
+    required this.candidates,
+  });
+
+  final String source;
+  final String target;
+  final List<CashTemplateCandidate> candidates;
+
+  factory CashMonthTemplate.fromJson(Map<String, dynamic> j) =>
+      CashMonthTemplate(
+        source: j['source'] as String? ?? '',
+        target: j['target'] as String? ?? '',
+        candidates: ((j['candidates'] as List?) ?? const [])
+            .map((e) => CashTemplateCandidate.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}

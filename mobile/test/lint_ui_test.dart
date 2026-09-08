@@ -36,6 +36,9 @@ void main() {
         'fiBandFor',
         'fiDecision',
         'fairPrice',
+        // A classe da divida e julgamento do sistema sobre o custo dela -- "caseira" contra
+        // "administravel" -- e sai de comparar a taxa com o que a carteira rende.
+        'DebtClass.',
       ];
       const explicador = [
         'FiProvenance',
