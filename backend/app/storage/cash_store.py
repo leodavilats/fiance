@@ -77,6 +77,57 @@ def add_entry(entry: CashEntry, source: str = "manual", user_id: str | None = No
     return _with_session(run, user_id)
 
 
+def add_entries(
+    entries: list[CashEntry], source: str = "manual", user_id: str | None = None
+) -> list[int]:
+    """Grava um lote inteiro ou nenhum: meio molde de mês é pior que molde nenhum."""
+
+    def run(session, uid):
+        agora = time.time()
+        ids = []
+        for entry in entries:
+            row = CashEntryDb(
+                user_id=uid,
+                kind=entry.kind.value,
+                category=entry.category,
+                description=entry.description.strip(),
+                amount=money(entry.amount),
+                due_on=entry.due_on,
+                paid_on=entry.paid_on,
+                recurrence_id=entry.recurrence_id,
+                source=source,
+                created_at=agora,
+                updated_at=agora,
+            )
+            session.add(row)
+            session.flush()
+            ids.append(int(row.id))
+        return ids
+
+    return _with_session(run, user_id)
+
+
+def update_entry(entry_id: int, entry: CashEntry, user_id: str | None = None) -> CashEntry:
+    def run(session, uid):
+        row = session.scalars(
+            select(CashEntryDb).where(CashEntryDb.id == entry_id, CashEntryDb.user_id == uid)
+        ).first()
+        if row is None:
+            raise NotFoundError(f"Lançamento {entry_id} não existe.")
+
+        row.kind = entry.kind.value
+        row.category = entry.category
+        row.description = entry.description.strip()
+        row.amount = money(entry.amount)
+        row.due_on = entry.due_on
+        row.paid_on = entry.paid_on
+        row.updated_at = time.time()
+        session.flush()
+        return _para_dominio(row)
+
+    return _with_session(run, user_id)
+
+
 def mark_paid(entry_id: int, paid_on: str, user_id: str | None = None) -> None:
     def run(session, uid):
         row = session.scalars(

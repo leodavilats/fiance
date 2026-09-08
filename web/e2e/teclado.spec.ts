@@ -115,6 +115,27 @@ test.describe('o foco acompanha a navegação', () => {
     expect(foco, 'depois de navegar o foco deve ir para o <h1> da rota').toBe('h1');
   });
 
+  test('o título recebe o foco sem desenhar anel de controle', async ({ page }) => {
+    await entrarComo(page, 'e2e_foco_sem_anel');
+    await page.goto('/mes');
+    await expect(page.locator('header')).toBeVisible();
+    await page.waitForLoadState('networkidle');
+
+    // O que interessa é o elemento que está de fato com o foco — medir por seletor pega outro.
+    const contorno = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement;
+      const c = getComputedStyle(el);
+      return { tag: el?.tagName, estilo: c.outlineStyle, largura: c.outlineWidth };
+    });
+
+    expect(contorno.tag).toBe('H1');
+    expect(
+      contorno.estilo === 'none' || contorno.largura === '0px',
+      'o <h1> não é operável pelo teclado: o anel ali faz toda tela abrir parecendo ter um ' +
+        'controle selecionado, e o destaque reaparece a cada volta para a aba'
+    ).toBe(true);
+  });
+
   test('a mudança de tela é anunciada', async ({ page }) => {
     await entrarComo(page, 'e2e_anuncio');
     await page.goto('/mes');

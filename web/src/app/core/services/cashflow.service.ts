@@ -6,6 +6,7 @@ import {
   CashEntry,
   CashEntryPayload,
   CashMonth,
+  CashMonthTemplate,
   CashVocabulary,
   Debt,
   DebtPayload,
@@ -32,6 +33,21 @@ export class CashflowService {
 
   addEntry(payload: CashEntryPayload): Observable<CashEntry> {
     return this.http.post<CashEntry>(`${this.base}/cashflow/entries`, payload);
+  }
+
+  addEntries(entries: CashEntryPayload[]): Observable<CashEntry[]> {
+    return this.http.post<CashEntry[]>(`${this.base}/cashflow/entries/batch`, { entries });
+  }
+
+  updateEntry(entryId: number, payload: CashEntryPayload): Observable<CashEntry> {
+    return this.http.put<CashEntry>(`${this.base}/cashflow/entries/${entryId}`, payload);
+  }
+
+  /** O mês anterior lido como molde do destino. Leitura: não grava nada. */
+  monthTemplate(target: string, source?: string): Observable<CashMonthTemplate> {
+    let params = new HttpParams().set('target', target);
+    if (source) params = params.set('source', source);
+    return this.http.get<CashMonthTemplate>(`${this.base}/cashflow/month/template`, { params });
   }
 
   markPaid(entryId: number, paidOn?: string): Observable<void> {

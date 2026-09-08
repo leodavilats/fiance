@@ -26,6 +26,27 @@ export interface CashEntryPayload {
   paid_on?: string | null;
 }
 
+export interface CashTemplateCandidate {
+  kind: CashKind;
+  category: string;
+  description: string;
+  amount: number;
+
+  /** Já no mês de destino, preso ao último dia quando o mês é mais curto. */
+  due_on: string;
+
+  /** Se a categoria volta todo mês por natureza. Gasto variável não volta. */
+  repeats: boolean;
+
+  already_there: boolean;
+}
+
+export interface CashMonthTemplate {
+  source: string;
+  target: string;
+  candidates: CashTemplateCandidate[];
+}
+
 export interface CashEstimate {
   base_months: string[];
   expected_low: number;

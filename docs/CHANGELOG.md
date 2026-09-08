@@ -12,6 +12,77 @@
 
 ---
 
+## O mês vira editável, e o caixa deixa de ser digitado em dois lugares (2026-09-07)
+
+Cinco correções vindas do uso, todas na mesma superfície: o mês.
+
+### O `<h1>` recebia foco a cada rota — e desenhava anel de controle
+
+Toda tela abria com o título aparentemente selecionado, e o destaque voltava a cada retorno para a
+aba. O foco programático no título **fica**: é o que impede quem usa leitor de tela de perder o
+lugar quando a rota troca. O que não devia ficar era o desenho. O `<h1>` tem `tabindex="-1"`, está
+fora da ordem de tabulação e não é operável pelo teclado, então o anel ali não indica onde a tecla
+vai agir — indica onde a rota pousou, que é informação para o leitor de tela, não para o olho.
+A WCAG 2.4.7 pede indicador em componente **operável**; um título de pouso não é um.
+
+A primeira guarda que escrevi passava sem o conserto: media `main h1` por seletor, e o elemento
+com foco era outro. Medir `document.activeElement` mostrou `outline: auto 1px` já na abertura, e
+com a régua certa a guarda reprova com a mensagem certa.
+
+### Caixa sai de Preferências: preferência é o que persiste
+
+`cash_available` era um número digitado à mão em Preferências e lido pela Estratégia. Com o módulo
+de caixa, a mesma pergunta — *quanto tenho para aportar?* — passou a ter duas respostas, e a
+digitada envelhece sem avisar: distribuir dinheiro que já foi gasto é pior que não responder.
+
+O campo saiu da tela. A Estratégia pergunta ao caixa (`available_to_invest` da cascata, que já é o
+que sobra **depois** da dívida cara e da reserva) e diz de onde o número veio. A coluna continua
+existindo como último recurso — para quem ainda não lançou nenhum mês, o valor informado ao
+distribuir um aporte é melhor que zero —, mas aparece rotulada como informada, não como derivada.
+
+### Editar um lançamento
+
+Só havia lançar, marcar como paga e apagar. Errar o valor obrigava a apagar e relançar, o que muda
+o id e perde a ordem. `PUT /cashflow/entries/{id}` e o mesmo formulário em modo de edição, com o
+id na URL (`/mes/lancar?editar=12`). Provento não é editável ali: ele vem do razão, e é lá que se
+corrige — editar no caixa criaria segunda verdade sobre o mesmo dinheiro.
+
+### Entrada não tem vencimento
+
+O formulário pedia vencimento e dia do pagamento para **entrada**, e vencimento é obrigação a
+cumprir — dinheiro que se recebe não tem uma. Com tipo `entrada`, o campo vira um só, "Dia", e é a
+data do crédito. A distinção entre recebido e a receber continua, no mesmo interruptor de sempre.
+
+### O mês anterior como molde
+
+`GET /cashflow/month/template` lê um mês como molde do outro, sem gravar nada; `POST
+/cashflow/entries/batch` grava o lote inteiro ou nenhum. Prévia e commit, como a importação de
+extrato — meio molde de mês é pior que molde nenhum, porque a pessoa não teria como saber o que
+entrou e o que ficou de fora.
+
+Três decisões dentro do molde:
+
+- **Vem marcado só o que repete por natureza** — o fixo, a dívida e o salário. Gasto variável fica
+  desmarcado e visível: o valor do mês que passou é fato daquele mês, e copiá-lo inventaria
+  despesa. Décimo terceiro e férias também não repetem: acontecem uma vez no ano.
+- **O copiado nasce a vencer**, nunca pago. Copiar o pagamento junto diria que o dinheiro se moveu
+  num mês que ainda não aconteceu.
+- **A identidade que evita duplicata ignora o valor** (tipo, categoria e descrição). A conta de luz
+  muda de valor todo mês; se o valor entrasse na identidade, o molde ofereceria a mesma conta de
+  novo.
+
+O dia viaja para o mês de destino preso ao último dia quando o destino é mais curto — 31/01 vira
+28/02, ou 29 em ano bissexto.
+
+### A régua do contrato de rotas só olhava o 200
+
+`tests/contrato_das_rotas.py` lia a resposta `200` de cada rota, e escrita responde `201`. Toda
+rota de criação ficava sem contrato nenhum, e a catraca `SEM_MODELO_HOJE` contava isso como
+normal. Consertada a régua — lê a primeira resposta 2xx —, seis rotas que já tinham `response_model`
+entraram no registro e a catraca caiu de 51 para 45.
+
+---
+
 ## `cashflow/` nasce, e as duas perguntas pendentes viraram decisão (2026-09-07)
 
 Começo da Fase 3 do [ROADMAP](produto/ROADMAP.md): o módulo de caixa, como

@@ -4,6 +4,7 @@ import logging
 from decimal import Decimal
 
 from app.cashflow import (
+    Candidato,
     Cascata,
     CashEntry,
     CashError,
@@ -14,6 +15,7 @@ from app.cashflow import (
     classificar_todas,
     gasto_fixo_mensal,
     montar,
+    montar_molde,
     projetar_mes,
 )
 from app.core.brt import now_brt
@@ -66,6 +68,35 @@ def registrar(entry: CashEntry, user_id: str | None = None) -> int:
             "Entrada derivada do razão não se grava: ela é projeção, montada na leitura."
         )
     return cash_store.add_entry(entry, user_id=user_id)
+
+
+def registrar_varias(entries: list[CashEntry], user_id: str | None = None) -> list[int]:
+    """O lote passa pela mesma porta, e a mesma recusa vale para cada um."""
+    for entry in entries:
+        if entry.derived:
+            raise CashError(
+                "Entrada derivada do razão não se grava: ela é projeção, montada na leitura."
+            )
+    return cash_store.add_entries(entries, user_id=user_id)
+
+
+def editar(entry_id: int, entry: CashEntry, user_id: str | None = None) -> CashEntry:
+    if entry.derived:
+        raise CashError(
+            "Provento vem do razão, e é lá que ele se corrige. Editar aqui criaria uma segunda "
+            "verdade sobre o mesmo dinheiro."
+        )
+    return cash_store.update_entry(entry_id, entry, user_id=user_id)
+
+
+def molde(de_mes: str, para_mes: str, user_id: str | None = None) -> tuple[Candidato, ...]:
+    """O mês de origem lido como molde do destino."""
+    return montar_molde(entradas(user_id=user_id), de_mes, para_mes)
+
+
+def mes_anterior(mes: str) -> str:
+    ano, m = int(mes[:4]), int(mes[5:7])
+    return f"{ano - 1:04d}-12" if m == 1 else f"{ano:04d}-{m - 1:02d}"
 
 
 def marcar_paga(entry_id: int, paid_on: str | None = None, user_id: str | None = None) -> None:

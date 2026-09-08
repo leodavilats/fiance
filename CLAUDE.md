@@ -27,11 +27,11 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 978 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 93 testes
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 146 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 145 testes
 node design-tokens/build-rules.mjs --check         # reguas e vocabulario sincronizados
 node design-tokens/check-contrast.mjs              # contraste AA
 python design-tokens/build-icons.py --check        # marca sincronizada
@@ -124,6 +124,10 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   site ficava com o bundle antigo por um ano, e nenhuma mudança aparecia — nem a reforma inteira
   do design. `outputHashing: all` no build, `immutable` no estático e `no-cache` no HTML, que é
   quem aponta para eles. `e2e/ssr.spec.ts` cobra os dois.
+- **Anel de foco em elemento não operável.** O `<h1>` recebe foco a cada troca de rota, para o
+  leitor de tela não perder o lugar — mas tem `tabindex="-1"` e está fora da ordem de tabulação,
+  então o anel ali não diz onde a tecla vai agir. Toda tela abria parecendo ter um controle
+  selecionado. Medir por seletor engana: a régua é `document.activeElement`.
 - **`<img>` com `src` vazio** desenha o texto alternativo dentro da caixa e estoura o layout:
   o avatar de quem não tem foto ficava 41px numa caixa de 34. Conta sem foto renderiza a
   inicial, não um `<img>` sem fonte.
@@ -250,9 +254,16 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 
 ### Caixa
 
-- **Toda escrita do caixa passa por `cashflow_service`.** `registrar`, `marcar_paga` e `apagar`
-  são a porta única; nenhuma rota escreve em `cash_store` direto, do mesmo jeito que nenhuma
-  escreve em `ledger_store`.
+- **Toda escrita do caixa passa por `cashflow_service`.** `registrar`, `registrar_varias`,
+  `editar`, `marcar_paga` e `apagar` são a porta única; nenhuma rota escreve em `cash_store`
+  direto, do mesmo jeito que nenhuma escreve em `ledger_store`.
+- **O molde de mês é prévia e commit, como a importação de extrato.**
+  `GET /cashflow/month/template` lê, não grava; `POST /cashflow/entries/batch` grava o lote
+  inteiro ou nenhum — meio molde de mês é pior que molde nenhum, porque quem lançou não teria como
+  saber o que entrou e o que ficou de fora. O que vem marcado é só o que repete por natureza
+  (`CATEGORIAS_FIXAS`, dívida e salário); variável fica visível e desmarcado, porque o valor do
+  mês que passou é fato daquele mês. O copiado nasce **a vencer**, e a identidade que evita
+  duplicata ignora o valor — a conta de luz muda todo mês.
 - **Entrada derivada não é gravada: é montada na leitura.** `cashflow_service.entradas()` soma o
   que está na tabela com o provento derivado de `dividends_received`, **em memória**. Assim
   duplicar fica impossível por construção, `GET` não escreve, e a exportação de conta não sai com
@@ -275,6 +286,9 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   de serviço, que é quem tem os dois lados.
 - **Valor de lançamento é sempre positivo.** Entrada e saída se distinguem por `kind`, nunca pelo
   sinal — mesma disciplina de "quantidade negativa não é lançamento, é sinal trocado".
+- **Entrada não tem vencimento.** Vencimento é obrigação a cumprir, e dinheiro que se recebe não
+  tem uma: com `kind: income` o formulário pede um dia só, o do crédito. O par recebido / a receber
+  continua, no mesmo interruptor da saída.
 - **A competência é o dia do pagamento, não do vencimento.** O caixa mede quando o dinheiro se
   moveu; conta de agosto paga em setembro é de setembro. Conta não paga conta no mês do
   vencimento, e é o que forma o `comprometido`.

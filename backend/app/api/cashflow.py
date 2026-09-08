@@ -8,6 +8,7 @@ from app.cashflow import CashEntry, CashKind, Debt
 from app.collectors import rates
 from app.models.cashflow import (
     CascadeResponse,
+    CashEntryBatchRequest,
     CashEntryRequest,
     CashEntryResponse,
     CashVocabularyResponse,
@@ -15,6 +16,7 @@ from app.models.cashflow import (
     DebtResponse,
     MarkPaidRequest,
     MonthResponse,
+    MonthTemplateResponse,
     SurplusResponse,
 )
 from app.services import cashflow_service
@@ -101,17 +103,49 @@ async def lancamentos() -> list[CashEntryResponse]:
 @router.post("/cashflow/entries", response_model=CashEntryResponse, status_code=201)
 async def lancar(req: CashEntryRequest) -> CashEntryResponse:
     entry = _entry_do_request(req)
-    novo_id = cashflow_service.registrar(entry)
+    return _resposta(entry, cashflow_service.registrar(entry))
 
+
+def _resposta(entry: CashEntry, entry_id: int | None = None) -> CashEntryResponse:
     return CashEntryResponse(
-        id=novo_id,
+        id=entry_id if entry_id is not None else (entry.id or 0),
         kind=entry.kind.value,
         category=entry.category,
         description=entry.description,
         amount=entry.amount,
         due_on=entry.due_on,
         paid_on=entry.paid_on,
-        derived=False,
+        derived=entry.derived,
+    )
+
+
+@router.post("/cashflow/entries/batch", response_model=list[CashEntryResponse], status_code=201)
+async def lancar_em_lote(req: CashEntryBatchRequest) -> list[CashEntryResponse]:
+    """Grava o lote inteiro ou nenhum: meio molde de mês é pior que molde nenhum."""
+    entries = [_entry_do_request(e) for e in req.entries]
+    ids = cashflow_service.registrar_varias(entries)
+    return [_resposta(e, i) for e, i in zip(entries, ids, strict=True)]
+
+
+@router.put("/cashflow/entries/{entry_id}", response_model=CashEntryResponse)
+async def editar(entry_id: int, req: CashEntryRequest) -> CashEntryResponse:
+    entry = _entry_do_request(req)
+    return _resposta(cashflow_service.editar(entry_id, entry))
+
+
+@router.get("/cashflow/month/template", response_model=MonthTemplateResponse)
+async def molde_do_mes(target: str, source: str | None = None) -> MonthTemplateResponse:
+    """O mês anterior lido como molde do destino, sem gravar nada."""
+    origem = source or cashflow_service.mes_anterior(target)
+    try:
+        candidatos = cashflow_service.molde(origem, target)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return MonthTemplateResponse(
+        source=origem,
+        target=target,
+        candidates=[c.as_dict() for c in candidatos],
     )
 
 

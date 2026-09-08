@@ -112,6 +112,11 @@
     "surplus_high",
     "surplus_low"
   ],
+  "GET /api/v1/cashflow/month/template": [
+    "candidates",
+    "source",
+    "target"
+  ],
   "GET /api/v1/cashflow/vocabulary": [
     "debt_kinds",
     "expense_categories",
@@ -332,6 +337,15 @@
     "items",
     "since"
   ],
+  "POST /api/v1/alerts": [
+    "condition",
+    "created_at",
+    "id",
+    "note",
+    "target_price",
+    "ticker",
+    "triggered_at"
+  ],
   "POST /api/v1/alerts/check": [
     "condition",
     "current_price",
@@ -350,6 +364,70 @@
     "access_token",
     "expires_in",
     "refresh_token"
+  ],
+  "POST /api/v1/cashflow/debts": [
+    "balance",
+    "class",
+    "description",
+    "flip_rate",
+    "id",
+    "kind",
+    "monthly_rate",
+    "reference_monthly",
+    "reference_source"
+  ],
+  "POST /api/v1/cashflow/entries": [
+    "amount",
+    "category",
+    "derived",
+    "description",
+    "due_on",
+    "id",
+    "kind",
+    "paid_on"
+  ],
+  "POST /api/v1/cashflow/entries/batch": [
+    "amount",
+    "category",
+    "derived",
+    "description",
+    "due_on",
+    "id",
+    "kind",
+    "paid_on"
+  ],
+  "POST /api/v1/dividends/received": [
+    "amount",
+    "id",
+    "kind",
+    "note",
+    "paid_at",
+    "ticker"
+  ],
+  "POST /api/v1/fixed-income": [
+    "data_aplicacao",
+    "dias_para_vencimento",
+    "id",
+    "isento_ir",
+    "liquidez",
+    "meses_decorridos",
+    "nome",
+    "oculto",
+    "pct_cdi_equivalente",
+    "percentual_cdi",
+    "rendimento_acumulado",
+    "rendimento_no_vencimento",
+    "rendimento_pct",
+    "taxa",
+    "taxa_anual_efetiva_pct",
+    "tipo",
+    "tipo_taxa",
+    "valor_atual",
+    "valor_investido",
+    "valor_no_vencimento",
+    "vencimento",
+    "vencimento_proximo",
+    "yield_equivalente_pct"
   ],
   "POST /api/v1/onboarding/complete": [
     "completed",
@@ -418,8 +496,37 @@
     "resultados",
     "selic_referencia"
   ],
+  "POST /api/v1/suggestions/followed": [
+    "action",
+    "beat_ibov",
+    "current_value",
+    "days_held",
+    "followed_on",
+    "ibov_pct_since",
+    "id",
+    "invested",
+    "note",
+    "pnl",
+    "pnl_pct",
+    "price",
+    "quantity",
+    "score_at_suggestion",
+    "source",
+    "ticker",
+    "verdict_at_suggestion"
+  ],
   "POST /api/v1/telemetry/verify": [
     "raised"
+  ],
+  "PUT /api/v1/cashflow/entries/{entry_id}": [
+    "amount",
+    "category",
+    "derived",
+    "description",
+    "due_on",
+    "id",
+    "kind",
+    "paid_on"
   ],
   "PUT /api/v1/dividends/received/{dividend_id}": [
     "amount",

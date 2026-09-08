@@ -21,6 +21,12 @@
     color: var(--fi-brand);
     @apply no-underline;
   }
+
+  /* O <h1> recebe foco na troca de rota, mas não é operável: anel ali parece controle selecionado. */
+  h1[tabindex='-1']:focus,
+  h1[tabindex='-1']:focus-visible {
+    outline: none;
+  }
   lucide-icon,
   lucide-angular {
     @apply inline-flex align-middle;

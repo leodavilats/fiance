@@ -35,25 +35,6 @@ const RISK_PROFILE_OPTIONS: { key: RiskProfile; label: string }[] = [
 
     <form [formGroup]="form" class="flex flex-col gap-8">
       <div class="fi-block">
-        <h2 class="fi-title m-0 mb-4 text-ink">Quanto você tem em caixa</h2>
-        <div class="max-w-[240px]">
-          <label class="field-label block mb-1" for="pref-caixa">Caixa disponível (R$)</label>
-          <input
-            id="pref-caixa"
-            type="number"
-            class="input"
-            formControlName="cash_available"
-            min="0"
-            step="100"
-            inputmode="decimal"
-          />
-        </div>
-        <p class="fi-caption text-ink-2 mt-1.5">
-          É o dinheiro que ainda não está investido. Fica salvo aqui e alimenta o plano em a Sobra e
-          a distribuição de aporte — não é lançamento na carteira, e nada é comprado por você.
-        </p>
-      </div>
-      <div class="fi-block">
         <h2 class="fi-title m-0 mb-4 text-ink">Como o fiance te avalia</h2>
         <label class="field-label block mb-2">
           Meta de dividend yield (preço-teto de Bazin) — por tipo de ativo
@@ -276,10 +257,6 @@ export class PreferencesComponent implements OnInit {
   private readonly yieldValidators = [Validators.min(0.5), Validators.max(30)];
 
   readonly form = this.fb.group({
-    cash_available: this.fb.control(0, {
-      nonNullable: true,
-      validators: [Validators.min(0)],
-    }),
     yield_stock: this.fb.control(6, { nonNullable: true, validators: this.yieldValidators }),
     yield_fii: this.fb.control(10, { nonNullable: true, validators: this.yieldValidators }),
     yield_bdr: this.fb.control(4, { nonNullable: true, validators: this.yieldValidators }),
@@ -300,7 +277,6 @@ export class PreferencesComponent implements OnInit {
         this.pushEnabled.set(prefs.push_enabled ?? false);
         this.registeredDevices.set(prefs.registered_devices ?? 0);
         this.form.patchValue({
-          cash_available: prefs.cash_available ?? 0,
           yield_stock: Math.round((prefs.desired_yield_stock ?? 0.06) * 1000) / 10,
           yield_fii: Math.round((prefs.desired_yield_fii ?? 0.1) * 1000) / 10,
           yield_bdr: Math.round((prefs.desired_yield_bdr ?? 0.04) * 1000) / 10,
@@ -336,7 +312,6 @@ export class PreferencesComponent implements OnInit {
 
     this.svc
       .savePreferences({
-        cash_available: v.cash_available,
         desired_yield_stock: v.yield_stock / 100,
         desired_yield_fii: v.yield_fii / 100,
         desired_yield_bdr: v.yield_bdr / 100,

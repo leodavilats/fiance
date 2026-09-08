@@ -32,6 +32,34 @@ class CashEntryResponse(BaseModel):
     derived: bool
 
 
+class CashEntryBatchRequest(BaseModel):
+    entries: list[CashEntryRequest] = Field(..., min_length=1, max_length=200)
+
+
+class TemplateCandidateResponse(BaseModel):
+    kind: str
+    category: str
+    description: str
+    amount: float
+    due_on: str = Field(
+        ..., description="Já no mês de destino, preso ao último dia quando preciso."
+    )
+    repeats: bool = Field(
+        ...,
+        description=(
+            "Se a categoria volta todo mês por natureza. Gasto variável não volta: ele é fato do "
+            "mês que passou, e copiá-lo inventaria despesa."
+        ),
+    )
+    already_there: bool
+
+
+class MonthTemplateResponse(BaseModel):
+    source: str
+    target: str
+    candidates: list[TemplateCandidateResponse]
+
+
 class MarkPaidRequest(BaseModel):
     paid_on: str | None = Field(None, pattern=_DATA)
 

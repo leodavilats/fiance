@@ -3,11 +3,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import {
+  CashflowService,
   InvestmentStrategy,
   LoadingService,
   RecommendService,
   UiHelperService,
   allocationScalePct,
+  nomeDoMes,
 } from '../../core';
 import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
@@ -58,6 +60,17 @@ interface ProjectionRow {
             >%)
           </p>
 
+          <p class="fi-caption text-ink-3 m-0 mt-1">
+            @if (origemDoCaixa(); as o) {
+              {{ o }}
+            }
+            @if (mesDoCaixa()) {
+              <a routerLink="/sobra" class="btn-link">ver a ordem</a>
+            } @else {
+              <a routerLink="/mes/lancar" class="btn-link">lançar o mês</a>
+            }
+          </p>
+
           @if (s.affirmation && !s.affirmation.prescriptive) {
             <p class="notice notice-indeterminate fi-caption text-ink-2 m-0 mt-4 max-w-reading">
               {{ s.affirmation.disclaimer }} Por isso o quanto aportar em cada destino aparece como
@@ -70,9 +83,11 @@ interface ProjectionRow {
               <a routerLink="/sobra/aporte" class="btn-primary no-underline">
                 Distribuir este caixa
               </a>
+            } @else if (mesDoCaixa()) {
+              <a routerLink="/sobra" class="btn-primary no-underline"> Ver a ordem do mês </a>
             } @else {
-              <a routerLink="/voce/preferencias" class="btn-primary no-underline">
-                Informar quanto tenho em caixa
+              <a routerLink="/mes/lancar" class="btn-primary no-underline">
+                Lançar o mês para saber quanto sobra
               </a>
             }
             <button
@@ -253,14 +268,29 @@ interface ProjectionRow {
           </section>
         } @else if (s.cash_available < 100) {
           <section class="fi-block">
-            <app-empty-state
-              icon="wallet"
-              title="Sem caixa para distribuir"
-              reason="O plano de aporte precisa saber quanto você tem disponível para investir; hoje esse valor está zerado."
-              nextStep="Informe o caixa em Preferências. Ele fica salvo e alimenta o Quick Invest."
-              actionLabel="Informar caixa"
-              actionRoute="/voce/preferencias"
-            />
+            @if (mesDoCaixa()) {
+              <app-empty-state
+                icon="wallet"
+                title="A ordem do mês não deixou nada para aportar"
+                [reason]="
+                  'Em ' +
+                  nome(mesDoCaixa()) +
+                  ' a sobra foi inteira para o que vem antes do aporte — e isso é resposta, não falha.'
+                "
+                nextStep="Enquanto a dívida custar mais do que a carteira rende, quitar é o melhor uso do dinheiro."
+                actionLabel="Ver a ordem"
+                actionRoute="/sobra"
+              />
+            } @else {
+              <app-empty-state
+                icon="wallet"
+                title="Sem caixa para distribuir"
+                reason="O plano de aporte precisa saber quanto sobra do seu mês, e hoje esse valor está zerado."
+                nextStep="Lance o que entrou e o que saiu. A sobra sai daí, já descontada a dívida cara e a reserva."
+                actionLabel="Lançar o mês"
+                actionRoute="/mes/lancar"
+              />
+            }
           </section>
         } @else {
           <section class="fi-block">
@@ -381,19 +411,58 @@ interface ProjectionRow {
   `,
 })
 export class StrategyComponent implements OnInit {
+  readonly nome = nomeDoMes;
+
   private readonly svc = inject(RecommendService);
+  private readonly caixa = inject(CashflowService);
   readonly ui = inject(UiHelperService);
   readonly loading = inject(LoadingService);
 
   readonly strategy = signal<InvestmentStrategy | null>(null);
 
+  /** O mês de onde o caixa saiu, ou vazio quando o número foi informado à mão. */
+  readonly mesDoCaixa = signal('');
+  readonly origemDoCaixa = signal('');
+
   ngOnInit(): void {
     this.loadStrategy();
   }
 
+  /*
+   * O caixa a distribuir é o que sobra do mês depois da dívida cara e da reserva — derivado,
+   * não digitado. O valor informado à mão fica como último recurso, para quem ainda não lançou
+   * nenhum mês: um número guardado numa preferência envelhece sem avisar, e distribuir dinheiro
+   * que já foi gasto é pior que não responder.
+   */
   loadStrategy(): void {
+    this.caixa.surplus().subscribe({
+      next: sobra => {
+        if (sobra.has_cash) {
+          this.mesDoCaixa.set(sobra.month.month);
+          this.origemDoCaixa.set(
+            `É o que sobra de ${nomeDoMes(sobra.month.month)} depois do que a ordem já destinou.`
+          );
+          this.fetch(sobra.cascade.available_to_invest);
+          return;
+        }
+        this.caixaInformado();
+      },
+      error: () => this.caixaInformado(),
+    });
+  }
+
+  private caixaInformado(): void {
+    this.mesDoCaixa.set('');
     this.svc.getPreferences().subscribe({
-      next: prefs => this.fetch(prefs.cash_available ?? 0),
+      next: prefs => {
+        const valor = prefs.cash_available ?? 0;
+        this.origemDoCaixa.set(
+          valor > 0
+            ? 'Este é o último valor que você informou — nenhum mês lançado para derivá-lo.'
+            : 'Sem mês lançado, não há sobra para derivar.'
+        );
+        this.fetch(valor);
+      },
       error: () => this.fetch(0),
     });
   }

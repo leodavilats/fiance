@@ -3,11 +3,7 @@ import { entrarComo, tokenPara } from './sessao';
 
 const API = 'http://127.0.0.1:8111';
 
-async function lancar(
-  page: Page,
-  userId: string,
-  corpo: Record<string, unknown>
-): Promise<number> {
+async function lancar(page: Page, userId: string, corpo: Record<string, unknown>): Promise<number> {
   const resposta = await page.request.post(`${API}/api/cashflow/entries`, {
     headers: { Authorization: `Bearer ${tokenPara(userId)}` },
     data: corpo,
@@ -46,6 +42,16 @@ function mesCorrente(): string {
 
 function dia(n: number): string {
   return `${mesCorrente()}-${String(n).padStart(2, '0')}`;
+}
+
+function mesAnterior(): string {
+  const agora = new Date();
+  const anterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+  return `${anterior.getFullYear()}-${String(anterior.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function diaDoAnterior(n: number): string {
+  return `${mesAnterior()}-${String(n).padStart(2, '0')}`;
 }
 
 test.describe('a ponte responde em vez de perguntar', () => {
@@ -280,8 +286,7 @@ test.describe('lançar', () => {
     await page.locator('#lanc-descricao').fill('Salário');
     await page.locator('#lanc-valor').fill('5000');
     await page.locator('#lanc-vencimento').fill(dia(5));
-    await page.locator('#lanc-pagamento').fill(dia(5));
-    await page.getByRole('button', { name: 'Lançar' }).click();
+    await page.getByRole('button', { name: 'Lançar', exact: true }).click();
 
     await expect(page.getByText(/Lançado em/)).toBeVisible();
 
@@ -355,5 +360,181 @@ test.describe('lançamento fora do mês corrente', () => {
       page.locator('main'),
       'mês corrente sem nada, com lançamento em outro mês, tem de dizer isso — e não ficar mudo'
     ).toContainText('lançamentos em outros meses');
+  });
+});
+
+test.describe('editar um lançamento', () => {
+  test('o valor errado se corrige na própria linha, sem virar dois lançamentos', async ({
+    page,
+  }) => {
+    const uid = titular('editar');
+    await entrarComo(page, uid);
+    await lancar(page, uid, {
+      kind: 'expense',
+      category: 'moradia',
+      description: 'Aluguel',
+      amount: 2150,
+      due_on: dia(5),
+      paid_on: dia(5),
+    });
+
+    await page.goto('/mes');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('link', { name: 'Editar' }).first().click();
+    await expect(page).toHaveURL(/editar=/);
+    await expect(page.getByRole('heading', { name: 'Editar lançamento' })).toBeVisible();
+
+    await expect(page.locator('#lanc-descricao')).toHaveValue('Aluguel');
+    await page.locator('#lanc-valor').fill('2250');
+    await page.getByRole('button', { name: 'Salvar' }).click();
+
+    await expect(page).toHaveURL(/\/mes/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('cell', { name: 'Aluguel' })).toHaveCount(1);
+    await expect(page.getByText('R$ 2.250,00').first()).toBeVisible();
+  });
+
+  test('provento derivado do razão não oferece edição', async ({ page }) => {
+    const uid = titular('editar_derivado');
+    await entrarComo(page, uid);
+    await lancar(page, uid, {
+      kind: 'expense',
+      category: 'moradia',
+      description: 'Aluguel',
+      amount: 2150,
+      due_on: dia(5),
+      paid_on: dia(5),
+    });
+
+    await page.goto('/mes');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('link', { name: 'Editar' })).toHaveCount(1);
+  });
+});
+
+test.describe('entrada não tem vencimento', () => {
+  test('o tipo entrada pede um dia só, e nenhum campo de vencimento', async ({ page }) => {
+    const uid = titular('entrada_sem_vencimento');
+    await entrarComo(page, uid);
+    await page.goto('/mes/lancar');
+    await page.waitForLoadState('networkidle');
+
+    const rotulo = page.locator('label[for="lanc-vencimento"]');
+    await expect(rotulo).toHaveText(/Vencimento/);
+
+    await page.locator('#lanc-kind').selectOption('income');
+
+    await expect(
+      rotulo,
+      'entrada não vence: exigir uma data de vencimento para dinheiro que se recebe é pedir ' +
+        'um dado que não existe'
+    ).toHaveText('Dia');
+    await expect(page.locator('#lanc-pagamento')).toHaveCount(0);
+  });
+
+  test('a entrada lançada com um dia só conta no mês', async ({ page }) => {
+    const uid = titular('entrada_um_dia');
+    await entrarComo(page, uid);
+    await page.goto('/mes/lancar');
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('#lanc-kind').selectOption('income');
+    await page.locator('#lanc-categoria').selectOption('salario');
+    await page.locator('#lanc-descricao').fill('Salário');
+    await page.locator('#lanc-valor').fill('6418.73');
+    await page.locator('#lanc-vencimento').fill(dia(5));
+    await page.getByRole('button', { name: 'Lançar', exact: true }).click();
+
+    await expect(page.getByText(/Lançado em/)).toBeVisible();
+
+    await page.goto('/mes');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('R$ 6.418,73').first()).toBeVisible();
+  });
+});
+
+test.describe('o mês anterior serve de molde', () => {
+  test('o fixo vem marcado, o variável não, e o copiado nasce a vencer', async ({ page }) => {
+    const uid = titular('molde');
+    await entrarComo(page, uid);
+
+    await lancar(page, uid, {
+      kind: 'expense',
+      category: 'moradia',
+      description: 'Aluguel',
+      amount: 2150,
+      due_on: diaDoAnterior(5),
+      paid_on: diaDoAnterior(5),
+    });
+    await lancar(page, uid, {
+      kind: 'expense',
+      category: 'mercado',
+      description: 'Feira da semana',
+      amount: 804.15,
+      due_on: diaDoAnterior(14),
+      paid_on: diaDoAnterior(14),
+    });
+
+    await page.goto('/mes/repetir');
+    await page.waitForLoadState('networkidle');
+
+    const aluguel = page.getByRole('checkbox', { name: 'Copiar Aluguel' });
+    const feira = page.getByRole('checkbox', { name: 'Copiar Feira da semana' });
+
+    await expect(aluguel).toBeChecked();
+    await expect(
+      feira,
+      'copiar gasto variável inventaria despesa: o valor do mês que passou é fato daquele mês'
+    ).not.toBeChecked();
+
+    await page.getByRole('button', { name: /Copiar 1 lançamento/ }).click();
+
+    await expect(page).toHaveURL(/\/mes/);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText(/^A vencer · \d+$/)).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Aluguel' }).first()).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Feira da semana' })).toHaveCount(0);
+  });
+
+  test('o que já está no mês de destino não é oferecido de novo', async ({ page }) => {
+    const uid = titular('molde_sem_duplicar');
+    await entrarComo(page, uid);
+
+    await lancar(page, uid, {
+      kind: 'expense',
+      category: 'moradia',
+      description: 'Aluguel',
+      amount: 2150,
+      due_on: diaDoAnterior(5),
+      paid_on: diaDoAnterior(5),
+    });
+    await lancar(page, uid, {
+      kind: 'expense',
+      category: 'moradia',
+      description: 'Aluguel',
+      amount: 2250,
+      due_on: dia(5),
+      paid_on: dia(5),
+    });
+
+    await page.goto('/mes/repetir');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('já está lá')).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'Copiar Aluguel' })).toBeDisabled();
+  });
+
+  test('sem mês anterior lançado, a tela diz isso em vez de abrir vazia', async ({ page }) => {
+    const uid = titular('molde_vazio');
+    await entrarComo(page, uid);
+    await page.goto('/mes/repetir');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText(/não tem nada lançado/)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Lançar/ }).first()).toBeVisible();
   });
 });

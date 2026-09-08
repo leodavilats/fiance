@@ -170,7 +170,16 @@ interface LinhaDoMes {
         <section class="fi-block">
           <div class="flex items-baseline justify-between gap-4 flex-wrap">
             <p class="fi-eyebrow text-ink-3 m-0">O mês</p>
-            <a routerLink="/mes/lancar" class="btn-link">Lançar</a>
+            <span class="flex items-baseline gap-4">
+              <a
+                [routerLink]="['/mes/repetir']"
+                [queryParams]="{ mes: ehMesCorrente() ? null : mesEscolhido() }"
+                class="btn-link"
+              >
+                Repetir {{ nome(mesAnterior()) }}
+              </a>
+              <a routerLink="/mes/lancar" class="btn-link">Lançar</a>
+            </span>
           </div>
 
           <div class="overflow-x-auto mt-3">
@@ -184,12 +193,13 @@ interface LinhaDoMes {
                   <th scope="col">Movimento</th>
                   <th scope="col">Categoria</th>
                   <th scope="col" class="num">Valor</th>
+                  <th scope="col"><span class="sr-only">Ação</span></th>
                 </tr>
               </thead>
               <tbody>
                 @if (linhas().length === 0) {
                   <tr>
-                    <td colspan="4" class="text-ink-2">
+                    <td colspan="5" class="text-ink-2">
                       Nada lançado em {{ nome(m.month) }}.
                       @if (mesesDisponiveis().length > 1) {
                         Você tem lançamentos em outros meses — troque no seletor acima.
@@ -203,7 +213,9 @@ interface LinhaDoMes {
                     <td class="text-ink">
                       {{ linha.entry.description }}
                       @if (linha.futura) {
-                        <span class="fi-caption text-ink-3">· a vencer</span>
+                        <span class="fi-caption text-ink-3">
+                          · {{ linha.entry.kind === 'income' ? 'a receber' : 'a vencer' }}
+                        </span>
                       }
                       @if (linha.entry.derived) {
                         <span class="fi-caption text-ink-3">· do seu razão</span>
@@ -216,6 +228,19 @@ interface LinhaDoMes {
                       [class.text-down]="linha.entry.kind === 'expense'"
                     >
                       {{ linha.entry.kind === 'income' ? '+' : '−' }}{{ reais(linha.entry.amount) }}
+                    </td>
+                    <td>
+                      @if (linha.entry.derived) {
+                        <span class="fi-caption text-ink-3">vem do razão</span>
+                      } @else {
+                        <a
+                          [routerLink]="['/mes/lancar']"
+                          [queryParams]="{ editar: linha.entry.id }"
+                          class="btn-link"
+                        >
+                          Editar
+                        </a>
+                      }
                     </td>
                   </tr>
                 }
@@ -246,6 +271,11 @@ export class MonthComponent implements OnInit {
   readonly atencao = computed(() => this.dividas().filter(d => d.class === 'expensive'));
 
   readonly ehMesCorrente = computed(() => this.mesEscolhido() === mesCorrente());
+
+  readonly mesAnterior = computed(() => {
+    const [ano, m] = this.mesEscolhido().split('-').map(Number);
+    return m === 1 ? `${ano - 1}-12` : `${ano}-${String(m - 1).padStart(2, '0')}`;
+  });
 
   /** Os meses que a pessoa tem, mais o corrente. Nada de faixa inventada. */
   readonly mesesDisponiveis = computed(() => {

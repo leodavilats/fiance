@@ -11,7 +11,7 @@ GOLDEN = Path(__file__).parent / "contrato_das_rotas.json"
 
 METODOS = ("get", "post", "put", "patch", "delete")
 
-SEM_MODELO_HOJE = 51
+SEM_MODELO_HOJE = 45
 
 
 def _campos(schema: dict, componentes: dict, visitados: frozenset[str] = frozenset()) -> list[str]:
@@ -36,6 +36,16 @@ def _campos(schema: dict, componentes: dict, visitados: frozenset[str] = frozens
     return sorted(schema.get("properties", {}))
 
 
+def _schema_de_sucesso(operacao: dict) -> dict:
+    """O corpo da resposta de sucesso — que em rota de escrita é 201, não 200."""
+    respostas = operacao.get("responses", {})
+    for codigo in sorted(c for c in respostas if c.startswith("2")):
+        schema = respostas[codigo].get("content", {}).get("application/json", {}).get("schema", {})
+        if schema:
+            return schema
+    return {}
+
+
 def contrato_atual() -> dict[str, list[str]]:
     openapi = app.openapi()
     componentes = openapi.get("components", {}).get("schemas", {})
@@ -47,13 +57,7 @@ def contrato_atual() -> dict[str, list[str]]:
         for metodo, operacao in operacoes.items():
             if metodo not in METODOS:
                 continue
-            corpo = (
-                operacao.get("responses", {})
-                .get("200", {})
-                .get("content", {})
-                .get("application/json", {})
-                .get("schema", {})
-            )
+            corpo = _schema_de_sucesso(operacao)
             campos = _campos(corpo, componentes)
             if campos:
                 saida[f"{metodo.upper()} {caminho}"] = campos

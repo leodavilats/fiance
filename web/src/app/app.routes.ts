@@ -37,6 +37,15 @@ export const routes: Routes = [
     title: 'Lançar no mês - fiance',
   },
   {
+    path: 'mes/repetir',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/month-template/month-template.component').then(
+        m => m.MonthTemplateComponent
+      ),
+    title: 'Repetir o mês - fiance',
+  },
+  {
     path: 'mes/dividas',
     canActivate: [authGuard],
     loadComponent: () =>
