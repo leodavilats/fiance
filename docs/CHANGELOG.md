@@ -142,9 +142,14 @@ antigos chegam ao destino declarado, sem JavaScript.
 ### O auto-deploy para produção estava desligado só na metade
 
 Conferido contra o Railway com um push real: o serviço `fiance` (API) sobe **homologação**, como
-o `OPERACAO.md` descreve — mas o `fiance-web` sobe **produção**. O front não tem serviço em
-homologação, então não tem para onde ir a não ser produção, e é onde mora toda a interface. A
-tranca de "promover, olhar, e só então promover" protegia a metade do sistema que muda menos.
+o `OPERACAO.md` descreve — mas o `fiance-web` sobe **produção** em todo commit que toque
+`web/**`. O front não tem serviço em homologação, então não tem para onde ir a não ser produção,
+e é onde mora toda a interface. A tranca de "promover, olhar, e só então promover" protegia a
+metade do sistema que muda menos.
+
+E o achado pior veio ao ler a configuração do serviço, não os deploys: **`checkSuites` está
+`false`**. O front de produção sobe sem esperar o CI — um commit vermelho que toque `web/**` vai
+ao ar antes de qualquer teste terminar. É o conserto de um clique, e é o primeiro da lista.
 
 E o fluxo de promoção do `deploy.yml` **não está utilizável**: os environments do Actions
 (`staging`, `production`) não existem — o que a API do GitHub lista é `fiance / production` e

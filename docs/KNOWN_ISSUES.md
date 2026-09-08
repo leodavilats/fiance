@@ -37,16 +37,25 @@
    apesar de já existir universo dinâmico via BRAPI (`core/universe.py`). Fallback defensivo
    intencional, mas extenso.
 
-5. **Todo push no `main` publica interface em produção.** O auto-deploy do `main` para produção
-   foi desligado em 2026-09-06 **só na API**: conferido contra o Railway em 2026-09-08, com um
-   push real, o serviço `fiance` sobe homologação e o `fiance-web` sobe **produção**. O front não
-   tem serviço em homologação, então não tem para onde ir a não ser produção — e é onde mora toda
-   a interface, que é o que muda mais. A tranca de "promover, olhar, e só então promover" protege
-   hoje a metade do sistema que muda menos. Pior: o fluxo de promoção do
-   [`deploy.yml`](../.github/workflows/deploy.yml) **não está utilizável** — os environments do
-   Actions (`staging`, `production`) não existem, e `RAILWAY_TOKEN` não está configurado, então o
-   `workflow_dispatch` para com a mensagem de token ausente. As duas saídas estão no
+5. **O front de produção sobe sem esperar o CI.** Conferido contra o Railway em 2026-09-08, com
+   push real e leitura da configuração do serviço: o auto-deploy do `main` para produção foi
+   desligado em 2026-09-06 **só na API**. O `fiance` sobe homologação; o `fiance-web` sobe
+   **produção** em todo commit que toque `web/**`, e **`checkSuites` está `false`** — ou seja,
+   publica antes de qualquer teste terminar. Um commit vermelho no front vai ao ar. Esse é o pior
+   caso, e é conserto de um clique (*Wait for CI*).
+
+   O resto do arranjo: o front não tem serviço em homologação, então não tem para onde ir a não
+   ser produção — e é onde mora toda a interface, que é o que muda mais. E o fluxo de promoção do
+   [`deploy.yml`](../.github/workflows/deploy.yml) **não está utilizável**: os environments do
+   Actions (`staging`, `production`) não existem — o que a API do GitHub lista é
+   `fiance / production` e `fiance / staging`, criados pelo Railway, que são outra coisa — e
+   `RAILWAY_TOKEN` não está configurado, então o `workflow_dispatch` para com a mensagem de token
+   ausente. As três saídas, em ordem de valor, estão no
    [OPERACAO](OPERACAO.md#o-que-falta-configurar-uma-vez), item 1.
+
+   Há também **4 mudanças de configuração STAGED e não implantadas** no `fiance-web`
+   (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL`, e a porta do domínio): elas entram junto do próximo
+   deploy de código, então um deploy de interface carrega mudança de ambiente sem ninguém pedir.
 
 ## Duplicação estrutural entre plataformas
 

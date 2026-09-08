@@ -116,19 +116,30 @@ Postgres, e só então subir o backend.
    | Serviço | O que o push no `main` faz | Confere com o combinado? |
    |---|---|---|
    | `fiance` (API) | sobe **homologação** | sim — produção sobe por ação explícita |
-   | `fiance-web` (front) | sobe **produção** | **não** |
+   | `fiance-web` (front) | sobe **produção**, quando o commit toca `web/**` | **não** |
 
    O front **não tem serviço em homologação** (a tabela acima diz "URL do front: não publicado"),
    então ele não tem para onde ir a não ser produção — e é onde mora toda a interface. A tranca
    de "promover, olhar, e só então promover" protege hoje a metade do sistema que muda menos.
 
-   Duas saídas, e a segunda é a certa: desligar o auto-deploy do `fiance-web` e promovê-lo pelo
-   mesmo fluxo da API; ou criar o `fiance-web` em homologação e apontar o gatilho do `main` para
-   lá. Enquanto nenhuma das duas existir, **todo push no `main` publica interface em produção** —
-   e quem for mexer no front precisa saber disso antes, não depois.
+   O `watchPatterns` do serviço é `["web/**"]`, então commit que só mexe em `mobile/` ou `docs/`
+   sai como `SKIPPED` — o que é bom, e é o único freio que existe hoje. Mas **`checkSuites` está
+   `false`**: o deploy de produção **não espera o CI**. Um commit vermelho que toque `web/**`
+   publica interface em produção antes de qualquer teste terminar. Isso é mais grave que a
+   ausência de homologação, e é o conserto de um clique.
 
-   Opcional: o gatilho de staging está com `checkSuites: false`, ou seja, não espera o CI. Marcar
-   *Wait for CI* evita gastar um deploy de homologação num commit vermelho.
+   Três saídas, na ordem de valor:
+   1. marcar *Wait for CI* no `fiance-web` — tira o pior caso, que é publicar commit vermelho;
+   2. criar o `fiance-web` em homologação e apontar o gatilho do `main` para lá;
+   3. desligar o auto-deploy do front e promovê-lo pelo mesmo fluxo da API.
+
+   Enquanto a 1 não existir, **quem mexe em `web/**` publica em produção sem rede** — e precisa
+   saber disso antes, não depois.
+
+   Há também **4 mudanças de configuração STAGED e não implantadas** no `fiance-web`
+   (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL`, e a porta do domínio). Elas entram no próximo deploy
+   junto do código, o que faz um deploy de código carregar mudança de ambiente sem ninguém pedir.
+   Conferir com `get-service-config` antes de promover.
 
    Opcional: o gatilho de staging está com `checkSuites: false`, ou seja, não espera o CI. Marcar
    *Wait for CI* evita gastar um deploy de homologação num commit vermelho.
