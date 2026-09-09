@@ -63,11 +63,7 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
                   children: [
                     Text(
                       formatCurrency(snapshots[_touchedIndex!].totalCurrent),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: lineColor,
-                      ),
+                      style: FiType.metricSm.copyWith(color: lineColor),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -303,7 +299,7 @@ class _FiBenchmarkStat extends StatelessWidget {
       children: [
         Text(
           '${pct >= 0 ? '+' : ''}${pct.toStringAsFixed(1)}%',
-          style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
+          style: FiType.metricSm.copyWith(color: color),
         ),
         Text(label, style: TextStyle(color: fiInk2(context), fontSize: 11)),
       ],

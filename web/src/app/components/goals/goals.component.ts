@@ -242,13 +242,13 @@ const DEFAULT_SECTORS = ['Financeiro', 'Energia', 'Varejo', 'Tecnologia', 'Saúd
         </div>
       </div>
       <div class="flex items-center justify-end gap-3 mt-1">
-        <span
-          class="fi-body"
-          [class.text-favorable]="message().startsWith('✓')"
-          [class.text-adverse]="message().startsWith('✗')"
-          *ngIf="message()"
-          >{{ message() }}</span
-        >
+        @if (resultado() === 'ok') {
+          <p class="fi-body text-favorable m-0" role="status">Metas salvas</p>
+        } @else if (resultado() === 'erro') {
+          <p class="fi-body text-adverse m-0" role="alert">
+            Não conseguimos salvar. As metas anteriores continuam valendo.
+          </p>
+        }
         <button
           type="button"
           class="btn-primary"
@@ -270,7 +270,7 @@ export class GoalsComponent implements OnInit {
 
   readonly categories = ALLOCATION_CATEGORIES;
   readonly saving = signal(false);
-  readonly message = signal('');
+  readonly resultado = signal<'ok' | 'erro' | null>(null);
 
   readonly currentIncome = signal<number | null>(null);
 
@@ -421,7 +421,7 @@ export class GoalsComponent implements OnInit {
     }));
 
     this.saving.set(true);
-    this.message.set('');
+    this.resultado.set(null);
 
     forkJoin({
       prefs: this.svc.savePreferences({ passive_income_goal: passive_income_goal ?? null }),
@@ -430,13 +430,13 @@ export class GoalsComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.saving.set(false);
-        this.message.set('✓ Metas salvas');
-        setTimeout(() => this.message.set(''), 3000);
+        this.resultado.set('ok');
+        setTimeout(() => this.resultado.set(null), 3000);
       },
       error: () => {
         this.saving.set(false);
-        this.message.set('✗ Não conseguimos salvar suas metas');
-        setTimeout(() => this.message.set(''), 4000);
+        this.resultado.set('erro');
+        setTimeout(() => this.resultado.set(null), 6000);
       },
     });
   }

@@ -93,7 +93,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
                 <p class="fi-caption text-ink-3 m-0 mt-5 pt-4 border-t border-hairline">
                   Nenhuma meta definida para estas classes — sem meta, a composição diz onde o
                   dinheiro está, mas não se está certo.
-                  <a routerLink="/voce/objetivos" class="text-brand">Definir metas →</a>
+                  <a routerLink="/voce/objetivos" class="btn-link">Definir metas</a>
                 </p>
               }
             }

@@ -66,9 +66,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     AppWordmark(height: 32, color: Theme.of(context).colorScheme.onSurface),
                     const SizedBox(height: 10),
                     Text(
-                      'Ações, FIIs, BDRs, ETFs e renda fixa — tudo em um só assistente',
+                      'Da sobra do mês ao próximo aporte, com a conta à vista',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: mutedColor, fontSize: 14, height: 1.4),
+                      style: FiType.body.copyWith(color: mutedColor),
                     ),
                     const SizedBox(height: 32),
                     Container(

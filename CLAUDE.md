@@ -87,7 +87,7 @@ CHANGELOG.
 | Tipo numa tela | Escolher o **papel** (`fi-body`, `fi-caption`, `fi-metric`…), nunca `text-sm` | `lint:ui` reprova tamanho solto |
 | Limiar de score | Mudar nas três plataformas, Python primeiro | Réguas divergem |
 | Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
-| Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template |
+| Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template. A **lista de frases** já é máquina nas duas plataformas; composição e hierarquia continuam sendo revisão humana |
 | Cor, tipografia, espaço | Editar [foundation.css](web/src/foundation.css) **e** o espelho em [design_tokens.dart](mobile/lib/core/design_tokens.dart) | Web e mobile divergem, e nenhuma máquina avisa |
 | Largura máxima numa tela | Escolher o papel: `max-w-reading` para prosa, `max-w-column` para lista, tabela ou gráfico | Prosa esticada, ou lista estrangulada em 70ch |
 | Papel de cor novo | Declarar nos **dois** temas de `foundation.css` | A cor não existe num dos temas, e a tela sai com texto de um tema no chão do outro |
@@ -170,7 +170,7 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   `fiClasseTextoDaSerie[4]` e recebia `undefined`: a armadilha acima na forma inversa, consumidor
   sem vocabulário. Os mapas cobrem os três blocos de categoria, e não só o de alocação.
 
-O `npm run lint:ui` cobre treze dessas, em **21 regras** — e a classificação importa: regra que
+O `npm run lint:ui` cobre treze dessas, em **22 regras** — e a classificação importa: regra que
 protege acessibilidade, contrato de produto ou erro silencioso **reprova o CI**; regra que
 protege só preferência visual **avisa e não reprova**, porque bloquear por gosto gasta a
 autoridade das que valem. Raio fora da escala e ícone decorando título são as duas que avisam.
@@ -189,6 +189,7 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 | Um foco só | `focus:ring*`, `focus:outline-none` | O anel é `outline` na cor da marca e já vem em `.input`/`.btn-*`/`.fi-focusable`; o do Tailwind desenhava outra coisa, e `outline-none` sem substituto apaga o foco |
 | Controle do sistema | `<button>`/`<input>`/`<select>` sem classe do sistema | Havia nove grafias de botão só de ícone, com cinco alturas. Escape: `<!-- design-exception: controle — motivo -->` |
 | Título sem ícone *(avisa)* | `<lucide-icon>` dentro de `<h1..h4>` | Ao lado de um título o ícone não acrescenta informação — faz a seção parecer cabeçalho de card de painel. Mantém lista de exceção por nome de arquivo, e regra que precisa conhecer nomes de arquivo é revisão com passos extras |
+| Vocabulário de IA | frase da lista de [AI-TELLS](docs/design/AI-TELLS.md), ou emoji, em texto de tela | A lista é literal, e nada a lia: as duas primeiras telas do mobile abriam com "tudo em um só assistente" — dois itens dela numa frase. Varre só literal de string, senão a regra reprovaria a própria justificativa. Seta fica de fora: é a informação em "condição → veredito" |
 | Contorno de controle | `border: … var(--fi-hairline)` num seletor de controle | `hairline` é separador, e com ele a borda de `.btn-secondary` desenhava a **1,20:1** — um quarto dos 3:1 que a WCAG 1.4.11 pede. Controle desabilitado fica de fora, que a norma isenta |
 
 ---

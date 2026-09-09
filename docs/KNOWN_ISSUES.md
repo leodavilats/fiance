@@ -73,31 +73,25 @@
    `analysis/score_ruler.py` como fonte e a disciplina de mudar as três plataformas no mesmo
    commit. O risco continua registrado: divergência aqui é um número errado, não uma tela feia.
 
-7. **A escala de tipo do mobile está invertida, e há 49 linhas com tamanho solto.**
-   `FiType.caption` (12px) é usada 44 vezes e `body` 14 — o aplicativo é dominado por legenda. O
-   topo da escala (`moneyXl`, `moneyLg`, `pageTitle`, `bodyLg`, `verdictSm`) soma **zero** usos:
-   eram valores de CSS transliterados para 360dp, grandes demais para caber. Em paralelo há 49
-   linhas com `fontSize:` solto, em 15 tamanhos distintos — incluindo 11px e 9px — contra 83 usos
-   de papel. O crescimento **está travado**: `test/lint_ui_test.dart` mantém uma catraca em 49, no
-   padrão de `SEM_MODELO_HOJE`, e o teto só desce. Consertar são duas coisas: **recalibrar** os
-   papéis para telefone (`body` em 16 para `caption` deixar de ser o corpo, `moneyXl` perto de 32)
-   e **reatribuir** os 49 sítios, baixando o teto a cada troca. A recalibração muda o desenho de
-   toda tela, então pede uma passagem visual em aparelho — não é substituição mecânica.
+7. **Restam 36 linhas com `fontSize:` solto no mobile, e seis delas abaixo de todo papel.**
+   A escala já foi **recalibrada** para 360dp (`body` em 16, `moneyXl` em 32), e os 15 sítios que
+   tinham papel equivalente foram trocados: `metricSm` para cifra, `metric` para score, `caption`
+   para legenda, `ticker` para papel, `pageTitle` para cabeçalho de sheet. A catraca de
+   `test/lint_ui_test.dart` desceu de 49 para **36**, e o teto só desce.
 
-   **Os seis sítios abaixo de todo papel, para a passagem começar por eles.** A escala do sistema
-   começa em 11 (`eyebrow`); estes estão em 9 e 10, e são justamente os pontos mais apertados,
-   que é por que ninguém os subiu:
+   O que sobra é onde a decisão é **de layout antes de tipo**, e por isso não é substituição
+   mecânica. A escala do sistema começa em 11 (`eyebrow`); os seis abaixo disso estão em 9 e 10, e
+   são justamente os pontos mais apertados, que é por que ninguém os subiu:
    - `features/hoje/widgets/hoje_charts.dart:112` e `:136` — rótulo de eixo do gráfico. Subir
-     para `caption` (12) pode sobrepor o eixo, e o gráfico é onde a densidade importa;
+     para `caption` (13) pode sobrepor o eixo, e o gráfico é onde a densidade importa;
    - `features/hoje/widgets/hoje_health.dart:262` e `:267` — rótulo e faixa de dimensão, numa
      linha de **quatro** colunas em 360dp. "Diversif." já é abreviação por falta de espaço;
    - `features/carteira/widgets/carteira_positions.dart:291` e `:392` — rótulo de categoria numa
      linha de posição.
 
-   Nos quatro primeiros a decisão é de layout antes de tipo: ou a linha passa a ter menos
-   colunas, ou o gráfico ganha mais espaço de eixo. Converter às cegas troca um defeito invisível
-   (texto pequeno demais) por um visível (texto sobreposto), e o visível é o que se conserta
-   correndo.
+   Ou a linha passa a ter menos colunas, ou o gráfico ganha mais espaço de eixo. Converter às
+   cegas troca um defeito invisível (texto pequeno demais) por um visível (texto sobreposto), e o
+   visível é o que se conserta correndo.
 
 8. **"Fio + chão" não embarcou no mobile.** Há 26 `Card(`, 36 `ListTile` e 150 `Icons.*` crus. O
    caso exemplar é `FiInsightTile` — `Card` + `CircleAvatar` com ícone colorido + título +

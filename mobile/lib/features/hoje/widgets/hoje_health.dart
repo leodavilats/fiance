@@ -69,11 +69,7 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
                   children: [
                     Text(
                       '${health.score.round()}/100',
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+                      style: FiType.metric.copyWith(color: color),
                     ),
                     const SizedBox(width: 8),
                     Container(

@@ -304,7 +304,7 @@ class _FiltersSheetState extends State<_FiltersSheet> {
               children: [
                 const Text(
                   'Filtros',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: FiType.title,
                 ),
                 TextButton(
                   onPressed: () => setState(() {
@@ -593,10 +593,7 @@ class _OpportunityCard extends StatelessWidget {
                       children: [
                         Text(
                           opportunity.ticker,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          style: FiType.ticker,
                         ),
                         if (opportunity.name != null)
                           Text(

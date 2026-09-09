@@ -71,6 +71,49 @@ atual" na trilha de seção e "esta é a opção escolhida" numa barra de ferram
 é um preenchimento (`.segmented` / `.segmented-option`), que não se confunde com aba, e o `lint:ui`
 conhece a classe nova.
 
+### A lista de vocabulário proibido virou máquina
+
+`AI-TELLS.md` se declara não-checável por máquina, e para composição e redação isso é verdade. A
+**lista de frases proibidas** não é, e a diferença apareceu no lugar mais visível possível:
+`login_screen` e `splash_screen`, as duas primeiras telas do aplicativo móvel, abriam com "Ações,
+FIIs, BDRs, ETFs e renda fixa — **tudo em um só assistente**". São dois itens da lista numa frase
+de dez palavras: o "tudo em um só lugar" de marketing genérico e a persona de assistente
+conversacional, que o documento nomeia como *o tell mais específico deste produto*. Passou por
+todas as revisões porque nenhuma máquina lia aquele documento.
+
+A regra entrou nas duas plataformas — `lint:ui` no web, `test/lint_ui_test.dart` no mobile — e
+varre **só literal de string**, porque varrer o fonte inteiro faria a regra reprovar a própria
+justificativa de por que uma frase é proibida. Emoji entra; seta **não**, porque a seta é a
+informação em "condição → veredito" e no rótulo de tendência lateral.
+
+E o glifo carregando estado saiu de três telas. `preferencias`, `objetivos` e `conta` decidiam a
+cor de uma mensagem por `message().startsWith('✓')` — o símbolo dentro da string era o estado, e a
+classe saía de reparsear o próprio texto. Agora é um sinal de `'ok' | 'erro' | null`, e o texto de
+erro diz o que continua valendo em vez de só anunciar a falha. Sete setas decorativas em rótulo de
+link também saíram: o link já diz que é link.
+
+### O foco na troca de rota falhava em nove telas
+
+`moverFocoParaOTitulo` faz `querySelector('main h1').focus()` a cada `NavigationEnd`, para o leitor
+de tela não perder o lugar. Só que `focus()` em elemento sem `tabindex` **não faz nada, e não
+avisa** — e nove telas escrevem o próprio `<h1>` em vez de usar `<app-page-header>`, que é quem
+traz o `tabindex="-1"`. Nelas o mecanismo estava morto desde sempre, com o teste de navegador
+verde, porque medir por seletor não pega isto: a régua é `document.activeElement`.
+
+A correção não foi carimbar `tabindex` em nove templates — foi o shell garantir o próprio alvo,
+porque quem devolve o foco é quem sabe que ele precisa ser aceito. Coberto por dois casos em
+`e2e/acessibilidade.spec.ts`, com navegação por **clique** e não por `goto`, que é a troca de rota
+que o mecanismo existe para cobrir.
+
+### A escala do mobile chega às telas
+
+A fundação recalibrou a escala para 360dp — `body` em 16, e não 15, porque em telefone o corpo
+precisa de corpo — e 15 tamanhos escritos soltos ignoravam isso por completo. Foram trocados pelo
+papel equivalente: `metricSm` para cifra, `metric` para o score de saúde, `caption` para legenda,
+`ticker` para papel, `pageTitle` para cabeçalho de sheet. A catraca de `fontSize:` solto desceu de
+**49 para 36**, e o que resta é legenda de gráfico abaixo de 11px, que não tem papel porque a
+escala tem piso.
+
 ### O contraste voltou ao CI
 
 `check-contrast.mjs` foi apagado junto com o gerador de design, e o CI ficou dois commits **sem

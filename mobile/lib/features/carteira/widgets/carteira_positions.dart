@@ -162,7 +162,7 @@ class _FiGroupHeader extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            style: FiType.label,
           ),
           Text(
             metaPct != null
@@ -199,7 +199,7 @@ class _FiAssetCard extends StatelessWidget {
           children: [
             Text(
               '${p.ticker} — ${p.label}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: FiType.title,
             ),
             const SizedBox(height: 12),
             ...p.reasons.map(

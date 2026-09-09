@@ -111,7 +111,7 @@ interface ProjectionRow {
             <div class="flex items-baseline justify-between gap-3 mb-1">
               <h2 class="fi-title text-ink m-0">Onde você está fora da meta</h2>
               <a routerLink="/voce/objetivos" class="fi-caption text-brand no-underline">
-                Ajustar metas →
+                Ajustar metas
               </a>
             </div>
             <p class="fi-caption text-ink-3 m-0 mb-4">
@@ -250,7 +250,7 @@ interface ProjectionRow {
                           routerLink="/descobrir/renda-fixa"
                           class="fi-caption text-brand no-underline"
                         >
-                          Comparar títulos →
+                          Comparar títulos
                         </a>
                       } @else {
                         <p class="fi-caption text-ink-3 m-0 mt-1">

@@ -205,19 +205,76 @@ void main() {
      * Tipografia fora da escala de papeis.
      *
      * `fontSize:` solto e o `text-sm` do Flutter, e a doenca e a mesma que o web ja curou: dois
-     * corpos para a mesma coisa em telas vizinhas. Aqui ela esta viva -- 49 linhas em 15 tamanhos
-     * distintos, incluindo 11px e 9px, contra 83 usos de papel.
+     * corpos para a mesma coisa em telas vizinhas.
      *
      * `core/design_tokens.dart` e `core/theme.dart` ficam de fora: sao a camada de design, e e
      * ali que tamanho se declara. O resto e tela.
      *
-     * Por isso esta regra e CATRACA, no padrao de `SEM_MODELO_HOJE` no backend: nao conserta
-     * hoje, nao deixa crescer, e o teto so desce. Consertar de verdade exige recalibrar a escala
-     * para 360dp -- `body` em 16 para `caption` deixar de ser o corpo do aplicativo -- e isso
-     * pede uma passagem visual em aparelho, nao substituicao mecanica. Esta no KNOWN_ISSUES.
+     * A escala ja foi recalibrada para 360dp, e com ela os 15 tamanhos que tinham papel
+     * equivalente foram trocados. O que resta e legenda de grafico abaixo de 11px, que nao tem
+     * papel porque a escala tem piso -- e por isso a regra segue CATRACA, no padrao de
+     * `SEM_MODELO_HOJE`: nao conserta hoje, nao deixa crescer, e o teto so desce.
      */
+    /*
+     * A parte mecanica de docs/design/AI-TELLS.md.
+     *
+     * Aquele documento se declara nao-checavel por maquina, e para composicao e redacao isso e
+     * verdade. A lista de vocabulario proibido nao e: sao frases literais. E foi aqui que ela
+     * custou -- `login_screen` e `splash_screen`, as duas primeiras telas do aplicativo, abriam
+     * com "tudo em um so assistente": o "tudo em um so lugar" de marketing generico e a persona
+     * de assistente conversacional, numa frase de dez palavras.
+     *
+     * Emoji tambem entra, incluindo os dingbats que o web usava para carregar estado. Estado e
+     * papel de cor (`fiStateColor`), nao glifo.
+     *
+     * Seta fica de fora de proposito: e a informacao no rotulo de tendencia lateral.
+     */
+    test('nenhuma tela fala como IA generica', () {
+      final proibido = <RegExp, String>{
+        RegExp(r'revolucion[aá]ri', caseSensitive: false): 'marketing generico',
+        RegExp(r'simples\s+e\s+poderos', caseSensitive: false): 'marketing generico',
+        RegExp(r'tudo\s+em\s+um\s+s[oó]\s+\w+', caseSensitive: false): 'marketing generico',
+        RegExp(r'pr[oó]ximo\s+n[ií]vel', caseSensitive: false): 'marketing generico',
+        RegExp(r'como\s+posso\s+(te\s+)?ajudar', caseSensitive: false): 'fala de assistente',
+        RegExp(r'[eé]\s+importante\s+notar', caseSensitive: false): 'fala de assistente',
+        RegExp(
+          r'assistente\s+(financeiro|de\s+investimentos)',
+          caseSensitive: false,
+        ): 'persona de chatbot',
+        RegExp(r'parab[eé]ns', caseSensitive: false): 'o produto descreve, nao comemora',
+      };
+
+      final emoji = RegExp(
+        r'[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F0FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]',
+        unicode: true,
+      );
+
+      final achados = <String>[];
+      for (final f in fontes) {
+        final fonte = f.readAsStringSync();
+        if (_temEscape(fonte, 'vocabulario')) continue;
+
+        for (final texto in _literaisDe(fonte)) {
+          for (final entrada in proibido.entries) {
+            final m = entrada.key.firstMatch(texto);
+            if (m != null) achados.add('${_curto(f)}: "${m[0]}" -- ${entrada.value}');
+          }
+          final g = emoji.firstMatch(texto);
+          if (g != null) achados.add('${_curto(f)}: ${g[0]} em texto de interface');
+        }
+      }
+
+      expect(
+        achados,
+        isEmpty,
+        reason:
+            'a lista esta em docs/design/AI-TELLS.md. Escape: '
+            '// design-exception: vocabulario -- motivo. Achados: ${achados.join(' | ')}',
+      );
+    });
+
     test('o tipo solto nao cresce', () {
-      const teto = 49;
+      const teto = 36;
 
       final soltos = <String>[];
       for (final f in fontes) {
@@ -252,6 +309,15 @@ List<File> _dartsDe(String raiz) => Directory(raiz)
     .toList();
 
 String _curto(File f) => f.path.replaceAll(r'\', '/').replaceFirst('lib/', '');
+
+/// Os literais de string do arquivo -- o que de fato vai para a tela.
+///
+/// Varrer o fonte inteiro pegaria comentario e nome de simbolo, e a regra passaria a
+/// reprovar a propria justificativa de por que uma frase e proibida.
+Iterable<String> _literaisDe(String fonte) =>
+    RegExp("'([^'\\\\\n]*)'")
+        .allMatches(fonte)
+        .map((m) => m[1] ?? '');
 
 /// A forma unica de escapar, igual a do web: a regra pelo nome, e o motivo escrito.
 bool _temEscape(String fonte, String regra) =>

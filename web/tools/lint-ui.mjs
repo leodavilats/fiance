@@ -302,6 +302,86 @@ function certaintyLanguage(files) {
   return problems;
 }
 
+/*
+ * A parte mecânica de docs/design/AI-TELLS.md.
+ *
+ * Aquele documento se declara não-checável por máquina, e para composição e redação isso é
+ * verdade. A **lista de vocabulário proibido** não é: são frases literais. Nada a conferia, e o
+ * custo apareceu — a primeira tela do aplicativo móvel abria com "tudo em um só assistente", que
+ * são dois itens da lista numa frase só, e três telas do web decidiam a cor de uma mensagem por
+ * um prefixo de glifo, com o símbolo carregando o estado que é papel de cor.
+ *
+ * Só o que é inequívoco entra. Nada de julgamento sobre hierarquia, simetria ou "parece
+ * plausível demais": isso é revisão humana e continua sendo.
+ */
+const VOCABULARIO_PROIBIDO = [
+  [/\brevolucion[áa]ri[oa]s?\b/gi, 'marketing genérico'],
+  [/\bsimples\s+e\s+poderos[oa]\b/gi, 'marketing genérico'],
+  [/\btudo\s+em\s+um\s+s[óo]\s+\w+/gi, 'marketing genérico'],
+  [/\bpr[óo]ximo\s+n[íi]vel\b/gi, 'marketing genérico'],
+  [/\btransforme\s+sua\s+rela[çc][ãa]o\b/gi, 'marketing genérico'],
+  [/\bcomo\s+posso\s+(?:te\s+)?ajudar\b/gi, 'fala de assistente'],
+  [/\bfico\s+feliz\s+em\s+ajudar\b/gi, 'fala de assistente'],
+  [/\b[ée]\s+importante\s+notar\b/gi, 'fala de assistente'],
+  [/\bn[óo]s\s+entendemos\s+que\b/gi, 'fala de assistente'],
+  [/\bassistente\s+(?:financeiro|de\s+investimentos)\b/gi, 'persona de chatbot'],
+  [/\bparab[ée]ns\b/gi, 'o produto descreve, não comemora'],
+];
+
+/*
+ * Pictograma, emoticon, bandeira e os dingbats que já foram usados aqui para carregar estado.
+ * Estado é papel de cor; ícone é o Lucide registrado.
+ *
+ * A faixa de setas fica **fora** de propósito: a seta é a informação em "condição → veredito" e
+ * no rótulo de tendência lateral. Seta decorando rótulo de link é revisão humana.
+ */
+const EMOJI_EM_TEXTO =
+  /[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F0FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{1F1E6}-\u{1F1FF}]/gu;
+
+const escapeDeVocabulario = escapeDe('vocabulario');
+
+/** Só o que vai para a tela: o literal de `template:`, não comentário nem nome de símbolo. */
+function textoDeTemplate(source) {
+  const inicio = source.indexOf('template: `');
+  if (inicio < 0) return '';
+  const abre = inicio + 'template: `'.length;
+  const fecha = source.indexOf('`,', abre);
+  return source.slice(abre, fecha < 0 ? source.length : fecha);
+}
+
+function vocabularioDeIA(files) {
+  const problems = [];
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    if (escapeDeVocabulario.test(source)) continue;
+
+    const template = textoDeTemplate(source);
+    if (!template) continue;
+
+    for (const [padrao, motivo] of VOCABULARIO_PROIBIDO) {
+      padrao.lastIndex = 0;
+      for (const match of template.matchAll(padrao)) {
+        problems.push({
+          file,
+          name: `${relative(WEB_ROOT, file)}: "${match[0]}" — ${motivo}`,
+        });
+      }
+    }
+
+    EMOJI_EM_TEXTO.lastIndex = 0;
+    const glifos = [...new Set([...template.matchAll(EMOJI_EM_TEXTO)].map(m => m[0]))];
+    if (glifos.length > 0) {
+      problems.push({
+        file,
+        name: `${relative(WEB_ROOT, file)}: ${glifos.join(' ')} em texto de interface`,
+      });
+    }
+  }
+
+  return problems;
+}
+
 const TIPO_CRU =
   /\b(?:text-(?:xs|sm|base|lg|xl|[2-9]xl)|font-(?:thin|extralight|light|normal|medium|semibold|bold|extrabold|black))\b/g;
 
@@ -691,6 +771,7 @@ function main() {
   const semNome = missingAccessibleNames(templates);
   const semFaixa = projectionsWithoutBand(templates);
   const comCerteza = certaintyLanguage(templates.filter(f => f.endsWith('.html')));
+  const vocabularioGenerico = vocabularioDeIA(tsFiles);
   const tipoCru = tipografiaCrua(templates);
   const raioSolto = raioForaDaEscala(templates);
   const camadaSolta = camadaForaDaEscala(templates);
@@ -766,6 +847,13 @@ function main() {
       comCerteza,
       'Preço futuro não se afirma. Troque por linguagem condicional, ou negue ' +
         'explicitamente (“não há garantia de retorno” passa; “retorno garantido” não).'
+    ) +
+    report(
+      'Vocabulário de IA genérica em texto de tela',
+      vocabularioGenerico,
+      'A lista está em docs/design/AI-TELLS.md: marketing genérico, fala de assistente, ' +
+        'persona de chatbot, emoji e comemoração. Estado é papel de cor, não glifo. ' +
+        'Escape: <!-- design-exception: vocabulario — motivo -->'
     ) +
     report(
       'Tipografia fora da escala de papéis',
@@ -862,7 +950,7 @@ function main() {
     '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas, linguagem, ' +
       'tipografia, camada, foco, controles, nome de tela, serifa, ' +
       'ordem de cabeçalho, caixa, esqueleto, direção, ' +
-      'estado desabilitado e contorno de controle conferidos.'
+      'estado desabilitado, contorno de controle e vocabulario conferidos.'
   );
 }
 

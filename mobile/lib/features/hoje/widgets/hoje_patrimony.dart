@@ -27,7 +27,7 @@ class FiPatrimonyBlock extends StatelessWidget {
           children: [
             Text(
               'Patrimônio total',
-              style: TextStyle(color: mutedColor, fontSize: 13),
+              style: FiType.caption.copyWith(color: mutedColor),
             ),
             const SizedBox(height: 4),
             Text(
@@ -53,7 +53,7 @@ class FiPatrimonyBlock extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '· ${summary.positionsCount} posições',
-                  style: TextStyle(color: mutedColor, fontSize: 13),
+                  style: FiType.caption.copyWith(color: mutedColor),
                 ),
               ],
             ),

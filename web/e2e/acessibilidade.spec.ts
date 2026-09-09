@@ -138,3 +138,36 @@ test.describe('movimento reduzido', () => {
     await contexto.close();
   });
 });
+
+test.describe('troca de rota devolve o foco ao título', () => {
+  /*
+   * `focus()` em elemento sem `tabindex` não faz nada, e não avisa. Nove telas escrevem o próprio
+   * `<h1>` em vez de usar `<app-page-header>`, e nelas o leitor de tela perdia o lugar a cada
+   * navegação — com o teste de navegador verde, porque medir por seletor não pega isto.
+   *
+   * A navegação aqui é por clique, e não por `goto`: é a troca de rota dentro do aplicativo que o
+   * mecanismo existe para cobrir.
+   */
+  const TROCAS = [
+    { de: '/descobrir/oportunidades', clicar: 'Quedas' },
+    { de: '/patrimonio', clicar: 'Composição' },
+  ];
+
+  for (const { de, clicar } of TROCAS) {
+    test(`de ${de}, o clique em "${clicar}" leva o foco ao título`, async ({ page }) => {
+      await entrarComo(page, 'e2e_foco_titulo');
+      await salvarPosicao(page, 'e2e_foco_titulo', 'PETR4', 100, 30);
+
+      await page.goto(de);
+      await expect(page.locator('main h1')).toBeVisible();
+
+      await page.getByRole('link', { name: clicar, exact: true }).first().click();
+      await expect(page.locator('main h1')).toBeVisible();
+
+      const noTitulo = await page.evaluate(
+        () => document.activeElement?.tagName.toLowerCase() ?? ''
+      );
+      expect(noTitulo, `o foco não voltou para o título ao abrir ${clicar}`).toBe('h1');
+    });
+  }
+});

@@ -130,11 +130,7 @@ class _FiStatBlock extends StatelessWidget {
           children: [
             Text(
               value,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: valueColor,
-              ),
+              style: FiType.metricSm.copyWith(color: valueColor),
             ),
             if (caption != null) ...[
               const SizedBox(width: 6),

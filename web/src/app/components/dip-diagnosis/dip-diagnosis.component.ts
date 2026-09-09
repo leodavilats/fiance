@@ -74,7 +74,10 @@ const DIMENSIONS: readonly { key: string; label: string; question: string }[] = 
               class="flex items-baseline justify-between gap-3 py-3 cursor-pointer list-none fi-focusable"
             >
               <span class="fi-title text-ink">{{ dim.label }}</span>
-              <span class="fi-caption text-ink-3">{{ dim.question }} →</span>
+              <span class="fi-caption text-ink-3 flex items-center gap-1">
+                {{ dim.question }}
+                <lucide-icon name="chevron-down" size="14" aria-hidden="true"></lucide-icon>
+              </span>
             </summary>
             <ul class="list-none m-0 p-0 pb-3 flex flex-col gap-1">
               @for (reason of dim.reasons; track reason) {

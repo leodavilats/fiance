@@ -41,7 +41,7 @@ import { LucideAngularModule } from 'lucide-angular';
           }
           @if (secondaryLabel() && secondaryRoute()) {
             <a [routerLink]="secondaryRoute()" class="fi-caption text-brand no-underline">
-              {{ secondaryLabel() }} →
+              {{ secondaryLabel() }}
             </a>
           }
         </div>

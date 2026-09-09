@@ -353,7 +353,13 @@ export class AppComponent {
     queueMicrotask(() => {
       setTimeout(() => {
         const titulo = this.doc.querySelector<HTMLElement>('main h1');
-        titulo?.focus({ preventScroll: true });
+        if (!titulo) return;
+
+        // `focus()` em elemento sem `tabindex` nao faz nada, e nao avisa. Nove telas escrevem o
+        // proprio `<h1>` em vez de usar `<app-page-header>`, e nelas a devolucao de foco falhava
+        // calada. Quem devolve o foco e quem garante que o alvo o aceita.
+        if (!titulo.hasAttribute('tabindex')) titulo.setAttribute('tabindex', '-1');
+        titulo.focus({ preventScroll: true });
       }, 0);
     });
   }

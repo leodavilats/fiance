@@ -83,7 +83,7 @@ const KIND_LABEL: Record<string, string> = {
       <p class="fi-caption text-ink-3 m-0 mt-6 pt-4 border-t border-hairline">
         A atividade cobre o que o fiance consegue observar: veredito, alocação, vencimento e
         proventos lançados.
-        <a routerLink="/patrimonio/proventos" class="text-brand">Ver todos os proventos →</a>
+        <a routerLink="/patrimonio/proventos" class="btn-link">Ver todos os proventos</a>
       </p>
     }
   `,

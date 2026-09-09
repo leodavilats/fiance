@@ -55,10 +55,7 @@ class _AssetDetailContent extends ConsumerWidget {
                   children: [
                     Text(
                       a.symbol,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: FiType.pageTitle,
                     ),
                     if (a.name != null)
                       Text(

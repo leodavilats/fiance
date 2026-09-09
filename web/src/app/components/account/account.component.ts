@@ -194,8 +194,15 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
             <lucide-icon [name]="clearing() ? 'loader-circle' : 'trash2'" size="16"></lucide-icon>
             {{ clearing() ? 'Limpando…' : 'Limpar todo o cache' }}
           </button>
-          @if (cacheMessage()) {
-            <span class="fi-body text-ink-2" role="status">{{ cacheMessage() }}</span>
+          @if (cacheResultado(); as r) {
+            <p
+              class="fi-body m-0"
+              [class.text-favorable]="r.ok"
+              [class.text-adverse]="!r.ok"
+              [attr.role]="r.ok ? 'status' : 'alert'"
+            >
+              {{ r.texto }}
+            </p>
           }
         </div>
       </div>
@@ -226,7 +233,7 @@ export class AccountComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly clearing = signal(false);
-  readonly cacheMessage = signal('');
+  readonly cacheResultado = signal<{ ok: boolean; texto: string } | null>(null);
 
   readonly exporting = signal(false);
   readonly exportError = signal('');
@@ -314,17 +321,17 @@ export class AccountComponent implements OnInit {
 
   private clear(pattern: string): void {
     this.clearing.set(true);
-    this.cacheMessage.set('');
+    this.cacheResultado.set(null);
     this.svc.clearCache(pattern).subscribe({
       next: res => {
         this.clearing.set(false);
-        this.cacheMessage.set(`✓ ${res.deleted} entradas removidas`);
-        setTimeout(() => this.cacheMessage.set(''), 3000);
+        this.cacheResultado.set({ ok: true, texto: `${res.deleted} entradas removidas` });
+        setTimeout(() => this.cacheResultado.set(null), 3000);
       },
       error: () => {
         this.clearing.set(false);
-        this.cacheMessage.set('✗ Não conseguimos limpar o cache');
-        setTimeout(() => this.cacheMessage.set(''), 4000);
+        this.cacheResultado.set({ ok: false, texto: 'Não conseguimos limpar o cache' });
+        setTimeout(() => this.cacheResultado.set(null), 4000);
       },
     });
   }

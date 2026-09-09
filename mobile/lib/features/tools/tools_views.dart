@@ -135,10 +135,7 @@ class _AssetAnalysisCard extends StatelessWidget {
                     children: [
                       Text(
                         a.symbol,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
+                        style: FiType.pageTitle,
                       ),
                       if (a.name != null)
                         Text(a.name!, style: TextStyle(color: fiInk2(context))),

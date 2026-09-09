@@ -98,6 +98,11 @@ imprecisão de dinheiro de verdade (R$ 1.847,32, não R$ 1.850,00).
 - **Comparar com um concorrente real de vez em quando**, lado a lado (Status Invest, Investidor10,
   o próprio produto atual) — "sameness de template" é mais fácil de ver em comparação do que
   olhando uma tela sozinha.
-- **Isto não substitui o `lint:ui`.** O lint pega classe, ícone e ausência de explicabilidade — é
-  mecânico. Nada aqui é checável por máquina; é revisão de julgamento, e por isso vale conferir
-  **antes** de pedir a tela como pronta, não depois.
+- **A lista de frases proibidas é máquina; o resto não.** As frases nomeadas acima, a persona de
+  assistente e emoji em texto de tela são cobradas pelo `lint:ui` (regra *Vocabulário de IA*) e
+  pelo `test/lint_ui_test.dart` do mobile, varrendo só literal de string. Isso entrou depois de o
+  documento existir por meses afirmando que nada aqui era checável — e enquanto ele afirmava, as
+  duas primeiras telas do aplicativo abriam com "tudo em um só assistente", que são dois itens
+  desta lista numa frase de dez palavras.
+- **Composição, simetria e "plausível demais" continuam sendo revisão humana**, e é por isso que
+  vale conferir **antes** de pedir a tela como pronta, não depois. Máquina não julga hierarquia.

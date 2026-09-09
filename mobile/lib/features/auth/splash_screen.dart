@@ -41,13 +41,9 @@ class SplashScreen extends ConsumerWidget {
                   const AppWordmark(height: 24),
                   const SizedBox(height: 8),
                   Text(
-                    'Ações, FIIs, BDRs, ETFs e renda fixa — tudo em um só assistente',
+                    'Da sobra do mês ao próximo aporte, com a conta à vista',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: fiInk2(context),
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
+                    style: FiType.caption.copyWith(color: fiInk2(context)),
                   ),
                 ],
               ),
