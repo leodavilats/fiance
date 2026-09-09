@@ -103,5 +103,58 @@ void main() {
 
       expect(limpo.breadcrumbs?.first.data, anyOf(isNull, isEmpty));
     });
+
+    test('a mensagem do evento é redigida como a do breadcrumb', () {
+      final evento = SentryEvent(
+        message: SentryMessage(
+          r'Falha ao lançar venda de R$ 38.400,00',
+          template: r'Falha ao lançar venda de R$ %s',
+          params: [38400],
+        ),
+      );
+
+      final limpo = limparEvento(evento, Hint())!;
+
+      expect(
+        limpo.message?.formatted,
+        isNot(contains('38.400')),
+        reason: 'valor em reais na mensagem sai do produto se ninguém redigir',
+      );
+      expect(
+        limpo.message?.params,
+        anyOf(isNull, isEmpty),
+        reason: 'o parâmetro é o valor cru, e nenhuma redação alcança ele',
+      );
+    });
+
+    test('o valor da exceção é redigido', () {
+      final evento = SentryEvent(
+        exceptions: [
+          SentryException(
+            type: 'StateError',
+            value: 'Quantidade de venda (300) maior que a carteira (100).',
+          ),
+        ],
+      );
+
+      final limpo = limparEvento(evento, Hint())!;
+
+      expect(
+        limpo.exceptions?.first.value,
+        isNot(contains('300')),
+        reason: 'número citado em erro é dado de carteira',
+      );
+      expect(limpo.exceptions?.first.value, contains('Quantidade de venda'));
+    });
+  });
+
+  group('o ambiente', () {
+    test('em teste, que roda em debug, não se diz produção', () {
+      expect(
+        ambiente,
+        'development',
+        reason: 'evento de desenvolvimento misturado ao de produção cega o painel',
+      );
+    });
   });
 }

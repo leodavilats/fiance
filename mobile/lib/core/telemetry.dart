@@ -11,10 +11,11 @@ const String sentryDsn = String.fromEnvironment(
   defaultValue: _dsnPadrao,
 );
 
-const String ambiente = String.fromEnvironment(
-  'APP_ENV',
-  defaultValue: 'development',
-);
+const String _ambienteDeclarado = String.fromEnvironment('APP_ENV');
+
+final String ambiente = _ambienteDeclarado.isNotEmpty
+    ? _ambienteDeclarado
+    : (kReleaseMode ? 'production' : 'development');
 
 final RegExp _segmentoIdentificador = RegExp(
   r'^(?:[A-Z][A-Z0-9]{3}\d{1,2}|\d+|[0-9a-fA-F-]{16,})$',
@@ -59,30 +60,45 @@ String limparTexto(String texto) {
 }
 
 SentryEvent? limparEvento(SentryEvent evento, Hint hint) {
+  final user = evento.user;
   final request = evento.request;
 
-  return evento.copyWith(
-    user: evento.user == null ? null : SentryUser(id: evento.user!.id),
-    request: request == null
-        ? null
-        : SentryRequest(
-            method: request.method,
-            url: request.url == null ? null : limparCaminho(request.url!),
-          ),
-    // ignore: deprecated_member_use
-    extra: const <String, dynamic>{},
-    breadcrumbs: evento.breadcrumbs
-        ?.map(
-          (b) => Breadcrumb(
-            message: b.message == null ? null : limparTexto(b.message!),
-            category: b.category,
-            level: b.level,
-            type: b.type,
-            timestamp: b.timestamp,
-          ),
-        )
-        .toList(),
-  );
+  evento.user = user == null ? null : SentryUser(id: user.id);
+  evento.request = request == null
+      ? null
+      : SentryRequest(
+          method: request.method,
+          url: request.url == null ? null : limparCaminho(request.url!),
+        );
+  // ignore: deprecated_member_use
+  evento.extra = <String, dynamic>{};
+
+  final mensagem = evento.message;
+  if (mensagem != null) {
+    evento.message = SentryMessage(
+      limparTexto(mensagem.formatted),
+      template: mensagem.template == null ? null : limparTexto(mensagem.template!),
+    );
+  }
+
+  for (final excecao in evento.exceptions ?? const <SentryException>[]) {
+    final valor = excecao.value;
+    if (valor != null) excecao.value = limparTexto(valor);
+  }
+
+  evento.breadcrumbs = evento.breadcrumbs
+      ?.map(
+        (b) => Breadcrumb(
+          message: b.message == null ? null : limparTexto(b.message!),
+          category: b.category,
+          level: b.level,
+          type: b.type,
+          timestamp: b.timestamp,
+        ),
+      )
+      .toList();
+
+  return evento;
 }
 
 Future<bool> rodarComTelemetria(Future<void> Function() app) async {

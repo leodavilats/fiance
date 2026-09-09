@@ -137,6 +137,47 @@ jobs:
       - name: Testes
         run: flutter test
 
+  android:
+    name: Mobile (build Android)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('mobile/android/**/*.gradle*', 'mobile/pubspec.lock') }}
+          restore-keys: gradle-
+
+      - name: Instalar dependências
+        run: flutter pub get
+
+      # O google-services.json real é segredo e não está no repositório; sem nenhum o plugin do
+      # Firebase para o build. O substituto não fala com projeto nenhum e serve só para compilar.
+      - name: Configuração do Firebase para compilar
+        run: cp android/app/google-services.ci.json android/app/google-services.json
+
+      # `flutter analyze` e `flutter test` nunca tocam o Gradle: o bump do Kotlin para 2.2 deixou
+      # o build Android quebrado por um plugin preso na linguagem 1.6, e a suíte ficou verde o
+      # tempo todo. Este job é o que enxerga essa metade.
+      - name: Build de release (APK)
+        run: flutter build apk --release
+
   e2e:
     name: E2E (navegador)
     runs-on: ubuntu-latest

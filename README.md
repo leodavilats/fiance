@@ -153,15 +153,64 @@ node dist/fiance/server/server.mjs   # sobe o servidor (porta 4000 por padrão)
 # Backend — Railway usa o Procfile (uvicorn) automaticamente.
 # Root Directory do serviço no Railway deve ser "backend".
 
-# Mobile — APK de teste
+# Mobile — APK de teste (assina com a chave de debug se não houver keystore)
 cd mobile
 flutter build apk --release   # saída em build/app/outputs/flutter-apk/
 
-# Mobile — App Bundle para a Play Store (requer keystore de release configurado)
+# Mobile — App Bundle para a Play Store (exige android/key.properties; ver abaixo)
 flutter build appbundle --release
 ```
 
 Por padrão, o app mobile aponta para o backend em produção (`https://fiance.up.railway.app/api`), configurado em `mobile/lib/core/api_client.dart`.
+
+### Assinatura do Android
+
+O APK de release sai assinado com a **chave de debug** quando não há keystore: serve para
+instalar no aparelho, e a Play Store recusa. O App Bundle não aceita isso e **falha** sem chave,
+porque ele é o artefato de loja.
+
+A chave é sua e não mora no repositório. Gere uma vez e guarde as duas coisas — o `.jks` e a
+senha —, porque **keystore perdido é aplicativo que não pode mais ser atualizado**:
+
+```bash
+keytool -genkeypair -v -keystore ~/fiance-release.jks -keyalg RSA -keysize 2048         -validity 10000 -alias fiance
+```
+
+Depois declare em `mobile/android/key.properties` (já está no `.gitignore`):
+
+```properties
+storePassword=…
+keyPassword=…
+keyAlias=fiance
+storeFile=/caminho/absoluto/para/fiance-release.jks
+```
+
+O arquivo é lido em `android/app/build.gradle.kts`. Declarado pela metade — campo faltando ou
+`.jks` inexistente —, o build **falha dizendo qual**; é a situação em que assinar com a chave
+errada em silêncio seria pior.
+
+### Firebase no build
+
+`android/app/google-services.json` é segredo de projeto e não está no repositório. Sem nenhum
+arquivo o plugin do Firebase interrompe o build, então há um substituto que **não fala com projeto
+nenhum** e serve só para compilar (é o que o CI usa):
+
+```bash
+cp android/app/google-services.ci.json android/app/google-services.json
+```
+
+Com ele, login pelo Google e push não funcionam — para rodar o app de verdade, use o arquivo do
+projeto Firebase.
+
+### Telemetria do mobile
+
+O DSN vem embutido (`lib/core/telemetry.dart`) e o app só reporta em release. O ambiente é
+`production` num build de release e `development` fora dele; para apontar um build de release
+para outro projeto ou ambiente, passe no build:
+
+```bash
+flutter build apk --release   --dart-define=SENTRY_DSN=…   --dart-define=APP_ENV=staging
+```
 
 ## Renderização no servidor
 
@@ -473,7 +522,7 @@ npm run format:check
 
 # Mobile
 flutter analyze
-flutter test         # 93 testes
+flutter test         # 114 testes
 flutter build apk --release
 
 # Marca — a partir da raiz

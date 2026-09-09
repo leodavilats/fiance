@@ -222,9 +222,17 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     há IOF sobre resgate de renda fixa com menos de 30 dias. Enquanto isso durar, o número é
     estimativa de apoio e não substitui a apuração oficial.
 
-21. **A telemetria do mobile ainda não foi ligada nem verificada.** Backend e web já têm DSN; o
-    mobile depende de `--dart-define=SENTRY_DSN=...` no build, e nenhum build assinado foi feito
-    ainda. O código está pronto e testado — o que falta é o DSN e um build real.
+21. **O mobile nunca teve um release de verdade: não existe chave, e nenhum evento foi visto.** A
+    fiação foi feita e está coberta (CHANGELOG de 2026-09-09): o DSN vem embutido em
+    `lib/core/telemetry.dart`, o app só reporta em release, o ambiente sai como `production` num
+    build de release, e a assinatura lê `android/key.properties` — o App Bundle **falha** sem ela.
+
+    O que falta é fora do código, e são duas coisas. A **chave de release não foi gerada**, então
+    o `.aab` de loja ainda não pode ser produzido; guardar o `.jks` e a senha é o que decide se o
+    app poderá ser atualizado depois de publicado (o passo está no
+    [README](../README.md#assinatura-do-android)). E **nenhum evento do mobile foi visto no
+    painel** do Sentry: confirmar exige um APK instalado num aparelho e um olhar no painel.
+    Enquanto isso não acontecer, a telemetria do mobile é código testado, não canal verificado.
 
 22. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
     vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo

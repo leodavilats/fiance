@@ -30,9 +30,11 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 111 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 114 testes
                                                    #   inclui test/lint_ui_test.dart:
                                                    #   8 regras do lint:ui, no Dart
+cd mobile  && flutter build apk --release          # analyze e test nao tocam o Gradle:
+                                                   #   o build Android e outra metade
 cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 160 testes
 cd web     && npm run lint:contrast                # contraste AA nos dois temas, web e mobile
 python design-tokens/build-icons.py --check        # marca sincronizada
@@ -46,8 +48,13 @@ Duas ressalvas que já custaram tempo:
 - **A lista acima é a do CI, não um subconjunto dela.** O `ruff format --check` já esteve fora
   daqui e dentro do `.github/workflows/ci.yml`: quem seguia o contrato à risca não rodava o comando
   que reprovava, e o HEAD ficou vermelho sem ninguém ver.
-- **Não rode `dart format`.** O CI do mobile é `flutter analyze && flutter test`. O formatter
-  reescreve o `design_tokens.dart` e quebra `if`s de uma linha que o repo mantém.
+- **Não rode `dart format`.** O formatter reescreve o `design_tokens.dart` e quebra `if`s de uma
+  linha que o repo mantém.
+- **O build Android custa minutos, e é o comando que ninguém roda.** `flutter analyze` e `flutter test`
+  rodam sobre Dart e **nunca** invocam o Gradle: o bump do Kotlin para 2.2 deixou o release
+  Android quebrado por um plugin preso na linguagem 1.6 com a suíte inteira verde. O CI tem um job
+  só para isso, e localmente ele custa alguns minutos — rode ao mexer em plugin, em `pubspec.yaml`
+  ou em qualquer coisa sob `mobile/android/`.
 
 ### Comentário: quase nunca
 
@@ -100,6 +107,7 @@ CHANGELOG.
 | Seção numa tela | Usar `<app-section title="…">`, que emite o `<h2>` | Seção sem cabeçalho: `/mes` tinha 5 seções e nenhuma parada de navegação |
 | Julgamento numa tela do mobile | `FiProvenance` — método, fonte, limitação | `test/lint_ui_test.dart` reprova: o invariante de explicabilidade vale nas duas plataformas |
 | Componente Angular novo | Escrever o `template` no próprio `.ts` — não há `.html` separado em `web/src/app/components` | Divergência de padrão na mesma pasta |
+| Dependência no `pubspec.yaml` do mobile | Rodar `flutter build apk --release` | Plugin com Gradle ou Kotlin incompatível quebra **só** o build Android, e `analyze`/`test` seguem verdes |
 
 ---
 

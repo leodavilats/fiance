@@ -1,9 +1,25 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+}
+
+// A chave de release mora em android/key.properties, fora do git (ver README).
+// Sem ela o build cai na chave de debug, que a Play Store recusa — e avisa em voz alta.
+val chaveDeRelease =
+    Properties().apply {
+        val arquivo = rootProject.file("key.properties")
+        if (arquivo.exists()) arquivo.inputStream().use { load(it) }
+    }
+
+val campoDaChave: (String) -> String = { campo ->
+    val valor = chaveDeRelease.getProperty(campo)
+    require(!valor.isNullOrBlank()) { "android/key.properties existe mas nao declara $campo" }
+    valor
 }
 
 android {
@@ -34,11 +50,36 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (!chaveDeRelease.isEmpty) {
+            create("release") {
+                val arquivo = rootProject.file(campoDaChave("storeFile"))
+                require(arquivo.exists()) { "keystore declarado em key.properties nao existe: $arquivo" }
+                storeFile = arquivo
+                storePassword = campoDaChave("storePassword")
+                keyAlias = campoDaChave("keyAlias")
+                keyPassword = campoDaChave("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+        }
+    }
+}
+
+// O APK de release pode sair com a chave de debug — serve para rodar no aparelho, e o
+// `flutter build apk` engole o aviso do Gradle. O App Bundle e o artefato de loja: sem chave
+// de verdade ele nao sai, porque um .aab assinado em debug e recusado la na ponta.
+val temChaveDeRelease = !chaveDeRelease.isEmpty
+
+tasks.matching { it.name.startsWith("bundle") && it.name.endsWith("Release") }.configureEach {
+    doFirst {
+        check(temChaveDeRelease) {
+            "App Bundle de release exige android/key.properties (ver README). " +
+                "Para rodar no aparelho, use `flutter build apk --release`."
         }
     }
 }

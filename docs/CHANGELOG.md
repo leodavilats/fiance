@@ -12,6 +12,68 @@
 
 ---
 
+## O build Android estava quebrado, e a suíte não tinha como saber (2026-09-09)
+
+`flutter build apk --release` falhava em `:sentry_flutter:compileReleaseKotlin` com *"Language
+version 1.6 is no longer supported"*. A causa é um encontro de duas datas: o projeto declara
+Kotlin **2.2.20**, que removeu o suporte a linguagem abaixo de 1.8, e `sentry_flutter` 8.14.2 fixa
+`languageVersion = "1.6"` no `build.gradle` do próprio plugin.
+
+**O que importa aqui não é o erro, é por quanto tempo ele coube no verde.** O CI do mobile era
+`flutter analyze && flutter test`, e nenhum dos dois invoca o Gradle: eles rodam sobre Dart. O
+produto tinha, ao mesmo tempo, 111 testes passando e nenhum artefato Android possível. Uma suíte
+que não constrói o que se distribui mede a metade que não é entregue.
+
+**O primeiro conserto foi um contorno, e ele foi desfeito.** Elevar o piso de linguagem dos
+subprojetos abaixo de 1.8, no `build.gradle.kts` da raiz, fazia o APK sair — mas deixava no repo um
+remendo cujo defeito estava a um upgrade de distância. `sentry_flutter` **9.29.0** já não fixa
+versão de linguagem nenhuma, e uma varredura nos onze plugins Android do projeto não achou outro
+que fixe. Sem consumidor, o remendo saiu: o conserto é o upgrade.
+
+**Numa subida de major, a telemetria se confere de novo.** O `before_send` é lista de permissão, e
+major é exatamente onde um canal novo de payload entra sem ser pedido — então foram conferidos os
+padrões do 9.x: captura de tela, hierarquia de view, replay de sessão e logs estruturados estão
+todos **desligados**. A API mudou uma coisa: `SentryEvent.copyWith` foi deprecado porque o evento
+passou a ser mutável, e `limparEvento` agora atribui direto.
+
+### O que a passagem encontrou na telemetria do mobile
+
+**Todo build de release se anunciava como `development`.** `APP_ENV` caía num `defaultValue` fixo,
+e nenhum build passava `--dart-define`. O painel receberia evento de produção etiquetado como
+desenvolvimento — que é a forma de ter telemetria e não ter aviso. Agora o padrão segue o modo do
+build (`production` em release), como o web já fazia com `environment.production`.
+
+**A redação cobria breadcrumb e mais nada.** O web redigia `message` e o valor das exceções desde
+sempre; o mobile, só a mensagem do breadcrumb. Uma exceção "Quantidade de venda (300) maior que a
+carteira (100)" saía com os dois números — que é dado de carteira, o que a Política de Privacidade
+promete não sair. Fechado, com teste dos dois lados: a mensagem do evento, o valor da exceção, e os
+parâmetros de interpolação descartados, porque parâmetro **é** o valor cru e nenhuma redação de
+texto alcança ele.
+
+### A assinatura de release deixou de ser a do template
+
+O `signingConfig` era `signingConfigs.getByName("debug")`, com o TODO do template ainda ao lado: o
+APK saía assinado com a chave de debug. A chave de verdade agora vem de `android/key.properties`,
+fora do git, e a validação **falha alto** quando o arquivo existe pela metade — campo ausente ou
+`.jks` inexistente dizem qual, porque assinar com a chave errada em silêncio é pior que não assinar.
+
+**A fronteira é entre artefato de aparelho e artefato de loja, e a assimetria é de propósito.** O
+APK continua caindo na chave de debug quando não há keystore — serve para instalar no telefone, e
+`flutter run --release` segue funcionando num clone novo. O **App Bundle** não: sem chave ele para,
+porque é ele que vai para a Play Store. A primeira versão disto era um aviso no `logger.lifecycle`,
+e ele foi trocado justamente por não aparecer: `flutter build` engole a saída do Gradle, e aviso
+que ninguém lê é pior que aviso nenhum — dá a sensação de proteção sem a proteção.
+
+### O CI ganhou o job que enxerga essa metade
+
+`Mobile (build Android)` compila o APK de release a cada push. Ele custa minutos, e é o preço de
+não repetir a situação de abrir esta entrada. Duas coisas o tornaram possível: o
+`google-services.json` é segredo e não está no repositório, e sem **nenhum** arquivo o plugin do
+Firebase interrompe o build — então há um `google-services.ci.json` que não fala com projeto nenhum
+e serve só para compilar. Ele também destrava quem clona sem acesso ao Firebase.
+
+---
+
 ## A documentação volta a descrever o produto que existe (2026-09-08)
 
 Passagem de verdade em `docs/`, conferida rota por rota contra `app.routes.ts` e `router.dart` — e
