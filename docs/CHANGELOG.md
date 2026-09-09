@@ -12,6 +12,83 @@
 
 ---
 
+## Tela a tela, depois da fundação (2026-09-08)
+
+A fundação visual trocou de voz no commit anterior. Este é o passe de tela, e ele encontrou mais
+defeito de produto do que de aparência.
+
+**`/patrimonio` abria pelo valor, e o veredito ficava na terceira seção.** A tela também se chamava
+"Carteira" no `<h1>` e "Patrimônio" na navegação, desde a migração para o ciclo do dinheiro. Agora
+abre pelo julgamento, com a régua ao lado — a mesma forma de `/mes` e de `/sobra/aporte`, o que a
+paridade chama de hierarquia igual.
+
+**`razoesDaSaude` existia, era testada, e nenhuma tela a chamava.** Foi extraída de `/hoje` quando
+`/hoje` se dissolveu e nunca foi religada; `/patrimonio` mostrava `health.warnings` cru no lugar
+dela. A diferença é concreta: a função nomeia o papel e o setor que concentram ("PETR4 concentra
+18,4% da carteira"), e os campos `top_position_ticker` e `top_sector` já vinham na resposta sem
+consumidor. É a armadilha de "vocabulário sem consumidor" na forma inversa — função calculada e
+descartada.
+
+**As quatro dimensões da saúde eram uma grade de quatro células, e viraram tabela.** A grade era o
+cheiro de painel que o contrato reprova; a tabela ganha uma coluna com o que cada dimensão mede, e
+isso dissolve o botão "o que cada dimensão considera" — o significado passa a ser coluna em vez de
+divulgação progressiva.
+
+**`/voce/preferencias` era o pior caso do produto.** Seis assuntos sob um título, a cor da mensagem
+decidida por `message().startsWith('✓')`, `*ngIf` convivendo com `@if`, um aviso montado à mão ao
+lado de um `.notice` na ramificação seguinte, e quatro campos numéricos em `grid-cols-4` **sem
+breakpoint** — quatro caixas de 60px em 360px de tela. Virou três eixos nomeados (preço justo,
+score de oportunidade, avisos) mais "Esta tela", que é o único que salva na hora e passou a dizer
+isso: o formulário tinha dois modelos de gravação sem nenhuma pista de qual era qual.
+
+**A ordem da cascata em `/sobra` eram três cards.** Card é para o que é **objeto** — uma posição,
+uma opção de renda fixa. Um passo de uma ordem é passo, e agora é linha numerada sobre fio. Duas
+telas também tinham duas cabeças para uma seção só (`app-section` já emite o `<h2>`, e havia um
+`<h2 class="fi-title">` logo abaixo).
+
+**A landing não tinha como entrar.** O construtor redireciona quem já está autenticado, e por isso
+a ausência de um link para `/login` passou: quem chega pela raiz sem sessão só via o formulário de
+interesse. Também caíram seis larguras escritas à mão (`max-w-[52ch]`, `max-w-[34ch]`) em favor da
+medida do sistema.
+
+### Duas larguras, e não uma
+
+`--fi-layout-reading-max-width` virou `70ch` na fundação, e isso **quebrou sete telas** — elas
+usavam `max-w-reading` como contêiner de página, não como medida de prosa, e uma lista de
+oportunidades a 70ch é uma lista estrangulada. O papel estava faltando, não o valor: existe agora
+`max-w-column` (1120px) para tela que não é prosa — lista, tabela, gráfico — e `max-w-reading`
+volta a significar só a medida do parágrafo.
+
+A coluna do aplicativo caiu de 1600px para 1240px. Em 1600px a cifra de abertura e a linha de
+figuras flutuavam sozinhas num monitor comum, e o olho percorria meia tela entre o rótulo e o
+número. Tabela larga já rola no próprio contorno, então nada perdeu coluna.
+
+### O controle segmentado entra no sistema
+
+`.subtab-btn` servia de aba **e** de opção escolhida em quatro telas — densidade da tabela, recorte
+da composição, período do gráfico, densidade da conta. O mesmo fio da marca dizia "esta é a página
+atual" na trilha de seção e "esta é a opção escolhida" numa barra de ferramentas. Agora o escolhido
+é um preenchimento (`.segmented` / `.segmented-option`), que não se confunde com aba, e o `lint:ui`
+conhece a classe nova.
+
+### O contraste voltou ao CI
+
+`check-contrast.mjs` foi apagado junto com o gerador de design, e o CI ficou dois commits **sem
+piso de contraste** — enquanto o CLAUDE.md continuava mandando rodá-lo em três lugares. Foi um erro
+de classificação: o verificador nunca gerou nada, ele **mede** a paleta escrita à mão das duas
+plataformas, nos dois temas, contra o piso do sistema. Voltou como `web/tools/check-contrast.mjs`,
+ao lado do `lint:ui`, ligado em `npm run lint:contrast` e no CI.
+
+Com ele volta também a guarda das duas cópias do tema claro do CSS, e por isso a regra que eu havia
+escrito no `lint:ui` para a mesma coisa saiu: ela cobria só o CSS, e o verificador cobre o CSS e o
+Dart. O `lint:ui` está em 21 regras.
+
+Toda a documentação que descrevia `product-rules.json`, `build-rules.mjs` e `check-parity.mjs` como
+presentes foi corrigida — CLAUDE.md, ARCHITECTURE, DESIGN-SYSTEM, INFORMATION-ARCHITECTURE, os dois
+README e KNOWN_ISSUES. O CHANGELOG fica como está: é passado, e o passado aconteceu.
+
+---
+
 ## O `styles.css` estava certo, e a auditoria estava errada (2026-09-08)
 
 A auditoria de design afirmou que `styles.css` tinha "grafias que se sobrepõem": `.tag` e

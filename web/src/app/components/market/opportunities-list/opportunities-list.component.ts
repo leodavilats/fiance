@@ -37,7 +37,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
     SkeletonComponent,
   ],
   template: `
-    <div class="max-w-reading">
+    <div class="max-w-column">
       <section>
         <h1 class="fi-page-title text-ink m-0">O que eu poderia comprar</h1>
         <p class="fi-body text-ink-2 m-0 mt-1">

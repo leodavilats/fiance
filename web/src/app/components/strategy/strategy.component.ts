@@ -37,7 +37,7 @@ interface ProjectionRow {
     SkeletonComponent,
   ],
   template: `
-    <div class="max-w-reading">
+    <div class="max-w-column">
       <app-page-header
         title="Alocação × meta"
         question="Onde minha carteira está longe do que eu declarei?"

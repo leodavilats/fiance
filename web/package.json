@@ -9,7 +9,8 @@
     "format:check": "prettier --check \"src/**/*.{ts,html,css,scss,json}\"",
     "lint:ui": "node tools/lint-ui.mjs",
     "test": "ng test --watch=false",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "lint:contrast": "node tools/check-contrast.mjs"
   },
   "dependencies": {
     "@angular/animations": "^22.1.4",

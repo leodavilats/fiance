@@ -30,8 +30,8 @@ foi assim que a Estratégia apareceu: `strategy.component` tinha 1092 linhas de 
 rota, e `GET /strategy` rodava para ninguém.
 
 **PARIDADE é a autoridade sobre o que precisa ser igual.** A resposta curta é: conceito, nome e
-hierarquia — não pixel, não hexadecimal. `design-tokens/check-parity.mjs` cobra a parte que a
-revisão humana já falhou em ver.
+hierarquia — não pixel, não hexadecimal. Nenhuma máquina o confere: a paridade é dirigida ao
+longo do desenvolvimento das telas, e o documento é a autoridade.
 
 ## O que o redesign descobriu, e vale lembrar
 
@@ -80,8 +80,8 @@ o que não se lê.
   e explica; não decide.
 - **Mesma intenção, não mesma implementação.** Conceito, vocabulário e hierarquia são iguais nas
   plataformas; espaçamento, composição e navegação não precisam ser. O que é **número** — banda de
-  régua, rótulo de veredito — nasce em `product-rules.json` e é gerado, porque a régua de score já
-  divergiu entre web e mobile por ser mantida à mão em três arquivos.
+  régua, rótulo de veredito — nasce em `analysis/score_ruler.py` e é espelhado nos dois clientes
+  no mesmo commit, porque a régua de score já divergiu entre web e mobile.
 - **Em conflito:** clareza vence informação; decisão vence funcionalidade visível; facilidade vence
   sofisticação técnica.
 

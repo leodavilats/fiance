@@ -67,11 +67,11 @@
 
 ## Duplicação estrutural entre plataformas
 
-6. **Sobra o glossário e os rótulos de veredito.** Rótulo, ícone e cor de categoria, tipo de
-   ativo, setor, tipo de renda fixa e liquidez passaram a ser **gerados** de `product-rules.json`
-   (2026-08-29), e o `--check` do CI reprova divergência. O que continua manual nos dois lados é
-   o glossário de score e os rótulos de veredito, que são texto longo e não cabem bem num arquivo
-   de tokens.
+6. **Rótulo e régua são escritos nos dois lados, e nenhuma máquina os compara.** Rótulo, ícone e
+   cor de categoria, tipo de ativo, setor, tipo de renda fixa e liquidez viviam num gerador até
+   2026-09-07, e voltaram a ser escritos quando ele saiu. O que os mantém em acordo é
+   `analysis/score_ruler.py` como fonte e a disciplina de mudar as três plataformas no mesmo
+   commit. O risco continua registrado: divergência aqui é um número errado, não uma tela feia.
 
 7. **A escala de tipo do mobile está invertida, e há 49 linhas com tamanho solto.**
    `FiType.caption` (12px) é usada 44 vezes e `body` 14 — o aplicativo é dominado por legenda. O

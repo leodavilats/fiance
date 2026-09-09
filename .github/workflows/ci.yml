@@ -109,6 +109,11 @@ jobs:
       - name: Ícones e classes (lint de runtime)
         run: npm run lint:ui
 
+      # Mede a paleta escrita à mão das duas plataformas contra o piso de contraste. Não depende
+      # do build: lê `foundation.css` e `design_tokens.dart` direto.
+      - name: Contraste (AA nos dois temas)
+        run: npm run lint:contrast
+
   mobile:
     name: Mobile (analyze + test)
     runs-on: ubuntu-latest

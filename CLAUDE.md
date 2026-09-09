@@ -33,7 +33,8 @@ cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 109 testes
                                                    #   inclui test/lint_ui_test.dart:
                                                    #   6 regras do lint:ui, no Dart
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 152 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 156 testes
+cd web     && npm run lint:contrast                # contraste AA nos dois temas, web e mobile
 python design-tokens/build-icons.py --check        # marca sincronizada
 ```
 
@@ -46,7 +47,7 @@ Duas ressalvas que já custaram tempo:
   daqui e dentro do `.github/workflows/ci.yml`: quem seguia o contrato à risca não rodava o comando
   que reprovava, e o HEAD ficou vermelho sem ninguém ver.
 - **Não rode `dart format`.** O CI do mobile é `flutter analyze && flutter test`. O formatter
-  reescreve o `design_tokens.dart` gerado e quebra `if`s de uma linha que o repo mantém.
+  reescreve o `design_tokens.dart` e quebra `if`s de uma linha que o repo mantém.
 
 ### Comentário: quase nunca
 
@@ -88,6 +89,7 @@ CHANGELOG.
 | Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
 | Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template |
 | Cor, tipografia, espaço | Editar [foundation.css](web/src/foundation.css) **e** o espelho em [design_tokens.dart](mobile/lib/core/design_tokens.dart) | Web e mobile divergem, e nenhuma máquina avisa |
+| Largura máxima numa tela | Escolher o papel: `max-w-reading` para prosa, `max-w-column` para lista, tabela ou gráfico | Prosa esticada, ou lista estrangulada em 70ch |
 | Papel de cor novo | Declarar nos **dois** temas de `foundation.css` | A cor não existe num dos temas, e a tela sai com texto de um tema no chão do outro |
 | Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` **e** `z-50` — uma regra, as duas grafias |
 | Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
@@ -157,18 +159,18 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   os tokens de **estado**. O verde passava a significar marca, lucro e veredito favorável ao mesmo
   tempo, e uma perda aparecia como aviso. As classes foram removidas: direção é `text-up` /
   `text-down`; estado é `text-favorable` / `text-attention` / `text-adverse` / `text-indeterminate`.
-- **Vocabulário gerado sem consumidor** — `fiTiposDeRendaFixa` e `fiLiquidez` saíam de
-  `product-rules.json` e não eram importados por ninguém no web, enquanto quatro telas reescreviam o mapa
-  à mão. O mobile fazia certo desde sempre (`core/labels.dart`). Ao gerar um vocabulário novo,
-  confira se ele chega a uma tela — gerado e ignorado é pior que não gerado, porque parece
+- **Vocabulário sem consumidor** — `fiTiposDeRendaFixa` e `fiLiquidez` existiam em
+  `core/vocabulary.ts` e não eram importados por ninguém no web, enquanto quatro telas reescreviam o mapa
+  à mão. O mobile fazia certo desde sempre (`core/labels.dart`). Ao declarar um vocabulário novo,
+  confira se ele chega a uma tela — declarado e ignorado é pior que não declarado, porque parece
   resolvido. **A causa era o barrel:** `core/vocabulary.ts` não estava em `core/index.ts`, então
   a tela que quisesse usá-lo teria de importar por caminho. Agora está.
 - **Série nova no vocabulário sem entrar nos mapas de classe** — `fiClasseTextoDaSerie` e irmãos
   eram montados só das séries de `categories`. Uma categoria de despesa em `series: 4` pedia
   `fiClasseTextoDaSerie[4]` e recebia `undefined`: a armadilha acima na forma inversa, consumidor
-  sem vocabulário. O gerador agora varre os três blocos de categoria.
+  sem vocabulário. Os mapas cobrem os três blocos de categoria, e não só o de alocação.
 
-O `npm run lint:ui` cobre treze dessas, em **22 regras** — e a classificação importa: regra que
+O `npm run lint:ui` cobre treze dessas, em **21 regras** — e a classificação importa: regra que
 protege acessibilidade, contrato de produto ou erro silencioso **reprova o CI**; regra que
 protege só preferência visual **avisa e não reprova**, porque bloquear por gosto gasta a
 autoridade das que valem. Raio fora da escala e ícone decorando título são as duas que avisam.
@@ -466,31 +468,30 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
   o patrimônio e o veredito de saúde já existiam no `Patrimônio`. `Estratégia` se dissolveu —
   sem aporte, meta e projeção, sobrava o desvio de alocação, que é leitura de patrimônio e vive
   em `/sobra/desvio`.
-- **A camada visual é escrita; a régua é gerada.** Cor, tipografia, espaço, raio, motion e
-  densidade vivem em [web/src/foundation.css](web/src/foundation.css), escrito à mão, com espelho
-  à mão em [mobile/lib/core/design_tokens.dart](mobile/lib/core/design_tokens.dart). O que continua
-  gerado é o que precisa ser **igual nas três plataformas por ser número, e não aparência**:
-  `design-tokens/product-rules.json` → `node design-tokens/build-rules.mjs` → as bandas das cinco
-  réguas (que espelham `score_ruler.py`), o vocabulário de veredito e os rótulos de categoria,
-  setor, tipo de ativo, tipo de renda fixa e liquidez. Qualquer chave `*Ruler` vira
-  `fi<Nome>Bands`/`fi<Nome>Domain` automaticamente. Nunca edite os quatro gerados — eles dizem
-  isso no cabeçalho — nem escreva hexadecimal em `styles.css`, `tailwind.config.js` ou `theme.dart`.
+- **A camada visual é escrita à mão, inteira. Não há gerador de design.** Cor, tipografia,
+  espaço, raio, motion e densidade vivem em [web/src/foundation.css](web/src/foundation.css), com
+  espelho à mão em [mobile/lib/core/design_tokens.dart](mobile/lib/core/design_tokens.dart). As
+  bandas das réguas, o vocabulário de veredito e os rótulos de categoria também são escritos —
+  `core/product-rules.ts`, `core/vocabulary.ts` e os dois pares em Dart. O que os mantém em acordo
+  é a régua de baixo: `analysis/score_ruler.py` é a fonte, e mudar um limiar exige as três
+  plataformas com o Python primeiro. Não escreva hexadecimal em `styles.css`,
+  `tailwind.config.js` ou `theme.dart` — a paleta mora só na fundação.
+- **Duas larguras, e não uma.** `max-w-reading` é a medida da **prosa** (70ch, em caracteres, para
+  acompanhar a fonte); `max-w-column` é a largura de uma **tela** que não é prosa — lista, tabela,
+  gráfico. Usar uma no lugar da outra estrangula a lista ou estica o parágrafo, e já aconteceu nas
+  duas direções.
 - **A paridade é de conceito, não de valor. Igualdade visual não é exigida.** O contrato é
   *mesma intenção, não mesma implementação*: conceito, nome e hierarquia são iguais nas duas
   plataformas; espaçamento, composição, navegação, gesto e **valor de cor** são livres. Um
   telefone sob sol pode precisar de mais contraste que um monitor, e exigir o mesmo hexadecimal
-  impediria a correção. O que a máquina cobra são duas coisas:
-  - **`check-contrast.mjs`** mede `foundation.css` **e** `design_tokens.dart`, cada um contra o
-    **piso** — não um contra o outro. Reprova papel abaixo do piso, papel declarado só num tema,
-    contorno de controle sob 3:1 e preenchimento que não se distingue do próprio poço. Também
-    confere as **duas cópias do tema claro** do CSS: eram 44 papéis sem guarda, e quem editasse
-    só a consulta de mídia quebrava o contraste de quem está no padrão do sistema.
-  - **`check-parity.mjs`** responde se os cinco destinos existem nas duas plataformas. Existe
-    porque a resposta já foi *não* por meses — o web migrou para o ciclo do dinheiro e o mobile
-    ficou sem `/mes` e `/sobra`, com a documentação afirmando que os shells eram espelhos.
-    Ausência conhecida é **dívida registrada** em `DIVIDA_HOJE`, e a lista só encolhe: um item
-    que passe a existir reprova, porque lista de dívida que não encolhe é a documentação
-    mentindo de novo. **Hoje ela está vazia**, e foi ela quem cobrou a própria baixa.
+  impediria a correção. O contrato escrito é [docs/design/PARIDADE.md](docs/design/PARIDADE.md), e
+  nenhuma máquina o confere — o que a máquina ainda cobra é uma coisa só:
+  - **`web/tools/check-contrast.mjs`** (`npm run lint:contrast`, no CI) mede `foundation.css` **e**
+    `design_tokens.dart`, cada um contra o **piso** — não um contra o outro. Reprova papel abaixo
+    do piso, papel declarado só num tema, contorno de controle sob 3:1 e preenchimento que não se
+    distingue do próprio poço. Também confere as **duas cópias do tema claro** do CSS: são 44
+    papéis, e quem editasse só a consulta de mídia quebraria o contraste de quem está no padrão do
+    sistema. Não é gerador — por isso mora em `web/tools/`, ao lado do `lint:ui`.
 - **Ícone e favicon são gerados**, do `brand` de `foundation.css` via
   `python design-tokens/build-icons.py` (requer Pillow). **O launcher nativo é um segundo passo**:
   `cd mobile && dart run flutter_launcher_icons` — sem ele os ícones do app ficam com a cor antiga
@@ -518,7 +519,7 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
   não conta. O escape exige motivo escrito: `<!-- design-exception: explicabilidade — ... -->`.
   **Há uma forma só de escapar**, e ela nomeia a regra: escapar de cabeçalho não escapa de
   contraste. Eram cinco grafias para a mesma ideia.
-- **Contraste é verificado, não recomendado** (`design-tokens/check-contrast.mjs`, no CI). `ink-3`
+- **Contraste é verificado, não recomendado** (`web/tools/check-contrast.mjs`, no CI). `ink-3`
   conta como texto (4,5:1) porque legenda é texto pequeno; série de gráfico conta como forma (3:1)
   porque nunca é a única informação; `hairline` fica de fora, é decoração.
 - **Filtro e recorte vivem na URL**, não em `sessionStorage`/`signal` — link salvo é contrato.

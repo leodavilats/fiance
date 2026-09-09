@@ -21,7 +21,11 @@ import { SectionComponent } from '../section/section.component';
     SectionComponent,
   ],
   template: `
-    <app-page-header title="Sobra" question="O que eu faço com o que sobrou?" />
+    <app-page-header
+      title="Sobra"
+      question="O que eu faço com o que sobrou?"
+      [scope]="dados() ? nome(dados()!.month.month) : ''"
+    />
 
     @if (carregando()) {
       <app-skeleton shape="metric" />
@@ -53,7 +57,10 @@ import { SectionComponent } from '../section/section.component';
           </div>
         </div>
       } @else {
-        <app-section [title]="'Sobra de ' + nome(d.month.month)">
+        <section class="fi-block">
+          <p class="fi-eyebrow text-ink-3 m-0">
+            {{ d.month.has_range ? 'Sobra, no piso' : 'Sobra' }}
+          </p>
           <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(d.month.surplus_low) }}</p>
 
           @if (d.month.has_range) {
@@ -115,19 +122,21 @@ import { SectionComponent } from '../section/section.component';
               }
             </div>
           </details>
-        </app-section>
+        </section>
 
-        <app-section title="A ordem">
-          <h2 class="fi-title text-ink m-0 mt-1">
-            O que fazer com isso
-            <app-help-tooltip
-              term="a ordem"
-              text="Cada passo consome parte da sobra e diz o que o derrubaria. Dívida cara vem
-                    antes de aporte porque é aritmética de taxa: enquanto o juro da dívida for
-                    maior que o retorno da sua carteira, quitar rende mais que investir. Dívida
-                    não é valor mobiliário, então isso não é recomendação de investimento."
-            />
-          </h2>
+        <app-section
+          title="A ordem"
+          tone="title"
+          hint="Cada passo consome parte da sobra, na ordem em que vale a pena gastá-la."
+        >
+          <app-help-tooltip
+            sectionActions
+            term="a ordem"
+            text="Cada passo consome parte da sobra e diz o que o derrubaria. Dívida cara vem
+                  antes de aporte porque é aritmética de taxa: enquanto o juro da dívida for
+                  maior que o retorno da sua carteira, quitar rende mais que investir. Dívida
+                  não é valor mobiliário, então isso não é recomendação de investimento."
+          />
 
           @if (d.cascade.steps.length === 0) {
             <div class="notice notice-attention mt-4">
@@ -144,35 +153,38 @@ import { SectionComponent } from '../section/section.component';
               </div>
             </div>
           } @else {
-            <ol class="list-none m-0 mt-4 p-0 flex flex-col gap-4">
+            <ol class="list-none m-0 mt-3 p-0 divide-y divide-hairline">
               @for (passo of d.cascade.steps; track passo.order) {
-                <li class="card">
-                  <div class="flex items-baseline justify-between gap-4 flex-wrap">
-                    <p class="fi-eyebrow text-ink-3 m-0">
-                      {{ passo.order }} · {{ rotuloDoPasso(passo.type) }}
-                    </p>
-                    <p class="fi-metric text-ink m-0">{{ reais(passo.amount) }}</p>
+                <li class="flex items-baseline gap-4 py-4">
+                  <span class="fi-metric text-ink-3 shrink-0" aria-hidden="true">
+                    {{ passo.order }}
+                  </span>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-baseline justify-between gap-4 flex-wrap">
+                      <p class="fi-title text-ink m-0">{{ rotuloDoPasso(passo.type) }}</p>
+                      <p class="fi-metric text-ink m-0">{{ reais(passo.amount) }}</p>
+                    </div>
+
+                    <p class="fi-verdict-sm text-ink m-0 mt-1 max-w-reading">{{ passo.reason }}</p>
+
+                    <div class="flex items-baseline gap-5 flex-wrap mt-2">
+                      @if (passo.type === 'debt') {
+                        <a routerLink="/mes/dividas" class="btn-link">Ver a dívida</a>
+                      }
+                      @if (passo.type === 'contribution') {
+                        <a routerLink="/sobra/aporte" class="btn-link">Ver onde aportar</a>
+                      }
+                      @if (passo.falsifier) {
+                        <details>
+                          <summary class="btn-quiet btn-explain">O que derrubaria isto</summary>
+                          <p class="fi-body text-ink-2 m-0 mt-2 max-w-reading">
+                            {{ passo.falsifier }}
+                          </p>
+                        </details>
+                      }
+                    </div>
                   </div>
-
-                  <p class="fi-verdict-sm text-ink m-0 mt-2 max-w-reading">{{ passo.reason }}</p>
-
-                  @if (passo.falsifier) {
-                    <details class="mt-3">
-                      <summary class="btn-quiet btn-explain">O que derrubaria isto</summary>
-                      <p class="fi-body text-ink-2 m-0 mt-2 max-w-reading">
-                        {{ passo.falsifier }}
-                      </p>
-                    </details>
-                  }
-
-                  @if (passo.type === 'debt') {
-                    <a routerLink="/mes/dividas" class="btn-link mt-3 inline-flex">Ver a dívida</a>
-                  }
-                  @if (passo.type === 'contribution') {
-                    <a routerLink="/sobra/aporte" class="btn-link mt-3 inline-flex">
-                      Ver onde aportar
-                    </a>
-                  }
                 </li>
               }
             </ol>

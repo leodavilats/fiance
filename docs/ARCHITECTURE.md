@@ -221,10 +221,11 @@ Cinco destinos por intenção, mais o ativo como camada — o racional está em
 - **`core/services/dip-analysis.service.ts`** — estado do drawer de diagnóstico de queda,
   compartilhado dentro de Descobrir. Vive num serviço porque um layout com `router-outlet` não
   recebe `output` de filho roteado.
-- **`core/product-rules.ts`** — **gerado** de `design-tokens/product-rules.json`. Não editar.
-  A camada visual não passa por aqui: ela é CSS escrito em `src/foundation.css`.
-- **`core/score-ruler.ts`** — apresentação da régua; os limiares vêm dos tokens gerados, que
-  espelham `analysis/score_ruler.py`.
+- **`core/product-rules.ts`** — bandas das réguas, vocabulário de veredito e diagnóstico.
+  Escrito à mão, e espelha `analysis/score_ruler.py`: mudar um limiar é Python primeiro. A camada
+  visual não passa por aqui — ela é CSS escrito em `src/foundation.css`.
+- **`core/score-ruler.ts`** — apresentação da régua; os limiares vêm de `product-rules.ts`, que
+  espelha `analysis/score_ruler.py`.
 - **`core/services/ui-helper.service.ts`** — labels, ícones e cores de AssetType/categoria/setor,
   glossário e rótulos de proveniência.
 - **`core/interceptors/`** — `auth.interceptor.ts` (Bearer), `http-error.interceptor.ts`.
@@ -247,8 +248,8 @@ Dart SDK `^3.10.7`. Dependências-chave: `dio`, `google_sign_in`, `flutter_river
 `projecao`), `/descobrir` (+ `quedas`, `comparar`, `renda-fixa`, `renda-fixa-vs-bolsa`), `/voce`
 (+ `objetivos`). `/ativo/:ticker` fica fora do shell de abas, como camada.
 
-`design-tokens/check-parity.mjs` cobra essa igualdade — os cinco existem nos dois lados, ou a
-ausência está registrada. As URLs antigas (`/hoje`, `/carteira`, `/estrategia/*`) seguem como
+Essa igualdade é regra escrita em [design/PARIDADE.md](design/PARIDADE.md), não máquina: a
+catraca que a cobrava foi retirada quando a dívida que ela media chegou a zero. As URLs antigas (`/hoje`, `/carteira`, `/estrategia/*`) seguem como
 redirect, com **alvo absoluto**: relativo resolve contra o segmento casado e manda o link salvo
 para lugar nenhum.
 

@@ -115,6 +115,7 @@ module.exports = {
       },
       maxWidth: {
         reading: 'var(--fi-layout-reading-max-width)',
+        column: 'var(--fi-layout-column-max-width)',
         dense: 'var(--fi-layout-dense-max-width)',
       },
     },

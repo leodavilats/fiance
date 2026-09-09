@@ -426,14 +426,15 @@ fiance/
 │       │                        #   + ativo/ (rota pública, renderizada no servidor)
 │       ├── foundation.css       # Camada visual — ESCRITA à mão (cor, tipo, espaço, motion)
 │       ├── styles.css           # Padrões de componente (.btn-*, .input, .card, .notice…)
-│       └── core/                # Serviços HTTP, interceptors, régua, vocabulário (gerado)
+│       ├── core/                # Serviços HTTP, interceptors, régua, vocabulário
+│       └── tools/               # lint-ui.mjs, check-contrast.mjs — rodam no CI
 │
 ├── mobile/                      # Flutter
 │   └── lib/
 │       ├── core/                # API client, auth, providers, router,
 │       │                        #   design_tokens.dart (espelho à mão do foundation.css)
-│       └── features/            # hoje, carteira, descobrir(market), estrategia,
-│                                #   config, busca, ativo, auth, shell, tools
+│       └── features/            # mes, sobra, carteira, market, hoje, estrategia,
+│                                #   config, busca, assets, auth, shell, tools
 │
 └── design-tokens/
     └── build-icons.py           # Gera favicon e ícones do app da cor da marca

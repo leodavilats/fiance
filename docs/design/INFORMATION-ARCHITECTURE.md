@@ -163,9 +163,9 @@ gastos?" é exatamente a presunção que ela recusa.
   **projeção** (piso da sobra), e a diferença entre as duas é exatamente a estimativa de gasto
   variável — o que dá uma frase que liga as telas sem repetir nada.
 - **Vocabulário do caixa — decidido** (2026-09-07), em
-  [DESIGN-SYSTEM](DESIGN-SYSTEM.md#o-vocabulário-do-caixa--decidido-ainda-não-gerado). Não entrou
-  em `product-rules.json` de propósito: vocabulário gerado sem consumidor é pior que não gerado, e
-  a entrada acompanha a primeira tela que o usa. O tipo de dívida **não** carrega se ela é cara —
+  [DESIGN-SYSTEM](DESIGN-SYSTEM.md#o-vocabulário-do-caixa--decidido-ainda-não-declarado). Não
+  entrou em `vocabulary.ts` de propósito: vocabulário sem consumidor é pior que vocabulário nenhum,
+  e a entrada acompanha a primeira tela que o usa. O tipo de dívida **não** carrega se ela é cara —
   isso é derivado da taxa, porque a regra manda classificar por custo, não por instrumento.
 - **`provento` no caixa é decisão de domínio pendente**, e bloqueia `cashflow/`: provento
   creditado é entrada de caixa **e** lançamento do razão, e sem regra o mesmo dinheiro conta duas

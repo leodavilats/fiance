@@ -9,7 +9,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
   standalone: true,
   imports: [PageHeaderComponent, CommonModule, LucideAngularModule],
   template: `
-    <div class="space-y-6 max-w-reading">
+    <div class="space-y-6 max-w-column">
       <div>
         <app-page-header title="Indicação" />
         <p class="fi-body text-ink-2 mt-1 mb-0">

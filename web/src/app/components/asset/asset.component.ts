@@ -78,7 +78,7 @@ interface Fundamental {
     <!-- design-exception: veredito — o resumo do ativo e as frases de estado (não encontrado, indisponível)
          são o que o sistema concluiu, não nomes de seção -->
     @if (notFound(); as symbol) {
-      <div class="max-w-reading">
+      <div class="max-w-column">
         <h2 class="fi-verdict text-ink m-0 mb-2">Não encontramos {{ symbol }}</h2>
         <p class="fi-body text-ink-2 m-0 mb-4">
           O fiance cobre ações da B3, FIIs, BDRs e ETFs. Ação estrangeira fora de BDR e criptomoeda
@@ -91,7 +91,7 @@ interface Fundamental {
     }
 
     @if (failed()) {
-      <div class="max-w-reading">
+      <div class="max-w-column">
         <h2 class="fi-verdict text-ink m-0 mb-2">Não conseguimos carregar este ativo agora</h2>
         <p class="fi-body text-ink-2 m-0 mb-4">
           Pode ser a conexão ou uma instabilidade na fonte de cotações.

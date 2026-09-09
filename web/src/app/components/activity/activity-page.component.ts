@@ -9,7 +9,7 @@ import { ActivityFeedComponent } from './activity-feed.component';
   standalone: true,
   imports: [ActivityFeedComponent, FollowedSuggestionsComponent, LucideAngularModule, RouterLink],
   template: `
-    <div class="max-w-reading">
+    <div class="max-w-column">
       <a
         routerLink="/mes"
         class="fi-caption text-ink-2 no-underline inline-flex items-center gap-1"

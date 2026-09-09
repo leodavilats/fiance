@@ -247,9 +247,13 @@
   --fi-motion-ease-enter: cubic-bezier(0.2, 0, 0, 1);
   --fi-motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
 
-  /* Em caracteres, não em pixels: 1120px de corpo 15 davam ~105 por linha, e a linha longa é
-     linha não lida. `ch` acompanha a fonte em vez de brigar com ela. */
+  /* Duas larguras, e não uma. `reading` é a medida da prosa, em caracteres e não em pixels:
+     1120px de corpo 15 davam ~105 por linha, e linha longa é linha não lida. `column` é a
+     largura de uma tela que não é prosa — lista, tabela, gráfico — e continua em pixels porque
+     o que a limita é o monitor, não a fonte. Usar uma no lugar da outra estrangula a lista ou
+     estica o parágrafo. */
   --fi-layout-reading-max-width: 70ch;
+  --fi-layout-column-max-width: 1120px;
   /* A coluna do aplicativo. Era 1600px: o olho percorria meia tela entre o rótulo e o número, e
      tabela larga já rola no próprio contorno em vez de esticar a página. */
   --fi-layout-dense-max-width: 1240px;

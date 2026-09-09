@@ -2,45 +2,43 @@
 
 > Traduz [VISUAL-LANGUAGE.md](VISUAL-LANGUAGE.md) em tokens e componentes.
 
-## Onde cada metade mora
+## Onde cada peça mora
 
-O sistema tem duas metades, e elas são mantidas de formas diferentes de propósito.
+Tudo é escrito à mão. Não existe gerador de design.
 
 ```
-web/src/foundation.css              ← ESCRITO. Cor, tipo, espaço, raio, motion, densidade.
-mobile/lib/core/design_tokens.dart  ← ESCRITO. O espelho da linha de cima, em Flutter.
+web/src/foundation.css              ← Cor, tipo, espaço, raio, motion, densidade.
+mobile/lib/core/design_tokens.dart  ← O espelho da linha de cima, em Flutter.
 
-design-tokens/product-rules.json    ← fonte única do que é NÚMERO, não aparência.
-design-tokens/build-rules.mjs       ← gerador (Node, sem dependências)
-        │
-        ├─→ web/src/app/core/product-rules.ts     bandas das réguas, veredito, diagnóstico
-        ├─→ mobile/lib/core/product_rules.dart    o mesmo, em Dart
-        ├─→ web/src/app/core/vocabulary.ts        rótulo, ícone e série de cada categoria
-        └─→ mobile/lib/core/vocabulary.dart       o mesmo, em Dart
+web/src/app/core/product-rules.ts   ← bandas das réguas, veredito, diagnóstico
+mobile/lib/core/product_rules.dart  ← o mesmo, em Dart
+web/src/app/core/vocabulary.ts      ← rótulo, ícone e série de cada categoria
+mobile/lib/core/vocabulary.dart     ← o mesmo, em Dart
 ```
 
 ```bash
-node design-tokens/build-rules.mjs           # regenera os quatro alvos
-node design-tokens/build-rules.mjs --check   # falha se algo divergir  (roda no CI)
-node design-tokens/check-contrast.mjs        # lê foundation.css e cobra os pisos  (roda no CI)
+cd web && npm run lint:contrast   # mede as duas plataformas contra o piso  (roda no CI)
 ```
 
-**Por que a régua continua gerada.** Ela já divergiu: "Boa oportunidade" era verde no web e azul
-no mobile, apesar de os dois arquivos trazerem um comentário dizendo que deviam andar juntos
-(achado #17). Limiar mantido à mão em N lugares diverge em N−1 deles, e o sintoma é um número
-errado, não uma tela feia. Os quatro gerados dizem "não edite" no cabeçalho e estão em
-`web/.prettierignore`.
+**Por que nada disso é gerado.** O gerador existiu e resolvia o problema errado. Ele mantinha o
+**valor** igual nas duas plataformas — e o valor nunca era o que divergia. O que divergia era o
+**conceito**: o mobile passou meses sem `/mes` e sem `/sobra`, com a régua de cor perfeitamente
+sincronizada nos dois lados. Em troca, o schema fechava o vocabulário visual: doze papéis de tipo,
+quatro raios, duas sombras, e nada para estado de interação — não havia como declarar contorno de
+controle, preenchimento pressionado ou poço de barra.
 
-**Por que a camada visual deixou de ser gerada.** O schema fechava o vocabulário: doze papéis de
-tipo, quatro raios, duas sombras, e nada para estado de interação — não havia como declarar
-contorno de controle, preenchimento pressionado ou poço de barra, porque o gerador não tinha
-essas chaves. O custo dessa escolha é conhecido e está aceito: **a paridade com o mobile não tem
-máquina**. Mudar um valor em `foundation.css` obriga a mudar em `design_tokens.dart`, e o
-contrário também.
+O custo é conhecido e está aceito: **a paridade não tem máquina**, e por isso é regra escrita em
+[PARIDADE.md](PARIDADE.md). Mudar um valor em `foundation.css` obriga a mudar em
+`design_tokens.dart`, e o contrário também.
+
+**O que impede a régua de divergir** é a régua de baixo. `backend/app/analysis/score_ruler.py` é a
+fonte; `product-rules.ts` e `product_rules.dart` a espelham. Ela já divergiu uma vez — "Boa
+oportunidade" era verde no web e azul no mobile — e a disciplina é a mesma de qualquer limiar do
+produto: **Python primeiro**, depois os dois clientes, no mesmo commit.
 
 ### O que continua verificado
 
-Contraste. `design-tokens/check-contrast.mjs` lê os dois blocos de tema do CSS e reprova:
+Contraste. `web/tools/check-contrast.mjs` lê os dois blocos de tema do CSS **e** o Dart, e reprova:
 
 | O que | Piso | Por quê |
 |---|---|---|
@@ -53,16 +51,18 @@ Contraste. `design-tokens/check-contrast.mjs` lê os dois blocos de tema do CSS 
 | `ink-disabled` sobre `control-fill` | 3 | controle inerte continua tendo de ser lido |
 | papel declarado só num tema | — | papel de cor existe nos dois ou em nenhum |
 
-`hairline` fica de fora: é separador decorativo. O que mudou é que **separador e contorno de
+`hairline` fica de fora: é separador decorativo. Também confere que as **duas cópias do tema
+claro** do CSS batem — a da consulta de mídia, que responde por quem está no padrão do sistema, e a
+do atributo, que responde pelo seletor de tema. São 44 papéis, e editar uma só quebraria o
+contraste da maioria. O que mudou antes disso é que **separador e contorno de
 controle deixaram de ser o mesmo token** — enquanto eram, `.btn-secondary` e `.btn-icon`
 desenhavam a borda inteira a 1,24:1, um quarto do mínimo, e nenhuma revisão visual pegou isso.
 
 ### O que os limiares NÃO são
 
-`product-rules.json → scoreRuler.thresholds` **espelha**
-`backend/app/analysis/score_ruler.py`. A régua numérica continua sendo do backend; o design
-system só decide como ela é *lida*. Mudar um limiar: Python primeiro, depois
-`product-rules.json`, depois regenerar.
+`fiScoreBands` **espelha** `backend/app/analysis/score_ruler.py`. A régua numérica continua sendo
+do backend; o design system só decide como ela é *lida*. Mudar um limiar: Python primeiro, depois
+`product-rules.ts` e `product_rules.dart`.
 
 ---
 
@@ -148,15 +148,15 @@ Largura de leitura 1120px, densa 1600px — o `max-w-[1180px]` global sai.
 
 ---
 
-## O vocabulário do caixa — decidido, ainda não gerado
+## O vocabulário do caixa — decidido, ainda não declarado
 
-Entregável da Fase 2 do [ROADMAP](../produto/ROADMAP.md). **Não está em
-`product-rules.json`**, e é decisão, não esquecimento: o CLAUDE.md registra que vocabulário gerado
-sem consumidor é pior que não gerado, porque *parece* resolvido. `fiTiposDeRendaFixa` e
-`fiLiquidez` já custaram isso — saíam do gerador e quatro telas reescreviam o mapa à mão.
+Entregável da Fase 2 do [ROADMAP](../produto/ROADMAP.md). **Não está em `vocabulary.ts`**, e é
+decisão, não esquecimento: o CLAUDE.md registra que vocabulário sem consumidor é pior que
+vocabulário nenhum, porque *parece* resolvido. `fiTiposDeRendaFixa` e `fiLiquidez` já custaram isso
+— existiam e quatro telas reescreviam o mapa à mão.
 
-A entrada em `product-rules.json` acompanha o commit que constrói a primeira tela que a consome,
-na Fase 3.
+A entrada em `vocabulary.ts` acompanha o commit que constrói a primeira tela que a consome, na
+Fase 3.
 
 ### Categoria de despesa
 
@@ -276,8 +276,8 @@ Uma régua com zonas nomeadas e um valor marcado, não um gauge.
 
 **Rótulos novos:** `Forte` · `Boa` · `Neutra` · `Fraca`, substituindo "Excelente entrada" /
 "Boa oportunidade" / "Neutro" / "Evitar agora". Os limiares não mudam; a linguagem deixa de dar
-ordem e passa a descrever a leitura (briefing §10 e §43). Muda nas três plataformas de uma vez,
-porque sai de `product-rules.json`.
+ordem e passa a descrever a leitura (briefing §10 e §43). Muda nas três plataformas no mesmo
+commit, com o Python primeiro.
 
 ### A régua reaproveitada
 

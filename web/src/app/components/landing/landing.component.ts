@@ -28,22 +28,25 @@ interface LinhaDoMes {
   ],
   template: `
     <div class="max-w-reading mx-auto px-4 py-12">
-      <header class="flex items-center gap-3">
-        <app-logo [size]="32" />
-        <app-wordmark [height]="18" />
+      <header class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <app-logo [size]="32" />
+          <app-wordmark [height]="18" />
+        </div>
+        <a routerLink="/login" class="btn-secondary no-underline">Entrar</a>
       </header>
 
-      <h1 class="fi-page-title text-ink m-0 mt-10 max-w-[34ch]">
+      <h1 class="fi-page-title text-ink m-0 mt-10 max-w-reading">
         Quanto você tem investido, você sabe. Quanto sobrou este mês, provavelmente não.
       </h1>
 
-      <p class="fi-body text-ink-2 m-0 mt-4 max-w-[52ch]">
+      <p class="fi-body-lg text-ink-2 m-0 mt-4 max-w-reading">
         E é a sobra que decide o próximo aporte. Hoje ela mora num app, e a carteira mora em outro —
         então a decisão acontece de cabeça, uma vez por mês, com o número errado.
       </p>
 
-      <app-section title="Um mês de exemplo" class="mt-12">
-        <h2 class="fi-title text-ink m-0 mt-1">O que o fiance passa a saber</h2>
+      <app-section title="O que o fiance passa a saber" tone="title" class="mt-12">
+        <p class="fi-caption text-ink-3 m-0 mt-1">Um mês de exemplo.</p>
 
         <div class="overflow-x-auto mt-4">
           <table class="data-table">
@@ -73,12 +76,10 @@ interface LinhaDoMes {
           </table>
         </div>
 
-        <dl class="flex flex-wrap gap-x-12 gap-y-5 m-0 mt-6 pt-4 border-t border-hairline">
-          <div>
-            <dt class="fi-eyebrow text-ink-3">Sobra do mês</dt>
-            <dd class="fi-money-xl text-ink m-0 mt-1">{{ reais(sobra()) }}</dd>
-          </div>
-        </dl>
+        <div class="mt-6 pt-4 border-t border-hairline">
+          <p class="fi-eyebrow text-ink-3 m-0">Sobra do mês</p>
+          <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(sobra()) }}</p>
+        </div>
       </app-section>
 
       <section class="fi-block">
@@ -104,7 +105,7 @@ interface LinhaDoMes {
           </div>
         </div>
 
-        <p class="fi-body text-ink m-0 mt-5 max-w-[52ch]">
+        <p class="fi-body text-ink m-0 mt-5 max-w-reading">
           Sobram <strong>{{ reais(sobra() - 890) }}</strong> depois disso. A meta que você declarou
           pede FIIs, e é a classe mais atrás — <strong>4,1 pontos</strong> abaixo do alvo. Não é um
           palpite sobre o futuro: é a distância entre onde a carteira está e onde você disse que ela
@@ -114,12 +115,12 @@ interface LinhaDoMes {
 
       <section class="fi-block">
         <h2 class="fi-title text-ink m-0">O que já existe, e o que está sendo construído</h2>
-        <p class="fi-body text-ink m-0 mt-3 max-w-[52ch]">
+        <p class="fi-body text-ink m-0 mt-3 max-w-reading">
           A metade de trás já funciona: preço justo por três métodos, score com a conta à vista,
           imposto apurado por mês e categoria, carteira reconstruída a partir do livro-razão. Tudo
           para ativos da B3 — ações, FIIs, BDRs, ETFs e renda fixa.
         </p>
-        <p class="fi-body text-ink m-0 mt-3 max-w-[52ch]">
+        <p class="fi-body text-ink m-0 mt-3 max-w-reading">
           A metade da frente — o mês corrente — é o que falta. Quando ela existir, a sobra deixa de
           ser um número que você descobre no extrato e passa a ser o começo da próxima decisão.
         </p>
@@ -161,7 +162,7 @@ interface LinhaDoMes {
             <p class="fi-caption text-adverse m-0 mt-3" role="alert">{{ erro() }}</p>
           }
 
-          <p class="fi-caption text-ink-3 m-0 mt-3 max-w-[52ch]">
+          <p class="fi-caption text-ink-3 m-0 mt-3 max-w-reading">
             Só para avisar do lançamento. Não vira newsletter e não vai para lugar nenhum — veja a
             <a routerLink="/privacidade" class="btn-link">Política de Privacidade</a>.
           </p>
@@ -169,7 +170,7 @@ interface LinhaDoMes {
       </section>
 
       <footer class="mt-12 pt-6 border-t border-hairline">
-        <p class="fi-caption text-ink-3 m-0 max-w-[52ch]">
+        <p class="fi-caption text-ink-3 m-0 max-w-reading">
           O fiance é ferramenta de análise, não consultoria de investimentos. Não há garantia de
           retorno, e nada aqui considera a sua situação financeira de forma individualizada.
           <a routerLink="/aviso-cvm" class="btn-link">Aviso CVM</a> ·

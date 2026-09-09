@@ -127,7 +127,7 @@ do estado e o corpo em tinta primária.
 
 ### O piso de contraste
 
-A AA é o chão legal, não o alvo. `design-tokens/check-contrast.mjs` cobra uma folga declarada
+A AA é o chão legal, não o alvo. `web/tools/check-contrast.mjs` cobra uma folga declarada
 acima dela, e a escada de tinta é explícita — corpo, secundária e legenda precisam continuar
 distinguíveis **entre si**, senão hierarquia vira uniformidade:
 
