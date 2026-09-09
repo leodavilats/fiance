@@ -773,6 +773,104 @@ function telaSemTratarFalha(files) {
   return problems;
 }
 
+/*
+ * `routerLink` apontando para rota que nao existe.
+ *
+ * O CTA do `gate.component.ts` apontava para `/voce/plano`, que nao esta em `app.routes.ts`:
+ * com o curinga `{ path: '**', redirectTo: '/mes' }`, quem decidisse assinar era despejado no
+ * Mes sem explicacao. Link morto e ruim em qualquer lugar e pessimo num paywall.
+ *
+ * Le a arvore de `app.routes.ts` de verdade, com `children`, e nao a lista de literais: e a
+ * composicao pai/filho que decide se `/voce/plano` existe.
+ */
+function arrayBalanceado(texto, abre) {
+  let profundidade = 0;
+  for (let i = abre; i < texto.length; i++) {
+    if (texto[i] === '[') profundidade++;
+    else if (texto[i] === ']') {
+      profundidade--;
+      if (profundidade === 0) return texto.slice(abre + 1, i);
+    }
+  }
+  return '';
+}
+
+function objetosDeArray(corpo) {
+  const saida = [];
+  let profundidade = 0;
+  let inicio = -1;
+  for (let i = 0; i < corpo.length; i++) {
+    if (corpo[i] === '{') {
+      if (profundidade === 0) inicio = i;
+      profundidade++;
+    } else if (corpo[i] === '}') {
+      profundidade--;
+      if (profundidade === 0) saida.push(corpo.slice(inicio, i + 1));
+    }
+  }
+  return saida;
+}
+
+function coletarRotas(corpo, prefixo, into) {
+  for (const obj of objetosDeArray(corpo)) {
+    const achado = obj.match(/(?:^|[\s{,])path:\s*'([^']*)'/);
+    if (!achado) continue;
+
+    const segmento = achado[1];
+    const completo = segmento === '' ? prefixo : `${prefixo}/${segmento}`;
+    into.add(completo || '/');
+
+    const onde = obj.indexOf('children:');
+    if (onde >= 0) {
+      const abre = obj.indexOf('[', onde);
+      if (abre >= 0) coletarRotas(arrayBalanceado(obj, abre), completo, into);
+    }
+  }
+}
+
+function rotasDeclaradas() {
+  const fonte = readFileSync(join(SRC, 'app', 'app.routes.ts'), 'utf8');
+  const inicio = fonte.indexOf('[', fonte.indexOf('export const routes'));
+  const rotas = new Set();
+  coletarRotas(arrayBalanceado(fonte, inicio), '', rotas);
+  return rotas;
+}
+
+/** Casa o caminho pedido contra os padroes declarados, tratando `:param`. */
+function rotaExiste(caminho, declaradas) {
+  if (declaradas.has(caminho)) return true;
+
+  const pedidos = caminho.split('/').filter(Boolean);
+  for (const padrao of declaradas) {
+    if (!padrao.includes(':')) continue;
+    const partes = padrao.split('/').filter(Boolean);
+    if (partes.length !== pedidos.length) continue;
+    if (partes.every((parte, i) => parte.startsWith(':') || parte === pedidos[i])) return true;
+  }
+  return false;
+}
+
+const LINK_LITERAL = /routerLink]?="'?(\/[A-Za-z0-9\-_/]*)'?"/g;
+
+function linkParaRotaInexistente(files) {
+  const declaradas = rotasDeclaradas();
+  const problems = [];
+
+  for (const file of files) {
+    if (file.endsWith('app.routes.ts')) continue;
+    const source = readFileSync(file, 'utf8');
+
+    for (const match of source.matchAll(LINK_LITERAL)) {
+      const caminho = match[1].replace(/\/$/, '') || '/';
+      if (rotaExiste(caminho, declaradas)) continue;
+
+      problems.push({ file, name: `${relative(WEB_ROOT, file)}: ${caminho}` });
+    }
+  }
+
+  return problems;
+}
+
 function aviso(title, problems, hint) {
   if (problems.length === 0) return;
   console.warn(`⚠ ${title} (aviso, não reprova)`);
@@ -846,6 +944,7 @@ function main() {
   const becoSemSaida = desabilitadoSemMotivo(templates);
   const contornoInvisivel = contornoDeSeparador(walk(SRC, /\.css$/));
   const falhaSemSaida = telaSemTratarFalha(templates);
+  const linkMorto = linkParaRotaInexistente(templates);
 
   aviso(
     'Raio fora da escala, ou raio de flutuante no que está no chão',
@@ -992,6 +1091,13 @@ function main() {
         'título, frase e card eles roubam a cor que pertence ao julgamento.'
     ) +
     report(
+      'routerLink aponta para rota que não existe',
+      linkMorto,
+      'O curinga manda o link morto para /mes sem explicação. Ou crie a rota em ' +
+        'app.routes.ts, ou corrija o alvo — e num paywall isto é o pior lugar ' +
+        'possível para um botão que não leva a nada.'
+    ) +
+    report(
       'Tela de rota lê dado e não diz quando a leitura falha',
       falhaSemSaida,
       'Envolva o corpo em <app-async-state [loading] [error] [empty] (retry)>. Sem isso a ' +
@@ -1016,8 +1122,8 @@ function main() {
     '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas, linguagem, ' +
       'tipografia, camada, foco, controles, nome de tela, serifa, ' +
       'ordem de cabeçalho, caixa, esqueleto, direção, ' +
-      'estado desabilitado, contorno de controle, tratamento de falha e ' +
-      'vocabulario conferidos.'
+      'estado desabilitado, contorno de controle, tratamento de falha, ' +
+      'alvo de link e vocabulario conferidos.'
   );
 }
 

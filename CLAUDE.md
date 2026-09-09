@@ -27,7 +27,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 1012 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 1024 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 121 testes
@@ -35,7 +35,7 @@ cd mobile  && flutter analyze && flutter test      # 0 issues, 121 testes
                                                    #   11 regras do lint:ui, no Dart
 cd mobile  && flutter build apk --release          # analyze e test nao tocam o Gradle:
                                                    #   o build Android e outra metade
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 177 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 182 testes
 cd web     && npm run lint:contrast                # contraste AA nos dois temas, web e mobile
 python design-tokens/build-icons.py --check        # marca sincronizada
 ```
@@ -185,7 +185,7 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   `fiClasseTextoDaSerie[4]` e recebia `undefined`: a armadilha acima na forma inversa, consumidor
   sem vocabulário. Os mapas cobrem os três blocos de categoria, e não só o de alocação.
 
-O `npm run lint:ui` cobre treze dessas, em **23 regras** — e a classificação importa: regra que
+O `npm run lint:ui` cobre treze dessas, em **24 regras** — e a classificação importa: regra que
 protege acessibilidade, contrato de produto ou erro silencioso **reprova o CI**; regra que
 protege só preferência visual **avisa e não reprova**, porque bloquear por gosto gasta a
 autoridade das que valem. Raio fora da escala e ícone decorando título são as duas que avisam.
@@ -193,8 +193,9 @@ autoridade das que valem. Raio fora da escala e ícone decorando título são as
 Oito são de tela quebrada ou informação escondida: ícone não registrado, classe inexistente,
 julgamento sem explicabilidade, gráfico sem tabela, botão de ícone sem `aria-label`, número
 projetado sem faixa, promessa sobre o futuro — este poupa a negação, porque "não há garantia de
-retorno" é a frase certa e "retorno garantido" é a errada — e **tela de rota que lê dado e não
-diz quando a leitura falhou**.
+retorno" é a frase certa e "retorno garantido" é a errada —, **tela de rota que lê dado e não
+diz quando a leitura falhou** e **`routerLink` apontando para rota que não existe**, que o curinga
+manda para `/mes` sem explicação — o CTA do paywall apontava para `/voce/plano`, que nunca existiu.
 
 **Regra que filtra por extensão de arquivo não roda.** `missingExplainers` e `certaintyLanguage`
 varriam `.html`, e este repo escreve o template dentro do `.ts`: as duas passaram meses lendo só o
@@ -472,6 +473,11 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
   webhook é pública: a assinatura protege a integridade da mensagem, não a autoridade sobre quem
   ela nomeia. `checkout_sessions` guarda quem abriu o checkout, e `BILLING_WEBHOOK_SECRET` é
   validado no startup com o mesmo rigor do JWT.
+- **Ligar a cerca exige declarar quando ela subiu.** `start_trial` é chamado na primeira posição
+  salva **sem consultar `ENTITLEMENTS_ENABLED`**, e não re-arma: toda conta com carteira carrega um
+  `trial_ends_at` no passado. `ENTITLEMENTS_ENABLED_AT` é a âncora — o relógio conta do **mais
+  tarde** entre qualificar e a cerca subir —, e a flag ligada sem ela **falha alto** no startup.
+  Sem isso, virar a flag derrubaria a base inteira para Free num instante, sem volta pelo código.
 - **Assinatura carrega o próprio preço** (`price_cents`, `locked`): preço travado de fundador é
   promessa pública, então é dado e não memória. Webhook é idempotente por `processed_webhooks`.
   O trial de 14 dias começa na **primeira posição salva**, não no cadastro.

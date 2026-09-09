@@ -12,6 +12,79 @@
 
 ---
 
+## Ligar a cobrança era um alçapão, e agora não é (2026-09-09)
+
+A pergunta era para onde seguir depois do passe de UX. A resposta veio de conferir o KNOWN_ISSUES
+contra o código em vez de acreditar nele — que é a disciplina que o próprio arquivo pede — e o que
+apareceu não era uma pendência de interface: era uma armadilha embaixo do gesto mais provável do
+próximo mês.
+
+### O alçapão
+
+`record_portfolio_milestones` chama `start_trial(uid)` na primeira posição salva e **não consulta
+`ENTITLEMENTS_ENABLED`**. A cerca está desligada desde sempre, então:
+
+- toda conta que já salvou uma posição tem `trial_started_at` gravado e `trial_ends_at` no passado;
+- `start_trial` não re-arma — `if row.trial_started_at is not None: return`;
+- com a cerca ligada, `resolve()` calcula `in_trial = moment < trial_ends_at`, que é falso, e sem
+  assinatura nem crédito o plano cai para `FREE`.
+
+Somando: **virar `ENTITLEMENTS_ENABLED=true` derrubaria a base inteira para Free no mesmo
+instante**, e nenhum caminho de código devolveria o trial. O KNOWN_ISSUES mencionava isso como nota
+dentro de "falta tela de plano". A ordem estava invertida: era a única coisa que precisava existir
+*antes* de qualquer tela, porque o modo de errar é silencioso, atinge todo mundo de uma vez, e o
+gesto que o dispara — "vamos ligar a cobrança" — é exatamente o que se faz sem cerimônia.
+
+### A âncora, e por que não é migração
+
+Um trial que correu enquanto nada era cercado não foi um trial: foi um carimbo sem efeito. Então o
+relógio conta do **mais tarde** entre qualificar e a cerca subir. Quem já tinha carteira ganha os 14
+dias a partir da cerca; quem qualificar depois conta dos seus.
+
+`ENTITLEMENTS_ENABLED_AT` (ISO ou epoch) declara quando a cerca subiu, e `fim_do_trial()` é
+`max(trial_started_at, cerca) + TRIAL_DAYS`. Isso é **cálculo, não escrita**: sem migração Alembic,
+sem backfill, sem tocar em linha nenhuma, e reversível — desligar a flag volta tudo ao que era.
+
+Uma migração resolveria o dado de hoje e não o mecanismo: se a cerca subisse semanas depois, quem
+qualificasse no intervalo queimaria o trial de novo. Não iniciar o trial com a cerca desligada é
+pior ainda — aí ninguém o teria, porque `start_trial` só é chamado no marco da primeira posição, que
+é uma vez só.
+
+**A flag ligada sem a data falha alto no startup.** É a mesma disciplina de `APP_ENV` sem default e
+de `SENTRY_DSN` sem o pacote: não se pode ligar a cerca sem declarar quando ela subiu, porque a
+alternativa é descobrir o esquecimento pelo suporte.
+
+### O CTA do paywall levava ao Mês
+
+O `gate.component.ts` apontava para `/voce/plano`, que **não está em `app.routes.ts`**. Com o
+curinga `{ path: '**', redirectTo: '/mes' }`, quem decidisse assinar era despejado no Mês sem
+explicação. Link morto é ruim em qualquer lugar e péssimo num paywall.
+
+Consertar só aquele literal seria consertar o sintoma, então virou a **24ª regra do `lint:ui`**:
+`routerLink` para rota que não existe reprova. Ela lê a árvore de `app.routes.ts` de verdade, com
+`children`, porque é a composição pai/filho que decide se `/voce/plano` existe — e varreu o produto
+inteiro achando exatamente aquele um.
+
+O gate agora recebe `upgradeRoute` como entrada, e **sem destino não desenha botão**: diz que a
+assinatura ainda não está aberta e que nada do que a pessoa cadastrou depende dela. Inventar uma
+tela de plano aqui seria inventar preço e forma de pagamento, que são decisão de produto; o que não
+se podia manter era um botão que promete uma saída inexistente.
+
+### O que a conferência ainda achou
+
+**Nada renderiza `<app-gate>`.** O único `app-gate` do repositório é a própria declaração do
+seletor. É a armadilha do "vocabulário sem consumidor" na sua forma mais caro — um componente de
+paywall que ninguém usa, apontando para uma rota que não existe. O KNOWN_ISSUES 27 foi reescrito
+para dizer o que a cobrança é de fato: três metades que não se falam, e o que falta é o meio.
+
+**`/patrimonio` pedia proventos duas vezes.** `reload()` chamava `loadDividends()` antes de a
+avaliação chegar — com a estimativa vazia — e o resultado era descartado pelo chamado que vem depois
+de `evaluate()`. Removê-lo cru deixaria quem só tem renda fixa sem proventos, porque essa conta não
+passa pela avaliação: o chamado desceu para os dois caminhos que existem, um por caminho, sempre com
+a estimativa em mão.
+
+---
+
 ## Quando a leitura falha, a tela para de mentir que está vazia (2026-09-09)
 
 Uma auditoria de UX das três plataformas procurava o que reformular na interface. O que ela achou

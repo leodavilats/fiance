@@ -106,7 +106,6 @@ export class CarteiraStore {
     this.carregando.set(true);
     this.loadFixedIncome();
     this.loadClosedTrades();
-    this.loadDividends();
     this.svc.dashboard().subscribe({
       next: d => this.alocacaoOficial.set(d.allocations ?? []),
       error: () => this.alocacaoOficial.set([]),
@@ -127,6 +126,7 @@ export class CarteiraStore {
         if (res.items.length === 0) {
           this.evaluation.set(null);
           this.carregando.set(false);
+          this.loadDividends();
           return;
         }
         this.evaluate(
@@ -172,6 +172,12 @@ export class CarteiraStore {
     });
   }
 
+  /**
+   * Um chamado por caminho, e sempre com a estimativa em mão.
+   *
+   * `reload()` também o chamava, antes de a avaliação chegar: a estimativa saía vazia, o
+   * resultado era descartado pelo chamado seguinte, e `/patrimonio` pedia proventos duas vezes.
+   */
   loadDividends(): void {
     const estimate = this.estimatedMonthlyIncome();
     this.svc.getDividendsReceived(estimate ?? undefined).subscribe({

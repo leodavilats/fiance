@@ -293,14 +293,19 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     do escuro. Uma sombra não se mede por par de token, o que faz deste um caso genuíno de olhar
     em navegador, e não de escrever mais uma régua.
 
-27. **A cobrança não tem caminho de ponta a ponta.** Existe backend, régua de plano, preço travado e
-    webhook idempotente; não existe tela de plano, exibição de preço, checkout, gestão de assinatura
-    nem cancelamento na interface — `billing` não aparece em `web/src` nem em `mobile/lib`, e o CTA
-    do `gate.component.ts` aponta para `/voce/plano`, que não existe em `app.routes.ts`. Some-se a
-    isto que o relógio do trial **já está correndo** com a cerca desligada: `start_trial()` é
-    chamado na primeira posição salva, então virar `ENTITLEMENTS_ENABLED` hoje derrubaria a base
-    inteira para Free no mesmo instante. O trial precisa ser reiniciado na ativação da cerca, antes
-    de virar a flag — não depois.
+27. **A cobrança são três metades que não se falam.** Não é "falta tela de plano": conferido em
+    2026-09-09, existe backend (cerca, régua de plano, preço travado, webhook idempotente),
+    existe `GateComponent` — e **nada renderiza `<app-gate>`**, o único `app-gate` do repo é a
+    própria declaração do seletor. Não existe UI de cobrança: `billing` não aparece em `web/src`
+    nem em `mobile/lib`. O que falta é o meio: decidir quais recursos a interface cerca, montar a
+    tela de plano em `/voce/plano` (que não existe como rota) e ligar o checkout.
+
+    *(O alçapão do trial saiu daqui, e era a parte urgente: `start_trial` é chamado na primeira
+    posição salva **sem consultar a flag**, e não re-arma, então virar `ENTITLEMENTS_ENABLED`
+    derrubaria a base inteira para Free no mesmo instante. Resolvido por âncora, sem migração:
+    `ENTITLEMENTS_ENABLED_AT` declara quando a cerca subiu e o relógio conta do mais tarde entre
+    qualificar e essa data; a flag ligada sem a data **falha alto** no startup. E o CTA morto do
+    gate virou regra de `lint:ui`: `routerLink` para rota inexistente reprova.)*
 
 28. **O ETF é estruturalmente mal avaliado, e o remendo tem consequência.** Para `asset_type ==
     "etf"` o único candidato a consenso é Bazin (`dividendo / 0,04`); um ETF de índice distribui na

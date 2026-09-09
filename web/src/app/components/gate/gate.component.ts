@@ -33,9 +33,15 @@ import { EntitlementService } from '../../core';
         }
 
         <div class="flex flex-wrap items-center gap-3 mt-4">
-          <a class="btn-primary" routerLink="/voce/plano" (click)="upgrade.emit()">
-            Ver o plano Premium
-          </a>
+          @if (upgradeRoute(); as destino) {
+            <a class="btn-primary" [routerLink]="destino" (click)="upgrade.emit()">
+              Ver o plano Premium
+            </a>
+          } @else {
+            <p class="fi-caption text-ink-3 m-0">
+              A assinatura ainda não está aberta. Nada do que você já cadastrou depende dela.
+            </p>
+          }
           @if (secondaryLabel()) {
             <span class="fi-body text-ink-3">{{ secondaryLabel() }}</span>
           }
@@ -54,6 +60,15 @@ export class GateComponent {
   readonly reason = input('Este recurso faz parte do plano Premium.');
   readonly limitReached = input(false);
   readonly secondaryLabel = input<string>('');
+
+  /**
+   * A rota da tela de plano, quando ela existir.
+   *
+   * Ficou como entrada em vez de literal porque o literal era `/voce/plano`, que não está em
+   * `app.routes.ts`: o curinga despejava no `/mes` justamente quem tinha decidido pagar. Sem
+   * destino, o gate explica a cerca e não finge que há como sair dela.
+   */
+  readonly upgradeRoute = input<string | null>(null);
 
   readonly upgrade = output<void>();
 

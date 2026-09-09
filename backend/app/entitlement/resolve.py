@@ -53,11 +53,37 @@ class Entitlements:
 @dataclass(frozen=True)
 class _Snapshot:
     status: str
+    trial_started_at: float | None
     trial_ends_at: float | None
     credited_until: float | None
     current_period_end: float | None
     price_cents: int
     locked: bool
+
+
+def fim_do_trial(
+    trial_started_at: float | None,
+    trial_ends_at: float | None,
+    cerca_subiu_em: float | None,
+) -> float | None:
+    """Quando o trial acaba de verdade — ancorado no que veio depois.
+
+    O trial começa na primeira posição salva, e `record_portfolio_milestones` o inicia
+    **mesmo com a cerca desligada**. Como `start_trial` não re-arma, toda conta que já tem
+    carteira carrega um `trial_ends_at` no passado: ligar a cerca sem âncora derrubaria a base
+    inteira para Free no mesmo instante, sem caminho de volta no código.
+
+    Um trial que correu enquanto nada era cercado não foi um trial — foi um carimbo sem efeito.
+    Então o relógio conta do **mais tarde** entre qualificar e a cerca subir: quem já tinha
+    carteira ganha os 14 dias a partir da cerca, e quem qualificar depois conta dos seus.
+    """
+    if trial_started_at is None:
+        return trial_ends_at
+
+    if cerca_subiu_em is None:
+        return trial_ends_at
+
+    return max(trial_started_at, cerca_subiu_em) + TRIAL_DAYS * 86400
 
 
 def _subscription(user_id: str) -> _Snapshot | None:
@@ -67,6 +93,7 @@ def _subscription(user_id: str) -> _Snapshot | None:
             return None
         return _Snapshot(
             status=row.status,
+            trial_started_at=row.trial_started_at,
             trial_ends_at=row.trial_ends_at,
             credited_until=row.credited_until,
             current_period_end=row.current_period_end,
@@ -96,7 +123,9 @@ def resolve(user_id: str, now: float | None = None) -> Entitlements:
     locked = False
 
     if row is not None:
-        trial_ends_at = row.trial_ends_at
+        trial_ends_at = fim_do_trial(
+            row.trial_started_at, row.trial_ends_at, settings.entitlements_up_at
+        )
         credited_until = row.credited_until
         price_cents = row.price_cents
         locked = row.locked

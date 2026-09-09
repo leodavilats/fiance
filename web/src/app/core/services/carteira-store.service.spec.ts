@@ -284,4 +284,54 @@ describe('CarteiraStore', () => {
       expect(store.carimboDosPrecos()).toBeNull();
     });
   });
+  describe('quantas vezes /patrimonio pede cada coisa', () => {
+    function contando(portfolio: { ticker: string; quantity: number; avg_price: number }[]) {
+      const chamados: string[] = [];
+      const stub = {
+        ...recommendStub,
+        getPortfolio: () => {
+          chamados.push('portfolio');
+          return of({ items: portfolio });
+        },
+        evaluatePortfolio: () => {
+          chamados.push('evaluate');
+          return of(evaluation(portfolio.map(p => position({ ticker: p.ticker }))));
+        },
+        getDividendsReceived: () => {
+          chamados.push('dividends');
+          return of({ items: [] });
+        },
+      };
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [{ provide: RecommendService, useValue: stub }],
+      });
+      const loja = TestBed.inject(CarteiraStore);
+      loja.reload();
+      return { chamados, loja };
+    }
+
+    it('pede provento uma vez, e com a estimativa já em mão', () => {
+      const { chamados } = contando([{ ticker: 'PETR4', quantity: 100, avg_price: 10 }]);
+
+      expect(
+        chamados.filter(c => c === 'dividends').length,
+        'reload() pedia antes da avaliação, com estimativa vazia, e o resultado era descartado'
+      ).toBe(1);
+      expect(
+        chamados.indexOf('dividends'),
+        'e o pedido vem depois da avaliação, que é quem produz a estimativa'
+      ).toBeGreaterThan(chamados.indexOf('evaluate'));
+    });
+
+    it('carteira sem ativo negociado ainda pede provento', () => {
+      const { chamados } = contando([]);
+
+      expect(
+        chamados.filter(c => c === 'dividends').length,
+        'quem só tem renda fixa não passa pela avaliação, e ficaria com Proventos em branco'
+      ).toBe(1);
+    });
+  });
 });

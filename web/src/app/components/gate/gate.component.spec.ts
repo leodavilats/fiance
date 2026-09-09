@@ -128,4 +128,46 @@ describe('gate contextual', () => {
       expect(icone.getAttribute('aria-hidden')).toBe('true');
     });
   });
+  describe('o convite a assinar', () => {
+    it('sem tela de plano, não há botão que leve a lugar nenhum', () => {
+      const fixture = render();
+      const html: string = fixture.nativeElement.innerHTML;
+
+      expect(
+        fixture.nativeElement.querySelector('a.btn-primary'),
+        'o CTA apontava para /voce/plano, que não existe em app.routes.ts — o curinga ' +
+          'despejava no /mes justamente quem tinha decidido pagar'
+      ).toBeNull();
+      expect(html).toContain('ainda não está aberta');
+    });
+
+    it('não deixa a pessoa sem saber o que fazer: diz o estado da assinatura', () => {
+      const fixture = render();
+      const texto: string = fixture.nativeElement.textContent;
+
+      expect(texto).toMatch(/não está aberta/i);
+      expect(texto, 'e que nada do que ela cadastrou depende disso').toMatch(
+        /nada do que você já cadastrou depende dela/i
+      );
+    });
+
+    it('com a rota declarada, o botão volta e aponta para ela', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          importProvidersFrom(LucideAngularModule.pick({ Lock })),
+          { provide: EntitlementService, useValue: fakeEntitlements() },
+        ],
+      });
+      const fixture = TestBed.createComponent(GateComponent);
+      fixture.componentRef.setInput('feature', 'strategy');
+      fixture.componentRef.setInput('upgradeRoute', '/voce/conta');
+      fixture.detectChanges();
+
+      const cta = fixture.nativeElement.querySelector('a.btn-primary');
+      expect(cta).not.toBeNull();
+      expect(cta.getAttribute('href')).toBe('/voce/conta');
+    });
+  });
 });

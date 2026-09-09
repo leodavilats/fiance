@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,6 +38,10 @@ class Settings(BaseSettings):
 
     entitlements_enabled: bool = False
 
+    # O momento em que a cerca subiu, ISO (`2026-10-01`) ou epoch. Obrigatoria com a cerca
+    # ligada, porque e ela que impede o trial ja gasto de derrubar a base inteira para Free.
+    entitlements_enabled_at: str = ""
+
     affirmation_level: int = 2
 
     suitability_personalization_allowed: bool = False
@@ -54,6 +59,28 @@ class Settings(BaseSettings):
     sentry_traces_sample_rate: float = 0.0
 
     release: str = ""
+
+    @property
+    def entitlements_up_at(self) -> float | None:
+        """Epoch em que a cerca subiu, ou None quando nao declarado."""
+        bruto = self.entitlements_enabled_at.strip()
+        if not bruto:
+            return None
+
+        try:
+            return float(bruto)
+        except ValueError:
+            pass
+
+        try:
+            texto = bruto.replace("Z", "+00:00")
+            momento = datetime.fromisoformat(texto)
+        except ValueError:
+            return None
+
+        if momento.tzinfo is None:
+            momento = momento.replace(tzinfo=UTC)
+        return momento.timestamp()
 
     @property
     def is_development(self) -> bool:
@@ -75,6 +102,17 @@ class Settings(BaseSettings):
                 "APP_ENV não definido. Declare explicitamente 'development' ou "
                 "'production' — sem isso não há como saber se o segredo de JWT, a "
                 "origem de CORS e a rota de operador estão configurados para valer."
+            )
+
+        if self.entitlements_enabled and self.entitlements_up_at is None:
+            raise InsecureConfigurationError(
+                "ENTITLEMENTS_ENABLED está ligado e ENTITLEMENTS_ENABLED_AT não foi "
+                "declarado (ou não é uma data ISO nem um epoch). O trial começa na "
+                "primeira posição salva, inclusive com a cerca desligada, então toda "
+                "conta que já tem carteira carrega um trial vencido: sem a data em que "
+                "a cerca subiu, ligá-la derruba a base inteira para Free no mesmo "
+                "instante, e start_trial não re-arma. Declare, por exemplo, "
+                "ENTITLEMENTS_ENABLED_AT=2026-10-01."
             )
 
         if self.is_development:

@@ -22,6 +22,7 @@ assume development). Esquecer essa variável desarmaria JWT, CORS e a rota de op
 | `JWT_SECRET` | sim fora de development | startup falha alto |
 | `ALLOWED_ORIGINS` | sim fora de development | startup falha alto |
 | `BILLING_WEBHOOK_SECRET` | sim fora de development | startup falha alto |
+| `ENTITLEMENTS_ENABLED_AT` | **sim, se `ENTITLEMENTS_ENABLED=true`** | startup falha alto — sem a data em que a cerca subiu, ligá-la derruba a base inteira para Free |
 | `BRAPI_TOKEN` | recomendada | cota anônima acaba rápido; o disjuntor abre |
 | `SENTRY_DSN` | não | telemetria desligada (o pacote nem inicializa) |
 | `RELEASE` | não | stack trace não aponta para o commit |
@@ -38,6 +39,14 @@ O serviço **`fiance-web`** (SSR do Angular) tem variáveis próprias, e duas de
 
 `SENTRY_DSN` configurado **com o pacote faltando falha alto**, de propósito: um sistema que se acha
 observado e não está é pior que um assumidamente cego.
+
+**Ligar a cerca de plano é ligar duas variáveis, não uma.** O trial começa na primeira posição
+salva e é iniciado **mesmo com a cerca desligada**, então toda conta que já tem carteira carrega um
+`trial_ends_at` no passado, e `start_trial` não re-arma. `ENTITLEMENTS_ENABLED_AT` é a data em que a
+cerca subiu, e o relógio do trial passa a contar do **mais tarde** entre qualificar e essa data:
+quem já tinha carteira ganha os 14 dias a partir dali. Aceita ISO (`2026-10-01`, lido em UTC) ou
+epoch. Sem ela, o startup falha alto — de propósito, porque o modo de errar aqui é silencioso e
+atinge todo mundo de uma vez.
 
 ---
 
