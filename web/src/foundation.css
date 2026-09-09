@@ -250,7 +250,9 @@
   /* Em caracteres, não em pixels: 1120px de corpo 15 davam ~105 por linha, e a linha longa é
      linha não lida. `ch` acompanha a fonte em vez de brigar com ela. */
   --fi-layout-reading-max-width: 70ch;
-  --fi-layout-dense-max-width: 1600px;
+  /* A coluna do aplicativo. Era 1600px: o olho percorria meia tela entre o rótulo e o número, e
+     tabela larga já rola no próprio contorno em vez de esticar a página. */
+  --fi-layout-dense-max-width: 1240px;
   --fi-layout-drawer-width: 600px;
   --fi-layout-subnav-width: 200px;
   --fi-layout-nav-height: 56px;

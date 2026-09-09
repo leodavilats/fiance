@@ -41,19 +41,16 @@ interface LinhaDoMes {
   template: `
     <app-page-header title="Mês" question="Como estou agora, e o que exige atenção?">
       @if (mesesDisponiveis().length > 1) {
-        <div class="field mt-3 max-w-[16rem]">
-          <label class="field-label" for="mes-escolhido">Mês</label>
-          <select
-            id="mes-escolhido"
-            class="input"
-            [value]="mesEscolhido()"
-            (change)="escolherMes($any($event.target).value)"
-          >
-            @for (m of mesesDisponiveis(); track m) {
-              <option [value]="m">{{ nome(m) }}</option>
-            }
-          </select>
-        </div>
+        <select
+          class="input mt-3 w-auto"
+          aria-label="Mês exibido"
+          [value]="mesEscolhido()"
+          (change)="escolherMes($any($event.target).value)"
+        >
+          @for (m of mesesDisponiveis(); track m) {
+            <option [value]="m">{{ nome(m) }}</option>
+          }
+        </select>
       }
     </app-page-header>
 
@@ -76,7 +73,6 @@ interface LinhaDoMes {
           </div>
         </div>
       } @else {
-        <!-- Não é seção nomeada: é a resposta da tela, logo abaixo do título dela. -->
         <section class="fi-block">
           @if (veredito(); as v) {
             <p class="fi-verdict m-0 max-w-reading" [class]="classeDoEstado(v.band.state)">

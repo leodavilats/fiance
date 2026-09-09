@@ -40,12 +40,11 @@ const MIN_POINTS = 5;
     <section>
       <div class="flex items-baseline justify-between gap-3 flex-wrap mb-1">
         <h3 class="fi-title text-ink m-0">O preço está longe do valor justo?</h3>
-        <div class="flex items-center gap-1" role="group" aria-label="Período do gráfico">
+        <div class="segmented" role="group" aria-label="Período do gráfico">
           @for (p of periods; track p.id) {
             <button
               type="button"
-              class="subtab-btn"
-              [class.active]="p.id === period()"
+              class="segmented-option"
               [attr.aria-pressed]="p.id === period()"
               (click)="period.set(p.id)"
             >

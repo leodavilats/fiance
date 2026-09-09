@@ -380,7 +380,7 @@ function temaClaroEmDuasCopias(arquivosCss) {
 function contornoDeSeparador(arquivosCss) {
   const problems = [];
   const ABRE_CONTROLE =
-    /^\s*\.(?:btn-[a-z-]+|input|input-bare|menu-item|subtab-btn|range-slider|pagination-btn|compact-btn)\b/;
+    /^\s*\.(?:btn-[a-z-]+|input|input-bare|menu-item|segmented-option|subtab-btn|range-slider|pagination-btn|compact-btn)\b/;
 
   for (const file of arquivosCss) {
     let dentro = false;
@@ -473,6 +473,7 @@ const CLASSES_DE_CONTROLE = [
   'btn-quiet',
   'menu-item',
   'pagination-btn',
+  'segmented-option',
   'subtab-btn',
   'th-sort',
   'nav-link',
@@ -853,7 +854,8 @@ function main() {
     report(
       'Controle montado à mão',
       controleSolto,
-      'Use .btn-primary, .btn-secondary, .btn-icon, .btn-link, .btn-quiet, .menu-item ' +
+      'Use .btn-primary, .btn-secondary, .btn-icon, .btn-link, .btn-quiet, .menu-item, ' +
+        '.segmented-option ' +
         'ou .input. Se este controle é mesmo único, declare o motivo no arquivo: ' +
         '<!-- design-exception: controle — motivo -->'
     ) +

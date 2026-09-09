@@ -658,6 +658,59 @@
     }
   }
 
+  /* Recorte de uma leitura, e não navegação. `.subtab-btn` fazia os dois, e o mesmo fio da marca
+     dizia "esta é a página atual" na trilha e "esta é a opção escolhida" numa barra de
+     ferramentas. Aqui o escolhido é um preenchimento, que não se confunde com aba. */
+  .segmented {
+    display: inline-flex;
+    align-items: stretch;
+    padding: 2px;
+    gap: 2px;
+    border: 1px solid var(--fi-hairline);
+    border-radius: var(--fi-radius-md);
+    background: var(--fi-ground-0);
+  }
+  .segmented-option {
+    @apply cursor-pointer whitespace-nowrap;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: calc(var(--fi-radius-md) - 2px);
+    background: transparent;
+    font-family: var(--fi-font-sans);
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 500;
+    color: var(--fi-ink-2);
+    transition:
+      color var(--fi-motion-fast) ease,
+      background var(--fi-motion-fast) ease;
+  }
+  /* O desenho tem 30px; o alvo de toque, os 44px que o sistema declara. */
+  .segmented-option::before {
+    content: '';
+    position: absolute;
+    inset: -7px 0;
+  }
+  .segmented-option:hover:not([aria-pressed='true']) {
+    color: var(--fi-ink-1);
+    background: var(--fi-ground-2);
+  }
+  .segmented-option[aria-pressed='true'] {
+    background: var(--fi-ground-1);
+    color: var(--fi-ink-1);
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px var(--fi-hairline);
+  }
+  .segmented-option:focus-visible {
+    outline: var(--fi-focus-ring) solid var(--fi-brand);
+    outline-offset: var(--fi-focus-offset);
+  }
+
   .subtab-btn {
     @apply flex items-center gap-1.5 px-3 cursor-pointer whitespace-nowrap;
     position: relative;

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
@@ -12,6 +11,7 @@ import {
   UiHelperService,
 } from '../../core';
 import { PageHeaderComponent } from '../page-header/page-header.component';
+import { SectionComponent } from '../section/section.component';
 
 const FREQUENCY_OPTIONS: { key: OpportunitiesFrequency; label: string }[] = [
   { key: 'off', label: 'Desativado' },
@@ -26,204 +26,166 @@ const RISK_PROFILE_OPTIONS: { key: RiskProfile; label: string }[] = [
   { key: 'aggressive', label: 'Arrojado' },
 ];
 
+const YIELDS: {
+  control: 'yield_stock' | 'yield_fii' | 'yield_bdr' | 'yield_etf';
+  label: string;
+}[] = [
+  { control: 'yield_stock', label: 'Ações BR' },
+  { control: 'yield_fii', label: 'FIIs' },
+  { control: 'yield_bdr', label: 'BDRs' },
+  { control: 'yield_etf', label: 'ETFs' },
+];
+
 @Component({
   selector: 'app-preferences',
   standalone: true,
-  imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [PageHeaderComponent, ReactiveFormsModule, LucideAngularModule, SectionComponent],
   template: `
-    <app-page-header title="Preferências" question="Como o fiance calcula, e o que ele te avisa." />
+    <app-page-header
+      title="Preferências"
+      question="Com que régua o fiance avalia o que é seu?"
+      scope="Vale para todas as telas e acompanha a sua conta, não este aparelho."
+    />
 
-    <form [formGroup]="form" class="flex flex-col gap-8">
-      <div class="fi-block">
-        <h2 class="fi-title m-0 mb-4 text-ink">Como o fiance te avalia</h2>
-        <label class="field-label block mb-2">
-          Meta de dividend yield (preço-teto de Bazin) — por tipo de ativo
-        </label>
-        <div class="grid grid-cols-4 gap-4">
-          <div>
-            <label class="field-label block mb-1">Ações BR (%)</label>
-            <input
-              type="number"
-              class="input"
-              formControlName="yield_stock"
-              min="0.5"
-              max="30"
-              step="0.5"
-            />
-          </div>
-          <div>
-            <label class="field-label block mb-1">FIIs (%)</label>
-            <input
-              type="number"
-              class="input"
-              formControlName="yield_fii"
-              min="0.5"
-              max="30"
-              step="0.5"
-            />
-          </div>
-          <div>
-            <label class="field-label block mb-1">BDRs (%)</label>
-            <input
-              type="number"
-              class="input"
-              formControlName="yield_bdr"
-              min="0.5"
-              max="30"
-              step="0.5"
-            />
-          </div>
-          <div>
-            <label class="field-label block mb-1">ETFs (%)</label>
-            <input
-              type="number"
-              class="input"
-              formControlName="yield_etf"
-              min="0.5"
-              max="30"
-              step="0.5"
-            />
-          </div>
-        </div>
-        <p class="fi-caption text-ink-2 mt-1.5">
-          Usada no preço justo de Bazin (dividendo anual ÷ meta). BDRs são avaliadas por Graham/DCF;
-          ETFs usam só dividend yield (sem Graham/DCF, que exigem fundamentos de empresa).
-        </p>
-      </div>
-      <div class="fi-block">
-        <h2 class="fi-title m-0 mb-2 text-ink">Notificações e recomendação</h2>
-
-        @if (!pushEnabled()) {
-          <div class="p-3 rounded-md bg-attention/10 border border-attention/40 mb-4 flex gap-3">
-            <lucide-icon name="smartphone" size="18" class="text-attention mt-0.5"></lucide-icon>
-            <div class="fi-body">
-              <div class="fi-label text-ink">As notificações requerem o app instalado</div>
-              <div class="text-ink-2 mt-0.5">
-                Nenhum aparelho registrado nesta conta. As preferências abaixo ficam salvas e passam
-                a valer assim que você entrar pelo app — no navegador elas não disparam nada.
-              </div>
+    <form [formGroup]="form">
+      <app-section
+        title="Preço justo"
+        tone="title"
+        hint="O dividend yield que você exige de cada classe. É o divisor do preço-teto de Bazin: dividendo anual ÷ meta. Exigir mais derruba o preço justo, e menos ativos passam."
+      >
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3 max-w-reading">
+          @for (y of yields; track y.control) {
+            <div class="field">
+              <label class="field-label" [attr.for]="y.control">{{ y.label }} (%)</label>
+              <input
+                type="number"
+                [id]="y.control"
+                class="input"
+                [formControlName]="y.control"
+                min="0.5"
+                max="30"
+                step="0.5"
+              />
             </div>
+          }
+        </div>
+        <p class="fi-caption text-ink-3 m-0 mt-2 max-w-reading">
+          BDRs também passam por Graham e DCF. ETFs não: os dois exigem fundamento de empresa, e um
+          ETF não tem um.
+        </p>
+      </app-section>
+
+      <app-section
+        title="Score de oportunidade"
+        tone="title"
+        hint="O que faz um ativo subir na lista de Descobrir. Nada aqui altera o preço justo — muda a ordem, não o veredito."
+      >
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3">
+          <div class="field">
+            <label class="field-label" for="perfil-de-risco">Perfil de risco</label>
+            <select id="perfil-de-risco" formControlName="risk_profile" class="input">
+              @for (r of riskProfileOptions; track r.key) {
+                <option [value]="r.key">{{ r.label }}</option>
+              }
+            </select>
+            <p class="fi-caption text-ink-3 m-0 mt-1">Ajusta o peso de cada indicador no score.</p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="setores-preferidos">Setores preferidos</label>
+            <input
+              type="text"
+              id="setores-preferidos"
+              formControlName="preferred_sectors"
+              placeholder="Energia, Bancos, Varejo"
+              class="input"
+            />
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="ativos-excluidos">Ativos que nunca quero ver</label>
+            <input
+              type="text"
+              id="ativos-excluidos"
+              formControlName="excluded_tickers"
+              placeholder="MGLU3, IRBR3"
+              class="input"
+            />
+            <p class="fi-caption text-ink-3 m-0 mt-1">
+              Saem de Descobrir. Posição sua continua aparecendo no Patrimônio.
+            </p>
+          </div>
+
+          <fieldset class="field m-0 p-0 border-0">
+            <legend class="field-label p-0">Categorias preferidas</legend>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 mt-1">
+              @for (cat of categories; track cat.key) {
+                <label class="fi-body flex items-center gap-1.5 text-ink cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="accent-brand"
+                    [checked]="isPreferredCategory(cat.key)"
+                    (change)="togglePreferredCategory(cat.key, $any($event.target).checked)"
+                  />
+                  {{ cat.label }}
+                </label>
+              }
+            </div>
+          </fieldset>
+        </div>
+      </app-section>
+
+      <app-section title="Avisos" tone="title">
+        @if (pushEnabled()) {
+          <div class="notice notice-brand mt-3">
+            <lucide-icon name="smartphone" size="18" aria-hidden="true"></lucide-icon>
+            <p class="fi-body text-ink-2 m-0">
+              {{ registeredDevices() }}
+              {{ registeredDevices() === 1 ? 'aparelho recebe' : 'aparelhos recebem' }}
+              os avisos desta conta.
+            </p>
           </div>
         } @else {
-          <div class="notice notice-brand mb-4">
-            <lucide-icon name="smartphone" size="18" class="text-brand mt-0.5"></lucide-icon>
-            <div class="fi-body text-ink-2">
-              {{ registeredDevices() }}
-              {{ registeredDevices() === 1 ? 'aparelho recebendo' : 'aparelhos recebendo' }}
-              notificações desta conta.
+          <div class="notice notice-attention mt-3">
+            <lucide-icon name="smartphone" size="18" aria-hidden="true"></lucide-icon>
+            <div>
+              <p class="fi-label text-ink m-0">Aviso exige o app instalado</p>
+              <p class="fi-body text-ink-2 m-0 mt-1">
+                Nenhum aparelho registrado nesta conta. O que você escolher aqui fica salvo e passa
+                a valer quando você entrar pelo app; no navegador nada dispara.
+              </p>
             </div>
           </div>
         }
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="field-label block mb-1.5">Alertas de preço</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
+          <fieldset class="field m-0 p-0 border-0">
+            <legend class="field-label p-0">Alerta de preço</legend>
             <label class="fi-body flex items-center gap-2 py-2 text-ink cursor-pointer">
               <input type="checkbox" formControlName="notify_price_alerts" class="accent-brand" />
-              Notificar (imediato)
+              Avisar assim que o preço bater
             </label>
-          </div>
+          </fieldset>
 
-          <div>
-            <label class="field-label block mb-1.5"> Resumo de oportunidades — cadência </label>
-            <select formControlName="opportunities_frequency" class="input">
+          <div class="field">
+            <label class="field-label" for="cadencia">Resumo de oportunidades</label>
+            <select id="cadencia" formControlName="opportunities_frequency" class="input">
               @for (f of frequencyOptions; track f.key) {
                 <option [value]="f.key">{{ f.label }}</option>
               }
             </select>
           </div>
-
-          <div>
-            <label class="field-label block mb-1.5">Perfil de risco</label>
-            <select formControlName="risk_profile" class="input">
-              @for (r of riskProfileOptions; track r.key) {
-                <option [value]="r.key">{{ r.label }}</option>
-              }
-            </select>
-            <p class="fi-caption text-ink-2 mt-1">
-              Ajusta o peso de cada indicador no score de oportunidade.
-            </p>
-          </div>
-
-          <div>
-            <span class="fi-label block text-ink-2 mb-1.5" id="rotulo-densidade">
-              Densidade da tela
-            </span>
-            <div class="flex items-center gap-2" role="group" aria-labelledby="rotulo-densidade">
-              <button
-                type="button"
-                class="subtab-btn"
-                [class.active]="densidade.density() === 'comfortable'"
-                [attr.aria-pressed]="densidade.density() === 'comfortable'"
-                (click)="densidade.set('comfortable')"
-              >
-                Confortável
-              </button>
-              <button
-                type="button"
-                class="subtab-btn"
-                [class.active]="densidade.density() === 'compact'"
-                [attr.aria-pressed]="densidade.density() === 'compact'"
-                (click)="densidade.set('compact')"
-              >
-                Compacta
-              </button>
-            </div>
-            <p class="fi-caption text-ink-2 mt-1">
-              Vale em todas as telas e acompanha a sua conta, não este aparelho.
-            </p>
-          </div>
         </div>
+      </app-section>
 
-        <div class="mt-4 pt-4 border-t border-hairline">
-          <label class="field-label block mb-2">Categorias preferidas</label>
-          <div class="flex flex-wrap gap-3">
-            @for (cat of categories; track cat.key) {
-              <label class="fi-body flex items-center gap-1.5 text-ink">
-                <input
-                  type="checkbox"
-                  class="accent-brand"
-                  [checked]="isPreferredCategory(cat.key)"
-                  (change)="togglePreferredCategory(cat.key, $any($event.target).checked)"
-                />
-                {{ cat.label }}
-              </label>
-            }
-          </div>
-          <p class="fi-caption text-ink-2 mt-1.5">
-            Ativos dessas categorias ganham um pequeno boost no score de oportunidade.
+      <div class="fi-block flex items-center justify-end gap-4 flex-wrap">
+        @if (resultado() === 'ok') {
+          <p class="fi-body text-favorable m-0" role="status">Preferências salvas</p>
+        } @else if (resultado() === 'erro') {
+          <p class="fi-body text-adverse m-0" role="alert">
+            Não conseguimos salvar. Suas preferências anteriores continuam valendo.
           </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label class="field-label block mb-1.5">Setores preferidos</label>
-            <input
-              type="text"
-              formControlName="preferred_sectors"
-              placeholder="Ex.: Energia, Bancos, Varejo"
-              class="input"
-            />
-          </div>
-          <div>
-            <label class="field-label block mb-1.5">Ativos excluídos</label>
-            <input
-              type="text"
-              formControlName="excluded_tickers"
-              placeholder="Ex.: MGLU3, IRBR3"
-              class="input"
-            />
-          </div>
-        </div>
-      </div>
-      <div class="flex items-center justify-end gap-3 mt-1">
-        <span
-          class="fi-body"
-          [class.text-favorable]="message().startsWith('✓')"
-          [class.text-adverse]="message().startsWith('✗')"
-          *ngIf="message()"
-          >{{ message() }}</span
-        >
+        }
         <button
           type="button"
           class="btn-primary"
@@ -231,9 +193,39 @@ const RISK_PROFILE_OPTIONS: { key: RiskProfile; label: string }[] = [
           [disabled]="saving()"
         >
           <lucide-icon [name]="saving() ? 'loader-circle' : 'check'" size="16"></lucide-icon>
-          {{ saving() ? 'Salvando...' : 'Salvar' }}
+          {{ saving() ? 'Salvando…' : 'Salvar' }}
         </button>
       </div>
+
+      <app-section
+        title="Esta tela"
+        tone="title"
+        hint="Muda na hora, sem passar pelo Salvar acima."
+      >
+        <span class="fi-label block text-ink-2 mt-3 mb-1.5" id="rotulo-densidade"> Densidade </span>
+        <div class="segmented" role="group" aria-labelledby="rotulo-densidade">
+          <button
+            type="button"
+            class="segmented-option"
+            [attr.aria-pressed]="densidade.density() === 'comfortable'"
+            (click)="densidade.set('comfortable')"
+          >
+            Confortável
+          </button>
+          <button
+            type="button"
+            class="segmented-option"
+            [attr.aria-pressed]="densidade.density() === 'compact'"
+            (click)="densidade.set('compact')"
+          >
+            Compacta
+          </button>
+        </div>
+        <p class="fi-caption text-ink-3 m-0 mt-2 max-w-reading">
+          Compacta encurta a altura de linha das tabelas e o espaço entre seções. Nenhum número
+          muda.
+        </p>
+      </app-section>
     </form>
   `,
 })
@@ -247,9 +239,10 @@ export class PreferencesComponent implements OnInit {
   readonly categories = ALLOCATION_CATEGORIES;
   readonly frequencyOptions = FREQUENCY_OPTIONS;
   readonly riskProfileOptions = RISK_PROFILE_OPTIONS;
+  readonly yields = YIELDS;
 
   readonly saving = signal(false);
-  readonly message = signal('');
+  readonly resultado = signal<'ok' | 'erro' | null>(null);
 
   readonly pushEnabled = signal(false);
   readonly registeredDevices = signal(0);
@@ -308,7 +301,7 @@ export class PreferencesComponent implements OnInit {
   savePreferencias(): void {
     const v = this.form.getRawValue();
     this.saving.set(true);
-    this.message.set('');
+    this.resultado.set(null);
 
     this.svc
       .savePreferences({
@@ -332,13 +325,13 @@ export class PreferencesComponent implements OnInit {
       .subscribe({
         next: () => {
           this.saving.set(false);
-          this.message.set('✓ Preferências salvas');
-          setTimeout(() => this.message.set(''), 3000);
+          this.resultado.set('ok');
+          setTimeout(() => this.resultado.set(null), 3000);
         },
         error: () => {
           this.saving.set(false);
-          this.message.set('✗ Não conseguimos salvar suas preferências');
-          setTimeout(() => this.message.set(''), 4000);
+          this.resultado.set('erro');
+          setTimeout(() => this.resultado.set(null), 6000);
         },
       });
   }

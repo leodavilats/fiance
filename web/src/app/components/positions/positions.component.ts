@@ -221,11 +221,10 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
           }
 
           <div class="ml-auto flex items-center gap-2">
-            <div class="flex items-center gap-1" role="group" aria-label="Densidade da tabela">
+            <div class="segmented" role="group" aria-label="Densidade da tabela">
               <button
                 type="button"
-                class="subtab-btn"
-                [class.active]="density() === 'comfortable'"
+                class="segmented-option"
                 [attr.aria-pressed]="density() === 'comfortable'"
                 (click)="setDensity('comfortable')"
               >
@@ -233,8 +232,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
               </button>
               <button
                 type="button"
-                class="subtab-btn"
-                [class.active]="density() === 'compact'"
+                class="segmented-option"
                 [attr.aria-pressed]="density() === 'compact'"
                 (click)="setDensity('compact')"
               >

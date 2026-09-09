@@ -9,7 +9,10 @@ import {
   UiHelperService,
   MIN_POSICOES_PARA_SAUDE,
   allocationScalePct,
+  fiBandFor,
   fiHealthBands,
+  razoesDaSaude,
+  stateTextClass,
   vereditoDeSaude,
 } from '../../core';
 import { AllocationGapComponent } from '../allocation-gap/allocation-gap.component';
@@ -18,6 +21,7 @@ import { ImportTradesComponent } from '../import-trades/import-trades.component'
 import { LedgerEntriesComponent } from '../ledger-entries/ledger-entries.component';
 import { ScoreRulerComponent } from '../score-ruler/score-ruler.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
+import { ProvenanceComponent } from '../provenance/provenance.component';
 import { SectionComponent } from '../section/section.component';
 
 interface HealthDimension {
@@ -37,12 +41,13 @@ interface HealthDimension {
     ImportTradesComponent,
     LedgerEntriesComponent,
     LucideAngularModule,
+    ProvenanceComponent,
     RouterLink,
     ScoreRulerComponent,
     SectionComponent,
   ],
   template: `
-    <app-page-header title="Carteira" question="Como está meu patrimônio?" />
+    <app-page-header title="Patrimônio" question="Quanto eu tenho, e o que nele exige atenção?" />
 
     @if (store.loadFailed()) {
       <div class="notice notice-adverse flex-col mb-6" role="alert">
@@ -66,226 +71,217 @@ interface HealthDimension {
         >
       </section>
     } @else {
-      <div class="flex flex-col gap-8">
-        <section>
-          <p class="fi-eyebrow text-ink-3 m-0 mb-2">Valor da carteira</p>
-          <p class="fi-money-lg text-ink m-0">R$ {{ store.valorAtual() | number: '1.2-2' }}</p>
+      <section class="fi-block">
+        <div class="flex items-start justify-between gap-8 flex-wrap">
+          <div class="flex-1 min-w-[18rem] max-w-reading">
+            @if (health()) {
+              <p class="fi-verdict m-0" [class]="classeDoEstado()">{{ healthVerdict() }}</p>
+              <ul class="list-none m-0 mt-3 p-0 flex flex-col gap-1.5">
+                @for (razao of razoes(); track razao) {
+                  <li class="fi-body text-ink-2 pl-3 border-l-2 border-hairline-strong">
+                    {{ razao }}
+                  </li>
+                }
+              </ul>
 
-          <p class="fi-body text-ink m-0 mt-2 flex items-center gap-1.5 flex-wrap">
-            <lucide-icon
-              [name]="store.rendimentoTotal() >= 0 ? 'arrow-up-right' : 'arrow-down-right'"
-              size="15"
-              aria-hidden="true"
-            ></lucide-icon>
-            <span class="fi-num">
-              {{ store.rendimentoTotal() >= 0 ? '+' : '−' }}R$ {{ absResult() | number: '1.2-2' }}
-            </span>
-            <span class="fi-num">({{ store.rendimentoPct() | number: '1.2-2' }}%)</span>
-            <span class="text-ink-3"
-              >sobre R$ {{ store.totalInvestido() | number: '1.0-0' }} aportados</span
-            >
-          </p>
-
-          <p class="fi-caption text-ink-3 m-0 mt-3">
-            <span class="fi-num">{{ store.negociadosCount() }}</span>
-            {{ store.negociadosCount() === 1 ? 'ativo negociado' : 'ativos negociados' }}
-            @if (store.rendaFixaCount() > 0) {
-              · <span class="fi-num">{{ store.rendaFixaCount() }}</span>
-              {{ store.rendaFixaCount() === 1 ? 'aplicação' : 'aplicações' }} de renda fixa
-            }
-            @if (store.evaluating()) {
-              · atualizando…
-            } @else if (store.lastEvaluatedLabel()) {
-              · avaliada às {{ store.lastEvaluatedLabel() }}
-            }
-          </p>
-        </section>
-
-        <app-section title="Alocação × meta">
-          <a sectionActions routerLink="/voce/objetivos" class="fi-caption text-brand no-underline">
-            Ajustar metas →
-          </a>
-
-          @if (hasGoals()) {
-            <ul class="list-none m-0 p-0 flex flex-col gap-3">
-              @for (gap of gaps(); track gap.label) {
-                <li>
-                  <app-allocation-gap
-                    [label]="gap.label"
-                    [currentPct]="gap.currentPct"
-                    [targetPct]="gap.targetPct"
-                    [barColor]="gap.barColor"
-                    [scalePct]="gapScalePct()"
-                  />
-                </li>
-              }
-            </ul>
-          } @else {
-            <app-empty-state
-              icon="target"
-              title="Nenhuma meta de alocação definida"
-              reason="Sem meta, o fiance mostra onde seu dinheiro está, mas não tem contra o que comparar — e desvio de uma meta que não existe seria número inventado."
-              nextStep="Defina o peso que cada classe deveria ter na carteira. Leva um minuto e passa a valer para o Mês, a Sobra e o aporte."
-              actionLabel="Definir metas"
-              actionRoute="/voce/objetivos"
-            />
-          }
-        </app-section>
-
-        @if (health(); as h) {
-          <section class="fi-block">
-            <div class="flex items-start justify-between gap-6 flex-wrap mb-4">
-              <div class="flex-1 min-w-[260px]">
-                <p class="fi-eyebrow text-ink-3 m-0 mb-2">Saúde da carteira</p>
-                <!-- design-exception: veredito — a mesma frase que Hoje exibe, vinda da mesma função -->
-                <h2 class="fi-verdict text-ink m-0">{{ healthVerdict() }}</h2>
-              </div>
-              <div class="w-full sm:w-[240px]">
-                <app-score-ruler
-                  [score]="h.score"
-                  [bands]="healthBands"
-                  [dataCompleteness]="healthReliable() ? 1 : 0"
-                  subject="Saúde da carteira"
-                  size="card"
-                  [showScale]="true"
-                />
-              </div>
-            </div>
-
-            @if (!healthReliable()) {
-              <p class="fi-body text-ink-2 m-0">
-                Com {{ store.negociadosCount() }}
-                {{ store.negociadosCount() === 1 ? 'ativo' : 'ativos' }}, concentração e
-                diversificação ainda não dizem muito — a leitura fica confiável a partir de quatro.
-              </p>
+              <app-provenance
+                summary="Como lemos sua carteira"
+                method="Quatro dimensões — concentração, setor, diversificação e risco — compõem uma nota de 0 a 100 na régua de saúde."
+                source="Suas posições marcadas a mercado pela BRAPI, mais o setor de cada empresa."
+                limitation="Abaixo de quatro ativos negociados a leitura não sai: concentração de uma carteira de dois papéis não diz nada."
+              />
             } @else {
-              <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 m-0">
+              <p class="fi-verdict text-ink-2 m-0">A leitura de saúde não chegou desta vez</p>
+              <p class="fi-body text-ink-2 m-0 mt-2">
+                Os números abaixo são seus e estão corretos. O que falta é a avaliação — recarregue
+                para tentar de novo.
+              </p>
+            }
+          </div>
+
+          @if (health(); as h) {
+            <div class="w-full sm:w-[15rem]">
+              <app-score-ruler
+                [score]="h.score"
+                [bands]="healthBands"
+                [dataCompleteness]="healthReliable() ? 1 : 0"
+                subject="Saúde da carteira"
+                size="card"
+                [showScale]="true"
+              />
+            </div>
+          }
+        </div>
+
+        <p class="fi-eyebrow text-ink-3 m-0 mt-8">Valor da carteira</p>
+        <p class="fi-money-xl text-ink m-0 mt-1">R$ {{ store.valorAtual() | number: '1.2-2' }}</p>
+
+        <p class="fi-body text-ink m-0 mt-3 flex items-center gap-1.5 flex-wrap">
+          <lucide-icon
+            [name]="store.rendimentoTotal() >= 0 ? 'arrow-up-right' : 'arrow-down-right'"
+            size="15"
+            aria-hidden="true"
+          ></lucide-icon>
+          <span class="fi-num">
+            {{ store.rendimentoTotal() >= 0 ? '+' : '−' }}R$ {{ absResult() | number: '1.2-2' }}
+          </span>
+          <span class="fi-num">({{ store.rendimentoPct() | number: '1.2-2' }}%)</span>
+          <span class="text-ink-3"
+            >sobre R$ {{ store.totalInvestido() | number: '1.0-0' }} aportados</span
+          >
+        </p>
+
+        <p class="fi-caption text-ink-3 m-0 mt-2">
+          <span class="fi-num">{{ store.negociadosCount() }}</span>
+          {{ store.negociadosCount() === 1 ? 'ativo negociado' : 'ativos negociados' }}
+          @if (store.rendaFixaCount() > 0) {
+            · <span class="fi-num">{{ store.rendaFixaCount() }}</span>
+            {{ store.rendaFixaCount() === 1 ? 'aplicação' : 'aplicações' }} de renda fixa
+          }
+          @if (store.evaluating()) {
+            · atualizando…
+          } @else if (store.lastEvaluatedLabel()) {
+            · avaliada às {{ store.lastEvaluatedLabel() }}
+          }
+        </p>
+      </section>
+
+      @if (health() && healthReliable()) {
+        <app-section
+          title="As quatro dimensões"
+          hint="A nota acima é a média destas. Cada linha diz o que ela mede, para a nota baixa apontar o que mudar."
+        >
+          <div class="overflow-x-auto mt-3">
+            <table class="data-table">
+              <caption class="sr-only">
+                As quatro dimensões da saúde da carteira, com a nota de cada uma
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Dimensão</th>
+                  <th scope="col">Nota</th>
+                  <th scope="col">O que ela mede</th>
+                </tr>
+              </thead>
+              <tbody>
                 @for (dim of healthDimensions(); track dim.label) {
-                  <div>
-                    <dt class="fi-caption text-ink-3">{{ dim.label }}</dt>
-                    <dd class="m-0 mt-1">
+                  <tr>
+                    <td class="text-ink">{{ dim.label }}</td>
+                    <td class="w-[9rem]">
                       <app-score-ruler
                         [score]="dim.score"
                         [bands]="healthBands"
                         [subject]="dim.label"
                         size="list"
                       />
-                    </dd>
-                  </div>
+                    </td>
+                    <td class="text-ink-2">{{ dim.explains }}</td>
+                  </tr>
                 }
-              </dl>
+              </tbody>
+            </table>
+          </div>
+        </app-section>
+      }
 
-              <button
-                type="button"
-                class="btn-link mt-4"
-                (click)="toggleHealthDetail()"
-                [attr.aria-expanded]="showHealthDetail()"
-              >
-                <lucide-icon
-                  [name]="showHealthDetail() ? 'chevron-down' : 'chevron-right'"
-                  size="16"
-                ></lucide-icon>
-                O que cada dimensão considera
-              </button>
+      <app-section title="Alocação × meta">
+        <a sectionActions routerLink="/voce/objetivos" class="btn-link">Ajustar metas</a>
 
-              @if (showHealthDetail()) {
-                <dl class="flex flex-col gap-3 mt-3 max-w-reading m-0">
-                  @for (dim of healthDimensions(); track dim.label) {
-                    <div>
-                      <dt class="fi-label text-ink">{{ dim.label }}</dt>
-                      <dd class="fi-body text-ink-2 m-0">{{ dim.explains }}</dd>
-                    </div>
-                  }
-                </dl>
-              }
-
-              @if (h.warnings.length > 0) {
-                <ul class="list-none m-0 p-0 mt-4 flex flex-col gap-1.5 max-w-reading">
-                  @for (warning of h.warnings; track warning) {
-                    <li class="fi-body text-ink-2 pl-3 border-l-2 border-hairline-strong">
-                      {{ warning }}
-                    </li>
-                  }
-                </ul>
-              }
+        @if (hasGoals()) {
+          <ul class="list-none m-0 mt-3 p-0 flex flex-col gap-3">
+            @for (gap of gaps(); track gap.label) {
+              <li>
+                <app-allocation-gap
+                  [label]="gap.label"
+                  [currentPct]="gap.currentPct"
+                  [targetPct]="gap.targetPct"
+                  [barColor]="gap.barColor"
+                  [scalePct]="gapScalePct()"
+                />
+              </li>
             }
-          </section>
+          </ul>
+        } @else {
+          <app-empty-state
+            icon="target"
+            title="Nenhuma meta de alocação definida"
+            reason="Sem meta, o fiance mostra onde seu dinheiro está, mas não tem contra o que comparar — e desvio de uma meta que não existe seria número inventado."
+            nextStep="Defina o peso que cada classe deveria ter na carteira. Leva um minuto e passa a valer para o Mês, a Sobra e o aporte."
+            actionLabel="Definir metas"
+            actionRoute="/voce/objetivos"
+          />
         }
+      </app-section>
 
-        <nav class="fi-block" aria-label="Detalhe da carteira">
-          <h2 class="fi-eyebrow text-ink-3 m-0 mb-3">Ver em detalhe</h2>
-          <ul
-            class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-hairline sm:divide-y-0"
-          >
-            <li>
-              <a routerLink="/patrimonio/posicoes" class="menu-item no-underline">
-                <span class="fi-body flex-1 min-w-0">Todas as posições, linha a linha</span>
-                <lucide-icon
-                  name="chevron-right"
-                  size="14"
-                  class="text-ink-3 shrink-0"
-                  aria-hidden="true"
-                ></lucide-icon>
-              </a>
-            </li>
-            <li>
-              <a routerLink="/patrimonio/encerradas" class="menu-item no-underline">
-                <span class="fi-body flex-1 min-w-0">O que eu já vendi</span>
-                <lucide-icon
-                  name="chevron-right"
-                  size="14"
-                  class="text-ink-3 shrink-0"
-                  aria-hidden="true"
-                ></lucide-icon>
-              </a>
-            </li>
-          </ul>
-        </nav>
+      <nav class="fi-block" aria-label="Detalhe da carteira">
+        <h2 class="fi-eyebrow text-ink-3 m-0 mb-2">Ver em detalhe</h2>
+        <ul class="list-none m-0 p-0 divide-y divide-hairline">
+          <li>
+            <a routerLink="/patrimonio/posicoes" class="menu-item no-underline">
+              <span class="fi-body flex-1 min-w-0">Todas as posições, linha a linha</span>
+              <lucide-icon
+                name="chevron-right"
+                size="14"
+                class="text-ink-3 shrink-0"
+                aria-hidden="true"
+              ></lucide-icon>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/patrimonio/encerradas" class="menu-item no-underline">
+              <span class="fi-body flex-1 min-w-0">O que eu já vendi, com o IR do mês</span>
+              <lucide-icon
+                name="chevron-right"
+                size="14"
+                class="text-ink-3 shrink-0"
+                aria-hidden="true"
+              ></lucide-icon>
+            </a>
+          </li>
+        </ul>
+      </nav>
 
-        <nav class="fi-block" aria-label="Registro e manutenção">
-          <h2 class="fi-eyebrow text-ink-3 m-0 mb-1">Registro e manutenção</h2>
-          <p class="fi-caption text-ink-3 m-0 mb-3 max-w-reading">
-            Operações sobre o livro-razão, não leituras do patrimônio.
-          </p>
-          <ul
-            class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-hairline sm:divide-y-0"
-          >
-            <li>
-              <button type="button" class="menu-item" (click)="showTransacoes.set(true)">
-                <span class="fi-body flex-1 min-w-0 text-left">Lançamentos</span>
-                <lucide-icon
-                  name="chevron-right"
-                  size="14"
-                  class="text-ink-3 shrink-0"
-                  aria-hidden="true"
-                ></lucide-icon>
-              </button>
-            </li>
-            <li>
-              <button type="button" class="menu-item" (click)="showImport.set(true)">
-                <span class="fi-body flex-1 min-w-0 text-left">Importar operações</span>
-                <lucide-icon
-                  name="chevron-right"
-                  size="14"
-                  class="text-ink-3 shrink-0"
-                  aria-hidden="true"
-                ></lucide-icon>
-              </button>
-            </li>
-            <li>
-              <a routerLink="/patrimonio/editar" class="menu-item no-underline">
-                <span class="fi-body flex-1 min-w-0">Editar a carteira</span>
-                <lucide-icon
-                  name="chevron-right"
-                  size="14"
-                  class="text-ink-3 shrink-0"
-                  aria-hidden="true"
-                ></lucide-icon>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      <nav class="fi-block" aria-label="Registro e manutenção">
+        <h2 class="fi-eyebrow text-ink-3 m-0 mb-1">Registro e manutenção</h2>
+        <p class="fi-caption text-ink-3 m-0 mb-2 max-w-reading">
+          Operações sobre o livro-razão, não leituras do patrimônio.
+        </p>
+        <ul class="list-none m-0 p-0 divide-y divide-hairline">
+          <li>
+            <button type="button" class="menu-item" (click)="showTransacoes.set(true)">
+              <span class="fi-body flex-1 min-w-0 text-left">Lançamentos</span>
+              <lucide-icon
+                name="chevron-right"
+                size="14"
+                class="text-ink-3 shrink-0"
+                aria-hidden="true"
+              ></lucide-icon>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="menu-item" (click)="showImport.set(true)">
+              <span class="fi-body flex-1 min-w-0 text-left">Importar operações</span>
+              <lucide-icon
+                name="chevron-right"
+                size="14"
+                class="text-ink-3 shrink-0"
+                aria-hidden="true"
+              ></lucide-icon>
+            </button>
+          </li>
+          <li>
+            <a routerLink="/patrimonio/editar" class="menu-item no-underline">
+              <span class="fi-body flex-1 min-w-0">Editar a carteira</span>
+              <lucide-icon
+                name="chevron-right"
+                size="14"
+                class="text-ink-3 shrink-0"
+                aria-hidden="true"
+              ></lucide-icon>
+            </a>
+          </li>
+        </ul>
+      </nav>
     }
 
     @if (showImport()) {
@@ -303,7 +299,6 @@ export class PortfolioSummaryComponent implements OnInit {
 
   readonly health = signal<PortfolioHealth | null>(null);
   readonly healthBands = fiHealthBands;
-  readonly showHealthDetail = signal(false);
 
   readonly showImport = signal(false);
   readonly showTransacoes = signal(false);
@@ -321,6 +316,25 @@ export class PortfolioSummaryComponent implements OnInit {
   readonly healthVerdict = computed(() => {
     const h = this.health();
     return h ? vereditoDeSaude(h.score, this.store.negociadosCount()) : '';
+  });
+
+  readonly classeDoEstado = computed(() => {
+    const h = this.health();
+    if (!h || !this.healthReliable()) return stateTextClass('indeterminate');
+    return stateTextClass(fiBandFor(h.score, fiHealthBands).state);
+  });
+
+  readonly razoes = computed(() => {
+    const h = this.health();
+    if (!h) return [];
+    return razoesDaSaude({
+      posicoes: this.store.negociadosCount(),
+      topPositionTicker: h.top_position_ticker,
+      topPositionPct: h.top_position_pct,
+      topSectorLabel: h.top_sector ? this.ui.translateSector(h.top_sector) : null,
+      topSectorPct: h.top_sector_pct,
+      warnings: h.warnings,
+    });
   });
 
   readonly healthDimensions = computed<HealthDimension[]>(() => {
@@ -369,10 +383,6 @@ export class PortfolioSummaryComponent implements OnInit {
   readonly gapScalePct = computed(() => allocationScalePct(this.gaps()));
 
   readonly hasGoals = computed(() => this.gaps().length > 0);
-
-  toggleHealthDetail(): void {
-    this.showHealthDetail.update(v => !v);
-  }
 
   onImported(): void {
     this.showImport.set(false);

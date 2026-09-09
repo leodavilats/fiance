@@ -41,15 +41,10 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
               <app-skeleton shape="row" [count]="5" />
             </div>
           } @else {
-            <div
-              class="flex items-center gap-1 mt-4"
-              role="group"
-              aria-label="Recorte da composição"
-            >
+            <div class="segmented mt-4" role="group" aria-label="Recorte da composição">
               <button
                 type="button"
-                class="subtab-btn"
-                [class.active]="composicaoMode() === 'ativo'"
+                class="segmented-option"
                 [attr.aria-pressed]="composicaoMode() === 'ativo'"
                 (click)="setComposicaoMode('ativo')"
               >
@@ -57,8 +52,7 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
               </button>
               <button
                 type="button"
-                class="subtab-btn"
-                [class.active]="composicaoMode() === 'setor'"
+                class="segmented-option"
                 [attr.aria-pressed]="composicaoMode() === 'setor'"
                 (click)="setComposicaoMode('setor')"
               >

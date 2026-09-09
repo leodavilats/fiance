@@ -98,7 +98,7 @@ const DESTINATIONS: readonly NavDestination[] = [
                     routerLinkActive="nav-active"
                     #rla="routerLinkActive"
                     [attr.aria-current]="rla.isActive ? 'page' : null"
-                    class="nav-link"
+                    class="nav-link fi-label"
                   >
                     <lucide-icon [name]="d.icon" size="16"></lucide-icon>
                     <span class="nav-label">
@@ -203,9 +203,6 @@ const DESTINATIONS: readonly NavDestination[] = [
         align-items: center;
         gap: 0.375rem;
         padding: 0.5rem 0.75rem;
-        font-size: 13px;
-        line-height: 18px;
-        font-weight: 500;
         color: var(--fi-ink-2);
         text-decoration: none;
         transition: color var(--fi-motion-base) var(--fi-motion-ease-enter);
