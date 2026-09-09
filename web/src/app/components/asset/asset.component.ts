@@ -517,7 +517,10 @@ export class AssetComponent implements OnInit, OnDestroy {
 
   private describePage(asset: AssetAnalysis): void {
     const nome = asset.name ? `${asset.name} (${asset.symbol})` : asset.symbol;
-    this.title.setTitle(`${nome} — preço justo, valuation e score | fiance`);
+    // O título dizia "score", e `/asset/{symbol}` não devolve score nenhum — a página mostra
+    // veredito, preço justo e margem de segurança. Título é o que o buscador indexa: prometer
+    // ali o que a tela não tem é a mesma falta que o produto cobra das telas.
+    this.title.setTitle(`${nome} — preço justo, margem de segurança e veredito | fiance`);
 
     const justo = asset.fair_price?.consensus;
     const trecho = justo
@@ -526,7 +529,8 @@ export class AssetComponent implements OnInit, OnDestroy {
 
     const descricao =
       `${nome}: ${asset.decision.label.toLowerCase()}. ${trecho} ` +
-      `Score, margem de segurança e histórico de proventos, com o cálculo explicado.`;
+      `Margem de segurança, histórico de proventos e o que derrubaria o veredito, ` +
+      `com o cálculo explicado.`;
 
     const canonica = this.absoluta(`/ativo/${asset.symbol}`);
 

@@ -793,6 +793,22 @@ def try_acquire_job_lock(name: str, holder: str, ttl_seconds: float) -> bool:
         return True
 
 
+def renew_job_lock(name: str, holder: str, ttl_seconds: float) -> bool:
+    """Empurra o vencimento do lock enquanto quem o tem continua vivo.
+
+    Devolve False quando o lock já não é nosso — outro worker o tomou, e quem chamou está
+    rodando em paralelo com ele.
+    """
+    now = time.time()
+    with _session_global() as session:
+        row = session.get(JobLockDb, name)
+        if row is None or row.holder != holder:
+            return False
+
+        row.expires_at = now + ttl_seconds
+        return True
+
+
 def release_job_lock(name: str, holder: str) -> None:
     with _session_global() as session:
         row = session.get(JobLockDb, name)

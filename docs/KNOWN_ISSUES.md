@@ -92,11 +92,11 @@
    `analysis/score_ruler.py` como fonte e a disciplina de mudar as três plataformas no mesmo
    commit. O risco continua registrado: divergência aqui é um número errado, não uma tela feia.
 
-7. **Restam 35 linhas com `fontSize:` solto no mobile, e seis delas abaixo de todo papel.**
+7. **Restam 34 linhas com `fontSize:` solto no mobile, e seis delas abaixo de todo papel.**
    A escala já foi **recalibrada** para 360dp (`body` em 16, `moneyXl` em 32), e os 15 sítios que
    tinham papel equivalente foram trocados: `metricSm` para cifra, `metric` para score, `caption`
    para legenda, `ticker` para papel, `pageTitle` para cabeçalho de sheet. A catraca de
-   `test/lint_ui_test.dart` desceu de 49 para **35**, e o teto só desce. (Estava declarada em 36
+   `test/lint_ui_test.dart` desceu de 49 para **34**, e o teto só desce. (Estava declarada em 36
    com 35 no código: catraca com folga não é catraca, e a folga foi recolhida em 2026-09-09.)
 
    O que sobra é onde a decisão é **de layout antes de tipo**, e por isso não é substituição
@@ -142,10 +142,12 @@
     Mover isso é mover rota e partir o componente, não renomear seção. O desenho está em
     [design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md).
 
-11. **Três comportamentos essenciais não têm componente.** Faltam `Range` (piso, teto, hipóteses
-    e horizonte — hoje a faixa é escrita à mão em cada projeção), `Evidence` (o nível 2 da
+11. **Dois comportamentos essenciais não têm componente.** Faltam `Evidence` (o nível 2 da
     explicabilidade, entre conclusão e método) e `Decision` (veredito + falsificador num objeto
     só, para que um não possa ser renderizado sem o outro).
+
+    *(`Range` saiu daqui em 2026-09-09: `<app-range>` e `FiRange` carregam piso, teto, cenário
+    base e hipótese. No web é atributo, para o par continuar `<dt>`/`<dd>` dentro do `<dl>`.)*
 
     *(A proveniência saiu daqui: `asOf` deixou a gaveta e é linha visível. Em 2026-09-09 o
     carimbo passou de `/ativo` para **onde se comparam preços** — a tabela de posições e a lista
@@ -194,11 +196,12 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
    continua igual para todo mundo. Exige coluna em `PreferencesDb`, campo em `GET/PUT /preferences`
    e migração Alembic.
 
-17. **Falta o componente `Range`, e ele é o último dos essenciais.** `MarginOfSafety`,
-    `AllocationGap`, `GoalProgress`, `DipDiagnosis`, `ScoreRuler`, `Insight`, `Section` e
-    `FairPrice` existem, e a tabela profissional de posições também. A faixa de projeção continua
-    escrita à mão em cada tela que a mostra — e é o dado que o produto mais insiste em nunca
-    reduzir a um número único, o que faz dele o candidato mais óbvio a componente. Ver o item 11.
+17. **A régua de score do mobile ainda não chegou a todas as telas que mostram score.** Ela
+    tinha **zero** consumidores até 2026-09-09 — três telas desenhavam o score à mão — e agora
+    serve o bloco de saúde do `Mês` e o card de Descobrir, que antes não mostrava score algum
+    embora a lista seja ordenada por ele. `feed_tiles` e `quick_invest_view` seguem com o rótulo
+    de banda em linha densa, onde a régua cheia não cabe: resolver é decidir a densidade da
+    linha, não trocar o widget.
 
 18. **O contrato das rotas guarda campo que sai, não campo que entra.**
     `tests/contrato_das_rotas.json` registra os campos de cada rota `/api/v1` e o teste falha
@@ -245,13 +248,6 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     [README](../README.md#assinatura-do-android)). E **nenhum evento do mobile foi visto no
     painel** do Sentry: confirmar exige um APK instalado num aparelho e um olhar no painel.
     Enquanto isso não acontecer, a telemetria do mobile é código testado, não canal verificado.
-
-22. **O lock de job periódico não é liberado ao terminar, só expira.** `_run_guarded` deixa o TTL
-    vencer, e isso é **deliberado**: o TTL é o próprio intervalo do job, e liberar no fim do ciclo
-    faria o worker seguinte repetir o trabalho segundos depois. O custo é real e continua aberto: se
-    um worker morre logo após adquirir, o snapshot diário fica bloqueado por até 5,4h. A correção
-    certa é heartbeat no lock, não release no `finally`. (O warm-up do scan é caso diferente — roda
-    uma vez e **libera** no `finally`.)
 
 23. **Token de push é reatribuído a quem o registrar.** `register_device_token()` move o token para
     o usuário da sessão se ele já existir — necessário para troca de dono do aparelho, mas significa

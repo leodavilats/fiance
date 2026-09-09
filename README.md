@@ -507,7 +507,7 @@ O roteamento é por tipo de ativo: **FII** → Bazin + P/VP (nunca Graham); **BD
 ```bash
 # Backend
 uvicorn app.main:app --reload            # servidor dev
-python -m pytest -q                      # 1024 passam (11 pulam sem Redis)
+python -m pytest -q                      # 1032 passam (11 pulam sem Redis)
 python -m ruff check app tests migrations
 python -m ruff format app tests migrations
 alembic upgrade head                     # aplicar migrações
@@ -515,14 +515,14 @@ alembic upgrade head                     # aplicar migrações
 # Web
 npm start            # servidor dev
 npm run build        # produção (navegador + servidor de renderização)
-npm test             # 182 testes (Vitest)
+npm test             # 191 testes (Vitest)
 npm run lint:ui      # 24 regras: ícone, classe CSS, explicabilidade, alvo de link, falha…
 npm run format       # Prettier
 npm run format:check
 
 # Mobile
 flutter analyze
-flutter test         # 121 testes
+flutter test         # 125 testes
 flutter build apk --release
 
 # Marca — a partir da raiz

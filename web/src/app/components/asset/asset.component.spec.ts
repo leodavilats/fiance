@@ -63,6 +63,30 @@ describe('página de ativo', () => {
   });
 
   describe('metadados por ticker', () => {
+    it('o título não promete score, que esta rota não devolve', () => {
+      setup({ authenticated: false, asset: analysis() });
+
+      const titulo = TestBed.inject(Title).getTitle();
+      const descricao =
+        document.head.querySelector('meta[name="description"]')?.getAttribute('content') ?? '';
+
+      expect(
+        titulo.toLowerCase(),
+        '/asset/{symbol} devolve veredito, preço justo e margem — score não está no payload, ' +
+          'e título é o que o buscador indexa'
+      ).not.toContain('score');
+      expect(descricao.toLowerCase()).not.toContain('score');
+    });
+
+    it('o título diz o que a página de fato mostra', () => {
+      setup({ authenticated: false, asset: analysis() });
+
+      const titulo = TestBed.inject(Title).getTitle().toLowerCase();
+
+      expect(titulo).toContain('preço justo');
+      expect(titulo).toContain('margem de segurança');
+    });
+
     it('o título nomeia a empresa e o ticker, não uma categoria', () => {
       setup({ authenticated: false, asset: analysis() });
 

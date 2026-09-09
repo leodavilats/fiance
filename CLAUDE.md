@@ -27,15 +27,15 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 1024 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 1032 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 121 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 125 testes
                                                    #   inclui test/lint_ui_test.dart:
                                                    #   11 regras do lint:ui, no Dart
 cd mobile  && flutter build apk --release          # analyze e test nao tocam o Gradle:
                                                    #   o build Android e outra metade
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 182 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 191 testes
 cd web     && npm run lint:contrast                # contraste AA nos dois temas, web e mobile
 python design-tokens/build-icons.py --check        # marca sincronizada
 ```
@@ -103,6 +103,8 @@ CHANGELOG.
 | Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |
 | Tela nova no mobile que julga | `FiProvenance`, e o papel de veredito em serifa | `test/lint_ui_test.dart` reprova — as oito regras valem lá também |
 | Nome de tela no mobile | Usar o **mesmo nome** do web: nome é paridade de conceito | `test/lint_ui_test.dart` reprova nome de destino aposentado — a barra do `/voce` dizia "Configurações" e a de `/sobra/desvio` dizia "Estratégia" |
+| Número projetado numa tela | `<app-range>` / `FiRange` — piso, teto e cenário base | A faixa escrita à mão divergiu entre as plataformas: o web mostrava o cenário base e o mobile não |
+| Pipe `number`/`currency`/`percent` numa tela | Nada — `LOCALE_ID` já é `pt-BR` em `app.config.ts`. **Não remova** | Sem ele o Angular assume `en-US` e `R$ 120.000` sai `R$ 120,000`, que se lê como cento e vinte reais |
 | Cifra de preço justo numa tela | `<app-fair-price>` — ele exige a base (quantos métodos, ou o nome do método) e nomeia a ausência | `/descobrir` mostrava Bazin cru enquanto `/ativo` dizia "consenso de 3 métodos" para o mesmo ativo |
 | Seção numa tela | Usar `<app-section title="…">`, que emite o `<h2>` | Seção sem cabeçalho: `/mes` tinha 5 seções e nenhuma parada de navegação |
 | Julgamento numa tela do mobile | `FiProvenance` — método, fonte, limitação | `test/lint_ui_test.dart` reprova: o invariante de explicabilidade vale nas duas plataformas |

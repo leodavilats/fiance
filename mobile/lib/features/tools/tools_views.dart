@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/widgets/range.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -875,9 +876,6 @@ class ContributionSimulatorViewState
   List<Widget> _buildResult(PassiveIncomeProjection r) {
     final last = r.projections.last;
 
-    String faixa(double piso, double teto) =>
-        'entre ${formatCurrency(piso)} e ${formatCurrency(teto)}';
-
     return [
       const SizedBox(height: 16),
       if (r.disclaimer.isNotEmpty)
@@ -903,17 +901,18 @@ class ContributionSimulatorViewState
         ],
       ),
       const SizedBox(height: 12),
-      _Stat(
+      FiRange(
         label: 'Carteira no fim',
-        value: faixa(last.portfolioValueLow, last.portfolioValueHigh),
+        low: last.portfolioValueLow,
+        high: last.portfolioValueHigh,
+        base: last.portfolioValue,
       ),
-      const SizedBox(height: 8),
-      _Stat(
+      const SizedBox(height: FiSpace.s3),
+      FiRange(
         label: 'Renda passiva/mês no fim',
-        value: faixa(
-          last.passiveIncomeMonthlyLow,
-          last.passiveIncomeMonthlyHigh,
-        ),
+        low: last.passiveIncomeMonthlyLow,
+        high: last.passiveIncomeMonthlyHigh,
+        base: last.passiveIncomeMonthly,
       ),
       const SizedBox(height: 16),
       for (final cenario in r.scenarios) ...[

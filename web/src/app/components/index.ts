@@ -29,6 +29,7 @@ export { AllocationGapComponent } from './allocation-gap/allocation-gap.componen
 export { DipDiagnosisComponent } from './dip-diagnosis/dip-diagnosis.component';
 export { EmptyStateComponent } from './empty-state/empty-state.component';
 export { AsyncStateComponent } from './async-state/async-state.component';
+export { RangeComponent } from './range/range.component';
 export { DataAgeComponent } from './data-age/data-age.component';
 export { FixedIncomeRateComponent } from './fixed-income-rate/fixed-income-rate.component';
 export { GoalProgressComponent } from './goal-progress/goal-progress.component';

@@ -319,7 +319,7 @@ void main() {
     });
 
     test('o tipo solto nao cresce', () {
-      const teto = 35;
+      const teto = 34;
 
       final soltos = <String>[];
       for (final f in fontes) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/score_ruler.dart';
 import '../../../core/widgets/provenance.dart';
 
 const fiHealthMetricExplanations = {
@@ -41,16 +42,10 @@ class FiHealthBlock extends StatefulWidget {
 class _FiHealthBlockState extends State<FiHealthBlock> {
   bool _showInfo = false;
 
-  FiState get _scoreState => fiBandFor(widget.health.score, fiHealthBands).state;
-
-  Color _scoreColor(Brightness brightness) => fiStateColor(_scoreState, brightness);
-
   @override
   Widget build(BuildContext context) {
     final health = widget.health;
     final brightness = Theme.of(context).brightness;
-    final color = _scoreColor(brightness);
-
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -58,41 +53,13 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Score geral',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      '${health.score.round()}/100',
-                      style: FiType.metric.copyWith(color: color),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: fiStateSurface(_scoreState, brightness),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        fiBandFor(health.score, fiHealthBands).label,
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            Text('Score geral', style: FiType.title),
+            const SizedBox(height: FiSpace.s3),
+            ScoreRuler(
+              score: health.score,
+              bands: fiHealthBands,
+              size: ScoreRulerSize.card,
+              subject: 'Saúde da carteira',
             ),
             const SizedBox(height: 12),
             InkWell(

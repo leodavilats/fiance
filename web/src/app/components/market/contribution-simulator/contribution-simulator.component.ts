@@ -3,12 +3,19 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PassiveIncomeProjectionResponse, RecommendService } from '../../../core';
 import { AsyncStateComponent } from '../../async-state/async-state.component';
+import { RangeComponent } from '../../range/range.component';
 import { PageHeaderComponent } from '../../page-header/page-header.component';
 
 @Component({
   selector: 'app-contribution-simulator',
   standalone: true,
-  imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule, AsyncStateComponent],
+  imports: [
+    PageHeaderComponent,
+    CommonModule,
+    ReactiveFormsModule,
+    AsyncStateComponent,
+    RangeComponent,
+  ],
   template: `
     <div class="flex flex-col gap-4">
       <app-page-header
@@ -82,28 +89,21 @@ import { PageHeaderComponent } from '../../page-header/page-header.component';
               R$ {{ r.current_passive_income_monthly | number: '1.2-2' }}/mês
             </dd>
           </div>
-          <div>
-            <dt class="fi-eyebrow text-ink-3">
-              Carteira em {{ form.getRawValue().months_ahead }} meses
-            </dt>
-            <dd class="fi-metric-sm text-ink m-0 mt-1">
-              entre R$ {{ ultimo(r).portfolio_value_low | number: '1.0-0' }} e R$
-              {{ ultimo(r).portfolio_value_high | number: '1.0-0' }}
-            </dd>
-            <dd class="fi-caption text-ink-3 m-0">
-              cenário base: R$ {{ ultimo(r).portfolio_value | number: '1.0-0' }}
-            </dd>
-          </div>
-          <div>
-            <dt class="fi-eyebrow text-ink-3">Renda passiva/mês no fim</dt>
-            <dd class="fi-metric-sm text-ink m-0 mt-1">
-              entre R$ {{ ultimo(r).passive_income_monthly_low | number: '1.2-2' }} e R$
-              {{ ultimo(r).passive_income_monthly_high | number: '1.2-2' }}
-            </dd>
-            <dd class="fi-caption text-ink-3 m-0">
-              cenário base: R$ {{ ultimo(r).passive_income_monthly | number: '1.2-2' }}
-            </dd>
-          </div>
+          <div
+            appRange
+            [label]="'Carteira em ' + form.getRawValue().months_ahead + ' meses'"
+            [low]="ultimo(r).portfolio_value_low"
+            [high]="ultimo(r).portfolio_value_high"
+            [base]="ultimo(r).portfolio_value"
+          ></div>
+          <div
+            appRange
+            label="Renda passiva/mês no fim"
+            [low]="ultimo(r).passive_income_monthly_low"
+            [high]="ultimo(r).passive_income_monthly_high"
+            [base]="ultimo(r).passive_income_monthly"
+            [cents]="true"
+          ></div>
         </dl>
 
         <div class="overflow-x-auto">

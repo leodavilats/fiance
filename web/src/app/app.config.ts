@@ -1,3 +1,5 @@
+import { registerLocaleData } from '@angular/common';
+import localePt from '@angular/common/locales/pt';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   PreloadAllModules,
@@ -5,7 +7,7 @@ import {
   withComponentInputBinding,
   withPreloading,
 } from '@angular/router';
-import { ApplicationConfig, ErrorHandler, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, LOCALE_ID, importProvidersFrom } from '@angular/core';
 import {
   ArrowDown,
   ArrowDownRight,
@@ -125,8 +127,17 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { httpErrorInterceptor } from './core/interceptors/http-error.interceptor';
 import { criarErrorHandler } from './core/telemetry';
 
+registerLocaleData(localePt);
+
 export const appConfig: ApplicationConfig = {
   providers: [
+    /*
+     * Sem LOCALE_ID o Angular assume `en-US`, e os pipes `number`/`currency`/`percent` saíam
+     * assim em 171 pontos de 29 arquivos: `R$ 120,000` — que um leitor brasileiro lê como cento
+     * e vinte reais. Ponto e vírgula trocam de papel entre os dois idiomas, então o erro não
+     * deforma o número, ele o divide por mil.
+     */
+    { provide: LOCALE_ID, useValue: 'pt-BR' },
     provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
     { provide: ErrorHandler, useFactory: criarErrorHandler },
     provideHttpClient(withInterceptors([httpErrorInterceptor, authInterceptor])),

@@ -12,6 +12,78 @@
 
 ---
 
+## Quatro pendências fechadas, e um erro de idioma achado no caminho (2026-09-09)
+
+Passagem sobre a lista aberta: o lock de job, a régua de score sem consumidor no mobile, o título
+que prometia score, e o componente `Range`. O quinto item não estava na lista — apareceu porque um
+teste do `Range` falhou por um motivo que não era o teste.
+
+### O lock de job tinha dois prazos num só
+
+`_run_guarded` não liberava o lock ao terminar: deixava vencer, com TTL igual a 0,9 × o intervalo
+do job. Isso é o **certo** para espaçar ciclos — liberar no fim faria o worker seguinte repetir o
+trabalho segundos depois — e o **errado** para exclusão mútua: um worker que morresse logo após
+adquirir deixava `daily_snapshot` bloqueado por até 5,4h, em silêncio.
+
+São duas funções diferentes pedindo prazos diferentes, e agora têm. Enquanto o corpo roda, o lock
+vale 120s e um batimento de 30s o renova; parado o batimento, outro worker assume em ≤2min.
+Terminado o corpo, o prazo longo entra como espaçamento, que é o que ele sempre foi. `renew_job_lock`
+recusa renovar lock alheio — renovar o de outro seria roubá-lo.
+
+### A régua de score do mobile não tinha um único consumidor
+
+`ScoreRuler` são ~120 linhas com trilho por banda, marcador, semântica e degradação por
+completude — e nada a instanciava. Três telas desenhavam score à mão: `feed_health` escrevia
+`'${score.round()}/100'` mais uma pílula montada na unha, `feed_tiles` e `quick_invest_view` faziam
+duas outras variações. É o "vocabulário sem consumidor" outra vez, na peça que a
+[DESIGN-SYSTEM](design/DESIGN-SYSTEM.md) chama de elemento-assinatura.
+
+Adotada em dois lugares, e **só nos dois em que cabe**: o bloco de saúde do `Mês`, que é o análogo
+do `portfolio-summary` do web, e o card de Descobrir — que **não mostrava score nenhum**, embora a
+lista seja ordenada por ele: o critério de ordenação era invisível, e com a régua vem junto a
+degradação por completude. Os outros dois sítios mostram só o rótulo de banda dentro de uma linha
+densa, e ali a régua cheia seria pior que o texto; forçá-la seria trocar um defeito por outro.
+
+### O título prometia um score que a rota não devolve
+
+`/ativo/:ticker` saía com `— preço justo, valuation e score | fiance`, e a descrição repetia
+"Score, margem de segurança e histórico de proventos". `/asset/{symbol}` **não tem campo `score`**:
+devolve `decision`, `fair_price`, `technical`, `fundamentals`, `price_history`. A página mostra
+veredito, preço justo, margem e falsificadores — nunca score.
+
+É pequeno e é o pior lugar para ser pequeno: título é o que o buscador indexa, na página pública de
+aquisição. Agora diz o que a tela tem, e a descrição troca a promessa vazia por "o que derrubaria o
+veredito", que é o que ela de fato mostra e é o que o produto tem de diferente.
+
+### `Range`, o último dos componentes essenciais
+
+A faixa de projeção era escrita à mão em cada tela, e as duas plataformas divergiram: o web mostrava
+`cenário base: R$ X` sob a faixa, o mobile não — a mesma projeção contava duas histórias. No mobile
+a "faixa" era um `closure` de duas linhas dentro de `_buildResult`.
+
+`<app-range>` e `FiRange` fecham isso. No web é **atributo**, e não elemento, para o par nome/valor
+continuar sendo `<dt>`/`<dd>` dentro do `<dl>`: um elemento no meio quebraria a lista de definição,
+que é como o leitor de tela pareia rótulo e cifra. O mobile ganhou o cenário base que lhe faltava, e
+a faixa passou a ser anunciada como uma coisa só — piso e teto lidos separados perdem que são as
+pontas de uma mesma faixa.
+
+### E o que apareceu sem ser procurado: o produto falava inglês nos números
+
+O primeiro teste do `Range` falhou esperando `120.000` e recebendo `120,000`. O teste estava certo.
+
+**Não havia `LOCALE_ID` na aplicação.** O Angular assume `en-US`, e os pipes `number`, `currency` e
+`percent` saíam assim em **171 usos, de 29 arquivos**. Ponto e vírgula trocam de papel entre os dois
+idiomas, então o erro não deforma o número — ele o divide por mil: `R$ 120,000` é lido como cento e
+vinte reais por quem escreve `R$ 120.000,00`. Num produto de dinheiro brasileiro, é o pior tipo de
+defeito de formatação, porque o número continua plausível.
+
+Passou despercebido porque parte das telas não usa pipe: `month`, `surplus` e outras formatam com
+`toLocaleString('pt-BR')` à mão, e essas sempre estiveram certas. A correção é de três linhas —
+`registerLocaleData(localePt)` e `{ provide: LOCALE_ID, useValue: 'pt-BR' }` — e conserta os 171 de
+uma vez. Um teste sobre o `appConfig` trava a regressão, porque o modo de errar aqui é não notar.
+
+---
+
 ## Ligar a cobrança era um alçapão, e agora não é (2026-09-09)
 
 A pergunta era para onde seguir depois do passe de UX. A resposta veio de conferir o KNOWN_ISSUES

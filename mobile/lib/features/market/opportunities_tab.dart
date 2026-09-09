@@ -7,6 +7,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/help_tooltip.dart';
+import '../../core/widgets/score_ruler.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
 import 'asset_detail_sheet.dart';
@@ -663,6 +664,16 @@ class _OpportunityCard extends StatelessWidget {
                     glossaryKey: 'dy',
                   ),
                 ],
+              ),
+              // A lista e ordenada por score, e o card nao o mostrava: o criterio de ordenacao
+              // ficava invisivel. A regua traz junto a degradacao por completude -- score com
+              // metade dos indicadores sai como travessao, e nao como numero.
+              const SizedBox(height: FiSpace.s4),
+              ScoreRuler(
+                score: opportunity.score,
+                dataCompleteness: opportunity.dataCompleteness,
+                size: ScoreRulerSize.list,
+                subject: 'Score de ${opportunity.ticker}',
               ),
             ],
           ),
