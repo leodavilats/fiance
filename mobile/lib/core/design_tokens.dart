@@ -188,9 +188,11 @@ abstract final class FiSpace {
 }
 
 abstract final class FiRadius {
-  static const sm = 4.0;
-  static const md = 8.0;
-  static const lg = 12.0;
+  // Mais retos que antes (era 4/8/12): canto muito arredondado e o que faz uma tela de dinheiro
+  // parecer aplicativo de banco.
+  static const sm = 2.0;
+  static const md = 6.0;
+  static const lg = 10.0;
   static const pill = 999.0;
 }
 
@@ -208,59 +210,49 @@ abstract final class FiMotion {
 }
 
 abstract final class FiType {
+  // Os mesmos PAPEIS do web, com valores de telefone. O topo do web (40, 30) nao cabe em 360dp,
+  // e por isso nunca era usado; `caption` virava o corpo por falta de alternativa.
   static const moneyXl = TextStyle(
-    fontSize: 44,
-    height: 1.091,
-    fontWeight: FontWeight.w600,
-    letterSpacing: -0.88,
-    fontFeatures: [
-      FontFeature.tabularFigures(),
-      FontFeature.slashedZero(),
-    ],
-  );
-  static const moneyLg = TextStyle(
     fontSize: 32,
     height: 1.125,
     fontWeight: FontWeight.w600,
-    letterSpacing: -0.32,
-    fontFeatures: [
-      FontFeature.tabularFigures(),
-      FontFeature.slashedZero(),
-    ],
+    letterSpacing: -0.8,
+    fontFeatures: [FontFeature.tabularFigures(), FontFeature.slashedZero()],
+  );
+  static const moneyLg = TextStyle(
+    fontSize: 26,
+    height: 1.154,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.52,
+    fontFeatures: [FontFeature.tabularFigures(), FontFeature.slashedZero()],
   );
   static const metric = TextStyle(
-    fontSize: 22,
-    height: 1.273,
+    fontSize: 20,
+    height: 1.3,
     fontWeight: FontWeight.w600,
-    fontFeatures: [
-      FontFeature.tabularFigures(),
-      FontFeature.slashedZero(),
-    ],
+    fontFeatures: [FontFeature.tabularFigures(), FontFeature.slashedZero()],
   );
   static const metricSm = TextStyle(
     fontSize: 16,
     height: 1.375,
     fontWeight: FontWeight.w600,
-    fontFeatures: [
-      FontFeature.tabularFigures(),
-      FontFeature.slashedZero(),
-    ],
+    fontFeatures: [FontFeature.tabularFigures(), FontFeature.slashedZero()],
   );
   static const verdict = TextStyle(
-    fontSize: 20,
-    height: 1.400,
+    fontSize: 19,
+    height: 1.474,
     fontWeight: FontWeight.w400,
   );
   static const verdictSm = TextStyle(
     fontSize: 16,
-    height: 1.500,
+    height: 1.5,
     fontWeight: FontWeight.w400,
   );
   static const pageTitle = TextStyle(
-    fontSize: 26,
-    height: 1.231,
+    fontSize: 22,
+    height: 1.273,
     fontWeight: FontWeight.w600,
-    letterSpacing: -0.39,
+    letterSpacing: -0.44,
   );
   static const title = TextStyle(
     fontSize: 16,
@@ -269,37 +261,40 @@ abstract final class FiType {
   );
   static const eyebrow = TextStyle(
     fontSize: 11,
-    height: 1.273,
+    height: 1.364,
     fontWeight: FontWeight.w600,
-    letterSpacing: 0.88,
+    letterSpacing: 1.1,
   );
+  // 16, e nao 15: em 360dp o corpo precisa de corpo, e era por isso que 44 usos de `caption`
+  // faziam o papel dele.
   static const body = TextStyle(
-    fontSize: 15,
-    height: 1.533,
+    fontSize: 16,
+    height: 1.5,
     fontWeight: FontWeight.w400,
   );
   static const bodyLg = TextStyle(
-    fontSize: 17,
-    height: 1.588,
+    fontSize: 18,
+    height: 1.556,
     fontWeight: FontWeight.w400,
   );
   static const label = TextStyle(
-    fontSize: 13,
-    height: 1.385,
+    fontSize: 14,
+    height: 1.429,
     fontWeight: FontWeight.w500,
   );
   static const caption = TextStyle(
-    fontSize: 12,
-    height: 1.333,
+    fontSize: 13,
+    height: 1.385,
     fontWeight: FontWeight.w400,
   );
   static const ticker = TextStyle(
     fontSize: 14,
     height: 1.286,
     fontWeight: FontWeight.w600,
-    letterSpacing: 0.56,
+    letterSpacing: 0.7,
+    fontFeatures: [FontFeature.tabularFigures(), FontFeature.slashedZero()],
   );
 }
 
-const String fiFontSans = 'Inter';
+const String fiFontSans = 'IBM Plex Sans';
 const String fiFontSerif = 'Source Serif 4';

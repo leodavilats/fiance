@@ -17,7 +17,7 @@ const double appRadius = FiRadius.md;
 
 TextStyle fiSerif(TextStyle base) => GoogleFonts.sourceSerif4(textStyle: base);
 
-TextStyle fiSans(TextStyle base) => GoogleFonts.inter(textStyle: base);
+TextStyle fiSans(TextStyle base) => GoogleFonts.ibmPlexSans(textStyle: base);
 
 ThemeData buildAppTheme(Brightness brightness) {
   final isDark = brightness == Brightness.dark;
@@ -57,7 +57,7 @@ ThemeData buildAppTheme(Brightness brightness) {
   );
 
   final baseTextTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
-  final textTheme = GoogleFonts.interTextTheme(
+  final textTheme = GoogleFonts.ibmPlexSansTextTheme(
     baseTextTheme,
   ).apply(bodyColor: ink1, displayColor: ink1);
 
@@ -67,7 +67,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     colorScheme: colorScheme,
     scaffoldBackgroundColor: ground0,
     canvasColor: ground0,
-    fontFamily: GoogleFonts.inter().fontFamily,
+    fontFamily: GoogleFonts.ibmPlexSans().fontFamily,
     textTheme: textTheme,
     cardTheme: CardThemeData(
       color: ground1,

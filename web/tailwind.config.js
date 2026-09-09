@@ -72,7 +72,7 @@ module.exports = {
         series,
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['IBM Plex Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         serif: ['Source Serif 4', 'ui-serif', 'Georgia', 'serif'],
       },
       boxShadow: {

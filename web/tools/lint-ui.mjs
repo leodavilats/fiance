@@ -319,6 +319,53 @@ function tipografiaCrua(files) {
 }
 
 /**
+ * O tema claro e declarado duas vezes: na consulta de midia, para quem esta no padrao do
+ * sistema, e no atributo, para o seletor de tema. Sao a mesma paleta escrita duas vezes.
+ *
+ * Esta regra nao opina sobre cor nenhuma -- escolher a paleta e livre. Ela impede editar uma
+ * copia e esquecer a outra, que deixaria a paleta nova para quem usa o seletor e a antiga para a
+ * maioria, que nunca o tocou. Erro silencioso, e do tipo que so aparece na tela de outra pessoa.
+ */
+function temaClaroEmDuasCopias(arquivosCss) {
+  const problems = [];
+
+  for (const file of arquivosCss) {
+    const css = readFileSync(file, 'utf8');
+    if (!css.includes("[data-theme='light']")) continue;
+
+    const papeis = seletor => {
+      const inicio = css.indexOf(seletor);
+      if (inicio < 0) return null;
+      const abre = css.indexOf('{', inicio);
+      const corpo = css.slice(abre + 1, css.indexOf('\n}', abre));
+      const saida = {};
+      for (const [, nome, valor] of corpo.matchAll(/--fi-([a-z0-9-]+):\s*([^;]+);/g)) {
+        saida[nome] = valor.trim();
+      }
+      return saida;
+    };
+
+    const daConsulta = papeis('@media (prefers-color-scheme: light)');
+    const doAtributo = papeis("[data-theme='light']");
+    if (!daConsulta || !doAtributo) continue;
+
+    const nomes = new Set([...Object.keys(daConsulta), ...Object.keys(doAtributo)]);
+    for (const nome of [...nomes].sort()) {
+      if (daConsulta[nome] === doAtributo[nome]) continue;
+      problems.push({
+        file,
+        name:
+          `${relative(WEB_ROOT, file)}: --fi-${nome} vale ` +
+          `${daConsulta[nome] ?? '(ausente)'} na consulta de midia e ` +
+          `${doAtributo[nome] ?? '(ausente)'} no atributo`,
+      });
+    }
+  }
+
+  return problems;
+}
+
+/**
  * Contorno de controle desenhado com o token de separador.
  *
  * `hairline` e decoracao: separa linha de tabela e fecha card. Quando desenha a borda de um
@@ -717,7 +764,9 @@ function main() {
   const esqueletoSolto = esqueletoImprovisado(templates);
   const direcaoSolta = direcaoForaDeTabela(templates);
   const becoSemSaida = desabilitadoSemMotivo(templates);
-  const contornoInvisivel = contornoDeSeparador(walk(SRC, /\.css$/));
+  const arquivosCss = walk(SRC, /\.css$/);
+  const contornoInvisivel = contornoDeSeparador(arquivosCss);
+  const temaPelaMetade = temaClaroEmDuasCopias(arquivosCss);
 
   aviso(
     'Raio fora da escala, ou raio de flutuante no que está no chão',
@@ -856,6 +905,12 @@ function main() {
         'título, frase e card eles roubam a cor que pertence ao julgamento.'
     ) +
     report(
+      'Tema claro divergente entre as duas copias',
+      temaPelaMetade,
+      'A paleta clara e escrita duas vezes, e as duas tem de bater. Editar so uma deixa a ' +
+        'maioria -- quem nunca tocou no seletor de tema -- com a paleta antiga, e nada avisa.'
+    ) +
+    report(
       'Contorno de controle desenhado com o token de separador',
       contornoInvisivel,
       'Use --fi-control-border. hairline é decoração: com ele o contorno de ' +
@@ -872,7 +927,7 @@ function main() {
     '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas, linguagem, ' +
       'tipografia, camada, foco, controles, nome de tela, serifa, ' +
       'ordem de cabeçalho, caixa, esqueleto, direção, ' +
-      'estado desabilitado e contorno de controle conferidos.'
+      'estado desabilitado, contorno de controle e tema claro conferidos.'
   );
 }
 

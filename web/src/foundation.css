@@ -204,7 +204,16 @@
 
 /* Invariantes de forma, espaço, tempo e camada — não mudam com o tema. */
 :root {
-  --fi-font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /*
+   * Duas vozes: uma mede, a outra decide.
+   *
+   * IBM Plex Sans mede. Foi desenhada para documentação técnica, e é isso que este produto é
+   * quando mostra número: terminais retos, algarismo tabular de verdade, e uma personalidade que
+   * não se confunde com a de qualquer painel. Source Serif carrega conclusão — o contraste mais
+   * alto dela contra a sans faz a serifa significar "aqui houve interpretação", que é o trabalho
+   * dela neste sistema.
+   */
+  --fi-font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --fi-font-serif: 'Source Serif 4', ui-serif, Georgia, serif;
   --fi-numeric: tabular-nums slashed-zero;
 
@@ -220,9 +229,16 @@
   --fi-space-12: 48px;
   --fi-space-16: 64px;
 
-  --fi-radius-sm: 4px;
-  --fi-radius-md: 8px;
-  --fi-radius-lg: 12px;
+  /*
+   * Quatro raios, e mais retos que antes (era 4/8/12).
+   *
+   * Canto muito arredondado é o que faz uma tela de dinheiro parecer aplicativo de banco. Um
+   * livro-razão é reto; o raio aqui existe para o dedo saber onde termina o controle, não para
+   * amaciar a informação.
+   */
+  --fi-radius-sm: 2px;
+  --fi-radius-md: 6px;
+  --fi-radius-lg: 10px;
   --fi-radius-pill: 999px;
 
   --fi-motion-fast: 120ms;
@@ -231,7 +247,9 @@
   --fi-motion-ease-enter: cubic-bezier(0.2, 0, 0, 1);
   --fi-motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
 
-  --fi-layout-reading-max-width: 1120px;
+  /* Em caracteres, não em pixels: 1120px de corpo 15 davam ~105 por linha, e a linha longa é
+     linha não lida. `ch` acompanha a fonte em vez de brigar com ela. */
+  --fi-layout-reading-max-width: 70ch;
   --fi-layout-dense-max-width: 1600px;
   --fi-layout-drawer-width: 600px;
   --fi-layout-subnav-width: 200px;
@@ -253,13 +271,13 @@
 /* Densidade é preferência da conta, aplicada como atributo no <html>. */
 [data-density='comfortable'] {
   --fi-row-height: 48px;
-  --fi-section-gap: 32px;
+  --fi-section-gap: 40px;
   --fi-block-padding: 20px;
 }
 
 [data-density='compact'] {
   --fi-row-height: 36px;
-  --fi-section-gap: 24px;
+  --fi-section-gap: 28px;
   --fi-block-padding: 14px;
 }
 
@@ -270,19 +288,19 @@
 
 .fi-money-xl {
   font-family: var(--fi-font-sans);
-  font-size: 44px;
-  line-height: 48px;
+  font-size: 40px;
+  line-height: 44px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   font-variant-numeric: var(--fi-numeric);
 }
 
 .fi-money-lg {
   font-family: var(--fi-font-sans);
-  font-size: 32px;
+  font-size: 30px;
   line-height: 36px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   font-variant-numeric: var(--fi-numeric);
 }
 
@@ -291,6 +309,7 @@
   font-size: 22px;
   line-height: 28px;
   font-weight: 600;
+  letter-spacing: -0.01em;
   font-variant-numeric: var(--fi-numeric);
 }
 
@@ -302,28 +321,28 @@
   font-variant-numeric: var(--fi-numeric);
 }
 
+/* A serifa nunca tem cifra tabular: ela carrega frase, e frase não se alinha em coluna. */
 .fi-verdict {
   font-family: var(--fi-font-serif);
-  font-size: 20px;
-  line-height: 28px;
+  font-size: 21px;
+  line-height: 31px;
   font-weight: 400;
+  letter-spacing: -0.005em;
 }
 
 .fi-verdict-sm {
   font-family: var(--fi-font-serif);
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 17px;
+  line-height: 26px;
   font-weight: 400;
 }
 
-/* O título da tela. Antes ele usava `title`, o mesmo papel do título de seção — com 15px de
-   h1 a página não tinha primeiro nível. */
 .fi-page-title {
   font-family: var(--fi-font-sans);
-  font-size: 26px;
-  line-height: 32px;
+  font-size: 24px;
+  line-height: 30px;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 
 .fi-title {
@@ -331,21 +350,22 @@
   font-size: 16px;
   line-height: 22px;
   font-weight: 600;
+  letter-spacing: -0.005em;
 }
 
 .fi-eyebrow {
   font-family: var(--fi-font-sans);
   font-size: 11px;
-  line-height: 14px;
+  line-height: 15px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .fi-body {
   font-family: var(--fi-font-sans);
   font-size: 15px;
-  line-height: 23px;
+  line-height: 24px;
   font-weight: 400;
 }
 
@@ -353,7 +373,7 @@
 .fi-body-lg {
   font-family: var(--fi-font-sans);
   font-size: 17px;
-  line-height: 27px;
+  line-height: 28px;
   font-weight: 400;
 }
 
@@ -367,7 +387,7 @@
 .fi-caption {
   font-family: var(--fi-font-sans);
   font-size: 12px;
-  line-height: 16px;
+  line-height: 17px;
   font-weight: 400;
 }
 
@@ -376,7 +396,8 @@
   font-size: 14px;
   line-height: 18px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  font-variant-numeric: var(--fi-numeric);
 }
 
 .fi-num {
