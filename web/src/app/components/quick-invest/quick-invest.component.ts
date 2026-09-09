@@ -148,10 +148,10 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
         </app-section>
       }
 
-      @if (r.unallocated.length > 0) {
+      @if (semDestino().length > 0) {
         <app-section title="Sem destino" hint="Todo real que não entrou na ordem tem um motivo.">
           <ul class="list-none m-0 p-0 flex flex-col gap-2">
-            @for (u of r.unallocated; track u.reason) {
+            @for (u of semDestino(); track u.reason) {
               <li class="fi-body text-ink-2 flex items-baseline gap-3">
                 <span class="fi-num text-ink">{{ reais(u.value) }}</span>
                 <span>{{ u.reason }}</span>
@@ -185,6 +185,9 @@ export class QuickInvestComponent implements OnInit {
   readonly erro = signal(false);
 
   readonly valor = this.fb.control<number | null>(null, [Validators.min(1)]);
+
+  /** A resposta de uma API anterior a este contrato nao traz a lista. */
+  readonly semDestino = computed(() => this.resultado()?.unallocated ?? []);
 
   readonly metodo = computed(() => {
     const r = this.resultado();

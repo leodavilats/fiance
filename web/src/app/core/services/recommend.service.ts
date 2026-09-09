@@ -1,6 +1,6 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, catchError, map, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   GlobalSearchResponse,
@@ -349,8 +349,45 @@ export class RecommendService {
     return this.http.put<SectorGoal[]>(`${this.base}/sector-goals`, { sector_goals: sectorGoals });
   }
 
+  /**
+   * O aporte, com o valor resolvido pela cascata quando `cash_available` vem nulo.
+   *
+   * O `catchError` nao e zelo: no Railway o front sobe sozinho em todo push que toca `web/**`, e
+   * a API de producao sobe por acao manual. As duas versoes convivem por minutos ou por dias, e
+   * uma API anterior a este contrato recusa o nulo com 422. Nesse caso o valor e resolvido aqui,
+   * a partir da mesma cascata -- mesmo numero, so calculado do outro lado.
+   */
   quickInvest(req: QuickInvestRequest): Observable<QuickInvestResponse> {
-    return this.http.post<QuickInvestResponse>(`${this.base}/quick-invest`, req);
+    return this.http.post<QuickInvestResponse>(`${this.base}/quick-invest`, req).pipe(
+      catchError((erro: HttpErrorResponse) => {
+        if (!this.recusouONulo(erro) || req.cash_available !== null) {
+          return throwError(() => erro);
+        }
+        return this.http
+          .get<{ cascade?: { available_to_invest?: number } }>(`${this.base}/surplus`)
+          .pipe(
+            switchMap(sobra => {
+              const daCascata = sobra?.cascade?.available_to_invest ?? 0;
+              if (daCascata <= 0) return throwError(() => erro);
+              return this.http
+                .post<QuickInvestResponse>(`${this.base}/quick-invest`, {
+                  ...req,
+                  cash_available: daCascata,
+                })
+                .pipe(map(r => ({ ...r, cash_source: 'cascade' as const })));
+            })
+          );
+      })
+    );
+  }
+
+  private recusouONulo(erro: HttpErrorResponse): boolean {
+    if (erro.status !== 422) return false;
+    const detalhe = erro.error?.detail;
+    if (!Array.isArray(detalhe)) return false;
+    return detalhe.some(
+      (d: { loc?: unknown[] }) => Array.isArray(d.loc) && d.loc.includes('cash_available')
+    );
   }
 
   getRebalanceSuggestions(): Observable<RebalanceSuggestionsResponse> {

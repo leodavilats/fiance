@@ -36,20 +36,24 @@ export interface Unallocated {
   reason: string;
 }
 
+/**
+ * Os campos marcados como opcionais nasceram depois, e o front sobe antes da API: uma resposta
+ * de uma versao anterior nao os traz, e ler `.length` de ausente quebraria a tela.
+ */
 export interface QuickInvestResponse {
   total_cash: number | null;
 
   /** `cascade` quando veio da sobra do mês; `informed` quando a pessoa digitou. */
-  cash_source: 'cascade' | 'informed';
+  cash_source?: 'cascade' | 'informed';
 
   /** `goals` quando a distribuição sai da alocação-alvo declarada; `score` quando não há meta. */
-  basis: 'goals' | 'score';
+  basis?: 'goals' | 'score';
 
   allocated_cash: number | null;
   remaining_cash: number | null;
   allocations: QuickInvestAllocation[];
-  fixed_income: FixedIncomeSlice | null;
-  unallocated: Unallocated[];
+  fixed_income?: FixedIncomeSlice | null;
+  unallocated?: Unallocated[];
   portfolio_balance: Record<string, unknown>;
   summary: string;
   affirmation?: AffirmationMode;
