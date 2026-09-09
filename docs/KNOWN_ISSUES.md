@@ -71,10 +71,18 @@
    de token ausente. As saídas, em ordem de valor, estão no
    [OPERACAO](OPERACAO.md#o-que-falta-configurar-uma-vez), item 1.
 
-   Há também **mudanças de configuração STAGED e não implantadas**, no mesmo patch para os dois
-   serviços: **13** no `fiance` e **4** no `fiance-web` (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL` e
-   a porta do domínio). Elas entram junto do próximo deploy de código, então um deploy de
-   interface carrega mudança de ambiente sem ninguém pedir.
+   Há **mudanças de configuração STAGED e não implantadas** no patch `27a43c52`, e são **33**:
+   13 no `fiance`, 4 no `fiance-web` (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL`, porta do domínio) e
+   **13 no `Postgres`**, inclusive `POSTGRES_PASSWORD` e `DATABASE_URL` — o serviço de banco não
+   estava na contagem anterior, e é o que mais importa dela.
+
+   **Elas não entram no deploy de código**, ao contrário do que a revisão anterior deste item
+   afirmava: o patch segue `STAGED` depois de oito deploys de git no mesmo dia, com o mesmo
+   `patchId`. Patch de ambiente pede aprovação explícita. O que fica aberto é outro: ninguém sabe
+   o que há dentro do patch. Os nomes staged são idênticos aos que estão no ar nos três serviços —
+   cara de re-stage do conjunto inteiro —, mas o valor não se confere sem despejar segredo, e
+   `list-variables` imprime `JWT_SECRET` e `POSTGRES_PASSWORD` em texto claro. Fechar é decidir o
+   patch: aprovar sabendo o que muda, ou descartá-lo.
 
 ## Duplicação estrutural entre plataformas
 

@@ -146,12 +146,24 @@ Postgres, e só então subir o backend.
    Enquanto a 1 não existir, **quem faz push no `main` publica em produção sem rede** — e precisa
    saber disso antes, não depois.
 
-   Há também **mudanças de configuração STAGED e não implantadas**, no mesmo patch
-   (`patchId` 27a43c52) para os dois serviços: **13** no `fiance` e **4** no `fiance-web`
-   (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL` e a porta do domínio). Elas entram no próximo deploy
-   junto do código, o que faz um deploy de código carregar mudança de ambiente sem ninguém pedir.
-   Conferir com `get-service-config` antes de promover — e **não** com `list-variables`, que
-   devolve `JWT_SECRET` e `DATABASE_URL` em texto claro.
+   Há **mudanças de configuração STAGED e não implantadas** no patch `27a43c52`, e são **33**, não
+   17: **13** no `fiance`, **4** no `fiance-web` (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL` e a porta
+   do domínio) e **13 no `Postgres`** — inclusive `POSTGRES_PASSWORD`, `PGPASSWORD` e
+   `DATABASE_URL`. O serviço de banco não estava nesta contagem antes, e é o que mais importa dela.
+
+   **Elas não entram no deploy de código.** Uma revisão anterior deste documento afirmava que
+   entravam, o que fazia todo push parecer capaz de trocar a senha do banco em produção. Conferido
+   em 2026-09-09: o patch continua `STAGED` depois de **oito** deploys de git bem-sucedidos no
+   mesmo dia (de `234182a` a `e6cf63a`), com o mesmo `patchId`. Patch de ambiente no Railway pede
+   aprovação explícita — o botão *Deploy* do painel, ou `accept-deploy`; o deploy disparado por
+   commit constrói e sobe o **código**, e passa ao lado dele.
+
+   O que continua verdade é que o patch existe e ninguém sabe o que há dentro dele: os nomes
+   staged são **idênticos** aos que já estão no ar nos três serviços, o que tem a cara de
+   re-stage do conjunto inteiro, mas os **valores** não se conferem sem despejar segredo. Conferir
+   com `get-service-config`, que lista nome e não valor — e **não** com `list-variables`, que
+   devolve `JWT_SECRET`, `DATABASE_URL` e `POSTGRES_PASSWORD` em texto claro. Antes de apertar
+   *Deploy* naquele patch, é preciso saber o que ele muda.
 
 2. No GitHub, em *Settings → Environments*, criar `staging` e `production`. Em `production`,
    marcar *Required reviewers* — a confirmação escrita do fluxo é a segunda tranca, não a primeira.
