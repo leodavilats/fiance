@@ -64,7 +64,7 @@ export const routes: Routes = [
           import('./components/portfolio-summary/portfolio-summary.component').then(
             m => m.PortfolioSummaryComponent
           ),
-        title: 'Carteira - fiance',
+        title: 'Patrimônio - fiance',
       },
       {
         path: 'composicao',
@@ -167,7 +167,7 @@ export const routes: Routes = [
     path: 'sobra',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/shell/strategy-shell.component').then(m => m.StrategyShellComponent),
+      import('./components/shell/surplus-shell.component').then(m => m.SurplusShellComponent),
     children: [
       {
         path: '',
@@ -178,7 +178,7 @@ export const routes: Routes = [
       {
         path: 'desvio',
         loadComponent: () =>
-          import('./components/strategy/strategy.component').then(m => m.StrategyComponent),
+          import('./components/deviation/deviation.component').then(m => m.DeviationComponent),
         title: 'Alocação × meta - fiance',
       },
 

@@ -5,15 +5,15 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
-import '../hoje/widgets/hoje_charts.dart';
-import 'carteira_actions.dart';
-import 'widgets/carteira_closed_trades.dart';
-import 'widgets/carteira_composition.dart';
-import 'widgets/carteira_positions.dart';
-import 'widgets/carteira_summary.dart';
+import '../mes/widgets/feed_charts.dart';
+import 'patrimonio_actions.dart';
+import 'widgets/patrimonio_closed_trades.dart';
+import 'widgets/patrimonio_composition.dart';
+import 'widgets/patrimonio_positions.dart';
+import 'widgets/patrimonio_summary.dart';
 
-class CarteiraScreen extends ConsumerWidget {
-  const CarteiraScreen({super.key});
+class PatrimonioScreen extends ConsumerWidget {
+  const PatrimonioScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

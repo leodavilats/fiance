@@ -11,7 +11,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/compare_metrics.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
-import '../hoje/widgets/hoje_tiles.dart';
+import '../mes/widgets/feed_tiles.dart';
 
 class AnalyzeAssetView extends ConsumerStatefulWidget {
   const AnalyzeAssetView({super.key, this.initialTicker});
@@ -147,6 +147,14 @@ class _AssetAnalysisCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (formatIdade(a.asOf).isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Preço lido ${formatIdade(a.asOf)}',
+                    style: FiType.caption.copyWith(color: fiInk2(context)),
+                  ),
+                ),
               const Divider(height: 20),
               Wrap(
                 spacing: 16,

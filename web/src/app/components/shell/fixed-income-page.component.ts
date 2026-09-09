@@ -13,7 +13,7 @@ import { FixedIncomeComponent } from '../market/fixed-income/fixed-income.compon
       question="Quanto rende um título, e rende mais que a bolsa para o meu caso?"
     />
 
-    <div class="space-y-6">
+    <div class="flex flex-col gap-6">
       <app-fixed-income />
       <app-income-compare />
     </div>

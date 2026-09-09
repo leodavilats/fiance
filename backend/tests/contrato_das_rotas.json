@@ -22,6 +22,7 @@
     "ticker"
   ],
   "GET /api/v1/asset/{symbol}": [
+    "as_of",
     "asset_type",
     "currency",
     "decision",
@@ -264,6 +265,7 @@
     "prescriptive"
   ],
   "GET /api/v1/public/asset/{symbol}": [
+    "as_of",
     "asset_type",
     "currency",
     "decision",

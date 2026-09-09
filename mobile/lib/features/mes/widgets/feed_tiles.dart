@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/format.dart';
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
-import '../hoje_actions.dart';
+import '../feed_actions.dart';
 import '../../../core/score_ruler.dart';
 
 class FiInsightTile extends StatelessWidget {

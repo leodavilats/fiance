@@ -24,7 +24,7 @@ interface ProjectionRow {
 }
 
 @Component({
-  selector: 'app-strategy',
+  selector: 'app-deviation',
   standalone: true,
   imports: [
     PageHeaderComponent,
@@ -110,9 +110,7 @@ interface ProjectionRow {
           <section class="fi-block">
             <div class="flex items-baseline justify-between gap-3 mb-1">
               <h2 class="fi-title text-ink m-0">Onde você está fora da meta</h2>
-              <a routerLink="/voce/objetivos" class="fi-caption text-brand no-underline">
-                Ajustar metas
-              </a>
+              <a routerLink="/voce/objetivos" class="btn-link"> Ajustar metas </a>
             </div>
             <p class="fi-caption text-ink-3 m-0 mb-4">
               A barra é a alocação atual; o fio, a meta. O desvio é o que decide o aporte.
@@ -246,10 +244,7 @@ interface ProjectionRow {
                         }
                       </p>
                       @if (sug.ticker === 'RENDA_FIXA') {
-                        <a
-                          routerLink="/descobrir/renda-fixa"
-                          class="fi-caption text-brand no-underline"
-                        >
+                        <a routerLink="/descobrir/renda-fixa" class="btn-link">
                           Comparar títulos
                         </a>
                       } @else {
@@ -410,7 +405,7 @@ interface ProjectionRow {
     </div>
   `,
 })
-export class StrategyComponent implements OnInit {
+export class DeviationComponent implements OnInit {
   readonly nome = nomeDoMes;
 
   private readonly svc = inject(RecommendService);

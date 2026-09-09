@@ -16,6 +16,7 @@ import {
 } from '../../../core';
 import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { HelpTooltipComponent } from '../../help-tooltip/help-tooltip.component';
+import { FairPriceComponent } from '../../fair-price/fair-price.component';
 import { ProvenanceComponent } from '../../provenance/provenance.component';
 import { ScoreRulerComponent } from '../../score-ruler/score-ruler.component';
 import { SkeletonComponent } from '../../skeleton/skeleton.component';
@@ -28,6 +29,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
   imports: [
     CommonModule,
     EmptyStateComponent,
+    FairPriceComponent,
     FormsModule,
     HelpTooltipComponent,
     LucideAngularModule,
@@ -230,28 +232,30 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
                         </div>
                         <div>
                           <dt class="fi-caption text-ink-3">Bazin</dt>
-                          @if (opp.bazin) {
-                            <dd class="fi-metric-sm text-ink m-0 fi-num">
-                              {{ opp.bazin | currency: 'BRL' }}
-                            </dd>
-                          } @else {
-                            <dd class="fi-caption text-indeterminate m-0">sem histórico</dd>
-                          }
+                          <dd class="m-0">
+                            <app-fair-price
+                              [value]="opp.bazin"
+                              method="Bazin"
+                              absent="sem histórico de proventos"
+                            />
+                          </dd>
                         </div>
                         <div>
                           <dt class="fi-caption text-ink-3">
                             {{ !opp.graham && opp.pvp ? 'P/VP' : 'Graham' }}
                           </dt>
                           @if (opp.graham) {
-                            <dd class="fi-metric-sm text-ink m-0 fi-num">
-                              {{ opp.graham | currency: 'BRL' }}
+                            <dd class="m-0">
+                              <app-fair-price [value]="opp.graham" method="Graham" />
                             </dd>
                           } @else if (opp.pvp) {
                             <dd class="fi-metric-sm text-ink m-0 fi-num">
                               {{ opp.pvp | number: '1.2-2' }}
                             </dd>
                           } @else {
-                            <dd class="fi-caption text-indeterminate m-0">não se aplica</dd>
+                            <dd class="fi-caption text-indeterminate m-0">
+                              não se aplica a este tipo de ativo
+                            </dd>
                           }
                         </div>
                         <div>

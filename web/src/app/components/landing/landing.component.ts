@@ -127,6 +127,32 @@ interface LinhaDoMes {
       </section>
 
       <section class="fi-block">
+        <h2 class="fi-title text-ink m-0">Por que ele não inventa número</h2>
+        <p class="fi-body text-ink m-0 mt-3 max-w-reading">
+          Todo número aqui vem de um lançamento seu ou de uma fonte com nome — a B3 pela BRAPI, o
+          CDI pelo Banco Central. Quando a fonte não responde, a tela diz que está com dado velho e
+          de quando ele é, em vez de mostrar o último preço como se fosse o de agora.
+        </p>
+        <p class="fi-body text-ink m-0 mt-3 max-w-reading">
+          O que é estimativa sai como <strong>faixa</strong>, nunca como um número único: a sobra do
+          mês parte de um piso e vai até um teto, e a diferença entre os dois é o tamanho do que
+          ainda não se sabe. Projeção de patrimônio a cinco anos é a mesma regra — um valor exato
+          ali empresta precisão de centavo a uma pilha de premissas.
+        </p>
+        <p class="fi-body text-ink m-0 mt-3 max-w-reading">
+          E todo julgamento vem com <strong>o que o derrubaria</strong>. Se o produto diz que um
+          papel está descontado, ele diz também em que preço deixa de estar. Uma opinião que não
+          pode ser contrariada por nenhum fato não é análise — é horóscopo com gráfico.
+        </p>
+        <p class="fi-body text-ink-2 m-0 mt-3 max-w-reading">
+          Três coisas ele <strong>não</strong> faz: não recomenda compra ou venda, não estima taxa
+          que você não informou, e não inventa a sua reserva de emergência em seis meses de gasto
+          porque é o que se diz por aí. Sem alvo declarado por você, o passo simplesmente não
+          aparece.
+        </p>
+      </section>
+
+      <section class="fi-block">
         <h2 class="fi-title text-ink m-0">Quer saber quando abrir?</h2>
 
         @if (enviado()) {

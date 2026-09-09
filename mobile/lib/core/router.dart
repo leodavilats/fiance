@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/carteira/carteira_screen.dart';
+import '../features/patrimonio/patrimonio_screen.dart';
 import '../features/assets/fixed_income_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
-import '../features/hoje/hoje_screen.dart';
+import '../features/mes/feed_screen.dart';
 import '../features/mes/dividas_screen.dart';
 import '../features/mes/mes_screen.dart';
 import '../features/sobra/sobra_screen.dart';
-import '../features/estrategia/estrategia_screen.dart';
+import '../features/sobra/desvio_screen.dart';
 import '../features/busca/busca_screen.dart';
-import '../features/estrategia/metas_screen.dart';
-import '../features/hoje/atividade_screen.dart';
+import '../features/config/objetivos_screen.dart';
+import '../features/mes/atividade_screen.dart';
 import '../features/tools/income_compare_view.dart';
 import '../features/market/opportunities_tab.dart';
 import '../features/market/quick_invest_view.dart';
@@ -71,7 +71,7 @@ final appRouter = GoRouter(
                 // alcancavel enquanto o feed nao se dissolve dentro do Mes, como no web.
                 GoRoute(
                   path: 'feed',
-                  builder: (context, state) => const HojeScreen(),
+                  builder: (context, state) => const FeedScreen(),
                 ),
                 GoRoute(
                   path: 'dividas',
@@ -99,7 +99,7 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: 'desvio',
-                  builder: (context, state) => const EstrategiaScreen(),
+                  builder: (context, state) => const DesvioScreen(),
                 ),
               ],
             ),
@@ -110,7 +110,7 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/patrimonio',
-              builder: (context, state) => const CarteiraScreen(),
+              builder: (context, state) => const PatrimonioScreen(),
               routes: [
                 GoRoute(
                   path: 'renda-fixa',
@@ -184,7 +184,7 @@ final appRouter = GoRouter(
               routes: [
                 GoRoute(
                   path: 'objetivos',
-                  builder: (context, state) => const MetasScreen(),
+                  builder: (context, state) => const ObjetivosScreen(),
                 ),
               ],
             ),

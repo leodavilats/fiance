@@ -14,7 +14,7 @@ import {
   standalone: true,
   imports: [CommonModule, LucideAngularModule, ProvenanceComponent],
   template: `
-    <div class="space-y-4">
+    <div class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-2">
         <p class="fi-body text-ink-2 m-0">
           Para cada ativo já na sua carteira: comprar mais, vender, realocar para outro ativo ou não

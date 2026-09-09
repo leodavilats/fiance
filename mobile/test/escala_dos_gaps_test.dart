@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fiance/core/models.dart';
-import 'package:fiance/features/estrategia/estrategia_screen.dart';
+import 'package:fiance/features/sobra/desvio_screen.dart';
 
 AllocationGap _gap({required double atual, required double meta}) {
   return AllocationGap.fromJson({

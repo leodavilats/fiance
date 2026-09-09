@@ -1,136 +1,203 @@
 # fiance — features por tela
 
-> Inventário do que cada tela faz, organizado pela navegação **atual**. Revisado em 2026-08-22.
+> Inventário do que cada tela faz, organizado pela navegação **atual**. Revisado em 2026-09-08,
+> conferido rota por rota contra `web/src/app/app.routes.ts` e `mobile/lib/core/router.dart`.
 >
-> Até esta revisão, este arquivo descrevia quatro telas — Dashboard, Meus Ativos (`/assets`),
-> Mercado (`/market`) e Configurações (`/config`) — e nenhuma dessas rotas existe mais no web.
-> Também carregava um changelog de 65 linhas no fim, que foi para [CHANGELOG.md](CHANGELOG.md).
+> Este arquivo esteve duas revisões de navegação atrás: descrevia **Hoje** e **Estratégia**, que
+> não existem mais, e não mencionava nenhuma tela do caixa. É a doença que o
+> [KNOWN_ISSUES](KNOWN_ISSUES.md) descreve no próprio cabeçalho — inventário envelhece mais rápido
+> que princípio, e envelhece calado.
 >
-> Estrutura, wireframes e o racional de cada decisão em [design/](design/).
+> Estrutura, wireframes e o racional de cada decisão em [design/](design/). O que é **igual** entre
+> as plataformas e o que é livre está em [design/PARIDADE.md](design/PARIDADE.md).
 
 ## Navegação
 
-Cinco destinos, agrupados por intenção do usuário — não pela topologia do backend.
+Cinco destinos, e eles são **o ciclo do dinheiro**: entra, sobra, vira patrimônio. Não é a
+topologia do backend nem uma lista de funcionalidades.
 
 | Destino | Pergunta que responde | Web | Mobile |
 |---|---|---|---|
-| **Hoje** | o que mudou e o que merece minha atenção? | `/hoje` | ✅ |
-| **Carteira** | como está meu patrimônio? | `/carteira` | ✅ |
-| **Descobrir** | o que eu poderia comprar? | `/descobrir` | ✅ |
-| **Estratégia** | o que eu faço com o próximo aporte? | `/estrategia` | ✅ |
-| **Você** | quero mudar como o app me trata | `/voce` | ✅ |
-| **Ativo** | este ativo específico vale? | `/ativo/:ticker` | ✅ |
+| **Mês** | como estou agora, e o que exige atenção? | `/mes` | `/mes` |
+| **Sobra** | o que eu faço com o que sobrou? | `/sobra` | `/sobra` |
+| **Patrimônio** | quanto eu tenho, e o que nele exige atenção? | `/patrimonio` | `/patrimonio` |
+| **Descobrir** | o que eu poderia comprar? | `/descobrir` | `/descobrir` |
+| **Você** | com que régua o produto me avalia? | `/voce` | `/voce` |
+| **Ativo** | este ativo específico vale? | `/ativo/:ticker` | `/ativo/:ticker` |
 
 `/ativo/:ticker` é **camada, não destino**: não aparece na navegação e é alcançável de qualquer
-lista. URLs antigas (`/dashboard`, `/assets`, `/market`, `/config`, `/strategy`) seguem como
-redirect nas duas plataformas.
+lista. As URLs antigas (`/hoje`, `/carteira/*`, `/estrategia/*`, `/dashboard`, `/assets`,
+`/market`, `/config`, `/strategy`) seguem como redirect nas duas plataformas — link salvo é
+contrato. Todo alvo de topo é **absoluto**: relativo resolve contra o primeiro segmento casado e
+manda o link para o curinga.
 
 ---
 
-## Hoje
+## Mês
 
-A central de decisão, em três níveis.
+O primeiro lugar depois do login, e a única tela que fala do dinheiro que ainda não foi investido.
 
-- **N1 — patrimônio:** valor atual, variação em R$ e %, e uma linha de apoio com investido, número
-  de posições, DY médio e renda mensal estimada.
-- **N1 — veredito de saúde:** uma frase ("Carteira saudável") mais 2–3 motivos em texto, ao lado da
-  régua. Carteira com menos de 4 ativos **não** recebe leitura de risco — a régua sai indeterminada
-  e o texto explica por quê.
-- **N2 — o que mudou:** feed único ordenado por urgência, alimentado por `GET /whats-new` e pelos
-  alertas de `GET /dashboard`, com uma ação por linha. Sem novidade, o bloco diz isso em vez de
-  desaparecer.
-- **N3 — próxima ação:** o maior desvio de alocação, com o cálculo visível antes da sugestão.
-  Derivado de `allocations`, sem chamada extra.
-- **N3 — em destaque:** as 3 melhores oportunidades, com o motivo antes dos números.
-- **Rodapé:** idade da cotação, origem do CDI/Selic (BCB ou estimativa) e o aviso de estimativa.
+- **A resposta, primeiro.** Um veredito em serifa sobre a pressão do mês — o que está comprometido
+  contra o que entrou — com a razão embaixo e `<app-provenance>` dizendo método, fonte e
+  limitação. Dívida cara, quando existe, é o que decide o veredito.
+- **Livre agora**, em `fi-money-xl`. É **fato**, não projeção: entrou, menos saiu, menos o
+  comprometido e datado. Ao lado, uma linha de cifras sob um fio: entrou · saiu · comprometido.
+- **A ponte para a Sobra.** Uma frase diz que, descontando o que ainda deve sair, a sobra parte de
+  um piso — e liga para `/sobra`. Sem mês fechado não há estimativa, e a tela diz isso em vez de
+  tratar ausência como zero.
+- **Exige atenção** — só dívida de classe *caseira*, com a taxa e a `taxa_de_virada`, que é a taxa
+  em que o veredito muda.
+- **A vencer** — contas com vencimento no mês e ainda não pagas, com "marcar como paga" por linha.
+- **O mês** — todo movimento em ordem de data, com categoria, "a receber"/"a vencer" e a marca
+  `do seu razão` no provento derivado, que não é editável porque não foi lançado.
+- **O que mudou** — o feed, deliberadamente por último: é o menos decisivo do mês.
+- **Recorte de mês na URL** (`?mes=2026-08`), com um seletor que só aparece havendo mais de um mês.
 
-Estados projetados: carga inicial (skeleton com a forma do conteúdo), atualização (dado antigo
-preservado), carteira vazia, carteira pequena, nada mudou, dado velho, erro.
+Sub-rotas: `/mes/lancar` (formulário de lançamento, aceita `?editar=`), `/mes/repetir` (o molde do
+mês anterior — prévia e commit, com o que repete por natureza já marcado), `/mes/dividas` (CRUD de
+dívida, classificada por **custo** e nunca por tipo), `/mes/atividade` (o histórico completo).
 
-## Carteira
+No mobile, `lancar` e `repetir` são *bottom sheets* em vez de rotas, e o feed é a rota
+`/mes/feed`. Gesto e navegação podem diferir; o conceito e o nome, não.
 
-Sete sub-rotas, cada uma respondendo uma pergunta.
+## Sobra
 
-| Rota | Conteúdo |
+- **A sobra, no piso.** Projeção, e por isso sai como **faixa**: o piso é o que já está livre menos
+  o gasto variável ainda esperado; o teto é o mês fechando como o mais barato dos últimos três.
+  Um `<details>` mostra a conta com os meses que formaram a base.
+- **A ordem** — a cascata, como lista numerada sobre fio (não como cards: passo de uma ordem não é
+  objeto). Cada passo traz o valor, a razão e `O que derrubaria isto`. Dívida cara vem antes de
+  aporte por aritmética de taxa, e a tela diz que dívida não é valor mobiliário.
+  **A ordem pode terminar sem aporte, e isso é a resposta** — não uma falha.
+- **Aporte** (`/sobra/aporte`) — abre já com a sobra resolvida pela cascata, sem pedir o valor;
+  "Simular outro valor" é a alternativa, não o caminho principal. Traz a ordem de compra, a fatia
+  de renda fixa quando ela cabe, e **o troco com a razão dele** (ordem mínima, teto por categoria,
+  arredondamento). Sem meta declarada não inventa 50/25/25: distribui por score e diz que é isso.
+- **Alocação × meta** (`/sobra/desvio`) — o desvio entre onde a carteira está e onde a pessoa
+  disse que ela deveria estar. Quatro camadas visualmente distintas: informação, cálculo, sugestão
+  rotulada como sugestão, e ação.
+
+## Patrimônio
+
+- **A resposta, primeiro** — o veredito de saúde da carteira em serifa, com a régua ao lado e até
+  três razões que **nomeiam o papel e o setor** que concentram. Abaixo de quatro ativos negociados
+  a leitura não sai, e a tela explica por quê em vez de mostrar régua indeterminada sem contexto.
+- **Valor da carteira** em `fi-money-xl`, com o resultado em R$ e %, sobre quanto foi aportado, e a
+  contagem de ativos negociados e aplicações de renda fixa, mais o momento da última avaliação.
+- **As quatro dimensões** — concentração, setor, diversificação e risco, como **tabela**: nota e
+  o que cada uma mede. Era uma grade de quatro células, que é o cheiro de painel.
+- **Alocação × meta**, ou o estado vazio que explica por que desvio de meta inexistente seria
+  número inventado.
+- **Ver em detalhe** e **Registro e manutenção**, separados de propósito: o primeiro é leitura do
+  patrimônio, o segundo é operação sobre o livro-razão.
+
+| Sub-rota | Conteúdo |
 |---|---|
-| `/carteira` | valor, resultado, **alocação × meta** (trilha com o atual preenchido e a meta marcada) e as 4 dimensões de saúde |
-| `/carteira/composicao` | pizza por classe ou por setor, sempre com a lista ao lado |
-| `/carteira/desempenho` | evolução do patrimônio e carteira × CDI × Ibovespa (TWR), cada gráfico com a pergunta no título |
-| `/carteira/proventos` | recebido no mês / 12 meses / média, quebra por ativo, e o confronto com a estimativa do app |
-| `/carteira/posicoes` | tabela ordenável, seleção de até 4 para comparar, exportação CSV, renda fixa como classe par, venda parcial ou total |
-| `/carteira/encerradas` | lucro realizado, IR pago e prejuízo disponível para compensar |
-| `/carteira/editar` | escrita: CRUD de posições e de renda fixa, salvamento explícito por linha |
+| `/patrimonio/composicao` | pizza por classe ou por setor, sempre com a lista ao lado |
+| `/patrimonio/posicoes` | tabela profissional — colunas configuráveis e densidade, com o recorte na URL (`cols`, `d`); seleção de até 4 para comparar; exportação CSV; venda parcial ou total |
+| `/patrimonio/encerradas` | lucro realizado, IR **rateado** por linha (o número do DARF é mensal, e a tela diz isso) e prejuízo disponível para compensar |
+| `/patrimonio/proventos` | recebido no mês / 12 meses / média, quebra por ativo, e o confronto com a estimativa |
+| `/patrimonio/desempenho` | evolução do patrimônio e carteira × CDI × Ibovespa (TWR) |
+| `/patrimonio/projecao` | simulador de aporte e renda passiva — **sempre em faixa**, nunca número único |
+| `/patrimonio/editar` | escrita: CRUD de posições e de renda fixa, salvamento explícito por linha |
 
 Renda fixa entra **na mesma tabela** das outras posições, falando a língua dela (taxa efetiva,
 % do CDI, vencimento, liquidez) em vez de receber colunas de ação vazias. Marcada a mercado no
-backend; aviso de vencimento em até 30 dias.
+backend. As sub-rotas compartilham `CarteiraStore` — trocar de aba não refaz
+`POST /portfolio/evaluate`, que é a chamada mais cara do produto.
 
-As sete rotas compartilham `CarteiraStore` — trocar de sub-aba não refaz
-`POST /portfolio/evaluate`, que é a chamada mais caras do produto.
+No mobile, `composicao`, `posicoes`, `encerradas` e `proventos` são abas **dentro** de
+`/patrimonio`, e a renda fixa da pessoa tem rota própria (`/patrimonio/renda-fixa`) porque o
+telefone não comporta a tabela de edição do web. Composição diferente, mesmo conceito.
 
 ## Descobrir
 
-- **Oportunidades** (`/descobrir/oportunidades`) — varredura do universo com score e preço justo.
-  Cada item responde **por que apareceu** antes de mostrar números. Filtros na URL. Clicar leva ao
-  ativo; "Entender queda" abre o diagnóstico.
+- **Oportunidades** (`/descobrir/oportunidades`) — varredura do universo. Abre com um veredito
+  sobre a **lista inteira**, antes de qualquer linha. Cada item responde *por que apareceu* antes
+  de mostrar número, e o preço justo sai por `<app-fair-price>`, que nunca mostra a cifra sem dizer
+  quantos métodos a formaram — nem um traço no lugar da ausência, sempre a razão nomeada. Filtros
+  na URL (`q`, `dy`, `mos`, `cat`, `destaque`, `p`).
 - **Quedas** (`/descobrir/quedas`) — scanner de dip com drawer de diagnóstico: a queda, a leitura,
-  as evidências (breakdown do score), o valuation e a conclusão.
-- **Comparar** (`/descobrir/comparar`) — até 4 ativos lado a lado. Aceita `?tickers=` para chegar
-  preenchido da carteira ou da página do ativo.
-
-## Estratégia
-
-- **Plano** (`/estrategia`) — "onde você está × onde deveria estar". Quatro camadas visualmente
-  distintas: informação (tabela de gaps), cálculo (a frase do maior desvio), sugestão (rotulada) e
-  ação (o botão). Inclui sugestões por categoria, posições para revisar, alocação projetada e o
-  resultado do que você seguiu.
-- **Aporte** (`/estrategia/aporte`) — Quick Invest: quanto, ordem mínima, e o app responde o que
-  está abaixo da meta. Persiste o caixa em `/preferences`, que o plano lê.
-- **Metas** (`/estrategia/metas`) — renda passiva mensal, alocação por categoria e por setor. Fica
-  aqui, e não em Configurações, porque meta é insumo de decisão: ao lado do gap que ela gera.
-- **Renda fixa** (`/estrategia/renda-fixa`) — duas perguntas na mesma tela: comparar títulos entre
-  si, e renda fixa × bolsa na mesma unidade (renda recorrente líquida a.a.), com a valorização
-  potencial mostrada **separada** — renda fixa não tem, e a tela diz isso.
-- **Projeção** (`/estrategia/projecao`) — simulador de aportes e renda passiva.
+  as evidências (breakdown do score), o valuation e a conclusão. Recorte na URL (`min_score`,
+  `top`, `category`).
+- **Renda fixa** (`/descobrir/renda-fixa`) — duas perguntas na mesma tela: comparar títulos entre
+  si depois do IR, e renda fixa × bolsa na mesma unidade (renda recorrente líquida a.a.), com a
+  valorização potencial mostrada **separada** — renda fixa não tem, e a tela diz isso. No mobile
+  são duas rotas (`renda-fixa` e `renda-fixa-vs-bolsa`), porque duas ferramentas numa tela de
+  telefone viram duas telas.
+- **Comparar** (`/descobrir/comparar`) — até 4 ativos lado a lado. Aceita `?tickers=`.
 
 ## Ativo
 
-`/ativo/:ticker` — página de research. O ticker vive na rota: recarregar mantém, o link é
-compartilhável.
+`/ativo/:ticker` — página de research, e **rota pública renderizada no servidor**: é o canal de
+aquisição, e robô não faz login.
 
-- **Cabeçalho:** ticker, nome, tipo, preço, distância do topo de 52 semanas, e as ações
-  contextuais (comparar, criar alerta com o ticker preenchido, adicionar à carteira).
-- **N1:** a leitura em uma frase, o veredito no vocabulário único (Interessante / Neutro / Atenção
-  / Evitar / Sem leitura), a régua de confiança e os `reasons` do backend.
-- **N2:** preço atual × consenso × margem de segurança, com a proveniência (quantos métodos, quantos
-  anos de provento, qual confiança).
-- **N3 — valuation:** **um bloco por método** (Bazin, Graham, DCF, e P/VP justo em FII), cada um com
+- **Cabeçalho:** ticker, nome, tipo, setor, preço, distância do topo de 52 semanas e **quando o
+  preço foi lido** — momento é nível 1, porque preço de anteontem muda a decisão.
+- **N1:** a leitura em uma frase, o veredito no vocabulário único, a régua de confiança e os
+  `reasons` do backend.
+- **N2:** preço atual × consenso (com o número de métodos na própria cifra) × margem de segurança.
+- **N3 — valuation:** **um bloco por método** (Bazin, Graham, DCF, P/VP justo em FII), cada um com
   preço estimado, distância do atual e o insumo que usou. Método que não se aplica **diz por quê**
-  ("Graham não se aplica a fundo imobiliário") em vez de deixar campo vazio. O roteamento por tipo
-  é do backend; a UI reflete e explica.
-- **N3:** fundamentos (só os que existem), tendência (com a base sobre a qual foi medida),
+  em vez de deixar campo vazio.
+- **N3:** fundamentos (só os que existem), tendência **com a base sobre a qual foi medida**,
   proventos.
+- **O que faria a tese mudar** — os falsificadores, cada um com a condição e o veredito em que ela
+  desemboca. Sem preço justo a lista sai vazia, porque almanaque não é condição conferível.
 - **N4:** "Como calculamos" — meta de yield usada, LPA, VPA, P/VP, base da tendência.
 
 ## Você
 
-- **Preferências** (`/voce/preferencias`) — yields desejados por classe (entram no preço-teto de
-  Bazin), perfil de risco (pondera o score), categorias e setores preferidos, tickers excluídos.
-  Cada controle diz o **efeito**, não só o nome.
-- **Alertas** (`/voce/alertas`) — CRUD de alertas de preço; aceita `?ticker=` para chegar
-  preenchido da página do ativo. Alertas de preço são imediatos; o resumo de oportunidades tem
-  cadência configurável. Push exige o app instalado, e a tela diz isso.
-- **Conta e dados** (`/voce/conta`) — origem de cada dado (BRAPI, BCB SGS), como o preço justo e o
-  score são calculados, o aviso de que tudo é estimativa, e a limpeza de cache.
+- **Preferências** (`/voce/preferencias`) — três eixos nomeados, e não uma lista de campos:
+  **Preço justo** (o yield exigido de cada classe, que é o divisor do preço-teto de Bazin),
+  **Score de oportunidade** (perfil de risco, categorias e setores preferidos, ativos excluídos —
+  nada aqui altera o preço justo, muda a ordem) e **Avisos**. Mais **Esta tela**, que é a densidade
+  e o único ajuste que salva na hora — e a tela diz isso, porque o resto passa pelo Salvar.
+- **Objetivos** (`/voce/objetivos`) — renda passiva mensal e alocação por categoria. Fica em Você,
+  e não na Sobra, porque declarar meta é armar a estratégia; ver o desvio é ler o patrimônio.
+- **Alertas** (`/voce/alertas`) — CRUD de alerta de preço; aceita `?ticker=`. Alerta de preço é
+  imediato; o resumo de oportunidades tem cadência. **Push exige o app instalado**, e a tela diz.
+- **Indicação** (`/voce/indicacao`) — o código da pessoa. Crédito entra na **qualificação**, nunca
+  no cadastro, e a rota nunca devolve quem foi indicado.
+- **Conta e dados** (`/voce/conta`) — origem de cada dado (BRAPI, BCB SGS), como preço justo e
+  score são calculados, exportação e exclusão da conta (nunca atrás de plano), limpeza de cache.
+
+No mobile, `/voce` é uma tela única com seções e só `objetivos` tem rota própria.
+
+## Público, sem login
+
+Cinco rotas, e **a lista é fechada** — crescer é decisão registrada, não efeito colateral
+(`web/src/app/app.routes.server.ts`, com teste que as lista pelo nome).
+
+- **`/`** — a landing. Não é herói com features: é o problema (você sabe quanto tem investido, não
+  quanto sobrou), um **mês de exemplo** com valores de dinheiro de verdade terminando na sobra, a
+  ordem da decisão sobre ela, **por que o produto não inventa número** (fonte com nome, estimativa
+  como faixa, julgamento com o que o derrubaria, e as três coisas que ele não faz), o que já existe
+  e o que falta, e o cadastro de interesse. Mais um caminho para entrar.
+- **`/ativo/:ticker`** — a página de research acima, sem titular e com teto por IP.
+- **`/termos`**, **`/privacidade`**, **`/aviso-cvm`** — robô de loja também não faz login, e a
+  ficha de segurança de dados pede uma URL de privacidade que abra sozinha. O Aviso CVM **lê**
+  `GET /api/public/affirmation` em vez de repetir a frase: `AFFIRMATION_LEVEL` é configuração, e
+  uma segunda cópia acabaria desatualizada justamente onde a pessoa a lê.
 
 ## Autenticação
 
-Login via Google nas duas plataformas, JWT emitido pelo backend (TTL 30 dias). O `authGuard` do
-web valida o `exp`, não só a presença do token.
+Login via Google nas duas plataformas. Acesso de 1h e refresh de 30 dias **rotacionado e queimado
+no uso**; revogação por `jti` (este dispositivo) e `session_cuts` (todos). Os clientes renovam uma
+vez ao levar 401, e no web isso é coordenado **entre abas** por Web Lock — dois refreshes
+simultâneos derrubam a sessão.
 
 ## Notificações
 
-Alertas de preço disparados são imediatos via FCM. O resumo de oportunidades (`STRONG_BUY`, ou
-score ≥ 75 com DY ≥ 6%, excluindo o que já está na carteira e os tickers excluídos) sai por
-cadência configurável — off, diária, semanal ou mensal. O mesmo push lista posições com veredito de
-venda. Requer o app instalado.
+Alerta de preço disparado é imediato via FCM. O resumo de oportunidades (`STRONG_BUY`, ou score
+≥ 75 com DY ≥ 6%, excluindo o que já está na carteira e os tickers excluídos) sai por cadência
+configurável — off, diária, semanal ou mensal. O mesmo push lista posições com veredito de venda.
+Requer o app instalado, e o web sinaliza isso em vez de oferecer um controle que não faria nada.
+
+## Busca
+
+`/search` procura carteira, renda fixa e universo e devolve `ref` — ticker ou id, **nunca
+caminho**. Destino de tela também é resultado, mas a lista vive em cada cliente
+(`SEARCH_DESTINATIONS` no web, `buscaDestinos` no mobile): as árvores diferem, e um catálogo de
+rotas no servidor seria segunda verdade sobre a arquitetura de informação. Por isso os destinos
+filtram sem rede. No web abre por `Ctrl/⌘ K`; no mobile é a rota `/busca`.

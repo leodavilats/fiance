@@ -9,7 +9,7 @@ import { PageHeaderComponent } from '../../page-header/page-header.component';
   standalone: true,
   imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule],
   template: `
-    <div class="space-y-4">
+    <div class="flex flex-col gap-4">
       <app-page-header
         title="Projeção"
         question="Se eu aportar todo mês, como a carteira e a renda passiva evoluiriam?"

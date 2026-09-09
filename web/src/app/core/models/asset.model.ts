@@ -72,6 +72,10 @@ export interface AssetAnalysis {
   sector: string | null;
   currency: string | null;
   price: number | null;
+
+  /** Momento da leitura do preço, em epoch. Opcional: API anterior a 2026-09-08 não o manda. */
+  as_of?: number | null;
+
   fundamentals: Partial<AssetFundamentals>;
   fair_price: FairPriceBlock;
   technical: TechnicalBlock;

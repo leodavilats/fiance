@@ -9,8 +9,8 @@ import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 
-class MetasScreen extends StatelessWidget {
-  const MetasScreen({super.key});
+class ObjetivosScreen extends StatelessWidget {
+  const ObjetivosScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class MetasScreen extends StatelessWidget {
     final ink3 = isDark ? FiColors.darkInk3 : FiColors.lightInk3;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Minhas metas')),
+      appBar: AppBar(title: const Text('Objetivos')),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: FiSpace.s4),
         children: [

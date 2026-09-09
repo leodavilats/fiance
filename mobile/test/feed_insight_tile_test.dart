@@ -1,5 +1,5 @@
 import 'package:fiance/core/models.dart';
-import 'package:fiance/features/hoje/widgets/hoje_tiles.dart';
+import 'package:fiance/features/mes/widgets/feed_tiles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -109,17 +109,28 @@ impediria a correção.
 
 ## O que a máquina ainda cobra
 
-**Quase nada, de propósito.** A verificação de contraste acima da norma e a catraca de paridade
-de conceito foram removidas em 2026-09-08, junto do gerador de réguas: a liberdade de UX/UI vale
-mais do que elas custavam, e a paridade passou a ser dirigida no desenvolvimento das telas.
+**Pouco, e o pouco é escolhido.** A catraca de paridade de **conceito** saiu em 2026-09-08 junto
+do gerador de réguas: a liberdade de UX/UI vale mais do que ela custava, e a paridade passou a ser
+dirigida no desenvolvimento das telas.
 
 O que ficou:
 
-- **`mobile/test/contraste_test.dart`** — o mínimo da WCAG 2.1 AA, e nada além: 4,5:1 para texto,
-  3:1 para limite de controle. Não é design, é legibilidade;
+- **`web/tools/check-contrast.mjs`** (`npm run lint:contrast`, no CI) — mede `foundation.css` **e**
+  `design_tokens.dart`, cada um contra o **piso do sistema**, que é acima da AA, e **nunca um
+  contra o outro**. É a forma certa da regra: exigir o mesmo hexadecimal impediria o telefone de
+  ter mais contraste que o monitor; exigir o piso não impede nada. Reprova papel abaixo do piso,
+  papel declarado só num tema, contorno de controle sob 3:1, preenchimento que não se distingue do
+  próprio poço, e as duas cópias do tema claro do CSS divergindo entre si.
+
+  *Ele chegou a ser apagado junto do gerador, e o CI ficou dois commits sem piso de contraste. Foi
+  erro de classificação: um verificador que lê a paleta escrita à mão e mede não é gerador. Mora em
+  `web/tools/`, ao lado do `lint:ui`, por isso.*
+- **`mobile/test/contraste_test.dart`** — o mínimo da WCAG 2.1 AA no Dart: 4,5:1 para texto, 3:1
+  para limite de controle. Não é design, é legibilidade;
 - **`web/tools/lint-ui.mjs`** e **`mobile/test/lint_ui_test.dart`** — as regras de **produto**:
   julgamento sem explicabilidade, projeção sem faixa, promessa sobre o futuro, botão sem nome
-  acessível;
+  acessível, vocabulário de IA genérica e — só no Dart — **nome de destino aposentado**, que é a
+  única parte da paridade de conceito com máquina, porque nome é a parte dela que é literal;
 - **`python design-tokens/build-icons.py --check`** — a marca, que é o único gerador que sobra.
 
 O que **saiu**, e o risco que veio com a escolha: a régua de score pode divergir entre as

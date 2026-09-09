@@ -58,6 +58,14 @@ class AssetAnalysis(BaseModel):
     sector: str | None = None
     currency: str | None = None
     price: float | None = None
+    as_of: float | None = Field(
+        default=None,
+        description=(
+            "Momento em que o preço foi lido da fonte, em epoch. O snapshot sempre carregou "
+            "este carimbo e ele parava no serviço: a tela julgava um preço sem dizer de quando "
+            "ele era, e preço de anteontem muda a decisão."
+        ),
+    )
     fundamentals: dict = Field(default_factory=dict)
     fair_price: FairPriceBlock
     technical: TechnicalBlock

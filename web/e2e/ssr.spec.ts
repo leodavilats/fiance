@@ -32,6 +32,38 @@ test.describe('renderização no servidor', () => {
     });
   }
 
+  /*
+   * O teste acima prova que há bytes na página; este prova o que eles dizem.
+   *
+   * A distinção não é acadêmica: a landing podia perder a seção de "por que ele não inventa
+   * número" — que é o argumento mais próprio deste produto — e o Aviso CVM podia parar de ler
+   * `GET /api/public/affirmation` e passar a repetir a frase, que é a segunda cópia que o
+   * invariante proíbe. Nos dois casos o HTML continuaria cheio, e o teste anterior, verde.
+   */
+  const PROMESSAS = [
+    {
+      rota: '/',
+      frases: ['não inventa número', 'faixa', 'o que o derrubaria', 'Banco Central'],
+      porque:
+        'a home pública responde por que o produto não inventa número, e não só o que ele faz',
+    },
+    {
+      rota: '/aviso-cvm',
+      frases: ['análise'],
+      porque: 'o Aviso CVM lê o nível de afirmação da API em vez de guardar uma segunda cópia',
+    },
+  ];
+
+  for (const { rota, frases, porque } of PROMESSAS) {
+    test(`${rota} diz o que promete, e não apenas tem conteúdo`, async ({ request }) => {
+      const html = await (await request.get(rota)).text();
+
+      for (const frase of frases) {
+        expect(html, `${rota} perdeu "${frase}" — ${porque}`).toContain(frase);
+      }
+    });
+  }
+
   test('rota de sessão continua sendo casca, e não vaza conteúdo', async ({ request }) => {
     const html = await (await request.get('/mes')).text();
 
@@ -52,8 +84,10 @@ test.describe('política de segurança de conteúdo', () => {
       ([, corpo]) => corpo
     );
 
-    expect(inlines.length, 'o index tem script inline — se deixar de ter, apague este teste').
-      toBeGreaterThan(0);
+    expect(
+      inlines.length,
+      'o index tem script inline — se deixar de ter, apague este teste'
+    ).toBeGreaterThan(0);
 
     for (const corpo of inlines) {
       const hash = createHash('sha256').update(corpo).digest('base64');
@@ -96,9 +130,9 @@ test.describe('política de segurança de conteúdo', () => {
 test.describe('o deploy chega em quem já visitou', () => {
   test('os bundles de entrada têm hash no nome', async ({ request }) => {
     const html = await (await request.get('/')).text();
-    const fontes = [...html.matchAll(/(?:src|href)="([^"]*\/?(?:main|polyfills|styles)[^"]*)"/g)].map(
-      m => m[1]
-    );
+    const fontes = [
+      ...html.matchAll(/(?:src|href)="([^"]*\/?(?:main|polyfills|styles)[^"]*)"/g),
+    ].map(m => m[1]);
 
     expect(fontes.length, 'a página tem de carregar main, polyfills e styles').toBeGreaterThan(0);
 
@@ -115,8 +149,9 @@ test.describe('o deploy chega em quem já visitou', () => {
     const resposta = await request.get('/');
     const cache = resposta.headers()['cache-control'] ?? '';
 
-    expect(cache, 'HTML com cache longo desfaz o hash: o índice fica preso no bundle antigo').toMatch(
-      /no-cache|no-store|max-age=0/
-    );
+    expect(
+      cache,
+      'HTML com cache longo desfaz o hash: o índice fica preso no bundle antigo'
+    ).toMatch(/no-cache|no-store|max-age=0/);
   });
 });

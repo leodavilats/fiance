@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { SectionNavComponent, SectionNavItem } from './section-nav.component';
 
 @Component({
-  selector: 'app-strategy-shell',
+  selector: 'app-surplus-shell',
   standalone: true,
   imports: [RouterOutlet, SectionNavComponent],
   template: `
@@ -12,7 +12,7 @@ import { SectionNavComponent, SectionNavItem } from './section-nav.component';
     </app-section-nav>
   `,
 })
-export class StrategyShellComponent {
+export class SurplusShellComponent {
   readonly items: readonly SectionNavItem[] = [
     { path: '/sobra', label: 'A ordem', icon: 'hand-coins' },
     { path: '/sobra/aporte', label: 'Aporte', icon: 'lightbulb' },

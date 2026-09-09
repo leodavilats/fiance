@@ -8,8 +8,8 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 
-class EstrategiaScreen extends ConsumerWidget {
-  const EstrategiaScreen({super.key});
+class DesvioScreen extends ConsumerWidget {
+  const DesvioScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +21,7 @@ class EstrategiaScreen extends ConsumerWidget {
     final hairline = isDark ? FiColors.darkHairline : FiColors.lightHairline;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Estratégia')),
+      appBar: AppBar(title: const Text('Alocação × meta')),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(rebalanceSuggestionsProvider),
         child: async.when(

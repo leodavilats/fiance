@@ -7,7 +7,13 @@ import { LucideAngularModule } from 'lucide-angular';
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <details class="fi-provenance mt-4">
+    @if (asOf()) {
+      <p class="fi-caption text-ink-2 m-0 mt-4">
+        <span class="text-ink-3">Dado de</span> <span class="fi-num">{{ asOf() }}</span>
+      </p>
+    }
+
+    <details class="fi-provenance" [class.mt-1]="asOf()" [class.mt-4]="!asOf()">
       <summary
         class="fi-caption text-ink-3 cursor-pointer list-none inline-flex items-center gap-1.5 fi-focusable rounded-sm"
       >
@@ -24,11 +30,6 @@ import { LucideAngularModule } from 'lucide-angular';
         @if (source()) {
           <p class="fi-caption text-ink-2 m-0">
             <span class="text-ink-3">Fonte:</span> {{ source() }}
-          </p>
-        }
-        @if (asOf()) {
-          <p class="fi-caption text-ink-2 m-0">
-            <span class="text-ink-3">Momento:</span> <span class="fi-num">{{ asOf() }}</span>
           </p>
         }
         @if (limitation()) {
@@ -56,6 +57,14 @@ export class ProvenanceComponent {
   readonly method = input<string>('');
   readonly source = input<string>('');
 
+  /**
+   * Fica **fora** da gaveta: método e fonte são nota de rodapé, momento não é.
+   *
+   * Um preço de anteontem muda a decisão, e ele estava no quarto item de uma gaveta fechada —
+   * que é o mesmo que não estar. Nenhuma tela passava este valor, então a promoção não desloca
+   * nada: ela abre o lugar onde ele passa a caber.
+   */
   readonly asOf = input<string>('');
+
   readonly limitation = input<string>('');
 }

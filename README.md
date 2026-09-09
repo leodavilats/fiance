@@ -433,8 +433,8 @@ fiance/
 │   └── lib/
 │       ├── core/                # API client, auth, providers, router,
 │       │                        #   design_tokens.dart (espelho à mão do foundation.css)
-│       └── features/            # mes, sobra, carteira, market, hoje, estrategia,
-│                                #   config, busca, assets, auth, shell, tools
+│       └── features/            # mes, sobra, patrimonio, market, config,
+│                                #   busca, assets, auth, shell, tools
 │
 └── design-tokens/
     └── build-icons.py           # Gera favicon e ícones do app da cor da marca

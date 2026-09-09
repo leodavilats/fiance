@@ -196,9 +196,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
           <h2 class="fi-title text-ink m-0">
             Ativos negociados <span class="text-ink-3 fi-num">({{ negociadosCount() }})</span>
           </h2>
-          <a routerLink="/patrimonio/editar" class="fi-caption text-brand no-underline">
-            Editar carteira
-          </a>
+          <a routerLink="/patrimonio/editar" class="btn-link"> Editar carteira </a>
         </div>
         <p class="fi-caption text-ink-3 m-0 mb-4">
           Ações, FIIs, BDRs e ETFs com cotação em bolsa. A leitura compara o preço atual com o preço

@@ -74,7 +74,7 @@ class FixedIncomeScreen extends ConsumerWidget {
     final listing = ref.watch(fixedIncomeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Renda Fixa')),
+      appBar: AppBar(title: const Text('Renda fixa')),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openForm(context, ref),
         child: const Icon(Icons.add),

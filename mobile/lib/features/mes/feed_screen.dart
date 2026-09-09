@@ -7,16 +7,16 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
-import 'widgets/hoje_health.dart';
-import 'widgets/hoje_patrimony.dart';
-import 'widgets/hoje_tiles.dart';
+import 'widgets/feed_health.dart';
+import 'widgets/feed_patrimony.dart';
+import 'widgets/feed_tiles.dart';
 
 const _minGapPp = 2.0;
 
 const _topBuysLimit = 3;
 
-class HojeScreen extends ConsumerWidget {
-  const HojeScreen({super.key});
+class FeedScreen extends ConsumerWidget {
+  const FeedScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,7 +25,7 @@ class HojeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hoje'),
+        title: const Text('O que mudou'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),

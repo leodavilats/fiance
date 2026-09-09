@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { InvestmentStrategy, InvestmentSuggestion } from '../../core';
-import { StrategyComponent } from './strategy.component';
+import { DeviationComponent } from './deviation.component';
 
 function sugestao(invest_amount: number | null): InvestmentSuggestion {
   return {
@@ -44,8 +44,8 @@ function estrategia(suggestions: InvestmentSuggestion[]): InvestmentStrategy {
   } as InvestmentStrategy;
 }
 
-describe('StrategyComponent.totalToInvest', () => {
-  const componente = Object.create(StrategyComponent.prototype) as StrategyComponent;
+describe('DeviationComponent.totalToInvest', () => {
+  const componente = Object.create(DeviationComponent.prototype) as DeviationComponent;
 
   it('soma quando os valores chegam', () => {
     expect(componente.totalToInvest(estrategia([sugestao(494), sugestao(476)]))).toBe(970);

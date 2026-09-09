@@ -201,16 +201,17 @@ Cinco destinos por intenção, mais o ativo como camada — o racional está em
 
 | Rota | Componente |
 |---|---|
-| `/hoje` | `dashboard/` — central de decisão em 3 níveis |
-| `/carteira` + 6 sub-rotas | `carteira-resumo/`, `composicao/`, `desempenho/`, `proventos/`, `posicoes/`, `encerradas/`, `portfolio-editor/` |
-| `/descobrir` + 3 | `market/opportunities-list/`, `market/dip-scanner/`, `market/compare-assets/` |
-| `/estrategia` + 4 | `strategy/`, `quick-invest/`, `metas/`, `shell/renda-fixa-page` (une `market/renda-fixa` e `market/income-compare`), `market/contribution-simulator/` |
-| `/ativo/:ticker` | `ativo/` — página de research |
-| `/voce` + 3 | `preferencias/`, `alertas/`, `conta/` |
+| `/mes` + 4 sub-rotas | `month/`, `month-entry/`, `month-template/`, `month-debts/`, `activity/activity-page` |
+| `/sobra` + 2 | `surplus/`, `quick-invest/`, `deviation/` |
+| `/patrimonio` + 7 | `portfolio-summary/`, `composition/`, `positions/`, `closed-trades/`, `dividends/`, `performance/`, `market/contribution-simulator/`, `portfolio-editor/` |
+| `/descobrir` + 4 | `market/opportunities-list/`, `market/dip-scanner/`, `shell/fixed-income-page` (une `market/fixed-income` e `market/income-compare`), `market/compare-assets/` |
+| `/ativo/:ticker` | `asset/` — página de research, e rota pública renderizada no servidor |
+| `/voce` + 5 | `preferences/`, `goals/`, `price-alerts/`, `referral/`, `account/` |
+| `/`, `/termos`, `/privacidade`, `/aviso-cvm` | `landing/`, `legal/` — as outras quatro públicas |
 
-- **`components/shell/`** — layouts de seção (`carteira`, `descobrir`, `estrategia`, `voce`), cada
-  um com `SectionNavComponent` + `router-outlet`. A sub-navegação é feita de links roteados, não de
-  tabs com estado local: cada destino tem URL, deep link e botão voltar.
+- **`components/shell/`** — layouts de seção (`portfolio-shell`, `discover-shell`, `surplus-shell`,
+  `you-shell`), cada um com `SectionNavComponent` + `router-outlet`. A sub-navegação é feita de
+  links roteados, não de tabs com estado local: cada destino tem URL, deep link e botão voltar.
 - **`components/score-ruler/`** — a régua, elemento-assinatura do produto. Aceita um conjunto de
   bandas, então serve tanto o score de um ativo quanto a saúde da carteira.
 - **`components/insight/`** — o padrão único de insight: o que aconteceu → por que importa → o que
@@ -264,20 +265,28 @@ Estrutura `lib/`:
 - **`core/widgets/`** — `score_ruler.dart` (a régua, espelhando o web), `error_state.dart`
   (`FiErrorState` + `fiErrorMessage`, que traduz exceção em causa humana),
   `ticker_autocomplete_field.dart`, `help_tooltip.dart`, `brand_background.dart`.
-- **`features/`** — `hoje/`, `carteira/`, `market/` (Descobrir: `opportunities_tab`,
-  `quick_invest_view`, `asset_detail_sheet`), `estrategia/`, `config/`, `busca/`, `assets/`,
-  `auth/`, `tools/tools_views.dart` (views de ferramenta, cada uma roteada) e `shell/`
-  (`app_shell`, `tool_screen`). `dashboard_screen.dart` e `assets_screen.dart` foram
-  reestruturados em 2026-08-26 e **não existem mais**.
+- **`features/`** — uma pasta por destino, e o nome da pasta é o nome do destino: `mes/`
+  (`mes_screen`, `feed_screen`, `atividade_screen`, `dividas_screen`, mais os *sheets* de lançar e
+  repetir), `sobra/` (`sobra_screen`, `desvio_screen`), `patrimonio/`, `market/` (Descobrir:
+  `opportunities_tab`, `quick_invest_view`, `asset_detail_sheet`), `config/` (Você, mais
+  `objetivos_screen`), `busca/`, `assets/` (a renda fixa da pessoa), `auth/`,
+  `tools/tools_views.dart` (views de ferramenta, cada uma roteada) e `shell/` (`app_shell`,
+  `tool_screen`). As pastas `hoje/`, `carteira/` e `estrategia/` nomeavam destinos removidos e
+  saíram em 2026-09-08 — deriva de nome entre rota e código é barata na hora e confusa para
+  sempre.
 
-**Paridade com o web.** O mobile consome a MESMA API, sem regra de cálculo duplicada — fair price,
-score, renda fixa e IR ficam 100% no backend. Cores, tipografia e réguas semânticas são geradas da
-mesma fonte, então não podem divergir.
+**Paridade com o web.** O mobile consome a MESMA API, sem regra de cálculo duplicada — preço
+justo, score, renda fixa e IR ficam 100% no backend.
 
-A paridade fechou em **2026-08-28**: metas têm tela própria (`/estrategia/metas`) e RF × Bolsa
-ganhou cliente Dart (`/estrategia/renda-fixa-vs-bolsa`). A única assimetria que resta é **decisão,
-não lacuna**: push exige o app instalado, e o web sinaliza isso em `/voce/alertas`. O que continua
-aberto está em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+A camada visual, ao contrário, é **escrita nos dois lados e não tem máquina**: `design_tokens.dart`
+espelha `foundation.css` à mão. O contrato é [design/PARIDADE.md](design/PARIDADE.md), e ele exige
+igualdade de **conceito, nome e hierarquia** — composição, gesto, espaçamento e valor de cor são
+livres, porque um telefone sob sol pode precisar de mais contraste que um monitor. O que a máquina
+ainda cobra é o piso de contraste (`npm run lint:contrast`) e, no Dart, que nenhuma tela use nome
+de destino aposentado.
+
+A assimetria que resta é **decisão, não lacuna**: push exige o app instalado, e o web sinaliza isso
+em `/voce/alertas`. O que continua aberto está em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ---
 

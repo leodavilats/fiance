@@ -770,6 +770,7 @@ class AssetAnalysis {
     required this.assetType,
     required this.sector,
     required this.price,
+    this.asOf,
     required this.bazin,
     required this.graham,
     required this.consensus,
@@ -788,6 +789,10 @@ class AssetAnalysis {
   final String assetType;
   final String? sector;
   final double? price;
+
+  /// Momento da leitura do preco, em epoch. Opcional: API anterior a 2026-09-08 nao o manda.
+  final double? asOf;
+
   final double? bazin;
   final double? graham;
   final double? consensus;
@@ -812,6 +817,7 @@ class AssetAnalysis {
       assetType: j['asset_type'] as String? ?? 'br_stock',
       sector: j['sector'] as String?,
       price: (j['price'] as num?)?.toDouble(),
+      asOf: (j['as_of'] as num?)?.toDouble(),
       bazin: (fp['bazin'] as num?)?.toDouble(),
       graham: (fp['graham'] as num?)?.toDouble(),
       consensus: (fp['consensus'] as num?)?.toDouble(),

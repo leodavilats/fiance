@@ -57,6 +57,7 @@ class AssetService:
             sector=snap.sector,
             currency=snap.currency,
             price=snap.price,
+            as_of=snap.as_of or None,
             fundamentals={
                 "market_cap": snap.market_cap,
                 "pe_ratio": snap.pe_ratio,

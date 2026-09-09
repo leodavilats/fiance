@@ -22,7 +22,7 @@ class ConfigScreen extends ConsumerWidget {
     final preferences = ref.watch(preferencesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Configurações')),
+      appBar: AppBar(title: const Text('Você')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
         children: [

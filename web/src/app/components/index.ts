@@ -37,14 +37,15 @@ export { RulerTrackComponent } from './ruler-track/ruler-track.component';
 export { SkeletonComponent } from './skeleton/skeleton.component';
 export { ScoreRulerComponent } from './score-ruler/score-ruler.component';
 export { SnackbarComponent } from './snackbar/snackbar.component';
-export { StrategyComponent } from './strategy/strategy.component';
+export { DeviationComponent } from './deviation/deviation.component';
+export { FairPriceComponent } from './fair-price/fair-price.component';
 export * from './portfolio-editor/portfolio-editor.component';
 export * from './market/income-compare/income-compare.component';
 export * from './market/followed-suggestions/followed-suggestions.component';
 
 export { PortfolioShellComponent } from './shell/portfolio-shell.component';
 export { DiscoverShellComponent } from './shell/discover-shell.component';
-export { StrategyShellComponent } from './shell/strategy-shell.component';
+export { SurplusShellComponent } from './shell/surplus-shell.component';
 export { FixedIncomePageComponent } from './shell/fixed-income-page.component';
 export { SectionNavComponent } from './shell/section-nav.component';
 export { YouShellComponent } from './shell/you-shell.component';

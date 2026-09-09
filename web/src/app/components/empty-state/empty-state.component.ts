@@ -40,7 +40,7 @@ import { LucideAngularModule } from 'lucide-angular';
             </button>
           }
           @if (secondaryLabel() && secondaryRoute()) {
-            <a [routerLink]="secondaryRoute()" class="fi-caption text-brand no-underline">
+            <a [routerLink]="secondaryRoute()" class="btn-link">
               {{ secondaryLabel() }}
             </a>
           }

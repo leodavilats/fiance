@@ -273,6 +273,51 @@ void main() {
       );
     });
 
+    /*
+     * Nome de destino que o produto nao tem mais.
+     *
+     * A PARIDADE exige que conceito, nome e hierarquia sejam iguais nas duas plataformas -- valor
+     * de cor e composicao sao livres, nome nao e. E o nome divergia em quatro telas: a barra do
+     * `/voce` dizia "Configuracoes", a de `/sobra/desvio` dizia "Estrategia" (um destino removido),
+     * `/voce/objetivos` dizia "Minhas metas" e a renda fixa vinha com F maiusculo.
+     *
+     * "Hoje", "Carteira" e "Mercado" entram na lista pelo mesmo motivo: eram destinos, sairam, e
+     * a rota antiga continua viva como redirect -- o que faz o nome antigo ser facil de reescrever
+     * sem perceber.
+     */
+    test('nenhuma tela usa nome de destino que saiu', () {
+      const aposentados = {
+        'Hoje': 'o feed vive no Mes',
+        'Estrategia': 'dissolveu-se em Sobra e Patrimonio',
+        'Carteira': 'o destino chama-se Patrimonio',
+        'Configuracoes': 'o destino chama-se Voce',
+        'Mercado': 'o destino chama-se Descobrir',
+      };
+
+      final achados = <String>[];
+      for (final f in fontes) {
+        final fonte = f.readAsStringSync();
+        if (_temEscape(fonte, 'vocabulario')) continue;
+
+        for (final m in RegExp(r"AppBar\(\s*title:\s*(?:const\s+)?Text\('([^']+)'\)")
+            .allMatches(fonte)) {
+          final titulo = m[1] ?? '';
+          for (final entrada in aposentados.entries) {
+            if (!_semAcento(titulo).contains(_semAcento(entrada.key))) continue;
+            achados.add('${_curto(f)}: "$titulo" -- ${entrada.value}');
+          }
+        }
+      }
+
+      expect(
+        achados,
+        isEmpty,
+        reason:
+            'nome de tela e paridade de conceito, e nao de aparencia: docs/design/PARIDADE.md. '
+            'Achados: ${achados.join(' | ')}',
+      );
+    });
+
     test('o tipo solto nao cresce', () {
       const teto = 36;
 
@@ -309,6 +354,17 @@ List<File> _dartsDe(String raiz) => Directory(raiz)
     .toList();
 
 String _curto(File f) => f.path.replaceAll(r'\', '/').replaceFirst('lib/', '');
+
+/// Compara nome sem depender de acento, que e onde a grafia divergiu na pratica.
+String _semAcento(String texto) {
+  const de = 'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC';
+  const para = 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ';
+  var saida = texto.toLowerCase();
+  for (var i = 0; i < para.length; i++) {
+    saida = saida.replaceAll(para[i], de[i].toLowerCase());
+  }
+  return saida;
+}
 
 /// Os literais de string do arquivo -- o que de fato vai para a tela.
 ///

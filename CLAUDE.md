@@ -30,10 +30,10 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 109 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 111 testes
                                                    #   inclui test/lint_ui_test.dart:
-                                                   #   6 regras do lint:ui, no Dart
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 156 testes
+                                                   #   8 regras do lint:ui, no Dart
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 160 testes
 cd web     && npm run lint:contrast                # contraste AA nos dois temas, web e mobile
 python design-tokens/build-icons.py --check        # marca sincronizada
 ```
@@ -94,9 +94,11 @@ CHANGELOG.
 | Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` **e** `z-50` — uma regra, as duas grafias |
 | Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
 | Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |
-| Tela nova no mobile que julga | `FiProvenance`, e o papel de veredito em serifa | `test/lint_ui_test.dart` reprova — as seis regras valem lá também |
+| Tela nova no mobile que julga | `FiProvenance`, e o papel de veredito em serifa | `test/lint_ui_test.dart` reprova — as oito regras valem lá também |
+| Nome de tela no mobile | Usar o **mesmo nome** do web: nome é paridade de conceito | `test/lint_ui_test.dart` reprova nome de destino aposentado — a barra do `/voce` dizia "Configurações" e a de `/sobra/desvio` dizia "Estratégia" |
+| Cifra de preço justo numa tela | `<app-fair-price>` — ele exige a base (quantos métodos, ou o nome do método) e nomeia a ausência | `/descobrir` mostrava Bazin cru enquanto `/ativo` dizia "consenso de 3 métodos" para o mesmo ativo |
 | Seção numa tela | Usar `<app-section title="…">`, que emite o `<h2>` | Seção sem cabeçalho: `/mes` tinha 5 seções e nenhuma parada de navegação |
-| Julgamento numa tela do mobile | `FiProvenance` — método, fonte, momento, limitação | `test/lint_ui_test.dart` reprova: o invariante de explicabilidade vale nas duas plataformas |
+| Julgamento numa tela do mobile | `FiProvenance` — método, fonte, limitação | `test/lint_ui_test.dart` reprova: o invariante de explicabilidade vale nas duas plataformas |
 | Componente Angular novo | Escrever o `template` no próprio `.ts` — não há `.html` separado em `web/src/app/components` | Divergência de padrão na mesma pasta |
 
 ---
@@ -515,6 +517,10 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
 - **Grade de KPI é o cheiro de painel.** Três a quatro caixas centralizadas com um número dentro
   não são informação organizada, são widgets. A alternativa é uma linha de cifras sob um fio
   (`<dl>`) quando são poucas, ou `.data-table` quando o que importa é comparar.
+- **Momento é nível 1, não nota de rodapé.** Método e fonte moram na gaveta de
+  `<app-provenance>`; **quando o dado foi lido, não** — um preço de anteontem muda a decisão. O
+  `asOf` é linha visível, e `/ativo/:ticker` diz a idade do preço ao lado do preço nas duas
+  plataformas. O carimbo já existia em `collectors/universal` e parava no serviço.
 - **Julgamento renderizado exige explicabilidade, e o lint cobra.** Score, veredito, preço justo e
   sugestão precisam de `<app-provenance>`, `<app-help-tooltip>` ou equivalente. Mencionar em prosa
   não conta. O escape exige motivo escrito: `<!-- design-exception: explicabilidade — ... -->`.

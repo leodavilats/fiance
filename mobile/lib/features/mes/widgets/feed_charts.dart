@@ -7,8 +7,8 @@ import '../../../core/format.dart';
 import '../../../core/models.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme.dart';
-import 'hoje_patrimony.dart';
-import 'hoje_tiles.dart';
+import 'feed_patrimony.dart';
+import 'feed_tiles.dart';
 
 class FiEvolutionChart extends StatefulWidget {
   const FiEvolutionChart({super.key, required this.snapshots});

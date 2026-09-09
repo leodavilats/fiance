@@ -5,7 +5,7 @@ import '../../core/design_tokens.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
-import 'widgets/hoje_tiles.dart';
+import 'widgets/feed_tiles.dart';
 
 class AtividadeScreen extends ConsumerWidget {
   const AtividadeScreen({super.key});

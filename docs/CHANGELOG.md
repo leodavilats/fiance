@@ -12,6 +12,64 @@
 
 ---
 
+## A documentação volta a descrever o produto que existe (2026-09-08)
+
+Passagem de verdade em `docs/`, conferida rota por rota contra `app.routes.ts` e `router.dart` — e
+ela encontrou mais defeito de produto do que de texto, o que é o argumento contra deixar
+documentação envelhecer: ela para de descrever e passa a esconder.
+
+**`FEATURES.md` estava duas revisões de navegação atrás.** Descrevia **Hoje** e **Estratégia**,
+que não existem, e não mencionava nenhuma tela do caixa — `/mes`, `/mes/lancar`, `/mes/repetir`,
+`/mes/dividas`, `/sobra`. Reescrito inteiro. `ARCHITECTURE.md` tinha o mesmo problema na tabela
+rota → componente, e ainda afirmava que "cores, tipografia e réguas semânticas são geradas da
+mesma fonte", o que deixou de ser verdade quando o gerador saiu.
+
+**`PARIDADE.md` afirmava que a verificação de contraste acima da norma tinha sido removida.** Foi
+— e voltou no commit anterior, porque apagá-la tinha sido erro de classificação. O documento
+descrevia o erro como decisão.
+
+### O que a passagem encontrou no código
+
+**A aba do navegador dizia "Carteira" e o `<h1>` dizia "Patrimônio".** O título da rota
+`/patrimonio` nunca acompanhou a renomeação do destino.
+
+**Quatro nomes de tela do mobile divergiam do web** — e nome é a parte da paridade que o contrato
+exige igual. A barra de `/voce` dizia **"Configurações"**, a de `/sobra/desvio` dizia
+**"Estratégia"** e a de `/mes/feed` dizia **"Hoje"**: dois destinos que o produto removeu, ainda
+nomeando telas vivas. Mais "Minhas metas" onde o web diz Objetivos, e "Renda Fixa" com F maiúsculo.
+Virou regra no Dart, porque nome é literal e literal se confere: `test/lint_ui_test.dart` reprova
+tela cujo `AppBar` carregue nome de destino aposentado. Ela achou a de `/mes/feed`, que eu não
+tinha visto.
+
+**O carimbo de quando o preço foi lido existia e parava no serviço.** `collectors/universal` sempre
+gravou `as_of` no snapshot; `AssetAnalysis` não o declarava, então ele morria na fronteira — a
+armadilha do "campo calculado que some em silêncio", ao contrário. E `<app-provenance>` tinha um
+campo `asOf` que **nenhuma tela preenchia**, no quarto item de uma gaveta fechada. Momento é nível
+1: um preço de anteontem muda a decisão, não a nota de rodapé dela. O campo saiu da gaveta, o
+backend passou a mandar o carimbo, e `/ativo/:ticker` diz a idade do preço ao lado do preço nas
+duas plataformas. O campo é opcional nos dois clientes, que é o que faz ele atravessar a assimetria
+de deploy sem 422.
+
+**O mesmo ativo tinha dois níveis de honestidade em duas telas.** `/ativo` mostrava "consenso de 3
+métodos"; `/descobrir` mostrava Bazin cru, sem dizer que Bazin sozinho é um método e não consenso.
+`<app-fair-price>` resolve: a cifra não sai sem a base, e a ausência é razão nomeada — "sem
+histórico de proventos" e "não se aplica a este tipo de ativo" são respostas diferentes, e as duas
+são melhores que um traço.
+
+**A home pública ganhou o argumento que faltava.** Ela já respondia qual é o problema, como o
+produto pensa e como começar; não respondia **por que ele não inventa número** — fonte com nome,
+estimativa como faixa, julgamento com o que o derrubaria, e as três coisas que ele não faz. E o
+`e2e/ssr.spec.ts` passou a conferir o que a página **diz**, não só que ela tem bytes: a seção podia
+sair inteira e o teste seguiria verde, porque havia HTML.
+
+**Os nomes de arquivo acompanharam os destinos.** No web, `strategy-shell` → `surplus-shell` e
+`strategy.component` → `deviation.component`. No mobile, `features/carteira/` → `patrimonio/`,
+`features/hoje/` virou o feed dentro de `mes/`, e `features/estrategia/` se dividiu entre `sobra/`
+e `config/`. O compilador é o verificador aqui, então o risco é zero e a confusão que se evita é
+permanente.
+
+---
+
 ## Tela a tela, depois da fundação (2026-09-08)
 
 A fundação visual trocou de voz no commit anterior. Este é o passe de tela, e ele encontrou mais
@@ -758,7 +816,7 @@ um mês, que é a **sequência**: o salário cai no dia 5 e o aluguel sai no mes
 ### O vocabulário do caixa: decidido, e de propósito não gerado
 
 Dez categorias de despesa, seis de entrada, sete tipos de dívida, em
-[DESIGN-SYSTEM](design/DESIGN-SYSTEM.md#o-vocabulário-do-caixa--decidido-ainda-não-gerado). Não
+[DESIGN-SYSTEM](design/DESIGN-SYSTEM.md#o-vocabulário-do-caixa--decidido-ainda-não-declarado). Não
 entrou em `product-rules.json`, e é decisão: o CLAUDE.md registra que vocabulário gerado sem
 consumidor é pior que não gerado, porque *parece* resolvido — `fiTiposDeRendaFixa` e `fiLiquidez`
 já custaram isso. A entrada acompanha o commit que constrói a primeira tela que a consome.
