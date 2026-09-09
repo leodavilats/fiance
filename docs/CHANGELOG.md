@@ -62,6 +62,16 @@ estimativa como faixa, julgamento com o que o derrubaria, e as três coisas que 
 `e2e/ssr.spec.ts` passou a conferir o que a página **diz**, não só que ela tem bytes: a seção podia
 sair inteira e o teste seguiria verde, porque havia HTML.
 
+**E o documento de operação estava errado sobre produção.** `KNOWN_ISSUES` e `OPERACAO`
+afirmavam que o auto-deploy do `main` para produção tinha sido desligado *só na API*, e que a API
+subia homologação. Conferido com `get-service-config` nos dois serviços: **os dois sobem produção
+direto do `main`, e nenhum espera o CI** (`checkSuites: false` em ambos) — o que o push de
+`43f50a4` confirmou, deployando os dois. Duas consequências trocam de sinal: a assimetria
+front/back encolheu (commit que toca os dois lados sobe os dois juntos), e o pior caso piorou,
+porque no `fiance` o `preDeployCommand` é `python -m app.release` — migração ruim é aplicada antes
+de qualquer teste terminar. Documento de operação errado é pior que ausente, porque quem lê age em
+cima dele.
+
 **Os nomes de arquivo acompanharam os destinos.** No web, `strategy-shell` → `surplus-shell` e
 `strategy.component` → `deviation.component`. No mobile, `features/carteira/` → `patrimonio/`,
 `features/hoje/` virou o feed dentro de `mes/`, e `features/estrategia/` se dividiu entre `sobra/`

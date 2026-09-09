@@ -110,39 +110,48 @@ Postgres, e só então subir o backend.
 
 ### O que falta configurar (uma vez)
 
-1. **Desligar o auto-deploy do `main` para produção — feito só na API.** Conferido contra o
-   Railway em 2026-09-08, com um push real:
+1. **Marcar *Wait for CI* nos dois serviços de produção.** Conferido contra o Railway em
+   2026-09-09, com `get-service-config` nos dois serviços do ambiente `production` e com um push
+   real (`43f50a4`, que tocou os dois lados e subiu os dois):
 
-   | Serviço | O que o push no `main` faz | Confere com o combinado? |
-   |---|---|---|
-   | `fiance` (API) | sobe **homologação** | sim — produção sobe por ação explícita |
-   | `fiance-web` (front) | sobe **produção**, quando o commit toca `web/**` | **não** |
+   | Serviço | Gatilho | Filtro | Espera o CI? |
+   |---|---|---|---|
+   | `fiance` (API) | `main` | `rootDirectory: /backend` | **não** (`checkSuites: false`) |
+   | `fiance-web` (front) | `main` | `watchPatterns: ["web/**"]` | **não** (`checkSuites: false`) |
 
-   O front **não tem serviço em homologação** (a tabela acima diz "URL do front: não publicado"),
-   então ele não tem para onde ir a não ser produção — e é onde mora toda a interface. A tranca
-   de "promover, olhar, e só então promover" protege hoje a metade do sistema que muda menos.
+   **Os dois sobem produção direto do `main`, e nenhum espera o CI.** Uma revisão anterior deste
+   documento afirmava que o auto-deploy de produção tinha sido desligado *só na API* e que a API
+   subia homologação — não é o que a configuração diz, e o push de `43f50a4` deployou os dois
+   serviços com sucesso. Corrigido aqui em vez de mantido: documento de operação errado é pior
+   que documento ausente, porque quem lê age em cima dele.
 
-   O `watchPatterns` do serviço é `["web/**"]`, então commit que só mexe em `mobile/` ou `docs/`
-   sai como `SKIPPED` — o que é bom, e é o único freio que existe hoje. Mas **`checkSuites` está
-   `false`**: o deploy de produção **não espera o CI**. Um commit vermelho que toque `web/**`
-   publica interface em produção antes de qualquer teste terminar. Isso é mais grave que a
-   ausência de homologação, e é o conserto de um clique.
+   O que isso muda, em relação ao que estava escrito:
 
-   Três saídas, na ordem de valor:
-   1. marcar *Wait for CI* no `fiance-web` — tira o pior caso, que é publicar commit vermelho;
-   2. criar o `fiance-web` em homologação e apontar o gatilho do `main` para lá;
-   3. desligar o auto-deploy do front e promovê-lo pelo mesmo fluxo da API.
+   - **A assimetria front/back encolheu.** Commit que toca os dois lados sobe os dois **juntos**,
+     então a regra antiga — "promover a API antes do push que toca `web/**`" — não se aplica a ele.
+     A assimetria sobrevive apenas para commit de **um lado só**: um commit em `web/**` não move a
+     API, e vice-versa. Mudança de contrato de API continua pedindo campo **opcional** nos
+     clientes, que é o que a fez atravessar sem 422 em `43f50a4`.
+   - **O pior caso ficou pior, e passou a valer para o backend também.** Um commit vermelho vai ao
+     ar nos dois, e no `fiance` o `preDeployCommand` é `python -m app.release` — ou seja, uma
+     migração ruim é aplicada antes de qualquer teste terminar. É o conserto de um clique em cada
+     serviço.
 
-   Enquanto a 1 não existir, **quem mexe em `web/**` publica em produção sem rede** — e precisa
+   Ordem de valor:
+   1. marcar *Wait for CI* no `fiance` **e** no `fiance-web` — tira o pior caso dos dois;
+   2. criar o `fiance-web` em homologação (ele não tem: a tabela acima diz "URL do front: não
+      publicado") e apontar o gatilho do `main` para lá;
+   3. depois disso, promover produção por ação explícita nos dois.
+
+   Enquanto a 1 não existir, **quem faz push no `main` publica em produção sem rede** — e precisa
    saber disso antes, não depois.
 
-   Há também **4 mudanças de configuração STAGED e não implantadas** no `fiance-web`
-   (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL`, e a porta do domínio). Elas entram no próximo deploy
+   Há também **mudanças de configuração STAGED e não implantadas**, no mesmo patch
+   (`patchId` 27a43c52) para os dois serviços: **13** no `fiance` e **4** no `fiance-web`
+   (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL` e a porta do domínio). Elas entram no próximo deploy
    junto do código, o que faz um deploy de código carregar mudança de ambiente sem ninguém pedir.
-   Conferir com `get-service-config` antes de promover.
-
-   Opcional: o gatilho de staging está com `checkSuites: false`, ou seja, não espera o CI. Marcar
-   *Wait for CI* evita gastar um deploy de homologação num commit vermelho.
+   Conferir com `get-service-config` antes de promover — e **não** com `list-variables`, que
+   devolve `JWT_SECRET` e `DATABASE_URL` em texto claro.
 
 2. No GitHub, em *Settings → Environments*, criar `staging` e `production`. Em `production`,
    marcar *Required reviewers* — a confirmação escrita do fluxo é a segunda tranca, não a primeira.

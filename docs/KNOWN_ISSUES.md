@@ -3,6 +3,13 @@
 > **Só pendências.** Todo item aqui foi verificado contra o código em **2026-09-08**; nada de
 > histórico, nada de ✅. O que já foi resolvido — e por quê — está em [CHANGELOG.md](CHANGELOG.md).
 >
+> A revisão de **2026-09-08/09** fechou seis itens (paridade de nome, proveniência no nível
+> errado, `FairPrice`, os nomes de arquivo, o `FEATURES.md` desatualizado e a metade da home
+> pública) e **corrigiu dois que estavam errados**: o item 5 afirmava que o auto-deploy de
+> produção estava desligado na API — a configuração diz que não —, e o item 26 media um
+> `opacity: 0.5` que já não existia. Os números liberados foram reaproveitados, como já é
+> convenção aqui.
+>
 > Este arquivo tem uma tendência conhecida a apodrecer. Na revisão de 2026-08-28, **oito dos 24
 > itens já estavam feitos** — onboarding, busca global, drawer de atividade, gráfico de preço,
 > reestruturação das telas mobile e indicação estavam descritos como inexistentes, e três outros
@@ -37,33 +44,37 @@
    apesar de já existir universo dinâmico via BRAPI (`core/universe.py`). Fallback defensivo
    intencional, mas extenso.
 
-5. **O front de produção sobe sem esperar o CI.** Conferido contra o Railway em 2026-09-08, com
-   push real e leitura da configuração do serviço: o auto-deploy do `main` para produção foi
-   desligado em 2026-09-06 **só na API**. O `fiance` sobe homologação; o `fiance-web` sobe
-   **produção** em todo commit que toque `web/**`, e **`checkSuites` está `false`** — ou seja,
-   publica antes de qualquer teste terminar. Um commit vermelho no front vai ao ar. Esse é o pior
-   caso, e é conserto de um clique (*Wait for CI*).
+5. **Os dois serviços de produção sobem sem esperar o CI.** Conferido com
+   `get-service-config` nos dois serviços do ambiente `production` em 2026-09-09, e com o push de
+   `43f50a4`, que tocou front e back e deployou **os dois** com sucesso:
 
-   O resto do arranjo: o front não tem serviço em homologação, então não tem para onde ir a não
-   ser produção — e é onde mora toda a interface, que é o que muda mais. E o fluxo de promoção do
-   [`deploy.yml`](../.github/workflows/deploy.yml) **não está utilizável**: os environments do
-   Actions (`staging`, `production`) não existem — o que a API do GitHub lista é
-   `fiance / production` e `fiance / staging`, criados pelo Railway, que são outra coisa — e
-   `RAILWAY_TOKEN` não está configurado, então o `workflow_dispatch` para com a mensagem de token
-   ausente. As três saídas, em ordem de valor, estão no
+   | Serviço | Gatilho | Filtro | Espera o CI? |
+   |---|---|---|---|
+   | `fiance` (API) | `main` | `rootDirectory: /backend` | **não** (`checkSuites: false`) |
+   | `fiance-web` (front) | `main` | `watchPatterns: ["web/**"]` | **não** (`checkSuites: false`) |
+
+   A revisão anterior deste item afirmava que o auto-deploy de produção tinha sido desligado *só
+   na API*, e que a API subia homologação. **A configuração diz o contrário**, e o deploy de
+   `43f50a4` confirma. Um commit vermelho vai ao ar nos dois — e no `fiance` o
+   `preDeployCommand` é `python -m app.release`, então uma migração ruim é aplicada antes de
+   qualquer teste terminar. Conserto de um clique em cada serviço (*Wait for CI*).
+
+   **A assimetria front/back encolheu, mas não fechou.** Commit que toca os dois lados sobe os
+   dois juntos; a assimetria sobrevive para commit de **um lado só** — um commit em `web/**` não
+   move a API, e vice-versa. Por isso mudança de contrato de API continua pedindo campo
+   **opcional** nos clientes, que é o que fez `as_of` atravessar sem 422.
+
+   O fluxo de promoção do [`deploy.yml`](../.github/workflows/deploy.yml) continua **não
+   utilizável**: os environments do Actions (`staging`, `production`) não existem — o que a API do
+   GitHub lista é `fiance / production` e `fiance / staging`, criados pelo Railway, que são outra
+   coisa — e `RAILWAY_TOKEN` não está configurado, então o `workflow_dispatch` para com a mensagem
+   de token ausente. As saídas, em ordem de valor, estão no
    [OPERACAO](OPERACAO.md#o-que-falta-configurar-uma-vez), item 1.
 
-   **E o front vai ao ar sem a API que ele espera.** Aconteceu em 2026-09-09: um commit mudou
-   `/quick-invest` nos dois lados, o `fiance-web` subiu sozinho e a API de produção ficou seis
-   commits atrás, então a tela pedia `cash_available: null` a uma API que exigia número — 422 em
-   produção. O `quickInvest` do web ganhou tolerância às duas versões, e os campos novos viraram
-   opcionais no modelo, mas isso trata o sintoma: **toda mudança que atravessa front e back vai
-   quebrar entre os dois deploys** enquanto um subir sozinho. Enquanto for assim, a regra é
-   promover a API **antes** do push que toca `web/**`.
-
-   Há também **4 mudanças de configuração STAGED e não implantadas** no `fiance-web`
-   (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL`, e a porta do domínio): elas entram junto do próximo
-   deploy de código, então um deploy de interface carrega mudança de ambiente sem ninguém pedir.
+   Há também **mudanças de configuração STAGED e não implantadas**, no mesmo patch para os dois
+   serviços: **13** no `fiance` e **4** no `fiance-web` (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL` e
+   a porta do domínio). Elas entram junto do próximo deploy de código, então um deploy de
+   interface carrega mudança de ambiente sem ninguém pedir.
 
 ## Duplicação estrutural entre plataformas
 
