@@ -53,6 +53,14 @@
    ausente. As três saídas, em ordem de valor, estão no
    [OPERACAO](OPERACAO.md#o-que-falta-configurar-uma-vez), item 1.
 
+   **E o front vai ao ar sem a API que ele espera.** Aconteceu em 2026-09-09: um commit mudou
+   `/quick-invest` nos dois lados, o `fiance-web` subiu sozinho e a API de produção ficou seis
+   commits atrás, então a tela pedia `cash_available: null` a uma API que exigia número — 422 em
+   produção. O `quickInvest` do web ganhou tolerância às duas versões, e os campos novos viraram
+   opcionais no modelo, mas isso trata o sintoma: **toda mudança que atravessa front e back vai
+   quebrar entre os dois deploys** enquanto um subir sozinho. Enquanto for assim, a regra é
+   promover a API **antes** do push que toca `web/**`.
+
    Há também **4 mudanças de configuração STAGED e não implantadas** no `fiance-web`
    (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL`, e a porta do domínio): elas entram junto do próximo
    deploy de código, então um deploy de interface carrega mudança de ambiente sem ninguém pedir.
