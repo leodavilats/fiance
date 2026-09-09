@@ -20,6 +20,7 @@ import {
 import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { MarginOfSafetyComponent } from '../../margin-of-safety/margin-of-safety.component';
 import { PageHeaderComponent } from '../../page-header/page-header.component';
+import { AsyncStateComponent } from '../../async-state/async-state.component';
 import { SkeletonComponent } from '../../skeleton/skeleton.component';
 import { SectionComponent } from '../../section/section.component';
 
@@ -35,6 +36,7 @@ const MAX_TICKERS = 4;
     EmptyStateComponent,
     MarginOfSafetyComponent,
     SkeletonComponent,
+    AsyncStateComponent,
     SectionComponent,
   ],
   template: `
@@ -115,7 +117,14 @@ const MAX_TICKERS = 4;
         }
       </section>
 
-      @if (loading()) {
+      @if (erroDeRede()) {
+        <app-async-state
+          [error]="erroDeRede()"
+          errorTitle="A comparação não foi montada"
+          errorAction="comparar estes ativos"
+          (retry)="compare()"
+        />
+      } @else if (loading()) {
         <div class="flex flex-col gap-5">
           <app-skeleton shape="title" />
           <app-skeleton shape="verdict" />
@@ -267,7 +276,9 @@ export class CompareAssetsComponent implements OnInit, OnDestroy {
 
   loading = signal(false);
   result = signal<CompareResponse | null>(null);
+  /** Validação do formulário. A falha de rede é outra coisa, e mora em `erroDeRede`. */
   error = signal('');
+  readonly erroDeRede = signal<unknown>(null);
 
   readonly maxTickers = MAX_TICKERS;
   readonly marginReason = 'Nenhum método de valuation se aplica a este ativo.';
@@ -344,14 +355,15 @@ export class CompareAssetsComponent implements OnInit, OnDestroy {
       return;
     }
     this.error.set('');
+    this.erroDeRede.set(null);
     this.loading.set(true);
     this.api.compareAssets(this.tickers()).subscribe({
       next: res => {
         this.result.set(res);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Não foi possível comparar os ativos agora.');
+      error: err => {
+        this.erroDeRede.set(err);
         this.loading.set(false);
       },
     });

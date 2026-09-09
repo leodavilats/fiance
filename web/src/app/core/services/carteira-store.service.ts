@@ -9,6 +9,7 @@ import {
   PortfolioPosition,
   SectorGoal,
 } from '../models';
+import { carimboMaisAntigo } from '../data-age';
 import { RecommendService } from './recommend.service';
 import { UiHelperService } from './ui-helper.service';
 
@@ -70,7 +71,19 @@ export class CarteiraStore {
   readonly goals = signal<Goal[]>([]);
   readonly sectorGoals = signal<SectorGoal[]>([]);
 
-  readonly loadFailed = signal(false);
+  /**
+   * O erro, e não só o fato de ter havido um.
+   *
+   * Sete telas de `/patrimonio` leem esta loja. Enquanto a falha era um booleano lido por uma
+   * delas, as outras seis renderizavam a carteira **como se estivesse vazia** — e "não
+   * conseguimos ler" não é "você não tem nada".
+   */
+  readonly erroDeCarga = signal<unknown>(null);
+  readonly loadFailed = computed(() => this.erroDeCarga() !== null);
+
+  /** Primeira leitura em voo: depois dela, o que existe é o dado anterior, não um vazio. */
+  readonly carregando = signal(false);
+
   readonly evaluating = signal(false);
   readonly lastEvaluatedAt = signal<number | null>(null);
   readonly hasStoredAssets = signal(false);
@@ -89,7 +102,8 @@ export class CarteiraStore {
   }
 
   reload(): void {
-    this.loadFailed.set(false);
+    this.erroDeCarga.set(null);
+    this.carregando.set(true);
     this.loadFixedIncome();
     this.loadClosedTrades();
     this.loadDividends();
@@ -112,13 +126,17 @@ export class CarteiraStore {
         this.hasStoredAssets.set(res.items.length > 0);
         if (res.items.length === 0) {
           this.evaluation.set(null);
+          this.carregando.set(false);
           return;
         }
         this.evaluate(
           res.items.map(i => ({ ticker: i.ticker, quantity: i.quantity, avg_price: i.avg_price }))
         );
       },
-      error: () => this.loadFailed.set(true),
+      error: err => {
+        this.erroDeCarga.set(err);
+        this.carregando.set(false);
+      },
     });
   }
 
@@ -129,11 +147,13 @@ export class CarteiraStore {
         this.evaluation.set(res);
         this.lastEvaluatedAt.set(Date.now());
         this.evaluating.set(false);
+        this.carregando.set(false);
         this.loadDividends();
       },
-      error: () => {
+      error: err => {
         this.evaluating.set(false);
-        this.loadFailed.set(true);
+        this.carregando.set(false);
+        this.erroDeCarga.set(err);
       },
     });
   }
@@ -141,7 +161,7 @@ export class CarteiraStore {
   private loadFixedIncome(): void {
     this.svc.getFixedIncome().subscribe({
       next: res => this.fixedIncome.set(res),
-      error: () => this.loadFailed.set(true),
+      error: err => this.erroDeCarga.set(err),
     });
   }
 
@@ -230,6 +250,16 @@ export class CarteiraStore {
     if (this.fixedIncome()?.has_more) cortadas.push('renda fixa');
     return cortadas;
   });
+
+  /**
+   * O `as_of` mais antigo entre as posições — a idade honesta da tabela.
+   *
+   * O campo vinha do backend, era declarado no modelo do cliente e não chegava a nenhuma tela
+   * fora de `/ativo`: trinta preços comparados sem dizer de quando são.
+   */
+  readonly carimboDosPrecos = computed(() =>
+    carimboMaisAntigo(this.tradedPositions().map(p => p.as_of))
+  );
 
   readonly negociadosCount = computed(() => this.tradedPositions().length);
   readonly rendaFixaCount = computed(() => this.fixedIncomePositions().length);

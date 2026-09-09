@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 
 _tmp_db = os.path.join(tempfile.mkdtemp(prefix="fiance_test_"), "test.db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp_db}"
@@ -36,6 +37,10 @@ def auth_headers():
 def _fake_snapshot(symbol: str):
     from app.collectors.universal import AssetSnapshot
 
+    # O coletor real sempre carimba (`as_of=time.time()`), e o stub nao carimbava: a suite
+    # exercitava um caminho que a producao nao tem, e um campo de momento perdido passaria verde.
+    agora = time.time()
+
     catalog = {
         "PETR4": AssetSnapshot(
             symbol="PETR4",
@@ -56,6 +61,7 @@ def _fake_snapshot(symbol: str):
             revenue_growth=5.0,
             fifty_two_week_high=42.0,
             fifty_two_week_low=30.0,
+            as_of=agora,
         ),
         "VALE3": AssetSnapshot(
             symbol="VALE3",
@@ -76,6 +82,7 @@ def _fake_snapshot(symbol: str):
             revenue_growth=3.0,
             fifty_two_week_high=70.0,
             fifty_two_week_low=55.0,
+            as_of=agora,
         ),
     }
     return catalog.get(symbol.upper())

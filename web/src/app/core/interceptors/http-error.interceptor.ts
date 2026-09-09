@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, finalize, retry, throwError, timeout, TimeoutError } from 'rxjs';
+import { detalheUtil, mensagemDeErro } from '../error-message';
 import { AuthService } from '../services/auth.service';
 import { LoadingService } from '../services/loading.service';
 import { SnackbarService } from '../services/snackbar.service';
@@ -47,45 +48,23 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      let errorMessage = 'Erro ao processar requisição';
+      /*
+       * A frase é a de `mensagemDeErro`, a mesma que a tela mostra em `<app-async-state>`.
+       * Aqui só se decide o efeito colateral do 401 e se há detalhe de domínio a acrescentar —
+       * `Erro 500` e "verifique se o backend está rodando" eram texto de quem desenvolve.
+       */
+      let errorMessage = mensagemDeErro(error, 'concluir esta ação');
 
-      if (error instanceof TimeoutError) {
-        errorMessage = 'A operação demorou demais. Tente novamente.';
-      } else if (error instanceof HttpErrorResponse) {
-        switch (error.status) {
-          case 0:
-            errorMessage = 'Sem conexão com o servidor. Verifique se o backend está rodando.';
-            break;
-          case 401: {
-            const tinhaSessao = !!(auth.token() || auth.refreshToken());
-            if (noNavegador && tinhaSessao) {
-              errorMessage = 'Sessão expirada. Faça login novamente.';
-              auth.clearSession();
-              router.navigateByUrl('/login');
-            } else {
-              errorMessage = '';
-            }
-            break;
-          }
-          case 429:
-            errorMessage =
-              error.error?.detail || 'Muitas requisições em pouco tempo. Aguarde um minuto.';
-            break;
-          case 404:
-            errorMessage = error.error?.detail || 'Recurso não encontrado.';
-            break;
-          case 422:
-            errorMessage = 'Dados inválidos. Verifique os campos e tente novamente.';
-            break;
-          case 500:
-            errorMessage = error.error?.detail || 'Erro interno do servidor.';
-            break;
-          case 503:
-            errorMessage = 'Serviço temporariamente indisponível. Aguarde e tente novamente.';
-            break;
-          default:
-            errorMessage = error.error?.detail || error.message || `Erro ${error.status}`;
+      if (error instanceof HttpErrorResponse && error.status === 401) {
+        const tinhaSessao = !!(auth.token() || auth.refreshToken());
+        if (noNavegador && tinhaSessao) {
+          auth.clearSession();
+          router.navigateByUrl('/login');
+        } else {
+          errorMessage = '';
         }
+      } else {
+        errorMessage = detalheUtil(error) ?? errorMessage;
       }
 
       snackbar.showError(errorMessage);

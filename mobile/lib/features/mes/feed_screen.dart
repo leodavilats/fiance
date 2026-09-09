@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/labels.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
@@ -45,7 +46,7 @@ class FeedScreen extends ConsumerWidget {
           ref.invalidate(whatsNewProvider);
         },
         child: dashboard.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 5, label: 'Carregando o que mudou'),
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos carregar seu resumo',

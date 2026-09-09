@@ -14,11 +14,11 @@ import {
   fiCategoriasDeDespesa,
   fiCategoriasDeEntrada,
 } from '../../core';
+import { AsyncStateComponent } from '../async-state/async-state.component';
 import { ChangesFeedComponent } from '../changes-feed/changes-feed.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { ProvenanceComponent } from '../provenance/provenance.component';
 import { SectionComponent } from '../section/section.component';
-import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 interface LinhaDoMes {
   readonly entry: CashEntry;
@@ -36,7 +36,7 @@ interface LinhaDoMes {
     PageHeaderComponent,
     ProvenanceComponent,
     SectionComponent,
-    SkeletonComponent,
+    AsyncStateComponent,
   ],
   template: `
     <app-page-header title="Mês" question="Como estou agora, e o que exige atenção?">
@@ -54,127 +54,216 @@ interface LinhaDoMes {
       }
     </app-page-header>
 
-    @if (carregando()) {
-      <app-skeleton shape="metric" />
-    } @else if (mes(); as m) {
-      @if (semLancamento()) {
-        <div class="notice notice-brand">
-          <lucide-icon name="circle-alert" size="18" aria-hidden="true"></lucide-icon>
-          <div>
-            <p class="fi-label m-0">Seu mês ainda não tem nada lançado</p>
-            <p class="fi-body m-0 mt-1">
-              Comece pelo que se repete: o dia e o valor que você recebe, e os dois ou três maiores
-              gastos fixos. Com isso a sobra do mês já sai, e ela é o que decide o próximo aporte.
-            </p>
-            <a routerLink="/mes/lancar" class="btn-primary no-underline mt-3">
-              <lucide-icon name="plus" size="16" aria-hidden="true"></lucide-icon>
-              Lançar o primeiro mês
-            </a>
+    <app-async-state
+      [loading]="carregando()"
+      [error]="erro()"
+      loadingShape="metric"
+      loadingLabel="Carregando seu mês"
+      errorTitle="Não conseguimos abrir o seu mês"
+      errorAction="carregar o seu mês"
+      (retry)="carregar()"
+    >
+      @if (mes(); as m) {
+        @if (semLancamento()) {
+          <div class="notice notice-brand">
+            <lucide-icon name="circle-alert" size="18" aria-hidden="true"></lucide-icon>
+            <div>
+              <p class="fi-label m-0">Seu mês ainda não tem nada lançado</p>
+              <p class="fi-body m-0 mt-1">
+                Comece pelo que se repete: o dia e o valor que você recebe, e os dois ou três
+                maiores gastos fixos. Com isso a sobra do mês já sai, e ela é o que decide o próximo
+                aporte.
+              </p>
+              <a routerLink="/mes/lancar" class="btn-primary no-underline mt-3">
+                <lucide-icon name="plus" size="16" aria-hidden="true"></lucide-icon>
+                Lançar o primeiro mês
+              </a>
+            </div>
           </div>
-        </div>
-      } @else {
-        <section class="fi-block">
-          @if (veredito(); as v) {
-            <p class="fi-verdict m-0 max-w-reading" [class]="classeDoEstado(v.band.state)">
-              {{ v.veredito }}
-            </p>
-            <p class="fi-body text-ink-2 m-0 mt-2 max-w-reading">{{ v.razao }}</p>
+        } @else {
+          <section class="fi-block">
+            @if (veredito(); as v) {
+              <p class="fi-verdict m-0 max-w-reading" [class]="classeDoEstado(v.band.state)">
+                {{ v.veredito }}
+              </p>
+              <p class="fi-body text-ink-2 m-0 mt-2 max-w-reading">{{ v.razao }}</p>
 
-            <app-provenance
-              summary="Como lemos seu mês"
-              method="Compara o que já está comprometido com o que entrou, na régua de pressão do mês."
-              source="Seus lançamentos de caixa, mais os proventos derivados do seu razão."
-              limitation="A leitura é do mês escolhido. Dívida sem taxa informada não entra na classe de dívida caseira."
-            />
+              <app-provenance
+                summary="Como lemos seu mês"
+                method="Compara o que já está comprometido com o que entrou, na régua de pressão do mês."
+                source="Seus lançamentos de caixa, mais os proventos derivados do seu razão."
+                limitation="A leitura é do mês escolhido. Dívida sem taxa informada não entra na classe de dívida caseira."
+              />
+            }
+
+            <p class="fi-eyebrow text-ink-3 m-0 mt-6">
+              {{ ehMesCorrente() ? 'Livre agora' : 'Sobrou em ' + nome(m.month) }}
+            </p>
+            <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(m.free_now) }}</p>
+
+            <dl class="flex flex-wrap gap-x-10 gap-y-4 m-0 mt-5">
+              <div>
+                <dt class="fi-eyebrow text-ink-3">Entrou</dt>
+                <dd class="fi-metric-sm text-ink m-0 mt-1">{{ reais(m.received) }}</dd>
+              </div>
+              <div>
+                <dt class="fi-eyebrow text-ink-3">Saiu</dt>
+                <dd class="fi-metric-sm text-ink m-0 mt-1">{{ reais(m.paid) }}</dd>
+              </div>
+              <div>
+                <dt class="fi-eyebrow text-ink-3">Comprometido</dt>
+                <dd class="fi-metric-sm text-ink m-0 mt-1">{{ reais(m.committed) }}</dd>
+              </div>
+            </dl>
+
+            <p class="fi-body text-ink-2 m-0 mt-5 pt-4 border-t border-hairline max-w-reading">
+              @if (m.has_range) {
+                Descontando o que ainda deve sair, a sobra parte de
+                <strong class="fi-num">{{ reais(m.surplus_low) }}</strong
+                >.
+              } @else {
+                Sem mês fechado ainda não há como estimar o que falta sair, então a sobra é o
+                próprio livre.
+              }
+              <a routerLink="/sobra" class="btn-link">decidir o que fazer com ela</a>
+            </p>
+          </section>
+
+          @if (atencao().length > 0) {
+            <app-section title="Exige atenção" [count]="atencao().length">
+              <ul class="list-none m-0 mt-3 p-0 flex flex-col gap-3">
+                @for (d of atencao(); track d.id) {
+                  <li class="flex items-baseline justify-between gap-4 flex-wrap">
+                    <span class="fi-body text-ink">
+                      {{ d.description }}: <span class="fi-num">{{ reais(d.balance) }}</span> a
+                      <span class="fi-num">{{ d.monthly_rate }}</span
+                      >% ao mês
+                      @if (d.flip_rate !== null) {
+                        <span class="fi-caption text-ink-3">
+                          · vira administrável a <span class="fi-num">{{ d.flip_rate }}</span
+                          >%
+                        </span>
+                      }
+                    </span>
+                    <a routerLink="/mes/dividas" class="btn-link">Ver a dívida</a>
+                  </li>
+                }
+              </ul>
+            </app-section>
           }
 
-          <p class="fi-eyebrow text-ink-3 m-0 mt-6">
-            {{ ehMesCorrente() ? 'Livre agora' : 'Sobrou em ' + nome(m.month) }}
-          </p>
-          <p class="fi-money-xl text-ink m-0 mt-1">{{ reais(m.free_now) }}</p>
-
-          <dl class="flex flex-wrap gap-x-10 gap-y-4 m-0 mt-5">
-            <div>
-              <dt class="fi-eyebrow text-ink-3">Entrou</dt>
-              <dd class="fi-metric-sm text-ink m-0 mt-1">{{ reais(m.received) }}</dd>
-            </div>
-            <div>
-              <dt class="fi-eyebrow text-ink-3">Saiu</dt>
-              <dd class="fi-metric-sm text-ink m-0 mt-1">{{ reais(m.paid) }}</dd>
-            </div>
-            <div>
-              <dt class="fi-eyebrow text-ink-3">Comprometido</dt>
-              <dd class="fi-metric-sm text-ink m-0 mt-1">{{ reais(m.committed) }}</dd>
-            </div>
-          </dl>
-
-          <p class="fi-body text-ink-2 m-0 mt-5 pt-4 border-t border-hairline max-w-reading">
-            @if (m.has_range) {
-              Descontando o que ainda deve sair, a sobra parte de
-              <strong class="fi-num">{{ reais(m.surplus_low) }}</strong
-              >.
-            } @else {
-              Sem mês fechado ainda não há como estimar o que falta sair, então a sobra é o próprio
-              livre.
-            }
-            <a routerLink="/sobra" class="btn-link">decidir o que fazer com ela</a>
-          </p>
-        </section>
-
-        @if (atencao().length > 0) {
-          <app-section title="Exige atenção" [count]="atencao().length">
-            <ul class="list-none m-0 mt-3 p-0 flex flex-col gap-3">
-              @for (d of atencao(); track d.id) {
-                <li class="flex items-baseline justify-between gap-4 flex-wrap">
-                  <span class="fi-body text-ink">
-                    {{ d.description }}: <span class="fi-num">{{ reais(d.balance) }}</span> a
-                    <span class="fi-num">{{ d.monthly_rate }}</span
-                    >% ao mês
-                    @if (d.flip_rate !== null) {
-                      <span class="fi-caption text-ink-3">
-                        · vira administrável a <span class="fi-num">{{ d.flip_rate }}</span
-                        >%
-                      </span>
+          @if (m.due.length > 0) {
+            <app-section title="A vencer" [count]="m.due.length">
+              <div class="overflow-x-auto mt-3">
+                <table class="data-table">
+                  <caption class="sr-only">
+                    Contas com vencimento neste mês que ainda não foram pagas
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Dia</th>
+                      <th scope="col">Conta</th>
+                      <th scope="col" class="num">Valor</th>
+                      <th scope="col"><span class="sr-only">Ação</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (conta of m.due; track conta.id) {
+                      <tr>
+                        <td class="num">{{ dia(conta.due_on) }}</td>
+                        <td class="text-ink">{{ conta.description }}</td>
+                        <td class="num">{{ reais(conta.amount) }}</td>
+                        <td>
+                          <button
+                            type="button"
+                            class="btn-secondary compact-btn"
+                            (click)="pagar(conta.id)"
+                            [disabled]="pagando() === conta.id"
+                            [attr.title]="pagando() === conta.id ? 'Registrando o pagamento' : null"
+                          >
+                            {{ pagando() === conta.id ? 'Marcando…' : 'Marcar como paga' }}
+                          </button>
+                        </td>
+                      </tr>
                     }
-                  </span>
-                  <a routerLink="/mes/dividas" class="btn-link">Ver a dívida</a>
-                </li>
-              }
-            </ul>
-          </app-section>
-        }
+                  </tbody>
+                </table>
+              </div>
+            </app-section>
+          }
 
-        @if (m.due.length > 0) {
-          <app-section title="A vencer" [count]="m.due.length">
+          <app-section title="O mês">
+            <span sectionActions class="flex items-baseline gap-4">
+              <a
+                [routerLink]="['/mes/repetir']"
+                [queryParams]="{ mes: ehMesCorrente() ? null : mesEscolhido() }"
+                class="btn-link"
+              >
+                Repetir {{ nome(mesAnterior()) }}
+              </a>
+              <a routerLink="/mes/lancar" class="btn-link">Lançar</a>
+            </span>
+
             <div class="overflow-x-auto mt-3">
               <table class="data-table">
                 <caption class="sr-only">
-                  Contas com vencimento neste mês que ainda não foram pagas
+                  Movimentos do mês em ordem de data, com o dia de hoje marcado
                 </caption>
                 <thead>
                   <tr>
                     <th scope="col">Dia</th>
-                    <th scope="col">Conta</th>
+                    <th scope="col">Movimento</th>
+                    <th scope="col">Categoria</th>
                     <th scope="col" class="num">Valor</th>
                     <th scope="col"><span class="sr-only">Ação</span></th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (conta of m.due; track conta.id) {
+                  @if (linhas().length === 0) {
                     <tr>
-                      <td class="num">{{ dia(conta.due_on) }}</td>
-                      <td class="text-ink">{{ conta.description }}</td>
-                      <td class="num">{{ reais(conta.amount) }}</td>
+                      <td colspan="5" class="text-ink-2">
+                        Nada lançado em {{ nome(m.month) }}.
+                        @if (mesesDisponiveis().length > 1) {
+                          Você tem lançamentos em outros meses — troque no seletor acima.
+                        }
+                      </td>
+                    </tr>
+                  }
+                  @for (linha of linhas(); track linha.entry.id + linha.entry.due_on) {
+                    <tr>
+                      <td class="num">{{ dia(linha.entry.paid_on ?? linha.entry.due_on) }}</td>
+                      <td class="text-ink">
+                        {{ linha.entry.description }}
+                        @if (linha.futura) {
+                          <span class="fi-caption text-ink-3">
+                            · {{ linha.entry.kind === 'income' ? 'a receber' : 'a vencer' }}
+                          </span>
+                        }
+                        @if (linha.entry.derived) {
+                          <span class="fi-caption text-ink-3">· do seu razão</span>
+                        }
+                      </td>
+                      <td class="text-ink-2">{{ rotuloDaCategoria(linha.entry) }}</td>
+                      <td
+                        class="num"
+                        [class.text-up]="linha.entry.kind === 'income'"
+                        [class.text-down]="linha.entry.kind === 'expense'"
+                      >
+                        {{ linha.entry.kind === 'income' ? '+' : '−'
+                        }}{{ reais(linha.entry.amount) }}
+                      </td>
                       <td>
-                        <button
-                          type="button"
-                          class="btn-secondary compact-btn"
-                          (click)="pagar(conta.id)"
-                          [disabled]="pagando() === conta.id"
-                          [attr.title]="pagando() === conta.id ? 'Registrando o pagamento' : null"
-                        >
-                          {{ pagando() === conta.id ? 'Marcando…' : 'Marcar como paga' }}
-                        </button>
+                        @if (linha.entry.derived) {
+                          <span class="fi-caption text-ink-3">vem do razão</span>
+                        } @else {
+                          <a
+                            [routerLink]="['/mes/lancar']"
+                            [queryParams]="{ editar: linha.entry.id }"
+                            class="btn-link"
+                          >
+                            Editar
+                          </a>
+                        }
                       </td>
                     </tr>
                   }
@@ -182,93 +271,14 @@ interface LinhaDoMes {
               </table>
             </div>
           </app-section>
+
+          <!-- Último de propósito: um feed é o menos decisivo do mês, e vinha antes da dívida. -->
+          <app-section title="O que mudou">
+            <app-changes-feed />
+          </app-section>
         }
-
-        <app-section title="O mês">
-          <span sectionActions class="flex items-baseline gap-4">
-            <a
-              [routerLink]="['/mes/repetir']"
-              [queryParams]="{ mes: ehMesCorrente() ? null : mesEscolhido() }"
-              class="btn-link"
-            >
-              Repetir {{ nome(mesAnterior()) }}
-            </a>
-            <a routerLink="/mes/lancar" class="btn-link">Lançar</a>
-          </span>
-
-          <div class="overflow-x-auto mt-3">
-            <table class="data-table">
-              <caption class="sr-only">
-                Movimentos do mês em ordem de data, com o dia de hoje marcado
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Dia</th>
-                  <th scope="col">Movimento</th>
-                  <th scope="col">Categoria</th>
-                  <th scope="col" class="num">Valor</th>
-                  <th scope="col"><span class="sr-only">Ação</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                @if (linhas().length === 0) {
-                  <tr>
-                    <td colspan="5" class="text-ink-2">
-                      Nada lançado em {{ nome(m.month) }}.
-                      @if (mesesDisponiveis().length > 1) {
-                        Você tem lançamentos em outros meses — troque no seletor acima.
-                      }
-                    </td>
-                  </tr>
-                }
-                @for (linha of linhas(); track linha.entry.id + linha.entry.due_on) {
-                  <tr>
-                    <td class="num">{{ dia(linha.entry.paid_on ?? linha.entry.due_on) }}</td>
-                    <td class="text-ink">
-                      {{ linha.entry.description }}
-                      @if (linha.futura) {
-                        <span class="fi-caption text-ink-3">
-                          · {{ linha.entry.kind === 'income' ? 'a receber' : 'a vencer' }}
-                        </span>
-                      }
-                      @if (linha.entry.derived) {
-                        <span class="fi-caption text-ink-3">· do seu razão</span>
-                      }
-                    </td>
-                    <td class="text-ink-2">{{ rotuloDaCategoria(linha.entry) }}</td>
-                    <td
-                      class="num"
-                      [class.text-up]="linha.entry.kind === 'income'"
-                      [class.text-down]="linha.entry.kind === 'expense'"
-                    >
-                      {{ linha.entry.kind === 'income' ? '+' : '−' }}{{ reais(linha.entry.amount) }}
-                    </td>
-                    <td>
-                      @if (linha.entry.derived) {
-                        <span class="fi-caption text-ink-3">vem do razão</span>
-                      } @else {
-                        <a
-                          [routerLink]="['/mes/lancar']"
-                          [queryParams]="{ editar: linha.entry.id }"
-                          class="btn-link"
-                        >
-                          Editar
-                        </a>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </app-section>
-
-        <!-- Último de propósito: um feed é o menos decisivo do mês, e vinha antes da dívida. -->
-        <app-section title="O que mudou">
-          <app-changes-feed />
-        </app-section>
       }
-    }
+    </app-async-state>
   `,
 })
 export class MonthComponent implements OnInit {
@@ -284,6 +294,7 @@ export class MonthComponent implements OnInit {
   readonly entradas = signal<CashEntry[]>([]);
   readonly dividas = signal<Debt[]>([]);
   readonly carregando = signal(true);
+  readonly erro = signal<unknown>(null);
   readonly pagando = signal<number | null>(null);
 
   readonly semLancamento = computed(() => this.entradas().every(e => e.derived));
@@ -343,13 +354,17 @@ export class MonthComponent implements OnInit {
 
   carregar(): void {
     this.carregando.set(true);
+    this.erro.set(null);
 
     this.api.month(this.mesEscolhido()).subscribe({
       next: m => {
         this.mes.set(m);
         this.carregando.set(false);
       },
-      error: () => this.carregando.set(false),
+      error: err => {
+        this.erro.set(err);
+        this.carregando.set(false);
+      },
     });
 
     this.api.entries().subscribe({ next: e => this.entradas.set(e) });

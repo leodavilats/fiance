@@ -26,3 +26,14 @@ String formatIdade(double? epochSegundos) {
   if (minutos < 60 * 24) return 'há ${minutos ~/ 60} h';
   return 'em ${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch((epochSegundos * 1000).round()))}';
 }
+
+/// O carimbo que representa um conjunto: o **mais antigo**.
+///
+/// Numa lista de trinta preços, dizer a idade do mais novo é prometer frescor que o card de
+/// baixo não tem. É o mesmo critério de `opportunity_service.market_data_age_seconds` e do
+/// `carimboMaisAntigo` do web.
+double? carimboMaisAntigo(Iterable<double?> carimbos) {
+  final validos = carimbos.whereType<double>().where((c) => c > 0);
+  if (validos.isEmpty) return null;
+  return validos.reduce((a, b) => a < b ? a : b);
+}

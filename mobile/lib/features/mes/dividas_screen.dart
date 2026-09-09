@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/cash_models.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/providers.dart';
@@ -27,7 +28,7 @@ class DividasScreen extends ConsumerWidget {
         label: const Text('Cadastrar'),
       ),
       body: dividas.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 4, label: 'Carregando suas dívidas'),
         error: (e, _) => FiErrorState(
           error: e,
           action: 'carregar suas dívidas',

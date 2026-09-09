@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/cash_models.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/mes.dart';
@@ -116,8 +117,8 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
     if (m == null) {
       return const SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(40),
-          child: Center(child: CircularProgressIndicator()),
+          padding: EdgeInsets.all(FiSpace.s6),
+          child: FiSkeleton(shape: FiSkeletonShape.row, count: 5),
         ),
       );
     }

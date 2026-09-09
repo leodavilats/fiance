@@ -27,15 +27,15 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 1004 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 1012 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 114 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 121 testes
                                                    #   inclui test/lint_ui_test.dart:
-                                                   #   8 regras do lint:ui, no Dart
+                                                   #   11 regras do lint:ui, no Dart
 cd mobile  && flutter build apk --release          # analyze e test nao tocam o Gradle:
                                                    #   o build Android e outra metade
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 160 testes
+cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 177 testes
 cd web     && npm run lint:contrast                # contraste AA nos dois temas, web e mobile
 python design-tokens/build-icons.py --check        # marca sincronizada
 ```
@@ -107,6 +107,11 @@ CHANGELOG.
 | Seção numa tela | Usar `<app-section title="…">`, que emite o `<h2>` | Seção sem cabeçalho: `/mes` tinha 5 seções e nenhuma parada de navegação |
 | Julgamento numa tela do mobile | `FiProvenance` — método, fonte, limitação | `test/lint_ui_test.dart` reprova: o invariante de explicabilidade vale nas duas plataformas |
 | Componente Angular novo | Escrever o `template` no próprio `.ts` — não há `.html` separado em `web/src/app/components` | Divergência de padrão na mesma pasta |
+| Tela de rota que lê dado | `<app-async-state [loading] [error] [empty] (retry)>` no web; `AsyncValue.when` com `FiSkeleton`/`FiErrorState` no mobile | `lint:ui` reprova. Sem isso a falha sai como tela vazia, e "não conseguimos ler" fica igual a "você não tem nada" |
+| Frase de falha numa tela | `mensagemDeErro(erro, acao)` / `fiErrorMessage` — nunca texto solto | Já houve oito grafias, e `Erro 500` chegou à tela |
+| Preço, ou lista de preços, numa tela | `<app-data-age [asOf]>` / `formatIdade`. Em lista, o carimbo é o **mais antigo** (`carimboMaisAntigo`) | Dizer a idade do mais novo promete frescor que a linha de baixo não tem |
+| Espera numa tela do mobile | `FiSkeleton.tela(shape:, count:)` — nunca `Center(child: CircularProgressIndicator())` | `test/lint_ui_test.dart` reprova: disco não diz o que vem, e a página salta quando o dado chega |
+| Destino de raiz no mobile | `FiSearchAction` na barra | `test/lint_ui_test.dart` reprova. A busca já teve uma porta só, numa tela secundária |
 | Dependência no `pubspec.yaml` do mobile | Rodar `flutter build apk --release` | Plugin com Gradle ou Kotlin incompatível quebra **só** o build Android, e `analyze`/`test` seguem verdes |
 
 ---
@@ -180,15 +185,22 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   `fiClasseTextoDaSerie[4]` e recebia `undefined`: a armadilha acima na forma inversa, consumidor
   sem vocabulário. Os mapas cobrem os três blocos de categoria, e não só o de alocação.
 
-O `npm run lint:ui` cobre treze dessas, em **22 regras** — e a classificação importa: regra que
+O `npm run lint:ui` cobre treze dessas, em **23 regras** — e a classificação importa: regra que
 protege acessibilidade, contrato de produto ou erro silencioso **reprova o CI**; regra que
 protege só preferência visual **avisa e não reprova**, porque bloquear por gosto gasta a
 autoridade das que valem. Raio fora da escala e ícone decorando título são as duas que avisam.
 
-Sete são de tela quebrada ou informação escondida: ícone não registrado, classe inexistente,
+Oito são de tela quebrada ou informação escondida: ícone não registrado, classe inexistente,
 julgamento sem explicabilidade, gráfico sem tabela, botão de ícone sem `aria-label`, número
-projetado sem faixa e promessa sobre o futuro — este último poupa a negação, porque "não há
-garantia de retorno" é a frase certa e "retorno garantido" é a errada.
+projetado sem faixa, promessa sobre o futuro — este poupa a negação, porque "não há garantia de
+retorno" é a frase certa e "retorno garantido" é a errada — e **tela de rota que lê dado e não
+diz quando a leitura falhou**.
+
+**Regra que filtra por extensão de arquivo não roda.** `missingExplainers` e `certaintyLanguage`
+varriam `.html`, e este repo escreve o template dentro do `.ts`: as duas passaram meses lendo só o
+`index.html`, e uma delas é a que protege o invariante de explicabilidade. Ao escrever regra nova,
+confira contra **o que o repo tem**, e não contra o que a extensão sugere — o mesmo erro de
+"vocabulário sem consumidor", do outro lado.
 
 Cinco são de coerência do sistema, e existem porque o produto já as perdeu por inteiro:
 
@@ -525,6 +537,11 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
 - **Grade de KPI é o cheiro de painel.** Três a quatro caixas centralizadas com um número dentro
   não são informação organizada, são widgets. A alternativa é uma linha de cifras sob um fio
   (`<dl>`) quando são poucas, ou `.data-table` quando o que importa é comparar.
+- **Estado de tela é um contrato, não uma escolha por tela.** Carregando, falha, vazio e conteúdo
+  saem de `<app-async-state>` no web e do par `FiSkeleton`/`FiErrorState` no mobile. A falha guarda
+  o **erro**, não um booleano: sem ele a tela só sabe dizer "algo deu errado", e a loja de carteira
+  passou a servir sete telas com um booleano que uma só lia. Ausência de dado e falha de leitura
+  nunca compartilham a mesma tela.
 - **Momento é nível 1, não nota de rodapé.** Método e fonte moram na gaveta de
   `<app-provenance>`; **quando o dado foi lido, não** — um preço de anteontem muda a decisão. O
   `asOf` é linha visível, e `/ativo/:ticker` diz a idade do preço ao lado do preço nas duas

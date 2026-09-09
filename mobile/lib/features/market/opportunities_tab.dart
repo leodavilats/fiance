@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
@@ -417,7 +418,7 @@ class _DipScannerView extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(dipScanResultProvider),
       child: result.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 6, label: 'Varrendo o mercado'),
         error: (err, _) => FiErrorState(error: err, action: 'varrer o mercado'),
         data: (items) {
           if (items.isEmpty) {
@@ -524,7 +525,7 @@ class _AllOpportunitiesView extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(filteredOpportunitiesProvider),
       child: opportunities.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 6, label: 'Varrendo o mercado'),
         error: (err, _) => FiErrorState(error: err, action: 'varrer o mercado'),
         data: (_) {
           if (items.isEmpty) {
@@ -540,12 +541,28 @@ class _AllOpportunitiesView extends ConsumerWidget {
               ],
             );
           }
+          final idade = formatIdade(
+            carimboMaisAntigo(items.map((o) => o.asOf)),
+          );
+          final escuro = Theme.of(context).brightness == Brightness.dark;
+
           return ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            itemCount: items.length,
+            itemCount: items.length + (idade.isEmpty ? 0 : 1),
             separatorBuilder: (_, _) => const SizedBox(height: 14),
-            itemBuilder: (context, index) =>
-                _OpportunityCard(opportunity: items[index]),
+            itemBuilder: (context, index) {
+              if (idade.isNotEmpty && index == 0) {
+                return Text(
+                  'Cotações lidas $idade',
+                  style: FiType.caption.copyWith(
+                    color: escuro ? FiColors.darkInk3 : FiColors.lightInk3,
+                  ),
+                );
+              }
+              return _OpportunityCard(
+                opportunity: items[idade.isEmpty ? index : index - 1],
+              );
+            },
           );
         },
       ),

@@ -15,6 +15,7 @@ import { AllocationGapComponent } from '../allocation-gap/allocation-gap.compone
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { RebalanceSuggestionsComponent } from '../market/rebalance-suggestions/rebalance-suggestions.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { AsyncStateComponent } from '../async-state/async-state.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
 interface ProjectionRow {
@@ -35,6 +36,7 @@ interface ProjectionRow {
     RebalanceSuggestionsComponent,
     RouterLink,
     SkeletonComponent,
+    AsyncStateComponent,
   ],
   template: `
     <div class="max-w-column">
@@ -382,6 +384,13 @@ interface ProjectionRow {
             </ul>
           </section>
         }
+      } @else if (erro()) {
+        <app-async-state
+          [error]="erro()"
+          errorTitle="Não conseguimos montar sua estratégia"
+          errorAction="cruzar sua carteira com as metas que você declarou"
+          (retry)="loadStrategy()"
+        />
       } @else if (!loading.loading()) {
         <app-empty-state
           icon="target"
@@ -429,7 +438,10 @@ export class DeviationComponent implements OnInit {
    * nenhum mês: um número guardado numa preferência envelhece sem avisar, e distribuir dinheiro
    * que já foi gasto é pior que não responder.
    */
+  readonly erro = signal<unknown>(null);
+
   loadStrategy(): void {
+    this.erro.set(null);
     this.caixa.surplus().subscribe({
       next: sobra => {
         if (sobra.has_cash) {
@@ -463,9 +475,12 @@ export class DeviationComponent implements OnInit {
   }
 
   private fetch(cash: number): void {
+    this.erro.set(null);
     this.svc.getStrategy(cash).subscribe({
       next: data => this.strategy.set(data),
-      error: () => {},
+      // Engolida, a falha saia como "nenhuma estrategia calculada ainda" -- e nao calcular e
+      // diferente de nao conseguir calcular.
+      error: err => this.erro.set(err),
     });
   }
 

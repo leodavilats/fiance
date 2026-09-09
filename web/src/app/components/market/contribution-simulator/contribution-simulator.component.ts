@@ -2,12 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PassiveIncomeProjectionResponse, RecommendService } from '../../../core';
+import { AsyncStateComponent } from '../../async-state/async-state.component';
 import { PageHeaderComponent } from '../../page-header/page-header.component';
 
 @Component({
   selector: 'app-contribution-simulator',
   standalone: true,
-  imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule],
+  imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule, AsyncStateComponent],
   template: `
     <div class="flex flex-col gap-4">
       <app-page-header
@@ -58,6 +59,15 @@ import { PageHeaderComponent } from '../../page-header/page-header.component';
           </button>
         </div>
       </form>
+
+      @if (erro()) {
+        <app-async-state
+          [error]="erro()"
+          errorTitle="A projeção não foi calculada"
+          errorAction="projetar sua carteira com esse aporte"
+          (retry)="simulate()"
+        />
+      }
 
       @if (result(); as r) {
         <p class="fi-caption text-ink-2 m-0">{{ r.disclaimer }}</p>
@@ -180,6 +190,7 @@ export class ContributionSimulatorComponent {
 
   loading = signal(false);
   result = signal<PassiveIncomeProjectionResponse | null>(null);
+  readonly erro = signal<unknown>(null);
 
   form: FormGroup = this.fb.group({
     monthly_contribution: this.fb.control(500, {
@@ -206,6 +217,7 @@ export class ContributionSimulatorComponent {
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
     this.loading.set(true);
+    this.erro.set(null);
     this.api
       .projectPassiveIncome({
         monthly_contribution: v.monthly_contribution,
@@ -220,7 +232,10 @@ export class ContributionSimulatorComponent {
           this.result.set(res);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: err => {
+          this.erro.set(err);
+          this.loading.set(false);
+        },
       });
   }
 

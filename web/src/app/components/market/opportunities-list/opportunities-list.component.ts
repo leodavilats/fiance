@@ -12,8 +12,11 @@ import {
   RecommendService,
   TickerSuggestion,
   UiHelperService,
+  carimboMaisAntigo,
   fiScoreBands,
 } from '../../../core';
+import { AsyncStateComponent } from '../../async-state/async-state.component';
+import { DataAgeComponent } from '../../data-age/data-age.component';
 import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { HelpTooltipComponent } from '../../help-tooltip/help-tooltip.component';
 import { FairPriceComponent } from '../../fair-price/fair-price.component';
@@ -27,6 +30,8 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
   selector: 'app-opportunities-list',
   standalone: true,
   imports: [
+    AsyncStateComponent,
+    DataAgeComponent,
     CommonModule,
     EmptyStateComponent,
     FairPriceComponent,
@@ -144,7 +149,14 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
         </div>
       </section>
 
-      @if (loadingOpportunities()) {
+      @if (erro()) {
+        <app-async-state
+          [error]="erro()"
+          errorTitle="Não conseguimos varrer o mercado agora"
+          errorAction="avaliar os ativos do universo"
+          (retry)="loadOpportunities(true)"
+        />
+      } @else if (loadingOpportunities()) {
         <div class="mt-8 flex flex-col gap-6">
           <app-skeleton shape="title" />
           <app-skeleton shape="row" [count]="6" />
@@ -170,11 +182,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
                 <span class="fi-num">{{ opps.items.length }}</span> de
                 <span class="fi-num">{{ opps.total_items }}</span> ativos avaliados
               </p>
-              @if (_cacheTime) {
-                <p class="fi-caption text-ink-3 m-0">
-                  Atualizado {{ helper.formatTimestamp(_cacheTime / 1000) }}
-                </p>
-              }
+              <app-data-age [asOf]="carimboDosPrecos()" label="Cotações lidas" />
             </div>
 
             <ul class="list-none m-0 p-0">
@@ -391,6 +399,16 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
 
   readonly opportunities = signal<OpportunitiesResponse | null>(null);
   readonly loadingOpportunities = signal(false);
+  readonly erro = signal<unknown>(null);
+
+  /*
+   * A idade da FONTE, e nao a do fetch do navegador. `_cacheTime` marcava quando o cliente
+   * recebeu: com o scan servido de cache no servidor, "Atualizado agora" aparecia sobre precos
+   * de meia hora atras.
+   */
+  readonly carimboDosPrecos = computed(() =>
+    carimboMaisAntigo((this.opportunities()?.items ?? []).map(o => o.as_of))
+  );
 
   filterText = '';
   filterMinDy: number | null = null;
@@ -566,6 +584,7 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
       return;
     }
     this.loadingOpportunities.set(true);
+    this.erro.set(null);
     this._cacheKey = key;
     this.api
       .opportunities(
@@ -588,7 +607,10 @@ export class OpportunitiesListComponent implements OnInit, OnDestroy {
           this._cacheTime = Date.now();
           this.loadingOpportunities.set(false);
         },
-        error: () => this.loadingOpportunities.set(false),
+        error: err => {
+          this.erro.set(err);
+          this.loadingOpportunities.set(false);
+        },
       });
   }
 

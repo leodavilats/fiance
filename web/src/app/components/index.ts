@@ -28,6 +28,8 @@ export { QuickInvestComponent } from './quick-invest/quick-invest.component';
 export { AllocationGapComponent } from './allocation-gap/allocation-gap.component';
 export { DipDiagnosisComponent } from './dip-diagnosis/dip-diagnosis.component';
 export { EmptyStateComponent } from './empty-state/empty-state.component';
+export { AsyncStateComponent } from './async-state/async-state.component';
+export { DataAgeComponent } from './data-age/data-age.component';
 export { FixedIncomeRateComponent } from './fixed-income-rate/fixed-income-rate.component';
 export { GoalProgressComponent } from './goal-progress/goal-progress.component';
 export { MarginOfSafetyComponent } from './margin-of-safety/margin-of-safety.component';

@@ -1,6 +1,6 @@
 # fiance — o que está aberto
 
-> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-09-08**; nada de
+> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-09-09**; nada de
 > histórico, nada de ✅. O que já foi resolvido — e por quê — está em [CHANGELOG.md](CHANGELOG.md).
 >
 > A revisão de **2026-09-08/09** fechou seis itens (paridade de nome, proveniência no nível
@@ -84,11 +84,12 @@
    `analysis/score_ruler.py` como fonte e a disciplina de mudar as três plataformas no mesmo
    commit. O risco continua registrado: divergência aqui é um número errado, não uma tela feia.
 
-7. **Restam 36 linhas com `fontSize:` solto no mobile, e seis delas abaixo de todo papel.**
+7. **Restam 35 linhas com `fontSize:` solto no mobile, e seis delas abaixo de todo papel.**
    A escala já foi **recalibrada** para 360dp (`body` em 16, `moneyXl` em 32), e os 15 sítios que
    tinham papel equivalente foram trocados: `metricSm` para cifra, `metric` para score, `caption`
    para legenda, `ticker` para papel, `pageTitle` para cabeçalho de sheet. A catraca de
-   `test/lint_ui_test.dart` desceu de 49 para **36**, e o teto só desce.
+   `test/lint_ui_test.dart` desceu de 49 para **35**, e o teto só desce. (Estava declarada em 36
+   com 35 no código: catraca com folga não é catraca, e a folga foi recolhida em 2026-09-09.)
 
    O que sobra é onde a decisão é **de layout antes de tipo**, e por isso não é substituição
    mecânica. A escala do sistema começa em 11 (`eyebrow`); os seis abaixo disso estão em 9 e 10, e
@@ -113,10 +114,11 @@
    a família serifada, e `test/lint_ui_test.dart` reprova o papel de veredito que saia em sans —
    declarar o papel não aplica a fonte.)*
 
-9. **Falta a regra do alvo de toque de 44dp no Dart.** `test/lint_ui_test.dart` cobra **oito** —
+9. **Falta a regra do alvo de toque de 44dp no Dart.** `test/lint_ui_test.dart` cobra **onze** —
     explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro, nome acessível em
     botão de ícone, serifa no papel de veredito, vocabulário de IA genérica, nome de destino
-    aposentado e a catraca de tipo solto.
+    aposentado, a catraca de tipo solto, esqueleto no lugar de disco girando, busca alcançável de
+    todo destino de raiz e falha de leitura numa voz só.
 
     A que falta precisa de uma decisão de layout **antes** da regra. `HelpTooltip` foi de 14 para
     32 e ganhou `Semantics`, mas 44 dobraria a altura do `Row` de rótulo de 11px onde ele vive.
@@ -137,9 +139,11 @@
     explicabilidade, entre conclusão e método) e `Decision` (veredito + falsificador num objeto
     só, para que um não possa ser renderizado sem o outro).
 
-    *(A proveniência saiu daqui: `asOf` deixou a gaveta e é linha visível, e `/ativo/:ticker`
-    passou a dizer quando o preço foi lido nas duas plataformas — o carimbo existia no snapshot
-    desde sempre e parava no serviço.)*
+    *(A proveniência saiu daqui: `asOf` deixou a gaveta e é linha visível. Em 2026-09-09 o
+    carimbo passou de `/ativo` para **onde se comparam preços** — a tabela de posições e a lista
+    de oportunidades, nas duas plataformas, com `<app-data-age>` / `formatIdade` e o critério do
+    carimbo mais antigo. No caminho, `Opportunity` (resposta) e `PortfolioPosition.fromJson`
+    (Dart) não declaravam o campo, e o descartavam em silêncio.)*
 
 12. **A tabela de posições mostra preço justo sem a base que o formou.** `<app-fair-price>`
     resolveu isso em `/ativo` e em `/descobrir` — a cifra nunca sai sem dizer quantos métodos
@@ -257,7 +261,9 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     que **não** foi feito é percorrer cada fluxo só com teclado e com leitor de tela de verdade:
     ordem de foco em camadas empilhadas, anúncio de mudança de rota e armadilha de foco em modal
     ainda não têm cobertura automática nem verificação manual registrada. **Parcialmente
-    endereçado:** a diretiva `fiDialog` (`core/directives/dialog.directive.ts`) prende o Tab,
+    endereçado:** há **salto para o conteúdo** (`.skip-link` no `app.component`, primeiro
+    controle da página) — sem ele o teclado atravessava cabeçalho e navegação inteiros a cada
+    troca de rota; a diretiva `fiDialog` (`core/directives/dialog.directive.ts`) prende o Tab,
     devolve o foco a quem abriu e dá papel e modalidade às seis superfícies sobrepostas; a mudança
     de rota é anunciada em região `aria-live`; e a **devolução do foco ao título** a cada navegação
     passou a ter cobertura em `e2e/acessibilidade.spec.ts`, medida por `document.activeElement` —

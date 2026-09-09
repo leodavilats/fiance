@@ -6,6 +6,8 @@ import '../../core/design_tokens.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/theme.dart';
 
 class DesvioScreen extends ConsumerWidget {
@@ -25,8 +27,15 @@ class DesvioScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(rebalanceSuggestionsProvider),
         child: async.when(
-          loading: () => const _Skeleton(),
-          error: (err, _) => _ErrorState(
+          loading: () => FiSkeleton.tela(
+            shape: FiSkeletonShape.row,
+            count: 5,
+            label: 'Cruzando sua carteira com as metas',
+          ),
+          error: (err, _) => FiErrorState(
+            error: err,
+            title: 'Não conseguimos montar sua estratégia',
+            action: 'cruzar sua carteira com as metas que você declarou',
             onRetry: () => ref.invalidate(rebalanceSuggestionsProvider),
           ),
           data: (data) {
@@ -447,72 +456,6 @@ class _ToolLink extends StatelessWidget {
       textColor: isDark ? FiColors.darkInk1 : FiColors.lightInk1,
       iconColor: isDark ? FiColors.darkInk2 : FiColors.lightInk2,
       onTap: onTap,
-    );
-  }
-}
-
-class _Skeleton extends StatelessWidget {
-  const _Skeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final block = isDark ? FiColors.darkGround2 : FiColors.lightGround2;
-
-    Widget bar(double width, double height) => Container(
-      width: width,
-      height: height,
-      margin: const EdgeInsets.only(bottom: FiSpace.s3),
-      decoration: BoxDecoration(
-        color: block,
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-
-    return ListView(
-      padding: const EdgeInsets.all(FiSpace.s4),
-      children: [
-        bar(180, 12),
-        for (var i = 0; i < 4; i++) bar(double.infinity, 20),
-        const SizedBox(height: FiSpace.s4),
-        bar(240, 24),
-      ],
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ink2 = isDark ? FiColors.darkInk2 : FiColors.lightInk2;
-
-    return ListView(
-      padding: const EdgeInsets.all(FiSpace.s4),
-      children: [
-        Text(
-          'Não conseguimos montar sua estratégia agora',
-          style: FiType.verdict.copyWith(fontFamily: fiFontSerif),
-        ),
-        const SizedBox(height: FiSpace.s2),
-        Text(
-          'Pode ser a conexão ou uma instabilidade na fonte de cotações. Suas metas e posições '
-          'estão salvas.',
-          style: FiType.body.copyWith(color: ink2),
-        ),
-        const SizedBox(height: FiSpace.s4),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton(
-            onPressed: onRetry,
-            child: const Text('Tentar de novo'),
-          ),
-        ),
-      ],
     );
   }
 }

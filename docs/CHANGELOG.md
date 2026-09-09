@@ -12,6 +12,115 @@
 
 ---
 
+## Quando a leitura falha, a tela para de mentir que está vazia (2026-09-09)
+
+Uma auditoria de UX das três plataformas procurava o que reformular na interface. O que ela achou
+não foi aparência: foi que **o produto tratava "não consegui ler" e "você não tem nada" como a
+mesma tela**, e essa tela era em branco.
+
+### O estado que não existia
+
+`CarteiraStore.loadFailed` era um booleano, alimentado por quatro leituras e consumido por **uma**
+tela — `/patrimonio` (Resumo). As outras seis seções da mesma loja renderizavam a carteira como se
+estivesse vazia quando a rede caía. Em Posições, Encerradas e Proventos não havia sequer estado
+vazio: a página abria com o título e o corpo em branco, sem uma frase, sem um botão, sem nada a
+fazer.
+
+O padrão se repetia fora da loja, sempre na mesma forma — `error: () => this.loading.set(false)`:
+
+- **`/mes`**, a primeira tela do produto. `@if (carregando()) … @else if (mes())` não tinha `@else`:
+  com a leitura falhada, a tela era o cabeçalho e o vazio.
+- **`/patrimonio/desempenho`** engolia a falha do dashboard (`error: () => undefined`) e mostrava
+  *"Ainda não há histórico suficiente"* para quem tinha história e não conseguiu lê-la.
+- **`/sobra/desvio`** mostrava *"Nenhuma estratégia calculada ainda"* quando o cálculo falhou.
+- **Projeção, Quedas, Comparar e Oportunidades** desligavam o botão e não diziam nada: a pessoa
+  clicava, o botão parava de girar, e a tela ficava igual.
+- **`/voce/alertas`** dizia *"Nenhum alerta configurado"* quando a leitura da lista falhou, e
+  reportava a falha de criação com `'✗ Não conseguimos criar o alerta'` — um glifo carregando
+  estado, contra a regra de que estado é papel de cor, e ainda por cima morto: a classe que o lia
+  testava `startsWith('x')` e o caractere é `✗`, então a frase saía sem cor nenhuma.
+- **`/aviso-cvm`**, texto jurídico, omitia em silêncio a postura de afirmação em vigor quando a
+  leitura de `/public/affirmation` falhava — justamente o número que o documento existe para não
+  duplicar.
+
+A falha era **anunciada e jogada fora**: o interceptor mostrava um toast que sumia em segundos e
+deixava a tela vazia atrás. E o texto do toast era de quem desenvolve, não de quem usa —
+`'Sem conexão com o servidor. Verifique se o backend está rodando.'`, `'Erro interno do servidor.'`,
+`` `Erro ${error.status}` ``.
+
+### A voz é uma só, e o mobile já a tinha
+
+O aplicativo estava **à frente** do web nisto: `FiErrorState` traduzia `DioException` em frase
+humana e oferecia "Tentar de novo" em quinze telas. O conserto foi trazer o padrão para o web, e
+não inventar um terceiro.
+
+- `core/error-message.ts` — `mensagemDeErro(erro, acao)`, espelho de `fiErrorMessage`. Status 0 é
+  rede de quem usa, não processo de quem opera. `detalheUtil` deixa passar o `detail` de 4xx de
+  domínio, que é escrito para ser lido, e barra o de 5xx, que é rastreamento.
+- `<app-async-state>` — os quatro estados num contrato só: esqueleto com a forma do que vem, falha
+  com frase e "Tentar de novo", vazio via `<app-empty-state>`, e o conteúdo. Adotado em treze telas.
+- O interceptor passou a tirar a frase do mesmo lugar, e só decide o efeito colateral do 401.
+- `CarteiraStore` guarda o **erro**, não o booleano, e ganhou `carregando` — as sete telas de
+  `/patrimonio` passaram a acertar de uma vez, porque o defeito estava na loja que todas leem.
+
+### Duas regras que existiam e não rodavam
+
+`missingExplainers` e `certaintyLanguage` filtravam `.html`. Este repo escreve o template dentro do
+`.ts` por contrato, e o único `.html` de `src/` é o `index.html`: as duas regras varriam o
+`index.html` havia meses. Uma delas é a que o CLAUDE.md chama de invariante de explicabilidade, e as
+telas carregavam `<!-- design-exception: explicabilidade -->` para uma máquina que não lia.
+
+Apontadas para o template inline, **as duas passam sem uma correção sequer** — o código já cumpria a
+regra que ninguém conferia. O custo aqui não foi dívida acumulada; foi a garantia ter sido
+imaginária.
+
+Uma regra nova, `telaSemTratarFalha`, reprova alvo de rota que lê dado e não trata a falha. Ela
+encontrou nove telas além das quatro que a auditoria já tinha achado à mão.
+
+### O momento do dado, onde ele decide
+
+`as_of` viajava do coletor até o cliente em `PortfolioPosition`, estava declarado no modelo do web,
+e **não chegava a nenhuma tela fora de `/ativo`**. Trinta preços comparados sem dizer de quando são.
+Em Oportunidades era pior que ausente: a linha *"Atualizado agora"* marcava o fetch do navegador, e
+com o scan servido do cache do servidor ela afirmava frescor que o dado não tinha.
+
+- `core/data-age.ts` (`idadeDoDado`, `dadoEnvelhecido`, `carimboMaisAntigo`) e `<app-data-age>`. A
+  idade de um conjunto é a do carimbo **mais antigo** — dizer a do mais novo promete um frescor que
+  a linha de baixo não tem. É o critério que `opportunity_service.market_data_age_seconds` já usava.
+- No backend, `Opportunity` (o modelo de resposta) não declarava `as_of`, embora `_MarketRecord` o
+  carregasse desde sempre: o `response_model` descartava o campo em silêncio, em cinquenta linhas de
+  preço. Declarado, e coberto por teste.
+- No mobile, `PortfolioPosition.fromJson` não declarava a chave — a armadilha que o CLAUDE.md nomeia,
+  na quarta ocorrência. Declarada, e coberta por teste.
+- Os *stubs* de `conftest.py` não carimbavam, então a suíte exercitava um caminho que a produção não
+  tem, e um campo de momento perdido passaria verde. Agora carimbam.
+
+### O esqueleto tem forma, e a busca tem porta
+
+Duas correções de paridade, cada uma na direção em que a plataforma estava atrás:
+
+- **O mobile ganhou esqueleto.** Treze telas abriam com um `CircularProgressIndicator` centralizado
+  — disco no meio da tela não diz o que está vindo, e a página salta quando o dado chega. `FiSkeleton`
+  espelha os papéis de `<app-skeleton>`: a altura de cada forma é a do papel de tipografia que vai
+  ocupar o lugar. `desvio_screen` tinha um `_Skeleton` e um `_ErrorState` privados, segunda grafia da
+  mesma coisa; saíram.
+- **O web ganhou salto para o conteúdo.** Não havia *skip link*: o teclado atravessava cabeçalho e
+  navegação inteiros a cada troca de rota.
+- **A busca global do mobile tinha uma porta só** — a barra de `/mes/feed`, tela secundária de um
+  destino, enquanto no web ela é botão de cabeçalho mais `⌘K` em qualquer tela. Achar um ativo exigia
+  saber onde a porta estava. `FiSearchAction` está nos cinco destinos de raiz.
+
+### O que a máquina passou a cobrar
+
+O `lint:ui` foi de 22 para 23 regras, e duas das antigas passaram a rodar de verdade. O
+`lint_ui_test.dart` foi de 8 para 11: esqueleto no lugar de disco, busca alcançável de todo destino
+de raiz, e falha de leitura numa voz só.
+
+**Nenhuma delas é preferência visual.** Todas protegem o mesmo defeito — a tela que não diz o que
+aconteceu — e por isso todas reprovam, em vez de avisar.
+
+---
+
 ## O build Android estava quebrado, e a suíte não tinha como saber (2026-09-09)
 
 `flutter build apk --release` falhava em `:sentry_flutter:compileReleaseKotlin` com *"Language

@@ -5,7 +5,7 @@ import { BenchmarkResponse, DashboardResponse, RecommendService } from '../../co
 import { BenchmarkChartComponent } from '../benchmark-chart/benchmark-chart.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 import { PatrimonyChartComponent } from '../patrimony-chart/patrimony-chart.component';
-import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { AsyncStateComponent } from '../async-state/async-state.component';
 import { SectionComponent } from '../section/section.component';
 
 @Component({
@@ -17,8 +17,8 @@ import { SectionComponent } from '../section/section.component';
     PageHeaderComponent,
     PatrimonyChartComponent,
     BenchmarkChartComponent,
-    SkeletonComponent,
     SectionComponent,
+    AsyncStateComponent,
   ],
   template: `
     <app-page-header
@@ -35,16 +35,25 @@ import { SectionComponent } from '../section/section.component';
           <p class="fi-verdict text-ink m-0 mb-4 max-w-reading">{{ frase }}</p>
         }
 
-        @if (snapshots().length > 1) {
-          <app-patrimony-chart [snapshots]="snapshots()" />
-        } @else if (carregando()) {
-          <app-skeleton shape="row" [count]="4" />
-        } @else {
-          <p class="fi-body text-ink-2 m-0">
-            Ainda não há histórico suficiente. O fiance guarda um retrato da carteira por dia — a
-            curva aparece a partir do segundo dia.
-          </p>
-        }
+        <app-async-state
+          [loading]="carregando()"
+          [error]="erroDoHistorico()"
+          loadingShape="row"
+          [loadingCount]="4"
+          loadingLabel="Carregando a evolução do patrimônio"
+          errorTitle="Não conseguimos abrir seu histórico"
+          errorAction="carregar a evolução do seu patrimônio"
+          (retry)="load()"
+        >
+          @if (snapshots().length > 1) {
+            <app-patrimony-chart [snapshots]="snapshots()" />
+          } @else {
+            <p class="fi-body text-ink-2 m-0">
+              Ainda não há histórico suficiente. O fiance guarda um retrato da carteira por dia — a
+              curva aparece a partir do segundo dia.
+            </p>
+          }
+        </app-async-state>
       </section>
 
       <app-section title="Carteira, CDI e Ibovespa">
@@ -57,15 +66,16 @@ import { SectionComponent } from '../section/section.component';
             Retorno ponderado no tempo: aportes entram como aporte, não como rentabilidade.
             {{ origemDaTaxa(b) }}
           </p>
-        } @else if (carregando()) {
-          <app-skeleton shape="verdict" />
         } @else {
-          <p class="fi-body text-ink-2 m-0">
-            Não conseguimos montar a comparação agora.
-            <button type="button" class="btn-link underline" (click)="load()">
-              Tentar de novo
-            </button>
-          </p>
+          <app-async-state
+            [loading]="carregando()"
+            [error]="erroDoBenchmark()"
+            loadingShape="verdict"
+            loadingLabel="Carregando a comparação com o CDI"
+            errorTitle="Não conseguimos montar a comparação"
+            errorAction="comparar sua carteira com o CDI e o Ibovespa"
+            (retry)="load()"
+          />
         }
       </app-section>
     </div>
@@ -78,23 +88,34 @@ export class PerformanceComponent implements OnInit {
   readonly benchmark = signal<BenchmarkResponse | null>(null);
   readonly carregando = signal(true);
 
+  /*
+   * Duas leituras, dois erros. Enquanto a falha do dashboard era engolida (`error: () => undefined`)
+   * a tela dizia "ainda não há histórico suficiente" para quem tinha história e não conseguiu lê-la.
+   */
+  readonly erroDoHistorico = signal<unknown>(null);
+  readonly erroDoBenchmark = signal<unknown>(null);
+
   ngOnInit(): void {
     this.load();
   }
 
   load(): void {
     this.carregando.set(true);
+    this.erroDoHistorico.set(null);
+    this.erroDoBenchmark.set(null);
+
     this.svc.dashboard().subscribe({
       next: d => this.snapshots.set(d.snapshots ?? []),
-      error: () => undefined,
+      error: err => this.erroDoHistorico.set(err),
     });
     this.svc.getBenchmark().subscribe({
       next: b => {
         this.benchmark.set(b);
         this.carregando.set(false);
       },
-      error: () => {
+      error: err => {
         this.benchmark.set(null);
+        this.erroDoBenchmark.set(err);
         this.carregando.set(false);
       },
     });

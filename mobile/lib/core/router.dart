@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'widgets/search_action.dart';
 import '../features/patrimonio/patrimonio_screen.dart';
 import '../features/assets/fixed_income_screen.dart';
 import '../features/auth/login_screen.dart';
@@ -212,6 +213,7 @@ class _DescobrirScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Descobrir'),
         actions: [
+          const FiSearchAction(),
           IconButton(
             tooltip: 'Quedas',
             icon: const Icon(Icons.trending_down),

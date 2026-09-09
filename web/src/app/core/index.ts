@@ -1,4 +1,6 @@
 export * from './allocation-categories';
+export * from './data-age';
+export * from './error-message';
 export * from './directives/dialog.directive';
 export * from './models';
 export * from './mes';

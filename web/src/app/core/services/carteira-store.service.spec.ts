@@ -1,7 +1,9 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { of } from 'rxjs';
 import { FixedIncomeListResponse, PortfolioEvaluationResponse, PortfolioPosition } from '../models';
+import { mensagemDeErro } from '../error-message';
 import { CarteiraStore, MAX_COMPARE } from './carteira-store.service';
 import { RecommendService } from './recommend.service';
 
@@ -41,6 +43,8 @@ const recommendStub = {
   getDividendsReceived: () => of({ items: [] }),
   getGoals: () => of([]),
   getSectorGoals: () => of([]),
+  getPortfolio: () => of({ items: [] }),
+  dashboard: () => of({ allocations: [], snapshots: [] }),
 };
 
 describe('CarteiraStore', () => {
@@ -238,6 +242,46 @@ describe('CarteiraStore', () => {
       store.closedTrades.set({ trades: [] } as never);
 
       expect(store.truncated()).toEqual([]);
+    });
+  });
+  describe('falha de leitura contra carteira vazia', () => {
+    it('guarda o erro, e não só o fato de ter havido um', () => {
+      expect(store.loadFailed()).toBe(false);
+
+      store.erroDeCarga.set(new HttpErrorResponse({ status: 503 }));
+
+      expect(store.loadFailed(), 'as sete telas de /patrimonio leem esta loja').toBe(true);
+      expect(
+        mensagemDeErro(store.erroDeCarga(), 'carregar sua carteira'),
+        'sem o erro a tela só sabia dizer "algo deu errado"'
+      ).toMatch(/instável/i);
+    });
+
+    it('recarregar limpa a falha antes de tentar de novo', () => {
+      store.erroDeCarga.set(new HttpErrorResponse({ status: 500 }));
+      store.reload();
+
+      expect(store.loadFailed()).toBe(false);
+    });
+  });
+
+  describe('idade dos preços', () => {
+    it('é a do carimbo mais antigo da tabela', () => {
+      const agora = Date.now() / 1000;
+      store.evaluation.set(
+        evaluation([
+          position({ ticker: 'AAA', as_of: agora - 60 }),
+          position({ ticker: 'BBB', as_of: agora - 3600 }),
+        ])
+      );
+
+      expect(store.carimboDosPrecos()).toBeCloseTo(agora - 3600, 3);
+    });
+
+    it('sem carimbo nenhum a tela não inventa um', () => {
+      store.evaluation.set(evaluation([position({ ticker: 'AAA', as_of: null })]));
+
+      expect(store.carimboDosPrecos()).toBeNull();
     });
   });
 });

@@ -523,6 +523,21 @@
     border: 0;
   }
 
+  /* Some da tela até receber foco, e então é o primeiro controle da página. Sem ele o teclado
+     atravessa cabeçalho e navegação inteiros a cada troca de rota. */
+  .skip-link {
+    position: absolute;
+    left: var(--fi-space-3);
+    top: var(--fi-space-3);
+    z-index: var(--fi-z-toast);
+    transform: translateY(-200%);
+    transition: transform var(--fi-motion-fast) var(--fi-motion-ease-enter);
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+  }
+
   .active {
     font-weight: 600;
     background: var(--fi-ground-2);

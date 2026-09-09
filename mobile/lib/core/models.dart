@@ -15,6 +15,7 @@ class PortfolioPosition {
     required this.categoryResolved,
     required this.dividendYield,
     required this.sector,
+    this.asOf,
     this.reasons = const [],
     this.confidence = 0,
     this.dataYears = 0,
@@ -37,6 +38,11 @@ class PortfolioPosition {
   final String categoryResolved;
   final double? dividendYield;
   final String? sector;
+
+  /// Momento da leitura do preco, em epoch. O backend manda desde sempre e este modelo nao o
+  /// declarava: `fromJson` descarta chave nao declarada sem avisar.
+  final double? asOf;
+
   final List<String> reasons;
   final double confidence;
   final int dataYears;
@@ -60,6 +66,7 @@ class PortfolioPosition {
         categoryResolved: j['category_resolved'] as String? ?? 'acoes_br',
         dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
         sector: j['sector'] as String?,
+        asOf: (j['as_of'] as num?)?.toDouble(),
         reasons:
             (j['reasons'] as List?)?.map((e) => e as String).toList() ??
             const [],
@@ -475,6 +482,7 @@ class Opportunity {
     required this.ticker,
     required this.name,
     required this.price,
+    this.asOf,
     required this.fairPrice,
     required this.marginOfSafety,
     required this.dividendYield,
@@ -492,6 +500,10 @@ class Opportunity {
   final String ticker;
   final String? name;
   final double? price;
+
+  /// Momento da leitura, em epoch. Espelha `Opportunity.as_of` do backend.
+  final double? asOf;
+
   final double? fairPrice;
   final double? marginOfSafety;
   final double? dividendYield;
@@ -509,6 +521,7 @@ class Opportunity {
     ticker: j['ticker'] as String,
     name: j['name'] as String?,
     price: (j['price'] as num?)?.toDouble(),
+    asOf: (j['as_of'] as num?)?.toDouble(),
     fairPrice: (j['fair_price'] as num?)?.toDouble(),
     marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
     dividendYield: (j['dividend_yield'] as num?)?.toDouble(),

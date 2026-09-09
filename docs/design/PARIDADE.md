@@ -63,6 +63,10 @@ quando a forma muda.
 - projeção sai como faixa, nunca número único;
 - julgamento vem com como conferir a conta;
 - ausência é um estado nomeado, nunca `0,00`;
+- **falha de leitura não é ausência de dado** — as duas nunca compartilham a mesma tela, e as
+  quatro faces do estado (esperando · falhou · vazio · conteúdo) saem de um contrato só;
+- toda tela de raiz alcança a busca global — o gesto é livre, a capacidade não;
+- espera tem a forma do que vai chegar, não um disco girando;
 - método não aplicável explica o motivo;
 - nada de promessa sobre o futuro.
 
@@ -129,13 +133,21 @@ O que ficou:
   para limite de controle. Não é design, é legibilidade;
 - **`web/tools/lint-ui.mjs`** e **`mobile/test/lint_ui_test.dart`** — as regras de **produto**:
   julgamento sem explicabilidade, projeção sem faixa, promessa sobre o futuro, botão sem nome
-  acessível, vocabulário de IA genérica e — só no Dart — **nome de destino aposentado**, que é a
-  única parte da paridade de conceito com máquina, porque nome é a parte dela que é literal;
+  acessível, vocabulário de IA genérica, tela de rota que não trata falha de leitura, e — só no
+  Dart — **nome de destino aposentado**, **esqueleto no lugar de disco girando** e **busca
+  alcançável de todo destino de raiz**. Estas três são a paridade com máquina: nome e frase porque
+  são literais, e a busca porque presença de afordância também é;
 - **`python design-tokens/build-icons.py --check`** — a marca, que é o único gerador que sobra.
 
 O que **saiu**, e o risco que veio com a escolha: a régua de score pode divergir entre as
 plataformas sem nada avisar, e um destino pode existir num lado e não no outro sem nada avisar. Os
 dois já aconteceram neste repositório. Revisão de PR é a única guarda.
+
+**A divergência não anda só numa direção.** Em 2026-09-09 o web estava atrás em estado de falha —
+oito grafias escritas à mão e nove telas de rota sem nenhuma — enquanto o mobile já tinha
+`FiErrorState` traduzindo exceção em frase; e o mobile estava atrás em esqueleto e em porta de
+busca. Cada correção foi na direção de quem já acertava. Ao achar uma assimetria, a pergunta é
+qual lado está certo, não qual é o de referência.
 
 ## Revisão de PR
 

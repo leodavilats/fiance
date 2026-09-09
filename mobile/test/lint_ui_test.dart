@@ -319,7 +319,7 @@ void main() {
     });
 
     test('o tipo solto nao cresce', () {
-      const teto = 36;
+      const teto = 35;
 
       final soltos = <String>[];
       for (final f in fontes) {
@@ -344,6 +344,94 @@ void main() {
             'Soltos hoje:\n  ${soltos.join('\n  ')}',
       );
     });
+
+    test('espera tem a forma do que vai chegar, e nao um disco girando', () {
+      /*
+       * Treze telas abriam com um `CircularProgressIndicator` centralizado. Disco no meio da
+       * tela nao diz o que esta vindo, e a pagina salta quando o dado chega -- o web resolveu
+       * isso com `<app-skeleton>` e o mobile ficou de fora. O indicador continua legitimo dentro
+       * de um botao, que e onde ele diz "esta acao esta em curso".
+       */
+      final achados = <String>[];
+      for (final f in fontes) {
+        final fonte = f.readAsStringSync();
+        if (_temEscape(fonte, 'esqueleto')) continue;
+
+        for (final m in RegExp(r'Center\(\s*child:\s*CircularProgressIndicator\(')
+            .allMatches(fonte)) {
+          final linha = '\n'.allMatches(fonte.substring(0, m.start)).length + 1;
+          achados.add('${_curto(f)}:$linha');
+        }
+      }
+
+      expect(
+        achados,
+        isEmpty,
+        reason:
+            'use FiSkeleton.tela(shape: ..., count: ...): o esqueleto tem a altura do papel que '
+            'vai ocupar o lugar, entao a pagina nao salta. Achados: ${achados.join(', ')}',
+      );
+    });
+
+    test('a busca global e alcancavel de todo destino de raiz', () {
+      /*
+       * A busca existia em `/busca` e tinha uma porta so: a barra de `/mes/feed`, tela secundaria
+       * de um destino. No web ela e botao de cabecalho mais atalho de teclado, em qualquer tela.
+       * Paridade aqui e de capacidade, nao de gesto.
+       */
+      const raizes = <String, String>{
+        'features/mes/mes_screen.dart': 'Mes',
+        'features/sobra/sobra_screen.dart': 'Sobra',
+        'features/patrimonio/patrimonio_screen.dart': 'Patrimonio',
+        'core/router.dart': 'Descobrir',
+        'features/config/config_screen.dart': 'Voce',
+      };
+
+      final semBusca = <String>[];
+      for (final entrada in raizes.entries) {
+        final arquivo = File('lib/${entrada.key}');
+        expect(arquivo.existsSync(), isTrue, reason: 'destino sumiu: ${entrada.key}');
+
+        if (!arquivo.readAsStringSync().contains('FiSearchAction')) {
+          semBusca.add('${entrada.value} (${entrada.key})');
+        }
+      }
+
+      expect(
+        semBusca,
+        isEmpty,
+        reason:
+            'todo destino de raiz leva a /busca por FiSearchAction. Sem busca: '
+            '${semBusca.join(', ')}',
+      );
+    });
+
+    test('a falha de leitura sai numa voz so', () {
+      /*
+       * `desvio_screen` tinha um `_ErrorState` privado com a frase escrita a mao, ao lado do
+       * `FiErrorState` que todas as outras telas usam. Duas grafias para a mesma coisa e como
+       * a divergencia comeca.
+       */
+      final proprios = <String>[];
+      for (final f in fontes) {
+        if (f.path.contains('error_state.dart')) continue;
+
+        final fonte = f.readAsStringSync();
+        for (final m in RegExp(r'class _\w*(?:Error|Falha)\w*\s+extends\s+\w*Widget')
+            .allMatches(fonte)) {
+          proprios.add('${_curto(f)}: ${m[0]}');
+        }
+      }
+
+      expect(
+        proprios,
+        isEmpty,
+        reason:
+            'use FiErrorState, que ja traduz DioException em frase e oferece "Tentar de novo". '
+            'Achados: ${proprios.join(' | ')}',
+      );
+    });
+
   });
 }
 

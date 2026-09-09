@@ -84,6 +84,17 @@ interface AffirmationMode {
               <p class="fi-body m-0 mt-1">{{ m.disclaimer }}</p>
             </div>
           </div>
+        } @else if (erro()) {
+          <div class="notice notice-attention mt-4" role="alert">
+            <div>
+              <p class="fi-label m-0">Não conseguimos ler a postura em vigor agora</p>
+              <p class="fi-body m-0 mt-1">
+                O nível vem do servidor de propósito, para não existir uma segunda cópia desta frase
+                que envelheça. A tabela acima continua valendo; recarregue a página para ver qual
+                dos níveis está ativo.
+              </p>
+            </div>
+          </div>
         }
 
         <p class="fi-body text-ink-2 m-0 mt-4">
@@ -123,6 +134,7 @@ export class CvmNoticeComponent {
   private readonly http = inject(HttpClient);
 
   readonly modo = signal<AffirmationMode | null>(null);
+  readonly erro = signal<unknown>(null);
 
   private readonly nomes: Record<number, string> = {
     1: 'descritivo',
@@ -131,9 +143,13 @@ export class CvmNoticeComponent {
   };
 
   constructor() {
-    this.http
-      .get<AffirmationMode>(`${environment.apiBaseUrl}/public/affirmation`)
-      .subscribe({ next: m => this.modo.set(m), error: () => this.modo.set(null) });
+    this.http.get<AffirmationMode>(`${environment.apiBaseUrl}/public/affirmation`).subscribe({
+      next: m => this.modo.set(m),
+      error: err => {
+        this.modo.set(null);
+        this.erro.set(err);
+      },
+    });
   }
 
   nomeDoNivel(level: number): string {

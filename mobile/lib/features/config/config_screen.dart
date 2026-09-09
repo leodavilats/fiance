@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/widgets/search_action.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/legal_links.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
@@ -22,7 +24,10 @@ class ConfigScreen extends ConsumerWidget {
     final preferences = ref.watch(preferencesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Você')),
+      appBar: AppBar(
+        title: const Text('Você'),
+        actions: const [FiSearchAction()],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
         children: [
@@ -80,7 +85,7 @@ class ConfigScreen extends ConsumerWidget {
           preferences.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
+              child: FiSkeleton(shape: FiSkeletonShape.row, count: 6),
             ),
             error: (err, _) => Padding(
               padding: const EdgeInsets.all(16),

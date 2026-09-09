@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/format.dart';
 import '../../core/providers.dart';
+import '../../core/widgets/search_action.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 import '../mes/widgets/feed_charts.dart';
@@ -24,6 +27,7 @@ class PatrimonioScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Patrimônio'),
         actions: [
+          const FiSearchAction(),
           IconButton(
             tooltip: 'Renda fixa',
             icon: const Icon(Icons.account_balance_outlined),
@@ -44,7 +48,7 @@ class PatrimonioScreen extends ConsumerWidget {
           ref.invalidate(fixedIncomeProvider);
         },
         child: dashboard.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => FiSkeleton.tela(shape: FiSkeletonShape.metric, count: 1, label: 'Carregando sua carteira'),
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos carregar sua carteira',
@@ -97,6 +101,25 @@ class PatrimonioScreen extends ConsumerWidget {
                 FiSectionTitle(
                   icon: Icons.receipt_long_outlined,
                   title: 'Ativos negociados (${data.positions.length})',
+                ),
+                Builder(
+                  builder: (context) {
+                    final idade = formatIdade(
+                      carimboMaisAntigo(data.positions.map((p) => p.asOf)),
+                    );
+                    if (idade.isEmpty) return const SizedBox.shrink();
+
+                    final escuro = Theme.of(context).brightness == Brightness.dark;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: FiSpace.s2),
+                      child: Text(
+                        'Cotações lidas $idade',
+                        style: FiType.caption.copyWith(
+                          color: escuro ? FiColors.darkInk3 : FiColors.lightInk3,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),

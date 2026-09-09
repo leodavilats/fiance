@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/format.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../core/models.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme.dart';
@@ -226,8 +227,8 @@ class FiBenchmarkSection extends ConsumerWidget {
       loading: () => const Card(
         margin: EdgeInsets.zero,
         child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Center(child: CircularProgressIndicator()),
+          padding: EdgeInsets.all(FiSpace.s6),
+          child: FiSkeleton(shape: FiSkeletonShape.row, count: 4),
         ),
       ),
       error: (_, _) => const SizedBox.shrink(),

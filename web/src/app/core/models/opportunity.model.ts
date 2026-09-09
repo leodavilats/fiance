@@ -6,6 +6,10 @@ export interface Opportunity {
   asset_type: AssetType;
   sector: string | null;
   price: number | null;
+
+  /** Momento da leitura da fonte, em segundos epoch. Ausente quando a fonte não carimbou. */
+  as_of: number | null;
+
   fair_price: number | null;
   bazin: number | null;
   graham: number | null;

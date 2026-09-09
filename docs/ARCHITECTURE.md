@@ -216,9 +216,20 @@ Cinco destinos por intenção, mais o ativo como camada — o racional está em
   bandas, então serve tanto o score de um ativo quanto a saúde da carteira.
 - **`components/insight/`** — o padrão único de insight: o que aconteceu → por que importa → o que
   sustenta → o que fazer.
+- **`components/async-state/`** — as quatro faces de uma leitura (esperando · falhou · vazio ·
+  conteúdo) num contrato só, para que uma tela não trate três e esqueça a quarta. A frase de falha
+  vem de `core/error-message.ts`, e o vazio delega a `components/empty-state/`.
+- **`components/data-age/`** — quando a fonte foi lida, ao lado do número que ela qualifica. Em
+  lista, o carimbo é o **mais antigo** (`core/data-age.ts`): dizer a idade do mais novo prometeria
+  frescor que a linha de baixo não tem.
+- **`core/error-message.ts`** — `mensagemDeErro(erro, acao)`, a única frase de falha do produto,
+  usada pelas telas **e** pelo `httpErrorInterceptor`. `detalheUtil` deixa passar o `detail` de
+  4xx de domínio e barra o de 5xx, que é rastreamento e não recado.
 - **`core/services/carteira-store.service.ts`** — estado da carteira compartilhado pelas sete
-  sub-rotas de `/carteira`. Sem ele, cada troca de sub-aba refaria `POST /portfolio/evaluate`, que
-  é a chamada mais caras do produto.
+  sub-rotas de `/patrimonio`. Sem ele, cada troca de sub-aba refaria `POST /portfolio/evaluate`,
+  que é a chamada mais cara do produto. Guarda o **erro** da leitura, e não um booleano: enquanto
+  era booleano, seis das sete telas renderizavam a carteira como se estivesse vazia quando a rede
+  caía.
 - **`core/services/dip-analysis.service.ts`** — estado do drawer de diagnóstico de queda,
   compartilhado dentro de Descobrir. Vive num serviço porque um layout com `router-outlet` não
   recebe `output` de filho roteado.
@@ -263,7 +274,10 @@ Estrutura `lib/`:
   máquina conferindo a paridade: mudar um valor num lado obriga a mudar no outro. `theme.dart`
   monta o `ThemeData` sobre esses valores.
 - **`core/widgets/`** — `score_ruler.dart` (a régua, espelhando o web), `error_state.dart`
-  (`FiErrorState` + `fiErrorMessage`, que traduz exceção em causa humana),
+  (`FiErrorState` + `fiErrorMessage`, que traduz exceção em causa humana e foi a origem do
+  `mensagemDeErro` do web), `skeleton.dart` (`FiSkeleton`, os papéis de `<app-skeleton>`: a altura
+  de cada forma é a do papel de tipografia que vai ocupar o lugar), `search_action.dart`
+  (`FiSearchAction`, a porta para `/busca` em todo destino de raiz),
   `ticker_autocomplete_field.dart`, `help_tooltip.dart`, `brand_background.dart`.
 - **`features/`** — uma pasta por destino, e o nome da pasta é o nome do destino: `mes/`
   (`mes_screen`, `feed_screen`, `atividade_screen`, `dividas_screen`, mais os *sheets* de lançar e

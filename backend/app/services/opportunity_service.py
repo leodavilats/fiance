@@ -164,6 +164,7 @@ class OpportunityService:
             asset_type=AssetType(record.asset_type),
             sector=record.sector,
             price=record.price,
+            as_of=record.as_of or None,
             fair_price=fair.consensus,
             bazin=fair.bazin,
             graham=fair.graham,

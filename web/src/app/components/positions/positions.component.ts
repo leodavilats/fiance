@@ -19,6 +19,8 @@ import {
   UiHelperService,
   parseColumns,
 } from '../../core';
+import { AsyncStateComponent } from '../async-state/async-state.component';
+import { DataAgeComponent } from '../data-age/data-age.component';
 import { HelpTooltipComponent } from '../help-tooltip/help-tooltip.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
@@ -33,423 +35,455 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
     LucideAngularModule,
     RouterLink,
     HelpTooltipComponent,
+    AsyncStateComponent,
+    DataAgeComponent,
   ],
   template: `
-    <app-page-header title="Posições" question="O que exatamente eu tenho, linha a linha?" />
+    <app-page-header title="Posições" question="O que exatamente eu tenho, linha a linha?">
+      <app-data-age [asOf]="carimboDosPrecos()" label="Cotações lidas" />
+    </app-page-header>
 
-    @if (vencimentosProximos().length > 0) {
-      <section class="mb-6">
-        <div
-          class="flex items-start gap-3 p-4 rounded-md border border-attention/40 bg-attention/10"
-        >
-          <lucide-icon
-            name="calendar-clock"
-            size="18"
-            class="text-attention mt-0.5 shrink-0"
-            aria-hidden="true"
-          ></lucide-icon>
-          <div class="min-w-0">
-            <p class="fi-verdict-sm text-ink m-0">
-              {{ vencimentosProximos().length === 1 ? 'Uma aplicação vence' : 'Aplicações vencem' }}
-              nos próximos 30 dias
-            </p>
-            <ul class="list-none m-0 p-0 mt-1 flex flex-col gap-0.5">
-              @for (v of vencimentosProximos(); track v.id) {
-                <li class="fi-caption text-ink-2">
-                  <span class="text-ink">{{ v.nome }}</span> — em
-                  <span class="fi-num">{{ v.dias_para_vencimento }}</span> dias,
-                  <span class="fi-num">{{
-                    v.valor_no_vencimento ?? v.valor_atual | currency: 'BRL'
-                  }}</span>
-                  no vencimento
-                </li>
-              }
-            </ul>
-          </div>
-        </div>
-      </section>
-    }
-
-    @if (fixedIncome(); as fi) {
-      @if (fixedIncomePositions().length > 0) {
-        <section>
-          <div class="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-            <h2 class="fi-title text-ink m-0">
-              Renda fixa
-              <span class="text-ink-3 fi-num">({{ fixedIncomePositions().length }})</span>
-            </h2>
-            <button
-              type="button"
-              class="btn-quiet"
-              [attr.aria-expanded]="showFixedIncomeDetail()"
-              (click)="showFixedIncomeDetail.set(!showFixedIncomeDetail())"
-            >
-              <lucide-icon
-                [name]="showFixedIncomeDetail() ? 'chevron-up' : 'chevron-down'"
-                size="14"
-              ></lucide-icon>
-              {{ showFixedIncomeDetail() ? 'Recolher' : 'Detalhar' }}
-            </button>
-          </div>
-
-          <div class="flex items-baseline gap-8 flex-wrap mt-4">
-            <div>
-              <p class="fi-eyebrow text-ink-3 m-0">Aplicado</p>
-              <p class="fi-metric text-ink m-0">{{ fi.total_investido | currency: 'BRL' }}</p>
-            </div>
-            <div>
-              <p class="fi-eyebrow text-ink-3 m-0">Valor hoje</p>
-              <p class="fi-metric text-ink m-0">{{ fi.total_atual | currency: 'BRL' }}</p>
-            </div>
-            <div>
-              <p class="fi-eyebrow text-ink-3 m-0">Rendimento líquido</p>
-              <p class="fi-metric text-ink m-0">
-                {{ fi.total_rendimento | currency: 'BRL' }}
-                <span class="fi-caption text-ink-3">
-                  (<span class="fi-num">{{ fi.rendimento_pct | number: '1.2-2' }}</span
-                  >%)
-                </span>
+    <app-async-state
+      [loading]="carregando()"
+      [error]="erroDeCarga()"
+      [empty]="vazio()"
+      loadingShape="row"
+      [loadingCount]="8"
+      loadingLabel="Carregando suas posições"
+      errorTitle="Não conseguimos abrir suas posições"
+      errorAction="carregar suas posições"
+      emptyTitle="Você ainda não tem posições registradas"
+      emptyReason="Esta tela lista, linha a linha, o que você tem — quantidade, preço médio, cotação e a leitura de preço justo. Ela se preenche a partir da sua carteira."
+      emptyNextStep="Você pode cadastrar uma posição de cada vez, ou colar o extrato da corretora de uma vez."
+      emptyActionLabel="Cadastrar uma posição"
+      emptyActionRoute="/patrimonio/editar"
+      emptySecondaryLabel="Importar extrato"
+      emptySecondaryRoute="/patrimonio/editar"
+      (retry)="recarregar()"
+    >
+      @if (vencimentosProximos().length > 0) {
+        <section class="mb-6">
+          <div
+            class="flex items-start gap-3 p-4 rounded-md border border-attention/40 bg-attention/10"
+          >
+            <lucide-icon
+              name="calendar-clock"
+              size="18"
+              class="text-attention mt-0.5 shrink-0"
+              aria-hidden="true"
+            ></lucide-icon>
+            <div class="min-w-0">
+              <p class="fi-verdict-sm text-ink m-0">
+                {{
+                  vencimentosProximos().length === 1 ? 'Uma aplicação vence' : 'Aplicações vencem'
+                }}
+                nos próximos 30 dias
               </p>
+              <ul class="list-none m-0 p-0 mt-1 flex flex-col gap-0.5">
+                @for (v of vencimentosProximos(); track v.id) {
+                  <li class="fi-caption text-ink-2">
+                    <span class="text-ink">{{ v.nome }}</span> — em
+                    <span class="fi-num">{{ v.dias_para_vencimento }}</span> dias,
+                    <span class="fi-num">{{
+                      v.valor_no_vencimento ?? v.valor_atual | currency: 'BRL'
+                    }}</span>
+                    no vencimento
+                  </li>
+                }
+              </ul>
             </div>
           </div>
-
-          <p class="fi-caption text-ink-3 m-0 mt-3">
-            Marcado a mercado no servidor, pela mesma regra do comparador. CDI de referência
-            <span class="fi-num">{{ fi.cdi_referencia | number: '1.2-2' }}</span
-            >% ({{ fi.fonte_taxas === 'bcb' ? 'BCB' : 'estimativa' }}).
-          </p>
-
-          @if (showFixedIncomeDetail()) {
-            <div class="overflow-x-auto mt-4" [attr.data-density]="density()">
-              <table class="w-full border-collapse">
-                <caption class="sr-only">
-                  Aplicações de renda fixa, com taxa efetiva e valor marcado a mercado
-                </caption>
-                <thead>
-                  <tr class="border-b border-hairline">
-                    <th class="text-left py-2 px-2 fi-label text-ink-3">Aplicação</th>
-                    <th class="text-left py-2 px-2 fi-label text-ink-3">Tipo</th>
-                    <th class="text-right py-2 px-2 fi-label text-ink-3">Rende</th>
-                    <th class="text-right py-2 px-2 fi-label text-ink-3">Aplicado</th>
-                    <th class="text-right py-2 px-2 fi-label text-ink-3">Hoje</th>
-                    <th class="text-right py-2 px-2 fi-label text-ink-3">Rend.</th>
-                    <th class="text-right py-2 px-2 fi-label text-ink-3">No vencimento</th>
-                    <th class="text-left py-2 px-2 fi-label text-ink-3">Liquidez</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (item of fixedIncomePositions(); track trackFixedIncome($index, item)) {
-                    <tr
-                      class="border-b border-hairline hover:bg-ground-2 transition-colors"
-                      [style.height]="'var(--fi-row-height)'"
-                    >
-                      <td class="px-2 fi-label text-ink">
-                        {{ item.nome }}
-                        @if (item.isento_ir) {
-                          <span class="tag tag-brand ml-1">isento de IR</span>
-                        }
-                      </td>
-                      <td class="px-2 fi-caption text-ink-2">{{ rfTipoLabel(item.tipo) }}</td>
-                      <td class="text-right px-2">
-                        <span class="fi-num text-ink">{{ rendeLabel(item) }}</span>
-                        <span class="fi-caption text-ink-3 block">
-                          {{ item.taxa_anual_efetiva_pct | number: '1.2-2' }}% a.a. líquido
-                        </span>
-                      </td>
-                      <td class="text-right px-2 fi-num text-ink">
-                        {{ item.valor_investido | number: '1.2-2' }}
-                      </td>
-                      <td class="text-right px-2 fi-num text-ink">
-                        {{ item.valor_atual | number: '1.2-2' }}
-                      </td>
-                      <td class="text-right px-2 fi-num text-up">
-                        +{{ item.rendimento_pct | number: '1.2-2' }}%
-                      </td>
-                      <td class="text-right px-2 fi-num text-ink-2">
-                        {{
-                          item.valor_no_vencimento != null
-                            ? (item.valor_no_vencimento | number: '1.2-2')
-                            : '—'
-                        }}
-                      </td>
-                      <td class="px-2 fi-caption text-ink-2">{{ liquidezLabel(item.liquidez) }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-
-            @if (hiddenFixedIncome().length > 0) {
-              <p class="fi-caption text-ink-3 mt-3 m-0">
-                <span class="fi-num">{{ hiddenFixedIncome().length }}</span> aplicação(ões)
-                oculta(s), fora dos totais.
-              </p>
-            }
-          }
         </section>
       }
-    }
 
-    @if (tradedPositions().length > 0) {
-      <section class="fi-block">
-        <div class="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-          <h2 class="fi-title text-ink m-0">
-            Ativos negociados <span class="text-ink-3 fi-num">({{ negociadosCount() }})</span>
-          </h2>
-          <a routerLink="/patrimonio/editar" class="btn-link"> Editar carteira </a>
-        </div>
-        <p class="fi-caption text-ink-3 m-0 mb-4">
-          Ações, FIIs, BDRs e ETFs com cotação em bolsa. A leitura compara o preço atual com o preço
-          justo estimado.
-          <app-help-tooltip term="margem de segurança" [text]="ui.glossary['ms']" />
-        </p>
-
-        <div class="flex flex-wrap items-center gap-2 mb-3">
-          @if (selectedTickers().length > 0) {
-            <span class="fi-caption text-ink-2">
-              <span class="fi-num">{{ selectedTickers().length }}/{{ maxCompare }}</span>
-              selecionados
-            </span>
-            <button type="button" class="btn-secondary compact-btn" (click)="compareSelected()">
-              <lucide-icon name="git-compare" size="14"></lucide-icon> Comparar
-            </button>
-            <button type="button" class="btn-secondary compact-btn" (click)="clearSelection()">
-              Limpar
-            </button>
-          }
-
-          <div class="ml-auto flex items-center gap-2">
-            <div class="segmented" role="group" aria-label="Densidade da tabela">
+      @if (fixedIncome(); as fi) {
+        @if (fixedIncomePositions().length > 0) {
+          <section>
+            <div class="flex items-baseline justify-between gap-3 flex-wrap mb-1">
+              <h2 class="fi-title text-ink m-0">
+                Renda fixa
+                <span class="text-ink-3 fi-num">({{ fixedIncomePositions().length }})</span>
+              </h2>
               <button
                 type="button"
-                class="segmented-option"
-                [attr.aria-pressed]="density() === 'comfortable'"
-                (click)="setDensity('comfortable')"
+                class="btn-quiet"
+                [attr.aria-expanded]="showFixedIncomeDetail()"
+                (click)="showFixedIncomeDetail.set(!showFixedIncomeDetail())"
               >
-                Confortável
-              </button>
-              <button
-                type="button"
-                class="segmented-option"
-                [attr.aria-pressed]="density() === 'compact'"
-                (click)="setDensity('compact')"
-              >
-                Compacta
+                <lucide-icon
+                  [name]="showFixedIncomeDetail() ? 'chevron-up' : 'chevron-down'"
+                  size="14"
+                ></lucide-icon>
+                {{ showFixedIncomeDetail() ? 'Recolher' : 'Detalhar' }}
               </button>
             </div>
 
-            <details class="relative">
-              <summary class="btn-secondary compact-btn cursor-pointer list-none">
-                <lucide-icon name="table" size="14"></lucide-icon>
-                Colunas (<span class="fi-num">{{ visibleColumns().length }}</span
-                >)
-              </summary>
-              <div
-                class="absolute right-0 top-full mt-1 z-popover w-[250px] bg-ground-1 border border-hairline rounded-lg shadow-popover p-2"
-              >
-                @for (col of allColumns; track col.id) {
-                  <label
-                    class="flex items-start gap-2 px-2 py-1.5 rounded-sm hover:bg-ground-2 cursor-pointer"
-                    [class.opacity-60]="col.essential"
-                  >
-                    <input
-                      type="checkbox"
-                      class="accent-brand mt-0.5"
-                      [checked]="isColumnVisible(col.id)"
-                      [disabled]="col.essential"
-                      (change)="toggleColumn(col.id)"
-                    />
-                    <span class="min-w-0">
-                      <span class="fi-label text-ink block">{{ col.label }}</span>
-                      <span class="fi-caption text-ink-3 block">{{ col.hint }}</span>
-                    </span>
-                  </label>
-                }
+            <div class="flex items-baseline gap-8 flex-wrap mt-4">
+              <div>
+                <p class="fi-eyebrow text-ink-3 m-0">Aplicado</p>
+                <p class="fi-metric text-ink m-0">{{ fi.total_investido | currency: 'BRL' }}</p>
               </div>
-            </details>
+              <div>
+                <p class="fi-eyebrow text-ink-3 m-0">Valor hoje</p>
+                <p class="fi-metric text-ink m-0">{{ fi.total_atual | currency: 'BRL' }}</p>
+              </div>
+              <div>
+                <p class="fi-eyebrow text-ink-3 m-0">Rendimento líquido</p>
+                <p class="fi-metric text-ink m-0">
+                  {{ fi.total_rendimento | currency: 'BRL' }}
+                  <span class="fi-caption text-ink-3">
+                    (<span class="fi-num">{{ fi.rendimento_pct | number: '1.2-2' }}</span
+                    >%)
+                  </span>
+                </p>
+              </div>
+            </div>
 
-            <button type="button" class="btn-secondary compact-btn" (click)="exportCsv()">
-              <lucide-icon name="download" size="14"></lucide-icon> CSV
-            </button>
-          </div>
-        </div>
+            <p class="fi-caption text-ink-3 m-0 mt-3">
+              Marcado a mercado no servidor, pela mesma regra do comparador. CDI de referência
+              <span class="fi-num">{{ fi.cdi_referencia | number: '1.2-2' }}</span
+              >% ({{ fi.fonte_taxas === 'bcb' ? 'BCB' : 'estimativa' }}).
+            </p>
 
-        <div class="overflow-x-auto" [attr.data-density]="density()">
-          <table class="w-full border-collapse">
-            <caption class="sr-only">
-              Posições negociadas, com preço médio, cotação atual e leitura do sistema
-            </caption>
-            <!-- design-exception: camada — o cabecalho grudado precisa cobrir so as celulas da propria tabela -->
-            <thead>
-              <tr class="border-b border-hairline">
-                <th class="py-2 px-2 w-8"><span class="sr-only">Selecionar para comparar</span></th>
-                @for (col of columns(); track col.id) {
-                  <th
-                    class="py-2 px-2 fi-label text-ink-3 sticky top-0 bg-ground z-10"
-                    [class.text-left]="col.align === 'left'"
-                    [class.text-right]="col.align === 'right'"
-                    [attr.aria-sort]="ariaSort(col.id)"
-                  >
-                    @if (col.sortable) {
-                      <button
-                        type="button"
-                        class="th-sort"
-                        [class.justify-end]="col.align === 'right'"
-                        [attr.aria-label]="'Ordenar por ' + col.label"
-                        (click)="toggleSort(sortableId(col.id))"
+            @if (showFixedIncomeDetail()) {
+              <div class="overflow-x-auto mt-4" [attr.data-density]="density()">
+                <table class="w-full border-collapse">
+                  <caption class="sr-only">
+                    Aplicações de renda fixa, com taxa efetiva e valor marcado a mercado
+                  </caption>
+                  <thead>
+                    <tr class="border-b border-hairline">
+                      <th class="text-left py-2 px-2 fi-label text-ink-3">Aplicação</th>
+                      <th class="text-left py-2 px-2 fi-label text-ink-3">Tipo</th>
+                      <th class="text-right py-2 px-2 fi-label text-ink-3">Rende</th>
+                      <th class="text-right py-2 px-2 fi-label text-ink-3">Aplicado</th>
+                      <th class="text-right py-2 px-2 fi-label text-ink-3">Hoje</th>
+                      <th class="text-right py-2 px-2 fi-label text-ink-3">Rend.</th>
+                      <th class="text-right py-2 px-2 fi-label text-ink-3">No vencimento</th>
+                      <th class="text-left py-2 px-2 fi-label text-ink-3">Liquidez</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of fixedIncomePositions(); track trackFixedIncome($index, item)) {
+                      <tr
+                        class="border-b border-hairline hover:bg-ground-2 transition-colors"
+                        [style.height]="'var(--fi-row-height)'"
                       >
-                        {{ col.label }}
-                        <lucide-icon [name]="sortIcon(sortableId(col.id))" size="12"></lucide-icon>
-                      </button>
-                    } @else {
-                      {{ col.label }}
+                        <td class="px-2 fi-label text-ink">
+                          {{ item.nome }}
+                          @if (item.isento_ir) {
+                            <span class="tag tag-brand ml-1">isento de IR</span>
+                          }
+                        </td>
+                        <td class="px-2 fi-caption text-ink-2">{{ rfTipoLabel(item.tipo) }}</td>
+                        <td class="text-right px-2">
+                          <span class="fi-num text-ink">{{ rendeLabel(item) }}</span>
+                          <span class="fi-caption text-ink-3 block">
+                            {{ item.taxa_anual_efetiva_pct | number: '1.2-2' }}% a.a. líquido
+                          </span>
+                        </td>
+                        <td class="text-right px-2 fi-num text-ink">
+                          {{ item.valor_investido | number: '1.2-2' }}
+                        </td>
+                        <td class="text-right px-2 fi-num text-ink">
+                          {{ item.valor_atual | number: '1.2-2' }}
+                        </td>
+                        <td class="text-right px-2 fi-num text-up">
+                          +{{ item.rendimento_pct | number: '1.2-2' }}%
+                        </td>
+                        <td class="text-right px-2 fi-num text-ink-2">
+                          {{
+                            item.valor_no_vencimento != null
+                              ? (item.valor_no_vencimento | number: '1.2-2')
+                              : '—'
+                          }}
+                        </td>
+                        <td class="px-2 fi-caption text-ink-2">
+                          {{ liquidezLabel(item.liquidez) }}
+                        </td>
+                      </tr>
                     }
-                  </th>
-                }
-                <th class="text-right py-2 px-2 w-[88px]"><span class="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (p of tradedPositions(); track p.ticker) {
-                <tr
-                  class="border-b border-hairline hover:bg-ground-2 transition-colors"
-                  [class.row-highlight]="isSelected(p.ticker)"
-                  [style.height]="'var(--fi-row-height)'"
-                >
-                  <td class="px-2">
-                    <input
-                      type="checkbox"
-                      class="accent-brand cursor-pointer"
-                      [checked]="isSelected(p.ticker)"
-                      (change)="toggleSelection(p.ticker)"
-                      [attr.aria-label]="'Selecionar ' + p.ticker + ' para comparar'"
-                    />
-                  </td>
+                  </tbody>
+                </table>
+              </div>
 
+              @if (hiddenFixedIncome().length > 0) {
+                <p class="fi-caption text-ink-3 mt-3 m-0">
+                  <span class="fi-num">{{ hiddenFixedIncome().length }}</span> aplicação(ões)
+                  oculta(s), fora dos totais.
+                </p>
+              }
+            }
+          </section>
+        }
+      }
+
+      @if (tradedPositions().length > 0) {
+        <section class="fi-block">
+          <div class="flex items-baseline justify-between gap-3 flex-wrap mb-1">
+            <h2 class="fi-title text-ink m-0">
+              Ativos negociados <span class="text-ink-3 fi-num">({{ negociadosCount() }})</span>
+            </h2>
+            <a routerLink="/patrimonio/editar" class="btn-link"> Editar carteira </a>
+          </div>
+          <p class="fi-caption text-ink-3 m-0 mb-4">
+            Ações, FIIs, BDRs e ETFs com cotação em bolsa. A leitura compara o preço atual com o
+            preço justo estimado.
+            <app-help-tooltip term="margem de segurança" [text]="ui.glossary['ms']" />
+          </p>
+
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            @if (selectedTickers().length > 0) {
+              <span class="fi-caption text-ink-2">
+                <span class="fi-num">{{ selectedTickers().length }}/{{ maxCompare }}</span>
+                selecionados
+              </span>
+              <button type="button" class="btn-secondary compact-btn" (click)="compareSelected()">
+                <lucide-icon name="git-compare" size="14"></lucide-icon> Comparar
+              </button>
+              <button type="button" class="btn-secondary compact-btn" (click)="clearSelection()">
+                Limpar
+              </button>
+            }
+
+            <div class="ml-auto flex items-center gap-2">
+              <div class="segmented" role="group" aria-label="Densidade da tabela">
+                <button
+                  type="button"
+                  class="segmented-option"
+                  [attr.aria-pressed]="density() === 'comfortable'"
+                  (click)="setDensity('comfortable')"
+                >
+                  Confortável
+                </button>
+                <button
+                  type="button"
+                  class="segmented-option"
+                  [attr.aria-pressed]="density() === 'compact'"
+                  (click)="setDensity('compact')"
+                >
+                  Compacta
+                </button>
+              </div>
+
+              <details class="relative">
+                <summary class="btn-secondary compact-btn cursor-pointer list-none">
+                  <lucide-icon name="table" size="14"></lucide-icon>
+                  Colunas (<span class="fi-num">{{ visibleColumns().length }}</span
+                  >)
+                </summary>
+                <div
+                  class="absolute right-0 top-full mt-1 z-popover w-[250px] bg-ground-1 border border-hairline rounded-lg shadow-popover p-2"
+                >
+                  @for (col of allColumns; track col.id) {
+                    <label
+                      class="flex items-start gap-2 px-2 py-1.5 rounded-sm hover:bg-ground-2 cursor-pointer"
+                      [class.opacity-60]="col.essential"
+                    >
+                      <input
+                        type="checkbox"
+                        class="accent-brand mt-0.5"
+                        [checked]="isColumnVisible(col.id)"
+                        [disabled]="col.essential"
+                        (change)="toggleColumn(col.id)"
+                      />
+                      <span class="min-w-0">
+                        <span class="fi-label text-ink block">{{ col.label }}</span>
+                        <span class="fi-caption text-ink-3 block">{{ col.hint }}</span>
+                      </span>
+                    </label>
+                  }
+                </div>
+              </details>
+
+              <button type="button" class="btn-secondary compact-btn" (click)="exportCsv()">
+                <lucide-icon name="download" size="14"></lucide-icon> CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto" [attr.data-density]="density()">
+            <table class="w-full border-collapse">
+              <caption class="sr-only">
+                Posições negociadas, com preço médio, cotação atual e leitura do sistema
+              </caption>
+              <!-- design-exception: camada — o cabecalho grudado precisa cobrir so as celulas da propria tabela -->
+              <thead>
+                <tr class="border-b border-hairline">
+                  <th class="py-2 px-2 w-8">
+                    <span class="sr-only">Selecionar para comparar</span>
+                  </th>
                   @for (col of columns(); track col.id) {
-                    <td
-                      class="px-2"
+                    <th
+                      class="py-2 px-2 fi-label text-ink-3 sticky top-0 bg-ground z-10"
                       [class.text-left]="col.align === 'left'"
                       [class.text-right]="col.align === 'right'"
+                      [attr.aria-sort]="ariaSort(col.id)"
                     >
-                      @switch (col.id) {
-                        @case ('ticker') {
-                          <a
-                            [routerLink]="['/ativo', p.ticker]"
-                            class="fi-ticker text-ink no-underline hover:text-brand transition-colors"
-                            >{{ p.ticker }}</a
-                          >
-                          @if (p.name && density() === 'comfortable') {
-                            <span class="fi-caption text-ink-3 block truncate max-w-[180px]">{{
-                              p.name
+                      @if (col.sortable) {
+                        <button
+                          type="button"
+                          class="th-sort"
+                          [class.justify-end]="col.align === 'right'"
+                          [attr.aria-label]="'Ordenar por ' + col.label"
+                          (click)="toggleSort(sortableId(col.id))"
+                        >
+                          {{ col.label }}
+                          <lucide-icon
+                            [name]="sortIcon(sortableId(col.id))"
+                            size="12"
+                          ></lucide-icon>
+                        </button>
+                      } @else {
+                        {{ col.label }}
+                      }
+                    </th>
+                  }
+                  <th class="text-right py-2 px-2 w-[88px]"><span class="sr-only">Ações</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of tradedPositions(); track p.ticker) {
+                  <tr
+                    class="border-b border-hairline hover:bg-ground-2 transition-colors"
+                    [class.row-highlight]="isSelected(p.ticker)"
+                    [style.height]="'var(--fi-row-height)'"
+                  >
+                    <td class="px-2">
+                      <input
+                        type="checkbox"
+                        class="accent-brand cursor-pointer"
+                        [checked]="isSelected(p.ticker)"
+                        (change)="toggleSelection(p.ticker)"
+                        [attr.aria-label]="'Selecionar ' + p.ticker + ' para comparar'"
+                      />
+                    </td>
+
+                    @for (col of columns(); track col.id) {
+                      <td
+                        class="px-2"
+                        [class.text-left]="col.align === 'left'"
+                        [class.text-right]="col.align === 'right'"
+                      >
+                        @switch (col.id) {
+                          @case ('ticker') {
+                            <a
+                              [routerLink]="['/ativo', p.ticker]"
+                              class="fi-ticker text-ink no-underline hover:text-brand transition-colors"
+                              >{{ p.ticker }}</a
+                            >
+                            @if (p.name && density() === 'comfortable') {
+                              <span class="fi-caption text-ink-3 block truncate max-w-[180px]">{{
+                                p.name
+                              }}</span>
+                            }
+                          }
+                          @case ('asset_type') {
+                            <span class="tag" [class]="ui.categoryChipClass(p.category_resolved)">{{
+                              ui.assetTypeLabel(p.asset_type)
                             }}</span>
                           }
-                        }
-                        @case ('asset_type') {
-                          <span class="tag" [class]="ui.categoryChipClass(p.category_resolved)">{{
-                            ui.assetTypeLabel(p.asset_type)
-                          }}</span>
-                        }
-                        @case ('quantity') {
-                          <span class="fi-num text-ink">{{ p.quantity }}</span>
-                        }
-                        @case ('avg_price') {
-                          <span class="fi-num text-ink">{{ p.avg_price | number: '1.2-2' }}</span>
-                        }
-                        @case ('current_price') {
-                          <span class="fi-num text-ink">{{ dash(p.current_price) }}</span>
-                        }
-                        @case ('current_value') {
-                          <span class="fi-num text-ink">{{ dash(p.current_value) }}</span>
-                        }
-                        @case ('weight') {
-                          <span class="fi-num text-ink-2">{{ weightLabel(p) }}</span>
-                        }
-                        @case ('fair_price') {
-                          <span class="fi-num text-ink">{{ dash(p.fair_price) }}</span>
-                        }
-                        @case ('margin') {
-                          @if (p.margin_of_safety != null) {
+                          @case ('quantity') {
+                            <span class="fi-num text-ink">{{ p.quantity }}</span>
+                          }
+                          @case ('avg_price') {
+                            <span class="fi-num text-ink">{{ p.avg_price | number: '1.2-2' }}</span>
+                          }
+                          @case ('current_price') {
+                            <span class="fi-num text-ink">{{ dash(p.current_price) }}</span>
+                          }
+                          @case ('current_value') {
+                            <span class="fi-num text-ink">{{ dash(p.current_value) }}</span>
+                          }
+                          @case ('weight') {
+                            <span class="fi-num text-ink-2">{{ weightLabel(p) }}</span>
+                          }
+                          @case ('fair_price') {
+                            <span class="fi-num text-ink">{{ dash(p.fair_price) }}</span>
+                          }
+                          @case ('margin') {
+                            @if (p.margin_of_safety != null) {
+                              <span
+                                class="fi-num"
+                                [class.text-favorable]="p.margin_of_safety > 0"
+                                [class.text-attention]="p.margin_of_safety <= 0"
+                              >
+                                {{ p.margin_of_safety * 100 | number: '1.0-0' }}%
+                              </span>
+                            } @else {
+                              <span class="text-indeterminate">—</span>
+                            }
+                          }
+                          @case ('pnl_pct') {
                             <span
                               class="fi-num"
-                              [class.text-favorable]="p.margin_of_safety > 0"
-                              [class.text-attention]="p.margin_of_safety <= 0"
+                              [class.text-up]="(p.pnl_pct || 0) >= 0"
+                              [class.text-down]="(p.pnl_pct || 0) < 0"
                             >
-                              {{ p.margin_of_safety * 100 | number: '1.0-0' }}%
+                              {{ p.pnl_pct != null ? (p.pnl_pct | number: '1.2-2') + '%' : '—' }}
                             </span>
-                          } @else {
-                            <span class="text-indeterminate">—</span>
                           }
-                        }
-                        @case ('pnl_pct') {
-                          <span
-                            class="fi-num"
-                            [class.text-up]="(p.pnl_pct || 0) >= 0"
-                            [class.text-down]="(p.pnl_pct || 0) < 0"
-                          >
-                            {{ p.pnl_pct != null ? (p.pnl_pct | number: '1.2-2') + '%' : '—' }}
-                          </span>
-                        }
-                        @case ('verdict') {
-                          <button
-                            type="button"
-                            class="verdict-pill cursor-pointer border-0"
-                            [class]="ui.verdictClass(p.verdict)"
-                            [attr.aria-expanded]="expandedReasonsTicker() === p.ticker"
-                            [title]="p.reasons.length ? 'Ver motivos' : ''"
-                            (click)="toggleReasons(p.ticker)"
-                          >
-                            {{ p.label }}
-                            @if (p.reasons.length) {
-                              <lucide-icon
-                                [name]="
-                                  expandedReasonsTicker() === p.ticker
-                                    ? 'chevron-up'
-                                    : 'chevron-down'
-                                "
-                                size="12"
-                              ></lucide-icon>
+                          @case ('verdict') {
+                            <button
+                              type="button"
+                              class="verdict-pill cursor-pointer border-0"
+                              [class]="ui.verdictClass(p.verdict)"
+                              [attr.aria-expanded]="expandedReasonsTicker() === p.ticker"
+                              [title]="p.reasons.length ? 'Ver motivos' : ''"
+                              (click)="toggleReasons(p.ticker)"
+                            >
+                              {{ p.label }}
+                              @if (p.reasons.length) {
+                                <lucide-icon
+                                  [name]="
+                                    expandedReasonsTicker() === p.ticker
+                                      ? 'chevron-up'
+                                      : 'chevron-down'
+                                  "
+                                  size="12"
+                                ></lucide-icon>
+                              }
+                            </button>
+                            @if (density() === 'comfortable') {
+                              <span class="fi-caption text-ink-3 block">
+                                {{ ui.dataYearsLabel(p.data_years) }} ·
+                                {{ ui.consensusLabel(p.consensus_methods) }}
+                              </span>
                             }
-                          </button>
-                          @if (density() === 'comfortable') {
-                            <span class="fi-caption text-ink-3 block">
-                              {{ ui.dataYearsLabel(p.data_years) }} ·
-                              {{ ui.consensusLabel(p.consensus_methods) }}
-                            </span>
                           }
                         }
-                      }
-                    </td>
-                  }
+                      </td>
+                    }
 
-                  <td class="text-right px-2">
-                    <button
-                      type="button"
-                      class="btn-secondary compact-btn"
-                      (click)="openSellModal(p)"
-                    >
-                      Vender
-                    </button>
-                  </td>
-                </tr>
-
-                @if (expandedReasonsTicker() === p.ticker && p.reasons.length) {
-                  <tr class="border-b border-hairline bg-ground-2">
-                    <td [attr.colspan]="columns().length + 2" class="py-2 px-4">
-                      <ul class="list-disc pl-4 fi-caption text-ink-2 leading-relaxed m-0">
-                        @for (reason of p.reasons; track reason) {
-                          <li>{{ reason }}</li>
-                        }
-                      </ul>
+                    <td class="text-right px-2">
+                      <button
+                        type="button"
+                        class="btn-secondary compact-btn"
+                        (click)="openSellModal(p)"
+                      >
+                        Vender
+                      </button>
                     </td>
                   </tr>
+
+                  @if (expandedReasonsTicker() === p.ticker && p.reasons.length) {
+                    <tr class="border-b border-hairline bg-ground-2">
+                      <td [attr.colspan]="columns().length + 2" class="py-2 px-4">
+                        <ul class="list-disc pl-4 fi-caption text-ink-2 leading-relaxed m-0">
+                          @for (reason of p.reasons; track reason) {
+                            <li>{{ reason }}</li>
+                          }
+                        </ul>
+                      </td>
+                    </tr>
+                  }
                 }
-              }
-            </tbody>
-          </table>
-        </div>
-      </section>
-    }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    </app-async-state>
 
     @if (sellModal(); as modal) {
       <div
@@ -535,6 +569,10 @@ export class PositionsComponent implements OnInit {
   readonly vencimentosProximos = this.store.vencimentosProximos;
   readonly negociadosCount = this.store.negociadosCount;
   readonly selectedTickers = this.store.selectedTickers;
+  readonly carregando = this.store.carregando;
+  readonly erroDeCarga = this.store.erroDeCarga;
+  readonly carimboDosPrecos = this.store.carimboDosPrecos;
+  readonly vazio = this.store.isEmpty;
 
   readonly maxCompare = MAX_COMPARE;
 
@@ -556,6 +594,10 @@ export class PositionsComponent implements OnInit {
   readonly sellingInProgress = signal(false);
 
   private readonly route = inject(ActivatedRoute);
+
+  recarregar(): void {
+    this.store.reload();
+  }
 
   ngOnInit(): void {
     this.store.ensureLoaded();

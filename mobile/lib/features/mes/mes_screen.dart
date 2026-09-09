@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/cash_models.dart';
+import '../../core/widgets/search_action.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
 import '../../core/mes.dart';
 import '../../core/month_verdict.dart';
@@ -33,6 +35,7 @@ class MesScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mês'),
         actions: [
+          const FiSearchAction(),
           IconButton(
             tooltip: 'Trocar de mês',
             icon: const Icon(Icons.calendar_month_outlined),
@@ -46,7 +49,7 @@ class MesScreen extends ConsumerWidget {
         label: const Text('Lançar'),
       ),
       body: mesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.metric, count: 1, label: 'Carregando seu mês'),
         error: (e, _) => FiErrorState(
           error: e,
           action: 'carregar seu mês',

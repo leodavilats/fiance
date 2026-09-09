@@ -67,6 +67,8 @@ const DESTINATIONS: readonly NavDestination[] = [
   template: `
     <p class="sr-only" role="status" aria-live="polite">{{ rotaAnunciada() }}</p>
 
+    <a href="#conteudo" class="skip-link btn-secondary no-underline">Pular para o conteúdo</a>
+
     <app-global-loader />
     <app-snackbar />
     <app-alert-modal />
@@ -166,7 +168,7 @@ const DESTINATIONS: readonly NavDestination[] = [
       </header>
     }
 
-    <main class="max-w-dense mx-auto px-3 sm:px-5 pt-5 sm:pt-6 pb-24 lg:pb-10">
+    <main id="conteudo" class="max-w-dense mx-auto px-3 sm:px-5 pt-5 sm:pt-6 pb-24 lg:pb-10">
       <router-outlet />
     </main>
 

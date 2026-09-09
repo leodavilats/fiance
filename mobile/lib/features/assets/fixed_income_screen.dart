@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -82,7 +83,7 @@ class FixedIncomeScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(fixedIncomeProvider),
         child: listing.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 5, label: 'Carregando seus títulos'),
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos carregar sua renda fixa',

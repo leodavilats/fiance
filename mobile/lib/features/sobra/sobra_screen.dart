@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/cash_models.dart';
+import '../../core/widgets/search_action.dart';
+import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
 import '../../core/mes.dart';
 import '../../core/providers.dart';
@@ -20,9 +22,12 @@ class SobraScreen extends ConsumerWidget {
     final sobra = ref.watch(surplusProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sobra')),
+      appBar: AppBar(
+        title: const Text('Sobra'),
+        actions: const [FiSearchAction()],
+      ),
       body: sobra.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.verdict, count: 1, label: 'Calculando sua sobra'),
         error: (e, _) => FiErrorState(
           error: e,
           action: 'calcular sua sobra',

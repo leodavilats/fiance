@@ -13,6 +13,7 @@ import {
   fiDipScoreBands,
   stateTextClass,
 } from '../../../core';
+import { AsyncStateComponent } from '../../async-state/async-state.component';
 import { EmptyStateComponent } from '../../empty-state/empty-state.component';
 import { ScoreRulerComponent } from '../../score-ruler/score-ruler.component';
 import { SkeletonComponent } from '../../skeleton/skeleton.component';
@@ -31,6 +32,7 @@ const RELAXED_MIN_SCORE = 25;
   imports: [
     CommonModule,
     EmptyStateComponent,
+    AsyncStateComponent,
     LucideAngularModule,
     ReactiveFormsModule,
     RouterLink,
@@ -83,7 +85,14 @@ const RELAXED_MIN_SCORE = 25;
         </form>
       </section>
 
-      @if (scanning()) {
+      @if (erro()) {
+        <app-async-state
+          [error]="erro()"
+          errorTitle="A varredura não terminou"
+          errorAction="varrer o mercado em busca de quedas"
+          (retry)="runScan()"
+        />
+      } @else if (scanning()) {
         <div class="mt-8 flex flex-col gap-6">
           <app-skeleton shape="verdict" />
           <app-skeleton shape="row" [count]="5" />
@@ -200,6 +209,7 @@ export class DipScannerComponent implements OnInit {
 
   readonly dipResults = signal<{ items: DipScanItem[] } | null>(null);
   readonly scanning = signal(false);
+  readonly erro = signal<unknown>(null);
 
   readonly scanForm = this.fb.nonNullable.group({
     min_score: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
@@ -220,6 +230,7 @@ export class DipScannerComponent implements OnInit {
   }
 
   runScan(): void {
+    this.erro.set(null);
     if (this.scanForm.invalid) return;
     const { min_score, top, category } = this.scanForm.getRawValue();
 
@@ -236,7 +247,10 @@ export class DipScannerComponent implements OnInit {
         this.dipResults.set(data);
         this.scanning.set(false);
       },
-      error: () => this.scanning.set(false),
+      error: err => {
+        this.erro.set(err);
+        this.scanning.set(false);
+      },
     });
   }
 

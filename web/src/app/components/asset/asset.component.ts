@@ -25,12 +25,14 @@ import {
   RecommendService,
   UiHelperService,
   fiDecision,
+  idadeDoDado,
 } from '../../core';
 import { environment } from '../../../environments/environment';
 import { AssetPriceChartComponent } from '../asset-price-chart/asset-price-chart.component';
 import { MetricWithContextComponent } from '../metric-with-context/metric-with-context.component';
 import { FairPriceComponent } from '../fair-price/fair-price.component';
 import { MarginOfSafetyComponent } from '../margin-of-safety/margin-of-safety.component';
+import { AsyncStateComponent } from '../async-state/async-state.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 import { SectionComponent } from '../section/section.component';
 
@@ -64,6 +66,7 @@ interface Fundamental {
     RouterLink,
     SkeletonComponent,
     SectionComponent,
+    AsyncStateComponent,
   ],
   template: `
     @if (fetching()) {
@@ -92,13 +95,14 @@ interface Fundamental {
       </div>
     }
 
-    @if (failed()) {
+    @if (falha()) {
       <div class="max-w-column">
-        <h2 class="fi-verdict text-ink m-0 mb-2">Não conseguimos carregar este ativo agora</h2>
-        <p class="fi-body text-ink-2 m-0 mb-4">
-          Pode ser a conexão ou uma instabilidade na fonte de cotações.
-        </p>
-        <button type="button" class="btn-primary" (click)="retry()">Tentar de novo</button>
+        <app-async-state
+          [error]="falha()"
+          errorTitle="Não conseguimos carregar este ativo agora"
+          [errorAction]="'analisar ' + (tickerPedido() || 'este ativo')"
+          (retry)="retry()"
+        />
       </div>
     }
 
@@ -493,7 +497,9 @@ export class AssetComponent implements OnInit, OnDestroy {
   readonly analysis = signal<AssetAnalysis | null>(null);
   readonly fetching = signal(false);
   readonly notFound = signal<string | null>(null);
-  readonly failed = signal(false);
+  /** O erro, não o booleano: a frase de falha sai de `mensagemDeErro`, como em toda tela. */
+  readonly falha = signal<unknown>(null);
+  readonly tickerPedido = signal('');
   readonly showMethod = signal(false);
 
   ngOnInit(): void {
@@ -626,7 +632,8 @@ export class AssetComponent implements OnInit, OnDestroy {
   private fetch(symbol: string): void {
     this.fetching.set(true);
     this.notFound.set(null);
-    this.failed.set(false);
+    this.falha.set(null);
+    this.tickerPedido.set(symbol);
     this.api.analyzeAsset(symbol).subscribe({
       next: res => {
         this.analysis.set(res);
@@ -638,7 +645,7 @@ export class AssetComponent implements OnInit, OnDestroy {
         this.fetching.set(false);
         const naoExiste = err?.status === 404;
         if (naoExiste) this.notFound.set(symbol);
-        else this.failed.set(true);
+        else this.falha.set(err);
         this.describeFailure(symbol, naoExiste);
       },
     });
@@ -814,23 +821,7 @@ export class AssetComponent implements OnInit, OnDestroy {
     return Object.fromEntries(new URLSearchParams(query));
   }
 
-  /**
-   * "há 4 minutos" quando é de hoje, a data quando não é.
-   *
-   * Um preço de anteontem muda a decisão, então o momento fica ao lado do número que ele
-   * qualifica — e não na gaveta de proveniência, onde ele era o quarto item de um `<details>`
-   * fechado que nenhuma tela sequer preenchia.
-   */
-  readonly idadeDoPreco = computed(() => {
-    const carimbo = this.analysis()?.as_of;
-    if (!carimbo) return '';
-
-    const minutos = Math.floor((Date.now() / 1000 - carimbo) / 60);
-    if (minutos < 1) return 'agora';
-    if (minutos < 60) return `há ${minutos} min`;
-    if (minutos < 60 * 24) return `há ${Math.floor(minutos / 60)} h`;
-    return `em ${new Date(carimbo * 1000).toLocaleDateString('pt-BR')}`;
-  });
+  readonly idadeDoPreco = computed(() => idadeDoDado(this.analysis()?.as_of));
 
   absoluto(valor: number): number {
     return Math.abs(valor);

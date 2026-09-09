@@ -11,13 +11,20 @@ import { ActivatedRoute } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { Subject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil } from 'rxjs/operators';
-import { PriceAlert, RecommendService, TickerSuggestion } from '../../core';
+import { PriceAlert, RecommendService, TickerSuggestion, mensagemDeErro } from '../../core';
+import { AsyncStateComponent } from '../async-state/async-state.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
 
 @Component({
   selector: 'app-price-alerts',
   standalone: true,
-  imports: [PageHeaderComponent, CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [
+    PageHeaderComponent,
+    CommonModule,
+    ReactiveFormsModule,
+    LucideAngularModule,
+    AsyncStateComponent,
+  ],
   template: `
     <div class="fi-block">
       <app-page-header
@@ -85,60 +92,65 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
         </button>
       </form>
 
-      @if (alertMessage()) {
-        <p
-          class="fi-body mb-3"
-          [class.text-brand]="alertMessage().startsWith('check')"
-          [class.text-adverse]="alertMessage().startsWith('x')"
-        >
-          {{ alertMessage() }}
-        </p>
+      @if (erroAoCriar(); as falha) {
+        <p class="fi-body text-adverse mb-3" role="alert">{{ falha }}</p>
       }
 
-      @if (alerts().length === 0) {
-        <p class="fi-body text-ink-2">Nenhum alerta configurado.</p>
-      } @else {
-        <div class="flex flex-col gap-2">
-          @for (a of alerts(); track a.id) {
-            <div
-              class="flex items-center justify-between gap-3 p-3 rounded-md border"
-              [class.border-brand]="!!a.triggered_at"
-              [class.border-hairline]="!a.triggered_at"
-              [class.opacity-60]="!!a.triggered_at"
-              style="background: var(--fi-ground-2)"
-            >
-              <div class="fi-body flex items-center gap-3 flex-wrap">
-                <span class="fi-label text-ink">{{ a.ticker }}</span>
-                <span
-                  class="fi-label px-2 py-0.5 rounded-pill border"
-                  [class.text-brand]="a.condition === 'above'"
-                  [class.border-brand]="a.condition === 'above'"
-                  [class.text-attention]="a.condition === 'below'"
-                  [class.border-attention]="a.condition === 'below'"
-                >
-                  {{ a.condition === 'below' ? 'Abaixo de' : 'Acima de' }}
-                </span>
-                <span class="fi-label text-ink">R$ {{ a.target_price | number: '1.2-2' }}</span>
-                @if (a.note) {
-                  <span class="fi-caption text-ink-2">-- {{ a.note }}</span>
-                }
-                @if (a.triggered_at) {
-                  <span class="fi-label text-brand">Disparado</span>
-                }
-              </div>
-              <button
-                type="button"
-                (click)="removeAlert(a.id)"
-                class="btn-icon btn-icon-quiet btn-icon-danger"
-                title="Remover alerta"
-                aria-label="Remover alerta"
+      <app-async-state
+        [loading]="carregando()"
+        [error]="erro()"
+        loadingShape="row"
+        [loadingCount]="3"
+        loadingLabel="Carregando seus alertas"
+        errorTitle="Não conseguimos abrir seus alertas"
+        errorAction="carregar seus alertas de preço"
+        (retry)="loadAlerts()"
+      >
+        @if (alerts().length === 0) {
+          <p class="fi-body text-ink-2">Nenhum alerta configurado.</p>
+        } @else {
+          <div class="flex flex-col gap-2">
+            @for (a of alerts(); track a.id) {
+              <div
+                class="flex items-center justify-between gap-3 p-3 rounded-md border"
+                [class.border-brand]="!!a.triggered_at"
+                [class.border-hairline]="!a.triggered_at"
+                [class.opacity-60]="!!a.triggered_at"
+                style="background: var(--fi-ground-2)"
               >
-                <lucide-icon name="trash2" size="16"></lucide-icon>
-              </button>
-            </div>
-          }
-        </div>
-      }
+                <div class="fi-body flex items-center gap-3 flex-wrap">
+                  <span class="fi-label text-ink">{{ a.ticker }}</span>
+                  <span
+                    class="fi-label px-2 py-0.5 rounded-pill border"
+                    [class.text-brand]="a.condition === 'above'"
+                    [class.border-brand]="a.condition === 'above'"
+                    [class.text-attention]="a.condition === 'below'"
+                    [class.border-attention]="a.condition === 'below'"
+                  >
+                    {{ a.condition === 'below' ? 'Abaixo de' : 'Acima de' }}
+                  </span>
+                  <span class="fi-label text-ink">R$ {{ a.target_price | number: '1.2-2' }}</span>
+                  @if (a.note) {
+                    <span class="fi-caption text-ink-2">-- {{ a.note }}</span>
+                  }
+                  @if (a.triggered_at) {
+                    <span class="fi-label text-brand">Disparado</span>
+                  }
+                </div>
+                <button
+                  type="button"
+                  (click)="removeAlert(a.id)"
+                  class="btn-icon btn-icon-quiet btn-icon-danger"
+                  title="Remover alerta"
+                  aria-label="Remover alerta"
+                >
+                  <lucide-icon name="trash2" size="16"></lucide-icon>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </app-async-state>
     </div>
   `,
 })
@@ -151,7 +163,9 @@ export class PriceAlertsComponent implements OnInit, OnDestroy {
   private readonly tickerSearch$ = new Subject<string>();
 
   readonly alerts = signal<PriceAlert[]>([]);
-  readonly alertMessage = signal('');
+  readonly erroAoCriar = signal('');
+  readonly erro = signal<unknown>(null);
+  readonly carregando = signal(true);
   readonly alertTickerSuggestions = signal<TickerSuggestion[]>([]);
   readonly alertTickerSuggestionsOpen = signal(false);
 
@@ -206,7 +220,18 @@ export class PriceAlertsComponent implements OnInit, OnDestroy {
   }
 
   loadAlerts(): void {
-    this.svc.getAlerts().subscribe({ next: a => this.alerts.set(a), error: () => {} });
+    this.carregando.set(true);
+    this.erro.set(null);
+    this.svc.getAlerts().subscribe({
+      next: a => {
+        this.alerts.set(a);
+        this.carregando.set(false);
+      },
+      error: err => {
+        this.erro.set(err);
+        this.carregando.set(false);
+      },
+    });
   }
 
   addAlert(): void {
@@ -214,15 +239,19 @@ export class PriceAlertsComponent implements OnInit, OnDestroy {
     const { ticker, condition, target_price, note } = this.alertForm.getRawValue();
     this.svc.createAlert({ ticker, condition, target_price, note: note || undefined }).subscribe({
       next: () => {
+        this.erroAoCriar.set('');
         this.alertForm.patchValue({ ticker: '', target_price: 0, note: '' });
         this.closeAlertTickerSuggestions();
         this.loadAlerts();
       },
-      error: () => this.alertMessage.set('✗ Não conseguimos criar o alerta'),
+      error: err => this.erroAoCriar.set(mensagemDeErro(err, 'criar este alerta')),
     });
   }
 
   removeAlert(id: number): void {
-    this.svc.deleteAlert(id).subscribe({ next: () => this.loadAlerts(), error: () => {} });
+    this.svc.deleteAlert(id).subscribe({
+      next: () => this.loadAlerts(),
+      error: err => this.erroAoCriar.set(mensagemDeErro(err, 'apagar este alerta')),
+    });
   }
 }

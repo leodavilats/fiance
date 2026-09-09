@@ -722,6 +722,57 @@ function desabilitadoSemMotivo(files) {
  * que protege só preferência visual entra em revisão de código — porque bloquear o CI por gosto
  * gasta a autoridade das regras que valem, e a pessoa passa a ler a lista inteira como ruído.
  */
+/*
+ * Tela de rota que le dado e nao trata a falha.
+ *
+ * Quatro das sete secoes de `/patrimonio` renderizavam **nada** quando a leitura falhava: a
+ * pagina abria com o titulo e o corpo vazio, e "nao conseguimos ler" ficava indistinguivel de
+ * "voce nao tem nada". A loja tinha o booleano da falha e uma tela sozinha o lia.
+ *
+ * A regra vale so para alvo de rota -- e ali que a pessoa fica presa sem saida. Bloco interno
+ * herda o estado do pai.
+ */
+const LEITURA_DE_DADO = /\.subscribe\(|firstValueFrom|erroDeCarga|loadFailed/;
+
+const TRATA_FALHA = [
+  '<app-async-state',
+  'role="alert"',
+  'notice-adverse',
+  'FiErrorState',
+];
+
+const ESCAPE_FALHA = escapeDe('falha');
+
+function alvosDeRota() {
+  const fonte = join(SRC, 'app', 'app.routes.ts');
+  const alvos = new Set();
+  try {
+    for (const match of readFileSync(fonte, 'utf8').matchAll(/import\('([^']+)'\)/g)) {
+      alvos.add(join(SRC, 'app', `${match[1].replace(/^\.\//, '')}.ts`));
+    }
+  } catch {}
+  return alvos;
+}
+
+function telaSemTratarFalha(files) {
+  const alvos = alvosDeRota();
+  const problems = [];
+
+  for (const file of files) {
+    if (!alvos.has(file)) continue;
+
+    const source = readFileSync(file, 'utf8');
+    if (/<router-outlet/.test(source)) continue;
+    if (!LEITURA_DE_DADO.test(source)) continue;
+    if (ESCAPE_FALHA.test(source)) continue;
+    if (TRATA_FALHA.some(marca => source.includes(marca))) continue;
+
+    problems.push({ file, name: relative(WEB_ROOT, file) });
+  }
+
+  return problems;
+}
+
 function aviso(title, problems, hint) {
   if (problems.length === 0) return;
   console.warn(`⚠ ${title} (aviso, não reprova)`);
@@ -766,11 +817,17 @@ function main() {
   const known = knownClasses(tsFiles);
   const missingClasses = usedClasses(templates).filter(use => !known.has(use.name));
 
-  const semExplicacao = missingExplainers(templates.filter(file => file.endsWith('.html')));
+  /*
+   * `.html` filtrava tudo: os componentes deste repo escrevem o template no proprio `.ts`, e o
+   * unico `.html` de `src/` e o `index.html`. Estas duas regras rodavam contra ele havia meses --
+   * a de explicabilidade e a que o CLAUDE.md chama de invariante, e as telas carregavam
+   * `design-exception: explicabilidade` para uma maquina que nao lia.
+   */
+  const semExplicacao = missingExplainers(templates);
   const semTabela = missingChartAlternatives(templates);
   const semNome = missingAccessibleNames(templates);
   const semFaixa = projectionsWithoutBand(templates);
-  const comCerteza = certaintyLanguage(templates.filter(f => f.endsWith('.html')));
+  const comCerteza = certaintyLanguage(templates);
   const vocabularioGenerico = vocabularioDeIA(tsFiles);
   const tipoCru = tipografiaCrua(templates);
   const raioSolto = raioForaDaEscala(templates);
@@ -788,6 +845,7 @@ function main() {
   const direcaoSolta = direcaoForaDeTabela(templates);
   const becoSemSaida = desabilitadoSemMotivo(templates);
   const contornoInvisivel = contornoDeSeparador(walk(SRC, /\.css$/));
+  const falhaSemSaida = telaSemTratarFalha(templates);
 
   aviso(
     'Raio fora da escala, ou raio de flutuante no que está no chão',
@@ -934,6 +992,14 @@ function main() {
         'título, frase e card eles roubam a cor que pertence ao julgamento.'
     ) +
     report(
+      'Tela de rota lê dado e não diz quando a leitura falha',
+      falhaSemSaida,
+      'Envolva o corpo em <app-async-state [loading] [error] [empty] (retry)>. Sem isso a ' +
+        'falha de rede sai como tela vazia, e "não conseguimos ler" fica indistinguível de ' +
+        '"você não tem nada". Se esta tela realmente não lê nada de fora: ' +
+        '<!-- design-exception: falha — motivo -->'
+    ) +
+    report(
       'Contorno de controle desenhado com o token de separador',
       contornoInvisivel,
       'Use --fi-control-border. hairline é decoração: com ele o contorno de ' +
@@ -950,7 +1016,8 @@ function main() {
     '✓ Ícones, classes, explicabilidade, gráficos, nomes, faixas, linguagem, ' +
       'tipografia, camada, foco, controles, nome de tela, serifa, ' +
       'ordem de cabeçalho, caixa, esqueleto, direção, ' +
-      'estado desabilitado, contorno de controle e vocabulario conferidos.'
+      'estado desabilitado, contorno de controle, tratamento de falha e ' +
+      'vocabulario conferidos.'
   );
 }
 

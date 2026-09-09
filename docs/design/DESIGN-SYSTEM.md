@@ -230,7 +230,7 @@ Contrato mínimo de cada um: **estados** (default/hover/focus/active/disabled/lo
 | Componente | Notas específicas do fiance |
 |---|---|
 | `Button` | primária (marca) · secundária (fio) · discreta (tinta) · destrutiva. Uma primária por bloco |
-| `IconButton` | `aria-label`/`tooltip` **obrigatório** — hoje há 97 botões e 1 `aria-label` |
+| `IconButton` | `aria-label`/`tooltip` **obrigatório**, e o `lint:ui` reprova quem não tem |
 | `Input` / `Money` / `Percent` | variantes numéricas com cifras tabulares, alinhamento à direita e máscara pt-BR |
 | `Select` / `Segmented` | segmented substitui tab quando há 2–4 opções mutuamente exclusivas |
 | `Tabs` | `role="tablist"`/`aria-selected`, navegação por setas, **estado na URL** |
@@ -243,12 +243,14 @@ Contrato mínimo de cada um: **estados** (default/hover/focus/active/disabled/lo
 | `Table` | ordenar · esconder coluna · fixar 1ª coluna · densidade · virtualização. Degrada para lista no mobile |
 | `Chart` | eixos, tooltip, linha de referência, anotação; **pergunta declarada no título** |
 | `Badge` | cor + ícone + texto, sempre os três |
-| `Skeleton` | composto na forma do conteúdo real (o componente existe e nunca foi usado) |
+| `Skeleton` | composto na forma do conteúdo real. `<app-skeleton shape>` e `FiSkeleton` — a altura de cada forma é a do papel de tipografia que vai ocupar o lugar |
 | `EmptyState` | causa + próximo passo executável; CTA não é opcional |
-| `ErrorState` | último dado + causa humana + repetir. Nunca exceção crua |
+| `AsyncState` | os quatro estados num contrato só (esperando · falhou · vazio · conteúdo), para que uma tela não possa tratar três e esquecer o quarto. `<app-async-state>` no web; `AsyncValue.when` com `FiSkeleton`/`FiErrorState` no mobile |
+| `ErrorState` | último dado + causa humana + repetir. Nunca exceção crua, nunca código de status: a frase sai de `mensagemDeErro` / `fiErrorMessage`, uma só para o produto inteiro |
 | `Nav` / `SubNav` / `BottomNav` | itens ≥44px; rótulo ≥12px |
 | `SearchGlobal` | `⌘K` no desktop; resultados por categoria (ativos, setores, telas) |
-| `Provenance` | rodapé padrão: fonte, momento, método, limitação |
+| `Provenance` | rodapé padrão: fonte, método, limitação — **momento não**, que é linha visível |
+| `DataAge` | quando a fonte foi lida, ao lado do número que ela qualifica. Em lista, o carimbo é o **mais antigo** |
 
 ---
 
