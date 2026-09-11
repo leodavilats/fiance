@@ -45,5 +45,12 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Sem isto o Android 11+ esconde o navegador do app, `canLaunchUrl` devolve false e
+             os links de Termos, Privacidade e Aviso CVM nao abrem nada. A ficha de seguranca
+             da loja exige uma URL de privacidade que abra. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
     </queries>
 </manifest>

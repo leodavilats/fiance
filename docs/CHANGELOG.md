@@ -12,6 +12,55 @@
 
 ---
 
+## Seis achados de uso, e um deles era um alvo que nenhuma tela escrevia (2026-09-11)
+
+Lista vinda de uso real do aplicativo depois do redesenho.
+
+### Os links jurídicos não abriam nada
+
+`abrirNoNavegador` chamava `canLaunchUrl` antes de tentar. Desde o Android 11 o sistema esconde
+do aplicativo os pacotes que ele não declara, e `canLaunchUrl` de um `https` responde **false**
+sem que haja nada de errado — a função desistia antes de tentar, e Termos, Privacidade e Aviso
+CVM não faziam nada ao toque. O `AndroidManifest.xml` declarava visibilidade só para
+`PROCESS_TEXT`.
+
+Entrou a declaração de `VIEW` + `https` no manifesto, e o `canLaunchUrl` saiu do caminho: a
+tentativa agora é direta, e quem falha é o `launchUrl`, que diz por quê. **A ficha de segurança
+de dados da loja exige uma URL de privacidade que abra** — este era um bloqueio de publicação,
+não um detalhe de tela.
+
+### A meta de renda passiva não tinha onde ser declarada
+
+O produto mostrava o alvo em três lugares — a régua de progresso do patrimônio, a linha do
+`/voce` e a projeção — e **nenhuma tela o escrevia**. `savePreferences` aceitava
+`passive_income_goal` desde sempre, e todo chamador apenas repassava o valor que já estava lá,
+para não apagá-lo. A régua de progresso nunca saía do lugar porque o alvo nunca podia ser posto.
+
+O redesenho piorou o sintoma antes de expor a causa: a linha "Renda passiva por mês" ganhou seta
+e levava a `/voce/objetivos`, que só tem alocação por categoria e por setor. A pessoa tocava
+esperando a meta do mês e chegava noutro assunto.
+
+Agora `/voce/objetivos` abre por **Renda passiva**, com o valor editável; a seção `Metas` do
+`/voce` voltou a ser leitura, com uma ação só — duas linhas levando ao mesmo destino era o que
+fazia parecer que nenhuma funcionava. `test/meta_declaravel_test.dart` cobra que alguma tela
+passe um valor de meta que não venha de `prefs`, que é a diferença entre declarar e repassar.
+
+### Os outros quatro
+
+- **Repetir o mês anterior** só se oferece com o mês vazio. Com lançamentos na tela o molde
+  duplicaria o que já está ali, e a identidade que evita duplicata ignora o valor de propósito —
+  a conta de luz muda todo mês, e entraria de novo.
+- **O formulário de renda fixa** subia até a barra de status: `showModalBottomSheet` com
+  `isScrollControlled` e sem `showDragHandle` nem teto de altura. Ganhou as duas coisas, e o
+  título parou de encostar no relógio.
+- **A porta da renda fixa** era um ícone na barra de título do Patrimônio, longe do bloco que ela
+  abre. O ícone saiu; a seção ganhou ação com rótulo escrito — a seta sozinha na linha de dado
+  não dizia o que havia do outro lado.
+- **A renda fixa desceu** para logo antes de "Ativos negociados". Ela abria a tela, entre a cifra
+  do patrimônio e a composição, como se fosse o assunto.
+
+---
+
 ## A margem de segurança saía cem vezes menor, e as cifras não tinham linha de base (2026-09-11)
 
 Pedido de "deixar os cards mais alinhados" no `/descobrir`. O alinhamento era real, e ao medi-lo

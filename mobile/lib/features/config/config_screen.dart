@@ -7,6 +7,7 @@ import '../../core/format.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/search_action.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
@@ -200,6 +201,12 @@ class _Metas extends StatelessWidget {
   Widget build(BuildContext context) {
     return FiSection(
       title: 'Metas',
+      // As duas linhas levavam ao mesmo lugar, e a primeira prometia um editor que nao existia
+      // em tela nenhuma. Agora a secao resume o que esta declarado, e a acao leva uma vez so.
+      action: FiNavAction(
+        label: 'Declarar metas',
+        onPressed: () => context.go('/voce/objetivos'),
+      ),
       child: FiRows(
         children: [
           FiDataRow(
@@ -210,12 +217,10 @@ class _Metas extends StatelessWidget {
             note: prefs.passiveIncomeGoal == null
                 ? 'Sem alvo declarado o produto não inventa um.'
                 : null,
-            onTap: () => context.go('/voce/objetivos'),
           ),
-          FiDataRow(
-            label: 'Alocação por categoria',
+          const FiDataRow(
+            label: 'Alocação por categoria e setor',
             detail: 'O alvo contra o qual a Sobra mede o desvio',
-            onTap: () => context.go('/voce/objetivos'),
           ),
         ],
       ),

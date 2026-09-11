@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
@@ -33,6 +35,7 @@ class ObjetivosScreen extends StatelessWidget {
             'salvar só libera lá.',
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
+          const RendaPassivaSection(),
           const FiSection(title: 'Por categoria', child: GoalsSection()),
           const FiSection(
             title: 'Por setor',
@@ -42,6 +45,106 @@ class ObjetivosScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// A meta de renda passiva mensal.
+///
+/// O produto exibia o alvo em três telas — a régua de progresso do feed, a linha do `/voce` e a
+/// projeção — e **nenhuma** o escrevia: `savePreferences` aceitava `passiveIncomeGoal` e todo
+/// chamador só repassava o valor que já estava lá. Alvo que só se lê é alvo que ninguém declara,
+/// e sem ele a régua de progresso nunca sai do lugar.
+class RendaPassivaSection extends ConsumerWidget {
+  const RendaPassivaSection({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preferences = ref.watch(preferencesProvider);
+
+    return FiSection(
+      title: 'Renda passiva',
+      hint: 'Quanto você quer receber por mês. É o alvo da régua de progresso do patrimônio.',
+      child: preferences.when(
+        loading: () => const FiSkeleton(shape: FiSkeletonShape.row, count: 1),
+        error: (err, _) => FiErrorState(
+          error: err,
+          action: 'carregar sua meta',
+          onRetry: () => ref.invalidate(preferencesProvider),
+        ),
+        data: (prefs) => FiDataRow(
+          label: 'Meta por mês',
+          value: prefs.passiveIncomeGoal == null
+              ? 'sem meta'
+              : formatCurrency(prefs.passiveIncomeGoal),
+          note: prefs.passiveIncomeGoal == null
+              ? 'Sem alvo declarado o produto não inventa um.'
+              : null,
+          onTap: () => _editar(context, ref, prefs),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editar(
+    BuildContext context,
+    WidgetRef ref,
+    Preferences prefs,
+  ) async {
+    final controller = TextEditingController(
+      text: prefs.passiveIncomeGoal == null
+          ? ''
+          : prefs.passiveIncomeGoal!.toStringAsFixed(2).replaceAll('.', ','),
+    );
+
+    final salvar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Meta de renda passiva'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Quanto você quer receber de proventos por mês. Deixe vazio para não declarar '
+              'alvo nenhum.',
+              style: FiType.body.copyWith(color: fiInk2(context)),
+            ),
+            const SizedBox(height: FiSpace.s4),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Meta por mês',
+                prefixText: r'R$ ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (salvar != true) return;
+
+    final texto = controller.text.trim();
+    final valor = texto.isEmpty
+        ? null
+        : double.tryParse(texto.replaceAll('.', '').replaceAll(',', '.'));
+
+    await ref
+        .read(apiRepositoryProvider)
+        .savePreferences(passiveIncomeGoal: valor);
+    ref.invalidate(preferencesProvider);
+    ref.invalidate(dashboardProvider);
   }
 }
 

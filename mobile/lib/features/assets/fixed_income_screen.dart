@@ -27,6 +27,12 @@ Future<void> abrirFormDeRendaFixa(
   final saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
+    showDragHandle: true,
+    // Sem teto o formulario sobe ate a barra de status e o titulo encosta no relogio. O resto
+    // da folha rola.
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.of(context).size.height * 0.9,
+    ),
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: _FixedIncomeForm(existing: existing),

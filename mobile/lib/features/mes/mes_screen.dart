@@ -201,16 +201,24 @@ class _Corpo extends ConsumerWidget {
               ),
             ),
 
+          // Repetir o mes anterior so se oferece com o mes vazio: com lancamentos na tela, o
+          // molde duplicaria o que ja esta ali, e a identidade que evita duplicata ignora o
+          // valor -- a conta de luz do mes passado entraria de novo com outro valor.
           FiSection(
             title: 'O mês',
-            action: FiButton.secondary(
-              icon: Icons.content_copy_outlined,
-              label:
-                  'Repetir ${nomeDoMes(mesAnterior(mes.month)).split(' de ').first}',
-              onPressed: () => abrirMoldeSheet(context, ref),
-            ),
+            action: doMes.isEmpty
+                ? FiButton.secondary(
+                    icon: Icons.content_copy_outlined,
+                    label:
+                        'Repetir ${nomeDoMes(mesAnterior(mes.month)).split(' de ').first}',
+                    onPressed: () => abrirMoldeSheet(context, ref),
+                  )
+                : null,
             child: doMes.isEmpty
-                ? FiEmptyLine('Nada lançado em ${nomeDoMes(mes.month)}.')
+                ? FiEmptyLine(
+                    'Nada lançado em ${nomeDoMes(mes.month)}. Repetir o mês anterior traz o '
+                    'que se repete por natureza, e deixa o gasto variável desmarcado.',
+                  )
                 : Column(
                     children: [for (final e in doMes) _LinhaDoMes(entry: e)],
                   ),

@@ -9,8 +9,19 @@ const String termsUrl = '$siteUrl/termos';
 const String privacyUrl = '$siteUrl/privacidade';
 const String cvmNoticeUrl = '$siteUrl/aviso-cvm';
 
+/// Abre a pagina no navegador do aparelho.
+///
+/// Nao passa por `canLaunchUrl`: desde o Android 11 ele responde `false` para `https` a menos
+/// que o manifesto declare a visibilidade do pacote, e a tela ficava sem reacao nenhuma. A
+/// declaracao esta no `AndroidManifest.xml`, e aqui a tentativa e direta -- quem falha e o
+/// `launchUrl`, que diz por que.
 Future<bool> abrirNoNavegador(String url) async {
-  final destino = Uri.parse(url);
-  if (!await canLaunchUrl(destino)) return false;
-  return launchUrl(destino, mode: LaunchMode.externalApplication);
+  try {
+    return await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+  } catch (_) {
+    return false;
+  }
 }

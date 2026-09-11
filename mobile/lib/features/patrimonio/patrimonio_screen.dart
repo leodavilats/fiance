@@ -32,14 +32,7 @@ class PatrimonioScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Patrimônio'),
-        actions: [
-          const FiSearchAction(),
-          IconButton(
-            tooltip: 'Renda fixa',
-            icon: const Icon(Icons.account_balance_outlined),
-            onPressed: () => context.go('/patrimonio/renda-fixa'),
-          ),
-        ],
+        actions: const [FiSearchAction()],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -90,13 +83,6 @@ class PatrimonioScreen extends ConsumerWidget {
               children: [
                 FiCarteiraSummary(summary: data.summary),
 
-                fixedIncome.maybeWhen(
-                  data: (fi) => fi.visiveis.isEmpty
-                      ? const SizedBox.shrink()
-                      : FiFixedIncomeSummary(data: fi),
-                  orElse: () => const SizedBox.shrink(),
-                ),
-
                 if (data.allocations.isNotEmpty)
                   _Composicao(
                     allocations: data.allocations,
@@ -110,6 +96,13 @@ class PatrimonioScreen extends ConsumerWidget {
                     title: 'Evolução',
                     child: FiEvolutionChart(snapshots: data.snapshots),
                   ),
+
+                fixedIncome.maybeWhen(
+                  data: (fi) => fi.visiveis.isEmpty
+                      ? const SizedBox.shrink()
+                      : FiFixedIncomeSummary(data: fi),
+                  orElse: () => const SizedBox.shrink(),
+                ),
 
                 FiSection(
                   title: 'Ativos negociados',

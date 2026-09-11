@@ -5,6 +5,7 @@ import '../../../core/format.dart';
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/data_row.dart';
+import '../../../core/widgets/nav_action.dart';
 import '../../../core/widgets/section.dart';
 
 /// A abertura do Patrimonio: o valor de hoje e o que o explica.
@@ -57,6 +58,15 @@ class FiFixedIncomeSummary extends StatelessWidget {
     return FiSection(
       title: 'Renda fixa',
       count: data.visiveis.length,
+      // A porta da renda fixa era um icone na barra de titulo, longe do bloco que ela abre. A
+      // acao da secao diz para onde leva, com rotulo escrito -- a seta sozinha na linha de dado
+      // nao dizia o que havia do outro lado.
+      action: FiNavAction(
+        label: data.visiveis.length == 1
+            ? 'Ver a aplicação'
+            : 'Ver as ${data.visiveis.length} aplicações',
+        onPressed: () => context.go('/patrimonio/renda-fixa'),
+      ),
       child: FiRows(
         children: [
           FiDataRow(
