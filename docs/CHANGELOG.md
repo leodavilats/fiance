@@ -12,6 +12,49 @@
 
 ---
 
+## A margem de segurança saía cem vezes menor, e as cifras não tinham linha de base (2026-09-11)
+
+Pedido de "deixar os cards mais alinhados" no `/descobrir`. O alinhamento era real, e ao medi-lo
+apareceu um número errado embaixo dele.
+
+### Duas unidades, um formatador
+
+`margin_of_safety` chega do backend como **razão** — `(consenso - preço) / consenso`, calculado em
+`analysis/fair_price.py` — e `dividend_yield` do snapshot chega em **percentual**, pela disciplina
+de `collectors/universal._ratio_to_pct`. As duas passavam pelo mesmo `formatPercent`, que só
+acrescenta `%`.
+
+Resultado na tela: ARRI11 a R$ 4,55 com preço justo de R$ 10,03 — 54,64% abaixo do justo — exibia
+**MARGEM 0,55%**. O papel mais descontado da lista parecia o menos descontado, e a ordenação por
+score contradizia a coluna ao lado. Seis sítios renderizavam assim; um deles, o DY de `/ativo`, foi
+introduzido no mesmo dia ao declarar `dy_12m`, que também é razão.
+
+A correção é um formatador, e não `* 100` espalhado: `formatRatio` existe para que a decisão de
+unidade seja tomada uma vez. Espalhar a multiplicação pelos seis sítios é como o defeito voltaria.
+
+### As quatro cifras em três alturas
+
+`PREÇO`, `PREÇO JUSTO`, `MARGEM` e `DY` eram quatro `Expanded` de mesma largura, e saíam em três
+linhas de base diferentes por três causas somadas:
+
+- `HelpTooltip` impunha `minHeight: 44` **só à coluna com verbete**, com o rótulo alinhado ao pé
+  da caixa — `MARGEM` e `DY` desciam, `PREÇO` e `PREÇO JUSTO` não;
+- `PREÇO JUSTO` não cabia em 82dp e quebrava em duas linhas, empurrando a cifra para baixo;
+- a base do número (`1 método no consenso`, `5 anos de proventos`) existia em duas colunas e
+  faltava nas outras duas, e quebrava em duas linhas onde existia.
+
+Agora o rótulo tem uma linha, a cifra tem uma linha, e o alvo de 44dp abraça **rótulo + cifra** nas
+quatro colunas — a coluna com verbete tem exatamente a geometria da coluna sem. A base desceu para
+uma legenda única sob a régua, com atribuição explícita: *"Justo de 1 método no consenso · DY sobre
+5 anos de proventos"*. O invariante da cifra de preço justo continua satisfeito — a base está na
+tela, e agora diz de qual número ela é.
+
+`test/linha_de_cifras_test.dart` mede os topos em 320dp e 390dp e exige um valor só por linha.
+Conferido que ele reprova o layout anterior antes de ser aceito: alinhamento é geometria, e
+geometria se mede.
+
+---
+
 ## O "Onde aportar" anunciava um destino que não mostrava (2026-09-11)
 
 A tela dizia, em serifa: *"Esta ordem cobre uma fatia em renda fixa. A distribuição sai da sua

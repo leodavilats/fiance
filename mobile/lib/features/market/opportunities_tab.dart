@@ -497,7 +497,7 @@ class _DipScannerView extends ConsumerWidget {
                     const SizedBox(height: FiSpace.s3),
                     Text(
                       'Caiu ${formatPercent(item.dropFromHighPct)} do topo · '
-                      'margem de segurança ${formatPercent(item.marginOfSafety)}',
+                      'margem de segurança ${formatRatio(item.marginOfSafety)}',
                       style: FiType.caption.copyWith(color: fiInk2(context)),
                     ),
                     if (item.topReason.isNotEmpty) ...[
@@ -583,7 +583,7 @@ class _AllOpportunitiesView extends ConsumerWidget {
                   ),
                 );
               }
-              return _OpportunityObject(
+              return FiOpportunityObject(
                 opportunity: items[idade.isEmpty ? index : index - 1],
               );
             },
@@ -594,8 +594,9 @@ class _AllOpportunitiesView extends ConsumerWidget {
   }
 }
 
-class _OpportunityObject extends StatelessWidget {
-  const _OpportunityObject({required this.opportunity});
+/// Uma oportunidade na lista do Descobrir.
+class FiOpportunityObject extends StatelessWidget {
+  const FiOpportunityObject({super.key, required this.opportunity});
 
   final Opportunity opportunity;
 
@@ -634,6 +635,9 @@ class _OpportunityObject extends StatelessWidget {
             ],
           ),
 
+          // Rotulo de uma linha e cifra de uma linha, nas quatro colunas: e o que garante a
+          // linha de base. A base de cada numero desceu para uma legenda propria, porque nota
+          // dentro da coluna quebra em duas linhas em umas e em nenhuma nas outras.
           const SizedBox(height: FiSpace.s4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -643,15 +647,14 @@ class _OpportunityObject extends StatelessWidget {
               ),
               Expanded(
                 child: _Cifra(
-                  label: 'PREÇO JUSTO',
+                  label: 'JUSTO',
                   value: formatCurrency(o.fairPrice),
-                  note: consensusLabel(o.consensusMethods),
                 ),
               ),
               Expanded(
                 child: _Cifra(
                   label: 'MARGEM',
-                  value: formatPercent(o.marginOfSafety),
+                  value: formatRatio(o.marginOfSafety),
                   glossaryKey: 'ms',
                 ),
               ),
@@ -660,7 +663,6 @@ class _OpportunityObject extends StatelessWidget {
                   label: 'DY',
                   value: formatPercent(o.dividendYield),
                   glossaryKey: 'dy',
-                  note: dataYearsLabel(o.dataYears),
                 ),
               ),
             ],
@@ -676,48 +678,56 @@ class _OpportunityObject extends StatelessWidget {
             size: ScoreRulerSize.list,
             subject: 'Score de ${o.ticker}',
           ),
+
+          const SizedBox(height: FiSpace.s3),
+          Text(
+            'Justo de ${consensusLabel(o.consensusMethods)} · '
+            'DY sobre ${dataYearsLabel(o.dataYears)}',
+            style: FiType.axis.copyWith(color: fiInk3(context)),
+          ),
         ],
       ),
     );
   }
 }
 
-/// Uma cifra rotulada, com a base logo abaixo quando o número precisa dela para ser lido.
 class _Cifra extends StatelessWidget {
-  const _Cifra({
-    required this.label,
-    required this.value,
-    this.glossaryKey,
-    this.note,
-  });
+  const _Cifra({required this.label, required this.value, this.glossaryKey});
 
   final String label;
   final String value;
   final String? glossaryKey;
-  final String? note;
 
   @override
   Widget build(BuildContext context) {
     final chave = glossaryKey;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (chave == null)
+    final cifra = Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: FiType.figure.copyWith(color: fiInk1(context)),
+      ),
+    );
+
+    if (chave == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: FiType.eyebrow.copyWith(color: fiInk3(context)),
-          )
-        else
-          HelpTooltip(termKey: chave, label: label),
-        const SizedBox(height: 2),
-        Text(value, style: FiType.figure.copyWith(color: fiInk1(context))),
-        if (note != null)
-          Text(
-            note!,
-            style: FiType.axis.copyWith(color: fiInk3(context)),
           ),
-      ],
-    );
+          cifra,
+        ],
+      );
+    }
+
+    return HelpTooltip(termKey: chave, label: label, child: cifra);
   }
 }

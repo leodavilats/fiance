@@ -31,7 +31,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 cd backend && python -m pytest -q                  # 1038 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 128 testes
+cd mobile  && flutter analyze && flutter test      # 0 issues, 134 testes
                                                    #   inclui test/lint_ui_test.dart (14 regras
                                                    #   de produto) e test/contraste_test.dart
 cd mobile  && flutter build apk --release          # analyze e test nao tocam o Gradle:

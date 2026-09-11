@@ -187,7 +187,7 @@ class _AssetAnalysis extends StatelessWidget {
                 min: fiMarginOfSafetyDomain.min,
                 max: fiMarginOfSafetyDomain.max,
                 reference: 0,
-                readout: formatPercent(margem),
+                readout: formatRatio(margem),
                 note: '${band.label} · preço justo ${formatCurrency(a.consensus)}, '
                     '${consensusLabel(a.consensusMethods)}',
                 state: band.state,
@@ -216,7 +216,7 @@ class _AssetAnalysis extends StatelessWidget {
               ),
               FiDataRow(
                 label: 'Dividendos',
-                value: formatPercent(a.dividendYield),
+                value: formatRatio(a.dividendYield),
                 note: dataYearsLabel(a.dataYears),
               ),
             ],
@@ -713,7 +713,7 @@ class _CompareDecisions extends StatelessWidget {
               FiDataRow(
                 label: a.symbol,
                 detail: '${fiAssetTypeLabel[a.assetType] ?? a.assetType} · margem de '
-                    'segurança ${formatPercent(a.marginOfSafety)}',
+                    'segurança ${formatRatio(a.marginOfSafety)}',
                 note: consensusLabel(a.consensusMethods),
                 trailing: FiVerdictChip(verdict: a.verdict, label: a.label),
               ),

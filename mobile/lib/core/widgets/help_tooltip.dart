@@ -4,12 +4,24 @@ import '../glossary.dart';
 import '../theme.dart';
 
 /// O termo do glossário: o rótulo inteiro é o alvo, com os 44dp da norma.
+///
+/// O alvo abraça o `child` junto porque, numa linha de cifras, a coluna com verbete precisa ter
+/// a mesma altura da coluna sem — senão o rótulo sublinhado desce sozinho e a linha de base se
+/// perde.
 class HelpTooltip extends StatelessWidget {
-  const HelpTooltip({super.key, required this.termKey, required this.label});
+  const HelpTooltip({
+    super.key,
+    required this.termKey,
+    required this.label,
+    this.child,
+  });
 
   final String termKey;
 
   final String label;
+
+  /// O que vem sob o rótulo e entra no mesmo alvo — a cifra que ele nomeia.
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +30,18 @@ class HelpTooltip extends StatelessWidget {
 
     final rotulo = Text(
       label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: FiType.eyebrow.copyWith(color: ink3),
     );
 
-    if (text == null) return rotulo;
+    if (text == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [rotulo, ?child],
+      );
+    }
 
     return Semantics(
       button: true,
@@ -56,17 +76,18 @@ class HelpTooltip extends StatelessWidget {
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
-          child: Align(
-            alignment: Alignment.bottomLeft,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: ink3)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: ink3)),
+                ),
                 child: rotulo,
               ),
-            ),
+              ?child,
+            ],
           ),
         ),
       ),

@@ -122,7 +122,7 @@ class _AssetDetailContent extends ConsumerWidget {
                     min: fiMarginOfSafetyDomain.min,
                     max: fiMarginOfSafetyDomain.max,
                     reference: 0,
-                    readout: formatPercent(margem),
+                    readout: formatRatio(margem),
                     note: '${band.label} · preço justo ${formatCurrency(a.consensus)}, '
                         '${consensusLabel(a.consensusMethods)}',
                     state: band.state,

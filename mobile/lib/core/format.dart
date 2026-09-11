@@ -8,6 +8,15 @@ String formatCurrency(double? value) => _currency.format(value ?? 0);
 String formatPercent(double? value) =>
     value == null ? '—' : '${_percent.format(value)}%';
 
+/// Uma razao (0,546) escrita como percentual (54,6%).
+///
+/// Existe porque duas unidades chegam do backend com cara de percentual e passavam pelo mesmo
+/// `formatPercent`: `margin_of_safety` e `dy_12m` sao **razao** -- `(consenso - preco) / consenso`
+/// --, enquanto `dividend_yield` do snapshot ja vem em percentual. A margem saia cem vezes menor,
+/// e um papel 54,6% abaixo do preco justo aparecia como 0,55%.
+String formatRatio(double? ratio) =>
+    ratio == null ? '—' : formatPercent(ratio * 100);
+
 /// Quando o dado foi lido, no espelho de `idadeDoPreco` do web.
 ///
 /// Devolve vazio sem carimbo, para a tela nao ter de decidir isso: momento ausente e diferente
