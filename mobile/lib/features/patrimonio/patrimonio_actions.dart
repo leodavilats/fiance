@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/format.dart';
@@ -17,31 +18,40 @@ import '../assets/fixed_income_screen.dart';
 Future<void> openAddPositionDialog(BuildContext context, WidgetRef ref) async {
   final tipo = await showModalBottomSheet<_TipoDeAtivo>(
     context: context,
+    showDragHandle: true,
     builder: (context) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 20, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('O que você quer adicionar?', style: FiType.title),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          FiSpace.s5,
+          0,
+          FiSpace.s5,
+          FiSpace.s6,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'O que você quer adicionar?',
+              style: FiType.pageTitle.copyWith(color: fiInk1(context)),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.show_chart_outlined),
-            title: const Text('Ativo negociado'),
-            subtitle: const Text('Ação, FII, BDR ou ETF — por ticker'),
-            onTap: () => Navigator.pop(context, _TipoDeAtivo.negociado),
-          ),
-          ListTile(
-            leading: const Icon(Icons.account_balance_outlined),
-            title: const Text('Renda fixa'),
-            subtitle: const Text('CDB, LCI, LCA, Tesouro — por taxa e vencimento'),
-            onTap: () => Navigator.pop(context, _TipoDeAtivo.rendaFixa),
-          ),
-          const SizedBox(height: 8),
-        ],
+            const SizedBox(height: FiSpace.s4),
+            FiRows(
+              children: [
+                FiDataRow(
+                  label: 'Ativo negociado',
+                  detail: 'Ação, FII, BDR ou ETF — por ticker',
+                  onTap: () => Navigator.pop(context, _TipoDeAtivo.negociado),
+                ),
+                FiDataRow(
+                  label: 'Renda fixa',
+                  detail: 'CDB, LCI, LCA, Tesouro — por taxa e vencimento',
+                  onTap: () => Navigator.pop(context, _TipoDeAtivo.rendaFixa),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -74,7 +84,7 @@ Future<void> _abrirFormDePosicao(BuildContext context, WidgetRef ref) async {
             controller: tickerCtrl,
             labelText: 'Ticker (ex: PETR4)',
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FiSpace.s4),
           TextField(
             controller: qtyCtrl,
             keyboardType: const TextInputType.numberWithOptions(
@@ -82,7 +92,7 @@ Future<void> _abrirFormDePosicao(BuildContext context, WidgetRef ref) async {
             ),
             decoration: const InputDecoration(labelText: 'Quantidade'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FiSpace.s4),
           TextField(
             controller: priceCtrl,
             keyboardType: const TextInputType.numberWithOptions(
@@ -171,7 +181,7 @@ Future<void> openSellDialog(
               labelText: 'Quantidade (máx. ${position.quantity})',
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FiSpace.s4),
           TextField(
             controller: priceCtrl,
             keyboardType: const TextInputType.numberWithOptions(
@@ -179,7 +189,7 @@ Future<void> openSellDialog(
             ),
             decoration: const InputDecoration(labelText: 'Preço de venda'),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: FiSpace.s3),
           Text(
             'Lucro/prejuízo, IR e histórico serão calculados automaticamente.',
             style: FiType.caption.copyWith(color: fiInk2(context)),

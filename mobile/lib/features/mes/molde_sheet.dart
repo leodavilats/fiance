@@ -8,6 +8,8 @@ import '../../core/labels.dart';
 import '../../core/mes.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 
 /// Repetir o mes anterior: previa e commit, e o lote grava inteiro ou nenhum.
@@ -100,7 +102,7 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
     if (erro != null) {
       return SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(FiSpace.s5),
           child: FiErrorState(
             error: erro,
             action: 'montar o molde do mês',
@@ -130,12 +132,20 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        padding: const EdgeInsets.fromLTRB(
+          FiSpace.s5,
+          0,
+          FiSpace.s5,
+          FiSpace.s6,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Repetir ${nomeDoMes(m.source)}', style: FiType.title),
+            Text(
+              'Repetir ${nomeDoMes(m.source)}',
+              style: FiType.pageTitle.copyWith(color: fiInk1(context)),
+            ),
             const SizedBox(height: FiSpace.s2),
             Text(
               disponiveis.isEmpty
@@ -150,46 +160,40 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  for (final i in disponiveis)
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                      value: _escolhidos.contains(i),
-                      onChanged: (v) => setState(() {
-                        if (v ?? false) {
-                          _escolhidos.add(i);
-                        } else {
-                          _escolhidos.remove(i);
-                        }
-                      }),
-                      title: Text(
-                        m.candidates[i].description,
-                        style: FiType.body,
-                      ),
-                      subtitle: Text(
-                        '${formatCurrency(m.candidates[i].amount)} · '
-                        '${cashCategoryLabel(m.candidates[i].kind, m.candidates[i].category)}'
-                        '${m.candidates[i].repeats ? '' : ' · variável'}',
-                        style: FiType.caption.copyWith(color: fiInk3(context)),
-                      ),
-                    ),
+                  FiRows(
+                    children: [
+                      for (final i in disponiveis)
+                        FiDataRow(
+                          label: m.candidates[i].description,
+                          detail:
+                              '${formatCurrency(m.candidates[i].amount)} · '
+                              '${cashCategoryLabel(m.candidates[i].kind, m.candidates[i].category)}'
+                              '${m.candidates[i].repeats ? '' : ' · variável'}',
+                          trailing: Checkbox(
+                            value: _escolhidos.contains(i),
+                            onChanged: (v) => setState(() {
+                              if (v ?? false) {
+                                _escolhidos.add(i);
+                              } else {
+                                _escolhidos.remove(i);
+                              }
+                            }),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
 
-            const SizedBox(height: FiSpace.s4),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _salvando || _escolhidos.isEmpty ? null : _gravar,
-                child: Text(
-                  _salvando
-                      ? 'Copiando…'
-                      : _escolhidos.isEmpty
-                      ? 'Escolha o que copiar'
-                      : 'Copiar ${_escolhidos.length} para ${nomeDoMes(m.target)}',
-                ),
-              ),
+            const SizedBox(height: FiSpace.s5),
+            FiButton.primary(
+              label: _escolhidos.isEmpty
+                  ? 'Escolha o que copiar'
+                  : 'Copiar ${_escolhidos.length} para ${nomeDoMes(m.target)}',
+              expand: true,
+              busy: _salvando,
+              onPressed: _escolhidos.isEmpty ? null : _gravar,
             ),
             if (_escolhidos.isNotEmpty)
               Padding(

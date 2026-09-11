@@ -11,6 +11,15 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/compare_metrics.dart';
+import '../../core/score_ruler.dart'
+    show consensusLabel, dataYearsLabel, trendBasisLabel;
+import '../../core/widgets/button.dart';
+import '../../core/widgets/measure.dart';
+import '../../core/widgets/provenance.dart';
+import '../../core/widgets/section.dart';
+import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/tag.dart';
+import '../../core/widgets/data_row.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../mes/widgets/feed_tiles.dart';
 
@@ -65,40 +74,41 @@ class AnalyzeAssetViewState extends ConsumerState<AnalyzeAssetView> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(
+        FiLayout.gutter,
+        FiSpace.s3,
+        FiLayout.gutter,
+        FiLayout.scrollTail,
+      ),
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: TextField(
                 controller: _tickerCtrl,
                 textCapitalization: TextCapitalization.characters,
                 decoration: const InputDecoration(
-                  labelText: 'Ticker (ex: PETR4, HGLG11, AAPL, BTC)',
-                  border: OutlineInputBorder(),
+                  labelText: 'Ticker',
+                  hintText: 'PETR4, HGLG11, IVVB11…',
                 ),
                 onSubmitted: (_) => _analyze(),
               ),
             ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: _loading ? null : _analyze,
-              child: _loading
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Analisar'),
+            const SizedBox(width: FiSpace.s2),
+            FiButton.primary(
+              label: 'Analisar',
+              busy: _loading,
+              onPressed: _analyze,
             ),
           ],
         ),
         if (_error != null)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: const EdgeInsets.only(top: FiSpace.s4),
             child: Text(
               _error!,
-              style: TextStyle(
+              style: FiType.body.copyWith(
                 color: fiStateColor(
                   FiState.adverse,
                   Theme.of(context).brightness,
@@ -106,104 +116,143 @@ class AnalyzeAssetViewState extends ConsumerState<AnalyzeAssetView> {
               ),
             ),
           ),
-        if (_result != null) _AssetAnalysisCard(analysis: _result!),
+        if (_loading && _result == null)
+          const Padding(
+            padding: EdgeInsets.only(top: FiSpace.s6),
+            child: FiSkeleton(shape: FiSkeletonShape.verdict, count: 2),
+          ),
+        if (_result != null) _AssetAnalysis(analysis: _result!),
       ],
     );
   }
 }
 
-class _AssetAnalysisCard extends StatelessWidget {
-  const _AssetAnalysisCard({required this.analysis});
+/// A leitura de um ativo: o veredito, o preço contra o justo, e o que sustenta os dois.
+class _AssetAnalysis extends StatelessWidget {
+  const _AssetAnalysis({required this.analysis});
 
   final AssetAnalysis analysis;
 
   @override
   Widget build(BuildContext context) {
     final a = analysis;
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        a.symbol,
-                        style: FiType.pageTitle,
-                      ),
-                      if (a.name != null)
-                        Text(a.name!, style: TextStyle(color: fiInk2(context))),
-                    ],
-                  ),
-                  Text(
-                    a.label,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              if (formatIdade(a.asOf).isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    'Preço lido ${formatIdade(a.asOf)}',
-                    style: FiType.caption.copyWith(color: fiInk2(context)),
-                  ),
-                ),
-              const Divider(height: 20),
-              Wrap(
-                spacing: 16,
-                runSpacing: 8,
-                children: [
-                  _Stat(label: 'Preço', value: formatCurrency(a.price)),
-                  _Stat(
-                    label: 'Preço justo',
-                    value: formatCurrency(a.consensus),
-                  ),
-                  _Stat(label: 'MS', value: formatPercent(a.marginOfSafety)),
-                  _Stat(
-                    label: 'RSI(14)',
-                    value: a.rsi14?.toStringAsFixed(1) ?? '—',
-                  ),
-                  _Stat(label: 'Tendência', value: trendLabel(a.trend)),
-                ],
-              ),
-              if (a.reasons.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Text(
-                  'Por que essa decisão?',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 6),
-                ...a.reasons.map((r) => Text('• $r')),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+    final idade = formatIdade(a.asOf);
+    final estado = fiVerdictState(a.verdict);
+    final margem = a.marginOfSafety;
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: fiInk2(context))),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: FiSpace.s6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    a.symbol,
+                    style: FiType.pageTitle.copyWith(color: fiInk1(context)),
+                  ),
+                  if (a.name != null)
+                    Text(
+                      a.name!,
+                      style: FiType.body.copyWith(color: fiInk2(context)),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: FiSpace.s3),
+            FiTag(label: a.label, state: estado),
+          ],
+        ),
+
+        const SizedBox(height: FiSpace.s4),
+        FiHeadline(
+          eyebrow: 'Preço',
+          figure: formatCurrency(a.price),
+          note: idade.isEmpty ? null : 'lido $idade',
+        ),
+
+        if (margem != null) ...[
+          const SizedBox(height: FiSpace.s5),
+          Builder(
+            builder: (context) {
+              final pct = margem * 100;
+              final band = fiBandFor(pct, fiMarginOfSafetyBands);
+              return FiMeasure(
+                label: 'Margem de segurança',
+                value: pct,
+                min: fiMarginOfSafetyDomain.min,
+                max: fiMarginOfSafetyDomain.max,
+                reference: 0,
+                readout: formatPercent(margem),
+                note: '${band.label} · preço justo ${formatCurrency(a.consensus)}, '
+                    '${consensusLabel(a.consensusMethods)}',
+                state: band.state,
+              );
+            },
+          ),
+        ],
+
+        FiSection(
+          title: 'A evidência',
+          child: FiRows(
+            children: [
+              FiDataRow(
+                label: 'Preço justo',
+                value: formatCurrency(a.consensus),
+                note: consensusLabel(a.consensusMethods),
+              ),
+              FiDataRow(
+                label: 'Tendência',
+                value: trendLabel(a.trend),
+                note: trendBasisLabel(a.trendBasis),
+              ),
+              FiDataRow(
+                label: 'Força relativa (RSI 14)',
+                value: a.rsi14?.toStringAsFixed(1) ?? '—',
+              ),
+              FiDataRow(
+                label: 'Dividendos',
+                value: formatPercent(a.dividendYield),
+                note: dataYearsLabel(a.dataYears),
+              ),
+            ],
+          ),
+        ),
+
+        if (a.reasons.isNotEmpty)
+          FiSection(
+            title: 'Por que esta leitura',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final r in a.reasons)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: FiSpace.s3),
+                    child: Text(
+                      r,
+                      style: FiType.body.copyWith(color: fiInk2(context)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+        const SizedBox(height: FiSpace.s3),
+        FiProvenance(
+          summary: 'Como chegamos nesta leitura',
+          method:
+              'O preço justo é o consenso dos métodos aplicáveis ao papel; a margem de '
+              'segurança é a distância entre o preço de hoje e esse consenso.',
+          source: 'Fundamentos e cotações da BRAPI.',
+          asOf: idade.isEmpty ? null : 'Preço lido $idade.',
+          limitation:
+              'É leitura do sistema sobre dado público, não recomendação. Método com histórico '
+              'curto entra no consenso com menos peso, e o número de métodos vem escrito.',
+        ),
       ],
     );
   }
@@ -279,21 +328,28 @@ class RendaFixaSimulatorViewState
   Widget build(BuildContext context) {
     final rates = ref.watch(_ratesProvider);
 
+    final brightness = Theme.of(context).brightness;
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(
+        FiLayout.gutter,
+        FiSpace.s3,
+        FiLayout.gutter,
+        FiLayout.scrollTail,
+      ),
       children: [
         rates.when(
           loading: () => const SizedBox.shrink(),
           error: (_, _) => const SizedBox.shrink(),
           data: (r) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Wrap(
-              spacing: 16,
-              children: [
-                Text('CDI: ${formatPercent(r.cdiAnual)}'),
-                Text('Selic: ${formatPercent(r.selicAnual)}'),
-                Text('IPCA: ${formatPercent(r.ipcaAnual)}'),
-              ],
+            padding: const EdgeInsets.only(bottom: FiSpace.s5),
+            child: FiFigures(
+              rule: false,
+              figures: {
+                'CDI': formatPercent(r.cdiAnual),
+                'SELIC': formatPercent(r.selicAnual),
+                'IPCA': formatPercent(r.ipcaAnual),
+              },
             ),
           ),
         ),
@@ -301,6 +357,7 @@ class RendaFixaSimulatorViewState
           _options.length,
           (i) => _OptionForm(
             option: _options[i],
+            ordem: i + 1,
             tipos: _tipos,
             onRemove: _options.length > 1
                 ? () => setState(() => _options.removeAt(i))
@@ -308,66 +365,81 @@ class RendaFixaSimulatorViewState
             onChanged: () => setState(() {}),
           ),
         ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () => setState(() => _options.add(_RendaFixaOption())),
-          icon: const Icon(Icons.add),
-          label: const Text('Adicionar opção'),
+        const SizedBox(height: FiSpace.s2),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FiButton.quiet(
+            label: 'Adicionar outro título',
+            icon: Icons.add,
+            onPressed: () => setState(() => _options.add(_RendaFixaOption())),
+          ),
         ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: _loading ? null : _compare,
-          child: _loading
-              ? const SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Comparar'),
+        const SizedBox(height: FiSpace.s5),
+        FiButton.primary(
+          label: 'Comparar depois do IR',
+          expand: true,
+          busy: _loading,
+          onPressed: _compare,
         ),
         if (_error != null)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: const EdgeInsets.only(top: FiSpace.s4),
             child: Text(
               _error!,
-              style: TextStyle(
-                color: fiStateColor(
-                  FiState.adverse,
-                  Theme.of(context).brightness,
-                ),
+              style: FiType.body.copyWith(
+                color: fiStateColor(FiState.adverse, brightness),
               ),
             ),
           ),
-        if (_results != null) ...[
-          const SizedBox(height: 16),
-          ..._results!.map(
-            (r) => Card(
-              color: r.melhorOpcao
-                  ? fiStateColor(
-                      FiState.favorable,
-                      Theme.of(context).brightness,
-                    ).withValues(alpha: 0.12)
-                  : null,
-              child: ListTile(
-                title: Text(
-                  '${_tipos[r.tipo] ?? r.tipo} ${r.nome != null ? "· ${r.nome}" : ""}',
-                ),
-                subtitle: Text(
-                  'Líquido: ${formatCurrency(r.valorLiquido)} · Taxa líq: ${formatPercent(r.taxaLiquidaAa)}',
-                ),
-                trailing: r.melhorOpcao
-                    ? Icon(
-                        Icons.star,
-                        color: fiStateColor(
-                          FiState.favorable,
-                          Theme.of(context).brightness,
-                        ),
-                      )
-                    : null,
-              ),
+        if (_results != null)
+          FiSection(
+            title: 'Resultado',
+            hint: 'Já descontado o IR de cada título, no prazo informado.',
+            child: Column(
+              children: [
+                for (final r in _results!)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: FiSpace.s2),
+                    child: FiObject(
+                      accent: r.melhorOpcao
+                          ? fiStateColor(FiState.favorable, brightness)
+                          : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${_tipos[r.tipo] ?? r.tipo}'
+                                  '${r.nome != null ? ' · ${r.nome}' : ''}',
+                                  style: FiType.title.copyWith(
+                                    color: fiInk1(context),
+                                  ),
+                                ),
+                              ),
+                              if (r.melhorOpcao)
+                                const FiTag(
+                                  label: 'Rende mais',
+                                  state: FiState.favorable,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: FiSpace.s3),
+                          FiFigures(
+                            rule: false,
+                            figures: {
+                              'LÍQUIDO': formatCurrency(r.valorLiquido),
+                              'TAXA LÍQUIDA': formatPercent(r.taxaLiquidaAa),
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-        ],
       ],
     );
   }
@@ -380,25 +452,32 @@ final _ratesProvider = FutureProvider.autoDispose<ReferenceRates>((ref) {
 class _OptionForm extends StatelessWidget {
   const _OptionForm({
     required this.option,
+    required this.ordem,
     required this.tipos,
     required this.onChanged,
     this.onRemove,
   });
 
   final _RendaFixaOption option;
+  final int ordem;
   final Map<String, String> tipos;
   final VoidCallback onChanged;
   final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s3),
+      child: FiObject(
+        padding: const EdgeInsets.all(FiSpace.s3),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'TÍTULO $ordem',
+              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s2),
             Row(
               children: [
                 Expanded(
@@ -430,12 +509,12 @@ class _OptionForm extends StatelessWidget {
                 if (onRemove != null)
                   IconButton(
                     onPressed: onRemove,
-                    tooltip: 'Remover este título da comparação',
+                    tooltip: 'Remover o título $ordem da comparação',
                     icon: const Icon(Icons.delete_outline),
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: FiSpace.s2),
             Row(
               children: [
                 Expanded(
@@ -540,16 +619,21 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(
+        FiLayout.gutter,
+        FiSpace.s3,
+        FiLayout.gutter,
+        FiLayout.scrollTail,
+      ),
       children: [
         Text(
           'Compare até $_maxCompareTickers ativos lado a lado.',
-          style: FiType.caption.copyWith(color: fiInk2(context)),
+          style: FiType.body.copyWith(color: fiInk2(context)),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: FiSpace.s3),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: FiSpace.s2,
+          runSpacing: FiSpace.s2,
           children: _tickers
               .map(
                 (t) => Chip(
@@ -560,30 +644,26 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
               .toList(),
         ),
         if (_tickers.length < _maxCompareTickers) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: FiSpace.s3),
           TickerAutocompleteField(
             controller: _tickerCtrl,
             labelText: 'Adicionar ticker',
             onSelected: (s) => _addTicker(s.ticker),
           ),
         ],
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: _loading ? null : _compare,
-          child: _loading
-              ? const SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Comparar'),
+        const SizedBox(height: FiSpace.s5),
+        FiButton.primary(
+          label: 'Comparar',
+          expand: true,
+          busy: _loading,
+          onPressed: _compare,
         ),
         if (_error != null)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: const EdgeInsets.only(top: FiSpace.s4),
             child: Text(
               _error!,
-              style: TextStyle(
+              style: FiType.body.copyWith(
                 color: fiStateColor(
                   FiState.adverse,
                   Theme.of(context).brightness,
@@ -592,14 +672,18 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
             ),
           ),
         if (_result != null) ...[
-          const SizedBox(height: 16),
           if (_result!.errors.isNotEmpty)
-            Text(
-              'Não foi possível buscar: ${_result!.errors.join(', ')}',
-              style: FiType.caption.copyWith(color: fiStateColor(
-                  FiState.attention,
-                  Theme.of(context).brightness,
-                )),
+            Padding(
+              padding: const EdgeInsets.only(top: FiSpace.s4),
+              child: Text(
+                'Não foi possível buscar: ${_result!.errors.join(', ')}',
+                style: FiType.caption.copyWith(
+                  color: fiStateColor(
+                    FiState.attention,
+                    Theme.of(context).brightness,
+                  ),
+                ),
+              ),
             ),
           if (_result!.items.isNotEmpty) _CompareTable(items: _result!.items),
         ],
@@ -618,47 +702,22 @@ class _CompareDecisions extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Decisão', style: Theme.of(context).textTheme.labelMedium),
-        const SizedBox(height: 8),
-        ...items.map(
-          (a) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 92,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        a.symbol,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      Text(
-                        fiAssetTypeLabel[a.assetType] ?? a.assetType,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FiVerdictChip(verdict: a.verdict, label: a.label),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Margem de segurança ${formatPercent(a.marginOfSafety)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+        Text(
+          'A DECISÃO',
+          style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+        ),
+        const SizedBox(height: FiSpace.s3),
+        FiRows(
+          children: [
+            for (final a in items)
+              FiDataRow(
+                label: a.symbol,
+                detail: '${fiAssetTypeLabel[a.assetType] ?? a.assetType} · margem de '
+                    'segurança ${formatPercent(a.marginOfSafety)}',
+                note: consensusLabel(a.consensusMethods),
+                trailing: FiVerdictChip(verdict: a.verdict, label: a.label),
+              ),
+          ],
         ),
       ],
     );
@@ -684,11 +743,8 @@ class _CompareTable extends StatelessWidget {
           cells: [
             DataCell(
               Text(
-                group,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
+                group.toUpperCase(),
+                style: FiType.eyebrow.copyWith(color: fiInk3(context)),
               ),
             ),
             ...items.map((_) => const DataCell(Text(''))),
@@ -721,10 +777,14 @@ class _CompareTable extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: FiSpace.s8),
         _CompareDecisions(items: items),
-        const SizedBox(height: 16),
-        Text('Evidência', style: Theme.of(context).textTheme.labelMedium),
-        const SizedBox(height: 4),
+        const SizedBox(height: FiSpace.s8),
+        Text(
+          'A EVIDÊNCIA',
+          style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+        ),
+        const SizedBox(height: FiSpace.s3),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
@@ -784,13 +844,18 @@ class ContributionSimulatorViewState
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(
+        FiLayout.gutter,
+        FiSpace.s3,
+        FiLayout.gutter,
+        FiLayout.scrollTail,
+      ),
       children: [
         Text(
           'Simule um aporte mensal recorrente e veja a evolução da sua carteira e renda passiva.',
-          style: FiType.caption.copyWith(color: fiInk2(context)),
+          style: FiType.body.copyWith(color: fiInk2(context)),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: FiSpace.s5),
         Row(
           children: [
             Expanded(
@@ -804,7 +869,7 @@ class ContributionSimulatorViewState
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: FiSpace.s2),
             Expanded(
               child: TextField(
                 controller: _monthsCtrl,
@@ -814,7 +879,7 @@ class ContributionSimulatorViewState
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: FiSpace.s3),
         Row(
           children: [
             Expanded(
@@ -828,7 +893,7 @@ class ContributionSimulatorViewState
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: FiSpace.s2),
             Expanded(
               child: TextField(
                 controller: _divGrowthCtrl,
@@ -842,7 +907,7 @@ class ContributionSimulatorViewState
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: FiSpace.s3),
         TextField(
           controller: _targetCtrl,
           decoration: const InputDecoration(
@@ -850,23 +915,21 @@ class ContributionSimulatorViewState
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
-        CheckboxListTile(
-          value: _reinvest,
-          onChanged: (v) => setState(() => _reinvest = v ?? true),
-          title: const Text('Reinvestir dividendos'),
-          contentPadding: EdgeInsets.zero,
-          controlAffinity: ListTileControlAffinity.leading,
+        const SizedBox(height: FiSpace.s2),
+        FiDataRow(
+          label: 'Reinvestir dividendos',
+          detail: 'O provento recebido volta para a carteira no mês seguinte',
+          trailing: Switch(
+            value: _reinvest,
+            onChanged: (v) => setState(() => _reinvest = v),
+          ),
         ),
-        const SizedBox(height: 8),
-        FilledButton(
-          onPressed: _loading ? null : _simulate,
-          child: _loading
-              ? const SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Simular'),
+        const SizedBox(height: FiSpace.s5),
+        FiButton.primary(
+          label: 'Projetar',
+          expand: true,
+          busy: _loading,
+          onPressed: _simulate,
         ),
         if (_result != null) ..._buildResult(_result!),
       ],
@@ -877,63 +940,69 @@ class ContributionSimulatorViewState
     final last = r.projections.last;
 
     return [
-      const SizedBox(height: 16),
-      if (r.disclaimer.isNotEmpty)
-        Text(
-          r.disclaimer,
-          style: FiType.caption.copyWith(color: fiInk2(context)),
+      FiSection(
+        title: 'De onde parte',
+        child: FiFigures(
+          rule: false,
+          figures: {
+            'CARTEIRA HOJE': formatCurrency(r.currentPortfolioValue),
+            'RENDA PASSIVA HOJE': formatCurrency(r.currentPassiveIncomeMonthly),
+          },
         ),
-      const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: _Stat(
-              label: 'Carteira hoje',
-              value: formatCurrency(r.currentPortfolioValue),
+      ),
+
+      FiSection(
+        title: 'Onde chega',
+        hint: 'A faixa é o número: piso e teto saem dos cenários, e o centro é só um deles.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FiRange(
+              label: 'Carteira no fim',
+              low: last.portfolioValueLow,
+              high: last.portfolioValueHigh,
+              base: last.portfolioValue,
             ),
-          ),
-          Expanded(
-            child: _Stat(
-              label: 'Renda passiva hoje',
-              value: formatCurrency(r.currentPassiveIncomeMonthly),
+            const SizedBox(height: FiSpace.s4),
+            FiRange(
+              label: 'Renda passiva por mês no fim',
+              low: last.passiveIncomeMonthlyLow,
+              high: last.passiveIncomeMonthlyHigh,
+              base: last.passiveIncomeMonthly,
             ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 12),
-      FiRange(
-        label: 'Carteira no fim',
-        low: last.portfolioValueLow,
-        high: last.portfolioValueHigh,
-        base: last.portfolioValue,
-      ),
-      const SizedBox(height: FiSpace.s3),
-      FiRange(
-        label: 'Renda passiva/mês no fim',
-        low: last.passiveIncomeMonthlyLow,
-        high: last.passiveIncomeMonthlyHigh,
-        base: last.passiveIncomeMonthly,
-      ),
-      const SizedBox(height: 16),
-      for (final cenario in r.scenarios) ...[
-        Text(
-          '${cenario.label}: ${formatCurrency(cenario.finalPassiveIncomeMonthly)}/mês',
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          ],
         ),
-        Text(
-          cenario.rationale,
-          style: FiType.caption.copyWith(color: fiInk2(context)),
+      ),
+
+      FiSection(
+        title: 'Os cenários',
+        child: FiRows(
+          children: [
+            for (final cenario in r.scenarios)
+              FiDataRow(
+                label: cenario.label,
+                value: '${formatCurrency(cenario.finalPassiveIncomeMonthly)}/mês',
+                note: cenario.rationale,
+              ),
+          ],
         ),
-        const SizedBox(height: 8),
-      ],
+      ),
+
       if (r.target != null) ...[
-        const SizedBox(height: 4),
-        Text(_textoDaMeta(r.target!)),
+        const SizedBox(height: FiSpace.s6),
+        Text(
+          _textoDaMeta(r.target!),
+          style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
+        ),
       ],
-      const SizedBox(height: 12),
+
+      const SizedBox(height: FiSpace.s5),
       Text(
-        'Projeção educativa, não é garantia de rentabilidade futura.',
-        style: TextStyle(color: fiInk3(context), fontSize: 11),
+        r.disclaimer.isNotEmpty
+            ? r.disclaimer
+            : 'Projeção educativa sobre premissas que você escolheu. Não há garantia de '
+                  'rentabilidade futura.',
+        style: FiType.caption.copyWith(color: fiInk3(context)),
       ),
     ];
   }

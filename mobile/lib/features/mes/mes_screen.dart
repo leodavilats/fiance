@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/cash_models.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/search_action.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
@@ -44,13 +47,19 @@ class MesScreen extends ConsumerWidget {
           ),
         ],
       ),
+      // A unica acao flutuante do produto: lancar se repete todo mes, de qualquer ponto da
+      // rolagem. As demais telas resolvem a acao dentro da secao que a justifica.
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => abrirLancarSheet(context, ref),
         icon: const Icon(Icons.add),
         label: const Text('Lançar'),
       ),
       body: mesAsync.when(
-        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.metric, count: 1, label: 'Carregando seu mês'),
+        loading: () => FiSkeleton.tela(
+          shape: FiSkeletonShape.metric,
+          count: 1,
+          label: 'Carregando seu mês',
+        ),
         error: (e, _) => FiErrorState(
           error: e,
           action: 'carregar seu mês',
@@ -85,13 +94,29 @@ class MesScreen extends ConsumerWidget {
       builder: (context) => SafeArea(
         child: ListView(
           shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(
+            FiSpace.s5,
+            0,
+            FiSpace.s5,
+            FiSpace.s6,
+          ),
           children: [
-            for (final m in ordenados)
-              ListTile(
-                title: Text(nomeDoMes(m)),
-                trailing: m == atual ? const Icon(Icons.check) : null,
-                onTap: () => Navigator.of(context).pop(m),
-              ),
+            Text(
+              'QUAL MÊS',
+              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s2),
+            FiRows(
+              children: [
+                for (final m in ordenados)
+                  FiDataRow(
+                    label: nomeDoMes(m),
+                    value: m == atual ? 'em leitura' : null,
+                    valueColor: m == atual ? fiInk3(context) : null,
+                    onTap: () => Navigator.of(context).pop(m),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
@@ -142,7 +167,12 @@ class _Corpo extends ConsumerWidget {
         ref.invalidate(debtsProvider);
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s2,
+          FiLayout.gutter,
+          88,
+        ),
         children: [
           _Veredito(veredito: v, mes: mes, ehMesCorrente: ehMesCorrente),
 
@@ -150,7 +180,7 @@ class _Corpo extends ConsumerWidget {
             FiSection(
               title: 'Exige atenção',
               count: caras.length,
-              trailing: FiNavAction(
+              action: FiNavAction(
                 label: 'Ver dívidas',
                 onPressed: () => GoRouter.of(context).go('/mes/dividas'),
               ),
@@ -164,7 +194,7 @@ class _Corpo extends ConsumerWidget {
             FiSection(
               title: 'A vencer',
               count: mes.due.length,
-              child: Column(
+              child: FiRows(
                 children: [
                   for (final conta in mes.due) _LinhaAVencer(conta: conta),
                 ],
@@ -173,21 +203,17 @@ class _Corpo extends ConsumerWidget {
 
           FiSection(
             title: 'O mês',
-            trailing: FiNavAction(
+            action: FiButton.secondary(
               icon: Icons.content_copy_outlined,
-              label: 'Repetir ${nomeDoMes(mesAnterior(mes.month)).split(' de ').first}',
+              label:
+                  'Repetir ${nomeDoMes(mesAnterior(mes.month)).split(' de ').first}',
               onPressed: () => abrirMoldeSheet(context, ref),
             ),
-            child: Column(
-              children: [
-                if (doMes.isEmpty)
-                  Text(
-                    'Nada lançado em ${nomeDoMes(mes.month)}.',
-                    style: FiType.body.copyWith(color: fiInk2(context)),
+            child: doMes.isEmpty
+                ? FiEmptyLine('Nada lançado em ${nomeDoMes(mes.month)}.')
+                : Column(
+                    children: [for (final e in doMes) _LinhaDoMes(entry: e)],
                   ),
-                for (final e in doMes) _LinhaDoMes(entry: e),
-              ],
-            ),
           ),
         ],
       ),
@@ -215,8 +241,7 @@ class _Veredito extends StatelessWidget {
       children: [
         Text(
           veredito.veredito,
-          style: FiType.verdict.copyWith(
-            fontFamily: fiFontSerif,
+          style: fiSerif(FiType.verdict).copyWith(
             color: fiStateColor(veredito.band.state, brightness),
           ),
         ),
@@ -237,15 +262,16 @@ class _Veredito extends StatelessWidget {
         ),
 
         const SizedBox(height: FiSpace.s4),
-        Text(
-          ehMesCorrente ? 'LIVRE AGORA' : 'SOBROU EM ${nomeDoMes(mes.month).toUpperCase()}',
-          style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+        FiHeadline(
+          eyebrow: ehMesCorrente
+              ? 'Livre agora'
+              : 'Sobrou em ${nomeDoMes(mes.month)}',
+          figure: formatCurrency(mes.freeNow),
         ),
-        const SizedBox(height: FiSpace.s1),
-        Text(formatCurrency(mes.freeNow), style: FiType.moneyLg),
 
         const SizedBox(height: FiSpace.s5),
         FiFigures(
+          rule: false,
           figures: {
             'ENTROU': formatCurrency(mes.received),
             'SAIU': formatCurrency(mes.paid),
@@ -253,8 +279,8 @@ class _Veredito extends StatelessWidget {
           },
         ),
 
-        const SizedBox(height: FiSpace.s5),
-        Divider(color: Theme.of(context).dividerColor, height: 1),
+        const SizedBox(height: FiSpace.s6),
+        Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
         const SizedBox(height: FiSpace.s4),
 
         Text(
@@ -265,13 +291,14 @@ class _Veredito extends StatelessWidget {
                     'próprio livre.',
           style: FiType.body.copyWith(color: fiInk2(context)),
         ),
-        const SizedBox(height: FiSpace.s2),
+        const SizedBox(height: FiSpace.s3),
+        // Secundaria em peso: a primaria da tela e lancar, e duas acoes solidas na mesma dobra
+        // disputariam o toque.
         Align(
           alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
+          child: FiButton.secondary(
+            label: 'Decidir o que fazer com ela',
             onPressed: () => GoRouter.of(context).go('/sobra'),
-            icon: const Icon(Icons.arrow_forward, size: 18),
-            label: const Text('Decidir o que fazer com ela'),
           ),
         ),
       ],
@@ -295,7 +322,7 @@ class _LinhaDivida extends StatelessWidget {
           Text(
             '${divida.description}: ${formatCurrency(divida.balance)}'
             '${taxa == null ? '' : ' a ${formatPercent(taxa)} ao mês'}',
-            style: FiType.body,
+            style: FiType.body.copyWith(color: fiInk1(context)),
           ),
           if (divida.flipRate != null)
             Text(
@@ -315,16 +342,12 @@ class _LinhaAVencer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      leading: SizedBox(
-        width: 28,
-        child: Text(diaDe(conta.dueOn), style: FiType.metricSm),
-      ),
-      title: Text(conta.description, style: FiType.body),
-      subtitle: Text(formatCurrency(conta.amount), style: FiType.caption),
-      trailing: TextButton(
+    return FiDataRow(
+      leading: _Dia(dia: diaDe(conta.dueOn)),
+      label: conta.description,
+      detail: formatCurrency(conta.amount),
+      trailing: FiButton.quiet(
+        label: 'Marcar paga',
         onPressed: conta.id == null
             ? null
             : () async {
@@ -334,7 +357,24 @@ class _LinhaAVencer extends ConsumerWidget {
                 ref.invalidate(cashMonthProvider);
                 ref.invalidate(cashEntriesProvider);
               },
-        child: const Text('Paga'),
+      ),
+    );
+  }
+}
+
+/// O dia do mês: é por ele que a pessoa encontra o lançamento na linha do tempo.
+class _Dia extends StatelessWidget {
+  const _Dia({required this.dia});
+
+  final String dia;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 24,
+      child: Text(
+        dia,
+        style: FiType.figure.copyWith(color: fiInk3(context)),
       ),
     );
   }
@@ -352,15 +392,12 @@ class _LinhaDoMes extends ConsumerWidget {
     final cor = fiDirectionColor(entrada ? 1 : -1, Theme.of(context).brightness);
 
     return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
       childrenPadding: const EdgeInsets.only(bottom: FiSpace.s3),
-      shape: const Border(),
-      collapsedShape: const Border(),
-      leading: SizedBox(
-        width: 28,
-        child: Text(diaDe(entry.competencia), style: FiType.metricSm),
+      leading: _Dia(dia: diaDe(entry.competencia)),
+      title: Text(
+        entry.description,
+        style: FiType.body.copyWith(color: fiInk1(context)),
       ),
-      title: Text(entry.description, style: FiType.body),
       subtitle: entry.futura || entry.derived
           ? Text(
               entry.derived
@@ -371,7 +408,7 @@ class _LinhaDoMes extends ConsumerWidget {
           : null,
       trailing: Text(
         '${entrada ? '+' : '−'}${formatCurrency(entry.amount)}',
-        style: FiType.metricSm.copyWith(color: cor),
+        style: FiType.figure.copyWith(color: cor),
       ),
       children: [
         Row(
@@ -388,9 +425,9 @@ class _LinhaDoMes extends ConsumerWidget {
                 style: FiType.caption.copyWith(color: fiInk3(context)),
               )
             else
-              TextButton(
+              FiButton.quiet(
+                label: 'Editar lançamento',
                 onPressed: () => abrirLancarSheet(context, ref, editar: entry),
-                child: const Text('Editar'),
               ),
           ],
         ),
@@ -407,29 +444,18 @@ class _MesVazio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(24),
       children: [
-        Text(
-          'Seu mês ainda não tem nada lançado',
-          style: FiType.verdict.copyWith(fontFamily: fiFontSerif),
-        ),
-        const SizedBox(height: FiSpace.s3),
-        Text(
-          'Comece pelo que se repete: o dia e o valor que você recebe, e os dois ou três '
-          'maiores gastos fixos. Com isso a sobra do mês já sai, e ela é o que decide o '
-          'próximo aporte.',
-          style: FiType.body.copyWith(color: fiInk2(context)),
-        ),
-        const SizedBox(height: FiSpace.s5),
-        FilledButton.icon(
-          onPressed: onLancar,
-          icon: const Icon(Icons.add),
-          label: const Text('Lançar o primeiro mês'),
-        ),
-        const SizedBox(height: FiSpace.s3),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FiNavAction(
+        FiEmptyState(
+          title: 'Seu mês ainda não tem nada lançado',
+          body: 'Comece pelo que se repete: o dia e o valor que você recebe, e os dois ou três '
+              'maiores gastos fixos. Com isso a sobra do mês já sai, e ela é o que decide o '
+              'próximo aporte.',
+          action: FiButton.primary(
+            label: 'Lançar o primeiro mês',
+            icon: Icons.add,
+            onPressed: onLancar,
+          ),
+          secondary: FiButton.secondary(
             label: 'Cadastrar uma dívida',
             onPressed: () => GoRouter.of(context).go('/mes/dividas'),
           ),

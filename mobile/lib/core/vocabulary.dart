@@ -3,23 +3,21 @@
 // Os limiares de score espelham `backend/app/analysis/score_ruler.py`, que e a fonte: mudar um
 // limiar exige mudar o Python primeiro, e depois aqui.
 
-import 'package:flutter/material.dart';
-
+/// Uma categoria do vocabulario: como ela se chama, e em que serie ela se pinta.
 class FiCategoria {
-  const FiCategoria(this.label, this.series, this.icon);
+  const FiCategoria(this.label, this.series);
 
   final String label;
   final int series;
-  final IconData icon;
 }
 
 const Map<String, FiCategoria> fiCategorias = {
-  'renda_fixa': FiCategoria('Renda Fixa', 1, Icons.account_balance_outlined),
-  'acoes_br': FiCategoria('Ações BR', 2, Icons.show_chart),
-  'fiis': FiCategoria('FIIs', 3, Icons.apartment_outlined),
-  'bdrs': FiCategoria('BDRs', 5, Icons.public_outlined),
-  'etfs': FiCategoria('ETFs', 8, Icons.layers_outlined),
-  'auto': FiCategoria('Automática', 0, Icons.category_outlined),
+  'renda_fixa': FiCategoria('Renda Fixa', 1),
+  'acoes_br': FiCategoria('Ações BR', 2),
+  'fiis': FiCategoria('FIIs', 3),
+  'bdrs': FiCategoria('BDRs', 5),
+  'etfs': FiCategoria('ETFs', 8),
+  'auto': FiCategoria('Automática', 0),
 };
 
 const Map<String, String> fiCategoriaApelidos = {
@@ -123,26 +121,26 @@ const Map<String, String> fiLiquidez = {
 };
 
 const Map<String, FiCategoria> fiCategoriasDeDespesa = {
-  'moradia': FiCategoria('Moradia', 1, Icons.home_outlined),
-  'contas_da_casa': FiCategoria('Contas da casa', 2, Icons.bolt_outlined),
-  'mercado': FiCategoria('Mercado', 3, Icons.shopping_basket_outlined),
-  'transporte': FiCategoria('Transporte', 4, Icons.directions_bus_outlined),
-  'saude': FiCategoria('Saúde', 5, Icons.favorite_outline),
-  'educacao': FiCategoria('Educação', 6, Icons.menu_book_outlined),
-  'lazer': FiCategoria('Lazer', 7, Icons.restaurant_outlined),
-  'cuidados_pessoais': FiCategoria('Cuidados pessoais', 8, Icons.person_outline),
-  'divida': FiCategoria('Dívida', 9, Icons.credit_card_outlined),
-  'outros': FiCategoria('Outros', 0, Icons.circle_outlined),
+  'moradia': FiCategoria('Moradia', 1),
+  'contas_da_casa': FiCategoria('Contas da casa', 2),
+  'mercado': FiCategoria('Mercado', 3),
+  'transporte': FiCategoria('Transporte', 4),
+  'saude': FiCategoria('Saúde', 5),
+  'educacao': FiCategoria('Educação', 6),
+  'lazer': FiCategoria('Lazer', 7),
+  'cuidados_pessoais': FiCategoria('Cuidados pessoais', 8),
+  'divida': FiCategoria('Dívida', 9),
+  'outros': FiCategoria('Outros', 0),
 };
 
 const Map<String, FiCategoria> fiCategoriasDeEntrada = {
-  'salario': FiCategoria('Salário', 1, Icons.wallet_outlined),
-  'decimo_terceiro': FiCategoria('13º salário', 2, Icons.card_giftcard_outlined),
-  'ferias': FiCategoria('Férias', 3, Icons.beach_access_outlined),
-  'renda_variavel': FiCategoria('Renda variável', 4, Icons.show_chart),
-  'provento': FiCategoria('Provento', 5, Icons.savings_outlined),
-  'reembolso': FiCategoria('Reembolso', 6, Icons.undo_outlined),
-  'outros': FiCategoria('Outros', 0, Icons.circle_outlined),
+  'salario': FiCategoria('Salário', 1),
+  'decimo_terceiro': FiCategoria('13º salário', 2),
+  'ferias': FiCategoria('Férias', 3),
+  'renda_variavel': FiCategoria('Renda variável', 4),
+  'provento': FiCategoria('Provento', 5),
+  'reembolso': FiCategoria('Reembolso', 6),
+  'outros': FiCategoria('Outros', 0),
 };
 
 const Map<String, String> fiTiposDeDivida = {

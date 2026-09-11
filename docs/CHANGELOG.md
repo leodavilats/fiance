@@ -12,6 +12,123 @@
 
 ---
 
+## A interface deixa de parecer gerada: papel, fio e uma ação por contexto (2026-09-11)
+
+O aplicativo tinha os princípios escritos e não aplicados. "Fio + chão, não card + card" estava
+no contrato de trabalho desde que ele existe; o código tinha **54 `Card(`**, **48 `ListTile`**,
+dois `CircleAvatar` decorativos e **161 `Icons.*`** crus. `/voce` era uma pilha de nove cartões,
+cada um com um ícone no cabeçalho e, dentro, uma lista de `ListTile` com um segundo ícone por
+linha: vinte e um glifos numa tela em que nenhum deles carregava informação.
+
+Princípio que nenhuma máquina cobra volta a ser violado em duas semanas — e este voltou por
+dezoito meses. Por isso a revisão termina em **duas regras novas** e uma catraca fechada, e não
+só em telas trocadas.
+
+### O chão deixa de ser branco estourado e preto absoluto
+
+As duas paletas foram reescritas. O claro era `#FFFFFF` sobre `#EDF2F5` — a folha do navegador,
+azulada e sem temperatura; o escuro era `#090C10`, que é preto com um grão de azul. Nenhum dos
+dois é papel nem tinta: são os extremos do dispositivo, e é o que um gerador escolhe quando não
+escolhe nada.
+
+Agora o claro é papel quente (`ground-0` `#F0EDE6`, `ground-1` `#FAF8F3`) e o escuro é
+azul-carvão (`#15171B` / `#1D2026`). A hierarquia continua vindo de superfície, espaço e fio —
+o que mudou é que **há três superfícies distinguíveis** nos dois temas, em vez de uma folha
+branca com caixas brancas em cima. A marca acompanhou (`#295D7C` → `#1F5670` no claro), e com ela
+os onze arquivos de `assets/brand`, o ícone adaptativo e o `ic_launcher_background` — a máquina de
+`tool/build_icons.py --check` é que apontou os dois últimos.
+
+`test/contraste_test.dart` passou sem nenhuma exceção nova: o mínimo da WCAG continua sendo o
+único piso, e ele é cobrado nos dois temas.
+
+### Uma ação precisa parecer uma ação
+
+Minimalismo não é motivo para uma frase solta carregar o único caminho adiante, e era o que
+acontecia: `TextButton` sem peso ao lado de `FilledButton` sem contexto, três controles de mesmo
+peso disputando o mesmo bloco, e `TextButton` de 32dp com ícone de 16 dentro do cartão de posição.
+
+`FiButton` tem quatro tons declarados — `primary`, `secondary`, `quiet`, `danger` — e a hierarquia
+passou a ser decisão de contexto: **uma ação principal por tela**, e a alternativa só quando ela
+existe de verdade. A ação da seção vem **depois** do conteúdo (`FiSection.action`), porque a
+sequência é informação → compreensão → decisão → ação; um controle encostado no cabeçalho pede que
+a pessoa decida antes de ler. O que fica no cabeçalho é **recorte** (`FiSegments`), que muda o que
+ela está prestes a ler.
+
+O botão flutuante sobreviveu num lugar só, o `Mês`, e por frequência: lançar é o gesto que se
+repete todo mês, de qualquer ponto da rolagem. Deixou de ser cápsula — raio do sistema, tipo do
+sistema. As demais telas resolvem a ação dentro da seção que a justifica.
+
+### A régua vira o elemento-assinatura, e não mais o widget de um bloco
+
+Ela tinha dois consumidores. Agora são sete leituras na mesma forma: score de oportunidade, saúde
+da carteira e **suas quatro dimensões**, desvio de alocação, progresso de meta, margem de
+segurança, carteira contra CDI e renda contratada contra CDI. `FiMeasure` é a variante geral —
+valor, referência, banda — e `ScoreRuler` continua sendo a de score.
+
+Duas dessas telas eram grades de KPI. As quatro dimensões de saúde eram quatro caixas
+centralizadas com número em 16px, rótulo em 10px e banda em 9px, com "Diversif." abreviado por
+falta de espaço: quatro números de mesmo peso, sem escala e sem dizer o que é alto. E
+"Estou rendendo mais que o CDI?" devolvia três cifras lado a lado para a pessoa comparar de
+cabeça — a pergunta agora tem resposta escrita, e o CDI é a marca de referência da régua, não mais
+uma barra.
+
+### Campos que o servidor mandava e o cliente descartava
+
+`consensus_methods`, `data_years`, `trend_basis` e `dy_12m` chegam em `GET /assets/{ticker}` desde
+sempre, dentro de `fair_price` e `technical`. O `fromJson` de `AssetAnalysis` não os declarava, e
+o construtor do Dart descarta chave não declarada **em silêncio** — a armadilha que já custou
+`consensus_methods`, `trend_basis` e `allocation_gaps` antes. O efeito na tela: `/ativo` dizia
+"consenso" sem dizer de quantos métodos, enquanto `/descobrir` dizia "3 métodos no consenso" para
+o mesmo papel. Os quatro campos entraram **opcionais**, como todo campo novo que uma versão já
+instalada não conhece.
+
+### O que a máquina passa a cobrar
+
+- **Catraca de caixa do Material** em zero: `Card`, `ListTile`, `SwitchListTile` e `CircleAvatar`.
+  `RadioListTile` e `CheckboxListTile` ficam de fora — são controle de formulário dentro de
+  diálogo, não layout de tela.
+- **Paleta escrita à mão**: `Color(0x…)` solto e `Colors.*` fora da fundação. Achou um:
+  `app_wordmark` caía em `Colors.black` quando nada lhe dava tinta, e preto puro não existe na
+  paleta.
+- **Tipo solto em zero** (era 34). Fechou porque a legenda de eixo ganhou papel próprio,
+  `FiType.axis` em 11px: os seis sobreviventes estavam em 9 e 10 porque a escala de leitura tem
+  piso em 13, e sem um papel para eixo cada gráfico reabria a decisão.
+
+### As primitivas, e por que elas e não outras
+
+`FiObject` é a **única** caixa, e existe para o que é objeto — uma posição, um título, uma
+oportunidade, um alerta com ação própria. `FiSection` + `FiRows`/`FiDataRow` é o resto.
+`FiHeadline` nasceu de seis telas escrevendo a mesma abertura à mão e já divergindo em três
+grafias. `FiEmptyState` separa ausência de dado de falha de leitura, que é invariante e não
+estilo. `FiTag` unificou três selos de veredito que discordavam nas bordas — um deles não conhecia
+`STRONG_SELL`, e o papel saía cinza de "sem leitura" onde devia sair vermelho de venda.
+
+O mesmo motivo levou `fiVerdictState` e `fiSeverityState` para `labels.dart`: três telas faziam o
+mapa à mão. E o **ícone** saiu do vocabulário de categoria — eram 24 glifos declarados que nenhuma
+tela lia depois que a identidade passou a ser cor de série mais rótulo escrito. Vocabulário sem
+consumidor é pior que vocabulário nenhum, porque parece resolvido.
+
+### Acessibilidade: o alvo de 44 pelo rótulo, não pelo ícone
+
+`HelpTooltip` era um ícone de 16px num alvo de 32, ao lado de um rótulo de 11px que ninguém
+associava a ele — e estava no KNOWN_ISSUES desde que a régua de 44 foi escrita, porque aumentar o
+glifo só deixaria o ícone maior. O alvo agora é o **rótulo inteiro**, sublinhado, que é a convenção
+editorial para "este termo tem verbete".
+
+Na mesma linha: a linha de ações do objeto de posição carrega o veredito vindo do servidor
+("Por que Compra forte?"), e em 320dp o par estourava a caixa pela direita — o que sumia era o
+botão de vender.
+
+### O que não mudou
+
+Os cinco destinos, o ciclo do dinheiro, as rotas, os cálculos e as réguas de produto. Nenhum
+limiar foi tocado: `analysis/score_ruler.py` continua sendo a fonte, e o backend não recebeu uma
+linha. O que mudou de lugar foram os **limiares de dimensão de saúde** (70/40), que estavam
+escritos duas vezes no mesmo arquivo — uma função de rótulo e um `switch` de cor com os mesmos
+números — e viraram uma lista de bandas, como todas as outras réguas.
+
+---
+
 ## Seis defeitos de uso, e três eram o mesmo: parâmetro que nunca chega (2026-09-11)
 
 Lista vinda de uso real do aplicativo, nas três abas. O que parecia seis problemas de interface

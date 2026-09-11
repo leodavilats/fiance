@@ -118,7 +118,7 @@ flutter_launcher_icons:
   # Nao e asset empacotado no app: so o build-time deste comando le estes arquivos.
   image_path: "assets/brand/icon.png"
   # Igual a FiColors.lightBrand em lib/core/design_tokens.dart. Ver tool/build_icons.py.
-  adaptive_icon_background: "#295D7C"
+  adaptive_icon_background: "#1F5670"
   adaptive_icon_foreground: "assets/brand/icon_foreground.png"
   min_sdk_android: 21
   remove_alpha_ios: true

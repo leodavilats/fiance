@@ -317,7 +317,7 @@ void main() {
     });
 
     test('o tipo solto nao cresce', () {
-      const teto = 34;
+      const teto = 0;
 
       final soltos = <String>[];
       for (final f in fontes) {
@@ -340,6 +340,42 @@ void main() {
             'tamanho solto reabre a decisao a cada tela. Use os papeis de FiType. O teto e '
             'catraca: ao trocar um solto por papel, baixe o numero neste teste. '
             'Soltos hoje:\n  ${soltos.join('\n  ')}',
+      );
+    });
+
+    test('a caixa do Material nao volta a crescer', () {
+      /*
+       * A moldura e o atalho que dispensa pensar em espaco, tipo e fio. O sistema tem
+       * substitutos com nome: `FiObject` para o que e objeto, `FiSection` + `FiRows`/`FiDataRow`
+       * para o resto.
+       *
+       * `RadioListTile` e `CheckboxListTile` ficam de fora: sao controle de formulario dentro
+       * de dialogo, e nao layout de tela.
+       */
+      const teto = 0;
+
+      final achados = <String>[];
+      for (final f in fontes) {
+        final linhas = f.readAsLinesSync();
+        for (var i = 0; i < linhas.length; i++) {
+          final linha = linhas[i];
+          if (linha.trimLeft().startsWith('//') || linha.trimLeft().startsWith('///')) {
+            continue;
+          }
+          if (!RegExp(r'\b(Card|ListTile|SwitchListTile|CircleAvatar)\(').hasMatch(linha)) {
+            continue;
+          }
+          achados.add('${_curto(f)}:${i + 1}: ${linha.trim()}');
+        }
+      }
+
+      expect(
+        achados.length,
+        lessThanOrEqualTo(teto),
+        reason:
+            'a moldura e o atalho que dispensa pensar em espaco, tipo e fio. Use FiObject '
+            '(o que e objeto) ou FiSection + FiRows/FiDataRow. O teto e catraca, e so desce. '
+            'Achados:\n  ${achados.join('\n  ')}',
       );
     });
 
@@ -368,6 +404,39 @@ void main() {
         reason:
             'use FiSkeleton.tela(shape: ..., count: ...): o esqueleto tem a altura do papel que '
             'vai ocupar o lugar, entao a pagina nao salta. Achados: ${achados.join(', ')}',
+      );
+    });
+
+    test('nenhuma tela escreve cor a mao', () {
+      /*
+       * Hexadecimal solto cria uma cor que nenhuma outra tela conhece, e `Colors.blue` cria uma
+       * que nem o tema conhece. `Colors.transparent` passa: e ausencia de tinta, nao uma cor.
+       */
+      final achados = <String>[];
+      for (final f in fontes) {
+        if (f.path.contains('design_tokens.dart')) continue;
+
+        final linhas = f.readAsLinesSync();
+        for (var i = 0; i < linhas.length; i++) {
+          final linha = linhas[i];
+          if (linha.trimLeft().startsWith('//')) continue;
+
+          if (RegExp(r'Color\(0x[0-9A-Fa-f]{8}\)').hasMatch(linha)) {
+            achados.add('${_curto(f)}:${i + 1}: hexadecimal solto');
+          }
+          if (RegExp(r'\bColors\.(?!transparent\b)[a-zA-Z]').hasMatch(linha)) {
+            achados.add('${_curto(f)}:${i + 1}: paleta do Material');
+          }
+        }
+      }
+
+      expect(
+        achados,
+        isEmpty,
+        reason:
+            'a paleta e uma so, e vive em core/design_tokens.dart. Use o papel: fiStateColor, '
+            'fiDirectionColor, fiSeriesColor, fiInk1/2/3, fiGround0/1/2, fiHairline. '
+            'Achados:\n  ${achados.join('\n  ')}',
       );
     });
 

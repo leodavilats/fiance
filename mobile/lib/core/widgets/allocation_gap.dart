@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'measure.dart';
 
+/// Sem meta declarada nao ha julgamento: o estado e indeterminado, e a linha diz isso.
 class FiAllocationGap extends StatelessWidget {
   const FiAllocationGap({
     super.key,
@@ -21,128 +23,36 @@ class FiAllocationGap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final hasTarget = targetPct != null;
-    final delta = hasTarget ? currentPct - targetPct! : 0.0;
-    final band = fiBandFor(delta.abs(), fiAllocationGapBands, hasTarget ? 1 : 0);
-    final stateColor = fiStateColor(band.state, brightness);
-    final brand = Theme.of(context).colorScheme.primary;
+    final alvo = targetPct;
+    final temAlvo = alvo != null;
+    final delta = temAlvo ? currentPct - alvo : 0.0;
+    final band = fiBandFor(delta.abs(), fiAllocationGapBands, temAlvo ? 1 : 0);
 
-    return Semantics(
-      label: hasTarget
+    final partes = <String>[
+      ?trailing,
+      if (temAlvo)
+        'meta ${alvo.toStringAsFixed(0)}%'
+      else
+        'sem meta declarada',
+      if (temAlvo && delta.abs() >= 1)
+        '${delta.abs().toStringAsFixed(1)} p.p. ${delta > 0 ? 'acima' : 'abaixo'}'
+      else if (temAlvo)
+        'na meta',
+    ];
+
+    return FiMeasure(
+      label: label,
+      value: currentPct,
+      reference: temAlvo ? alvo : null,
+      readout: '${currentPct.toStringAsFixed(1)}%',
+      note: partes.join(' · '),
+      state: band.state,
+      fillColor: barColor ?? fiInk3(context),
+      semantics: temAlvo
           ? '$label: ${currentPct.toStringAsFixed(1)}% da carteira contra meta de '
-                '${targetPct!.toStringAsFixed(1)}% — ${delta.abs().toStringAsFixed(1)} pontos '
+                '${alvo.toStringAsFixed(1)}% — ${delta.abs().toStringAsFixed(1)} pontos '
                 'percentuais ${delta > 0 ? 'acima' : 'abaixo'}, ${band.label.toLowerCase()}'
           : '$label: ${currentPct.toStringAsFixed(1)}% da carteira, sem meta definida',
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(label)),
-                if (trailing != null) ...[
-                  Text(
-                    trailing!,
-                    style: FiType.caption.copyWith(color: fiInk2(context)),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                SizedBox(
-                  width: 52,
-                  child: Text(
-                    '${currentPct.toStringAsFixed(1)}%',
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                final fill = (currentPct.clamp(0, 100) / 100) * width;
-                final tick = hasTarget
-                    ? (targetPct!.clamp(0, 100) / 100) * width
-                    : null;
-                return SizedBox(
-                  height: 12,
-                  child: Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          height: 8,
-                          width: width,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(FiRadius.sm),
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          height: 8,
-                          width: fill,
-                          decoration: BoxDecoration(
-                            color: barColor ?? fiInk3(context),
-                            borderRadius: BorderRadius.circular(FiRadius.sm),
-                          ),
-                        ),
-                      ),
-                      if (tick != null)
-                        Positioned(
-                          left: (tick - 1).clamp(0, width - 2),
-                          top: 0,
-                          bottom: 0,
-                          child: Container(width: 2, color: brand),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                if (hasTarget) ...[
-                  Text(
-                    'meta ${targetPct!.toStringAsFixed(0)}%',
-                    style: TextStyle(color: fiInk3(context), fontSize: 11),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    delta.abs() < 1
-                        ? Icons.drag_handle
-                        : (delta > 0 ? Icons.arrow_upward : Icons.arrow_downward),
-                    size: 12,
-                    color: stateColor,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${delta > 0 ? '+' : ''}${delta.toStringAsFixed(1)} p.p.',
-                    style: TextStyle(
-                      color: stateColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ] else
-                  Text(
-                    'sem meta definida',
-                    style: TextStyle(
-                      color: fiStateColor(FiState.indeterminate, brightness),
-                      fontSize: 11,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

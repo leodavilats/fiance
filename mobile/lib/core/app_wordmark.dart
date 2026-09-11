@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme.dart';
+
 class AppWordmark extends StatelessWidget {
   const AppWordmark({super.key, this.height = 18, this.color});
 
@@ -13,7 +15,7 @@ class AppWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tinta = color ?? DefaultTextStyle.of(context).style.color ?? Colors.black;
+    final tinta = color ?? DefaultTextStyle.of(context).style.color ?? fiInk1(context);
     return CustomPaint(
       size: Size(height * _largura / 100.0, height),
       painter: _WordmarkPainter(tinta),

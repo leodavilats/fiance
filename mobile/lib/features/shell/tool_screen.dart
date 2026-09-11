@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/design_tokens.dart';
+import '../../core/theme.dart';
 
 class ToolScreen extends StatelessWidget {
   const ToolScreen({
@@ -17,8 +17,7 @@ class ToolScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ink3 = isDark ? FiColors.darkInk3 : FiColors.lightInk3;
+    final pergunta = question;
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -26,15 +25,31 @@ class ToolScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (question != null)
+            if (pergunta != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  FiSpace.s4,
+                  FiLayout.gutter,
                   0,
-                  FiSpace.s4,
-                  FiSpace.s2,
+                  FiLayout.gutter,
+                  FiSpace.s3,
                 ),
-                child: Text(question!, style: FiType.body.copyWith(color: ink3)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pergunta,
+                      style: fiSerif(FiType.verdictSm).copyWith(
+                        color: fiInk2(context),
+                      ),
+                    ),
+                    const SizedBox(height: FiSpace.s3),
+                    Divider(
+                      color: Theme.of(context).dividerColor,
+                      height: 1,
+                      thickness: 1,
+                    ),
+                  ],
+                ),
               ),
             Expanded(child: child),
           ],

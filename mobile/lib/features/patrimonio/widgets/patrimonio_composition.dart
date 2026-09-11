@@ -6,8 +6,8 @@ import '../../../core/labels.dart';
 import '../../../core/models.dart';
 import '../../../core/providers.dart';
 import '../../../core/sector_translations.dart';
-import '../../../core/theme.dart';
 import '../../../core/widgets/allocation_gap.dart';
+import '../../../core/widgets/empty_state.dart';
 
 enum FiCompositionMode { asset, sector }
 
@@ -19,7 +19,6 @@ class FiCompositionSlice {
     required this.value,
     required this.pct,
     required this.color,
-    required this.icon,
     this.targetPct,
   });
 
@@ -27,24 +26,27 @@ class FiCompositionSlice {
   final double value;
   final double pct;
   final Color color;
-  final IconData? icon;
 
   final double? targetPct;
 }
 
 class FiCompositionBlock extends ConsumerStatefulWidget {
-  const FiCompositionBlock({super.key, required this.allocations, required this.positions});
+  const FiCompositionBlock({
+    super.key,
+    required this.allocations,
+    required this.positions,
+    this.mode = FiCompositionMode.asset,
+  });
 
   final List<CategoryAllocation> allocations;
   final List<PortfolioPosition> positions;
+  final FiCompositionMode mode;
 
   @override
   ConsumerState<FiCompositionBlock> createState() => _FiCompositionBlockState();
 }
 
 class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
-  FiCompositionMode _mode = FiCompositionMode.asset;
-
   List<FiCompositionSlice> _byAsset(Brightness brightness) {
     final sorted = [...widget.allocations]
       ..sort((a, b) => b.currentValue.compareTo(a.currentValue));
@@ -56,7 +58,6 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
             value: a.currentValue,
             pct: a.currentPct,
             color: categoryColor(a.category, brightness),
-            icon: categoryIcon(a.category),
             targetPct: a.targetPct,
           ),
         )
@@ -98,7 +99,6 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
             value: e.value,
             pct: e.value / totalAcoes * 100,
             color: sectorColor(e.key, brightness),
-            icon: null,
             targetPct: metas[e.key],
           ),
         )
@@ -108,54 +108,26 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final slices = _mode == FiCompositionMode.asset
+    final slices = widget.mode == FiCompositionMode.asset
         ? _byAsset(brightness)
         : _bySector(brightness);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            SegmentedButton<FiCompositionMode>(
-              segments: const [
-                ButtonSegment(
-                  value: FiCompositionMode.asset,
-                  label: Text('Por ativo'),
-                ),
-                ButtonSegment(
-                  value: FiCompositionMode.sector,
-                  label: Text('Por setor (ações)'),
-                ),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (s) => setState(() => _mode = s.first),
-            ),
-            const SizedBox(height: 16),
-            if (slices.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text(
-                  'Nenhuma ação ou BDR avaliada ainda.',
-                  style: TextStyle(color: fiInk2(context)),
-                ),
-              )
-            else ...[
-              for (var i = 0; i < slices.length; i++) ...[
-                if (i > 0) const Divider(height: 1),
-                FiAllocationGap(
-                  label: slices[i].label,
-                  currentPct: slices[i].pct,
-                  targetPct: slices[i].targetPct,
-                  barColor: slices[i].color,
-                  trailing: formatCurrency(slices[i].value),
-                ),
-              ],
-            ],
-          ],
-        ),
-      ),
+    if (slices.isEmpty) {
+      return const FiEmptyLine('Nenhuma ação ou BDR avaliada ainda.');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final slice in slices)
+          FiAllocationGap(
+            label: slice.label,
+            currentPct: slice.pct,
+            targetPct: slice.targetPct,
+            barColor: slice.color,
+            trailing: formatCurrency(slice.value),
+          ),
+      ],
     );
   }
 }

@@ -4,10 +4,6 @@ import '../theme.dart';
 
 /// A ação que leva a outro lugar, com forma de controle.
 ///
-/// No tema escuro a marca é clara e salta do chão; no claro ela é um azul fechado
-/// (`#295D7C`) que, escrito sem mais nada, tem a mesma cara de texto do corpo. Quem olhava
-/// "Repetir agosto" e "Decidir o que fazer com ela" não via um controle — via uma frase.
-///
 /// Cor não é affordance sozinha: a seta é o que diz que aquilo leva a algum lugar, e ela
 /// aparece nos dois temas.
 class FiNavAction extends StatelessWidget {
@@ -38,7 +34,7 @@ class FiNavAction extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: FiType.label.copyWith(color: marca),
+              style: FiType.action.copyWith(color: marca),
               overflow: TextOverflow.ellipsis,
             ),
           ),

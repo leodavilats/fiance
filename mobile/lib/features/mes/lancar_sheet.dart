@@ -6,6 +6,8 @@ import '../../core/labels.dart';
 import '../../core/mes.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 
 /// Lancar no caixa.
@@ -191,7 +193,12 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        padding: const EdgeInsets.fromLTRB(
+          FiSpace.s5,
+          0,
+          FiSpace.s5,
+          FiSpace.s6,
+        ),
         child: Form(
           key: _form,
           child: Column(
@@ -200,27 +207,21 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
             children: [
               Text(
                 widget.editar == null ? 'Lançar no mês' : 'Editar lançamento',
-                style: FiType.title,
+                style: FiType.pageTitle.copyWith(color: fiInk1(context)),
               ),
-              const SizedBox(height: FiSpace.s4),
+              const SizedBox(height: FiSpace.s5),
 
+              // Entrada e saída se distinguem por `kind`, nunca pelo sinal do valor.
               SegmentedButton<CashKind>(
+                showSelectedIcon: false,
                 segments: const [
-                  ButtonSegment(
-                    value: CashKind.expense,
-                    label: Text('Saída'),
-                    icon: Icon(Icons.arrow_outward),
-                  ),
-                  ButtonSegment(
-                    value: CashKind.income,
-                    label: Text('Entrada'),
-                    icon: Icon(Icons.south_west),
-                  ),
+                  ButtonSegment(value: CashKind.expense, label: Text('Saída')),
+                  ButtonSegment(value: CashKind.income, label: Text('Entrada')),
                 ],
                 selected: {_kind},
                 onSelectionChanged: (s) => _trocarKind(s.first),
               ),
-              const SizedBox(height: FiSpace.s4),
+              const SizedBox(height: FiSpace.s5),
 
               TextFormField(
                 controller: _descricao,
@@ -264,43 +265,37 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
               ),
               const SizedBox(height: FiSpace.s3),
 
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  _entrada
-                      ? 'Dia do crédito'
-                      : (_liquidado ? 'Dia do pagamento' : 'Vencimento'),
-                  style: FiType.label,
-                ),
-                subtitle: Text(
-                  '${diaDe(_iso)}/${_iso.substring(5, 7)}/${_iso.substring(0, 4)}',
-                  style: FiType.body,
-                ),
-                trailing: TextButton(
-                  onPressed: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: _dia,
-                      firstDate: DateTime(_dia.year - 3),
-                      lastDate: DateTime(_dia.year + 3),
-                    );
-                    if (d != null) setState(() => _dia = d);
-                  },
-                  child: const Text('Trocar'),
-                ),
-              ),
-
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _liquidado,
-                onChanged: (v) => setState(() => _liquidado = v),
-                title: Text(_entrada ? 'Já recebi' : 'Já paguei', style: FiType.label),
-                subtitle: Text(
-                  _liquidado
-                      ? 'Entra na competência deste dia.'
-                      : 'Conta não paga conta no mês do vencimento, e é o que forma o comprometido.',
-                  style: FiType.caption.copyWith(color: fiInk3(context)),
-                ),
+              const SizedBox(height: FiSpace.s2),
+              FiRows(
+                children: [
+                  FiDataRow(
+                    label: _entrada
+                        ? 'Dia do crédito'
+                        : (_liquidado ? 'Dia do pagamento' : 'Vencimento'),
+                    value:
+                        '${diaDe(_iso)}/${_iso.substring(5, 7)}/${_iso.substring(0, 4)}',
+                    onTap: () async {
+                      final d = await showDatePicker(
+                        context: context,
+                        initialDate: _dia,
+                        firstDate: DateTime(_dia.year - 3),
+                        lastDate: DateTime(_dia.year + 3),
+                      );
+                      if (d != null) setState(() => _dia = d);
+                    },
+                  ),
+                  FiDataRow(
+                    label: _entrada ? 'Já recebi' : 'Já paguei',
+                    detail: _liquidado
+                        ? 'Entra na competência deste dia.'
+                        : 'Conta não paga conta no mês do vencimento, e é o que forma o '
+                              'comprometido.',
+                    trailing: Switch(
+                      value: _liquidado,
+                      onChanged: (v) => setState(() => _liquidado = v),
+                    ),
+                  ),
+                ],
               ),
 
               if (_erro != null) ...[
@@ -313,23 +308,24 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
                 ),
               ],
 
-              const SizedBox(height: FiSpace.s5),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _salvando ? null : _salvar,
-                  child: Text(_salvando ? 'Salvando…' : 'Salvar'),
-                ),
+              const SizedBox(height: FiSpace.s6),
+              FiButton.primary(
+                label: widget.editar == null
+                    ? 'Lançar'
+                    : 'Salvar alterações',
+                expand: true,
+                busy: _salvando,
+                onPressed: _salvar,
               ),
 
-              if (widget.editar != null)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: _salvando ? null : _apagar,
-                    child: const Text('Apagar lançamento'),
-                  ),
+              if (widget.editar != null) ...[
+                const SizedBox(height: FiSpace.s2),
+                FiButton.danger(
+                  label: 'Apagar lançamento',
+                  expand: true,
+                  onPressed: _salvando ? null : _apagar,
                 ),
+              ],
             ],
           ),
         ),

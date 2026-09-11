@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/cash_models.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/search_action.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
@@ -28,15 +30,17 @@ class SobraScreen extends ConsumerWidget {
         actions: const [FiSearchAction()],
       ),
       body: sobra.when(
-        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.verdict, count: 1, label: 'Calculando sua sobra'),
+        loading: () => FiSkeleton.tela(
+          shape: FiSkeletonShape.verdict,
+          count: 1,
+          label: 'Calculando sua sobra',
+        ),
         error: (e, _) => FiErrorState(
           error: e,
           action: 'calcular sua sobra',
           onRetry: () => ref.invalidate(surplusProvider),
         ),
-        data: (s) => s.hasCash
-            ? _Corpo(sobra: s)
-            : const _SemCaixa(),
+        data: (s) => s.hasCash ? _Corpo(sobra: s) : const _SemCaixa(),
       ),
     );
   }
@@ -56,30 +60,24 @@ class _Corpo extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(surplusProvider),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s2,
+          FiLayout.gutter,
+          FiLayout.scrollTail,
+        ),
         children: [
-          Text(
-            'SOBRA DE ${nomeDoMes(m.month).toUpperCase()}',
-            style: FiType.eyebrow.copyWith(color: fiInk3(context)),
-          ),
-          const SizedBox(height: FiSpace.s1),
-          if (m.hasRange)
-            Text(
-              '${formatCurrency(m.surplusLow)} — ${formatCurrency(m.surplusHigh)}',
-              style: FiType.moneyLg,
-            )
-          else
-            Text(formatCurrency(m.freeNow), style: FiType.moneyLg),
-
-          const SizedBox(height: FiSpace.s2),
-          Text(
-            m.hasRange
+          FiHeadline(
+            eyebrow: 'Sobra de ${nomeDoMes(m.month)}',
+            figure: m.hasRange
+                ? '${formatCurrency(m.surplusLow)} — ${formatCurrency(m.surplusHigh)}'
+                : formatCurrency(m.freeNow),
+            support: m.hasRange
                 ? 'A faixa é o número: o piso desconta o gasto variável que ainda deve sair, '
                       'estimado a partir de ${m.estimate.baseMonths.length} '
                       '${m.estimate.baseMonths.length == 1 ? 'mês fechado' : 'meses fechados'} seus.'
                 : 'Sem mês fechado ainda não há base para estimar o que falta sair, então a '
                       'sobra é o próprio livre agora.',
-            style: FiType.body.copyWith(color: fiInk2(context)),
           ),
 
           FiProvenance(
@@ -103,6 +101,12 @@ class _Corpo extends ConsumerWidget {
             hint: passos.length > 1
                 ? 'Cada passo consome a sobra antes do seguinte.'
                 : null,
+            action: temAporte
+                ? FiNavAction(
+                    label: 'Alocação × meta',
+                    onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
+                  )
+                : null,
             child: Column(
               children: [
                 for (final p in passos)
@@ -117,15 +121,6 @@ class _Corpo extends ConsumerWidget {
               ],
             ),
           ),
-
-          if (temAporte)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FiNavAction(
-                label: 'Alocação × meta',
-                onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
-              ),
-            ),
         ],
       ),
     );
@@ -170,59 +165,70 @@ class _Passo extends StatelessWidget {
     final cor = fiStateColor(_estado, Theme.of(context).brightness);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: FiSpace.s5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(width: 3, height: 44, color: cor),
-          const SizedBox(width: FiSpace.s3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        numerado
-                            ? '${passo.order} · ${_rotulos[passo.type] ?? ''}'
-                            : (_rotulos[passo.type] ?? ''),
-                        style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+      padding: const EdgeInsets.only(bottom: FiSpace.s6),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 3, color: cor),
+            const SizedBox(width: FiSpace.s4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          numerado
+                              ? '${passo.order} · ${_rotulos[passo.type] ?? ''}'
+                              : (_rotulos[passo.type] ?? ''),
+                          style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+                        ),
+                      ),
+                      Text(
+                        formatCurrency(passo.amount),
+                        style: FiType.metricSm.copyWith(color: fiInk1(context)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: FiSpace.s2),
+                  Text(
+                    passo.reason,
+                    style: FiType.body.copyWith(color: fiInk1(context)),
+                  ),
+                  if (passo.falsifier != null) ...[
+                    const SizedBox(height: FiSpace.s1),
+                    Text(
+                      passo.falsifier!,
+                      style: FiType.caption.copyWith(color: fiInk3(context)),
+                    ),
+                  ],
+                  if (_origem[passo.reference] != null) ...[
+                    const SizedBox(height: FiSpace.s1),
+                    Text(
+                      _origem[passo.reference]!,
+                      style: FiType.caption.copyWith(color: fiInk3(context)),
+                    ),
+                  ],
+                  if (destino != null) ...[
+                    const SizedBox(height: FiSpace.s3),
+                    // O único passo que se resolve em outra tela, e a única ação sólida daqui.
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FiButton.primary(
+                        label: 'Onde aportar ${formatCurrency(passo.amount)}',
+                        onPressed: destino,
                       ),
                     ),
-                    Text(formatCurrency(passo.amount), style: FiType.metricSm),
                   ],
-                ),
-                const SizedBox(height: FiSpace.s1),
-                Text(passo.reason, style: FiType.body),
-                if (passo.falsifier != null) ...[
-                  const SizedBox(height: FiSpace.s1),
-                  Text(
-                    passo.falsifier!,
-                    style: FiType.caption.copyWith(color: fiInk3(context)),
-                  ),
                 ],
-                if (_origem[passo.reference] != null) ...[
-                  const SizedBox(height: FiSpace.s1),
-                  Text(
-                    _origem[passo.reference]!,
-                    style: FiType.caption.copyWith(color: fiInk3(context)),
-                  ),
-                ],
-                if (destino != null) ...[
-                  const SizedBox(height: FiSpace.s1),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: FiNavAction(
-                      label: 'Onde aportar ${formatCurrency(passo.amount)}',
-                      onPressed: destino,
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -238,7 +244,7 @@ class _SemAporte extends StatelessWidget {
       child: Text(
         'A ordem termina sem passo de aporte, e isso é a resposta certa: com o que está acima '
         'consumindo a sobra, não aportar rende mais que aportar.',
-        style: FiType.verdict.copyWith(fontFamily: fiFontSerif),
+        style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
       ),
     );
   }
@@ -250,23 +256,16 @@ class _SemCaixa extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(24),
       children: [
-        Text(
-          'Ainda não sei seu mês',
-          style: FiType.verdict.copyWith(fontFamily: fiFontSerif),
-        ),
-        const SizedBox(height: FiSpace.s3),
-        Text(
-          'A sobra sai do que entrou e do que saiu, e para isso preciso dos seus lançamentos. '
-          'Comece pelo que se repete: o salário e os dois ou três maiores gastos fixos.',
-          style: FiType.body.copyWith(color: fiInk2(context)),
-        ),
-        const SizedBox(height: FiSpace.s5),
-        FilledButton.icon(
-          onPressed: () => GoRouter.of(context).go('/mes'),
-          icon: const Icon(Icons.arrow_forward),
-          label: const Text('Ir para o Mês'),
+        FiEmptyState(
+          title: 'Ainda não sei seu mês',
+          body: 'A sobra sai do que entrou e do que saiu, e para isso preciso dos seus '
+              'lançamentos. Comece pelo que se repete: o salário e os dois ou três maiores '
+              'gastos fixos.',
+          action: FiButton.primary(
+            label: 'Ir para o Mês',
+            onPressed: () => GoRouter.of(context).go('/mes'),
+          ),
         ),
       ],
     );

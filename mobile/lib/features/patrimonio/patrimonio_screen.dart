@@ -3,8 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/search_action.dart';
+import '../../core/widgets/section.dart';
+import '../../core/widgets/segments.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
@@ -15,6 +20,7 @@ import 'widgets/patrimonio_composition.dart';
 import 'widgets/patrimonio_positions.dart';
 import 'widgets/patrimonio_summary.dart';
 
+/// O Patrimonio: "quanto eu tenho, e como isso esta distribuido?"
 class PatrimonioScreen extends ConsumerWidget {
   const PatrimonioScreen({super.key});
 
@@ -35,20 +41,17 @@ class PatrimonioScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: dashboard.hasValue
-          ? FloatingActionButton(
-              tooltip: 'Adicionar ativo',
-              onPressed: () => openAddPositionDialog(context, ref),
-              child: const Icon(Icons.add),
-            )
-          : null,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(dashboardProvider);
           ref.invalidate(fixedIncomeProvider);
         },
         child: dashboard.when(
-          loading: () => FiSkeleton.tela(shape: FiSkeletonShape.metric, count: 1, label: 'Carregando sua carteira'),
+          loading: () => FiSkeleton.tela(
+            shape: FiSkeletonShape.metric,
+            count: 1,
+            label: 'Carregando sua carteira',
+          ),
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos carregar sua carteira',
@@ -57,100 +60,75 @@ class PatrimonioScreen extends ConsumerWidget {
           ),
           data: (data) {
             if (data.positions.isEmpty) {
-              return _EmptyCarteira(onAdd: () => openAddPositionDialog(context, ref));
+              return FiEmptyState(
+                title: 'Sua carteira ainda está vazia',
+                body: 'A carteira é a base de tudo: sem ela o fiance não tem o que avaliar, '
+                    'comparar com meta ou usar para sugerir aporte.',
+                hint: 'Cadastre o que você já tem — ticker, quantidade e preço médio.',
+                action: FiButton.primary(
+                  label: 'Adicionar primeiro ativo',
+                  onPressed: () => openAddPositionDialog(context, ref),
+                ),
+                secondary: FiButton.secondary(
+                  label: 'Cadastrar renda fixa',
+                  onPressed: () => context.go('/patrimonio/renda-fixa'),
+                ),
+              );
             }
 
+            final idade = formatIdade(
+              carimboMaisAntigo(data.positions.map((p) => p.asOf)),
+            );
+
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
+              padding: const EdgeInsets.fromLTRB(
+                FiLayout.gutter,
+                FiSpace.s3,
+                FiLayout.gutter,
+                FiLayout.scrollTail,
+              ),
               children: [
                 FiCarteiraSummary(summary: data.summary),
+
                 fixedIncome.maybeWhen(
                   data: (fi) => fi.visiveis.isEmpty
                       ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.only(top: 20),
-                          child: FiFixedIncomeSummary(data: fi),
-                        ),
+                      : FiFixedIncomeSummary(data: fi),
                   orElse: () => const SizedBox.shrink(),
                 ),
 
-                if (data.allocations.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  const FiSectionTitle(
-                    icon: Icons.donut_small_outlined,
-                    title: 'Onde está concentrado',
-                  ),
-                  FiCompositionBlock(
+                if (data.allocations.isNotEmpty)
+                  _Composicao(
                     allocations: data.allocations,
                     positions: data.positions,
                   ),
-                ],
 
-                const SizedBox(height: 24),
                 const FiBenchmarkSection(),
-                if (data.snapshots.length > 1) ...[
-                  const SizedBox(height: 20),
-                  const FiSectionTitle(
-                    icon: Icons.show_chart,
-                    title: 'Evolução do patrimônio',
+
+                if (data.snapshots.length > 1)
+                  FiSection(
+                    title: 'Evolução',
+                    child: FiEvolutionChart(snapshots: data.snapshots),
                   ),
-                  FiEvolutionChart(snapshots: data.snapshots),
-                ],
 
-                const SizedBox(height: 24),
-                FiSectionTitle(
-                  icon: Icons.receipt_long_outlined,
-                  title: 'Ativos negociados (${data.positions.length})',
-                ),
-                Builder(
-                  builder: (context) {
-                    final idade = formatIdade(
-                      carimboMaisAntigo(data.positions.map((p) => p.asOf)),
-                    );
-                    if (idade.isEmpty) return const SizedBox.shrink();
-
-                    final escuro = Theme.of(context).brightness == Brightness.dark;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: FiSpace.s2),
-                      child: Text(
-                        'Cotações lidas $idade',
-                        style: FiType.caption.copyWith(
-                          color: escuro ? FiColors.darkInk3 : FiColors.lightInk3,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: SegmentedButton<FiAssetGroupMode>(
-                    segments: const [
-                      ButtonSegment(
-                        value: FiAssetGroupMode.value,
-                        label: Text('Por valor'),
-                      ),
-                      ButtonSegment(
-                        value: FiAssetGroupMode.category,
-                        label: Text('Por categoria'),
-                      ),
-                      ButtonSegment(
-                        value: FiAssetGroupMode.sector,
-                        label: Text('Por setor'),
-                      ),
-                    ],
-                    selected: {ref.watch(fiAssetGroupModeProvider)},
-                    onSelectionChanged: (s) =>
-                        ref.read(fiAssetGroupModeProvider.notifier).state = s.first,
+                FiSection(
+                  title: 'Ativos negociados',
+                  count: data.positions.length,
+                  hint: idade.isEmpty ? null : 'Cotações lidas $idade.',
+                  trailing: const _RecorteDeAtivos(),
+                  action: FiButton.secondary(
+                    label: 'Adicionar ativo',
+                    icon: Icons.add,
+                    onPressed: () => openAddPositionDialog(context, ref),
+                  ),
+                  child: FiGroupedPositionsList(
+                    positions: data.positions,
+                    mode: ref.watch(fiAssetGroupModeProvider),
+                    onDelete: (ticker) => deletePosition(ref, ticker),
+                    onSell: (p) => openSellDialog(context, ref, p),
                   ),
                 ),
-                FiGroupedPositionsList(
-                  positions: data.positions,
-                  mode: ref.watch(fiAssetGroupModeProvider),
-                  onDelete: (ticker) => deletePosition(ref, ticker),
-                  onSell: (p) => openSellDialog(context, ref, p),
-                ),
 
-                const SizedBox(height: 24),
                 const FiClosedTradesSection(),
               ],
             );
@@ -161,36 +139,57 @@ class PatrimonioScreen extends ConsumerWidget {
   }
 }
 
-class _EmptyCarteira extends StatelessWidget {
-  const _EmptyCarteira({required this.onAdd});
+class _RecorteDeAtivos extends ConsumerWidget {
+  const _RecorteDeAtivos();
 
-  final VoidCallback onAdd;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final modo = ref.watch(fiAssetGroupModeProvider);
+
+    return FiSegments<FiAssetGroupMode>(
+      selected: modo,
+      semanticsPrefix: 'Agrupar por',
+      options: const {
+        FiAssetGroupMode.value: 'Valor',
+        FiAssetGroupMode.category: 'Classe',
+        FiAssetGroupMode.sector: 'Setor',
+      },
+      onSelect: (v) => ref.read(fiAssetGroupModeProvider.notifier).state = v,
+    );
+  }
+}
+
+class _Composicao extends StatefulWidget {
+  const _Composicao({required this.allocations, required this.positions});
+
+  final List<CategoryAllocation> allocations;
+  final List<PortfolioPosition> positions;
+
+  @override
+  State<_Composicao> createState() => _ComposicaoState();
+}
+
+class _ComposicaoState extends State<_Composicao> {
+  FiCompositionMode _modo = FiCompositionMode.asset;
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
-      children: [
-        Icon(Icons.inbox_outlined, size: 40, color: fiInk3(context)),
-        const SizedBox(height: 16),
-        Text(
-          'Nenhuma posição cadastrada',
-          style: fiSerif(Theme.of(context).textTheme.titleMedium ?? const TextStyle()),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'A carteira é a base de tudo: sem ela o fiance não tem o que avaliar, '
-          'comparar com meta ou usar para sugerir aporte.',
-          style: TextStyle(color: fiInk2(context)),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Cadastre o que você já tem — ticker, quantidade e preço médio.',
-          style: FiType.caption.copyWith(color: fiInk3(context)),
-        ),
-        const SizedBox(height: 20),
-        FilledButton(onPressed: onAdd, child: const Text('Adicionar ativo')),
-      ],
+    return FiSection(
+      title: 'Onde está concentrado',
+      trailing: FiSegments<FiCompositionMode>(
+        selected: _modo,
+        semanticsPrefix: 'Agrupar por',
+        options: const {
+          FiCompositionMode.asset: 'Classe',
+          FiCompositionMode.sector: 'Setor',
+        },
+        onSelect: (v) => setState(() => _modo = v),
+      ),
+      child: FiCompositionBlock(
+        allocations: widget.allocations,
+        positions: widget.positions,
+        mode: _modo,
+      ),
     );
   }
 }

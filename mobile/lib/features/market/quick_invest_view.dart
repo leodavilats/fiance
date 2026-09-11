@@ -5,12 +5,15 @@ import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
-import '../../core/score_ruler.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
-import '../../core/widgets/nav_action.dart';
-import '../../core/widgets/provenance.dart';
+import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/tag.dart';
+import '../../core/widgets/provenance.dart';
 
 class QuickInvestView extends ConsumerStatefulWidget {
   const QuickInvestView({super.key});
@@ -81,9 +84,7 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (_loading) {
+    if (_loading && _result == null) {
       return FiSkeleton.tela(
         shape: FiSkeletonShape.row,
         count: 4,
@@ -99,22 +100,30 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
       );
     }
 
+    final r = _result!;
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+      padding: const EdgeInsets.fromLTRB(
+        FiLayout.gutter,
+        FiSpace.s3,
+        FiLayout.gutter,
+        FiLayout.scrollTail,
+      ),
       children: [
-        Text(
-          _simulando
-              ? 'Simulando um aporte de ${_dinheiroOuTraco(_result?.totalCash)}.'
-              : 'O valor vem da sua sobra deste mês: '
-                    '${_dinheiroOuTraco(_result?.totalCash)}. A distribuição respeita suas '
-                    'metas de alocação e o que já está na carteira, incluindo a renda fixa.',
-          style: FiType.body.copyWith(color: fiInk2(context)),
+        FiHeadline(
+          eyebrow: _simulando ? 'Valor simulado' : 'Sobra deste mês',
+          figure: _dinheiroOuTraco(r.totalCash),
+          support: _simulando
+              ? 'A distribuição abaixo é sobre este valor, e não sobre a sua sobra.'
+              : 'A distribuição respeita suas metas de alocação e o que já está na carteira, '
+                    'incluindo a renda fixa.',
         ),
-        const SizedBox(height: FiSpace.s2),
+
+        const SizedBox(height: FiSpace.s3),
         if (!_simulando)
           Align(
             alignment: Alignment.centerLeft,
-            child: FiNavAction(
+            child: FiButton.quiet(
               label: 'Simular outro valor',
               onPressed: () => setState(() => _simulando = true),
             ),
@@ -126,78 +135,91 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
               Expanded(
                 child: TextField(
                   controller: _cashCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Valor a simular (R\$)'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Valor a simular (R\$)',
+                  ),
                   onSubmitted: (_) => _simularOutroValor(),
                 ),
               ),
-              const SizedBox(width: FiSpace.s3),
-              FilledButton(
+              const SizedBox(width: FiSpace.s2),
+              FiButton.secondary(
+                label: 'Simular',
+                busy: _loading,
                 onPressed: _simularOutroValor,
-                child: const Text('Simular'),
               ),
             ],
           ),
+
         if (_error != null)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: FiSpace.s3),
             child: Text(
               fiErrorMessage(_error!, action: 'calcular onde aportar'),
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-          ),
-        const SizedBox(height: FiSpace.s4),
-        if (_result != null) ...[
-          const SizedBox(height: 16),
-          if (_result!.affirmation?.prescriptive == false)
-            _NotaDeAfirmacao(texto: _result!.affirmation!.disclaimer),
-          _QuickInvestSummary(result: _result!),
-          const SizedBox(height: 12),
-          if (_result!.allocations.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  _result!.summary,
-                  style: theme.textTheme.bodyMedium,
+              style: FiType.body.copyWith(
+                color: fiStateColor(
+                  FiState.adverse,
+                  Theme.of(context).brightness,
                 ),
               ),
-            )
-          else
-            for (final allocation in _result!.allocations)
-              _AllocationCard(allocation: allocation),
+            ),
+          ),
 
-          const FiProvenance(
-            summary: 'Como chegamos nesta ordem',
-            method:
-                'Compara sua alocação atual com as metas por categoria e distribui o valor '
-                'informado no que está mais abaixo do alvo. O score de cada ativo entra como '
-                'desempate, na régua do sistema.',
-            source: 'Suas posições e renda fixa, com metas de alocação e preços da BRAPI.',
-            limitation:
-                'É uma ordem de prioridade, não uma recomendação de compra. Sem metas '
-                'declaradas não há alvo para comparar, e a distribuição sai vazia.',
+        const SizedBox(height: FiSpace.s5),
+        Text(
+          r.summary,
+          style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
+        ),
+        const SizedBox(height: FiSpace.s4),
+        FiFigures(
+          figures: {
+            'ALOCADO': _dinheiroOuTraco(r.allocatedCash),
+            'FICA EM CAIXA': _dinheiroOuTraco(r.remainingCash),
+          },
+        ),
+        if (r.affirmation?.prescriptive == false) ...[
+          const SizedBox(height: FiSpace.s2),
+          Text(
+            '${r.affirmation!.disclaimer} Por isso o quanto aportar em cada ativo aparece '
+            'como —.',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
         ],
+
+        FiSection(
+          title: 'A ordem de prioridade',
+          count: r.allocations.isEmpty ? null : r.allocations.length,
+          hint: r.allocations.isEmpty
+              ? null
+              : 'Do que está mais longe da meta para o que está mais perto.',
+          child: r.allocations.isEmpty
+              ? const FiEmptyLine(
+                  'Sem metas de alocação declaradas não há alvo contra o que comparar, e a '
+                  'distribuição sai vazia.',
+                )
+              : Column(
+                  children: [
+                    for (final allocation in r.allocations)
+                      _Alocacao(allocation: allocation),
+                  ],
+                ),
+        ),
+
+        const SizedBox(height: FiSpace.s3),
+        const FiProvenance(
+          summary: 'Como chegamos nesta ordem',
+          method:
+              'Compara sua alocação atual com as metas por categoria e distribui o valor '
+              'informado no que está mais abaixo do alvo. O score de cada ativo entra como '
+              'desempate, na régua do sistema.',
+          source: 'Suas posições e renda fixa, com metas de alocação e preços da BRAPI.',
+          limitation:
+              'É uma ordem de prioridade, não uma recomendação de compra. Sem metas '
+              'declaradas não há alvo para comparar, e a distribuição sai vazia.',
+        ),
       ],
-    );
-  }
-}
-
-class _NotaDeAfirmacao extends StatelessWidget {
-  const _NotaDeAfirmacao({required this.texto});
-
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        '$texto Por isso o quanto aportar em cada ativo aparece como —.',
-        style: theme.textTheme.bodySmall,
-      ),
     );
   }
 }
@@ -205,135 +227,70 @@ class _NotaDeAfirmacao extends StatelessWidget {
 String _dinheiroOuTraco(double? valor) =>
     valor == null ? '—' : formatCurrency(valor);
 
-class _QuickInvestSummary extends StatelessWidget {
-  const _QuickInvestSummary({required this.result});
-
-  final QuickInvestResult result;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(result.summary, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Alocado', style: theme.textTheme.labelSmall),
-                      Text(_dinheiroOuTraco(result.allocatedCash)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Sobra em caixa', style: theme.textTheme.labelSmall),
-                      Text(_dinheiroOuTraco(result.remainingCash)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AllocationCard extends StatelessWidget {
-  const _AllocationCard({required this.allocation});
+class _Alocacao extends StatelessWidget {
+  const _Alocacao({required this.allocation});
 
   final QuickInvestAllocation allocation;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final band = allocation.score != null
-        ? scoreBand(allocation.score!, theme.brightness)
-        : null;
+    final a = allocation;
+    final brightness = Theme.of(context).brightness;
+    final band = a.score != null ? fiScoreBandFor(a.score!, null) : null;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s2),
+      child: FiObject(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(categoryIcon(allocation.category), size: 18),
-                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        allocation.ticker,
-                        style: theme.textTheme.titleMedium,
+                        a.ticker,
+                        style: FiType.ticker.copyWith(color: fiInk1(context)),
                       ),
                       Text(
-                        allocation.name ?? categoryLabel(allocation.category),
-                        style: theme.textTheme.bodySmall,
+                        a.name ?? categoryLabel(a.category),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: FiType.caption.copyWith(color: fiInk2(context)),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: FiSpace.s3),
                 if (band != null)
-                  Text(
-                    band.text,
-                    style: theme.textTheme.bodySmall?.copyWith(color: band.color),
+                  FiTag(label: band.label, state: band.state)
+                else
+                  FiTag.serie(
+                    label: categoryLabel(a.category),
+                    color: categoryColor(a.category, brightness),
                   ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Comprar', style: theme.textTheme.labelSmall),
-                      Text(
-                        allocation.suggestedQuantity == null
-                            ? '—'
-                            : '${allocation.suggestedQuantity} cota(s)',
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Preço', style: theme.textTheme.labelSmall),
-                      Text(_dinheiroOuTraco(allocation.currentPrice)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Total', style: theme.textTheme.labelSmall),
-                      Text(_dinheiroOuTraco(allocation.suggestedInvestment)),
-                    ],
-                  ),
-                ),
-              ],
+            const SizedBox(height: FiSpace.s3),
+            FiFigures(
+              rule: false,
+              figures: {
+                'COMPRAR': a.suggestedQuantity == null
+                    ? '—'
+                    : '${a.suggestedQuantity} cota(s)',
+                'PREÇO': _dinheiroOuTraco(a.currentPrice),
+                'TOTAL': _dinheiroOuTraco(a.suggestedInvestment),
+              },
             ),
-            if (allocation.rationale.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(allocation.rationale, style: theme.textTheme.bodySmall),
+            if (a.rationale.isNotEmpty) ...[
+              const SizedBox(height: FiSpace.s3),
+              Text(
+                a.rationale,
+                style: FiType.caption.copyWith(color: fiInk3(context)),
+              ),
             ],
           ],
         ),

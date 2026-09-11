@@ -1,3 +1,4 @@
+import 'package:fiance/core/design_tokens.dart';
 import 'package:fiance/core/models.dart';
 import 'package:fiance/core/widgets/nav_action.dart';
 import 'package:fiance/features/mes/widgets/feed_tiles.dart';
@@ -23,8 +24,7 @@ void main() {
     await montar(
       tester,
       const FiInsightTile(
-        icon: Icons.balance_outlined,
-        color: Colors.blue,
+        state: FiState.attention,
         title: 'FIIs abaixo da meta',
         detail: 'Sua exposição está 7,0 pontos percentuais abaixo do objetivo.',
         actionLabel: rotuloLongo,
@@ -44,8 +44,7 @@ void main() {
     await montar(
       tester,
       const FiInsightTile(
-        icon: Icons.balance_outlined,
-        color: Colors.blue,
+        state: FiState.attention,
         title: 'Um título comprido o bastante para encostar na margem direita',
         detail: 'Detalhe.',
         actionLabel: rotuloLongo,

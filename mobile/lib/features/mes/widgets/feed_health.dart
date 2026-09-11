@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/button.dart';
+import '../../../core/widgets/measure.dart';
 import '../../../core/widgets/score_ruler.dart';
 import '../../../core/widgets/provenance.dart';
 
@@ -18,17 +20,36 @@ const fiHealthMetricExplanations = {
 
 // A DIMENSAO tem regua propria: e outro numero -- 0-100 por eixo (concentracao, setor,
 // diversificacao, risco), nao o score de saude -- e o backend nao devolve faixa para ela.
-// A cor de `_FiHealthMetric` usa estes mesmos limiares, e e por isso que os dois andam juntos.
-//
-// O score de SAUDE nao passa por aqui: ele le `fiHealthBands`, gerado de product-rules.json.
-// Eram duas reguas para o mesmo numero -- 70/40 aqui contra 75/60/40 na gerada -- e a mesma
-// classe usava a gerada para a cor e esta para o rotulo: um score de 65 saia favoravel na cor
-// e "Atencao" no texto.
-String fiDimensionBandLabel(double value) {
-  if (value >= 70) return 'Bom';
-  if (value >= 40) return 'Atenção';
-  return 'Ruim';
-}
+// O score de SAUDE nao passa por aqui: ele le `fiHealthBands`.
+const List<FiScoreBand> fiHealthDimensionBands = [
+  FiScoreBand(
+    id: 'good',
+    min: 70,
+    max: 100,
+    label: 'Bom',
+    state: FiState.favorable,
+    emphasis: 'muted',
+  ),
+  FiScoreBand(
+    id: 'watch',
+    min: 40,
+    max: 69,
+    label: 'Atenção',
+    state: FiState.attention,
+    emphasis: 'muted',
+  ),
+  FiScoreBand(
+    id: 'poor',
+    min: 0,
+    max: 39,
+    label: 'Ruim',
+    state: FiState.adverse,
+    emphasis: 'strong',
+  ),
+];
+
+String fiDimensionBandLabel(double value) =>
+    fiBandFor(value, fiHealthDimensionBands).label;
 
 class FiHealthBlock extends StatefulWidget {
   const FiHealthBlock({super.key, required this.health});
@@ -45,189 +66,101 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
   @override
   Widget build(BuildContext context) {
     final health = widget.health;
-    final brightness = Theme.of(context).brightness;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Score geral', style: FiType.title),
-            const SizedBox(height: FiSpace.s3),
-            ScoreRuler(
-              score: health.score,
-              bands: fiHealthBands,
-              size: ScoreRulerSize.card,
-              subject: 'Saúde da carteira',
-            ),
-            const SizedBox(height: 12),
-            InkWell(
-              onTap: () => setState(() => _showInfo = !_showInfo),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
+
+    final dimensoes = <String, double>{
+      'Concentração': health.concentrationScore,
+      'Setor': health.sectorConcentrationScore,
+      'Diversificação': health.diversificationScore,
+      'Risco': health.riskScore,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ScoreRuler(
+          score: health.score,
+          bands: fiHealthBands,
+          size: ScoreRulerSize.card,
+          subject: 'Saúde da carteira',
+        ),
+
+        const SizedBox(height: FiSpace.s5),
+        for (final entry in dimensoes.entries)
+          Builder(
+            builder: (context) {
+              final band = fiBandFor(entry.value, fiHealthDimensionBands);
+              return FiMeasure(
+                label: entry.key,
+                value: entry.value,
+                readout: entry.value.round().toString(),
+                note: band.label,
+                state: band.state,
+              );
+            },
+          ),
+
+        if (_showInfo) ...[
+          const SizedBox(height: FiSpace.s4),
+          Text(
+            'Cada dimensão vai de 0 a 100: 70 ou mais é bom, de 40 a 69 pede atenção, abaixo '
+            'de 40 é ruim.',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
+          const SizedBox(height: FiSpace.s3),
+          for (final entry in fiHealthMetricExplanations.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: FiSpace.s3),
+              child: RichText(
+                text: TextSpan(
+                  style: FiType.caption.copyWith(color: fiInk2(context)),
                   children: [
-                    Expanded(
-                      child: _FiHealthMetric(
-                        label: 'Concentração',
-                        value: health.concentrationScore,
-                      ),
+                    TextSpan(
+                      text: '${entry.key} — ',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    Expanded(
-                      child: _FiHealthMetric(
-                        label: 'Setor',
-                        value: health.sectorConcentrationScore,
-                      ),
-                    ),
-                    Expanded(
-                      child: _FiHealthMetric(
-                        label: 'Diversif.',
-                        value: health.diversificationScore,
-                      ),
-                    ),
-                    Expanded(
-                      child: _FiHealthMetric(label: 'Risco', value: health.riskScore),
-                    ),
+                    TextSpan(text: entry.value),
                   ],
                 ),
               ),
             ),
-            if (_showInfo) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 4,
-                        children: [
-                          _FiLegendDot(color: fiStateColor(FiState.favorable, brightness), label: '≥70 bom'),
-                          _FiLegendDot(color: fiStateColor(FiState.attention, brightness), label: '40–69 atenção'),
-                          _FiLegendDot(color: fiStateColor(FiState.adverse, brightness), label: '<40 ruim'),
-                        ],
-                      ),
-                    ),
-                    for (final entry in fiHealthMetricExplanations.entries)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: RichText(
-                          text: TextSpan(
-                            style: FiType.caption.copyWith(color: fiInk2(context)),
-                            children: [
-                              TextSpan(
-                                text: '${entry.key}: ',
-                                style: const TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                              TextSpan(text: entry.value),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-            if (health.warnings.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              for (final w in health.warnings)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline, size: 14, color: fiInk2(context)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          w,
-                          style: FiType.caption.copyWith(color: fiInk2(context)),
-                        ),
-                      ),
-                    ],
+        ],
+
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FiButton.quiet(
+            label: _showInfo
+                ? 'Recolher o que cada dimensão mede'
+                : 'O que cada dimensão mede',
+            onPressed: () => setState(() => _showInfo = !_showInfo),
+          ),
+        ),
+
+        if (health.warnings.isNotEmpty) ...[
+          const SizedBox(height: FiSpace.s3),
+          for (final w in health.warnings)
+            Padding(
+              padding: const EdgeInsets.only(bottom: FiSpace.s2),
+              child: Text(
+                w,
+                style: FiType.caption.copyWith(
+                  color: fiStateColor(
+                    FiState.attention,
+                    Theme.of(context).brightness,
                   ),
                 ),
-            ],
-            const SizedBox(height: FiSpace.s2),
-            FiProvenance(
-              summary: 'Como lemos a saúde da carteira',
-              method:
-                  'Quatro dimensões em 0-100 — concentração, setor, diversificação e risco — '
-                  'combinadas num score, lido na régua de saúde do sistema.',
-              source: 'Suas posições e renda fixa, com preços da BRAPI.',
-              limitation:
-                  'Com menos de quatro ativos concentração e diversificação não dizem muito, '
-                  'e a leitura sai como carteira pequena demais para avaliar.',
+              ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+        ],
 
-class _FiLegendDot extends StatelessWidget {
-  const _FiLegendDot({required this.color, required this.label});
-
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(color: fiInk2(context), fontSize: 11)),
-      ],
-    );
-  }
-}
-
-class _FiHealthMetric extends StatelessWidget {
-  const _FiHealthMetric({required this.label, required this.value});
-
-  final String label;
-  final double value;
-
-  Color _color(Brightness brightness) {
-    if (value >= 70) return fiStateColor(FiState.favorable, brightness);
-    if (value >= 40) return fiStateColor(FiState.attention, brightness);
-    return fiStateColor(FiState.adverse, brightness);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _color(Theme.of(context).brightness);
-    return Column(
-      children: [
-        Text(
-          value.round().toString(),
-          style: FiType.title.copyWith(color: color),
-        ),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(color: fiInk2(context), fontSize: 10),
-        ),
-        Text(
-          fiDimensionBandLabel(value),
-          textAlign: TextAlign.center,
-          style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 9),
+        FiProvenance(
+          summary: 'Como lemos a saúde da carteira',
+          method:
+              'Quatro dimensões em 0-100 — concentração, setor, diversificação e risco — '
+              'combinadas num score, lido na régua de saúde do sistema.',
+          source: 'Suas posições e renda fixa, com preços da BRAPI.',
+          limitation:
+              'Com menos de quatro ativos concentração e diversificação não dizem muito, '
+              'e a leitura sai como carteira pequena demais para avaliar.',
         ),
       ],
     );

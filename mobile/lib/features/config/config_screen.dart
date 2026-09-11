@@ -4,7 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/search_action.dart';
+import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/legal_links.dart';
 import '../../core/labels.dart';
@@ -15,12 +19,13 @@ import '../../core/theme_provider.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
 
+/// A ordem e a do que muda o julgamento do produto: o que pesa na analise, o que chega como
+/// aviso, o aparelho, e por ultimo a conta.
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
     final preferences = ref.watch(preferencesProvider);
 
     return Scaffold(
@@ -29,261 +34,249 @@ class ConfigScreen extends ConsumerWidget {
         actions: const [FiSearchAction()],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s2,
+          FiLayout.gutter,
+          FiLayout.scrollTail,
+        ),
         children: [
-          _SettingsCard(
-            icon: Icons.person_outline,
-            title: 'Conta',
-            children: [
-              if (user != null)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundImage: user.picture.isNotEmpty
-                        ? NetworkImage(user.picture)
-                        : null,
-                    child: user.picture.isEmpty
-                        ? Text(user.name.isNotEmpty ? user.name[0] : '?')
-                        : null,
-                  ),
-                  title: Text(user.name),
-                  subtitle: Text(user.email),
-                ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.logout),
-                title: const Text('Sair'),
-                onTap: () async {
-                  await ref
-                      .read(notificationsServiceProvider)
-                      .unregisterToken();
-                  await ref.read(authServiceProvider).signOut();
-                  ref.read(currentUserProvider.notifier).state = null;
-                  if (context.mounted) context.go('/login');
-                },
-              ),
-            ],
-          ),
-          const _ReferralCard(),
-          _SettingsCard(
-            icon: Icons.palette_outlined,
-            title: 'Aparência',
-            children: [
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                secondary: Icon(
-                  ref.watch(themeModeProvider) == ThemeMode.dark
-                      ? Icons.dark_mode_outlined
-                      : Icons.light_mode_outlined,
-                ),
-                title: const Text('Tema escuro'),
-                value: ref.watch(themeModeProvider) == ThemeMode.dark,
-                onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
-              ),
-            ],
-          ),
+          const _Identidade(),
+
           preferences.when(
             loading: () => const Padding(
-              padding: EdgeInsets.all(24),
+              padding: EdgeInsets.only(top: FiSpace.s8),
               child: FiSkeleton(shape: FiSkeletonShape.row, count: 6),
             ),
             error: (err, _) => Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.only(top: FiSpace.s6),
               child: FiErrorState(
                 error: err,
                 action: 'carregar suas preferências',
+                onRetry: () => ref.invalidate(preferencesProvider),
               ),
             ),
             data: (prefs) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _SettingsCard(
-                  icon: Icons.account_balance_wallet_outlined,
-                  title: 'Preferências financeiras',
-                  children: [
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.savings_outlined),
-                      title: const Text('Yield desejado — Ações'),
-                      trailing: Text(
-                        formatPercent(prefs.desiredYieldStock * 100),
-                      ),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.apartment_outlined),
-                      title: const Text('Yield desejado — FIIs'),
-                      trailing: Text(
-                        formatPercent(prefs.desiredYieldFii * 100),
-                      ),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.public_outlined),
-                      title: const Text('Yield desejado — BDRs'),
-                      trailing: Text(
-                        formatPercent(prefs.desiredYieldBdr * 100),
-                      ),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.layers_outlined),
-                      title: const Text('Yield desejado — ETFs'),
-                      trailing: Text(
-                        formatPercent(prefs.desiredYieldEtf * 100),
-                      ),
-                    ),
-                    if (prefs.passiveIncomeGoal != null)
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.flag_outlined),
-                        title: const Text('Meta de renda passiva'),
-                        trailing: Text(
-                          '${formatCurrency(prefs.passiveIncomeGoal)}/mês',
-                        ),
-                      ),
-                  ],
-                ),
-                _SettingsCard(
-                  icon: Icons.notifications_active_outlined,
-                  title: 'Notificações',
-                  children: [
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      secondary: const Icon(
-                        Icons.notifications_active_outlined,
-                      ),
-                      title: const Text('Notificar alertas de preço'),
-                      subtitle: const Text(
-                        'Sempre imediato, é um alerta de risco',
-                      ),
-                      value: prefs.notifyPriceAlerts,
-                      onChanged: (v) async {
-                        await ref
-                            .read(apiRepositoryProvider)
-                            .savePreferences(
-                              passiveIncomeGoal: prefs.passiveIncomeGoal,
-                              notifyPriceAlerts: v,
-                            );
-                        ref.invalidate(preferencesProvider);
-                      },
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.auto_awesome_outlined),
-                      title: const Text('Resumo de oportunidades'),
-                      subtitle: Text(
-                        'Cadência: ${_frequencyLabel(prefs.opportunitiesFrequency)}',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _pickFrequency(context, ref, prefs),
-                    ),
-                  ],
-                ),
-                _SettingsCard(
-                  icon: Icons.tune_outlined,
-                  title: 'Preferências de recomendação',
-                  children: [
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.shield_outlined),
-                      title: const Text('Perfil de risco'),
-                      subtitle: Text(_riskProfileLabel(prefs.riskProfile)),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _pickRiskProfile(context, ref, prefs),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.category_outlined),
-                      title: const Text('Categorias preferidas'),
-                      subtitle: Text(
-                        prefs.preferredCategories.isEmpty
-                            ? 'Nenhuma — todas pesam igual'
-                            : prefs.preferredCategories
-                                  .map(categoryLabel)
-                                  .join(', '),
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () =>
-                          _pickPreferredCategories(context, ref, prefs),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.factory_outlined),
-                      title: const Text('Setores preferidos'),
-                      subtitle: Text(
-                        prefs.preferredSectors.isEmpty
-                            ? 'Nenhum'
-                            : prefs.preferredSectors.join(', '),
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _editCsvList(
-                        context,
-                        ref,
-                        prefs,
-                        title: 'Setores preferidos',
-                        hint: 'Ex.: Energia, Bancos, Varejo',
-                        initial: prefs.preferredSectors,
-                        apply: (values) => ref
-                            .read(apiRepositoryProvider)
-                            .savePreferences(
-                              passiveIncomeGoal: prefs.passiveIncomeGoal,
-                              preferredSectors: values,
-                            ),
-                      ),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.block_outlined),
-                      title: const Text('Ativos excluídos'),
-                      subtitle: Text(
-                        prefs.excludedTickers.isEmpty
-                            ? 'Nenhum'
-                            : prefs.excludedTickers.join(', '),
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _editCsvList(
-                        context,
-                        ref,
-                        prefs,
-                        title: 'Ativos excluídos das oportunidades',
-                        hint: 'Ex.: MGLU3, IRBR3',
-                        initial: prefs.excludedTickers,
-                        apply: (values) => ref
-                            .read(apiRepositoryProvider)
-                            .savePreferences(
-                              passiveIncomeGoal: prefs.passiveIncomeGoal,
-                              excludedTickers: values
-                                  .map((v) => v.toUpperCase())
-                                  .toList(),
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
+                _Recomendacao(prefs: prefs),
+                _Metas(prefs: prefs),
+                _Notificacoes(prefs: prefs),
               ],
             ),
           ),
-          _SettingsCard(
-            icon: Icons.pie_chart_outline,
-            title: 'Metas de alocação',
+
+          const _Alertas(),
+          const _Indicacao(),
+          const _Aparencia(),
+          const _Legal(),
+          const _Conta(),
+        ],
+      ),
+    );
+  }
+}
+
+class _Identidade extends ConsumerWidget {
+  const _Identidade();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    if (user == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: FiSpace.s2, bottom: FiSpace.s2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(user.name, style: FiType.metric.copyWith(color: fiInk1(context))),
+          const SizedBox(height: 2),
+          Text(user.email, style: FiType.body.copyWith(color: fiInk2(context))),
+        ],
+      ),
+    );
+  }
+}
+
+/// Os `yield` desejados nao sao ajuste: vem do servidor, derivados do perfil, e por isso saem
+/// como cifra e nao como linha com seta.
+class _Recomendacao extends ConsumerWidget {
+  const _Recomendacao({required this.prefs});
+
+  final Preferences prefs;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FiSection(
+      title: 'O que pesa na análise',
+      hint: 'O perfil decide o yield que o sistema cobra de cada classe, e a ordem em que as '
+          'oportunidades aparecem.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FiRows(
             children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.flag_outlined),
-                title: const Text('Ajustar minhas metas'),
-                subtitle: const Text('Em Estratégia, junto do desvio'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.go('/voce/objetivos'),
+              FiDataRow(
+                label: 'Perfil de risco',
+                value: _riskProfileLabel(prefs.riskProfile),
+                onTap: () => _pickRiskProfile(context, ref, prefs),
+              ),
+              FiDataRow(
+                label: 'Categorias preferidas',
+                detail: prefs.preferredCategories.isEmpty
+                    ? 'Nenhuma — todas pesam igual'
+                    : prefs.preferredCategories.map(categoryLabel).join(', '),
+                onTap: () => _pickPreferredCategories(context, ref, prefs),
+              ),
+              FiDataRow(
+                label: 'Setores preferidos',
+                detail: prefs.preferredSectors.isEmpty
+                    ? 'Nenhum'
+                    : prefs.preferredSectors.join(', '),
+                onTap: () => _editCsvList(
+                  context,
+                  ref,
+                  prefs,
+                  title: 'Setores preferidos',
+                  hint: 'Ex.: Energia, Bancos, Varejo',
+                  initial: prefs.preferredSectors,
+                  apply: (values) => ref
+                      .read(apiRepositoryProvider)
+                      .savePreferences(
+                        passiveIncomeGoal: prefs.passiveIncomeGoal,
+                        preferredSectors: values,
+                      ),
+                ),
+              ),
+              FiDataRow(
+                label: 'Ativos excluídos',
+                detail: prefs.excludedTickers.isEmpty
+                    ? 'Nenhum'
+                    : prefs.excludedTickers.join(', '),
+                onTap: () => _editCsvList(
+                  context,
+                  ref,
+                  prefs,
+                  title: 'Ativos excluídos das oportunidades',
+                  hint: 'Ex.: MGLU3, IRBR3',
+                  initial: prefs.excludedTickers,
+                  apply: (values) => ref
+                      .read(apiRepositoryProvider)
+                      .savePreferences(
+                        passiveIncomeGoal: prefs.passiveIncomeGoal,
+                        excludedTickers: values.map((v) => v.toUpperCase()).toList(),
+                      ),
+                ),
               ),
             ],
           ),
-          _SettingsCard(
-            icon: Icons.notifications_none,
-            title: 'Alertas de preço',
-            children: const [_AlertsSection()],
+          const SizedBox(height: FiSpace.s5),
+          FiFigures(
+            figures: {
+              'AÇÕES': formatPercent(prefs.desiredYieldStock * 100),
+              'FIIS': formatPercent(prefs.desiredYieldFii * 100),
+              'BDRS': formatPercent(prefs.desiredYieldBdr * 100),
+              'ETFS': formatPercent(prefs.desiredYieldEtf * 100),
+            },
           ),
-          const _LegalCard(),
+          const SizedBox(height: FiSpace.s2),
+          Text(
+            'Yield desejado por classe — derivado do perfil, não editado aqui.',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _Metas extends StatelessWidget {
+  const _Metas({required this.prefs});
+
+  final Preferences prefs;
+
+  @override
+  Widget build(BuildContext context) {
+    return FiSection(
+      title: 'Metas',
+      child: FiRows(
+        children: [
+          FiDataRow(
+            label: 'Renda passiva por mês',
+            value: prefs.passiveIncomeGoal == null
+                ? 'sem meta'
+                : formatCurrency(prefs.passiveIncomeGoal),
+            note: prefs.passiveIncomeGoal == null
+                ? 'Sem alvo declarado o produto não inventa um.'
+                : null,
+            onTap: () => context.go('/voce/objetivos'),
+          ),
+          FiDataRow(
+            label: 'Alocação por categoria',
+            detail: 'O alvo contra o qual a Sobra mede o desvio',
+            onTap: () => context.go('/voce/objetivos'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Notificacoes extends ConsumerWidget {
+  const _Notificacoes({required this.prefs});
+
+  final Preferences prefs;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FiSection(
+      title: 'O que chega até você',
+      child: FiRows(
+        children: [
+          FiDataRow(
+            label: 'Alertas de preço',
+            detail: 'Sempre imediato, é um alerta de risco',
+            trailing: Switch(
+              value: prefs.notifyPriceAlerts,
+              onChanged: (v) async {
+                await ref
+                    .read(apiRepositoryProvider)
+                    .savePreferences(
+                      passiveIncomeGoal: prefs.passiveIncomeGoal,
+                      notifyPriceAlerts: v,
+                    );
+                ref.invalidate(preferencesProvider);
+              },
+            ),
+          ),
+          FiDataRow(
+            label: 'Resumo de oportunidades',
+            value: _frequencyLabel(prefs.opportunitiesFrequency),
+            onTap: () => _pickFrequency(context, ref, prefs),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Aparencia extends ConsumerWidget {
+  const _Aparencia();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final escuro = ref.watch(themeModeProvider) == ThemeMode.dark;
+
+    return FiSection(
+      title: 'Aparência',
+      child: FiDataRow(
+        label: 'Tema escuro',
+        detail: 'Fica neste aparelho — não viaja com a conta',
+        trailing: Switch(
+          value: escuro,
+          onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
+        ),
       ),
     );
   }
@@ -407,6 +400,7 @@ Future<void> _pickPreferredCategories(
                 (c) => CheckboxListTile(
                   value: selected.contains(c),
                   title: Text(categoryLabel(c)),
+                  contentPadding: EdgeInsets.zero,
                   onChanged: (v) => setState(() {
                     if (v == true) {
                       selected.add(c);
@@ -484,8 +478,8 @@ Future<void> _editCsvList(
   ref.invalidate(preferencesProvider);
 }
 
-class _ReferralCard extends ConsumerWidget {
-  const _ReferralCard();
+class _Indicacao extends ConsumerWidget {
+  const _Indicacao();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -494,91 +488,47 @@ class _ReferralCard extends ConsumerWidget {
     return indicacao.when(
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
-      data: (r) => _SettingsCard(
-        icon: Icons.card_giftcard_outlined,
+      data: (r) => FiSection(
         title: 'Indicação',
-        children: [
-          Text(
-            'Quem entra pelo seu link ganha ${r.rewardDays} dias de Premium — '
-            'e você também, quando essa pessoa salvar a primeira posição.',
-            style: TextStyle(color: fiInk2(context)),
-          ),
-          const SizedBox(height: 12),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              r.code,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: const Text('Seu código'),
-            trailing: IconButton(
-              icon: const Icon(Icons.copy),
-              tooltip: 'Copiar link de indicação',
-              onPressed: () async {
-                await Clipboard.setData(
-                  ClipboardData(
-                    text: 'https://fiance.app/?indicacao=${r.code}',
-                  ),
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Link copiado')));
-                }
-              },
-            ),
-          ),
-          Text(
-            '${r.attributed} chegaram pelo seu link · ${r.qualified} montaram carteira · '
-            '${r.daysEarned} dias ganhos',
-            style: FiType.caption.copyWith(color: fiInk2(context)),
-          ),
-          if (r.pending > 0) ...[
-            const SizedBox(height: 4),
-            Text(
-              '${r.pending} ainda não montaram carteira. O crédito sai quando elas '
-              'salvarem a primeira posição.',
-              style: FiType.caption.copyWith(color: fiInk3(context)),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({
-    required this.icon,
-    required this.title,
-    required this.children,
-  });
-
-  final IconData icon;
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+        hint: 'Quem entra pelo seu link ganha ${r.rewardDays} dias de Premium — e você '
+            'também, quando essa pessoa salvar a primeira posição.',
+        action: FiButton.secondary(
+          label: 'Copiar link de indicação',
+          icon: Icons.link,
+          onPressed: () async {
+            await Clipboard.setData(
+              ClipboardData(text: 'https://fiance.app/?indicacao=${r.code}'),
+            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Link copiado')));
+            }
+          },
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(icon, size: 18, color: fiInk2(context)),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
+            Text(
+              r.code,
+              style: FiType.moneyLg.copyWith(color: fiInk1(context)),
             ),
-            const SizedBox(height: 8),
-            ...children,
+            const SizedBox(height: FiSpace.s4),
+            FiFigures(
+              figures: {
+                'CHEGARAM': '${r.attributed}',
+                'MONTARAM CARTEIRA': '${r.qualified}',
+                'DIAS GANHOS': '${r.daysEarned}',
+              },
+            ),
+            if (r.pending > 0) ...[
+              const SizedBox(height: FiSpace.s3),
+              Text(
+                '${r.pending} ainda não montaram carteira. O crédito sai quando elas '
+                'salvarem a primeira posição.',
+                style: FiType.caption.copyWith(color: fiInk3(context)),
+              ),
+            ],
           ],
         ),
       ),
@@ -586,8 +536,8 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
-class _AlertsSection extends ConsumerWidget {
-  const _AlertsSection();
+class _Alertas extends ConsumerWidget {
+  const _Alertas();
 
   Future<void> _createAlert(BuildContext context, WidgetRef ref) async {
     final tickerCtrl = TextEditingController();
@@ -603,7 +553,7 @@ class _AlertsSection extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               TickerAutocompleteField(controller: tickerCtrl),
-              const SizedBox(height: 16),
+              const SizedBox(height: FiSpace.s4),
               DropdownButtonFormField<String>(
                 initialValue: condition,
                 decoration: const InputDecoration(labelText: 'Condição'),
@@ -613,7 +563,7 @@ class _AlertsSection extends ConsumerWidget {
                 ],
                 onChanged: (v) => setState(() => condition = v!),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: FiSpace.s4),
               TextField(
                 controller: priceCtrl,
                 keyboardType: const TextInputType.numberWithOptions(
@@ -654,124 +604,93 @@ class _AlertsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final alerts = ref.watch(alertsProvider);
 
-    return Column(
-      children: [
-        alerts.when(
-          loading: () => const Padding(
-            padding: EdgeInsets.all(16),
-            child: LinearProgressIndicator(),
-          ),
-          error: (err, _) => Padding(
-            padding: const EdgeInsets.all(16),
-            child: FiErrorState(error: err, action: 'carregar seus alertas'),
-          ),
-          data: (items) {
-            if (items.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Text(
-                  'Nenhum alerta configurado',
-                  style: TextStyle(color: fiInk2(context)),
-                ),
-              );
-            }
-            return Column(
-              children: items
-                  .map(
-                    (a) => ListTile(
-                      title: Text(a.ticker),
-                      subtitle: Text(
-                        '${a.condition == 'below' ? 'Abaixo de' : 'Acima de'} ${formatCurrency(a.targetPrice)}'
-                        '${a.triggeredAt != null ? ' · disparado' : ''}',
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: 'Apagar alerta',
-                        onPressed: () async {
-                          await ref
-                              .read(apiRepositoryProvider)
-                              .deleteAlert(a.id);
-                          ref.invalidate(alertsProvider);
-                        },
-                      ),
-                    ),
-                  )
-                  .toList(),
+    return FiSection(
+      title: 'Alertas de preço',
+      count: alerts.valueOrNull?.length,
+      action: FiButton.secondary(
+        label: 'Novo alerta',
+        icon: Icons.add,
+        onPressed: () => _createAlert(context, ref),
+      ),
+      child: alerts.when(
+        loading: () => const FiSkeleton(shape: FiSkeletonShape.row, count: 2),
+        error: (err, _) => FiErrorState(
+          error: err,
+          action: 'carregar seus alertas',
+          onRetry: () => ref.invalidate(alertsProvider),
+        ),
+        data: (items) {
+          if (items.isEmpty) {
+            return const FiEmptyLine(
+              'Nenhum alerta. Um alerta dispara quando o preço cruza o valor que você '
+              'declarou — é a condição, não o palpite.',
             );
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: () => _createAlert(context, ref),
-              icon: const Icon(Icons.add_alert_outlined),
-              label: const Text('Novo alerta'),
-            ),
-          ),
-        ),
-      ],
+          }
+          return FiRows(
+            children: [
+              for (final a in items)
+                FiDataRow(
+                  label: a.ticker,
+                  detail:
+                      '${a.condition == 'below' ? 'Abaixo de' : 'Acima de'} '
+                      '${formatCurrency(a.targetPrice)}'
+                      '${a.triggeredAt != null ? ' · disparado' : ''}',
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Apagar alerta de ${a.ticker}',
+                    onPressed: () async {
+                      await ref.read(apiRepositoryProvider).deleteAlert(a.id);
+                      ref.invalidate(alertsProvider);
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
 
-
-class _LegalCard extends StatelessWidget {
-  const _LegalCard();
+class _Legal extends StatelessWidget {
+  const _Legal();
 
   @override
   Widget build(BuildContext context) {
-    return _SettingsCard(
-      icon: Icons.gavel_outlined,
+    return FiSection(
       title: 'Termos e privacidade',
-      children: [
-        _LegalTile(
-          icon: Icons.description_outlined,
-          label: 'Termos de Uso',
-          url: termsUrl,
-        ),
-        _LegalTile(
-          icon: Icons.lock_outline,
-          label: 'Política de Privacidade',
-          subtitle: 'Que dado guardamos, e como você o leva embora',
-          url: privacyUrl,
-        ),
-        _LegalTile(
-          icon: Icons.balance_outlined,
-          label: 'Aviso CVM',
-          subtitle: 'Por que a análise não é recomendação',
-          url: cvmNoticeUrl,
-        ),
-      ],
+      child: FiRows(
+        children: const [
+          _LegalRow(label: 'Termos de Uso', url: termsUrl),
+          _LegalRow(
+            label: 'Política de Privacidade',
+            detail: 'Que dado guardamos, e como você o leva embora',
+            url: privacyUrl,
+          ),
+          _LegalRow(
+            label: 'Aviso CVM',
+            detail: 'Por que a análise não é recomendação',
+            url: cvmNoticeUrl,
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _LegalTile extends StatelessWidget {
-  const _LegalTile({
-    required this.icon,
-    required this.label,
-    required this.url,
-    this.subtitle,
-  });
+class _LegalRow extends StatelessWidget {
+  const _LegalRow({required this.label, required this.url, this.detail});
 
-  final IconData icon;
   final String label;
-  final String? subtitle;
+  final String? detail;
   final String url;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon),
-      title: Text(label),
-      subtitle: subtitle == null ? null : Text(subtitle!),
-      trailing: const Icon(Icons.open_in_new, size: 18),
+    return FiDataRow(
+      label: label,
+      detail: detail,
+      trailing: Icon(Icons.open_in_new, size: 16, color: fiInk3(context)),
       onTap: () async {
         final abriu = await abrirNoNavegador(url);
         if (!abriu && context.mounted) {
@@ -780,6 +699,26 @@ class _LegalTile extends StatelessWidget {
           );
         }
       },
+    );
+  }
+}
+
+class _Conta extends ConsumerWidget {
+  const _Conta();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FiSection(
+      title: 'Conta',
+      child: FiButton.danger(
+        label: 'Sair desta conta',
+        onPressed: () async {
+          await ref.read(notificationsServiceProvider).unregisterToken();
+          await ref.read(authServiceProvider).signOut();
+          ref.read(currentUserProvider.notifier).state = null;
+          if (context.mounted) context.go('/login');
+        },
+      ),
     );
   }
 }

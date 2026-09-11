@@ -10,6 +10,13 @@
 > `opacity: 0.5` que já não existia. Os números liberados foram reaproveitados, como já é
 > convenção aqui.
 >
+> A revisão de **2026-09-11** fechou dois itens do redesenho de interface — o tipo solto
+> (catraca em zero) e "fio + chão" no mobile (nenhum `Card`/`ListTile`/`CircleAvatar` de layout
+> restante) — e trocou o assunto de outros dois: o 7 passou a ser o controle de formulário do
+> Material sem componente próprio, e o 8, a base do preço justo nas telas de posição. O **12**
+> saiu inteiro: a tabela de posições que ele descrevia era do front, e o front não existe mais.
+> Seu número fica livre para reuso.
+>
 > Este arquivo tem uma tendência conhecida a apodrecer. Na revisão de 2026-08-28, **oito dos 24
 > itens já estavam feitos** — onboarding, busca global, drawer de atividade, gráfico de preço,
 > reestruturação das telas mobile e indicação estavam descritos como inexistentes, e três outros
@@ -77,54 +84,49 @@
 
 ## Duplicação estrutural entre Python e Dart
 
-6. **Rótulo e régua são escritos dos dois lados, e nenhuma máquina os compara.** Rótulo, ícone e
+6. **Rótulo e régua são escritos dos dois lados, e nenhuma máquina os compara.** Rótulo e
    cor de categoria, tipo de ativo, setor, tipo de renda fixa e liquidez viviam num gerador até
    2026-09-07, e voltaram a ser escritos quando ele saiu. O que os mantém em acordo é
    `analysis/score_ruler.py` como fonte e a disciplina de mudar Python e Dart no mesmo commit. O
    risco continua registrado: divergência aqui é um número errado, não uma tela feia. Com um
    cliente só, a distância encolheu de três cópias para duas.
 
-7. **Restam 34 linhas com `fontSize:` solto no mobile, e seis delas abaixo de todo papel.**
-   A escala já foi **recalibrada** para 360dp (`body` em 16, `moneyXl` em 32), e os 15 sítios que
-   tinham papel equivalente foram trocados: `metricSm` para cifra, `metric` para score, `caption`
-   para legenda, `ticker` para papel, `pageTitle` para cabeçalho de sheet. A catraca de
-   `test/lint_ui_test.dart` desceu de 49 para **34**, e o teto só desce. (Estava declarada em 36
-   com 35 no código: catraca com folga não é catraca, e a folga foi recolhida em 2026-09-09.)
+   *(O **ícone** de categoria saiu do vocabulário em 2026-09-11: eram 24 glifos declarados que
+   nenhuma tela lia depois que a identidade de categoria passou a ser cor de série mais rótulo
+   escrito. Vocabulário sem consumidor é pior que vocabulário nenhum, porque parece resolvido.)*
 
-   O que sobra é onde a decisão é **de layout antes de tipo**, e por isso não é substituição
-   mecânica. A escala do sistema começa em 11 (`eyebrow`); os seis abaixo disso estão em 9 e 10, e
-   são justamente os pontos mais apertados, que é por que ninguém os subiu:
-   - `features/mes/widgets/feed_charts.dart:108` e `:132` — rótulo de eixo do gráfico. Subir
-     para `caption` (13) pode sobrepor o eixo, e o gráfico é onde a densidade importa;
-   - `features/mes/widgets/feed_health.dart:258` e `:263` — rótulo e faixa de dimensão, numa
-     linha de **quatro** colunas em 360dp. "Diversif." já é abreviação por falta de espaço;
-   - `features/patrimonio/widgets/patrimonio_positions.dart:291` e `:392` — rótulo de categoria
-     numa linha de posição.
+7. **Três famílias de controle ainda são Material puro, com estilo só no tema.**
+   `DropdownButtonFormField`, `Slider`, `showDatePicker` e o par `RadioListTile`/`CheckboxListTile`
+   dentro de diálogo — 16 usos — não têm componente do sistema: o que os aproxima do resto é o
+   `ThemeData`, não uma primitiva. Funciona enquanto o tema cobre tudo que eles desenham, e para
+   de funcionar na primeira propriedade que o Material não expõe (a altura do item de menu, o
+   calendário do seletor de data).
 
-   Ou a linha passa a ter menos colunas, ou o gráfico ganha mais espaço de eixo. Converter às
-   cegas troca um defeito invisível (texto pequeno demais) por um visível (texto sobreposto), e o
-   visível é o que se conserta correndo.
+   Não é substituição mecânica: cada um é um comportamento — escolher entre poucos, escolher numa
+   faixa contínua, escolher uma data — e escrever isso à mão custa mais que estilizar. O critério
+   para atacar é o mesmo de sempre: quando a divergência aparecer na tela, e não antes.
 
-8. **"Fio + chão" não embarcou no mobile.** Contado em 2026-09-08: 26 `Card(`, **28** `ListTile`
-   e **161** `Icons.*` crus. O caso exemplar é `FiInsightTile` (em
-   `features/mes/widgets/feed_tiles.dart`) — `Card` + `CircleAvatar` com ícone colorido + título +
-   detalhe —, que é a pilha inteira de cheiros de interface gerada e ainda se chama "Insight".
-   Trocar exige um `FiSection` (a seção com cabeçalho de verdade) e um `FiDataRow` (a linha de
-   dado sob um fio, no lugar do `ListTile`). *("Serifa decide" saiu daqui: os quatro usos de `FiType.verdict` aplicam
-   a família serifada, e `test/lint_ui_test.dart` reprova o papel de veredito que saia em sans —
-   declarar o papel não aplica a fonte.)*
+8. **A base do preço justo não chega às telas de posição da carteira.** Em `/ativo`, em
+   `/descobrir` e no sheet de detalhe a cifra nunca sai sem `consensusLabel` dizendo quantos
+   métodos entraram. Na lista de ativos do `/patrimônio`, o objeto de posição mostra preço médio e
+   preço de hoje, mas não o justo — então a explicabilidade não está violada, e sim ausente: quem
+   quer a leitura do papel abre `/ativo/:ticker`. Se o preço justo entrar ali, entra com a base
+   junto, e aí é decisão de layout numa linha que já carrega cinco números.
 
-9. **Falta a regra do alvo de toque de 44dp no Dart.** `test/lint_ui_test.dart` cobra **doze** —
-    explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro, nome acessível em
-    botão de ícone, serifa no papel de veredito, vocabulário de IA genérica, nome de destino
-    aposentado, a catraca de tipo solto, esqueleto no lugar de disco girando, busca alcançável de
-    todo destino de raiz, destino de navegação que o roteador não declara, e falha de leitura numa
-    voz só.
+9. **Falta a regra do alvo de toque de 44dp no Dart.** `test/lint_ui_test.dart` cobra
+    **catorze** — explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro, nome
+    acessível em botão de ícone, serifa no papel de veredito, vocabulário de IA genérica, nome de
+    destino aposentado, a catraca de tipo solto, a catraca de caixa do Material, paleta escrita à
+    mão, esqueleto no lugar de disco girando, busca alcançável de todo destino de raiz, destino de
+    navegação que o roteador não declara, e falha de leitura numa voz só.
 
-    A que falta precisa de uma decisão de layout **antes** da regra. `HelpTooltip` foi de 14 para
-    32 e ganhou `Semantics`, mas 44 dobraria a altura do `Row` de rótulo de 11px onde ele vive.
-    Chegar aos 44 é fazer o rótulo inteiro ser o alvo, em vez de pendurar um ícone ao lado — e só
-    depois a regra tem o que cobrar.
+    A **decisão de layout** que faltava foi tomada em 2026-09-11: `HelpTooltip` deixou de ser um
+    ícone pendurado ao lado do rótulo e passou a ser o **rótulo inteiro**, sublinhado, com alvo de
+    44. Era o caso que travava a regra — chegar aos 44 aumentando o glifo só deixaria o ícone
+    maior. O que falta agora é a regra em si, e ela é difícil por outro motivo: alvo de toque é
+    propriedade de **layout renderizado**, não de fonte. Ou ela vira teste de widget que monta cada
+    controle e mede, ou ela é uma catraca de grafia (`minimumSize`, `ConstrainedBox`) que deixa
+    passar o caso montado de outro jeito.
 
 10. **`/voce` são cinco entradas, e o desenho pede quatro eixos.** A reorganização de destinos
     foi feita, e `/voce/preferencias` já está partida em três eixos **dentro** da tela — Preço
@@ -146,14 +148,6 @@
     de oportunidades, com `formatIdade` e o critério do carimbo mais antigo. No caminho, `Opportunity` (resposta) e `PortfolioPosition.fromJson`
     (Dart) não declaravam o campo, e o descartavam em silêncio.)*
 
-12. **A tabela de posições mostra preço justo sem a base que o formou.** Em `/ativo` e em
-    `/descobrir` a cifra nunca sai sem dizer quantos métodos entraram, e a ausência é razão
-    nomeada e não traço. Na tabela de `/patrimonio/posicoes` a coluna continua um número cru: o
-    cabeçalho diz "Preço justo" e a tabela tem proveniência própria, então a explicabilidade está
-    satisfeita, mas a **base por linha** não aparece. Célula de tabela não comporta legenda, então
-    resolver é decidir entre uma coluna a mais e um toque que revela — e coluna a mais numa tabela
-    que já rola é decisão de layout.
-
 ## Cobertura de testes
 
 13. **Não existe mais teste de ponta a ponta.** O que havia rodava no navegador (Playwright
@@ -164,12 +158,18 @@
    deploy, que confere que o processo responde, e nada sobre o cliente.
 
 14. **As regras de interface que só rodavam no front não foram portadas.** O verificador do web
-   tinha 24 regras; `test/lint_ui_test.dart` cobra **doze**, e o contraste é cobrado por
+   tinha 24 regras; `test/lint_ui_test.dart` cobra **catorze**, e o contraste é cobrado por
    `test/contraste_test.dart`. Nunca chegaram ao Dart: classe/ícone inexistente (que não tem
-   equivalente em Flutter e morreu com o problema), **gráfico sem tabela equivalente**,
-   **controle montado à mão em vez do componente do sistema** e **escala de tipo fora dos
-   papéis** — esta última existe como catraca de contagem (item 7), não como proibição. A de
-   gráfico sem tabela protege acessibilidade, e é a que mais falta.
+   equivalente em Flutter e morreu com o problema), **gráfico sem tabela equivalente** e
+   **controle montado à mão em vez do componente do sistema** (item 7). A de gráfico sem tabela
+   protege acessibilidade, e é a que mais falta.
+
+   *(Duas entraram em 2026-09-11, e uma delas o web não tinha: a **catraca de caixa do Material**
+   — `Card`, `ListTile`, `SwitchListTile` e `CircleAvatar` em zero, com `RadioListTile` e
+   `CheckboxListTile` de fora por serem controle de formulário — e **paleta escrita à mão**, que
+   reprova `Color(0x…)` solto e `Colors.*` fora da fundação. A **escala de tipo fora dos papéis**
+   deixou de ser item aberto: a catraca chegou a **zero** quando a legenda de eixo ganhou papel
+   próprio (`FiType.axis`), e catraca em zero é a proibição que faltava.)*
 
    *(A regra de **destino de navegação inexistente** saiu daqui em 2026-09-11, depois de o defeito
    que ela pega acontecer de verdade: `patrimonio_summary` levava a `/assets/renda-fixa`, que não
@@ -195,12 +195,17 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
    continua igual para todo mundo. Exige coluna em `PreferencesDb`, campo em `GET/PUT /preferences`
    e migração Alembic.
 
-17. **A régua de score do mobile ainda não chegou a todas as telas que mostram score.** Ela
-    tinha **zero** consumidores até 2026-09-09 — três telas desenhavam o score à mão — e agora
-    serve o bloco de saúde do `Mês` e o card de Descobrir, que antes não mostrava score algum
-    embora a lista seja ordenada por ele. `feed_tiles` e `quick_invest_view` seguem com o rótulo
-    de banda em linha densa, onde a régua cheia não cabe: resolver é decidir a densidade da
-    linha, não trocar o widget.
+17. **A régua não cobre o score em linha densa, e ali ele sai só como selo.** Ela tinha **zero**
+    consumidores até 2026-09-09, e desde 2026-09-11 é o elemento-assinatura do produto: serve
+    score de oportunidade, saúde da carteira e suas quatro dimensões, desvio de alocação, progresso
+    de meta, margem de segurança, carteira contra CDI e renda contratada contra CDI — sete leituras
+    na mesma forma, com `FiMeasure` como a variante geral (valor, referência, banda) e `ScoreRuler`
+    como a de score.
+
+    O que sobra são as **linhas densas**: `feed_tiles` e `quick_invest_view` mostram a banda como
+    `FiTag`, porque uma régua dentro de um objeto de três linhas rouba a atenção do número que o
+    objeto existe para mostrar. É escolha, não pendência de implementação — mas é a única
+    inconsistência viva na família, e fica registrada para que a próxima tela não decida sozinha.
 
 18. **O contrato das rotas guarda campo que sai, não campo que entra.**
     `tests/contrato_das_rotas.json` registra os campos de cada rota `/api/v1` e o teste falha
@@ -273,7 +278,9 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
 
 26. **A aparência das telas nos dois temas nunca foi conferida num aparelho.** O contraste é
     verificado no CI, mas **por par de token**: ele mede `ink-2` sobre `ground-0`, não a tela
-    montada. *(A parte de `opacity: 0.5` no controle desabilitado saiu deste item: o estado inerte
+    montada. A revisão de 2026-09-11 **reescreveu as duas paletas** — papel quente no claro, tinta
+    azul-carvão no escuro, sem branco nem preto puros — e conferiu o resultado num espécime
+    renderizado fora do CI; nenhuma das duas coisas é olhar a tela num aparelho com luz em volta. *(A parte de `opacity: 0.5` no controle desabilitado saiu deste item: o estado inerte
     é token explícito — `control-fill` com `ink-disabled` — e o teste **mede** esse par nos dois
     temas.)*
 

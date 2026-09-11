@@ -3,48 +3,69 @@ import 'package:flutter/material.dart';
 import '../glossary.dart';
 import '../theme.dart';
 
-/// O termo do glossario, num sheet.
-///
-/// O alvo e 32, e nao os 44 de `FiLayout.minTouchTarget`: ele vive num `Row` de rotulo de 11px,
-/// e 44 dobraria a linha. Chegar aos 44 exige repensar a linha -- esta no KNOWN_ISSUES.
+/// O termo do glossário: o rótulo inteiro é o alvo, com os 44dp da norma.
 class HelpTooltip extends StatelessWidget {
-  const HelpTooltip({super.key, required this.termKey});
+  const HelpTooltip({super.key, required this.termKey, required this.label});
 
   final String termKey;
 
-  static const double _alvo = 32;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final text = glossary[termKey];
-    if (text == null) return const SizedBox.shrink();
+    final ink3 = fiInk3(context);
+
+    final rotulo = Text(
+      label,
+      style: FiType.eyebrow.copyWith(color: ink3),
+    );
+
+    if (text == null) return rotulo;
 
     return Semantics(
       button: true,
-      label: 'O que é isto? Abre a explicação do termo.',
+      label: '$label. O que é isto? Abre a explicação do termo.',
       child: InkWell(
-        borderRadius: BorderRadius.circular(FiRadius.pill),
+        borderRadius: BorderRadius.circular(FiRadius.sm),
         onTap: () => showModalBottomSheet<void>(
           context: context,
           showDragHandle: true,
           builder: (context) => SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: Text(
-                text,
-                style: FiType.body.copyWith(color: fiInk2(context)),
+              padding: const EdgeInsets.fromLTRB(
+                FiSpace.s5,
+                0,
+                FiSpace.s5,
+                FiSpace.s6,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: FiType.title),
+                  const SizedBox(height: FiSpace.s3),
+                  Text(
+                    text,
+                    style: FiType.body.copyWith(color: fiInk2(context)),
+                  ),
+                ],
               ),
             ),
           ),
         ),
-        child: SizedBox(
-          width: _alvo,
-          height: _alvo,
-          child: Center(
-            child: Icon(
-              Icons.help_outline,
-              size: 16,
-              color: fiInk3(context),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: ink3)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 1),
+                child: rotulo,
+              ),
             ),
           ),
         ),

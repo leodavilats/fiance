@@ -8,9 +8,12 @@ import '../../core/labels.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/vocabulary.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
+import '../../core/widgets/tag.dart';
 
 /// As dividas: saldo, taxa, e a comparacao com o que a carteira rende.
 class DividasScreen extends ConsumerWidget {
@@ -22,21 +25,23 @@ class DividasScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dívidas')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _abrirCadastro(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Cadastrar'),
-      ),
       body: dividas.when(
-        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 4, label: 'Carregando suas dívidas'),
+        loading: () => FiSkeleton.tela(
+          shape: FiSkeletonShape.row,
+          count: 4,
+          label: 'Carregando suas dívidas',
+        ),
         error: (e, _) => FiErrorState(
           error: e,
           action: 'carregar suas dívidas',
           onRetry: () => ref.invalidate(debtsProvider),
         ),
         data: (lista) => lista.isEmpty
-            ? const _SemDivida()
-            : _Lista(dividas: lista),
+            ? _SemDivida(onCadastrar: () => _abrirCadastro(context, ref))
+            : _Lista(
+                dividas: lista,
+                onCadastrar: () => _abrirCadastro(context, ref),
+              ),
       ),
     );
   }
@@ -57,9 +62,10 @@ class DividasScreen extends ConsumerWidget {
 }
 
 class _Lista extends ConsumerWidget {
-  const _Lista({required this.dividas});
+  const _Lista({required this.dividas, required this.onCadastrar});
 
   final List<Debt> dividas;
+  final VoidCallback onCadastrar;
 
   static const _rotuloDaClasse = {
     DebtClass.expensive: 'Caseira',
@@ -75,7 +81,6 @@ class _Lista extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final brightness = Theme.of(context).brightness;
     final caras = dividas.where((d) => d.debtClass == DebtClass.expensive);
     final referencia = dividas
         .map((d) => d.referenceMonthly)
@@ -84,7 +89,12 @@ class _Lista extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(debtsProvider),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s2,
+          FiLayout.gutter,
+          FiLayout.scrollTail,
+        ),
         children: [
           Text(
             caras.isEmpty
@@ -92,7 +102,12 @@ class _Lista extends ConsumerWidget {
                 : 'Você tem ${caras.length} '
                       '${caras.length == 1 ? 'dívida' : 'dívidas'} que custam mais do que sua '
                       'carteira rende.',
-            style: FiType.verdict.copyWith(fontFamily: fiFontSerif),
+            style: fiSerif(FiType.verdict).copyWith(
+              color: fiStateColor(
+                caras.isEmpty ? FiState.favorable : FiState.adverse,
+                Theme.of(context).brightness,
+              ),
+            ),
           ),
 
           FiProvenance(
@@ -112,13 +127,18 @@ class _Lista extends ConsumerWidget {
           FiSection(
             title: 'Suas dívidas',
             count: dividas.length,
+            action: FiButton.secondary(
+              label: 'Cadastrar dívida',
+              icon: Icons.add,
+              onPressed: onCadastrar,
+            ),
             child: Column(
               children: [
                 for (final d in dividas)
                   _LinhaDivida(
                     divida: d,
                     rotulo: _rotuloDaClasse[d.debtClass] ?? '',
-                    cor: fiStateColor(_estado(d.debtClass), brightness),
+                    estado: _estado(d.debtClass),
                   ),
               ],
             ),
@@ -133,25 +153,36 @@ class _LinhaDivida extends ConsumerWidget {
   const _LinhaDivida({
     required this.divida,
     required this.rotulo,
-    required this.cor,
+    required this.estado,
   });
 
   final Debt divida;
   final String rotulo;
-  final Color cor;
+  final FiState estado;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      shape: const Border(),
-      collapsedShape: const Border(),
-      title: Text(divida.description, style: FiType.body),
-      subtitle: Text(
-        '${debtKindLabel(divida.kind)} · $rotulo',
-        style: FiType.caption.copyWith(color: cor),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              divida.description,
+              style: FiType.body.copyWith(color: fiInk1(context)),
+            ),
+          ),
+          const SizedBox(width: FiSpace.s2),
+          FiTag(label: rotulo, state: estado),
+        ],
       ),
-      trailing: Text(formatCurrency(divida.balance), style: FiType.metricSm),
+      subtitle: Text(
+        debtKindLabel(divida.kind),
+        style: FiType.caption.copyWith(color: fiInk3(context)),
+      ),
+      trailing: Text(
+        formatCurrency(divida.balance),
+        style: FiType.figure.copyWith(color: fiInk1(context)),
+      ),
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: FiSpace.s3),
@@ -172,11 +203,11 @@ class _LinhaDivida extends ConsumerWidget {
               const SizedBox(height: FiSpace.s2),
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton(
+                child: FiButton.secondary(
+                  label: 'Marcar como quitada',
                   onPressed: divida.id == null
                       ? null
                       : () => _quitar(context, ref, divida),
-                  child: const Text('Marcar como quitada'),
                 ),
               ),
             ],
@@ -358,12 +389,11 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
               ],
 
               const SizedBox(height: FiSpace.s5),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _salvando ? null : _salvar,
-                  child: Text(_salvando ? 'Salvando…' : 'Cadastrar'),
-                ),
+              FiButton.primary(
+                label: 'Cadastrar dívida',
+                expand: true,
+                busy: _salvando,
+                onPressed: _salvar,
               ),
             ],
           ),
@@ -374,22 +404,26 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
 }
 
 class _SemDivida extends StatelessWidget {
-  const _SemDivida();
+  const _SemDivida({required this.onCadastrar});
+
+  final VoidCallback onCadastrar;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(24),
       children: [
-        Text(
-          'Você não tem dívida cadastrada',
-          style: FiType.verdict.copyWith(fontFamily: fiFontSerif),
-        ),
-        const SizedBox(height: FiSpace.s3),
-        Text(
-          'A ordem da sobra começa pela dívida que custa mais do que sua carteira rende. Sem '
-          'cadastrar, ela não entra na conta — e é a que decide se aportar faz sentido.',
-          style: FiType.body.copyWith(color: fiInk2(context)),
+        FiEmptyState(
+          title: 'Você não tem dívida cadastrada',
+          body: 'A ordem da sobra começa pela dívida que custa mais do que sua carteira '
+              'rende. Sem cadastrar, ela não entra na conta — e é a que decide se aportar '
+              'faz sentido.',
+          hint: 'A taxa mensal é opcional, mas sem ela não há classe: o produto não estima '
+              'taxa de rotativo.',
+          action: FiButton.primary(
+            label: 'Cadastrar dívida',
+            icon: Icons.add,
+            onPressed: onCadastrar,
+          ),
         ),
       ],
     );

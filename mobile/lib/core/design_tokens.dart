@@ -9,100 +9,112 @@ import 'product_rules.dart';
 export 'product_rules.dart';
 
 abstract final class FiColors {
-  static const darkGround0 = Color(0xFF090C10);
-  static const darkGround1 = Color(0xFF161C23);
-  static const darkGround2 = Color(0xFF1F262F);
-  static const darkHairline = Color(0xFF2F3945);
-  static const darkHairlineStrong = Color(0xFF424E5C);
-  static const darkControlBorder = Color(0xFF5A6B77);
-  static const darkControlBorderHover = Color(0xFF738796);
-  static const darkControlFill = Color(0xFF161C23);
-  static const darkControlFillHover = Color(0xFF1F262F);
-  static const darkControlFillActive = Color(0xFF2B3440);
-  static const darkTrack = Color(0xFF252D38);
-  static const darkInk1 = Color(0xFFE8EAEE);
-  static const darkInk2 = Color(0xFFBABFC9);
-  static const darkInk3 = Color(0xFFA0A6B1);
-  static const darkInkDisabled = Color(0xFF6E7684);
-  static const darkInkOnBrand = Color(0xFF08131A);
-  static const darkBrand = Color(0xFF74ACC9);
-  static const darkBrandHover = Color(0xFF9CC6DC);
-  static const darkBrandActive = Color(0xFFB5D6E6);
-  static const darkBrandStrong = Color(0xFF9CC6DC);
-  static const darkBrandLight = Color(0xFF9CC6DC);
-  static const darkBrandQuiet = Color(0xFF1D3140);
-  static const darkStateFavorable = Color(0xFF58B68C);
-  static const darkStateAttention = Color(0xFFD9A23B);
-  static const darkStateAdverse = Color(0xFFE29184);
-  static const darkStateIndeterminate = Color(0xFFA1A6A5);
-  static const darkStateFavorableSurface = Color(0xFF1D3229);
-  static const darkStateAttentionSurface = Color(0xFF3A321B);
-  static const darkStateAdverseSurface = Color(0xFF372C28);
-  static const darkStateIndeterminateSurface = Color(0xFF2A2F2D);
-  static const darkDirectionUp = Color(0xFF89AD9D);
-  static const darkDirectionDown = Color(0xFFC19D95);
-  static const darkSeries1 = Color(0xFF74ACC9);
-  static const darkSeries2 = Color(0xFF58B68C);
-  static const darkSeries3 = Color(0xFFD9A23B);
-  static const darkSeries4 = Color(0xFFE29184);
-  static const darkSeries5 = Color(0xFFA69DD0);
-  static const darkSeries6 = Color(0xFF5AB0B0);
-  static const darkSeries7 = Color(0xFFD58CB1);
-  static const darkSeries8 = Color(0xFFD69361);
-  static const darkSeries9 = Color(0xFF9AAD56);
-  static const darkSeries10 = Color(0xFF87A2DD);
-  static const darkSeries11 = Color(0xFFC198AB);
-  static const darkSeriesOther = Color(0xFF9FA5A2);
+  static const darkGround0 = Color(0xFF15171B);
+  static const darkGround1 = Color(0xFF1D2026);
+  static const darkGround2 = Color(0xFF262A31);
+  static const darkHairline = Color(0xFF333841);
+  static const darkHairlineStrong = Color(0xFF474D58);
+  static const darkControlBorder = Color(0xFF6A727E);
+  static const darkControlBorderHover = Color(0xFF838C99);
+  static const darkControlFill = Color(0xFF1D2026);
+  static const darkControlFillHover = Color(0xFF262A31);
+  static const darkControlFillActive = Color(0xFF31363F);
+  static const darkTrack = Color(0xFF2B3039);
+  static const darkInk1 = Color(0xFFE9E7E1);
+  static const darkInk2 = Color(0xFFBBB8B0);
+  static const darkInk3 = Color(0xFFA2A099);
+  static const darkInkDisabled = Color(0xFF767369);
+  static const darkInkOnBrand = Color(0xFF0B1015);
+  static const darkBrand = Color(0xFF7DB0CB);
+  static const darkBrandHover = Color(0xFF9EC8DE);
+  static const darkBrandActive = Color(0xFFB6D7E7);
+  static const darkBrandStrong = Color(0xFF9EC8DE);
+  static const darkBrandLight = Color(0xFF9EC8DE);
+  static const darkBrandQuiet = Color(0xFF1C3240);
+  static const darkStateFavorable = Color(0xFF5CB98E);
+  static const darkStateAttention = Color(0xFFDCA63F);
+  static const darkStateAdverse = Color(0xFFE39588);
+  static const darkStateIndeterminate = Color(0xFFA5A9A6);
+  static const darkStateFavorableSurface = Color(0xFF1C3126);
+  static const darkStateAttentionSurface = Color(0xFF3C351D);
+  static const darkStateAdverseSurface = Color(0xFF3A2E2A);
+  static const darkStateIndeterminateSurface = Color(0xFF2C312F);
+  static const darkDirectionUp = Color(0xFF8CB0A0);
+  static const darkDirectionDown = Color(0xFFC4A199);
+  static const darkSeries1 = Color(0xFF7DB0CB);
+  static const darkSeries2 = Color(0xFF5CB98E);
+  static const darkSeries3 = Color(0xFFDCA63F);
+  static const darkSeries4 = Color(0xFFE39588);
+  static const darkSeries5 = Color(0xFFA9A1D3);
+  static const darkSeries6 = Color(0xFF5FB4B4);
+  static const darkSeries7 = Color(0xFFD892B5);
+  static const darkSeries8 = Color(0xFFD99766);
+  static const darkSeries9 = Color(0xFF9EB15B);
+  static const darkSeries10 = Color(0xFF8CA6E0);
+  static const darkSeries11 = Color(0xFFC59DAF);
+  static const darkSeriesOther = Color(0xFFA3A9A6);
 
-  static const lightGround0 = Color(0xFFEDF2F5);
-  static const lightGround1 = Color(0xFFFFFFFF);
-  static const lightGround2 = Color(0xFFEFF3F5);
-  static const lightHairline = Color(0xFFD7DEE4);
-  static const lightHairlineStrong = Color(0xFFA9B9C5);
-  static const lightControlBorder = Color(0xFF708B9F);
-  static const lightControlBorderHover = Color(0xFF577082);
-  static const lightControlFill = Color(0xFFFFFFFF);
-  static const lightControlFillHover = Color(0xFFE3EAEF);
-  static const lightControlFillActive = Color(0xFFD5DEE4);
-  static const lightTrack = Color(0xFFDCE3E9);
-  static const lightInk1 = Color(0xFF1F2933);
-  static const lightInk2 = Color(0xFF414956);
-  static const lightInk3 = Color(0xFF4B5764);
-  static const lightInkDisabled = Color(0xFF8493A1);
-  static const lightInkOnBrand = Color(0xFFFFFFFF);
-  static const lightBrand = Color(0xFF295D7C);
-  static const lightBrandHover = Color(0xFF1F465D);
-  static const lightBrandActive = Color(0xFF17364A);
-  static const lightBrandStrong = Color(0xFF1F465D);
-  static const lightBrandLight = Color(0xFF3F7898);
-  static const lightBrandQuiet = Color(0xFFDCE9F0);
-  static const lightStateFavorable = Color(0xFF116446);
-  static const lightStateAttention = Color(0xFF784F0E);
-  static const lightStateAdverse = Color(0xFF973A2D);
-  static const lightStateIndeterminate = Color(0xFF515A55);
-  static const lightStateFavorableSurface = Color(0xFFD7E5E0);
-  static const lightStateAttentionSurface = Color(0xFFE8E1D6);
-  static const lightStateAdverseSurface = Color(0xFFEFE1E0);
-  static const lightStateIndeterminateSurface = Color(0xFFE1E3E2);
-  static const lightDirectionUp = Color(0xFF33614D);
-  static const lightDirectionDown = Color(0xFF7A4D41);
-  static const lightSeries1 = Color(0xFF295D7C);
-  static const lightSeries2 = Color(0xFF116446);
-  static const lightSeries3 = Color(0xFF784F0E);
-  static const lightSeries4 = Color(0xFF973A2D);
-  static const lightSeries5 = Color(0xFF5C51A0);
-  static const lightSeries6 = Color(0xFF156766);
-  static const lightSeries7 = Color(0xFF924168);
-  static const lightSeries8 = Color(0xFF8B4E1B);
-  static const lightSeries9 = Color(0xFF56641C);
-  static const lightSeries10 = Color(0xFF3B5AA8);
-  static const lightSeries11 = Color(0xFF7A4E62);
-  static const lightSeriesOther = Color(0xFF595F5C);
+  static const lightGround0 = Color(0xFFF0EDE6);
+  static const lightGround1 = Color(0xFFFAF8F3);
+  static const lightGround2 = Color(0xFFE5E1D7);
+  static const lightHairline = Color(0xFFD9D3C6);
+  static const lightHairlineStrong = Color(0xFFADA593);
+  static const lightControlBorder = Color(0xFF6D6655);
+  static const lightControlBorderHover = Color(0xFF524C3E);
+  static const lightControlFill = Color(0xFFFAF8F3);
+  static const lightControlFillHover = Color(0xFFEDE9DF);
+  static const lightControlFillActive = Color(0xFFDFDACD);
+  static const lightTrack = Color(0xFFDED8CA);
+  static const lightInk1 = Color(0xFF1C1B17);
+  static const lightInk2 = Color(0xFF454238);
+  static const lightInk3 = Color(0xFF5B574B);
+  static const lightInkDisabled = Color(0xFF87816F);
+  static const lightInkOnBrand = Color(0xFFF8F6F1);
+  static const lightBrand = Color(0xFF1F5670);
+  static const lightBrandHover = Color(0xFF164254);
+  static const lightBrandActive = Color(0xFF0F3241);
+  static const lightBrandStrong = Color(0xFF164254);
+  static const lightBrandLight = Color(0xFF367191);
+  static const lightBrandQuiet = Color(0xFFDDE6EA);
+  static const lightStateFavorable = Color(0xFF0F5F41);
+  static const lightStateAttention = Color(0xFF7A4B0C);
+  static const lightStateAdverse = Color(0xFF97362A);
+  static const lightStateIndeterminate = Color(0xFF4E4B42);
+  static const lightStateFavorableSurface = Color(0xFFDEE7E1);
+  static const lightStateAttentionSurface = Color(0xFFEDE4D3);
+  static const lightStateAdverseSurface = Color(0xFFF0E2DE);
+  static const lightStateIndeterminateSurface = Color(0xFFE6E3DB);
+  static const lightDirectionUp = Color(0xFF3B5C4C);
+  static const lightDirectionDown = Color(0xFF785047);
+  static const lightSeries1 = Color(0xFF1F5670);
+  static const lightSeries2 = Color(0xFF0F5F41);
+  static const lightSeries3 = Color(0xFF7A4B0C);
+  static const lightSeries4 = Color(0xFF97362A);
+  static const lightSeries5 = Color(0xFF564C99);
+  static const lightSeries6 = Color(0xFF12615F);
+  static const lightSeries7 = Color(0xFF8C3D62);
+  static const lightSeries8 = Color(0xFF854917);
+  static const lightSeries9 = Color(0xFF525F18);
+  static const lightSeries10 = Color(0xFF37549F);
+  static const lightSeries11 = Color(0xFF75495D);
+  static const lightSeriesOther = Color(0xFF55594F);
 
   // Veu sob drawer e sheet. Tem alfa, e por isso fica fora da varredura de contraste.
-  static const darkOverlay = Color(0xA8030508);
-  static const lightOverlay = Color(0x66151E26);
+  static const darkOverlay = Color(0xA805070A);
+  static const lightOverlay = Color(0x661E1B14);
 }
+
+Color fiGround0(Brightness brightness) =>
+    brightness == Brightness.dark ? FiColors.darkGround0 : FiColors.lightGround0;
+
+Color fiGround1(Brightness brightness) =>
+    brightness == Brightness.dark ? FiColors.darkGround1 : FiColors.lightGround1;
+
+Color fiGround2(Brightness brightness) =>
+    brightness == Brightness.dark ? FiColors.darkGround2 : FiColors.lightGround2;
+
+Color fiHairline(Brightness brightness) =>
+    brightness == Brightness.dark ? FiColors.darkHairline : FiColors.lightHairline;
 
 Color fiStateColor(FiState state, Brightness brightness) {
   final dark = brightness == Brightness.dark;
@@ -199,6 +211,9 @@ abstract final class FiRadius {
 abstract final class FiLayout {
   // 44 e norma de acessibilidade, nao aparencia -- e o unico numero de layout que atravessa.
   static const minTouchTarget = 44.0;
+
+  static const gutter = FiSpace.s4;
+  static const scrollTail = FiSpace.s16;
 }
 
 abstract final class FiMotion {
@@ -293,6 +308,24 @@ abstract final class FiType {
     fontWeight: FontWeight.w600,
     letterSpacing: 0.7,
     fontFeatures: [FontFeature.tabularFigures(), FontFeature.slashedZero()],
+  );
+  static const figure = TextStyle(
+    fontSize: 15,
+    height: 1.4,
+    fontWeight: FontWeight.w500,
+    fontFeatures: [FontFeature.tabularFigures(), FontFeature.slashedZero()],
+  );
+  static const axis = TextStyle(
+    fontSize: 11,
+    height: 1.273,
+    fontWeight: FontWeight.w400,
+    fontFeatures: [FontFeature.tabularFigures(), FontFeature.slashedZero()],
+  );
+  static const action = TextStyle(
+    fontSize: 15,
+    height: 1.2,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
   );
 }
 

@@ -28,11 +28,11 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 1036 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 1038 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
-cd mobile  && flutter analyze && flutter test      # 0 issues, 125 testes
-                                                   #   inclui test/lint_ui_test.dart (12 regras
+cd mobile  && flutter analyze && flutter test      # 0 issues, 128 testes
+                                                   #   inclui test/lint_ui_test.dart (14 regras
                                                    #   de produto) e test/contraste_test.dart
 cd mobile  && flutter build apk --release          # analyze e test nao tocam o Gradle:
                                                    #   o build Android e outra metade
@@ -100,7 +100,11 @@ CHANGELOG.
 | Preço, ou lista de preços, numa tela | `formatIdade`. Em lista, o carimbo é o **mais antigo** (`carimboMaisAntigo`) | Dizer a idade do mais novo promete frescor que a linha de baixo não tem |
 | Espera numa tela | `FiSkeleton.tela(shape:, count:)` — nunca `Center(child: CircularProgressIndicator())` | `test/lint_ui_test.dart` reprova: disco não diz o que vem, e a página salta quando o dado chega |
 | Destino de raiz | `FiSearchAction` na barra | `test/lint_ui_test.dart` reprova. A busca já teve uma porta só, numa tela secundária |
-| Tamanho de tipo | Escolher o **papel** em `FiType` (`body`, `caption`, `metric`, `verdict`…), nunca `fontSize:` solto | A catraca de tipo solto em `test/lint_ui_test.dart` só desce; subir exige explicar por quê |
+| Tamanho de tipo | Escolher o **papel** em `FiType` (`body`, `caption`, `metric`, `verdict`, `axis`…), nunca `fontSize:` solto | A catraca de tipo solto em `test/lint_ui_test.dart` está em **zero**, e zero é proibição |
+| Bloco novo numa tela | `FiSection`; a caixa só para objeto (`FiObject`) | `test/lint_ui_test.dart` reprova `Card`/`ListTile`: a hierarquia nasce de espaço, tipo e fio |
+| Ação numa tela | `FiButton` (`primary`/`secondary`/`quiet`/`danger`), uma principal por contexto | Frase solta não parece ação, e três controles de mesmo peso não deixam escolher |
+| Número contra uma referência | `FiMeasure` (ou `ScoreRuler`, para score) | A régua é a assinatura do produto; grade de KPI é o cheiro de painel |
+| Tela sem dado | `FiEmptyState` — nunca a mesma tela de `FiErrorState` | "Não conseguimos ler" e "você não tem nada" são estados diferentes |
 | Dependência no `pubspec.yaml` | Rodar `flutter build apk --release` | Plugin com Gradle ou Kotlin incompatível quebra **só** o build Android, e `analyze`/`test` seguem verdes |
 | Rota pública nova no backend | Decidir por escrito que ela é pública | Sem titular não há teto por usuário, e o teto por IP é o que resta |
 
@@ -143,12 +147,12 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   **o que o repo tem**, e não contra o que a extensão sugere. No Dart vale igual: a regra varre
   `lib/`, e o que estiver fora não é conferido.
 
-O `flutter test` cobre parte disso por máquina, em **12 regras** de `test/lint_ui_test.dart` —
+O `flutter test` cobre parte disso por máquina, em **14 regras** de `test/lint_ui_test.dart` —
 explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro, nome acessível em
 botão de ícone, serifa no papel de veredito, vocabulário de IA genérica, nome de destino
-aposentado, a catraca de tipo solto, esqueleto no lugar de disco girando, busca alcançável de todo
-destino de raiz, **destino de navegação que o roteador não declara** e falha de leitura numa voz
-só. O contraste é cobrado à parte, em
+aposentado, a catraca de tipo solto, **a catraca de caixa do Material**, **paleta escrita à mão**,
+esqueleto no lugar de disco girando, busca alcançável de todo destino de raiz, **destino de
+navegação que o roteador não declara** e falha de leitura numa voz só. O contraste é cobrado à parte, em
 `test/contraste_test.dart`, nos dois temas.
 
 **Vive como teste, e não como script próprio**, porque `flutter test` já é o comando do CI: regra
@@ -457,7 +461,9 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
 - **Fio + chão, não card + card.** A hierarquia de uma tela nasce de espaço, tipo e uma regra
   horizontal. A caixa fica reservada ao que é **objeto**: uma posição, uma opção de renda fixa,
   uma sugestão. Card dentro de card dentro de card é a forma mais reconhecível de o produto virar
-  painel de BI, e o `Card(`/`ListTile` ainda é a dívida aberta do item 8 do KNOWN_ISSUES.
+  painel de BI. A caixa tem nome — **`FiObject`**, e só para o que é objeto —, e `Card`,
+  `ListTile`, `SwitchListTile` e `CircleAvatar` estão em **catraca zero** no
+  `test/lint_ui_test.dart`: o resto é `FiSection` + `FiRows`/`FiDataRow`.
 - **Grade de KPI é o cheiro de painel.** Três a quatro caixas centralizadas com um número dentro
   não são informação organizada, são widgets. A alternativa é uma linha de cifras sob um fio
   quando são poucas, ou uma tabela quando o que importa é comparar.

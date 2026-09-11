@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/format.dart';
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/measure.dart';
+import '../../../core/widgets/provenance.dart';
+import '../../../core/widgets/section.dart';
 
 class FiPatrimonyBlock extends StatelessWidget {
   const FiPatrimonyBlock({super.key, required this.summary});
@@ -11,137 +14,58 @@ class FiPatrimonyBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final positive = summary.totalPnl >= 0;
     final brightness = Theme.of(context).brightness;
+    final positive = summary.totalPnl >= 0;
     final pnlColor = fiDirectionColor(positive ? 1 : -1, brightness);
-    final scheme = Theme.of(context).colorScheme;
-    final mutedColor = fiInk2(context);
+    final meta = summary.passiveIncomeGoal;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Patrimônio total',
-              style: FiType.caption.copyWith(color: mutedColor),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              formatCurrency(summary.totalCurrent),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: scheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Icon(
-                  positive ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: pnlColor,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${formatCurrency(summary.totalPnl)} (${formatPercent(summary.totalPnlPct)})',
-                  style: FiType.label.copyWith(color: pnlColor),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '· ${summary.positionsCount} posições',
-                  style: FiType.caption.copyWith(color: mutedColor),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: FiMiniStat(
-                    icon: Icons.savings_outlined,
-                    label: 'Investido',
-                    value: formatCurrency(summary.totalInvested),
-                  ),
-                ),
-                Expanded(
-                  child: FiMiniStat(
-                    icon: Icons.payments_outlined,
-                    label: 'Div./mês',
-                    value: formatCurrency(summary.monthlyDividendsEstimate),
-                  ),
-                ),
-              ],
-            ),
-            if (summary.passiveIncomeGoal != null) ...[
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Meta de renda passiva',
-                    style: FiType.caption.copyWith(color: fiInk2(context)),
-                  ),
-                  Text(
-                    '${formatCurrency(summary.passiveIncomeGoal)}/mês',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: (summary.passiveIncomeProgress ?? 0).clamp(0, 1),
-                  minHeight: 6,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class FiMiniStat extends StatelessWidget {
-  const FiMiniStat({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(icon, size: 14, color: fiInk2(context)),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(color: fiInk2(context), fontSize: 11),
-            ),
-          ],
+        FiHeadline(
+          eyebrow: 'Patrimônio total',
+          figure: formatCurrency(summary.totalCurrent),
+          size: FiHeadlineSize.xl,
+          support:
+              '${positive ? '+' : ''}${formatCurrency(summary.totalPnl)} '
+              '(${formatPercent(summary.totalPnlPct)}) · '
+              '${summary.positionsCount} posições',
+          supportColor: pnlColor,
         ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: FiType.label,
+        const SizedBox(height: FiSpace.s5),
+        FiFigures(
+          figures: {
+            'INVESTIDO': formatCurrency(summary.totalInvested),
+            'PROVENTOS/MÊS': formatCurrency(summary.monthlyDividendsEstimate),
+          },
         ),
+        if (meta != null) ...[
+          const SizedBox(height: FiSpace.s5),
+          FiMeasure(
+            label: 'Meta de renda passiva',
+            value: (summary.passiveIncomeProgress ?? 0).clamp(0, 1) * 100,
+            readout: '${formatCurrency(meta)}/mês',
+            reference: 100,
+            note:
+                '${((summary.passiveIncomeProgress ?? 0) * 100).toStringAsFixed(0)}% do alvo, '
+                'com ${formatCurrency(summary.monthlyDividendsEstimate)} por mês hoje',
+            state: fiBandFor(
+              (summary.passiveIncomeProgress ?? 0) * 100,
+              fiGoalProgressBands,
+              1,
+            ).state,
+          ),
+          FiProvenance(
+            summary: 'Como lemos o progresso da meta',
+            method:
+                'Os proventos estimados dos próximos doze meses, divididos pela meta mensal '
+                'que você declarou. A faixa nomeada vem da régua de progresso do sistema.',
+            source: 'Suas posições e o histórico de proventos de cada papel.',
+            limitation:
+                'É estimativa de provento, não promessa: corte de dividendo do emissor muda o '
+                'número sem aviso.',
+          ),
+        ],
       ],
     );
   }
@@ -154,6 +78,9 @@ String fiCompactCurrency(double value) {
   return formatCurrency(value);
 }
 
+/// Quando o dado foi lido, e de onde vem a referência.
+///
+/// Momento é nível 1, e não nota de rodapé: um preço de anteontem muda a decisão.
 class FiFreshnessLine extends StatelessWidget {
   const FiFreshnessLine({super.key, required this.freshness});
 
@@ -161,28 +88,18 @@ class FiFreshnessLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = freshness.marketDataStale
-        ? fiStateColor(FiState.attention, theme.brightness)
-        : theme.textTheme.bodySmall?.color;
+    final atrasado = freshness.marketDataStale;
 
-    return Row(
-      children: [
-        Icon(
-          freshness.marketDataStale
-              ? Icons.schedule_outlined
-              : Icons.check_circle_outline,
-          size: 14,
-          color: color,
+    return Padding(
+      padding: const EdgeInsets.only(top: FiSpace.s3),
+      child: Text(
+        '${freshness.label} · ${freshness.ratesLabel}',
+        style: FiType.caption.copyWith(
+          color: atrasado
+              ? fiStateColor(FiState.attention, Theme.of(context).brightness)
+              : fiInk3(context),
         ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            '${freshness.label} - ${freshness.ratesLabel}',
-            style: theme.textTheme.bodySmall?.copyWith(color: color),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/labels.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/search_action.dart';
+import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -29,11 +33,7 @@ class FeedScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('O que mudou'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: 'Buscar ativo, título ou tela',
-            onPressed: () => context.push('/busca'),
-          ),
+          const FiSearchAction(),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'O que aconteceu',
@@ -47,7 +47,11 @@ class FeedScreen extends ConsumerWidget {
           ref.invalidate(whatsNewProvider);
         },
         child: dashboard.when(
-          loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 5, label: 'Carregando o que mudou'),
+          loading: () => FiSkeleton.tela(
+            shape: FiSkeletonShape.row,
+            count: 5,
+            label: 'Carregando o que mudou',
+          ),
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos carregar seu resumo',
@@ -58,50 +62,62 @@ class FeedScreen extends ConsumerWidget {
             },
           ),
           data: (data) => ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              FiLayout.gutter,
+              FiSpace.s3,
+              FiLayout.gutter,
+              FiLayout.scrollTail,
+            ),
             children: [
               FiPatrimonyBlock(summary: data.summary),
               if (data.freshness != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: FiFreshnessLine(freshness: data.freshness!),
-                ),
+                FiFreshnessLine(freshness: data.freshness!),
 
-              if (data.health != null) ...[
-                const SizedBox(height: 24),
-                const FiSectionTitle(
-                  icon: Icons.health_and_safety_outlined,
-                  title: 'Como está a carteira',
-                ),
-                FiHealthBlock(health: data.health!),
-              ],
-
-              const SizedBox(height: 24),
-              const FiSectionTitle(
-                icon: Icons.auto_awesome_outlined,
+              FiSection(
                 title: 'O que mudou',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _feed(data, whatsNew),
+                ),
               ),
-              ..._feed(context, data, whatsNew),
 
-              ..._nextAction(context, data),
+              ..._proximaAcao(context, data),
 
-              if (data.topBuys.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                const FiSectionTitle(
-                  icon: Icons.trending_up,
+              if (data.health != null)
+                FiSection(
+                  title: 'Como está a carteira',
+                  child: FiHealthBlock(health: data.health!),
+                ),
+
+              if (data.topBuys.isNotEmpty)
+                FiSection(
                   title: 'Em destaque',
+                  hint: 'As leituras mais fortes do universo coberto hoje.',
+                  action: FiNavAction(
+                    label: 'Ver todas as oportunidades',
+                    onPressed: () => context.go('/descobrir'),
+                  ),
+                  child: Column(
+                    children: data.topBuys
+                        .take(_topBuysLimit)
+                        .map(
+                          (o) => FiOpportunityTile(
+                            opportunity: o,
+                            onTap: () => context.push('/ativo/${o.ticker}'),
+                          ),
+                        )
+                        .toList(),
+                  ),
                 ),
-                ...data.topBuys
-                    .take(_topBuysLimit)
-                    .map((o) => FiOpportunityTile(opportunity: o)),
-                _MoreLink(
-                  label: 'Ver todas as oportunidades',
-                  route: '/descobrir',
-                ),
-              ],
 
-              const SizedBox(height: 24),
-              _MoreLink(label: 'Abrir a carteira', route: '/patrimonio'),
+              const SizedBox(height: FiSpace.s8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FiNavAction(
+                  label: 'Abrir o patrimônio',
+                  onPressed: () => context.go('/patrimonio'),
+                ),
+              ),
             ],
           ),
         ),
@@ -109,11 +125,7 @@ class FeedScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _feed(
-    BuildContext context,
-    DashboardData data,
-    AsyncValue<WhatsNew> whatsNew,
-  ) {
+  List<Widget> _feed(DashboardData data, AsyncValue<WhatsNew> whatsNew) {
     final tiles = <(int, Widget)>[];
 
     for (final alert in data.alerts) {
@@ -128,15 +140,7 @@ class FeedScreen extends ConsumerWidget {
     });
 
     if (tiles.isEmpty) {
-      return [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Text(
-            'Nada mudou desde a sua última visita.',
-            style: TextStyle(color: fiInk2(context)),
-          ),
-        ),
-      ];
+      return const [FiEmptyLine('Nada mudou desde a sua última visita.')];
     }
 
     tiles.sort((a, b) => a.$1.compareTo(b.$1));
@@ -158,7 +162,9 @@ class FeedScreen extends ConsumerWidget {
     }
   }
 
-  List<Widget> _nextAction(BuildContext context, DashboardData data) {
+  /// A única ação com peso de primária no feed, e só quando há desvio grande o bastante para
+  /// decidir alguma coisa.
+  List<Widget> _proximaAcao(BuildContext context, DashboardData data) {
     final candidates =
         data.allocations
             .where((a) => a.targetPct != null)
@@ -180,57 +186,30 @@ class FeedScreen extends ConsumerWidget {
     final below = gap.delta < 0;
 
     return [
-      const SizedBox(height: 24),
-      const FiSectionTitle(icon: Icons.flag_outlined, title: 'Próxima ação'),
-      Card(
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${gap.label} está ${below ? 'abaixo' : 'acima'} da sua meta',
-                style: fiSerif(
-                  Theme.of(context).textTheme.titleMedium ?? const TextStyle(),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Sua exposição está ${gap.delta.abs().toStringAsFixed(1)} pontos percentuais '
-                '${below ? 'abaixo' : 'acima'} do objetivo '
-                '(${gap.current.toStringAsFixed(1)}% contra ${gap.target.toStringAsFixed(1)}%).',
-                style: TextStyle(color: fiInk2(context)),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'É o maior desvio da sua carteira hoje.',
-                style: FiType.caption.copyWith(color: fiInk3(context)),
-              ),
-              const SizedBox(height: 14),
-              FilledButton(
-                onPressed: () => context.go('/sobra/desvio'),
-                child: const Text('Ver estratégia'),
-              ),
-            ],
-          ),
+      FiSection(
+        title: 'Próxima ação',
+        action: FiButton.primary(
+          label: 'Ver alocação × meta',
+          onPressed: () => context.go('/sobra/desvio'),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${gap.label} está ${below ? 'abaixo' : 'acima'} da sua meta.',
+              style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
+            ),
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              'Sua exposição está ${gap.delta.abs().toStringAsFixed(1)} pontos percentuais '
+              '${below ? 'abaixo' : 'acima'} do objetivo '
+              '(${gap.current.toStringAsFixed(1)}% contra ${gap.target.toStringAsFixed(1)}%). '
+              'É o maior desvio da sua carteira hoje.',
+              style: FiType.body.copyWith(color: fiInk2(context)),
+            ),
+          ],
         ),
       ),
     ];
-  }
-}
-
-class _MoreLink extends StatelessWidget {
-  const _MoreLink({required this.label, required this.route});
-
-  final String label;
-  final String route;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: FiNavAction(label: label, onPressed: () => context.go(route)),
-    );
   }
 }

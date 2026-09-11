@@ -28,13 +28,31 @@ Color categoryColor(String? category, Brightness brightness) {
   return fiSeriesColor(fiCategorias[chave]?.series ?? 0, brightness);
 }
 
-IconData categoryIcon(String? category) {
-  final chave = fiCategoriaApelidos[category] ?? category;
-  return fiCategorias[chave]?.icon ?? Icons.category_outlined;
-}
-
 Color sectorColor(String sector, Brightness brightness) =>
     fiSeriesColor(fiSetorSeriePorRotulo[sector] ?? 0, brightness);
+
+/// O veredito do sistema sobre um ativo, traduzido para estado.
+FiState fiVerdictState(String? verdict) {
+  final v = verdict ?? '';
+  if (v.contains('BUY')) return FiState.favorable;
+  if (v.contains('SELL')) return FiState.adverse;
+  return FiState.indeterminate;
+}
+
+FiState fiSeverityState(String? severity) {
+  switch (severity) {
+    case 'critical':
+    case 'high':
+      return FiState.adverse;
+    case 'warning':
+    case 'medium':
+      return FiState.attention;
+    case 'positive':
+      return FiState.favorable;
+    default:
+      return FiState.indeterminate;
+  }
+}
 
 String trendLabel(String? trend) {
   switch (trend) {
@@ -61,9 +79,6 @@ String cashCategoryLabel(CashKind kind, String? category) {
   if (category == null) return '—';
   return _mapaDe(kind)[category]?.label ?? category;
 }
-
-IconData cashCategoryIcon(CashKind kind, String? category) =>
-    _mapaDe(kind)[category]?.icon ?? Icons.circle_outlined;
 
 /// As categorias na ordem de leitura do vocabulario, nao na do mapa.
 List<String> cashCategoryKeys(CashKind kind) {

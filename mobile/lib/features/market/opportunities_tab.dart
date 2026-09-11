@@ -6,8 +6,14 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/labels.dart';
+import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/help_tooltip.dart';
+import '../../core/score_ruler.dart' show consensusLabel, dataYearsLabel;
 import '../../core/widgets/score_ruler.dart';
+import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
 import 'asset_detail_sheet.dart';
@@ -153,7 +159,12 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          padding: const EdgeInsets.fromLTRB(
+            FiLayout.gutter,
+            FiSpace.s3,
+            FiLayout.gutter,
+            0,
+          ),
           child: Column(
             children: [
               Row(
@@ -168,25 +179,21 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Badge(
-                    label: Text('$activeCount'),
-                    isLabelVisible: activeCount > 0,
-                    child: IconButton.filledTonal(
-                      icon: const Icon(Icons.tune),
-                      tooltip: 'Filtros',
-                      onPressed: _openFilters,
-                    ),
+                  const SizedBox(width: FiSpace.s2),
+                  FiButton.secondary(
+                    label: activeCount > 0 ? 'Filtros: $activeCount' : 'Filtros',
+                    icon: Icons.tune,
+                    onPressed: _openFilters,
                   ),
                 ],
               ),
               if (activeCount > 0) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: FiSpace.s3),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: FiSpace.s2,
+                    runSpacing: FiSpace.s2,
                     children: [
                       if (filters.category.isNotEmpty)
                         _ActiveFilterChip(
@@ -239,7 +246,7 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
                   ),
                 ),
               ],
-              const SizedBox(height: 10),
+              const SizedBox(height: FiSpace.s3),
             ],
           ),
         ),
@@ -292,10 +299,10 @@ class _FiltersSheetState extends State<_FiltersSheet> {
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 16,
-          bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
+          left: FiSpace.s5,
+          right: FiSpace.s5,
+          top: FiSpace.s5,
+          bottom: FiSpace.s5 + MediaQuery.of(context).viewInsets.bottom,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -308,7 +315,8 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                   'Filtros',
                   style: FiType.title,
                 ),
-                TextButton(
+                FiButton.quiet(
+                  label: 'Limpar tudo',
                   onPressed: () => setState(() {
                     _category = '';
                     _onlyDip = false;
@@ -316,16 +324,18 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                     _dyEnabled = false;
                     _mosEnabled = false;
                   }),
-                  child: const Text('Limpar'),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text('Categoria', style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 8),
+            const SizedBox(height: FiSpace.s5),
+            Text(
+              'CATEGORIA',
+              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s3),
             Wrap(
-              spacing: 6,
-              runSpacing: 6,
+              spacing: FiSpace.s2,
+              runSpacing: FiSpace.s2,
               children: _categoryLabels.entries
                   .map(
                     (e) => ChoiceChip(
@@ -336,27 +346,36 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                   )
                   .toList(),
             ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Em queda'),
-              subtitle: const Text('Scanner de ativos em queda recente'),
-              value: _onlyDip,
-              onChanged: (v) => setState(() => _onlyDip = v),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Somente destaques'),
-              value: _onlyInteresting,
-              onChanged: _onlyDip ? null : (v) => setState(() => _onlyInteresting = v),
-            ),
-            const Divider(height: 24),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Dividend yield mínimo'),
-              subtitle: _dyEnabled ? Text('${_dyValue.toStringAsFixed(1)}%') : null,
-              value: _dyEnabled,
-              onChanged: (v) => setState(() => _dyEnabled = v),
+            const SizedBox(height: FiSpace.s5),
+            FiRows(
+              children: [
+                FiDataRow(
+                  label: 'Em queda',
+                  detail: 'Varredura de ativos que caíram do topo recente',
+                  trailing: Switch(
+                    value: _onlyDip,
+                    onChanged: (v) => setState(() => _onlyDip = v),
+                  ),
+                ),
+                FiDataRow(
+                  label: 'Somente destaques',
+                  detail: _onlyDip ? 'Não se aplica à varredura de quedas' : null,
+                  trailing: Switch(
+                    value: _onlyInteresting,
+                    onChanged: _onlyDip
+                        ? null
+                        : (v) => setState(() => _onlyInteresting = v),
+                  ),
+                ),
+                FiDataRow(
+                  label: 'Dividend yield mínimo',
+                  value: _dyEnabled ? '${_dyValue.toStringAsFixed(1)}%' : null,
+                  trailing: Switch(
+                    value: _dyEnabled,
+                    onChanged: (v) => setState(() => _dyEnabled = v),
+                  ),
+                ),
+              ],
             ),
             if (_dyEnabled)
               Slider(
@@ -367,12 +386,13 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                 label: '${_dyValue.toStringAsFixed(1)}%',
                 onChanged: (v) => setState(() => _dyValue = v),
               ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Margem de segurança mínima'),
-              subtitle: _mosEnabled ? Text('${_mosValue.toStringAsFixed(0)}%') : null,
-              value: _mosEnabled,
-              onChanged: (v) => setState(() => _mosEnabled = v),
+            FiDataRow(
+              label: 'Margem de segurança mínima',
+              value: _mosEnabled ? '${_mosValue.toStringAsFixed(0)}%' : null,
+              trailing: Switch(
+                value: _mosEnabled,
+                onChanged: (v) => setState(() => _mosEnabled = v),
+              ),
             ),
             if (_mosEnabled)
               Slider(
@@ -383,25 +403,23 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                 label: '${_mosValue.toStringAsFixed(0)}%',
                 onChanged: (v) => setState(() => _mosValue = v),
               ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  Navigator.pop(
-                    context,
-                    OpportunitiesFilters(
-                      search: widget.initial.search,
-                      category: _category,
-                      onlyDip: _onlyDip,
-                      onlyInteresting: _onlyDip ? false : _onlyInteresting,
-                      minDy: _dyEnabled ? _dyValue : null,
-                      minMos: _mosEnabled ? _mosValue / 100 : null,
-                    ),
-                  );
-                },
-                child: const Text('Aplicar filtros'),
-              ),
+            const SizedBox(height: FiSpace.s6),
+            FiButton.primary(
+              label: 'Aplicar filtros',
+              expand: true,
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  OpportunitiesFilters(
+                    search: widget.initial.search,
+                    category: _category,
+                    onlyDip: _onlyDip,
+                    onlyInteresting: _onlyDip ? false : _onlyInteresting,
+                    minDy: _dyEnabled ? _dyValue : null,
+                    minMos: _mosEnabled ? _mosValue / 100 : null,
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -425,74 +443,71 @@ class _DipScannerView extends ConsumerWidget {
           if (items.isEmpty) {
             return ListView(
               children: const [
-                Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text(
-                    'Nenhum ativo em queda encontrado agora',
-                    textAlign: TextAlign.center,
-                  ),
+                FiEmptyState(
+                  title: 'Nenhum ativo em queda agora',
+                  body: 'A varredura procura papéis que caíram do topo recente e ainda têm '
+                      'fundamento. Nenhum do universo coberto atende ao corte neste momento.',
                 ),
               ],
             );
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(
+              FiLayout.gutter,
+              FiSpace.s2,
+              FiLayout.gutter,
+              FiLayout.scrollTail,
+            ),
             itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 14),
+            separatorBuilder: (_, _) => const SizedBox(height: FiSpace.s2),
             itemBuilder: (context, index) {
               final item = items[index];
-              return Card(
-                margin: EdgeInsets.zero,
-                elevation: 1.5,
-                child: InkWell(
-                  onTap: () => showAssetDetailSheet(context, item.symbol),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
+              final band = fiBandFor(item.dipScore, fiDipScoreBands);
+
+              return FiObject(
+                onTap: () => showAssetDetailSheet(context, item.symbol),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              item.symbol,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.symbol,
+                                style: FiType.ticker.copyWith(color: fiInk1(context)),
                               ),
-                            ),
-                            Text(
-                              'score ${item.dipScore.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: fiStateColor(
-                                  FiState.attention,
-                                  Theme.of(context).brightness,
+                              if (item.name != null)
+                                Text(
+                                  item.name!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: FiType.caption.copyWith(color: fiInk2(context)),
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (item.name != null)
-                          Text(
-                            item.name!,
-                            style: FiType.caption.copyWith(color: fiInk2(context)),
+                            ],
                           ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Queda do topo: ${formatPercent(item.dropFromHighPct)} · MS: ${formatPercent(item.marginOfSafety)}',
-                          style: FiType.caption,
                         ),
-                        if (item.topReason.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              item.topReason,
-                              style: FiType.caption.copyWith(fontStyle: FontStyle.italic),
-                            ),
-                          ),
+                        const SizedBox(width: FiSpace.s3),
+                        FiTag(label: band.label, state: band.state),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: FiSpace.s3),
+                    Text(
+                      'Caiu ${formatPercent(item.dropFromHighPct)} do topo · '
+                      'margem de segurança ${formatPercent(item.marginOfSafety)}',
+                      style: FiType.caption.copyWith(color: fiInk2(context)),
+                    ),
+                    if (item.topReason.isNotEmpty) ...[
+                      const SizedBox(height: FiSpace.s1),
+                      Text(
+                        item.topReason,
+                        style: FiType.caption.copyWith(color: fiInk3(context)),
+                      ),
+                    ],
+                  ],
                 ),
               );
             },
@@ -531,12 +546,16 @@ class _AllOpportunitiesView extends ConsumerWidget {
         data: (_) {
           if (items.isEmpty) {
             return ListView(
-              children: const [
-                Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text(
-                    'Nenhuma oportunidade encontrada',
-                    textAlign: TextAlign.center,
+              children: [
+                FiEmptyState(
+                  title: 'Nenhuma oportunidade com estes filtros',
+                  body: 'O corte atual não deixou nada passar. Afrouxar o yield mínimo ou a '
+                      'margem de segurança costuma ser o que devolve resultado.',
+                  action: FiButton.secondary(
+                    label: 'Limpar filtros',
+                    onPressed: () =>
+                        ref.read(opportunitiesFiltersProvider.notifier).state =
+                            OpportunitiesFilters(search: filters.search),
                   ),
                 ),
               ],
@@ -545,22 +564,26 @@ class _AllOpportunitiesView extends ConsumerWidget {
           final idade = formatIdade(
             carimboMaisAntigo(items.map((o) => o.asOf)),
           );
-          final escuro = Theme.of(context).brightness == Brightness.dark;
-
           return ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: const EdgeInsets.fromLTRB(
+              FiLayout.gutter,
+              FiSpace.s2,
+              FiLayout.gutter,
+              FiLayout.scrollTail,
+            ),
             itemCount: items.length + (idade.isEmpty ? 0 : 1),
-            separatorBuilder: (_, _) => const SizedBox(height: 14),
+            separatorBuilder: (_, _) => const SizedBox(height: FiSpace.s2),
             itemBuilder: (context, index) {
               if (idade.isNotEmpty && index == 0) {
-                return Text(
-                  'Cotações lidas $idade',
-                  style: FiType.caption.copyWith(
-                    color: escuro ? FiColors.darkInk3 : FiColors.lightInk3,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: FiSpace.s2),
+                  child: Text(
+                    'Cotações lidas $idade — o carimbo é o do preço mais antigo da lista.',
+                    style: FiType.caption.copyWith(color: fiInk3(context)),
                   ),
                 );
               }
-              return _OpportunityCard(
+              return _OpportunityObject(
                 opportunity: items[idade.isEmpty ? index : index - 1],
               );
             },
@@ -571,144 +594,129 @@ class _AllOpportunitiesView extends ConsumerWidget {
   }
 }
 
-class _OpportunityCard extends StatelessWidget {
-  const _OpportunityCard({required this.opportunity});
+class _OpportunityObject extends StatelessWidget {
+  const _OpportunityObject({required this.opportunity});
 
   final Opportunity opportunity;
 
-  Color _verdictColor(Brightness brightness) {
-    switch (opportunity.verdict) {
-      case 'STRONG_BUY':
-      case 'BUY':
-        return fiStateColor(FiState.favorable, brightness);
-      case 'STRONG_SELL':
-      case 'SELL':
-        return fiStateColor(FiState.adverse, brightness);
-      default:
-        return fiStateColor(FiState.indeterminate, brightness);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final verdictColor = _verdictColor(Theme.of(context).brightness);
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 1.5,
-      child: InkWell(
-        onTap: () => showAssetDetailSheet(context, opportunity.ticker),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    final o = opportunity;
+
+    return FiObject(
+      onTap: () => showAssetDetailSheet(context, o.ticker),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          opportunity.ticker,
-                          style: FiType.ticker,
-                        ),
-                        if (opportunity.name != null)
-                          Text(
-                            opportunity.name!,
-                            style: FiType.caption.copyWith(color: fiInk2(context)),
-                          ),
-                      ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      o.ticker,
+                      style: FiType.ticker.copyWith(color: fiInk1(context)),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: verdictColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      opportunity.label,
-                      style: TextStyle(
-                        color: verdictColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                    if (o.name != null)
+                      Text(
+                        o.name!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: FiType.caption.copyWith(color: fiInk2(context)),
                       ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const Divider(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _Stat(
-                    label: 'Preço',
-                    value: formatCurrency(opportunity.price),
-                  ),
-                  _Stat(
-                    label: 'Preço justo',
-                    value: formatCurrency(opportunity.fairPrice),
-                  ),
-                  _Stat(
-                    label: 'MS',
-                    value: formatPercent(opportunity.marginOfSafety),
-                    glossaryKey: 'ms',
-                  ),
-                  _Stat(
-                    label: 'DY',
-                    value: formatPercent(opportunity.dividendYield),
-                    glossaryKey: 'dy',
-                  ),
-                ],
+              const SizedBox(width: FiSpace.s3),
+              FiTag(label: o.label, state: fiVerdictState(o.verdict)),
+            ],
+          ),
+
+          const SizedBox(height: FiSpace.s4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _Cifra(label: 'PREÇO', value: formatCurrency(o.price)),
               ),
-              // A lista e ordenada por score, e o card nao o mostrava: o criterio de ordenacao
-              // ficava invisivel. A regua traz junto a degradacao por completude -- score com
-              // metade dos indicadores sai como travessao, e nao como numero.
-              const SizedBox(height: FiSpace.s4),
-              ScoreRuler(
-                score: opportunity.score,
-                dataCompleteness: opportunity.dataCompleteness,
-                size: ScoreRulerSize.list,
-                subject: 'Score de ${opportunity.ticker}',
+              Expanded(
+                child: _Cifra(
+                  label: 'PREÇO JUSTO',
+                  value: formatCurrency(o.fairPrice),
+                  note: consensusLabel(o.consensusMethods),
+                ),
+              ),
+              Expanded(
+                child: _Cifra(
+                  label: 'MARGEM',
+                  value: formatPercent(o.marginOfSafety),
+                  glossaryKey: 'ms',
+                ),
+              ),
+              Expanded(
+                child: _Cifra(
+                  label: 'DY',
+                  value: formatPercent(o.dividendYield),
+                  glossaryKey: 'dy',
+                  note: dataYearsLabel(o.dataYears),
+                ),
               ),
             ],
           ),
-        ),
+
+          // A lista e ordenada por score, e o card nao o mostrava: o criterio de ordenacao
+          // ficava invisivel. A regua traz junto a degradacao por completude -- score com
+          // metade dos indicadores sai como travessao, e nao como numero.
+          const SizedBox(height: FiSpace.s4),
+          ScoreRuler(
+            score: o.score,
+            dataCompleteness: o.dataCompleteness,
+            size: ScoreRulerSize.list,
+            subject: 'Score de ${o.ticker}',
+          ),
+        ],
       ),
     );
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value, this.glossaryKey});
+/// Uma cifra rotulada, com a base logo abaixo quando o número precisa dela para ser lido.
+class _Cifra extends StatelessWidget {
+  const _Cifra({
+    required this.label,
+    required this.value,
+    this.glossaryKey,
+    this.note,
+  });
 
   final String label;
   final String value;
   final String? glossaryKey;
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
+    final chave = glossaryKey;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(color: fiInk2(context), fontSize: 11),
-            ),
-            if (glossaryKey != null) HelpTooltip(termKey: glossaryKey!),
-          ],
-        ),
-        Text(
-          value,
-          style: FiType.label,
-        ),
+        if (chave == null)
+          Text(
+            label,
+            style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+          )
+        else
+          HelpTooltip(termKey: chave, label: label),
+        const SizedBox(height: 2),
+        Text(value, style: FiType.figure.copyWith(color: fiInk1(context))),
+        if (note != null)
+          Text(
+            note!,
+            style: FiType.axis.copyWith(color: fiInk3(context)),
+          ),
       ],
     );
   }

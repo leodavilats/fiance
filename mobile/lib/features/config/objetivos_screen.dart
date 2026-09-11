@@ -1,68 +1,144 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/design_tokens.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/button.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/section.dart';
+import '../../core/widgets/skeleton.dart';
 
+/// A alocação-alvo: a referência contra a qual a carteira é comparada.
 class ObjetivosScreen extends StatelessWidget {
   const ObjetivosScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final isDark = brightness == Brightness.dark;
-    final ink2 = isDark ? FiColors.darkInk2 : FiColors.lightInk2;
-    final ink3 = isDark ? FiColors.darkInk3 : FiColors.lightInk3;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Objetivos')),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: FiSpace.s4),
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s2,
+          FiLayout.gutter,
+          FiLayout.scrollTail,
+        ),
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: FiSpace.s4),
-            child: Text(
-              'A meta é a referência contra a qual a sua carteira é comparada. '
-              'Enquanto a soma não fechar 100%, o desvio calculado em Estratégia '
-              'não quer dizer nada — por isso o botão de salvar só libera lá.',
-              style: FiType.body.copyWith(color: ink2),
-            ),
+          Text(
+            'A meta é a referência contra a qual a sua carteira é comparada. Enquanto a soma '
+            'não fechar 100%, o desvio calculado na Sobra não quer dizer nada — por isso '
+            'salvar só libera lá.',
+            style: FiType.body.copyWith(color: fiInk2(context)),
           ),
-          const SizedBox(height: FiSpace.s5),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: FiSpace.s4),
-            child: Text(
-              'POR CATEGORIA',
-              style: FiType.eyebrow.copyWith(color: ink3),
-            ),
+          const FiSection(title: 'Por categoria', child: GoalsSection()),
+          const FiSection(
+            title: 'Por setor',
+            hint: 'Dentro do total em ações, não do total da carteira.',
+            child: SectorGoalsSection(),
           ),
-          const SizedBox(height: FiSpace.s2),
-          const GoalsSection(),
-          const SizedBox(height: FiSpace.s6),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: FiSpace.s4),
-            child: Text(
-              'POR SETOR',
-              style: FiType.eyebrow.copyWith(color: ink3),
-            ),
-          ),
-          const SizedBox(height: FiSpace.s1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: FiSpace.s4),
-            child: Text(
-              'Dentro do total em ações, não do total da carteira.',
-              style: FiType.caption.copyWith(color: ink3),
-            ),
-          ),
-          const SizedBox(height: FiSpace.s2),
-          const SectorGoalsSection(),
         ],
       ),
+    );
+  }
+}
+
+class _LinhaDeMeta extends StatelessWidget {
+  const _LinhaDeMeta({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: FiType.body.copyWith(color: fiInk1(context)),
+                ),
+              ),
+              Text(
+                '${value.toStringAsFixed(0)}%',
+                style: FiType.figure.copyWith(color: fiInk1(context)),
+              ),
+            ],
+          ),
+          Slider(
+            value: value.clamp(0, 100),
+            max: 100,
+            divisions: 100,
+            label: '${value.toStringAsFixed(0)}%',
+            semanticFormatterCallback: (v) => '$label: ${v.round()} por cento',
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Fechamento extends StatelessWidget {
+  const _Fechamento({
+    required this.total,
+    required this.exigeCemPorCento,
+    required this.onSalvar,
+  });
+
+  final double total;
+
+  /// A meta por categoria só faz sentido somando 100%; a por setor aceita parcial.
+  final bool exigeCemPorCento;
+
+  final VoidCallback? onSalvar;
+
+  @override
+  Widget build(BuildContext context) {
+    final fechou = (total - 100).abs() < 0.5;
+    final estado = !exigeCemPorCento
+        ? FiState.neutral
+        : (fechou ? FiState.favorable : FiState.attention);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: FiSpace.s2),
+        Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
+        const SizedBox(height: FiSpace.s3),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Soma ${total.toStringAsFixed(0)}%',
+                style: FiType.metricSm.copyWith(
+                  color: fiStateColor(estado, Theme.of(context).brightness),
+                ),
+              ),
+            ),
+            FiButton.primary(label: 'Salvar metas', onPressed: onSalvar),
+          ],
+        ),
+        if (exigeCemPorCento && !fechou) ...[
+          const SizedBox(height: FiSpace.s2),
+          Text(
+            'Faltam ${(100 - total).abs().toStringAsFixed(0)} pontos para fechar 100%.',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -82,89 +158,44 @@ class GoalsSectionState extends ConsumerState<GoalsSection> {
     final goals = ref.watch(goalsProvider);
 
     return goals.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(16),
-        child: LinearProgressIndicator(),
-      ),
-      error: (err, _) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: FiErrorState(error: err, action: 'carregar suas metas'),
+      loading: () => const FiSkeleton(shape: FiSkeletonShape.row, count: 4),
+      error: (err, _) => FiErrorState(
+        error: err,
+        action: 'carregar suas metas',
+        onRetry: () => ref.invalidate(goalsProvider),
       ),
       data: (data) {
         final items = _editing ?? data;
         final total = items.fold<double>(0, (sum, g) => sum + g.targetPct);
+        final podeSalvar = _editing != null && (total - 100).abs() < 0.5;
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...items.map(
-              (g) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(categoryLabel(g.category))),
-                    SizedBox(
-                      width: 160,
-                      child: Slider(
-                        value: g.targetPct.clamp(0, 100),
-                        max: 100,
-                        divisions: 100,
-                        label: '${g.targetPct.toStringAsFixed(0)}%',
-                        onChanged: (v) => setState(() {
-                          _editing = items
-                              .map(
-                                (it) => it.category == g.category
-                                    ? it.copyWith(targetPct: v)
-                                    : it,
-                              )
-                              .toList();
-                        }),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 44,
-                      child: Text('${g.targetPct.toStringAsFixed(0)}%'),
-                    ),
-                  ],
-                ),
+            for (final g in items)
+              _LinhaDeMeta(
+                label: categoryLabel(g.category),
+                value: g.targetPct,
+                onChanged: (v) => setState(() {
+                  _editing = items
+                      .map(
+                        (it) => it.category == g.category
+                            ? it.copyWith(targetPct: v)
+                            : it,
+                      )
+                      .toList();
+                }),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total: ${total.toStringAsFixed(0)}%',
-                    style: TextStyle(
-                      color: (total - 100).abs() < 0.5
-                          ? fiStateColor(
-                              FiState.favorable,
-                              Theme.of(context).brightness,
-                            )
-                          : fiStateColor(
-                              FiState.adverse,
-                              Theme.of(context).brightness,
-                            ),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  FilledButton(
-                    onPressed: _editing == null || (total - 100).abs() >= 0.5
-                        ? null
-                        : () async {
-                            await ref
-                                .read(apiRepositoryProvider)
-                                .saveGoals(_editing!);
-                            ref.invalidate(goalsProvider);
-                            setState(() => _editing = null);
-                          },
-                    child: const Text('Salvar'),
-                  ),
-                ],
-              ),
+            _Fechamento(
+              total: total,
+              exigeCemPorCento: true,
+              onSalvar: podeSalvar
+                  ? () async {
+                      await ref.read(apiRepositoryProvider).saveGoals(_editing!);
+                      ref.invalidate(goalsProvider);
+                      setState(() => _editing = null);
+                    }
+                  : null,
             ),
           ],
         );
@@ -197,13 +228,11 @@ class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
     final goals = ref.watch(sectorGoalsProvider);
 
     return goals.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(16),
-        child: LinearProgressIndicator(),
-      ),
-      error: (err, _) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: FiErrorState(error: err, action: 'carregar suas metas'),
+      loading: () => const FiSkeleton(shape: FiSkeletonShape.row, count: 4),
+      error: (err, _) => FiErrorState(
+        error: err,
+        action: 'carregar suas metas por setor',
+        onRetry: () => ref.invalidate(sectorGoalsProvider),
       ),
       data: (data) {
         final items = data.isNotEmpty
@@ -220,62 +249,34 @@ class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
         final total = current.fold<double>(0, (sum, g) => sum + g.targetPct);
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...current.map(
-              (g) => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(translateSector(g.sector))),
-                    SizedBox(
-                      width: 160,
-                      child: Slider(
-                        value: g.targetPct.clamp(0, 100),
-                        max: 100,
-                        divisions: 100,
-                        label: '${g.targetPct.toStringAsFixed(0)}%',
-                        onChanged: (v) => setState(() {
-                          _editing = current
-                              .map(
-                                (it) => it.sector == g.sector
-                                    ? it.copyWith(targetPct: v)
-                                    : it,
-                              )
-                              .toList();
-                        }),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 44,
-                      child: Text('${g.targetPct.toStringAsFixed(0)}%'),
-                    ),
-                  ],
-                ),
+            for (final g in current)
+              _LinhaDeMeta(
+                label: translateSector(g.sector),
+                value: g.targetPct,
+                onChanged: (v) => setState(() {
+                  _editing = current
+                      .map(
+                        (it) => it.sector == g.sector
+                            ? it.copyWith(targetPct: v)
+                            : it,
+                      )
+                      .toList();
+                }),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total: ${total.toStringAsFixed(0)}%'),
-                  FilledButton(
-                    onPressed: _editing == null
-                        ? null
-                        : () async {
-                            await ref
-                                .read(apiRepositoryProvider)
-                                .saveSectorGoals(_editing!);
-                            ref.invalidate(sectorGoalsProvider);
-                            setState(() => _editing = null);
-                          },
-                    child: const Text('Salvar'),
-                  ),
-                ],
-              ),
+            _Fechamento(
+              total: total,
+              exigeCemPorCento: false,
+              onSalvar: _editing == null
+                  ? null
+                  : () async {
+                      await ref
+                          .read(apiRepositoryProvider)
+                          .saveSectorGoals(_editing!);
+                      ref.invalidate(sectorGoalsProvider);
+                      setState(() => _editing = null);
+                    },
             ),
           ],
         );

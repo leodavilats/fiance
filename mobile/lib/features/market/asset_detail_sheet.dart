@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
+import '../../core/score_ruler.dart' show consensusLabel, dataYearsLabel, trendBasisLabel;
+import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
+import '../../core/widgets/measure.dart';
+import '../../core/widgets/provenance.dart';
+import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/tag.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -11,11 +19,12 @@ import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 
 void showAssetDetailSheet(BuildContext context, String ticker) {
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    showDragHandle: true,
     builder: (context) => DraggableScrollableSheet(
-      initialChildSize: 0.7,
+      initialChildSize: 0.75,
       minChildSize: 0.4,
       maxChildSize: 0.95,
       expand: false,
@@ -41,109 +50,183 @@ class _AssetDetailContent extends ConsumerWidget {
     final analysisFuture = ref.watch(_assetAnalysisProvider(ticker));
 
     return analysisFuture.when(
-      loading: () => FiSkeleton.tela(shape: FiSkeletonShape.verdict, count: 1, label: 'Analisando este ativo'),
-      error: (err, _) => FiErrorState(error: err, action: 'analisar $ticker'),
-      data: (a) => ListView(
-        controller: scrollController,
-        padding: const EdgeInsets.all(20),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
+      loading: () => FiSkeleton.tela(
+        shape: FiSkeletonShape.verdict,
+        count: 1,
+        label: 'Analisando este ativo',
+      ),
+      error: (err, _) => FiErrorState(
+        error: err,
+        action: 'analisar $ticker',
+        onRetry: () => ref.invalidate(_assetAnalysisProvider(ticker)),
+      ),
+      data: (a) {
+        final idade = formatIdade(a.asOf);
+        final margem = a.marginOfSafety;
+
+        return ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(
+            FiSpace.s5,
+            0,
+            FiSpace.s5,
+            FiSpace.s8,
+          ),
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        a.symbol,
+                        style: FiType.pageTitle.copyWith(color: fiInk1(context)),
+                      ),
+                      if (a.name != null)
+                        Text(
+                          a.name!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: FiType.body.copyWith(color: fiInk2(context)),
+                        ),
+                      Text(
+                        translateSector(a.sector),
+                        style: FiType.caption.copyWith(color: fiInk3(context)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: FiSpace.s3),
+                FiTag(label: a.label, state: fiVerdictState(a.verdict)),
+              ],
+            ),
+
+            const SizedBox(height: FiSpace.s5),
+            FiHeadline(
+              eyebrow: 'Preço',
+              figure: formatCurrency(a.price),
+              note: idade.isEmpty ? null : 'lido $idade',
+            ),
+
+            if (margem != null) ...[
+              const SizedBox(height: FiSpace.s5),
+              Builder(
+                builder: (context) {
+                  final pct = margem * 100;
+                  final band = fiBandFor(pct, fiMarginOfSafetyBands);
+                  return FiMeasure(
+                    label: 'Margem de segurança',
+                    value: pct,
+                    min: fiMarginOfSafetyDomain.min,
+                    max: fiMarginOfSafetyDomain.max,
+                    reference: 0,
+                    readout: formatPercent(margem),
+                    note: '${band.label} · preço justo ${formatCurrency(a.consensus)}, '
+                        '${consensusLabel(a.consensusMethods)}',
+                    state: band.state,
+                  );
+                },
+              ),
+            ],
+
+            FiSection(
+              title: 'A conta por trás do preço justo',
+              child: FiRows(
+                children: [
+                  if (a.bazin != null)
+                    FiDataRow(
+                      label: 'Bazin',
+                      value: formatCurrency(a.bazin),
+                      note: dataYearsLabel(a.dataYears),
+                    ),
+                  if (a.graham != null)
+                    FiDataRow(label: 'Graham', value: formatCurrency(a.graham)),
+                  FiDataRow(
+                    label: 'Consenso',
+                    value: formatCurrency(a.consensus),
+                    note: consensusLabel(a.consensusMethods),
+                    emphasis: true,
+                  ),
+                ],
+              ),
+            ),
+
+            FiSection(
+              title: 'O técnico',
+              child: FiRows(
+                children: [
+                  FiDataRow(
+                    label: 'Tendência',
+                    value: trendLabel(a.trend),
+                    note: trendBasisLabel(a.trendBasis),
+                  ),
+                  FiDataRow(
+                    label: 'Força relativa (RSI 14)',
+                    value: a.rsi14?.toStringAsFixed(1) ?? '—',
+                  ),
+                ],
+              ),
+            ),
+
+            if (a.reasons.isNotEmpty)
+              FiSection(
+                title: 'Por que esta leitura',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      a.symbol,
-                      style: FiType.pageTitle,
-                    ),
-                    if (a.name != null)
-                      Text(
-                        a.name!,
-                        style: TextStyle(color: fiInk2(context)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    for (final r in a.reasons)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: FiSpace.s3),
+                        child: Text(
+                          r,
+                          style: FiType.body.copyWith(color: fiInk2(context)),
+                        ),
                       ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              _VerdictPill(verdict: a.verdict, label: a.label),
-            ],
-          ),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 2.6,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            children: [
-              _StatCard(label: 'Preço atual', value: formatCurrency(a.price)),
-              _StatCard(
-                label: 'Preço justo (consenso)',
-                value: formatCurrency(a.consensus),
+
+            if (a.falsifiers.isNotEmpty)
+              FiSection(
+                title: 'O que derrubaria a leitura',
+                hint: 'A condição conferível em que o veredito muda.',
+                child: FiRows(
+                  children: [
+                    for (final f in a.falsifiers)
+                      FiDataRow(
+                        label: f.condition,
+                        detail: 'passa a ${f.becomesLabel}',
+                      ),
+                  ],
+                ),
               ),
-              _StatCard(
-                label: 'Margem de segurança',
-                value: formatPercent(a.marginOfSafety),
-              ),
-              _StatCard(label: 'Setor', value: translateSector(a.sector)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Preço justo detalhado',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          if (a.bazin != null)
-            _KeyValueRow(label: 'Bazin', value: formatCurrency(a.bazin)),
-          if (a.graham != null)
-            _KeyValueRow(label: 'Graham', value: formatCurrency(a.graham)),
-          const SizedBox(height: 16),
-          const Text(
-            'Indicadores técnicos',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          _KeyValueRow(label: 'Tendência', value: trendLabel(a.trend)),
-          _KeyValueRow(
-            label: 'RSI (14)',
-            value: a.rsi14?.toStringAsFixed(1) ?? '—',
-          ),
-          if (a.reasons.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text(
-              'Por que essa decisão?',
-              style: TextStyle(fontWeight: FontWeight.bold),
+
+            const SizedBox(height: FiSpace.s4),
+            FiProvenance(
+              summary: 'Como chegamos nesta leitura',
+              method:
+                  'O preço justo é o consenso dos métodos aplicáveis ao papel; a margem de '
+                  'segurança é a distância entre o preço de hoje e esse consenso.',
+              source: 'Fundamentos e cotações da BRAPI.',
+              asOf: idade.isEmpty ? null : 'Preço lido $idade.',
+              limitation:
+                  'É leitura do sistema sobre dado público, não recomendação de compra.',
             ),
-            const SizedBox(height: 8),
-            ...a.reasons.map(
-              (r) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text('• $r'),
-              ),
+
+            const SizedBox(height: FiSpace.s5),
+            FiButton.secondary(
+              label: 'Abrir a análise completa',
+              expand: true,
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.push('/ativo/${a.symbol}');
+              },
             ),
           ],
-          if (a.falsifiers.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text(
-              'O que faria a tese mudar',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ...a.falsifiers.map(
-              (f) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text('• ${f.condition} → ${f.becomesLabel}'),
-              ),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -152,96 +235,3 @@ final _assetAnalysisProvider = FutureProvider.autoDispose
     .family<AssetAnalysis, String>((ref, ticker) {
       return ref.watch(apiRepositoryProvider).analyzeAsset(ticker);
     });
-
-class _VerdictPill extends StatelessWidget {
-  const _VerdictPill({required this.verdict, required this.label});
-
-  final String verdict;
-  final String label;
-
-  Color _color(Brightness brightness) {
-    if (verdict.contains('BUY')) {
-      return fiStateColor(FiState.favorable, brightness);
-    }
-    if (verdict.contains('SELL')) {
-      return fiStateColor(FiState.adverse, brightness);
-    }
-    return fiStateColor(FiState.indeterminate, brightness);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _color(Theme.of(context).brightness);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: fiInk2(context),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: scheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _KeyValueRow extends StatelessWidget {
-  const _KeyValueRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-}

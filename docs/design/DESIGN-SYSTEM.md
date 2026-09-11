@@ -222,12 +222,16 @@ Contrato mínimo de cada um: **estados** (default/hover/focus/active/disabled/lo
 
 | Componente | Notas específicas do fiance |
 |---|---|
-| `Button` | primária (marca) · secundária (fio) · discreta (tinta) · destrutiva. Uma primária por bloco |
+| `Button` | `FiButton`: primária (marca) · secundária (fio) · discreta (tinta) · destrutiva. **Uma primária por contexto**, e a hierarquia é declarada em `FiActions` |
 | `IconButton` | `tooltip`/rótulo semântico **obrigatório**, e `test/lint_ui_test.dart` reprova quem não tem |
 | `Input` / `Money` / `Percent` | variantes numéricas com cifras tabulares, alinhamento à direita e máscara pt-BR |
 | `Select` / `Segmented` | segmented substitui tab quando há 2–4 opções mutuamente exclusivas |
 | `Tabs` | `role="tablist"`/`aria-selected`, navegação por setas, **estado na URL** |
-| `Card` | só para objeto acionável. Seção usa fio + espaço |
+| `Card` | `FiObject`, e **só** para objeto acionável — uma posição, um título, uma oportunidade, um alerta com ação própria. Seção é `FiSection` (fio + espaço); linha de dado é `FiDataRow` dentro de `FiRows`. `Card`, `ListTile` e `CircleAvatar` do Material estão em catraca zero |
+| `Measure` | `FiMeasure` — a régua: valor, trilho, marca da referência, leitura. É o elemento-assinatura, e vale para score, saúde, desvio, progresso, margem e distância até um benchmark. `ScoreRuler` é a variante de score, com as bandas do sistema |
+| `Headline` | `FiHeadline` — a abertura de tela: sobrancelha, cifra, leitura. Existe para que seis telas não inventem seis grafias da mesma coisa |
+| `Tag` | `FiTag` — selo de estado (veredito, severidade) ou de identidade (categoria, série). Estado ganha superfície; identidade, só contorno |
+| `Segments` | `FiSegments` — recorte de seção com peso de legenda. **Recorte não é ação**: ele muda o que se lê, e por isso não usa forma de botão |
 | `Drawer` | 600px à direita, `role="dialog"`, focus trap, Esc, retorno de foco |
 | `BottomSheet` | mobile; dois estágios (peek / cheio) |
 | `Modal` | reservado a confirmação destrutiva. Não é o padrão de detalhe |
@@ -237,7 +241,7 @@ Contrato mínimo de cada um: **estados** (default/hover/focus/active/disabled/lo
 | `Chart` | eixos, tooltip, linha de referência, anotação; **pergunta declarada no título** |
 | `Badge` | cor + ícone + texto, sempre os três |
 | `Skeleton` | composto na forma do conteúdo real (`FiSkeleton`) — a altura de cada forma é a do papel de tipografia que vai ocupar o lugar |
-| `EmptyState` | causa + próximo passo executável; CTA não é opcional |
+| `EmptyState` | `FiEmptyState`: causa + próximo passo executável. Nunca compartilha tela com `FiErrorState` — "não conseguimos ler" e "você não tem nada" são estados diferentes |
 | `AsyncState` | os quatro estados num contrato só (esperando · falhou · vazio · conteúdo), para que uma tela não possa tratar três e esquecer o quarto: `AsyncValue.when` com `FiSkeleton`/`FiErrorState` |
 | `ErrorState` | último dado + causa humana + repetir. Nunca exceção crua, nunca código de status: a frase sai de `fiErrorMessage`, uma só para o produto inteiro |
 | `Nav` / `SubNav` / `BottomNav` | itens ≥44px; rótulo ≥12px |

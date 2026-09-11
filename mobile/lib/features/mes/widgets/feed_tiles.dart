@@ -1,73 +1,51 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/format.dart';
+import '../../../core/labels.dart';
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/data_row.dart';
 import '../../../core/widgets/nav_action.dart';
+import '../../../core/widgets/tag.dart';
 import '../feed_actions.dart';
 import '../../../core/score_ruler.dart';
 
+/// Um item do feed: o que mudou, e o que fazer com isso. O estado vive na aresta do objeto.
 class FiInsightTile extends StatelessWidget {
   const FiInsightTile({
     super.key,
-    required this.icon,
-    required this.color,
+    required this.state,
     required this.title,
     required this.detail,
     this.actionLabel,
     this.onAction,
   });
 
-  final IconData icon;
-  final Color color;
+  final FiState state;
   final String title;
   final String detail;
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  static const double _textColumnInset = 44;
-
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    final rotulo = actionLabel;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s2),
+      child: FiObject(
+        accent: fiStateColor(state, Theme.of(context).brightness),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: color.withValues(alpha: 0.12),
-                  child: Icon(icon, color: color, size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(detail, style: TextStyle(color: fiInk2(context))),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (actionLabel != null) ...[
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.only(left: _textColumnInset),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: FiNavAction(label: actionLabel!, onPressed: onAction),
-                ),
+            Text(title, style: FiType.title.copyWith(color: fiInk1(context))),
+            const SizedBox(height: FiSpace.s1),
+            Text(detail, style: FiType.body.copyWith(color: fiInk2(context))),
+            if (rotulo != null) ...[
+              const SizedBox(height: FiSpace.s2),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FiNavAction(label: rotulo, onPressed: onAction),
               ),
             ],
           ],
@@ -82,39 +60,10 @@ class FiAlertTile extends StatelessWidget {
 
   final PortfolioAlert alert;
 
-  Color _color(Brightness brightness) {
-    switch (alert.severity) {
-      case 'critical':
-      case 'high':
-        return fiStateColor(FiState.adverse, brightness);
-      case 'warning':
-      case 'medium':
-        return fiStateColor(FiState.attention, brightness);
-      default:
-        return fiStateColor(FiState.indeterminate, brightness);
-    }
-  }
-
-  IconData _icon() {
-    switch (alert.kind) {
-      case 'sell_target':
-        return Icons.trending_down;
-      case 'opportunity':
-        return Icons.trending_up;
-      case 'concentration':
-        return Icons.donut_small_outlined;
-      case 'rebalance':
-        return Icons.balance_outlined;
-      default:
-        return Icons.info_outline;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return FiInsightTile(
-      icon: _icon(),
-      color: _color(Theme.of(context).brightness),
+      state: fiSeverityState(alert.severity),
       title: alert.count > 1 ? '${alert.title} (${alert.count})' : alert.title,
       detail: alert.detail,
       actionLabel: alert.actionLabel,
@@ -128,43 +77,10 @@ class FiWhatsNewTile extends StatelessWidget {
 
   final WhatsNewItem item;
 
-  IconData _icon() {
-    switch (item.kind) {
-      case 'patrimony':
-        return Icons.show_chart;
-      case 'verdict_change':
-        return Icons.trending_down;
-      case 'allocation':
-        return Icons.balance_outlined;
-      case 'maturity':
-        return Icons.event_available_outlined;
-      case 'new_opportunity':
-        return Icons.auto_awesome_outlined;
-      case 'tax':
-        return Icons.receipt_long_outlined;
-      default:
-        return Icons.check_circle_outline;
-    }
-  }
-
-  Color _color(Brightness brightness) {
-    switch (item.severity) {
-      case 'critical':
-        return fiStateColor(FiState.adverse, brightness);
-      case 'warning':
-        return fiStateColor(FiState.attention, brightness);
-      case 'positive':
-        return fiStateColor(FiState.favorable, brightness);
-      default:
-        return fiStateColor(FiState.indeterminate, brightness);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return FiInsightTile(
-      icon: _icon(),
-      color: _color(Theme.of(context).brightness),
+      state: fiSeverityState(item.severity),
       title: item.title,
       detail: item.detail,
       actionLabel: item.actionLabel,
@@ -179,169 +95,84 @@ class FiVerdictChip extends StatelessWidget {
   final String verdict;
   final String label;
 
-  Color _color(Brightness brightness) {
-    if (verdict.contains('BUY')) return fiStateColor(FiState.favorable, brightness);
-    if (verdict.contains('SELL')) return fiStateColor(FiState.adverse, brightness);
-    return fiStateColor(FiState.indeterminate, brightness);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final c = _color(Theme.of(context).brightness);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: c.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: c, fontWeight: FontWeight.w600, fontSize: 11),
-      ),
-    );
+    return FiTag(label: label, state: fiVerdictState(verdict));
   }
 }
 
-class FiPositionRow extends StatelessWidget {
-  const FiPositionRow({super.key, required this.position});
+class FiOpportunityTile extends StatelessWidget {
+  const FiOpportunityTile({super.key, required this.opportunity, this.onTap});
 
-  final PortfolioPosition position;
+  final Opportunity opportunity;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final positive = (position.pnl ?? 0) >= 0;
-    final brightness = Theme.of(context).brightness;
-    final color = fiDirectionColor(positive ? 1 : -1, brightness);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
+    final o = opportunity;
+    // Rotulo e estado saem da mesma regua: o rotulo do score com a cor do veredito seriam
+    // duas reguas no mesmo selo.
+    final band = fiScoreBandFor(o.score, o.dataCompleteness);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s2),
+      child: FiObject(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        position.ticker,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        o.ticker,
+                        style: FiType.ticker.copyWith(color: fiInk1(context)),
                       ),
-                      const SizedBox(width: 6),
-                      FiVerdictChip(
-                        verdict: position.verdict,
-                        label: position.label,
-                      ),
+                      if (o.name != null)
+                        Text(
+                          o.name!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: FiType.caption.copyWith(color: fiInk2(context)),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${position.quantity} un. · PM ${formatCurrency(position.avgPrice)}',
-                    style: FiType.caption.copyWith(color: fiInk2(context)),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  formatCurrency(position.currentValue),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                Text(
-                  formatPercent(position.pnlPct),
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: FiSpace.s3),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatCurrency(o.price),
+                      style: FiType.metricSm.copyWith(color: fiInk1(context)),
+                    ),
+                    Text(
+                      'DY ${formatPercent(o.dividendYield)}',
+                      style: FiType.caption.copyWith(color: fiInk2(context)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: FiSpace.s3),
+            Row(
+              children: [
+                FiTag(label: band.label, state: band.state),
+                const SizedBox(width: FiSpace.s2),
+                Expanded(
+                  child: Text(
+                    '${dataYearsLabel(o.dataYears)} · ${consensusLabel(o.consensusMethods)}',
+                    style: FiType.caption.copyWith(color: fiInk3(context)),
                   ),
                 ),
               ],
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class FiOpportunityTile extends StatelessWidget {
-  const FiOpportunityTile({super.key, required this.opportunity});
-
-  final Opportunity opportunity;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(
-          opportunity.ticker,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(opportunity.name ?? ''),
-            Text(
-              '${dataYearsLabel(opportunity.dataYears)} · '
-              '${consensusLabel(opportunity.consensusMethods)}',
-              style: TextStyle(color: fiInk2(context), fontSize: 11),
-            ),
-          ],
-        ),
-        trailing: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(formatCurrency(opportunity.price)),
-            Text(
-              'DY ${formatPercent(opportunity.dividendYield)}',
-              style: FiType.caption.copyWith(color: fiInk2(context)),
-            ),
-            Builder(
-              builder: (context) {
-                final band = scoreBandFor(
-                  opportunity.score,
-                  opportunity.dataCompleteness,
-                  Theme.of(context).brightness,
-                );
-                return Text(
-                  band.text,
-                  style: TextStyle(color: band.color, fontSize: 11),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class FiSectionTitle extends StatelessWidget {
-  const FiSectionTitle({super.key, required this.icon, required this.title});
-
-  final IconData icon;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10, left: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: fiInk2(context)),
-          const SizedBox(width: 6),
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ],
       ),
     );
   }

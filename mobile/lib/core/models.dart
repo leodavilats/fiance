@@ -788,8 +788,12 @@ class AssetAnalysis {
     required this.graham,
     required this.consensus,
     required this.marginOfSafety,
+    this.consensusMethods = 0,
+    this.dataYears = 0,
+    this.dividendYield,
     required this.rsi14,
     required this.trend,
+    this.trendBasis,
     required this.verdict,
     required this.label,
     required this.reasons,
@@ -810,8 +814,21 @@ class AssetAnalysis {
   final double? graham;
   final double? consensus;
   final double? marginOfSafety;
+
+  /// Quantos metodos entraram no consenso de preco justo.
+  final int consensusMethods;
+
+  /// Anos de historico de proventos por tras do calculo de dividendos.
+  final int dataYears;
+
+  /// Dividend yield dos ultimos doze meses, em percentual.
+  final double? dividendYield;
+
   final double? rsi14;
   final String trend;
+
+  /// Sobre que medias a tendencia foi lida -- `long`, `short` ou `none`.
+  final String? trendBasis;
   final String verdict;
   final String label;
   final List<String> reasons;
@@ -835,8 +852,12 @@ class AssetAnalysis {
       graham: (fp['graham'] as num?)?.toDouble(),
       consensus: (fp['consensus'] as num?)?.toDouble(),
       marginOfSafety: (fp['margin_of_safety'] as num?)?.toDouble(),
+      consensusMethods: (fp['consensus_methods'] as num?)?.toInt() ?? 0,
+      dataYears: (fp['data_years'] as num?)?.toInt() ?? 0,
+      dividendYield: (fp['dy_12m'] as num?)?.toDouble(),
       rsi14: (tech['rsi_14'] as num?)?.toDouble(),
       trend: tech['trend'] as String? ?? 'unknown',
+      trendBasis: tech['trend_basis'] as String?,
       verdict: dec['verdict'] as String? ?? '',
       label: dec['label'] as String? ?? '',
       reasons:

@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/design_tokens.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/data_row.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 
 class BuscaDestino {
@@ -15,14 +16,12 @@ class BuscaDestino {
     required this.title,
     required this.subtitle,
     required this.route,
-    required this.icon,
     required this.terms,
   });
 
   final String title;
   final String subtitle;
   final String route;
-  final IconData icon;
   final List<String> terms;
 }
 
@@ -33,7 +32,6 @@ const buscaDestinos = <BuscaDestino>[
     title: 'Mês',
     subtitle: 'O que aconteceu com seu dinheiro, e o que exige atenção',
     route: '/mes',
-    icon: Icons.calendar_month_outlined,
     terms: [
       'mes',
       'hoje',
@@ -52,7 +50,6 @@ const buscaDestinos = <BuscaDestino>[
     title: 'Sobra',
     subtitle: 'O que fazer com o que ficou, na ordem que a sobra pede',
     route: '/sobra',
-    icon: Icons.savings_outlined,
     terms: [
       'sobra',
       'sobrou',
@@ -68,14 +65,12 @@ const buscaDestinos = <BuscaDestino>[
     title: 'O que aconteceu',
     subtitle: 'Histórico de mudanças, metas e proventos',
     route: '/mes/atividade',
-    icon: Icons.history,
     terms: ['atividade', 'historico', 'aconteceu', 'mudancas'],
   ),
   BuscaDestino(
     title: 'Patrimônio',
     subtitle: 'Posições, composição e proventos',
     route: '/patrimonio',
-    icon: Icons.pie_chart_outline,
     terms: [
       'carteira',
       'posicoes',
@@ -89,49 +84,42 @@ const buscaDestinos = <BuscaDestino>[
     title: 'Objetivos',
     subtitle: 'A alocação-alvo por categoria e setor',
     route: '/voce/objetivos',
-    icon: Icons.flag_outlined,
     terms: ['meta', 'metas', 'alocacao', 'objetivo', 'alvo'],
   ),
   BuscaDestino(
     title: 'Onde aportar',
     subtitle: 'Distribuir um aporte pelo que está longe da meta',
     route: '/sobra/aporte',
-    icon: Icons.add_circle_outline,
     terms: ['aporte', 'aportar', 'investir', 'comprar'],
   ),
   BuscaDestino(
     title: 'Renda fixa',
     subtitle: 'Comparar títulos depois do IR',
     route: '/descobrir/renda-fixa',
-    icon: Icons.account_balance_outlined,
     terms: ['renda fixa', 'cdb', 'lci', 'lca', 'tesouro', 'selic', 'cdi'],
   ),
   BuscaDestino(
     title: 'Renda fixa × bolsa',
     subtitle: 'Renda contratada contra dividendo de bolsa',
     route: '/descobrir/renda-fixa-vs-bolsa',
-    icon: Icons.compare_arrows_outlined,
     terms: ['renda fixa x bolsa', 'cdb ou fii', 'comparar renda'],
   ),
   BuscaDestino(
     title: 'Projeção de renda passiva',
     subtitle: 'Aportando assim, onde eu chego',
     route: '/patrimonio/projecao',
-    icon: Icons.timeline_outlined,
     terms: ['projecao', 'projetar', 'renda passiva', 'futuro'],
   ),
   BuscaDestino(
     title: 'Quedas',
     subtitle: 'O que caiu e por quê',
     route: '/descobrir/quedas',
-    icon: Icons.trending_down,
     terms: ['queda', 'quedas', 'caiu', 'desabou'],
   ),
   BuscaDestino(
     title: 'Você',
     subtitle: 'Conta, alertas, indicação e preferências',
     route: '/voce',
-    icon: Icons.person_outline,
     terms: [
       'conta',
       'configuracao',
@@ -246,39 +234,44 @@ class _BuscaScreenState extends ConsumerState<BuscaScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: FiSpace.s2),
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s2,
+          FiLayout.gutter,
+          FiLayout.scrollTail,
+        ),
         children: [
           for (final grupo in grupos) ...[
             _Cabecalho(texto: grupo.label, cor: ink3),
-            ...grupo.items.map(
-              (hit) => ListTile(
-                leading: Icon(
-                  hit.kind == 'fixed_income'
-                      ? Icons.account_balance_outlined
-                      : Icons.show_chart,
-                ),
-                title: Text(hit.title),
-                subtitle: Text(hit.subtitle),
-                onTap: () => context.go(rotaDoAchado(hit)),
-              ),
+            FiRows(
+              children: [
+                for (final hit in grupo.items)
+                  FiDataRow(
+                    label: hit.title,
+                    detail: hit.subtitle,
+                    onTap: () => context.go(rotaDoAchado(hit)),
+                  ),
+              ],
             ),
           ],
 
           if (destinos.isNotEmpty) ...[
-            _Cabecalho(texto: 'IR PARA', cor: ink3),
-            ...destinos.map(
-              (d) => ListTile(
-                leading: Icon(d.icon),
-                title: Text(d.title),
-                subtitle: Text(d.subtitle),
-                onTap: () => context.go(d.route),
-              ),
+            _Cabecalho(texto: 'Ir para', cor: ink3),
+            FiRows(
+              children: [
+                for (final d in destinos)
+                  FiDataRow(
+                    label: d.title,
+                    detail: d.subtitle,
+                    onTap: () => context.go(d.route),
+                  ),
+              ],
             ),
           ],
 
           if (_error != null && destinos.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(FiSpace.s4),
+              padding: const EdgeInsets.only(top: FiSpace.s4),
               child: FiErrorState(error: _error!, action: 'buscar'),
             ),
 
@@ -286,12 +279,10 @@ class _BuscaScreenState extends ConsumerState<BuscaScreen> {
               grupos.isEmpty &&
               destinos.isEmpty &&
               _error == null)
-            Padding(
-              padding: const EdgeInsets.all(FiSpace.s4),
-              child: Text(
-                'Nada encontrado para "${_query.trim()}".',
-                style: FiType.body.copyWith(color: ink3),
-              ),
+            FiEmptyState(
+              title: 'Nada encontrado para "${_query.trim()}"',
+              body: 'A busca cobre a sua carteira, sua renda fixa, o universo de ativos da B3 '
+                  'e as telas do produto. Um ticker inteiro costuma achar mais que um pedaço.',
             ),
         ],
       ),
@@ -308,12 +299,7 @@ class _Cabecalho extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        FiSpace.s4,
-        FiSpace.s3,
-        FiSpace.s4,
-        FiSpace.s1,
-      ),
+      padding: const EdgeInsets.only(top: FiSpace.s5, bottom: FiSpace.s2),
       child: Text(
         texto.toUpperCase(),
         style: FiType.eyebrow.copyWith(color: cor),

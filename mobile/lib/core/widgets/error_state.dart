@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-import '../design_tokens.dart';
 import '../theme.dart';
+import 'button.dart';
 
 String fiErrorMessage(Object error, {String? action}) {
   final what = action ?? 'carregar estes dados';
@@ -57,31 +57,33 @@ class FiErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ink2 = isDark ? FiColors.darkInk2 : FiColors.lightInk2;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(FiSpace.s6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title ?? 'Algo não carregou',
-              style: FiType.verdict.copyWith(fontFamily: fiFontSerif),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        FiLayout.gutter,
+        FiSpace.s8,
+        FiLayout.gutter,
+        FiSpace.s6,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title ?? 'Algo não carregou',
+            style: fiSerif(FiType.verdict).copyWith(
+              color: fiStateColor(FiState.attention, Theme.of(context).brightness),
             ),
-            const SizedBox(height: FiSpace.s2),
-            Text(
-              fiErrorMessage(error, action: action),
-              style: FiType.body.copyWith(color: ink2),
-            ),
-            if (onRetry != null) ...[
-              const SizedBox(height: FiSpace.s4),
-              FilledButton(onPressed: onRetry, child: const Text('Tentar de novo')),
-            ],
+          ),
+          const SizedBox(height: FiSpace.s3),
+          Text(
+            fiErrorMessage(error, action: action),
+            style: FiType.body.copyWith(color: fiInk2(context)),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: FiSpace.s6),
+            FiButton.secondary(label: 'Tentar de novo', onPressed: onRetry),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/design_tokens.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
@@ -14,42 +14,49 @@ class AtividadeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(whatsNewProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ink2 = isDark ? FiColors.darkInk2 : FiColors.lightInk2;
 
     return Scaffold(
       appBar: AppBar(title: const Text('O que aconteceu')),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(whatsNewProvider),
         child: async.when(
-          loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 6, label: 'Carregando a atividade'),
-          error: (err, _) => Padding(
-            padding: const EdgeInsets.all(FiSpace.s4),
-            child: FiErrorState(error: err, action: 'carregar a atividade'),
+          loading: () => FiSkeleton.tela(
+            shape: FiSkeletonShape.row,
+            count: 6,
+            label: 'Carregando a atividade',
+          ),
+          error: (err, _) => FiErrorState(
+            error: err,
+            action: 'carregar a atividade',
+            onRetry: () => ref.invalidate(whatsNewProvider),
           ),
           data: (data) {
             if (data.items.isEmpty) {
               return ListView(
-                padding: const EdgeInsets.all(FiSpace.s4),
-                children: [
-                  Text(
-                    'Nada mudou desde a sua última visita. Silêncio aqui é boa '
-                    'notícia — não é falha de carregamento.',
-                    style: FiType.body.copyWith(color: ink2),
+                children: const [
+                  FiEmptyState(
+                    title: 'Nada mudou desde a sua última visita',
+                    body: 'Silêncio aqui é boa notícia, e não falha de carregamento: nenhum '
+                        'veredito virou, nenhuma meta se afastou e nada venceu.',
                   ),
                 ],
               );
             }
 
             return ListView(
-              padding: const EdgeInsets.all(FiSpace.s4),
+              padding: const EdgeInsets.fromLTRB(
+                FiLayout.gutter,
+                FiSpace.s3,
+                FiLayout.gutter,
+                FiLayout.scrollTail,
+              ),
               children: [
                 Text(
-                  'Mudanças de veredito, desvios de meta, vencimentos e '
-                  'proventos — do mais recente para o mais antigo.',
-                  style: FiType.body.copyWith(color: ink2),
+                  'Mudanças de veredito, desvios de meta, vencimentos e proventos — do mais '
+                  'recente para o mais antigo.',
+                  style: FiType.body.copyWith(color: fiInk2(context)),
                 ),
-                const SizedBox(height: FiSpace.s4),
+                const SizedBox(height: FiSpace.s5),
                 ...data.items.map((item) => FiWhatsNewTile(item: item)),
               ],
             );
