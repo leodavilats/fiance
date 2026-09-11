@@ -7,62 +7,57 @@
 Tudo é escrito à mão. Não existe gerador de design.
 
 ```
-web/src/foundation.css              ← Cor, tipo, espaço, raio, motion, densidade.
-mobile/lib/core/design_tokens.dart  ← O espelho da linha de cima, em Flutter.
-
-web/src/app/core/product-rules.ts   ← bandas das réguas, veredito, diagnóstico
-mobile/lib/core/product_rules.dart  ← o mesmo, em Dart
-web/src/app/core/vocabulary.ts      ← rótulo, ícone e série de cada categoria
-mobile/lib/core/vocabulary.dart     ← o mesmo, em Dart
+mobile/lib/core/design_tokens.dart  ← cor (nos dois temas), tipo, espaço, raio, motion, densidade
+mobile/lib/core/theme.dart          ← o ThemeData montado sobre eles
+mobile/lib/core/product_rules.dart  ← bandas das réguas, veredito, diagnóstico
+mobile/lib/core/vocabulary.dart     ← rótulo, ícone e série de cada categoria
 ```
 
 ```bash
-cd web && npm run lint:contrast   # mede as duas plataformas contra o piso  (roda no CI)
+cd mobile && flutter test   # contraste e regras de produto rodam aqui  (é o comando do CI)
 ```
 
 **Por que nada disso é gerado.** O gerador existiu e resolvia o problema errado. Ele mantinha o
-**valor** igual nas duas plataformas — e o valor nunca era o que divergia. O que divergia era o
-**conceito**: o mobile passou meses sem `/mes` e sem `/sobra`, com a régua de cor perfeitamente
-sincronizada nos dois lados. Em troca, o schema fechava o vocabulário visual: doze papéis de tipo,
+**valor** igual entre plataformas — e o valor nunca era o que divergia. O que divergia era o
+**conceito**: houve meses sem `/mes` e sem `/sobra` no aplicativo, com a régua de cor
+perfeitamente sincronizada. Em troca, o schema fechava o vocabulário visual: doze papéis de tipo,
 quatro raios, duas sombras, e nada para estado de interação — não havia como declarar contorno de
 controle, preenchimento pressionado ou poço de barra.
 
-O custo é conhecido e está aceito: **a paridade não tem máquina**, e por isso é regra escrita em
-[PARIDADE.md](PARIDADE.md). Mudar um valor em `foundation.css` obriga a mudar em
-`design_tokens.dart`, e o contrário também.
+Com um cliente só, o custo daquela escolha desapareceu: existe **uma** paleta, e ela é esta.
 
 **O que impede a régua de divergir** é a régua de baixo. `backend/app/analysis/score_ruler.py` é a
-fonte; `product-rules.ts` e `product_rules.dart` a espelham. Ela já divergiu uma vez — "Boa
-oportunidade" era verde no web e azul no mobile — e a disciplina é a mesma de qualquer limiar do
-produto: **Python primeiro**, depois os dois clientes, no mesmo commit.
+fonte; `product_rules.dart` a espelha. Ela já divergiu uma vez — "Boa oportunidade" saiu verde numa
+plataforma e azul na outra — e a disciplina continua: **Python primeiro**, depois o Dart, no mesmo
+commit.
 
 ### O que continua verificado
 
-Contraste. `web/tools/check-contrast.mjs` lê os dois blocos de tema do CSS **e** o Dart, e reprova:
+Contraste, em `mobile/test/contraste_test.dart`, nos **dois temas** e contra o **mínimo da WCAG** —
+4,5:1 para texto e 3:1 para forma e limite de controle (1.4.3 e 1.4.11). Pisos acima da norma eram
+escolha de design, e escolha de design não tem máquina: a paleta é livre, o ilegível não é.
 
 | O que | Piso | Por quê |
 |---|---|---|
-| `ink-2` / `ink-3` / `brand` / `state-*` / `direction-*` sobre os três chãos | 8 / 6 / 6 / 6 / 6 | a escada de tinta precisa continuar distinguível entre si |
-| `series-*` sobre o chão e **sobre o próprio chip** | 3 / 4,5 | forma no gráfico, texto no chip |
-| `control-border` e `control-border-hover` | 3 | é o contorno que faz um controle ser um controle (WCAG 1.4.11) |
-| `brand` sobre `track` | 3 | preenchido contra vazio: é o par que faz progresso ser legível |
-| `ink-on-brand` sobre `brand`, `-hover` e `-active` | 4,5 | o rótulo do botão primário nos três estados |
-| `ink-1` sobre `control-fill`, `-hover` e `-active` | 4,5 | o rótulo do botão secundário nos três estados |
+| `ink-1` / `ink-2` / `ink-3` sobre o chão | 4,5 | legenda é texto pequeno, e a regra para texto pequeno é a mesma |
+| `brand` e cada `state-*` sobre o chão | 4,5 | marca e estado escrevem texto |
+| tinta do estado sobre a **superfície** do próprio estado | 5,5 | o rótulo do selo é a própria cor do estado |
+| `series-*` (12) sobre o chão | 4,5 | a série nomeia o próprio chip |
+| `control-border` sobre chão e superfície | 3 | é o contorno que faz um controle ser um controle |
+| `brand` sobre `track` | 3 | preenchido contra vazio: é o par que faz barra e deslizador mostrarem onde estão |
+| `ink-on-brand` sobre `brand` | 4,5 | o rótulo do botão primário |
+| `ink-1` sobre `control-fill` | 4,5 | o rótulo do botão secundário |
 | `ink-disabled` sobre `control-fill` | 3 | controle inerte continua tendo de ser lido |
-| papel declarado só num tema | — | papel de cor existe nos dois ou em nenhum |
 
-`hairline` fica de fora: é separador decorativo. Também confere que as **duas cópias do tema
-claro** do CSS batem — a da consulta de mídia, que responde por quem está no padrão do sistema, e a
-do atributo, que responde pelo seletor de tema. São 44 papéis, e editar uma só quebraria o
-contraste da maioria. O que mudou antes disso é que **separador e contorno de
-controle deixaram de ser o mesmo token** — enquanto eram, `.btn-secondary` e `.btn-icon`
-desenhavam a borda inteira a 1,24:1, um quarto do mínimo, e nenhuma revisão visual pegou isso.
+`hairline` fica de fora: é separador decorativo. O que mudou antes disso é que **separador e
+contorno de controle deixaram de ser o mesmo token** — enquanto eram, a borda de um botão
+secundário desenhava a 1,24:1, um quarto do mínimo, e nenhuma revisão visual pegou isso.
 
 ### O que os limiares NÃO são
 
 `fiScoreBands` **espelha** `backend/app/analysis/score_ruler.py`. A régua numérica continua sendo
 do backend; o design system só decide como ela é *lida*. Mudar um limiar: Python primeiro, depois
-`product-rules.ts` e `product_rules.dart`.
+`product_rules.dart`.
 
 ---
 
@@ -109,12 +104,11 @@ Três regras de uso, verificáveis em revisão:
 `metric-sm` · `verdict` · `verdict-sm` · `title` · `eyebrow` · `body` · `label` · `caption` ·
 `ticker` (tabela completa em [identidade visual](VISUAL-LANGUAGE.md#tipografia)).
 
-- No web, um papel = uma classe: `.fi-money-xl`, `.fi-verdict`, `.fi-eyebrow`…
-- No mobile, um papel = um `TextStyle` em `FiType` + a família em `fiTypeFamily` (resolvida via
+- Um papel = um `TextStyle` em `FiType` + a família em `fiTypeFamily` (resolvida via
   `google_fonts`). `eyebrow` precisa de `.toUpperCase()` na aplicação — `TextStyle` não
   transforma caixa.
-- Cifras tabulares (`tabular-nums slashed-zero` / `FontFeature.tabularFigures()` +
-  `slashedZero()`) já vêm embutidas em todo papel numérico. Fora da escala existe `.fi-num`.
+- Cifras tabulares (`FontFeature.tabularFigures()` + `slashedZero()`) já vêm embutidas em todo
+  papel numérico.
 - **Um único `money-xl` por tela.** Dois números do mesmo tamanho significam que a tela não
   decidiu qual é a resposta.
 
@@ -123,13 +117,12 @@ Três regras de uso, verificáveis em revisão:
 - Espaço: escala de 4px (`--fi-space-1..16`).
 - Raio: `sm` 4 · `md` 8 · `lg` 12 · `pill`.
 - Sombra: **duas** (`drawer`, `popover`), só para o que flutua. Estrutura usa chão + fio.
-- Densidade: `comfortable` (linha 48px) / `compact` (36px), por `data-density` no web e
-  `FiDensity` no mobile.
+- Densidade: `comfortable` (linha 48px) / `compact` (36px), por `FiDensity`.
 
 ### Motion
 
 `fast` 120ms · `base` 180ms · `slow` 240ms; entrada `cubic-bezier(0.2,0,0,1)`, saída
-`cubic-bezier(0.4,0,1,1)`. `prefers-reduced-motion` colapsa tudo para 1ms via `foundation.css`.
+`cubic-bezier(0.4,0,1,1)`. Movimento reduzido no sistema colapsa tudo para 1ms.
 **Números não animam contagem.**
 
 ### Foco, toque, z-index
@@ -140,9 +133,9 @@ Camadas: nav 100 · drawer/sheet 200 · popover 300 · toast 400.
 
 ### Breakpoints
 
-`mobile-sm` 0 · `mobile-lg` 420 · `tablet` 768 · `desktop-sm` 1024 · `desktop` 1280 ·
-`desktop-lg` 1440. Comportamento por faixa em [wireframes](WIREFRAMES.md#10-responsividade).
-Largura de leitura 1120px, densa 1600px — o `max-w-[1180px]` global sai.
+`mobile-sm` 0 · `mobile-lg` 420 · `tablet` 768. Comportamento por faixa em
+[wireframes](WIREFRAMES.md#9-larguras). Acima de tablet não há faixa: o produto é distribuído
+pelas lojas.
 
 ---
 
@@ -230,7 +223,7 @@ Contrato mínimo de cada um: **estados** (default/hover/focus/active/disabled/lo
 | Componente | Notas específicas do fiance |
 |---|---|
 | `Button` | primária (marca) · secundária (fio) · discreta (tinta) · destrutiva. Uma primária por bloco |
-| `IconButton` | `aria-label`/`tooltip` **obrigatório**, e o `lint:ui` reprova quem não tem |
+| `IconButton` | `tooltip`/rótulo semântico **obrigatório**, e `test/lint_ui_test.dart` reprova quem não tem |
 | `Input` / `Money` / `Percent` | variantes numéricas com cifras tabulares, alinhamento à direita e máscara pt-BR |
 | `Select` / `Segmented` | segmented substitui tab quando há 2–4 opções mutuamente exclusivas |
 | `Tabs` | `role="tablist"`/`aria-selected`, navegação por setas, **estado na URL** |
@@ -243,12 +236,12 @@ Contrato mínimo de cada um: **estados** (default/hover/focus/active/disabled/lo
 | `Table` | ordenar · esconder coluna · fixar 1ª coluna · densidade · virtualização. Degrada para lista no mobile |
 | `Chart` | eixos, tooltip, linha de referência, anotação; **pergunta declarada no título** |
 | `Badge` | cor + ícone + texto, sempre os três |
-| `Skeleton` | composto na forma do conteúdo real. `<app-skeleton shape>` e `FiSkeleton` — a altura de cada forma é a do papel de tipografia que vai ocupar o lugar |
+| `Skeleton` | composto na forma do conteúdo real (`FiSkeleton`) — a altura de cada forma é a do papel de tipografia que vai ocupar o lugar |
 | `EmptyState` | causa + próximo passo executável; CTA não é opcional |
-| `AsyncState` | os quatro estados num contrato só (esperando · falhou · vazio · conteúdo), para que uma tela não possa tratar três e esquecer o quarto. `<app-async-state>` no web; `AsyncValue.when` com `FiSkeleton`/`FiErrorState` no mobile |
-| `ErrorState` | último dado + causa humana + repetir. Nunca exceção crua, nunca código de status: a frase sai de `mensagemDeErro` / `fiErrorMessage`, uma só para o produto inteiro |
+| `AsyncState` | os quatro estados num contrato só (esperando · falhou · vazio · conteúdo), para que uma tela não possa tratar três e esquecer o quarto: `AsyncValue.when` com `FiSkeleton`/`FiErrorState` |
+| `ErrorState` | último dado + causa humana + repetir. Nunca exceção crua, nunca código de status: a frase sai de `fiErrorMessage`, uma só para o produto inteiro |
 | `Nav` / `SubNav` / `BottomNav` | itens ≥44px; rótulo ≥12px |
-| `SearchGlobal` | `⌘K` no desktop; resultados por categoria (ativos, setores, telas) |
+| `SearchGlobal` | porta em todo destino de raiz (`FiSearchAction`); resultados por categoria (ativos, setores, telas) |
 | `Provenance` | rodapé padrão: fonte, método, limitação — **momento não**, que é linha visível |
 | `DataAge` | quando a fonte foi lida, ao lado do número que ela qualifica. Em lista, o carimbo é o **mais antigo** |
 
@@ -339,9 +332,6 @@ disponível, ele **não inventa** uma — mostra o valor e omite a comparação.
 |---|---|---|
 | `detail_level` (Essencial/Completo/Avançado) | **contrato** | `PreferencesDb` + `GET/PUT /preferences` + migração Alembic |
 | marcador de onboarding concluído | **contrato** | idem |
-| Source Serif 4 | asset | `<link>` no `web/src/index.html`; `google_fonts` no mobile |
-| `foundation.css` no build do Angular | fiação | importar em `styles.css`, apontar `tailwind.config.js` para `--fi-*` |
-| `FiTheme` a partir de `design_tokens.dart` | fiação | reescrever `mobile/lib/core/theme.dart` sobre os tokens escritos |
 | verificar as 3 classes de `dipDiagnosis` | verificação | `DipAnalysis` real precisa sustentar a separação; se não, ficam 2 |
 
 Nenhum algoritmo novo. O redesign consome o que o backend já calcula.

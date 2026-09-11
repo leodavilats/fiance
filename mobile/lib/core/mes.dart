@@ -1,7 +1,7 @@
-/// O mes como recorte, espelhando `web/src/app/core/mes.ts`.
+/// O mes como recorte.
 ///
-/// Mesmo conceito e mesmo nome nas duas plataformas, implementacao de cada uma -- e por isso
-/// aqui nao ha `Intl`: seriam duas fontes para o nome do mes, e o web escreve a lista a mao.
+/// A lista de nomes e escrita a mao de proposito: com `Intl` o nome do mes teria duas fontes,
+/// uma delas dependente de locale carregado.
 const _nomes = [
   'janeiro',
   'fevereiro',

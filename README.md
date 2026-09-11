@@ -1,6 +1,6 @@
 # fiance
 
-Plataforma de inteligência de investimentos com análise fundamentalista, varredura de oportunidades e sugestões determinísticas de alocação, focada no mercado brasileiro (B3). Disponível como app web e mobile (iOS/Android), com login por conta Google e dados isolados por usuário.
+Plataforma de inteligência de investimentos com análise fundamentalista, varredura de oportunidades e sugestões determinísticas de alocação, focada no mercado brasileiro (B3). É um **aplicativo para celular** (iOS/Android) sobre uma API própria, com login por conta Google e dados isolados por usuário.
 
 ## Documentação
 
@@ -39,20 +39,18 @@ O fiance integra dados de mercado em tempo real e métodos clássicos de valuati
 | Backend | Python 3.11+, FastAPI, Uvicorn, SQLAlchemy |
 | Banco de dados | PostgreSQL (produção, via Railway) / SQLite (fallback local) |
 | Autenticação | Login com Google (OAuth) + JWT de sessão próprio |
-| Web | Angular 22 (standalone, SSR), TypeScript, Tailwind CSS |
-| Mobile | Flutter (iOS/Android), Riverpod, go_router |
+| Aplicativo | Flutter (iOS/Android), Riverpod, go_router |
 | Dados de mercado — B3/FIIs/BDRs/ETFs | [BRAPI](https://brapi.dev) |
 | Dados de renda fixa — CDI/Selic/IPCA | [BCB SGS](https://www3.bcb.gov.br/sgspub/) |
 | Hospedagem backend | Railway |
-| Linting / Format | Ruff (Python), Prettier (TypeScript) |
+| Linting / Format | Ruff (Python), `flutter analyze` (Dart) |
 
 ## Pré-requisitos
 
 - Python 3.11+
-- Node.js 18+ e npm (para o app web)
-- Flutter 3.x + Android Studio / Xcode (para o app mobile)
+- Flutter 3.x + Android Studio / Xcode (para o aplicativo)
 - Chave de API: [BRAPI](https://brapi.dev)
-- OAuth Client IDs do Google (Web, Android e iOS) em [console.cloud.google.com](https://console.cloud.google.com/apis/credentials)
+- OAuth Client IDs do Google (Web, Android e iOS) em [console.cloud.google.com](https://console.cloud.google.com/apis/credentials) — o **Web** é usado como `serverClientId`, mesmo não havendo site
 - Projeto no [Railway](https://railway.app) com addon PostgreSQL (para produção)
 
 ## Instalação
@@ -71,14 +69,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Web
-
-```bash
-cd web
-npm install
-```
-
-### Mobile
+### Aplicativo
 
 ```bash
 cd mobile
@@ -101,7 +92,7 @@ cp backend/.env.example backend/.env
 | `DATABASE_URL` | Não | String de conexão Postgres. Em produção, o Railway injeta automaticamente; sem ela, cai no SQLite local |
 | `APP_ENV` | Não | `development` ou `production` (padrão: `development`) |
 | `LOG_LEVEL` | Não | Nível de log: `DEBUG`, `INFO`, `WARNING` (padrão: `INFO`) |
-| `ALLOWED_ORIGINS` | Não | Origens CORS permitidas (padrão: `http://localhost:4200`) |
+| `ALLOWED_ORIGINS` | Não | Origens CORS permitidas. Nenhum navegador é cliente da API hoje, mas fora de `development` a variável é obrigatória: falhar fechado é a regra do startup |
 | `ENTITLEMENTS_ENABLED` | Não | Liga a régua de plano (padrão: `false` — todo mundo tem tudo) |
 | `AFFIRMATION_LEVEL` | Não | Modo de afirmação: `1` descritivo, `2` analítico (padrão), `3` prescritivo |
 | `SUITABILITY_PERSONALIZATION_ALLOWED` | Não | Libera personalização por perfil **no nível 3**. Só com parecer jurídico (padrão: `false`) |
@@ -126,30 +117,18 @@ No app mobile (`mobile/lib/core/auth_service.dart`), o login com Google usa um `
 cd backend
 uvicorn app.main:app --reload --port 8000
 
-# Terminal 2 — Web (http://localhost:4200, já apontando pro backend local)
-cd web
-npm start
-
-# Terminal 3 — Mobile (emulador/dispositivo, apontando pro backend local)
+# Terminal 2 — Aplicativo (emulador/dispositivo, apontando pro backend local)
 cd mobile
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api   # emulador Android
 flutter run --dart-define=API_BASE_URL=http://localhost:8000/api  # iOS simulator
 ```
 
-`npm start` usa a configuração `development`, que troca o arquivo de ambiente por
-`environment.development.ts` (`http://localhost:8000/api`). **Não edite
-`environment.ts`** — ele é o publicado, e apontá-lo para `localhost` quebra o app
-no ar sem quebrar teste nenhum. Há uma trava para isso em
-`src/environments/environment.spec.ts`.
+O texto jurídico abre no navegador do aparelho, e vem do mesmo backend: para apontá-lo para o
+local, passe `--dart-define=SITE_URL=http://10.0.2.2:8000`.
 
 ### Build de Produção
 
 ```bash
-# Web — o build gera navegador **e** servidor de renderização
-cd web
-npm run build                        # dist/fiance/browser + dist/fiance/server
-node dist/fiance/server/server.mjs   # sobe o servidor (porta 4000 por padrão)
-
 # Backend — Railway usa o Procfile (uvicorn) automaticamente.
 # Root Directory do serviço no Railway deve ser "backend".
 
@@ -212,27 +191,20 @@ para outro projeto ou ambiente, passe no build:
 flutter build apk --release   --dart-define=SENTRY_DSN=…   --dart-define=APP_ENV=staging
 ```
 
-## Renderização no servidor
+## Páginas públicas
 
-A rota `/ativo/:ticker` é renderizada no servidor; todo o resto continua no
-cliente. Não é refinamento técnico: é o canal de aquisição do produto — página
-renderizada no cliente é invisível para busca, e o modelo de receita não
-comporta mídia paga para compensar. A fronteira está declarada em
-`web/src/app/app.routes.server.ts` e tem teste.
+Não há front web. O que o backend serve em HTML são **três páginas de documento**, fora de
+`/api`: `/termos`, `/privacidade` e `/aviso-cvm` (`app/api/legal.py` +
+`app/services/legal_pages.py`). Elas existem porque as lojas exigem uma URL de privacidade que
+abra sem login, e é para elas que o aplicativo manda quem toca em "Termos" nas configurações.
 
-O servidor também serve `/sitemap.xml` (montado a partir de
-`GET /api/public/universe`, com cache de 6h) e `/robots.txt`.
+São páginas sem JavaScript, sem asset externo e sem paleta — a cor vem do agente do usuário, e
+uma segunda cópia dos tokens de design envelheceria calada. O Aviso CVM lê a postura de afirmação
+em vigor **no servidor**, então `AFFIRMATION_LEVEL` continua sendo a única fonte da frase.
 
-| Variável | Obrigatória | Descrição |
-| --- | --- | --- |
-| `PORT` | Não | Porta do servidor de renderização (padrão: `4000`) |
-| `ALLOWED_HOSTS` | **Em produção** | Hosts aceitos no cabeçalho `Host`, separados por vírgula. O Angular recusa host desconhecido para não virar proxy de SSRF; sem configurar, só `localhost` e `127.0.0.1` respondem. |
-| `SITE_URL` | Sim | Base pública, usada nas URLs absolutas do sitemap (padrão: `https://fiance.app`) |
-
-O backend expõe a leitura **sem titular** em `/api/public/asset/{ticker}` e
-`/api/public/universe` — impessoal de propósito, para que a mesma URL devolva o
-mesmo conteúdo ao robô e a quem chega pelo link. O teto de abuso dessas rotas é
-por IP, não por usuário.
+O backend também expõe a leitura **sem titular** em `/api/public/asset/{ticker}` — impessoal de
+propósito, para que a mesma URL devolva o mesmo conteúdo a quem chega por um link compartilhado.
+O teto de abuso dessa rota é por IP, não por usuário.
 
 ## Versão da API e paginação
 
@@ -270,10 +242,10 @@ duas vezes.
 ## Cobrança
 
 O direito de Premium mora no backend, ligado ao `user_id`; o gateway é **detalhe
-de canal**. É isso que permite vender na web (Pix 1,19%, cartão 3,99% + R$ 0,39)
-e liberar no app sem migrar assinante quando a compra in-app entrar — 14 pontos
-de diferença de taxa sobre R$ 179,90, que em mil assinantes anuais são ~R$ 25
-mil por ano.
+de canal**. Com a distribuição só por loja, o canal provável é a compra in-app (15–30% de
+comissão) — a alternativa de vender fora do aplicativo saiu junto com o site, e a decisão está
+aberta em [docs/produto/PRE_PRODUCAO.md](docs/produto/PRE_PRODUCAO.md) §B1. O que a arquitetura
+garante é que trocar de canal não migra assinante.
 
 Quatro peças: catálogo (`GET /billing/plans`), checkout
 (`POST /billing/checkout`, que **não** concede nada), webhook
@@ -412,7 +384,7 @@ cada rota, está em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 |--------|------|-----------|
 | `GET` | `/health` | Health check (público) |
 | `POST` | `/auth/google` | Login: troca o `id_token` do Google por um JWT de sessão (público) |
-| `GET` | `/public/asset/{ticker}` , `/public/universe` | Leitura **sem titular**, com teto por IP (público) |
+| `GET` | `/public/asset/{ticker}` , `/public/affirmation` | Leitura **sem titular**, com teto por IP (público) |
 | `GET` | `/dashboard` | Dados consolidados do dashboard |
 | `GET/PUT` | `/portfolio` | Ler carteira · `PUT` é **importação destrutiva** |
 | `POST/DELETE` | `/portfolio/position` , `/portfolio/position/{ticker}` | Escrita por item — o caminho normal |
@@ -465,28 +437,18 @@ fiance/
 │   │   └── core/                # Config, banco, auth, sessões, cache, dinheiro,
 │   │                            #   paginação, eventos, uso, jobs, fuso fiscal
 │   ├── migrations/              # Alembic — coluna nova exige migração
-│   ├── tests/                   # 724 testes
+│   ├── tests/                   # 1036 testes
 │   └── requirements.txt
 │
-├── web/                         # Angular 22, standalone, rotas lazy
-│   ├── tools/lint-ui.mjs        # 5 verificações que o build não faz
-│   └── src/app/
-│       ├── components/          # 5 destinos: mes, sobra, patrimonio, descobrir, voce
-│       │                        #   + ativo/ (rota pública, renderizada no servidor)
-│       ├── foundation.css       # Camada visual — ESCRITA à mão (cor, tipo, espaço, motion)
-│       ├── styles.css           # Padrões de componente (.btn-*, .input, .card, .notice…)
-│       ├── core/                # Serviços HTTP, interceptors, régua, vocabulário
-│       └── tools/               # lint-ui.mjs, check-contrast.mjs — rodam no CI
-│
-├── mobile/                      # Flutter
-│   └── lib/
-│       ├── core/                # API client, auth, providers, router,
-│       │                        #   design_tokens.dart (espelho à mão do foundation.css)
-│       └── features/            # mes, sobra, patrimonio, market, config,
-│                                #   busca, assets, auth, shell, tools
-│
-└── design-tokens/
-    └── build-icons.py           # Gera favicon e ícones do app da cor da marca
+└── mobile/                      # Flutter — o único cliente
+    ├── assets/brand/            # A marca: ícone do app e kit de referência (gerados)
+    ├── tool/build_icons.py      # Gera os ícones a partir da cor de design_tokens.dart
+    ├── test/                    # 125 testes, incluindo lint_ui_test e contraste_test
+    └── lib/
+        ├── core/                # API client, auth, providers, router,
+        │                        #   design_tokens.dart — a ÚNICA paleta do produto
+        └── features/            # mes, sobra, patrimonio, market, config,
+                                 #   busca, assets, auth, shell, tools
 ```
 
 ## Métodos de Valuation
@@ -512,30 +474,21 @@ python -m ruff check app tests migrations
 python -m ruff format app tests migrations
 alembic upgrade head                     # aplicar migrações
 
-# Web
-npm start            # servidor dev
-npm run build        # produção (navegador + servidor de renderização)
-npm test             # 191 testes (Vitest)
-npm run lint:ui      # 24 regras: ícone, classe CSS, explicabilidade, alvo de link, falha…
-npm run format       # Prettier
-npm run format:check
-
-# Mobile
+# Aplicativo — a partir de mobile/
 flutter analyze
-flutter test         # 125 testes
-flutter build apk --release
+flutter test         # 125 testes, incluindo as 11 regras de interface e o contraste
+flutter build apk --release   # analyze e test NUNCA tocam o Gradle; este comando toca
 
-# Marca — a partir da raiz
-# Não há gerador de design. Cor, tipografia, espaço e as réguas do produto são escritos à mão
-# em web/src/foundation.css, web/src/app/core/ e mobile/lib/core/.
-python design-tokens/build-icons.py          # regenerar favicon e ícones da cor da marca
-python design-tokens/build-icons.py --check  # falha se a marca divergir
-cd mobile && dart run flutter_launcher_icons   # ícones nativos (segundo passo)
+# Marca — a partir de mobile/
+# Não há gerador de design. Cor, tipografia, espaço e as réguas do produto são escritos à mão,
+# em lib/core/design_tokens.dart e lib/core/product_rules.dart.
+python tool/build_icons.py            # regenerar os ícones a partir da cor da marca
+python tool/build_icons.py --check    # falha se a marca divergir (roda no CI)
+dart run flutter_launcher_icons       # ícones nativos (segundo passo, e é fácil esquecer)
 ```
 
-> `npm run lint:ui` deve rodar **depois** do build: a fonte de verdade das classes é o CSS emitido.
-> E confira o **código de saída** do build — ele imprime erro como `X [ERROR] TS…`, que um
-> `grep -i error` ingênuo não pega.
+> **Não rode `dart format`**: ele reescreve `design_tokens.dart` e quebra `if`s de uma linha que o
+> repositório mantém.
 
 ## Licença
 

@@ -99,8 +99,8 @@ imprecisão de dinheiro de verdade (R$ 1.847,32, não R$ 1.850,00).
   o próprio produto atual) — "sameness de template" é mais fácil de ver em comparação do que
   olhando uma tela sozinha.
 - **A lista de frases proibidas é máquina; o resto não.** As frases nomeadas acima, a persona de
-  assistente e emoji em texto de tela são cobradas pelo `lint:ui` (regra *Vocabulário de IA*) e
-  pelo `test/lint_ui_test.dart` do mobile, varrendo só literal de string. Isso entrou depois de o
+  assistente e emoji em texto de tela são cobrados por `test/lint_ui_test.dart` (regra
+  *Vocabulário de IA*), varrendo só literal de string. Isso entrou depois de o
   documento existir por meses afirmando que nada aqui era checável — e enquanto ele afirmava, as
   duas primeiras telas do aplicativo abriam com "tudo em um só assistente", que são dois itens
   desta lista numa frase de dez palavras.

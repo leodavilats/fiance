@@ -1,29 +1,28 @@
 # fiance — features por tela
 
-> Inventário do que cada tela faz, organizado pela navegação **atual**. Revisado em 2026-09-08,
-> conferido rota por rota contra `web/src/app/app.routes.ts` e `mobile/lib/core/router.dart`.
+> Inventário do que cada tela faz, organizado pela navegação **atual**. Revisado em 2026-09-11,
+> conferido rota por rota contra `mobile/lib/core/router.dart`.
 >
 > Este arquivo esteve duas revisões de navegação atrás: descrevia **Hoje** e **Estratégia**, que
 > não existem mais, e não mencionava nenhuma tela do caixa. É a doença que o
 > [KNOWN_ISSUES](KNOWN_ISSUES.md) descreve no próprio cabeçalho — inventário envelhece mais rápido
 > que princípio, e envelhece calado.
 >
-> Estrutura, wireframes e o racional de cada decisão em [design/](design/). O que é **igual** entre
-> as plataformas e o que é livre está em [design/PARIDADE.md](design/PARIDADE.md).
+> Estrutura, wireframes e o racional de cada decisão em [design/](design/).
 
 ## Navegação
 
 Cinco destinos, e eles são **o ciclo do dinheiro**: entra, sobra, vira patrimônio. Não é a
 topologia do backend nem uma lista de funcionalidades.
 
-| Destino | Pergunta que responde | Web | Mobile |
-|---|---|---|---|
-| **Mês** | como estou agora, e o que exige atenção? | `/mes` | `/mes` |
-| **Sobra** | o que eu faço com o que sobrou? | `/sobra` | `/sobra` |
-| **Patrimônio** | quanto eu tenho, e o que nele exige atenção? | `/patrimonio` | `/patrimonio` |
-| **Descobrir** | o que eu poderia comprar? | `/descobrir` | `/descobrir` |
-| **Você** | com que régua o produto me avalia? | `/voce` | `/voce` |
-| **Ativo** | este ativo específico vale? | `/ativo/:ticker` | `/ativo/:ticker` |
+| Destino | Pergunta que responde | Rota |
+|---|---|---|
+| **Mês** | como estou agora, e o que exige atenção? | `/mes` |
+| **Sobra** | o que eu faço com o que sobrou? | `/sobra` |
+| **Patrimônio** | quanto eu tenho, e o que nele exige atenção? | `/patrimonio` |
+| **Descobrir** | o que eu poderia comprar? | `/descobrir` |
+| **Você** | com que régua o produto me avalia? | `/voce` |
+| **Ativo** | este ativo específico vale? | `/ativo/:ticker` |
 
 `/ativo/:ticker` é **camada, não destino**: não aparece na navegação e é alcançável de qualquer
 lista. As URLs antigas (`/hoje`, `/carteira/*`, `/estrategia/*`, `/dashboard`, `/assets`,
@@ -106,9 +105,9 @@ Renda fixa entra **na mesma tabela** das outras posições, falando a língua de
 backend. As sub-rotas compartilham `CarteiraStore` — trocar de aba não refaz
 `POST /portfolio/evaluate`, que é a chamada mais cara do produto.
 
-No mobile, `composicao`, `posicoes`, `encerradas` e `proventos` são abas **dentro** de
-`/patrimonio`, e a renda fixa da pessoa tem rota própria (`/patrimonio/renda-fixa`) porque o
-telefone não comporta a tabela de edição do web. Composição diferente, mesmo conceito.
+`composicao`, `posicoes`, `encerradas` e `proventos` são abas **dentro** de `/patrimonio`, e a
+renda fixa da pessoa tem rota própria (`/patrimonio/renda-fixa`): a tabela de edição não cabe
+numa aba de telefone.
 
 ## Descobrir
 
@@ -166,38 +165,34 @@ No mobile, `/voce` é uma tela única com seções e só `objetivos` tem rota pr
 
 ## Público, sem login
 
-Cinco rotas, e **a lista é fechada** — crescer é decisão registrada, não efeito colateral
-(`web/src/app/app.routes.server.ts`, com teste que as lista pelo nome).
+Três páginas de documento e uma leitura sem titular. **A lista é fechada** — crescer é decisão
+registrada, não efeito colateral.
 
-- **`/`** — a landing. Não é herói com features: é o problema (você sabe quanto tem investido, não
-  quanto sobrou), um **mês de exemplo** com valores de dinheiro de verdade terminando na sobra, a
-  ordem da decisão sobre ela, **por que o produto não inventa número** (fonte com nome, estimativa
-  como faixa, julgamento com o que o derrubaria, e as três coisas que ele não faz), o que já existe
-  e o que falta, e o cadastro de interesse. Mais um caminho para entrar.
-- **`/ativo/:ticker`** — a página de research acima, sem titular e com teto por IP.
-- **`/termos`**, **`/privacidade`**, **`/aviso-cvm`** — robô de loja também não faz login, e a
-  ficha de segurança de dados pede uma URL de privacidade que abra sozinha. O Aviso CVM **lê**
-  `GET /api/public/affirmation` em vez de repetir a frase: `AFFIRMATION_LEVEL` é configuração, e
-  uma segunda cópia acabaria desatualizada justamente onde a pessoa a lê.
+- **`/termos`**, **`/privacidade`**, **`/aviso-cvm`** — HTML servido pelo backend
+  (`api/legal.py`). Robô de loja não faz login, e a ficha de segurança de dados pede uma URL de
+  privacidade que abra sozinha; é para cá que o aplicativo manda quem toca em "Termos" nas
+  configurações. O Aviso CVM **lê a postura em vigor no servidor** em vez de repetir a frase:
+  `AFFIRMATION_LEVEL` é configuração, e uma segunda cópia acabaria desatualizada justamente onde a
+  pessoa a lê.
+- **`GET /api/public/asset/{ticker}`** — a análise acima, sem titular e com teto por IP: a mesma
+  URL devolve o mesmo conteúdo para quem chega por um link compartilhado.
 
 ## Autenticação
 
-Login via Google nas duas plataformas. Acesso de 1h e refresh de 30 dias **rotacionado e queimado
-no uso**; revogação por `jti` (este dispositivo) e `session_cuts` (todos). Os clientes renovam uma
-vez ao levar 401, e no web isso é coordenado **entre abas** por Web Lock — dois refreshes
-simultâneos derrubam a sessão.
+Login via Google. Acesso de 1h e refresh de 30 dias **rotacionado e queimado no uso**; revogação
+por `jti` (este aparelho) e `session_cuts` (todos). O aplicativo renova **uma vez** ao levar 401,
+com a renovação compartilhada: dois refreshes simultâneos derrubam a sessão.
 
 ## Notificações
 
 Alerta de preço disparado é imediato via FCM. O resumo de oportunidades (`STRONG_BUY`, ou score
 ≥ 75 com DY ≥ 6%, excluindo o que já está na carteira e os tickers excluídos) sai por cadência
 configurável — off, diária, semanal ou mensal. O mesmo push lista posições com veredito de venda.
-Requer o app instalado, e o web sinaliza isso em vez de oferecer um controle que não faria nada.
 
 ## Busca
 
 `/search` procura carteira, renda fixa e universo e devolve `ref` — ticker ou id, **nunca
-caminho**. Destino de tela também é resultado, mas a lista vive em cada cliente
-(`SEARCH_DESTINATIONS` no web, `buscaDestinos` no mobile): as árvores diferem, e um catálogo de
-rotas no servidor seria segunda verdade sobre a arquitetura de informação. Por isso os destinos
-filtram sem rede. No web abre por `Ctrl/⌘ K`; no mobile é a rota `/busca`.
+caminho**. Destino de tela também é resultado, mas a lista vive no cliente (`buscaDestinos`): um
+catálogo de rotas no servidor seria segunda verdade sobre a arquitetura de informação, e por isso
+os destinos filtram sem rede. A porta é `FiSearchAction`, na barra de todo destino de raiz, e leva
+à rota `/busca`.

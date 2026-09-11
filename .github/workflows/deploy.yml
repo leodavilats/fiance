@@ -117,8 +117,9 @@ jobs:
           RAILWAY_ENVIRONMENT: ${{ inputs.ambiente }}
 
       # Fumaça, não suíte: se `/api/health` e a rota pública respondem, o processo subiu, o banco
-      # respondeu e a fonte externa foi alcançada. É o mínimo que separa "deploy terminou" de
-      # "deploy funcionou".
+      # respondeu e a fonte externa foi alcançada. `/privacidade` entra junto porque é a URL que a
+      # loja exige e que o aplicativo linka — ela cair não aparece em nenhum outro lugar.
+      # É o mínimo que separa "deploy terminou" de "deploy funcionou".
       - name: Teste de fumaça
         run: |
           set -e
@@ -132,6 +133,8 @@ jobs:
               echo "health respondeu na tentativa $tentativa"
               curl -fsS "$base/api/public/asset/PETR4" > /dev/null
               echo "rota pública respondeu"
+              curl -fsS "$base/privacidade" > /dev/null
+              echo "página de privacidade respondeu"
               exit 0
             fi
             echo "ainda subindo (tentativa $tentativa)…"

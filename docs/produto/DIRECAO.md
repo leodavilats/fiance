@@ -113,7 +113,7 @@ imediata, não análise.
 
 ### 3.5 O papel de educador já tem esqueleto no repositório
 
-A disciplina de explicabilidade não é discurso aqui: o `lint:ui` **reprova** julgamento renderizado
+A disciplina de explicabilidade não é discurso aqui: `test/lint_ui_test.dart` **reprova** julgamento renderizado
 sem `<app-provenance>` ou equivalente, `analysis/falsifiers.py` entrega o que derrubaria cada
 veredito, e a projeção sai em faixa por invariante. Educação contextual — explicar no momento em que
 o número aparece — é exatamente o formato que essa arquitetura favorece, e é o oposto de "seção de
@@ -293,7 +293,7 @@ Inventário concreto, porque é a maior vantagem desta ideia sobre começar do z
 | Perfil de risco e preferências | `preferences` | base do perfil, sem tabela nova |
 | Cerca de plano como dado, desligada | `entitlement/plans.py` | dá para mover a linha do free/pago sem tocar em regra de negócio |
 | Dicionário fechado de eventos que recusa ticker e valor | `core/events.py` | analytics de um app financeiro sem vazar dado financeiro |
-| Tokens, vocabulário gerado e `lint:ui` | `design-tokens/` | tela nova nasce coerente nas três plataformas; **categoria de despesa deve nascer aqui**, como já nascem categoria de ativo e tipo de renda fixa |
+| Fundação visual, vocabulário e regras de interface por teste | `mobile/lib/core/`, `mobile/test/lint_ui_test.dart` | tela nova nasce coerente; **categoria de despesa deve nascer no vocabulário**, como já nascem categoria de ativo e tipo de renda fixa |
 | Tabelas com dono, exportação e exclusão | `account_store` | LGPD do §4.7 sai quase de graça, se as tabelas novas forem registradas |
 | Push, alertas, cadência configurável | `notifications/` | canal do alerta reenquadrado do §4.4 |
 | Níveis de afirmação | `affirmation.py` | a fronteira do §4.4 já é configuração, não refactor |
@@ -342,7 +342,7 @@ prioridades mudam de lugar.
 | **E-mail transacional** | barato | pré-requisito de cobrança (B5) **e** o canal do público novo que não instala app | com a cobrança |
 | **WhatsApp (Meta Cloud API)** | por conversa | **sobe**: o público novo é WhatsApp-first, e "sua sobra deste mês é R$ X" é mensagem que se lê ali | após validar |
 | **Telegram (bot)** | zero | alternativa subestimada para testar o canal sem custo | experimento |
-| **Landing pública + conteúdo** | zero | hoje a raiz redireciona para `/hoje`, que exige sessão: o robô só alcança `/ativo/:ticker`. A promessa nova precisa de uma página que a explique | fase 1 |
+| **Página de venda pública** | zero | o front saiu em 2026-09-11, e com ele a landing: hoje a única porta de entrada é a ficha da loja, e a promessa nova precisa de algum lugar que a explique — a ficha, um site enxuto, ou os dois | fase 1 |
 | **Analytics de leitura** (PostHog ou tela de operador) | free tier | os 27 eventos já existem; falta **ler** funil e retenção — e a nova direção é uma aposta que só se confirma medindo | fase 1 |
 | **Sentry, uptime, log** | free tier | pré-requisito de subir, independente de direção (A5) | agora |
 | **IA de escopo estreito** | por uso | **um uso novo e legítimo**: classificar transação bancária em categoria de despesa — não há julgamento de investimento envolvido, então não fere a fronteira do §4.4. Também: normalizar cabeçalho de CSV que o parser não reconhece, e redigir em português o que o backend já calculou | fase 3 |
@@ -396,7 +396,8 @@ A direção nova é uma aposta num público que o time ainda não entrevistou. B
 - 10 a 15 conversas com o público-alvo descrito (assalariado, investe pouco ou nada, não acompanha
   o mercado). A pergunta a responder não é "você usaria?" — é **"o que você usa hoje, e o que te
   fez parar de usar?"**.
-- Landing pública com a promessa nova, e medição de quem se cadastra por ela.
+- A promessa nova escrita onde alguém a encontre: a ficha de loja é o mínimo, e ela tem título,
+  subtítulo, descrição e capturas — todos textos de produto, não de engenharia.
 - Ligar a leitura de funil e retenção sobre os eventos que já existem.
 
 ### Fase 2 — a ponte, sem automação (4–6 semanas)

@@ -17,13 +17,6 @@ class TestSemAutenticacao:
         assert corpo["decision"]["verdict"]
         assert corpo["fair_price"]
 
-    def test_o_universo_responde_sem_token(self, client):
-        corpo = client.get("/api/public/universe").json()
-
-        assert corpo["count"] > 0
-        assert "PETR4" in corpo["tickers"]
-        assert len(corpo["lastmod"]) == 10
-
     def test_ativo_inexistente_devolve_404_e_nao_500(self, client):
         assert client.get("/api/public/asset/NAOEXISTE99").status_code == 404
 

@@ -1,6 +1,8 @@
 # fiance — o que falta para subir
 
-> Auditoria de **2026-09-04**, contra o commit `5f2b0bb` (`main`, árvore limpa).
+> Auditoria de **2026-09-04**, revista em **2026-09-11**, quando o front web saiu do produto e a
+> distribuição passou a ser só por loja — o que muda a trilha B mais que qualquer outra coisa
+> escrita aqui.
 >
 > **Escopo:** só o que impede colocar a aplicação no ar. Ferramenta ou integração que mudaria o
 > patamar do produto saiu deste arquivo e está em [DIRECAO.md](DIRECAO.md).
@@ -20,19 +22,22 @@ primeira é obrigatória.
 
 | Trilha | O que destrava | Bloqueios |
 |---|---|---|
-| **A — subir** | aplicação no ar, de graça, com usuário real | 5 |
-| **B — cobrar** | ligar a cobrança | 6 |
-| **C — lojas** | publicar Android e iOS | 5 |
+| **A — subir** | API no ar, de graça, com usuário real | 5 |
+| **C — lojas** | publicar Android e iOS, que agora é **a única porta de entrada** | 5 |
+| **B — cobrar** | ligar a cobrança, depois de C | 6 |
 
-O que existe é sólido e incomum para o estágio: 91 rotas de API, ~18,5k linhas de Python, ~15k de
-TypeScript, ~12k de Dart, seis migrações Alembic, CI de cinco jobs cobrindo backend, web, mobile,
-E2E em navegador e sincronia de design tokens, SSR na rota de aquisição, multi-tenancy aplicada na
-camada de store, sessão com refresh rotacionado e revogação, exportação e exclusão de conta, e um
-livro-razão que é fonte única da carteira. Nada disso é o problema.
+**A ordem mudou em 2026-09-11.** Enquanto havia site, dava para ter usuário antes de ter loja; hoje
+não há produto alcançável sem passar por Play e App Store, e a trilha C deixou de ser a última.
+
+O que existe é sólido e incomum para o estágio: 91 rotas de API, ~18,5k linhas de Python, ~12k de
+Dart, nove migrações Alembic, CI de quatro jobs cobrindo backend, aplicativo, build Android e
+marca, multi-tenancy aplicada na camada de store, sessão com refresh rotacionado e revogação,
+exportação e exclusão de conta, e um livro-razão que é fonte única da carteira. Nada disso é o
+problema.
 
 O que impedia subir era, em boa parte, código — e essa parte foi feita em 2026-09-05: a suíte
 ficou honesta e verde, o IR passou a ser apurado por mês, a migração saiu do startup, o texto
-jurídico passou a existir e o Sentry foi integrado nas três plataformas (ver
+jurídico passou a existir e o Sentry foi integrado nas duas plataformas (ver
 [CHANGELOG](../CHANGELOG.md)). **O que sobrou da trilha A não é código:** é criar conta de
 Sentry e de monitor, montar a homologação no Railway, desligar o auto-deploy do `main`, executar um
 restore de backup e conseguir um advogado para revisar a minuta dos termos.
@@ -45,9 +50,10 @@ Para cobrar, o problema é que **três camadas existem só no backend**:
 | Provedor de pagamento | `FakeProvider`, HMAC caseiro | — | não há como processar dinheiro |
 | E-mail | **nada** | — | não há como avisar ninguém de nada |
 
-**Estimativa:** poucos dias para o que resta da trilha A, quase tudo em painel de terceiro. Mais
-2 a 3 semanas para a B, e a maior parte dessas
-não é código de domínio — é integração, tela de cobrança e texto jurídico.
+**Estimativa:** poucos dias para o que resta da trilha A, quase tudo em painel de terceiro. A
+trilha C passa a vir antes da B, e o prazo dela não é de engenharia: é fila de revisão de loja. Mais
+2 a 3 semanas para a B, e a maior parte não é código de domínio — é integração, tela de cobrança e
+texto jurídico.
 
 > **Antes de começar a trilha B, leia [DIRECAO.md](DIRECAO.md).** Há uma mudança de
 > direção em avaliação que altera o que é vendido, para quem, e por quanto. Tela de plano, régua de
@@ -64,18 +70,20 @@ não é código de domínio — é integração, tela de cobrança e texto jurí
 
 ### A2. O texto jurídico é minuta, e precisa de advogado
 
-As três páginas existem, são públicas, renderizadas no servidor e alcançáveis do login e de
-Você → Conta: `/termos`, `/privacidade`, `/aviso-cvm`. Elas descrevem com honestidade o que o
-produto faz hoje, e estão marcadas como **minuta pendente de revisão jurídica**.
+As três páginas existem, são públicas e servidas pelo backend, e o aplicativo linka para elas do
+login e de Você → Conta: `/termos`, `/privacidade`, `/aviso-cvm`. Elas descrevem com honestidade o
+que o produto faz hoje, e estão marcadas como **minuta pendente de revisão jurídica**.
 
 O que falta é a revisão em si. Dois pontos que o advogado precisa fechar antes de o aviso de minuta
 sair:
 
-- o **endereço do encarregado** de dados, que hoje a página remete a "Você → Conta" sem nomear;
+- o **endereço do encarregado** de dados, que a Política promete publicar e ainda não tem (é o
+  item 30 do [KNOWN_ISSUES](../KNOWN_ISSUES.md), e as lojas exigem um canal);
 - o **prazo de retenção do log técnico**, hoje descrito como "o necessário" — que é honesto e vago.
 
-Quando o parecer chegar, apagar `web/src/app/components/legal/legal-draft-notice.component.ts` tira
-o aviso das três páginas de uma vez.
+Quando o parecer chegar, apagar a constante `_MINUTA` de
+[`services/legal_pages.py`](../../backend/app/services/legal_pages.py) tira o aviso das três
+páginas de uma vez.
 
 ### A3. O parecer da fronteira CVM continua sem dono
 
@@ -90,12 +98,13 @@ comprar Y" é exatamente ele. A leitura sobre orientação de dívida
 
 ### A5. Falta a conta de observabilidade, não o código
 
-Sentry está integrado nas três plataformas, com `before_send` que redige ticker e valor, e é inerte
-sem DSN. `SENTRY_DSN` configurado sem o pacote falha alto.
+Sentry está integrado nas duas plataformas, com `before_send` que redige ticker e valor, e é
+inerte sem DSN. `SENTRY_DSN` configurado sem o pacote falha alto.
 
 O que falta, tudo em plano gratuito e detalhado em [OPERACAO.md](../OPERACAO.md):
 
-- [x] projetos no Sentry criados e os três DSN conferidos por entrega (2026-09-06);
+- [x] projetos no Sentry criados e os DSN conferidos por entrega (2026-09-06) — menos o do
+      aplicativo, que nunca teve evento visto em painel;
 - [ ] monitor externo em `/api/health` **e** em `/api/public/asset/PETR4` — só o primeiro passa
       verde com a BRAPI fora do ar;
 - [ ] agregação de log fora do Railway, que é efêmero;
@@ -118,8 +127,8 @@ pelo *release command*, sobe e faz teste de fumaça.
       que é o arranjo desejado; a fonte do serviço de produção continua ligada, então deploy manual
       e redeploy de rollback seguem funcionando
 - [x] primeiro deploy de homologação, e `ALLOWED_ORIGINS` corrigido (2026-09-06)
-- [x] front publicado como serviço `fiance-web`, com a renderização no servidor **funcionando de
-      fato** — ela nunca funcionou até aqui (ver CHANGELOG de 2026-09-06)
+- [ ] apagar o serviço `fiance-web`, que perdeu a origem em 2026-09-11 e continua servindo a
+      última build (KNOWN_ISSUES #31)
 
 ### A8. O restore de backup continua sem nunca ter sido testado
 
@@ -140,18 +149,21 @@ decisão de arquitetura.
 ### B1. A pergunta que precede tudo: IAP das lojas
 
 Google Play e App Store exigem compra in-app para conteúdo digital consumido dentro do app, com
-comissão de 15–30%. Checkout web aberto de dentro do app é motivo de rejeição nas duas.
+comissão de 15–30%. Checkout aberto em navegador de dentro do app é motivo de rejeição nas duas.
 
-Isto **não está decidido em lugar nenhum do repositório**, e é decisão de arquitetura:
+**Sem site, a opção de 0% de comissão deixou de existir.** Ela dependia de vender a assinatura numa
+página própria, com o aplicativo apenas lendo o estado — e essa página saiu do produto em
+2026-09-11. O que sobra:
 
 | Caminho | Como funciona | Custo | Risco |
 |---|---|---|---|
-| **Só web** (recomendado para começar) | assinatura vendida só no site; o app lê o estado e nunca mostra preço nem CTA | 0% | o app **não pode** mencionar preço nem linkar checkout; conversão mobile cai |
-| **IAP nativo** | Play Billing + StoreKit | 15% (1º US$1M) a 30% | dois provedores, dois webhooks, reconciliação com a assinatura web |
-| **IAP via RevenueCat** | unifica Play + App Store + web | comissão da loja; free até US$2,5k/mês | dependência a mais, mas resolve em dias |
+| **IAP via RevenueCat** | unifica Play + App Store | comissão da loja; free até US$2,5k/mês | dependência a mais, mas resolve em dias |
+| **IAP nativo** | Play Billing + StoreKit | 15% (1º US$1M) a 30% | dois provedores, dois webhooks, reconciliação com a assinatura do servidor |
+| **Voltar a ter uma página de venda** | publicar de novo uma superfície de checkout fora do app | 0% na venda | é reabrir o front que acabou de sair; o app continua proibido de mencionar preço |
 
 A arquitetura atual — assinatura no servidor, entitlement resolvido no backend, cliente burro —
-suporta os três. **Decidir isto é o primeiro item da trilha**, porque B2 e B3 dependem da resposta.
+suporta os três. **Decidir isto é o primeiro item da trilha**, porque B2 e B3 dependem da resposta,
+e a decisão agora custa comissão em vez de custar tela.
 
 ### B2. Não existe provedor de pagamento real
 
@@ -165,15 +177,13 @@ substituindo o HMAC caseiro. Validar em staging (A7) antes de qualquer venda.
 
 ### B3. Não existe interface de cobrança, e o CTA está quebrado
 
-`billing` não aparece em `web/src` nem em `mobile/lib` (KI#19). Concretamente:
+`billing` não aparece em `mobile/lib`. Não há tela de plano, exibição de preço, checkout, gestão
+de assinatura, cancelamento, recibo nem histórico de pagamento — e o 402 do backend já devolve o
+corpo que montaria o bloqueio.
 
-- Sem tela de plano, exibição de preço, checkout, gestão de assinatura, cancelamento, recibo ou
-  histórico de pagamento.
-- [gate.component.ts:36](../../web/src/app/components/gate/gate.component.ts#L36) aponta para
-  `routerLink="/voce/plano"`. Essa rota **não existe** em `app.routes.ts` — e como a última entrada
-  é `{ path: '**', redirectTo: 'hoje' }`, clicar em "assinar" **joga a pessoa silenciosamente para a
-  Hoje**. Não dá 404, não dá erro, não loga nada. É o pior modo de falha possível para um botão de
-  conversão.
+O gate do front tinha um CTA que apontava para uma rota inexistente e mandava a pessoa para a home
+sem erro nenhum; ele saiu com o front. **A lição fica:** todo destino de conversão precisa existir
+antes do botão, e no Dart isso não tem máquina que cobre.
 
 Cancelamento em interface não é conveniência: é exigência do CDC e das duas lojas.
 
@@ -217,7 +227,7 @@ mas precisa estar tomada antes de a primeira cobrança cair.
 | Android assina release com chave de **debug** | `// TODO: Add your own signing config` | [build.gradle.kts:38-41](../../mobile/android/app/build.gradle.kts#L38-L41) |
 | iOS sem `GoogleService-Info.plist` | push não funciona no iOS | `mobile/ios/Runner/` |
 | Sem *Sign in with Apple* | único login é `/auth/google` | [auth.py](../../backend/app/api/auth.py) |
-| ~~Sem política de privacidade pública~~ | **feito** — `/privacidade`, pública e SSR; falta a revisão jurídica (A2) | [privacy.component.ts](../../web/src/app/components/legal/privacy.component.ts) |
+| ~~Sem política de privacidade pública~~ | **feito** — `/privacidade`, servida pelo backend e sem login; falta a revisão jurídica (A2) e o canal de atendimento | [legal_pages.py](../../backend/app/services/legal_pages.py) |
 | `applicationId` genérico `com.fiance.fiance` | funciona; confira o domínio antes de registrar | — |
 
 A ausência de *Sign in with Apple* é bloqueio duro: a diretriz 4.8 exige oferecer login que não
@@ -234,13 +244,13 @@ resposta pronta.
 ### Trilha A — antes de subir
 
 - [x] Suíte verde de verdade: rede bloqueada no transporte e ETF de renda fixa classificado certo
-- [x] Termos de Uso, Política de Privacidade e Aviso CVM publicados em rota SSR pública — como
-      minuta (A2 segue aberto pela revisão jurídica)
+- [x] Termos de Uso, Política de Privacidade e Aviso CVM públicos, servidos pelo backend — como
+      minuta (A2 segue aberto pela revisão jurídica e pelo canal de atendimento)
 - [x] Nível de afirmação publicável decidido por escrito, e registrado no CHANGELOG
 - [x] IR consertado: apuração por mês e categoria, projetada do razão
 - [x] Migração movida do startup para *release command*, e comentário do Procfile corrigido
-- [x] Sentry integrado nas três plataformas, com limpeza que não deixa carteira sair
-- [ ] DSN do Sentry criado e configurado nos três projetos (A5)
+- [x] Sentry integrado nas duas plataformas, com limpeza que não deixa carteira sair
+- [ ] Evento do aplicativo visto no painel do Sentry, num aparelho real (A5)
 - [ ] Monitor de uptime em `/api/health` **e** na rota pública (A5)
 - [ ] Alerta em canal humano para 5xx, disjuntor aberto e job periódico parado (A5)
 - [ ] Log persistente fora do Railway (A5)
@@ -248,14 +258,9 @@ resposta pronta.
 - [ ] Restore de backup testado, com data registrada, e RPO/RTO confirmados (A8)
 - [ ] Minuta dos termos revisada por advogado, e o aviso de minuta removido (A2)
 - [x] `APP_ENV=production`, `JWT_SECRET`, `ALLOWED_ORIGINS` e `BILLING_WEBHOOK_SECRET` conferidos
-      no ambiente (2026-09-06). **Correção:** cheguei a registrar aqui que `ALLOWED_HOSTS` e
-      `SITE_URL` não eram lidas por ninguém — eu havia procurado só em `backend/`. As duas são do
-      **web**: `SITE_URL` derruba o build (sitemap e canônicas apontariam para o domínio errado) e
-      `ALLOWED_HOSTS` é a proteção contra SSRF do SSR do Angular
-- [ ] `ALLOWED_ORIGINS` aponta para `fiance-production.up.railway.app`, e o domínio real é
-      `fiance.up.railway.app`. Corrigir quando o web for publicado, e **tirar
-      `http://localhost:4200` de produção** — com credenciais liberadas, ele deixa uma página local
-      falar com a API de produção
+      no ambiente (2026-09-06)
+- [ ] `ALLOWED_ORIGINS` revisada: as origens de navegador que ela liberava saíram com o front, e
+      `http://localhost:4200` em produção deixa uma página local falar com a API de produção
 - [x] `FINNHUB_API_KEY` e `GEMINI_API_KEY` apagadas dos dois ambientes (2026-09-06) — as fontes
       foram descontinuadas e o código não lia nenhuma das chaves
 - [ ] Dependabot e scanner de segredo ligados — nada avisa de CVE em dependência, e nada impede o
@@ -267,22 +272,27 @@ resposta pronta.
       quanto precede a tela que vende
 - [ ] Decisão de IAP tomada (B1)
 - [ ] Provedor de pagamento real integrado e webhook validado em staging (B2)
-- [ ] Tela de plano em `/voce/plano` — a rota que o gate já chama e que não existe (B3)
+- [ ] Tela de plano em `/voce/plano` — a rota não existe no aplicativo (B3)
 - [ ] Checkout, gestão de assinatura, cancelamento e recibo em interface (B3)
 - [ ] **Trial reiniciado para a base existente**, antes de virar `ENTITLEMENTS_ENABLED` (B4)
 - [ ] E-mail transacional para recibo, fim de trial, falha de cobrança e cancelamento (B5)
-- [ ] Fluxo completo — assinar, cobrar, falhar, retentar, cancelar, degradar — coberto em E2E
-      (KI#6 registra que o miolo não está coberto hoje)
+- [ ] Fluxo completo — assinar, cobrar, falhar, retentar, cancelar, degradar — coberto de ponta a
+      ponta. Não há mais suíte E2E nenhuma (KNOWN_ISSUES #13)
 - [ ] Emissão de nota fiscal resolvida (B6)
 - [ ] Parecer jurídico sobre a fronteira CVM 19/20 (A3) — obrigatório quando há remuneração
 
 ### Trilha C — antes de publicar nas lojas
 
+> **Esta trilha virou a porta de entrada do produto.** Enquanto ela não fechar, não há como alguém
+> de fora usar o fiance.
+
 - [ ] Keystore de release Android gerado, guardado em cofre e configurado no Gradle
 - [ ] `GoogleService-Info.plist` do iOS adicionado e push testado em aparelho real
 - [ ] *Sign in with Apple* implementado (backend + mobile)
-- [ ] URL de política de privacidade preenchida nos dois formulários
+- [ ] URL de política de privacidade (`{SITE_URL}/privacidade`) preenchida nos dois formulários,
+      e o canal de atendimento publicado nela (KNOWN_ISSUES #30)
 - [ ] Ficha de segurança de dados preenchida
+- [ ] Monitor externo cobrindo `/privacidade`: ela cai sem que nenhuma tela do produto perceba
 - [ ] Decisão de IAP implementada conforme B1
 
 ---
@@ -291,7 +301,7 @@ resposta pronta.
 
 Registrado para que ninguém refaça:
 
-- **Push exigir o app instalado** é decisão, e o web sinaliza em `/voce/alertas`.
+- **Push exigir o app instalado** deixou de ser assimetria: só há o aplicativo.
 - **O lock de job expirar por TTL em vez de ser liberado** é deliberado — o TTL é o intervalo do
   job. O custo está no KI#14 e a correção certa é heartbeat, não `release` no `finally`.
 - **O universo hardcoded** (KI#4) é fallback defensivo intencional.

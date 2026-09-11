@@ -34,9 +34,11 @@ construindo em cima de uma aposta errada.
 - [ ] 10 a 15 conversas com gente real do público amplo descrito em VISAO_NOVA — a pergunta certa é
       "o que você usa hoje para controlar dinheiro, e o que te fez parar de usar", não "você
       usaria isto"
-- [x] **Landing publicada em `/`** (2026-09-06), com captura de e-mail em `interest_signups`. O
-      centro dela é um mês de exemplo que fecha na conta, não uma headline — foi a saída que o
-      [AI-TELLS](../design/AI-TELLS.md) apontava para não virar template gerado
+- [ ] **A promessa precisa de um lugar público de novo.** A landing existiu em `/` entre
+      2026-09-06 e 2026-09-11, com captura de e-mail; saiu junto com o front web, e com ela a
+      única superfície que explicava o produto para quem não instalou. Hoje a porta é a ficha da
+      loja, que ainda não foi escrita. O que a landing acertou vale para a ficha: o centro é um
+      mês de exemplo que fecha na conta, não uma headline
 - [x] **Educação: curada, por ora.** Decidido em 2026-09-05, por delegação. Educação própria é
       obrigação editorial permanente, e o produto ainda não sabe se a ponte retém gente — assumir
       uma redação contínua antes disso é gastar o recurso mais escasso na aposta não validada. A
@@ -51,7 +53,7 @@ construindo em cima de uma aposta errada.
 - [ ] Ligar a leitura de funil/retenção sobre os 27 eventos que `core/events.py` já produz (PostHog
       ou tela de operador — decisão já discutida no PRE_PRODUCAO, seção de integrações)
 
-**Portão para a Fase 2:** as conversas e a landing indicam interesse real na ponte — não em
+**Portão para a Fase 2:** as conversas indicam interesse real na ponte — não em
 "orçamento" isolado, que é mercado disputado e de baixa disposição a pagar (ver
 [DIRECAO.md §4.1](DIRECAO.md#41-o-mercado-de-orçamento-é-mais-disputado-e-paga-menos-que-o-de-investimento)).
 Se o sinal vier fraco, **voltar à Fase 0** e revisar a tese antes de gastar em design ou construção.
@@ -73,8 +75,8 @@ Se o sinal vier fraco, **voltar à Fase 0** e revisar a tese antes de gastar em 
       [docs/CHANGELOG.md](../CHANGELOG.md). A direção de 2026-09-05 mudou em 2026-09-07:
       não era *manter* o mecanismo de geração, era **tirar a camada visual dele** — o schema
       fechava o vocabulário e não tinha chave para estado de interação. Cor, tipo, espaço, raio,
-      motion e densidade passaram a ser escritos em `web/src/foundation.css`, com espelho à mão
-      em `design_tokens.dart`; réguas e vocabulário continuam gerados de `product-rules.json`,
+      motion e densidade passaram a ser escritos à mão — e desde 2026-09-11 existem num lugar
+      só, `mobile/lib/core/design_tokens.dart`; réguas e vocabulário seguem espelhando o Python,
       porque são número e não aparência. A afordância era o diagnóstico certo e virou número:
       contorno de controle a **1,20:1** (WCAG pede 3) e preenchimento contra poço a **2,28:1**.
       Três travas novas, cada uma conferida contra o defeito que a motivou

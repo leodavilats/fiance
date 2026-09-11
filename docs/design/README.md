@@ -23,15 +23,15 @@ documento que corresponde ao que se está fazendo. O resto de `docs/` também n�
 | [VISUAL-LANGUAGE.md](VISUAL-LANGUAGE.md) | A identidade: "tinta e papel", paleta semântica, tipografia, a régua | Ao decidir aparência |
 | [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) | Tokens e componentes, e o contrato de cada um | Antes de construir componente |
 | [AI-TELLS.md](AI-TELLS.md) | O que faz uma tela parecer gerada por IA, e a regra contra cada coisa — texto, composição, dado de exemplo | Antes de aceitar qualquer tela como pronta |
-| [PARIDADE.md](PARIDADE.md) | O que precisa ser igual entre web e mobile, o que pode divergir, e o que nunca se copia | **Antes de mexer num conceito** |
 
-**INFORMATION-ARCHITECTURE é a autoridade da navegação.** Quando web e mobile divergem, é contra ele que se confere —
-foi assim que a Estratégia apareceu: `strategy.component` tinha 1092 linhas de template e nenhuma
-rota, e `GET /strategy` rodava para ninguém.
+**INFORMATION-ARCHITECTURE é a autoridade da navegação.** Quando uma tela não sabe onde mora, é
+contra ele que se confere — foi assim que a Estratégia apareceu: um componente com 1092 linhas de
+template e nenhuma rota, e `GET /strategy` rodando para ninguém.
 
-**PARIDADE é a autoridade sobre o que precisa ser igual.** A resposta curta é: conceito, nome e
-hierarquia — não pixel, não hexadecimal. Nenhuma máquina o confere: a paridade é dirigida ao
-longo do desenvolvimento das telas, e o documento é a autoridade.
+`PARIDADE.md` saiu em 2026-09-11, junto com o front web: ele existia para dizer o que precisava ser
+igual entre duas plataformas, e sobrou uma. O que ele ensinou — *mesma intenção, não mesma
+implementação*, e que a paridade quebra no conceito, não na cor — está no
+[CHANGELOG](../CHANGELOG.md).
 
 ## O que o redesign descobriu, e vale lembrar
 
@@ -42,10 +42,10 @@ backend calcula e o cliente descarta em silêncio**. `Modelo(**resultado.__dict_
 `trend_basis`, `allocation_gaps`, `dcf`, `price_history`, `reason_groups` e
 `pct_cdi_equivalente`.
 
-O segundo padrão: **classe CSS que não existe não quebra o build, quebra a tela.** `.card`,
-`.btn-primary`, `.tag`, `verdict-*` e `bg-success` eram usadas em dezenas de templates sem estar
-definidas em CSS nenhum. Hoje o `npm run lint:ui` cobre isso, junto de ícone do Lucide não
-registrado.
+O segundo padrão: **princípio que nenhuma máquina cobra volta a ser violado em duas semanas.**
+Quando as regras de produto só rodavam numa plataforma, a outra tinha zero proveniência em
+julgamento e 49 tamanhos de tipo escritos soltos. Hoje elas são teste Dart
+(`mobile/test/lint_ui_test.dart`), e rodam no mesmo comando do CI.
 
 Os dois estão na lista de armadilhas do [CLAUDE.md](../../CLAUDE.md#armadilhas-que-não-quebram-o-build).
 
@@ -55,18 +55,13 @@ Cor, tipografia, espaço, raio, motion, densidade **e as réguas do produto** s�
 
 | O quê | Onde |
 |---|---|
-| Fundação visual do web | [`web/src/foundation.css`](../../web/src/foundation.css) |
-| Componentes do web | [`web/src/styles.css`](../../web/src/styles.css) |
-| Fundação visual do mobile | [`mobile/lib/core/design_tokens.dart`](../../mobile/lib/core/design_tokens.dart) |
-| Bandas de régua e vocabulário | `core/product-rules.ts` e `core/product_rules.dart` |
-| Favicon e ícones do app | `python design-tokens/build-icons.py` (o único gerador que sobra) |
-
-**A paridade entre web e mobile é dirigida no desenvolvimento das telas**, não por máquina. O que
-precisa ser igual está em [PARIDADE.md](PARIDADE.md): conceito, nome e hierarquia. Espaçamento,
-composição, navegação, gesto e cor são de cada plataforma.
+| Fundação visual | [`mobile/lib/core/design_tokens.dart`](../../mobile/lib/core/design_tokens.dart) |
+| Tema montado sobre ela | [`mobile/lib/core/theme.dart`](../../mobile/lib/core/theme.dart) |
+| Bandas de régua e vocabulário | `mobile/lib/core/product_rules.dart` e `vocabulary.dart` |
+| Ícones do aplicativo | `cd mobile && python tool/build_icons.py` (o único gerador que sobra) |
 
 Os limiares de score espelham `backend/app/analysis/score_ruler.py`, que é a fonte. Mudar um
-limiar exige mudar o Python primeiro, e depois os dois clientes.
+limiar exige mudar o Python primeiro, e depois o Dart.
 
 O mínimo da WCAG continua verificado, e não é design: `mobile/test/contraste_test.dart` cobra
 4,5:1 para texto e 3:1 para limite de controle. Liberdade de UX/UI é escolher a cor, não publicar
@@ -78,10 +73,9 @@ o que não se lê.
   Onde o dado falta, o entregável é um **estado**, não um número.
 - **Regra de negócio fica no backend.** `analysis/` e `optimizer/` são a fonte única. A UI reflete
   e explica; não decide.
-- **Mesma intenção, não mesma implementação.** Conceito, vocabulário e hierarquia são iguais nas
-  plataformas; espaçamento, composição e navegação não precisam ser. O que é **número** — banda de
-  régua, rótulo de veredito — nasce em `analysis/score_ruler.py` e é espelhado nos dois clientes
-  no mesmo commit, porque a régua de score já divergiu entre web e mobile.
+- **O que é número nasce no backend.** Banda de régua e rótulo de veredito vêm de
+  `analysis/score_ruler.py` e são espelhados no Dart no mesmo commit. A régua já divergiu entre
+  plataformas uma vez, e o sintoma foi o mesmo ativo receber dois vereditos.
 - **Em conflito:** clareza vence informação; decisão vence funcionalidade visível; facilidade vence
   sofisticação técnica.
 

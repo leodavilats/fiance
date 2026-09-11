@@ -12,6 +12,98 @@
 
 ---
 
+## O produto passa a ser um aplicativo, e o front web sai inteiro (2026-09-11)
+
+Decisão de produto, tomada para andar mais rápido: **o fiance é um aplicativo de celular**,
+distribuído pela App Store e pelo Google Play. O front Angular saiu do repositório, com os 191
+testes, o E2E de navegador, as 24 regras do `lint:ui`, a renderização no servidor e a landing.
+Sobraram duas pernas: a API em FastAPI e o Flutter.
+
+O motivo não é técnico. Manter duas interfaces custa cada tela duas vezes, cada regra de produto
+duas vezes, e — o que é pior — mantém a **paridade** como trabalho permanente: um documento, uma
+disciplina e uma classe inteira de defeito que só existe porque há dois lugares para a mesma ideia.
+O repositório tem o registro de que a paridade quebrava sempre no mesmo lugar (o conceito, nunca a
+cor), e de que o mobile passou meses sem `/mes` e sem `/sobra` com a paleta perfeitamente
+sincronizada. Com um cliente só, esse custo desaparece em vez de ser administrado.
+
+### O que o front carregava e não era tela
+
+Três coisas, e cada uma teve destino diferente.
+
+**O texto jurídico passou para o backend.** `/termos`, `/privacidade` e `/aviso-cvm` agora são HTML
+servido pelo próprio processo da API (`api/legal.py` + `services/legal_pages.py`), fora de `/api`.
+Não é conveniência: `mobile/lib/core/legal_links.dart` já apontava para
+`https://fiance.up.railway.app/termos` — o domínio da **API** —, então os três links de dentro do
+aplicativo estavam quebrados antes desta mudança, e ninguém tinha percebido. As lojas exigem uma
+URL de privacidade que abra sem login, e agora ela existe onde o aplicativo sempre disse que
+estava.
+
+São páginas de documento, e a forma segue disso: sem JavaScript, sem asset externo, sem paleta. A
+cor vem do agente do usuário (`color-scheme: light dark`), porque uma segunda cópia dos tokens
+envelheceria calada — é a mesma razão pela qual o Aviso CVM lê `affirmation.current()` no servidor
+em vez de repetir a frase do nível em vigor. `test_paginas_juridicas.py` cobra que as três abrem
+sem sessão, que não carregam script, e que a de privacidade diz como apagar a conta.
+
+**A landing e o que a sustentava saíram.** Com ela foram `POST /public/interest` e a tabela
+`interest_signups` (migração `0009_sem_landing`), `GET /public/universe` (que existia para montar o
+sitemap) e `GET /public/asset/{t}/og.png` com o `og_image.py` inteiro — cartão de link para uma
+página que não existe mais. Ficou `GET /public/asset/{ticker}`: é a leitura sem titular, é o que o
+teste de fumaça do deploy exercita, e é o que sustenta compartilhar um ativo por link.
+
+**A paleta mudou de casa.** `web/src/foundation.css` era a fonte da cor, e tinha três consumidores
+fora do web. Agora a fundação é `mobile/lib/core/design_tokens.dart`, que já existia como espelho
+escrito à mão — e a varredura de conferência não achou uma divergência: os 11 SVG da marca saíram
+byte a byte idênticos depois de o gerador passar a ler o Dart. O espelho estava certo; o que
+sobrava era a duplicação.
+
+### O que a máquina deixou de cobrar, e está declarado
+
+O verificador do front tinha 24 regras; o Dart tem 11, em `test/lint_ui_test.dart`, mais o
+contraste em `test/contraste_test.dart`. Cinco regras não têm equivalente escrito, e três delas
+protegiam acessibilidade ou erro silencioso — gráfico sem tabela, destino de navegação inexistente,
+controle montado à mão. Isso é **dívida registrada**, não decisão: está no
+[KNOWN_ISSUES](KNOWN_ISSUES.md), item 14, junto do E2E que também deixou de existir (item 13).
+
+Registrar em vez de portar às pressas é deliberado. Uma regra de lint nasce de um sinal no código —
+um seletor CSS, um nome de classe —, e traduzir "controle montado à mão" para Flutter exige decidir
+antes o que corresponde àquele sinal. Regra escrita contra o que a extensão sugere, e não contra o
+que o repositório tem, já passou meses aqui lendo um arquivo só.
+
+### O que isto muda em decisões que ainda não foram tomadas
+
+Duas, e as duas ficaram mais caras.
+
+**A cobrança perdeu a opção de 0% de comissão.** O plano registrado em 2026-08-27 assumia vender a
+assinatura numa página própria, com o aplicativo apenas lendo o estado — Google Play e App Store
+proíbem checkout externo aberto de dentro do app, mas não proíbem que a venda aconteça fora dele.
+Sem site, sobram a compra in-app (15–30%) e a hipótese de republicar uma superfície de venda. A
+arquitetura aguenta as duas: o direito mora no backend, ligado ao `user_id`, e o gateway continua
+sendo detalhe de canal.
+
+**A compatibilidade de contrato deixou de ser precaução e virou regra.** Enquanto havia web, um
+campo novo obrigatório chegava a todo mundo no próximo carregamento. Agora o cliente passa por fila
+de revisão de loja e convive com versões antigas instaladas por tempo indeterminado: campo novo
+nasce **opcional** no Dart, e campo que some do backend derruba a versão anterior do aplicativo.
+
+### O que mudou de lugar
+
+| O quê | Antes | Agora |
+|---|---|---|
+| Marca (ícone e kit) | `assets/brand/` na raiz | `mobile/assets/brand/` |
+| Gerador de ícones | `design-tokens/build-icons.py` | `mobile/tool/build_icons.py`, lendo a cor do Dart |
+| Fundação visual | `web/src/foundation.css` | `mobile/lib/core/design_tokens.dart` |
+| Texto jurídico | componentes Angular | `backend/app/services/legal_pages.py` |
+| Contrato de paridade | `docs/design/PARIDADE.md` | apagado — sobrou uma plataforma |
+
+O favicon e as cópias em `web/public/` saíram com o front: favicon sem site é arquivo que ninguém
+pede. O CI foi de seis jobs para quatro (marca, backend, aplicativo, build Android).
+
+**O serviço `fiance-web` do Railway não foi apagado**, e é o único fio solto desta mudança:
+apagá-lo é ação fora do repositório, e está registrado como item 31 do KNOWN_ISSUES. Enquanto
+estiver de pé, ele serve a última build publicada — um produto que não existe mais.
+
+---
+
 ## Quatro pendências fechadas, e um erro de idioma achado no caminho (2026-09-09)
 
 Passagem sobre a lista aberta: o lock de job, a régua de score sem consumidor no mobile, o título
@@ -985,7 +1077,8 @@ os cinco destinos com os nomes antigos e trazia contagens de teste de 724/90/49.
 fonte, três alvos", exatamente a arquitetura que foi abandonada. `web/tailwind.config.js` apontava
 para três caminhos mortos, incluindo um `docs/design/06-DESIGN-SYSTEM.md`.
 
-O contrato de paridade virou documento: [design/PARIDADE.md](design/PARIDADE.md). Este arquivo
+O contrato de paridade virou documento: `design/PARIDADE.md` (removido em 2026-09-11, quando
+sobrou uma plataforma). Este arquivo
 ficou intacto: aqui `tokens.json` é narrativa do que era verdade na época, e história não é
 pendência.
 
@@ -1228,7 +1321,7 @@ o progresso"*. As duas estavam certas, e nenhuma pelo motivo que parecia.
 Metade dele era design, e o schema fechava o vocabulário: doze papéis de tipo, quatro raios, duas
 sombras, e **nada para estado de interação**. Não havia como declarar contorno de controle,
 preenchimento pressionado ou poço de barra, porque o gerador não tinha essas chaves. Essa metade
-saiu para [foundation.css](../web/src/foundation.css), escrita à mão, com espelho à mão em
+saiu para `web/src/foundation.css`, escrita à mão, com espelho à mão em
 `design_tokens.dart`.
 
 A outra metade é **dado de produto**, consumido por 48 arquivos do web: as bandas das cinco

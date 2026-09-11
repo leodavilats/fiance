@@ -1,7 +1,8 @@
 # fiance
 
 Plataforma multi-tenant de análise de investimentos focada na B3.
-**FastAPI + Postgres** (`backend/`) · **Angular 22** (`web/`) · **Flutter** (`mobile/`).
+**FastAPI + Postgres** (`backend/`) · **Flutter** (`mobile/`), o único cliente, distribuído pelas
+lojas.
 
 Este arquivo é o **contrato de trabalho**: invariantes, armadilhas e checklists. Ele não descreve
 o sistema — isso é [docs/](docs/), e o [índice](docs/README.md) diz qual arquivo responde o quê:
@@ -27,24 +28,19 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 1032 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 1036 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 125 testes
-                                                   #   inclui test/lint_ui_test.dart:
-                                                   #   11 regras do lint:ui, no Dart
+                                                   #   inclui test/lint_ui_test.dart (11 regras
+                                                   #   de produto) e test/contraste_test.dart
 cd mobile  && flutter build apk --release          # analyze e test nao tocam o Gradle:
                                                    #   o build Android e outra metade
-cd web     && npm run format:check && npm test && npm run build && npm run lint:ui   # 191 testes
-cd web     && npm run lint:contrast                # contraste AA nos dois temas, web e mobile
-python design-tokens/build-icons.py --check        # marca sincronizada
+cd mobile  && python tool/build_icons.py --check   # marca sincronizada
 ```
 
-Duas ressalvas que já custaram tempo:
+Três ressalvas que já custaram tempo:
 
-- **Confira o código de saída, não o texto.** O build do Angular imprime erro como
-  `X [ERROR] TS…`; um `grep -i error` ingênuo passa reto.
-- **`lint:ui` roda depois do build** — a fonte de verdade das classes é o CSS emitido.
 - **A lista acima é a do CI, não um subconjunto dela.** O `ruff format --check` já esteve fora
   daqui e dentro do `.github/workflows/ci.yml`: quem seguia o contrato à risca não rodava o comando
   que reprovava, e o HEAD ficou vermelho sem ninguém ver.
@@ -76,7 +72,7 @@ O que fica:
 |---|---|
 | **Infra** — CI, migração, gerador, configuração de build, script de operação | Não tem CHANGELOG próprio, e quem lê está prestes a executar |
 | **Armadilha local**, em uma linha | O comentário evita o defeito ali, e o defeito não é óbvio na linha seguinte |
-| **Escape declarado** que o `lint:ui` exige | `<!-- design-exception: regra — motivo -->` é contrato com a máquina |
+| **Escape declarado** que uma regra de `test/lint_ui_test.dart` exige | `// design-exception: regra — motivo` é contrato com a máquina, e o motivo é obrigatório |
 
 Se a explicação é boa demais para caber em uma linha, ela não é comentário: é entrada no
 CHANGELOG.
@@ -87,34 +83,26 @@ CHANGELOG.
 |---|---|---|
 | Coluna no model | Migração Alembic (`backend/migrations/`) | `test_database_migration.py` falha |
 | Tabela com `user_id` | Entrar em `account_store.USER_SCOPED_MODELS` | `test_export_cobre_toda_tabela_com_dono` falha |
-| Campo calculado numa resposta | Declarar no modelo Pydantic / `fromJson` do Dart | Some **em silêncio** |
-| `<lucide-icon>` | Registrar em `LucideAngularModule.pick({...})` ([app.config.ts](web/src/app/app.config.ts)) | Quebra a tela em runtime |
-| Classe CSS global | Confirmar que existe em [styles.css](web/src/styles.css) | Quebra a tela em silêncio |
-| Botão, campo ou tabela | Usar `.btn-*`, `.input`, `.field-label`, `.data-table` de [styles.css](web/src/styles.css) | `lint:ui` reprova controle montado à mão |
-| Tipo numa tela | Escolher o **papel** (`fi-body`, `fi-caption`, `fi-metric`…), nunca `text-sm` | `lint:ui` reprova tamanho solto |
-| Limiar de score | Mudar nas três plataformas, Python primeiro | Réguas divergem |
-| Tela ou rota | Ler [docs/design/](docs/design/) antes | IA diverge entre plataformas |
-| Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template. A **lista de frases** já é máquina nas duas plataformas; composição e hierarquia continuam sendo revisão humana |
-| Cor, tipografia, espaço | Editar [foundation.css](web/src/foundation.css) **e** o espelho em [design_tokens.dart](mobile/lib/core/design_tokens.dart) | Web e mobile divergem, e nenhuma máquina avisa |
-| Largura máxima numa tela | Escolher o papel: `max-w-reading` para prosa, `max-w-column` para lista, tabela ou gráfico | Prosa esticada, ou lista estrangulada em 70ch |
-| Papel de cor novo | Declarar nos **dois** temas de `foundation.css` | A cor não existe num dos temas, e a tela sai com texto de um tema no chão do outro |
-| Camada empilhada | Usar `z-nav`/`z-drawer`/`z-drawer-panel`/`z-sheet`/`z-popover`/`z-loader`/`z-toast` | `lint:ui` reprova `z-[…]` **e** `z-50` — uma regra, as duas grafias |
-| Diálogo sobreposto | Aplicar `fiDialog` — papel, foco preso e foco devolvido | Tab escapa para a página atrás |
+| Campo calculado numa resposta | Declarar no modelo Pydantic **e** no `fromJson` do Dart | Some **em silêncio** |
+| Campo novo numa resposta que o app já lê | Deixá-lo **opcional** no Dart | O aplicativo chega por loja: há versão antiga instalada por tempo indeterminado, e ela não se atualiza no próximo carregamento |
+| Limiar de score | Mudar nas duas plataformas, Python primeiro | Réguas divergem |
+| Tela ou rota | Ler [docs/design/](docs/design/) antes | A IA do produto se desfaz uma tela por vez |
+| Tela nova, ou texto de interface | Conferir [docs/design/AI-TELLS.md](docs/design/AI-TELLS.md) antes de aceitar como pronta | Cheiro de protótipo gerado — genérico, "sameness" de template. A **lista de frases** já é máquina; composição e hierarquia continuam sendo revisão humana |
+| Cor, tipografia, espaço | Editar [design_tokens.dart](mobile/lib/core/design_tokens.dart), que é a única paleta | Hexadecimal solto em `theme.dart` cria uma cor que nenhuma tela conhece |
+| Papel de cor novo | Declarar nos **dois** temas | A cor não existe num dos temas, e a tela sai com tinta de um tema no chão do outro |
 | Escrita no razão | Passar por `ledger_service`, nunca por `ledger_store` na camada de API | A Carteira não muda e ninguém avisa |
-| Tela nova no mobile que julga | `FiProvenance`, e o papel de veredito em serifa | `test/lint_ui_test.dart` reprova — as oito regras valem lá também |
-| Nome de tela no mobile | Usar o **mesmo nome** do web: nome é paridade de conceito | `test/lint_ui_test.dart` reprova nome de destino aposentado — a barra do `/voce` dizia "Configurações" e a de `/sobra/desvio` dizia "Estratégia" |
-| Número projetado numa tela | `<app-range>` / `FiRange` — piso, teto e cenário base | A faixa escrita à mão divergiu entre as plataformas: o web mostrava o cenário base e o mobile não |
-| Pipe `number`/`currency`/`percent` numa tela | Nada — `LOCALE_ID` já é `pt-BR` em `app.config.ts`. **Não remova** | Sem ele o Angular assume `en-US` e `R$ 120.000` sai `R$ 120,000`, que se lê como cento e vinte reais |
-| Cifra de preço justo numa tela | `<app-fair-price>` — ele exige a base (quantos métodos, ou o nome do método) e nomeia a ausência | `/descobrir` mostrava Bazin cru enquanto `/ativo` dizia "consenso de 3 métodos" para o mesmo ativo |
-| Seção numa tela | Usar `<app-section title="…">`, que emite o `<h2>` | Seção sem cabeçalho: `/mes` tinha 5 seções e nenhuma parada de navegação |
-| Julgamento numa tela do mobile | `FiProvenance` — método, fonte, limitação | `test/lint_ui_test.dart` reprova: o invariante de explicabilidade vale nas duas plataformas |
-| Componente Angular novo | Escrever o `template` no próprio `.ts` — não há `.html` separado em `web/src/app/components` | Divergência de padrão na mesma pasta |
-| Tela de rota que lê dado | `<app-async-state [loading] [error] [empty] (retry)>` no web; `AsyncValue.when` com `FiSkeleton`/`FiErrorState` no mobile | `lint:ui` reprova. Sem isso a falha sai como tela vazia, e "não conseguimos ler" fica igual a "você não tem nada" |
-| Frase de falha numa tela | `mensagemDeErro(erro, acao)` / `fiErrorMessage` — nunca texto solto | Já houve oito grafias, e `Erro 500` chegou à tela |
-| Preço, ou lista de preços, numa tela | `<app-data-age [asOf]>` / `formatIdade`. Em lista, o carimbo é o **mais antigo** (`carimboMaisAntigo`) | Dizer a idade do mais novo promete frescor que a linha de baixo não tem |
-| Espera numa tela do mobile | `FiSkeleton.tela(shape:, count:)` — nunca `Center(child: CircularProgressIndicator())` | `test/lint_ui_test.dart` reprova: disco não diz o que vem, e a página salta quando o dado chega |
-| Destino de raiz no mobile | `FiSearchAction` na barra | `test/lint_ui_test.dart` reprova. A busca já teve uma porta só, numa tela secundária |
-| Dependência no `pubspec.yaml` do mobile | Rodar `flutter build apk --release` | Plugin com Gradle ou Kotlin incompatível quebra **só** o build Android, e `analyze`/`test` seguem verdes |
+| Julgamento numa tela | `FiProvenance` — método, fonte, limitação — e o papel de veredito em serifa | `test/lint_ui_test.dart` reprova: explicabilidade é invariante, não enfeite |
+| Nome de tela | Usar o nome do conceito, não um sinônimo | `test/lint_ui_test.dart` reprova nome de destino aposentado — a barra do `/voce` dizia "Configurações" e a de `/sobra/desvio` dizia "Estratégia" |
+| Número projetado numa tela | `FiRange` — piso, teto e cenário base | Número único a cinco anos empresta precisão de centavo a uma pilha de premissas |
+| Cifra de preço justo numa tela | A base junto: quantos métodos, ou o nome do método | `/descobrir` já mostrou Bazin cru enquanto `/ativo` dizia "consenso de 3 métodos" para o mesmo ativo |
+| Tela que lê dado | `AsyncValue.when` com `FiSkeleton`/`FiErrorState` | `test/lint_ui_test.dart` reprova. Sem isso a falha sai como tela vazia, e "não conseguimos ler" fica igual a "você não tem nada" |
+| Frase de falha numa tela | `fiErrorMessage` — nunca texto solto | Já houve oito grafias, e `Erro 500` chegou à tela |
+| Preço, ou lista de preços, numa tela | `formatIdade`. Em lista, o carimbo é o **mais antigo** (`carimboMaisAntigo`) | Dizer a idade do mais novo promete frescor que a linha de baixo não tem |
+| Espera numa tela | `FiSkeleton.tela(shape:, count:)` — nunca `Center(child: CircularProgressIndicator())` | `test/lint_ui_test.dart` reprova: disco não diz o que vem, e a página salta quando o dado chega |
+| Destino de raiz | `FiSearchAction` na barra | `test/lint_ui_test.dart` reprova. A busca já teve uma porta só, numa tela secundária |
+| Tamanho de tipo | Escolher o **papel** em `FiType` (`body`, `caption`, `metric`, `verdict`…), nunca `fontSize:` solto | A catraca de tipo solto em `test/lint_ui_test.dart` só desce; subir exige explicar por quê |
+| Dependência no `pubspec.yaml` | Rodar `flutter build apk --release` | Plugin com Gradle ou Kotlin incompatível quebra **só** o build Android, e `analyze`/`test` seguem verdes |
+| Rota pública nova no backend | Decidir por escrito que ela é pública | Sem titular não há teto por usuário, e o teto por IP é o que resta |
 
 ---
 
@@ -122,47 +110,15 @@ CHANGELOG.
 
 Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde**.
 
-- **`redirectTo` relativo em rota de dois segmentos** manda o link salvo para o curinga.
-  `{ path: 'carteira/posicoes', redirectTo: 'patrimonio/posicoes' }` resolve contra o primeiro
-  segmento casado e leva a `/carteira/patrimonio/posicoes`, que não existe — a pessoa cai em
-  `/mes` sem entender por quê. Valia para os oito redirects de dois segmentos do produto, e o
-  teste passava verde porque comparava a **string declarada**, não a resolução. Todo alvo de topo
-  é absoluto, e `app.routes.server.spec.ts` reprova o que não começa com `/`.
-- **`index.html` sem `<base href="/">`** deixa rota de dois segmentos (`/voce/preferencias`)
-  pedir os chunks em caminho relativo aninhado; o SSR devolve HTML, o módulo não carrega e a
-  tela abre **em branco** por link direto. Passa despercebido navegando por dentro do app.
-- **Ícone Lucide não registrado** — `The "x" icon has not been provided...` em runtime.
-- **Classe CSS inexistente** — já aconteceu com `.card`, `.btn-primary`, `.tag`, `.verdict-pill`,
-  `verdict-*`, `bg-success`.
 - **Construtor que ignora chave não declarada** — `Modelo(**resultado.__dict__)` no Pydantic e
   `fromJson` no Dart descartam campo não declarado sem avisar. Três campos calculados nunca
   chegaram ao cliente assim: `consensus_methods`, `trend_basis`, `allocation_gaps`.
-- **Cor do Tailwind declarada como string** — o modificador de opacidade (`bg-brand/20`) é
-  **descartado em silêncio**. As cores da config são funções que emitem `color-mix` por isso.
-- **Classe de controle fora de `@layer components`** derrota as utilitárias. Escritas soltas
-  depois de `@tailwind utilities`, `.btn-*` e `.input` venciam por ordem de cascata:
-  `class="btn-secondary hidden sm:inline-flex"` ficava **visível**, porque
-  `.btn-secondary { display: inline-flex }` derrotava o `display: none` do `hidden`. Valia para
-  todo botão do produto — esconder controle por breakpoint não fazia nada, e não havia erro
-  nenhum. O sintoma que apareceu foi outro: o cabeçalho vazando 3px em 320px. Regra sem camada
-  sempre vence regra em camada, então a camada de controle de [styles.css](web/src/styles.css)
-  mora dentro de `@layer components`, e `e2e/afordancia.spec.ts` cobra isso.
-- **Bundle de entrada sem hash servido com cache longo** congela o deploy. `main.js`,
-  `polyfills.js` e `styles.css` saíam sem hash e com `max-age=31536000`: quem já tinha visitado o
-  site ficava com o bundle antigo por um ano, e nenhuma mudança aparecia — nem a reforma inteira
-  do design. `outputHashing: all` no build, `immutable` no estático e `no-cache` no HTML, que é
-  quem aponta para eles. `e2e/ssr.spec.ts` cobra os dois.
-- **Anel de foco em elemento não operável.** O `<h1>` recebe foco a cada troca de rota, para o
-  leitor de tela não perder o lugar — mas tem `tabindex="-1"` e está fora da ordem de tabulação,
-  então o anel ali não diz onde a tecla vai agir. Toda tela abria parecendo ter um controle
-  selecionado. Medir por seletor engana: a régua é `document.activeElement`.
-- **`<img>` com `src` vazio** desenha o texto alternativo dentro da caixa e estoura o layout:
-  o avatar de quem não tem foto ficava 41px numa caixa de 34. Conta sem foto renderiza a
-  inicial, não um `<img>` sem fonte.
+- **Campo obrigatório novo no Dart quebra quem não atualizou.** O cliente chega por loja: há
+  versão antiga instalada, e ela não se atualiza no próximo carregamento. Campo novo nasce
+  opcional; campo que some do backend derruba a versão anterior do aplicativo, não a atual.
 - **`_session_global()` em caminho de request** — não filtra por usuário. É para job cross-tenant.
-- **Dois refreshes simultâneos** derrubam a sessão: o refresh é rotacionado e queimado no uso. No
-  web isso é coordenado **entre abas** por Web Lock — `_refreshInFlight` sozinho vale só dentro de
-  uma aba, e duas abas têm dois nulos e o mesmo refresh no `localStorage`.
+- **Dois refreshes simultâneos** derrubam a sessão: o refresh é rotacionado e queimado no uso. A
+  renovação é compartilhada, e quem levar 401 espera a que está em voo em vez de abrir a segunda.
 - **Escrita seguida de 4xx** — os handlers de `DomainError` vivem no `ExceptionMiddleware` do
   Starlette, que é *interno* ao middleware de observabilidade: a exceção nunca sobe. Quem decide
   commit ou rollback é o **status da resposta**, não a ausência de exceção. O que precisa
@@ -171,51 +127,33 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
 - **Rota cara casada por prefixo com versão** — `/api/opportunities` casa, `/api/v1/opportunities`
   não. O teto morre em silêncio no dia da migração para o caminho canônico. O casamento é por
   **sufixo**.
+- **Papel de cor usado como o outro papel** — direção pintada com token de estado faz o verde
+  significar marca, lucro e veredito favorável ao mesmo tempo, e uma perda aparecer como aviso.
+  Direção é `fiDirectionColor(delta, brightness)`; estado é `fiStateColor(FiState.x, brightness)`.
+- **Vocabulário sem consumidor** — mapa de rótulos declarado e nunca importado é pior que mapa
+  nenhum, porque parece resolvido enquanto quatro telas reescrevem o mapa à mão. Ao declarar um
+  vocabulário novo, confira se ele chega a uma tela.
+- **Série nova no vocabulário sem entrar nos mapas de classe** — a armadilha acima na forma
+  inversa, consumidor sem vocabulário: uma categoria de despesa em `series: 4` pedia a classe da
+  série 4 e recebia nada, porque os mapas eram montados só das séries de alocação. Os mapas
+  cobrem os três blocos de categoria.
+- **Regra de lint que filtra por extensão de arquivo não roda.** Duas regras varriam `.html` num
+  repositório que escrevia o template dentro do `.ts`, e passaram meses lendo um arquivo só — uma
+  delas era a que protege o invariante de explicabilidade. Ao escrever regra nova, confira contra
+  **o que o repo tem**, e não contra o que a extensão sugere. No Dart vale igual: a regra varre
+  `lib/`, e o que estiver fora não é conferido.
 
-- **Papel de cor usado como o outro papel** — `.good`/`.warn` pintavam P&L, que é **direção**, com
-  os tokens de **estado**. O verde passava a significar marca, lucro e veredito favorável ao mesmo
-  tempo, e uma perda aparecia como aviso. As classes foram removidas: direção é `text-up` /
-  `text-down`; estado é `text-favorable` / `text-attention` / `text-adverse` / `text-indeterminate`.
-- **Vocabulário sem consumidor** — `fiTiposDeRendaFixa` e `fiLiquidez` existiam em
-  `core/vocabulary.ts` e não eram importados por ninguém no web, enquanto quatro telas reescreviam o mapa
-  à mão. O mobile fazia certo desde sempre (`core/labels.dart`). Ao declarar um vocabulário novo,
-  confira se ele chega a uma tela — declarado e ignorado é pior que não declarado, porque parece
-  resolvido. **A causa era o barrel:** `core/vocabulary.ts` não estava em `core/index.ts`, então
-  a tela que quisesse usá-lo teria de importar por caminho. Agora está.
-- **Série nova no vocabulário sem entrar nos mapas de classe** — `fiClasseTextoDaSerie` e irmãos
-  eram montados só das séries de `categories`. Uma categoria de despesa em `series: 4` pedia
-  `fiClasseTextoDaSerie[4]` e recebia `undefined`: a armadilha acima na forma inversa, consumidor
-  sem vocabulário. Os mapas cobrem os três blocos de categoria, e não só o de alocação.
+O `flutter test` cobre parte disso por máquina, em **11 regras** de `test/lint_ui_test.dart` —
+explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro, nome acessível em
+botão de ícone, serifa no papel de veredito, vocabulário de IA genérica, nome de destino
+aposentado, a catraca de tipo solto, esqueleto no lugar de disco girando, busca alcançável de todo
+destino de raiz, e falha de leitura numa voz só. O contraste é cobrado à parte, em
+`test/contraste_test.dart`, nos dois temas.
 
-O `npm run lint:ui` cobre treze dessas, em **24 regras** — e a classificação importa: regra que
-protege acessibilidade, contrato de produto ou erro silencioso **reprova o CI**; regra que
-protege só preferência visual **avisa e não reprova**, porque bloquear por gosto gasta a
-autoridade das que valem. Raio fora da escala e ícone decorando título são as duas que avisam.
-
-Oito são de tela quebrada ou informação escondida: ícone não registrado, classe inexistente,
-julgamento sem explicabilidade, gráfico sem tabela, botão de ícone sem `aria-label`, número
-projetado sem faixa, promessa sobre o futuro — este poupa a negação, porque "não há garantia de
-retorno" é a frase certa e "retorno garantido" é a errada —, **tela de rota que lê dado e não
-diz quando a leitura falhou** e **`routerLink` apontando para rota que não existe**, que o curinga
-manda para `/mes` sem explicação — o CTA do paywall apontava para `/voce/plano`, que nunca existiu.
-
-**Regra que filtra por extensão de arquivo não roda.** `missingExplainers` e `certaintyLanguage`
-varriam `.html`, e este repo escreve o template dentro do `.ts`: as duas passaram meses lendo só o
-`index.html`, e uma delas é a que protege o invariante de explicabilidade. Ao escrever regra nova,
-confira contra **o que o repo tem**, e não contra o que a extensão sugere — o mesmo erro de
-"vocabulário sem consumidor", do outro lado.
-
-Cinco são de coerência do sistema, e existem porque o produto já as perdeu por inteiro:
-
-| Regra | O que reprova | Por quê |
-|---|---|---|
-| Escala de papéis | `text-sm`, `font-bold` e afins no template | 384 utilitárias de tamanho conviviam com 372 papéis, dando dois corpos para a mesma coisa em telas vizinhas — e é no papel que "serifa decide, sans mede" vive |
-| Quatro raios *(avisa)* | `rounded-xl`, `rounded-full`, `rounded-lg` sem sombra | `sm` marca, `md` assentado, `lg` **só o que flutua** (flutuar é ter sombra), `pill`. Havia três raios para a mesma caixa. Preferência fundamentada, não erro silencioso — e o `rounded-xl` já é pego pela regra de classe não emitida |
-| Um foco só | `focus:ring*`, `focus:outline-none` | O anel é `outline` na cor da marca e já vem em `.input`/`.btn-*`/`.fi-focusable`; o do Tailwind desenhava outra coisa, e `outline-none` sem substituto apaga o foco |
-| Controle do sistema | `<button>`/`<input>`/`<select>` sem classe do sistema | Havia nove grafias de botão só de ícone, com cinco alturas. Escape: `<!-- design-exception: controle — motivo -->` |
-| Título sem ícone *(avisa)* | `<lucide-icon>` dentro de `<h1..h4>` | Ao lado de um título o ícone não acrescenta informação — faz a seção parecer cabeçalho de card de painel. Mantém lista de exceção por nome de arquivo, e regra que precisa conhecer nomes de arquivo é revisão com passos extras |
-| Vocabulário de IA | frase da lista de [AI-TELLS](docs/design/AI-TELLS.md), ou emoji, em texto de tela | A lista é literal, e nada a lia: as duas primeiras telas do mobile abriam com "tudo em um só assistente" — dois itens dela numa frase. Varre só literal de string, senão a regra reprovaria a própria justificativa. Seta fica de fora: é a informação em "condição → veredito" |
-| Contorno de controle | `border: … var(--fi-hairline)` num seletor de controle | `hairline` é separador, e com ele a borda de `.btn-secondary` desenhava a **1,20:1** — um quarto dos 3:1 que a WCAG 1.4.11 pede. Controle desabilitado fica de fora, que a norma isenta |
+**Vive como teste, e não como script próprio**, porque `flutter test` já é o comando do CI: regra
+que exige mudar a esteira para rodar é regra que não roda. O que ainda **não** é cobrado — e era,
+quando havia um verificador no front — está no [KNOWN_ISSUES](docs/KNOWN_ISSUES.md), item 14:
+gráfico sem tabela equivalente, destino de navegação inexistente e controle montado à mão.
 
 ---
 
@@ -223,11 +161,10 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
 
 ### Domínio e cálculo
 
-- **Regra de negócio vive só no backend** (`analysis/`, `optimizer/`). Web e mobile delegam — não
-  há cálculo de renda fixa duplicado no Angular.
-- **Régua de score em um lugar por plataforma:** `analysis/score_ruler.py`,
-  `web/src/app/core/score-ruler.ts`, `mobile/lib/core/score_ruler.dart`. Mudar um limiar exige os
-  três, e o Python é o primeiro.
+- **Regra de negócio vive só no backend** (`analysis/`, `optimizer/`). O aplicativo delega — não
+  há cálculo de renda fixa duplicado em Dart.
+- **Régua de score em um lugar por plataforma:** `analysis/score_ruler.py` e
+  `mobile/lib/core/score_ruler.dart`. Mudar um limiar exige os dois, e o Python é o primeiro.
 - **Unidades:** `roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` chegam do collector em
   **percentual** (`collectors/universal._ratio_to_pct`). Crescimento no DCF também.
 - **Dinheiro fiscal é `Decimal`; dinheiro de tela é `float`.** Escala e arredondamento só em
@@ -245,7 +182,8 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   "fique de olho nos resultados" seria almanaque no lugar de uma condição conferível.
 - **Projeção sai como faixa, nunca número único** (`analysis/scenarios.py`). `_low`/`_high` são
   campos obrigatórios de `PassiveIncomeMonth`: com default existiria caminho em que o número sai
-  sozinho. O `lint:ui` recusa tela que exiba `portfolio_value`/`passive_income_monthly` sem a faixa.
+  sozinho. `test/lint_ui_test.dart` recusa tela que exiba `portfolioValue`/`passiveIncomeMonthly`
+  sem a faixa.
 - **Modo de afirmação é configuração, não código** (`affirmation.py`, `AFFIRMATION_LEVEL`).
   Descritivo / analítico (padrão) / prescritivo. O que sai fora do nível 3 é o **valor por ativo**,
   que é o que instrui; a análise que o sustentava fica. Existe para que a resposta sobre CVM 19/20
@@ -405,31 +343,23 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   coordena isso. Banco local em SQLite continua se criando sozinho, porque é de um processo só.
 - **`APP_ENV` não tem default.** Vazio falha alto no startup e, se algo escapar, falha **fechado**
   (não é development): esquecer a variável desarmava JWT, CORS e a rota de operador de uma vez.
-- **Cinco rotas são públicas e renderizadas no servidor, e a lista é fechada.** A raiz (`/`) é a
-  landing de validação, e a página de ativo (`/ativo/:ticker`) é o canal de aquisição: robô não faz
-  login e o modelo não comporta mídia paga.
-  O texto jurídico (`/termos`, `/privacidade`, `/aviso-cvm`) está lá por outro motivo: robô de loja
-  também não faz login, e a ficha de segurança de dados pede uma URL de privacidade que abre
-  sozinha. A fronteira está em `web/src/app/app.routes.server.ts`, o teste lista as cinco pelo
-  nome, e crescer essa lista é decisão registrada — não efeito colateral. No backend,
+- **Três páginas de HTML são públicas, e a lista é fechada.** `/termos`, `/privacidade` e
+  `/aviso-cvm` (`api/legal.py` + `services/legal_pages.py`) ficam **fora de `/api`** porque robô de
+  loja não faz login, e a ficha de segurança de dados pede uma URL de privacidade que abre sozinha.
+  São páginas de documento: sem JavaScript, sem asset externo e sem paleta — a cor vem do agente do
+  usuário, e uma segunda cópia dos tokens envelheceria calada. `test_paginas_juridicas.py` cobra as
+  três, e crescer essa lista é decisão registrada, não efeito colateral. No backend,
   `analyze_asset(personalized=False)` e `/api/public/*` são a leitura **sem titular**, com teto por
   IP.
-- **O texto jurídico não repete o que o produto afirma.** O Aviso CVM lê
-  `GET /api/public/affirmation`; `AFFIRMATION_LEVEL` é configuração, e uma segunda cópia da frase
-  acabaria desatualizada justamente onde a pessoa a lê. O nível publicável hoje é o **2**; o 3 fica
-  desligado até haver parecer. Enquanto o texto for minuta, `<app-legal-draft-notice>` diz isso —
-  e é um componente só, para sair de uma vez.
-- **O código do web roda também no Node.** Use `DOCUMENT` e `isPlatformBrowser`; nunca `document`,
-  `localStorage`, `window` ou `navigator` direto — nem em inicializador de campo, que é onde a
-  guarda mais escapa. Serviço que busca dado de titular também não roda no servidor: no SSR não há
-  titular, a chamada responde 401 e ainda segura o render esperando a rede. `e2e/ssr.spec.ts` pede
-  as rotas servidas **sem executar JavaScript** e exige conteúdo no HTML cru; sem ele o produto
-  passou meses entregando página vazia para robô, com o teste de navegador verde por hidratação.
+- **O texto jurídico não repete o que o produto afirma.** O Aviso CVM lê `affirmation.current()` no
+  servidor; `AFFIRMATION_LEVEL` é configuração, e uma segunda cópia da frase acabaria desatualizada
+  justamente onde a pessoa a lê. O nível publicável hoje é o **2**; o 3 fica desligado até haver
+  parecer. Enquanto o texto for minuta, a constante `_MINUTA` diz isso — e é uma só, para sair de
+  uma vez.
 - **Busca global: o servidor devolve o que é da pessoa; a rota é do cliente.** `/search` procura
   carteira, renda fixa e universo e devolve `ref` — ticker ou id, nunca caminho. Destino de tela
-  também é resultado, mas a lista vive em cada cliente (`SEARCH_DESTINATIONS` no web,
-  `buscaDestinos` no mobile): as árvores diferem, e um catálogo de rotas no servidor seria segunda
-  verdade sobre a IA. Por isso os destinos filtram sem rede.
+  também é resultado, mas a lista vive no cliente (`buscaDestinos`): um catálogo de rotas no
+  servidor seria segunda verdade sobre a IA. Por isso os destinos filtram sem rede.
 - **Onboarding é derivado, não guardado.** O passo sai do que a pessoa já fez (tem posição? tem
   meta?), em `/onboarding` — um contador criaria segunda verdade. O recorte mora na URL
   (`?passo=2`) e nada bloqueia.
@@ -442,12 +372,12 @@ Cinco são de coerência do sistema, e existem porque o produto já as perdeu po
   `list_positions`, que lê só a tabela `portfolio` — quem chegava por CDB nunca "começava".
 - **Sessão tem TTL curto e refresh rotacionado.** Acesso 1h, refresh 30 dias queimado no uso.
   Revogação por `jti` (este dispositivo) e `session_cuts` (todos). Os clientes renovam **uma vez**
-  ao levar 401, com a renovação compartilhada. No web, `httpErrorInterceptor` é o mais externo.
+  ao levar 401, com a renovação compartilhada.
 - **Telemetria não leva carteira.** O `before_send` de cada plataforma
-  (`core/telemetry.py`/`.ts`/`.dart`) é **lista de permissão**: ticker no caminho vira `{id}`, valor
+  (`core/telemetry.py` e `core/telemetry.dart`) é **lista de permissão**: ticker no caminho vira `{id}`, valor
   em reais e número citado em erro são redigidos, corpo de request e `extra` não saem, do usuário
   sai só o identificador, e variável local de frame é descartada. Uma chave nova num payload nasce
-  redigida. Três suítes travam isso, e é a Política de Privacidade escrita como código.
+  redigida. Duas suítes travam isso, e é a Política de Privacidade escrita como código.
   `SENTRY_DSN` sem o pacote instalado **falha alto**.
 - **Evento de produto tem dicionário fechado** (`core/events.py`). Nome fora dele, ou propriedade
   com ticker ou valor, devolve 422 — dado de carteira não sai do produto. Marcos de ativação são
@@ -490,7 +420,7 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
   separado de `trial_ends_at` para não reabrir trial gasto, com teto declarado. A rota nunca devolve
   quem foi indicado.
 
-### Interface — web e mobile
+### Interface
 
 - **A navegação é o ciclo do dinheiro**: `/mes` → `/sobra` → `/patrimonio`, mais `/descobrir` e
   `/voce`, e `/ativo/:ticker` como camada. Continuam cinco destinos, e as URLs antigas
@@ -499,73 +429,60 @@ O plano de cinco portões (G0 publicável → G4 preço cheio) está no
   o patrimônio e o veredito de saúde já existiam no `Patrimônio`. `Estratégia` se dissolveu —
   sem aporte, meta e projeção, sobrava o desvio de alocação, que é leitura de patrimônio e vive
   em `/sobra/desvio`.
-- **A camada visual é escrita à mão, inteira. Não há gerador de design.** Cor, tipografia,
-  espaço, raio, motion e densidade vivem em [web/src/foundation.css](web/src/foundation.css), com
-  espelho à mão em [mobile/lib/core/design_tokens.dart](mobile/lib/core/design_tokens.dart). As
-  bandas das réguas, o vocabulário de veredito e os rótulos de categoria também são escritos —
-  `core/product-rules.ts`, `core/vocabulary.ts` e os dois pares em Dart. O que os mantém em acordo
-  é a régua de baixo: `analysis/score_ruler.py` é a fonte, e mudar um limiar exige as três
-  plataformas com o Python primeiro. Não escreva hexadecimal em `styles.css`,
-  `tailwind.config.js` ou `theme.dart` — a paleta mora só na fundação.
-- **Duas larguras, e não uma.** `max-w-reading` é a medida da **prosa** (70ch, em caracteres, para
-  acompanhar a fonte); `max-w-column` é a largura de uma **tela** que não é prosa — lista, tabela,
-  gráfico. Usar uma no lugar da outra estrangula a lista ou estica o parágrafo, e já aconteceu nas
-  duas direções.
-- **A paridade é de conceito, não de valor. Igualdade visual não é exigida.** O contrato é
-  *mesma intenção, não mesma implementação*: conceito, nome e hierarquia são iguais nas duas
-  plataformas; espaçamento, composição, navegação, gesto e **valor de cor** são livres. Um
-  telefone sob sol pode precisar de mais contraste que um monitor, e exigir o mesmo hexadecimal
-  impediria a correção. O contrato escrito é [docs/design/PARIDADE.md](docs/design/PARIDADE.md), e
-  nenhuma máquina o confere — o que a máquina ainda cobra é uma coisa só:
-  - **`web/tools/check-contrast.mjs`** (`npm run lint:contrast`, no CI) mede `foundation.css` **e**
-    `design_tokens.dart`, cada um contra o **piso** — não um contra o outro. Reprova papel abaixo
-    do piso, papel declarado só num tema, contorno de controle sob 3:1 e preenchimento que não se
-    distingue do próprio poço. Também confere as **duas cópias do tema claro** do CSS: são 44
-    papéis, e quem editasse só a consulta de mídia quebraria o contraste de quem está no padrão do
-    sistema. Não é gerador — por isso mora em `web/tools/`, ao lado do `lint:ui`.
-- **Ícone e favicon são gerados**, do `brand` de `foundation.css` via
-  `python design-tokens/build-icons.py` (requer Pillow). **O launcher nativo é um segundo passo**:
-  `cd mobile && dart run flutter_launcher_icons` — sem ele os ícones do app ficam com a cor antiga
-  mesmo com a fundação correta.
-- **Não existe alias de cor.** Nada de `bg-accent`, `text-tx`, `bg-panel`, `text-muted`, nem paleta
-  crua do Tailwind. Os papéis são `ground`/`ground-1`/`ground-2`, `hairline`, `ink`/`ink-2`/`ink-3`,
-  `brand`/`on-brand`, os estados `favorable`/`attention`/`adverse`/`indeterminate`, a direção
-  `up`/`down` e as séries `series-1..11`/`series-other`.
+- **A camada visual é escrita à mão, inteira, e existe num lugar só. Não há gerador de design.**
+  Cor (nos dois temas), tipografia, espaço, raio, motion e densidade vivem em
+  [mobile/lib/core/design_tokens.dart](mobile/lib/core/design_tokens.dart). As bandas das réguas, o
+  vocabulário de veredito e os rótulos de categoria também são escritos — `core/product_rules.dart`
+  e `core/vocabulary.dart`. O que os mantém em acordo com o cálculo é a régua de baixo:
+  `analysis/score_ruler.py` é a fonte, e mudar um limiar exige as duas plataformas com o Python
+  primeiro. **Não escreva hexadecimal em `theme.dart`** — a paleta mora só na fundação.
+- **Contraste é verificado, não recomendado** (`mobile/test/contraste_test.dart`, no CI), nos dois
+  temas e contra o **mínimo da WCAG**: 4,5:1 para texto e 3:1 para forma e limite de controle.
+  `ink-3` conta como texto porque legenda é texto pequeno; série de gráfico escreve o rótulo do
+  próprio chip, então também conta como texto; `hairline` fica de fora, é decoração. Piso acima da
+  norma é escolha de design, e escolha de design não tem máquina: a paleta é livre, o ilegível não
+  é.
+- **Ícone do aplicativo é gerado**, da cor `brand` de `design_tokens.dart`, por
+  `cd mobile && python tool/build_icons.py` (requer Pillow). **O launcher nativo é um segundo
+  passo**: `dart run flutter_launcher_icons` — sem ele os ícones ficam com a cor antiga mesmo com a
+  fundação correta.
+- **Não existe alias de cor.** Os papéis são `ground-0`/`ground-1`/`ground-2`, `hairline`,
+  `ink-1`/`ink-2`/`ink-3`, `brand`/`ink-on-brand`, os estados
+  `favorable`/`attention`/`adverse`/`indeterminate`, a direção `up`/`down` e as séries.
 - **Estado ≠ direção.** Estado é julgamento (veredito, saúde, severidade) e tem prioridade
-  cromática; direção é a aritmética de um número (P&L, linha de gráfico) e tem croma baixo. No
-  mobile: `fiStateColor(FiState.x, brightness)` e `fiDirectionColor(delta, brightness)`.
-- **Fio + chão, não card + card.** A hierarquia de uma página nasce de espaço, tipo e uma regra
-  horizontal — `.fi-block` é isso. A caixa (`.card`) fica reservada ao que é **objeto**: uma
-  posição, uma opção de renda fixa, uma sugestão. Card dentro de card dentro de card era a forma
-  mais reconhecível de o produto virar painel de BI, e havia três níveis em `renda-fixa`.
-- **Controle vem do sistema, não do template.** `.btn-primary`, `.btn-secondary`, `.btn-icon`
-  (`-quiet`, `-danger`), `.btn-link`, `.btn-quiet` (`.btn-explain`), `.menu-item`, `.input`
-  (`.input-bare`), `.field-label`, `.data-table`, `.notice` (`-attention`/`-adverse`/`-brand`).
-  Remontar um deles com utilitárias produz alvo de toque, raio e foco diferentes a cada tela.
+  cromática; direção é a aritmética de um número (P&L, linha de gráfico) e tem croma baixo:
+  `fiStateColor(FiState.x, brightness)` e `fiDirectionColor(delta, brightness)`. Pintar direção
+  com token de estado faz uma perda aparecer como aviso, e o verde significar três coisas.
+- **Fio + chão, não card + card.** A hierarquia de uma tela nasce de espaço, tipo e uma regra
+  horizontal. A caixa fica reservada ao que é **objeto**: uma posição, uma opção de renda fixa,
+  uma sugestão. Card dentro de card dentro de card é a forma mais reconhecível de o produto virar
+  painel de BI, e o `Card(`/`ListTile` ainda é a dívida aberta do item 8 do KNOWN_ISSUES.
 - **Grade de KPI é o cheiro de painel.** Três a quatro caixas centralizadas com um número dentro
   não são informação organizada, são widgets. A alternativa é uma linha de cifras sob um fio
-  (`<dl>`) quando são poucas, ou `.data-table` quando o que importa é comparar.
+  quando são poucas, ou uma tabela quando o que importa é comparar.
+- **Tipo é papel, não tamanho.** `FiType.body`, `.caption`, `.metric`, `.verdict`… `fontSize:`
+  solto tem catraca em `test/lint_ui_test.dart`, e ela só desce.
+- **Serifa decide, sans mede.** O papel de veredito sai na família serifada, e o teste reprova o
+  contrário: é o sinal de que aquela linha é conclusão, e não mais um número.
 - **Estado de tela é um contrato, não uma escolha por tela.** Carregando, falha, vazio e conteúdo
-  saem de `<app-async-state>` no web e do par `FiSkeleton`/`FiErrorState` no mobile. A falha guarda
-  o **erro**, não um booleano: sem ele a tela só sabe dizer "algo deu errado", e a loja de carteira
-  passou a servir sete telas com um booleano que uma só lia. Ausência de dado e falha de leitura
-  nunca compartilham a mesma tela.
-- **Momento é nível 1, não nota de rodapé.** Método e fonte moram na gaveta de
-  `<app-provenance>`; **quando o dado foi lido, não** — um preço de anteontem muda a decisão. O
-  `asOf` é linha visível, e `/ativo/:ticker` diz a idade do preço ao lado do preço nas duas
-  plataformas. O carimbo já existia em `collectors/universal` e parava no serviço.
-- **Julgamento renderizado exige explicabilidade, e o lint cobra.** Score, veredito, preço justo e
-  sugestão precisam de `<app-provenance>`, `<app-help-tooltip>` ou equivalente. Mencionar em prosa
-  não conta. O escape exige motivo escrito: `<!-- design-exception: explicabilidade — ... -->`.
-  **Há uma forma só de escapar**, e ela nomeia a regra: escapar de cabeçalho não escapa de
-  contraste. Eram cinco grafias para a mesma ideia.
-- **Contraste é verificado, não recomendado** (`web/tools/check-contrast.mjs`, no CI). `ink-3`
-  conta como texto (4,5:1) porque legenda é texto pequeno; série de gráfico conta como forma (3:1)
-  porque nunca é a única informação; `hairline` fica de fora, é decoração.
-- **Filtro e recorte vivem na URL**, não em `sessionStorage`/`signal` — link salvo é contrato.
-  Oportunidades (`q`, `dy`, `mos`, `cat`, `destaque`, `p`), quedas (`min_score`, `top`, `category`),
-  tabela de posições (`cols`, `d`).
-- **Densidade é preferência da conta; tema é do aparelho.** Densidade vive em `preferences.density`,
-  aplicada pelo `DensityService` como `[data-density]` no `<html>`; tema vive em `localStorage`. Na
-  tabela de posições a URL vence a preferência.
-- **Push exige o app instalado, e isso é decisão declarada** — o web sinaliza em `/voce/alertas`.
+  saem do par `FiSkeleton`/`FiErrorState` com `AsyncValue.when`. A falha guarda o **erro**, não um
+  booleano: sem ele a tela só sabe dizer "algo deu errado", e uma loja de carteira chegou a servir
+  sete telas com um booleano que uma só lia. Ausência de dado e falha de leitura nunca
+  compartilham a mesma tela.
+- **Momento é nível 1, não nota de rodapé.** Método e fonte moram na gaveta de `FiProvenance`;
+  **quando o dado foi lido, não** — um preço de anteontem muda a decisão. O `asOf` é linha visível,
+  e `/ativo/:ticker` diz a idade do preço ao lado do preço. O carimbo já existia em
+  `collectors/universal` e parava no serviço.
+- **Julgamento renderizado exige explicabilidade, e o teste cobra.** Score, veredito, preço justo e
+  sugestão precisam de `FiProvenance`, `HelpTooltip` ou as funções de proveniência de
+  `core/score_ruler.dart`. Mencionar em prosa não conta. O escape exige motivo escrito:
+  `// design-exception: explicabilidade — …`. **Há uma forma só de escapar**, e ela nomeia a
+  regra: escapar de cabeçalho não escapa de contraste.
+- **Filtro e recorte vivem na rota**, não em estado local — voltar não perde o recorte, e o mesmo
+  endereço leva ao mesmo lugar. Oportunidades (`q`, `dy`, `mos`, `cat`, `destaque`, `p`), quedas
+  (`min_score`, `top`, `category`), tabela de posições (`cols`, `d`).
+- **Densidade é preferência da conta; tema é do aparelho.** Densidade vive em
+  `preferences.density`, que é do servidor; tema fica no armazenamento local do aparelho. Na
+  tabela de posições o recorte da rota vence a preferência.
+- **Número em português é responsabilidade do formatador, não do template.** O locale é `pt_BR`, e
+  `R$ 120.000` escrito como `R$ 120,000` se lê como cento e vinte reais.

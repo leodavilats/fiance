@@ -84,15 +84,6 @@ class PreferencesDb(Base):
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)
 
 
-class InterestSignupDb(Base):
-    __tablename__ = "interest_signups"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    email: Mapped[str] = mapped_column(String, unique=True, index=True)
-    source: Mapped[str] = mapped_column(String, default="landing")
-    created_at: Mapped[float] = mapped_column(Float, default=time.time)
-
-
 class NotifiedOpportunityDb(Base):
     __tablename__ = "notified_opportunities"
 

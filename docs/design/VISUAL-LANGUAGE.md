@@ -84,7 +84,7 @@ marca, de modo que nenhum cinza da interface briga com `brand` por temperatura.
 | tinta terciária | `ink-3` |
 
 **Os valores não estão escritos aqui de propósito.** Eles vivem em
-`web/src/foundation.css`, e uma cópia neste arquivo seria uma segunda verdade que apodrece
+`mobile/lib/core/design_tokens.dart`, e uma cópia neste arquivo seria uma segunda verdade que apodrece
 calada — a tabela anterior listava `#7A847F` para a tinta terciária clara, um valor que o produto
 nunca teve. O que este documento decide é o **papel**; o valor é da fundação.
 
@@ -127,23 +127,23 @@ do estado e o corpo em tinta primária.
 
 ### O piso de contraste
 
-A AA é o chão legal, não o alvo. `web/tools/check-contrast.mjs` cobra uma folga declarada
-acima dela, e a escada de tinta é explícita — corpo, secundária e legenda precisam continuar
-distinguíveis **entre si**, senão hierarquia vira uniformidade:
+A AA é o chão, e é o que a máquina cobra: `mobile/test/contraste_test.dart` mede os dois temas
+contra **4,5:1 para texto** e **3:1 para forma e limite de controle**. Pisos acima da norma eram
+escolha de design, e escolha de design não tem máquina — a paleta é livre, o ilegível não é.
 
 | Papel | Piso | Por quê |
 |---|---|---|
-| `ink-2` | 8:1 | texto secundário é lido, não olhado |
-| `ink-3` | 6:1 | legenda é texto pequeno, e a regra para texto pequeno é mais rígida |
-| `brand`, `state-*`, `direction-*` | 6:1 | carregam rótulo |
+| `ink-1`, `ink-2`, `ink-3` | 4,5:1 | legenda é texto pequeno, e a regra para texto pequeno é a mesma |
+| `brand`, `state-*` | 4,5:1 | carregam rótulo |
 | `series-*` | 4,5:1 | forma no gráfico, **e texto no chip de categoria** |
-| tinta sobre `*-surface` | 5,5:1 | o rótulo do selo |
-| `ink-1` sobre `*-surface` | 6:1 | o corpo do aviso |
+| tinta sobre `*-surface` | 5,5:1 | o rótulo do selo é a própria cor do estado |
+| `ink-1` sobre `*-surface` | 4,5:1 | o corpo do aviso |
+| `control-border`, `brand` sobre `track`, `ink-disabled` | 3:1 | é o que faz um controle ser um controle (WCAG 1.4.11) |
 
 A linha das séries é a que menos parece óbvia e mais custou: enquanto série só desenhava barra e
 linha, 3:1 bastava, porque forma não é texto. No dia em que a mesma cor passou a escrever o rótulo
 do chip de categoria, o requisito mudou e nada percebeu — `series-other` escrevia a 3,1:1 sobre o
-próprio chip. O verificador agora conhece esse par.
+próprio chip. O teste agora conhece esse par.
 
 Duas coisas que essa tabela decide de propósito:
 
@@ -173,8 +173,7 @@ distinguível não existe.
 | Sans | **Inter** (já carregada) | números, tabelas, rótulos, navegação, corpo |
 | Serifa | **Source Serif 4** | veredito, diagnóstico, resumo de ativo, título de insight |
 
-Source Serif 4 está no Google Fonts (web) e no `google_fonts` do Flutter — as duas plataformas
-alcançam a mesma família, o que é pré-requisito de identidade compartilhada.
+Source Serif 4 chega pelo `google_fonts` do Flutter.
 
 **Números têm tratamento próprio, e isso é obrigatório:**
 
@@ -269,11 +268,11 @@ quatro leituras — é isso que faz o produto parecer projetado em vez de montad
 
 ## Ícones
 
-Lucide (web) e Material Symbols Outlined (mobile), traço 1,5px, tamanho 16/18/20 apenas.
+Material Symbols Outlined, traço 1,5px, tamanho 16/18/20 apenas.
 Regras: **nunca** ícone ao lado de todo rótulo; ícone só quando substitui palavra (ação em
-barra de ferramentas) ou marca estado com redundância textual. Hoje quase todo `<h2>` do produto
-carrega um ícone decorativo — isso sai, e é grande parte do que faz as telas parecerem
-"template".
+barra de ferramentas) ou marca estado com redundância textual. Ícone ao lado de título de seção
+não acrescenta informação — faz a seção parecer cabeçalho de card de painel, e é grande parte do
+que faz uma tela parecer "template".
 
 ## Teste de identidade
 

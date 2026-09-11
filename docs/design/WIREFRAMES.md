@@ -11,12 +11,9 @@
 
 ---
 
-# Os wireframes da IA nova
-
-> **Duas IAs vivem neste arquivo**, como em
-> [INFORMATION-ARCHITECTURE](INFORMATION-ARCHITECTURE.md). Esta parte é a **decisão** para a
-> transformação; nada dela está implementado. A parte de baixo continua sendo a referência de
-> qualquer tela existente.
+> O produto é um aplicativo de celular, e só. Os esboços largos descrevem **conteúdo e ordem de
+> leitura**, não largura de janela; onde a tela estreita muda a forma, há um segundo esboço
+> dizendo como.
 
 ## N1. `/sobra` — a ponte
 
@@ -27,7 +24,7 @@ produto é dois apps num só instalador"*.
 ### A ideia, numa frase
 
 **O número que era uma pergunta passa a ser uma resposta.** O
-[Quick Invest de hoje](#estrategiaaporte--quick-invest) abre perguntando *"quanto você quer
+[Quick Invest de hoje](#sobraaporte--quick-invest) abre perguntando *"quanto você quer
 aportar?"* — e a pessoa responde de cabeça, uma vez por mês, com o número errado, porque a sobra
 mora em outro app. A ponte não pergunta: ela sabe.
 
@@ -35,7 +32,7 @@ Isso também é o critério de aceite da tela. Se em algum estado ela voltar a *
 aporte a quem tem caixa lançado, a ponte não está construída — está desenhada em cima da mesma
 lacuna.
 
-### Desktop
+### Conteúdo e ordem de leitura
 
 ```
 SOBRA DE SETEMBRO                                     N1   GET /cashflow/month
@@ -118,7 +115,7 @@ sugerido edita o número **no lugar em que ele aparece**, não num formulário a
 Se o aporte disputasse tamanho com a sobra, a tela estaria dizendo que o dinheiro é para investir,
 que é exatamente a conclusão que a cascata às vezes contradiz.
 
-### Mobile
+### Na tela do telefone
 
 `Sobra` é o caso de uso mais móvel do produto — decidir o aporte é coisa de sofá. A ordem de
 leitura é a mesma; o que muda é que cada passo da cascata vira um bloco de largura cheia e a
@@ -146,7 +143,7 @@ até R$ 1.788,19
 
 ### Estados de `/sobra`
 
-O contrato geral está na [matriz de estados](#9-matriz-de-estados--o-contrato-de-toda-tela). O que
+O contrato geral está na [matriz de estados](#8-matriz-de-estados--o-contrato-de-toda-tela). O que
 é específico desta tela:
 
 | Estado | O que a tela faz | Antipadrão |
@@ -199,7 +196,7 @@ R$ 2.047,32; descontando o que ainda deve sair, a sobra parte de R$ 1.647,32"*.
 Por isso `/mes` não carrega faixa: fato não tem faixa. A faixa nasce em `/sobra`, junto com a
 estimativa que a cria.
 
-### Desktop
+### Conteúdo e ordem de leitura
 
 ```
 SETEMBRO · dia 20 de 30                               N1   GET /cashflow/month
@@ -250,7 +247,7 @@ itens e a informação — o que exige atenção — fica abaixo de tudo.
 um fio rotulado. Duas listas ("já aconteceu" / "vai acontecer") escondem a coisa mais útil de um
 mês, que é a **sequência** — o salário cai no dia 5 e o aluguel sai no mesmo dia.
 
-**5. A escrita mora em `/mes/lancar`.** Mesma disciplina de `/carteira/editar`: leitura e escrita
+**5. A escrita mora em `/mes/lancar`.** Mesma disciplina de `/patrimonio/editar`: leitura e escrita
 separadas, porque a tela que se abre todo dia não pode ser um formulário. O único atalho de
 escrita na leitura é `[Marcar como paga]`, porque confirmar pagamento **é** um ato de leitura do
 mês — a pessoa está conferindo, não cadastrando.
@@ -281,33 +278,7 @@ cartão varia por banco e por dia, e errar aqui é pior que não mostrar nada.
 
 ---
 
-## Shell — desktop (≥1280px)
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│ fiance      Hoje  Carteira  Descobrir  Estratégia            [⌘K buscar]  ⚲  ◔  ⬤   │  56px
-├────────┬─────────────────────────────────────────────────────────────────────────────┤
-│        │                                                                             │
-│  sub-  │   CONTEÚDO                                    ┌─ painel contextual ───┐      │
-│  nav   │   largura máxima 1120px para leitura;         │  (drawer, sob demanda) │      │
-│  da    │   full-bleed para tabela e split view         │  Atividade · detalhe   │      │
-│  seção │                                               └────────────────────────┘      │
-│ 200px  │                                                                             │
-└────────┴─────────────────────────────────────────────────────────────────────────────┘
-   ⚲ busca  ◔ Atividade (drawer)  ⬤ conta → /voce
-```
-
-Regras do shell:
-- Nav primária **horizontal no topo** com 4 itens de trabalho; `/voce` fica no avatar. Sidebar
-  vertical não se justifica com 5 destinos e rouba largura de tabela.
-- Sub-nav da seção à esquerda, largura fixa 200px, **só quando a seção tem sub-rotas** (Carteira,
-  Descobrir, Estratégia, Você). Hoje e Ativo ocupam a largura inteira.
-- Container adaptativo: 1120px para leitura, **até 1600px** em `/carteira/posicoes`,
-  `/descobrir/*` (split view) e `/descobrir/comparar`. O `max-w-[1180px]` global sai.
-- Painel contextual é drawer da direita (600px), nunca modal centralizado — modal interrompe,
-  drawer contextualiza.
-
-## Shell — mobile
+## Shell
 
 ```
 ┌──────────────────────────┐        Bottom nav: 5 destinos, 56px + safe area
@@ -324,105 +295,12 @@ Regras do shell:
 
 ---
 
-## 1. `/hoje` — a central de decisão
+## 1. `/patrimonio`
 
-### Desktop
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                      │
-│  PATRIMÔNIO                                        N1 · GET /dashboard               │
-│  R$ 187.430,22                                                                       │
-│  ↑ R$ 2.214  ·  +1,20%  ·  no mês ▾                    ← período trocável, na URL    │
-│                                                                                      │
-│  ───────────────────────────────────────────────────────────────────────────────      │
-│                                                                                      │
-│  Carteira saudável                                 N1 · veredito, 1 frase, serif     │
-│  │ Concentração: PETR4 é 14% da carteira                                             │
-│  │ FIIs estão 7 p.p. abaixo da sua meta                                              │
-│                                                       (ver a carteira inteira →)     │
-│                                                                                      │
-│  ───────────────────────────────────────────────────────────────────────────────      │
-│                                                                                      │
-│  O QUE MUDOU                                       N2 · GET /whats-new (máx. 5)      │
-│                                                                                      │
-│   ▪  PETR4 caiu 8,4% hoje                                    [Entender esta queda]   │
-│   ▪  R$ 340 de proventos creditados em novembro              [Ver proventos]          │
-│   ▪  CDB Banco X vence em 12 dias                           [Ver posição]            │
-│   ▪  Prejuízo de R$ 1.240 disponível para abater IR         [Ver operações]          │
-│                                                                                      │
-│  ···························· dobra em 900px ·······································  │
-│                                                                                      │
-│  PRÓXIMA AÇÃO                                      N3 · derivado de /strategy         │
-│  ┌────────────────────────────────────────────────────────────────────────────────┐  │
-│  │  FIIs estão abaixo da sua meta                                                 │  │
-│  │  Sua exposição está 6,8 p.p. abaixo do objetivo — o maior gap atual.           │  │
-│  │                                                        [Ver estratégia]         │  │
-│  └────────────────────────────────────────────────────────────────────────────────┘  │
-│                                                                                      │
-│  OPORTUNIDADES EM DESTAQUE                         N3 · GET /opportunities, top 2    │
-│   BBAS3  score 81   "14% abaixo do justo, DY 8,2% com 6 anos de histórico"     →     │
-│   HGLG11 score 78   "P/VP 0,88 com vacância estável"                          →     │
-│                                                       (ver todas as 34 →)            │
-│                                                                                      │
-│  ────────────────────────────────────────────────────────────────────────────────     │
-│  Cotações de 16:42 · CDI e Selic do Banco Central · estimativas, não garantias        │
-└──────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-**Saíram da home** (cada um para a tela dona): tabela de posições → `/carteira/posicoes`;
-gráfico de patrimônio + benchmark → `/carteira/desempenho`; grid de oportunidades →
-`/descobrir/oportunidades`; alertas → drawer Atividade; sinais de venda → `/estrategia`;
-progresso da meta → uma linha no feed + `/estrategia/metas`.
-
-**Ganho medido:** 10 blocos → 5. Sete das oito perguntas do briefing §2 respondidas acima da
-dobra.
-
-### Mobile
+### Resumo
 
 ```
-┌──────────────────────────┐
-│ R$ 187.430,22            │  N1 — o número mais legível do app
-│ ↑ 1,20% no mês           │
-│ ─────────────────────────│
-│ Carteira saudável        │  N1 — veredito em serif
-│ · PETR4 = 14%            │
-│ · FIIs −7 p.p.           │
-│ ─────────────────────────│
-│ O QUE MUDOU              │  N2 — feed é o corpo da tela no celular
-│ PETR4 caiu 8,4%      →   │
-│ R$ 340 de proventos  →   │
-│ CDB vence em 12d     →   │
-│ ─────────────────────────│
-│ ┌──────────────────────┐ │
-│ │ Maior gap: FIIs −7pp │ │  N3 — ação primária, alcance do polegar
-│ │      [Ver estratégia]│ │
-│ └──────────────────────┘ │
-│ 16:42 · CDI do BCB       │
-└──────────────────────────┘
-```
-
-### Estados de `/hoje`
-
-| Estado | Comportamento |
-|---|---|
-| Carregando (1ª vez) | Skeleton **com a forma real**: um bloco de valor alto, uma frase larga, 4 linhas de feed. Não um retângulo genérico |
-| Carregando (refresh) | Valores antigos permanecem, com barra de progresso fina no topo. Nunca esvaziar a tela que já tinha conteúdo |
-| Sem carteira | Patrimônio não é exibido como R$ 0,00. Bloco único: "Sua carteira ainda está vazia — adicione uma posição para o fiance começar a analisar" + [Adicionar primeira posição] + (ou explorar o mercado) |
-| Carteira pequena (1–3 ativos) | Veredito de saúde é substituído por "Carteira ainda pequena para avaliar concentração" — honesto, em vez de "concentração crítica: 100% em PETR4" |
-| Nada mudou | Feed diz "Nada mudou desde ontem" — o bloco não desaparece |
-| Dado velho (`market_data_stale`) | Valores mantidos + selo "cotações de ontem, 18:05" no topo do bloco, não só no rodapé |
-| Erro | Última leitura conhecida + "Não conseguimos atualizar agora" + causa + [Tentar de novo]. Nunca tela branca |
-| Offline (mobile) | Último snapshot + faixa "sem conexão · dados de 16:42" |
-
----
-
-## 2. `/carteira`
-
-### Resumo (desktop)
-
-```
-Carteira │ Composição │ Desempenho │ Proventos │ Posições │ Encerradas    [Editar carteira]
+Resumo │ Composição │ Desempenho │ Projeção │ Movimento          [Editar carteira]
 ─────────┴────────────────────────────────────────────────────────────────────────────────
   R$ 187.430,22        Investido R$ 164.100      Resultado ↑ R$ 23.330 · +14,2%      N1
   ────────────────────────────────────────────────────────────────────────────────────
@@ -442,7 +320,7 @@ Carteira │ Composição │ Desempenho │ Proventos │ Posições │ Encerr
 O gráfico **não** aparece no resumo: quem quer a curva vai em Desempenho. O resumo responde
 "quanto, comparado a quê" com números e barras — mais rápido de ler que qualquer gráfico.
 
-### Posições (desktop — a tabela profissional)
+### Posições — a tabela densa
 
 ```
                                              [⚙ colunas] [densidade: compacta ▾] [↓ CSV]
@@ -461,7 +339,7 @@ Renda fixa entra **na mesma tabela** como classe par (decisão de IA): colunas d
 `—` e as de posição/resultado são preenchidas pela marcação a mercado do backend. Hoje RF é um
 bloco anexo, o que contradiz "renda fixa é entidade de primeira classe".
 
-### Posições (mobile — lista, não tabela)
+### Posições — a lista, quando a tabela não cabe
 
 ```
 ┌──────────────────────────┐
@@ -491,13 +369,13 @@ bloco anexo, o que contradiz "renda fixa é entidade de primeira classe".
 - **Encerradas** — N1 lucro realizado + IR pago + prejuízo a compensar; N2 tabela. O prejuízo a
   compensar ganha destaque: é dinheiro que o usuário recupera e hoje está enterrado.
 - **Editar** — dois grupos (negociados, renda fixa), escrita por linha, sem autosave. Estrutura
-  atual preservada; muda o enquadramento e o retorno para `/carteira`.
+  atual preservada; muda o enquadramento e o retorno para `/patrimonio`.
 
 ---
 
-## 3. `/ativo/:ticker` — a página de research
+## 2. `/ativo/:ticker` — a página de research
 
-### Desktop
+### Conteúdo e ordem de leitura
 
 ```
 (← Oportunidades)                                     ← breadcrumb preserva a origem
@@ -546,19 +424,7 @@ Regras que esta tela impõe:
   baixa (regra que já existe no backend e no Dart e falta no web).
 - Sem posição na carteira, o cartão "Sua posição" vira `[Adicionar à carteira]`.
 
-### Split view em Descobrir (desktop ≥1440px)
-
-```
-┌── lista ──────────┬── /ativo/:ticker embutido ─────────────────────────┐
-│ ▸ BBAS3   81      │  PETR4 …                                          │
-│ ▸ HGLG11  78      │  (a mesma tela acima, sem breadcrumb)             │
-│ ▸ PETR4   87  ◀   │                                                   │
-│ ▸ …               │                                                   │
-└───────────────────┴───────────────────────────────────────────────────┘
-  ↑↓ navega a lista sem perder o painel — varrer 10 ativos sem ir-e-voltar
-```
-
-### Mobile
+### Na tela do telefone
 
 Bottom sheet em dois estágios: **peek** (ticker, preço, score, veredito de 1 frase, ações) →
 **arrastar para cima** = tela cheia com o restante. O usuário decide em 2 segundos no peek e
@@ -566,7 +432,7 @@ aprofunda só se quiser.
 
 ---
 
-## 4. `/descobrir/oportunidades` — radar
+## 3. `/descobrir/oportunidades` — radar
 
 ```
 [Todas ▾] [DY mín] [MS mín] [☐ só destaques]                      filtros na URL
@@ -593,7 +459,7 @@ estimado" ✓ · "BBAS3 vai subir" ✗ · "Compre BBAS3" ✗.
 
 ---
 
-## 5. `/descobrir/quedas` — dip com diagnóstico
+## 4. `/descobrir/quedas` — dip com diagnóstico
 
 ```
 QUEDA SAUDÁVEL · 4          preço caiu, fundamentos preservados
@@ -630,11 +496,9 @@ do briefing §11 sem SSE (o endpoint `/dip-scanner/stream` foi removido em 2026-
 
 ---
 
-## 6. `/estrategia`
+## 5. `/sobra/desvio` — alocação × meta
 
 ```
-Plano │ Aporte │ Metas │ Renda fixa │ Projeção
-──────┴────────────────────────────────────────────────────────────────────────────
 ONDE VOCÊ ESTÁ × ONDE DEVERIA ESTAR                    N1 · GET /strategy
 ┌────────────┬───────┬──────┬───────┐
 │ Categoria  │ Atual │ Meta │  Gap  │
@@ -658,7 +522,7 @@ As quatro camadas do briefing §12 são visualmente distintas por posição e pe
 **informação** (tabela) · **cálculo** (a frase do gap) · **sugestão** (texto rotulado como
 sugestão) · **ação** (botão). Nunca uma sugestão sem o cálculo visível acima dela.
 
-### `/estrategia/aporte` — Quick Invest
+### `/sobra/aporte` — Quick Invest
 
 ```
 Quanto você quer aportar?      R$ [ 3.000,00 ]
@@ -680,7 +544,7 @@ SUGESTÃO                                          POST /quick-invest
 Três campos, uma resposta, a lógica atrás de um acordeão. É a tela mais curta do produto por
 projeto — no celular cabe sem rolar.
 
-### `/estrategia/metas`
+### `/voce/objetivos`
 
 ```
 RENDA PASSIVA MENSAL     R$ [ 3.000 ]        hoje: R$ 1.140 (38%)  ▮▮▮▮▯▯▯▯▯▯
@@ -692,7 +556,7 @@ POR SETOR (ações e BDRs) ▸
 A alocação atual marcada na própria trilha do slider é o detalhe que transforma o formulário em
 ferramenta de decisão: o usuário vê o gap enquanto move a meta.
 
-### `/estrategia/renda-fixa`
+### `/descobrir/renda-fixa`
 
 ```
 [ Comparar títulos ]  [ Renda fixa × bolsa ]        ← duas perguntas, uma tela
@@ -715,10 +579,10 @@ RENDA FIXA × BOLSA                                   GET /income-compare
 
 ---
 
-## 7. `/voce`
+## 6. `/voce`
 
 ```
-Preferências │ Alertas │ Conta
+Preferências │ Objetivos │ Alertas │ Indicação │ Conta
 ─────────────┴──────────────────────────────────────────────────────────
 NÍVEL DE DETALHE     ( ) Essencial  (•) Completo  ( ) Avançado
                      "Completo: métricas de valuation e score detalhado."
@@ -740,7 +604,7 @@ risco sem saber que está mudando o score de todos os ativos.
 
 ---
 
-## 8. Onboarding
+## 7. Onboarding
 
 ```
 1/3  Como você se descreve?              → risk_profile + detail_level
@@ -762,7 +626,7 @@ Três perguntas, `[Pular]` em todas, nada mais. Exige um marcador de conclusão 
 
 ---
 
-## 9. Matriz de estados — o contrato de toda tela
+## 8. Matriz de estados — o contrato de toda tela
 
 | Estado | Regra geral | Antipadrão a evitar |
 |---|---|---|
@@ -773,21 +637,19 @@ Três perguntas, `[Pular]` em todas, nada mais. Exige um marcador de conclusão 
 | Dados parciais | Valor + selo de completude ("62% dos indicadores") | Número parcial indistinguível de completo |
 | Dado velho | Valor + idade ("cotações de ontem, 18:05") | Substituir por skeleton; exibir como atual |
 | Atualizando | Progresso fino, sem bloqueio de interação | Overlay que congela a tela |
-| Offline (mobile) | Último snapshot + faixa persistente | Erro de rede cru |
+| Offline | Último snapshot + faixa persistente | Erro de rede cru |
 | 1ª utilização | Onboarding de 3 passos | Dashboard vazio com instruções em texto |
-| Sem carteira | Porta de entrada em Hoje, Carteira, Estratégia | "R$ 0,00" como se fosse patrimônio |
+| Sem carteira | Porta de entrada em Mês, Patrimônio e Sobra | "R$ 0,00" como se fosse patrimônio |
 | Carteira pequena | Análise de concentração suprimida com explicação | "100% concentrado em 1 ativo — crítico" |
 | Carteira grande | Densidade compacta, agrupamento, paginação de tabela | Renderizar 200 linhas sem virtualização |
 
-## 10. Responsividade
+## 9. Larguras
 
 | Faixa | Nome | Comportamento |
 |---|---|---|
-| < 420px | mobile pequeno | 1 coluna · 3 dados por linha de lista · valores abreviados (R$ 187,4 mil) |
-| 420–767 | mobile grande | 1 coluna · 4 dados por linha · valor cheio |
-| 768–1023 | tablet | 2 colunas em Hoje e Carteira · tabela com scroll horizontal e ticker fixo |
-| 1024–1279 | desktop pequeno | nav horizontal + sub-nav · conteúdo 1120px · sem split view |
-| 1280–1439 | desktop | idem + drawer contextual |
-| ≥ 1440 | desktop grande | **split view** em Descobrir · tabela até 1600px · 4 colunas em Comparar |
+| < 420px | telefone pequeno | 1 coluna · 3 dados por linha de lista · valores abreviados (R$ 187,4 mil) |
+| 420–767 | telefone | 1 coluna · 4 dados por linha · valor cheio |
+| ≥ 768 | tablet | 2 colunas em Mês e Patrimônio · tabela com rolagem horizontal e ticker fixo |
 
-`xl:` e `2xl:` passam a ser usados de fato — hoje são zero ocorrências.
+Não há faixa acima disso: o produto é distribuído pelas lojas, e a maior tela que ele encontra é
+um tablet.

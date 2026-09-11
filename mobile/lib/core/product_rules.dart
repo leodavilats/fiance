@@ -1,7 +1,7 @@
 // As bandas de regua e o vocabulario do produto, escritos a mao.
 //
 // Os limiares de score espelham `backend/app/analysis/score_ruler.py`, que e a fonte: mudar um
-// limiar exige mudar o Python primeiro, e depois aqui e no espelho de `web/src/app/core/`.
+// limiar exige mudar o Python primeiro, e depois aqui.
 
 enum FiState { favorable, attention, adverse, neutral, indeterminate }
 

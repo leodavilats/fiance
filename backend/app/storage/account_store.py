@@ -67,7 +67,6 @@ GLOBAL_TABLES = frozenset(
         "cache_entries",
         "alembic_version",
         "instruments",
-        "interest_signups",
     }
 )
 

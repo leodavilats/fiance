@@ -1,6 +1,6 @@
-// A fundacao visual do mobile, escrita a mao. Nao ha gerador nem espelho obrigatorio do web:
-// o contrato de paridade esta em docs/design/PARIDADE.md, e `test/contraste_test.dart` cobra o
-// minimo da WCAG.
+// A fundacao visual do produto, escrita a mao e sem gerador. E a unica paleta que existe:
+// `test/contraste_test.dart` cobra o minimo da WCAG, e `tool/build_icons.py` le daqui a cor
+// da marca.
 
 import 'package:flutter/material.dart';
 

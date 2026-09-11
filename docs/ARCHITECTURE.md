@@ -1,14 +1,16 @@
 # fiance — Arquitetura Técnica
 
 > Referência de **como o sistema é montado por dentro**: camadas, algoritmos, endpoints e
-> estrutura de pastas. Revisado em **2026-08-28**.
+> estrutura de pastas. Revisado em **2026-09-11**.
 >
 > Setup e variáveis de ambiente ficam no [README.md](../README.md). O que cada tela faz fica em
 > [FEATURES.md](FEATURES.md). O histórico das decisões fica em [CHANGELOG.md](CHANGELOG.md).
 
 ## Visão geral
 
-fiance é uma plataforma multi-tenant de análise de investimentos focada na B3, com três frontends consumindo a mesma API: **web** (Angular 22), **mobile** (Flutter) e a API em si (**FastAPI**). Login via Google (JWT próprio emitido pelo backend), dados persistidos em Postgres (produção) / SQLite (dev), isolados por `user_id`.
+fiance é uma plataforma multi-tenant de análise de investimentos focada na B3, com **um cliente só**: o aplicativo **Flutter**, distribuído pelas lojas, sobre a API **FastAPI**. Login via Google (JWT próprio emitido pelo backend), dados persistidos em Postgres (produção) / SQLite (dev), isolados por `user_id`.
+
+O front web (Angular) foi removido em 2026-09-11, com o serviço `fiance-web` do Railway junto. O que ele carregava e não era tela — as três páginas jurídicas — passou a ser servido pelo próprio backend, e o resto (landing, SEO, cartão de link) deixou de existir. O porquê está no [CHANGELOG.md](CHANGELOG.md).
 
 **Correção importante em relação a documentação/memória antigas**: o projeto migrou de yfinance/Alpha Vantage para **BRAPI** (ações BR/FIIs/BDRs/ETFs). Finnhub (ações US), CoinGecko (cripto) e Gemini (IA) foram removidos em 2026-08-19 — o sistema não trabalha mais com ações internacionais fora de BDR nem com criptomoedas; a exposição internacional é só via BDR, e ETF passou a ser uma classe de ativo própria. A persistência não é mais JSON local — é SQLAlchemy sobre Postgres/SQLite.
 
@@ -21,12 +23,12 @@ fiance é uma plataforma multi-tenant de análise de investimentos focada na B3,
 - **`main.py`** — cria a app FastAPI, CORS, middleware de observabilidade e handlers globais de exceção, inclui `router` sob prefixo `/api`. Erros de domínio são **tipados** (`core/errors.py`: `DomainError`/`NotFoundError`/`ConflictError` carregam o status) — o mapeamento por palavra-chave na mensagem (`"não encontrado" in msg`) foi removido. Usa `lifespan` (não `on_event`): `init_db()` — que **confere** a revisão do banco e só migra quando ele é local —, limpeza das posições `RF_*` legadas e `core/jobs.start_background_jobs()`. Migrar é *release command* (`python -m app.release`), não startup.
 - **`core/jobs.py`** — jobs de background com **lock cooperativo no banco** (tabela `job_locks`, TTL que expira sozinho): warm-up do scan de mercado, ciclo de notificação, snapshot diário de patrimônio e manutenção de cache. Antes eram dois `asyncio.create_task` soltos, executados por todo worker — o que gerava push duplicado com mais de um worker.
 - **`core/observability.py`** — middleware que abre **uma sessão de banco por request**, memoiza o pipeline caro por request, cronometra latência por rota e propaga `X-Request-Id`. Contadores de chamada externa e cache hit rate expostos em `GET /api/metrics`.
-- **`core/telemetry.py`** — integração do Sentry, inerte sem `SENTRY_DSN` e alta se o DSN existir sem o pacote. O `before_send` é **lista de permissão**: ticker no caminho vira `{id}`, valor e número citado em erro são redigidos, corpo de request, `extra` e variável local de frame não saem, e do usuário sai só o identificador. Web (`core/telemetry.ts`) e mobile (`core/telemetry.dart`) repetem a mesma limpeza, cada um com sua suíte. Ver [OPERACAO.md](OPERACAO.md).
+- **`core/telemetry.py`** — integração do Sentry, inerte sem `SENTRY_DSN` e alta se o DSN existir sem o pacote. O `before_send` é **lista de permissão**: ticker no caminho vira `{id}`, valor e número citado em erro são redigidos, corpo de request, `extra` e variável local de frame não saem, e do usuário sai só o identificador. O mobile (`core/telemetry.dart`) repete a mesma limpeza, com a sua suíte. Ver [OPERACAO.md](OPERACAO.md).
 - **`core/brt.py`** — fuso fiscal (UTC-3 fixo; o Brasil não usa horário de verão desde 2019). A isenção mensal de R$ 20 mil e as faixas de IR são apuradas por mês calendário brasileiro, não UTC.
 - **`analysis/`** — algoritmos puros de domínio (sem I/O):
   - `fair_price.py` — núcleo de valuation, dividido em duas metades: `compute_fair_price_inputs()` produz o que **não** depende de preferência (dado de mercado, cacheável globalmente) e `fair_price_from_inputs()` aplica o `desired_yield` do usuário (CPU pura, por request). `compute_fair_price()` continua existindo como atalho. A média de dividendos usa anos-calendário **completos**, com denominador igual aos anos cobertos pelo histórico; o DCF recebe crescimento em **percentual**. `compute_technical()` expõe `trend_basis` (`long` com SMA 50/200, `short` com 20/50 quando o histórico é curto, `none` sem série) — antes a tendência ficava permanentemente `unknown`. Roteamento por tipo: FII → consenso `[bazin, pvp_fair]` (nunca Graham); BDR → Graham + DCF; ETF → só `bazin` (dividend yield histórico, sem Graham/DCF — ETF não tem EPS/book_value de empresa); ações BR → Bazin/Graham/DCF. `desired_yield_for()` define metas de yield (6% ações, 10% FII, 4% BDR, 4% ETF), configuráveis via `prefs` do usuário. `compute_technical()` calcula SMA50/200, RSI14, tendência, distância de 52w high/low.
   - `scoring.py` — `score_opportunity()` é o score real usado por `opportunity_service.py` (0–100): combina margem de segurança (preço justo), qualidade (ROE/margem), endividamento (D/E), crescimento de receita, dividend yield e técnico (RSI/tendência, peso baixo — buy-and-hold, não day trade), ponderado por perfil de risco (`OPPORTUNITY_WEIGHTS`, conservative/moderate/aggressive). FII/ETF usam subconjunto (mos+dividend+liquidez, sem EPS/ROE/dívida de empresa). Os pesos são **renormalizados sobre as dimensões disponíveis** e o breakdown carrega `data_completeness`: ausência de dado deixa de pontuar como nota baixa. `score_company()`/`rank()`/`PROFILE_WEIGHTS` (modelo alternativo baseado em P/L·P/VP, sem consumidor) foram **removidos em 2026-08-20** junto de `CompanyFundamentals`/`ScoredCompany` — eram ~200 das 380 linhas do arquivo e o risco real era um dev corrigir o modelo errado.
-  - `score_ruler.py` — régua única do score (limiares 75/60/40 e critério de destaque), espelhada em `web/src/app/core/score-ruler.ts` e `mobile/lib/core/score_ruler.dart`. Antes o mesmo número tinha três réguas.
+  - `score_ruler.py` — régua única do score (limiares 75/60/40 e critério de destaque), espelhada em `mobile/lib/core/score_ruler.dart`. Ela é a fonte: mudar um limiar é Python primeiro.
   - `sectors.py` — tradução dos setores crus da BRAPI para português, usada pelos alertas do backend (que emitiam "Setor Financial Services concentrado").
   - `renda_fixa_analysis.py` — % do CDI **multiplicativo** (110% do CDI = 1,10 × CDI), IPCA+ compondo inflação com juro real, constante única de dias por mês, e dois números explícitos de comparação com CDI (líquido e equivalente bruto por faixa de IR) no lugar do benchmark `cdi × 0.85` hardcoded. `analyze_one(prazo_meses_override=...)` é o que permite marcar uma posição a mercado.
   - `classify.py` — `auto_category()` mapeia AssetType → categoria canônica (fii→fiis, etf→etfs, bdr→bdrs, resto→acoes_br); `resolve_category()` trata categorias legadas (`renda`/`trade`/`caixa`). Categoria `bdrs` (antes `acoes_int`) foi renomeada de verdade em 2026-08-19, sem alias — sistema ainda sem usuários em produção, então sem dado real para migrar.
@@ -129,9 +131,17 @@ versão.
 
 Públicos: `GET /health`, `GET /universe`, `GET /universe/search` (autocomplete de ticker por
 prefixo/nome) em `basic.py`, `POST /auth/google` (`auth.py`) e as rotas **sem titular**
-`GET /public/asset/{ticker}` e `GET /public/universe` (`public.py`) — leitura impessoal de
-propósito, para que a mesma URL devolva o mesmo conteúdo ao robô e a quem chega pelo link, com teto
-por IP em vez de por usuário.
+`GET /public/asset/{ticker}` e `GET /public/affirmation` (`public.py`) — leitura impessoal de
+propósito, para que a mesma URL devolva o mesmo conteúdo a quem chega pelo link, com teto por IP em
+vez de por usuário.
+
+**Fora de `/api`, e de propósito:** `GET /termos`, `/privacidade` e `/aviso-cvm` (`api/legal.py` +
+`services/legal_pages.py`) são HTML servido por este processo. As lojas exigem uma URL de
+privacidade que abra sozinha, e é para cá que `mobile/lib/core/legal_links.dart` aponta. São
+páginas de documento: sem JavaScript, sem asset externo e sem paleta — a cor vem do agente do
+usuário, porque uma segunda cópia dos tokens envelheceria calada. O Aviso CVM lê
+`affirmation.current()` no servidor, de modo que o nível em vigor nunca é uma frase escrita duas
+vezes.
 
 `POST /cache/clear` e `GET /metrics` **não** são públicos: vivem no `admin_router`, dentro do router protegido.
 
@@ -190,93 +200,37 @@ ficaram invisíveis até 2026-08-21. `test_fair_price.py` tem regressão para am
 
 ---
 
-## Web (`web/src/app/`)
+## Aplicativo (`mobile/`) — Flutter
 
-Angular 22, standalone components, todas as rotas lazy-loaded. **40 entradas em
-`app.routes.ts`**: as rotas de conteúdo, os layouts de seção e os redirects das URLs antigas. O
-`authGuard` valida o `exp` do JWT, não só a presença do token.
-
-Cinco destinos por intenção, mais o ativo como camada — o racional está em
-[design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md):
-
-| Rota | Componente |
-|---|---|
-| `/mes` + 4 sub-rotas | `month/`, `month-entry/`, `month-template/`, `month-debts/`, `activity/activity-page` |
-| `/sobra` + 2 | `surplus/`, `quick-invest/`, `deviation/` |
-| `/patrimonio` + 7 | `portfolio-summary/`, `composition/`, `positions/`, `closed-trades/`, `dividends/`, `performance/`, `market/contribution-simulator/`, `portfolio-editor/` |
-| `/descobrir` + 4 | `market/opportunities-list/`, `market/dip-scanner/`, `shell/fixed-income-page` (une `market/fixed-income` e `market/income-compare`), `market/compare-assets/` |
-| `/ativo/:ticker` | `asset/` — página de research, e rota pública renderizada no servidor |
-| `/voce` + 5 | `preferences/`, `goals/`, `price-alerts/`, `referral/`, `account/` |
-| `/`, `/termos`, `/privacidade`, `/aviso-cvm` | `landing/`, `legal/` — as outras quatro públicas |
-
-- **`components/shell/`** — layouts de seção (`portfolio-shell`, `discover-shell`, `surplus-shell`,
-  `you-shell`), cada um com `SectionNavComponent` + `router-outlet`. A sub-navegação é feita de
-  links roteados, não de tabs com estado local: cada destino tem URL, deep link e botão voltar.
-- **`components/score-ruler/`** — a régua, elemento-assinatura do produto. Aceita um conjunto de
-  bandas, então serve tanto o score de um ativo quanto a saúde da carteira.
-- **`components/insight/`** — o padrão único de insight: o que aconteceu → por que importa → o que
-  sustenta → o que fazer.
-- **`components/async-state/`** — as quatro faces de uma leitura (esperando · falhou · vazio ·
-  conteúdo) num contrato só, para que uma tela não trate três e esqueça a quarta. A frase de falha
-  vem de `core/error-message.ts`, e o vazio delega a `components/empty-state/`.
-- **`components/data-age/`** — quando a fonte foi lida, ao lado do número que ela qualifica. Em
-  lista, o carimbo é o **mais antigo** (`core/data-age.ts`): dizer a idade do mais novo prometeria
-  frescor que a linha de baixo não tem.
-- **`core/error-message.ts`** — `mensagemDeErro(erro, acao)`, a única frase de falha do produto,
-  usada pelas telas **e** pelo `httpErrorInterceptor`. `detalheUtil` deixa passar o `detail` de
-  4xx de domínio e barra o de 5xx, que é rastreamento e não recado.
-- **`core/services/carteira-store.service.ts`** — estado da carteira compartilhado pelas sete
-  sub-rotas de `/patrimonio`. Sem ele, cada troca de sub-aba refaria `POST /portfolio/evaluate`,
-  que é a chamada mais cara do produto. Guarda o **erro** da leitura, e não um booleano: enquanto
-  era booleano, seis das sete telas renderizavam a carteira como se estivesse vazia quando a rede
-  caía.
-- **`core/services/dip-analysis.service.ts`** — estado do drawer de diagnóstico de queda,
-  compartilhado dentro de Descobrir. Vive num serviço porque um layout com `router-outlet` não
-  recebe `output` de filho roteado.
-- **`core/product-rules.ts`** — bandas das réguas, vocabulário de veredito e diagnóstico.
-  Escrito à mão, e espelha `analysis/score_ruler.py`: mudar um limiar é Python primeiro. A camada
-  visual não passa por aqui — ela é CSS escrito em `src/foundation.css`.
-- **`core/score-ruler.ts`** — apresentação da régua; os limiares vêm de `product-rules.ts`, que
-  espelha `analysis/score_ruler.py`.
-- **`core/services/ui-helper.service.ts`** — labels, ícones e cores de AssetType/categoria/setor,
-  glossário e rótulos de proveniência.
-- **`core/interceptors/`** — `auth.interceptor.ts` (Bearer), `http-error.interceptor.ts`.
-- **`src/foundation.css`** — **escrito à mão**: cor (nos dois temas), tipografia por papel,
-  espaço, raio, motion, camada e densidade. `styles.css` é a camada de componentes (`.btn-*`,
-  `.input`, `.card`, `.notice`, `.data-table`), dentro de `@layer components`.
-
-**Pegadinha:** ícone do Lucide precisa ser registrado à mão em `LucideAngularModule.pick({...})`
-(`src/app/app.config.ts`). Nome ausente não quebra o build — quebra a tela em runtime.
-
----
-
-## Mobile (`mobile/`) — Flutter
+É o único cliente do produto. O que antes se dizia "paridade com o web" agora é simplesmente o
+produto: conceito, nome e hierarquia vivem aqui, e a régua de baixo continua no Python.
 
 Dart SDK `^3.10.7`. Dependências-chave: `dio`, `google_sign_in`, `flutter_riverpod`,
 `flutter_secure_storage` (JWT), `go_router`, `fl_chart`, `google_fonts`.
 
-`StatefulShellRoute.indexedStack` com **5 branches**, e são os mesmos cinco destinos do web:
+`StatefulShellRoute.indexedStack` com **5 branches** — os cinco destinos do produto:
 `/mes` (+ `atividade`, `feed`), `/sobra` (+ `aporte`, `desvio`), `/patrimonio` (+ `renda-fixa`,
 `projecao`), `/descobrir` (+ `quedas`, `comparar`, `renda-fixa`, `renda-fixa-vs-bolsa`), `/voce`
 (+ `objetivos`). `/ativo/:ticker` fica fora do shell de abas, como camada.
 
-Essa igualdade é regra escrita em [design/PARIDADE.md](design/PARIDADE.md), não máquina: a
-catraca que a cobrava foi retirada quando a dívida que ela media chegou a zero. As URLs antigas (`/hoje`, `/carteira`, `/estrategia/*`) seguem como
-redirect, com **alvo absoluto**: relativo resolve contra o segmento casado e manda o link salvo
-para lugar nenhum.
+O racional dos cinco está em
+[design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md). As URLs antigas
+(`/hoje`, `/carteira`, `/estrategia/*`) seguem como redirect, com **alvo absoluto**: relativo
+resolve contra o segmento casado e manda o link salvo para lugar nenhum.
 
 Estrutura `lib/`:
 - **`core/`** — `api_client.dart` (Dio + Bearer), `api_repository.dart` (chamadas tipadas),
   `auth_service.dart` (Google Sign-In com `serverClientId` = Client ID Web, para o `aud` do idToken
   ser validável cross-platform), `models.dart` (DTOs), `providers.dart` (Riverpod), `router.dart`,
   `labels.dart` (equivalente ao `ui-helper.service.ts`), `theme.dart`.
-- **`core/design_tokens.dart`** — **escrito à mão**, espelho de `web/src/foundation.css`. Não há
-  máquina conferindo a paridade: mudar um valor num lado obriga a mudar no outro. `theme.dart`
-  monta o `ThemeData` sobre esses valores.
-- **`core/widgets/`** — `score_ruler.dart` (a régua, espelhando o web), `error_state.dart`
-  (`FiErrorState` + `fiErrorMessage`, que traduz exceção em causa humana e foi a origem do
-  `mensagemDeErro` do web), `skeleton.dart` (`FiSkeleton`, os papéis de `<app-skeleton>`: a altura
-  de cada forma é a do papel de tipografia que vai ocupar o lugar), `search_action.dart`
+- **`core/design_tokens.dart`** — **escrito à mão**, e a **única** paleta que existe: cor nos dois
+  temas, tipografia por papel, espaço, raio, motion e densidade. `theme.dart` monta o `ThemeData`
+  sobre esses valores, `test/contraste_test.dart` cobra o mínimo da WCAG (4,5:1 para texto, 3:1
+  para forma e limite de controle) e `tool/build_icons.py` lê daqui a cor da marca.
+- **`core/widgets/`** — `score_ruler.dart` (a régua, elemento-assinatura do produto),
+  `error_state.dart` (`FiErrorState` + `fiErrorMessage`, que traduz exceção em causa humana),
+  `skeleton.dart` (`FiSkeleton`: a altura de cada forma é a do papel de tipografia que vai ocupar
+  o lugar), `search_action.dart`
   (`FiSearchAction`, a porta para `/busca` em todo destino de raiz),
   `ticker_autocomplete_field.dart`, `help_tooltip.dart`, `brand_background.dart`.
 - **`features/`** — uma pasta por destino, e o nome da pasta é o nome do destino: `mes/`
@@ -289,26 +243,25 @@ Estrutura `lib/`:
   saíram em 2026-09-08 — deriva de nome entre rota e código é barata na hora e confusa para
   sempre.
 
-**Paridade com o web.** O mobile consome a MESMA API, sem regra de cálculo duplicada — preço
-justo, score, renda fixa e IR ficam 100% no backend.
+**Nenhuma regra de cálculo vive aqui.** Preço justo, score, renda fixa, caixa e IR ficam 100% no
+backend; o que o Dart escreve à mão são as bandas da régua (`core/product_rules.dart`), o
+vocabulário (`core/vocabulary.dart`) e a paleta — os três espelhando o Python, que é a fonte.
 
-A camada visual, ao contrário, é **escrita nos dois lados e não tem máquina**: `design_tokens.dart`
-espelha `foundation.css` à mão. O contrato é [design/PARIDADE.md](design/PARIDADE.md), e ele exige
-igualdade de **conceito, nome e hierarquia** — composição, gesto, espaçamento e valor de cor são
-livres, porque um telefone sob sol pode precisar de mais contraste que um monitor. O que a máquina
-ainda cobra é o piso de contraste (`npm run lint:contrast`) e, no Dart, que nenhuma tela use nome
-de destino aposentado.
-
-A assimetria que resta é **decisão, não lacuna**: push exige o app instalado, e o web sinaliza isso
-em `/voce/alertas`. O que continua aberto está em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+As máquinas que cobram isso são testes Dart, e rodam no mesmo `flutter test` do CI:
+`test/lint_ui_test.dart` (11 regras de produto e acessibilidade — explicabilidade em julgamento,
+faixa em número projetado, serifa carregando conclusão, esqueleto em vez de disco, nome de destino
+aposentado, vocabulário de IA), `test/contraste_test.dart` (WCAG) e `test/score_ruler_test.dart`
+(a régua contra os casos do backend). O que ainda não é cobrado está em
+[KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ---
 
 ## Fluxo de dados (resumo)
 
 ```
-Web (Angular) ─┐
-                ├─→ HTTP + JWT Bearer ─→ FastAPI (/api/*) ─→ services/ ─→ analysis/ (cálculo puro)
-Mobile (Flutter)┘                              │                    └─→ repositories/ → storage/ → Postgres/SQLite
-                                                └─→ collectors/ → BRAPI / BCB SGS
+Aplicativo (Flutter) ─→ HTTP + JWT Bearer ─→ FastAPI (/api/v1/*) ─→ services/ ─→ analysis/ (cálculo puro)
+                                                   │                      └─→ repositories/ → storage/ → Postgres/SQLite
+                                                   └─→ collectors/ → BRAPI / BCB SGS
+
+           navegador ─→ /termos · /privacidade · /aviso-cvm  (HTML do mesmo processo)
 ```

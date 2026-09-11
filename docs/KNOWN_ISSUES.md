@@ -1,6 +1,6 @@
 # fiance — o que está aberto
 
-> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-09-09**; nada de
+> **Só pendências.** Todo item aqui foi verificado contra o código em **2026-09-11**; nada de
 > histórico, nada de ✅. O que já foi resolvido — e por quê — está em [CHANGELOG.md](CHANGELOG.md).
 >
 > A revisão de **2026-09-08/09** fechou seis itens (paridade de nome, proveniência no nível
@@ -44,25 +44,16 @@
    apesar de já existir universo dinâmico via BRAPI (`core/universe.py`). Fallback defensivo
    intencional, mas extenso.
 
-5. **Os dois serviços de produção sobem sem esperar o CI.** Conferido com
-   `get-service-config` nos dois serviços do ambiente `production` em 2026-09-09, e com o push de
-   `43f50a4`, que tocou front e back e deployou **os dois** com sucesso:
+5. **A API de produção sobe sem esperar o CI.** Conferido com `get-service-config` em
+   2026-09-09: o serviço `fiance` tem gatilho `main`, filtro `rootDirectory: /backend` e
+   `checkSuites: false`. Um commit vermelho vai ao ar — e o `preDeployCommand` é
+   `python -m app.release`, então uma migração ruim é aplicada antes de qualquer teste terminar.
+   Conserto de um clique no serviço (*Wait for CI*).
 
-   | Serviço | Gatilho | Filtro | Espera o CI? |
-   |---|---|---|---|
-   | `fiance` (API) | `main` | `rootDirectory: /backend` | **não** (`checkSuites: false`) |
-   | `fiance-web` (front) | `main` | `watchPatterns: ["web/**"]` | **não** (`checkSuites: false`) |
-
-   A revisão anterior deste item afirmava que o auto-deploy de produção tinha sido desligado *só
-   na API*, e que a API subia homologação. **A configuração diz o contrário**, e o deploy de
-   `43f50a4` confirma. Um commit vermelho vai ao ar nos dois — e no `fiance` o
-   `preDeployCommand` é `python -m app.release`, então uma migração ruim é aplicada antes de
-   qualquer teste terminar. Conserto de um clique em cada serviço (*Wait for CI*).
-
-   **A assimetria front/back encolheu, mas não fechou.** Commit que toca os dois lados sobe os
-   dois juntos; a assimetria sobrevive para commit de **um lado só** — um commit em `web/**` não
-   move a API, e vice-versa. Por isso mudança de contrato de API continua pedindo campo
-   **opcional** nos clientes, que é o que fez `as_of` atravessar sem 422.
+   O cliente **não** sobe junto: o aplicativo chega por loja, com fila de revisão e com versões
+   antigas instaladas por tempo indeterminado. Por isso mudança de contrato de API pede campo
+   **opcional** no Dart — é o que fez `as_of` atravessar sem 422 —, e agora vale mais do que
+   valia: não existe mais um cliente que se atualiza sozinho no próximo carregamento.
 
    O fluxo de promoção do [`deploy.yml`](../.github/workflows/deploy.yml) continua **não
    utilizável**: os environments do Actions (`staging`, `production`) não existem — o que a API do
@@ -71,10 +62,10 @@
    de token ausente. As saídas, em ordem de valor, estão no
    [OPERACAO](OPERACAO.md#o-que-falta-configurar-uma-vez), item 1.
 
-   Há **mudanças de configuração STAGED e não implantadas** no patch `27a43c52`, e são **33**:
-   13 no `fiance`, 4 no `fiance-web` (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL`, porta do domínio) e
-   **13 no `Postgres`**, inclusive `POSTGRES_PASSWORD` e `DATABASE_URL` — o serviço de banco não
-   estava na contagem anterior, e é o que mais importa dela.
+   Há **mudanças de configuração STAGED e não implantadas** no patch `27a43c52`, e eram **33**:
+   13 no `fiance`, 4 no serviço do front (que saiu em 2026-09-11) e **13 no `Postgres`**,
+   inclusive `POSTGRES_PASSWORD` e `DATABASE_URL` — o serviço de banco não estava na contagem
+   anterior, e é o que mais importa dela.
 
    **Elas não entram no deploy de código**, ao contrário do que a revisão anterior deste item
    afirmava: o patch segue `STAGED` depois de oito deploys de git no mesmo dia, com o mesmo
@@ -84,13 +75,14 @@
    `list-variables` imprime `JWT_SECRET` e `POSTGRES_PASSWORD` em texto claro. Fechar é decidir o
    patch: aprovar sabendo o que muda, ou descartá-lo.
 
-## Duplicação estrutural entre plataformas
+## Duplicação estrutural entre Python e Dart
 
-6. **Rótulo e régua são escritos nos dois lados, e nenhuma máquina os compara.** Rótulo, ícone e
+6. **Rótulo e régua são escritos dos dois lados, e nenhuma máquina os compara.** Rótulo, ícone e
    cor de categoria, tipo de ativo, setor, tipo de renda fixa e liquidez viviam num gerador até
    2026-09-07, e voltaram a ser escritos quando ele saiu. O que os mantém em acordo é
-   `analysis/score_ruler.py` como fonte e a disciplina de mudar as três plataformas no mesmo
-   commit. O risco continua registrado: divergência aqui é um número errado, não uma tela feia.
+   `analysis/score_ruler.py` como fonte e a disciplina de mudar Python e Dart no mesmo commit. O
+   risco continua registrado: divergência aqui é um número errado, não uma tela feia. Com um
+   cliente só, a distância encolheu de três cópias para duas.
 
 7. **Restam 34 linhas com `fontSize:` solto no mobile, e seis delas abaixo de todo papel.**
    A escala já foi **recalibrada** para 360dp (`body` em 16, `moneyXl` em 32), e os 15 sítios que
@@ -117,8 +109,8 @@
    e **161** `Icons.*` crus. O caso exemplar é `FiInsightTile` (em
    `features/mes/widgets/feed_tiles.dart`) — `Card` + `CircleAvatar` com ícone colorido + título +
    detalhe —, que é a pilha inteira de cheiros de interface gerada e ainda se chama "Insight".
-   Trocar exige um `FiSection` e um `FiDataRow` no mobile, equivalentes ao `<app-section>` e ao
-   `.data-table` do web. *("Serifa decide" saiu daqui: os quatro usos de `FiType.verdict` aplicam
+   Trocar exige um `FiSection` (a seção com cabeçalho de verdade) e um `FiDataRow` (a linha de
+   dado sob um fio, no lugar do `ListTile`). *("Serifa decide" saiu daqui: os quatro usos de `FiType.verdict` aplicam
    a família serifada, e `test/lint_ui_test.dart` reprova o papel de veredito que saia em sans —
    declarar o papel não aplica a fonte.)*
 
@@ -146,35 +138,39 @@
     explicabilidade, entre conclusão e método) e `Decision` (veredito + falsificador num objeto
     só, para que um não possa ser renderizado sem o outro).
 
-    *(`Range` saiu daqui em 2026-09-09: `<app-range>` e `FiRange` carregam piso, teto, cenário
-    base e hipótese. No web é atributo, para o par continuar `<dt>`/`<dd>` dentro do `<dl>`.)*
+    *(`Range` saiu daqui em 2026-09-09: `FiRange` carrega piso, teto, cenário base e hipótese.)*
 
     *(A proveniência saiu daqui: `asOf` deixou a gaveta e é linha visível. Em 2026-09-09 o
     carimbo passou de `/ativo` para **onde se comparam preços** — a tabela de posições e a lista
-    de oportunidades, nas duas plataformas, com `<app-data-age>` / `formatIdade` e o critério do
-    carimbo mais antigo. No caminho, `Opportunity` (resposta) e `PortfolioPosition.fromJson`
+    de oportunidades, com `formatIdade` e o critério do carimbo mais antigo. No caminho, `Opportunity` (resposta) e `PortfolioPosition.fromJson`
     (Dart) não declaravam o campo, e o descartavam em silêncio.)*
 
-12. **A tabela de posições mostra preço justo sem a base que o formou.** `<app-fair-price>`
-    resolveu isso em `/ativo` e em `/descobrir` — a cifra nunca sai sem dizer quantos métodos
-    entraram, e a ausência é razão nomeada e não traço. Na `.data-table` de
-    `/patrimonio/posicoes` a coluna continua um número cru: o cabeçalho diz "Preço justo" e a
-    tabela tem proveniência própria, então a explicabilidade está satisfeita, mas a **base por
-    linha** não aparece. Célula de tabela não comporta legenda, então resolver é decidir entre uma
-    coluna a mais e um `title` — e coluna a mais numa tabela que já rola é decisão de layout.
+12. **A tabela de posições mostra preço justo sem a base que o formou.** Em `/ativo` e em
+    `/descobrir` a cifra nunca sai sem dizer quantos métodos entraram, e a ausência é razão
+    nomeada e não traço. Na tabela de `/patrimonio/posicoes` a coluna continua um número cru: o
+    cabeçalho diz "Preço justo" e a tabela tem proveniência própria, então a explicabilidade está
+    satisfeita, mas a **base por linha** não aparece. Célula de tabela não comporta legenda, então
+    resolver é decidir entre uma coluna a mais e um toque que revela — e coluna a mais numa tabela
+    que já rola é decisão de layout.
 
 ## Cobertura de testes
 
-13. **O E2E cobre o esqueleto, não os fluxos.** `web/e2e/` roda Playwright contra o backend real e
-   o build de produção com SSR, e cobre o que o resto da suíte não alcança: redirecionamento sem
-   sessão, as cinco rotas principais e três aninhadas abrindo por **link direto**, e uma posição
-   salva no servidor chegando à tela. O que **não** está coberto é o miolo — importar operações,
-   passar pelo checkout, ver o gate aparecer, degradar de plano. São os fluxos que o plano lista, e
-   eles dependem de cotação externa, que no ambiente de teste não é determinística.
+13. **Não existe mais teste de ponta a ponta.** O que havia rodava no navegador (Playwright
+   contra o backend real) e saiu com o front, em 2026-09-11. Ele cobria o que nenhuma suíte
+   unitária alcança: subir o processo de verdade, abrir tela por **link direto**, e uma posição
+   salva no servidor chegando à tela. O substituto no aplicativo é `integration_test` do Flutter
+   rodando contra o backend local, e ele **não foi escrito** — o que sobrou é o teste de fumaça do
+   deploy, que confere que o processo responde, e nada sobre o cliente.
 
-14. **SQLite tranca sob concorrência de navegador.** Durante o E2E o backend loga
-   `database is locked` em requisições paralelas. Não derruba os testes e não afeta produção, que é
-   Postgres — mas torna o E2E local mais lento e potencialmente instável se ele crescer.
+14. **As regras de interface que só rodavam no front não foram portadas.** O verificador do web
+   tinha 24 regras; `test/lint_ui_test.dart` cobra **onze** (o item 9 lista quais), e o contraste
+   é cobrado por `test/contraste_test.dart`. Nunca chegaram ao Dart, entre outras: classe/ícone
+   inexistente (que não tem equivalente em Flutter e morreu com o problema), **gráfico sem tabela
+   equivalente**, **rota inexistente em destino de navegação**, **controle montado à mão em vez do
+   componente do sistema** e **escala de tipo fora dos papéis** — esta última existe como catraca
+   de contagem (item 7), não como proibição. As três primeiras protegem acessibilidade ou erro
+   silencioso, que é a classe que reprovava o CI; escrever cada uma é decidir antes qual sinal no
+   Dart corresponde ao que o seletor CSS via.
 
 ## Automação que não existe
 
@@ -218,9 +214,8 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     últimas. Se o veredito atual não sustentar, são dois grupos, não três — verificar antes de
     desenhar o terceiro.
 
-> **Não é pendência:** push exigir o app instalado é **decisão**, e o web sinaliza isso em
-> `/voce/alertas`. As demais assimetrias entre mobile e web fecharam em 2026-08-28 — metas ganharam
-> tela própria e RF × Bolsa ganhou cliente Dart.
+> **Não é pendência:** push exigir o app instalado deixou de ser assimetria em 2026-09-11 — só há
+> o aplicativo, e ele está sempre instalado.
 
 ## Dívida aberta (auditoria de 2026-08-29, revista em 2026-09-03)
 
@@ -260,48 +255,48 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     atravessa a rede está limitado; a consulta não. Resolver de verdade exige mover esses agregados
     para SQL — o que, no caso da renda fixa, significa mover a marcação a mercado junto.
 
-25. **A acessibilidade foi coberta por verificação, não por auditoria.** Contraste (CI), nome
-    acessível de botão (lint), alternativa textual de gráfico (lint) e foco visível estão de pé. O
-    que **não** foi feito é percorrer cada fluxo só com teclado e com leitor de tela de verdade:
-    ordem de foco em camadas empilhadas, anúncio de mudança de rota e armadilha de foco em modal
-    ainda não têm cobertura automática nem verificação manual registrada. **Parcialmente
-    endereçado:** há **salto para o conteúdo** (`.skip-link` no `app.component`, primeiro
-    controle da página) — sem ele o teclado atravessava cabeçalho e navegação inteiros a cada
-    troca de rota; a diretiva `fiDialog` (`core/directives/dialog.directive.ts`) prende o Tab,
-    devolve o foco a quem abriu e dá papel e modalidade às seis superfícies sobrepostas; a mudança
-    de rota é anunciada em região `aria-live`; e a **devolução do foco ao título** a cada navegação
-    passou a ter cobertura em `e2e/acessibilidade.spec.ts`, medida por `document.activeElement` —
-    ela estava morta em nove telas, porque `focus()` em elemento sem `tabindex` não faz nada e não
-    avisa. O que continua aberto é a **inércia real do fundo**
-    para o cursor virtual do leitor de tela — `aria-modal` promete uma inércia que o DOM não tem, e
-    resolver isso exige tirar o diálogo da árvore da aplicação — e a verificação manual com leitor
-    de tela de verdade.
+25. **A acessibilidade foi coberta por verificação, não por auditoria — e a verificação encolheu.**
+    Contraste (`test/contraste_test.dart`) e nome acessível de botão de ícone
+    (`test/lint_ui_test.dart`) estão de pé. O que **nunca** foi feito é percorrer cada fluxo com
+    **TalkBack e VoiceOver de verdade**: ordem de leitura, anúncio de mudança de tela, foco preso
+    em bottom sheet e alvo de toque real não têm cobertura automática nem verificação manual
+    registrada.
 
-26. **A aparência das telas nos dois temas nunca foi conferida em navegador.** O contraste é
-    verificado no CI, mas **por par de token**: ele mede `ink-2` sobre `ground-1`, não a tela
-    montada. *(A parte de `opacity: 0.5` no botão desabilitado saiu deste item: o estado inerte
-    passou a ser token explícito — `control-fill-hover` com `ink-disabled` — e o verificador
-    **mede** esse par nos dois temas.)*
+    O que existia no front e **não** tem equivalente no aplicativo: salto para o conteúdo, foco
+    preso em diálogo com devolução a quem abriu, anúncio de rota em região viva e alternativa
+    textual obrigatória em gráfico. Parte disso o Flutter resolve sozinho (o `Navigator` devolve o
+    foco; `Semantics` anuncia a rota), e parte não — a alternativa textual de gráfico é regra de
+    produto, e é a mesma que o item 14 lista como não portada.
+
+26. **A aparência das telas nos dois temas nunca foi conferida num aparelho.** O contraste é
+    verificado no CI, mas **por par de token**: ele mede `ink-2` sobre `ground-0`, não a tela
+    montada. *(A parte de `opacity: 0.5` no controle desabilitado saiu deste item: o estado inerte
+    é token explícito — `control-fill` com `ink-disabled` — e o teste **mede** esse par nos dois
+    temas.)*
 
     O que continua aberto é a suspeita, levantada por análise de composição e **não confirmada no
-    olho**, de que a elevação de modais e drawers é fraca demais no tema claro: painel e véu ficam
-    em 1,06:1 nos dois temas, então quem separa é a sombra — e a do claro tem 27% da opacidade da
-    do escuro. Uma sombra não se mede por par de token, o que faz deste um caso genuíno de olhar
-    em navegador, e não de escrever mais uma régua.
+    olho**, de que a elevação de sheets e diálogos é fraca demais no tema claro: painel e véu
+    ficam em 1,06:1 nos dois temas, então quem separa é a sombra — e a do claro tem 27% da
+    opacidade da do escuro. Sombra não se mede por par de token, o que faz deste um caso genuíno
+    de olhar num aparelho, e não de escrever mais uma régua.
 
-27. **A cobrança são três metades que não se falam.** Não é "falta tela de plano": conferido em
-    2026-09-09, existe backend (cerca, régua de plano, preço travado, webhook idempotente),
-    existe `GateComponent` — e **nada renderiza `<app-gate>`**, o único `app-gate` do repo é a
-    própria declaração do seletor. Não existe UI de cobrança: `billing` não aparece em `web/src`
-    nem em `mobile/lib`. O que falta é o meio: decidir quais recursos a interface cerca, montar a
-    tela de plano em `/voce/plano` (que não existe como rota) e ligar o checkout.
+27. **A cobrança é backend sem cliente.** Existe a cerca, a régua de plano, o preço travado e o
+    webhook idempotente; não existe interface: `billing` não aparece em `mobile/lib`. O que falta
+    é o meio: decidir quais recursos a interface cerca, montar a tela de plano em `/voce/plano`
+    (que não existe como rota) e ligar o checkout. **Com distribuição por loja, a decisão mudou de
+    forma**: assinatura vendida dentro do app passa pela cobrança da própria loja e pela comissão
+    dela, e cobrar por fora tem regra própria em cada uma. Decidir o meio vem antes de construir a
+    tela.
+
+    *(O `GateComponent` do front saiu junto com ele em 2026-09-11; o equivalente em Dart não
+    existe. O que ele resolvia — montar o bloqueio a partir do corpo do 402 — continua valendo,
+    e o corpo continua sendo emitido pelo backend.)*
 
     *(O alçapão do trial saiu daqui, e era a parte urgente: `start_trial` é chamado na primeira
     posição salva **sem consultar a flag**, e não re-arma, então virar `ENTITLEMENTS_ENABLED`
     derrubaria a base inteira para Free no mesmo instante. Resolvido por âncora, sem migração:
     `ENTITLEMENTS_ENABLED_AT` declara quando a cerca subiu e o relógio conta do mais tarde entre
-    qualificar e essa data; a flag ligada sem a data **falha alto** no startup. E o CTA morto do
-    gate virou regra de `lint:ui`: `routerLink` para rota inexistente reprova.)*
+    qualificar e essa data; a flag ligada sem a data **falha alto** no startup.)*
 
 28. **O ETF é estruturalmente mal avaliado, e o remendo tem consequência.** Para `asset_type ==
     "etf"` o único candidato a consenso é Bazin (`dividendo / 0,04`); um ETF de índice distribui na
@@ -320,12 +315,26 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     existe. O glossário descreve "qualidade e endividamento ponderados pelo seu perfil", que é o
     produto que existirá quando houver segunda fonte.
 
+30. **O texto jurídico não publica canal de atendimento, e a loja exige um.** `/termos`,
+    `/privacidade` e `/aviso-cvm` são servidos pelo backend e abrem sem sessão — o que a ficha de
+    segurança de dados pede. Mas a Política diz que o canal "será publicado antes de o aplicativo
+    ser distribuído", e não existe endereço nenhum: não há e-mail de contato em lugar algum do
+    repositório. Exportar e apagar a conta funcionam sem atendimento, o que cobre os dois direitos
+    mais pedidos; os demais (confirmação, correção, oposição) não têm porta. Fechar é decidir o
+    endereço e escrevê-lo em `services/legal_pages.py` — uma linha, e bloqueia submissão.
+
+31. **O serviço `fiance-web` do Railway ainda existe.** O código do front saiu do repositório em
+    2026-09-11 e o serviço parou de ter origem, mas ele **não foi apagado** — apagar é ação fora do
+    repositório e foi deixada para decisão explícita. Enquanto estiver de pé, ele serve a última
+    build publicada, que aponta para a API e mostra telas que não existem mais no produto. O
+    domínio `fiance-web-production.up.railway.app` continua respondendo.
+
 ## Armadilhas conhecidas
 
 Não são bugs, mas mordem. A lista completa, com o que cada uma já quebrou, está em
 [CLAUDE.md](../CLAUDE.md#armadilhas-que-não-quebram-o-build).
 
-- Ícone do Lucide não registrado quebra a tela em runtime, não o build.
-- Classe CSS inexistente quebra a tela em silêncio.
 - `Modelo(**resultado.__dict__)` e `fromJson` descartam campo não declarado sem avisar.
 - Coluna nova exige migração Alembic — mexer no model não basta.
+- `flutter analyze` e `flutter test` nunca tocam o Gradle: o build Android é outra metade.
+- Dependência nova no `pubspec.yaml` pede `flutter build apk --release` antes do commit.

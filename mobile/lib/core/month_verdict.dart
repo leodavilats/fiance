@@ -1,7 +1,7 @@
 import 'cash_models.dart';
 import 'product_rules.dart';
 
-/// A leitura do mes. Espelha `web/src/app/core/month-verdict.ts`.
+/// A leitura do mes.
 ///
 /// A banda sai de `fiMonthPressureBands`: nenhum limiar se decide aqui.
 class VereditoDoMes {

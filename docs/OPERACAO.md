@@ -29,13 +29,14 @@ assume development). Esquecer essa variável desarmaria JWT, CORS e a rota de op
 | `CACHE_BACKEND` | não | escolhe sozinho: banco da aplicação em Postgres, arquivo local em SQLite |
 | `WEB_CONCURRENCY` | não | dois workers, que é o default do Procfile |
 
-O serviço **`fiance-web`** (SSR do Angular) tem variáveis próprias, e duas delas não são opcionais:
+Há **um serviço de aplicação só** desde 2026-09-11: o front web saiu, e com ele o serviço
+`fiance-web` e as variáveis dele (`SITE_URL`, `ALLOWED_HOSTS`, `NODE_ENV`). O cliente agora é o
+aplicativo, que chega por loja.
 
-| Variável | Obrigatória | O que acontece se faltar |
-|---|---|---|
-| `SITE_URL` | **sim** | o build falha: sitemap e canônicas apontariam para o domínio errado |
-| `ALLOWED_HOSTS` | **sim** | o SSR do Angular recusa a requisição por proteção contra SSRF — inclusive a do healthcheck do Railway, que chega como `healthcheck.railway.app` |
-| `NODE_ENV` | recomendada | sem `production`, `SITE_URL` cai no default de desenvolvimento |
+`ALLOWED_ORIGINS` continua obrigatória e continua sendo lida pelo CORS, embora **nenhum navegador
+seja mais cliente da API**: aplicativo nativo não faz *preflight*, e as três páginas jurídicas são
+servidas pelo mesmo processo. Ela permanece porque falhar fechado é a regra do startup — deixar a
+variável cair no vazio seria abrir CORS por omissão no dia em que um navegador voltar.
 
 `SENTRY_DSN` configurado **com o pacote faltando falha alto**, de propósito: um sistema que se acha
 observado e não está é pior que um assumidamente cego.
@@ -93,9 +94,8 @@ Projeto `fiance` (`70bc2a47-2a8e-417c-9231-fbdccf3579aa`), workspace pessoal, pl
 
 | | production | staging |
 |---|---|---|
-| Serviços | `fiance` + `fiance-web` + `Postgres` | `fiance` + `Postgres` |
+| Serviços | `fiance` + `Postgres` | `fiance` + `Postgres` |
 | URL da API | `fiance.up.railway.app` | `fiance-staging.up.railway.app` |
-| URL do front | `fiance-web-production.up.railway.app` | não publicado |
 | `ADMIN_USER_IDS` | definido | definido |
 | Volume do banco | `postgres-volume` | `postgres-volume-WKva` (separado) |
 | Workers da API | 1 (`WEB_CONCURRENCY`) | 1 |
@@ -119,46 +119,30 @@ Postgres, e só então subir o backend.
 
 ### O que falta configurar (uma vez)
 
-1. **Marcar *Wait for CI* nos dois serviços de produção.** Conferido contra o Railway em
-   2026-09-09, com `get-service-config` nos dois serviços do ambiente `production` e com um push
-   real (`43f50a4`, que tocou os dois lados e subiu os dois):
+1. **Marcar *Wait for CI* no serviço de produção.** Conferido contra o Railway em 2026-09-09 com
+   `get-service-config`: o `fiance` (API) tem gatilho `main`, filtro `rootDirectory: /backend` e
+   `checkSuites: false`.
 
-   | Serviço | Gatilho | Filtro | Espera o CI? |
-   |---|---|---|---|
-   | `fiance` (API) | `main` | `rootDirectory: /backend` | **não** (`checkSuites: false`) |
-   | `fiance-web` (front) | `main` | `watchPatterns: ["web/**"]` | **não** (`checkSuites: false`) |
+   **Ele sobe produção direto do `main`, sem esperar o CI.** Um commit vermelho vai ao ar, e o
+   `preDeployCommand` é `python -m app.release` — ou seja, uma migração ruim é aplicada antes de
+   qualquer teste terminar. É conserto de um clique.
 
-   **Os dois sobem produção direto do `main`, e nenhum espera o CI.** Uma revisão anterior deste
-   documento afirmava que o auto-deploy de produção tinha sido desligado *só na API* e que a API
-   subia homologação — não é o que a configuração diz, e o push de `43f50a4` deployou os dois
-   serviços com sucesso. Corrigido aqui em vez de mantido: documento de operação errado é pior
-   que documento ausente, porque quem lê age em cima dele.
+   A assimetria cliente/servidor **cresceu** com a distribuição por loja: o aplicativo não se
+   atualiza no próximo carregamento, passa por fila de revisão e convive com versões antigas
+   instaladas. Mudança de contrato de API pede campo **opcional** no Dart, e agora isso é a regra
+   que segura a compatibilidade, não uma precaução.
 
-   O que isso muda, em relação ao que estava escrito:
+   Enquanto o *Wait for CI* não existir, **quem faz push no `main` publica em produção sem rede** —
+   e precisa saber disso antes, não depois.
 
-   - **A assimetria front/back encolheu.** Commit que toca os dois lados sobe os dois **juntos**,
-     então a regra antiga — "promover a API antes do push que toca `web/**`" — não se aplica a ele.
-     A assimetria sobrevive apenas para commit de **um lado só**: um commit em `web/**` não move a
-     API, e vice-versa. Mudança de contrato de API continua pedindo campo **opcional** nos
-     clientes, que é o que a fez atravessar sem 422 em `43f50a4`.
-   - **O pior caso ficou pior, e passou a valer para o backend também.** Um commit vermelho vai ao
-     ar nos dois, e no `fiance` o `preDeployCommand` é `python -m app.release` — ou seja, uma
-     migração ruim é aplicada antes de qualquer teste terminar. É o conserto de um clique em cada
-     serviço.
+   **Apagar o serviço `fiance-web`** é o outro item deste bloco: ele não tem mais origem no
+   repositório, mas continua de pé servindo a última build. Está registrado no
+   [KNOWN_ISSUES](KNOWN_ISSUES.md), item 31.
 
-   Ordem de valor:
-   1. marcar *Wait for CI* no `fiance` **e** no `fiance-web` — tira o pior caso dos dois;
-   2. criar o `fiance-web` em homologação (ele não tem: a tabela acima diz "URL do front: não
-      publicado") e apontar o gatilho do `main` para lá;
-   3. depois disso, promover produção por ação explícita nos dois.
-
-   Enquanto a 1 não existir, **quem faz push no `main` publica em produção sem rede** — e precisa
-   saber disso antes, não depois.
-
-   Há **mudanças de configuração STAGED e não implantadas** no patch `27a43c52`, e são **33**, não
-   17: **13** no `fiance`, **4** no `fiance-web` (`ALLOWED_HOSTS`, `NODE_ENV`, `SITE_URL` e a porta
-   do domínio) e **13 no `Postgres`** — inclusive `POSTGRES_PASSWORD`, `PGPASSWORD` e
-   `DATABASE_URL`. O serviço de banco não estava nesta contagem antes, e é o que mais importa dela.
+   Há **mudanças de configuração STAGED e não implantadas** no patch `27a43c52`, e eram **33**:
+   **13** no `fiance`, **4** no serviço do front (que saiu) e **13 no `Postgres`** — inclusive
+   `POSTGRES_PASSWORD`, `PGPASSWORD` e `DATABASE_URL`. O serviço de banco não estava nesta
+   contagem antes, e é o que mais importa dela.
 
    **Elas não entram no deploy de código.** Uma revisão anterior deste documento afirmava que
    entravam, o que fazia todo push parecer capaz de trocar a senha do banco em produção. Conferido
@@ -185,22 +169,24 @@ Postgres, e só então subir o backend.
 3. Em cada ambiente, definir:
    - segredo `RAILWAY_TOKEN` (token de projeto do Railway);
    - variável `RAILWAY_SERVICE` (`fiance`);
-   - variável `SITE_URL` (a URL daquele ambiente, sem barra no fim).
-4. ~~Corrigir `ALLOWED_ORIGINS`~~ — feito em 2026-09-06. Produção aceita o front
-   (`https://fiance-web-production.up.railway.app`) e o próprio domínio da API; homologação aceita
-   o dela mais `http://localhost:4200`. `localhost` saiu de produção: com credenciais liberadas, ele
-   deixava uma página local conversar com a API de produção.
+   - variável `SITE_URL` (a URL daquele ambiente, sem barra no fim) — é o que o teste de fumaça
+     chama, e é a mesma URL de onde o aplicativo abre o texto jurídico.
 
 ### Domínio novo? São três cadastros, não um
 
-Trocar de domínio — ou publicar o front em outro lugar — exige mexer em três sistemas, e esquecer
-qualquer um quebra em silêncio ou no pior momento:
+Trocar o domínio da API exige mexer em três lugares, e esquecer qualquer um quebra em silêncio ou
+no pior momento:
 
-1. **`ALLOWED_ORIGINS`** na API, senão o navegador barra a chamada por CORS;
-2. **`SITE_URL`** e **`ALLOWED_HOSTS`** no `fiance-web`, senão o build falha e o SSR recusa;
-3. **Authorized JavaScript origins** do cliente OAuth, no
+1. **`ALLOWED_ORIGINS`** na API — hoje nenhum navegador é cliente, mas a variável é obrigatória e
+   o startup falha sem ela;
+2. **`SITE_URL`** em `mobile/lib/core/legal_links.dart`, que vem por `--dart-define` e tem default
+   embutido: um build antigo continua apontando para o domínio velho, e quem já instalou não
+   recebe a correção até atualizar o aplicativo;
+3. **Authorized origins** do cliente OAuth, no
    [Google Cloud Console](https://console.cloud.google.com/apis/credentials) — sem isso o login
-   devolve `The given origin is not allowed for the given client ID` e nada mais funciona.
+   falha por origem não autorizada e nada mais funciona. O `serverClientId` do Google Sign-In é o
+   **Client ID Web** mesmo num aplicativo: é ele que torna o `aud` do idToken validável no
+   backend.
 
 O terceiro é o que menos se lembra, e é o único que não está em arquivo nenhum deste repositório.
 
@@ -209,18 +195,19 @@ O terceiro é o que menos se lembra, e é o único que não está em arquivo nen
 O Hobby é **US$ 5/mês incluindo US$ 5 de consumo**, e a cobrança é por **recurso**, não por
 ambiente — não existe taxa por ambiente criado. O que um ambiente novo faz é consumir RAM e CPU.
 
-Medido em 2026-09-06, em regime, já com o front publicado e a API em um worker:
+Medido em 2026-09-06, em regime, com a API em um worker e o front ainda publicado:
 
 | Serviço | RAM média | Custo/mês |
 |---|---|---|
 | `fiance` (API) | 0,334 GB | US$ 3,34 |
 | `Postgres` | 0,174 GB | US$ 1,74 |
-| `fiance-web` (SSR) | 0,099 GB | US$ 0,99 |
-| CPU (os três) | 0,011 vCPU | US$ 0,23 |
-| **Total** | | **US$ 6,30** |
+| ~~`fiance-web` (SSR)~~ | ~~0,099 GB~~ | ~~US$ 0,99~~ |
+| CPU | 0,011 vCPU | US$ 0,23 |
+| **Total medido** | | **US$ 6,30** |
 
-As tarifas são US$ 10/GB/mês de RAM e US$ 20/vCPU/mês. **Isso passa do crédito em ~US$ 1,30/mês**
-— o Hobby cobra o excedente por cima da assinatura.
+As tarifas são US$ 10/GB/mês de RAM e US$ 20/vCPU/mês. Apagar o serviço do front tira ~US$ 1/mês e
+leva o total para perto do crédito — mas a medição acima é de antes dele sair, e vale refazer
+depois em vez de confiar na subtração.
 
 Baixar a API para um worker **não** reduziu o consumo dela: ela saiu de 0,252 para 0,334 GB no
 mesmo período, porque o SDK do Sentry entrou junto. O worker a menos economizou; o observador a
@@ -271,24 +258,23 @@ precisa de rollback de banco.
 
 ## Observabilidade: o que ligar
 
-O código está pronto nas três plataformas e é inerte sem DSN. O que falta é conta.
+O código está pronto nas duas plataformas e é inerte sem DSN. O que falta é conta.
 
 ### 1. Sentry (erro)
 
 | Plataforma | Onde | Como ligar |
 |---|---|---|
 | Backend | `app/core/telemetry.py` | variável `SENTRY_DSN` |
-| Web | `src/app/core/telemetry.ts` | `sentryDsn` em `src/environments/environment*.ts` |
-| Mobile | `lib/core/telemetry.dart` | DSN embutido; reporta em **release**, cala em debug |
+| Aplicativo | `lib/core/telemetry.dart` | DSN embutido; reporta em **release**, cala em debug |
 
-Os três DSN estão colados e **conferidos por entrega**, com evento visto na tela de cada projeto
-(2026-09-06). Vale saber que a ingestão do Sentry não é instantânea: um evento aceito com `200`
+Os DSN estão colados e **conferidos por entrega**, com evento visto na tela de cada projeto
+(2026-09-06) — menos o do aplicativo, que nunca teve evento visto em painel (KNOWN_ISSUES #21). Vale saber que a ingestão do Sentry não é instantânea: um evento aceito com `200`
 pode levar alguns minutos para aparecer em *Issues*, e a ausência imediata não é sinal de erro. O plano gratuito do Sentry
 cobre o volume desta fase com folga.
 
-DSN não é segredo — ele vai no bundle do navegador e no binário do app de qualquer forma; é um
-endereço de escrita, não uma credencial de leitura. Por isso os do web e do mobile moram no
-código, e só o do backend é variável de ambiente.
+DSN não é segredo — ele vai no binário do aplicativo de qualquer forma; é um endereço de
+escrita, não uma credencial de leitura. Por isso o do aplicativo mora no código, e só o do backend
+é variável de ambiente.
 
 No mobile, o build de **release** reporta sempre e o de **debug** cala. Isso é de propósito: um
 `--dart-define` que alguém esquece de passar produz um app que se acha observado e não está. Para
@@ -366,10 +352,9 @@ com o handler no caminho.
 **Não mexa no `before_send` sem ler o teste.** Ticker e valor são dado pessoal financeiro, e a
 Política de Privacidade promete que nenhum terceiro os recebe. A limpeza é **lista de permissão**:
 sai o que foi liberado, e não "tudo menos o que eu lembrei de proibir" — uma chave nova num payload
-nasce redigida. Os três testes que travam isso:
+nasce redigida. Os dois testes que travam isso:
 
 - `backend/tests/test_telemetria_nao_vaza_carteira.py`
-- `web/src/app/core/telemetry.spec.ts`
 - `mobile/test/telemetry_test.dart`
 
 **O que a limpeza não cobre, e por quê:** o Sentry envia as linhas de código-fonte ao redor do erro
@@ -379,7 +364,7 @@ Ficam ligadas de propósito: sem elas a stack trace perde a maior parte do que a
 forma de vazarem algo é alguém escrever segredo ou dado real como literal no código, que é problema
 maior que a telemetria.
 
-Vale notar que **nada no produto chama `set_user`**, nas três plataformas. O identificador de conta
+Vale notar que **nada no produto chama `set_user`**, nas duas plataformas. O identificador de conta
 só chegaria ao Sentry se alguém passasse a chamá-lo — e nesse caso a limpeza reduz o objeto a
 `{id}`, sem nome nem e-mail.
 
@@ -390,7 +375,9 @@ Um monitor externo (BetterStack, Checkly ou UptimeRobot — todos com plano grat
 
 - `GET {SITE_URL}/api/health` — o processo está de pé;
 - `GET {SITE_URL}/api/public/asset/PETR4` — e o caminho inteiro funciona: banco, cache e fonte
-  externa. Só a primeira passa verde com a BRAPI fora do ar.
+  externa. Só a primeira passa verde com a BRAPI fora do ar;
+- `GET {SITE_URL}/privacidade` — a URL que a loja exige e que o aplicativo linka. Ela cai sem que
+  ninguém perceba, porque nenhuma tela do produto depende dela.
 
 ### 3. Log que sobrevive ao restart
 

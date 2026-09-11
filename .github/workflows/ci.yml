@@ -11,8 +11,11 @@ concurrency:
 
 jobs:
   marca:
-    name: Marca (favicon e ícones)
+    name: Marca (ícones do aplicativo)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
     steps:
       - uses: actions/checkout@v4
 
@@ -23,10 +26,10 @@ jobs:
       - name: Instalar Pillow
         run: pip install --quiet Pillow
 
-      # Favicon e launcher ja carregaram a marca antiga por uma versao inteira:
-      # eram escritos a mao e ninguem os regerava quando a cor mudava.
-      - name: Verificar marca (favicon e icones)
-        run: python design-tokens/build-icons.py --check
+      # O launcher ja carregou a marca antiga por uma versao inteira: era escrito a mao e
+      # ninguem o regerava quando a cor mudava.
+      - name: Verificar marca (icones do aplicativo)
+        run: python tool/build_icons.py --check
 
   backend:
     name: Backend (ruff + pytest)
@@ -75,44 +78,6 @@ jobs:
           # ausente de propósito: o padrão do produto é o cache local, e é ele
           # que o resto da suíte tem que exercitar.
           REDIS_TEST_URL: redis://localhost:6379/0
-
-  web:
-    name: Web (build + format)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - name: Instalar dependências
-        run: npm ci
-
-      - name: Formatação (prettier)
-        run: npm run format:check
-
-      - name: Testes
-        run: npm test
-
-      - name: Build de produção
-        run: npm run build
-
-      # Ícone não registrado e classe inexistente não quebram o build — quebram
-      # a tela em runtime. O lint roda depois do build de propósito: a fonte de
-      # verdade das classes é o CSS que o build de fato emitiu.
-      - name: Ícones e classes (lint de runtime)
-        run: npm run lint:ui
-
-      # Mede a paleta escrita à mão das duas plataformas contra o piso de contraste. Não depende
-      # do build: lê `foundation.css` e `design_tokens.dart` direto.
-      - name: Contraste (AA nos dois temas)
-        run: npm run lint:contrast
 
   mobile:
     name: Mobile (analyze + test)
@@ -177,48 +142,3 @@ jobs:
       # tempo todo. Este job é o que enxerga essa metade.
       - name: Build de release (APK)
         run: flutter build apk --release
-
-  e2e:
-    name: E2E (navegador)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: pip
-          cache-dependency-path: backend/requirements.txt
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - name: Instalar dependências do backend
-        run: pip install -r requirements.txt
-        working-directory: backend
-
-      - name: Instalar dependências do web
-        run: npm ci
-        working-directory: web
-
-      - name: Instalar o navegador
-        run: npx playwright install --with-deps chromium
-        working-directory: web
-
-      - name: Testes de ponta a ponta
-        run: npm run e2e
-        working-directory: web
-        env:
-          APP_ENV: development
-          CI: 'true'
-
-      - name: Guardar o relatório quando falhar
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: web/playwright-report/
-          retention-days: 7

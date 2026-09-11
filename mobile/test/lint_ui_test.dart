@@ -2,16 +2,14 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// As regras de produto e acessibilidade do `npm run lint:ui`, agora no Dart.
+/// As regras de produto e acessibilidade do fiance, cobradas por maquina.
 ///
-/// O `lint:ui` tem 22 regras e nenhuma rodava aqui. O efeito era medivel e sempre na mesma
-/// direcao: todo principio do produto era cobrado por uma maquina que so rodava no web, e no
-/// mobile ele simplesmente nao embarcava. Proveniencia em julgamento: 15 pontos no web, zero
-/// aqui. Serifa carregando conclusao: 20 contra 3. Tamanho de tipo escrito solto: zero no web,
-/// porque uma regra reprova, e 49 aqui, porque nenhuma rodava.
+/// Principio que nenhuma maquina cobra volta a ser violado em duas semanas, e sem esteira
+/// nenhuma o mobile ja tinha zero proveniencia em julgamento e 49 tamanhos de tipo soltos.
 ///
 /// Vive como teste, e nao como script proprio, porque `flutter test` ja e o comando do CI: uma
-/// regra que exige mudar a esteira para rodar e uma regra que nao roda.
+/// regra que exige mudar a esteira para rodar e uma regra que nao roda. O que ainda falta
+/// cobrar aqui esta em docs/KNOWN_ISSUES.md.
 void main() {
   final fontes = _dartsDe('lib');
 
@@ -27,7 +25,7 @@ void main() {
      * O explicador aceita o vocabulario que este codigo ja tem: `FiProvenance`, `HelpTooltip`,
      * e as funcoes de proveniencia de `core/score_ruler.dart` (`consensusLabel` diz quantos
      * metodos entraram, `dataYearsLabel` diz a profundidade do historico). Mencionar em prosa
-     * nao conta, igual no web.
+     * nao conta.
      */
     test('nenhuma tela julga sem explicar', () {
       const julgamento = [
@@ -112,7 +110,7 @@ void main() {
      * precisao de centavo a uma pilha de premissas, e e em cima dele que a pessoa decide quanto
      * poupar.
      *
-     * A regra e sobre PROJECAO, e o escopo e o mesmo do `lint:ui` do web: `portfolioValue` e
+     * A regra e sobre PROJECAO, e o escopo e estreito: `portfolioValue` e
      * `passiveIncomeMonthly`, que sao os numeros a anos de distancia. Duas coisas ficam fora, e
      * por motivos diferentes:
      *
@@ -276,10 +274,10 @@ void main() {
     /*
      * Nome de destino que o produto nao tem mais.
      *
-     * A PARIDADE exige que conceito, nome e hierarquia sejam iguais nas duas plataformas -- valor
-     * de cor e composicao sao livres, nome nao e. E o nome divergia em quatro telas: a barra do
-     * `/voce` dizia "Configuracoes", a de `/sobra/desvio` dizia "Estrategia" (um destino removido),
-     * `/voce/objetivos` dizia "Minhas metas" e a renda fixa vinha com F maiusculo.
+     * O nome de um destino e o conceito, nao um rotulo de tela: quando ele diverge, o produto
+     * passa a ter dois vocabularios. A barra do `/voce` ja disse "Configuracoes", a de
+     * `/sobra/desvio` disse "Estrategia" (um destino removido), `/voce/objetivos` disse
+     * "Minhas metas" e a renda fixa vinha com F maiusculo.
      *
      * "Hoje", "Carteira" e "Mercado" entram na lista pelo mesmo motivo: eram destinos, sairam, e
      * a rota antiga continua viva como redirect -- o que faz o nome antigo ser facil de reescrever
@@ -313,8 +311,8 @@ void main() {
         achados,
         isEmpty,
         reason:
-            'nome de tela e paridade de conceito, e nao de aparencia: docs/design/PARIDADE.md. '
-            'Achados: ${achados.join(' | ')}',
+            'nome de tela e o conceito, e o destino antigo saiu: docs/design/'
+            'INFORMATION-ARCHITECTURE.md. Achados: ${achados.join(' | ')}',
       );
     });
 

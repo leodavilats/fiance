@@ -36,14 +36,11 @@ ela invalidava as anteriores; seis itens contradiziam o código.
 ## Antes de mexer
 
 - **Regra de negócio** (preço justo, score, renda fixa, IR, caixa) vive **só** no backend, em
-  `analysis/`, `optimizer/`, `ledger/` e `cashflow/`. Web e mobile delegam.
-- **A camada visual é escrita; a régua é gerada.** Cor, tipografia, espaço e motion vivem em
-  [web/src/foundation.css](../web/src/foundation.css), com espelho à mão em
-  `mobile/lib/core/design_tokens.dart`. O que continua gerado é o que precisa ser igual nas três
-  plataformas. **Não há gerador de design**: cor, tipografia, espaço e as réguas do produto
-  são escritos à mão, e a paridade entre web e mobile é dirigida no desenvolvimento das
-  telas. O que continua verificado por máquina é o mínimo da WCAG, nos testes de cada
-  plataforma.
+  `analysis/`, `optimizer/`, `ledger/` e `cashflow/`. O aplicativo delega.
+- **A camada visual é escrita à mão, e existe num lugar só**:
+  [mobile/lib/core/design_tokens.dart](../mobile/lib/core/design_tokens.dart). Não há gerador de
+  design. O que a máquina cobra é o mínimo da WCAG (`mobile/test/contraste_test.dart`) e as
+  regras de produto de `mobile/test/lint_ui_test.dart`.
 - **Navegação e telas** seguem a arquitetura de informação em
   [design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md). O que já está
   construído está no código; o que **não** está, em [produto/ROADMAP.md](produto/ROADMAP.md).

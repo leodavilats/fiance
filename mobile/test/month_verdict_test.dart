@@ -4,10 +4,10 @@ import 'package:fiance/core/month_verdict.dart';
 import 'package:fiance/core/product_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Os mesmos casos de `web/src/app/core/month-verdict.spec.ts`.
+/// A regua do mes, caso a caso.
 ///
-/// Paridade de conceito inclui paridade de **verificacao**: se a regua divergir entre as
-/// plataformas, os dois conjuntos de casos deixam de concordar, e e isso que se quer que quebre.
+/// Os limiares sao do backend (`analysis/score_ruler.py`): se a banda daqui divergir da de la,
+/// e isto que se quer que quebre.
 /// A regua em si vem gerada de `product-rules.json`, entao ela nao pode divergir por descuido --
 /// o que estes casos protegem e a apresentacao em volta dela.
 VereditoDoMes _leitura({

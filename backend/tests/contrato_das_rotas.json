@@ -483,9 +483,6 @@
     "target",
     "target_monthly_income"
   ],
-  "POST /api/v1/public/interest": [
-    "registered"
-  ],
   "POST /api/v1/referral/rotate": [
     "code"
   ],
