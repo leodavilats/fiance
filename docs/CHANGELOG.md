@@ -12,6 +12,70 @@
 
 ---
 
+## A cota da fonte passa a ser gasta no pregão, e não de madrugada (2026-09-11)
+
+O preço só se move enquanto o mercado negocia, e o produto tratava as 24 horas do dia igual:
+`FUND_TTL` de 2h o tempo todo, varredura do universo a cada 2h, sete dias por semana. O resultado
+eram as duas pontas erradas ao mesmo tempo — **preço de duas horas às 11h da manhã**, quando ele
+mais se mexe, e **requisição às 3h da madrugada** para reler o fechamento da véspera.
+
+A troca não é economia. É mover o gasto para onde ele compra alguma coisa:
+
+| | antes | depois |
+|---|---|---|
+| requisições/semana | ~1.260 | ~1.275 |
+| idade máxima do preço no pregão | 120 min | **30 min** |
+| fim de semana | ~360 | **0** |
+
+Mesmo custo, preço quatro vezes mais fresco na hora que importa. O pico de 255 requisições num dia
+útil é 8% da cota diária da BRAPI.
+
+### A janela, e por que ela termina depois do fechamento
+
+`core/pregao.py`, separado de `core/brt.py` de propósito: lá mora o **fuso fiscal**, que decide mês
+de apuração e faixa de alíquota, e juntar os dois faria uma mudança de horário de pregão mexer em
+IR. A janela é 10h–**18h30**, de segunda a sexta. O fim é uma hora depois do fechamento porque o
+último preço do dia assenta depois do leilão, e **balanço na B3 costuma sair depois do pregão** —
+uma janela que fecha junto com o mercado perderia os dois e só os leria às 10h do dia seguinte.
+
+O instante é parâmetro de `em_pregao()`. Regra de horário sem injeção é suíte que passa às 14h e
+falha às 3h.
+
+### Três armadilhas que o portão tinha de evitar
+
+**A tela não pode esvaziar à noite.** O portão fica no `_refresh_market`, não no coletor. Se
+estivesse no coletor, `_brapi_raw` devolveria `{}` → `_fetch_brapi` devolveria `None` → o registro
+seria descartado, e o Descobrir apareceria vazio às 22h. A busca de **um** ativo, pedida por uma
+pessoa fora do pregão, continua valendo: o que se bloqueia é a varredura do universo.
+
+**Sem cache nenhum o portão não fecha.** Um deploy no sábado deixaria o Descobrir vazio até
+segunda. Tela vazia por economia é o pior dos dois mundos.
+
+**A tolerância não atravessava o fim de semana.** `_SCAN_STALE_TOLERANCE` era 12h; de sexta 18h30 a
+segunda 10h são 63,5h. Com 12h o scan estourava a tolerância no sábado e ia à rede de qualquer
+jeito — o portão não teria bloqueado nada no fim de semana, que é metade do que ele existe para
+bloquear. Subiu para 72h.
+
+### O marcador de ausência deixou de proteger, e o teste pegou
+
+`_AUSENTE_TTL` era 30 minutos, contra um `FUND_TTL` de 2h — a invariante escrita era *"a ausência
+expira antes do dado bom"*. Com a varredura de pregão a cada 30 minutos, o marcador passou a
+expirar sempre a tempo da rodada seguinte, e o ticker que a fonte não conhece voltaria à rede em
+**toda** varredura. Era exatamente o gasto que ele existe para evitar.
+
+Subiu para 6h, e a invariante virou o par que de fato importa: **maior que o ciclo de varredura**,
+para não voltar à rede a cada rodada, e **não maior que o prazo de mercado fechado**, para que
+papel recém-listado ainda apareça no mesmo dia.
+
+### O que não foi feito
+
+**Feriado da B3 não existe no código.** Nenhum calendário, e uma lista fixa de datas envelheceria
+calada — é a classe de constante que ninguém lembra de revisar em janeiro. O custo é cerca de doze
+varreduras por ano em dia sem pregão, contra a manutenção anual de uma tabela. Fica registrado no
+KNOWN_ISSUES.
+
+---
+
 ## Seis achados de uso, e um deles era um alvo que nenhuma tela escrevia (2026-09-11)
 
 Lista vinda de uso real do aplicativo depois do redesenho.

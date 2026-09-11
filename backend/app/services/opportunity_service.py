@@ -18,6 +18,7 @@ from app.analysis.scoring import score_opportunity
 from app.collectors.universal import prefetch_brapi_raw
 from app.core import cache
 from app.core.context import memoize_request
+from app.core.pregao import em_pregao
 from app.core.universe import get_universe
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.models.enums import RiskProfile
@@ -28,7 +29,9 @@ logger = logging.getLogger(__name__)
 _SCAN_CACHE_KEY = "opps_market_scan_v2"
 _SCAN_TTL = 20 * 60
 
-_SCAN_STALE_TOLERANCE = 12 * 3600
+# De sexta as 18h30 a segunda as 10h sao 63,5h. Com 12h a varredura estourava a tolerancia no
+# sabado e caia no caminho de rede, que e exatamente o que a janela de pregao existe para evitar.
+_SCAN_STALE_TOLERANCE = 72 * 3600
 
 _scan_lock = asyncio.Lock()
 _refresh_lock = asyncio.Lock()
@@ -225,6 +228,19 @@ class OpportunityService:
         async with _scan_lock:
             cached, stale_by = cache.get_with_age(_SCAN_CACHE_KEY)
             if cached is not None and stale_by == 0:
+                return self._decode(cached)
+
+            # Fora do pregao o preco nao se move, e varrer o universo gasta cota para reler o
+            # fechamento de ontem. O portao fica aqui, e nao no coletor: a busca de UM ativo,
+            # pedida por uma pessoa as 22h, continua valendo -- o que se bloqueia e a varredura.
+            #
+            # Sem cache nenhum ele nao fecha. Um deploy no sabado deixaria o Descobrir vazio ate
+            # segunda, e tela vazia por economia e o pior dos dois mundos.
+            if cached is not None and not em_pregao():
+                logger.info(
+                    "Fora do pregão: servindo scan de %.0f s atrás em vez de varrer.",
+                    stale_by or 0.0,
+                )
                 return self._decode(cached)
 
             universe = sorted(set(await asyncio.to_thread(get_universe)))

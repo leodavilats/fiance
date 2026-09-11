@@ -28,7 +28,7 @@ problema. O que está aberto está no KNOWN_ISSUES, e só lá.
 **Pronto = suíte verde.** Tudo abaixo roda no CI (`.github/workflows/ci.yml`) a cada push.
 
 ```bash
-cd backend && python -m pytest -q                  # 1038 passam, 11 pulam sem Redis
+cd backend && python -m pytest -q                  # 1056 passam, 11 pulam sem Redis
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 135 testes
@@ -327,8 +327,18 @@ gráfico sem tabela equivalente, destino de navegação inexistente e controle m
 - **Coleta em lote, e a ausência é lembrada** (`collectors/universal.prefetch_brapi_raw`). A BRAPI
   dá 3.000 requisições/dia; varrer o universo um ticker por vez custava ~285 por rodada. O lote de
   20 leva isso a ~15, e como tudo passa por `brapi_raw:{base}`, aquecer essa chave basta. Ticker que
-  a fonte não conhece fica marcado por 30min, senão o scan o repede 96 vezes por dia. **Falha de
-  rede não vira ausência** — confundir "não sei" com "não existe" esconde fonte caída por meia hora.
+  a fonte não conhece fica marcado por **6h** — o marcador tem de durar mais que o ciclo de
+  varredura, senão ele expira a tempo de toda rodada e o inexistente volta à rede em todas elas.
+  **Falha de rede não vira ausência** — confundir "não sei" com "não existe" esconde fonte caída
+  por meia hora.
+- **A cota se gasta no pregão** (`core/pregao.py`). A janela é 10h–18h30, seg–sex, e fora dela a
+  **varredura do universo** não vai à rede: o preço não se move, e reler o fechamento de madrugada
+  gasta cota que o pregão precisa. O prazo do preço segue a janela — `FUND_TTL_PREGAO` de 30min,
+  `FUND_TTL_FECHADO` de 12h —, e é isso que paga a frescura: mesmo custo semanal, preço quatro
+  vezes mais novo na hora que ele se mexe. Três coisas que o portão **não** faz: não fica no
+  coletor (buscar **um** ativo, pedido por uma pessoa às 22h, continua valendo), não fecha sem
+  cache para servir (deploy no sábado deixaria o Descobrir vazio até segunda), e não conhece
+  feriado. A janela termina 1h depois do fechamento porque balanço na B3 sai depois do pregão.
 
 ### API
 

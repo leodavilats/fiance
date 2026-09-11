@@ -106,18 +106,18 @@ def _quality_score(
         reasons.append("Margem de lucro indisponível.")
 
     if debt_to_equity is not None:
-        if debt_to_equity <= 0.3:
+        if debt_to_equity <= 30:
             pts += 7
-            reasons.append(f"Dívida muito baixa (D/E: {debt_to_equity:.2f}) — empresa sólida.")
-        elif debt_to_equity <= 0.7:
+            reasons.append(f"Dívida muito baixa (D/E: {debt_to_equity:.1f}%) — empresa sólida.")
+        elif debt_to_equity <= 70:
             pts += 5
-            reasons.append(f"Endividamento controlado (D/E: {debt_to_equity:.2f}).")
-        elif debt_to_equity <= 1.5:
+            reasons.append(f"Endividamento controlado (D/E: {debt_to_equity:.1f}%).")
+        elif debt_to_equity <= 150:
             pts += 2
-            reasons.append(f"Alavancagem moderada (D/E: {debt_to_equity:.2f}).")
+            reasons.append(f"Alavancagem moderada (D/E: {debt_to_equity:.1f}%).")
         else:
             reasons.append(
-                f"Alto endividamento (D/E: {debt_to_equity:.2f}) — risco elevado em crises."
+                f"Alto endividamento (D/E: {debt_to_equity:.1f}%) — risco elevado em crises."
             )
     else:
         reasons.append("Índice de endividamento indisponível.")

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.collectors.rates import get_rates
-from app.collectors.universal import FUND_TTL
+from app.collectors.universal import fund_ttl
 from app.models import DashboardResponse, DataFreshness
 from app.services import (
     DashboardService,
@@ -39,8 +39,8 @@ async def dashboard() -> DashboardResponse:
     freshness = DataFreshness(
         rates_source=get_rates()["source"],
         market_data_age_seconds=round(age, 1) if age is not None else None,
-        market_data_stale=age is not None and age > FUND_TTL,
-        quotes_ttl_seconds=FUND_TTL,
+        market_data_stale=age is not None and age > fund_ttl(),
+        quotes_ttl_seconds=fund_ttl(),
     )
 
     received = dividends_service.list_received()

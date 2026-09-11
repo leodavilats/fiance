@@ -83,6 +83,18 @@
    `list-variables` imprime `JWT_SECRET` e `POSTGRES_PASSWORD` em texto claro. Fechar é decidir o
    patch: aprovar sabendo o que muda, ou descartá-lo.
 
+33. **A janela de pregão não conhece feriado da B3.** `core/pregao.py` bloqueia a varredura do
+    universo fora de 10h–18h30 e nos fins de semana, e isso é dia da semana mais hora — não há
+    calendário de feriado no produto. Em 25 de dezembro o job varre como se houvesse pregão.
+
+    São cerca de doze dias por ano, ~255 requisições cada, contra uma cota diária de 3.000: o
+    desperdício é real e pequeno. O que segura a correção não é o custo de escrever a lista, é o
+    de mantê-la — data fixa em código é a constante que ninguém lembra de revisar em janeiro, e
+    uma lista errada é pior que lista nenhuma, porque bloquearia a varredura num dia de pregão.
+
+    Sai daqui com um calendário que se atualize sozinho (a própria B3 publica), não com um
+    `frozenset` de datas.
+
 ## Duplicação estrutural entre Python e Dart
 
 6. **Rótulo e régua são escritos dos dois lados, e nenhuma máquina os compara.** Rótulo e

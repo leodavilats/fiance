@@ -95,8 +95,17 @@ class TestAAusenciaEhLembrada:
         assert universal._brapi_raw("FANTASMA9") == {}
         assert brapi == [], "ausência conhecida não deveria voltar à rede"
 
-    def test_a_ausencia_expira_antes_do_dado_bom(self):
-        assert universal._AUSENTE_TTL < universal._BRAPI_RAW_TTL
+    def test_a_ausencia_nao_volta_a_rede_a_cada_varredura(self):
+        assert universal._AUSENTE_TTL > universal.FUND_TTL_PREGAO, (
+            "o marcador tem de durar mais que o ciclo de varredura do pregão, senão ele expira "
+            "a tempo de toda rodada e o ticker inexistente volta à rede em todas elas"
+        )
+
+    def test_a_ausencia_nao_sobrevive_ao_dia(self):
+        assert universal._AUSENTE_TTL <= universal.FUND_TTL_FECHADO, (
+            "papel recém-listado não pode ficar invisível mais que um pregão: o marcador tem de "
+            "vencer dentro do dia"
+        )
 
     def test_ausencia_nao_se_confunde_com_dado(self, brapi):
         universal.prefetch_brapi_raw(["FANTASMA9"])
@@ -159,7 +168,7 @@ class TestOCaminhoAvulsoContinuaValendo:
 
         assert idade == 0
         bruto = cache.backend().get_raw("brapi_raw:PETR4")
-        assert bruto[1] == pytest.approx(time.time() + universal._BRAPI_RAW_TTL, abs=5)
+        assert bruto[1] == pytest.approx(time.time() + universal._raw_ttl(), abs=5)
 
 
 class TestOAquecimentoNaoPenduraORequest:

@@ -14,6 +14,7 @@ from app.collectors import circuit, plausibility
 from app.core import cache
 from app.core.config import get_settings
 from app.core.observability import record_external_call
+from app.core.pregao import em_pregao
 from app.core.universe import get_sector_map, get_type_map
 from app.models.enums import AssetType
 
@@ -24,9 +25,23 @@ class UnsupportedTickerError(ValueError):
     pass
 
 
-FUND_TTL = 2 * 3600
+# O preço só se move no pregão, e a cota da fonte é diária. Dois prazos, então: curto enquanto
+# o mercado negocia, longo quando o número é o mesmo desde o fechamento. Antes era 2h o dia
+# inteiro, o que dava preço de duas horas às 11h da manhã e gastava requisição às 3h da manhã
+# para buscar o fechamento de ontem.
+FUND_TTL_PREGAO = 30 * 60
+FUND_TTL_FECHADO = 12 * 3600
+
+# O teto da idade, para quem precisa de um número só -- o rótulo de frescor do painel.
+FUND_TTL = FUND_TTL_FECHADO
+
 HIST_TTL = 12 * 3600
 DIV_TTL = 24 * 3600
+
+
+def fund_ttl(momento=None) -> int:
+    return FUND_TTL_PREGAO if em_pregao(momento) else FUND_TTL_FECHADO
+
 
 _FETCH_SEMAPHORE = asyncio.Semaphore(30)
 
@@ -205,7 +220,9 @@ def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> flo
         return None
 
 
-_BRAPI_RAW_TTL = FUND_TTL
+def _raw_ttl() -> int:
+    return fund_ttl()
+
 
 _FALLBACK_HISTORY_RANGE = "3mo"
 
@@ -213,7 +230,11 @@ _BRAPI_PROVIDER = "brapi"
 
 _BRAPI_LOTE = 20
 
-_AUSENTE_TTL = 30 * 60
+# Seis horas, e não trinta minutos: com a varredura de pregão a cada meia hora, um marcador de
+# meia hora expirava sempre a tempo da rodada seguinte e o ticker inexistente voltava à rede em
+# toda varredura -- que é o gasto que ele existe para evitar. Seis horas cabem dentro de um
+# pregão, então papel recém-listado ainda aparece no mesmo dia.
+_AUSENTE_TTL = 6 * 3600
 
 _AUSENTE = {"__ausente__": True}
 
@@ -238,7 +259,7 @@ def _brapi_params(range_param: str) -> dict:
 
 
 def _guardar_raw(base: str, r: dict | None) -> None:
-    cache.set(_raw_key(base), r if r else _AUSENTE, _BRAPI_RAW_TTL if r else _AUSENTE_TTL)
+    cache.set(_raw_key(base), r if r else _AUSENTE, _raw_ttl() if r else _AUSENTE_TTL)
 
 
 def _ler_raw(base: str) -> dict | None:
@@ -514,7 +535,7 @@ async def fetch_asset(symbol: str, asset_type: AssetType | None = None) -> Asset
         snap = await asyncio.to_thread(_fetch_sync, symbol, asset_type)
 
     if snap:
-        cache.set(ck, snap.to_dict(), FUND_TTL)
+        cache.set(ck, snap.to_dict(), fund_ttl())
 
     return snap
 
