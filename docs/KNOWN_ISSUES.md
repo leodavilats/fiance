@@ -14,8 +14,9 @@
 > (catraca em zero) e "fio + chão" no mobile (nenhum `Card`/`ListTile`/`CircleAvatar` de layout
 > restante) — e trocou o assunto de outros dois: o 7 passou a ser o controle de formulário do
 > Material sem componente próprio, e o 8, a base do preço justo nas telas de posição. O **12**
-> saiu inteiro: a tabela de posições que ele descrevia era do front, e o front não existe mais.
-> Seu número fica livre para reuso.
+> saiu inteiro — a tabela de posições que ele descrevia era do front, e o front não existe
+> mais —, e seu número foi reaproveitado pela régua de afirmação que anula um campo e deixa a
+> subtração de pé.
 >
 > Este arquivo tem uma tendência conhecida a apodrecer. Na revisão de 2026-08-28, **oito dos 24
 > itens já estavam feitos** — onboarding, busca global, drawer de atividade, gráfico de preço,
@@ -149,6 +150,26 @@
     (Dart) não declaravam o campo, e o descartavam em silêncio.)*
 
 ## Cobertura de testes
+
+12. **A régua de afirmação anula `allocated_cash` e deixa a subtração de pé.** `allocated_cash`
+    está em `affirmation.ACTION_FIELDS` e vem nulo fora do nível prescritivo, porque instrui uma
+    compra. `total_cash` e `remaining_cash` não estão, e viajam inteiros — então o número
+    recusado sai por subtração: R$ 271,36 de sobra menos R$ 96,90 em caixa dão os R$ 174,46
+    alocados, sem esforço nenhum.
+
+    Ou o agregado é protegido, ou não é; hoje é as duas coisas. As duas saídas são de uma linha,
+    e a escolha entre elas é de produto, não de código:
+
+    - **pôr `remaining_cash` em `ACTION_FIELDS`** — a tela passa a mostrar só a sobra total e os
+      motivos do que não coube, sem cifra do que ficou em caixa. Mas o valor sem destino é
+      análise, e `Unallocated.value` existe justamente para sobreviver em todo nível: seria
+      preciso decidir se ele cai junto, e aí a pessoa perde a explicação do troco;
+    - **tirar `allocated_cash` de `ACTION_FIELDS`** — o invariante do CLAUDE.md diz que o que
+      sai fora do nível 3 é o **valor por ativo**, que é o que instrui. `allocated_cash` é
+      agregado, e `suggested_investment`/`suggested_quantity` continuam anulados.
+
+    A segunda parece a certa, e é por isso que não foi feita sozinha: mexer no nível de afirmação
+    é decisão registrada, com parecer, e não efeito colateral de conserto de tela.
 
 13. **Não existe mais teste de ponta a ponta.** O que havia rodava no navegador (Playwright
    contra o backend real) e saiu com o front, em 2026-09-11. Ele cobria o que nenhuma suíte

@@ -12,6 +12,43 @@
 
 ---
 
+## O "Onde aportar" anunciava um destino que não mostrava (2026-09-11)
+
+A tela dizia, em serifa: *"Esta ordem cobre uma fatia em renda fixa. A distribuição sai da sua
+alocação-alvo. Parte do valor ficou sem destino, e o motivo está ao lado."* Abaixo dela,
+**ALOCADO —**, **FICA EM CAIXA R$ 96,90**, e uma seção "A ordem de prioridade" que respondia
+*"Sem metas de alocação declaradas não há alvo contra o que comparar"* — contradizendo a frase
+logo acima, que acabara de dizer que a distribuição saiu da alocação-alvo.
+
+Três frases, três destinos anunciados, nenhum na tela. A causa é uma só, e é a armadilha do
+construtor que ignora chave não declarada: `QuickInvestResult.fromJson` lia seis campos e a
+resposta tem nove. Sumiam **`fixed_income`**, **`unallocated`** e **`basis`**.
+
+Cada um explica uma linha do que se via:
+
+- **`fixed_income`** era o único destino da ordem. `_resumo` monta a frase a partir do que
+  existe, e com `allocations` vazia sobra só *"uma fatia em renda fixa"* — que o cliente não
+  declarava. Por isso "A ordem de prioridade" vinha vazia: o destino existia e não era lido.
+- **`unallocated`** é o par valor + motivo do que não coube. O backend escreve *"o motivo está
+  ao lado"* de propósito, porque prosa não é varrida pela régua de afirmação e um número ali
+  reapareceria depois de o campo ser retirado — o motivo viaja estruturado. Sem ele, o produto
+  reproduziu no cliente exatamente o defeito que `test_api_quick_invest.py` tem um teste para
+  impedir: *"`remaining_cash` sozinho é um número sem explicação"*.
+- **`basis`** distingue `goals` de `score`. Sem ele, o estado vazio chutou "sem metas" para uma
+  conta que tem metas.
+
+O "ao lado" saiu da frase do backend junto: é palavra de layout de duas colunas, e o único
+cliente do produto tem uma. A frase agora diz que o motivo **vem junto**, sem apontar posição.
+
+`ALOCADO` deixou de aparecer quando vem nulo. Fora do nível prescritivo `allocated_cash` é
+anulado pela régua de afirmação, e uma sobrancelha com um travessão embaixo não é leitura — é um
+campo faltando com cara de dado.
+
+O teste que faltava é o mesmo padrão de `allocation_gap_test.dart`: monta o JSON que o servidor
+manda e cobra que o `fromJson` não o descarte.
+
+---
+
 ## A interface deixa de parecer gerada: papel, fio e uma ação por contexto (2026-09-11)
 
 O aplicativo tinha os princípios escritos e não aplicados. "Fio + chão, não card + card" estava

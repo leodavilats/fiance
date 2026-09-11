@@ -403,6 +403,7 @@ class QuickInvestService:
         if sem_destino:
             # A prosa nunca cita cifra: ela não é varrida pela régua de afirmação, então um
             # número aqui reapareceria depois de o campo ter sido retirado. O valor sem destino
-            # viaja em `unallocated`, que é estruturado.
-            frase += " Parte do valor ficou sem destino, e o motivo está ao lado."
+            # viaja em `unallocated`, que é estruturado -- e a frase não diz onde ele aparece,
+            # porque "ao lado" é posição de tela e o cliente não tem duas colunas.
+            frase += " Parte do valor ficou sem destino, e o motivo vem junto."
         return frase

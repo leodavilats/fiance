@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/labels.dart';
@@ -8,7 +9,6 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
-import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
@@ -115,8 +115,7 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
           figure: _dinheiroOuTraco(r.totalCash),
           support: _simulando
               ? 'A distribuição abaixo é sobre este valor, e não sobre a sua sobra.'
-              : 'A distribuição respeita suas metas de alocação e o que já está na carteira, '
-                    'incluindo a renda fixa.',
+              : null,
         ),
 
         const SizedBox(height: FiSpace.s3),
@@ -172,40 +171,60 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
           r.summary,
           style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
         ),
-        const SizedBox(height: FiSpace.s4),
-        FiFigures(
-          figures: {
-            'ALOCADO': _dinheiroOuTraco(r.allocatedCash),
-            'FICA EM CAIXA': _dinheiroOuTraco(r.remainingCash),
-          },
-        ),
+        // `ALOCADO` sozinho nao se mostra: fora do nivel prescritivo ele vem nulo, e uma cifra
+        // com um travessao ao lado nao e leitura, e sim um campo faltando.
+        if (r.allocatedCash != null) ...[
+          const SizedBox(height: FiSpace.s4),
+          FiFigures(
+            figures: {'ALOCADO': _dinheiroOuTraco(r.allocatedCash)},
+          ),
+        ],
+
+        // Sem destino a secao nao existe: o resumo em serifa ja diz que nada coube, e uma
+        // secao vazia logo abaixo dele repetiria a mesma frase com outras palavras.
+        if (r.temDestino)
+          FiSection(
+            title: 'A ordem de prioridade',
+            hint: r.basis == 'goals'
+                ? 'Do que está mais longe da alocação-alvo para o que está mais perto.'
+                : 'Sem alocação-alvo declarada, a ordem sai pelo score do ativo.',
+            child: Column(
+              children: [
+                for (final allocation in r.allocations)
+                  _Alocacao(allocation: allocation),
+                if (r.fixedIncome != null)
+                  _FatiaDeRendaFixa(fatia: r.fixedIncome!),
+              ],
+            ),
+          ),
+
+        // `remainingCash` sozinho e um numero sem explicacao -- o backend tem teste para
+        // impedir que ele viaje assim, e a tela o mostrava sem o motivo ao lado.
+        if (r.unallocated.isNotEmpty)
+          FiSection(
+            title: 'O que não coube',
+            hint: r.remainingCash == null
+                ? null
+                : '${_dinheiroOuTraco(r.remainingCash)} do valor ficam em caixa.',
+            child: FiRows(
+              children: [
+                for (final sobra in r.unallocated)
+                  FiDataRow(
+                    label: sobra.reason,
+                    value: _dinheiroOuTraco(sobra.value),
+                  ),
+              ],
+            ),
+          ),
+
         if (r.affirmation?.prescriptive == false) ...[
-          const SizedBox(height: FiSpace.s2),
+          const SizedBox(height: FiSpace.s5),
           Text(
-            '${r.affirmation!.disclaimer} Por isso o quanto aportar em cada ativo aparece '
+            '${r.affirmation!.disclaimer} Por isso o quanto aportar em cada destino aparece '
             'como —.',
             style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
         ],
-
-        FiSection(
-          title: 'A ordem de prioridade',
-          count: r.allocations.isEmpty ? null : r.allocations.length,
-          hint: r.allocations.isEmpty
-              ? null
-              : 'Do que está mais longe da meta para o que está mais perto.',
-          child: r.allocations.isEmpty
-              ? const FiEmptyLine(
-                  'Sem metas de alocação declaradas não há alvo contra o que comparar, e a '
-                  'distribuição sai vazia.',
-                )
-              : Column(
-                  children: [
-                    for (final allocation in r.allocations)
-                      _Alocacao(allocation: allocation),
-                  ],
-                ),
-        ),
 
         const SizedBox(height: FiSpace.s3),
         const FiProvenance(
@@ -226,6 +245,70 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
 
 String _dinheiroOuTraco(double? valor) =>
     valor == null ? '—' : formatCurrency(valor);
+
+/// A fatia de renda fixa: o produto nao tem catalogo de titulos, entao ela nao nomeia papel --
+/// diz quanto vai para a categoria, o que a referencia rende hoje, e o caminho para comparar.
+class _FatiaDeRendaFixa extends StatelessWidget {
+  const _FatiaDeRendaFixa({required this.fatia});
+
+  final QuickInvestFixedIncome fatia;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = fatia;
+    final fonte = switch (f.referenceSource) {
+      'bcb' => 'CDI do Banco Central',
+      'bcb_cache_vencido' => 'CDI do Banco Central, leitura anterior',
+      _ => 'CDI estimado',
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s2),
+      child: FiObject(
+        onTap: () => context.go('/descobrir/renda-fixa'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Renda fixa',
+                    style: FiType.title.copyWith(color: fiInk1(context)),
+                  ),
+                ),
+                const SizedBox(width: FiSpace.s3),
+                Text(
+                  _dinheiroOuTraco(f.amount),
+                  style: FiType.metricSm.copyWith(color: fiInk1(context)),
+                ),
+              ],
+            ),
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              f.rationale,
+              style: FiType.body.copyWith(color: fiInk2(context)),
+            ),
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              f.referenceMonthlyPct == null
+                  ? 'Sem taxa de referência lida agora.'
+                  : 'A referência rende ${formatPercent(f.referenceMonthlyPct)} ao mês · $fonte.',
+              style: FiType.caption.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s3),
+            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
+            FiButton.quiet(
+              label: 'Comparar títulos depois do IR',
+              onPressed: () => context.go('/descobrir/renda-fixa'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _Alocacao extends StatelessWidget {
   const _Alocacao({required this.allocation});

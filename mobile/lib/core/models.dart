@@ -1437,6 +1437,49 @@ class AffirmationMode {
   );
 }
 
+/// A fatia de renda fixa de um aporte, sem nomear titulo.
+class QuickInvestFixedIncome {
+  QuickInvestFixedIncome({
+    required this.amount,
+    required this.referenceMonthlyPct,
+    required this.referenceSource,
+    required this.rationale,
+  });
+
+  /// Anulado fora do nivel prescritivo: instrui uma compra.
+  final double? amount;
+
+  final double? referenceMonthlyPct;
+  final String referenceSource;
+  final String rationale;
+
+  factory QuickInvestFixedIncome.fromJson(Map<String, dynamic> j) =>
+      QuickInvestFixedIncome(
+        amount: (j['amount'] as num?)?.toDouble(),
+        referenceMonthlyPct: (j['reference_monthly_pct'] as num?)?.toDouble(),
+        referenceSource: j['reference_source'] as String? ?? 'estimativa',
+        rationale: j['rationale'] as String? ?? '',
+      );
+}
+
+/// Dinheiro sem destino, e o motivo.
+///
+/// `remainingCash` sozinho e um numero sem explicacao, e o backend tem teste para impedir que
+/// ele viaje assim. O valor aqui sobrevive em todo nivel de afirmacao: ele explica o que o
+/// sistema **nao** fez, e isso nao instrui compra nenhuma.
+class QuickInvestUnallocated {
+  QuickInvestUnallocated({required this.value, required this.reason});
+
+  final double? value;
+  final String reason;
+
+  factory QuickInvestUnallocated.fromJson(Map<String, dynamic> j) =>
+      QuickInvestUnallocated(
+        value: (j['value'] as num?)?.toDouble(),
+        reason: j['reason'] as String? ?? '',
+      );
+}
+
 class QuickInvestResult {
   QuickInvestResult({
     required this.totalCash,
@@ -1445,6 +1488,9 @@ class QuickInvestResult {
     required this.allocations,
     required this.summary,
     required this.affirmation,
+    this.basis = 'goals',
+    this.fixedIncome,
+    this.unallocated = const [],
   });
 
   final double? totalCash;
@@ -1453,6 +1499,16 @@ class QuickInvestResult {
   final List<QuickInvestAllocation> allocations;
   final String summary;
   final AffirmationMode? affirmation;
+
+  /// `goals` quando a distribuicao sai da alocacao-alvo declarada; `score` quando nao ha meta.
+  final String basis;
+
+  final QuickInvestFixedIncome? fixedIncome;
+
+  final List<QuickInvestUnallocated> unallocated;
+
+  /// A ordem tem destino, mesmo quando nenhuma acao coube: a fatia de renda fixa e destino.
+  bool get temDestino => allocations.isNotEmpty || fixedIncome != null;
 
   factory QuickInvestResult.fromJson(Map<String, dynamic> j) =>
       QuickInvestResult(
@@ -1468,6 +1524,17 @@ class QuickInvestResult {
         affirmation: j['affirmation'] != null
             ? AffirmationMode.fromJson(j['affirmation'] as Map<String, dynamic>)
             : null,
+        basis: j['basis'] as String? ?? 'goals',
+        fixedIncome: j['fixed_income'] != null
+            ? QuickInvestFixedIncome.fromJson(
+                j['fixed_income'] as Map<String, dynamic>,
+              )
+            : null,
+        unallocated: (j['unallocated'] as List? ?? const [])
+            .map(
+              (e) => QuickInvestUnallocated.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
       );
 }
 
