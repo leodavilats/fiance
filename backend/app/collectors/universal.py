@@ -188,6 +188,83 @@ def _ratio_to_pct(v) -> float | None:
         return None
 
 
+def _estatistica(raw: dict, chave: str):
+    modulo = raw.get("defaultKeyStatistics")
+    if isinstance(modulo, dict) and modulo.get(chave) is not None:
+        return modulo[chave]
+    return raw.get(chave)
+
+
+def _exercicios(raw: dict, modulo: str) -> list[dict]:
+    bruto = raw.get(modulo)
+    if not isinstance(bruto, list):
+        return []
+    anos = [e for e in bruto if isinstance(e, dict) and e.get("endDate")]
+    return sorted(anos, key=lambda e: str(e["endDate"]), reverse=True)
+
+
+def _razao_pct(numerador: float | None, patrimonio: float | None) -> float | None:
+    if numerador is None or patrimonio is None or patrimonio <= 0:
+        return None
+    return round(numerador / patrimonio * 100.0, 4)
+
+
+def _roe_do_balanco(raw: dict) -> float | None:
+    balancos = _exercicios(raw, "balanceSheetHistory")
+    resultados = _exercicios(raw, "incomeStatementHistory")
+    if not balancos or not resultados:
+        return None
+
+    if balancos[0]["endDate"] != resultados[0]["endDate"]:
+        return None
+
+    return _razao_pct(
+        _safe_float(resultados[0].get("netIncome")),
+        _safe_float(balancos[0].get("shareholdersEquity")),
+    )
+
+
+# As parcelas `...InNationalCurrency`/`InForeignCurrency` já somam estas, e entram em dobro.
+_DIVIDA_FINANCEIRA = (
+    "loansAndFinancing",
+    "debentures",
+    "leaseFinancing",
+    "longTermLoansAndFinancing",
+    "longTermDebentures",
+    "longTermLeaseFinancing",
+)
+
+
+def _divida_financeira(balanco: dict) -> float | None:
+    parcelas = [_safe_float(balanco.get(chave)) for chave in _DIVIDA_FINANCEIRA]
+    presentes = [p for p in parcelas if p is not None]
+    return sum(presentes) if presentes else None
+
+
+def _endividamento_do_balanco(raw: dict) -> float | None:
+    balancos = _exercicios(raw, "balanceSheetHistory")
+    if not balancos:
+        return None
+
+    return _razao_pct(
+        _divida_financeira(balancos[0]),
+        _safe_float(balancos[0].get("shareholdersEquity")),
+    )
+
+
+def _crescimento_de_receita(raw: dict) -> float | None:
+    resultados = _exercicios(raw, "incomeStatementHistory")
+    if len(resultados) < 2:
+        return None
+
+    atual = _safe_float(resultados[0].get("totalRevenue"))
+    anterior = _safe_float(resultados[1].get("totalRevenue"))
+    if atual is None or anterior is None or anterior <= 0:
+        return None
+
+    return round((atual / anterior - 1) * 100.0, 4)
+
+
 def _cash_dividends(raw: dict) -> list[dict]:
     return (raw.get("dividendsData") or {}).get("cashDividends") or []
 
@@ -247,6 +324,9 @@ def _raw_key(base: str) -> str:
     return f"brapi_raw:{base}"
 
 
+_MODULOS = "defaultKeyStatistics,balanceSheetHistory,incomeStatementHistory"
+
+
 def _brapi_params(range_param: str) -> dict:
     settings = get_settings()
     return {
@@ -255,6 +335,7 @@ def _brapi_params(range_param: str) -> dict:
         "dividends": "true",
         "range": range_param,
         "interval": "1d",
+        "modules": _MODULOS,
     }
 
 
@@ -411,18 +492,26 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
 
     sector = r.get("sector") or get_sector_map().get(base)
 
+    roe_lido = _ratio_to_pct(_estatistica(r, "returnOnEquity"))
+    crescimento_lido = _ratio_to_pct(_estatistica(r, "revenueGrowth"))
+    endividamento_lido = _ratio_to_pct(_estatistica(r, "debtToEquity"))
+
     numeros = {
         "price": price,
         "market_cap": _safe_float(r.get("marketCap")),
         "pe_ratio": _safe_float(r.get("priceEarnings")),
-        "pb_ratio": _safe_float(r.get("priceToBook") or r.get("pvp")),
+        "pb_ratio": _safe_float(_estatistica(r, "priceToBook") or r.get("pvp")),
         "eps": _safe_float(r.get("earningsPerShare")),
-        "book_value": _safe_float(r.get("bookValue")),
-        "roe": _ratio_to_pct(r.get("returnOnEquity")),
+        "book_value": _safe_float(_estatistica(r, "bookValue")),
+        "roe": roe_lido if roe_lido is not None else _roe_do_balanco(r),
         "dividend_yield": dividend_yield,
-        "debt_to_equity": _ratio_to_pct(r.get("debtToEquity")),
-        "profit_margin": _ratio_to_pct(r.get("profitMargins")),
-        "revenue_growth": _ratio_to_pct(r.get("revenueGrowth")),
+        "debt_to_equity": (
+            endividamento_lido if endividamento_lido is not None else _endividamento_do_balanco(r)
+        ),
+        "profit_margin": _ratio_to_pct(_estatistica(r, "profitMargins")),
+        "revenue_growth": (
+            crescimento_lido if crescimento_lido is not None else _crescimento_de_receita(r)
+        ),
         "fifty_two_week_high": _safe_float(r.get("fiftyTwoWeekHigh")),
         "fifty_two_week_low": _safe_float(r.get("fiftyTwoWeekLow")),
     }

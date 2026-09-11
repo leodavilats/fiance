@@ -12,6 +12,64 @@
 
 ---
 
+## Metade do motor de análise estava desligada por um parâmetro (2026-09-11)
+
+Pergunta de partida: "a BRAPI fornece todos os dados que precisamos?". A resposta curta é não, mas
+as duas causas que apareceram não eram as registradas.
+
+**A SMA200 não faltava por limite de plano — a variável nunca foi definida.** `BRAPI_HISTORY_RANGE`
+não existia no ambiente de produção, então o backend rodava o default de `3mo` enquanto a
+assinatura já dava um ano. Conferido contra a API: `range=1y` devolve 250 pregões para ação, FII e
+BDR. A variável subiu para `1y` e o KI#2 fechou sem uma linha de código.
+
+**O coletor nunca pediu `modules=`.** É aí que a BRAPI guarda fundamento, e a chamada mandava só
+`fundamental=true`. O efeito era maior do que os quatro campos nulos que o KI#3 registrava:
+`bookValue` e `priceToBook` também não vinham, e sem VPA o `graham_fair_price` devolve `None`.
+**Graham nunca rodou, e P/VP nunca existiu** — o consenso de uma ação era Bazin + DCF, dois
+métodos, nunca três.
+
+O plano é o Startup, que libera `summaryProfile`, `balanceSheetHistory`, `defaultKeyStatistics` e
+`incomeStatementHistory`; `financialData`, onde moram ROE e D/E prontos, é do Pro. Conferido que os
+módulos **sobrevivem ao lote** e cabem na mesma chamada de preço, histórico e proventos — então
+`brapi_raw:{base}` continua sendo a chave única, e a varredura continua custando ~20 requisições e
+não ~400. Sem isso, o que aqui é um parâmetro seria uma reescrita do caminho de coleta.
+
+O que não vem pronto é derivado do balanço: ROE de `netIncome / shareholdersEquity`, crescimento da
+receita de um exercício contra o anterior, endividamento de dívida financeira sobre patrimônio.
+Três guardas que valem mais que a aritmética:
+
+- **exercícios têm de bater.** Patrimônio de um ano com lucro de outro dá um ROE que não existiu em
+  ano nenhum.
+- **a ordem da fonte não é confiada.** Os exercícios são ordenados por data; depender de a BRAPI
+  mandar o mais recente primeiro faria o sinal do crescimento inverter em silêncio no dia em que
+  ela mudasse.
+- **dívida financeira, não passivo inteiro.** Pelo `totalLiab` a WEGE3 daria 129,85% e sairia como
+  alavancagem moderada; pela dívida que cobra juros dá **24,74%**, que é o que ela é. Fornecedor,
+  imposto e obrigação trabalhista não são alavancagem. E **somar ausência não dá zero**: banco não
+  preenche essas chaves, e um zero ali faria o produto anunciar "dívida muito baixa, empresa
+  sólida" para toda instituição financeira.
+
+**O DCF premiava quem encolhe.** Com `revenue_growth` sempre nulo, todo ativo caía no crescimento
+default de 8%. Passando a existir, apareceu que a faixa aceita era `(0, 25]` — e empresa com
+receita caindo continuava valendo como se crescesse 8% ao ano. Agora crescimento ≤ 0 vale 0%.
+Acima de 25% segue caindo no default, que erra para baixo. A sensibilidade é grande e é real: por
+R$ 1 de LPA, o DCF vai de 12,70 a 2% de crescimento para 23,23 a 16,8%.
+
+**Achado de raspão, e o mais perto de ter mordido:** `debt_to_equity` era lido em duas unidades —
+percentual em `scoring.py`, razão em `dip_analysis.py`. As duas suítes passavam porque cada teste
+alimentava a própria convenção, e produção não exercitava nenhuma, já que o campo era nulo. No
+primeiro dia de dado real, toda empresa sairia como super-alavancada. Os limiares do `dip_analysis`
+foram para percentual (30/70/150), e um teste passa a cobrar que as duas réguas concordem. O
+`compare_metrics.dart` já formatava o campo com `%`, então o cliente estava do lado certo.
+
+Junto: `circuit.reset()` entrou nas fixtures de `test_brapi_fundamentos` e
+`test_brapi_pede_proventos`. `circuit._states` é dicionário de módulo sem reset entre testes, e
+disjuntor aberto por um teste anterior faz `_brapi_raw` devolver `{}` sem tocar na rede — teste que
+passa sozinho e falha na suíte.
+
+Fica aberto, no KNOWN_ISSUES item 3: a cobertura por classe de ativo não foi medida, e a medida é
+`GET /api/v1/data-quality` depois da primeira varredura completa.
+
 ## A cota da fonte passa a ser gasta no pregão, e não de madrugada (2026-09-11)
 
 O preço só se move enquanto o mercado negocia, e o produto tratava as 24 horas do dia igual:

@@ -45,10 +45,22 @@ def test_dcf_uses_the_growth_it_receives_not_the_default():
     assert faster > default > slower
 
 
-def test_dcf_ignores_negative_and_absurd_growth():
+def test_dcf_ignores_absurd_growth():
     default = dcf_fair_price(2.0)
-    assert dcf_fair_price(2.0, revenue_growth_pct=-15.0) == default
+
     assert dcf_fair_price(2.0, revenue_growth_pct=900.0) == default
+
+
+def test_empresa_encolhendo_nao_e_avaliada_como_se_crescesse():
+    default = dcf_fair_price(2.0)
+    encolhendo = dcf_fair_price(2.0, revenue_growth_pct=-15.0)
+    parada = dcf_fair_price(2.0, revenue_growth_pct=0.0)
+
+    assert encolhendo == parada, "receita caindo e receita parada valem o mesmo teto: nenhum"
+    assert encolhendo < default, (
+        "cair no default de 8% dava a quem encolhe o mesmo preço justo de quem cresce 8% ao ano, "
+        "e o erro saía para o otimista justamente onde o veredito precisa ser duro"
+    )
 
 
 def test_compute_fair_price_fii_never_uses_graham():

@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from app.collectors import universal
+from app.collectors import circuit, universal
 from app.core import cache
 
 
@@ -18,6 +18,7 @@ class _RespostaFalsa:
 
 @pytest.fixture()
 def chamadas(monkeypatch):
+    circuit.reset()
     registro = []
 
     def _get(url, params=None, timeout=None):

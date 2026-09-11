@@ -34,19 +34,21 @@
    do adaptador (prefixo, envelope, padrão SQL virando glob). Não coberto: rede instável,
    reconexão e failover.
 
-2. **`BRAPI_HISTORY_RANGE` default `3mo` torna a SMA200 incalculável.** O plano gratuito da BRAPI
-   só aceita ranges curtos. O sistema é honesto sobre isso (`trend_basis` = `short`, rotulado na UI;
-   `GET /data-quality` reporta a cobertura), mas tendência de longo prazo só existe de fato com
-   plano pago e `BRAPI_HISTORY_RANGE=2y`.
+3. **A cobertura dos fundamentos por classe de ativo não foi medida.** Os quatro campos que eram
+   sempre nulos passaram a chegar — `profit_margin` direto de `defaultKeyStatistics`, e `roe`,
+   `revenue_growth` e `debt_to_equity` derivados das demonstrações anuais (CHANGELOG de
+   2026-09-11). O que foi conferido contra a API real é **ação não-financeira**: WEGE3, VALE3 e
+   BBAS3. O que **não** foi medido é quanto disso existe para BDR, FII e small cap de liquidez
+   fina, nem quantas ações têm balanço publicado na fonte.
 
-3. **Metade dos fundamentos não chega da BRAPI.** `returnOnEquity`, `profitMargins`,
-   `revenueGrowth` e `debtToEquity` voltam ausentes para **todo** ativo no plano atual —
-   conferido em 2026-08-29 contra a API real, com ações, FII e BDR. O que chega é
-   `priceEarnings` e `earningsPerShare`. Então `roe`, `profit_margin`, `revenue_growth` e
-   `debt_to_equity` são sempre `null`, e as dimensões de qualidade e endividamento do score
-   caem no caminho de dado ausente. Isso encerra a dúvida antiga sobre a **unidade** desses
-   campos: `_ratio_to_pct` está correto e nunca é exercitado. Só sai daqui com plano pago ou
-   segunda fonte; `GET /data-quality` dá a visibilidade.
+   Dois limites já conhecidos por construção. **Banco não preenche as chaves de dívida
+   financeira** (`loansAndFinancing` e companhia), então `debt_to_equity` fica nulo para
+   instituição financeira — de propósito: somar ausência daria 0% e o produto diria "dívida muito
+   baixa, empresa sólida" para todo banco. E **fundamento anual é velho por natureza**: o balanço
+   é do exercício fechado enquanto o preço é de agora.
+
+   A medida existe e é uma chamada: `GET /api/v1/data-quality` reporta cobertura campo a campo
+   depois da primeira varredura completa. Fechar este item é rodar isso e registrar o número.
 
 4. **Universo hardcoded como fallback.** `core/config.py::default_universe` mantém ~400 tickers,
    apesar de já existir universo dinâmico via BRAPI (`core/universe.py`). Fallback defensivo

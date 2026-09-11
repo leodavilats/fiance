@@ -193,8 +193,11 @@ def dcf_fair_price(
         return None
 
     growth_pct = DCF_DEFAULT_GROWTH_PCT
-    if revenue_growth_pct is not None and 0 < revenue_growth_pct <= DCF_MAX_GROWTH_PCT:
-        growth_pct = revenue_growth_pct
+    if revenue_growth_pct is not None:
+        if revenue_growth_pct <= 0:
+            growth_pct = 0.0
+        elif revenue_growth_pct <= DCF_MAX_GROWTH_PCT:
+            growth_pct = revenue_growth_pct
 
     growth = growth_pct / 100.0
 

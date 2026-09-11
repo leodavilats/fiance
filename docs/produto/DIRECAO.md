@@ -225,11 +225,12 @@ Vale escrever isso no CLAUDE.md junto com a mudança, para ninguém "consertar" 
 
 ### 4.6 O risco de virar dois produtos com um time
 
-A direção nova não dispensa nenhuma manutenção da direção velha. O motor de análise continua com
-buracos reais — KI#3 e KI#21 registram que `roe`, `profit_margin`, `revenue_growth` e
-`debt_to_equity` voltam nulos da BRAPI, sobrando **0,60 de peso** no perfil conservador: metade do
-score não existe e o perfil de risco é quase inerte. Se metade da atenção for para caixa, esse
-buraco não fecha, e o lado que supostamente diferencia o produto continua manco.
+A direção nova não dispensa nenhuma manutenção da direção velha. O buraco que esta seção citava —
+`roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` nulos, sobrando 0,60 de peso no perfil
+conservador — **foi fechado em 2026-09-11**, e a causa era um parâmetro que o coletor nunca pediu,
+não o preço do plano. O que resta é medir a cobertura por classe de ativo (KI#3). Se metade da
+atenção for para caixa, é esse tipo de buraco que deixa de ser encontrado — e este levou um mês
+para aparecer estando à vista.
 
 Isso não é argumento contra a direção. É argumento contra fazer as duas coisas em paralelo, e a
 favor da sequência do §10.
@@ -337,8 +338,8 @@ prioridades mudam de lugar.
 | **Extrato B3 (XLSX) no parser** | zero | mata o atrito de entrada **hoje**, sem depender da decisão | **já** — melhor razão valor/esforço do repositório |
 | **Tesouro Direto** (API pública) | zero | **sobe muito**: o público novo entra por Tesouro Selic, não por ação; a arquitetura de renda fixa já está de pé | fase 2 |
 | **Open Finance (Pluggy/Belvo/Klavi)** | por conexão/mês | deixa de ser opcional: é o que torna a camada de caixa verdadeira (§4.2) **e** resolve o item 6 da proposta | fase 3, atrás de validação |
-| **CVM Dados Abertos** (DFP/ITR em CSV) | zero | fecha KI#3/KI#21 — os quatro fundamentos nulos passam a ser derivados de fonte oficial, e "fonte: CVM, DFP 2025" é credibilidade que agregador não dá | quando o motor voltar ao foco |
-| **BRAPI paga** | mensalidade | preço e histórico; resolve KI#2 (SMA200) | quando houver receita |
+| **CVM Dados Abertos** (DFP/ITR em CSV) | zero | **deixou de ser necessário** para os quatro fundamentos, que hoje saem do balanço da BRAPI. Continua valendo por procedência — "fonte: CVM, DFP 2025" é credibilidade que agregador não dá — e por cobrir quem a BRAPI não cobre | se a cobertura do KI#3 vier baixa |
+| **BRAPI Pro** | R$ 139,99/mês | `financialData` (ROE e D/E prontos, sem derivar), demonstrações trimestrais e fluxo de caixa. O Startup já resolveu KI#2 e os quatro fundamentos | só se a derivação se mostrar frágil |
 | **E-mail transacional** | barato | pré-requisito de cobrança (B5) **e** o canal do público novo que não instala app | com a cobrança |
 | **WhatsApp (Meta Cloud API)** | por conversa | **sobe**: o público novo é WhatsApp-first, e "sua sobra deste mês é R$ X" é mensagem que se lê ali | após validar |
 | **Telegram (bot)** | zero | alternativa subestimada para testar o canal sem custo | experimento |

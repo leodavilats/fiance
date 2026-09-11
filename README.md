@@ -98,7 +98,7 @@ cp backend/.env.example backend/.env
 | `SUITABILITY_PERSONALIZATION_ALLOWED` | Não | Libera personalização por perfil **no nível 3**. Só com parecer jurídico (padrão: `false`) |
 | `ADMIN_USER_IDS` | Não | IDs (o `sub` do Google) liberados em `/cache/clear` e `/metrics`, separados por vírgula. Vazio libera em `development` e **nega** em produção |
 | `DEFAULT_UNIVERSE` | Não | Tickers monitorados, separados por vírgula |
-| `BRAPI_HISTORY_RANGE` | Não | Janela de histórico da BRAPI. O padrão `3mo` (plano gratuito) **torna a SMA200 incalculável** — a tendência sai como `short` e é rotulada como tal. `2y` exige plano pago |
+| `BRAPI_HISTORY_RANGE` | Não | Janela de histórico da BRAPI. O padrão `3mo` (plano gratuito) **torna a SMA200 incalculável** — a tendência sai como `short` e é rotulada como tal. `1y` dá ~250 pregões e basta para a SMA200; é o que produção usa, no plano Startup |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Não | Credencial do Firebase Admin para push. Sem ela, o envio apenas loga em vez de falhar |
 | `REDIS_URL` | Não | Cache compartilhado via Redis. Ver [Cache](#cache) |
 | `CACHE_BACKEND` | Não | `database`, `sqlite` ou `redis`. Sem ela, o banco decide. Ver [Cache](#cache) |
