@@ -8,6 +8,31 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/error_state.dart';
 
+/// O formulario de uma aplicacao de renda fixa.
+///
+/// Mora aqui, mas e chamado de dois lugares: da tela de renda fixa e do "Adicionar ativo" do
+/// Patrimonio. Renda fixa e classe de ativo de primeira classe -- ter uma porta so, escondida
+/// numa tela secundaria, fazia o CDB parecer anexo da carteira.
+Future<void> abrirFormDeRendaFixa(
+  BuildContext context,
+  WidgetRef ref, {
+  FixedIncomePosition? existing,
+}) async {
+  final saved = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) => Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: _FixedIncomeForm(existing: existing),
+    ),
+  );
+
+  if (saved == true) {
+    ref.invalidate(fixedIncomeProvider);
+    ref.invalidate(dashboardProvider);
+  }
+}
+
 class FixedIncomeScreen extends ConsumerWidget {
   const FixedIncomeScreen({super.key});
 
@@ -15,23 +40,7 @@ class FixedIncomeScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref, {
     FixedIncomePosition? existing,
-  }) async {
-    final saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: _FixedIncomeForm(existing: existing),
-      ),
-    );
-
-    if (saved == true) {
-      ref.invalidate(fixedIncomeProvider);
-      ref.invalidate(dashboardProvider);
-    }
-  }
+  }) => abrirFormDeRendaFixa(context, ref, existing: existing);
 
   Future<void> _delete(
     BuildContext context,

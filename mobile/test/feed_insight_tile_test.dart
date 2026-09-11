@@ -1,4 +1,5 @@
 import 'package:fiance/core/models.dart';
+import 'package:fiance/core/widgets/nav_action.dart';
 import 'package:fiance/features/mes/widgets/feed_tiles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,7 +32,7 @@ void main() {
     );
 
     final titulo = tester.getRect(find.text('FIIs abaixo da meta'));
-    final acao = tester.getRect(find.text('$rotuloLongo →'));
+    final acao = tester.getRect(find.text(rotuloLongo));
 
     expect(acao.left, titulo.left);
     expect(acao.top, greaterThan(titulo.bottom));
@@ -71,6 +72,6 @@ void main() {
       ),
     );
 
-    expect(find.byType(TextButton), findsNothing);
+    expect(find.byType(FiNavAction), findsNothing);
   });
 }

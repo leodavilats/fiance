@@ -12,6 +12,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/labels.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import 'lancar_sheet.dart';
@@ -149,9 +150,9 @@ class _Corpo extends ConsumerWidget {
             FiSection(
               title: 'Exige atenção',
               count: caras.length,
-              trailing: TextButton(
+              trailing: FiNavAction(
+                label: 'Ver dívidas',
                 onPressed: () => GoRouter.of(context).go('/mes/dividas'),
-                child: const Text('Ver dívidas'),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,9 +173,10 @@ class _Corpo extends ConsumerWidget {
 
           FiSection(
             title: 'O mês',
-            trailing: TextButton(
+            trailing: FiNavAction(
+              icon: Icons.content_copy_outlined,
+              label: 'Repetir ${nomeDoMes(mesAnterior(mes.month)).split(' de ').first}',
               onPressed: () => abrirMoldeSheet(context, ref),
-              child: Text('Repetir ${nomeDoMes(mesAnterior(mes.month)).split(' de ').first}'),
             ),
             child: Column(
               children: [
@@ -266,9 +268,10 @@ class _Veredito extends StatelessWidget {
         const SizedBox(height: FiSpace.s2),
         Align(
           alignment: Alignment.centerLeft,
-          child: TextButton(
+          child: OutlinedButton.icon(
             onPressed: () => GoRouter.of(context).go('/sobra'),
-            child: const Text('Decidir o que fazer com ela'),
+            icon: const Icon(Icons.arrow_forward, size: 18),
+            label: const Text('Decidir o que fazer com ela'),
           ),
         ),
       ],
@@ -426,9 +429,9 @@ class _MesVazio extends StatelessWidget {
         const SizedBox(height: FiSpace.s3),
         Align(
           alignment: Alignment.centerLeft,
-          child: TextButton(
+          child: FiNavAction(
+            label: 'Cadastrar uma dívida',
             onPressed: () => GoRouter.of(context).go('/mes/dividas'),
-            child: const Text('Cadastrar uma dívida'),
           ),
         ),
       ],

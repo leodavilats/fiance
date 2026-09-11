@@ -10,6 +10,7 @@ import '../../core/mes.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 
@@ -94,45 +95,35 @@ class _Corpo extends ConsumerWidget {
                 'rotina custa o que a dívida custa.',
           ),
 
+          // Com um passo so, "A ordem" anunciava uma sequencia que nao existe -- e o unico
+          // passo ficava com cara de item de lista. A cascata so se chama ordem quando ha o
+          // que ordenar.
           FiSection(
-            title: 'A ordem',
-            hint: 'Cada passo consome a sobra antes do seguinte.',
+            title: passos.length > 1 ? 'A ordem' : 'O que fazer com ela',
+            hint: passos.length > 1
+                ? 'Cada passo consome a sobra antes do seguinte.'
+                : null,
             child: Column(
               children: [
-                for (final p in passos) _Passo(passo: p),
+                for (final p in passos)
+                  _Passo(
+                    passo: p,
+                    numerado: passos.length > 1,
+                    destino: p.type == CascadeStepType.contribution
+                        ? () => GoRouter.of(context).go('/sobra/aporte')
+                        : null,
+                  ),
                 if (!temAporte) const _SemAporte(),
               ],
             ),
           ),
 
           if (temAporte)
-            FiSection(
-              title: 'Onde',
-              hint: 'Alternativas compatíveis com suas metas, com o critério visível.',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Restam ${formatCurrency(sobra.cascade.availableToInvest)} depois da '
-                    'ordem acima.',
-                    style: FiType.body.copyWith(color: fiInk2(context)),
-                  ),
-                  const SizedBox(height: FiSpace.s3),
-                  Wrap(
-                    spacing: FiSpace.s2,
-                    runSpacing: FiSpace.s2,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => GoRouter.of(context).go('/sobra/aporte'),
-                        child: const Text('Onde aportar'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
-                        child: const Text('Alocação × meta'),
-                      ),
-                    ],
-                  ),
-                ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FiNavAction(
+                label: 'Alocação × meta',
+                onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
               ),
             ),
         ],
@@ -143,14 +134,31 @@ class _Corpo extends ConsumerWidget {
 
 /// Um passo da cascata: o quanto, a razão, e o que o derrubaria.
 class _Passo extends StatelessWidget {
-  const _Passo({required this.passo});
+  const _Passo({required this.passo, this.numerado = true, this.destino});
 
   final CascadeStep passo;
+  final bool numerado;
+
+  /// A porta para onde o passo se resolve. Só o aporte tem uma.
+  final VoidCallback? destino;
 
   static const _rotulos = {
     CascadeStepType.debt: 'Dívida',
     CascadeStepType.reserve: 'Reserva',
     CascadeStepType.contribution: 'Aporte',
+  };
+
+  /// `reference` é o nome interno da régua que decidiu o passo, e chegava cru à tela: quem
+  /// lia a Sobra via a palavra `score` ou `gasto_fixo_proprio` solta embaixo do valor. O que
+  /// a pessoa precisa saber é contra o que o passo foi medido.
+  static const _origem = {
+    'carteira': 'Medido contra o que a sua carteira rendeu.',
+    'referencia_rf': 'Medido contra a referência de renda fixa.',
+    'sem_taxa_informada': 'Sem a taxa da dívida não há como classificar o custo.',
+    'sem_referencia': 'Sem carteira nem referência, a comparação usa o CDI.',
+    'gasto_fixo_proprio': 'A base é o seu gasto fixo, não um número de mercado.',
+    'meta': 'A ordem sai da alocação-alvo que você declarou.',
+    'score': 'Sem alocação-alvo declarada, a ordem sai pelo score do ativo.',
   };
 
   FiState get _estado => passo.type == CascadeStepType.debt
@@ -176,7 +184,9 @@ class _Passo extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        '${passo.order} · ${_rotulos[passo.type] ?? ''}',
+                        numerado
+                            ? '${passo.order} · ${_rotulos[passo.type] ?? ''}'
+                            : (_rotulos[passo.type] ?? ''),
                         style: FiType.eyebrow.copyWith(color: fiInk3(context)),
                       ),
                     ),
@@ -192,11 +202,21 @@ class _Passo extends StatelessWidget {
                     style: FiType.caption.copyWith(color: fiInk3(context)),
                   ),
                 ],
-                if (passo.reference != null) ...[
+                if (_origem[passo.reference] != null) ...[
                   const SizedBox(height: FiSpace.s1),
                   Text(
-                    passo.reference!,
+                    _origem[passo.reference]!,
                     style: FiType.caption.copyWith(color: fiInk3(context)),
+                  ),
+                ],
+                if (destino != null) ...[
+                  const SizedBox(height: FiSpace.s1),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FiNavAction(
+                      label: 'Onde aportar ${formatCurrency(passo.amount)}',
+                      onPressed: destino,
+                    ),
                   ),
                 ],
               ],

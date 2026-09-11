@@ -8,6 +8,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/nav_action.dart';
 import 'widgets/feed_health.dart';
 import 'widgets/feed_patrimony.dart';
 import 'widgets/feed_tiles.dart';
@@ -229,10 +230,7 @@ class _MoreLink extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: TextButton(
-        onPressed: () => context.go(route),
-        child: Text('$label →'),
-      ),
+      child: FiNavAction(label: label, onPressed: () => context.go(route)),
     );
   }
 }

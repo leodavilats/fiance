@@ -16,6 +16,17 @@ class SectorGoal(BaseModel):
     target_pct: float = Field(..., ge=0, le=100, description="% dentro do total de ações")
 
 
+class SectorGoalResponse(SectorGoal):
+    declared: bool = Field(
+        True,
+        description=(
+            "Falso quando o alvo é o padrão do produto, e não da pessoa. A tela precisa da "
+            "distinção: desenhar 20% como meta de quem nunca declarou nada é inventar objetivo "
+            "alheio."
+        ),
+    )
+
+
 class GoalsRequest(BaseModel):
     goals: list[Goal]
 

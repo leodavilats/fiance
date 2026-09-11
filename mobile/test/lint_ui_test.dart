@@ -404,6 +404,78 @@ void main() {
       );
     });
 
+    test('todo destino navegado existe no roteador', () {
+      /*
+       * `patrimonio_summary` mandava para `/assets/renda-fixa`, que nunca existiu: `/assets` e
+       * redirect e nao tem filho. O go_router lanca GoException na hora do toque -- o build passa,
+       * a suite passa, e quem toca no bloco de renda fixa leva a tela de erro.
+       *
+       * A regra le a arvore de `router.dart` montando os caminhos como o go_router monta: rota de
+       * topo comeca com `/`, rota filha concatena no pai. Rota com parametro (`:ticker`) vira
+       * padrao, porque o que se navega e um valor.
+       */
+      final router = File('lib/core/router.dart').readAsStringSync();
+
+      final declarados = <String>{};
+      final pilha = <({int indent, String caminho})>[];
+      for (final linha in router.split('\n')) {
+        final path = RegExp(r"path:\s*'([^']+)'").firstMatch(linha);
+        if (path == null) continue;
+
+        final trecho = path[1]!;
+        final indent = linha.length - linha.trimLeft().length;
+
+        while (pilha.isNotEmpty && pilha.last.indent >= indent) {
+          pilha.removeLast();
+        }
+
+        final completo = trecho.startsWith('/')
+            ? trecho
+            : '${pilha.isEmpty ? '' : pilha.last.caminho}/$trecho';
+
+        pilha.add((indent: indent, caminho: completo));
+        declarados.add(completo);
+      }
+
+      expect(
+        declarados,
+        contains('/mes'),
+        reason: 'a leitura do roteador quebrou: nenhum destino conhecido foi encontrado',
+      );
+
+      bool existe(String destino) {
+        final alvo = destino.split('?').first;
+        for (final d in declarados) {
+          if (d == alvo) return true;
+          if (!d.contains(':')) continue;
+          final padrao = RegExp('^${d.replaceAll(RegExp(r':[A-Za-z_]+'), '[^/]+')}\$');
+          if (padrao.hasMatch(alvo)) return true;
+        }
+        return false;
+      }
+
+      final quebrados = <String>[];
+      for (final f in fontes) {
+        if (f.path.endsWith('router.dart')) continue;
+
+        final fonte = f.readAsStringSync();
+        for (final m in RegExp(r"\.(?:go|push|replace)\('(/[^']*)'").allMatches(fonte)) {
+          final destino = m[1]!;
+          if (existe(destino)) continue;
+          final linha = '\n'.allMatches(fonte.substring(0, m.start)).length + 1;
+          quebrados.add('${_curto(f)}:$linha -> $destino');
+        }
+      }
+
+      expect(
+        quebrados,
+        isEmpty,
+        reason:
+            'destino que o roteador nao declara vira GoException no toque, e so aparece para '
+            'quem toca. Achados:\n  ${quebrados.join('\n  ')}',
+      );
+    });
+
     test('a falha de leitura sai numa voz so', () {
       /*
        * `desvio_screen` tinha um `_ErrorState` privado com a frase escrita a mao, ao lado do

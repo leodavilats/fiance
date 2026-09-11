@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/format.dart';
 import '../../../core/labels.dart';
 import '../../../core/models.dart';
+import '../../../core/providers.dart';
 import '../../../core/sector_translations.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/allocation_gap.dart';
@@ -30,17 +32,17 @@ class FiCompositionSlice {
   final double? targetPct;
 }
 
-class FiCompositionBlock extends StatefulWidget {
+class FiCompositionBlock extends ConsumerStatefulWidget {
   const FiCompositionBlock({super.key, required this.allocations, required this.positions});
 
   final List<CategoryAllocation> allocations;
   final List<PortfolioPosition> positions;
 
   @override
-  State<FiCompositionBlock> createState() => _FiCompositionBlockState();
+  ConsumerState<FiCompositionBlock> createState() => _FiCompositionBlockState();
 }
 
-class _FiCompositionBlockState extends State<FiCompositionBlock> {
+class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
   FiCompositionMode _mode = FiCompositionMode.asset;
 
   List<FiCompositionSlice> _byAsset(Brightness brightness) {
@@ -61,7 +63,20 @@ class _FiCompositionBlockState extends State<FiCompositionBlock> {
         .toList();
   }
 
+  /// As metas por setor, so quando sao da pessoa.
+  ///
+  /// `GET /sector-goals` devolve o padrao do produto quando nada foi declarado, e desenhar 20%
+  /// como alvo de quem nunca declarou nada seria inventar objetivo alheio. O `declared` da
+  /// resposta e o que separa os dois casos.
+  Map<String, double> _metasPorSetor() {
+    final metas = ref.watch(sectorGoalsProvider).valueOrNull ?? const <SectorGoal>[];
+    return {
+      for (final m in metas.where((m) => m.declared)) translateSector(m.sector): m.targetPct,
+    };
+  }
+
   List<FiCompositionSlice> _bySector(Brightness brightness) {
+    final metas = _metasPorSetor();
     final buckets = <String, double>{};
     var totalAcoes = 0.0;
     for (final p in widget.positions) {
@@ -84,6 +99,7 @@ class _FiCompositionBlockState extends State<FiCompositionBlock> {
             pct: e.value / totalAcoes * 100,
             color: sectorColor(e.key, brightness),
             icon: null,
+            targetPct: metas[e.key],
           ),
         )
         .toList();

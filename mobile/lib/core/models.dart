@@ -927,20 +927,27 @@ class Goal {
 }
 
 class SectorGoal {
-  SectorGoal({required this.sector, required this.targetPct});
+  SectorGoal({required this.sector, required this.targetPct, this.declared = true});
 
   final String sector;
   final double targetPct;
 
+  /// Falso quando o alvo e o padrao do produto, e nao da pessoa.
+  final bool declared;
+
   factory SectorGoal.fromJson(Map<String, dynamic> j) => SectorGoal(
     sector: j['sector'] as String,
     targetPct: (j['target_pct'] as num).toDouble(),
+    declared: j['declared'] as bool? ?? true,
   );
 
   Map<String, dynamic> toJson() => {'sector': sector, 'target_pct': targetPct};
 
-  SectorGoal copyWith({double? targetPct}) =>
-      SectorGoal(sector: sector, targetPct: targetPct ?? this.targetPct);
+  SectorGoal copyWith({double? targetPct}) => SectorGoal(
+    sector: sector,
+    targetPct: targetPct ?? this.targetPct,
+    declared: declared,
+  );
 }
 
 class PriceAlert {

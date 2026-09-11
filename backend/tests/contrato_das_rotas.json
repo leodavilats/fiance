@@ -306,6 +306,7 @@
     "total"
   ],
   "GET /api/v1/sector-goals": [
+    "declared",
     "sector",
     "target_pct"
   ],
@@ -590,6 +591,7 @@
     "updated_at"
   ],
   "PUT /api/v1/sector-goals": [
+    "declared",
     "sector",
     "target_pct"
   ]

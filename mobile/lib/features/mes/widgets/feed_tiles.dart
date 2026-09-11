@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/format.dart';
 import '../../../core/models.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/nav_action.dart';
 import '../feed_actions.dart';
 import '../../../core/score_ruler.dart';
 
@@ -65,15 +66,7 @@ class FiInsightTile extends StatelessWidget {
                 padding: const EdgeInsets.only(left: _textColumnInset),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: onAction,
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 32),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text('$actionLabel →'),
-                  ),
+                  child: FiNavAction(label: actionLabel!, onPressed: onAction),
                 ),
               ),
             ],

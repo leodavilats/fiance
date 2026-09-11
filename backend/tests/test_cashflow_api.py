@@ -195,6 +195,59 @@ class TestAPonteRespondeSemPerguntar:
         assert [p["type"] for p in corpo["cascade"]["steps"]] == ["contribution"]
         assert corpo["cascade"]["available_to_invest"] == 6418.73
 
+    def test_com_meta_declarada_o_aporte_nao_diz_que_nao_ha_meta(self, client, headers):
+        """A razão do passo de aporte vinha fixa: `/surplus` nunca consultava as metas.
+
+        Quem declarou alocação-alvo lia "Sem meta de alocação declarada" no único passo da
+        ordem — o produto contradizendo o que a pessoa acabara de salvar duas telas antes.
+        """
+        client.put(
+            "/api/goals",
+            json={
+                "goals": [
+                    {"category": "acoes_br", "target_pct": 60.0},
+                    {"category": "fiis", "target_pct": 40.0},
+                ]
+            },
+            headers=headers,
+        )
+        lancar(
+            client,
+            headers,
+            kind="income",
+            category="salario",
+            description="Salário",
+            amount=3000.0,
+            due_on="2026-09-05",
+            paid_on="2026-09-05",
+        )
+
+        corpo = client.get("/api/surplus?month=2026-09", headers=headers).json()
+        aporte = next(p for p in corpo["cascade"]["steps"] if p["type"] == "contribution")
+
+        assert "Sem meta" not in aporte["reason"]
+        assert aporte["reference"] == "meta"
+
+    def test_sem_meta_declarada_o_aporte_diz_que_a_ordem_sai_por_score(self, client, headers):
+        lancar(
+            client,
+            headers,
+            kind="income",
+            category="salario",
+            description="Salário",
+            amount=3000.0,
+            due_on="2026-09-05",
+            paid_on="2026-09-05",
+        )
+
+        corpo = client.get("/api/surplus?month=2026-09", headers=headers).json()
+        aporte = next(p for p in corpo["cascade"]["steps"] if p["type"] == "contribution")
+
+        assert "Sem meta" in aporte["reason"], (
+            "o padrão do produto não é objetivo da pessoa, e a tela precisa dizer isso"
+        )
+        assert aporte["reference"] == "score"
+
     def test_sem_caixa_lancado_a_rota_diz_que_nao_ha(self, client, headers):
         corpo = client.get("/api/surplus?month=2026-09", headers=headers).json()
 

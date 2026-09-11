@@ -43,6 +43,10 @@ class GoalService:
         self.repo.replace_goals([g.dict() for g in goals])
         return self.get_goals()
 
+    def has_declared_sector_goals(self) -> bool:
+        """Mesma distinção de `has_declared_goals`, para a divisão por setor."""
+        return bool(self.repo.list_sector_goals())
+
     def get_sector_goals(self) -> list[SectorGoal]:
         data = self.repo.list_sector_goals()
         if not data:

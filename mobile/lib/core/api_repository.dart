@@ -19,18 +19,16 @@ class ApiRepository {
     return DashboardData.fromJson(res.data as Map<String, dynamic>);
   }
 
+  /// Onde aportar. `cashAvailable` nulo resolve da cascata do caixa, no servidor: e o que
+  /// faz a tela responder em vez de perguntar um valor que o produto ja calculou.
   Future<QuickInvestResult> quickInvest({
-    required double cashAvailable,
-    bool useCurrentGoals = true,
-    bool prioritizeRebalance = true,
+    double? cashAvailable,
     double minOrderValue = 100,
   }) async {
     final res = await _dio.post(
       '/quick-invest',
       data: {
-        'cash_available': cashAvailable,
-        'use_current_goals': useCurrentGoals,
-        'prioritize_rebalance': prioritizeRebalance,
+        'cash_available': ?cashAvailable,
         'min_order_value': minOrderValue,
       },
     );

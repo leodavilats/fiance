@@ -18,12 +18,14 @@ from app.models.cashflow import (
     MonthTemplateResponse,
     SurplusResponse,
 )
-from app.services import cashflow_service
+from app.services import GoalService, cashflow_service
 from app.services.rendimento_referencia import referencia_de_rendimento
 
 logger = logging.getLogger("fiance.api.cashflow")
 
 router = APIRouter()
+
+goal_service = GoalService()
 
 
 def _entry_do_request(req: CashEntryRequest) -> CashEntry:
@@ -163,6 +165,17 @@ async def quitar_divida(debt_id: int) -> None:
     cashflow_service.quitar_divida(debt_id)
 
 
+# A alocação-alvo decide a ordem do aporte, e a cascata precisa saber se ela é da pessoa: com o
+# padrão do produto (30/35/15/15/5), dizer "o alvo que você declarou" seria inventar objetivo
+# alheio. A distância em p.p. de cada classe não entra aqui de propósito — ela exige avaliar a
+# carteira a preço de mercado, que é a chamada mais cara do produto, e é o que `/quick-invest`
+# responde quando a tela pergunta o destino.
+_ORDEM_POR_META = (
+    "O destino sai da sua alocação-alvo: entra primeiro a classe que está mais abaixo do alvo "
+    "que você declarou."
+)
+
+
 @router.get("/surplus", response_model=SurplusResponse)
 async def sobra(month: str | None = None) -> SurplusResponse:
     """A ponte: o mês projetado e a ordem do que fazer com o piso da sobra."""
@@ -173,6 +186,7 @@ async def sobra(month: str | None = None) -> SurplusResponse:
         tem_carteira=tem_carteira,
         cdi_anual=cdi_anual,
         mes_referencia=month,
+        desvio_de_meta=_ORDEM_POR_META if goal_service.has_declared_goals() else None,
     )
 
     return SurplusResponse(

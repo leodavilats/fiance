@@ -12,6 +12,98 @@
 
 ---
 
+## Seis defeitos de uso, e três eram o mesmo: parâmetro que nunca chega (2026-09-11)
+
+Lista vinda de uso real do aplicativo, nas três abas. O que parecia seis problemas de interface
+era, no fundo, uma família só: **cálculo que aceita um parâmetro e uma rota que nunca o passa**.
+O código estava certo nos dois extremos e vazio no meio.
+
+### A Sobra dizia que não havia meta para quem tinha acabado de declarar uma
+
+O passo de aporte saía com *"Sem meta de alocação declarada, a ordem sai por score — e não por
+desvio."* — para uma conta com alocação-alvo salva. `cascata.montar` recebe `desvio_de_meta`,
+`cashflow_service.sobra` repassa, e **`GET /surplus` nunca o calculou**: o argumento existia na
+assinatura das duas camadas e morria na rota. A frase não era um texto errado; era o valor padrão
+de um parâmetro que ninguém preenchia.
+
+Agora a rota consulta `has_declared_goals()` — a mesma distinção que o Quick Invest já fazia entre
+o alvo da pessoa e o padrão 30/35/15/15/5 do produto. **A distância em p.p. de cada classe ficou
+fora de propósito**: ela exige avaliar a carteira a preço de mercado, que é a chamada mais cara do
+produto, e é exatamente o que `/quick-invest` responde na tela seguinte. A cascata diz de onde vem
+a ordem; o destino diz quanto e onde.
+
+### O mesmo defeito, duas telas adiante: as metas por setor
+
+Em Patrimônio → Onde está concentrado → Por setor, toda barra dizia "sem meta definida" **mesmo com
+as metas por setor declaradas**. `sectorGoalsProvider` existia, `GET /sector-goals` respondia, e
+nenhuma tela lia: a composição por setor montava as fatias sem nunca pedir o alvo. É o
+"vocabulário sem consumidor" que este repositório já registrou duas vezes, agora na forma que mais
+custa — o dado existe, a tela nega que exista.
+
+Ao ligar, apareceu a armadilha que o `has_declared_goals` documenta: `GET /sector-goals` **também**
+cai num padrão do produto quando nada foi declarado, e desenhar 20% como alvo de quem nunca
+declarou nada é inventar objetivo alheio. A resposta ganhou `declared` — campo novo, opcional,
+que cliente antigo ignora — e a tela só desenha o alvo quando ele é da pessoa.
+
+### O bloco de renda fixa levava a uma rota que não existe
+
+`patrimonio_summary` navegava para `/assets/renda-fixa`. `/assets` é redirect e não tem filho: o
+`go_router` lançava `GoException` no toque. Build verde, suíte verde, e a tela de erro só para quem
+tocasse ali.
+
+Era uma das regras que o verificador do front tinha e o Dart não — a de destino de navegação
+inexistente, registrada como dívida em KNOWN_ISSUES #14 no dia anterior. Ela agora existe em
+`test/lint_ui_test.dart`, são **12 regras**: lê a árvore de `router.dart` montando os caminhos como
+o go_router monta (filho concatena no pai, parâmetro vira padrão) e confere todo `.go`/`.push`
+literal contra ela. Conferida contra o defeito que a motivou antes de entrar.
+
+### A ponte voltava a perguntar o valor que o produto já sabia
+
+`/sobra/aporte` abria com *"Quanto você tem para aportar?"* e o campo preenchido com **1000** — um
+número que não é o dinheiro de ninguém. O critério de aceite da Sobra, escrito no wireframe desde
+2026-09-07, é literalmente este: *se em algum estado a tela voltar a pedir o valor do aporte a quem
+tem caixa lançado, a ponte não está construída*.
+
+O contrato já previa a saída: `cash_available` nulo resolve da cascata, no servidor. A tela passa a
+abrir **respondendo**, com o valor vindo da sobra, e "Simular outro valor" é o caminho secundário.
+
+No caminho saíram dois interruptores — "Usar minhas metas de alocação" e "Priorizar
+rebalanceamento" — que o cliente mandava como `use_current_goals` e `prioritize_rebalance`.
+**`QuickInvestRequest` não declara nenhum dos dois**, e o Pydantic descarta campo extra em
+silêncio: eram dois controles que a pessoa mexia e que não mudavam nada na resposta.
+
+### A Sobra anunciava uma ordem de um passo só
+
+Com uma sobra e nenhuma dívida, a tela mostrava "A ordem" com um item, e embaixo dele a palavra
+`score` solta — o nome interno da régua que decidiu o passo, `reference`, renderizado cru. Quem lia
+via um jargão sem antecedente.
+
+Agora o título acompanha o conteúdo ("A ordem" com dois ou mais passos, "O que fazer com ela" com
+um), a origem vira frase ("Sem alocação-alvo declarada, a ordem sai pelo score do ativo") e o passo
+de aporte carrega a própria porta — *Onde aportar R$ 271,36*, com o valor no rótulo. A seção
+"Onde", que repetia o mesmo destino em dois botões soltos, deixou de existir.
+
+### Ação que não parecia ação, no tema claro
+
+"Decidir o que fazer com ela" e "Repetir agosto" eram `TextButton` sem mais nada. No escuro a marca
+é um azul claro que salta; no claro ela é `#295D7C`, que ao lado da tinta do corpo **tem cara de
+texto**. Cor sozinha não é affordance — e a WCAG diz o mesmo sobre link distinguido só por cor.
+
+Entrou `FiNavAction` em `core/widgets/`: rótulo em marca, seta à direita, alvo de toque do tema, e
+sem recuo horizontal para continuar alinhado à coluna de texto — o que um teste de layout já
+cobrava e pegou na primeira execução. As seis ações de navegação do Mês passaram a usá-lo, e a
+ponte para a Sobra virou `OutlinedButton`, que é o controle secundário do sistema. Some junto a
+seta escrita no meio da string (`'$label →'`), que era um chevron de mentira.
+
+### Renda fixa entrava por uma porta só, e escondida
+
+Adicionar uma aplicação exigia achar a tela de renda fixa e o botão de lá; o "+" do Patrimônio só
+aceitava ticker. Renda fixa é **entidade de primeira classe** no domínio há tempos, e a interface
+tratava como anexo. O "+" agora pergunta o que se quer adicionar — negociado ou renda fixa — e o
+formulário de renda fixa deixou de ser privado da própria tela.
+
+---
+
 ## O produto passa a ser um aplicativo, e o front web sai inteiro (2026-09-11)
 
 Decisão de produto, tomada para andar mais rápido: **o fiance é um aplicativo de celular**,

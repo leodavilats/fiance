@@ -114,11 +114,12 @@
    a família serifada, e `test/lint_ui_test.dart` reprova o papel de veredito que saia em sans —
    declarar o papel não aplica a fonte.)*
 
-9. **Falta a regra do alvo de toque de 44dp no Dart.** `test/lint_ui_test.dart` cobra **onze** —
+9. **Falta a regra do alvo de toque de 44dp no Dart.** `test/lint_ui_test.dart` cobra **doze** —
     explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro, nome acessível em
     botão de ícone, serifa no papel de veredito, vocabulário de IA genérica, nome de destino
     aposentado, a catraca de tipo solto, esqueleto no lugar de disco girando, busca alcançável de
-    todo destino de raiz e falha de leitura numa voz só.
+    todo destino de raiz, destino de navegação que o roteador não declara, e falha de leitura numa
+    voz só.
 
     A que falta precisa de uma decisão de layout **antes** da regra. `HelpTooltip` foi de 14 para
     32 e ganhou `Semantics`, mas 44 dobraria a altura do `Row` de rótulo de 11px onde ele vive.
@@ -163,14 +164,16 @@
    deploy, que confere que o processo responde, e nada sobre o cliente.
 
 14. **As regras de interface que só rodavam no front não foram portadas.** O verificador do web
-   tinha 24 regras; `test/lint_ui_test.dart` cobra **onze** (o item 9 lista quais), e o contraste
-   é cobrado por `test/contraste_test.dart`. Nunca chegaram ao Dart, entre outras: classe/ícone
-   inexistente (que não tem equivalente em Flutter e morreu com o problema), **gráfico sem tabela
-   equivalente**, **rota inexistente em destino de navegação**, **controle montado à mão em vez do
-   componente do sistema** e **escala de tipo fora dos papéis** — esta última existe como catraca
-   de contagem (item 7), não como proibição. As três primeiras protegem acessibilidade ou erro
-   silencioso, que é a classe que reprovava o CI; escrever cada uma é decidir antes qual sinal no
-   Dart corresponde ao que o seletor CSS via.
+   tinha 24 regras; `test/lint_ui_test.dart` cobra **doze**, e o contraste é cobrado por
+   `test/contraste_test.dart`. Nunca chegaram ao Dart: classe/ícone inexistente (que não tem
+   equivalente em Flutter e morreu com o problema), **gráfico sem tabela equivalente**,
+   **controle montado à mão em vez do componente do sistema** e **escala de tipo fora dos
+   papéis** — esta última existe como catraca de contagem (item 7), não como proibição. A de
+   gráfico sem tabela protege acessibilidade, e é a que mais falta.
+
+   *(A regra de **destino de navegação inexistente** saiu daqui em 2026-09-11, depois de o defeito
+   que ela pega acontecer de verdade: `patrimonio_summary` levava a `/assets/renda-fixa`, que não
+   existe, e o `go_router` lançava `GoException` no toque.)*
 
 ## Automação que não existe
 
@@ -315,7 +318,26 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     existe. O glossário descreve "qualidade e endividamento ponderados pelo seu perfil", que é o
     produto que existirá quando houver segunda fonte.
 
-30. **O texto jurídico não publica canal de atendimento, e a loja exige um.** `/termos`,
+30. **O passo de reserva da cascata é inalcançável: não existe alvo declarado.** `cascata.montar`
+    recebe `reserva_meses_alvo` e `reserva_atual`, a matemática está escrita e testada, e
+    **nenhuma rota passa os dois** — porque não há onde declarar quantos meses de gasto fixo a
+    pessoa quer guardar. Não há campo em `preferences`, em `goals`, em lugar nenhum. O invariante
+    ("a reserva vem depois da dívida cara, e só existe com alvo declarado") descreve um passo que
+    a Sobra nunca mostra.
+
+    Fechar é decisão de produto antes de código, e a
+    [arquitetura de informação](design/INFORMATION-ARCHITECTURE.md) a deixou em aberto de
+    propósito: quantos meses, contra qual base, e o que acontece com quem não declara. Inventar
+    "seis meses" é o número de mercado solto que a régua de dívida proíbe.
+
+31. **A alocação-alvo por categoria cai no padrão do produto e a tela não distingue.** `GET
+    /dashboard` monta as barras com `goal_service.get_goals()`, que devolve 30/35/15/15/5 quando
+    nada foi declarado — então quem nunca declarou meta vê barras "abaixo da meta" de uma meta que
+    nunca escolheu, e o alerta de rebalanceamento dispara sobre ela. As metas **por setor** já
+    distinguem desde 2026-09-11 (o `declared` da resposta); as de categoria não, e mudar isso mexe
+    no alerta do dashboard, no `whats_new` e no Quick Invest de uma vez.
+
+32. **O texto jurídico não publica canal de atendimento, e a loja exige um.** `/termos`,
     `/privacidade` e `/aviso-cvm` são servidos pelo backend e abrem sem sessão — o que a ficha de
     segurança de dados pede. Mas a Política diz que o canal "será publicado antes de o aplicativo
     ser distribuído", e não existe endereço nenhum: não há e-mail de contato em lugar algum do

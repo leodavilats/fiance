@@ -6,7 +6,11 @@ import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/score_ruler.dart';
+import '../../core/theme.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/provenance.dart';
+import '../../core/widgets/skeleton.dart';
 
 class QuickInvestView extends ConsumerStatefulWidget {
   const QuickInvestView({super.key});
@@ -16,14 +20,23 @@ class QuickInvestView extends ConsumerStatefulWidget {
 }
 
 class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
-  final _cashCtrl = TextEditingController(text: '1000');
+  final _cashCtrl = TextEditingController();
 
-  bool _useGoals = true;
-  bool _prioritizeRebalance = true;
+  /// Quando verdadeiro, a tela pergunta o valor em vez de usar a sobra do mês.
+  bool _simulando = false;
 
-  bool _loading = false;
-  String? _error;
+  bool _loading = true;
+  Object? _error;
   QuickInvestResult? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    // A tela abre respondendo. O valor vem da cascata do caixa, no servidor -- pedir de novo
+    // o número que o produto acabou de calcular era a ponte não estar construída, e o campo
+    // ainda vinha preenchido com 1000, que não é o dinheiro de ninguém.
+    _run();
+  }
 
   @override
   void dispose() {
@@ -31,24 +44,16 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
     super.dispose();
   }
 
-  Future<void> _run() async {
-    final cash = double.tryParse(_cashCtrl.text.replaceAll(',', '.'));
-    if (cash == null || cash <= 0) {
-      setState(() => _error = 'Informe quanto você tem para aportar.');
-      return;
-    }
-
+  Future<void> _run({double? valor}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final result = await ref.read(apiRepositoryProvider).quickInvest(
-        cashAvailable: cash,
-        useCurrentGoals: _useGoals,
-        prioritizeRebalance: _prioritizeRebalance,
-      );
+      final result = await ref
+          .read(apiRepositoryProvider)
+          .quickInvest(cashAvailable: valor);
       if (mounted) {
         setState(() {
           _result = result;
@@ -59,79 +64,89 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = 'Não foi possível calcular agora: $e';
+          _error = e;
         });
       }
     }
+  }
+
+  void _simularOutroValor() {
+    final valor = double.tryParse(_cashCtrl.text.replaceAll(',', '.'));
+    if (valor == null || valor <= 0) {
+      setState(() => _error = 'Informe um valor para simular.');
+      return;
+    }
+    _run(valor: valor);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    if (_loading) {
+      return FiSkeleton.tela(
+        shape: FiSkeletonShape.row,
+        count: 4,
+        label: 'Calculando onde aportar',
+      );
+    }
+
+    if (_error != null && _result == null) {
+      return FiErrorState(
+        error: _error!,
+        action: 'calcular onde aportar',
+        onRetry: () => _simulando ? _simularOutroValor() : _run(),
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Quanto você tem para aportar?',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'A sugestão respeita suas metas de alocação e o que já está na '
-                  'carteira, incluindo a renda fixa.',
-                  style: theme.textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                TextField(
+        Text(
+          _simulando
+              ? 'Simulando um aporte de ${_dinheiroOuTraco(_result?.totalCash)}.'
+              : 'O valor vem da sua sobra deste mês: '
+                    '${_dinheiroOuTraco(_result?.totalCash)}. A distribuição respeita suas '
+                    'metas de alocação e o que já está na carteira, incluindo a renda fixa.',
+          style: FiType.body.copyWith(color: fiInk2(context)),
+        ),
+        const SizedBox(height: FiSpace.s2),
+        if (!_simulando)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FiNavAction(
+              label: 'Simular outro valor',
+              onPressed: () => setState(() => _simulando = true),
+            ),
+          )
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
                   controller: _cashCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Valor disponível (R\$)',
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Valor a simular (R\$)'),
+                  onSubmitted: (_) => _simularOutroValor(),
                 ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _useGoals,
-                  onChanged: (v) => setState(() => _useGoals = v),
-                  title: const Text('Usar minhas metas de alocação'),
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _prioritizeRebalance,
-                  onChanged: (v) => setState(() => _prioritizeRebalance = v),
-                  title: const Text('Priorizar rebalanceamento'),
-                  subtitle: const Text('Reforça primeiro o que está abaixo da meta'),
-                ),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      _error!,
-                      style: TextStyle(color: theme.colorScheme.error),
-                    ),
-                  ),
-                const SizedBox(height: 4),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _loading ? null : _run,
-                    icon: const Icon(Icons.bolt_outlined),
-                    label: Text(_loading ? 'Calculando…' : 'Sugerir aportes'),
-                  ),
-                ),
-              ],
+              ),
+              const SizedBox(width: FiSpace.s3),
+              FilledButton(
+                onPressed: _simularOutroValor,
+                child: const Text('Simular'),
+              ),
+            ],
+          ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              fiErrorMessage(_error!, action: 'calcular onde aportar'),
+              style: TextStyle(color: theme.colorScheme.error),
             ),
           ),
-        ),
+        const SizedBox(height: FiSpace.s4),
         if (_result != null) ...[
           const SizedBox(height: 16),
           if (_result!.affirmation?.prescriptive == false)

@@ -248,9 +248,10 @@ backend; o que o Dart escreve à mão são as bandas da régua (`core/product_ru
 vocabulário (`core/vocabulary.dart`) e a paleta — os três espelhando o Python, que é a fonte.
 
 As máquinas que cobram isso são testes Dart, e rodam no mesmo `flutter test` do CI:
-`test/lint_ui_test.dart` (11 regras de produto e acessibilidade — explicabilidade em julgamento,
+`test/lint_ui_test.dart` (12 regras de produto e acessibilidade — explicabilidade em julgamento,
 faixa em número projetado, serifa carregando conclusão, esqueleto em vez de disco, nome de destino
-aposentado, vocabulário de IA), `test/contraste_test.dart` (WCAG) e `test/score_ruler_test.dart`
+aposentado, destino de navegação inexistente, vocabulário de IA), `test/contraste_test.dart` (WCAG)
+e `test/score_ruler_test.dart`
 (a régua contra os casos do backend). O que ainda não é cobrado está em
 [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 

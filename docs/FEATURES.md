@@ -64,10 +64,12 @@ No mobile, `lancar` e `repetir` são *bottom sheets* em vez de rotas, e o feed �
 - **A sobra, no piso.** Projeção, e por isso sai como **faixa**: o piso é o que já está livre menos
   o gasto variável ainda esperado; o teto é o mês fechando como o mais barato dos últimos três.
   Um `<details>` mostra a conta com os meses que formaram a base.
-- **A ordem** — a cascata, como lista numerada sobre fio (não como cards: passo de uma ordem não é
-  objeto). Cada passo traz o valor, a razão e `O que derrubaria isto`. Dívida cara vem antes de
-  aporte por aritmética de taxa, e a tela diz que dívida não é valor mobiliário.
-  **A ordem pode terminar sem aporte, e isso é a resposta** — não uma falha.
+- **A ordem** — a cascata, como lista sobre fio (não como cards: passo de uma ordem não é
+  objeto). Cada passo traz o valor, a razão, `O que derrubaria isto` e contra o que ele foi medido.
+  Dívida cara vem antes de aporte por aritmética de taxa, e a tela diz que dívida não é valor
+  mobiliário. O passo de aporte carrega a própria porta, com o valor no rótulo — *Onde aportar
+  R$ 271,36*. **Com um passo só o título deixa de anunciar uma ordem**, porque não há o que
+  ordenar; e **a ordem pode terminar sem aporte, e isso é a resposta** — não uma falha.
 - **Aporte** (`/sobra/aporte`) — abre já com a sobra resolvida pela cascata, sem pedir o valor;
   "Simular outro valor" é a alternativa, não o caminho principal. Traz a ordem de compra, a fatia
   de renda fixa quando ela cabe, e **o troco com a razão dele** (ordem mínima, teto por categoria,
@@ -99,6 +101,10 @@ No mobile, `lancar` e `repetir` são *bottom sheets* em vez de rotas, e o feed �
 | `/patrimonio/desempenho` | evolução do patrimônio e carteira × CDI × Ibovespa (TWR) |
 | `/patrimonio/projecao` | simulador de aporte e renda passiva — **sempre em faixa**, nunca número único |
 | `/patrimonio/editar` | escrita: CRUD de posições e de renda fixa, salvamento explícito por linha |
+
+Adicionar começa perguntando **o quê**: ativo negociado (por ticker) ou renda fixa (por taxa e
+vencimento). Renda fixa é entidade de primeira classe no domínio, e tinha uma porta só — dentro da
+tela de renda fixa.
 
 Renda fixa entra **na mesma tabela** das outras posições, falando a língua dela (taxa efetiva,
 % do CDI, vencimento, liquidez) em vez de receber colunas de ação vazias. Marcada a mercado no

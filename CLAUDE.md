@@ -32,7 +32,7 @@ cd backend && python -m pytest -q                  # 1036 passam, 11 pulam sem R
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests   # o CI roda os dois
 cd mobile  && flutter analyze && flutter test      # 0 issues, 125 testes
-                                                   #   inclui test/lint_ui_test.dart (11 regras
+                                                   #   inclui test/lint_ui_test.dart (12 regras
                                                    #   de produto) e test/contraste_test.dart
 cd mobile  && flutter build apk --release          # analyze e test nao tocam o Gradle:
                                                    #   o build Android e outra metade
@@ -143,11 +143,12 @@ Esta lista existe porque cada item já quebrou a tela ou o dado **com o CI verde
   **o que o repo tem**, e não contra o que a extensão sugere. No Dart vale igual: a regra varre
   `lib/`, e o que estiver fora não é conferido.
 
-O `flutter test` cobre parte disso por máquina, em **11 regras** de `test/lint_ui_test.dart` —
+O `flutter test` cobre parte disso por máquina, em **12 regras** de `test/lint_ui_test.dart` —
 explicabilidade em julgamento, projeção sem faixa, promessa sobre o futuro, nome acessível em
 botão de ícone, serifa no papel de veredito, vocabulário de IA genérica, nome de destino
 aposentado, a catraca de tipo solto, esqueleto no lugar de disco girando, busca alcançável de todo
-destino de raiz, e falha de leitura numa voz só. O contraste é cobrado à parte, em
+destino de raiz, **destino de navegação que o roteador não declara** e falha de leitura numa voz
+só. O contraste é cobrado à parte, em
 `test/contraste_test.dart`, nos dois temas.
 
 **Vive como teste, e não como script próprio**, porque `flutter test` já é o comando do CI: regra

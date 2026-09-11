@@ -7,8 +7,58 @@ import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/format.dart';
+import '../assets/fixed_income_screen.dart';
 
+/// O que entra na carteira: um papel negociado, ou uma aplicação de renda fixa.
+///
+/// A renda fixa tinha uma porta só, e ficava dentro da tela de renda fixa — quem chegava pelo
+/// botão de adicionar ativo só conseguia lançar ticker. Renda fixa é classe de primeira classe
+/// no domínio, e a escolha do tipo é a primeira pergunta, não um caminho paralelo.
 Future<void> openAddPositionDialog(BuildContext context, WidgetRef ref) async {
+  final tipo = await showModalBottomSheet<_TipoDeAtivo>(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 20, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('O que você quer adicionar?', style: FiType.title),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.show_chart_outlined),
+            title: const Text('Ativo negociado'),
+            subtitle: const Text('Ação, FII, BDR ou ETF — por ticker'),
+            onTap: () => Navigator.pop(context, _TipoDeAtivo.negociado),
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_balance_outlined),
+            title: const Text('Renda fixa'),
+            subtitle: const Text('CDB, LCI, LCA, Tesouro — por taxa e vencimento'),
+            onTap: () => Navigator.pop(context, _TipoDeAtivo.rendaFixa),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+
+  if (tipo == null || !context.mounted) return;
+
+  if (tipo == _TipoDeAtivo.rendaFixa) {
+    await abrirFormDeRendaFixa(context, ref);
+    return;
+  }
+
+  await _abrirFormDePosicao(context, ref);
+}
+
+enum _TipoDeAtivo { negociado, rendaFixa }
+
+Future<void> _abrirFormDePosicao(BuildContext context, WidgetRef ref) async {
   final tickerCtrl = TextEditingController();
   final qtyCtrl = TextEditingController();
   final priceCtrl = TextEditingController();

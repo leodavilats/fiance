@@ -155,7 +155,7 @@ class FiFixedIncomeSummary extends StatelessWidget {
 
     return Card(
       child: InkWell(
-        onTap: () => context.go('/assets/renda-fixa'),
+        onTap: () => context.go('/patrimonio/renda-fixa'),
         borderRadius: BorderRadius.circular(appRadius),
         child: Padding(
           padding: const EdgeInsets.all(16),

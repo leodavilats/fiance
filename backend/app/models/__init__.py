@@ -32,7 +32,7 @@ from .enums import (
     RiskProfile,
     TaxType,
 )
-from .goal import Goal, GoalsRequest, SectorGoal, SectorGoalsRequest
+from .goal import Goal, GoalsRequest, SectorGoal, SectorGoalResponse, SectorGoalsRequest
 from .opportunity import OpportunitiesResponse, Opportunity
 from .portfolio import (
     ClosedTrade,
@@ -107,6 +107,7 @@ __all__ = [
     "Goal",
     "GoalsRequest",
     "SectorGoal",
+    "SectorGoalResponse",
     "SectorGoalsRequest",
     "Preferences",
     "PreferencesRequest",
