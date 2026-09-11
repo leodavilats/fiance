@@ -10,9 +10,6 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 
-/// Lancar no caixa.
-///
-/// A forma muda pelo `kind`: entrada nao tem vencimento, e por isso pede um dia so, o do credito.
 Future<void> abrirLancarSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -78,7 +75,6 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
   void _trocarKind(CashKind k) {
     setState(() {
       _kind = k;
-      // A categoria pertence ao vocabulario do kind, e o backend recusa a de outro.
       _categoria = cashCategoryKeys(k).first;
     });
   }
@@ -211,7 +207,6 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
               ),
               const SizedBox(height: FiSpace.s5),
 
-              // Entrada e saída se distinguem por `kind`, nunca pelo sinal do valor.
               SegmentedButton<CashKind>(
                 showSelectedIcon: false,
                 segments: const [

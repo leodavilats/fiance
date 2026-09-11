@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// O recorte de uma seção: rótulos curtos separados por ponto médio.
-///
-/// Recorte não é ação: ele muda **o que** se lê, e por isso tem peso de legenda. O alvo de toque
-/// continua sendo o da norma, porque a área clicável não é a tinta.
 class FiSegments<T> extends StatelessWidget {
   const FiSegments({
     super.key,

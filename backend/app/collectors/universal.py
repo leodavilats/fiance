@@ -25,14 +25,9 @@ class UnsupportedTickerError(ValueError):
     pass
 
 
-# O preço só se move no pregão, e a cota da fonte é diária. Dois prazos, então: curto enquanto
-# o mercado negocia, longo quando o número é o mesmo desde o fechamento. Antes era 2h o dia
-# inteiro, o que dava preço de duas horas às 11h da manhã e gastava requisição às 3h da manhã
-# para buscar o fechamento de ontem.
 FUND_TTL_PREGAO = 30 * 60
 FUND_TTL_FECHADO = 12 * 3600
 
-# O teto da idade, para quem precisa de um número só -- o rótulo de frescor do painel.
 FUND_TTL = FUND_TTL_FECHADO
 
 HIST_TTL = 12 * 3600
@@ -224,7 +219,6 @@ def _roe_do_balanco(raw: dict) -> float | None:
     )
 
 
-# As parcelas `...InNationalCurrency`/`InForeignCurrency` já somam estas, e entram em dobro.
 _DIVIDA_FINANCEIRA = (
     "loansAndFinancing",
     "debentures",
@@ -307,10 +301,6 @@ _BRAPI_PROVIDER = "brapi"
 
 _BRAPI_LOTE = 20
 
-# Seis horas, e não trinta minutos: com a varredura de pregão a cada meia hora, um marcador de
-# meia hora expirava sempre a tempo da rodada seguinte e o ticker inexistente voltava à rede em
-# toda varredura -- que é o gasto que ele existe para evitar. Seis horas cabem dentro de um
-# pregão, então papel recém-listado ainda aparece no mesmo dia.
 _AUSENTE_TTL = 6 * 3600
 
 _AUSENTE = {"__ausente__": True}

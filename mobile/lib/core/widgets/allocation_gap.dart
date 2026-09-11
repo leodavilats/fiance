@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'measure.dart';
 
-/// Sem meta declarada nao ha julgamento: o estado e indeterminado, e a linha diz isso.
 class FiAllocationGap extends StatelessWidget {
   const FiAllocationGap({
     super.key,

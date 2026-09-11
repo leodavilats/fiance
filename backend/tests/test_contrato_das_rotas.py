@@ -37,7 +37,6 @@ def _campos(schema: dict, componentes: dict, visitados: frozenset[str] = frozens
 
 
 def _schema_de_sucesso(operacao: dict) -> dict:
-    """O corpo da resposta de sucesso — que em rota de escrita é 201, não 200."""
     respostas = operacao.get("responses", {})
     for codigo in sorted(c for c in respostas if c.startswith("2")):
         schema = respostas[codigo].get("content", {}).get("application/json", {}).get("schema", {})
@@ -109,13 +108,6 @@ class TestNenhumCampoSomeEmSilencio:
 
 
 def _devolve_json(operacao: dict) -> bool:
-    """Se a rota responde JSON — a única forma de resposta que tem campos.
-
-    Uma rota binária (a imagem de compartilhamento por ticker, por exemplo) não
-    tem campo nenhum a sumir em silêncio, que é a classe de bug que o contrato
-    existe para pegar. Contá-la como "rota sem modelo" faria a catraca subir por
-    um motivo que ela não mede.
-    """
     respostas = operacao.get("responses", {})
     houve_2xx = False
 
@@ -128,9 +120,6 @@ def _devolve_json(operacao: dict) -> bool:
             continue
         return any(tipo.startswith("application/json") for tipo in content)
 
-    # Rota de 204: teve resposta de sucesso e nenhuma delas declara corpo. Não há campo a
-    # sumir, pelo mesmo motivo da rota binária — contá-la faria a catraca subir por um motivo
-    # que ela não mede. Sem 2xx nenhum a resposta é desconhecida, e aí a catraca é estrita.
     return not houve_2xx
 
 

@@ -123,12 +123,7 @@ final benchmarkProvider = FutureProvider.autoDispose<BenchmarkResponse>((ref) {
 });
 
 
-// -----------------------------------------------------------------------------
-// Caixa
-// -----------------------------------------------------------------------------
 
-/// O recorte do mes vive num provider, nao no estado da tela: e o equivalente do `?mes=` na URL
-/// do web -- ali o recorte e link salvo, aqui ele sobrevive a troca de aba.
 final mesEscolhidoProvider = StateProvider<String>((ref) => mesCorrente());
 
 final cashMonthProvider = FutureProvider.autoDispose<CashMonth>((ref) {

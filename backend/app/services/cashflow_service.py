@@ -35,7 +35,6 @@ def hoje() -> str:
 
 
 def _proventos_derivados(user_id: str | None = None) -> list[CashEntry]:
-    """As entradas de provento, derivadas do razão **em memória**."""
     return [
         CashEntry(
             kind=CashKind.INCOME,
@@ -53,7 +52,6 @@ def _proventos_derivados(user_id: str | None = None) -> list[CashEntry]:
 
 
 def entradas(user_id: str | None = None) -> list[CashEntry]:
-    """O caixa completo: o que foi lançado, mais o que é derivado do razão."""
     return cash_store.list_entries(user_id=user_id) + _proventos_derivados(user_id=user_id)
 
 
@@ -62,7 +60,6 @@ def mes(referencia: str | None = None, user_id: str | None = None) -> MonthProje
 
 
 def registrar(entry: CashEntry, user_id: str | None = None) -> int:
-    """A porta única de escrita do caixa."""
     if entry.derived:
         raise CashError(
             "Entrada derivada do razão não se grava: ela é projeção, montada na leitura."
@@ -71,7 +68,6 @@ def registrar(entry: CashEntry, user_id: str | None = None) -> int:
 
 
 def registrar_varias(entries: list[CashEntry], user_id: str | None = None) -> list[int]:
-    """O lote passa pela mesma porta, e a mesma recusa vale para cada um."""
     for entry in entries:
         if entry.derived:
             raise CashError(
@@ -90,7 +86,6 @@ def editar(entry_id: int, entry: CashEntry, user_id: str | None = None) -> CashE
 
 
 def molde(de_mes: str, para_mes: str, user_id: str | None = None) -> tuple[Candidato, ...]:
-    """O mês de origem lido como molde do destino."""
     return montar_molde(entradas(user_id=user_id), de_mes, para_mes)
 
 
@@ -116,7 +111,6 @@ def quitar_divida(debt_id: int, user_id: str | None = None) -> None:
 
 
 def _mensal_de_anual(taxa_anual_pct: float) -> float:
-    """Anual para mensal, por juros compostos — nunca dividindo por doze."""
     return ((1.0 + taxa_anual_pct / 100.0) ** (1.0 / 12.0) - 1.0) * 100.0
 
 
@@ -164,7 +158,6 @@ def sobra(
     mes_referencia: str | None = None,
     user_id: str | None = None,
 ) -> tuple[MonthProjection, Cascata]:
-    """A ponte: o mês projetado e a ordem do que fazer com o piso da sobra."""
     todas = entradas(user_id=user_id)
     projecao = projetar_mes(todas, mes_referencia or mes_corrente())
 
@@ -192,5 +185,4 @@ def gasto_fixo(user_id: str | None = None) -> Decimal:
 
 
 def tem_caixa(user_id: str | None = None) -> bool:
-    """Se existe caixa lançado — a pergunta que deriva a porta de entrada."""
     return bool(cash_store.list_entries(user_id=user_id))

@@ -31,8 +31,6 @@ class ClasseDaDivida(StrEnum):
 
 @dataclass(frozen=True)
 class Debt:
-    """Uma dívida declarada. `monthly_rate` em % ao mês; `None` é **não informada**."""
-
     kind: str
     description: str
     balance: float
@@ -58,8 +56,6 @@ class Debt:
 
 @dataclass(frozen=True)
 class DividaClassificada:
-    """A dívida com a leitura. `taxa_de_virada` é a taxa em que o veredito muda."""
-
     divida: Debt
     classe: ClasseDaDivida
     referencia_mensal: Decimal | None
@@ -97,7 +93,6 @@ def classificar(
     retorno_mensal_da_carteira: float | None,
     cdi_mensal: float | None = None,
 ) -> DividaClassificada:
-    """Classifica por **custo**, nunca por tipo."""
     if divida.monthly_rate is None:
         return DividaClassificada(
             divida=divida,
@@ -139,7 +134,6 @@ def classificar_todas(
     retorno_mensal_da_carteira: float | None,
     cdi_mensal: float | None = None,
 ) -> tuple[DividaClassificada, ...]:
-    """As caras primeiro, e entre elas a de maior taxa — que é a que custa mais esperar."""
     lidas = [classificar(d, retorno_mensal_da_carteira, cdi_mensal) for d in dividas]
 
     def ordem(d: DividaClassificada) -> tuple:

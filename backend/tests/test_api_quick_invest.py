@@ -50,7 +50,6 @@ def test_quick_invest_requires_auth(client):
 
 
 def test_valor_nulo_resolve_da_cascata(client):
-    """Nulo não é erro: é "use a minha sobra"."""
     headers = make_auth_headers("test_quick_invest_cascata")
 
     resp = client.post("/api/quick-invest", headers=headers, json={})
@@ -75,7 +74,6 @@ def test_valor_informado_diz_que_foi_informado(client):
 
 
 def test_sem_meta_declarada_a_base_e_score_e_nao_uma_divisao_inventada(client):
-    """O serviço caía num 50/25/25 fixo, que nada na carteira da pessoa sustentava."""
     headers = make_auth_headers("test_quick_invest_sem_meta")
 
     resp = client.post("/api/quick-invest", headers=headers, json={"cash_available": 1000.0})
@@ -89,13 +87,6 @@ def test_sem_meta_declarada_a_base_e_score_e_nao_uma_divisao_inventada(client):
 
 
 def test_todo_dinheiro_tem_destino_ou_motivo(client):
-    """O que sobra vem com o porquê.
-
-    Era o defeito relatado: com R$ 1.000 a sugestão trazia um ativo só e o resto ficava sem
-    destino, sem uma linha dizendo por que. Três causas, e todas silenciosas — a fatia de renda
-    fixa descartada por não haver título na lista de oportunidades, a fatia de 10% do terceiro
-    ativo caindo abaixo da ordem mínima, e o troco de cota inteira.
-    """
     headers = make_auth_headers("test_quick_invest_destino")
 
     resp = client.post("/api/quick-invest", headers=headers, json={"cash_available": 1000.0})
@@ -105,7 +96,6 @@ def test_todo_dinheiro_tem_destino_ou_motivo(client):
     alocado = body["allocated_cash"]
     restante = body["remaining_cash"]
 
-    # `allocated_cash` é anulado fora do nível prescritivo: ele instrui uma compra.
     if alocado is not None:
         assert abs(alocado + restante - body["total_cash"]) < 0.01, "a conta tem de fechar"
 
@@ -121,11 +111,6 @@ def test_todo_dinheiro_tem_destino_ou_motivo(client):
 
 
 def test_renda_fixa_nao_desaparece_da_sugestao(client):
-    """A fatia de renda fixa sumia porque só se olhava a lista de oportunidades.
-
-    Ela tem ações, FIIs, BDRs e ETFs, e nunca um título. Com meta de renda fixa, o dinheiro
-    evaporava sem uma linha na tela.
-    """
     uid = "test_quick_invest_rf"
     headers = make_auth_headers(uid)
 
@@ -146,8 +131,6 @@ def test_renda_fixa_nao_desaparece_da_sugestao(client):
     assert fatia is not None, "a meta pedia renda fixa e a fatia não veio"
     assert fatia["reference_source"], "a taxa de referência precisa dizer de onde veio"
 
-    # `amount` instrui uma compra, então é anulado fora do nível prescritivo -- e o que sustenta
-    # a fatia (a razão e a referência) fica. É a mesma regra do valor por ativo.
     nivel = body["affirmation"]["level"]
     if nivel >= 3:
         assert fatia["amount"] > 0

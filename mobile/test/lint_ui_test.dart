@@ -2,31 +2,10 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// As regras de produto e acessibilidade do fiance, cobradas por maquina.
-///
-/// Principio que nenhuma maquina cobra volta a ser violado em duas semanas, e sem esteira
-/// nenhuma o mobile ja tinha zero proveniencia em julgamento e 49 tamanhos de tipo soltos.
-///
-/// Vive como teste, e nao como script proprio, porque `flutter test` ja e o comando do CI: uma
-/// regra que exige mudar a esteira para rodar e uma regra que nao roda. O que ainda falta
-/// cobrar aqui esta em docs/KNOWN_ISSUES.md.
 void main() {
   final fontes = _dartsDe('lib');
 
   group('regras de produto no mobile', () {
-    /*
-     * Julgamento renderizado exige como conferir a conta.
-     *
-     * O sinal de julgamento e estreito de proposito: `scoreBand`/`scoreBandFor`/`fiBandFor` sao
-     * o sistema colocando um numero numa faixa nomeada, `fiDecision` e o veredito, e `fairPrice`
-     * e preco justo. `fiStateColor` NAO entra: a tela de login usa estado para erro, e erro nao
-     * e julgamento sobre dinheiro.
-     *
-     * O explicador aceita o vocabulario que este codigo ja tem: `FiProvenance`, `HelpTooltip`,
-     * e as funcoes de proveniencia de `core/score_ruler.dart` (`consensusLabel` diz quantos
-     * metodos entraram, `dataYearsLabel` diz a profundidade do historico). Mencionar em prosa
-     * nao conta.
-     */
     test('nenhuma tela julga sem explicar', () {
       const julgamento = [
         'scoreBand',
@@ -34,8 +13,8 @@ void main() {
         'fiBandFor',
         'fiDecision',
         'fairPrice',
-        // A classe da divida e julgamento do sistema sobre o custo dela -- "caseira" contra
-        // "administravel" -- e sai de comparar a taxa com o que a carteira rende.
+
+
         'DebtClass.',
       ];
       const explicador = [
@@ -47,7 +26,6 @@ void main() {
         'dataCompletenessLabel',
         'confidenceLabel',
       ];
-
       final mudos = <String>[];
       for (final f in fontes.where((f) => f.path.contains('features'))) {
         final fonte = f.readAsStringSync();
@@ -67,11 +45,7 @@ void main() {
       );
     });
 
-    /*
-     * O produto nao sabe o futuro, e diz isso. Mesma lista do web: a negacao explicita passa,
-     * a afirmacao nao. "nao ha garantia de retorno" e a frase certa; "retorno garantido" e a
-     * errada.
-     */
+
     test('nenhuma tela promete o futuro', () {
       final promessas = RegExp(
         r'(retorno|lucro|ganho|rendimento)\s+garantid|garantia\s+de\s+(retorno|lucro|ganho)|'
@@ -83,7 +57,6 @@ void main() {
         r'(nao|n[aã]o)\s+(existe|garante)',
         caseSensitive: false,
       );
-
       final achados = <String>[];
       for (final f in fontes) {
         for (final linha in f.readAsLinesSync()) {
@@ -102,24 +75,7 @@ void main() {
       );
     });
 
-    /*
-     * Projecao sai como faixa, nunca numero unico.
-     *
-     * `_low`/`_high` sao campos obrigatorios de `PassiveIncomeMonth` no backend justamente para
-     * que nao exista caminho em que o numero saia sozinho: um valor unico a cinco anos empresta
-     * precisao de centavo a uma pilha de premissas, e e em cima dele que a pessoa decide quanto
-     * poupar.
-     *
-     * A regra e sobre PROJECAO, e o escopo e estreito: `portfolioValue` e
-     * `passiveIncomeMonthly`, que sao os numeros a anos de distancia. Duas coisas ficam fora, e
-     * por motivos diferentes:
-     *
-     * * **meta** (`passiveIncomeGoal`) e alvo declarado pela pessoa, e alvo nao tem faixa;
-     * * **piso de sobra** (`surplusLow`) aparece sozinho no Mes de proposito, porque a frase o
-     *   nomeia como piso -- "a sobra parte de X". A faixa inteira vive na Sobra, onde e o
-     *   assunto. Escrever a regra larga demais reprovaria essa frase, que esta certa; o teste
-     *   pegou exatamente isso na primeira vez que rodou.
-     */
+
     test('projeção só aparece como faixa', () {
       const projetados = ['portfolioValue', 'passiveIncomeMonthly'];
 
@@ -145,11 +101,7 @@ void main() {
   });
 
   group('regras de acessibilidade no mobile', () {
-    /*
-     * Botao de icone sem nome acessivel anuncia so "botao", e a pessoa tem que adivinhar se
-     * aquilo apaga a posicao ou fecha o modal. No Flutter o `tooltip:` do IconButton ja produz
-     * o rotulo semantico, e por isso ele conta.
-     */
+
     test('todo botao de icone tem nome acessivel', () {
       final semNome = <String>[];
       for (final f in fontes) {
@@ -171,19 +123,14 @@ void main() {
   });
 
   group('regras de coerencia no mobile', () {
-    /*
-     * Serifa decide, sans mede. O papel `verdict` existe para carregar conclusao, e conclusao
-     * se le em serifa -- mas declarar o papel nao aplica a familia: `FiType.verdict` sozinho sai
-     * em Inter, porque a familia do tema e sans. Quem usa o papel aplica `fiFontSerif` ou
-     * `fiSerif`, e e isso que se cobra.
-     */
+
     test('o papel de veredito sai em serifa', () {
       final semSerifa = <String>[];
       for (final f in fontes) {
         final linhas = f.readAsLinesSync();
         for (var i = 0; i < linhas.length; i++) {
           if (!RegExp(r'FiType\.verdict(Sm)?\b').hasMatch(linhas[i])) continue;
-          // A familia pode vir no `.copyWith(` da linha seguinte.
+
           final janela = linhas.sublist(i, (i + 4).clamp(0, linhas.length)).join(' ');
           if (janela.contains('fiFontSerif') || janela.contains('fiSerif')) continue;
           semSerifa.add('${_curto(f)}:${i + 1}');
@@ -199,34 +146,8 @@ void main() {
       );
     });
 
-    /*
-     * Tipografia fora da escala de papeis.
-     *
-     * `fontSize:` solto e o `text-sm` do Flutter, e a doenca e a mesma que o web ja curou: dois
-     * corpos para a mesma coisa em telas vizinhas.
-     *
-     * `core/design_tokens.dart` e `core/theme.dart` ficam de fora: sao a camada de design, e e
-     * ali que tamanho se declara. O resto e tela.
-     *
-     * A escala ja foi recalibrada para 360dp, e com ela os 15 tamanhos que tinham papel
-     * equivalente foram trocados. O que resta e legenda de grafico abaixo de 11px, que nao tem
-     * papel porque a escala tem piso -- e por isso a regra segue CATRACA, no padrao de
-     * `SEM_MODELO_HOJE`: nao conserta hoje, nao deixa crescer, e o teto so desce.
-     */
-    /*
-     * A parte mecanica de docs/design/AI-TELLS.md.
-     *
-     * Aquele documento se declara nao-checavel por maquina, e para composicao e redacao isso e
-     * verdade. A lista de vocabulario proibido nao e: sao frases literais. E foi aqui que ela
-     * custou -- `login_screen` e `splash_screen`, as duas primeiras telas do aplicativo, abriam
-     * com "tudo em um so assistente": o "tudo em um so lugar" de marketing generico e a persona
-     * de assistente conversacional, numa frase de dez palavras.
-     *
-     * Emoji tambem entra, incluindo os dingbats que o web usava para carregar estado. Estado e
-     * papel de cor (`fiStateColor`), nao glifo.
-     *
-     * Seta fica de fora de proposito: e a informacao no rotulo de tendencia lateral.
-     */
+
+
     test('nenhuma tela fala como IA generica', () {
       final proibido = <RegExp, String>{
         RegExp(r'revolucion[aá]ri', caseSensitive: false): 'marketing generico',
@@ -251,7 +172,6 @@ void main() {
       for (final f in fontes) {
         final fonte = f.readAsStringSync();
         if (_temEscape(fonte, 'vocabulario')) continue;
-
         for (final texto in _literaisDe(fonte)) {
           for (final entrada in proibido.entries) {
             final m = entrada.key.firstMatch(texto);
@@ -271,18 +191,7 @@ void main() {
       );
     });
 
-    /*
-     * Nome de destino que o produto nao tem mais.
-     *
-     * O nome de um destino e o conceito, nao um rotulo de tela: quando ele diverge, o produto
-     * passa a ter dois vocabularios. A barra do `/voce` ja disse "Configuracoes", a de
-     * `/sobra/desvio` disse "Estrategia" (um destino removido), `/voce/objetivos` disse
-     * "Minhas metas" e a renda fixa vinha com F maiusculo.
-     *
-     * "Hoje", "Carteira" e "Mercado" entram na lista pelo mesmo motivo: eram destinos, sairam, e
-     * a rota antiga continua viva como redirect -- o que faz o nome antigo ser facil de reescrever
-     * sem perceber.
-     */
+
     test('nenhuma tela usa nome de destino que saiu', () {
       const aposentados = {
         'Hoje': 'o feed vive no Mes',
@@ -344,14 +253,7 @@ void main() {
     });
 
     test('a caixa do Material nao volta a crescer', () {
-      /*
-       * A moldura e o atalho que dispensa pensar em espaco, tipo e fio. O sistema tem
-       * substitutos com nome: `FiObject` para o que e objeto, `FiSection` + `FiRows`/`FiDataRow`
-       * para o resto.
-       *
-       * `RadioListTile` e `CheckboxListTile` ficam de fora: sao controle de formulario dentro
-       * de dialogo, e nao layout de tela.
-       */
+
       const teto = 0;
 
       final achados = <String>[];
@@ -380,12 +282,7 @@ void main() {
     });
 
     test('espera tem a forma do que vai chegar, e nao um disco girando', () {
-      /*
-       * Treze telas abriam com um `CircularProgressIndicator` centralizado. Disco no meio da
-       * tela nao diz o que esta vindo, e a pagina salta quando o dado chega -- o web resolveu
-       * isso com `<app-skeleton>` e o mobile ficou de fora. O indicador continua legitimo dentro
-       * de um botao, que e onde ele diz "esta acao esta em curso".
-       */
+
       final achados = <String>[];
       for (final f in fontes) {
         final fonte = f.readAsStringSync();
@@ -408,10 +305,7 @@ void main() {
     });
 
     test('nenhuma tela escreve cor a mao', () {
-      /*
-       * Hexadecimal solto cria uma cor que nenhuma outra tela conhece, e `Colors.blue` cria uma
-       * que nem o tema conhece. `Colors.transparent` passa: e ausencia de tinta, nao uma cor.
-       */
+
       final achados = <String>[];
       for (final f in fontes) {
         if (f.path.contains('design_tokens.dart')) continue;
@@ -441,11 +335,7 @@ void main() {
     });
 
     test('a busca global e alcancavel de todo destino de raiz', () {
-      /*
-       * A busca existia em `/busca` e tinha uma porta so: a barra de `/mes/feed`, tela secundaria
-       * de um destino. No web ela e botao de cabecalho mais atalho de teclado, em qualquer tela.
-       * Paridade aqui e de capacidade, nao de gesto.
-       */
+
       const raizes = <String, String>{
         'features/mes/mes_screen.dart': 'Mes',
         'features/sobra/sobra_screen.dart': 'Sobra',
@@ -474,15 +364,7 @@ void main() {
     });
 
     test('todo destino navegado existe no roteador', () {
-      /*
-       * `patrimonio_summary` mandava para `/assets/renda-fixa`, que nunca existiu: `/assets` e
-       * redirect e nao tem filho. O go_router lanca GoException na hora do toque -- o build passa,
-       * a suite passa, e quem toca no bloco de renda fixa leva a tela de erro.
-       *
-       * A regra le a arvore de `router.dart` montando os caminhos como o go_router monta: rota de
-       * topo comeca com `/`, rota filha concatena no pai. Rota com parametro (`:ticker`) vira
-       * padrao, porque o que se navega e um valor.
-       */
+
       final router = File('lib/core/router.dart').readAsStringSync();
 
       final declarados = <String>{};
@@ -546,11 +428,7 @@ void main() {
     });
 
     test('a falha de leitura sai numa voz so', () {
-      /*
-       * `desvio_screen` tinha um `_ErrorState` privado com a frase escrita a mao, ao lado do
-       * `FiErrorState` que todas as outras telas usam. Duas grafias para a mesma coisa e como
-       * a divergencia comeca.
-       */
+
       final proprios = <String>[];
       for (final f in fontes) {
         if (f.path.contains('error_state.dart')) continue;
@@ -582,7 +460,7 @@ List<File> _dartsDe(String raiz) => Directory(raiz)
 
 String _curto(File f) => f.path.replaceAll(r'\', '/').replaceFirst('lib/', '');
 
-/// Compara nome sem depender de acento, que e onde a grafia divergiu na pratica.
+
 String _semAcento(String texto) {
   const de = 'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC';
   const para = 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ';
@@ -593,15 +471,15 @@ String _semAcento(String texto) {
   return saida;
 }
 
-/// Os literais de string do arquivo -- o que de fato vai para a tela.
-///
-/// Varrer o fonte inteiro pegaria comentario e nome de simbolo, e a regra passaria a
-/// reprovar a propria justificativa de por que uma frase e proibida.
+
+
+
+
 Iterable<String> _literaisDe(String fonte) =>
     RegExp("'([^'\\\\\n]*)'")
         .allMatches(fonte)
         .map((m) => m[1] ?? '');
 
-/// A forma unica de escapar, igual a do web: a regra pelo nome, e o motivo escrito.
+
 bool _temEscape(String fonte, String regra) =>
     RegExp('//\\s*design-exception:\\s*$regra\\s*(?:—|-{1,2})\\s*\\S').hasMatch(fonte);

@@ -38,8 +38,6 @@ class Settings(BaseSettings):
 
     entitlements_enabled: bool = False
 
-    # O momento em que a cerca subiu, ISO (`2026-10-01`) ou epoch. Obrigatoria com a cerca
-    # ligada, porque e ela que impede o trial ja gasto de derrubar a base inteira para Free.
     entitlements_enabled_at: str = ""
 
     affirmation_level: int = 2
@@ -62,7 +60,6 @@ class Settings(BaseSettings):
 
     @property
     def entitlements_up_at(self) -> float | None:
-        """Epoch em que a cerca subiu, ou None quando nao declarado."""
         bruto = self.entitlements_enabled_at.strip()
         if not bruto:
             return None

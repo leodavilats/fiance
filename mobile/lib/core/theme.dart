@@ -150,8 +150,6 @@ ThemeData buildAppTheme(Brightness brightness) {
       minVerticalPadding: FiSpace.s2,
       shape: const RoundedRectangleBorder(),
     ),
-    // Contorno de campo e `controlBorder`, nao `hairline`: com o token de separador a borda
-    // desenhava a 1,20:1 no tema claro, contra os 3:1 que a WCAG 1.4.11 pede de um controle.
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: controlFill,
@@ -246,8 +244,6 @@ ThemeData buildAppTheme(Brightness brightness) {
       ),
     ),
 
-    // O botao secundario nao era declarado, e caia no padrao do Material -- outra grafia de
-    // botao, com outra altura e outro contorno, ao lado do primario do sistema.
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         backgroundColor: controlFill,
@@ -351,8 +347,6 @@ ThemeData buildAppTheme(Brightness brightness) {
         color: isDark ? FiColors.darkInk1 : FiColors.lightGround1,
       ),
     ),
-    // Trilho vazio e o poco, e nao o separador: `brand` sobre `hairline` ficava a 2,28:1, e
-    // era o par que faz um deslizador mostrar onde esta.
     sliderTheme: SliderThemeData(
       trackHeight: 8,
       activeTrackColor: brand,

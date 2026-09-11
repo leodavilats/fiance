@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Uma secao: fio e chao, nao card.
-///
-/// `Semantics(header: true)` da a quem usa leitor de tela a navegacao por cabecalho que o `<h2>`
-/// da no web. A caixa fica reservada ao que e objeto, e isso e `FiObject`.
 class FiSection extends StatelessWidget {
   const FiSection({
     super.key,
@@ -20,20 +16,16 @@ class FiSection extends StatelessWidget {
 
   final String title;
 
-  /// Sufixo `· N`, para titulo que carrega quantidade.
   final int? count;
 
   final String? hint;
 
-  /// O recorte do que vem abaixo: muda o que se le, e por isso fica no cabecalho.
   final Widget? trailing;
 
-  /// A acao que a secao habilita: vem **depois** do conteudo, nunca ao lado do titulo.
   final Widget? action;
 
   final Widget child;
 
-  /// A primeira secao nao desenha o fio de cima.
   final bool first;
 
   @override
@@ -88,14 +80,11 @@ class FiSection extends StatelessWidget {
   }
 }
 
-/// Cifras rotuladas sob um fio, no lugar de uma grade de KPI.
 class FiFigures extends StatelessWidget {
   const FiFigures({super.key, required this.figures, this.rule = true});
 
-  /// Rotulo -> valor ja formatado, na ordem da leitura.
   final Map<String, String> figures;
 
-  /// O fio sobre a linha de cifras. Sai quando ja ha um logo acima.
   final bool rule;
 
   @override
@@ -147,8 +136,6 @@ class FiHeadline extends StatelessWidget {
 
   final String? support;
 
-  /// A tinta da leitura, quando ela é direção. Julgamento não passa por aqui: veredito é bloco
-  /// próprio, em serifa.
   final Color? supportColor;
 
   final String? note;
@@ -184,6 +171,4 @@ class FiHeadline extends StatelessWidget {
   }
 }
 
-/// `xl` é para a tela cujo assunto **é** aquele número; `lg`, para a que abre por ele e discute
-/// outra coisa.
 enum FiHeadlineSize { lg, xl }

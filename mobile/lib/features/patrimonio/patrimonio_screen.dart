@@ -20,7 +20,6 @@ import 'widgets/patrimonio_composition.dart';
 import 'widgets/patrimonio_positions.dart';
 import 'widgets/patrimonio_summary.dart';
 
-/// O Patrimonio: "quanto eu tenho, e como isso esta distribuido?"
 class PatrimonioScreen extends ConsumerWidget {
   const PatrimonioScreen({super.key});
 

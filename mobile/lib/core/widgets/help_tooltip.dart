@@ -3,11 +3,6 @@ import 'package:flutter/material.dart';
 import '../glossary.dart';
 import '../theme.dart';
 
-/// O termo do glossário: o rótulo inteiro é o alvo, com os 44dp da norma.
-///
-/// O alvo abraça o `child` junto porque, numa linha de cifras, a coluna com verbete precisa ter
-/// a mesma altura da coluna sem — senão o rótulo sublinhado desce sozinho e a linha de base se
-/// perde.
 class HelpTooltip extends StatelessWidget {
   const HelpTooltip({
     super.key,
@@ -20,7 +15,6 @@ class HelpTooltip extends StatelessWidget {
 
   final String label;
 
-  /// O que vem sob o rótulo e entra no mesmo alvo — a cifra que ele nomeia.
   final Widget? child;
 
   @override

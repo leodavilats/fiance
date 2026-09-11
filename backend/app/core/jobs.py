@@ -16,22 +16,11 @@ logger = logging.getLogger("fiance.jobs")
 WORKER_ID = f"{socket.gethostname()}:{os.getpid()}"
 
 
-# O lock de job faz duas coisas, e elas pedem prazos diferentes.
-#
-# Enquanto o corpo roda, ele é exclusão mútua, e o prazo tem de ser curto: um worker que morre
-# logo após adquirir deixava o `daily_snapshot` travado por até 5,4h (0,9 × 6h), porque o TTL era
-# o intervalo e ninguém liberava. O batimento renova o prazo curto enquanto há alguém vivo — e
-# para de renovar quando não há.
-#
-# Terminado o corpo, ele vira espaçamento, e aí o prazo longo é que está certo: liberar no fim do
-# ciclo faria o worker seguinte repetir o trabalho segundos depois. Por isso o lock não é
-# liberado no `finally` — ele é estendido até perto do próximo ciclo.
 HEARTBEAT_INTERVAL = 30.0
 HEARTBEAT_TTL = 120.0
 
 
 async def _bater(name: str) -> None:
-    """Renova o lock enquanto o corpo roda. Morre junto com quem o criou."""
     while True:
         await asyncio.sleep(HEARTBEAT_INTERVAL)
         try:
@@ -75,7 +64,6 @@ async def _run_guarded(
                     batimento.cancel()
                     with contextlib.suppress(asyncio.CancelledError):
                         await batimento
-                    # O prazo longo entra agora, como espaçamento até o próximo ciclo.
                     with contextlib.suppress(Exception):
                         await asyncio.to_thread(
                             portfolio_store.renew_job_lock, name, WORKER_ID, lock_ttl_seconds

@@ -120,8 +120,6 @@ def create_app() -> FastAPI:
     app.include_router(router, prefix=f"/api/{API_VERSION}")
     app.include_router(router, prefix="/api", include_in_schema=False)
 
-    # Fora de /api de propósito: as lojas exigem uma URL de privacidade que abra sozinha, e o
-    # aplicativo linka estas três. Sem front, quem as serve é este processo.
     app.include_router(legal.router)
 
     return app

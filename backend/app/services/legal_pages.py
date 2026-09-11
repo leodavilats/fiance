@@ -1,11 +1,3 @@
-"""Termos, privacidade e aviso CVM servidos pelo próprio backend.
-
-São páginas de documento, não de produto: não há paleta, não há JavaScript e não há
-nenhum asset externo. A cor vem do agente do usuário (`color-scheme: light dark`) de
-propósito — a paleta do fiance mora em `mobile/lib/core/design_tokens.dart`, e uma
-segunda cópia dela aqui envelheceria calada.
-"""
-
 from __future__ import annotations
 
 from app import affirmation

@@ -10,8 +10,6 @@ class Opportunity(BaseModel):
     sector: str | None = None
     price: float | None = None
 
-    # Momento da leitura, em epoch. O `_MarketRecord` sempre o carregou e o modelo de resposta
-    # nao o declarava: cinquenta precos comparados sem dizer de quando sao.
     as_of: float | None = None
 
     fair_price: float | None = None

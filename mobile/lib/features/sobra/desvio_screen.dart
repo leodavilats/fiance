@@ -14,7 +14,6 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/theme.dart';
 
-/// Onde a carteira está × onde ela deveria estar.
 class DesvioScreen extends ConsumerWidget {
   const DesvioScreen({super.key});
 
@@ -183,8 +182,6 @@ double escalaDosGaps(List<AllocationGap> gaps) {
   return (maior * 1.15).clamp(10, 100);
 }
 
-/// A régua com o vão desenhado: a barra é a posição de hoje, a marca é a meta, e o trecho entre
-/// as duas sai tingido.
 class _GapRow extends StatelessWidget {
   const _GapRow({
     required this.gap,

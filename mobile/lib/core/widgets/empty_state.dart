@@ -3,10 +3,6 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'button.dart';
 
-/// Ausencia de dado, numa voz so.
-///
-/// E o par de `FiErrorState`, e a separacao entre os dois e invariante: "nao conseguimos ler" e
-/// "voce ainda nao tem nada" sao estados diferentes, e nunca compartilham a mesma tela.
 class FiEmptyState extends StatelessWidget {
   const FiEmptyState({
     super.key,
@@ -17,13 +13,10 @@ class FiEmptyState extends StatelessWidget {
     this.secondary,
   });
 
-  /// A frase que nomeia a ausencia. Descreve o estado, nao cobra a pessoa.
   final String title;
 
-  /// Por que isto importa, e o que destrava.
   final String body;
 
-  /// Uma instrucao concreta.
   final String? hint;
 
   final Widget? action;
@@ -63,7 +56,6 @@ class FiEmptyState extends StatelessWidget {
   }
 }
 
-/// A ausencia dentro de uma secao: a linha que diz por que nao ha nada ali, e nada mais.
 class FiEmptyLine extends StatelessWidget {
   const FiEmptyLine(this.text, {super.key});
 

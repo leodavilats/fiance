@@ -26,8 +26,6 @@ class BuscaDestino {
 }
 
 const buscaDestinos = <BuscaDestino>[
-  // Os cinco destinos primeiro, na ordem do ciclo do dinheiro. Os termos antigos continuam
-  // buscaveis de proposito: quem procura "hoje" ou "estrategia" tem de achar a casa nova.
   BuscaDestino(
     title: 'Mês',
     subtitle: 'O que aconteceu com seu dinheiro, e o que exige atenção',

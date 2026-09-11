@@ -27,13 +27,6 @@ class QuickInvestAllocation(BaseModel):
 
 
 class FixedIncomeSlice(BaseModel):
-    """A fatia de renda fixa, sem nomear título.
-
-    O produto não tem catálogo de títulos à venda — tem taxas de referência e um comparador. Dizer
-    o nome de um CDB seria inventar oferta. O que se diz é quanto vai para a categoria e o que a
-    referência rende hoje, com o caminho para comparar.
-    """
-
     amount: float
     reference_monthly_pct: float | None = Field(
         None, description="O que a referência rende ao mês, quando conhecida"
@@ -43,18 +36,6 @@ class FixedIncomeSlice(BaseModel):
 
 
 class Unallocated(BaseModel):
-    """Dinheiro sem destino, e o motivo.
-
-    Existe porque `remaining_cash` sozinho é um número sem explicação: a pessoa vê R$ 310 sobrando
-    e não sabe se o sistema falhou, se o mercado não tem o que comprar, ou se é troco de cota
-    inteira.
-
-    O campo se chama `value`, e não `amount`, de propósito: `amount` está em
-    `affirmation.ACTION_FIELDS` e é anulado fora do nível prescritivo, porque instrui uma compra.
-    Este número não instrui nada — ele explica o que o sistema **não** fez, e essa é a análise que
-    fica em todos os níveis.
-    """
-
     value: float
     reason: str
 

@@ -1,6 +1,3 @@
-// A fundacao visual do produto, escrita a mao e sem gerador. E a unica paleta que existe:
-// `test/contraste_test.dart` cobra o minimo da WCAG, e `tool/build_icons.py` le daqui a cor
-// da marca.
 
 import 'package:flutter/material.dart';
 
@@ -99,7 +96,6 @@ abstract final class FiColors {
   static const lightSeries11 = Color(0xFF75495D);
   static const lightSeriesOther = Color(0xFF55594F);
 
-  // Veu sob drawer e sheet. Tem alfa, e por isso fica fora da varredura de contraste.
   static const darkOverlay = Color(0xA805070A);
   static const lightOverlay = Color(0x661E1B14);
 }
@@ -200,8 +196,6 @@ abstract final class FiSpace {
 }
 
 abstract final class FiRadius {
-  // Mais retos que antes (era 4/8/12): canto muito arredondado e o que faz uma tela de dinheiro
-  // parecer aplicativo de banco.
   static const sm = 2.0;
   static const md = 6.0;
   static const lg = 10.0;
@@ -209,7 +203,6 @@ abstract final class FiRadius {
 }
 
 abstract final class FiLayout {
-  // 44 e norma de acessibilidade, nao aparencia -- e o unico numero de layout que atravessa.
   static const minTouchTarget = 44.0;
 
   static const gutter = FiSpace.s4;
@@ -225,8 +218,6 @@ abstract final class FiMotion {
 }
 
 abstract final class FiType {
-  // Os mesmos PAPEIS do web, com valores de telefone. O topo do web (40, 30) nao cabe em 360dp,
-  // e por isso nunca era usado; `caption` virava o corpo por falta de alternativa.
   static const moneyXl = TextStyle(
     fontSize: 32,
     height: 1.125,
@@ -280,8 +271,6 @@ abstract final class FiType {
     fontWeight: FontWeight.w600,
     letterSpacing: 1.1,
   );
-  // 16, e nao 15: em 360dp o corpo precisa de corpo, e era por isso que 44 usos de `caption`
-  // faziam o papel dele.
   static const body = TextStyle(
     fontSize: 16,
     height: 1.5,

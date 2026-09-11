@@ -25,7 +25,6 @@ class QuickInvestView extends ConsumerStatefulWidget {
 class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
   final _cashCtrl = TextEditingController();
 
-  /// Quando verdadeiro, a tela pergunta o valor em vez de usar a sobra do mês.
   bool _simulando = false;
 
   bool _loading = true;
@@ -35,9 +34,6 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
   @override
   void initState() {
     super.initState();
-    // A tela abre respondendo. O valor vem da cascata do caixa, no servidor -- pedir de novo
-    // o número que o produto acabou de calcular era a ponte não estar construída, e o campo
-    // ainda vinha preenchido com 1000, que não é o dinheiro de ninguém.
     _run();
   }
 
@@ -171,8 +167,6 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
           r.summary,
           style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
         ),
-        // `ALOCADO` sozinho nao se mostra: fora do nivel prescritivo ele vem nulo, e uma cifra
-        // com um travessao ao lado nao e leitura, e sim um campo faltando.
         if (r.allocatedCash != null) ...[
           const SizedBox(height: FiSpace.s4),
           FiFigures(
@@ -180,8 +174,6 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
           ),
         ],
 
-        // Sem destino a secao nao existe: o resumo em serifa ja diz que nada coube, e uma
-        // secao vazia logo abaixo dele repetiria a mesma frase com outras palavras.
         if (r.temDestino)
           FiSection(
             title: 'A ordem de prioridade',
@@ -198,8 +190,6 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
             ),
           ),
 
-        // `remainingCash` sozinho e um numero sem explicacao -- o backend tem teste para
-        // impedir que ele viaje assim, e a tela o mostrava sem o motivo ao lado.
         if (r.unallocated.isNotEmpty)
           FiSection(
             title: 'O que não coube',
@@ -246,8 +236,6 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
 String _dinheiroOuTraco(double? valor) =>
     valor == null ? '—' : formatCurrency(valor);
 
-/// A fatia de renda fixa: o produto nao tem catalogo de titulos, entao ela nao nomeia papel --
-/// diz quanto vai para a categoria, o que a referencia rende hoje, e o caminho para comparar.
 class _FatiaDeRendaFixa extends StatelessWidget {
   const _FatiaDeRendaFixa({required this.fatia});
 

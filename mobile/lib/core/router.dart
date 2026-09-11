@@ -47,8 +47,6 @@ final appRouter = GoRouter(
       redirect: (_, _) => '/patrimonio/projecao',
     ),
     GoRoute(path: '/assets', redirect: (_, _) => '/patrimonio'),
-    // O web renomeou este destino ao adotar o ciclo do dinheiro; o mobile ficou em
-    // `carteira` e a divergencia passou meses sem ser vista. Link salvo e contrato.
     GoRoute(path: '/carteira', redirect: (_, _) => '/patrimonio'),
     GoRoute(path: '/market', redirect: (_, _) => '/descobrir'),
     GoRoute(path: '/config', redirect: (_, _) => '/voce'),
@@ -68,8 +66,6 @@ final appRouter = GoRouter(
                   path: 'atividade',
                   builder: (context, state) => const AtividadeScreen(),
                 ),
-                // `Hoje` respondia "o que mudou", e isso e feed, nao lugar. A tela continua
-                // alcancavel enquanto o feed nao se dissolve dentro do Mes, como no web.
                 GoRoute(
                   path: 'feed',
                   builder: (context, state) => const FeedScreen(),

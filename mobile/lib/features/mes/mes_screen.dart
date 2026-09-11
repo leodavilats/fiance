@@ -21,10 +21,6 @@ import '../../core/widgets/section.dart';
 import 'lancar_sheet.dart';
 import 'molde_sheet.dart';
 
-/// O Mes: "o que aconteceu com meu dinheiro?"
-///
-/// A linha do tempo e lista com disclosure, e nao tabela: cinco colunas em 360dp esconderiam a
-/// que decide.
 class MesScreen extends ConsumerWidget {
   const MesScreen({super.key});
 
@@ -47,8 +43,6 @@ class MesScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // A unica acao flutuante do produto: lancar se repete todo mes, de qualquer ponto da
-      // rolagem. As demais telas resolvem a acao dentro da secao que a justifica.
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => abrirLancarSheet(context, ref),
         icon: const Icon(Icons.add),
@@ -75,7 +69,6 @@ class MesScreen extends ConsumerWidget {
     );
   }
 
-  /// Os meses que a pessoa tem, mais o corrente.
   Future<void> _escolherMes(
     BuildContext context,
     WidgetRef ref,
@@ -201,9 +194,6 @@ class _Corpo extends ConsumerWidget {
               ),
             ),
 
-          // Repetir o mes anterior so se oferece com o mes vazio: com lancamentos na tela, o
-          // molde duplicaria o que ja esta ali, e a identidade que evita duplicata ignora o
-          // valor -- a conta de luz do mes passado entraria de novo com outro valor.
           FiSection(
             title: 'O mês',
             action: doMes.isEmpty
@@ -300,8 +290,6 @@ class _Veredito extends StatelessWidget {
           style: FiType.body.copyWith(color: fiInk2(context)),
         ),
         const SizedBox(height: FiSpace.s3),
-        // Secundaria em peso: a primaria da tela e lancar, e duas acoes solidas na mesma dobra
-        // disputariam o toque.
         Align(
           alignment: Alignment.centerLeft,
           child: FiButton.secondary(
@@ -370,7 +358,6 @@ class _LinhaAVencer extends ConsumerWidget {
   }
 }
 
-/// O dia do mês: é por ele que a pessoa encontra o lançamento na linha do tempo.
 class _Dia extends StatelessWidget {
   const _Dia({required this.dia});
 
@@ -388,7 +375,6 @@ class _Dia extends StatelessWidget {
   }
 }
 
-/// Linha da linha do tempo, com disclosure em vez de coluna.
 class _LinhaDoMes extends ConsumerWidget {
   const _LinhaDoMes({required this.entry});
 

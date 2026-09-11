@@ -1,10 +1,3 @@
-"""O carimbo de leitura chega até a tela, e não morre no modelo de resposta.
-
-O `response_model` do FastAPI descarta em silêncio o que não declara. `_MarketRecord.as_of`
-existia desde sempre e `Opportunity` não o declarava: cinquenta preços comparados em
-`/descobrir` sem dizer de quando eram.
-"""
-
 from tests.conftest import make_auth_headers
 
 
@@ -49,7 +42,6 @@ def test_posicao_avaliada_carrega_o_momento_da_leitura(client):
 
 
 def test_ativo_sem_carimbo_devolve_nulo_e_nao_zero(client):
-    """Ausência de momento não é 01/01/1970 — a tela precisa distinguir os dois."""
     itens = _oportunidades(client, make_auth_headers("idade_nula"))
 
     for o in itens:

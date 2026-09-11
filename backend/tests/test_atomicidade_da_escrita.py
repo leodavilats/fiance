@@ -1,15 +1,3 @@
-"""A unidade de trabalho da requisição — o buraco que 797 testes não viram.
-
-A sessão de banco nascia e commitava no middleware de observabilidade, e só o
-ramo `except BaseException` fazia rollback. Mas os handlers de `DomainError` e
-`ValueError` vivem no `ExceptionMiddleware` do Starlette, que é *interno* ao
-middleware de usuário: o erro nunca subia, o middleware via uma resposta 4xx
-normal e commitava a escrita parcial.
-
-A suíte não pegava porque exercita rotas e confere respostas, não o estado do
-banco depois de um erro de domínio no meio de uma escrita composta.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -83,11 +71,6 @@ class TestVendaRecusadaNaoDeixaRastro:
 
 class TestOContadorDoTetoSobreveveAoErro:
     def test_a_recusa_nao_devolve_a_cota(self, client, como):
-        """O contador do teto não pode voltar atrás junto com o 4xx que provocou.
-
-        Ele escreve em transação própria justamente por isso — senão o
-        rate limiting seria desarmado pela própria correção de F-01.
-        """
         from app.core import usage
 
         uid = como("u_atomico_teto")

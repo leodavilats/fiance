@@ -196,11 +196,6 @@ class TestAPonteRespondeSemPerguntar:
         assert corpo["cascade"]["available_to_invest"] == 6418.73
 
     def test_com_meta_declarada_o_aporte_nao_diz_que_nao_ha_meta(self, client, headers):
-        """A razão do passo de aporte vinha fixa: `/surplus` nunca consultava as metas.
-
-        Quem declarou alocação-alvo lia "Sem meta de alocação declarada" no único passo da
-        ordem — o produto contradizendo o que a pessoa acabara de salvar duas telas antes.
-        """
         client.put(
             "/api/goals",
             json={

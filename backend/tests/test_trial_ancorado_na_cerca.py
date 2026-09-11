@@ -1,15 +1,3 @@
-"""Ligar a cerca não pode derrubar a base inteira para Free.
-
-O trial começa na primeira posição salva, e `record_portfolio_milestones` o inicia **mesmo com
-`ENTITLEMENTS_ENABLED` desligado** — não há consulta à flag ali. Como `start_trial` não re-arma
-(`if row.trial_started_at is not None: return`), toda conta que já tem carteira carrega um
-`trial_ends_at` no passado. Sem âncora, virar a flag levaria `resolve()` a calcular
-`in_trial = False` para todas elas de uma vez, e nenhum caminho de código devolveria o trial.
-
-A âncora resolve isso por cálculo, sem migração e sem escrita: o relógio conta do **mais tarde**
-entre qualificar e a cerca subir.
-"""
-
 from __future__ import annotations
 
 import time
@@ -55,7 +43,6 @@ class TestAncora:
         assert fim_do_trial(None, None, cerca) is None
 
     def test_sem_data_de_cerca_o_valor_gravado_prevalece(self):
-        """Defensivo: a validação de startup impede este estado, mas a função não mente."""
         qualificou = 1_700_000_000.0
 
         assert fim_do_trial(qualificou, qualificou + TRIAL, None) == qualificou + TRIAL
@@ -97,7 +84,6 @@ class TestResolveComACercaLigada:
         assert direitos.days_left_in_trial >= TRIAL_DAYS - 2
 
     def test_sem_ancora_a_mesma_conta_cai_para_free(self, cerca, monkeypatch):
-        """O comportamento que a âncora existe para impedir, medido de propósito."""
         agora = time.time()
         self._assinatura("trial_queimado_sem_ancora", agora - 300 * DIA)
         monkeypatch.setattr(cerca, "entitlements_enabled_at", "", raising=False)
@@ -108,7 +94,6 @@ class TestResolveComACercaLigada:
         assert direitos.in_trial is False
 
     def test_trial_ancorado_tambem_expira(self, cerca, monkeypatch):
-        """A âncora adia o relógio uma vez; ela não o congela."""
         agora = time.time()
         cerca_subiu = agora - 100 * DIA
         self._assinatura("trial_ancorado_vencido", cerca_subiu - 50 * DIA)

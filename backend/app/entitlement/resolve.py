@@ -66,17 +66,6 @@ def fim_do_trial(
     trial_ends_at: float | None,
     cerca_subiu_em: float | None,
 ) -> float | None:
-    """Quando o trial acaba de verdade — ancorado no que veio depois.
-
-    O trial começa na primeira posição salva, e `record_portfolio_milestones` o inicia
-    **mesmo com a cerca desligada**. Como `start_trial` não re-arma, toda conta que já tem
-    carteira carrega um `trial_ends_at` no passado: ligar a cerca sem âncora derrubaria a base
-    inteira para Free no mesmo instante, sem caminho de volta no código.
-
-    Um trial que correu enquanto nada era cercado não foi um trial — foi um carimbo sem efeito.
-    Então o relógio conta do **mais tarde** entre qualificar e a cerca subir: quem já tinha
-    carteira ganha os 14 dias a partir da cerca, e quem qualificar depois conta dos seus.
-    """
     if trial_started_at is None:
         return trial_ends_at
 

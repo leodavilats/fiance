@@ -39,8 +39,6 @@ class Passo:
 
 @dataclass(frozen=True)
 class Cascata:
-    """A ordem. Pode terminar **sem** passo de aporte, e isso é resposta, não falha."""
-
     sobra_piso: Decimal
     passos: tuple[Passo, ...]
     sobrou_para_aporte: Decimal
@@ -58,7 +56,6 @@ class Cascata:
 
 
 def gasto_fixo_mensal(entries: Iterable[CashEntry], meses: int = 3) -> Decimal:
-    """A média do gasto fixo dos meses fechados. Zero quando não há mês fechado."""
     por_mes: dict[str, Decimal] = {}
     for e in entries:
         if e.kind is not CashKind.EXPENSE or e.category not in CATEGORIAS_FIXAS:
@@ -84,7 +81,6 @@ def montar(
     gasto_fixo: Decimal = ZERO,
     desvio_de_meta: str | None = None,
 ) -> Cascata:
-    """Monta a ordem sobre o **piso** da faixa, nunca sobre o meio."""
     passos: list[Passo] = []
     disponivel = sobra_piso
 

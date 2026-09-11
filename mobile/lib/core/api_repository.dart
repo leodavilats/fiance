@@ -19,8 +19,6 @@ class ApiRepository {
     return DashboardData.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Onde aportar. `cashAvailable` nulo resolve da cascata do caixa, no servidor: e o que
-  /// faz a tela responder em vez de perguntar um valor que o produto ja calculou.
   Future<QuickInvestResult> quickInvest({
     double? cashAvailable,
     double minOrderValue = 100,
@@ -390,7 +388,6 @@ class ApiRepository {
     final res = await _dio.post('/referral/rotate');
     return (res.data as Map<String, dynamic>)['code'] as String;
   }
-  // Caixa.
 
   Future<CashMonth> getCashMonth({String? month}) async {
     final res = await _dio.get(
@@ -400,7 +397,6 @@ class ApiRepository {
     return CashMonth.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Os lancamentos, com o provento derivado do razao montado na leitura.
   Future<List<CashEntry>> getCashEntries() async {
     final res = await _dio.get('/cashflow/entries');
     return (res.data as List)
@@ -501,7 +497,6 @@ class ApiRepository {
     return Surplus.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// O molde do mes: le, nao grava. A gravacao e `createCashEntriesBatch`.
   Future<CashMonthTemplate> getMonthTemplate({
     required String target,
     String? source,
@@ -516,7 +511,6 @@ class ApiRepository {
     return CashMonthTemplate.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// Grava o lote inteiro ou nenhum.
   Future<List<CashEntry>> createCashEntriesBatch(
     List<CashTemplateCandidate> escolhidos,
   ) async {

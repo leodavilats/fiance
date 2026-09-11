@@ -5,14 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fiance/core/design_tokens.dart';
 
-/// Contraste da paleta: o **mínimo da WCAG 2.1 AA**, e nada além dele.
-///
-/// Aqui havia pisos acima da norma — tinta secundária a 8:1, legenda e marca a 6:1. Eram escolha
-/// de design, e escolha de design deixou de ter máquina: a paleta é livre. O que não é livre é
-/// texto ilegível, então ficam os dois números da norma: **4,5:1 para texto** e **3:1 para
-/// limite de controle e forma** (WCAG 1.4.3 e 1.4.11).
-///
-/// A diferença importa: liberdade de UX/UI é escolher a cor, não é publicar o que não se lê.
 double _canal(double v) {
   final c = v / 255;
   return c <= 0.03928 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
@@ -83,7 +75,6 @@ void main() {
       test('toda tinta de texto passa dos 4,5:1 da norma', () {
         expect(contraste(ink1(), ground0()), greaterThanOrEqualTo(4.5));
         expect(contraste(ink2(), ground0()), greaterThanOrEqualTo(4.5));
-        // Legenda e texto pequeno, e a regra para texto pequeno e a mesma, nao uma mais frouxa.
         expect(contraste(ink3(), ground0()), greaterThanOrEqualTo(4.5));
       });
 

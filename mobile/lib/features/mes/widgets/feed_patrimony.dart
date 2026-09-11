@@ -78,9 +78,6 @@ String fiCompactCurrency(double value) {
   return formatCurrency(value);
 }
 
-/// Quando o dado foi lido, e de onde vem a referência.
-///
-/// Momento é nível 1, e não nota de rodapé: um preço de anteontem muda a decisão.
 class FiFreshnessLine extends StatelessWidget {
   const FiFreshnessLine({super.key, required this.freshness});
 

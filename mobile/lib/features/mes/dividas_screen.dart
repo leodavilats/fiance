@@ -15,7 +15,6 @@ import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/tag.dart';
 
-/// As dividas: saldo, taxa, e a comparacao com o que a carteira rende.
 class DividasScreen extends ConsumerWidget {
   const DividasScreen({super.key});
 

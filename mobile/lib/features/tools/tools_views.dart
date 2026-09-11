@@ -127,7 +127,6 @@ class AnalyzeAssetViewState extends ConsumerState<AnalyzeAssetView> {
   }
 }
 
-/// A leitura de um ativo: o veredito, o preço contra o justo, e o que sustenta os dois.
 class _AssetAnalysis extends StatelessWidget {
   const _AssetAnalysis({required this.analysis});
 

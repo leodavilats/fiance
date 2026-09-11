@@ -113,7 +113,6 @@ class CashEntry:
 
     @property
     def eh_consumo(self) -> bool:
-        """Saída que é custo de vida — pagamento de dívida não é."""
         return self.kind is CashKind.EXPENSE and self.category not in CATEGORIAS_QUE_NAO_SAO_CONSUMO
 
     @property

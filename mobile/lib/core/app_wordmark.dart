@@ -55,8 +55,6 @@ class _Letra {
   final Path Function(double escala) path;
 }
 
-/// Cada `_Letra.path` reproduz literalmente o atributo `d` do SVG de
-/// referência — polígono por polígono, arco por arco — na mesma caixa 0..100.
 class _AppWordmarkLetras {
   static final List<_Letra> todas = [f, i, a, n, c, e];
 
@@ -98,10 +96,6 @@ class _AppWordmarkLetras {
         Offset(13, 100), Offset(0, 100),
       ]));
 
-  // Única letra com arco: "M64.4 22.8 A35 50 0 1 0 64.4 77.2
-  // L53.4 70.2 A22 37 0 1 1 53.4 29.8 Z" — dois arcos elípticos concêntricos
-  // ligados por dois segmentos retos. `Path.arcToPoint` recebe os mesmos
-  // parâmetros do comando SVG `A` (rx, ry, rotação, arco-grande, sentido).
   static final c = _Letra(70, (k) {
     return Path()
       ..moveTo(64.4 * k, 22.8 * k)

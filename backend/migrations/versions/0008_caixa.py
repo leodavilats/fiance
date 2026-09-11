@@ -34,9 +34,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_cash_entries_category"), "cash_entries", ["category"])
     op.create_index(op.f("ix_cash_entries_due_on"), "cash_entries", ["due_on"])
     op.create_index(op.f("ix_cash_entries_paid_on"), "cash_entries", ["paid_on"])
-    op.create_index(
-        op.f("ix_cash_entries_recurrence_id"), "cash_entries", ["recurrence_id"]
-    )
+    op.create_index(op.f("ix_cash_entries_recurrence_id"), "cash_entries", ["recurrence_id"])
     op.create_index("ix_cash_entries_user_due", "cash_entries", ["user_id", "due_on"])
     op.create_index("ix_cash_entries_user_paid", "cash_entries", ["user_id", "paid_on"])
 
@@ -66,8 +64,6 @@ def upgrade() -> None:
         sa.Column("kind", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=False),
         sa.Column("balance", app.core.money.ExactNumeric(), nullable=False),
-        # Nula de propósito: taxa **não informada** não é zero. O produto não estima taxa de
-        # rotativo, e sem ela a régua de dívida simplesmente não aparece.
         sa.Column("monthly_rate", sa.Float(), nullable=True),
         sa.Column("settled_at", sa.Float(), nullable=True),
         sa.Column("created_at", sa.Float(), nullable=False),

@@ -8,31 +8,14 @@ from PIL import Image, ImageDraw
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOKENS = os.path.join(ROOT, 'lib', 'core', 'design_tokens.dart')
 
-# Marca fiance, direcao "Escala": um eixo com dois tracos de comprimentos
-# diferentes (medir, comparar), a leitura solta a direita e um chao que corre
-# de borda a borda. O chao fica DESCOLADO da haste de proposito -- encostado,
-# ele vira o terceiro braco e a marca le "E".
-#
-# As coordenadas estao na mesma caixa de 100 de assets/brand/*.svg. Mexeu
-# aqui, mexe la: o simbolo do produto e o icone do aplicativo sao o mesmo
-# desenho, e e por isso que o --check existe.
 GLYPH_VIEWBOX = 100.0
 GLYPH_EIXO = [(6, 6), (76, 6), (76, 19), (19, 19), (19, 41),
               (56, 41), (56, 54), (19, 54), (19, 79), (6, 79)]
-GLYPH_LEITURA = (83, 6, 96, 19, 3)   # x0, y0, x1, y1, raio
+GLYPH_LEITURA = (83, 6, 96, 19, 3)
 GLYPH_CHAO = (0, 87, 100, 95, 4)
 
-# O chao e papel secundario: ink-on-brand puxado 35% na direcao de brand.
-# Nao e cor nova, e mistura de dois tokens -- design_tokens.dart nao tem um papel
-# "secundario sobre a marca", e inventar um so para o icone criaria uma cor
-# que nenhuma tela conhece.
 GROUND_MIX = 0.65
 
-# Logotipo FIANCE: contorno proprio, caixa alta 100, linha de base y=100,
-# haste 13. O detalhe de familia e que o braco medio do F, a travessa do A e o
-# braco medio do E ocupam a MESMA faixa (y 49..62) -- o fio atravessando a
-# palavra. Por isso a travessa do A fica um pouco alta e o braco do F um pouco
-# baixo; e desvio de proposito, nao erro de desenho.
 WORDMARK = [
     (62, 'M0 0L62 0L62 13L13 13L13 49L50 49L50 62L13 62L13 100L0 100Z'),
     (13, 'M0 0L13 0L13 100L0 100Z'),
@@ -51,17 +34,12 @@ ADAPTIVE_GLYPH_RATIO = 0.42
 SS = 4
 
 
-# A marca mora dentro do mobile porque o mobile e o unico cliente: e daqui que o
-# flutter_launcher_icons le icon.png e icon_foreground.png (image_path no pubspec).
 BRAND_DIR = 'assets/brand'
 
 
 _COR = re.compile(
     r"static const (dark|light)([A-Za-z0-9]+) = Color\(0x(?:FF)?([0-9A-Fa-f]{6})\);")
 
-# O gerador precisa de quatro papeis, e os le do unico lugar onde a paleta existe.
-# `design_tokens.dart` escreve em camelCase (`lightInkOnBrand`); a marca e os SVG
-# falam em papel (`ink-on-brand`). A traducao e esta, e nao ha outra copia da cor.
 PAPEIS = {
     'Brand': 'brand',
     'InkOnBrand': 'ink-on-brand',
@@ -71,7 +49,6 @@ PAPEIS = {
 
 
 def tokens():
-    """A paleta, lida da fundacao visual do mobile."""
     with io.open(TOKENS, encoding='utf-8') as fh:
         dart = fh.read()
 
@@ -182,12 +159,8 @@ def wordmark_markup():
 
 
 def brand_files(light, dark, on_brand_hex, ground_hex):
-    """Kit da marca. Mesma geometria do icone -- e a razao de morar aqui."""
     wm, wm_w = wordmark_markup()
     mono = ('currentColor', 'currentColor')
-    # O chao e neutro (ink-3), nao um azul mais claro: ele e referencia, e
-    # referencia nao julga. ink-3 tambem e o unico neutro que passa de 3:1
-    # como forma sobre o chao dos dois temas.
     tints = {
         'light': (light['brand'], light['ink-3']),
         'dark': (dark['brand'], dark['ink-3']),
@@ -198,12 +171,10 @@ def brand_files(light, dark, on_brand_hex, ground_hex):
         out['%s/fiance-%s.svg' % (BRAND_DIR, name)] = svg_doc(
             width, height, 'Fiance, ' + what, inner)
 
-    # simbolo
     add('symbol', 100, 100, 'simbolo', symbol_markup(*tints['light']))
     add('symbol-dark', 100, 100, 'simbolo em fundo escuro', symbol_markup(*tints['dark']))
     add('symbol-mono', 100, 100, 'simbolo monocromatico', symbol_markup(*mono))
 
-    # assinatura horizontal: simbolo a 132, caixa alta da palavra centrada nele
     size, gap = 132, 46
     def lock_h(fg, ground, ink):
         return ('<g transform="scale(%g)">%s</g>\n'
@@ -217,7 +188,6 @@ def brand_files(light, dark, on_brand_hex, ground_hex):
     add('lockup-h-mono', hw, size, 'assinatura horizontal monocromatica',
         lock_h(mono[0], mono[1], 'currentColor'))
 
-    # assinatura vertical
     vs, vgap, vcap = 150, 42, 0.84
     vwm = wm_w * vcap
     vw, vh = round(max(vs, vwm), 2), round(vs + vgap + 100 * vcap, 2)
@@ -231,12 +201,10 @@ def brand_files(light, dark, on_brand_hex, ground_hex):
     add('lockup-v-dark', vw, vh, 'assinatura vertical em fundo escuro',
         lock_v(tints['dark'][0], tints['dark'][1], dark['ink-1']))
 
-    # logotipo isolado
     add('wordmark', wm_w, 100, 'logotipo', '<g fill="%s">%s</g>' % (light['ink-1'], wm))
     add('wordmark-dark', wm_w, 100, 'logotipo em fundo escuro',
         '<g fill="%s">%s</g>' % (dark['ink-1'], wm))
 
-    # selo compacto: app bar, splash, avatar
     add('compact', 120, 120, 'marca compacta',
         '<rect width="120" height="120" rx="28" fill="%s"/>\n'
         '<g transform="translate(27 27) scale(0.66)">%s</g>' % (

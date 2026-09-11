@@ -30,13 +30,6 @@ class GoalService:
         return [Goal(**g) for g in data]
 
     def has_declared_goals(self) -> bool:
-        """Se a alocação-alvo é da pessoa, ou o padrão do produto.
-
-        `get_goals` cai num padrão de 30/35/15/15/5 quando não há nada salvo, e telas que só
-        precisam de uma régua para desenhar vivem bem com isso. Quem vai **distribuir dinheiro**
-        precisa da distinção: sugerir 35% em ações porque o produto acha, e apresentar isso como
-        se a pessoa tivesse pedido, é inventar objetivo alheio.
-        """
         return bool(self.repo.list_goals())
 
     def save_goals(self, goals: list[Goal]) -> list[Goal]:
@@ -44,7 +37,6 @@ class GoalService:
         return self.get_goals()
 
     def has_declared_sector_goals(self) -> bool:
-        """Mesma distinção de `has_declared_goals`, para a divisão por setor."""
         return bool(self.repo.list_sector_goals())
 
     def get_sector_goals(self) -> list[SectorGoal]:

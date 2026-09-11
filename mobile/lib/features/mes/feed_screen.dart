@@ -162,8 +162,6 @@ class FeedScreen extends ConsumerWidget {
     }
   }
 
-  /// A única ação com peso de primária no feed, e só quando há desvio grande o bastante para
-  /// decidir alguma coisa.
   List<Widget> _proximaAcao(BuildContext context, DashboardData data) {
     final candidates =
         data.allocations

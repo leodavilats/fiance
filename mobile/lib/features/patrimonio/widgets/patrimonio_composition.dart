@@ -64,11 +64,6 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
         .toList();
   }
 
-  /// As metas por setor, so quando sao da pessoa.
-  ///
-  /// `GET /sector-goals` devolve o padrao do produto quando nada foi declarado, e desenhar 20%
-  /// como alvo de quem nunca declarou nada seria inventar objetivo alheio. O `declared` da
-  /// resposta e o que separa os dois casos.
   Map<String, double> _metasPorSetor() {
     final metas = ref.watch(sectorGoalsProvider).valueOrNull ?? const <SectorGoal>[];
     return {

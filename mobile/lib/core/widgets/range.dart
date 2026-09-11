@@ -3,11 +3,6 @@ import 'package:flutter/material.dart';
 import '../format.dart';
 import '../theme.dart';
 
-/// Um número projetado, que só existe como faixa.
-///
-/// `analysis/scenarios.py` devolve `_low`/`_high` como campos obrigatórios. A faixa era um
-/// `closure` local dentro de `_buildResult`, e por isso divergiu do web: lá o cenário base
-/// aparecia sob a faixa, aqui não aparecia — a mesma projeção contava duas histórias.
 class FiRange extends StatelessWidget {
   const FiRange({
     super.key,
@@ -21,12 +16,10 @@ class FiRange extends StatelessWidget {
   final double low;
   final double high;
 
-  /// O cenário central. Sai como legenda sob a faixa, nunca no lugar dela.
   final double? base;
 
   final String label;
 
-  /// A premissa que sustenta a faixa, quando ela não é óbvia pelo rótulo.
   final String hypothesis;
 
   @override

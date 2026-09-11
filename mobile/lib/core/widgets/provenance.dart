@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Como conferir a conta de um julgamento renderizado: metodo, fonte, momento e limitacao.
-///
-/// No web e uma gaveta; aqui e um sheet, e o gatilho respeita `FiLayout.minTouchTarget`.
 class FiProvenance extends StatelessWidget {
   const FiProvenance({
     super.key,
@@ -19,7 +16,6 @@ class FiProvenance extends StatelessWidget {
   final String? method;
   final String? source;
 
-  /// Quando o dado foi coletado.
   final String? asOf;
 
   final String? limitation;

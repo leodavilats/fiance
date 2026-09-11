@@ -91,7 +91,6 @@ def _resposta(entry: CashEntry, entry_id: int | None = None) -> CashEntryRespons
 
 @router.post("/cashflow/entries/batch", response_model=list[CashEntryResponse], status_code=201)
 async def lancar_em_lote(req: CashEntryBatchRequest) -> list[CashEntryResponse]:
-    """Grava o lote inteiro ou nenhum: meio molde de mês é pior que molde nenhum."""
     entries = [_entry_do_request(e) for e in req.entries]
     ids = cashflow_service.registrar_varias(entries)
     return [_resposta(e, i) for e, i in zip(entries, ids, strict=True)]
@@ -105,7 +104,6 @@ async def editar(entry_id: int, req: CashEntryRequest) -> CashEntryResponse:
 
 @router.get("/cashflow/month/template", response_model=MonthTemplateResponse)
 async def molde_do_mes(target: str, source: str | None = None) -> MonthTemplateResponse:
-    """O mês anterior lido como molde do destino, sem gravar nada."""
     origem = source or cashflow_service.mes_anterior(target)
     try:
         candidatos = cashflow_service.molde(origem, target)
@@ -165,11 +163,6 @@ async def quitar_divida(debt_id: int) -> None:
     cashflow_service.quitar_divida(debt_id)
 
 
-# A alocação-alvo decide a ordem do aporte, e a cascata precisa saber se ela é da pessoa: com o
-# padrão do produto (30/35/15/15/5), dizer "o alvo que você declarou" seria inventar objetivo
-# alheio. A distância em p.p. de cada classe não entra aqui de propósito — ela exige avaliar a
-# carteira a preço de mercado, que é a chamada mais cara do produto, e é o que `/quick-invest`
-# responde quando a tela pergunta o destino.
 _ORDEM_POR_META = (
     "O destino sai da sua alocação-alvo: entra primeiro a classe que está mais abaixo do alvo "
     "que você declarou."
@@ -178,7 +171,6 @@ _ORDEM_POR_META = (
 
 @router.get("/surplus", response_model=SurplusResponse)
 async def sobra(month: str | None = None) -> SurplusResponse:
-    """A ponte: o mês projetado e a ordem do que fazer com o piso da sobra."""
     mensal, tem_carteira, cdi_anual = await referencia_de_rendimento()
 
     projecao, cascata = cashflow_service.sobra(

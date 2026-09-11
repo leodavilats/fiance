@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// O selo de estado: veredito, severidade, classe.
 class FiTag extends StatelessWidget {
   const FiTag({super.key, required this.label, this.state = FiState.neutral, this.color});
 
@@ -12,8 +11,6 @@ class FiTag extends StatelessWidget {
   final String label;
   final FiState state;
 
-  /// A tinta de identidade -- a cor da categoria ou da serie. O selo entao e contorno e texto:
-  /// identidade nao e julgamento, e nao merece area colorida.
   final Color? color;
 
   @override

@@ -80,7 +80,6 @@ def add_entry(entry: CashEntry, source: str = "manual", user_id: str | None = No
 def add_entries(
     entries: list[CashEntry], source: str = "manual", user_id: str | None = None
 ) -> list[int]:
-    """Grava um lote inteiro ou nenhum: meio molde de mês é pior que molde nenhum."""
 
     def run(session, uid):
         agora = time.time()

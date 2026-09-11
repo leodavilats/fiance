@@ -110,12 +110,6 @@ class TestDuplicidade:
 
 class TestReconciliacaoAposImportar:
     def test_a_carteira_importada_aparece_na_projecao(self, client):
-        """Importar tem que mudar a Carteira, não só o razão.
-
-        Antes, a importação gravava com perfeição num lugar que a tela
-        principal não lê: o usuário colava o extrato, o produto respondia
-        `{"imported": 2}`, e nada mudava.
-        """
         headers = make_auth_headers("u_import_projection")
 
         _commit(client, headers, CSV_BOM)

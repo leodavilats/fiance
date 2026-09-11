@@ -40,7 +40,6 @@ def test_startup_validation_accepts_configured_secret():
 
 
 def test_startup_validation_exige_app_env_declarado():
-    """Esquecer APP_ENV desarmava JWT, CORS e a rota de operador de uma vez."""
     with pytest.raises(InsecureConfigurationError, match="APP_ENV"):
         Settings(app_env="").validate_for_startup()
 
@@ -52,7 +51,6 @@ def test_sem_app_env_nada_e_tratado_como_desenvolvimento():
 
 
 def test_startup_validation_rejects_default_webhook_secret_outside_development():
-    """O webhook é público: com o segredo do repositório, qualquer um concede plano."""
     settings = Settings(
         app_env="production",
         jwt_secret="um-segredo-de-verdade-com-tamanho-suficiente",

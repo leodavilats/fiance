@@ -1,11 +1,3 @@
-"""A posição é projeção do razão — em toda escrita, não em metade delas.
-
-Três caminhos passavam por `ledger_service` e reprojetavam; três iam direto ao
-`ledger_store` e não reprojetavam nada. O usuário colava o extrato da
-corretora, o produto respondia `{"imported": 47}`, e a tela de Carteira não
-mudava — nada avisava que faltava chamar `POST /transactions/rebuild`.
-"""
-
 from __future__ import annotations
 
 import pytest
@@ -102,11 +94,6 @@ class TestTodaEscritaReprojeta:
 
 class TestAncoraDaPosicaoDeclarada:
     def test_compra_anterior_a_declaracao_nao_dobra_a_posicao(self, client, como):
-        """Declarar hoje e importar o histórico depois é o fluxo que o produto convida.
-
-        A âncora era por ordem de gravação: a compra importada entrava depois
-        do ADJUST, era aplicada em cima do estado declarado, e 100 viravam 200.
-        """
         uid = como("u_ancora_import")
         headers = make_auth_headers(uid)
 
@@ -146,7 +133,6 @@ class TestAncoraDaPosicaoDeclarada:
 
 class TestRendaFixaEhCarteira:
     def test_so_renda_fixa_ja_conta_como_carteira(self, client, como):
-        """Quem tem R$ 300 mil em CDB e nenhuma ação já "começou"."""
         uid = como("u_rf_carteira")
 
         client.post(
@@ -191,11 +177,6 @@ class TestRendaFixaEhCarteira:
 
 class TestACercaDoLote:
     def test_o_lote_tem_a_mesma_cerca_da_importacao(self, client, como, regua_ligada):
-        """A cerca estava no parser, não no direito de escrever em lote.
-
-        Qualquer cliente que fizesse o parse do CSV do próprio lado contornava
-        `/transactions/import` mandando a mesma lista para `/transactions/batch`.
-        """
         uid = como("u_cerca_lote")
         headers = make_auth_headers(uid)
 

@@ -104,8 +104,6 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
   }
 
   List<Widget> _buildResult(IncomeCompare r, Color ink2, Color ink3) {
-    // O teto cobre a melhor opção com folga: sem isso a distância até o CDI some quando todas
-    // as opções ficam perto dele.
     final todas = [...r.fixedIncome, ...r.assets];
     final maior = todas.isEmpty
         ? r.cdiAnual

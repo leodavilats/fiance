@@ -16,7 +16,6 @@ import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 
-/// A Sobra: "o que devo fazer com o que ficou?"
 class SobraScreen extends ConsumerWidget {
   const SobraScreen({super.key});
 
@@ -93,9 +92,6 @@ class _Corpo extends ConsumerWidget {
                 'rotina custa o que a dívida custa.',
           ),
 
-          // Com um passo so, "A ordem" anunciava uma sequencia que nao existe -- e o unico
-          // passo ficava com cara de item de lista. A cascata so se chama ordem quando ha o
-          // que ordenar.
           FiSection(
             title: passos.length > 1 ? 'A ordem' : 'O que fazer com ela',
             hint: passos.length > 1
@@ -127,14 +123,12 @@ class _Corpo extends ConsumerWidget {
   }
 }
 
-/// Um passo da cascata: o quanto, a razão, e o que o derrubaria.
 class _Passo extends StatelessWidget {
   const _Passo({required this.passo, this.numerado = true, this.destino});
 
   final CascadeStep passo;
   final bool numerado;
 
-  /// A porta para onde o passo se resolve. Só o aporte tem uma.
   final VoidCallback? destino;
 
   static const _rotulos = {
@@ -143,9 +137,6 @@ class _Passo extends StatelessWidget {
     CascadeStepType.contribution: 'Aporte',
   };
 
-  /// `reference` é o nome interno da régua que decidiu o passo, e chegava cru à tela: quem
-  /// lia a Sobra via a palavra `score` ou `gasto_fixo_proprio` solta embaixo do valor. O que
-  /// a pessoa precisa saber é contra o que o passo foi medido.
   static const _origem = {
     'carteira': 'Medido contra o que a sua carteira rendeu.',
     'referencia_rf': 'Medido contra a referência de renda fixa.',
@@ -215,7 +206,6 @@ class _Passo extends StatelessWidget {
                   ],
                   if (destino != null) ...[
                     const SizedBox(height: FiSpace.s3),
-                    // O único passo que se resolve em outra tela, e a única ação sólida daqui.
                     Align(
                       alignment: Alignment.centerLeft,
                       child: FiButton.primary(

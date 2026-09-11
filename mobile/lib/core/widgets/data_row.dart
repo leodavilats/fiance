@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Uma linha de dado: rotulo a esquerda, valor a direita, fio embaixo.
-///
-/// Com `onTap` a linha inteira e o alvo, com a altura minima de acessibilidade. Sem `onTap` ela
-/// e so leitura, e nao finge ser tocavel.
 class FiDataRow extends StatelessWidget {
   const FiDataRow({
     super.key,
@@ -23,23 +19,18 @@ class FiDataRow extends StatelessWidget {
 
   final String label;
 
-  /// A cifra ou o estado, alinhado a direita.
   final String? value;
 
   final Color? valueColor;
 
   final String? detail;
 
-  /// Ocupa o lugar do valor quando ele nao e texto -- uma regua, um interruptor.
   final Widget? trailing;
 
-  /// Um marcador antes do rotulo: informacao, nunca enfeite.
   final Widget? leading;
 
-  /// Rodape da propria linha, em tinta terciaria.
   final String? note;
 
-  /// A linha que resume o bloco. Sai em peso, nao em caixa.
   final bool emphasis;
 
   final bool dense;
@@ -87,7 +78,6 @@ class FiDataRow extends StatelessWidget {
             ),
           ),
           if (value != null || trailing != null) const SizedBox(width: FiSpace.s4),
-          // `Flexible`: o valor as vezes e uma frase, e sem ele a linha estoura em 320dp.
           if (value != null)
             Flexible(
               child: Text(
@@ -123,7 +113,6 @@ class FiDataRow extends StatelessWidget {
   }
 }
 
-/// Uma pilha de linhas separadas por fio, sem caixa em volta.
 class FiRows extends StatelessWidget {
   const FiRows({super.key, required this.children, this.divided = true});
 
@@ -151,8 +140,6 @@ class FiRows extends StatelessWidget {
   }
 }
 
-/// A unica caixa do sistema, e so para o que e **objeto**: uma posicao, um titulo, uma
-/// oportunidade -- o que a pessoa abre, vende ou remove. O resto e `FiSection`.
 class FiObject extends StatelessWidget {
   const FiObject({
     super.key,
@@ -167,8 +154,6 @@ class FiObject extends StatelessWidget {
   final VoidCallback? onTap;
   final EdgeInsets padding;
 
-  /// A tinta da aresta esquerda, quando o objeto carrega estado. Nada de fundo tingido: cor de
-  /// estado em area grande compete com o proprio numero.
   final Color? accent;
 
   final String? semanticsLabel;
@@ -180,8 +165,6 @@ class FiObject extends StatelessWidget {
 
     final conteudo = Padding(padding: padding, child: child);
 
-    // `IntrinsicHeight` so quando ha aresta: sem ele o `stretch` do `Row` pede altura infinita
-    // dentro de uma lista rolavel.
     Widget corpo = DecoratedBox(
       decoration: BoxDecoration(
         color: fiGround1(brightness),

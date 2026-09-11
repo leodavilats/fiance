@@ -18,9 +18,6 @@ const fiHealthMetricExplanations = {
       'A fatia da carteira em ativos com sinal de venda hoje. Nota boa = pouca ou nenhuma exposição a esses ativos; nota ruim = parte relevante da carteira pede atenção.',
 };
 
-// A DIMENSAO tem regua propria: e outro numero -- 0-100 por eixo (concentracao, setor,
-// diversificacao, risco), nao o score de saude -- e o backend nao devolve faixa para ela.
-// O score de SAUDE nao passa por aqui: ele le `fiHealthBands`.
 const List<FiScoreBand> fiHealthDimensionBands = [
   FiScoreBand(
     id: 'good',

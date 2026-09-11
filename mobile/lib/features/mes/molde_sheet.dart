@@ -12,9 +12,6 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 
-/// Repetir o mes anterior: previa e commit, e o lote grava inteiro ou nenhum.
-///
-/// Vem marcado so o que repete por natureza; variavel fica visivel e desmarcado.
 Future<void> abrirMoldeSheet(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet<void>(
     context: context,

@@ -32,7 +32,6 @@ def saida(categoria: str, valor: float, dia: str, pago: str | None = "mesmo") ->
 
 
 def mes_do_wireframe() -> list[CashEntry]:
-    """O mês de exemplo do wireframe da ponte, no dia 20."""
     return [
         entrada("salario", 6418.73, "2026-09-05"),
         saida("moradia", 2150.00, "2026-09-05"),
@@ -44,7 +43,6 @@ def mes_do_wireframe() -> list[CashEntry]:
 
 
 def historico_variavel() -> list[CashEntry]:
-    """Três meses fechados de gasto variável, para a estimativa existir."""
     return [
         saida("mercado", 1204.15, "2026-06-20"),
         saida("mercado", 1140.60, "2026-07-20"),
@@ -77,7 +75,6 @@ class TestOMesSeparaFatoDeProjecao:
         assert p.estimativa.meses_de_base == ("2026-06", "2026-07", "2026-08")
         assert p.estimativa.ja_gasto == Decimal("804.15")
 
-        # O maior dos tres meses fechados manda no piso; o menor, no teto.
         assert p.estimativa.restante_alto == Decimal("400.00")
         assert p.estimativa.restante_baixo == Decimal("259.13")
 

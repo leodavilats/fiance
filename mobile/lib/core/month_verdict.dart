@@ -1,9 +1,6 @@
 import 'cash_models.dart';
 import 'product_rules.dart';
 
-/// A leitura do mes.
-///
-/// A banda sai de `fiMonthPressureBands`: nenhum limiar se decide aqui.
 class VereditoDoMes {
   const VereditoDoMes({
     required this.band,
@@ -14,16 +11,12 @@ class VereditoDoMes {
 
   final FiScoreBand band;
 
-  /// Quanto do que entrou ja esta comprometido, em %. `null` sem o que dividir.
   final int? pressao;
 
   final String veredito;
   final String razao;
 }
 
-/// Sem entrada lancada a banda e a de leitura ausente: dividir por zero daria "Mes folgado".
-///
-/// Divida caseira nao muda a banda, so assume a razao.
 VereditoDoMes vereditoDoMes({
   required double recebido,
   required double comprometido,
@@ -63,7 +56,6 @@ VereditoDoMes vereditoDoMes({
   );
 }
 
-/// `14.9` -> `14,9`; `2.0` -> `2`.
 String _semZeroInutil(double v) {
   final texto = v == v.roundToDouble()
       ? v.toStringAsFixed(0)

@@ -1,5 +1,3 @@
-"""A janela em que vale gastar cota, e o que acontece fora dela."""
-
 from datetime import datetime
 
 import pytest
@@ -13,7 +11,6 @@ from app.services import OpportunityService
 
 
 def instante(dia: int, hora: int, minuto: int = 0) -> datetime:
-    """Setembro de 2026: 7 é segunda, 11 é sexta, 12 sábado, 13 domingo."""
     return datetime(2026, 9, dia, hora, minuto, tzinfo=BRT)
 
 
@@ -25,8 +22,6 @@ class TestAJanela:
             (7, 10, 0, True),
             (9, 13, 0, True),
             (11, 17, 30, True),
-            # O fim da janela é 18h30, e não o fechamento: o último preço assenta depois do
-            # leilão, e balanço na B3 sai depois do pregão.
             (11, 18, 30, True),
             (11, 18, 31, False),
             (7, 3, 0, False),
@@ -110,7 +105,6 @@ class TestForaDoPregaoNaoSeVarre:
         )
 
     def test_a_tolerancia_atravessa_o_fim_de_semana(self):
-        # Sexta 18h30 -> segunda 10h.
         fim_de_semana = 63.5 * 3600
         assert opp_mod._SCAN_STALE_TOLERANCE > fim_de_semana, (
             "com tolerância menor que o fim de semana o scan estoura no sábado e vai à rede, "

@@ -10,11 +10,6 @@ import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/format.dart';
 import '../assets/fixed_income_screen.dart';
 
-/// O que entra na carteira: um papel negociado, ou uma aplicação de renda fixa.
-///
-/// A renda fixa tinha uma porta só, e ficava dentro da tela de renda fixa — quem chegava pelo
-/// botão de adicionar ativo só conseguia lançar ticker. Renda fixa é classe de primeira classe
-/// no domínio, e a escolha do tipo é a primeira pergunta, não um caminho paralelo.
 Future<void> openAddPositionDialog(BuildContext context, WidgetRef ref) async {
   final tipo = await showModalBottomSheet<_TipoDeAtivo>(
     context: context,

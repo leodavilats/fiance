@@ -10,7 +10,6 @@ import '../../../core/widgets/tag.dart';
 import '../feed_actions.dart';
 import '../../../core/score_ruler.dart';
 
-/// Um item do feed: o que mudou, e o que fazer com isso. O estado vive na aresta do objeto.
 class FiInsightTile extends StatelessWidget {
   const FiInsightTile({
     super.key,
@@ -110,8 +109,6 @@ class FiOpportunityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final o = opportunity;
-    // Rotulo e estado saem da mesma regua: o rotulo do score com a cor do veredito seriam
-    // duas reguas no mesmo selo.
     final band = fiScoreBandFor(o.score, o.dataCompleteness);
 
     return Padding(

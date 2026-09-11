@@ -203,8 +203,6 @@ class TestAReservaVemDepoisDaDividaCara:
         )
 
     def test_sem_divida_cara_a_reserva_vem_antes_do_aporte(self):
-        # Alvo de 6 meses a 2.150 = 12.900. Com 12.000 guardados, faltam 900 -- menos que o
-        # piso, entao os dois passos cabem.
         c = cascata.montar(
             PISO,
             [],
@@ -218,7 +216,6 @@ class TestAReservaVemDepoisDaDividaCara:
         assert c.sobrou_para_aporte == Decimal("747.32")
 
     def test_reserva_que_falta_mais_que_a_sobra_consome_a_sobra_inteira(self):
-        # Faltam 1.900 e o piso e 1.647,32: nenhum passo pode gastar dinheiro que nao existe.
         c = cascata.montar(
             PISO,
             [],

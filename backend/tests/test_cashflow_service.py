@@ -33,13 +33,11 @@ def entrada(categoria: str, valor: float, dia: str) -> CashEntry:
 
 @pytest.fixture
 def uid(request) -> str:
-    """Um titular por teste."""
     return f"u_caixa_{request.node.name}"[:60]
 
 
 @pytest.fixture
 def semeado(client, uid) -> str:
-    """O mês do wireframe, no dia 20."""
     cashflow_service.registrar(entrada("salario", 6418.73, "2026-09-05"), user_id=uid)
     cashflow_service.registrar(saida("moradia", 2150.00, "2026-09-05"), user_id=uid)
     cashflow_service.registrar(saida("mercado", 804.15, "2026-09-14"), user_id=uid)
@@ -212,7 +210,6 @@ class TestOCdiVemComposto:
         assert cashflow_service._mensal_de_anual(12.0) == pytest.approx(0.9489, abs=1e-4)
 
     def test_dividir_por_doze_afrouxaria_a_regua(self, semeado):
-        """Dividir por doze **superestima** a referência, e afrouxa o julgamento."""
         cash_store.add_debt(
             Debt(
                 kind="credito_pessoal",

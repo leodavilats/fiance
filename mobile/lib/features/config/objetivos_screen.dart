@@ -13,7 +13,6 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 
-/// A alocação-alvo: a referência contra a qual a carteira é comparada.
 class ObjetivosScreen extends StatelessWidget {
   const ObjetivosScreen({super.key});
 
@@ -48,12 +47,6 @@ class ObjetivosScreen extends StatelessWidget {
   }
 }
 
-/// A meta de renda passiva mensal.
-///
-/// O produto exibia o alvo em três telas — a régua de progresso do feed, a linha do `/voce` e a
-/// projeção — e **nenhuma** o escrevia: `savePreferences` aceitava `passiveIncomeGoal` e todo
-/// chamador só repassava o valor que já estava lá. Alvo que só se lê é alvo que ninguém declara,
-/// e sem ele a régua de progresso nunca sai do lugar.
 class RendaPassivaSection extends ConsumerWidget {
   const RendaPassivaSection({super.key});
 
@@ -203,7 +196,6 @@ class _Fechamento extends StatelessWidget {
 
   final double total;
 
-  /// A meta por categoria só faz sentido somando 100%; a por setor aceita parcial.
   final bool exigeCemPorCento;
 
   final VoidCallback? onSalvar;

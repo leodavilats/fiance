@@ -1,12 +1,3 @@
-"""Um worker que morre não pode travar o snapshot diário por horas.
-
-O lock não era liberado ao terminar — só vencia —, e o TTL era o próprio intervalo do job. Isso
-é o certo para *espaçar* ciclos e o errado para *exclusão mútua*: um worker que morresse logo
-após adquirir deixava `daily_snapshot` bloqueado por até 5,4h (0,9 × 6h), em silêncio.
-
-O batimento separa os dois prazos: curto enquanto o corpo roda, longo depois que ele termina.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -57,7 +48,6 @@ class TestRenovacao:
 
 class TestPrazoCurtoEnquantoRoda:
     def test_o_lock_nasce_com_o_prazo_do_batimento_e_nao_com_o_do_intervalo(self):
-        """É este prazo que decide em quanto tempo um worker morto é substituído."""
         assert jobs.HEARTBEAT_TTL <= 300, (
             "o prazo enquanto o corpo roda tem de ser curto — era o intervalo do job, "
             "e por isso a recuperação levava horas"
@@ -96,7 +86,6 @@ class TestPrazoCurtoEnquantoRoda:
         )
 
     def test_o_batimento_estende_um_corpo_mais_longo_que_o_prazo(self, monkeypatch):
-        """O corpo dura mais que o TTL, e mesmo assim o lock continua nosso no fim."""
         monkeypatch.setattr(jobs, "HEARTBEAT_INTERVAL", 0.02)
         monkeypatch.setattr(jobs, "HEARTBEAT_TTL", 0.2)
 

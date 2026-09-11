@@ -1,5 +1,3 @@
-"""O mês anterior como molde do próximo: o que repete, e só o que repete."""
-
 from __future__ import annotations
 
 from calendar import monthrange
@@ -14,8 +12,6 @@ from .entries import (
     CashKind,
 )
 
-# Décimo terceiro e férias acontecem uma vez no ano; provento vem do razão; reembolso é evento.
-# O que sobra de recorrente por natureza é o salário.
 CATEGORIAS_DE_ENTRADA_QUE_REPETEM = frozenset({"salario"})
 
 CATEGORIAS_DE_DESPESA_QUE_REPETEM = CATEGORIAS_FIXAS | CATEGORIAS_QUE_NAO_SAO_CONSUMO
@@ -23,8 +19,6 @@ CATEGORIAS_DE_DESPESA_QUE_REPETEM = CATEGORIAS_FIXAS | CATEGORIAS_QUE_NAO_SAO_CO
 
 @dataclass(frozen=True)
 class Candidato:
-    """Um lançamento do mês de origem, já datado no destino."""
-
     entry: CashEntry
     repete: bool
     ja_esta_la: bool
@@ -42,7 +36,6 @@ class Candidato:
 
 
 def repete_todo_mes(entry: CashEntry) -> bool:
-    """Se o lançamento é do tipo que volta no mês seguinte por natureza, não por hábito."""
     if entry.derived:
         return False
     if entry.kind is CashKind.INCOME:
@@ -51,12 +44,10 @@ def repete_todo_mes(entry: CashEntry) -> bool:
 
 
 def _identidade(entry: CashEntry) -> tuple[str, str, str]:
-    """O que faz dois lançamentos serem o mesmo. O valor fica de fora: a conta de luz muda."""
     return (entry.kind.value, entry.category, entry.description.strip().casefold())
 
 
 def dia_no_mes(data: str, mes: str) -> str:
-    """Mesmo dia, outro mês — preso ao último dia quando o mês de destino é mais curto."""
     ano, m = int(mes[:4]), int(mes[5:7])
     dia = min(int(data[8:10]), monthrange(ano, m)[1])
     return f"{mes}-{dia:02d}"
@@ -68,7 +59,6 @@ def _conferir_mes(valor: str, papel: str) -> None:
 
 
 def montar_molde(entries: Iterable[CashEntry], de_mes: str, para_mes: str) -> tuple[Candidato, ...]:
-    """Os candidatos a copiar de um mês para o outro, em ordem de dia."""
     _conferir_mes(de_mes, "origem")
     _conferir_mes(para_mes, "destino")
 

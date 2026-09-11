@@ -39,8 +39,6 @@ class PortfolioPosition {
   final double? dividendYield;
   final String? sector;
 
-  /// Momento da leitura do preco, em epoch. O backend manda desde sempre e este modelo nao o
-  /// declarava: `fromJson` descarta chave nao declarada sem avisar.
   final double? asOf;
 
   final List<String> reasons;
@@ -501,7 +499,6 @@ class Opportunity {
   final String? name;
   final double? price;
 
-  /// Momento da leitura, em epoch. Espelha `Opportunity.as_of` do backend.
   final double? asOf;
 
   final double? fairPrice;
@@ -807,7 +804,6 @@ class AssetAnalysis {
   final String? sector;
   final double? price;
 
-  /// Momento da leitura do preco, em epoch. Opcional: API anterior a 2026-09-08 nao o manda.
   final double? asOf;
 
   final double? bazin;
@@ -815,19 +811,15 @@ class AssetAnalysis {
   final double? consensus;
   final double? marginOfSafety;
 
-  /// Quantos metodos entraram no consenso de preco justo.
   final int consensusMethods;
 
-  /// Anos de historico de proventos por tras do calculo de dividendos.
   final int dataYears;
 
-  /// Dividend yield dos ultimos doze meses, em percentual.
   final double? dividendYield;
 
   final double? rsi14;
   final String trend;
 
-  /// Sobre que medias a tendencia foi lida -- `long`, `short` ou `none`.
   final String? trendBasis;
   final String verdict;
   final String label;
@@ -953,7 +945,6 @@ class SectorGoal {
   final String sector;
   final double targetPct;
 
-  /// Falso quando o alvo e o padrao do produto, e nao da pessoa.
   final bool declared;
 
   factory SectorGoal.fromJson(Map<String, dynamic> j) => SectorGoal(
@@ -1437,7 +1428,6 @@ class AffirmationMode {
   );
 }
 
-/// A fatia de renda fixa de um aporte, sem nomear titulo.
 class QuickInvestFixedIncome {
   QuickInvestFixedIncome({
     required this.amount,
@@ -1446,7 +1436,6 @@ class QuickInvestFixedIncome {
     required this.rationale,
   });
 
-  /// Anulado fora do nivel prescritivo: instrui uma compra.
   final double? amount;
 
   final double? referenceMonthlyPct;
@@ -1462,11 +1451,6 @@ class QuickInvestFixedIncome {
       );
 }
 
-/// Dinheiro sem destino, e o motivo.
-///
-/// `remainingCash` sozinho e um numero sem explicacao, e o backend tem teste para impedir que
-/// ele viaje assim. O valor aqui sobrevive em todo nivel de afirmacao: ele explica o que o
-/// sistema **nao** fez, e isso nao instrui compra nenhuma.
 class QuickInvestUnallocated {
   QuickInvestUnallocated({required this.value, required this.reason});
 
@@ -1500,14 +1484,12 @@ class QuickInvestResult {
   final String summary;
   final AffirmationMode? affirmation;
 
-  /// `goals` quando a distribuicao sai da alocacao-alvo declarada; `score` quando nao ha meta.
   final String basis;
 
   final QuickInvestFixedIncome? fixedIncome;
 
   final List<QuickInvestUnallocated> unallocated;
 
-  /// A ordem tem destino, mesmo quando nenhuma acao coube: a fatia de renda fixa e destino.
   bool get temDestino => allocations.isNotEmpty || fixedIncome != null;
 
   factory QuickInvestResult.fromJson(Map<String, dynamic> j) =>

@@ -20,8 +20,6 @@ import '../../core/theme_provider.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
 
-/// A ordem e a do que muda o julgamento do produto: o que pesa na analise, o que chega como
-/// aviso, o aparelho, e por ultimo a conta.
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
 
@@ -100,8 +98,6 @@ class _Identidade extends ConsumerWidget {
   }
 }
 
-/// Os `yield` desejados nao sao ajuste: vem do servidor, derivados do perfil, e por isso saem
-/// como cifra e nao como linha com seta.
 class _Recomendacao extends ConsumerWidget {
   const _Recomendacao({required this.prefs});
 
@@ -201,8 +197,6 @@ class _Metas extends StatelessWidget {
   Widget build(BuildContext context) {
     return FiSection(
       title: 'Metas',
-      // As duas linhas levavam ao mesmo lugar, e a primeira prometia um editor que nao existia
-      // em tela nenhuma. Agora a secao resume o que esta declarado, e a acao leva uma vez so.
       action: FiNavAction(
         label: 'Declarar metas',
         onPressed: () => context.go('/voce/objetivos'),

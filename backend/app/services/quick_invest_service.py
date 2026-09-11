@@ -15,12 +15,8 @@ from app.services.fixed_income_service import FixedIncomeService
 
 RENDA_FIXA = "renda_fixa"
 
-# Quantos ativos por categoria a sugestão considera. Acima de três a lista deixa de ser uma
-# decisão e passa a ser uma triagem, que é o que /descobrir faz.
 MAX_POR_CATEGORIA = 3
 
-# O peso de cada posição na categoria, por quantas cabem. Antes era sempre [0.7, 0.2, 0.1], e a
-# fatia de 10% caía abaixo da ordem mínima e era descartada em silêncio.
 PESOS = {1: (1.0,), 2: (0.6, 0.4), 3: (0.5, 0.3, 0.2)}
 
 
@@ -108,11 +104,6 @@ class QuickInvestService:
         )
 
     async def _resolver_caixa(self, informado: float | None) -> tuple[float, str]:
-        """Nulo resolve da cascata: o que sobra depois da dívida caseira e da reserva.
-
-        Decidir quanto há para aportar é regra de negócio, e por isso não fica no cliente — os
-        dois teriam de repetir "pergunte a sobra, leia available_to_invest", e podiam divergir.
-        """
         if informado is not None:
             return informado, "informed"
 
@@ -163,12 +154,6 @@ class QuickInvestService:
         total_carteira: float,
         caixa: float,
     ) -> dict[str, float]:
-        """Quanto vai para cada categoria.
-
-        Sem meta declarada **não se inventa divisão**. Antes o serviço caía num 50/25/25 fixo, que
-        é número inventado: nada na carteira da pessoa nem nos objetivos dela dizia isso. Sem meta
-        a resposta honesta é ordenar por score num pote único, e dizer que a base é essa.
-        """
         if not metas:
             return {"": caixa}
 
@@ -215,8 +200,6 @@ class QuickInvestService:
 
         candidatos = sorted(candidatos, key=lambda x: x.score or 0, reverse=True)
 
-        # Quantos cabem respeitando a ordem mínima. Antes o número era fixo em três e as fatias
-        # que não alcançavam o mínimo eram descartadas; agora o orçamento decide quantos entram.
         cabem = max(1, int(orcamento // min_ordem)) if min_ordem > 0 else MAX_POR_CATEGORIA
         candidatos = candidatos[: min(len(candidatos), cabem, MAX_POR_CATEGORIA)]
         pesos = PESOS.get(len(candidatos), (1.0,))
@@ -259,7 +242,6 @@ class QuickInvestService:
                 )
             )
 
-        # O troco de cota inteira volta para a fila: sem isso ele desaparecia sem explicação.
         for indice, alocacao in enumerate(feitas):
             if sobra < alocacao.current_price:
                 continue
@@ -287,12 +269,6 @@ class QuickInvestService:
         return snap, snap.price
 
     def _fatia_de_renda_fixa(self, orcamento: float, metas: dict[str, float]) -> FixedIncomeSlice:
-        """A fatia de renda fixa deixa de desaparecer.
-
-        Ela sumia porque o serviço só olhava a lista de oportunidades, que tem ações, FIIs, BDRs e
-        ETFs — nunca um título. Com meta de 25% em renda fixa e R$ 1.000, R$ 250 evaporavam sem
-        uma linha na tela.
-        """
         mensal: float | None = None
         fonte = "estimativa"
         try:
@@ -401,9 +377,5 @@ class QuickInvestService:
             " distribuição respeitar o que você quer construir."
         )
         if sem_destino:
-            # A prosa nunca cita cifra: ela não é varrida pela régua de afirmação, então um
-            # número aqui reapareceria depois de o campo ter sido retirado. O valor sem destino
-            # viaja em `unallocated`, que é estruturado -- e a frase não diz onde ele aparece,
-            # porque "ao lado" é posição de tela e o cliente não tem duas colunas.
             frase += " Parte do valor ficou sem destino, e o motivo vem junto."
         return frase

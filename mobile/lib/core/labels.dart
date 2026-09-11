@@ -31,7 +31,6 @@ Color categoryColor(String? category, Brightness brightness) {
 Color sectorColor(String sector, Brightness brightness) =>
     fiSeriesColor(fiSetorSeriePorRotulo[sector] ?? 0, brightness);
 
-/// O veredito do sistema sobre um ativo, traduzido para estado.
 FiState fiVerdictState(String? verdict) {
   final v = verdict ?? '';
   if (v.contains('BUY')) return FiState.favorable;
@@ -68,9 +67,6 @@ String trendLabel(String? trend) {
 }
 
 
-// -----------------------------------------------------------------------------
-// Caixa. O vocabulario e gerado de product-rules.json; aqui so se escolhe o mapa.
-// -----------------------------------------------------------------------------
 
 Map<String, FiCategoria> _mapaDe(CashKind kind) =>
     kind == CashKind.income ? fiCategoriasDeEntrada : fiCategoriasDeDespesa;
@@ -80,14 +76,12 @@ String cashCategoryLabel(CashKind kind, String? category) {
   return _mapaDe(kind)[category]?.label ?? category;
 }
 
-/// As categorias na ordem de leitura do vocabulario, nao na do mapa.
 List<String> cashCategoryKeys(CashKind kind) {
   final mapa = _mapaDe(kind);
   return mapa.keys.toList()
     ..sort((a, b) {
       final sa = mapa[a]!.series;
       final sb = mapa[b]!.series;
-      // `outros` tem serie 0 e fecha a lista, nao abre.
       if (sa == 0) return 1;
       if (sb == 0) return -1;
       return sa.compareTo(sb);

@@ -56,7 +56,6 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Lugar fixo: sem isso o gráfico salta 24dp no primeiro toque, e a linha foge do dedo.
         SizedBox(
           height: 24,
           child: tocado == null
@@ -216,7 +215,6 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
   }
 }
 
-/// A carteira contra a referência, com o CDI como marca da régua.
 class FiBenchmarkSection extends ConsumerWidget {
   const FiBenchmarkSection({super.key});
 
@@ -237,8 +235,6 @@ class FiBenchmarkSection extends ConsumerWidget {
         final acima = delta >= 0;
         final estado = acima ? FiState.favorable : FiState.attention;
 
-        // O domínio cobre os três números com folga: sem isso uma carteira negativa contra um
-        // CDI positivo sai encostada na borda esquerda, sem escala.
         final numeros = <double>[
           0,
           data.portfolioReturnPct,

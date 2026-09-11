@@ -12,14 +12,16 @@ máquina, e removê-las quebra a esteira:
 
 Por padrão elas ficam. `--tudo` as remove junto, e aí a esteira precisa ser reparada à mão.
 
-Docstring de Python **não é comentário** e por padrão não sai: três rotas do backend usam a sua
-como descrição do OpenAPI, e `__doc__` é legível em tempo de execução. `--docstrings` as remove.
+Docstring de Python sai junto, e `--manter-docstrings` a preserva. Duas consequências, para
+decidir com elas à vista: três rotas do backend usam a sua como descrição do OpenAPI, e `__doc__`
+deixa de responder em tempo de execução. Um corpo que era só a docstring vira `pass`, senão o
+arquivo não compila.
 
 Uso:
 
     python tool/remover_comentarios.py                 # relatório, não escreve
     python tool/remover_comentarios.py --aplicar
-    python tool/remover_comentarios.py --aplicar --docstrings
+    python tool/remover_comentarios.py --aplicar --manter-docstrings
     python tool/remover_comentarios.py backend/app --aplicar
 
 Depois de aplicar, rode a esteira: o Python precisa de `ruff format` para recompor as linhas em
@@ -110,12 +112,16 @@ def _fatias_de_comentario_py(fonte: str, tudo: bool) -> tuple[list[tuple[int, in
     return fatias, preservados
 
 
-def _docstrings_py(fonte: str) -> list[tuple[int, int]]:
-    """As linhas `(inicio, fim)` de cada docstring, 1-indexadas e inclusivas."""
+def _docstrings_py(fonte: str) -> list[tuple[int, int, bool]]:
+    """As docstrings como `(inicio, fim, era_o_corpo_inteiro)`, 1-indexadas e inclusivas.
+
+    `ast`, e nao regex: uma tripla aspas so e docstring quando e a primeira instrucao de modulo,
+    classe ou funcao. Tripla aspas no meio do corpo e dado, e apaga-la apaga codigo.
+    """
     import ast
 
     arvore = ast.parse(fonte)
-    fatias: list[tuple[int, int]] = []
+    fatias: list[tuple[int, int, bool]] = []
 
     for no in ast.walk(arvore):
         if not isinstance(
@@ -131,19 +137,20 @@ def _docstrings_py(fonte: str) -> list[tuple[int, int]]:
             and isinstance(primeiro.value, ast.Constant)
             and isinstance(primeiro.value.value, str)
         ):
-            # Docstring que é o corpo inteiro vira `pass`, senão o arquivo não compila.
-            if len(corpo) == 1:
-                continue
-            fatias.append((primeiro.lineno, primeiro.end_lineno or primeiro.lineno))
+            sozinha = len(corpo) == 1 and not isinstance(no, ast.Module)
+            fatias.append(
+                (primeiro.lineno, primeiro.end_lineno or primeiro.lineno, sozinha)
+            )
 
     return fatias
 
 
-def limpar_python(fonte: str, tudo: bool, docstrings: bool) -> tuple[str, int, int, int]:
+def limpar_python(fonte: str, tudo: bool, docstrings: bool = True) -> tuple[str, int, int, int]:
     fatias, preservados = _fatias_de_comentario_py(fonte, tudo)
 
     linhas = fonte.splitlines(keepends=True)
     remover_linha: set[int] = set()
+    substitutos: list[tuple[int, str]] = []
 
     for linha, inicio, _fim in sorted(fatias, reverse=True):
         i = linha - 1
@@ -156,13 +163,23 @@ def limpar_python(fonte: str, tudo: bool, docstrings: bool) -> tuple[str, int, i
 
     doc_removidas = 0
     if docstrings:
-        for inicio, fim in _docstrings_py(fonte):
+        for inicio, fim, sozinha in _docstrings_py(fonte):
             for n in range(inicio - 1, fim):
                 remover_linha.add(n)
             doc_removidas += 1
+            # Corpo que era só a docstring fica sem corpo, e o arquivo deixa de compilar. O
+            # `pass` entra na coluna em que ela estava.
+            if sozinha:
+                recuo = len(linhas[inicio - 1]) - len(linhas[inicio - 1].lstrip())
+                substitutos.append((inicio - 1, " " * recuo + "pass\n"))
+
+    troca = dict(substitutos)
 
     saida: list[str] = []
     for i, linha in enumerate(linhas):
+        if i in troca:
+            saida.append(troca[i])
+            continue
         if i in remover_linha:
             continue
         saida.append(linha)
@@ -367,9 +384,10 @@ def main(argv: list[str] | None = None) -> int:
         help="remove também noqa, type:, pragma:, ignore: e design-exception: — quebra a esteira",
     )
     p.add_argument(
-        "--docstrings",
-        action="store_true",
-        help="remove também docstring de Python (some do OpenAPI e de __doc__)",
+        "--manter-docstrings",
+        dest="docstrings",
+        action="store_false",
+        help="mantém a docstring de Python; por padrão ela sai junto com o comentário",
     )
     args = p.parse_args(argv)
 

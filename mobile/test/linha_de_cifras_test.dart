@@ -5,11 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// A linha de cifras de uma oportunidade, medida em vez de conferida no olho.
-///
-/// As quatro colunas saíam em três alturas: o rótulo com verbete descia porque o alvo de 44dp
-/// era só dele, "PREÇO JUSTO" quebrava em duas linhas, e a base do número existia em duas
-/// colunas e faltava nas outras duas.
 void main() {
   Opportunity amostra() => Opportunity.fromJson(const {
     'ticker': 'ARRI11',
@@ -47,7 +42,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
-  /// O topo de cada rotulo, por texto exato -- "DY" tambem aparece dentro da legenda de base.
   Set<double> toposExatos(WidgetTester tester, List<String> textos) => {
     for (final texto in textos) tester.getTopLeft(find.text(texto)).dy,
   };

@@ -1,7 +1,3 @@
-/// Os modelos do caixa, espelhando `backend/app/models/cashflow.py`.
-///
-/// Campo nao declarado aqui e descartado em silencio pelo `fromJson`, entao todo campo do
-/// contrato esta declarado -- inclusive os que nenhuma tela le ainda.
 enum CashKind {
   income,
   expense;
@@ -12,7 +8,6 @@ enum CashKind {
   String get json => name;
 }
 
-/// A classe sai do custo, nunca do tipo. Sem taxa informada nao ha classe.
 enum DebtClass {
   expensive,
   manageable,
@@ -57,13 +52,10 @@ class CashEntry {
   final String dueOn;
   final String? paidOn;
 
-  /// Provento creditado, vindo do razao. Nao se lanca nem se edita no caixa.
   final bool derived;
 
   bool get futura => paidOn == null;
 
-  /// A competencia e o dia do pagamento, nao do vencimento: conta de agosto paga em setembro e
-  /// de setembro.
   String get competencia => paidOn ?? dueOn;
 
   factory CashEntry.fromJson(Map<String, dynamic> j) => CashEntry(
@@ -112,7 +104,6 @@ class CashEstimate {
     required this.remainingHigh,
   });
 
-  /// Os meses fechados que sustentam a estimativa. Vazio significa sem base para estimar.
   final List<String> baseMonths;
 
   final double expectedLow;
@@ -153,15 +144,11 @@ class CashMonth {
   final double paid;
   final double committed;
 
-  /// **Fato**: entrou, menos saiu, menos o comprometido e datado. Nao tem faixa.
   final double freeNow;
 
-  /// **Projecao**: `freeNow` menos o gasto variavel ainda esperado. A diferenca entre os dois
-  /// e a estimativa.
   final double surplusLow;
   final double surplusHigh;
 
-  /// Falso quando nao ha mes fechado para estimar. Ausencia nao vira zero.
   final bool hasRange;
 
   final double incomeBaseline;
@@ -205,17 +192,13 @@ class Debt {
   final String description;
   final double balance;
 
-  /// Sem taxa informada nao ha classe: o produto nao estima taxa de rotativo.
   final double? monthlyRate;
 
   final DebtClass debtClass;
 
-  /// O que a carteira rende ao mes -- ou o CDI, sem carteira. E contra ela que a divida se
-  /// classifica.
   final double? referenceMonthly;
   final String referenceSource;
 
-  /// A taxa em que o veredito muda. Sai por algebra, nao por opiniao.
   final double? flipRate;
 
   factory Debt.fromJson(Map<String, dynamic> j) => Debt(
@@ -246,7 +229,6 @@ class CascadeStep {
   final double amount;
   final String reason;
 
-  /// O que derrubaria este passo. Veredito sem o que o muda e opiniao.
   final String? falsifier;
 
   final String? reference;
@@ -270,7 +252,6 @@ class Cascade {
 
   final double surplusLow;
 
-  /// Pode terminar **sem passo de aporte**, e isso e sucesso.
   final List<CascadeStep> steps;
 
   final double availableToInvest;
@@ -290,7 +271,6 @@ class Surplus {
   final CashMonth month;
   final Cascade cascade;
 
-  /// Falso quando nao ha lancamento proprio. O provento derivado do razao nao conta.
   final bool hasCash;
 
   factory Surplus.fromJson(Map<String, dynamic> j) => Surplus(
@@ -344,10 +324,8 @@ class CashTemplateCandidate {
   final String description;
   final double amount;
 
-  /// Ja no mes de destino, preso ao ultimo dia quando o mes e mais curto.
   final String dueOn;
 
-  /// Se a categoria volta todo mes por natureza. Gasto variavel nao volta.
   final bool repeats;
 
   final bool alreadyThere;

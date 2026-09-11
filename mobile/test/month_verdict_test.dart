@@ -4,12 +4,6 @@ import 'package:fiance/core/month_verdict.dart';
 import 'package:fiance/core/product_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// A regua do mes, caso a caso.
-///
-/// Os limiares sao do backend (`analysis/score_ruler.py`): se a banda daqui divergir da de la,
-/// e isto que se quer que quebre.
-/// A regua em si vem gerada de `product-rules.json`, entao ela nao pode divergir por descuido --
-/// o que estes casos protegem e a apresentacao em volta dela.
 VereditoDoMes _leitura({
   double recebido = 10000,
   double comprometido = 3000,
@@ -93,7 +87,6 @@ void main() {
         isNot(contains('null')),
         reason: 'o produto não estima taxa que a pessoa não informou',
       );
-      // A pressao em % continua na frase; o que nao pode aparecer e a TAXA da divida.
       expect(v.razao, isNot(contains('% ao mês')));
     });
   });

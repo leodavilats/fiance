@@ -299,7 +299,6 @@ class _FiAssetObject extends StatelessWidget {
             ),
             const SizedBox(height: FiSpace.s3),
             Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
-            // `Flexible` nos dois: o rotulo carrega o veredito, e em 320dp estoura a caixa.
             Row(
               children: [
                 if (p.reasons.isNotEmpty) ...[

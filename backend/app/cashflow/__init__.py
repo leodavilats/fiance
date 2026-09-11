@@ -1,5 +1,3 @@
-"""O caixa: matemática pura, sem banco. Módulo irmão de `ledger/`."""
-
 from .cascata import Cascata, Passo, TipoDePasso, gasto_fixo_mensal, montar
 from .debt import (
     TIPOS_DE_DIVIDA,

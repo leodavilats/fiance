@@ -18,8 +18,6 @@ MESES_DE_BASE = 3
 
 @dataclass(frozen=True)
 class Estimativa:
-    """O gasto variável que ainda deve acontecer no mês, em faixa."""
-
     meses_de_base: tuple[str, ...]
     esperado_baixo: Decimal
     esperado_alto: Decimal
@@ -44,8 +42,6 @@ class Estimativa:
 
 @dataclass(frozen=True)
 class MonthProjection:
-    """O mês corrente. `livre_agora` é fato; `sobra_piso`/`sobra_teto` são projeção."""
-
     mes: str
     entrou: Decimal
     saiu: Decimal

@@ -1,10 +1,3 @@
-"""O que a carteira da pessoa rende ao mês, e o CDI como segunda opção.
-
-Vive fora de `api/` porque dois consumidores precisam da mesma resposta: a régua de dívida, que
-compara o custo de uma dívida com o que a carteira rende, e o aporte, que precisa da cascata para
-saber quanto sobrou depois da dívida e da reserva.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -38,8 +31,6 @@ async def referencia_de_rendimento() -> tuple[float | None, bool, float | None]:
     if not benchmark.points:
         return None, False, cdi_anual
 
-    # O retorno vem acumulado na série, e a série é diária: mensalizar por composto sobre o
-    # número de meses, não sobre o número de pontos.
     meses = max(1.0, len(benchmark.points) / 21.0)
     mensal = ((1.0 + total_pct / 100.0) ** (1.0 / meses) - 1.0) * 100.0
     return mensal, True, cdi_anual

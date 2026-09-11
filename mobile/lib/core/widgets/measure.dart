@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// A regua: um numero contra a distancia ate uma referencia.
-///
-/// E a forma geral -- score, saude, progresso de meta, desvio de alocacao, margem de seguranca.
-/// `ScoreRuler` e a variante de **score**, com as bandas do sistema.
 class FiMeasure extends StatelessWidget {
   const FiMeasure({
     super.key,
@@ -26,20 +22,14 @@ class FiMeasure extends StatelessWidget {
   final double min;
   final double max;
 
-  /// O alvo, desenhado como marca vertical sobre o trilho. Sem referencia a regua so mede.
   final double? reference;
 
-  /// O numero como a pessoa o le -- ja formatado, com unidade.
   final String? readout;
 
-  /// A leitura em palavras: a banda, o que falta, o que a derrubaria.
   final String? note;
 
-  /// O julgamento sobre o valor. Decide a tinta da leitura.
   final FiState state;
 
-  /// A tinta do preenchimento quando ela carrega identidade propria. Estado continua mandando
-  /// na leitura escrita.
   final Color? fillColor;
 
   final String? semantics;

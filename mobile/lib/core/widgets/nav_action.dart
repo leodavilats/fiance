@@ -2,17 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// A ação que leva a outro lugar, com forma de controle.
-///
-/// Cor não é affordance sozinha: a seta é o que diz que aquilo leva a algum lugar, e ela
-/// aparece nos dois temas.
 class FiNavAction extends StatelessWidget {
   const FiNavAction({super.key, required this.label, required this.onPressed, this.icon});
 
   final String label;
   final VoidCallback? onPressed;
 
-  /// Um ícone à esquerda, quando a ação tem um objeto próprio (dívida, mês, meta).
   final IconData? icon;
 
   @override
@@ -21,8 +16,6 @@ class FiNavAction extends StatelessWidget {
 
     return TextButton(
       onPressed: onPressed,
-      // Sem recuo horizontal: a acao alinha com a coluna de texto que a precede, e o alvo de
-      // toque continua vindo da altura minima do tema.
       style: TextButton.styleFrom(padding: EdgeInsets.zero),
       child: Row(
         mainAxisSize: MainAxisSize.min,

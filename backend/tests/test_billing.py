@@ -27,11 +27,6 @@ def regua_ligada(monkeypatch):
 
 
 def _abrir_checkout(client, user_id: str, plan_code: str = "premium_monthly") -> str:
-    """Abre um checkout de verdade e devolve o id da sessão.
-
-    É por aqui que o titular de um evento passa a ser conhecido: o webhook não
-    aceita mais quem o corpo mandar.
-    """
     resposta = client.post(
         "/api/billing/checkout",
         json={"plan_code": plan_code},
@@ -186,7 +181,6 @@ class TestWebhookIdempotente:
         assert resposta.status_code == 400
 
     def test_o_titular_vem_da_sessao_e_nunca_do_corpo(self, client, gateway, regua_ligada):
-        """A rota é pública: o corpo diz o que quiser, e não é ele quem decide."""
         sessao = _abrir_checkout(client, "u_bill_dono_real")
 
         _enviar(
@@ -262,7 +256,6 @@ class TestWebhookIdempotente:
 
 class TestPrecoDoEvento:
     def test_o_preco_gravado_vem_da_sessao_e_nao_do_corpo(self, client, gateway):
-        """Preço no corpo seria preço escolhido por quem chama a rota pública."""
         sessao = _abrir_checkout(client, "u_bill_preco", "premium_monthly")
 
         _enviar(

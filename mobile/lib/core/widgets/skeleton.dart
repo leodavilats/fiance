@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../design_tokens.dart';
 
-/// A forma do que está chegando, e não um disco girando no meio da tela.
-///
-/// Os papéis são os mesmos de `<app-skeleton>` no web: a altura de cada um é a do papel de
-/// tipografia que vai ocupar aquele lugar, para a página não saltar quando o dado chega.
 enum FiSkeletonShape { moneyXl, verdict, metric, title, body, caption, ruler, row }
 
 class FiSkeleton extends StatefulWidget {
@@ -14,7 +10,6 @@ class FiSkeleton extends StatefulWidget {
   final FiSkeletonShape shape;
   final int count;
 
-  /// O esqueleto de uma tela inteira, com a margem que uma lista usaria.
   static Widget tela({
     FiSkeletonShape shape = FiSkeletonShape.row,
     int count = 5,
@@ -94,8 +89,6 @@ class _FiSkeletonState extends State<FiSkeleton> with SingleTickerProviderStateM
       child: AnimatedBuilder(
         animation: _pulso,
         builder: (context, _) {
-          // `disableAnimations` é a preferência do sistema por menos movimento: o pulso some,
-          // a forma fica.
           final reduzido = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
           final opacidade = reduzido ? 0.30 : 0.30 * (1 - 0.45 * _pulso.value);
 

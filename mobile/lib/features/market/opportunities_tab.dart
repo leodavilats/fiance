@@ -594,7 +594,6 @@ class _AllOpportunitiesView extends ConsumerWidget {
   }
 }
 
-/// Uma oportunidade na lista do Descobrir.
 class FiOpportunityObject extends StatelessWidget {
   const FiOpportunityObject({super.key, required this.opportunity});
 
@@ -635,9 +634,6 @@ class FiOpportunityObject extends StatelessWidget {
             ],
           ),
 
-          // Rotulo de uma linha e cifra de uma linha, nas quatro colunas: e o que garante a
-          // linha de base. A base de cada numero desceu para uma legenda propria, porque nota
-          // dentro da coluna quebra em duas linhas em umas e em nenhuma nas outras.
           const SizedBox(height: FiSpace.s4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,9 +664,6 @@ class FiOpportunityObject extends StatelessWidget {
             ],
           ),
 
-          // A lista e ordenada por score, e o card nao o mostrava: o criterio de ordenacao
-          // ficava invisivel. A regua traz junto a degradacao por completude -- score com
-          // metade dos indicadores sai como travessao, e nao como numero.
           const SizedBox(height: FiSpace.s4),
           ScoreRuler(
             score: o.score,

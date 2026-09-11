@@ -84,7 +84,6 @@ class TestNivelAnalitico:
         assert resultado["allocated_cash"] is None
 
     def test_o_agregado_nao_sai_sozinho(self, nivel):
-        """O que instrui é o valor por ativo — reter só o total seria meia régua."""
         resultado = apply(PAYLOAD, nivel(2))
         alocacao = resultado["allocations"][0]
 
@@ -192,12 +191,6 @@ class TestEstruturalNaoTextual:
         assert resultado["summary"] == PAYLOAD["summary"]
 
     def test_a_prosa_nao_carrega_a_cifra_que_a_regua_retira(self):
-        """A régua retira campo e não reescreve texto.
-
-        Enquanto o resumo dizia "sugerimos investir R$ 950,00", o valor retido em
-        `allocated_cash`/`invest_amount` reaparecia duas linhas abaixo, na prosa.
-        Quem gera resumo aqui não pode citar cifra de aporte.
-        """
         from app.analysis.strategy import _generate_strategy_summary
         from app.models.quick_invest import QuickInvestAllocation
         from app.services.quick_invest_service import QuickInvestService

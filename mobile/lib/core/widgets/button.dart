@@ -2,23 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// O peso de uma acao na tela.
 enum FiButtonTone {
-  /// A acao principal daquele contexto. Uma por tela, quase sempre.
   primary,
 
-  /// A alternativa declarada: mesmo alvo, mesmo tipo, peso de papel em vez de tinta.
   secondary,
 
-  /// A acao discreta -- leva a algum lugar, ou muda um recorte. Alinha com a coluna de texto.
   quiet,
 
-  /// O que remove ou desfaz. Sai em contorno, nunca preenchida.
   danger,
 }
 
-/// O botao do sistema: o alvo e `FiLayout.minTouchTarget` em todos os tons, e o rotulo inteiro
-/// e tocavel.
 class FiButton extends StatelessWidget {
   const FiButton({
     super.key,
@@ -70,13 +63,10 @@ class FiButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final FiButtonTone tone;
 
-  /// Um icone antes do rotulo. Nunca no lugar dele.
   final IconData? icon;
 
-  /// Ocupa a largura do bloco.
   final bool expand;
 
-  /// A acao esta em curso. O disco vive aqui dentro, que e onde ele diz algo.
   final bool busy;
 
   @override
@@ -98,7 +88,6 @@ class FiButton extends StatelessWidget {
         ),
         child: filho,
       ),
-      // Sem recuo horizontal: a acao discreta alinha com a coluna de texto que a precede.
       FiButtonTone.quiet => TextButton(
         onPressed: tocar,
         style: TextButton.styleFrom(padding: EdgeInsets.zero),
@@ -147,8 +136,6 @@ class _Conteudo extends StatelessWidget {
   }
 }
 
-/// A hierarquia de acoes de um bloco: uma principal, e no maximo uma alternativa. Em 360dp o
-/// par empilha em vez de espremer dois rotulos numa linha.
 class FiActions extends StatelessWidget {
   const FiActions({super.key, required this.primary, this.secondary});
 

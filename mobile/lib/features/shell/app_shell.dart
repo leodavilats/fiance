@@ -28,8 +28,6 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     return Scaffold(
       body: navigationShell,
-      // Sem o indicador em capsula, a diferenca entre `ground1` e `ground0` nao basta sozinha
-      // para dizer onde a pagina termina.
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(
@@ -42,9 +40,6 @@ class _AppShellState extends ConsumerState<AppShell> {
             index,
             initialLocation: index == navigationShell.currentIndex,
           ),
-          // A navegacao e o ciclo do dinheiro: Mes -> Sobra -> Patrimonio, mais as duas camadas
-          // que o cruzam. A ordem e temporal e causal, nao uma taxonomia -- nao ha o que decidir
-          // sem saber o que sobrou, e nao ha patrimonio sem o que foi decidido.
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.calendar_month_outlined),

@@ -14,11 +14,6 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/error_state.dart';
 
-/// O formulario de uma aplicacao de renda fixa.
-///
-/// Mora aqui, mas e chamado de dois lugares: da tela de renda fixa e do "Adicionar ativo" do
-/// Patrimonio. Renda fixa e classe de ativo de primeira classe -- ter uma porta so, escondida
-/// numa tela secundaria, fazia o CDB parecer anexo da carteira.
 Future<void> abrirFormDeRendaFixa(
   BuildContext context,
   WidgetRef ref, {
@@ -28,8 +23,6 @@ Future<void> abrirFormDeRendaFixa(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    // Sem teto o formulario sobe ate a barra de status e o titulo encosta no relogio. O resto
-    // da folha rola.
     constraints: BoxConstraints(
       maxHeight: MediaQuery.of(context).size.height * 0.9,
     ),

@@ -37,8 +37,6 @@ def auth_headers():
 def _fake_snapshot(symbol: str):
     from app.collectors.universal import AssetSnapshot
 
-    # O coletor real sempre carimba (`as_of=time.time()`), e o stub nao carimbava: a suite
-    # exercitava um caminho que a producao nao tem, e um campo de momento perdido passaria verde.
     agora = time.time()
 
     catalog = {
