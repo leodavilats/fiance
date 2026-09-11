@@ -127,8 +127,8 @@ pelo *release command*, sobe e faz teste de fumaça.
       que é o arranjo desejado; a fonte do serviço de produção continua ligada, então deploy manual
       e redeploy de rollback seguem funcionando
 - [x] primeiro deploy de homologação, e `ALLOWED_ORIGINS` corrigido (2026-09-06)
-- [ ] apagar o serviço `fiance-web`, que perdeu a origem em 2026-09-11 e continua servindo a
-      última build (KNOWN_ISSUES #31)
+- [x] serviço `fiance-web` apagado (2026-09-11), junto com o domínio dele. Restam dois serviços
+      em produção: `fiance` e `Postgres`
 
 ### A8. O restore de backup continua sem nunca ter sido testado
 

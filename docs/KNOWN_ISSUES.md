@@ -323,12 +323,6 @@ componentes em [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md).
     mais pedidos; os demais (confirmação, correção, oposição) não têm porta. Fechar é decidir o
     endereço e escrevê-lo em `services/legal_pages.py` — uma linha, e bloqueia submissão.
 
-31. **O serviço `fiance-web` do Railway ainda existe.** O código do front saiu do repositório em
-    2026-09-11 e o serviço parou de ter origem, mas ele **não foi apagado** — apagar é ação fora do
-    repositório e foi deixada para decisão explícita. Enquanto estiver de pé, ele serve a última
-    build publicada, que aponta para a API e mostra telas que não existem mais no produto. O
-    domínio `fiance-web-production.up.railway.app` continua respondendo.
-
 ## Armadilhas conhecidas
 
 Não são bugs, mas mordem. A lista completa, com o que cada uma já quebrou, está em

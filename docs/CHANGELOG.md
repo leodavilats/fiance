@@ -98,9 +98,10 @@ nasce **opcional** no Dart, e campo que some do backend derruba a versão anteri
 O favicon e as cópias em `web/public/` saíram com o front: favicon sem site é arquivo que ninguém
 pede. O CI foi de seis jobs para quatro (marca, backend, aplicativo, build Android).
 
-**O serviço `fiance-web` do Railway não foi apagado**, e é o único fio solto desta mudança:
-apagá-lo é ação fora do repositório, e está registrado como item 31 do KNOWN_ISSUES. Enquanto
-estiver de pé, ele serve a última build publicada — um produto que não existe mais.
+**O serviço `fiance-web` do Railway foi apagado no mesmo dia**, com o domínio
+`fiance-web-production.up.railway.app` junto. Ele não tinha volume, e o último deploy já havia
+falhado — o repositório deixou de ter o diretório que a origem dele apontava. Produção fica com
+dois serviços: `fiance` e `Postgres`.
 
 ---
 

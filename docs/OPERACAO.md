@@ -135,10 +135,6 @@ Postgres, e só então subir o backend.
    Enquanto o *Wait for CI* não existir, **quem faz push no `main` publica em produção sem rede** —
    e precisa saber disso antes, não depois.
 
-   **Apagar o serviço `fiance-web`** é o outro item deste bloco: ele não tem mais origem no
-   repositório, mas continua de pé servindo a última build. Está registrado no
-   [KNOWN_ISSUES](KNOWN_ISSUES.md), item 31.
-
    Há **mudanças de configuração STAGED e não implantadas** no patch `27a43c52`, e eram **33**:
    **13** no `fiance`, **4** no serviço do front (que saiu) e **13 no `Postgres`** — inclusive
    `POSTGRES_PASSWORD`, `PGPASSWORD` e `DATABASE_URL`. O serviço de banco não estava nesta
@@ -205,9 +201,9 @@ Medido em 2026-09-06, em regime, com a API em um worker e o front ainda publicad
 | CPU | 0,011 vCPU | US$ 0,23 |
 | **Total medido** | | **US$ 6,30** |
 
-As tarifas são US$ 10/GB/mês de RAM e US$ 20/vCPU/mês. Apagar o serviço do front tira ~US$ 1/mês e
-leva o total para perto do crédito — mas a medição acima é de antes dele sair, e vale refazer
-depois em vez de confiar na subtração.
+As tarifas são US$ 10/GB/mês de RAM e US$ 20/vCPU/mês. O serviço do front foi apagado em
+2026-09-11, o que tira ~US$ 1/mês pela subtração — **a medição não foi refeita depois disso**, e é
+ela, não a conta de cabeça, que diz se o consumo cabe no crédito.
 
 Baixar a API para um worker **não** reduziu o consumo dela: ela saiu de 0,252 para 0,334 GB no
 mesmo período, porque o SDK do Sentry entrou junto. O worker a menos economizou; o observador a
