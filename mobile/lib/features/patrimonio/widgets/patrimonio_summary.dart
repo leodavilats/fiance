@@ -71,7 +71,6 @@ class FiFixedIncomeSummary extends StatelessWidget {
             detail:
                 'rendimento de ${formatCurrency(data.totalRendimento)} '
                 '(${data.rendimentoPct.toStringAsFixed(2)}%)',
-            onTap: () => context.go('/patrimonio/renda-fixa'),
           ),
           if (vencendo > 0)
             FiDataRow(
@@ -80,7 +79,6 @@ class FiFixedIncomeSummary extends StatelessWidget {
                   : '$vencendo aplicações vencem nos próximos 30 dias',
               note: 'Planeje a reaplicação antes do vencimento.',
               valueColor: fiStateColor(FiState.attention, brightness),
-              onTap: () => context.go('/patrimonio/renda-fixa'),
             ),
         ],
       ),

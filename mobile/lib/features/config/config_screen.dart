@@ -8,7 +8,6 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/nav_action.dart';
-import '../../core/widgets/search_action.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/legal_links.dart';
@@ -30,7 +29,6 @@ class ConfigScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Você'),
-        actions: const [FiSearchAction()],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(

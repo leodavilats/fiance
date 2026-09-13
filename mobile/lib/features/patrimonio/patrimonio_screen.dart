@@ -7,7 +7,6 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/search_action.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/segments.dart';
 import '../../core/widgets/skeleton.dart';
@@ -31,7 +30,6 @@ class PatrimonioScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Patrimônio'),
-        actions: const [FiSearchAction()],
       ),
       body: RefreshIndicator(
         onRefresh: () async {

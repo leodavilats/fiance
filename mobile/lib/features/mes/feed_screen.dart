@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/labels.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/search_action.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/models.dart';
@@ -33,7 +32,6 @@ class FeedScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('O que mudou'),
         actions: [
-          const FiSearchAction(),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'O que aconteceu',

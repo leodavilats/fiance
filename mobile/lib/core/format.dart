@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 
 final _currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 final _percent = NumberFormat('##0.00', 'pt_BR');
-final _dia = DateFormat('dd/MM/yyyy', 'pt_BR');
+final _dia = DateFormat('dd/MM/yyyy');
 final _quantidade = NumberFormat('#,##0.########', 'pt_BR');
 
 String formatCurrency(double? value) => _currency.format(value ?? 0);

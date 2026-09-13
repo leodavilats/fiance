@@ -5,14 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../core/cash_models.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/search_action.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
 import '../../core/mes.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
-import '../../core/widgets/nav_action.dart';
+import '../../core/widgets/data_row.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 
@@ -26,7 +25,6 @@ class SobraScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sobra'),
-        actions: const [FiSearchAction()],
       ),
       body: sobra.when(
         loading: () => FiSkeleton.tela(
@@ -97,12 +95,7 @@ class _Corpo extends ConsumerWidget {
             hint: passos.length > 1
                 ? 'Cada passo consome a sobra antes do seguinte.'
                 : null,
-            action: temAporte
-                ? FiNavAction(
-                    label: 'Alocação × meta',
-                    onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
-                  )
-                : null,
+
             child: Column(
               children: [
                 for (final p in passos)
@@ -117,6 +110,21 @@ class _Corpo extends ConsumerWidget {
               ],
             ),
           ),
+
+          if (temAporte)
+            FiSection(
+              title: 'Onde esse aporte entra',
+              child: FiRows(
+                children: [
+                  FiDataRow(
+                    label: 'Alocação × meta',
+                    detail: 'O que está acima e abaixo do que você declarou, e quais ativos '
+                        'reequilibram',
+                    onTap: () => GoRouter.of(context).go('/sobra/desvio'),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

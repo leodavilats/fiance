@@ -104,14 +104,13 @@ ordem:
 | Preço justo por consenso de métodos | `[ATUAL]` | `analysis/fair_price.py` | idem |
 | Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — **só ações e BDRs**, ver [10-PROBLEMAS](10-PROBLEMAS.md) |
 | Falsificadores do veredito | `[ATUAL]` | `analysis/falsifiers.py` | `market/asset_detail_sheet.dart` |
-| Análise de ativo individual | `[ATUAL]` | `services/` | `market/asset_detail_sheet.dart` |
+| Análise de ativo individual | `[ATUAL]` | `services/` | `market/asset_detail_sheet.dart` — a folha é a análise; `/ativo/:ticker` mostra menos e deixou de ser oferecida por botão |
 | Quedas (dip scanner) | `[IMPLEMENTADO]` | `analysis/dip_analysis.py` | `/descobrir/quedas` |
 | Comparador de ativos | `[ATUAL]` | — | `/descobrir/comparar` |
 | Comparador renda fixa × bolsa | `[ATUAL]` | `services/income_compare_service.py` | `tools/income_compare_view.dart` |
 | Calculadora de renda fixa | `[ATUAL]` | `analysis/renda_fixa_analysis.py` | `tools/tools_views.dart` |
 | Setores | `[ATUAL]` | `analysis/sectors.py` | — |
 | Benchmark CDI/Selic/IPCA | `[ATUAL]` | `collectors/rates.py` | — |
-| Busca global | `[IMPLEMENTADO]` | `api/search.py` | `busca/busca_screen.dart` |
 | Sugestões de rebalanceamento, com o alvo da realocação | `[ATUAL]` | `analysis/strategy.py` | `sobra/desvio_screen.dart` |
 | Perfil de risco visível onde ele ordena | `[ATUAL]` | `analysis/scoring.py` | `/descobrir` e `/sobra/desvio` |
 | Ativos seguidos | `[SEM CLIENTE]` | `api/followed.py` | ❌ |

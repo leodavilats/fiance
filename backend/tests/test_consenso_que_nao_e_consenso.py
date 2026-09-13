@@ -137,3 +137,47 @@ class TestConsensoQueNaoEConsenso:
         assert r.consensus_methods == 1
         assert r.method_dispersion is None
         assert r.methods_disagree is False
+
+
+class TestARazaoNaoContradizOVeredito:
+    def _com_desconto_e_queda(self):
+        from app.analysis.fair_price import FairPriceResult, TechnicalSnapshot
+
+        fair = FairPriceResult(
+            bazin=None,
+            graham=None,
+            dcf=None,
+            consensus=100.0,
+            consensus_methods=2,
+            margin_of_safety=0.35,
+            avg_dividend_5y=None,
+            dy_12m=None,
+            dy_5y=None,
+            data_years=0,
+            desired_yield_used=0.06,
+        )
+        tech = TechnicalSnapshot(
+            sma_50=90.0,
+            sma_200=110.0,
+            rsi_14=45.0,
+            trend="downtrend",
+            trend_basis="long",
+            last_price=65.0,
+            distance_from_52w_high_pct=None,
+            distance_from_52w_low_pct=None,
+        )
+        return fair, tech
+
+    def test_o_rebaixamento_diz_para_onde_foi(self):
+        fair, tech = self._com_desconto_e_queda()
+
+        d = decide(fair, tech, current_price=65.0)
+
+        assert d.verdict == "BUY"
+        assert not any("evite entrar" in r.lower() for r in d.reasons), (
+            "a tela mostrava a etiqueta Comprar ao lado da frase 'evite entrar contra a "
+            "tendência' — duas instruções opostas sobre o mesmo ativo"
+        )
+        assert any(d.label.lower() in r.lower() for r in d.reasons), (
+            "quando o veredito é rebaixado, a razão precisa nomear onde ele foi parar"
+        )

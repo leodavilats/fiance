@@ -577,15 +577,18 @@ class _AllOpportunitiesView extends ConsumerWidget {
               if (idade.isNotEmpty && index == 0) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: FiSpace.s2),
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Cotações lidas $idade — o carimbo é o do preço mais antigo da lista.',
-                        style: FiType.caption.copyWith(color: fiInk3(context)),
+                      const Expanded(child: FiPerfilQueOrdena()),
+                      const SizedBox(width: FiSpace.s3),
+                      Flexible(
+                        child: Text(
+                          'Cotações lidas $idade',
+                          textAlign: TextAlign.end,
+                          style: FiType.caption.copyWith(color: fiInk3(context)),
+                        ),
                       ),
-                      const SizedBox(height: FiSpace.s1),
-                      const FiPerfilQueOrdena(),
                     ],
                   ),
                 );
@@ -752,7 +755,7 @@ class FiPerfilQueOrdena extends ConsumerWidget {
           termKey: 'perfil_de_risco',
           label: 'perfil $rotulo',
           child: Text(
-            'Ordenado pelo seu perfil $rotulo.',
+            'Ordenado pelo seu perfil $rotulo. O carimbo é o do preço mais antigo da lista.',
             style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
         );

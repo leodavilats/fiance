@@ -300,6 +300,7 @@ class _FiAssetObject extends StatelessWidget {
             const SizedBox(height: FiSpace.s3),
             Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
             Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (p.reasons.isNotEmpty) ...[
                   Flexible(
@@ -310,9 +311,7 @@ class _FiAssetObject extends StatelessWidget {
                   ),
                   const SizedBox(width: FiSpace.s5),
                 ],
-                Flexible(
-                  child: FiButton.quiet(label: 'Vender', onPressed: onSell),
-                ),
+                FiButton.quiet(label: 'Vender', onPressed: onSell),
               ],
             ),
           ],

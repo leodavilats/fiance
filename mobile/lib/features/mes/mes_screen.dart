@@ -6,7 +6,6 @@ import '../../core/cash_models.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/search_action.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
 import '../../core/mes.dart';
@@ -35,7 +34,6 @@ class MesScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mês'),
         actions: [
-          const FiSearchAction(),
           IconButton(
             tooltip: 'Trocar de mês',
             icon: const Icon(Icons.calendar_month_outlined),

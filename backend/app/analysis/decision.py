@@ -158,12 +158,20 @@ def decide(
             reasons.append(f"Tendência de baixa ({base['down']}).")
 
             if verdict in ("BUY", "STRONG_BUY"):
+                anterior = LABELS[verdict]
                 verdict = "HOLD" if verdict == "BUY" else "BUY"
 
-                reasons.append("Apesar do desconto, evite entrar contra a tendência principal.")
+                reasons.append(
+                    f"O preço está descontado, mas a tendência principal é de queda: a leitura "
+                    f"cai de {anterior.lower()} para {LABELS[verdict].lower()}."
+                )
 
             elif verdict == "HOLD":
                 verdict = "SELL"
+                reasons.append(
+                    "Sem desconto no preço e com a tendência principal de queda, a leitura cai "
+                    "para vender."
+                )
 
         if tech.rsi_14 is not None:
             if tech.rsi_14 >= 70:

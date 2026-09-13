@@ -80,11 +80,15 @@ class FiDataRow extends StatelessWidget {
           if (value != null || trailing != null) const SizedBox(width: FiSpace.s4),
           if (value != null)
             Flexible(
-              child: Text(
-                value!,
-                textAlign: TextAlign.end,
-                style: (emphasis ? FiType.metricSm : FiType.figure).copyWith(
-                  color: valueColor ?? fiInk1(context),
+              fit: FlexFit.tight,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  value!,
+                  textAlign: TextAlign.end,
+                  style: (emphasis ? FiType.metricSm : FiType.figure).copyWith(
+                    color: valueColor ?? fiInk1(context),
+                  ),
                 ),
               ),
             ),

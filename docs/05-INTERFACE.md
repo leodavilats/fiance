@@ -121,7 +121,6 @@ poucas, ou uma tabela quando o que importa é comparar.
 | Espera | `FiSkeleton.tela(shape:, count:)` | Disco girando não diz o que vem, e a página salta |
 | Falha | `FiErrorState` + `fiErrorMessage` | Já houve oito grafias, e `Erro 500` chegou à tela |
 | Ausência de dado | `FiEmptyState` | "Não conseguimos ler" ≠ "você não tem nada" |
-| Busca, em destino de raiz | `FiSearchAction` na barra | O lint reprova |
 
 ---
 
@@ -165,7 +164,7 @@ não**. Um preço de anteontem muda a decisão.
 
 ---
 
-## As 16 regras de máquina
+## As 13 regras de máquina
 
 `mobile/test/lint_ui_test.dart` — roda em `flutter test`, que já é comando do CI. **Regra que exige
 mudar a esteira para rodar é regra que não roda.**
@@ -183,11 +182,14 @@ mudar a esteira para rodar é regra que não roda.**
 | 9 | A caixa do Material não volta a crescer *(catraca)* |
 | 10 | Nenhuma tela escreve cor à mão |
 | 11 | Espera tem a forma do que vai chegar, não um disco girando |
-| 12 | A busca global é alcançável de todo destino de raiz |
-| 13 | Todo destino navegado existe no roteador |
-| 14 | A falha de leitura sai numa voz só |
+| 12 | Todo destino navegado existe no roteador |
+| 13 | A falha de leitura sai numa voz só |
 
 Mais o contraste, cobrado à parte em `contraste_test.dart`, nos dois temas.
+
+Uma regra saiu em 2026-09-13: *"a busca global é alcançável de todo destino de raiz"*. A busca foi
+removida do produto — não se busca nem tela nem ativo —, e regra que exige o que o produto não quer
+mais é regra trabalhando contra ele.
 
 ⚠️ **A regra varre `lib/`.** O que estiver fora não é conferido. Ao escrever regra nova, confira
 contra **o que o repositório tem**, não contra o que a extensão sugere: duas regras já varreram

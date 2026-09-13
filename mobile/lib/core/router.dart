@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'widgets/search_action.dart';
 import '../features/patrimonio/patrimonio_screen.dart';
 import '../features/patrimonio/proventos_screen.dart';
 import '../features/patrimonio/razao_screen.dart';
@@ -14,7 +13,6 @@ import '../features/mes/dividas_screen.dart';
 import '../features/mes/mes_screen.dart';
 import '../features/sobra/sobra_screen.dart';
 import '../features/sobra/desvio_screen.dart';
-import '../features/busca/busca_screen.dart';
 import '../features/config/objetivos_screen.dart';
 import '../features/mes/atividade_screen.dart';
 import '../features/tools/income_compare_view.dart';
@@ -52,7 +50,6 @@ final appRouter = GoRouter(
     GoRoute(path: '/carteira', redirect: (_, _) => '/patrimonio'),
     GoRoute(path: '/market', redirect: (_, _) => '/descobrir'),
     GoRoute(path: '/config', redirect: (_, _) => '/voce'),
-    GoRoute(path: '/busca', builder: (context, state) => const BuscaScreen()),
 
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
@@ -219,7 +216,6 @@ class _DescobrirScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Descobrir'),
         actions: [
-          const FiSearchAction(),
           IconButton(
             tooltip: 'Quedas',
             icon: const Icon(Icons.trending_down),

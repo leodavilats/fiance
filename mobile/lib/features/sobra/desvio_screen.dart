@@ -138,35 +138,6 @@ class DesvioScreen extends ConsumerWidget {
                   ),
                 ],
 
-                FiSection(
-                  title: 'Ferramentas',
-                  child: FiRows(
-                    children: [
-                      FiDataRow(
-                        label: 'Ajustar minhas metas',
-                        onTap: () => context.go('/voce/objetivos'),
-                      ),
-                      FiDataRow(
-                        label: 'Comparar títulos de renda fixa',
-                        onTap: () => context.go('/descobrir/renda-fixa'),
-                      ),
-                      FiDataRow(
-                        label: 'Renda fixa × bolsa',
-                        onTap: () => context.go('/descobrir/renda-fixa-vs-bolsa'),
-                      ),
-                      FiDataRow(
-                        label: 'Projetar renda passiva',
-                        onTap: () => context.go('/patrimonio/projecao'),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: FiSpace.s6),
-                Text(
-                  'Estimativas a partir de dado público. Não é recomendação de investimento.',
-                  style: FiType.caption.copyWith(color: fiInk3(context)),
-                ),
               ],
             );
           },

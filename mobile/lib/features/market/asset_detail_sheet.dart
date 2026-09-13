@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/score_ruler.dart' show consensusLabel, dataYearsLabel, trendBasisLabel;
-import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/measure.dart';
 import '../../core/widgets/provenance.dart';
@@ -132,19 +130,26 @@ class _AssetDetailContent extends ConsumerWidget {
             ],
 
             FiSection(
-              title: 'A conta por trás do preço justo',
+              title: 'Quanto o ativo vale, por cada método',
+              hint: 'Cada método olha para uma coisa diferente. Quando eles concordam, a '
+                  'estimativa é mais firme.',
               child: FiRows(
                 children: [
                   if (a.bazin != null)
                     FiDataRow(
-                      label: 'Bazin',
+                      label: 'Pelos dividendos que paga',
                       value: formatCurrency(a.bazin),
+                      detail: 'Método Bazin',
                       note: dataYearsLabel(a.dataYears),
                     ),
                   if (a.graham != null)
-                    FiDataRow(label: 'Graham', value: formatCurrency(a.graham)),
+                    FiDataRow(
+                      label: 'Pelo lucro e pelo patrimônio',
+                      value: formatCurrency(a.graham),
+                      detail: 'Fórmula de Graham',
+                    ),
                   FiDataRow(
-                    label: 'Consenso',
+                    label: 'Preço justo estimado',
                     value: formatCurrency(a.consensus),
                     note: consensusLabel(a.consensusMethods),
                     emphasis: true,
@@ -154,18 +159,26 @@ class _AssetDetailContent extends ConsumerWidget {
             ),
 
             FiSection(
-              title: 'O técnico',
+              title: 'O que o preço vem fazendo',
+              hint: 'Isto não diz se a empresa é boa: diz por onde o preço tem andado.',
               child: FiRows(
                 children: [
                   FiDataRow(
-                    label: 'Tendência',
+                    label: 'Direção recente',
                     value: trendLabel(a.trend),
                     note: trendBasisLabel(a.trendBasis),
                   ),
                   FiDataRow(
-                    label: 'Força relativa (RSI 14)',
-                    value: a.rsi14?.toStringAsFixed(1) ?? '—',
+                    label: 'Ritmo da alta ou da queda',
+                    value: a.rsi14?.toStringAsFixed(0) ?? '—',
+                    detail: _ritmoLabel(a.rsi14),
                   ),
+                  if (a.dividendYield != null)
+                    FiDataRow(
+                      label: 'Dividendos em 12 meses',
+                      value: formatRatio(a.dividendYield),
+                      detail: 'Sobre o preço de hoje',
+                    ),
                 ],
               ),
             ),
@@ -215,15 +228,6 @@ class _AssetDetailContent extends ConsumerWidget {
                   'É leitura do sistema sobre dado público, não recomendação de compra.',
             ),
 
-            const SizedBox(height: FiSpace.s5),
-            FiButton.secondary(
-              label: 'Abrir a análise completa',
-              expand: true,
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.push('/ativo/${a.symbol}');
-              },
-            ),
           ],
         );
       },
@@ -235,3 +239,10 @@ final _assetAnalysisProvider = FutureProvider.autoDispose
     .family<AssetAnalysis, String>((ref, ticker) {
       return ref.watch(apiRepositoryProvider).analyzeAsset(ticker);
     });
+
+String _ritmoLabel(double? rsi) {
+  if (rsi == null) return 'Sem histórico suficiente';
+  if (rsi >= 70) return 'Subiu rápido demais — costuma vir correção';
+  if (rsi <= 30) return 'Caiu muito em pouco tempo';
+  return 'Sem exagero para nenhum lado';
+}

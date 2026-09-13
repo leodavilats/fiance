@@ -334,35 +334,6 @@ void main() {
       );
     });
 
-    test('a busca global e alcancavel de todo destino de raiz', () {
-
-      const raizes = <String, String>{
-        'features/mes/mes_screen.dart': 'Mes',
-        'features/sobra/sobra_screen.dart': 'Sobra',
-        'features/patrimonio/patrimonio_screen.dart': 'Patrimonio',
-        'core/router.dart': 'Descobrir',
-        'features/config/config_screen.dart': 'Voce',
-      };
-
-      final semBusca = <String>[];
-      for (final entrada in raizes.entries) {
-        final arquivo = File('lib/${entrada.key}');
-        expect(arquivo.existsSync(), isTrue, reason: 'destino sumiu: ${entrada.key}');
-
-        if (!arquivo.readAsStringSync().contains('FiSearchAction')) {
-          semBusca.add('${entrada.value} (${entrada.key})');
-        }
-      }
-
-      expect(
-        semBusca,
-        isEmpty,
-        reason:
-            'todo destino de raiz leva a /busca por FiSearchAction. Sem busca: '
-            '${semBusca.join(', ')}',
-      );
-    });
-
     test('todo destino navegado existe no roteador', () {
 
       final router = File('lib/core/router.dart').readAsStringSync();
