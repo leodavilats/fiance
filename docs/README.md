@@ -1,52 +1,110 @@
 # Documentação do fiance
 
-Cada arquivo responde **uma** pergunta. Se você não sabe onde procurar, comece pela tabela.
+Cada documento responde **uma** pergunta e é a fonte de verdade dela. Se dois responderem a mesma
+coisa, um está errado e ninguém sabe qual.
 
-| Quero saber… | Leia |
+---
+
+## Qual arquivo responde o quê
+
+| A pergunta | O arquivo |
 |---|---|
-| Como rodar o projeto, variáveis de ambiente | [../README.md](../README.md) |
-| O que não pode ser violado — invariantes, armadilhas, checklists | [../CLAUDE.md](../CLAUDE.md) |
-| Como o sistema é montado por dentro — camadas, algoritmos, endpoints | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| O que cada tela faz | [FEATURES.md](FEATURES.md) |
-| O que está quebrado, faltando ou pendente **agora** | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) |
-| Por que uma decisão foi tomada, e quando | [CHANGELOG.md](CHANGELOG.md) |
-| Por que a interface é assim — identidade, design system, arquitetura de informação, wireframes | [design/](design/) |
-| Para onde o produto vai — visão, modelo de negócio, regras de domínio, roadmap | [produto/](produto/) |
-| Subir, observar e reverter — variáveis, deploy, Sentry, backup | [OPERACAO.md](OPERACAO.md) |
+| **Isto existe? Em que estado?** | [08-ESTADO](08-ESTADO.md) ⭐ |
+| Por que o sistema existe, para quem, e como ganha dinheiro | [01-PRODUTO](01-PRODUTO.md) |
+| O que significa esse termo? Qual é a regra? | [02-DOMINIO](02-DOMINIO.md) |
+| Como o sistema é montado, e por que assim | [03-ARQUITETURA](03-ARQUITETURA.md) |
+| Como esse número é calculado, e no que não confiar | [04-CALCULOS](04-CALCULOS.md) |
+| Por que a interface é assim, e o que uma tela nova precisa respeitar | [05-INTERFACE](05-INTERFACE.md) |
+| Como rodar, testar e não quebrar nada | [06-DESENVOLVIMENTO](06-DESENVOLVIMENTO.md) |
+| Como subir, observar e reverter | [07-OPERACAO](07-OPERACAO.md) |
+| O que vem depois | [09-FUTURO](09-FUTURO.md) |
+| O que está quebrado ou aberto | [10-PROBLEMAS](10-PROBLEMAS.md) |
+| Por que essa decisão foi tomada | [decisoes/](decisoes/) |
+| O que a web tinha e o aplicativo ainda não tem | [temporario/PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) ⏳ |
+| O que aconteceu antes | [historico/CHANGELOG](historico/CHANGELOG.md) |
 
-## As três naturezas de documento
+---
 
-A pasta tem três tipos de arquivo, e misturá-los é o que fez esta documentação apodrecer antes.
+## Por onde começar
 
-**O que o sistema É.** `ARCHITECTURE.md`, `FEATURES.md`, `KNOWN_ISSUES.md` e `design/`. Se algo
-aqui não corresponde ao código, é **bug de documentação** — corrija o documento, não o leitor.
+**Chegou agora:** [README](../README.md) do repositório → [01-PRODUTO](01-PRODUTO.md) →
+[08-ESTADO](08-ESTADO.md) → [03-ARQUITETURA](03-ARQUITETURA.md).
 
-**Como o sistema chegou aqui.** `CHANGELOG.md`, e só ele. Nada lá é pendência, mesmo quando
-descreve um problema: é o registro de decisões, incluindo as revertidas e o código apagado de
-propósito.
+**Vai escrever código:** [CLAUDE.md](../CLAUDE.md) →
+[06-DESENVOLVIMENTO](06-DESENVOLVIMENTO.md) → o documento da área que você vai tocar.
 
-**Para onde o produto vai.** `produto/`. Nada ali está construído, e por isso todo arquivo tem
-prazo de validade: item fechado se apaga, direção que virou código vira entrada no `CHANGELOG` e
-sai de lá.
+**Vai mexer numa tela:** [05-INTERFACE](05-INTERFACE.md), antes de abrir o editor.
 
-Essa separação existe porque não existia. `KNOWN_ISSUES.md` já teve 227 linhas com a maioria dos
-itens marcada como resolvida e um aviso no topo pedindo para ler a última seção primeiro, porque
-ela invalidava as anteriores; seis itens contradiziam o código.
+**Vai mexer num cálculo:** [04-CALCULOS](04-CALCULOS.md) e [02-DOMINIO](02-DOMINIO.md).
 
-## Antes de mexer
+---
 
-- **Regra de negócio** (preço justo, score, renda fixa, IR, caixa) vive **só** no backend, em
-  `analysis/`, `optimizer/`, `ledger/` e `cashflow/`. O aplicativo delega.
-- **A camada visual é escrita à mão, e existe num lugar só**:
-  [mobile/lib/core/design_tokens.dart](../mobile/lib/core/design_tokens.dart). Não há gerador de
-  design. O que a máquina cobra é o mínimo da WCAG (`mobile/test/contraste_test.dart`) e as
-  regras de produto de `mobile/test/lint_ui_test.dart`.
-- **Navegação e telas** seguem a arquitetura de informação em
-  [design/INFORMATION-ARCHITECTURE.md](design/INFORMATION-ARCHITECTURE.md). O que já está
-  construído está no código; o que **não** está, em [produto/ROADMAP.md](produto/ROADMAP.md).
-- **Suíte verde é pré-requisito de merge.** Os comandos exatos, com as contagens esperadas, estão
-  em [CLAUDE.md](../CLAUDE.md). Tudo roda no CI a cada push.
-- **Link quebrado é erro.** `node docs/checar-links.mjs` varre todo `.md` do repositório, arquivo
-  e âncora. Documentação reorganizada sem conferir link é refatoração sem teste.
-- **Invariantes e armadilhas** — o que não pode ser violado e o que quebra em silêncio — estão em
-  [CLAUDE.md](../CLAUDE.md), não aqui.
+## Estados
+
+Todo item funcional carrega um marcador, e eles não se misturam:
+
+`[ATUAL]` funciona e é usado · `[IMPLEMENTADO]` existe no código, sem uso real ·
+`[SEM CLIENTE]` backend vivo, aplicativo não alcança · `[PLANEJADO]` decidido, não construído ·
+`[EM DISCUSSÃO]` sem decisão · `[ABANDONADO]` existiu, saiu
+
+Definições em [08-ESTADO](08-ESTADO.md).
+
+---
+
+## Regras desta documentação
+
+**Toda afirmação tem âncora verificável** — nome de arquivo, teste que falha, comando que roda. Sem
+âncora, a frase não entra. É o que impede a documentação de descrever um sistema que não existe, como
+já aconteceu com `optimizer/`.
+
+**O que é derivável do código não é copiado.** Endpoints, campos de resposta e esquema de banco têm
+fonte no código; a documentação aponta para ela.
+
+**Histórico fica fora do caminho.** Nada em `historico/` é pendência, mesmo quando descreve um
+problema. O que está aberto está em [10-PROBLEMAS](10-PROBLEMAS.md), e só lá.
+
+**Futuro nunca se mistura com presente.** O que não existe está em [09-FUTURO](09-FUTURO.md), em
+seções rígidas por estágio.
+
+---
+
+## Fontes de verdade
+
+| Assunto | Fonte |
+|---|---|
+| Endpoints e schemas | Código — OpenAPI do FastAPI |
+| Campos de resposta | `backend/tests/contrato_das_rotas.json` |
+| Esquema do banco | Migrações Alembic |
+| Vocabulário fechado (classes, categorias) | `backend/app/models/enums.py` |
+| Fórmulas | Código; [04-CALCULOS](04-CALCULOS.md) é o espelho auditado |
+| Limiares de score | `backend/app/analysis/score_ruler.py` — Python primeiro |
+| Cor, tipo, espaço | `mobile/lib/core/design_tokens.dart` |
+| Regras de tela | `mobile/test/lint_ui_test.dart` |
+| Comandos | `.github/workflows/ci.yml` |
+| Variáveis de ambiente | `backend/app/core/config.py` |
+| **O que existe** | [08-ESTADO](08-ESTADO.md) |
+| **Regras de negócio e glossário** | [02-DOMINIO](02-DOMINIO.md) |
+| **Visão e negócio** | [01-PRODUTO](01-PRODUTO.md) |
+| **Decisões** | [decisoes/](decisoes/) |
+| **Roadmap** | [09-FUTURO](09-FUTURO.md) |
+| **Problemas** | [10-PROBLEMAS](10-PROBLEMAS.md) |
+| **Invariantes de trabalho** | [CLAUDE.md](../CLAUDE.md) |
+
+**Quando documentação e código divergirem, o código vence** em tudo que é derivável, e a divergência
+é bug de documentação. Nos seis assuntos em negrito, a documentação vence — não há código que
+responda intenção.
+
+---
+
+## Manutenção
+
+Escrita em 2026-09-13, a partir de entrevista com o autor e leitura direcionada do repositório.
+
+**Ao mudar o código, o documento correspondente muda no mesmo commit.** A tabela de fontes de verdade
+diz qual é.
+
+**Ao fechar um item de [10-PROBLEMAS](10-PROBLEMAS.md), apague-o.** Item resolvido que fica manda
+alguém refazer o que existe.
+
+`checar-links.mjs` confere links quebrados. Um verificador de âncoras — que falharia quando a
+documentação cita arquivo ou símbolo inexistente — está previsto e ainda não foi construído.

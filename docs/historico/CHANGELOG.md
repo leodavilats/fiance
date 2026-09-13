@@ -1,5 +1,20 @@
 # fiance — histórico de mudanças
 
+> ## 📦 ARQUIVO HISTÓRICO — não é pendência, não é fonte de verdade
+>
+> Movido para `docs/historico/` em **2026-09-13**, na reconstrução da documentação.
+>
+> **Nada aqui é trabalho a fazer**, mesmo quando descreve um problema. O que está aberto está em
+> [10-PROBLEMAS](../10-PROBLEMAS.md), e só lá.
+>
+> **Os links internos apontam para documentos que não existem mais** — `FEATURES.md`,
+> `KNOWN_ISSUES.md`, `ARCHITECTURE.md`, `design/`, `produto/`. Foram substituídos pela estrutura
+> descrita em [docs/README.md](../README.md). Os links ficam quebrados de propósito: corrigi-los
+> reescreveria o registro do que se pensava na época, que é exatamente o valor deste arquivo. O
+> verificador de links ignora este diretório.
+>
+> Para decisões com contexto, use [docs/decisoes/](../decisoes/).
+
 > Registro datado do que mudou e **por quê**, incluindo as decisões que foram tomadas e depois
 > revertidas. É aqui que mora o contexto: por que a categoria `acoes_int` foi renomeada sem alias,
 > por que o script de limpeza de cripto foi escrito e apagado no mesmo dia, por que o motor de

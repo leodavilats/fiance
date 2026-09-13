@@ -18,7 +18,18 @@ import { readdirSync } from 'node:fs';
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = resolve(AQUI, '..');
 
-const IGNORAR = new Set(['node_modules', '.git', 'dist', '.angular', 'build', '__pycache__']);
+// `historico` guarda o CHANGELOG, que cita documentos já removidos. Corrigir esses links
+// reescreveria a história; deixá-los deixaria o verificador vermelho para sempre, e verificador que
+// sempre falha ninguém roda.
+const IGNORAR = new Set([
+  'node_modules',
+  '.git',
+  'dist',
+  '.angular',
+  'build',
+  '__pycache__',
+  'historico',
+]);
 
 function varrer(dir) {
   const achados = [];
