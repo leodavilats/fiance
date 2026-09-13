@@ -95,8 +95,6 @@ OPPORTUNITY_WEIGHTS: dict[RiskProfile, dict[str, float]] = {
 _FII_WEIGHTS = {"mos": 0.45, "dividend": 0.40, "liquidity": 0.15}
 _ETF_WEIGHTS = {"mos": 0.55, "dividend": 0.30, "liquidity": 0.15}
 
-MIN_DATA_COMPLETENESS = 0.5
-
 
 def score_opportunity(
     asset_type: str,

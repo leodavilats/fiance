@@ -7,13 +7,6 @@ class RiskProfile(StrEnum):
     aggressive = "aggressive"
 
 
-class OptimizationStrategy(StrEnum):
-    score_weighted = "score_weighted"
-    max_sharpe = "max_sharpe"
-    min_volatility = "min_volatility"
-    hrp = "hrp"
-
-
 class AssetType(StrEnum):
     br_stock = "br_stock"
     bdr = "bdr"

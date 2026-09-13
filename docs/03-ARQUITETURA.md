@@ -186,7 +186,7 @@ precisa do dado vencido para o disjuntor degradar.
 Dois testes de arquitetura travam isso:
 
 - nenhuma condicional de plano fora do módulo;
-- `analysis/`, `optimizer/`, `collectors/` e `ledger/` **não importam nada dele**.
+- `analysis/`, `cashflow/`, `collectors/` e `ledger/` **não importam nada dele**.
 
 Se o cálculo souber quem paga, a independência do algoritmo vira promessa. Ativo da própria carteira
 nunca consome cota; a rota pública também não.

@@ -282,13 +282,20 @@ class TestWebhookIdempotente:
 
 
 class TestArquitetura:
-    def test_analise_e_otimizador_nao_conhecem_entitlement(self):
+    def test_o_calculo_nao_conhece_entitlement(self):
         import pathlib
 
         raiz = pathlib.Path(__file__).resolve().parent.parent / "app"
         infratores = []
 
-        for pasta in ("analysis", "optimizer", "collectors", "ledger"):
+        camadas = ("analysis", "cashflow", "collectors", "ledger")
+        ausentes = [p for p in camadas if not (raiz / p).is_dir()]
+        assert ausentes == [], (
+            f"camada inexistente na lista: {ausentes}. rglob em pasta que não existe não "
+            "levanta erro — ela apenas deixa de ser verificada, em silêncio."
+        )
+
+        for pasta in camadas:
             for arquivo in (raiz / pasta).rglob("*.py"):
                 texto = arquivo.read_text(encoding="utf-8")
                 if "entitlement" in texto or "subscription" in texto:

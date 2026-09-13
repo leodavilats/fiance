@@ -1,0 +1,55 @@
+from __future__ import annotations
+
+import pathlib
+import re
+
+import pytest
+
+from app.analysis import score_ruler
+
+_PRODUCT_RULES = (
+    pathlib.Path(__file__).resolve().parents[2] / "mobile" / "lib" / "core" / "product_rules.dart"
+)
+
+_LIMIARES = (
+    ("kScoreStrong", score_ruler.SCORE_STRONG),
+    ("kScoreGood", score_ruler.SCORE_GOOD),
+    ("kScoreNeutral", score_ruler.SCORE_NEUTRAL),
+    ("kHighlightMinDy", score_ruler.HIGHLIGHT_MIN_DY),
+    ("kMinDataCompleteness", score_ruler.MIN_DATA_COMPLETENESS),
+)
+
+
+def _valor_no_dart(fonte: str, nome: str) -> float | None:
+    achado = re.search(rf"const\s+double\s+{nome}\s*=\s*([0-9.]+)\s*;", fonte)
+    return float(achado.group(1)) if achado else None
+
+
+@pytest.mark.skipif(not _PRODUCT_RULES.exists(), reason="repositório sem a pasta mobile")
+@pytest.mark.parametrize(("nome", "esperado"), _LIMIARES)
+def test_o_dart_usa_o_mesmo_limiar_do_python(nome: str, esperado: float):
+    dart = _valor_no_dart(_PRODUCT_RULES.read_text(encoding="utf-8"), nome)
+
+    assert dart is not None, (
+        f"{nome} sumiu de product_rules.dart. A régua de score vive nas duas plataformas e "
+        "este teste é a única coisa que as compara."
+    )
+
+    assert dart == esperado, (
+        f"{nome}: Python diz {esperado}, Dart diz {dart}. O Python é a fonte — mude lá "
+        "primeiro e espelhe aqui, senão a tela classifica um número que o servidor "
+        "classificou de outro jeito."
+    )
+
+
+def test_score_confiavel_respeita_o_piso():
+    assert score_ruler.score_confiavel(None) is True, (
+        "sem informação de completude, o score é tratado como completo — é o que o Dart faz "
+        "com o default de 1."
+    )
+    assert score_ruler.score_confiavel(1.0) is True
+    assert score_ruler.score_confiavel(score_ruler.MIN_DATA_COMPLETENESS) is True
+    assert score_ruler.score_confiavel(0.35) is False, (
+        "0.35 é a completude de uma ação sem roe, margem e crescimento no perfil arrojado — "
+        "o caso que o piso existe para marcar."
+    )

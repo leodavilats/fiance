@@ -106,5 +106,9 @@ diz qual é.
 **Ao fechar um item de [10-PROBLEMAS](10-PROBLEMAS.md), apague-o.** Item resolvido que fica manda
 alguém refazer o que existe.
 
-`checar-links.mjs` confere links quebrados. Um verificador de âncoras — que falharia quando a
-documentação cita arquivo ou símbolo inexistente — está previsto e ainda não foi construído.
+Duas máquinas cobram esta documentação, e ambas rodam no CI:
+
+- `docs/checar-links.mjs` — links quebrados entre documentos
+- `backend/tests/test_ancoras_da_documentacao.py` — **arquivo citado que não existe**, e citação de
+  linha que passou do fim do arquivo. Blocos de código ficam de fora: ali o caminho é comando, não
+  referência de repositório

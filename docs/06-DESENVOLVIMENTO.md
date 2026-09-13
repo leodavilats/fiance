@@ -123,8 +123,15 @@ Se a explicação é boa demais para caber em uma linha, ela não é comentário
 | `mobile/test/contraste_test.dart` | WCAG nos dois temas |
 | `mobile/test` | Widgets e modelos |
 
-**Testes de arquitetura existem e reprovam:** condicional de plano fora de `entitlement/`, e
-importação de `entitlement` por `analysis`/`optimizer`/`collectors`/`ledger`.
+**Testes de arquitetura e de coerência existem e reprovam:**
+
+| Teste | O que trava |
+|---|---|
+| `test_entitlement.py` | Condicional de plano fora de `entitlement/`, e importação de `entitlement` pelo cálculo. A lista de camadas falha se uma delas não existir — pasta inexistente não é varrida, e o silêncio passaria |
+| `test_regua_nas_duas_plataformas.py` | Os limiares de score do Dart contra os do Python |
+| `test_ancoras_da_documentacao.py` | Documentação que cita arquivo ou linha inexistente |
+| `test_contrato_das_rotas.py` | Campo de resposta que some |
+| `test_money_columns.py` | Campo de dinheiro fora do tipo `Money` |
 
 **A razão de um teste existir vai na mensagem do assert.** É onde ela aparece quando ele falha.
 

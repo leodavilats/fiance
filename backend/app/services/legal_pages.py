@@ -138,8 +138,8 @@ exportação funcionando.</p>
 <section>
 <h2>8. Lei aplicável e contato</h2>
 <p>Estes termos são regidos pela lei brasileira. Dúvidas, pedidos de exclusão e exercício de
-direitos previstos na LGPD: veja o canal indicado na
-<a href="/privacidade">Política de Privacidade</a>.</p>
+direitos previstos na LGPD: <a href="mailto:leonardodavilats@gmail.com">leonardodavilats@gmail.com</a>,
+ou o canal indicado na <a href="/privacidade">Política de Privacidade</a>.</p>
 </section>
 """
 
@@ -231,9 +231,9 @@ você.</li>
 <li><strong>Apagar a conta</strong> — Você → Conta remove o dado, sem passar por atendimento e sem
 cerca de plano. É o mesmo botão que atende a um pedido de exclusão feito por qualquer canal.</li>
 </ul>
-<p>Um canal de atendimento para os demais direitos, e para falar com o encarregado pelo tratamento
-de dados, será publicado aqui antes de o aplicativo ser distribuído nas lojas. Enquanto isso, a
-exclusão e a exportação já funcionam sem depender de atendimento.</p>
+<p>Para os demais direitos, e para falar com o encarregado pelo tratamento de dados, escreva para
+<a href="mailto:leonardodavilats@gmail.com">leonardodavilats@gmail.com</a>. A exclusão e a
+exportação não dependem desse canal: funcionam pelo próprio aplicativo, a qualquer momento.</p>
 </section>
 
 <section>

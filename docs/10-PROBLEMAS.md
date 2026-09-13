@@ -13,17 +13,20 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 
 ## A · Motor de cálculo — auditoria de 2026-09-13
 
-### A1 · `MIN_DATA_COMPLETENESS` é declarado e nunca aplicado — **bug**
+### A1 · O piso de completude — *resolvido em 2026-09-13, com ressalva*
 
-`analysis/scoring.py:98` define o piso de 0,5 e **nada o usa**. A completude é calculada, viaja até o
-cliente em `data_completeness`, e nenhum corte acontece.
+O diagnóstico original estava incompleto. O piso **é aplicado**, no cliente:
+`fiScoreBandFor` devolve a banda `insufficient` abaixo de 0,5, e as telas usam
+(`mobile/lib/features/mes/widgets/feed_tiles.dart`). O que não existia era **consumidor no Python** —
+a constante estava duplicada em `scoring.py` sem uso, e nada comparava os dois lados.
 
-Um ativo com uma única dimensão disponível recebe score normalizado sobre o peso que sobrou e chega à
-tela com a mesma aparência de confiabilidade de um ativo completo. Combinado com o item A2, isso é o
-caso normal, não a exceção.
+Resolvido movendo o limiar para `analysis/score_ruler.py` e criando
+`tests/test_regua_nas_duas_plataformas.py`, que confronta os cinco limiares da régua com os do Dart.
 
-**Fechar é decidir o comportamento:** abster-se abaixo do piso, ou exibir o score com a completude
-visível na interface. As duas são defensáveis; o silêncio atual não é.
+**A ressalva que fica aberta:** o piso não é aplicado no backend de propósito. Aplicá-lo como
+supressão eliminaria o score de toda ação sem fundamentos completos no perfil arrojado, cuja
+completude típica é **0,35**. A leitura parcial declarada é melhor que tela vazia — mas isso é
+remendo enquanto o item 29 não for resolvido.
 
 ### A2 · O "DCF" não é um DCF
 
@@ -204,6 +207,16 @@ O serviço tem gatilho em `main` e `checkSuites: false`. Um commit vermelho vai 
 pre-deploy é `python -m app.release`, então **uma migração ruim é aplicada antes de qualquer teste
 terminar**. É o item de maior risco operacional da lista.
 
+### 6 · Rótulo e régua são escritos dos dois lados — os números já são comparados, os textos não
+
+Desde 2026-09-13, `tests/test_regua_nas_duas_plataformas.py` confronta os **cinco limiares
+numéricos** da régua de score entre `analysis/score_ruler.py` e `mobile/lib/core/product_rules.dart`,
+com o Python como fonte.
+
+**O que ainda não é comparado:** os rótulos das bandas ("Excelente entrada", "Boa oportunidade"…),
+o vocabulário de veredito e os rótulos de categoria. Continuam escritos duas vezes, e nada impede que
+o Dart chame de "Boa oportunidade" o que o Python chama de outra coisa.
+
 ### 18 · O contrato das rotas guarda campo que sai, não campo que entra
 
 ### 45 rotas sem contrato de resposta
@@ -230,35 +243,14 @@ Não existe chave de assinatura, e nenhum evento de telemetria foi visto em prod
 
 | Item | Ação |
 |---|---|
-| `backend/app/optimizer/` — diretório vazio, só `__init__.py` | Apagar · [ADR-010](decisoes/ADR-010-remover-otimizador.md) |
-| `OptimizationStrategy` em `models/enums.py` — nada importa | Apagar |
-| `MIN_DATA_COMPLETENESS` — declarado, nunca usado | Usar ou apagar (ver A1) |
 | `api/demo.py` — sem cliente desde 2026-09-11 | Decidir |
+
+`optimizer/`, `OptimizationStrategy` e a duplicata de `MIN_DATA_COMPLETENESS` foram removidos em
+2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md) e item A1).
 
 ---
 
 ## H · Pré-requisitos de loja não atendidos
-
-### 32 · O texto jurídico não publica canal de atendimento, e a loja exige um
-
-A Política diz que o canal "será publicado antes de o aplicativo ser distribuído", e **não existe
-endereço nenhum no repositório**. Exportar e apagar a conta funcionam sem atendimento, o que cobre os
-dois direitos mais pedidos; confirmação, correção e oposição não têm porta.
-
-Fechar é decidir o endereço e escrevê-lo em `services/legal_pages.py` — uma linha, e **bloqueia
-submissão**.
-
-### O aplicativo iOS nunca foi executado
-
-Nem em aparelho, nem em simulador. **Zero evidência** de que o produto funcione em iOS — e o roadmap
-prevê publicar nas duas lojas.
-
-O risco não é teórico: layout, fontes, rolagem, teclado, área segura, permissão de notificação e o
-fluxo de login com Google se comportam de forma diferente no iOS, e nada disso aparece em
-`flutter analyze` ou `flutter test`, que rodam sobre Dart. É a mesma classe de problema do build
-Android — suíte verde, plataforma quebrada — só que sem nenhuma execução para contrariar.
-
-Exige um Mac, que também não existe.
 
 ### Sign in with Apple não existe
 

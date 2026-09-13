@@ -60,14 +60,12 @@ servem a alguém que não tem tempo?**
   desprezível: um diretório e quatro constantes
 - O histórico do git preserva o que havia, que é uma linha de `__init__.py`
 
-**Ação necessária no código** — esta ADR não se cumpre sozinha:
+**Executada em 2026-09-13.** Saíram o diretório, o enum e a reexportação em `models/__init__.py`.
 
-```bash
-rm -r backend/app/optimizer/
-# e remover OptimizationStrategy de backend/app/models/enums.py
-```
-
-Registrado em [10-PROBLEMAS](../10-PROBLEMAS.md), seção G.
+Efeito colateral que a remoção expôs: o teste de arquitetura
+`test_o_calculo_nao_conhece_entitlement` varria `("analysis", "optimizer", "collectors", "ledger")`,
+e `rglob` numa pasta inexistente **não levanta erro** — apenas deixa de verificar, em silêncio. O
+teste passou a exigir que toda camada da lista exista, e ganhou `cashflow/`, que nunca esteve nela.
 
 ## Referências
 

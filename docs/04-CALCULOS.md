@@ -131,10 +131,20 @@ score = Σ(peso × valor) ÷ Σ(pesos disponíveis)
 completude = Σ(pesos disponíveis) ÷ Σ(todos os pesos)
 ```
 
-⚠️ **`MIN_DATA_COMPLETENESS = 0.5` está declarado e nunca é usado** (`scoring.py:98`). Não existe
-piso: um ativo com uma única dimensão disponível recebe score normalizado e chega à tela com a mesma
-aparência de confiabilidade de um ativo completo. A completude viaja até o cliente e ninguém a usa
-como corte. **É bug, não dívida.**
+### O piso de completude
+
+`MIN_DATA_COMPLETENESS = 0.5`, em `analysis/score_ruler.py`. Abaixo do piso, o score existe mas
+**não é apresentado como banda**: o cliente mostra a leitura como insuficiente
+(`fiScoreBandFor` devolve a banda `insufficient` em `mobile/lib/core/product_rules.dart`).
+
+O corte acontece **na apresentação, não no cálculo**, e isso é deliberado. Aplicá-lo como supressão
+no backend eliminaria o score de toda ação sem fundamentos completos no perfil arrojado, onde a
+completude típica é **0,35** — crescimento sozinho vale 40% do peso e quase nunca tem dado (ver
+[10-PROBLEMAS](10-PROBLEMAS.md), item 29). Suprimir entregaria tela vazia em vez de leitura parcial
+declarada.
+
+`tests/test_regua_nas_duas_plataformas.py` confronta o limiar do Python com o do Dart. **O Python é
+a fonte.**
 
 ### Bandas
 

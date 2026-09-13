@@ -6,6 +6,8 @@ SCORE_NEUTRAL = 40.0
 
 HIGHLIGHT_MIN_DY = 6.0
 
+MIN_DATA_COMPLETENESS = 0.5
+
 _BANDS = (
     (SCORE_STRONG, "Excelente entrada"),
     (SCORE_GOOD, "Boa oportunidade"),
@@ -18,6 +20,10 @@ def score_band(score: float) -> str:
         if score >= threshold:
             return label
     return "Evitar agora"
+
+
+def score_confiavel(data_completeness: float | None) -> bool:
+    return (1.0 if data_completeness is None else data_completeness) >= MIN_DATA_COMPLETENESS
 
 
 def is_highlight(verdict: str, score: float, dividend_yield: float | None) -> bool:
