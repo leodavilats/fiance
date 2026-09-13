@@ -34,10 +34,14 @@ remendo enquanto o item 29 não for resolvido.
 de **receita** como proxy do crescimento de lucro. A taxa de desconto é fixa em 13% para qualquer
 empresa — sem beta, sem WACC, sem prêmio por setor ou porte — e o P/L terminal é fixo em 15.
 
-É uma heurística razoável com nome errado. O nome importa porque a interface promete "consenso de N
-métodos", e o usuário supõe que um deles seja fluxo de caixa descontado.
+É uma heurística razoável com nome errado.
 
-**Fechar é escolher:** renomear para o que é (lucros descontados), ou implementar um DCF de verdade.
+**Mitigado em 2026-09-13:** o glossário passou a chamá-lo de "lucros descontados" e a declarar as
+três limitações — desconta lucro e não caixa, usa crescimento de receita como proxy, e a taxa de 13%
+é igual para qualquer empresa.
+
+**Segue aberto:** implementar um DCF de verdade, ou assumir a heurística e renomear o campo na API
+(`dcf`) junto. Decisão de produto: muda o número que a pessoa vê.
 
 ### A3 · O múltiplo de Graham não é ajustado ao juro brasileiro
 
@@ -45,11 +49,16 @@ métodos", e o usuário supõe que um deles seja fluxo de caixa descontado.
 e o Brasil passou a maior parte da década recente em juro alto. O método participa do consenso de
 toda ação e de todo BDR.
 
+**Mitigado em 2026-09-13:** o glossário declara a limitação. **Segue aberto:** ajustar o múltiplo à
+Selic muda o preço justo de toda a base, e é decisão de produto.
+
 ### A4 · O DCF é descartado sempre que há Bazin, e isso não está documentado na interface
 
 `fair_price.py:307`: `if bazin is not None: dcf = None`. Na prática, o DCF só participa do consenso de
-uma ação que **não paga dividendos**. É uma regra deliberada e invisível — a tela diz "consenso de 2
-métodos" sem dizer que um terceiro foi descartado por regra.
+uma ação que **não paga dividendos**.
+
+**Mitigado em 2026-09-13:** o verbete do glossário diz a regra. **Segue aberto:** a tela ainda mostra
+"consenso de 2 métodos" sem nomear quais — nomeá-los exige campo novo na resposta.
 
 ### A5 · O perfil de risco não afeta FIIs nem ETFs
 

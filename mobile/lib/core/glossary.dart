@@ -15,13 +15,19 @@ final Map<String, String> glossary = {
       'oportunidades, não o preço justo de consenso. Você troca em Você → Preferências.',
   'bazin':
       'Método Décio Bazin — define o Preço Teto como o dividendo médio anual dividido pela sua '
-      'meta de yield, configurável por classe em Configurações (padrão: 6% ações BR, 10% FIIs, '
-      '4% ETFs). A média usa os anos-calendário completos disponíveis, excluindo o ano corrente. '
-      'Comprar abaixo do teto garante um DY mínimo. Não se aplica a BDRs (Graham/DCF).',
+      'meta de yield, configurável por classe em Você → Preferências (padrão: 6% ações BR, '
+      '10% FIIs, 4% ETFs). A média usa os anos-calendário completos disponíveis, excluindo o ano '
+      'corrente; se o yield implícito passar de 30%, troca a média pela mediana, para que um '
+      'provento extraordinário não infle o teto por cinco anos. Comprar abaixo do teto garante '
+      'um DY mínimo. Pressupõe dividendo estável: para empresa cíclica, projeta o passado bom '
+      'para sempre. Não se aplica a BDRs.',
   'dcf':
-      'Fluxo de Caixa Descontado simplificado — projeta o lucro por ação por 5 anos usando o '
-      'crescimento de receita do ativo (8% a.a. quando o dado não existe ou é implausível), '
-      'desconta a 13% a.a. e soma um valor terminal a P/L 15.',
+      'Lucros descontados — projeta o lucro por ação por 5 anos usando o crescimento de receita '
+      'do ativo (8% a.a. quando o dado não existe, teto de 25%), desconta a 13% a.a. e soma um '
+      'valor terminal a P/L 15. Não é um fluxo de caixa descontado: desconta lucro, não caixa '
+      'livre, e usa crescimento de receita como proxy do crescimento de lucro. A taxa de 13% é '
+      'a mesma para qualquer empresa, sem ajuste por setor ou porte. '
+      'Só entra no consenso de ação que não paga dividendos — havendo Bazin, ele é descartado.',
   'rsi':
       'Índice de Força Relativa (14 dias) — mede se o ativo subiu ou caiu rápido demais no curto '
       'prazo. Acima de 70 indica sobrecompra; abaixo de 30, sobrevenda. É sinal de timing.',
@@ -42,7 +48,9 @@ final Map<String, String> glossary = {
       'pouco confiável — o número aparece ao lado do veredito para você descontar isso.',
   'graham':
       'Fórmula Benjamin Graham — Preço Intrínseco = √(22,5 × LPA × VPA). Válido para empresas '
-      'com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização.',
+      'com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização. '
+      'O múltiplo 22,5 é de 1949 e do mercado americano, e não é ajustado ao juro brasileiro: '
+      'com Selic alta, ele tende a ser generoso.',
   'pvp':
       'Preço / Valor Patrimonial — quanto se paga por cada R\$ 1 de patrimônio. P/VP < 1 indica '
       'desconto (comum em FIIs atrativos); > 1 indica ágio.',
