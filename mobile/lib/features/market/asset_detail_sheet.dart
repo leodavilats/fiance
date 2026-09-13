@@ -64,8 +64,11 @@ class _AssetDetailContent extends ConsumerWidget {
         final idade = formatIdade(a.asOf);
         final margem = a.marginOfSafety;
 
-        return ListView(
-          controller: scrollController,
+        return Column(
+          children: [
+            Expanded(
+              child: ListView(
+                controller: scrollController,
           padding: const EdgeInsets.fromLTRB(
             FiSpace.s5,
             0,
@@ -230,24 +233,56 @@ class _AssetDetailContent extends ConsumerWidget {
                   'É leitura do sistema sobre dado público, não recomendação de compra.',
             ),
 
-            const SizedBox(height: FiSpace.s5),
-            FiButton.primary(
-              label: 'Já comprei este ativo',
-              icon: Icons.add,
-              expand: true,
-              onPressed: () async {
-                final registrou = await abrirCompraDeAtivo(
-                  context,
-                  ref,
-                  ticker: a.symbol,
-                  precoAtual: a.price,
-                );
-                if (registrou && context.mounted) Navigator.of(context).pop();
-              },
+          ],
+              ),
             ),
+            _RodapeDeCompra(analysis: a),
           ],
         );
       },
+    );
+  }
+}
+
+class _RodapeDeCompra extends ConsumerWidget {
+  const _RodapeDeCompra({required this.analysis});
+
+  final AssetAnalysis analysis;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final brightness = Theme.of(context).brightness;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: fiGround1(brightness),
+        border: Border(top: BorderSide(color: fiHairline(brightness))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            FiSpace.s5,
+            FiSpace.s3,
+            FiSpace.s5,
+            FiSpace.s3,
+          ),
+          child: FiButton.primary(
+            label: 'Já comprei este ativo',
+            icon: Icons.add,
+            expand: true,
+            onPressed: () async {
+              final registrou = await abrirCompraDeAtivo(
+                context,
+                ref,
+                ticker: analysis.symbol,
+                precoAtual: analysis.price,
+              );
+              if (registrou && context.mounted) Navigator.of(context).pop();
+            },
+          ),
+        ),
+      ),
     );
   }
 }
