@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'widgets/search_action.dart';
 import '../features/patrimonio/patrimonio_screen.dart';
+import '../features/patrimonio/razao_screen.dart';
 import '../features/assets/fixed_income_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
@@ -112,6 +113,10 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'renda-fixa',
                   builder: (context, state) => const FixedIncomeScreen(),
+                ),
+                GoRoute(
+                  path: 'razao',
+                  builder: (context, state) => const RazaoScreen(),
                 ),
                 GoRoute(
                   path: 'projecao',

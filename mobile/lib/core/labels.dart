@@ -92,3 +92,13 @@ String debtKindLabel(String? kind) {
   if (kind == null) return '—';
   return fiTiposDeDivida[kind] ?? kind;
 }
+
+String lancamentoTipoLabel(String? kind) {
+  if (kind == null) return '—';
+  return fiTiposDeLancamento[kind] ?? kind;
+}
+
+String lancamentoTipoExplicacao(String? kind) {
+  if (kind == null) return '';
+  return fiExplicaTipoDeLancamento[kind] ?? '';
+}

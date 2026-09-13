@@ -147,3 +147,25 @@ const Map<String, String> fiTiposDeDivida = {
   'parcelamento': 'Parcelamento',
   'outros': 'Outros',
 };
+
+const Map<String, String> fiTiposDeLancamento = {
+  'buy': 'Compra',
+  'sell': 'Venda',
+  'split': 'Desdobramento',
+  'bonus': 'Bonificação',
+  'transfer_in': 'Transferência de entrada',
+  'transfer_out': 'Transferência de saída',
+  'amortization': 'Amortização',
+  'adjust': 'Declaração de posição',
+};
+
+const Map<String, String> fiExplicaTipoDeLancamento = {
+  'buy': 'Aumenta a quantidade e o custo. Entra no preço médio.',
+  'sell': 'Reduz quantidade e custo, nunca a média — é a convenção brasileira. Apura ganho no mês.',
+  'split': 'Multiplica a quantidade sem mexer no valor investido. Sem ele, o imposto sai errado.',
+  'bonus': 'Ações recebidas sem desembolso. Aumentam a quantidade e diluem a média.',
+  'transfer_in': 'Papel que chegou de outra corretora, com o custo que ele já tinha.',
+  'transfer_out': 'Papel que saiu para outra corretora. Reduz a posição sem apurar ganho.',
+  'amortization': 'Devolução de capital, comum em FII. Reduz o custo, não a quantidade.',
+  'adjust': 'Ancora a linha do tempo: o que vier depois se aplica em cima do que você declarou.',
+};

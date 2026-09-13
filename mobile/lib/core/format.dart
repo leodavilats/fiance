@@ -2,11 +2,22 @@ import 'package:intl/intl.dart';
 
 final _currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 final _percent = NumberFormat('##0.00', 'pt_BR');
+final _dia = DateFormat('dd/MM/yyyy', 'pt_BR');
+final _quantidade = NumberFormat('#,##0.########', 'pt_BR');
 
 String formatCurrency(double? value) => _currency.format(value ?? 0);
 
 String formatPercent(double? value) =>
     value == null ? '—' : '${_percent.format(value)}%';
+
+String formatDate(String? isoDate) {
+  if (isoDate == null || isoDate.length < 10) return '—';
+  final data = DateTime.tryParse(isoDate.substring(0, 10));
+  return data == null ? isoDate : _dia.format(data);
+}
+
+String formatQuantity(double? value) =>
+    value == null ? '—' : _quantidade.format(value);
 
 String formatRatio(double? ratio) =>
     ratio == null ? '—' : formatPercent(ratio * 100);

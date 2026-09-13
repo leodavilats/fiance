@@ -1680,3 +1680,80 @@ class SearchResults {
     total: (j['total'] as num?)?.toInt() ?? 0,
   );
 }
+
+class LedgerEntry {
+  LedgerEntry({
+    required this.id,
+    required this.kind,
+    required this.symbol,
+    required this.tradedOn,
+    this.quantity = 0,
+    this.price = 0,
+    this.fees = 0,
+    this.ratioFrom = 1,
+    this.ratioTo = 1,
+    this.amount = 0,
+    this.note,
+  });
+
+  final int? id;
+  final String kind;
+  final String symbol;
+  final String tradedOn;
+  final double quantity;
+  final double price;
+  final double fees;
+  final double ratioFrom;
+  final double ratioTo;
+  final double amount;
+  final String? note;
+
+  bool get temQuantidade => const {
+    'buy',
+    'sell',
+    'bonus',
+    'transfer_in',
+    'transfer_out',
+  }.contains(kind);
+
+  bool get temPreco => kind == 'buy' || kind == 'sell';
+
+  double get valorBruto => quantity * price;
+
+  factory LedgerEntry.fromJson(Map<String, dynamic> j) => LedgerEntry(
+    id: (j['id'] as num?)?.toInt(),
+    kind: j['kind'] as String? ?? 'buy',
+    symbol: j['symbol'] as String? ?? '',
+    tradedOn: j['traded_on'] as String? ?? '',
+    quantity: (j['quantity'] as num?)?.toDouble() ?? 0,
+    price: (j['price'] as num?)?.toDouble() ?? 0,
+    fees: (j['fees'] as num?)?.toDouble() ?? 0,
+    ratioFrom: (j['ratio_from'] as num?)?.toDouble() ?? 1,
+    ratioTo: (j['ratio_to'] as num?)?.toDouble() ?? 1,
+    amount: (j['amount'] as num?)?.toDouble() ?? 0,
+    note: j['note'] as String?,
+  );
+}
+
+class LedgerPage {
+  LedgerPage({
+    required this.items,
+    required this.count,
+    this.nextCursor,
+    this.hasMore = false,
+  });
+
+  final List<LedgerEntry> items;
+  final int count;
+  final String? nextCursor;
+  final bool hasMore;
+
+  factory LedgerPage.fromJson(Map<String, dynamic> j) => LedgerPage(
+    items: ((j['items'] as List?) ?? const [])
+        .map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    count: (j['count'] as num?)?.toInt() ?? 0,
+    nextCursor: j['next_cursor'] as String?,
+    hasMore: j['has_more'] as bool? ?? false,
+  );
+}

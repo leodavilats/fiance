@@ -53,3 +53,27 @@ def test_score_confiavel_respeita_o_piso():
         "0.35 é a completude de uma ação sem roe, margem e crescimento no perfil arrojado — "
         "o caso que o piso existe para marcar."
     )
+
+
+_VOCABULARY = (
+    pathlib.Path(__file__).resolve().parents[2] / "mobile" / "lib" / "core" / "vocabulary.dart"
+)
+
+
+@pytest.mark.skipif(not _VOCABULARY.exists(), reason="repositório sem a pasta mobile")
+def test_todo_tipo_de_lancamento_tem_rotulo_no_dart():
+    from app.ledger import TransactionKind
+
+    fonte = _VOCABULARY.read_text(encoding="utf-8")
+    bloco = re.search(
+        r"const Map<String, String> fiTiposDeLancamento = \{(.*?)\};", fonte, re.DOTALL
+    )
+    assert bloco, "fiTiposDeLancamento sumiu de vocabulary.dart."
+
+    declarados = set(re.findall(r"'([a-z_]+)':", bloco.group(1)))
+    faltando = sorted({k.value for k in TransactionKind} - declarados)
+
+    assert faltando == [], (
+        f"tipo de lançamento sem rótulo no Dart: {faltando}. A tela do razão mostraria o "
+        "código cru — 'transfer_in' no lugar de 'Transferência de entrada'."
+    )

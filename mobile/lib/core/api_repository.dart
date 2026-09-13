@@ -535,6 +535,48 @@ class ApiRepository {
         .toList();
   }
 
+  Future<LedgerPage> getTransactions({String? symbol, String? cursor}) async {
+    final res = await _dio.get(
+      '/transactions',
+      queryParameters: {'symbol': ?symbol, 'cursor': ?cursor},
+    );
+    return LedgerPage.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<int> createTransaction({
+    required String kind,
+    required String symbol,
+    required String tradedOn,
+    double quantity = 0,
+    double price = 0,
+    double fees = 0,
+    double ratioFrom = 1,
+    double ratioTo = 1,
+    double amount = 0,
+    String? note,
+  }) async {
+    final res = await _dio.post(
+      '/transactions',
+      data: {
+        'kind': kind,
+        'symbol': symbol,
+        'traded_on': tradedOn,
+        'quantity': quantity,
+        'price': price,
+        'fees': fees,
+        'ratio_from': ratioFrom,
+        'ratio_to': ratioTo,
+        'amount': amount,
+        'note': ?note,
+      },
+    );
+    return (res.data['id'] as num).toInt();
+  }
+
+  Future<void> deleteTransaction(int id) async {
+    await _dio.delete('/transactions/$id');
+  }
+
   Future<CashVocabulary> getCashVocabulary() async {
     final res = await _dio.get('/cashflow/vocabulary');
     return CashVocabulary.fromJson(res.data as Map<String, dynamic>);

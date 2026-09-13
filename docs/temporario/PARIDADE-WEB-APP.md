@@ -2,7 +2,7 @@
 
 > ## ⏳ DOCUMENTO TEMPORÁRIO
 >
-> **Critério de morte:** quando as nove funcionalidades marcadas `[SEM CLIENTE]` tiverem tela no
+> **Critério de morte:** quando as funcionalidades marcadas `[SEM CLIENTE]` tiverem tela no
 > aplicativo, **apague este arquivo** e remova a linha do índice em [README](../README.md).
 >
 > Ele existe para fechar uma janela aberta em 2026-09-11 e não deve sobreviver a ela. Se você estiver
@@ -30,16 +30,17 @@ histórico do git, e o backend está pronto e testado. Ver o componente Angular 
 
 Em ordem de gravidade.
 
-### 1 · Livro-razão — `ledger-entries`
+### ~~1 · Livro-razão~~ — ✅ **fechado em 2026-09-13**
 
-**A mais grave.** O razão é a fonte da carteira e do imposto
-([ADR-002](../decisoes/ADR-002-razao-fonte-unica.md)), e não há nenhuma tela.
+`mobile/lib/features/patrimonio/razao_screen.dart`, na rota `/patrimonio/razao`, alcançável pela
+seção "Livro-razão" do Patrimônio.
 
-| | |
-|---|---|
-| Backend | `POST /transactions`, `GET /transactions`, `DELETE /transactions/{id}` |
-| Falta | Listar, lançar, editar e apagar lançamento |
-| Depende | Nada. É o primeiro item do roadmap |
+Lista, registra e apaga lançamento, com reprojeção da carteira. Cobre os oito tipos, inclusive os
+eventos corporativos (item 8 desta lista, fechado junto). O formulário muda de campos conforme o
+tipo, e cada tipo explica o que faz com a posição.
+
+Ficou de fora, de propósito: **editar** lançamento. O backend não tem `PUT /transactions/{id}` — o
+caminho é apagar e registrar de novo, que é o que reprojeta corretamente.
 
 ### 2 · Importação de extrato — `import-trades`
 
@@ -80,10 +81,9 @@ Zero arquivos no aplicativo. Backend em `api/followed.py`.
 
 `GET /transactions/reconciliation` e `POST /transactions/rebuild`. Sem tela e sem plano.
 
-### 8 · Eventos corporativos
+### ~~8 · Eventos corporativos~~ — ✅ **fechado em 2026-09-13**
 
-`split`, `bonus`, `amortization` são lançamentos do razão. Sem tela, **desdobramento vira imposto
-errado**.
+`split`, `bonus` e `amortization` entram pelo formulário do razão.
 
 ### 9 · Exclusão de conta na interface
 
@@ -122,6 +122,7 @@ publicação, não só paridade.
 
 | Data | Lacunas abertas |
 |---|---|
-| 2026-09-13 | **9** |
+| 2026-09-13 | 9 |
+| 2026-09-13 | **7** — livro-razão e eventos corporativos fechados |
 
 Atualize esta tabela ao fechar cada uma. **Quando chegar a zero, apague o arquivo.**

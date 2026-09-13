@@ -147,3 +147,7 @@ final surplusProvider = FutureProvider.autoDispose<Surplus>((ref) {
 final cashVocabularyProvider = FutureProvider<CashVocabulary>((ref) {
   return ref.watch(apiRepositoryProvider).getCashVocabulary();
 });
+
+final razaoProvider = FutureProvider.autoDispose<LedgerPage>((ref) {
+  return ref.watch(apiRepositoryProvider).getTransactions();
+});

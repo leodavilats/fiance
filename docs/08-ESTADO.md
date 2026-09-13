@@ -124,12 +124,13 @@ imposto, e não tem nenhuma tela no aplicativo.
 
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
-| Razão como fonte única; posição é projeção | `[ATUAL]` | `ledger/projection.py` | ❌ **nenhuma** |
-| Registro de lançamento | `[SEM CLIENTE]` | `services/ledger_service.py` | ❌ |
+| Razão como fonte única; posição é projeção | `[ATUAL]` | `ledger/projection.py` | `patrimonio/razao_screen.dart` |
+| Registro de lançamento | `[IMPLEMENTADO]` | `services/ledger_service.py` | ✅ `/patrimonio/razao` |
+| Apagar lançamento, com reprojeção | `[IMPLEMENTADO]` | idem | ✅ idem |
+| Eventos corporativos pela interface | `[IMPLEMENTADO]` | `ledger/entries.py` | ✅ idem |
 | Importação de extrato (prévia + commit) | `[SEM CLIENTE]` | `importing/` | ❌ |
 | Reconstrução da projeção | `[SEM CLIENTE]` | `POST /transactions/rebuild` | ❌ |
 | Reconciliação projeção × razão | `[SEM CLIENTE]` | `GET /transactions/reconciliation` | ❌ |
-| Eventos corporativos (split, bonus, amortização) | `[SEM CLIENTE]` | `ledger/entries.py` | ❌ |
 | Apuração mensal de IR | `[IMPLEMENTADO]` | `ledger/apuracao.py` | parcial |
 | Compensação de prejuízo por categoria | `[IMPLEMENTADO]` | `ledger/apuracao.py` | ❌ |
 | Isenção mensal de R$ 20 mil | `[IMPLEMENTADO]` | `ledger/apuracao.py` | — |
@@ -213,10 +214,11 @@ Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma
 |---|---|
 | `[ATUAL]` | ~30 funcionalidades |
 | `[IMPLEMENTADO]` | ~14 |
-| `[SEM CLIENTE]` | **9** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
+| `[SEM CLIENTE]` | **7** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
 | `[PLANEJADO]` | ver [09-FUTURO](09-FUTURO.md) |
 | `[ABANDONADO]` | 8 blocos |
 
-O número que importa é o `[SEM CLIENTE]`: **nove funcionalidades que o backend serve e o aplicativo
-não alcança**, todas por perda de paridade em 2026-09-11. Enquanto ele não chegar a zero, o produto
+O número que importa é o `[SEM CLIENTE]`: **sete funcionalidades que o backend serve e o aplicativo
+não alcança**, todas por perda de paridade em 2026-09-11 — eram nove, e o livro-razão e os eventos
+corporativos saíram da lista em 2026-09-13. Enquanto ele não chegar a zero, o produto
 entrega menos do que possui.

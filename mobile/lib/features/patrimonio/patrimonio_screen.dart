@@ -122,6 +122,17 @@ class PatrimonioScreen extends ConsumerWidget {
                 ),
 
                 const FiClosedTradesSection(),
+
+                FiSection(
+                  title: 'Livro-razão',
+                  hint: 'A posição e o preço médio acima são reconstruídos a partir dos seus '
+                      'lançamentos.',
+                  action: FiButton.secondary(
+                    label: 'Ver lançamentos',
+                    onPressed: () => context.go('/patrimonio/razao'),
+                  ),
+                  child: const SizedBox.shrink(),
+                ),
               ],
             );
           },
