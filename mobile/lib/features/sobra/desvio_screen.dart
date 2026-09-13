@@ -9,9 +9,12 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/help_tooltip.dart';
+import '../../core/widgets/score_ruler.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
+import '../../core/score_ruler.dart';
 import '../../core/theme.dart';
 
 class DesvioScreen extends ConsumerWidget {
@@ -119,6 +122,7 @@ class DesvioScreen extends ConsumerWidget {
                   FiSection(
                     title: 'Posições para revisar',
                     count: data.items.length,
+                    trailing: const _PerfilQueOrdena(),
                     child: Column(
                       children: [
                         for (final item in data.items) _RebalanceObject(item: item),
@@ -352,10 +356,18 @@ class _RebalanceObject extends StatelessWidget {
             ),
             if (item.reasons.isNotEmpty) ...[
               const SizedBox(height: FiSpace.s2),
-              Text(
-                item.reasons.first,
-                style: FiType.body.copyWith(color: fiInk2(context)),
-              ),
+              for (final razao in item.reasons.take(3))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: FiSpace.s1),
+                  child: Text(
+                    razao,
+                    style: FiType.body.copyWith(color: fiInk2(context)),
+                  ),
+                ),
+            ],
+            if (item.realocarPara != null) ...[
+              const SizedBox(height: FiSpace.s2),
+              _Realocacao(alvo: item.realocarPara!),
             ],
             if (item.requiresTaxReview) ...[
               const SizedBox(height: FiSpace.s1),
@@ -385,4 +397,81 @@ class _RebalanceObject extends StatelessWidget {
     'realocar' => FiState.attention,
     _ => FiState.neutral,
   };
+}
+
+class _Realocacao extends StatelessWidget {
+  const _Realocacao({required this.alvo});
+
+  final RebalanceTarget alvo;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => context.push('/ativo/${alvo.ticker}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(Icons.arrow_forward, size: 16, color: fiInk3(context)),
+            const SizedBox(width: FiSpace.s2),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  style: FiType.body.copyWith(color: fiInk2(context)),
+                  children: [
+                    const TextSpan(text: 'Se sair daqui, '),
+                    TextSpan(
+                      text: alvo.ticker,
+                      style: FiType.ticker.copyWith(color: fiInk1(context)),
+                    ),
+                    TextSpan(
+                      text: ' está ${scoreBand(alvo.score, Theme.of(context).brightness).text.toLowerCase()}'
+                          ' na mesma categoria.',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: FiSpace.s2),
+            ScoreRuler(
+              score: alvo.score,
+              size: ScoreRulerSize.inline,
+              showValue: false,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PerfilQueOrdena extends ConsumerWidget {
+  const _PerfilQueOrdena();
+
+  static const _rotulos = {
+    'conservative': 'conservador',
+    'moderate': 'moderado',
+    'aggressive': 'arrojado',
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(preferencesProvider);
+
+    return prefs.maybeWhen(
+      data: (p) {
+        final rotulo = _rotulos[p.riskProfile] ?? p.riskProfile;
+        return HelpTooltip(
+          termKey: 'perfil_de_risco',
+          label: 'perfil $rotulo',
+          child: Text(
+            'perfil $rotulo',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
 }

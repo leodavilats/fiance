@@ -577,9 +577,16 @@ class _AllOpportunitiesView extends ConsumerWidget {
               if (idade.isNotEmpty && index == 0) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: FiSpace.s2),
-                  child: Text(
-                    'Cotações lidas $idade — o carimbo é o do preço mais antigo da lista.',
-                    style: FiType.caption.copyWith(color: fiInk3(context)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Cotações lidas $idade — o carimbo é o do preço mais antigo da lista.',
+                        style: FiType.caption.copyWith(color: fiInk3(context)),
+                      ),
+                      const SizedBox(height: FiSpace.s1),
+                      const FiPerfilQueOrdena(),
+                    ],
                   ),
                 );
               }
@@ -722,5 +729,35 @@ class _Cifra extends StatelessWidget {
     }
 
     return HelpTooltip(termKey: chave, label: label, child: cifra);
+  }
+}
+
+class FiPerfilQueOrdena extends ConsumerWidget {
+  const FiPerfilQueOrdena({super.key});
+
+  static const _rotulos = {
+    'conservative': 'conservador',
+    'moderate': 'moderado',
+    'aggressive': 'arrojado',
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(preferencesProvider);
+
+    return prefs.maybeWhen(
+      data: (p) {
+        final rotulo = _rotulos[p.riskProfile] ?? p.riskProfile;
+        return HelpTooltip(
+          termKey: 'perfil_de_risco',
+          label: 'perfil $rotulo',
+          child: Text(
+            'Ordenado pelo seu perfil $rotulo.',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
   }
 }

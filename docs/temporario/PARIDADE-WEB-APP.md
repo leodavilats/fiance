@@ -62,13 +62,13 @@ do crédito, e lista as ressalvas da fonte.
 A regra foi respeitada: **nada vem marcado** e **não existe "aceitar todos"** — o botão diz quantos
 você escolheu e fica desabilitado em zero.
 
-### 4 · Sugestões de rebalanceamento — `rebalance-suggestions`
+### ~~4 · Sugestões de rebalanceamento~~ — ✅ **fechado em 2026-09-13**
 
-| | |
-|---|---|
-| Backend | `analysis/strategy.py:378` — compras por lacuna e reduções por veredito, com razões |
-| Falta | A tela |
-| Nota | **É a frase-alvo do produto** e a hipótese de receita. Ver [09-FUTURO](../09-FUTURO.md), item 3 |
+`/sobra/desvio` já listava as posições a revisar, mas mostrava só a primeira razão e **omitia
+`realocar_para`** — o alvo, que é a segunda metade da frase-alvo do produto.
+
+Agora mostra as três razões, o alvo com régua de score, e o perfil de risco que ordenou a lista,
+com o glossário explicando o que ele muda. O mesmo indicador de perfil entrou em `/descobrir`.
 
 ### 5 · Ativos seguidos — `followed-suggestions`
 
@@ -128,6 +128,7 @@ publicação, não só paridade.
 |---|---|
 | 2026-09-13 | 9 |
 | 2026-09-13 | 7 — livro-razão e eventos corporativos fechados |
-| 2026-09-13 | **6** — proventos fechados |
+| 2026-09-13 | 6 — proventos fechados |
+| 2026-09-13 | **5** — rebalanceamento fechado |
 
 Atualize esta tabela ao fechar cada uma. **Quando chegar a zero, apague o arquivo.**

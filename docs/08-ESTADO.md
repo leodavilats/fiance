@@ -112,7 +112,8 @@ ordem:
 | Setores | `[ATUAL]` | `analysis/sectors.py` | — |
 | Benchmark CDI/Selic/IPCA | `[ATUAL]` | `collectors/rates.py` | — |
 | Busca global | `[IMPLEMENTADO]` | `api/search.py` | `busca/busca_screen.dart` |
-| **Sugestões de rebalanceamento (comprar e reduzir)** | `[SEM CLIENTE]` | `analysis/strategy.py` | ❌ parcial |
+| Sugestões de rebalanceamento, com o alvo da realocação | `[ATUAL]` | `analysis/strategy.py` | `sobra/desvio_screen.dart` |
+| Perfil de risco visível onde ele ordena | `[ATUAL]` | `analysis/scoring.py` | `/descobrir` e `/sobra/desvio` |
 | Ativos seguidos | `[SEM CLIENTE]` | `api/followed.py` | ❌ |
 
 ---
@@ -215,11 +216,11 @@ Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma
 |---|---|
 | `[ATUAL]` | ~30 funcionalidades |
 | `[IMPLEMENTADO]` | ~14 |
-| `[SEM CLIENTE]` | **6** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
+| `[SEM CLIENTE]` | **5** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
 | `[PLANEJADO]` | ver [09-FUTURO](09-FUTURO.md) |
 | `[ABANDONADO]` | 8 blocos |
 
-O número que importa é o `[SEM CLIENTE]`: **seis funcionalidades que o backend serve e o aplicativo
-não alcança**, todas por perda de paridade em 2026-09-11 — eram nove, e o livro-razão, os eventos
-corporativos e os proventos saíram da lista em 2026-09-13. Enquanto ele não chegar a zero, o produto
+O número que importa é o `[SEM CLIENTE]`: **cinco funcionalidades que o backend serve e o aplicativo
+não alcança**, todas por perda de paridade em 2026-09-11 — eram nove, e quatro saíram da lista em
+2026-09-13: livro-razão, eventos corporativos, proventos e o alvo da realocação. Enquanto ele não chegar a zero, o produto
 entrega menos do que possui.

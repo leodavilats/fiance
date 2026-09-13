@@ -8,6 +8,11 @@ final Map<String, String> glossary = {
       'Margem de Segurança — desconto do preço atual em relação ao preço justo calculado. '
       'Quanto maior, mais "barato" está o ativo em relação ao seu valor intrínseco.',
   'score': scoreGlossary,
+  'perfil_de_risco':
+      'Perfil de risco — decide o peso de cada critério no score e o retorno que o sistema cobra '
+      'de cada classe para calcular o preço justo. No conservador os dividendos pesam 25% e o '
+      'crescimento 5%; no arrojado a conta se inverte, com crescimento em 40%. Muda a ordem das '
+      'oportunidades, não o preço justo de consenso. Você troca em Você → Preferências.',
   'bazin':
       'Método Décio Bazin — define o Preço Teto como o dividendo médio anual dividido pela sua '
       'meta de yield, configurável por classe em Configurações (padrão: 6% ações BR, 10% FIIs, '

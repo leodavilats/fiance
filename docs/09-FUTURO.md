@@ -36,17 +36,20 @@ Ver de onde veio cada provento e lançar os recebidos. Hoje o aplicativo mostra 
 caixa, mas não há como inspecionar a origem nem gerir os pendentes. `GET /dividends` e
 `/dividends/pending` existem sem cliente.
 
-### 3 · Oportunidades personalizadas por perfil, metas e carteira
+### ~~3 · Oportunidades personalizadas~~ — parcialmente entregue em 2026-09-13
 
 A frase-alvo, declarada pelo autor:
 
 > *"PETR4 está 20% abaixo do preço justo e cabe na sua meta de renda, e você tem ITSA4 que está 20%
 > acima — avalie se vale fazer o ajuste."*
 
-**Boa parte disso já existe no backend.** `analysis/strategy.py:378` (`build_rebalance_suggestions`)
-produz sugestões de compra por lacuna de alocação e de redução por veredito, com razões escritas.
-Falta a tela, e falta o perfil de risco aparecer na interface — ele já muda os pesos do score e nada
-conta isso ao usuário.
+**Entregue:** `/sobra/desvio` mostra o alvo da realocação com régua de score, as três razões, e o
+perfil de risco que ordenou a lista. O perfil também aparece em `/descobrir`, com o glossário
+dizendo o que ele muda.
+
+**Falta, e depende do item 4:** a frase ainda não cita o preço justo do alvo nem a margem de
+segurança dos dois lados — e citar isso com mais força exige confiar no número, que é o item
+seguinte.
 
 Esta é a hipótese de receita do produto. Ver
 [ADR-006](decisoes/ADR-006-recomendacao-personalizada.md).
