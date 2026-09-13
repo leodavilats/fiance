@@ -126,6 +126,7 @@ imposto, e não tem nenhuma tela no aplicativo.
 |---|---|---|---|
 | Razão como fonte única; posição é projeção | `[ATUAL]` | `ledger/projection.py` | `patrimonio/razao_screen.dart` |
 | Registro de lançamento | `[IMPLEMENTADO]` | `services/ledger_service.py` | ✅ `/patrimonio/razao` |
+| Comprar direto do Descobrir, com o preço de agora | `[IMPLEMENTADO]` | `POST /transactions` (`buy`) | `market/comprar_sheet.dart` |
 | Apagar lançamento, com reprojeção | `[IMPLEMENTADO]` | idem | ✅ idem |
 | Eventos corporativos pela interface | `[IMPLEMENTADO]` | `ledger/entries.py` | ✅ idem |
 | Importação de extrato (prévia + commit) | `[SEM CLIENTE]` | `importing/` | ❌ |

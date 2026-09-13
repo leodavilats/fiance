@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
 import '../../core/score_ruler.dart' show consensusLabel, dataYearsLabel, trendBasisLabel;
+import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/measure.dart';
 import '../../core/widgets/provenance.dart';
@@ -15,6 +16,7 @@ import '../../core/providers.dart';
 import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
+import 'comprar_sheet.dart';
 
 void showAssetDetailSheet(BuildContext context, String ticker) {
   showModalBottomSheet<void>(
@@ -228,6 +230,21 @@ class _AssetDetailContent extends ConsumerWidget {
                   'É leitura do sistema sobre dado público, não recomendação de compra.',
             ),
 
+            const SizedBox(height: FiSpace.s5),
+            FiButton.primary(
+              label: 'Já comprei este ativo',
+              icon: Icons.add,
+              expand: true,
+              onPressed: () async {
+                final registrou = await abrirCompraDeAtivo(
+                  context,
+                  ref,
+                  ticker: a.symbol,
+                  precoAtual: a.price,
+                );
+                if (registrou && context.mounted) Navigator.of(context).pop();
+              },
+            ),
           ],
         );
       },

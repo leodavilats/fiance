@@ -87,6 +87,11 @@ mudar — e o usuário não saber.
 
 **Preço médio segue a convenção brasileira:** venda reduz quantidade e custo, nunca a média.
 
+**Comprar não é declarar posição.** Uma compra (`buy`) soma à posição e recalcula a média; uma
+declaração (`adjust`, via `POST /portfolio/position`) diz "eu tenho isto" e ancora a linha do tempo.
+Usar declaração onde cabia compra apaga o histórico e faz o imposto da venda futura sair errado —
+por isso o botão do Descobrir registra compra.
+
 **Uma declaração de posição ancora a linha do tempo, e a assimetria é proposital.** O que vier
 depois se aplica em cima. O que tem data anterior e **soma** posição (compra, bonificação,
 transferência de entrada) já está dentro do que foi declarado, e é descartado com aviso — senão
