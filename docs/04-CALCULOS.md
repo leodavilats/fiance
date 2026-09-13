@@ -15,7 +15,7 @@ Se uma fórmula aqui divergir do código, o código está certo e este documento
 | Método | Fórmula | Aplicado a | Âncora |
 |---|---|---|---|
 | **Bazin** | `dividendo médio 5a ÷ yield desejado` | ações, FIIs, ETFs | `analysis/fair_price.py:157` |
-| **Graham** | `√(22,5 × LPA × VPA)` | ações, BDRs | `analysis/fair_price.py:166` |
+| **Graham** | `√(22,5 × LPA × VPA)` ⚠️ | ações, BDRs | `analysis/fair_price.py:166` |
 | **Lucros descontados** | LPA projetado 5 anos, desconto 13%, P/L terminal 15 | ações, BDRs | `analysis/fair_price.py:184` |
 | **VPA** | valor patrimonial por cota | FIIs | `analysis/fair_price.py:258` |
 
@@ -67,6 +67,11 @@ no período, cai para os últimos 12 meses.
 
 ### Limitações — leia antes de confiar no número
 
+0. ⚠️ **Graham é aplicado fora da própria faixa de validade.** O método vale para P/L ≤ 15 e
+   P/VP ≤ 1,5 — o glossário diz isso ao usuário —, e o código **não verifica nenhum dos dois**.
+   Junto com o descarte do DCF, isso faz empresa de crescimento sair sistematicamente "cara": em
+   2026-09-13, 54% de uma amostra de 33 ativos recebeu sinal de venda. Ver
+   [10-PROBLEMAS](10-PROBLEMAS.md), itens A0 e A6.
 1. **O "DCF" não é um DCF.** Desconta **lucro por ação**, não fluxo de caixa livre, e usa
    crescimento de **receita** como proxy de crescimento de lucro. É um modelo de lucros descontados
    com premissas constantes.
@@ -137,11 +142,14 @@ completude = Σ(pesos disponíveis) ÷ Σ(todos os pesos)
 **não é apresentado como banda**: o cliente mostra a leitura como insuficiente
 (`fiScoreBandFor` devolve a banda `insufficient` em `mobile/lib/core/product_rules.dart`).
 
-O corte acontece **na apresentação, não no cálculo**, e isso é deliberado. Aplicá-lo como supressão
-no backend eliminaria o score de toda ação sem fundamentos completos no perfil arrojado, onde a
-completude típica é **0,35** — crescimento sozinho vale 40% do peso e quase nunca tem dado (ver
-[10-PROBLEMAS](10-PROBLEMAS.md), item 29). Suprimir entregaria tela vazia em vez de leitura parcial
-declarada.
+O corte acontece **na apresentação, não no cálculo**, e isso é deliberado: suprimir entregaria tela
+vazia em vez de leitura parcial declarada.
+
+A medição de 2026-09-13 mostrou que, **para ação**, isso quase nunca dispara — os fundamentos chegam
+em 80% a 100% dos casos. Onde ele importa é em **FII, BDR e ETF**, cujas dimensões de fundamento são
+vazias por natureza da classe: FII perde a liquidez (15% do peso, `market_cap` ausente em 5 de 5) e
+BDR perde Graham inteiro (VPA ausente em 4 de 4, e o consenso cai para um método). Ver
+[10-PROBLEMAS](10-PROBLEMAS.md), item 3.
 
 `tests/test_regua_nas_duas_plataformas.py` confronta o limiar do Python com o do Dart. **O Python é
 a fonte.**

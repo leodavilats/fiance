@@ -10,10 +10,15 @@ Subir, observar, reverter — e o que falta para publicar nas lojas.
 | Ambiente | Onde | Banco |
 |---|---|---|
 | Desenvolvimento | Máquina local | SQLite em `.cache/fiance.db` |
-| Produção | Railway | Postgres gerenciado |
+| **Staging** | Railway, projeto `fiance`, ambiente `staging` | Postgres próprio, volume de 5 GB |
+| Produção | Railway, ambiente `production` | Postgres gerenciado |
 
-Não existe staging. Com um usuário e um autor, um ambiente intermediário custaria mais do que
-entrega — a decisão deve ser revista antes de haver usuários reais.
+URL de produção: `https://fiance.up.railway.app`
+
+⚠️ **Staging acompanha a mesma branch que produção (`main`)**, então ele não é um passo *antes* do
+deploy: é uma segunda cópia do mesmo commit. Para virar staging de verdade, precisaria acompanhar
+outra branch — e aí seria o lugar natural de resolver o item 5 de
+[10-PROBLEMAS](10-PROBLEMAS.md), em que um commit vermelho vai direto a produção.
 
 ---
 

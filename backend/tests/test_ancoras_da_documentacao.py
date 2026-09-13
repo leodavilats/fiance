@@ -13,8 +13,6 @@ _CAMINHO = re.compile(r"(?<![\w/.-])((?:backend|mobile|docs)/[\w./-]*\.\w+)")
 
 _SIMBOLO = re.compile(r"`?([\w./-]+\.py):(\d+)`?")
 
-# Bloco de código é comando, não referência: `cd mobile && python tool/build_icons.py` está certo
-# como comando e erraria como caminho de repositório.
 _BLOCO = re.compile(r"```.*?```", re.DOTALL)
 
 

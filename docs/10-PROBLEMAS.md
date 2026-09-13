@@ -13,6 +13,56 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 
 ## A · Motor de cálculo — auditoria de 2026-09-13
 
+### A0 · O consenso pende para dividendo, e 54% da amostra sai como venda — **o mais grave**
+
+Medido em produção em 2026-09-13, amostra de 33 ativos:
+
+| Veredito | Ativos | % |
+|---|---|---|
+| SELL | 10 | 30% |
+| STRONG_SELL | 8 | 24% |
+| BUY | 6 | 18% |
+| HOLD | 5 | 15% |
+| UNKNOWN | 3 | 9% |
+| STRONG_BUY | 1 | 3% |
+
+**Mais da metade da amostra recebe sinal de venda**, e a margem de segurança se distribui de forma
+bimodal, alinhada ao dividend yield:
+
+| Pagam pouco dividendo | MOS | Pagam muito | MOS |
+|---|---|---|---|
+| WEGE3 (DY 1,9%) | **−308%** | PTBL3 | +72% |
+| RADL3 | −190% | GRND3 | +61% |
+| TOTS3 | −114% | CSAN3 | +59% |
+| BPAC11 | −94% | PETR4 | +57% |
+
+A causa é estrutural: para ação, o consenso é **Bazin + Graham**, e o DCF é descartado sempre que há
+Bazin (item A4). Bazin é `dividendo médio ÷ 6%`, então empresa que retém lucro para crescer sai
+sistematicamente "cara". O produto se apresenta como consenso de métodos e **opera, na prática, como
+uma régua de dividendos**.
+
+Isso atinge a tese do produto de frente: a pergunta é *"que ativo eu compro agora?"*, e a resposta
+hoje é "quase nenhum, exceto os maiores pagadores de dividendo".
+
+**Fechar é decisão de produto**, e as saídas não são excludentes: ponderar o consenso em vez de tirar
+média simples; deixar o DCF participar junto com o Bazin; ou aplicar a faixa de validade de Graham
+(item A6), que sozinha já removeria os casos mais extremos.
+
+### A6 · Graham é aplicado fora da própria faixa de validade
+
+`graham_fair_price` (`analysis/fair_price.py`) aplica `√(22,5 × LPA × VPA)` a qualquer empresa. Não
+verifica nada além de LPA e VPA positivos.
+
+Mas o glossário **promete ao usuário** que o método vale "para empresas com P/L ≤ 15 e P/VP ≤ 1,5".
+
+WEGE3 tem P/L 34,6 e P/VP 11,5 — quase o dobro e quase oito vezes os limites —, e mesmo assim recebe
+um preço justo de Graham de R$ 12,28 contra preço de R$ 51,49. Os dois métodos do consenso estão
+fora da faixa em que fazem sentido, e nada no código percebe.
+
+É o achado mais acionável do conjunto: a condição já está escrita, em português, na tela. Falta
+implementá-la — e decidir o que fazer quando ela não é atendida (abster-se do método, ou abster-se do
+veredito).
+
 ### A1 · O piso de completude — *resolvido em 2026-09-13, com ressalva*
 
 O diagnóstico original estava incompleto. O piso **é aplicado**, no cliente:
@@ -71,29 +121,43 @@ Junto com o item 29, isto compromete a personalização que é a hipótese de re
 
 ## B · Dado e fonte
 
-### 3 · A cobertura dos fundamentos por classe de ativo não foi medida
+### 3 · Cobertura dos fundamentos — **medida em 2026-09-13**
 
-`roe`, `profit_margin`, `revenue_growth` e `debt_to_equity` passaram a chegar. O que foi conferido
-contra a API real é **ação não-financeira**: WEGE3, VALE3, BBAS3. Não foi medido quanto disso existe
-para BDR, FII e small cap de liquidez fina.
+Amostra de 33 ativos em produção, pela rota pública. Presentes / total:
 
-Dois limites conhecidos por construção: **banco não preenche as chaves de dívida financeira**, então
-`debt_to_equity` fica nulo para instituição financeira — de propósito, porque somar ausência daria 0%
-e o produto diria "dívida muito baixa, empresa sólida" para todo banco. E **fundamento anual é velho
-por natureza**.
+| Classe | n | ROE | Margem | Cresc. | D/E | VPA | LPA | Val. mercado |
+|---|---|---|---|---|---|---|---|---|
+| Ação grande | 8 | 7 | 8 | 8 | 6 | 8 | 8 | 8 |
+| Ação média | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 4 |
+| Ação pequena | 5 | 3 | 4 | 4 | 4 | 4 | 5 | 5 |
+| Banco | 4 | 2 | 4 | 4 | **0** | 4 | 4 | 2 |
+| FII | 5 | 0 | 0 | 0 | 0 | 5 | 0 | **0** |
+| BDR | 4 | 0 | 0 | 0 | 0 | **0** | 4 | 4 |
+| ETF | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-A medida é uma chamada: `GET /api/v1/data-quality` reporta cobertura campo a campo depois da primeira
-varredura completa.
+**Para ação, a cobertura é boa** — 80% a 100% nos quatro campos de fundamento. O problema que o item
+29 descrevia **não existe mais para ações**; ele descrevia o estado anterior a 2026-09-11.
 
-### 29 · Três das seis dimensões do score nunca têm dado, e o perfil de risco fica quase inerte
+O que a medição encontrou de novo:
 
-Consequência direta do item 3, e **mais grave que o item A5**. Com os pesos reais, sobra 0,60 de peso
-no perfil conservador, 0,55 no moderado e 0,35 no arrojado. O que resta em todos é margem de
-segurança, dividendos e técnico, renormalizados. **Crescimento vale 40% do peso arrojado e nunca
-existe.**
+- **Banco sem D/E: 0 de 4.** Conhecido e deliberado
+- **FII sem valor de mercado: 0 de 5.** `_FII_WEIGHTS` dá 15% do peso à liquidez, que vem de
+  `market_cap` — então todo FII perde essa dimensão e é pontuado só por margem e dividendos
+- **BDR sem VPA: 0 de 4.** Sem VPA não há Graham, e o consenso de BDR cai para **um método só**, o
+  DCF. `consensus_methods: 1` em todos os quatro
+- **ETF sem nada.** Confirma o item 28, e pior: o veredito sai `UNKNOWN` na rota pública, então nem
+  o remendo por RSI está atuando ali
 
-O produto descreve "qualidade e endividamento ponderados pelo seu perfil" — que é o produto que
-existirá quando houver segunda fonte de fundamentos.
+Repetir a medição: `GET /api/v1/data-quality` (exige sessão) ou amostrar
+`GET /api/v1/public/asset/{ticker}`, que não exige.
+
+### 29 · ~~Três das seis dimensões nunca têm dado~~ — **superado pela medição de 2026-09-13**
+
+Este item descrevia o estado anterior a 2026-09-11 e **não vale mais para ações**: ROE, margem,
+crescimento e D/E chegam em 80% a 100% da amostra, e o perfil de risco pondera o que deveria.
+
+O que sobra dele, em forma menor: para **FII, BDR e ETF** as dimensões de fundamento continuam
+vazias — por natureza da classe, não por falha de coleta. Isso está no item 3 e no A5.
 
 ### 28 · O ETF é estruturalmente mal avaliado, e o remendo tem consequência
 
