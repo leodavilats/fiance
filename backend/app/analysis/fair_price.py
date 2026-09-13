@@ -61,6 +61,10 @@ class FairPriceResult:
 
     pvp: float | None = None
 
+    method_dispersion: float | None = None
+
+    methods_disagree: bool = False
+
     details: dict[str, float | None] = field(default_factory=dict)
 
 
@@ -170,10 +174,28 @@ def bazin_fair_price(
     return round(avg_dividend / desired_yield, 2)
 
 
-def graham_fair_price(eps: float | None, book_value: float | None) -> float | None:
+GRAHAM_MAX_PE = 15.0
+GRAHAM_MAX_PB = 1.5
 
+MAX_METHOD_DISPERSION = 2.0
+
+
+def graham_fair_price(
+    eps: float | None,
+    book_value: float | None,
+    price: float | None = None,
+    pb_ratio: float | None = None,
+) -> float | None:
     if eps is None or book_value is None or eps <= 0 or book_value <= 0:
         return None
+
+    if price is not None and price > 0:
+        if price / eps > GRAHAM_MAX_PE:
+            return None
+
+        pb = pb_ratio if (pb_ratio and pb_ratio > 0) else price / book_value
+        if pb > GRAHAM_MAX_PB:
+            return None
 
     return round(math.sqrt(22.5 * eps * book_value), 2)
 
@@ -265,7 +287,7 @@ def compute_fair_price_inputs(
     graham: float | None = None
     dcf: float | None = None
     if not is_fii and not is_etf:
-        graham = graham_fair_price(eps, book_value)
+        graham = graham_fair_price(eps, book_value, price=price, pb_ratio=pb_ratio)
         if eps is not None and eps > 0:
             dcf = dcf_fair_price(eps, revenue_growth_pct)
 
@@ -312,12 +334,17 @@ def fair_price_from_inputs(
         bazin = None
         candidates = [v for v in (graham, dcf) if v is not None]
     else:
-        if bazin is not None:
-            dcf = None
         candidates = [v for v in (bazin, graham, dcf) if v is not None]
 
     consensus = round(sum(candidates) / len(candidates), 2) if candidates else None
     consensus_methods = len(candidates)
+
+    dispersion: float | None = None
+    if len(candidates) >= 2:
+        menor = min(candidates)
+        if menor > 0:
+            dispersion = round(max(candidates) / menor, 2)
+    disagree = dispersion is not None and dispersion >= MAX_METHOD_DISPERSION
 
     mos = None
     if consensus and price and price > 0:
@@ -340,6 +367,8 @@ def fair_price_from_inputs(
         dcf=dcf,
         consensus=consensus,
         consensus_methods=consensus_methods,
+        method_dispersion=dispersion,
+        methods_disagree=disagree,
         margin_of_safety=mos,
         avg_dividend_5y=round(inputs.avg_dividend, 4) if inputs.avg_dividend else None,
         dy_12m=dy_12m,

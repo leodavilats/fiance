@@ -98,6 +98,19 @@ def decide(
 
     confidence = 0.4
 
+    if getattr(fair, "methods_disagree", False) and fair.consensus:
+        reasons.append(
+            f"Os {fair.consensus_methods} métodos de preço justo discordam por "
+            f"{fair.method_dispersion:.1f}x entre si. A média deles não sustenta um veredito."
+        )
+        return Decision(
+            verdict="UNKNOWN",
+            label=LABELS["UNKNOWN"],
+            confidence=0.2,
+            reasons=reasons,
+            band_verdict=banda,
+        )
+
     if fair.consensus and current_price:
         if fair.margin_of_safety is not None:
             mos_pct = fair.margin_of_safety * 100

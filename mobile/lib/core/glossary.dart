@@ -26,8 +26,7 @@ final Map<String, String> glossary = {
       'do ativo (8% a.a. quando o dado não existe, teto de 25%), desconta a 13% a.a. e soma um '
       'valor terminal a P/L 15. Não é um fluxo de caixa descontado: desconta lucro, não caixa '
       'livre, e usa crescimento de receita como proxy do crescimento de lucro. A taxa de 13% é '
-      'a mesma para qualquer empresa, sem ajuste por setor ou porte. '
-      'Só entra no consenso de ação que não paga dividendos — havendo Bazin, ele é descartado.',
+      'a mesma para qualquer empresa, sem ajuste por setor ou porte.',
   'rsi':
       'Índice de Força Relativa (14 dias) — mede se o ativo subiu ou caiu rápido demais no curto '
       'prazo. Acima de 70 indica sobrecompra; abaixo de 30, sobrevenda. É sinal de timing.',
@@ -41,14 +40,19 @@ final Map<String, String> glossary = {
       'Dívida / Patrimônio Líquido — quanto a empresa deve em relação ao próprio patrimônio. '
       'Abaixo de 100% é confortável.',
   'consenso':
-      'Média dos métodos de preço justo aplicáveis ao ativo. A tela mostra quantos métodos '
-      'entraram na conta: um consenso de um método é bem menos confiável que de três.',
+      'Média dos métodos de preço justo que se sustentam para o ativo. A tela mostra quantos '
+      'entraram na conta: um consenso de um método é bem menos confiável que de três. Cada método '
+      'tem condições próprias — Graham se abstém fora de P/L 15 e P/VP 1,5, e Bazin exige '
+      'histórico de proventos. E quando os métodos discordam entre si por 2 vezes ou mais, não há '
+      'consenso: você vê o número de cada um, e o veredito fica em aberto em vez de sair de uma '
+      'média que nenhum método sustenta.',
   'data_years':
       'Quantos anos-calendário de proventos o sistema encontrou. Menos de 3 anos torna o Bazin '
       'pouco confiável — o número aparece ao lado do veredito para você descontar isso.',
   'graham':
       'Fórmula Benjamin Graham — Preço Intrínseco = √(22,5 × LPA × VPA). Válido para empresas '
-      'com P/L ≤ 15 e P/VP ≤ 1,5. Preço abaixo = potencial de valorização. '
+      'com P/L ≤ 15 e P/VP ≤ 1,5, e fora dessa faixa o método se abstém em vez de devolver um '
+      'número que não descreve a empresa. Preço abaixo = potencial de valorização. '
       'O múltiplo 22,5 é de 1949 e do mercado americano, e não é ajustado ao juro brasileiro: '
       'com Selic alta, ele tende a ser generoso.',
   'pvp':

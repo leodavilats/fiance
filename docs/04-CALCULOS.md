@@ -15,7 +15,7 @@ Se uma fórmula aqui divergir do código, o código está certo e este documento
 | Método | Fórmula | Aplicado a | Âncora |
 |---|---|---|---|
 | **Bazin** | `dividendo médio 5a ÷ yield desejado` | ações, FIIs, ETFs | `analysis/fair_price.py:157` |
-| **Graham** | `√(22,5 × LPA × VPA)` ⚠️ | ações, BDRs | `analysis/fair_price.py:166` |
+| **Graham** | `√(22,5 × LPA × VPA)`, **só com P/L ≤ 15 e P/VP ≤ 1,5** | ações, BDRs | `analysis/fair_price.py` |
 | **Lucros descontados** | LPA projetado 5 anos, desconto 13%, P/L terminal 15 | ações, BDRs | `analysis/fair_price.py:184` |
 | **VPA** | valor patrimonial por cota | FIIs | `analysis/fair_price.py:258` |
 
@@ -23,18 +23,34 @@ Se uma fórmula aqui divergir do código, o código está certo e este documento
 
 | Classe | Métodos combinados |
 |---|---|
-| Ação | Bazin + Graham. **O DCF é descartado quando há Bazin** |
+| Ação | Bazin + Graham + lucros descontados |
 | FII | Bazin + VPA |
 | ETF | **só** Bazin |
-| BDR | Graham + DCF (Bazin desligado) |
+| BDR | Graham + lucros descontados (Bazin desligado) |
 
-`consenso = média simples dos métodos disponíveis` · `fair_price.py:305-317`
+`consenso = média simples dos métodos disponíveis`
 
-A regra de descarte do DCF é forte e fácil de perder de vista: `if bazin is not None: dcf = None`.
-Na prática, o DCF só participa do consenso de uma ação que **não paga dividendos**.
+Cada método só entra quando as próprias condições se sustentam: **Graham se abstém fora de
+P/L ≤ 15 e P/VP ≤ 1,5**, e Bazin exige dividendo médio positivo.
 
 `consensus_methods` viaja até a tela, porque um consenso de um método não é consenso — e a interface
 é obrigada a dizer quantos métodos sustentam a cifra.
+
+### Quando o consenso não é consenso
+
+Se os métodos disponíveis discordarem entre si por **2× ou mais**
+(`MAX_METHOD_DISPERSION`), a média deles é um número que nenhum método sustenta. Nesse caso o
+produto **se abstém do veredito** (`UNKNOWN`) e diz por quê — a razão vai em `decision.reasons`, com
+a dispersão medida.
+
+Os preços justos de cada método continuam visíveis; o que não sai é a conclusão.
+
+Medido em produção em 2026-09-13: **39% da amostra** tinha dispersão ≥ 2×. Casos como VALE3, em que
+Bazin dizia R$ 125,67 e os lucros descontados diziam R$ 33,20, produziam um "consenso" de R$ 79,44
+que nenhum dos dois defendia.
+
+Sem consenso confiável não há falsificador: prometer "se cair para X, vira Comprar" sobre um veredito
+que não existe é promessa que não se pode conferir.
 
 ### Margem de segurança
 
@@ -67,11 +83,6 @@ no período, cai para os últimos 12 meses.
 
 ### Limitações — leia antes de confiar no número
 
-0. ⚠️ **Graham é aplicado fora da própria faixa de validade.** O método vale para P/L ≤ 15 e
-   P/VP ≤ 1,5 — o glossário diz isso ao usuário —, e o código **não verifica nenhum dos dois**.
-   Junto com o descarte do DCF, isso faz empresa de crescimento sair sistematicamente "cara": em
-   2026-09-13, 54% de uma amostra de 33 ativos recebeu sinal de venda. Ver
-   [10-PROBLEMAS](10-PROBLEMAS.md), itens A0 e A6.
 1. **O "DCF" não é um DCF.** Desconta **lucro por ação**, não fluxo de caixa livre, e usa
    crescimento de **receita** como proxy de crescimento de lucro. É um modelo de lucros descontados
    com premissas constantes.
@@ -82,6 +93,10 @@ no período, cai para os últimos 12 meses.
 4. **ETF é avaliado só por dividendos.** ETF de crescimento sai sem preço justo representativo.
 5. **A média do consenso é simples.** Métodos de qualidades diferentes pesam igual.
 6. **Bazin pressupõe dividendo estável.** Para empresa cíclica, projeta o passado bom para sempre.
+7. **O consenso ainda pende para dividendo.** Bazin entra em toda ação pagadora, e empresa que
+   retém lucro para crescer tende a sair "cara". A abstenção por discordância corta os casos em que
+   isso produziria um veredito sem base, mas não reequilibra o consenso onde os métodos concordam
+   num número baixo. Ver [10-PROBLEMAS](10-PROBLEMAS.md), item A0.
 
 ---
 

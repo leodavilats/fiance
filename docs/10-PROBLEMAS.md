@@ -13,70 +13,36 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 
 ## A · Motor de cálculo — auditoria de 2026-09-13
 
-### A0 · O consenso pende para dividendo, e 54% da amostra sai como venda — **o mais grave**
+### A0 · O consenso pende para dividendo — *atacado em 2026-09-13, não resolvido*
 
-Medido em produção em 2026-09-13, amostra de 33 ativos:
+Medido em produção em 2026-09-13, amostra de 33 ativos: **55% recebia sinal de venda**, com a margem
+de segurança distribuída junto ao dividend yield — WEGE3 (DY 1,9%) saía com −308%, PTBL3 com +72%.
 
-| Veredito | Ativos | % |
-|---|---|---|
-| SELL | 10 | 30% |
-| STRONG_SELL | 8 | 24% |
-| BUY | 6 | 18% |
-| HOLD | 5 | 15% |
-| UNKNOWN | 3 | 9% |
-| STRONG_BUY | 1 | 3% |
+A causa: o consenso de ação era Bazin + Graham, com o DCF descartado sempre que havia Bazin. Bazin é
+`dividendo médio ÷ 6%`, então empresa que retém lucro para crescer saía sistematicamente cara.
 
-**Mais da metade da amostra recebe sinal de venda**, e a margem de segurança se distribui de forma
-bimodal, alinhada ao dividend yield:
+**Três correções aplicadas** (ver [04-CALCULOS](04-CALCULOS.md)):
 
-| Pagam pouco dividendo | MOS | Pagam muito | MOS |
-|---|---|---|---|
-| WEGE3 (DY 1,9%) | **−308%** | PTBL3 | +72% |
-| RADL3 | −190% | GRND3 | +61% |
-| TOTS3 | −114% | CSAN3 | +59% |
-| BPAC11 | −94% | PETR4 | +57% |
+1. Graham passou a respeitar a própria faixa de validade (item A6)
+2. O DCF deixou de ser descartado e participa do consenso de ação
+3. Quando os métodos discordam por 2× ou mais, o produto **se abstém do veredito**
 
-A causa é estrutural: para ação, o consenso é **Bazin + Graham**, e o DCF é descartado sempre que há
-Bazin (item A4). Bazin é `dividendo médio ÷ 6%`, então empresa que retém lucro para crescer sai
-sistematicamente "cara". O produto se apresenta como consenso de métodos e **opera, na prática, como
-uma régua de dividendos**.
+**Efeito medido na mesma amostra:** sinal de venda caiu de 55% para 33%, **sem inverter o viés** —
+compra foi de 21% para 18% e convicção ficou em 3%. O que aumentou foi a abstenção, de 3 para 12
+ativos: o produto passou a dizer "não sei" onde antes afirmava sem base.
 
-Isso atinge a tese do produto de frente: a pergunta é *"que ativo eu compro agora?"*, e a resposta
-hoje é "quase nenhum, exceto os maiores pagadores de dividendo".
+**O que segue aberto:** onde os métodos *concordam* num número baixo, o viés permanece — WEGE3
+continua `STRONG_SELL` com Bazin em R$ 12,94 e lucros descontados em R$ 23,77 contra preço de
+R$ 51,49. Reequilibrar isso exige ponderar o consenso por classe de empresa, ou reconhecer que Bazin
+não é método de preço justo para empresa de crescimento. **Decisão de produto, ainda não tomada.**
 
-**Fechar é decisão de produto**, e as saídas não são excludentes: ponderar o consenso em vez de tirar
-média simples; deixar o DCF participar junto com o Bazin; ou aplicar a faixa de validade de Graham
-(item A6), que sozinha já removeria os casos mais extremos.
+### A6 · ~~Graham fora da faixa de validade~~ — **corrigido em 2026-09-13**
 
-### A6 · Graham é aplicado fora da própria faixa de validade
+`graham_fair_price` passou a receber preço e P/VP, e se abstém acima de P/L 15 ou P/VP 1,5 — a faixa
+que o glossário sempre prometeu ao usuário. Na amostra, 11 de 23 ativos com Graham calculado estavam
+fora dela, incluindo WEGE3 (P/L 34,6 · P/VP 11,5) e RADL3 (P/L 25,3 · P/VP 4,7).
 
-`graham_fair_price` (`analysis/fair_price.py`) aplica `√(22,5 × LPA × VPA)` a qualquer empresa. Não
-verifica nada além de LPA e VPA positivos.
-
-Mas o glossário **promete ao usuário** que o método vale "para empresas com P/L ≤ 15 e P/VP ≤ 1,5".
-
-WEGE3 tem P/L 34,6 e P/VP 11,5 — quase o dobro e quase oito vezes os limites —, e mesmo assim recebe
-um preço justo de Graham de R$ 12,28 contra preço de R$ 51,49. Os dois métodos do consenso estão
-fora da faixa em que fazem sentido, e nada no código percebe.
-
-É o achado mais acionável do conjunto: a condição já está escrita, em português, na tela. Falta
-implementá-la — e decidir o que fazer quando ela não é atendida (abster-se do método, ou abster-se do
-veredito).
-
-### A1 · O piso de completude — *resolvido em 2026-09-13, com ressalva*
-
-O diagnóstico original estava incompleto. O piso **é aplicado**, no cliente:
-`fiScoreBandFor` devolve a banda `insufficient` abaixo de 0,5, e as telas usam
-(`mobile/lib/features/mes/widgets/feed_tiles.dart`). O que não existia era **consumidor no Python** —
-a constante estava duplicada em `scoring.py` sem uso, e nada comparava os dois lados.
-
-Resolvido movendo o limiar para `analysis/score_ruler.py` e criando
-`tests/test_regua_nas_duas_plataformas.py`, que confronta os cinco limiares da régua com os do Dart.
-
-**A ressalva que fica aberta:** o piso não é aplicado no backend de propósito. Aplicá-lo como
-supressão eliminaria o score de toda ação sem fundamentos completos no perfil arrojado, cuja
-completude típica é **0,35**. A leitura parcial declarada é melhor que tela vazia — mas isso é
-remendo enquanto o item 29 não for resolvido.
+Travado por `tests/test_consenso_que_nao_e_consenso.py`.
 
 ### A2 · O "DCF" não é um DCF
 
@@ -102,13 +68,16 @@ toda ação e de todo BDR.
 **Mitigado em 2026-09-13:** o glossário declara a limitação. **Segue aberto:** ajustar o múltiplo à
 Selic muda o preço justo de toda a base, e é decisão de produto.
 
-### A4 · O DCF é descartado sempre que há Bazin, e isso não está documentado na interface
+### A4 · ~~O DCF é descartado sempre que há Bazin~~ — **corrigido em 2026-09-13**
 
-`fair_price.py:307`: `if bazin is not None: dcf = None`. Na prática, o DCF só participa do consenso de
-uma ação que **não paga dividendos**.
+Era `if bazin is not None: dcf = None`, o que fazia o DCF participar só do consenso de ação que
+**não paga dividendos**.
 
-**Mitigado em 2026-09-13:** o verbete do glossário diz a regra. **Segue aberto:** a tela ainda mostra
-"consenso de 2 métodos" sem nomear quais — nomeá-los exige campo novo na resposta.
+**Corrigido em 2026-09-13:** o descarte foi removido. O DCF participa do consenso de ação junto com
+Bazin e Graham, e `consensus_methods` passou de 2 para 3 nas ações em que os três se sustentam.
+
+**Segue aberto:** a tela mostra "consenso de N métodos" sem nomear quais — nomeá-los exige campo novo
+na resposta.
 
 ### A5 · O perfil de risco não afeta FIIs nem ETFs
 
