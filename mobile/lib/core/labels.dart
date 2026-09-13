@@ -102,3 +102,8 @@ String lancamentoTipoExplicacao(String? kind) {
   if (kind == null) return '';
   return fiExplicaTipoDeLancamento[kind] ?? '';
 }
+
+String proventoTipoLabel(String? kind) {
+  if (kind == null) return '—';
+  return fiTiposDeProvento[kind] ?? kind;
+}

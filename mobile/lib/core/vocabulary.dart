@@ -169,3 +169,11 @@ const Map<String, String> fiExplicaTipoDeLancamento = {
   'amortization': 'Devolução de capital, comum em FII. Reduz o custo, não a quantidade.',
   'adjust': 'Ancora a linha do tempo: o que vier depois se aplica em cima do que você declarou.',
 };
+
+const Map<String, String> fiTiposDeProvento = {
+  'dividendo': 'Dividendo',
+  'jcp': 'JCP',
+  'rendimento': 'Rendimento',
+  'amortizacao': 'Amortização',
+  'outro': 'Outro',
+};

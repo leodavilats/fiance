@@ -124,6 +124,16 @@ class PatrimonioScreen extends ConsumerWidget {
                 const FiClosedTradesSection(),
 
                 FiSection(
+                  title: 'Proventos',
+                  hint: 'O que os seus ativos pagaram, e o que o calendário sugere que caiu.',
+                  action: FiButton.secondary(
+                    label: 'Ver proventos',
+                    onPressed: () => context.go('/patrimonio/proventos'),
+                  ),
+                  child: const SizedBox.shrink(),
+                ),
+
+                FiSection(
                   title: 'Livro-razão',
                   hint: 'A posição e o preço médio acima são reconstruídos a partir dos seus '
                       'lançamentos.',

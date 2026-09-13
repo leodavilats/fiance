@@ -577,6 +577,61 @@ class ApiRepository {
     await _dio.delete('/transactions/$id');
   }
 
+  Future<DividendsReceived> getDividendsReceived({double? estimatedMonthly}) async {
+    final res = await _dio.get(
+      '/dividends/received',
+      queryParameters: {'estimated_monthly': ?estimatedMonthly},
+    );
+    return DividendsReceived.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<DividendReceived> createDividendReceived({
+    required String ticker,
+    required String paidAt,
+    required double amount,
+    String kind = 'dividendo',
+    String? note,
+  }) async {
+    final res = await _dio.post(
+      '/dividends/received',
+      data: {
+        'ticker': ticker,
+        'paid_at': paidAt,
+        'amount': amount,
+        'kind': kind,
+        'note': ?note,
+      },
+    );
+    return DividendReceived.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteDividendReceived(int id) async {
+    await _dio.delete('/dividends/received/$id');
+  }
+
+  Future<DividendPending> getDividendsPending() async {
+    final res = await _dio.get('/dividends/pending');
+    return DividendPending.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<int> confirmDividends(List<DividendSuggestion> escolhidos) async {
+    final res = await _dio.post(
+      '/dividends/pending/confirm',
+      data: {
+        'items': [
+          for (final s in escolhidos)
+            {
+              'ticker': s.ticker,
+              'paid_at': s.paidAt,
+              'amount': s.amount,
+              'kind': s.kind,
+            },
+        ],
+      },
+    );
+    return (res.data['created'] as num?)?.toInt() ?? 0;
+  }
+
   Future<CashVocabulary> getCashVocabulary() async {
     final res = await _dio.get('/cashflow/vocabulary');
     return CashVocabulary.fromJson(res.data as Map<String, dynamic>);

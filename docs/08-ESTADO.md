@@ -134,7 +134,8 @@ imposto, e não tem nenhuma tela no aplicativo.
 | Apuração mensal de IR | `[IMPLEMENTADO]` | `ledger/apuracao.py` | parcial |
 | Compensação de prejuízo por categoria | `[IMPLEMENTADO]` | `ledger/apuracao.py` | ❌ |
 | Isenção mensal de R$ 20 mil | `[IMPLEMENTADO]` | `ledger/apuracao.py` | — |
-| Proventos: calendário e pendentes | `[SEM CLIENTE]` | `api/dividends.py` | ❌ |
+| Proventos recebidos: registrar, listar, apagar | `[IMPLEMENTADO]` | `api/dividends.py` | `patrimonio/proventos_screen.dart` |
+| Proventos: sugestões do calendário | `[IMPLEMENTADO]` | `services/dividend_calendar_service.py` | ✅ `/patrimonio/proventos` |
 
 **O que o IR cobre:** swing trade de ações, BDRs, ETFs (15%) e FIIs (20%), com compensação de
 prejuízo e isenção mensal. **O que não cobre:** day trade, emissão de DARF, informe anual.
@@ -214,11 +215,11 @@ Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma
 |---|---|
 | `[ATUAL]` | ~30 funcionalidades |
 | `[IMPLEMENTADO]` | ~14 |
-| `[SEM CLIENTE]` | **7** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
+| `[SEM CLIENTE]` | **6** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
 | `[PLANEJADO]` | ver [09-FUTURO](09-FUTURO.md) |
 | `[ABANDONADO]` | 8 blocos |
 
-O número que importa é o `[SEM CLIENTE]`: **sete funcionalidades que o backend serve e o aplicativo
-não alcança**, todas por perda de paridade em 2026-09-11 — eram nove, e o livro-razão e os eventos
-corporativos saíram da lista em 2026-09-13. Enquanto ele não chegar a zero, o produto
+O número que importa é o `[SEM CLIENTE]`: **seis funcionalidades que o backend serve e o aplicativo
+não alcança**, todas por perda de paridade em 2026-09-11 — eram nove, e o livro-razão, os eventos
+corporativos e os proventos saíram da lista em 2026-09-13. Enquanto ele não chegar a zero, o produto
 entrega menos do que possui.

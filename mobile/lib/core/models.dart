@@ -1757,3 +1757,152 @@ class LedgerPage {
     hasMore: j['has_more'] as bool? ?? false,
   );
 }
+
+class DividendReceived {
+  DividendReceived({
+    required this.id,
+    required this.ticker,
+    required this.paidAt,
+    required this.amount,
+    this.kind = 'dividendo',
+    this.note,
+  });
+
+  final int id;
+  final String ticker;
+  final String paidAt;
+  final double amount;
+  final String kind;
+  final String? note;
+
+  factory DividendReceived.fromJson(Map<String, dynamic> j) => DividendReceived(
+    id: (j['id'] as num?)?.toInt() ?? 0,
+    ticker: j['ticker'] as String? ?? '',
+    paidAt: j['paid_at'] as String? ?? '',
+    amount: (j['amount'] as num?)?.toDouble() ?? 0,
+    kind: j['kind'] as String? ?? 'dividendo',
+    note: j['note'] as String?,
+  );
+}
+
+class DividendMonth {
+  DividendMonth({required this.month, required this.total, required this.count});
+
+  final String month;
+  final double total;
+  final int count;
+
+  factory DividendMonth.fromJson(Map<String, dynamic> j) => DividendMonth(
+    month: j['month'] as String? ?? '',
+    total: (j['total'] as num?)?.toDouble() ?? 0,
+    count: (j['count'] as num?)?.toInt() ?? 0,
+  );
+}
+
+class DividendTickerTotal {
+  DividendTickerTotal({required this.ticker, required this.total, required this.count});
+
+  final String ticker;
+  final double total;
+  final int count;
+
+  factory DividendTickerTotal.fromJson(Map<String, dynamic> j) => DividendTickerTotal(
+    ticker: j['ticker'] as String? ?? '',
+    total: (j['total'] as num?)?.toDouble() ?? 0,
+    count: (j['count'] as num?)?.toInt() ?? 0,
+  );
+}
+
+class DividendsReceived {
+  DividendsReceived({
+    required this.items,
+    this.totalReceived = 0,
+    this.receivedThisMonth = 0,
+    this.receivedLast12m = 0,
+    this.monthlyAverage12m = 0,
+    this.byMonth = const [],
+    this.byTicker = const [],
+    this.estimatedMonthly,
+    this.estimateAccuracyPct,
+    this.totalCount = 0,
+  });
+
+  final List<DividendReceived> items;
+  final double totalReceived;
+  final double receivedThisMonth;
+  final double receivedLast12m;
+  final double monthlyAverage12m;
+  final List<DividendMonth> byMonth;
+  final List<DividendTickerTotal> byTicker;
+  final double? estimatedMonthly;
+  final double? estimateAccuracyPct;
+  final int totalCount;
+
+  factory DividendsReceived.fromJson(Map<String, dynamic> j) => DividendsReceived(
+    items: ((j['items'] as List?) ?? const [])
+        .map((e) => DividendReceived.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    totalReceived: (j['total_received'] as num?)?.toDouble() ?? 0,
+    receivedThisMonth: (j['received_this_month'] as num?)?.toDouble() ?? 0,
+    receivedLast12m: (j['received_last_12m'] as num?)?.toDouble() ?? 0,
+    monthlyAverage12m: (j['monthly_average_12m'] as num?)?.toDouble() ?? 0,
+    byMonth: ((j['by_month'] as List?) ?? const [])
+        .map((e) => DividendMonth.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    byTicker: ((j['by_ticker'] as List?) ?? const [])
+        .map((e) => DividendTickerTotal.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    estimatedMonthly: (j['estimated_monthly'] as num?)?.toDouble(),
+    estimateAccuracyPct: (j['estimate_accuracy_pct'] as num?)?.toDouble(),
+    totalCount: (j['total_count'] as num?)?.toInt() ?? 0,
+  );
+}
+
+class DividendSuggestion {
+  DividendSuggestion({
+    required this.ticker,
+    required this.paidAt,
+    required this.amount,
+    this.quantityAtDate = 0,
+    this.ratePerShare = 0,
+    this.kind = 'dividendo',
+    this.caveats = const [],
+    this.quantityIsCurrent = false,
+  });
+
+  final String ticker;
+  final String paidAt;
+  final double amount;
+  final double quantityAtDate;
+  final double ratePerShare;
+  final String kind;
+  final List<String> caveats;
+  final bool quantityIsCurrent;
+
+  factory DividendSuggestion.fromJson(Map<String, dynamic> j) => DividendSuggestion(
+    ticker: j['ticker'] as String? ?? '',
+    paidAt: j['paid_at'] as String? ?? '',
+    amount: (j['amount'] as num?)?.toDouble() ?? 0,
+    quantityAtDate: (j['quantity_at_date'] as num?)?.toDouble() ?? 0,
+    ratePerShare: (j['rate_per_share'] as num?)?.toDouble() ?? 0,
+    kind: j['kind'] as String? ?? 'dividendo',
+    caveats: ((j['caveats'] as List?) ?? const []).map((e) => e.toString()).toList(),
+    quantityIsCurrent: j['quantity_is_current'] as bool? ?? false,
+  );
+}
+
+class DividendPending {
+  DividendPending({required this.items, this.note = '', this.count = 0});
+
+  final List<DividendSuggestion> items;
+  final String note;
+  final int count;
+
+  factory DividendPending.fromJson(Map<String, dynamic> j) => DividendPending(
+    items: ((j['items'] as List?) ?? const [])
+        .map((e) => DividendSuggestion.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    note: j['note'] as String? ?? '',
+    count: (j['count'] as num?)?.toInt() ?? 0,
+  );
+}

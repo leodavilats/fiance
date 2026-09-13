@@ -50,13 +50,17 @@ caminho é apagar e registrar de novo, que é o que reprojeta corretamente.
 | Falta | Colar ou anexar extrato, revisar a prévia, decidir sobre duplicidade |
 | Nota | A regra "duplicidade é apresentada para decisão, nunca silenciada" exige tela |
 
-### 3 · Proventos — `dividends` + `pending-dividends`
+### ~~3 · Proventos~~ — ✅ **fechado em 2026-09-13**
 
-| | |
-|---|---|
-| Backend | `GET /dividends`, `GET /dividends/pending` |
-| Falta | Ver a origem de cada provento; aceitar os pendentes um a um |
-| Nota | Nada vem pré-selecionado, e não existe "aceitar todos" — toda ressalva do calendário erra para mais |
+`mobile/lib/features/patrimonio/proventos_screen.dart`, na rota `/patrimonio/proventos`.
+
+Registra, lista e apaga provento recebido; mostra o total de 12 meses e a média mensal com
+proveniência; e traz as sugestões do calendário na mesma tela, **uma a uma**. Cada sugestão exibe a
+base do cálculo (quantidade × valor por ação), avisa quando a quantidade é a de hoje em vez da data
+do crédito, e lista as ressalvas da fonte.
+
+A regra foi respeitada: **nada vem marcado** e **não existe "aceitar todos"** — o botão diz quantos
+você escolheu e fica desabilitado em zero.
 
 ### 4 · Sugestões de rebalanceamento — `rebalance-suggestions`
 
@@ -123,6 +127,7 @@ publicação, não só paridade.
 | Data | Lacunas abertas |
 |---|---|
 | 2026-09-13 | 9 |
-| 2026-09-13 | **7** — livro-razão e eventos corporativos fechados |
+| 2026-09-13 | 7 — livro-razão e eventos corporativos fechados |
+| 2026-09-13 | **6** — proventos fechados |
 
 Atualize esta tabela ao fechar cada uma. **Quando chegar a zero, apague o arquivo.**

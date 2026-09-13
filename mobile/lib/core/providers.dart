@@ -151,3 +151,13 @@ final cashVocabularyProvider = FutureProvider<CashVocabulary>((ref) {
 final razaoProvider = FutureProvider.autoDispose<LedgerPage>((ref) {
   return ref.watch(apiRepositoryProvider).getTransactions();
 });
+
+final proventosProvider = FutureProvider.autoDispose<DividendsReceived>((ref) {
+  return ref.watch(apiRepositoryProvider).getDividendsReceived();
+});
+
+final proventosPendentesProvider = FutureProvider.autoDispose<DividendPending>((
+  ref,
+) {
+  return ref.watch(apiRepositoryProvider).getDividendsPending();
+});
