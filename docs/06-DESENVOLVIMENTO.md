@@ -88,6 +88,30 @@ tem, não contra o que a extensão sugere.
 
 ---
 
+## Catálogo de telas, para revisão
+
+```bash
+python tool/catalogo_de_telas.py           # escreve build/catalogo/
+python tool/catalogo_de_telas.py --check   # confere que nada saiu do radar
+```
+
+Monta, a partir de `mobile/lib/`, um retrato de cada tela: rota, título, seções na ordem, ações e seus
+pesos, os quatro estados, componentes usados, explicabilidade presente, para onde navega e **todos
+os textos**. Inclui as folhas e formulários, que não são rota e são onde a pessoa escreve.
+
+Serve para revisão de linguagem e hierarquia — por uma pessoa ou por uma IA. Sai junto um
+`COMO-AVALIAR.md` com o contexto do produto e as regras que ele já se impôs: sem isso, quem avalia
+sugere o oposto do que o produto decidiu, como trocar fio e chão por cards.
+
+**Lê o fonte, não o aplicativo em execução.** Isso é escolha: os textos são literais no código, e
+assim a coleta não depende de emulador, de rede, nem da fonte que o ambiente de teste não carrega —
+em `flutter test` o texto sairia como caixas pretas. O preço é não enxergar espaçamento, contraste
+nem ordem visual, e isso está escrito no fim do próprio relatório.
+
+`--check` falha quando o catálogo deixa de enxergar um destino de raiz, uma tela fica sem texto ou
+nenhuma folha é encontrada — sinais de que o padrão do router mudou e a coleta passou a descrever
+menos do que existe.
+
 ## Comentários: quase nunca
 
 **O porquê vive nas [decisões](decisoes/); o que não pode ser violado vive no `CLAUDE.md`.** O fonte
