@@ -253,7 +253,7 @@ Map<String, dynamic> _cheio(String caminho) {
   return base;
 }
 
-Future<void> _capturar(WidgetTester tester, String nome) async {
+Future<void> _capturar(WidgetTester tester, String subpasta, String nome) async {
   final boundary =
       tester.firstRenderObject(find.byType(RepaintBoundary)) as RenderRepaintBoundary;
 
@@ -266,8 +266,9 @@ Future<void> _capturar(WidgetTester tester, String nome) async {
 
   if (bytes == null) fail('não foi possível codificar $nome');
 
-  _saida.createSync(recursive: true);
-  File('${_saida.path}/$nome.png').writeAsBytesSync(bytes!.buffer.asUint8List());
+  final pasta = Directory('${_saida.path}/$subpasta');
+  pasta.createSync(recursive: true);
+  File('${pasta.path}/$nome.png').writeAsBytesSync(bytes!.buffer.asUint8List());
 }
 
 Future<void> _montar(
@@ -302,6 +303,17 @@ Future<void> _montar(
   for (var i = 0; i < 8; i++) {
     await tester.pump(const Duration(milliseconds: 120));
   }
+
+  // O google_fonts lanca a cada peso que nao esta nos assets, e sem rede no teste nao ha como
+  // busca-lo. A fonte ja veio pelo FontLoader, entao a excecao e ruido: consumida, o teste segue
+  // e a imagem sai. Qualquer outra excecao continua derrubando o teste.
+  while (true) {
+    final excecao = tester.takeException();
+    if (excecao == null) break;
+    if (!excecao.toString().contains('allowRuntimeFetching')) {
+      throw excecao as Object;
+    }
+  }
 }
 
 void main() {
@@ -323,20 +335,15 @@ void main() {
   };
 
   for (final tela in telas.entries) {
-    for (final brilho in const [Brightness.light, Brightness.dark]) {
-      final sufixo = brilho == Brightness.light ? 'claro' : 'escuro';
+    for (final estado in Estado.values) {
+      for (final brilho in const [Brightness.light, Brightness.dark]) {
+        final tema = brilho == Brightness.light ? 'claro' : 'escuro';
 
-      testWidgets('${tela.key} - $sufixo', (tester) async {
-        await _montar(tester, tela.value(), brilho: brilho);
-        await _capturar(tester, '${tela.key}-$sufixo');
-      });
+        testWidgets('${tela.key} - ${estado.name} - $tema', (tester) async {
+          await _montar(tester, tela.value(), brilho: brilho, estado: estado);
+          await _capturar(tester, estado.name, '${tela.key}-$tema');
+        });
+      }
     }
-  }
-
-  for (final estado in const [Estado.carregando, Estado.falha, Estado.vazio]) {
-    testWidgets('razao - ${estado.name}', (tester) async {
-      await _montar(tester, const RazaoScreen(), brilho: Brightness.light, estado: estado);
-      await _capturar(tester, 'estado-razao-${estado.name}');
-    });
   }
 }

@@ -115,12 +115,16 @@ menos do que existe.
 ## Captura das telas, para revisão visual
 
 ```bash
-python tool/capturar_telas.py            # 27 PNG em mobile/build/catalogo/telas/
+python tool/capturar_telas.py            # 96 PNG em mobile/build/catalogo/telas/
 python tool/capturar_telas.py --limpar   # apaga as capturas antigas antes
 ```
 
-Renderiza cada tela nos **dois temas**, com dados de exemplo, e escreve PNG de 780×2800. Cobre
-também os estados de carregando, falha e sem dado do livro-razão.
+Renderiza **cada tela nos quatro estados e nos dois temas** — 12 telas × conteúdo, sem dado, falha e
+carregando × claro e escuro —, em PNG de 780×2800. A saída fica em uma pasta por estado, para que se
+possa enviar só o conjunto que interessa.
+
+Os estados são onde a interface costuma falhar, e são os mais difíceis de alcançar no aparelho: o
+vazio exige conta nova, e a falha exige o servidor fora do ar.
 
 Roda em `flutter test`, **sem emulador e sem backend**: a rede é dublada por um interceptor do Dio
 e o repositório é injetado por `overrideWithValue`. Leva segundos.

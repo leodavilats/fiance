@@ -104,7 +104,7 @@ def main() -> int:
         capture_output=True,
     )
 
-    imagens = sorted(TELAS.glob("*.png")) if TELAS.exists() else []
+    imagens = sorted(TELAS.rglob("*.png")) if TELAS.exists() else []
     if not imagens:
         print(
             "nenhuma imagem foi escrita. Rode "
@@ -115,8 +115,11 @@ def main() -> int:
 
     total = sum(i.stat().st_size for i in imagens)
     print(f"\n{len(imagens)} imagens, {total / 1024 / 1024:.1f} MB -> {TELAS.relative_to(RAIZ)}")
+    por_estado: dict[str, int] = {}
     for imagem in imagens:
-        print(f"  {imagem.name}")
+        por_estado[imagem.parent.name] = por_estado.get(imagem.parent.name, 0) + 1
+    for estado in sorted(por_estado):
+        print(f"  {estado}/  {por_estado[estado]} imagens")
 
     print(
         "\nPara avaliacao, envie as imagens junto com "

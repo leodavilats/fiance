@@ -324,10 +324,13 @@ class _PendentesState extends ConsumerState<_Pendentes> {
     final pendentes = ref.watch(proventosPendentesProvider);
 
     return pendentes.when(
-      loading: () => FiSkeleton.tela(
-        shape: FiSkeletonShape.row,
-        count: 2,
-        label: 'Procurando proventos no calendário',
+      loading: () => FiSection(
+        title: 'Sugestões do calendário',
+        child: Semantics(
+          label: 'Procurando proventos no calendário',
+          liveRegion: true,
+          child: const FiSkeleton(shape: FiSkeletonShape.row, count: 2),
+        ),
       ),
       error: (err, _) => FiErrorState(
         error: err,
