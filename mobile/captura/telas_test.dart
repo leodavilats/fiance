@@ -125,6 +125,8 @@ dynamic _resposta(String caminho, Estado estado) {
       'density': 'comfortable',
       'desired_yield_stock': 0.06,
       'desired_yield_fii': 0.10,
+      'desired_yield_bdr': 0.04,
+      'desired_yield_etf': 0.04,
     };
   }
 
@@ -142,6 +144,41 @@ dynamic _resposta(String caminho, Estado estado) {
   ];
   if (listas.any(caminho.contains)) {
     return vazio ? <dynamic>[] : _cheio(caminho);
+  }
+
+  // O objeto vazio generico nao tem forma de resposta unica (ex.: 'summary' do
+  // dashboard, ou os totais da renda fixa); sem ela o parser do cliente quebra
+  // e a tela vazia que o proprio widget ja sabe mostrar nunca aparece.
+  if (caminho.contains('/fixed-income') && vazio) {
+    return {
+      ..._vazio(),
+      'total_investido': 0.0,
+      'total_atual': 0.0,
+      'total_rendimento': 0.0,
+      'rendimento_pct': 0.0,
+      'taxa_media_aa': 0.0,
+      'cdi_referencia': 0.0,
+      'fonte_taxas': 'bcb',
+    };
+  }
+
+  if (caminho.contains('/dashboard') && vazio) {
+    return {
+      ..._vazio(),
+      'summary': {
+        'total_invested': 0.0,
+        'total_current': 0.0,
+        'total_pnl': 0.0,
+        'total_pnl_pct': 0.0,
+        'monthly_dividends_estimate': 0.0,
+        'passive_income_goal': null,
+        'passive_income_progress': null,
+        'positions_count': 0,
+      },
+      'top_buys': <dynamic>[],
+      'top_sells': <dynamic>[],
+      'alerts': <dynamic>[],
+    };
   }
 
   return vazio ? _vazio() : _cheio(caminho);
@@ -406,7 +443,26 @@ dynamic _cheio(String caminho) {
   if (caminho.contains('/surplus')) {
     return {
       ...base,
-      'month': '2026-09',
+      'month': {
+        'month': '2026-09',
+        'received': 8400.0,
+        'paid': 5210.40,
+        'committed': 1180.00,
+        'free_now': 2009.60,
+        'surplus_low': 1109.60,
+        'surplus_high': 1609.60,
+        'has_range': true,
+        'income_baseline': 8400.0,
+        'estimate': {
+          'base_months': ['2026-06', '2026-07', '2026-08'],
+          'expected_low': 1800.0,
+          'expected_high': 2300.0,
+          'spent_so_far': 1400.0,
+          'remaining_low': 400.0,
+          'remaining_high': 900.0,
+        },
+        'due': <dynamic>[],
+      },
       'has_cash': true,
       'cascade': {
         'surplus_low': 1109.60,

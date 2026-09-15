@@ -1020,7 +1020,7 @@ class Preferences {
     passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
     desiredYieldStock: (j['desired_yield_stock'] as num).toDouble(),
     desiredYieldFii: (j['desired_yield_fii'] as num).toDouble(),
-    desiredYieldBdr: (j['desired_yield_bdr'] as num).toDouble(),
+    desiredYieldBdr: (j['desired_yield_bdr'] as num?)?.toDouble() ?? 0.04,
     desiredYieldEtf: (j['desired_yield_etf'] as num?)?.toDouble() ?? 0.04,
     notifyPriceAlerts: j['notify_price_alerts'] as bool? ?? true,
     opportunitiesFrequency: j['opportunities_frequency'] as String? ?? 'weekly',

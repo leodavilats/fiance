@@ -99,8 +99,8 @@ class _Lista extends ConsumerWidget {
             caras.isEmpty
                 ? 'Nenhuma dívida sua custa mais do que sua carteira rende.'
                 : 'Você tem ${caras.length} '
-                      '${caras.length == 1 ? 'dívida' : 'dívidas'} que custam mais do que sua '
-                      'carteira rende.',
+                      '${caras.length == 1 ? 'dívida que custa' : 'dívidas que custam'} mais do '
+                      'que sua carteira rende.',
             style: fiSerif(FiType.verdict).copyWith(
               color: fiStateColor(
                 caras.isEmpty ? FiState.favorable : FiState.adverse,
