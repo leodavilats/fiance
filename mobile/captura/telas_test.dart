@@ -4,24 +4,14 @@ import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:fiance/core/api_repository.dart';
 import 'package:fiance/core/providers.dart';
+import 'package:fiance/core/router.dart';
 import 'package:fiance/core/theme.dart';
-import 'package:fiance/features/assets/fixed_income_screen.dart';
-import 'package:fiance/features/auth/login_screen.dart';
-import 'package:fiance/features/config/config_screen.dart';
-import 'package:fiance/features/config/objetivos_screen.dart';
-import 'package:fiance/features/mes/atividade_screen.dart';
-import 'package:fiance/features/mes/dividas_screen.dart';
-import 'package:fiance/features/mes/mes_screen.dart';
-import 'package:fiance/features/patrimonio/patrimonio_screen.dart';
-import 'package:fiance/features/patrimonio/proventos_screen.dart';
-import 'package:fiance/features/patrimonio/razao_screen.dart';
-import 'package:fiance/features/sobra/desvio_screen.dart';
-import 'package:fiance/features/sobra/sobra_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 const _tela = Size(390, 1400);
@@ -683,7 +673,7 @@ Future<void> _capturar(WidgetTester tester, String subpasta, String nome) async 
 
 Future<void> _montar(
   WidgetTester tester,
-  Widget tela, {
+  String rota, {
   required Brightness brilho,
   Estado estado = Estado.conteudo,
 }) async {
@@ -693,16 +683,18 @@ Future<void> _montar(
 
   final dio = Dio()..interceptors.add(_RedeDublada(estado));
 
+  final roteador = GoRouter(initialLocation: rota, routes: appRouter.configuration.routes);
+
   await tester.pumpWidget(
     RepaintBoundary(
       child: ProviderScope(
         overrides: [apiRepositoryProvider.overrideWithValue(ApiRepository(dio))],
-        child: MaterialApp(
+        child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(Brightness.light),
           darkTheme: buildAppTheme(Brightness.dark),
           themeMode: brilho == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
-          home: tela,
+          routerConfig: roteador,
         ),
       ),
     ),
@@ -729,19 +721,20 @@ Future<void> _montar(
 void main() {
   setUpAll(_carregarFontes);
 
-  final telas = <String, Widget Function()>{
-    'login': () => const LoginScreen(),
-    'mes': () => const MesScreen(),
-    'mes-atividade': () => const AtividadeScreen(),
-    'mes-dividas': () => const DividasScreen(),
-    'sobra': () => const SobraScreen(),
-    'sobra-desvio': () => const DesvioScreen(),
-    'patrimonio': () => const PatrimonioScreen(),
-    'patrimonio-renda-fixa': () => const FixedIncomeScreen(),
-    'patrimonio-razao': () => const RazaoScreen(),
-    'patrimonio-proventos': () => const ProventosScreen(),
-    'voce': () => const ConfigScreen(),
-    'voce-objetivos': () => const ObjetivosScreen(),
+  const telas = <String, String>{
+    'login': '/login',
+    'mes': '/mes',
+    'mes-atividade': '/mes/atividade',
+    'mes-dividas': '/mes/dividas',
+    'sobra': '/sobra',
+    'sobra-desvio': '/sobra/desvio',
+    'patrimonio': '/patrimonio',
+    'patrimonio-renda-fixa': '/patrimonio/renda-fixa',
+    'patrimonio-razao': '/patrimonio/razao',
+    'patrimonio-proventos': '/patrimonio/proventos',
+    'descobrir': '/descobrir',
+    'voce': '/voce',
+    'voce-objetivos': '/voce/objetivos',
   };
 
   for (final tela in telas.entries) {
@@ -750,7 +743,7 @@ void main() {
         final tema = brilho == Brightness.light ? 'claro' : 'escuro';
 
         testWidgets('${tela.key} - ${estado.name} - $tema', (tester) async {
-          await _montar(tester, tela.value(), brilho: brilho, estado: estado);
+          await _montar(tester, tela.value, brilho: brilho, estado: estado);
           await _capturar(tester, estado.name, '${tela.key}-$tema');
         });
       }

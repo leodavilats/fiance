@@ -486,6 +486,21 @@ Não sugira violar nenhuma delas — se achar que uma está errada, diga isso ex
   vista.
 - **Não se promete futuro**, e não se fala como IA genérica.
 
+## O que as imagens são, e o que não são
+
+Elas saem do mesmo código de tela, com o tema real, as fontes reais e o roteador real — a barra de
+navegação inferior é a de verdade. Três coisas, porém, não correspondem ao aparelho:
+
+- **A imagem tem 1400 pontos de altura; um celular comum tem ~844.** A captura mostra a tela inteira
+  sem rolagem, de propósito, para que nada fique escondido. Mas isso apaga a dobra: **o que passa dos
+  primeiros 60% da imagem exige rolar no aparelho.** Ao julgar o que a pessoa vê primeiro, considere
+  só a parte de cima.
+- **Os dados são inventados.** Os valores, a quantidade de itens e os nomes são de exemplo. Uma
+  carteira real pode ter trinta posições onde aqui há quatro, e a lista se comporta diferente.
+- **A densidade é a padrão.** Quem escolhe a densidade compacta vê tudo mais junto.
+
+Não há gesto, rolagem nem animação: é um quadro parado de cada estado.
+
 ## O que queremos da avaliação
 
 1. **Linguagem.** Há jargão que um iniciante não entenderia? Frase que promete mais do que o
