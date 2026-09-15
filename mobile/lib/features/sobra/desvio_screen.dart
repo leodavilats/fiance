@@ -405,10 +405,13 @@ class _Realocacao extends StatelessWidget {
               ),
             ),
             const SizedBox(width: FiSpace.s2),
-            ScoreRuler(
-              score: alvo.score,
-              size: ScoreRulerSize.inline,
-              showValue: false,
+            SizedBox(
+              width: 64,
+              child: ScoreRuler(
+                score: alvo.score,
+                size: ScoreRulerSize.inline,
+                showValue: false,
+              ),
             ),
           ],
         ),

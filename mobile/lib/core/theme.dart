@@ -145,8 +145,8 @@ ThemeData buildAppTheme(Brightness brightness) {
     listTileTheme: ListTileThemeData(
       textColor: ink1,
       iconColor: ink2,
-      titleTextStyle: FiType.body.copyWith(color: ink1),
-      subtitleTextStyle: FiType.caption.copyWith(color: ink2),
+      titleTextStyle: fiSans(FiType.body).copyWith(color: ink1),
+      subtitleTextStyle: fiSans(FiType.caption).copyWith(color: ink2),
       minVerticalPadding: FiSpace.s2,
       shape: const RoundedRectangleBorder(),
     ),
@@ -158,7 +158,7 @@ ThemeData buildAppTheme(Brightness brightness) {
         horizontal: FiSpace.s3,
         vertical: FiSpace.s3,
       ),
-      labelStyle: FiType.label.copyWith(color: ink2),
+      labelStyle: fiSans(FiType.label).copyWith(color: ink2),
       floatingLabelStyle: FiType.caption.copyWith(color: ink2),
       helperStyle: FiType.caption.copyWith(color: ink3),
       hintStyle: FiType.body.copyWith(color: ink3),
@@ -193,7 +193,7 @@ ThemeData buildAppTheme(Brightness brightness) {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       titleTextStyle: fiSerif(FiType.verdictSm).copyWith(color: ink1),
-      contentTextStyle: FiType.body.copyWith(color: ink2),
+      contentTextStyle: fiSans(FiType.body).copyWith(color: ink2),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(FiRadius.lg),
         side: BorderSide(color: hairline),
@@ -211,7 +211,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: isDark ? FiColors.darkGround2 : FiColors.lightInk1,
-      contentTextStyle: FiType.body.copyWith(
+      contentTextStyle: fiSans(FiType.body).copyWith(
         color: isDark ? FiColors.darkInk1 : FiColors.lightGround1,
       ),
       actionTextColor: isDark ? FiColors.darkBrand : FiColors.lightBrandLight,
@@ -226,7 +226,7 @@ ThemeData buildAppTheme(Brightness brightness) {
       focusElevation: 2,
       hoverElevation: 2,
       highlightElevation: 2,
-      extendedTextStyle: FiType.action,
+      extendedTextStyle: fiSans(FiType.action),
       extendedPadding: const EdgeInsets.symmetric(horizontal: FiSpace.s5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FiRadius.md)),
     ),
@@ -294,7 +294,7 @@ ThemeData buildAppTheme(Brightness brightness) {
       selectedColor: brandQuiet,
       disabledColor: ground2,
       side: BorderSide(color: controlBorder),
-      labelStyle: FiType.label.copyWith(color: ink1),
+      labelStyle: fiSans(FiType.label).copyWith(color: ink1),
       secondaryLabelStyle: FiType.label.copyWith(color: ink1),
       checkmarkColor: ink1,
       showCheckmark: false,
@@ -357,7 +357,7 @@ ThemeData buildAppTheme(Brightness brightness) {
       disabledThumbColor: hairlineStrong,
       overlayColor: brand.withValues(alpha: 0.12),
       valueIndicatorColor: isDark ? FiColors.darkGround2 : FiColors.lightInk1,
-      valueIndicatorTextStyle: FiType.caption.copyWith(
+      valueIndicatorTextStyle: fiSans(FiType.caption).copyWith(
         color: isDark ? FiColors.darkInk1 : FiColors.lightGround1,
       ),
     ),

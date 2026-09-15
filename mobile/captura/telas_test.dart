@@ -142,6 +142,18 @@ dynamic _resposta(String caminho, Estado estado) {
     return {'id': 'demo', 'name': 'Maria', 'email': 'maria@exemplo.com'};
   }
 
+  // Rotas que devolvem lista crua: no estado sem dado, o cliente espera [] e nao um objeto.
+  const listas = [
+    '/goals',
+    '/sector-goals',
+    '/alerts',
+    '/cashflow/debts',
+    '/cashflow/entries',
+  ];
+  if (listas.any(caminho.contains)) {
+    return vazio ? <dynamic>[] : _cheio(caminho);
+  }
+
   return vazio ? _vazio() : _cheio(caminho);
 }
 
@@ -162,8 +174,406 @@ Map<String, dynamic> _vazio() => {
   'allocation_gaps': <dynamic>[],
 };
 
-Map<String, dynamic> _cheio(String caminho) {
+Map<String, dynamic> _posicao(
+  String ticker,
+  String nome,
+  double quantidade,
+  double medio,
+  double atual,
+  String veredito,
+  String rotulo,
+  String categoria,
+  String setor,
+  double dy,
+) {
+  final investido = quantidade * medio;
+  final valor = quantidade * atual;
+  return {
+    'ticker': ticker,
+    'name': nome,
+    'asset_type': categoria == 'fiis' ? 'fii' : 'br_stock',
+    'quantity': quantidade,
+    'avg_price': medio,
+    'current_price': atual,
+    'invested': investido,
+    'current_value': valor,
+    'pnl': valor - investido,
+    'pnl_pct': (valor - investido) / investido * 100,
+    'verdict': veredito,
+    'label': rotulo,
+    'category_resolved': categoria,
+    'dividend_yield': dy,
+    'sector': setor,
+    'as_of': 1789324890.0,
+    'reasons': <String>[],
+    'confidence': 0.75,
+    'data_years': 5,
+    'consensus_methods': 3,
+    'trend_basis': 'long',
+  };
+}
+
+dynamic _cheio(String caminho) {
   final base = _vazio();
+
+  if (caminho.contains('/dashboard')) {
+    return {
+      ...base,
+      'summary': {
+        'total_invested': 84200.00,
+        'total_current': 97430.55,
+        'total_pnl': 13230.55,
+        'total_pnl_pct': 15.71,
+        'monthly_dividends_estimate': 412.80,
+        'passive_income_goal': 5000.0,
+        'passive_income_progress': 8.26,
+        'positions_count': 6,
+      },
+      'positions': [
+        _posicao('PETR4', 'Petróleo Brasileiro', 300, 32.10, 38.42, 'BUY', 'Comprar', 'acoes_br',
+            'Energia', 9.8),
+        _posicao('BBAS3', 'Banco do Brasil', 400, 21.40, 22.49, 'STRONG_BUY',
+            'Comprar com convicção', 'acoes_br', 'Bancos', 11.2),
+        _posicao('MXRF11', 'Maxi Renda', 900, 9.80, 9.14, 'HOLD', 'Manter', 'fiis',
+            'Fundos imobiliários', 12.8),
+        _posicao('WEGE3', 'WEG', 120, 44.10, 51.49, 'UNKNOWN', 'Sem dados suficientes',
+            'acoes_br', 'Bens industriais', 1.9),
+      ],
+      'allocations': [
+        {'category': 'acoes_br', 'current_value': 52300.0, 'current_pct': 53.7, 'target_pct': 45.0},
+        {'category': 'fiis', 'current_value': 24130.55, 'current_pct': 24.8, 'target_pct': 25.0},
+        {'category': 'renda_fixa', 'current_value': 18000.0, 'current_pct': 18.5, 'target_pct': 25.0},
+        {'category': 'etfs', 'current_value': 3000.0, 'current_pct': 3.0, 'target_pct': 5.0},
+      ],
+      'top_buys': <dynamic>[],
+      'top_sells': <dynamic>[],
+      'alerts': <dynamic>[],
+      'health': {
+        'score': 68.0,
+        'concentration_score': 62.0,
+        'sector_concentration_score': 58.0,
+        'diversification_score': 74.0,
+        'risk_score': 70.0,
+        'top_position_ticker': 'PETR4',
+        'top_position_pct': 11.8,
+        'top_sector': 'Energia',
+        'top_sector_pct': 22.4,
+        'warnings': <dynamic>[],
+      },
+      'snapshots': [
+        {
+          'captured_at': 1782000000,
+          'total_invested': 71000.0,
+          'total_current': 76200.0,
+          'total_pnl': 5200.0,
+          'total_pnl_pct': 7.32,
+        },
+        {
+          'captured_at': 1784678400,
+          'total_invested': 78400.0,
+          'total_current': 85100.0,
+          'total_pnl': 6700.0,
+          'total_pnl_pct': 8.55,
+        },
+        {
+          'captured_at': 1787356800,
+          'total_invested': 84200.0,
+          'total_current': 97430.55,
+          'total_pnl': 13230.55,
+          'total_pnl_pct': 15.71,
+        },
+      ],
+    };
+  }
+
+  if (caminho.contains('/fixed-income')) {
+    return {
+      ...base,
+      'items': [
+        {
+          'id': 1,
+          'nome': 'CDB Banco Master',
+          'tipo': 'cdb',
+          'valor_investido': 10000.0,
+          'taxa': 118.0,
+          'tipo_taxa': 'pos_fixado',
+          'percentual_cdi': 118.0,
+          'data_aplicacao': '2025-09-10',
+          'vencimento': '2027-09-10',
+          'liquidez': 'no_vencimento',
+          'isento_ir': false,
+          'oculto': false,
+          'valor_atual': 11240.30,
+          'rendimento_acumulado': 1240.30,
+          'rendimento_pct': 12.40,
+          'meses_decorridos': 12,
+          'taxa_anual_efetiva_pct': 13.2,
+          'yield_equivalente_pct': 118.0,
+          'valor_no_vencimento': 12680.0,
+          'dias_para_vencimento': 361,
+          'vencimento_proximo': false,
+        },
+        {
+          'id': 2,
+          'nome': 'LCI Inter',
+          'tipo': 'lci',
+          'valor_investido': 8000.0,
+          'taxa': 96.0,
+          'tipo_taxa': 'pos_fixado',
+          'percentual_cdi': 96.0,
+          'data_aplicacao': '2026-01-15',
+          'vencimento': '2026-10-05',
+          'liquidez': 'no_vencimento',
+          'isento_ir': true,
+          'oculto': false,
+          'valor_atual': 8492.10,
+          'rendimento_acumulado': 492.10,
+          'rendimento_pct': 6.15,
+          'meses_decorridos': 8,
+          'taxa_anual_efetiva_pct': 10.7,
+          'yield_equivalente_pct': 113.0,
+          'valor_no_vencimento': 8610.0,
+          'dias_para_vencimento': 20,
+          'vencimento_proximo': true,
+        },
+      ],
+      'total_investido': 18000.0,
+      'total_atual': 19732.40,
+      'total_rendimento': 1732.40,
+      'rendimento_pct': 9.62,
+      'taxa_media_aa': 12.8,
+      'cdi_referencia': 11.15,
+      'fonte_taxas': 'bcb',
+    };
+  }
+
+  if (caminho.contains('/cashflow/month')) {
+    return {
+      ...base,
+      'month': '2026-09',
+      'received': 8400.0,
+      'paid': 5210.40,
+      'committed': 1180.00,
+      'free_now': 2009.60,
+      'surplus_low': 1109.60,
+      'surplus_high': 1609.60,
+      'has_range': true,
+      'income_baseline': 8400.0,
+      'estimate': {
+        'base_months': ['2026-06', '2026-07', '2026-08'],
+        'expected_low': 1800.0,
+        'expected_high': 2300.0,
+        'spent_so_far': 1400.0,
+        'remaining_low': 400.0,
+        'remaining_high': 900.0,
+      },
+      'due': [
+        {
+          'id': 11,
+          'category': 'moradia',
+          'description': 'Aluguel',
+          'amount': 1800.0,
+          'due_on': '2026-09-25',
+        },
+        {
+          'id': 12,
+          'category': 'contas_da_casa',
+          'description': 'Luz',
+          'amount': 180.0,
+          'due_on': '2026-09-28',
+        },
+      ],
+    };
+  }
+
+  if (caminho.contains('/cashflow/debts')) {
+    return [
+        {
+          'id': 1,
+          'kind': 'rotativo_cartao',
+          'description': 'Fatura do cartão',
+          'balance': 3200.0,
+          'monthly_rate': 14.9,
+          'class': 'expensive',
+          'reference_monthly': 0.92,
+          'reference_source': 'carteira',
+          'flip_rate': 0.92,
+        },
+        {
+          'id': 2,
+          'kind': 'financiamento_veiculo',
+          'description': 'Financiamento do carro',
+          'balance': 21000.0,
+          'monthly_rate': 0.84,
+          'class': 'manageable',
+          'reference_monthly': 0.92,
+        'reference_source': 'carteira',
+        'flip_rate': 0.92,
+      },
+    ];
+  }
+
+  if (caminho.contains('/surplus')) {
+    return {
+      ...base,
+      'month': '2026-09',
+      'has_cash': true,
+      'cascade': {
+        'surplus_low': 1109.60,
+        'available_to_invest': 0.0,
+        'steps': [
+          {
+            'order': 1,
+            'type': 'debt',
+            'amount': 1109.60,
+            'reason': 'Fatura do cartão custa 14.90% ao mês. Sua carteira rendeu 0.92% ao mês. '
+                'Enquanto essa diferença existir, quitar rende mais que aportar.',
+            'falsifier': 'Se a taxa da dívida cair abaixo de 0.92% ao mês, quitar deixa de ser a '
+                'prioridade.',
+            'reference': 'carteira',
+          },
+        ],
+      },
+    };
+  }
+
+  if (caminho.contains('/rebalance-suggestions')) {
+    return {
+      ...base,
+      'allocation_gaps': [
+        {
+          'category': 'renda_fixa',
+          'current_pct': 18.5,
+          'target_pct': 25.0,
+          'gap_pct': -6.5,
+          'gap_value': 6330.0,
+        },
+        {
+          'category': 'acoes_br',
+          'current_pct': 53.7,
+          'target_pct': 45.0,
+          'gap_pct': 8.7,
+          'gap_value': -8470.0,
+        },
+      ],
+      'items': [
+        {
+          'ticker': 'WEGE3',
+          'name': 'WEG',
+          'category': 'acoes_br',
+          'verdict': 'SELL',
+          'action': 'realocar',
+          'current_value': 6178.80,
+          'quantity': 120.0,
+          'pnl_pct': 16.8,
+          'reasons': [
+            'Preço atual está 180.4% acima do preço justo estimado (R\$ 18,36).',
+            'Categoria acoes_br também está acima da meta de alocação.',
+          ],
+          'requires_tax_review': true,
+          'realocar_para': {
+            'ticker': 'BBAS3',
+            'name': 'Banco do Brasil',
+            'category': 'acoes_br',
+            'score': 78.0,
+            'verdict': 'STRONG_BUY',
+          },
+        },
+      ],
+      'tax_disclaimer': 'Vender pode gerar imposto. O número do mês está na apuração.',
+    };
+  }
+
+  if (caminho.contains('/goals')) {
+    return [
+      {'category': 'acoes_br', 'target_pct': 45.0, 'target_value': 43843.0, 'declared': true},
+      {'category': 'fiis', 'target_pct': 25.0, 'target_value': 24357.0, 'declared': true},
+      {'category': 'renda_fixa', 'target_pct': 25.0, 'target_value': 24357.0, 'declared': true},
+      {'category': 'etfs', 'target_pct': 5.0, 'target_value': 4871.0, 'declared': true},
+    ];
+  }
+
+  if (caminho.contains('/sector-goals')) {
+    return [
+      {'sector': 'Energia', 'target_pct': 20.0, 'declared': true},
+      {'sector': 'Bancos', 'target_pct': 15.0, 'declared': true},
+    ];
+  }
+
+  if (caminho.contains('/alerts')) {
+    return [
+      {
+        'id': 1,
+        'ticker': 'PETR4',
+        'condition': 'below',
+        'target_price': 30.0,
+        'note': 'Voltar a comprar',
+      },
+      {'id': 2, 'ticker': 'MXRF11', 'condition': 'above', 'target_price': 11.0},
+    ];
+  }
+
+  if (caminho.contains('/whats-new')) {
+    return {
+      ...base,
+      'days_since': 3,
+      'captured_at': '2026-09-11',
+      'total_invested': 84200.0,
+      'total_current': 97430.55,
+      'total_pnl': 13230.55,
+      'total_pnl_pct': 15.71,
+      'items': [
+        {
+          'kind': 'price',
+          'ticker': 'PETR4',
+          'title': 'PETR4 subiu 4,2% desde a última visita',
+          'detail': 'De R\$ 36,87 para R\$ 38,42.',
+        },
+        {
+          'kind': 'dividend',
+          'ticker': 'BBAS3',
+          'title': 'BBAS3 anunciou JCP',
+          'detail': 'R\$ 0,476 por ação, com crédito em 05/09.',
+        },
+      ],
+    };
+  }
+
+  if (caminho.contains('/referral')) {
+    return {'code': 'MARIA2026', 'invited': 0, 'credited_until': null};
+  }
+
+  if (caminho.contains('/cashflow/entries')) {
+    return [
+        {
+          'id': 1,
+          'kind': 'income',
+          'category': 'salario',
+          'description': 'Salário',
+          'amount': 8400.0,
+          'due_on': '2026-09-05',
+          'paid_on': '2026-09-05',
+        },
+        {
+          'id': 2,
+          'kind': 'expense',
+          'category': 'moradia',
+          'description': 'Aluguel',
+          'amount': 1800.0,
+          'due_on': '2026-09-25',
+          'paid_on': null,
+        },
+        {
+          'id': 3,
+          'kind': 'expense',
+          'category': 'mercado',
+          'description': 'Compras do mês',
+          'amount': 980.40,
+        'due_on': '2026-09-08',
+        'paid_on': '2026-09-08',
+      },
+    ];
+  }
 
   if (caminho.contains('/transactions')) {
     return {
