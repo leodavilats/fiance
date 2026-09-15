@@ -169,7 +169,7 @@ class _LinkLegal extends StatelessWidget {
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: FiSpace.s1),
         minimumSize: const Size(0, FiLayout.minTouchTarget),
-        textStyle: FiType.caption.copyWith(
+        textStyle: fiSans(FiType.caption).copyWith(
           decoration: TextDecoration.underline,
         ),
       ),

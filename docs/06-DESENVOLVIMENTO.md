@@ -112,6 +112,38 @@ nem ordem visual, e isso está escrito no fim do próprio relatório.
 nenhuma folha é encontrada — sinais de que o padrão do router mudou e a coleta passou a descrever
 menos do que existe.
 
+## Captura das telas, para revisão visual
+
+```bash
+python tool/capturar_telas.py            # 27 PNG em mobile/build/catalogo/telas/
+python tool/capturar_telas.py --limpar   # apaga as capturas antigas antes
+```
+
+Renderiza cada tela nos **dois temas**, com dados de exemplo, e escreve PNG de 780×2800. Cobre
+também os estados de carregando, falha e sem dado do livro-razão.
+
+Roda em `flutter test`, **sem emulador e sem backend**: a rede é dublada por um interceptor do Dio
+e o repositório é injetado por `overrideWithValue`. Leva segundos.
+
+Três coisas que essa captura exigiu, e que valem saber antes de mexer nela:
+
+- **As fontes são baixadas para `mobile/build/fontes/`.** O aplicativo usa `google_fonts`, que busca
+  a fonte em runtime; em `flutter test` o cliente HTTP é dublado e a busca nunca completa. Sem as
+  fontes carregadas por `FontLoader`, o Flutter desenha caixas pretas no lugar do texto — e a imagem
+  engana quem for avaliá-la. A fonte de ícones vem do próprio SDK do Flutter.
+- **`toImage` roda dentro de `tester.runAsync`.** Fora dele o Future não completa no relógio falso
+  do teste, e cada captura passa a levar **dez minutos** em vez de um segundo.
+- **Um `pump` não basta.** Cada Future do Riverpod resolve num ciclo, e tela com providers aninhados
+  precisa de mais de um. `pumpAndSettle` não serve: o esqueleto de carregamento anima para sempre.
+
+O arquivo vive em `mobile/captura/`, **fora de `test/`**, de propósito: não é teste de regressão, e
+`flutter test` não deve rodá-lo. Ele termina em erro mesmo com as imagens escritas — ao desenhar um
+peso que não está nos assets, o `google_fonts` lança depois do fim do teste —, então quem diz se a
+captura deu certo são as imagens, e é por elas que o script confere.
+
+Complementa `tool/catalogo_de_telas.py`: o catálogo dá o texto e a estrutura, a captura dá o que só
+se vê olhando.
+
 ## Comentários: quase nunca
 
 **O porquê vive nas [decisões](decisoes/); o que não pode ser violado vive no `CLAUDE.md`.** O fonte

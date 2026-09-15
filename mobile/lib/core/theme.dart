@@ -236,7 +236,7 @@ ThemeData buildAppTheme(Brightness brightness) {
         foregroundColor: inkOnBrand,
         disabledBackgroundColor: controlFillHover,
         disabledForegroundColor: inkDisabled,
-        textStyle: FiType.action,
+        textStyle: fiSans(FiType.action),
         minimumSize: const Size(0, FiLayout.minTouchTarget),
         padding: const EdgeInsets.symmetric(horizontal: FiSpace.s5),
         elevation: 0,
@@ -250,7 +250,7 @@ ThemeData buildAppTheme(Brightness brightness) {
         foregroundColor: ink1,
         disabledForegroundColor: inkDisabled,
         side: BorderSide(color: controlBorder),
-        textStyle: FiType.action,
+        textStyle: fiSans(FiType.action),
         minimumSize: const Size(0, FiLayout.minTouchTarget),
         padding: const EdgeInsets.symmetric(horizontal: FiSpace.s4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FiRadius.md)),
@@ -260,7 +260,7 @@ ThemeData buildAppTheme(Brightness brightness) {
       style: TextButton.styleFrom(
         foregroundColor: brand,
         disabledForegroundColor: inkDisabled,
-        textStyle: FiType.action,
+        textStyle: fiSans(FiType.action),
         minimumSize: const Size(0, FiLayout.minTouchTarget),
         padding: const EdgeInsets.symmetric(horizontal: FiSpace.s2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FiRadius.sm)),
@@ -275,7 +275,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
-        textStyle: WidgetStatePropertyAll(FiType.label),
+        textStyle: WidgetStatePropertyAll(fiSans(FiType.label)),
         side: WidgetStatePropertyAll(BorderSide(color: controlBorder)),
         backgroundColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected) ? brandQuiet : controlFill,
@@ -343,7 +343,7 @@ ThemeData buildAppTheme(Brightness brightness) {
         color: isDark ? FiColors.darkGround2 : FiColors.lightInk1,
         borderRadius: BorderRadius.circular(FiRadius.sm),
       ),
-      textStyle: FiType.caption.copyWith(
+      textStyle: fiSans(FiType.caption).copyWith(
         color: isDark ? FiColors.darkInk1 : FiColors.lightGround1,
       ),
     ),
