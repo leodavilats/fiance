@@ -88,65 +88,47 @@ tem, não contra o que a extensão sugere.
 
 ---
 
-## Catálogo de telas, para revisão
+## Revisar as telas
 
 ```bash
-python tool/catalogo_de_telas.py           # escreve build/catalogo/
-python tool/catalogo_de_telas.py --check   # confere que nada saiu do radar
+python tool/revisar_telas.py             # catálogo + imagens
+python tool/revisar_telas.py --limpar    # apaga a revisão anterior antes
+python tool/revisar_telas.py --texto     # só o catálogo, instantâneo
+python tool/revisar_telas.py --imagens   # só as capturas
+python tool/revisar_telas.py --check     # confere que nada saiu do radar
 ```
 
-Monta, a partir de `mobile/lib/`, um retrato de cada tela: rota, título, seções na ordem, ações e seus
-pesos, os quatro estados, componentes usados, explicabilidade presente, para onde navega e **todos
-os textos**. Inclui as folhas e formulários, que não são rota e são onde a pessoa escreve.
+Escreve em `build/revisao/`, que o git ignora. Produz **duas leituras da mesma interface**, porque
+nenhuma enxerga o que a outra vê:
 
-Serve para revisão de linguagem e hierarquia — por uma pessoa ou por uma IA. Sai junto um
-`COMO-AVALIAR.md` com o contexto do produto e as regras que ele já se impôs: sem isso, quem avalia
-sugere o oposto do que o produto decidiu, como trocar fio e chão por cards.
+| | Como funciona | Enxerga | Não enxerga |
+|---|---|---|---|
+| `CATALOGO.md` | Lê `mobile/lib/` | Todo o texto do app, inclusive o que só aparece em situação rara; seções, ações, estados e componentes | Nada visual |
+| `telas/` | Renderiza e fotografa | Espaçamento, cor, densidade, hierarquia; 12 telas × 4 estados × 2 temas | Texto que não está naquele estado |
 
-**Lê o fonte, não o aplicativo em execução.** Isso é escolha: os textos são literais no código, e
-assim a coleta não depende de emulador, de rede, nem da fonte que o ambiente de teste não carrega —
-em `flutter test` o texto sairia como caixas pretas. O preço é não enxergar espaçamento, contraste
-nem ordem visual, e isso está escrito no fim do próprio relatório.
+Sai junto um **`COMO-AVALIAR.md`** com o contexto do produto e as regras que ele já se impôs. Envie-o
+sempre: sem ele, quem avalia sugere o contrário do que foi decidido — trocar fio e chão por cards,
+remover a proveniência para "limpar a interface".
 
-`--check` falha quando o catálogo deixa de enxergar um destino de raiz, uma tela fica sem texto ou
-nenhuma folha é encontrada — sinais de que o padrão do router mudou e a coleta passou a descrever
-menos do que existe.
+### O que a captura exigiu, e por quê
 
-## Captura das telas, para revisão visual
-
-```bash
-python tool/capturar_telas.py            # 96 PNG em mobile/build/catalogo/telas/
-python tool/capturar_telas.py --limpar   # apaga as capturas antigas antes
-```
-
-Renderiza **cada tela nos quatro estados e nos dois temas** — 12 telas × conteúdo, sem dado, falha e
-carregando × claro e escuro —, em PNG de 780×2800. A saída fica em uma pasta por estado, para que se
-possa enviar só o conjunto que interessa.
-
-Os estados são onde a interface costuma falhar, e são os mais difíceis de alcançar no aparelho: o
-vazio exige conta nova, e a falha exige o servidor fora do ar.
-
-Roda em `flutter test`, **sem emulador e sem backend**: a rede é dublada por um interceptor do Dio
-e o repositório é injetado por `overrideWithValue`. Leva segundos.
-
-Três coisas que essa captura exigiu, e que valem saber antes de mexer nela:
-
-- **As fontes são baixadas para `mobile/build/fontes/`.** O aplicativo usa `google_fonts`, que busca
-  a fonte em runtime; em `flutter test` o cliente HTTP é dublado e a busca nunca completa. Sem as
-  fontes carregadas por `FontLoader`, o Flutter desenha caixas pretas no lugar do texto — e a imagem
-  engana quem for avaliá-la. A fonte de ícones vem do próprio SDK do Flutter.
-- **`toImage` roda dentro de `tester.runAsync`.** Fora dele o Future não completa no relógio falso
-  do teste, e cada captura passa a levar **dez minutos** em vez de um segundo.
+- **As fontes são baixadas para `build/revisao/.fontes/`.** O aplicativo usa `google_fonts`, que
+  busca a fonte em runtime; em `flutter test` o cliente HTTP é dublado e a busca nunca completa. Sem
+  as fontes carregadas por `FontLoader`, o Flutter desenha caixas pretas no lugar do texto — e a
+  imagem engana quem for avaliá-la. A fonte de ícones vem do próprio SDK.
+- **`toImage` roda dentro de `tester.runAsync`.** Fora dele o Future não completa no relógio falso do
+  teste, e cada captura passa a levar **dez minutos** em vez de um segundo.
 - **Um `pump` não basta.** Cada Future do Riverpod resolve num ciclo, e tela com providers aninhados
   precisa de mais de um. `pumpAndSettle` não serve: o esqueleto de carregamento anima para sempre.
 
-O arquivo vive em `mobile/captura/`, **fora de `test/`**, de propósito: não é teste de regressão, e
-`flutter test` não deve rodá-lo. Ele termina em erro mesmo com as imagens escritas — ao desenhar um
-peso que não está nos assets, o `google_fonts` lança depois do fim do teste —, então quem diz se a
-captura deu certo são as imagens, e é por elas que o script confere.
+O arquivo de captura vive em `mobile/captura/`, **fora de `test/`**, de propósito: não é teste de
+regressão, e `flutter test` não deve rodá-lo. Ele termina em erro mesmo com as imagens escritas — ao
+desenhar um peso que não está nos assets, o `google_fonts` lança depois do fim do teste —, então quem
+diz se a captura deu certo são as imagens, e é por elas que o script confere.
 
-Complementa `tool/catalogo_de_telas.py`: o catálogo dá o texto e a estrutura, a captura dá o que só
-se vê olhando.
+**As fixtures vivem no próprio teste de captura.** Ao mudar a forma de uma resposta, elas são o
+segundo lugar a ajustar; se uma tela aparecer vazia ou em erro na pasta `conteudo/`, é sinal de que a
+fixture ficou para trás.
 
 ## Comentários: quase nunca
 

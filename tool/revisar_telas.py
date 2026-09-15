@@ -1,14 +1,23 @@
-"""Monta o catálogo das telas do aplicativo, para revisão por pessoa ou por IA.
+"""Gera o material para revisar as telas do aplicativo — por pessoa ou por IA.
 
 Uso:
-    python tool/catalogo_de_telas.py            # escreve build/catalogo/
-    python tool/catalogo_de_telas.py --stdout   # imprime o Markdown
-    python tool/catalogo_de_telas.py --check    # confere que nada saiu do radar
+    python tool/revisar_telas.py             # catálogo + imagens
+    python tool/revisar_telas.py --limpar    # apaga a revisão anterior antes
+    python tool/revisar_telas.py --texto     # só o catálogo (instantâneo)
+    python tool/revisar_telas.py --imagens   # só as capturas
+    python tool/revisar_telas.py --check     # confere que nada saiu do radar
 
-Lê os fontes em mobile/lib/, não o aplicativo em execução: os textos de interface são literais no
-código, e isso evita depender de emulador, de rede e da fonte que o ambiente de teste não carrega.
-O que ele NÃO enxerga está declarado em "pontos cegos", no fim do relatório — nenhum leitor deve
-supor que o silêncio aqui significa ausência na tela.
+Produz duas leituras da mesma interface, porque nenhuma enxerga o que a outra vê:
+
+- **O catálogo** lê `mobile/lib/` e extrai todo o texto e a estrutura. Enxerga até a frase que só
+  aparece em situação rara, e não enxerga nada visual.
+- **As imagens** renderizam cada tela nos quatro estados e nos dois temas. Enxergam espaçamento,
+  cor e hierarquia, e só mostram o texto daquele estado.
+
+Sai junto um COMO-AVALIAR.md com o contexto do produto: sem ele, quem avalia sugere o contrário do
+que o produto ja decidiu.
+
+Tudo vai para build/revisao/, que o git ignora — é material de revisão, não fonte.
 """
 
 from __future__ import annotations
@@ -17,11 +26,28 @@ import argparse
 import json
 import pathlib
 import re
+import shutil
+import subprocess
 import sys
+import urllib.request
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
-LIB = RAIZ / "mobile" / "lib"
-SAIDA = RAIZ / "build" / "catalogo"
+MOBILE = RAIZ / "mobile"
+LIB = MOBILE / "lib"
+SAIDA = RAIZ / "build" / "revisao"
+TELAS = SAIDA / "telas"
+FONTES = SAIDA / ".fontes"
+
+# Variáveis de peso, do repositório oficial do Google Fonts. Licença OFL.
+_ARQUIVOS_DE_FONTE = {
+    "IBMPlexSans-Regular.ttf": (
+        "https://github.com/google/fonts/raw/main/ofl/ibmplexsans/IBMPlexSans%5Bwdth%2Cwght%5D.ttf"
+    ),
+    "SourceSerif4-Regular.ttf": (
+        "https://github.com/google/fonts/raw/main/ofl/sourceserif4/"
+        "SourceSerif4%5Bopsz%2Cwght%5D.ttf"
+    ),
+}
 
 _ROTA_PAI = re.compile(r"path:\s*'(/[\w/:-]*)'")
 _ROTA_FILHA = re.compile(r"path:\s*'([\w:-]+)'")
@@ -510,42 +536,142 @@ def _conferir(catalogo: dict) -> int:
     return 0
 
 
-def main() -> int:
-    # O console do Windows nasce em cp1252 e engasga com acento e seta.
-    sys.stdout.reconfigure(encoding="utf-8")
+def _copiar_icones() -> None:
+    destino = FONTES / "MaterialIcons-Regular.otf"
+    if destino.exists():
+        return
 
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stdout", action="store_true", help="imprime em vez de escrever")
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="falha se o catálogo deixou de enxergar alguma tela; não escreve nada",
-    )
-    args = parser.parse_args()
+    flutter = shutil.which("flutter")
+    if not flutter:
+        print("  flutter nao encontrado no PATH; os icones sairao como quadrados vazios")
+        return
 
-    catalogo = montar()
+    raiz = pathlib.Path(flutter).resolve().parent.parent
+    for candidato in raiz.rglob("materialicons-regular.otf"):
+        shutil.copy(candidato, destino)
+        return
+    for candidato in raiz.rglob("MaterialIcons-Regular.otf"):
+        shutil.copy(candidato, destino)
+        return
 
-    if args.check:
-        return _conferir(catalogo)
+    print("  fonte de icones do Flutter nao localizada; eles sairao como quadrados vazios")
 
-    markdown = como_markdown(catalogo)
 
-    if args.stdout:
-        print(markdown)
-        return 0
+def _baixar_fontes() -> bool:
+    FONTES.mkdir(parents=True, exist_ok=True)
+    _copiar_icones()
 
+    for nome, url in _ARQUIVOS_DE_FONTE.items():
+        destino = FONTES / nome
+        if destino.exists() and destino.stat().st_size > 10_000:
+            continue
+
+        print(f"baixando {nome}...")
+        try:
+            pedido = urllib.request.Request(url, headers={"User-Agent": "fiance-captura"})
+            with urllib.request.urlopen(pedido, timeout=60) as resposta:
+                destino.write_bytes(resposta.read())
+        except Exception as erro:
+            print(f"  nao foi possivel baixar {nome}: {erro}")
+            print(
+                "  Sem a fonte, a captura sai com caixas no lugar do texto. Baixe manualmente de "
+                f"{url} e salve em {destino}."
+            )
+            return False
+
+    return True
+
+
+def _escrever_catalogo(catalogo: dict) -> None:
     SAIDA.mkdir(parents=True, exist_ok=True)
     (SAIDA / "catalogo.json").write_text(
         json.dumps(catalogo, ensure_ascii=False, indent=1), encoding="utf-8"
     )
-    (SAIDA / "CATALOGO.md").write_text(markdown, encoding="utf-8")
+    (SAIDA / "CATALOGO.md").write_text(como_markdown(catalogo), encoding="utf-8")
     (SAIDA / "COMO-AVALIAR.md").write_text(_BRIEFING, encoding="utf-8")
 
     telas = len(catalogo["telas"])
     folhas = len(catalogo["folhas_e_formularios"])
     textos = sum(len(t.get("textos", [])) for t in catalogo["telas"])
-    print(f"{telas} telas, {folhas} folhas, {textos} textos -> {SAIDA.relative_to(RAIZ)}")
-    print("envie CATALOGO.md junto com COMO-AVALIAR.md")
+    print(f"catalogo: {telas} telas, {folhas} folhas, {textos} textos")
+
+
+def _capturar() -> int:
+    if not _baixar_fontes():
+        return 1
+
+    print("capturando... (cerca de um minuto)")
+    subprocess.run(
+        ["flutter", "test", "captura/telas_test.dart"],
+        cwd=MOBILE,
+        shell=True,
+        capture_output=True,
+    )
+
+    imagens = sorted(TELAS.rglob("*.png")) if TELAS.exists() else []
+    if not imagens:
+        print(
+            "nenhuma imagem foi escrita. Rode `flutter test captura/telas_test.dart` em mobile/ "
+            "para ver o erro."
+        )
+        return 1
+
+    total = sum(i.stat().st_size for i in imagens)
+    print(f"imagens: {len(imagens)} em {total / 1024 / 1024:.1f} MB")
+
+    por_estado: dict[str, int] = {}
+    for imagem in imagens:
+        por_estado[imagem.parent.name] = por_estado.get(imagem.parent.name, 0) + 1
+    for estado in sorted(por_estado):
+        print(f"  telas/{estado}/  {por_estado[estado]}")
+
+    return 0
+
+
+def main() -> int:
+    # O console do Windows nasce em cp1252 e engasga com acento e seta.
+    sys.stdout.reconfigure(encoding="utf-8")
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--limpar", action="store_true", help="apaga a revisao anterior antes")
+    parser.add_argument("--texto", action="store_true", help="so o catalogo")
+    parser.add_argument("--imagens", action="store_true", help="so as capturas")
+    parser.add_argument("--stdout", action="store_true", help="imprime o catalogo, sem escrever")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="falha se o catalogo deixou de enxergar alguma tela; nao escreve nada",
+    )
+    args = parser.parse_args()
+
+    if args.check:
+        return _conferir(montar())
+
+    if args.stdout:
+        print(como_markdown(montar()))
+        return 0
+
+    if args.limpar and SAIDA.exists():
+        # As fontes ficam de fora: baixa-las de novo custa rede e elas nao envelhecem.
+        for item in SAIDA.iterdir():
+            if item.name == FONTES.name:
+                continue
+            shutil.rmtree(item) if item.is_dir() else item.unlink()
+        print("revisao anterior apagada")
+
+    so_um = args.texto or args.imagens
+
+    if args.texto or not so_um:
+        _escrever_catalogo(montar())
+
+    if args.imagens or not so_um:
+        if _capturar() != 0:
+            return 1
+
+    print()
+    print(f"-> {SAIDA.relative_to(RAIZ)}")
+    print("Para avaliar, envie COMO-AVALIAR.md com o que interessa: CATALOGO.md para linguagem,")
+    print("telas/conteudo/ para o visual, e as outras pastas para os estados.")
     return 0
 
 

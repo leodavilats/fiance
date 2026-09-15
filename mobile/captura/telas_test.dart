@@ -26,8 +26,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 const _tela = Size(390, 1400);
 
-final _saida = Directory('build/catalogo/telas');
-final _fontes = Directory('build/fontes');
+final _saida = Directory('../build/revisao/telas');
+final _fontes = Directory('../build/revisao/.fontes');
 
 enum Estado { conteudo, carregando, falha, vazio }
 
@@ -56,7 +56,7 @@ Future<void> _carregarFontes() async {
 
   if (!_fontes.existsSync()) {
     fail(
-      'Sem as fontes em ${_fontes.path}. Rode `python tool/capturar_telas.py`, que as baixa antes '
+      'Sem as fontes em ${_fontes.path}. Rode `python tool/revisar_telas.py`, que as baixa antes '
       'de chamar este teste — sem elas o Flutter desenha caixas no lugar do texto, e a imagem '
       'engana quem for avaliá-la.',
     );
