@@ -80,6 +80,12 @@ final opportunitiesProvider = FutureProvider.autoDispose<List<Opportunity>>((
   return ref.watch(apiRepositoryProvider).getOpportunities(search: search);
 });
 
+final quickInvestProvider = FutureProvider.autoDispose<QuickInvestResult>((
+  ref,
+) {
+  return ref.watch(apiRepositoryProvider).quickInvest();
+});
+
 final rebalanceSuggestionsProvider =
     FutureProvider.autoDispose<RebalanceSuggestions>((ref) {
       return ref.watch(apiRepositoryProvider).getRebalanceSuggestions();
@@ -151,6 +157,60 @@ final cashVocabularyProvider = FutureProvider<CashVocabulary>((ref) {
 final razaoProvider = FutureProvider.autoDispose<LedgerPage>((ref) {
   return ref.watch(apiRepositoryProvider).getTransactions();
 });
+
+class RazaoFiltro {
+  const RazaoFiltro({this.symbol, this.kinds = const [], this.periodo});
+
+  final String? symbol;
+  final List<String> kinds;
+  final String? periodo;
+
+  bool get vazio => symbol == null && kinds.isEmpty && periodo == null;
+
+  int get ativos =>
+      (symbol == null ? 0 : 1) + (kinds.isEmpty ? 0 : 1) + (periodo == null ? 0 : 1);
+
+  RazaoFiltro copyWith({
+    String? symbol,
+    List<String>? kinds,
+    String? periodo,
+    bool limparSymbol = false,
+    bool limparPeriodo = false,
+  }) {
+    return RazaoFiltro(
+      symbol: limparSymbol ? null : (symbol ?? this.symbol),
+      kinds: kinds ?? this.kinds,
+      periodo: limparPeriodo ? null : (periodo ?? this.periodo),
+    );
+  }
+}
+
+final razaoFiltroProvider = StateProvider.autoDispose<RazaoFiltro>(
+  (ref) => const RazaoFiltro(),
+);
+
+final razaoFiltradoProvider = FutureProvider.autoDispose<LedgerPage>((ref) {
+  final f = ref.watch(razaoFiltroProvider);
+  return ref
+      .watch(apiRepositoryProvider)
+      .getTransactions(
+        symbol: f.symbol,
+        kinds: f.kinds,
+        tradedFrom: fiInicioDoPeriodo(f.periodo),
+      );
+});
+
+String? fiInicioDoPeriodo(String? periodo) {
+  if (periodo == null) return null;
+  final hoje = DateTime.now();
+  final inicio = switch (periodo) {
+    'mes' => DateTime(hoje.year, hoje.month, 1),
+    'ano' => DateTime(hoje.year, 1, 1),
+    '12m' => DateTime(hoje.year - 1, hoje.month, hoje.day),
+    _ => null,
+  };
+  return inicio?.toIso8601String().substring(0, 10);
+}
 
 final proventosProvider = FutureProvider.autoDispose<DividendsReceived>((ref) {
   return ref.watch(apiRepositoryProvider).getDividendsReceived();

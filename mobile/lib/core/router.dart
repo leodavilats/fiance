@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/patrimonio/patrimonio_screen.dart';
+import '../features/patrimonio/widgets/patrimonio_positions.dart';
 import '../features/patrimonio/proventos_screen.dart';
 import '../features/patrimonio/razao_screen.dart';
 import '../features/assets/fixed_income_screen.dart';
@@ -19,6 +20,7 @@ import '../features/tools/income_compare_view.dart';
 import '../features/market/opportunities_tab.dart';
 import '../features/market/quick_invest_view.dart';
 import '../features/shell/app_shell.dart';
+import '../features/shell/branch_pager.dart';
 import '../features/shell/tool_screen.dart';
 import '../features/tools/tools_views.dart';
 
@@ -51,9 +53,11 @@ final appRouter = GoRouter(
     GoRoute(path: '/market', redirect: (_, _) => '/descobrir'),
     GoRoute(path: '/config', redirect: (_, _) => '/voce'),
 
-    StatefulShellRoute.indexedStack(
+    StatefulShellRoute(
       builder: (context, state, navigationShell) =>
           AppShell(navigationShell: navigationShell),
+      navigatorContainerBuilder: (context, navigationShell, children) =>
+          FiBranchPager(navigationShell: navigationShell, children: children),
       branches: [
         StatefulShellBranch(
           routes: [
@@ -106,7 +110,11 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/patrimonio',
-              builder: (context, state) => const PatrimonioScreen(),
+              builder: (context, state) => PatrimonioScreen(
+                recorte: FiAssetGroupMode.deSlug(
+                  state.uri.queryParameters['por'],
+                ),
+              ),
               routes: [
                 GoRoute(
                   path: 'renda-fixa',
@@ -190,6 +198,22 @@ final appRouter = GoRouter(
                   path: 'objetivos',
                   builder: (context, state) => const ObjetivosScreen(),
                 ),
+                GoRoute(
+                  path: 'investir',
+                  builder: (context, state) => const InvestirScreen(),
+                ),
+                GoRoute(
+                  path: 'avisos',
+                  builder: (context, state) => const AvisosScreen(),
+                ),
+                GoRoute(
+                  path: 'aparencia',
+                  builder: (context, state) => const AparenciaScreen(),
+                ),
+                GoRoute(
+                  path: 'conta',
+                  builder: (context, state) => const ContaScreen(),
+                ),
               ],
             ),
           ],
@@ -216,11 +240,6 @@ class _DescobrirScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Descobrir'),
         actions: [
-          IconButton(
-            tooltip: 'Quedas',
-            icon: const Icon(Icons.trending_down),
-            onPressed: () => context.go('/descobrir/quedas'),
-          ),
           IconButton(
             tooltip: 'Comparar ativos',
             icon: const Icon(Icons.compare_arrows),

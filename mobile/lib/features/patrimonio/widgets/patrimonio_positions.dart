@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/format.dart';
 import '../../../core/labels.dart';
@@ -7,15 +8,24 @@ import '../../../core/models.dart';
 import '../../../core/sector_translations.dart';
 import '../../../core/theme.dart';
 import '../../../core/providers.dart';
-import '../../../core/widgets/button.dart';
 import '../../../core/widgets/data_row.dart';
+import '../../../core/widgets/disclosure.dart';
 import '../../../core/widgets/tag.dart';
 
-enum FiAssetGroupMode { value, category, sector }
+enum FiAssetGroupMode {
+  value('valor'),
+  category('classe'),
+  sector('setor');
 
-final fiAssetGroupModeProvider = StateProvider.autoDispose<FiAssetGroupMode>(
-  (ref) => FiAssetGroupMode.value,
-);
+  const FiAssetGroupMode(this.slug);
+
+  final String slug;
+
+  static FiAssetGroupMode deSlug(String? slug) => values.firstWhere(
+    (m) => m.slug == slug,
+    orElse: () => FiAssetGroupMode.value,
+  );
+}
 
 class FiGroupedPositionsList extends ConsumerWidget {
   const FiGroupedPositionsList({
@@ -93,60 +103,50 @@ class FiGroupedPositionsList extends ConsumerWidget {
             : sectorGoals.where((g) => g.sector == e.key).firstOrNull?.targetPct;
 
         return [
-          _FiGroupHeader(
+          FiGroupDisclosure(
             label: porCategoria
                 ? categoryLabel(e.key)
                 : translateSector(e.key == '—' ? null : e.key),
-            atualPct: atualPct,
-            metaPct: metaPct,
+            count: e.value.length,
+            trailing: metaPct != null
+                ? '${formatPercent(atualPct)} de ${formatPercent(metaPct)}'
+                : formatPercent(atualPct),
+            initiallyOpen: entries.length <= 3,
+            child: _objetos(e.value),
           ),
-          _objetos(e.value),
-          const SizedBox(height: FiSpace.s5),
         ];
       }).toList(),
     );
   }
 }
 
-class _FiGroupHeader extends StatelessWidget {
-  const _FiGroupHeader({
+class _FundoDeArrasto extends StatelessWidget {
+  const _FundoDeArrasto({
     required this.label,
-    required this.atualPct,
-    this.metaPct,
+    required this.state,
+    required this.alignment,
+    required this.padding,
   });
 
   final String label;
-  final double atualPct;
-  final double? metaPct;
+  final FiState state;
+  final Alignment alignment;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: FiSpace.s3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
-          const SizedBox(height: FiSpace.s3),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Expanded(
-                child: Text(
-                  label.toUpperCase(),
-                  style: FiType.eyebrow.copyWith(color: fiInk3(context)),
-                ),
-              ),
-              Text(
-                metaPct != null
-                    ? '${formatPercent(atualPct)} de ${formatPercent(metaPct)}'
-                    : formatPercent(atualPct),
-                style: FiType.caption.copyWith(color: fiInk2(context)),
-              ),
-            ],
-          ),
-        ],
+    final brightness = Theme.of(context).brightness;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: fiStateSurface(state, brightness),
+        borderRadius: BorderRadius.circular(FiRadius.md),
+      ),
+      alignment: alignment,
+      padding: padding,
+      child: Text(
+        label,
+        style: FiType.action.copyWith(color: fiStateColor(state, brightness)),
       ),
     );
   }
@@ -163,35 +163,6 @@ class _FiAssetObject extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onSell;
 
-  void _showReasons(BuildContext context, PortfolioPosition p) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(FiSpace.s5, 0, FiSpace.s5, FiSpace.s6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${p.ticker} — ${p.label}', style: FiType.title),
-              const SizedBox(height: FiSpace.s4),
-              ...p.reasons.map(
-                (r) => Padding(
-                  padding: const EdgeInsets.only(bottom: FiSpace.s3),
-                  child: Text(
-                    r,
-                    style: FiType.body.copyWith(color: fiInk2(context)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final p = position;
@@ -201,42 +172,50 @@ class _FiAssetObject extends StatelessWidget {
 
     return Dismissible(
       key: ValueKey(p.ticker),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (_) => showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Remover ativo'),
-          content: Text(
-            'Remover ${p.ticker} da carteira? A posição sai do patrimônio e das análises.',
+      confirmDismiss: (direcao) async {
+        if (direcao == DismissDirection.startToEnd) {
+          onSell();
+          return false;
+        }
+        final confirmado = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Remover ativo'),
+            content: Text(
+              'Remover ${p.ticker} da carteira? A posição sai do patrimônio e das análises.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Remover'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Remover'),
-            ),
-          ],
-        ),
-      ).then((v) => v ?? false),
+        );
+        return confirmado ?? false;
+      },
       onDismissed: (_) => onDelete(),
-      background: Container(
-        decoration: BoxDecoration(
-          color: fiStateSurface(FiState.adverse, brightness),
-          borderRadius: BorderRadius.circular(FiRadius.md),
-        ),
+      background: _FundoDeArrasto(
+        label: 'Vender',
+        state: FiState.attention,
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: FiSpace.s5),
+      ),
+      secondaryBackground: _FundoDeArrasto(
+        label: 'Remover',
+        state: FiState.adverse,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: FiSpace.s5),
-        child: Text(
-          'Remover',
-          style: FiType.action.copyWith(
-            color: fiStateColor(FiState.adverse, brightness),
-          ),
-        ),
       ),
       child: FiObject(
+        onTap: () => context.push('/ativo/${p.ticker}'),
+        semanticsLabel:
+            '${p.ticker}, ${p.label}. ${formatCurrency(p.currentValue)}, '
+            '${formatPercent(p.pnlPct)}. Abrir a análise.',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -296,23 +275,6 @@ class _FiAssetObject extends StatelessWidget {
               '${p.quantity} un. · PM ${formatCurrency(p.avgPrice)} · '
               'hoje ${formatCurrency(p.currentPrice)} · DY ${formatPercent(p.dividendYield)}',
               style: FiType.caption.copyWith(color: fiInk2(context)),
-            ),
-            const SizedBox(height: FiSpace.s3),
-            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (p.reasons.isNotEmpty) ...[
-                  Flexible(
-                    child: FiButton.quiet(
-                      label: 'Por que ${p.label}?',
-                      onPressed: () => _showReasons(context, p),
-                    ),
-                  ),
-                  const SizedBox(width: FiSpace.s5),
-                ],
-                FiButton.quiet(label: 'Vender', onPressed: onSell),
-              ],
             ),
           ],
         ),

@@ -13,7 +13,10 @@ async def opportunities(
     include_held: bool = Query(False, description="Inclui ativos já em carteira"),
     page: int = Query(1, ge=1, description="Página atual (começa em 1)"),
     page_size: int = Query(50, ge=10, le=100, description="Itens por página"),
-    sort_by: str = Query("score", description="Campo para ordenação: score, dy, mos, price"),
+    sort_by: str = Query(
+        "score",
+        description="Campo para ordenação: score, dy, mos, price, change_day, range_52w",
+    ),
     sort_order: str = Query("desc", description="Ordem: asc ou desc"),
     search: str = Query("", description="Busca por ticker ou nome"),
     min_dy: float | None = Query(None, ge=0, description="DY mínimo (%)"),
@@ -22,6 +25,16 @@ async def opportunities(
     asset_type: str = Query("", description="Filtrar por tipo de ativo"),
     category: str = Query("", description="Filtrar por categoria: renda ou trade"),
     only_interesting: bool = Query(False, description="Apenas destaques"),
+    trend_day: str = Query(
+        "", description="Variação do pregão de hoje: up (subindo) ou down (caindo)"
+    ),
+    trend_year: str = Query(
+        "",
+        description=(
+            "Posição na faixa de 52 semanas: up (metade alta) ou down (metade baixa). "
+            "Não é variação no ano — é onde o preço está entre a mínima e a máxima."
+        ),
+    ),
 ) -> OpportunitiesResponse:
     return await opportunity_service.get_opportunities(
         include_held=include_held,
@@ -36,4 +49,6 @@ async def opportunities(
         asset_type=asset_type,
         category=category,
         only_interesting=only_interesting,
+        trend_day=trend_day,
+        trend_year=trend_year,
     )

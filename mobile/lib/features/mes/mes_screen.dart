@@ -211,6 +211,8 @@ class _Corpo extends ConsumerWidget {
                     children: [for (final e in doMes) _LinhaDoMes(entry: e)],
                   ),
           ),
+
+          _ParaASobra(mes: mes),
         ],
       ),
     );
@@ -275,27 +277,44 @@ class _Veredito extends StatelessWidget {
           },
         ),
 
-        const SizedBox(height: FiSpace.s6),
-        Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
-        const SizedBox(height: FiSpace.s4),
+      ],
+    );
+  }
+}
 
-        Text(
-          mes.hasRange
-              ? 'Descontando o que ainda deve sair, a sobra parte de '
-                    '${formatCurrency(mes.surplusLow)}.'
-              : 'Sem mês fechado ainda não há como estimar o que falta sair, então a sobra é o '
-                    'próprio livre.',
-          style: FiType.body.copyWith(color: fiInk2(context)),
-        ),
-        const SizedBox(height: FiSpace.s3),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FiButton.secondary(
+class _ParaASobra extends StatelessWidget {
+  const _ParaASobra({required this.mes});
+
+  final CashMonth mes;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: FiSpace.s8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Divider(
+            color: Theme.of(context).dividerColor,
+            height: 1,
+            thickness: 1,
+          ),
+          const SizedBox(height: FiSpace.s4),
+          Text(
+            mes.hasRange
+                ? 'Descontando o que ainda deve sair, a sobra parte de '
+                      '${formatCurrency(mes.surplusLow)}.'
+                : 'Sem mês fechado ainda não há como estimar o que falta sair, então a sobra '
+                      'é o próprio livre.',
+            style: FiType.body.copyWith(color: fiInk2(context)),
+          ),
+          const SizedBox(height: FiSpace.s2),
+          FiNavAction(
             label: 'Decidir o que fazer com ela',
             onPressed: () => GoRouter.of(context).go('/sobra'),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

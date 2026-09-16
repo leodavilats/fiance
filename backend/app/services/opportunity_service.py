@@ -53,6 +53,7 @@ class _MarketRecord:
     fair_inputs: FairPriceInputs
     technical: TechnicalSnapshot
     as_of: float = 0.0
+    change_percent_day: float | None = None
 
     def to_dict(self) -> dict:
         data = self.__dict__.copy()
@@ -106,6 +107,7 @@ class OpportunityService:
             market_cap=snap.market_cap,
             has_dividend_history=bool(dividends),
             as_of=snap.as_of,
+            change_percent_day=snap.change_percent_day,
             fair_inputs=compute_fair_price_inputs(
                 price=snap.price,
                 eps=snap.eps,
@@ -184,6 +186,9 @@ class OpportunityService:
             score=score,
             score_breakdown=breakdown,
             data_completeness=breakdown.get("data_completeness", 1.0),
+            change_percent_day=record.change_percent_day,
+            distance_from_52w_high_pct=tech.distance_from_52w_high_pct,
+            range_52w_position=tech.range_52w_position,
             reasons=dec.reasons,
         )
 
@@ -303,6 +308,8 @@ class OpportunityService:
         asset_type: str = "",
         category: str = "",
         only_interesting: bool = False,
+        trend_day: str = "",
+        trend_year: str = "",
     ) -> OpportunitiesResponse:
         prefs = self.portfolio_repo.get_preferences()
 
@@ -361,6 +368,24 @@ class OpportunityService:
         if only_interesting:
             opps = [o for o in opps if o.is_interesting]
 
+        if trend_day in ("up", "down"):
+            subindo = trend_day == "up"
+            opps = [
+                o
+                for o in opps
+                if o.change_percent_day is not None
+                and (o.change_percent_day > 0 if subindo else o.change_percent_day < 0)
+            ]
+
+        if trend_year in ("up", "down"):
+            alta = trend_year == "up"
+            opps = [
+                o
+                for o in opps
+                if o.range_52w_position is not None
+                and (o.range_52w_position >= 0.5 if alta else o.range_52w_position < 0.5)
+            ]
+
         reverse = sort_order.lower() == "desc"
         if sort_by == "score":
             opps.sort(key=lambda x: x.score, reverse=reverse)
@@ -370,6 +395,10 @@ class OpportunityService:
             opps.sort(key=lambda x: x.margin_of_safety or 0, reverse=reverse)
         elif sort_by == "price":
             opps.sort(key=lambda x: x.price or 0, reverse=reverse)
+        elif sort_by == "change_day":
+            opps.sort(key=lambda x: x.change_percent_day or 0, reverse=reverse)
+        elif sort_by == "range_52w":
+            opps.sort(key=lambda x: x.range_52w_position or 0, reverse=reverse)
         else:
             opps.sort(key=lambda x: x.score, reverse=True)
 

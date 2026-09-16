@@ -160,6 +160,7 @@ class AssetSnapshot:
     fifty_two_week_high: float | None
     fifty_two_week_low: float | None
 
+    change_percent_day: float | None = None
     as_of: float = 0.0
     source: str = "brapi"
 
@@ -265,6 +266,11 @@ def _cash_dividends(raw: dict) -> list[dict]:
 
 def _dividend_date(d: dict) -> str | None:
     raw_date = d.get("paymentDate") or d.get("approvedOn")
+    return str(raw_date)[:10] if raw_date else None
+
+
+def _dividend_ex_date(d: dict) -> str | None:
+    raw_date = d.get("lastDatePrior")
     return str(raw_date)[:10] if raw_date else None
 
 
@@ -504,6 +510,7 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         ),
         "fifty_two_week_high": _safe_float(r.get("fiftyTwoWeekHigh")),
         "fifty_two_week_low": _safe_float(r.get("fiftyTwoWeekLow")),
+        "change_percent_day": _safe_float(r.get("regularMarketChangePercent")),
     }
 
     numeros, veredito = plausibility.screen(numeros, symbol=symbol.upper())
@@ -557,16 +564,16 @@ def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
     return out
 
 
-def _dividends_brapi(symbol: str) -> list[dict[str, float]]:
+def _dividends_brapi(symbol: str) -> list[dict]:
     base = _base_symbol(symbol)
     r = _brapi_raw(base)
 
-    out: list[dict[str, float]] = []
+    out: list[dict] = []
     for d in _cash_dividends(r):
         date = _dividend_date(d)
         value = _safe_float(d.get("rate"))
         if date and value is not None:
-            out.append({"date": date, "value": value})
+            out.append({"date": date, "value": value, "ex_date": _dividend_ex_date(d)})
     return sorted(out, key=lambda x: x["date"])
 
 
@@ -586,7 +593,7 @@ def _history_sync(symbol: str, period: str = "1y") -> dict[str, float]:
     return {}
 
 
-def _dividends_sync(symbol: str) -> list[dict[str, float]]:
+def _dividends_sync(symbol: str) -> list[dict]:
     t = detect_type(symbol)
 
     if t in ("br_stock", "fii", "bdr", "etf"):
@@ -703,7 +710,7 @@ async def fetch_ibov_history(days: int = 365) -> dict[str, float]:
     return series
 
 
-async def fetch_dividends(symbol: str) -> list[dict[str, float]]:
+async def fetch_dividends(symbol: str) -> list[dict]:
     ck = f"udiv:{symbol.upper()}"
     cached = cache.get(ck)
     if cached:

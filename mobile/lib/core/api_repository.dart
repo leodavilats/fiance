@@ -145,6 +145,8 @@ class ApiRepository {
     bool onlyInteresting = false,
     double? minDy,
     double? minMosPct,
+    String trendDay = '',
+    String trendYear = '',
   }) async {
     final res = await _dio.get(
       '/opportunities',
@@ -155,6 +157,8 @@ class ApiRepository {
         if (search.isNotEmpty) 'search': search,
         if (assetType.isNotEmpty) 'asset_type': assetType,
         if (onlyInteresting) 'only_interesting': true,
+        if (trendDay.isNotEmpty) 'trend_day': trendDay,
+        if (trendYear.isNotEmpty) 'trend_year': trendYear,
         'min_dy': ?minDy,
         'min_mos': ?minMosPct,
       },
@@ -535,10 +539,22 @@ class ApiRepository {
         .toList();
   }
 
-  Future<LedgerPage> getTransactions({String? symbol, String? cursor}) async {
+  Future<LedgerPage> getTransactions({
+    String? symbol,
+    String? cursor,
+    List<String> kinds = const [],
+    String? tradedFrom,
+    String? tradedTo,
+  }) async {
     final res = await _dio.get(
       '/transactions',
-      queryParameters: {'symbol': ?symbol, 'cursor': ?cursor},
+      queryParameters: {
+        'symbol': ?symbol,
+        'cursor': ?cursor,
+        if (kinds.isNotEmpty) 'kind': kinds,
+        'traded_from': ?tradedFrom,
+        'traded_to': ?tradedTo,
+      },
     );
     return LedgerPage.fromJson(res.data as Map<String, dynamic>);
   }

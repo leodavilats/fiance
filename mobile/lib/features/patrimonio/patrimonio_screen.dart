@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
-import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/button.dart';
+import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/segments.dart';
@@ -16,16 +16,18 @@ import '../mes/widgets/feed_charts.dart';
 import 'patrimonio_actions.dart';
 import 'widgets/patrimonio_closed_trades.dart';
 import 'widgets/patrimonio_composition.dart';
+import 'widgets/patrimonio_fixed_income.dart';
 import 'widgets/patrimonio_positions.dart';
 import 'widgets/patrimonio_summary.dart';
 
 class PatrimonioScreen extends ConsumerWidget {
-  const PatrimonioScreen({super.key});
+  const PatrimonioScreen({super.key, this.recorte = FiAssetGroupMode.value});
+
+  final FiAssetGroupMode recorte;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(dashboardProvider);
-    final fixedIncome = ref.watch(fixedIncomeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -37,9 +39,8 @@ class PatrimonioScreen extends ConsumerWidget {
           ref.invalidate(fixedIncomeProvider);
         },
         child: dashboard.when(
-          loading: () => FiSkeleton.tela(
-            shape: FiSkeletonShape.metric,
-            count: 1,
+          loading: () => FiSkeleton.pagina(
+            secoes: const [2, 4, 3],
             label: 'Carregando sua carteira',
           ),
           error: (err, _) => FiErrorState(
@@ -81,31 +82,36 @@ class PatrimonioScreen extends ConsumerWidget {
                 FiCarteiraSummary(summary: data.summary),
 
                 if (data.allocations.isNotEmpty)
-                  _Composicao(
-                    allocations: data.allocations,
-                    positions: data.positions,
+                  FiSection(
+                    title: recorte == FiAssetGroupMode.sector
+                        ? 'Onde está concentrado, por setor'
+                        : 'Onde está concentrado, por classe',
+                    trailing: _Recorte(atual: recorte),
+                    child: FiCompositionBlock(
+                      allocations: data.allocations,
+                      positions: data.positions,
+                      mode: recorte == FiAssetGroupMode.sector
+                          ? FiCompositionMode.sector
+                          : FiCompositionMode.asset,
+                    ),
                   ),
-
-                const FiBenchmarkSection(),
 
                 if (data.snapshots.length > 1)
                   FiSection(
                     title: 'Evolução',
+                    hint: 'A distância entre as duas linhas é o seu lucro — o que subiu por '
+                        'aporte fica na linha de baixo.',
                     child: FiEvolutionChart(snapshots: data.snapshots),
                   ),
 
-                fixedIncome.maybeWhen(
-                  data: (fi) => fi.visiveis.isEmpty
-                      ? const SizedBox.shrink()
-                      : FiFixedIncomeSummary(data: fi),
-                  orElse: () => const SizedBox.shrink(),
-                ),
+                const FiBenchmarkSection(),
+
+                const FiFixedIncomeSection(),
 
                 FiSection(
                   title: 'Ativos negociados',
                   count: data.positions.length,
                   hint: idade.isEmpty ? null : 'Cotações lidas $idade.',
-                  trailing: const _RecorteDeAtivos(),
                   action: FiButton.secondary(
                     label: 'Adicionar ativo',
                     icon: Icons.add,
@@ -113,7 +119,7 @@ class PatrimonioScreen extends ConsumerWidget {
                   ),
                   child: FiGroupedPositionsList(
                     positions: data.positions,
-                    mode: ref.watch(fiAssetGroupModeProvider),
+                    mode: recorte,
                     onDelete: (ticker) => deletePosition(ref, ticker),
                     onSell: (p) => openSellDialog(context, ref, p),
                   ),
@@ -121,26 +127,7 @@ class PatrimonioScreen extends ConsumerWidget {
 
                 const FiClosedTradesSection(),
 
-                FiSection(
-                  title: 'Proventos',
-                  hint: 'O que os seus ativos pagaram, e o que o calendário sugere que caiu.',
-                  action: FiButton.secondary(
-                    label: 'Ver proventos',
-                    onPressed: () => context.go('/patrimonio/proventos'),
-                  ),
-                  child: const SizedBox.shrink(),
-                ),
-
-                FiSection(
-                  title: 'Livro-razão',
-                  hint: 'A posição e o preço médio acima são reconstruídos a partir dos seus '
-                      'lançamentos.',
-                  action: FiButton.secondary(
-                    label: 'Ver lançamentos',
-                    onPressed: () => context.go('/patrimonio/razao'),
-                  ),
-                  child: const SizedBox.shrink(),
-                ),
+                const _DeOndeVem(),
               ],
             );
           },
@@ -150,56 +137,69 @@ class PatrimonioScreen extends ConsumerWidget {
   }
 }
 
-class _RecorteDeAtivos extends ConsumerWidget {
-  const _RecorteDeAtivos();
+class _Recorte extends StatelessWidget {
+  const _Recorte({required this.atual});
+
+  final FiAssetGroupMode atual;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final modo = ref.watch(fiAssetGroupModeProvider);
-
+  Widget build(BuildContext context) {
     return FiSegments<FiAssetGroupMode>(
-      selected: modo,
-      semanticsPrefix: 'Agrupar por',
+      selected: atual,
+      semanticsPrefix: 'Ver a carteira por',
       options: const {
         FiAssetGroupMode.value: 'Valor',
         FiAssetGroupMode.category: 'Classe',
         FiAssetGroupMode.sector: 'Setor',
       },
-      onSelect: (v) => ref.read(fiAssetGroupModeProvider.notifier).state = v,
+      onSelect: (v) => GoRouter.of(context).go('/patrimonio?por=${v.slug}'),
     );
   }
 }
 
-class _Composicao extends StatefulWidget {
-  const _Composicao({required this.allocations, required this.positions});
-
-  final List<CategoryAllocation> allocations;
-  final List<PortfolioPosition> positions;
+class _DeOndeVem extends ConsumerWidget {
+  const _DeOndeVem();
 
   @override
-  State<_Composicao> createState() => _ComposicaoState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final proventos = ref.watch(proventosProvider);
+    final razao = ref.watch(razaoProvider);
 
-class _ComposicaoState extends State<_Composicao> {
-  FiCompositionMode _modo = FiCompositionMode.asset;
-
-  @override
-  Widget build(BuildContext context) {
     return FiSection(
-      title: 'Onde está concentrado',
-      trailing: FiSegments<FiCompositionMode>(
-        selected: _modo,
-        semanticsPrefix: 'Agrupar por',
-        options: const {
-          FiCompositionMode.asset: 'Classe',
-          FiCompositionMode.sector: 'Setor',
-        },
-        onSelect: (v) => setState(() => _modo = v),
-      ),
-      child: FiCompositionBlock(
-        allocations: widget.allocations,
-        positions: widget.positions,
-        mode: _modo,
+      title: 'De onde vem este patrimônio',
+      hint: 'A posição e o preço médio acima são reconstruídos a partir dos seus lançamentos.',
+      child: FiRows(
+        children: [
+          FiDataRow(
+            label: 'Proventos',
+            value: proventos.maybeWhen(
+              data: (d) => formatCurrency(d.receivedLast12m),
+              orElse: () => null,
+            ),
+            detail: proventos.maybeWhen(
+              data: (d) => d.totalCount == 0
+                  ? 'Nada registrado ainda — o calendário pode ter sugestões'
+                  : '${d.totalCount} ${d.totalCount == 1 ? 'crédito' : 'créditos'} '
+                        'nos últimos 12 meses',
+              orElse: () => 'Lendo o que os seus ativos pagaram',
+            ),
+            onTap: () => context.go('/patrimonio/proventos'),
+          ),
+          FiDataRow(
+            label: 'Livro-razão',
+            value: razao.maybeWhen(
+              data: (d) => '${d.count}',
+              orElse: () => null,
+            ),
+            detail: razao.maybeWhen(
+              data: (d) => d.items.isEmpty
+                  ? 'Nenhum lançamento — a carteira veio de declaração de posição'
+                  : 'O último em ${formatDate(d.items.first.tradedOn)}',
+              orElse: () => 'Lendo os seus lançamentos',
+            ),
+            onTap: () => context.go('/patrimonio/razao'),
+          ),
+        ],
       ),
     );
   }

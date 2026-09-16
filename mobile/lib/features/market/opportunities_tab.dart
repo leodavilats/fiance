@@ -8,6 +8,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/labels.dart';
 import '../../core/widgets/button.dart';
+import '../../core/widgets/chip.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/help_tooltip.dart';
@@ -34,6 +35,8 @@ class OpportunitiesFilters {
     this.category = '',
     this.onlyInteresting = false,
     this.onlyDip = false,
+    this.trendDay = '',
+    this.trendYear = '',
   });
 
   final String search;
@@ -43,6 +46,9 @@ class OpportunitiesFilters {
   final bool onlyInteresting;
   final bool onlyDip;
 
+  final String trendDay;
+  final String trendYear;
+
   OpportunitiesFilters copyWith({
     String? search,
     double? minDy,
@@ -50,6 +56,8 @@ class OpportunitiesFilters {
     String? category,
     bool? onlyInteresting,
     bool? onlyDip,
+    String? trendDay,
+    String? trendYear,
   }) {
     return OpportunitiesFilters(
       search: search ?? this.search,
@@ -58,9 +66,18 @@ class OpportunitiesFilters {
       category: category ?? this.category,
       onlyInteresting: onlyInteresting ?? this.onlyInteresting,
       onlyDip: onlyDip ?? this.onlyDip,
+      trendDay: trendDay ?? this.trendDay,
+      trendYear: trendYear ?? this.trendYear,
     );
   }
 }
+
+const fiTrendDayLabels = {'up': 'Subindo hoje', 'down': 'Caindo hoje'};
+
+const fiTrendYearLabels = {
+  'up': 'Na parte alta do ano',
+  'down': 'Na parte baixa do ano',
+};
 
 final opportunitiesFiltersProvider =
     StateProvider.autoDispose<OpportunitiesFilters>(
@@ -78,6 +95,8 @@ final filteredOpportunitiesProvider =
             onlyInteresting: f.onlyInteresting,
             minDy: f.minDy,
             minMosPct: f.minMos != null ? f.minMos! * 100 : null,
+            trendDay: f.trendDay,
+            trendYear: f.trendYear,
           );
     });
 
@@ -114,6 +133,8 @@ int _activeFilterCount(OpportunitiesFilters f) {
   if (f.onlyInteresting) count++;
   if (f.minDy != null) count++;
   if (f.minMos != null) count++;
+  if (f.trendDay.isNotEmpty) count++;
+  if (f.trendYear.isNotEmpty) count++;
   return count;
 }
 
@@ -216,6 +237,20 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
                               ref.read(opportunitiesFiltersProvider.notifier).state =
                                   filters.copyWith(onlyInteresting: false),
                         ),
+                      if (filters.trendDay.isNotEmpty)
+                        _ActiveFilterChip(
+                          label: fiTrendDayLabels[filters.trendDay] ?? filters.trendDay,
+                          onDeleted: () =>
+                              ref.read(opportunitiesFiltersProvider.notifier).state =
+                                  filters.copyWith(trendDay: ''),
+                        ),
+                      if (filters.trendYear.isNotEmpty)
+                        _ActiveFilterChip(
+                          label: fiTrendYearLabels[filters.trendYear] ?? filters.trendYear,
+                          onDeleted: () =>
+                              ref.read(opportunitiesFiltersProvider.notifier).state =
+                                  filters.copyWith(trendYear: ''),
+                        ),
                       if (filters.minDy != null)
                         _ActiveFilterChip(
                           label: 'DY ≥ ${filters.minDy!.toStringAsFixed(1)}%',
@@ -268,10 +303,11 @@ class _ActiveFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InputChip(
-      label: Text(label, style: FiType.caption),
-      onDeleted: onDeleted,
-      visualDensity: VisualDensity.compact,
+    return FiChoiceChip(
+      label: label,
+      selected: true,
+      onSelected: onDeleted,
+      onRemove: onDeleted,
     );
   }
 }
@@ -293,6 +329,8 @@ class _FiltersSheetState extends State<_FiltersSheet> {
   late double _dyValue = widget.initial.minDy ?? 6.0;
   late bool _mosEnabled = widget.initial.minMos != null;
   late double _mosValue = (widget.initial.minMos ?? 0.15) * 100;
+  late String _trendDay = widget.initial.trendDay;
+  late String _trendYear = widget.initial.trendYear;
 
   @override
   Widget build(BuildContext context) {
@@ -323,6 +361,8 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                     _onlyInteresting = false;
                     _dyEnabled = false;
                     _mosEnabled = false;
+                    _trendDay = '';
+                    _trendYear = '';
                   }),
                 ),
               ],
@@ -338,13 +378,47 @@ class _FiltersSheetState extends State<_FiltersSheet> {
               runSpacing: FiSpace.s2,
               children: _categoryLabels.entries
                   .map(
-                    (e) => ChoiceChip(
-                      label: Text(e.value),
+                    (e) => FiChoiceChip(
+                      label: e.value,
                       selected: _category == e.key,
-                      onSelected: (_) => setState(() => _category = e.key),
+                      onSelected: () => setState(() => _category = e.key),
                     ),
                   )
                   .toList(),
+            ),
+            const SizedBox(height: FiSpace.s5),
+            Text(
+              'DIREÇÃO DO PREÇO',
+              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s3),
+            Wrap(
+              spacing: FiSpace.s2,
+              runSpacing: FiSpace.s2,
+              children: [
+                for (final e in fiTrendDayLabels.entries)
+                  FiChoiceChip(
+                    label: e.value,
+                    selected: _trendDay == e.key,
+                    onSelected: () => setState(
+                      () => _trendDay = _trendDay == e.key ? '' : e.key,
+                    ),
+                  ),
+                for (final e in fiTrendYearLabels.entries)
+                  FiChoiceChip(
+                    label: e.value,
+                    selected: _trendYear == e.key,
+                    onSelected: () => setState(
+                      () => _trendYear = _trendYear == e.key ? '' : e.key,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              'Hoje é a variação do pregão. O ano é onde o preço está entre a mínima e a '
+              'máxima de 52 semanas — não é a variação acumulada no ano.',
+              style: FiType.caption.copyWith(color: fiInk3(context)),
             ),
             const SizedBox(height: FiSpace.s5),
             FiRows(
@@ -417,6 +491,8 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                     onlyInteresting: _onlyDip ? false : _onlyInteresting,
                     minDy: _dyEnabled ? _dyValue : null,
                     minMos: _mosEnabled ? _mosValue / 100 : null,
+                    trendDay: _trendDay,
+                    trendYear: _trendYear,
                   ),
                 );
               },
@@ -682,6 +758,11 @@ class FiOpportunityObject extends StatelessWidget {
             subject: 'Score de ${o.ticker}',
           ),
 
+          if (o.changePercentDay != null || o.distanceFrom52wHighPct != null) ...[
+            const SizedBox(height: FiSpace.s3),
+            _Direcao(opportunity: o),
+          ],
+
           const SizedBox(height: FiSpace.s3),
           Text(
             'Justo de ${consensusLabel(o.consensusMethods)} · '
@@ -690,6 +771,45 @@ class FiOpportunityObject extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _Direcao extends StatelessWidget {
+  const _Direcao({required this.opportunity});
+
+  final Opportunity opportunity;
+
+  @override
+  Widget build(BuildContext context) {
+    final o = opportunity;
+    final brightness = Theme.of(context).brightness;
+    final dia = o.changePercentDay;
+    final doTopo = o.distanceFrom52wHighPct;
+
+    return Row(
+      children: [
+        if (dia != null) ...[
+          Text(
+            'hoje ${dia >= 0 ? '+' : ''}${formatPercent(dia)}',
+            style: FiType.axis.copyWith(
+              color: fiDirectionColor(dia >= 0 ? 1 : -1, brightness),
+            ),
+          ),
+          const SizedBox(width: FiSpace.s3),
+        ],
+        if (doTopo != null)
+          Flexible(
+            child: Text(
+              doTopo.abs() < 0.5
+                  ? 'na máxima de 52 semanas'
+                  : '${formatPercent(doTopo.abs())} abaixo da máxima de 52 semanas',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: FiType.axis.copyWith(color: fiInk3(context)),
+            ),
+          ),
+      ],
     );
   }
 }

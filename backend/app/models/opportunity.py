@@ -28,6 +28,9 @@ class Opportunity(BaseModel):
     score: float = 0.0
     score_breakdown: dict[str, float] = Field(default_factory=dict)
     data_completeness: float = 1.0
+    change_percent_day: float | None = None
+    distance_from_52w_high_pct: float | None = None
+    range_52w_position: float | None = None
     in_portfolio: bool = False
     is_interesting: bool = False
     reasons: list[str] = Field(default_factory=list)

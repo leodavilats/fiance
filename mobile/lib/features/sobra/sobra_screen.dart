@@ -14,6 +14,11 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
+import '../../core/labels.dart';
+import '../../core/models.dart';
+import '../../core/widgets/allocation_gap.dart';
+import '../../core/widgets/nav_action.dart';
+import '../../core/widgets/tag.dart';
 
 class SobraScreen extends ConsumerWidget {
   const SobraScreen({super.key});
@@ -99,45 +104,271 @@ class _Corpo extends ConsumerWidget {
             child: Column(
               children: [
                 for (final p in passos)
-                  _Passo(
-                    passo: p,
-                    numerado: passos.length > 1,
-                    destino: p.type == CascadeStepType.contribution
-                        ? () => GoRouter.of(context).go('/sobra/aporte')
-                        : null,
-                  ),
+                  _Passo(passo: p, numerado: passos.length > 1),
                 if (!temAporte) const _SemAporte(),
               ],
             ),
           ),
 
-          if (temAporte)
-            FiSection(
-              title: 'Onde esse aporte entra',
-              child: FiRows(
-                children: [
-                  FiDataRow(
-                    label: 'Alocação × meta',
-                    detail: 'O que está acima e abaixo do que você declarou, e quais ativos '
-                        'reequilibram',
-                    onTap: () => GoRouter.of(context).go('/sobra/desvio'),
-                  ),
-                ],
-              ),
-            ),
+          if (temAporte) const _OndeAportar(),
+          if (temAporte) const _ContraAMeta(),
         ],
       ),
     );
   }
 }
 
+class _OndeAportar extends ConsumerWidget {
+  const _OndeAportar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final aporte = ref.watch(quickInvestProvider);
+
+    return aporte.when(
+      loading: () => const FiSection(
+        title: 'Onde aportar',
+        child: FiSkeleton(shape: FiSkeletonShape.row, count: 3),
+      ),
+      error: (e, _) => FiSection(
+        title: 'Onde aportar',
+        child: FiErrorState(
+          error: e,
+          action: 'calcular onde aportar',
+          onRetry: () => ref.invalidate(quickInvestProvider),
+        ),
+      ),
+      data: (r) {
+        if (!r.temDestino) {
+          return FiSection(
+            title: 'Onde aportar',
+            child: FiEmptyLine(
+              r.summary.isEmpty
+                  ? 'Sem meta declarada não há alvo contra o que distribuir a sobra.'
+                  : r.summary,
+            ),
+          );
+        }
+
+        final primeiros = r.allocations.take(3).toList();
+        final restantes = r.allocations.length - primeiros.length;
+
+        return FiSection(
+          title: 'Onde aportar',
+          hint: r.basis == 'goals'
+              ? 'Do que está mais longe da alocação-alvo para o que está mais perto.'
+              : 'Sem alocação-alvo declarada, a ordem sai pelo score do ativo.',
+          action: FiNavAction(
+            label: restantes > 0
+                ? 'Ver os outros $restantes e simular outro valor'
+                : 'Simular outro valor',
+            onPressed: () => GoRouter.of(context).go('/sobra/aporte'),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final a in primeiros) _DestinoDoAporte(alocacao: a),
+              if (r.fixedIncome != null)
+                _DestinoDeRendaFixa(fatia: r.fixedIncome!),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DestinoDoAporte extends StatelessWidget {
+  const _DestinoDoAporte({required this.alocacao});
+
+  final QuickInvestAllocation alocacao;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = alocacao;
+    final brightness = Theme.of(context).brightness;
+    final band = a.score != null ? fiScoreBandFor(a.score!, null) : null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s2),
+      child: FiObject(
+        onTap: () => GoRouter.of(context).push('/ativo/${a.ticker}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        a.ticker,
+                        style: FiType.ticker.copyWith(color: fiInk1(context)),
+                      ),
+                      Text(
+                        a.name ?? categoryLabel(a.category),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: FiType.caption.copyWith(color: fiInk2(context)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: FiSpace.s3),
+                if (band != null)
+                  FiTag(label: band.label, state: band.state)
+                else
+                  FiTag.serie(
+                    label: categoryLabel(a.category),
+                    color: categoryColor(a.category, brightness),
+                  ),
+              ],
+            ),
+            const SizedBox(height: FiSpace.s3),
+            Text(
+              a.suggestedQuantity == null
+                  ? '${_valorOuTraco(a.suggestedInvestment)} · '
+                        '${_valorOuTraco(a.currentPrice)} por cota'
+                  : '${a.suggestedQuantity} cota(s) · '
+                        '${_valorOuTraco(a.currentPrice)} cada · '
+                        '${_valorOuTraco(a.suggestedInvestment)}',
+              style: FiType.caption.copyWith(color: fiInk2(context)),
+            ),
+            if (a.rationale.isNotEmpty) ...[
+              const SizedBox(height: FiSpace.s1),
+              Text(
+                a.rationale,
+                style: FiType.caption.copyWith(color: fiInk3(context)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DestinoDeRendaFixa extends StatelessWidget {
+  const _DestinoDeRendaFixa({required this.fatia});
+
+  final QuickInvestFixedIncome fatia;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s2),
+      child: FiObject(
+        onTap: () => GoRouter.of(context).go('/descobrir/renda-fixa'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Renda fixa',
+                    style: FiType.ticker.copyWith(color: fiInk1(context)),
+                  ),
+                ),
+                const SizedBox(width: FiSpace.s3),
+                Text(
+                  _valorOuTraco(fatia.amount),
+                  style: FiType.figure.copyWith(color: fiInk1(context)),
+                ),
+              ],
+            ),
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              fatia.rationale,
+              style: FiType.caption.copyWith(color: fiInk2(context)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _valorOuTraco(double? valor) =>
+    valor == null ? '—' : formatCurrency(valor);
+
+class _ContraAMeta extends ConsumerWidget {
+  const _ContraAMeta();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final desvio = ref.watch(rebalanceSuggestionsProvider);
+
+    return desvio.maybeWhen(
+      loading: () => const FiSection(
+        title: 'Contra a sua meta',
+        child: FiSkeleton(shape: FiSkeletonShape.row, count: 3),
+      ),
+      data: (data) {
+        final gaps = data.allocationGaps;
+        if (gaps.isEmpty) {
+          return FiSection(
+            title: 'Contra a sua meta',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const FiEmptyLine(
+                  'Você ainda não declarou metas de alocação. Sem elas o aporte acima sai pelo '
+                  'score do ativo, e não por onde a sua carteira está desequilibrada.',
+                ),
+                const SizedBox(height: FiSpace.s3),
+                FiNavAction(
+                  label: 'Declarar metas de alocação',
+                  onPressed: () => GoRouter.of(context).go('/voce/objetivos'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final maiores = [...gaps]
+          ..sort((a, b) => b.gapPct.abs().compareTo(a.gapPct.abs()));
+        final mostrados = maiores.take(3).toList();
+
+        return FiSection(
+          title: 'Contra a sua meta',
+          hint: 'Os maiores desvios são o que o próximo aporte reequilibra.',
+          action: FiNavAction(
+            label: data.items.isEmpty
+                ? 'Ver a alocação inteira'
+                : 'Ver a alocação inteira e as ${data.items.length} posições para revisar',
+            onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final gap in mostrados)
+                FiAllocationGap(
+                  label: categoryLabel(gap.category),
+                  currentPct: gap.currentPct,
+                  targetPct: gap.targetPct,
+                  barColor: categoryColor(
+                    gap.category,
+                    Theme.of(context).brightness,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
 class _Passo extends StatelessWidget {
-  const _Passo({required this.passo, this.numerado = true, this.destino});
+  const _Passo({required this.passo, this.numerado = true});
 
   final CascadeStep passo;
   final bool numerado;
-
-  final VoidCallback? destino;
 
   static const _rotulos = {
     CascadeStepType.debt: 'Dívida',
@@ -210,16 +441,6 @@ class _Passo extends StatelessWidget {
                     Text(
                       _origem[passo.reference]!,
                       style: FiType.caption.copyWith(color: fiInk3(context)),
-                    ),
-                  ],
-                  if (destino != null) ...[
-                    const SizedBox(height: FiSpace.s3),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: FiButton.primary(
-                        label: 'Onde aportar ${formatCurrency(passo.amount)}',
-                        onPressed: destino,
-                      ),
                     ),
                   ],
                 ],

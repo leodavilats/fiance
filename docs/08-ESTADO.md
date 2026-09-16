@@ -55,6 +55,9 @@ ordem:
                                                   o que comprar
 ```
 
+Deslizar na horizontal troca de aba. O gesto tem esse significado só no nível da raiz: dentro de um
+card de ativo ele continua sendo vender e remover.
+
 ---
 
 ## Caixa — `/mes`
@@ -79,7 +82,8 @@ ordem:
 | Passo de reserva na cascata | `[IMPLEMENTADO]` | idem | ❌ **inalcançável** — falta onde declarar o alvo ([10-PROBLEMAS](10-PROBLEMAS.md), item 30) |
 | Faixa piso/teto da sobra | `[ATUAL]` | `cashflow/month.py` | idem |
 | Desvio de alocação | `[ATUAL]` | `analysis/strategy.py` | `sobra/desvio_screen.dart` |
-| Sugestões de aporte por categoria | `[ATUAL]` | `analysis/strategy.py` | `/sobra/aporte` |
+| Sugestões de aporte por categoria | `[ATUAL]` | `analysis/strategy.py` | `/sobra`, com os três primeiros destinos na própria aba; `/sobra/aporte` para a ordem inteira e a simulação |
+| Maiores desvios de alocação na própria Sobra | `[ATUAL]` | `analysis/strategy.py` | `sobra/sobra_screen.dart` |
 
 ---
 
@@ -136,7 +140,9 @@ imposto, e não tem nenhuma tela no aplicativo.
 | Compensação de prejuízo por categoria | `[IMPLEMENTADO]` | `ledger/apuracao.py` | ❌ |
 | Isenção mensal de R$ 20 mil | `[IMPLEMENTADO]` | `ledger/apuracao.py` | — |
 | Proventos recebidos: registrar, listar, apagar | `[IMPLEMENTADO]` | `api/dividends.py` | `patrimonio/proventos_screen.dart` |
-| Proventos: sugestões do calendário | `[IMPLEMENTADO]` | `services/dividend_calendar_service.py` | ✅ `/patrimonio/proventos` |
+| Proventos: sugestões do calendário | `[IMPLEMENTADO]` | `services/dividend_calendar_service.py` | ✅ `/patrimonio/proventos`, colapsado |
+| Direito a provento provado pela data-com | `[ATUAL]` | `services/dividend_calendar_service.py` | ✅ bloco "Aguardando sua confirmação" |
+| Razão: filtro por tipo, período e ativo, com paginação | `[ATUAL]` | `GET /transactions` | ✅ `/patrimonio/razao` |
 
 **O que o IR cobre:** swing trade de ações, BDRs, ETFs (15%) e FIIs (20%), com compensação de
 prejuízo e isenção mensal. **O que não cobre:** day trade, emissão de DARF, informe anual.

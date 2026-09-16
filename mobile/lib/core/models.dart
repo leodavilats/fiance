@@ -493,6 +493,9 @@ class Opportunity {
     this.consensusMethods = 0,
     this.trendBasis = 'none',
     this.dataCompleteness = 1,
+    this.changePercentDay,
+    this.distanceFrom52wHighPct,
+    this.range52wPosition,
   });
 
   final String ticker;
@@ -513,6 +516,9 @@ class Opportunity {
   final int consensusMethods;
   final String trendBasis;
   final double dataCompleteness;
+  final double? changePercentDay;
+  final double? distanceFrom52wHighPct;
+  final double? range52wPosition;
 
   factory Opportunity.fromJson(Map<String, dynamic> j) => Opportunity(
     ticker: j['ticker'] as String,
@@ -531,6 +537,9 @@ class Opportunity {
     consensusMethods: j['consensus_methods'] as int? ?? 0,
     trendBasis: j['trend_basis'] as String? ?? 'none',
     dataCompleteness: (j['data_completeness'] as num?)?.toDouble() ?? 1,
+    changePercentDay: (j['change_percent_day'] as num?)?.toDouble(),
+    distanceFrom52wHighPct: (j['distance_from_52w_high_pct'] as num?)?.toDouble(),
+    range52wPosition: (j['range_52w_position'] as num?)?.toDouble(),
   );
 }
 
@@ -1868,6 +1877,8 @@ class DividendSuggestion {
     this.kind = 'dividendo',
     this.caveats = const [],
     this.quantityIsCurrent = false,
+    this.exDate,
+    this.entitlement = 'indeterminado',
   });
 
   final String ticker;
@@ -1878,6 +1889,10 @@ class DividendSuggestion {
   final String kind;
   final List<String> caveats;
   final bool quantityIsCurrent;
+  final String? exDate;
+  final String entitlement;
+
+  bool get direitoProvado => entitlement == 'provado';
 
   factory DividendSuggestion.fromJson(Map<String, dynamic> j) => DividendSuggestion(
     ticker: j['ticker'] as String? ?? '',
@@ -1888,6 +1903,8 @@ class DividendSuggestion {
     kind: j['kind'] as String? ?? 'dividendo',
     caveats: ((j['caveats'] as List?) ?? const []).map((e) => e.toString()).toList(),
     quantityIsCurrent: j['quantity_is_current'] as bool? ?? false,
+    exDate: j['ex_date'] as String?,
+    entitlement: j['entitlement'] as String? ?? 'indeterminado',
   );
 }
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 
 from sqlalchemy import delete, select
 
@@ -185,12 +186,21 @@ def list_entries(
     limit: int | None = None,
     cursor: str | None = None,
     descending: bool = False,
+    kinds: Sequence[str] | None = None,
+    traded_from: str | None = None,
+    traded_to: str | None = None,
 ) -> list[LedgerEntry]:
 
     def body(session, uid: str) -> list[LedgerEntry]:
         stmt = select(TransactionDb).where(TransactionDb.user_id == uid)
         if symbol:
             stmt = stmt.where(TransactionDb.symbol == symbol.strip().upper())
+        if kinds:
+            stmt = stmt.where(TransactionDb.kind.in_(list(kinds)))
+        if traded_from:
+            stmt = stmt.where(TransactionDb.traded_on >= traded_from)
+        if traded_to:
+            stmt = stmt.where(TransactionDb.traded_on <= traded_to)
         stmt = apply_keyset(stmt, TransactionDb.traded_on, TransactionDb.id, cursor, descending)
         if limit:
             stmt = stmt.limit(limit + 1)

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from app.core.money import money, quantize
 from app.ledger import project_position
+from app.ledger.entries import TransactionKind
 from app.repositories import AssetRepository, PortfolioRepository
 from app.storage import ledger_store
 
@@ -28,6 +29,8 @@ class DividendSuggestion:
     kind: str
     caveats: list[str] = field(default_factory=list)
     quantity_is_current: bool = False
+    ex_date: str | None = None
+    entitlement: str = "indeterminado"
 
     def as_dict(self) -> dict:
         return {
@@ -39,6 +42,8 @@ class DividendSuggestion:
             "kind": self.kind,
             "caveats": list(self.caveats),
             "quantity_is_current": self.quantity_is_current,
+            "ex_date": self.ex_date,
+            "entitlement": self.entitlement,
         }
 
 
@@ -131,15 +136,18 @@ class DividendCalendarService:
             if (ticker, dia) in ja_lancados:
                 continue
 
-            quantidade, do_razao = self._quantity_at(do_ativo, dia, posicao)
+            data_com = str(pago.get("ex_date") or "")[:10] or None
+            quantidade, do_razao = self._quantity_at(do_ativo, data_com or dia, posicao)
             if quantidade <= 0:
                 continue
 
             kind = _classify(pago)
-            caveats = [
-                "A fonte publica a data de pagamento, não a data-com. Se você comprou "
-                "entre uma e outra, este provento não é seu."
-            ]
+            caveats = []
+            if data_com is None:
+                caveats.append(
+                    "A fonte não publicou a data-com deste provento. Se você comprou entre "
+                    "ela e o pagamento, este provento não é seu."
+                )
             if not do_razao:
                 caveats.append(
                     "Quantidade estimada pela posição de hoje: o livro-razão não tem "
@@ -161,6 +169,8 @@ class DividendCalendarService:
                     kind=kind,
                     caveats=caveats,
                     quantity_is_current=not do_razao,
+                    ex_date=data_com,
+                    entitlement="provado" if (data_com and do_razao) else "indeterminado",
                 )
             )
 
@@ -169,7 +179,13 @@ class DividendCalendarService:
     @staticmethod
     def _quantity_at(entries: list, day: str, posicao: dict) -> tuple[float, bool]:
         anteriores = [e for e in entries if e.traded_on <= day]
-        if not anteriores:
+        if anteriores:
+            return float(project_position(anteriores).quantity), True
+
+        declarado_depois = any(
+            e.kind is TransactionKind.ADJUST for e in entries if e.traded_on > day
+        )
+        if not entries or declarado_depois:
             return float(posicao["quantity"]), False
 
-        return float(project_position(anteriores).quantity), True
+        return 0.0, True

@@ -8,6 +8,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/vocabulary.dart';
 import '../../core/widgets/button.dart';
+import '../../core/widgets/chip.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
@@ -31,6 +32,7 @@ Future<void> abrirFormDeLancamento(BuildContext context, WidgetRef ref) async {
 
   if (salvo == true) {
     ref.invalidate(razaoProvider);
+    ref.invalidate(razaoFiltradoProvider);
     ref.invalidate(portfolioProvider);
     ref.invalidate(dashboardProvider);
   }
@@ -39,51 +41,15 @@ Future<void> abrirFormDeLancamento(BuildContext context, WidgetRef ref) async {
 class RazaoScreen extends ConsumerWidget {
   const RazaoScreen({super.key});
 
-  Future<void> _apagar(BuildContext context, WidgetRef ref, LedgerEntry item) async {
-    final confirmado = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Apagar ${lancamentoTipoLabel(item.kind).toLowerCase()} de ${item.symbol}?'),
-        content: const Text(
-          'A carteira é reconstruída sem este lançamento, e a apuração do mês muda junto.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Apagar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmado != true) return;
-    if (item.id == null) return;
-
-    try {
-      await ref.read(apiRepositoryProvider).deleteTransaction(item.id!);
-      ref.invalidate(razaoProvider);
-      ref.invalidate(portfolioProvider);
-      ref.invalidate(dashboardProvider);
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(fiErrorMessage(e, action: 'apagar este lançamento'))),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pagina = ref.watch(razaoProvider);
+    final pagina = ref.watch(razaoFiltradoProvider);
+    final filtro = ref.watch(razaoFiltroProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Livro-razão')),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(razaoProvider),
+        onRefresh: () async => ref.invalidate(razaoFiltradoProvider),
         child: pagina.when(
           loading: () => FiSkeleton.tela(
             shape: FiSkeletonShape.row,
@@ -94,9 +60,35 @@ class RazaoScreen extends ConsumerWidget {
             error: err,
             title: 'Não conseguimos carregar seus lançamentos',
             action: 'carregar o livro-razão',
-            onRetry: () => ref.invalidate(razaoProvider),
+            onRetry: () => ref.invalidate(razaoFiltradoProvider),
           ),
           data: (data) {
+            if (data.items.isEmpty && !filtro.vazio) {
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  FiLayout.gutter,
+                  FiSpace.s3,
+                  FiLayout.gutter,
+                  FiLayout.scrollTail,
+                ),
+                children: [
+                  const _Filtros(),
+                  const SizedBox(height: FiSpace.s5),
+                  FiEmptyState(
+                    title: 'Nenhum lançamento com estes filtros',
+                    body: 'O corte atual não deixou nada passar. Os lançamentos continuam '
+                        'no razão — o que mudou foi só o recorte.',
+                    action: FiButton.secondary(
+                      label: 'Limpar filtros',
+                      onPressed: () =>
+                          ref.read(razaoFiltroProvider.notifier).state =
+                              const RazaoFiltro(),
+                    ),
+                  ),
+                ],
+              );
+            }
+
             if (data.items.isEmpty) {
               return ListView(
                 children: [
@@ -126,6 +118,7 @@ class RazaoScreen extends ConsumerWidget {
               children: [
                 const _Cabecalho(),
                 const SizedBox(height: FiSpace.s5),
+                const _Filtros(),
                 FiSection(
                   title: 'Lançamentos',
                   count: data.items.length,
@@ -139,24 +132,282 @@ class RazaoScreen extends ConsumerWidget {
                       for (final item in data.items)
                         _LancamentoObject(
                           item: item,
-                          onDelete: () => _apagar(context, ref, item),
+                          onDelete: () => apagarLancamento(context, ref, item),
                         ),
                     ],
                   ),
                 ),
-                if (data.hasMore)
+                if (data.hasMore && data.nextCursor != null)
                   Padding(
                     padding: const EdgeInsets.only(top: FiSpace.s3),
-                    child: Text(
-                      'Mostrando os ${data.count} lançamentos mais recentes.',
-                      style: FiType.caption.copyWith(color: fiInk3(context)),
-                    ),
+                    child: _MaisAntigos(cursor: data.nextCursor!),
                   ),
               ],
             );
           },
         ),
       ),
+    );
+  }
+}
+
+Future<void> apagarLancamento(
+  BuildContext context,
+  WidgetRef ref,
+  LedgerEntry item,
+) async {
+  final confirmado = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(
+        'Apagar ${lancamentoTipoLabel(item.kind).toLowerCase()} de ${item.symbol}?',
+      ),
+      content: const Text(
+        'A carteira é reconstruída sem este lançamento, e a apuração do mês muda junto.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Apagar'),
+        ),
+      ],
+    ),
+  );
+  if (confirmado != true || item.id == null) return;
+
+  try {
+    await ref.read(apiRepositoryProvider).deleteTransaction(item.id!);
+    ref.invalidate(razaoProvider);
+    ref.invalidate(razaoFiltradoProvider);
+    ref.invalidate(portfolioProvider);
+    ref.invalidate(dashboardProvider);
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(fiErrorMessage(e, action: 'apagar este lançamento')),
+        ),
+      );
+    }
+  }
+}
+
+class _Filtros extends ConsumerWidget {
+  const _Filtros();
+
+  static const _tipos = {
+    'buy': 'Compras',
+    'sell': 'Vendas',
+    'split': 'Desdobramentos',
+    'bonus': 'Bonificações',
+    'transfer_in': 'Transferências recebidas',
+    'transfer_out': 'Transferências enviadas',
+    'amortization': 'Amortizações',
+    'adjust': 'Declarações de posição',
+  };
+
+  static const _periodos = {
+    'mes': 'Este mês',
+    'ano': 'Este ano',
+    '12m': 'Últimos 12 meses',
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filtro = ref.watch(razaoFiltroProvider);
+    final notifier = ref.read(razaoFiltroProvider.notifier);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                filtro.vazio
+                    ? 'TODOS OS LANÇAMENTOS'
+                    : 'RECORTE · ${filtro.ativos}',
+                style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+              ),
+            ),
+            if (!filtro.vazio)
+              FiButton.quiet(
+                label: 'Limpar',
+                onPressed: () => notifier.state = const RazaoFiltro(),
+              ),
+          ],
+        ),
+        const SizedBox(height: FiSpace.s3),
+        Wrap(
+          spacing: FiSpace.s2,
+          runSpacing: FiSpace.s2,
+          children: [
+            for (final e in _periodos.entries)
+              FiChoiceChip(
+                label: e.value,
+                selected: filtro.periodo == e.key,
+                onSelected: () => notifier.state = filtro.periodo == e.key
+                    ? filtro.copyWith(limparPeriodo: true)
+                    : filtro.copyWith(periodo: e.key),
+              ),
+          ],
+        ),
+        const SizedBox(height: FiSpace.s2),
+        Wrap(
+          spacing: FiSpace.s2,
+          runSpacing: FiSpace.s2,
+          children: [
+            for (final e in _tipos.entries)
+              FiChoiceChip(
+                label: e.value,
+                selected: filtro.kinds.contains(e.key),
+                onSelected: () {
+                  final tipos = [...filtro.kinds];
+                  if (!tipos.remove(e.key)) tipos.add(e.key);
+                  notifier.state = filtro.copyWith(kinds: tipos);
+                },
+              ),
+          ],
+        ),
+        const SizedBox(height: FiSpace.s3),
+        _FiltroDeTicker(atual: filtro.symbol),
+      ],
+    );
+  }
+}
+
+class _FiltroDeTicker extends ConsumerStatefulWidget {
+  const _FiltroDeTicker({this.atual});
+
+  final String? atual;
+
+  @override
+  ConsumerState<_FiltroDeTicker> createState() => _FiltroDeTickerState();
+}
+
+class _FiltroDeTickerState extends ConsumerState<_FiltroDeTicker> {
+  final _ticker = TextEditingController();
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final atual = widget.atual;
+    if (atual != null) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: FiChoiceChip(
+          label: 'Só $atual',
+          selected: true,
+          onSelected: () {
+            _ticker.clear();
+            ref.read(razaoFiltroProvider.notifier).state = ref
+                .read(razaoFiltroProvider)
+                .copyWith(limparSymbol: true);
+          },
+        ),
+      );
+    }
+
+    return TickerAutocompleteField(
+      controller: _ticker,
+      labelText: 'Filtrar por ativo',
+      onSelected: (s) {
+        ref.read(razaoFiltroProvider.notifier).state = ref
+            .read(razaoFiltroProvider)
+            .copyWith(symbol: s.ticker);
+      },
+    );
+  }
+}
+
+class _MaisAntigos extends ConsumerStatefulWidget {
+  const _MaisAntigos({required this.cursor});
+
+  final String cursor;
+
+  @override
+  ConsumerState<_MaisAntigos> createState() => _MaisAntigosState();
+}
+
+class _MaisAntigosState extends ConsumerState<_MaisAntigos> {
+  final List<LedgerEntry> _extras = [];
+  String? _cursor;
+  bool _carregando = false;
+  Object? _erro;
+
+  Future<void> _carregar() async {
+    setState(() {
+      _carregando = true;
+      _erro = null;
+    });
+    try {
+      final filtro = ref.read(razaoFiltroProvider);
+      final pagina = await ref
+          .read(apiRepositoryProvider)
+          .getTransactions(
+            symbol: filtro.symbol,
+            kinds: filtro.kinds,
+            tradedFrom: fiInicioDoPeriodo(filtro.periodo),
+            cursor: _cursor ?? widget.cursor,
+          );
+      if (!mounted) return;
+      setState(() {
+        _extras.addAll(pagina.items);
+        _cursor = pagina.hasMore ? pagina.nextCursor : null;
+        _carregando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _erro = e;
+        _carregando = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final temMais = _extras.isEmpty || _cursor != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final item in _extras)
+          _LancamentoObject(
+            item: item,
+            onDelete: () => apagarLancamento(context, ref, item),
+          ),
+        if (_erro != null) ...[
+          const SizedBox(height: FiSpace.s2),
+          Text(
+            fiErrorMessage(_erro!, action: 'carregar os lançamentos anteriores'),
+            style: FiType.caption.copyWith(
+              color: fiStateColor(FiState.adverse, Theme.of(context).brightness),
+            ),
+          ),
+        ],
+        const SizedBox(height: FiSpace.s2),
+        if (temMais)
+          FiButton.secondary(
+            label: _carregando ? 'Carregando…' : 'Carregar os anteriores',
+            busy: _carregando,
+            onPressed: _carregando ? null : _carregar,
+          )
+        else
+          Text(
+            'Fim do razão — não há lançamento anterior a estes.',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
+      ],
     );
   }
 }

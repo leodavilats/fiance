@@ -8,6 +8,7 @@ import '../../../core/theme.dart';
 import '../../../core/widgets/button.dart';
 import '../../../core/widgets/data_row.dart';
 import '../../../core/widgets/section.dart';
+import '../../../core/widgets/skeleton.dart';
 
 const _mesesAbreviados = [
   'jan',
@@ -48,7 +49,10 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
     final trades = ref.watch(closedTradesProvider);
 
     return trades.when(
-      loading: () => const SizedBox.shrink(),
+      loading: () => const FiSection(
+        title: 'Operações encerradas',
+        child: FiSkeleton(shape: FiSkeletonShape.row, count: 2),
+      ),
       error: (_, _) => const SizedBox.shrink(),
       data: (data) {
         if (data.trades.isEmpty) return const SizedBox.shrink();

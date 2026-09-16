@@ -35,52 +35,75 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
   Widget build(BuildContext context) {
     final snapshots = widget.snapshots;
     final brightness = Theme.of(context).brightness;
-    final positive = snapshots.last.totalCurrent >= snapshots.first.totalCurrent;
-    final lineColor = fiDirectionColor(positive ? 1 : -1, brightness);
-    final gridColor = Theme.of(context).dividerColor;
     final lastIndex = snapshots.length - 1;
 
-    final spots = <FlSpot>[
+    final corDoValor = fiDirectionColor(
+      snapshots.last.totalPnl >= 0 ? 1 : -1,
+      brightness,
+    );
+    final corDoAplicado = fiInk3(context);
+    final gridColor = Theme.of(context).dividerColor;
+
+    final valor = <FlSpot>[
       for (var i = 0; i < snapshots.length; i++)
         FlSpot(i.toDouble(), snapshots[i].totalCurrent),
     ];
+    final aplicado = <FlSpot>[
+      for (var i = 0; i < snapshots.length; i++)
+        FlSpot(i.toDouble(), snapshots[i].totalInvested),
+    ];
 
-    final values = snapshots.map((s) => s.totalCurrent).toList();
-    final minY = values.reduce((a, b) => a < b ? a : b);
-    final maxY = values.reduce((a, b) => a > b ? a : b);
+    final numeros = [
+      for (final s in snapshots) ...[s.totalCurrent, s.totalInvested],
+    ];
+    final minY = numeros.reduce((a, b) => a < b ? a : b);
+    final maxY = numeros.reduce((a, b) => a > b ? a : b);
     final padding = (maxY - minY).abs() * 0.15 + 1;
 
     final labelIndices = <int>{0, lastIndex, (lastIndex / 2).round()};
     final tocado = _touchedIndex;
+    final foco = snapshots[tocado ?? lastIndex];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: 24,
-          child: tocado == null
-              ? Text(
-                  'De ${_dateFormat.format(_dateAt(0))} a '
-                  '${_dateFormat.format(_dateAt(lastIndex))}',
-                  style: FiType.caption.copyWith(color: fiInk3(context)),
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+          height: 40,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      formatCurrency(snapshots[tocado].totalCurrent),
-                      style: FiType.metricSm.copyWith(color: lineColor),
+                      tocado == null
+                          ? 'HOJE'
+                          : _dateFormat.format(_dateAt(tocado)).toUpperCase(),
+                      style: FiType.eyebrow.copyWith(color: fiInk3(context)),
                     ),
-                    const SizedBox(width: FiSpace.s2),
                     Text(
-                      _dateFormat.format(_dateAt(tocado)),
+                      '${formatCurrency(foco.totalCurrent)} sobre '
+                      '${formatCurrency(foco.totalInvested)} aplicados',
                       style: FiType.caption.copyWith(color: fiInk2(context)),
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(width: FiSpace.s3),
+              Text(
+                '${foco.totalPnl >= 0 ? '+' : ''}${formatCurrency(foco.totalPnl)}',
+                style: FiType.figure.copyWith(
+                  color: fiDirectionColor(
+                    foco.totalPnl >= 0 ? 1 : -1,
+                    brightness,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: FiSpace.s2),
+        const SizedBox(height: FiSpace.s3),
         SizedBox(
           height: 200,
           child: LineChart(
@@ -141,30 +164,30 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
               ),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipItems: (touchedSpots) => touchedSpots
-                      .map(
-                        (s) => LineTooltipItem(
-                          '${formatCurrency(s.y)}\n${_dateFormat.format(_dateAt(s.x.round()))}',
-                          FiType.caption.copyWith(
-                            color: lineColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  getTooltipItems: (touchedSpots) => [
+                    for (final s in touchedSpots)
+                      LineTooltipItem(
+                        '${s.barIndex == 0 ? 'aplicado' : 'hoje'} '
+                        '${formatCurrency(s.y)}',
+                        FiType.caption.copyWith(
+                          color: s.barIndex == 0 ? corDoAplicado : corDoValor,
+                          fontWeight: FontWeight.w600,
                         ),
-                      )
-                      .toList(),
+                      ),
+                  ],
                 ),
                 getTouchedSpotIndicator: (barData, indicators) => indicators
                     .map(
                       (i) => TouchedSpotIndicatorData(
                         FlLine(
-                          color: lineColor.withValues(alpha: 0.4),
+                          color: corDoValor.withValues(alpha: 0.4),
                           strokeWidth: 1.5,
                         ),
                         FlDotData(
                           getDotPainter: (spot, percent, bar, index) =>
                               FlDotCirclePainter(
-                                radius: 5,
-                                color: lineColor,
+                                radius: 4,
+                                color: bar.color ?? corDoValor,
                                 strokeWidth: 2,
                                 strokeColor: fiGround0(brightness),
                               ),
@@ -188,27 +211,80 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
               ),
               lineBarsData: [
                 LineChartBarData(
-                  spots: spots,
-                  isCurved: true,
-                  color: lineColor,
+                  spots: aplicado,
+                  isCurved: false,
+                  color: corDoAplicado,
+                  barWidth: 1.5,
+                  dashArray: const [4, 3],
+                  dotData: const FlDotData(show: false),
+                ),
+                LineChartBarData(
+                  spots: valor,
+                  isCurved: false,
+                  color: corDoValor,
                   barWidth: 2.5,
                   dotData: FlDotData(
                     show: snapshots.length <= 14,
                     getDotPainter: (spot, percent, bar, index) =>
                         FlDotCirclePainter(
                           radius: 2.5,
-                          color: lineColor,
+                          color: corDoValor,
                           strokeWidth: 0,
                         ),
                   ),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: lineColor.withValues(alpha: 0.10),
+                    color: corDoValor.withValues(alpha: 0.10),
+                    cutOffY: 0,
+                    applyCutOffY: false,
                   ),
                 ),
               ],
             ),
           ),
+        ),
+        const SizedBox(height: FiSpace.s3),
+        Row(
+          children: [
+            _Legenda(cor: corDoValor, label: 'valor de hoje'),
+            const SizedBox(width: FiSpace.s5),
+            _Legenda(cor: corDoAplicado, label: 'aplicado', tracejada: true),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _Legenda extends StatelessWidget {
+  const _Legenda({
+    required this.cor,
+    required this.label,
+    this.tracejada = false,
+  });
+
+  final Color cor;
+  final String label;
+  final bool tracejada;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 16,
+          height: 2,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: cor.withValues(alpha: tracejada ? 0.7 : 1),
+            ),
+          ),
+        ),
+        const SizedBox(width: FiSpace.s2),
+        Text(
+          label,
+          style: FiType.axis.copyWith(color: fiInk3(context)),
         ),
       ],
     );

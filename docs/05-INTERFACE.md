@@ -2,7 +2,7 @@
 
 Por que a interface é assim, e o que uma tela nova precisa respeitar.
 Fonte compartilhada com `mobile/lib/core/design_tokens.dart` e `mobile/test/lint_ui_test.dart`.
-Última revisão: 2026-09-13
+Última revisão: 2026-09-15
 
 ---
 
@@ -16,6 +16,14 @@ Cinco destinos de raiz, e `/ativo/:ticker` como camada:
 
 URLs antigas seguem como redirect — `/hoje`, `/carteira/*`, `/estrategia/*`. **Link salvo é
 contrato.**
+
+**Deslizar na horizontal troca de destino de raiz**, e o gesto tem esse significado só ali. Dentro de
+um card de ativo ele continua sendo vender e remover — o gesto interno vence a arena, e é por isso
+que nenhuma seção tem pager próprio: dois pagers aninhados fazem o mesmo movimento significar coisas
+diferentes sem aviso na tela.
+
+`/voce` é índice de quatro eixos — `investir`, `avisos`, `aparencia`, `conta` —, e cada linha carrega
+o estado atual em vez de só encaminhar.
 
 Dois destinos deixaram de existir e não voltam:
 
@@ -118,7 +126,9 @@ poucas, ou uma tabela quando o que importa é comparar.
 | Número contra referência | `FiMeasure`, ou `ScoreRuler` para score | A régua é a assinatura do produto |
 | Julgamento | `FiProvenance` — método, fonte, limitação | O lint reprova |
 | Número projetado | `FiRange` — piso, teto, cenário base | O lint reprova |
-| Espera | `FiSkeleton.tela(shape:, count:)` | Disco girando não diz o que vem, e a página salta |
+| Espera | `FiSkeleton.tela(shape:, count:)`, ou `FiSkeleton.pagina()` quando a tela tem manchete e seções | Disco girando não diz o que vem, e a página salta |
+| Revelar detalhe | `FiDisclosure` (item) ou `FiGroupDisclosure` (grupo) | `ExpansionTile` traz a moldura do Material de volta |
+| Ficha de filtro | `FiChoiceChip` | `ChoiceChip` e `InputChip` têm estilo só no tema |
 | Falha | `FiErrorState` + `fiErrorMessage` | Já houve oito grafias, e `Erro 500` chegou à tela |
 | Ausência de dado | `FiEmptyState` | "Não conseguimos ler" ≠ "você não tem nada" |
 
@@ -130,6 +140,10 @@ Carregando, falha, vazio e conteúdo saem do par `FiSkeleton`/`FiErrorState` com
 
 **A falha guarda o erro, não um booleano.** Sem ele a tela só sabe dizer "algo deu errado" — uma
 loja de carteira chegou a servir sete telas com um booleano que uma só lia.
+
+**Bloco que carrega reserva o espaço.** `loading: () => SizedBox.shrink()` é reprovado por máquina:
+a seção aparece depois e empurra a página para baixo, debaixo do dedo de quem estava lendo. Ou o
+esqueleto tem a forma da seção, ou a seção não se desenha.
 
 **Ausência de dado e falha de leitura nunca compartilham a mesma tela.**
 
@@ -164,7 +178,7 @@ não**. Um preço de anteontem muda a decisão.
 
 ---
 
-## As 13 regras de máquina
+## As 14 regras de máquina
 
 `mobile/test/lint_ui_test.dart` — roda em `flutter test`, que já é comando do CI. **Regra que exige
 mudar a esteira para rodar é regra que não roda.**
@@ -184,6 +198,7 @@ mudar a esteira para rodar é regra que não roda.**
 | 11 | Espera tem a forma do que vai chegar, não um disco girando |
 | 12 | Todo destino navegado existe no roteador |
 | 13 | A falha de leitura sai numa voz só |
+| 14 | Bloco que carrega reserva o espaço em vez de sumir |
 
 Mais o contraste, cobrado à parte em `contraste_test.dart`, nos dois temas.
 
@@ -221,7 +236,9 @@ tela. E ao acrescentar uma série, entre nos mapas de classe dos **três** bloco
 (armazenamento local). Na tabela de posições, o recorte da rota vence a preferência.
 
 **Filtro e recorte vivem na rota**, não em estado local — voltar não perde o recorte, e o mesmo
-endereço leva ao mesmo lugar.
+endereço leva ao mesmo lugar. Em `/patrimonio` o recorte é um só (`?por=valor|classe|setor`) e vale
+para a tela inteira: dois controles de recorte a meia tela de distância obrigam a pessoa a decidir
+duas vezes a mesma coisa.
 
 ---
 

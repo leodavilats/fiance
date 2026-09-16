@@ -304,6 +304,32 @@ void main() {
       );
     });
 
+    test('bloco que carrega reserva o espaco em vez de sumir', () {
+
+      final achados = <String>[];
+      for (final f in fontes) {
+        if (_temEscape(f.readAsStringSync(), 'esqueleto')) continue;
+
+        final linhas = f.readAsLinesSync();
+        for (var i = 0; i < linhas.length; i++) {
+          if (!RegExp(r'loading:\s*\(\)\s*=>\s*(const\s+)?SizedBox\.shrink\(\)')
+              .hasMatch(linhas[i])) {
+            continue;
+          }
+          achados.add('${_curto(f)}:${i + 1}');
+        }
+      }
+
+      expect(
+        achados,
+        isEmpty,
+        reason:
+            'bloco que some enquanto carrega aparece depois e empurra o resto da pagina para '
+            'baixo, debaixo do dedo de quem estava lendo. Reserve o espaco com FiSkeleton, ou '
+            'nao desenhe a secao. Achados: ${achados.join(', ')}',
+      );
+    });
+
     test('nenhuma tela escreve cor a mao', () {
 
       final achados = <String>[];

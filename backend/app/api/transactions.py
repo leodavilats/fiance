@@ -50,11 +50,24 @@ class TransactionBatch(BaseModel):
 @router.get("/transactions")
 async def list_transactions(
     symbol: str | None = None,
+    kind: list[TransactionKind] | None = Query(
+        None, description="Tipos a incluir. Repetir o parâmetro soma tipos."
+    ),
+    traded_from: str | None = Query(None, description="Primeiro dia da faixa, YYYY-MM-DD."),
+    traded_to: str | None = Query(None, description="Último dia da faixa, YYYY-MM-DD."),
     limit: int | None = Query(None, ge=1, le=MAX_PAGE_SIZE),
     cursor: str | None = Query(None, description="Cursor devolvido em `next_cursor`."),
 ) -> dict:
     page_size = clamp_limit(limit)
-    rows = ledger_store.list_entries(symbol=symbol, limit=page_size, cursor=cursor, descending=True)
+    rows = ledger_store.list_entries(
+        symbol=symbol,
+        limit=page_size,
+        cursor=cursor,
+        descending=True,
+        kinds=[k.value for k in kind] if kind else None,
+        traded_from=traded_from,
+        traded_to=traded_to,
+    )
     page = paginate(rows, page_size, key=lambda e: e.traded_on, identity=lambda e: e.id)
     entries = page.items
 

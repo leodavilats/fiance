@@ -130,9 +130,29 @@ class TestQuantidadeNaData:
         assert any("posição de hoje" in c for c in item["caveats"])
 
 
-class TestAvisos:
-    def test_toda_sugestao_avisa_sobre_a_data_com(self, client, calendario):
-        headers = make_auth_headers("u_div_datacom")
+@pytest.fixture()
+def calendario_com_data_com(monkeypatch):
+    from datetime import timedelta
+
+    from app.core.brt import now_brt
+    from app.repositories.asset_repository import AssetRepository
+
+    hoje = now_brt().date()
+    pagamento = (hoje - timedelta(days=30)).isoformat()
+    data_com = (hoje - timedelta(days=45)).isoformat()
+
+    async def _fake(symbol: str):
+        if symbol.upper() != "PETR4":
+            return []
+        return [{"date": pagamento, "value": 0.50, "ex_date": data_com}]
+
+    monkeypatch.setattr(AssetRepository, "get_dividends", staticmethod(_fake))
+    return {"pagamento": pagamento, "data_com": data_com}
+
+
+class TestDireito:
+    def test_sem_data_com_na_fonte_o_direito_fica_indeterminado(self, client, calendario):
+        headers = make_auth_headers("u_div_sem_datacom")
         client.post(
             "/api/portfolio/position",
             json={"ticker": "PETR4", "quantity": 100, "avg_price": 30.0},
@@ -141,8 +161,125 @@ class TestAvisos:
 
         item = client.get("/api/dividends/pending", headers=headers).json()["items"][0]
 
+        assert item["entitlement"] == "indeterminado", (
+            "sem a data-com nao ha como saber se a posicao ja existia quando o provento foi "
+            "declarado, e afirmar que existia inventa dado"
+        )
         assert any("data-com" in c for c in item["caveats"])
 
+    def test_razao_anterior_a_data_com_prova_o_direito(self, client, calendario_com_data_com):
+        headers = make_auth_headers("u_div_direito_provado")
+        client.post(
+            "/api/transactions",
+            json={
+                "kind": "buy",
+                "symbol": "PETR4",
+                "traded_on": "2020-01-10",
+                "quantity": 100,
+                "price": 20.0,
+            },
+            headers=headers,
+        )
+        client.post(
+            "/api/portfolio/position",
+            json={"ticker": "PETR4", "quantity": 100, "avg_price": 20.0},
+            headers=headers,
+        )
+
+        item = client.get("/api/dividends/pending", headers=headers).json()["items"][0]
+
+        assert item["entitlement"] == "provado", (
+            "com data-com da fonte e lancamento anterior a ela, o direito e fato do razao, "
+            "nao estimativa"
+        )
+        assert item["ex_date"] == calendario_com_data_com["data_com"]
+        assert not any("data-com" in c for c in item["caveats"]), (
+            "provado o direito, o aviso sobre a data-com so faria o usuario duvidar de um fato"
+        )
+
+    def test_compra_depois_da_data_com_nao_conta_quantidade(self, client, calendario_com_data_com):
+        from datetime import date, timedelta
+
+        depois = date.fromisoformat(calendario_com_data_com["data_com"]) + timedelta(days=3)
+        headers = make_auth_headers("u_div_comprou_depois")
+        client.post(
+            "/api/transactions",
+            json={
+                "kind": "buy",
+                "symbol": "PETR4",
+                "traded_on": depois.isoformat(),
+                "quantity": 100,
+                "price": 20.0,
+            },
+            headers=headers,
+        )
+
+        corpo = client.get("/api/dividends/pending", headers=headers).json()
+
+        assert corpo["count"] == 0, (
+            "a base do provento e a posicao na data-com; quem comprou depois dela nao recebe, "
+            "e sugerir o contrario creditaria dinheiro que nunca caiu"
+        )
+
+    def test_declaracao_posterior_devolve_o_direito_a_indeterminado(
+        self, client, calendario_com_data_com
+    ):
+        headers = make_auth_headers("u_div_declarou_depois")
+        client.post(
+            "/api/portfolio/position",
+            json={"ticker": "PETR4", "quantity": 100, "avg_price": 20.0},
+            headers=headers,
+        )
+
+        item = client.get("/api/dividends/pending", headers=headers).json()["items"][0]
+
+        assert item["entitlement"] == "indeterminado", (
+            "a declaracao de posicao absorve o que veio antes dela, entao o razao nao sabe "
+            "dizer o que existia na data-com — e nao saber nao e provar"
+        )
+        assert item["quantity_is_current"] is True
+
+    def test_a_quantidade_e_a_da_data_com_nao_a_do_pagamento(self, client, calendario_com_data_com):
+        from datetime import date, timedelta
+
+        entre = date.fromisoformat(calendario_com_data_com["data_com"]) + timedelta(days=5)
+        headers = make_auth_headers("u_div_quantidade_datacom")
+        client.post(
+            "/api/transactions",
+            json={
+                "kind": "buy",
+                "symbol": "PETR4",
+                "traded_on": "2020-01-10",
+                "quantity": 100,
+                "price": 20.0,
+            },
+            headers=headers,
+        )
+        client.post(
+            "/api/transactions",
+            json={
+                "kind": "buy",
+                "symbol": "PETR4",
+                "traded_on": entre.isoformat(),
+                "quantity": 400,
+                "price": 22.0,
+            },
+            headers=headers,
+        )
+        client.post(
+            "/api/portfolio/position",
+            json={"ticker": "PETR4", "quantity": 500, "avg_price": 21.0},
+            headers=headers,
+        )
+
+        item = client.get("/api/dividends/pending", headers=headers).json()["items"][0]
+
+        assert item["quantity_at_date"] == 100, (
+            "as 400 compradas entre a data-com e o pagamento nao dao direito a provento algum"
+        )
+
+
+class TestAvisos:
     def test_a_resposta_diz_que_nada_foi_lancado(self, client, calendario):
         headers = make_auth_headers("u_div_nota")
         client.post(

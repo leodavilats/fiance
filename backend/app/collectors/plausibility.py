@@ -58,6 +58,11 @@ RANGES: dict[str, Range] = {
     ),
     "fifty_two_week_high": Range(0.01, 1_000_000.0, "Máxima de 52 semanas, mesma faixa do preço."),
     "fifty_two_week_low": Range(0.01, 1_000_000.0, "Mínima de 52 semanas, mesma faixa do preço."),
+    "change_percent_day": Range(
+        -100.0,
+        1_000.0,
+        "Variação do dia em percentual; abaixo de -100% seria preço negativo.",
+    ),
 }
 
 

@@ -180,6 +180,13 @@ alerta de rebalanceamento dispara sobre ela.
 As metas **por setor** já distinguem (o `declared` da resposta); as de categoria não, e mudar isso
 mexe no alerta do dashboard, no `whats_new` e no Quick Invest de uma vez.
 
+### 34 · O calendário de proventos só prova o direito quando a fonte publica a data-com
+
+Desde 2026-09-15 o coletor carrega `lastDatePrior`, e com ela o razão prova quem tinha a posição na
+data-com. Quando a fonte não publica a data-com, ou quando uma declaração de posição absorveu a
+história anterior, o direito fica `indeterminado` e a sugestão vai para o calendário colapsado. Não
+há como saber quantos proventos caem em cada caso sem medir contra a fonte real.
+
 ### 15 · Sugestões seguidas dependem de lançamento manual
 
 ### 20 · A apuração de IR não cobre day trade nem IOF de renda fixa
@@ -206,19 +213,27 @@ O item mais grave: **o livro-razão, fonte da carteira e do imposto, não tem ne
 
 ## E · Interface
 
-### 7 · Três famílias de controle ainda são Material puro, com estilo só no tema
+### 7 · Duas famílias de controle ainda são Material puro, com estilo só no tema
 
-### 8 · A base do preço justo não chega às telas de posição da carteira
+`Switch` e `Slider`. A ficha saiu em 2026-09-15 — `FiChoiceChip` —, e `ExpansionTile` foi substituído
+onde o produto usava caixa expansível.
 
-Em `/ativo` a cifra vem com "consenso de N métodos"; nas telas de posição, não.
+### 8 · ~~A base do preço justo não chega às telas de posição da carteira~~ — **resolvido em 2026-09-15**
+
+O card de posição deixou de ter gaveta própria de razões e passou a abrir `/ativo/:ticker`, que já
+traz a cifra com a base.
 
 ### 9 · Falta a regra do alvo de toque de 44dp no Dart
 
-### 10 · `/voce` são cinco entradas, e o desenho pede quatro eixos
+### 10 · ~~`/voce` são cinco entradas, e o desenho pede quatro eixos~~ — **resolvido em 2026-09-15**
 
-### 11 · Dois comportamentos essenciais não têm componente
+`/voce` virou índice de `investir`, `avisos`, `aparencia` e `conta`, e cada linha carrega o estado
+atual.
 
-Faltam `Evidence` (o nível 2 da explicabilidade) e o par que o acompanha.
+### 11 · Falta o componente de evidência
+
+Falta `Evidence`, o nível 2 da explicabilidade. O par que revelava detalhe foi construído em
+2026-09-15: `FiDisclosure` e `FiGroupDisclosure`.
 
 ### 12 · A régua de afirmação anula `allocated_cash` e deixa a subtração de pé
 

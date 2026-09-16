@@ -438,6 +438,8 @@ class TechnicalSnapshot:
 
     data_points: int = 0
 
+    range_52w_position: float | None = None
+
     def to_dict(self) -> dict:
         return self.__dict__.copy()
 
@@ -527,6 +529,11 @@ def compute_technical(
     if last and week52_low and week52_low > 0:
         d_low = round((last - week52_low) / week52_low * 100, 2)
 
+    posicao_52s = None
+    if last and week52_high and week52_low and week52_high > week52_low:
+        posicao_52s = round((last - week52_low) / (week52_high - week52_low), 4)
+        posicao_52s = min(1.0, max(0.0, posicao_52s))
+
     return TechnicalSnapshot(
         sma_50=s50,
         sma_200=s200,
@@ -538,4 +545,5 @@ def compute_technical(
         sma_20=s20,
         trend_basis=trend_basis,
         data_points=len(closes),
+        range_52w_position=posicao_52s,
     )

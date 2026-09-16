@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../design_tokens.dart';
+import '../theme.dart';
 
 enum FiSkeletonShape { moneyXl, verdict, metric, title, body, caption, ruler, row }
 
@@ -19,11 +20,53 @@ class FiSkeleton extends StatefulWidget {
       label: label,
       liveRegion: true,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(FiSpace.s4, FiSpace.s4, FiSpace.s4, FiSpace.s8),
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s3,
+          FiLayout.gutter,
+          FiLayout.scrollTail,
+        ),
         children: [FiSkeleton(shape: shape, count: count)],
       ),
     );
   }
+
+  static Widget pagina({
+    bool manchete = true,
+    List<int> secoes = const [3, 2],
+    String label = 'Carregando estas informações',
+  }) {
+    return Semantics(
+      label: label,
+      liveRegion: true,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s3,
+          FiLayout.gutter,
+          FiLayout.scrollTail,
+        ),
+        children: [
+          if (manchete) ...[
+            const FiSkeleton(shape: FiSkeletonShape.caption),
+            const SizedBox(height: FiSpace.s2),
+            const FiSkeleton(shape: FiSkeletonShape.moneyXl),
+            const SizedBox(height: FiSpace.s3),
+            const FiSkeleton(shape: FiSkeletonShape.body, count: 2),
+          ],
+          for (final linhas in secoes) ...[
+            const SizedBox(height: FiSpace.s8),
+            const FiSkeleton(shape: FiSkeletonShape.caption),
+            const SizedBox(height: FiSpace.s3),
+            FiSkeleton(shape: FiSkeletonShape.row, count: linhas),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static Widget secao({int count = 3}) =>
+      FiSkeleton(shape: FiSkeletonShape.row, count: count);
 
   @override
   State<FiSkeleton> createState() => _FiSkeletonState();

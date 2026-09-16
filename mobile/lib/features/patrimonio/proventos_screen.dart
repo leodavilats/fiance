@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../core/vocabulary.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
+import '../../core/widgets/disclosure.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/provenance.dart';
@@ -112,7 +113,8 @@ class ProventosScreen extends ConsumerWidget {
                     body: 'Provento creditado é lançamento do razão, e é ele que alimenta a '
                         'renda do mês. Não se lança no caixa: contaria o mesmo dinheiro duas '
                         'vezes.',
-                    hint: 'Registre o que já caiu na conta, ou confira as sugestões abaixo.',
+                    hint: 'Registre o que já caiu na conta, ou confirme o que o seu razão '
+                        'já prova que é seu.',
                     action: FiButton.primary(
                       label: 'Registrar provento',
                       icon: Icons.add,
@@ -120,7 +122,8 @@ class ProventosScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: FiSpace.s5),
-                  const _Pendentes(),
+                  const _AguardandoConfirmacao(),
+                  const _Calendario(),
                 ],
               );
             }
@@ -135,7 +138,7 @@ class ProventosScreen extends ConsumerWidget {
               children: [
                 _Totais(data: data),
                 const SizedBox(height: FiSpace.s5),
-                const _Pendentes(),
+                const _AguardandoConfirmacao(),
                 FiSection(
                   title: 'Recebidos',
                   count: data.totalCount,
@@ -154,6 +157,7 @@ class ProventosScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const _Calendario(),
                 if (data.byTicker.isNotEmpty)
                   FiSection(
                     title: 'Por ativo',
@@ -275,26 +279,105 @@ class _ProventoObject extends StatelessWidget {
   }
 }
 
-class _Pendentes extends ConsumerStatefulWidget {
-  const _Pendentes();
+class _AguardandoConfirmacao extends ConsumerWidget {
+  const _AguardandoConfirmacao();
 
   @override
-  ConsumerState<_Pendentes> createState() => _PendentesState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendentes = ref.watch(proventosPendentesProvider);
+
+    return pendentes.maybeWhen(
+      loading: () => const FiSection(
+        title: 'Aguardando sua confirmação',
+        child: FiSkeleton(shape: FiSkeletonShape.row, count: 2),
+      ),
+      data: (data) {
+        final provados = data.items.where((s) => s.direitoProvado).toList();
+        if (provados.isEmpty) return const SizedBox.shrink();
+
+        return _ListaDeSugestoes(
+          titulo: 'Aguardando sua confirmação',
+          sugestoes: provados,
+          hint: 'O seu razão mostra a posição já na data-com, então estes proventos são seus. '
+              'Falta só dizer que caíram na conta — nada é lançado antes disso.',
+          colapsada: false,
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
 }
 
-class _PendentesState extends ConsumerState<_Pendentes> {
+class _Calendario extends ConsumerWidget {
+  const _Calendario();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendentes = ref.watch(proventosPendentesProvider);
+
+    return pendentes.when(
+      loading: () => const FiSection(
+        title: 'Consultar o calendário',
+        child: FiSkeleton(shape: FiSkeletonShape.row, count: 1),
+      ),
+      error: (err, _) => FiErrorState(
+        error: err,
+        title: 'Não conseguimos ler o calendário de proventos',
+        action: 'buscar proventos do calendário',
+        onRetry: () => ref.invalidate(proventosPendentesProvider),
+      ),
+      data: (data) {
+        final indeterminados =
+            data.items.where((s) => !s.direitoProvado).toList();
+        if (indeterminados.isEmpty) return const SizedBox.shrink();
+
+        return _ListaDeSugestoes(
+          titulo: 'Consultar o calendário',
+          sugestoes: indeterminados,
+          hint: 'Aqui o razão não prova o direito: ou a fonte não publicou a data-com, ou os '
+              'seus lançamentos não alcançam aquela data. Confira contra o extrato da '
+              'corretora antes de confirmar.',
+          colapsada: true,
+        );
+      },
+    );
+  }
+}
+
+class _ListaDeSugestoes extends ConsumerStatefulWidget {
+  const _ListaDeSugestoes({
+    required this.titulo,
+    required this.sugestoes,
+    required this.hint,
+    required this.colapsada,
+  });
+
+  final String titulo;
+  final List<DividendSuggestion> sugestoes;
+  final String hint;
+  final bool colapsada;
+
+  @override
+  ConsumerState<_ListaDeSugestoes> createState() => _ListaDeSugestoesState();
+}
+
+class _ListaDeSugestoesState extends ConsumerState<_ListaDeSugestoes> {
   final Set<String> _escolhidos = {};
   bool _confirmando = false;
 
   String _chave(DividendSuggestion s) => '${s.ticker}|${s.paidAt}';
 
-  Future<void> _confirmar(List<DividendSuggestion> todos) async {
-    final selecionados = todos.where((s) => _escolhidos.contains(_chave(s))).toList();
+  Future<void> _confirmar() async {
+    final selecionados = widget.sugestoes
+        .where((s) => _escolhidos.contains(_chave(s)))
+        .toList();
     if (selecionados.isEmpty) return;
 
     setState(() => _confirmando = true);
     try {
-      final criados = await ref.read(apiRepositoryProvider).confirmDividends(selecionados);
+      final criados = await ref
+          .read(apiRepositoryProvider)
+          .confirmDividends(selecionados);
       _escolhidos.clear();
       ref.invalidate(proventosProvider);
       ref.invalidate(proventosPendentesProvider);
@@ -311,7 +394,11 @@ class _PendentesState extends ConsumerState<_Pendentes> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(fiErrorMessage(e, action: 'lançar os proventos escolhidos'))),
+          SnackBar(
+            content: Text(
+              fiErrorMessage(e, action: 'lançar os proventos escolhidos'),
+            ),
+          ),
         );
       }
     } finally {
@@ -321,60 +408,69 @@ class _PendentesState extends ConsumerState<_Pendentes> {
 
   @override
   Widget build(BuildContext context) {
-    final pendentes = ref.watch(proventosPendentesProvider);
+    final escolhidos = widget.sugestoes
+        .where((s) => _escolhidos.contains(_chave(s)))
+        .length;
+    final total = widget.sugestoes.fold<double>(0, (t, s) => t + s.amount);
 
-    return pendentes.when(
-      loading: () => FiSection(
-        title: 'Sugestões do calendário',
-        child: Semantics(
-          label: 'Procurando proventos no calendário',
-          liveRegion: true,
-          child: const FiSkeleton(shape: FiSkeletonShape.row, count: 2),
+    final corpo = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final s in widget.sugestoes)
+          _SugestaoObject(
+            sugestao: s,
+            marcada: _escolhidos.contains(_chave(s)),
+            onToggle: () => setState(() {
+              final k = _chave(s);
+              if (!_escolhidos.remove(k)) _escolhidos.add(k);
+            }),
+          ),
+        const SizedBox(height: FiSpace.s3),
+        FiButton.primary(
+          label: _confirmando
+              ? 'Lançando…'
+              : escolhidos == 0
+              ? 'Marque o que já caiu na conta'
+              : 'Lançar $escolhidos ${escolhidos == 1 ? 'provento' : 'proventos'}',
+          onPressed: _confirmando || escolhidos == 0 ? null : _confirmar,
+        ),
+      ],
+    );
+
+    if (!widget.colapsada) {
+      return FiSection(
+        title: widget.titulo,
+        count: widget.sugestoes.length,
+        hint: widget.hint,
+        child: corpo,
+      );
+    }
+
+    return FiSection(
+      title: widget.titulo,
+      count: widget.sugestoes.length,
+      child: FiDisclosure(
+        rule: false,
+        title:
+            '${widget.sugestoes.length} '
+            '${widget.sugestoes.length == 1 ? 'crédito' : 'créditos'} '
+            'que o razão não confirma',
+        detail: widget.sugestoes.length == 1
+            ? 'Um crédito por conferir'
+            : 'Somam ${formatCurrency(total)} por conferir',
+        initiallyOpen: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.hint,
+              style: FiType.caption.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s3),
+            corpo,
+          ],
         ),
       ),
-      error: (err, _) => FiErrorState(
-        error: err,
-        title: 'Não conseguimos ler o calendário de proventos',
-        action: 'buscar proventos do calendário',
-        onRetry: () => ref.invalidate(proventosPendentesProvider),
-      ),
-      data: (data) {
-        if (data.items.isEmpty) return const SizedBox.shrink();
-
-        final escolhidos = data.items.where((s) => _escolhidos.contains(_chave(s))).length;
-
-        return FiSection(
-          title: 'Sugestões do calendário',
-          count: data.items.length,
-          hint: 'Nada foi lançado. Confira cada linha contra o extrato da corretora antes de '
-              'confirmar — a quantidade vem da sua posição, e o calendário da fonte.',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final s in data.items)
-                _SugestaoObject(
-                  sugestao: s,
-                  marcada: _escolhidos.contains(_chave(s)),
-                  onToggle: () => setState(() {
-                    final k = _chave(s);
-                    if (!_escolhidos.remove(k)) _escolhidos.add(k);
-                  }),
-                ),
-              const SizedBox(height: FiSpace.s3),
-              FiButton.primary(
-                label: _confirmando
-                    ? 'Lançando…'
-                    : escolhidos == 0
-                    ? 'Marque o que já caiu na conta'
-                    : 'Lançar $escolhidos ${escolhidos == 1 ? 'provento' : 'proventos'}',
-                onPressed: _confirmando || escolhidos == 0
-                    ? null
-                    : () => _confirmar(data.items),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
@@ -426,6 +522,12 @@ class _SugestaoObject extends StatelessWidget {
             FiRows(
               children: [
                 FiDataRow(label: 'Crédito', value: formatDate(sugestao.paidAt)),
+                if (sugestao.exDate != null)
+                  FiDataRow(
+                    label: 'Data-com',
+                    value: formatDate(sugestao.exDate),
+                    detail: 'quem tinha o ativo neste dia recebe',
+                  ),
                 FiDataRow(
                   label: 'Valor estimado',
                   value: formatCurrency(sugestao.amount),
@@ -436,8 +538,8 @@ class _SugestaoObject extends StatelessWidget {
                   value: '${formatQuantity(sugestao.quantityAtDate)} × '
                       '${formatCurrency(sugestao.ratePerShare)}',
                   detail: sugestao.quantityIsCurrent
-                      ? 'Quantidade de hoje, não a da data do crédito'
-                      : 'Quantidade que você tinha na data',
+                      ? 'Quantidade de hoje, não a da data-com'
+                      : 'Quantidade que o seu razão tinha na data-com',
                 ),
               ],
             ),

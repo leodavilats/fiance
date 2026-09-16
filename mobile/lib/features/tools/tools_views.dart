@@ -338,7 +338,10 @@ class RendaFixaSimulatorViewState
       ),
       children: [
         rates.when(
-          loading: () => const SizedBox.shrink(),
+          loading: () => const Padding(
+            padding: EdgeInsets.only(bottom: FiSpace.s5),
+            child: FiSkeleton(shape: FiSkeletonShape.caption),
+          ),
           error: (_, _) => const SizedBox.shrink(),
           data: (r) => Padding(
             padding: const EdgeInsets.only(bottom: FiSpace.s5),
