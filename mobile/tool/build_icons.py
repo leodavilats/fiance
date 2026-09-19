@@ -1,4 +1,3 @@
-
 import io
 import os
 import re
@@ -6,24 +5,37 @@ import sys
 from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TOKENS = os.path.join(ROOT, 'lib', 'core', 'design_tokens.dart')
+TOKENS = os.path.join(ROOT, "lib", "core", "design_tokens.dart")
 
 GLYPH_VIEWBOX = 100.0
-GLYPH_EIXO = [(6, 6), (76, 6), (76, 19), (19, 19), (19, 41),
-              (56, 41), (56, 54), (19, 54), (19, 79), (6, 79)]
+GLYPH_EIXO = [
+    (6, 6),
+    (76, 6),
+    (76, 19),
+    (19, 19),
+    (19, 41),
+    (56, 41),
+    (56, 54),
+    (19, 54),
+    (19, 79),
+    (6, 79),
+]
 GLYPH_LEITURA = (83, 6, 96, 19, 3)
 GLYPH_CHAO = (0, 87, 100, 95, 4)
 
 GROUND_MIX = 0.65
 
 WORDMARK = [
-    (62, 'M0 0L62 0L62 13L13 13L13 49L50 49L50 62L13 62L13 100L0 100Z'),
-    (13, 'M0 0L13 0L13 100L0 100Z'),
-    (74, 'M29 0L45 0L74 100L59.5 100L37 22.4L14.5 100L0 100Z '
-         'M29.29 49L44.71 49L48.48 62L25.52 62Z'),
-    (72, 'M0 0L13 0L59 76L59 0L72 0L72 100L59 100L13 24L13 100L0 100Z'),
-    (70, 'M64.4 22.8A35 50 0 1 0 64.4 77.2L53.4 70.2A22 37 0 1 1 53.4 29.8Z'),
-    (62, 'M0 0L62 0L62 13L13 13L13 49L48 49L48 62L13 62L13 87L62 87L62 100L0 100Z'),
+    (62, "M0 0L62 0L62 13L13 13L13 49L50 49L50 62L13 62L13 100L0 100Z"),
+    (13, "M0 0L13 0L13 100L0 100Z"),
+    (
+        74,
+        "M29 0L45 0L74 100L59.5 100L37 22.4L14.5 100L0 100Z "
+        "M29.29 49L44.71 49L48.48 62L25.52 62Z",
+    ),
+    (72, "M0 0L13 0L59 76L59 0L72 0L72 100L59 100L13 24L13 100L0 100Z"),
+    (70, "M64.4 22.8A35 50 0 1 0 64.4 77.2L53.4 70.2A22 37 0 1 1 53.4 29.8Z"),
+    (62, "M0 0L62 0L62 13L13 13L13 49L48 49L48 62L13 62L13 87L62 87L62 100L0 100Z"),
 ]
 WORDMARK_TRACK = 13
 
@@ -34,49 +46,52 @@ ADAPTIVE_GLYPH_RATIO = 0.42
 SS = 4
 
 
-BRAND_DIR = 'assets/brand'
+BRAND_DIR = "assets/brand"
 
 
 _COR = re.compile(
-    r"static const (dark|light)([A-Za-z0-9]+) = Color\(0x(?:FF)?([0-9A-Fa-f]{6})\);")
+    r"static const (dark|light)([A-Za-z0-9]+) = Color\(0x(?:FF)?([0-9A-Fa-f]{6})\);"
+)
 
 PAPEIS = {
-    'Brand': 'brand',
-    'InkOnBrand': 'ink-on-brand',
-    'Ink1': 'ink-1',
-    'Ink3': 'ink-3',
+    "Brand": "brand",
+    "InkOnBrand": "ink-on-brand",
+    "Ink1": "ink-1",
+    "Ink3": "ink-3",
 }
 
 
 def tokens():
-    with io.open(TOKENS, encoding='utf-8') as fh:
+    with io.open(TOKENS, encoding="utf-8") as fh:
         dart = fh.read()
 
-    palette = {'dark': {}, 'light': {}}
+    palette = {"dark": {}, "light": {}}
     for tema, nome, valor in _COR.findall(dart):
         papel = PAPEIS.get(nome)
         if papel:
-            palette[tema][papel] = '#' + valor.upper()
+            palette[tema][papel] = "#" + valor.upper()
 
     faltando = [
-        '%s%s' % (tema, nome)
+        "%s%s" % (tema, nome)
         for tema in palette
         for nome, papel in PAPEIS.items()
         if papel not in palette[tema]
     ]
     if faltando:
-        raise SystemExit('design_tokens.dart nao declara: ' + ', '.join(sorted(faltando)))
+        raise SystemExit(
+            "design_tokens.dart nao declara: " + ", ".join(sorted(faltando))
+        )
 
-    return {'color': palette}
+    return {"color": palette}
 
 
 def rgb(hex_color):
-    h = hex_color.lstrip('#')
-    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+    h = hex_color.lstrip("#")
+    return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def hexa(color):
-    return '#%02X%02X%02X' % color
+    return "#%02X%02X%02X" % color
 
 
 def mix(a, b, t):
@@ -105,12 +120,13 @@ def draw_glyph(draw, size, ratio, fg, ground):
 
 def render(size, bg, fg, ground, ratio=GLYPH_RATIO, rounded=True):
     big = size * SS
-    img = Image.new('RGBA', (big, big), (0, 0, 0, 0))
+    img = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     if bg is not None:
         if rounded:
-            draw.rounded_rectangle([0, 0, big - 1, big - 1],
-                                   radius=big * RADIUS_RATIO, fill=bg)
+            draw.rounded_rectangle(
+                [0, 0, big - 1, big - 1], radius=big * RADIUS_RATIO, fill=bg
+            )
         else:
             draw.rectangle([0, 0, big - 1, big - 1], fill=bg)
     draw_glyph(draw, big, ratio, fg, ground)
@@ -121,18 +137,18 @@ def write_png(img, path, flatten=None):
     full = os.path.join(ROOT, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
     if flatten is not None:
-        base = Image.new('RGB', img.size, flatten)
+        base = Image.new("RGB", img.size, flatten)
         base.paste(img, mask=img.split()[3])
         img = base
     img.save(full)
-    print('escrito %s (%dx%d)' % (path, img.size[0], img.size[1]))
+    print("escrito %s (%dx%d)" % (path, img.size[0], img.size[1]))
 
 
 def svg_doc(width, height, label, inner):
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %s %s" '
         'width="%s" height="%s" role="img" aria-label="%s">\n'
-        '<title>%s</title>\n%s\n</svg>\n'
+        "<title>%s</title>\n%s\n</svg>\n"
     ) % (width, height, width, height, label, label, inner)
 
 
@@ -144,9 +160,20 @@ def symbol_markup(fg, ground):
         '<rect x="%g" y="%g" width="%g" height="%g" rx="%g" fill="%s"/>'
         '<rect x="%g" y="%g" width="%g" height="%g" rx="%g" fill="%s"/>'
     ) % (
-        'L'.join('%g %g' % p for p in GLYPH_EIXO), fg,
-        x0, y0, x1 - x0, y1 - y0, r, fg,
-        cx0, cy0, cx1 - cx0, cy1 - cy0, cr, ground,
+        "L".join("%g %g" % p for p in GLYPH_EIXO),
+        fg,
+        x0,
+        y0,
+        x1 - x0,
+        y1 - y0,
+        r,
+        fg,
+        cx0,
+        cy0,
+        cx1 - cx0,
+        cy1 - cy0,
+        cr,
+        ground,
     )
 
 
@@ -155,78 +182,137 @@ def wordmark_markup():
     for advance, d in WORDMARK:
         parts.append('<path d="%s" transform="translate(%g 0)"/>' % (d, x))
         x += advance + WORDMARK_TRACK
-    return ''.join(parts), x - WORDMARK_TRACK
+    return "".join(parts), x - WORDMARK_TRACK
 
 
 def brand_files(light, dark, on_brand_hex, ground_hex):
     wm, wm_w = wordmark_markup()
-    mono = ('currentColor', 'currentColor')
+    mono = ("currentColor", "currentColor")
     tints = {
-        'light': (light['brand'], light['ink-3']),
-        'dark': (dark['brand'], dark['ink-3']),
+        "light": (light["brand"], light["ink-3"]),
+        "dark": (dark["brand"], dark["ink-3"]),
     }
     out = {}
 
     def add(name, width, height, what, inner):
-        out['%s/fiance-%s.svg' % (BRAND_DIR, name)] = svg_doc(
-            width, height, 'Fiance, ' + what, inner)
+        out["%s/fiance-%s.svg" % (BRAND_DIR, name)] = svg_doc(
+            width, height, "Fiance, " + what, inner
+        )
 
-    add('symbol', 100, 100, 'simbolo', symbol_markup(*tints['light']))
-    add('symbol-dark', 100, 100, 'simbolo em fundo escuro', symbol_markup(*tints['dark']))
-    add('symbol-mono', 100, 100, 'simbolo monocromatico', symbol_markup(*mono))
+    add("symbol", 100, 100, "simbolo", symbol_markup(*tints["light"]))
+    add(
+        "symbol-dark",
+        100,
+        100,
+        "simbolo em fundo escuro",
+        symbol_markup(*tints["dark"]),
+    )
+    add("symbol-mono", 100, 100, "simbolo monocromatico", symbol_markup(*mono))
 
     size, gap = 132, 46
+
     def lock_h(fg, ground, ink):
-        return ('<g transform="scale(%g)">%s</g>\n'
-                '<g fill="%s" transform="translate(%g 16)">%s</g>') % (
-            size / 100.0, symbol_markup(fg, ground), ink, size + gap, wm)
+        return (
+            '<g transform="scale(%g)">%s</g>\n'
+            '<g fill="%s" transform="translate(%g 16)">%s</g>'
+        ) % (size / 100.0, symbol_markup(fg, ground), ink, size + gap, wm)
+
     hw = size + gap + wm_w
-    add('lockup-h', hw, size, 'assinatura horizontal',
-        lock_h(tints['light'][0], tints['light'][1], light['ink-1']))
-    add('lockup-h-dark', hw, size, 'assinatura horizontal em fundo escuro',
-        lock_h(tints['dark'][0], tints['dark'][1], dark['ink-1']))
-    add('lockup-h-mono', hw, size, 'assinatura horizontal monocromatica',
-        lock_h(mono[0], mono[1], 'currentColor'))
+    add(
+        "lockup-h",
+        hw,
+        size,
+        "assinatura horizontal",
+        lock_h(tints["light"][0], tints["light"][1], light["ink-1"]),
+    )
+    add(
+        "lockup-h-dark",
+        hw,
+        size,
+        "assinatura horizontal em fundo escuro",
+        lock_h(tints["dark"][0], tints["dark"][1], dark["ink-1"]),
+    )
+    add(
+        "lockup-h-mono",
+        hw,
+        size,
+        "assinatura horizontal monocromatica",
+        lock_h(mono[0], mono[1], "currentColor"),
+    )
 
     vs, vgap, vcap = 150, 42, 0.84
     vwm = wm_w * vcap
     vw, vh = round(max(vs, vwm), 2), round(vs + vgap + 100 * vcap, 2)
+
     def lock_v(fg, ground, ink):
-        return ('<g transform="translate(%.2f 0) scale(%g)">%s</g>\n'
-                '<g fill="%s" transform="translate(%.2f %g) scale(%g)">%s</g>') % (
-            (vw - vs) / 2.0, vs / 100.0, symbol_markup(fg, ground),
-            ink, (vw - vwm) / 2.0, vs + vgap, vcap, wm)
-    add('lockup-v', vw, vh, 'assinatura vertical',
-        lock_v(tints['light'][0], tints['light'][1], light['ink-1']))
-    add('lockup-v-dark', vw, vh, 'assinatura vertical em fundo escuro',
-        lock_v(tints['dark'][0], tints['dark'][1], dark['ink-1']))
+        return (
+            '<g transform="translate(%.2f 0) scale(%g)">%s</g>\n'
+            '<g fill="%s" transform="translate(%.2f %g) scale(%g)">%s</g>'
+        ) % (
+            (vw - vs) / 2.0,
+            vs / 100.0,
+            symbol_markup(fg, ground),
+            ink,
+            (vw - vwm) / 2.0,
+            vs + vgap,
+            vcap,
+            wm,
+        )
 
-    add('wordmark', wm_w, 100, 'logotipo', '<g fill="%s">%s</g>' % (light['ink-1'], wm))
-    add('wordmark-dark', wm_w, 100, 'logotipo em fundo escuro',
-        '<g fill="%s">%s</g>' % (dark['ink-1'], wm))
+    add(
+        "lockup-v",
+        vw,
+        vh,
+        "assinatura vertical",
+        lock_v(tints["light"][0], tints["light"][1], light["ink-1"]),
+    )
+    add(
+        "lockup-v-dark",
+        vw,
+        vh,
+        "assinatura vertical em fundo escuro",
+        lock_v(tints["dark"][0], tints["dark"][1], dark["ink-1"]),
+    )
 
-    add('compact', 120, 120, 'marca compacta',
+    add("wordmark", wm_w, 100, "logotipo", '<g fill="%s">%s</g>' % (light["ink-1"], wm))
+    add(
+        "wordmark-dark",
+        wm_w,
+        100,
+        "logotipo em fundo escuro",
+        '<g fill="%s">%s</g>' % (dark["ink-1"], wm),
+    )
+
+    add(
+        "compact",
+        120,
+        120,
+        "marca compacta",
         '<rect width="120" height="120" rx="28" fill="%s"/>\n'
-        '<g transform="translate(27 27) scale(0.66)">%s</g>' % (
-            light['brand'], symbol_markup(on_brand_hex, ground_hex)))
+        '<g transform="translate(27 27) scale(0.66)">%s</g>'
+        % (light["brand"], symbol_markup(on_brand_hex, ground_hex)),
+    )
     return out
 
 
 def check_derived(brand_hex):
     targets = [
-        ('pubspec.yaml', 'adaptive_icon_background: "%s"' % brand_hex),
-        ('android/app/src/main/res/values/colors.xml',
-         '<color name="ic_launcher_background">%s</color>' % brand_hex),
+        ("pubspec.yaml", 'adaptive_icon_background: "%s"' % brand_hex),
+        (
+            "android/app/src/main/res/values/colors.xml",
+            '<color name="ic_launcher_background">%s</color>' % brand_hex,
+        ),
     ]
     bad = []
     for rel, needle in targets:
-        with io.open(os.path.join(ROOT, rel), encoding='utf-8') as fh:
+        with io.open(os.path.join(ROOT, rel), encoding="utf-8") as fh:
             if needle not in fh.read():
-                bad.append('%s nao contem %r' % (rel, needle))
+                bad.append("%s nao contem %r" % (rel, needle))
     if bad:
-        raise SystemExit('marca divergente:\n  ' + '\n  '.join(bad))
-    print('conferido: adaptive_icon_background e ic_launcher_background em %s'
-          % brand_hex)
+        raise SystemExit("marca divergente:\n  " + "\n  ".join(bad))
+    print(
+        "conferido: adaptive_icon_background e ic_launcher_background em %s" % brand_hex
+    )
 
 
 def check(kit):
@@ -234,32 +320,33 @@ def check(kit):
     for rel, want in sorted(kit.items()):
         full = os.path.join(ROOT, rel)
         if not os.path.exists(full):
-            bad.append('%s nao existe' % rel)
+            bad.append("%s nao existe" % rel)
             continue
-        with io.open(full, encoding='utf-8') as fh:
+        with io.open(full, encoding="utf-8") as fh:
             if fh.read() != want:
-                bad.append('%s divergente' % rel)
+                bad.append("%s divergente" % rel)
     if bad:
         raise SystemExit(
-            'marca fora do gerador:\n  ' + '\n  '.join(bad) +
-            '\nRode: python tool/build_icons.py'
+            "marca fora do gerador:\n  "
+            + "\n  ".join(bad)
+            + "\nRode: python tool/build_icons.py"
         )
-    print('conferido: %d arquivos em %s' % (len(kit), BRAND_DIR))
+    print("conferido: %d arquivos em %s" % (len(kit), BRAND_DIR))
 
 
 def main():
-    palette = tokens()['color']
-    color = palette['light']
-    brand_hex = color['brand']
-    on_brand_hex = color['ink-on-brand']
+    palette = tokens()["color"]
+    color = palette["light"]
+    brand_hex = color["brand"]
+    on_brand_hex = color["ink-on-brand"]
     brand, on_brand = rgb(brand_hex), rgb(on_brand_hex)
     ground = mix(on_brand, brand, GROUND_MIX)
     ground_hex = hexa(ground)
-    kit = brand_files(color, palette['dark'], on_brand_hex, ground_hex)
+    kit = brand_files(color, palette["dark"], on_brand_hex, ground_hex)
 
-    print('marca: brand=%s glifo=%s chao=%s' % (brand_hex, on_brand_hex, ground_hex))
+    print("marca: brand=%s glifo=%s chao=%s" % (brand_hex, on_brand_hex, ground_hex))
 
-    if '--check' in sys.argv:
+    if "--check" in sys.argv:
         check(kit)
         check_derived(brand_hex)
         return
@@ -267,15 +354,20 @@ def main():
     for rel, body in sorted(kit.items()):
         full = os.path.join(ROOT, rel)
         os.makedirs(os.path.dirname(full), exist_ok=True)
-        io.open(full, 'w', encoding='utf-8', newline='\n').write(body)
-    print('escrito %d arquivos em %s' % (len(kit), BRAND_DIR))
+        io.open(full, "w", encoding="utf-8", newline="\n").write(body)
+    print("escrito %d arquivos em %s" % (len(kit), BRAND_DIR))
 
-    write_png(render(1024, brand, on_brand, ground, rounded=False),
-              'assets/brand/icon.png', flatten=brand)
-    write_png(render(1024, None, on_brand, ground, ratio=ADAPTIVE_GLYPH_RATIO),
-              'assets/brand/icon_foreground.png')
+    write_png(
+        render(1024, brand, on_brand, ground, rounded=False),
+        "assets/brand/icon.png",
+        flatten=brand,
+    )
+    write_png(
+        render(1024, None, on_brand, ground, ratio=ADAPTIVE_GLYPH_RATIO),
+        "assets/brand/icon_foreground.png",
+    )
     check_derived(brand_hex)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
