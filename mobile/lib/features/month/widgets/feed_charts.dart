@@ -67,8 +67,6 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // A altura e fixa: o texto muda ao arrastar sobre a linha, e sem ela o grafico
-        // sobe e desce debaixo do dedo.
         SizedBox(
           height: 46,
           child: Column(
