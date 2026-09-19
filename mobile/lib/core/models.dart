@@ -1923,3 +1923,31 @@ class DividendPending {
     count: (j['count'] as num?)?.toInt() ?? 0,
   );
 }
+
+class AccountDeletionPolicy {
+  AccountDeletionPolicy({
+    required this.slaDays,
+    required this.removes,
+    required this.note,
+    required this.confirmationPhrase,
+  });
+
+  final int slaDays;
+  final List<String> removes;
+  final String note;
+  final String confirmationPhrase;
+
+  factory AccountDeletionPolicy.fromJson(Map<String, dynamic> j) => AccountDeletionPolicy(
+    slaDays: (j['sla_days'] as num?)?.toInt() ?? 0,
+    removes: ((j['removes'] as List?) ?? const []).map((e) => e.toString()).toList(),
+    note: j['note'] as String? ?? '',
+    confirmationPhrase: j['confirmation_phrase'] as String? ?? 'EXCLUIR',
+  );
+}
+
+class AccountExport {
+  AccountExport({required this.bytes, required this.filename});
+
+  final List<int> bytes;
+  final String filename;
+}

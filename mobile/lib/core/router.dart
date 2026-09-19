@@ -9,6 +9,7 @@ import '../features/assets/fixed_income_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
+import '../features/config/delete_account_screen.dart';
 import '../features/month/feed_screen.dart';
 import '../features/month/debts_screen.dart';
 import '../features/month/month_screen.dart';
@@ -213,6 +214,12 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'conta',
                   builder: (context, state) => const AccountScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'excluir',
+                      builder: (context, state) => const DeleteAccountScreen(),
+                    ),
+                  ],
                 ),
               ],
             ),

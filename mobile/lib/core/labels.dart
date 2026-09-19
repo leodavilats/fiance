@@ -107,3 +107,7 @@ String dividendKindLabel(String? kind) {
   if (kind == null) return '—';
   return fiDividendKinds[kind] ?? kind;
 }
+
+// O nome cru aparece quando o backend ganha uma tabela que o mapa não conhece: feio, e por isso
+// visível — a alternativa é a tela omitir um dado que vai ser apagado.
+String accountDataLabel(String slug) => fiAccountData[slug] ?? slug;

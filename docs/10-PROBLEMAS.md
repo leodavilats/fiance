@@ -203,11 +203,13 @@ hoje **não** será aproveitado.
 
 ## D · Paridade perdida — o mais urgente
 
-Nove funcionalidades que o backend serve e o aplicativo não alcança, todas por remoção do front web
-em 2026-09-11. Inventário completo e com critério de morte em
+Nove funcionalidades ficaram sem cliente com a remoção do front web em 2026-09-11. **Quatro seguem
+abertas:** importação de extrato, ativos seguidos, onboarding, e reconciliação com reconstrução.
+Inventário completo e com critério de morte em
 [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md).
 
-O item mais grave: **o livro-razão, fonte da carteira e do imposto, não tem nenhuma tela**.
+A mais grave é a **importação de extrato**: o razão ganhou tela em 2026-09-13, e alimentá-lo
+continua sendo um lançamento de cada vez.
 
 ---
 
@@ -307,10 +309,6 @@ Não existe chave de assinatura, e nenhum evento de telemetria foi visto em prod
 
 A App Store exige quando há login social de terceiros. O sistema só tem Google. É um segundo provedor
 de identidade, não uma configuração.
-
-### Exclusão de conta não tem tela
-
-Existe em `api/account.py`. As lojas exigem o caminho **dentro do aplicativo**.
 
 ### Não há contas de desenvolvedor, nem Mac
 

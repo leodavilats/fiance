@@ -51,6 +51,10 @@ final referralProvider = FutureProvider.autoDispose<ReferralStatus>((ref) {
   return ref.watch(apiRepositoryProvider).referralStatus();
 });
 
+final deletionPolicyProvider = FutureProvider.autoDispose<AccountDeletionPolicy>((ref) {
+  return ref.watch(apiRepositoryProvider).getDeletionPolicy();
+});
+
 final dashboardProvider = FutureProvider.autoDispose<DashboardData>((ref) {
   return ref.watch(apiRepositoryProvider).getDashboard();
 });

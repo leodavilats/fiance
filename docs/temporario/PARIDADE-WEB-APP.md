@@ -89,10 +89,18 @@ Zero arquivos no aplicativo. Backend em `api/followed.py`.
 
 `split`, `bonus` e `amortization` entram pelo formulário do razão.
 
-### 9 · Exclusão de conta na interface
+### ~~9 · Exclusão de conta na interface~~ — ✅ **fechado em 2026-09-19**
 
-`api/account.py` existe. As lojas exigem o caminho **dentro do aplicativo** — é bloqueador de
-publicação, não só paridade.
+`mobile/lib/features/config/delete_account_screen.dart`, em `/voce/conta/excluir`, alcançável pela
+seção "Conta" do Você.
+
+A tela lê `GET /account/deletion-policy` e mostra **o que o backend diz que apaga** — traduzido, não
+reescrito —, o prazo em que backups e réplicas ainda guardam o dado, e a exportação ao lado, antes da
+confirmação. O botão só se arma com a frase exata, e isso é travado por
+`mobile/test/exclusao_de_conta_test.dart`.
+
+A exportação (`GET /account/export`) sai pela folha de compartilhamento do sistema, em JSON — é o
+outro lado do mesmo invariante, e por isso veio junto.
 
 ---
 

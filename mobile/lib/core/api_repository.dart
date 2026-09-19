@@ -652,4 +652,29 @@ class ApiRepository {
     final res = await _dio.get('/cashflow/vocabulary');
     return CashVocabulary.fromJson(res.data as Map<String, dynamic>);
   }
+
+  Future<AccountDeletionPolicy> getDeletionPolicy() async {
+    final res = await _dio.get('/account/deletion-policy');
+    return AccountDeletionPolicy.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<AccountExport> exportAccount() async {
+    final res = await _dio.get<List<int>>(
+      '/account/export',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return AccountExport(
+      bytes: res.data ?? const [],
+      filename: _filename(res.headers.value('content-disposition')),
+    );
+  }
+
+  Future<void> deleteAccount(String confirmation) async {
+    await _dio.delete('/account', data: {'confirm': confirmation});
+  }
+
+  static String _filename(String? contentDisposition) {
+    final nome = RegExp('filename="([^"]+)"').firstMatch(contentDisposition ?? '');
+    return nome?.group(1) ?? 'fiance.json';
+  }
 }

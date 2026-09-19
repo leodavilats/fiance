@@ -156,7 +156,7 @@ prejuízo e isenção mensal. **O que não cobre:** day trade, emissão de DARF,
 | Login com Google | `[ATUAL]` | `POST /auth/google` |
 | Sessão: acesso 1h, refresh 30d rotacionado | `[ATUAL]` | `api/auth.py` |
 | Revogação por dispositivo e por conta | `[IMPLEMENTADO]` | `session_cuts` |
-| Exclusão e exportação de conta | `[IMPLEMENTADO]` | `api/account.py` |
+| Exclusão e exportação de conta | `[IMPLEMENTADO]` | `api/account.py` — ✅ `/voce/conta`, exclusão com frase de confirmação e exportação pela folha de compartilhamento |
 | Preferências (perfil de risco, yields, densidade) | `[ATUAL]` | `api/preferences.py` |
 | Metas | `[ATUAL]` | `api/goals.py` |
 | Alertas de preço | `[ATUAL]` | `api/alerts.py` |

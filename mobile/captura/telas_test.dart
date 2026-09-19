@@ -589,6 +589,27 @@ dynamic _cheio(String caminho) {
     return {'code': 'MARIA2026', 'invited': 0, 'credited_until': null};
   }
 
+  if (caminho.contains('/account/deletion-policy')) {
+    return {
+      'sla_days': 30,
+      'removes': [
+        'cash_entries',
+        'debts',
+        'dividends_received',
+        'goals',
+        'positions',
+        'preferences',
+        'price_alerts',
+        'transactions',
+      ],
+      'note':
+          'A remoção é imediata no banco de produção. O prazo declarado cobre backups e '
+          'réplicas, onde o dado ainda pode existir até serem rotacionados. Nada disso está '
+          'atrás de plano.',
+      'confirmation_phrase': 'EXCLUIR',
+    };
+  }
+
   if (caminho.contains('/cashflow/entries')) {
     return [
         {
@@ -792,6 +813,8 @@ void main() {
     'descobrir': '/descobrir',
     'voce': '/voce',
     'voce-objetivos': '/voce/objetivos',
+    'voce-conta': '/voce/conta',
+    'voce-conta-excluir': '/voce/conta/excluir',
   };
 
   for (final screen in telas.entries) {

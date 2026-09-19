@@ -18,6 +18,7 @@ import '../../core/theme.dart';
 import '../../core/theme_provider.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
+import 'delete_account_screen.dart';
 
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
@@ -67,7 +68,7 @@ class ConfigScreen extends ConsumerWidget {
               ),
               FiDataRow(
                 label: 'Conta',
-                detail: 'Indicação, termos, privacidade e sair',
+                detail: 'Indicação, termos, seus dados e exclusão',
                 onTap: () => context.go('/voce/conta'),
               ),
             ],
@@ -861,7 +862,7 @@ class FiAccount extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return FiSection(
       title: 'Conta',
-      child: FiButton.danger(
+      action: FiButton.danger(
         label: 'Sair desta conta',
         onPressed: () async {
           await ref.read(notificationsServiceProvider).unregisterToken();
@@ -869,6 +870,21 @@ class FiAccount extends ConsumerWidget {
           ref.read(currentUserProvider.notifier).state = null;
           if (context.mounted) context.go('/login');
         },
+      ),
+      child: FiRows(
+        children: [
+          FiDataRow(
+            label: 'Baixar meus dados',
+            detail: 'Tudo o que esta conta guarda, em JSON',
+            trailing: Icon(Icons.download, size: 16, color: fiInk3(context)),
+            onTap: () => exportAccountData(context, ref),
+          ),
+          FiDataRow(
+            label: 'Excluir esta conta',
+            detail: 'Apaga tudo, e não há como desfazer',
+            onTap: () => context.go('/voce/conta/excluir'),
+          ),
+        ],
       ),
     );
   }

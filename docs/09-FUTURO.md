@@ -79,8 +79,8 @@ hierarquia, não de cálculo.
 ### 7 · Contas de desenvolvedor e publicação
 
 Bloqueadores listados em [07-OPERACAO](07-OPERACAO.md): contas Google Play e Apple, um Mac, **Sign in
-with Apple**, exclusão de conta na interface, ficha de segurança de dados e um canal de atendimento
-publicado.
+with Apple**, ficha de segurança de dados e um canal de atendimento publicado. A exclusão de conta
+dentro do aplicativo saiu da lista em 2026-09-19.
 
 ⚠️ **O aplicativo nunca rodou em iOS**, nem em simulador. Publicar nas duas lojas significa descobrir
 o comportamento em iOS do zero, e é o item de maior incerteza deste roadmap — pode custar horas ou

@@ -157,7 +157,7 @@ Nada disso existe hoje. Todos são bloqueadores de `[09-FUTURO](09-FUTURO.md)`, 
 | Mac para build e publicação iOS | ❌ | Não há alternativa oficial |
 | **O app rodar em iOS ao menos uma vez** | ❌ | Nunca executado, nem em simulador |
 | **Sign in with Apple** | ❌ | A App Store exige quando há login social de terceiros, e o sistema só tem Google |
-| Exclusão de conta dentro do app | ⚠️ | Existe no backend (`api/account.py`), falta a tela |
+| Exclusão de conta dentro do app | ✅ | `/voce/conta` → **Excluir esta conta**, com a exportação oferecida ao lado |
 | URL de privacidade pública | ✅ | `/privacidade`, sem login |
 | URL de termos pública | ✅ | `/termos` |
 | Ficha de segurança de dados | ❌ | A escrever, a partir da lista de permissão da telemetria |
