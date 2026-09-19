@@ -16,9 +16,8 @@ Subir, observar, reverter — e o que falta para publicar nas lojas.
 URL de produção: `https://fiance.up.railway.app`
 
 ⚠️ **Staging acompanha a mesma branch que produção (`main`)**, então ele não é um passo *antes* do
-deploy: é uma segunda cópia do mesmo commit. Para virar staging de verdade, precisaria acompanhar
-outra branch — e aí seria o lugar natural de resolver o item 5 de
-[10-PROBLEMAS](10-PROBLEMAS.md), em que um commit vermelho vai direto a produção.
+deploy: é uma segunda cópia do mesmo commit, e os dois sobem juntos. Para virar staging de verdade,
+precisaria acompanhar outra branch.
 
 ---
 
@@ -43,6 +42,25 @@ web: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers ${WEB_CONCURRENC
 
 Dois workers são seguros porque o cache mora no banco da aplicação e os jobs de background são
 protegidos por lock no banco.
+
+### Dois caminhos sobem código, e os dois esperam o CI
+
+| Caminho | Gatilho | Espera o CI? |
+|---|---|---|
+| Auto-deploy do Railway | push em `main`, nos **dois** ambientes | Sim, desde 2026-09-19 |
+| [deploy.yml](../.github/workflows/deploy.yml) | manual, com confirmação escrita para produção | Sim, e recusa commit com verificação falhando |
+
+**A espera do CI é o botão `Wait for CI`** (Service → Settings → Source), e ele vive no
+`DeploymentTrigger`: nenhuma rota da API pública, comando da CLI ou agente do Railway alcança esse
+campo — o agente chega a relatar sucesso sem ter mudado nada. Confira sempre por
+`source.checkSuites` na descrição do serviço, nunca pela confirmação de quem mexeu.
+
+⚠️ Com a espera ligada, **commit sem verificação nenhuma não sobe**: o Railway fica aguardando um
+check suite que nunca chega. Se um push precisar ir ao ar com o CI fora do ar, o caminho é promover
+pelo `deploy.yml` ou disparar o deploy à mão no painel.
+
+O caminho manual **nunca rodou**: ele exige `RAILWAY_TOKEN` nos segredos e `RAILWAY_SERVICE` e
+`SITE_URL` nas variáveis de cada ambiente do GitHub. Sem isso ele para com mensagem, de propósito.
 
 ---
 

@@ -258,12 +258,6 @@ O que havia rodava no navegador e saiu com o front web.
 Três não têm equivalente no Dart: **gráfico sem tabela equivalente**, **destino de navegação
 inexistente** *(esta foi portada — regra 13 do lint)* e **controle montado à mão**.
 
-### 5 · A API de produção sobe sem esperar o CI
-
-O serviço tem gatilho em `main` e `checkSuites: false`. Um commit vermelho vai ao ar — e o
-pre-deploy é `python -m app.release`, então **uma migração ruim é aplicada antes de qualquer teste
-terminar**. É o item de maior risco operacional da lista.
-
 ### 6 · Rótulo e régua são escritos dos dois lados — os números já são comparados, os textos não
 
 Desde 2026-09-13, `tests/test_regua_nas_duas_plataformas.py` confronta os **cinco limiares
