@@ -116,6 +116,12 @@ remover a proveniência para "limpar a interface".
   busca a fonte em runtime; em `flutter test` o cliente HTTP é dublado e a busca nunca completa. Sem
   as fontes carregadas por `FontLoader`, o Flutter desenha caixas pretas no lugar do texto — e a
   imagem engana quem for avaliá-la. A fonte de ícones vem do próprio SDK.
+- **O plugin de notificação não tem implementação de plataforma sob `flutter test`.** O
+  `AppShell` chama `NotificationsService.init()` no primeiro quadro, e o
+  `LateInitializationError` que sai dali derrubava a captura de toda tela dentro da casca —
+  `/patrimonio` no estado `conteudo` ficou meses sem imagem por isso. A exceção é consumida junto
+  com a do `google_fonts`; qualquer outra continua derrubando o teste, e foi assim que o estouro
+  de 11 px no cabeçalho do gráfico de evolução apareceu.
 - **`toImage` roda dentro de `tester.runAsync`.** Fora dele o Future não completa no relógio falso do
   teste, e cada captura passa a levar **dez minutos** em vez de um segundo.
 - **Um `pump` não basta.** Cada Future do Riverpod resolve num ciclo, e tela com providers aninhados

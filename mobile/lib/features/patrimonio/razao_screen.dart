@@ -38,6 +38,8 @@ Future<void> abrirFormDeLancamento(BuildContext context, WidgetRef ref) async {
   }
 }
 
+const double _rodapeDoFab = 88;
+
 class RazaoScreen extends ConsumerWidget {
   const RazaoScreen({super.key});
 
@@ -46,8 +48,18 @@ class RazaoScreen extends ConsumerWidget {
     final pagina = ref.watch(razaoFiltradoProvider);
     final filtro = ref.watch(razaoFiltroProvider);
 
+    final razaoEmBranco =
+        (pagina.valueOrNull?.items.isEmpty ?? false) && filtro.vazio;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Livro-razão')),
+      floatingActionButton: razaoEmBranco
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => abrirFormDeLancamento(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Registrar'),
+            ),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(razaoFiltradoProvider),
         child: pagina.when(
@@ -69,10 +81,10 @@ class RazaoScreen extends ConsumerWidget {
                   FiLayout.gutter,
                   FiSpace.s3,
                   FiLayout.gutter,
-                  FiLayout.scrollTail,
+                  _rodapeDoFab,
                 ),
                 children: [
-                  const _Filtros(),
+                  const _BarraDeFiltros(),
                   const SizedBox(height: FiSpace.s5),
                   FiEmptyState(
                     title: 'Nenhum lançamento com estes filtros',
@@ -113,20 +125,15 @@ class RazaoScreen extends ConsumerWidget {
                 FiLayout.gutter,
                 FiSpace.s3,
                 FiLayout.gutter,
-                FiLayout.scrollTail,
+                _rodapeDoFab,
               ),
               children: [
                 const _Cabecalho(),
                 const SizedBox(height: FiSpace.s5),
-                const _Filtros(),
+                const _BarraDeFiltros(),
                 FiSection(
                   title: 'Lançamentos',
                   count: data.items.length,
-                  action: FiButton.secondary(
-                    label: 'Registrar',
-                    icon: Icons.add,
-                    onPressed: () => abrirFormDeLancamento(context, ref),
-                  ),
                   child: Column(
                     children: [
                       for (final item in data.items)
@@ -196,86 +203,175 @@ Future<void> apagarLancamento(
   }
 }
 
-class _Filtros extends ConsumerWidget {
-  const _Filtros();
+const _tiposDeLancamento = {
+  'buy': 'Compras',
+  'sell': 'Vendas',
+  'split': 'Desdobramentos',
+  'bonus': 'Bonificações',
+  'transfer_in': 'Transferências recebidas',
+  'transfer_out': 'Transferências enviadas',
+  'amortization': 'Amortizações',
+  'adjust': 'Declarações de posição',
+};
 
-  static const _tipos = {
-    'buy': 'Compras',
-    'sell': 'Vendas',
-    'split': 'Desdobramentos',
-    'bonus': 'Bonificações',
-    'transfer_in': 'Transferências recebidas',
-    'transfer_out': 'Transferências enviadas',
-    'amortization': 'Amortizações',
-    'adjust': 'Declarações de posição',
-  };
+const _periodosDoRazao = {
+  'mes': 'Este mês',
+  'ano': 'Este ano',
+  '12m': 'Últimos 12 meses',
+};
 
-  static const _periodos = {
-    'mes': 'Este mês',
-    'ano': 'Este ano',
-    '12m': 'Últimos 12 meses',
-  };
+String _recorteEmPalavras(RazaoFiltro filtro) {
+  final partes = <String>[
+    if (filtro.periodo != null) _periodosDoRazao[filtro.periodo] ?? filtro.periodo!,
+    if (filtro.kinds.length == 1)
+      _tiposDeLancamento[filtro.kinds.first] ?? filtro.kinds.first
+    else if (filtro.kinds.length > 1)
+      '${filtro.kinds.length} tipos',
+    if (filtro.symbol != null) filtro.symbol!,
+  ];
+  return partes.join(' · ');
+}
+
+class _BarraDeFiltros extends ConsumerWidget {
+  const _BarraDeFiltros();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filtro = ref.watch(razaoFiltroProvider);
+    final ativos = filtro.ativos;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            filtro.vazio
+                ? 'TODOS OS LANÇAMENTOS'
+                : 'RECORTE · ${_recorteEmPalavras(filtro).toUpperCase()}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+          ),
+        ),
+        const SizedBox(width: FiSpace.s3),
+        FiButton.secondary(
+          label: ativos == 0 ? 'Filtros' : 'Filtros · $ativos',
+          icon: Icons.tune,
+          onPressed: () => abrirFolhaDeFiltros(context),
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> abrirFolhaDeFiltros(BuildContext context) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  showDragHandle: true,
+  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+  builder: (context) => Padding(
+    padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+    child: const _FolhaDeFiltros(),
+  ),
+);
+
+class _FolhaDeFiltros extends ConsumerWidget {
+  const _FolhaDeFiltros();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filtro = ref.watch(razaoFiltroProvider);
     final notifier = ref.read(razaoFiltroProvider.notifier);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s2,
+          FiLayout.gutter,
+          FiSpace.s5,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Text(
-                filtro.vazio
-                    ? 'TODOS OS LANÇAMENTOS'
-                    : 'RECORTE · ${filtro.ativos}',
-                style: FiType.eyebrow.copyWith(color: fiInk3(context)),
-              ),
+            Text(
+              'Recortar o razão',
+              style: FiType.title.copyWith(color: fiInk1(context)),
             ),
-            if (!filtro.vazio)
-              FiButton.quiet(
-                label: 'Limpar',
-                onPressed: () => notifier.state = const RazaoFiltro(),
-              ),
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              'O recorte muda o que a lista mostra, nunca o que está lançado.',
+              style: FiType.caption.copyWith(color: fiInk3(context)),
+            ),
+
+            const SizedBox(height: FiSpace.s5),
+            Text(
+              'PERÍODO',
+              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s3),
+            Wrap(
+              spacing: FiSpace.s2,
+              runSpacing: FiSpace.s2,
+              children: [
+                for (final e in _periodosDoRazao.entries)
+                  FiChoiceChip(
+                    label: e.value,
+                    selected: filtro.periodo == e.key,
+                    onSelected: () => notifier.state = filtro.periodo == e.key
+                        ? filtro.copyWith(limparPeriodo: true)
+                        : filtro.copyWith(periodo: e.key),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: FiSpace.s5),
+            Text(
+              'TIPO DE LANÇAMENTO',
+              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s3),
+            Wrap(
+              spacing: FiSpace.s2,
+              runSpacing: FiSpace.s2,
+              children: [
+                for (final e in _tiposDeLancamento.entries)
+                  FiChoiceChip(
+                    label: e.value,
+                    selected: filtro.kinds.contains(e.key),
+                    onSelected: () {
+                      final tipos = [...filtro.kinds];
+                      if (!tipos.remove(e.key)) tipos.add(e.key);
+                      notifier.state = filtro.copyWith(kinds: tipos);
+                    },
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: FiSpace.s5),
+            Text(
+              'ATIVO',
+              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+            ),
+            const SizedBox(height: FiSpace.s3),
+            _FiltroDeTicker(atual: filtro.symbol),
+
+            const SizedBox(height: FiSpace.s6),
+            FiButton.primary(
+              label: 'Ver os lançamentos',
+              expand: true,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            const SizedBox(height: FiSpace.s2),
+            FiButton.quiet(
+              label: 'Limpar o recorte',
+              onPressed: filtro.vazio
+                  ? null
+                  : () => notifier.state = const RazaoFiltro(),
+            ),
           ],
         ),
-        const SizedBox(height: FiSpace.s3),
-        Wrap(
-          spacing: FiSpace.s2,
-          runSpacing: FiSpace.s2,
-          children: [
-            for (final e in _periodos.entries)
-              FiChoiceChip(
-                label: e.value,
-                selected: filtro.periodo == e.key,
-                onSelected: () => notifier.state = filtro.periodo == e.key
-                    ? filtro.copyWith(limparPeriodo: true)
-                    : filtro.copyWith(periodo: e.key),
-              ),
-          ],
-        ),
-        const SizedBox(height: FiSpace.s2),
-        Wrap(
-          spacing: FiSpace.s2,
-          runSpacing: FiSpace.s2,
-          children: [
-            for (final e in _tipos.entries)
-              FiChoiceChip(
-                label: e.value,
-                selected: filtro.kinds.contains(e.key),
-                onSelected: () {
-                  final tipos = [...filtro.kinds];
-                  if (!tipos.remove(e.key)) tipos.add(e.key);
-                  notifier.state = filtro.copyWith(kinds: tipos);
-                },
-              ),
-          ],
-        ),
-        const SizedBox(height: FiSpace.s3),
-        _FiltroDeTicker(atual: filtro.symbol),
-      ],
+      ),
     );
   }
 }
@@ -426,11 +522,11 @@ class _Cabecalho extends StatelessWidget {
         ),
         const SizedBox(height: FiSpace.s2),
         Text(
-          'Cada linha é um fato. A posição e o preço médio que você vê no Patrimônio, e o imposto '
-          'apurado no mês, são projeções destes lançamentos — não números guardados à parte.',
+          'Cada linha é um fato, e a posição, o preço médio e o imposto do mês são projeções '
+          'dele.',
           style: FiType.body.copyWith(color: fiInk2(context)),
         ),
-        const SizedBox(height: FiSpace.s3),
+        const SizedBox(height: FiSpace.s2),
         const FiProvenance(
           summary: 'Como a posição é reconstruída',
           method: 'Preço médio pela convenção brasileira: a venda reduz quantidade e custo, '

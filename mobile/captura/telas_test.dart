@@ -762,15 +762,16 @@ Future<void> _montar(
     await tester.pump(const Duration(milliseconds: 120));
   }
 
-  // O google_fonts lanca a cada peso que nao esta nos assets, e sem rede no teste nao ha como
-  // busca-lo. A fonte ja veio pelo FontLoader, entao a excecao e ruido: consumida, o teste segue
-  // e a imagem sai. Qualquer outra excecao continua derrubando o teste.
+  // O google_fonts lanca a cada peso que nao esta nos assets, e o plugin de notificacao nao tem
+  // implementacao de plataforma sob flutter test. As duas sao ruido do ambiente: consumidas, o
+  // teste segue e a imagem sai. Qualquer outra excecao continua derrubando o teste.
   while (true) {
     final excecao = tester.takeException();
     if (excecao == null) break;
-    if (!excecao.toString().contains('allowRuntimeFetching')) {
-      throw excecao as Object;
-    }
+    final texto = excecao.toString();
+    if (texto.contains('allowRuntimeFetching')) continue;
+    if (texto.contains('LateInitializationError')) continue;
+    throw excecao as Object;
   }
 }
 

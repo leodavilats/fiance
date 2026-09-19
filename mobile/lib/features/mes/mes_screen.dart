@@ -308,11 +308,6 @@ class _ParaASobra extends StatelessWidget {
                       'é o próprio livre.',
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
-          const SizedBox(height: FiSpace.s2),
-          FiNavAction(
-            label: 'Decidir o que fazer com ela',
-            onPressed: () => GoRouter.of(context).go('/sobra'),
-          ),
         ],
       ),
     );

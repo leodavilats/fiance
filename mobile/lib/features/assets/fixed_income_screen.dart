@@ -132,8 +132,8 @@ class FixedIncomeScreen extends ConsumerWidget {
                 FiSection(
                   title: 'Aplicações',
                   count: data.items.length,
-                  action: FiButton.secondary(
-                    label: 'Cadastrar aplicação',
+                  trailing: FiButton.quiet(
+                    label: 'Cadastrar',
                     icon: Icons.add,
                     onPressed: () => _openForm(context, ref),
                   ),
@@ -165,6 +165,7 @@ class _Totais extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fonte = data.fonteTaxas == 'bcb' ? 'BCB' : 'estimativa';
+    final rendeu = data.totalRendimento >= 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,10 +175,10 @@ class _Totais extends StatelessWidget {
           figure: formatCurrency(data.totalAtual),
           size: FiHeadlineSize.xl,
           support:
-              '${formatCurrency(data.totalRendimento)} de rendimento líquido '
-              '(${data.rendimentoPct.toStringAsFixed(2)}%) sobre o aplicado',
+              '${rendeu ? '+' : ''}${formatCurrency(data.totalRendimento)} de rendimento '
+              'líquido (${formatPercent(data.rendimentoPct)}) sobre o aplicado',
           supportColor: fiDirectionColor(
-            data.totalRendimento >= 0 ? 1 : -1,
+            rendeu ? 1 : -1,
             Theme.of(context).brightness,
           ),
         ),
@@ -185,13 +186,12 @@ class _Totais extends StatelessWidget {
         FiFigures(
           figures: {
             'APLICADO': formatCurrency(data.totalInvestido),
-            'TAXA MÉDIA': '${data.taxaMediaAa.toStringAsFixed(2)}% a.a.',
-            'CDI DE REFERÊNCIA': '${data.cdiReferencia.toStringAsFixed(2)}% a.a.',
+            'TAXA MÉDIA': '${formatPercent(data.taxaMediaAa)} ao ano',
           },
         ),
         const SizedBox(height: FiSpace.s2),
         Text(
-          'CDI lido do $fonte.',
+          'Contra um CDI de ${formatPercent(data.cdiReferencia)} ao ano, lido do $fonte.',
           style: FiType.caption.copyWith(color: fiInk3(context)),
         ),
       ],
@@ -214,6 +214,10 @@ class _AplicacaoObject extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final vencendo = item.vencimentoProximo && item.diasParaVencimento != null;
+    final rendeu = item.rendimentoAcumulado >= 0;
+    final prazo = item.vencimento == null
+        ? liquidezLabel(item.liquidez)
+        : 'vence em ${formatDate(item.vencimento)}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
@@ -244,10 +248,8 @@ class _AplicacaoObject extends StatelessWidget {
               ),
               const SizedBox(height: FiSpace.s1),
               Text(
-                '${item.taxaAnualEfetivaPct.toStringAsFixed(2)}% a.a.'
-                '${item.isentoIr == true ? ' · isento de IR' : ''} · '
-                '${liquidezLabel(item.liquidez)}'
-                '${item.vencimento != null ? ' · vence em ${item.vencimento}' : ''}',
+                '${formatPercent(item.taxaAnualEfetivaPct)} ao ano'
+                '${item.isentoIr == true ? ' · isento de IR' : ''} · $prazo',
                 style: FiType.caption.copyWith(color: fiInk2(context)),
               ),
 
@@ -257,8 +259,15 @@ class _AplicacaoObject extends StatelessWidget {
                 figures: {
                   'APLICADO': formatCurrency(item.valorInvestido),
                   'HOJE': formatCurrency(item.valorAtual),
-                  'RENDIMENTO': '+${item.rendimentoPct.toStringAsFixed(2)}%',
                 },
+              ),
+              const SizedBox(height: FiSpace.s2),
+              Text(
+                '${rendeu ? '+' : ''}${formatCurrency(item.rendimentoAcumulado)} '
+                '(${formatPercent(item.rendimentoPct)}) de rendimento',
+                style: FiType.caption.copyWith(
+                  color: fiDirectionColor(rendeu ? 1 : -1, brightness),
+                ),
               ),
 
               if (vencendo) ...[
@@ -278,8 +287,9 @@ class _AplicacaoObject extends StatelessWidget {
                 ),
               ],
 
-              const SizedBox(height: FiSpace.s3),
+              const SizedBox(height: FiSpace.s4),
               Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
+              const SizedBox(height: FiSpace.s1),
               Row(
                 children: [
                   Flexible(
@@ -518,12 +528,14 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
                 children: [
                   FiDataRow(
                     label: 'Data de aplicação',
-                    value: _iso(_dataAplicacao),
+                    value: formatDate(_iso(_dataAplicacao)),
                     onTap: () => _pickDate(vencimento: false),
                   ),
                   FiDataRow(
                     label: 'Vencimento',
-                    value: _vencimento != null ? _iso(_vencimento!) : 'sem vencimento',
+                    value: _vencimento == null
+                        ? 'sem vencimento'
+                        : formatDate(_iso(_vencimento!)),
                     onTap: () => _pickDate(vencimento: true),
                   ),
                 ],

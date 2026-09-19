@@ -67,38 +67,44 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // A altura e fixa: o texto muda ao arrastar sobre a linha, e sem ela o grafico
+        // sobe e desce debaixo do dedo.
         SizedBox(
-          height: 40,
-          child: Row(
+          height: 46,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Expanded(
+                    child: Text(
                       tocado == null
                           ? 'HOJE'
                           : _dateFormat.format(_dateAt(tocado)).toUpperCase(),
                       style: FiType.eyebrow.copyWith(color: fiInk3(context)),
                     ),
-                    Text(
-                      '${formatCurrency(foco.totalCurrent)} sobre '
-                      '${formatCurrency(foco.totalInvested)} aplicados',
-                      style: FiType.caption.copyWith(color: fiInk2(context)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: FiSpace.s3),
-              Text(
-                '${foco.totalPnl >= 0 ? '+' : ''}${formatCurrency(foco.totalPnl)}',
-                style: FiType.figure.copyWith(
-                  color: fiDirectionColor(
-                    foco.totalPnl >= 0 ? 1 : -1,
-                    brightness,
                   ),
-                ),
+                  const SizedBox(width: FiSpace.s3),
+                  Text(
+                    '${foco.totalPnl >= 0 ? '+' : ''}${formatCurrency(foco.totalPnl)}',
+                    style: FiType.figure.copyWith(
+                      color: fiDirectionColor(
+                        foco.totalPnl >= 0 ? 1 : -1,
+                        brightness,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: FiSpace.s1),
+              Text(
+                '${formatCurrency(foco.totalCurrent)} sobre '
+                '${formatCurrency(foco.totalInvested)} aplicados',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: FiType.caption.copyWith(color: fiInk2(context)),
               ),
             ],
           ),

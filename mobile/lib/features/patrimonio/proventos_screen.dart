@@ -113,8 +113,8 @@ class ProventosScreen extends ConsumerWidget {
                     body: 'Provento creditado é lançamento do razão, e é ele que alimenta a '
                         'renda do mês. Não se lança no caixa: contaria o mesmo dinheiro duas '
                         'vezes.',
-                    hint: 'Registre o que já caiu na conta, ou confirme o que o seu razão '
-                        'já prova que é seu.',
+                    hint: 'Registre o que já caiu na conta, ou confirme abaixo o que o seu '
+                        'razão já prova que é seu.',
                     action: FiButton.primary(
                       label: 'Registrar provento',
                       icon: Icons.add,
@@ -137,12 +137,12 @@ class ProventosScreen extends ConsumerWidget {
               ),
               children: [
                 _Totais(data: data),
-                const SizedBox(height: FiSpace.s5),
                 const _AguardandoConfirmacao(),
+                const _Calendario(),
                 FiSection(
                   title: 'Recebidos',
                   count: data.totalCount,
-                  action: FiButton.secondary(
+                  trailing: FiButton.quiet(
                     label: 'Registrar',
                     icon: Icons.add,
                     onPressed: () => abrirFormDeProvento(context, ref),
@@ -157,10 +157,10 @@ class ProventosScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const _Calendario(),
                 if (data.byTicker.isNotEmpty)
                   FiSection(
                     title: 'Por ativo',
+                    hint: 'Quem paga quanto, nos últimos 12 meses.',
                     child: FiRows(
                       children: [
                         for (final t in data.byTicker.take(12))
@@ -288,7 +288,7 @@ class _AguardandoConfirmacao extends ConsumerWidget {
 
     return pendentes.maybeWhen(
       loading: () => const FiSection(
-        title: 'Aguardando sua confirmação',
+        title: 'Confirme o que já caiu',
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 2),
       ),
       data: (data) {
@@ -296,7 +296,7 @@ class _AguardandoConfirmacao extends ConsumerWidget {
         if (provados.isEmpty) return const SizedBox.shrink();
 
         return _ListaDeSugestoes(
-          titulo: 'Aguardando sua confirmação',
+          titulo: 'Confirme o que já caiu',
           sugestoes: provados,
           hint: 'O seu razão mostra a posição já na data-com, então estes proventos são seus. '
               'Falta só dizer que caíram na conta — nada é lançado antes disso.',
@@ -408,14 +408,33 @@ class _ListaDeSugestoesState extends ConsumerState<_ListaDeSugestoes> {
 
   @override
   Widget build(BuildContext context) {
-    final escolhidos = widget.sugestoes
+    final marcados = widget.sugestoes
         .where((s) => _escolhidos.contains(_chave(s)))
-        .length;
+        .toList();
+    final escolhidos = marcados.length;
+    final somaMarcada = marcados.fold<double>(0, (t, s) => t + s.amount);
     final total = widget.sugestoes.fold<double>(0, (t, s) => t + s.amount);
+    final todos = escolhidos == widget.sugestoes.length;
 
     final corpo = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (widget.sugestoes.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: FiSpace.s2),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FiButton.quiet(
+                label: todos ? 'Desmarcar todos' : 'Marcar todos',
+                onPressed: () => setState(() {
+                  _escolhidos.clear();
+                  if (!todos) {
+                    _escolhidos.addAll(widget.sugestoes.map(_chave));
+                  }
+                }),
+              ),
+            ),
+          ),
         for (final s in widget.sugestoes)
           _SugestaoObject(
             sugestao: s,
@@ -426,12 +445,21 @@ class _ListaDeSugestoesState extends ConsumerState<_ListaDeSugestoes> {
             }),
           ),
         const SizedBox(height: FiSpace.s3),
+        Text(
+          escolhidos == 0
+              ? 'Marque o que já caiu na conta. O que ficar desmarcado não é lançado.'
+              : '$escolhidos de ${widget.sugestoes.length} marcados, '
+                    '${formatCurrency(somaMarcada)} no total.',
+          style: FiType.caption.copyWith(color: fiInk3(context)),
+        ),
+        const SizedBox(height: FiSpace.s2),
         FiButton.primary(
           label: _confirmando
               ? 'Lançando…'
               : escolhidos == 0
-              ? 'Marque o que já caiu na conta'
+              ? 'Lançar os marcados'
               : 'Lançar $escolhidos ${escolhidos == 1 ? 'provento' : 'proventos'}',
+          busy: _confirmando,
           onPressed: _confirmando || escolhidos == 0 ? null : _confirmar,
         ),
       ],
@@ -493,6 +521,7 @@ class _SugestaoObject extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
       child: FiObject(
+        onTap: onToggle,
         accent: marcada ? fiStateColor(FiState.favorable, brightness) : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

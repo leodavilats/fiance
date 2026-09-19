@@ -160,7 +160,7 @@ class _OndeAportar extends ConsumerWidget {
               : 'Sem alocação-alvo declarada, a ordem sai pelo score do ativo.',
           action: FiNavAction(
             label: restantes > 0
-                ? 'Ver os outros $restantes e simular outro valor'
+                ? 'Ver os outros $restantes e simular'
                 : 'Simular outro valor',
             onPressed: () => GoRouter.of(context).go('/sobra/aporte'),
           ),
@@ -339,7 +339,8 @@ class _ContraAMeta extends ConsumerWidget {
           action: FiNavAction(
             label: data.items.isEmpty
                 ? 'Ver a alocação inteira'
-                : 'Ver a alocação inteira e as ${data.items.length} posições para revisar',
+                : 'Ver a alocação e ${data.items.length} '
+                      '${data.items.length == 1 ? 'posição' : 'posições'}',
             onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
           ),
           child: Column(
