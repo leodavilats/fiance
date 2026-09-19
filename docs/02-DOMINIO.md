@@ -27,11 +27,16 @@ já é lançamento do razão; a camada de serviço o soma em memória na leitura
 impossível, por construção, contar o mesmo dinheiro duas vezes. O tipo recusa categoria `provento`
 sem `derived=True`, e recusa `derived` em qualquer outra categoria.
 
-**Margem de segurança** — distância percentual entre o preço justo estimado e o preço de mercado:
-`(consenso − preço) ÷ consenso`. Positiva significa preço abaixo do justo.
+**Faixa de preço justo** — piso e teto dos métodos que se aplicam ao ativo, do mais conservador ao
+mais otimista. Não há média: os métodos não medem a mesma coisa. O número de métodos viaja junto
+(`consensus_methods`), porque faixa de um método é um ponto.
 
-**Consenso** — média simples dos métodos de preço justo aplicáveis àquela classe de ativo. O número
-de métodos viaja junto (`consensus_methods`), porque um consenso de um método não é consenso.
+**Margem de segurança** — distância do preço de mercado até a **borda** da faixa: contra o piso
+quando o preço está abaixo dele, contra o teto quando está acima, e zero dentro da faixa. Positiva
+significa preço abaixo do método mais pessimista.
+
+**Leitura de tendência** — o que o produto diz sobre ativo ao qual nenhum método de preço justo se
+aplica, como ETF de índice. Sai marcada (`basis: trend`) e o que a derruba é a tendência virar.
 
 **Cascata da sobra** — a ordem em que o dinheiro que sobra é destinado: dívida cara, depois reserva,
 depois aporte. Pode terminar sem aporte, e isso é sucesso.

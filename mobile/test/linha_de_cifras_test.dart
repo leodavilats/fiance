@@ -11,6 +11,8 @@ void main() {
     'name': 'Fundo de Investimento Imobiliario Atrio Reit Recebiveis',
     'price': 4.55,
     'fair_price': 10.03,
+    'fair_low': 10.03,
+    'fair_high': 10.03,
     'margin_of_safety': 0.5464,
     'dividend_yield': 20.66,
     'score': 100.0,
@@ -90,7 +92,7 @@ void main() {
   testWidgets('a base de cada número continua na tela', (tester) async {
     await montar(tester, 390);
 
-    expect(find.textContaining('1 método no consenso'), findsOneWidget);
+    expect(find.textContaining('1 método na faixa'), findsOneWidget);
     expect(find.textContaining('5 anos de proventos'), findsOneWidget);
   });
 }

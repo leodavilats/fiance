@@ -13,6 +13,8 @@ class Opportunity(BaseModel):
     as_of: float | None = None
 
     fair_price: float | None = None
+    fair_low: float | None = None
+    fair_high: float | None = None
     bazin: float | None = None
     graham: float | None = None
     pvp: float | None = None
@@ -20,6 +22,7 @@ class Opportunity(BaseModel):
     dividend_yield: float | None = None
     verdict: str
     label: str
+    basis: str = "band"
     confidence: float = 0.0
     data_years: int = 0
     consensus_methods: int = 0

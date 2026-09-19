@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.analysis.decision import (
+    BASIS_BAND,
+    BASIS_TREND,
     LABELS,
     MOS_BUY,
     MOS_SELL,
@@ -42,11 +44,13 @@ class Falsifier:
         }
 
 
-def _price_at(consensus: float, mos: float) -> float:
-    return consensus * (1 - mos)
+def _price_at(fair_low: float, fair_high: float, mos: float) -> float:
+    return (fair_low if mos >= 0 else fair_high) * (1 - mos)
 
 
-def _price_falsifiers(consensus: float, price: float, verdict: str) -> list[Falsifier]:
+def _price_falsifiers(
+    fair_low: float, fair_high: float, price: float, verdict: str
+) -> list[Falsifier]:
     if verdict not in _ORDER:
         return []
 
@@ -55,7 +59,7 @@ def _price_falsifiers(consensus: float, price: float, verdict: str) -> list[Fals
 
     if indice > 0:
         alvo = _ORDER[indice - 1]
-        alvo_preco = _price_at(consensus, _BANDS[indice - 1][0])
+        alvo_preco = _price_at(fair_low, fair_high, _BANDS[indice - 1][0])
         if alvo_preco >= price:
             return saida
         saida.append(
@@ -72,7 +76,7 @@ def _price_falsifiers(consensus: float, price: float, verdict: str) -> list[Fals
 
     if indice < len(_ORDER) - 1:
         alvo = _ORDER[indice + 1]
-        alvo_preco = _price_at(consensus, _BANDS[indice][0])
+        alvo_preco = _price_at(fair_low, fair_high, _BANDS[indice][0])
         if alvo_preco <= price:
             return saida
         saida.append(
@@ -92,21 +96,18 @@ def _price_falsifiers(consensus: float, price: float, verdict: str) -> list[Fals
 
 def _dividend_falsifier(
     bazin: float | None,
-    consensus: float | None,
-    consensus_methods: int,
+    fair_low: float | None,
     price: float,
     avg_dividend: float | None,
 ) -> Falsifier | None:
-    if not bazin or not consensus or not avg_dividend or consensus_methods < 1:
-        return None
-    if consensus <= price:
+    if not bazin or not fair_low or not avg_dividend:
         return None
 
-    outros = consensus * consensus_methods - bazin
-    bazin_alvo = price * consensus_methods - outros
-    if bazin_alvo >= bazin:
+    if abs(bazin - fair_low) > 0.01 or price >= fair_low:
         return None
-    if bazin_alvo < 0:
+
+    bazin_alvo = price / (1 - MOS_BUY)
+    if bazin_alvo >= bazin or bazin_alvo < 0:
         return None
 
     corte = 1 - bazin_alvo / bazin
@@ -238,19 +239,28 @@ def falsifiers(
     sma_200: float | None = None,
     rsi_14: float | None = None,
     band_verdict: str | None = None,
+    fair_low: float | None = None,
+    fair_high: float | None = None,
+    basis: str = BASIS_BAND,
 ) -> list[dict]:
-    if not price or not consensus or verdict == "UNKNOWN":
+    if not price or verdict == "UNKNOWN":
+        return []
+
+    if basis == BASIS_TREND:
+        return momentum_falsifiers(trend, rsi_14)
+
+    if fair_low is None or fair_high is None:
         return []
 
     banda = band_verdict or verdict
 
-    itens = _price_falsifiers(consensus, price, banda)
+    itens = _price_falsifiers(fair_low, fair_high, price, banda)
 
     ajuste = _technical_override_falsifier(banda, verdict, trend, rsi_14)
     if ajuste:
         itens.insert(0, ajuste)
 
-    dividendo = _dividend_falsifier(bazin, consensus, consensus_methods, price, avg_dividend)
+    dividendo = _dividend_falsifier(bazin, fair_low, price, avg_dividend)
     if dividendo:
         itens.append(dividendo)
 

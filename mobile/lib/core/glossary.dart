@@ -40,12 +40,21 @@ final Map<String, String> glossary = {
       'Dívida / Patrimônio Líquido — quanto a empresa deve em relação ao próprio patrimônio. '
       'Abaixo de 100% é confortável.',
   'consenso':
-      'Média dos métodos de preço justo que se sustentam para o ativo. A tela mostra quantos '
-      'entraram na conta: um consenso de um método é bem menos confiável que de três. Cada método '
-      'tem condições próprias — Graham se abstém fora de P/L 15 e P/VP 1,5, e Bazin exige '
-      'histórico de proventos. E quando os métodos discordam entre si por 2 vezes ou mais, não há '
-      'consenso: você vê o número de cada um, e o veredito fica em aberto em vez de sair de uma '
-      'média que nenhum método sustenta.',
+      'O preço justo sai como faixa, do método mais conservador ao mais otimista, porque os '
+      'métodos não medem a mesma coisa: Bazin mede o dividendo, Graham mede lucro e patrimônio, '
+      'e os lucros descontados medem crescimento. A média deles seria um número que nenhum '
+      'método sustenta. Cada um tem condições próprias — Graham se abstém fora de P/L 15 e '
+      'P/VP 1,5, e Bazin exige histórico de proventos —, e a tela mostra quantos entraram na '
+      'faixa. Faixa larga é sinal de que se sabe pouco, não de que o número é preciso.',
+  'faixa_de_preco_justo':
+      'Piso e teto dos métodos que se aplicam ao ativo. Abaixo do piso há margem a favor; acima '
+      'do teto, contra; dentro da faixa não há margem nenhuma, e o produto diz isso em vez de '
+      'escolher um lado. Comprar exige preço abaixo do método mais pessimista — é o que torna a '
+      'medida conservadora.',
+  'leitura_de_tendencia':
+      'Para ativo sem nenhum método aplicável, como ETF de índice, não há preço justo e o '
+      'produto diz de onde a leitura veio: médias móveis e RSI. Vem marcada como tal, e o que a '
+      'derruba é a própria tendência virar — não um preço-limite, que ali não existiria.',
   'data_years':
       'Quantos anos-calendário de proventos o sistema encontrou. Menos de 3 anos torna o Bazin '
       'pouco confiável — o número aparece ao lado do veredito para você descontar isso.',

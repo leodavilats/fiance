@@ -1,7 +1,7 @@
 # Estado do sistema
 
 **Fonte de verdade** para a pergunta *"isto existe?"*. Nenhum outro documento responde isso.
-Última revisão: 2026-09-13 · Escopo: todo o produto
+Última revisão: 2026-09-19 · Escopo: todo o produto
 
 Se um documento descrever uma funcionalidade e este arquivo disser que ela não existe, **este
 arquivo vence**.
@@ -79,7 +79,7 @@ card de ativo ele continua sendo vender e remover.
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
 | Cascata: dívida cara → aporte | `[ATUAL]` | `cashflow/cascata.py` | `surplus/surplus_screen.dart` |
-| Passo de reserva na cascata | `[IMPLEMENTADO]` | idem | ❌ **inalcançável** — falta onde declarar o alvo ([10-PROBLEMAS](10-PROBLEMAS.md), item 30) |
+| Passo de reserva na cascata | `[IMPLEMENTADO]` | idem | ✅ alvo em meses declarado em `/voce/investir`; saldo vem da renda fixa de liquidez diária |
 | Faixa piso/teto da sobra | `[ATUAL]` | `cashflow/month.py` | idem |
 | Desvio de alocação | `[ATUAL]` | `analysis/strategy.py` | `surplus/allocation_drift_screen.dart` |
 | Sugestões de aporte por categoria | `[ATUAL]` | `analysis/strategy.py` | `/sobra`, com os três primeiros destinos na própria aba; `/sobra/aporte` para a ordem inteira e a simulação |
@@ -105,7 +105,7 @@ card de ativo ele continua sendo vender e remover.
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
 | Oportunidades com score e veredito | `[ATUAL]` | `services/opportunity_service.py` | `market/opportunities_tab.dart` |
-| Preço justo por consenso de métodos | `[ATUAL]` | `analysis/fair_price.py` | idem |
+| Preço justo como faixa piso–teto | `[ATUAL]` | `analysis/fair_price.py` | idem — ETF não tem faixa e sai por leitura de tendência declarada |
 | Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — **só ações e BDRs**, ver [10-PROBLEMAS](10-PROBLEMAS.md) |
 | Falsificadores do veredito | `[ATUAL]` | `analysis/falsifiers.py` | `market/asset_detail_sheet.dart` |
 | Análise de ativo individual | `[ATUAL]` | `services/` | `market/asset_detail_sheet.dart` — a folha é a análise; `/ativo/:ticker` mostra menos e deixou de ser oferecida por botão |
@@ -158,7 +158,7 @@ prejuízo e isenção mensal. **O que não cobre:** day trade, emissão de DARF,
 | Revogação por dispositivo e por conta | `[IMPLEMENTADO]` | `session_cuts` |
 | Exclusão e exportação de conta | `[IMPLEMENTADO]` | `api/account.py` — ✅ `/voce/conta`, exclusão com frase de confirmação e exportação pela folha de compartilhamento |
 | Preferências (perfil de risco, yields, densidade) | `[ATUAL]` | `api/preferences.py` |
-| Metas | `[ATUAL]` | `api/goals.py` |
+| Metas, com alvo declarado distinto do padrão | `[ATUAL]` | `api/goals.py` — sem declaração, nada cobra desvio |
 | Alertas de preço | `[ATUAL]` | `api/alerts.py` |
 | Notificações push | `[ATUAL]` | `notifications/` |
 | Onboarding derivado | `[SEM CLIENTE]` | `api/onboarding.py` |

@@ -132,6 +132,11 @@ regressão, e `flutter test` não deve rodá-lo. Ele termina em erro mesmo com a
 desenhar um peso que não está nos assets, o `google_fonts` lança depois do fim do teste —, então quem
 diz se a captura deu certo são as imagens, e é por elas que o script confere.
 
+⚠️ **Por isso o script apaga `telas/` antes de capturar.** Enquanto ele apenas conferia que *existia*
+imagem, uma captura que nem compilava reportava sucesso mostrando a imagem da semana passada — e foi
+assim que uma tela apareceu "pronta" com uma correção que não estava nela (2026-09-19). Com a pasta
+limpa, o que sobra descreve o código de agora, e captura quebrada deixa a pasta vazia.
+
 **As fixtures vivem no próprio teste de captura.** Ao mudar a forma de uma resposta, elas são o
 segundo lugar a ajustar; se uma tela aparecer vazia ou em erro na pasta `conteudo/`, é sinal de que a
 fixture ficou para trás.

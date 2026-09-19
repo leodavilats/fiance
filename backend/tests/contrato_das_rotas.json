@@ -186,6 +186,7 @@
   "GET /api/v1/goals": [
     "category",
     "deadline",
+    "declared",
     "target_pct",
     "target_value"
   ],
@@ -253,6 +254,7 @@
     "preferred_sectors",
     "push_enabled",
     "registered_devices",
+    "reserve_months_target",
     "risk_profile",
     "updated_at"
   ],
@@ -564,6 +566,7 @@
   "PUT /api/v1/goals": [
     "category",
     "deadline",
+    "declared",
     "target_pct",
     "target_value"
   ],
@@ -587,6 +590,7 @@
     "preferred_sectors",
     "push_enabled",
     "registered_devices",
+    "reserve_months_target",
     "risk_profile",
     "updated_at"
   ],

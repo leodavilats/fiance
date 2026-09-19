@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
-import '../../core/score_ruler.dart' show consensusLabel, dataYearsLabel, trendBasisLabel;
+import '../../core/score_ruler.dart' show basisLabel, consensusLabel, fairBandLabel, dataYearsLabel, trendBasisLabel;
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/measure.dart';
@@ -102,7 +102,23 @@ class _AssetDetailContent extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: FiSpace.s3),
-                FiTag(label: a.label, state: fiVerdictState(a.verdict)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    FiTag(label: a.label, state: fiVerdictState(a.verdict)),
+                    if (basisLabel(a.basis).isNotEmpty) ...[
+                      const SizedBox(height: FiSpace.s1),
+                      SizedBox(
+                        width: 140,
+                        child: Text(
+                          basisLabel(a.basis),
+                          textAlign: TextAlign.end,
+                          style: FiType.caption.copyWith(color: fiInk3(context)),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
 
@@ -126,7 +142,8 @@ class _AssetDetailContent extends ConsumerWidget {
                     max: fiMarginOfSafetyDomain.max,
                     reference: 0,
                     readout: formatRatio(margem),
-                    note: '${band.label} · preço justo ${formatCurrency(a.consensus)}, '
+                    note: '${band.label} · faixa de preço justo '
+                        '${fairBandLabel(a.fairLow, a.fairHigh)}, '
                         '${consensusLabel(a.consensusMethods)}',
                     state: band.state,
                   );
@@ -154,8 +171,9 @@ class _AssetDetailContent extends ConsumerWidget {
                       detail: 'Fórmula de Graham',
                     ),
                   FiDataRow(
-                    label: 'Preço justo estimado',
-                    value: formatCurrency(a.consensus),
+                    label: 'Faixa de preço justo',
+                    value: fairBandLabel(a.fairLow, a.fairHigh),
+                    detail: 'Do método mais conservador ao mais otimista',
                     note: consensusLabel(a.consensusMethods),
                     emphasis: true,
                   ),
@@ -225,8 +243,8 @@ class _AssetDetailContent extends ConsumerWidget {
             FiProvenance(
               summary: 'Como chegamos nesta leitura',
               method:
-                  'O preço justo é o consenso dos métodos aplicáveis ao papel; a margem de '
-                  'segurança é a distância entre o preço de hoje e esse consenso.',
+                  'O preço justo é uma faixa, do método mais conservador ao mais otimista; a '
+                  'margem de segurança é a distância do preço de hoje até a borda da faixa.',
               source: 'Fundamentos e cotações da BRAPI.',
               asOf: idade.isEmpty ? null : 'Preço lido $idade.',
               limitation:

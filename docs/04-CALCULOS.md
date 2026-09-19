@@ -19,46 +19,59 @@ Se uma fórmula aqui divergir do código, o código está certo e este documento
 | **Lucros descontados** | LPA projetado 5 anos, desconto 13%, P/L terminal 15 | ações, BDRs | `analysis/fair_price.py:184` |
 | **VPA** | valor patrimonial por cota | FIIs | `analysis/fair_price.py:258` |
 
-### Consenso, por classe de ativo
+### A faixa, por classe de ativo
 
-| Classe | Métodos combinados |
+| Classe | Métodos que entram na faixa |
 |---|---|
 | Ação | Bazin + Graham + lucros descontados |
 | FII | Bazin + VPA |
-| ETF | **só** Bazin |
 | BDR | Graham + lucros descontados (Bazin desligado) |
+| ETF | **nenhum** — ver "Quando não há método" |
 
-`consenso = média simples dos métodos disponíveis`
+```
+piso = o mais conservador dos métodos que se aplicam
+teto = o mais otimista
+```
+
+**Não há média.** Os métodos não medem a mesma coisa — Bazin mede dividendo, Graham mede lucro e
+patrimônio, os lucros descontados medem crescimento —, e a média de estimadores incompatíveis é um
+número que nenhum deles sustenta. Ver [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md).
 
 Cada método só entra quando as próprias condições se sustentam: **Graham se abstém fora de
 P/L ≤ 15 e P/VP ≤ 1,5**, e Bazin exige dividendo médio positivo.
 
-`consensus_methods` viaja até a tela, porque um consenso de um método não é consenso — e a interface
-é obrigada a dizer quantos métodos sustentam a cifra.
+`consensus_methods` viaja até a tela, porque faixa de um método é um ponto — e a interface é
+obrigada a dizer quantos métodos a sustentam. `consensus` continua na resposta como média dos
+métodos, sem decidir nada.
 
-### Quando o consenso não é consenso
+### Quando os métodos discordam
 
-Se os métodos disponíveis discordarem entre si por **2× ou mais**
-(`MAX_METHOD_DISPERSION`), a média deles é um número que nenhum método sustenta. Nesse caso o
-produto **se abstém do veredito** (`UNKNOWN`) e diz por quê — a razão vai em `decision.reasons`, com
-a dispersão medida.
+`method_dispersion` (`teto ÷ piso`) continua sendo calculado e, acima de `MAX_METHOD_DISPERSION`,
+marca `methods_disagree`. Isso **não cala mais o veredito**: a discordância é a largura da faixa, e
+uma faixa larga leva o preço a cair dentro dela, onde a leitura é "não há margem a favor nem contra".
 
-Os preços justos de cada método continuam visíveis; o que não sai é a conclusão.
+Até 2026-09-19 a discordância produzia abstenção (`UNKNOWN`). Medida em produção naquele dia, ela
+deixava **11 de 22 ações sem veredito nenhum**.
 
-Medido em produção em 2026-09-13: **39% da amostra** tinha dispersão ≥ 2×. Casos como VALE3, em que
-Bazin dizia R$ 125,67 e os lucros descontados diziam R$ 33,20, produziam um "consenso" de R$ 79,44
-que nenhum dos dois defendia.
+### Quando não há método
 
-Sem consenso confiável não há falsificador: prometer "se cair para X, vira Comprar" sobre um veredito
-que não existe é promessa que não se pode conferir.
+Para ETF de índice não há LPA, VPA nem dividendo que sustente qualquer método: não há faixa, e
+`margin_of_safety` é `None` — nunca um número contra um preço justo inexistente.
+
+Nesse caso a leitura vem da **tendência** (médias móveis e RSI) e se declara: `decision.basis` sai
+`trend` em vez de `band`. A regra vive só em `decide()`, então o Descobrir e a análise dizem o mesmo.
+O falsificador é a tendência virar — específico e conferível.
 
 ### Margem de segurança
 
 ```
-margem = (consenso − preço) ÷ consenso
+preço < piso    →  margem = (piso − preço) ÷ piso      (a favor)
+piso ≤ preço ≤ teto  →  margem = 0                     (não há margem)
+preço > teto    →  margem = (teto − preço) ÷ teto      (contra)
 ```
 
-Positiva = preço abaixo do justo. `fair_price.py:319`
+**A margem mede contra a borda, não contra a média.** Comprar exige preço abaixo do método mais
+pessimista; ficar caro exige preço acima do mais otimista. `fair_price.py::margin_of_safety_in_band`
 
 ### Premissas
 
@@ -90,13 +103,12 @@ no período, cai para os últimos 12 meses.
    risco por setor ou porte.
 3. **O múltiplo 22,5 de Graham é de 1949 e do mercado americano.** Não é ajustado à Selic. Em juro
    alto, ele é generoso.
-4. **ETF é avaliado só por dividendos.** ETF de crescimento sai sem preço justo representativo.
-5. **A média do consenso é simples.** Métodos de qualidades diferentes pesam igual.
+4. **ETF não tem preço justo.** A leitura sai da tendência, e vem marcada como tal.
+5. **A faixa não pondera.** Um método frágil define a borda igual a um método firme — o que a
+   largura mostra é desacordo, não qualidade.
 6. **Bazin pressupõe dividendo estável.** Para empresa cíclica, projeta o passado bom para sempre.
-7. **O consenso ainda pende para dividendo.** Bazin entra em toda ação pagadora, e empresa que
-   retém lucro para crescer tende a sair "cara". A abstenção por discordância corta os casos em que
-   isso produziria um veredito sem base, mas não reequilibra o consenso onde os métodos concordam
-   num número baixo. Ver [10-PROBLEMAS](10-PROBLEMAS.md), item A0.
+7. **Faixa de um método é um ponto.** Quando só um método se aplica, a leitura volta a depender de
+   um número só — a tela declara isso, mas o risco continua.
 
 ---
 
@@ -209,17 +221,22 @@ produz veredito sozinha.
 
 O que derrubaria o veredito, em condição conferível. `analysis/falsifiers.py`
 
-Os limiares de margem dão, por álgebra, o preço em que o veredito muda:
+Os limiares de margem dão, por álgebra, o preço em que o veredito muda — e a borda usada é a mesma
+que a margem mede:
 
 ```
-preço_alvo = consenso × (1 − margem_da_banda)
+margem ≥ 0  →  preço_alvo = piso × (1 − margem_da_banda)
+margem < 0  →  preço_alvo = teto × (1 − margem_da_banda)
 ```
 
-Produz até dois falsificadores de preço — a banda acima e a banda abaixo — e um de dividendo, que
-calcula quanto o Bazin teria de cair para o consenso encostar no preço atual.
+Produz até dois falsificadores de preço — a banda acima e a banda abaixo — e um de dividendo, que só
+sai quando **é o dividendo que sustenta a tese**: Bazin no piso da faixa e preço abaixo dele. Aí ele
+calcula o corte que levaria a margem até a borda da compra.
 
-**Sem preço justo, a lista sai vazia.** Não há falsificador genérico: "fique de olho nos resultados"
-seria almanaque no lugar de uma condição conferível.
+**Sem faixa, não há preço-limite.** Para leitura de tendência (`basis: trend`), o que sai é a
+reversão da tendência e o RSI, que são conferíveis. Sem faixa **e** sem tendência, a lista sai vazia:
+não há falsificador genérico — "fique de olho nos resultados" seria almanaque no lugar de uma
+condição conferível.
 
 ---
 
@@ -362,9 +379,10 @@ compara a taxa da dívida com o que a carteira rende, e nomeia a fonte da refer�
 **2 · Reserva** — só existe com **alvo declarado em meses do próprio gasto fixo**. O gasto fixo sai
 da média dos últimos 3 meses das categorias fixas realizadas. O produto não inventa seis meses.
 
-⚠️ **Este passo nunca aparece hoje.** A matemática está escrita e testada, mas nenhuma rota passa
-`reserva_meses_alvo` e `reserva_atual`, porque **não existe onde declarar o alvo** — nem em
-`preferences`, nem em `goals`. Ver [10-PROBLEMAS](10-PROBLEMAS.md), item 30.
+O alvo em meses é declarado em `preferences.reserve_months_target`, e **nada mais é declarado**: a
+base é o gasto fixo do próprio caixa, e a reserva atual é a renda fixa de **liquidez diária** —
+papel preso até o vencimento não cobre emergência. Sem alvo, o passo não aparece. Ver
+[ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md).
 
 **3 · Aporte** — o que sobrou. Se houver meta de alocação, a ordem sai pelo desvio; sem meta, pelo
 score.

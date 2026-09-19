@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
+import 'format.dart';
 
 export 'design_tokens.dart'
     show
@@ -65,7 +66,31 @@ String dataYearsLabel(int? dataYears) {
 
 String consensusLabel(int? methods) {
   if (methods == null || methods == 0) return 'sem método aplicável';
-  return '$methods ${methods == 1 ? 'método' : 'métodos'} no consenso';
+  return '$methods ${methods == 1 ? 'método' : 'métodos'} na faixa';
+}
+
+String fairBandLabel(double? low, double? high) {
+  if (low == null || high == null) return '—';
+  if ((high - low).abs() < 0.01) return formatCurrency(low);
+  return '${formatCurrency(low)} a ${formatCurrency(high)}';
+}
+
+String fairBandSummary(double? low, double? high, int? methods) {
+  if (low == null || high == null) return consensusLabel(methods);
+  if ((high - low).abs() < 0.01) return 'Justo de ${consensusLabel(methods)}';
+  return 'Justo entre ${fairBandLabel(low, high)}, ${consensusLabel(methods)}';
+}
+
+String fairBandEdgeLabel(double? price, double? low, double? high) {
+  if (low == null || high == null || price == null) return '—';
+  if (price < low) return formatCurrency(low);
+  if (price > high) return formatCurrency(high);
+  return 'na faixa';
+}
+
+String basisLabel(String? basis) {
+  if (basis == 'trend') return 'leitura de tendência, sem preço justo';
+  return '';
 }
 
 String confidenceLabel(double? confidence) {

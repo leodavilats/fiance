@@ -80,6 +80,7 @@ class PreferencesDb(Base):
     preferred_categories: Mapped[str] = mapped_column(String, default="")
     preferred_sectors: Mapped[str] = mapped_column(String, default="")
     excluded_tickers: Mapped[str] = mapped_column(String, default="")
+    reserve_months_target: Mapped[int | None] = mapped_column(Integer, nullable=True)
     last_digest_sent_at: Mapped[float | None] = mapped_column(Float, nullable=True)
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)
 

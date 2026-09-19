@@ -43,7 +43,7 @@ async def get_investment_strategy(cash_available: float = 0.0) -> dict:
 
     rf_positions = _renda_fixa_como_posicoes()
 
-    goals = goal_service.get_goals()
+    goals = goal_service.goals_for_judgement()
 
     opps_resp = await opportunity_service.get_opportunities(
         include_held=False,
@@ -102,7 +102,7 @@ async def get_rebalance_suggestions() -> dict:
     if not current_portfolio and not rf_positions:
         return affirmation.apply({"allocation_gaps": [], "items": [], "tax_disclaimer": None})
 
-    goals = goal_service.get_goals()
+    goals = goal_service.goals_for_judgement()
     prefs = portfolio_repo.get_preferences()
     excluded_tickers = {t.upper() for t in prefs.get("excluded_tickers", [])}
 

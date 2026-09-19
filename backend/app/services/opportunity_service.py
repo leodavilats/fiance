@@ -146,21 +146,6 @@ class OpportunityService:
             profile=profile,
         )
 
-        verdict = dec.verdict
-        label = dec.label
-
-        if record.asset_type == "etf" and verdict == "UNKNOWN" and tech.rsi_14 is not None:
-            if tech.trend == "uptrend" and tech.rsi_14 < 70:
-                verdict, label = "BUY", "Comprar (momentum)"
-            elif tech.trend == "downtrend" and tech.rsi_14 > 30:
-                verdict, label = "SELL", "Evitar (tendência ruim)"
-            elif tech.rsi_14 <= 30:
-                verdict, label = "BUY", "Comprar (sobrevendido)"
-            elif tech.rsi_14 >= 70:
-                verdict, label = "HOLD", "Aguardar (sobrecomprado)"
-            else:
-                verdict, label = "HOLD", "Manter"
-
         return Opportunity(
             ticker=record.ticker,
             name=record.name,
@@ -169,13 +154,16 @@ class OpportunityService:
             price=record.price,
             as_of=record.as_of or None,
             fair_price=fair.consensus,
+            fair_low=fair.fair_low,
+            fair_high=fair.fair_high,
             bazin=fair.bazin,
             graham=fair.graham,
             pvp=fair.pvp,
             margin_of_safety=fair.margin_of_safety,
             dividend_yield=record.dividend_yield,
-            verdict=verdict,
-            label=label,
+            verdict=dec.verdict,
+            label=dec.label,
+            basis=dec.basis,
             confidence=dec.confidence,
             data_years=fair.data_years,
             consensus_methods=fair.consensus_methods,

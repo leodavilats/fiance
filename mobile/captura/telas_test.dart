@@ -513,7 +513,8 @@ dynamic _cheio(String caminho) {
           'quantity': 120.0,
           'pnl_pct': 16.8,
           'reasons': [
-            'Preço atual está 180.4% acima do preço justo estimado (R\$ 18,36).',
+            'Preço atual está 118.0% acima do teto da faixa de preço justo '
+                '(R\$ 12,94 a R\$ 23,77).',
             'Categoria acoes_br também está acima da meta de alocação.',
           ],
           'requires_tax_review': true,
@@ -527,6 +528,67 @@ dynamic _cheio(String caminho) {
         },
       ],
       'tax_disclaimer': 'Vender pode gerar imposto. O número do mês está na apuração.',
+    };
+  }
+
+  // O Descobrir nunca teve dublê próprio, e saía vazio até na pasta 'conteudo' -- uma imagem
+  // dizendo 'sem oportunidade' sobre a tela que é o coração da aba.
+  if (caminho.contains('/opportunities')) {
+    return {
+      ...base,
+      'items': [
+        {
+          'ticker': 'TAEE11',
+          'name': 'Taesa',
+          'sector': 'Energia',
+          'price': 41.91,
+          'fair_price': 103.17,
+          'fair_low': 60.32,
+          'fair_high': 146.03,
+          'margin_of_safety': 0.3052,
+          'dividend_yield': 8.64,
+          'verdict': 'BUY',
+          'label': 'Comprar',
+          'basis': 'band',
+          'score': 81.0,
+          'confidence': 0.6,
+          'data_years': 6,
+          'consensus_methods': 2,
+          'trend_basis': 'long',
+          'data_completeness': 1.0,
+          'change_percent_day': 0.8,
+          'distance_from_52w_high_pct': -12.4,
+          'range_52w_position': 0.38,
+        },
+        {
+          'ticker': 'BOVA11',
+          'name': 'iShares Ibovespa',
+          'sector': null,
+          'price': 182.47,
+          'fair_price': null,
+          'fair_low': null,
+          'fair_high': null,
+          'margin_of_safety': null,
+          'dividend_yield': 1.2,
+          'verdict': 'BUY',
+          'label': 'Comprar',
+          'basis': 'trend',
+          'score': 54.0,
+          'confidence': 0.35,
+          'data_years': 0,
+          'consensus_methods': 0,
+          'trend_basis': 'long',
+          'data_completeness': 0.2,
+          'change_percent_day': -0.4,
+          'distance_from_52w_high_pct': -3.1,
+          'range_52w_position': 0.72,
+        },
+      ],
+      'total_count': 2,
+      'universe_size': 412,
+      'page': 1,
+      'page_size': 30,
+      'has_more': false,
     };
   }
 

@@ -482,10 +482,13 @@ class Opportunity {
     required this.price,
     this.asOf,
     required this.fairPrice,
+    this.fairLow,
+    this.fairHigh,
     required this.marginOfSafety,
     required this.dividendYield,
     required this.verdict,
     required this.label,
+    this.basis = 'band',
     required this.sector,
     required this.score,
     this.confidence = 0,
@@ -505,10 +508,14 @@ class Opportunity {
   final double? asOf;
 
   final double? fairPrice;
+  final double? fairLow;
+  final double? fairHigh;
   final double? marginOfSafety;
   final double? dividendYield;
   final String verdict;
   final String label;
+
+  final String basis;
   final String? sector;
   final double score;
   final double confidence;
@@ -526,10 +533,13 @@ class Opportunity {
     price: (j['price'] as num?)?.toDouble(),
     asOf: (j['as_of'] as num?)?.toDouble(),
     fairPrice: (j['fair_price'] as num?)?.toDouble(),
+    fairLow: (j['fair_low'] as num?)?.toDouble(),
+    fairHigh: (j['fair_high'] as num?)?.toDouble(),
     marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
     dividendYield: (j['dividend_yield'] as num?)?.toDouble(),
     verdict: j['verdict'] as String? ?? '',
     label: j['label'] as String? ?? '',
+    basis: j['basis'] as String? ?? 'band',
     sector: j['sector'] as String?,
     score: (j['score'] as num?)?.toDouble() ?? 0,
     confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
@@ -793,8 +803,11 @@ class AssetAnalysis {
     required this.bazin,
     required this.graham,
     required this.consensus,
+    this.fairLow,
+    this.fairHigh,
     required this.marginOfSafety,
     this.consensusMethods = 0,
+    this.basis = 'band',
     this.dataYears = 0,
     this.dividendYield,
     required this.rsi14,
@@ -818,9 +831,14 @@ class AssetAnalysis {
   final double? bazin;
   final double? graham;
   final double? consensus;
+
+  final double? fairLow;
+  final double? fairHigh;
   final double? marginOfSafety;
 
   final int consensusMethods;
+
+  final String basis;
 
   final int dataYears;
 
@@ -852,8 +870,11 @@ class AssetAnalysis {
       bazin: (fp['bazin'] as num?)?.toDouble(),
       graham: (fp['graham'] as num?)?.toDouble(),
       consensus: (fp['consensus'] as num?)?.toDouble(),
+      fairLow: (fp['fair_low'] as num?)?.toDouble(),
+      fairHigh: (fp['fair_high'] as num?)?.toDouble(),
       marginOfSafety: (fp['margin_of_safety'] as num?)?.toDouble(),
       consensusMethods: (fp['consensus_methods'] as num?)?.toInt() ?? 0,
+      basis: dec['basis'] as String? ?? 'band',
       dataYears: (fp['data_years'] as num?)?.toInt() ?? 0,
       dividendYield: (fp['dy_12m'] as num?)?.toDouble(),
       rsi14: (tech['rsi_14'] as num?)?.toDouble(),
@@ -922,16 +943,24 @@ class FixedIncomeResult {
 }
 
 class Goal {
-  Goal({required this.category, required this.targetPct, this.targetValue});
+  Goal({
+    required this.category,
+    required this.targetPct,
+    this.targetValue,
+    this.declared = true,
+  });
 
   final String category;
   final double targetPct;
   final double? targetValue;
 
+  final bool declared;
+
   factory Goal.fromJson(Map<String, dynamic> j) => Goal(
     category: j['category'] as String,
     targetPct: (j['target_pct'] as num).toDouble(),
     targetValue: (j['target_value'] as num?)?.toDouble(),
+    declared: j['declared'] as bool? ?? true,
   );
 
   Map<String, dynamic> toJson() => {
@@ -945,6 +974,7 @@ class Goal {
     category: category,
     targetPct: targetPct ?? this.targetPct,
     targetValue: targetValue,
+    declared: declared,
   );
 }
 
@@ -1008,6 +1038,7 @@ class Preferences {
     this.notifyPriceAlerts = true,
     this.opportunitiesFrequency = 'weekly',
     this.riskProfile = 'moderate',
+    this.reserveMonthsTarget,
     this.preferredCategories = const [],
     this.preferredSectors = const [],
     this.excludedTickers = const [],
@@ -1021,6 +1052,8 @@ class Preferences {
   final bool notifyPriceAlerts;
   final String opportunitiesFrequency;
   final String riskProfile;
+
+  final int? reserveMonthsTarget;
   final List<String> preferredCategories;
   final List<String> preferredSectors;
   final List<String> excludedTickers;
@@ -1034,6 +1067,7 @@ class Preferences {
     notifyPriceAlerts: j['notify_price_alerts'] as bool? ?? true,
     opportunitiesFrequency: j['opportunities_frequency'] as String? ?? 'weekly',
     riskProfile: j['risk_profile'] as String? ?? 'moderate',
+    reserveMonthsTarget: (j['reserve_months_target'] as num?)?.toInt(),
     preferredCategories:
         (j['preferred_categories'] as List?)?.cast<String>() ?? const [],
     preferredSectors:

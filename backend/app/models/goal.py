@@ -11,6 +11,17 @@ class Goal(BaseModel):
     deadline: str | None = Field(None, description="Prazo no formato YYYY-MM-DD (opcional)")
 
 
+class GoalResponse(Goal):
+    declared: bool = Field(
+        True,
+        description=(
+            "Falso quando o alvo é o padrão do produto, e não da pessoa. Quem julga desvio "
+            "precisa da distinção: acusar 'abaixo da meta' contra uma meta que ninguém escolheu "
+            "é inventar objetivo alheio."
+        ),
+    )
+
+
 class SectorGoal(BaseModel):
     sector: str = Field(..., description="Nome do setor (ex: 'Financeiro', 'Energia')")
     target_pct: float = Field(..., ge=0, le=100, description="% dentro do total de ações")

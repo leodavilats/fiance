@@ -187,6 +187,23 @@ class _GoalRow extends StatelessWidget {
   }
 }
 
+class _NotYours extends StatelessWidget {
+  const _NotYours();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: FiSpace.s3),
+      child: Text(
+        'Este é o ponto de partida do produto, e não a sua escolha. Enquanto for assim, nada '
+        'no aplicativo cobra desvio contra ele — salve para que passe a cobrar.',
+        style: FiType.body.copyWith(color: fiInk2(context)),
+      ),
+    );
+  }
+}
+
+
 class _Closing extends StatelessWidget {
   const _Closing({
     required this.total,
@@ -263,10 +280,12 @@ class GoalsSectionState extends ConsumerState<GoalsSection> {
         final items = _editing ?? data;
         final total = items.fold<double>(0, (sum, g) => sum + g.targetPct);
         final podeSalvar = _editing != null && (total - 100).abs() < 0.5;
+        final padrao = data.isNotEmpty && data.every((g) => !g.declared);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (padrao) const _NotYours(),
             for (final g in items)
               _GoalRow(
                 label: categoryLabel(g.category),
@@ -342,10 +361,12 @@ class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
                   .toList();
         final current = _editing ?? items;
         final total = current.fold<double>(0, (sum, g) => sum + g.targetPct);
+        final padrao = items.every((g) => !g.declared);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (padrao) const _NotYours(),
             for (final g in current)
               _GoalRow(
                 label: translateSector(g.sector),

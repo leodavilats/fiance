@@ -18,6 +18,12 @@ MOS_SELL = -0.15
 
 MOS_STRONG_SELL = -0.30
 
+BASIS_BAND = "band"
+
+BASIS_TREND = "trend"
+
+BASIS_NONE = "none"
+
 Verdict = str
 
 
@@ -32,6 +38,8 @@ class Decision:
     reasons: list[str] = field(default_factory=list)
 
     band_verdict: Verdict = "UNKNOWN"
+
+    basis: str = BASIS_BAND
 
 
 def _verdict_from_mos(mos: float | None) -> Verdict:
@@ -74,6 +82,28 @@ def _trend_phrase(basis: str | None) -> dict[str, str]:
     return _TREND_PHRASES.get(basis or TREND_BASIS_NONE, _TREND_PHRASES[TREND_BASIS_NONE])
 
 
+def _verdict_from_trend(tech: TechnicalSnapshot) -> tuple[Verdict, str]:
+    rsi = tech.rsi_14
+    if rsi is None:
+        return "UNKNOWN", ""
+
+    base = _trend_phrase(getattr(tech, "trend_basis", TREND_BASIS_NONE))
+
+    if tech.trend == "uptrend" and rsi < 70:
+        return "BUY", f"A leitura sai da tendência de alta ({base['up']}), com RSI {rsi:.0f}."
+
+    if tech.trend == "downtrend" and rsi > 30:
+        return "SELL", f"A leitura sai da tendência de baixa ({base['down']}), com RSI {rsi:.0f}."
+
+    if rsi <= 30:
+        return "BUY", f"A leitura sai do RSI {rsi:.0f}: o ativo está sobrevendido."
+
+    if rsi >= 70:
+        return "HOLD", f"A leitura sai do RSI {rsi:.0f}: o ativo está sobrecomprado."
+
+    return "HOLD", f"Sem tendência definida e com RSI {rsi:.0f}, a leitura é manter."
+
+
 LABELS = {
     "STRONG_BUY": "Comprar com convicção",
     "BUY": "Comprar",
@@ -96,38 +126,60 @@ def decide(
     verdict = _verdict_from_mos(fair.margin_of_safety)
     banda = verdict
 
+    tem_faixa = fair.fair_low is not None and fair.fair_high is not None
+    basis = BASIS_BAND if tem_faixa else BASIS_NONE
+
     confidence = 0.4
 
-    if getattr(fair, "methods_disagree", False) and fair.consensus:
-        reasons.append(
-            f"Os {fair.consensus_methods} métodos de preço justo discordam por "
-            f"{fair.method_dispersion:.1f}x entre si. A média deles não sustenta um veredito."
-        )
-        return Decision(
-            verdict="UNKNOWN",
-            label=LABELS["UNKNOWN"],
-            confidence=0.2,
-            reasons=reasons,
-            band_verdict=banda,
-        )
+    if tem_faixa and current_price:
+        faixa = f"R$ {fair.fair_low:.2f} a R$ {fair.fair_high:.2f}"
+        mos = fair.margin_of_safety or 0.0
 
-    if fair.consensus and current_price:
-        if fair.margin_of_safety is not None:
-            mos_pct = fair.margin_of_safety * 100
-
-            if mos_pct > 0:
-                reasons.append(
-                    f"Preço atual está {mos_pct:.1f}% abaixo do preço justo estimado "
-                    f"(R$ {fair.consensus:.2f})."
-                )
-
-            else:
-                reasons.append(
-                    f"Preço atual está {abs(mos_pct):.1f}% acima do preço justo estimado "
-                    f"(R$ {fair.consensus:.2f})."
-                )
+        if mos > 0:
+            reasons.append(
+                f"Preço atual está {mos * 100:.1f}% abaixo do piso da faixa de preço justo "
+                f"({faixa})."
+            )
+        elif mos < 0:
+            reasons.append(
+                f"Preço atual está {abs(mos) * 100:.1f}% acima do teto da faixa de preço justo "
+                f"({faixa})."
+            )
+        else:
+            reasons.append(
+                f"Preço atual está dentro da faixa de preço justo ({faixa}): não há margem a "
+                "favor nem contra."
+            )
 
         confidence += 0.2
+
+        if getattr(fair, "methods_disagree", False) and fair.method_dispersion:
+            reasons.append(
+                f"Os {fair.consensus_methods} métodos variam {fair.method_dispersion:.1f}x entre "
+                "si, e é por isso que o preço justo sai como faixa: o que cada um mede é "
+                "diferente."
+            )
+            confidence -= 0.1
+
+    if not tem_faixa and tech is not None:
+        verdict, motivo = _verdict_from_trend(tech)
+        if verdict != "UNKNOWN":
+            basis = BASIS_TREND
+            reasons.append(
+                "Nenhum método de preço justo se aplica a este ativo: sem lucro, patrimônio ou "
+                "dividendo que os sustentem, não há faixa."
+            )
+            reasons.append(motivo)
+            confidence = 0.35
+
+            return Decision(
+                verdict=verdict,
+                label=LABELS.get(verdict, "Manter"),
+                confidence=confidence,
+                reasons=reasons,
+                band_verdict=banda,
+                basis=basis,
+            )
 
     if fair.bazin:
         reasons.append(f"Preço justo Bazin (dividendos): R$ {fair.bazin:.2f}.")
@@ -169,8 +221,8 @@ def decide(
             elif verdict == "HOLD":
                 verdict = "SELL"
                 reasons.append(
-                    "Sem desconto no preço e com a tendência principal de queda, a leitura cai "
-                    "para vender."
+                    "O desconto não chega à faixa que pede compra, e a tendência principal é de "
+                    "queda: a leitura cai para vender."
                 )
 
         if tech.rsi_14 is not None:
@@ -212,4 +264,5 @@ def decide(
         confidence=confidence,
         reasons=reasons,
         band_verdict=banda,
+        basis=basis,
     )

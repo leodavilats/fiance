@@ -44,7 +44,7 @@ class TestARendaFixaEntraNaEstrategia:
         if com_rf:
             client.post("/api/v1/fixed-income", headers=headers, json=_cdb(30000.0))
 
-        client.post(
+        declarou = client.put(
             "/api/v1/goals",
             headers=headers,
             json={
@@ -53,6 +53,10 @@ class TestARendaFixaEntraNaEstrategia:
                     {"category": "renda_fixa", "target_pct": 50.0},
                 ]
             },
+        )
+        assert declarou.status_code == 200, (
+            "o cenário declarava meta por POST, e a rota é PUT: o 405 passava calado e o teste "
+            "seguia lendo a meta padrão do produto como se fosse declarada"
         )
         return headers
 
@@ -86,7 +90,7 @@ class TestARendaFixaEntraNaEstrategia:
     def test_carteira_so_de_renda_fixa_ainda_produz_estrategia(self, client):
         headers = make_auth_headers("estrat_rf_4")
         client.post("/api/v1/fixed-income", headers=headers, json=_cdb(20000.0))
-        client.post(
+        client.put(
             "/api/v1/goals",
             headers=headers,
             json={"goals": [{"category": "renda_fixa", "target_pct": 100.0}]},

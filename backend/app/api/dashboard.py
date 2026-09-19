@@ -33,7 +33,7 @@ async def dashboard() -> DashboardResponse:
     )
     top_buys = opps_resp.items[:5]
 
-    goals = goal_service.get_goals()
+    goals = goal_service.goals_for_judgement()
 
     age = await opportunity_service.market_data_age_seconds()
     freshness = DataFreshness(

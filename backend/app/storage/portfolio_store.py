@@ -76,6 +76,7 @@ class Preferences(TypedDict):
     opportunities_frequency: str
     risk_profile: str
     density: str
+    reserve_months_target: int | None
     preferred_categories: list[str]
     preferred_sectors: list[str]
     excluded_tickers: list[str]
@@ -413,6 +414,7 @@ def get_preferences(user_id: str | None = None) -> Preferences:
                 opportunities_frequency=row.opportunities_frequency,
                 risk_profile=row.risk_profile,
                 density=row.density or "comfortable",
+                reserve_months_target=row.reserve_months_target,
                 preferred_categories=_csv_to_list(row.preferred_categories),
                 preferred_sectors=_csv_to_list(row.preferred_sectors),
                 excluded_tickers=_csv_to_list(row.excluded_tickers),
@@ -430,6 +432,7 @@ def get_preferences(user_id: str | None = None) -> Preferences:
         opportunities_frequency="weekly",
         risk_profile="moderate",
         density="comfortable",
+        reserve_months_target=None,
         preferred_categories=[],
         preferred_sectors=[],
         excluded_tickers=[],
@@ -448,6 +451,7 @@ _PREF_DEFAULTS: dict[str, object] = {
     "opportunities_frequency": "weekly",
     "risk_profile": "moderate",
     "density": "comfortable",
+    "reserve_months_target": None,
     "preferred_categories": [],
     "preferred_sectors": [],
     "excluded_tickers": [],
@@ -455,7 +459,7 @@ _PREF_DEFAULTS: dict[str, object] = {
 
 _PREF_CSV_FIELDS = {"preferred_categories", "preferred_sectors", "excluded_tickers"}
 
-_PREF_ANULAVEIS = {"passive_income_goal"}
+_PREF_ANULAVEIS = {"passive_income_goal", "reserve_months_target"}
 
 
 def set_preferences(user_id: str | None = None, **fields) -> None:

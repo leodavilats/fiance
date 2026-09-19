@@ -41,8 +41,8 @@ void main() {
       expect(dataYearsLabel(4), '4 anos de proventos');
 
       expect(consensusLabel(0), 'sem método aplicável');
-      expect(consensusLabel(1), '1 método no consenso');
-      expect(consensusLabel(3), '3 métodos no consenso');
+      expect(consensusLabel(1), '1 método na faixa');
+      expect(consensusLabel(3), '3 métodos na faixa');
     });
 
     test('confiança é apresentada em percentual', () {

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.models import Goal, GoalsRequest, SectorGoalResponse, SectorGoalsRequest
+from app.models import GoalResponse, GoalsRequest, SectorGoalResponse, SectorGoalsRequest
 from app.services import GoalService
 
 router = APIRouter()
@@ -8,14 +8,16 @@ router = APIRouter()
 goal_service = GoalService()
 
 
-@router.get("/goals", response_model=list[Goal])
-async def get_goals() -> list[Goal]:
-    return goal_service.get_goals()
+@router.get("/goals", response_model=list[GoalResponse])
+async def get_goals() -> list[GoalResponse]:
+    declaradas = goal_service.has_declared_goals()
+    return [GoalResponse(**g.model_dump(), declared=declaradas) for g in goal_service.get_goals()]
 
 
-@router.put("/goals", response_model=list[Goal])
-async def save_goals(req: GoalsRequest) -> list[Goal]:
-    return goal_service.save_goals(req.goals)
+@router.put("/goals", response_model=list[GoalResponse])
+async def save_goals(req: GoalsRequest) -> list[GoalResponse]:
+    salvas = goal_service.save_goals(req.goals)
+    return [GoalResponse(**g.model_dump(), declared=True) for g in salvas]
 
 
 @router.get("/sector-goals", response_model=list[SectorGoalResponse])

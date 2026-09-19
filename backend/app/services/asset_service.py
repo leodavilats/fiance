@@ -78,6 +78,7 @@ class AssetService:
                 verdict=dec.verdict,
                 label=dec.label,
                 confidence=dec.confidence,
+                basis=dec.basis,
                 reasons=dec.reasons,
                 falsifiers=falsifiers(
                     verdict=dec.verdict,
@@ -91,6 +92,9 @@ class AssetService:
                     sma_200=tech.sma_200,
                     rsi_14=tech.rsi_14,
                     band_verdict=dec.band_verdict,
+                    fair_low=fair.fair_low,
+                    fair_high=fair.fair_high,
+                    basis=dec.basis,
                 ),
             ),
             price_history=(

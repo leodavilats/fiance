@@ -12,7 +12,8 @@ import '../../core/widgets/chip.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/help_tooltip.dart';
-import '../../core/score_ruler.dart' show consensusLabel, dataYearsLabel;
+import '../../core/score_ruler.dart'
+    show basisLabel, dataYearsLabel, fairBandEdgeLabel, fairBandSummary;
 import '../../core/widgets/score_ruler.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
@@ -730,7 +731,8 @@ class FiOpportunityObject extends StatelessWidget {
               Expanded(
                 child: _Figure(
                   label: 'JUSTO',
-                  value: formatCurrency(o.fairPrice),
+                  value: fairBandEdgeLabel(o.price, o.fairLow, o.fairHigh),
+                  glossaryKey: 'faixa_de_preco_justo',
                 ),
               ),
               Expanded(
@@ -765,8 +767,13 @@ class FiOpportunityObject extends StatelessWidget {
 
           const SizedBox(height: FiSpace.s3),
           Text(
-            'Justo de ${consensusLabel(o.consensusMethods)} · '
-            'DY sobre ${dataYearsLabel(o.dataYears)}',
+            [
+              if (o.basis == 'trend')
+                basisLabel(o.basis)
+              else
+                fairBandSummary(o.fairLow, o.fairHigh, o.consensusMethods),
+              if (o.dataYears > 0) 'DY sobre ${dataYearsLabel(o.dataYears)}',
+            ].join(' · '),
             style: FiType.axis.copyWith(color: fiInk3(context)),
           ),
         ],

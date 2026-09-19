@@ -616,6 +616,12 @@ def _capturar() -> int:
         return 1
 
     print("capturando... (cerca de um minuto)")
+    # A pasta sai antes de capturar. O codigo de saida nao serve de conferencia -- o google_fonts
+    # lanca por caminho assincrono a cada tela e derruba os 120 testes, mesmo escrevendo as
+    # imagens certas --, entao o que garante que build/revisao/ descreve o codigo de agora e nao
+    # ter sobrado nada de antes: captura que nem compila deixa a pasta vazia, e isso aparece.
+    shutil.rmtree(TELAS, ignore_errors=True)
+
     subprocess.run(
         ["flutter", "test", "captura/telas_test.dart"],
         cwd=MOBILE,

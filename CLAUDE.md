@@ -64,6 +64,10 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
   Yield desejado e margem de segurança são **fração**.
 - **Veredito vem com o que o derrubaria** (`analysis/falsifiers.py`). Sem preço justo, a lista sai
   vazia — nada de falsificador genérico.
+- **Preço justo sai como faixa, nunca média** (`fair_low`/`fair_high`). Os métodos não medem a mesma
+  coisa. A margem de segurança mede contra a **borda**: piso abaixo, teto acima, zero dentro.
+- **Veredito que não vem da faixa se declara** (`decision.basis`). Ativo sem método aplicável sai por
+  leitura de tendência, nomeada, e a regra vive só em `decide()` — nunca numa tela.
 - **Projeção sai como faixa, nunca número único** (`analysis/scenarios.py`). `_low`/`_high` são
   obrigatórios.
 - **Modo de afirmação é configuração, não código** (`affirmation.py`, `AFFIRMATION_LEVEL`).
@@ -97,7 +101,10 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 - **Taxa anual vira mensal por juros compostos, nunca dividindo por doze.**
 - **Dívida se classifica por custo, nunca por tipo. Sem taxa informada não há classe.**
 - **A cascata pode terminar sem aporte, e isso é sucesso.**
-- **A reserva vem depois da dívida cara, e só existe com alvo declarado.**
+- **A reserva vem depois da dívida cara, e só existe com alvo declarado.** Declara-se o número de
+  meses; a base é o gasto fixo e o saldo é a renda fixa de liquidez diária.
+- **Alvo não declarado não julga.** Sem meta declarada, `goals_for_judgement()` devolve lista vazia:
+  a composição aparece, o desvio não.
 - **Pagamento de dívida sai do caixa e não é consumo.**
 
 ### Dados externos

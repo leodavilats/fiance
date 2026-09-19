@@ -1,9 +1,11 @@
 # Problemas conhecidos
 
 **Fonte de verdade** do que está aberto. Só pendências: nada de histórico, nada de item resolvido.
-Última verificação contra o código: **2026-09-13**
+Última verificação contra o código: **2026-09-19**
 Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria do motor de cálculo de
-2026-09-13.
+2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
+[ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
+[ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md).
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -12,29 +14,6 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 ---
 
 ## A · Motor de cálculo — auditoria de 2026-09-13
-
-### A0 · O consenso pende para dividendo — *atacado em 2026-09-13, não resolvido*
-
-Medido em produção em 2026-09-13, amostra de 33 ativos: **55% recebia sinal de venda**, com a margem
-de segurança distribuída junto ao dividend yield — WEGE3 (DY 1,9%) saía com −308%, PTBL3 com +72%.
-
-A causa: o consenso de ação era Bazin + Graham, com o DCF descartado sempre que havia Bazin. Bazin é
-`dividendo médio ÷ 6%`, então empresa que retém lucro para crescer saía sistematicamente cara.
-
-**Três correções aplicadas** (ver [04-CALCULOS](04-CALCULOS.md)):
-
-1. Graham passou a respeitar a própria faixa de validade (item A6)
-2. O DCF deixou de ser descartado e participa do consenso de ação
-3. Quando os métodos discordam por 2× ou mais, o produto **se abstém do veredito**
-
-**Efeito medido na mesma amostra:** sinal de venda caiu de 55% para 33%, **sem inverter o viés** —
-compra foi de 21% para 18% e convicção ficou em 3%. O que aumentou foi a abstenção, de 3 para 12
-ativos: o produto passou a dizer "não sei" onde antes afirmava sem base.
-
-**O que segue aberto:** onde os métodos *concordam* num número baixo, o viés permanece — WEGE3
-continua `STRONG_SELL` com Bazin em R$ 12,94 e lucros descontados em R$ 23,77 contra preço de
-R$ 51,49. Reequilibrar isso exige ponderar o consenso por classe de empresa, ou reconhecer que Bazin
-não é método de preço justo para empresa de crescimento. **Decisão de produto, ainda não tomada.**
 
 ### A6 · ~~Graham fora da faixa de validade~~ — **corrigido em 2026-09-13**
 
@@ -114,8 +93,8 @@ O que a medição encontrou de novo:
   `market_cap` — então todo FII perde essa dimensão e é pontuado só por margem e dividendos
 - **BDR sem VPA: 0 de 4.** Sem VPA não há Graham, e o consenso de BDR cai para **um método só**, o
   DCF. `consensus_methods: 1` em todos os quatro
-- **ETF sem nada.** Confirma o item 28, e pior: o veredito sai `UNKNOWN` na rota pública, então nem
-  o remendo por RSI está atuando ali
+- **ETF sem nada.** Nenhum método se aplica, e desde 2026-09-19 o produto diz isso: a leitura sai
+  da tendência, marcada como tal ([ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md))
 
 Repetir a medição: `GET /api/v1/data-quality` (exige sessão) ou amostrar
 `GET /api/v1/public/asset/{ticker}`, que não exige.
@@ -127,20 +106,6 @@ crescimento e D/E chegam em 80% a 100% da amostra, e o perfil de risco pondera o
 
 O que sobra dele, em forma menor: para **FII, BDR e ETF** as dimensões de fundamento continuam
 vazias — por natureza da classe, não por falha de coleta. Isso está no item 3 e no A5.
-
-### 28 · O ETF é estruturalmente mal avaliado, e o remendo tem consequência
-
-Para `asset_type == "etf"` o único candidato a consenso é Bazin (`dividendo ÷ 0,04`); um ETF de
-índice distribui na casa de 1% ao ano, então o preço justo sai em ~25% do preço e a margem de
-segurança em −300%, sempre.
-
-`opportunity_service` sobrescreve o veredito por RSI e tendência quando ele sai `UNKNOWN`, o que
-produz duas coisas ruins: **o mesmo ETF recebe veredito diferente em `/descobrir` e em
-`/ativo/:ticker`**, e o veredito por momentum sai **sem falsificador**, porque sem consenso não há
-preço-limite.
-
-Decidir o método — comparação com o índice, prêmio sobre valor patrimonial, ou abstenção explícita —
-vem antes de mexer no falsificador.
 
 ### 1 · O caminho do Redis nunca rodou contra um servidor real fora do CI
 
@@ -158,27 +123,6 @@ BRAPI. Fallback defensivo intencional, mas extenso.
 ---
 
 ## C · Produto incompleto
-
-### 30 · O passo de reserva da cascata é inalcançável
-
-`cascata.montar` recebe `reserva_meses_alvo` e `reserva_atual`, a matemática está escrita e testada,
-e **nenhuma rota passa os dois** — porque não há onde declarar quantos meses de gasto fixo a pessoa
-quer guardar. Não há campo em `preferences`, em `goals`, em lugar nenhum.
-
-A regra documentada ("a reserva vem depois da dívida cara, e só existe com alvo declarado") descreve
-um passo que a Sobra **nunca mostra**.
-
-Fechar é decisão de produto antes de código: quantos meses, contra qual base, e o que acontece com
-quem não declara. Inventar "seis meses" é o número de mercado solto que a régua de dívida proíbe.
-
-### 31 · A alocação-alvo cai no padrão e a tela não distingue
-
-`GET /dashboard` monta as barras com `goal_service.get_goals()`, que devolve 30/35/15/15/5 quando nada
-foi declarado. Quem nunca declarou meta vê barras "abaixo da meta" de uma meta que não escolheu, e o
-alerta de rebalanceamento dispara sobre ela.
-
-As metas **por setor** já distinguem (o `declared` da resposta); as de categoria não, e mudar isso
-mexe no alerta do dashboard, no `whats_new` e no Quick Invest de uma vez.
 
 ### 34 · O calendário de proventos só prova o direito quando a fonte publica a data-com
 

@@ -61,6 +61,10 @@ class FairPriceResult:
 
     pvp: float | None = None
 
+    fair_low: float | None = None
+
+    fair_high: float | None = None
+
     method_dispersion: float | None = None
 
     methods_disagree: bool = False
@@ -172,6 +176,23 @@ def bazin_fair_price(
         return None
 
     return round(avg_dividend / desired_yield, 2)
+
+
+def margin_of_safety_in_band(
+    price: float | None,
+    fair_low: float | None,
+    fair_high: float | None,
+) -> float | None:
+    if not price or price <= 0 or fair_low is None or fair_high is None:
+        return None
+
+    if price < fair_low:
+        return round((fair_low - price) / fair_low, 4)
+
+    if price > fair_high:
+        return round((fair_high - price) / fair_high, 4)
+
+    return 0.0
 
 
 GRAHAM_MAX_PE = 15.0
@@ -339,6 +360,9 @@ def fair_price_from_inputs(
     consensus = round(sum(candidates) / len(candidates), 2) if candidates else None
     consensus_methods = len(candidates)
 
+    fair_low = round(min(candidates), 2) if candidates else None
+    fair_high = round(max(candidates), 2) if candidates else None
+
     dispersion: float | None = None
     if len(candidates) >= 2:
         menor = min(candidates)
@@ -346,9 +370,7 @@ def fair_price_from_inputs(
             dispersion = round(max(candidates) / menor, 2)
     disagree = dispersion is not None and dispersion >= MAX_METHOD_DISPERSION
 
-    mos = None
-    if consensus and price and price > 0:
-        mos = round((consensus - price) / consensus, 4)
+    mos = margin_of_safety_in_band(price, fair_low, fair_high)
 
     dy_12m = (
         round(inputs.dividend_12m / price, 4)
@@ -370,6 +392,8 @@ def fair_price_from_inputs(
         method_dispersion=dispersion,
         methods_disagree=disagree,
         margin_of_safety=mos,
+        fair_low=fair_low,
+        fair_high=fair_high,
         avg_dividend_5y=round(inputs.avg_dividend, 4) if inputs.avg_dividend else None,
         dy_12m=dy_12m,
         dy_5y=dy_5y,

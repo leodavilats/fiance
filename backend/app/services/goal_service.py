@@ -32,6 +32,9 @@ class GoalService:
     def has_declared_goals(self) -> bool:
         return bool(self.repo.list_goals())
 
+    def goals_for_judgement(self) -> list[Goal]:
+        return self.get_goals() if self.has_declared_goals() else []
+
     def save_goals(self, goals: list[Goal]) -> list[Goal]:
         self.repo.replace_goals([g.dict() for g in goals])
         return self.get_goals()

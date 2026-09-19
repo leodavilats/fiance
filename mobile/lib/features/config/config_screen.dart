@@ -334,13 +334,15 @@ class FiRecommendation extends ConsumerWidget {
   }
 }
 
-class FiGoals extends StatelessWidget {
+class FiGoals extends ConsumerWidget {
   const FiGoals({super.key, required this.prefs});
 
   final Preferences prefs;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final meses = prefs.reserveMonthsTarget;
+
     return FiSection(
       title: 'Metas',
       action: FiNavAction(
@@ -358,6 +360,15 @@ class FiGoals extends StatelessWidget {
                 ? 'Sem alvo declarado o produto não inventa um.'
                 : null,
           ),
+          FiDataRow(
+            label: 'Reserva de emergência',
+            value: meses == null ? 'sem alvo' : '$meses ${meses == 1 ? 'mês' : 'meses'}',
+            detail: meses == null
+                ? 'Sem alvo declarado, a Sobra não mostra o passo da reserva.'
+                : 'Medida contra o seu gasto fixo, e coberta pelo que você tem em '
+                      'liquidez diária.',
+            onTap: () => _pickReserveMonths(context, ref, prefs),
+          ),
           const FiDataRow(
             label: 'Alocação por categoria e setor',
             detail: 'O alvo contra o qual a Sobra mede o desvio',
@@ -366,6 +377,67 @@ class FiGoals extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _pickReserveMonths(
+  BuildContext context,
+  WidgetRef ref,
+  Preferences prefs,
+) async {
+  final controller = TextEditingController(
+    text: prefs.reserveMonthsTarget?.toString() ?? '',
+  );
+
+  final escolha = await showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Reserva de emergência'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quantos meses do seu gasto fixo você quer guardar. O produto não sugere um '
+            'número: o seu custo de vida é que decide.',
+            style: FiType.body.copyWith(color: fiInk2(context)),
+          ),
+          const SizedBox(height: FiSpace.s3),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Meses'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'cancelar'),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'limpar'),
+          child: const Text('Sem alvo'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, 'salvar'),
+          child: const Text('Salvar'),
+        ),
+      ],
+    ),
+  );
+  if (escolha == null || escolha == 'cancelar') return;
+
+  final meses = int.tryParse(controller.text.trim());
+  if (escolha == 'salvar' && (meses == null || meses < 0 || meses > 60)) return;
+
+  await ref
+      .read(apiRepositoryProvider)
+      .savePreferences(
+        passiveIncomeGoal: prefs.passiveIncomeGoal,
+        reserveMonthsTarget: escolha == 'limpar' ? null : meses,
+        clearReserveMonths: escolha == 'limpar',
+      );
+  ref.invalidate(preferencesProvider);
 }
 
 class FiNotifications extends ConsumerWidget {

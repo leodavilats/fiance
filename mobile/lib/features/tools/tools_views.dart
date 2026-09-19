@@ -12,7 +12,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/compare_metrics.dart';
 import '../../core/score_ruler.dart'
-    show consensusLabel, dataYearsLabel, trendBasisLabel;
+    show basisLabel, consensusLabel, fairBandLabel, dataYearsLabel, trendBasisLabel;
 import '../../core/widgets/button.dart';
 import '../../core/widgets/measure.dart';
 import '../../core/widgets/provenance.dart';
@@ -163,7 +163,23 @@ class _AssetAnalysis extends StatelessWidget {
               ),
             ),
             const SizedBox(width: FiSpace.s3),
-            FiTag(label: a.label, state: estado),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FiTag(label: a.label, state: estado),
+                if (basisLabel(a.basis).isNotEmpty) ...[
+                  const SizedBox(height: FiSpace.s1),
+                  SizedBox(
+                    width: 140,
+                    child: Text(
+                      basisLabel(a.basis),
+                      textAlign: TextAlign.end,
+                      style: FiType.caption.copyWith(color: fiInk3(context)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
 
@@ -187,7 +203,8 @@ class _AssetAnalysis extends StatelessWidget {
                 max: fiMarginOfSafetyDomain.max,
                 reference: 0,
                 readout: formatRatio(margem),
-                note: '${band.label} · preço justo ${formatCurrency(a.consensus)}, '
+                note: '${band.label} · faixa de preço justo '
+                    '${fairBandLabel(a.fairLow, a.fairHigh)}, '
                     '${consensusLabel(a.consensusMethods)}',
                 state: band.state,
               );
@@ -200,8 +217,8 @@ class _AssetAnalysis extends StatelessWidget {
           child: FiRows(
             children: [
               FiDataRow(
-                label: 'Preço justo',
-                value: formatCurrency(a.consensus),
+                label: 'Faixa de preço justo',
+                value: fairBandLabel(a.fairLow, a.fairHigh),
                 note: consensusLabel(a.consensusMethods),
               ),
               FiDataRow(
@@ -244,13 +261,13 @@ class _AssetAnalysis extends StatelessWidget {
         FiProvenance(
           summary: 'Como chegamos nesta leitura',
           method:
-              'O preço justo é o consenso dos métodos aplicáveis ao papel; a margem de '
-              'segurança é a distância entre o preço de hoje e esse consenso.',
+              'O preço justo é uma faixa, do método mais conservador ao mais otimista; a '
+              'margem de segurança é a distância do preço de hoje até a borda da faixa.',
           source: 'Fundamentos e cotações da BRAPI.',
           asOf: idade.isEmpty ? null : 'Preço lido $idade.',
           limitation:
-              'É leitura do sistema sobre dado público, não recomendação. Método com histórico '
-              'curto entra no consenso com menos peso, e o número de métodos vem escrito.',
+              'É leitura do sistema sobre dado público, não recomendação. Faixa larga é sinal '
+              'de que os métodos discordam, e o número deles vem escrito.',
         ),
       ],
     );

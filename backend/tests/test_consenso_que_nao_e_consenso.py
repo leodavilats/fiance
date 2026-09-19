@@ -77,7 +77,7 @@ class TestConsensoQueNaoEConsenso:
         if r.method_dispersion >= MAX_METHOD_DISPERSION:
             assert r.methods_disagree is True
 
-    def test_quando_discordam_o_produto_se_abstem(self):
+    def test_quando_discordam_a_faixa_alarga_em_vez_de_calar(self):
         r = compute_fair_price(
             price=100.0,
             eps=10.0,
@@ -92,14 +92,54 @@ class TestConsensoQueNaoEConsenso:
 
         d = decide(r, current_price=100.0)
 
-        assert d.verdict == "UNKNOWN", (
-            "com os métodos discordando por mais de "
-            f"{MAX_METHOD_DISPERSION}x, a média deles é um número que nenhum método sustenta. "
-            "Afirmar um veredito sobre ela é inventar precisão."
+        assert r.fair_high / r.fair_low >= MAX_METHOD_DISPERSION, (
+            "a discordância entre métodos é a largura da faixa: é o que ela mede"
         )
-        assert any("discordam" in r for r in d.reasons), (
-            "a abstenção precisa dizer por que se absteve — senão vira 'sem dados suficientes', "
-            "que é outra coisa"
+        assert d.verdict != "UNKNOWN", (
+            "calar sobre a discordância custava metade das ações sem veredito. A faixa larga já "
+            "diz o que a abstenção dizia — que não se sabe o número — sem deixar de ler o preço"
+        )
+        assert any("faixa" in motivo for motivo in d.reasons), (
+            "a faixa larga precisa se explicar, senão vira um número largo sem motivo"
+        )
+
+    def test_dentro_da_faixa_nao_ha_margem_a_favor_nem_contra(self):
+        r = compute_fair_price(
+            price=100.0,
+            eps=10.0,
+            book_value=90.0,
+            dividends=[{"date": "2025-03-01", "value": 0.1}],
+            asset_type="br_stock",
+            revenue_growth_rate=20.0,
+        )
+
+        if r.fair_low is None or not (r.fair_low < 100.0 < r.fair_high):
+            return
+
+        assert r.margin_of_safety == 0.0
+        assert decide(r, current_price=100.0).verdict == "HOLD"
+
+    def test_a_margem_mede_contra_a_borda_e_nao_contra_a_media(self):
+        r = compute_fair_price(
+            price=10.0,
+            eps=1.0,
+            book_value=8.0,
+            dividends=[{"date": "2025-03-01", "value": 0.6}],
+            asset_type="br_stock",
+            revenue_growth_rate=5.0,
+        )
+
+        if r.fair_low is None or r.consensus is None:
+            return
+        if r.margin_of_safety is None or r.margin_of_safety <= 0:
+            return
+
+        pela_media = (r.consensus - 10.0) / r.consensus
+
+        assert r.margin_of_safety <= pela_media + 1e-9, (
+            "medir contra o piso é mais conservador que medir contra a média, e é essa a razão "
+            "de medir contra o piso: comprar exige que o preço esteja abaixo do método mais "
+            "pessimista, não da média deles"
         )
 
     def test_a_abstencao_nao_promete_falsificador(self):
@@ -137,6 +177,7 @@ class TestConsensoQueNaoEConsenso:
         assert r.consensus_methods == 1
         assert r.method_dispersion is None
         assert r.methods_disagree is False
+        assert r.fair_low == r.fair_high, "com um método só, a faixa é um ponto"
 
 
 class TestARazaoNaoContradizOVeredito:
@@ -150,6 +191,8 @@ class TestARazaoNaoContradizOVeredito:
             consensus=100.0,
             consensus_methods=2,
             margin_of_safety=0.35,
+            fair_low=100.0,
+            fair_high=100.0,
             avg_dividend_5y=None,
             dy_12m=None,
             dy_5y=None,

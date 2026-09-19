@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app.cashflow import CashEntry, CashKind, Debt
+from app.core.money import money
 from app.models.cashflow import (
     CascadeResponse,
     CashEntryBatchRequest,
@@ -18,14 +19,17 @@ from app.models.cashflow import (
     MonthTemplateResponse,
     SurplusResponse,
 )
-from app.services import GoalService, cashflow_service
+from app.services import FixedIncomeService, GoalService, cashflow_service
 from app.services.rendimento_referencia import referencia_de_rendimento
+from app.storage import portfolio_store
 
 logger = logging.getLogger("fiance.api.cashflow")
 
 router = APIRouter()
 
 goal_service = GoalService()
+
+fixed_income_service = FixedIncomeService()
 
 
 def _entry_do_request(req: CashEntryRequest) -> CashEntry:
@@ -173,12 +177,19 @@ _ORDEM_POR_META = (
 async def sobra(month: str | None = None) -> SurplusResponse:
     mensal, tem_carteira, cdi_anual = await referencia_de_rendimento()
 
+    prefs = portfolio_store.get_preferences()
+    alvo_de_reserva = prefs.get("reserve_months_target")
+
     projecao, cascata = cashflow_service.sobra(
         referencia_mensal=mensal,
         tem_carteira=tem_carteira,
         cdi_anual=cdi_anual,
         mes_referencia=month,
         desvio_de_meta=_ORDEM_POR_META if goal_service.has_declared_goals() else None,
+        reserva_meses_alvo=alvo_de_reserva,
+        reserva_atual=(
+            money(fixed_income_service.liquidez_diaria_total()) if alvo_de_reserva else None
+        ),
     )
 
     return SurplusResponse(

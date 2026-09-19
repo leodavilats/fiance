@@ -171,7 +171,7 @@ class WhatsNewService:
             return []
 
         allocations = DashboardService().calculate_category_allocations(
-            all_positions, GoalService().get_goals()
+            all_positions, GoalService().goals_for_judgement()
         )
 
         off_target = [

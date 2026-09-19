@@ -194,6 +194,17 @@ class FixedIncomeService:
             ),
         )
 
+    def liquidez_diaria_total(self) -> float:
+        rates = get_rates()
+        return round(
+            sum(
+                self._mark_to_market(row, rates).valor_atual
+                for row in portfolio_store.list_fixed_income()
+                if row.get("liquidez") == Liquidez.diaria.value
+            ),
+            2,
+        )
+
     def as_portfolio_positions(self) -> list[PortfolioPosition]:
         listing = self.list_positions()
         return [_to_portfolio_position(item) for item in listing.items if not item.oculto]

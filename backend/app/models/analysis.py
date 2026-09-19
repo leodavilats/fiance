@@ -8,6 +8,17 @@ class FairPriceBlock(BaseModel):
     graham: float | None = None
     dcf: float | None = None
     consensus: float | None = None
+    fair_low: float | None = Field(
+        None,
+        description=(
+            "Piso da faixa de preço justo: o mais conservador dos métodos que se aplicam. "
+            "A margem de segurança é medida contra esta borda quando o preço está abaixo dela."
+        ),
+    )
+    fair_high: float | None = Field(
+        None,
+        description="Teto da faixa: o mais otimista dos métodos que se aplicam.",
+    )
     margin_of_safety: float | None = None
     avg_dividend_5y: float | None = None
     dy_12m: float | None = None
@@ -34,6 +45,13 @@ class DecisionBlock(BaseModel):
     verdict: str
     label: str
     confidence: float
+    basis: str = Field(
+        "band",
+        description=(
+            "De onde o veredito veio: `band` para a faixa de preço justo, `trend` para leitura "
+            "de tendência em ativo sem método aplicável, `none` quando não há nem uma nem outra."
+        ),
+    )
     reasons: list[str] = Field(default_factory=list)
     falsifiers: list[dict] = Field(
         default_factory=list,

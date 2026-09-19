@@ -21,6 +21,14 @@ class Preferences(BaseModel):
     opportunities_frequency: OpportunitiesFrequency = "weekly"
     risk_profile: RiskProfile = RiskProfile.moderate
     density: str = "comfortable"
+    reserve_months_target: int | None = Field(
+        None,
+        description=(
+            "Quantos meses de gasto fixo a pessoa quer guardar. Nulo é o normal: sem alvo "
+            "declarado a cascata não mostra o passo da reserva, porque o número de meses é "
+            "escolha de quem guarda — não do produto."
+        ),
+    )
     preferred_categories: list[AssetCategory] = Field(default_factory=list)
     preferred_sectors: list[str] = Field(default_factory=list)
     excluded_tickers: list[str] = Field(default_factory=list)
@@ -38,6 +46,7 @@ class PreferencesRequest(BaseModel):
     opportunities_frequency: OpportunitiesFrequency | None = None
     risk_profile: RiskProfile | None = None
     density: Literal["comfortable", "compact"] | None = None
+    reserve_months_target: int | None = Field(None, ge=0, le=60)
     preferred_categories: list[AssetCategory] | None = Field(None, max_length=10)
     preferred_sectors: list[str] | None = Field(None, max_length=50)
     excluded_tickers: list[str] | None = Field(None, max_length=500)

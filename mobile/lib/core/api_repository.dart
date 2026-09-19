@@ -183,6 +183,8 @@ class ApiRepository {
     bool? notifyPriceAlerts,
     String? opportunitiesFrequency,
     String? riskProfile,
+    int? reserveMonthsTarget,
+    bool clearReserveMonths = false,
     List<String>? preferredCategories,
     List<String>? preferredSectors,
     List<String>? excludedTickers,
@@ -192,10 +194,13 @@ class ApiRepository {
       'notify_price_alerts': notifyPriceAlerts,
       'opportunities_frequency': opportunitiesFrequency,
       'risk_profile': riskProfile,
+      'reserve_months_target': reserveMonthsTarget,
       'preferred_categories': preferredCategories,
       'preferred_sectors': preferredSectors,
       'excluded_tickers': excludedTickers,
     }..removeWhere((_, v) => v == null);
+
+    if (clearReserveMonths) data['reserve_months_target'] = null;
 
     final res = await _dio.put('/preferences', data: data);
     return Preferences.fromJson(res.data as Map<String, dynamic>);
