@@ -4,32 +4,32 @@ import 'cash_models.dart';
 import 'design_tokens.dart';
 import 'vocabulary.dart';
 
-String rendaFixaTipoLabel(String? tipo) {
-  if (tipo == null) return '—';
-  return fiTiposDeRendaFixa[tipo] ?? tipo;
+String fixedIncomeKindLabel(String? kind) {
+  if (kind == null) return '—';
+  return fiFixedIncomeKinds[kind] ?? kind;
 }
 
-String liquidezLabel(String? liquidez) =>
-    fiLiquidez[liquidez] ?? fiLiquidez['no_vencimento']!;
+String fixedIncomeLiquidityLabel(String? liquidity) =>
+    fiLiquidity[liquidity] ?? fiLiquidity['no_vencimento']!;
 
 String categoryLabel(String? category) {
   if (category == null) return '—';
-  final chave = fiCategoriaApelidos[category] ?? category;
-  return fiCategorias[chave]?.label ?? category;
+  final chave = fiCategoryAliases[category] ?? category;
+  return fiCategories[chave]?.label ?? category;
 }
 
 String assetTypeLabel(String? assetType) {
   if (assetType == null) return '—';
-  return fiTiposDeAtivo[assetType] ?? assetType;
+  return fiAssetTypes[assetType] ?? assetType;
 }
 
 Color categoryColor(String? category, Brightness brightness) {
-  final chave = fiCategoriaApelidos[category] ?? category;
-  return fiSeriesColor(fiCategorias[chave]?.series ?? 0, brightness);
+  final chave = fiCategoryAliases[category] ?? category;
+  return fiSeriesColor(fiCategories[chave]?.series ?? 0, brightness);
 }
 
 Color sectorColor(String sector, Brightness brightness) =>
-    fiSeriesColor(fiSetorSeriePorRotulo[sector] ?? 0, brightness);
+    fiSeriesColor(fiSectorSeriesByLabel[sector] ?? 0, brightness);
 
 FiState fiVerdictState(String? verdict) {
   final v = verdict ?? '';
@@ -68,16 +68,16 @@ String trendLabel(String? trend) {
 
 
 
-Map<String, FiCategoria> _mapaDe(CashKind kind) =>
-    kind == CashKind.income ? fiCategoriasDeEntrada : fiCategoriasDeDespesa;
+Map<String, FiCategory> _mapOf(CashKind kind) =>
+    kind == CashKind.income ? fiIncomeCategories : fiExpenseCategories;
 
 String cashCategoryLabel(CashKind kind, String? category) {
   if (category == null) return '—';
-  return _mapaDe(kind)[category]?.label ?? category;
+  return _mapOf(kind)[category]?.label ?? category;
 }
 
 List<String> cashCategoryKeys(CashKind kind) {
-  final mapa = _mapaDe(kind);
+  final mapa = _mapOf(kind);
   return mapa.keys.toList()
     ..sort((a, b) {
       final sa = mapa[a]!.series;
@@ -90,20 +90,20 @@ List<String> cashCategoryKeys(CashKind kind) {
 
 String debtKindLabel(String? kind) {
   if (kind == null) return '—';
-  return fiTiposDeDivida[kind] ?? kind;
+  return fiDebtKinds[kind] ?? kind;
 }
 
-String lancamentoTipoLabel(String? kind) {
+String ledgerKindLabel(String? kind) {
   if (kind == null) return '—';
-  return fiTiposDeLancamento[kind] ?? kind;
+  return fiLedgerKinds[kind] ?? kind;
 }
 
-String lancamentoTipoExplicacao(String? kind) {
+String ledgerKindExplanation(String? kind) {
   if (kind == null) return '';
-  return fiExplicaTipoDeLancamento[kind] ?? '';
+  return fiLedgerKindExplanations[kind] ?? '';
 }
 
-String proventoTipoLabel(String? kind) {
+String dividendKindLabel(String? kind) {
   if (kind == null) return '—';
-  return fiTiposDeProvento[kind] ?? kind;
+  return fiDividendKinds[kind] ?? kind;
 }

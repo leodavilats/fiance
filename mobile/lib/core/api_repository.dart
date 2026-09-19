@@ -236,20 +236,20 @@ class ApiRepository {
     return AssetAnalysis.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<ReferenceRates> getRendaFixaRates() async {
+  Future<ReferenceRates> getFixedIncomeRates() async {
     final res = await _dio.get('/renda-fixa/taxas');
     return ReferenceRates.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<List<RendaFixaResult>> compareRendaFixa(
-    List<Map<String, dynamic>> ativos,
+  Future<List<FixedIncomeResult>> compareFixedIncome(
+    List<Map<String, dynamic>> activeCount,
   ) async {
     final res = await _dio.post(
       '/renda-fixa/comparar',
-      data: {'ativos': ativos},
+      data: {'ativos': activeCount},
     );
     return (res.data['resultados'] as List)
-        .map((e) => RendaFixaResult.fromJson(e as Map<String, dynamic>))
+        .map((e) => FixedIncomeResult.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
@@ -516,13 +516,13 @@ class ApiRepository {
   }
 
   Future<List<CashEntry>> createCashEntriesBatch(
-    List<CashTemplateCandidate> escolhidos,
+    List<CashTemplateCandidate> chosen,
   ) async {
     final res = await _dio.post(
       '/cashflow/entries/batch',
       data: {
         'entries': [
-          for (final c in escolhidos)
+          for (final c in chosen)
             {
               'kind': c.kind.json,
               'category': c.category,
@@ -630,12 +630,12 @@ class ApiRepository {
     return DividendPending.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<int> confirmDividends(List<DividendSuggestion> escolhidos) async {
+  Future<int> confirmDividends(List<DividendSuggestion> chosen) async {
     final res = await _dio.post(
       '/dividends/pending/confirm',
       data: {
         'items': [
-          for (final s in escolhidos)
+          for (final s in chosen)
             {
               'ticker': s.ticker,
               'paid_at': s.paidAt,

@@ -3,17 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/cash_models.dart';
 import '../../core/labels.dart';
-import '../../core/mes.dart';
+import '../../core/month.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 
-Future<void> abrirLancarSheet(
+Future<void> openCashEntrySheet(
   BuildContext context,
   WidgetRef ref, {
-  CashEntry? editar,
+  CashEntry? editing,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -23,100 +23,100 @@ Future<void> abrirLancarSheet(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: _LancarForm(editar: editar),
+      child: _CashEntryForm(editing: editing),
     ),
   );
 }
 
-class _LancarForm extends ConsumerStatefulWidget {
-  const _LancarForm({this.editar});
+class _CashEntryForm extends ConsumerStatefulWidget {
+  const _CashEntryForm({this.editing});
 
-  final CashEntry? editar;
+  final CashEntry? editing;
 
   @override
-  ConsumerState<_LancarForm> createState() => _LancarFormState();
+  ConsumerState<_CashEntryForm> createState() => _CashEntryFormState();
 }
 
-class _LancarFormState extends ConsumerState<_LancarForm> {
+class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
   final _form = GlobalKey<FormState>();
-  final _descricao = TextEditingController();
-  final _valor = TextEditingController();
+  final _description = TextEditingController();
+  final _amount = TextEditingController();
 
   late CashKind _kind;
-  late String _categoria;
-  late DateTime _dia;
+  late String _category;
+  late DateTime _dayFormat;
 
-  bool _liquidado = false;
+  bool _settled = false;
 
-  bool _salvando = false;
-  String? _erro;
+  bool _saving = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    final e = widget.editar;
+    final e = widget.editing;
     _kind = e?.kind ?? CashKind.expense;
-    _categoria = e?.category ?? cashCategoryKeys(_kind).first;
-    _dia = DateTime.tryParse(e?.competencia ?? '') ?? DateTime.now();
-    _liquidado = e?.paidOn != null;
+    _category = e?.category ?? cashCategoryKeys(_kind).first;
+    _dayFormat = DateTime.tryParse(e?.accrualOn ?? '') ?? DateTime.now();
+    _settled = e?.paidOn != null;
     if (e != null) {
-      _descricao.text = e.description;
-      _valor.text = e.amount.toStringAsFixed(2).replaceAll('.', ',');
+      _description.text = e.description;
+      _amount.text = e.amount.toStringAsFixed(2).replaceAll('.', ',');
     }
   }
 
   @override
   void dispose() {
-    _descricao.dispose();
-    _valor.dispose();
+    _description.dispose();
+    _amount.dispose();
     super.dispose();
   }
 
-  void _trocarKind(CashKind k) {
+  void _changeKind(CashKind k) {
     setState(() {
       _kind = k;
-      _categoria = cashCategoryKeys(k).first;
+      _category = cashCategoryKeys(k).first;
     });
   }
 
-  String get _iso => _dia.toIso8601String().substring(0, 10);
+  String get _iso => _dayFormat.toIso8601String().substring(0, 10);
 
-  bool get _entrada => _kind == CashKind.income;
+  bool get _income => _kind == CashKind.income;
 
-  Future<void> _salvar() async {
+  Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
 
     final valor = double.tryParse(
-      _valor.text.replaceAll('.', '').replaceAll(',', '.'),
+      _amount.text.replaceAll('.', '').replaceAll(',', '.'),
     );
     if (valor == null) return;
 
     setState(() {
-      _salvando = true;
-      _erro = null;
+      _saving = true;
+      _error = null;
     });
 
     try {
       final api = ref.read(apiRepositoryProvider);
-      final e = widget.editar;
+      final e = widget.editing;
       if (e == null) {
         await api.createCashEntry(
           kind: _kind,
-          category: _categoria,
-          description: _descricao.text.trim(),
+          category: _category,
+          description: _description.text.trim(),
           amount: valor,
           dueOn: _iso,
-          paidOn: _liquidado ? _iso : null,
+          paidOn: _settled ? _iso : null,
         );
       } else {
         await api.updateCashEntry(
           id: e.id,
           kind: _kind,
-          category: _categoria,
-          description: _descricao.text.trim(),
+          category: _category,
+          description: _description.text.trim(),
           amount: valor,
           dueOn: _iso,
-          paidOn: _liquidado ? _iso : null,
+          paidOn: _settled ? _iso : null,
         );
       }
 
@@ -125,24 +125,24 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
       ref.invalidate(surplusProvider);
 
       if (!mounted) return;
-      final mesDoLancamento = _iso.substring(0, 7);
+      final entryMonth = _iso.substring(0, 7);
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lançado em ${nomeDoMes(mesDoLancamento)}'),
+          content: Text('Lançado em ${monthName(entryMonth)}'),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _salvando = false;
-        _erro = fiErrorMessage(e, action: 'salvar este lançamento');
+        _saving = false;
+        _error = fiErrorMessage(e, action: 'salvar este lançamento');
       });
     }
   }
 
-  Future<void> _apagar() async {
-    final e = widget.editar;
+  Future<void> _delete() async {
+    final e = widget.editing;
     if (e == null) return;
 
     final ok = await showDialog<bool>(
@@ -166,7 +166,7 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
     );
     if (ok != true) return;
 
-    setState(() => _salvando = true);
+    setState(() => _saving = true);
     try {
       await ref.read(apiRepositoryProvider).deleteCashEntry(e.id);
       ref.invalidate(cashMonthProvider);
@@ -177,15 +177,15 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
     } catch (erro) {
       if (!mounted) return;
       setState(() {
-        _salvando = false;
-        _erro = fiErrorMessage(erro, action: 'apagar este lançamento');
+        _saving = false;
+        _error = fiErrorMessage(erro, action: 'apagar este lançamento');
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final categorias = cashCategoryKeys(_kind);
+    final categories = cashCategoryKeys(_kind);
 
     return SafeArea(
       child: Padding(
@@ -202,7 +202,7 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.editar == null ? 'Lançar no mês' : 'Editar lançamento',
+                widget.editing == null ? 'Lançar no mês' : 'Editar lançamento',
                 style: FiType.pageTitle.copyWith(color: fiInk1(context)),
               ),
               const SizedBox(height: FiSpace.s5),
@@ -214,12 +214,12 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
                   ButtonSegment(value: CashKind.income, label: Text('Entrada')),
                 ],
                 selected: {_kind},
-                onSelectionChanged: (s) => _trocarKind(s.first),
+                onSelectionChanged: (s) => _changeKind(s.first),
               ),
               const SizedBox(height: FiSpace.s5),
 
               TextFormField(
-                controller: _descricao,
+                controller: _description,
                 decoration: const InputDecoration(labelText: 'Descrição'),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (v) =>
@@ -228,7 +228,7 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
               const SizedBox(height: FiSpace.s3),
 
               TextFormField(
-                controller: _valor,
+                controller: _amount,
                 decoration: const InputDecoration(
                   labelText: 'Valor',
                   prefixText: r'R$ ',
@@ -247,16 +247,16 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
               const SizedBox(height: FiSpace.s3),
 
               DropdownButtonFormField<String>(
-                initialValue: _categoria,
+                initialValue: _category,
                 decoration: const InputDecoration(labelText: 'Categoria'),
                 items: [
-                  for (final c in categorias)
+                  for (final c in categories)
                     DropdownMenuItem(
                       value: c,
                       child: Text(cashCategoryLabel(_kind, c)),
                     ),
                 ],
-                onChanged: (v) => setState(() => _categoria = v ?? _categoria),
+                onChanged: (v) => setState(() => _category = v ?? _category),
               ),
               const SizedBox(height: FiSpace.s3),
 
@@ -264,39 +264,39 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
               FiRows(
                 children: [
                   FiDataRow(
-                    label: _entrada
+                    label: _income
                         ? 'Dia do crédito'
-                        : (_liquidado ? 'Dia do pagamento' : 'Vencimento'),
+                        : (_settled ? 'Dia do pagamento' : 'Vencimento'),
                     value:
-                        '${diaDe(_iso)}/${_iso.substring(5, 7)}/${_iso.substring(0, 4)}',
+                        '${dayOf(_iso)}/${_iso.substring(5, 7)}/${_iso.substring(0, 4)}',
                     onTap: () async {
                       final d = await showDatePicker(
                         context: context,
-                        initialDate: _dia,
-                        firstDate: DateTime(_dia.year - 3),
-                        lastDate: DateTime(_dia.year + 3),
+                        initialDate: _dayFormat,
+                        firstDate: DateTime(_dayFormat.year - 3),
+                        lastDate: DateTime(_dayFormat.year + 3),
                       );
-                      if (d != null) setState(() => _dia = d);
+                      if (d != null) setState(() => _dayFormat = d);
                     },
                   ),
                   FiDataRow(
-                    label: _entrada ? 'Já recebi' : 'Já paguei',
-                    detail: _liquidado
+                    label: _income ? 'Já recebi' : 'Já paguei',
+                    detail: _settled
                         ? 'Entra na competência deste dia.'
                         : 'Conta não paga conta no mês do vencimento, e é o que forma o '
                               'comprometido.',
                     trailing: Switch(
-                      value: _liquidado,
-                      onChanged: (v) => setState(() => _liquidado = v),
+                      value: _settled,
+                      onChanged: (v) => setState(() => _settled = v),
                     ),
                   ),
                 ],
               ),
 
-              if (_erro != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: FiSpace.s3),
                 Text(
-                  _erro!,
+                  _error!,
                   style: FiType.body.copyWith(
                     color: fiStateColor(FiState.adverse, Theme.of(context).brightness),
                   ),
@@ -305,20 +305,20 @@ class _LancarFormState extends ConsumerState<_LancarForm> {
 
               const SizedBox(height: FiSpace.s6),
               FiButton.primary(
-                label: widget.editar == null
+                label: widget.editing == null
                     ? 'Lançar'
                     : 'Salvar alterações',
                 expand: true,
-                busy: _salvando,
-                onPressed: _salvar,
+                busy: _saving,
+                onPressed: _save,
               ),
 
-              if (widget.editar != null) ...[
+              if (widget.editing != null) ...[
                 const SizedBox(height: FiSpace.s2),
                 FiButton.danger(
                   label: 'Apagar lançamento',
                   expand: true,
-                  onPressed: _salvando ? null : _apagar,
+                  onPressed: _saving ? null : _delete,
                 ),
               ],
             ],

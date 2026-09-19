@@ -21,7 +21,7 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
-import '../mes/widgets/feed_tiles.dart';
+import '../month/widgets/feed_tiles.dart';
 
 class AnalyzeAssetView extends ConsumerStatefulWidget {
   const AnalyzeAssetView({super.key, this.initialTicker});
@@ -135,7 +135,7 @@ class _AssetAnalysis extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = analysis;
-    final idade = formatIdade(a.asOf);
+    final idade = formatAge(a.asOf);
     final estado = fiVerdictState(a.verdict);
     final margem = a.marginOfSafety;
 
@@ -257,31 +257,31 @@ class _AssetAnalysis extends StatelessWidget {
   }
 }
 
-class _RendaFixaOption {
-  String tipo = 'cdb';
-  String nome = '';
-  double valor = 1000;
-  double taxa = 110;
-  int prazoMeses = 12;
-  String tipoTaxa = 'pos_fixado';
+class _FixedIncomeOption {
+  String kind = 'cdb';
+  String name = '';
+  double amount = 1000;
+  double rate = 110;
+  int termMonths = 12;
+  String rateKind = 'pos_fixado';
 }
 
-class RendaFixaSimulatorView extends ConsumerStatefulWidget {
-  const RendaFixaSimulatorView({super.key});
+class FixedIncomeSimulatorView extends ConsumerStatefulWidget {
+  const FixedIncomeSimulatorView({super.key});
 
   @override
-  ConsumerState<RendaFixaSimulatorView> createState() =>
-      RendaFixaSimulatorViewState();
+  ConsumerState<FixedIncomeSimulatorView> createState() =>
+      FixedIncomeSimulatorViewState();
 }
 
-class RendaFixaSimulatorViewState
-    extends ConsumerState<RendaFixaSimulatorView> {
-  final List<_RendaFixaOption> _options = [_RendaFixaOption()];
-  List<RendaFixaResult>? _results;
+class FixedIncomeSimulatorViewState
+    extends ConsumerState<FixedIncomeSimulatorView> {
+  final List<_FixedIncomeOption> _options = [_FixedIncomeOption()];
+  List<FixedIncomeResult>? _results;
   bool _loading = false;
   String? _error;
 
-  static const _tipos = {
+  static const _kinds = {
     'cdb': 'CDB',
     'lci': 'LCI',
     'lca': 'LCA',
@@ -300,17 +300,17 @@ class RendaFixaSimulatorViewState
     try {
       final results = await ref
           .read(apiRepositoryProvider)
-          .compareRendaFixa(
+          .compareFixedIncome(
             _options
                 .map(
                   (o) => {
-                    'tipo': o.tipo,
-                    'nome': o.nome.isEmpty ? null : o.nome,
-                    'valor_investido': o.valor,
-                    'taxa': o.taxa,
-                    'prazo_meses': o.prazoMeses,
-                    'tipo_taxa': o.tipoTaxa,
-                    if (o.tipoTaxa == 'pos_fixado') 'percentual_cdi': o.taxa,
+                    'tipo': o.kind,
+                    'nome': o.name.isEmpty ? null : o.name,
+                    'valor_investido': o.amount,
+                    'taxa': o.rate,
+                    'prazo_meses': o.termMonths,
+                    'tipo_taxa': o.rateKind,
+                    if (o.rateKind == 'pos_fixado') 'percentual_cdi': o.rate,
                   },
                 )
                 .toList(),
@@ -348,9 +348,9 @@ class RendaFixaSimulatorViewState
             child: FiFigures(
               rule: false,
               figures: {
-                'CDI': formatPercent(r.cdiAnual),
-                'SELIC': formatPercent(r.selicAnual),
-                'IPCA': formatPercent(r.ipcaAnual),
+                'CDI': formatPercent(r.cdiAnnual),
+                'SELIC': formatPercent(r.selicAnnual),
+                'IPCA': formatPercent(r.ipcaAnnual),
               },
             ),
           ),
@@ -359,8 +359,8 @@ class RendaFixaSimulatorViewState
           _options.length,
           (i) => _OptionForm(
             option: _options[i],
-            ordem: i + 1,
-            tipos: _tipos,
+            index: i + 1,
+            kinds: _kinds,
             onRemove: _options.length > 1
                 ? () => setState(() => _options.removeAt(i))
                 : null,
@@ -373,7 +373,7 @@ class RendaFixaSimulatorViewState
           child: FiButton.quiet(
             label: 'Adicionar outro título',
             icon: Icons.add,
-            onPressed: () => setState(() => _options.add(_RendaFixaOption())),
+            onPressed: () => setState(() => _options.add(_FixedIncomeOption())),
           ),
         ),
         const SizedBox(height: FiSpace.s5),
@@ -403,7 +403,7 @@ class RendaFixaSimulatorViewState
                   Padding(
                     padding: const EdgeInsets.only(bottom: FiSpace.s2),
                     child: FiObject(
-                      accent: r.melhorOpcao
+                      accent: r.bestOption
                           ? fiStateColor(FiState.favorable, brightness)
                           : null,
                       child: Column(
@@ -413,14 +413,14 @@ class RendaFixaSimulatorViewState
                             children: [
                               Expanded(
                                 child: Text(
-                                  '${_tipos[r.tipo] ?? r.tipo}'
-                                  '${r.nome != null ? ' · ${r.nome}' : ''}',
+                                  '${_kinds[r.kind] ?? r.kind}'
+                                  '${r.name != null ? ' · ${r.name}' : ''}',
                                   style: FiType.title.copyWith(
                                     color: fiInk1(context),
                                   ),
                                 ),
                               ),
-                              if (r.melhorOpcao)
+                              if (r.bestOption)
                                 const FiTag(
                                   label: 'Rende mais',
                                   state: FiState.favorable,
@@ -431,8 +431,8 @@ class RendaFixaSimulatorViewState
                           FiFigures(
                             rule: false,
                             figures: {
-                              'LÍQUIDO': formatCurrency(r.valorLiquido),
-                              'TAXA LÍQUIDA': formatPercent(r.taxaLiquidaAa),
+                              'LÍQUIDO': formatCurrency(r.netValue),
+                              'TAXA LÍQUIDA': formatPercent(r.netAnnualRate),
                             },
                           ),
                         ],
@@ -448,21 +448,21 @@ class RendaFixaSimulatorViewState
 }
 
 final _ratesProvider = FutureProvider.autoDispose<ReferenceRates>((ref) {
-  return ref.watch(apiRepositoryProvider).getRendaFixaRates();
+  return ref.watch(apiRepositoryProvider).getFixedIncomeRates();
 });
 
 class _OptionForm extends StatelessWidget {
   const _OptionForm({
     required this.option,
-    required this.ordem,
-    required this.tipos,
+    required this.index,
+    required this.kinds,
     required this.onChanged,
     this.onRemove,
   });
 
-  final _RendaFixaOption option;
-  final int ordem;
-  final Map<String, String> tipos;
+  final _FixedIncomeOption option;
+  final int index;
+  final Map<String, String> kinds;
   final VoidCallback onChanged;
   final VoidCallback? onRemove;
 
@@ -476,7 +476,7 @@ class _OptionForm extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'TÍTULO $ordem',
+              'TÍTULO $index',
               style: FiType.eyebrow.copyWith(color: fiInk3(context)),
             ),
             const SizedBox(height: FiSpace.s2),
@@ -484,12 +484,12 @@ class _OptionForm extends StatelessWidget {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    initialValue: option.tipo,
+                    initialValue: option.kind,
                     decoration: const InputDecoration(
                       labelText: 'Tipo',
                       isDense: true,
                     ),
-                    items: tipos.entries
+                    items: kinds.entries
                         .map(
                           (e) => DropdownMenuItem(
                             value: e.key,
@@ -498,8 +498,8 @@ class _OptionForm extends StatelessWidget {
                         )
                         .toList(),
                     onChanged: (v) {
-                      option.tipo = v!;
-                      option.tipoTaxa = (v == 'tesouro_ipca')
+                      option.kind = v!;
+                      option.rateKind = (v == 'tesouro_ipca')
                           ? 'hibrido'
                           : (v == 'tesouro_pre')
                           ? 'pre_fixado'
@@ -511,7 +511,7 @@ class _OptionForm extends StatelessWidget {
                 if (onRemove != null)
                   IconButton(
                     onPressed: onRemove,
-                    tooltip: 'Remover o título $ordem da comparação',
+                    tooltip: 'Remover o título $index da comparação',
                     icon: const Icon(Icons.delete_outline),
                   ),
               ],
@@ -521,42 +521,42 @@ class _OptionForm extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextFormField(
-                    initialValue: option.valor.toStringAsFixed(0),
+                    initialValue: option.amount.toStringAsFixed(0),
                     decoration: const InputDecoration(
                       labelText: 'Valor (R\$)',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
                     onChanged: (v) =>
-                        option.valor = double.tryParse(v) ?? option.valor,
+                        option.amount = double.tryParse(v) ?? option.amount,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
-                    initialValue: option.taxa.toStringAsFixed(0),
+                    initialValue: option.rate.toStringAsFixed(0),
                     decoration: InputDecoration(
-                      labelText: option.tipoTaxa == 'pos_fixado'
+                      labelText: option.rateKind == 'pos_fixado'
                           ? '% do CDI'
                           : 'Taxa % a.a.',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
                     onChanged: (v) =>
-                        option.taxa = double.tryParse(v) ?? option.taxa,
+                        option.rate = double.tryParse(v) ?? option.rate,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
-                    initialValue: option.prazoMeses.toString(),
+                    initialValue: option.termMonths.toString(),
                     decoration: const InputDecoration(
                       labelText: 'Prazo (meses)',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
-                    onChanged: (v) => option.prazoMeses =
-                        int.tryParse(v) ?? option.prazoMeses,
+                    onChanged: (v) => option.termMonths =
+                        int.tryParse(v) ?? option.termMonths,
                   ),
                 ),
               ],
@@ -993,7 +993,7 @@ class ContributionSimulatorViewState
       if (r.target != null) ...[
         const SizedBox(height: FiSpace.s6),
         Text(
-          _textoDaMeta(r.target!),
+          _targetText(r.target!),
           style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
         ),
       ],
@@ -1009,17 +1009,17 @@ class ContributionSimulatorViewState
     ];
   }
 
-  String _textoDaMeta(ProjectionTarget meta) {
-    final valor = formatCurrency(meta.monthlyIncome);
+  String _targetText(ProjectionTarget meta) {
+    final amount = formatCurrency(meta.monthlyIncome);
     if (meta.reachedInAllScenarios) {
-      return 'Meta de $valor/mês: alcançada entre ${meta.earliestMonths} e '
+      return 'Meta de $amount/mês: alcançada entre ${meta.earliestMonths} e '
           '${meta.latestMonths} meses. No cenário base, ${meta.expectedMonths} meses.';
     }
     if (meta.expectedMonths != null) {
-      return 'Meta de $valor/mês: ${meta.expectedMonths} meses no cenário base, mas não '
+      return 'Meta de $amount/mês: ${meta.expectedMonths} meses no cenário base, mas não '
           'alcançada no cenário conservador dentro do período simulado.';
     }
-    return 'Meta de $valor/mês: não alcançada em nenhum dos três cenários dentro do '
+    return 'Meta de $amount/mês: não alcançada em nenhum dos três cenários dentro do '
         'período simulado. Aumentar o aporte ou o prazo muda isso; mudar a premissa '
         'de valorização não.';
   }

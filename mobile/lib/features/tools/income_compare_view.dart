@@ -106,11 +106,11 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
   List<Widget> _buildResult(IncomeCompare r, Color ink2, Color ink3) {
     final todas = [...r.fixedIncome, ...r.assets];
     final maior = todas.isEmpty
-        ? r.cdiAnual
+        ? r.cdiAnnual
         : todas
               .map((o) => o.netIncomeYieldPct)
               .reduce((a, b) => a > b ? a : b);
-    final teto = (maior > r.cdiAnual ? maior : r.cdiAnual) * 1.15 + 0.5;
+    final cap = (maior > r.cdiAnnual ? maior : r.cdiAnnual) * 1.15 + 0.5;
 
     return [
       const SizedBox(height: FiSpace.s6),
@@ -122,7 +122,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
         const SizedBox(height: FiSpace.s2),
       ],
       Text(
-        'CDI a ${r.cdiAnual.toStringAsFixed(2)}% ao ano · '
+        'CDI a ${r.cdiAnnual.toStringAsFixed(2)}% ao ano · '
         '${formatCurrency(r.amount)} por ${r.horizonMonths} meses. '
         'A marca em cada régua é o CDI.',
         style: FiType.caption.copyWith(color: ink3),
@@ -134,7 +134,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
           child: Column(
             children: [
               for (final o in r.fixedIncome)
-                _OptionObject(option: o, cdi: r.cdiAnual, teto: teto),
+                _OptionObject(option: o, cdi: r.cdiAnnual, cap: cap),
             ],
           ),
         ),
@@ -145,7 +145,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
           child: Column(
             children: [
               for (final o in r.assets)
-                _OptionObject(option: o, cdi: r.cdiAnual, teto: teto),
+                _OptionObject(option: o, cdi: r.cdiAnnual, cap: cap),
             ],
           ),
         ),
@@ -167,12 +167,12 @@ class _OptionObject extends StatelessWidget {
   const _OptionObject({
     required this.option,
     required this.cdi,
-    required this.teto,
+    required this.cap,
   });
 
   final IncomeOption option;
   final double cdi;
-  final double teto;
+  final double cap;
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +188,7 @@ class _OptionObject extends StatelessWidget {
             FiMeasure(
               label: o.label,
               value: o.netIncomeYieldPct,
-              max: teto,
+              max: cap,
               reference: cdi,
               readout: '${o.netIncomeYieldPct.toStringAsFixed(2)}% a.a.',
               note: acimaDoCdi

@@ -74,7 +74,7 @@ void main() {
             'o resumo anunciava "uma fatia em renda fixa" e a tela nao mostrava nenhuma',
       );
       expect(resultado.fixedIncome?.referenceSource, 'bcb');
-      expect(resultado.temDestino, isTrue, reason: 'renda fixa e destino');
+      expect(resultado.hasDestination, isTrue, reason: 'renda fixa e destino');
 
       expect(
         resultado.unallocated.single.reason,
@@ -96,7 +96,7 @@ void main() {
         'allocations': [],
       });
 
-      expect(resultado.temDestino, isFalse);
+      expect(resultado.hasDestination, isFalse);
       expect(resultado.basis, 'goals', reason: 'campo ausente cai no padrao, nao em nulo');
       expect(resultado.fixedIncome, isNull);
       expect(resultado.unallocated, isEmpty);

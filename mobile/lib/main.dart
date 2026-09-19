@@ -9,7 +9,7 @@ import 'core/theme_provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
-  await rodarComTelemetria(() async {
+  await runWithTelemetry(() async {
     WidgetsFlutterBinding.ensureInitialized();
     try {
       await Firebase.initializeApp(

@@ -13,8 +13,8 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 
-class ObjetivosScreen extends StatelessWidget {
-  const ObjetivosScreen({super.key});
+class GoalsScreen extends StatelessWidget {
+  const GoalsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class ObjetivosScreen extends StatelessWidget {
             'salvar só libera lá.',
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
-          const RendaPassivaSection(),
+          const PassiveIncomeSection(),
           const FiSection(title: 'Por categoria', child: GoalsSection()),
           const FiSection(
             title: 'Por setor',
@@ -47,8 +47,8 @@ class ObjetivosScreen extends StatelessWidget {
   }
 }
 
-class RendaPassivaSection extends ConsumerWidget {
-  const RendaPassivaSection({super.key});
+class PassiveIncomeSection extends ConsumerWidget {
+  const PassiveIncomeSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -141,8 +141,8 @@ class RendaPassivaSection extends ConsumerWidget {
   }
 }
 
-class _LinhaDeMeta extends StatelessWidget {
-  const _LinhaDeMeta({
+class _GoalRow extends StatelessWidget {
+  const _GoalRow({
     required this.label,
     required this.value,
     required this.onChanged,
@@ -187,23 +187,23 @@ class _LinhaDeMeta extends StatelessWidget {
   }
 }
 
-class _Fechamento extends StatelessWidget {
-  const _Fechamento({
+class _Closing extends StatelessWidget {
+  const _Closing({
     required this.total,
-    required this.exigeCemPorCento,
-    required this.onSalvar,
+    required this.requiresFullAllocation,
+    required this.onSave,
   });
 
   final double total;
 
-  final bool exigeCemPorCento;
+  final bool requiresFullAllocation;
 
-  final VoidCallback? onSalvar;
+  final VoidCallback? onSave;
 
   @override
   Widget build(BuildContext context) {
     final fechou = (total - 100).abs() < 0.5;
-    final estado = !exigeCemPorCento
+    final estado = !requiresFullAllocation
         ? FiState.neutral
         : (fechou ? FiState.favorable : FiState.attention);
 
@@ -223,10 +223,10 @@ class _Fechamento extends StatelessWidget {
                 ),
               ),
             ),
-            FiButton.primary(label: 'Salvar metas', onPressed: onSalvar),
+            FiButton.primary(label: 'Salvar metas', onPressed: onSave),
           ],
         ),
-        if (exigeCemPorCento && !fechou) ...[
+        if (requiresFullAllocation && !fechou) ...[
           const SizedBox(height: FiSpace.s2),
           Text(
             'Faltam ${(100 - total).abs().toStringAsFixed(0)} pontos para fechar 100%.',
@@ -268,7 +268,7 @@ class GoalsSectionState extends ConsumerState<GoalsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (final g in items)
-              _LinhaDeMeta(
+              _GoalRow(
                 label: categoryLabel(g.category),
                 value: g.targetPct,
                 onChanged: (v) => setState(() {
@@ -281,10 +281,10 @@ class GoalsSectionState extends ConsumerState<GoalsSection> {
                       .toList();
                 }),
               ),
-            _Fechamento(
+            _Closing(
               total: total,
-              exigeCemPorCento: true,
-              onSalvar: podeSalvar
+              requiresFullAllocation: true,
+              onSave: podeSalvar
                   ? () async {
                       await ref.read(apiRepositoryProvider).saveGoals(_editing!);
                       ref.invalidate(goalsProvider);
@@ -347,7 +347,7 @@ class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (final g in current)
-              _LinhaDeMeta(
+              _GoalRow(
                 label: translateSector(g.sector),
                 value: g.targetPct,
                 onChanged: (v) => setState(() {
@@ -360,10 +360,10 @@ class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
                       .toList();
                 }),
               ),
-            _Fechamento(
+            _Closing(
               total: total,
-              exigeCemPorCento: false,
-              onSalvar: _editing == null
+              requiresFullAllocation: false,
+              onSave: _editing == null
                   ? null
                   : () async {
                       await ref

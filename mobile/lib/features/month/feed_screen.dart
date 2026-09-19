@@ -45,7 +45,7 @@ class FeedScreen extends ConsumerWidget {
           ref.invalidate(whatsNewProvider);
         },
         child: dashboard.when(
-          loading: () => FiSkeleton.tela(
+          loading: () => FiSkeleton.screen(
             shape: FiSkeletonShape.row,
             count: 5,
             label: 'Carregando o que mudou',
@@ -79,7 +79,7 @@ class FeedScreen extends ConsumerWidget {
                 ),
               ),
 
-              ..._proximaAcao(context, data),
+              ..._nextAction(context, data),
 
               if (data.health != null)
                 FiSection(
@@ -160,7 +160,7 @@ class FeedScreen extends ConsumerWidget {
     }
   }
 
-  List<Widget> _proximaAcao(BuildContext context, DashboardData data) {
+  List<Widget> _nextAction(BuildContext context, DashboardData data) {
     final candidates =
         data.allocations
             .where((a) => a.targetPct != null)

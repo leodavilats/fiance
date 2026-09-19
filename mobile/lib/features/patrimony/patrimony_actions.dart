@@ -11,7 +11,7 @@ import '../../core/format.dart';
 import '../assets/fixed_income_screen.dart';
 
 Future<void> openAddPositionDialog(BuildContext context, WidgetRef ref) async {
-  final tipo = await showModalBottomSheet<_TipoDeAtivo>(
+  final kind = await showModalBottomSheet<_AssetKind>(
     context: context,
     showDragHandle: true,
     builder: (context) => SafeArea(
@@ -36,12 +36,12 @@ Future<void> openAddPositionDialog(BuildContext context, WidgetRef ref) async {
                 FiDataRow(
                   label: 'Ativo negociado',
                   detail: 'Ação, FII, BDR ou ETF — por ticker',
-                  onTap: () => Navigator.pop(context, _TipoDeAtivo.negociado),
+                  onTap: () => Navigator.pop(context, _AssetKind.traded),
                 ),
                 FiDataRow(
                   label: 'Renda fixa',
                   detail: 'CDB, LCI, LCA, Tesouro — por taxa e vencimento',
-                  onTap: () => Navigator.pop(context, _TipoDeAtivo.rendaFixa),
+                  onTap: () => Navigator.pop(context, _AssetKind.fixedIncome),
                 ),
               ],
             ),
@@ -51,19 +51,19 @@ Future<void> openAddPositionDialog(BuildContext context, WidgetRef ref) async {
     ),
   );
 
-  if (tipo == null || !context.mounted) return;
+  if (kind == null || !context.mounted) return;
 
-  if (tipo == _TipoDeAtivo.rendaFixa) {
-    await abrirFormDeRendaFixa(context, ref);
+  if (kind == _AssetKind.fixedIncome) {
+    await openFixedIncomeForm(context, ref);
     return;
   }
 
-  await _abrirFormDePosicao(context, ref);
+  await _openPositionForm(context, ref);
 }
 
-enum _TipoDeAtivo { negociado, rendaFixa }
+enum _AssetKind { traded, fixedIncome }
 
-Future<void> _abrirFormDePosicao(BuildContext context, WidgetRef ref) async {
+Future<void> _openPositionForm(BuildContext context, WidgetRef ref) async {
   final tickerCtrl = TextEditingController();
   final qtyCtrl = TextEditingController();
   final priceCtrl = TextEditingController();

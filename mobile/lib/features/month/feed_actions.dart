@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-void runHojeAction(BuildContext context, String? action, String? ticker) {
+void runFeedAction(BuildContext context, String? action, String? ticker) {
   switch (action) {
     case 'analyze':
       context.go(ticker != null ? '/ativo/$ticker' : '/patrimonio');

@@ -14,7 +14,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/error_state.dart';
 
-Future<void> abrirFormDeRendaFixa(
+Future<void> openFixedIncomeForm(
   BuildContext context,
   WidgetRef ref, {
   FixedIncomePosition? existing,
@@ -45,7 +45,7 @@ class FixedIncomeScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref, {
     FixedIncomePosition? existing,
-  }) => abrirFormDeRendaFixa(context, ref, existing: existing);
+  }) => openFixedIncomeForm(context, ref, existing: existing);
 
   Future<void> _delete(
     BuildContext context,
@@ -55,7 +55,7 @@ class FixedIncomeScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Remover ${position.nome}?'),
+        title: Text('Remover ${position.name}?'),
         content: const Text('A aplicação sai da carteira e do histórico de rendimento.'),
         actions: [
           TextButton(
@@ -93,7 +93,7 @@ class FixedIncomeScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(fixedIncomeProvider),
         child: listing.when(
-          loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 5, label: 'Carregando seus títulos'),
+          loading: () => FiSkeleton.screen(shape: FiSkeletonShape.row, count: 5, label: 'Carregando seus títulos'),
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos carregar sua renda fixa',
@@ -128,7 +128,7 @@ class FixedIncomeScreen extends ConsumerWidget {
                 FiLayout.scrollTail,
               ),
               children: [
-                _Totais(data: data),
+                _Totals(data: data),
                 FiSection(
                   title: 'Aplicações',
                   count: data.items.length,
@@ -140,7 +140,7 @@ class FixedIncomeScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       for (final item in data.items)
-                        _AplicacaoObject(
+                        _HoldingObject(
                           item: item,
                           onEdit: () => _openForm(context, ref, existing: item),
                           onDelete: () => _delete(context, ref, item),
@@ -157,26 +157,26 @@ class FixedIncomeScreen extends ConsumerWidget {
   }
 }
 
-class _Totais extends StatelessWidget {
-  const _Totais({required this.data});
+class _Totals extends StatelessWidget {
+  const _Totals({required this.data});
 
   final FixedIncomeList data;
 
   @override
   Widget build(BuildContext context) {
-    final fonte = data.fonteTaxas == 'bcb' ? 'BCB' : 'estimativa';
-    final rendeu = data.totalRendimento >= 0;
+    final fonte = data.ratesOrigin == 'bcb' ? 'BCB' : 'estimativa';
+    final rendeu = data.totalReturn >= 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FiHeadline(
           eyebrow: 'Valor de hoje',
-          figure: formatCurrency(data.totalAtual),
+          figure: formatCurrency(data.totalCurrent),
           size: FiHeadlineSize.xl,
           support:
-              '${rendeu ? '+' : ''}${formatCurrency(data.totalRendimento)} de rendimento '
-              'líquido (${formatPercent(data.rendimentoPct)}) sobre o aplicado',
+              '${rendeu ? '+' : ''}${formatCurrency(data.totalReturn)} de rendimento '
+              'líquido (${formatPercent(data.returnPct)}) sobre o aplicado',
           supportColor: fiDirectionColor(
             rendeu ? 1 : -1,
             Theme.of(context).brightness,
@@ -185,13 +185,13 @@ class _Totais extends StatelessWidget {
         const SizedBox(height: FiSpace.s5),
         FiFigures(
           figures: {
-            'APLICADO': formatCurrency(data.totalInvestido),
-            'TAXA MÉDIA': '${formatPercent(data.taxaMediaAa)} ao ano',
+            'APLICADO': formatCurrency(data.totalInvested),
+            'TAXA MÉDIA': '${formatPercent(data.averageAnnualRate)} ao ano',
           },
         ),
         const SizedBox(height: FiSpace.s2),
         Text(
-          'Contra um CDI de ${formatPercent(data.cdiReferencia)} ao ano, lido do $fonte.',
+          'Contra um CDI de ${formatPercent(data.cdiReference)} ao ano, lido do $fonte.',
           style: FiType.caption.copyWith(color: fiInk3(context)),
         ),
       ],
@@ -199,8 +199,8 @@ class _Totais extends StatelessWidget {
   }
 }
 
-class _AplicacaoObject extends StatelessWidget {
-  const _AplicacaoObject({
+class _HoldingObject extends StatelessWidget {
+  const _HoldingObject({
     required this.item,
     required this.onEdit,
     required this.onDelete,
@@ -213,16 +213,16 @@ class _AplicacaoObject extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final vencendo = item.vencimentoProximo && item.diasParaVencimento != null;
-    final rendeu = item.rendimentoAcumulado >= 0;
-    final prazo = item.vencimento == null
-        ? liquidezLabel(item.liquidez)
-        : 'vence em ${formatDate(item.vencimento)}';
+    final vencendo = item.maturingSoon && item.daysToMaturity != null;
+    final rendeu = item.accruedReturn >= 0;
+    final prazo = item.maturity == null
+        ? fixedIncomeLiquidityLabel(item.liquidity)
+        : 'vence em ${formatDate(item.maturity)}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
       child: Opacity(
-        opacity: item.oculto ? 0.6 : 1,
+        opacity: item.hidden ? 0.6 : 1,
         child: FiObject(
           accent: vencendo
               ? fiStateColor(FiState.attention, brightness)
@@ -235,21 +235,21 @@ class _AplicacaoObject extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      item.nome,
+                      item.name,
                       style: FiType.title.copyWith(color: fiInk1(context)),
                     ),
                   ),
                   const SizedBox(width: FiSpace.s2),
-                  FiTag.serie(
-                    label: rendaFixaTipoLabel(item.tipo),
+                  FiTag.series(
+                    label: fixedIncomeKindLabel(item.kind),
                     color: fiInk2(context),
                   ),
                 ],
               ),
               const SizedBox(height: FiSpace.s1),
               Text(
-                '${formatPercent(item.taxaAnualEfetivaPct)} ao ano'
-                '${item.isentoIr == true ? ' · isento de IR' : ''} · $prazo',
+                '${formatPercent(item.effectiveAnnualRatePct)} ao ano'
+                '${item.irExempt == true ? ' · isento de IR' : ''} · $prazo',
                 style: FiType.caption.copyWith(color: fiInk2(context)),
               ),
 
@@ -257,14 +257,14 @@ class _AplicacaoObject extends StatelessWidget {
               FiFigures(
                 rule: false,
                 figures: {
-                  'APLICADO': formatCurrency(item.valorInvestido),
-                  'HOJE': formatCurrency(item.valorAtual),
+                  'APLICADO': formatCurrency(item.investedValue),
+                  'HOJE': formatCurrency(item.currentValue),
                 },
               ),
               const SizedBox(height: FiSpace.s2),
               Text(
-                '${rendeu ? '+' : ''}${formatCurrency(item.rendimentoAcumulado)} '
-                '(${formatPercent(item.rendimentoPct)}) de rendimento',
+                '${rendeu ? '+' : ''}${formatCurrency(item.accruedReturn)} '
+                '(${formatPercent(item.returnPct)}) de rendimento',
                 style: FiType.caption.copyWith(
                   color: fiDirectionColor(rendeu ? 1 : -1, brightness),
                 ),
@@ -273,13 +273,13 @@ class _AplicacaoObject extends StatelessWidget {
               if (vencendo) ...[
                 const SizedBox(height: FiSpace.s3),
                 Text(
-                  'Vence em ${item.diasParaVencimento} dias — planeje a reaplicação.',
+                  'Vence em ${item.daysToMaturity} dias — planeje a reaplicação.',
                   style: FiType.caption.copyWith(
                     color: fiStateColor(FiState.attention, brightness),
                   ),
                 ),
               ],
-              if (item.oculto) ...[
+              if (item.hidden) ...[
                 const SizedBox(height: FiSpace.s2),
                 Text(
                   'Fora do total da carteira, por escolha sua.',
@@ -319,22 +319,22 @@ class _FixedIncomeForm extends ConsumerStatefulWidget {
 }
 
 class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
-  late final TextEditingController _nome;
-  late final TextEditingController _valor;
-  late final TextEditingController _taxa;
-  late final TextEditingController _percentualCdi;
+  late final TextEditingController _name;
+  late final TextEditingController _amount;
+  late final TextEditingController _rate;
+  late final TextEditingController _cdiPercent;
 
-  late String _tipo;
-  late String _tipoTaxa;
-  late String _liquidez;
-  late DateTime _dataAplicacao;
-  DateTime? _vencimento;
-  late bool _oculto;
+  late String _kind;
+  late String _rateKind;
+  late String _liquidity;
+  late DateTime _appliedOn;
+  DateTime? _maturity;
+  late bool _hidden;
 
   bool _saving = false;
   String? _error;
 
-  static const _tipos = [
+  static const _kinds = [
     'cdb',
     'lci',
     'lca',
@@ -350,71 +350,71 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
   void initState() {
     super.initState();
     final e = widget.existing;
-    _nome = TextEditingController(text: e?.nome ?? '');
-    _valor = TextEditingController(text: e != null ? '${e.valorInvestido}' : '');
-    _taxa = TextEditingController(text: e != null ? '${e.taxa}' : '');
-    _percentualCdi = TextEditingController(
-      text: e?.percentualCdi != null ? '${e!.percentualCdi}' : '',
+    _name = TextEditingController(text: e?.name ?? '');
+    _amount = TextEditingController(text: e != null ? '${e.investedValue}' : '');
+    _rate = TextEditingController(text: e != null ? '${e.rate}' : '');
+    _cdiPercent = TextEditingController(
+      text: e?.cdiPercent != null ? '${e!.cdiPercent}' : '',
     );
-    _tipo = e?.tipo ?? 'cdb';
-    _tipoTaxa = e?.tipoTaxa ?? 'pre_fixado';
-    _liquidez = e?.liquidez ?? 'no_vencimento';
-    _dataAplicacao = DateTime.tryParse(e?.dataAplicacao ?? '') ?? DateTime.now();
-    _vencimento = e?.vencimento != null ? DateTime.tryParse(e!.vencimento!) : null;
-    _oculto = e?.oculto ?? false;
+    _kind = e?.kind ?? 'cdb';
+    _rateKind = e?.rateKind ?? 'pre_fixado';
+    _liquidity = e?.liquidity ?? 'no_vencimento';
+    _appliedOn = DateTime.tryParse(e?.appliedOn ?? '') ?? DateTime.now();
+    _maturity = e?.maturity != null ? DateTime.tryParse(e!.maturity!) : null;
+    _hidden = e?.hidden ?? false;
   }
 
   @override
   void dispose() {
-    _nome.dispose();
-    _valor.dispose();
-    _taxa.dispose();
-    _percentualCdi.dispose();
+    _name.dispose();
+    _amount.dispose();
+    _rate.dispose();
+    _cdiPercent.dispose();
     super.dispose();
   }
 
   String _iso(DateTime date) => date.toIso8601String().substring(0, 10);
 
-  Future<void> _pickDate({required bool vencimento}) async {
+  Future<void> _pickDate({required bool maturity}) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: vencimento ? (_vencimento ?? now) : _dataAplicacao,
+      initialDate: maturity ? (_maturity ?? now) : _appliedOn,
       firstDate: DateTime(now.year - 30),
       lastDate: DateTime(now.year + 30),
     );
     if (picked == null) return;
     setState(() {
-      if (vencimento) {
-        _vencimento = picked;
+      if (maturity) {
+        _maturity = picked;
       } else {
-        _dataAplicacao = picked;
+        _appliedOn = picked;
       }
     });
   }
 
   Future<void> _save() async {
-    final valor = double.tryParse(_valor.text.replaceAll(',', '.'));
-    final taxa = double.tryParse(_taxa.text.replaceAll(',', '.'));
+    final valor = double.tryParse(_amount.text.replaceAll(',', '.'));
+    final rate = double.tryParse(_rate.text.replaceAll(',', '.'));
 
-    if (_nome.text.trim().isEmpty || valor == null || valor <= 0 || taxa == null || taxa <= 0) {
+    if (_name.text.trim().isEmpty || valor == null || valor <= 0 || rate == null || rate <= 0) {
       setState(() => _error = 'Preencha nome, valor aplicado e taxa.');
       return;
     }
 
     final payload = <String, dynamic>{
-      'nome': _nome.text.trim(),
-      'tipo': _tipo,
+      'nome': _name.text.trim(),
+      'tipo': _kind,
       'valor_investido': valor,
-      'taxa': taxa,
-      'tipo_taxa': _tipoTaxa,
-      'percentual_cdi': _tipoTaxa == 'pos_fixado'
-          ? double.tryParse(_percentualCdi.text.replaceAll(',', '.'))
+      'taxa': rate,
+      'tipo_taxa': _rateKind,
+      'percentual_cdi': _rateKind == 'pos_fixado'
+          ? double.tryParse(_cdiPercent.text.replaceAll(',', '.'))
           : null,
-      'data_aplicacao': _iso(_dataAplicacao),
-      'vencimento': _vencimento != null ? _iso(_vencimento!) : null,
-      'liquidez': _liquidez,
-      'oculto': _oculto,
+      'data_aplicacao': _iso(_appliedOn),
+      'vencimento': _maturity != null ? _iso(_maturity!) : null,
+      'liquidez': _liquidity,
+      'oculto': _hidden,
     };
 
     setState(() {
@@ -443,7 +443,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
 
   @override
   Widget build(BuildContext context) {
-    final isPosFixado = _tipoTaxa == 'pos_fixado';
+    final isPosFixado = _rateKind == 'pos_fixado';
 
     return SafeArea(
       child: Padding(
@@ -459,7 +459,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
               ),
               const SizedBox(height: FiSpace.s5),
               TextField(
-                controller: _nome,
+                controller: _name,
                 decoration: const InputDecoration(
                   labelText: 'Nome / banco emissor',
                   hintText: 'ex.: CDB Banco Inter 2027',
@@ -467,27 +467,27 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
               ),
               const SizedBox(height: FiSpace.s4),
               DropdownButtonFormField<String>(
-                initialValue: _tipo,
+                initialValue: _kind,
                 decoration: const InputDecoration(labelText: 'Tipo'),
-                items: _tipos
+                items: _kinds
                     .map(
                       (t) => DropdownMenuItem(
                         value: t,
-                        child: Text(rendaFixaTipoLabel(t)),
+                        child: Text(fixedIncomeKindLabel(t)),
                       ),
                     )
                     .toList(),
-                onChanged: (v) => setState(() => _tipo = v ?? _tipo),
+                onChanged: (v) => setState(() => _kind = v ?? _kind),
               ),
               const SizedBox(height: FiSpace.s4),
               TextField(
-                controller: _valor,
+                controller: _amount,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(labelText: 'Valor aplicado (R\$)'),
               ),
               const SizedBox(height: FiSpace.s4),
               DropdownButtonFormField<String>(
-                initialValue: _tipoTaxa,
+                initialValue: _rateKind,
                 decoration: const InputDecoration(labelText: 'Tipo de taxa'),
                 items: const [
                   DropdownMenuItem(value: 'pre_fixado', child: Text('Pré-fixado')),
@@ -500,11 +500,11 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
                     child: Text('Híbrido (IPCA + taxa)'),
                   ),
                 ],
-                onChanged: (v) => setState(() => _tipoTaxa = v ?? _tipoTaxa),
+                onChanged: (v) => setState(() => _rateKind = v ?? _rateKind),
               ),
               const SizedBox(height: FiSpace.s4),
               TextField(
-                controller: _taxa,
+                controller: _rate,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: isPosFixado
@@ -515,7 +515,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
               if (isPosFixado) ...[
                 const SizedBox(height: FiSpace.s4),
                 TextField(
-                  controller: _percentualCdi,
+                  controller: _cdiPercent,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
                     labelText: '% do CDI',
@@ -528,21 +528,21 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
                 children: [
                   FiDataRow(
                     label: 'Data de aplicação',
-                    value: formatDate(_iso(_dataAplicacao)),
-                    onTap: () => _pickDate(vencimento: false),
+                    value: formatDate(_iso(_appliedOn)),
+                    onTap: () => _pickDate(maturity: false),
                   ),
                   FiDataRow(
                     label: 'Vencimento',
-                    value: _vencimento == null
+                    value: _maturity == null
                         ? 'sem vencimento'
-                        : formatDate(_iso(_vencimento!)),
-                    onTap: () => _pickDate(vencimento: true),
+                        : formatDate(_iso(_maturity!)),
+                    onTap: () => _pickDate(maturity: true),
                   ),
                 ],
               ),
               const SizedBox(height: FiSpace.s4),
               DropdownButtonFormField<String>(
-                initialValue: _liquidez,
+                initialValue: _liquidity,
                 decoration: const InputDecoration(labelText: 'Liquidez'),
                 items: const [
                   DropdownMenuItem(
@@ -551,15 +551,15 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
                   ),
                   DropdownMenuItem(value: 'diaria', child: Text('Diária')),
                 ],
-                onChanged: (v) => setState(() => _liquidez = v ?? _liquidez),
+                onChanged: (v) => setState(() => _liquidity = v ?? _liquidity),
               ),
               const SizedBox(height: FiSpace.s2),
               FiDataRow(
                 label: 'Não somar na carteira',
                 detail: 'Para reservas mantidas à parte',
                 trailing: Switch(
-                  value: _oculto,
-                  onChanged: (v) => setState(() => _oculto = v),
+                  value: _hidden,
+                  onChanged: (v) => setState(() => _hidden = v),
                 ),
               ),
               if (_error != null)

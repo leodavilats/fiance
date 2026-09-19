@@ -1,62 +1,62 @@
 import 'cash_models.dart';
 import 'product_rules.dart';
 
-class VereditoDoMes {
-  const VereditoDoMes({
+class MonthVerdict {
+  const MonthVerdict({
     required this.band,
-    required this.pressao,
-    required this.veredito,
-    required this.razao,
+    required this.pressure,
+    required this.verdict,
+    required this.reason,
   });
 
   final FiScoreBand band;
 
-  final int? pressao;
+  final int? pressure;
 
-  final String veredito;
-  final String razao;
+  final String verdict;
+  final String reason;
 }
 
-VereditoDoMes vereditoDoMes({
-  required double recebido,
-  required double comprometido,
-  Debt? dividaCara,
+MonthVerdict monthVerdict({
+  required double received,
+  required double committed,
+  Debt? expensiveDebt,
 }) {
-  if (recebido <= 0) {
-    return VereditoDoMes(
+  if (received <= 0) {
+    return MonthVerdict(
       band: fiBandFor(0, fiMonthPressureBands, 0),
-      pressao: null,
-      veredito: 'Ainda não há entrada lançada neste mês',
-      razao: 'Sem o que entrou não há como medir o que está comprometido.',
+      pressure: null,
+      verdict: 'Ainda não há entrada lançada neste mês',
+      reason: 'Sem o que entrou não há como medir o que está comprometido.',
     );
   }
 
-  final pressao = (comprometido / recebido * 100).round().clamp(0, 100);
-  final band = fiBandFor(pressao.toDouble(), fiMonthPressureBands);
+  final pressure = (committed / received * 100).round().clamp(0, 100);
+  final band = fiBandFor(pressure.toDouble(), fiMonthPressureBands);
 
-  if (dividaCara != null) {
-    final taxa = dividaCara.monthlyRate == null
+  if (expensiveDebt != null) {
+    final taxa = expensiveDebt.monthlyRate == null
         ? ''
-        : ' a ${_semZeroInutil(dividaCara.monthlyRate!)}% ao mês';
-    return VereditoDoMes(
+        : ' a ${_trimTrailingZero(expensiveDebt.monthlyRate!)}% ao mês';
+    return MonthVerdict(
       band: band,
-      pressao: pressao,
-      veredito: band.label,
-      razao:
-          'O comprometido consome $pressao% do que entrou, e ${dividaCara.description}$taxa '
+      pressure: pressure,
+      verdict: band.label,
+      reason:
+          'O comprometido consome $pressure% do que entrou, e ${expensiveDebt.description}$taxa '
           'come a sobra antes de qualquer aporte.',
     );
   }
 
-  return VereditoDoMes(
+  return MonthVerdict(
     band: band,
-    pressao: pressao,
-    veredito: band.label,
-    razao: 'O comprometido consome $pressao% do que entrou.',
+    pressure: pressure,
+    verdict: band.label,
+    reason: 'O comprometido consome $pressure% do que entrou.',
   );
 }
 
-String _semZeroInutil(double v) {
+String _trimTrailingZero(double v) {
   final texto = v == v.roundToDouble()
       ? v.toStringAsFixed(0)
       : v.toStringAsFixed(2).replaceFirst(RegExp(r'0$'), '');

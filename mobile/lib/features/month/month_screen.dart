@@ -8,7 +8,7 @@ import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
-import '../../core/mes.dart';
+import '../../core/month.dart';
 import '../../core/month_verdict.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
@@ -17,18 +17,18 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
-import 'lancar_sheet.dart';
-import 'molde_sheet.dart';
+import 'cash_entry_sheet.dart';
+import 'month_template_sheet.dart';
 
-class MesScreen extends ConsumerWidget {
-  const MesScreen({super.key});
+class MonthScreen extends ConsumerWidget {
+  const MonthScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mes = ref.watch(mesEscolhidoProvider);
+    final cashMonth = ref.watch(selectedMonthProvider);
     final mesAsync = ref.watch(cashMonthProvider);
-    final entradas = ref.watch(cashEntriesProvider);
-    final dividas = ref.watch(debtsProvider);
+    final entries = ref.watch(cashEntriesProvider);
+    final debts = ref.watch(debtsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -37,17 +37,17 @@ class MesScreen extends ConsumerWidget {
           IconButton(
             tooltip: 'Trocar de mês',
             icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: () => _escolherMes(context, ref, entradas.valueOrNull),
+            onPressed: () => _pickMonth(context, ref, entries.valueOrNull),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => abrirLancarSheet(context, ref),
+        onPressed: () => openCashEntrySheet(context, ref),
         icon: const Icon(Icons.add),
         label: const Text('Lançar'),
       ),
       body: mesAsync.when(
-        loading: () => FiSkeleton.tela(
+        loading: () => FiSkeleton.screen(
           shape: FiSkeletonShape.metric,
           count: 1,
           label: 'Carregando seu mês',
@@ -57,27 +57,27 @@ class MesScreen extends ConsumerWidget {
           action: 'carregar seu mês',
           onRetry: () => ref.invalidate(cashMonthProvider),
         ),
-        data: (m) => _Corpo(
-          mes: m,
-          entradas: entradas.valueOrNull ?? const [],
-          dividas: dividas.valueOrNull ?? const [],
-          ehMesCorrente: mes == mesCorrente(),
+        data: (m) => _Body(
+          cashMonth: m,
+          entries: entries.valueOrNull ?? const [],
+          debts: debts.valueOrNull ?? const [],
+          isCurrentMonth: cashMonth == currentMonth(),
         ),
       ),
     );
   }
 
-  Future<void> _escolherMes(
+  Future<void> _pickMonth(
     BuildContext context,
     WidgetRef ref,
-    List<CashEntry>? entradas,
+    List<CashEntry>? entries,
   ) async {
-    final meses = <String>{mesCorrente()};
-    for (final e in entradas ?? const <CashEntry>[]) {
-      meses.add(e.competencia.substring(0, 7));
+    final meses = <String>{currentMonth()};
+    for (final e in entries ?? const <CashEntry>[]) {
+      meses.add(e.accrualOn.substring(0, 7));
     }
     final ordenados = meses.toList()..sort((a, b) => b.compareTo(a));
-    final atual = ref.read(mesEscolhidoProvider);
+    final current = ref.read(selectedMonthProvider);
 
     final escolhido = await showModalBottomSheet<String>(
       context: context,
@@ -101,9 +101,9 @@ class MesScreen extends ConsumerWidget {
               children: [
                 for (final m in ordenados)
                   FiDataRow(
-                    label: nomeDoMes(m),
-                    value: m == atual ? 'em leitura' : null,
-                    valueColor: m == atual ? fiInk3(context) : null,
+                    label: monthName(m),
+                    value: m == current ? 'em leitura' : null,
+                    valueColor: m == current ? fiInk3(context) : null,
                     onTap: () => Navigator.of(context).pop(m),
                   ),
               ],
@@ -114,42 +114,42 @@ class MesScreen extends ConsumerWidget {
     );
 
     if (escolhido != null) {
-      ref.read(mesEscolhidoProvider.notifier).state = escolhido;
+      ref.read(selectedMonthProvider.notifier).state = escolhido;
     }
   }
 }
 
-class _Corpo extends ConsumerWidget {
-  const _Corpo({
-    required this.mes,
-    required this.entradas,
-    required this.dividas,
-    required this.ehMesCorrente,
+class _Body extends ConsumerWidget {
+  const _Body({
+    required this.cashMonth,
+    required this.entries,
+    required this.debts,
+    required this.isCurrentMonth,
   });
 
-  final CashMonth mes;
-  final List<CashEntry> entradas;
-  final List<Debt> dividas;
-  final bool ehMesCorrente;
+  final CashMonth cashMonth;
+  final List<CashEntry> entries;
+  final List<Debt> debts;
+  final bool isCurrentMonth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final semLancamento = entradas.isNotEmpty && entradas.every((e) => e.derived);
-    if (entradas.isEmpty || semLancamento) {
-      return _MesVazio(onLancar: () => abrirLancarSheet(context, ref));
+    final semLancamento = entries.isNotEmpty && entries.every((e) => e.derived);
+    if (entries.isEmpty || semLancamento) {
+      return _EmptyMonth(onAddEntry: () => openCashEntrySheet(context, ref));
     }
 
-    final caras = dividas.where((d) => d.debtClass == DebtClass.expensive).toList();
-    final v = vereditoDoMes(
-      recebido: mes.received,
-      comprometido: mes.committed,
-      dividaCara: caras.isEmpty ? null : caras.first,
+    final caras = debts.where((d) => d.debtClass == DebtClass.expensive).toList();
+    final v = monthVerdict(
+      received: cashMonth.received,
+      committed: cashMonth.committed,
+      expensiveDebt: caras.isEmpty ? null : caras.first,
     );
 
-    final doMes = entradas
-        .where((e) => e.competencia.startsWith(mes.month))
+    final doMes = entries
+        .where((e) => e.accrualOn.startsWith(cashMonth.month))
         .toList()
-      ..sort((a, b) => a.competencia.compareTo(b.competencia));
+      ..sort((a, b) => a.accrualOn.compareTo(b.accrualOn));
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -165,7 +165,7 @@ class _Corpo extends ConsumerWidget {
           88,
         ),
         children: [
-          _Veredito(veredito: v, mes: mes, ehMesCorrente: ehMesCorrente),
+          _Verdict(verdict: v, cashMonth: cashMonth, isCurrentMonth: isCurrentMonth),
 
           if (caras.isNotEmpty)
             FiSection(
@@ -177,17 +177,17 @@ class _Corpo extends ConsumerWidget {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [for (final d in caras) _LinhaDivida(divida: d)],
+                children: [for (final d in caras) _DebtRow(debt: d)],
               ),
             ),
 
-          if (mes.due.isNotEmpty)
+          if (cashMonth.due.isNotEmpty)
             FiSection(
               title: 'A vencer',
-              count: mes.due.length,
+              count: cashMonth.due.length,
               child: FiRows(
                 children: [
-                  for (final conta in mes.due) _LinhaAVencer(conta: conta),
+                  for (final bill in cashMonth.due) _DueRow(bill: bill),
                 ],
               ),
             ),
@@ -198,37 +198,37 @@ class _Corpo extends ConsumerWidget {
                 ? FiButton.secondary(
                     icon: Icons.content_copy_outlined,
                     label:
-                        'Repetir ${nomeDoMes(mesAnterior(mes.month)).split(' de ').first}',
-                    onPressed: () => abrirMoldeSheet(context, ref),
+                        'Repetir ${monthName(previousMonth(cashMonth.month)).split(' de ').first}',
+                    onPressed: () => openMonthTemplateSheet(context, ref),
                   )
                 : null,
             child: doMes.isEmpty
                 ? FiEmptyLine(
-                    'Nada lançado em ${nomeDoMes(mes.month)}. Repetir o mês anterior traz o '
+                    'Nada lançado em ${monthName(cashMonth.month)}. Repetir o mês anterior traz o '
                     'que se repete por natureza, e deixa o gasto variável desmarcado.',
                   )
                 : Column(
-                    children: [for (final e in doMes) _LinhaDoMes(entry: e)],
+                    children: [for (final e in doMes) _MonthRow(entry: e)],
                   ),
           ),
 
-          _ParaASobra(mes: mes),
+          _ToSurplus(cashMonth: cashMonth),
         ],
       ),
     );
   }
 }
 
-class _Veredito extends StatelessWidget {
-  const _Veredito({
-    required this.veredito,
-    required this.mes,
-    required this.ehMesCorrente,
+class _Verdict extends StatelessWidget {
+  const _Verdict({
+    required this.verdict,
+    required this.cashMonth,
+    required this.isCurrentMonth,
   });
 
-  final VereditoDoMes veredito;
-  final CashMonth mes;
-  final bool ehMesCorrente;
+  final MonthVerdict verdict;
+  final CashMonth cashMonth;
+  final bool isCurrentMonth;
 
   @override
   Widget build(BuildContext context) {
@@ -238,14 +238,14 @@ class _Veredito extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          veredito.veredito,
+          verdict.verdict,
           style: fiSerif(FiType.verdict).copyWith(
-            color: fiStateColor(veredito.band.state, brightness),
+            color: fiStateColor(verdict.band.state, brightness),
           ),
         ),
         const SizedBox(height: FiSpace.s2),
         Text(
-          veredito.razao,
+          verdict.reason,
           style: FiType.body.copyWith(color: fiInk2(context)),
         ),
 
@@ -261,19 +261,19 @@ class _Veredito extends StatelessWidget {
 
         const SizedBox(height: FiSpace.s4),
         FiHeadline(
-          eyebrow: ehMesCorrente
+          eyebrow: isCurrentMonth
               ? 'Livre agora'
-              : 'Sobrou em ${nomeDoMes(mes.month)}',
-          figure: formatCurrency(mes.freeNow),
+              : 'Sobrou em ${monthName(cashMonth.month)}',
+          figure: formatCurrency(cashMonth.freeNow),
         ),
 
         const SizedBox(height: FiSpace.s5),
         FiFigures(
           rule: false,
           figures: {
-            'ENTROU': formatCurrency(mes.received),
-            'SAIU': formatCurrency(mes.paid),
-            'COMPROMETIDO': formatCurrency(mes.committed),
+            'ENTROU': formatCurrency(cashMonth.received),
+            'SAIU': formatCurrency(cashMonth.paid),
+            'COMPROMETIDO': formatCurrency(cashMonth.committed),
           },
         ),
 
@@ -282,10 +282,10 @@ class _Veredito extends StatelessWidget {
   }
 }
 
-class _ParaASobra extends StatelessWidget {
-  const _ParaASobra({required this.mes});
+class _ToSurplus extends StatelessWidget {
+  const _ToSurplus({required this.cashMonth});
 
-  final CashMonth mes;
+  final CashMonth cashMonth;
 
   @override
   Widget build(BuildContext context) {
@@ -301,9 +301,9 @@ class _ParaASobra extends StatelessWidget {
           ),
           const SizedBox(height: FiSpace.s4),
           Text(
-            mes.hasRange
+            cashMonth.hasRange
                 ? 'Descontando o que ainda deve sair, a sobra parte de '
-                      '${formatCurrency(mes.surplusLow)}.'
+                      '${formatCurrency(cashMonth.surplusLow)}.'
                 : 'Sem mês fechado ainda não há como estimar o que falta sair, então a sobra '
                       'é o próprio livre.',
             style: FiType.body.copyWith(color: fiInk2(context)),
@@ -314,27 +314,27 @@ class _ParaASobra extends StatelessWidget {
   }
 }
 
-class _LinhaDivida extends StatelessWidget {
-  const _LinhaDivida({required this.divida});
+class _DebtRow extends StatelessWidget {
+  const _DebtRow({required this.debt});
 
-  final Debt divida;
+  final Debt debt;
 
   @override
   Widget build(BuildContext context) {
-    final taxa = divida.monthlyRate;
+    final taxa = debt.monthlyRate;
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${divida.description}: ${formatCurrency(divida.balance)}'
+            '${debt.description}: ${formatCurrency(debt.balance)}'
             '${taxa == null ? '' : ' a ${formatPercent(taxa)} ao mês'}',
             style: FiType.body.copyWith(color: fiInk1(context)),
           ),
-          if (divida.flipRate != null)
+          if (debt.flipRate != null)
             Text(
-              'Vira administrável a ${formatPercent(divida.flipRate)} ao mês.',
+              'Vira administrável a ${formatPercent(debt.flipRate)} ao mês.',
               style: FiType.caption.copyWith(color: fiInk3(context)),
             ),
         ],
@@ -343,25 +343,25 @@ class _LinhaDivida extends StatelessWidget {
   }
 }
 
-class _LinhaAVencer extends ConsumerWidget {
-  const _LinhaAVencer({required this.conta});
+class _DueRow extends ConsumerWidget {
+  const _DueRow({required this.bill});
 
-  final CashDueEntry conta;
+  final CashDueEntry bill;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return FiDataRow(
-      leading: _Dia(dia: diaDe(conta.dueOn)),
-      label: conta.description,
-      detail: formatCurrency(conta.amount),
+      leading: _Day(day: dayOf(bill.dueOn)),
+      label: bill.description,
+      detail: formatCurrency(bill.amount),
       trailing: FiButton.quiet(
         label: 'Marcar paga',
-        onPressed: conta.id == null
+        onPressed: bill.id == null
             ? null
             : () async {
                 await ref
                     .read(apiRepositoryProvider)
-                    .markCashEntryPaid(conta.id!);
+                    .markCashEntryPaid(bill.id!);
                 ref.invalidate(cashMonthProvider);
                 ref.invalidate(cashEntriesProvider);
               },
@@ -370,25 +370,25 @@ class _LinhaAVencer extends ConsumerWidget {
   }
 }
 
-class _Dia extends StatelessWidget {
-  const _Dia({required this.dia});
+class _Day extends StatelessWidget {
+  const _Day({required this.day});
 
-  final String dia;
+  final String day;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 24,
       child: Text(
-        dia,
+        day,
         style: FiType.figure.copyWith(color: fiInk3(context)),
       ),
     );
   }
 }
 
-class _LinhaDoMes extends ConsumerWidget {
-  const _LinhaDoMes({required this.entry});
+class _MonthRow extends ConsumerWidget {
+  const _MonthRow({required this.entry});
 
   final CashEntry entry;
 
@@ -399,12 +399,12 @@ class _LinhaDoMes extends ConsumerWidget {
 
     return ExpansionTile(
       childrenPadding: const EdgeInsets.only(bottom: FiSpace.s3),
-      leading: _Dia(dia: diaDe(entry.competencia)),
+      leading: _Day(day: dayOf(entry.accrualOn)),
       title: Text(
         entry.description,
         style: FiType.body.copyWith(color: fiInk1(context)),
       ),
-      subtitle: entry.futura || entry.derived
+      subtitle: entry.isFuture || entry.derived
           ? Text(
               entry.derived
                   ? 'do seu razão'
@@ -433,7 +433,7 @@ class _LinhaDoMes extends ConsumerWidget {
             else
               FiButton.quiet(
                 label: 'Editar lançamento',
-                onPressed: () => abrirLancarSheet(context, ref, editar: entry),
+                onPressed: () => openCashEntrySheet(context, ref, editing: entry),
               ),
           ],
         ),
@@ -442,10 +442,10 @@ class _LinhaDoMes extends ConsumerWidget {
   }
 }
 
-class _MesVazio extends StatelessWidget {
-  const _MesVazio({required this.onLancar});
+class _EmptyMonth extends StatelessWidget {
+  const _EmptyMonth({required this.onAddEntry});
 
-  final VoidCallback onLancar;
+  final VoidCallback onAddEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -459,7 +459,7 @@ class _MesVazio extends StatelessWidget {
           action: FiButton.primary(
             label: 'Lançar o primeiro mês',
             icon: Icons.add,
-            onPressed: onLancar,
+            onPressed: onAddEntry,
           ),
           secondary: FiButton.secondary(
             label: 'Cadastrar uma dívida',

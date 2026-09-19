@@ -16,7 +16,7 @@ import '../../core/providers.dart';
 import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
-import 'comprar_sheet.dart';
+import 'buy_sheet.dart';
 
 void showAssetDetailSheet(BuildContext context, String ticker) {
   showModalBottomSheet<void>(
@@ -50,7 +50,7 @@ class _AssetDetailContent extends ConsumerWidget {
     final analysisFuture = ref.watch(_assetAnalysisProvider(ticker));
 
     return analysisFuture.when(
-      loading: () => FiSkeleton.tela(
+      loading: () => FiSkeleton.screen(
         shape: FiSkeletonShape.verdict,
         count: 1,
         label: 'Analisando este ativo',
@@ -61,7 +61,7 @@ class _AssetDetailContent extends ConsumerWidget {
         onRetry: () => ref.invalidate(_assetAnalysisProvider(ticker)),
       ),
       data: (a) {
-        final idade = formatIdade(a.asOf);
+        final idade = formatAge(a.asOf);
         final margem = a.marginOfSafety;
 
         return Column(
@@ -176,7 +176,7 @@ class _AssetDetailContent extends ConsumerWidget {
                   FiDataRow(
                     label: 'Ritmo da alta ou da queda',
                     value: a.rsi14?.toStringAsFixed(0) ?? '—',
-                    detail: _ritmoLabel(a.rsi14),
+                    detail: _paceLabel(a.rsi14),
                   ),
                   if (a.dividendYield != null)
                     FiDataRow(
@@ -236,7 +236,7 @@ class _AssetDetailContent extends ConsumerWidget {
           ],
               ),
             ),
-            _RodapeDeCompra(analysis: a),
+            _BuyFooter(analysis: a),
           ],
         );
       },
@@ -244,8 +244,8 @@ class _AssetDetailContent extends ConsumerWidget {
   }
 }
 
-class _RodapeDeCompra extends ConsumerWidget {
-  const _RodapeDeCompra({required this.analysis});
+class _BuyFooter extends ConsumerWidget {
+  const _BuyFooter({required this.analysis});
 
   final AssetAnalysis analysis;
 
@@ -272,11 +272,11 @@ class _RodapeDeCompra extends ConsumerWidget {
             icon: Icons.add,
             expand: true,
             onPressed: () async {
-              final registrou = await abrirCompraDeAtivo(
+              final registrou = await openBuySheet(
                 context,
                 ref,
                 ticker: analysis.symbol,
-                precoAtual: analysis.price,
+                currentPrice: analysis.price,
               );
               if (registrou && context.mounted) Navigator.of(context).pop();
             },
@@ -292,7 +292,7 @@ final _assetAnalysisProvider = FutureProvider.autoDispose
       return ref.watch(apiRepositoryProvider).analyzeAsset(ticker);
     });
 
-String _ritmoLabel(double? rsi) {
+String _paceLabel(double? rsi) {
   if (rsi == null) return 'Sem histórico suficiente';
   if (rsi >= 70) return 'Subiu rápido demais — costuma vir correção';
   if (rsi <= 30) return 'Caiu muito em pouco tempo';

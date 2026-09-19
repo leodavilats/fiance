@@ -5,7 +5,7 @@ import '../theme.dart';
 class FiTag extends StatelessWidget {
   const FiTag({super.key, required this.label, this.state = FiState.neutral, this.color});
 
-  const FiTag.serie({super.key, required this.label, required Color this.color})
+  const FiTag.series({super.key, required this.label, required Color this.color})
     : state = FiState.neutral;
 
   final String label;

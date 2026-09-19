@@ -18,7 +18,7 @@ class FiBranchPager extends StatefulWidget {
 }
 
 class _FiBranchPagerState extends State<FiBranchPager> {
-  late final PageController _controle = PageController(
+  late final PageController _control = PageController(
     initialPage: widget.navigationShell.currentIndex,
   );
 
@@ -26,17 +26,17 @@ class _FiBranchPagerState extends State<FiBranchPager> {
   void didUpdateWidget(FiBranchPager oldWidget) {
     super.didUpdateWidget(oldWidget);
     final destino = widget.navigationShell.currentIndex;
-    if (!_controle.hasClients) return;
+    if (!_control.hasClients) return;
 
-    final atual = _controle.page?.round();
-    if (atual == destino) return;
+    final current = _control.page?.round();
+    if (current == destino) return;
 
-    if (atual == null || (atual - destino).abs() > 1) {
-      _controle.jumpToPage(destino);
+    if (current == null || (current - destino).abs() > 1) {
+      _control.jumpToPage(destino);
       return;
     }
 
-    _controle.animateToPage(
+    _control.animateToPage(
       destino,
       duration: FiMotion.base,
       curve: FiMotion.easeEnter,
@@ -45,33 +45,33 @@ class _FiBranchPagerState extends State<FiBranchPager> {
 
   @override
   void dispose() {
-    _controle.dispose();
+    _control.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return PageView(
-      controller: _controle,
+      controller: _control,
       onPageChanged: (indice) {
         if (indice == widget.navigationShell.currentIndex) return;
         widget.navigationShell.goBranch(indice);
       },
-      children: [for (final ramo in widget.children) _Vivo(child: ramo)],
+      children: [for (final ramo in widget.children) _KeepAlive(child: ramo)],
     );
   }
 }
 
-class _Vivo extends StatefulWidget {
-  const _Vivo({required this.child});
+class _KeepAlive extends StatefulWidget {
+  const _KeepAlive({required this.child});
 
   final Widget child;
 
   @override
-  State<_Vivo> createState() => _VivoState();
+  State<_KeepAlive> createState() => _KeepAliveState();
 }
 
-class _VivoState extends State<_Vivo> with AutomaticKeepAliveClientMixin {
+class _KeepAliveState extends State<_KeepAlive> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 

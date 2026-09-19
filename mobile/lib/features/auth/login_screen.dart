@@ -21,7 +21,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _loading = false;
   String? _error;
 
-  static const _oQueFaz = [
+  static const _whatItDoes = [
     ('Mês', 'o que entrou, o que saiu e o que ainda vence'),
     ('Sobra', 'a ordem em que o que ficou deve ser usado'),
     ('Patrimônio', 'preço justo, margem de segurança e IR apurado'),
@@ -70,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
 
                     const SizedBox(height: FiSpace.s8),
-                    for (final (titulo, responde) in _oQueFaz) ...[
+                    for (final (titulo, responde) in _whatItDoes) ...[
                       Divider(color: hairline, height: 1, thickness: 1),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: FiSpace.s3),
@@ -135,12 +135,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Ao entrar você aceita os',
                           style: FiType.caption.copyWith(color: fiInk3(context)),
                         ),
-                        const _LinkLegal(label: 'Termos', url: termsUrl),
+                        const _LegalLink(label: 'Termos', url: termsUrl),
                         Text(
                           'e a',
                           style: FiType.caption.copyWith(color: fiInk3(context)),
                         ),
-                        const _LinkLegal(
+                        const _LegalLink(
                           label: 'Política de Privacidade',
                           url: privacyUrl,
                         ),
@@ -157,8 +157,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-class _LinkLegal extends StatelessWidget {
-  const _LinkLegal({required this.label, required this.url});
+class _LegalLink extends StatelessWidget {
+  const _LegalLink({required this.label, required this.url});
 
   final String label;
   final String url;
@@ -174,7 +174,7 @@ class _LinkLegal extends StatelessWidget {
         ),
       ),
       onPressed: () async {
-        final abriu = await abrirNoNavegador(url);
+        final abriu = await openInBrowser(url);
         if (!abriu && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Não foi possível abrir $url')),

@@ -64,13 +64,13 @@ card de ativo ele continua sendo vender e remover.
 
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
-| Lançamento de entrada e saída | `[ATUAL]` | `cashflow/entries.py` | `mes/lancar_sheet.dart` |
-| Projeção do mês (entrou, saiu, comprometido, livre agora) | `[ATUAL]` | `cashflow/month.py` | `mes/mes_screen.dart` |
+| Lançamento de entrada e saída | `[ATUAL]` | `cashflow/entries.py` | `month/cash_entry_sheet.dart` |
+| Projeção do mês (entrou, saiu, comprometido, livre agora) | `[ATUAL]` | `cashflow/month.py` | `month/month_screen.dart` |
 | Estimativa de gasto variável a partir de meses fechados | `[ATUAL]` | `cashflow/month.py` | idem |
-| Molde de mês (prévia e commit) | `[ATUAL]` | `cashflow/template.py` | `mes/molde_sheet.dart` |
-| Dívidas e classificação por custo | `[ATUAL]` | `cashflow/debt.py` | `mes/dividas_screen.dart` |
+| Molde de mês (prévia e commit) | `[ATUAL]` | `cashflow/template.py` | `month/month_template_sheet.dart` |
+| Dívidas e classificação por custo | `[ATUAL]` | `cashflow/debt.py` | `month/debts_screen.dart` |
 | Proventos derivados do razão, montados na leitura | `[ATUAL]` | `cashflow_service` | feed |
-| Feed do mês | `[ATUAL]` | — | `mes/feed_screen.dart` |
+| Feed do mês | `[ATUAL]` | — | `month/feed_screen.dart` |
 
 ---
 
@@ -78,12 +78,12 @@ card de ativo ele continua sendo vender e remover.
 
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
-| Cascata: dívida cara → aporte | `[ATUAL]` | `cashflow/cascata.py` | `sobra/sobra_screen.dart` |
+| Cascata: dívida cara → aporte | `[ATUAL]` | `cashflow/cascata.py` | `surplus/surplus_screen.dart` |
 | Passo de reserva na cascata | `[IMPLEMENTADO]` | idem | ❌ **inalcançável** — falta onde declarar o alvo ([10-PROBLEMAS](10-PROBLEMAS.md), item 30) |
 | Faixa piso/teto da sobra | `[ATUAL]` | `cashflow/month.py` | idem |
-| Desvio de alocação | `[ATUAL]` | `analysis/strategy.py` | `sobra/desvio_screen.dart` |
+| Desvio de alocação | `[ATUAL]` | `analysis/strategy.py` | `surplus/allocation_drift_screen.dart` |
 | Sugestões de aporte por categoria | `[ATUAL]` | `analysis/strategy.py` | `/sobra`, com os três primeiros destinos na própria aba; `/sobra/aporte` para a ordem inteira e a simulação |
-| Maiores desvios de alocação na própria Sobra | `[ATUAL]` | `analysis/strategy.py` | `sobra/sobra_screen.dart` |
+| Maiores desvios de alocação na própria Sobra | `[ATUAL]` | `analysis/strategy.py` | `surplus/surplus_screen.dart` |
 
 ---
 
@@ -91,7 +91,7 @@ card de ativo ele continua sendo vender e remover.
 
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
-| Posições e composição | `[ATUAL]` | `storage/portfolio_store.py` | `patrimonio/` |
+| Posições e composição | `[ATUAL]` | `storage/portfolio_store.py` | `patrimony/` |
 | Marcação a mercado | `[ATUAL]` | `collectors/universal.py` | idem |
 | Operações encerradas | `[ATUAL]` | `ledger/apuracao.py` | `patrimonio_closed_trades.dart` |
 | Renda fixa (CDB, LCI, LCA, LC, CRI, CRA, Tesouro Selic/IPCA+/Pré) | `[ATUAL]` | `analysis/renda_fixa_analysis.py` | `assets/fixed_income_screen.dart` |
@@ -115,7 +115,7 @@ card de ativo ele continua sendo vender e remover.
 | Calculadora de renda fixa | `[ATUAL]` | `analysis/renda_fixa_analysis.py` | `tools/tools_views.dart` |
 | Setores | `[ATUAL]` | `analysis/sectors.py` | — |
 | Benchmark CDI/Selic/IPCA | `[ATUAL]` | `collectors/rates.py` | — |
-| Sugestões de rebalanceamento, com o alvo da realocação | `[ATUAL]` | `analysis/strategy.py` | `sobra/desvio_screen.dart` |
+| Sugestões de rebalanceamento, com o alvo da realocação | `[ATUAL]` | `analysis/strategy.py` | `surplus/allocation_drift_screen.dart` |
 | Perfil de risco visível onde ele ordena | `[ATUAL]` | `analysis/scoring.py` | `/descobrir` e `/sobra/desvio` |
 | Ativos seguidos | `[SEM CLIENTE]` | `api/followed.py` | ❌ |
 
@@ -128,9 +128,9 @@ imposto, e não tem nenhuma tela no aplicativo.
 
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
-| Razão como fonte única; posição é projeção | `[ATUAL]` | `ledger/projection.py` | `patrimonio/razao_screen.dart` |
+| Razão como fonte única; posição é projeção | `[ATUAL]` | `ledger/projection.py` | `patrimony/ledger_screen.dart` |
 | Registro de lançamento | `[IMPLEMENTADO]` | `services/ledger_service.py` | ✅ `/patrimonio/razao` |
-| Comprar direto do Descobrir, com o preço de agora | `[IMPLEMENTADO]` | `POST /transactions` (`buy`) | `market/comprar_sheet.dart` |
+| Comprar direto do Descobrir, com o preço de agora | `[IMPLEMENTADO]` | `POST /transactions` (`buy`) | `market/buy_sheet.dart` |
 | Apagar lançamento, com reprojeção | `[IMPLEMENTADO]` | idem | ✅ idem |
 | Eventos corporativos pela interface | `[IMPLEMENTADO]` | `ledger/entries.py` | ✅ idem |
 | Importação de extrato (prévia + commit) | `[SEM CLIENTE]` | `importing/` | ❌ |
@@ -139,7 +139,7 @@ imposto, e não tem nenhuma tela no aplicativo.
 | Apuração mensal de IR | `[IMPLEMENTADO]` | `ledger/apuracao.py` | parcial |
 | Compensação de prejuízo por categoria | `[IMPLEMENTADO]` | `ledger/apuracao.py` | ❌ |
 | Isenção mensal de R$ 20 mil | `[IMPLEMENTADO]` | `ledger/apuracao.py` | — |
-| Proventos recebidos: registrar, listar, apagar | `[IMPLEMENTADO]` | `api/dividends.py` | `patrimonio/proventos_screen.dart` |
+| Proventos recebidos: registrar, listar, apagar | `[IMPLEMENTADO]` | `api/dividends.py` | `patrimony/dividends_screen.dart` |
 | Proventos: sugestões do calendário | `[IMPLEMENTADO]` | `services/dividend_calendar_service.py` | ✅ `/patrimonio/proventos`, colapsado |
 | Direito a provento provado pela data-com | `[ATUAL]` | `services/dividend_calendar_service.py` | ✅ bloco "Aguardando sua confirmação" |
 | Razão: filtro por tipo, período e ativo, com paginação | `[ATUAL]` | `GET /transactions` | ✅ `/patrimonio/razao` |

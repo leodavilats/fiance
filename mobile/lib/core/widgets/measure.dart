@@ -53,8 +53,8 @@ class FiMeasure extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final ink1 = fiInk1Of(brightness);
     final ink3 = fiInk3Of(brightness);
-    final corDoEstado = fiStateColor(state, brightness);
-    final preenchimento = fillColor ?? corDoEstado;
+    final stateColor = fiStateColor(state, brightness);
+    final preenchimento = fillColor ?? stateColor;
 
     return Semantics(
       label: semantics ?? '$label: ${readout ?? value.toStringAsFixed(0)}'
@@ -133,7 +133,7 @@ class FiMeasure extends StatelessWidget {
                 Text(
                   note!,
                   style: FiType.caption.copyWith(
-                    color: state == FiState.neutral ? ink3 : corDoEstado,
+                    color: state == FiState.neutral ? ink3 : stateColor,
                   ),
                 ),
               ],

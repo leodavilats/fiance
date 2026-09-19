@@ -1,36 +1,36 @@
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-const String _dsnPadrao =
+const String _defaultDsn =
     'https://824f6af34d9c061803a4fe16e9efa86a@o4512039699021824.ingest.us.sentry.io/4512039720714240';
 
-const bool _dsnVeioDoBuild = bool.hasEnvironment('SENTRY_DSN');
+const bool _dsnFromBuild = bool.hasEnvironment('SENTRY_DSN');
 
 const String sentryDsn = String.fromEnvironment(
   'SENTRY_DSN',
-  defaultValue: _dsnPadrao,
+  defaultValue: _defaultDsn,
 );
 
-const String _ambienteDeclarado = String.fromEnvironment('APP_ENV');
+const String _declaredEnvironment = String.fromEnvironment('APP_ENV');
 
-final String ambiente = _ambienteDeclarado.isNotEmpty
-    ? _ambienteDeclarado
+final String environment = _declaredEnvironment.isNotEmpty
+    ? _declaredEnvironment
     : (kReleaseMode ? 'production' : 'development');
 
-final RegExp _segmentoIdentificador = RegExp(
+final RegExp _identifierSegment = RegExp(
   r'^(?:[A-Z][A-Z0-9]{3}\d{1,2}|\d+|[0-9a-fA-F-]{16,})$',
 );
 
-final RegExp _sigiloNaUrl = RegExp(
+final RegExp _secretInUrl = RegExp(
   r'\b(token|api_key|apikey|access_token|refresh_token|secret|password|senha)=([^&\s"' r"'" r'>]+)',
   caseSensitive: false,
 );
 
-final RegExp _dinheiro = RegExp(r'R\$\s?-?[\d.,]+');
+final RegExp _moneyPattern = RegExp(r'R\$\s?-?[\d.,]+');
 
-final RegExp _numeroEntreParenteses = RegExp(r'\((-?\d[\d.,]*)\)');
+final RegExp _numberInParentheses = RegExp(r'\((-?\d[\d.,]*)\)');
 
-String limparCaminho(String url) {
+String redactPath(String url) {
   var prefixo = '';
   var caminho = url;
 
@@ -46,20 +46,20 @@ String limparCaminho(String url) {
   final semQuery = caminho.split('?').first.split('#').first;
   final limpo = semQuery
       .split('/')
-      .map((parte) => _segmentoIdentificador.hasMatch(parte) ? '{id}' : parte)
+      .map((parte) => _identifierSegment.hasMatch(parte) ? '{id}' : parte)
       .join('/');
 
   return prefixo + limpo;
 }
 
-String limparTexto(String texto) {
+String redactText(String texto) {
   return texto
-      .replaceAllMapped(_sigiloNaUrl, (m) => '${m[1]}=[redigido]')
-      .replaceAll(_dinheiro, r'R$ [redigido]')
-      .replaceAll(_numeroEntreParenteses, '([redigido])');
+      .replaceAllMapped(_secretInUrl, (m) => '${m[1]}=[redigido]')
+      .replaceAll(_moneyPattern, r'R$ [redigido]')
+      .replaceAll(_numberInParentheses, '([redigido])');
 }
 
-SentryEvent? limparEvento(SentryEvent evento, Hint hint) {
+SentryEvent? redactEvent(SentryEvent evento, Hint hint) {
   final user = evento.user;
   final request = evento.request;
 
@@ -68,7 +68,7 @@ SentryEvent? limparEvento(SentryEvent evento, Hint hint) {
       ? null
       : SentryRequest(
           method: request.method,
-          url: request.url == null ? null : limparCaminho(request.url!),
+          url: request.url == null ? null : redactPath(request.url!),
         );
   // ignore: deprecated_member_use
   evento.extra = <String, dynamic>{};
@@ -76,20 +76,20 @@ SentryEvent? limparEvento(SentryEvent evento, Hint hint) {
   final mensagem = evento.message;
   if (mensagem != null) {
     evento.message = SentryMessage(
-      limparTexto(mensagem.formatted),
-      template: mensagem.template == null ? null : limparTexto(mensagem.template!),
+      redactText(mensagem.formatted),
+      template: mensagem.template == null ? null : redactText(mensagem.template!),
     );
   }
 
   for (final excecao in evento.exceptions ?? const <SentryException>[]) {
     final valor = excecao.value;
-    if (valor != null) excecao.value = limparTexto(valor);
+    if (valor != null) excecao.value = redactText(valor);
   }
 
   evento.breadcrumbs = evento.breadcrumbs
       ?.map(
         (b) => Breadcrumb(
-          message: b.message == null ? null : limparTexto(b.message!),
+          message: b.message == null ? null : redactText(b.message!),
           category: b.category,
           level: b.level,
           type: b.type,
@@ -101,8 +101,8 @@ SentryEvent? limparEvento(SentryEvent evento, Hint hint) {
   return evento;
 }
 
-Future<bool> rodarComTelemetria(Future<void> Function() app) async {
-  final reporta = (kReleaseMode || _dsnVeioDoBuild) && sentryDsn.trim().isNotEmpty;
+Future<bool> runWithTelemetry(Future<void> Function() app) async {
+  final reporta = (kReleaseMode || _dsnFromBuild) && sentryDsn.trim().isNotEmpty;
   if (!reporta) {
     await app();
     return false;
@@ -111,9 +111,9 @@ Future<bool> rodarComTelemetria(Future<void> Function() app) async {
   try {
     await SentryFlutter.init((options) {
       options.dsn = sentryDsn;
-      options.environment = ambiente;
+      options.environment = environment;
       options.sendDefaultPii = false;
-      options.beforeSend = limparEvento;
+      options.beforeSend = redactEvent;
     }, appRunner: app);
     return true;
   } catch (erro) {

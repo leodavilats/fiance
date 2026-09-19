@@ -20,10 +20,10 @@ class FiProvenance extends StatelessWidget {
 
   final String? limitation;
 
-  bool get _temConteudo =>
+  bool get _hasContent =>
       (method ?? source ?? asOf ?? limitation) != null;
 
-  void _abrir(BuildContext context) {
+  void _open(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -36,10 +36,10 @@ class FiProvenance extends StatelessWidget {
             children: [
               Text(summary, style: FiType.title),
               const SizedBox(height: FiSpace.s4),
-              _Campo(rotulo: 'Método', valor: method),
-              _Campo(rotulo: 'Fonte', valor: source),
-              _Campo(rotulo: 'Momento', valor: asOf),
-              _Campo(rotulo: 'Limitação', valor: limitation),
+              _Field(label: 'Método', value: method),
+              _Field(label: 'Fonte', value: source),
+              _Field(label: 'Momento', value: asOf),
+              _Field(label: 'Limitação', value: limitation),
             ],
           ),
         ),
@@ -49,13 +49,13 @@ class FiProvenance extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!_temConteudo) return const SizedBox.shrink();
+    if (!_hasContent) return const SizedBox.shrink();
 
     return Semantics(
       button: true,
       label: '$summary. Abre método, fonte e limitações.',
       child: InkWell(
-        onTap: () => _abrir(context),
+        onTap: () => _open(context),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
           child: Row(
@@ -76,15 +76,15 @@ class FiProvenance extends StatelessWidget {
   }
 }
 
-class _Campo extends StatelessWidget {
-  const _Campo({required this.rotulo, required this.valor});
+class _Field extends StatelessWidget {
+  const _Field({required this.label, required this.value});
 
-  final String rotulo;
-  final String? valor;
+  final String label;
+  final String? value;
 
   @override
   Widget build(BuildContext context) {
-    final texto = valor;
+    final texto = value;
     if (texto == null) return const SizedBox.shrink();
 
     return Padding(
@@ -93,7 +93,7 @@ class _Campo extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            rotulo,
+            label,
             style: FiType.eyebrow.copyWith(color: fiInk3(context)),
           ),
           const SizedBox(height: FiSpace.s1),

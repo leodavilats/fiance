@@ -2,8 +2,8 @@ import 'package:intl/intl.dart';
 
 final _currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 final _percent = NumberFormat('##0.00', 'pt_BR');
-final _dia = DateFormat('dd/MM/yyyy');
-final _quantidade = NumberFormat('#,##0.########', 'pt_BR');
+final _dayFormat = DateFormat('dd/MM/yyyy');
+final _quantityFormat = NumberFormat('#,##0.########', 'pt_BR');
 
 String formatCurrency(double? value) => _currency.format(value ?? 0);
 
@@ -13,16 +13,16 @@ String formatPercent(double? value) =>
 String formatDate(String? isoDate) {
   if (isoDate == null || isoDate.length < 10) return '—';
   final data = DateTime.tryParse(isoDate.substring(0, 10));
-  return data == null ? isoDate : _dia.format(data);
+  return data == null ? isoDate : _dayFormat.format(data);
 }
 
 String formatQuantity(double? value) =>
-    value == null ? '—' : _quantidade.format(value);
+    value == null ? '—' : _quantityFormat.format(value);
 
 String formatRatio(double? ratio) =>
     ratio == null ? '—' : formatPercent(ratio * 100);
 
-String formatIdade(double? epochSegundos) {
+String formatAge(double? epochSegundos) {
   if (epochSegundos == null || epochSegundos <= 0) return '';
 
   final minutos = DateTime.now()
@@ -37,8 +37,8 @@ String formatIdade(double? epochSegundos) {
   return 'em ${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch((epochSegundos * 1000).round()))}';
 }
 
-double? carimboMaisAntigo(Iterable<double?> carimbos) {
-  final validos = carimbos.whereType<double>().where((c) => c > 0);
+double? oldestStamp(Iterable<double?> stamps) {
+  final validos = stamps.whereType<double>().where((c) => c > 0);
   if (validos.isEmpty) return null;
   return validos.reduce((a, b) => a < b ? a : b);
 }

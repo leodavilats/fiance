@@ -22,7 +22,7 @@ class HelpTooltip extends StatelessWidget {
     final text = glossary[termKey];
     final ink3 = fiInk3(context);
 
-    final rotulo = Text(
+    final labelText = Text(
       label,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -33,7 +33,7 @@ class HelpTooltip extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
-        children: [rotulo, ?child],
+        children: [labelText, ?child],
       );
     }
 
@@ -78,7 +78,7 @@ class HelpTooltip extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(bottom: BorderSide(color: ink3)),
                 ),
-                child: rotulo,
+                child: labelText,
               ),
               ?child,
             ],

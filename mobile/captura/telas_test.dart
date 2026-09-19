@@ -19,7 +19,7 @@ const _tela = Size(390, 1400);
 final _saida = Directory('../build/revisao/telas');
 final _fontes = Directory('../build/revisao/.fontes');
 
-enum Estado { conteudo, carregando, falha, vazio }
+enum Estado { conteudo, carregando, falha, isEmpty }
 
 void _ignorarFonteAusente() {
   final anterior = FlutterError.onError;
@@ -113,12 +113,12 @@ class _RedeDublada extends Interceptor {
 }
 
 dynamic _resposta(String caminho, Estado estado) {
-  final vazio = estado == Estado.vazio;
+  final isEmpty = estado == Estado.isEmpty;
 
   if (caminho.contains('/preferences')) {
     return {
       'risk_profile': 'moderate',
-      'passive_income_goal': vazio ? null : 5000.0,
+      'passive_income_goal': isEmpty ? null : 5000.0,
       'preferred_categories': <String>[],
       'preferred_sectors': <String>[],
       'excluded_tickers': <String>[],
@@ -143,13 +143,13 @@ dynamic _resposta(String caminho, Estado estado) {
     '/cashflow/entries',
   ];
   if (listas.any(caminho.contains)) {
-    return vazio ? <dynamic>[] : _cheio(caminho);
+    return isEmpty ? <dynamic>[] : _cheio(caminho);
   }
 
   // O objeto vazio generico nao tem forma de resposta unica (ex.: 'summary' do
   // dashboard, ou os totais da renda fixa); sem ela o parser do cliente quebra
   // e a tela vazia que o proprio widget ja sabe mostrar nunca aparece.
-  if (caminho.contains('/fixed-income') && vazio) {
+  if (caminho.contains('/fixed-income') && isEmpty) {
     return {
       ..._vazio(),
       'total_investido': 0.0,
@@ -162,7 +162,7 @@ dynamic _resposta(String caminho, Estado estado) {
     };
   }
 
-  if (caminho.contains('/dashboard') && vazio) {
+  if (caminho.contains('/dashboard') && isEmpty) {
     return {
       ..._vazio(),
       'summary': {
@@ -181,7 +181,7 @@ dynamic _resposta(String caminho, Estado estado) {
     };
   }
 
-  return vazio ? _vazio() : _cheio(caminho);
+  return isEmpty ? _vazio() : _cheio(caminho);
 }
 
 Map<String, dynamic> _vazio() => {
@@ -206,7 +206,7 @@ Map<String, dynamic> _posicao(
   String nome,
   double quantidade,
   double medio,
-  double atual,
+  double current,
   String veredito,
   String rotulo,
   String categoria,
@@ -214,14 +214,14 @@ Map<String, dynamic> _posicao(
   double dy,
 ) {
   final investido = quantidade * medio;
-  final valor = quantidade * atual;
+  final valor = quantidade * current;
   return {
     'ticker': ticker,
     'name': nome,
     'asset_type': categoria == 'fiis' ? 'fii' : 'br_stock',
     'quantity': quantidade,
     'avg_price': medio,
-    'current_price': atual,
+    'current_price': current,
     'invested': investido,
     'current_value': valor,
     'pnl': valor - investido,
@@ -794,14 +794,14 @@ void main() {
     'voce-objetivos': '/voce/objetivos',
   };
 
-  for (final tela in telas.entries) {
+  for (final screen in telas.entries) {
     for (final estado in Estado.values) {
       for (final brilho in const [Brightness.light, Brightness.dark]) {
         final tema = brilho == Brightness.light ? 'claro' : 'escuro';
 
-        testWidgets('${tela.key} - ${estado.name} - $tema', (tester) async {
-          await _montar(tester, tela.value, brilho: brilho, estado: estado);
-          await _capturar(tester, estado.name, '${tela.key}-$tema');
+        testWidgets('${screen.key} - ${estado.name} - $tema', (tester) async {
+          await _montar(tester, screen.value, brilho: brilho, estado: estado);
+          await _capturar(tester, estado.name, '${screen.key}-$tema');
         });
       }
     }

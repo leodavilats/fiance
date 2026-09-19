@@ -75,7 +75,7 @@ class FiButton extends StatelessWidget {
     final acionavel = onPressed != null && !busy;
     final tocar = acionavel ? onPressed : null;
 
-    final filho = _Conteudo(label: label, icon: icon, busy: busy, expand: expand);
+    final filho = _Content(label: label, icon: icon, busy: busy, expand: expand);
 
     final botao = switch (tone) {
       FiButtonTone.primary => FilledButton(onPressed: tocar, child: filho),
@@ -100,8 +100,8 @@ class FiButton extends StatelessWidget {
   }
 }
 
-class _Conteudo extends StatelessWidget {
-  const _Conteudo({
+class _Content extends StatelessWidget {
+  const _Content({
     required this.label,
     required this.icon,
     required this.busy,

@@ -1,7 +1,7 @@
 import 'package:fiance/core/design_tokens.dart';
 import 'package:fiance/core/models.dart';
 import 'package:fiance/core/widgets/nav_action.dart';
-import 'package:fiance/features/mes/widgets/feed_tiles.dart';
+import 'package:fiance/features/month/widgets/feed_tiles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

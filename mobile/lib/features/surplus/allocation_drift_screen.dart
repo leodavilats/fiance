@@ -17,8 +17,8 @@ import '../../core/widgets/tag.dart';
 import '../../core/score_ruler.dart';
 import '../../core/theme.dart';
 
-class DesvioScreen extends ConsumerWidget {
-  const DesvioScreen({super.key});
+class AllocationDriftScreen extends ConsumerWidget {
+  const AllocationDriftScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,7 +29,7 @@ class DesvioScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(rebalanceSuggestionsProvider),
         child: async.when(
-          loading: () => FiSkeleton.tela(
+          loading: () => FiSkeleton.screen(
             shape: FiSkeletonShape.row,
             count: 5,
             label: 'Cruzando sua carteira com as metas',
@@ -77,7 +77,7 @@ class DesvioScreen extends ConsumerWidget {
                 for (final gap in gaps)
                   _GapRow(
                     gap: gap,
-                    escala: escalaDosGaps(gaps),
+                    scale: gapScale(gaps),
                     isBiggest: biggest != null && gap.category == biggest.category,
                   ),
 
@@ -122,7 +122,7 @@ class DesvioScreen extends ConsumerWidget {
                   FiSection(
                     title: 'Posições para revisar',
                     count: data.items.length,
-                    trailing: const _PerfilQueOrdena(),
+                    trailing: const _RankingProfile(),
                     child: Column(
                       children: [
                         for (final item in data.items) _RebalanceObject(item: item),
@@ -147,7 +147,7 @@ class DesvioScreen extends ConsumerWidget {
   }
 }
 
-double escalaDosGaps(List<AllocationGap> gaps) {
+double gapScale(List<AllocationGap> gaps) {
   var maior = 0.0;
   for (final gap in gaps) {
     if (gap.currentPct > maior) maior = gap.currentPct;
@@ -161,12 +161,12 @@ class _GapRow extends StatelessWidget {
   const _GapRow({
     required this.gap,
     required this.isBiggest,
-    required this.escala,
+    required this.scale,
   });
 
   final AllocationGap gap;
   final bool isBiggest;
-  final double escala;
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
@@ -176,15 +176,15 @@ class _GapRow extends StatelessWidget {
 
     final relevante = gap.gapPct.abs() >= 2;
     final falta = gap.gapPct > 0;
-    final corDaCategoria = categoryColor(gap.category, brightness);
-    final corDoDesvio = relevante
+    final categoryBarColor = categoryColor(gap.category, brightness);
+    final driftColor = relevante
         ? fiStateColor(FiState.attention, brightness)
         : ink3;
 
-    final atual = (gap.currentPct / escala).clamp(0.0, 1.0);
-    final meta = (gap.targetPct / escala).clamp(0.0, 1.0);
-    final inicioDoDesvio = atual < meta ? atual : meta;
-    final fimDoDesvio = atual < meta ? meta : atual;
+    final current = (gap.currentPct / scale).clamp(0.0, 1.0);
+    final meta = (gap.targetPct / scale).clamp(0.0, 1.0);
+    final inicioDoDesvio = current < meta ? current : meta;
+    final fimDoDesvio = current < meta ? meta : current;
 
     return Semantics(
       label:
@@ -249,7 +249,7 @@ class _GapRow extends StatelessWidget {
                           height: 8,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: corDoDesvio.withValues(
+                              color: driftColor.withValues(
                                 alpha: falta ? 0.22 : 0.32,
                               ),
                               borderRadius: BorderRadius.circular(FiRadius.sm),
@@ -258,12 +258,12 @@ class _GapRow extends StatelessWidget {
                         ),
                         Positioned(
                           left: 0,
-                          width: largura * atual,
+                          width: largura * current,
                           top: 2,
                           height: 8,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: corDaCategoria,
+                              color: categoryBarColor,
                               borderRadius: BorderRadius.circular(FiRadius.sm),
                             ),
                           ),
@@ -287,7 +287,7 @@ class _GapRow extends StatelessWidget {
                           ? 'faltam ${gap.gapPct.abs().toStringAsFixed(1)} p.p. para a meta'
                           : '${gap.gapPct.abs().toStringAsFixed(1)} p.p. acima da meta')
                     : 'dentro da meta',
-                style: FiType.caption.copyWith(color: corDoDesvio),
+                style: FiType.caption.copyWith(color: driftColor),
               ),
             ],
           ),
@@ -336,9 +336,9 @@ class _RebalanceObject extends StatelessWidget {
                   ),
                 ),
             ],
-            if (item.realocarPara != null) ...[
+            if (item.reallocateTo != null) ...[
               const SizedBox(height: FiSpace.s2),
-              _Realocacao(alvo: item.realocarPara!),
+              _Reallocation(target: item.reallocateTo!),
             ],
             if (item.requiresTaxReview) ...[
               const SizedBox(height: FiSpace.s1),
@@ -370,15 +370,15 @@ class _RebalanceObject extends StatelessWidget {
   };
 }
 
-class _Realocacao extends StatelessWidget {
-  const _Realocacao({required this.alvo});
+class _Reallocation extends StatelessWidget {
+  const _Reallocation({required this.target});
 
-  final RebalanceTarget alvo;
+  final RebalanceTarget target;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.push('/ativo/${alvo.ticker}'),
+      onTap: () => context.push('/ativo/${target.ticker}'),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
         child: Row(
@@ -393,11 +393,11 @@ class _Realocacao extends StatelessWidget {
                   children: [
                     const TextSpan(text: 'Se sair daqui, '),
                     TextSpan(
-                      text: alvo.ticker,
+                      text: target.ticker,
                       style: FiType.ticker.copyWith(color: fiInk1(context)),
                     ),
                     TextSpan(
-                      text: ' está ${scoreBand(alvo.score, Theme.of(context).brightness).text.toLowerCase()}'
+                      text: ' está ${scoreBand(target.score, Theme.of(context).brightness).text.toLowerCase()}'
                           ' na mesma categoria.',
                     ),
                   ],
@@ -408,7 +408,7 @@ class _Realocacao extends StatelessWidget {
             SizedBox(
               width: 64,
               child: ScoreRuler(
-                score: alvo.score,
+                score: target.score,
                 size: ScoreRulerSize.inline,
                 showValue: false,
               ),
@@ -420,10 +420,10 @@ class _Realocacao extends StatelessWidget {
   }
 }
 
-class _PerfilQueOrdena extends ConsumerWidget {
-  const _PerfilQueOrdena();
+class _RankingProfile extends ConsumerWidget {
+  const _RankingProfile();
 
-  static const _rotulos = {
+  static const _labels = {
     'conservative': 'conservador',
     'moderate': 'moderado',
     'aggressive': 'arrojado',
@@ -435,12 +435,12 @@ class _PerfilQueOrdena extends ConsumerWidget {
 
     return prefs.maybeWhen(
       data: (p) {
-        final rotulo = _rotulos[p.riskProfile] ?? p.riskProfile;
+        final label = _labels[p.riskProfile] ?? p.riskProfile;
         return HelpTooltip(
           termKey: 'perfil_de_risco',
-          label: 'perfil $rotulo',
+          label: 'perfil $label',
           child: Text(
-            'perfil $rotulo',
+            'perfil $label',
             style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
         );

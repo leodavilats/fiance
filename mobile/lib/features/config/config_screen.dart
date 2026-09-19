@@ -40,14 +40,14 @@ class ConfigScreen extends ConsumerWidget {
           FiLayout.scrollTail,
         ),
         children: [
-          const FiIdentidade(),
+          const FiIdentity(),
           const SizedBox(height: FiSpace.s5),
           FiRows(
             children: [
               FiDataRow(
                 label: 'Como eu invisto',
                 detail: preferences.maybeWhen(
-                  data: _resumoDeInvestimento,
+                  data: _investingSummary,
                   orElse: () => 'Perfil, categorias, setores e metas',
                 ),
                 onTap: () => context.go('/voce/investir'),
@@ -55,7 +55,7 @@ class ConfigScreen extends ConsumerWidget {
               FiDataRow(
                 label: 'O que chega até você',
                 detail: preferences.maybeWhen(
-                  data: (p) => _resumoDeAvisos(p, alertas.valueOrNull?.length),
+                  data: (p) => _notificationsSummary(p, alertas.valueOrNull?.length),
                   orElse: () => 'Notificações e alertas de preço',
                 ),
                 onTap: () => context.go('/voce/avisos'),
@@ -89,7 +89,7 @@ class ConfigScreen extends ConsumerWidget {
   }
 }
 
-String _resumoDeInvestimento(Preferences p) {
+String _investingSummary(Preferences p) {
   final partes = <String>[
     'perfil ${_riskProfileLabel(p.riskProfile).toLowerCase()}',
     if (p.preferredCategories.isNotEmpty)
@@ -104,7 +104,7 @@ String _resumoDeInvestimento(Preferences p) {
   return partes.join(' · ');
 }
 
-String _resumoDeAvisos(Preferences p, int? alertas) {
+String _notificationsSummary(Preferences p, int? alertas) {
   final partes = <String>[
     'resumo ${_frequencyLabel(p.opportunitiesFrequency).toLowerCase()}',
     if (alertas != null && alertas > 0)
@@ -115,16 +115,16 @@ String _resumoDeAvisos(Preferences p, int? alertas) {
   return partes.join(' · ');
 }
 
-class _Eixo extends StatelessWidget {
-  const _Eixo({required this.titulo, required this.children});
+class _Axis extends StatelessWidget {
+  const _Axis({required this.title, required this.children});
 
-  final String titulo;
+  final String title;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(titulo)),
+      appBar: AppBar(title: Text(title)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           FiLayout.gutter,
@@ -138,15 +138,15 @@ class _Eixo extends StatelessWidget {
   }
 }
 
-class InvestirScreen extends ConsumerWidget {
-  const InvestirScreen({super.key});
+class InvestingScreen extends ConsumerWidget {
+  const InvestingScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
 
-    return _Eixo(
-      titulo: 'Como eu invisto',
+    return _Axis(
+      title: 'Como eu invisto',
       children: [
         preferences.when(
           loading: () => const FiSkeleton(
@@ -161,8 +161,8 @@ class InvestirScreen extends ConsumerWidget {
           data: (prefs) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FiRecomendacao(prefs: prefs),
-              FiMetas(prefs: prefs),
+              FiRecommendation(prefs: prefs),
+              FiGoals(prefs: prefs),
             ],
           ),
         ),
@@ -171,15 +171,15 @@ class InvestirScreen extends ConsumerWidget {
   }
 }
 
-class AvisosScreen extends ConsumerWidget {
-  const AvisosScreen({super.key});
+class NotificationsScreen extends ConsumerWidget {
+  const NotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
 
-    return _Eixo(
-      titulo: 'O que chega até você',
+    return _Axis(
+      title: 'O que chega até você',
       children: [
         preferences.when(
           loading: () => const FiSkeleton(
@@ -191,37 +191,37 @@ class AvisosScreen extends ConsumerWidget {
             action: 'carregar suas preferências',
             onRetry: () => ref.invalidate(preferencesProvider),
           ),
-          data: (prefs) => FiNotificacoes(prefs: prefs),
+          data: (prefs) => FiNotifications(prefs: prefs),
         ),
-        const FiAlertas(),
+        const FiPriceAlerts(),
       ],
     );
   }
 }
 
-class AparenciaScreen extends StatelessWidget {
-  const AparenciaScreen({super.key});
+class AppearanceScreen extends StatelessWidget {
+  const AppearanceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const _Eixo(titulo: 'Aparência', children: [FiAparencia()]);
+    return const _Axis(title: 'Aparência', children: [FiAppearance()]);
   }
 }
 
-class ContaScreen extends StatelessWidget {
-  const ContaScreen({super.key});
+class AccountScreen extends StatelessWidget {
+  const AccountScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const _Eixo(
-      titulo: 'Conta',
-      children: [FiIndicacao(), FiLegal(), FiConta()],
+    return const _Axis(
+      title: 'Conta',
+      children: [FiReferral(), FiLegal(), FiAccount()],
     );
   }
 }
 
-class FiIdentidade extends ConsumerWidget {
-  const FiIdentidade({super.key});
+class FiIdentity extends ConsumerWidget {
+  const FiIdentity({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -242,8 +242,8 @@ class FiIdentidade extends ConsumerWidget {
   }
 }
 
-class FiRecomendacao extends ConsumerWidget {
-  const FiRecomendacao({super.key, required this.prefs});
+class FiRecommendation extends ConsumerWidget {
+  const FiRecommendation({super.key, required this.prefs});
 
   final Preferences prefs;
 
@@ -333,8 +333,8 @@ class FiRecomendacao extends ConsumerWidget {
   }
 }
 
-class FiMetas extends StatelessWidget {
-  const FiMetas({super.key, required this.prefs});
+class FiGoals extends StatelessWidget {
+  const FiGoals({super.key, required this.prefs});
 
   final Preferences prefs;
 
@@ -367,8 +367,8 @@ class FiMetas extends StatelessWidget {
   }
 }
 
-class FiNotificacoes extends ConsumerWidget {
-  const FiNotificacoes({super.key, required this.prefs});
+class FiNotifications extends ConsumerWidget {
+  const FiNotifications({super.key, required this.prefs});
 
   final Preferences prefs;
 
@@ -406,8 +406,8 @@ class FiNotificacoes extends ConsumerWidget {
   }
 }
 
-class FiAparencia extends ConsumerWidget {
-  const FiAparencia({super.key});
+class FiAppearance extends ConsumerWidget {
+  const FiAppearance({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -624,8 +624,8 @@ Future<void> _editCsvList(
   ref.invalidate(preferencesProvider);
 }
 
-class FiIndicacao extends ConsumerWidget {
-  const FiIndicacao({super.key});
+class FiReferral extends ConsumerWidget {
+  const FiReferral({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -687,8 +687,8 @@ class FiIndicacao extends ConsumerWidget {
   }
 }
 
-class FiAlertas extends ConsumerWidget {
-  const FiAlertas({super.key});
+class FiPriceAlerts extends ConsumerWidget {
+  const FiPriceAlerts({super.key});
 
   Future<void> _createAlert(BuildContext context, WidgetRef ref) async {
     final tickerCtrl = TextEditingController();
@@ -843,7 +843,7 @@ class _LegalRow extends StatelessWidget {
       detail: detail,
       trailing: Icon(Icons.open_in_new, size: 16, color: fiInk3(context)),
       onTap: () async {
-        final abriu = await abrirNoNavegador(url);
+        final abriu = await openInBrowser(url);
         if (!abriu && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Não foi possível abrir $url')),
@@ -854,8 +854,8 @@ class _LegalRow extends StatelessWidget {
   }
 }
 
-class FiConta extends ConsumerWidget {
-  const FiConta({super.key});
+class FiAccount extends ConsumerWidget {
+  const FiAccount({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

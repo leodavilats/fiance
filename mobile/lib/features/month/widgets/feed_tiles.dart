@@ -28,7 +28,7 @@ class FiInsightTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rotulo = actionLabel;
+    final label = actionLabel;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
@@ -40,11 +40,11 @@ class FiInsightTile extends StatelessWidget {
             Text(title, style: FiType.title.copyWith(color: fiInk1(context))),
             const SizedBox(height: FiSpace.s1),
             Text(detail, style: FiType.body.copyWith(color: fiInk2(context))),
-            if (rotulo != null) ...[
+            if (label != null) ...[
               const SizedBox(height: FiSpace.s2),
               Align(
                 alignment: Alignment.centerLeft,
-                child: FiNavAction(label: rotulo, onPressed: onAction),
+                child: FiNavAction(label: label, onPressed: onAction),
               ),
             ],
           ],
@@ -66,7 +66,7 @@ class FiAlertTile extends StatelessWidget {
       title: alert.count > 1 ? '${alert.title} (${alert.count})' : alert.title,
       detail: alert.detail,
       actionLabel: alert.actionLabel,
-      onAction: () => runHojeAction(context, alert.action, alert.ticker),
+      onAction: () => runFeedAction(context, alert.action, alert.ticker),
     );
   }
 }
@@ -83,7 +83,7 @@ class FiWhatsNewTile extends StatelessWidget {
       title: item.title,
       detail: item.detail,
       actionLabel: item.actionLabel,
-      onAction: () => runHojeAction(context, item.action, item.ticker),
+      onAction: () => runFeedAction(context, item.action, item.ticker),
     );
   }
 }

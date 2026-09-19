@@ -18,7 +18,7 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 
-Future<void> abrirFormDeProvento(BuildContext context, WidgetRef ref) async {
+Future<void> openDividendForm(BuildContext context, WidgetRef ref) async {
   final salvo = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -26,21 +26,21 @@ Future<void> abrirFormDeProvento(BuildContext context, WidgetRef ref) async {
     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: const _ProventoForm(),
+      child: const _DividendForm(),
     ),
   );
 
   if (salvo == true) {
-    ref.invalidate(proventosProvider);
-    ref.invalidate(proventosPendentesProvider);
+    ref.invalidate(dividendsProvider);
+    ref.invalidate(pendingDividendsProvider);
     ref.invalidate(dashboardProvider);
   }
 }
 
-class ProventosScreen extends ConsumerWidget {
-  const ProventosScreen({super.key});
+class DividendsScreen extends ConsumerWidget {
+  const DividendsScreen({super.key});
 
-  Future<void> _apagar(BuildContext context, WidgetRef ref, DividendReceived item) async {
+  Future<void> _delete(BuildContext context, WidgetRef ref, DividendReceived item) async {
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -64,7 +64,7 @@ class ProventosScreen extends ConsumerWidget {
 
     try {
       await ref.read(apiRepositoryProvider).deleteDividendReceived(item.id);
-      ref.invalidate(proventosProvider);
+      ref.invalidate(dividendsProvider);
       ref.invalidate(dashboardProvider);
     } catch (e) {
       if (context.mounted) {
@@ -77,17 +77,17 @@ class ProventosScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recebidos = ref.watch(proventosProvider);
+    final recebidos = ref.watch(dividendsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Proventos')),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(proventosProvider);
-          ref.invalidate(proventosPendentesProvider);
+          ref.invalidate(dividendsProvider);
+          ref.invalidate(pendingDividendsProvider);
         },
         child: recebidos.when(
-          loading: () => FiSkeleton.tela(
+          loading: () => FiSkeleton.screen(
             shape: FiSkeletonShape.row,
             count: 6,
             label: 'Carregando seus proventos',
@@ -96,7 +96,7 @@ class ProventosScreen extends ConsumerWidget {
             error: err,
             title: 'Não conseguimos carregar seus proventos',
             action: 'carregar os proventos recebidos',
-            onRetry: () => ref.invalidate(proventosProvider),
+            onRetry: () => ref.invalidate(dividendsProvider),
           ),
           data: (data) {
             if (data.items.isEmpty) {
@@ -118,12 +118,12 @@ class ProventosScreen extends ConsumerWidget {
                     action: FiButton.primary(
                       label: 'Registrar provento',
                       icon: Icons.add,
-                      onPressed: () => abrirFormDeProvento(context, ref),
+                      onPressed: () => openDividendForm(context, ref),
                     ),
                   ),
                   const SizedBox(height: FiSpace.s5),
-                  const _AguardandoConfirmacao(),
-                  const _Calendario(),
+                  const _AwaitingConfirmation(),
+                  const _Calendar(),
                 ],
               );
             }
@@ -136,23 +136,23 @@ class ProventosScreen extends ConsumerWidget {
                 FiLayout.scrollTail,
               ),
               children: [
-                _Totais(data: data),
-                const _AguardandoConfirmacao(),
-                const _Calendario(),
+                _Totals(data: data),
+                const _AwaitingConfirmation(),
+                const _Calendar(),
                 FiSection(
                   title: 'Recebidos',
                   count: data.totalCount,
                   trailing: FiButton.quiet(
                     label: 'Registrar',
                     icon: Icons.add,
-                    onPressed: () => abrirFormDeProvento(context, ref),
+                    onPressed: () => openDividendForm(context, ref),
                   ),
                   child: Column(
                     children: [
                       for (final item in data.items)
-                        _ProventoObject(
+                        _DividendObject(
                           item: item,
-                          onDelete: () => _apagar(context, ref, item),
+                          onDelete: () => _delete(context, ref, item),
                         ),
                     ],
                   ),
@@ -181,8 +181,8 @@ class ProventosScreen extends ConsumerWidget {
   }
 }
 
-class _Totais extends StatelessWidget {
-  const _Totais({required this.data});
+class _Totals extends StatelessWidget {
+  const _Totals({required this.data});
 
   final DividendsReceived data;
 
@@ -219,8 +219,8 @@ class _Totais extends StatelessWidget {
   }
 }
 
-class _ProventoObject extends StatelessWidget {
-  const _ProventoObject({required this.item, required this.onDelete});
+class _DividendObject extends StatelessWidget {
+  const _DividendObject({required this.item, required this.onDelete});
 
   final DividendReceived item;
   final VoidCallback onDelete;
@@ -243,8 +243,8 @@ class _ProventoObject extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: FiSpace.s2),
-                FiTag.serie(
-                  label: proventoTipoLabel(item.kind),
+                FiTag.series(
+                  label: dividendKindLabel(item.kind),
                   color: fiInk2(context),
                 ),
                 IconButton(
@@ -279,12 +279,12 @@ class _ProventoObject extends StatelessWidget {
   }
 }
 
-class _AguardandoConfirmacao extends ConsumerWidget {
-  const _AguardandoConfirmacao();
+class _AwaitingConfirmation extends ConsumerWidget {
+  const _AwaitingConfirmation();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pendentes = ref.watch(proventosPendentesProvider);
+    final pendentes = ref.watch(pendingDividendsProvider);
 
     return pendentes.maybeWhen(
       loading: () => const FiSection(
@@ -292,15 +292,15 @@ class _AguardandoConfirmacao extends ConsumerWidget {
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 2),
       ),
       data: (data) {
-        final provados = data.items.where((s) => s.direitoProvado).toList();
+        final provados = data.items.where((s) => s.entitlementProven).toList();
         if (provados.isEmpty) return const SizedBox.shrink();
 
-        return _ListaDeSugestoes(
-          titulo: 'Confirme o que já caiu',
-          sugestoes: provados,
+        return _SuggestionList(
+          title: 'Confirme o que já caiu',
+          suggestions: provados,
           hint: 'O seu razão mostra a posição já na data-com, então estes proventos são seus. '
               'Falta só dizer que caíram na conta — nada é lançado antes disso.',
-          colapsada: false,
+          collapsed: false,
         );
       },
       orElse: () => const SizedBox.shrink(),
@@ -308,12 +308,12 @@ class _AguardandoConfirmacao extends ConsumerWidget {
   }
 }
 
-class _Calendario extends ConsumerWidget {
-  const _Calendario();
+class _Calendar extends ConsumerWidget {
+  const _Calendar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pendentes = ref.watch(proventosPendentesProvider);
+    final pendentes = ref.watch(pendingDividendsProvider);
 
     return pendentes.when(
       loading: () => const FiSection(
@@ -324,63 +324,63 @@ class _Calendario extends ConsumerWidget {
         error: err,
         title: 'Não conseguimos ler o calendário de proventos',
         action: 'buscar proventos do calendário',
-        onRetry: () => ref.invalidate(proventosPendentesProvider),
+        onRetry: () => ref.invalidate(pendingDividendsProvider),
       ),
       data: (data) {
         final indeterminados =
-            data.items.where((s) => !s.direitoProvado).toList();
+            data.items.where((s) => !s.entitlementProven).toList();
         if (indeterminados.isEmpty) return const SizedBox.shrink();
 
-        return _ListaDeSugestoes(
-          titulo: 'Consultar o calendário',
-          sugestoes: indeterminados,
+        return _SuggestionList(
+          title: 'Consultar o calendário',
+          suggestions: indeterminados,
           hint: 'Aqui o razão não prova o direito: ou a fonte não publicou a data-com, ou os '
               'seus lançamentos não alcançam aquela data. Confira contra o extrato da '
               'corretora antes de confirmar.',
-          colapsada: true,
+          collapsed: true,
         );
       },
     );
   }
 }
 
-class _ListaDeSugestoes extends ConsumerStatefulWidget {
-  const _ListaDeSugestoes({
-    required this.titulo,
-    required this.sugestoes,
+class _SuggestionList extends ConsumerStatefulWidget {
+  const _SuggestionList({
+    required this.title,
+    required this.suggestions,
     required this.hint,
-    required this.colapsada,
+    required this.collapsed,
   });
 
-  final String titulo;
-  final List<DividendSuggestion> sugestoes;
+  final String title;
+  final List<DividendSuggestion> suggestions;
   final String hint;
-  final bool colapsada;
+  final bool collapsed;
 
   @override
-  ConsumerState<_ListaDeSugestoes> createState() => _ListaDeSugestoesState();
+  ConsumerState<_SuggestionList> createState() => _SuggestionListState();
 }
 
-class _ListaDeSugestoesState extends ConsumerState<_ListaDeSugestoes> {
-  final Set<String> _escolhidos = {};
-  bool _confirmando = false;
+class _SuggestionListState extends ConsumerState<_SuggestionList> {
+  final Set<String> _chosen = {};
+  bool _confirming = false;
 
-  String _chave(DividendSuggestion s) => '${s.ticker}|${s.paidAt}';
+  String _key(DividendSuggestion s) => '${s.ticker}|${s.paidAt}';
 
-  Future<void> _confirmar() async {
-    final selecionados = widget.sugestoes
-        .where((s) => _escolhidos.contains(_chave(s)))
+  Future<void> _confirm() async {
+    final selecionados = widget.suggestions
+        .where((s) => _chosen.contains(_key(s)))
         .toList();
     if (selecionados.isEmpty) return;
 
-    setState(() => _confirmando = true);
+    setState(() => _confirming = true);
     try {
       final criados = await ref
           .read(apiRepositoryProvider)
           .confirmDividends(selecionados);
-      _escolhidos.clear();
-      ref.invalidate(proventosProvider);
-      ref.invalidate(proventosPendentesProvider);
+      _chosen.clear();
+      ref.invalidate(dividendsProvider);
+      ref.invalidate(pendingDividendsProvider);
       ref.invalidate(dashboardProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -402,24 +402,24 @@ class _ListaDeSugestoesState extends ConsumerState<_ListaDeSugestoes> {
         );
       }
     } finally {
-      if (mounted) setState(() => _confirmando = false);
+      if (mounted) setState(() => _confirming = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final marcados = widget.sugestoes
-        .where((s) => _escolhidos.contains(_chave(s)))
+    final marcados = widget.suggestions
+        .where((s) => _chosen.contains(_key(s)))
         .toList();
-    final escolhidos = marcados.length;
+    final chosen = marcados.length;
     final somaMarcada = marcados.fold<double>(0, (t, s) => t + s.amount);
-    final total = widget.sugestoes.fold<double>(0, (t, s) => t + s.amount);
-    final todos = escolhidos == widget.sugestoes.length;
+    final total = widget.suggestions.fold<double>(0, (t, s) => t + s.amount);
+    final todos = chosen == widget.suggestions.length;
 
     final corpo = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.sugestoes.length > 1)
+        if (widget.suggestions.length > 1)
           Padding(
             padding: const EdgeInsets.only(bottom: FiSpace.s2),
             child: Align(
@@ -427,63 +427,63 @@ class _ListaDeSugestoesState extends ConsumerState<_ListaDeSugestoes> {
               child: FiButton.quiet(
                 label: todos ? 'Desmarcar todos' : 'Marcar todos',
                 onPressed: () => setState(() {
-                  _escolhidos.clear();
+                  _chosen.clear();
                   if (!todos) {
-                    _escolhidos.addAll(widget.sugestoes.map(_chave));
+                    _chosen.addAll(widget.suggestions.map(_key));
                   }
                 }),
               ),
             ),
           ),
-        for (final s in widget.sugestoes)
-          _SugestaoObject(
-            sugestao: s,
-            marcada: _escolhidos.contains(_chave(s)),
+        for (final s in widget.suggestions)
+          _SuggestionObject(
+            suggestion: s,
+            checked: _chosen.contains(_key(s)),
             onToggle: () => setState(() {
-              final k = _chave(s);
-              if (!_escolhidos.remove(k)) _escolhidos.add(k);
+              final k = _key(s);
+              if (!_chosen.remove(k)) _chosen.add(k);
             }),
           ),
         const SizedBox(height: FiSpace.s3),
         Text(
-          escolhidos == 0
+          chosen == 0
               ? 'Marque o que já caiu na conta. O que ficar desmarcado não é lançado.'
-              : '$escolhidos de ${widget.sugestoes.length} marcados, '
+              : '$chosen de ${widget.suggestions.length} marcados, '
                     '${formatCurrency(somaMarcada)} no total.',
           style: FiType.caption.copyWith(color: fiInk3(context)),
         ),
         const SizedBox(height: FiSpace.s2),
         FiButton.primary(
-          label: _confirmando
+          label: _confirming
               ? 'Lançando…'
-              : escolhidos == 0
+              : chosen == 0
               ? 'Lançar os marcados'
-              : 'Lançar $escolhidos ${escolhidos == 1 ? 'provento' : 'proventos'}',
-          busy: _confirmando,
-          onPressed: _confirmando || escolhidos == 0 ? null : _confirmar,
+              : 'Lançar $chosen ${chosen == 1 ? 'provento' : 'proventos'}',
+          busy: _confirming,
+          onPressed: _confirming || chosen == 0 ? null : _confirm,
         ),
       ],
     );
 
-    if (!widget.colapsada) {
+    if (!widget.collapsed) {
       return FiSection(
-        title: widget.titulo,
-        count: widget.sugestoes.length,
+        title: widget.title,
+        count: widget.suggestions.length,
         hint: widget.hint,
         child: corpo,
       );
     }
 
     return FiSection(
-      title: widget.titulo,
-      count: widget.sugestoes.length,
+      title: widget.title,
+      count: widget.suggestions.length,
       child: FiDisclosure(
         rule: false,
         title:
-            '${widget.sugestoes.length} '
-            '${widget.sugestoes.length == 1 ? 'crédito' : 'créditos'} '
+            '${widget.suggestions.length} '
+            '${widget.suggestions.length == 1 ? 'crédito' : 'créditos'} '
             'que o razão não confirma',
-        detail: widget.sugestoes.length == 1
+        detail: widget.suggestions.length == 1
             ? 'Um crédito por conferir'
             : 'Somam ${formatCurrency(total)} por conferir',
         initiallyOpen: false,
@@ -503,15 +503,15 @@ class _ListaDeSugestoesState extends ConsumerState<_ListaDeSugestoes> {
   }
 }
 
-class _SugestaoObject extends StatelessWidget {
-  const _SugestaoObject({
-    required this.sugestao,
-    required this.marcada,
+class _SuggestionObject extends StatelessWidget {
+  const _SuggestionObject({
+    required this.suggestion,
+    required this.checked,
     required this.onToggle,
   });
 
-  final DividendSuggestion sugestao;
-  final bool marcada;
+  final DividendSuggestion suggestion;
+  final bool checked;
   final VoidCallback onToggle;
 
   @override
@@ -522,7 +522,7 @@ class _SugestaoObject extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
       child: FiObject(
         onTap: onToggle,
-        accent: marcada ? fiStateColor(FiState.favorable, brightness) : null,
+        accent: checked ? fiStateColor(FiState.favorable, brightness) : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -530,51 +530,51 @@ class _SugestaoObject extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Semantics(
-                  label: marcada
-                      ? 'Desmarcar provento de ${sugestao.ticker}'
-                      : 'Marcar provento de ${sugestao.ticker} como recebido',
-                  child: Checkbox(value: marcada, onChanged: (_) => onToggle()),
+                  label: checked
+                      ? 'Desmarcar provento de ${suggestion.ticker}'
+                      : 'Marcar provento de ${suggestion.ticker} como recebido',
+                  child: Checkbox(value: checked, onChanged: (_) => onToggle()),
                 ),
                 Expanded(
                   child: Text(
-                    sugestao.ticker,
+                    suggestion.ticker,
                     style: FiType.title.copyWith(color: fiInk1(context)),
                   ),
                 ),
                 const SizedBox(width: FiSpace.s2),
-                FiTag.serie(
-                  label: proventoTipoLabel(sugestao.kind),
+                FiTag.series(
+                  label: dividendKindLabel(suggestion.kind),
                   color: fiInk2(context),
                 ),
               ],
             ),
             FiRows(
               children: [
-                FiDataRow(label: 'Crédito', value: formatDate(sugestao.paidAt)),
-                if (sugestao.exDate != null)
+                FiDataRow(label: 'Crédito', value: formatDate(suggestion.paidAt)),
+                if (suggestion.exDate != null)
                   FiDataRow(
                     label: 'Data-com',
-                    value: formatDate(sugestao.exDate),
+                    value: formatDate(suggestion.exDate),
                     detail: 'quem tinha o ativo neste dia recebe',
                   ),
                 FiDataRow(
                   label: 'Valor estimado',
-                  value: formatCurrency(sugestao.amount),
+                  value: formatCurrency(suggestion.amount),
                   emphasis: true,
                 ),
                 FiDataRow(
                   label: 'Base do cálculo',
-                  value: '${formatQuantity(sugestao.quantityAtDate)} × '
-                      '${formatCurrency(sugestao.ratePerShare)}',
-                  detail: sugestao.quantityIsCurrent
+                  value: '${formatQuantity(suggestion.quantityAtDate)} × '
+                      '${formatCurrency(suggestion.ratePerShare)}',
+                  detail: suggestion.quantityIsCurrent
                       ? 'Quantidade de hoje, não a da data-com'
                       : 'Quantidade que o seu razão tinha na data-com',
                 ),
               ],
             ),
-            if (sugestao.caveats.isNotEmpty) ...[
+            if (suggestion.caveats.isNotEmpty) ...[
               const SizedBox(height: FiSpace.s2),
-              for (final c in sugestao.caveats)
+              for (final c in suggestion.caveats)
                 Padding(
                   padding: const EdgeInsets.only(bottom: FiSpace.s1),
                   child: Text(
@@ -592,49 +592,49 @@ class _SugestaoObject extends StatelessWidget {
   }
 }
 
-class _ProventoForm extends ConsumerStatefulWidget {
-  const _ProventoForm();
+class _DividendForm extends ConsumerStatefulWidget {
+  const _DividendForm();
 
   @override
-  ConsumerState<_ProventoForm> createState() => _ProventoFormState();
+  ConsumerState<_DividendForm> createState() => _DividendFormState();
 }
 
-class _ProventoFormState extends ConsumerState<_ProventoForm> {
+class _DividendFormState extends ConsumerState<_DividendForm> {
   final _formKey = GlobalKey<FormState>();
   final _ticker = TextEditingController();
-  final _valor = TextEditingController();
-  final _nota = TextEditingController();
+  final _amount = TextEditingController();
+  final _note = TextEditingController();
 
   String _kind = 'dividendo';
-  DateTime _data = DateTime.now();
-  bool _salvando = false;
+  DateTime _date = DateTime.now();
+  bool _saving = false;
 
   @override
   void dispose() {
     _ticker.dispose();
-    _valor.dispose();
-    _nota.dispose();
+    _amount.dispose();
+    _note.dispose();
     super.dispose();
   }
 
-  Future<void> _salvar() async {
+  Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _salvando = true);
+    setState(() => _saving = true);
     try {
       await ref
           .read(apiRepositoryProvider)
           .createDividendReceived(
             ticker: _ticker.text.trim().toUpperCase(),
-            paidAt: _data.toIso8601String().substring(0, 10),
-            amount: double.parse(_valor.text.trim().replaceAll(',', '.')),
+            paidAt: _date.toIso8601String().substring(0, 10),
+            amount: double.parse(_amount.text.trim().replaceAll(',', '.')),
             kind: _kind,
-            note: _nota.text.trim().isEmpty ? null : _nota.text.trim(),
+            note: _note.text.trim().isEmpty ? null : _note.text.trim(),
           );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        setState(() => _salvando = false);
+        setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(fiErrorMessage(e, action: 'registrar o provento'))),
         );
@@ -673,7 +673,7 @@ class _ProventoFormState extends ConsumerState<_ProventoForm> {
                 initialValue: _kind,
                 decoration: const InputDecoration(labelText: 'Tipo'),
                 items: [
-                  for (final e in fiTiposDeProvento.entries)
+                  for (final e in fiDividendKinds.entries)
                     DropdownMenuItem(value: e.key, child: Text(e.value)),
                 ],
                 onChanged: (v) => setState(() => _kind = v ?? 'dividendo'),
@@ -685,16 +685,16 @@ class _ProventoFormState extends ConsumerState<_ProventoForm> {
                   onTap: () async {
                     final escolhida = await showDatePicker(
                       context: context,
-                      initialDate: _data,
+                      initialDate: _date,
                       firstDate: DateTime(2000),
                       lastDate: DateTime.now(),
                     );
-                    if (escolhida != null) setState(() => _data = escolhida);
+                    if (escolhida != null) setState(() => _date = escolhida);
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
                     child: Text(
-                      formatDate(_data.toIso8601String().substring(0, 10)),
+                      formatDate(_date.toIso8601String().substring(0, 10)),
                       style: FiType.body.copyWith(color: fiInk1(context)),
                     ),
                   ),
@@ -702,7 +702,7 @@ class _ProventoFormState extends ConsumerState<_ProventoForm> {
               ),
               const SizedBox(height: FiSpace.s3),
               TextFormField(
-                controller: _valor,
+                controller: _amount,
                 decoration: const InputDecoration(
                   labelText: 'Valor líquido',
                   prefixText: 'R\$ ',
@@ -717,13 +717,13 @@ class _ProventoFormState extends ConsumerState<_ProventoForm> {
               ),
               const SizedBox(height: FiSpace.s3),
               TextFormField(
-                controller: _nota,
+                controller: _note,
                 decoration: const InputDecoration(labelText: 'Observação (opcional)'),
               ),
               const SizedBox(height: FiSpace.s5),
               FiButton.primary(
-                label: _salvando ? 'Registrando…' : 'Registrar provento',
-                onPressed: _salvando ? null : _salvar,
+                label: _saving ? 'Registrando…' : 'Registrar provento',
+                onPressed: _saving ? null : _save,
               ),
             ],
           ),

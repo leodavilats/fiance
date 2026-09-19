@@ -36,7 +36,7 @@ class FiDisclosure extends StatefulWidget {
 }
 
 class _FiDisclosureState extends State<FiDisclosure> {
-  late bool _aberto = widget.initiallyOpen;
+  late bool _isOpen = widget.initiallyOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +81,7 @@ class _FiDisclosureState extends State<FiDisclosure> {
           ],
           const SizedBox(width: FiSpace.s2),
           AnimatedRotation(
-            turns: _aberto ? 0.5 : 0,
+            turns: _isOpen ? 0.5 : 0,
             duration: FiMotion.fast,
             curve: FiMotion.easeEnter,
             child: Icon(
@@ -105,11 +105,11 @@ class _FiDisclosureState extends State<FiDisclosure> {
           ),
         Semantics(
           button: true,
-          expanded: _aberto,
+          expanded: _isOpen,
           label: widget.title,
           child: ExcludeSemantics(
             child: InkWell(
-              onTap: () => setState(() => _aberto = !_aberto),
+              onTap: () => setState(() => _isOpen = !_isOpen),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
                   minHeight: FiLayout.minTouchTarget,
@@ -123,7 +123,7 @@ class _FiDisclosureState extends State<FiDisclosure> {
           duration: FiMotion.base,
           curve: FiMotion.easeEnter,
           alignment: Alignment.topCenter,
-          child: _aberto
+          child: _isOpen
               ? Padding(
                   padding: const EdgeInsets.only(bottom: FiSpace.s4),
                   child: widget.child,
@@ -160,7 +160,7 @@ class FiGroupDisclosure extends StatefulWidget {
 }
 
 class _FiGroupDisclosureState extends State<FiGroupDisclosure> {
-  late bool _aberto = widget.initiallyOpen;
+  late bool _isOpen = widget.initiallyOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -174,12 +174,12 @@ class _FiGroupDisclosureState extends State<FiGroupDisclosure> {
         Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
         Semantics(
           button: true,
-          expanded: _aberto,
+          expanded: _isOpen,
           header: true,
           label: titulo,
           child: ExcludeSemantics(
             child: InkWell(
-              onTap: () => setState(() => _aberto = !_aberto),
+              onTap: () => setState(() => _isOpen = !_isOpen),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
                   minHeight: FiLayout.minTouchTarget,
@@ -190,7 +190,7 @@ class _FiGroupDisclosureState extends State<FiGroupDisclosure> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       AnimatedRotation(
-                        turns: _aberto ? 0 : -0.25,
+                        turns: _isOpen ? 0 : -0.25,
                         duration: FiMotion.fast,
                         curve: FiMotion.easeEnter,
                         child: Icon(
@@ -222,7 +222,7 @@ class _FiGroupDisclosureState extends State<FiGroupDisclosure> {
           duration: FiMotion.base,
           curve: FiMotion.easeEnter,
           alignment: Alignment.topCenter,
-          child: _aberto
+          child: _isOpen
               ? Padding(
                   padding: const EdgeInsets.only(bottom: FiSpace.s5),
                   child: widget.child,

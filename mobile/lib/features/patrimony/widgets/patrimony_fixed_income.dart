@@ -19,9 +19,9 @@ class FiFixedIncomeSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rendaFixa = ref.watch(fixedIncomeProvider);
+    final fixedIncome = ref.watch(fixedIncomeProvider);
 
-    return rendaFixa.when(
+    return fixedIncome.when(
       loading: () => const FiSection(
         title: 'Renda fixa',
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 2),
@@ -35,18 +35,18 @@ class FiFixedIncomeSection extends ConsumerWidget {
         ),
       ),
       data: (data) {
-        final visiveis = data.visiveis;
-        if (visiveis.isEmpty) return const SizedBox.shrink();
+        final visible = data.visible;
+        if (visible.isEmpty) return const SizedBox.shrink();
 
         final brightness = Theme.of(context).brightness;
-        final rendeu = data.totalRendimento >= 0;
-        final vencendo = visiveis.where((i) => i.vencimentoProximo).toList();
-        final ordenadas = [...visiveis]
-          ..sort((a, b) => b.valorAtual.compareTo(a.valorAtual));
+        final rendeu = data.totalReturn >= 0;
+        final vencendo = visible.where((i) => i.maturingSoon).toList();
+        final ordenadas = [...visible]
+          ..sort((a, b) => b.currentValue.compareTo(a.currentValue));
 
         return FiSection(
           title: 'Renda fixa',
-          count: visiveis.length,
+          count: visible.length,
           action: FiNavAction(
             label: 'Gerenciar aplicações',
             onPressed: () => context.go('/patrimonio/renda-fixa'),
@@ -57,14 +57,14 @@ class FiFixedIncomeSection extends ConsumerWidget {
               FiFigures(
                 rule: false,
                 figures: {
-                  'HOJE': formatCurrency(data.totalAtual),
-                  'APLICADO': formatCurrency(data.totalInvestido),
+                  'HOJE': formatCurrency(data.totalCurrent),
+                  'APLICADO': formatCurrency(data.totalInvested),
                 },
               ),
               const SizedBox(height: FiSpace.s2),
               Text(
-                '${rendeu ? '+' : ''}${formatCurrency(data.totalRendimento)} '
-                '(${formatPercent(data.rendimentoPct)}) de rendimento sobre o aplicado.',
+                '${rendeu ? '+' : ''}${formatCurrency(data.totalReturn)} '
+                '(${formatPercent(data.returnPct)}) de rendimento sobre o aplicado.',
                 style: FiType.caption.copyWith(
                   color: fiDirectionColor(rendeu ? 1 : -1, brightness),
                 ),
@@ -73,7 +73,7 @@ class FiFixedIncomeSection extends ConsumerWidget {
                 const SizedBox(height: FiSpace.s1),
                 Text(
                   vencendo.length == 1
-                      ? '${vencendo.first.nome} vence nos próximos 30 dias — planeje a '
+                      ? '${vencendo.first.name} vence nos próximos 30 dias — planeje a '
                             'reaplicação antes.'
                       : '${vencendo.length} aplicações vencem nos próximos 30 dias — '
                             'planeje a reaplicação antes.',
@@ -83,7 +83,7 @@ class FiFixedIncomeSection extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: FiSpace.s4),
-              for (final item in ordenadas) _AplicacaoExpansivel(item: item),
+              for (final item in ordenadas) _HoldingDisclosure(item: item),
             ],
           ),
         );
@@ -92,59 +92,59 @@ class FiFixedIncomeSection extends ConsumerWidget {
   }
 }
 
-class _AplicacaoExpansivel extends StatelessWidget {
-  const _AplicacaoExpansivel({required this.item});
+class _HoldingDisclosure extends StatelessWidget {
+  const _HoldingDisclosure({required this.item});
 
   final FixedIncomePosition item;
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final rendeu = item.rendimentoAcumulado >= 0;
+    final rendeu = item.accruedReturn >= 0;
 
     return FiDisclosure(
-      title: item.nome,
-      value: formatCurrency(item.valorAtual),
-      detail: item.vencimentoProximo
-          ? '${rendaFixaTipoLabel(item.tipo)} · vence em '
-                '${item.diasParaVencimento} dias'
-          : '${rendaFixaTipoLabel(item.tipo)} · '
-                '${rendeu ? '+' : ''}${formatPercent(item.rendimentoPct)}',
+      title: item.name,
+      value: formatCurrency(item.currentValue),
+      detail: item.maturingSoon
+          ? '${fixedIncomeKindLabel(item.kind)} · vence em '
+                '${item.daysToMaturity} dias'
+          : '${fixedIncomeKindLabel(item.kind)} · '
+                '${rendeu ? '+' : ''}${formatPercent(item.returnPct)}',
       child: FiRows(
         children: [
           FiDataRow(
             label: 'Aplicado',
-            value: formatCurrency(item.valorInvestido),
+            value: formatCurrency(item.investedValue),
           ),
           FiDataRow(
             label: 'Rendimento',
             value:
-                '${rendeu ? '+' : ''}${formatCurrency(item.rendimentoAcumulado)}',
-            detail: '${rendeu ? '+' : ''}${formatPercent(item.rendimentoPct)} '
+                '${rendeu ? '+' : ''}${formatCurrency(item.accruedReturn)}',
+            detail: '${rendeu ? '+' : ''}${formatPercent(item.returnPct)} '
                 'sobre o aplicado',
             valueColor: fiDirectionColor(rendeu ? 1 : -1, brightness),
             emphasis: true,
           ),
           FiDataRow(
             label: 'Taxa',
-            value: item.percentualCdi != null
-                ? '${formatPercent(item.percentualCdi)} do CDI'
-                : '${formatPercent(item.taxa)} ao ano',
-            detail: '${formatPercent(item.taxaAnualEfetivaPct)} ao ano na prática',
+            value: item.cdiPercent != null
+                ? '${formatPercent(item.cdiPercent)} do CDI'
+                : '${formatPercent(item.rate)} ao ano',
+            detail: '${formatPercent(item.effectiveAnnualRatePct)} ao ano na prática',
           ),
           FiDataRow(
             label: 'Vencimento',
-            value: item.vencimento == null
-                ? liquidezLabel(item.liquidez)
-                : formatDate(item.vencimento),
-            detail: item.diasParaVencimento == null
+            value: item.maturity == null
+                ? fixedIncomeLiquidityLabel(item.liquidity)
+                : formatDate(item.maturity),
+            detail: item.daysToMaturity == null
                 ? null
-                : 'em ${item.diasParaVencimento} dias',
-            valueColor: item.vencimentoProximo
+                : 'em ${item.daysToMaturity} dias',
+            valueColor: item.maturingSoon
                 ? fiStateColor(FiState.attention, brightness)
                 : null,
           ),
-          if (item.isentoIr == true)
+          if (item.irExempt == true)
             const FiDataRow(label: 'IR', value: 'Isento'),
         ],
       ),

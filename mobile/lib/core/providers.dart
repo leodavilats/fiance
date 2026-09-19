@@ -4,7 +4,7 @@ import 'api_client.dart';
 import 'api_repository.dart';
 import 'auth_service.dart';
 import 'cash_models.dart';
-import 'mes.dart';
+import 'month.dart';
 import 'models.dart';
 import 'notifications_service.dart';
 
@@ -130,10 +130,10 @@ final benchmarkProvider = FutureProvider.autoDispose<BenchmarkResponse>((ref) {
 
 
 
-final mesEscolhidoProvider = StateProvider<String>((ref) => mesCorrente());
+final selectedMonthProvider = StateProvider<String>((ref) => currentMonth());
 
 final cashMonthProvider = FutureProvider.autoDispose<CashMonth>((ref) {
-  final mes = ref.watch(mesEscolhidoProvider);
+  final mes = ref.watch(selectedMonthProvider);
   return ref.watch(apiRepositoryProvider).getCashMonth(month: mes);
 });
 
@@ -146,7 +146,7 @@ final debtsProvider = FutureProvider.autoDispose<List<Debt>>((ref) {
 });
 
 final surplusProvider = FutureProvider.autoDispose<Surplus>((ref) {
-  final mes = ref.watch(mesEscolhidoProvider);
+  final mes = ref.watch(selectedMonthProvider);
   return ref.watch(apiRepositoryProvider).getSurplus(month: mes);
 });
 
@@ -154,56 +154,56 @@ final cashVocabularyProvider = FutureProvider<CashVocabulary>((ref) {
   return ref.watch(apiRepositoryProvider).getCashVocabulary();
 });
 
-final razaoProvider = FutureProvider.autoDispose<LedgerPage>((ref) {
+final ledgerProvider = FutureProvider.autoDispose<LedgerPage>((ref) {
   return ref.watch(apiRepositoryProvider).getTransactions();
 });
 
-class RazaoFiltro {
-  const RazaoFiltro({this.symbol, this.kinds = const [], this.periodo});
+class LedgerFilter {
+  const LedgerFilter({this.symbol, this.kinds = const [], this.period});
 
   final String? symbol;
   final List<String> kinds;
-  final String? periodo;
+  final String? period;
 
-  bool get vazio => symbol == null && kinds.isEmpty && periodo == null;
+  bool get isEmpty => symbol == null && kinds.isEmpty && period == null;
 
-  int get ativos =>
-      (symbol == null ? 0 : 1) + (kinds.isEmpty ? 0 : 1) + (periodo == null ? 0 : 1);
+  int get activeCount =>
+      (symbol == null ? 0 : 1) + (kinds.isEmpty ? 0 : 1) + (period == null ? 0 : 1);
 
-  RazaoFiltro copyWith({
+  LedgerFilter copyWith({
     String? symbol,
     List<String>? kinds,
-    String? periodo,
-    bool limparSymbol = false,
-    bool limparPeriodo = false,
+    String? period,
+    bool clearSymbol = false,
+    bool clearPeriod = false,
   }) {
-    return RazaoFiltro(
-      symbol: limparSymbol ? null : (symbol ?? this.symbol),
+    return LedgerFilter(
+      symbol: clearSymbol ? null : (symbol ?? this.symbol),
       kinds: kinds ?? this.kinds,
-      periodo: limparPeriodo ? null : (periodo ?? this.periodo),
+      period: clearPeriod ? null : (period ?? this.period),
     );
   }
 }
 
-final razaoFiltroProvider = StateProvider.autoDispose<RazaoFiltro>(
-  (ref) => const RazaoFiltro(),
+final ledgerFilterProvider = StateProvider.autoDispose<LedgerFilter>(
+  (ref) => const LedgerFilter(),
 );
 
-final razaoFiltradoProvider = FutureProvider.autoDispose<LedgerPage>((ref) {
-  final f = ref.watch(razaoFiltroProvider);
+final filteredLedgerProvider = FutureProvider.autoDispose<LedgerPage>((ref) {
+  final f = ref.watch(ledgerFilterProvider);
   return ref
       .watch(apiRepositoryProvider)
       .getTransactions(
         symbol: f.symbol,
         kinds: f.kinds,
-        tradedFrom: fiInicioDoPeriodo(f.periodo),
+        tradedFrom: fiPeriodStart(f.period),
       );
 });
 
-String? fiInicioDoPeriodo(String? periodo) {
-  if (periodo == null) return null;
+String? fiPeriodStart(String? period) {
+  if (period == null) return null;
   final hoje = DateTime.now();
-  final inicio = switch (periodo) {
+  final inicio = switch (period) {
     'mes' => DateTime(hoje.year, hoje.month, 1),
     'ano' => DateTime(hoje.year, 1, 1),
     '12m' => DateTime(hoje.year - 1, hoje.month, hoje.day),
@@ -212,11 +212,11 @@ String? fiInicioDoPeriodo(String? periodo) {
   return inicio?.toIso8601String().substring(0, 10);
 }
 
-final proventosProvider = FutureProvider.autoDispose<DividendsReceived>((ref) {
+final dividendsProvider = FutureProvider.autoDispose<DividendsReceived>((ref) {
   return ref.watch(apiRepositoryProvider).getDividendsReceived();
 });
 
-final proventosPendentesProvider = FutureProvider.autoDispose<DividendPending>((
+final pendingDividendsProvider = FutureProvider.autoDispose<DividendPending>((
   ref,
 ) {
   return ref.watch(apiRepositoryProvider).getDividendsPending();

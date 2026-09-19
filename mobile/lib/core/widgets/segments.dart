@@ -35,9 +35,9 @@ class FiSegments<T> extends StatelessWidget {
                 style: FiType.caption.copyWith(color: fiInk3(context)),
               ),
             ),
-          _Opcao(
+          _Option(
             label: entradas[i].value,
-            selecionado: entradas[i].key == selected,
+            selected: entradas[i].key == selected,
             semanticsLabel: '$semanticsPrefix ${entradas[i].value}',
             onTap: () => onSelect(entradas[i].key),
           ),
@@ -47,16 +47,16 @@ class FiSegments<T> extends StatelessWidget {
   }
 }
 
-class _Opcao extends StatelessWidget {
-  const _Opcao({
+class _Option extends StatelessWidget {
+  const _Option({
     required this.label,
-    required this.selecionado,
+    required this.selected,
     required this.semanticsLabel,
     required this.onTap,
   });
 
   final String label;
-  final bool selecionado;
+  final bool selected;
   final String semanticsLabel;
   final VoidCallback onTap;
 
@@ -64,7 +64,7 @@ class _Opcao extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      selected: selecionado,
+      selected: selected,
       label: semanticsLabel,
       child: InkWell(
         onTap: onTap,
@@ -78,8 +78,8 @@ class _Opcao extends StatelessWidget {
               child: Text(
                 label,
                 style: FiType.caption.copyWith(
-                  color: selecionado ? fiInk1(context) : fiInk3(context),
-                  fontWeight: selecionado ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? fiInk1(context) : fiInk3(context),
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),

@@ -32,7 +32,7 @@ Em ordem de gravidade.
 
 ### ~~1 · Livro-razão~~ — ✅ **fechado em 2026-09-13**
 
-`mobile/lib/features/patrimonio/razao_screen.dart`, na rota `/patrimonio/razao`, alcançável pela
+`mobile/lib/features/patrimony/ledger_screen.dart`, na rota `/patrimonio/razao`, alcançável pela
 seção "Livro-razão" do Patrimônio.
 
 Lista, registra e apaga lançamento, com reprojeção da carteira. Cobre os oito tipos, inclusive os
@@ -52,7 +52,7 @@ caminho é apagar e registrar de novo, que é o que reprojeta corretamente.
 
 ### ~~3 · Proventos~~ — ✅ **fechado em 2026-09-13**
 
-`mobile/lib/features/patrimonio/proventos_screen.dart`, na rota `/patrimonio/proventos`.
+`mobile/lib/features/patrimony/dividends_screen.dart`, na rota `/patrimonio/proventos`.
 
 Registra, lista e apaga provento recebido; mostra o total de 12 meses e a média mensal com
 proveniência; e traz as sugestões do calendário na mesma tela, **uma a uma**. Cada sugestão exibe a

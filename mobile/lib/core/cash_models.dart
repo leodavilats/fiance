@@ -54,9 +54,9 @@ class CashEntry {
 
   final bool derived;
 
-  bool get futura => paidOn == null;
+  bool get isFuture => paidOn == null;
 
-  String get competencia => paidOn ?? dueOn;
+  String get accrualOn => paidOn ?? dueOn;
 
   factory CashEntry.fromJson(Map<String, dynamic> j) => CashEntry(
     id: (j['id'] as num).toInt(),

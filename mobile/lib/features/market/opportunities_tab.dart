@@ -513,7 +513,7 @@ class _DipScannerView extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(dipScanResultProvider),
       child: result.when(
-        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 6, label: 'Varrendo o mercado'),
+        loading: () => FiSkeleton.screen(shape: FiSkeletonShape.row, count: 6, label: 'Varrendo o mercado'),
         error: (err, _) => FiErrorState(error: err, action: 'varrer o mercado'),
         data: (items) {
           if (items.isEmpty) {
@@ -617,7 +617,7 @@ class _AllOpportunitiesView extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(filteredOpportunitiesProvider),
       child: opportunities.when(
-        loading: () => FiSkeleton.tela(shape: FiSkeletonShape.row, count: 6, label: 'Varrendo o mercado'),
+        loading: () => FiSkeleton.screen(shape: FiSkeletonShape.row, count: 6, label: 'Varrendo o mercado'),
         error: (err, _) => FiErrorState(error: err, action: 'varrer o mercado'),
         data: (_) {
           if (items.isEmpty) {
@@ -637,8 +637,8 @@ class _AllOpportunitiesView extends ConsumerWidget {
               ],
             );
           }
-          final idade = formatIdade(
-            carimboMaisAntigo(items.map((o) => o.asOf)),
+          final idade = formatAge(
+            oldestStamp(items.map((o) => o.asOf)),
           );
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(
@@ -656,7 +656,7 @@ class _AllOpportunitiesView extends ConsumerWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Expanded(child: FiPerfilQueOrdena()),
+                      const Expanded(child: FiRankingProfile()),
                       const SizedBox(width: FiSpace.s3),
                       Flexible(
                         child: Text(
@@ -725,23 +725,23 @@ class FiOpportunityObject extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _Cifra(label: 'PREÇO', value: formatCurrency(o.price)),
+                child: _Figure(label: 'PREÇO', value: formatCurrency(o.price)),
               ),
               Expanded(
-                child: _Cifra(
+                child: _Figure(
                   label: 'JUSTO',
                   value: formatCurrency(o.fairPrice),
                 ),
               ),
               Expanded(
-                child: _Cifra(
+                child: _Figure(
                   label: 'MARGEM',
                   value: formatRatio(o.marginOfSafety),
                   glossaryKey: 'ms',
                 ),
               ),
               Expanded(
-                child: _Cifra(
+                child: _Figure(
                   label: 'DY',
                   value: formatPercent(o.dividendYield),
                   glossaryKey: 'dy',
@@ -760,7 +760,7 @@ class FiOpportunityObject extends StatelessWidget {
 
           if (o.changePercentDay != null || o.distanceFrom52wHighPct != null) ...[
             const SizedBox(height: FiSpace.s3),
-            _Direcao(opportunity: o),
+            _Direction(opportunity: o),
           ],
 
           const SizedBox(height: FiSpace.s3),
@@ -775,8 +775,8 @@ class FiOpportunityObject extends StatelessWidget {
   }
 }
 
-class _Direcao extends StatelessWidget {
-  const _Direcao({required this.opportunity});
+class _Direction extends StatelessWidget {
+  const _Direction({required this.opportunity});
 
   final Opportunity opportunity;
 
@@ -814,8 +814,8 @@ class _Direcao extends StatelessWidget {
   }
 }
 
-class _Cifra extends StatelessWidget {
-  const _Cifra({required this.label, required this.value, this.glossaryKey});
+class _Figure extends StatelessWidget {
+  const _Figure({required this.label, required this.value, this.glossaryKey});
 
   final String label;
   final String value;
@@ -825,7 +825,7 @@ class _Cifra extends StatelessWidget {
   Widget build(BuildContext context) {
     final chave = glossaryKey;
 
-    final cifra = Padding(
+    final figure = Padding(
       padding: const EdgeInsets.only(top: 2),
       child: Text(
         value,
@@ -846,19 +846,19 @@ class _Cifra extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: FiType.eyebrow.copyWith(color: fiInk3(context)),
           ),
-          cifra,
+          figure,
         ],
       );
     }
 
-    return HelpTooltip(termKey: chave, label: label, child: cifra);
+    return HelpTooltip(termKey: chave, label: label, child: figure);
   }
 }
 
-class FiPerfilQueOrdena extends ConsumerWidget {
-  const FiPerfilQueOrdena({super.key});
+class FiRankingProfile extends ConsumerWidget {
+  const FiRankingProfile({super.key});
 
-  static const _rotulos = {
+  static const _labels = {
     'conservative': 'conservador',
     'moderate': 'moderado',
     'aggressive': 'arrojado',
@@ -870,7 +870,7 @@ class FiPerfilQueOrdena extends ConsumerWidget {
 
     return prefs.maybeWhen(
       data: (p) {
-        final rotulo = _rotulos[p.riskProfile] ?? p.riskProfile;
+        final rotulo = _labels[p.riskProfile] ?? p.riskProfile;
         return HelpTooltip(
           termKey: 'perfil_de_risco',
           label: 'perfil $rotulo',

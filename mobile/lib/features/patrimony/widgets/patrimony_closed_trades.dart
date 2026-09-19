@@ -10,7 +10,7 @@ import '../../../core/widgets/data_row.dart';
 import '../../../core/widgets/section.dart';
 import '../../../core/widgets/skeleton.dart';
 
-const _mesesAbreviados = [
+const _shortMonths = [
   'jan',
   'fev',
   'mar',
@@ -25,12 +25,12 @@ const _mesesAbreviados = [
   'dez',
 ];
 
-String _mesPorExtenso(String mes) {
+String _shortMonthLabel(String mes) {
   final partes = mes.split('-');
   if (partes.length != 2) return mes;
   final numero = int.tryParse(partes[1]);
   if (numero == null || numero < 1 || numero > 12) return mes;
-  return '${_mesesAbreviados[numero - 1]}/${partes[0]}';
+  return '${_shortMonths[numero - 1]}/${partes[0]}';
 }
 
 class FiClosedTradesSection extends ConsumerStatefulWidget {
@@ -105,7 +105,7 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                     children: [
                       for (final m in data.months)
                         FiDataRow(
-                          label: '${_mesPorExtenso(m.month)} · ${categoryLabel(m.category)}',
+                          label: '${_shortMonthLabel(m.month)} · ${categoryLabel(m.category)}',
                           value: formatCurrency(m.irAmount),
                           note: m.observation,
                         ),

@@ -8,16 +8,16 @@ class AppWordmark extends StatelessWidget {
   final double height;
   final Color? color;
 
-  static const _entreletra = 13.0;
-  static const _avancos = <double>[62, 13, 74, 72, 70, 62];
-  static double get _largura =>
-      _avancos.reduce((a, b) => a + b) + (_avancos.length - 1) * _entreletra;
+  static const _letterSpacing = 13.0;
+  static const _advances = <double>[62, 13, 74, 72, 70, 62];
+  static double get _width =>
+      _advances.reduce((a, b) => a + b) + (_advances.length - 1) * _letterSpacing;
 
   @override
   Widget build(BuildContext context) {
     final tinta = color ?? DefaultTextStyle.of(context).style.color ?? fiInk1(context);
     return CustomPaint(
-      size: Size(height * _largura / 100.0, height),
+      size: Size(height * _width / 100.0, height),
       painter: _WordmarkPainter(tinta),
     );
   }
@@ -36,12 +36,12 @@ class _WordmarkPainter extends CustomPainter {
       ..isAntiAlias = true;
 
     var x = 0.0;
-    for (final letra in _AppWordmarkLetras.todas) {
+    for (final letter in _AppWordmarkLetters.todas) {
       canvas.save();
       canvas.translate(x * e, 0);
-      canvas.drawPath(letra.path(e), tinta);
+      canvas.drawPath(letter.path(e), tinta);
       canvas.restore();
-      x += letra.avanco + AppWordmark._entreletra;
+      x += letter.advance + AppWordmark._letterSpacing;
     }
   }
 
@@ -49,34 +49,34 @@ class _WordmarkPainter extends CustomPainter {
   bool shouldRepaint(_WordmarkPainter old) => old.color != color;
 }
 
-class _Letra {
-  const _Letra(this.avanco, this.path);
-  final double avanco;
-  final Path Function(double escala) path;
+class _Letter {
+  const _Letter(this.advance, this.path);
+  final double advance;
+  final Path Function(double scale) path;
 }
 
-class _AppWordmarkLetras {
-  static final List<_Letra> todas = [f, i, a, n, c, e];
+class _AppWordmarkLetters {
+  static final List<_Letter> todas = [f, i, a, n, c, e];
 
-  static Path _poly(double escala, List<Offset> pontos) {
-    final p = Path()..moveTo(pontos.first.dx * escala, pontos.first.dy * escala);
+  static Path _poly(double scale, List<Offset> pontos) {
+    final p = Path()..moveTo(pontos.first.dx * scale, pontos.first.dy * scale);
     for (final pt in pontos.skip(1)) {
-      p.lineTo(pt.dx * escala, pt.dy * escala);
+      p.lineTo(pt.dx * scale, pt.dy * scale);
     }
     return p..close();
   }
 
-  static final f = _Letra(62, (k) => _poly(k, const [
+  static final f = _Letter(62, (k) => _poly(k, const [
         Offset(0, 0), Offset(62, 0), Offset(62, 13), Offset(13, 13),
         Offset(13, 49), Offset(50, 49), Offset(50, 62), Offset(13, 62),
         Offset(13, 100), Offset(0, 100),
       ]));
 
-  static final i = _Letra(13, (k) => _poly(k, const [
+  static final i = _Letter(13, (k) => _poly(k, const [
         Offset(0, 0), Offset(13, 0), Offset(13, 100), Offset(0, 100),
       ]));
 
-  static final a = _Letra(74, (k) {
+  static final a = _Letter(74, (k) {
     final p = _poly(k, const [
       Offset(29, 0), Offset(45, 0), Offset(74, 100), Offset(59.5, 100),
       Offset(37, 22.4), Offset(14.5, 100), Offset(0, 100),
@@ -90,13 +90,13 @@ class _AppWordmarkLetras {
     return p;
   });
 
-  static final n = _Letra(72, (k) => _poly(k, const [
+  static final n = _Letter(72, (k) => _poly(k, const [
         Offset(0, 0), Offset(13, 0), Offset(59, 76), Offset(59, 0),
         Offset(72, 0), Offset(72, 100), Offset(59, 100), Offset(13, 24),
         Offset(13, 100), Offset(0, 100),
       ]));
 
-  static final c = _Letra(70, (k) {
+  static final c = _Letter(70, (k) {
     return Path()
       ..moveTo(64.4 * k, 22.8 * k)
       ..arcToPoint(
@@ -115,7 +115,7 @@ class _AppWordmarkLetras {
       ..close();
   });
 
-  static final e = _Letra(62, (k) => _poly(k, const [
+  static final e = _Letter(62, (k) => _poly(k, const [
         Offset(0, 0), Offset(62, 0), Offset(62, 13), Offset(13, 13),
         Offset(13, 49), Offset(48, 49), Offset(48, 62), Offset(13, 62),
         Offset(13, 87), Offset(62, 87), Offset(62, 100), Offset(0, 100),

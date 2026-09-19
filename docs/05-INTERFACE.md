@@ -126,7 +126,7 @@ poucas, ou uma tabela quando o que importa é comparar.
 | Número contra referência | `FiMeasure`, ou `ScoreRuler` para score | A régua é a assinatura do produto |
 | Julgamento | `FiProvenance` — método, fonte, limitação | O lint reprova |
 | Número projetado | `FiRange` — piso, teto, cenário base | O lint reprova |
-| Espera | `FiSkeleton.tela(shape:, count:)`, ou `FiSkeleton.pagina()` quando a tela tem manchete e seções | Disco girando não diz o que vem, e a página salta |
+| Espera | `FiSkeleton.screen(shape:, count:)`, ou `FiSkeleton.page()` quando a tela tem manchete e seções | Disco girando não diz o que vem, e a página salta |
 | Revelar detalhe | `FiDisclosure` (item) ou `FiGroupDisclosure` (grupo) | `ExpansionTile` traz a moldura do Material de volta |
 | Ficha de filtro | `FiChoiceChip` | `ChoiceChip` e `InputChip` têm estilo só no tema |
 | Falha | `FiErrorState` + `fiErrorMessage` | Já houve oito grafias, e `Erro 500` chegou à tela |
@@ -167,7 +167,7 @@ Regras específicas de conteúdo:
 | Ao mostrar | Exigência |
 |---|---|
 | Cifra de preço justo | A base junto: quantos métodos, ou o nome do método |
-| Preço, ou lista de preços | `formatIdade`. Em lista, o carimbo é o **mais antigo** (`carimboMaisAntigo`) |
+| Preço, ou lista de preços | `formatAge`. Em lista, o carimbo é o **mais antigo** (`oldestStamp`) |
 | Projeção | Faixa, com piso, teto e cenário base |
 | Julgamento | Proveniência e papel de veredito em serifa |
 

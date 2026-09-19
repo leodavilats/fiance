@@ -5,8 +5,8 @@ import '../../../core/models.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/section.dart';
 
-class FiCarteiraSummary extends StatelessWidget {
-  const FiCarteiraSummary({super.key, required this.summary});
+class FiPortfolioSummary extends StatelessWidget {
+  const FiPortfolioSummary({super.key, required this.summary});
 
   final DashboardSummary summary;
 

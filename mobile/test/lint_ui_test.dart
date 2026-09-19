@@ -84,8 +84,8 @@ void main() {
         final fonte = f.readAsStringSync();
         for (final campo in projetados) {
           final piso = fonte.contains('${campo}Low');
-          final teto = fonte.contains('${campo}High');
-          if (piso == teto) continue;
+          final cap = fonte.contains('${campo}High');
+          if (piso == cap) continue;
           semFaixa.add('${_curto(f)}: $campo tem ${piso ? 'piso' : 'teto'} e falta o outro lado');
         }
       }
@@ -226,7 +226,7 @@ void main() {
     });
 
     test('o tipo solto nao cresce', () {
-      const teto = 0;
+      const cap = 0;
 
       final soltos = <String>[];
       for (final f in fontes) {
@@ -244,7 +244,7 @@ void main() {
 
       expect(
         soltos.length,
-        lessThanOrEqualTo(teto),
+        lessThanOrEqualTo(cap),
         reason:
             'tamanho solto reabre a decisao a cada tela. Use os papeis de FiType. O teto e '
             'catraca: ao trocar um solto por papel, baixe o numero neste teste. '
@@ -254,7 +254,7 @@ void main() {
 
     test('a caixa do Material nao volta a crescer', () {
 
-      const teto = 0;
+      const cap = 0;
 
       final achados = <String>[];
       for (final f in fontes) {
@@ -273,7 +273,7 @@ void main() {
 
       expect(
         achados.length,
-        lessThanOrEqualTo(teto),
+        lessThanOrEqualTo(cap),
         reason:
             'a moldura e o atalho que dispensa pensar em espaco, tipo e fio. Use FiObject '
             '(o que e objeto) ou FiSection + FiRows/FiDataRow. O teto e catraca, e so desce. '
@@ -299,7 +299,7 @@ void main() {
         achados,
         isEmpty,
         reason:
-            'use FiSkeleton.tela(shape: ..., count: ...): o esqueleto tem a altura do papel que '
+            'use FiSkeleton.screen(shape: ..., count: ...): o esqueleto tem a altura do papel que '
             'vai ocupar o lugar, entao a pagina nao salta. Achados: ${achados.join(', ')}',
       );
     });

@@ -15,17 +15,17 @@ import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/tag.dart';
 
-class DividasScreen extends ConsumerWidget {
-  const DividasScreen({super.key});
+class DebtsScreen extends ConsumerWidget {
+  const DebtsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dividas = ref.watch(debtsProvider);
+    final debts = ref.watch(debtsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dívidas')),
-      body: dividas.when(
-        loading: () => FiSkeleton.tela(
+      body: debts.when(
+        loading: () => FiSkeleton.screen(
           shape: FiSkeletonShape.row,
           count: 4,
           label: 'Carregando suas dívidas',
@@ -36,16 +36,16 @@ class DividasScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(debtsProvider),
         ),
         data: (lista) => lista.isEmpty
-            ? _SemDivida(onCadastrar: () => _abrirCadastro(context, ref))
-            : _Lista(
-                dividas: lista,
-                onCadastrar: () => _abrirCadastro(context, ref),
+            ? _NoDebt(onRegister: () => _openDebtForm(context, ref))
+            : _DebtList(
+                debts: lista,
+                onRegister: () => _openDebtForm(context, ref),
               ),
       ),
     );
   }
 
-  Future<void> _abrirCadastro(BuildContext context, WidgetRef ref) {
+  Future<void> _openDebtForm(BuildContext context, WidgetRef ref) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -54,25 +54,25 @@ class DividasScreen extends ConsumerWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: const _CadastroForm(),
+        child: const _DebtForm(),
       ),
     );
   }
 }
 
-class _Lista extends ConsumerWidget {
-  const _Lista({required this.dividas, required this.onCadastrar});
+class _DebtList extends ConsumerWidget {
+  const _DebtList({required this.debts, required this.onRegister});
 
-  final List<Debt> dividas;
-  final VoidCallback onCadastrar;
+  final List<Debt> debts;
+  final VoidCallback onRegister;
 
-  static const _rotuloDaClasse = {
+  static const _classLabel = {
     DebtClass.expensive: 'Caseira',
     DebtClass.manageable: 'Administrável',
     DebtClass.noRate: 'Sem taxa informada',
   };
 
-  static FiState _estado(DebtClass c) => switch (c) {
+  static FiState _state(DebtClass c) => switch (c) {
     DebtClass.expensive => FiState.adverse,
     DebtClass.manageable => FiState.neutral,
     DebtClass.noRate => FiState.indeterminate,
@@ -80,8 +80,8 @@ class _Lista extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final caras = dividas.where((d) => d.debtClass == DebtClass.expensive);
-    final referencia = dividas
+    final caras = debts.where((d) => d.debtClass == DebtClass.expensive);
+    final referencia = debts
         .map((d) => d.referenceMonthly)
         .firstWhere((r) => r != null, orElse: () => null);
 
@@ -117,7 +117,7 @@ class _Lista extends ConsumerWidget {
             source: referencia == null
                 ? 'Sem taxa informada em nenhuma dívida, não há o que comparar.'
                 : 'Referência: ${formatPercent(referencia)} ao mês, de '
-                      '${dividas.first.referenceSource == 'bcb' ? 'CDI do BCB' : dividas.first.referenceSource}.',
+                      '${debts.first.referenceSource == 'bcb' ? 'CDI do BCB' : debts.first.referenceSource}.',
             limitation:
                 'Dívida sem taxa informada fica sem classe: o produto não estima taxa de '
                 'rotativo, que varia por banco e por dia.',
@@ -125,19 +125,19 @@ class _Lista extends ConsumerWidget {
 
           FiSection(
             title: 'Suas dívidas',
-            count: dividas.length,
+            count: debts.length,
             action: FiButton.secondary(
               label: 'Cadastrar dívida',
               icon: Icons.add,
-              onPressed: onCadastrar,
+              onPressed: onRegister,
             ),
             child: Column(
               children: [
-                for (final d in dividas)
-                  _LinhaDivida(
-                    divida: d,
-                    rotulo: _rotuloDaClasse[d.debtClass] ?? '',
-                    estado: _estado(d.debtClass),
+                for (final d in debts)
+                  _DebtRow(
+                    debt: d,
+                    label: _classLabel[d.debtClass] ?? '',
+                    state: _state(d.debtClass),
                   ),
               ],
             ),
@@ -148,16 +148,16 @@ class _Lista extends ConsumerWidget {
   }
 }
 
-class _LinhaDivida extends ConsumerWidget {
-  const _LinhaDivida({
-    required this.divida,
-    required this.rotulo,
-    required this.estado,
+class _DebtRow extends ConsumerWidget {
+  const _DebtRow({
+    required this.debt,
+    required this.label,
+    required this.state,
   });
 
-  final Debt divida;
-  final String rotulo;
-  final FiState estado;
+  final Debt debt;
+  final String label;
+  final FiState state;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -166,20 +166,20 @@ class _LinhaDivida extends ConsumerWidget {
         children: [
           Expanded(
             child: Text(
-              divida.description,
+              debt.description,
               style: FiType.body.copyWith(color: fiInk1(context)),
             ),
           ),
           const SizedBox(width: FiSpace.s2),
-          FiTag(label: rotulo, state: estado),
+          FiTag(label: label, state: state),
         ],
       ),
       subtitle: Text(
-        debtKindLabel(divida.kind),
+        debtKindLabel(debt.kind),
         style: FiType.caption.copyWith(color: fiInk3(context)),
       ),
       trailing: Text(
-        formatCurrency(divida.balance),
+        formatCurrency(debt.balance),
         style: FiType.figure.copyWith(color: fiInk1(context)),
       ),
       children: [
@@ -189,14 +189,14 @@ class _LinhaDivida extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                divida.monthlyRate == null
+                debt.monthlyRate == null
                     ? 'Taxa não informada, então não há classe.'
-                    : 'Custa ${formatPercent(divida.monthlyRate)} ao mês.',
+                    : 'Custa ${formatPercent(debt.monthlyRate)} ao mês.',
                 style: FiType.body.copyWith(color: fiInk2(context)),
               ),
-              if (divida.flipRate != null)
+              if (debt.flipRate != null)
                 Text(
-                  'Vira administrável a ${formatPercent(divida.flipRate)} ao mês.',
+                  'Vira administrável a ${formatPercent(debt.flipRate)} ao mês.',
                   style: FiType.caption.copyWith(color: fiInk3(context)),
                 ),
               const SizedBox(height: FiSpace.s2),
@@ -204,9 +204,9 @@ class _LinhaDivida extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: FiButton.secondary(
                   label: 'Marcar como quitada',
-                  onPressed: divida.id == null
+                  onPressed: debt.id == null
                       ? null
-                      : () => _quitar(context, ref, divida),
+                      : () => _payOff(context, ref, debt),
                 ),
               ),
             ],
@@ -216,7 +216,7 @@ class _LinhaDivida extends ConsumerWidget {
     );
   }
 
-  Future<void> _quitar(BuildContext context, WidgetRef ref, Debt d) async {
+  Future<void> _payOff(BuildContext context, WidgetRef ref, Debt d) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -246,49 +246,49 @@ class _LinhaDivida extends ConsumerWidget {
   }
 }
 
-class _CadastroForm extends ConsumerStatefulWidget {
-  const _CadastroForm();
+class _DebtForm extends ConsumerStatefulWidget {
+  const _DebtForm();
 
   @override
-  ConsumerState<_CadastroForm> createState() => _CadastroFormState();
+  ConsumerState<_DebtForm> createState() => _DebtFormState();
 }
 
-class _CadastroFormState extends ConsumerState<_CadastroForm> {
+class _DebtFormState extends ConsumerState<_DebtForm> {
   final _form = GlobalKey<FormState>();
-  final _descricao = TextEditingController();
-  final _saldo = TextEditingController();
-  final _taxa = TextEditingController();
+  final _description = TextEditingController();
+  final _balance = TextEditingController();
+  final _rate = TextEditingController();
 
-  String _tipo = fiTiposDeDivida.keys.first;
-  bool _salvando = false;
-  Object? _erro;
+  String _kind = fiDebtKinds.keys.first;
+  bool _saving = false;
+  Object? _error;
 
   @override
   void dispose() {
-    _descricao.dispose();
-    _saldo.dispose();
-    _taxa.dispose();
+    _description.dispose();
+    _balance.dispose();
+    _rate.dispose();
     super.dispose();
   }
 
-  Future<void> _salvar() async {
+  Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
 
     final saldo = double.tryParse(
-      _saldo.text.replaceAll('.', '').replaceAll(',', '.'),
+      _balance.text.replaceAll('.', '').replaceAll(',', '.'),
     );
     if (saldo == null) return;
 
-    final taxaTexto = _taxa.text.trim();
-    final taxa = taxaTexto.isEmpty
+    final rateText = _rate.text.trim();
+    final taxa = rateText.isEmpty
         ? null
-        : double.tryParse(taxaTexto.replaceAll(',', '.'));
+        : double.tryParse(rateText.replaceAll(',', '.'));
 
-    setState(() => _salvando = true);
+    setState(() => _saving = true);
     try {
       await ref.read(apiRepositoryProvider).createDebt(
-        kind: _tipo,
-        description: _descricao.text.trim(),
+        kind: _kind,
+        description: _description.text.trim(),
         balance: saldo,
         monthlyRate: taxa,
       );
@@ -301,8 +301,8 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _salvando = false;
-        _erro = e;
+        _saving = false;
+        _error = e;
       });
     }
   }
@@ -322,7 +322,7 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
               const SizedBox(height: FiSpace.s4),
 
               TextFormField(
-                controller: _descricao,
+                controller: _description,
                 decoration: const InputDecoration(labelText: 'Descrição'),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (v) =>
@@ -331,18 +331,18 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
               const SizedBox(height: FiSpace.s3),
 
               DropdownButtonFormField<String>(
-                initialValue: _tipo,
+                initialValue: _kind,
                 decoration: const InputDecoration(labelText: 'Tipo'),
                 items: [
-                  for (final e in fiTiposDeDivida.entries)
+                  for (final e in fiDebtKinds.entries)
                     DropdownMenuItem(value: e.key, child: Text(e.value)),
                 ],
-                onChanged: (v) => setState(() => _tipo = v ?? _tipo),
+                onChanged: (v) => setState(() => _kind = v ?? _kind),
               ),
               const SizedBox(height: FiSpace.s3),
 
               TextFormField(
-                controller: _saldo,
+                controller: _balance,
                 decoration: const InputDecoration(
                   labelText: 'Saldo devedor',
                   prefixText: r'R$ ',
@@ -361,7 +361,7 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
               const SizedBox(height: FiSpace.s3),
 
               TextFormField(
-                controller: _taxa,
+                controller: _rate,
                 decoration: const InputDecoration(
                   labelText: 'Taxa mensal (opcional)',
                   suffixText: '% ao mês',
@@ -374,10 +374,10 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
                 ),
               ),
 
-              if (_erro != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: FiSpace.s3),
                 Text(
-                  fiErrorMessage(_erro!, action: 'cadastrar esta dívida'),
+                  fiErrorMessage(_error!, action: 'cadastrar esta dívida'),
                   style: FiType.body.copyWith(
                     color: fiStateColor(
                       FiState.adverse,
@@ -391,8 +391,8 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
               FiButton.primary(
                 label: 'Cadastrar dívida',
                 expand: true,
-                busy: _salvando,
-                onPressed: _salvar,
+                busy: _saving,
+                onPressed: _save,
               ),
             ],
           ),
@@ -402,10 +402,10 @@ class _CadastroFormState extends ConsumerState<_CadastroForm> {
   }
 }
 
-class _SemDivida extends StatelessWidget {
-  const _SemDivida({required this.onCadastrar});
+class _NoDebt extends StatelessWidget {
+  const _NoDebt({required this.onRegister});
 
-  final VoidCallback onCadastrar;
+  final VoidCallback onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -421,7 +421,7 @@ class _SemDivida extends StatelessWidget {
           action: FiButton.primary(
             label: 'Cadastrar dívida',
             icon: Icons.add,
-            onPressed: onCadastrar,
+            onPressed: onRegister,
           ),
         ),
       ],

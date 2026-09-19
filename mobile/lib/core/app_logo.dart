@@ -23,9 +23,9 @@ class AppLogo extends StatelessWidget {
       child: Center(
         child: CustomPaint(
           size: Size.square(size * 0.58),
-          painter: _MarcaPainter(
-            eixo: onBrand,
-            chao: Color.lerp(onBrand, brand, 0.35)!,
+          painter: _BrandPainter(
+            axis: onBrand,
+            ground: Color.lerp(onBrand, brand, 0.35)!,
           ),
         ),
       ),
@@ -33,13 +33,13 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-class _MarcaPainter extends CustomPainter {
-  const _MarcaPainter({required this.eixo, required this.chao});
+class _BrandPainter extends CustomPainter {
+  const _BrandPainter({required this.axis, required this.ground});
 
-  final Color eixo;
-  final Color chao;
+  final Color axis;
+  final Color ground;
 
-  static const _eixo = <Offset>[
+  static const _axis = <Offset>[
     Offset(6, 6), Offset(76, 6), Offset(76, 19), Offset(19, 19),
     Offset(19, 41), Offset(56, 41), Offset(56, 54), Offset(19, 54),
     Offset(19, 79), Offset(6, 79),
@@ -48,10 +48,10 @@ class _MarcaPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final e = size.width / 100.0;
-    final tinta = Paint()..color = eixo..isAntiAlias = true;
+    final tinta = Paint()..color = axis..isAntiAlias = true;
 
-    final haste = Path()..moveTo(_eixo.first.dx * e, _eixo.first.dy * e);
-    for (final p in _eixo.skip(1)) {
+    final haste = Path()..moveTo(_axis.first.dx * e, _axis.first.dy * e);
+    for (final p in _axis.skip(1)) {
       haste.lineTo(p.dx * e, p.dy * e);
     }
     haste.close();
@@ -63,10 +63,10 @@ class _MarcaPainter extends CustomPainter {
     );
     canvas.drawRRect(
       RRect.fromLTRBR(0, 87 * e, 100 * e, 95 * e, Radius.circular(4 * e)),
-      Paint()..color = chao..isAntiAlias = true,
+      Paint()..color = ground..isAntiAlias = true,
     );
   }
 
   @override
-  bool shouldRepaint(_MarcaPainter old) => old.eixo != eixo || old.chao != chao;
+  bool shouldRepaint(_BrandPainter old) => old.axis != axis || old.ground != ground;
 }

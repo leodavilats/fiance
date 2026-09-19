@@ -8,8 +8,8 @@ import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 import 'widgets/feed_tiles.dart';
 
-class AtividadeScreen extends ConsumerWidget {
-  const AtividadeScreen({super.key});
+class ActivityScreen extends ConsumerWidget {
+  const ActivityScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,7 +20,7 @@ class AtividadeScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(whatsNewProvider),
         child: async.when(
-          loading: () => FiSkeleton.tela(
+          loading: () => FiSkeleton.screen(
             shape: FiSkeletonShape.row,
             count: 6,
             label: 'Carregando a atividade',

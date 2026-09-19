@@ -1,27 +1,27 @@
 
-class FiCategoria {
-  const FiCategoria(this.label, this.series);
+class FiCategory {
+  const FiCategory(this.label, this.series);
 
   final String label;
   final int series;
 }
 
-const Map<String, FiCategoria> fiCategorias = {
-  'renda_fixa': FiCategoria('Renda Fixa', 1),
-  'acoes_br': FiCategoria('Ações BR', 2),
-  'fiis': FiCategoria('FIIs', 3),
-  'bdrs': FiCategoria('BDRs', 5),
-  'etfs': FiCategoria('ETFs', 8),
-  'auto': FiCategoria('Automática', 0),
+const Map<String, FiCategory> fiCategories = {
+  'renda_fixa': FiCategory('Renda Fixa', 1),
+  'acoes_br': FiCategory('Ações BR', 2),
+  'fiis': FiCategory('FIIs', 3),
+  'bdrs': FiCategory('BDRs', 5),
+  'etfs': FiCategory('ETFs', 8),
+  'auto': FiCategory('Automática', 0),
 };
 
-const Map<String, String> fiCategoriaApelidos = {
+const Map<String, String> fiCategoryAliases = {
   'renda': 'renda_fixa',
   'caixa': 'renda_fixa',
   'trade': 'acoes_br',
 };
 
-const Map<String, String> fiTiposDeAtivo = {
+const Map<String, String> fiAssetTypes = {
   'br_stock': 'Ação BR',
   'bdr': 'BDR',
   'fii': 'FII',
@@ -29,7 +29,7 @@ const Map<String, String> fiTiposDeAtivo = {
   'renda_fixa': 'Renda Fixa',
 };
 
-const Map<String, String> fiTipoDeAtivoParaCategoria = {
+const Map<String, String> fiAssetTypeToCategory = {
   'br_stock': 'acoes_br',
   'bdr': 'bdrs',
   'fii': 'fiis',
@@ -37,7 +37,7 @@ const Map<String, String> fiTipoDeAtivoParaCategoria = {
   'renda_fixa': 'renda_fixa',
 };
 
-const Map<String, String> fiSetores = {
+const Map<String, String> fiSectors = {
   'Financial Services': 'Financeiro',
   'Technology': 'Tecnologia',
   'Energy': 'Energia',
@@ -51,7 +51,7 @@ const Map<String, String> fiSetores = {
   'Communication Services': 'Telecomunicações',
 };
 
-const Map<String, String> fiSetorApelidos = {
+const Map<String, String> fiSectorAliases = {
   'technology': 'Tecnologia',
   'finance': 'Financeiro',
   'healthcare': 'Saúde',
@@ -84,7 +84,7 @@ const Map<String, String> fiSetorApelidos = {
   'Distribution Services': 'Industrial',
 };
 
-const Map<String, int> fiSetorSeriePorRotulo = {
+const Map<String, int> fiSectorSeriesByLabel = {
   'Financeiro': 1,
   'Tecnologia': 2,
   'Energia': 3,
@@ -98,7 +98,7 @@ const Map<String, int> fiSetorSeriePorRotulo = {
   'Telecomunicações': 11,
 };
 
-const Map<String, String> fiTiposDeRendaFixa = {
+const Map<String, String> fiFixedIncomeKinds = {
   'cdb': 'CDB',
   'lci': 'LCI',
   'lca': 'LCA',
@@ -110,35 +110,35 @@ const Map<String, String> fiTiposDeRendaFixa = {
   'tesouro_pre': 'Tesouro Pré',
 };
 
-const Map<String, String> fiLiquidez = {
+const Map<String, String> fiLiquidity = {
   'diaria': 'Liquidez diária',
   'no_vencimento': 'No vencimento',
 };
 
-const Map<String, FiCategoria> fiCategoriasDeDespesa = {
-  'moradia': FiCategoria('Moradia', 1),
-  'contas_da_casa': FiCategoria('Contas da casa', 2),
-  'mercado': FiCategoria('Mercado', 3),
-  'transporte': FiCategoria('Transporte', 4),
-  'saude': FiCategoria('Saúde', 5),
-  'educacao': FiCategoria('Educação', 6),
-  'lazer': FiCategoria('Lazer', 7),
-  'cuidados_pessoais': FiCategoria('Cuidados pessoais', 8),
-  'divida': FiCategoria('Dívida', 9),
-  'outros': FiCategoria('Outros', 0),
+const Map<String, FiCategory> fiExpenseCategories = {
+  'moradia': FiCategory('Moradia', 1),
+  'contas_da_casa': FiCategory('Contas da casa', 2),
+  'mercado': FiCategory('Mercado', 3),
+  'transporte': FiCategory('Transporte', 4),
+  'saude': FiCategory('Saúde', 5),
+  'educacao': FiCategory('Educação', 6),
+  'lazer': FiCategory('Lazer', 7),
+  'cuidados_pessoais': FiCategory('Cuidados pessoais', 8),
+  'divida': FiCategory('Dívida', 9),
+  'outros': FiCategory('Outros', 0),
 };
 
-const Map<String, FiCategoria> fiCategoriasDeEntrada = {
-  'salario': FiCategoria('Salário', 1),
-  'decimo_terceiro': FiCategoria('13º salário', 2),
-  'ferias': FiCategoria('Férias', 3),
-  'renda_variavel': FiCategoria('Renda variável', 4),
-  'provento': FiCategoria('Provento', 5),
-  'reembolso': FiCategoria('Reembolso', 6),
-  'outros': FiCategoria('Outros', 0),
+const Map<String, FiCategory> fiIncomeCategories = {
+  'salario': FiCategory('Salário', 1),
+  'decimo_terceiro': FiCategory('13º salário', 2),
+  'ferias': FiCategory('Férias', 3),
+  'renda_variavel': FiCategory('Renda variável', 4),
+  'provento': FiCategory('Provento', 5),
+  'reembolso': FiCategory('Reembolso', 6),
+  'outros': FiCategory('Outros', 0),
 };
 
-const Map<String, String> fiTiposDeDivida = {
+const Map<String, String> fiDebtKinds = {
   'rotativo_cartao': 'Rotativo do cartão',
   'cheque_especial': 'Cheque especial',
   'credito_pessoal': 'Crédito pessoal',
@@ -148,7 +148,7 @@ const Map<String, String> fiTiposDeDivida = {
   'outros': 'Outros',
 };
 
-const Map<String, String> fiTiposDeLancamento = {
+const Map<String, String> fiLedgerKinds = {
   'buy': 'Compra',
   'sell': 'Venda',
   'split': 'Desdobramento',
@@ -159,7 +159,7 @@ const Map<String, String> fiTiposDeLancamento = {
   'adjust': 'Declaração de posição',
 };
 
-const Map<String, String> fiExplicaTipoDeLancamento = {
+const Map<String, String> fiLedgerKindExplanations = {
   'buy': 'Aumenta a quantidade e o custo. Entra no preço médio.',
   'sell': 'Reduz quantidade e custo, nunca a média — é a convenção brasileira. Apura ganho no mês.',
   'split': 'Multiplica a quantidade sem mexer no valor investido. Sem ele, o imposto sai errado.',
@@ -170,7 +170,7 @@ const Map<String, String> fiExplicaTipoDeLancamento = {
   'adjust': 'Ancora a linha do tempo: o que vier depois se aplica em cima do que você declarou.',
 };
 
-const Map<String, String> fiTiposDeProvento = {
+const Map<String, String> fiDividendKinds = {
   'dividendo': 'Dividendo',
   'jcp': 'JCP',
   'rendimento': 'Rendimento',

@@ -9,7 +9,7 @@ const String termsUrl = '$siteUrl/termos';
 const String privacyUrl = '$siteUrl/privacidade';
 const String cvmNoticeUrl = '$siteUrl/aviso-cvm';
 
-Future<bool> abrirNoNavegador(String url) async {
+Future<bool> openInBrowser(String url) async {
   try {
     return await launchUrl(
       Uri.parse(url),

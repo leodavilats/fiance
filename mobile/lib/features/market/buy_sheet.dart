@@ -9,11 +9,11 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 
-Future<bool> abrirCompraDeAtivo(
+Future<bool> openBuySheet(
   BuildContext context,
   WidgetRef ref, {
   required String ticker,
-  double? precoAtual,
+  double? currentPrice,
 }) async {
   final registrou = await showModalBottomSheet<bool>(
     context: context,
@@ -22,85 +22,85 @@ Future<bool> abrirCompraDeAtivo(
     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: _CompraForm(ticker: ticker, precoAtual: precoAtual),
+      child: _BuyForm(ticker: ticker, currentPrice: currentPrice),
     ),
   );
 
   if (registrou == true) {
     ref.invalidate(portfolioProvider);
     ref.invalidate(dashboardProvider);
-    ref.invalidate(razaoProvider);
+    ref.invalidate(ledgerProvider);
   }
 
   return registrou == true;
 }
 
-class _CompraForm extends ConsumerStatefulWidget {
-  const _CompraForm({required this.ticker, this.precoAtual});
+class _BuyForm extends ConsumerStatefulWidget {
+  const _BuyForm({required this.ticker, this.currentPrice});
 
   final String ticker;
-  final double? precoAtual;
+  final double? currentPrice;
 
   @override
-  ConsumerState<_CompraForm> createState() => _CompraFormState();
+  ConsumerState<_BuyForm> createState() => _BuyFormState();
 }
 
-class _CompraFormState extends ConsumerState<_CompraForm> {
+class _BuyFormState extends ConsumerState<_BuyForm> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _preco;
-  final _quantidade = TextEditingController();
-  final _custos = TextEditingController(text: '0');
+  late final TextEditingController _price;
+  final _quantityFormat = TextEditingController();
+  final _fees = TextEditingController(text: '0');
 
-  DateTime _data = DateTime.now();
-  bool _salvando = false;
+  DateTime _date = DateTime.now();
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _preco = TextEditingController(
-      text: widget.precoAtual == null
+    _price = TextEditingController(
+      text: widget.currentPrice == null
           ? ''
-          : widget.precoAtual!.toStringAsFixed(2).replaceAll('.', ','),
+          : widget.currentPrice!.toStringAsFixed(2).replaceAll('.', ','),
     );
-    _quantidade.addListener(_recalcular);
-    _preco.addListener(_recalcular);
-    _custos.addListener(_recalcular);
+    _quantityFormat.addListener(_recompute);
+    _price.addListener(_recompute);
+    _fees.addListener(_recompute);
   }
 
   @override
   void dispose() {
-    _preco.dispose();
-    _quantidade.dispose();
-    _custos.dispose();
+    _price.dispose();
+    _quantityFormat.dispose();
+    _fees.dispose();
     super.dispose();
   }
 
-  void _recalcular() => setState(() {});
+  void _recompute() => setState(() {});
 
-  double _numero(TextEditingController c) =>
+  double _number(TextEditingController c) =>
       double.tryParse(c.text.trim().replaceAll(',', '.')) ?? 0;
 
-  double get _total => _numero(_quantidade) * _numero(_preco) + _numero(_custos);
+  double get _total => _number(_quantityFormat) * _number(_price) + _number(_fees);
 
-  Future<void> _salvar() async {
+  Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _salvando = true);
+    setState(() => _saving = true);
     try {
       await ref
           .read(apiRepositoryProvider)
           .createTransaction(
             kind: 'buy',
             symbol: widget.ticker,
-            tradedOn: _data.toIso8601String().substring(0, 10),
-            quantity: _numero(_quantidade),
-            price: _numero(_preco),
-            fees: _numero(_custos),
+            tradedOn: _date.toIso8601String().substring(0, 10),
+            quantity: _number(_quantityFormat),
+            price: _number(_price),
+            fees: _number(_fees),
           );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        setState(() => _salvando = false);
+        setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(fiErrorMessage(e, action: 'registrar esta compra'))),
         );
@@ -150,7 +150,7 @@ class _CompraFormState extends ConsumerState<_CompraForm> {
               ),
               const SizedBox(height: FiSpace.s5),
               TextFormField(
-                controller: _quantidade,
+                controller: _quantityFormat,
                 autofocus: true,
                 decoration: const InputDecoration(labelText: 'Quantidade'),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -162,11 +162,11 @@ class _CompraFormState extends ConsumerState<_CompraForm> {
               ),
               const SizedBox(height: FiSpace.s3),
               TextFormField(
-                controller: _preco,
+                controller: _price,
                 decoration: InputDecoration(
                   labelText: 'Preço pago por unidade',
                   prefixText: 'R\$ ',
-                  helperText: widget.precoAtual == null
+                  helperText: widget.currentPrice == null
                       ? null
                       : 'Veio a cotação de agora — troque pelo preço que você pagou.',
                 ),
@@ -184,16 +184,16 @@ class _CompraFormState extends ConsumerState<_CompraForm> {
                   onTap: () async {
                     final escolhida = await showDatePicker(
                       context: context,
-                      initialDate: _data,
+                      initialDate: _date,
                       firstDate: DateTime(2000),
                       lastDate: DateTime.now(),
                     );
-                    if (escolhida != null) setState(() => _data = escolhida);
+                    if (escolhida != null) setState(() => _date = escolhida);
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
                     child: Text(
-                      formatDate(_data.toIso8601String().substring(0, 10)),
+                      formatDate(_date.toIso8601String().substring(0, 10)),
                       style: FiType.body.copyWith(color: fiInk1(context)),
                     ),
                   ),
@@ -201,7 +201,7 @@ class _CompraFormState extends ConsumerState<_CompraForm> {
               ),
               const SizedBox(height: FiSpace.s3),
               TextFormField(
-                controller: _custos,
+                controller: _fees,
                 decoration: const InputDecoration(
                   labelText: 'Corretagem e taxas',
                   prefixText: 'R\$ ',
@@ -223,8 +223,8 @@ class _CompraFormState extends ConsumerState<_CompraForm> {
               ],
               const SizedBox(height: FiSpace.s5),
               FiButton.primary(
-                label: _salvando ? 'Registrando…' : 'Adicionar à carteira',
-                onPressed: _salvando ? null : _salvar,
+                label: _saving ? 'Registrando…' : 'Adicionar à carteira',
+                onPressed: _saving ? null : _save,
               ),
             ],
           ),

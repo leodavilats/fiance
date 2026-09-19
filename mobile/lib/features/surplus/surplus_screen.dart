@@ -7,7 +7,7 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
-import '../../core/mes.dart';
+import '../../core/month.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
@@ -20,19 +20,19 @@ import '../../core/widgets/allocation_gap.dart';
 import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/tag.dart';
 
-class SobraScreen extends ConsumerWidget {
-  const SobraScreen({super.key});
+class SurplusScreen extends ConsumerWidget {
+  const SurplusScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sobra = ref.watch(surplusProvider);
+    final surplus = ref.watch(surplusProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sobra'),
       ),
-      body: sobra.when(
-        loading: () => FiSkeleton.tela(
+      body: surplus.when(
+        loading: () => FiSkeleton.screen(
           shape: FiSkeletonShape.verdict,
           count: 1,
           label: 'Calculando sua sobra',
@@ -42,21 +42,21 @@ class SobraScreen extends ConsumerWidget {
           action: 'calcular sua sobra',
           onRetry: () => ref.invalidate(surplusProvider),
         ),
-        data: (s) => s.hasCash ? _Corpo(sobra: s) : const _SemCaixa(),
+        data: (s) => s.hasCash ? _Body(surplus: s) : const _NoCash(),
       ),
     );
   }
 }
 
-class _Corpo extends ConsumerWidget {
-  const _Corpo({required this.sobra});
+class _Body extends ConsumerWidget {
+  const _Body({required this.surplus});
 
-  final Surplus sobra;
+  final Surplus surplus;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final m = sobra.month;
-    final passos = sobra.cascade.steps;
+    final m = surplus.month;
+    final passos = surplus.cascade.steps;
     final temAporte = passos.any((p) => p.type == CascadeStepType.contribution);
 
     return RefreshIndicator(
@@ -70,7 +70,7 @@ class _Corpo extends ConsumerWidget {
         ),
         children: [
           FiHeadline(
-            eyebrow: 'Sobra de ${nomeDoMes(m.month)}',
+            eyebrow: 'Sobra de ${monthName(m.month)}',
             figure: m.hasRange
                 ? '${formatCurrency(m.surplusLow)} — ${formatCurrency(m.surplusHigh)}'
                 : formatCurrency(m.freeNow),
@@ -104,22 +104,22 @@ class _Corpo extends ConsumerWidget {
             child: Column(
               children: [
                 for (final p in passos)
-                  _Passo(passo: p, numerado: passos.length > 1),
-                if (!temAporte) const _SemAporte(),
+                  _Step(step: p, numbered: passos.length > 1),
+                if (!temAporte) const _NoContribution(),
               ],
             ),
           ),
 
-          if (temAporte) const _OndeAportar(),
-          if (temAporte) const _ContraAMeta(),
+          if (temAporte) const _WhereToContribute(),
+          if (temAporte) const _AgainstTarget(),
         ],
       ),
     );
   }
 }
 
-class _OndeAportar extends ConsumerWidget {
-  const _OndeAportar();
+class _WhereToContribute extends ConsumerWidget {
+  const _WhereToContribute();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -139,7 +139,7 @@ class _OndeAportar extends ConsumerWidget {
         ),
       ),
       data: (r) {
-        if (!r.temDestino) {
+        if (!r.hasDestination) {
           return FiSection(
             title: 'Onde aportar',
             child: FiEmptyLine(
@@ -167,9 +167,9 @@ class _OndeAportar extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final a in primeiros) _DestinoDoAporte(alocacao: a),
+              for (final a in primeiros) _ContributionDestination(allocation: a),
               if (r.fixedIncome != null)
-                _DestinoDeRendaFixa(fatia: r.fixedIncome!),
+                _FixedIncomeDestination(slice: r.fixedIncome!),
             ],
           ),
         );
@@ -178,14 +178,14 @@ class _OndeAportar extends ConsumerWidget {
   }
 }
 
-class _DestinoDoAporte extends StatelessWidget {
-  const _DestinoDoAporte({required this.alocacao});
+class _ContributionDestination extends StatelessWidget {
+  const _ContributionDestination({required this.allocation});
 
-  final QuickInvestAllocation alocacao;
+  final QuickInvestAllocation allocation;
 
   @override
   Widget build(BuildContext context) {
-    final a = alocacao;
+    final a = allocation;
     final brightness = Theme.of(context).brightness;
     final band = a.score != null ? fiScoreBandFor(a.score!, null) : null;
 
@@ -220,7 +220,7 @@ class _DestinoDoAporte extends StatelessWidget {
                 if (band != null)
                   FiTag(label: band.label, state: band.state)
                 else
-                  FiTag.serie(
+                  FiTag.series(
                     label: categoryLabel(a.category),
                     color: categoryColor(a.category, brightness),
                   ),
@@ -229,11 +229,11 @@ class _DestinoDoAporte extends StatelessWidget {
             const SizedBox(height: FiSpace.s3),
             Text(
               a.suggestedQuantity == null
-                  ? '${_valorOuTraco(a.suggestedInvestment)} · '
-                        '${_valorOuTraco(a.currentPrice)} por cota'
+                  ? '${_valueOrDash(a.suggestedInvestment)} · '
+                        '${_valueOrDash(a.currentPrice)} por cota'
                   : '${a.suggestedQuantity} cota(s) · '
-                        '${_valorOuTraco(a.currentPrice)} cada · '
-                        '${_valorOuTraco(a.suggestedInvestment)}',
+                        '${_valueOrDash(a.currentPrice)} cada · '
+                        '${_valueOrDash(a.suggestedInvestment)}',
               style: FiType.caption.copyWith(color: fiInk2(context)),
             ),
             if (a.rationale.isNotEmpty) ...[
@@ -250,10 +250,10 @@ class _DestinoDoAporte extends StatelessWidget {
   }
 }
 
-class _DestinoDeRendaFixa extends StatelessWidget {
-  const _DestinoDeRendaFixa({required this.fatia});
+class _FixedIncomeDestination extends StatelessWidget {
+  const _FixedIncomeDestination({required this.slice});
 
-  final QuickInvestFixedIncome fatia;
+  final QuickInvestFixedIncome slice;
 
   @override
   Widget build(BuildContext context) {
@@ -275,14 +275,14 @@ class _DestinoDeRendaFixa extends StatelessWidget {
                 ),
                 const SizedBox(width: FiSpace.s3),
                 Text(
-                  _valorOuTraco(fatia.amount),
+                  _valueOrDash(slice.amount),
                   style: FiType.figure.copyWith(color: fiInk1(context)),
                 ),
               ],
             ),
             const SizedBox(height: FiSpace.s2),
             Text(
-              fatia.rationale,
+              slice.rationale,
               style: FiType.caption.copyWith(color: fiInk2(context)),
             ),
           ],
@@ -292,11 +292,11 @@ class _DestinoDeRendaFixa extends StatelessWidget {
   }
 }
 
-String _valorOuTraco(double? valor) =>
+String _valueOrDash(double? valor) =>
     valor == null ? '—' : formatCurrency(valor);
 
-class _ContraAMeta extends ConsumerWidget {
-  const _ContraAMeta();
+class _AgainstTarget extends ConsumerWidget {
+  const _AgainstTarget();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -365,19 +365,19 @@ class _ContraAMeta extends ConsumerWidget {
   }
 }
 
-class _Passo extends StatelessWidget {
-  const _Passo({required this.passo, this.numerado = true});
+class _Step extends StatelessWidget {
+  const _Step({required this.step, this.numbered = true});
 
-  final CascadeStep passo;
-  final bool numerado;
+  final CascadeStep step;
+  final bool numbered;
 
-  static const _rotulos = {
+  static const _labels = {
     CascadeStepType.debt: 'Dívida',
     CascadeStepType.reserve: 'Reserva',
     CascadeStepType.contribution: 'Aporte',
   };
 
-  static const _origem = {
+  static const _origin = {
     'carteira': 'Medido contra o que a sua carteira rendeu.',
     'referencia_rf': 'Medido contra a referência de renda fixa.',
     'sem_taxa_informada': 'Sem a taxa da dívida não há como classificar o custo.',
@@ -387,13 +387,13 @@ class _Passo extends StatelessWidget {
     'score': 'Sem alocação-alvo declarada, a ordem sai pelo score do ativo.',
   };
 
-  FiState get _estado => passo.type == CascadeStepType.debt
+  FiState get _state => step.type == CascadeStepType.debt
       ? FiState.adverse
       : FiState.neutral;
 
   @override
   Widget build(BuildContext context) {
-    final cor = fiStateColor(_estado, Theme.of(context).brightness);
+    final cor = fiStateColor(_state, Theme.of(context).brightness);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s6),
@@ -413,34 +413,34 @@ class _Passo extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          numerado
-                              ? '${passo.order} · ${_rotulos[passo.type] ?? ''}'
-                              : (_rotulos[passo.type] ?? ''),
+                          numbered
+                              ? '${step.order} · ${_labels[step.type] ?? ''}'
+                              : (_labels[step.type] ?? ''),
                           style: FiType.eyebrow.copyWith(color: fiInk3(context)),
                         ),
                       ),
                       Text(
-                        formatCurrency(passo.amount),
+                        formatCurrency(step.amount),
                         style: FiType.metricSm.copyWith(color: fiInk1(context)),
                       ),
                     ],
                   ),
                   const SizedBox(height: FiSpace.s2),
                   Text(
-                    passo.reason,
+                    step.reason,
                     style: FiType.body.copyWith(color: fiInk1(context)),
                   ),
-                  if (passo.falsifier != null) ...[
+                  if (step.falsifier != null) ...[
                     const SizedBox(height: FiSpace.s1),
                     Text(
-                      passo.falsifier!,
+                      step.falsifier!,
                       style: FiType.caption.copyWith(color: fiInk3(context)),
                     ),
                   ],
-                  if (_origem[passo.reference] != null) ...[
+                  if (_origin[step.reference] != null) ...[
                     const SizedBox(height: FiSpace.s1),
                     Text(
-                      _origem[passo.reference]!,
+                      _origin[step.reference]!,
                       style: FiType.caption.copyWith(color: fiInk3(context)),
                     ),
                   ],
@@ -454,8 +454,8 @@ class _Passo extends StatelessWidget {
   }
 }
 
-class _SemAporte extends StatelessWidget {
-  const _SemAporte();
+class _NoContribution extends StatelessWidget {
+  const _NoContribution();
 
   @override
   Widget build(BuildContext context) {
@@ -470,8 +470,8 @@ class _SemAporte extends StatelessWidget {
   }
 }
 
-class _SemCaixa extends StatelessWidget {
-  const _SemCaixa();
+class _NoCash extends StatelessWidget {
+  const _NoCash();
 
   @override
   Widget build(BuildContext context) {

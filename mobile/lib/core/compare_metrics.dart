@@ -2,9 +2,9 @@ import 'labels.dart';
 import 'models.dart';
 import 'format.dart';
 
-const fiCompareAcoes = {'br_stock', 'bdr'};
-const fiCompareComPatrimonio = {'br_stock', 'bdr', 'fii'};
-const fiCompareTodas = {'br_stock', 'bdr', 'fii', 'etf'};
+const fiCompareStocks = {'br_stock', 'bdr'};
+const fiCompareWithPatrimony = {'br_stock', 'bdr', 'fii'};
+const fiCompareAll = {'br_stock', 'bdr', 'fii', 'etf'};
 
 const fiAssetTypeLabel = {
   'br_stock': 'ação BR',
@@ -29,56 +29,56 @@ final fiCompareMetrics = <FiCompareMetric>[
   FiCompareMetric(
     'Preço',
     'Valuation',
-    fiCompareTodas,
+    fiCompareAll,
     (a) => formatCurrency(a.price),
   ),
   FiCompareMetric(
     'Preço justo (consenso)',
     'Valuation',
-    fiCompareTodas,
+    fiCompareAll,
     (a) => formatCurrency(a.consensus),
   ),
   FiCompareMetric(
     'P/L',
     'Valuation',
-    fiCompareAcoes,
+    fiCompareStocks,
     (a) => a.fundamentals['pe_ratio']?.toStringAsFixed(1) ?? '—',
   ),
   FiCompareMetric(
     'P/VP',
     'Valuation',
-    fiCompareComPatrimonio,
+    fiCompareWithPatrimony,
     (a) => a.fundamentals['pb_ratio']?.toStringAsFixed(2) ?? '—',
   ),
   FiCompareMetric(
     'ROE',
     'Qualidade',
-    fiCompareAcoes,
+    fiCompareStocks,
     (a) => _fmtPct(a.fundamentals['roe']),
   ),
   FiCompareMetric(
     'Margem líquida',
     'Qualidade',
-    fiCompareAcoes,
+    fiCompareStocks,
     (a) => _fmtPct(a.fundamentals['profit_margin']),
   ),
   FiCompareMetric(
     'Dívida / Patrimônio',
     'Risco',
-    fiCompareAcoes,
+    fiCompareStocks,
     (a) => _fmtPct(a.fundamentals['debt_to_equity']),
   ),
   FiCompareMetric(
     'RSI (14)',
     'Risco',
-    fiCompareTodas,
+    fiCompareAll,
     (a) => a.rsi14?.toStringAsFixed(0) ?? '—',
   ),
-  FiCompareMetric('Tendência', 'Risco', fiCompareTodas, (a) => trendLabel(a.trend)),
+  FiCompareMetric('Tendência', 'Risco', fiCompareAll, (a) => trendLabel(a.trend)),
   FiCompareMetric(
     'Dividend Yield',
     'Proventos',
-    fiCompareTodas,
+    fiCompareAll,
     (a) => _fmtPct(a.fundamentals['dividend_yield']),
   ),
 ];

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fiance/core/providers.dart';
 import 'package:fiance/core/theme.dart';
-import 'package:fiance/features/patrimonio/razao_screen.dart';
+import 'package:fiance/features/patrimony/ledger_screen.dart';
 
 void main() {
   testWidgets('a folha de filtros recorta o razão e sabe se desfazer', (tester) async {
@@ -24,7 +24,7 @@ void main() {
               return Scaffold(
                 body: Builder(
                   builder: (context) => TextButton(
-                    onPressed: () => abrirFolhaDeFiltros(context),
+                    onPressed: () => openLedgerFilterSheet(context),
                     child: const Text('abrir'),
                   ),
                 ),
@@ -50,7 +50,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      ref.read(razaoFiltroProvider).ativos,
+      ref.read(ledgerFilterProvider).activeCount,
       2,
       reason: 'período e tipo contam separado, e é esse número que a barra mostra',
     );
@@ -61,7 +61,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      ref.read(razaoFiltroProvider).vazio,
+      ref.read(ledgerFilterProvider).isEmpty,
       isTrue,
       reason: 'sem uma saída para o recorte inteiro, a lista some e não volta',
     );

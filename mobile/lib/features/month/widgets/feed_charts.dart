@@ -37,11 +37,11 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
     final brightness = Theme.of(context).brightness;
     final lastIndex = snapshots.length - 1;
 
-    final corDoValor = fiDirectionColor(
+    final currentColor = fiDirectionColor(
       snapshots.last.totalPnl >= 0 ? 1 : -1,
       brightness,
     );
-    final corDoAplicado = fiInk3(context);
+    final investedColor = fiInk3(context);
     final gridColor = Theme.of(context).dividerColor;
 
     final valor = <FlSpot>[
@@ -176,7 +176,7 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
                         '${s.barIndex == 0 ? 'aplicado' : 'hoje'} '
                         '${formatCurrency(s.y)}',
                         FiType.caption.copyWith(
-                          color: s.barIndex == 0 ? corDoAplicado : corDoValor,
+                          color: s.barIndex == 0 ? investedColor : currentColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -186,14 +186,14 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
                     .map(
                       (i) => TouchedSpotIndicatorData(
                         FlLine(
-                          color: corDoValor.withValues(alpha: 0.4),
+                          color: currentColor.withValues(alpha: 0.4),
                           strokeWidth: 1.5,
                         ),
                         FlDotData(
                           getDotPainter: (spot, percent, bar, index) =>
                               FlDotCirclePainter(
                                 radius: 4,
-                                color: bar.color ?? corDoValor,
+                                color: bar.color ?? currentColor,
                                 strokeWidth: 2,
                                 strokeColor: fiGround0(brightness),
                               ),
@@ -219,7 +219,7 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
                 LineChartBarData(
                   spots: aplicado,
                   isCurved: false,
-                  color: corDoAplicado,
+                  color: investedColor,
                   barWidth: 1.5,
                   dashArray: const [4, 3],
                   dotData: const FlDotData(show: false),
@@ -227,20 +227,20 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
                 LineChartBarData(
                   spots: valor,
                   isCurved: false,
-                  color: corDoValor,
+                  color: currentColor,
                   barWidth: 2.5,
                   dotData: FlDotData(
                     show: snapshots.length <= 14,
                     getDotPainter: (spot, percent, bar, index) =>
                         FlDotCirclePainter(
                           radius: 2.5,
-                          color: corDoValor,
+                          color: currentColor,
                           strokeWidth: 0,
                         ),
                   ),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: corDoValor.withValues(alpha: 0.10),
+                    color: currentColor.withValues(alpha: 0.10),
                     cutOffY: 0,
                     applyCutOffY: false,
                   ),
@@ -252,9 +252,9 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
         const SizedBox(height: FiSpace.s3),
         Row(
           children: [
-            _Legenda(cor: corDoValor, label: 'valor de hoje'),
+            _Legend(color: currentColor, label: 'valor de hoje'),
             const SizedBox(width: FiSpace.s5),
-            _Legenda(cor: corDoAplicado, label: 'aplicado', tracejada: true),
+            _Legend(color: investedColor, label: 'aplicado', dashed: true),
           ],
         ),
       ],
@@ -262,16 +262,16 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
   }
 }
 
-class _Legenda extends StatelessWidget {
-  const _Legenda({
-    required this.cor,
+class _Legend extends StatelessWidget {
+  const _Legend({
+    required this.color,
     required this.label,
-    this.tracejada = false,
+    this.dashed = false,
   });
 
-  final Color cor;
+  final Color color;
   final String label;
-  final bool tracejada;
+  final bool dashed;
 
   @override
   Widget build(BuildContext context) {
@@ -283,7 +283,7 @@ class _Legenda extends StatelessWidget {
           height: 2,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: cor.withValues(alpha: tracejada ? 0.7 : 1),
+              color: color.withValues(alpha: dashed ? 0.7 : 1),
             ),
           ),
         ),
@@ -324,8 +324,8 @@ class FiBenchmarkSection extends ConsumerWidget {
           if (data.ibovAvailable) data.ibovReturnPct ?? 0,
         ];
         final piso = numeros.reduce((a, b) => a < b ? a : b);
-        final teto = numeros.reduce((a, b) => a > b ? a : b);
-        final folga = (teto - piso).abs() * 0.1 + 0.5;
+        final cap = numeros.reduce((a, b) => a > b ? a : b);
+        final folga = (cap - piso).abs() * 0.1 + 0.5;
 
         return FiSection(
           title: 'Contra a referência',
@@ -347,7 +347,7 @@ class FiBenchmarkSection extends ConsumerWidget {
                 label: 'Sua carteira',
                 value: data.portfolioReturnPct,
                 min: piso - folga,
-                max: teto + folga,
+                max: cap + folga,
                 reference: data.cdiReturnPct,
                 readout: _pct(data.portfolioReturnPct),
                 note: 'a marca é o CDI, em ${_pct(data.cdiReturnPct)}',
@@ -358,7 +358,7 @@ class FiBenchmarkSection extends ConsumerWidget {
                   label: 'Ibovespa',
                   value: data.ibovReturnPct ?? 0,
                   min: piso - folga,
-                  max: teto + folga,
+                  max: cap + folga,
                   reference: data.cdiReturnPct,
                   readout: _pct(data.ibovReturnPct ?? 0),
                   fillColor: fiInk3(context),

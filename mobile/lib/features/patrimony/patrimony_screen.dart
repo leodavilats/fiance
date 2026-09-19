@@ -12,18 +12,18 @@ import '../../core/widgets/segments.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
-import '../mes/widgets/feed_charts.dart';
-import 'patrimonio_actions.dart';
-import 'widgets/patrimonio_closed_trades.dart';
-import 'widgets/patrimonio_composition.dart';
-import 'widgets/patrimonio_fixed_income.dart';
-import 'widgets/patrimonio_positions.dart';
-import 'widgets/patrimonio_summary.dart';
+import '../month/widgets/feed_charts.dart';
+import 'patrimony_actions.dart';
+import 'widgets/patrimony_closed_trades.dart';
+import 'widgets/patrimony_composition.dart';
+import 'widgets/patrimony_fixed_income.dart';
+import 'widgets/patrimony_positions.dart';
+import 'widgets/patrimony_summary.dart';
 
-class PatrimonioScreen extends ConsumerWidget {
-  const PatrimonioScreen({super.key, this.recorte = FiAssetGroupMode.value});
+class PatrimonyScreen extends ConsumerWidget {
+  const PatrimonyScreen({super.key, this.groupMode = FiAssetGroupMode.value});
 
-  final FiAssetGroupMode recorte;
+  final FiAssetGroupMode groupMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,8 +39,8 @@ class PatrimonioScreen extends ConsumerWidget {
           ref.invalidate(fixedIncomeProvider);
         },
         child: dashboard.when(
-          loading: () => FiSkeleton.pagina(
-            secoes: const [2, 4, 3],
+          loading: () => FiSkeleton.page(
+            sections: const [2, 4, 3],
             label: 'Carregando sua carteira',
           ),
           error: (err, _) => FiErrorState(
@@ -67,8 +67,8 @@ class PatrimonioScreen extends ConsumerWidget {
               );
             }
 
-            final idade = formatIdade(
-              carimboMaisAntigo(data.positions.map((p) => p.asOf)),
+            final idade = formatAge(
+              oldestStamp(data.positions.map((p) => p.asOf)),
             );
 
             return ListView(
@@ -79,18 +79,18 @@ class PatrimonioScreen extends ConsumerWidget {
                 FiLayout.scrollTail,
               ),
               children: [
-                FiCarteiraSummary(summary: data.summary),
+                FiPortfolioSummary(summary: data.summary),
 
                 if (data.allocations.isNotEmpty)
                   FiSection(
-                    title: recorte == FiAssetGroupMode.sector
+                    title: groupMode == FiAssetGroupMode.sector
                         ? 'Onde está concentrado, por setor'
                         : 'Onde está concentrado, por classe',
-                    trailing: _Recorte(atual: recorte),
+                    trailing: _GroupModeSegments(current: groupMode),
                     child: FiCompositionBlock(
                       allocations: data.allocations,
                       positions: data.positions,
-                      mode: recorte == FiAssetGroupMode.sector
+                      mode: groupMode == FiAssetGroupMode.sector
                           ? FiCompositionMode.sector
                           : FiCompositionMode.asset,
                     ),
@@ -119,7 +119,7 @@ class PatrimonioScreen extends ConsumerWidget {
                   ),
                   child: FiGroupedPositionsList(
                     positions: data.positions,
-                    mode: recorte,
+                    mode: groupMode,
                     onDelete: (ticker) => deletePosition(ref, ticker),
                     onSell: (p) => openSellDialog(context, ref, p),
                   ),
@@ -127,7 +127,7 @@ class PatrimonioScreen extends ConsumerWidget {
 
                 const FiClosedTradesSection(),
 
-                const _DeOndeVem(),
+                const _WhereItComesFrom(),
               ],
             );
           },
@@ -137,15 +137,15 @@ class PatrimonioScreen extends ConsumerWidget {
   }
 }
 
-class _Recorte extends StatelessWidget {
-  const _Recorte({required this.atual});
+class _GroupModeSegments extends StatelessWidget {
+  const _GroupModeSegments({required this.current});
 
-  final FiAssetGroupMode atual;
+  final FiAssetGroupMode current;
 
   @override
   Widget build(BuildContext context) {
     return FiSegments<FiAssetGroupMode>(
-      selected: atual,
+      selected: current,
       semanticsPrefix: 'Ver a carteira por',
       options: const {
         FiAssetGroupMode.value: 'Valor',
@@ -157,13 +157,13 @@ class _Recorte extends StatelessWidget {
   }
 }
 
-class _DeOndeVem extends ConsumerWidget {
-  const _DeOndeVem();
+class _WhereItComesFrom extends ConsumerWidget {
+  const _WhereItComesFrom();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final proventos = ref.watch(proventosProvider);
-    final razao = ref.watch(razaoProvider);
+    final proventos = ref.watch(dividendsProvider);
+    final razao = ref.watch(ledgerProvider);
 
     return FiSection(
       title: 'De onde vem este patrimônio',

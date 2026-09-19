@@ -613,7 +613,7 @@ class RebalanceItem {
     required this.quantity,
     required this.pnlPct,
     required this.reasons,
-    required this.realocarPara,
+    required this.reallocateTo,
     required this.requiresTaxReview,
   });
 
@@ -626,7 +626,7 @@ class RebalanceItem {
   final double? quantity;
   final double? pnlPct;
   final List<String> reasons;
-  final RebalanceTarget? realocarPara;
+  final RebalanceTarget? reallocateTo;
   final bool requiresTaxReview;
 
   factory RebalanceItem.fromJson(Map<String, dynamic> j) => RebalanceItem(
@@ -641,7 +641,7 @@ class RebalanceItem {
     reasons: (j['reasons'] as List? ?? const [])
         .map((e) => e as String)
         .toList(),
-    realocarPara: j['realocar_para'] != null
+    reallocateTo: j['realocar_para'] != null
         ? RebalanceTarget.fromJson(j['realocar_para'] as Map<String, dynamic>)
         : null,
     requiresTaxReview: j['requires_tax_review'] as bool? ?? false,
@@ -875,49 +875,49 @@ class AssetAnalysis {
 
 class ReferenceRates {
   ReferenceRates({
-    required this.cdiAnual,
-    required this.selicAnual,
-    required this.ipcaAnual,
+    required this.cdiAnnual,
+    required this.selicAnnual,
+    required this.ipcaAnnual,
   });
 
-  final double cdiAnual;
-  final double selicAnual;
-  final double ipcaAnual;
+  final double cdiAnnual;
+  final double selicAnnual;
+  final double ipcaAnnual;
 
   factory ReferenceRates.fromJson(Map<String, dynamic> j) => ReferenceRates(
-    cdiAnual: (j['cdi_anual'] as num).toDouble(),
-    selicAnual: (j['selic_anual'] as num).toDouble(),
-    ipcaAnual: (j['ipca_anual'] as num).toDouble(),
+    cdiAnnual: (j['cdi_anual'] as num).toDouble(),
+    selicAnnual: (j['selic_anual'] as num).toDouble(),
+    ipcaAnnual: (j['ipca_anual'] as num).toDouble(),
   );
 }
 
-class RendaFixaResult {
-  RendaFixaResult({
-    required this.tipo,
-    required this.nome,
-    required this.valorInvestido,
-    required this.valorLiquido,
-    required this.rendimentoLiquido,
-    required this.taxaLiquidaAa,
-    required this.melhorOpcao,
+class FixedIncomeResult {
+  FixedIncomeResult({
+    required this.kind,
+    required this.name,
+    required this.investedValue,
+    required this.netValue,
+    required this.netReturn,
+    required this.netAnnualRate,
+    required this.bestOption,
   });
 
-  final String tipo;
-  final String? nome;
-  final double valorInvestido;
-  final double valorLiquido;
-  final double rendimentoLiquido;
-  final double taxaLiquidaAa;
-  final bool melhorOpcao;
+  final String kind;
+  final String? name;
+  final double investedValue;
+  final double netValue;
+  final double netReturn;
+  final double netAnnualRate;
+  final bool bestOption;
 
-  factory RendaFixaResult.fromJson(Map<String, dynamic> j) => RendaFixaResult(
-    tipo: j['tipo'] as String,
-    nome: j['nome'] as String?,
-    valorInvestido: (j['valor_investido'] as num).toDouble(),
-    valorLiquido: (j['valor_liquido'] as num).toDouble(),
-    rendimentoLiquido: (j['rendimento_liquido'] as num).toDouble(),
-    taxaLiquidaAa: (j['taxa_liquida_aa'] as num).toDouble(),
-    melhorOpcao: j['melhor_opcao'] as bool? ?? false,
+  factory FixedIncomeResult.fromJson(Map<String, dynamic> j) => FixedIncomeResult(
+    kind: j['tipo'] as String,
+    name: j['nome'] as String?,
+    investedValue: (j['valor_investido'] as num).toDouble(),
+    netValue: (j['valor_liquido'] as num).toDouble(),
+    netReturn: (j['rendimento_liquido'] as num).toDouble(),
+    netAnnualRate: (j['taxa_liquida_aa'] as num).toDouble(),
+    bestOption: j['melhor_opcao'] as bool? ?? false,
   );
 }
 
@@ -1275,113 +1275,113 @@ class PassiveIncomeProjection {
 class FixedIncomePosition {
   FixedIncomePosition({
     required this.id,
-    required this.nome,
-    required this.tipo,
-    required this.valorInvestido,
-    required this.taxa,
-    required this.tipoTaxa,
-    required this.percentualCdi,
-    required this.dataAplicacao,
-    required this.vencimento,
-    required this.liquidez,
-    required this.isentoIr,
-    required this.oculto,
-    required this.valorAtual,
-    required this.rendimentoAcumulado,
-    required this.rendimentoPct,
-    required this.mesesDecorridos,
-    required this.taxaAnualEfetivaPct,
-    required this.yieldEquivalentePct,
-    required this.valorNoVencimento,
-    required this.diasParaVencimento,
-    required this.vencimentoProximo,
+    required this.name,
+    required this.kind,
+    required this.investedValue,
+    required this.rate,
+    required this.rateKind,
+    required this.cdiPercent,
+    required this.appliedOn,
+    required this.maturity,
+    required this.liquidity,
+    required this.irExempt,
+    required this.hidden,
+    required this.currentValue,
+    required this.accruedReturn,
+    required this.returnPct,
+    required this.monthsElapsed,
+    required this.effectiveAnnualRatePct,
+    required this.equivalentYieldPct,
+    required this.valueAtMaturity,
+    required this.daysToMaturity,
+    required this.maturingSoon,
   });
 
   final int id;
-  final String nome;
-  final String tipo;
-  final double valorInvestido;
-  final double taxa;
-  final String tipoTaxa;
-  final double? percentualCdi;
-  final String dataAplicacao;
-  final String? vencimento;
-  final String liquidez;
-  final bool? isentoIr;
-  final bool oculto;
+  final String name;
+  final String kind;
+  final double investedValue;
+  final double rate;
+  final String rateKind;
+  final double? cdiPercent;
+  final String appliedOn;
+  final String? maturity;
+  final String liquidity;
+  final bool? irExempt;
+  final bool hidden;
 
-  final double valorAtual;
-  final double rendimentoAcumulado;
-  final double rendimentoPct;
-  final double mesesDecorridos;
-  final double taxaAnualEfetivaPct;
-  final double yieldEquivalentePct;
+  final double currentValue;
+  final double accruedReturn;
+  final double returnPct;
+  final double monthsElapsed;
+  final double effectiveAnnualRatePct;
+  final double equivalentYieldPct;
 
-  final double? valorNoVencimento;
-  final int? diasParaVencimento;
-  final bool vencimentoProximo;
+  final double? valueAtMaturity;
+  final int? daysToMaturity;
+  final bool maturingSoon;
 
   factory FixedIncomePosition.fromJson(Map<String, dynamic> j) =>
       FixedIncomePosition(
         id: j['id'] as int,
-        nome: j['nome'] as String,
-        tipo: j['tipo'] as String,
-        valorInvestido: (j['valor_investido'] as num).toDouble(),
-        taxa: (j['taxa'] as num).toDouble(),
-        tipoTaxa: j['tipo_taxa'] as String? ?? 'pre_fixado',
-        percentualCdi: (j['percentual_cdi'] as num?)?.toDouble(),
-        dataAplicacao: j['data_aplicacao'] as String,
-        vencimento: j['vencimento'] as String?,
-        liquidez: j['liquidez'] as String? ?? 'no_vencimento',
-        isentoIr: j['isento_ir'] as bool?,
-        oculto: j['oculto'] as bool? ?? false,
-        valorAtual: (j['valor_atual'] as num).toDouble(),
-        rendimentoAcumulado: (j['rendimento_acumulado'] as num).toDouble(),
-        rendimentoPct: (j['rendimento_pct'] as num).toDouble(),
-        mesesDecorridos: (j['meses_decorridos'] as num).toDouble(),
-        taxaAnualEfetivaPct: (j['taxa_anual_efetiva_pct'] as num).toDouble(),
-        yieldEquivalentePct: (j['yield_equivalente_pct'] as num).toDouble(),
-        valorNoVencimento: (j['valor_no_vencimento'] as num?)?.toDouble(),
-        diasParaVencimento: j['dias_para_vencimento'] as int?,
-        vencimentoProximo: j['vencimento_proximo'] as bool? ?? false,
+        name: j['nome'] as String,
+        kind: j['tipo'] as String,
+        investedValue: (j['valor_investido'] as num).toDouble(),
+        rate: (j['taxa'] as num).toDouble(),
+        rateKind: j['tipo_taxa'] as String? ?? 'pre_fixado',
+        cdiPercent: (j['percentual_cdi'] as num?)?.toDouble(),
+        appliedOn: j['data_aplicacao'] as String,
+        maturity: j['vencimento'] as String?,
+        liquidity: j['liquidez'] as String? ?? 'no_vencimento',
+        irExempt: j['isento_ir'] as bool?,
+        hidden: j['oculto'] as bool? ?? false,
+        currentValue: (j['valor_atual'] as num).toDouble(),
+        accruedReturn: (j['rendimento_acumulado'] as num).toDouble(),
+        returnPct: (j['rendimento_pct'] as num).toDouble(),
+        monthsElapsed: (j['meses_decorridos'] as num).toDouble(),
+        effectiveAnnualRatePct: (j['taxa_anual_efetiva_pct'] as num).toDouble(),
+        equivalentYieldPct: (j['yield_equivalente_pct'] as num).toDouble(),
+        valueAtMaturity: (j['valor_no_vencimento'] as num?)?.toDouble(),
+        daysToMaturity: j['dias_para_vencimento'] as int?,
+        maturingSoon: j['vencimento_proximo'] as bool? ?? false,
       );
 }
 
 class FixedIncomeList {
   FixedIncomeList({
     required this.items,
-    required this.totalInvestido,
-    required this.totalAtual,
-    required this.totalRendimento,
-    required this.rendimentoPct,
-    required this.taxaMediaAa,
-    required this.cdiReferencia,
-    required this.fonteTaxas,
+    required this.totalInvested,
+    required this.totalCurrent,
+    required this.totalReturn,
+    required this.returnPct,
+    required this.averageAnnualRate,
+    required this.cdiReference,
+    required this.ratesOrigin,
   });
 
   final List<FixedIncomePosition> items;
-  final double totalInvestido;
-  final double totalAtual;
-  final double totalRendimento;
-  final double rendimentoPct;
-  final double taxaMediaAa;
-  final double cdiReferencia;
-  final String fonteTaxas;
+  final double totalInvested;
+  final double totalCurrent;
+  final double totalReturn;
+  final double returnPct;
+  final double averageAnnualRate;
+  final double cdiReference;
+  final String ratesOrigin;
 
-  List<FixedIncomePosition> get visiveis =>
-      items.where((i) => !i.oculto).toList(growable: false);
+  List<FixedIncomePosition> get visible =>
+      items.where((i) => !i.hidden).toList(growable: false);
 
   factory FixedIncomeList.fromJson(Map<String, dynamic> j) => FixedIncomeList(
     items: (j['items'] as List)
         .map((e) => FixedIncomePosition.fromJson(e as Map<String, dynamic>))
         .toList(),
-    totalInvestido: (j['total_investido'] as num).toDouble(),
-    totalAtual: (j['total_atual'] as num).toDouble(),
-    totalRendimento: (j['total_rendimento'] as num).toDouble(),
-    rendimentoPct: (j['rendimento_pct'] as num).toDouble(),
-    taxaMediaAa: (j['taxa_media_aa'] as num).toDouble(),
-    cdiReferencia: (j['cdi_referencia'] as num).toDouble(),
-    fonteTaxas: j['fonte_taxas'] as String? ?? 'estimativa',
+    totalInvested: (j['total_investido'] as num).toDouble(),
+    totalCurrent: (j['total_atual'] as num).toDouble(),
+    totalReturn: (j['total_rendimento'] as num).toDouble(),
+    returnPct: (j['rendimento_pct'] as num).toDouble(),
+    averageAnnualRate: (j['taxa_media_aa'] as num).toDouble(),
+    cdiReference: (j['cdi_referencia'] as num).toDouble(),
+    ratesOrigin: j['fonte_taxas'] as String? ?? 'estimativa',
   );
 }
 
@@ -1499,7 +1499,7 @@ class QuickInvestResult {
 
   final List<QuickInvestUnallocated> unallocated;
 
-  bool get temDestino => allocations.isNotEmpty || fixedIncome != null;
+  bool get hasDestination => allocations.isNotEmpty || fixedIncome != null;
 
   factory QuickInvestResult.fromJson(Map<String, dynamic> j) =>
       QuickInvestResult(
@@ -1603,7 +1603,7 @@ class IncomeCompare {
   IncomeCompare({
     required this.amount,
     required this.horizonMonths,
-    required this.cdiAnual,
+    required this.cdiAnnual,
     required this.fixedIncome,
     required this.assets,
     required this.bestIncomeOption,
@@ -1613,14 +1613,14 @@ class IncomeCompare {
 
   final double amount;
   final int horizonMonths;
-  final double cdiAnual;
+  final double cdiAnnual;
   final List<IncomeOption> fixedIncome;
   final List<IncomeOption> assets;
   final IncomeOption? bestIncomeOption;
   final String verdict;
   final String disclaimer;
 
-  static List<IncomeOption> _lista(dynamic bruto) =>
+  static List<IncomeOption> _list(dynamic bruto) =>
       ((bruto as List?) ?? const [])
           .map((e) => IncomeOption.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -1628,9 +1628,9 @@ class IncomeCompare {
   factory IncomeCompare.fromJson(Map<String, dynamic> j) => IncomeCompare(
     amount: (j['amount'] as num?)?.toDouble() ?? 0,
     horizonMonths: (j['horizon_months'] as num?)?.toInt() ?? 12,
-    cdiAnual: (j['cdi_anual'] as num?)?.toDouble() ?? 0,
-    fixedIncome: _lista(j['fixed_income']),
-    assets: _lista(j['assets']),
+    cdiAnnual: (j['cdi_anual'] as num?)?.toDouble() ?? 0,
+    fixedIncome: _list(j['fixed_income']),
+    assets: _list(j['assets']),
     bestIncomeOption: j['best_income_option'] == null
         ? null
         : IncomeOption.fromJson(
@@ -1717,7 +1717,7 @@ class LedgerEntry {
   final double amount;
   final String? note;
 
-  bool get temQuantidade => const {
+  bool get hasQuantity => const {
     'buy',
     'sell',
     'bonus',
@@ -1725,9 +1725,9 @@ class LedgerEntry {
     'transfer_out',
   }.contains(kind);
 
-  bool get temPreco => kind == 'buy' || kind == 'sell';
+  bool get hasPrice => kind == 'buy' || kind == 'sell';
 
-  double get valorBruto => quantity * price;
+  double get grossValue => quantity * price;
 
   factory LedgerEntry.fromJson(Map<String, dynamic> j) => LedgerEntry(
     id: (j['id'] as num?)?.toInt(),
@@ -1892,7 +1892,7 @@ class DividendSuggestion {
   final String? exDate;
   final String entitlement;
 
-  bool get direitoProvado => entitlement == 'provado';
+  bool get entitlementProven => entitlement == 'provado';
 
   factory DividendSuggestion.fromJson(Map<String, dynamic> j) => DividendSuggestion(
     ticker: j['ticker'] as String? ?? '',

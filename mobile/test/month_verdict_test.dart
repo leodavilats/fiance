@@ -1,17 +1,17 @@
 import 'package:fiance/core/cash_models.dart';
-import 'package:fiance/core/mes.dart';
+import 'package:fiance/core/month.dart';
 import 'package:fiance/core/month_verdict.dart';
 import 'package:fiance/core/product_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-VereditoDoMes _leitura({
-  double recebido = 10000,
-  double comprometido = 3000,
-  Debt? dividaCara,
-}) => vereditoDoMes(
-  recebido: recebido,
-  comprometido: comprometido,
-  dividaCara: dividaCara,
+MonthVerdict _leitura({
+  double received = 10000,
+  double committed = 3000,
+  Debt? expensiveDebt,
+}) => monthVerdict(
+  received: received,
+  committed: committed,
+  expensiveDebt: expensiveDebt,
 );
 
 Debt _divida({double? taxa = 14.9, String descricao = 'Rotativo do cartão'}) =>
@@ -30,9 +30,9 @@ Debt _divida({double? taxa = 14.9, String descricao = 'Rotativo do cartão'}) =>
 void main() {
   group('veredito do mês', () {
     test('sem entrada lançada não há leitura, e a pressão não vira zero', () {
-      final v = _leitura(recebido: 0, comprometido: 500);
+      final v = _leitura(received: 0, committed: 500);
       expect(
-        v.pressao,
+        v.pressure,
         isNull,
         reason: 'dividir por zero daria 0% e "Mês folgado" para quem não lançou nada',
       );
@@ -44,16 +44,16 @@ void main() {
     });
 
     test('a banda sai da régua gerada, e o pior estado é o mês apertado', () {
-      expect(_leitura(comprometido: 9000).band.id, 'tight');
-      expect(_leitura(comprometido: 7000).band.id, 'pressured');
-      expect(_leitura(comprometido: 4000).band.id, 'steady');
-      expect(_leitura(comprometido: 1000).band.id, 'loose');
+      expect(_leitura(committed: 9000).band.id, 'tight');
+      expect(_leitura(committed: 7000).band.id, 'pressured');
+      expect(_leitura(committed: 4000).band.id, 'steady');
+      expect(_leitura(committed: 1000).band.id, 'loose');
     });
 
     test('comprometido acima da renda não estoura a régua', () {
-      final v = _leitura(recebido: 1000, comprometido: 4000);
+      final v = _leitura(received: 1000, committed: 4000);
       expect(
-        v.pressao,
+        v.pressure,
         100,
         reason: 'o domínio para em 100: uma barra que estoura não informa',
       );
@@ -61,8 +61,8 @@ void main() {
     });
 
     test('dívida caseira assume a razão sem mudar a banda', () {
-      final sem = _leitura(comprometido: 1000);
-      final com = _leitura(comprometido: 1000, dividaCara: _divida());
+      final sem = _leitura(committed: 1000);
+      final com = _leitura(committed: 1000, expensiveDebt: _divida());
 
       expect(
         com.band.id,
@@ -70,50 +70,50 @@ void main() {
         reason: 'a régua mede pressão do mês, e a dívida é outro julgamento',
       );
       expect(
-        com.razao,
+        com.reason,
         contains('Rotativo do cartão'),
         reason: 'um mês folgado com dívida a 14,9% ao mês não é um mês resolvido',
       );
-      expect(com.razao, contains('14,9% ao mês'));
+      expect(com.reason, contains('14,9% ao mês'));
     });
 
     test('dívida sem taxa informada não inventa taxa na frase', () {
       final v = _leitura(
-        dividaCara: _divida(taxa: null, descricao: 'Consignado'),
+        expensiveDebt: _divida(taxa: null, descricao: 'Consignado'),
       );
-      expect(v.razao, contains('Consignado'));
+      expect(v.reason, contains('Consignado'));
       expect(
-        v.razao,
+        v.reason,
         isNot(contains('null')),
         reason: 'o produto não estima taxa que a pessoa não informou',
       );
-      expect(v.razao, isNot(contains('% ao mês')));
+      expect(v.reason, isNot(contains('% ao mês')));
     });
   });
 
   group('o mês como recorte', () {
     test('o nome do mês é o de quem lê, não o do formato', () {
-      expect(nomeDoMes('2026-09'), 'setembro de 2026');
-      expect(nomeDoMes('2026-01'), 'janeiro de 2026');
+      expect(monthName('2026-09'), 'setembro de 2026');
+      expect(monthName('2026-01'), 'janeiro de 2026');
     });
 
     test('mês malformado volta como veio, em vez de inventar', () {
-      expect(nomeDoMes('2026'), '2026');
-      expect(nomeDoMes('2026-99'), '2026-99 de 2026');
+      expect(monthName('2026'), '2026');
+      expect(monthName('2026-99'), '2026-99 de 2026');
     });
 
     test('o mês anterior atravessa a virada do ano', () {
-      expect(mesAnterior('2026-01'), '2025-12');
-      expect(mesAnterior('2026-09'), '2026-08');
+      expect(previousMonth('2026-01'), '2025-12');
+      expect(previousMonth('2026-09'), '2026-08');
     });
 
     test('o mês corrente sai no formato que o backend espera', () {
-      expect(mesCorrente(), matches(RegExp(r'^\d{4}-\d{2}$')));
+      expect(currentMonth(), matches(RegExp(r'^\d{4}-\d{2}$')));
     });
 
     test('o dia sai da data, e data curta não estoura', () {
-      expect(diaDe('2026-09-08'), '08');
-      expect(diaDe('2026-09'), '2026-09');
+      expect(dayOf('2026-09-08'), '08');
+      expect(dayOf('2026-09'), '2026-09');
     });
   });
 }

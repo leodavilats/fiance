@@ -28,7 +28,7 @@ void main() {
       reason:
           'nenhuma tela escreve a meta de renda passiva, e o produto a mostra em três. '
           'O alvo tem de ser declarável onde ele é lido — hoje em '
-          'features/config/objetivos_screen.dart',
+          'features/config/goals_screen.dart',
     );
   });
 }

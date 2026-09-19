@@ -64,7 +64,7 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
         .toList();
   }
 
-  Map<String, double> _metasPorSetor() {
+  Map<String, double> _sectorTargets() {
     final metas = ref.watch(sectorGoalsProvider).valueOrNull ?? const <SectorGoal>[];
     return {
       for (final m in metas.where((m) => m.declared)) translateSector(m.sector): m.targetPct,
@@ -72,7 +72,7 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
   }
 
   List<FiCompositionSlice> _bySector(Brightness brightness) {
-    final metas = _metasPorSetor();
+    final metas = _sectorTargets();
     final buckets = <String, double>{};
     var totalAcoes = 0.0;
     for (final p in widget.positions) {

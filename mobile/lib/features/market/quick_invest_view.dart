@@ -25,7 +25,7 @@ class QuickInvestView extends ConsumerStatefulWidget {
 class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
   final _cashCtrl = TextEditingController();
 
-  bool _simulando = false;
+  bool _simulating = false;
 
   bool _loading = true;
   Object? _error;
@@ -69,7 +69,7 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
     }
   }
 
-  void _simularOutroValor() {
+  void _simulateAnotherAmount() {
     final valor = double.tryParse(_cashCtrl.text.replaceAll(',', '.'));
     if (valor == null || valor <= 0) {
       setState(() => _error = 'Informe um valor para simular.');
@@ -81,7 +81,7 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _result == null) {
-      return FiSkeleton.tela(
+      return FiSkeleton.screen(
         shape: FiSkeletonShape.row,
         count: 4,
         label: 'Calculando onde aportar',
@@ -92,7 +92,7 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
       return FiErrorState(
         error: _error!,
         action: 'calcular onde aportar',
-        onRetry: () => _simulando ? _simularOutroValor() : _run(),
+        onRetry: () => _simulating ? _simulateAnotherAmount() : _run(),
       );
     }
 
@@ -107,20 +107,20 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
       ),
       children: [
         FiHeadline(
-          eyebrow: _simulando ? 'Valor simulado' : 'Sobra deste mês',
-          figure: _dinheiroOuTraco(r.totalCash),
-          support: _simulando
+          eyebrow: _simulating ? 'Valor simulado' : 'Sobra deste mês',
+          figure: _moneyOrDash(r.totalCash),
+          support: _simulating
               ? 'A distribuição abaixo é sobre este valor, e não sobre a sua sobra.'
               : null,
         ),
 
         const SizedBox(height: FiSpace.s3),
-        if (!_simulando)
+        if (!_simulating)
           Align(
             alignment: Alignment.centerLeft,
             child: FiButton.quiet(
               label: 'Simular outro valor',
-              onPressed: () => setState(() => _simulando = true),
+              onPressed: () => setState(() => _simulating = true),
             ),
           )
         else
@@ -136,14 +136,14 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
                   decoration: const InputDecoration(
                     labelText: 'Valor a simular (R\$)',
                   ),
-                  onSubmitted: (_) => _simularOutroValor(),
+                  onSubmitted: (_) => _simulateAnotherAmount(),
                 ),
               ),
               const SizedBox(width: FiSpace.s2),
               FiButton.secondary(
                 label: 'Simular',
                 busy: _loading,
-                onPressed: _simularOutroValor,
+                onPressed: _simulateAnotherAmount,
               ),
             ],
           ),
@@ -170,11 +170,11 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
         if (r.allocatedCash != null) ...[
           const SizedBox(height: FiSpace.s4),
           FiFigures(
-            figures: {'ALOCADO': _dinheiroOuTraco(r.allocatedCash)},
+            figures: {'ALOCADO': _moneyOrDash(r.allocatedCash)},
           ),
         ],
 
-        if (r.temDestino)
+        if (r.hasDestination)
           FiSection(
             title: 'A ordem de prioridade',
             hint: r.basis == 'goals'
@@ -183,9 +183,9 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
             child: Column(
               children: [
                 for (final allocation in r.allocations)
-                  _Alocacao(allocation: allocation),
+                  _Allocation(allocation: allocation),
                 if (r.fixedIncome != null)
-                  _FatiaDeRendaFixa(fatia: r.fixedIncome!),
+                  _FixedIncomeSlice(slice: r.fixedIncome!),
               ],
             ),
           ),
@@ -195,13 +195,13 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
             title: 'O que não coube',
             hint: r.remainingCash == null
                 ? null
-                : '${_dinheiroOuTraco(r.remainingCash)} do valor ficam em caixa.',
+                : '${_moneyOrDash(r.remainingCash)} do valor ficam em caixa.',
             child: FiRows(
               children: [
                 for (final sobra in r.unallocated)
                   FiDataRow(
                     label: sobra.reason,
-                    value: _dinheiroOuTraco(sobra.value),
+                    value: _moneyOrDash(sobra.value),
                   ),
               ],
             ),
@@ -233,17 +233,17 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
   }
 }
 
-String _dinheiroOuTraco(double? valor) =>
+String _moneyOrDash(double? valor) =>
     valor == null ? '—' : formatCurrency(valor);
 
-class _FatiaDeRendaFixa extends StatelessWidget {
-  const _FatiaDeRendaFixa({required this.fatia});
+class _FixedIncomeSlice extends StatelessWidget {
+  const _FixedIncomeSlice({required this.slice});
 
-  final QuickInvestFixedIncome fatia;
+  final QuickInvestFixedIncome slice;
 
   @override
   Widget build(BuildContext context) {
-    final f = fatia;
+    final f = slice;
     final fonte = switch (f.referenceSource) {
       'bcb' => 'CDI do Banco Central',
       'bcb_cache_vencido' => 'CDI do Banco Central, leitura anterior',
@@ -268,7 +268,7 @@ class _FatiaDeRendaFixa extends StatelessWidget {
                 ),
                 const SizedBox(width: FiSpace.s3),
                 Text(
-                  _dinheiroOuTraco(f.amount),
+                  _moneyOrDash(f.amount),
                   style: FiType.metricSm.copyWith(color: fiInk1(context)),
                 ),
               ],
@@ -298,8 +298,8 @@ class _FatiaDeRendaFixa extends StatelessWidget {
   }
 }
 
-class _Alocacao extends StatelessWidget {
-  const _Alocacao({required this.allocation});
+class _Allocation extends StatelessWidget {
+  const _Allocation({required this.allocation});
 
   final QuickInvestAllocation allocation;
 
@@ -339,7 +339,7 @@ class _Alocacao extends StatelessWidget {
                 if (band != null)
                   FiTag(label: band.label, state: band.state)
                 else
-                  FiTag.serie(
+                  FiTag.series(
                     label: categoryLabel(a.category),
                     color: categoryColor(a.category, brightness),
                   ),
@@ -352,8 +352,8 @@ class _Alocacao extends StatelessWidget {
                 'COMPRAR': a.suggestedQuantity == null
                     ? '—'
                     : '${a.suggestedQuantity} cota(s)',
-                'PREÇO': _dinheiroOuTraco(a.currentPrice),
-                'TOTAL': _dinheiroOuTraco(a.suggestedInvestment),
+                'PREÇO': _moneyOrDash(a.currentPrice),
+                'TOTAL': _moneyOrDash(a.suggestedInvestment),
               },
             ),
             if (a.rationale.isNotEmpty) ...[

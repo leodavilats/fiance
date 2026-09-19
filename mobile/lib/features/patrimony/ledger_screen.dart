@@ -18,7 +18,7 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 
-Future<void> abrirFormDeLancamento(BuildContext context, WidgetRef ref) async {
+Future<void> openLedgerEntryForm(BuildContext context, WidgetRef ref) async {
   final salvo = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -26,44 +26,44 @@ Future<void> abrirFormDeLancamento(BuildContext context, WidgetRef ref) async {
     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: const _LancamentoForm(),
+      child: const _LedgerEntryForm(),
     ),
   );
 
   if (salvo == true) {
-    ref.invalidate(razaoProvider);
-    ref.invalidate(razaoFiltradoProvider);
+    ref.invalidate(ledgerProvider);
+    ref.invalidate(filteredLedgerProvider);
     ref.invalidate(portfolioProvider);
     ref.invalidate(dashboardProvider);
   }
 }
 
-const double _rodapeDoFab = 88;
+const double _fabTail = 88;
 
-class RazaoScreen extends ConsumerWidget {
-  const RazaoScreen({super.key});
+class LedgerScreen extends ConsumerWidget {
+  const LedgerScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pagina = ref.watch(razaoFiltradoProvider);
-    final filtro = ref.watch(razaoFiltroProvider);
+    final page = ref.watch(filteredLedgerProvider);
+    final filtro = ref.watch(ledgerFilterProvider);
 
-    final razaoEmBranco =
-        (pagina.valueOrNull?.items.isEmpty ?? false) && filtro.vazio;
+    final emptyLedger =
+        (page.valueOrNull?.items.isEmpty ?? false) && filtro.isEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Livro-razão')),
-      floatingActionButton: razaoEmBranco
+      floatingActionButton: emptyLedger
           ? null
           : FloatingActionButton.extended(
-              onPressed: () => abrirFormDeLancamento(context, ref),
+              onPressed: () => openLedgerEntryForm(context, ref),
               icon: const Icon(Icons.add),
               label: const Text('Registrar'),
             ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(razaoFiltradoProvider),
-        child: pagina.when(
-          loading: () => FiSkeleton.tela(
+        onRefresh: () async => ref.invalidate(filteredLedgerProvider),
+        child: page.when(
+          loading: () => FiSkeleton.screen(
             shape: FiSkeletonShape.row,
             count: 6,
             label: 'Carregando seus lançamentos',
@@ -72,19 +72,19 @@ class RazaoScreen extends ConsumerWidget {
             error: err,
             title: 'Não conseguimos carregar seus lançamentos',
             action: 'carregar o livro-razão',
-            onRetry: () => ref.invalidate(razaoFiltradoProvider),
+            onRetry: () => ref.invalidate(filteredLedgerProvider),
           ),
           data: (data) {
-            if (data.items.isEmpty && !filtro.vazio) {
+            if (data.items.isEmpty && !filtro.isEmpty) {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(
                   FiLayout.gutter,
                   FiSpace.s3,
                   FiLayout.gutter,
-                  _rodapeDoFab,
+                  _fabTail,
                 ),
                 children: [
-                  const _BarraDeFiltros(),
+                  const _FilterBar(),
                   const SizedBox(height: FiSpace.s5),
                   FiEmptyState(
                     title: 'Nenhum lançamento com estes filtros',
@@ -93,8 +93,8 @@ class RazaoScreen extends ConsumerWidget {
                     action: FiButton.secondary(
                       label: 'Limpar filtros',
                       onPressed: () =>
-                          ref.read(razaoFiltroProvider.notifier).state =
-                              const RazaoFiltro(),
+                          ref.read(ledgerFilterProvider.notifier).state =
+                              const LedgerFilter(),
                     ),
                   ),
                 ],
@@ -113,7 +113,7 @@ class RazaoScreen extends ConsumerWidget {
                     action: FiButton.primary(
                       label: 'Registrar lançamento',
                       icon: Icons.add,
-                      onPressed: () => abrirFormDeLancamento(context, ref),
+                      onPressed: () => openLedgerEntryForm(context, ref),
                     ),
                   ),
                 ],
@@ -125,21 +125,21 @@ class RazaoScreen extends ConsumerWidget {
                 FiLayout.gutter,
                 FiSpace.s3,
                 FiLayout.gutter,
-                _rodapeDoFab,
+                _fabTail,
               ),
               children: [
-                const _Cabecalho(),
+                const _Header(),
                 const SizedBox(height: FiSpace.s5),
-                const _BarraDeFiltros(),
+                const _FilterBar(),
                 FiSection(
                   title: 'Lançamentos',
                   count: data.items.length,
                   child: Column(
                     children: [
                       for (final item in data.items)
-                        _LancamentoObject(
+                        _LedgerEntryObject(
                           item: item,
-                          onDelete: () => apagarLancamento(context, ref, item),
+                          onDelete: () => deleteLedgerEntry(context, ref, item),
                         ),
                     ],
                   ),
@@ -147,7 +147,7 @@ class RazaoScreen extends ConsumerWidget {
                 if (data.hasMore && data.nextCursor != null)
                   Padding(
                     padding: const EdgeInsets.only(top: FiSpace.s3),
-                    child: _MaisAntigos(cursor: data.nextCursor!),
+                    child: _OlderEntries(cursor: data.nextCursor!),
                   ),
               ],
             );
@@ -158,7 +158,7 @@ class RazaoScreen extends ConsumerWidget {
   }
 }
 
-Future<void> apagarLancamento(
+Future<void> deleteLedgerEntry(
   BuildContext context,
   WidgetRef ref,
   LedgerEntry item,
@@ -167,7 +167,7 @@ Future<void> apagarLancamento(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(
-        'Apagar ${lancamentoTipoLabel(item.kind).toLowerCase()} de ${item.symbol}?',
+        'Apagar ${ledgerKindLabel(item.kind).toLowerCase()} de ${item.symbol}?',
       ),
       content: const Text(
         'A carteira é reconstruída sem este lançamento, e a apuração do mês muda junto.',
@@ -188,8 +188,8 @@ Future<void> apagarLancamento(
 
   try {
     await ref.read(apiRepositoryProvider).deleteTransaction(item.id!);
-    ref.invalidate(razaoProvider);
-    ref.invalidate(razaoFiltradoProvider);
+    ref.invalidate(ledgerProvider);
+    ref.invalidate(filteredLedgerProvider);
     ref.invalidate(portfolioProvider);
     ref.invalidate(dashboardProvider);
   } catch (e) {
@@ -203,7 +203,7 @@ Future<void> apagarLancamento(
   }
 }
 
-const _tiposDeLancamento = {
+const _ledgerKindLabels = {
   'buy': 'Compras',
   'sell': 'Vendas',
   'split': 'Desdobramentos',
@@ -214,17 +214,17 @@ const _tiposDeLancamento = {
   'adjust': 'Declarações de posição',
 };
 
-const _periodosDoRazao = {
+const _ledgerPeriods = {
   'mes': 'Este mês',
   'ano': 'Este ano',
   '12m': 'Últimos 12 meses',
 };
 
-String _recorteEmPalavras(RazaoFiltro filtro) {
+String _filterInWords(LedgerFilter filtro) {
   final partes = <String>[
-    if (filtro.periodo != null) _periodosDoRazao[filtro.periodo] ?? filtro.periodo!,
+    if (filtro.period != null) _ledgerPeriods[filtro.period] ?? filtro.period!,
     if (filtro.kinds.length == 1)
-      _tiposDeLancamento[filtro.kinds.first] ?? filtro.kinds.first
+      _ledgerKindLabels[filtro.kinds.first] ?? filtro.kinds.first
     else if (filtro.kinds.length > 1)
       '${filtro.kinds.length} tipos',
     if (filtro.symbol != null) filtro.symbol!,
@@ -232,22 +232,22 @@ String _recorteEmPalavras(RazaoFiltro filtro) {
   return partes.join(' · ');
 }
 
-class _BarraDeFiltros extends ConsumerWidget {
-  const _BarraDeFiltros();
+class _FilterBar extends ConsumerWidget {
+  const _FilterBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filtro = ref.watch(razaoFiltroProvider);
-    final ativos = filtro.ativos;
+    final filtro = ref.watch(ledgerFilterProvider);
+    final activeCount = filtro.activeCount;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
-            filtro.vazio
+            filtro.isEmpty
                 ? 'TODOS OS LANÇAMENTOS'
-                : 'RECORTE · ${_recorteEmPalavras(filtro).toUpperCase()}',
+                : 'RECORTE · ${_filterInWords(filtro).toUpperCase()}',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: FiType.eyebrow.copyWith(color: fiInk3(context)),
@@ -255,33 +255,33 @@ class _BarraDeFiltros extends ConsumerWidget {
         ),
         const SizedBox(width: FiSpace.s3),
         FiButton.secondary(
-          label: ativos == 0 ? 'Filtros' : 'Filtros · $ativos',
+          label: activeCount == 0 ? 'Filtros' : 'Filtros · $activeCount',
           icon: Icons.tune,
-          onPressed: () => abrirFolhaDeFiltros(context),
+          onPressed: () => openLedgerFilterSheet(context),
         ),
       ],
     );
   }
 }
 
-Future<void> abrirFolhaDeFiltros(BuildContext context) => showModalBottomSheet<void>(
+Future<void> openLedgerFilterSheet(BuildContext context) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
   constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
   builder: (context) => Padding(
     padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-    child: const _FolhaDeFiltros(),
+    child: const _LedgerFilterSheet(),
   ),
 );
 
-class _FolhaDeFiltros extends ConsumerWidget {
-  const _FolhaDeFiltros();
+class _LedgerFilterSheet extends ConsumerWidget {
+  const _LedgerFilterSheet();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filtro = ref.watch(razaoFiltroProvider);
-    final notifier = ref.read(razaoFiltroProvider.notifier);
+    final filtro = ref.watch(ledgerFilterProvider);
+    final notifier = ref.read(ledgerFilterProvider.notifier);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -314,13 +314,13 @@ class _FolhaDeFiltros extends ConsumerWidget {
               spacing: FiSpace.s2,
               runSpacing: FiSpace.s2,
               children: [
-                for (final e in _periodosDoRazao.entries)
+                for (final e in _ledgerPeriods.entries)
                   FiChoiceChip(
                     label: e.value,
-                    selected: filtro.periodo == e.key,
-                    onSelected: () => notifier.state = filtro.periodo == e.key
-                        ? filtro.copyWith(limparPeriodo: true)
-                        : filtro.copyWith(periodo: e.key),
+                    selected: filtro.period == e.key,
+                    onSelected: () => notifier.state = filtro.period == e.key
+                        ? filtro.copyWith(clearPeriod: true)
+                        : filtro.copyWith(period: e.key),
                   ),
               ],
             ),
@@ -335,7 +335,7 @@ class _FolhaDeFiltros extends ConsumerWidget {
               spacing: FiSpace.s2,
               runSpacing: FiSpace.s2,
               children: [
-                for (final e in _tiposDeLancamento.entries)
+                for (final e in _ledgerKindLabels.entries)
                   FiChoiceChip(
                     label: e.value,
                     selected: filtro.kinds.contains(e.key),
@@ -354,7 +354,7 @@ class _FolhaDeFiltros extends ConsumerWidget {
               style: FiType.eyebrow.copyWith(color: fiInk3(context)),
             ),
             const SizedBox(height: FiSpace.s3),
-            _FiltroDeTicker(atual: filtro.symbol),
+            _TickerFilter(current: filtro.symbol),
 
             const SizedBox(height: FiSpace.s6),
             FiButton.primary(
@@ -365,9 +365,9 @@ class _FolhaDeFiltros extends ConsumerWidget {
             const SizedBox(height: FiSpace.s2),
             FiButton.quiet(
               label: 'Limpar o recorte',
-              onPressed: filtro.vazio
+              onPressed: filtro.isEmpty
                   ? null
-                  : () => notifier.state = const RazaoFiltro(),
+                  : () => notifier.state = const LedgerFilter(),
             ),
           ],
         ),
@@ -376,16 +376,16 @@ class _FolhaDeFiltros extends ConsumerWidget {
   }
 }
 
-class _FiltroDeTicker extends ConsumerStatefulWidget {
-  const _FiltroDeTicker({this.atual});
+class _TickerFilter extends ConsumerStatefulWidget {
+  const _TickerFilter({this.current});
 
-  final String? atual;
+  final String? current;
 
   @override
-  ConsumerState<_FiltroDeTicker> createState() => _FiltroDeTickerState();
+  ConsumerState<_TickerFilter> createState() => _TickerFilterState();
 }
 
-class _FiltroDeTickerState extends ConsumerState<_FiltroDeTicker> {
+class _TickerFilterState extends ConsumerState<_TickerFilter> {
   final _ticker = TextEditingController();
 
   @override
@@ -396,18 +396,18 @@ class _FiltroDeTickerState extends ConsumerState<_FiltroDeTicker> {
 
   @override
   Widget build(BuildContext context) {
-    final atual = widget.atual;
-    if (atual != null) {
+    final current = widget.current;
+    if (current != null) {
       return Align(
         alignment: Alignment.centerLeft,
         child: FiChoiceChip(
-          label: 'Só $atual',
+          label: 'Só $current',
           selected: true,
           onSelected: () {
             _ticker.clear();
-            ref.read(razaoFiltroProvider.notifier).state = ref
-                .read(razaoFiltroProvider)
-                .copyWith(limparSymbol: true);
+            ref.read(ledgerFilterProvider.notifier).state = ref
+                .read(ledgerFilterProvider)
+                .copyWith(clearSymbol: true);
           },
         ),
       );
@@ -417,55 +417,55 @@ class _FiltroDeTickerState extends ConsumerState<_FiltroDeTicker> {
       controller: _ticker,
       labelText: 'Filtrar por ativo',
       onSelected: (s) {
-        ref.read(razaoFiltroProvider.notifier).state = ref
-            .read(razaoFiltroProvider)
+        ref.read(ledgerFilterProvider.notifier).state = ref
+            .read(ledgerFilterProvider)
             .copyWith(symbol: s.ticker);
       },
     );
   }
 }
 
-class _MaisAntigos extends ConsumerStatefulWidget {
-  const _MaisAntigos({required this.cursor});
+class _OlderEntries extends ConsumerStatefulWidget {
+  const _OlderEntries({required this.cursor});
 
   final String cursor;
 
   @override
-  ConsumerState<_MaisAntigos> createState() => _MaisAntigosState();
+  ConsumerState<_OlderEntries> createState() => _OlderEntriesState();
 }
 
-class _MaisAntigosState extends ConsumerState<_MaisAntigos> {
+class _OlderEntriesState extends ConsumerState<_OlderEntries> {
   final List<LedgerEntry> _extras = [];
   String? _cursor;
-  bool _carregando = false;
-  Object? _erro;
+  bool _loading = false;
+  Object? _error;
 
-  Future<void> _carregar() async {
+  Future<void> _load() async {
     setState(() {
-      _carregando = true;
-      _erro = null;
+      _loading = true;
+      _error = null;
     });
     try {
-      final filtro = ref.read(razaoFiltroProvider);
-      final pagina = await ref
+      final filtro = ref.read(ledgerFilterProvider);
+      final page = await ref
           .read(apiRepositoryProvider)
           .getTransactions(
             symbol: filtro.symbol,
             kinds: filtro.kinds,
-            tradedFrom: fiInicioDoPeriodo(filtro.periodo),
+            tradedFrom: fiPeriodStart(filtro.period),
             cursor: _cursor ?? widget.cursor,
           );
       if (!mounted) return;
       setState(() {
-        _extras.addAll(pagina.items);
-        _cursor = pagina.hasMore ? pagina.nextCursor : null;
-        _carregando = false;
+        _extras.addAll(page.items);
+        _cursor = page.hasMore ? page.nextCursor : null;
+        _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _erro = e;
-        _carregando = false;
+        _error = e;
+        _loading = false;
       });
     }
   }
@@ -478,14 +478,14 @@ class _MaisAntigosState extends ConsumerState<_MaisAntigos> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final item in _extras)
-          _LancamentoObject(
+          _LedgerEntryObject(
             item: item,
-            onDelete: () => apagarLancamento(context, ref, item),
+            onDelete: () => deleteLedgerEntry(context, ref, item),
           ),
-        if (_erro != null) ...[
+        if (_error != null) ...[
           const SizedBox(height: FiSpace.s2),
           Text(
-            fiErrorMessage(_erro!, action: 'carregar os lançamentos anteriores'),
+            fiErrorMessage(_error!, action: 'carregar os lançamentos anteriores'),
             style: FiType.caption.copyWith(
               color: fiStateColor(FiState.adverse, Theme.of(context).brightness),
             ),
@@ -494,9 +494,9 @@ class _MaisAntigosState extends ConsumerState<_MaisAntigos> {
         const SizedBox(height: FiSpace.s2),
         if (temMais)
           FiButton.secondary(
-            label: _carregando ? 'Carregando…' : 'Carregar os anteriores',
-            busy: _carregando,
-            onPressed: _carregando ? null : _carregar,
+            label: _loading ? 'Carregando…' : 'Carregar os anteriores',
+            busy: _loading,
+            onPressed: _loading ? null : _load,
           )
         else
           Text(
@@ -508,8 +508,8 @@ class _MaisAntigosState extends ConsumerState<_MaisAntigos> {
   }
 }
 
-class _Cabecalho extends StatelessWidget {
-  const _Cabecalho();
+class _Header extends StatelessWidget {
+  const _Header();
 
   @override
   Widget build(BuildContext context) {
@@ -540,8 +540,8 @@ class _Cabecalho extends StatelessWidget {
   }
 }
 
-class _LancamentoObject extends StatelessWidget {
-  const _LancamentoObject({required this.item, required this.onDelete});
+class _LedgerEntryObject extends StatelessWidget {
+  const _LedgerEntryObject({required this.item, required this.onDelete});
 
   final LedgerEntry item;
   final VoidCallback onDelete;
@@ -564,8 +564,8 @@ class _LancamentoObject extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: FiSpace.s2),
-                FiTag.serie(
-                  label: lancamentoTipoLabel(item.kind),
+                FiTag.series(
+                  label: ledgerKindLabel(item.kind),
                   color: fiInk2(context),
                 ),
                 IconButton(
@@ -579,17 +579,17 @@ class _LancamentoObject extends StatelessWidget {
             FiRows(
               children: [
                 FiDataRow(label: 'Data', value: formatDate(item.tradedOn)),
-                if (item.temQuantidade)
+                if (item.hasQuantity)
                   FiDataRow(
                     label: 'Quantidade',
                     value: formatQuantity(item.quantity),
                   ),
-                if (item.temPreco)
+                if (item.hasPrice)
                   FiDataRow(label: 'Preço', value: formatCurrency(item.price)),
-                if (item.temPreco)
+                if (item.hasPrice)
                   FiDataRow(
                     label: 'Valor bruto',
-                    value: formatCurrency(item.valorBruto),
+                    value: formatCurrency(item.grossValue),
                   ),
                 if (item.fees > 0)
                   FiDataRow(label: 'Custos', value: formatCurrency(item.fees)),
@@ -620,42 +620,42 @@ class _LancamentoObject extends StatelessWidget {
   }
 }
 
-class _LancamentoForm extends ConsumerStatefulWidget {
-  const _LancamentoForm();
+class _LedgerEntryForm extends ConsumerStatefulWidget {
+  const _LedgerEntryForm();
 
   @override
-  ConsumerState<_LancamentoForm> createState() => _LancamentoFormState();
+  ConsumerState<_LedgerEntryForm> createState() => _LedgerEntryFormState();
 }
 
-class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
+class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
   final _formKey = GlobalKey<FormState>();
   final _ticker = TextEditingController();
-  final _quantidade = TextEditingController();
-  final _preco = TextEditingController();
-  final _custos = TextEditingController(text: '0');
-  final _de = TextEditingController(text: '1');
-  final _para = TextEditingController(text: '2');
-  final _valor = TextEditingController();
-  final _nota = TextEditingController();
+  final _quantityFormat = TextEditingController();
+  final _price = TextEditingController();
+  final _fees = TextEditingController(text: '0');
+  final _from = TextEditingController(text: '1');
+  final _to = TextEditingController(text: '2');
+  final _amount = TextEditingController();
+  final _note = TextEditingController();
 
   String _kind = 'buy';
-  DateTime _data = DateTime.now();
-  bool _salvando = false;
+  DateTime _date = DateTime.now();
+  bool _saving = false;
 
   @override
   void dispose() {
     _ticker.dispose();
-    _quantidade.dispose();
-    _preco.dispose();
-    _custos.dispose();
-    _de.dispose();
-    _para.dispose();
-    _valor.dispose();
-    _nota.dispose();
+    _quantityFormat.dispose();
+    _price.dispose();
+    _fees.dispose();
+    _from.dispose();
+    _to.dispose();
+    _amount.dispose();
+    _note.dispose();
     super.dispose();
   }
 
-  bool get _pedeQuantidade => const {
+  bool get _needsQuantity => const {
     'buy',
     'sell',
     'bonus',
@@ -664,34 +664,34 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
     'adjust',
   }.contains(_kind);
 
-  bool get _pedePreco => _kind == 'buy' || _kind == 'sell' || _kind == 'adjust';
+  bool get _needsPrice => _kind == 'buy' || _kind == 'sell' || _kind == 'adjust';
 
-  double _numero(TextEditingController c) =>
+  double _number(TextEditingController c) =>
       double.tryParse(c.text.trim().replaceAll(',', '.')) ?? 0;
 
-  Future<void> _salvar() async {
+  Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _salvando = true);
+    setState(() => _saving = true);
     try {
       await ref
           .read(apiRepositoryProvider)
           .createTransaction(
             kind: _kind,
             symbol: _ticker.text.trim().toUpperCase(),
-            tradedOn: _data.toIso8601String().substring(0, 10),
-            quantity: _pedeQuantidade ? _numero(_quantidade) : 0,
-            price: _pedePreco ? _numero(_preco) : 0,
-            fees: _numero(_custos),
-            ratioFrom: _kind == 'split' ? _numero(_de) : 1,
-            ratioTo: _kind == 'split' ? _numero(_para) : 1,
-            amount: _kind == 'amortization' ? _numero(_valor) : 0,
-            note: _nota.text.trim().isEmpty ? null : _nota.text.trim(),
+            tradedOn: _date.toIso8601String().substring(0, 10),
+            quantity: _needsQuantity ? _number(_quantityFormat) : 0,
+            price: _needsPrice ? _number(_price) : 0,
+            fees: _number(_fees),
+            ratioFrom: _kind == 'split' ? _number(_from) : 1,
+            ratioTo: _kind == 'split' ? _number(_to) : 1,
+            amount: _kind == 'amortization' ? _number(_amount) : 0,
+            note: _note.text.trim().isEmpty ? null : _note.text.trim(),
           );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        setState(() => _salvando = false);
+        setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(fiErrorMessage(e, action: 'registrar o lançamento'))),
         );
@@ -701,7 +701,7 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
 
   @override
   Widget build(BuildContext context) {
-    final explicacao = lancamentoTipoExplicacao(_kind);
+    final explicacao = ledgerKindExplanation(_kind);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -725,7 +725,7 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
                 initialValue: _kind,
                 decoration: const InputDecoration(labelText: 'Tipo'),
                 items: [
-                  for (final e in fiTiposDeLancamento.entries)
+                  for (final e in fiLedgerKinds.entries)
                     DropdownMenuItem(value: e.key, child: Text(e.value)),
                 ],
                 onChanged: (v) => setState(() => _kind = v ?? 'buy'),
@@ -746,25 +746,25 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
                   onTap: () async {
                     final escolhida = await showDatePicker(
                       context: context,
-                      initialDate: _data,
+                      initialDate: _date,
                       firstDate: DateTime(2000),
                       lastDate: DateTime.now(),
                     );
-                    if (escolhida != null) setState(() => _data = escolhida);
+                    if (escolhida != null) setState(() => _date = escolhida);
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
                     child: Text(
-                      formatDate(_data.toIso8601String().substring(0, 10)),
+                      formatDate(_date.toIso8601String().substring(0, 10)),
                       style: FiType.body.copyWith(color: fiInk1(context)),
                     ),
                   ),
                 ),
               ),
-              if (_pedeQuantidade) ...[
+              if (_needsQuantity) ...[
                 const SizedBox(height: FiSpace.s3),
                 TextFormField(
-                  controller: _quantidade,
+                  controller: _quantityFormat,
                   decoration: const InputDecoration(labelText: 'Quantidade'),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (v) {
@@ -774,10 +774,10 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
                   },
                 ),
               ],
-              if (_pedePreco) ...[
+              if (_needsPrice) ...[
                 const SizedBox(height: FiSpace.s3),
                 TextFormField(
-                  controller: _preco,
+                  controller: _price,
                   decoration: const InputDecoration(
                     labelText: 'Preço por unidade',
                     prefixText: 'R\$ ',
@@ -796,7 +796,7 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
                   children: [
                     Expanded(
                       child: TextFormField(
-                        controller: _de,
+                        controller: _from,
                         decoration: const InputDecoration(labelText: 'De'),
                         keyboardType: TextInputType.number,
                       ),
@@ -804,7 +804,7 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
                     const SizedBox(width: FiSpace.s3),
                     Expanded(
                       child: TextFormField(
-                        controller: _para,
+                        controller: _to,
                         decoration: const InputDecoration(labelText: 'Para'),
                         keyboardType: TextInputType.number,
                       ),
@@ -815,7 +815,7 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
               if (_kind == 'amortization') ...[
                 const SizedBox(height: FiSpace.s3),
                 TextFormField(
-                  controller: _valor,
+                  controller: _amount,
                   decoration: const InputDecoration(
                     labelText: 'Valor devolvido',
                     prefixText: 'R\$ ',
@@ -830,7 +830,7 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
               ],
               const SizedBox(height: FiSpace.s3),
               TextFormField(
-                controller: _custos,
+                controller: _fees,
                 decoration: const InputDecoration(
                   labelText: 'Custos da operação',
                   prefixText: 'R\$ ',
@@ -840,13 +840,13 @@ class _LancamentoFormState extends ConsumerState<_LancamentoForm> {
               ),
               const SizedBox(height: FiSpace.s3),
               TextFormField(
-                controller: _nota,
+                controller: _note,
                 decoration: const InputDecoration(labelText: 'Observação (opcional)'),
               ),
               const SizedBox(height: FiSpace.s5),
               FiButton.primary(
-                label: _salvando ? 'Registrando…' : 'Registrar lançamento',
-                onPressed: _salvando ? null : _salvar,
+                label: _saving ? 'Registrando…' : 'Registrar lançamento',
+                onPressed: _saving ? null : _save,
               ),
             ],
           ),

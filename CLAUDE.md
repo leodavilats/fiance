@@ -159,8 +159,8 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 - **Estado de tela é contrato:** `AsyncValue.when` com `FiSkeleton`/`FiErrorState`. A falha guarda o
   **erro**, não um booleano. Vazio e falha nunca compartilham a mesma tela.
 - **Falha usa `fiErrorMessage`**, nunca texto solto.
-- **Preço vem com `formatIdade`.** Em lista, o carimbo é o **mais antigo**.
-- **Espera é `FiSkeleton.tela()`**, nunca disco girando.
+- **Preço vem com `formatAge`.** Em lista, o carimbo é o **mais antigo**.
+- **Espera é `FiSkeleton.screen()`**, nunca disco girando.
 - **Número em português é do formatador**, não do template.
 
 ---

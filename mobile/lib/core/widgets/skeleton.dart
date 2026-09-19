@@ -11,7 +11,7 @@ class FiSkeleton extends StatefulWidget {
   final FiSkeletonShape shape;
   final int count;
 
-  static Widget tela({
+  static Widget screen({
     FiSkeletonShape shape = FiSkeletonShape.row,
     int count = 5,
     String label = 'Carregando estas informações',
@@ -31,9 +31,9 @@ class FiSkeleton extends StatefulWidget {
     );
   }
 
-  static Widget pagina({
+  static Widget page({
     bool manchete = true,
-    List<int> secoes = const [3, 2],
+    List<int> sections = const [3, 2],
     String label = 'Carregando estas informações',
   }) {
     return Semantics(
@@ -54,7 +54,7 @@ class FiSkeleton extends StatefulWidget {
             const SizedBox(height: FiSpace.s3),
             const FiSkeleton(shape: FiSkeletonShape.body, count: 2),
           ],
-          for (final linhas in secoes) ...[
+          for (final linhas in sections) ...[
             const SizedBox(height: FiSpace.s8),
             const FiSkeleton(shape: FiSkeletonShape.caption),
             const SizedBox(height: FiSpace.s3),
@@ -65,7 +65,7 @@ class FiSkeleton extends StatefulWidget {
     );
   }
 
-  static Widget secao({int count = 3}) =>
+  static Widget section({int count = 3}) =>
       FiSkeleton(shape: FiSkeletonShape.row, count: count);
 
   @override
@@ -73,7 +73,7 @@ class FiSkeleton extends StatefulWidget {
 }
 
 class _FiSkeletonState extends State<FiSkeleton> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulso = AnimationController(
+  late final AnimationController _pulse = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1400),
   );
@@ -81,16 +81,16 @@ class _FiSkeletonState extends State<FiSkeleton> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _pulso.repeat(reverse: true);
+    _pulse.repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    _pulso.dispose();
+    _pulse.dispose();
     super.dispose();
   }
 
-  double get _altura => switch (widget.shape) {
+  double get _height => switch (widget.shape) {
     FiSkeletonShape.moneyXl => 40,
     FiSkeletonShape.verdict => 26,
     FiSkeletonShape.metric => 26,
@@ -130,10 +130,10 @@ class _FiSkeletonState extends State<FiSkeleton> with SingleTickerProviderStateM
 
     return ExcludeSemantics(
       child: AnimatedBuilder(
-        animation: _pulso,
+        animation: _pulse,
         builder: (context, _) {
           final reduzido = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-          final opacidade = reduzido ? 0.30 : 0.30 * (1 - 0.45 * _pulso.value);
+          final opacidade = reduzido ? 0.30 : 0.30 * (1 - 0.45 * _pulse.value);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,7 +145,7 @@ class _FiSkeletonState extends State<FiSkeleton> with SingleTickerProviderStateM
                     alignment: Alignment.centerLeft,
                     widthFactor: larguras[i],
                     child: Container(
-                      height: _altura,
+                      height: _height,
                       decoration: BoxDecoration(
                         color: tinta.withValues(alpha: opacidade),
                         borderRadius: BorderRadius.circular(FiRadius.sm),

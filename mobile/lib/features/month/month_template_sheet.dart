@@ -5,68 +5,68 @@ import '../../core/cash_models.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/format.dart';
 import '../../core/labels.dart';
-import '../../core/mes.dart';
+import '../../core/month.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 
-Future<void> abrirMoldeSheet(BuildContext context, WidgetRef ref) {
+Future<void> openMonthTemplateSheet(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => const _MoldeSheet(),
+    builder: (context) => const _TemplateSheet(),
   );
 }
 
-class _MoldeSheet extends ConsumerStatefulWidget {
-  const _MoldeSheet();
+class _TemplateSheet extends ConsumerStatefulWidget {
+  const _TemplateSheet();
 
   @override
-  ConsumerState<_MoldeSheet> createState() => _MoldeSheetState();
+  ConsumerState<_TemplateSheet> createState() => _TemplateSheetState();
 }
 
-class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
-  CashMonthTemplate? _molde;
-  Set<int> _escolhidos = {};
-  Object? _erro;
-  bool _salvando = false;
+class _TemplateSheetState extends ConsumerState<_TemplateSheet> {
+  CashMonthTemplate? _template;
+  Set<int> _chosen = {};
+  Object? _error;
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _carregar();
+    _load();
   }
 
-  Future<void> _carregar() async {
-    final alvo = ref.read(mesEscolhidoProvider);
+  Future<void> _load() async {
+    final alvo = ref.read(selectedMonthProvider);
     try {
       final m = await ref
           .read(apiRepositoryProvider)
-          .getMonthTemplate(target: alvo, source: mesAnterior(alvo));
+          .getMonthTemplate(target: alvo, source: previousMonth(alvo));
       if (!mounted) return;
       setState(() {
-        _molde = m;
-        _escolhidos = {
+        _template = m;
+        _chosen = {
           for (var i = 0; i < m.candidates.length; i++)
             if (m.candidates[i].repeats && !m.candidates[i].alreadyThere) i,
         };
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _erro = e);
+      setState(() => _error = e);
     }
   }
 
-  Future<void> _gravar() async {
-    final m = _molde;
-    if (m == null || _escolhidos.isEmpty) return;
+  Future<void> _store() async {
+    final m = _template;
+    if (m == null || _chosen.isEmpty) return;
 
-    setState(() => _salvando = true);
+    setState(() => _saving = true);
     try {
-      final lote = [for (final i in _escolhidos) m.candidates[i]];
+      final lote = [for (final i in _chosen) m.candidates[i]];
       await ref.read(apiRepositoryProvider).createCashEntriesBatch(lote);
 
       ref.invalidate(cashMonthProvider);
@@ -80,22 +80,22 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
         SnackBar(
           content: Text(
             '$quantos ${quantos == 1 ? 'lançamento copiado' : 'lançamentos copiados'} '
-            'para ${nomeDoMes(m.target)}',
+            'para ${monthName(m.target)}',
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _salvando = false;
-        _erro = e;
+        _saving = false;
+        _error = e;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final erro = _erro;
+    final erro = _error;
     if (erro != null) {
       return SafeArea(
         child: Padding(
@@ -104,15 +104,15 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
             error: erro,
             action: 'montar o molde do mês',
             onRetry: () {
-              setState(() => _erro = null);
-              _carregar();
+              setState(() => _error = null);
+              _load();
             },
           ),
         ),
       );
     }
 
-    final m = _molde;
+    final m = _template;
     if (m == null) {
       return const SafeArea(
         child: Padding(
@@ -140,13 +140,13 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Repetir ${nomeDoMes(m.source)}',
+              'Repetir ${monthName(m.source)}',
               style: FiType.pageTitle.copyWith(color: fiInk1(context)),
             ),
             const SizedBox(height: FiSpace.s2),
             Text(
               disponiveis.isEmpty
-                  ? 'Tudo que ${nomeDoMes(m.source)} tinha já está em ${nomeDoMes(m.target)}.'
+                  ? 'Tudo que ${monthName(m.source)} tinha já está em ${monthName(m.target)}.'
                   : 'Vem marcado o que repete todo mês. O gasto variável fica desmarcado: o '
                         'valor do mês que passou é fato daquele mês.',
               style: FiType.body.copyWith(color: fiInk2(context)),
@@ -167,12 +167,12 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
                               '${cashCategoryLabel(m.candidates[i].kind, m.candidates[i].category)}'
                               '${m.candidates[i].repeats ? '' : ' · variável'}',
                           trailing: Checkbox(
-                            value: _escolhidos.contains(i),
+                            value: _chosen.contains(i),
                             onChanged: (v) => setState(() {
                               if (v ?? false) {
-                                _escolhidos.add(i);
+                                _chosen.add(i);
                               } else {
-                                _escolhidos.remove(i);
+                                _chosen.remove(i);
                               }
                             }),
                           ),
@@ -185,14 +185,14 @@ class _MoldeSheetState extends ConsumerState<_MoldeSheet> {
 
             const SizedBox(height: FiSpace.s5),
             FiButton.primary(
-              label: _escolhidos.isEmpty
+              label: _chosen.isEmpty
                   ? 'Escolha o que copiar'
-                  : 'Copiar ${_escolhidos.length} para ${nomeDoMes(m.target)}',
+                  : 'Copiar ${_chosen.length} para ${monthName(m.target)}',
               expand: true,
-              busy: _salvando,
-              onPressed: _escolhidos.isEmpty ? null : _gravar,
+              busy: _saving,
+              onPressed: _chosen.isEmpty ? null : _store,
             ),
-            if (_escolhidos.isNotEmpty)
+            if (_chosen.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: FiSpace.s2),
                 child: Text(

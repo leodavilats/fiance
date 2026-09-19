@@ -21,7 +21,7 @@ enum FiAssetGroupMode {
 
   final String slug;
 
-  static FiAssetGroupMode deSlug(String? slug) => values.firstWhere(
+  static FiAssetGroupMode fromSlug(String? slug) => values.firstWhere(
     (m) => m.slug == slug,
     orElse: () => FiAssetGroupMode.value,
   );
@@ -49,7 +49,7 @@ class FiGroupedPositionsList extends ConsumerWidget {
     return sorted;
   }
 
-  Widget _objetos(List<PortfolioPosition> items) {
+  Widget _objects(List<PortfolioPosition> items) {
     return Column(
       children: _sortedByValue(items)
           .map(
@@ -66,16 +66,16 @@ class FiGroupedPositionsList extends ConsumerWidget {
     );
   }
 
-  double _valorDe(List<PortfolioPosition> items) =>
+  double _valueOf(List<PortfolioPosition> items) =>
       items.fold<double>(0, (s, p) => s + (p.currentValue ?? 0));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (mode == FiAssetGroupMode.value) {
-      return _objetos(positions);
+      return _objects(positions);
     }
 
-    final totalValue = _valorDe(positions);
+    final totalValue = _valueOf(positions);
 
     final porCategoria = mode == FiAssetGroupMode.category;
     final goals = porCategoria
@@ -92,13 +92,13 @@ class FiGroupedPositionsList extends ConsumerWidget {
     }
 
     final entries = groups.entries.toList()
-      ..sort((a, b) => _valorDe(b.value).compareTo(_valorDe(a.value)));
+      ..sort((a, b) => _valueOf(b.value).compareTo(_valueOf(a.value)));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: entries.expand((e) {
-        final atualPct = totalValue > 0 ? _valorDe(e.value) / totalValue * 100 : 0.0;
-        final metaPct = porCategoria
+        final atualPct = totalValue > 0 ? _valueOf(e.value) / totalValue * 100 : 0.0;
+        final targetPct = porCategoria
             ? goals.where((g) => g.category == e.key).firstOrNull?.targetPct
             : sectorGoals.where((g) => g.sector == e.key).firstOrNull?.targetPct;
 
@@ -108,11 +108,11 @@ class FiGroupedPositionsList extends ConsumerWidget {
                 ? categoryLabel(e.key)
                 : translateSector(e.key == '—' ? null : e.key),
             count: e.value.length,
-            trailing: metaPct != null
-                ? '${formatPercent(atualPct)} de ${formatPercent(metaPct)}'
+            trailing: targetPct != null
+                ? '${formatPercent(atualPct)} de ${formatPercent(targetPct)}'
                 : formatPercent(atualPct),
             initiallyOpen: entries.length <= 3,
-            child: _objetos(e.value),
+            child: _objects(e.value),
           ),
         ];
       }).toList(),
@@ -120,8 +120,8 @@ class FiGroupedPositionsList extends ConsumerWidget {
   }
 }
 
-class _FundoDeArrasto extends StatelessWidget {
-  const _FundoDeArrasto({
+class _SwipeBackground extends StatelessWidget {
+  const _SwipeBackground({
     required this.label,
     required this.state,
     required this.alignment,
@@ -199,13 +199,13 @@ class _FiAssetObject extends StatelessWidget {
         return confirmado ?? false;
       },
       onDismissed: (_) => onDelete(),
-      background: _FundoDeArrasto(
+      background: _SwipeBackground(
         label: 'Vender',
         state: FiState.attention,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: FiSpace.s5),
       ),
-      secondaryBackground: _FundoDeArrasto(
+      secondaryBackground: _SwipeBackground(
         label: 'Remover',
         state: FiState.adverse,
         alignment: Alignment.centerRight,
@@ -235,7 +235,7 @@ class _FiAssetObject extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: FiSpace.s2),
-                          FiTag.serie(
+                          FiTag.series(
                             label: categoryLabel(p.categoryResolved),
                             color: categoryColor(p.categoryResolved, brightness),
                           ),

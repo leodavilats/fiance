@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/patrimonio/patrimonio_screen.dart';
-import '../features/patrimonio/widgets/patrimonio_positions.dart';
-import '../features/patrimonio/proventos_screen.dart';
-import '../features/patrimonio/razao_screen.dart';
+import '../features/patrimony/patrimony_screen.dart';
+import '../features/patrimony/widgets/patrimony_positions.dart';
+import '../features/patrimony/dividends_screen.dart';
+import '../features/patrimony/ledger_screen.dart';
 import '../features/assets/fixed_income_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
-import '../features/mes/feed_screen.dart';
-import '../features/mes/dividas_screen.dart';
-import '../features/mes/mes_screen.dart';
-import '../features/sobra/sobra_screen.dart';
-import '../features/sobra/desvio_screen.dart';
-import '../features/config/objetivos_screen.dart';
-import '../features/mes/atividade_screen.dart';
+import '../features/month/feed_screen.dart';
+import '../features/month/debts_screen.dart';
+import '../features/month/month_screen.dart';
+import '../features/surplus/surplus_screen.dart';
+import '../features/surplus/allocation_drift_screen.dart';
+import '../features/config/goals_screen.dart';
+import '../features/month/activity_screen.dart';
 import '../features/tools/income_compare_view.dart';
 import '../features/market/opportunities_tab.dart';
 import '../features/market/quick_invest_view.dart';
@@ -63,11 +63,11 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/mes',
-              builder: (context, state) => const MesScreen(),
+              builder: (context, state) => const MonthScreen(),
               routes: [
                 GoRoute(
                   path: 'atividade',
-                  builder: (context, state) => const AtividadeScreen(),
+                  builder: (context, state) => const ActivityScreen(),
                 ),
                 GoRoute(
                   path: 'feed',
@@ -75,7 +75,7 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: 'dividas',
-                  builder: (context, state) => const DividasScreen(),
+                  builder: (context, state) => const DebtsScreen(),
                 ),
               ],
             ),
@@ -86,7 +86,7 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/sobra',
-              builder: (context, state) => const SobraScreen(),
+              builder: (context, state) => const SurplusScreen(),
               routes: [
                 GoRoute(
                   path: 'aporte',
@@ -99,7 +99,7 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: 'desvio',
-                  builder: (context, state) => const DesvioScreen(),
+                  builder: (context, state) => const AllocationDriftScreen(),
                 ),
               ],
             ),
@@ -110,8 +110,8 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/patrimonio',
-              builder: (context, state) => PatrimonioScreen(
-                recorte: FiAssetGroupMode.deSlug(
+              builder: (context, state) => PatrimonyScreen(
+                groupMode: FiAssetGroupMode.fromSlug(
                   state.uri.queryParameters['por'],
                 ),
               ),
@@ -122,11 +122,11 @@ final appRouter = GoRouter(
                 ),
                 GoRoute(
                   path: 'razao',
-                  builder: (context, state) => const RazaoScreen(),
+                  builder: (context, state) => const LedgerScreen(),
                 ),
                 GoRoute(
                   path: 'proventos',
-                  builder: (context, state) => const ProventosScreen(),
+                  builder: (context, state) => const DividendsScreen(),
                 ),
                 GoRoute(
                   path: 'projecao',
@@ -145,7 +145,7 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/descobrir',
-              builder: (context, state) => const _DescobrirScreen(),
+              builder: (context, state) => const _DiscoverScreen(),
               routes: [
                 GoRoute(
                   path: 'quedas',
@@ -170,7 +170,7 @@ final appRouter = GoRouter(
                     title: 'Renda fixa',
                     question:
                         'Entre estes títulos, qual rende mais depois do IR?',
-                    child: RendaFixaSimulatorView(),
+                    child: FixedIncomeSimulatorView(),
                   ),
                 ),
                 GoRoute(
@@ -196,23 +196,23 @@ final appRouter = GoRouter(
               routes: [
                 GoRoute(
                   path: 'objetivos',
-                  builder: (context, state) => const ObjetivosScreen(),
+                  builder: (context, state) => const GoalsScreen(),
                 ),
                 GoRoute(
                   path: 'investir',
-                  builder: (context, state) => const InvestirScreen(),
+                  builder: (context, state) => const InvestingScreen(),
                 ),
                 GoRoute(
                   path: 'avisos',
-                  builder: (context, state) => const AvisosScreen(),
+                  builder: (context, state) => const NotificationsScreen(),
                 ),
                 GoRoute(
                   path: 'aparencia',
-                  builder: (context, state) => const AparenciaScreen(),
+                  builder: (context, state) => const AppearanceScreen(),
                 ),
                 GoRoute(
                   path: 'conta',
-                  builder: (context, state) => const ContaScreen(),
+                  builder: (context, state) => const AccountScreen(),
                 ),
               ],
             ),
@@ -231,8 +231,8 @@ final appRouter = GoRouter(
   ],
 );
 
-class _DescobrirScreen extends StatelessWidget {
-  const _DescobrirScreen();
+class _DiscoverScreen extends StatelessWidget {
+  const _DiscoverScreen();
 
   @override
   Widget build(BuildContext context) {
