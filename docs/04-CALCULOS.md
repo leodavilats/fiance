@@ -217,35 +217,44 @@ Este é o `band_verdict`, e é ele que os falsificadores de preço leem ao contr
 ```mermaid
 flowchart TD
     TIPO{"Tipo do ativo"}
-    TIPO -->|Ação| ACAO["Candidatos: Bazin · Graham · Lucros descontados"]
-    TIPO -->|BDR| BDR["Candidatos: Graham · Lucros descontados<br/>Bazin é desligado de propósito"]
-    TIPO -->|FII| FII["Candidatos: Bazin · VPA"]
-    TIPO -->|ETF| ETF["Candidato: Bazin<br/>(ETF de índice não tem dividendo que o sustente)"]
+    TIPO -->|"Ação"| BAZIN
+    TIPO -->|"Ação"| GRAHAM
+    TIPO -->|"Ação"| DESC
+    TIPO -->|"BDR — Bazin desligado de propósito"| GRAHAM
+    TIPO -->|"BDR"| DESC
+    TIPO -->|"FII"| BAZIN
+    TIPO -->|"FII"| VPA
+    TIPO -->|"ETF"| BAZIN
 
-    ACAO --> COND
-    BDR --> COND
-    FII --> COND
-    ETF --> COND
+    BAZIN["Bazin<br/>preço = dividendo médio de 5 anos ÷ yield exigido<br/>yield: 6% ação · 10% FII · 4% BDR e ETF, configurável<br/>abstém-se sem dividendo médio positivo"]
+    GRAHAM["Graham<br/>preço = raiz de (22,5 × LPA × VPA)<br/>abstém-se com P/L acima de 15 ou P/VP acima de 1,5<br/>e sem LPA e VPA positivos"]
+    DESC["Lucros descontados<br/>preço = Σ para t de 1 a 5 de LPA×(1+g)^t ÷ 1,13^t<br/>mais LPA×(1+g)^5 × 15 ÷ 1,13^5<br/>g = crescimento de receita: 0 se não cresce, o próprio valor até 25%,<br/>e de volta ao padrão de 8% acima disso<br/>abstém-se sem LPA positivo"]
+    VPA["VPA<br/>preço = valor patrimonial por cota"]
 
-    COND{"Cada candidato passa na própria condição?<br/>Bazin: dividendo médio 5a maior que 0<br/>Graham: LPA e VPA maiores que 0, P/L até 15, P/VP até 1,5<br/>Descontados: LPA maior que 0"}
-    COND -->|"nenhum sobra"| SEMFAIXA
-    COND -->|"sobra 1 ou mais"| FAIXA["Faixa = do menor ao maior dos que sobraram<br/>1 método = faixa de um ponto"]
+    BAZIN --> COND
+    GRAHAM --> COND
+    DESC --> COND
+    VPA --> COND
+
+    COND{"Quantos métodos sobraram?"}
+    COND -->|"nenhum"| SEMFAIXA
+    COND -->|"um ou mais"| FAIXA["piso = o menor dos que sobraram<br/>teto = o maior<br/>dispersão = teto ÷ piso<br/>acima de 2× a faixa é declarada larga"]
 
     FAIXA --> MARGEM{"Onde o preço está?"}
-    MARGEM -->|"abaixo do piso"| MPOS["margem = piso menos preço, sobre o piso"]
-    MARGEM -->|"dentro da faixa"| MZERO["margem = 0"]
-    MARGEM -->|"acima do teto"| MNEG["margem = teto menos preço, sobre o teto"]
+    MARGEM -->|"preço abaixo do piso"| MPOS["margem = (piso − preço) ÷ piso"]
+    MARGEM -->|"preço entre piso e teto"| MZERO["margem = 0"]
+    MARGEM -->|"preço acima do teto"| MNEG["margem = (teto − preço) ÷ teto"]
 
     MPOS --> BANDA
     MZERO --> BANDA
     MNEG --> BANDA
 
     BANDA{"Veredito de faixa, só pela margem"}
-    BANDA -->|"+30% ou mais"| SB["Comprar com convicção"]
-    BANDA -->|"+15% a +30%"| B["Comprar"]
-    BANDA -->|"entre -15% e +15%"| H["Manter"]
-    BANDA -->|"-15% a -30%"| S["Vender"]
-    BANDA -->|"-30% ou menos"| SS["Vender com urgência"]
+    BANDA -->|"margem ≥ +30%"| SB["Comprar com convicção"]
+    BANDA -->|"+15% ≤ margem < +30%"| B["Comprar"]
+    BANDA -->|"−15% < margem < +15%"| H["Manter"]
+    BANDA -->|"−30% < margem ≤ −15%"| S["Vender"]
+    BANDA -->|"margem ≤ −30%"| SS["Vender com urgência"]
 
     SB --> TEND
     B --> TEND
@@ -253,24 +262,24 @@ flowchart TD
     S --> TEND
     SS --> TEND
 
-    TEND{"Tendência: média de 50 contra a de 200"}
-    TEND -->|"alta"| RSI["(só aumenta a confiança)"]
-    TEND -->|"sem tendência"| RSI
-    TEND -->|"baixa"| QUEDA["Convicção vira Comprar<br/>Comprar vira Manter<br/>Manter vira VENDER<br/>Vender continua Vender"]
+    TEND{"Tendência = média de 50 dias contra a de 200"}
+    TEND -->|"50 acima de 200"| RSI["alta: o veredito não muda<br/>a confiança sobe 0,1 se for Manter ou Vender"]
+    TEND -->|"sem histórico"| RSI
+    TEND -->|"50 abaixo de 200"| QUEDA["baixa:<br/>Convicção vira Comprar<br/>Comprar vira Manter<br/>Manter vira VENDER<br/>Vender e Urgência ficam"]
     QUEDA --> RSI
 
     RSI --> RSIQ{"RSI de 14 dias"}
-    RSIQ -->|"70 ou mais"| RA["Comprar vira Manter"]
-    RSIQ -->|"30 ou menos"| RB["Manter vira Comprar<br/>não alcança o que a queda já rebaixou para Vender"]
-    RSIQ -->|"entre 30 e 70"| FIM
+    RSIQ -->|"RSI ≥ 70"| RA["sobrecomprado: Comprar vira Manter"]
+    RSIQ -->|"RSI ≤ 30"| RB["sobrevendido: Manter vira Comprar<br/>não alcança o que a queda já rebaixou para Vender"]
+    RSIQ -->|"30 < RSI < 70"| FIM
     RA --> FIM
     RB --> FIM
-    FIM["Etiqueta final · basis = band<br/>falsificadores: preço-limite das duas bandas vizinhas"]
+    FIM["Etiqueta final · basis = band<br/>falsificador de preço, para a banda vizinha de margem m:<br/>alvo = piso × (1 − m) se m ≥ 0, teto × (1 − m) se m < 0<br/>falsificador de dividendo, só com Bazin no piso:<br/>corte = 1 − (preço ÷ 0,85) ÷ Bazin"]
 
     SEMFAIXA{"Tem RSI?"}
-    SEMFAIXA -->|"não"| UNK["Sem dados suficientes · sem falsificador"]
-    SEMFAIXA -->|"sim"| TENDONLY["Alta e RSI abaixo de 70: Comprar<br/>Baixa e RSI acima de 30: Vender<br/>RSI 30 ou menos: Comprar<br/>RSI 70 ou mais: Manter<br/>senão: Manter"]
-    TENDONLY --> FIMT["Etiqueta final · basis = trend<br/>falsificador: a tendência virar"]
+    SEMFAIXA -->|"não"| UNK["Sem dados suficientes<br/>margem = nula · sem falsificador"]
+    SEMFAIXA -->|"sim"| TENDONLY["alta e RSI < 70: Comprar<br/>baixa e RSI > 30: Vender<br/>RSI ≤ 30: Comprar<br/>RSI ≥ 70: Manter<br/>senão: Manter"]
+    TENDONLY --> FIMT["Etiqueta final · basis = trend · confiança 0,35<br/>falsificador: a tendência virar, e o RSI cruzar 30 ou 70"]
 ```
 
 ### O que o desenho torna visível
