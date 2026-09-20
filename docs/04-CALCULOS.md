@@ -197,7 +197,9 @@ a fonte.**
 
 ## Veredito
 
-Sai **apenas** da margem de segurança. `analysis/decision.py:37`
+Sai da margem de segurança, e depois é **ajustado pela análise técnica**. `analysis/decision.py`
+
+### O veredito de faixa, só pela margem
 
 | Margem | Veredito | Rótulo |
 |---|---|---|
@@ -206,14 +208,89 @@ Sai **apenas** da margem de segurança. `analysis/decision.py:37`
 | entre −15% e +15% | `HOLD` | Manter |
 | ≤ −15% | `SELL` | Vender |
 | ≤ −30% | `STRONG_SELL` | Vender com urgência |
-| sem preço justo | `UNKNOWN` | Sem dados suficientes |
+| sem faixa e sem tendência | `UNKNOWN` | Sem dados suficientes |
+
+Este é o `band_verdict`, e é ele que os falsificadores de preço leem ao contrário.
+
+### O caminho inteiro, do tipo do ativo à etiqueta
+
+```mermaid
+flowchart TD
+    TIPO{"Tipo do ativo"}
+    TIPO -->|Ação| ACAO["Candidatos: Bazin · Graham · Lucros descontados"]
+    TIPO -->|BDR| BDR["Candidatos: Graham · Lucros descontados<br/>Bazin é desligado de propósito"]
+    TIPO -->|FII| FII["Candidatos: Bazin · VPA"]
+    TIPO -->|ETF| ETF["Candidato: Bazin<br/>(ETF de índice não tem dividendo que o sustente)"]
+
+    ACAO --> COND
+    BDR --> COND
+    FII --> COND
+    ETF --> COND
+
+    COND{"Cada candidato passa na própria condição?<br/>Bazin: dividendo médio 5a maior que 0<br/>Graham: LPA e VPA maiores que 0, P/L até 15, P/VP até 1,5<br/>Descontados: LPA maior que 0"}
+    COND -->|"nenhum sobra"| SEMFAIXA
+    COND -->|"sobra 1 ou mais"| FAIXA["Faixa = do menor ao maior dos que sobraram<br/>1 método = faixa de um ponto"]
+
+    FAIXA --> MARGEM{"Onde o preço está?"}
+    MARGEM -->|"abaixo do piso"| MPOS["margem = piso menos preço, sobre o piso"]
+    MARGEM -->|"dentro da faixa"| MZERO["margem = 0"]
+    MARGEM -->|"acima do teto"| MNEG["margem = teto menos preço, sobre o teto"]
+
+    MPOS --> BANDA
+    MZERO --> BANDA
+    MNEG --> BANDA
+
+    BANDA{"Veredito de faixa, só pela margem"}
+    BANDA -->|"+30% ou mais"| SB["Comprar com convicção"]
+    BANDA -->|"+15% a +30%"| B["Comprar"]
+    BANDA -->|"entre -15% e +15%"| H["Manter"]
+    BANDA -->|"-15% a -30%"| S["Vender"]
+    BANDA -->|"-30% ou menos"| SS["Vender com urgência"]
+
+    SB --> TEND
+    B --> TEND
+    H --> TEND
+    S --> TEND
+    SS --> TEND
+
+    TEND{"Tendência: média de 50 contra a de 200"}
+    TEND -->|"alta"| RSI["(só aumenta a confiança)"]
+    TEND -->|"sem tendência"| RSI
+    TEND -->|"baixa"| QUEDA["Convicção vira Comprar<br/>Comprar vira Manter<br/>Manter vira VENDER<br/>Vender continua Vender"]
+    QUEDA --> RSI
+
+    RSI --> RSIQ{"RSI de 14 dias"}
+    RSIQ -->|"70 ou mais"| RA["Comprar vira Manter"]
+    RSIQ -->|"30 ou menos"| RB["Manter vira Comprar<br/>não alcança o que a queda já rebaixou para Vender"]
+    RSIQ -->|"entre 30 e 70"| FIM
+    RA --> FIM
+    RB --> FIM
+    FIM["Etiqueta final · basis = band<br/>falsificadores: preço-limite das duas bandas vizinhas"]
+
+    SEMFAIXA{"Tem RSI?"}
+    SEMFAIXA -->|"não"| UNK["Sem dados suficientes · sem falsificador"]
+    SEMFAIXA -->|"sim"| TENDONLY["Alta e RSI abaixo de 70: Comprar<br/>Baixa e RSI acima de 30: Vender<br/>RSI 30 ou menos: Comprar<br/>RSI 70 ou mais: Manter<br/>senão: Manter"]
+    TENDONLY --> FIMT["Etiqueta final · basis = trend<br/>falsificador: a tendência virar"]
+```
+
+### O que o desenho torna visível
+
+**O nó `Manter vira VENDER` decide a maior parte da base.** Com a faixa, muito mais ativo cai em
+`HOLD` — é o que "dentro da faixa" significa —, e toda tendência de baixa o converte em venda.
+Medido em produção em **2026-09-20**, logo após a faixa subir: **11 de 22 ações** da amostra saem
+com sinal de venda, e seis delas com margem **zero ou positiva** (TOTS3, RENT3, VALE3, ITUB4,
+BBDC4, LREN3).
+
+**O resgate pelo RSI chega tarde.** `RSI ≤ 30 → HOLD vira BUY` roda depois do ajuste de tendência,
+então o ativo sobrevendido que a queda já rebaixou para `SELL` nunca é recuperado — ele deixou de
+ser `HOLD` antes da regra rodar.
+
+**A tendência de alta não promove ninguém**, só aumenta a confiança. A assimetria é deliberada no
+código e **nunca foi decidida por escrito**.
 
 **Consequência que precisa estar escrita:** o veredito herda integralmente a fragilidade do preço
-justo. Toda limitação da seção anterior é também limitação do veredito.
-
-**Exceção para ETFs:** quando o veredito sai `UNKNOWN` e há RSI, um ramo em
-`opportunity_service.py:150` decide por momentum e tendência. É o único lugar onde análise técnica
-produz veredito sozinha.
+justo. Toda limitação da seção anterior é também limitação do veredito — e, pelo que o desenho
+mostra, também a da análise técnica.
 
 ---
 
