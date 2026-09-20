@@ -13,7 +13,11 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 
 ---
 
-## A · Motor de cálculo — auditoria de 2026-09-13
+## A · Motor de cálculo
+
+Duas auditorias do mesmo subsistema: a de **2026-09-13**, cujos itens remanescentes estão
+abaixo, e a de **2026-09-20**, que inventariou o caminho do preço ao veredito e vive em
+arquivo próprio — última subseção desta seção.
 
 ### A6 · ~~Graham fora da faixa de validade~~ — **corrigido em 2026-09-13**
 
@@ -64,6 +68,30 @@ na resposta.
 carteira de FIIs muda de conservador para arrojado e **nada acontece**.
 
 Junto com o item 29, isto compromete a personalização que é a hipótese de receita do produto.
+
+### Do preço ao veredito — auditoria de 2026-09-20
+
+**Quarenta itens**, levantados sobre o fluxo que [04-CALCULOS](04-CALCULOS.md) desenha na seção
+*Veredito* e conferidos contra o código. Inventário completo, com prioridade e critério de morte, em
+[AUDITORIA-DO-VEREDITO](temporario/AUDITORIA-DO-VEREDITO.md).
+
+Eles são cinco problemas vistos de ângulos diferentes:
+
+| Bloco no inventário | O que é | Natureza |
+|---|---|---|
+| **A** | O técnico decide sem mandato sobre o valuation | Decisão de produto |
+| **B** | A faixa não carrega a própria incerteza | Decisão de produto |
+| **C** | Falsificador que não falsifica | Decisão de produto |
+| **D** | Premissas sem fundamentação econômica | Majoritariamente escrita |
+| **E** | Defeito mecânico, não decisão | Correção direta |
+
+**O mais caro é o bloco A.** Medido em produção em 2026-09-20, o rebaixamento por tendência move
+**11 das 22 ações** da amostra para sinal de venda, seis delas com margem zero ou positiva — e num
+dos caminhos a razão exibida contradiz a própria etiqueta.
+
+**O mais barato é o bloco E**, que não depende de decisão nenhuma: a guarda contra dividendo
+extraordinário deixa passar inflação de 5,6× no Bazin, e crescimento acima de 25% cai de volta para
+8% em vez de ser limitado.
 
 ---
 
