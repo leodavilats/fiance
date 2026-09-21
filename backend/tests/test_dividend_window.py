@@ -75,11 +75,11 @@ def test_bazin_reflects_the_corrected_average():
         eps=None,
         book_value=None,
         dividends=dividends,
-        asset_type="etf",
+        asset_type="br_stock",
         reference=REFERENCE,
     )
 
-    assert result.bazin == bazin_fair_price(avg, 0.04)
+    assert result.bazin == bazin_fair_price(avg, 0.06)
 
 
 def test_collector_dy_uses_last_12_months_not_first_12_records():

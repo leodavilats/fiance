@@ -19,6 +19,37 @@ class FairPriceBlock(BaseModel):
         None,
         description="Teto da faixa: o mais otimista dos métodos que se aplicam.",
     )
+    band_position: float | None = Field(
+        None,
+        description=(
+            "Onde o preço está dentro da faixa, de 0 no piso a 1 no teto. Nulo quando o preço "
+            "está fora dela. Rente ao piso e rente ao teto não são a mesma leitura."
+        ),
+    )
+    band_quality: str = Field(
+        "sem_faixa",
+        description=(
+            "`firme` (insumos independentes e métodos convergentes) · `ampla` (métodos "
+            "discordam) · `fragil` (tudo apoiado num insumo só, inclusive método único) · "
+            "`sem_faixa`."
+        ),
+    )
+    independent_inputs: int = Field(
+        0,
+        description=(
+            "Quantos insumos econômicos distintos sustentam a faixa — dividendo, lucro, "
+            "patrimônio. Graham e lucros descontados leem o mesmo lucro: três métodos podem "
+            "ser duas evidências."
+        ),
+    )
+    methods: list[dict] = Field(
+        default_factory=list,
+        description=(
+            "Diagnóstico por método: `ok`, `inaplicavel`, `sem_dado`, `lucro_negativo`, "
+            "`fora_da_faixa` ou `descartado_por_destoar`. Silêncios diferentes têm significados "
+            "econômicos diferentes."
+        ),
+    )
     margin_of_safety: float | None = None
     avg_dividend_5y: float | None = None
     dy_12m: float | None = None
@@ -45,6 +76,13 @@ class DecisionBlock(BaseModel):
     verdict: str
     label: str
     confidence: float
+    confidence_label: str = Field(
+        "baixa",
+        description=(
+            "A confiança em palavra: `alta`, `média` ou `baixa`. A tela mostra esta, e não o "
+            "decimal — casa decimal promete precisão que a premissa não entrega."
+        ),
+    )
     basis: str = Field(
         "band",
         description=(

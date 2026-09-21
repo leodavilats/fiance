@@ -46,7 +46,9 @@ void main() {
     });
 
     test('confiança é apresentada em percentual', () {
-      expect(confidenceLabel(0.75), 'confiança 75%');
+      expect(confidenceLabel(0.75), 'confiança alta');
+      expect(confidenceLabel(0.45), 'confiança média');
+      expect(confidenceLabel(0.2), 'confiança baixa');
       expect(confidenceLabel(null), '');
     });
   });

@@ -88,6 +88,55 @@ String fairBandEdgeLabel(double? price, double? low, double? high) {
   return 'na faixa';
 }
 
+String bandQualityLabel(String? quality, int independentInputs) {
+  switch (quality) {
+    case 'firme':
+      return '$independentInputs insumos independentes, e os métodos convergem';
+    case 'ampla':
+      return 'os métodos discordam entre si: a faixa é larga por isso';
+    case 'fragil':
+      return independentInputs <= 1
+          ? 'tudo apoiado num insumo só — concordar aqui não confirma nada'
+          : 'evidência frágil';
+    default:
+      return 'sem faixa de preço justo';
+  }
+}
+
+String methodStatusLabel(String status) {
+  switch (status) {
+    case 'ok':
+      return 'entrou na faixa';
+    case 'destoa_dos_demais':
+      return 'entrou, e é ele que alarga a faixa';
+    case 'inaplicavel':
+      return 'não descreve esta classe de ativo';
+    case 'sem_dado':
+      return 'falta o dado';
+    case 'lucro_negativo':
+      return 'a empresa não teve lucro';
+    case 'fora_da_faixa':
+      return 'o dado existe e reprova o método';
+    default:
+      return status;
+  }
+}
+
+String methodLabel(String method) {
+  switch (method) {
+    case 'bazin':
+      return 'Pelos dividendos (Bazin)';
+    case 'graham':
+      return 'Pelo lucro e patrimônio (Graham)';
+    case 'dcf':
+      return 'Pelos lucros descontados';
+    case 'vpa':
+      return 'Pelo valor patrimonial';
+    default:
+      return method;
+  }
+}
+
 String basisLabel(String? basis) {
   if (basis == 'trend') return 'leitura de tendência, sem preço justo';
   return '';
@@ -95,5 +144,7 @@ String basisLabel(String? basis) {
 
 String confidenceLabel(double? confidence) {
   if (confidence == null) return '';
-  return 'confiança ${(confidence * 100).round()}%';
+  if (confidence >= 0.6) return 'confiança alta';
+  if (confidence >= 0.4) return 'confiança média';
+  return 'confiança baixa';
 }

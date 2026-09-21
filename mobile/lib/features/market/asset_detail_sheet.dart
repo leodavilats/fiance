@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
-import '../../core/score_ruler.dart' show basisLabel, consensusLabel, fairBandLabel, dataYearsLabel, trendBasisLabel;
+import '../../core/score_ruler.dart'
+    show
+        bandQualityLabel,
+        basisLabel,
+        consensusLabel,
+        dataYearsLabel,
+        fairBandLabel,
+        methodLabel,
+        methodStatusLabel,
+        trendBasisLabel;
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/measure.dart';
@@ -151,6 +160,25 @@ class _AssetDetailContent extends ConsumerWidget {
               ),
             ],
 
+            if (a.methods.any((m) => !m.applies && m.status != 'inaplicavel'))
+              FiSection(
+                title: 'O que não entrou na faixa, e por quê',
+                hint: 'Método ausente por falta de dado e método que o dado reprova são '
+                    'silêncios diferentes.',
+                child: FiRows(
+                  children: [
+                    for (final m in a.methods.where(
+                      (m) => !m.applies && m.status != 'inaplicavel',
+                    ))
+                      FiDataRow(
+                        label: methodLabel(m.method),
+                        detail: methodStatusLabel(m.status),
+                        note: m.note.isEmpty ? null : m.note,
+                      ),
+                  ],
+                ),
+              ),
+
             FiSection(
               title: 'Quanto o ativo vale, por cada método',
               hint: 'Cada método olha para uma coisa diferente. Quando eles concordam, a '
@@ -174,7 +202,7 @@ class _AssetDetailContent extends ConsumerWidget {
                     label: 'Faixa de preço justo',
                     value: fairBandLabel(a.fairLow, a.fairHigh),
                     detail: 'Do método mais conservador ao mais otimista',
-                    note: consensusLabel(a.consensusMethods),
+                    note: bandQualityLabel(a.bandQuality, a.independentInputs),
                     emphasis: true,
                   ),
                 ],
@@ -224,13 +252,25 @@ class _AssetDetailContent extends ConsumerWidget {
                 ),
               ),
 
-            if (a.falsifiers.isNotEmpty)
+            if (a.falsifiers.any((f) => f.isPremise))
               FiSection(
-                title: 'O que derrubaria a leitura',
-                hint: 'A condição conferível em que o veredito muda.',
+                title: 'O que derrubaria a tese',
+                hint: 'A premissa que sustenta o preço justo, e a condição que a refuta.',
                 child: FiRows(
                   children: [
-                    for (final f in a.falsifiers)
+                    for (final f in a.falsifiers.where((f) => f.isPremise))
+                      FiDataRow(label: f.condition),
+                  ],
+                ),
+              ),
+
+            if (a.falsifiers.any((f) => !f.isPremise))
+              FiSection(
+                title: 'O que muda a classificação',
+                hint: 'Atravessar um limiar troca a etiqueta — não refuta a premissa.',
+                child: FiRows(
+                  children: [
+                    for (final f in a.falsifiers.where((f) => !f.isPremise))
                       FiDataRow(
                         label: f.condition,
                         detail: 'passa a ${f.becomesLabel}',

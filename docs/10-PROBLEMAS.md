@@ -15,9 +15,10 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 
 ## A · Motor de cálculo
 
-Duas auditorias do mesmo subsistema: a de **2026-09-13**, cujos itens remanescentes estão
-abaixo, e a de **2026-09-20**, que inventariou o caminho do preço ao veredito e vive em
-arquivo próprio — última subseção desta seção.
+Os itens remanescentes da auditoria de **2026-09-13**. A de **2026-09-20**, que inventariou os
+40 problemas do caminho do preço ao veredito, foi fechada no mesmo dia
+([ADR-013](decisoes/ADR-013-o-tecnico-nao-decide.md)) e virou registro em
+[historico/AUDITORIA-DO-VEREDITO-2026-09-20](historico/AUDITORIA-DO-VEREDITO-2026-09-20.md).
 
 ### A6 · ~~Graham fora da faixa de validade~~ — **corrigido em 2026-09-13**
 
@@ -29,15 +30,18 @@ Travado por `tests/test_consenso_que_nao_e_consenso.py`.
 
 ### A2 · O "DCF" não é um DCF
 
-`analysis/fair_price.py:184` desconta **lucro por ação**, não fluxo de caixa livre, e usa crescimento
-de **receita** como proxy do crescimento de lucro. A taxa de desconto é fixa em 13% para qualquer
-empresa — sem beta, sem WACC, sem prêmio por setor ou porte — e o P/L terminal é fixo em 15.
+`backend/app/analysis/fair_price.py` desconta **lucro por ação**, não fluxo de caixa livre, e usa
+crescimento de **receita** como proxy do crescimento de lucro. O P/L terminal é fixo em 15.
+
+A taxa de desconto **deixou de ser fixa em 2026-09-20**: acompanha a Selic mais um prêmio declarado
+de 5 pontos. O prêmio continua igual para toda empresa — sem beta nem estrutura de capital,
+diferenciá-lo seria inventar.
 
 É uma heurística razoável com nome errado.
 
 **Mitigado em 2026-09-13:** o glossário passou a chamá-lo de "lucros descontados" e a declarar as
-três limitações — desconta lucro e não caixa, usa crescimento de receita como proxy, e a taxa de 13%
-é igual para qualquer empresa.
+limitações. **Em 2026-09-20** a taxa passou a acompanhar a Selic, e o teto de crescimento deixou de
+ser um degrau.
 
 **Segue aberto:** implementar um DCF de verdade, ou assumir a heurística e renomear o campo na API
 (`dcf`) junto. Decisão de produto: muda o número que a pessoa vê.
@@ -68,32 +72,6 @@ na resposta.
 carteira de FIIs muda de conservador para arrojado e **nada acontece**.
 
 Junto com o item 29, isto compromete a personalização que é a hipótese de receita do produto.
-
-### Do preço ao veredito — auditoria de 2026-09-20
-
-**Quarenta itens**, levantados sobre o fluxo que [04-CALCULOS](04-CALCULOS.md) desenha na seção
-*Veredito* e conferidos contra o código. Inventário completo, com prioridade e critério de morte, em
-[AUDITORIA-DO-VEREDITO](temporario/AUDITORIA-DO-VEREDITO.md).
-
-Eles são cinco problemas vistos de ângulos diferentes:
-
-| Bloco no inventário | O que é | Natureza |
-|---|---|---|
-| **A** | O técnico decide sem mandato sobre o valuation | Decisão de produto |
-| **B** | A faixa não carrega a própria incerteza | Decisão de produto |
-| **C** | Falsificador que não falsifica | Decisão de produto |
-| **D** | Premissas sem fundamentação econômica | Majoritariamente escrita |
-| **E** | Defeito mecânico, não decisão | Correção direta |
-
-**O mais caro é o bloco A.** Medido em produção em 2026-09-20, o rebaixamento por tendência move
-**11 das 22 ações** da amostra para sinal de venda, seis delas com margem zero ou positiva — e num
-dos caminhos a razão exibida contradiz a própria etiqueta.
-
-**O mais barato é o bloco E**, que não depende de decisão nenhuma: a guarda contra dividendo
-extraordinário deixa passar inflação de 5,6× no Bazin, e crescimento acima de 25% cai de volta para
-8% em vez de ser limitado.
-
----
 
 ## B · Dado e fonte
 

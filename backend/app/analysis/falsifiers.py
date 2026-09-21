@@ -22,6 +22,11 @@ _BANDS: tuple[tuple[float, str], ...] = (
 _ORDER: tuple[str, ...] = tuple(nome for _, nome in _BANDS) + ("STRONG_SELL",)
 
 
+KIND_TRIGGER = "gatilho"
+
+KIND_PREMISE = "premissa"
+
+
 @dataclass(frozen=True)
 class Falsifier:
     metric: str
@@ -31,6 +36,7 @@ class Falsifier:
     current: float
     threshold: float
     unit: str
+    kind: str = KIND_TRIGGER
 
     def as_dict(self) -> dict:
         return {
@@ -41,6 +47,7 @@ class Falsifier:
             "current": round(self.current, 2),
             "threshold": round(self.threshold, 2),
             "unit": self.unit,
+            "kind": self.kind,
         }
 
 
@@ -96,40 +103,62 @@ def _price_falsifiers(
 
 def _dividend_falsifier(
     bazin: float | None,
-    fair_low: float | None,
     price: float,
     avg_dividend: float | None,
 ) -> Falsifier | None:
-    if not bazin or not fair_low or not avg_dividend:
+    if not bazin or not avg_dividend or bazin <= price:
         return None
 
-    if abs(bazin - fair_low) > 0.01 or price >= fair_low:
-        return None
-
-    bazin_alvo = price / (1 - MOS_BUY)
-    if bazin_alvo >= bazin or bazin_alvo < 0:
-        return None
-
-    corte = 1 - bazin_alvo / bazin
-    dividendo_alvo = avg_dividend * bazin_alvo / bazin
+    corte = 1 - price / bazin
+    dividendo_alvo = avg_dividend * price / bazin
 
     condicao = (
         "O dividendo ser suspenso por completo"
         if corte >= 0.995
         else (
             f"O dividendo médio cair {corte * 100:.0f}% "
-            f"(de R$ {avg_dividend:.2f} para R$ {dividendo_alvo:.2f} por ação ao ano)"
+            f"(de R$ {avg_dividend:.2f} para R$ {dividendo_alvo:.2f} por ação ao ano) — aí o "
+            "preço de hoje deixa de ser justificado pela distribuição"
         )
     )
 
     return Falsifier(
         metric="dividend",
         condition=condicao,
-        becomes="HOLD",
-        becomes_label=LABELS["HOLD"],
+        becomes="REVIEW",
+        becomes_label="Rever a tese",
         current=avg_dividend,
         threshold=dividendo_alvo,
         unit="BRL/ação/ano",
+        kind=KIND_PREMISE,
+    )
+
+
+def _growth_falsifier(
+    dcf: float | None,
+    dcf_sem_crescimento: float | None,
+    price: float,
+) -> Falsifier | None:
+    if not dcf or not dcf_sem_crescimento or dcf_sem_crescimento >= dcf:
+        return None
+    if dcf_sem_crescimento >= price:
+        return None
+
+    queda = 1 - dcf_sem_crescimento / dcf
+
+    return Falsifier(
+        metric="growth",
+        condition=(
+            f"O crescimento projetado não se confirmar: sem ele, os lucros descontados valem "
+            f"R$ {dcf_sem_crescimento:.2f} em vez de R$ {dcf:.2f}, {queda * 100:.0f}% menos, e "
+            "ficam abaixo do preço de hoje"
+        ),
+        becomes="REVIEW",
+        becomes_label="Rever a tese",
+        current=dcf,
+        threshold=dcf_sem_crescimento,
+        unit="BRL",
+        kind=KIND_PREMISE,
     )
 
 
@@ -149,46 +178,6 @@ def _trend_falsifier(trend: str, sma_50: float | None, sma_200: float | None) ->
         threshold=sma_200,
         unit="BRL",
     )
-
-
-def _technical_override_falsifier(
-    band_verdict: str,
-    verdict: str,
-    trend: str,
-    rsi_14: float | None,
-) -> Falsifier | None:
-    if band_verdict == verdict:
-        return None
-
-    if trend in ("uptrend", "downtrend"):
-        lado = "de alta" if trend == "uptrend" else "de baixa"
-        return Falsifier(
-            metric="trend",
-            condition=(
-                f"A tendência {lado} se desfazer — é ela, e não o preço, que segura "
-                f"este veredito fora da faixa de margem de segurança"
-            ),
-            becomes=band_verdict,
-            becomes_label=LABELS.get(band_verdict, band_verdict),
-            current=0.0,
-            threshold=0.0,
-            unit="",
-        )
-
-    if rsi_14 is not None:
-        alvo = 70.0 if rsi_14 >= 70 else 30.0
-        sentido = "cair abaixo de" if rsi_14 >= 70 else "subir acima de"
-        return Falsifier(
-            metric="rsi",
-            condition=f"O RSI {sentido} {alvo:.0f}",
-            becomes=band_verdict,
-            becomes_label=LABELS.get(band_verdict, band_verdict),
-            current=rsi_14,
-            threshold=alvo,
-            unit="pontos",
-        )
-
-    return None
 
 
 def momentum_falsifiers(trend: str, rsi_14: float | None) -> list[dict]:
@@ -242,6 +231,8 @@ def falsifiers(
     fair_low: float | None = None,
     fair_high: float | None = None,
     basis: str = BASIS_BAND,
+    dcf: float | None = None,
+    dcf_sem_crescimento: float | None = None,
 ) -> list[dict]:
     if not price or verdict == "UNKNOWN":
         return []
@@ -256,16 +247,16 @@ def falsifiers(
 
     itens = _price_falsifiers(fair_low, fair_high, price, banda)
 
-    ajuste = _technical_override_falsifier(banda, verdict, trend, rsi_14)
-    if ajuste:
-        itens.insert(0, ajuste)
-
-    dividendo = _dividend_falsifier(bazin, fair_low, price, avg_dividend)
-    if dividendo:
-        itens.append(dividendo)
-
     tendencia = _trend_falsifier(trend, sma_50, sma_200)
     if tendencia:
         itens.append(tendencia)
+
+    dividendo = _dividend_falsifier(bazin, price, avg_dividend)
+    if dividendo:
+        itens.append(dividendo)
+
+    crescimento = _growth_falsifier(dcf, dcf_sem_crescimento, price)
+    if crescimento:
+        itens.append(crescimento)
 
     return [item.as_dict() for item in itens]

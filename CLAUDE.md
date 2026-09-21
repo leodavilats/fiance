@@ -68,6 +68,15 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
   coisa. A margem de segurança mede contra a **borda**: piso abaixo, teto acima, zero dentro.
 - **Veredito que não vem da faixa se declara** (`decision.basis`). Ativo sem método aplicável sai por
   leitura de tendência, nomeada, e a regra vive só em `decide()` — nunca numa tela.
+- **Análise técnica não decide.** Tendência e RSI são contexto: não mudam veredito nem somam
+  confiança. Os dois saem do mesmo preço, e contá-los como duas evidências é contar uma duas vezes.
+- **A faixa carrega a própria incerteza** (`band_quality`, `independent_inputs`). O que conta como
+  evidência é o **insumo** — dividendo, lucro, patrimônio —, não o método: Graham e lucros
+  descontados leem o mesmo LPA.
+- **Silêncio tem motivo** (`methods[]`). Inaplicável, sem dado, lucro negativo e reprovado pelo
+  próprio filtro são quatro coisas, não uma.
+- **Falsificador distingue gatilho de premissa** (`kind`). Atravessar limiar reclassifica; refutar
+  premissa derruba a tese.
 - **Projeção sai como faixa, nunca número único** (`analysis/scenarios.py`). `_low`/`_high` são
   obrigatórios.
 - **Modo de afirmação é configuração, não código** (`affirmation.py`, `AFFIRMATION_LEVEL`).

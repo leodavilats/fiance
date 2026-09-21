@@ -171,16 +171,20 @@ class TestConsensoQueNaoEConsenso:
             eps=None,
             book_value=None,
             dividends=[{"date": "2025-03-01", "value": 0.6}],
-            asset_type="etf",
+            asset_type="br_stock",
         )
 
         assert r.consensus_methods == 1
         assert r.method_dispersion is None
         assert r.methods_disagree is False
         assert r.fair_low == r.fair_high, "com um método só, a faixa é um ponto"
+        assert r.band_quality == "fragil", (
+            "faixa de um ponto não é convergência: é uma estimativa pontual usada como limite, "
+            "e a qualidade precisa dizer isso"
+        )
 
 
-class TestARazaoNaoContradizOVeredito:
+class TestOTecnicoNaoReescreveOValuation:
     def _com_desconto_e_queda(self):
         from app.analysis.fair_price import FairPriceResult, TechnicalSnapshot
 
@@ -191,18 +195,20 @@ class TestARazaoNaoContradizOVeredito:
             consensus=100.0,
             consensus_methods=2,
             margin_of_safety=0.35,
-            fair_low=100.0,
-            fair_high=100.0,
             avg_dividend_5y=None,
             dy_12m=None,
             dy_5y=None,
             data_years=0,
             desired_yield_used=0.06,
+            fair_low=100.0,
+            fair_high=100.0,
+            band_quality="firme",
+            independent_inputs=2,
         )
         tech = TechnicalSnapshot(
             sma_50=90.0,
             sma_200=110.0,
-            rsi_14=45.0,
+            rsi_14=25.0,
             trend="downtrend",
             trend_basis="long",
             last_price=65.0,
@@ -211,16 +217,46 @@ class TestARazaoNaoContradizOVeredito:
         )
         return fair, tech
 
-    def test_o_rebaixamento_diz_para_onde_foi(self):
+    def test_a_tendencia_nao_rebaixa_o_veredito(self):
         fair, tech = self._com_desconto_e_queda()
 
         d = decide(fair, tech, current_price=65.0)
 
-        assert d.verdict == "BUY"
-        assert not any("evite entrar" in r.lower() for r in d.reasons), (
-            "a tela mostrava a etiqueta Comprar ao lado da frase 'evite entrar contra a "
-            "tendência' — duas instruções opostas sobre o mesmo ativo"
+        assert d.verdict == "STRONG_BUY"
+        assert d.verdict == d.band_verdict, (
+            "um indicador derivado só do preço reescrevia uma conclusão de valuation sem que "
+            "nenhum fundamento tivesse mudado — e a razão exibida contradizia a etiqueta"
         )
-        assert any(d.label.lower() in r.lower() for r in d.reasons), (
-            "quando o veredito é rebaixado, a razão precisa nomear onde ele foi parar"
+
+    def test_a_tendencia_aparece_como_contexto_declarado(self):
+        fair, tech = self._com_desconto_e_queda()
+
+        d = decide(fair, tech, current_price=65.0)
+
+        assert any("contexto de preço" in motivo for motivo in d.reasons), (
+            "se a tendência não decide, ela precisa dizer o que é — senão vira número solto"
+        )
+        assert not any("cai de" in motivo for motivo in d.reasons)
+
+    def test_o_rsi_tambem_nao_promove(self):
+        fair, tech = self._com_desconto_e_queda()
+        fair.margin_of_safety = 0.0
+        fair.fair_low, fair.fair_high = 60.0, 70.0
+
+        d = decide(fair, tech, current_price=65.0)
+
+        assert d.verdict == "HOLD", (
+            "RSI baixo promovia Manter para Comprar, desfazendo o que a tendência tinha feito: "
+            "uma cadeia de correções sobre a mesma evidência"
+        )
+
+    def test_a_confianca_nao_sobe_por_sinal_tecnico(self):
+        fair, tech = self._com_desconto_e_queda()
+
+        com_tecnico = decide(fair, tech, current_price=65.0).confidence
+        sem_tecnico = decide(fair, None, current_price=65.0).confidence
+
+        assert com_tecnico == sem_tecnico, (
+            "tendência e RSI saem do mesmo preço: somar confiança pelos dois é contar a mesma "
+            "evidência duas vezes"
         )

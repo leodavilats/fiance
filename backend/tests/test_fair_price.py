@@ -45,10 +45,18 @@ def test_dcf_uses_the_growth_it_receives_not_the_default():
     assert faster > default > slower
 
 
-def test_dcf_ignores_absurd_growth():
-    default = dcf_fair_price(2.0)
+def test_crescimento_absurdo_e_limitado_ao_teto_sem_degrau():
+    from app.analysis.fair_price import DCF_MAX_GROWTH_PCT
 
-    assert dcf_fair_price(2.0, revenue_growth_pct=900.0) == default
+    no_teto = dcf_fair_price(2.0, revenue_growth_pct=DCF_MAX_GROWTH_PCT)
+
+    assert dcf_fair_price(2.0, revenue_growth_pct=900.0) == no_teto, (
+        "crescimento acima do teto é limitado ao teto. Voltar ao padrão fazia uma empresa "
+        "crescendo 30% ser avaliada como se crescesse 8% — menos que uma crescendo 24%"
+    )
+    assert dcf_fair_price(2.0, revenue_growth_pct=DCF_MAX_GROWTH_PCT - 1) < no_teto, (
+        "e a passagem pelo teto não pode ter degrau: logo abaixo dele vale menos, não mais"
+    )
 
 
 def test_empresa_encolhendo_nao_e_avaliada_como_se_crescesse():
@@ -98,7 +106,7 @@ def test_compute_fair_price_bdr_survives_missing_book_value():
     assert result.dcf is not None
 
 
-def test_compute_fair_price_etf_never_uses_graham_or_dcf():
+def test_etf_nao_tem_metodo_de_preco_justo():
     result = compute_fair_price(
         price=100.0,
         eps=None,
@@ -106,9 +114,14 @@ def test_compute_fair_price_etf_never_uses_graham_or_dcf():
         dividends=[{"date": "2025-01-15", "value": 1.0}] * 12,
         asset_type="etf",
     )
+
     assert result.graham is None
     assert result.dcf is None
-    assert result.bazin is not None
+    assert result.bazin is None, (
+        "a distribuição de um ETF de índice é consequência da política do fundo, não da "
+        "capacidade de gerar valor do que ele carrega — exigir dela um yield não avalia nada"
+    )
+    assert result.fair_low is None and result.band_quality == "sem_faixa"
 
 
 def test_compute_fair_price_etf_without_dividends_has_no_candidates():

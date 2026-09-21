@@ -3,7 +3,13 @@ import time
 
 from app.analysis.classify import auto_category, resolve_category
 from app.analysis.decision import decide
-from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.analysis.fair_price import (
+    compute_fair_price,
+    compute_technical,
+    desired_yield_for,
+    discount_rate_from,
+)
+from app.collectors.rates import get_rates
 from app.core.brt import to_brt
 from app.core.context import memoize_request
 from app.core.errors import DomainError, NotFoundError
@@ -29,6 +35,11 @@ from app.repositories import AssetRepository, PortfolioRepository
 from app.services import apuracao_service, ledger_service
 from app.services.milestones import record_portfolio_milestones
 from app.storage import audit_store
+
+
+def _taxa_de_desconto() -> float:
+    return discount_rate_from(get_rates().get("selic_anual"))
+
 
 _SOLD_AT_CLOCK_SKEW_SECONDS = 5 * 60
 _SOLD_AT_MAX_BACKDATE_SECONDS = 90 * 24 * 3600
@@ -90,6 +101,7 @@ class PortfolioService:
                 pb_ratio=snap.pb_ratio,
                 revenue_growth_rate=snap.revenue_growth,
                 desired_yield=desired_yield_for(snap.asset_type, prefs),
+                discount_rate=_taxa_de_desconto(),
             )
 
             tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)

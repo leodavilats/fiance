@@ -1,8 +1,14 @@
 import asyncio
 
-from app.analysis.decision import decide
-from app.analysis.fair_price import compute_fair_price, compute_technical, desired_yield_for
+from app.analysis.decision import confidence_label, decide
+from app.analysis.fair_price import (
+    compute_fair_price,
+    compute_technical,
+    desired_yield_for,
+    discount_rate_from,
+)
 from app.analysis.falsifiers import falsifiers
+from app.collectors.rates import get_rates
 from app.core.errors import NotFoundError
 from app.models import (
     AssetAnalysis,
@@ -13,6 +19,10 @@ from app.models import (
     TechnicalBlock,
 )
 from app.repositories import AssetRepository, PortfolioRepository
+
+
+def _taxa_de_desconto() -> float:
+    return discount_rate_from(get_rates().get("selic_anual"))
 
 
 class AssetService:
@@ -45,6 +55,7 @@ class AssetService:
             pb_ratio=snap.pb_ratio,
             revenue_growth_rate=snap.revenue_growth,
             desired_yield=desired_yield_for(snap.asset_type, prefs),
+            discount_rate=_taxa_de_desconto(),
         )
 
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
@@ -78,6 +89,7 @@ class AssetService:
                 verdict=dec.verdict,
                 label=dec.label,
                 confidence=dec.confidence,
+                confidence_label=confidence_label(dec.confidence),
                 basis=dec.basis,
                 reasons=dec.reasons,
                 falsifiers=falsifiers(
@@ -95,6 +107,8 @@ class AssetService:
                     fair_low=fair.fair_low,
                     fair_high=fair.fair_high,
                     basis=dec.basis,
+                    dcf=fair.dcf,
+                    dcf_sem_crescimento=fair.details.get("dcf_sem_crescimento"),
                 ),
             ),
             price_history=(

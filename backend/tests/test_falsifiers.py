@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.analysis.decision import MOS_BUY, decide
+from app.analysis.decision import decide
 from app.analysis.fair_price import FairPriceResult, margin_of_safety_in_band
 from app.analysis.falsifiers import falsifiers as _falsifiers
 
@@ -144,7 +144,7 @@ class TestFronteirasDePreco:
 
 
 class TestCorteDeDividendo:
-    def test_o_corte_anunciado_realmente_apaga_o_desconto(self):
+    def test_o_corte_anunciado_leva_o_bazin_ao_preco_de_hoje(self):
         bazin, price, dividendo = 100.0, 70.0, 6.0
 
         item = next(
@@ -162,14 +162,17 @@ class TestCorteDeDividendo:
         )
 
         novo_bazin = bazin * item["threshold"] / dividendo
-        nova_margem = (novo_bazin - price) / novo_bazin
 
-        assert nova_margem == pytest.approx(MOS_BUY, abs=0.001), (
-            "o corte anunciado tem de levar a margem exatamente até a borda da compra: menos que "
-            "isso não derruba a tese, mais que isso exagera o que basta"
+        assert novo_bazin == pytest.approx(price, abs=0.05), (
+            "a premissa do Bazin é que a distribuição de hoje se mantém. O que a refuta é o "
+            "corte que leva o próprio Bazin ao preço de agora — abaixo disso, o dividendo "
+            "deixa de justificar o preço"
+        )
+        assert item["kind"] == "premissa", (
+            "cortar dividendo não é atravessar um limiar de classificação: é a premissa caindo"
         )
 
-    def test_so_vale_quando_e_o_dividendo_que_sustenta_a_tese(self):
+    def test_vale_mesmo_com_o_bazin_fora_do_piso(self):
         itens = _falsifiers(
             verdict="BUY",
             price=70.0,
@@ -180,9 +183,9 @@ class TestCorteDeDividendo:
             avg_dividend=6.0,
         )
 
-        assert all(i["metric"] != "dividend" for i in itens), (
-            "com o Bazin no teto da faixa, cortar o dividendo baixa o teto e não move a margem, "
-            "que é medida contra o piso"
+        assert any(i["metric"] == "dividend" for i in itens), (
+            "a sustentabilidade do dividendo importa sempre que o método participa — amarrá-la "
+            "à posição do Bazin na faixa confundia o veredito com a premissa"
         )
 
     def test_sem_desconto_nao_ha_corte_a_anunciar(self):

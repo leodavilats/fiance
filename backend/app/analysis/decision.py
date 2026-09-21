@@ -18,6 +18,45 @@ MOS_SELL = -0.15
 
 MOS_STRONG_SELL = -0.30
 
+CONFIDENCE_BY_QUALITY = {
+    "firme": 0.70,
+    "ampla": 0.45,
+    "fragil": 0.35,
+    "sem_faixa": 0.0,
+}
+
+CONFIDENCE_TREND_ONLY = 0.25
+
+CONFIDENCE_LABELS = ((0.6, "alta"), (0.4, "média"), (0.0, "baixa"))
+
+
+def confidence_from_evidence(fair: FairPriceResult, basis: str) -> float:
+    if basis == BASIS_TREND:
+        return CONFIDENCE_TREND_ONLY
+    if basis != BASIS_BAND:
+        return 0.0
+
+    valor = CONFIDENCE_BY_QUALITY.get(fair.band_quality, 0.35)
+
+    if fair.independent_inputs >= 3:
+        valor += 0.10
+
+    bazin_participa = any(
+        m["method"] == "bazin" and m["status"] == "ok" for m in (fair.methods or [])
+    )
+    if bazin_participa and fair.data_years < 3:
+        valor -= 0.10
+
+    return round(max(0.05, min(0.95, valor)), 2)
+
+
+def confidence_label(confidence: float) -> str:
+    for piso, rotulo in CONFIDENCE_LABELS:
+        if confidence >= piso:
+            return rotulo
+    return "baixa"
+
+
 BASIS_BAND = "band"
 
 BASIS_TREND = "trend"
@@ -114,6 +153,26 @@ LABELS = {
 }
 
 
+def _quality_reason(fair: FairPriceResult) -> str:
+    metodos = fair.consensus_methods
+    insumos = fair.independent_inputs
+
+    if fair.band_quality == "fragil" and metodos <= 1:
+        return "A faixa vem de um método só: é uma estimativa pontual, e não uma convergência."
+    if fair.band_quality == "fragil":
+        return (
+            f"Os {metodos} métodos da faixa leem o mesmo insumo, então concordar entre si não "
+            "confirma nada — se o insumo estiver errado, os dois erram juntos."
+        )
+    if fair.band_quality == "ampla":
+        return (
+            f"Os {metodos} métodos variam {fair.method_dispersion:.1f}x entre si, sobre "
+            f"{insumos} insumos diferentes: a faixa é larga porque o que cada um mede é "
+            "diferente."
+        )
+    return f"A faixa se apoia em {insumos} insumos independentes, e os métodos convergem."
+
+
 def decide(
     fair: FairPriceResult,
     tech: TechnicalSnapshot | None = None,
@@ -128,8 +187,6 @@ def decide(
 
     tem_faixa = fair.fair_low is not None and fair.fair_high is not None
     basis = BASIS_BAND if tem_faixa else BASIS_NONE
-
-    confidence = 0.4
 
     if tem_faixa and current_price:
         faixa = f"R$ {fair.fair_low:.2f} a R$ {fair.fair_high:.2f}"
@@ -146,20 +203,22 @@ def decide(
                 f"({faixa})."
             )
         else:
+            onde = fair.band_position
+            lugar = ""
+            if onde is not None:
+                lugar = (
+                    " — mais perto do piso"
+                    if onde <= 0.33
+                    else " — mais perto do teto"
+                    if onde >= 0.67
+                    else " — no meio dela"
+                )
             reasons.append(
                 f"Preço atual está dentro da faixa de preço justo ({faixa}): não há margem a "
-                "favor nem contra."
+                f"favor nem contra{lugar}."
             )
 
-        confidence += 0.2
-
-        if getattr(fair, "methods_disagree", False) and fair.method_dispersion:
-            reasons.append(
-                f"Os {fair.consensus_methods} métodos variam {fair.method_dispersion:.1f}x entre "
-                "si, e é por isso que o preço justo sai como faixa: o que cada um mede é "
-                "diferente."
-            )
-            confidence -= 0.1
+        reasons.append(_quality_reason(fair))
 
     if not tem_faixa and tech is not None:
         verdict, motivo = _verdict_from_trend(tech)
@@ -170,12 +229,11 @@ def decide(
                 "dividendo que os sustentem, não há faixa."
             )
             reasons.append(motivo)
-            confidence = 0.35
 
             return Decision(
                 verdict=verdict,
                 label=LABELS.get(verdict, "Manter"),
-                confidence=confidence,
+                confidence=confidence_from_evidence(fair, basis),
                 reasons=reasons,
                 band_verdict=banda,
                 basis=basis,
@@ -201,46 +259,23 @@ def decide(
         base = _trend_phrase(getattr(tech, "trend_basis", TREND_BASIS_NONE))
 
         if tech.trend == "uptrend":
-            reasons.append(f"Tendência de alta ({base['up']}).")
-
-            if verdict in ("HOLD", "SELL"):
-                confidence += 0.1
-
+            reasons.append(
+                f"Tendência de alta ({base['up']}) — é contexto de preço, e não muda a leitura "
+                "de valor."
+            )
         elif tech.trend == "downtrend":
-            reasons.append(f"Tendência de baixa ({base['down']}).")
-
-            if verdict in ("BUY", "STRONG_BUY"):
-                anterior = LABELS[verdict]
-                verdict = "HOLD" if verdict == "BUY" else "BUY"
-
-                reasons.append(
-                    f"O preço está descontado, mas a tendência principal é de queda: a leitura "
-                    f"cai de {anterior.lower()} para {LABELS[verdict].lower()}."
-                )
-
-            elif verdict == "HOLD":
-                verdict = "SELL"
-                reasons.append(
-                    "O desconto não chega à faixa que pede compra, e a tendência principal é de "
-                    "queda: a leitura cai para vender."
-                )
+            reasons.append(
+                f"Tendência de baixa ({base['down']}) — é contexto de preço, e não muda a "
+                "leitura de valor."
+            )
 
         if tech.rsi_14 is not None:
             if tech.rsi_14 >= 70:
                 reasons.append(f"RSI {tech.rsi_14:.0f}: ativo sobrecomprado (risco de correção).")
-
-                if verdict == "BUY":
-                    verdict = "HOLD"
-
             elif tech.rsi_14 <= 30:
                 reasons.append(
                     f"RSI {tech.rsi_14:.0f}: ativo sobrevendido (possível ponto de entrada)."
                 )
-
-                if verdict == "HOLD":
-                    verdict = "BUY"
-
-        confidence += 0.15
 
     if avg_cost and current_price:
         pnl_pct = (current_price - avg_cost) / avg_cost * 100
@@ -256,7 +291,7 @@ def decide(
                 "Considere realizar parte do lucro: o ativo está caro e você já lucrou bastante."
             )
 
-    confidence = min(0.95, round(confidence, 2))
+    confidence = confidence_from_evidence(fair, basis)
 
     return Decision(
         verdict=verdict,

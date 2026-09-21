@@ -36,7 +36,19 @@ quando o preço está abaixo dele, contra o teto quando está acima, e zero dent
 significa preço abaixo do método mais pessimista.
 
 **Leitura de tendência** — o que o produto diz sobre ativo ao qual nenhum método de preço justo se
-aplica, como ETF de índice. Sai marcada (`basis: trend`) e o que a derruba é a tendência virar.
+aplica, como ETF de índice. Sai marcada (`basis: trend`) e o que a derruba é a tendência virar. É o
+**único** lugar em que análise técnica decide sozinha, e decide porque não há alternativa.
+
+**Insumo independente** — o dado econômico do qual um método vive: dividendo, lucro ou patrimônio.
+Graham e lucros descontados leem o mesmo lucro, então três métodos de ação são **duas** evidências.
+É isso que `independent_inputs` conta, e não métodos.
+
+**Qualidade da faixa** — `firme`, `ampla`, `fragil` ou `sem_faixa`. Diz se dá para confiar na faixa,
+e não onde ela está.
+
+**Gatilho e premissa** — o gatilho é o preço em que a etiqueta muda; a premissa é a condição
+econômica que sustenta o preço justo. Atravessar um gatilho reclassifica; refutar uma premissa
+derruba a tese. A resposta separa os dois em `kind`.
 
 **Cascata da sobra** — a ordem em que o dinheiro que sobra é destinado: dívida cara, depois reserva,
 depois aporte. Pode terminar sem aporte, e isso é sucesso.

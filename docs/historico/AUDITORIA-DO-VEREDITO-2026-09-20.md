@@ -2,7 +2,8 @@
 
 > ## ⏳ DOCUMENTO TEMPORÁRIO
 >
-> **Critério de morte:** quando os 40 itens estiverem riscados, **apague este arquivo**, remova a
+> **Critério de morte:** os 40 itens foram fechados em 2026-09-20 ([ADR-013](../decisoes/ADR-013-o-tecnico-nao-decide.md)).
+> Confira contra [08-ESTADO](../08-ESTADO.md) e **apague este arquivo**, remova a
 > linha do índice em [README](../README.md) e a seção correspondente em
 > [10-PROBLEMAS](../10-PROBLEMAS.md).
 >
@@ -94,52 +95,66 @@ nenhum por que um deve prevalecer sobre o outro. É a decisão mais cara em aber
 2026-09-20, ela move **11 das 22 ações** da amostra para sinal de venda, seis delas com margem zero
 ou positiva.
 
-### 1 · A decisão final pode contradizer o valuation
+### ~~1 · A decisão final pode contradizer o valuation~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** análise técnica virou contexto: não muda veredito nem confiança.
 
 Tendência e RSI alteram a conclusão sem que nenhum fundamento tenha mudado. Definir o papel de cada
 camada — se modificam veredito, confiança ou apenas contexto — é a decisão que abre o bloco.
 
 `backend/app/analysis/decision.py`
 
-### 18 · Tendência e RSI vêm da mesma fonte
+### ~~18 · Tendência e RSI vêm da mesma fonte~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** os dois viraram contexto, e nenhum soma confiança.
 
 Os dois derivam do histórico de preço. Uma queda produz tendência de baixa **e** RSI baixo, e o
 fluxo os trata como dois sinais.
 
-### 19 · O RSI desfaz o que a tendência fez
+### ~~19 · O RSI desfaz o que a tendência fez~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** a cadeia deixou de existir junto com o rebaixamento.
 
 Confirmado na medição acima, e a consequência é maior que a descrita: além da cadeia de correções,
 **a razão exibida contradiz a etiqueta**. Para o usuário, é o sistema discordando de si mesmo.
 
-### 26 · A confiança sobe por informação redundante
+### ~~26 · A confiança sobe por informação redundante~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** tendência e RSI não somam confiança.
 
 Tendência e RSI somam confiança como se fossem evidências independentes. Ver também o item 25.
 
-### 36 · Não há hierarquia declarada entre fundamento e mercado
+### ~~36 · Não há hierarquia declarada entre fundamento e mercado~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** a hierarquia ficou escrita em ADR-013: valuation decide, técnica contextualiza.
 
 É o item 1 em forma geral: três tipos de evidência se combinam sem que se diga o que cada um mede.
 
-### 37 · A regra de tendência é assimétrica
+### ~~37 · A regra de tendência é assimétrica~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** a assimetria sumiu junto com o rebaixamento.
 
 Alta só aumenta confiança, e apenas quando o veredito já era Manter ou Vender. Baixa rebaixa três
 categorias. A mesma variável tem poderes diferentes conforme a direção, e isso nunca foi decidido
 por escrito.
 
-### 38 · Médias de 50 e 200 dias são indicadores atrasados
+### ~~38 · Médias de 50 e 200 dias são indicadores atrasados~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade baixa · Viável `sim`
+
+**Como fechou:** declarado em 04-CALCULOS como natureza do indicador.
 
 É a natureza do indicador, não um defeito de implementação. Cabe declarar em
 [04-CALCULOS](../04-CALCULOS.md), não corrigir.
@@ -152,69 +167,87 @@ A faixa hoje é apenas `mín` e `máx`. Tudo o que diferencia uma faixa confiáv
 quantos métodos, se são independentes, se um extremo é outlier, onde o preço está dentro dela — se
 perde antes de chegar ao veredito.
 
-### 2 · Mínimo e máximo viram piso e teto econômicos
+### ~~2 · Mínimo e máximo viram piso e teto econômicos~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** a faixa passou a declarar qualidade e insumos independentes; a margem continua medindo contra a borda, agora com a fragilidade dita.
 
 A faixa não *afirma* ser piso e teto econômicos — mas a margem de segurança é medida contra eles,
 então na prática é assim que funcionam. A ressalva não salva o item: o efeito é o descrito.
 
 `backend/app/analysis/fair_price.py::margin_of_safety_in_band`
 
-### 3 · A dispersão não afeta a decisão proporcionalmente
+### ~~3 · A dispersão não afeta a decisão proporcionalmente~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade média · Viável `sim`
+
+**Como fechou:** `band_quality` distingue `firme`, `ampla` e `fragil`, e é ela que move a confiança.
 
 A dispersão **já** afeta a decisão por dois caminhos: alarga a faixa (o que puxa o preço para
 dentro dela) e tira 0,1 da confiança. O que falta é ela mudar a *interpretação* — hoje uma faixa de
 5,5× e uma de 1,1× produzem vereditos da mesma natureza.
 
-### 4 · Um método só é tratado como faixa validada
+### ~~4 · Um método só é tratado como faixa validada~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** método único sai `fragil`, e a razão diz que é estimativa pontual.
 
 Com um método, piso = teto, e uma estimativa pontual passa a funcionar como limite exato.
 `consensus_methods` já viaja até a tela; o que falta é consequência sobre o veredito.
 
-### 5 · Métodos não são evidências independentes
+### ~~5 · Métodos não são evidências independentes~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** `independent_inputs` conta insumos distintos: três métodos de ação são duas evidências.
 
 Graham usa LPA e VPA; os lucros descontados usam LPA. **Duas das três "confirmações" da ação
 compartilham o mesmo insumo.** Não exige dado novo — exige reconhecer a dependência ao medir
 robustez.
 
-### 15 · A margem é zerada em toda a região interna
+### ~~15 · A margem é zerada em toda a região interna~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** `band_position` sai na resposta e entra na razão.
 
 Preço rente ao piso e preço rente ao teto recebem margem 0. A posição relativa dentro da faixa é
 informação que existe e é descartada.
 
-### 23 · Valores extremos dominam a faixa
+### ~~23 · Valores extremos dominam a faixa~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** normalização na origem, e quem destoa é nomeado em vez de definir a borda em silêncio.
 
 Comprovado pela medição: um Bazin de 46,67 vindo de dividendo extraordinário vira teto da faixa sem
 que nada o questione.
 
-### 31 · O nível de evidência varia por classe
+### ~~31 · O nível de evidência varia por classe~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
+
+**Como fechou:** a confiança passou a olhar insumos independentes, e não a classe.
 
 Ação até três métodos, BDR e FII dois, ETF nenhum. A confiança acompanha a classe do ativo, não a
 qualidade da evidência.
 
-### 35 · O resultado final esconde a origem da incerteza
+### ~~35 · O resultado final esconde a origem da incerteza~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade média · Viável `sim`
+
+**Como fechou:** `band_quality`, `independent_inputs`, `methods[]` e `basis` viajam juntos do veredito.
 
 `basis`, `consensus_methods` e `method_dispersion` **já** viajam na resposta desde 2026-09-19. O que
 falta é consolidá-los numa leitura de qualidade e mostrá-la junto do veredito.
 
-### 40 · A faixa esconde a causa da divergência
+### ~~40 · A faixa esconde a causa da divergência~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
+
+**Como fechou:** quem destoa é nomeado em `methods[]`, e a faixa continua mostrando a discordância.
 
 `method_dispersion` é só `teto ÷ piso`. Um outlier isolado e três métodos genuinamente discordantes
 produzem o mesmo número.
@@ -226,33 +259,41 @@ produzem o mesmo número.
 O invariante do produto diz que **o veredito vem com o que o derrubaria**. O que ele entrega é o
 preço que muda a etiqueta — que é outra coisa.
 
-### 27 · Falsificadores de preço medem mudança de banda
+### ~~27 · Falsificadores de preço medem mudança de banda~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** `kind` separa gatilho de premissa.
 
 Atravessar um limiar não demonstra que a premissa do valuation deixou de valer. São gatilhos de
 reclassificação apresentados como refutação.
 
 `backend/app/analysis/falsifiers.py`
 
-### 28 · O falsificador de dividendo não explica o que testa
+### ~~28 · O falsificador de dividendo não explica o que testa~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade média · Viável `sim`
+
+**Como fechou:** a premissa virou `1 − preço ÷ Bazin`, e a condição está escrita na frase.
 
 O significado **é** definido no código: o corte que levaria a margem exatamente à borda da compra
 (+15%) — daí o fator 0,85. O defeito é de comunicação, não de derivação: a tela mostra a conta sem
 dizer a condição que ela testa.
 
-### 29 · Falsificadores técnicos não são falsificadores
+### ~~29 · Falsificadores técnicos não são falsificadores~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** falsificador técnico é `gatilho`, e nunca `premissa`.
 
 "A tendência virar" altera um indicador; não refuta premissa econômica alguma. Como o ETF depende
 inteiramente desse caminho, é ali que o problema é mais visível.
 
-### 39 · O falsificador de dividendo só existe com Bazin no piso
+### ~~39 · O falsificador de dividendo só existe com Bazin no piso~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade média · Viável `sim`
+
+**Como fechou:** a premissa do dividendo vale sempre que o método participa.
 
 Para o **veredito**, a restrição é correta: com Bazin fora do piso, cortar o dividendo não move a
 margem. Para a **premissa**, o item está certo — a sustentabilidade do dividendo importa
@@ -265,69 +306,89 @@ independentemente da posição que o método ocupa.
 Nenhuma destas premissas tem origem escrita. Algumas já aparecem como limitação declarada em
 [04-CALCULOS](../04-CALCULOS.md); nenhuma tem justificativa.
 
-### 6 · As premissas do modelo de lucros descontados são arbitrárias
+### ~~6 · As premissas do modelo de lucros descontados são arbitrárias~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `parcial`
+
+**Como fechou:** a taxa de desconto passou a ser Selic do dia + 5 pontos declarados.
 
 Desconto de 13%, múltiplo terminal 15, horizonte de 5 anos — e o valor terminal domina o resultado.
 A Selic vem do BCB e permitiria ancorar a taxa; beta e WACC não existem nas fontes atuais.
 
-### 7 · Crescimento de receita é aplicado ao LPA
+### ~~7 · Crescimento de receita é aplicado ao LPA~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `parcial`
+
+**Como fechou:** declarado em 04-CALCULOS como limitação: a fonte não fornece crescimento de lucro.
 
 Margem, despesa financeira, imposto e número de ações rompem a relação. Depende de a fonte fornecer
 crescimento de lucro, o que hoje não está confirmado.
 
-### 9 · Bazin depende de dividendo histórico
+### ~~9 · Bazin depende de dividendo histórico~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
 
+**Como fechou:** normalização pela própria série, e o histórico curto derruba a confiança.
+
 Cinco anos de média incorporam o que não se repete. A guarda existente falha — ver a medição.
 
-### 10 · Yields exigidos são fixos por classe
+### ~~10 · Yields exigidos são fixos por classe~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade média · Viável `parcial`
+
+**Como fechou:** declarado: o yield é premissa de quem investe, e não medida de risco do ativo.
 
 Eles **são** configuráveis por usuário (`desired_yield_stock` e irmãos). O que não existe é variação
 por risco do ativo: mesma taxa para empresa endividada e para empresa sem dívida.
 
-### 11 · VPA é usado como preço justo de FII
+### ~~11 · VPA é usado como preço justo de FII~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `parcial`
+
+**Como fechou:** declarado: VPA de FII é referência patrimonial, não valor econômico.
 
 Valor patrimonial contábil não é valor econômico do imóvel. Cap rate e vacância não existem na
 fonte, então o caminho realista é rebaixar o VPA a referência, não substituí-lo.
 
-### 13 · Os filtros de Graham dependem do próprio preço
+### ~~13 · Os filtros de Graham dependem do próprio preço~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
+
+**Como fechou:** declarado em 04-CALCULOS: a circularidade é a doutrina do próprio método.
 
 P/L e P/VP usam o preço atual para decidir se o método roda. O método se abstém justamente quando o
 preço está alto — circularidade real, e sutil.
 
-### 14 · Graham não se aplica a todo modelo de negócio
+### ~~14 · Graham não se aplica a todo modelo de negócio~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `parcial`
 
+**Como fechou:** declarado: Graham explica menos em banco, ativo leve e holding.
+
 O setor existe na resposta; estrutura de capital, não.
 
-### 17 · Os limiares de margem não têm origem declarada
+### ~~17 · Os limiares de margem não têm origem declarada~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
 
+**Como fechou:** declarado: ±15% e ±30% são a tradição da margem de segurança, não fronteira medida.
+
 ±15% e ±30% separam Comprar, Manter e Vender sem justificativa escrita.
 
-### 33 · VPA extremo, negativo ou zero
+### ~~33 · VPA extremo, negativo ou zero~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade baixa · Viável `sim`
+
+**Como fechou:** VPA zero e negativo já abstêm; o extremo positivo continua entrando, e isso está declarado.
 
 Conferido: VPA zero e negativo **já** fazem o método se abster. O que não existe é tratamento para
 VPA positivo mas absurdo, que entra na faixa sem questionamento — caso particular do item 23.
 
-### 34 · Crescimento negativo, zero e ausente
+### ~~34 · Crescimento negativo, zero e ausente~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `❌` · Prioridade média · Viável `sim`
+
+**Como fechou:** `growth_source` distingue medido, estagnação, contração e ausente.
 
 Conferido: **ausente e zero não são iguais.** Sem dado, o modelo usa o padrão de 8%; com zero ou
 negativo, usa 0. Os que se confundem são **zero e negativo** — deterioração e estagnação produzem o
@@ -339,69 +400,89 @@ mesmo preço justo. O item continua válido nessa forma menor.
 
 Não dependem de decisão de produto. Hoje distorcem número real.
 
-### 8 · A regra de crescimento acima de 25% é uma descontinuidade
+### ~~8 · A regra de crescimento acima de 25% é uma descontinuidade~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** crescimento acima de 25% é limitado ao teto, sem degrau.
 
 Crescimento acima de 25% **não é limitado a 25%: volta ao padrão de 8%**. Uma empresa crescendo 30%
 é avaliada como se crescesse 8%, e uma crescendo 24% usa os 24%.
 
-### 12 · Bazin como regra geral para ETF
+### ~~12 · Bazin como regra geral para ETF~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade baixa · Viável `n/a`
+
+**Como fechou:** ETF deixou de declarar Bazin: a classe não tem método.
 
 Na prática nenhum ETF de índice tem dividendo que sustente o método: os quatro medidos saem sem
 faixa e caem na leitura de tendência. O método está declarado e não produz nada — o que sobra é
 limpar a declaração.
 
-### 16 · Os limiares criam saltos abruptos
+### ~~16 · Os limiares criam saltos abruptos~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
 
+**Como fechou:** o gatilho de preço mostra a que distância a etiqueta muda; sem estado anterior não há histerese possível.
+
 Variação mínima de preço troca a etiqueta. Histerese resolve sem mudar a régua.
 
-### 20 · Sem valuation, o técnico ainda recomenda comprar ou vender
+### ~~20 · Sem valuation, o técnico ainda recomenda comprar ou vender~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `⚠️` · Prioridade baixa · Viável `feito em parte`
+
+**Como fechou:** `basis: trend` vale 0,25 de confiança — menos que qualquer faixa.
 
 Desde 2026-09-19 a resposta declara `basis: trend`, então a distinção existe no dado. O que falta é
 a confiança refletir a diferença — o que pertence ao item 25.
 
-### 21 · Ausência de dado não é classificada
+### ~~21 · Ausência de dado não é classificada~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
+
+**Como fechou:** `methods[]` registra o motivo de cada ausência.
 
 Dado ausente, zero, negativo, inconsistente e velho levam à mesma abstenção silenciosa.
 
-### 22 · LPA negativo é tratado como incapacidade do modelo
+### ~~22 · LPA negativo é tratado como incapacidade do modelo~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
 
+**Como fechou:** `lucro_negativo` é estado próprio, separado de `sem_dado`.
+
 Prejuízo é informação econômica, não ausência de informação. Caso particular do 21.
 
-### 24 · Dividendo extraordinário contamina o Bazin
+### ~~24 · Dividendo extraordinário contamina o Bazin~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** um ano acima de 3x a mediana dos outros passa a ser lido pela mediana.
 
 Ver a medição: a guarda existe e falha em 2,8×, 4,4× e 5,6× de inflação.
 
-### 25 · A confiança não representa incerteza
+### ~~25 · A confiança não representa incerteza~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade **alta** · Viável `sim`
+
+**Como fechou:** confiança passou a sair de qualidade da faixa, insumos e histórico.
 
 Ela é soma de constantes — 0,4 inicial, +0,2 por ter faixa, −0,1 por dispersão, +0,15 por ter
 técnico, 0,35 fixo na leitura de tendência. Nenhuma tem relação declarada com qualidade de dado,
 convergência ou sensibilidade a premissa.
 
-### 30 · Inaplicável e sem dados são a mesma coisa
+### ~~30 · Inaplicável e sem dados são a mesma coisa~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
+
+**Como fechou:** `inaplicavel` e `sem_dado` são estados distintos.
 
 Um ETF que nenhum método avalia e uma ação sem LPA no momento produzem a mesma resposta vazia.
 
-### 32 · A precisão exibida excede a precisão real
+### ~~32 · A precisão exibida excede a precisão real~~ — ✅ **fechado em 2026-09-20**
 
 Premissa `✅` · Prioridade média · Viável `sim`
+
+**Como fechou:** a confiança sai em palavra; a casa decimal saiu da tela.
 
 Centavos e décimos de ponto percentual saem de uma taxa de desconto escolhida a dedo. A casa decimal
 promete o que a metodologia não entrega.

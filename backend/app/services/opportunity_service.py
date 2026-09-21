@@ -4,17 +4,19 @@ import time
 from dataclasses import dataclass
 
 from app.analysis.classify import auto_category
-from app.analysis.decision import decide
+from app.analysis.decision import confidence_label, decide
 from app.analysis.fair_price import (
     FairPriceInputs,
     TechnicalSnapshot,
     compute_fair_price_inputs,
     compute_technical,
     desired_yield_for,
+    discount_rate_from,
     fair_price_from_inputs,
 )
 from app.analysis.score_ruler import is_highlight
 from app.analysis.scoring import score_opportunity
+from app.collectors.rates import get_rates
 from app.collectors.universal import prefetch_brapi_raw
 from app.core import cache
 from app.core.context import memoize_request
@@ -23,6 +25,11 @@ from app.core.universe import get_universe
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.models.enums import RiskProfile
 from app.repositories import AssetRepository, PortfolioRepository
+
+
+def _taxa_de_desconto() -> float:
+    return discount_rate_from(get_rates().get("selic_anual"))
+
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +123,7 @@ class OpportunityService:
                 asset_type=snap.asset_type,
                 revenue_growth_pct=snap.revenue_growth,
                 pb_ratio=snap.pb_ratio,
+                discount_rate=_taxa_de_desconto(),
             ),
             technical=compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low),
         )
@@ -156,6 +164,8 @@ class OpportunityService:
             fair_price=fair.consensus,
             fair_low=fair.fair_low,
             fair_high=fair.fair_high,
+            band_quality=fair.band_quality,
+            independent_inputs=fair.independent_inputs,
             bazin=fair.bazin,
             graham=fair.graham,
             pvp=fair.pvp,
@@ -165,6 +175,7 @@ class OpportunityService:
             label=dec.label,
             basis=dec.basis,
             confidence=dec.confidence,
+            confidence_label=confidence_label(dec.confidence),
             data_years=fair.data_years,
             consensus_methods=fair.consensus_methods,
             trend_basis=tech.trend_basis,

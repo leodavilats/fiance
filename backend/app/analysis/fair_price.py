@@ -12,8 +12,6 @@ DEFAULT_DESIRED_YIELD = DESIRED_YIELD_STOCK
 
 DIVIDEND_WINDOW_YEARS = 5
 
-_IMPLIED_DY_OUTLIER = 0.30
-
 
 def desired_yield_for(asset_type: str, prefs: dict | None = None) -> float:
     stock = DESIRED_YIELD_STOCK
@@ -64,6 +62,14 @@ class FairPriceResult:
     fair_low: float | None = None
 
     fair_high: float | None = None
+
+    band_position: float | None = None
+
+    band_quality: str = "sem_faixa"
+
+    independent_inputs: int = 0
+
+    methods: list[dict] = field(default_factory=list)
 
     method_dispersion: float | None = None
 
@@ -122,7 +128,6 @@ def average_dividend_last_12m(
 def average_dividend_last_n_years(
     dividends: list[dict[str, float]],
     years: int = DIVIDEND_WINDOW_YEARS,
-    use_median: bool = False,
     reference: datetime | None = None,
 ) -> float | None:
     if not dividends:
@@ -148,14 +153,42 @@ def average_dividend_last_n_years(
         covered.get(year, 0.0) for year in range(first_year_with_data, last_complete_year + 1)
     ]
 
-    if use_median:
-        values_sorted = sorted(values)
-        n = len(values_sorted)
-        if n % 2 == 0:
-            return (values_sorted[n // 2 - 1] + values_sorted[n // 2]) / 2
-        return values_sorted[n // 2]
-
     return sum(values) / len(values)
+
+
+DIVIDEND_OUTLIER_RATIO = 3.0
+
+MIN_YEARS_FOR_OUTLIER = 3
+
+
+def normalized_annual_dividend(
+    dividends: list[dict[str, float]],
+    years: int = DIVIDEND_WINDOW_YEARS,
+    reference: datetime | None = None,
+) -> tuple[float | None, bool]:
+    today = reference or _now()
+    by_year = _dividends_by_year(dividends)
+
+    oldest_allowed = today.year - years
+    last_complete_year = today.year - 1
+    covered = {y: v for y, v in by_year.items() if oldest_allowed <= y <= last_complete_year}
+    if not covered:
+        return average_dividend_last_12m(dividends, reference=today), False
+
+    values = [covered.get(y, 0.0) for y in range(min(covered), last_complete_year + 1)]
+    media = sum(values) / len(values)
+
+    if len(values) < MIN_YEARS_FOR_OUTLIER:
+        return media, False
+
+    ordenados = sorted(values)
+    meio = len(ordenados) // 2
+    mediana = ordenados[meio] if len(ordenados) % 2 else (ordenados[meio - 1] + ordenados[meio]) / 2
+
+    if mediana <= 0 or max(values) <= mediana * DIVIDEND_OUTLIER_RATIO:
+        return media, False
+
+    return mediana, True
 
 
 def dividend_data_years(
@@ -176,6 +209,85 @@ def bazin_fair_price(
         return None
 
     return round(avg_dividend / desired_yield, 2)
+
+
+METHOD_INPUT = {
+    "bazin": "dividendo",
+    "graham": "lucro",
+    "dcf": "lucro",
+    "vpa": "patrimonio",
+}
+
+METHODS_BY_TYPE = {
+    "fii": ("bazin", "vpa"),
+    "etf": (),
+    "bdr": ("graham", "dcf"),
+}
+
+BAND_OUTLIER_RATIO = 2.0
+
+
+def _method_status(nome: str, inputs: FairPriceInputs, valor: float | None) -> dict:
+    aplicaveis = METHODS_BY_TYPE.get(inputs.asset_type, ("bazin", "graham", "dcf"))
+    estado, nota = "ok", ""
+
+    if nome not in aplicaveis:
+        estado, nota = "inaplicavel", "o método não descreve esta classe de ativo"
+    elif valor is not None:
+        estado = "ok"
+    elif nome == "bazin":
+        estado, nota = "sem_dado", "sem histórico de dividendo no período"
+    elif nome == "vpa":
+        estado, nota = "sem_dado", "sem valor patrimonial informado"
+    elif inputs.eps is None:
+        estado, nota = "sem_dado", "lucro por ação não informado"
+    elif inputs.eps <= 0:
+        estado, nota = "lucro_negativo", "a empresa não teve lucro no período"
+    elif nome == "graham" and (inputs.book_value is None or inputs.book_value <= 0):
+        estado, nota = "sem_dado", "sem valor patrimonial positivo"
+    elif nome == "graham":
+        estado, nota = "fora_da_faixa", "P/L acima de 15 ou P/VP acima de 1,5"
+    else:
+        estado, nota = "sem_dado", "insumo ausente"
+
+    return {
+        "method": nome,
+        "input": METHOD_INPUT[nome],
+        "value": valor,
+        "status": estado,
+        "note": nota,
+    }
+
+
+def _band_from(candidatos: dict[str, float]) -> tuple[float | None, float | None, str | None]:
+    if not candidatos:
+        return None, None, None
+
+    valores = sorted(candidatos.values())
+    fora: str | None = None
+
+    if len(valores) >= 3:
+        meio = len(valores) // 2
+        mediana = valores[meio] if len(valores) % 2 else (valores[meio - 1] + valores[meio]) / 2
+        if mediana > 0:
+            for nome, valor in candidatos.items():
+                if valor > mediana * BAND_OUTLIER_RATIO or valor * BAND_OUTLIER_RATIO < mediana:
+                    fora = nome
+                    break
+
+    return round(min(valores), 2), round(max(valores), 2), fora
+
+
+def band_position(
+    price: float | None, fair_low: float | None, fair_high: float | None
+) -> float | None:
+    if not price or fair_low is None or fair_high is None:
+        return None
+    if not (fair_low <= price <= fair_high):
+        return None
+    if fair_high == fair_low:
+        return 0.5
+    return round((price - fair_low) / (fair_high - fair_low), 4)
 
 
 def margin_of_safety_in_band(
@@ -224,11 +336,21 @@ def graham_fair_price(
 DCF_DEFAULT_GROWTH_PCT = 8.0
 DCF_MAX_GROWTH_PCT = 25.0
 
+DCF_FALLBACK_DISCOUNT = 0.13
+
+EQUITY_RISK_PREMIUM = 0.05
+
+
+def discount_rate_from(selic_anual_pct: float | None) -> float:
+    if not selic_anual_pct or selic_anual_pct <= 0:
+        return DCF_FALLBACK_DISCOUNT
+    return round(selic_anual_pct / 100 + EQUITY_RISK_PREMIUM, 4)
+
 
 def dcf_fair_price(
     eps: float | None,
     revenue_growth_pct: float | None = None,
-    discount_rate: float = 0.13,
+    discount_rate: float = DCF_FALLBACK_DISCOUNT,
     growth_years: int = 5,
     terminal_pe: float = 15.0,
 ) -> float | None:
@@ -237,10 +359,7 @@ def dcf_fair_price(
 
     growth_pct = DCF_DEFAULT_GROWTH_PCT
     if revenue_growth_pct is not None:
-        if revenue_growth_pct <= 0:
-            growth_pct = 0.0
-        elif revenue_growth_pct <= DCF_MAX_GROWTH_PCT:
-            growth_pct = revenue_growth_pct
+        growth_pct = max(0.0, min(revenue_growth_pct, DCF_MAX_GROWTH_PCT))
 
     growth = growth_pct / 100.0
 
@@ -270,6 +389,9 @@ class FairPriceInputs:
     pvp: float | None
     pvp_fair: float | None
     used_median: bool
+    discount_rate: float = DCF_FALLBACK_DISCOUNT
+    dcf_sem_crescimento: float | None = None
+    growth_source: str = "ausente"
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()
@@ -284,17 +406,14 @@ def compute_fair_price_inputs(
     revenue_growth_pct: float | None = None,
     pb_ratio: float | None = None,
     reference: datetime | None = None,
+    discount_rate: float | None = None,
 ) -> FairPriceInputs:
     is_fii = asset_type == "fii"
     is_etf = asset_type == "etf"
 
     today = reference or _now()
 
-    avg_div = average_dividend_last_n_years(dividends, reference=today)
-    used_median = False
-    if avg_div and price and price > 0 and (avg_div / price) > _IMPLIED_DY_OUTLIER:
-        avg_div = average_dividend_last_n_years(dividends, use_median=True, reference=today)
-        used_median = True
+    avg_div, used_median = normalized_annual_dividend(dividends, reference=today)
 
     pvp: float | None = None
     pvp_fair: float | None = None
@@ -307,10 +426,13 @@ def compute_fair_price_inputs(
 
     graham: float | None = None
     dcf: float | None = None
+    dcf_sem_crescimento: float | None = None
     if not is_fii and not is_etf:
         graham = graham_fair_price(eps, book_value, price=price, pb_ratio=pb_ratio)
         if eps is not None and eps > 0:
-            dcf = dcf_fair_price(eps, revenue_growth_pct)
+            taxa = discount_rate or DCF_FALLBACK_DISCOUNT
+            dcf = dcf_fair_price(eps, revenue_growth_pct, discount_rate=taxa)
+            dcf_sem_crescimento = dcf_fair_price(eps, 0.0, discount_rate=taxa)
 
     return FairPriceInputs(
         asset_type=asset_type,
@@ -325,6 +447,17 @@ def compute_fair_price_inputs(
         pvp=pvp,
         pvp_fair=pvp_fair,
         used_median=used_median,
+        discount_rate=discount_rate or DCF_FALLBACK_DISCOUNT,
+        dcf_sem_crescimento=dcf_sem_crescimento,
+        growth_source=(
+            "ausente"
+            if revenue_growth_pct is None
+            else "contracao"
+            if revenue_growth_pct < 0
+            else "estagnacao"
+            if revenue_growth_pct == 0
+            else "medido"
+        ),
     )
 
 
@@ -348,27 +481,52 @@ def fair_price_from_inputs(
     dcf = inputs.dcf
 
     if is_fii:
-        candidates = [v for v in (bazin, inputs.pvp_fair) if v is not None]
+        candidatos = {"bazin": bazin, "vpa": inputs.pvp_fair}
     elif is_etf:
-        candidates = [v for v in (bazin,) if v is not None]
+        bazin = None
+        candidatos = {}
     elif is_bdr:
         bazin = None
-        candidates = [v for v in (graham, dcf) if v is not None]
+        candidatos = {"graham": graham, "dcf": dcf}
     else:
-        candidates = [v for v in (bazin, graham, dcf) if v is not None]
+        candidatos = {"bazin": bazin, "graham": graham, "dcf": dcf}
 
-    consensus = round(sum(candidates) / len(candidates), 2) if candidates else None
-    consensus_methods = len(candidates)
+    validos = {n: v for n, v in candidatos.items() if v is not None}
+    fair_low, fair_high, destoante = _band_from(validos)
+    usados = validos
 
-    fair_low = round(min(candidates), 2) if candidates else None
-    fair_high = round(max(candidates), 2) if candidates else None
+    consensus = round(sum(usados.values()) / len(usados), 2) if usados else None
+    consensus_methods = len(usados)
+
+    independent_inputs = len({METHOD_INPUT[n] for n in usados})
 
     dispersion: float | None = None
-    if len(candidates) >= 2:
-        menor = min(candidates)
+    if len(usados) >= 2:
+        menor = min(usados.values())
         if menor > 0:
-            dispersion = round(max(candidates) / menor, 2)
+            dispersion = round(max(usados.values()) / menor, 2)
     disagree = dispersion is not None and dispersion >= MAX_METHOD_DISPERSION
+
+    if fair_low is None:
+        band_quality = "sem_faixa"
+    elif independent_inputs <= 1:
+        band_quality = "fragil"
+    elif destoante or disagree:
+        band_quality = "ampla"
+    else:
+        band_quality = "firme"
+
+    diagnostico = [
+        _method_status(nome, inputs, validos.get(nome))
+        for nome in ("bazin", "graham", "dcf", "vpa")
+    ]
+    if destoante:
+        for item in diagnostico:
+            if item["method"] == destoante:
+                item["status"] = "destoa_dos_demais"
+                item["note"] = (
+                    "afasta-se mais de 2x da mediana dos outros: é ele que alarga a faixa"
+                )
 
     mos = margin_of_safety_in_band(price, fair_low, fair_high)
 
@@ -394,6 +552,10 @@ def fair_price_from_inputs(
         margin_of_safety=mos,
         fair_low=fair_low,
         fair_high=fair_high,
+        band_position=band_position(price, fair_low, fair_high),
+        band_quality=band_quality,
+        independent_inputs=independent_inputs,
+        methods=diagnostico,
         avg_dividend_5y=round(inputs.avg_dividend, 4) if inputs.avg_dividend else None,
         dy_12m=dy_12m,
         dy_5y=dy_5y,
@@ -401,6 +563,9 @@ def fair_price_from_inputs(
         desired_yield_used=effective_yield,
         pvp=inputs.pvp,
         details={
+            "discount_rate_pct": round(inputs.discount_rate * 100, 2),
+            "dcf_sem_crescimento": inputs.dcf_sem_crescimento,
+            "growth_source": inputs.growth_source,
             "eps": inputs.eps,
             "book_value": inputs.book_value,
             "desired_yield_pct": effective_yield * 100,
@@ -421,6 +586,7 @@ def compute_fair_price(
     revenue_growth_rate: float | None = None,
     pb_ratio: float | None = None,
     reference: datetime | None = None,
+    discount_rate: float | None = None,
 ) -> FairPriceResult:
     inputs = compute_fair_price_inputs(
         price=price,
@@ -431,6 +597,7 @@ def compute_fair_price(
         revenue_growth_pct=revenue_growth_rate,
         pb_ratio=pb_ratio,
         reference=reference,
+        discount_rate=discount_rate,
     )
     return fair_price_from_inputs(inputs, desired_yield=desired_yield)
 

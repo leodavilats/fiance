@@ -489,6 +489,9 @@ class Opportunity {
     required this.verdict,
     required this.label,
     this.basis = 'band',
+    this.bandQuality = 'sem_faixa',
+    this.independentInputs = 0,
+    this.confidenceLabel = 'baixa',
     required this.sector,
     required this.score,
     this.confidence = 0,
@@ -516,6 +519,9 @@ class Opportunity {
   final String label;
 
   final String basis;
+  final String bandQuality;
+  final int independentInputs;
+  final String confidenceLabel;
   final String? sector;
   final double score;
   final double confidence;
@@ -540,6 +546,9 @@ class Opportunity {
     verdict: j['verdict'] as String? ?? '',
     label: j['label'] as String? ?? '',
     basis: j['basis'] as String? ?? 'band',
+    bandQuality: j['band_quality'] as String? ?? 'sem_faixa',
+    independentInputs: (j['independent_inputs'] as num?)?.toInt() ?? 0,
+    confidenceLabel: j['confidence_label'] as String? ?? 'baixa',
     sector: j['sector'] as String?,
     score: (j['score'] as num?)?.toDouble() ?? 0,
     confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
@@ -775,6 +784,7 @@ class Falsifier {
     required this.becomesLabel,
     required this.current,
     required this.threshold,
+    this.kind = 'gatilho',
   });
 
   final String metric;
@@ -783,12 +793,43 @@ class Falsifier {
   final double current;
   final double threshold;
 
+  final String kind;
+
+  bool get isPremise => kind == 'premissa';
+
   factory Falsifier.fromJson(Map<String, dynamic> j) => Falsifier(
     metric: j['metric'] as String? ?? '',
     condition: j['condition'] as String? ?? '',
     becomesLabel: j['becomes_label'] as String? ?? '',
     current: (j['current'] as num?)?.toDouble() ?? 0,
     threshold: (j['threshold'] as num?)?.toDouble() ?? 0,
+    kind: j['kind'] as String? ?? 'gatilho',
+  );
+}
+
+class FairMethod {
+  FairMethod({
+    required this.method,
+    required this.input,
+    required this.status,
+    required this.note,
+    this.value,
+  });
+
+  final String method;
+  final String input;
+  final String status;
+  final String note;
+  final double? value;
+
+  bool get applies => status == 'ok' || status == 'destoa_dos_demais';
+
+  factory FairMethod.fromJson(Map<String, dynamic> j) => FairMethod(
+    method: j['method'] as String? ?? '',
+    input: j['input'] as String? ?? '',
+    status: j['status'] as String? ?? '',
+    note: j['note'] as String? ?? '',
+    value: (j['value'] as num?)?.toDouble(),
   );
 }
 
@@ -807,7 +848,12 @@ class AssetAnalysis {
     this.fairHigh,
     required this.marginOfSafety,
     this.consensusMethods = 0,
+    this.independentInputs = 0,
+    this.bandQuality = 'sem_faixa',
+    this.bandPosition,
+    this.methods = const [],
     this.basis = 'band',
+    this.confidenceLabel = 'baixa',
     this.dataYears = 0,
     this.dividendYield,
     required this.rsi14,
@@ -838,7 +884,15 @@ class AssetAnalysis {
 
   final int consensusMethods;
 
+  final int independentInputs;
+
+  final String bandQuality;
+  final double? bandPosition;
+
+  final List<FairMethod> methods;
+
   final String basis;
+  final String confidenceLabel;
 
   final int dataYears;
 
@@ -874,7 +928,14 @@ class AssetAnalysis {
       fairHigh: (fp['fair_high'] as num?)?.toDouble(),
       marginOfSafety: (fp['margin_of_safety'] as num?)?.toDouble(),
       consensusMethods: (fp['consensus_methods'] as num?)?.toInt() ?? 0,
+      independentInputs: (fp['independent_inputs'] as num?)?.toInt() ?? 0,
+      bandQuality: fp['band_quality'] as String? ?? 'sem_faixa',
+      bandPosition: (fp['band_position'] as num?)?.toDouble(),
+      methods: ((fp['methods'] as List?) ?? const [])
+          .map((e) => FairMethod.fromJson(e as Map<String, dynamic>))
+          .toList(),
       basis: dec['basis'] as String? ?? 'band',
+      confidenceLabel: dec['confidence_label'] as String? ?? 'baixa',
       dataYears: (fp['data_years'] as num?)?.toInt() ?? 0,
       dividendYield: (fp['dy_12m'] as num?)?.toDouble(),
       rsi14: (tech['rsi_14'] as num?)?.toDouble(),

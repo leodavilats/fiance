@@ -51,6 +51,21 @@ final Map<String, String> glossary = {
       'do teto, contra; dentro da faixa não há margem nenhuma, e o produto diz isso em vez de '
       'escolher um lado. Comprar exige preço abaixo do método mais pessimista — é o que torna a '
       'medida conservadora.',
+  'qualidade_da_faixa':
+      'Diz com o que a faixa se apoia. `Firme`: pelo menos dois insumos econômicos diferentes '
+      '(dividendo, lucro, patrimônio) e métodos que convergem. `Ampla`: os métodos discordam '
+      'entre si. `Frágil`: tudo depende de um insumo só — inclusive quando há um método apenas, '
+      'ou quando dois métodos leem o mesmo número. Graham e lucros descontados vivem do mesmo '
+      'lucro por ação: se ele estiver errado, os dois erram juntos.',
+  'premissa_e_gatilho':
+      'São coisas diferentes, e a tela as separa. O **gatilho** é o preço em que a etiqueta '
+      'muda — atravessá-lo reclassifica, não refuta nada. A **premissa** é o que sustenta o '
+      'preço justo: o dividendo se manter, o crescimento se confirmar. Refutar uma premissa '
+      'derruba a tese; cruzar um limiar só troca o nome dela.',
+  'taxa_de_desconto':
+      'Quanto o futuro vale menos que o presente, no cálculo de lucros descontados. Sai da '
+      'Selic do dia mais um prêmio declarado de 5 pontos: em juro alto, descontar a uma taxa '
+      'fixa seria exigir da empresa menos do que o título do governo paga.',
   'leitura_de_tendencia':
       'Para ativo sem nenhum método aplicável, como ETF de índice, não há preço justo e o '
       'produto diz de onde a leitura veio: médias móveis e RSI. Vem marcada como tal, e o que a '
