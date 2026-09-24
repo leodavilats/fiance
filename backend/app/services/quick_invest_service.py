@@ -322,8 +322,8 @@ class QuickInvestService:
             razoes.append(f"score {opp.score:.0f}")
         if opp.dividend_yield and opp.dividend_yield >= 6:
             razoes.append(f"DY {opp.dividend_yield:.1f}%")
-        if opp.margin_of_safety and opp.margin_of_safety >= 20:
-            razoes.append(f"margem de {opp.margin_of_safety:.0f}%")
+        if opp.margin_of_safety and opp.margin_of_safety >= 0.20:
+            razoes.append(f"margem de {opp.margin_of_safety * 100:.0f}%")
         return " · ".join(razoes) if razoes else "entre os melhores scores do universo"
 
     def _balanco(

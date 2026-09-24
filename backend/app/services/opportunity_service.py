@@ -8,15 +8,12 @@ from app.analysis.decision import confidence_label, decide
 from app.analysis.fair_price import (
     FairPriceInputs,
     TechnicalSnapshot,
-    compute_fair_price_inputs,
     compute_technical,
     desired_yield_for,
-    discount_rate_from,
     fair_price_from_inputs,
 )
 from app.analysis.score_ruler import is_highlight
 from app.analysis.scoring import score_opportunity
-from app.collectors.rates import get_rates
 from app.collectors.universal import prefetch_brapi_raw
 from app.core import cache
 from app.core.context import memoize_request
@@ -25,15 +22,11 @@ from app.core.universe import get_universe
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.models.enums import RiskProfile
 from app.repositories import AssetRepository, PortfolioRepository
-
-
-def _taxa_de_desconto() -> float:
-    return discount_rate_from(get_rates().get("selic_anual"))
-
+from app.services.valuation import fair_price_inputs_for
 
 logger = logging.getLogger(__name__)
 
-_SCAN_CACHE_KEY = "opps_market_scan_v2"
+_SCAN_CACHE_KEY = "opps_market_scan_v3"
 _SCAN_TTL = 20 * 60
 
 _SCAN_STALE_TOLERANCE = 72 * 3600
@@ -115,16 +108,7 @@ class OpportunityService:
             has_dividend_history=bool(dividends),
             as_of=snap.as_of,
             change_percent_day=snap.change_percent_day,
-            fair_inputs=compute_fair_price_inputs(
-                price=snap.price,
-                eps=snap.eps,
-                book_value=snap.book_value,
-                dividends=dividends,
-                asset_type=snap.asset_type,
-                revenue_growth_pct=snap.revenue_growth,
-                pb_ratio=snap.pb_ratio,
-                discount_rate=_taxa_de_desconto(),
-            ),
+            fair_inputs=fair_price_inputs_for(snap, dividends),
             technical=compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low),
         )
 
@@ -169,6 +153,7 @@ class OpportunityService:
             bazin=fair.bazin,
             graham=fair.graham,
             pvp=fair.pvp,
+            personal_ceiling=fair.personal_ceiling,
             margin_of_safety=fair.margin_of_safety,
             dividend_yield=record.dividend_yield,
             verdict=dec.verdict,

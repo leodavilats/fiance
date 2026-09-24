@@ -18,7 +18,7 @@ da verdade** da carteira. `ledger/`
 apuração de imposto. Projeção nunca é gravada como verdade independente; é recalculada.
 
 **Falsificador** — a condição conferível que mudaria o veredito. Para um veredito de preço, é o
-preço em que ele vira outro: *"se cair para R$ 28,40, vira Comprar"*. Sai por álgebra dos limiares
+preço em que ele vira outro: *"se cair para R$ 28,40, fica abaixo do preço justo"*. Sai por álgebra dos limiares
 de margem de segurança, não de opinião. Existe para que um julgamento seja verificável em vez de
 confiável. `analysis/falsifiers.py`
 
@@ -27,24 +27,28 @@ já é lançamento do razão; a camada de serviço o soma em memória na leitura
 impossível, por construção, contar o mesmo dinheiro duas vezes. O tipo recusa categoria `provento`
 sem `derived=True`, e recusa `derived` em qualquer outra categoria.
 
-**Faixa de preço justo** — piso e teto dos métodos que se aplicam ao ativo, do mais conservador ao
-mais otimista. Não há média: os métodos não medem a mesma coisa. O número de métodos viaja junto
-(`consensus_methods`), porque faixa de um método é um ponto.
+**Modelo principal** — o método que descreve o fluxo da classe: lucro distribuível descontado para
+ação, distribuição recorrente capitalizada para FII. BDR e ETF não têm.
 
-**Margem de segurança** — distância do preço de mercado até a **borda** da faixa: contra o piso
-quando o preço está abaixo dele, contra o teto quando está acima, e zero dentro da faixa. Positiva
-significa preço abaixo do método mais pessimista.
+**Faixa de preço justo** — o modelo principal da premissa pessimista à otimista: sem crescimento e
+com 1 ponto a mais de taxa, até com crescimento e 1 ponto a menos. É incerteza sobre o valor, e não
+distância entre métodos que medem coisas diferentes.
 
-**Leitura de tendência** — o que o produto diz sobre ativo ao qual nenhum método de preço justo se
-aplica, como ETF de índice. Sai marcada (`basis: trend`) e o que a derruba é a tendência virar. É o
-**único** lugar em que análise técnica decide sozinha, e decide porque não há alternativa.
+**Confirmação** — a leitura por outro insumo: o dividendo recorrente na ação, o VPA no FII. Diz se a
+faixa se sustenta, e entra na qualidade — nunca na borda.
 
-**Insumo independente** — o dado econômico do qual um método vive: dividendo, lucro ou patrimônio.
-Graham e lucros descontados leem o mesmo lucro, então três métodos de ação são **duas** evidências.
-É isso que `independent_inputs` conta, e não métodos.
+**Margem de segurança** — distância do preço de mercado até a **borda** da faixa: sobre o piso
+quando o preço está abaixo dele, sobre o próprio preço quando está acima do teto, e zero dentro da
+faixa. As duas pontas medem a mesma distância.
+
+**Sem preço justo** — o que o produto diz sobre ativo sem modelo principal (BDR, ETF) ou sem o dado
+que o modelo exige (lucro, ROE, juro). A tendência continua na tela, como contexto, e nunca decide.
+
+**Preço-teto da meta** — até que preço a distribuição recorrente rende o yield que a pessoa
+declarou. É meta de renda, não valor: mudar a meta muda o teto, e não a faixa.
 
 **Qualidade da faixa** — `firme`, `ampla`, `fragil` ou `sem_faixa`. Diz se dá para confiar na faixa,
-e não onde ela está.
+e não onde ela está. Com `fragil`, a etiqueta não passa de abaixo ou acima do preço justo.
 
 **Gatilho e premissa** — o gatilho é o preço em que a etiqueta muda; a premissa é a condição
 econômica que sustenta o preço justo. Atravessar um gatilho reclassifica; refutar uma premissa
@@ -230,7 +234,7 @@ Erro de unidade é o defeito mais caro deste domínio, porque não quebra nada.
 | Grandeza | Unidade | Onde se converte |
 |---|---|---|
 | `roe`, `profit_margin`, `revenue_growth`, `debt_to_equity` | **percentual** (20.0 = 20%) | `collectors/universal._ratio_to_pct` |
-| Crescimento no DCF | percentual | idem |
+| Crescimento e ROE no modelo de lucro | **fração** (0.15 = 15%) | `analysis/fair_price.py::normalized_roe` |
 | Yield desejado | **fração** (0.06 = 6%) | `analysis/fair_price.py` |
 | Margem de segurança | fração (0.15 = 15%) | `analysis/fair_price.py` |
 | Dividend yield no score | percentual | `analysis/scoring.py` |

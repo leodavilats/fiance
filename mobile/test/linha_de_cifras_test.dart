@@ -17,7 +17,7 @@ void main() {
     'dividend_yield': 20.66,
     'score': 100.0,
     'verdict': 'BUY',
-    'label': 'Comprar',
+    'label': 'Bem abaixo do preço justo',
     'consensus_methods': 1,
     'data_years': 5,
     'data_completeness': 1.0,
@@ -92,7 +92,7 @@ void main() {
   testWidgets('a base de cada número continua na tela', (tester) async {
     await montar(tester, 390);
 
-    expect(find.textContaining('1 método na faixa'), findsOneWidget);
+    expect(find.textContaining('sem confirmação independente'), findsOneWidget);
     expect(find.textContaining('5 anos de proventos'), findsOneWidget);
   });
 }

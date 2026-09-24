@@ -1,14 +1,8 @@
 import asyncio
 
 from app.analysis.decision import confidence_label, decide
-from app.analysis.fair_price import (
-    compute_fair_price,
-    compute_technical,
-    desired_yield_for,
-    discount_rate_from,
-)
+from app.analysis.fair_price import compute_technical
 from app.analysis.falsifiers import falsifiers
-from app.collectors.rates import get_rates
 from app.core.errors import NotFoundError
 from app.models import (
     AssetAnalysis,
@@ -19,10 +13,7 @@ from app.models import (
     TechnicalBlock,
 )
 from app.repositories import AssetRepository, PortfolioRepository
-
-
-def _taxa_de_desconto() -> float:
-    return discount_rate_from(get_rates().get("selic_anual"))
+from app.services.valuation import fair_price_for
 
 
 class AssetService:
@@ -45,18 +36,7 @@ class AssetService:
 
         prefs = self.portfolio_repo.get_preferences() if personalized else None
 
-        fair = compute_fair_price(
-            price=snap.price,
-            eps=snap.eps,
-            book_value=snap.book_value,
-            dividends=dividends,
-            asset_type=snap.asset_type,
-            week52_high=snap.fifty_two_week_high,
-            pb_ratio=snap.pb_ratio,
-            revenue_growth_rate=snap.revenue_growth,
-            desired_yield=desired_yield_for(snap.asset_type, prefs),
-            discount_rate=_taxa_de_desconto(),
-        )
+        fair = fair_price_for(snap, dividends, prefs)
 
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
         dec = decide(fair, tech, current_price=snap.price)
@@ -92,24 +72,7 @@ class AssetService:
                 confidence_label=confidence_label(dec.confidence),
                 basis=dec.basis,
                 reasons=dec.reasons,
-                falsifiers=falsifiers(
-                    verdict=dec.verdict,
-                    price=snap.price,
-                    consensus=fair.consensus,
-                    bazin=fair.bazin,
-                    consensus_methods=fair.consensus_methods,
-                    avg_dividend=fair.avg_dividend_5y,
-                    trend=tech.trend,
-                    sma_50=tech.sma_50,
-                    sma_200=tech.sma_200,
-                    rsi_14=tech.rsi_14,
-                    band_verdict=dec.band_verdict,
-                    fair_low=fair.fair_low,
-                    fair_high=fair.fair_high,
-                    basis=dec.basis,
-                    dcf=fair.dcf,
-                    dcf_sem_crescimento=fair.details.get("dcf_sem_crescimento"),
-                ),
+                falsifiers=falsifiers(fair, dec.verdict, snap.price, dec.basis),
             ),
             price_history=(
                 [

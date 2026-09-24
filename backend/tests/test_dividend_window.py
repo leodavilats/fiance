@@ -66,7 +66,7 @@ def test_trailing_12m_ignores_older_payments():
     assert average_dividend_last_12m(dividends, reference=REFERENCE) == 3.0
 
 
-def test_bazin_reflects_the_corrected_average():
+def test_the_personal_ceiling_reflects_the_corrected_average():
     dividends = _yearly(2024, 4.0) + _yearly(2025, 4.0)
     avg = average_dividend_last_n_years(dividends, reference=REFERENCE)
 
@@ -79,7 +79,7 @@ def test_bazin_reflects_the_corrected_average():
         reference=REFERENCE,
     )
 
-    assert result.bazin == bazin_fair_price(avg, 0.06)
+    assert result.personal_ceiling == bazin_fair_price(avg, 0.06)
 
 
 def test_collector_dy_uses_last_12_months_not_first_12_records():

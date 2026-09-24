@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 
 import httpx
 
 from app.core import cache
+from app.core.brt import now_brt
 
 from . import circuit
 from .plausibility import Range
@@ -15,7 +17,14 @@ PROVIDER = "bcb"
 
 _BCB_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{sid}/dados/ultimos/1?formato=json"
 
-_SERIES = {"cdi": 4389, "selic": 432, "ipca": 13522}
+_BCB_RANGE_URL = (
+    "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{sid}/dados"
+    "?formato=json&dataInicial={inicio}&dataFinal={fim}"
+)
+
+_SERIES = {"cdi": 4389, "selic": 432, "ipca": 13522, "selic_mensal": 4189}
+
+SELIC_AVERAGE_MONTHS = 120
 
 _CACHE_KEY = "reference_rates:bcb"
 _TTL = 24 * 3600
@@ -45,6 +54,24 @@ def _fetch_series(client: httpx.Client, sid: int) -> float | None:
     if not data:
         return None
     return float(str(data[-1]["valor"]).replace(",", "."))
+
+
+def _selic_media(client: httpx.Client) -> float | None:
+    hoje = now_brt()
+    inicio = hoje - timedelta(days=SELIC_AVERAGE_MONTHS * 31)
+    resp = client.get(
+        _BCB_RANGE_URL.format(
+            sid=_SERIES["selic_mensal"],
+            inicio=inicio.strftime("%d/%m/%Y"),
+            fim=hoje.strftime("%d/%m/%Y"),
+        )
+    )
+    resp.raise_for_status()
+    valores = [float(str(p["valor"]).replace(",", ".")) for p in resp.json() or []]
+    valores = [v for v in valores[-SELIC_AVERAGE_MONTHS:] if FAIXAS["selic_anual"].accepts(v)]
+    if len(valores) < SELIC_AVERAGE_MONTHS // 2:
+        return None
+    return round(sum(valores) / len(valores), 2)
 
 
 def _dentro_da_faixa(campo: str, valor: float | None) -> float | None:
@@ -102,10 +129,18 @@ def get_rates() -> dict:
 
     circuit.record_success(PROVIDER)
 
+    try:
+        with httpx.Client(timeout=_TIMEOUT) as client:
+            selic_media = _selic_media(client)
+    except Exception as exc:
+        logger.warning("BCB sem a série mensal da Selic (%s); a média fica ausente.", exc)
+        selic_media = None
+
     rates = {
         "cdi_anual": round(cdi, 2),
         "selic_anual": round(selic, 2),
         "ipca_anual": round(ipca, 2) if ipca is not None else DEFAULT_IPCA_ANUAL,
+        "selic_media_10a": selic_media,
         "source": SOURCE_BCB,
     }
     cache.set(_CACHE_KEY, rates, _TTL)

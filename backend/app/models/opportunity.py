@@ -20,6 +20,7 @@ class Opportunity(BaseModel):
     bazin: float | None = None
     graham: float | None = None
     pvp: float | None = None
+    personal_ceiling: float | None = None
     margin_of_safety: float | None = None
     dividend_yield: float | None = None
     verdict: str

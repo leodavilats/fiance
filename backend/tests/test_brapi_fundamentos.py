@@ -200,3 +200,44 @@ class TestOEndividamentoEDividaQueCobraJuros:
             "zero declarado é informação: quem não deve precisa aparecer como quem não deve, "
             "e não como quem não informou"
         )
+
+
+class TestAsSeriesDoLucroNormalizado:
+    def test_lucro_de_banco_sai_da_chave_que_o_banco_preenche(self):
+        resultado = {
+            "endDate": "2025-12-31",
+            "netIncome": None,
+            "netIncomeApplicableToCommonShares": 44857000000,
+        }
+        raw = {
+            "balanceSheetHistory": [_balanco("2025-12-31", 215076000000)],
+            "incomeStatementHistory": [resultado],
+        }
+
+        assert universal._roe_do_balanco(raw) == pytest.approx(20.86, abs=0.01), (
+            "o Itaú não preenche `netIncome`, e banco saía sem ROE: sem ROE a ação não tem "
+            "preço justo"
+        )
+
+    def test_lucro_e_patrimonio_saem_alinhados_por_exercicio(self):
+        raw = {
+            "incomeStatementHistory": [
+                _resultado("2023-12-31", 1, 30),
+                _resultado("2025-12-31", 1, 50),
+                _resultado("2024-12-31", 1, 40),
+            ],
+            "balanceSheetHistory": [
+                _balanco("2025-12-31", 500),
+                _balanco("2023-12-31", 300),
+            ],
+        }
+
+        lucros, patrimonios = universal._series_anuais(raw)
+
+        assert lucros == [50, 40, 30]
+        assert patrimonios == [500, None, 300], (
+            "patrimônio de um ano ao lado do lucro de outro dá um ROE que não existiu"
+        )
+
+    def test_sem_demonstrativo_nao_ha_serie(self):
+        assert universal._series_anuais({}) == (None, None)

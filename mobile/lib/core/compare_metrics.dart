@@ -33,7 +33,7 @@ final fiCompareMetrics = <FiCompareMetric>[
     (a) => formatCurrency(a.price),
   ),
   FiCompareMetric(
-    'Preço justo (consenso)',
+    'Preço justo (valor central)',
     'Valuation',
     fiCompareAll,
     (a) => formatCurrency(a.consensus),

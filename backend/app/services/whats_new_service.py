@@ -115,9 +115,9 @@ class WhatsNewService:
                 kind="verdict_change",
                 severity="critical" if to_review[0].verdict == "STRONG_SELL" else "warning",
                 title=(
-                    f"{len(to_review)} posição com sinal de venda"
+                    f"{len(to_review)} posição acima do preço justo"
                     if len(to_review) == 1
-                    else f"{len(to_review)} posições com sinal de venda"
+                    else f"{len(to_review)} posições acima do preço justo"
                 ),
                 detail=f"{names}{extra} — o preço passou do preço justo estimado.",
                 ticker=to_review[0].ticker if len(to_review) == 1 else None,

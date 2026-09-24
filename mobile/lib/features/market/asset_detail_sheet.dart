@@ -4,13 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/format.dart';
 import '../../core/score_ruler.dart'
     show
+        agreementLabel,
         bandQualityLabel,
         basisLabel,
         consensusLabel,
-        dataYearsLabel,
         fairBandLabel,
         methodLabel,
         methodStatusLabel,
+        principalLabel,
+        rateBaseLabel,
         trendBasisLabel;
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
@@ -111,22 +113,24 @@ class _AssetDetailContent extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: FiSpace.s3),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    FiTag(label: a.label, state: fiVerdictState(a.verdict)),
-                    if (basisLabel(a.basis).isNotEmpty) ...[
-                      const SizedBox(height: FiSpace.s1),
-                      SizedBox(
-                        width: 140,
-                        child: Text(
-                          basisLabel(a.basis),
-                          textAlign: TextAlign.end,
-                          style: FiType.caption.copyWith(color: fiInk3(context)),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      FiTag(label: a.label, state: fiVerdictState(a.verdict)),
+                      if (basisLabel(a.basis).isNotEmpty) ...[
+                        const SizedBox(height: FiSpace.s1),
+                        SizedBox(
+                          width: 140,
+                          child: Text(
+                            basisLabel(a.basis),
+                            textAlign: TextAlign.end,
+                            style: FiType.caption.copyWith(color: fiInk3(context)),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -162,9 +166,9 @@ class _AssetDetailContent extends ConsumerWidget {
 
             if (a.methods.any((m) => !m.applies && m.status != 'inaplicavel'))
               FiSection(
-                title: 'O que não entrou na faixa, e por quê',
-                hint: 'Método ausente por falta de dado e método que o dado reprova são '
-                    'silêncios diferentes.',
+                title: 'O que ficou de fora, e por quê',
+                hint: 'Falta de dado, prejuízo e leitura que não se aplica são silêncios '
+                    'diferentes.',
                 child: FiRows(
                   children: [
                     for (final m in a.methods.where(
@@ -179,35 +183,50 @@ class _AssetDetailContent extends ConsumerWidget {
                 ),
               ),
 
-            FiSection(
-              title: 'Quanto o ativo vale, por cada método',
-              hint: 'Cada método olha para uma coisa diferente. Quando eles concordam, a '
-                  'estimativa é mais firme.',
-              child: FiRows(
-                children: [
-                  if (a.bazin != null)
+            if (a.fairLow != null)
+              FiSection(
+                title: 'Quanto o ativo vale',
+                hint: 'Um método principal, com a faixa das premissas, e outro insumo para '
+                    'confirmar.',
+                child: FiRows(
+                  children: [
                     FiDataRow(
-                      label: 'Pelos dividendos que paga',
-                      value: formatCurrency(a.bazin),
-                      detail: 'Método Bazin',
-                      note: dataYearsLabel(a.dataYears),
+                      label: principalLabel(a.principal),
+                      value: formatCurrency(a.consensus),
+                      detail: 'Valor central',
                     ),
-                  if (a.graham != null)
                     FiDataRow(
-                      label: 'Pelo lucro e pelo patrimônio',
-                      value: formatCurrency(a.graham),
-                      detail: 'Fórmula de Graham',
+                      label: 'Faixa de preço justo',
+                      value: fairBandLabel(a.fairLow, a.fairHigh),
+                      detail: 'Da premissa pessimista à otimista',
+                      note: a.qualityReasons.isNotEmpty
+                          ? a.qualityReasons.join('; ')
+                          : bandQualityLabel(a.bandQuality, a.independentInputs),
+                      emphasis: true,
                     ),
-                  FiDataRow(
-                    label: 'Faixa de preço justo',
-                    value: fairBandLabel(a.fairLow, a.fairHigh),
-                    detail: 'Do método mais conservador ao mais otimista',
-                    note: bandQualityLabel(a.bandQuality, a.independentInputs),
-                    emphasis: true,
-                  ),
-                ],
+                    if (a.confirmation != null)
+                      FiDataRow(
+                        label: methodLabel(a.confirmation!.method),
+                        value: formatCurrency(a.confirmation!.value),
+                        detail: agreementLabel(a.confirmation!.agreement),
+                      ),
+                  ],
+                ),
               ),
-            ),
+
+            if (a.premises.isNotEmpty)
+              FiSection(
+                title: 'As premissas',
+                hint: 'O que sustenta a faixa. Se uma delas não se confirmar, a leitura muda.',
+                child: FiRows(children: _premiseRows(a)),
+              ),
+
+            if (a.indicators.isNotEmpty)
+              FiSection(
+                title: 'Indicadores que não decidem',
+                hint: 'Ajudam a ler o ativo, mas não mexem na faixa.',
+                child: FiRows(children: _indicatorRows(a)),
+              ),
 
             FiSection(
               title: 'O que o preço vem fazendo',
@@ -283,9 +302,10 @@ class _AssetDetailContent extends ConsumerWidget {
             FiProvenance(
               summary: 'Como chegamos nesta leitura',
               method:
-                  'O preço justo é uma faixa, do método mais conservador ao mais otimista; a '
-                  'margem de segurança é a distância do preço de hoje até a borda da faixa.',
-              source: 'Fundamentos e cotações da BRAPI.',
+                  'O preço justo é uma faixa: o método principal da classe, da premissa '
+                  'pessimista à otimista. A margem de segurança é a distância do preço de hoje '
+                  'até a borda da faixa, e outro insumo confirma ou não a leitura.',
+              source: 'Fundamentos e cotações da BRAPI; juro do Banco Central.',
               asOf: idade.isEmpty ? null : 'Preço lido $idade.',
               limitation:
                   'É leitura do sistema sobre dado público, não recomendação de compra.',
@@ -349,6 +369,84 @@ final _assetAnalysisProvider = FutureProvider.autoDispose
     .family<AssetAnalysis, String>((ref, ticker) {
       return ref.watch(apiRepositoryProvider).analyzeAsset(ticker);
     });
+
+List<Widget> _premiseRows(AssetAnalysis a) {
+  final base = rateBaseLabel(a.premises['rate_base'] as String?);
+
+  if (a.principal == 'dividendos') {
+    return [
+      FiDataRow(
+        label: 'Yield exigido',
+        value: formatRatio(a.premise('fii_yield')),
+        detail: 'Juro real de longo prazo mais prêmio',
+        note: base.isEmpty ? null : 'a partir da $base',
+      ),
+      FiDataRow(
+        label: 'Distribuição recorrente',
+        value: formatCurrency(a.premise('dividend_recurring')),
+        detail: 'Por cota, ao ano',
+      ),
+    ];
+  }
+
+  final payout = a.premise('payout');
+  final retido = payout == null ? '' : ' (${formatRatio(1 - payout)})';
+  return [
+    FiDataRow(
+      label: 'Taxa exigida',
+      value: formatRatio(a.premise('discount_rate')),
+      detail: base.isEmpty ? null : '$base mais 5 pontos',
+    ),
+    FiDataRow(
+      label: 'Crescimento nos próximos 5 anos',
+      value: formatRatio(a.premise('growth')),
+      detail: 'O ROE de ${formatRatio(a.premise('roe'))} sobre o que a empresa retém$retido',
+    ),
+    FiDataRow(
+      label: 'Crescimento depois',
+      value: formatRatio(a.premise('long_run_growth')),
+      detail: 'Meta de inflação mais crescimento real',
+    ),
+    FiDataRow(
+      label: 'Lucro por ação normalizado',
+      value: formatCurrency(a.premise('eps_normalized')),
+      detail: 'Média dos últimos exercícios anuais',
+    ),
+  ];
+}
+
+List<Widget> _indicatorRows(AssetAnalysis a) {
+  final graham = a.indicator('graham');
+  final teto = a.indicator('preco_teto_pessoal');
+  final pvp = a.indicator('pvp');
+
+  return [
+    if (teto != null)
+      FiDataRow(
+        label: 'Preço-teto da sua meta',
+        value: formatCurrency(teto.value),
+        detail: 'Para render ${formatRatio(teto.desiredYield)} ao ano',
+        note: teto.passes == true
+            ? 'o preço de hoje cabe na sua meta de renda'
+            : 'o preço de hoje não cabe na sua meta de renda',
+      ),
+    if (graham != null)
+      FiDataRow(
+        label: 'Critério de Graham',
+        value: formatCurrency(graham.value),
+        detail: graham.passes == true
+            ? 'O preço passa na triagem defensiva'
+            : 'O preço não passa na triagem defensiva',
+        note: 'é triagem, não preço justo',
+      ),
+    if (pvp != null)
+      FiDataRow(
+        label: 'Preço sobre valor patrimonial',
+        value: formatQuantity(pvp.value),
+        detail: 'P/VP',
+      ),
+  ];
+}
 
 String _paceLabel(double? rsi) {
   if (rsi == null) return 'Sem histórico suficiente';

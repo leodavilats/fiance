@@ -65,8 +65,9 @@ String dataYearsLabel(int? dataYears) {
 }
 
 String consensusLabel(int? methods) {
-  if (methods == null || methods == 0) return 'sem método aplicável';
-  return '$methods ${methods == 1 ? 'método' : 'métodos'} na faixa';
+  if (methods == null || methods == 0) return 'sem preço justo';
+  if (methods == 1) return 'sem confirmação independente';
+  return 'confirmada por outro insumo';
 }
 
 String fairBandLabel(double? low, double? high) {
@@ -77,7 +78,7 @@ String fairBandLabel(double? low, double? high) {
 
 String fairBandSummary(double? low, double? high, int? methods) {
   if (low == null || high == null) return consensusLabel(methods);
-  if ((high - low).abs() < 0.01) return 'Justo de ${consensusLabel(methods)}';
+  if ((high - low).abs() < 0.01) return 'Preço justo pontual, ${consensusLabel(methods)}';
   return 'Justo entre ${fairBandLabel(low, high)}, ${consensusLabel(methods)}';
 }
 
@@ -91,15 +92,50 @@ String fairBandEdgeLabel(double? price, double? low, double? high) {
 String bandQualityLabel(String? quality, int independentInputs) {
   switch (quality) {
     case 'firme':
-      return '$independentInputs insumos independentes, e os métodos convergem';
+      return 'faixa estreita, confirmada por outro insumo';
     case 'ampla':
-      return 'os métodos discordam entre si: a faixa é larga por isso';
-    case 'fragil':
       return independentInputs <= 1
-          ? 'tudo apoiado num insumo só — concordar aqui não confirma nada'
-          : 'evidência frágil';
+          ? 'sem confirmação por outro insumo'
+          : 'a confirmação fica perto da faixa, ou a faixa é larga pelas premissas';
+    case 'fragil':
+      return 'evidência frágil: a leitura não passa de abaixo ou acima do preço justo';
     default:
       return 'sem faixa de preço justo';
+  }
+}
+
+String agreementLabel(String? agreement) {
+  switch (agreement) {
+    case 'dentro':
+      return 'dentro da faixa: confirma';
+    case 'fora_ate_30':
+      return 'fora da faixa, a até 30% dela';
+    case 'fora_mais_30':
+      return 'longe da faixa: não confirma';
+    default:
+      return '';
+  }
+}
+
+String principalLabel(String? principal) {
+  switch (principal) {
+    case 'lucros_descontados':
+      return 'Pelo lucro que a empresa pode distribuir sem deixar de crescer';
+    case 'dividendos':
+      return 'Pela distribuição recorrente, no yield que o juro exige';
+    default:
+      return 'Valor central';
+  }
+}
+
+String rateBaseLabel(String? base) {
+  switch (base) {
+    case 'selic_media_10a':
+      return 'Selic média de 10 anos';
+    case 'selic_atual':
+      return 'Selic do dia, sem a série de 10 anos';
+    default:
+      return '';
   }
 }
 
@@ -117,6 +153,14 @@ String methodStatusLabel(String status) {
       return 'a empresa não teve lucro';
     case 'fora_da_faixa':
       return 'o dado existe e reprova o método';
+    case 'roe_insuficiente':
+      return 'o retorno sobre o patrimônio não cobre o crescimento';
+    case 'sem_juro':
+      return 'falta o juro de referência';
+    case 'pouco_distribuido':
+      return 'a empresa distribui pouco do lucro';
+    case 'taxa_implausivel':
+      return 'a taxa de desconto não cabe no modelo';
     default:
       return status;
   }
@@ -125,11 +169,11 @@ String methodStatusLabel(String status) {
 String methodLabel(String method) {
   switch (method) {
     case 'bazin':
-      return 'Pelos dividendos (Bazin)';
+      return 'Pelos dividendos';
     case 'graham':
-      return 'Pelo lucro e patrimônio (Graham)';
+      return 'Critério de Graham';
     case 'dcf':
-      return 'Pelos lucros descontados';
+      return 'Pelo lucro distribuível';
     case 'vpa':
       return 'Pelo valor patrimonial';
     default:

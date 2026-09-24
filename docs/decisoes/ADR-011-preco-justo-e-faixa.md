@@ -1,6 +1,7 @@
 # ADR-011 — O preço justo é uma faixa, e o que não tem método diz que não tem
 
-**Status:** ACEITO
+**Status:** SUBSTITUÍDO EM PARTE pela [ADR-014](ADR-014-um-modelo-por-classe.md) — a faixa passou a
+ser das premissas de um modelo por classe, e a leitura de tendência saiu
 **Data:** 2026-09-19
 **Decidido por:** autor do projeto
 
@@ -117,5 +118,5 @@ Efeito medido na amostra de 2026-09-19:
 
 - `backend/app/analysis/fair_price.py` — `margin_of_safety_in_band`, `fair_low`, `fair_high`
 - `backend/app/analysis/decision.py` — `BASIS_BAND`, `BASIS_TREND`, `_verdict_from_trend`
-- `backend/tests/test_consenso_que_nao_e_consenso.py`, `backend/tests/test_etf_sem_metodo.py`
+- `test_consenso_que_nao_e_consenso.py` e `test_etf_sem_metodo.py`, removidos pela ADR-014
 - [04-CALCULOS](../04-CALCULOS.md) · [ADR-006](ADR-006-recomendacao-personalizada.md)

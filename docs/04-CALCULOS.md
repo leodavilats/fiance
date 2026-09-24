@@ -2,7 +2,7 @@
 
 Cada número que o produto afirma, com entrada, fórmula, saída e **limitação**.
 O **código é a fonte de verdade**; este documento é o espelho auditado, com âncora em cada fórmula.
-Última revisão: 2026-09-13 · Auditoria completa do motor em 2026-09-13
+Última revisão: 2026-09-23 · Preço justo e veredito refeitos pela ADR-014
 
 Se uma fórmula aqui divergir do código, o código está certo e este documento tem um bug.
 
@@ -10,156 +10,189 @@ Se uma fórmula aqui divergir do código, o código está certo e este documento
 
 ## Preço justo
 
-### Métodos
+Cada classe tem **um modelo principal**, a faixa é a sensibilidade dele às premissas, e **outro
+insumo confirma ou não**. Não há mínimo e máximo de métodos que medem coisas diferentes, nem média
+deles. Ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). `analysis/fair_price.py`
 
-| Método | Fórmula | Aplicado a | Âncora |
+### Por classe de ativo
+
+| Classe | Principal | Confirmação | Por quê |
 |---|---|---|---|
-| **Bazin** | `dividendo médio 5a ÷ yield desejado` | ações, FIIs, ETFs | `analysis/fair_price.py:157` |
-| **Graham** | `√(22,5 × LPA × VPA)`, **só com P/L ≤ 15 e P/VP ≤ 1,5** | ações, BDRs | `analysis/fair_price.py` |
-| **Lucros descontados** | LPA projetado 5 anos, desconto = Selic + 5 pp, P/L terminal 15 | ações, BDRs | `backend/app/analysis/fair_price.py` |
-| **VPA** | valor patrimonial por cota | FIIs | `analysis/fair_price.py:258` |
+| Ação | lucro distribuível descontado | dividendo recorrente | o lucro é o que gera valor; o dividendo diz se ele vira caixa |
+| FII | distribuição recorrente ÷ yield exigido | VPA | a lei obriga a distribuir 95% do resultado de caixa: a distribuição **é** o fluxo |
+| BDR | **nenhum** | — | a única taxa disponível é em reais, e o lucro não é |
+| ETF | **nenhum** | — | o preço acompanha o valor do que o fundo carrega |
 
-### A faixa, por classe de ativo
-
-| Classe | Métodos que entram na faixa |
-|---|---|
-| Ação | Bazin + Graham + lucros descontados |
-| FII | Bazin + VPA |
-| BDR | Graham + lucros descontados (Bazin desligado) |
-| ETF | **nenhum** — a distribuição de um ETF de índice é política do fundo, não capacidade de gerar valor |
+### A taxa
 
 ```
-piso = o mais conservador dos métodos que se aplicam
-teto = o mais otimista
+d_ação = Selic média de 10 anos + 5 pontos
+g_T    = meta de inflação (3%) + 1,5% de crescimento real       = 4,5%
+y_FII  = máx(Selic média de 10 anos − meta de inflação, 3%) + 3 pontos
+```
+
+A Selic média de 10 anos sai da série mensal 4189 do SGS (`collectors/rates.py::_selic_media`).
+**Custo de capital é taxa de longo prazo**: a Selic de um dia mudaria todo preço justo a cada Copom,
+e a média de dois anos, no pico do ciclo, dava 19% de taxa e quase toda ação acima do preço justo.
+Sem a série, entra a Selic do dia, e `premises.rate_base` diz qual base foi usada. **Com juros
+estimados (`source: estimativa`), não há avaliação** — `analysis/fair_price.py::rates_for_valuation`.
+
+### O modelo de ação
+
+```
+V(d, g) = Σ_{t=1..5} LPA_n·(1+g)^t·q ÷ (1+d)^t
+        + LPA_n·(1+g)^5·(1+g_T)·(1 − g_T/ROE) ÷ ((d − g_T)·(1+d)^5)
+
+q = 1 − g/ROE          (o que pode ser distribuído sem deixar de crescer)
+g = mín(ROE × (1 − payout), 20%)
+payout = dividendo recorrente ÷ LPA_n, entre 0 e 1
+```
+
+`analysis/fair_price.py::earnings_value` e `_earnings_lens`.
+
+- **Só se desconta o que pode ser distribuído.** Somar o lucro inteiro e ainda crescer por
+  reinvestimento contava duas vezes o lucro retido. Em regime estável esta é a mesma equação do P/VP
+  justificado, `VPA·(ROE − g) ÷ (d − g)` — banco sai avaliado pelo mesmo modelo.
+- **Crescer só cria valor quando o ROE passa da taxa.** Com ROE perto de `d`, o valor quase não muda
+  com o payout — é o comportamento correto.
+- **O terminal sai da mesma taxa**, por Gordon. O P/L terminal implícito cai quando o juro sobe.
+- **LPA normalizado** (`normalized_eps`): média dos 3 últimos exercícios, escalada pela razão entre
+  lucros — `LPA × média(lucro anual) ÷ lucro de 12 meses`. Em unit, lucro ÷ número de ações não é o
+  LPA da unit. Com menos de 3 exercícios, usa o LPA de 12 meses e a qualidade sai frágil.
+- **ROE normalizado** (`normalized_roe`): média do lucro sobre média do patrimônio, nos mesmos 3
+  exercícios alinhados por data. Sem série, o ROE informado. Patrimônio médio negativo: sem ROE.
+
+### O modelo de FII
+
+```
+V = distribuição recorrente ÷ y_FII
+```
+
+`analysis/fair_price.py::_dividend_lens`.
+
+### O dividendo recorrente
+
+```
+cada ano completo da janela de 5 anos limitado a 2 × a mediana dos outros
+média   = média desses anos
+último  = máx(último ano completo, últimos 12 meses)
+recorrente = mín(média, último)
+corte   = último < 50% da média
+```
+
+`analysis/fair_price.py::recurring_dividend`. Contínuo — 2,9× e 3,1× a mediana dão o mesmo
+resultado. **Pega corte**, que é a armadilha de dividendo. Não apaga uma mudança de política para
+cima, como fazia a troca da série inteira pela mediana. Ano sem pagamento dentro da série conta como
+zero; sem nenhum ano completo, vale a soma dos últimos 12 meses.
+
+### A faixa
+
+```
+piso   = V(d + 1 ponto, crescimento zero)        FII: D ÷ (y + 1 ponto)
+teto   = V(d − 1 ponto, crescimento g)           FII: D ÷ (y − 1 ponto)
+central = V(d, g)                                FII: D ÷ y
 posição = (preço − piso) ÷ (teto − piso), quando o preço está dentro
 ```
 
-**Quem destoa é nomeado, não excluído.** Com três ou mais métodos, o que se afasta mais de 2× da
-mediana dos outros é marcado `destoa_dos_demais` e continua definindo a borda. Excluí-lo esconderia
-a discordância que a faixa existe para mostrar — e apagaria a premissa de quem exige outro yield,
-cujo Bazin cai de propósito. Contra dado contaminado quem defende é a normalização do dividendo, na
-origem.
+É **incerteza real sobre o valor** — o que acontece se a premissa mais discutível errar —, e não a
+distância entre métodos com alvos diferentes. `consensus` e `dcf` (ação) ou `bazin` (FII) carregam o
+valor central; nenhum deles decide sozinho.
 
-**Insumos independentes.** Graham e lucros descontados vivem do mesmo LPA: se ele estiver errado, os
-dois erram juntos. `independent_inputs` conta **insumos distintos** — dividendo, lucro, patrimônio —
-e não métodos. Três métodos de ação são duas evidências.
+### A confirmação
+
+| Classe | Leitura | Não se aplica quando |
+|---|---|---|
+| Ação | `D × (1 + g_c) ÷ (d − g_c)`, com `g_c = mín(g, g_T)` | menos de 3 anos de dividendo; payout abaixo de 25% |
+| FII | VPA | sem VPA |
+
+A concordância é `dentro` da faixa, `fora_ate_30` ou `fora_mais_30`. **A confirmação não define
+borda**: ela entra na qualidade.
+
+### Qualidade
 
 | `band_quality` | Quando |
 |---|---|
-| `firme` | dois ou mais insumos independentes, e os métodos convergem |
-| `ampla` | os métodos discordam por 2× ou mais, ou um deles destoa |
-| `fragil` | um insumo só sustenta tudo — inclusive método único, e o BDR, cujos dois métodos leem o mesmo lucro |
-| `sem_faixa` | nenhum método se aplica |
+| `fragil` | lucro de menos de 3 exercícios, ou instável (LPA de 12m fora de metade a dobro do normalizado, ou ano com prejuízo); FII com menos de 3 anos de distribuição; corte de distribuição; confirmação a mais de 30% da faixa |
+| `ampla` | sem confirmação; confirmação fora da faixa por até 30%; teto acima de 1,5× o piso |
+| `firme` | nenhum dos anteriores |
+| `sem_faixa` | não há modelo principal |
 
-**Não há média.** Os métodos não medem a mesma coisa — Bazin mede dividendo, Graham mede lucro e
-patrimônio, os lucros descontados medem crescimento —, e a média de estimadores incompatíveis é um
-número que nenhum deles sustenta. Ver [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md).
-
-Cada método só entra quando as próprias condições se sustentam: **Graham se abstém fora de
-P/L ≤ 15 e P/VP ≤ 1,5**, e Bazin exige dividendo médio positivo.
-
-`consensus_methods` viaja até a tela, porque faixa de um método é um ponto — e a interface é
-obrigada a dizer quantos métodos a sustentam. `consensus` continua na resposta como média dos
-métodos, sem decidir nada.
-
-### Quando os métodos discordam
-
-`method_dispersion` (`teto ÷ piso`) continua sendo calculado e, acima de `MAX_METHOD_DISPERSION`,
-marca `methods_disagree`. Isso **não cala mais o veredito**: a discordância é a largura da faixa, e
-uma faixa larga leva o preço a cair dentro dela, onde a leitura é "não há margem a favor nem contra".
-
-Até 2026-09-19 a discordância produzia abstenção (`UNKNOWN`). Medida em produção naquele dia, ela
-deixava **11 de 22 ações sem veredito nenhum**.
+`quality_reasons` diz, em frase, o que a definiu. `independent_inputs` é 1 ou 2: o insumo do
+principal e, se houver, o da confirmação.
 
 ### Silêncio com motivo
 
-Método que não entra registra **por quê**, em `methods[]`. São situações economicamente diferentes,
-e tratá-las como a mesma ausência apagava informação:
+`methods[]` traz cada leitura com `role` — `principal`, `confirmacao`, `indicador`, `inaplicavel` — e
+`status`:
 
 | Estado | Significa |
 |---|---|
-| `ok` | entrou na faixa |
-| `destoa_dos_demais` | entrou, e é ele que a alarga |
-| `inaplicavel` | o método não descreve esta classe de ativo |
+| `ok` | a leitura existe |
+| `inaplicavel` | não descreve esta classe de ativo |
 | `sem_dado` | o insumo não veio da fonte |
-| `lucro_negativo` | a empresa teve prejuízo — informação, não ausência |
-| `fora_da_faixa` | o dado existe e reprova o método (P/L ou P/VP de Graham) |
+| `lucro_negativo` | o LPA normalizado é negativo — informação, não ausência |
+| `roe_insuficiente` | o ROE não passa do crescimento de longo prazo: crescer consome valor |
+| `sem_juro` | não há juro de referência real |
+| `pouco_distribuido` | o dividendo não mede a capacidade de quem distribui menos de 25% do lucro |
+| `taxa_implausivel` | a taxa menos o choque não passa do crescimento de longo prazo |
 
-### Quando não há método
+### Indicadores que não decidem
 
-Para ETF de índice não há LPA, VPA nem dividendo que sustente qualquer método: não há faixa, e
-`margin_of_safety` é `None` — nunca um número contra um preço justo inexistente.
+`indicators[]`, fora da faixa:
 
-Nesse caso a leitura vem da **tendência** (médias móveis e RSI) e se declara: `decision.basis` sai
-`trend` em vez de `band`. A regra vive só em `decide()`, então o Descobrir e a análise dizem o mesmo.
-O falsificador é a tendência virar — específico e conferível.
+| Indicador | O que é |
+|---|---|
+| `graham` | `√(22,5 × LPA_n × VPA)`: o preço-limite do critério defensivo, com `passes`. Dentro do próprio filtro ele sempre fica acima do preço — por isso não pode ser borda |
+| `preco_teto_pessoal` | `dividendo recorrente ÷ yield que a pessoa declarou`. É meta de renda, não preço justo: mudar a meta muda o teto, e não a faixa |
+| `pvp` | preço sobre valor patrimonial |
 
 ### Margem de segurança
 
 ```
-preço < piso    →  margem = (piso − preço) ÷ piso      (a favor)
-piso ≤ preço ≤ teto  →  margem = 0                     (não há margem)
-preço > teto    →  margem = (teto − preço) ÷ teto      (contra)
+preço < piso          →  margem = (piso − preço) ÷ piso       (a favor)
+piso ≤ preço ≤ teto   →  margem = 0                          (não há margem)
+preço > teto          →  margem = (teto − preço) ÷ preço      (contra)
 ```
 
-**A margem mede contra a borda, não contra a média.** Comprar exige preço abaixo do método mais
-pessimista; ficar caro exige preço acima do mais otimista. `fair_price.py::margin_of_safety_in_band`
+As duas pontas medem a mesma distância em escala logarítmica: +30% e −30% correspondem ao mesmo
+afastamento. Contra o teto, a fórmula antiga disparava −30% com 23% de distância e exigia 43% para
++30%. `fair_price.py::margin_of_safety_in_band`
 
 ### Premissas
 
 | Premissa | Valor | Configurável |
 |---|---|---|
-| Yield desejado — ações | 6% | ✅ por usuário |
-| Yield desejado — FII | 10% | ✅ |
-| Yield desejado — BDR / ETF | 4% | ✅ |
-| Múltiplo de Graham | 22,5 | ❌ constante |
-| Taxa de desconto | **Selic do dia + 5 pontos** | ❌ o prêmio é constante |
-| Crescimento padrão | 8% ao ano, **limitado** a 25% | ❌ |
-| Normalização de dividendo | ano acima de 3× a mediana vira mediana | ❌ |
-| P/L terminal | 15 | ❌ |
-| Janela de dividendos | 5 anos completos | ❌ |
-
-### Proteções
-
-**Normalização de dividendo:** um ano que paga mais de **3× a mediana** dos outros não descreve
-capacidade recorrente de distribuição, e a série passa a ser lida pela mediana
-(`backend/app/analysis/fair_price.py::normalized_annual_dividend`). Exige três anos: com menos, não
-há base para dizer o que é recorrente.
-
-A guarda anterior disparava por *yield implícito acima de 30%* e quase não pegava — medida em
-2026-09-20, deixava passar inflação de 2,8×, 4,4× e 5,6× no Bazin, e a própria entrada era um
-degrau.
-
-**Anos completos:** a janela usa do ano anterior para trás, não o ano corrente incompleto. Sem dado
-no período, cai para os últimos 12 meses.
+| Base da taxa | Selic média de 10 anos | ❌ |
+| Prêmio de ação | 5 pontos | ❌ |
+| Meta de inflação | 3% | ❌ |
+| Crescimento real de longo prazo | 1,5% | ❌ |
+| Teto de crescimento | 20% ao ano | ❌ |
+| Anos explícitos | 5 | ❌ |
+| Choque de taxa na faixa | ±1 ponto | ❌ |
+| Prêmio de FII / piso de juro real | 3 pontos / 3% | ❌ |
+| Exercícios do LPA normalizado | 3 | ❌ |
+| Limite de ano extraordinário / corte | 2× a mediana dos outros / 50% da média | ❌ |
+| Yield da meta pessoal | 6% ação, 10% FII | ✅ por usuário — só no preço-teto |
 
 ### Limitações — leia antes de confiar no número
 
-1. **O "DCF" não é um DCF.** Desconta **lucro por ação**, não fluxo de caixa livre, e usa
-   crescimento de **receita** como proxy de crescimento de lucro. Margem, despesa financeira,
-   imposto e número de ações rompem essa relação, e a fonte não fornece crescimento de lucro.
-2. **O prêmio de risco de 5 pontos é o mesmo para toda empresa.** A taxa já acompanha a Selic, mas
-   sem beta nem estrutura de capital não há como diferenciar risco por empresa.
-3. **O múltiplo 22,5 de Graham é de 1949 e do mercado americano.** Não é ajustado à Selic. Em juro
-   alto, ele é generoso.
-4. **Os filtros de Graham dependem do próprio preço.** P/L e P/VP usam a cotação de hoje para
-   decidir se o método roda, então ele se abstém justamente quando o preço parece alto. É
-   circular, e é a doutrina do próprio método.
-5. **Graham não se aplica igualmente a todo modelo de negócio.** LPA e VPA explicam menos em banco,
-   em empresa de ativo leve e em holding. O setor está na resposta; a estrutura de capital, não.
-6. **VPA de FII é referência patrimonial, não valor econômico.** Não incorpora cap rate, vacância
-   nem contrato — nada disso existe na fonte.
-7. **O yield exigido é premissa de quem investe, não medida de risco do ativo.** É configurável por
-   usuário e por classe, e não varia com endividamento ou estabilidade do dividendo.
-8. **ETF não tem preço justo.** A leitura sai da tendência, e vem marcada como tal.
-9. **A faixa não pondera.** Um método frágil define a borda igual a um método firme. `band_quality`
-   diz *que* a evidência é fraca; não corrige a borda.
-10. **Faixa de um método é um ponto.** A leitura volta a depender de um número só — sai como
-    `fragil`, mas o risco continua.
-11. **Bazin pressupõe dividendo estável.** Para empresa cíclica, projeta o passado bom para sempre.
-    A normalização remove o ano extraordinário, não a ciclicidade.
-12. **±15% e ±30% são a tradição da margem de segurança**, não fronteiras econômicas medidas. A
-    mudança de etiqueta é degrau: o falsificador de preço mostra a que distância ela está.
+1. **Não é fluxo de caixa livre.** Desconta o lucro distribuível; capex, capital de giro e dívida
+   líquida por empresa não existem na fonte.
+2. **O prêmio é o mesmo para toda empresa.** Sem beta nem estrutura de capital, diferenciar seria
+   inventar.
+3. **O ROE do terminal é o normalizado de hoje.** Empresa de ROE muito alto sai generosa no longo
+   prazo; a concorrência tende a reduzi-lo.
+4. **Os parâmetros não têm calibração empírica.** Validá-los exige fundamento *point-in-time*, que a
+   BRAPI não entrega.
+5. **FII de papel parece barato.** Ele distribui a correção monetária dos CRIs como rendimento, e
+   sem o subtipo do fundo o modelo trata tudo como tijolo.
+6. **VPA de FII é laudo, com defasagem.** Em FoF, ele já carrega o desconto dos fundos investidos.
+7. **Quem cresce o dividendo com a inflação sai cerca de 9% abaixo do último ano**, pelo mínimo
+   entre a média e o mais recente.
+8. **Cíclica em ciclo longo** ainda pode ter três exercícios de pico; a normalização suaviza, não
+   resolve.
+9. **±15% e ±30% são convenção declarada**, não fronteira medida. A mudança de etiqueta é degrau:
+   o falsificador de preço mostra a que distância ela está.
 
 ---
 
@@ -225,8 +258,8 @@ vazia em vez de leitura parcial declarada.
 
 A medição de 2026-09-13 mostrou que, **para ação**, isso quase nunca dispara — os fundamentos chegam
 em 80% a 100% dos casos. Onde ele importa é em **FII, BDR e ETF**, cujas dimensões de fundamento são
-vazias por natureza da classe: FII perde a liquidez (15% do peso, `market_cap` ausente em 5 de 5) e
-BDR perde Graham inteiro (VPA ausente em 4 de 4, e o consenso cai para um método). Ver
+vazias por natureza da classe: FII perde a liquidez (15% do peso, `market_cap` ausente em 5 de 5), e
+BDR e ETF não têm preço justo, então perdem também a dimensão de margem. Ver
 [10-PROBLEMAS](10-PROBLEMAS.md), item 3.
 
 `tests/test_regua_nas_duas_plataformas.py` confronta o limiar do Python com o do Dart. **O Python é
@@ -248,154 +281,144 @@ a fonte.**
 
 ## Veredito
 
-Sai da margem de segurança, e depois é **ajustado pela análise técnica**. `analysis/decision.py`
+Sai da margem de segurança, e só dela. A qualidade da faixa limita a intensidade. `analysis/decision.py`
 
-### O veredito de faixa, só pela margem
+### A leitura pela margem
 
-| Margem | Veredito | Rótulo |
+| Margem | Código | Etiqueta |
 |---|---|---|
-| ≥ +30% | `STRONG_BUY` | Comprar com convicção |
-| ≥ +15% | `BUY` | Comprar |
-| entre −15% e +15% | `HOLD` | Manter |
-| ≤ −15% | `SELL` | Vender |
-| ≤ −30% | `STRONG_SELL` | Vender com urgência |
-| sem faixa e sem tendência | `UNKNOWN` | Sem dados suficientes |
+| ≥ +30% | `STRONG_BUY` | Bem abaixo do preço justo |
+| ≥ +15% | `BUY` | Abaixo do preço justo |
+| entre −15% e +15% | `HOLD` | No preço justo |
+| ≤ −15% | `SELL` | Acima do preço justo |
+| ≤ −30% | `STRONG_SELL` | Bem acima do preço justo |
+| sem faixa | `UNKNOWN` | Sem preço justo |
 
-Este é o `band_verdict`, e é ele que os falsificadores de preço leem ao contrário.
+**A etiqueta descreve posição, não ordem.** A tela dizia *"não é recomendação de compra"* embaixo de
+*"Comprar com convicção"*. Os códigos ficam, porque carteira, alertas e estratégia os leem.
+
+**Com qualidade `fragil`, a leitura não passa de "abaixo" ou "acima"**: `STRONG_BUY` vira `BUY` e
+`STRONG_SELL` vira `SELL` (`decision.py::verdict_for`). A margem crua fica em `band_verdict`, e a razão
+diz que a etiqueta foi contida.
 
 ### O caminho inteiro, do tipo do ativo à etiqueta
 
 ```mermaid
 flowchart TD
-    TIPO{"Tipo do ativo"}
-    TIPO -->|"Ação"| BAZIN
-    TIPO -->|"Ação"| GRAHAM
-    TIPO -->|"Ação"| DESC
-    TIPO -->|"BDR — Bazin desligado de propósito"| GRAHAM
-    TIPO -->|"BDR"| DESC
-    TIPO -->|"FII"| BAZIN
-    TIPO -->|"FII"| VPA
-    TIPO -->|"ETF — nenhum método se aplica"| SEMFAIXA
+    CLS{"Classe do ativo"}
+    CLS -->|"ETF"| SEMV
+    CLS -->|"BDR — taxa em reais sobre lucro em outra moeda"| SEMV
+    CLS -->|"Ação"| QA
+    CLS -->|"FII"| QF
 
-    BAZIN["Bazin · insumo: dividendo<br/>preço = dividendo recorrente ÷ yield exigido<br/>recorrente = média dos anos, ou a mediana quando um ano paga<br/>mais de 3× a mediana dos outros<br/>yield: 6% ação · 10% FII, configurável"]
-    GRAHAM["Graham · insumo: lucro<br/>preço = raiz de (22,5 × LPA × VPA)<br/>abstém-se com P/L acima de 15 ou P/VP acima de 1,5"]
-    DESC["Lucros descontados · insumo: lucro<br/>preço = Σ para t de 1 a 5 de LPA×(1+g)^t ÷ (1+d)^t<br/>mais LPA×(1+g)^5 × 15 ÷ (1+d)^5<br/>d = Selic do dia + 5 pontos de prêmio<br/>g = crescimento de receita, limitado a 25%, piso 0"]
-    VPA["VPA · insumo: patrimônio<br/>preço = valor patrimonial por cota"]
+    JURO["Juro de referência<br/>Selic média de 10 anos, ou a do dia, declarada<br/>juro estimado não avalia"]
+    JURO -.-> QA
+    JURO -.-> QF
 
-    BAZIN --> COND
-    GRAHAM --> COND
-    DESC --> COND
-    VPA --> COND
+    QA{"LPA normalizado de 3 exercícios maior que zero?<br/>ROE acima de 4,5%? Há juro?"}
+    QA -->|"não — o motivo fica em methods"| SEMV
+    QA -->|"sim"| PA["Principal · lucro distribuível descontado<br/>d = Selic 10a + 5 · g = mín de ROE × retenção e 20%<br/>fluxo = LPA × (1 − g ÷ ROE) por 5 anos<br/>terminal por Gordon com g_T = 4,5%"]
+    QA -->|"sim, e 3 anos de dividendo com payout de 25% ou mais"| CA["Confirmação · dividendo recorrente<br/>D × (1 + g_c) ÷ (d − g_c), g_c = mín de g e g_T"]
 
-    COND{"Cada método passa na própria condição?<br/>Quando não passa, o motivo é registrado:<br/>inaplicável · sem dado · lucro negativo · fora da faixa"}
-    COND -->|"nenhum sobra"| SEMFAIXA
-    COND -->|"sobra um ou mais"| FAIXA["piso = o menor · teto = o maior<br/>quem destoa mais de 2× da mediana é nomeado, não excluído<br/>insumos independentes = insumos distintos entre os métodos<br/>qualidade = firme · ampla · frágil"]
+    QF{"Há distribuição recorrente? Há juro?"}
+    QF -->|"não"| SEMV
+    QF -->|"sim"| PF["Principal · D ÷ y<br/>y = máx de Selic 10a − 3% e 3%, mais 3 pontos"]
+    QF -->|"sim, e há VPA"| CF["Confirmação · VPA"]
 
-    FAIXA --> MARGEM{"Onde o preço está?"}
-    MARGEM -->|"abaixo do piso"| MPOS["margem = (piso − preço) ÷ piso"]
-    MARGEM -->|"dentro da faixa"| MZERO["margem = 0<br/>posição = (preço − piso) ÷ (teto − piso)"]
-    MARGEM -->|"acima do teto"| MNEG["margem = (teto − preço) ÷ teto"]
+    PA --> FX["Faixa das premissas<br/>piso: sem crescimento, taxa + 1 ponto<br/>teto: com crescimento, taxa − 1 ponto"]
+    PF --> FX2["Faixa das premissas<br/>piso: y + 1 ponto · teto: y − 1 ponto"]
 
-    MPOS --> BANDA
-    MZERO --> BANDA
-    MNEG --> BANDA
+    FX --> QL
+    FX2 --> QL
+    CA --> QL
+    CF --> QL
 
-    BANDA{"Veredito, só pela margem"}
-    BANDA -->|"margem ≥ +30%"| SB["Comprar com convicção"]
-    BANDA -->|"+15% ≤ margem < +30%"| B["Comprar"]
-    BANDA -->|"−15% < margem < +15%"| H["Manter"]
-    BANDA -->|"−30% < margem ≤ −15%"| S["Vender"]
-    BANDA -->|"margem ≤ −30%"| SS["Vender com urgência"]
+    QL{"Qualidade"}
+    QL -->|"lucro curto ou instável, corte,<br/>confirmação a mais de 30%"| FRA["frágil"]
+    QL -->|"sem confirmação, confirmação perto,<br/>ou teto acima de 1,5× o piso"| AMP["ampla"]
+    QL -->|"o resto"| FIR["firme"]
 
-    SB --> FIM
-    B --> FIM
-    H --> FIM
-    S --> FIM
-    SS --> FIM
+    FRA --> POS
+    AMP --> POS
+    FIR --> POS
 
-    TECNICO["Tendência e RSI entram como CONTEXTO<br/>não alteram o veredito, e não somam confiança:<br/>os dois saem do mesmo preço"]
-    TECNICO -.->|"aparecem nas razões"| FIM
+    POS{"Preço contra a faixa<br/>abaixo: (piso − preço) ÷ piso<br/>acima: (teto − preço) ÷ preço"}
+    POS --> LBL["Etiqueta pela margem, ±15% e ±30%<br/>frágil não passa de abaixo ou acima<br/>confiança: firme alta · ampla média · frágil baixa"]
 
-    FIM["Etiqueta final · basis = band<br/>confiança = qualidade da faixa, insumos independentes<br/>e anos de histórico — em palavra, não em decimal<br/><br/>gatilhos: preço-limite das bandas vizinhas<br/>premissas: o dividendo cair até o preço de hoje,<br/>ou o crescimento projetado não se confirmar"]
+    SEMV["Sem preço justo<br/>o motivo nomeado, sem falsificador"]
 
-    SEMFAIXA{"Tem RSI?"}
-    SEMFAIXA -->|"não"| UNK["Sem dados suficientes · sem falsificador"]
-    SEMFAIXA -->|"sim"| TENDONLY["alta e RSI < 70: Comprar<br/>baixa e RSI > 30: Vender<br/>RSI ≤ 30: Comprar · RSI ≥ 70: Manter<br/>senão: Manter"]
-    TENDONLY --> FIMT["Etiqueta final · basis = trend · confiança baixa<br/>único lugar em que a técnica decide sozinha,<br/>e só porque não há preço justo nenhum<br/>gatilho: a tendência virar, e o RSI cruzar 30 ou 70"]
+    TEC["Tendência e RSI<br/>contexto de preço, nas razões<br/>nunca decidem, nunca somam confiança"]
+    IND["Fora da faixa: critério de Graham,<br/>preço-teto da meta de renda, P/VP"]
+
+    LBL --> OUT["Tela: etiqueta, faixa, premissas, confirmação<br/>gatilhos: preços das bandas vizinhas<br/>premissas: crescimento, taxa de equilíbrio, distribuição"]
+    SEMV --> OUT
+    TEC -.-> OUT
+    IND -.-> OUT
 ```
 
 ### A análise técnica não decide
 
-Tendência e RSI **não alteram o veredito**. Eles aparecem nas razões como contexto de preço, e não
-somam confiança. Ver [ADR-013](decisoes/ADR-013-o-tecnico-nao-decide.md).
+Tendência e RSI **não alteram a leitura**, nem com faixa nem sem ela. Aparecem nas razões como
+contexto de preço, e não somam confiança: os dois saem do mesmo preço. Ver
+[ADR-013](decisoes/ADR-013-o-tecnico-nao-decide.md) e [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md).
 
-Até **2026-09-20** a tendência de baixa rebaixava `BUY` para `HOLD` e `HOLD` para `SELL`, e o RSI
-podia desfazer o rebaixamento depois. Duas consequências mediadas em produção naquele dia:
+Até 2026-09-23, o ativo sem método saía com uma leitura de tendência (`basis: trend`) que misturava
+momentum e reversão à média: em baixa com RSI 35 era Vender, e a mesma baixa com RSI 29 virava
+Comprar. **Sem faixa, agora, a etiqueta é "Sem preço justo"**, e `basis` é `none`.
 
-- **11 de 22 ações** saíam com sinal de venda, seis delas com margem zero ou positiva
-- num dos caminhos, a razão exibida dizia *"a leitura cai de comprar para manter"* ao lado da
-  etiqueta **Comprar** — o produto contradizendo a si mesmo na mesma folha
-
-O único lugar em que a técnica ainda decide sozinha é o ativo **sem nenhum método aplicável**
-(`basis: trend`), e ali ela decide porque não há alternativa — com confiança baixa e dizendo de onde
-veio.
+O RSI é o de Wilder, 14 períodos, que é o das plataformas de gráfico: a média simples dos 14 últimos
+movimentos esquecia a queda de antes da janela.
 
 ### Confiança
 
-Sai da evidência, e não de somas de constantes:
+| `band_quality` | Confiança | Palavra |
+|---|---|---|
+| `firme` | 0,70 | alta |
+| `ampla` | 0,45 | média |
+| `fragil` | 0,30 | baixa |
+| sem faixa | 0 | — |
 
-| Entra | Efeito |
-|---|---|
-| `band_quality` | `firme` 0,70 · `ampla` 0,45 · `fragil` 0,35 |
-| Três insumos independentes | +0,10 |
-| Bazin participando com menos de 3 anos de histórico | −0,10 |
-| Leitura de tendência (`basis: trend`) | 0,25, fixo |
-| **Tendência e RSI** | **nada** — os dois saem do mesmo preço, e somar os dois contaria a mesma evidência duas vezes |
+Tudo que pesa na evidência — anos de lucro, estabilidade, corte, confirmação, largura — entra pela
+qualidade. A interface mostra **a palavra**, não o decimal.
 
-A interface mostra **a palavra** — alta, média, baixa. Casa decimal sobre premissa escolhida a dedo
-promete precisão que a metodologia não entrega.
-
-**Consequência que precisa estar escrita:** o veredito herda integralmente a fragilidade do preço
-justo. Toda limitação da seção anterior é também limitação do veredito.
+**Consequência que precisa estar escrita:** a leitura herda integralmente a fragilidade do preço
+justo. Toda limitação da seção anterior é também limitação dela.
 
 ---
 
 ## Falsificadores
 
-O que derrubaria o veredito, em condição conferível. `analysis/falsifiers.py`
+O que derrubaria a leitura, em condição conferível. `analysis/falsifiers.py`
 
-Os limiares de margem dão, por álgebra, o preço em que o veredito muda — e a borda usada é a mesma
-que a margem mede:
+Os limiares de margem dão, por álgebra, o preço em que a etiqueta muda — com a mesma borda que a
+margem mede:
 
 ```
 margem ≥ 0  →  preço_alvo = piso × (1 − margem_da_banda)
-margem < 0  →  preço_alvo = teto × (1 − margem_da_banda)
+margem < 0  →  preço_alvo = teto ÷ (1 + margem_da_banda)
 ```
 
-Produz até dois **gatilhos** de preço — a banda acima e a banda abaixo.
+Produz até dois **gatilhos** de preço — a banda acima e a banda abaixo. Com qualidade `fragil`, as
+bandas `STRONG_*` não existem, e o gatilho não promete uma etiqueta que a evidência não alcança.
 
 ### Gatilho e premissa não são a mesma coisa
 
-Cada item carrega `kind`, porque atravessar um limiar reclassifica, e não refuta:
-
 | `kind` | O que é | Exemplos |
 |---|---|---|
-| `gatilho` | o preço em que a etiqueta muda | as duas bandas vizinhas; a tendência virar |
-| `premissa` | a condição econômica que sustenta o preço justo | o dividendo cair; o crescimento não se confirmar |
+| `gatilho` | o preço em que a etiqueta muda | as duas bandas vizinhas |
+| `premissa` | a condição econômica que sustenta o preço justo | o crescimento não se confirmar; a taxa exigida mudar; a distribuição cair |
 
-**Premissa do Bazin:** a distribuição recorrente de hoje se mantém. O que a refuta é o corte que
-leva o próprio Bazin ao preço de agora — `corte = 1 − preço ÷ Bazin`. Vale sempre que o método
-participa, e não apenas quando ele ocupa o piso: a sustentabilidade do dividendo independe da
-posição que o método ocupa na faixa.
+**Crescimento (ação):** sai quando o valor sem crescimento fica abaixo do preço e o preço não passa
+do teto — diz de quanto a quanto o valor cai.
 
-**Premissa dos lucros descontados:** o crescimento projetado se confirma. O sistema já calcula o
-preço justo **sem crescimento**; quando esse número fica abaixo do preço de hoje, ele é o
-falsificador — e diz em quanto o método encolheria.
+**Taxa (ação):** a taxa em que o valor central iguala o preço de hoje
+(`premises.breakeven_discount_rate`, por bisseção). Acima da taxa atual, é o quanto ela pode subir
+antes de a folga acabar; abaixo, o quanto teria de cair para o preço de hoje se justificar.
 
-**Sem faixa, não há preço-limite.** Para leitura de tendência (`basis: trend`), o que sai é a
-reversão da tendência e o RSI, que são conferíveis. Sem faixa **e** sem tendência, a lista sai vazia:
-não há falsificador genérico — "fique de olho nos resultados" seria almanaque no lugar de uma
-condição conferível.
+**Distribuição (FII):** o corte que leva o valor central ao preço de hoje — `1 − preço ÷ valor`.
+
+**Sem faixa, a lista sai vazia.** Não há falsificador genérico: "fique de olho nos resultados" seria
+almanaque no lugar de uma condição conferível.
 
 ---
 
@@ -583,7 +606,8 @@ histórico** — e o rótulo de fonte viaja até a tela.
 | Limiar | Arquivo | Espelho |
 |---|---|---|
 | Bandas de score | `analysis/score_ruler.py` | `mobile/lib/core/score_ruler.dart` |
-| Limiares de veredito | `analysis/decision.py` | `mobile/lib/core/product_rules.dart` |
+| Limiares de veredito | `analysis/decision.py` | — (a régua de margem do Dart é de exibição) |
+| Premissas do preço justo | `analysis/fair_price.py` | — |
 | Pesos por perfil | `analysis/scoring.py` | — |
 | Alíquotas e isenção | `ledger/apuracao.py` | — |
 

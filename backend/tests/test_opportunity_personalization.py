@@ -1,40 +1,46 @@
 from tests.conftest import make_auth_headers
 
 
-def _fair_prices(client, headers) -> dict[str, float | None]:
+def _campo(client, headers, campo: str) -> dict[str, float | None]:
     resp = client.get(
         "/api/opportunities",
         headers=headers,
         params={"include_held": "true", "page_size": 50},
     )
     assert resp.status_code == 200
-    return {o["ticker"]: o["fair_price"] for o in resp.json()["items"]}
+    return {o["ticker"]: o[campo] for o in resp.json()["items"]}
 
 
-def test_desired_yield_changes_the_fair_price_the_user_sees(client):
+def test_a_meta_de_renda_muda_o_preco_teto_e_nao_o_preco_justo(client):
     headers = make_auth_headers("prefs_effect_user")
 
     client.put("/api/preferences", headers=headers, json={"desired_yield_stock": 0.06})
-    conservative = _fair_prices(client, headers)
+    teto_modesto = _campo(client, headers, "personal_ceiling")
+    justo_modesto = _campo(client, headers, "fair_price")
 
     client.put("/api/preferences", headers=headers, json={"desired_yield_stock": 0.12})
-    demanding = _fair_prices(client, headers)
+    teto_exigente = _campo(client, headers, "personal_ceiling")
+    justo_exigente = _campo(client, headers, "fair_price")
 
-    shared = [t for t in conservative if conservative[t] and demanding.get(t)]
-    assert shared, "esperava pelo menos um ativo com preço justo calculado"
+    shared = [t for t in teto_modesto if teto_modesto[t] and teto_exigente.get(t)]
+    assert shared, "esperava pelo menos um ativo com preço-teto calculado"
 
-    assert any(demanding[t] < conservative[t] for t in shared)
+    assert all(teto_exigente[t] < teto_modesto[t] for t in shared)
+    assert justo_modesto == justo_exigente, (
+        "o yield da pessoa é meta de renda, não valor da empresa: ele entrava na borda da "
+        "faixa e trocava o veredito de quem só mudou a própria meta"
+    )
 
 
-def test_two_users_with_different_prefs_get_different_fair_prices(client):
+def test_two_users_with_different_prefs_get_different_ceilings(client):
     headers_a = make_auth_headers("calc_leak_a")
     headers_b = make_auth_headers("calc_leak_b")
 
     client.put("/api/preferences", headers=headers_a, json={"desired_yield_stock": 0.05})
     client.put("/api/preferences", headers=headers_b, json={"desired_yield_stock": 0.15})
 
-    from_a = _fair_prices(client, headers_a)
-    from_b = _fair_prices(client, headers_b)
+    from_a = _campo(client, headers_a, "personal_ceiling")
+    from_b = _campo(client, headers_b, "personal_ceiling")
 
     shared = [t for t in from_a if from_a[t] and from_b.get(t)]
     assert shared

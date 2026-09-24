@@ -89,4 +89,4 @@ def test_sell_signal_positions_reduce_risk_score():
 
     assert health is not None
     assert health.risk_score < 100
-    assert any("sinal de venda" in w for w in health.warnings)
+    assert any("acima do preço justo" in w for w in health.warnings)

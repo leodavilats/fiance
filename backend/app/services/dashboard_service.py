@@ -75,7 +75,7 @@ class DashboardService:
                 Alert(
                     severity="critical" if strong else "warning",
                     kind="sell_target",
-                    title=f"{position.ticker}: sinal de venda",
+                    title=f"{position.ticker}: acima do preço justo",
                     detail=(
                         f"{position.label}. Preço atual R$ {position.current_price or 0:.2f}, "
                         f"justo R$ {position.fair_price or 0:.2f}."
@@ -94,7 +94,7 @@ class DashboardService:
             Alert(
                 severity="critical" if strong else "warning",
                 kind="sell_target",
-                title=f"{len(to_sell)} posições com sinal de venda",
+                title=f"{len(to_sell)} posições acima do preço justo",
                 detail=f"{names}{extra} — o preço passou do preço justo estimado.",
                 count=len(to_sell),
                 tickers=[p.ticker for p in to_sell],

@@ -163,22 +163,24 @@ class _AssetAnalysis extends StatelessWidget {
               ),
             ),
             const SizedBox(width: FiSpace.s3),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FiTag(label: a.label, state: estado),
-                if (basisLabel(a.basis).isNotEmpty) ...[
-                  const SizedBox(height: FiSpace.s1),
-                  SizedBox(
-                    width: 140,
-                    child: Text(
-                      basisLabel(a.basis),
-                      textAlign: TextAlign.end,
-                      style: FiType.caption.copyWith(color: fiInk3(context)),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FiTag(label: a.label, state: estado),
+                  if (basisLabel(a.basis).isNotEmpty) ...[
+                    const SizedBox(height: FiSpace.s1),
+                    SizedBox(
+                      width: 140,
+                      child: Text(
+                        basisLabel(a.basis),
+                        textAlign: TextAlign.end,
+                        style: FiType.caption.copyWith(color: fiInk3(context)),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ],
         ),

@@ -717,7 +717,7 @@ class FiOpportunityObject extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: FiSpace.s3),
-              FiTag(label: o.label, state: fiVerdictState(o.verdict)),
+              Flexible(child: FiTag(label: o.label, state: fiVerdictState(o.verdict))),
             ],
           ),
 

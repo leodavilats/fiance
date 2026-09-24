@@ -56,13 +56,12 @@ Esta é a hipótese de receita do produto. Ver
 
 ### 4 · Confiança no preço justo
 
-O autor não confia no cálculo. A auditoria de 2026-09-13 encontrou quatro pontos concretos, todos em
-[10-PROBLEMAS](10-PROBLEMAS.md):
+A revisão de 2026-09-23 refez o motor ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)): um
+modelo por classe, taxa ligada à Selic de longo prazo, faixa das premissas, e nenhum método que vote
+de um lado só. O preço-teto da meta de renda passou a existir, e é a segunda metade da frase-alvo.
 
-- o "DCF" não é um DCF
-- taxa de desconto fixa em 13% para qualquer empresa
-- múltiplo de Graham não ajustado ao juro brasileiro
-- `MIN_DATA_COMPLETENESS` declarado e nunca aplicado
+O que falta para confiar mais está em [10-PROBLEMAS](10-PROBLEMAS.md): os parâmetros não têm
+calibração empírica (A8), o FII de papel é lido como tijolo (A7) e BDR não tem leitura (A9).
 
 O item 3 depende deste: recomendar com mais força um número em que não se confia aumenta o dano do
 erro.

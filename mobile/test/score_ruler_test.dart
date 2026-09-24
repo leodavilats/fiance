@@ -34,15 +34,15 @@ void main() {
       expect(trendBasisLabel(null), contains('sem histórico'));
     });
 
-    test('anos de dado e consenso usam singular e plural corretos', () {
+    test('anos de dado usam singular e plural, e a confirmação tem nome', () {
       expect(dataYearsLabel(0), 'sem histórico de proventos');
       expect(dataYearsLabel(null), 'sem histórico de proventos');
       expect(dataYearsLabel(1), '1 ano de proventos');
       expect(dataYearsLabel(4), '4 anos de proventos');
 
-      expect(consensusLabel(0), 'sem método aplicável');
-      expect(consensusLabel(1), '1 método na faixa');
-      expect(consensusLabel(3), '3 métodos na faixa');
+      expect(consensusLabel(0), 'sem preço justo');
+      expect(consensusLabel(1), 'sem confirmação independente');
+      expect(consensusLabel(2), 'confirmada por outro insumo');
     });
 
     test('confiança é apresentada em percentual', () {

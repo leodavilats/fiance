@@ -299,7 +299,8 @@ def _stub_market_data(monkeypatch, request):
         "cdi_anual": 14.40,
         "selic_anual": 14.40,
         "ipca_anual": 5.00,
-        "source": "estimativa",
+        "selic_media_10a": 9.50,
+        "source": "bcb",
     }
     import app.analysis.renda_fixa_analysis as rf_mod
     import app.collectors.rates as rates_mod

@@ -33,10 +33,10 @@ void main() {
     });
   });
 
-  group('leitura sem preço justo se declara', () {
-    test('tendência vem nomeada', () {
-      expect(basisLabel('trend'), contains('tendência'));
-      expect(basisLabel('trend'), contains('sem preço justo'));
+  group('sem preço justo se declara', () {
+    test('a ausência tem nome, e não vira leitura de tendência', () {
+      expect(consensusLabel(0), 'sem preço justo');
+      expect(glossary['sem_preco_justo'], contains('em vez de ler compra ou venda'));
     });
 
     test('faixa não precisa de aviso, porque é o normal', () {
@@ -44,9 +44,9 @@ void main() {
     });
   });
 
-  test('o glossário explica a faixa e a leitura de tendência', () {
-    expect(glossary['faixa_de_preco_justo'], isNotNull);
-    expect(glossary['leitura_de_tendencia'], isNotNull);
+  test('o glossário explica a faixa e de onde ela vem', () {
+    expect(glossary['faixa_de_preco_justo'], contains('premissa pessimista'));
     expect(glossary['consenso'], contains('faixa'));
+    expect(glossary['graham'], contains('não preço justo'));
   });
 }

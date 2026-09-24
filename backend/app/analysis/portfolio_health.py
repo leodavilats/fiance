@@ -71,7 +71,7 @@ def compute_portfolio_health(
         warnings.append("Carteira concentrada em poucas categorias de ativo.")
     if at_risk_value > 0:
         at_risk_pct = at_risk_value / total * 100
-        warnings.append(f"{at_risk_pct:.0f}% da carteira está em ativos com sinal de venda.")
+        warnings.append(f"{at_risk_pct:.0f}% da carteira está em ativos acima do preço justo.")
 
     return PortfolioHealth(
         score=round(overall, 1),

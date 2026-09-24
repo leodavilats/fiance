@@ -502,6 +502,7 @@ class Opportunity {
     this.changePercentDay,
     this.distanceFrom52wHighPct,
     this.range52wPosition,
+    this.personalCeiling,
   });
 
   final String ticker;
@@ -509,6 +510,8 @@ class Opportunity {
   final double? price;
 
   final double? asOf;
+
+  final double? personalCeiling;
 
   final double? fairPrice;
   final double? fairLow;
@@ -559,6 +562,7 @@ class Opportunity {
     changePercentDay: (j['change_percent_day'] as num?)?.toDouble(),
     distanceFrom52wHighPct: (j['distance_from_52w_high_pct'] as num?)?.toDouble(),
     range52wPosition: (j['range_52w_position'] as num?)?.toDouble(),
+    personalCeiling: (j['personal_ceiling'] as num?)?.toDouble(),
   );
 }
 
@@ -814,6 +818,7 @@ class FairMethod {
     required this.status,
     required this.note,
     this.value,
+    this.role = '',
   });
 
   final String method;
@@ -821,6 +826,8 @@ class FairMethod {
   final String status;
   final String note;
   final double? value;
+
+  final String role;
 
   bool get applies => status == 'ok' || status == 'destoa_dos_demais';
 
@@ -830,6 +837,37 @@ class FairMethod {
     status: j['status'] as String? ?? '',
     note: j['note'] as String? ?? '',
     value: (j['value'] as num?)?.toDouble(),
+    role: j['role'] as String? ?? '',
+  );
+}
+
+class FairConfirmation {
+  FairConfirmation({required this.method, this.value, this.agreement = ''});
+
+  final String method;
+  final double? value;
+  final String agreement;
+
+  factory FairConfirmation.fromJson(Map<String, dynamic> j) => FairConfirmation(
+    method: j['method'] as String? ?? '',
+    value: (j['value'] as num?)?.toDouble(),
+    agreement: j['agreement'] as String? ?? '',
+  );
+}
+
+class FairIndicator {
+  FairIndicator({required this.kind, this.value, this.passes, this.desiredYield});
+
+  final String kind;
+  final double? value;
+  final bool? passes;
+  final double? desiredYield;
+
+  factory FairIndicator.fromJson(Map<String, dynamic> j) => FairIndicator(
+    kind: j['kind'] as String? ?? '',
+    value: (j['value'] as num?)?.toDouble(),
+    passes: j['passes'] as bool?,
+    desiredYield: (j['desired_yield'] as num?)?.toDouble(),
   );
 }
 
@@ -864,6 +902,12 @@ class AssetAnalysis {
     required this.reasons,
     this.falsifiers = const [],
     this.fundamentals = const {},
+    this.principal,
+    this.qualityReasons = const [],
+    this.confirmation,
+    this.premises = const {},
+    this.indicators = const [],
+    this.personalCeiling,
   });
 
   final String symbol;
@@ -909,6 +953,22 @@ class AssetAnalysis {
   final List<Falsifier> falsifiers;
   final Map<String, double?> fundamentals;
 
+  final String? principal;
+  final List<String> qualityReasons;
+  final FairConfirmation? confirmation;
+  final Map<String, dynamic> premises;
+  final List<FairIndicator> indicators;
+  final double? personalCeiling;
+
+  double? premise(String key) => (premises[key] as num?)?.toDouble();
+
+  FairIndicator? indicator(String kind) {
+    for (final i in indicators) {
+      if (i.kind == kind) return i;
+    }
+    return null;
+  }
+
   factory AssetAnalysis.fromJson(Map<String, dynamic> j) {
     final fp = j['fair_price'] as Map<String, dynamic>;
     final tech = j['technical'] as Map<String, dynamic>;
@@ -951,6 +1011,17 @@ class AssetAnalysis {
               .toList() ??
           const [],
       fundamentals: fund.map((k, v) => MapEntry(k, (v as num?)?.toDouble())),
+      principal: fp['principal'] as String?,
+      qualityReasons:
+          (fp['quality_reasons'] as List?)?.map((e) => e as String).toList() ?? const [],
+      confirmation: fp['confirmation'] is Map<String, dynamic>
+          ? FairConfirmation.fromJson(fp['confirmation'] as Map<String, dynamic>)
+          : null,
+      premises: (fp['premises'] as Map<String, dynamic>?) ?? const {},
+      indicators: ((fp['indicators'] as List?) ?? const [])
+          .map((e) => FairIndicator.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      personalCeiling: (fp['personal_ceiling'] as num?)?.toDouble(),
     );
   }
 }

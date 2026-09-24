@@ -166,7 +166,7 @@ Regras específicas de conteúdo:
 
 | Ao mostrar | Exigência |
 |---|---|
-| Cifra de preço justo | A base junto: quantos métodos, ou o nome do método |
+| Cifra de preço justo | A base junto: o modelo principal, a qualidade e as premissas |
 | Preço, ou lista de preços | `formatAge`. Em lista, o carimbo é o **mais antigo** (`oldestStamp`) |
 | Projeção | Faixa, com piso, teto e cenário base |
 | Julgamento | Proveniência e papel de veredito em serifa |

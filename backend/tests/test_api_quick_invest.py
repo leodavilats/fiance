@@ -140,3 +140,23 @@ def test_renda_fixa_nao_desaparece_da_sugestao(client):
         "o produto não tem catálogo de títulos: ele diz quanto vai para a categoria e manda "
         "comparar, em vez de nomear uma oferta que não conhece"
     )
+
+
+def test_a_margem_chega_em_fracao_e_a_razao_a_le_assim():
+    from app.models import AssetType, Opportunity
+    from app.services.quick_invest_service import QuickInvestService
+
+    opp = Opportunity(
+        ticker="PETR4",
+        asset_type=AssetType.br_stock,
+        verdict="STRONG_BUY",
+        label="Bem abaixo do preço justo",
+        margin_of_safety=0.34,
+    )
+
+    razao = QuickInvestService()._porque(opp, "acoes_br", {})
+
+    assert "margem de 34%" in razao, (
+        "a margem é fração: comparada com 20, a razão nunca aparecia, e formatada sem ×100 "
+        "sairia como 0%"
+    )

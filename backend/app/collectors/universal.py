@@ -163,6 +163,9 @@ class AssetSnapshot:
     change_percent_day: float | None = None
     as_of: float = 0.0
     source: str = "brapi"
+    net_income_history: list[float | None] | None = None
+    equity_history: list[float | None] | None = None
+    net_income_ttm: float | None = None
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()
@@ -205,6 +208,23 @@ def _razao_pct(numerador: float | None, patrimonio: float | None) -> float | Non
     return round(numerador / patrimonio * 100.0, 4)
 
 
+_CHAVES_DE_LUCRO = (
+    "netIncome",
+    "netIncomeApplicableToCommonShares",
+    "netIncomeFromContinuingOps",
+)
+
+_EXERCICIOS_NA_SERIE = 5
+
+
+def _lucro(resultado: dict) -> float | None:
+    for chave in _CHAVES_DE_LUCRO:
+        valor = _safe_float(resultado.get(chave))
+        if valor is not None:
+            return valor
+    return None
+
+
 def _roe_do_balanco(raw: dict) -> float | None:
     balancos = _exercicios(raw, "balanceSheetHistory")
     resultados = _exercicios(raw, "incomeStatementHistory")
@@ -215,9 +235,25 @@ def _roe_do_balanco(raw: dict) -> float | None:
         return None
 
     return _razao_pct(
-        _safe_float(resultados[0].get("netIncome")),
+        _lucro(resultados[0]),
         _safe_float(balancos[0].get("shareholdersEquity")),
     )
+
+
+def _series_anuais(raw: dict) -> tuple[list[float | None] | None, list[float | None] | None]:
+    resultados = [
+        r for r in _exercicios(raw, "incomeStatementHistory") if r.get("type", "yearly") == "yearly"
+    ][:_EXERCICIOS_NA_SERIE]
+    if not resultados:
+        return None, None
+
+    patrimonio_por_data = {
+        str(b["endDate"]): _safe_float(b.get("shareholdersEquity"))
+        for b in _exercicios(raw, "balanceSheetHistory")
+    }
+    lucros = [_lucro(r) for r in resultados]
+    patrimonios = [patrimonio_por_data.get(str(r["endDate"])) for r in resultados]
+    return lucros, patrimonios
 
 
 _DIVIDA_FINANCEIRA = (
@@ -518,6 +554,8 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         record_external_call("brapi.plausibility", ok=False)
         return None
 
+    lucros_anuais, patrimonios_anuais = _series_anuais(r)
+
     return AssetSnapshot(
         symbol=symbol.upper(),
         as_of=time.time(),
@@ -526,6 +564,9 @@ def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
         name=name,
         sector=sector,
         currency=r.get("currency") or "BRL",
+        net_income_history=lucros_anuais,
+        equity_history=patrimonios_anuais,
+        net_income_ttm=_safe_float(_estatistica(r, "netIncomeToCommon")),
         **numeros,
     )
 

@@ -1,6 +1,8 @@
 # ADR-013 — O técnico não decide, e a faixa carrega a própria incerteza
 
-**Status:** ACEITO
+**Status:** SUBSTITUÍDO EM PARTE pela [ADR-014](ADR-014-um-modelo-por-classe.md) — seguem valendo
+o técnico como contexto e o falsificador com `kind`; a qualidade, a taxa e o dividendo recorrente
+foram refeitos
 **Data:** 2026-09-20
 **Decidido por:** autor do projeto, que delegou as escolhas desta auditoria
 
@@ -136,5 +138,5 @@ gerar valor do que ele carrega. A leitura sai da tendência, marcada.
 - [AUDITORIA-DO-VEREDITO](../historico/AUDITORIA-DO-VEREDITO-2026-09-20.md) — os 40 itens e o que cada um virou
 - `backend/app/analysis/fair_price.py` · `backend/app/analysis/decision.py` ·
   `backend/app/analysis/falsifiers.py`
-- `backend/tests/test_faixa_carrega_a_incerteza.py` · `mobile/test/a_tela_mostra_a_incerteza_test.dart`
+- `test_faixa_carrega_a_incerteza.py`, removido pela ADR-014 · `mobile/test/a_tela_mostra_a_incerteza_test.dart`
 - [ADR-011](ADR-011-preco-justo-e-faixa.md), que criou a faixa que esta ADR qualifica

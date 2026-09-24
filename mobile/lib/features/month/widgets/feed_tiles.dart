@@ -96,7 +96,10 @@ class FiVerdictChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FiTag(label: label, state: fiVerdictState(verdict));
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 140),
+      child: FiTag(label: label, state: fiVerdictState(verdict)),
+    );
   }
 }
 

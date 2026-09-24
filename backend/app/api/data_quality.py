@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
+from app.analysis.fair_price import EARNINGS_YEARS, fair_price_from_inputs
 from app.collectors import circuit, plausibility
 from app.services import OpportunityService
 
@@ -11,17 +12,20 @@ _service = OpportunityService()
 _FIELD_IMPACT = {
     "price": "sem preço não há análise nenhuma",
     "dividend_yield": "sem DY o score de dividendos fica indefinido",
-    "avg_dividend": "sem média de proventos não há Bazin (único método de ETF)",
-    "eps": "sem LPA não há Graham nem DCF",
-    "book_value": "sem VPA não há Graham nem P/VP",
-    "roe": "sem ROE o score de qualidade perde metade da base",
+    "avg_dividend": "sem distribuição recorrente o FII não tem preço justo, e a ação perde a confirmação",
+    "eps": "sem LPA a ação não tem preço justo",
+    "earnings_history": (
+        f"sem {EARNINGS_YEARS} exercícios anuais o lucro não é normalizado, e a faixa sai frágil"
+    ),
+    "book_value": "sem VPA o FII perde a confirmação, e não há P/VP nem critério de Graham",
+    "roe": "sem ROE a ação não tem preço justo, e o score de qualidade perde metade da base",
     "profit_margin": "sem margem o score de qualidade perde metade da base",
     "debt_to_equity": "sem D/E o score de endividamento fica indefinido",
-    "revenue_growth": "sem crescimento o DCF cai no default de 8%",
+    "revenue_growth": "sem crescimento de receita o score de crescimento fica indefinido",
     "sector": "sem setor não há alerta de concentração setorial",
     "market_cap": "sem valor de mercado o score de liquidez fica indefinido",
     "technical_trend": "sem série longa a tendência é de curto prazo ou inexistente",
-    "fair_price": "sem consenso não há margem de segurança, veredito nem alerta",
+    "fair_price": "sem faixa não há margem de segurança, leitura de valor nem alerta",
 }
 
 
@@ -97,10 +101,11 @@ async def data_quality() -> DataQualityResponse:
         checks = {
             "price": record.price,
             "dividend_yield": record.dividend_yield,
-            "avg_dividend": inputs.avg_dividend,
+            "avg_dividend": inputs.dividend_recurring,
             "eps": inputs.eps,
+            "earnings_history": True if inputs.earnings_years >= EARNINGS_YEARS else None,
             "book_value": inputs.book_value,
-            "roe": record.roe,
+            "roe": inputs.roe,
             "profit_margin": record.profit_margin,
             "debt_to_equity": record.debt_to_equity,
             "revenue_growth": record.revenue_growth,
@@ -109,9 +114,7 @@ async def data_quality() -> DataQualityResponse:
             "technical_trend": record.technical.trend_basis
             if record.technical.trend_basis != "none"
             else None,
-            "fair_price": True
-            if (inputs.avg_dividend or inputs.graham or inputs.dcf or inputs.pvp_fair)
-            else None,
+            "fair_price": True if fair_price_from_inputs(inputs).fair_low is not None else None,
         }
 
         for field, value in checks.items():
@@ -144,14 +147,10 @@ async def data_quality() -> DataQualityResponse:
         for asset_type, values in sorted(by_type.items())
     ]
 
-    notes: list[str] = []
-    etf = next((t for t in by_asset_type if t.asset_type == "etf"), None)
-    if etf and etf.fair_price_coverage_pct < 50:
-        notes.append(
-            f"Só {etf.fair_price_coverage_pct:.0f}% dos ETFs têm preço justo: para ETF o "
-            "Bazin é o único método, então a ausência de dividendsData na BRAPI apaga a "
-            "análise inteira da classe."
-        )
+    notes: list[str] = [
+        "ETF e BDR não têm preço justo por decisão de método, não por falta de dado: a "
+        "cobertura zero dessas classes é esperada."
+    ]
 
     dividends = next((f for f in fields if f.field == "avg_dividend"), None)
     if dividends and dividends.coverage_pct < 50:

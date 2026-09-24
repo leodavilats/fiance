@@ -23,9 +23,10 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [008](ADR-008-monetizacao-por-loja.md) | Monetização por loja via RevenueCat; `billing/` descartado | `ACEITO` | 2026-09-13 |
 | [009](ADR-009-trial-e-gratuidade.md) | Nada gratuito; trial de 14 dias na primeira posição salva | `ACEITO` | 2026-09-13 |
 | [010](ADR-010-remover-otimizador.md) | Remover `optimizer/` e o enum de estratégias | `ACEITO` | 2026-09-13 |
-| [011](ADR-011-preco-justo-e-faixa.md) | Preço justo como faixa; leitura de tendência declarada | `ACEITO` | 2026-09-19 |
+| [011](ADR-011-preco-justo-e-faixa.md) | Preço justo como faixa; leitura de tendência declarada | `SUBSTITUÍDO EM PARTE` por 014 | 2026-09-19 |
 | [012](ADR-012-o-alvo-e-de-quem-declara.md) | Sem alvo declarado não há julgamento | `ACEITO` | 2026-09-19 |
-| [013](ADR-013-o-tecnico-nao-decide.md) | O técnico não decide, e a faixa carrega a própria incerteza | `ACEITO` | 2026-09-20 |
+| [013](ADR-013-o-tecnico-nao-decide.md) | O técnico não decide, e a faixa carrega a própria incerteza | `SUBSTITUÍDO EM PARTE` por 014 | 2026-09-20 |
+| [014](ADR-014-um-modelo-por-classe.md) | Um modelo por classe, e a faixa é das premissas dele | `ACEITO` | 2026-09-23 |
 
 ---
 

@@ -3,14 +3,8 @@ import logging
 
 from app.analysis.classify import auto_category
 from app.analysis.dip_analysis import compute_dip_analysis
-from app.analysis.fair_price import (
-    compute_fair_price,
-    compute_technical,
-    desired_yield_for,
-    discount_rate_from,
-)
+from app.analysis.fair_price import compute_technical
 from app.collectors.news import analyze_news_with_ai, news_sentiment_summary
-from app.collectors.rates import get_rates
 from app.core.errors import NotFoundError
 from app.core.universe import get_universe
 from app.models import (
@@ -24,11 +18,7 @@ from app.models import (
     TechnicalBlock,
 )
 from app.repositories import AssetRepository, PortfolioRepository
-
-
-def _taxa_de_desconto() -> float:
-    return discount_rate_from(get_rates().get("selic_anual"))
-
+from app.services.valuation import fair_price_for
 
 logger = logging.getLogger(__name__)
 
@@ -53,18 +43,7 @@ class DipService:
             ),
         )
 
-        fair = compute_fair_price(
-            price=snap.price,
-            eps=snap.eps,
-            book_value=snap.book_value,
-            dividends=dividends,
-            asset_type=snap.asset_type,
-            week52_high=snap.fifty_two_week_high,
-            pb_ratio=snap.pb_ratio,
-            revenue_growth_rate=snap.revenue_growth,
-            desired_yield=desired_yield_for(snap.asset_type, prefs),
-            discount_rate=_taxa_de_desconto(),
-        )
+        fair = fair_price_for(snap, dividends, prefs)
 
         tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
         sentiment_summary = news_sentiment_summary(news_items)
@@ -165,18 +144,7 @@ class DipService:
                         self.asset_repo.get_dividends(ticker),
                     )
 
-                    fair = compute_fair_price(
-                        price=snap.price,
-                        eps=snap.eps,
-                        book_value=snap.book_value,
-                        dividends=dividends,
-                        asset_type=snap.asset_type,
-                        week52_high=snap.fifty_two_week_high,
-                        pb_ratio=snap.pb_ratio,
-                        revenue_growth_rate=snap.revenue_growth,
-                        desired_yield=desired_yield_for(snap.asset_type, prefs),
-                        discount_rate=_taxa_de_desconto(),
-                    )
+                    fair = fair_price_for(snap, dividends, prefs)
 
                     tech = compute_technical(
                         history, snap.fifty_two_week_high, snap.fifty_two_week_low

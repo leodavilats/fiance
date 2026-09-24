@@ -15,7 +15,7 @@ const fiHealthMetricExplanations = {
   'Diversificação':
       'A variedade entre categorias (renda fixa, ações BR, BDRs, FIIs, ETFs) e o número de ativos. Nota boa = carteira cobrindo várias categorias; nota ruim = tudo concentrado em 1-2 categorias.',
   'Risco':
-      'A fatia da carteira em ativos com sinal de venda hoje. Nota boa = pouca ou nenhuma exposição a esses ativos; nota ruim = parte relevante da carteira pede atenção.',
+      'A fatia da carteira em ativos acima do preço justo hoje. Nota boa = pouca ou nenhuma exposição a esses ativos; nota ruim = parte relevante da carteira pede atenção.',
 };
 
 const List<FiScoreBand> fiHealthDimensionBands = [

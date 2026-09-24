@@ -64,17 +64,23 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
   Yield desejado e margem de segurança são **fração**.
 - **Veredito vem com o que o derrubaria** (`analysis/falsifiers.py`). Sem preço justo, a lista sai
   vazia — nada de falsificador genérico.
-- **Preço justo sai como faixa, nunca média** (`fair_low`/`fair_high`). Os métodos não medem a mesma
-  coisa. A margem de segurança mede contra a **borda**: piso abaixo, teto acima, zero dentro.
-- **Veredito que não vem da faixa se declara** (`decision.basis`). Ativo sem método aplicável sai por
-  leitura de tendência, nomeada, e a regra vive só em `decide()` — nunca numa tela.
-- **Análise técnica não decide.** Tendência e RSI são contexto: não mudam veredito nem somam
-  confiança. Os dois saem do mesmo preço, e contá-los como duas evidências é contar uma duas vezes.
-- **A faixa carrega a própria incerteza** (`band_quality`, `independent_inputs`). O que conta como
-  evidência é o **insumo** — dividendo, lucro, patrimônio —, não o método: Graham e lucros
-  descontados leem o mesmo LPA.
-- **Silêncio tem motivo** (`methods[]`). Inaplicável, sem dado, lucro negativo e reprovado pelo
-  próprio filtro são quatro coisas, não uma.
+- **Preço justo é um modelo por classe, e a faixa é das premissas dele** (`fair_low`/`fair_high`).
+  Nunca média, nunca mínimo e máximo de métodos que medem coisas diferentes. A margem mede contra a
+  **borda**: abaixo do piso, sobre o piso; acima do teto, sobre o preço; zero dentro.
+- **Nenhum método vota de um lado só, e a faixa não depende do preço que julga.** Graham é
+  indicador, nunca borda: dentro do próprio filtro ele sempre fica acima do preço.
+- **O yield que a pessoa declara é meta de renda** (`personal_ceiling`), nunca borda da faixa.
+- **Juro estimado não avalia.** A taxa sai da Selic média de 10 anos (`rates_for_valuation`); sem
+  juro real, o método se cala em vez de descontar por um número do código.
+- **Sem faixa, não há leitura de valor** (`decision.basis = none`, "Sem preço justo"). BDR e ETF não
+  têm método. A regra vive só em `decide()` — nunca numa tela.
+- **Análise técnica não decide**, com faixa ou sem ela. Tendência e RSI são contexto: não mudam a
+  leitura nem somam confiança. Os dois saem do mesmo preço.
+- **A qualidade limita a etiqueta** (`band_quality`). Frágil nunca passa de abaixo ou acima do preço
+  justo. A confirmação por outro insumo entra na qualidade, nunca na borda.
+- **A etiqueta descreve posição, não ordem.** "Abaixo do preço justo", nunca "Comprar".
+- **Silêncio tem motivo** (`methods[]`). Inaplicável, sem dado, lucro negativo, ROE insuficiente,
+  sem juro e pouco distribuído são coisas diferentes.
 - **Falsificador distingue gatilho de premissa** (`kind`). Atravessar limiar reclassifica; refutar
   premissa derruba a tese.
 - **Projeção sai como faixa, nunca número único** (`analysis/scenarios.py`). `_low`/`_high` são

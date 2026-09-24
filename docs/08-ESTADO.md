@@ -105,7 +105,8 @@ card de ativo ele continua sendo vender e remover.
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
 | Oportunidades com score e veredito | `[ATUAL]` | `services/opportunity_service.py` | `market/opportunities_tab.dart` |
-| Preço justo como faixa piso–teto | `[ATUAL]` | `analysis/fair_price.py` | idem — ETF não tem faixa e sai por leitura de tendência declarada |
+| Preço justo por modelo de classe, faixa das premissas | `[ATUAL]` | `analysis/fair_price.py` | idem e `market/asset_detail_sheet.dart` — BDR e ETF saem "Sem preço justo" ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)) |
+| Preço-teto da meta de renda | `[ATUAL]` | `analysis/fair_price.py::_indicators` | `market/asset_detail_sheet.dart` |
 | Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — **só ações e BDRs**, ver [10-PROBLEMAS](10-PROBLEMAS.md) |
 | Falsificadores do veredito | `[ATUAL]` | `analysis/falsifiers.py` | `market/asset_detail_sheet.dart` |
 | Análise de ativo individual | `[ATUAL]` | `services/` | `market/asset_detail_sheet.dart` — a folha é a análise; `/ativo/:ticker` mostra menos e deixou de ser oferecida por botão |

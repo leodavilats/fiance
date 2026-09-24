@@ -1,11 +1,12 @@
 # Problemas conhecidos
 
 **Fonte de verdade** do que está aberto. Só pendências: nada de histórico, nada de item resolvido.
-Última verificação contra o código: **2026-09-19**
+Última verificação contra o código: **2026-09-23**
 Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria do motor de cálculo de
 2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
-[ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md).
+[ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md). A2, A3, A4 e A6 saíram em 2026-09-23, e
+A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md).
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -20,58 +21,40 @@ Os itens remanescentes da auditoria de **2026-09-13**. A de **2026-09-20**, que 
 ([ADR-013](decisoes/ADR-013-o-tecnico-nao-decide.md)) e virou registro em
 [historico/AUDITORIA-DO-VEREDITO-2026-09-20](historico/AUDITORIA-DO-VEREDITO-2026-09-20.md).
 
-### A6 · ~~Graham fora da faixa de validade~~ — **corrigido em 2026-09-13**
-
-`graham_fair_price` passou a receber preço e P/VP, e se abstém acima de P/L 15 ou P/VP 1,5 — a faixa
-que o glossário sempre prometeu ao usuário. Na amostra, 11 de 23 ativos com Graham calculado estavam
-fora dela, incluindo WEGE3 (P/L 34,6 · P/VP 11,5) e RADL3 (P/L 25,3 · P/VP 4,7).
-
-Travado por `tests/test_consenso_que_nao_e_consenso.py`.
-
-### A2 · O "DCF" não é um DCF
-
-`backend/app/analysis/fair_price.py` desconta **lucro por ação**, não fluxo de caixa livre, e usa
-crescimento de **receita** como proxy do crescimento de lucro. O P/L terminal é fixo em 15.
-
-A taxa de desconto **deixou de ser fixa em 2026-09-20**: acompanha a Selic mais um prêmio declarado
-de 5 pontos. O prêmio continua igual para toda empresa — sem beta nem estrutura de capital,
-diferenciá-lo seria inventar.
-
-É uma heurística razoável com nome errado.
-
-**Mitigado em 2026-09-13:** o glossário passou a chamá-lo de "lucros descontados" e a declarar as
-limitações. **Em 2026-09-20** a taxa passou a acompanhar a Selic, e o teto de crescimento deixou de
-ser um degrau.
-
-**Segue aberto:** implementar um DCF de verdade, ou assumir a heurística e renomear o campo na API
-(`dcf`) junto. Decisão de produto: muda o número que a pessoa vê.
-
-### A3 · O múltiplo de Graham não é ajustado ao juro brasileiro
-
-`√(22,5 × LPA × VPA)` usa a constante de 1949, do mercado americano. Em juro alto, ela é generosa —
-e o Brasil passou a maior parte da década recente em juro alto. O método participa do consenso de
-toda ação e de todo BDR.
-
-**Mitigado em 2026-09-13:** o glossário declara a limitação. **Segue aberto:** ajustar o múltiplo à
-Selic muda o preço justo de toda a base, e é decisão de produto.
-
-### A4 · ~~O DCF é descartado sempre que há Bazin~~ — **corrigido em 2026-09-13**
-
-Era `if bazin is not None: dcf = None`, o que fazia o DCF participar só do consenso de ação que
-**não paga dividendos**.
-
-**Corrigido em 2026-09-13:** o descarte foi removido. O DCF participa do consenso de ação junto com
-Bazin e Graham, e `consensus_methods` passou de 2 para 3 nas ações em que os três se sustentam.
-
-**Segue aberto:** a tela mostra "consenso de N métodos" sem nomear quais — nomeá-los exige campo novo
-na resposta.
-
 ### A5 · O perfil de risco não afeta FIIs nem ETFs
 
 `scoring.py:95-96`: `_FII_WEIGHTS` e `_ETF_WEIGHTS` são fixos e `profile` não entra no ramo. Quem tem
 carteira de FIIs muda de conservador para arrojado e **nada acontece**.
 
 Junto com o item 29, isto compromete a personalização que é a hipótese de receita do produto.
+
+### A7 · FII de papel parece barato
+
+O FII de papel distribui como rendimento a correção monetária dos CRIs. A distribuição sobe com a
+inflação sem que o valor suba, e o principal perde valor real. O modelo de FII trata tudo como
+tijolo, cuja distribuição cresce com o aluguel. Na amostra de 2026-09-23, MXRF11 foi o único ativo a
+sair "abaixo do preço justo".
+
+**Segue aberto:** a BRAPI não entrega o subtipo do fundo. Resolver exige uma classificação mantida
+à mão ou outra fonte, e um yield exigido nominal para papel.
+
+### A8 · Os parâmetros do preço justo não têm calibração empírica
+
+Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e
+bandas de ±15% e ±30% são convenções declaradas. Validá-los exige retorno à frente por faixa de
+margem, fora da amostra, com fundamentos **como estavam na data** e sem viés de sobrevivência.
+
+**Segue aberto:** a BRAPI não entrega fundamento *point-in-time*. Os dados abertos da CVM
+(DFP/ITR) entregariam, mas o invariante "só BRAPI e BCB SGS" teria de ser revisto. Decisão de
+produto.
+
+### A9 · BDR não tem leitura de valor
+
+Por decisão da ADR-014: a única taxa disponível é em reais, e descontar lucro em dólar pela Selic
+fazia todo BDR parecer caro (cerca de 0,67× o valor numa taxa em dólar). O LPA que a BRAPI entrega
+para BDR já vem por BDR e em reais — a escala está certa, a moeda da taxa não.
+
+**Segue aberto:** exige juro em dólar, fora das duas fontes permitidas.
 
 ## B · Dado e fonte
 
@@ -97,10 +80,12 @@ O que a medição encontrou de novo:
 - **Banco sem D/E: 0 de 4.** Conhecido e deliberado
 - **FII sem valor de mercado: 0 de 5.** `_FII_WEIGHTS` dá 15% do peso à liquidez, que vem de
   `market_cap` — então todo FII perde essa dimensão e é pontuado só por margem e dividendos
-- **BDR sem VPA: 0 de 4.** Sem VPA não há Graham, e o consenso de BDR cai para **um método só**, o
-  DCF. `consensus_methods: 1` em todos os quatro
-- **ETF sem nada.** Nenhum método se aplica, e desde 2026-09-19 o produto diz isso: a leitura sai
-  da tendência, marcada como tal ([ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md))
+- **BDR sem VPA: 0 de 4.** Desde 2026-09-23 BDR não tem preço justo por decisão de método (A9), e
+  não por falta de dado
+- **ETF sem nada.** Nenhum método se aplica, e o produto diz "Sem preço justo"
+  ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md))
+- **Banco sem ROE.** O Itaú não preenche `netIncome`; desde 2026-09-23 o coletor lê
+  `netIncomeApplicableToCommonShares`, e sem ROE a ação não tem preço justo. Repetir a medição
 
 Repetir a medição: `GET /api/v1/data-quality` (exige sessão) ou amostrar
 `GET /api/v1/public/asset/{ticker}`, que não exige.

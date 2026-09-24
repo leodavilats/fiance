@@ -289,7 +289,7 @@ def _generate_suggestion_reasons(
         reasons.append(f"Dividend Yield atrativo de {opp.dividend_yield:.1f}%")
 
     if opp.verdict == "STRONG_BUY":
-        reasons.append("Sinal forte de compra baseado em análise fundamentalista")
+        reasons.append("Bem abaixo do preço justo, com evidência que não é frágil")
 
     return reasons[:3]
 
