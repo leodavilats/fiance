@@ -59,7 +59,7 @@ para BDR já vem por BDR e em reais — a escala está certa, a moeda da taxa n�
 
 ### Especificação do preço justo — auditoria de 2026-09-25
 
-**Dezoito itens** sobre o fluxo que [04-CALCULOS](04-CALCULOS.md) desenha na seção *Veredito*,
+**Dezenove itens** sobre o fluxo que [04-CALCULOS](04-CALCULOS.md) desenha na seção *Veredito*,
 conferidos contra o código do commit `53a6796`. A pergunta não foi qual metodologia é melhor, e sim
 se as regras são coerentes, determinísticas e completas. O inventário completo, com medições,
 ataque e teste de cada item, está em
@@ -77,9 +77,9 @@ que contradiz a identidade que o próprio principal usa. Com ROE de 15% e sem di
 R$ 3,03 contra um central de R$ 6,97. No piso coerente, ele seria R$ 6,09. A faixa mede a penalidade
 de reter sem crescer, e "firme" fica quase inalcançável para ação que cresce.
 
-**O mais urgente é o R-005**, que não depende de decisão nenhuma. Uma falha da BRAPI entrega lista
-vazia de dividendos, e isso vira payout zero e crescimento máximo. Viola "falha de rede não vira
-ausência".
+Os lotes A e B foram corrigidos em 2026-09-25, com duas pendências: R-012 (arredondamento antes do
+limiar) e a idade da taxa na tela (R-010). **Ficam abertos os lotes C e D**, que pedem decisão
+antes de código.
 
 ## B · Dado e fonte
 

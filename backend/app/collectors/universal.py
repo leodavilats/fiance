@@ -605,9 +605,11 @@ def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
     return out
 
 
-def _dividends_brapi(symbol: str) -> list[dict]:
+def _dividends_brapi(symbol: str) -> list[dict] | None:
     base = _base_symbol(symbol)
     r = _brapi_raw(base)
+    if not r:
+        return None if _ler_raw(base) is None else []
 
     out: list[dict] = []
     for d in _cash_dividends(r):
@@ -634,7 +636,7 @@ def _history_sync(symbol: str, period: str = "1y") -> dict[str, float]:
     return {}
 
 
-def _dividends_sync(symbol: str) -> list[dict]:
+def _dividends_sync(symbol: str) -> list[dict] | None:
     t = detect_type(symbol)
 
     if t in ("br_stock", "fii", "bdr", "etf"):
@@ -751,15 +753,21 @@ async def fetch_ibov_history(days: int = 365) -> dict[str, float]:
     return series
 
 
-async def fetch_dividends(symbol: str) -> list[dict]:
+async def fetch_dividends(symbol: str) -> list[dict] | None:
     ck = f"udiv:{symbol.upper()}"
     cached = cache.get(ck)
-    if cached:
+    if cached is not None:
         return cached
 
     data = await asyncio.to_thread(_dividends_sync, symbol)
 
-    if data:
-        cache.set(ck, data, DIV_TTL)
+    if data is None:
+        vencido, idade = cache.get_with_age(ck)
+        if vencido is not None:
+            logger.warning("Proventos de %s não chegaram; servindo cache de %.0fs.", symbol, idade)
+            return vencido
+        logger.warning("Proventos de %s não chegaram e não há cache.", symbol)
+        return None
 
+    cache.set(ck, data, DIV_TTL)
     return data

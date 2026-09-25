@@ -14,7 +14,7 @@ def valuation_rates() -> ValuationRates | None:
     return rates_for_valuation(rates_source.get_rates())
 
 
-def fair_price_inputs_for(snap, dividends: list[dict]) -> FairPriceInputs:
+def fair_price_inputs_for(snap, dividends: list[dict] | None) -> FairPriceInputs:
     return compute_fair_price_inputs(
         price=snap.price,
         eps=snap.eps,
@@ -30,7 +30,7 @@ def fair_price_inputs_for(snap, dividends: list[dict]) -> FairPriceInputs:
     )
 
 
-def fair_price_for(snap, dividends: list[dict], prefs: dict | None) -> FairPriceResult:
+def fair_price_for(snap, dividends: list[dict] | None, prefs: dict | None) -> FairPriceResult:
     return fair_price_from_inputs(
         fair_price_inputs_for(snap, dividends),
         desired_yield=desired_yield_for(str(snap.asset_type), prefs),

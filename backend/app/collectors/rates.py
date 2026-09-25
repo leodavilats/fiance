@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import timedelta
 
 import httpx
@@ -142,6 +143,7 @@ def get_rates() -> dict:
         "ipca_anual": round(ipca, 2) if ipca is not None else DEFAULT_IPCA_ANUAL,
         "selic_media_10a": selic_media,
         "source": SOURCE_BCB,
+        "fetched_at": time.time(),
     }
     cache.set(_CACHE_KEY, rates, _TTL)
     return rates

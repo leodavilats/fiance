@@ -112,6 +112,8 @@ class ValuationRates:
     fii_yield: float
     rate_base: str
     selic_pct: float
+    source: str | None = None
+    as_of: float | None = None
 
 
 def rates_for_valuation(rates: dict | None) -> ValuationRates | None:
@@ -134,6 +136,8 @@ def rates_for_valuation(rates: dict | None) -> ValuationRates | None:
         fii_yield=round(juro_real + FII_PREMIUM, 4),
         rate_base=base,
         selic_pct=round(selic, 2),
+        source=rates.get("source"),
+        as_of=rates.get("fetched_at"),
     )
 
 
@@ -223,6 +227,7 @@ class RecurringDividend:
     complete_years: int
     cut: bool
     capped: bool
+    paid_years: int = 0
 
 
 def recurring_dividend(
@@ -258,6 +263,7 @@ def recurring_dividend(
         complete_years=len(values),
         cut=media > 0 and ultimo < DIVIDEND_CUT_RATIO * media,
         capped=capped,
+        paid_years=sum(1 for v in values if v > 0),
     )
 
 
@@ -489,6 +495,12 @@ class FairPriceInputs:
     fii_yield: float | None = None
     rate_base: str | None = None
     earnings_inconsistent: bool = False
+    dividends_known: bool = True
+    dividend_paid_years: int | None = None
+    rate_source: str | None = None
+    selic_pct: float | None = None
+    rates_as_of: float | None = None
+    reference_date: str | None = None
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()
@@ -498,7 +510,7 @@ def compute_fair_price_inputs(
     price: float | None,
     eps: float | None,
     book_value: float | None,
-    dividends: list[dict[str, float]],
+    dividends: list[dict[str, float]] | None,
     asset_type: str = "br_stock",
     pb_ratio: float | None = None,
     roe_pct: float | None = None,
@@ -509,6 +521,8 @@ def compute_fair_price_inputs(
     reference: datetime | None = None,
 ) -> FairPriceInputs:
     today = _hoje(reference)
+    proventos_conhecidos = dividends is not None
+    dividends = dividends or []
 
     lucro = normalized_eps(eps, net_income_history, net_income_ttm)
     dividendo = recurring_dividend(dividends, reference=today)
@@ -542,7 +556,29 @@ def compute_fair_price_inputs(
         fii_yield=rates.fii_yield if rates else None,
         rate_base=rates.rate_base if rates else None,
         earnings_inconsistent=lucro.inconsistent,
+        dividends_known=proventos_conhecidos,
+        dividend_paid_years=dividendo.paid_years,
+        rate_source=rates.source if rates else None,
+        selic_pct=rates.selic_pct if rates else None,
+        rates_as_of=rates.as_of if rates else None,
+        reference_date=today.date().isoformat(),
     )
+
+
+def _anos_pagos(inputs: FairPriceInputs) -> int:
+    if inputs.dividend_paid_years is None:
+        return inputs.dividend_complete_years
+    return inputs.dividend_paid_years
+
+
+def _rate_premises(inputs: FairPriceInputs) -> dict:
+    return {
+        "rate_base": inputs.rate_base,
+        "rate_source": inputs.rate_source,
+        "selic_pct": inputs.selic_pct,
+        "rates_as_of": inputs.rates_as_of,
+        "reference_date": inputs.reference_date,
+    }
 
 
 def _method(
@@ -605,6 +641,14 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
         )
     if d - RATE_SHOCK <= LONG_RUN_GROWTH:
         return _Lens(status="taxa_implausivel", note="taxa de desconto abaixo do crescimento")
+    if not inputs.dividends_known:
+        return _Lens(
+            status="sem_dado",
+            note=(
+                "o histórico de proventos não chegou da fonte: sem ele não há como separar o que "
+                "a empresa distribui do que retém para crescer"
+            ),
+        )
 
     payout = min(max((inputs.dividend_recurring or 0.0) / eps, 0.0), 1.0)
     crescimento = min(max(inputs.roe * (1 - payout), 0.0), MAX_GROWTH)
@@ -621,7 +665,7 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
         high=round(teto, 2),
         premises={
             "discount_rate": d,
-            "rate_base": inputs.rate_base,
+            **_rate_premises(inputs),
             "growth": round(crescimento, 4),
             "long_run_growth": LONG_RUN_GROWTH,
             "explicit_years": EXPLICIT_YEARS,
@@ -644,6 +688,8 @@ def _dividend_lens(inputs: FairPriceInputs) -> _Lens:
     y = inputs.fii_yield
     d = inputs.dividend_recurring
 
+    if not inputs.dividends_known:
+        return _Lens(status="sem_dado", note="o histórico de distribuições não chegou da fonte")
     if not d:
         return _Lens(status="sem_dado", note="sem distribuição recorrente no período")
     if y is None:
@@ -658,7 +704,7 @@ def _dividend_lens(inputs: FairPriceInputs) -> _Lens:
         high=round(d / (y - RATE_SHOCK), 2),
         premises={
             "fii_yield": y,
-            "rate_base": inputs.rate_base,
+            **_rate_premises(inputs),
             "inflation_target": INFLATION_TARGET,
             "real_rate_floor": REAL_RATE_FLOOR,
             "fii_premium": FII_PREMIUM,
@@ -671,12 +717,12 @@ def _stock_confirmation(inputs: FairPriceInputs, lens: _Lens) -> dict:
     d = inputs.dividend_recurring
     taxa = inputs.discount_rate
 
-    if not d or inputs.dividend_complete_years < MIN_DIVIDEND_YEARS:
+    if not d or _anos_pagos(inputs) < MIN_DIVIDEND_YEARS:
         return _method(
             "bazin",
             "confirmacao",
             "sem_dado",
-            f"menos de {MIN_DIVIDEND_YEARS} anos de dividendo: não há série para confirmar o lucro",
+            f"menos de {MIN_DIVIDEND_YEARS} anos com dividendo: não há série para confirmar o lucro",
         )
     if lens.premises.get("payout", 0.0) < LOW_PAYOUT:
         return _method(
@@ -727,10 +773,10 @@ def _quality(
                 "o lucro oscila demais entre os exercícios: o dos últimos 12 meses se afasta da "
                 "média, ou algum ano teve prejuízo"
             )
-    elif inputs.dividend_complete_years < MIN_DIVIDEND_YEARS:
+    elif _anos_pagos(inputs) < MIN_DIVIDEND_YEARS:
         frageis.append(
-            f"a distribuição tem {inputs.dividend_complete_years} ano(s) completo(s) de "
-            f"histórico, e o recorrente exige {MIN_DIVIDEND_YEARS}"
+            f"a distribuição tem {_anos_pagos(inputs)} ano(s) completo(s) com pagamento, e o "
+            f"recorrente exige {MIN_DIVIDEND_YEARS}"
         )
 
     if inputs.dividend_cut:
@@ -953,7 +999,7 @@ def compute_fair_price(
     price: float | None,
     eps: float | None,
     book_value: float | None,
-    dividends: list[dict[str, float]],
+    dividends: list[dict[str, float]] | None,
     asset_type: str = "br_stock",
     desired_yield: float | None = None,
     pb_ratio: float | None = None,

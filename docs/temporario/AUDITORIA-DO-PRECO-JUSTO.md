@@ -2,7 +2,7 @@
 
 > ## ⏳ DOCUMENTO TEMPORÁRIO
 >
-> **Critério de morte:** quando os 18 itens estiverem riscados, **apague este arquivo**, remova a
+> **Critério de morte:** quando os 19 itens estiverem riscados, **apague este arquivo**, remova a
 > linha do índice em [README](../README.md) e a subseção correspondente em
 > [10-PROBLEMAS](../10-PROBLEMAS.md).
 >
@@ -119,7 +119,7 @@ então a chamada seguinte tenta de novo, mas a avaliação daquela rodada já sa
 | Lote | O que é | Itens | Natureza |
 |---|---|---|---|
 | **A** | Estados e guardas | R-003, R-006, R-007, R-008, R-009, R-011, R-012, R-013, R-017 | Correção direta, sem ADR |
-| **B** | Ausência não vira zero | R-004, R-005, R-010 | Correção direta; toca o coletor |
+| **B** | Ausência não vira zero | R-004, R-005, R-010, R-019 | Correção direta; toca o coletor |
 | **C** | A faixa coerente | R-001, R-002, R-014, R-018 | Emenda à ADR-014 antes de código |
 | **D** | Contrato e produto | R-015, R-016 | Contrato regravado; decisão de produto |
 
@@ -247,7 +247,7 @@ sentidos diferentes nas duas regras.
 
 ## Lote B · Ausência não vira zero
 
-### R-005 · Dividendo que não chegou vira payout zero e crescimento máximo
+### R-005 · ~~Dividendo que não chegou vira payout zero e crescimento máximo~~ — **corrigido em 2026-09-25**
 
 Severidade **crítico** · Natureza `lacuna` · Lote B
 
@@ -276,7 +276,7 @@ passando de 0,50 para 0,25 leva o teto de 7,84 para 7,98 e o piso de 4,67 para 3
   identidade funcionando, não uma ausência. O efeito duplo do corte vai para a emenda da ADR-014
   (lote C).
 
-### R-004 · "Recorrente" e "3 anos de dividendo" não medem o que dizem
+### R-004 · ~~"Recorrente" e "3 anos de dividendo" não medem o que dizem~~ — **corrigido em 2026-09-25**
 
 Severidade atenção · Natureza `ambiguidade` · Lote B
 
@@ -306,6 +306,30 @@ resultado nem mostrar a idade da taxa.
   As premissas ganham `rate_source`, `selic_pct`, `rates_age_s` e `reference_date`. `premises` é um
   dicionário, então chaves novas não quebram o `fromJson` do Dart. Na tela, o precedente é a regra
   de `formatAge` para preço.
+
+**Parte corrigida em 2026-09-25:** as premissas carregam `rate_source`, `selic_pct`, `rates_as_of` e
+`reference_date`. Grava-se o momento da leitura, e não a idade, porque a idade muda a cada segundo
+e tornaria o resultado não reproduzível. **Segue aberto:** a tela do ativo mostrar a idade da taxa
+quando `rate_source` for `bcb_cache_vencido`. É mudança no aplicativo, com `formatAge` sobre
+`rates_as_of`.
+
+### R-019 · ~~O cache vencido era apagado antes de ser lido~~ — **corrigido em 2026-09-25**
+
+Severidade **crítico** · Natureza `lacuna` · Lote B
+
+Achado ao atacar o R-005, fora do inventário original. `cache.get` apagava a entrada vencida no
+mesmo acesso em que a recusava. Quem degrada chama `get` primeiro e `get_with_age` depois, e por
+isso nunca encontrava o vencido. Medido com o cache real: taxa vencida e disjuntor aberto davam
+`source: estimativa`, e não `bcb_cache_vencido`. Como juro estimado não avalia, **24h depois da
+última leitura, com o BCB fora do ar, todo preço justo sumia** em vez de usar a taxa vencida.
+
+- **Correção:** `cache.get` continua recusando o vencido, mas não o apaga. Quem limpa é
+  `cache.purge_expired`, na manutenção de `backend/app/core/jobs.py`. O Redis já guardava 6h de
+  sobrevida (`STALE_MARGIN_SECONDS`).
+- **Teste:** `backend/tests/test_ausencia_nao_vira_zero.py`, com o cache real, para a taxa e para os
+  proventos.
+- **Limite que fica:** no SQLite e no Postgres, o vencido sobrevive só até a próxima manutenção. No
+  Redis, 6h. A degradação é por janela, não permanente.
 
 ---
 

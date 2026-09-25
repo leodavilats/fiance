@@ -175,7 +175,8 @@ força a escolha e **nome errado falha alto**.
 
 Não é desempenho, é correção: com dois nós e cache por nó, a mesma pessoa vê preços diferentes
 conforme o balanceador. O vencimento vai **dentro** do valor mesmo no Redis, porque `get_with_age`
-precisa do dado vencido para o disjuntor degradar.
+precisa do dado vencido para o disjuntor degradar. Pelo mesmo motivo, `cache.get` devolve `None` para
+o vencido **sem apagá-lo**: quem apaga é a manutenção (`core/jobs.py`, `cache.purge_expired`).
 
 ---
 

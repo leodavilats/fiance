@@ -35,7 +35,10 @@ y_FII  = máx(Selic média de 10 anos − meta de inflação, 3%) + 3 pontos
 A Selic média de 10 anos sai da série mensal 4189 do SGS (`collectors/rates.py::_selic_media`).
 **Custo de capital é taxa de longo prazo**: a Selic de um dia mudaria todo preço justo a cada Copom,
 e a média de dois anos, no pico do ciclo, dava 19% de taxa e quase toda ação acima do preço justo.
-Sem a série, entra a Selic do dia, e `premises.rate_base` diz qual base foi usada. **Com juros
+Sem a série, entra a Selic do dia, e `premises.rate_base` diz qual base foi usada. As premissas
+também carregam a origem da taxa (`rate_source`, que pode ser `bcb_cache_vencido`), a Selic usada
+(`selic_pct`), o momento da leitura (`rates_as_of`) e a data de referência da janela de dividendos
+(`reference_date`). **Com juros
 estimados (`source: estimativa`), não há avaliação** — `analysis/fair_price.py::rates_for_valuation`.
 Selic zero, na média e no dia, conta como ausência de juro.
 
@@ -90,6 +93,11 @@ cima, como fazia a troca da série inteira pela mediana. Ano sem pagamento dentr
 zero; sem nenhum ano completo, vale a soma dos últimos 12 meses. O ano civil é o brasileiro
 (`core/brt.py`): às 22h de 31 de dezembro, o ano ainda não fechou.
 
+**Provento que não chegou não é provento zero.** Quando a fonte falha e não há cache, nem vencido, a
+coleta devolve `None`, e não lista vazia (`collectors/universal.py::fetch_dividends`). O principal
+cala com `sem_dado`: sem o histórico, o payout é desconhecido, e tratá-lo como zero poria o
+crescimento no máximo. A empresa que de fato não paga chega com lista vazia e cresce pelo ROE.
+
 ### A faixa
 
 ```
@@ -107,7 +115,7 @@ valor central; nenhum deles decide sozinho.
 
 | Classe | Leitura | Não se aplica quando |
 |---|---|---|
-| Ação | `D × (1 + g_c) ÷ (d − g_c)`, com `g_c = mín(g, g_T)` | menos de 3 anos de dividendo; payout abaixo de 25% |
+| Ação | `D × (1 + g_c) ÷ (d − g_c)`, com `g_c = mín(g, g_T)` | menos de 3 anos completos **com pagamento**; payout abaixo de 25% |
 | FII | VPA | sem VPA |
 
 A concordância é `dentro` da faixa, `fora_ate_30` ou `fora_mais_30`. **A confirmação não define
@@ -121,7 +129,7 @@ preço. Exatamente 30% ainda é `fora_ate_30`.
 
 | `band_quality` | Quando |
 |---|---|
-| `fragil` | lucro de menos de 3 exercícios, ou instável (LPA de 12m fora de metade a dobro do normalizado, ou ano com prejuízo); FII com menos de 3 anos de distribuição; corte de distribuição; confirmação a mais de 30% da faixa |
+| `fragil` | lucro de menos de 3 exercícios, ou instável (LPA de 12m fora de metade a dobro do normalizado, ou ano com prejuízo); FII com menos de 3 anos completos com distribuição; corte de distribuição; confirmação a mais de 30% da faixa |
 | `ampla` | sem confirmação; confirmação fora da faixa por até 30%; teto acima de 1,5× o piso |
 | `firme` | nenhum dos anteriores |
 | `sem_faixa` | não há modelo principal |
@@ -145,8 +153,8 @@ principal e, se houver, o da confirmação.
 | `pouco_distribuido` | o dividendo não mede a capacidade de quem distribui menos de 25% do lucro |
 | `taxa_implausivel` | a taxa menos o choque não passa do crescimento de longo prazo |
 
-Na ação, o motor confere **nesta ordem** — LPA, juro, ROE, taxa — e grava só o primeiro motivo
-que falha (`_earnings_lens`). Empresa em prejuízo e sem juro de referência aparece como
+Na ação, o motor confere **nesta ordem** — LPA, juro, ROE, taxa, proventos — e grava só o primeiro
+motivo que falha (`_earnings_lens`). Empresa em prejuízo e sem juro de referência aparece como
 `lucro_negativo`.
 
 ### Indicadores que não decidem
@@ -329,12 +337,12 @@ flowchart TD
     JURO -.-> QA
     JURO -.-> QF
 
-    QA{"Nesta ordem: LPA normalizado maior que zero?<br/>Há juro? ROE acima de 4,5%?<br/>Taxa − 1 ponto acima de 4,5%?"}
+    QA{"Nesta ordem: LPA normalizado maior que zero?<br/>Há juro? ROE acima de 4,5%?<br/>Taxa − 1 ponto acima de 4,5%? Os proventos chegaram?"}
     QA -->|"não — o primeiro motivo fica em methods"| SEMV
     QA -->|"sim"| PA["Principal · lucro distribuível descontado<br/>d = Selic 10a + 5 · g = mín de ROE × retenção e 20%<br/>fluxo = LPA × (1 − g ÷ ROE) por 5 anos<br/>terminal por Gordon com g_T = 4,5%"]
-    QA -->|"sim, e 3 anos de dividendo com payout de 25% ou mais"| CA["Confirmação · dividendo recorrente<br/>D × (1 + g_c) ÷ (d − g_c), g_c = mín de g e g_T"]
+    QA -->|"sim, e 3 anos com dividendo e payout de 25% ou mais"| CA["Confirmação · dividendo recorrente<br/>D × (1 + g_c) ÷ (d − g_c), g_c = mín de g e g_T"]
 
-    QF{"Há distribuição recorrente? Há juro?"}
+    QF{"Os proventos chegaram? Há distribuição recorrente? Há juro?"}
     QF -->|"não"| SEMV
     QF -->|"sim"| PF["Principal · D ÷ y<br/>y = máx de Selic 10a − 3% e 3%, mais 3 pontos"]
     QF -->|"sim, e há VPA"| CF["Confirmação · VPA"]

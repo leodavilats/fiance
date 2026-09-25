@@ -65,7 +65,6 @@ def get(key: str) -> Any | None:
 
     if expires_at < time.time():
         _record_lookup(hit=False)
-        delete(key)
         return None
 
     _record_lookup(hit=True)
