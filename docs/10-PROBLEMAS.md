@@ -6,7 +6,8 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
 [ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md). A2, A3, A4 e A6 saíram em 2026-09-23, e
-A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md).
+A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A auditoria da
+especificação do preço justo, de 2026-09-25, entrou como inventário próprio, no fim da seção A.
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -55,6 +56,30 @@ fazia todo BDR parecer caro (cerca de 0,67× o valor numa taxa em dólar). O LPA
 para BDR já vem por BDR e em reais — a escala está certa, a moeda da taxa não.
 
 **Segue aberto:** exige juro em dólar, fora das duas fontes permitidas.
+
+### Especificação do preço justo — auditoria de 2026-09-25
+
+**Dezoito itens** sobre o fluxo que [04-CALCULOS](04-CALCULOS.md) desenha na seção *Veredito*,
+conferidos contra o código do commit `53a6796`. A pergunta não foi qual metodologia é melhor, e sim
+se as regras são coerentes, determinísticas e completas. O inventário completo, com medições,
+ataque e teste de cada item, está em
+[AUDITORIA-DO-PRECO-JUSTO](temporario/AUDITORIA-DO-PRECO-JUSTO.md).
+
+| Lote | O que é | Natureza |
+|---|---|---|
+| **A** | Estados e guardas: classe desconhecida vira ação, dado contraditório vira faixa, fuso UTC | Correção direta |
+| **B** | Ausência não vira zero: dividendo que não chegou vira crescimento máximo | Correção direta |
+| **C** | A faixa coerente: o piso retém sem crescer, e a confirmação diverge por construção | Emenda à ADR-014 |
+| **D** | Contrato e produto: nomes de campo, técnico no score | Decisão de produto |
+
+**O bloqueador é o R-001.** O piso "sem crescimento" mantém a fração distribuível `1 − g/ROE`, o
+que contradiz a identidade que o próprio principal usa. Com ROE de 15% e sem dividendo, o piso é
+R$ 3,03 contra um central de R$ 6,97. No piso coerente, ele seria R$ 6,09. A faixa mede a penalidade
+de reter sem crescer, e "firme" fica quase inalcançável para ação que cresce.
+
+**O mais urgente é o R-005**, que não depende de decisão nenhuma. Uma falha da BRAPI entrega lista
+vazia de dividendos, e isso vira payout zero e crescimento máximo. Viola "falha de rede não vira
+ausência".
 
 ## B · Dado e fonte
 

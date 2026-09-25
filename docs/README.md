@@ -21,6 +21,7 @@ coisa, um está errado e ninguém sabe qual.
 | O que está quebrado ou aberto | [10-PROBLEMAS](10-PROBLEMAS.md) |
 | Por que essa decisão foi tomada | [decisoes/](decisoes/) |
 | O que a web tinha e o aplicativo ainda não tem | [temporario/PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) ⏳ |
+| O que está incoerente na especificação do preço justo | [temporario/AUDITORIA-DO-PRECO-JUSTO](temporario/AUDITORIA-DO-PRECO-JUSTO.md) ⏳ |
 | O que aconteceu antes | [historico/CHANGELOG](historico/CHANGELOG.md) |
 
 ---
