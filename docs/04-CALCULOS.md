@@ -2,7 +2,7 @@
 
 Cada número que o produto afirma, com entrada, fórmula, saída e **limitação**.
 O **código é a fonte de verdade**; este documento é o espelho auditado, com âncora em cada fórmula.
-Última revisão: 2026-09-23 · Preço justo e veredito refeitos pela ADR-014
+Última revisão: 2026-09-25 · Estados do preço justo conferidos pela auditoria de 2026-09-25
 
 Se uma fórmula aqui divergir do código, o código está certo e este documento tem um bug.
 
@@ -22,6 +22,7 @@ deles. Ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). `analysis/fair_p
 | FII | distribuição recorrente ÷ yield exigido | VPA | a lei obriga a distribuir 95% do resultado de caixa: a distribuição **é** o fluxo |
 | BDR | **nenhum** | — | a única taxa disponível é em reais, e o lucro não é |
 | ETF | **nenhum** | — | o preço acompanha o valor do que o fundo carrega |
+| Qualquer outra | **nenhum** | — | não há modelo declarado para ela; o modelo de ação só vale para `br_stock` |
 
 ### A taxa
 
@@ -36,6 +37,7 @@ A Selic média de 10 anos sai da série mensal 4189 do SGS (`collectors/rates.py
 e a média de dois anos, no pico do ciclo, dava 19% de taxa e quase toda ação acima do preço justo.
 Sem a série, entra a Selic do dia, e `premises.rate_base` diz qual base foi usada. **Com juros
 estimados (`source: estimativa`), não há avaliação** — `analysis/fair_price.py::rates_for_valuation`.
+Selic zero, na média e no dia, conta como ausência de juro.
 
 ### O modelo de ação
 
@@ -58,7 +60,9 @@ payout = dividendo recorrente ÷ LPA_n, entre 0 e 1
 - **O terminal sai da mesma taxa**, por Gordon. O P/L terminal implícito cai quando o juro sobe.
 - **LPA normalizado** (`normalized_eps`): média dos 3 últimos exercícios, escalada pela razão entre
   lucros — `LPA × média(lucro anual) ÷ lucro de 12 meses`. Em unit, lucro ÷ número de ações não é o
-  LPA da unit. Com menos de 3 exercícios, usa o LPA de 12 meses e a qualidade sai frágil.
+  LPA da unit. Com menos de 3 exercícios, usa o LPA de 12 meses e a qualidade sai frágil. Com o
+  LPA e o lucro-base de sinais opostos, ou lucro-base zero, **não há LPA normalizado**: um dos dois
+  está errado, e o principal cala com `sem_dado`.
 - **ROE normalizado** (`normalized_roe`): média do lucro sobre média do patrimônio, nos mesmos 3
   exercícios alinhados por data. Sem série, o ROE informado. Patrimônio médio negativo: sem ROE.
 
@@ -83,7 +87,8 @@ corte   = último < 50% da média
 `analysis/fair_price.py::recurring_dividend`. Contínuo — 2,9× e 3,1× a mediana dão o mesmo
 resultado. **Pega corte**, que é a armadilha de dividendo. Não apaga uma mudança de política para
 cima, como fazia a troca da série inteira pela mediana. Ano sem pagamento dentro da série conta como
-zero; sem nenhum ano completo, vale a soma dos últimos 12 meses.
+zero; sem nenhum ano completo, vale a soma dos últimos 12 meses. O ano civil é o brasileiro
+(`core/brt.py`): às 22h de 31 de dezembro, o ano ainda não fechou.
 
 ### A faixa
 
@@ -107,6 +112,10 @@ valor central; nenhum deles decide sozinho.
 
 A concordância é `dentro` da faixa, `fora_ate_30` ou `fora_mais_30`. **A confirmação não define
 borda**: ela entra na qualidade.
+
+A distância da concordância se mede contra a borda atravessada: abaixo do piso, `(piso − v) ÷ piso`;
+acima do teto, `(v − teto) ÷ teto`. É convenção diferente da margem, que acima do teto divide pelo
+preço. Exatamente 30% ainda é `fora_ate_30`.
 
 ### Qualidade
 
@@ -135,6 +144,10 @@ principal e, se houver, o da confirmação.
 | `sem_juro` | não há juro de referência real |
 | `pouco_distribuido` | o dividendo não mede a capacidade de quem distribui menos de 25% do lucro |
 | `taxa_implausivel` | a taxa menos o choque não passa do crescimento de longo prazo |
+
+Na ação, o motor confere **nesta ordem** — LPA, juro, ROE, taxa — e grava só o primeiro motivo
+que falha (`_earnings_lens`). Empresa em prejuízo e sem juro de referência aparece como
+`lucro_negativo`.
 
 ### Indicadores que não decidem
 
@@ -310,13 +323,14 @@ flowchart TD
     CLS -->|"BDR — taxa em reais sobre lucro em outra moeda"| SEMV
     CLS -->|"Ação"| QA
     CLS -->|"FII"| QF
+    CLS -->|"qualquer outra"| SEMV
 
     JURO["Juro de referência<br/>Selic média de 10 anos, ou a do dia, declarada<br/>juro estimado não avalia"]
     JURO -.-> QA
     JURO -.-> QF
 
-    QA{"LPA normalizado de 3 exercícios maior que zero?<br/>ROE acima de 4,5%? Há juro?"}
-    QA -->|"não — o motivo fica em methods"| SEMV
+    QA{"Nesta ordem: LPA normalizado maior que zero?<br/>Há juro? ROE acima de 4,5%?<br/>Taxa − 1 ponto acima de 4,5%?"}
+    QA -->|"não — o primeiro motivo fica em methods"| SEMV
     QA -->|"sim"| PA["Principal · lucro distribuível descontado<br/>d = Selic 10a + 5 · g = mín de ROE × retenção e 20%<br/>fluxo = LPA × (1 − g ÷ ROE) por 5 anos<br/>terminal por Gordon com g_T = 4,5%"]
     QA -->|"sim, e 3 anos de dividendo com payout de 25% ou mais"| CA["Confirmação · dividendo recorrente<br/>D × (1 + g_c) ÷ (d − g_c), g_c = mín de g e g_T"]
 
@@ -343,7 +357,8 @@ flowchart TD
     FIR --> POS
 
     POS{"Preço contra a faixa<br/>abaixo: (piso − preço) ÷ piso<br/>acima: (teto − preço) ÷ preço"}
-    POS --> LBL["Etiqueta pela margem, ±15% e ±30%<br/>frágil não passa de abaixo ou acima<br/>confiança: firme alta · ampla média · frágil baixa"]
+    POS -->|"sem cotação"| SCOT["Sem cotação<br/>faixa exibida, confiança zero"]
+    POS --> LBL["Etiqueta pela margem, ±15% e ±30%, limites inclusivos<br/>frágil não passa de abaixo ou acima<br/>confiança: firme alta · ampla média · frágil baixa"]
 
     SEMV["Sem preço justo<br/>o motivo nomeado, sem falsificador"]
 
@@ -352,6 +367,7 @@ flowchart TD
 
     LBL --> OUT["Tela: etiqueta, faixa, premissas, confirmação<br/>gatilhos: preços das bandas vizinhas<br/>premissas: crescimento, taxa de equilíbrio, distribuição"]
     SEMV --> OUT
+    SCOT --> OUT
     TEC -.-> OUT
     IND -.-> OUT
 ```
@@ -377,9 +393,14 @@ movimentos esquecia a queda de antes da janela.
 | `ampla` | 0,45 | média |
 | `fragil` | 0,30 | baixa |
 | sem faixa | 0 | — |
+| faixa sem cotação | 0 | — |
 
 Tudo que pesa na evidência — anos de lucro, estabilidade, corte, confirmação, largura — entra pela
 qualidade. A interface mostra **a palavra**, não o decimal.
+
+Com faixa e sem cotação, a etiqueta é **"Sem cotação"**, e não "Sem preço justo": o preço justo
+existe, e o que falta é o preço para comparar. O veredito é `UNKNOWN` e a confiança é zero
+(`decision.py::decide`).
 
 **Consequência que precisa estar escrita:** a leitura herda integralmente a fragilidade do preço
 justo. Toda limitação da seção anterior é também limitação dela.

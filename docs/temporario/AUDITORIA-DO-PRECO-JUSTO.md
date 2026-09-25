@@ -138,7 +138,7 @@ mais, e `basisLabel` ainda trata `trend`: vocabulário sem produtor.
 
 ## Lote A · Estados e guardas
 
-### R-007 · Classe desconhecida cai no modelo de ação
+### R-007 · ~~Classe desconhecida cai no modelo de ação~~ — **corrigido em 2026-09-25**
 
 Severidade **crítico** · Natureza `lacuna` · Lote A
 
@@ -155,7 +155,7 @@ defeito é de contrato, e o custo de correção é quase zero.
 - **Teste:** `renda_fixa` e `"xyz"` saem sem faixa, com todos os métodos `inaplicavel` e a nota
   preenchida.
 
-### R-011 · LPA positivo com lucro de 12 meses negativo produz faixa
+### R-011 · ~~LPA positivo com lucro de 12 meses negativo produz faixa~~ — **corrigido em 2026-09-25**
 
 Severidade atenção · Natureza `lacuna` · Lote A
 
@@ -167,7 +167,7 @@ contraditório vira faixa frágil, em vez de silêncio com motivo.
   continua em `lucro_negativo`.
 - **Teste:** `normalized_eps(1.0, [10, 10, 10], -5)` cai em `sem_dado` com essa nota.
 
-### R-017 · A janela de anos usa UTC
+### R-017 · ~~A janela de anos usa UTC~~ — **corrigido em 2026-09-25**
 
 Severidade atenção · Natureza `lacuna` · Lote A
 
@@ -178,7 +178,7 @@ ano seguinte.
   importar `core/`; o invariante proíbe só `storage/`.
 - **Teste:** com referência em 31/12/2026 às 22h (BRT), o último ano completo é 2025.
 
-### R-006 · Faixa com preço ausente sai como "Sem preço justo"
+### R-006 · ~~Faixa com preço ausente sai como "Sem preço justo"~~ — **corrigido em 2026-09-25**
 
 Severidade **latente** · Natureza `lacuna` · Lote A
 
@@ -194,7 +194,7 @@ de `decide()` passam o preço do snapshot.
   `verdict`.
 - **Teste:** `decide(fair_com_faixa, None, None)` dá confiança 0.
 
-### R-003 · O diagrama exige 3 exercícios e depois classifica o lucro curto
+### R-003 · ~~O diagrama exige 3 exercícios e depois classifica o lucro curto~~ — **corrigido em 2026-09-25**
 
 Severidade atenção · Natureza `ambiguidade` · Lote A
 
@@ -205,7 +205,7 @@ exercícios: com menos, usa o LPA bruto e marca frágil.
 - **Ataque:** tirar "de 3 exercícios" da pré-condição no diagrama de
   [04-CALCULOS](../04-CALCULOS.md). Sem mudança de código.
 
-### R-008 · Selic zero e `taxa_implausivel` não estão no diagrama
+### R-008 · ~~Selic zero e `taxa_implausivel` não estão no diagrama~~ — **corrigido em 2026-09-25**
 
 Severidade documentação · Natureza `ambiguidade` · Lote A
 
@@ -214,7 +214,7 @@ gera `taxa_implausivel`, que o diagrama não tem.
 
 - **Ataque:** acrescentar o nó e o motivo ao diagrama.
 
-### R-009 · A ordem dos motivos difere do diagrama
+### R-009 · ~~A ordem dos motivos difere do diagrama~~ — **corrigido em 2026-09-25**
 
 Severidade documentação · Natureza `ambiguidade` · Lote A
 
@@ -234,7 +234,7 @@ abaixo", enquanto o gatilho anuncia R$ 70,00. O efeito é de no máximo 0,005 po
 - **Ataque:** `verdict_for` recalcula a margem sem arredondar, a partir de preço, piso e teto; o
   campo exibido continua com 4 casas. Vale fazer só se o PR já estiver mexendo em `decide`.
 
-### R-013 · Duas convenções de distância acima do teto
+### R-013 · ~~Duas convenções de distância acima do teto~~ — **corrigido em 2026-09-25**
 
 Severidade documentação · Natureza `ambiguidade` · Lote A
 

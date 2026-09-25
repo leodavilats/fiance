@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+
+from app.core.brt import BRT, now_brt
 
 DESIRED_YIELD_STOCK = 0.06
 DESIRED_YIELD_FII = 0.10
@@ -64,6 +66,8 @@ _NO_METHOD_NOTE = {
     ),
 }
 
+_NO_METHOD_FALLBACK = "esta classe de ativo não tem método de preço justo"
+
 
 def desired_yield_for(asset_type: str, prefs: dict | None = None) -> float:
     stock = DESIRED_YIELD_STOCK
@@ -85,8 +89,9 @@ def desired_yield_for(asset_type: str, prefs: dict | None = None) -> float:
     return stock
 
 
-def _now() -> datetime:
-    return datetime.now(UTC)
+def _hoje(reference: datetime | None) -> datetime:
+    momento = reference or now_brt()
+    return momento.astimezone(BRT) if momento.tzinfo else momento
 
 
 def _media(valores: list[float]) -> float:
@@ -154,7 +159,7 @@ def average_dividend_last_12m(
     if not dividends:
         return None
 
-    today = reference or _now()
+    today = _hoje(reference)
     cutoff_str = f"{today.year - 1}-{today.month:02d}-{today.day:02d}"
     horizon_str = today.strftime("%Y-%m-%d")
 
@@ -193,7 +198,7 @@ def average_dividend_last_n_years(
     if not dividends:
         return None
 
-    today = reference or _now()
+    today = _hoje(reference)
     values = _complete_years(dividends, years, today)
     if not values:
         return average_dividend_last_12m(dividends, reference=today)
@@ -205,7 +210,7 @@ def dividend_data_years(
     years: int = DIVIDEND_WINDOW_YEARS,
     reference: datetime | None = None,
 ) -> int:
-    today = reference or _now()
+    today = _hoje(reference)
     by_year = _dividends_by_year(dividends)
     return len([y for y in by_year if today.year - years <= y <= today.year - 1])
 
@@ -224,7 +229,7 @@ def recurring_dividend(
     dividends: list[dict[str, float]],
     reference: datetime | None = None,
 ) -> RecurringDividend:
-    today = reference or _now()
+    today = _hoje(reference)
     ttm = average_dividend_last_12m(dividends, reference=today) or 0.0
     values = _complete_years(dividends, DIVIDEND_WINDOW_YEARS, today)
 
@@ -261,6 +266,7 @@ class NormalizedEarnings:
     eps: float | None
     years: int
     unstable: bool
+    inconsistent: bool = False
 
 
 def normalized_eps(
@@ -275,9 +281,11 @@ def normalized_eps(
     if len(anuais) < EARNINGS_YEARS:
         return NormalizedEarnings(eps, len(anuais), False)
 
-    base = net_income_ttm if net_income_ttm else anuais[0]
-    if not base or eps == 0 or (base > 0) != (eps > 0):
+    if eps == 0:
         return NormalizedEarnings(eps, len(anuais), True)
+    base = net_income_ttm if net_income_ttm else anuais[0]
+    if not base or (base > 0) != (eps > 0):
+        return NormalizedEarnings(None, len(anuais), True, inconsistent=True)
 
     eps_n = eps * _media(anuais) / base
     instavel = (
@@ -480,6 +488,7 @@ class FairPriceInputs:
     discount_rate: float | None = None
     fii_yield: float | None = None
     rate_base: str | None = None
+    earnings_inconsistent: bool = False
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()
@@ -499,7 +508,7 @@ def compute_fair_price_inputs(
     rates: ValuationRates | None = None,
     reference: datetime | None = None,
 ) -> FairPriceInputs:
-    today = reference or _now()
+    today = _hoje(reference)
 
     lucro = normalized_eps(eps, net_income_history, net_income_ttm)
     dividendo = recurring_dividend(dividends, reference=today)
@@ -532,6 +541,7 @@ def compute_fair_price_inputs(
         discount_rate=rates.discount_rate if rates else None,
         fii_yield=rates.fii_yield if rates else None,
         rate_base=rates.rate_base if rates else None,
+        earnings_inconsistent=lucro.inconsistent,
     )
 
 
@@ -563,6 +573,14 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
     eps = inputs.eps_normalized
     d = inputs.discount_rate
 
+    if eps is None and inputs.earnings_inconsistent:
+        return _Lens(
+            status="sem_dado",
+            note=(
+                "o LPA e o lucro informado para o período têm sinais opostos: um dos dois está "
+                "errado"
+            ),
+        )
     if eps is None:
         return _Lens(status="sem_dado", note="lucro por ação não informado")
     if eps <= 0:
@@ -783,8 +801,8 @@ def _indicators(inputs: FairPriceInputs, desired_yield: float) -> tuple[list[dic
 
 
 def _no_band_methods(inputs: FairPriceInputs, lens: _Lens | None, principal: str | None) -> list:
-    nota = _NO_METHOD_NOTE.get(inputs.asset_type)
-    if nota:
+    if principal is None:
+        nota = _NO_METHOD_NOTE.get(inputs.asset_type, _NO_METHOD_FALLBACK)
         return [
             _method(nome, "inaplicavel", "inaplicavel", nota) for nome in ("dcf", "bazin", "vpa")
         ]
@@ -850,7 +868,7 @@ def fair_price_from_inputs(
     if asset_type == "fii":
         principal = PRINCIPAL_DIVIDENDS
         lens = _dividend_lens(inputs)
-    elif asset_type not in _NO_METHOD_NOTE:
+    elif asset_type == "br_stock":
         principal = PRINCIPAL_EARNINGS
         lens = _earnings_lens(inputs)
 

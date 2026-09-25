@@ -46,11 +46,13 @@ LABELS = {
     "UNKNOWN": "Sem preço justo",
 }
 
+LABEL_NO_QUOTE = "Sem cotação"
+
 _CAP_WHEN_FRAGILE = {"STRONG_BUY": "BUY", "STRONG_SELL": "SELL"}
 
 
 def confidence_from_evidence(fair: FairPriceResult, basis: str) -> float:
-    if basis != BASIS_BAND:
+    if basis != BASIS_BAND or fair.margin_of_safety is None:
         return 0.0
     return CONFIDENCE_BY_QUALITY.get(fair.band_quality, 0.0)
 
@@ -289,6 +291,11 @@ def decide(
     if tem_faixa:
         if current_price:
             reasons.append(_band_reason(fair, current_price))
+        else:
+            reasons.append(
+                f"Sem cotação: a faixa de preço justo é de {_brl(fair.fair_low)} a "
+                f"{_brl(fair.fair_high)}, e não há preço para comparar com ela."
+            )
         if fair.principal in (PRINCIPAL_EARNINGS, PRINCIPAL_DIVIDENDS):
             reasons.append(_premise_reason(fair))
         confirmacao = _confirmation_reason(fair)
@@ -328,7 +335,7 @@ def decide(
 
     return Decision(
         verdict=verdict,
-        label=LABELS[verdict],
+        label=LABEL_NO_QUOTE if tem_faixa and verdict == "UNKNOWN" else LABELS[verdict],
         confidence=confidence,
         reasons=reasons,
         band_verdict=banda,
