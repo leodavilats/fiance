@@ -19,6 +19,7 @@ import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
 import 'asset_detail_sheet.dart';
+import '../../core/widgets/controls.dart';
 
 const _categoryToAssetType = {
   '': '',
@@ -427,7 +428,8 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                 FiDataRow(
                   label: 'Em queda',
                   detail: 'Varredura de ativos que caíram do topo recente',
-                  trailing: Switch(
+                  trailing: FiSwitch(
+                    label: 'Em queda',
                     value: _onlyDip,
                     onChanged: (v) => setState(() => _onlyDip = v),
                   ),
@@ -435,7 +437,8 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                 FiDataRow(
                   label: 'Somente destaques',
                   detail: _onlyDip ? 'Não se aplica à varredura de quedas' : null,
-                  trailing: Switch(
+                  trailing: FiSwitch(
+                    label: 'Somente destaques',
                     value: _onlyInteresting,
                     onChanged: _onlyDip
                         ? null
@@ -445,7 +448,8 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                 FiDataRow(
                   label: 'Dividend yield mínimo',
                   value: _dyEnabled ? '${_dyValue.toStringAsFixed(1)}%' : null,
-                  trailing: Switch(
+                  trailing: FiSwitch(
+                    label: 'Dividend yield mínimo',
                     value: _dyEnabled,
                     onChanged: (v) => setState(() => _dyEnabled = v),
                   ),
@@ -453,29 +457,32 @@ class _FiltersSheetState extends State<_FiltersSheet> {
               ],
             ),
             if (_dyEnabled)
-              Slider(
+              FiSlider(
+                label: 'Dividend yield mínimo',
                 value: _dyValue,
                 min: 0,
                 max: 20,
                 divisions: 40,
-                label: '${_dyValue.toStringAsFixed(1)}%',
+                format: formatPercent,
                 onChanged: (v) => setState(() => _dyValue = v),
               ),
             FiDataRow(
               label: 'Margem de segurança mínima',
               value: _mosEnabled ? '${_mosValue.toStringAsFixed(0)}%' : null,
-              trailing: Switch(
+              trailing: FiSwitch(
+                label: 'Margem de segurança mínima',
                 value: _mosEnabled,
                 onChanged: (v) => setState(() => _mosEnabled = v),
               ),
             ),
             if (_mosEnabled)
-              Slider(
+              FiSlider(
+                label: 'Margem de segurança mínima',
                 value: _mosValue,
                 min: -20,
                 max: 50,
                 divisions: 70,
-                label: '${_mosValue.toStringAsFixed(0)}%',
+                format: formatPercent,
                 onChanged: (v) => setState(() => _mosValue = v),
               ),
             const SizedBox(height: FiSpace.s6),

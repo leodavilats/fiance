@@ -19,6 +19,7 @@ import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import 'cash_entry_sheet.dart';
 import 'month_template_sheet.dart';
+import '../../core/widgets/disclosure.dart';
 
 class MonthScreen extends ConsumerWidget {
   const MonthScreen({super.key});
@@ -397,27 +398,15 @@ class _MonthRow extends ConsumerWidget {
     final entrada = entry.kind == CashKind.income;
     final cor = fiDirectionColor(entrada ? 1 : -1, Theme.of(context).brightness);
 
-    return ExpansionTile(
-      childrenPadding: const EdgeInsets.only(bottom: FiSpace.s3),
+    return FiDisclosure(
       leading: _Day(day: dayOf(entry.accrualOn)),
-      title: Text(
-        entry.description,
-        style: FiType.body.copyWith(color: fiInk1(context)),
-      ),
-      subtitle: entry.isFuture || entry.derived
-          ? Text(
-              entry.derived
-                  ? 'do seu razão'
-                  : (entrada ? 'a receber' : 'a vencer'),
-              style: FiType.caption.copyWith(color: fiInk3(context)),
-            )
+      title: entry.description,
+      detail: entry.isFuture || entry.derived
+          ? (entry.derived ? 'do seu razão' : (entrada ? 'a receber' : 'a vencer'))
           : null,
-      trailing: Text(
-        '${entrada ? '+' : '−'}${formatCurrency(entry.amount)}',
-        style: FiType.figure.copyWith(color: cor),
-      ),
-      children: [
-        Row(
+      value: '${entrada ? '+' : '−'}${formatCurrency(entry.amount)}',
+      valueColor: cor,
+      child: Row(
           children: [
             Expanded(
               child: Text(
@@ -437,7 +426,6 @@ class _MonthRow extends ConsumerWidget {
               ),
           ],
         ),
-      ],
     );
   }
 }

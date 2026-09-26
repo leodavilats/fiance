@@ -14,6 +14,7 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/tag.dart';
+import '../../core/widgets/disclosure.dart';
 
 class DebtsScreen extends ConsumerWidget {
   const DebtsScreen({super.key});
@@ -161,31 +162,12 @@ class _DebtRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ExpansionTile(
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              debt.description,
-              style: FiType.body.copyWith(color: fiInk1(context)),
-            ),
-          ),
-          const SizedBox(width: FiSpace.s2),
-          FiTag(label: label, state: state),
-        ],
-      ),
-      subtitle: Text(
-        debtKindLabel(debt.kind),
-        style: FiType.caption.copyWith(color: fiInk3(context)),
-      ),
-      trailing: Text(
-        formatCurrency(debt.balance),
-        style: FiType.figure.copyWith(color: fiInk1(context)),
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: FiSpace.s3),
-          child: Column(
+    return FiDisclosure(
+      title: debt.description,
+      tag: FiTag(label: label, state: state),
+      detail: debtKindLabel(debt.kind),
+      value: formatCurrency(debt.balance),
+      child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -211,8 +193,6 @@ class _DebtRow extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ],
     );
   }
 

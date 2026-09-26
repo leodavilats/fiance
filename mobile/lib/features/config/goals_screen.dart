@@ -12,6 +12,7 @@ import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/controls.dart';
 
 class GoalsScreen extends StatelessWidget {
   const GoalsScreen({super.key});
@@ -173,12 +174,13 @@ class _GoalRow extends StatelessWidget {
               ),
             ],
           ),
-          Slider(
-            value: value.clamp(0, 100),
+          FiSlider(
+            label: label,
+            value: value,
+            min: 0,
             max: 100,
             divisions: 100,
-            label: '${value.toStringAsFixed(0)}%',
-            semanticFormatterCallback: (v) => '$label: ${v.round()} por cento',
+            format: formatPercent,
             onChanged: onChanged,
           ),
         ],

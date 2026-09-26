@@ -129,6 +129,8 @@ poucas, ou uma tabela quando o que importa é comparar.
 | Espera | `FiSkeleton.screen(shape:, count:)`, ou `FiSkeleton.page()` quando a tela tem manchete e seções | Disco girando não diz o que vem, e a página salta |
 | Revelar detalhe | `FiDisclosure` (item) ou `FiGroupDisclosure` (grupo) | `ExpansionTile` traz a moldura do Material de volta |
 | Ficha de filtro | `FiChoiceChip` | `ChoiceChip` e `InputChip` têm estilo só no tema |
+| Ligar e desligar | `FiSwitch`, com o rótulo da linha | O `Switch` solto era anunciado como "ligado", sem dizer o quê |
+| Escolher um valor numa escala | `FiSlider`, com o formatador do produto | O `Slider` com `toStringAsFixed` mostrava 5.5% com ponto |
 | Falha | `FiErrorState` + `fiErrorMessage` | Já houve oito grafias, e `Erro 500` chegou à tela |
 | Ausência de dado | `FiEmptyState` | "Não conseguimos ler" ≠ "você não tem nada" |
 
@@ -183,7 +185,7 @@ resto das razões fica na seção do método, sem repetir as três.
 
 ---
 
-## As 16 regras de máquina
+## As 17 regras de máquina
 
 `mobile/test/lint_ui_test.dart` — roda em `flutter test`, que já é comando do CI. **Regra que exige
 mudar a esteira para rodar é regra que não roda.**
@@ -206,6 +208,7 @@ mudar a esteira para rodar é regra que não roda.**
 | 14 | Bloco que carrega reserva o espaço em vez de sumir |
 | 15 | Todo gráfico tem tabela equivalente (FiDisclosure com FiRows/FiDataRow), ou escape `grafico` |
 | 16 | Controle de toque vem do sistema: `InkWell`/`GestureDetector` fora de `core/widgets/` *(catraca)* |
+| 17 | Controle do Material só existe dentro do sistema: `Switch`, `Slider`, `ChoiceChip`, `InputChip`, `FilterChip`, `ExpansionTile` |
 
 Mais o contraste, cobrado à parte em `contraste_test.dart`, nos dois temas, e o **alvo de toque de
 44dp** dos componentes de toque do sistema, em `alvo_de_toque_test.dart`, pela diretriz

@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/controls.dart';
 
 Future<void> openCashEntrySheet(
   BuildContext context,
@@ -285,7 +286,8 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
                         ? 'Entra na competência deste dia.'
                         : 'Conta não paga conta no mês do vencimento, e é o que forma o '
                               'comprometido.',
-                    trailing: Switch(
+                    trailing: FiSwitch(
+                      label: _income ? 'Já recebi' : 'Já paguei',
                       value: _settled,
                       onChanged: (v) => setState(() => _settled = v),
                     ),

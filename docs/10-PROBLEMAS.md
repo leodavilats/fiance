@@ -64,11 +64,6 @@ continua sendo um lançamento de cada vez.
 
 ## E · Interface
 
-### 7 · Duas famílias de controle ainda são Material puro, com estilo só no tema
-
-`Switch` e `Slider`. A ficha saiu em 2026-09-15 — `FiChoiceChip` —, e `ExpansionTile` foi substituído
-onde o produto usava caixa expansível.
-
 ### 12 · A régua de afirmação anula `allocated_cash` e deixa a subtração de pé
 
 ### 17 · A régua não cobre o score em linha densa, e ali ele sai só como selo

@@ -19,6 +19,7 @@ import '../../core/theme_provider.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
 import 'delete_account_screen.dart';
+import '../../core/widgets/controls.dart';
 
 class ConfigScreen extends ConsumerWidget {
   const ConfigScreen({super.key});
@@ -455,7 +456,8 @@ class FiNotifications extends ConsumerWidget {
           FiDataRow(
             label: 'Alertas de preço',
             detail: 'Sempre imediato, é um alerta de risco',
-            trailing: Switch(
+            trailing: FiSwitch(
+              label: 'Alertas de preço',
               value: prefs.notifyPriceAlerts,
               onChanged: (v) async {
                 await ref
@@ -492,7 +494,8 @@ class FiAppearance extends ConsumerWidget {
       child: FiDataRow(
         label: 'Tema escuro',
         detail: 'Fica neste aparelho — não viaja com a conta',
-        trailing: Switch(
+        trailing: FiSwitch(
+          label: 'Tema escuro',
           value: escuro,
           onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
         ),

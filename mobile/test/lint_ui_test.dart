@@ -330,6 +330,31 @@ void main() {
       );
     });
 
+    test('controle do Material so existe dentro do sistema', () {
+      final achados = <String>[];
+      for (final f in fontes) {
+        final caminho = f.path.replaceAll(r'\', '/');
+        if (caminho.contains('lib/core/widgets/')) continue;
+        final linhas = f.readAsLinesSync();
+        for (var i = 0; i < linhas.length; i++) {
+          final linha = linhas[i].trimLeft();
+          if (linha.startsWith('//')) continue;
+          if (RegExp(r'\b(Switch|Slider|ChoiceChip|InputChip|FilterChip|ExpansionTile)\(')
+              .hasMatch(linha)) {
+            achados.add('${_curto(f)}:${i + 1}');
+          }
+        }
+      }
+
+      expect(
+        achados,
+        isEmpty,
+        reason: 'o controle do Material estilizado só pelo tema não carrega o rótulo nem o '
+            'formatador de número do produto. Use FiSwitch, FiSlider, FiChoiceChip ou '
+            'FiDisclosure. Achados:\n  ${achados.join('\n  ')}',
+      );
+    });
+
     test('espera tem a forma do que vai chegar, e nao um disco girando', () {
 
       final achados = <String>[];

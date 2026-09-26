@@ -22,6 +22,7 @@ import '../../core/widgets/tag.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../month/widgets/feed_tiles.dart';
+import '../../core/widgets/controls.dart';
 
 class AnalyzeAssetView extends ConsumerStatefulWidget {
   const AnalyzeAssetView({super.key, this.initialTicker});
@@ -940,7 +941,8 @@ class ContributionSimulatorViewState
         FiDataRow(
           label: 'Reinvestir dividendos',
           detail: 'O provento recebido volta para a carteira no mês seguinte',
-          trailing: Switch(
+          trailing: FiSwitch(
+            label: 'Reinvestir dividendos',
             value: _reinvest,
             onChanged: (v) => setState(() => _reinvest = v),
           ),

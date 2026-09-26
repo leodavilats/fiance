@@ -13,6 +13,7 @@ import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/controls.dart';
 
 Future<void> openFixedIncomeForm(
   BuildContext context,
@@ -557,7 +558,8 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
               FiDataRow(
                 label: 'Não somar na carteira',
                 detail: 'Para reservas mantidas à parte',
-                trailing: Switch(
+                trailing: FiSwitch(
+                  label: 'Não somar na carteira',
                   value: _hidden,
                   onChanged: (v) => setState(() => _hidden = v),
                 ),

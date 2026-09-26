@@ -172,7 +172,7 @@ Se a explicação é boa demais para caber em uma linha, ela não é comentário
 | Suíte | O que cobre |
 |---|---|
 | `backend/tests` | Domínio, API, contrato de rotas, arquitetura, dinheiro, privacidade |
-| `mobile/test/lint_ui_test.dart` | 16 regras de produto |
+| `mobile/test/lint_ui_test.dart` | 17 regras de produto |
 | `mobile/test/contraste_test.dart` | WCAG nos dois temas |
 | `mobile/test` | Widgets e modelos |
 

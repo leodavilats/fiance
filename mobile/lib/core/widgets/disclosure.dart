@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'tag.dart';
 
 class FiDisclosure extends StatefulWidget {
   const FiDisclosure({
@@ -13,9 +14,12 @@ class FiDisclosure extends StatefulWidget {
     this.initiallyOpen = false,
     this.leading,
     this.rule = true,
+    this.tag,
   });
 
   final String title;
+
+  final FiTag? tag;
 
   final Widget child;
 
@@ -53,10 +57,24 @@ class _FiDisclosureState extends State<FiDisclosure> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.title,
-                  style: FiType.body.copyWith(color: fiInk1(context)),
-                ),
+                if (widget.tag == null)
+                  Text(
+                    widget.title,
+                    style: FiType.body.copyWith(color: fiInk1(context)),
+                  )
+                else
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          widget.title,
+                          style: FiType.body.copyWith(color: fiInk1(context)),
+                        ),
+                      ),
+                      const SizedBox(width: FiSpace.s2),
+                      widget.tag!,
+                    ],
+                  ),
                 if (widget.detail != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
@@ -106,7 +124,7 @@ class _FiDisclosureState extends State<FiDisclosure> {
         Semantics(
           button: true,
           expanded: _isOpen,
-          label: widget.title,
+          label: widget.tag == null ? widget.title : '${widget.title}, ${widget.tag!.label}',
           value: widget.value,
           hint: widget.detail,
           onTap: () => setState(() => _isOpen = !_isOpen),
