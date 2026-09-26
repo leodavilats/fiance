@@ -161,7 +161,7 @@ Procedimento e pré-requisitos de loja em [docs/07-OPERACAO.md](docs/07-OPERACAO
 
 ### Chave de release do Android
 
-O App Bundle de release exige `mobile/android/key.properties`, que fica **fora do git** (o
+O App Bundle de release exige um `key.properties` na pasta `android/` do app, **fora do git** (o
 `.gitignore` do Android já recusa `key.properties` e `*.keystore`). Sem o arquivo, o APK cai na chave
 de debug, que a Play Store recusa; o AAB nem é gerado.
 
