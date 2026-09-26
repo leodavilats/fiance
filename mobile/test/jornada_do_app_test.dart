@@ -95,6 +95,16 @@ void main() {
 
       expect(tester.takeException(), isNull, reason: '${destino.key} quebrou ao abrir');
       expect(_ondeEstou(), startsWith(destino.value));
+      await expectLater(
+        tester,
+        meetsGuideline(labeledTapTargetGuideline),
+        reason: 'em ${destino.key}, todo alvo de toque precisa de nome para o leitor de tela',
+      );
+      await expectLater(
+        tester,
+        meetsGuideline(iOSTapTargetGuideline),
+        reason: 'em ${destino.key}, todo alvo de toque precisa de 44dp',
+      );
     }
 
     expect(

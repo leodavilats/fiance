@@ -68,9 +68,17 @@ continua sendo um lançamento de cada vez.
 
 ### 26 · A aparência nos dois temas nunca foi conferida num aparelho
 
-O contraste é verificado por máquina; a aparência não.
+O contraste é verificado por máquina; a aparência não. **Depende de aparelho**, ou emulador com a
+pessoa olhando: golden test não substitui, porque a renderização de fonte muda entre o Windows de
+quem gera e o Linux do CI.
 
-### 25 · A acessibilidade foi coberta por verificação, não por auditoria — e a verificação encolheu
+### 25 · A acessibilidade nunca teve auditoria com leitor de tela
+
+A verificação voltou a crescer em 2026-09-26: alvo de toque de 44dp e ação de toque na semântica dos
+componentes (`alvo_de_toque_test.dart`), as diretrizes de alvo rotulado e de tamanho nos cinco
+destinos (`jornada_do_app_test.dart`), gráfico com tabela equivalente e controles com rótulo
+(regras 15 e 17). Ela achou chip e gavetas que o leitor de tela não conseguia apertar. **Falta a
+auditoria:** percorrer o app com TalkBack e VoiceOver, o que exige aparelho — e, para iOS, um Mac.
 
 ---
 
