@@ -107,7 +107,7 @@ card de ativo ele continua sendo vender e remover.
 | Oportunidades com score e veredito | `[ATUAL]` | `services/opportunity_service.py` | `market/opportunities_tab.dart` |
 | Preço justo por modelo de classe, faixa das premissas | `[ATUAL]` | `analysis/fair_price.py` | idem e `market/asset_detail_sheet.dart` — BDR e ETF saem "Sem preço justo" ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)) |
 | Preço-teto da meta de renda | `[ATUAL]` | `analysis/fair_price.py::_indicators` | `market/asset_detail_sheet.dart` |
-| Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — **só ações e BDRs**, ver [10-PROBLEMAS](10-PROBLEMAS.md) |
+| Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — ações e FIIs; ETF e BDR não têm score |
 | Falsificadores do veredito | `[ATUAL]` | `analysis/falsifiers.py` | `market/asset_detail_sheet.dart` |
 | Análise de ativo individual | `[ATUAL]` | `services/` | `market/asset_detail_sheet.dart` — a folha é a análise; `/ativo/:ticker` mostra menos e deixou de ser oferecida por botão |
 | Quedas: recorte de quem caiu da máxima de 52 semanas, com a leitura de valor | `[IMPLEMENTADO]` | `services/dip_service.py` | `/descobrir/quedas` — [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md) |
@@ -142,7 +142,7 @@ imposto, e não tem nenhuma tela no aplicativo.
 | Isenção mensal de R$ 20 mil | `[IMPLEMENTADO]` | `ledger/apuracao.py` | — |
 | Proventos recebidos: registrar, listar, apagar | `[IMPLEMENTADO]` | `api/dividends.py` | `patrimony/dividends_screen.dart` |
 | Proventos: sugestões do calendário | `[IMPLEMENTADO]` | `services/dividend_calendar_service.py` | ✅ `/patrimonio/proventos`, colapsado |
-| Direito a provento provado pela data-com | `[ATUAL]` | `services/dividend_calendar_service.py` | ✅ bloco "Aguardando sua confirmação" |
+| Direito a provento provado pela data-com | `[ATUAL]` | `services/dividend_calendar_service.py` | ✅ bloco "Aguardando sua confirmação" — medido em 2026-09-25, 0 de 3.659 proventos da BRAPI sem data-com; o indeterminado vem de declaração de posição que absorveu a história |
 | Razão: filtro por tipo, período e ativo, com paginação | `[ATUAL]` | `GET /transactions` | ✅ `/patrimonio/razao` |
 
 **O que o IR cobre:** swing trade de ações, BDRs, ETFs (15%) e FIIs (20%), com compensação de

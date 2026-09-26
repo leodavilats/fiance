@@ -12,6 +12,7 @@ final Map<String, String> glossary = {
   'perfil_de_risco':
       'Perfil de risco — decide o peso de cada critério no score. No conservador os dividendos '
       'pesam 26% e o crescimento 5%; no arrojado a conta se inverte, com crescimento em 44%. '
+      'Em FII, o conservador dá 60% aos dividendos e o arrojado, 65% ao desconto. '
       'Muda a ordem das oportunidades, não o preço justo. Você troca em Você → Preferências.',
   'bazin':
       'Pelos dividendos — a distribuição recorrente capitalizada. Em FII é o método principal: '

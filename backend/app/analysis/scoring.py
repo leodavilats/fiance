@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import math
-
 from app.models.enums import RiskProfile
 
 
@@ -38,12 +36,6 @@ def _score_growth(rev_growth: float | None) -> float | None:
     return _clip((rev_growth + 10) * (100 / 30))
 
 
-def _score_liquidity(market_cap: float | None) -> float | None:
-    if not market_cap or market_cap <= 0:
-        return None
-    return _clip((math.log10(market_cap) - 7) * 30)
-
-
 def _score_mos(margin_of_safety: float | None) -> float | None:
     if margin_of_safety is None:
         return None
@@ -74,8 +66,11 @@ OPPORTUNITY_WEIGHTS: dict[RiskProfile, dict[str, float]] = {
     },
 }
 
-_FII_WEIGHTS = {"mos": 0.45, "dividend": 0.40, "liquidity": 0.15}
-_ETF_WEIGHTS = {"mos": 0.55, "dividend": 0.30, "liquidity": 0.15}
+FII_WEIGHTS: dict[RiskProfile, dict[str, float]] = {
+    RiskProfile.conservative: {"mos": 0.40, "dividend": 0.60},
+    RiskProfile.moderate: {"mos": 0.50, "dividend": 0.50},
+    RiskProfile.aggressive: {"mos": 0.65, "dividend": 0.35},
+}
 
 
 def score_opportunity(
@@ -86,16 +81,17 @@ def score_opportunity(
     profit_margin: float | None,
     debt_to_equity: float | None,
     revenue_growth: float | None,
-    market_cap: float | None,
     profile: RiskProfile = RiskProfile.moderate,
 ) -> tuple[float, dict[str, float]]:
-    if asset_type in ("fii", "etf"):
+    if asset_type == "etf":
+        return 0.0, {"data_completeness": 0.0}
+
+    if asset_type == "fii":
         dimensions: dict[str, float | None] = {
             "mos": _score_mos(margin_of_safety),
             "dividend": _score_dividend(dividend_yield),
-            "liquidity": _score_liquidity(market_cap),
         }
-        weights = _FII_WEIGHTS if asset_type == "fii" else _ETF_WEIGHTS
+        weights = FII_WEIGHTS[profile]
     else:
         dimensions = {
             "mos": _score_mos(margin_of_safety),

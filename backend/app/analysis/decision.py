@@ -14,6 +14,7 @@ from app.analysis.fair_price import (
     TechnicalSnapshot,
     margin_exact,
 )
+from app.analysis.fii_segments import SEGMENT_PAPER
 
 MOS_STRONG_BUY = 0.30
 
@@ -192,14 +193,19 @@ def _premise_reason(fair: FairPriceResult) -> str:
             )
         return texto
 
-    return (
+    texto = (
         f"Vale cerca de {_brl(fair.principal_value)} pela distribuição recorrente de "
         f"{_brl(p['dividend_recurring'])} por cota ao ano, exigindo yield de "
         f"{_pct(p['fii_yield'])}: o juro real de longo prazo ({base} menos a meta de inflação "
         f"de {_pct(p['inflation_target'], 0)}, com piso de {_pct(p['real_rate_floor'], 0)}) mais "
-        f"{_pct(p['fii_premium'], 0)} de prêmio. A faixa vai de 1 ponto a mais a 1 ponto a menos "
-        "de yield."
+        f"{_pct(p['fii_premium'], 0)} de prêmio"
     )
+    if p.get("fii_segment") == SEGMENT_PAPER:
+        texto += (
+            ", mais a meta de inflação, porque o fundo é de papel: a distribuição dele já traz a "
+            "correção monetária dos recebíveis, e o principal não cresce com ela"
+        )
+    return texto + ". A faixa vai de 1 ponto a mais a 1 ponto a menos de yield."
 
 
 _CONFIRMATION_NAME = {"bazin": "Pelos dividendos", "vpa": "Pelo valor patrimonial"}

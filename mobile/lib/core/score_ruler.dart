@@ -44,8 +44,8 @@ String dataCompletenessLabel(double? dataCompleteness) {
 final String scoreGlossary =
     'Pontuação 0–100 calculada pelo sistema combinando margem de segurança '
     '(preço justo), qualidade, dividendos, endividamento e crescimento, ponderados pelo seu '
-    'perfil de risco; em FII e ETF, margem, dividendos e liquidez. O movimento do preço '
-    'não entra. '
+    'perfil de risco; em FII, margem e dividendos. ETF e BDR não têm score. O movimento do '
+    'preço não entra. '
     '${fiScoreBands.where((b) => b.min != null).map((b) => b.max == 100 ? '${b.min!.toInt()} ou mais: leitura ${b.label.toLowerCase()}' : '${b.min!.toInt()}–${b.max!.toInt()}: leitura ${b.label.toLowerCase()}').join('; ')}'
     '. É uma leitura do sistema, não recomendação de compra.';
 

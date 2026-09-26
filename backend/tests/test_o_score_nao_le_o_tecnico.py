@@ -31,7 +31,6 @@ def test_bdr_sem_faixa_e_sem_fundamento_nao_ganha_nota():
         profit_margin=None,
         debt_to_equity=None,
         revenue_growth=None,
-        market_cap=None,
     )
 
     assert score == 0.0 and detalhe["data_completeness"] == 0.0, (

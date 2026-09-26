@@ -78,9 +78,13 @@ V = distribuição recorrente ÷ y_FII
 `analysis/fair_price.py::_dividend_lens`.
 
 **Premissa implícita:** `y_FII` é juro real, e a distribuição é nominal. O quociente só é coerente se
-a distribuição crescer com a inflação, como o aluguel de um FII de tijolo. O FII de papel distribui a
-correção monetária dos CRIs como rendimento, e aí a premissa falha (item A7 de
-[10-PROBLEMAS](10-PROBLEMAS.md)).
+a distribuição crescer com a inflação, como o aluguel de um FII de tijolo.
+
+**FII de papel exige yield nominal:** `y_FII + meta de inflação`. A distribuição dele já traz a
+correção monetária dos recebíveis, e o principal não cresce com ela. A fonte não informa o tipo do
+fundo, então a leitura de papel vale para a lista de referência em
+`analysis/fii_segments.py::PAPER_FIIS`, com data de revisão, e `premises.fii_segment` diz qual foi
+usada ([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)).
 
 ### O dividendo recorrente
 
@@ -235,8 +239,9 @@ casas tiram o ruído de ponto flutuante, e no preço exato do gatilho a etiqueta
    prazo; a concorrência tende a reduzi-lo.
 4. **Os parâmetros não têm calibração empírica.** Validá-los exige fundamento *point-in-time*, que a
    BRAPI não entrega.
-5. **FII de papel parece barato.** Ele distribui a correção monetária dos CRIs como rendimento, e
-   sem o subtipo do fundo o modelo trata tudo como tijolo.
+5. **FII de papel fora da lista de referência parece barato.** A lista é mantida à mão; fundo que
+   não está nela é lido como tijolo, e a distribuição com correção monetária sai capitalizada por
+   juro real.
 6. **VPA de FII é laudo, com defasagem.** Em FoF, ele já carrega o desconto dos fundos investidos.
 7. **Quem cresce o dividendo com a inflação sai cerca de 9% abaixo do último ano**, pelo mínimo
    entre a média e o mais recente.
@@ -260,7 +265,6 @@ Nota de 0 a 100 por ativo. `analysis/scoring.py`
 | Dividendos | `DY × 12,5` | DY 8% | `_score_dividend` |
 | Alavancagem | `100 − D/E ÷ 2` | D/E 200% | `_score_leverage` |
 | Crescimento | `(crescimento + 10) × 100/30` | −10% a +20% | `_score_growth` |
-| Liquidez | `(log₁₀(valor de mercado) − 7) × 30` | ~R$ 20 bi | `_score_liquidity` |
 
 **RSI e tendência não entram no score** ([ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md)).
 O score ordena Descobrir e decide o destaque, e o técnico não decide. Em BDR, que não tem preço
@@ -283,16 +287,20 @@ Todas as entradas em **percentual**, exceto a margem de segurança, que é fraç
 disponível, então o peso efetivo com todos os dados é o nominal sobre essa soma: no conservador, os
 dividendos pesam 26%; no arrojado, o crescimento pesa 44%.
 
-### Pesos — FIIs e ETFs
+### Pesos — FIIs, por perfil de risco
 
-| Classe | Margem | Dividendos | Liquidez |
+| Dimensão | Conservador | Moderado | Arrojado |
 |---|---|---|---|
-| FII | 45% | 40% | 15% |
-| ETF | 55% | 30% | 15% |
+| Margem de segurança | 40% | 50% | **65%** |
+| Dividendos | **60%** | 50% | 35% |
 
-⚠️ **O perfil de risco não afeta FIIs nem ETFs.** Os pesos são fixos e `profile` não entra no ramo.
-Quem tem carteira de FIIs muda de conservador para arrojado e nada acontece. Ver
-[10-PROBLEMAS](10-PROBLEMAS.md).
+`scoring.py::FII_WEIGHTS`. O conservador pesa a renda; o arrojado, o desconto. A liquidez saiu em
+2026-09-25: ela vinha do valor de mercado, que a BRAPI não entrega para FII (0 de 6 na amostra), e
+dimensão que nunca tem dado só derrubava a completude.
+
+**ETF e BDR não têm score.** Nenhum dos dois tem preço justo (ADR-014), e a fonte não entrega
+fundamento deles: sem dimensão aplicável, a completude é zero e a tela mostra "Sem dado". Uma nota
+só de dividendo leria como oportunidade a política de distribuição de um fundo.
 
 ### Normalização por dado faltante
 
@@ -312,11 +320,21 @@ completude = Σ(pesos disponíveis) ÷ Σ(todos os pesos)
 O corte acontece **na apresentação, não no cálculo**, e isso é deliberado: suprimir entregaria tela
 vazia em vez de leitura parcial declarada.
 
-A medição de 2026-09-13 mostrou que, **para ação**, isso quase nunca dispara — os fundamentos chegam
-em 80% a 100% dos casos. Onde ele importa é em **FII, BDR e ETF**, cujas dimensões de fundamento são
-vazias por natureza da classe: FII perde a liquidez (15% do peso, `market_cap` ausente em 5 de 5), e
-BDR e ETF não têm preço justo, então perdem também a dimensão de margem. Ver
-[10-PROBLEMAS](10-PROBLEMAS.md), item 3.
+**Cobertura dos fundamentos**, medida em 2026-09-25 sobre 31 ativos pela coleta real. Presentes /
+total:
+
+| Classe | n | ROE | Margem | Cresc. | D/E | VPA | LPA | Val. mercado | DY | 3 exercícios de lucro |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Ação | 17 | 17 | 17 | 17 | 17 | 17 | 17 | 15 | 16 | 17 |
+| Banco | 4 | 4 | 4 | 4 | 0 | 4 | 4 | 3 | 4 | 4 |
+| FII | 6 | 0 | 0 | 0 | 0 | 6 | 0 | 0 | 6 | 0 |
+| BDR | 2 | 0 | 0 | 0 | 0 | 0 | 2 | 2 | 0 | 0 |
+| ETF | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+Para ação, a cobertura é completa, e o piso quase nunca dispara. Banco não tem D/E, por decisão, e
+voltou a ter ROE desde que o coletor lê `netIncomeApplicableToCommonShares`. Em FII, BDR e ETF, o
+que falta é o que não se aplica à classe, e não falha de coleta. Repetir a medição:
+`GET /api/v1/data-quality` (exige sessão).
 
 `tests/test_regua_nas_duas_plataformas.py` confronta o limiar do Python com o do Dart. **O Python é
 a fonte.**

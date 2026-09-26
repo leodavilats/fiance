@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from app.analysis.fii_segments import SEGMENT_PAPER, fii_segment
 from app.core.brt import BRT, now_brt
 
 DESIRED_YIELD_STOCK = 0.06
@@ -506,6 +507,7 @@ class FairPriceInputs:
     selic_pct: float | None = None
     rates_as_of: float | None = None
     reference_date: str | None = None
+    fii_segment: str | None = None
 
     def to_dict(self) -> dict:
         return self.__dict__.copy()
@@ -524,6 +526,7 @@ def compute_fair_price_inputs(
     net_income_ttm: float | None = None,
     rates: ValuationRates | None = None,
     reference: datetime | None = None,
+    symbol: str | None = None,
 ) -> FairPriceInputs:
     today = _hoje(reference)
     proventos_conhecidos = dividends is not None
@@ -567,6 +570,7 @@ def compute_fair_price_inputs(
         selic_pct=rates.selic_pct if rates else None,
         rates_as_of=rates.as_of if rates else None,
         reference_date=today.date().isoformat(),
+        fii_segment=fii_segment(symbol) if asset_type == "fii" else None,
     )
 
 
@@ -699,6 +703,7 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
 def _dividend_lens(inputs: FairPriceInputs) -> _Lens:
     y = inputs.fii_yield
     d = inputs.dividend_recurring
+    papel = inputs.fii_segment == SEGMENT_PAPER
 
     if not inputs.dividends_known:
         return _Lens(status="sem_dado", note="o histórico de distribuições não chegou da fonte")
@@ -709,6 +714,8 @@ def _dividend_lens(inputs: FairPriceInputs) -> _Lens:
             status="sem_juro",
             note="sem juro de referência não há yield exigido para capitalizar a distribuição",
         )
+    if papel:
+        y = round(y + INFLATION_TARGET, 4)
 
     return _Lens(
         central=round(d / y, 2),
@@ -720,6 +727,7 @@ def _dividend_lens(inputs: FairPriceInputs) -> _Lens:
             "inflation_target": INFLATION_TARGET,
             "real_rate_floor": REAL_RATE_FLOOR,
             "fii_premium": FII_PREMIUM,
+            "fii_segment": inputs.fii_segment,
             "dividend_recurring": round(d, 4),
         },
     )
@@ -1019,6 +1027,7 @@ def compute_fair_price(
     net_income_ttm: float | None = None,
     rates: ValuationRates | None = None,
     reference: datetime | None = None,
+    symbol: str | None = None,
 ) -> FairPriceResult:
     inputs = compute_fair_price_inputs(
         price=price,
@@ -1033,6 +1042,7 @@ def compute_fair_price(
         net_income_ttm=net_income_ttm,
         rates=rates,
         reference=reference,
+        symbol=symbol,
     )
     return fair_price_from_inputs(inputs, desired_yield=desired_yield)
 

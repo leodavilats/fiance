@@ -27,6 +27,7 @@ def fair_price_inputs_for(snap, dividends: list[dict] | None) -> FairPriceInputs
         equity_history=getattr(snap, "equity_history", None),
         net_income_ttm=getattr(snap, "net_income_ttm", None),
         rates=valuation_rates(),
+        symbol=snap.symbol,
     )
 
 

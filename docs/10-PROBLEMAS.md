@@ -17,7 +17,7 @@ saíram em 2026-09-25 — ver [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao
 
 ## A · Motor de cálculo
 
-Os itens remanescentes da auditoria de **2026-09-13**. A de **2026-09-20**, que inventariou os
+Os itens da auditoria de **2026-09-13** foram fechados até 2026-09-25. A de **2026-09-20**, que inventariou os
 40 problemas do caminho do preço ao veredito, foi fechada no mesmo dia
 ([ADR-013](decisoes/ADR-013-o-tecnico-nao-decide.md)) e virou registro em
 [historico/AUDITORIA-DO-VEREDITO-2026-09-20](historico/AUDITORIA-DO-VEREDITO-2026-09-20.md). A de
@@ -26,75 +26,10 @@ Os itens remanescentes da auditoria de **2026-09-13**. A de **2026-09-20**, que 
 [ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md)) e virou registro em
 [historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25](historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md).
 
-### A5 · O perfil de risco não afeta FIIs nem ETFs
-
-`scoring.py::score_opportunity`: `_FII_WEIGHTS` e `_ETF_WEIGHTS` são fixos e `profile` não entra no ramo. Quem tem
-carteira de FIIs muda de conservador para arrojado e **nada acontece**.
-
-Isto compromete a personalização, que é a hipótese de receita do produto, justo nas classes em que
-as dimensões de fundamento já vêm vazias (item 3).
-
-### A7 · FII de papel parece barato
-
-O FII de papel distribui como rendimento a correção monetária dos CRIs. A distribuição sobe com a
-inflação sem que o valor suba, e o principal perde valor real. O modelo de FII trata tudo como
-tijolo, cuja distribuição cresce com o aluguel. Na amostra de 2026-09-23, MXRF11 foi o único ativo a
-sair "abaixo do preço justo".
-
-**Segue aberto:** a BRAPI não entrega o subtipo do fundo. Resolver exige uma classificação mantida
-à mão ou outra fonte, e um yield exigido nominal para papel.
-
-### A8 · Os parâmetros do preço justo não têm calibração empírica
-
-Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e
-bandas de ±15% e ±30% são convenções declaradas. Validá-los exige retorno à frente por faixa de
-margem, fora da amostra, com fundamentos **como estavam na data** e sem viés de sobrevivência.
-
-**Segue aberto:** a BRAPI não entrega fundamento *point-in-time*. Os dados abertos da CVM
-(DFP/ITR) entregariam, mas o invariante "só BRAPI e BCB SGS" teria de ser revisto. Decisão de
-produto.
-
-### A9 · BDR não tem leitura de valor
-
-Por decisão da ADR-014: a única taxa disponível é em reais, e descontar lucro em dólar pela Selic
-fazia todo BDR parecer caro (cerca de 0,67× o valor numa taxa em dólar). O LPA que a BRAPI entrega
-para BDR já vem por BDR e em reais — a escala está certa, a moeda da taxa não.
-
-**Segue aberto:** exige juro em dólar, fora das duas fontes permitidas.
+Nenhum item aberto. A calibração empírica dos parâmetros e o preço justo de BDR não são defeitos:
+exigem fonte fora de BRAPI e BCB SGS, e estão em [09-FUTURO](09-FUTURO.md), *Considerado*.
 
 ## B · Dado e fonte
-
-### 3 · Cobertura dos fundamentos — **medida em 2026-09-13**
-
-Amostra de 33 ativos em produção, pela rota pública. Presentes / total:
-
-| Classe | n | ROE | Margem | Cresc. | D/E | VPA | LPA | Val. mercado |
-|---|---|---|---|---|---|---|---|---|
-| Ação grande | 8 | 7 | 8 | 8 | 6 | 8 | 8 | 8 |
-| Ação média | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 4 |
-| Ação pequena | 5 | 3 | 4 | 4 | 4 | 4 | 5 | 5 |
-| Banco | 4 | 2 | 4 | 4 | **0** | 4 | 4 | 2 |
-| FII | 5 | 0 | 0 | 0 | 0 | 5 | 0 | **0** |
-| BDR | 4 | 0 | 0 | 0 | 0 | **0** | 4 | 4 |
-| ETF | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-
-**Para ação, a cobertura é boa** — 80% a 100% nos quatro campos de fundamento. Em FII, BDR e ETF as
-dimensões de fundamento continuam vazias por natureza da classe, e não por falha de coleta.
-
-O que a medição encontrou de novo:
-
-- **Banco sem D/E: 0 de 4.** Conhecido e deliberado
-- **FII sem valor de mercado: 0 de 5.** `_FII_WEIGHTS` dá 15% do peso à liquidez, que vem de
-  `market_cap` — então todo FII perde essa dimensão e é pontuado só por margem e dividendos
-- **BDR sem VPA: 0 de 4.** Desde 2026-09-23 BDR não tem preço justo por decisão de método (A9), e
-  não por falta de dado
-- **ETF sem nada.** Nenhum método se aplica, e o produto diz "Sem preço justo"
-  ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md))
-- **Banco sem ROE.** O Itaú não preenche `netIncome`; desde 2026-09-23 o coletor lê
-  `netIncomeApplicableToCommonShares`, e sem ROE a ação não tem preço justo. Repetir a medição
-
-Repetir a medição: `GET /api/v1/data-quality` (exige sessão) ou amostrar
-`GET /api/v1/public/asset/{ticker}`, que não exige.
 
 ### 1 · O caminho do Redis nunca rodou contra um servidor real fora do CI
 
@@ -112,13 +47,6 @@ BRAPI. Fallback defensivo intencional, mas extenso.
 ---
 
 ## C · Produto incompleto
-
-### 34 · O calendário de proventos só prova o direito quando a fonte publica a data-com
-
-Desde 2026-09-15 o coletor carrega `lastDatePrior`, e com ela o razão prova quem tinha a posição na
-data-com. Quando a fonte não publica a data-com, ou quando uma declaração de posição absorveu a
-história anterior, o direito fica `indeterminado` e a sugestão vai para o calendário colapsado. Não
-há como saber quantos proventos caem em cada caso sem medir contra a fonte real.
 
 ### 15 · Sugestões seguidas dependem de lançamento manual
 

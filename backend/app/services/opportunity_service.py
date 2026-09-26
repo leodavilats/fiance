@@ -132,7 +132,6 @@ class OpportunityService:
             profit_margin=record.profit_margin,
             debt_to_equity=record.debt_to_equity,
             revenue_growth=record.revenue_growth,
-            market_cap=record.market_cap,
             profile=profile,
         )
 

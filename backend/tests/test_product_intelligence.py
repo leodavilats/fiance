@@ -251,7 +251,6 @@ def test_score_reports_data_completeness(client):
         "profit_margin": 25.0,
         "debt_to_equity": 60.0,
         "revenue_growth": 5.0,
-        "market_cap": 5.0e11,
     }
     _, completo = score_opportunity(**fundamentos)
     _, sem_crescimento = score_opportunity(**{**fundamentos, "revenue_growth": None})
