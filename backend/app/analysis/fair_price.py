@@ -482,6 +482,12 @@ class FairPriceResult:
 
     price: float | None = None
 
+    principal_value: float | None = None
+
+    dividend_recurring: float | None = None
+
+    dividend_yield_recurring: float | None = None
+
 
 @dataclass
 class FairPriceInputs:
@@ -930,6 +936,10 @@ def fair_price_from_inputs(
         "dy_5y": dy_5y,
         "data_years": inputs.data_years,
         "desired_yield_used": effective_yield,
+        "dividend_recurring": (
+            round(inputs.dividend_recurring, 4) if inputs.dividend_recurring else None
+        ),
+        "dividend_yield_recurring": dy_5y,
         "pvp": inputs.pvp,
         "indicators": indicadores,
         "personal_ceiling": teto_pessoal,
@@ -991,6 +1001,7 @@ def fair_price_from_inputs(
         bazin=bazin,
         dcf=dcf,
         consensus=lens.central,
+        principal_value=lens.central,
         consensus_methods=2 if confirmado else 1,
         margin_of_safety=margin_of_safety_in_band(price, lens.low, lens.high),
         fair_low=lens.low,

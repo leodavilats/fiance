@@ -419,7 +419,7 @@ A7 (FII de papel) de [10-PROBLEMAS](../10-PROBLEMAS.md).
 
 ## Lote D · Contrato e produto
 
-### R-015 · Nomes de campo que não dizem o que guardam
+### R-015 · ~~Nomes de campo que não dizem o que guardam~~ — **corrigido em 2026-09-25**, com alias
 
 Severidade documentação · Natureza `nomenclatura` · Lote D
 
@@ -438,6 +438,12 @@ Quem consome o campo pelo nome o interpreta errado.
   como opcional, com fallback para o antigo, e `mobile/lib/core/glossary.dart` acompanha. O contrato
   é regravado no mesmo commit (`python -m tests.contrato_das_rotas`). Os aliases saem depois que a
   versão da loja que lê os campos novos estiver em uso.
+
+**Parte corrigida em 2026-09-25:** a resposta ganhou `principal_value`, `dividend_recurring` e
+`dividend_yield_recurring`, e os nomes antigos seguem como alias. O app lê `principal_value` e cai
+em `consensus` quando ele falta. `confirmation_value` não foi criado: o valor da confirmação já
+chega em `confirmation.value`. **Remover os aliases** fica para quando a versão da loja que lê os
+nomes novos estiver em uso; até lá, o item conta como fechado.
 
 ### R-016 · O técnico pesa no score
 

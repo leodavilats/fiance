@@ -983,7 +983,7 @@ class AssetAnalysis {
       asOf: (j['as_of'] as num?)?.toDouble(),
       bazin: (fp['bazin'] as num?)?.toDouble(),
       graham: (fp['graham'] as num?)?.toDouble(),
-      consensus: (fp['consensus'] as num?)?.toDouble(),
+      consensus: ((fp['principal_value'] ?? fp['consensus']) as num?)?.toDouble(),
       fairLow: (fp['fair_low'] as num?)?.toDouble(),
       fairHigh: (fp['fair_high'] as num?)?.toDouble(),
       marginOfSafety: (fp['margin_of_safety'] as num?)?.toDouble(),

@@ -126,8 +126,10 @@ envelope dos dois cenários, e não um deles em cada ponta. `premises.growth_cre
 regimes: `piso ≤ com(d+1) < com(d) < com(d−1) ≤ teto`.
 
 É **incerteza real sobre o valor** — o que acontece se a premissa mais discutível errar —, e não a
-distância entre métodos com alvos diferentes. `consensus` e `dcf` (ação) ou `bazin` (FII) carregam o
-valor central; nenhum deles decide sozinho.
+distância entre métodos com alvos diferentes. `principal_value` carrega o valor central, e não decide
+sozinho. `consensus`, `dcf` (ação) e `bazin` (FII) são nomes legados do mesmo valor, mantidos como
+alias para o app em loja; `avg_dividend_5y` e `dy_5y` são alias de `dividend_recurring` e
+`dividend_yield_recurring`.
 
 ### A confirmação
 

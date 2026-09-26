@@ -26,21 +26,28 @@ class FairPriceBlock(BaseModel):
         ),
     )
     consensus: float | None = Field(
+        None,
+        description=(
+            "Alias de `principal_value`, mantido para o app que ainda não o lê. O nome é legado: "
+            "não é consenso de métodos."
+        ),
+    )
+    principal_value: float | None = Field(
         None, description="Valor central do método principal. Não decide nada sozinho."
     )
     fair_low: float | None = Field(
         None,
         description=(
-            "Piso da faixa de preço justo: o método principal na premissa pessimista — sem "
-            "crescimento e com 1 ponto a mais de taxa. A margem mede contra ele quando o preço "
-            "está abaixo."
+            "Piso da faixa de preço justo: o método principal na premissa pessimista, com 1 "
+            "ponto a mais de taxa. Na ação, o menor entre crescer com o lucro retido e não crescer "
+            "distribuindo tudo. A margem mede contra ele quando o preço está abaixo."
         ),
     )
     fair_high: float | None = Field(
         None,
         description=(
-            "Teto da faixa: o método principal na premissa otimista — com crescimento e 1 ponto "
-            "a menos de taxa."
+            "Teto da faixa: o método principal na premissa otimista, com 1 ponto a menos de "
+            "taxa. Na ação, o maior dos dois cenários de crescimento."
         ),
     )
     band_position: float | None = Field(
@@ -54,9 +61,9 @@ class FairPriceBlock(BaseModel):
         "sem_faixa",
         description=(
             "`firme` (faixa estreita e confirmada por outro insumo) · `ampla` (sem confirmação, "
-            "confirmação perto da faixa, ou faixa larga) · `fragil` (lucro curto ou instável, "
-            "corte de distribuição, ou confirmação que discorda) · `sem_faixa`. Frágil nunca "
-            "passa de abaixo ou acima do preço justo."
+            "confirmação perto da faixa, dividendo longe da faixa na ação, ou faixa larga) · "
+            "`fragil` (lucro curto ou instável, corte de distribuição, ou VPA que discorda no "
+            "FII) · `sem_faixa`. Frágil nunca passa de abaixo ou acima do preço justo."
         ),
     )
     quality_reasons: list[str] = Field(
@@ -122,15 +129,24 @@ class FairPriceBlock(BaseModel):
             "Dentro: 0. As duas pontas medem a mesma distância em escala logarítmica."
         ),
     )
-    avg_dividend_5y: float | None = Field(
+    dividend_recurring: float | None = Field(
         None,
         description=(
             "Distribuição recorrente: a média dos anos completos, cada um limitado a 2× a "
             "mediana dos outros, ou a mais recente, se for menor."
         ),
     )
+    avg_dividend_5y: float | None = Field(
+        None,
+        description=(
+            "Alias de `dividend_recurring`. O nome é legado: não é a média de cinco anos."
+        ),
+    )
     dy_12m: float | None = None
-    dy_5y: float | None = None
+    dividend_yield_recurring: float | None = Field(
+        None, description="Distribuição recorrente sobre o preço."
+    )
+    dy_5y: float | None = Field(None, description="Alias de `dividend_yield_recurring`.")
     data_years: int = 0
     desired_yield_used: float = 0.06
     pvp: float | None = None
