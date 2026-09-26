@@ -795,6 +795,12 @@ def _quality(
     concordancia = confirmacao.get("agreement")
     if confirmacao["status"] != "ok":
         amplas.append(f"sem confirmação independente — {confirmacao['note']}")
+    elif concordancia == AGREEMENT_FAR and principal == PRINCIPAL_EARNINGS:
+        amplas.append(
+            f"a leitura pelos dividendos fica a mais de {CONFIRMATION_TOLERANCE:.0%} da faixa: ela "
+            "usa a mesma taxa e o crescimento do principal, e se afasta dele quando o payout se "
+            "afasta do que o modelo distribui no longo prazo"
+        )
     elif concordancia == AGREEMENT_FAR:
         frageis.append(
             f"a leitura de confirmação discorda da faixa em mais de {CONFIRMATION_TOLERANCE:.0%}"

@@ -1,7 +1,9 @@
 # ADR-014 — Um modelo por classe, e a faixa é das premissas dele
 
 **Status:** SUBSTITUÍDO EM PARTE pela [ADR-015](ADR-015-a-faixa-cobre-os-dois-cenarios.md) — a
-faixa da ação passou a cobrir os dois cenários de crescimento; o resto segue valendo · substitui em
+faixa da ação passou a cobrir os dois cenários de crescimento — e pela
+[ADR-016](ADR-016-a-confirmacao-da-acao-alarga-e-nao-derruba.md) — na ação, dividendo longe da
+faixa passou a alargar a leitura, e não a derrubar; o resto segue valendo · substitui em
 parte a [ADR-011](ADR-011-preco-justo-e-faixa.md) e a [ADR-013](ADR-013-o-tecnico-nao-decide.md)
 **Data:** 2026-09-23
 **Decidido por:** autor do projeto, que delegou as escolhas desta revisão

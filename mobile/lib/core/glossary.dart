@@ -52,10 +52,10 @@ final Map<String, String> glossary = {
       'faixa não há margem nenhuma, e o produto diz isso em vez de escolher um lado.',
   'qualidade_da_faixa':
       'Diz quanto a faixa merece confiança. `Firme`: faixa estreita, e outro insumo cai dentro '
-      'dela. `Ampla`: sem confirmação, confirmação perto da faixa, ou faixa larga pelo peso do '
-      'crescimento. `Frágil`: lucro de menos de 3 exercícios ou instável, corte de distribuição, '
-      'ou confirmação que discorda — e aí a leitura nunca passa de abaixo ou acima do preço '
-      'justo.',
+      'dela. `Ampla`: sem confirmação, confirmação perto da faixa, dividendo longe da faixa na '
+      'ação, ou faixa larga pelo peso do crescimento. `Frágil`: lucro de menos de 3 exercícios ou '
+      'instável, corte de distribuição, ou valor patrimonial que discorda no FII — e aí a leitura '
+      'nunca passa de abaixo ou acima do preço justo.',
   'premissa_e_gatilho':
       'São coisas diferentes, e a tela as separa. O **gatilho** é o preço em que a etiqueta '
       'muda — atravessá-lo reclassifica, não refuta nada. A **premissa** é o que sustenta o '

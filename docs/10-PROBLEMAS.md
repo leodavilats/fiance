@@ -75,8 +75,10 @@ ataque e teste de cada item, está em
 **O R-001, bloqueador, foi corrigido em 2026-09-25** pela
 [ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md): a faixa da ação passou a cobrir os
 dois cenários de crescimento. Na amostra de 31 ativos, as ações com faixa acima de 1,5× caíram de 12
-para 5. **O mais caro agora é o R-002**: a confirmação por dividendo é quase função do payout, e
-levou três ações a frágil sem que nenhum dado mudasse.
+para 5. O R-002 saiu no mesmo dia pela
+[ADR-016](decisoes/ADR-016-a-confirmacao-da-acao-alarga-e-nao-derruba.md): na ação, dividendo longe
+da faixa alarga a leitura, em vez de derrubá-la. Frágil caiu de 11 para 7, e os que ficam são por
+corte ou lucro instável.
 
 Os lotes A e B foram corrigidos em 2026-09-25, com duas pendências: R-012 (arredondamento antes do
 limiar) e a idade da taxa na tela (R-010). **Ficam abertos o resto do lote C e o lote D**, que

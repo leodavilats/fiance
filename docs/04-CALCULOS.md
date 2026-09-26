@@ -2,7 +2,7 @@
 
 Cada número que o produto afirma, com entrada, fórmula, saída e **limitação**.
 O **código é a fonte de verdade**; este documento é o espelho auditado, com âncora em cada fórmula.
-Última revisão: 2026-09-25 · Faixa da ação refeita pela ADR-015
+Última revisão: 2026-09-25 · Faixa da ação refeita pela ADR-015; qualidade pela ADR-016
 
 Se uma fórmula aqui divergir do código, o código está certo e este documento tem um bug.
 
@@ -140,10 +140,15 @@ preço. Exatamente 30% ainda é `fora_ate_30`.
 
 | `band_quality` | Quando |
 |---|---|
-| `fragil` | lucro de menos de 3 exercícios, ou instável (LPA de 12m fora de metade a dobro do normalizado, ou ano com prejuízo); FII com menos de 3 anos completos com distribuição; corte de distribuição; confirmação a mais de 30% da faixa |
-| `ampla` | sem confirmação; confirmação fora da faixa por até 30%; teto acima de 1,5× o piso |
+| `fragil` | lucro de menos de 3 exercícios, ou instável (LPA de 12m fora de metade a dobro do normalizado, ou ano com prejuízo); FII com menos de 3 anos completos com distribuição; corte de distribuição; **no FII**, VPA a mais de 30% da faixa |
+| `ampla` | sem confirmação; confirmação fora da faixa por até 30%; **na ação**, dividendo a mais de 30% da faixa; teto acima de 1,5× o piso |
 | `firme` | nenhum dos anteriores |
 | `sem_faixa` | não há modelo principal |
+
+Na ação, o dividendo longe da faixa **alarga, e não derruba**: a confirmação usa a mesma taxa e um
+crescimento tirado do principal, e a distância dela é quase função do payout — abaixo de 45%, longe;
+de 60% para cima, dentro. No FII, o VPA é insumo independente, e discordar é evidência
+([ADR-016](decisoes/ADR-016-a-confirmacao-da-acao-alarga-e-nao-derruba.md)).
 
 `quality_reasons` diz, em frase, o que a definiu. `independent_inputs` é 1 ou 2: o insumo do
 principal e, se houver, o da confirmação.
@@ -367,8 +372,8 @@ flowchart TD
     CF --> QL
 
     QL{"Qualidade"}
-    QL -->|"lucro curto ou instável, corte,<br/>confirmação a mais de 30%"| FRA["frágil"]
-    QL -->|"sem confirmação, confirmação perto,<br/>ou teto acima de 1,5× o piso"| AMP["ampla"]
+    QL -->|"lucro curto ou instável, corte,<br/>VPA do FII a mais de 30%"| FRA["frágil"]
+    QL -->|"sem confirmação, confirmação perto,<br/>dividendo da ação a mais de 30%,<br/>ou teto acima de 1,5× o piso"| AMP["ampla"]
     QL -->|"o resto"| FIR["firme"]
 
     FRA --> POS

@@ -370,7 +370,7 @@ cresce.
 - **Validação:** a distribuição por qualidade e por etiqueta na amostra, antes e depois. Os dois
   números vão para a ADR.
 
-### R-002 · A confirmação da ação não é independente
+### R-002 · ~~A confirmação da ação não é independente~~ — **corrigido em 2026-09-25**, opção A ([ADR-016](../decisoes/ADR-016-a-confirmacao-da-acao-alarga-e-nao-derruba.md))
 
 Severidade **crítico** · Natureza `incoerência` · Lote C
 
