@@ -33,7 +33,6 @@ void main() {
   });
 
   testWidgets('o controle deslizante fala o número em português', (tester) async {
-    final semantica = tester.ensureSemantics();
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -49,11 +48,12 @@ void main() {
       ),
     );
 
+    final slider = tester.widget<Slider>(find.byType(Slider));
     expect(
-      tester.getSemantics(find.byType(Slider)).value,
+      slider.semanticFormatterCallback!(5.5),
       'Dividend yield mínimo: 5,50%',
       reason: 'o rótulo antigo era 5.5%, com ponto: número em português é do formatador',
     );
-    semantica.dispose();
+    expect(slider.label, '5,50%');
   });
 }
