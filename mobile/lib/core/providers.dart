@@ -26,6 +26,14 @@ final notificationsServiceProvider = Provider<NotificationsService>((ref) {
 
 final currentUserProvider = StateProvider<AppUser?>((ref) => null);
 
+final signOutProvider = Provider<Future<void> Function()>((ref) {
+  return () async {
+    await ref.read(notificationsServiceProvider).unregisterToken();
+    await ref.read(authServiceProvider).signOut();
+    ref.read(currentUserProvider.notifier).state = null;
+  };
+});
+
 final authStatusProvider = FutureProvider<AppUser?>((ref) async {
   final minDuration = Future<void>.delayed(const Duration(milliseconds: 1100));
   final authService = ref.watch(authServiceProvider);

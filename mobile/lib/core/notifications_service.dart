@@ -11,19 +11,25 @@ const _androidChannel = AndroidNotificationChannel(
   importance: Importance.high,
 );
 
+Future<String?> _firebaseToken() => FirebaseMessaging.instance.getToken();
+
 class NotificationsService {
-  NotificationsService(this._repo);
+  NotificationsService(this._repo, {Future<String?> Function()? readToken})
+    : _readToken = readToken ?? _firebaseToken;
 
   final ApiRepository _repo;
+  final Future<String?> Function() _readToken;
   final _localNotifications = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  bool _signedOut = false;
 
   AuthorizationStatus? permissionStatus;
   bool tokenRegistered = false;
   String? lastError;
 
   Future<void> init() async {
-    if (_initialized) return;
+    _signedOut = false;
+    if (_initialized) return _registerToken();
     _initialized = true;
 
     await _localNotifications.initialize(
@@ -44,12 +50,15 @@ class NotificationsService {
     FirebaseMessaging.onMessage.listen(_showForegroundNotification);
 
     await _registerToken();
-    messaging.onTokenRefresh.listen((_) => _registerToken());
+    messaging.onTokenRefresh.listen((_) {
+      if (!_signedOut) _registerToken();
+    });
   }
 
   Future<void> unregisterToken() async {
+    _signedOut = true;
     try {
-      final token = await FirebaseMessaging.instance.getToken();
+      final token = await _readToken();
       if (token == null) return;
       await _repo.unregisterDeviceToken(token);
       tokenRegistered = false;
@@ -63,7 +72,7 @@ class NotificationsService {
 
   Future<void> _registerToken() async {
     try {
-      final token = await FirebaseMessaging.instance.getToken();
+      final token = await _readToken();
       if (token == null) return;
       await _repo.registerDeviceToken(token: token, platform: 'android');
       tokenRegistered = true;

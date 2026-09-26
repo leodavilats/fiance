@@ -524,6 +524,12 @@ def unregister_device_token(token: str, user_id: str | None = None) -> None:
         )
 
 
+def unregister_all_device_tokens(user_id: str | None = None) -> int:
+    with _session(user_id) as (session, uid):
+        result = session.execute(delete(DeviceTokenDb).where(DeviceTokenDb.user_id == uid))
+        return int(result.rowcount or 0)
+
+
 def list_all_device_tokens() -> list[DeviceToken]:
     with _session_global() as session:
         rows = session.scalars(select(DeviceTokenDb)).all()

@@ -120,6 +120,10 @@ class PortfolioRepository:
         portfolio_store.unregister_device_token(token)
 
     @staticmethod
+    def unregister_all_device_tokens(user_id: str) -> int:
+        return portfolio_store.unregister_all_device_tokens(user_id)
+
+    @staticmethod
     def list_all_device_tokens() -> list[DeviceToken]:
         return portfolio_store.list_all_device_tokens()
 

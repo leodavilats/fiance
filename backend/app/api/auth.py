@@ -21,6 +21,7 @@ from app.core.auth import (
 from app.core.database import SessionLocal
 from app.core.ratelimit import ip_rate_limit
 from app.models.db_models import User
+from app.repositories import PortfolioRepository
 from app.services import referral_service
 
 logger = logging.getLogger("fiance.auth")
@@ -28,6 +29,8 @@ logger = logging.getLogger("fiance.auth")
 router = APIRouter()
 
 AUTH_PER_MINUTE = 20
+
+portfolio_repo = PortfolioRepository()
 
 
 class GoogleLoginRequest(BaseModel):
@@ -136,6 +139,7 @@ async def logout(
 
     if body.all_devices:
         sessions.revoke_all_for_user(payload["sub"])
+        portfolio_repo.unregister_all_device_tokens(payload["sub"])
         return {"revoked": "all"}
 
     revoke_token(payload)

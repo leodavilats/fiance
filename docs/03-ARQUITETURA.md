@@ -106,6 +106,28 @@ esquecer a variável desarmava JWT, CORS e rota de operador de uma vez.
 
 `BILLING_WEBHOOK_SECRET` e o segredo do JWT são validados no startup com o mesmo rigor.
 
+**O token de push é da instalação, não da conta, e vive enquanto a sessão vive.** O token do FCM
+identifica o aplicativo num aparelho; quem entra por último nesse aparelho é quem recebe o aviso, e
+`portfolio_store.register_device_token` reatribui o token a essa conta. Reatribuir é o certo: o
+contrário deixaria a conta anterior recebendo alerta de preço — que diz o que a carteira segue — num
+aparelho que já não é dela. O risco real é outro, e fecha em três pontos:
+
+- **Sair apaga o token antes de encerrar a sessão.** `signOutProvider` (`mobile/lib/core/providers.dart`)
+  chama o `DELETE /notifications/register-token` enquanto a sessão ainda autentica, e só depois
+  revoga e limpa. Falha nesse passo não impede a saída: o token órfão é reatribuído no próximo login
+  do aparelho.
+- **Sair de todos os aparelhos apaga todos os tokens da conta** (`POST /auth/logout` com
+  `all_devices`, via `portfolio_store.unregister_all_device_tokens`). Sessão cortada em todo lugar
+  não deixa aparelho recebendo aviso.
+- **Token tem forma.** Registro e remoção (`api/notifications.py`) aceitam só o alfabeto do FCM
+  (letras, dígitos, `-`, `_`, `:`), de 32 a 512 caracteres; plataforma é `android` ou `ios`. O
+  token real tem por volta de 150 caracteres, e o Google não fixa o tamanho — o piso recusa lixo,
+  não um formato que pode mudar.
+
+Fica de fora a sessão que expira sem logout: sem sessão, o aplicativo não tem como pedir a remoção,
+e o token segue com a conta até o próximo login no aparelho ou até o FCM o declarar inválido
+(`services/notification_job.py` apaga o que o FCM recusa).
+
 ---
 
 ## API

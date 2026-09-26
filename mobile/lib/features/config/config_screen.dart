@@ -997,9 +997,7 @@ class FiAccount extends ConsumerWidget {
       action: FiButton.danger(
         label: 'Sair desta conta',
         onPressed: () async {
-          await ref.read(notificationsServiceProvider).unregisterToken();
-          await ref.read(authServiceProvider).signOut();
-          ref.read(currentUserProvider.notifier).state = null;
+          await ref.read(signOutProvider)();
           if (context.mounted) context.go('/login');
         },
       ),

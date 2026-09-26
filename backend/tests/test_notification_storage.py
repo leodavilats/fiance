@@ -18,7 +18,9 @@ def test_register_same_token_reassigns_user():
     all_tokens = portfolio_store.list_all_device_tokens()
     matching = [t for t in all_tokens if t["token"] == "shared-token"]
     assert len(matching) == 1
-    assert matching[0]["user_id"] == "user_b"
+    assert matching[0]["user_id"] == "user_b", (
+        "o token é da instalação: quem entra por último no aparelho é quem recebe o aviso"
+    )
 
 
 def test_list_device_tokens_filters_by_user():

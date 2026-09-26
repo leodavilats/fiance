@@ -355,14 +355,14 @@ def test_device_token_can_be_unregistered_on_logout(client):
     client.post(
         "/api/notifications/register-token",
         headers=headers,
-        json={"token": "token-de-teste-123456", "platform": "android"},
+        json={"token": "fTeste:APA91bToken-de-teste_1234567890abcdef", "platform": "android"},
     )
     assert client.get("/api/preferences", headers=headers).json()["push_enabled"] is True
 
     resp = client.delete(
         "/api/notifications/register-token",
         headers=headers,
-        params={"token": "token-de-teste-123456"},
+        params={"token": "fTeste:APA91bToken-de-teste_1234567890abcdef"},
     )
     assert resp.status_code == 204
     assert client.get("/api/preferences", headers=headers).json()["push_enabled"] is False
