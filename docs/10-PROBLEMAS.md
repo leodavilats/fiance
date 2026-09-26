@@ -109,9 +109,11 @@ crescer; não faz o número cair.
 
 ### 23 · Token de push é reatribuído a quem o registrar
 
-### Não existe rotina de backup própria nem restauração testada
+### O backup próprio ainda não é agendado
 
-O backup é o do provedor. Nunca foi exercitado.
+A cópia lógica e a restauração existem e são testadas (`backend/app/backup.py`, ver
+[07-OPERACAO](07-OPERACAO.md)). Falta agendar a exportação e escolher o destino cifrado, com
+retenção de no máximo 30 dias. **Depende de decisão de operação na conta do Railway**, não de código.
 
 ### 21 · O mobile nunca teve um release de verdade
 

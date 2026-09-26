@@ -142,8 +142,31 @@ O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte
 
 ## Backup e recuperação
 
-O Postgres do Railway é gerenciado; o backup é o do provedor. **Não existe rotina própria de backup
-nem procedimento testado de restauração.** Ver [10-PROBLEMAS](10-PROBLEMAS.md).
+O Postgres do Railway é gerenciado, e o provedor tem o próprio backup. Além dele existe uma cópia
+lógica própria, portátil entre Postgres e SQLite, cuja restauração é testada no CI
+(`backend/app/backup.py`, `backend/tests/test_backup_e_restauracao.py`):
+
+```bash
+cd backend
+python -m app.backup exportar copia.json            # todas as tabelas, menos cache e trava de job
+python -m app.backup restaurar copia.json           # só em banco vazio e na mesma revisão
+python -m app.backup reaplicar-exclusoes nova.json  # lápides de conta de uma cópia mais nova
+```
+
+- **Dinheiro volta exato:** `Decimal` passa por texto na cópia.
+- **A restauração recusa** banco com dados e revisão de esquema diferente. Para restaurar, crie o
+  banco, rode `python -m app.release` na mesma versão do código que gerou a cópia, e só então
+  restaure.
+- **Exclusão de conta vence a cópia.** Restaurar uma cópia anterior a uma exclusão traria de volta
+  dados que a pessoa pediu para apagar. Depois de restaurar, exporte o banco danificado se ele ainda
+  for legível e rode `reaplicar-exclusoes` com essa exportação.
+- **A cópia é dado pessoal financeiro.** Guarde cifrada, fora do git e fora de artefato de CI, e por
+  no máximo **30 dias** (`account_store.DELETION_SLA_DAYS`): é o prazo que a política de exclusão
+  promete para backups. Cópia mais velha que isso descumpre a política.
+
+**Falta decisão de operação:** agendar a exportação (um serviço de cron no Railway, por exemplo) e
+escolher o destino cifrado. As duas coisas dependem da conta do Railway e de onde guardar, e não do
+código. Até lá, a exportação roda à mão.
 
 Para reverter um deploy, use o rollback do Railway. Migração aplicada **não** é revertida por
 rollback de aplicação — migração que precise voltar exige `downgrade` escrito e testado antes.
