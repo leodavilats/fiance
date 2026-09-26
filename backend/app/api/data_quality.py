@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 from app.analysis.fair_price import EARNINGS_YEARS, fair_price_from_inputs
 from app.collectors import circuit, plausibility
+from app.models.operacao import SourceHealth
 from app.services import OpportunityService
 
 router = APIRouter()
@@ -61,7 +62,7 @@ class DataQualityResponse(BaseModel):
     )
 
 
-@router.get("/data-quality/source")
+@router.get("/data-quality/source", response_model=SourceHealth)
 async def source_health() -> dict:
     return {
         "circuit": circuit.status("brapi"),

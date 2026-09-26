@@ -1,6 +1,14 @@
 {
+  "DELETE /api/v1/account": [
+    "deleted",
+    "removed",
+    "sla_days"
+  ],
   "DELETE /api/v1/account (entrada)": [
     "confirm"
+  ],
+  "DELETE /api/v1/alerts/{alert_id}": [
+    "deleted"
   ],
   "DELETE /api/v1/portfolio/position/{ticker}": [
     "items",
@@ -16,6 +24,12 @@
     "snapshots[].total_invested",
     "snapshots[].total_pnl",
     "snapshots[].total_pnl_pct"
+  ],
+  "GET /api/v1/account/deletion-policy": [
+    "confirmation_phrase",
+    "note",
+    "removes",
+    "sla_days"
   ],
   "GET /api/v1/alerts": [
     "condition",
@@ -33,6 +47,9 @@
     "note",
     "target_price",
     "ticker"
+  ],
+  "GET /api/v1/analytics/aha": [
+    "candidates"
   ],
   "GET /api/v1/asset/{symbol}": [
     "as_of",
@@ -390,6 +407,21 @@
     "source",
     "universe_size"
   ],
+  "GET /api/v1/data-quality/source": [
+    "circuit",
+    "circuit.consecutive_failures",
+    "circuit.last_failure",
+    "circuit.provider",
+    "circuit.rejected_while_open",
+    "circuit.retry_in_seconds",
+    "circuit.state",
+    "plausibility_ranges",
+    "plausibility_ranges[].field",
+    "plausibility_ranges[].high",
+    "plausibility_ranges[].low",
+    "plausibility_ranges[].reason",
+    "plausibility_ranges[].rejects_snapshot"
+  ],
   "GET /api/v1/dip-scanner": [
     "disclaimer",
     "items",
@@ -440,6 +472,33 @@
     "received_this_month",
     "total_count",
     "total_received"
+  ],
+  "GET /api/v1/entitlements/check/{feature}": [
+    "allowed",
+    "feature",
+    "limit",
+    "limit_reached",
+    "plan",
+    "reason",
+    "required_plan",
+    "used"
+  ],
+  "GET /api/v1/entitlements/rules": [
+    "rules",
+    "rules[].feature",
+    "rules[].free_limit",
+    "rules[].min_plan",
+    "rules[].monthly",
+    "rules[].premium_limit",
+    "rules[].rationale",
+    "rules[].unit"
+  ],
+  "GET /api/v1/events/catalog": [
+    "events",
+    "events[].description",
+    "events[].name",
+    "events[].question",
+    "questions"
   ],
   "GET /api/v1/fixed-income": [
     "cdi_referencia",
@@ -863,6 +922,14 @@
     "month.surplus_high",
     "month.surplus_low"
   ],
+  "GET /api/v1/universe": [
+    "tickers"
+  ],
+  "GET /api/v1/universe/search": [
+    "items",
+    "items[].name",
+    "items[].ticker"
+  ],
   "GET /api/v1/whats-new": [
     "days_since",
     "generated_at",
@@ -943,6 +1010,10 @@
   "POST /api/v1/billing/checkout (entrada)": [
     "plan_code!"
   ],
+  "POST /api/v1/cache/clear": [
+    "deleted",
+    "message"
+  ],
   "POST /api/v1/cashflow/debts": [
     "balance",
     "class",
@@ -1022,6 +1093,9 @@
     "paid_at!",
     "ticker!"
   ],
+  "POST /api/v1/events": [
+    "accepted"
+  ],
   "POST /api/v1/events (entrada)": [
     "events",
     "events[].name!",
@@ -1066,6 +1140,9 @@
     "tipo_taxa",
     "valor_investido!",
     "vencimento"
+  ],
+  "POST /api/v1/metrics/reset": [
+    "reset"
   ],
   "POST /api/v1/notifications/register-token (entrada)": [
     "platform",

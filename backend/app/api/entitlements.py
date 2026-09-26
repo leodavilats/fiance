@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.auth import get_current_user
 from app.entitlement import Feature, check, plans, resolve
+from app.models.operacao import FeatureCheck, PlanRules
 from app.services import subscription_service
 
 router = APIRouter()
@@ -27,11 +28,11 @@ async def read_entitlements(user_id: str = Depends(get_current_user)) -> dict:
     }
 
 
-@router.get("/entitlements/rules")
+@router.get("/entitlements/rules", response_model=PlanRules)
 async def read_rules() -> dict:
     return {"rules": plans.as_dicts()}
 
 
-@router.get("/entitlements/check/{feature}")
+@router.get("/entitlements/check/{feature}", response_model=FeatureCheck)
 async def check_feature(feature: Feature, user_id: str = Depends(get_current_user)) -> dict:
     return check(feature, user_id, cost=0).as_dict()

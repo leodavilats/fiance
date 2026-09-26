@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
+from app.models.operacao import DeletedById
 from app.models.portfolio import TICKER_PATTERN
 from app.repositories.asset_repository import AssetRepository
 from app.storage import portfolio_store
@@ -126,7 +127,7 @@ async def create_alert(body: AlertCreate) -> AlertResponse:
     return AlertResponse(**created)
 
 
-@router.delete("/alerts/{alert_id}")
+@router.delete("/alerts/{alert_id}", response_model=DeletedById)
 async def delete_alert(alert_id: int) -> dict:
     deleted = portfolio_store.delete_price_alert(alert_id)
     if not deleted:

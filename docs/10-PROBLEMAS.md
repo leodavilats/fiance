@@ -99,11 +99,13 @@ O que havia rodava no navegador e saiu com o front web.
 Três não têm equivalente no Dart: **gráfico sem tabela equivalente**, **destino de navegação
 inexistente** *(esta foi portada — regra 13 do lint)* e **controle montado à mão**.
 
-### 45 rotas sem contrato de resposta
+### 31 rotas sem contrato de resposta
 
-`SEM_MODELO_HOJE = 45` em `tests/test_contrato_das_rotas.py`. Metade das rotas devolve `dict` solto,
-sem `response_model` — o FastAPI não pode conferir, e o contrato não as cobre. A catraca impede
-crescer; não faz o número cair.
+`SEM_MODELO_HOJE = 31` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,
+qualidade de dado, regras de plano, universo e operação de cache ganharam modelo em 2026-09-26.
+Seguem sem: transações, proventos pendentes, estratégia, aporte rápido, cobrança, logout, as exclusões
+de posição, `/account/export` (é download de arquivo) e as leituras de operador (`/metrics`,
+`/analytics/funnel`), cujo formato é aberto.
 
 ### 24 · A paginação das listas com agregado limita o payload, não a consulta
 

@@ -10,6 +10,7 @@ from app.core import sessions
 from app.core.auth import get_current_user
 from app.core.brt import now_brt
 from app.core.errors import DomainError
+from app.models.operacao import AccountDeleted, DeletionPolicy
 from app.storage import account_store
 
 router = APIRouter()
@@ -35,7 +36,7 @@ async def export_account(user_id: str = Depends(get_current_user)) -> Response:
     )
 
 
-@router.get("/account/deletion-policy")
+@router.get("/account/deletion-policy", response_model=DeletionPolicy)
 async def deletion_policy() -> dict:
     return {
         "sla_days": account_store.DELETION_SLA_DAYS,
@@ -49,7 +50,7 @@ async def deletion_policy() -> dict:
     }
 
 
-@router.delete("/account")
+@router.delete("/account", response_model=AccountDeleted)
 async def delete_account(
     body: ConfirmDeletion | None = None,
     user_id: str = Depends(get_current_user),

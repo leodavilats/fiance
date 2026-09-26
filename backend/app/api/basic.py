@@ -10,6 +10,7 @@ from app.core import cache
 from app.core.database import SessionLocal
 from app.core.observability import metrics
 from app.core.universe import get_universe, invalidate_universe_memo, search_universe
+from app.models.operacao import CacheCleared, MetricsReset, UniverseList, UniverseSearch
 
 logger = logging.getLogger("fiance.health")
 
@@ -81,18 +82,18 @@ async def ready(response: Response) -> dict:
     }
 
 
-@router.get("/universe")
+@router.get("/universe", response_model=UniverseList)
 async def universe() -> dict:
     return {"tickers": await asyncio.to_thread(get_universe)}
 
 
-@router.get("/universe/search")
+@router.get("/universe/search", response_model=UniverseSearch)
 async def universe_search(q: str = "", limit: int = 10) -> dict:
     limit = max(1, min(limit, 25))
     return {"items": await asyncio.to_thread(search_universe, q, limit)}
 
 
-@admin_router.post("/cache/clear")
+@admin_router.post("/cache/clear", response_model=CacheCleared)
 async def clear_cache(pattern: str = "*") -> dict:
     invalidate_universe_memo()
 
@@ -110,7 +111,7 @@ async def read_metrics() -> dict:
     return {**metrics.snapshot(), "cache": cache.describe()}
 
 
-@admin_router.post("/metrics/reset")
+@admin_router.post("/metrics/reset", response_model=MetricsReset)
 async def reset_metrics() -> dict:
     metrics.reset()
     return {"reset": True}

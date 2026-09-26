@@ -292,7 +292,13 @@ def _stub_market_data(monkeypatch, request):
         cache_mod, "set", lambda key, value, ttl_seconds: fake_store.__setitem__(key, value)
     )
     monkeypatch.setattr(cache_mod, "delete", lambda key: fake_store.pop(key, None))
-    monkeypatch.setattr(cache_mod, "clear_all", lambda: fake_store.clear())
+
+    def _clear_all() -> int:
+        apagadas = len(fake_store)
+        fake_store.clear()
+        return apagadas
+
+    monkeypatch.setattr(cache_mod, "clear_all", _clear_all)
     monkeypatch.setattr(cache_mod, "delete_pattern", lambda pattern: 0)
 
     fake_rates = {

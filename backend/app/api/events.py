@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from app.core import events as event_catalog
 from app.core.auth import get_current_user
 from app.core.errors import DomainError
+from app.models.operacao import AhaCandidates, EventCatalog, EventsAccepted
 from app.services.analytics_service import aha_correlation, build_funnel
 from app.storage import event_store
 
@@ -33,7 +34,7 @@ class InvalidEventPayload(DomainError):
     status_code = 422
 
 
-@router.post("/events")
+@router.post("/events", response_model=EventsAccepted)
 async def ingest_events(body: EventBatch, user_id: str = Depends(get_current_user)) -> dict:
     if len(body.events) > MAX_BATCH:
         raise InvalidEventPayload(f"No máximo {MAX_BATCH} eventos por lote.")
@@ -55,7 +56,7 @@ async def ingest_events(body: EventBatch, user_id: str = Depends(get_current_use
     return {"accepted": accepted}
 
 
-@router.get("/events/catalog")
+@router.get("/events/catalog", response_model=EventCatalog)
 async def read_catalog() -> dict:
     return {"questions": list(event_catalog.QUESTIONS), "events": event_catalog.catalog_as_dicts()}
 
@@ -66,6 +67,6 @@ async def read_funnel(days: int = 90) -> dict:
     return build_funnel(days=days)
 
 
-@admin_router.get("/analytics/aha")
+@admin_router.get("/analytics/aha", response_model=AhaCandidates)
 async def read_aha() -> dict:
     return {"candidates": aha_correlation()}
