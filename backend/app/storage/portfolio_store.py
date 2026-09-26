@@ -75,7 +75,7 @@ class Preferences(TypedDict):
     notify_price_alerts: bool
     opportunities_frequency: str
     risk_profile: str
-    density: str
+    detail_level: str
     reserve_months_target: int | None
     preferred_categories: list[str]
     preferred_sectors: list[str]
@@ -413,7 +413,7 @@ def get_preferences(user_id: str | None = None) -> Preferences:
                 notify_price_alerts=row.notify_price_alerts,
                 opportunities_frequency=row.opportunities_frequency,
                 risk_profile=row.risk_profile,
-                density=row.density or "comfortable",
+                detail_level=row.detail_level or "completo",
                 reserve_months_target=row.reserve_months_target,
                 preferred_categories=_csv_to_list(row.preferred_categories),
                 preferred_sectors=_csv_to_list(row.preferred_sectors),
@@ -431,7 +431,7 @@ def get_preferences(user_id: str | None = None) -> Preferences:
         notify_price_alerts=True,
         opportunities_frequency="weekly",
         risk_profile="moderate",
-        density="comfortable",
+        detail_level="completo",
         reserve_months_target=None,
         preferred_categories=[],
         preferred_sectors=[],
@@ -450,7 +450,7 @@ _PREF_DEFAULTS: dict[str, object] = {
     "notify_price_alerts": True,
     "opportunities_frequency": "weekly",
     "risk_profile": "moderate",
-    "density": "comfortable",
+    "detail_level": "completo",
     "reserve_months_target": None,
     "preferred_categories": [],
     "preferred_sectors": [],

@@ -6,6 +6,8 @@ from .enums import AssetCategory, RiskProfile
 
 OpportunitiesFrequency = str
 
+DetailLevel = Literal["essencial", "completo", "avancado"]
+
 
 class Preferences(BaseModel):
     push_enabled: bool = False
@@ -20,7 +22,15 @@ class Preferences(BaseModel):
     notify_price_alerts: bool = True
     opportunities_frequency: OpportunitiesFrequency = "weekly"
     risk_profile: RiskProfile = RiskProfile.moderate
-    density: str = "comfortable"
+    detail_level: DetailLevel = Field(
+        "completo",
+        description=(
+            "Quanto da explicação a tela mostra de saída: `essencial` fica na etiqueta, na faixa "
+            "e na razão principal; `completo` traz premissas, confirmação e indicadores; "
+            "`avancado` abre também os métodos, o silêncio de cada um e os insumos do cálculo. "
+            "Nada é escondido: o nível muda o que vem aberto."
+        ),
+    )
     reserve_months_target: int | None = Field(
         None,
         description=(
@@ -45,7 +55,7 @@ class PreferencesRequest(BaseModel):
     notify_price_alerts: bool | None = None
     opportunities_frequency: OpportunitiesFrequency | None = None
     risk_profile: RiskProfile | None = None
-    density: Literal["comfortable", "compact"] | None = None
+    detail_level: DetailLevel | None = None
     reserve_months_target: int | None = Field(None, ge=0, le=60)
     preferred_categories: list[AssetCategory] | None = Field(None, max_length=10)
     preferred_sectors: list[str] | None = Field(None, max_length=50)

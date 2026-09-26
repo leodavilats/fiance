@@ -76,7 +76,7 @@ class PreferencesDb(Base):
     notify_price_alerts: Mapped[bool] = mapped_column(default=True)
     opportunities_frequency: Mapped[str] = mapped_column(String, default="weekly")
     risk_profile: Mapped[str] = mapped_column(String, default="moderate")
-    density: Mapped[str] = mapped_column(String, default="comfortable")
+    detail_level: Mapped[str] = mapped_column(String, default="completo")
     preferred_categories: Mapped[str] = mapped_column(String, default="")
     preferred_sectors: Mapped[str] = mapped_column(String, default="")
     excluded_tickers: Mapped[str] = mapped_column(String, default="")
