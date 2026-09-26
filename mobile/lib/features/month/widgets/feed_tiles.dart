@@ -9,6 +9,7 @@ import '../../../core/widgets/nav_action.dart';
 import '../../../core/widgets/tag.dart';
 import '../feed_actions.dart';
 import '../../../core/score_ruler.dart';
+import '../../../core/widgets/score_ruler.dart';
 
 class FiInsightTile extends StatelessWidget {
   const FiInsightTile({
@@ -112,7 +113,6 @@ class FiOpportunityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final o = opportunity;
-    final band = fiScoreBandFor(o.score, o.dataCompleteness);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
@@ -159,17 +159,16 @@ class FiOpportunityTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: FiSpace.s3),
-            Row(
-              children: [
-                FiTag(label: band.label, state: band.state),
-                const SizedBox(width: FiSpace.s2),
-                Expanded(
-                  child: Text(
-                    '${dataYearsLabel(o.dataYears)} · ${confirmationLabel(o.independentInputs)}',
-                    style: FiType.caption.copyWith(color: fiInk3(context)),
-                  ),
-                ),
-              ],
+            ScoreRuler(
+              score: o.score,
+              dataCompleteness: o.dataCompleteness,
+              size: ScoreRulerSize.inline,
+              subject: 'Score de ${o.ticker}',
+            ),
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              '${dataYearsLabel(o.dataYears)} · ${confirmationLabel(o.independentInputs)}',
+              style: FiType.caption.copyWith(color: fiInk3(context)),
             ),
           ],
         ),

@@ -19,6 +19,7 @@ import '../../core/models.dart';
 import '../../core/widgets/allocation_gap.dart';
 import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/tag.dart';
+import '../../core/widgets/score_ruler.dart';
 
 class SurplusScreen extends ConsumerWidget {
   const SurplusScreen({super.key});
@@ -187,7 +188,6 @@ class _ContributionDestination extends StatelessWidget {
   Widget build(BuildContext context) {
     final a = allocation;
     final brightness = Theme.of(context).brightness;
-    final band = a.score != null ? fiScoreBandFor(a.score!, null) : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
@@ -217,15 +217,20 @@ class _ContributionDestination extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: FiSpace.s3),
-                if (band != null)
-                  FiTag(label: band.label, state: band.state)
-                else
-                  FiTag.series(
-                    label: categoryLabel(a.category),
-                    color: categoryColor(a.category, brightness),
-                  ),
+                FiTag.series(
+                  label: categoryLabel(a.category),
+                  color: categoryColor(a.category, brightness),
+                ),
               ],
             ),
+            if (a.score != null) ...[
+              const SizedBox(height: FiSpace.s3),
+              ScoreRuler(
+                score: a.score!,
+                size: ScoreRulerSize.inline,
+                subject: 'Score de ${a.ticker}',
+              ),
+            ],
             const SizedBox(height: FiSpace.s3),
             Text(
               a.suggestedQuantity == null
