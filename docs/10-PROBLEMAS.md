@@ -9,7 +9,8 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 e A11 entraram e
 saíram em 2026-09-25 — ver [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md). O 20
 (day trade e IOF) saiu em 2026-09-25 — ver [ADR-020](decisoes/ADR-020-day-trade-apartado.md) —, e
-os itens 1, 4 e 33 antes disso.
+os itens 1, 4 e 33 antes disso. O 12 e o 23 saíram em 2026-09-26 — ver
+[ADR-007](decisoes/ADR-007-nivel-de-afirmacao.md) e [03-ARQUITETURA](03-ARQUITETURA.md).
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -68,12 +69,6 @@ continua sendo um lançamento de cada vez.
 
 ## E · Interface
 
-### 12 · A régua de afirmação anula `allocated_cash` e deixa a subtração de pé
-
-Fora do nível prescritivo, `affirmation.py` retira o valor alocado do aporte rápido, mas
-`remaining_cash` (caixa menos alocado), o `value` de cada sobra e a projeção da carteira seguem na
-resposta, e o valor retirado se reconstrói por uma conta de menos.
-
 ### 17 · A régua não cobre o score em linha densa, e ali ele sai só como selo
 
 Em `mobile/lib/features/market/quick_invest_view.dart`, cada alocação mostra a faixa do score como
@@ -112,11 +107,6 @@ lançamento, sugestão seguida), `/account/export` (é download de arquivo) e as
 
 Renda fixa e proventos recebidos paginam por cursor, mas o total e a média de 12 meses que vêm na
 mesma resposta são calculados lendo todas as linhas da conta a cada página.
-
-### 23 · Token de push é reatribuído a quem o registrar
-
-`POST /notifications/register-token` aceita qualquer texto como token, e sair da conta não o apaga: o
-aparelho segue recebendo aviso da conta anterior até outra entrar.
 
 ### O backup próprio ainda não é agendado
 
