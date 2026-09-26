@@ -160,12 +160,25 @@ meia hora.
 | Disjuntor | Aberto, nem tenta; quem chama cai no cache vencido | `collectors/circuit.py` |
 | Coleta em lote | 20 tickers por chamada; ~285 requisições/rodada caíram para ~15 | `collectors/universal.prefetch_brapi_raw` |
 | Marcador de inexistente | 6h — tem de durar mais que o ciclo de varredura | idem |
-| Portão de pregão | 10h–18h30, seg–sex; fora disso a varredura do universo não vai à rede | `core/pregao.py` |
+| Portão de pregão | 10h–18h30 em dia com pregão na B3; fora disso a varredura do universo não vai à rede | `core/pregao.py` |
 
 A cota da BRAPI é de 3.000 requisições por dia. O portão de pregão existe porque reler o fechamento
 de madrugada gasta cota que o pregão precisa. Ele **não** se aplica a: busca de um ativo pedido por
-uma pessoa às 22h; servir cache no fim de semana; feriado, que ele não conhece. A janela termina 1h
-depois do fechamento porque balanço na B3 sai depois do pregão.
+uma pessoa às 22h, ou num feriado; servir cache no fim de semana. A janela termina 1h depois do
+fechamento porque balanço na B3 sai depois do pregão.
+
+**O calendário é calculado, sem rede e sem banco** (`core/pregao.py::dias_sem_pregao`):
+
+- feriados nacionais fixos: 1/1, 21/4, 1/5, 7/9, 12/10, 2/11, 15/11, 25/12, e 20/11 a partir de
+  2024 (Consciência Negra, nacional pela Lei 14.759/2023);
+- móveis, pela Páscoa (`pascoa`): segunda e terça de Carnaval, Sexta-feira Santa, Corpus Christi;
+- os dias sem pregão da própria B3: 24/12 e 31/12.
+
+Feriado municipal ou estadual de São Paulo (25/1, 9/7) **não** fecha a janela: a B3 funciona neles.
+Na Quarta-feira de Cinzas o pregão começa às 13h, e a janela abre às 13h (`abertura`). Feriado que
+cai no fim de semana não se transfere. O instante com fuso é lido em horário de Brasília. Um
+fechamento extraordinário que a B3 anuncie fora dessas regras não entra sozinho: é linha nova no
+cálculo.
 
 ### Cache
 

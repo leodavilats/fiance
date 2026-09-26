@@ -132,7 +132,9 @@ O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte
 
 1. `GET /data-quality/source` — disjuntor aberto?
 2. Cota da BRAPI — o limite é 3.000 requisições/dia
-3. Horário — fora de 10h–18h30 em dia útil, a varredura do universo não vai à rede por desenho
+3. Horário — fora de 10h–18h30 em dia com pregão na B3, a varredura do universo não vai à rede
+   por desenho. Feriado nacional, Carnaval e 24 e 31/12 contam como fechados; na Quarta-feira de
+   Cinzas a janela abre às 13h
 
 ---
 
