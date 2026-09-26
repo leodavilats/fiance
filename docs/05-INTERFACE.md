@@ -185,10 +185,15 @@ resto das razões fica na seção do método, sem repetir as três.
 
 **O nível de detalhe muda o que vem aberto, e nada é escondido** (`detail_level` em `/preferences`,
 escolhido em Você → Como eu invisto, `/voce/investir`). Na folha do ativo: **Essencial** traz a etiqueta, o preço, a margem
-e a evidência, com o método numa gaveta fechada, "Como chegamos nisso"; **Completo**, o padrão, traz
-as seções de método abertas; **Avançado** acrescenta os métodos com o motivo de cada silêncio e os
-insumos do cálculo — data de referência, Selic usada e sua origem, tipo do fundo. O que derrubaria a
-tese fica visível em todos os níveis: veredito vem com o falsificador.
+em palavras e a evidência, com o método numa gaveta fechada, "Como chegamos nisso"; **Completo**, o
+padrão, traz as seções de método abertas; **Avançado** acrescenta os métodos com o motivo de cada
+silêncio e os insumos do cálculo — data de referência, Selic usada e sua origem, tipo do fundo. "O que
+derrubaria esta leitura" fica visível em todos os níveis: veredito vem com o falsificador.
+
+**A ordem das razões é hierarquia.** A evidência mostra as três primeiras que o backend manda, então
+`decide()` as ordena para quem lê só elas: onde o preço está em relação à faixa, o valor numa frase,
+a segunda conta. As premissas detalhadas ("Na conta, a taxa exigida…") são método, e vêm depois — no
+Essencial, dentro da gaveta.
 
 ---
 
@@ -236,7 +241,33 @@ explicabilidade.
 ## Linguagem
 
 **Número em português é responsabilidade do formatador, não do template.** O locale é `pt_BR`:
-`R$ 120.000` escrito como `R$ 120,000` se lê como cento e vinte reais.
+`R$ 120.000` escrito como `R$ 120,000` se lê como cento e vinte reais. Vale também para a frase que
+chega pronta do backend: razões, falsificadores e motivos de silêncio da análise saem por
+`analysis/texto.py` (`reais`, `pct`, `numero`).
+
+### A análise se lê sem glossário
+
+Metade do público nunca investiu ([01-PRODUTO](01-PRODUTO.md)). Na folha do ativo, e nas frases que o
+backend manda para ela:
+
+- **Sigla nunca chega sozinha.** Ela pode ficar, mas com o nome por extenso ou a explicação ao lado,
+  na mesma frase ou na mesma linha: "o retorno sobre o patrimônio (ROE)", "o índice de força
+  relativa (RSI), de 0 a 100", "Fundo imobiliário (FII)". O nome do ativo que vem da fonte ("Maxi
+  Renda FII") é nome próprio; quem diz o que o ativo é, por extenso, é o cabeçalho.
+- **O método se chama pelo que mede.** "Pelo lucro distribuível", "Pelos dividendos", "Pelo valor
+  patrimonial" — nunca DCF, Bazin ou Gordon. A confirmação é "uma segunda conta, com outro dado";
+  "insumo" é vocabulário do código, não da tela.
+- **Termo que fica tem verbete ao toque.** `FiDataRow` e `FiMeasure` aceitam `glossaryKey`: o rótulo
+  ganha sublinhado pontilhado e o toque abre o verbete de `core/glossary.dart`. Chave sem verbete não
+  vira toque, em silêncio — o teste confere que toda chave usada existe.
+- **A margem sai em palavras e em reais** ("o preço está R$ 1,55 abaixo do piso do preço justo"). Um
+  percentual negativo de margem não diz nada a quem começou agora.
+- **Contexto de preço não prevê.** "Subiu rápido em pouco tempo", nunca "costuma vir correção".
+
+`mobile/test/linguagem_da_folha_do_ativo_test.dart` monta a folha no Essencial, com a gaveta fechada
+e aberta, e reprova sigla sem explicação ao lado e jargão de analista;
+`backend/tests/test_linguagem_da_analise.py` faz o mesmo com as frases do backend, em todos os
+cenários que elas cobrem. A lista de siglas vive nos dois testes.
 
 **Nome de tela usa o nome do conceito, não um sinônimo.** A barra de `/voce` já dizia
 "Configurações" e a de `/sobra/desvio` dizia "Estratégia".

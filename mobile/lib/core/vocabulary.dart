@@ -29,6 +29,14 @@ const Map<String, String> fiAssetTypes = {
   'renda_fixa': 'Renda Fixa',
 };
 
+const Map<String, String> fiAssetTypesInWords = {
+  'br_stock': 'Ação',
+  'bdr': 'Recibo de ação estrangeira (BDR)',
+  'fii': 'Fundo imobiliário (FII)',
+  'etf': 'Fundo de índice (ETF)',
+  'renda_fixa': 'Renda fixa',
+};
+
 const Map<String, String> fiAssetTypeToCategory = {
   'br_stock': 'acoes_br',
   'bdr': 'bdrs',

@@ -8,6 +8,7 @@ import 'package:fiance/core/widgets/chip.dart';
 import 'package:fiance/core/widgets/data_row.dart';
 import 'package:fiance/core/widgets/disclosure.dart';
 import 'package:fiance/core/widgets/help_tooltip.dart';
+import 'package:fiance/core/widgets/measure.dart';
 import 'package:fiance/core/widgets/provenance.dart';
 import 'package:fiance/core/widgets/segments.dart';
 
@@ -31,6 +32,8 @@ void main() {
       children: [FiChoiceChip(label: 'FIIs', selected: false, onSelected: () {})],
     ),
     'FiDataRow com toque': FiDataRow(label: 'PETR4', value: 'R\$ 38,00', onTap: () {}),
+    'FiDataRow com verbete': const FiDataRow(label: 'Taxa exigida', glossaryKey: 'taxa_de_desconto'),
+    'FiMeasure com verbete': const FiMeasure(label: 'Margem de segurança', value: 12, glossaryKey: 'ms'),
     'FiDisclosure': const FiDisclosure(title: 'Ver os números', child: Text('x')),
     'FiGroupDisclosure': const FiGroupDisclosure(label: 'Ações', count: 3, child: Text('x')),
     'FiSegments': FiSegments<int>(

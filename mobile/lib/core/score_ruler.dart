@@ -52,9 +52,9 @@ final String scoreGlossary =
 String trendBasisLabel(String? basis) {
   switch (basis) {
     case 'long':
-      return 'médias de 50 e 200 dias';
+      return 'média de 50 dias contra a de 200';
     case 'short':
-      return 'médias de 20 e 50 dias (histórico curto)';
+      return 'média de 20 dias contra a de 50 (histórico curto)';
     default:
       return 'sem histórico suficiente';
   }
@@ -67,8 +67,8 @@ String dataYearsLabel(int? dataYears) {
 
 String confirmationLabel(int? inputs) {
   if (inputs == null || inputs == 0) return 'sem preço justo';
-  if (inputs == 1) return 'sem confirmação independente';
-  return 'confirmada por outro insumo';
+  if (inputs == 1) return 'sem confirmação por outro dado';
+  return 'confirmada por outro dado';
 }
 
 String fairBandLabel(double? low, double? high) {
@@ -93,11 +93,11 @@ String fairBandEdgeLabel(double? price, double? low, double? high) {
 String bandQualityLabel(String? quality, int independentInputs) {
   switch (quality) {
     case 'firme':
-      return 'faixa estreita, confirmada por outro insumo';
+      return 'faixa estreita, confirmada por outro dado';
     case 'ampla':
       return independentInputs <= 1
-          ? 'sem confirmação por outro insumo'
-          : 'a confirmação fica perto da faixa, ou a faixa é larga pelas premissas';
+          ? 'sem confirmação por outro dado'
+          : 'a segunda conta fica perto da faixa, ou a faixa é larga pelas premissas';
     case 'fragil':
       return 'evidência frágil: a leitura não passa de abaixo ou acima do preço justo';
     default:
@@ -123,7 +123,7 @@ String principalLabel(String? principal) {
     case 'lucros_descontados':
       return 'Pelo lucro que a empresa pode distribuir sem deixar de crescer';
     case 'dividendos':
-      return 'Pela distribuição recorrente, no yield que o juro exige';
+      return 'Pelo que o fundo distribui num ano típico, no rendimento que o juro exige';
     default:
       return 'Valor central';
   }
@@ -154,13 +154,13 @@ String methodStatusLabel(String status) {
     case 'destoa_dos_demais':
       return 'entrou, e é ele que alarga a faixa';
     case 'inaplicavel':
-      return 'não descreve esta classe de ativo';
+      return 'não serve para este tipo de ativo';
     case 'sem_dado':
       return 'falta o dado';
     case 'lucro_negativo':
       return 'a empresa não teve lucro';
     case 'fora_da_faixa':
-      return 'o dado existe e reprova o método';
+      return 'o dado existe, e reprova a conta';
     case 'roe_insuficiente':
       return 'o retorno sobre o patrimônio não cobre o crescimento';
     case 'sem_juro':
@@ -168,7 +168,7 @@ String methodStatusLabel(String status) {
     case 'pouco_distribuido':
       return 'a empresa distribui pouco do lucro';
     case 'taxa_implausivel':
-      return 'a taxa de desconto não cabe no modelo';
+      return 'a taxa exigida não fecha a conta';
     default:
       return status;
   }

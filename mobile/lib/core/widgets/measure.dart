@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'help_tooltip.dart';
 
 class FiMeasure extends StatelessWidget {
   const FiMeasure({
@@ -15,7 +16,10 @@ class FiMeasure extends StatelessWidget {
     this.state = FiState.neutral,
     this.fillColor,
     this.semantics,
+    this.glossaryKey,
   });
+
+  final String? glossaryKey;
 
   final String label;
   final double value;
@@ -55,8 +59,9 @@ class FiMeasure extends StatelessWidget {
     final ink3 = fiInk3Of(brightness);
     final stateColor = fiStateColor(state, brightness);
     final preenchimento = fillColor ?? stateColor;
+    final explicavel = hasGlossaryEntry(glossaryKey);
 
-    return Semantics(
+    final medida = Semantics(
       label: semantics ?? '$label: ${readout ?? value.toStringAsFixed(0)}'
           '${note == null ? '' : ' — $note'}',
       child: ExcludeSemantics(
@@ -70,7 +75,15 @@ class FiMeasure extends StatelessWidget {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Expanded(
-                    child: Text(label, style: FiType.body.copyWith(color: ink1)),
+                    child: Text(
+                      label,
+                      style: FiType.body.copyWith(
+                        color: ink1,
+                        decoration: explicavel ? TextDecoration.underline : null,
+                        decorationStyle: TextDecorationStyle.dotted,
+                        decorationColor: ink3,
+                      ),
+                    ),
                   ),
                   if (readout != null)
                     Flexible(
@@ -139,6 +152,20 @@ class FiMeasure extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+
+    if (!explicavel) return medida;
+
+    return Semantics(
+      button: true,
+      hint: 'O que é $label? Abre a explicação do termo.',
+      child: InkWell(
+        onTap: () => showGlossaryTerm(context, glossaryKey!, label),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
+          child: medida,
         ),
       ),
     );

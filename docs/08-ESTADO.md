@@ -110,6 +110,7 @@ card de ativo ele continua sendo vender e remover.
 | Preço-teto da meta de renda | `[ATUAL]` | `analysis/fair_price.py::_indicators` | `market/asset_detail_sheet.dart` |
 | Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — ações e FIIs; BDR com os pesos da ação e sem a margem; ETF não tem score |
 | Falsificadores do veredito | `[ATUAL]` | `analysis/falsifiers.py` | `market/asset_detail_sheet.dart` |
+| Linguagem da análise para iniciante: sigla com explicação ao lado, verbete ao toque, número em português | `[IMPLEMENTADO]` | `analysis/decision.py`, `analysis/texto.py` | `market/asset_detail_sheet.dart` e `core/glossary.dart` |
 | Análise de ativo individual | `[ATUAL]` | `services/` | `market/asset_detail_sheet.dart` — a folha é a análise; `/ativo/:ticker` mostra menos e deixou de ser oferecida por botão |
 | Quedas: recorte de quem caiu da máxima de 52 semanas, com a leitura de valor | `[IMPLEMENTADO]` | `services/dip_service.py` | `/descobrir/quedas` — [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md) |
 | Comparador de ativos | `[ATUAL]` | — | `/descobrir/comparar` |

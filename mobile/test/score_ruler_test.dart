@@ -41,8 +41,8 @@ void main() {
       expect(dataYearsLabel(4), '4 anos de proventos');
 
       expect(confirmationLabel(0), 'sem preço justo');
-      expect(confirmationLabel(1), 'sem confirmação independente');
-      expect(confirmationLabel(2), 'confirmada por outro insumo');
+      expect(confirmationLabel(1), 'sem confirmação por outro dado');
+      expect(confirmationLabel(2), 'confirmada por outro dado');
     });
 
     test('confiança é apresentada em percentual', () {

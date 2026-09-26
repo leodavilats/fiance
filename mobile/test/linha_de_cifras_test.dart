@@ -92,7 +92,7 @@ void main() {
   testWidgets('a base de cada número continua na tela', (tester) async {
     await montar(tester, 390);
 
-    expect(find.textContaining('sem confirmação independente'), findsOneWidget);
+    expect(find.textContaining('sem confirmação por outro dado'), findsOneWidget);
     expect(find.textContaining('5 anos de proventos'), findsOneWidget);
   });
 }

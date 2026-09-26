@@ -6,8 +6,8 @@ import 'package:fiance/core/score_ruler.dart';
 
 void main() {
   group('a faixa diz quanto merece confiança', () {
-    test('firme diz que outro insumo a confirma', () {
-      expect(bandQualityLabel('firme', 2), contains('confirmada por outro insumo'));
+    test('firme diz que outro dado a confirma', () {
+      expect(bandQualityLabel('firme', 2), contains('confirmada por outro dado'));
     });
 
     test('frágil diz que a leitura tem teto de intensidade', () {

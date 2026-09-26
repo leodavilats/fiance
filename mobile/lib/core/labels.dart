@@ -23,6 +23,11 @@ String assetTypeLabel(String? assetType) {
   return fiAssetTypes[assetType] ?? assetType;
 }
 
+String assetTypeInWords(String? assetType) {
+  if (assetType == null) return '';
+  return fiAssetTypesInWords[assetType] ?? assetTypeLabel(assetType);
+}
+
 Color categoryColor(String? category, Brightness brightness) {
   final chave = fiCategoryAliases[category] ?? category;
   return fiSeriesColor(fiCategories[chave]?.series ?? 0, brightness);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'help_tooltip.dart';
 
 class FiDataRow extends StatelessWidget {
   const FiDataRow({
@@ -15,7 +16,10 @@ class FiDataRow extends StatelessWidget {
     this.onTap,
     this.emphasis = false,
     this.dense = false,
+    this.glossaryKey,
   });
+
+  final String? glossaryKey;
 
   final String label;
 
@@ -40,6 +44,10 @@ class FiDataRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navegavel = onTap != null;
+    final explicavel = !navegavel && hasGlossaryEntry(glossaryKey);
+    final estiloDoRotulo = emphasis
+        ? FiType.title
+        : FiType.body.copyWith(color: fiInk1(context));
 
     final corpo = Padding(
       padding: EdgeInsets.symmetric(vertical: dense ? FiSpace.s2 : FiSpace.s3),
@@ -56,9 +64,13 @@ class FiDataRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: emphasis
-                      ? FiType.title
-                      : FiType.body.copyWith(color: fiInk1(context)),
+                  style: explicavel
+                      ? estiloDoRotulo.copyWith(
+                          decoration: TextDecoration.underline,
+                          decorationStyle: TextDecorationStyle.dotted,
+                          decorationColor: fiInk3(context),
+                        )
+                      : estiloDoRotulo,
                 ),
                 if (detail != null) ...[
                   const SizedBox(height: 2),
@@ -100,6 +112,20 @@ class FiDataRow extends StatelessWidget {
         ],
       ),
     );
+
+    if (explicavel) {
+      return Semantics(
+        button: true,
+        label: glossarySemantics(value == null ? label : '$label: $value'),
+        child: InkWell(
+          onTap: () => showGlossaryTerm(context, glossaryKey!, label),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
+            child: corpo,
+          ),
+        ),
+      );
+    }
 
     if (!navegavel) return corpo;
 

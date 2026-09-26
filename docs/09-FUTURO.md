@@ -63,11 +63,15 @@ confiar mais — calibrar os parâmetros e avaliar BDR — exige fonte fora de B
 O item 3 depende deste: recomendar com mais força um número em que não se confia aumenta o dano do
 erro.
 
-### 5 · Simplificar a linguagem da análise de ativo
+### ~~5 · Simplificar a linguagem da análise de ativo~~ — entregue em 2026-09-26
 
-Muitas siglas para um iniciante — e o iniciante é metade do público declarado. Trabalho de texto e
-hierarquia, não de cálculo. O nível de detalhe **Essencial** (2026-09-26) já fecha o método numa
-gaveta; falta o texto.
+A folha do ativo e as frases que o backend manda para ela passaram a se ler sem glossário: sigla só
+com o nome por extenso ao lado, método chamado pelo que mede, "segunda conta, com outro dado" no
+lugar de "insumo", número em português também na frase do servidor, margem em reais e o tipo do
+ativo por extenso no cabeçalho. A evidência aberta passou a ser leitura, e as premissas detalhadas
+foram para depois; todo termo técnico que ficou na tela abre verbete ao toque. Nenhum cálculo, campo
+ou código mudou. As regras estão em [05-INTERFACE](05-INTERFACE.md#a-análise-se-lê-sem-glossário), e
+dois testes as cobram, um em cada ponta.
 
 ### ~~6 · Onboarding no aplicativo~~ — entregue em 2026-09-26
 

@@ -112,7 +112,10 @@ class _AssetDetailContent extends ConsumerWidget {
                           style: FiType.body.copyWith(color: fiInk2(context)),
                         ),
                       Text(
-                        translateSector(a.sector),
+                        [
+                          assetTypeInWords(a.assetType),
+                          translateSector(a.sector),
+                        ].where((t) => t.isNotEmpty && t != '—').join(' · '),
                         style: FiType.caption.copyWith(color: fiInk3(context)),
                       ),
                     ],
@@ -156,13 +159,13 @@ class _AssetDetailContent extends ConsumerWidget {
                   final band = fiBandFor(pct, fiMarginOfSafetyBands);
                   return FiMeasure(
                     label: 'Margem de segurança',
+                    glossaryKey: 'ms',
                     value: pct,
                     min: fiMarginOfSafetyDomain.min,
                     max: fiMarginOfSafetyDomain.max,
                     reference: 0,
                     readout: formatRatio(margem),
-                    note: '${band.label} · faixa de preço justo '
-                        '${fairBandLabel(a.fairLow, a.fairHigh)}, '
+                    note: '${band.label}: ${_margemEmPalavras(a)} · '
                         '${confirmationLabel(a.independentInputs)}',
                     state: band.state,
                   );
@@ -191,8 +194,9 @@ class _AssetDetailContent extends ConsumerWidget {
 
             if (a.falsifiers.any((f) => f.isPremise))
               FiSection(
-                title: 'O que derrubaria a tese',
-                hint: 'A premissa que sustenta o preço justo, e a condição que a refuta.',
+                title: 'O que derrubaria esta leitura',
+                hint: 'O que precisa continuar verdade para o preço justo valer. Se deixar de '
+                    'ser, a leitura inteira cai.',
                 child: FiRows(
                   children: [
                     for (final f in a.falsifiers.where((f) => f.isPremise))
@@ -204,7 +208,8 @@ class _AssetDetailContent extends ConsumerWidget {
             if (a.falsifiers.any((f) => !f.isPremise))
               FiSection(
                 title: 'O que muda a classificação',
-                hint: 'Atravessar um limiar troca a etiqueta — não refuta a premissa.',
+                hint: 'Se o preço chegar a um destes valores, a etiqueta muda. Isso reclassifica, '
+                    'e não derruba a conta.',
                 child: FiRows(
                   children: [
                     for (final f in a.falsifiers.where((f) => !f.isPremise))
@@ -220,9 +225,10 @@ class _AssetDetailContent extends ConsumerWidget {
             FiProvenance(
               summary: 'Como chegamos nesta leitura',
               method:
-                  'O preço justo é uma faixa: o método principal da classe, da premissa '
+                  'O preço justo é uma faixa: a conta principal para o tipo de ativo, da premissa '
                   'pessimista à otimista. A margem de segurança é a distância do preço de hoje '
-                  'até a borda da faixa, e outro insumo confirma ou não a leitura.',
+                  'até a borda da faixa, e uma segunda conta, com outro dado, confirma ou não a '
+                  'leitura.',
               source: 'Fundamentos e cotações da BRAPI; juro do Banco Central.',
               asOf: idade.isEmpty ? null : 'Preço lido $idade.',
               limitation:
@@ -284,12 +290,43 @@ class _BuyFooter extends ConsumerWidget {
   }
 }
 
+const _verbeteDoMetodo = {
+  'dcf': 'dcf',
+  'bazin': 'bazin',
+  'vpa': 'vpa',
+  'graham': 'graham',
+};
+
+const _qualidade = {
+  'firme': 'Firme',
+  'ampla': 'Ampla',
+  'fragil': 'Frágil',
+};
+
+String _margemEmPalavras(AssetAnalysis a) {
+  final preco = a.price;
+  final piso = a.fairLow;
+  final teto = a.fairHigh;
+  if (preco == null || piso == null || teto == null) {
+    return 'faixa de preço justo ${fairBandLabel(piso, teto)}';
+  }
+  if (preco < piso) {
+    return 'o preço está ${formatCurrency(piso - preco)} abaixo do piso do preço justo, '
+        '${formatCurrency(piso)}';
+  }
+  if (preco > teto) {
+    return 'o preço está ${formatCurrency(preco - teto)} acima do teto do preço justo, '
+        '${formatCurrency(teto)}';
+  }
+  return 'o preço está dentro da faixa de preço justo, de ${fairBandLabel(piso, teto)}';
+}
+
 List<Widget> _metodo(BuildContext context, AssetAnalysis a) => [
     if (a.methods.any((m) => !m.applies && m.status != 'inaplicavel'))
       FiSection(
         title: 'O que ficou de fora, e por quê',
-        hint: 'Falta de dado, prejuízo e leitura que não se aplica são silêncios '
-            'diferentes.',
+        hint: 'Cada conta que não entrou diz por quê: faltou dado, a empresa teve prejuízo, ou '
+            'a conta não serve para este ativo.',
         child: FiRows(
           children: [
             for (final m in a.methods.where(
@@ -299,6 +336,7 @@ List<Widget> _metodo(BuildContext context, AssetAnalysis a) => [
                 label: methodLabel(m.method),
                 detail: methodStatusLabel(m.status),
                 note: m.note.isEmpty ? null : m.note,
+                glossaryKey: _verbeteDoMetodo[m.method],
               ),
           ],
         ),
@@ -307,29 +345,37 @@ List<Widget> _metodo(BuildContext context, AssetAnalysis a) => [
     if (a.fairLow != null)
       FiSection(
         title: 'Quanto o ativo vale',
-        hint: 'Um método principal, com a faixa das premissas, e outro insumo para '
-            'confirmar.',
+        hint: 'Uma conta principal dá o valor, e as premissas dela dão a faixa. Uma segunda '
+            'conta, com outro dado, confirma ou não.',
         child: FiRows(
           children: [
             FiDataRow(
               label: principalLabel(a.principal),
               value: formatCurrency(a.principalValue),
               detail: 'Valor central',
+              glossaryKey: a.principal == 'dividendos' ? 'bazin' : 'dcf',
             ),
             FiDataRow(
               label: 'Faixa de preço justo',
               value: fairBandLabel(a.fairLow, a.fairHigh),
               detail: 'Da premissa pessimista à otimista',
+              emphasis: true,
+              glossaryKey: 'faixa_de_preco_justo',
+            ),
+            FiDataRow(
+              label: 'Quanto confiar na faixa',
+              value: _qualidade[a.bandQuality],
               note: a.qualityReasons.isNotEmpty
                   ? a.qualityReasons.join('; ')
                   : bandQualityLabel(a.bandQuality, a.independentInputs),
-              emphasis: true,
+              glossaryKey: 'qualidade_da_faixa',
             ),
             if (a.confirmation != null)
               FiDataRow(
                 label: methodLabel(a.confirmation!.method),
                 value: formatCurrency(a.confirmation!.value),
-                detail: agreementLabel(a.confirmation!.agreement),
+                detail: 'Segunda conta: ${agreementLabel(a.confirmation!.agreement)}',
+                glossaryKey: _verbeteDoMetodo[a.confirmation!.method],
               ),
           ],
         ),
@@ -358,17 +404,21 @@ List<Widget> _metodo(BuildContext context, AssetAnalysis a) => [
             label: 'Direção recente',
             value: trendLabel(a.trend),
             note: trendBasisLabel(a.trendBasis),
+            glossaryKey: 'tendencia',
           ),
           FiDataRow(
             label: 'Ritmo da alta ou da queda',
             value: a.rsi14?.toStringAsFixed(0) ?? '—',
             detail: _paceLabel(a.rsi14),
+            note: a.rsi14 == null ? null : 'Índice de força relativa (RSI), de 0 a 100',
+            glossaryKey: 'rsi',
           ),
           if (a.dividendYield != null)
             FiDataRow(
               label: 'Dividendos em 12 meses',
               value: formatRatio(a.dividendYield),
               detail: 'Sobre o preço de hoje',
+              glossaryKey: 'dy',
             ),
         ],
       ),
@@ -398,7 +448,7 @@ List<Widget> _insumos(BuildContext context, AssetAnalysis a) {
   return [
     FiSection(
       title: 'Os métodos e os insumos',
-      hint: 'O nível avançado abre o que o cálculo usou, e por que cada método falou ou calou.',
+      hint: 'O nível avançado abre o que o cálculo usou, e por que cada conta falou ou calou.',
       child: FiRows(
         children: [
           for (final m in a.methods)
@@ -407,6 +457,7 @@ List<Widget> _insumos(BuildContext context, AssetAnalysis a) {
               value: m.value == null ? null : formatCurrency(m.value),
               detail: methodStatusLabel(m.status),
               note: m.note.isEmpty ? null : m.note,
+              glossaryKey: _verbeteDoMetodo[m.method],
             ),
           if (p['reference_date'] != null)
             FiDataRow(
@@ -419,11 +470,16 @@ List<Widget> _insumos(BuildContext context, AssetAnalysis a) {
               value: formatPercent((p['selic_pct'] as num).toDouble()),
               detail: rateBaseLabel(p['rate_base'] as String?),
               note: staleRateNote(p).isEmpty ? null : staleRateNote(p),
+              glossaryKey: 'selic',
             ),
           if (p['fii_segment'] != null)
             FiDataRow(
               label: 'Tipo do fundo',
-              value: p['fii_segment'] == 'papel' ? 'Papel' : 'Tijolo ou não classificado',
+              value: p['fii_segment'] == 'papel' ? 'Papel' : 'Tijolo',
+              detail: p['fii_segment'] == 'papel'
+                  ? 'Vive de dívidas imobiliárias'
+                  : 'Tem imóveis, ou não está na lista de fundos de papel',
+              glossaryKey: 'fii_de_papel',
             ),
         ],
       ),
@@ -438,24 +494,27 @@ final _assetAnalysisProvider = FutureProvider.autoDispose
 
 List<Widget> _premiseRows(AssetAnalysis a) {
   final base = rateBaseLabel(a.premises['rate_base'] as String?);
+  final baseComJuro = base.isEmpty ? '' : '$base, o juro básico,';
   final vencida = staleRateNote(a.premises);
   final origemDoYield = [
-    if (base.isNotEmpty) 'a partir da $base',
+    if (base.isNotEmpty) 'a partir da $base, o juro básico',
     if (vencida.isNotEmpty) vencida,
   ].join(' · ');
 
   if (a.principal == 'dividendos') {
     return [
       FiDataRow(
-        label: 'Yield exigido',
+        label: 'Rendimento exigido',
         value: formatRatio(a.premise('fii_yield')),
-        detail: 'Juro real de longo prazo mais prêmio',
+        detail: 'O juro acima da inflação, no longo prazo, mais um prêmio pelo risco',
         note: origemDoYield.isEmpty ? null : origemDoYield,
+        glossaryKey: 'yield',
       ),
       FiDataRow(
-        label: 'Distribuição recorrente',
+        label: 'Distribuição num ano típico',
         value: formatCurrency(a.premise('dividend_recurring')),
-        detail: 'Por cota, ao ano',
+        detail: 'Por cota',
+        glossaryKey: 'distribuicao_recorrente',
       ),
     ];
   }
@@ -466,23 +525,29 @@ List<Widget> _premiseRows(AssetAnalysis a) {
     FiDataRow(
       label: 'Taxa exigida',
       value: formatRatio(a.premise('discount_rate')),
-      detail: base.isEmpty ? null : '$base mais 5 pontos',
+      detail: baseComJuro.isEmpty
+          ? 'O retorno mínimo, ao ano, para valer a pena'
+          : 'O retorno mínimo, ao ano, para valer a pena: $baseComJuro mais 5 pontos',
       note: vencida.isEmpty ? null : vencida,
+      glossaryKey: 'taxa_de_desconto',
     ),
     FiDataRow(
       label: 'Crescimento nos próximos 5 anos',
       value: formatRatio(a.premise('growth')),
-      detail: 'O ROE de ${formatRatio(a.premise('roe'))} sobre o que a empresa retém$retido',
+      detail: 'O retorno sobre o patrimônio (ROE) de ${formatRatio(a.premise('roe'))} vezes a '
+          'parte do lucro que a empresa retém$retido',
+      glossaryKey: 'roe',
     ),
     FiDataRow(
       label: 'Crescimento depois',
       value: formatRatio(a.premise('long_run_growth')),
-      detail: 'Meta de inflação mais crescimento real',
+      detail: 'A meta de inflação mais um crescimento acima dela',
     ),
     FiDataRow(
-      label: 'Lucro por ação normalizado',
+      label: 'Lucro por ação, na média',
       value: formatCurrency(a.premise('eps_normalized')),
-      detail: 'Média dos últimos exercícios anuais',
+      detail: 'Média dos últimos anos fechados, para um ano atípico não pesar demais',
+      glossaryKey: 'lpa',
     ),
   ];
 }
@@ -497,32 +562,35 @@ List<Widget> _indicatorRows(AssetAnalysis a) {
       FiDataRow(
         label: 'Preço-teto da sua meta',
         value: formatCurrency(teto.value),
-        detail: 'Para render ${formatRatio(teto.desiredYield)} ao ano',
+        detail: 'Para render ${formatRatio(teto.desiredYield)} ao ano em proventos',
         note: teto.passes == true
             ? 'o preço de hoje cabe na sua meta de renda'
             : 'o preço de hoje não cabe na sua meta de renda',
+        glossaryKey: 'preco_teto_pessoal',
       ),
     if (graham != null)
       FiDataRow(
         label: 'Critério de Graham',
         value: formatCurrency(graham.value),
         detail: graham.passes == true
-            ? 'O preço passa na triagem defensiva'
-            : 'O preço não passa na triagem defensiva',
-        note: 'é triagem, não preço justo',
+            ? 'O preço passa no filtro de Graham para o investidor defensivo'
+            : 'O preço não passa no filtro de Graham para o investidor defensivo',
+        note: 'é filtro, não preço justo',
+        glossaryKey: 'graham',
       ),
     if (pvp != null)
       FiDataRow(
         label: 'Preço sobre valor patrimonial',
         value: formatQuantity(pvp.value),
-        detail: 'P/VP',
+        detail: 'P/VP: quanto se paga por R\$ 1 do patrimônio que está no balanço',
+        glossaryKey: 'pvp',
       ),
   ];
 }
 
 String _paceLabel(double? rsi) {
   if (rsi == null) return 'Sem histórico suficiente';
-  if (rsi >= 70) return 'Subiu rápido demais — costuma vir correção';
-  if (rsi <= 30) return 'Caiu muito em pouco tempo';
+  if (rsi >= 70) return 'Subiu rápido em pouco tempo';
+  if (rsi <= 30) return 'Caiu rápido em pouco tempo';
   return 'Sem exagero para nenhum lado';
 }
