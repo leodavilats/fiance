@@ -159,6 +159,27 @@ Railway, com Postgres gerenciado. A migração roda como **pre-deploy**
 
 Procedimento e pré-requisitos de loja em [docs/07-OPERACAO.md](docs/07-OPERACAO.md).
 
+### Chave de release do Android
+
+O App Bundle de release exige `mobile/android/key.properties`, que fica **fora do git** (o
+`.gitignore` do Android já recusa `key.properties` e `*.keystore`). Sem o arquivo, o APK cai na chave
+de debug, que a Play Store recusa; o AAB nem é gerado.
+
+```bash
+keytool -genkey -v -keystore mobile/android/fiance-release.keystore -alias fiance   -keyalg RSA -keysize 2048 -validity 10000
+```
+
+```properties
+# mobile/android/key.properties
+storeFile=fiance-release.keystore
+storePassword=...
+keyAlias=fiance
+keyPassword=...
+```
+
+`storeFile` é relativo a `mobile/android/`. **Perder a chave impede atualizar o app na loja** — guarde
+o keystore e as senhas num cofre, fora da máquina de quem gerou.
+
 ---
 
 ## Licença
