@@ -256,7 +256,10 @@ corpo de request e `extra` não saem, do usuário sai só o identificador, vari�
 descartada. **Uma chave nova num payload nasce redigida.**
 
 Evento de produto tem dicionário fechado (`core/events.py`). Nome fora dele, ou propriedade com
-ticker ou valor, devolve 422.
+ticker ou valor, devolve 422. O app envia pelo `ProductEvents` (`mobile/lib/core/product_events.dart`),
+sem ticker nem valor, e engole a falha: telemetria nunca derruba tela.
+`tests/test_eventos_do_app_estao_no_catalogo.py` varre o app e recusa nome fora do catálogo, que de
+outro modo sumiria em silêncio.
 
 Marcos de ativação são gravados pelo **servidor**, não pelo cliente.
 

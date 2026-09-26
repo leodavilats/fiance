@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import '../product_events.dart';
 
 class FiProvenance extends StatelessWidget {
   const FiProvenance({
@@ -24,6 +25,7 @@ class FiProvenance extends StatelessWidget {
       (method ?? source ?? asOf ?? limitation) != null;
 
   void _open(BuildContext context) {
+    trackEvent(context, 'why_this_opened');
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,

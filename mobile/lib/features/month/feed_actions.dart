@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/product_events.dart';
 
 void runFeedAction(BuildContext context, String? action, String? ticker) {
+  trackEvent(context, 'feed_item_opened', props: {'source': action ?? 'market'});
   switch (action) {
     case 'analyze':
       context.go(ticker != null ? '/ativo/$ticker' : '/patrimonio');

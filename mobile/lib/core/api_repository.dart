@@ -660,6 +660,10 @@ class ApiRepository {
     return CashVocabulary.fromJson(res.data as Map<String, dynamic>);
   }
 
+  Future<void> sendEvents(List<Map<String, Object?>> events) async {
+    await _dio.post('/events', data: {'events': events});
+  }
+
   Future<AccountDeletionPolicy> getDeletionPolicy() async {
     final res = await _dio.get('/account/deletion-policy');
     return AccountDeletionPolicy.fromJson(res.data as Map<String, dynamic>);

@@ -31,8 +31,10 @@ import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 import 'buy_sheet.dart';
+import '../../core/product_events.dart';
 
 void showAssetDetailSheet(BuildContext context, String ticker) {
+  trackEvent(context, 'first_diagnosis_viewed');
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,

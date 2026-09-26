@@ -100,7 +100,10 @@ retenção de no máximo 30 dias. **Depende de decisão de operação na conta d
 
 ### 21 · O mobile nunca teve um release de verdade
 
-Não existe chave de assinatura, e nenhum evento de telemetria foi visto em produção.
+O app passou a enviar eventos de produto (`mobile/lib/core/product_events.dart`), conferidos contra o
+catálogo fechado do servidor, e o README explica como gerar a chave de release. **Falta o que depende
+de conta:** gerar e guardar a chave, publicar nas lojas (seção H) e ver o primeiro evento chegar de
+um aparelho real.
 
 ---
 
