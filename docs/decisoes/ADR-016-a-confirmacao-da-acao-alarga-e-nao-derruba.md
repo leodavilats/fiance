@@ -10,7 +10,7 @@ auditoria
 
 Pela ADR-014, confirmação a mais de 30% da faixa torna a qualidade frágil, e frágil nunca passa de
 "abaixo" ou "acima" do preço justo. A
-[auditoria de 2026-09-25](../temporario/AUDITORIA-DO-PRECO-JUSTO.md) registrou no item R-002 que,
+[auditoria de 2026-09-25](../historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md) registrou no item R-002 que,
 na ação, a confirmação não é independente do principal. A
 [ADR-015](ADR-015-a-faixa-cobre-os-dois-cenarios.md) deixou o item aberto como custo declarado.
 
@@ -72,5 +72,5 @@ baixa para média.
 ## Referências
 
 - `backend/app/analysis/fair_price.py` · `backend/tests/test_confirmacao_que_nao_e_independente.py`
-- [AUDITORIA-DO-PRECO-JUSTO](../temporario/AUDITORIA-DO-PRECO-JUSTO.md), item R-002 ·
+- [AUDITORIA-DO-PRECO-JUSTO](../historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md), item R-002 ·
   [04-CALCULOS](../04-CALCULOS.md)

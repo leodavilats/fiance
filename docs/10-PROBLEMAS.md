@@ -6,8 +6,8 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
 [ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md). A2, A3, A4 e A6 saíram em 2026-09-23, e
-A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A auditoria da
-especificação do preço justo, de 2026-09-25, entrou como inventário próprio, no fim da seção A.
+A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 entrou em
+2026-09-25, o que sobrou da auditoria da especificação do preço justo.
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -20,11 +20,15 @@ especificação do preço justo, de 2026-09-25, entrou como inventário próprio
 Os itens remanescentes da auditoria de **2026-09-13**. A de **2026-09-20**, que inventariou os
 40 problemas do caminho do preço ao veredito, foi fechada no mesmo dia
 ([ADR-013](decisoes/ADR-013-o-tecnico-nao-decide.md)) e virou registro em
-[historico/AUDITORIA-DO-VEREDITO-2026-09-20](historico/AUDITORIA-DO-VEREDITO-2026-09-20.md).
+[historico/AUDITORIA-DO-VEREDITO-2026-09-20](historico/AUDITORIA-DO-VEREDITO-2026-09-20.md). A de
+**2026-09-25**, sobre a especificação do preço justo, teve os 19 itens fechados no mesmo dia
+([ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md) a
+[ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md)) e virou registro em
+[historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25](historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md).
 
 ### A5 · O perfil de risco não afeta FIIs nem ETFs
 
-`scoring.py:95-96`: `_FII_WEIGHTS` e `_ETF_WEIGHTS` são fixos e `profile` não entra no ramo. Quem tem
+`scoring.py::score_opportunity`: `_FII_WEIGHTS` e `_ETF_WEIGHTS` são fixos e `profile` não entra no ramo. Quem tem
 carteira de FIIs muda de conservador para arrojado e **nada acontece**.
 
 Junto com o item 29, isto compromete a personalização que é a hipótese de receita do produto.
@@ -57,31 +61,16 @@ para BDR já vem por BDR e em reais — a escala está certa, a moeda da taxa n�
 
 **Segue aberto:** exige juro em dólar, fora das duas fontes permitidas.
 
-### Especificação do preço justo — auditoria de 2026-09-25
+### A10 · O preço justo responde com nomes legados, como alias
 
-**Dezenove itens** sobre o fluxo que [04-CALCULOS](04-CALCULOS.md) desenha na seção *Veredito*,
-conferidos contra o código do commit `53a6796`. A pergunta não foi qual metodologia é melhor, e sim
-se as regras são coerentes, determinísticas e completas. O inventário completo, com medições,
-ataque e teste de cada item, está em
-[AUDITORIA-DO-PRECO-JUSTO](temporario/AUDITORIA-DO-PRECO-JUSTO.md).
+`consensus`, `avg_dividend_5y` e `dy_5y` seguem na resposta ao lado de `principal_value`,
+`dividend_recurring` e `dividend_yield_recurring`, que dizem o que guardam
+(`backend/app/models/analysis.py::FairPriceBlock`). O aplicativo já lê o nome novo e cai no antigo
+quando ele falta; o app em loja ainda lê `consensus`.
 
-| Lote | O que é | Natureza |
-|---|---|---|
-| **A** | Estados e guardas: classe desconhecida vira ação, dado contraditório vira faixa, fuso UTC | Correção direta |
-| **B** | Ausência não vira zero: dividendo que não chegou vira crescimento máximo | Correção direta |
-| **C** | A faixa coerente: o piso retém sem crescer, e a confirmação diverge por construção | Emenda à ADR-014 |
-| **D** | Contrato e produto: nomes de campo, técnico no score | Decisão de produto |
-
-**O R-001, bloqueador, foi corrigido em 2026-09-25** pela
-[ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md): a faixa da ação passou a cobrir os
-dois cenários de crescimento. Na amostra de 31 ativos, as ações com faixa acima de 1,5× caíram de 12
-para 5. O R-002 saiu no mesmo dia pela
-[ADR-016](decisoes/ADR-016-a-confirmacao-da-acao-alarga-e-nao-derruba.md): na ação, dividendo longe
-da faixa alarga a leitura, em vez de derrubá-la. Frágil caiu de 11 para 7, e os que ficam são por
-corte ou lucro instável.
-
-Os lotes A, B e C e o R-015 foram corrigidos em 2026-09-25. **Fica aberto o R-016**, o técnico no
-score, que pede decisão de produto.
+**Segue aberto:** remover os aliases quando a versão da loja que lê `principal_value` estiver em uso.
+`bazin` e `dcf` também são nomes legados e continuam na resposta. Não há nome novo para migrar: o
+valor deles já chega em `principal_value` e em `confirmation.value`.
 
 ## B · Dado e fonte
 

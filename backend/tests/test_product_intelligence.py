@@ -1,5 +1,6 @@
 import pytest
 
+from app.analysis.scoring import score_opportunity
 from app.services.benchmark_service import _twr_series
 from app.services.snapshot_job import record_snapshot_for_user
 from app.storage import portfolio_store
@@ -242,5 +243,18 @@ def test_score_reports_data_completeness(client):
         assert 0.0 <= item["data_completeness"] <= 1.0
         assert "data_completeness" in item["score_breakdown"]
 
-    by_ticker = {i["ticker"]: i for i in items}
-    assert by_ticker["VALE3"]["data_completeness"] < by_ticker["PETR4"]["data_completeness"]
+    fundamentos = {
+        "asset_type": "br_stock",
+        "margin_of_safety": 0.1,
+        "dividend_yield": 8.0,
+        "roe": 20.0,
+        "profit_margin": 25.0,
+        "debt_to_equity": 60.0,
+        "revenue_growth": 5.0,
+        "market_cap": 5.0e11,
+    }
+    _, completo = score_opportunity(**fundamentos)
+    _, sem_crescimento = score_opportunity(**{**fundamentos, "revenue_growth": None})
+    assert sem_crescimento["data_completeness"] < completo["data_completeness"] == 1.0, (
+        "a completude diz quanto do peso teve dado; com todos os fundamentos, é inteira"
+    )

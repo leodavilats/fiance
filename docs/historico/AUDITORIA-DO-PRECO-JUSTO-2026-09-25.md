@@ -1,21 +1,19 @@
 # Auditoria da especificação do preço justo
 
-> ## ⏳ DOCUMENTO TEMPORÁRIO
+> ## Registro, não pendência
 >
-> **Critério de morte:** quando os 19 itens estiverem riscados, **apague este arquivo**, remova a
-> linha do índice em [README](../README.md) e a subseção correspondente em
-> [10-PROBLEMAS](../10-PROBLEMAS.md).
->
-> Ele existe para que o fluxo introduzido pela [ADR-014](../decisoes/ADR-014-um-modelo-por-classe.md),
-> que vai da classe do ativo à etiqueta, tenha os seus defeitos de especificação listados num lugar
-> só, e não numa conversa.
+> **Fechada em 2026-09-25:** os 19 itens foram corrigidos no mesmo dia
+> ([ADR-015](../decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md),
+> [ADR-016](../decisoes/ADR-016-a-confirmacao-da-acao-alarga-e-nao-derruba.md),
+> [ADR-017](../decisoes/ADR-017-o-score-nao-le-o-tecnico.md)). Nada aqui é trabalho a fazer. O que
+> sobrou, a remoção dos aliases do R-015, está em [10-PROBLEMAS](../10-PROBLEMAS.md).
 
 Levantado em **2026-09-25**, sobre o commit `53a6796` e o fluxo que [04-CALCULOS](../04-CALCULOS.md)
 desenha na seção *Veredito*. A pergunta não foi qual metodologia é melhor. Foi se as regras
 existentes são coerentes, determinísticas, completas e implementáveis sem interpretação. Cada item
 foi conferido contra o código. Onde a resposta dependia de comportamento, o motor foi executado.
 
-**Ao fechar um item, risque-o com a data**, como em [PARIDADE-WEB-APP](PARIDADE-WEB-APP.md). A
+**Ao fechar um item, risque-o com a data**, como em [PARIDADE-WEB-APP](../temporario/PARIDADE-WEB-APP.md). A
 numeração não muda, porque ela é referência daqui para fora.
 
 ---
@@ -445,7 +443,7 @@ em `consensus` quando ele falta. `confirmation_value` não foi criado: o valor d
 chega em `confirmation.value`. **Remover os aliases** fica para quando a versão da loja que lê os
 nomes novos estiver em uso; até lá, o item conta como fechado.
 
-### R-016 · O técnico pesa no score
+### R-016 · ~~O técnico pesa no score~~ — **corrigido em 2026-09-25**, opção A ([ADR-017](../decisoes/ADR-017-o-score-nao-le-o-tecnico.md))
 
 Severidade atenção · Natureza `ambiguidade` · Lote D
 

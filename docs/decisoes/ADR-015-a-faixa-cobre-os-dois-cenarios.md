@@ -8,7 +8,7 @@ auditoria
 
 ## Contexto
 
-A [auditoria da especificação do preço justo](../temporario/AUDITORIA-DO-PRECO-JUSTO.md), de
+A [auditoria da especificação do preço justo](../historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md), de
 2026-09-25, marcou como bloqueador o item R-001. Pela ADR-014, a faixa da ação vai "do cenário sem
 crescimento e com 1 ponto a mais de taxa ao cenário com crescimento e 1 ponto a menos". A intenção
 se sustenta. A implementação do piso, não.
@@ -105,5 +105,5 @@ subiram de zero (RENT3 e VIVT3, que já não cresciam) a 59% (SUZB3). FII, BDR e
 - `backend/app/analysis/fair_price.py` · `backend/app/analysis/falsifiers.py` ·
   `backend/app/analysis/decision.py`
 - `backend/tests/test_faixa_coerente.py`
-- [AUDITORIA-DO-PRECO-JUSTO](../temporario/AUDITORIA-DO-PRECO-JUSTO.md), itens R-001 e R-002 ·
+- [AUDITORIA-DO-PRECO-JUSTO](../historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md), itens R-001 e R-002 ·
   [04-CALCULOS](../04-CALCULOS.md)

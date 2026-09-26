@@ -254,13 +254,17 @@ Nota de 0 a 100 por ativo. `analysis/scoring.py`
 
 | Dimensão | Fórmula | Satura em | Âncora |
 |---|---|---|---|
-| Margem de segurança | `50 + margem × 100` | ±50% | `scoring.py:64` |
-| Qualidade | média de `ROE × 4` e `margem × 5` | ROE 25%, margem 20% | `scoring.py:12` |
-| Dividendos | `DY × 12,5` | DY 8% | `scoring.py:23` |
-| Alavancagem | `100 − D/E ÷ 2` | D/E 200% | `scoring.py:29` |
-| Crescimento | `(crescimento + 10) × 100/30` | −10% a +20% | `scoring.py:35` |
-| Liquidez | `(log₁₀(valor de mercado) − 7) × 30` | ~R$ 20 bi | `scoring.py:41` |
-| Técnico | `50 + (60 − RSI) × 0,5`, ±10 por tendência | — | `scoring.py:47` |
+| Margem de segurança | `50 + margem × 100` | ±50% | `_score_mos` |
+| Qualidade | média de `ROE × 4` e `margem × 5` | ROE 25%, margem 20% | `_score_quality` |
+| Dividendos | `DY × 12,5` | DY 8% | `_score_dividend` |
+| Alavancagem | `100 − D/E ÷ 2` | D/E 200% | `_score_leverage` |
+| Crescimento | `(crescimento + 10) × 100/30` | −10% a +20% | `_score_growth` |
+| Liquidez | `(log₁₀(valor de mercado) − 7) × 30` | ~R$ 20 bi | `_score_liquidity` |
+
+**RSI e tendência não entram no score** ([ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md)).
+O score ordena Descobrir e decide o destaque, e o técnico não decide. Em BDR, que não tem preço
+justo nem fundamento na fonte, eles eram a única dimensão: o score saía inteiro do movimento do
+preço.
 
 Todas as entradas em **percentual**, exceto a margem de segurança, que é fração.
 
@@ -273,9 +277,10 @@ Todas as entradas em **percentual**, exceto a margem de segurança, que é fraç
 | Dividendos | **25%** | 15% | **5%** |
 | Alavancagem | 15% | 10% | 5% |
 | Crescimento | **5%** | 15% | **40%** |
-| Técnico | 5% | 10% | 10% |
 
-`scoring.py:68-93`
+`scoring.py::OPPORTUNITY_WEIGHTS`. Os pesos somam 95%, 90% e 90%, e o score divide pelo peso
+disponível, então o peso efetivo com todos os dados é o nominal sobre essa soma: no conservador, os
+dividendos pesam 26%; no arrojado, o crescimento pesa 44%.
 
 ### Pesos — FIIs e ETFs
 
@@ -319,13 +324,16 @@ a fonte.**
 
 | Score | Banda |
 |---|---|
-| ≥ 75 | Excelente entrada |
-| ≥ 60 | Boa oportunidade |
-| ≥ 40 | Neutro |
-| < 40 | Evitar agora |
+| ≥ 75 | Forte |
+| ≥ 60 | Boa |
+| ≥ 40 | Neutra |
+| < 40 | Fraca |
+| completude abaixo de 50% | Sem dado |
 
-`analysis/score_ruler.py` — **a fonte é o Python**. O espelho em
-`mobile/lib/core/score_ruler.dart` deve mudar depois, nunca antes.
+Os **limiares** moram em `analysis/score_ruler.py` — **a fonte é o Python**, e o espelho em
+`mobile/lib/core/score_ruler.dart` muda depois, nunca antes. Os **rótulos** existem só no aplicativo
+(`fiScoreBands`, em `mobile/lib/core/product_rules.dart`). O Python tinha rótulos próprios —
+"Excelente entrada", "Evitar agora" — sem nenhum consumidor, e eles saíram.
 
 ---
 
