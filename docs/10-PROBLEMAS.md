@@ -6,8 +6,8 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
 [ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md). A2, A3, A4 e A6 saíram em 2026-09-23, e
-A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 entrou em
-2026-09-25, o que sobrou da auditoria da especificação do preço justo.
+A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 e A11 entraram em
+2026-09-25: o que sobrou da auditoria da especificação do preço justo, e a varredura de quedas.
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -31,7 +31,8 @@ Os itens remanescentes da auditoria de **2026-09-13**. A de **2026-09-20**, que 
 `scoring.py::score_opportunity`: `_FII_WEIGHTS` e `_ETF_WEIGHTS` são fixos e `profile` não entra no ramo. Quem tem
 carteira de FIIs muda de conservador para arrojado e **nada acontece**.
 
-Junto com o item 29, isto compromete a personalização que é a hipótese de receita do produto.
+Isto compromete a personalização, que é a hipótese de receita do produto, justo nas classes em que
+as dimensões de fundamento já vêm vazias (item 3).
 
 ### A7 · FII de papel parece barato
 
@@ -72,6 +73,39 @@ quando ele falta; o app em loja ainda lê `consensus`.
 `bazin` e `dcf` também são nomes legados e continuam na resposta. Não há nome novo para migrar: o
 valor deles já chega em `principal_value` e em `confirmation.value`.
 
+### A11 · A varredura de quedas tem veredito próprio, e ele contradiz a leitura de valor
+
+`analysis/dip_analysis.py` dá a cada ativo em queda uma nota de 0 a 100 e uma etiqueta —
+"Oportunidade na baixa", "Aguardar" ou "Armadilha" —, que o filtro "Em queda" de Descobrir mostra
+em lista (`/dip-scanner`, `fiDipScoreBands`). É um segundo sistema de veredito, fora das ADRs 013 a
+017. Medido em 2026-09-25 sobre 31 ativos reais:
+
+- **26 saem "Armadilha", 5 "Aguardar" e nenhum "Oportunidade na baixa".** A dimensão de valor foi
+  calibrada para a margem antiga: dentro da faixa a margem é zero e vale 6 de 30 pontos, e acima
+  dela, zero. "Oportunidade" ficou praticamente inalcançável.
+- **Contradiz a folha do ativo.** MXRF11 sai "Abaixo do preço justo" na folha e "Armadilha — cuidado
+  com o value trap" na varredura.
+- **Ausência vira zero.** FII não tem ROE, margem nem D/E, e perde os 25 pontos de qualidade por
+  inaplicabilidade — todo FII da amostra saiu "Armadilha".
+- **Sem faixa ainda há leitura de valor.** Sem preço justo, a dimensão de valor dá 10,5 pontos
+  "neutros", o que a regra "sem faixa, não há leitura de valor" proíbe.
+- **O técnico decide.** RSI, distância do topo e média de 200 dias somam 25 pontos, com frases sem
+  base ("alta probabilidade de reversão técnica", "zona historicamente de valor"). Sem eles, 4 dos 31
+  mudam de etiqueta.
+- **A confiança é a nota ÷ 100**, e não sai da qualidade da faixa. O motivo de ETF diz usar um
+  "proxy neutro" de qualidade que não existe, e o parâmetro `trend` é recebido e ignorado.
+
+**Caminho recomendado:** a queda vira recorte de Descobrir, e não veredito. A varredura continua
+filtrando pela distância do topo de 52 semanas, que é o que define "em queda", e mostra a mesma
+etiqueta, faixa e qualidade da leitura de valor. A nota e as três etiquetas próprias saem. A
+alternativa, recalibrar cada dimensão, mantém um segundo vocabulário de veredito nas duas
+plataformas.
+
+**Custo:** o app em loja lê `dip_score` como número obrigatório e calcula a etiqueta dele. A migração
+é em dois passos, como no A10: a resposta ganha a etiqueta da leitura de valor e o app passa a
+usá-la; `dip_score` sai depois. A rota individual `/asset/{symbol}/dip-analysis` não tem cliente e
+entra no item G.
+
 ## B · Dado e fonte
 
 ### 3 · Cobertura dos fundamentos — **medida em 2026-09-13**
@@ -88,8 +122,8 @@ Amostra de 33 ativos em produção, pela rota pública. Presentes / total:
 | BDR | 4 | 0 | 0 | 0 | 0 | **0** | 4 | 4 |
 | ETF | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-**Para ação, a cobertura é boa** — 80% a 100% nos quatro campos de fundamento. O problema que o item
-29 descrevia **não existe mais para ações**; ele descrevia o estado anterior a 2026-09-11.
+**Para ação, a cobertura é boa** — 80% a 100% nos quatro campos de fundamento. Em FII, BDR e ETF as
+dimensões de fundamento continuam vazias por natureza da classe, e não por falha de coleta.
 
 O que a medição encontrou de novo:
 
@@ -105,14 +139,6 @@ O que a medição encontrou de novo:
 
 Repetir a medição: `GET /api/v1/data-quality` (exige sessão) ou amostrar
 `GET /api/v1/public/asset/{ticker}`, que não exige.
-
-### 29 · ~~Três das seis dimensões nunca têm dado~~ — **superado pela medição de 2026-09-13**
-
-Este item descrevia o estado anterior a 2026-09-11 e **não vale mais para ações**: ROE, margem,
-crescimento e D/E chegam em 80% a 100% da amostra, e o perfil de risco pondera o que deveria.
-
-O que sobra dele, em forma menor: para **FII, BDR e ETF** as dimensões de fundamento continuam
-vazias — por natureza da classe, não por falha de coleta. Isso está no item 3 e no A5.
 
 ### 1 · O caminho do Redis nunca rodou contra um servidor real fora do CI
 
@@ -171,17 +197,7 @@ continua sendo um lançamento de cada vez.
 `Switch` e `Slider`. A ficha saiu em 2026-09-15 — `FiChoiceChip` —, e `ExpansionTile` foi substituído
 onde o produto usava caixa expansível.
 
-### 8 · ~~A base do preço justo não chega às telas de posição da carteira~~ — **resolvido em 2026-09-15**
-
-O card de posição deixou de ter gaveta própria de razões e passou a abrir `/ativo/:ticker`, que já
-traz a cifra com a base.
-
 ### 9 · Falta a regra do alvo de toque de 44dp no Dart
-
-### 10 · ~~`/voce` são cinco entradas, e o desenho pede quatro eixos~~ — **resolvido em 2026-09-15**
-
-`/voce` virou índice de `investir`, `avisos`, `aparencia` e `conta`, e cada linha carrega o estado
-atual.
 
 ### 11 · Falta o componente de evidência
 
@@ -248,6 +264,7 @@ Não existe chave de assinatura, e nenhum evento de telemetria foi visto em prod
 | Item | Ação |
 |---|---|
 | `api/demo.py` — sem cliente desde 2026-09-11 | Decidir |
+| `/asset/{symbol}/dip-analysis` — sem cliente; atrás de `Feature.DIP_DIAGNOSIS` | Decidir junto com o A11 |
 
 `optimizer/`, `OptimizationStrategy` e a duplicata de `MIN_DATA_COMPLETENESS` foram removidos em
 2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md) e item A1).
