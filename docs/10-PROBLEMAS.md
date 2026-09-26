@@ -71,11 +71,6 @@ onde o produto usava caixa expansível.
 
 ### 9 · Falta a regra do alvo de toque de 44dp no Dart
 
-### 11 · Falta o componente de evidência
-
-Falta `Evidence`, o nível 2 da explicabilidade. O par que revelava detalhe foi construído em
-2026-09-15: `FiDisclosure` e `FiGroupDisclosure`.
-
 ### 12 · A régua de afirmação anula `allocated_cash` e deixa a subtração de pé
 
 ### 17 · A régua não cobre o score em linha densa, e ali ele sai só como selo

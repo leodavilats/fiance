@@ -17,6 +17,7 @@ import '../../core/score_ruler.dart'
         trendBasisLabel;
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
+import '../../core/widgets/evidence.dart';
 import '../../core/widgets/measure.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
@@ -165,6 +166,11 @@ class _AssetDetailContent extends ConsumerWidget {
               ),
             ],
 
+            if (a.reasons.isNotEmpty) ...[
+              const SizedBox(height: FiSpace.s5),
+              FiEvidence(reasons: a.reasons),
+            ],
+
             if (a.methods.any((m) => !m.applies && m.status != 'inaplicavel'))
               FiSection(
                 title: 'O que ficou de fora, e por quê',
@@ -254,13 +260,13 @@ class _AssetDetailContent extends ConsumerWidget {
               ),
             ),
 
-            if (a.reasons.isNotEmpty)
+            if (FiEvidence.rest(a.reasons).isNotEmpty)
               FiSection(
-                title: 'Por que esta leitura',
+                title: 'O resto da leitura',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final r in a.reasons)
+                    for (final r in FiEvidence.rest(a.reasons))
                       Padding(
                         padding: const EdgeInsets.only(bottom: FiSpace.s3),
                         child: Text(

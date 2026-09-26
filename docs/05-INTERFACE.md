@@ -176,6 +176,11 @@ Dizer a idade do preço mais novo de uma lista promete frescor que a linha de ba
 **Momento é nível 1, não nota de rodapé.** Método e fonte moram na gaveta; **quando o dado foi lido,
 não**. Um preço de anteontem muda a decisão.
 
+**Evidência é o nível 2** (`FiEvidence`, em `mobile/lib/core/widgets/evidence.dart`): entre a
+conclusão e o método, os três primeiros motivos da leitura, visíveis sem abrir nada, marcados por um
+fio à esquerda e não por caixa. Na folha do ativo ela vem logo abaixo da margem de segurança, e o
+resto das razões fica na seção do método, sem repetir as três.
+
 ---
 
 ## As 16 regras de máquina
