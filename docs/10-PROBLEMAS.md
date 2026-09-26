@@ -46,8 +46,6 @@ Existe a cerca, a régua de plano, o preço travado e o webhook — e nenhuma te
 de refazer tudo para RevenueCat ([ADR-008](decisoes/ADR-008-monetizacao-por-loja.md)): o que existe
 hoje **não** será aproveitado.
 
-### 16 · `detail_level` (Essencial / Completo / Avançado) não existe no backend
-
 ---
 
 ## D · Paridade perdida — o mais urgente

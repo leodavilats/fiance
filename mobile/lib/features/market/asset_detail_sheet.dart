@@ -17,6 +17,7 @@ import '../../core/score_ruler.dart'
         trendBasisLabel;
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
+import '../../core/widgets/disclosure.dart';
 import '../../core/widgets/evidence.dart';
 import '../../core/widgets/measure.dart';
 import '../../core/widgets/provenance.dart';
@@ -61,6 +62,7 @@ class _AssetDetailContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final analysisFuture = ref.watch(_assetAnalysisProvider(ticker));
+    final nivel = ref.watch(preferencesProvider).valueOrNull?.detailLevel ?? 'completo';
 
     return analysisFuture.when(
       loading: () => FiSkeleton.screen(
@@ -171,112 +173,19 @@ class _AssetDetailContent extends ConsumerWidget {
               FiEvidence(reasons: a.reasons),
             ],
 
-            if (a.methods.any((m) => !m.applies && m.status != 'inaplicavel'))
-              FiSection(
-                title: 'O que ficou de fora, e por quê',
-                hint: 'Falta de dado, prejuízo e leitura que não se aplica são silêncios '
-                    'diferentes.',
-                child: FiRows(
-                  children: [
-                    for (final m in a.methods.where(
-                      (m) => !m.applies && m.status != 'inaplicavel',
-                    ))
-                      FiDataRow(
-                        label: methodLabel(m.method),
-                        detail: methodStatusLabel(m.status),
-                        note: m.note.isEmpty ? null : m.note,
-                      ),
-                  ],
-                ),
-              ),
-
-            if (a.fairLow != null)
-              FiSection(
-                title: 'Quanto o ativo vale',
-                hint: 'Um método principal, com a faixa das premissas, e outro insumo para '
-                    'confirmar.',
-                child: FiRows(
-                  children: [
-                    FiDataRow(
-                      label: principalLabel(a.principal),
-                      value: formatCurrency(a.principalValue),
-                      detail: 'Valor central',
-                    ),
-                    FiDataRow(
-                      label: 'Faixa de preço justo',
-                      value: fairBandLabel(a.fairLow, a.fairHigh),
-                      detail: 'Da premissa pessimista à otimista',
-                      note: a.qualityReasons.isNotEmpty
-                          ? a.qualityReasons.join('; ')
-                          : bandQualityLabel(a.bandQuality, a.independentInputs),
-                      emphasis: true,
-                    ),
-                    if (a.confirmation != null)
-                      FiDataRow(
-                        label: methodLabel(a.confirmation!.method),
-                        value: formatCurrency(a.confirmation!.value),
-                        detail: agreementLabel(a.confirmation!.agreement),
-                      ),
-                  ],
-                ),
-              ),
-
-            if (a.premises.isNotEmpty)
-              FiSection(
-                title: 'As premissas',
-                hint: 'O que sustenta a faixa. Se uma delas não se confirmar, a leitura muda.',
-                child: FiRows(children: _premiseRows(a)),
-              ),
-
-            if (a.indicators.isNotEmpty)
-              FiSection(
-                title: 'Indicadores que não decidem',
-                hint: 'Ajudam a ler o ativo, mas não mexem na faixa.',
-                child: FiRows(children: _indicatorRows(a)),
-              ),
-
-            FiSection(
-              title: 'O que o preço vem fazendo',
-              hint: 'Isto não diz se a empresa é boa: diz por onde o preço tem andado.',
-              child: FiRows(
-                children: [
-                  FiDataRow(
-                    label: 'Direção recente',
-                    value: trendLabel(a.trend),
-                    note: trendBasisLabel(a.trendBasis),
-                  ),
-                  FiDataRow(
-                    label: 'Ritmo da alta ou da queda',
-                    value: a.rsi14?.toStringAsFixed(0) ?? '—',
-                    detail: _paceLabel(a.rsi14),
-                  ),
-                  if (a.dividendYield != null)
-                    FiDataRow(
-                      label: 'Dividendos em 12 meses',
-                      value: formatRatio(a.dividendYield),
-                      detail: 'Sobre o preço de hoje',
-                    ),
-                ],
-              ),
-            ),
-
-            if (FiEvidence.rest(a.reasons).isNotEmpty)
-              FiSection(
-                title: 'O resto da leitura',
+            if (nivel == 'essencial')
+              FiGroupDisclosure(
+                label: 'Como chegamos nisso',
+                initiallyOpen: false,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final r in FiEvidence.rest(a.reasons))
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: FiSpace.s3),
-                        child: Text(
-                          r,
-                          style: FiType.body.copyWith(color: fiInk2(context)),
-                        ),
-                      ),
-                  ],
+                  children: _metodo(context, a),
                 ),
-              ),
+              )
+            else
+              ..._metodo(context, a),
+
+            if (nivel == 'avancado') ..._insumos(context, a),
 
             if (a.falsifiers.any((f) => f.isPremise))
               FiSection(
@@ -370,6 +279,153 @@ class _BuyFooter extends ConsumerWidget {
       ),
     );
   }
+}
+
+List<Widget> _metodo(BuildContext context, AssetAnalysis a) => [
+    if (a.methods.any((m) => !m.applies && m.status != 'inaplicavel'))
+      FiSection(
+        title: 'O que ficou de fora, e por quê',
+        hint: 'Falta de dado, prejuízo e leitura que não se aplica são silêncios '
+            'diferentes.',
+        child: FiRows(
+          children: [
+            for (final m in a.methods.where(
+              (m) => !m.applies && m.status != 'inaplicavel',
+            ))
+              FiDataRow(
+                label: methodLabel(m.method),
+                detail: methodStatusLabel(m.status),
+                note: m.note.isEmpty ? null : m.note,
+              ),
+          ],
+        ),
+      ),
+
+    if (a.fairLow != null)
+      FiSection(
+        title: 'Quanto o ativo vale',
+        hint: 'Um método principal, com a faixa das premissas, e outro insumo para '
+            'confirmar.',
+        child: FiRows(
+          children: [
+            FiDataRow(
+              label: principalLabel(a.principal),
+              value: formatCurrency(a.principalValue),
+              detail: 'Valor central',
+            ),
+            FiDataRow(
+              label: 'Faixa de preço justo',
+              value: fairBandLabel(a.fairLow, a.fairHigh),
+              detail: 'Da premissa pessimista à otimista',
+              note: a.qualityReasons.isNotEmpty
+                  ? a.qualityReasons.join('; ')
+                  : bandQualityLabel(a.bandQuality, a.independentInputs),
+              emphasis: true,
+            ),
+            if (a.confirmation != null)
+              FiDataRow(
+                label: methodLabel(a.confirmation!.method),
+                value: formatCurrency(a.confirmation!.value),
+                detail: agreementLabel(a.confirmation!.agreement),
+              ),
+          ],
+        ),
+      ),
+
+    if (a.premises.isNotEmpty)
+      FiSection(
+        title: 'As premissas',
+        hint: 'O que sustenta a faixa. Se uma delas não se confirmar, a leitura muda.',
+        child: FiRows(children: _premiseRows(a)),
+      ),
+
+    if (a.indicators.isNotEmpty)
+      FiSection(
+        title: 'Indicadores que não decidem',
+        hint: 'Ajudam a ler o ativo, mas não mexem na faixa.',
+        child: FiRows(children: _indicatorRows(a)),
+      ),
+
+    FiSection(
+      title: 'O que o preço vem fazendo',
+      hint: 'Isto não diz se a empresa é boa: diz por onde o preço tem andado.',
+      child: FiRows(
+        children: [
+          FiDataRow(
+            label: 'Direção recente',
+            value: trendLabel(a.trend),
+            note: trendBasisLabel(a.trendBasis),
+          ),
+          FiDataRow(
+            label: 'Ritmo da alta ou da queda',
+            value: a.rsi14?.toStringAsFixed(0) ?? '—',
+            detail: _paceLabel(a.rsi14),
+          ),
+          if (a.dividendYield != null)
+            FiDataRow(
+              label: 'Dividendos em 12 meses',
+              value: formatRatio(a.dividendYield),
+              detail: 'Sobre o preço de hoje',
+            ),
+        ],
+      ),
+    ),
+
+    if (FiEvidence.rest(a.reasons).isNotEmpty)
+      FiSection(
+        title: 'O resto da leitura',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final r in FiEvidence.rest(a.reasons))
+              Padding(
+                padding: const EdgeInsets.only(bottom: FiSpace.s3),
+                child: Text(
+                  r,
+                  style: FiType.body.copyWith(color: fiInk2(context)),
+                ),
+              ),
+          ],
+        ),
+      ),
+];
+
+List<Widget> _insumos(BuildContext context, AssetAnalysis a) {
+  final p = a.premises;
+  return [
+    FiSection(
+      title: 'Os métodos e os insumos',
+      hint: 'O nível avançado abre o que o cálculo usou, e por que cada método falou ou calou.',
+      child: FiRows(
+        children: [
+          for (final m in a.methods)
+            FiDataRow(
+              label: methodLabel(m.method),
+              value: m.value == null ? null : formatCurrency(m.value),
+              detail: methodStatusLabel(m.status),
+              note: m.note.isEmpty ? null : m.note,
+            ),
+          if (p['reference_date'] != null)
+            FiDataRow(
+              label: 'Data de referência do cálculo',
+              value: formatDate(p['reference_date'] as String?),
+            ),
+          if (p['selic_pct'] != null)
+            FiDataRow(
+              label: 'Selic usada',
+              value: formatPercent((p['selic_pct'] as num).toDouble()),
+              detail: rateBaseLabel(p['rate_base'] as String?),
+              note: staleRateNote(p).isEmpty ? null : staleRateNote(p),
+            ),
+          if (p['fii_segment'] != null)
+            FiDataRow(
+              label: 'Tipo do fundo',
+              value: p['fii_segment'] == 'papel' ? 'Papel' : 'Tijolo ou não classificado',
+            ),
+        ],
+      ),
+    ),
+  ];
 }
 
 final _assetAnalysisProvider = FutureProvider.autoDispose

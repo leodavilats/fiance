@@ -267,6 +267,12 @@ class FiRecommendation extends ConsumerWidget {
                 onTap: () => _pickRiskProfile(context, ref, prefs),
               ),
               FiDataRow(
+                label: 'Nível de detalhe',
+                value: _detailLevelLabel(prefs.detailLevel),
+                detail: _detailLevelHints[prefs.detailLevel],
+                onTap: () => _pickDetailLevel(context, ref, prefs),
+              ),
+              FiDataRow(
                 label: 'Categorias preferidas',
                 detail: prefs.preferredCategories.isEmpty
                     ? 'Nenhuma — todas pesam igual'
@@ -520,6 +526,57 @@ const _riskProfileLabels = {
 };
 
 String _riskProfileLabel(String value) => _riskProfileLabels[value] ?? value;
+
+const _detailLevelLabels = {
+  'essencial': 'Essencial',
+  'completo': 'Completo',
+  'avancado': 'Avançado',
+};
+
+const _detailLevelHints = {
+  'essencial': 'A etiqueta, a margem e o porquê; o método fica numa gaveta',
+  'completo': 'Também as premissas, a confirmação e os indicadores',
+  'avancado': 'Também os métodos, o silêncio de cada um e os insumos do cálculo',
+};
+
+String _detailLevelLabel(String value) => _detailLevelLabels[value] ?? value;
+
+Future<void> _pickDetailLevel(
+  BuildContext context,
+  WidgetRef ref,
+  Preferences prefs,
+) async {
+  final picked = await showDialog<String>(
+    context: context,
+    builder: (context) => SimpleDialog(
+      title: const Text('Nível de detalhe'),
+      children: [
+        RadioGroup<String>(
+          groupValue: prefs.detailLevel,
+          onChanged: (v) => Navigator.pop(context, v),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _detailLevelLabels.entries
+                .map(
+                  (e) => RadioListTile<String>(
+                    value: e.key,
+                    title: Text(e.value),
+                    subtitle: Text(_detailLevelHints[e.key] ?? ''),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ],
+    ),
+  );
+  if (picked == null || picked == prefs.detailLevel) return;
+
+  await ref
+      .read(apiRepositoryProvider)
+      .savePreferences(passiveIncomeGoal: prefs.passiveIncomeGoal, detailLevel: picked);
+  ref.invalidate(preferencesProvider);
+}
 
 const _preferenceCategories = [
   'acoes_br',

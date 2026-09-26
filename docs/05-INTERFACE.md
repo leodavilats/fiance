@@ -183,6 +183,13 @@ conclusão e o método, os três primeiros motivos da leitura, visíveis sem abr
 fio à esquerda e não por caixa. Na folha do ativo ela vem logo abaixo da margem de segurança, e o
 resto das razões fica na seção do método, sem repetir as três.
 
+**O nível de detalhe muda o que vem aberto, e nada é escondido** (`detail_level` em `/preferences`,
+escolhido em Você → Preferências). Na folha do ativo: **Essencial** traz a etiqueta, o preço, a margem
+e a evidência, com o método numa gaveta fechada, "Como chegamos nisso"; **Completo**, o padrão, traz
+as seções de método abertas; **Avançado** acrescenta os métodos com o motivo de cada silêncio e os
+insumos do cálculo — data de referência, Selic usada e sua origem, tipo do fundo. O que derrubaria a
+tese fica visível em todos os níveis: veredito vem com o falsificador.
+
 ---
 
 ## As 17 regras de máquina

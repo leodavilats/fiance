@@ -1185,6 +1185,7 @@ class Preferences {
     this.notifyPriceAlerts = true,
     this.opportunitiesFrequency = 'weekly',
     this.riskProfile = 'moderate',
+    this.detailLevel = 'completo',
     this.reserveMonthsTarget,
     this.preferredCategories = const [],
     this.preferredSectors = const [],
@@ -1199,6 +1200,7 @@ class Preferences {
   final bool notifyPriceAlerts;
   final String opportunitiesFrequency;
   final String riskProfile;
+  final String detailLevel;
 
   final int? reserveMonthsTarget;
   final List<String> preferredCategories;
@@ -1214,6 +1216,7 @@ class Preferences {
     notifyPriceAlerts: j['notify_price_alerts'] as bool? ?? true,
     opportunitiesFrequency: j['opportunities_frequency'] as String? ?? 'weekly',
     riskProfile: j['risk_profile'] as String? ?? 'moderate',
+    detailLevel: j['detail_level'] as String? ?? 'completo',
     reserveMonthsTarget: (j['reserve_months_target'] as num?)?.toInt(),
     preferredCategories:
         (j['preferred_categories'] as List?)?.cast<String>() ?? const [],
