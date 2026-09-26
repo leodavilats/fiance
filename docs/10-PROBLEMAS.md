@@ -1,13 +1,15 @@
 # Problemas conhecidos
 
 **Fonte de verdade** do que está aberto. Só pendências: nada de histórico, nada de item resolvido.
-Última verificação contra o código: **2026-09-23**
+Última verificação contra o código: **2026-09-26**
 Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria do motor de cálculo de
 2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
 [ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md). A2, A3, A4 e A6 saíram em 2026-09-23, e
 A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 e A11 entraram e
-saíram em 2026-09-25 — ver [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md).
+saíram em 2026-09-25 — ver [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md). O 20
+(day trade e IOF) saiu em 2026-09-25 — ver [ADR-020](decisoes/ADR-020-day-trade-apartado.md) —, e
+os itens 1, 4 e 33 antes disso.
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -40,6 +42,10 @@ foram fechados em 2026-09-25 — ver [03-ARQUITETURA](03-ARQUITETURA.md).
 
 ### 15 · Sugestões seguidas dependem de lançamento manual
 
+`POST /suggestions/followed` pede quantidade e preço executado digitados, embora a compra já esteja
+no razão. Sem tela no app (seção D), o resultado de seguir uma sugestão não é medido. O caminho é
+derivar do lançamento de compra, não pedir de novo.
+
 ### 27 · A cobrança é backend sem cliente
 
 Existe a cerca, a régua de plano, o preço travado e o webhook — e nenhuma tela. Agravado pela decisão
@@ -64,7 +70,14 @@ continua sendo um lançamento de cada vez.
 
 ### 12 · A régua de afirmação anula `allocated_cash` e deixa a subtração de pé
 
+Fora do nível prescritivo, `affirmation.py` retira o valor alocado do aporte rápido, mas
+`remaining_cash` (caixa menos alocado), o `value` de cada sobra e a projeção da carteira seguem na
+resposta, e o valor retirado se reconstrói por uma conta de menos.
+
 ### 17 · A régua não cobre o score em linha densa, e ali ele sai só como selo
+
+Em `mobile/lib/features/market/quick_invest_view.dart`, cada alocação mostra a faixa do score como
+`FiTag`, sem a régua nem o número — julgamento sem explicabilidade.
 
 ### 26 · A aparência nos dois temas nunca foi conferida num aparelho
 
@@ -88,13 +101,22 @@ auditoria:** percorrer o app com TalkBack e VoiceOver, o que exige aparelho — 
 
 `SEM_MODELO_HOJE = 31` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,
 qualidade de dado, regras de plano, universo e operação de cache ganharam modelo em 2026-09-26.
-Seguem sem: transações, proventos pendentes, estratégia, aporte rápido, cobrança, logout, as exclusões
-de posição, `/account/export` (é download de arquivo) e as leituras de operador (`/metrics`,
-`/analytics/funnel`), cujo formato é aberto.
+Seguem sem: transações (lista, lançamento, lote, importação, reconstrução, reconciliação, derivação e
+*backfill*), proventos pendentes, estratégia e sugestões de rebalanceamento, aporte rápido, atividade,
+direitos de plano, cobrança, demonstração, logout, as exclusões (posição, renda fixa, provento,
+lançamento, sugestão seguida), `/account/export` (é download de arquivo) e as leituras de operador
+(`/metrics`, `/analytics/funnel`), cujo formato é aberto. A lista exata sai de
+`rotas_declaradas()` menos o contrato gravado.
 
 ### 24 · A paginação das listas com agregado limita o payload, não a consulta
 
+Renda fixa e proventos recebidos paginam por cursor, mas o total e a média de 12 meses que vêm na
+mesma resposta são calculados lendo todas as linhas da conta a cada página.
+
 ### 23 · Token de push é reatribuído a quem o registrar
+
+`POST /notifications/register-token` aceita qualquer texto como token, e sair da conta não o apaga: o
+aparelho segue recebendo aviso da conta anterior até outra entrar.
 
 ### O backup próprio ainda não é agendado
 

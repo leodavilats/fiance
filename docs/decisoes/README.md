@@ -26,12 +26,12 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [011](ADR-011-preco-justo-e-faixa.md) | Preço justo como faixa; leitura de tendência declarada | `SUBSTITUÍDO EM PARTE` por 014 | 2026-09-19 |
 | [012](ADR-012-o-alvo-e-de-quem-declara.md) | Sem alvo declarado não há julgamento | `ACEITO` | 2026-09-19 |
 | [013](ADR-013-o-tecnico-nao-decide.md) | O técnico não decide, e a faixa carrega a própria incerteza | `SUBSTITUÍDO EM PARTE` por 014 | 2026-09-20 |
-| [014](ADR-014-um-modelo-por-classe.md) | Um modelo por classe, e a faixa é das premissas dele | `SUBSTITUÍDO EM PARTE` por 015 | 2026-09-23 |
+| [014](ADR-014-um-modelo-por-classe.md) | Um modelo por classe, e a faixa é das premissas dele | `SUBSTITUÍDO EM PARTE` por 015 e 016 | 2026-09-23 |
 | [015](ADR-015-a-faixa-cobre-os-dois-cenarios.md) | A faixa da ação cobre os dois cenários de crescimento | `ACEITO` | 2026-09-25 |
 | [016](ADR-016-a-confirmacao-da-acao-alarga-e-nao-derruba.md) | Na ação, o dividendo longe da faixa alarga a leitura, e não a derruba | `ACEITO` | 2026-09-25 |
-| [017](ADR-017-o-score-nao-le-o-tecnico.md) | O score de oportunidade não lê o técnico | `ACEITO` | 2026-09-25 |
-| [018](ADR-018-a-queda-e-recorte-e-nao-veredito.md) | A queda é recorte de Descobrir, e não veredito | `ACEITO` | 2026-09-25 |
-| [019](ADR-019-fii-de-papel-exige-yield-nominal.md) | FII de papel exige yield nominal, por uma classificação mantida no código | `ACEITO` | 2026-09-25 |
+| [017](ADR-017-o-score-nao-le-o-tecnico.md) | O score de oportunidade não lê o técnico — estende 013 | `ACEITO` | 2026-09-25 |
+| [018](ADR-018-a-queda-e-recorte-e-nao-veredito.md) | A queda é recorte de Descobrir, e não veredito — estende 013 | `ACEITO` | 2026-09-25 |
+| [019](ADR-019-fii-de-papel-exige-yield-nominal.md) | FII de papel exige yield nominal, por uma classificação mantida no código — complementa 014 | `ACEITO` | 2026-09-25 |
 | [020](ADR-020-day-trade-apartado.md) | Day trade é apartado na projeção, e apurado em conta própria | `ACEITO` | 2026-09-25 |
 
 ---

@@ -45,7 +45,8 @@ Todo item funcional carrega um marcador, e eles não se misturam:
 
 `[ATUAL]` funciona e é usado · `[IMPLEMENTADO]` existe no código, sem uso real ·
 `[SEM CLIENTE]` backend vivo, aplicativo não alcança · `[PLANEJADO]` decidido, não construído ·
-`[EM DISCUSSÃO]` sem decisão · `[ABANDONADO]` existiu, saiu
+`[EM DISCUSSÃO]` sem decisão · `[ABANDONADO]` existiu, saiu · `[DESCONHECIDO]` nunca foi executado,
+e não há como afirmar o estado
 
 Definições em [08-ESTADO](08-ESTADO.md).
 
@@ -73,7 +74,7 @@ seções rígidas por estágio.
 | Assunto | Fonte |
 |---|---|
 | Endpoints e schemas | Código — OpenAPI do FastAPI |
-| Campos de resposta | `backend/tests/contrato_das_rotas.json` |
+| Campos de resposta e de entrada | `backend/tests/contrato_das_rotas.json` |
 | Esquema do banco | Migrações Alembic |
 | Vocabulário fechado (classes, categorias) | `backend/app/models/enums.py` |
 | Fórmulas | Código; [04-CALCULOS](04-CALCULOS.md) é o espelho auditado |
@@ -108,7 +109,9 @@ alguém refazer o que existe.
 
 Duas máquinas cobram esta documentação, e ambas rodam no CI:
 
-- `docs/checar-links.mjs` — links quebrados entre documentos
+- `docs/checar-links.mjs` — links quebrados entre documentos (job *Documentação* do CI)
 - `backend/tests/test_ancoras_da_documentacao.py` — **arquivo citado que não existe**, e citação de
   linha que passou do fim do arquivo. Blocos de código ficam de fora: ali o caminho é comando, não
-  referência de repositório
+  referência de repositório. **Só confere caminho completo** (começando em `backend/`, `mobile/` ou
+  `docs/`): um nome curto, como `analysis/fair_price.py`, não é verificado. As ADRs antigas citam
+  arquivos que já saíram, e isso é esperado — ADR não se reescreve

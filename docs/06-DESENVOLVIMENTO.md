@@ -2,7 +2,7 @@
 
 Como trabalhar no código sem quebrar nada.
 O CI (`.github/workflows/ci.yml`) é a fonte de verdade dos comandos; aqui está a explicação.
-Última revisão: 2026-09-13
+Última revisão: 2026-09-26
 
 ---
 
@@ -104,7 +104,7 @@ nenhuma enxerga o que a outra vê:
 | | Como funciona | Enxerga | Não enxerga |
 |---|---|---|---|
 | `CATALOGO.md` | Lê `mobile/lib/` | Todo o texto do app, inclusive o que só aparece em situação rara; seções, ações, estados e componentes | Nada visual |
-| `telas/` | Renderiza e fotografa | Espaçamento, cor, densidade, hierarquia; 12 telas × 4 estados × 2 temas | Texto que não está naquele estado |
+| `telas/` | Renderiza e fotografa | Espaçamento, cor, hierarquia; 15 telas × 4 estados × 2 temas (`mobile/captura/telas_test.dart`) | Texto que não está naquele estado |
 
 Sai junto um **`COMO-AVALIAR.md`** com o contexto do produto e as regras que ele já se impôs. Envie-o
 sempre: sem ele, quem avalia sugere o contrário do que foi decidido — trocar fio e chão por cards,
@@ -191,6 +191,9 @@ comportamento num aparelho: isso exige conta de loja e aparelho, e fica para o r
 | `test_ancoras_da_documentacao.py` | Documentação que cita arquivo ou linha inexistente |
 | `test_contrato_das_rotas.py` | Campo de resposta que some, inclusive aninhado; campo de entrada que some ou vira obrigatório (`!`) |
 | `test_money_columns.py` | Campo de dinheiro fora do tipo `Money` |
+| `test_eventos_do_app_estao_no_catalogo.py` | Evento de produto que o app envia e o servidor não conhece |
+| `test_backup_e_restauracao.py` | Backup que não cobre toda tabela, e restauração que ressuscita conta excluída |
+| `test_cache_backends.py` | Cache vencido apagado antes da margem de dado velho — falha de rede viraria ausência |
 
 **A razão de um teste existir vai na mensagem do assert.** É onde ela aparece quando ele falha.
 

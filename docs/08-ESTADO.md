@@ -1,7 +1,7 @@
 # Estado do sistema
 
 **Fonte de verdade** para a pergunta *"isto existe?"*. Nenhum outro documento responde isso.
-Última revisão: 2026-09-19 · Escopo: todo o produto
+Última revisão: 2026-09-26 · Escopo: todo o produto
 
 Se um documento descrever uma funcionalidade e este arquivo disser que ela não existe, **este
 arquivo vence**.
@@ -93,7 +93,7 @@ card de ativo ele continua sendo vender e remover.
 |---|---|---|---|
 | Posições e composição | `[ATUAL]` | `storage/portfolio_store.py` | `patrimony/` |
 | Marcação a mercado | `[ATUAL]` | `collectors/universal.py` | idem |
-| Operações encerradas | `[ATUAL]` | `ledger/apuracao.py` | `patrimonio_closed_trades.dart` |
+| Operações encerradas | `[ATUAL]` | `ledger/apuracao.py` | `patrimony/widgets/patrimony_closed_trades.dart` |
 | Renda fixa (CDB, LCI, LCA, LC, CRI, CRA, Tesouro Selic/IPCA+/Pré) | `[ATUAL]` | `analysis/renda_fixa_analysis.py` | `assets/fixed_income_screen.dart` |
 | Saúde da carteira | `[ATUAL]` | `analysis/portfolio_health.py` | feed |
 | Projeção de patrimônio e renda passiva, em faixa | `[IMPLEMENTADO]` | `analysis/scenarios.py` | `/patrimonio/projecao` |
@@ -107,7 +107,7 @@ card de ativo ele continua sendo vender e remover.
 | Oportunidades com score e veredito | `[ATUAL]` | `services/opportunity_service.py` | `market/opportunities_tab.dart` |
 | Preço justo por modelo de classe, faixa das premissas | `[ATUAL]` | `analysis/fair_price.py` | idem e `market/asset_detail_sheet.dart` — BDR e ETF saem "Sem preço justo" ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)) |
 | Preço-teto da meta de renda | `[ATUAL]` | `analysis/fair_price.py::_indicators` | `market/asset_detail_sheet.dart` |
-| Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — ações e FIIs; ETF e BDR não têm score |
+| Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — ações e FIIs; BDR com os pesos da ação e sem a margem; ETF não tem score |
 | Falsificadores do veredito | `[ATUAL]` | `analysis/falsifiers.py` | `market/asset_detail_sheet.dart` |
 | Análise de ativo individual | `[ATUAL]` | `services/` | `market/asset_detail_sheet.dart` — a folha é a análise; `/ativo/:ticker` mostra menos e deixou de ser oferecida por botão |
 | Quedas: recorte de quem caiu da máxima de 52 semanas, com a leitura de valor | `[IMPLEMENTADO]` | `services/dip_service.py` | `/descobrir/quedas` — [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md) |
@@ -124,8 +124,9 @@ card de ativo ele continua sendo vender e remover.
 
 ## Livro-razão e imposto
 
-A camada mais bem construída do sistema, e a **menos acessível**: o razão é a fonte da carteira e do
-imposto, e não tem nenhuma tela no aplicativo.
+A camada mais bem construída do sistema: o razão é a fonte da carteira e do imposto. Ele tem tela
+desde 2026-09-13 (`/patrimonio/razao`); o que ainda não chega ao aplicativo é importação,
+reconstrução e reconciliação.
 
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
@@ -155,22 +156,24 @@ corretora única. **O que não cobre:** emissão de DARF, informe anual.
 
 | Funcionalidade | Estado | Onde vive |
 |---|---|---|
-| Login com Google | `[ATUAL]` | `POST /auth/google` |
+| Login com Google | `[ATUAL]` | `POST /auth/google` — botão no aplicativo |
+| Login com Apple | `[IMPLEMENTADO]` | `POST /auth/apple` — servidor pronto; o botão depende da conta de desenvolvedor Apple |
 | Sessão: acesso 1h, refresh 30d rotacionado | `[ATUAL]` | `api/auth.py` |
 | Revogação por dispositivo e por conta | `[IMPLEMENTADO]` | `session_cuts` |
 | Exclusão e exportação de conta | `[IMPLEMENTADO]` | `api/account.py` — ✅ `/voce/conta`, exclusão com frase de confirmação e exportação pela folha de compartilhamento |
-| Preferências (perfil de risco, yields, densidade) | `[ATUAL]` | `api/preferences.py` |
+| Preferências (perfil de risco, yields, nível de detalhe, tema) | `[ATUAL]` | `api/preferences.py` |
 | Metas, com alvo declarado distinto do padrão | `[ATUAL]` | `api/goals.py` — sem declaração, nada cobra desvio |
 | Alertas de preço | `[ATUAL]` | `api/alerts.py` |
 | Notificações push | `[ATUAL]` | `notifications/` |
 | Onboarding derivado | `[SEM CLIENTE]` | `api/onboarding.py` |
-| Telemetria com dicionário fechado | `[IMPLEMENTADO]` | `core/events.py` |
+| Telemetria com dicionário fechado | `[ATUAL]` | `core/events.py` — o aplicativo envia por `mobile/lib/core/product_events.dart`, conferido contra o catálogo |
 | Rotas de administrador | `[IMPLEMENTADO]` | `require_admin` |
 | Rota pública sem titular | `[IMPLEMENTADO]` | `GET /public/asset/{ticker}` |
 | Páginas jurídicas (`/termos`, `/privacidade`, `/aviso-cvm`) | `[ATUAL]` | `api/legal.py` |
-| Dados de demonstração | `[SEM CLIENTE]` | `api/demo.py` |
+| Dados de demonstração | `[SEM CLIENTE]` | `api/demo.py` — fora da paridade: era vitrine da web |
+| Backup lógico: exportar, restaurar, reaplicar exclusões | `[IMPLEMENTADO]` | `backend/app/backup.py` — runbook em [07-OPERACAO](07-OPERACAO.md); agendamento no Railway pendente |
 
-**Não existe senha no sistema.** O login é exclusivamente Google. Não há "esqueci minha senha"
+**Não existe senha no sistema.** O login é Google (e Apple, quando o botão chegar). Não há "esqueci minha senha"
 porque não há senha.
 
 ---
@@ -184,7 +187,7 @@ Nada cobra dinheiro hoje. A cerca de plano está **desligada** (`ENTITLEMENTS_EN
 | Cerca de plano | `[IMPLEMENTADO]` | Desligada. Nunca exercitada |
 | Trial de 14 dias na primeira posição salva | `[IMPLEMENTADO]` | Ver [ADR-009](decisoes/ADR-009-trial-e-gratuidade.md) |
 | Indicação com crédito | `[IMPLEMENTADO]` | Nunca usada |
-| Cobrança (`billing/`) | `[ABANDONADO na direção]` | Só `FakeProvider`. Será refeito para RevenueCat — [ADR-008](decisoes/ADR-008-monetizacao-por-loja.md) |
+| Cobrança (`backend/app/payments/`, `api/billing.py`) | `[IMPLEMENTADO]` | Só `FakeProvider`, sem tela. Será refeito para RevenueCat, e o que existe não será aproveitado — [ADR-008](decisoes/ADR-008-monetizacao-por-loja.md) |
 | RevenueCat | `[PLANEJADO]` | Decidido, não iniciado |
 
 ---
@@ -211,8 +214,12 @@ portão de pregão. Detalhes em [03-ARQUITETURA](03-ARQUITETURA.md).
 | Criptomoedas | antes de 2026-09 | Nenhum vestígio no código |
 | Ações internacionais diretas (fora de BDR) | antes de 2026-09 | — |
 | Finnhub, CoinGecko, Gemini, yfinance, Alpha Vantage | antes de 2026-09 | Restaram BRAPI e BCB |
-| `backend/app/optimizer/` | a remover | Diretório vazio · [ADR-010](decisoes/ADR-010-remover-otimizador.md) |
-| `OptimizationStrategy` (Sharpe, HRP, mín. volatilidade) | a remover | Enum órfão em `models/enums.py` |
+| Otimizador (`optimizer/`, `OptimizationStrategy`) | 2026-09-13 | commit `88c18c5` · [ADR-010](decisoes/ADR-010-remover-otimizador.md) |
+| Diagnóstico de queda por notícia (Google News) | 2026-09-25 | [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md) — a queda virou recorte |
+| Veredito por tendência (`basis = trend`) e os nomes antigos das etiquetas | 2026-09-25 | [ADR-013](decisoes/ADR-013-o-tecnico-nao-decide.md) |
+| Técnico como dimensão do score | 2026-09-25 | [ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md) |
+| Liquidez no score de FII | 2026-09-25 | [ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md) |
+| Densidade de tela | 2026-09-26 | substituída pelo nível de detalhe (migração `0011_nivel_de_detalhe`) |
 
 Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma interface.
 
@@ -224,11 +231,12 @@ Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma
 |---|---|
 | `[ATUAL]` | ~30 funcionalidades |
 | `[IMPLEMENTADO]` | ~14 |
-| `[SEM CLIENTE]` | **5** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
+| `[SEM CLIENTE]` | **4 lacunas de paridade** + demonstração — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
 | `[PLANEJADO]` | ver [09-FUTURO](09-FUTURO.md) |
-| `[ABANDONADO]` | 8 blocos |
+| `[ABANDONADO]` | 12 blocos |
 
-O número que importa é o `[SEM CLIENTE]`: **cinco funcionalidades que o backend serve e o aplicativo
-não alcança**, todas por perda de paridade em 2026-09-11 — eram nove, e quatro saíram da lista em
-2026-09-13: livro-razão, eventos corporativos, proventos e o alvo da realocação. Enquanto ele não chegar a zero, o produto
+O número que importa é o `[SEM CLIENTE]`: **quatro lacunas que o backend serve e o aplicativo não
+alcança** — importação de extrato, ativos seguidos, onboarding, e reconciliação com reconstrução —,
+todas por perda de paridade em 2026-09-11. Eram nove: livro-razão, eventos corporativos, proventos e
+o alvo da realocação fecharam em 2026-09-13, e a exclusão de conta em 2026-09-19. Enquanto ele não chegar a zero, o produto
 entrega menos do que possui.

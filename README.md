@@ -74,7 +74,7 @@ cp backend/.env.example backend/.env
 | `BRAPI_HISTORY_RANGE` | `3mo` | ⚠️ `3mo` **torna a SMA200 incalculável**, e a tendência sai rotulada como curta. `1y` dá ~250 pregões e é o que produção usa |
 | `AFFIRMATION_LEVEL` | `2` | `1` descritivo, `2` analítico, `3` prescritivo — ver [ADR-007](docs/decisoes/ADR-007-nivel-de-afirmacao.md) |
 | `ENTITLEMENTS_ENABLED` | `false` | Cerca de plano. Ligar exige `ENTITLEMENTS_ENABLED_AT`, ou falha alto |
-| `ADMIN_USER_IDS` | vazio | O `sub` do Google, separado por vírgula. Vazio libera em dev e **nega** em produção |
+| `ADMIN_USER_IDS` | vazio | O `sub` do Google (ou `apple:<sub>` para conta Apple), separado por vírgula. Vazio libera em dev e **nega** em produção |
 | `CACHE_BACKEND` | automático | `database`, `sqlite` ou `redis`. Nome errado **falha alto** |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | vazio | Push. Sem ela, o envio apenas loga |
 | `RATE_LIMIT_FACTOR` | `1.0` | Afrouxar tetos em desenvolvimento |
@@ -91,8 +91,8 @@ cd backend && uvicorn app.main:app --reload --port 8000
 
 # Terminal 2 — aplicativo
 cd mobile
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api   # emulador Android
-flutter run --dart-define=API_BASE_URL=http://localhost:8000/api  # simulador iOS
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1   # emulador Android
+flutter run --dart-define=API_BASE_URL=http://localhost:8000/api/v1  # simulador iOS
 ```
 
 O texto jurídico abre no navegador do aparelho e vem do mesmo backend. Para apontá-lo ao local:
@@ -132,9 +132,13 @@ backend/
     storage/      acesso a dados, por usuário
     ledger/       razão, projeção, apuração — sem banco
     cashflow/     mês, cascata, dívida — sem banco
-    analysis/     preço justo, score, quedas — sem banco
+    analysis/     preço justo, score — sem banco
     collectors/   BRAPI, BCB, cache, disjuntor
     entitlement/  cerca de plano, isolada
+    importing/    leitura de extrato, prévia + commit
+    payments/     cobrança (só FakeProvider, será refeita para loja)
+    notifications/ push
+    backup.py     cópia lógica, restauração, reaplicar exclusões
   migrations/     Alembic
   tests/
 

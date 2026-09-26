@@ -31,6 +31,21 @@ jobs:
       - name: Verificar marca (icones do aplicativo)
         run: python tool/build_icons.py --check
 
+  documentacao:
+    name: Documentação (links)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # O docs/README dizia que o verificador rodava no CI, e nenhum job o chamava: link
+      # quebrado passava verde.
+      - name: Verificar links entre documentos
+        run: node docs/checar-links.mjs
+
   backend:
     name: Backend (ruff + pytest)
     runs-on: ubuntu-latest
@@ -65,7 +80,7 @@ jobs:
 
       - name: Lint (ruff)
         run: |
-          python -m ruff check app tests
+          python -m ruff check app tests migrations
           python -m ruff format --check app tests
 
       - name: Testes

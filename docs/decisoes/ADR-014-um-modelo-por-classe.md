@@ -8,6 +8,9 @@ parte a [ADR-011](ADR-011-preco-justo-e-faixa.md) e a [ADR-013](ADR-013-o-tecnic
 **Data:** 2026-09-23
 **Decidido por:** autor do projeto, que delegou as escolhas desta revisão
 
+**Nota (2026-09-25):** os campos legados `consensus`, `consensus_methods`, `bazin` e `dcf` saíram da
+resposta no commit `f8c2609`; a consequência que os mantinha não vale mais.
+
 ## Contexto
 
 A [revisão de metodologia de 2026-09-23](../historico/REVISAO-METODOLOGIA-VALUATION-2026-09-23.md)

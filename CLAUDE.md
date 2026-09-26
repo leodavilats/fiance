@@ -80,7 +80,7 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
   justo. A confirmação por outro insumo entra na qualidade, nunca na borda.
 - **A etiqueta descreve posição, não ordem.** "Abaixo do preço justo", nunca "Comprar".
 - **Silêncio tem motivo** (`methods[]`). Inaplicável, sem dado, lucro negativo, ROE insuficiente,
-  sem juro e pouco distribuído são coisas diferentes.
+  sem juro, taxa implausível e pouco distribuído são coisas diferentes.
 - **Falsificador distingue gatilho de premissa** (`kind`). Atravessar limiar reclassifica; refutar
   premissa derruba a tese.
 - **Projeção sai como faixa, nunca número único** (`analysis/scenarios.py`). `_low`/`_high` são
@@ -138,8 +138,9 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 
 ### API e dados
 
-- **Campo de resposta que some é pego por contrato.** Regravar é
-  `python -m tests.contrato_das_rotas`, no mesmo commit.
+- **Campo que some é pego por contrato** — de resposta, inclusive aninhado, e de entrada; campo de
+  entrada que vira obrigatório (`!`) também. Regravar é `python -m tests.contrato_das_rotas`, no
+  mesmo commit.
 - **`/api/v1` é canônico**; `/api` é alias em transição.
 - **Listas paginam por cursor keyset**, nunca offset.
 - **Rota cara casa por sufixo**, não por prefixo — `/api/v1/opportunities` precisa casar.
@@ -161,7 +162,7 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 ### Monetização
 
 - **Cerca de plano mora só em `entitlement/`**, e entra desligada. Nenhuma condicional de plano fora
-  do módulo; `analysis`/`collectors`/`ledger` não importam nada dele.
+  do módulo; `analysis`/`cashflow`/`collectors`/`ledger` não importam nada dele.
 - **Nada é cercado antes da primeira posição salva.**
 - **`ENTITLEMENTS_ENABLED` sem `ENTITLEMENTS_ENABLED_AT` falha alto.**
 - **O titular de um evento de cobrança sai da sessão de checkout, nunca do corpo.**
@@ -178,6 +179,9 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 - **Serifa decide, sans mede.**
 - **Fio + chão, não card + card.** A caixa é `FiObject`, e só para objeto. `Card`, `ListTile`,
   `SwitchListTile`, `CircleAvatar` estão em catraca zero.
+- **Controle vem do sistema.** `Switch`, `Slider`, chips e `ExpansionTile` do Material só existem
+  dentro de `core/widgets/` (`FiSwitch`, `FiSlider`, `FiChoiceChip`, `FiDisclosure`); `InkWell` e
+  `GestureDetector` fora dele estão em catraca. Gráfico vem com tabela equivalente.
 - **Julgamento exige explicabilidade.** Escape só com `// design-exception: regra — motivo`.
 - **Estado de tela é contrato:** `AsyncValue.when` com `FiSkeleton`/`FiErrorState`. A falha guarda o
   **erro**, não um booleano. Vazio e falha nunca compartilham a mesma tela.

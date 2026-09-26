@@ -1,7 +1,7 @@
 # Domínio
 
 **Fonte de verdade** para o vocabulário e as regras de negócio. Os enums são derivados do código.
-Última revisão: 2026-09-13
+Última revisão: 2026-09-26
 
 Leia antes de tocar em `ledger/`, `cashflow/` ou `analysis/`.
 
@@ -30,9 +30,17 @@ sem `derived=True`, e recusa `derived` em qualquer outra categoria.
 **Modelo principal** — o método que descreve o fluxo da classe: lucro distribuível descontado para
 ação, distribuição recorrente capitalizada para FII. BDR e ETF não têm.
 
-**Faixa de preço justo** — o modelo principal da premissa pessimista à otimista: sem crescimento e
-com 1 ponto a mais de taxa, até com crescimento e 1 ponto a menos. É incerteza sobre o valor, e não
-distância entre métodos que medem coisas diferentes.
+**Faixa de preço justo** — a sensibilidade do modelo principal às premissas. Na ação, o envelope de
+dois cenários — crescer com o lucro retido, ou não crescer e distribuir tudo —: o piso é o menor dos
+dois com 1 ponto a mais de taxa, o teto é o maior com 1 ponto a menos
+([ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md)). No FII, a distribuição dividida pelo
+yield exigido mais e menos 1 ponto. É incerteza sobre o valor, e não distância entre métodos que
+medem coisas diferentes.
+
+**FII de papel** — fundo de recebíveis, cuja distribuição já carrega a inflação. Exige yield
+nominal (yield exigido do FII mais a meta de inflação), e é identificado pelo segmento
+(`fii_segment`) numa lista de referência mantida à mão
+([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)).
 
 **Confirmação** — a leitura por outro insumo: o dividendo recorrente na ação, o VPA no FII. Diz se a
 faixa se sustenta, e entra na qualidade — nunca na borda.
@@ -69,7 +77,8 @@ setembro é de setembro.
 
 **Desvio de alocação** — diferença entre a alocação atual e a meta declarada, por categoria.
 
-**Classe de dívida** — `cara`, `administrável` ou `sem taxa`. Sai da comparação entre a taxa da
+**Classe de dívida** — cara, administrável ou sem taxa (`expensive`, `manageable`, `no_rate` em
+`cashflow/debt.py`). Sai da comparação entre a taxa da
 dívida e o que a carteira da pessoa rende. Não existe campo "caro" declarado.
 
 **Taxa de virada** — a taxa em que uma dívida deixa de ser cara. É o falsificador da régua de
@@ -170,7 +179,7 @@ de corretora única.
 ## Regras do caixa
 
 **Toda escrita passa por `cashflow_service`:** `registrar`, `registrar_varias`, `editar`,
-`marcar_paga`, `apagar`.
+`marcar_paga`, `apagar`, `cadastrar_divida`, `quitar_divida`.
 
 **Competência é o dia do pagamento.** Conta não paga conta no mês do vencimento, e é o que forma o
 comprometido.

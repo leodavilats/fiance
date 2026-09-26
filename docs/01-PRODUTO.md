@@ -2,7 +2,7 @@
 
 **Fonte de verdade** para visão, público, limites e modelo de negócio. Não há código que responda
 estas perguntas.
-Última revisão: 2026-09-13
+Última revisão: 2026-09-26
 
 ---
 
@@ -73,7 +73,7 @@ devolve?*
 | Home broker | Não executa ordem, não conecta com corretora |
 | Ferramenta para profissional gerir carteira de terceiros | Uma conta, uma pessoa |
 | Rede social de investidores | — |
-| Ferramenta de trade, análise técnica, candles | Indicadores técnicos entram como **dimensão do score**, nunca como tela de gráfico |
+| Ferramenta de trade, análise técnica, candles | Tendência e RSI aparecem só como contexto de preço: não decidem a etiqueta nem pontuam no score ([ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md)) |
 | Curso ou conteúdo educacional | Explica o que calcula, não ensina a investir |
 
 **Sobre recomendação personalizada:** o produto quer indicar ativos com base no perfil, nas metas e

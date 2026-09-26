@@ -114,6 +114,9 @@ outro lado do mesmo invariante, e por isso veio junto.
 | `provenance`, `score-ruler`, `range`, `skeleton`, `section`, `ruler-track` | Já existem no Flutter como `FiProvenance`, `ScoreRuler`, `FiRange`, `FiSkeleton`, `FiSection` |
 | `portfolio-shell`, `surplus-shell`, `you-shell`, `section-nav` | A navegação do Flutter é outra |
 | `global-loader`, `snackbar`, `profile-modal` | Equivalente nativo |
+| `dip-diagnosis` | A queda virou recorte, sem diagnóstico por notícia ([ADR-018](../decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md)) |
+| `global-search` | Não há busca global no aplicativo: a busca mora no Descobrir |
+| `demo` (`api/demo.py`) | Era vitrine da web; fica fora da paridade e não conta como lacuna |
 
 ---
 
@@ -122,8 +125,8 @@ outro lado do mesmo invariante, e por isso veio junto.
 `month`, `month-entry`, `month-debts`, `month-template`, `surplus`, `deviation`, `allocation-gap`,
 `goals`, `goal-progress`, `positions`, `portfolio-editor`, `portfolio-summary`, `composition`,
 `closed-trades`, `performance`, `patrimony-chart`, `asset`, `fair-price`, `margin-of-safety`,
-`opportunities-list`, `dip-scanner`, `dip-diagnosis`, `compare-assets`, `fixed-income`,
-`fixed-income-rate`, `income-compare`, `benchmark-chart`, `quick-invest`, `global-search`,
+`opportunities-list`, `dip-scanner`, `compare-assets`, `fixed-income`,
+`fixed-income-rate`, `income-compare`, `benchmark-chart`, `quick-invest`,
 `price-alerts`, `preferences`, `account`, `referral`, `activity-feed`, `changes-feed`,
 `contribution-simulator`, `data-age`, `empty-state`, `async-state`, `help-tooltip`, `insight`,
 `metric-with-context`, `logo`, `wordmark`, `page-header`, `login`.
@@ -137,6 +140,7 @@ outro lado do mesmo invariante, e por isso veio junto.
 | 2026-09-13 | 9 |
 | 2026-09-13 | 7 — livro-razão e eventos corporativos fechados |
 | 2026-09-13 | 6 — proventos fechados |
-| 2026-09-13 | **5** — rebalanceamento fechado |
+| 2026-09-13 | 5 — rebalanceamento fechado |
+| 2026-09-19 | **4** — exclusão de conta fechada |
 
 Atualize esta tabela ao fechar cada uma. **Quando chegar a zero, apague o arquivo.**

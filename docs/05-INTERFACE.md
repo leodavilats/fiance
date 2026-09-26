@@ -2,7 +2,7 @@
 
 Por que a interface é assim, e o que uma tela nova precisa respeitar.
 Fonte compartilhada com `mobile/lib/core/design_tokens.dart` e `mobile/test/lint_ui_test.dart`.
-Última revisão: 2026-09-15
+Última revisão: 2026-09-26
 
 ---
 
@@ -38,7 +38,7 @@ declara.
 
 ## A camada visual é escrita à mão, inteira, num lugar só
 
-**Não há gerador de design.** Cor (nos dois temas), tipografia, espaço, raio, motion e densidade
+**Não há gerador de design.** Cor (nos dois temas), tipografia, espaço, raio e motion
 vivem em `mobile/lib/core/design_tokens.dart`. As bandas das réguas, o vocabulário de veredito e os
 rótulos de categoria também são escritos — `core/product_rules.dart` e `core/vocabulary.dart`.
 
@@ -184,7 +184,7 @@ fio à esquerda e não por caixa. Na folha do ativo ela vem logo abaixo da marge
 resto das razões fica na seção do método, sem repetir as três.
 
 **O nível de detalhe muda o que vem aberto, e nada é escondido** (`detail_level` em `/preferences`,
-escolhido em Você → Preferências). Na folha do ativo: **Essencial** traz a etiqueta, o preço, a margem
+escolhido em Você → Como eu invisto, `/voce/investir`). Na folha do ativo: **Essencial** traz a etiqueta, o preço, a margem
 e a evidência, com o método numa gaveta fechada, "Como chegamos nisso"; **Completo**, o padrão, traz
 as seções de método abertas; **Avançado** acrescenta os métodos com o motivo de cada silêncio e os
 insumos do cálculo — data de referência, Selic usada e sua origem, tipo do fundo. O que derrubaria a
@@ -222,9 +222,9 @@ Mais o contraste, cobrado à parte em `contraste_test.dart`, nos dois temas, e o
 `iOSTapTargetGuideline` do Flutter. O teste exige antes que o componente tenha ação de toque na
 semântica: sem ela, a diretriz nem o enxerga, e o leitor de tela não consegue apertá-lo.
 
-Uma regra saiu em 2026-09-13: *"a busca global é alcançável de todo destino de raiz"*. A busca foi
-removida do produto — não se busca nem tela nem ativo —, e regra que exige o que o produto não quer
-mais é regra trabalhando contra ele.
+Uma regra saiu em 2026-09-13: *"a busca global é alcançável de todo destino de raiz"*. A busca global
+saiu do produto — não se busca tela, e o ativo se procura no campo de ticker do `/descobrir`, que é
+filtro da lista —, e regra que exige o que o produto não quer mais é regra trabalhando contra ele.
 
 ⚠️ **A regra varre `lib/`.** O que estiver fora não é conferido. Ao escrever regra nova, confira
 contra **o que o repositório tem**, não contra o que a extensão sugere: duas regras já varreram
@@ -250,10 +250,10 @@ tela. E ao acrescentar uma série, entre nos mapas de classe dos **três** bloco
 
 ---
 
-## Densidade e tema
+## Nível de detalhe e tema
 
-**Densidade é preferência da conta** (`preferences.density`, servidor); **tema é do aparelho**
-(armazenamento local). Na tabela de posições, o recorte da rota vence a preferência.
+**O nível de detalhe é preferência da conta** (`preferences.detail_level`, servidor), e substituiu a
+antiga densidade em 2026-09-26; **tema é do aparelho** (armazenamento local).
 
 **Filtro e recorte vivem na rota**, não em estado local — voltar não perde o recorte, e o mesmo
 endereço leva ao mesmo lugar. Em `/patrimonio` o recorte é um só (`?por=valor|classe|setor`) e vale

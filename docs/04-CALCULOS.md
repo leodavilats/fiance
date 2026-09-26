@@ -2,7 +2,7 @@
 
 Cada número que o produto afirma, com entrada, fórmula, saída e **limitação**.
 O **código é a fonte de verdade**; este documento é o espelho auditado, com âncora em cada fórmula.
-Última revisão: 2026-09-25 · Faixa da ação refeita pela ADR-015; qualidade pela ADR-016
+Última revisão: 2026-09-26 · Faixa da ação refeita pela ADR-015; qualidade pela ADR-016
 
 Se uma fórmula aqui divergir do código, o código está certo e este documento tem um bug.
 
@@ -287,6 +287,9 @@ Todas as entradas em **percentual**, exceto a margem de segurança, que é fraç
 disponível, então o peso efetivo com todos os dados é o nominal sobre essa soma: no conservador, os
 dividendos pesam 26%; no arrojado, o crescimento pesa 44%.
 
+O BDR usa os pesos da ação, mas não tem preço justo: a margem fica de fora, e o score se divide pelo
+peso que sobra. ETF não tem score.
+
 ### Pesos — FIIs, por perfil de risco
 
 | Dimensão | Conservador | Moderado | Arrojado |
@@ -527,8 +530,16 @@ Cada item traz a mesma etiqueta, faixa, qualidade e primeira razão da folha do 
 
 ## Saúde da carteira
 
-`analysis/portfolio_health.py` — pontuação ponderada sobre diversificação, concentração e qualidade
-das posições.
+`analysis/portfolio_health.py` — de 0 a 100, sobre as posições de renda variável:
+
+| Dimensão | Peso | Nota 100 → 0 |
+|---|---|---|
+| Concentração | 30% | maior posição de 10% a 40% do total |
+| Concentração setorial | 20% | maior setor de 20% a 60% |
+| Diversificação | 20% | categorias com valor, de 5 a 0 |
+| Risco | 30% | fatia em veredito de venda, × 1,5 |
+
+`_WEIGHTS` no mesmo arquivo.
 
 ---
 
@@ -703,8 +714,7 @@ Produz duas listas:
 
 Cada sugestão carrega até 3 razões escritas.
 
-Estado `[SEM CLIENTE]`: o cálculo existe e produz a comparação entre o que se tem e o que se quer.
-Falta a tela.
+Na tela em `/sobra/desvio`, com as três razões e o alvo da realocação.
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Fonte de verdade** do roadmap. Nada aqui existe — o que existe está em
 [08-ESTADO](08-ESTADO.md).
-Última revisão: 2026-09-13
+Última revisão: 2026-09-26
 
 As seções são rígidas e não se misturam. Um item só muda de seção por decisão explícita.
 
@@ -19,22 +19,23 @@ As seções são rígidas e não se misturam. Um item só muda de seção por de
 Ordem definida em 2026-09-13. Os cinco primeiros são **recuperação e amadurecimento do que já
 existe** — só o 7 e o 8 são construção nova.
 
-### 1 · Livro-razão e importação de extrato no aplicativo
+### 1 · Importação de extrato, reconciliação e reconstrução no aplicativo
 
-O razão é a fonte da carteira e do imposto, e **não tem nenhuma tela**. O backend está pronto e
-testado: `POST /transactions`, `/transactions/import`, `/rebuild`, `/reconciliation`.
+O razão ganhou tela em 2026-09-13 (`/patrimonio/razao`): lista, registra e apaga lançamento, com os
+eventos corporativos. Falta o que alimenta o razão em volume e o que o confere: `POST
+/transactions/import` (prévia + commit), `GET /transactions/reconciliation` e `POST
+/transactions/rebuild`. O backend está pronto e testado.
 
-É o primeiro item porque o produto hoje entrega menos do que possui, e porque todo o resto —
-proventos, apuração, sugestões — depende de o razão ser alimentável.
+É o primeiro item porque o produto ainda entrega menos do que possui, e porque lançar à mão uma
+história inteira é a maior barreira para quem chega com carteira.
 
 **Esforço:** telas novas sobre backend existente. Ver
 [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md).
 
-### 2 · Tela de proventos
+### ~~2 · Tela de proventos~~ — entregue em 2026-09-13
 
-Ver de onde veio cada provento e lançar os recebidos. Hoje o aplicativo mostra proventos derivados no
-caixa, mas não há como inspecionar a origem nem gerir os pendentes. `GET /dividends` e
-`/dividends/pending` existem sem cliente.
+`/patrimonio/proventos` registra, lista e apaga o recebido (`/dividends/received`) e traz as
+sugestões do calendário uma a uma, nada pré-selecionado.
 
 ### ~~3 · Oportunidades personalizadas~~ — parcialmente entregue em 2026-09-13
 
@@ -72,7 +73,8 @@ erro.
 ### 5 · Simplificar a linguagem da análise de ativo
 
 Muitas siglas para um iniciante — e o iniciante é metade do público declarado. Trabalho de texto e
-hierarquia, não de cálculo.
+hierarquia, não de cálculo. O nível de detalhe **Essencial** (2026-09-26) já fecha o método numa
+gaveta; falta o texto.
 
 ### 6 · Onboarding no aplicativo
 
@@ -80,8 +82,8 @@ hierarquia, não de cálculo.
 
 ### 7 · Contas de desenvolvedor e publicação
 
-Bloqueadores listados em [07-OPERACAO](07-OPERACAO.md): contas Google Play e Apple, um Mac, **Sign in
-with Apple**, ficha de segurança de dados e um canal de atendimento publicado. A exclusão de conta
+Bloqueadores listados em [07-OPERACAO](07-OPERACAO.md): contas Google Play e Apple, um Mac, o botão de **Sign in
+with Apple** (o servidor, `POST /auth/apple`, está pronto), ficha de segurança de dados e um canal de atendimento publicado. A exclusão de conta
 dentro do aplicativo saiu da lista em 2026-09-19.
 
 ⚠️ **O aplicativo nunca rodou em iOS**, nem em simulador. Publicar nas duas lojas significa descobrir
@@ -90,7 +92,7 @@ semanas, e não há como saber antes de executar.
 
 ### 8 · RevenueCat e cobrança real
 
-O `billing/` atual tem só `FakeProvider` e será descartado. Ver
+O `payments/` atual (com `api/billing.py`) tem só `FakeProvider` e será descartado. Ver
 [ADR-008](decisoes/ADR-008-monetizacao-por-loja.md).
 
 **Sem data.** Não há prazo de publicação definido.
@@ -105,7 +107,7 @@ Sem decisão, mas com interesse declarado.
 |---|---|
 | **Opções e derivativos** | Tensiona o limite "não é ferramenta de trade" de [01-PRODUTO](01-PRODUTO.md) |
 | **Controle de gastos completo** (tipo Mobills) | Aumentaria a atenção exigida de um público definido por não ter tempo |
-| **Otimizador de carteira** (Sharpe, HRP, mínima volatilidade) | O diretório está vazio e será removido. Reconstruir é decisão nova — e é preciso responder se isso serve a quem não tem tempo |
+| **Otimizador de carteira** (Sharpe, HRP, mínima volatilidade) | Removido em 2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md)). Reconstruir é decisão nova — e é preciso responder se isso serve a quem não tem tempo |
 | **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. A BRAPI não entrega fundamento *point-in-time*; os dados abertos da CVM (DFP/ITR) entregariam, e o invariante "só BRAPI e BCB SGS" teria de ser revisto |
 | **Preço justo de BDR** | Exige juro em dólar para descontar lucro em dólar ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)): descontar pela Selic fazia todo BDR parecer caro, cerca de 0,67× o valor. Nenhuma das duas fontes entrega essa taxa |
 
@@ -155,5 +157,5 @@ não contra descontinuação nem mudança de preço.
 
 **Regulatório.** Registrado em [ADR-006](decisoes/ADR-006-recomendacao-personalizada.md).
 
-**Um autor.** 37 mil linhas de código, 15 mil de teste, e uma pessoa. O sistema tem testes suficientes
+**Um autor.** Cerca de 44 mil linhas de código, 20 mil de teste (2026-09-26), e uma pessoa. O sistema tem testes suficientes
 para absorver isso, mas não tem quem o mantenha se o autor parar.

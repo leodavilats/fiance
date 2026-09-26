@@ -26,7 +26,7 @@ class AppUser {
 }
 
 class AuthService {
-  AuthService({String apiBaseUrl = 'http://localhost:8000/api'})
+  AuthService({String apiBaseUrl = 'http://localhost:8000/api/v1'})
     : _dio = Dio(BaseOptions(baseUrl: apiBaseUrl)),
       _googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],

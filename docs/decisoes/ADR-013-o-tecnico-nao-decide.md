@@ -6,6 +6,9 @@ foram refeitos
 **Data:** 2026-09-20
 **Decidido por:** autor do projeto, que delegou as escolhas desta auditoria
 
+**Nota (2026-09-25):** os campos legados `consensus`, `consensus_methods`, `bazin` e `dcf` saíram da
+resposta no commit `f8c2609`; a consequência que os mantinha não vale mais.
+
 ## Contexto
 
 A [auditoria de 2026-09-20](../historico/AUDITORIA-DO-VEREDITO-2026-09-20.md) levantou 40 problemas no caminho

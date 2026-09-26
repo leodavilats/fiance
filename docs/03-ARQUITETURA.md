@@ -3,7 +3,7 @@
 Como o sistema é montado e por que as fronteiras estão onde estão.
 Estrutura e endpoints são derivados do código; a **intenção** vive aqui e nas
 [decisões](decisoes/).
-Última revisão: 2026-09-13
+Última revisão: 2026-09-26
 
 ---
 
@@ -47,7 +47,7 @@ resultados. Quem liga isso à persistência são os `*_service.py`.
 
 Consequências práticas:
 
-- a matemática é testável sem infraestrutura — é o que permite 13 mil linhas de teste no backend;
+- a matemática é testável sem infraestrutura — é o que permite a maior parte dos testes do backend rodar sem banco;
 - uma regra financeira errada é um bug localizável, não um efeito de consulta;
 - o cálculo não sabe quem paga, e não pode passar a saber (ver a regra de monetização abaixo).
 
@@ -73,7 +73,9 @@ a solução está errada. Passe o dado por parâmetro.
 
 ## Multi-tenant
 
-Todo dado é de um usuário, e o isolamento é aplicado em `storage/portfolio_store.py`.
+Todo dado é de um usuário, e o isolamento é aplicado na camada `storage/`: `portfolio_store.py`
+abre a sessão filtrada, e `cash_store`, `ledger_store`, `account_store` e `event_store` filtram pelo
+titular em cada consulta.
 
 **`_session_global()` não filtra por usuário.** Existe para job cross-tenant e **nunca** deve
 aparecer em caminho de request. Tabelas sem dono estão em `account_store.GLOBAL_TABLES` —
@@ -112,10 +114,12 @@ esquecer a variável desarmava JWT, CORS e rota de operador de uma vez.
 `X-API-Deprecation`.
 
 **Campo que some é pego por contrato.** `tests/contrato_das_rotas.json` registra os campos de cada
-rota `/api/v1`; o FastAPI descarta em silêncio o que o `response_model` não declara. Regravar é
+rota `/api/v1` — os de resposta, inclusive aninhados, e os de entrada, com `!` nos obrigatórios; o
+FastAPI descarta em silêncio o que o `response_model` não declara, e campo de entrada que vira
+obrigatório quebra o aplicativo que ainda não atualizou. Regravar é
 `python -m tests.contrato_das_rotas`, e o diff entra no mesmo commit.
 
-⚠️ **45 rotas ainda devolvem `dict` solto e não têm contrato.** `SEM_MODELO_HOJE` é a catraca que
+⚠️ **31 rotas ainda devolvem `dict` solto e não têm contrato.** `SEM_MODELO_HOJE` é a catraca que
 impede esse número de crescer. Ver [10-PROBLEMAS](10-PROBLEMAS.md).
 
 **Listas paginam por cursor keyset**, nunca offset. Onde há agregado (proventos, renda fixa,

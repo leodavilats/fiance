@@ -5,6 +5,9 @@ ser das premissas de um modelo por classe, e a leitura de tendência saiu
 **Data:** 2026-09-19
 **Decidido por:** autor do projeto
 
+**Nota (2026-09-25):** os campos legados `consensus`, `consensus_methods`, `bazin` e `dcf` saíram da
+resposta no commit `f8c2609`; a consequência que os mantinha não vale mais.
+
 ## Contexto
 
 O preço justo saía como **média aritmética** dos métodos aplicáveis ao ativo: Bazin, Graham e lucros

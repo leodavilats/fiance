@@ -1,13 +1,13 @@
 name: Deploy
 
-# Deploy é **acionado à mão**, e não por push. O motivo está no PRE_PRODUCAO (A7): hoje o `main`
+# Deploy é **acionado à mão**, e não por push. O motivo: sem este fluxo, o `main`
 # vai direto para produção por auto-deploy do Railway, sem etapa intermediária — e `main` verde nem
 # sempre significa código certo. Este fluxo troca isso por: promover para homologação, olhar, e só
 # então promover para produção, com o rollback documentado no mesmo lugar.
 #
 # Enquanto `RAILWAY_TOKEN` não existir nos segredos do repositório, o fluxo **para com uma
 # mensagem** em vez de falhar por metade — e como o gatilho é manual, ele nunca deixa o CI
-# vermelho. O passo a passo de configuração está em docs/OPERACAO.md.
+# vermelho. O passo a passo de configuração está em docs/07-OPERACAO.md.
 
 on:
   workflow_dispatch:
@@ -74,7 +74,7 @@ jobs:
       - name: Sem token do Railway não há o que fazer
         run: |
           if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
-            echo "::error::RAILWAY_TOKEN não configurado. Veja docs/OPERACAO.md § Deploy."
+            echo "::error::RAILWAY_TOKEN não configurado. Veja docs/07-OPERACAO.md § Deploy."
             exit 1
           fi
 
@@ -140,5 +140,5 @@ jobs:
             echo "ainda subindo (tentativa $tentativa)…"
             sleep 10
           done
-          echo "::error::/api/health não respondeu. Reverta pelo painel do Railway — docs/OPERACAO.md § Rollback."
+          echo "::error::/api/health não respondeu. Reverta pelo painel do Railway — docs/07-OPERACAO.md § Backup e recuperação."
           exit 1

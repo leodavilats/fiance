@@ -1,7 +1,7 @@
 # Operação
 
 Subir, observar, reverter — e o que falta para publicar nas lojas.
-Última revisão: 2026-09-13
+Última revisão: 2026-09-26
 
 ---
 
@@ -88,8 +88,13 @@ O caminho manual **nunca rodou**: ele exige `RAILWAY_TOKEN` nos segredos e `RAIL
 | `BRAPI_TOKEN` | vazio | Fonte de mercado |
 | `BRAPI_HISTORY_RANGE` | `3mo` | Janela de histórico |
 | `ALLOWED_ORIGINS` | localhost | CORS |
-| `ADMIN_USER_IDS` | vazio | Rotas de operador |
+| `ADMIN_USER_IDS` | vazio | Rotas de operador. Conta Apple entra como `apple:<sub>` |
 | `RATE_LIMIT_ENABLED` | `true` | Teto de uso |
+| `RATE_LIMIT_FACTOR` | `1.0` | Multiplica todos os tetos |
+| `TRUSTED_PROXY_COUNT` | `0` | Quantos proxies à frente têm o `X-Forwarded-For` confiável. Zero usa o IP da conexão |
+| `SUITABILITY_PERSONALIZATION_ALLOWED` | `false` | Permite leitura personalizada no nível prescritivo de afirmação |
+| `LOG_LEVEL` | `INFO` | Nível de log |
+| `RELEASE` | vazio | Versão enviada ao Sentry |
 | `AFFIRMATION_LEVEL` | `2` | Nível de afirmação — ver [ADR-007](decisoes/ADR-007-nivel-de-afirmacao.md) |
 | `ENTITLEMENTS_ENABLED` | `false` | Cerca de plano |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | vazio | Push |
@@ -176,7 +181,7 @@ rollback de aplicação — migração que precise voltar exige `downgrade` escr
 
 ## Publicação nas lojas — pré-requisitos
 
-Nada disso existe hoje. Todos são bloqueadores de `[09-FUTURO](09-FUTURO.md)`, item 7.
+Nada disso existe hoje. Todos são bloqueadores de [09-FUTURO](09-FUTURO.md), item 7.
 
 | Pré-requisito | Estado | Observação |
 |---|---|---|
