@@ -61,6 +61,7 @@ cp backend/.env.example backend/.env
 |---|---|
 | `APP_ENV` | `development` ou `production`. **Não tem default**: vazio falha no startup, e se algo escapar, falha **fechado** |
 | `GOOGLE_CLIENT_ID` | Client IDs aceitos como audience do login, separados por vírgula |
+| `APPLE_CLIENT_ID` | Bundle id e Services ID aceitos como audience do login com Apple, separados por vírgula |
 | `JWT_SECRET` | Assina o JWT de sessão. O valor de exemplo é recusado fora de desenvolvimento |
 | `BRAPI_TOKEN` | Cotações e fundamentos |
 

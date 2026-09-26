@@ -134,10 +134,11 @@ Não existe chave de assinatura, e nenhum evento de telemetria foi visto em prod
 
 ## H · Pré-requisitos de loja não atendidos
 
-### Sign in with Apple não existe
+### Sign in with Apple não tem botão no app
 
-A App Store exige quando há login social de terceiros. O sistema só tem Google. É um segundo provedor
-de identidade, não uma configuração.
+O servidor está pronto (`POST /auth/apple`, ver [07-OPERACAO](07-OPERACAO.md)). O botão no app
+depende de conta Apple Developer (Services ID), de um Mac e do pacote `sign_in_with_apple`, e só pode
+ser construído e testado com eles.
 
 ### Não há contas de desenvolvedor, nem Mac
 

@@ -13,7 +13,9 @@ from app.core.auth import (
     issue_access_token,
     issue_refresh_token,
     revoke_token,
+    upsert_user_from_apple,
     upsert_user_from_google,
+    verify_apple_identity_token,
     verify_google_id_token,
 )
 from app.core.database import SessionLocal
@@ -30,6 +32,12 @@ AUTH_PER_MINUTE = 20
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
+    referral_code: str | None = None
+
+
+class AppleLoginRequest(BaseModel):
+    identity_token: str
+    name: str = ""
     referral_code: str | None = None
 
 
@@ -63,6 +71,27 @@ async def login_with_google(body: GoogleLoginRequest, request: Request) -> Login
 
     google_user = verify_google_id_token(body.id_token)
     user = upsert_user_from_google(google_user)
+
+    if body.referral_code:
+        try:
+            referral_service.attribute(user.id, body.referral_code)
+        except referral_service.ReferralError as erro:
+            logger.info("Indicação recusada para %s: %s", user.id, erro)
+
+    return LoginResponse(
+        access_token=issue_access_token(user.id),
+        refresh_token=issue_refresh_token(user.id),
+        expires_in=ACCESS_TTL_SECONDS,
+        user=UserResponse(id=user.id, email=user.email, name=user.name, picture=user.picture),
+    )
+
+
+@router.post("/auth/apple", response_model=LoginResponse)
+async def login_with_apple(body: AppleLoginRequest, request: Request) -> LoginResponse:
+    await ip_rate_limit(request, "auth", AUTH_PER_MINUTE)
+
+    apple_user = verify_apple_identity_token(body.identity_token)
+    user = upsert_user_from_apple(apple_user, name=body.name.strip())
 
     if body.referral_code:
         try:

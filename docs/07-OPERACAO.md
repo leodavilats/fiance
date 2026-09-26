@@ -84,6 +84,7 @@ O caminho manual **nunca rodou**: ele exige `RAILWAY_TOKEN` nos segredos e `RAIL
 |---|---|---|
 | `DATABASE_URL` | SQLite local | Postgres em produção |
 | `GOOGLE_CLIENT_ID` | vazio | Login |
+| `APPLE_CLIENT_ID` | vazio | Login com Apple: bundle id e Services ID aceitos como audience, separados por vírgula. Vazio, a rota recusa com 500 |
 | `BRAPI_TOKEN` | vazio | Fonte de mercado |
 | `BRAPI_HISTORY_RANGE` | `3mo` | Janela de histórico |
 | `ALLOWED_ORIGINS` | localhost | CORS |
@@ -183,14 +184,16 @@ Nada disso existe hoje. Todos são bloqueadores de `[09-FUTURO](09-FUTURO.md)`, 
 | Conta Apple Developer | ❌ | Anuidade |
 | Mac para build e publicação iOS | ❌ | Não há alternativa oficial |
 | **O app rodar em iOS ao menos uma vez** | ❌ | Nunca executado, nem em simulador |
-| **Sign in with Apple** | ❌ | A App Store exige quando há login social de terceiros, e o sistema só tem Google |
+| **Sign in with Apple** | ⚠️ | Backend pronto e testado (`POST /auth/apple`, verificação pelas chaves públicas da Apple). Falta o botão no app, que exige conta Apple Developer (Services ID), um Mac e o pacote `sign_in_with_apple` |
 | Exclusão de conta dentro do app | ✅ | `/voce/conta` → **Excluir esta conta**, com a exportação oferecida ao lado |
 | URL de privacidade pública | ✅ | `/privacidade`, sem login |
 | URL de termos pública | ✅ | `/termos` |
 | Ficha de segurança de dados | ❌ | A escrever, a partir da lista de permissão da telemetria |
 
-**Sign in with Apple é o item de maior esforço**, porque não é configuração: é um segundo provedor de
-identidade, com fluxo próprio e a complicação de que a Apple permite ocultar o e-mail real.
+**Sign in with Apple** é um segundo provedor de identidade, e a parte do servidor já existe: o token
+é verificado pelas chaves públicas da Apple, a conta ganha id próprio, e o e-mail oculto (relay) nunca
+liga contas. O que falta é o cliente, e ele depende de conta Apple Developer e de um Mac para ser
+construído e testado.
 
 ---
 

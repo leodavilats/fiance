@@ -119,6 +119,93 @@ def revoke_token(payload: dict) -> None:
     sessions.revoke_jti(jti, payload["sub"], float(payload.get("exp") or 0))
 
 
+APPLE_ISSUER = "https://appleid.apple.com"
+APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
+APPLE_ID_PREFIX = "apple:"
+
+_apple_jwks: jwt.PyJWKClient | None = None
+
+
+class AppleUser:
+    def __init__(self, sub: str, email: str, email_verified: bool, private_email: bool):
+        self.sub = sub
+        self.email = email
+        self.email_verified = email_verified
+        self.private_email = private_email
+
+
+def _apple_signing_key(token: str):
+    global _apple_jwks
+    if _apple_jwks is None:
+        _apple_jwks = jwt.PyJWKClient(APPLE_JWKS_URL, cache_keys=True, lifespan=24 * 3600)
+    return _apple_jwks.get_signing_key_from_jwt(token).key
+
+
+def _claim_verdadeiro(valor) -> bool:
+    return valor is True or str(valor).lower() == "true"
+
+
+def verify_apple_identity_token(token: str) -> AppleUser:
+    allowed_client_ids = get_settings().apple_client_ids
+    if not allowed_client_ids:
+        raise HTTPException(status_code=500, detail="APPLE_CLIENT_ID não configurado")
+
+    try:
+        payload = jwt.decode(
+            token,
+            _apple_signing_key(token),
+            algorithms=["RS256"],
+            audience=allowed_client_ids,
+            issuer=APPLE_ISSUER,
+            options={"require": ["sub", "exp", "iat", "aud", "iss"]},
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"Token da Apple inválido: {exc}") from exc
+
+    return AppleUser(
+        sub=payload["sub"],
+        email=payload.get("email", ""),
+        email_verified=_claim_verdadeiro(payload.get("email_verified")),
+        private_email=_claim_verdadeiro(payload.get("is_private_email")),
+    )
+
+
+def upsert_user_from_apple(apple_user: AppleUser, name: str = "") -> User:
+    ensure_initialized()
+    user_id = f"{APPLE_ID_PREFIX}{apple_user.sub}"
+    pode_ligar = apple_user.email and apple_user.email_verified and not apple_user.private_email
+
+    session = SessionLocal()
+    try:
+        user = session.get(User, user_id)
+        if user is None and pode_ligar:
+            user = (
+                session.query(User)
+                .filter(User.email == apple_user.email, User.deleted_at.is_(None))
+                .first()
+            )
+        if user is None:
+            email_livre = apple_user.email and (
+                session.query(User.id).filter(User.email == apple_user.email).first() is None
+            )
+            user = User(
+                id=user_id,
+                email=apple_user.email if email_livre else f"{user_id}@sem-email.invalid",
+                name=name,
+                picture="",
+            )
+            session.add(user)
+        else:
+            if name and not user.name:
+                user.name = name
+            user.deleted_at = None
+        session.commit()
+        session.refresh(user)
+        return user
+    finally:
+        session.close()
+
+
 def upsert_user_from_google(google_user: GoogleUser) -> User:
     ensure_initialized()
 

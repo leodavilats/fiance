@@ -26,6 +26,8 @@ class Settings(BaseSettings):
 
     google_client_id: str = ""
 
+    apple_client_id: str = ""
+
     jwt_secret: str = DEFAULT_JWT_SECRET
 
     admin_user_ids: str = ""
@@ -144,6 +146,10 @@ class Settings(BaseSettings):
     @property
     def google_client_ids(self) -> list[str]:
         return [c.strip() for c in self.google_client_id.split(",") if c.strip()]
+
+    @property
+    def apple_client_ids(self) -> list[str]:
+        return [c.strip() for c in self.apple_client_id.split(",") if c.strip()]
 
     @property
     def sqlalchemy_database_url(self) -> str:

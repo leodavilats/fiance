@@ -899,6 +899,21 @@
     "target_price",
     "ticker"
   ],
+  "POST /api/v1/auth/apple": [
+    "access_token",
+    "expires_in",
+    "refresh_token",
+    "user",
+    "user.email",
+    "user.id",
+    "user.name",
+    "user.picture"
+  ],
+  "POST /api/v1/auth/apple (entrada)": [
+    "identity_token!",
+    "name",
+    "referral_code"
+  ],
   "POST /api/v1/auth/google": [
     "access_token",
     "expires_in",

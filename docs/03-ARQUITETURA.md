@@ -91,7 +91,7 @@ fixa. Perguntar a `list_positions` ignora quem chegou por CDB.
 
 | Item | Valor |
 |---|---|
-| Login | Google, exclusivamente. Não existe senha |
+| Login | Google (`POST /auth/google`) e Apple (`POST /auth/apple`). Não existe senha. As duas rotas são públicas por natureza: é por elas que a sessão começa. A conta Apple tem id `apple:<sub>`, para não colidir com o `sub` do Google, e entra na conta existente só quando a Apple confirma um e-mail real (`email_verified` e não relay privado) |
 | Token de acesso | 1 hora |
 | Refresh | 30 dias, **rotacionado e queimado no uso** |
 | Revogação | Por `jti` (um dispositivo) e `session_cuts` (todos) |
