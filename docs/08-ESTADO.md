@@ -146,7 +146,8 @@ imposto, e não tem nenhuma tela no aplicativo.
 | Razão: filtro por tipo, período e ativo, com paginação | `[ATUAL]` | `GET /transactions` | ✅ `/patrimonio/razao` |
 
 **O que o IR cobre:** swing trade de ações, BDRs, ETFs (15%) e FIIs (20%), com compensação de
-prejuízo e isenção mensal. **O que não cobre:** day trade, emissão de DARF, informe anual.
+prejuízo e isenção mensal; day trade a 20%, apurado à parte, com IRRF de 1% e premissa de
+corretora única. **O que não cobre:** emissão de DARF, informe anual.
 
 ---
 

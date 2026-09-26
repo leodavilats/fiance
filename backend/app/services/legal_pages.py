@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app import affirmation
 
-VERSAO = "11 de setembro de 2026"
+VERSAO = "25 de setembro de 2026"
 
 _CSS = """
 :root { color-scheme: light dark; }
@@ -108,8 +108,12 @@ e a exclusão remove o dado de fato — não o marca como oculto.</p>
 <h2>4. Apuração de imposto</h2>
 <p>O fiance apura ganho de capital em renda variável por mês e por categoria, a partir do que você
 lançou no livro-razão, e mostra o cálculo. É uma <strong>estimativa de apoio</strong>: ela não
-substitui a apuração oficial, não emite DARF, não cobre day trade e não considera a sua situação
-fiscal completa. Confira com seu contador antes de declarar.</p>
+substitui a apuração oficial, não emite DARF e não considera a sua situação fiscal completa. Confira
+com seu contador antes de declarar.</p>
+<p>Compra e venda do mesmo ativo no mesmo dia é apurada como <strong>day trade</strong>, à parte. O
+livro-razão não guarda a corretora, então o fiance assume que as duas pontas foram na mesma: se
+você comprou numa corretora e vendeu noutra no mesmo dia, o número não vale para essa operação. O
+IRRF de 1% que aparece é o que a corretora retém, estimado a partir do que você lançou.</p>
 </section>
 
 <section>

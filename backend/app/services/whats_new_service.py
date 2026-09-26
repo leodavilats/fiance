@@ -217,7 +217,8 @@ class WhatsNewService:
                 title=f"R$ {total_loss:,.2f} de prejuízo disponível para compensar IR",
                 detail=(
                     "A legislação permite abater esse prejuízo de ganhos futuros da mesma "
-                    "categoria. O app já considera isso ao estimar o IR de novas vendas."
+                    "categoria, e o de day trade só de day trade. O app já considera isso ao "
+                    "estimar o IR de novas vendas."
                 ),
                 action="analyze",
                 action_label="Ver operações encerradas",

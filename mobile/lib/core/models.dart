@@ -119,6 +119,7 @@ class ClosedTrade {
     required this.soldAt,
     required this.month,
     required this.irIsProrated,
+    this.dayTrade = false,
   });
 
   final int id;
@@ -134,6 +135,7 @@ class ClosedTrade {
   final double soldAt;
   final String month;
   final bool irIsProrated;
+  final bool dayTrade;
 
   factory ClosedTrade.fromJson(Map<String, dynamic> j) => ClosedTrade(
     id: j['id'] as int,
@@ -149,6 +151,7 @@ class ClosedTrade {
     soldAt: (j['sold_at'] as num).toDouble(),
     month: j['month'] as String? ?? '',
     irIsProrated: j['ir_is_prorated'] as bool? ?? false,
+    dayTrade: j['day_trade'] as bool? ?? false,
   );
 }
 
@@ -165,6 +168,10 @@ class MonthlyTaxAssessment {
     required this.irAmount,
     required this.sales,
     required this.observation,
+    this.dayTrade = false,
+    this.irrfWithheld = 0,
+    this.irrfDeducted = 0,
+    this.irPayable,
   });
 
   final String month;
@@ -178,6 +185,10 @@ class MonthlyTaxAssessment {
   final double irAmount;
   final int sales;
   final String observation;
+  final bool dayTrade;
+  final double irrfWithheld;
+  final double irrfDeducted;
+  final double? irPayable;
 
   factory MonthlyTaxAssessment.fromJson(Map<String, dynamic> j) =>
       MonthlyTaxAssessment(
@@ -192,6 +203,10 @@ class MonthlyTaxAssessment {
         irAmount: (j['ir_amount'] as num?)?.toDouble() ?? 0,
         sales: (j['sales'] as num?)?.toInt() ?? 0,
         observation: j['observation'] as String? ?? '',
+        dayTrade: j['day_trade'] as bool? ?? false,
+        irrfWithheld: (j['irrf_withheld'] as num?)?.toDouble() ?? 0,
+        irrfDeducted: (j['irrf_deducted'] as num?)?.toDouble() ?? 0,
+        irPayable: (j['ir_payable'] as num?)?.toDouble(),
       );
 }
 

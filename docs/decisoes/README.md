@@ -32,6 +32,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [017](ADR-017-o-score-nao-le-o-tecnico.md) | O score de oportunidade não lê o técnico | `ACEITO` | 2026-09-25 |
 | [018](ADR-018-a-queda-e-recorte-e-nao-veredito.md) | A queda é recorte de Descobrir, e não veredito | `ACEITO` | 2026-09-25 |
 | [019](ADR-019-fii-de-papel-exige-yield-nominal.md) | FII de papel exige yield nominal, por uma classificação mantida no código | `ACEITO` | 2026-09-25 |
+| [020](ADR-020-day-trade-apartado.md) | Day trade é apartado na projeção, e apurado em conta própria | `ACEITO` | 2026-09-25 |
 
 ---
 

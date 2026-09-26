@@ -4,11 +4,36 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from app.core.money import ZERO, money, quantize
+from app.core.money import ZERO, money, quantize, sum_money
 
 from .entries import LedgerEntry, LedgerError, TransactionKind
 
 QUANTITY_EPSILON = Decimal("0.00000001")
+
+_PREGAO = frozenset({TransactionKind.BUY, TransactionKind.SELL})
+
+
+@dataclass(frozen=True)
+class Realizacao:
+    entry_id: int | None
+    traded_on: str
+    quantity: Decimal
+    sell_value: Decimal
+    cost: Decimal
+    fees: Decimal
+    day_trade: bool = False
+
+    @property
+    def result(self) -> Decimal:
+        return self.sell_value - self.cost - self.fees
+
+    @property
+    def sell_price(self) -> Decimal:
+        return self.sell_value / self.quantity
+
+    @property
+    def avg_price(self) -> Decimal:
+        return self.cost / self.quantity
 
 
 @dataclass
@@ -22,6 +47,7 @@ class PositionProjection:
     last_traded_on: str | None = None
     entries_applied: int = 0
     warnings: list[str] = field(default_factory=list)
+    realizacoes: list[Realizacao] = field(default_factory=list)
 
     @property
     def avg_price_exact(self) -> Decimal:
@@ -68,6 +94,32 @@ class PositionProjection:
         }
 
 
+def _comprar(state: PositionProjection, quantity: Decimal, value: Decimal, fees: Decimal) -> None:
+    state.quantity_exact += quantity
+    state.total_cost_exact += value + fees
+    state.total_fees_exact += fees
+
+
+def _vender(
+    state: PositionProjection,
+    quantity: Decimal,
+    value: Decimal,
+    fees: Decimal,
+    entry_id: int | None,
+    traded_on: str,
+) -> None:
+    sold_cost = state.avg_price_exact * quantity
+    realizacao = Realizacao(entry_id, traded_on, quantity, value, sold_cost, fees)
+    state.realizacoes.append(realizacao)
+    state.realized_pnl_exact += realizacao.result
+    state.quantity_exact -= quantity
+    state.total_cost_exact -= sold_cost
+    state.total_fees_exact += fees
+    if abs(state.quantity_exact) < QUANTITY_EPSILON:
+        state.quantity_exact = ZERO
+        state.total_cost_exact = ZERO
+
+
 def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
     kind = entry.kind
     quantity = money(entry.quantity)
@@ -80,9 +132,7 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
         return
 
     if kind is TransactionKind.BUY:
-        state.quantity_exact += quantity
-        state.total_cost_exact += quantity * price + fees
-        state.total_fees_exact += fees
+        _comprar(state, quantity, quantity * price, fees)
         return
 
     if kind is TransactionKind.SELL:
@@ -91,14 +141,7 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
                 f"Venda de {entry.quantity:g} {entry.symbol} em {entry.traded_on} sem posição: "
                 f"o razão tem {state.quantity:g}."
             )
-        sold_cost = state.avg_price_exact * quantity
-        state.realized_pnl_exact += quantity * price - sold_cost - fees
-        state.quantity_exact -= quantity
-        state.total_cost_exact -= sold_cost
-        state.total_fees_exact += fees
-        if abs(state.quantity_exact) < QUANTITY_EPSILON:
-            state.quantity_exact = ZERO
-            state.total_cost_exact = ZERO
+        _vender(state, quantity, quantity * price, fees, entry.id, entry.traded_on)
         return
 
     if kind is TransactionKind.SPLIT:
@@ -172,7 +215,89 @@ def _sequence(entries: Iterable[LedgerEntry]) -> tuple[list[LedgerEntry], list[L
     return [ancora] + sorted(aplicaveis, key=lambda e: e.sort_key), absorvidos
 
 
-def _fold(entries: Iterable[LedgerEntry], symbol: str, on_step=None) -> PositionProjection:
+def _pregoes_com_day_trade(ordered: list[LedgerEntry]) -> dict[str, list[LedgerEntry]]:
+    por_dia: dict[str, list[LedgerEntry]] = {}
+    for entry in ordered:
+        if entry.kind in _PREGAO:
+            por_dia.setdefault(entry.traded_on, []).append(entry)
+    return {dia: bloco for dia, bloco in por_dia.items() if {e.kind for e in bloco} == _PREGAO}
+
+
+def _apply_day_trade(
+    state: PositionProjection, bloco: list[LedgerEntry], tolerant: bool
+) -> Realizacao:
+    compras = [e for e in bloco if e.kind is TransactionKind.BUY]
+    vendas = [e for e in bloco if e.kind is TransactionKind.SELL]
+    dia = bloco[0].traded_on
+    venda_id = max((e.id for e in vendas if e.id is not None), default=None)
+
+    comprado = sum_money(e.quantity for e in compras)
+    valor_compras = sum_money(money(e.quantity) * money(e.price) for e in compras)
+    taxas_compras = sum_money(e.fees for e in compras)
+    vendido = sum_money(e.quantity for e in vendas)
+    valor_vendas = sum_money(money(e.quantity) * money(e.price) for e in vendas)
+    taxas_vendas = sum_money(e.fees for e in vendas)
+
+    casado = min(comprado, vendido)
+    custo_casado = casado * valor_compras / comprado
+    venda_casada = casado * valor_vendas / vendido
+    taxas_compra_casada = taxas_compras * casado / comprado
+    taxas_venda_casada = taxas_vendas * casado / vendido
+
+    day_trade = Realizacao(
+        entry_id=venda_id,
+        traded_on=dia,
+        quantity=casado,
+        sell_value=venda_casada,
+        cost=custo_casado,
+        fees=taxas_compra_casada + taxas_venda_casada,
+        day_trade=True,
+    )
+    state.realizacoes.append(day_trade)
+    state.realized_pnl_exact += day_trade.result
+    state.total_fees_exact += day_trade.fees
+
+    sobra_compra = comprado - casado
+    sobra_venda = vendido - casado
+    if sobra_compra > QUANTITY_EPSILON:
+        _comprar(
+            state,
+            sobra_compra,
+            valor_compras - custo_casado,
+            taxas_compras - taxas_compra_casada,
+        )
+    elif sobra_venda > QUANTITY_EPSILON:
+        if sobra_venda <= state.quantity_exact + QUANTITY_EPSILON:
+            _vender(
+                state,
+                sobra_venda,
+                valor_vendas - venda_casada,
+                taxas_vendas - taxas_venda_casada,
+                venda_id,
+                dia,
+            )
+        elif not tolerant:
+            raise LedgerError(
+                f"Venda de {float(sobra_venda):g} {bloco[0].symbol} em {dia} sem posição: "
+                f"o day trade do dia casou {float(casado):g}, e o razão tem {state.quantity:g}."
+            )
+
+    return day_trade
+
+
+def _venda_sem_posicao(state: PositionProjection, entry: LedgerEntry) -> bool:
+    return (
+        entry.kind is TransactionKind.SELL
+        and money(entry.quantity) > state.quantity_exact + QUANTITY_EPSILON
+    )
+
+
+def _fold(
+    entries: Iterable[LedgerEntry],
+    symbol: str,
+    on_step=None,
+    tolerant: bool = False,
+) -> PositionProjection:
     ordered, ignorados = _sequence(entries)
     state = PositionProjection(symbol=symbol or (ordered[0].symbol if ordered else ""))
 
@@ -183,14 +308,26 @@ def _fold(entries: Iterable[LedgerEntry], symbol: str, on_step=None) -> Position
             f"de {ancora} não foram somados: o que foi declarado já os contém."
         )
 
+    pregoes = _pregoes_com_day_trade(ordered)
+
     for entry in ordered:
-        _apply(state, entry)
-        state.entries_applied += 1
+        bloco = pregoes.get(entry.traded_on) if entry.kind in _PREGAO else None
+        day_trade = None
+        if bloco is not None:
+            if entry is not bloco[0]:
+                continue
+            day_trade = _apply_day_trade(state, bloco, tolerant)
+            state.entries_applied += len(bloco)
+        elif tolerant and _venda_sem_posicao(state, entry):
+            continue
+        else:
+            _apply(state, entry)
+            state.entries_applied += 1
         if state.first_traded_on is None:
             state.first_traded_on = entry.traded_on
         state.last_traded_on = entry.traded_on
         if on_step is not None:
-            on_step(entry, state)
+            on_step(entry, state, day_trade)
 
     return state
 
@@ -262,15 +399,26 @@ def _describe(entry: LedgerEntry, state: PositionProjection) -> str:
     )
 
 
+def _describe_day_trade(day_trade: Realizacao, state: PositionProjection) -> str:
+    return (
+        f"Day trade de {float(day_trade.quantity):g}: compra média "
+        f"{float(day_trade.avg_price):.2f}, venda média {float(day_trade.sell_price):.2f}, "
+        f"resultado {float(quantize(day_trade.result)):.2f} apurado à parte. "
+        f"O que sobrou do dia entra na média, que fica em {state.avg_price:.4f}."
+    )
+
+
 def explain_position(entries: Iterable[LedgerEntry], symbol: str = "") -> dict:
     steps: list[DerivationStep] = []
 
-    def record(entry: LedgerEntry, state: PositionProjection) -> None:
+    def record(entry: LedgerEntry, state: PositionProjection, day_trade: Realizacao | None) -> None:
         steps.append(
             DerivationStep(
                 traded_on=entry.traded_on,
-                kind=entry.kind.value,
-                description=_describe(entry, state),
+                kind="day_trade" if day_trade else entry.kind.value,
+                description=(
+                    _describe_day_trade(day_trade, state) if day_trade else _describe(entry, state)
+                ),
                 quantity_after=state.quantity,
                 total_cost_after=state.total_cost,
                 avg_price_after=state.avg_price,

@@ -25,6 +25,10 @@ const _shortMonths = [
   'dez',
 ];
 
+const _notaDoDayTrade =
+    ' Day trade, compra e venda no mesmo dia, é apurado à parte, sem isenção e '
+    'fora do preço médio.';
+
 String _shortMonthLabel(String mes) {
   final partes = mes.split('-');
   if (partes.length != 2) return mes;
@@ -97,7 +101,8 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                   const SizedBox(height: FiSpace.s1),
                   Text(
                     'O imposto é do mês, não da venda: lucros e prejuízos do mesmo mês e da '
-                    'mesma categoria se compensam.',
+                    'mesma categoria se compensam.'
+                    '${data.months.any((m) => m.dayTrade) ? _notaDoDayTrade : ''}',
                     style: FiType.caption.copyWith(color: fiInk2(context)),
                   ),
                   const SizedBox(height: FiSpace.s3),
@@ -105,8 +110,9 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                     children: [
                       for (final m in data.months)
                         FiDataRow(
-                          label: '${_shortMonthLabel(m.month)} · ${categoryLabel(m.category)}',
-                          value: formatCurrency(m.irAmount),
+                          label: '${_shortMonthLabel(m.month)} · ${categoryLabel(m.category)}'
+                              '${m.dayTrade ? ' · day trade' : ''}',
+                          value: formatCurrency(m.irPayable ?? m.irAmount),
                           note: m.observation,
                         ),
                     ],
@@ -125,7 +131,8 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                       FiDataRow(
                         label: t.ticker,
                         detail:
-                            '${t.quantity} un. · venda ${formatCurrency(t.sellPrice)}',
+                            '${t.quantity} un. · venda ${formatCurrency(t.sellPrice)}'
+                            '${t.dayTrade ? ' · day trade' : ''}',
                         value:
                             '${t.netProfit >= 0 ? '+' : ''}${formatCurrency(t.netProfit)}',
                         valueColor: fiDirectionColor(

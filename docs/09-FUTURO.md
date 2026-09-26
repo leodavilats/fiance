@@ -117,7 +117,6 @@ Sem compromisso nenhum. Listado para não ser esquecido, e para não ser confund
 
 | Item | Observação |
 |---|---|
-| Day trade na apuração de IR | Alíquota de 20% e apuração própria. Tensiona o mesmo limite das opções |
 | Open Finance | Resolveria a tensão central do produto — a atenção exigida — e é o item de maior esforço e maior regulação |
 | Sair do Brasil / outros mercados | A premissa brasileira está em toda parte: IR, fuso, BRT, BRAPI, BCB |
 | API para terceiros | `[EM DISCUSSÃO]` desde o início |

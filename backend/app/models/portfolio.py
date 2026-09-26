@@ -122,6 +122,13 @@ class ClosedTrade(BaseModel):
     loss_compensable: bool = True
     sold_at: float
     month: str = Field("", description="Mês fiscal BRT (YYYY-MM) em que esta venda foi apurada.")
+    day_trade: bool = Field(
+        False,
+        description=(
+            "Compra e venda do mesmo ativo no mesmo dia, casadas pela menor quantidade. "
+            "Apurada à parte, a 20%, e fora do preço médio. `id` é o da última venda do dia."
+        ),
+    )
     ir_is_prorated: bool = Field(
         False,
         description="Verdadeiro quando `ir_amount` é rateio de um imposto apurado no mês.",
@@ -140,10 +147,33 @@ class MonthlyTaxAssessment(BaseModel):
     ir_amount: float
     sales: int
     observation: str
+    day_trade: bool = Field(
+        False,
+        description=(
+            "Apuração de day trade: 20%, sem isenção, prejuízo que só compensa day trade "
+            "da mesma categoria."
+        ),
+    )
+    irrf_withheld: float = Field(
+        0.0,
+        description=(
+            "IRRF de 1% sobre o resultado positivo de day trade de cada dia, o que a "
+            "corretora retém. Assume corretora única."
+        ),
+    )
+    irrf_deducted: float = Field(
+        0.0,
+        description="IRRF deste mês e de meses anteriores deduzido de `ir_amount`.",
+    )
+    ir_payable: float | None = Field(
+        None,
+        description="O que vai para o DARF: `ir_amount` menos `irrf_deducted`.",
+    )
 
 
 class TaxLossCategoryBalance(BaseModel):
     category: str
+    day_trade: bool = False
     realized_loss: float
     offset_used: float
     available: float

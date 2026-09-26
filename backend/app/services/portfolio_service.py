@@ -305,7 +305,7 @@ class PortfolioService:
             cursor,
             page_size,
             key=lambda t: t["sold_at"],
-            identity=lambda t: t["id"],
+            identity=apuracao_service.ordem_da_linha,
         )
 
         balances = apuracao_service.saldos_de_prejuizo(apuracao)

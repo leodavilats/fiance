@@ -110,6 +110,9 @@ de posição a partir dele. Não há espelhamento entre duas verdades.
 mudar — e o usuário não saber.
 
 **Preço médio segue a convenção brasileira:** venda reduz quantidade e custo, nunca a média.
+Compra e venda do mesmo ativo no mesmo dia é **day trade** e fica fora da média: a quantidade
+casada é apurada à parte, a sobra de compra entra na média, a sobra de venda sai contra ela
+([ADR-020](decisoes/ADR-020-day-trade-apartado.md)).
 
 **Comprar não é declarar posição.** Uma compra (`buy`) soma à posição e recalcula a média; uma
 declaração (`adjust`, via `POST /portfolio/position`) diz "eu tenho isto" e ancora a linha do tempo.
@@ -144,8 +147,10 @@ guardá-lo fazia a ordem de registro dentro do mês mudar o número.
 |---|---|
 | Alíquota ações, BDRs, ETFs | 15% |
 | Alíquota FIIs | 20% |
-| Isenção mensal | R$ 20.000 em vendas, **só** para `acoes_br` |
-| Compensação de prejuízo | Por categoria, sem prazo |
+| Alíquota day trade, qualquer categoria | 20% |
+| Isenção mensal | R$ 20.000 em vendas, **só** para `acoes_br`, **nunca** para day trade |
+| Compensação de prejuízo | Por categoria e por modalidade (comum ou day trade), sem prazo |
+| IRRF de day trade | 1% do resultado positivo do dia, deduzido do imposto de day trade |
 | Fuso | Brasileiro (`core/brt.py`), não UTC |
 
 **Isenção corta os dois lados:** prejuízo apurado em mês isento **não** gera crédito compensável.
@@ -153,7 +158,12 @@ guardá-lo fazia a ordem de registro dentro do mês mudar o número.
 **O IR por linha em Encerradas é rateio do mês**, e a tela diz isso. O número que se paga está na
 apuração mensal.
 
-**Não cobre:** day trade, emissão de DARF, informe anual. O texto de `/aviso-cvm` declara isso.
+**Day trade é compra e venda do mesmo ativo no mesmo dia**, casadas pela menor quantidade. Sem
+corretora no razão, **assume-se corretora única**. A venda de day trade conta no volume da isenção
+das operações comuns.
+
+**Não cobre:** emissão de DARF, informe anual. A seção 4 dos `/termos` declara isso e a premissa
+de corretora única.
 
 ---
 

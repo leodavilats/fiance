@@ -43,7 +43,7 @@ def apuracao(user_id: str | None = None) -> Apuracao:
 
 
 def _linha(apuracao_completa: Apuracao, venda: VendaApurada) -> dict:
-    mes = apuracao_completa.mes(venda.mes, venda.categoria)
+    mes = apuracao_completa.mes(venda.mes, venda.categoria, venda.day_trade)
     imposto = apuracao_completa.ir_da_venda(venda)
 
     return {
@@ -63,22 +63,27 @@ def _linha(apuracao_completa: Apuracao, venda: VendaApurada) -> dict:
         "sold_at": day_timestamp(venda.traded_on),
         "month": venda.mes,
         "ir_is_prorated": bool(mes and mes.ir_amount > ZERO),
+        "day_trade": venda.day_trade,
     }
 
 
 def vendas_apuradas(user_id: str | None = None) -> tuple[list[dict], Apuracao]:
     completa = apuracao(user_id=user_id)
     linhas = [_linha(completa, venda) for venda in completa.vendas]
-    linhas.sort(key=lambda linha: (linha["sold_at"], linha["id"]), reverse=True)
+    linhas.sort(key=lambda linha: (linha["sold_at"], ordem_da_linha(linha)), reverse=True)
     return linhas, completa
 
 
+def ordem_da_linha(linha: dict) -> int:
+    return linha["id"] * 2 + int(linha["day_trade"])
+
+
 def saldos_de_prejuizo(completa: Apuracao) -> list[dict]:
-    por_categoria: dict[str, dict] = {}
+    por_conta: dict[tuple[str, bool], dict] = {}
 
     for mes in completa.meses:
-        bucket = por_categoria.setdefault(
-            mes.categoria, {"realized_loss": ZERO, "offset_used": ZERO}
+        bucket = por_conta.setdefault(
+            (mes.categoria, mes.day_trade), {"realized_loss": ZERO, "offset_used": ZERO}
         )
         bucket["realized_loss"] += mes.loss_generated
         bucket["offset_used"] += mes.loss_offset_used
@@ -86,13 +91,14 @@ def saldos_de_prejuizo(completa: Apuracao) -> list[dict]:
     return [
         {
             "category": categoria,
+            "day_trade": day_trade,
             "realized_loss": to_float(quantize(valores["realized_loss"])),
             "offset_used": to_float(quantize(valores["offset_used"])),
             "available": to_float(
                 quantize(max(valores["realized_loss"] - valores["offset_used"], ZERO))
             ),
         }
-        for categoria, valores in sorted(por_categoria.items())
+        for (categoria, day_trade), valores in sorted(por_conta.items())
         if valores["realized_loss"] > ZERO or valores["offset_used"] > ZERO
     ]
 
