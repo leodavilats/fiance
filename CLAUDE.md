@@ -95,7 +95,8 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 - **A apuração de IR também é projeção, e a unidade é o mês.** Não existe imposto gravado numa venda.
 - **Uma declaração de posição ancora a linha do tempo.** O que tem data anterior e *soma* é
   descartado com aviso; o que *reduz* continua valendo.
-- **Preço médio segue a convenção brasileira:** venda reduz quantidade e custo, nunca a média.
+- **Preço médio segue a convenção brasileira:** venda reduz quantidade e custo, nunca a média. O day
+  trade (compra e venda no mesmo dia) é apartado na projeção e não toca o preço médio.
 - **Evento corporativo é lançamento**, não correção manual.
 - **Valor negativo não é lançamento, é sinal trocado.**
 - **`PUT /portfolio` é destrutivo** e existe só para importação explícita.
@@ -132,7 +133,7 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 - **Fonte tem disjuntor.** Aberto, nem tenta.
 - **`CACHE_BACKEND` errado falha alto.** Cair em silêncio para cache por nó faz a mesma pessoa ver
   preços diferentes.
-- **A cota se gasta no pregão** (`core/pregao.py`, 10h–18h30 seg–sex). O portão vale para a varredura
+- **A cota se gasta no pregão** (`core/pregao.py`, 10h–18h30 nos dias de pregão da B3). O portão vale para a varredura
   do universo, **não** para busca de um ativo pedido por alguém.
 
 ### API e dados

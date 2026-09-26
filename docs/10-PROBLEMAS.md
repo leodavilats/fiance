@@ -31,26 +31,14 @@ exigem fonte fora de BRAPI e BCB SGS, e estão em [09-FUTURO](09-FUTURO.md), *Co
 
 ## B · Dado e fonte
 
-### 1 · O caminho do Redis nunca rodou contra um servidor real fora do CI
-
-Coberto: o contrato e a tradução do adaptador. Não coberto: rede instável, reconexão, failover.
-
-### 4 · Universo hardcoded como fallback
-
-`core/config.py::default_universe` mantém ~400 tickers, apesar de existir universo dinâmico via
-BRAPI. Fallback defensivo intencional, mas extenso.
-
-### 33 · A janela de pregão não conhece feriado da B3
-
-`core/pregao.py` bloqueia a varredura em dia de feriado como se fosse pregão normal.
+Nenhum item aberto. Redis com timeout e reconexão, universo com cache vencido e calendário da B3
+foram fechados em 2026-09-25 — ver [03-ARQUITETURA](03-ARQUITETURA.md).
 
 ---
 
 ## C · Produto incompleto
 
 ### 15 · Sugestões seguidas dependem de lançamento manual
-
-### 20 · A apuração de IR não cobre day trade nem IOF de renda fixa
 
 ### 27 · A cobrança é backend sem cliente
 
