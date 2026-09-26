@@ -17,7 +17,6 @@ class Opportunity(BaseModel):
     fair_high: float | None = None
     band_quality: str = "sem_faixa"
     independent_inputs: int = 0
-    bazin: float | None = None
     graham: float | None = None
     pvp: float | None = None
     personal_ceiling: float | None = None
@@ -29,7 +28,6 @@ class Opportunity(BaseModel):
     confidence_label: str = "baixa"
     confidence: float = 0.0
     data_years: int = 0
-    consensus_methods: int = 0
     trend_basis: str = "none"
     category_resolved: str = "acoes_br"
     score: float = 0.0

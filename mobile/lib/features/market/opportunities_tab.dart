@@ -771,7 +771,7 @@ class FiOpportunityObject extends StatelessWidget {
               if (o.basis == 'trend')
                 basisLabel(o.basis)
               else
-                fairBandSummary(o.fairLow, o.fairHigh, o.consensusMethods),
+                fairBandSummary(o.fairLow, o.fairHigh, o.independentInputs),
               if (o.dataYears > 0) 'DY sobre ${dataYearsLabel(o.dataYears)}',
             ].join(' · '),
             style: FiType.axis.copyWith(color: fiInk3(context)),

@@ -426,23 +426,17 @@ def margin_of_safety_in_band(
 
 @dataclass
 class FairPriceResult:
-    bazin: float | None
-
     graham: float | None
 
-    dcf: float | None
-
-    consensus: float | None
-
-    consensus_methods: int
+    principal_value: float | None
 
     margin_of_safety: float | None
 
-    avg_dividend_5y: float | None
+    dividend_recurring: float | None
 
     dy_12m: float | None
 
-    dy_5y: float | None
+    dividend_yield_recurring: float | None
 
     data_years: int
 
@@ -481,12 +475,6 @@ class FairPriceResult:
     details: dict = field(default_factory=dict)
 
     price: float | None = None
-
-    principal_value: float | None = None
-
-    dividend_recurring: float | None = None
-
-    dividend_yield_recurring: float | None = None
 
 
 @dataclass
@@ -920,7 +908,7 @@ def fair_price_from_inputs(
         if (inputs.dividend_12m is not None and price and price > 0)
         else None
     )
-    dy_5y = (
+    dy_recorrente = (
         round(inputs.dividend_recurring / price, 4)
         if (inputs.dividend_recurring is not None and price and price > 0)
         else None
@@ -929,17 +917,13 @@ def fair_price_from_inputs(
     base = {
         "price": price,
         "graham": graham,
-        "avg_dividend_5y": (
-            round(inputs.dividend_recurring, 4) if inputs.dividend_recurring else None
-        ),
-        "dy_12m": dy_12m,
-        "dy_5y": dy_5y,
-        "data_years": inputs.data_years,
-        "desired_yield_used": effective_yield,
         "dividend_recurring": (
             round(inputs.dividend_recurring, 4) if inputs.dividend_recurring else None
         ),
-        "dividend_yield_recurring": dy_5y,
+        "dy_12m": dy_12m,
+        "dividend_yield_recurring": dy_recorrente,
+        "data_years": inputs.data_years,
+        "desired_yield_used": effective_yield,
         "pvp": inputs.pvp,
         "indicators": indicadores,
         "personal_ceiling": teto_pessoal,
@@ -956,10 +940,7 @@ def fair_price_from_inputs(
 
     if lens is None or lens.central is None:
         return FairPriceResult(
-            bazin=None,
-            dcf=None,
-            consensus=None,
-            consensus_methods=0,
+            principal_value=None,
             margin_of_safety=None,
             principal=principal,
             methods=_no_band_methods(inputs, lens, principal),
@@ -973,8 +954,6 @@ def fair_price_from_inputs(
             confirmacao,
             _method("vpa", "inaplicavel", "inaplicavel", "vale para FII"),
         ]
-        bazin = confirmacao["value"]
-        dcf = lens.central
     else:
         confirmacao = _fii_confirmation(inputs, lens)
         metodos = [
@@ -982,8 +961,6 @@ def fair_price_from_inputs(
             confirmacao,
             _method("dcf", "inaplicavel", "inaplicavel", "vale para ação"),
         ]
-        bazin = lens.central
-        dcf = None
 
     if graham is not None:
         metodos.append(_method("graham", "indicador", "ok", valor=graham))
@@ -998,11 +975,7 @@ def fair_price_from_inputs(
     )
 
     return FairPriceResult(
-        bazin=bazin,
-        dcf=dcf,
-        consensus=lens.central,
         principal_value=lens.central,
-        consensus_methods=2 if confirmado else 1,
         margin_of_safety=margin_of_safety_in_band(price, lens.low, lens.high),
         fair_low=lens.low,
         fair_high=lens.high,

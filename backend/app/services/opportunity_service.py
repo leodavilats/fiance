@@ -143,12 +143,11 @@ class OpportunityService:
             sector=record.sector,
             price=record.price,
             as_of=record.as_of or None,
-            fair_price=fair.consensus,
+            fair_price=fair.principal_value,
             fair_low=fair.fair_low,
             fair_high=fair.fair_high,
             band_quality=fair.band_quality,
             independent_inputs=fair.independent_inputs,
-            bazin=fair.bazin,
             graham=fair.graham,
             pvp=fair.pvp,
             personal_ceiling=fair.personal_ceiling,
@@ -160,7 +159,6 @@ class OpportunityService:
             confidence=dec.confidence,
             confidence_label=confidence_label(dec.confidence),
             data_years=fair.data_years,
-            consensus_methods=fair.consensus_methods,
             trend_basis=tech.trend_basis,
             category_resolved=auto_category(
                 record.asset_type, record.dividend_yield, record.has_dividend_history

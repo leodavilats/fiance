@@ -18,7 +18,7 @@ void main() {
     'score': 100.0,
     'verdict': 'BUY',
     'label': 'Bem abaixo do preço justo',
-    'consensus_methods': 1,
+    'independent_inputs': 1,
     'data_years': 5,
     'data_completeness': 1.0,
   });

@@ -74,7 +74,7 @@ def test_opportunity_carries_its_own_provenance(client):
     items = resp.json()["items"]
     assert items
 
-    for field in ("confidence", "data_years", "consensus_methods", "trend_basis"):
+    for field in ("confidence", "data_years", "independent_inputs", "trend_basis"):
         assert field in items[0]
 
     petr = next((o for o in items if o["ticker"] == "PETR4"), None)

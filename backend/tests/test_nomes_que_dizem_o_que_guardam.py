@@ -37,12 +37,11 @@ def test_os_nomes_novos_chegam_a_resposta():
     assert bloco.dividend_yield_recurring is not None
 
 
-def test_os_nomes_antigos_seguem_como_alias():
-    bloco = FairPriceBlock(**_acao().__dict__)
+def test_os_nomes_legados_sairam():
+    campos = FairPriceBlock.model_fields
 
-    assert bloco.consensus == bloco.principal_value, (
-        "o app em loja lê `consensus`: tirar o alias antes da versão nova apaga o preço justo "
-        "da tela de quem não atualizou"
+    legados = {"consensus", "consensus_methods", "bazin", "dcf", "avg_dividend_5y", "dy_5y"}
+    assert not legados & set(campos), (
+        "consensus não era consenso, bazin não era Bazin e dcf não era fluxo de caixa: nome que "
+        "não diz o que guarda induz leitura errada, e não há app em loja para proteger"
     )
-    assert bloco.avg_dividend_5y == bloco.dividend_recurring
-    assert bloco.dy_5y == bloco.dividend_yield_recurring

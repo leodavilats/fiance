@@ -36,7 +36,7 @@ final fiCompareMetrics = <FiCompareMetric>[
     'Preço justo (valor central)',
     'Valuation',
     fiCompareAll,
-    (a) => formatCurrency(a.consensus),
+    (a) => formatCurrency(a.principalValue),
   ),
   FiCompareMetric(
     'P/L',

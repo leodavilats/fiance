@@ -261,7 +261,7 @@ class TestFalsificadores:
             f for f in falsifiers(r, decide(r).verdict, 80.0) if f["metric"] == "dividend"
         )
 
-        assert premissa["threshold"] == pytest.approx(9.5 * 80.0 / r.consensus, rel=1e-3)
+        assert premissa["threshold"] == pytest.approx(9.5 * 80.0 / r.principal_value, rel=1e-3)
 
     def test_sem_faixa_nao_ha_falsificador(self):
         r = _acao(rates=None)

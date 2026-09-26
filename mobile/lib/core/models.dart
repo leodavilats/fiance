@@ -19,7 +19,7 @@ class PortfolioPosition {
     this.reasons = const [],
     this.confidence = 0,
     this.dataYears = 0,
-    this.consensusMethods = 0,
+    this.independentInputs = 0,
     this.trendBasis = 'none',
   });
 
@@ -44,7 +44,7 @@ class PortfolioPosition {
   final List<String> reasons;
   final double confidence;
   final int dataYears;
-  final int consensusMethods;
+  final int independentInputs;
   final String trendBasis;
 
   factory PortfolioPosition.fromJson(Map<String, dynamic> j) =>
@@ -70,7 +70,7 @@ class PortfolioPosition {
             const [],
         confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
         dataYears: j['data_years'] as int? ?? 0,
-        consensusMethods: j['consensus_methods'] as int? ?? 0,
+        independentInputs: (j['independent_inputs'] as num?)?.toInt() ?? 0,
         trendBasis: j['trend_basis'] as String? ?? 'none',
       );
 }
@@ -496,7 +496,6 @@ class Opportunity {
     required this.score,
     this.confidence = 0,
     this.dataYears = 0,
-    this.consensusMethods = 0,
     this.trendBasis = 'none',
     this.dataCompleteness = 1,
     this.changePercentDay,
@@ -529,7 +528,6 @@ class Opportunity {
   final double score;
   final double confidence;
   final int dataYears;
-  final int consensusMethods;
   final String trendBasis;
   final double dataCompleteness;
   final double? changePercentDay;
@@ -556,7 +554,6 @@ class Opportunity {
     score: (j['score'] as num?)?.toDouble() ?? 0,
     confidence: (j['confidence'] as num?)?.toDouble() ?? 0,
     dataYears: j['data_years'] as int? ?? 0,
-    consensusMethods: j['consensus_methods'] as int? ?? 0,
     trendBasis: j['trend_basis'] as String? ?? 'none',
     dataCompleteness: (j['data_completeness'] as num?)?.toDouble() ?? 1,
     changePercentDay: (j['change_percent_day'] as num?)?.toDouble(),
@@ -879,13 +876,11 @@ class AssetAnalysis {
     required this.sector,
     required this.price,
     this.asOf,
-    required this.bazin,
     required this.graham,
-    required this.consensus,
+    required this.principalValue,
     this.fairLow,
     this.fairHigh,
     required this.marginOfSafety,
-    this.consensusMethods = 0,
     this.independentInputs = 0,
     this.bandQuality = 'sem_faixa',
     this.bandPosition,
@@ -918,15 +913,13 @@ class AssetAnalysis {
 
   final double? asOf;
 
-  final double? bazin;
   final double? graham;
-  final double? consensus;
+  final double? principalValue;
 
   final double? fairLow;
   final double? fairHigh;
   final double? marginOfSafety;
 
-  final int consensusMethods;
 
   final int independentInputs;
 
@@ -981,13 +974,11 @@ class AssetAnalysis {
       sector: j['sector'] as String?,
       price: (j['price'] as num?)?.toDouble(),
       asOf: (j['as_of'] as num?)?.toDouble(),
-      bazin: (fp['bazin'] as num?)?.toDouble(),
       graham: (fp['graham'] as num?)?.toDouble(),
-      consensus: ((fp['principal_value'] ?? fp['consensus']) as num?)?.toDouble(),
+      principalValue: (fp['principal_value'] as num?)?.toDouble(),
       fairLow: (fp['fair_low'] as num?)?.toDouble(),
       fairHigh: (fp['fair_high'] as num?)?.toDouble(),
       marginOfSafety: (fp['margin_of_safety'] as num?)?.toDouble(),
-      consensusMethods: (fp['consensus_methods'] as num?)?.toInt() ?? 0,
       independentInputs: (fp['independent_inputs'] as num?)?.toInt() ?? 0,
       bandQuality: fp['band_quality'] as String? ?? 'sem_faixa',
       bandPosition: (fp['band_position'] as num?)?.toDouble(),

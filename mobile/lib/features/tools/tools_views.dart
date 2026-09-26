@@ -12,7 +12,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/compare_metrics.dart';
 import '../../core/score_ruler.dart'
-    show basisLabel, consensusLabel, fairBandLabel, dataYearsLabel, trendBasisLabel;
+    show basisLabel, confirmationLabel, fairBandLabel, dataYearsLabel, trendBasisLabel;
 import '../../core/widgets/button.dart';
 import '../../core/widgets/measure.dart';
 import '../../core/widgets/provenance.dart';
@@ -207,7 +207,7 @@ class _AssetAnalysis extends StatelessWidget {
                 readout: formatRatio(margem),
                 note: '${band.label} · faixa de preço justo '
                     '${fairBandLabel(a.fairLow, a.fairHigh)}, '
-                    '${consensusLabel(a.consensusMethods)}',
+                    '${confirmationLabel(a.independentInputs)}',
                 state: band.state,
               );
             },
@@ -221,7 +221,7 @@ class _AssetAnalysis extends StatelessWidget {
               FiDataRow(
                 label: 'Faixa de preço justo',
                 value: fairBandLabel(a.fairLow, a.fairHigh),
-                note: consensusLabel(a.consensusMethods),
+                note: confirmationLabel(a.independentInputs),
               ),
               FiDataRow(
                 label: 'Tendência',
@@ -735,7 +735,7 @@ class _CompareDecisions extends StatelessWidget {
                 label: a.symbol,
                 detail: '${fiAssetTypeLabel[a.assetType] ?? a.assetType} · margem de '
                     'segurança ${formatRatio(a.marginOfSafety)}',
-                note: consensusLabel(a.consensusMethods),
+                note: confirmationLabel(a.independentInputs),
                 trailing: FiVerdictChip(verdict: a.verdict, label: a.label),
               ),
           ],

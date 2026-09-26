@@ -127,9 +127,10 @@ regimes: `piso ≤ com(d+1) < com(d) < com(d−1) ≤ teto`.
 
 É **incerteza real sobre o valor** — o que acontece se a premissa mais discutível errar —, e não a
 distância entre métodos com alvos diferentes. `principal_value` carrega o valor central, e não decide
-sozinho. `consensus`, `dcf` (ação) e `bazin` (FII) são nomes legados do mesmo valor, mantidos como
-alias para o app em loja; `avg_dividend_5y` e `dy_5y` são alias de `dividend_recurring` e
-`dividend_yield_recurring`.
+sozinho. `independent_inputs` diz se ele tem confirmação por outro insumo (2) ou não (1). Os nomes
+legados — `consensus`, `consensus_methods`, `bazin`, `dcf`, `avg_dividend_5y`, `dy_5y` — saíram da
+resposta em 2026-09-25: não havia app em loja para proteger. `bazin`, `dcf`, `vpa` e `graham`
+seguem apenas como identificadores de método em `methods[]`.
 
 ### A confirmação
 

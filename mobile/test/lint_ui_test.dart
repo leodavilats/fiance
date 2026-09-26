@@ -20,7 +20,7 @@ void main() {
       const explicador = [
         'FiProvenance',
         'HelpTooltip',
-        'consensusLabel',
+        'confirmationLabel',
         'dataYearsLabel',
         'trendBasisLabel',
         'dataCompletenessLabel',

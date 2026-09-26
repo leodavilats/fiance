@@ -4,32 +4,11 @@ from .enums import AssetType
 
 
 class FairPriceBlock(BaseModel):
-    bazin: float | None = Field(
-        None,
-        description=(
-            "Valor pela distribuição recorrente. Em FII é o método principal; em ação é a "
-            "leitura de confirmação, com a mesma taxa do modelo de lucro."
-        ),
-    )
     graham: float | None = Field(
         None,
         description=(
             "Número de Graham: o limite do critério do investidor defensivo. É indicador, não "
             "entra na faixa — sempre que ele se calcula com o filtro, fica acima do preço."
-        ),
-    )
-    dcf: float | None = Field(
-        None,
-        description=(
-            "Valor central de ação pelo lucro distribuível descontado. O nome é legado: não é "
-            "fluxo de caixa livre."
-        ),
-    )
-    consensus: float | None = Field(
-        None,
-        description=(
-            "Alias de `principal_value`, mantido para o app que ainda não o lê. O nome é legado: "
-            "não é consenso de métodos."
         ),
     )
     principal_value: float | None = Field(
@@ -136,21 +115,13 @@ class FairPriceBlock(BaseModel):
             "mediana dos outros, ou a mais recente, se for menor."
         ),
     )
-    avg_dividend_5y: float | None = Field(
-        None,
-        description=(
-            "Alias de `dividend_recurring`. O nome é legado: não é a média de cinco anos."
-        ),
-    )
     dy_12m: float | None = None
     dividend_yield_recurring: float | None = Field(
         None, description="Distribuição recorrente sobre o preço."
     )
-    dy_5y: float | None = Field(None, description="Alias de `dividend_yield_recurring`.")
     data_years: int = 0
     desired_yield_used: float = 0.06
     pvp: float | None = None
-    consensus_methods: int = 0
     details: dict = Field(default_factory=dict)
 
 

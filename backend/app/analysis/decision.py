@@ -178,7 +178,7 @@ def _premise_reason(fair: FairPriceResult) -> str:
 
     if fair.principal == PRINCIPAL_EARNINGS:
         texto = (
-            f"Vale cerca de {_brl(fair.consensus)} pelo lucro que a empresa pode distribuir sem "
+            f"Vale cerca de {_brl(fair.principal_value)} pelo lucro que a empresa pode distribuir sem "
             f"deixar de crescer: taxa exigida de {_pct(p['discount_rate'])} ({base} mais 5 "
             f"pontos), crescimento de {_pct(p['growth'])} ao ano por {p['explicit_years']} anos "
             f"— o ROE de {_pct(p['roe'], 0)} vezes o que ela retém — e "
@@ -193,7 +193,7 @@ def _premise_reason(fair: FairPriceResult) -> str:
         return texto
 
     return (
-        f"Vale cerca de {_brl(fair.consensus)} pela distribuição recorrente de "
+        f"Vale cerca de {_brl(fair.principal_value)} pela distribuição recorrente de "
         f"{_brl(p['dividend_recurring'])} por cota ao ano, exigindo yield de "
         f"{_pct(p['fii_yield'])}: o juro real de longo prazo ({base} menos a meta de inflação "
         f"de {_pct(p['inflation_target'], 0)}, com piso de {_pct(p['real_rate_floor'], 0)}) mais "

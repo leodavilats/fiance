@@ -35,7 +35,7 @@ void main() {
 
   group('sem preço justo se declara', () {
     test('a ausência tem nome, e não vira leitura de tendência', () {
-      expect(consensusLabel(0), 'sem preço justo');
+      expect(confirmationLabel(0), 'sem preço justo');
       expect(glossary['sem_preco_justo'], contains('em vez de ler compra ou venda'));
     });
 

@@ -7,7 +7,7 @@ import '../../core/score_ruler.dart'
         agreementLabel,
         bandQualityLabel,
         basisLabel,
-        consensusLabel,
+        confirmationLabel,
         fairBandLabel,
         methodLabel,
         methodStatusLabel,
@@ -158,7 +158,7 @@ class _AssetDetailContent extends ConsumerWidget {
                     readout: formatRatio(margem),
                     note: '${band.label} · faixa de preço justo '
                         '${fairBandLabel(a.fairLow, a.fairHigh)}, '
-                        '${consensusLabel(a.consensusMethods)}',
+                        '${confirmationLabel(a.independentInputs)}',
                     state: band.state,
                   );
                 },
@@ -193,7 +193,7 @@ class _AssetDetailContent extends ConsumerWidget {
                   children: [
                     FiDataRow(
                       label: principalLabel(a.principal),
-                      value: formatCurrency(a.consensus),
+                      value: formatCurrency(a.principalValue),
                       detail: 'Valor central',
                     ),
                     FiDataRow(

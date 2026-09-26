@@ -83,7 +83,7 @@ class TestFaixaCobreOsDoisCenarios:
 
         assert r.fair_low == pytest.approx(min(c["com_alta"], c["sem_alta"]), abs=0.01)
         assert r.fair_high == pytest.approx(max(c["com_baixa"], c["sem_baixa"]), abs=0.01)
-        assert r.fair_low < r.consensus < r.fair_high, (
+        assert r.fair_low < r.principal_value < r.fair_high, (
             "piso ≤ com(d+1) < com(d) = central < com(d−1) ≤ teto: a ordem vale nos dois regimes"
         )
 
@@ -117,7 +117,7 @@ class TestRazaoEPremissaDeCrescimento:
 
     def test_sem_criar_valor_o_crescimento_nao_e_premissa_que_derruba(self):
         r = _acao(roe=0.06, dividendo=0.3)
-        preco = (r.consensus + r.fair_high) / 2
+        preco = (r.principal_value + r.fair_high) / 2
         r = _acao(roe=0.06, dividendo=0.3, price=preco)
         metricas = {f["metric"] for f in falsifiers(r, decide(r).verdict, preco)}
 

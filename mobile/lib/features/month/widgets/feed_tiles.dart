@@ -165,7 +165,7 @@ class FiOpportunityTile extends StatelessWidget {
                 const SizedBox(width: FiSpace.s2),
                 Expanded(
                   child: Text(
-                    '${dataYearsLabel(o.dataYears)} · ${consensusLabel(o.consensusMethods)}',
+                    '${dataYearsLabel(o.dataYears)} · ${confirmationLabel(o.independentInputs)}',
                     style: FiType.caption.copyWith(color: fiInk3(context)),
                   ),
                 ),

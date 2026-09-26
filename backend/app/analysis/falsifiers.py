@@ -113,9 +113,9 @@ def _growth_falsifier(fair: FairPriceResult, price: float) -> Falsifier | None:
     p = fair.premises
     sem_crescimento = p.get("value_without_growth")
     crescimento = p.get("growth") or 0.0
-    if not sem_crescimento or crescimento <= 0 or not fair.consensus:
+    if not sem_crescimento or crescimento <= 0 or not fair.principal_value:
         return None
-    if sem_crescimento >= fair.consensus:
+    if sem_crescimento >= fair.principal_value:
         return None
     if not (sem_crescimento < price <= fair.fair_high):
         return None
@@ -124,7 +124,7 @@ def _growth_falsifier(fair: FairPriceResult, price: float) -> Falsifier | None:
         metric="growth",
         condition=(
             f"O crescimento de {crescimento * 100:.1f}% ao ano não se confirmar: sem ele, o "
-            f"valor cai de R$ {fair.consensus:.2f} para R$ {sem_crescimento:.2f}, abaixo do "
+            f"valor cai de R$ {fair.principal_value:.2f} para R$ {sem_crescimento:.2f}, abaixo do "
             "preço de hoje"
         ),
         becomes="REVIEW",
@@ -167,7 +167,7 @@ def _rate_falsifier(fair: FairPriceResult, price: float) -> Falsifier | None:
 
 
 def _dividend_falsifier(fair: FairPriceResult, price: float) -> Falsifier | None:
-    valor = fair.consensus
+    valor = fair.principal_value
     dividendo = fair.premises.get("dividend_recurring")
     if not valor or not dividendo or valor <= price:
         return None

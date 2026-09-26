@@ -225,7 +225,7 @@ def test_positions_carry_verdict_provenance(client):
     positions = client.get("/api/dashboard", headers=headers).json()["positions"]
     petr = next(p for p in positions if p["ticker"] == "PETR4")
 
-    for field in ("confidence", "data_years", "consensus_methods", "trend_basis"):
+    for field in ("confidence", "data_years", "independent_inputs", "trend_basis"):
         assert field in petr
 
     assert petr["confidence"] > 0

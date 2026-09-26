@@ -7,7 +7,7 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
 [ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md). A2, A3, A4 e A6 saíram em 2026-09-23, e
 A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 e A11 entraram em
-2026-09-25: o que sobrou da auditoria da especificação do preço justo, e a varredura de quedas.
+2026-09-25, e o A10 saiu no mesmo dia: sem app em loja, os nomes legados puderam sair de uma vez.
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -61,17 +61,6 @@ fazia todo BDR parecer caro (cerca de 0,67× o valor numa taxa em dólar). O LPA
 para BDR já vem por BDR e em reais — a escala está certa, a moeda da taxa não.
 
 **Segue aberto:** exige juro em dólar, fora das duas fontes permitidas.
-
-### A10 · O preço justo responde com nomes legados, como alias
-
-`consensus`, `avg_dividend_5y` e `dy_5y` seguem na resposta ao lado de `principal_value`,
-`dividend_recurring` e `dividend_yield_recurring`, que dizem o que guardam
-(`backend/app/models/analysis.py::FairPriceBlock`). O aplicativo já lê o nome novo e cai no antigo
-quando ele falta; o app em loja ainda lê `consensus`.
-
-**Segue aberto:** remover os aliases quando a versão da loja que lê `principal_value` estiver em uso.
-`bazin` e `dcf` também são nomes legados e continuam na resposta. Não há nome novo para migrar: o
-valor deles já chega em `principal_value` e em `confirmation.value`.
 
 ### A11 · A varredura de quedas tem veredito próprio, e ele contradiz a leitura de valor
 

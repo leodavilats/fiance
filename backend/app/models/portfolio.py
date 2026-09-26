@@ -45,7 +45,7 @@ class PortfolioPosition(BaseModel):
     label: str
     confidence: float = 0.0
     data_years: int = 0
-    consensus_methods: int = 0
+    independent_inputs: int = 0
     trend_basis: str = "none"
     as_of: float | None = None
     reasons: list[str] = Field(default_factory=list)

@@ -191,7 +191,7 @@ class TestModeloDeLucro:
     def test_o_piso_e_o_teto_cercam_o_valor_central(self):
         r = _acao()
 
-        assert r.fair_low < r.consensus < r.fair_high
+        assert r.fair_low < r.principal_value < r.fair_high
         assert r.principal == PRINCIPAL_EARNINGS
 
     def test_o_crescimento_sai_do_roe_e_do_que_a_empresa_retem(self):
@@ -271,7 +271,7 @@ class TestConfirmacaoEQualidade:
         r = _acao()
 
         assert r.confirmation["method"] == "bazin"
-        assert r.consensus_methods == 2
+        assert r.independent_inputs == 2
         assert r.independent_inputs == 2
 
     def test_quem_distribui_pouco_nao_tem_confirmacao_pelo_dividendo(self):
@@ -301,7 +301,7 @@ class TestFii:
         r = _fii()
 
         assert r.principal == PRINCIPAL_DIVIDENDS
-        assert r.consensus == pytest.approx(9.5 / TAXAS.fii_yield, rel=1e-3)
+        assert r.principal_value == pytest.approx(9.5 / TAXAS.fii_yield, rel=1e-3)
         assert r.fair_low == pytest.approx(9.5 / (TAXAS.fii_yield + RATE_SHOCK), rel=1e-3)
         assert r.fair_high == pytest.approx(9.5 / (TAXAS.fii_yield - RATE_SHOCK), rel=1e-3)
 
