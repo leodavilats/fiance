@@ -683,6 +683,29 @@ Falta a tela.
 `analysis/renda_fixa_analysis.py` — marcação a mercado por tipo de taxa, com o IPCA do BCB para os
 indexados. Compara com o CDI e projeta o valor no vencimento.
 
+O valor atual é o **líquido se resgatasse hoje**, e o dia conta no fuso brasileiro. Dois impostos
+saem do rendimento, nesta ordem:
+
+```
+iof       = rendimento × alíquota_iof(dias corridos)
+ir        = (rendimento − iof) × alíquota_ir(dias corridos)
+líquido   = rendimento − iof − ir
+```
+
+**IOF regressivo** (Decreto 6.306/2007, anexo): 96% no dia 1, 50% no dia 15, 3% no dia 29, zero do
+dia 30 em diante. A tabela mora em `IOF_REGRESSIVO_PCT`. **O IOF vem antes do IR**, e a base do IR
+é o que o IOF deixou.
+
+**IR regressivo:** 22,5% até 180 dias, 20% até 360, 17,5% até 720, 15% depois.
+
+| Tipo | IR | IOF |
+|---|---|---|
+| `cdb`, `lc`, `tesouro_selic`, `tesouro_ipca`, `tesouro_pre` | ✅ | ✅ |
+| `lci`, `lca`, `cri`, `cra` | ❌ isentos | ✅ |
+
+`isento_ir` declarado tira o IR, **nunca o IOF**. Poupança, isenta dos dois, não é tipo do modelo.
+No comparador o prazo é de meses inteiros, então o IOF só aparece na posição com menos de 30 dias.
+
 A curva de CDI é extrapolada da taxa de hoje (`cdi_basis`), então é **referência, não acumulado
 histórico** — e o rótulo de fonte viaja até a tela.
 

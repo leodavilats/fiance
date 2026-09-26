@@ -30,6 +30,11 @@ class IrBreakdown(BaseModel):
     prazo_dias: int
 
 
+class IofBreakdown(BaseModel):
+    aliquota_pct: float
+    valor_iof: float
+
+
 class RendaFixaAnalysisResult(BaseModel):
     tipo: str
     nome: str | None
@@ -37,6 +42,13 @@ class RendaFixaAnalysisResult(BaseModel):
     valor_bruto: float
     rendimento_bruto: float
     ir: IrBreakdown
+    iof: IofBreakdown | None = Field(
+        None,
+        description=(
+            "IOF regressivo sobre o rendimento, para resgate antes de 30 dias corridos. "
+            "Incide antes do IR: a base do IR é o rendimento menos o IOF."
+        ),
+    )
     valor_liquido: float
     rendimento_liquido: float
     taxa_liquida_aa: float

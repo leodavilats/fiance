@@ -1,10 +1,11 @@
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 
+from app.core.brt import now_brt
 from tests.conftest import make_auth_headers
 
 
 def _hoje() -> date:
-    return datetime.now(UTC).date()
+    return now_brt().date()
 
 
 def _cdb(**overrides) -> dict:

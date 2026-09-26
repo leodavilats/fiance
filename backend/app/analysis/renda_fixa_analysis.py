@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.collectors.rates import get_rates
 from app.models.enums import Liquidez, RendaFixaType, TaxType
 from app.models.renda_fixa import (
+    IofBreakdown,
     IrBreakdown,
     ReferenceRates,
     RendaFixaAnalysisResult,
@@ -28,6 +29,13 @@ ISENTOS_IR = {
 
 INDEXADOS_IPCA = {RendaFixaType.tesouro_ipca}
 
+IOF_REGRESSIVO_PCT = tuple(
+    int(pct)
+    for pct in "96 93 90 86 83 80 76 73 70 66 63 60 56 53 50 46 43 40 36 33 30 26 23 20 16 13 10 6 3".split()
+)
+
+DIAS_SEM_IOF = len(IOF_REGRESSIVO_PCT) + 1
+
 
 def _aliquota_ir(prazo_dias: int) -> float:
     if prazo_dias <= 180:
@@ -38,6 +46,12 @@ def _aliquota_ir(prazo_dias: int) -> float:
         return 0.175
     else:
         return 0.15
+
+
+def aliquota_iof(dias: int) -> float:
+    if dias >= DIAS_SEM_IOF:
+        return 0.0
+    return IOF_REGRESSIVO_PCT[max(dias, 1) - 1] / 100.0
 
 
 def _compor(taxa_anual_pct: float, meses: float) -> float:
@@ -65,9 +79,14 @@ def analyze_one(
     selic_anual: float = DEFAULT_SELIC_ANUAL,
     ipca_anual: float = DEFAULT_IPCA_ANUAL,
     prazo_meses_override: float | None = None,
+    prazo_dias_override: int | None = None,
 ) -> RendaFixaAnalysisResult:
     prazo_meses = ativo.prazo_meses if prazo_meses_override is None else prazo_meses_override
-    prazo_dias = int(round(prazo_meses * DIAS_POR_MES))
+    prazo_dias = (
+        int(round(prazo_meses * DIAS_POR_MES))
+        if prazo_dias_override is None
+        else prazo_dias_override
+    )
 
     isento = ativo.isento_ir
     if isento is None:
@@ -79,14 +98,17 @@ def analyze_one(
     valor_bruto = ativo.valor_investido * (1 + taxa_periodo)
     rendimento_bruto = valor_bruto - ativo.valor_investido
 
+    aliquota_de_iof = aliquota_iof(prazo_dias)
+    valor_iof = max(rendimento_bruto, 0.0) * aliquota_de_iof
+
     if isento:
         aliquota = 0.0
         valor_ir = 0.0
     else:
         aliquota = _aliquota_ir(prazo_dias)
-        valor_ir = max(rendimento_bruto, 0.0) * aliquota
+        valor_ir = max(rendimento_bruto - valor_iof, 0.0) * aliquota
 
-    rendimento_liquido = rendimento_bruto - valor_ir
+    rendimento_liquido = rendimento_bruto - valor_iof - valor_ir
     valor_liquido = ativo.valor_investido + rendimento_liquido
 
     taxa_liq_periodo = rendimento_liquido / ativo.valor_investido
@@ -114,6 +136,10 @@ def analyze_one(
             aliquota_pct=round(aliquota * 100, 2),
             valor_ir=round(valor_ir, 2),
             prazo_dias=prazo_dias,
+        ),
+        iof=IofBreakdown(
+            aliquota_pct=round(aliquota_de_iof * 100, 2),
+            valor_iof=round(valor_iof, 2),
         ),
         valor_liquido=round(valor_liquido, 2),
         rendimento_liquido=round(rendimento_liquido, 2),

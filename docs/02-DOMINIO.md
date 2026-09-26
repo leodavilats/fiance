@@ -91,6 +91,9 @@ Vocabulário fechado, em `models/enums.py`.
 
 **Renda fixa** (`RendaFixaType`): `cdb`, `lci`, `lca`, `lc`, `cri`, `cra`, `tesouro_selic`,
 `tesouro_ipca`, `tesouro_pre`. Tipo de taxa: `pre_fixado`, `pos_fixado`, `hibrido`.
+O valor atual de uma posição é o líquido do resgate hoje: IOF regressivo nos primeiros 29 dias,
+depois IR sobre o que o IOF deixou. LCI, LCA, CRI e CRA são isentos de IR, não de IOF. Fórmulas em
+[04-CALCULOS](04-CALCULOS.md#renda-fixa).
 
 **Fora de escopo:** cripto, ações internacionais diretas, previdência, Fiagro/Fi-Infra, opções e
 derivativos. Ver [09-FUTURO](09-FUTURO.md) para o que é ideia e o que é considerado.

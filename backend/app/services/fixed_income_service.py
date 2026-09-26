@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import date
 
 from app.analysis.renda_fixa_analysis import DIAS_POR_MES, analyze_one
 from app.collectors.rates import get_rates
+from app.core.brt import now_brt
 from app.core.errors import NotFoundError
 from app.core.pagination import clamp_limit, slice_after
 from app.models.enums import AssetType, Liquidez, RendaFixaType, TaxType
@@ -24,7 +25,7 @@ FIXED_INCOME_TICKER_PREFIX = "RF-"
 
 
 def _today() -> date:
-    return datetime.now(UTC).date()
+    return now_brt().date()
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -144,6 +145,7 @@ class FixedIncomeService:
             selic_anual=rates["selic_anual"],
             ipca_anual=rates["ipca_anual"],
             prazo_meses_override=meses_decorridos,
+            prazo_dias_override=dias_decorridos,
         )
 
         no_vencimento = None
@@ -154,6 +156,7 @@ class FixedIncomeService:
                 selic_anual=rates["selic_anual"],
                 ipca_anual=rates["ipca_anual"],
                 prazo_meses_override=prazo_total_meses,
+                prazo_dias_override=max((vencimento - aplicacao).days, 1),
             )
 
         dias_para_vencimento = (vencimento - today).days if vencimento else None
