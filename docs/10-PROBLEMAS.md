@@ -94,11 +94,6 @@ O contraste é verificado por máquina; a aparência não.
 
 O que havia rodava no navegador e saiu com o front web.
 
-### 14 · As regras de interface que só rodavam no front não foram portadas
-
-Três não têm equivalente no Dart: **gráfico sem tabela equivalente**, **destino de navegação
-inexistente** *(esta foi portada — regra 13 do lint)* e **controle montado à mão**.
-
 ### 31 rotas sem contrato de resposta
 
 `SEM_MODELO_HOJE = 31` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,

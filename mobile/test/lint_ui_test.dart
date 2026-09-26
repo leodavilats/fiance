@@ -120,6 +120,55 @@ void main() {
         reason: 'adicione tooltip: ao IconButton, ou envolva em Semantics(button: true, label:)',
       );
     });
+
+    test('todo grafico tem tabela equivalente', () {
+      final semTabela = <String>[];
+      for (final f in fontes) {
+        final fonte = f.readAsStringSync();
+        if (!RegExp(r'\b(LineChart|BarChart|PieChart|ScatterChart|RadarChart)\(').hasMatch(fonte)) {
+          continue;
+        }
+        if (_temEscape(fonte, 'grafico')) continue;
+        final temTabela = fonte.contains('FiDataRow(') || fonte.contains('FiRows(');
+        if (!temTabela) semTabela.add(_curto(f));
+      }
+
+      expect(
+        semTabela,
+        isEmpty,
+        reason: 'gráfico é imagem para quem usa leitor de tela: ponha os números numa tabela '
+            'equivalente (FiDisclosure com FiRows/FiDataRow) no mesmo arquivo, ou declare '
+            '// design-exception: grafico — motivo',
+      );
+    });
+
+    test('controle de toque vem do sistema', () {
+      const cap = 4;
+
+      final achados = <String>[];
+      for (final f in fontes) {
+        final caminho = f.path.replaceAll(r'\', '/');
+        if (caminho.contains('lib/core/widgets/')) continue;
+        final fonte = f.readAsStringSync();
+        if (_temEscape(fonte, 'controle')) continue;
+        final linhas = fonte.split('\n');
+        for (var i = 0; i < linhas.length; i++) {
+          final linha = linhas[i].trimLeft();
+          if (linha.startsWith('//')) continue;
+          if (RegExp(r'\b(InkWell|GestureDetector)\(').hasMatch(linha)) {
+            achados.add('${_curto(f)}:${i + 1}');
+          }
+        }
+      }
+
+      expect(
+        achados.length,
+        lessThanOrEqualTo(cap),
+        reason: 'controle montado à mão esquece alvo de toque, nome acessível e estado de foco. '
+            'Use FiButton, FiDataRow(onTap:) ou FiObject(onTap:). O teto é catraca, e só desce. '
+            'Achados:\n  ${achados.join('\n  ')}',
+      );
+    });
   });
 
   group('regras de coerencia no mobile', () {

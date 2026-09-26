@@ -178,7 +178,7 @@ não**. Um preço de anteontem muda a decisão.
 
 ---
 
-## As 14 regras de máquina
+## As 16 regras de máquina
 
 `mobile/test/lint_ui_test.dart` — roda em `flutter test`, que já é comando do CI. **Regra que exige
 mudar a esteira para rodar é regra que não roda.**
@@ -199,6 +199,8 @@ mudar a esteira para rodar é regra que não roda.**
 | 12 | Todo destino navegado existe no roteador |
 | 13 | A falha de leitura sai numa voz só |
 | 14 | Bloco que carrega reserva o espaço em vez de sumir |
+| 15 | Todo gráfico tem tabela equivalente (FiDisclosure com FiRows/FiDataRow), ou escape `grafico` |
+| 16 | Controle de toque vem do sistema: `InkWell`/`GestureDetector` fora de `core/widgets/` *(catraca)* |
 
 Mais o contraste, cobrado à parte em `contraste_test.dart`, nos dois temas.
 

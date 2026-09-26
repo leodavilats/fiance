@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/format.dart';
+import '../../../core/widgets/data_row.dart';
+import '../../../core/widgets/disclosure.dart';
 import '../../../core/widgets/measure.dart';
 import '../../../core/widgets/provenance.dart';
 import '../../../core/widgets/section.dart';
@@ -254,6 +256,26 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
             const SizedBox(width: FiSpace.s5),
             _Legend(color: investedColor, label: 'aplicado', dashed: true),
           ],
+        ),
+        const SizedBox(height: FiSpace.s3),
+        FiDisclosure(
+          title: 'Ver os números',
+          detail: 'De ${_dateFormat.format(_dateAt(0))} a '
+              '${_dateFormat.format(_dateAt(lastIndex))}: '
+              '${formatCurrency(snapshots.first.totalCurrent)} para '
+              '${formatCurrency(snapshots.last.totalCurrent)}, com '
+              '${formatCurrency(snapshots.last.totalInvested)} aplicados',
+          child: FiRows(
+            children: [
+              for (var i = lastIndex; i >= 0; i--)
+                FiDataRow(
+                  label: _dateFormat.format(_dateAt(i)),
+                  value: formatCurrency(snapshots[i].totalCurrent),
+                  detail: '${formatCurrency(snapshots[i].totalInvested)} aplicados',
+                  dense: true,
+                ),
+            ],
+          ),
         ),
       ],
     );
