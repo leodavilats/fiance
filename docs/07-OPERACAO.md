@@ -135,6 +135,8 @@ O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte
 3. Horário — fora de 10h–18h30 em dia com pregão na B3, a varredura do universo não vai à rede
    por desenho. Feriado nacional, Carnaval e 24 e 31/12 contam como fechados; na Quarta-feira de
    Cinzas a janela abre às 13h
+4. Log `não há universo em cache` — a lista de tickers da BRAPI falhou e não havia universo vencido
+   para servir; `servindo o universo vencido` é a degradação funcionando, não a causa
 
 ---
 

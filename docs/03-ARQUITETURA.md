@@ -149,6 +149,12 @@ Em ordem de degradação:
 Constantes de `collectors/rates.py` são o **último** recurso, e o rótulo de fonte (`bcb`,
 `bcb_cache_vencido`, `estimativa`) viaja até a tela.
 
+O universo da varredura segue a mesma ordem (`core/universe.py::get_universe`): com a lista da BRAPI
+fora do ar, serve o universo vencido e loga a idade; só sem nenhum devolve lista vazia, e loga isso.
+A idade fica no log porque a lista não é exibida; o que a tela carimba é a idade da varredura. O
+vencido não é regravado como válido, e dura até a manutenção apagá-lo (a cada 6h) ou, no Redis, até
+a sobrevida de 6h depois do vencimento.
+
 **Falha de rede não vira ausência.** Confundir "não sei" com "não existe" esconde fonte caída por
 meia hora.
 

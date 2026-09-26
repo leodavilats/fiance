@@ -138,12 +138,19 @@ def get_universe() -> list[str]:
         return cached
 
     brapi_tickers = _build_brapi_universe()
-    if not brapi_tickers:
-        logger.warning("Lista dinâmica da BRAPI falhou — universo vazio neste ciclo.")
-        return []
+    if brapi_tickers:
+        cache.set(_UNIVERSE_CACHE_KEY, brapi_tickers, _UNIVERSE_TTL)
+        return brapi_tickers
 
-    cache.set(_UNIVERSE_CACHE_KEY, brapi_tickers, _UNIVERSE_TTL)
-    return brapi_tickers
+    vencido, idade = cache.get_with_age(_UNIVERSE_CACHE_KEY)
+    if vencido:
+        logger.warning(
+            "Lista dinâmica da BRAPI falhou — servindo o universo vencido há %.0f s.", idade or 0.0
+        )
+        return vencido
+
+    logger.warning("Lista dinâmica da BRAPI falhou e não há universo em cache — universo vazio.")
+    return []
 
 
 def search_universe(query: str, limit: int = 10) -> list[dict]:
