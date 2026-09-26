@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query
 
 from app.core.pagination import MAX_PAGE_SIZE
+from app.models.operacao import DeletedById
 from app.models.renda_fixa import (
     FixedIncomeCreateRequest,
     FixedIncomeListResponse,
@@ -34,6 +35,6 @@ async def update_fixed_income(
     return service.update(position_id, req)
 
 
-@router.delete("/fixed-income/{position_id}")
+@router.delete("/fixed-income/{position_id}", response_model=DeletedById)
 async def delete_fixed_income(position_id: int) -> dict:
     return service.delete(position_id)

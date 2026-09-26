@@ -4,13 +4,13 @@ from fastapi import APIRouter, Depends
 
 from app.core.auth import get_current_user
 from app.entitlement import Feature, check, plans, resolve
-from app.models.operacao import FeatureCheck, PlanRules
+from app.models.operacao import EntitlementsState, FeatureCheck, PlanRules
 from app.services import subscription_service
 
 router = APIRouter()
 
 
-@router.get("/entitlements")
+@router.get("/entitlements", response_model=EntitlementsState)
 async def read_entitlements(user_id: str = Depends(get_current_user)) -> dict:
     direitos = resolve(user_id)
     assinatura = subscription_service.get(user_id)

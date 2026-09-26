@@ -1,8 +1,32 @@
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class DeletedById(BaseModel):
     deleted: int
+
+
+class DeletedByTicker(BaseModel):
+    deleted: str
+
+
+class SessionRevoked(BaseModel):
+    revoked: str
+
+
+class ActivityItem(BaseModel):
+    id: int
+    action: str
+    entity: str | None = None
+    entity_id: str | None = None
+    summary: str | None = None
+    detail: dict[str, Any] = Field(default_factory=dict)
+    occurred_at: float
+
+
+class ActivityLog(BaseModel):
+    items: list[ActivityItem] = Field(default_factory=list)
 
 
 class AccountDeleted(BaseModel):
@@ -104,3 +128,26 @@ class CacheCleared(BaseModel):
 
 class MetricsReset(BaseModel):
     reset: bool
+
+
+class SubscriptionSummary(BaseModel):
+    status: str
+    plan_code: str
+    interval: str | None = None
+    price_cents: int
+    locked: bool
+    current_period_end: float | None = None
+
+
+class EntitlementsState(BaseModel):
+    plan: str
+    unrestricted: bool
+    in_trial: bool
+    trial_ends_at: float | None = None
+    trial_days_left: int | None = None
+    credited_until: float | None = None
+    price_cents: int
+    locked_price: bool
+    features: dict[str, bool] = Field(default_factory=dict)
+    limits: dict[str, int | None] = Field(default_factory=dict)
+    subscription: SubscriptionSummary

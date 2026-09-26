@@ -11,6 +11,7 @@ from app.models import (
     SavePortfolioRequest,
     SellRequest,
 )
+from app.models.operacao import DeletedByTicker
 from app.services import PortfolioService
 
 router = APIRouter()
@@ -44,7 +45,7 @@ async def delete_position_by_item(ticker: str) -> PortfolioStateResponse:
     return portfolio_service.get_portfolio()
 
 
-@router.delete("/portfolio/{ticker}")
+@router.delete("/portfolio/{ticker}", response_model=DeletedByTicker)
 async def delete_position(ticker: str) -> dict:
     return portfolio_service.delete_position(ticker)
 

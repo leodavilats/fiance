@@ -92,14 +92,14 @@ auditoria:** percorrer o app com TalkBack e VoiceOver, o que exige aparelho — 
 
 ## F · Teste, automação e operação
 
-### 31 rotas sem contrato de resposta
+### 10 rotas sem contrato de resposta
 
-`SEM_MODELO_HOJE = 31` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,
-qualidade de dado, regras de plano, universo e operação de cache ganharam modelo em 2026-09-26.
-Seguem sem: transações (lista, lançamento, lote, importação, reconstrução, reconciliação, derivação e
-*backfill*), proventos pendentes, estratégia e sugestões de rebalanceamento, aporte rápido, atividade,
-direitos de plano, cobrança, demonstração, logout, as exclusões (posição, renda fixa, provento,
-lançamento, sugestão seguida), `/account/export` (é download de arquivo) e as leituras de operador
+`SEM_MODELO_HOJE = 10` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,
+qualidade de dado, regras de plano, universo e operação de cache ganharam modelo em 2026-09-26, e
+depois deles transações, proventos pendentes, estratégia e sugestões de rebalanceamento, aporte
+rápido, atividade, direitos de plano, logout e as exclusões. Seguem sem: as quatro de cobrança, que
+serão refeitas ([ADR-008](decisoes/ADR-008-monetizacao-por-loja.md)), as duas de demonstração, a
+exclusão de sugestão seguida, `/account/export` (é download de arquivo) e as leituras de operador
 (`/metrics`, `/analytics/funnel`), cujo formato é aberto. A lista exata sai de
 `rotas_declaradas()` menos o contrato gravado.
 

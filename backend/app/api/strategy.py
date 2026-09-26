@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app import affirmation
 from app.entitlement import Feature, requires
 from app.models import PortfolioItem
+from app.models.strategy import InvestmentStrategy, RebalanceSuggestions
 from app.repositories import PortfolioRepository
 from app.services import (
     FixedIncomeService,
@@ -26,7 +27,11 @@ def _renda_fixa_como_posicoes() -> list:
     return fixed_income_service.as_portfolio_positions()
 
 
-@router.get("/strategy", dependencies=[Depends(requires(Feature.STRATEGY))])
+@router.get(
+    "/strategy",
+    response_model=InvestmentStrategy,
+    dependencies=[Depends(requires(Feature.STRATEGY))],
+)
 async def get_investment_strategy(cash_available: float = 0.0) -> dict:
     cash = cash_available
 
@@ -86,7 +91,11 @@ async def get_investment_strategy(cash_available: float = 0.0) -> dict:
     return affirmation.apply(plano)
 
 
-@router.get("/rebalance-suggestions", dependencies=[Depends(requires(Feature.STRATEGY, cost=0))])
+@router.get(
+    "/rebalance-suggestions",
+    response_model=RebalanceSuggestions,
+    dependencies=[Depends(requires(Feature.STRATEGY, cost=0))],
+)
 async def get_rebalance_suggestions() -> dict:
     stored = portfolio_repo.list_positions()
     current_portfolio = [

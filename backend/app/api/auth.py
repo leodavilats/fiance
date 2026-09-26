@@ -21,6 +21,7 @@ from app.core.auth import (
 from app.core.database import SessionLocal
 from app.core.ratelimit import ip_rate_limit
 from app.models.db_models import User
+from app.models.operacao import SessionRevoked
 from app.repositories import PortfolioRepository
 from app.services import referral_service
 
@@ -130,7 +131,7 @@ class LogoutRequest(BaseModel):
     all_devices: bool = False
 
 
-@router.post("/auth/logout")
+@router.post("/auth/logout", response_model=SessionRevoked)
 async def logout(
     body: LogoutRequest | None = None,
     payload: dict = Depends(get_access_payload),

@@ -141,7 +141,7 @@ FastAPI descarta em silêncio o que o `response_model` não declara, e campo de 
 obrigatório quebra o aplicativo que ainda não atualizou. Regravar é
 `python -m tests.contrato_das_rotas`, e o diff entra no mesmo commit.
 
-⚠️ **31 rotas ainda devolvem `dict` solto e não têm contrato.** `SEM_MODELO_HOJE` é a catraca que
+⚠️ **10 rotas ainda devolvem `dict` solto e não têm contrato.** `SEM_MODELO_HOJE` é a catraca que
 impede esse número de crescer. Ver [10-PROBLEMAS](10-PROBLEMAS.md).
 
 **Listas paginam por cursor keyset**, nunca offset. Onde há agregado, ele é **da conta inteira** —

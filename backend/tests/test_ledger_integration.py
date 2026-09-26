@@ -147,6 +147,27 @@ class TestReconciliacao:
 
         assert ledger_service.backfill_from_positions(user_id=uid) == 0
 
+    def test_backfill_e_reconstrucao_pela_rota_dizem_o_que_fizeram(self, client):
+        uid = "u_backfill_rota"
+        headers = make_auth_headers(uid)
+        portfolio_store.upsert_position("PETR4", 100, 30.0, user_id=uid)
+        ledger_store.delete_symbol_entries("PETR4", user_id=uid)
+
+        semeadas = client.post("/api/transactions/backfill", headers=headers)
+        assert semeadas.status_code == 200, semeadas.text
+        assert semeadas.json() == {"seeded": 1}
+
+        reconstruida = client.post("/api/transactions/rebuild", headers=headers)
+        assert reconstruida.status_code == 200, reconstruida.text
+        corpo = reconstruida.json()
+        assert corpo["rebuilt"] == 1
+        assert corpo["reconciliation"] == {
+            "positions": 1,
+            "projected": 1,
+            "differences": [],
+            "in_sync": True,
+        }, "a reconstrução devolve a reconciliação inteira, e não só a contagem"
+
 
 class TestIdentidadeDeInstrumento:
     def test_ticker_reutilizado_pela_b3_nao_mistura_historicos(self, como):

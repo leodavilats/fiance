@@ -9,6 +9,18 @@ from app.core.pagination import MAX_PAGE_SIZE, clamp_limit, paginate
 from app.entitlement import Feature, requires
 from app.importing import parse_import
 from app.ledger import LedgerEntry, TransactionKind
+from app.models.operacao import ActivityLog, DeletedById
+from app.models.transactions import (
+    BackfillResult,
+    ImportCommitted,
+    ImportPreview,
+    PositionDerivation,
+    RebuildResult,
+    Reconciliation,
+    TransactionCreated,
+    TransactionsCreated,
+    TransactionsPage,
+)
 from app.services import ledger_service
 from app.services.ledger_service import derivation_for
 from app.storage import audit_store, ledger_store
@@ -47,7 +59,7 @@ class TransactionBatch(BaseModel):
     transactions: list[TransactionIn] = Field(default_factory=list)
 
 
-@router.get("/transactions")
+@router.get("/transactions", response_model=TransactionsPage)
 async def list_transactions(
     symbol: str | None = None,
     kind: list[TransactionKind] | None = Query(
@@ -94,7 +106,7 @@ async def list_transactions(
     }
 
 
-@router.post("/transactions")
+@router.post("/transactions", response_model=TransactionCreated)
 async def create_transaction(body: TransactionIn) -> dict:
     entry = body.to_entry()
     entry_id = ledger_service.record_entry(entry, source="manual")
@@ -110,6 +122,7 @@ async def create_transaction(body: TransactionIn) -> dict:
 
 @router.post(
     "/transactions/batch",
+    response_model=TransactionsCreated,
     dependencies=[Depends(requires(Feature.LEDGER_IMPORT))],
 )
 async def create_transactions(body: TransactionBatch) -> dict:
@@ -123,7 +136,7 @@ async def create_transactions(body: TransactionBatch) -> dict:
     return {"ids": ids, "count": len(ids)}
 
 
-@router.delete("/transactions/{entry_id}")
+@router.delete("/transactions/{entry_id}", response_model=DeletedById)
 async def delete_transaction(entry_id: int) -> dict:
     ledger_service.delete_entry(entry_id)
     audit_store.write(
@@ -135,29 +148,29 @@ async def delete_transaction(entry_id: int) -> dict:
     return {"deleted": entry_id}
 
 
-@router.get("/transactions/derivation/{symbol}")
+@router.get("/transactions/derivation/{symbol}", response_model=PositionDerivation)
 async def read_derivation(symbol: str) -> dict:
     return derivation_for(symbol)
 
 
-@router.get("/transactions/reconciliation")
+@router.get("/transactions/reconciliation", response_model=Reconciliation)
 async def read_reconciliation() -> dict:
     return ledger_service.reconcile()
 
 
-@router.post("/transactions/backfill")
+@router.post("/transactions/backfill", response_model=BackfillResult)
 async def backfill(user_id: str = Depends(get_current_user)) -> dict:
     seeded = ledger_service.backfill_from_positions(user_id=user_id)
     return {"seeded": seeded}
 
 
-@router.post("/transactions/rebuild")
+@router.post("/transactions/rebuild", response_model=RebuildResult)
 async def rebuild(user_id: str = Depends(get_current_user)) -> dict:
     rebuilt = ledger_service.rebuild_projection(user_id=user_id)
     return {"rebuilt": rebuilt, "reconciliation": ledger_service.reconcile(user_id)}
 
 
-@router.get("/activity")
+@router.get("/activity", response_model=ActivityLog)
 async def read_activity(action: str | None = None, limit: int = 100) -> dict:
     return {"items": audit_store.read(action=action, limit=limit)}
 
@@ -181,7 +194,7 @@ class ImportCommitRequest(BaseModel):
     )
 
 
-@router.post("/transactions/import/preview")
+@router.post("/transactions/import/preview", response_model=ImportPreview)
 async def preview_import(body: ImportPreviewRequest) -> dict:
     parsed = parse_import(
         body.content, default_day=ledger_service.today_brt(), force_format=body.format
@@ -196,6 +209,7 @@ class ImportRejected(DomainError):
 
 @router.post(
     "/transactions/import",
+    response_model=ImportCommitted,
     dependencies=[Depends(requires(Feature.LEDGER_IMPORT))],
 )
 async def commit_import(body: ImportCommitRequest) -> dict:

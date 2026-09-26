@@ -10,6 +10,12 @@
   "DELETE /api/v1/alerts/{alert_id}": [
     "deleted"
   ],
+  "DELETE /api/v1/dividends/received/{dividend_id}": [
+    "deleted"
+  ],
+  "DELETE /api/v1/fixed-income/{position_id}": [
+    "deleted"
+  ],
   "DELETE /api/v1/portfolio/position/{ticker}": [
     "items",
     "items[].avg_price",
@@ -25,11 +31,27 @@
     "snapshots[].total_pnl",
     "snapshots[].total_pnl_pct"
   ],
+  "DELETE /api/v1/portfolio/{ticker}": [
+    "deleted"
+  ],
+  "DELETE /api/v1/transactions/{entry_id}": [
+    "deleted"
+  ],
   "GET /api/v1/account/deletion-policy": [
     "confirmation_phrase",
     "note",
     "removes",
     "sla_days"
+  ],
+  "GET /api/v1/activity": [
+    "items",
+    "items[].action",
+    "items[].detail",
+    "items[].entity",
+    "items[].entity_id",
+    "items[].id",
+    "items[].occurred_at",
+    "items[].summary"
   ],
   "GET /api/v1/alerts": [
     "condition",
@@ -447,6 +469,21 @@
     "scanned",
     "universe_used"
   ],
+  "GET /api/v1/dividends/pending": [
+    "count",
+    "items",
+    "items[].amount",
+    "items[].caveats",
+    "items[].entitlement",
+    "items[].ex_date",
+    "items[].kind",
+    "items[].paid_at",
+    "items[].quantity_at_date",
+    "items[].quantity_is_current",
+    "items[].rate_per_share",
+    "items[].ticker",
+    "note"
+  ],
   "GET /api/v1/dividends/received": [
     "by_month",
     "by_month[].count",
@@ -472,6 +509,25 @@
     "received_this_month",
     "total_count",
     "total_received"
+  ],
+  "GET /api/v1/entitlements": [
+    "credited_until",
+    "features",
+    "in_trial",
+    "limits",
+    "locked_price",
+    "plan",
+    "price_cents",
+    "subscription",
+    "subscription.current_period_end",
+    "subscription.interval",
+    "subscription.locked",
+    "subscription.plan_code",
+    "subscription.price_cents",
+    "subscription.status",
+    "trial_days_left",
+    "trial_ends_at",
+    "unrestricted"
   ],
   "GET /api/v1/entitlements/check/{feature}": [
     "allowed",
@@ -798,6 +854,42 @@
     "ready",
     "sources"
   ],
+  "GET /api/v1/rebalance-suggestions": [
+    "affirmation",
+    "affirmation.asset_level",
+    "affirmation.disclaimer",
+    "affirmation.level",
+    "affirmation.name",
+    "affirmation.personalized",
+    "affirmation.prescriptive",
+    "allocation_gaps",
+    "allocation_gaps[].action",
+    "allocation_gaps[].category",
+    "allocation_gaps[].current_pct",
+    "allocation_gaps[].current_value",
+    "allocation_gaps[].gap_pct",
+    "allocation_gaps[].gap_value",
+    "allocation_gaps[].target_pct",
+    "allocation_gaps[].target_value",
+    "items",
+    "items[].action",
+    "items[].category",
+    "items[].current_value",
+    "items[].name",
+    "items[].pnl_pct",
+    "items[].quantity",
+    "items[].realocar_para",
+    "items[].realocar_para.category",
+    "items[].realocar_para.name",
+    "items[].realocar_para.score",
+    "items[].realocar_para.ticker",
+    "items[].realocar_para.verdict",
+    "items[].reasons",
+    "items[].requires_tax_review",
+    "items[].ticker",
+    "items[].verdict",
+    "tax_disclaimer"
+  ],
   "GET /api/v1/referral": [
     "attributed",
     "code",
@@ -847,6 +939,72 @@
     "sectors[].top_assets[].ticker",
     "sectors[].top_assets[].verdict",
     "total_assets"
+  ],
+  "GET /api/v1/strategy": [
+    "affirmation",
+    "affirmation.asset_level",
+    "affirmation.disclaimer",
+    "affirmation.level",
+    "affirmation.name",
+    "affirmation.personalized",
+    "affirmation.prescriptive",
+    "allocation_gaps",
+    "allocation_gaps[].action",
+    "allocation_gaps[].category",
+    "allocation_gaps[].current_pct",
+    "allocation_gaps[].current_value",
+    "allocation_gaps[].gap_pct",
+    "allocation_gaps[].gap_value",
+    "allocation_gaps[].target_pct",
+    "allocation_gaps[].target_value",
+    "cash_available",
+    "current_allocation",
+    "current_allocation[].assets_count",
+    "current_allocation[].category",
+    "current_allocation[].current_pct",
+    "current_allocation[].current_value",
+    "profile",
+    "profile.description",
+    "profile.goals",
+    "profile.growth_pct",
+    "profile.income_pct",
+    "profile.risk_tolerance",
+    "profile.type",
+    "projected_allocation",
+    "projected_allocation[].assets_count",
+    "projected_allocation[].category",
+    "projected_allocation[].projected_pct",
+    "projected_allocation[].projected_value",
+    "reduce_suggestions",
+    "reduce_suggestions[].category",
+    "reduce_suggestions[].current_value",
+    "reduce_suggestions[].label",
+    "reduce_suggestions[].name",
+    "reduce_suggestions[].overweight_category",
+    "reduce_suggestions[].pnl_pct",
+    "reduce_suggestions[].quantity",
+    "reduce_suggestions[].reasons",
+    "reduce_suggestions[].ticker",
+    "reduce_suggestions[].verdict",
+    "suggestions",
+    "suggestions[].already_held",
+    "suggestions[].asset_type",
+    "suggestions[].category",
+    "suggestions[].dividend_yield",
+    "suggestions[].invest_amount",
+    "suggestions[].margin_of_safety",
+    "suggestions[].name",
+    "suggestions[].objective",
+    "suggestions[].price",
+    "suggestions[].quantity",
+    "suggestions[].rationale",
+    "suggestions[].reasons",
+    "suggestions[].score",
+    "suggestions[].ticker",
+    "suggestions[].verdict",
+    "summary",
+    "total_capital",
+    "total_invested"
   ],
   "GET /api/v1/suggestions/followed": [
     "beat_ibov",
@@ -923,6 +1081,69 @@
     "month.surplus_high",
     "month.surplus_low"
   ],
+  "GET /api/v1/transactions": [
+    "count",
+    "has_more",
+    "items",
+    "items[].amount",
+    "items[].fees",
+    "items[].id",
+    "items[].kind",
+    "items[].note",
+    "items[].price",
+    "items[].quantity",
+    "items[].ratio_from",
+    "items[].ratio_to",
+    "items[].symbol",
+    "items[].traded_on",
+    "next_cursor"
+  ],
+  "GET /api/v1/transactions/derivation/{symbol}": [
+    "position",
+    "position.avg_price",
+    "position.entries_applied",
+    "position.first_traded_on",
+    "position.last_traded_on",
+    "position.quantity",
+    "position.realized_pnl",
+    "position.symbol",
+    "position.total_cost",
+    "position.total_fees",
+    "position.warnings",
+    "steps",
+    "steps[].avg_price_after",
+    "steps[].description",
+    "steps[].kind",
+    "steps[].quantity_after",
+    "steps[].total_cost_after",
+    "steps[].traded_on",
+    "symbol"
+  ],
+  "GET /api/v1/transactions/reconciliation": [
+    "differences",
+    "differences[].projected",
+    "differences[].projected.avg_price",
+    "differences[].projected.entries_applied",
+    "differences[].projected.first_traded_on",
+    "differences[].projected.last_traded_on",
+    "differences[].projected.quantity",
+    "differences[].projected.realized_pnl",
+    "differences[].projected.symbol",
+    "differences[].projected.total_cost",
+    "differences[].projected.total_fees",
+    "differences[].projected.warnings",
+    "differences[].reason",
+    "differences[].stored",
+    "differences[].stored.avg_price",
+    "differences[].stored.category",
+    "differences[].stored.quantity",
+    "differences[].stored.ticker",
+    "differences[].stored.updated_at",
+    "differences[].ticker",
+    "in_sync",
+    "positions",
+    "projected"
+  ],
   "GET /api/v1/universe": [
     "tickers"
   ],
@@ -995,6 +1216,9 @@
   "POST /api/v1/auth/google (entrada)": [
     "id_token!",
     "referral_code"
+  ],
+  "POST /api/v1/auth/logout": [
+    "revoked"
   ],
   "POST /api/v1/auth/logout (entrada)": [
     "all_devices",
@@ -1071,6 +1295,16 @@
   ],
   "POST /api/v1/cashflow/entries/{entry_id}/paid (entrada)": [
     "paid_on"
+  ],
+  "POST /api/v1/dividends/pending/confirm": [
+    "created",
+    "items",
+    "items[].amount",
+    "items[].id",
+    "items[].kind",
+    "items[].note",
+    "items[].paid_at",
+    "items[].ticker"
   ],
   "POST /api/v1/dividends/pending/confirm (entrada)": [
     "items",
@@ -1297,6 +1531,41 @@
     "reinvest_dividends",
     "target_monthly_income"
   ],
+  "POST /api/v1/quick-invest": [
+    "affirmation",
+    "affirmation.asset_level",
+    "affirmation.disclaimer",
+    "affirmation.level",
+    "affirmation.name",
+    "affirmation.personalized",
+    "affirmation.prescriptive",
+    "allocated_cash",
+    "allocations",
+    "allocations[].category",
+    "allocations[].current_price",
+    "allocations[].dividend_yield",
+    "allocations[].name",
+    "allocations[].rationale",
+    "allocations[].score",
+    "allocations[].sector",
+    "allocations[].suggested_investment",
+    "allocations[].suggested_quantity",
+    "allocations[].ticker",
+    "basis",
+    "cash_source",
+    "fixed_income",
+    "fixed_income.amount",
+    "fixed_income.rationale",
+    "fixed_income.reference_monthly_pct",
+    "fixed_income.reference_source",
+    "portfolio_balance",
+    "remaining_cash",
+    "summary",
+    "total_cash",
+    "unallocated",
+    "unallocated[].reason",
+    "unallocated[].value"
+  ],
   "POST /api/v1/quick-invest (entrada)": [
     "cash_available",
     "min_order_value"
@@ -1385,6 +1654,9 @@
   "POST /api/v1/telemetry/verify": [
     "raised"
   ],
+  "POST /api/v1/transactions": [
+    "id"
+  ],
   "POST /api/v1/transactions (entrada)": [
     "amount",
     "fees",
@@ -1396,6 +1668,13 @@
     "ratio_to",
     "symbol!",
     "traded_on!"
+  ],
+  "POST /api/v1/transactions/backfill": [
+    "seeded"
+  ],
+  "POST /api/v1/transactions/batch": [
+    "count",
+    "ids"
   ],
   "POST /api/v1/transactions/batch (entrada)": [
     "transactions",
@@ -1410,14 +1689,69 @@
     "transactions[].symbol!",
     "transactions[].traded_on!"
   ],
+  "POST /api/v1/transactions/import": [
+    "ids",
+    "imported",
+    "skipped_duplicates"
+  ],
   "POST /api/v1/transactions/import (entrada)": [
     "content!",
     "format",
     "include_duplicates"
   ],
+  "POST /api/v1/transactions/import/preview": [
+    "duplicates",
+    "format",
+    "issues",
+    "issues[].field",
+    "issues[].line",
+    "issues[].message",
+    "issues[].raw",
+    "ok",
+    "rows",
+    "rows[].amount",
+    "rows[].duplicate_of",
+    "rows[].fees",
+    "rows[].kind",
+    "rows[].line",
+    "rows[].note",
+    "rows[].price",
+    "rows[].quantity",
+    "rows[].ratio_from",
+    "rows[].ratio_to",
+    "rows[].symbol",
+    "rows[].traded_on"
+  ],
   "POST /api/v1/transactions/import/preview (entrada)": [
     "content!",
     "format"
+  ],
+  "POST /api/v1/transactions/rebuild": [
+    "rebuilt",
+    "reconciliation",
+    "reconciliation.differences",
+    "reconciliation.differences[].projected",
+    "reconciliation.differences[].projected.avg_price",
+    "reconciliation.differences[].projected.entries_applied",
+    "reconciliation.differences[].projected.first_traded_on",
+    "reconciliation.differences[].projected.last_traded_on",
+    "reconciliation.differences[].projected.quantity",
+    "reconciliation.differences[].projected.realized_pnl",
+    "reconciliation.differences[].projected.symbol",
+    "reconciliation.differences[].projected.total_cost",
+    "reconciliation.differences[].projected.total_fees",
+    "reconciliation.differences[].projected.warnings",
+    "reconciliation.differences[].reason",
+    "reconciliation.differences[].stored",
+    "reconciliation.differences[].stored.avg_price",
+    "reconciliation.differences[].stored.category",
+    "reconciliation.differences[].stored.quantity",
+    "reconciliation.differences[].stored.ticker",
+    "reconciliation.differences[].stored.updated_at",
+    "reconciliation.differences[].ticker",
+    "reconciliation.in_sync",
+    "reconciliation.positions",
+    "reconciliation.projected"
   ],
   "PUT /api/v1/cashflow/entries/{entry_id}": [
     "amount",

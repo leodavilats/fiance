@@ -8,8 +8,11 @@ from app.models.dividends import (
     DividendReceived,
     DividendReceivedCreate,
     DividendReceivedUpdate,
+    DividendsConfirmedResponse,
+    DividendsPendingResponse,
     DividendsReceivedResponse,
 )
+from app.models.operacao import DeletedById
 from app.services.dividend_calendar_service import DividendCalendarService
 from app.services.dividends_service import DividendsService
 
@@ -42,7 +45,7 @@ async def update_received(dividend_id: int, req: DividendReceivedUpdate) -> Divi
     return service.update(dividend_id, req)
 
 
-@router.delete("/dividends/received/{dividend_id}")
+@router.delete("/dividends/received/{dividend_id}", response_model=DeletedById)
 async def delete_received(dividend_id: int) -> dict:
     return service.delete(dividend_id)
 
@@ -58,12 +61,12 @@ class DividendConfirmRequest(BaseModel):
     items: list[DividendConfirmItem] = Field(default_factory=list)
 
 
-@router.get("/dividends/pending")
+@router.get("/dividends/pending", response_model=DividendsPendingResponse)
 async def pending_dividends() -> dict:
     return await calendar_service.pending()
 
 
-@router.post("/dividends/pending/confirm")
+@router.post("/dividends/pending/confirm", response_model=DividendsConfirmedResponse)
 async def confirm_dividends(body: DividendConfirmRequest) -> dict:
     if not body.items:
         return {"created": 0, "items": []}

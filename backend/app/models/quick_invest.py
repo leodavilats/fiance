@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from .affirmation import AffirmationMode
+
 
 class QuickInvestRequest(BaseModel):
     cash_available: float | None = Field(
@@ -74,3 +76,32 @@ class QuickInvestResponse(BaseModel):
     portfolio_balance: dict = Field(default_factory=dict)
 
     summary: str
+
+
+class QuickInvestAllocationRead(QuickInvestAllocation):
+    suggested_quantity: int | None
+    suggested_investment: float | None
+
+
+class FixedIncomeSliceRead(FixedIncomeSlice):
+    amount: float | None
+
+
+class UnallocatedRead(Unallocated):
+    value: float | None
+
+
+class PortfolioBalanceSlice(BaseModel):
+    value: float | None = None
+    percentage: float | None = None
+    target: float = 0.0
+
+
+class QuickInvestRead(QuickInvestResponse):
+    allocated_cash: float | None
+    remaining_cash: float | None
+    allocations: list[QuickInvestAllocationRead] = Field(default_factory=list)
+    fixed_income: FixedIncomeSliceRead | None = None
+    unallocated: list[UnallocatedRead] = Field(default_factory=list)
+    portfolio_balance: dict[str, PortfolioBalanceSlice] = Field(default_factory=dict)
+    affirmation: AffirmationMode

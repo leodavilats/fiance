@@ -62,3 +62,27 @@ class DividendsReceivedResponse(BaseModel):
     next_cursor: str | None = None
     has_more: bool = False
     total_count: int = 0
+
+
+class DividendSuggestionOut(BaseModel):
+    ticker: str
+    paid_at: str
+    quantity_at_date: float
+    rate_per_share: float
+    amount: float
+    kind: str
+    caveats: list[str] = Field(default_factory=list)
+    quantity_is_current: bool = False
+    ex_date: str | None = None
+    entitlement: str = "indeterminado"
+
+
+class DividendsPendingResponse(BaseModel):
+    items: list[DividendSuggestionOut] = Field(default_factory=list)
+    count: int = 0
+    note: str
+
+
+class DividendsConfirmedResponse(BaseModel):
+    created: int
+    items: list[DividendReceived] = Field(default_factory=list)
