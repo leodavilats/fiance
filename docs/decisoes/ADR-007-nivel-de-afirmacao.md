@@ -38,6 +38,16 @@ O que sai fora do nível 3 é o **valor por ativo**, que é o que instrui: `amou
 `suggested_amount`, `suggested_quantity`, `action`, `recommended_action` e outros de `ACTION_FIELDS`.
 **A análise que os sustentava fica.**
 
+**Sai também todo campo de onde o valor se reconstrói por aritmética.** Anular o alocado e deixar o
+caixa e a sobra é entregar o alocado por subtração. Por isso saem, fora do nível 3, `remaining_cash`
+(caixa − alocado), o valor de cada linha de `unallocated` (somado, dá a sobra), o valor e o
+percentual de `portfolio_balance` (a carteira *depois* do aporte, que menos a de antes é o aporte da
+categoria) e `projected_value`/`projected_pct` da estratégia, pelo mesmo motivo. Onde a chave é
+genérica demais para valer em todo payload — `value` —, ela sai só dentro do bloco que a torna
+instrução: `ACTION_FIELDS_WITHIN`. Fica o que a pessoa já sabe ou declarou (o caixa que entrou, a
+meta), o preço de cada ativo e o **motivo** do que não coube. `tests/test_affirmation.py`
+(`TestSubtracao`) tenta reconstruir o alocado pelo caminho de cada campo e exige que falhe.
+
 O aviso ao usuário acompanha o nível, e `/aviso-cvm` lê `affirmation.current()` **no servidor** — uma
 segunda cópia da frase desatualizaria justamente onde a pessoa a lê.
 
@@ -60,7 +70,10 @@ continua personalizada. Sem ela, o nível 3 prescreve sem personalizar.
 - Um campo novo que instrui precisa entrar em `ACTION_FIELDS`, e **esquecer disso vaza instrução no
   nível errado, em silêncio**
 - O filtro pode anular um campo e deixar de pé uma subtração que dependia dele — foi o que aconteceu
-  com `allocated_cash`, item 12 de [10-PROBLEMAS](../10-PROBLEMAS.md)
+  com `allocated_cash` até 2026-09-25. Campo novo que é soma, diferença ou fatia de um valor de ação
+  entra na mesma lista, e o teste de subtração só enxerga o que o cenário dele produz
+- Fora do nível 3, a tela de aporte mostra o caixa, a ordem e o motivo do que não coube, mas
+  nenhuma cifra do que sai do caixa: o que sobra aparece como —
 
 **Estado atual:** nível **2**. O nível 3 está desligado, e ligá-lo é a decisão registrada em
 [ADR-006](ADR-006-recomendacao-personalizada.md).

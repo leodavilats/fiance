@@ -86,7 +86,10 @@ def test_sem_meta_declarada_a_base_e_score_e_nao_uma_divisao_inventada(client):
     assert "score" in body["summary"].lower()
 
 
-def test_todo_dinheiro_tem_destino_ou_motivo(client):
+def test_todo_dinheiro_tem_destino_ou_motivo(client, monkeypatch):
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "affirmation_level", 3, raising=False)
     headers = make_auth_headers("test_quick_invest_destino")
 
     resp = client.post("/api/quick-invest", headers=headers, json={"cash_available": 1000.0})
@@ -96,8 +99,7 @@ def test_todo_dinheiro_tem_destino_ou_motivo(client):
     alocado = body["allocated_cash"]
     restante = body["remaining_cash"]
 
-    if alocado is not None:
-        assert abs(alocado + restante - body["total_cash"]) < 0.01, "a conta tem de fechar"
+    assert abs(alocado + restante - body["total_cash"]) < 0.01, "a conta tem de fechar"
 
     if restante > 0.01:
         assert body["unallocated"], (
@@ -105,9 +107,25 @@ def test_todo_dinheiro_tem_destino_ou_motivo(client):
             "`remaining_cash` sozinho é um número sem explicação"
         )
         assert all(u["reason"] for u in body["unallocated"])
-        assert all(u["value"] is not None for u in body["unallocated"]), (
-            "o valor sem destino é análise, não instrução: sobrevive em todo nível"
+        assert abs(sum(u["value"] for u in body["unallocated"]) - restante) < 0.01, (
+            "cada real que não foi alocado está numa linha com motivo"
         )
+
+
+def test_fora_do_prescritivo_o_que_sobra_vem_so_com_o_motivo(client):
+    headers = make_auth_headers("test_quick_invest_motivo")
+
+    resp = client.post("/api/quick-invest", headers=headers, json={"cash_available": 1000.0})
+    assert resp.status_code == 200
+
+    body = resp.json()
+    assert body["remaining_cash"] is None, (
+        "caixa menos o que sobra é o valor alocado: a sobra sai junto com ele"
+    )
+    assert body["unallocated"], "o cenário precisa de sobra para provar alguma coisa"
+    assert all(u["reason"] and u["value"] is None for u in body["unallocated"]), (
+        "o motivo é análise e fica; o valor sem destino, somado, dá o alocado por subtração"
+    )
 
 
 def test_renda_fixa_nao_desaparece_da_sugestao(client):

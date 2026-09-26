@@ -210,8 +210,8 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
         if (r.affirmation?.prescriptive == false) ...[
           const SizedBox(height: FiSpace.s5),
           Text(
-            '${r.affirmation!.disclaimer} Por isso o quanto aportar em cada destino aparece '
-            'como —.',
+            '${r.affirmation!.disclaimer} Por isso o quanto aportar em cada destino, e o '
+            'que fica em caixa, aparecem como —.',
             style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
         ],

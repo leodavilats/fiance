@@ -231,3 +231,131 @@ class TestEstruturalNaoTextual:
         )
 
         assert apply({"amount": 10}, modo)["amount"] is None
+
+
+METAS_COM_TUDO = {
+    "goals": [
+        {"category": "renda_fixa", "target_pct": 30.0},
+        {"category": "acoes_br", "target_pct": 40.0},
+        {"category": "fiis", "target_pct": 30.0},
+    ]
+}
+
+
+def _folhas_numericas(valor, caminho=()):
+    if isinstance(valor, dict):
+        for chave, item in valor.items():
+            if chave != "affirmation":
+                yield from _folhas_numericas(item, (*caminho, chave))
+    elif isinstance(valor, list):
+        for item in valor:
+            yield from _folhas_numericas(item, caminho)
+    elif isinstance(valor, int | float) and not isinstance(valor, bool):
+        yield caminho, float(valor)
+
+
+class TestSubtracao:
+    def _aporte(self, client, nivel, valor, uid):
+        headers = make_auth_headers(uid)
+        client.put("/api/goals", headers=headers, json=METAS_COM_TUDO)
+        nivel(valor)
+        return client.post(
+            "/api/quick-invest", json={"cash_available": 10000}, headers=headers
+        ).json()
+
+    def test_o_valor_alocado_nao_sai_por_subtracao(self, client, nivel):
+        prescritivo = self._aporte(client, nivel, 3, "u_afirm_subtracao_3")
+        analitico = self._aporte(client, nivel, 2, "u_afirm_subtracao_2")
+
+        alocado = prescritivo["allocated_cash"]
+        assert alocado and prescritivo["unallocated"] and prescritivo["fixed_income"], (
+            "o cenário precisa de alocação, renda fixa e sobra, senão a tentativa não prova nada"
+        )
+        caixa = analitico["total_cash"]
+        assert caixa == prescritivo["total_cash"]
+
+        restante = analitico["remaining_cash"]
+        sem_destino = [u["value"] for u in analitico["unallocated"]]
+        depois = [b["value"] for b in analitico["portfolio_balance"].values()]
+        tentativas = {
+            "caixa menos o que ficou em caixa": None if restante is None else caixa - restante,
+            "caixa menos o que ficou sem destino": (
+                None if None in sem_destino else caixa - sum(sem_destino)
+            ),
+            "soma do balanço depois do aporte": None if None in depois else sum(depois),
+        }
+        for tentativa, resultado in tentativas.items():
+            assert resultado is None, (
+                f"{tentativa} reconstrói o valor de ação que a régua retira no nível 2"
+            )
+
+        for caminho, numero in _folhas_numericas(analitico):
+            assert abs(numero - alocado) > 0.005, f"{caminho} é o próprio valor alocado"
+            assert abs(caixa - numero - alocado) > 0.005, (
+                f"caixa menos {caminho} dá o valor alocado"
+            )
+
+    def test_nenhuma_cifra_de_acao_sobra_em_outro_campo(self, client, nivel):
+        prescritivo = self._aporte(client, nivel, 3, "u_afirm_cifras_3")
+        analitico = self._aporte(client, nivel, 2, "u_afirm_cifras_2")
+
+        segredos = {
+            prescritivo["remaining_cash"],
+            prescritivo["fixed_income"]["amount"],
+            *(a["suggested_investment"] for a in prescritivo["allocations"]),
+            *(u["value"] for u in prescritivo["unallocated"]),
+            *(b["value"] for b in prescritivo["portfolio_balance"].values()),
+            *(b["percentage"] for b in prescritivo["portfolio_balance"].values()),
+        }
+        folhas = {numero for _, numero in _folhas_numericas(analitico)}
+
+        assert not segredos & folhas, (
+            "cifra que só existe no nível prescritivo não pode reaparecer em outro campo"
+        )
+
+    def test_a_explicacao_do_que_ficou_sem_destino_fica(self, client, nivel):
+        analitico = self._aporte(client, nivel, 2, "u_afirm_motivo_2")
+
+        assert analitico["unallocated"], "o fato de sobrar dinheiro é análise, e fica"
+        assert all(u["reason"] for u in analitico["unallocated"])
+        assert all(b["target"] is not None for b in analitico["portfolio_balance"].values()), (
+            "a meta é o que a pessoa declarou, não instrução"
+        )
+
+
+class TestProjecaoDaEstrategia:
+    PLANO = {
+        "cash_available": 1000.0,
+        "total_invested": 5000.0,
+        "current_allocation": [{"category": "acoes_br", "current_value": 5000.0}],
+        "projected_allocation": [
+            {
+                "category": "acoes_br",
+                "projected_value": 5494.0,
+                "projected_pct": 91.5,
+                "assets_count": 2,
+            }
+        ],
+    }
+
+    def test_a_projecao_sai_fora_do_nivel_prescritivo(self, nivel):
+        projecao = apply(self.PLANO, nivel(2))["projected_allocation"][0]
+
+        assert projecao["projected_value"] is None, (
+            "projetado menos atual é o aporte da categoria: sai pela mesma régua do valor"
+        )
+        assert projecao["projected_pct"] is None
+        assert projecao["category"] == "acoes_br"
+
+    def test_no_nivel_prescritivo_a_projecao_fica(self, nivel):
+        projecao = apply(self.PLANO, nivel(3))["projected_allocation"][0]
+
+        assert projecao["projected_value"] == 5494.0
+
+    def test_o_escopo_nao_vaza_para_campo_homonimo_fora_dele(self, nivel):
+        resultado = apply({"value": 1.0, "unallocated": [{"value": 2.0}]}, nivel(2))
+
+        assert resultado["value"] == 1.0, (
+            "`value` só é valor de ação dentro de `unallocated` e do balanço, não em todo lugar"
+        )
+        assert resultado["unallocated"][0]["value"] is None

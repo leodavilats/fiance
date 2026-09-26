@@ -33,6 +33,9 @@ ACTION_FIELDS = frozenset(
     {
         "amount",
         "allocated_cash",
+        "remaining_cash",
+        "projected_value",
+        "projected_pct",
         "suggested_amount",
         "suggested_investment",
         "suggested_quantity",
@@ -45,6 +48,11 @@ ACTION_FIELDS = frozenset(
         "suggested_action",
     }
 )
+
+ACTION_FIELDS_WITHIN: dict[str, frozenset[str]] = {
+    "unallocated": frozenset({"value"}),
+    "portfolio_balance": frozenset({"value", "percentage"}),
+}
 
 ASSET_LEVEL_FIELDS = frozenset(
     {"allocations", "suggestions", "top_buys", "top_sells", "opportunities", "items"}
@@ -97,20 +105,20 @@ def apply(payload: dict, mode: Mode | None = None) -> dict:
     return resultado
 
 
-def _walk(value, modo: Mode):
+def _walk(value, modo: Mode, escopo: frozenset[str] = frozenset()):
     if isinstance(value, dict):
         saida = {}
         for chave, item in value.items():
             if not modo.asset_level and chave in ASSET_LEVEL_FIELDS:
                 saida[chave] = []
                 continue
-            if not modo.prescriptive and chave in ACTION_FIELDS:
+            if not modo.prescriptive and (chave in ACTION_FIELDS or chave in escopo):
                 saida[chave] = None
                 continue
-            saida[chave] = _walk(item, modo)
+            saida[chave] = _walk(item, modo, escopo | ACTION_FIELDS_WITHIN.get(chave, frozenset()))
         return saida
 
     if isinstance(value, list):
-        return [_walk(item, modo) for item in value]
+        return [_walk(item, modo, escopo) for item in value]
 
     return value
