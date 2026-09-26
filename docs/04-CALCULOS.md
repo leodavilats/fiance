@@ -374,6 +374,12 @@ Sai da margem de segurança, e só dela. A qualidade da faixa limita a intensida
 | ≤ −30% | `STRONG_SELL` | Bem acima do preço justo |
 | sem faixa | `UNKNOWN` | Sem preço justo |
 
+**A medida de margem na tela não reclassifica.** A nota dela ("Algum desconto", "Perto do justo")
+sai do veredito que o servidor deu (`fiMarginBandForVerdict`); os limiares ficam espelhados em
+`product_rules.dart` (`kMarginBuy`, `kMarginStrongBuy`) e `test_regua_nas_duas_plataformas.py`
+compara com os daqui. Até 2026-09-26 a régua do app começava em 10%, e a mesma folha dizia "No preço
+justo" na etiqueta e "Algum desconto" na medida.
+
 **A etiqueta descreve posição, não ordem.** A tela dizia *"não é recomendação de compra"* embaixo de
 *"Comprar com convicção"*. Os códigos ficam, porque carteira, alertas e estratégia os leem.
 

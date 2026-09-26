@@ -198,7 +198,7 @@ class _AssetAnalysis extends StatelessWidget {
           Builder(
             builder: (context) {
               final pct = margem * 100;
-              final band = fiBandFor(pct, fiMarginOfSafetyBands);
+              final band = fiMarginBandForVerdict(a.verdict);
               return FiMeasure(
                 label: 'Margem de segurança',
                 value: pct,

@@ -30,4 +30,23 @@ void main() {
       }
     });
   }
+
+  test('a nota da margem sai do veredito do servidor, e não de uma régua própria', () {
+    expect(
+      {
+        for (final v in ['STRONG_BUY', 'BUY', 'HOLD', 'SELL', 'STRONG_SELL', 'UNKNOWN'])
+          v: fiMarginBandForVerdict(v).label,
+      },
+      {
+        'STRONG_BUY': 'Desconto amplo',
+        'BUY': 'Algum desconto',
+        'HOLD': 'Perto do justo',
+        'SELL': 'Acima do justo',
+        'STRONG_SELL': 'Acima do justo',
+        'UNKNOWN': 'Sem preço justo',
+      },
+      reason: 'a régua do app começava em 10%, e o servidor em 15%: com 12% a etiqueta dizia '
+          '"No preço justo" e a medida, "Algum desconto", na mesma folha',
+    );
+  });
 }

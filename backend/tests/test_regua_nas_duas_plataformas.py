@@ -5,7 +5,7 @@ import re
 
 import pytest
 
-from app.analysis import score_ruler
+from app.analysis import decision, score_ruler
 
 _PRODUCT_RULES = (
     pathlib.Path(__file__).resolve().parents[2] / "mobile" / "lib" / "core" / "product_rules.dart"
@@ -17,6 +17,8 @@ _LIMIARES = (
     ("kScoreNeutral", score_ruler.SCORE_NEUTRAL),
     ("kHighlightMinDy", score_ruler.HIGHLIGHT_MIN_DY),
     ("kMinDataCompleteness", score_ruler.MIN_DATA_COMPLETENESS),
+    ("kMarginStrongBuy", round(decision.MOS_STRONG_BUY * 100)),
+    ("kMarginBuy", round(decision.MOS_BUY * 100)),
 )
 
 

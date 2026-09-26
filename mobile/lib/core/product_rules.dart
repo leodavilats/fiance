@@ -61,13 +61,27 @@ const List<FiScoreBand> fiHealthBands = [
   FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Carteira pequena demais para avaliar', state: FiState.indeterminate, emphasis: 'muted'),
 ];
 
+const double kMarginStrongBuy = 30;
+const double kMarginBuy = 15;
+
 const List<FiScoreBand> fiMarginOfSafetyBands = [
-  FiScoreBand(id: 'wide', min: 25, max: 50, label: 'Desconto amplo', state: FiState.favorable, emphasis: 'strong'),
-  FiScoreBand(id: 'some', min: 10, max: 24, label: 'Algum desconto', state: FiState.favorable, emphasis: 'muted'),
-  FiScoreBand(id: 'fair', min: 0, max: 9, label: 'Perto do justo', state: FiState.neutral, emphasis: 'muted'),
-  FiScoreBand(id: 'above', min: -50, max: -1, label: 'Acima do justo', state: FiState.attention, emphasis: 'strong'),
+  FiScoreBand(id: 'wide', min: kMarginStrongBuy, max: 50, label: 'Desconto amplo', state: FiState.favorable, emphasis: 'strong'),
+  FiScoreBand(id: 'some', min: kMarginBuy, max: kMarginStrongBuy, label: 'Algum desconto', state: FiState.favorable, emphasis: 'muted'),
+  FiScoreBand(id: 'fair', min: -kMarginBuy, max: kMarginBuy, label: 'Perto do justo', state: FiState.neutral, emphasis: 'muted'),
+  FiScoreBand(id: 'above', min: -50, max: -kMarginBuy, label: 'Acima do justo', state: FiState.attention, emphasis: 'strong'),
   FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem preço justo', state: FiState.indeterminate, emphasis: 'muted'),
 ];
+
+FiScoreBand fiMarginBandForVerdict(String verdict) {
+  final id = switch (verdict) {
+    'STRONG_BUY' => 'wide',
+    'BUY' => 'some',
+    'HOLD' => 'fair',
+    'SELL' || 'STRONG_SELL' => 'above',
+    _ => 'insufficient',
+  };
+  return fiMarginOfSafetyBands.firstWhere((b) => b.id == id);
+}
 
 const ({double min, double max}) fiMarginOfSafetyDomain = (min: -50, max: 50);
 
