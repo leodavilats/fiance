@@ -44,6 +44,25 @@ void main() {
     });
   });
 
+  group('taxa de cache vencido', () {
+    test('diz de quando é a leitura', () {
+      final duasHorasAtras =
+          DateTime.now().subtract(const Duration(hours: 2)).millisecondsSinceEpoch / 1000;
+      final nota = staleRateNote({
+        'rate_source': 'bcb_cache_vencido',
+        'rates_as_of': duasHorasAtras,
+      });
+
+      expect(nota, contains('há 2 h'));
+      expect(nota, contains('BCB fora do ar'));
+    });
+
+    test('taxa fresca não ganha nota', () {
+      expect(staleRateNote({'rate_source': 'bcb', 'rates_as_of': 1790000000.0}), '');
+      expect(staleRateNote(const {}), '');
+    });
+  });
+
   test('o glossário explica a faixa e de onde ela vem', () {
     expect(glossary['faixa_de_preco_justo'], contains('premissa pessimista'));
     expect(glossary['consenso'], contains('faixa'));

@@ -77,6 +77,11 @@ V = distribuição recorrente ÷ y_FII
 
 `analysis/fair_price.py::_dividend_lens`.
 
+**Premissa implícita:** `y_FII` é juro real, e a distribuição é nominal. O quociente só é coerente se
+a distribuição crescer com a inflação, como o aluguel de um FII de tijolo. O FII de papel distribui a
+correção monetária dos CRIs como rendimento, e aí a premissa falha (item A7 de
+[10-PROBLEMAS](10-PROBLEMAS.md)).
+
 ### O dividendo recorrente
 
 ```
@@ -89,9 +94,11 @@ corte   = último < 50% da média
 
 `analysis/fair_price.py::recurring_dividend`. Contínuo — 2,9× e 3,1× a mediana dão o mesmo
 resultado. **Pega corte**, que é a armadilha de dividendo. Não apaga uma mudança de política para
-cima, como fazia a troca da série inteira pela mediana. Ano sem pagamento dentro da série conta como
-zero; sem nenhum ano completo, vale a soma dos últimos 12 meses. O ano civil é o brasileiro
-(`core/brt.py`): às 22h de 31 de dezembro, o ano ainda não fechou.
+cima, como fazia a troca da série inteira pela mediana. **Na ação, o corte age duas vezes:**
+rebaixa a qualidade para frágil e, por baixar o payout, aumenta o crescimento que o modelo atribui
+ao lucro retido. Ano sem pagamento dentro da série conta como zero; sem nenhum ano completo, vale
+a soma dos últimos 12 meses. O ano civil é o brasileiro (`core/brt.py`): às 22h de 31 de dezembro,
+o ano ainda não fechou.
 
 **Provento que não chegou não é provento zero.** Quando a fonte falha e não há cache, nem vencido, a
 coleta devolve `None`, e não lista vazia (`collectors/universal.py::fetch_dividends`). O principal
@@ -141,7 +148,7 @@ preço. Exatamente 30% ainda é `fora_ate_30`.
 | `band_quality` | Quando |
 |---|---|
 | `fragil` | lucro de menos de 3 exercícios, ou instável (LPA de 12m fora de metade a dobro do normalizado, ou ano com prejuízo); FII com menos de 3 anos completos com distribuição; corte de distribuição; **no FII**, VPA a mais de 30% da faixa |
-| `ampla` | sem confirmação; confirmação fora da faixa por até 30%; **na ação**, dividendo a mais de 30% da faixa; teto acima de 1,5× o piso |
+| `ampla` | sem confirmação; confirmação fora da faixa por até 30%; **na ação**, dividendo a mais de 30% da faixa; **na ação**, teto acima de 1,5× o piso |
 | `firme` | nenhum dos anteriores |
 | `sem_faixa` | não há modelo principal |
 
@@ -194,6 +201,10 @@ preço > teto          →  margem = (teto − preço) ÷ preço      (contra)
 As duas pontas medem a mesma distância em escala logarítmica: +30% e −30% correspondem ao mesmo
 afastamento. Contra o teto, a fórmula antiga disparava −30% com 23% de distância e exigia 43% para
 +30%. `fair_price.py::margin_of_safety_in_band`
+
+O campo exibido tem quatro casas. **A etiqueta compara a margem com nove** (`margin_exact`): com
+quatro, um preço a 29,996% do piso já saía "bem abaixo", acima do gatilho que a tela anunciava. Nove
+casas tiram o ruído de ponto flutuante, e no preço exato do gatilho a etiqueta já é a nova.
 
 ### Premissas
 

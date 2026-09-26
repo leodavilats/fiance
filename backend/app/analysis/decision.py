@@ -12,6 +12,7 @@ from app.analysis.fair_price import (
     TREND_BASIS_SHORT,
     FairPriceResult,
     TechnicalSnapshot,
+    margin_exact,
 )
 
 MOS_STRONG_BUY = 0.30
@@ -98,8 +99,14 @@ def _verdict_from_mos(mos: float | None) -> Verdict:
     return "HOLD"
 
 
+def _margin_for_verdict(fair: FairPriceResult) -> float | None:
+    if fair.price:
+        return margin_exact(fair.price, fair.fair_low, fair.fair_high)
+    return fair.margin_of_safety
+
+
 def verdict_for(fair: FairPriceResult) -> Verdict:
-    verdict = _verdict_from_mos(fair.margin_of_safety)
+    verdict = _verdict_from_mos(_margin_for_verdict(fair))
     if fair.band_quality == "fragil":
         return _CAP_WHEN_FRAGILE.get(verdict, verdict)
     return verdict
@@ -291,7 +298,7 @@ def decide(
 
     tem_faixa = fair.fair_low is not None and fair.fair_high is not None
     basis = BASIS_BAND if tem_faixa else BASIS_NONE
-    banda = _verdict_from_mos(fair.margin_of_safety)
+    banda = _verdict_from_mos(_margin_for_verdict(fair))
     verdict = verdict_for(fair)
 
     if tem_faixa:

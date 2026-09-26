@@ -398,7 +398,7 @@ def band_position(
     return round((price - fair_low) / (fair_high - fair_low), 4)
 
 
-def margin_of_safety_in_band(
+def margin_exact(
     price: float | None,
     fair_low: float | None,
     fair_high: float | None,
@@ -407,12 +407,21 @@ def margin_of_safety_in_band(
         return None
 
     if price < fair_low:
-        return round((fair_low - price) / fair_low, 4)
+        return round((fair_low - price) / fair_low, 9)
 
     if price > fair_high:
-        return round((fair_high - price) / price, 4)
+        return round((fair_high - price) / price, 9)
 
     return 0.0
+
+
+def margin_of_safety_in_band(
+    price: float | None,
+    fair_low: float | None,
+    fair_high: float | None,
+) -> float | None:
+    margem = margin_exact(price, fair_low, fair_high)
+    return None if margem is None else round(margem, 4)
 
 
 @dataclass
@@ -470,6 +479,8 @@ class FairPriceResult:
     personal_ceiling: float | None = None
 
     details: dict = field(default_factory=dict)
+
+    price: float | None = None
 
 
 @dataclass
@@ -810,7 +821,8 @@ def _quality(
             f"a leitura de confirmação fica fora da faixa, a até {CONFIRMATION_TOLERANCE:.0%} dela"
         )
 
-    if lens.low and lens.high and lens.high / lens.low > WIDE_BAND_RATIO:
+    largura = lens.high / lens.low if lens.low and lens.high else None
+    if principal == PRINCIPAL_EARNINGS and largura and largura > WIDE_BAND_RATIO:
         amplas.append(
             f"a faixa é larga: o teto passa de {WIDE_BAND_RATIO:.1f}× o piso, porque a premissa "
             "de crescimento pesa muito"
@@ -909,6 +921,7 @@ def fair_price_from_inputs(
     )
 
     base = {
+        "price": price,
         "graham": graham,
         "avg_dividend_5y": (
             round(inputs.dividend_recurring, 4) if inputs.dividend_recurring else None

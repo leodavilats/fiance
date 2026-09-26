@@ -13,6 +13,7 @@ import '../../core/score_ruler.dart'
         methodStatusLabel,
         principalLabel,
         rateBaseLabel,
+        staleRateNote,
         trendBasisLabel;
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
@@ -372,6 +373,11 @@ final _assetAnalysisProvider = FutureProvider.autoDispose
 
 List<Widget> _premiseRows(AssetAnalysis a) {
   final base = rateBaseLabel(a.premises['rate_base'] as String?);
+  final vencida = staleRateNote(a.premises);
+  final origemDoYield = [
+    if (base.isNotEmpty) 'a partir da $base',
+    if (vencida.isNotEmpty) vencida,
+  ].join(' · ');
 
   if (a.principal == 'dividendos') {
     return [
@@ -379,7 +385,7 @@ List<Widget> _premiseRows(AssetAnalysis a) {
         label: 'Yield exigido',
         value: formatRatio(a.premise('fii_yield')),
         detail: 'Juro real de longo prazo mais prêmio',
-        note: base.isEmpty ? null : 'a partir da $base',
+        note: origemDoYield.isEmpty ? null : origemDoYield,
       ),
       FiDataRow(
         label: 'Distribuição recorrente',
@@ -396,6 +402,7 @@ List<Widget> _premiseRows(AssetAnalysis a) {
       label: 'Taxa exigida',
       value: formatRatio(a.premise('discount_rate')),
       detail: base.isEmpty ? null : '$base mais 5 pontos',
+      note: vencida.isEmpty ? null : vencida,
     ),
     FiDataRow(
       label: 'Crescimento nos próximos 5 anos',

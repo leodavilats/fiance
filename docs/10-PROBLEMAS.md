@@ -80,9 +80,8 @@ para 5. O R-002 saiu no mesmo dia pela
 da faixa alarga a leitura, em vez de derrubá-la. Frágil caiu de 11 para 7, e os que ficam são por
 corte ou lucro instável.
 
-Os lotes A e B foram corrigidos em 2026-09-25, com duas pendências: R-012 (arredondamento antes do
-limiar) e a idade da taxa na tela (R-010). **Ficam abertos o resto do lote C e o lote D**, que
-pedem decisão antes de código.
+Os lotes A, B e C foram corrigidos em 2026-09-25. **Fica aberto o lote D:** os nomes de campo
+(R-015) e o técnico no score (R-016), que pede decisão de produto.
 
 ## B · Dado e fonte
 

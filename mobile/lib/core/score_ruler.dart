@@ -128,6 +128,13 @@ String principalLabel(String? principal) {
   }
 }
 
+String staleRateNote(Map<String, dynamic> premises) {
+  if (premises['rate_source'] != 'bcb_cache_vencido') return '';
+  final idade = formatAge((premises['rates_as_of'] as num?)?.toDouble());
+  if (idade.isEmpty) return 'taxa de uma leitura anterior, com o BCB fora do ar';
+  return 'taxa lida $idade, com o BCB fora do ar';
+}
+
 String rateBaseLabel(String? base) {
   switch (base) {
     case 'selic_media_10a':

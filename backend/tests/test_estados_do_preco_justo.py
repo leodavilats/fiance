@@ -12,6 +12,7 @@ from app.analysis.fair_price import (
     normalized_eps,
     recurring_dividend,
 )
+from app.analysis.falsifiers import price_at_margin
 
 REF = datetime(2026, 9, 23, tzinfo=UTC)
 
@@ -120,3 +121,27 @@ class TestFaixaSemCotacao:
         dec = decide(_acao(asset_type="etf"), None, current_price=10.0)
 
         assert dec.label == LABELS["UNKNOWN"]
+
+
+class TestBordaDaEtiqueta:
+    def test_a_etiqueta_nao_atravessa_a_borda_pelo_arredondamento(self):
+        faixa = _acao()
+        preco = faixa.fair_low * (1 - 0.29996)
+        r = _acao(price=preco)
+
+        assert r.margin_of_safety == 0.3, "o campo exibido continua com quatro casas"
+        assert decide(r, None, current_price=preco).band_verdict == "BUY", (
+            "a 29,996% do piso a margem ainda não chegou a 30%: arredondar antes de comparar "
+            "classificava como 'bem abaixo' um preço acima do gatilho que a própria tela anuncia"
+        )
+
+    @pytest.mark.parametrize(("margem", "esperado"), [(0.30, "STRONG_BUY"), (-0.30, "STRONG_SELL")])
+    def test_no_preco_do_gatilho_a_etiqueta_ja_mudou(self, margem, esperado):
+        faixa = _acao()
+        preco = price_at_margin(faixa.fair_low, faixa.fair_high, margem)
+        r = _acao(price=preco)
+
+        assert decide(r, None, current_price=preco).band_verdict == esperado, (
+            "o gatilho diz 'cair para R$ X ou menos': em R$ X exato a etiqueta já é a nova, e o "
+            "ruído de ponto flutuante não pode desfazer isso"
+        )

@@ -223,7 +223,7 @@ LPA, ROE e juro. O resultado é o mesmo, mas o motivo exibido depende da ordem.
 
 - **Ataque:** fixar no diagrama a ordem do código.
 
-### R-012 · A margem é arredondada antes do limiar
+### R-012 · ~~A margem é arredondada antes do limiar~~ — **corrigido em 2026-09-25**
 
 Severidade documentação · Natureza `lacuna` · Lote A
 
@@ -293,7 +293,7 @@ que pagou 2 vezes em 5 anos passa no filtro de 3 anos da confirmação.
   valor?
 - **Efeito:** ações com série falhada perdem a confirmação e passam de firme para ampla.
 
-### R-010 · A taxa e a data de referência não são gravadas
+### R-010 · ~~A taxa e a data de referência não são gravadas~~ — **corrigido em 2026-09-25**
 
 Severidade atenção · Natureza `lacuna` · Lote B
 
@@ -309,9 +309,9 @@ resultado nem mostrar a idade da taxa.
 
 **Parte corrigida em 2026-09-25:** as premissas carregam `rate_source`, `selic_pct`, `rates_as_of` e
 `reference_date`. Grava-se o momento da leitura, e não a idade, porque a idade muda a cada segundo
-e tornaria o resultado não reproduzível. **Segue aberto:** a tela do ativo mostrar a idade da taxa
-quando `rate_source` for `bcb_cache_vencido`. É mudança no aplicativo, com `formatAge` sobre
-`rates_as_of`.
+e tornaria o resultado não reproduzível. A tela do ativo mostra a idade da taxa quando
+`rate_source` é `bcb_cache_vencido`, na nota da taxa exigida ou do yield exigido
+(`staleRateNote`, em `mobile/lib/core/score_ruler.dart`).
 
 ### R-019 · ~~O cache vencido era apagado antes de ser lido~~ — **corrigido em 2026-09-25**
 
@@ -395,7 +395,7 @@ mudasse. O item passou a pesar mais: é o que hoje mais produz frágil na amostr
 - **Fora de escopo:** reformular a confirmação para usar a mesma fração distribuída na
   perpetuidade. Seria outro método.
 
-### R-014 · A regra de largura não discrimina
+### R-014 · ~~A regra de largura não discrimina~~ — **corrigido em 2026-09-25**
 
 Severidade atenção · Natureza `incoerência` · Lote C
 
@@ -405,7 +405,7 @@ dispara. Na ação, ela dispara quase sempre, em parte por causa de R-001.
 - **Ataque:** em `_quality`, restringir a regra a `principal == PRINCIPAL_EARNINGS`. O comportamento
   não muda, mas a regra fica explícita. Medir de novo o limiar de 1,5× depois de R-001.
 
-### R-018 · D ÷ y supõe distribuição que acompanha a inflação
+### R-018 · ~~D ÷ y supõe distribuição que acompanha a inflação~~ — **corrigido em 2026-09-25**
 
 Severidade documentação · Natureza `metodológico` · Lote C
 
