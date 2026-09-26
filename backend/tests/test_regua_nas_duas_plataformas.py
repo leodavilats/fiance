@@ -75,3 +75,24 @@ def test_todo_tipo_de_lancamento_tem_rotulo_no_dart():
         f"tipo de lançamento sem rótulo no Dart: {faltando}. A tela do razão mostraria o "
         "código cru — 'transfer_in' no lugar de 'Transferência de entrada'."
     )
+
+
+@pytest.mark.skipif(not _VOCABULARY.exists(), reason="repositório sem a pasta mobile")
+def test_o_rotulo_de_categoria_e_o_mesmo_nas_duas_plataformas():
+    from app.services.dashboard_service import _CATEGORY_LABELS
+
+    fonte = _VOCABULARY.read_text(encoding="utf-8")
+    bloco = re.search(r"const Map<String, FiCategory> fiCategories = \{(.*?)\};", fonte, re.DOTALL)
+    assert bloco, "fiCategories sumiu de vocabulary.dart."
+
+    no_dart = dict(re.findall(r"'([a-z_]+)':\s*FiCategory\('([^']+)'", bloco.group(1)))
+    divergentes = {
+        chave: (rotulo, no_dart.get(chave))
+        for chave, rotulo in _CATEGORY_LABELS.items()
+        if no_dart.get(chave) != rotulo
+    }
+
+    assert divergentes == {}, (
+        f"categoria com rótulo diferente entre servidor e app: {divergentes}. O painel vem com o "
+        "rótulo do servidor e a carteira com o do app: a mesma categoria apareceria com dois nomes."
+    )

@@ -99,18 +99,6 @@ O que havia rodava no navegador e saiu com o front web.
 Três não têm equivalente no Dart: **gráfico sem tabela equivalente**, **destino de navegação
 inexistente** *(esta foi portada — regra 13 do lint)* e **controle montado à mão**.
 
-### 6 · Rótulo e régua são escritos dos dois lados — os números já são comparados, os textos não
-
-Desde 2026-09-13, `tests/test_regua_nas_duas_plataformas.py` confronta os **cinco limiares
-numéricos** da régua de score entre `analysis/score_ruler.py` e `mobile/lib/core/product_rules.dart`,
-com o Python como fonte.
-
-**O que ainda não é comparado:** os rótulos das bandas ("Excelente entrada", "Boa oportunidade"…),
-o vocabulário de veredito e os rótulos de categoria. Continuam escritos duas vezes, e nada impede que
-o Dart chame de "Boa oportunidade" o que o Python chama de outra coisa.
-
-### 18 · O contrato das rotas guarda campo que sai, não campo que entra
-
 ### 45 rotas sem contrato de resposta
 
 `SEM_MODELO_HOJE = 45` em `tests/test_contrato_das_rotas.py`. Metade das rotas devolve `dict` solto,

@@ -14,26 +14,67 @@ METODOS = ("get", "post", "put", "patch", "delete")
 SEM_MODELO_HOJE = 45
 
 
-def _campos(schema: dict, componentes: dict, visitados: frozenset[str] = frozenset()) -> list[str]:
+PROFUNDIDADE = 4
+
+
+def _resolver(schema: dict, componentes: dict, visitados: frozenset[str]):
     ref = schema.get("$ref")
-    if ref:
-        nome = ref.rsplit("/", 1)[-1]
-        if nome in visitados:
-            return []
-        alvo = componentes.get(nome, {})
-        return _campos(alvo, componentes, visitados | {nome})
+    if not ref:
+        return schema, visitados
+    nome = ref.rsplit("/", 1)[-1]
+    if nome in visitados:
+        return {}, visitados
+    return _resolver(componentes.get(nome, {}), componentes, visitados | {nome})
+
+
+def _campos(
+    schema: dict,
+    componentes: dict,
+    visitados: frozenset[str] = frozenset(),
+    prefixo: str = "",
+    profundidade: int = 0,
+    marcar_obrigatorio: bool = False,
+) -> list[str]:
+    schema, visitados = _resolver(schema, componentes, visitados)
 
     for combinador in ("allOf", "anyOf", "oneOf"):
         if combinador in schema:
             juntos: list[str] = []
             for parte in schema[combinador]:
-                juntos.extend(_campos(parte, componentes, visitados))
+                juntos.extend(
+                    _campos(
+                        parte, componentes, visitados, prefixo, profundidade, marcar_obrigatorio
+                    )
+                )
             return sorted(set(juntos))
 
     if schema.get("type") == "array":
-        return _campos(schema.get("items", {}), componentes, visitados)
+        return _campos(
+            schema.get("items", {}),
+            componentes,
+            visitados,
+            f"{prefixo}[]" if prefixo else prefixo,
+            profundidade,
+            marcar_obrigatorio,
+        )
 
-    return sorted(schema.get("properties", {}))
+    obrigatorios = set(schema.get("required", [])) if marcar_obrigatorio else set()
+    saida: list[str] = []
+    for nome, filho in schema.get("properties", {}).items():
+        caminho = f"{prefixo}.{nome}" if prefixo else nome
+        saida.append(f"{caminho}!" if nome in obrigatorios else caminho)
+        if profundidade + 1 < PROFUNDIDADE:
+            saida.extend(
+                _campos(
+                    filho, componentes, visitados, caminho, profundidade + 1, marcar_obrigatorio
+                )
+            )
+    return sorted(set(saida))
+
+
+def _schema_de_entrada(operacao: dict) -> dict:
+    corpo = operacao.get("requestBody", {}).get("content", {})
+    return corpo.get("application/json", {}).get("schema", {})
 
 
 def _schema_de_sucesso(operacao: dict) -> dict:
@@ -60,6 +101,9 @@ def contrato_atual() -> dict[str, list[str]]:
             campos = _campos(corpo, componentes)
             if campos:
                 saida[f"{metodo.upper()} {caminho}"] = campos
+            entrada = _campos(_schema_de_entrada(operacao), componentes, marcar_obrigatorio=True)
+            if entrada:
+                saida[f"{metodo.upper()} {caminho} (entrada)"] = entrada
 
     return saida
 
@@ -85,9 +129,11 @@ class TestNenhumCampoSomeEmSilencio:
                 perdidos[rota] = faltando
 
         assert perdidos == {}, (
-            "campo declarado sumiu do modelo de resposta: o FastAPI descarta em "
-            "silêncio o que o response_model não declara. Se a remoção é intencional, "
-            "atualize tests/contrato_das_rotas.json no mesmo commit."
+            "campo declarado sumiu do contrato. Na resposta, o FastAPI descarta em silêncio o "
+            "que o response_model não declara; na entrada (rotas com '(entrada)'), o servidor "
+            "passa a ignorar o que o app manda, e um nome que ganhou '!' virou obrigatório e "
+            "quebra quem não o envia. Se é intencional, rode `python -m tests.contrato_das_rotas` "
+            "no mesmo commit."
         )
 
     def test_nenhuma_rota_sumiu(self, atual, registrado):
@@ -158,3 +204,19 @@ class TestOContratoEUtil:
         campos = set(atual.get("GET /api/v1/asset/{symbol}", []))
 
         assert {"decision", "fair_price", "price_history"} <= campos
+
+    def test_o_registro_desce_aos_campos_aninhados(self, atual):
+        campos = set(atual.get("GET /api/v1/asset/{symbol}", []))
+
+        assert {"fair_price.principal_value", "fair_price.fair_low", "decision.label"} <= campos, (
+            "o preço justo vem aninhado na análise: registrando só o nível de cima, a troca de "
+            "consensus por principal_value passou sem que o contrato visse"
+        )
+
+    def test_o_registro_guarda_o_que_o_app_envia(self, atual):
+        entrada = set(atual.get("POST /api/v1/portfolio/position (entrada)", []))
+
+        assert {"ticker!", "quantity!", "avg_price!"} <= entrada, (
+            "campo que o app envia e o servidor deixa de ler é ignorado em silêncio, e campo que "
+            "vira obrigatório quebra quem não o envia"
+        )
