@@ -69,8 +69,6 @@ continua sendo um lançamento de cada vez.
 `Switch` e `Slider`. A ficha saiu em 2026-09-15 — `FiChoiceChip` —, e `ExpansionTile` foi substituído
 onde o produto usava caixa expansível.
 
-### 9 · Falta a regra do alvo de toque de 44dp no Dart
-
 ### 12 · A régua de afirmação anula `allocated_cash` e deixa a subtração de pé
 
 ### 17 · A régua não cobre o score em linha densa, e ali ele sai só como selo

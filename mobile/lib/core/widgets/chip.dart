@@ -29,6 +29,7 @@ class FiChoiceChip extends StatelessWidget {
       button: true,
       selected: selected,
       label: label,
+      onTap: onSelected,
       child: ExcludeSemantics(
         child: Material(
           color: selected
@@ -39,6 +40,8 @@ class FiChoiceChip extends StatelessWidget {
             onTap: onSelected,
             borderRadius: BorderRadius.circular(FiRadius.pill),
             child: Container(
+              constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(FiRadius.pill),
                 border: Border.all(color: borda),

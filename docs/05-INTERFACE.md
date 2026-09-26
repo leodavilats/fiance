@@ -207,7 +207,10 @@ mudar a esteira para rodar é regra que não roda.**
 | 15 | Todo gráfico tem tabela equivalente (FiDisclosure com FiRows/FiDataRow), ou escape `grafico` |
 | 16 | Controle de toque vem do sistema: `InkWell`/`GestureDetector` fora de `core/widgets/` *(catraca)* |
 
-Mais o contraste, cobrado à parte em `contraste_test.dart`, nos dois temas.
+Mais o contraste, cobrado à parte em `contraste_test.dart`, nos dois temas, e o **alvo de toque de
+44dp** dos componentes de toque do sistema, em `alvo_de_toque_test.dart`, pela diretriz
+`iOSTapTargetGuideline` do Flutter. O teste exige antes que o componente tenha ação de toque na
+semântica: sem ela, a diretriz nem o enxerga, e o leitor de tela não consegue apertá-lo.
 
 Uma regra saiu em 2026-09-13: *"a busca global é alcançável de todo destino de raiz"*. A busca foi
 removida do produto — não se busca nem tela nem ativo —, e regra que exige o que o produto não quer

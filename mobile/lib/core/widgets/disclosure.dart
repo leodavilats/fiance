@@ -107,6 +107,9 @@ class _FiDisclosureState extends State<FiDisclosure> {
           button: true,
           expanded: _isOpen,
           label: widget.title,
+          value: widget.value,
+          hint: widget.detail,
+          onTap: () => setState(() => _isOpen = !_isOpen),
           child: ExcludeSemantics(
             child: InkWell(
               onTap: () => setState(() => _isOpen = !_isOpen),
@@ -176,7 +179,8 @@ class _FiGroupDisclosureState extends State<FiGroupDisclosure> {
           button: true,
           expanded: _isOpen,
           header: true,
-          label: titulo,
+          label: widget.count == null ? widget.label : '${widget.label}, ${widget.count}',
+          onTap: () => setState(() => _isOpen = !_isOpen),
           child: ExcludeSemantics(
             child: InkWell(
               onTap: () => setState(() => _isOpen = !_isOpen),
