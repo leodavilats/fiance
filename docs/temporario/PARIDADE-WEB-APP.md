@@ -116,7 +116,6 @@ outro lado do mesmo invariante, e por isso veio junto.
 | `global-loader`, `snackbar`, `profile-modal` | Equivalente nativo |
 | `dip-diagnosis` | A queda virou recorte, sem diagnóstico por notícia ([ADR-018](../decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md)) |
 | `global-search` | Não há busca global no aplicativo: a busca mora no Descobrir |
-| `demo` (`api/demo.py`) | Era vitrine da web; fica fora da paridade e não conta como lacuna |
 
 ---
 

@@ -92,14 +92,14 @@ auditoria:** percorrer o app com TalkBack e VoiceOver, o que exige aparelho — 
 
 ## F · Teste, automação e operação
 
-### 10 rotas sem contrato de resposta
+### 8 rotas sem contrato de resposta
 
-`SEM_MODELO_HOJE = 10` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,
+`SEM_MODELO_HOJE = 8` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,
 qualidade de dado, regras de plano, universo e operação de cache ganharam modelo em 2026-09-26, e
 depois deles transações, proventos pendentes, estratégia e sugestões de rebalanceamento, aporte
 rápido, atividade, direitos de plano, logout e as exclusões. Seguem sem: as quatro de cobrança, que
-serão refeitas ([ADR-008](decisoes/ADR-008-monetizacao-por-loja.md)), as duas de demonstração, a
-exclusão de sugestão seguida, `/account/export` (é download de arquivo) e as leituras de operador
+serão refeitas ([ADR-008](decisoes/ADR-008-monetizacao-por-loja.md)), a exclusão de sugestão
+seguida, `/account/export` (é download de arquivo) e as leituras de operador
 (`/metrics`, `/analytics/funnel`), cujo formato é aberto. A lista exata sai de
 `rotas_declaradas()` menos o contrato gravado.
 
@@ -120,12 +120,10 @@ um aparelho real.
 
 ## G · Código morto a remover
 
-| Item | Ação |
-|---|---|
-| `api/demo.py` — sem cliente desde 2026-09-11 | Decidir |
-
-`optimizer/`, `OptimizationStrategy` e a duplicata de `MIN_DATA_COMPLETENESS` foram removidos em
-2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md) e item A1).
+Nenhum item aberto. `optimizer/`, `OptimizationStrategy` e a duplicata de
+`MIN_DATA_COMPLETENESS` foram removidos em 2026-09-13
+([ADR-010](decisoes/ADR-010-remover-otimizador.md) e item A1), e a demonstração (`api/demo.py`), que
+era vitrine da web, em 2026-09-26.
 
 ---
 

@@ -12,8 +12,6 @@ from app.storage import event_store, portfolio_store
 
 router = APIRouter()
 
-READABLE_PORTFOLIO_SIZE = 4
-
 STEP_PORTFOLIO = 2
 STEP_GOALS = 3
 TOTAL_STEPS = 3

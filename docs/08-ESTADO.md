@@ -170,7 +170,6 @@ corretora única. **O que não cobre:** emissão de DARF, informe anual.
 | Rotas de administrador | `[IMPLEMENTADO]` | `require_admin` |
 | Rota pública sem titular | `[IMPLEMENTADO]` | `GET /public/asset/{ticker}` |
 | Páginas jurídicas (`/termos`, `/privacidade`, `/aviso-cvm`) | `[ATUAL]` | `api/legal.py` |
-| Dados de demonstração | `[SEM CLIENTE]` | `api/demo.py` — fora da paridade: era vitrine da web |
 | Backup lógico: exportar, restaurar, reaplicar exclusões | `[IMPLEMENTADO]` | `backend/app/backup.py` — runbook em [07-OPERACAO](07-OPERACAO.md); agendamento no Railway pendente |
 
 **Não existe senha no sistema.** O login é Google (e Apple, quando o botão chegar). Não há "esqueci minha senha"
@@ -220,6 +219,7 @@ portão de pregão. Detalhes em [03-ARQUITETURA](03-ARQUITETURA.md).
 | Técnico como dimensão do score | 2026-09-25 | [ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md) |
 | Liquidez no score de FII | 2026-09-25 | [ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md) |
 | Densidade de tela | 2026-09-26 | substituída pelo nível de detalhe (migração `0011_nivel_de_detalhe`) |
+| Dados de demonstração (`/demo/portfolio`, `/demo/assets`) | 2026-09-26 | Era vitrine da web e ficou sem cliente desde 2026-09-11 |
 
 Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma interface.
 
@@ -231,9 +231,9 @@ Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma
 |---|---|
 | `[ATUAL]` | ~30 funcionalidades |
 | `[IMPLEMENTADO]` | ~14 |
-| `[SEM CLIENTE]` | **4 lacunas de paridade** + demonstração — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
+| `[SEM CLIENTE]` | **4 lacunas de paridade** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
 | `[PLANEJADO]` | ver [09-FUTURO](09-FUTURO.md) |
-| `[ABANDONADO]` | 12 blocos |
+| `[ABANDONADO]` | 13 blocos |
 
 O número que importa é o `[SEM CLIENTE]`: **quatro lacunas que o backend serve e o aplicativo não
 alcança** — importação de extrato, ativos seguidos, onboarding, e reconciliação com reconstrução —,

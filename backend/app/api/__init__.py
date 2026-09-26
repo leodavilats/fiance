@@ -14,7 +14,6 @@ from . import (
     cashflow,
     dashboard,
     data_quality,
-    demo,
     dip_scanner,
     dividends,
     entitlements,
@@ -71,7 +70,6 @@ protected.include_router(transactions.router, tags=["Livro-razão"])
 protected.include_router(cashflow.router, tags=["Caixa"])
 protected.include_router(goals.router, tags=["Goals"])
 protected.include_router(onboarding.router, tags=["Onboarding"])
-protected.include_router(demo.router, tags=["Onboarding"])
 protected.include_router(preferences.router, tags=["Preferences"])
 protected.include_router(opportunities.router, tags=["Opportunities"])
 protected.include_router(dashboard.router, tags=["Dashboard"])

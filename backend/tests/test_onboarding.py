@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from app.api.demo import DEMO_POSITIONS
-from app.api.onboarding import READABLE_PORTFOLIO_SIZE, STEP_GOALS, STEP_PORTFOLIO, TOTAL_STEPS
+from app.api.onboarding import STEP_GOALS, STEP_PORTFOLIO, TOTAL_STEPS
 from app.storage import event_store
 from tests.conftest import make_auth_headers
 
@@ -129,38 +128,3 @@ class TestConclusao:
 
         assert client.get("/api/portfolio", headers=headers).status_code == 200
         assert client.get("/api/dashboard", headers=headers).status_code == 200
-
-
-class TestCarteiraDeDemonstracao:
-    def test_a_demonstracao_roda_a_analise_de_verdade(self, client):
-        headers = make_auth_headers("u_demo")
-
-        corpo = client.get("/api/demo/portfolio", headers=headers).json()
-
-        assert corpo["is_demo"] is True
-        posicoes = corpo["evaluation"]["positions"]
-        assert len(posicoes) >= 1
-        assert posicoes[0]["verdict"]
-
-    def test_a_demonstracao_nao_grava_nada_na_conta(self, client):
-        headers = make_auth_headers("u_demo_limpo")
-
-        client.get("/api/demo/portfolio", headers=headers)
-
-        assert client.get("/api/portfolio", headers=headers).json()["items"] == []
-
-    def test_o_aviso_vem_junto_e_diz_que_nao_e_recomendacao(self, client):
-        headers = make_auth_headers("u_demo_aviso")
-
-        corpo = client.get("/api/demo/assets", headers=headers).json()
-
-        assert "exemplo" in corpo["disclaimer"].lower()
-        assert "recomendação" in corpo["disclaimer"].lower()
-
-    def test_a_carteira_de_exemplo_e_grande_o_bastante_para_o_veredito(self):
-        assert len(DEMO_POSITIONS) >= READABLE_PORTFOLIO_SIZE
-
-    def test_a_carteira_de_exemplo_e_diversificada(self):
-        categorias = {p["category"] for p in DEMO_POSITIONS}
-
-        assert len(categorias) >= 3

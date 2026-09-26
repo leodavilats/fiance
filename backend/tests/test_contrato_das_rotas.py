@@ -11,7 +11,7 @@ GOLDEN = Path(__file__).parent / "contrato_das_rotas.json"
 
 METODOS = ("get", "post", "put", "patch", "delete")
 
-SEM_MODELO_HOJE = 10
+SEM_MODELO_HOJE = 8
 
 
 PROFUNDIDADE = 4
