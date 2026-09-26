@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import time
 
 import pytest
@@ -288,3 +289,105 @@ class TestTraducaoDoAdaptadorRedis:
         backend, _ = redis_falso
 
         assert backend.purge_expired() == 0
+
+
+LIMITE_DE_ESPERA = 5.0
+
+
+@pytest.fixture()
+def redis_mudo():
+    servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    servidor.bind(("127.0.0.1", 0))
+    servidor.listen(64)
+    yield f"redis://127.0.0.1:{servidor.getsockname()[1]}/0"
+    servidor.close()
+
+
+@pytest.fixture(params=["recusa", "mudo"])
+def redis_fora(request):
+    if request.param == "recusa":
+        return RedisBackend("redis://127.0.0.1:1/0", prefix="fiance:test:")
+    return RedisBackend(request.getfixturevalue("redis_mudo"), prefix="fiance:test:")
+
+
+def _cronometrado(operacao):
+    inicio = time.monotonic()
+    resultado = operacao()
+    return resultado, time.monotonic() - inicio
+
+
+class TestRedisForaDoArNaoSeguraARequisicao:
+    def test_ler_devolve_none_em_tempo_curto(self, redis_fora):
+        resultado, duracao = _cronometrado(lambda: redis_fora.get_raw("k"))
+
+        assert resultado is None, (
+            "Redis fora do ar é falta de cache, e a leitura segue para a fonte"
+        )
+        assert duracao < LIMITE_DE_ESPERA, (
+            f"a leitura levou {duracao:.1f} s: sem timeout, um Redis que para de responder "
+            "segura a requisição pelo tempo do TCP"
+        )
+
+    def test_gravar_nao_levanta_e_termina_em_tempo_curto(self, redis_fora):
+        _, duracao = _cronometrado(lambda: redis_fora.set_raw("k", "v", time.time() + 60))
+
+        assert duracao < LIMITE_DE_ESPERA, f"a gravação levou {duracao:.1f} s"
+
+    def test_apagar_nao_levanta_e_termina_em_tempo_curto(self, redis_fora):
+        _, duracao = _cronometrado(lambda: redis_fora.delete("k"))
+
+        assert duracao < LIMITE_DE_ESPERA, f"a remoção levou {duracao:.1f} s"
+
+    def test_a_limpeza_do_operador_falha_alto_e_em_tempo_curto(self, redis_fora):
+        from redis.exceptions import ConnectionError as RedisConnectionError
+        from redis.exceptions import TimeoutError as RedisTimeoutError
+
+        inicio = time.monotonic()
+        with pytest.raises((RedisConnectionError, RedisTimeoutError)):
+            redis_fora.clear_all()
+        duracao = time.monotonic() - inicio
+
+        assert duracao < LIMITE_DE_ESPERA, (
+            f"a limpeza levou {duracao:.1f} s; e falha alto porque o operador precisa saber "
+            "que o cache não foi limpo"
+        )
+
+    def test_a_conexao_ociosa_e_conferida_antes_de_usar(self):
+        backend = RedisBackend("redis://127.0.0.1:1/0", prefix="fiance:test:")
+
+        assert backend._client.connection_pool.connection_kwargs["health_check_interval"] > 0, (
+            "conexão parada no pool há muito tempo pode ter sido derrubada no caminho; sem o "
+            "ping antes do uso, a primeira operação depois do silêncio é a que descobre"
+        )
+
+
+class TestRedisReconecta:
+    def test_o_pool_derrubado_se_refaz_na_operacao_seguinte(self):
+        backend = _redis_backend()
+        backend.set_raw("k", "antes", time.time() + 60)
+
+        backend._client.connection_pool.disconnect()
+
+        assert backend.get_raw("k") == ("antes", pytest.approx(time.time() + 60, abs=2)), (
+            "conexões derrubadas não podem virar falta de cache até o processo reiniciar"
+        )
+        backend.set_raw("k", "depois", time.time() + 60)
+        assert backend.get_raw("k")[0] == "depois"
+        backend.clear_all()
+
+    def test_a_conexao_que_o_servidor_matou_e_refeita(self):
+        import redis
+
+        backend = _redis_backend()
+        backend.set_raw("k", "antes", time.time() + 60)
+
+        administrador = redis.Redis.from_url(REDIS_URL)
+        try:
+            administrador.client_kill_filter(_type="normal", skipme=True)
+        finally:
+            administrador.close()
+
+        assert backend.get_raw("k") is not None, (
+            "o socket morto no pool dá erro na primeira tentativa; a segunda reconecta"
+        )
+        backend.clear_all()

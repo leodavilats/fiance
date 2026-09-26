@@ -197,6 +197,18 @@ conforme o balanceador. O vencimento vai **dentro** do valor mesmo no Redis, por
 precisa do dado vencido para o disjuntor degradar. Pelo mesmo motivo, `cache.get` devolve `None` para
 o vencido **sem apagá-lo**: quem apaga é a manutenção (`core/jobs.py`, `cache.purge_expired`).
 
+**Redis fora do ar vira falta de cache, e rápido** (`RedisBackend`). A conexão tem 1 s para abrir e
+cada leitura do socket 1 s para responder; timeout e erro de conexão são tentados mais uma vez, com
+a conexão refeita, e conexão ociosa há mais de 30 s recebe um ping antes do uso. Ler, gravar e apagar
+capturam o erro, logam e seguem: a leitura devolve `None` e quem chamou vai à fonte. No pior caso a
+operação espera uns 2 s, e não o tempo do TCP. A limpeza pedida pelo operador (`delete_pattern`,
+`clear_all`) falha alto, porque quem pediu precisa saber que o cache não foi limpo.
+
+Sem servidor nenhum, `tests/test_cache_backends.py` cobre porta recusada e servidor que aceita a
+conexão e não responde. Com o Redis do CI (`REDIS_TEST_URL`), cobre o pool derrubado e a conexão
+que o servidor matou, as duas refeitas na operação seguinte. Failover (Sentinel, réplica promovida)
+não é coberto.
+
 ---
 
 ## Monetização, isolada por arquitetura

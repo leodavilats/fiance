@@ -149,6 +149,11 @@ class RedisBackend:
     name = "redis"
     shared = True
 
+    TIMEOUT_CONEXAO = 1.0
+    TIMEOUT_SOCKET = 1.0
+    TENTATIVAS_EXTRAS = 1
+    INTERVALO_HEALTH_CHECK = 30
+
     def __init__(self, url: str, prefix: str = "fiance:cache:", client: Any = None) -> None:
         self._prefix = prefix
 
@@ -166,7 +171,21 @@ class RedisBackend:
                 "descobrir isso em produção."
             ) from exc
 
-        self._client = redis.Redis.from_url(url, decode_responses=True)
+        from redis.backoff import ExponentialBackoff  # noqa: PLC0415
+        from redis.exceptions import ConnectionError as RedisConnectionError  # noqa: PLC0415
+        from redis.exceptions import TimeoutError as RedisTimeoutError  # noqa: PLC0415
+        from redis.retry import Retry  # noqa: PLC0415
+
+        self._client = redis.Redis.from_url(
+            url,
+            decode_responses=True,
+            socket_connect_timeout=self.TIMEOUT_CONEXAO,
+            socket_timeout=self.TIMEOUT_SOCKET,
+            retry_on_timeout=True,
+            retry=Retry(ExponentialBackoff(cap=0.5, base=0.1), self.TENTATIVAS_EXTRAS),
+            retry_on_error=[RedisConnectionError, RedisTimeoutError],
+            health_check_interval=self.INTERVALO_HEALTH_CHECK,
+        )
 
     def _k(self, key: str) -> str:
         return f"{self._prefix}{key}"
@@ -174,7 +193,7 @@ class RedisBackend:
     def get_raw(self, key: str) -> tuple[str, float] | None:
         try:
             bruto = self._client.get(self._k(key))
-        except Exception as exc:  # pragma: no cover - depende de servidor
+        except Exception as exc:
             logger.warning("Falha ao ler cache %s: %s", key, exc)
             return None
 
@@ -191,13 +210,13 @@ class RedisBackend:
         sobrevida = max(1, int(expires_at - time.time()) + STALE_MARGIN_SECONDS)
         try:
             self._client.set(self._k(key), envelope, ex=sobrevida)
-        except Exception as exc:  # pragma: no cover - depende de servidor
+        except Exception as exc:
             logger.warning("Falha ao gravar cache %s: %s", key, exc)
 
     def delete(self, key: str) -> None:
         try:
             self._client.delete(self._k(key))
-        except Exception as exc:  # pragma: no cover - depende de servidor
+        except Exception as exc:
             logger.warning("Falha ao apagar cache %s: %s", key, exc)
 
     def _scan(self, match: str) -> list[str]:
