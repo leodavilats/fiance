@@ -174,7 +174,13 @@ Se a explicação é boa demais para caber em uma linha, ela não é comentário
 | `backend/tests` | Domínio, API, contrato de rotas, arquitetura, dinheiro, privacidade |
 | `mobile/test/lint_ui_test.dart` | 17 regras de produto |
 | `mobile/test/contraste_test.dart` | WCAG nos dois temas |
+| `mobile/test/jornada_do_app_test.dart` | Ponta a ponta do app com o roteador e as telas reais e a API simulada: os cinco destinos abrem sem quebrar, e as URLs antigas continuam chegando |
+| `mobile/test/alvo_de_toque_test.dart` | Alvo de toque de 44dp e ação de toque na semântica dos componentes de toque |
 | `mobile/test` | Widgets e modelos |
+
+A jornada do app roda em `flutter test`, sem emulador. **Não cobre** o login Google real nem o
+comportamento num aparelho: isso exige conta de loja e aparelho, e fica para o release (ver
+[10-PROBLEMAS](10-PROBLEMAS.md), itens 21 e 26).
 
 **Testes de arquitetura e de coerência existem e reprovam:**
 
