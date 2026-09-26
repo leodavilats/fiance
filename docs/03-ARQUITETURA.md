@@ -144,8 +144,11 @@ obrigatório quebra o aplicativo que ainda não atualizou. Regravar é
 ⚠️ **31 rotas ainda devolvem `dict` solto e não têm contrato.** `SEM_MODELO_HOJE` é a catraca que
 impede esse número de crescer. Ver [10-PROBLEMAS](10-PROBLEMAS.md).
 
-**Listas paginam por cursor keyset**, nunca offset. Onde há agregado (proventos, renda fixa,
-sugestões), o corte é **do payload**, não da consulta — senão o total encolhe conforme a rolagem.
+**Listas paginam por cursor keyset**, nunca offset. Onde há agregado, ele é **da conta inteira** —
+senão o total encolhe conforme a rolagem. Em proventos e renda fixa a página sai do banco com
+limite, e o agregado de uma consulta própria que lê só as colunas que soma, mais uma contagem; a
+marcação completa da renda fixa (vencimento, equivalências) só roda para a linha exibida. Sugestões
+seguidas ainda cortam só o payload.
 
 **Rota cara casada por prefixo tem de casar por sufixo:** `/api/opportunities` casa,
 `/api/v1/opportunities` não. O teto morreria em silêncio no dia da migração para o caminho canônico.

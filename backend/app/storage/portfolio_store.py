@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from contextlib import contextmanager
+from decimal import Decimal
 from typing import TypedDict
 
 from sqlalchemy import delete, func, select
@@ -721,6 +722,64 @@ def list_fixed_income(
         return [_fixed_income_row(r) for r in session.scalars(stmt).all()]
 
 
+class FixedIncomeValuationRow(TypedDict):
+    tipo: str
+    valor_investido: Decimal
+    taxa: float
+    tipo_taxa: str
+    percentual_cdi: float | None
+    data_aplicacao: str
+    vencimento: str | None
+    liquidez: str
+    isento_ir: bool | None
+
+
+def count_fixed_income(user_id: str | None = None) -> int:
+    with _session(user_id) as (session, uid):
+        return int(
+            session.scalar(
+                select(func.count(FixedIncomePositionDb.id)).where(
+                    FixedIncomePositionDb.user_id == uid
+                )
+            )
+            or 0
+        )
+
+
+def list_visible_fixed_income_valuation(
+    user_id: str | None = None,
+) -> list[FixedIncomeValuationRow]:
+    with _session(user_id) as (session, uid):
+        stmt = select(
+            FixedIncomePositionDb.tipo,
+            FixedIncomePositionDb.valor_investido,
+            FixedIncomePositionDb.taxa,
+            FixedIncomePositionDb.tipo_taxa,
+            FixedIncomePositionDb.percentual_cdi,
+            FixedIncomePositionDb.data_aplicacao,
+            FixedIncomePositionDb.vencimento,
+            FixedIncomePositionDb.liquidez,
+            FixedIncomePositionDb.isento_ir,
+        ).where(
+            FixedIncomePositionDb.user_id == uid,
+            FixedIncomePositionDb.oculto.isnot(True),
+        )
+        return [
+            FixedIncomeValuationRow(
+                tipo=r.tipo,
+                valor_investido=money(r.valor_investido),
+                taxa=r.taxa,
+                tipo_taxa=r.tipo_taxa,
+                percentual_cdi=r.percentual_cdi,
+                data_aplicacao=r.data_aplicacao,
+                vencimento=r.vencimento,
+                liquidez=r.liquidez,
+                isento_ir=r.isento_ir,
+            )
+            for r in session.execute(stmt).all()
+        ]
+
+
 def get_fixed_income(position_id: int, user_id: str | None = None) -> FixedIncomeRow | None:
     with _session(user_id) as (session, uid):
         row = session.get(FixedIncomePositionDb, position_id)
@@ -866,6 +925,25 @@ def list_dividends_received(
         if limit is not None:
             stmt = stmt.limit(limit + 1)
         return [_dividend_row(r) for r in session.scalars(stmt).all()]
+
+
+class DividendAmountRow(TypedDict):
+    ticker: str
+    paid_at: str
+    amount: Decimal
+
+
+def list_dividend_amounts(user_id: str | None = None) -> list[DividendAmountRow]:
+    with _session(user_id) as (session, uid):
+        stmt = (
+            select(DividendReceivedDb.ticker, DividendReceivedDb.paid_at, DividendReceivedDb.amount)
+            .where(DividendReceivedDb.user_id == uid)
+            .order_by(DividendReceivedDb.paid_at.desc(), DividendReceivedDb.id.desc())
+        )
+        return [
+            DividendAmountRow(ticker=r.ticker, paid_at=r.paid_at, amount=money(r.amount))
+            for r in session.execute(stmt).all()
+        ]
 
 
 def create_dividend_received(user_id: str | None = None, **fields) -> DividendReceivedRow:

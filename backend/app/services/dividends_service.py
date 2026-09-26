@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import date, timedelta
+from decimal import Decimal
 
 from app.core.brt import month_key, now_brt
 from app.core.errors import NotFoundError
-from app.core.pagination import clamp_limit, slice_after
+from app.core.money import quantize, sum_money, to_float
+from app.core.pagination import clamp_limit, paginate
 from app.models.dividends import (
     DividendMonth,
     DividendReceived,
@@ -17,6 +19,10 @@ from app.models.dividends import (
 from app.storage import portfolio_store
 
 
+def _cents(value: Decimal) -> float:
+    return to_float(quantize(value))
+
+
 class DividendsService:
     def list_received(
         self,
@@ -24,23 +30,13 @@ class DividendsService:
         limit: int | None = None,
         cursor: str | None = None,
     ) -> DividendsReceivedResponse:
-        rows = portfolio_store.list_dividends_received()
-        items = [
-            DividendReceived(
-                id=r["id"],
-                ticker=r["ticker"],
-                paid_at=date.fromisoformat(r["paid_at"]),
-                amount=r["amount"],
-                kind=r["kind"],
-                note=r["note"],
-            )
-            for r in rows
-        ]
-
-        page = slice_after(
-            items,
-            cursor,
-            clamp_limit(limit),
+        page_size = clamp_limit(limit)
+        page = paginate(
+            [
+                self._to_model(r)
+                for r in portfolio_store.list_dividends_received(limit=page_size, cursor=cursor)
+            ],
+            page_size,
             key=lambda i: i.paid_at.isoformat(),
             identity=lambda i: i.id,
         )
@@ -48,40 +44,45 @@ class DividendsService:
         today = now_brt().date()
         current_month = today.strftime("%Y-%m")
         cutoff_12m = today - timedelta(days=365)
+        cutoff_iso = cutoff_12m.isoformat()
 
-        total = sum(i.amount for i in items)
-        this_month = sum(i.amount for i in items if i.paid_at.strftime("%Y-%m") == current_month)
-        last_12m = sum(i.amount for i in items if i.paid_at >= cutoff_12m)
+        amounts = portfolio_store.list_dividend_amounts()
+        total = sum_money(r["amount"] for r in amounts)
+        this_month = sum_money(r["amount"] for r in amounts if r["paid_at"][:7] == current_month)
+        last_12m = sum_money(r["amount"] for r in amounts if r["paid_at"][:10] >= cutoff_iso)
 
-        by_month: dict[str, list[float]] = defaultdict(list)
-        by_ticker: dict[str, list[float]] = defaultdict(list)
-        for item in items:
-            by_month[item.paid_at.strftime("%Y-%m")].append(item.amount)
-            by_ticker[item.ticker].append(item.amount)
+        by_month: dict[str, list[Decimal]] = defaultdict(list)
+        by_ticker: dict[str, list[Decimal]] = defaultdict(list)
+        for row in amounts:
+            by_month[row["paid_at"][:7]].append(row["amount"])
+            by_ticker[row["ticker"]].append(row["amount"])
 
         months_with_data = [m for m in by_month if m >= cutoff_12m.strftime("%Y-%m")]
-        monthly_average = last_12m / len(months_with_data) if months_with_data else 0.0
+        monthly_average = _cents(last_12m / len(months_with_data)) if months_with_data else 0.0
 
         accuracy = None
         if estimated_monthly and estimated_monthly > 0 and monthly_average > 0:
             accuracy = round(monthly_average / estimated_monthly * 100, 1)
 
+        month_totals = {m: sum_money(v) for m, v in by_month.items()}
+        ticker_totals = {t: sum_money(v) for t, v in by_ticker.items()}
+
         return DividendsReceivedResponse(
             items=page.items,
             next_cursor=page.next_cursor,
             has_more=page.has_more,
-            total_count=len(items),
-            total_received=round(total, 2),
-            received_this_month=round(this_month, 2),
-            received_last_12m=round(last_12m, 2),
-            monthly_average_12m=round(monthly_average, 2),
+            total_count=len(amounts),
+            total_received=_cents(total),
+            received_this_month=_cents(this_month),
+            received_last_12m=_cents(last_12m),
+            monthly_average_12m=monthly_average,
             by_month=[
-                DividendMonth(month=m, total=round(sum(v), 2), count=len(v))
-                for m, v in sorted(by_month.items(), reverse=True)
+                DividendMonth(month=m, total=_cents(month_totals[m]), count=len(by_month[m]))
+                for m in sorted(by_month, reverse=True)
             ],
             by_ticker=[
-                DividendTickerTotal(ticker=t, total=round(sum(v), 2), count=len(v))
-                for t, v in sorted(by_ticker.items(), key=lambda kv: -sum(kv[1]))
+                DividendTickerTotal(ticker=t, total=_cents(ticker_totals[t]), count=len(v))
+                for t, v in sorted(by_ticker.items(), key=lambda kv: -ticker_totals[kv[0]])
             ],
             estimated_monthly=round(estimated_monthly, 2)
             if estimated_monthly is not None

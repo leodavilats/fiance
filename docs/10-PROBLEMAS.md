@@ -9,7 +9,7 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 e A11 entraram e
 saíram em 2026-09-25 — ver [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md). O 20
 (day trade e IOF) saiu em 2026-09-25 — ver [ADR-020](decisoes/ADR-020-day-trade-apartado.md) —, e
-os itens 1, 4 e 33 antes disso. O 12 e o 23 saíram em 2026-09-26 — ver
+os itens 1, 4 e 33 antes disso. O 12, o 23 e o 24 saíram em 2026-09-26 — ver
 [ADR-007](decisoes/ADR-007-nivel-de-afirmacao.md) e [03-ARQUITETURA](03-ARQUITETURA.md).
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
@@ -102,11 +102,6 @@ direitos de plano, cobrança, demonstração, logout, as exclusões (posição, 
 lançamento, sugestão seguida), `/account/export` (é download de arquivo) e as leituras de operador
 (`/metrics`, `/analytics/funnel`), cujo formato é aberto. A lista exata sai de
 `rotas_declaradas()` menos o contrato gravado.
-
-### 24 · A paginação das listas com agregado limita o payload, não a consulta
-
-Renda fixa e proventos recebidos paginam por cursor, mas o total e a média de 12 meses que vêm na
-mesma resposta são calculados lendo todas as linhas da conta a cada página.
 
 ### O backup próprio ainda não é agendado
 

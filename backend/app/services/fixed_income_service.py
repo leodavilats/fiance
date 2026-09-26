@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 
-from app.analysis.renda_fixa_analysis import DIAS_POR_MES, analyze_one
+from app.analysis.renda_fixa_analysis import DIAS_POR_MES, RendaFixaAnalysisResult, analyze_one
 from app.collectors.rates import get_rates
 from app.core.brt import now_brt
 from app.core.errors import NotFoundError
-from app.core.pagination import clamp_limit, slice_after
+from app.core.money import quantize, sum_money, to_float
+from app.core.pagination import clamp_limit, paginate
 from app.models.enums import AssetType, Liquidez, RendaFixaType, TaxType
 from app.models.portfolio import PortfolioPosition
 from app.models.renda_fixa import (
@@ -37,45 +40,59 @@ def _parse_date(value: str | None) -> date | None:
         return None
 
 
+@dataclass(frozen=True)
+class _Marcacao:
+    today: date
+    aplicacao: date
+    vencimento: date | None
+    meses_decorridos: float
+    prazo_total_meses: float | None
+    asset: RendaFixaAsset
+    atual: RendaFixaAnalysisResult
+
+
 class FixedIncomeService:
     def list_positions(
         self, limit: int | None = None, cursor: str | None = None
     ) -> FixedIncomeListResponse:
         rates = get_rates()
-        rows = portfolio_store.list_fixed_income()
-        items = [self._mark_to_market(row, rates) for row in rows]
-
-        page = slice_after(
-            items,
-            cursor,
-            clamp_limit(limit),
-            key=lambda i: i.data_aplicacao,
-            identity=lambda i: i.id,
+        page_size = clamp_limit(limit)
+        page = paginate(
+            portfolio_store.list_fixed_income(limit=page_size, cursor=cursor),
+            page_size,
+            key=lambda row: row["data_aplicacao"],
+            identity=lambda row: row["id"],
         )
 
-        visiveis = [i for i in items if not i.oculto]
-        total_investido = sum(i.valor_investido for i in visiveis)
-        total_atual = sum(i.valor_atual for i in visiveis)
+        investido: list[Decimal] = []
+        atual: list[Decimal] = []
+        ponderada = 0.0
+        for row in portfolio_store.list_visible_fixed_income_valuation():
+            analise = self._analyze_today(row, rates).atual
+            valor_investido = quantize(row["valor_investido"])
+            investido.append(valor_investido)
+            atual.append(quantize(analise.valor_liquido))
+            ponderada += analise.taxa_anual_efetiva_pct * to_float(valor_investido)
+
+        total_investido = sum_money(investido)
+        total_atual = sum_money(atual)
         total_rendimento = total_atual - total_investido
 
         if total_investido > 0:
-            rendimento_pct = total_rendimento / total_investido * 100
-            taxa_media = (
-                sum(i.taxa_anual_efetiva_pct * i.valor_investido for i in visiveis)
-                / total_investido
-            )
+            rendimento_pct = to_float(total_rendimento) / to_float(total_investido) * 100
+            taxa_media = ponderada / to_float(total_investido)
         else:
             rendimento_pct = 0.0
             taxa_media = 0.0
 
         return FixedIncomeListResponse(
-            items=page.items,
+            items=[self._mark_to_market(row, rates) for row in page.items],
             next_cursor=page.next_cursor,
             has_more=page.has_more,
-            total_count=len(items),
-            total_investido=round(total_investido, 2),
-            total_atual=round(total_atual, 2),
-            total_rendimento=round(total_rendimento, 2),
+            total_count=portfolio_store.count_fixed_income(),
+            total_investido=to_float(total_investido),
+            total_atual=to_float(total_atual),
+            total_rendimento=to_float(total_rendimento),
             rendimento_pct=round(rendimento_pct, 2),
             taxa_media_aa=round(taxa_media, 2),
             cdi_referencia=rates["cdi_anual"],
@@ -115,17 +132,17 @@ class FixedIncomeService:
     def _as_asset(row: dict, prazo_meses: int) -> RendaFixaAsset:
         return RendaFixaAsset(
             tipo=RendaFixaType(row["tipo"]),
-            valor_investido=row["valor_investido"],
+            valor_investido=to_float(row["valor_investido"]),
             taxa=row["taxa"],
             prazo_meses=max(1, prazo_meses),
             tipo_taxa=TaxType(row["tipo_taxa"]),
             percentual_cdi=row["percentual_cdi"],
             liquidez=Liquidez(row["liquidez"]),
-            nome=row["nome"],
+            nome=row.get("nome"),
             isento_ir=row["isento_ir"],
         )
 
-    def _mark_to_market(self, row: dict, rates: dict) -> FixedIncomePosition:
+    def _analyze_today(self, row, rates: dict) -> _Marcacao:
         today = _today()
         aplicacao = _parse_date(row["data_aplicacao"]) or today
         vencimento = _parse_date(row["vencimento"])
@@ -147,6 +164,25 @@ class FixedIncomeService:
             prazo_meses_override=meses_decorridos,
             prazo_dias_override=dias_decorridos,
         )
+        return _Marcacao(
+            today=today,
+            aplicacao=aplicacao,
+            vencimento=vencimento,
+            meses_decorridos=meses_decorridos,
+            prazo_total_meses=prazo_total_meses,
+            asset=asset,
+            atual=atual,
+        )
+
+    def _mark_to_market(self, row: dict, rates: dict) -> FixedIncomePosition:
+        marcacao = self._analyze_today(row, rates)
+        today = marcacao.today
+        aplicacao = marcacao.aplicacao
+        vencimento = marcacao.vencimento
+        meses_decorridos = marcacao.meses_decorridos
+        prazo_total_meses = marcacao.prazo_total_meses
+        asset = marcacao.asset
+        atual = marcacao.atual
 
         no_vencimento = None
         if prazo_total_meses:
@@ -209,8 +245,12 @@ class FixedIncomeService:
         )
 
     def as_portfolio_positions(self) -> list[PortfolioPosition]:
-        listing = self.list_positions()
-        return [_to_portfolio_position(item) for item in listing.items if not item.oculto]
+        rates = get_rates()
+        return [
+            _to_portfolio_position(self._mark_to_market(row, rates))
+            for row in portfolio_store.list_fixed_income()
+            if not row["oculto"]
+        ]
 
 
 def _to_portfolio_position(item: FixedIncomePosition) -> PortfolioPosition:
