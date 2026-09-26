@@ -654,10 +654,16 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
     crescimento = min(max(inputs.roe * (1 - payout), 0.0), MAX_GROWTH)
     distribuivel = 1 - crescimento / inputs.roe
 
-    central = earnings_value(eps, distribuivel, crescimento, d, inputs.roe)
-    piso = earnings_value(eps, distribuivel, 0.0, d + RATE_SHOCK, inputs.roe)
-    teto = earnings_value(eps, distribuivel, crescimento, d - RATE_SHOCK, inputs.roe)
-    sem_crescimento = earnings_value(eps, distribuivel, 0.0, d, inputs.roe)
+    def com(taxa: float) -> float:
+        return earnings_value(eps, distribuivel, crescimento, taxa, inputs.roe)
+
+    def sem(taxa: float) -> float:
+        return earnings_value(eps, 1.0, 0.0, taxa, inputs.roe)
+
+    central = com(d)
+    sem_crescimento = sem(d)
+    piso = min(com(d + RATE_SHOCK), sem(d + RATE_SHOCK))
+    teto = max(com(d - RATE_SHOCK), sem(d - RATE_SHOCK))
 
     return _Lens(
         central=round(central, 2),
@@ -675,6 +681,7 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
             "eps_normalized": round(eps, 4),
             "earnings_years": inputs.earnings_years,
             "value_without_growth": round(sem_crescimento, 2),
+            "growth_creates_value": central > sem_crescimento,
             "breakeven_discount_rate": (
                 _breakeven_rate(inputs.price, eps, distribuivel, crescimento, inputs.roe)
                 if inputs.price and inputs.price > 0

@@ -72,14 +72,15 @@ ataque e teste de cada item, está em
 | **C** | A faixa coerente: o piso retém sem crescer, e a confirmação diverge por construção | Emenda à ADR-014 |
 | **D** | Contrato e produto: nomes de campo, técnico no score | Decisão de produto |
 
-**O bloqueador é o R-001.** O piso "sem crescimento" mantém a fração distribuível `1 − g/ROE`, o
-que contradiz a identidade que o próprio principal usa. Com ROE de 15% e sem dividendo, o piso é
-R$ 3,03 contra um central de R$ 6,97. No piso coerente, ele seria R$ 6,09. A faixa mede a penalidade
-de reter sem crescer, e "firme" fica quase inalcançável para ação que cresce.
+**O R-001, bloqueador, foi corrigido em 2026-09-25** pela
+[ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md): a faixa da ação passou a cobrir os
+dois cenários de crescimento. Na amostra de 31 ativos, as ações com faixa acima de 1,5× caíram de 12
+para 5. **O mais caro agora é o R-002**: a confirmação por dividendo é quase função do payout, e
+levou três ações a frágil sem que nenhum dado mudasse.
 
 Os lotes A e B foram corrigidos em 2026-09-25, com duas pendências: R-012 (arredondamento antes do
-limiar) e a idade da taxa na tela (R-010). **Ficam abertos os lotes C e D**, que pedem decisão
-antes de código.
+limiar) e a idade da taxa na tela (R-010). **Ficam abertos o resto do lote C e o lote D**, que
+pedem decisão antes de código.
 
 ## B · Dado e fonte
 

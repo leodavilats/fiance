@@ -115,6 +115,8 @@ def _growth_falsifier(fair: FairPriceResult, price: float) -> Falsifier | None:
     crescimento = p.get("growth") or 0.0
     if not sem_crescimento or crescimento <= 0 or not fair.consensus:
         return None
+    if sem_crescimento >= fair.consensus:
+        return None
     if not (sem_crescimento < price <= fair.fair_high):
         return None
 

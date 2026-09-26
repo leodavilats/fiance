@@ -2,7 +2,7 @@
 
 Cada número que o produto afirma, com entrada, fórmula, saída e **limitação**.
 O **código é a fonte de verdade**; este documento é o espelho auditado, com âncora em cada fórmula.
-Última revisão: 2026-09-25 · Estados do preço justo conferidos pela auditoria de 2026-09-25
+Última revisão: 2026-09-25 · Faixa da ação refeita pela ADR-015
 
 Se uma fórmula aqui divergir do código, o código está certo e este documento tem um bug.
 
@@ -101,11 +101,22 @@ crescimento no máximo. A empresa que de fato não paga chega com lista vazia e 
 ### A faixa
 
 ```
-piso   = V(d + 1 ponto, crescimento zero)        FII: D ÷ (y + 1 ponto)
-teto   = V(d − 1 ponto, crescimento g)           FII: D ÷ (y − 1 ponto)
-central = V(d, g)                                FII: D ÷ y
+com(d') = V(d', g, q = 1 − g/ROE)                o crescimento que o lucro retido sustenta
+sem(d') = V(d', 0, q = 1)                        sem crescer, distribuindo todo o lucro
+
+piso    = mín(com(d + 1 ponto), sem(d + 1 ponto))    FII: D ÷ (y + 1 ponto)
+teto    = máx(com(d − 1 ponto), sem(d − 1 ponto))    FII: D ÷ (y − 1 ponto)
+central = com(d)                                     FII: D ÷ y
 posição = (preço − piso) ÷ (teto − piso), quando o preço está dentro
 ```
+
+**Sem crescimento é sem retenção**, pela mesma identidade `g = ROE × retenção` do modelo. Até
+2026-09-25, o piso zerava o crescimento e mantinha `q = 1 − g/ROE`: retinha sem crescer, e com
+payout zero sobrava só o terminal ([ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md)).
+Quando o ROE não paga a taxa, crescer consome valor e `sem` passa de `com`. Por isso a faixa é o
+envelope dos dois cenários, e não um deles em cada ponta. `premises.growth_creates_value` diz qual
+é o caso, e a razão avisa quando crescer consome valor. A ordem `piso < central < teto` vale nos dois
+regimes: `piso ≤ com(d+1) < com(d) < com(d−1) ≤ teto`.
 
 É **incerteza real sobre o valor** — o que acontece se a premissa mais discutível errar —, e não a
 distância entre métodos com alvos diferentes. `consensus` e `dcf` (ação) ou `bazin` (FII) carregam o
@@ -347,7 +358,7 @@ flowchart TD
     QF -->|"sim"| PF["Principal · D ÷ y<br/>y = máx de Selic 10a − 3% e 3%, mais 3 pontos"]
     QF -->|"sim, e há VPA"| CF["Confirmação · VPA"]
 
-    PA --> FX["Faixa das premissas<br/>piso: sem crescimento, taxa + 1 ponto<br/>teto: com crescimento, taxa − 1 ponto"]
+    PA --> FX["Faixa das premissas: dois cenários<br/>com o crescimento do lucro retido · sem crescer, distribuindo tudo<br/>piso: o menor a taxa + 1 ponto · teto: o maior a taxa − 1 ponto"]
     PF --> FX2["Faixa das premissas<br/>piso: y + 1 ponto · teto: y − 1 ponto"]
 
     FX --> QL
@@ -438,7 +449,8 @@ bandas `STRONG_*` não existem, e o gatilho não promete uma etiqueta que a evid
 | `premissa` | a condição econômica que sustenta o preço justo | o crescimento não se confirmar; a taxa exigida mudar; a distribuição cair |
 
 **Crescimento (ação):** sai quando o valor sem crescimento fica abaixo do preço e o preço não passa
-do teto — diz de quanto a quanto o valor cai.
+do teto — diz de quanto a quanto o valor cai. Só existe quando crescer cria valor: se o ROE não paga
+a taxa, o crescimento não se confirmar faria o valor subir, e o falsificador não falsificaria nada.
 
 **Taxa (ação):** a taxa em que o valor central iguala o preço de hoje
 (`premises.breakeven_discount_rate`, por bisseção). Acima da taxa atual, é o quanto ela pode subir

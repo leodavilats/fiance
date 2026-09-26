@@ -45,8 +45,10 @@ final Map<String, String> glossary = {
       'entre métodos que medem coisas diferentes. Outro insumo confirma ou não: o dividendo, na '
       'ação; o valor patrimonial, no FII. ETF e BDR não têm preço justo.',
   'faixa_de_preco_justo':
-      'Do valor na premissa pessimista — sem crescimento e com 1 ponto a mais de taxa — ao '
-      'valor na otimista. Abaixo do piso há margem a favor; acima do teto, contra; dentro da '
+      'Do valor na premissa pessimista ao da otimista, com 1 ponto de taxa para cada lado. Na ação, '
+      'os cenários são dois: crescer com o lucro que retém, ou não crescer e distribuir tudo. '
+      'Quando o retorno não paga a taxa, crescer consome valor, e o pessimista é crescer. '
+      'Abaixo do piso há margem a favor; acima do teto, contra; dentro da '
       'faixa não há margem nenhuma, e o produto diz isso em vez de escolher um lado.',
   'qualidade_da_faixa':
       'Diz quanto a faixa merece confiança. `Firme`: faixa estreita, e outro insumo cai dentro '

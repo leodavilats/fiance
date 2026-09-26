@@ -170,14 +170,20 @@ def _premise_reason(fair: FairPriceResult) -> str:
     )
 
     if fair.principal == PRINCIPAL_EARNINGS:
-        return (
+        texto = (
             f"Vale cerca de {_brl(fair.consensus)} pelo lucro que a empresa pode distribuir sem "
             f"deixar de crescer: taxa exigida de {_pct(p['discount_rate'])} ({base} mais 5 "
             f"pontos), crescimento de {_pct(p['growth'])} ao ano por {p['explicit_years']} anos "
             f"— o ROE de {_pct(p['roe'], 0)} vezes o que ela retém — e "
-            f"{_pct(p['long_run_growth'])} depois. A faixa vai do cenário sem crescimento e "
-            "com 1 ponto a mais de taxa ao cenário com crescimento e 1 ponto a menos."
+            f"{_pct(p['long_run_growth'])} depois. A faixa cobre esse cenário e o sem "
+            "crescimento, em que ela distribui todo o lucro, com 1 ponto de taxa a mais e a menos."
         )
+        if p.get("growth_creates_value") is False:
+            texto += (
+                f" Aqui crescer consome valor: o ROE de {_pct(p['roe'], 0)} não paga a taxa "
+                f"exigida, e distribuindo todo o lucro ela valeria {_brl(p['value_without_growth'])}."
+            )
+        return texto
 
     return (
         f"Vale cerca de {_brl(fair.consensus)} pela distribuição recorrente de "

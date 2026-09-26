@@ -339,7 +339,7 @@ Pede uma emenda à [ADR-014](../decisoes/ADR-014-um-modelo-por-classe.md) antes 
 atualização de [04-CALCULOS](../04-CALCULOS.md) e a amostra de 2026-09-23 rodada de novo, antes e
 depois.
 
-### R-001 · O piso "sem crescimento" retém lucro sem crescer
+### R-001 · ~~O piso "sem crescimento" retém lucro sem crescer~~ — **corrigido em 2026-09-25**, opção A ([ADR-015](../decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md))
 
 Severidade **bloqueador** · Natureza `incoerência` · Lote C
 
@@ -381,6 +381,12 @@ estrutural rebaixa para frágil sem que nenhum dado discorde.
 **Decidir só depois de R-001.** Com o piso coerente, ROE 30% e payout 30% continuam longe (2,99
 contra piso de 6,95). ROE 6% e payout 90% passam de longe para perto (6,29 contra teto de 4,86, a
 29%).
+
+**Medido em 2026-09-25, depois do R-001**, em 31 ativos reais. A concordância é quase função do
+payout. Com payout abaixo de 45% (BBAS3, CMIG4, EQTL3, ITUB4, RADL3), a confirmação cai a mais de
+30% do piso. Com payout acima de 60% (ABEV3, BBDC4, EGIE3, SANB11, TAEE11, VALE3), cai dentro da
+faixa. Com o piso novo, CMIG4, ITUB4 e RADL3 passaram de ampla para frágil sem que nenhum dado
+mudasse. O item passou a pesar mais: é o que hoje mais produz frágil na amostra.
 
 - **Opção A:** na ação, confirmação longe rebaixa para ampla, não para frágil. É uma condição em
   `_quality`, restrita a `principal == PRINCIPAL_EARNINGS`.
