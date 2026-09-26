@@ -5,7 +5,7 @@ import time
 import pytest
 from sqlalchemy.dialects import postgresql, sqlite
 
-from app.core.cache_backends import DatabaseBackend
+from app.core.cache_backends import STALE_MARGIN_SECONDS, DatabaseBackend
 from app.models.db_models import CacheEntryDb
 
 pytestmark = pytest.mark.real_cache
@@ -64,15 +64,20 @@ class TestOCacheNoBancoNaoPegaCaronaNaTransacaoDeQuemChama:
 
         assert backend.get_raw("fora-do-request") is not None
 
-    def test_purgar_apaga_so_o_vencido(self):
+    def test_purgar_apaga_so_o_vencido_ha_mais_que_a_margem(self):
         backend = DatabaseBackend()
         backend.clear_all()
-        backend.set_raw("vencido", "x", time.time() - 10)
+        backend.set_raw("antigo", "x", time.time() - STALE_MARGIN_SECONDS - 10)
+        backend.set_raw("recente", "z", time.time() - 10)
         backend.set_raw("vivo", "y", time.time() + 600)
 
         assert backend.purge_expired() == 1
         assert backend.get_raw("vivo") is not None
-        assert backend.get_raw("vencido") is None
+        assert backend.get_raw("antigo") is None
+        assert backend.get_raw("recente") is not None, (
+            "o vencido recente é a degradação: fonte fora do ar serve cache vencido com idade "
+            "visível, e a manutenção de 6 h não pode apagá-lo antes da tolerância"
+        )
 
     def test_a_tabela_e_declarada_sem_dono(self):
         from app.storage.account_store import GLOBAL_TABLES

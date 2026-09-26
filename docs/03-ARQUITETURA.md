@@ -152,8 +152,7 @@ Constantes de `collectors/rates.py` são o **último** recurso, e o rótulo de f
 O universo da varredura segue a mesma ordem (`core/universe.py::get_universe`): com a lista da BRAPI
 fora do ar, serve o universo vencido e loga a idade; só sem nenhum devolve lista vazia, e loga isso.
 A idade fica no log porque a lista não é exibida; o que a tela carimba é a idade da varredura. O
-vencido não é regravado como válido, e dura até a manutenção apagá-lo (a cada 6h) ou, no Redis, até
-a sobrevida de 6h depois do vencimento.
+vencido não é regravado como válido, e dura 72 h depois do vencimento (`STALE_MARGIN_SECONDS`).
 
 **Falha de rede não vira ausência.** Confundir "não sei" com "não existe" esconde fonte caída por
 meia hora.
@@ -195,7 +194,10 @@ força a escolha e **nome errado falha alto**.
 Não é desempenho, é correção: com dois nós e cache por nó, a mesma pessoa vê preços diferentes
 conforme o balanceador. O vencimento vai **dentro** do valor mesmo no Redis, porque `get_with_age`
 precisa do dado vencido para o disjuntor degradar. Pelo mesmo motivo, `cache.get` devolve `None` para
-o vencido **sem apagá-lo**: quem apaga é a manutenção (`core/jobs.py`, `cache.purge_expired`).
+o vencido **sem apagá-lo**: quem apaga é a manutenção (`core/jobs.py`, `cache.purge_expired`), e só o
+que venceu há mais de 72 h (`cache_backends.py::STALE_MARGIN_SECONDS`, a mesma janela que o Redis
+guarda e a tolerância da varredura). Com 6 h, a manutenção apagava o vencido antes de a degradação
+precisar dele, e num fim de semana a varredura voltava à rede a cada ciclo.
 
 **Redis fora do ar vira falta de cache, e rápido** (`RedisBackend`). A conexão tem 1 s para abrir e
 cada leitura do socket 1 s para responder; timeout e erro de conexão são tentados mais uma vez, com

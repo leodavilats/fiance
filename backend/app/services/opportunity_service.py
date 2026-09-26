@@ -16,6 +16,7 @@ from app.analysis.score_ruler import is_highlight
 from app.analysis.scoring import score_opportunity
 from app.collectors.universal import prefetch_brapi_raw
 from app.core import cache
+from app.core.cache_backends import STALE_MARGIN_SECONDS
 from app.core.context import memoize_request
 from app.core.pregao import em_pregao
 from app.core.universe import get_universe
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 _SCAN_CACHE_KEY = "opps_market_scan_v3"
 _SCAN_TTL = 20 * 60
 
-_SCAN_STALE_TOLERANCE = 72 * 3600
+_SCAN_STALE_TOLERANCE = STALE_MARGIN_SECONDS
 
 _scan_lock = asyncio.Lock()
 _refresh_lock = asyncio.Lock()

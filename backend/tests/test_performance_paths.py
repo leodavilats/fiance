@@ -146,7 +146,8 @@ def test_purge_expired_removes_only_stale_entries(tmp_path, monkeypatch):
     _cache_em(tmp_path, monkeypatch, "purge.db")
 
     cache_mod.set("keep", 1, 600)
-    cache_mod.set("drop", 2, -1)
+    cache_mod.set("stale", 3, -1)
+    cache_mod.set("drop", 2, -cache_backends.STALE_MARGIN_SECONDS - 10)
 
     assert cache_mod.purge_expired() == 1
     assert cache_mod.get("keep") == 1

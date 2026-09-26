@@ -13,7 +13,7 @@ from typing import Any, Protocol
 
 logger = logging.getLogger("fiance.cache")
 
-STALE_MARGIN_SECONDS = 6 * 3600
+STALE_MARGIN_SECONDS = 72 * 3600
 
 
 class CacheBackend(Protocol):
@@ -142,7 +142,9 @@ class SqliteBackend:
 
     def purge_expired(self) -> int:
         with self._conn() as cx:
-            return cx.execute("DELETE FROM cache WHERE expires_at < ?", (time.time(),)).rowcount
+            return cx.execute(
+                "DELETE FROM cache WHERE expires_at < ?", (time.time() - STALE_MARGIN_SECONDS,)
+            ).rowcount
 
 
 class RedisBackend:
@@ -356,7 +358,7 @@ class DatabaseBackend:
             with self._session() as session:
                 return int(
                     session.query(CacheEntryDb)
-                    .filter(CacheEntryDb.expires_at < time.time())
+                    .filter(CacheEntryDb.expires_at < time.time() - STALE_MARGIN_SECONDS)
                     .delete(synchronize_session=False)
                 )
         except Exception as exc:
