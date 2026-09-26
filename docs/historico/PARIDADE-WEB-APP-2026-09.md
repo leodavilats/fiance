@@ -1,12 +1,12 @@
 # Paridade web → aplicativo
 
-> ## ⏳ DOCUMENTO TEMPORÁRIO
+> ## Registro, não pendência
 >
-> **Critério de morte:** quando as funcionalidades marcadas `[SEM CLIENTE]` tiverem tela no
-> aplicativo, **apague este arquivo** e remova a linha do índice em [README](../README.md).
->
-> Ele existe para fechar uma janela aberta em 2026-09-11 e não deve sobreviver a ela. Se você estiver
-> lendo isto em 2027, provavelmente já é lixo — confira contra [08-ESTADO](../08-ESTADO.md).
+> **Fechado em 2026-09-26:** as nove lacunas abertas pela saída da web têm tela no aplicativo, e a
+> demonstração, que era vitrine da web, saiu do backend. O critério de morte deste documento era
+> esse; ele saiu de `temporario/` e ficou aqui como registro, porque a
+> [ADR-003](../decisoes/ADR-003-cliente-unico.md) aponta para ele. O estado atual está em
+> [08-ESTADO](../08-ESTADO.md).
 
 Criado em 2026-09-13 · Referência: commit `3a922a6`
 
@@ -42,13 +42,12 @@ tipo, e cada tipo explica o que faz com a posição.
 Ficou de fora, de propósito: **editar** lançamento. O backend não tem `PUT /transactions/{id}` — o
 caminho é apagar e registrar de novo, que é o que reprojeta corretamente.
 
-### 2 · Importação de extrato — `import-trades`
+### ~~2 · Importação de extrato~~ — ✅ **fechado em 2026-09-26**
 
-| | |
-|---|---|
-| Backend | `POST /transactions/import` — prévia e commit, gravação atômica |
-| Falta | Colar ou anexar extrato, revisar a prévia, decidir sobre duplicidade |
-| Nota | A regra "duplicidade é apresentada para decisão, nunca silenciada" exige tela |
+`mobile/lib/features/patrimony/import_screen.dart`, em `/patrimonio/razao/importar`, alcançável pelo
+Livro-razão e pelos primeiros passos. Cola a lista ou o CSV, mostra a prévia com o erro na linha, e
+a repetida fica de fora até a pessoa ligar a chave. Anexar arquivo ficou de fora: exigiria um plugin
+novo, e colar o conteúdo do CSV cobre o caso.
 
 ### ~~3 · Proventos~~ — ✅ **fechado em 2026-09-13**
 
@@ -70,20 +69,22 @@ você escolheu e fica desabilitado em zero.
 Agora mostra as três razões, o alvo com régua de score, e o perfil de risco que ordenou a lista,
 com o glossário explicando o que ele muda. O mesmo indicador de perfil entrou em `/descobrir`.
 
-### 5 · Ativos seguidos — `followed-suggestions`
+### ~~5 · Sugestões seguidas~~ — ✅ **fechado em 2026-09-26**
 
-Zero arquivos no aplicativo. Backend em `api/followed.py`.
+`mobile/lib/features/patrimony/followed_screen.dart`, em `/patrimonio/seguidas`. A sugestão seguida
+passou a sair do lançamento de compra do razão (`entry_id`), e a folha de compra do Descobrir a
+registra, com chave para desligar.
 
-### 6 · Onboarding — `onboarding`
+### ~~6 · Onboarding~~ — ✅ **fechado em 2026-09-26**
 
-| | |
-|---|---|
-| Backend | `GET /onboarding` — passo derivado do que a pessoa já fez |
-| Falta | A tela. O recorte mora na URL (`?passo=2`) e nada bloqueia |
+`mobile/lib/features/config/onboarding_screen.dart`, em `/voce/comecar`, alcançável pela primeira
+linha do Você. O passo vem do servidor, a URL pode apontar outro (`?passo=2`), e nada bloqueia.
 
-### 7 · Reconciliação e reconstrução
+### ~~7 · Reconciliação e reconstrução~~ — ✅ **fechado em 2026-09-26**
 
-`GET /transactions/reconciliation` e `POST /transactions/rebuild`. Sem tela e sem plano.
+`mobile/lib/features/patrimony/reconciliation_screen.dart`, em `/patrimonio/razao/conferir`. Mostra
+as diferenças; posição sem lançamento pode ir para o razão (`POST /transactions/backfill`) antes de
+refazer, e refazer diz quais posições saem.
 
 ### ~~8 · Eventos corporativos~~ — ✅ **fechado em 2026-09-13**
 
@@ -140,6 +141,7 @@ outro lado do mesmo invariante, e por isso veio junto.
 | 2026-09-13 | 7 — livro-razão e eventos corporativos fechados |
 | 2026-09-13 | 6 — proventos fechados |
 | 2026-09-13 | 5 — rebalanceamento fechado |
-| 2026-09-19 | **4** — exclusão de conta fechada |
+| 2026-09-19 | 4 — exclusão de conta fechada |
+| 2026-09-26 | **0** — importação, sugestões seguidas, onboarding e conferência fechadas |
 
-Atualize esta tabela ao fechar cada uma. **Quando chegar a zero, apague o arquivo.**
+Chegou a zero em 2026-09-26.

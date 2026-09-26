@@ -10,7 +10,8 @@ A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A1
 saíram em 2026-09-25 — ver [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md). O 20
 (day trade e IOF) saiu em 2026-09-25 — ver [ADR-020](decisoes/ADR-020-day-trade-apartado.md) —, e
 os itens 1, 4 e 33 antes disso. O 12, o 23 e o 24 saíram em 2026-09-26 — ver
-[ADR-007](decisoes/ADR-007-nivel-de-afirmacao.md) e [03-ARQUITETURA](03-ARQUITETURA.md).
+[ADR-007](decisoes/ADR-007-nivel-de-afirmacao.md) e [03-ARQUITETURA](03-ARQUITETURA.md) —, e no
+mesmo dia o 15, o 17 e a seção D inteira: a paridade com a web fechou.
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -41,12 +42,6 @@ foram fechados em 2026-09-25 — ver [03-ARQUITETURA](03-ARQUITETURA.md).
 
 ## C · Produto incompleto
 
-### 15 · Sugestões seguidas dependem de lançamento manual
-
-`POST /suggestions/followed` pede quantidade e preço executado digitados, embora a compra já esteja
-no razão. Sem tela no app (seção D), o resultado de seguir uma sugestão não é medido. O caminho é
-derivar do lançamento de compra, não pedir de novo.
-
 ### 27 · A cobrança é backend sem cliente
 
 Existe a cerca, a régua de plano, o preço travado e o webhook — e nenhuma tela. Agravado pela decisão
@@ -55,24 +50,7 @@ hoje **não** será aproveitado.
 
 ---
 
-## D · Paridade perdida — o mais urgente
-
-Nove funcionalidades ficaram sem cliente com a remoção do front web em 2026-09-11. **Quatro seguem
-abertas:** importação de extrato, ativos seguidos, onboarding, e reconciliação com reconstrução.
-Inventário completo e com critério de morte em
-[PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md).
-
-A mais grave é a **importação de extrato**: o razão ganhou tela em 2026-09-13, e alimentá-lo
-continua sendo um lançamento de cada vez.
-
----
-
 ## E · Interface
-
-### 17 · A régua não cobre o score em linha densa, e ali ele sai só como selo
-
-Em `mobile/lib/features/market/quick_invest_view.dart`, cada alocação mostra a faixa do score como
-`FiTag`, sem a régua nem o número — julgamento sem explicabilidade.
 
 ### 26 · A aparência nos dois temas nunca foi conferida num aparelho
 
@@ -92,14 +70,13 @@ auditoria:** percorrer o app com TalkBack e VoiceOver, o que exige aparelho — 
 
 ## F · Teste, automação e operação
 
-### 8 rotas sem contrato de resposta
+### 7 rotas sem contrato de resposta
 
-`SEM_MODELO_HOJE = 8` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,
+`SEM_MODELO_HOJE = 7` em `tests/test_contrato_das_rotas.py` (eram 45). Conta, alertas, eventos,
 qualidade de dado, regras de plano, universo e operação de cache ganharam modelo em 2026-09-26, e
 depois deles transações, proventos pendentes, estratégia e sugestões de rebalanceamento, aporte
 rápido, atividade, direitos de plano, logout e as exclusões. Seguem sem: as quatro de cobrança, que
-serão refeitas ([ADR-008](decisoes/ADR-008-monetizacao-por-loja.md)), a exclusão de sugestão
-seguida, `/account/export` (é download de arquivo) e as leituras de operador
+serão refeitas ([ADR-008](decisoes/ADR-008-monetizacao-por-loja.md)), `/account/export` (é download de arquivo) e as leituras de operador
 (`/metrics`, `/analytics/funnel`), cujo formato é aberto. A lista exata sai de
 `rotas_declaradas()` menos o contrato gravado.
 

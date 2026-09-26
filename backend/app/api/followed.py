@@ -6,6 +6,7 @@ from app.models.followed import (
     FollowedSuggestionCreate,
     FollowedSuggestionsResponse,
 )
+from app.models.operacao import DeletedById
 from app.services.followed_service import FollowedService
 
 router = APIRouter()
@@ -26,6 +27,6 @@ async def register_followed(req: FollowedSuggestionCreate) -> FollowedSuggestion
     return service.register(req)
 
 
-@router.delete("/suggestions/followed/{suggestion_id}")
-async def delete_followed(suggestion_id: int) -> dict:
-    return service.delete(suggestion_id)
+@router.delete("/suggestions/followed/{suggestion_id}", response_model=DeletedById)
+async def delete_followed(suggestion_id: int) -> DeletedById:
+    return DeletedById(**service.delete(suggestion_id))

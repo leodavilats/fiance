@@ -19,8 +19,9 @@ arquivo vence**.
 | `[EM DISCUSSÃO]` | Sem decisão | Precisa de decisão |
 | `[ABANDONADO]` | Existiu, saiu | Com data e commit |
 
-`[SEM CLIENTE]` existe porque o front web saiu em 2026-09-11 e levou junto o único consumidor de
-várias rotas. É a categoria mais importante deste documento hoje, e a que deve encolher primeiro.
+`[SEM CLIENTE]` existiu porque o front web saiu em 2026-09-11 e levou junto o único consumidor de
+várias rotas. Chegou a zero em 2026-09-26; o marcador fica para a próxima vez que uma rota nascer sem
+tela.
 
 ---
 
@@ -118,15 +119,14 @@ card de ativo ele continua sendo vender e remover.
 | Benchmark CDI/Selic/IPCA | `[ATUAL]` | `collectors/rates.py` | — |
 | Sugestões de rebalanceamento, com o alvo da realocação | `[ATUAL]` | `analysis/strategy.py` | `surplus/allocation_drift_screen.dart` |
 | Perfil de risco visível onde ele ordena | `[ATUAL]` | `analysis/scoring.py` | `/descobrir` e `/sobra/desvio` |
-| Ativos seguidos | `[SEM CLIENTE]` | `api/followed.py` | ❌ |
+| Sugestões seguidas, derivadas da compra no razão | `[IMPLEMENTADO]` | `services/followed_service.py` | `/patrimonio/seguidas`; a folha de compra do Descobrir registra |
 
 ---
 
 ## Livro-razão e imposto
 
-A camada mais bem construída do sistema: o razão é a fonte da carteira e do imposto. Ele tem tela
-desde 2026-09-13 (`/patrimonio/razao`); o que ainda não chega ao aplicativo é importação,
-reconstrução e reconciliação.
+A camada mais bem construída do sistema: o razão é a fonte da carteira e do imposto. Tem tela desde
+2026-09-13 (`/patrimonio/razao`), e importação, conferência e reconstrução desde 2026-09-26.
 
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
@@ -135,9 +135,9 @@ reconstrução e reconciliação.
 | Comprar direto do Descobrir, com o preço de agora | `[IMPLEMENTADO]` | `POST /transactions` (`buy`) | `market/buy_sheet.dart` |
 | Apagar lançamento, com reprojeção | `[IMPLEMENTADO]` | idem | ✅ idem |
 | Eventos corporativos pela interface | `[IMPLEMENTADO]` | `ledger/entries.py` | ✅ idem |
-| Importação de extrato (prévia + commit) | `[SEM CLIENTE]` | `importing/` | ❌ |
-| Reconstrução da projeção | `[SEM CLIENTE]` | `POST /transactions/rebuild` | ❌ |
-| Reconciliação projeção × razão | `[SEM CLIENTE]` | `GET /transactions/reconciliation` | ❌ |
+| Importação de extrato (prévia + commit) | `[IMPLEMENTADO]` | `importing/` | ✅ `/patrimonio/razao/importar` — colar; anexar arquivo não |
+| Reconstrução da projeção | `[IMPLEMENTADO]` | `POST /transactions/rebuild` | ✅ `/patrimonio/razao/conferir` |
+| Reconciliação projeção × razão | `[IMPLEMENTADO]` | `GET /transactions/reconciliation` | ✅ idem, com posição sem lançamento levada ao razão |
 | Apuração mensal de IR | `[IMPLEMENTADO]` | `ledger/apuracao.py` | parcial |
 | Compensação de prejuízo por categoria | `[IMPLEMENTADO]` | `ledger/apuracao.py` | ❌ |
 | Isenção mensal de R$ 20 mil | `[IMPLEMENTADO]` | `ledger/apuracao.py` | — |
@@ -165,7 +165,7 @@ corretora única. **O que não cobre:** emissão de DARF, informe anual.
 | Metas, com alvo declarado distinto do padrão | `[ATUAL]` | `api/goals.py` — sem declaração, nada cobra desvio |
 | Alertas de preço | `[ATUAL]` | `api/alerts.py` |
 | Notificações push | `[ATUAL]` | `notifications/` |
-| Onboarding derivado | `[SEM CLIENTE]` | `api/onboarding.py` |
+| Onboarding derivado | `[IMPLEMENTADO]` | `api/onboarding.py` — ✅ `/voce/comecar` |
 | Telemetria com dicionário fechado | `[ATUAL]` | `core/events.py` — o aplicativo envia por `mobile/lib/core/product_events.dart`, conferido contra o catálogo |
 | Rotas de administrador | `[IMPLEMENTADO]` | `require_admin` |
 | Rota pública sem titular | `[IMPLEMENTADO]` | `GET /public/asset/{ticker}` |
@@ -230,13 +230,11 @@ Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma
 | Estado | Quantidade aproximada |
 |---|---|
 | `[ATUAL]` | ~30 funcionalidades |
-| `[IMPLEMENTADO]` | ~14 |
-| `[SEM CLIENTE]` | **4 lacunas de paridade** — ver [PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md) |
+| `[IMPLEMENTADO]` | ~19 |
+| `[SEM CLIENTE]` | **0** — ver [historico/PARIDADE-WEB-APP-2026-09](historico/PARIDADE-WEB-APP-2026-09.md) |
 | `[PLANEJADO]` | ver [09-FUTURO](09-FUTURO.md) |
 | `[ABANDONADO]` | 13 blocos |
 
-O número que importa é o `[SEM CLIENTE]`: **quatro lacunas que o backend serve e o aplicativo não
-alcança** — importação de extrato, ativos seguidos, onboarding, e reconciliação com reconstrução —,
-todas por perda de paridade em 2026-09-11. Eram nove: livro-razão, eventos corporativos, proventos e
-o alvo da realocação fecharam em 2026-09-13, e a exclusão de conta em 2026-09-19. Enquanto ele não chegar a zero, o produto
-entrega menos do que possui.
+O `[SEM CLIENTE]` chegou a zero em 2026-09-26: as nove lacunas abertas pela saída da web têm tela,
+e a demonstração, que era vitrine dela, saiu do backend. O número que importa agora é o
+`[IMPLEMENTADO]`: o que existe e ninguém exercita com dado real, porque não há aplicativo em loja.

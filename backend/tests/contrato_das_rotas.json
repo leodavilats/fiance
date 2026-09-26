@@ -34,6 +34,9 @@
   "DELETE /api/v1/portfolio/{ticker}": [
     "deleted"
   ],
+  "DELETE /api/v1/suggestions/followed/{suggestion_id}": [
+    "deleted"
+  ],
   "DELETE /api/v1/transactions/{entry_id}": [
     "deleted"
   ],

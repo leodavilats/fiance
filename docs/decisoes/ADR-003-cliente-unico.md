@@ -64,7 +64,7 @@ O que o front carregava e não era tela foi realocado:
 remoção. Nove funcionalidades ficaram sem cliente — entre elas o livro-razão, a importação de extrato
 e a gestão de proventos. O backend continua servindo todas.
 
-Ver [PARIDADE-WEB-APP](../temporario/PARIDADE-WEB-APP.md).
+Ver [PARIDADE-WEB-APP](../historico/PARIDADE-WEB-APP-2026-09.md) — fechada em 2026-09-26.
 
 ## Referências
 

@@ -19,18 +19,11 @@ As seções são rígidas e não se misturam. Um item só muda de seção por de
 Ordem definida em 2026-09-13. Os cinco primeiros são **recuperação e amadurecimento do que já
 existe** — só o 7 e o 8 são construção nova.
 
-### 1 · Importação de extrato, reconciliação e reconstrução no aplicativo
+### ~~1 · Importação de extrato, reconciliação e reconstrução no aplicativo~~ — entregue em 2026-09-26
 
-O razão ganhou tela em 2026-09-13 (`/patrimonio/razao`): lista, registra e apaga lançamento, com os
-eventos corporativos. Falta o que alimenta o razão em volume e o que o confere: `POST
-/transactions/import` (prévia + commit), `GET /transactions/reconciliation` e `POST
-/transactions/rebuild`. O backend está pronto e testado.
-
-É o primeiro item porque o produto ainda entrega menos do que possui, e porque lançar à mão uma
-história inteira é a maior barreira para quem chega com carteira.
-
-**Esforço:** telas novas sobre backend existente. Ver
-[PARIDADE-WEB-APP](temporario/PARIDADE-WEB-APP.md).
+`/patrimonio/razao/importar` (prévia + commit, duplicidade para decisão) e
+`/patrimonio/razao/conferir` (diferenças, levar ao razão, refazer). Com eles, a paridade com a web
+fechou — registro em [historico/PARIDADE-WEB-APP-2026-09](historico/PARIDADE-WEB-APP-2026-09.md).
 
 ### ~~2 · Tela de proventos~~ — entregue em 2026-09-13
 
@@ -76,9 +69,9 @@ Muitas siglas para um iniciante — e o iniciante é metade do público declarad
 hierarquia, não de cálculo. O nível de detalhe **Essencial** (2026-09-26) já fecha o método numa
 gaveta; falta o texto.
 
-### 6 · Onboarding no aplicativo
+### ~~6 · Onboarding no aplicativo~~ — entregue em 2026-09-26
 
-`GET /onboarding` deriva o passo do que a pessoa já fez. Zero arquivos no cliente.
+`/voce/comecar`, com o passo derivado do servidor e nada travando.
 
 ### 7 · Contas de desenvolvedor e publicação
 
