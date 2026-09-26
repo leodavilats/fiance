@@ -17,11 +17,8 @@ from .dashboard import (
     PortfolioHealth,
 )
 from .dip import (
-    DipAnalysisResponse,
     DipScanItem,
     DipScannerResponse,
-    DipScoreBreakdownSchema,
-    NewsItemSchema,
 )
 from .enums import (
     AssetCategory,
@@ -124,11 +121,8 @@ __all__ = [
     "DashboardResponse",
     "DashboardSummary",
     "DataFreshness",
-    "DipAnalysisResponse",
     "DipScanItem",
     "DipScannerResponse",
-    "DipScoreBreakdownSchema",
-    "NewsItemSchema",
     "RendaFixaAsset",
     "RendaFixaAnalysisResult",
     "RendaFixaCompareRequest",

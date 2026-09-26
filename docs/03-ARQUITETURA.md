@@ -27,7 +27,7 @@ serviço auxiliar.
 │  ── matemática pura, sem banco ──        │
 │  ledger/      razão, projeção, apuração  │
 │  cashflow/    mês, cascata, dívida       │
-│  analysis/    preço justo, score, quedas │
+│  analysis/    preço justo, score         │
 │                                          │
 │  collectors/  BRAPI, BCB, cache, disjuntor│
 └───────────────────┬──────────────────────┘

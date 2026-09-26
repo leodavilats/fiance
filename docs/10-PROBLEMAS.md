@@ -6,8 +6,8 @@ Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria d
 2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
 [ADR-012](decisoes/ADR-012-o-alvo-e-de-quem-declara.md). A2, A3, A4 e A6 saíram em 2026-09-23, e
-A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 e A11 entraram em
-2026-09-25, e o A10 saiu no mesmo dia: sem app em loja, os nomes legados puderam sair de uma vez.
+A7 a A9 entraram — ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). A10 e A11 entraram e
+saíram em 2026-09-25 — ver [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md).
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -61,39 +61,6 @@ fazia todo BDR parecer caro (cerca de 0,67× o valor numa taxa em dólar). O LPA
 para BDR já vem por BDR e em reais — a escala está certa, a moeda da taxa não.
 
 **Segue aberto:** exige juro em dólar, fora das duas fontes permitidas.
-
-### A11 · A varredura de quedas tem veredito próprio, e ele contradiz a leitura de valor
-
-`analysis/dip_analysis.py` dá a cada ativo em queda uma nota de 0 a 100 e uma etiqueta —
-"Oportunidade na baixa", "Aguardar" ou "Armadilha" —, que o filtro "Em queda" de Descobrir mostra
-em lista (`/dip-scanner`, `fiDipScoreBands`). É um segundo sistema de veredito, fora das ADRs 013 a
-017. Medido em 2026-09-25 sobre 31 ativos reais:
-
-- **26 saem "Armadilha", 5 "Aguardar" e nenhum "Oportunidade na baixa".** A dimensão de valor foi
-  calibrada para a margem antiga: dentro da faixa a margem é zero e vale 6 de 30 pontos, e acima
-  dela, zero. "Oportunidade" ficou praticamente inalcançável.
-- **Contradiz a folha do ativo.** MXRF11 sai "Abaixo do preço justo" na folha e "Armadilha — cuidado
-  com o value trap" na varredura.
-- **Ausência vira zero.** FII não tem ROE, margem nem D/E, e perde os 25 pontos de qualidade por
-  inaplicabilidade — todo FII da amostra saiu "Armadilha".
-- **Sem faixa ainda há leitura de valor.** Sem preço justo, a dimensão de valor dá 10,5 pontos
-  "neutros", o que a regra "sem faixa, não há leitura de valor" proíbe.
-- **O técnico decide.** RSI, distância do topo e média de 200 dias somam 25 pontos, com frases sem
-  base ("alta probabilidade de reversão técnica", "zona historicamente de valor"). Sem eles, 4 dos 31
-  mudam de etiqueta.
-- **A confiança é a nota ÷ 100**, e não sai da qualidade da faixa. O motivo de ETF diz usar um
-  "proxy neutro" de qualidade que não existe, e o parâmetro `trend` é recebido e ignorado.
-
-**Caminho recomendado:** a queda vira recorte de Descobrir, e não veredito. A varredura continua
-filtrando pela distância do topo de 52 semanas, que é o que define "em queda", e mostra a mesma
-etiqueta, faixa e qualidade da leitura de valor. A nota e as três etiquetas próprias saem. A
-alternativa, recalibrar cada dimensão, mantém um segundo vocabulário de veredito nas duas
-plataformas.
-
-**Custo:** o app em loja lê `dip_score` como número obrigatório e calcula a etiqueta dele. A migração
-é em dois passos, como no A10: a resposta ganha a etiqueta da leitura de valor e o app passa a
-usá-la; `dip_score` sai depois. A rota individual `/asset/{symbol}/dip-analysis` não tem cliente e
-entra no item G.
 
 ## B · Dado e fonte
 
@@ -253,7 +220,6 @@ Não existe chave de assinatura, e nenhum evento de telemetria foi visto em prod
 | Item | Ação |
 |---|---|
 | `api/demo.py` — sem cliente desde 2026-09-11 | Decidir |
-| `/asset/{symbol}/dip-analysis` — sem cliente; atrás de `Feature.DIP_DIAGNOSIS` | Decidir junto com o A11 |
 
 `optimizer/`, `OptimizationStrategy` e a duplicata de `MIN_DATA_COMPLETENESS` foram removidos em
 2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md) e item A1).

@@ -89,13 +89,6 @@ const List<FiScoreBand> fiGoalProgressBands = [
 
 const ({double min, double max}) fiGoalProgressDomain = (min: 0, max: 100);
 
-const List<FiScoreBand> fiDipScoreBands = [
-  FiScoreBand(id: 'opportunity', min: 68, max: 100, label: 'Oportunidade na baixa', state: FiState.favorable, emphasis: 'strong'),
-  FiScoreBand(id: 'wait', min: 42, max: 67, label: 'Aguardar', state: FiState.neutral, emphasis: 'muted'),
-  FiScoreBand(id: 'trap', min: 0, max: 41, label: 'Armadilha', state: FiState.adverse, emphasis: 'strong'),
-  FiScoreBand(id: 'insufficient', min: null, max: null, label: 'Sem leitura', state: FiState.indeterminate, emphasis: 'muted'),
-];
-
 const List<FiScoreBand> fiMonthPressureBands = [
   FiScoreBand(id: 'tight', min: 80, max: 100, label: 'Mês apertado', state: FiState.adverse, emphasis: 'strong'),
   FiScoreBand(id: 'pressured', min: 60, max: 79, label: 'Mês sob pressão', state: FiState.attention, emphasis: 'strong'),
@@ -126,10 +119,4 @@ abstract final class FiDecision {
   static const attention = (label: 'Atenção', state: FiState.attention);
   static const avoid = (label: 'Evitar', state: FiState.adverse);
   static const unknown = (label: 'Sem leitura', state: FiState.indeterminate);
-}
-
-abstract final class FiDipDiagnosis {
-  static const healthy = (label: 'Queda saudável', criterion: 'preço caiu, fundamentos preservados', state: FiState.favorable);
-  static const investigate = (label: 'Queda para investigar', criterion: 'preço caiu e alguma métrica piorou', state: FiState.attention);
-  static const structural = (label: 'Queda estrutural', criterion: 'preço caiu junto de deterioração relevante', state: FiState.adverse);
 }

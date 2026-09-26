@@ -13,12 +13,15 @@ async def dip_scanner(
     universe: str | None = Query(
         None, description="Tickers separados por vírgula. Padrão: universo do sistema"
     ),
-    min_score: float = Query(
-        40.0, ge=0, le=100, description="Score mínimo para incluir no resultado"
+    min_drop: float = Query(
+        15.0,
+        ge=0,
+        le=95,
+        description="Queda mínima desde a máxima de 52 semanas, em percentual, para entrar",
     ),
     top: int = Query(12, ge=1, le=30, description="Máximo de itens retornados"),
     category: str | None = Query(
         None, description="Filtrar por categoria: acoes_br | bdrs | fiis | etfs"
     ),
 ) -> DipScannerResponse:
-    return await dip_service.scan_dips(universe, min_score, top, category=category)
+    return await dip_service.scan_dips(universe, min_drop, top, category=category)

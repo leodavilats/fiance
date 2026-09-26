@@ -13,7 +13,7 @@ import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/help_tooltip.dart';
 import '../../core/score_ruler.dart'
-    show basisLabel, dataYearsLabel, fairBandEdgeLabel, fairBandSummary;
+    show basisLabel, dataYearsLabel, fairBandEdgeLabel, fairBandLabel, fairBandSummary;
 import '../../core/widgets/score_ruler.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
@@ -522,12 +522,14 @@ class _DipScannerView extends ConsumerWidget {
               children: const [
                 FiEmptyState(
                   title: 'Nenhum ativo em queda agora',
-                  body: 'A varredura procura papéis que caíram do topo recente e ainda têm '
-                      'fundamento. Nenhum do universo coberto atende ao corte neste momento.',
+                  body: 'A varredura mostra quem caiu 15% ou mais da máxima de 52 semanas, com a '
+                      'mesma leitura de valor do ativo. Nenhum do universo coberto caiu tanto '
+                      'neste momento.',
                 ),
               ],
             );
           }
+          final idade = formatAge(oldestStamp(items.map((i) => i.asOf)));
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(
               FiLayout.gutter,
@@ -535,11 +537,16 @@ class _DipScannerView extends ConsumerWidget {
               FiLayout.gutter,
               FiLayout.scrollTail,
             ),
-            itemCount: items.length,
+            itemCount: items.length + (idade.isEmpty ? 0 : 1),
             separatorBuilder: (_, _) => const SizedBox(height: FiSpace.s2),
             itemBuilder: (context, index) {
-              final item = items[index];
-              final band = fiBandFor(item.dipScore, fiDipScoreBands);
+              if (idade.isNotEmpty && index == 0) {
+                return Text(
+                  'A queda filtra; a leitura de valor ordena. Cotações lidas $idade',
+                  style: FiType.caption.copyWith(color: fiInk3(context)),
+                );
+              }
+              final item = items[idade.isEmpty ? index : index - 1];
 
               return FiObject(
                 onTap: () => showAssetDetailSheet(context, item.symbol),
@@ -568,13 +575,15 @@ class _DipScannerView extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: FiSpace.s3),
-                        FiTag(label: band.label, state: band.state),
+                        Flexible(
+                          child: FiTag(label: item.label, state: fiVerdictState(item.verdict)),
+                        ),
                       ],
                     ),
                     const SizedBox(height: FiSpace.s3),
                     Text(
-                      'Caiu ${formatPercent(item.dropFromHighPct)} do topo · '
-                      'margem de segurança ${formatRatio(item.marginOfSafety)}',
+                      'Caiu ${formatPercent(item.dropFromHighPct)} da máxima de 52 semanas · '
+                      'faixa ${fairBandLabel(item.fairLow, item.fairHigh)}',
                       style: FiType.caption.copyWith(color: fiInk2(context)),
                     ),
                     if (item.topReason.isNotEmpty) ...[

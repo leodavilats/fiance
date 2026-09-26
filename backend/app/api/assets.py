@@ -2,14 +2,13 @@ import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.entitlement import Feature, requires, requires_asset_page
-from app.models import AssetAnalysis, CompareResponse, DipAnalysisResponse
-from app.services import AssetService, DipService
+from app.entitlement import requires_asset_page
+from app.models import AssetAnalysis, CompareResponse
+from app.services import AssetService
 
 router = APIRouter()
 
 asset_service = AssetService()
-dip_service = DipService()
 
 MAX_COMPARE_TICKERS = 4
 
@@ -50,17 +49,3 @@ async def compare_assets(
             errors.append(symbol)
 
     return CompareResponse(items=items, errors=errors)
-
-
-@router.get(
-    "/asset/{symbol}/dip-analysis",
-    response_model=DipAnalysisResponse,
-    dependencies=[Depends(requires(Feature.DIP_DIAGNOSIS))],
-)
-async def dip_analysis(
-    symbol: str,
-) -> DipAnalysisResponse:
-    try:
-        return await dip_service.analyze_dip(symbol)
-    except ValueError as e:
-        raise HTTPException(404, str(e)) from e

@@ -219,14 +219,14 @@ class ApiRepository {
   }
 
   Future<List<DipScanItem>> dipScan({
-    double minScore = 40,
+    double minDrop = 15,
     int top = 12,
     String? category,
   }) async {
     final res = await _dio.get(
       '/dip-scanner',
       queryParameters: {
-        'min_score': minScore,
+        'min_drop': minDrop,
         'top': top,
         if (category != null && category.isNotEmpty) 'category': category,
       },

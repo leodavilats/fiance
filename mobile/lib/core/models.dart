@@ -750,9 +750,12 @@ class DipScanItem {
     required this.symbol,
     required this.name,
     required this.price,
-    required this.dipScore,
-    required this.verdictLabel,
+    required this.asOf,
     required this.dropFromHighPct,
+    required this.verdict,
+    required this.label,
+    required this.fairLow,
+    required this.fairHigh,
     required this.marginOfSafety,
     required this.topReason,
   });
@@ -760,9 +763,12 @@ class DipScanItem {
   final String symbol;
   final String? name;
   final double? price;
-  final double dipScore;
-  final String verdictLabel;
-  final double? dropFromHighPct;
+  final double? asOf;
+  final double dropFromHighPct;
+  final String verdict;
+  final String label;
+  final double? fairLow;
+  final double? fairHigh;
   final double? marginOfSafety;
   final String topReason;
 
@@ -770,9 +776,12 @@ class DipScanItem {
     symbol: j['symbol'] as String,
     name: j['name'] as String?,
     price: (j['price'] as num?)?.toDouble(),
-    dipScore: (j['dip_score'] as num).toDouble(),
-    verdictLabel: j['verdict_label'] as String? ?? '',
-    dropFromHighPct: (j['drop_from_52w_high_pct'] as num?)?.toDouble(),
+    asOf: (j['as_of'] as num?)?.toDouble(),
+    dropFromHighPct: (j['drop_from_52w_high_pct'] as num?)?.toDouble() ?? 0,
+    verdict: j['verdict'] as String? ?? '',
+    label: j['label'] as String? ?? '',
+    fairLow: (j['fair_low'] as num?)?.toDouble(),
+    fairHigh: (j['fair_high'] as num?)?.toDouble(),
     marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
     topReason: j['top_reason'] as String? ?? '',
   );

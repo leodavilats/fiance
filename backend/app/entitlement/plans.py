@@ -32,7 +32,6 @@ class Feature(StrEnum):
 
     ASSET_PAGE = "asset_page"
     OPPORTUNITY_FILTERS = "opportunity_filters"
-    DIP_DIAGNOSIS = "dip_diagnosis"
     COMPARE = "compare"
     GOALS = "goals"
     PRICE_ALERTS = "price_alerts"
@@ -164,16 +163,6 @@ RULES: dict[Feature, Rule] = {
         rationale=(
             "A prévia gera desejo; o filtro é o produto. O custo foi resolvido por "
             "materialização, não por cerca."
-        ),
-    ),
-    Feature.DIP_DIAGNOSIS: Rule(
-        Feature.DIP_DIAGNOSIS,
-        Plan.FREE,
-        free_limit=1,
-        premium_limit=None,
-        unit="diagnósticos por mês",
-        rationale=(
-            "Alta urgência: quem chega aqui está com medo. Um grátis converte melhor que zero."
         ),
     ),
     Feature.COMPARE: Rule(

@@ -2,25 +2,29 @@ import asyncio
 import logging
 
 from app.analysis.classify import auto_category
-from app.analysis.dip_analysis import compute_dip_analysis
-from app.analysis.fair_price import compute_technical
-from app.collectors.news import analyze_news_with_ai, news_sentiment_summary
-from app.core.errors import NotFoundError
+from app.analysis.decision import confidence_label, decide
 from app.core.universe import get_universe
-from app.models import (
-    AssetType,
-    DipAnalysisResponse,
-    DipScanItem,
-    DipScannerResponse,
-    DipScoreBreakdownSchema,
-    FairPriceBlock,
-    NewsItemSchema,
-    TechnicalBlock,
-)
+from app.models import AssetType, DipScanItem, DipScannerResponse
 from app.repositories import AssetRepository, PortfolioRepository
 from app.services.valuation import fair_price_for
 
 logger = logging.getLogger(__name__)
+
+MIN_DROP_PCT = 15.0
+
+
+def drop_from_high_pct(price: float | None, high_52w: float | None) -> float | None:
+    if not price or not high_52w or high_52w <= 0:
+        return None
+    return round(max(0.0, (high_52w - price) / high_52w * 100), 2)
+
+
+def _ordem(item: DipScanItem) -> tuple:
+    return (
+        item.margin_of_safety is None,
+        -(item.margin_of_safety or 0.0),
+        -item.drop_from_52w_high_pct,
+    )
 
 
 class DipService:
@@ -28,99 +32,10 @@ class DipService:
         self.asset_repo = AssetRepository()
         self.portfolio_repo = PortfolioRepository()
 
-    async def analyze_dip(self, symbol: str) -> DipAnalysisResponse:
-        snap = await self.asset_repo.get_asset(symbol)
-        if not snap:
-            raise NotFoundError(f"Ativo '{symbol}' não encontrado ou sem dados.")
-
-        prefs = self.portfolio_repo.get_preferences()
-
-        history, dividends, news_items = await asyncio.gather(
-            self.asset_repo.get_history(symbol, period="2y"),
-            self.asset_repo.get_dividends(symbol),
-            self.asset_repo.get_news(
-                symbol, asset_type=snap.asset_type, company_name=snap.name or ""
-            ),
-        )
-
-        fair = fair_price_for(snap, dividends, prefs)
-
-        tech = compute_technical(history, snap.fifty_two_week_high, snap.fifty_two_week_low)
-        sentiment_summary = news_sentiment_summary(news_items)
-
-        news_ai_analysis = await analyze_news_with_ai(news_items, symbol, snap.name or "")
-
-        dip = compute_dip_analysis(
-            margin_of_safety=fair.margin_of_safety,
-            roe=snap.roe,
-            profit_margin=snap.profit_margin,
-            debt_to_equity=snap.debt_to_equity,
-            rsi_14=tech.rsi_14,
-            trend=tech.trend,
-            distance_from_52w_high_pct=tech.distance_from_52w_high_pct,
-            sma_200=tech.sma_200,
-            last_price=tech.last_price,
-            dividend_yield=snap.dividend_yield,
-            avg_dividend_5y=fair.dividend_recurring,
-            fair_price_consensus=fair.principal_value,
-            current_price=snap.price,
-            news_items=news_items,
-            news_sentiment_summary=sentiment_summary,
-            asset_type=snap.asset_type,
-        )
-
-        return DipAnalysisResponse(
-            symbol=snap.symbol,
-            asset_type=AssetType(snap.asset_type),
-            name=snap.name,
-            sector=snap.sector,
-            price=snap.price,
-            currency=snap.currency,
-            fair_price=FairPriceBlock(**fair.__dict__),
-            technical=TechnicalBlock(**tech.__dict__),
-            fundamentals={
-                "pe_ratio": snap.pe_ratio,
-                "pb_ratio": snap.pb_ratio,
-                "eps": snap.eps,
-                "roe": snap.roe,
-                "dividend_yield": snap.dividend_yield,
-                "debt_to_equity": snap.debt_to_equity,
-                "profit_margin": snap.profit_margin,
-                "revenue_growth": snap.revenue_growth,
-                "market_cap": snap.market_cap,
-                "fifty_two_week_high": snap.fifty_two_week_high,
-                "fifty_two_week_low": snap.fifty_two_week_low,
-            },
-            dip_score=dip.dip_score,
-            breakdown=DipScoreBreakdownSchema(**dip.breakdown.__dict__),
-            verdict=dip.verdict,
-            verdict_label=dip.verdict_label,
-            confidence=dip.confidence,
-            reasons=dip.reasons,
-            reason_groups=dip.reason_groups,
-            drop_from_52w_high_pct=dip.drop_from_52w_high_pct,
-            drop_from_fair_price_pct=dip.drop_from_fair_price_pct,
-            news=[
-                NewsItemSchema(
-                    title=n.title,
-                    source=n.source,
-                    published=n.published,
-                    url=n.url,
-                    sentiment=n.sentiment,
-                )
-                for n in news_items
-            ],
-            news_sentiment_summary=dip.news_sentiment_summary,
-            news_ai_summary=news_ai_analysis.get("summary"),
-            news_ai_score=news_ai_analysis.get("score"),
-            news_impact=news_ai_analysis.get("impact"),
-            news_key_topics=news_ai_analysis.get("key_topics", []),
-        )
-
     async def scan_dips(
         self,
         universe: str | None = None,
-        min_score: float = 40.0,
+        min_drop: float = MIN_DROP_PCT,
         top: int = 12,
         category: str | None = None,
     ) -> DipScannerResponse:
@@ -139,38 +54,13 @@ class DipService:
                     if not snap or not snap.price:
                         return None
 
-                    history, dividends = await asyncio.gather(
-                        self.asset_repo.get_history(ticker, period="2y"),
-                        self.asset_repo.get_dividends(ticker),
-                    )
-
-                    fair = fair_price_for(snap, dividends, prefs)
-
-                    tech = compute_technical(
-                        history, snap.fifty_two_week_high, snap.fifty_two_week_low
-                    )
-
-                    dip = compute_dip_analysis(
-                        margin_of_safety=fair.margin_of_safety,
-                        roe=snap.roe,
-                        profit_margin=snap.profit_margin,
-                        debt_to_equity=snap.debt_to_equity,
-                        rsi_14=tech.rsi_14,
-                        trend=tech.trend,
-                        distance_from_52w_high_pct=tech.distance_from_52w_high_pct,
-                        sma_200=tech.sma_200,
-                        last_price=tech.last_price,
-                        dividend_yield=snap.dividend_yield,
-                        avg_dividend_5y=fair.dividend_recurring,
-                        fair_price_consensus=fair.principal_value,
-                        current_price=snap.price,
-                        news_items=[],
-                        news_sentiment_summary="",
-                        asset_type=snap.asset_type,
-                    )
-
-                    if dip.dip_score < min_score:
+                    queda = drop_from_high_pct(snap.price, snap.fifty_two_week_high)
+                    if queda is None or queda < min_drop:
                         return None
+
+                    dividends = await self.asset_repo.get_dividends(ticker)
+                    fair = fair_price_for(snap, dividends, prefs)
+                    dec = decide(fair, None, current_price=snap.price)
 
                     return DipScanItem(
                         symbol=snap.symbol,
@@ -178,22 +68,23 @@ class DipService:
                         asset_type=AssetType(snap.asset_type),
                         sector=snap.sector,
                         price=snap.price,
-                        fair_price_consensus=fair.principal_value,
+                        as_of=snap.as_of or None,
+                        drop_from_52w_high_pct=queda,
+                        verdict=dec.verdict,
+                        label=dec.label,
+                        basis=dec.basis,
+                        confidence_label=confidence_label(dec.confidence),
+                        band_quality=fair.band_quality,
+                        fair_low=fair.fair_low,
+                        fair_high=fair.fair_high,
+                        principal_value=fair.principal_value,
                         margin_of_safety=fair.margin_of_safety,
-                        dip_score=dip.dip_score,
-                        breakdown=DipScoreBreakdownSchema(**dip.breakdown.__dict__),
-                        verdict=dip.verdict,
-                        verdict_label=dip.verdict_label,
-                        confidence=dip.confidence,
-                        drop_from_52w_high_pct=dip.drop_from_52w_high_pct,
-                        drop_from_fair_price_pct=dip.drop_from_fair_price_pct,
                         dividend_yield=snap.dividend_yield,
-                        rsi_14=tech.rsi_14,
-                        top_reason=dip.reasons[0] if dip.reasons else "",
+                        top_reason=dec.reasons[0] if dec.reasons else "",
                     )
 
                 except Exception as exc:
-                    logger.warning("Dip scan falhou para %s: %s", ticker, exc)
+                    logger.warning("Varredura de quedas falhou para %s: %s", ticker, exc)
                     return None
 
         results = await asyncio.gather(*[_scan_one(t) for t in tickers])
@@ -207,10 +98,11 @@ class DipService:
                 == category
             ]
 
-        items.sort(key=lambda x: x.dip_score, reverse=True)
+        items.sort(key=_ordem)
 
         return DipScannerResponse(
             items=items[:top],
             scanned=len(tickers),
             universe_used=tickers,
+            min_drop_pct=min_drop,
         )

@@ -1,4 +1,3 @@
-from app.collectors.news import fetch_news
 from app.collectors.universal import (
     fetch_asset,
     fetch_dividends,
@@ -19,10 +18,6 @@ class AssetRepository:
     @staticmethod
     async def get_history(symbol: str, period: str = "2y"):
         return await fetch_history_universal(symbol, period=period)
-
-    @staticmethod
-    async def get_news(symbol: str, asset_type: str, company_name: str = ""):
-        return await fetch_news(symbol, asset_type=asset_type, company_name=company_name)
 
     @staticmethod
     async def get_universe(tickers: list[str]):

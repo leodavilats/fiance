@@ -110,7 +110,7 @@ card de ativo ele continua sendo vender e remover.
 | Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — **só ações e BDRs**, ver [10-PROBLEMAS](10-PROBLEMAS.md) |
 | Falsificadores do veredito | `[ATUAL]` | `analysis/falsifiers.py` | `market/asset_detail_sheet.dart` |
 | Análise de ativo individual | `[ATUAL]` | `services/` | `market/asset_detail_sheet.dart` — a folha é a análise; `/ativo/:ticker` mostra menos e deixou de ser oferecida por botão |
-| Quedas (dip scanner) | `[IMPLEMENTADO]` | `analysis/dip_analysis.py` | `/descobrir/quedas` |
+| Quedas: recorte de quem caiu da máxima de 52 semanas, com a leitura de valor | `[IMPLEMENTADO]` | `services/dip_service.py` | `/descobrir/quedas` — [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md) |
 | Comparador de ativos | `[ATUAL]` | — | `/descobrir/comparar` |
 | Comparador renda fixa × bolsa | `[ATUAL]` | `services/income_compare_service.py` | `tools/income_compare_view.dart` |
 | Calculadora de renda fixa | `[ATUAL]` | `analysis/renda_fixa_analysis.py` | `tools/tools_views.dart` |

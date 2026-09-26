@@ -490,19 +490,20 @@ almanaque no lugar de uma condição conferível.
 
 ---
 
-## Análise de quedas
+## Varredura de quedas
 
-`analysis/dip_analysis.py` — pontuação de 100 para diagnosticar uma queda.
+`services/dip_service.py` — **a queda é recorte, e não veredito**
+([ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md)).
 
-| Dimensão | Peso |
-|---|---|
-| Valor (margem de segurança) | 30 |
-| Qualidade | 25 |
-| Técnico | 25 |
-| Dividendos | 10 |
-| Notícias | 10 |
+```
+queda = (máxima de 52 semanas − preço) ÷ máxima de 52 semanas     (zero se o preço passou dela)
+entra quem cai MIN_DROP_PCT = 15% ou mais                          (ajustável por min_drop)
+ordem: margem de segurança, da maior para a menor; sem faixa no fim; empate pela queda
+```
 
-Responde "esta queda é oportunidade ou deterioração?". Estado `[IMPLEMENTADO]`.
+Cada item traz a mesma etiqueta, faixa, qualidade e primeira razão da folha do ativo
+(`decision.py::decide`). Até 2026-09-25 a varredura tinha nota e etiquetas próprias —
+"Oportunidade na baixa", "Aguardar", "Armadilha" — com 25 pontos de técnico, e contradizia a folha.
 
 ---
 

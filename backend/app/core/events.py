@@ -47,7 +47,6 @@ _SPECS: tuple[EventSpec, ...] = (
     EventSpec("first_diagnosis_viewed", QUESTION_VALUE, "Primeiro diagnóstico visto."),
     EventSpec("next_action_viewed", QUESTION_VALUE, "N3 de Hoje, a próxima ação."),
     EventSpec("quick_invest_completed", QUESTION_VALUE, "Aporte simulado até o fim."),
-    EventSpec("dip_diagnosis_opened", QUESTION_VALUE, "Diagnóstico de queda aberto."),
     EventSpec("health_verdict_viewed", QUESTION_VALUE, "Veredito de saúde da carteira visto."),
     EventSpec("why_this_opened", QUESTION_VALUE, "Painel de explicabilidade aberto."),
     EventSpec("session_started", QUESTION_RETURN, "Sessão iniciada."),
@@ -77,7 +76,6 @@ AHA_EVENTS = (
     "first_diagnosis_viewed",
     "next_action_viewed",
     "quick_invest_completed",
-    "dip_diagnosis_opened",
 )
 
 ALLOWED_PROP_KEYS = frozenset(
