@@ -43,7 +43,7 @@ def _derive(user_id: str) -> OnboardingState:
         user = session.get(User, user_id)
         onboarded_at = user.onboarded_at if user is not None else None
 
-    if positions == 0:
+    if not portfolio_store.has_holdings(user_id):
         step, reason = STEP_PORTFOLIO, "Falta registrar a primeira posição."
     elif not goals:
         step, reason = STEP_GOALS, "Falta definir a primeira meta de alocação."

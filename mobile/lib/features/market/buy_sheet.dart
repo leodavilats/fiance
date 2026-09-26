@@ -6,6 +6,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
+import '../../core/widgets/controls.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 
@@ -14,6 +15,7 @@ Future<bool> openBuySheet(
   WidgetRef ref, {
   required String ticker,
   double? currentPrice,
+  String? verdict,
 }) async {
   final registrou = await showModalBottomSheet<bool>(
     context: context,
@@ -22,7 +24,7 @@ Future<bool> openBuySheet(
     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: _BuyForm(ticker: ticker, currentPrice: currentPrice),
+      child: _BuyForm(ticker: ticker, currentPrice: currentPrice, verdict: verdict),
     ),
   );
 
@@ -30,16 +32,18 @@ Future<bool> openBuySheet(
     ref.invalidate(portfolioProvider);
     ref.invalidate(dashboardProvider);
     ref.invalidate(ledgerProvider);
+    ref.invalidate(followedSuggestionsProvider);
   }
 
   return registrou == true;
 }
 
 class _BuyForm extends ConsumerStatefulWidget {
-  const _BuyForm({required this.ticker, this.currentPrice});
+  const _BuyForm({required this.ticker, this.currentPrice, this.verdict});
 
   final String ticker;
   final double? currentPrice;
+  final String? verdict;
 
   @override
   ConsumerState<_BuyForm> createState() => _BuyFormState();
@@ -53,6 +57,7 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
 
   DateTime _date = DateTime.now();
   bool _saving = false;
+  bool _follow = true;
 
   @override
   void initState() {
@@ -86,9 +91,10 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _saving = true);
+    final api = ref.read(apiRepositoryProvider);
+    final avisos = ScaffoldMessenger.of(context);
     try {
-      await ref
-          .read(apiRepositoryProvider)
+      final entryId = await api
           .createTransaction(
             kind: 'buy',
             symbol: widget.ticker,
@@ -97,6 +103,24 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
             price: _number(_price),
             fees: _number(_fees),
           );
+      if (widget.verdict != null && _follow) {
+        try {
+          await api.followFromLedger(
+            entryId: entryId,
+            source: 'opportunities',
+            verdictAtSuggestion: widget.verdict,
+          );
+        } catch (e) {
+          avisos.showSnackBar(
+            SnackBar(
+              content: Text(
+                'A compra entrou na carteira. '
+                '${fiErrorMessage(e, action: 'acompanhar o resultado dela')}',
+              ),
+            ),
+          );
+        }
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -219,6 +243,19 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
                       emphasis: true,
                     ),
                   ],
+                ),
+              ],
+              if (widget.verdict != null) ...[
+                const SizedBox(height: FiSpace.s4),
+                FiSwitch(
+                  label: 'Acompanhar o resultado desta compra',
+                  value: _follow,
+                  onChanged: _saving ? null : (v) => setState(() => _follow = v),
+                ),
+                Text(
+                  'Ela entra em Patrimônio, Sugestões seguidas, medida contra o Ibovespa a partir '
+                  'da data da compra. Dá para deixar de acompanhar depois.',
+                  style: FiType.caption.copyWith(color: fiInk3(context)),
                 ),
               ],
               const SizedBox(height: FiSpace.s5),

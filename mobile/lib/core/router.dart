@@ -4,12 +4,16 @@ import 'package:go_router/go_router.dart';
 import '../features/patrimony/patrimony_screen.dart';
 import '../features/patrimony/widgets/patrimony_positions.dart';
 import '../features/patrimony/dividends_screen.dart';
+import '../features/patrimony/followed_screen.dart';
+import '../features/patrimony/import_screen.dart';
 import '../features/patrimony/ledger_screen.dart';
+import '../features/patrimony/reconciliation_screen.dart';
 import '../features/assets/fixed_income_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/config/delete_account_screen.dart';
+import '../features/config/onboarding_screen.dart';
 import '../features/month/feed_screen.dart';
 import '../features/month/debts_screen.dart';
 import '../features/month/month_screen.dart';
@@ -124,6 +128,20 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'razao',
                   builder: (context, state) => const LedgerScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'importar',
+                      builder: (context, state) => const ImportScreen(),
+                    ),
+                    GoRoute(
+                      path: 'conferir',
+                      builder: (context, state) => const ReconciliationScreen(),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'seguidas',
+                  builder: (context, state) => const FollowedScreen(),
                 ),
                 GoRoute(
                   path: 'proventos',
@@ -198,6 +216,12 @@ final appRouter = GoRouter(
                 GoRoute(
                   path: 'objetivos',
                   builder: (context, state) => const GoalsScreen(),
+                ),
+                GoRoute(
+                  path: 'comecar',
+                  builder: (context, state) => OnboardingScreen(
+                    step: int.tryParse(state.uri.queryParameters['passo'] ?? ''),
+                  ),
                 ),
                 GoRoute(
                   path: 'investir',

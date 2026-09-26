@@ -29,6 +29,7 @@ class ConfigScreen extends ConsumerWidget {
     final preferences = ref.watch(preferencesProvider);
     final alertas = ref.watch(alertsProvider);
     final escuro = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final passos = ref.watch(onboardingProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -46,6 +47,16 @@ class ConfigScreen extends ConsumerWidget {
           const SizedBox(height: FiSpace.s5),
           FiRows(
             children: [
+              FiDataRow(
+                label: 'Primeiros passos',
+                detail: passos.maybeWhen(
+                  data: (s) => s.completed
+                      ? 'Concluídos — reveja quando quiser'
+                      : 'Passo ${s.step} de ${s.totalSteps} · ${s.reason}',
+                  orElse: () => 'Carteira e meta, e nada trava o resto',
+                ),
+                onTap: () => context.go('/voce/comecar'),
+              ),
               FiDataRow(
                 label: 'Como eu invisto',
                 detail: preferences.maybeWhen(

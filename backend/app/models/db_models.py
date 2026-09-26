@@ -173,6 +173,7 @@ class FollowedSuggestionDb(Base):
     score_at_suggestion: Mapped[float | None] = mapped_column(Float, nullable=True)
     verdict_at_suggestion: Mapped[str | None] = mapped_column(String, nullable=True)
     note: Mapped[str | None] = mapped_column(String, nullable=True)
+    ledger_entry_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     created_at: Mapped[float] = mapped_column(Float)
 
 

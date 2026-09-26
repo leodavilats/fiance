@@ -6,8 +6,9 @@ from datetime import date
 
 from app.collectors.universal import fetch_ibov_history
 from app.core.brt import now_brt
-from app.core.errors import NotFoundError
+from app.core.errors import ConflictError, DomainError, NotFoundError
 from app.core.pagination import clamp_limit, slice_after
+from app.ledger import TransactionKind
 from app.models.followed import (
     FollowedSuggestion,
     FollowedSuggestionCreate,
@@ -15,7 +16,7 @@ from app.models.followed import (
     SuggestionOutcomeGroup,
 )
 from app.repositories import AssetRepository
-from app.storage import portfolio_store
+from app.storage import ledger_store, portfolio_store
 
 _SOURCE_LABELS = {
     "opportunities": "Oportunidades",
@@ -26,27 +27,92 @@ _SOURCE_LABELS = {
     "whats_new": "O que mudou",
 }
 
+_ACTION_OF_KIND = {TransactionKind.BUY: "comprar", TransactionKind.SELL: "vender"}
+
 
 class FollowedService:
     def __init__(self):
         self.asset_repo = AssetRepository()
 
     def register(self, req: FollowedSuggestionCreate) -> FollowedSuggestion:
+        if req.entry_id is not None:
+            execucao = self._from_ledger(req.entry_id)
+        else:
+            execucao = {
+                "ticker": req.ticker.upper(),
+                "action": req.action,
+                "quantity": req.quantity,
+                "price": req.price,
+                "followed_on": (req.followed_on or now_brt().date()).isoformat(),
+            }
+
         row = portfolio_store.create_followed_suggestion(
-            ticker=req.ticker.upper(),
             source=req.source,
-            action=req.action,
-            quantity=req.quantity,
-            price=req.price,
-            followed_on=(req.followed_on or now_brt().date()).isoformat(),
             score_at_suggestion=req.score_at_suggestion,
             verdict_at_suggestion=req.verdict_at_suggestion,
             note=req.note,
+            ledger_entry_id=req.entry_id,
+            **execucao,
         )
         return FollowedSuggestion(
-            **{**row, "followed_on": date.fromisoformat(row["followed_on"])},
+            id=row["id"],
+            ticker=row["ticker"],
+            source=row["source"],
+            action=row["action"],
+            quantity=row["quantity"],
+            price=row["price"],
+            followed_on=date.fromisoformat(row["followed_on"]),
+            score_at_suggestion=row["score_at_suggestion"],
+            verdict_at_suggestion=row["verdict_at_suggestion"],
+            note=row["note"],
+            entry_id=row["ledger_entry_id"],
             invested=round(row["quantity"] * row["price"], 2),
         )
+
+    @staticmethod
+    def _from_ledger(entry_id: int) -> dict:
+        entry = ledger_store.entries_by_id([entry_id]).get(entry_id)
+        if entry is None:
+            raise NotFoundError(f"Lançamento {entry_id} não encontrado no razão.")
+        if entry.kind not in _ACTION_OF_KIND:
+            raise DomainError("Só compra ou venda do razão pode ser uma sugestão seguida.")
+        if any(
+            row["ledger_entry_id"] == entry_id
+            for row in portfolio_store.list_followed_suggestions()
+        ):
+            raise ConflictError("Este lançamento já está acompanhado como sugestão seguida.")
+        return {
+            "ticker": entry.symbol,
+            "action": _ACTION_OF_KIND[entry.kind],
+            "quantity": entry.quantity,
+            "price": entry.price,
+            "followed_on": entry.traded_on,
+        }
+
+    @staticmethod
+    def _resolve(rows: list[dict]) -> list[dict]:
+        linked = [row["ledger_entry_id"] for row in rows if row["ledger_entry_id"] is not None]
+        entries = ledger_store.entries_by_id(linked)
+
+        resolved = []
+        for row in rows:
+            entry_id = row["ledger_entry_id"]
+            if entry_id is None:
+                resolved.append(row)
+                continue
+            entry = entries.get(entry_id)
+            if entry is None:
+                continue
+            resolved.append(
+                {
+                    **row,
+                    "ticker": entry.symbol,
+                    "quantity": entry.quantity,
+                    "price": entry.price,
+                    "followed_on": entry.traded_on,
+                }
+            )
+        return resolved
 
     def delete(self, suggestion_id: int) -> dict:
         if not portfolio_store.delete_followed_suggestion(suggestion_id):
@@ -56,7 +122,7 @@ class FollowedService:
     async def outcomes(
         self, limit: int | None = None, cursor: str | None = None
     ) -> FollowedSuggestionsResponse:
-        rows = portfolio_store.list_followed_suggestions()
+        rows = self._resolve(portfolio_store.list_followed_suggestions())
         if not rows:
             return FollowedSuggestionsResponse(
                 summary=(
@@ -97,6 +163,7 @@ class FollowedService:
                     score_at_suggestion=row["score_at_suggestion"],
                     verdict_at_suggestion=row["verdict_at_suggestion"],
                     note=row["note"],
+                    entry_id=row["ledger_entry_id"],
                     invested=round(invested, 2),
                     current_value=round(current_value, 2) if current_value is not None else None,
                     pnl=round(pnl, 2) if pnl is not None else None,

@@ -921,6 +921,7 @@ class FollowedSuggestionRow(TypedDict):
     score_at_suggestion: float | None
     verdict_at_suggestion: str | None
     note: str | None
+    ledger_entry_id: int | None
 
 
 _FOLLOWED_FIELDS = (
@@ -933,6 +934,7 @@ _FOLLOWED_FIELDS = (
     "score_at_suggestion",
     "verdict_at_suggestion",
     "note",
+    "ledger_entry_id",
 )
 
 
@@ -948,6 +950,7 @@ def _followed_row(row: FollowedSuggestionDb) -> FollowedSuggestionRow:
         score_at_suggestion=row.score_at_suggestion,
         verdict_at_suggestion=row.verdict_at_suggestion,
         note=row.note,
+        ledger_entry_id=row.ledger_entry_id,
     )
 
 

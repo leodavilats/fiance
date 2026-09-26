@@ -2135,3 +2135,30 @@ class AccountExport {
   final List<int> bytes;
   final String filename;
 }
+
+class OnboardingState {
+  OnboardingState({
+    required this.step,
+    required this.totalSteps,
+    required this.completed,
+    required this.positions,
+    required this.hasGoals,
+    required this.reason,
+  });
+
+  final int step;
+  final int totalSteps;
+  final bool completed;
+  final int positions;
+  final bool hasGoals;
+  final String reason;
+
+  factory OnboardingState.fromJson(Map<String, dynamic> j) => OnboardingState(
+    step: (j['step'] as num?)?.toInt() ?? 1,
+    totalSteps: (j['total_steps'] as num?)?.toInt() ?? 3,
+    completed: j['completed'] as bool? ?? false,
+    positions: (j['positions'] as num?)?.toInt() ?? 0,
+    hasGoals: j['has_goals'] as bool? ?? false,
+    reason: j['reason'] as String? ?? '',
+  );
+}

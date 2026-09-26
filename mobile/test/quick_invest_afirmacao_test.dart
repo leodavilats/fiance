@@ -4,6 +4,7 @@ import 'package:fiance/core/format.dart';
 import 'package:fiance/core/models.dart';
 import 'package:fiance/core/providers.dart';
 import 'package:fiance/core/theme.dart';
+import 'package:fiance/core/widgets/score_ruler.dart';
 import 'package:fiance/features/market/quick_invest_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -105,6 +106,33 @@ void main() {
       textos.any((t) => t.contains('fica em caixa')),
       isTrue,
       reason: 'o aviso diz por que a sobra aparece como —',
+    );
+  });
+
+  testWidgets('o score da alocação sai na régua, e não só como selo', (tester) async {
+    tester.view.physicalSize = const Size(390, 2400) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+
+    final dio = Dio()..interceptors.add(_Resposta());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [apiRepositoryProvider.overrideWithValue(ApiRepository(dio))],
+        child: MaterialApp(
+          theme: buildAppTheme(Brightness.light),
+          home: const Scaffold(body: QuickInvestView()),
+        ),
+      ),
+    );
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    final reguas = tester.widgetList<ScoreRuler>(find.byType(ScoreRuler)).toList();
+    expect(
+      reguas.map((r) => r.score),
+      [82.0],
+      reason: 'o selo dizia a faixa sem o número nem a escala: julgamento sem explicação',
     );
   });
 

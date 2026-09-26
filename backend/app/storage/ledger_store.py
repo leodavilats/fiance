@@ -209,6 +209,19 @@ def list_entries(
     return _with_session(body, user_id)
 
 
+def entries_by_id(entry_ids: Sequence[int], user_id: str | None = None) -> dict[int, LedgerEntry]:
+    if not entry_ids:
+        return {}
+
+    def body(session, uid: str) -> dict[int, LedgerEntry]:
+        stmt = select(TransactionDb).where(
+            TransactionDb.user_id == uid, TransactionDb.id.in_(list(entry_ids))
+        )
+        return {row.id: _to_entry(row) for row in session.execute(stmt).scalars()}
+
+    return _with_session(body, user_id)
+
+
 def delete_entry(entry_id: int, user_id: str | None = None) -> str:
 
     def body(session, uid: str) -> str:

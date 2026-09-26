@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import 'auth_service.dart';
 import 'cash_models.dart';
+import 'ledger_models.dart';
 import 'models.dart';
 
 class ApiRepository {
@@ -598,6 +599,74 @@ class ApiRepository {
 
   Future<void> deleteTransaction(int id) async {
     await _dio.delete('/transactions/$id');
+  }
+
+  Future<ImportPreview> previewImport(String content) async {
+    final res = await _dio.post('/transactions/import/preview', data: {'content': content});
+    return ImportPreview.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<ImportResult> commitImport(String content, {required bool includeDuplicates}) async {
+    final res = await _dio.post(
+      '/transactions/import',
+      data: {'content': content, 'include_duplicates': includeDuplicates},
+    );
+    return ImportResult.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<Reconciliation> getReconciliation() async {
+    final res = await _dio.get('/transactions/reconciliation');
+    return Reconciliation.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<int> backfillLedger() async {
+    final res = await _dio.post('/transactions/backfill');
+    return (res.data['seeded'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<Reconciliation> rebuildProjection() async {
+    final res = await _dio.post('/transactions/rebuild');
+    return Reconciliation.fromJson(res.data['reconciliation'] as Map<String, dynamic>);
+  }
+
+  Future<FollowedSuggestions> getFollowedSuggestions({String? cursor}) async {
+    final res = await _dio.get(
+      '/suggestions/followed',
+      queryParameters: {'cursor': ?cursor},
+    );
+    return FollowedSuggestions.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<FollowedSuggestion> followFromLedger({
+    required int entryId,
+    required String source,
+    double? scoreAtSuggestion,
+    String? verdictAtSuggestion,
+  }) async {
+    final res = await _dio.post(
+      '/suggestions/followed',
+      data: {
+        'entry_id': entryId,
+        'source': source,
+        'score_at_suggestion': ?scoreAtSuggestion,
+        'verdict_at_suggestion': ?verdictAtSuggestion,
+      },
+    );
+    return FollowedSuggestion.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> deleteFollowedSuggestion(int id) async {
+    await _dio.delete('/suggestions/followed/$id');
+  }
+
+  Future<OnboardingState> getOnboarding() async {
+    final res = await _dio.get('/onboarding');
+    return OnboardingState.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<OnboardingState> completeOnboarding({required bool skipped}) async {
+    final res = await _dio.post('/onboarding/complete', data: {'skipped': skipped});
+    return OnboardingState.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<DividendsReceived> getDividendsReceived({double? estimatedMonthly}) async {

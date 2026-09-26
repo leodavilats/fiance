@@ -12,6 +12,7 @@ import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
+import '../../core/widgets/score_ruler.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/provenance.dart';
 
@@ -307,7 +308,6 @@ class _Allocation extends StatelessWidget {
   Widget build(BuildContext context) {
     final a = allocation;
     final brightness = Theme.of(context).brightness;
-    final band = a.score != null ? fiScoreBandFor(a.score!, null) : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
@@ -336,15 +336,20 @@ class _Allocation extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: FiSpace.s3),
-                if (band != null)
-                  FiTag(label: band.label, state: band.state)
-                else
-                  FiTag.series(
-                    label: categoryLabel(a.category),
-                    color: categoryColor(a.category, brightness),
-                  ),
+                FiTag.series(
+                  label: categoryLabel(a.category),
+                  color: categoryColor(a.category, brightness),
+                ),
               ],
             ),
+            if (a.score != null) ...[
+              const SizedBox(height: FiSpace.s3),
+              ScoreRuler(
+                score: a.score!,
+                size: ScoreRulerSize.list,
+                subject: 'Score de ${a.ticker}',
+              ),
+            ],
             const SizedBox(height: FiSpace.s3),
             FiFigures(
               rule: false,

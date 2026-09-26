@@ -199,6 +199,11 @@ class _WhereItComesFrom extends ConsumerWidget {
             ),
             onTap: () => context.go('/patrimonio/razao'),
           ),
+          FiDataRow(
+            label: 'Sugestões seguidas',
+            detail: 'O resultado das compras feitas a partir de uma leitura, contra o Ibovespa',
+            onTap: () => context.go('/patrimonio/seguidas'),
+          ),
         ],
       ),
     );

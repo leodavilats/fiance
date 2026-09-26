@@ -273,6 +273,7 @@ class _BuyFooter extends ConsumerWidget {
                 ref,
                 ticker: analysis.symbol,
                 currentPrice: analysis.price,
+                verdict: analysis.verdict,
               );
               if (registrou && context.mounted) Navigator.of(context).pop();
             },

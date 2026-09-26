@@ -865,6 +865,7 @@
     "items[].beat_ibov",
     "items[].current_value",
     "items[].days_held",
+    "items[].entry_id",
     "items[].followed_on",
     "items[].ibov_pct_since",
     "items[].id",
@@ -1354,6 +1355,7 @@
     "beat_ibov",
     "current_value",
     "days_held",
+    "entry_id",
     "followed_on",
     "ibov_pct_since",
     "id",
@@ -1370,13 +1372,14 @@
   ],
   "POST /api/v1/suggestions/followed (entrada)": [
     "action",
+    "entry_id",
     "followed_on",
     "note",
-    "price!",
-    "quantity!",
+    "price",
+    "quantity",
     "score_at_suggestion",
     "source",
-    "ticker!",
+    "ticker",
     "verdict_at_suggestion"
   ],
   "POST /api/v1/telemetry/verify": [

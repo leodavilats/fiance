@@ -4,6 +4,7 @@ import 'api_client.dart';
 import 'api_repository.dart';
 import 'auth_service.dart';
 import 'cash_models.dart';
+import 'ledger_models.dart';
 import 'month.dart';
 import 'models.dart';
 import 'notifications_service.dart';
@@ -233,3 +234,25 @@ final pendingDividendsProvider = FutureProvider.autoDispose<DividendPending>((
 ) {
   return ref.watch(apiRepositoryProvider).getDividendsPending();
 });
+
+final reconciliationProvider = FutureProvider.autoDispose<Reconciliation>((ref) {
+  return ref.watch(apiRepositoryProvider).getReconciliation();
+});
+
+final followedSuggestionsProvider = FutureProvider.autoDispose<FollowedSuggestions>((ref) {
+  return ref.watch(apiRepositoryProvider).getFollowedSuggestions();
+});
+
+final onboardingProvider = FutureProvider.autoDispose<OnboardingState>((ref) {
+  return ref.watch(apiRepositoryProvider).getOnboarding();
+});
+
+void invalidateLedgerReaders(WidgetRef ref) {
+  ref.invalidate(ledgerProvider);
+  ref.invalidate(filteredLedgerProvider);
+  ref.invalidate(portfolioProvider);
+  ref.invalidate(dashboardProvider);
+  ref.invalidate(reconciliationProvider);
+  ref.invalidate(followedSuggestionsProvider);
+  ref.invalidate(onboardingProvider);
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/labels.dart';
@@ -109,11 +110,17 @@ class LedgerScreen extends ConsumerWidget {
                     body: 'O livro-razão é a fonte da sua carteira: a posição, o preço médio e a '
                         'apuração de imposto são reconstruídos a partir dele, nunca guardados '
                         'em separado.',
-                    hint: 'Registre uma compra, uma venda ou um evento corporativo.',
+                    hint: 'Registre uma compra, uma venda ou um evento corporativo — ou traga '
+                        'o extrato da corretora de uma vez.',
                     action: FiButton.primary(
                       label: 'Registrar lançamento',
                       icon: Icons.add,
                       onPressed: () => openLedgerEntryForm(context, ref),
+                    ),
+                    secondary: FiButton.secondary(
+                      label: 'Importar extrato',
+                      icon: Icons.upload_file_outlined,
+                      onPressed: () => context.push('/patrimonio/razao/importar'),
                     ),
                   ),
                 ],
@@ -534,6 +541,23 @@ class _Header extends StatelessWidget {
           source: 'Seus lançamentos — registrados aqui ou importados de extrato.',
           limitation: 'Uma declaração de posição ancora a linha do tempo: compra com data '
               'anterior a ela é descartada, porque já está dentro do que foi declarado.',
+        ),
+        const SizedBox(height: FiSpace.s3),
+        Wrap(
+          spacing: FiSpace.s2,
+          runSpacing: FiSpace.s2,
+          children: [
+            FiButton.secondary(
+              label: 'Importar extrato',
+              icon: Icons.upload_file_outlined,
+              onPressed: () => context.push('/patrimonio/razao/importar'),
+            ),
+            FiButton.quiet(
+              label: 'Conferir com o razão',
+              icon: Icons.fact_check_outlined,
+              onPressed: () => context.push('/patrimonio/razao/conferir'),
+            ),
+          ],
         ),
       ],
     );
