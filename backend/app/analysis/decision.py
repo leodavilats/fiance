@@ -15,6 +15,7 @@ from app.analysis.fair_price import (
     margin_exact,
 )
 from app.analysis.fii_segments import SEGMENT_PAPER
+from app.analysis.texto import numero, pct, reais
 
 MOS_STRONG_BUY = 0.30
 
@@ -115,16 +116,22 @@ def verdict_for(fair: FairPriceResult) -> Verdict:
 
 _TREND_PHRASES = {
     TREND_BASIS_LONG: {
-        "up": "média de 50 dias acima da de 200",
-        "down": "média de 50 dias abaixo da de 200",
+        "up": "a média do preço nos últimos 50 dias está acima da média dos últimos 200",
+        "down": "a média do preço nos últimos 50 dias está abaixo da média dos últimos 200",
     },
     TREND_BASIS_SHORT: {
-        "up": "média de 20 dias acima da de 50, histórico curto",
-        "down": "média de 20 dias abaixo da de 50, histórico curto",
+        "up": (
+            "a média do preço nos últimos 20 dias está acima da média dos últimos 50, com "
+            "histórico curto"
+        ),
+        "down": (
+            "a média do preço nos últimos 20 dias está abaixo da média dos últimos 50, com "
+            "histórico curto"
+        ),
     },
     TREND_BASIS_NONE: {
-        "up": "médias móveis do período disponível",
-        "down": "médias móveis do período disponível",
+        "up": "pela média do preço no período disponível",
+        "down": "pela média do preço no período disponível",
     },
 }
 
@@ -133,82 +140,92 @@ def _trend_phrase(basis: str | None) -> dict[str, str]:
     return _TREND_PHRASES.get(basis or TREND_BASIS_NONE, _TREND_PHRASES[TREND_BASIS_NONE])
 
 
-def _pct(valor: float, casas: int = 1) -> str:
-    return f"{valor * 100:.{casas}f}%"
-
-
-def _brl(valor: float | None) -> str:
-    return f"R$ {valor or 0:.2f}"
-
-
 def _band_reason(fair: FairPriceResult, price: float) -> str:
-    faixa = f"{_brl(fair.fair_low)} a {_brl(fair.fair_high)}"
+    faixa = f"que vai de {reais(fair.fair_low)} a {reais(fair.fair_high)}"
     mos = fair.margin_of_safety or 0.0
 
     if mos > 0:
-        return f"O preço está {_pct(mos)} abaixo do piso da faixa de preço justo ({faixa})."
+        return f"O preço está {pct(mos)} abaixo do piso da faixa de preço justo, {faixa}."
     if mos < 0:
         return (
-            f"O preço está {_pct(price / fair.fair_high - 1)} acima do teto da faixa de preço "
-            f"justo ({faixa})."
+            f"O preço está {pct(price / fair.fair_high - 1)} acima do teto da faixa de preço "
+            f"justo, {faixa}."
         )
 
     onde = fair.band_position
     lugar = ""
     if onde is not None:
         lugar = (
-            " — mais perto do piso"
+            ", mais perto do piso"
             if onde <= 0.33
-            else " — mais perto do teto"
+            else ", mais perto do teto"
             if onde >= 0.67
-            else " — no meio dela"
+            else ", no meio dela"
         )
     return (
-        f"O preço está dentro da faixa de preço justo ({faixa}): não há margem a favor nem "
-        f"contra{lugar}."
+        f"O preço está dentro da faixa de preço justo, {faixa}{lugar}: não há folga a favor "
+        "nem excesso contra."
     )
+
+
+def _value_reason(fair: FairPriceResult) -> str:
+    if fair.principal == PRINCIPAL_EARNINGS:
+        return (
+            f"Vale cerca de {reais(fair.principal_value)} pelo lucro que a empresa pode "
+            "distribuir sem deixar de crescer."
+        )
+    return (
+        f"Vale cerca de {reais(fair.principal_value)} pelo que o fundo distribui num ano "
+        f"típico, {reais(fair.premises['dividend_recurring'])} por cota."
+    )
+
+
+def _rate_base(fair: FairPriceResult) -> str:
+    if fair.premises.get("rate_base") == RATE_BASE_AVERAGE:
+        return "a Selic média de 10 anos, o juro básico do país"
+    return "a Selic do dia, o juro básico do país, sem a série de 10 anos"
 
 
 def _premise_reason(fair: FairPriceResult) -> str:
     p = fair.premises
-    base = (
-        "Selic média de 10 anos"
-        if p.get("rate_base") == RATE_BASE_AVERAGE
-        else "Selic do dia, sem a série de 10 anos"
-    )
+    base = _rate_base(fair)
 
     if fair.principal == PRINCIPAL_EARNINGS:
         texto = (
-            f"Vale cerca de {_brl(fair.principal_value)} pelo lucro que a empresa pode distribuir sem "
-            f"deixar de crescer: taxa exigida de {_pct(p['discount_rate'])} ({base} mais 5 "
-            f"pontos), crescimento de {_pct(p['growth'])} ao ano por {p['explicit_years']} anos "
-            f"— o ROE de {_pct(p['roe'], 0)} vezes o que ela retém — e "
-            f"{_pct(p['long_run_growth'])} depois. A faixa cobre esse cenário e o sem "
-            "crescimento, em que ela distribui todo o lucro, com 1 ponto de taxa a mais e a menos."
+            f"Na conta, a taxa exigida — o retorno mínimo para o investimento valer a pena — é "
+            f"de {pct(p['discount_rate'])} ao ano: {base}, mais 5 pontos. O lucro cresce "
+            f"{pct(p['growth'])} ao ano por {p['explicit_years']} anos — o retorno sobre o "
+            f"patrimônio (ROE) de {pct(p['roe'], 0)} vezes a parte do lucro que a empresa "
+            f"retém — e {pct(p['long_run_growth'])} depois. A faixa cobre esse cenário e o de "
+            "não crescer e distribuir todo o lucro, com 1 ponto de taxa a mais e a menos."
         )
         if p.get("growth_creates_value") is False:
             texto += (
-                f" Aqui crescer consome valor: o ROE de {_pct(p['roe'], 0)} não paga a taxa "
-                f"exigida, e distribuindo todo o lucro ela valeria {_brl(p['value_without_growth'])}."
+                f" Aqui crescer consome valor: o ROE de {pct(p['roe'], 0)} não paga a taxa "
+                f"exigida, e distribuindo todo o lucro a empresa valeria "
+                f"{reais(p['value_without_growth'])}."
             )
         return texto
 
     texto = (
-        f"Vale cerca de {_brl(fair.principal_value)} pela distribuição recorrente de "
-        f"{_brl(p['dividend_recurring'])} por cota ao ano, exigindo yield de "
-        f"{_pct(p['fii_yield'])}: o juro real de longo prazo ({base} menos a meta de inflação "
-        f"de {_pct(p['inflation_target'], 0)}, com piso de {_pct(p['real_rate_floor'], 0)}) mais "
-        f"{_pct(p['fii_premium'], 0)} de prêmio"
+        f"Na conta, o rendimento exigido do fundo é de {pct(p['fii_yield'])} ao ano: o juro "
+        f"real de longo prazo, que é o que sobra acima da inflação ({base}, menos a meta de "
+        f"inflação de {pct(p['inflation_target'], 0)}, com piso de "
+        f"{pct(p['real_rate_floor'], 0)}), mais {pct(p['fii_premium'], 0)} de prêmio pelo risco"
     )
     if p.get("fii_segment") == SEGMENT_PAPER:
         texto += (
-            ", mais a meta de inflação, porque o fundo é de papel: a distribuição dele já traz a "
-            "correção monetária dos recebíveis, e o principal não cresce com ela"
+            ", mais a meta de inflação, porque o fundo é de papel: ele vive de dívidas "
+            "imobiliárias, e o que distribui já traz a correção pela inflação, sem que o valor "
+            "emprestado cresça com ela"
         )
-    return texto + ". A faixa vai de 1 ponto a mais a 1 ponto a menos de yield."
+    return texto + ". A faixa vai de 1 ponto a mais a 1 ponto a menos de rendimento exigido."
 
 
-_CONFIRMATION_NAME = {"bazin": "Pelos dividendos", "vpa": "Pelo valor patrimonial"}
+_CONFIRMATION_NAME = {
+    "bazin": "pelos dividendos,",
+    "vpa": "pelo valor patrimonial, o patrimônio do fundo dividido pelas cotas,",
+}
 
 
 def _confirmation_reason(fair: FairPriceResult) -> str | None:
@@ -219,13 +236,13 @@ def _confirmation_reason(fair: FairPriceResult) -> str | None:
     nome = _CONFIRMATION_NAME.get(c["method"], c["method"])
     valor = c["value"]
     if c["agreement"] == AGREEMENT_INSIDE:
-        return f"{nome}, {_brl(valor)}: dentro da faixa, e a confirma por outro insumo."
+        return f"Uma segunda conta, {nome} dá {reais(valor)}: cai dentro da faixa e a confirma."
 
     lado = "abaixo do piso" if valor < fair.fair_low else "acima do teto"
     referencia = fair.fair_low if valor < fair.fair_low else fair.fair_high
     return (
-        f"{nome}, {_brl(valor)}: {_pct(abs(valor / referencia - 1), 0)} {lado}. A outra leitura "
-        "não confirma a faixa."
+        f"Uma segunda conta, {nome} dá {reais(valor)}, {pct(abs(valor / referencia - 1), 0)} "
+        f"{lado}: não confirma a faixa."
     )
 
 
@@ -234,15 +251,15 @@ def _personal_reason(fair: FairPriceResult, price: float | None) -> str | None:
     if not teto or not price:
         return None
 
-    meta = _pct(fair.desired_yield_used, 0)
+    meta = pct(fair.desired_yield_used, 0)
     if price <= teto:
         return (
-            f"Cabe na sua meta de renda: para render os {meta} que você pediu, o preço-teto é "
-            f"{_brl(teto)}, e o de hoje está abaixo."
+            f"Cabe na sua meta de renda: para render os {meta} ao ano que você pediu em "
+            f"proventos, o preço-teto é {reais(teto)}, e o de hoje está abaixo."
         )
     return (
-        f"Não cabe na sua meta de renda: para render os {meta} que você pediu, o preço-teto é "
-        f"{_brl(teto)}, abaixo do de hoje."
+        f"Não cabe na sua meta de renda: para render os {meta} ao ano que você pediu em "
+        f"proventos, o preço-teto é {reais(teto)}, abaixo do de hoje."
     )
 
 
@@ -258,37 +275,39 @@ def _context_reasons(fair: FairPriceResult, tech: TechnicalSnapshot | None) -> l
     reasons: list[str] = []
 
     if fair.pvp:
+        pvp = f"Preço sobre valor patrimonial (P/VP) de {numero(fair.pvp)}"
         if fair.pvp < 1:
-            reasons.append(
-                f"P/VP {fair.pvp:.2f}: negociando abaixo do valor patrimonial (desconto)."
-            )
+            reasons.append(f"{pvp}: paga-se menos que o patrimônio que está no balanço.")
         elif fair.pvp > 1:
-            reasons.append(f"P/VP {fair.pvp:.2f}: negociando acima do valor patrimonial (ágio).")
+            reasons.append(f"{pvp}: paga-se mais que o patrimônio que está no balanço.")
         else:
-            reasons.append(f"P/VP {fair.pvp:.2f}: no valor patrimonial.")
+            reasons.append(f"{pvp}: paga-se o patrimônio que está no balanço.")
 
     if tech:
         base = _trend_phrase(getattr(tech, "trend_basis", TREND_BASIS_NONE))
 
         if tech.trend == "uptrend":
             reasons.append(
-                f"Tendência de alta ({base['up']}) — é contexto de preço, e não muda a leitura "
+                f"O preço vem subindo: {base['up']}. É contexto de preço, e não muda a leitura "
                 "de valor."
             )
         elif tech.trend == "downtrend":
             reasons.append(
-                f"Tendência de baixa ({base['down']}) — é contexto de preço, e não muda a "
-                "leitura de valor."
+                f"O preço vem caindo: {base['down']}. É contexto de preço, e não muda a leitura "
+                "de valor."
             )
 
         if tech.rsi_14 is not None:
+            forca = f"o índice de força relativa (RSI) está em {tech.rsi_14:.0f}, de 0 a 100"
             if tech.rsi_14 >= 70:
                 reasons.append(
-                    f"RSI {tech.rsi_14:.0f}: o preço subiu rápido — contexto, não leitura de valor."
+                    f"O preço subiu rápido em pouco tempo: {forca}. É contexto, não leitura de "
+                    "valor."
                 )
             elif tech.rsi_14 <= 30:
                 reasons.append(
-                    f"RSI {tech.rsi_14:.0f}: o preço caiu rápido — contexto, não leitura de valor."
+                    f"O preço caiu rápido em pouco tempo: {forca}. É contexto, não leitura de "
+                    "valor."
                 )
 
     return reasons
@@ -306,27 +325,28 @@ def decide(
     basis = BASIS_BAND if tem_faixa else BASIS_NONE
     banda = _verdict_from_mos(_margin_for_verdict(fair))
     verdict = verdict_for(fair)
+    tem_principal = fair.principal in (PRINCIPAL_EARNINGS, PRINCIPAL_DIVIDENDS)
 
     if tem_faixa:
         if current_price:
             reasons.append(_band_reason(fair, current_price))
         else:
             reasons.append(
-                f"Sem cotação: a faixa de preço justo é de {_brl(fair.fair_low)} a "
-                f"{_brl(fair.fair_high)}, e não há preço para comparar com ela."
+                f"Sem cotação: a faixa de preço justo vai de {reais(fair.fair_low)} a "
+                f"{reais(fair.fair_high)}, e não há preço para comparar com ela."
             )
-        if fair.principal in (PRINCIPAL_EARNINGS, PRINCIPAL_DIVIDENDS):
-            reasons.append(_premise_reason(fair))
-        confirmacao = _confirmation_reason(fair)
-        if confirmacao:
-            reasons.append(confirmacao)
-        if fair.quality_reasons:
-            reasons.append("Qualidade da faixa: " + "; ".join(fair.quality_reasons) + ".")
         if verdict != banda:
             reasons.append(
                 "Com evidência frágil, a leitura não passa de "
                 f"'{LABELS[verdict].lower()}', mesmo com a margem que tem."
             )
+        if tem_principal:
+            reasons.append(_value_reason(fair))
+        confirmacao = _confirmation_reason(fair)
+        if confirmacao:
+            reasons.append(confirmacao)
+        if fair.quality_reasons:
+            reasons.append("Qualidade da faixa: " + "; ".join(fair.quality_reasons) + ".")
     else:
         reasons.append(_no_band_reason(fair))
 
@@ -334,15 +354,18 @@ def decide(
     if pessoal:
         reasons.append(pessoal)
 
+    if tem_faixa and tem_principal:
+        reasons.append(_premise_reason(fair))
+
     reasons.extend(_context_reasons(fair, tech))
 
     if avg_cost and current_price:
         pnl_pct = (current_price - avg_cost) / avg_cost * 100
 
         if pnl_pct >= 0:
-            reasons.append(f"Você está com lucro de {pnl_pct:.1f}% nesta posição.")
+            reasons.append(f"Você está com lucro de {numero(pnl_pct, 1)}% nesta posição.")
         else:
-            reasons.append(f"Você está com prejuízo de {abs(pnl_pct):.1f}% nesta posição.")
+            reasons.append(f"Você está com prejuízo de {numero(abs(pnl_pct), 1)}% nesta posição.")
 
         if fair.margin_of_safety is not None and fair.margin_of_safety < MOS_SELL and pnl_pct > 30:
             reasons.append(

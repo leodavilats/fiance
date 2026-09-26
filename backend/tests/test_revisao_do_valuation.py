@@ -200,7 +200,9 @@ class TestVocabulario:
     def test_a_razao_declara_as_premissas(self):
         dec = decide(_acao(), current_price=10.0)
 
-        assert any("taxa exigida de 14.5%" in m for m in dec.reasons)
+        assert any("taxa exigida" in m and "14,5% ao ano" in m for m in dec.reasons), (
+            "a premissa que sustenta o preço justo sai com o número, e o número em português"
+        )
         assert any("Selic média de 10 anos" in m for m in dec.reasons)
 
 

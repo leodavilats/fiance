@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from app.analysis.fii_segments import SEGMENT_PAPER, fii_segment
+from app.analysis.texto import numero
 from app.core.brt import BRT, now_brt
 
 DESIRED_YIELD_STOCK = 0.06
@@ -58,16 +59,16 @@ METHOD_INPUT = {
 
 _NO_METHOD_NOTE = {
     "etf": (
-        "ETF de índice não tem método de preço justo: o preço dele acompanha o valor da carteira "
-        "que carrega, e a distribuição é política do fundo"
+        "ETF é fundo que copia um índice, e não tem conta de preço justo: o preço dele acompanha "
+        "o valor da carteira que carrega, e a distribuição é política do fundo"
     ),
     "bdr": (
-        "a taxa de desconto disponível é em reais, e o lucro de uma empresa estrangeira não é: "
-        "descontá-lo pela Selic faria todo BDR parecer caro"
+        "BDR é recibo de ação de empresa estrangeira, e o juro disponível para a conta é em "
+        "reais, enquanto o lucro dela não é: fazer a conta pela Selic faria todo BDR parecer caro"
     ),
 }
 
-_NO_METHOD_FALLBACK = "esta classe de ativo não tem método de preço justo"
+_NO_METHOD_FALLBACK = "este tipo de ativo não tem conta de preço justo"
 
 
 def desired_yield_for(asset_type: str, prefs: dict | None = None) -> float:
@@ -622,8 +623,8 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
         return _Lens(
             status="sem_dado",
             note=(
-                "o LPA e o lucro informado para o período têm sinais opostos: um dos dois está "
-                "errado"
+                "o lucro por ação e o lucro total informados para o período têm sinais opostos: "
+                "um dos dois está errado"
             ),
         )
     if eps is None:
@@ -633,12 +634,15 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
     if d is None:
         return _Lens(
             status="sem_juro",
-            note="sem juro de referência não há taxa para descontar o lucro",
+            note="sem o juro de referência do Banco Central, não há taxa exigida para a conta",
         )
     if inputs.roe is None:
         return _Lens(
             status="sem_dado",
-            note="sem ROE não há como saber quanto do lucro a empresa pode distribuir e crescer",
+            note=(
+                "sem o retorno sobre o patrimônio (ROE), não há como saber quanto do lucro a "
+                "empresa pode distribuir e ainda crescer"
+            ),
         )
     if inputs.roe <= LONG_RUN_GROWTH:
         return _Lens(
@@ -649,7 +653,10 @@ def _earnings_lens(inputs: FairPriceInputs) -> _Lens:
             ),
         )
     if d - RATE_SHOCK <= LONG_RUN_GROWTH:
-        return _Lens(status="taxa_implausivel", note="taxa de desconto abaixo do crescimento")
+        return _Lens(
+            status="taxa_implausivel",
+            note="a taxa exigida fica abaixo do crescimento de longo prazo, e a conta não fecha",
+        )
     if not inputs.dividends_known:
         return _Lens(
             status="sem_dado",
@@ -712,7 +719,10 @@ def _dividend_lens(inputs: FairPriceInputs) -> _Lens:
     if y is None:
         return _Lens(
             status="sem_juro",
-            note="sem juro de referência não há yield exigido para capitalizar a distribuição",
+            note=(
+                "sem o juro de referência do Banco Central, não há rendimento exigido para "
+                "transformar a distribuição em valor"
+            ),
         )
     if papel:
         y = round(y + INFLATION_TARGET, 4)
@@ -742,7 +752,8 @@ def _stock_confirmation(inputs: FairPriceInputs, lens: _Lens) -> dict:
             "bazin",
             "confirmacao",
             "sem_dado",
-            f"menos de {MIN_DIVIDEND_YEARS} anos com dividendo: não há série para confirmar o lucro",
+            f"menos de {MIN_DIVIDEND_YEARS} anos com dividendo: não há histórico para confirmar "
+            "a conta pelo lucro",
         )
     if lens.premises.get("payout", 0.0) < LOW_PAYOUT:
         return _method(
@@ -785,56 +796,54 @@ def _quality(
     if principal == PRINCIPAL_EARNINGS:
         if inputs.earnings_years < EARNINGS_YEARS:
             frageis.append(
-                f"o lucro vem de {inputs.earnings_years or 'nenhum'} exercício(s) anual(is), e "
-                f"normalizá-lo exige {EARNINGS_YEARS}"
+                f"há lucro de {inputs.earnings_years or 'nenhum'} ano(s) fechado(s), e a média "
+                f"exige {EARNINGS_YEARS}"
             )
         if inputs.earnings_unstable:
             frageis.append(
-                "o lucro oscila demais entre os exercícios: o dos últimos 12 meses se afasta da "
+                "o lucro oscila demais de um ano para outro: o dos últimos 12 meses se afasta da "
                 "média, ou algum ano teve prejuízo"
             )
     elif _anos_pagos(inputs) < MIN_DIVIDEND_YEARS:
         frageis.append(
-            f"a distribuição tem {_anos_pagos(inputs)} ano(s) completo(s) com pagamento, e o "
-            f"recorrente exige {MIN_DIVIDEND_YEARS}"
+            f"a distribuição tem {_anos_pagos(inputs)} ano(s) completo(s) com pagamento, e a "
+            f"média de um ano típico exige {MIN_DIVIDEND_YEARS}"
         )
 
     if inputs.dividend_cut:
         frageis.append(
-            "a distribuição mais recente caiu para menos da metade da média: o recorrente usa a "
-            "mais recente"
+            "a distribuição mais recente caiu para menos da metade da média: a conta usa a mais "
+            "recente"
         )
 
     concordancia = confirmacao.get("agreement")
     if confirmacao["status"] != "ok":
-        amplas.append(f"sem confirmação independente — {confirmacao['note']}")
+        amplas.append(f"sem confirmação por outro dado — {confirmacao['note']}")
     elif concordancia == AGREEMENT_FAR and principal == PRINCIPAL_EARNINGS:
         amplas.append(
-            f"a leitura pelos dividendos fica a mais de {CONFIRMATION_TOLERANCE:.0%} da faixa: ela "
-            "usa a mesma taxa e o crescimento do principal, e se afasta dele quando o payout se "
-            "afasta do que o modelo distribui no longo prazo"
+            f"a conta pelos dividendos fica a mais de {CONFIRMATION_TOLERANCE:.0%} da faixa: ela "
+            "usa a mesma taxa e o mesmo crescimento da conta principal, e se afasta dela quando a "
+            "parte do lucro que a empresa distribui foge do que o modelo supõe no longo prazo"
         )
     elif concordancia == AGREEMENT_FAR:
-        frageis.append(
-            f"a leitura de confirmação discorda da faixa em mais de {CONFIRMATION_TOLERANCE:.0%}"
-        )
+        frageis.append(f"a segunda conta discorda da faixa em mais de {CONFIRMATION_TOLERANCE:.0%}")
     elif concordancia == AGREEMENT_NEAR:
         amplas.append(
-            f"a leitura de confirmação fica fora da faixa, a até {CONFIRMATION_TOLERANCE:.0%} dela"
+            f"a segunda conta fica fora da faixa, a até {CONFIRMATION_TOLERANCE:.0%} dela"
         )
 
     largura = lens.high / lens.low if lens.low and lens.high else None
     if principal == PRINCIPAL_EARNINGS and largura and largura > WIDE_BAND_RATIO:
         amplas.append(
-            f"a faixa é larga: o teto passa de {WIDE_BAND_RATIO:.1f}× o piso, porque a premissa "
-            "de crescimento pesa muito"
+            f"a faixa é larga: o teto passa de {numero(WIDE_BAND_RATIO, 1)} vez o piso, porque a "
+            "premissa de crescimento pesa muito"
         )
 
     if frageis:
         return "fragil", frageis
     if amplas:
         return "ampla", amplas
-    return "firme", ["a faixa é estreita e a leitura de confirmação cai dentro dela"]
+    return "firme", ["a faixa é estreita, e a segunda conta cai dentro dela"]
 
 
 def _indicators(inputs: FairPriceInputs, desired_yield: float) -> tuple[list[dict], float | None]:
@@ -849,8 +858,8 @@ def _indicators(inputs: FairPriceInputs, desired_yield: float) -> tuple[list[dic
                 "value": graham,
                 "passes": bool(price and price <= graham),
                 "note": (
-                    "critério do investidor defensivo de Graham: P/L vezes P/VP até 22,5. É "
-                    "triagem, não preço justo"
+                    "filtro de Graham para o investidor defensivo: preço sobre lucro (P/L) vezes "
+                    "preço sobre valor patrimonial (P/VP) até 22,5. É filtro, não preço justo"
                 ),
             }
         )
@@ -887,7 +896,7 @@ def _no_band_methods(inputs: FairPriceInputs, lens: _Lens | None, principal: str
             if lens
             else _method("dcf", "principal", "sem_dado")
         )
-        metodos.append(_method("vpa", "inaplicavel", "inaplicavel", "vale para FII"))
+        metodos.append(_method("vpa", "inaplicavel", "inaplicavel", "vale para fundo imobiliário"))
     else:
         metodos.append(
             _method("bazin", "principal", lens.status, lens.note)
@@ -960,7 +969,7 @@ def fair_price_from_inputs(
         metodos = [
             _method("dcf", "principal", "ok", valor=lens.central),
             confirmacao,
-            _method("vpa", "inaplicavel", "inaplicavel", "vale para FII"),
+            _method("vpa", "inaplicavel", "inaplicavel", "vale para fundo imobiliário"),
         ]
     else:
         confirmacao = _fii_confirmation(inputs, lens)

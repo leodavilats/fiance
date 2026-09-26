@@ -11,6 +11,7 @@ from app.analysis.decision import (
     MOS_STRONG_SELL,
 )
 from app.analysis.fair_price import PRINCIPAL_DIVIDENDS, PRINCIPAL_EARNINGS, FairPriceResult
+from app.analysis.texto import pct, reais
 
 _BANDS: tuple[tuple[float, str], ...] = (
     (MOS_STRONG_BUY, "STRONG_BUY"),
@@ -81,7 +82,7 @@ def _price_falsifiers(
             saida.append(
                 Falsifier(
                     metric="price",
-                    condition=f"O preço cair para R$ {alvo_preco:.2f} ou menos",
+                    condition=f"O preço cair para {reais(alvo_preco)} ou menos",
                     becomes=alvo,
                     becomes_label=LABELS.get(alvo, alvo),
                     current=price,
@@ -97,7 +98,7 @@ def _price_falsifiers(
             saida.append(
                 Falsifier(
                     metric="price",
-                    condition=f"O preço subir para R$ {alvo_preco:.2f} ou mais",
+                    condition=f"O preço subir para {reais(alvo_preco)} ou mais",
                     becomes=alvo,
                     becomes_label=LABELS.get(alvo, alvo),
                     current=price,
@@ -123,9 +124,9 @@ def _growth_falsifier(fair: FairPriceResult, price: float) -> Falsifier | None:
     return Falsifier(
         metric="growth",
         condition=(
-            f"O crescimento de {crescimento * 100:.1f}% ao ano não se confirmar: sem ele, o "
-            f"valor cai de R$ {fair.principal_value:.2f} para R$ {sem_crescimento:.2f}, abaixo do "
-            "preço de hoje"
+            f"O crescimento do lucro, de {pct(crescimento)} ao ano, não se confirmar: sem ele, o "
+            f"valor cai de {reais(fair.principal_value)} para {reais(sem_crescimento)}, abaixo "
+            "do preço de hoje"
         ),
         becomes="REVIEW",
         becomes_label="Rever a tese",
@@ -143,15 +144,16 @@ def _rate_falsifier(fair: FairPriceResult, price: float) -> Falsifier | None:
     if not equilibrio or not taxa or abs(equilibrio - taxa) < 0.001:
         return None
 
+    taxa_exigida = "A taxa exigida, o retorno mínimo que a conta pede ao ano,"
     if equilibrio > taxa:
         condicao = (
-            f"A taxa exigida subir de {taxa * 100:.1f}% para {equilibrio * 100:.1f}%: aí o "
-            "preço de hoje deixa de ter folga sobre o valor"
+            f"{taxa_exigida} subir de {pct(taxa)} para {pct(equilibrio)}: aí o preço de hoje "
+            "deixa de ter folga sobre o valor"
         )
     else:
         condicao = (
-            f"A taxa exigida cair de {taxa * 100:.1f}% para {equilibrio * 100:.1f}%: aí o preço "
-            "de hoje passa a ser justificado"
+            f"{taxa_exigida} cair de {pct(taxa)} para {pct(equilibrio)}: aí o preço de hoje "
+            "passa a ser justificado"
         )
 
     return Falsifier(
@@ -179,9 +181,9 @@ def _dividend_falsifier(fair: FairPriceResult, price: float) -> Falsifier | None
         "A distribuição ser suspensa por completo"
         if corte >= 0.995
         else (
-            f"A distribuição recorrente cair {corte * 100:.0f}% "
-            f"(de R$ {dividendo:.2f} para R$ {dividendo_alvo:.2f} por cota ao ano) — aí o "
-            "preço de hoje deixa de ser justificado por ela"
+            f"O que o fundo distribui num ano típico cair {pct(corte, 0)}, de "
+            f"{reais(dividendo)} para {reais(dividendo_alvo)} por cota: aí o preço de hoje "
+            "deixa de ser justificado pela distribuição"
         )
     )
 
