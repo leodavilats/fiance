@@ -122,7 +122,7 @@ dynamic _resposta(String caminho, Estado estado) {
       'preferred_categories': <String>[],
       'preferred_sectors': <String>[],
       'excluded_tickers': <String>[],
-      'density': 'comfortable',
+      'detail_level': 'completo',
       'desired_yield_stock': 0.06,
       'desired_yield_fii': 0.10,
       'desired_yield_bdr': 0.04,
@@ -181,6 +181,86 @@ dynamic _resposta(String caminho, Estado estado) {
     };
   }
 
+  if (caminho.contains('/transactions/reconciliation')) {
+    return {
+      'positions': isEmpty ? 3 : 4,
+      'projected': 3,
+      'in_sync': isEmpty,
+      'differences': isEmpty
+          ? <dynamic>[]
+          : [
+              {
+                'ticker': 'ITSA4',
+                'reason': 'posicao_sem_razao',
+                'stored': {'ticker': 'ITSA4', 'quantity': 300.0, 'avg_price': 9.84},
+                'projected': null,
+              },
+              {
+                'ticker': 'PETR4',
+                'reason': 'quantidade',
+                'stored': {'ticker': 'PETR4', 'quantity': 180.0, 'avg_price': 38.42},
+                'projected': {'symbol': 'PETR4', 'quantity': 200.0, 'avg_price': 38.42},
+              },
+            ],
+    };
+  }
+
+  if (caminho.contains('/suggestions/followed')) {
+    if (isEmpty) {
+      return {
+        ..._vazio(),
+        'summary': 'Nenhuma sugestão marcada como seguida ainda. Ao registrar as que você '
+            'executar, esta tela mostra o resultado — e você pode auditar o produto.',
+      };
+    }
+    return {
+      'items': [
+        {
+          'id': 1,
+          'ticker': 'BBAS3',
+          'source': 'opportunities',
+          'action': 'comprar',
+          'quantity': 100.0,
+          'price': 24.10,
+          'followed_on': '2026-06-02',
+          'entry_id': 7,
+          'invested': 2410.0,
+          'current_value': 2688.0,
+          'pnl': 278.0,
+          'pnl_pct': 11.54,
+          'days_held': 116,
+          'ibov_pct_since': 4.2,
+          'beat_ibov': true,
+          'score_at_suggestion': 78.0,
+        },
+      ],
+      'total_invested': 2410.0,
+      'total_current_value': 2688.0,
+      'total_pnl': 278.0,
+      'total_pnl_pct': 11.54,
+      'ibov_pct_same_period': 4.2,
+      'beat_ibov': true,
+      'by_source': <dynamic>[],
+      'summary': 'A 1 compra que você fez a partir de sugestões está +11,5% contra +4,2% do '
+          'Ibovespa no período — acima do índice.',
+      'total_count': 1,
+      'has_more': false,
+    };
+  }
+
+  if (caminho.contains('/onboarding')) {
+    return {
+      'step': isEmpty ? 2 : 3,
+      'total_steps': 3,
+      'completed': false,
+      'positions': isEmpty ? 0 : 6,
+      'has_goals': false,
+      'reason': isEmpty
+          ? 'Falta registrar a primeira posição.'
+          : 'Falta definir a primeira meta de alocação.',
+    };
+  }
+
   return isEmpty ? _vazio() : _cheio(caminho);
 }
 
@@ -235,7 +315,7 @@ Map<String, dynamic> _posicao(
     'reasons': <String>[],
     'confidence': 0.75,
     'data_years': 5,
-    'consensus_methods': 3,
+    'independent_inputs': 1,
     'trend_basis': 'long',
   };
 }
@@ -257,13 +337,13 @@ dynamic _cheio(String caminho) {
         'positions_count': 6,
       },
       'positions': [
-        _posicao('PETR4', 'Petróleo Brasileiro', 300, 32.10, 38.42, 'BUY', 'Comprar', 'acoes_br',
+        _posicao('PETR4', 'Petróleo Brasileiro', 300, 32.10, 38.42, 'BUY', 'Abaixo do preço justo', 'acoes_br',
             'Energia', 9.8),
         _posicao('BBAS3', 'Banco do Brasil', 400, 21.40, 22.49, 'STRONG_BUY',
-            'Comprar com convicção', 'acoes_br', 'Bancos', 11.2),
-        _posicao('MXRF11', 'Maxi Renda', 900, 9.80, 9.14, 'HOLD', 'Manter', 'fiis',
+            'Bem abaixo do preço justo', 'acoes_br', 'Bancos', 11.2),
+        _posicao('MXRF11', 'Maxi Renda', 900, 9.80, 9.14, 'HOLD', 'No preço justo', 'fiis',
             'Fundos imobiliários', 12.8),
-        _posicao('WEGE3', 'WEG', 120, 44.10, 51.49, 'UNKNOWN', 'Sem dados suficientes',
+        _posicao('WEGE3', 'WEG', 120, 44.10, 51.49, 'UNKNOWN', 'Sem preço justo',
             'acoes_br', 'Bens industriais', 1.9),
       ],
       'allocations': [
@@ -491,14 +571,14 @@ dynamic _cheio(String caminho) {
           'category': 'renda_fixa',
           'current_pct': 18.5,
           'target_pct': 25.0,
-          'gap_pct': -6.5,
+          'gap_pct': 6.5,
           'gap_value': 6330.0,
         },
         {
           'category': 'acoes_br',
           'current_pct': 53.7,
           'target_pct': 45.0,
-          'gap_pct': 8.7,
+          'gap_pct': -8.7,
           'gap_value': -8470.0,
         },
       ],
@@ -513,17 +593,27 @@ dynamic _cheio(String caminho) {
           'quantity': 120.0,
           'pnl_pct': 16.8,
           'reasons': [
-            'Preço atual está 118.0% acima do teto da faixa de preço justo '
+            'Preço atual está 54% acima do teto da faixa de preço justo '
                 '(R\$ 12,94 a R\$ 23,77).',
-            'Categoria acoes_br também está acima da meta de alocação.',
+            'A categoria ações também está acima da meta de alocação.',
           ],
           'requires_tax_review': true,
+          'label': 'Acima do preço justo',
+          'margin_of_safety': -0.54,
+          'adjustment_sentence': 'BBAS3 está 18% abaixo do preço justo e cabe na sua meta de '
+              'renda, e você tem WEGE3, que está 54% acima — avalie se vale fazer o ajuste.',
           'realocar_para': {
             'ticker': 'BBAS3',
             'name': 'Banco do Brasil',
             'category': 'acoes_br',
             'score': 78.0,
             'verdict': 'STRONG_BUY',
+            'label': 'Bem abaixo do preço justo',
+            'price': 26.88,
+            'fair_low': 32.80,
+            'fair_high': 41.10,
+            'margin_of_safety': 0.18,
+            'fits_income_goal': true,
           },
         },
       ],
@@ -548,7 +638,7 @@ dynamic _cheio(String caminho) {
           'margin_of_safety': 0.3052,
           'dividend_yield': 8.64,
           'verdict': 'BUY',
-          'label': 'Comprar',
+          'label': 'Abaixo do preço justo',
           'basis': 'band',
           'band_quality': 'firme',
           'independent_inputs': 2,
@@ -556,7 +646,6 @@ dynamic _cheio(String caminho) {
           'score': 81.0,
           'confidence': 0.6,
           'data_years': 6,
-          'consensus_methods': 2,
           'trend_basis': 'long',
           'data_completeness': 1.0,
           'change_percent_day': 0.8,
@@ -573,18 +662,17 @@ dynamic _cheio(String caminho) {
           'fair_high': null,
           'margin_of_safety': null,
           'dividend_yield': 1.2,
-          'verdict': 'BUY',
-          'label': 'Comprar',
-          'basis': 'trend',
+          'verdict': 'UNKNOWN',
+          'label': 'Sem preço justo',
+          'basis': 'none',
           'band_quality': 'sem_faixa',
           'independent_inputs': 0,
           'confidence_label': 'baixa',
-          'score': 54.0,
-          'confidence': 0.35,
+          'score': 0.0,
+          'confidence': 0.0,
           'data_years': 0,
-          'consensus_methods': 0,
           'trend_basis': 'long',
-          'data_completeness': 0.2,
+          'data_completeness': 0.0,
           'change_percent_day': -0.4,
           'distance_from_52w_high_pct': -3.1,
           'range_52w_position': 0.72,
@@ -877,10 +965,14 @@ void main() {
     'patrimonio': '/patrimonio',
     'patrimonio-renda-fixa': '/patrimonio/renda-fixa',
     'patrimonio-razao': '/patrimonio/razao',
+    'patrimonio-razao-importar': '/patrimonio/razao/importar',
+    'patrimonio-razao-conferir': '/patrimonio/razao/conferir',
     'patrimonio-proventos': '/patrimonio/proventos',
+    'patrimonio-seguidas': '/patrimonio/seguidas',
     'descobrir': '/descobrir',
     'voce': '/voce',
     'voce-objetivos': '/voce/objetivos',
+    'voce-comecar': '/voce/comecar',
     'voce-conta': '/voce/conta',
     'voce-conta-excluir': '/voce/conta/excluir',
   };

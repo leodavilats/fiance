@@ -30,20 +30,20 @@ fechou — registro em [historico/PARIDADE-WEB-APP-2026-09](historico/PARIDADE-W
 `/patrimonio/proventos` registra, lista e apaga o recebido (`/dividends/received`) e traz as
 sugestões do calendário uma a uma, nada pré-selecionado.
 
-### ~~3 · Oportunidades personalizadas~~ — parcialmente entregue em 2026-09-13
+### ~~3 · Oportunidades personalizadas~~ — entregue em 2026-09-26
 
 A frase-alvo, declarada pelo autor:
 
 > *"PETR4 está 20% abaixo do preço justo e cabe na sua meta de renda, e você tem ITSA4 que está 20%
 > acima — avalie se vale fazer o ajuste."*
 
-**Entregue:** `/sobra/desvio` mostra o alvo da realocação com régua de score, as três razões, e o
-perfil de risco que ordenou a lista. O perfil também aparece em `/descobrir`, com o glossário
-dizendo o que ele muda.
+**Entregue:** `/sobra/desvio` diz a frase, montada no servidor (`adjustment_sentence`): a margem
+do alvo e a da posição contra o preço justo, e se o alvo cabe na meta de renda declarada. Junto, o
+alvo com a faixa de preço justo e a régua de score, as três razões, e o perfil de risco que ordenou
+a lista.
 
-**Falta, e depende do item 4:** a frase ainda não cita o preço justo do alvo nem a margem de
-segurança dos dois lados — e citar isso com mais força exige confiar no número, que é o item
-seguinte.
+A força da frase continua limitada pela confiança no número (item 4): ela descreve posição, em
+modo analítico, e nunca vira ordem.
 
 Esta é a hipótese de receita do produto. Ver
 [ADR-006](decisoes/ADR-006-recomendacao-personalizada.md).

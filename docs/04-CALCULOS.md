@@ -714,7 +714,14 @@ Produz duas listas:
 
 Cada sugestão carrega até 3 razões escritas.
 
-Na tela em `/sobra/desvio`, com as três razões e o alvo da realocação.
+Quando uma posição acima do preço justo tem para onde ir — um ativo abaixo do preço justo, de
+categoria abaixo da meta, fora da carteira —, a sugestão traz a **frase do ajuste**
+(`adjustment_sentence`): a margem do alvo e a da posição, as duas medidas contra a borda da faixa, e
+se o preço do alvo cabe na meta de renda (`fits_income_goal`: preço ≤ `personal_ceiling`). Sem
+yield declarado, a frase não fala de meta de renda. `realocar_para` leva também preço, faixa e
+margem do alvo.
+
+Na tela em `/sobra/desvio`: a frase em serifa, as razões, e o alvo com a faixa e a régua de score.
 
 ---
 

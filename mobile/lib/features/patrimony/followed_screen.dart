@@ -87,11 +87,10 @@ class _Outcome extends StatelessWidget {
           eyebrow: 'Resultado do que você seguiu',
           figure: _signed(data.totalPnlPct),
           size: FiHeadlineSize.xl,
-          support: ibov == null
-              ? '${data.totalPnl >= 0 ? '+' : ''}${formatCurrency(data.totalPnl)} sobre '
-                    '${formatCurrency(data.totalInvested)} investidos'
-              : 'Ibovespa no mesmo período: ${_signed(ibov)}',
+          support: '${data.totalPnl >= 0 ? '+' : ''}${formatCurrency(data.totalPnl)} sobre '
+              '${formatCurrency(data.totalInvested)} investidos',
           supportColor: fiDirectionColor(data.totalPnl, brightness),
+          note: ibov == null ? null : 'Ibovespa no mesmo período: ${_signed(ibov)}',
         ),
         const SizedBox(height: FiSpace.s3),
         Text(data.summary, style: FiType.body.copyWith(color: fiInk2(context))),

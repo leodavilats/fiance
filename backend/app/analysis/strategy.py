@@ -317,7 +317,10 @@ def _generate_reduce_suggestions(
         category = pos.get("category_resolved", "acoes_br")
         reasons = list(pos.get("reasons") or [])
         if category in overweight_categories:
-            reasons.append(f"Categoria {category} também está acima da meta de alocação.")
+            reasons.append(
+                f"A categoria {_CATEGORY_NAMES.get(category, category)} também está acima da "
+                "meta de alocação."
+            )
 
         suggestions.append(
             {
@@ -375,6 +378,49 @@ def _calculate_projected_allocation(
     return result
 
 
+_CATEGORY_NAMES = {
+    "renda_fixa": "renda fixa",
+    "acoes_br": "ações",
+    "bdrs": "BDRs",
+    "fiis": "FIIs",
+    "etfs": "ETFs",
+}
+
+
+def _distance_from_fair(margin: float | None, short: bool = False) -> str | None:
+    if margin is None:
+        return None
+    pct = round(abs(margin) * 100)
+    if pct == 0:
+        return "dentro da faixa de preço justo"
+    lado = "abaixo" if margin > 0 else "acima"
+    return f"{pct}% {lado}" if short else f"{pct}% {lado} do preço justo"
+
+
+def _fits_income_goal(opp: Opportunity) -> bool | None:
+    if opp.personal_ceiling is None or opp.price is None:
+        return None
+    return opp.price <= opp.personal_ceiling
+
+
+def _adjustment_sentence(ticker: str, held_margin: float | None, target: Opportunity) -> str:
+    distancia = _distance_from_fair(target.margin_of_safety)
+    alvo = (
+        f"{target.ticker} está {distancia}"
+        if distancia
+        else f"{target.ticker} está {target.label.lower()}"
+    )
+    cabe = _fits_income_goal(target)
+    if cabe is True:
+        alvo += " e cabe na sua meta de renda"
+    elif cabe is False:
+        alvo += ", mas rende menos que a sua meta de renda"
+
+    atual = _distance_from_fair(held_margin, short=True)
+    tem = f"você tem {ticker}, que está {atual}" if atual else f"você tem {ticker}"
+    return f"{alvo}, e {tem} — avalie se vale fazer o ajuste."
+
+
 def build_rebalance_suggestions(
     current_portfolio: list[PortfolioItem],
     goals: list[Goal],
@@ -414,6 +460,7 @@ def build_rebalance_suggestions(
         action = "manter"
         reasons = list(pos.get("reasons") or [])
         realocar_para = None
+        sentence = None
 
         if is_excluded:
             action = "manter"
@@ -437,16 +484,27 @@ def build_rebalance_suggestions(
                     "category": target.category_resolved,
                     "score": target.score,
                     "verdict": target.verdict,
+                    "label": target.label,
+                    "price": target.price,
+                    "fair_low": target.fair_low,
+                    "fair_high": target.fair_high,
+                    "margin_of_safety": target.margin_of_safety,
+                    "personal_ceiling": target.personal_ceiling,
+                    "fits_income_goal": _fits_income_goal(target),
                 }
+                sentence = _adjustment_sentence(ticker, pos.get("margin_of_safety"), target)
+                nome = _CATEGORY_NAMES.get(target.category_resolved, target.category_resolved)
                 reasons.append(
-                    f"Realocar para {target.ticker} — categoria {target.category_resolved} "
-                    "está abaixo da meta de alocação"
+                    f"Realocar para {target.ticker}: a categoria {nome} está abaixo da meta de alocação"
                 )
             else:
                 action = "vender"
         elif verdict in ("BUY", "STRONG_BUY") and category in underweight_categories:
             action = "comprar_mais"
-            reasons.append(f"Categoria {category} está abaixo da meta de alocação")
+            reasons.append(
+                f"A categoria {_CATEGORY_NAMES.get(category, category)} está abaixo da meta "
+                "de alocação"
+            )
         else:
             reasons = reasons or ["Sem sinal de ajuste — posição alinhada ao perfil atual"]
 
@@ -460,8 +518,11 @@ def build_rebalance_suggestions(
                 "current_value": pos.get("current_value"),
                 "quantity": pos.get("quantity"),
                 "pnl_pct": pos.get("pnl_pct"),
+                "label": pos.get("label"),
+                "margin_of_safety": pos.get("margin_of_safety"),
                 "reasons": reasons[:3],
                 "realocar_para": realocar_para,
+                "adjustment_sentence": sentence,
                 "requires_tax_review": action in ("vender", "realocar"),
             }
         )

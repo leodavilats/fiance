@@ -67,23 +67,26 @@ class ScoreRuler extends StatelessWidget {
                       height: _trackHeight,
                       child: Stack(
                         children: [
-                          Row(
-                            children: [
-                              for (final band in _numeric) ...[
-                                Expanded(
-                                  flex: ((band.max! + 1 - band.min!) * 10).round(),
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: band.id == activeId
-                                          ? fiStateColor(band.state, brightness)
-                                          : inactive,
-                                      borderRadius: BorderRadius.circular(2),
+                          Positioned.fill(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (final band in _numeric) ...[
+                                  Expanded(
+                                    flex: ((band.max! + 1 - band.min!) * 10).round(),
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: band.id == activeId
+                                            ? fiStateColor(band.state, brightness)
+                                            : inactive,
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                if (band != _numeric.last) const SizedBox(width: 1),
+                                  if (band != _numeric.last) const SizedBox(width: 1),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                           if (_reliable)
                             Positioned(

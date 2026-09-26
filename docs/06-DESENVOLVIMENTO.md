@@ -104,7 +104,7 @@ nenhuma enxerga o que a outra vê:
 | | Como funciona | Enxerga | Não enxerga |
 |---|---|---|---|
 | `CATALOGO.md` | Lê `mobile/lib/` | Todo o texto do app, inclusive o que só aparece em situação rara; seções, ações, estados e componentes | Nada visual |
-| `telas/` | Renderiza e fotografa | Espaçamento, cor, hierarquia; 15 telas × 4 estados × 2 temas (`mobile/captura/telas_test.dart`) | Texto que não está naquele estado |
+| `telas/` | Renderiza e fotografa | Espaçamento, cor, hierarquia; 19 telas × 4 estados × 2 temas (`mobile/captura/telas_test.dart`) | Texto que não está naquele estado |
 
 Sai junto um **`COMO-AVALIAR.md`** com o contexto do produto e as regras que ele já se impôs. Envie-o
 sempre: sem ele, quem avalia sugere o contrário do que foi decidido — trocar fio e chão por cards,

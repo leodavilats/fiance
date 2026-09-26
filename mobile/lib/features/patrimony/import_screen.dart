@@ -133,6 +133,7 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             decoration: const InputDecoration(
               labelText: 'Operações',
               alignLabelWithHint: true,
+              floatingLabelBehavior: FloatingLabelBehavior.always,
               hintText: 'PETR4 100 30,50\nVALE3 50 62,10 15/03/2024\n\n'
                   'ou\n\nData;Ativo;Tipo;Quantidade;Preço;Taxas',
             ),

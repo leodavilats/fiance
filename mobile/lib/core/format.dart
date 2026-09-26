@@ -7,6 +7,10 @@ final _quantityFormat = NumberFormat('#,##0.########', 'pt_BR');
 
 String formatCurrency(double? value) => _currency.format(value ?? 0);
 
+String formatDecimal(double? value, {int digits = 1}) => value == null
+    ? '—'
+    : NumberFormat.decimalPatternDigits(locale: 'pt_BR', decimalDigits: digits).format(value);
+
 String formatPercent(double? value) =>
     value == null ? '—' : '${_percent.format(value)}%';
 

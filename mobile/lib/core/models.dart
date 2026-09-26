@@ -620,6 +620,12 @@ class RebalanceTarget {
     required this.category,
     required this.score,
     required this.verdict,
+    this.label,
+    this.price,
+    this.fairLow,
+    this.fairHigh,
+    this.marginOfSafety,
+    this.fitsIncomeGoal,
   });
 
   final String ticker;
@@ -627,6 +633,12 @@ class RebalanceTarget {
   final String category;
   final double score;
   final String verdict;
+  final String? label;
+  final double? price;
+  final double? fairLow;
+  final double? fairHigh;
+  final double? marginOfSafety;
+  final bool? fitsIncomeGoal;
 
   factory RebalanceTarget.fromJson(Map<String, dynamic> j) => RebalanceTarget(
     ticker: j['ticker'] as String,
@@ -634,6 +646,12 @@ class RebalanceTarget {
     category: j['category'] as String? ?? '',
     score: (j['score'] as num?)?.toDouble() ?? 0,
     verdict: j['verdict'] as String? ?? '',
+    label: j['label'] as String?,
+    price: (j['price'] as num?)?.toDouble(),
+    fairLow: (j['fair_low'] as num?)?.toDouble(),
+    fairHigh: (j['fair_high'] as num?)?.toDouble(),
+    marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
+    fitsIncomeGoal: j['fits_income_goal'] as bool?,
   );
 }
 
@@ -650,6 +668,7 @@ class RebalanceItem {
     required this.reasons,
     required this.reallocateTo,
     required this.requiresTaxReview,
+    this.adjustmentSentence,
   });
 
   final String ticker;
@@ -663,6 +682,7 @@ class RebalanceItem {
   final List<String> reasons;
   final RebalanceTarget? reallocateTo;
   final bool requiresTaxReview;
+  final String? adjustmentSentence;
 
   factory RebalanceItem.fromJson(Map<String, dynamic> j) => RebalanceItem(
     ticker: j['ticker'] as String,
@@ -680,6 +700,7 @@ class RebalanceItem {
         ? RebalanceTarget.fromJson(j['realocar_para'] as Map<String, dynamic>)
         : null,
     requiresTaxReview: j['requires_tax_review'] as bool? ?? false,
+    adjustmentSentence: j['adjustment_sentence'] as String?,
   );
 }
 

@@ -91,6 +91,13 @@ class RebalanceTarget(BaseModel):
     category: str
     score: float
     verdict: str
+    label: str | None = None
+    price: float | None = None
+    fair_low: float | None = None
+    fair_high: float | None = None
+    margin_of_safety: float | None = None
+    personal_ceiling: float | None = None
+    fits_income_goal: bool | None = None
 
 
 class RebalanceItem(BaseModel):
@@ -102,8 +109,11 @@ class RebalanceItem(BaseModel):
     current_value: float | None = None
     quantity: float | None = None
     pnl_pct: float | None = None
+    label: str | None = None
+    margin_of_safety: float | None = None
     reasons: list[str] = Field(default_factory=list)
     realocar_para: RebalanceTarget | None = None
+    adjustment_sentence: str | None = None
     requires_tax_review: bool
 
 

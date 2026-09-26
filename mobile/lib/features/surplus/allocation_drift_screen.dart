@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
@@ -14,7 +15,6 @@ import '../../core/widgets/score_ruler.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
-import '../../core/score_ruler.dart';
 import '../../core/theme.dart';
 
 class AllocationDriftScreen extends ConsumerWidget {
@@ -98,10 +98,10 @@ class AllocationDriftScreen extends ConsumerWidget {
                         const SizedBox(height: FiSpace.s2),
                         Text(
                           'Sua exposição está '
-                          '${biggest.gapPct.abs().toStringAsFixed(1)} pontos percentuais '
+                          '${formatDecimal(biggest.gapPct.abs())} pontos percentuais '
                           '${biggest.isBelowTarget ? 'abaixo' : 'acima'} do objetivo '
-                          '(${biggest.currentPct.toStringAsFixed(1)}% contra '
-                          '${biggest.targetPct.toStringAsFixed(1)}%).',
+                          '(${formatDecimal(biggest.currentPct)}% contra '
+                          '${formatDecimal(biggest.targetPct)}%).',
                           style: FiType.body.copyWith(color: fiInk2(context)),
                         ),
                         const SizedBox(height: FiSpace.s3),
@@ -189,9 +189,9 @@ class _GapRow extends StatelessWidget {
     return Semantics(
       label:
           '${categoryLabel(gap.category)}: '
-          '${gap.currentPct.toStringAsFixed(1)}% da carteira contra meta de '
-          '${gap.targetPct.toStringAsFixed(1)}% — '
-          '${gap.gapPct.abs().toStringAsFixed(1)} pontos percentuais '
+          '${formatDecimal(gap.currentPct)}% da carteira contra meta de '
+          '${formatDecimal(gap.targetPct)}% — '
+          '${formatDecimal(gap.gapPct.abs())} pontos percentuais '
           '${falta ? 'abaixo' : 'acima'}',
       child: ExcludeSemantics(
         child: Padding(
@@ -284,8 +284,8 @@ class _GapRow extends StatelessWidget {
               Text(
                 relevante
                     ? (falta
-                          ? 'faltam ${gap.gapPct.abs().toStringAsFixed(1)} p.p. para a meta'
-                          : '${gap.gapPct.abs().toStringAsFixed(1)} p.p. acima da meta')
+                          ? 'faltam ${formatDecimal(gap.gapPct.abs())} p.p. para a meta'
+                          : '${formatDecimal(gap.gapPct.abs())} p.p. acima da meta')
                     : 'dentro da meta',
                 style: FiType.caption.copyWith(color: driftColor),
               ),
@@ -325,6 +325,13 @@ class _RebalanceObject extends StatelessWidget {
                 FiTag(label: _actionLabel(item.action), state: estado),
               ],
             ),
+            if (item.adjustmentSentence != null) ...[
+              const SizedBox(height: FiSpace.s2),
+              Text(
+                item.adjustmentSentence!,
+                style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
+              ),
+            ],
             if (item.reasons.isNotEmpty) ...[
               const SizedBox(height: FiSpace.s2),
               for (final razao in item.reasons.take(3))
@@ -377,45 +384,35 @@ class _Reallocation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => context.push('/ativo/${target.ticker}'),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PARA ONDE IRIA',
+          style: FiType.eyebrow.copyWith(color: fiInk3(context)),
+        ),
+        FiRows(
           children: [
-            Icon(Icons.arrow_forward, size: 16, color: fiInk3(context)),
-            const SizedBox(width: FiSpace.s2),
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                  style: FiType.body.copyWith(color: fiInk2(context)),
-                  children: [
-                    const TextSpan(text: 'Se sair daqui, '),
-                    TextSpan(
-                      text: target.ticker,
-                      style: FiType.ticker.copyWith(color: fiInk1(context)),
-                    ),
-                    TextSpan(
-                      text: ' está ${scoreBand(target.score, Theme.of(context).brightness).text.toLowerCase()}'
-                          ' na mesma categoria.',
-                    ),
-                  ],
-                ),
-              ),
+            FiDataRow(
+              label: target.ticker,
+              value: target.price == null ? null : formatCurrency(target.price),
+              detail: target.label ?? target.name,
+              onTap: () => context.push('/ativo/${target.ticker}'),
             ),
-            const SizedBox(width: FiSpace.s2),
-            SizedBox(
-              width: 64,
-              child: ScoreRuler(
-                score: target.score,
-                size: ScoreRulerSize.inline,
-                showValue: false,
+            if (target.fairLow != null && target.fairHigh != null)
+              FiDataRow(
+                label: 'Faixa de preço justo',
+                value: '${formatCurrency(target.fairLow)} a ${formatCurrency(target.fairHigh)}',
               ),
-            ),
           ],
         ),
-      ),
+        const SizedBox(height: FiSpace.s2),
+        ScoreRuler(
+          score: target.score,
+          size: ScoreRulerSize.list,
+          subject: 'Score de ${target.ticker}',
+        ),
+      ],
     );
   }
 }
@@ -436,14 +433,7 @@ class _RankingProfile extends ConsumerWidget {
     return prefs.maybeWhen(
       data: (p) {
         final label = _labels[p.riskProfile] ?? p.riskProfile;
-        return HelpTooltip(
-          termKey: 'perfil_de_risco',
-          label: 'perfil $label',
-          child: Text(
-            'perfil $label',
-            style: FiType.caption.copyWith(color: fiInk3(context)),
-          ),
-        );
+        return HelpTooltip(termKey: 'perfil_de_risco', label: 'perfil $label');
       },
       orElse: () => const SizedBox.shrink(),
     );
