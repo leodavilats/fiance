@@ -338,6 +338,29 @@ def record_snapshot(
         )
 
 
+def restore_snapshot(
+    captured_at: float,
+    total_invested: float,
+    total_current: float,
+    total_pnl: float,
+    total_pnl_pct: float,
+    user_id: str | None = None,
+) -> None:
+    with _session(user_id, ensure_user=True) as (session, uid):
+        if session.get(PortfolioSnapshot, (uid, captured_at)) is not None:
+            return
+        session.add(
+            PortfolioSnapshot(
+                user_id=uid,
+                captured_at=captured_at,
+                total_invested=total_invested,
+                total_current=total_current,
+                total_pnl=total_pnl,
+                total_pnl_pct=total_pnl_pct,
+            )
+        )
+
+
 def list_snapshots(limit: int = 90, user_id: str | None = None) -> list[Snapshot]:
     with _session(user_id) as (session, uid):
         rows = session.scalars(

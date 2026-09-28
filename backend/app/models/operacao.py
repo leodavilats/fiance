@@ -151,3 +151,42 @@ class EntitlementsState(BaseModel):
     features: dict[str, bool] = Field(default_factory=dict)
     limits: dict[str, int | None] = Field(default_factory=dict)
     subscription: SubscriptionSummary
+
+
+class AccountImportRequest(BaseModel):
+    export: dict = Field(
+        description="O conteúdo do arquivo de GET /account/export, sem alteração.",
+    )
+
+
+class AccountImportSection(BaseModel):
+    section: str
+    label: str
+    count: int
+
+
+class AccountImportLeftOut(BaseModel):
+    section: str
+    label: str
+
+
+class AccountImportIssue(BaseModel):
+    section: str
+    label: str
+    index: int
+    message: str
+
+
+class AccountImportPreview(BaseModel):
+    format_version: int
+    exported_at: float | None = None
+    source_email: str | None = None
+    sections: list[AccountImportSection] = Field(default_factory=list)
+    left_out: list[AccountImportLeftOut] = Field(default_factory=list)
+    issues: list[AccountImportIssue] = Field(default_factory=list)
+    blockers: list[str] = Field(default_factory=list)
+    ok: bool
+
+
+class AccountImportResult(BaseModel):
+    imported: dict[str, int]

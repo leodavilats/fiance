@@ -749,6 +749,15 @@ class ApiRepository {
     );
   }
 
+  Future<AccountImportPreview> previewAccountImport(Map<String, dynamic> export) async {
+    final res = await _dio.post('/account/import/preview', data: {'export': export});
+    return AccountImportPreview.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<void> importAccount(Map<String, dynamic> export) async {
+    await _dio.post('/account/import', data: {'export': export});
+  }
+
   Future<void> deleteAccount(String confirmation) async {
     await _dio.delete('/account', data: {'confirm': confirmation});
   }

@@ -975,6 +975,7 @@ void main() {
     'voce-comecar': '/voce/comecar',
     'voce-conta': '/voce/conta',
     'voce-conta-excluir': '/voce/conta/excluir',
+    'voce-conta-importar': '/voce/conta/importar',
   };
 
   for (final screen in telas.entries) {

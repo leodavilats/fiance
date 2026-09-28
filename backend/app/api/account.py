@@ -10,7 +10,14 @@ from app.core import sessions
 from app.core.auth import get_current_user
 from app.core.brt import now_brt
 from app.core.errors import DomainError
-from app.models.operacao import AccountDeleted, DeletionPolicy
+from app.models.operacao import (
+    AccountDeleted,
+    AccountImportPreview,
+    AccountImportRequest,
+    AccountImportResult,
+    DeletionPolicy,
+)
+from app.services import account_import_service
 from app.storage import account_store
 
 router = APIRouter()
@@ -34,6 +41,20 @@ async def export_account(user_id: str = Depends(get_current_user)) -> Response:
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="fiance-{stamp}.json"'},
     )
+
+
+@router.post("/account/import/preview", response_model=AccountImportPreview)
+async def preview_account_import(
+    body: AccountImportRequest, user_id: str = Depends(get_current_user)
+) -> dict:
+    return account_import_service.preview(body.export, user_id)
+
+
+@router.post("/account/import", response_model=AccountImportResult)
+async def import_account(
+    body: AccountImportRequest, user_id: str = Depends(get_current_user)
+) -> dict:
+    return account_import_service.apply(body.export, user_id)
 
 
 @router.get("/account/deletion-policy", response_model=DeletionPolicy)

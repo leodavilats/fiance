@@ -142,7 +142,8 @@ class _CorpoState extends ConsumerState<_Corpo> {
         ),
         FiSection(
           title: 'Antes de excluir',
-          hint: 'A exportação sai em JSON, com tudo o que a conta guarda.',
+          hint: 'A exportação sai em JSON, com tudo o que a conta guarda, e pode voltar depois '
+              'por "Importar meus dados", numa conta sem dados.',
           child: FiButton.secondary(
             label: 'Baixar meus dados',
             icon: Icons.download,

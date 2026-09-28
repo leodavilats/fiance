@@ -33,6 +33,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [018](ADR-018-a-queda-e-recorte-e-nao-veredito.md) | A queda é recorte de Descobrir, e não veredito — estende 013 | `ACEITO` | 2026-09-25 |
 | [019](ADR-019-fii-de-papel-exige-yield-nominal.md) | FII de papel exige yield nominal, por uma classificação mantida no código — complementa 014 | `ACEITO` | 2026-09-25 |
 | [020](ADR-020-day-trade-apartado.md) | Day trade é apartado na projeção, e apurado em conta própria | `ACEITO` | 2026-09-25 |
+| [021](ADR-021-a-exportacao-volta-para-conta-vazia.md) | A exportação da conta volta, e só para conta sem dados financeiros | `ACEITO` | 2026-09-28 |
 
 ---
 

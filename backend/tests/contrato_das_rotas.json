@@ -1178,6 +1178,33 @@
     "items[].title",
     "since"
   ],
+  "POST /api/v1/account/import": [
+    "imported"
+  ],
+  "POST /api/v1/account/import (entrada)": [
+    "export!"
+  ],
+  "POST /api/v1/account/import/preview": [
+    "blockers",
+    "exported_at",
+    "format_version",
+    "issues",
+    "issues[].index",
+    "issues[].message",
+    "issues[].section",
+    "left_out",
+    "left_out[].label",
+    "left_out[].section",
+    "ok",
+    "sections",
+    "sections[].count",
+    "sections[].label",
+    "sections[].section",
+    "source_email"
+  ],
+  "POST /api/v1/account/import/preview (entrada)": [
+    "export!"
+  ],
   "POST /api/v1/alerts": [
     "condition",
     "created_at",

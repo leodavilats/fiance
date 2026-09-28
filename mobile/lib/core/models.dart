@@ -2183,3 +2183,75 @@ class OnboardingState {
     reason: j['reason'] as String? ?? '',
   );
 }
+
+class AccountImportSection {
+  AccountImportSection({required this.section, required this.label, required this.count});
+
+  final String section;
+  final String label;
+  final int count;
+
+  factory AccountImportSection.fromJson(Map<String, dynamic> j) => AccountImportSection(
+    section: j['section'] as String? ?? '',
+    label: j['label'] as String? ?? '',
+    count: (j['count'] as num?)?.toInt() ?? 0,
+  );
+}
+
+class AccountImportIssue {
+  AccountImportIssue({
+    required this.section,
+    required this.label,
+    required this.index,
+    required this.message,
+  });
+
+  final String section;
+  final String label;
+  final int index;
+  final String message;
+
+  factory AccountImportIssue.fromJson(Map<String, dynamic> j) => AccountImportIssue(
+    section: j['section'] as String? ?? '',
+    label: j['label'] as String? ?? j['section'] as String? ?? '',
+    index: (j['index'] as num?)?.toInt() ?? 0,
+    message: j['message'] as String? ?? '',
+  );
+}
+
+class AccountImportPreview {
+  AccountImportPreview({
+    required this.sections,
+    required this.leftOut,
+    required this.issues,
+    required this.blockers,
+    required this.ok,
+    this.exportedAt,
+    this.sourceEmail,
+  });
+
+  final List<AccountImportSection> sections;
+  final List<String> leftOut;
+  final List<AccountImportIssue> issues;
+  final List<String> blockers;
+  final bool ok;
+  final double? exportedAt;
+  final String? sourceEmail;
+
+  factory AccountImportPreview.fromJson(Map<String, dynamic> j) => AccountImportPreview(
+    sections: ((j['sections'] as List?) ?? const [])
+        .map((e) => AccountImportSection.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    leftOut: ((j['left_out'] as List?) ?? const [])
+        .map((e) => (e as Map<String, dynamic>)['label'] as String? ?? '')
+        .where((l) => l.isNotEmpty)
+        .toList(),
+    issues: ((j['issues'] as List?) ?? const [])
+        .map((e) => AccountImportIssue.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    blockers: ((j['blockers'] as List?) ?? const []).map((e) => e as String).toList(),
+    ok: j['ok'] as bool? ?? false,
+    exportedAt: (j['exported_at'] as num?)?.toDouble(),
+    sourceEmail: j['source_email'] as String?,
+  );
+}

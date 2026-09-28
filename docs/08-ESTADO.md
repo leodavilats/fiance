@@ -1,7 +1,7 @@
 # Estado do sistema
 
 **Fonte de verdade** para a pergunta *"isto existe?"*. Nenhum outro documento responde isso.
-Última revisão: 2026-09-26 · Escopo: todo o produto
+Última revisão: 2026-09-28 · Escopo: todo o produto
 
 Se um documento descrever uma funcionalidade e este arquivo disser que ela não existe, **este
 arquivo vence**.
@@ -162,6 +162,7 @@ corretora única. **O que não cobre:** emissão de DARF, informe anual.
 | Sessão: acesso 1h, refresh 30d rotacionado | `[ATUAL]` | `api/auth.py` |
 | Revogação por dispositivo e por conta | `[IMPLEMENTADO]` | `session_cuts` |
 | Exclusão e exportação de conta | `[IMPLEMENTADO]` | `api/account.py` — ✅ `/voce/conta`, exclusão com frase de confirmação e exportação pela folha de compartilhamento |
+| Importação da exportação, com prévia | `[IMPLEMENTADO]` | `services/account_import_service.py` — ✅ `/voce/conta/importar`, só em conta sem dados financeiros ([ADR-021](decisoes/ADR-021-a-exportacao-volta-para-conta-vazia.md)) |
 | Preferências (perfil de risco, yields, nível de detalhe, tema) | `[ATUAL]` | `api/preferences.py` |
 | Metas, com alvo declarado distinto do padrão | `[ATUAL]` | `api/goals.py` — sem declaração, nada cobra desvio |
 | Alertas de preço | `[ATUAL]` | `api/alerts.py` |

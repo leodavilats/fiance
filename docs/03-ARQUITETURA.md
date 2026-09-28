@@ -3,7 +3,7 @@
 Como o sistema é montado e por que as fronteiras estão onde estão.
 Estrutura e endpoints são derivados do código; a **intenção** vive aqui e nas
 [decisões](decisoes/).
-Última revisão: 2026-09-26
+Última revisão: 2026-09-28
 
 ---
 
@@ -292,7 +292,7 @@ outro modo sumiria em silêncio.
 
 Marcos de ativação são gravados pelo **servidor**, não pelo cliente.
 
-Exportação e exclusão de conta nunca ficam atrás de plano.
+Exportação, importação e exclusão de conta nunca ficam atrás de plano.
 
 ---
 

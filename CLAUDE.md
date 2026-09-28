@@ -157,7 +157,8 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 - **"Tem carteira" é `portfolio_store.has_holdings()`**, que olha posições **e** renda fixa.
 - **Telemetria não leva carteira.** O `before_send` é lista de permissão; chave nova nasce redigida.
 - **Evento de produto tem dicionário fechado.** Nome fora dele devolve 422.
-- **Exportação e exclusão de conta nunca ficam atrás de plano.**
+- **Exportação, importação e exclusão de conta nunca ficam atrás de plano.** A exportação volta
+  só para conta sem dados financeiros, cada parte pela sua porta de escrita.
 
 ### Monetização
 

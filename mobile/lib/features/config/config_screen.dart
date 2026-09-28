@@ -1021,6 +1021,11 @@ class FiAccount extends ConsumerWidget {
             onTap: () => exportAccountData(context, ref),
           ),
           FiDataRow(
+            label: 'Importar meus dados',
+            detail: 'Traz de volta um arquivo baixado daqui, para uma conta sem dados',
+            onTap: () => context.go('/voce/conta/importar'),
+          ),
+          FiDataRow(
             label: 'Excluir esta conta',
             detail: 'Apaga tudo, e não há como desfazer',
             onTap: () => context.go('/voce/conta/excluir'),

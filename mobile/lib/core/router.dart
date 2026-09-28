@@ -13,6 +13,7 @@ import '../features/auth/login_screen.dart';
 import '../features/auth/splash_screen.dart';
 import '../features/config/config_screen.dart';
 import '../features/config/delete_account_screen.dart';
+import '../features/config/import_account_screen.dart';
 import '../features/config/onboarding_screen.dart';
 import '../features/month/feed_screen.dart';
 import '../features/month/debts_screen.dart';
@@ -242,6 +243,10 @@ final appRouter = GoRouter(
                     GoRoute(
                       path: 'excluir',
                       builder: (context, state) => const DeleteAccountScreen(),
+                    ),
+                    GoRoute(
+                      path: 'importar',
+                      builder: (context, state) => const ImportAccountScreen(),
                     ),
                   ],
                 ),
