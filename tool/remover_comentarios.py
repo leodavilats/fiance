@@ -91,7 +91,9 @@ class Resultado:
 # ----------------------------------------------------------------------------- Python
 
 
-def _fatias_de_comentario_py(fonte: str, tudo: bool) -> tuple[list[tuple[int, int, int]], int]:
+def _fatias_de_comentario_py(
+    fonte: str, tudo: bool
+) -> tuple[list[tuple[int, int, int]], int]:
     """As fatias `(linha, coluna_inicial, coluna_final)` a remover, e quantas ficaram.
 
     Usa `tokenize`, e não expressão regular: só ele distingue um `#` de comentário de um `#`
@@ -145,7 +147,9 @@ def _docstrings_py(fonte: str) -> list[tuple[int, int, bool]]:
     return fatias
 
 
-def limpar_python(fonte: str, tudo: bool, docstrings: bool = True) -> tuple[str, int, int, int]:
+def limpar_python(
+    fonte: str, tudo: bool, docstrings: bool = True
+) -> tuple[str, int, int, int]:
     fatias, preservados = _fatias_de_comentario_py(fonte, tudo)
 
     linhas = fonte.splitlines(keepends=True)
@@ -317,7 +321,9 @@ def limpar_dart(fonte: str, tudo: bool) -> tuple[str, int, int]:
     # espaço solto no fim.
     linhas = saida.split("\n")
     originais = fonte.split("\n")
-    apagadas = {i for i, linha in enumerate(originais) if linha.strip().startswith(("//", "/*"))}
+    apagadas = {
+        i for i, linha in enumerate(originais) if linha.strip().startswith(("//", "/*"))
+    }
 
     resultado: list[str] = []
     for i, linha in enumerate(linhas):
@@ -338,7 +344,9 @@ def processar(caminho: Path, tudo: bool, docstrings: bool, aplicar: bool) -> Res
 
     try:
         if caminho.suffix == ".py":
-            novo, removidos, preservados, docs = limpar_python(original, tudo, docstrings)
+            novo, removidos, preservados, docs = limpar_python(
+                original, tudo, docstrings
+            )
             r.docstrings = docs
         else:
             novo, removidos, preservados = limpar_dart(original, tudo)
@@ -375,9 +383,13 @@ def coletar(raizes: list[Path]) -> list[Path]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p.add_argument("alvos", nargs="*", default=list(ALVOS_PADRAO))
-    p.add_argument("--aplicar", action="store_true", help="escreve; sem isto é só relatório")
+    p.add_argument(
+        "--aplicar", action="store_true", help="escreve; sem isto é só relatório"
+    )
     p.add_argument(
         "--tudo",
         action="store_true",
@@ -394,7 +406,10 @@ def main(argv: list[str] | None = None) -> int:
     raizes = [Path(a) for a in (args.alvos or ALVOS_PADRAO)]
     ausentes = [r for r in raizes if not r.exists()]
     if ausentes:
-        print("caminho inexistente: " + ", ".join(str(a) for a in ausentes), file=sys.stderr)
+        print(
+            "caminho inexistente: " + ", ".join(str(a) for a in ausentes),
+            file=sys.stderr,
+        )
         return 2
 
     total = Resultado()
@@ -411,9 +426,15 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  diretivas preservadas   {total.preservados}")
 
     if total.preservados and not args.tudo:
-        print("\n  diretivas ficam porque são lidas por máquina: noqa, type:, pragma:, fmt:,")
-        print("  ruff:, mypy:, isort:, nosec, shebang, ignore:, ignore_for_file:, coverage: e")
-        print("  design-exception:. Use --tudo para removê-las e consertar a esteira à mão.")
+        print(
+            "\n  diretivas ficam porque são lidas por máquina: noqa, type:, pragma:, fmt:,"
+        )
+        print(
+            "  ruff:, mypy:, isort:, nosec, shebang, ignore:, ignore_for_file:, coverage: e"
+        )
+        print(
+            "  design-exception:. Use --tudo para removê-las e consertar a esteira à mão."
+        )
 
     if total.falhas:
         print("\nfalhas:", file=sys.stderr)

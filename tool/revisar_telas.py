@@ -57,7 +57,9 @@ _FERRAMENTA = re.compile(
     r"ToolScreen\((?:[^()]|\([^()]*\))*?child:\s*(?:const\s+)?(\w+)",
     re.DOTALL,
 )
-_FERRAMENTA_TITULO = re.compile(r"ToolScreen\((?:[^()]|\([^()]*\))*?title:\s*'([^']+)'", re.DOTALL)
+_FERRAMENTA_TITULO = re.compile(
+    r"ToolScreen\((?:[^()]|\([^()]*\))*?title:\s*'([^']+)'", re.DOTALL
+)
 _FERRAMENTA_PERGUNTA = re.compile(
     r"ToolScreen\((?:[^()]|\([^()]*\))*?question:\s*'([^']+)'", re.DOTALL
 )
@@ -68,9 +70,15 @@ _SECAO = re.compile(r"FiSection\(\s*\n\s*title:\s*'([^']+)'")
 _HINT = re.compile(r"hint:\s*'([^']+)'")
 _BOTAO = re.compile(r"FiButton\.(\w+)\(\s*\n?\s*label:\s*(?:_?\w+\s*\?\s*)?'([^']+)'")
 _ESQUELETO = re.compile(r"FiSkeleton\.tela\([^)]*label:\s*'([^']+)'", re.DOTALL)
-_ERRO_TITULO = re.compile(r"FiErrorState\((?:[^()]|\([^()]*\))*?title:\s*'([^']+)'", re.DOTALL)
-_ERRO_ACAO = re.compile(r"FiErrorState\((?:[^()]|\([^()]*\))*?action:\s*'([^']+)'", re.DOTALL)
-_VAZIO = re.compile(r"FiEmptyState\((?:[^()]|\([^()]*\))*?title:\s*'([^']+)'", re.DOTALL)
+_ERRO_TITULO = re.compile(
+    r"FiErrorState\((?:[^()]|\([^()]*\))*?title:\s*'([^']+)'", re.DOTALL
+)
+_ERRO_ACAO = re.compile(
+    r"FiErrorState\((?:[^()]|\([^()]*\))*?action:\s*'([^']+)'", re.DOTALL
+)
+_VAZIO = re.compile(
+    r"FiEmptyState\((?:[^()]|\([^()]*\))*?title:\s*'([^']+)'", re.DOTALL
+)
 _NAVEGA = re.compile(r"(?:context|GoRouter\.of\(context\))\.(?:go|push)\('([^']+)'")
 _TIPO = re.compile(r"FiType\.(\w+)")
 
@@ -93,7 +101,13 @@ _COMPONENTES = (
     "FiSkeleton",
 )
 
-_MATERIAL_CRU = ("Card(", "ListTile(", "SwitchListTile(", "CircleAvatar(", "AlertDialog(")
+_MATERIAL_CRU = (
+    "Card(",
+    "ListTile(",
+    "SwitchListTile(",
+    "CircleAvatar(",
+    "AlertDialog(",
+)
 
 _RUIDO = re.compile(
     r"^(?:[\w./:-]+\.dart|package:|https?://|[\d.,%$ RS-]+|[a-z_]+)$|^\s*$|^[A-Za-z_]+\(\)$"
@@ -128,7 +142,9 @@ def _mapa_de_rotas() -> tuple[dict[str, dict], dict[str, str]]:
 
     for indice, achado in enumerate(marcos):
         caminho = achado.group(1)
-        fim_do_bloco = marcos[indice + 1].start() if indice + 1 < len(marcos) else len(fonte)
+        fim_do_bloco = (
+            marcos[indice + 1].start() if indice + 1 < len(marcos) else len(fonte)
+        )
         bloco = fonte[achado.end() : fim_do_bloco]
 
         if caminho.startswith("/"):
@@ -187,7 +203,10 @@ def _ler_tela(caminho: pathlib.Path) -> dict:
         hint = _HINT.search(bloco)
         if titulo:
             secoes.append(
-                {"titulo": titulo.group(1), "explicacao": hint.group(1) if hint else None}
+                {
+                    "titulo": titulo.group(1),
+                    "explicacao": hint.group(1) if hint else None,
+                }
             )
 
     textos = []
@@ -268,7 +287,9 @@ def montar() -> dict:
         widget = rotas[rota]["widget"]
         caminho = _arquivo_do_widget(widget)
         if caminho is None:
-            telas.append({"rota": rota, "widget": widget, "erro": "fonte não localizado"})
+            telas.append(
+                {"rota": rota, "widget": widget, "erro": "fonte não localizado"}
+            )
             continue
 
         ferramenta = rotas[rota]["ferramenta"]
@@ -341,7 +362,9 @@ def como_markdown(catalogo: dict) -> str:
             if pergunta:
                 linhas.append(f"**Pergunta que responde:** {pergunta}")
             linhas.append("")
-            linhas.append(f"Mesmo conteúdo de `{ja_visto}` — o arquivo serve às duas rotas.")
+            linhas.append(
+                f"Mesmo conteúdo de `{ja_visto}` — o arquivo serve às duas rotas."
+            )
             linhas.append("")
             linhas.append("---")
             linhas.append("")
@@ -349,7 +372,9 @@ def como_markdown(catalogo: dict) -> str:
 
         detalhado[tela["arquivo"]] = tela["rota"]
 
-        linhas.append(f"**Widget:** `{tela['widget']}` · `{tela['arquivo']}` · {tela['linhas']} linhas")
+        linhas.append(
+            f"**Widget:** `{tela['widget']}` · `{tela['arquivo']}` · {tela['linhas']} linhas"
+        )
         if tela["titulo_da_barra"]:
             linhas.append(f"**Título na barra:** {tela['titulo_da_barra']}")
         if tela.get("pergunta_que_responde"):
@@ -390,7 +415,9 @@ def como_markdown(catalogo: dict) -> str:
             linhas.append("⚠️ **Material cru:** " + ", ".join(tela["material_cru"]))
             linhas.append("")
         if tela["navega_para"]:
-            linhas.append("**Leva a:** " + ", ".join(f"`{d}`" for d in tela["navega_para"]))
+            linhas.append(
+                "**Leva a:** " + ", ".join(f"`{d}`" for d in tela["navega_para"])
+            )
             linhas.append("")
 
         if tela["textos"]:
@@ -428,7 +455,10 @@ def como_markdown(catalogo: dict) -> str:
                 continue
             if folha["acoes"]:
                 linhas.append(
-                    "**Ações:** " + ", ".join(f"{a['rotulo']} (`{a['peso']}`)" for a in folha["acoes"])
+                    "**Ações:** "
+                    + ", ".join(
+                        f"{a['rotulo']} (`{a['peso']}`)" for a in folha["acoes"]
+                    )
                 )
                 linhas.append("")
             if folha["material_cru"]:
@@ -522,7 +552,11 @@ def _conferir(catalogo: dict) -> int:
         if raiz not in rotas:
             queixas.append(f"destino de raiz fora do catálogo: {raiz}")
 
-    mudas = [t["rota"] for t in catalogo["telas"] if not t.get("erro") and not t.get("textos")]
+    mudas = [
+        t["rota"]
+        for t in catalogo["telas"]
+        if not t.get("erro") and not t.get("textos")
+    ]
     if mudas:
         queixas.append(f"telas sem nenhum texto lido: {', '.join(mudas)}")
 
@@ -558,7 +592,9 @@ def _copiar_icones() -> None:
 
     flutter = shutil.which("flutter")
     if not flutter:
-        print("  flutter nao encontrado no PATH; os icones sairao como quadrados vazios")
+        print(
+            "  flutter nao encontrado no PATH; os icones sairao como quadrados vazios"
+        )
         return
 
     raiz = pathlib.Path(flutter).resolve().parent.parent
@@ -569,7 +605,9 @@ def _copiar_icones() -> None:
         shutil.copy(candidato, destino)
         return
 
-    print("  fonte de icones do Flutter nao localizada; eles sairao como quadrados vazios")
+    print(
+        "  fonte de icones do Flutter nao localizada; eles sairao como quadrados vazios"
+    )
 
 
 def _baixar_fontes() -> bool:
@@ -583,7 +621,9 @@ def _baixar_fontes() -> bool:
 
         print(f"baixando {nome}...")
         try:
-            pedido = urllib.request.Request(url, headers={"User-Agent": "fiance-captura"})
+            pedido = urllib.request.Request(
+                url, headers={"User-Agent": "fiance-captura"}
+            )
             with urllib.request.urlopen(pedido, timeout=60) as resposta:
                 destino.write_bytes(resposta.read())
         except Exception as erro:
@@ -654,10 +694,14 @@ def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--limpar", action="store_true", help="apaga a revisao anterior antes")
+    parser.add_argument(
+        "--limpar", action="store_true", help="apaga a revisao anterior antes"
+    )
     parser.add_argument("--texto", action="store_true", help="so o catalogo")
     parser.add_argument("--imagens", action="store_true", help="so as capturas")
-    parser.add_argument("--stdout", action="store_true", help="imprime o catalogo, sem escrever")
+    parser.add_argument(
+        "--stdout", action="store_true", help="imprime o catalogo, sem escrever"
+    )
     parser.add_argument(
         "--check",
         action="store_true",
@@ -691,7 +735,9 @@ def main() -> int:
 
     print()
     print(f"-> {SAIDA.relative_to(RAIZ)}")
-    print("Para avaliar, envie COMO-AVALIAR.md com o que interessa: CATALOGO.md para linguagem,")
+    print(
+        "Para avaliar, envie COMO-AVALIAR.md com o que interessa: CATALOGO.md para linguagem,"
+    )
     print("telas/conteudo/ para o visual, e as outras pastas para os estados.")
     return 0
 
