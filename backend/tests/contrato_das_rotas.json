@@ -1190,6 +1190,7 @@
     "format_version",
     "issues",
     "issues[].index",
+    "issues[].label",
     "issues[].message",
     "issues[].section",
     "left_out",
