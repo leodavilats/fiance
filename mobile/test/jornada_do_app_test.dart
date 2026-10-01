@@ -8,6 +8,7 @@ import 'package:fiance/core/notifications_service.dart';
 import 'package:fiance/core/providers.dart';
 import 'package:fiance/core/router.dart';
 import 'package:fiance/core/theme.dart';
+import 'package:fiance/core/widgets/button.dart';
 
 class _ServidorVazio extends Interceptor {
   final caminhos = <String>[];
@@ -112,6 +113,33 @@ void main() {
       isNotEmpty,
       reason: 'as telas leem do servidor; sem nenhuma chamada, a jornada não exercitou nada',
     );
+  });
+
+  testWidgets('com todos os filtros abertos, o aplicar continua ao alcance', (tester) async {
+    await _abrirApp(tester);
+    tester.view.physicalSize = const Size(360, 640) * 3;
+    appRouter.go('/descobrir');
+    await _esperar(tester);
+
+    await tester.tap(find.widgetWithText(FiButton, 'Filtros'));
+    await _esperar(tester);
+    for (final rotulo in ['Dividend yield mínimo', 'Margem de segurança mínima']) {
+      final chave = find.bySemanticsLabel(rotulo).last;
+      await tester.ensureVisible(chave);
+      await tester.tap(chave);
+      await _esperar(tester);
+    }
+
+    final aplicar = find.widgetWithText(FiButton, 'Aplicar 2 filtros');
+    expect(
+      aplicar.hitTestable(),
+      findsOneWidget,
+      reason: 'o botão de aplicar não rola junto: abrir os controles não pode empurrá-lo para fora',
+    );
+    await tester.tap(aplicar);
+    await _esperar(tester);
+    expect(find.text('Filtros: 2'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('link salvo de URL antiga continua chegando', (tester) async {

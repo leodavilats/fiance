@@ -60,11 +60,13 @@ class OpportunitiesFilters {
     bool? onlyDip,
     String? trendDay,
     String? trendYear,
+    bool clearMinDy = false,
+    bool clearMinMos = false,
   }) {
     return OpportunitiesFilters(
       search: search ?? this.search,
-      minDy: minDy ?? this.minDy,
-      minMos: minMos ?? this.minMos,
+      minDy: clearMinDy ? null : (minDy ?? this.minDy),
+      minMos: clearMinMos ? null : (minMos ?? this.minMos),
       category: category ?? this.category,
       onlyInteresting: onlyInteresting ?? this.onlyInteresting,
       onlyDip: onlyDip ?? this.onlyDip,
@@ -167,7 +169,12 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
     final result = await showModalBottomSheet<OpportunitiesFilters>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _FiltersSheet(initial: filters),
+      showDragHandle: true,
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: _FiltersSheet(initial: filters),
+      ),
     );
     if (result != null) {
       ref.read(opportunitiesFiltersProvider.notifier).state = result;
@@ -258,26 +265,14 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
                           label: 'DY ≥ ${filters.minDy!.toStringAsFixed(1)}%',
                           onDeleted: () =>
                               ref.read(opportunitiesFiltersProvider.notifier).state =
-                                  OpportunitiesFilters(
-                                    search: filters.search,
-                                    minMos: filters.minMos,
-                                    category: filters.category,
-                                    onlyInteresting: filters.onlyInteresting,
-                                    onlyDip: filters.onlyDip,
-                                  ),
+                                  filters.copyWith(clearMinDy: true),
                         ),
                       if (filters.minMos != null)
                         _ActiveFilterChip(
                           label: 'MS ≥ ${(filters.minMos! * 100).toStringAsFixed(0)}%',
                           onDeleted: () =>
                               ref.read(opportunitiesFiltersProvider.notifier).state =
-                                  OpportunitiesFilters(
-                                    search: filters.search,
-                                    minDy: filters.minDy,
-                                    category: filters.category,
-                                    onlyInteresting: filters.onlyInteresting,
-                                    onlyDip: filters.onlyDip,
-                                  ),
+                                  filters.copyWith(clearMinMos: true),
                         ),
                     ],
                   ),
@@ -334,179 +329,222 @@ class _FiltersSheetState extends State<_FiltersSheet> {
   late String _trendDay = widget.initial.trendDay;
   late String _trendYear = widget.initial.trendYear;
 
+  OpportunitiesFilters get _result => OpportunitiesFilters(
+    search: widget.initial.search,
+    category: _category,
+    onlyDip: _onlyDip,
+    onlyInteresting: _onlyDip ? false : _onlyInteresting,
+    minDy: _dyEnabled ? _dyValue : null,
+    minMos: _mosEnabled ? _mosValue / 100 : null,
+    trendDay: _trendDay,
+    trendYear: _trendYear,
+  );
+
+  void _clear() => setState(() {
+    _category = '';
+    _onlyDip = false;
+    _onlyInteresting = false;
+    _dyEnabled = false;
+    _mosEnabled = false;
+    _trendDay = '';
+    _trendYear = '';
+  });
+
   @override
   Widget build(BuildContext context) {
+    final ativos = _activeFilterCount(_result);
+
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: FiSpace.s5,
-          right: FiSpace.s5,
-          top: FiSpace.s5,
-          bottom: FiSpace.s5 + MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(FiLayout.gutter, 0, FiLayout.gutter, FiSpace.s2),
+            child: Row(
               children: [
-                const Text(
-                  'Filtros',
-                  style: FiType.title,
+                Expanded(
+                  child: Text(
+                    'Filtros',
+                    style: FiType.title.copyWith(color: fiInk1(context)),
+                  ),
                 ),
                 FiButton.quiet(
                   label: 'Limpar tudo',
-                  onPressed: () => setState(() {
-                    _category = '';
-                    _onlyDip = false;
-                    _onlyInteresting = false;
-                    _dyEnabled = false;
-                    _mosEnabled = false;
-                    _trendDay = '';
-                    _trendYear = '';
-                  }),
+                  onPressed: ativos == 0 ? null : _clear,
                 ),
               ],
             ),
-            const SizedBox(height: FiSpace.s5),
-            Text(
-              'CATEGORIA',
-              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
-            ),
-            const SizedBox(height: FiSpace.s3),
-            Wrap(
-              spacing: FiSpace.s2,
-              runSpacing: FiSpace.s2,
-              children: _categoryLabels.entries
-                  .map(
-                    (e) => FiChoiceChip(
-                      label: e.value,
-                      selected: _category == e.key,
-                      onSelected: () => setState(() => _category = e.key),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: FiSpace.s5),
-            Text(
-              'DIREÇÃO DO PREÇO',
-              style: FiType.eyebrow.copyWith(color: fiInk3(context)),
-            ),
-            const SizedBox(height: FiSpace.s3),
-            Wrap(
-              spacing: FiSpace.s2,
-              runSpacing: FiSpace.s2,
-              children: [
-                for (final e in fiTrendDayLabels.entries)
-                  FiChoiceChip(
-                    label: e.value,
-                    selected: _trendDay == e.key,
-                    onSelected: () => setState(
-                      () => _trendDay = _trendDay == e.key ? '' : e.key,
-                    ),
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                FiLayout.gutter,
+                0,
+                FiLayout.gutter,
+                FiSpace.s5,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _SheetEyebrow('Classe', first: true),
+                  Wrap(
+                    spacing: FiSpace.s2,
+                    runSpacing: FiSpace.s2,
+                    children: [
+                      for (final e in _categoryLabels.entries)
+                        FiChoiceChip(
+                          label: e.value,
+                          selected: _category == e.key,
+                          onSelected: () => setState(() => _category = e.key),
+                        ),
+                    ],
                   ),
-                for (final e in fiTrendYearLabels.entries)
-                  FiChoiceChip(
-                    label: e.value,
-                    selected: _trendYear == e.key,
-                    onSelected: () => setState(
-                      () => _trendYear = _trendYear == e.key ? '' : e.key,
-                    ),
+
+                  const _SheetEyebrow('O que mostrar'),
+                  FiRows(
+                    children: [
+                      FiDataRow(
+                        label: 'Em queda',
+                        detail: 'Varredura de ativos que caíram do topo recente',
+                        trailing: FiSwitch(
+                          label: 'Em queda',
+                          value: _onlyDip,
+                          onChanged: (v) => setState(() => _onlyDip = v),
+                        ),
+                      ),
+                      FiDataRow(
+                        label: 'Somente destaques',
+                        detail: _onlyDip ? 'Não se aplica à varredura de quedas' : null,
+                        trailing: FiSwitch(
+                          label: 'Somente destaques',
+                          value: _onlyInteresting && !_onlyDip,
+                          onChanged: _onlyDip
+                              ? null
+                              : (v) => setState(() => _onlyInteresting = v),
+                        ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
-            const SizedBox(height: FiSpace.s2),
-            Text(
-              'Hoje é a variação do pregão. O ano é onde o preço está entre a mínima e a '
-              'máxima de 52 semanas — não é a variação acumulada no ano.',
-              style: FiType.caption.copyWith(color: fiInk3(context)),
-            ),
-            const SizedBox(height: FiSpace.s5),
-            FiRows(
-              children: [
-                FiDataRow(
-                  label: 'Em queda',
-                  detail: 'Varredura de ativos que caíram do topo recente',
-                  trailing: FiSwitch(
-                    label: 'Em queda',
-                    value: _onlyDip,
-                    onChanged: (v) => setState(() => _onlyDip = v),
+
+                  const _SheetEyebrow('Variação de hoje'),
+                  Wrap(
+                    spacing: FiSpace.s2,
+                    runSpacing: FiSpace.s2,
+                    children: [
+                      for (final e in fiTrendDayLabels.entries)
+                        FiChoiceChip(
+                          label: e.value,
+                          selected: _trendDay == e.key,
+                          onSelected: () => setState(
+                            () => _trendDay = _trendDay == e.key ? '' : e.key,
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-                FiDataRow(
-                  label: 'Somente destaques',
-                  detail: _onlyDip ? 'Não se aplica à varredura de quedas' : null,
-                  trailing: FiSwitch(
-                    label: 'Somente destaques',
-                    value: _onlyInteresting,
-                    onChanged: _onlyDip
-                        ? null
-                        : (v) => setState(() => _onlyInteresting = v),
+
+                  const _SheetEyebrow('Posição no ano'),
+                  Wrap(
+                    spacing: FiSpace.s2,
+                    runSpacing: FiSpace.s2,
+                    children: [
+                      for (final e in fiTrendYearLabels.entries)
+                        FiChoiceChip(
+                          label: e.value,
+                          selected: _trendYear == e.key,
+                          onSelected: () => setState(
+                            () => _trendYear = _trendYear == e.key ? '' : e.key,
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-                FiDataRow(
-                  label: 'Dividend yield mínimo',
-                  value: _dyEnabled ? '${_dyValue.toStringAsFixed(1)}%' : null,
-                  trailing: FiSwitch(
+                  const SizedBox(height: FiSpace.s2),
+                  Text(
+                    'Onde o preço está entre a mínima e a máxima de 52 semanas — não é a '
+                    'variação acumulada no ano.',
+                    style: FiType.caption.copyWith(color: fiInk3(context)),
+                  ),
+
+                  const _SheetEyebrow('Fundamentos'),
+                  FiDataRow(
                     label: 'Dividend yield mínimo',
-                    value: _dyEnabled,
-                    onChanged: (v) => setState(() => _dyEnabled = v),
+                    value: _dyEnabled ? formatPercent(_dyValue) : null,
+                    trailing: FiSwitch(
+                      label: 'Dividend yield mínimo',
+                      value: _dyEnabled,
+                      onChanged: (v) => setState(() => _dyEnabled = v),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            if (_dyEnabled)
-              FiSlider(
-                label: 'Dividend yield mínimo',
-                value: _dyValue,
-                min: 0,
-                max: 20,
-                divisions: 40,
-                format: formatPercent,
-                onChanged: (v) => setState(() => _dyValue = v),
-              ),
-            FiDataRow(
-              label: 'Margem de segurança mínima',
-              value: _mosEnabled ? '${_mosValue.toStringAsFixed(0)}%' : null,
-              trailing: FiSwitch(
-                label: 'Margem de segurança mínima',
-                value: _mosEnabled,
-                onChanged: (v) => setState(() => _mosEnabled = v),
-              ),
-            ),
-            if (_mosEnabled)
-              FiSlider(
-                label: 'Margem de segurança mínima',
-                value: _mosValue,
-                min: -20,
-                max: 50,
-                divisions: 70,
-                format: formatPercent,
-                onChanged: (v) => setState(() => _mosValue = v),
-              ),
-            const SizedBox(height: FiSpace.s6),
-            FiButton.primary(
-              label: 'Aplicar filtros',
-              expand: true,
-              onPressed: () {
-                Navigator.pop(
-                  context,
-                  OpportunitiesFilters(
-                    search: widget.initial.search,
-                    category: _category,
-                    onlyDip: _onlyDip,
-                    onlyInteresting: _onlyDip ? false : _onlyInteresting,
-                    minDy: _dyEnabled ? _dyValue : null,
-                    minMos: _mosEnabled ? _mosValue / 100 : null,
-                    trendDay: _trendDay,
-                    trendYear: _trendYear,
+                  if (_dyEnabled)
+                    FiSlider(
+                      label: 'Dividend yield mínimo',
+                      value: _dyValue,
+                      min: 0,
+                      max: 20,
+                      divisions: 40,
+                      format: formatPercent,
+                      onChanged: (v) => setState(() => _dyValue = v),
+                    ),
+                  FiDataRow(
+                    label: 'Margem de segurança mínima',
+                    value: _mosEnabled ? formatPercent(_mosValue) : null,
+                    trailing: FiSwitch(
+                      label: 'Margem de segurança mínima',
+                      value: _mosEnabled,
+                      onChanged: (v) => setState(() => _mosEnabled = v),
+                    ),
                   ),
-                );
+                  if (_mosEnabled)
+                    FiSlider(
+                      label: 'Margem de segurança mínima',
+                      value: _mosValue,
+                      min: -20,
+                      max: 50,
+                      divisions: 70,
+                      format: formatPercent,
+                      onChanged: (v) => setState(() => _mosValue = v),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              FiLayout.gutter,
+              FiSpace.s3,
+              FiLayout.gutter,
+              FiSpace.s3,
+            ),
+            child: FiButton.primary(
+              label: switch (ativos) {
+                0 => 'Ver todos',
+                1 => 'Aplicar 1 filtro',
+                _ => 'Aplicar $ativos filtros',
               },
+              expand: true,
+              onPressed: () => Navigator.pop(context, _result),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetEyebrow extends StatelessWidget {
+  const _SheetEyebrow(this.text, {this.first = false});
+
+  final String text;
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: first ? FiSpace.s2 : FiSpace.s6, bottom: FiSpace.s3),
+      child: Text(
+        text.toUpperCase(),
+        style: FiType.eyebrow.copyWith(color: fiInk3(context)),
       ),
     );
   }
