@@ -6,12 +6,15 @@ import '../../../core/labels.dart';
 import '../../../core/models.dart';
 import '../../../core/providers.dart';
 import '../../../core/sector_translations.dart';
+import '../../../core/theme.dart';
 import '../../../core/widgets/allocation_gap.dart';
 import '../../../core/widgets/empty_state.dart';
 
-enum FiCompositionMode { asset, sector }
+enum FiCompositionMode { position, category, sector }
 
 const fiStockCategories = {'acoes_br', 'bdrs'};
+
+const _visiblePositions = 6;
 
 class FiCompositionSlice {
   const FiCompositionSlice({
@@ -35,7 +38,7 @@ class FiCompositionBlock extends ConsumerStatefulWidget {
     super.key,
     required this.allocations,
     required this.positions,
-    this.mode = FiCompositionMode.asset,
+    this.mode = FiCompositionMode.position,
   });
 
   final List<CategoryAllocation> allocations;
@@ -47,7 +50,38 @@ class FiCompositionBlock extends ConsumerStatefulWidget {
 }
 
 class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
-  List<FiCompositionSlice> _byAsset(Brightness brightness) {
+  List<FiCompositionSlice> _byPosition(Brightness brightness) {
+    final sorted = [
+      for (final p in widget.positions) (p, p.currentValue ?? p.invested),
+    ]..sort((a, b) => b.$2.compareTo(a.$2));
+    final total = sorted.fold<double>(0, (s, e) => s + e.$2);
+    if (total <= 0) return [];
+
+    final visiveis = sorted.length > _visiblePositions + 1
+        ? sorted.take(_visiblePositions).toList()
+        : sorted;
+    final resto = sorted.skip(visiveis.length).toList();
+    final valorResto = resto.fold<double>(0, (s, e) => s + e.$2);
+
+    return [
+      for (final (p, valor) in visiveis.where((e) => e.$2 > 0))
+        FiCompositionSlice(
+          label: p.ticker,
+          value: valor,
+          pct: valor / total * 100,
+          color: categoryColor(p.categoryResolved, brightness),
+        ),
+      if (valorResto > 0)
+        FiCompositionSlice(
+          label: 'Outros ${resto.length} ativos',
+          value: valorResto,
+          pct: valorResto / total * 100,
+          color: fiInk3Of(brightness),
+        ),
+    ];
+  }
+
+  List<FiCompositionSlice> _byCategory(Brightness brightness) {
     final sorted = [...widget.allocations]
       ..sort((a, b) => b.currentValue.compareTo(a.currentValue));
     return sorted
@@ -103,9 +137,11 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final slices = widget.mode == FiCompositionMode.asset
-        ? _byAsset(brightness)
-        : _bySector(brightness);
+    final slices = switch (widget.mode) {
+      FiCompositionMode.position => _byPosition(brightness),
+      FiCompositionMode.category => _byCategory(brightness),
+      FiCompositionMode.sector => _bySector(brightness),
+    };
 
     if (slices.isEmpty) {
       return const FiEmptyLine('Nenhuma ação ou BDR avaliada ainda.');

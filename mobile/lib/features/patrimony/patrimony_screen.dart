@@ -83,16 +83,20 @@ class PatrimonyScreen extends ConsumerWidget {
 
                 if (data.allocations.isNotEmpty)
                   FiSection(
-                    title: groupMode == FiAssetGroupMode.sector
-                        ? 'Onde está concentrado, por setor'
-                        : 'Onde está concentrado, por classe',
+                    title: switch (groupMode) {
+                      FiAssetGroupMode.value => 'Onde está concentrado, por ativo',
+                      FiAssetGroupMode.category => 'Onde está concentrado, por classe',
+                      FiAssetGroupMode.sector => 'Onde está concentrado, por setor',
+                    },
                     trailing: _GroupModeSegments(current: groupMode),
                     child: FiCompositionBlock(
                       allocations: data.allocations,
                       positions: data.positions,
-                      mode: groupMode == FiAssetGroupMode.sector
-                          ? FiCompositionMode.sector
-                          : FiCompositionMode.asset,
+                      mode: switch (groupMode) {
+                        FiAssetGroupMode.value => FiCompositionMode.position,
+                        FiAssetGroupMode.category => FiCompositionMode.category,
+                        FiAssetGroupMode.sector => FiCompositionMode.sector,
+                      },
                     ),
                   ),
 
