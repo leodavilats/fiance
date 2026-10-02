@@ -552,9 +552,9 @@ dynamic _cheio(String caminho) {
             'order': 1,
             'type': 'debt',
             'amount': 1109.60,
-            'reason': 'Fatura do cartão custa 14.90% ao mês. Sua carteira rendeu 0.92% ao mês. '
+            'reason': 'Fatura do cartão custa 14,90% ao mês. Sua carteira rendeu 0,92% ao mês. '
                 'Enquanto essa diferença existir, quitar rende mais que aportar.',
-            'falsifier': 'Se a taxa da dívida cair abaixo de 0.92% ao mês, quitar deixa de ser a '
+            'falsifier': 'Se a taxa da dívida cair abaixo de 0,92% ao mês, quitar deixa de ser a '
                 'prioridade.',
             'reference': 'carteira',
           },

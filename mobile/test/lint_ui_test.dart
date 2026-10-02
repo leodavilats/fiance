@@ -498,6 +498,28 @@ void main() {
       );
     });
 
+    test('numero na tela sai do formatador, nao do toStringAsFixed', () {
+
+      final soltos = <String>[];
+      for (final f in fontes) {
+        if (f.path.endsWith('format.dart')) continue;
+        final linhas = f.readAsLinesSync();
+        for (var i = 0; i < linhas.length; i++) {
+          if (!linhas[i].contains('toStringAsFixed(')) continue;
+          soltos.add('${_curto(f)}:${i + 1}');
+        }
+      }
+
+      expect(
+        soltos,
+        isEmpty,
+        reason:
+            'toStringAsFixed escreve 33.0% e 8.7 p.p. com ponto, e o leitor de tela le igual. '
+            'Use formatPercent, formatPoints, formatDecimal ou formatForInput de core/format.dart. '
+            'Achados:\n  ${soltos.join('\n  ')}',
+      );
+    });
+
     test('a falha de leitura sai numa voz so', () {
 
       final proprios = <String>[];
