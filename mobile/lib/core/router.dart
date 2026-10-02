@@ -23,6 +23,7 @@ import '../features/surplus/allocation_drift_screen.dart';
 import '../features/config/goals_screen.dart';
 import '../features/month/activity_screen.dart';
 import '../features/tools/income_compare_view.dart';
+import '../features/market/asset_detail_sheet.dart';
 import '../features/market/opportunities_tab.dart';
 import '../features/market/quick_invest_view.dart';
 import '../features/shell/app_shell.dart';
@@ -259,10 +260,8 @@ final appRouter = GoRouter(
 
     GoRoute(
       path: '/ativo/:ticker',
-      builder: (context, state) => ToolScreen(
-        title: state.pathParameters['ticker']?.toUpperCase() ?? 'Ativo',
-        child: AnalyzeAssetView(initialTicker: state.pathParameters['ticker']),
-      ),
+      builder: (context, state) =>
+          AssetDetailScreen(ticker: state.pathParameters['ticker'] ?? ''),
     ),
   ],
 );
@@ -273,17 +272,8 @@ class _DiscoverScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Descobrir'),
-        actions: [
-          IconButton(
-            tooltip: 'Comparar ativos',
-            icon: const Icon(Icons.compare_arrows),
-            onPressed: () => context.go('/descobrir/comparar'),
-          ),
-        ],
-      ),
-      body: const OpportunitiesTab(),
+      appBar: AppBar(title: const Text('Descobrir')),
+      body: const OpportunitiesTab(header: DiscoverTools()),
     );
   }
 }

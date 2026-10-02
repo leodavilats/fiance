@@ -25,11 +25,13 @@ class FiChoiceChip extends StatelessWidget {
     final tinta = selected ? marca : fiInk2(context);
     final borda = selected ? marca : fiHairline(brightness);
 
+    final remover = onRemove;
+
     return Semantics(
       button: true,
-      selected: selected,
-      label: label,
-      onTap: onSelected,
+      selected: remover == null ? selected : null,
+      label: remover == null ? label : 'Remover filtro $label',
+      onTap: remover ?? onSelected,
       child: ExcludeSemantics(
         child: Material(
           color: selected
@@ -37,7 +39,7 @@ class FiChoiceChip extends StatelessWidget {
               : fiGround1(brightness),
           borderRadius: BorderRadius.circular(FiRadius.pill),
           child: InkWell(
-            onTap: onSelected,
+            onTap: remover ?? onSelected,
             borderRadius: BorderRadius.circular(FiRadius.pill),
             child: Container(
               constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
@@ -53,7 +55,14 @@ class FiChoiceChip extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(label, style: FiType.caption.copyWith(color: tinta)),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: FiType.caption.copyWith(color: tinta),
+                    ),
+                  ),
                   if (onRemove != null) ...[
                     const SizedBox(width: FiSpace.s1),
                     Icon(Icons.close, size: 14, color: tinta),

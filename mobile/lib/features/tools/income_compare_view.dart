@@ -25,6 +25,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
   IncomeCompare? _result;
   bool _loading = false;
   Object? _error;
+  String? _amountError;
 
   @override
   void dispose() {
@@ -33,12 +34,16 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
   }
 
   Future<void> _compare() async {
-    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
-    if (amount == null || amount <= 0) return;
+    final amount = parseDecimal(_amountCtrl.text);
+    if (amount == null || amount <= 0) {
+      setState(() => _amountError = 'Informe um valor maior que zero, como 10.000 ou 10.000,50');
+      return;
+    }
 
     setState(() {
       _loading = true;
       _error = null;
+      _amountError = null;
     });
 
     try {
@@ -47,7 +52,12 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
           .incomeCompare(amount: amount, horizonMonths: _horizonMonths);
       if (mounted) setState(() => _result = res);
     } catch (err) {
-      if (mounted) setState(() => _error = err);
+      if (mounted) {
+        setState(() {
+          _result = null;
+          _error = err;
+        });
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -57,6 +67,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
   Widget build(BuildContext context) {
     final ink2 = fiInk2(context);
     final ink3 = fiInk3(context);
+    final erro = _error;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -68,10 +79,16 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
       children: [
         TextField(
           controller: _amountCtrl,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Valor a comparar (R\$)',
+            errorText: _amountError,
+            errorMaxLines: 2,
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) {
+            if (_amountError != null) setState(() => _amountError = null);
+          },
+          onSubmitted: (_) => _compare(),
         ),
         const SizedBox(height: FiSpace.s3),
         DropdownButtonFormField<int>(
@@ -83,7 +100,10 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
             DropdownMenuItem(value: 24, child: Text('2 anos')),
             DropdownMenuItem(value: 60, child: Text('5 anos')),
           ],
-          onChanged: (v) => setState(() => _horizonMonths = v ?? 12),
+          onChanged: (v) => setState(() {
+            _horizonMonths = v ?? 12;
+            _result = null;
+          }),
         ),
         const SizedBox(height: FiSpace.s5),
         FiButton.primary(
@@ -93,12 +113,17 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
           onPressed: _compare,
         ),
 
-        if (_error != null) ...[
+        if (erro != null) ...[
           const SizedBox(height: FiSpace.s4),
-          FiErrorState(error: _error!, action: 'comparar renda fixa e bolsa'),
+          FiErrorState(
+            error: erro,
+            title: 'A comparação não saiu',
+            action: 'comparar renda fixa e bolsa',
+            onRetry: _compare,
+          ),
         ],
 
-        if (_result != null) ..._buildResult(_result!, ink2, ink3),
+        if (_result case final resultado?) ..._buildResult(resultado, ink2, ink3),
       ],
     );
   }
@@ -122,7 +147,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
         const SizedBox(height: FiSpace.s2),
       ],
       Text(
-        'CDI a ${r.cdiAnnual.toStringAsFixed(2)}% ao ano · '
+        'CDI a ${formatPercent(r.cdiAnnual)} ao ano · '
         '${formatCurrency(r.amount)} por ${r.horizonMonths} meses. '
         'A marca em cada régua é o CDI.',
         style: FiType.caption.copyWith(color: ink3),
@@ -190,7 +215,7 @@ class _OptionObject extends StatelessWidget {
               value: o.netIncomeYieldPct,
               max: cap,
               reference: cdi,
-              readout: '${o.netIncomeYieldPct.toStringAsFixed(2)}% a.a.',
+              readout: '${formatPercent(o.netIncomeYieldPct)} a.a.',
               note: acimaDoCdi
                   ? 'acima do CDI, já descontado o IR'
                   : 'abaixo do CDI, já descontado o IR',

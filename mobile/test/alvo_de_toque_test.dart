@@ -91,4 +91,27 @@ void main() {
     expect(tocado, isTrue);
     semantica.dispose();
   });
+
+  testWidgets('o chip que remove diz que remove', (tester) async {
+    final semantica = tester.ensureSemantics();
+    var removido = false;
+    await _montar(
+      tester,
+      FiChoiceChip(
+        label: 'FIIs',
+        selected: true,
+        onSelected: () {},
+        onRemove: () => removido = true,
+      ),
+    );
+
+    tester.semantics.tap(find.semantics.byLabel('Remover filtro FIIs'));
+    expect(
+      removido,
+      isTrue,
+      reason: 'o chip ativo some ao toque; anunciado só como "FIIs", o leitor de tela não avisa '
+          'que tocar tira o filtro',
+    );
+    semantica.dispose();
+  });
 }

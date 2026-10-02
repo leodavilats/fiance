@@ -17,6 +17,14 @@ void main() {
     test('sem método não se inventa faixa', () {
       expect(fairBandLabel(null, null), '—');
     });
+
+    test('o resumo da faixa fala português: entre um valor e outro', () {
+      expect(
+        fairBandSummary(60.32, 146.03, 2),
+        startsWith('Justo entre ${formatCurrency(60.32)} e ${formatCurrency(146.03)}'),
+        reason: '"entre R\$ 60,32 a R\$ 146,03" chegou à lista do Descobrir',
+      );
+    });
   });
 
   group('a borda mostrada é a que a margem mede', () {

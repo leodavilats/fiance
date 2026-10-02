@@ -44,22 +44,41 @@ void showAssetDetailSheet(BuildContext context, String ticker) {
       minChildSize: 0.4,
       maxChildSize: 0.95,
       expand: false,
-      builder: (context, scrollController) => _AssetDetailContent(
+      builder: (context, scrollController) => AssetDetailContent(
         ticker: ticker,
         scrollController: scrollController,
+        inSheet: true,
       ),
     ),
   );
 }
 
-class _AssetDetailContent extends ConsumerWidget {
-  const _AssetDetailContent({
+class AssetDetailScreen extends StatelessWidget {
+  const AssetDetailScreen({super.key, required this.ticker});
+
+  final String ticker;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: AssetDetailContent(ticker: ticker.toUpperCase()),
+    );
+  }
+}
+
+class AssetDetailContent extends ConsumerWidget {
+  const AssetDetailContent({
+    super.key,
     required this.ticker,
-    required this.scrollController,
+    this.scrollController,
+    this.inSheet = false,
   });
 
   final String ticker;
-  final ScrollController scrollController;
+  final ScrollController? scrollController;
+
+  final bool inSheet;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -86,10 +105,10 @@ class _AssetDetailContent extends ConsumerWidget {
             Expanded(
               child: ListView(
                 controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(
-            FiSpace.s5,
+          padding: EdgeInsets.fromLTRB(
+            inSheet ? FiSpace.s5 : FiLayout.gutter,
             0,
-            FiSpace.s5,
+            inSheet ? FiSpace.s5 : FiLayout.gutter,
             FiSpace.s8,
           ),
           children: [
@@ -238,7 +257,7 @@ class _AssetDetailContent extends ConsumerWidget {
           ],
               ),
             ),
-            _BuyFooter(analysis: a),
+            _BuyFooter(analysis: a, inSheet: inSheet),
           ],
         );
       },
@@ -247,9 +266,10 @@ class _AssetDetailContent extends ConsumerWidget {
 }
 
 class _BuyFooter extends ConsumerWidget {
-  const _BuyFooter({required this.analysis});
+  const _BuyFooter({required this.analysis, required this.inSheet});
 
   final AssetAnalysis analysis;
+  final bool inSheet;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -280,8 +300,9 @@ class _BuyFooter extends ConsumerWidget {
                 ticker: analysis.symbol,
                 currentPrice: analysis.price,
                 verdict: analysis.verdict,
+                assetType: analysis.assetType,
               );
-              if (registrou && context.mounted) Navigator.of(context).pop();
+              if (registrou && inSheet && context.mounted) Navigator.of(context).pop();
             },
           ),
         ),
@@ -408,7 +429,7 @@ List<Widget> _metodo(BuildContext context, AssetAnalysis a) => [
           ),
           FiDataRow(
             label: 'Ritmo da alta ou da queda',
-            value: a.rsi14?.toStringAsFixed(0) ?? '—',
+            value: formatDecimal(a.rsi14, digits: 0),
             detail: _paceLabel(a.rsi14),
             note: a.rsi14 == null ? null : 'Índice de força relativa (RSI), de 0 a 100',
             glossaryKey: 'rsi',

@@ -23,7 +23,7 @@ class FiCompareMetric {
   final String Function(AssetAnalysis) render;
 }
 
-String _fmtPct(double? v) => v == null ? '—' : '${v.toStringAsFixed(1)}%';
+String _fmtPct(double? v) => formatPercent(v, digits: 1);
 
 final fiCompareMetrics = <FiCompareMetric>[
   FiCompareMetric(
@@ -42,13 +42,13 @@ final fiCompareMetrics = <FiCompareMetric>[
     'P/L',
     'Valuation',
     fiCompareStocks,
-    (a) => a.fundamentals['pe_ratio']?.toStringAsFixed(1) ?? '—',
+    (a) => formatDecimal(a.fundamentals['pe_ratio']),
   ),
   FiCompareMetric(
     'P/VP',
     'Valuation',
     fiCompareWithPatrimony,
-    (a) => a.fundamentals['pb_ratio']?.toStringAsFixed(2) ?? '—',
+    (a) => formatDecimal(a.fundamentals['pb_ratio'], digits: 2),
   ),
   FiCompareMetric(
     'ROE',
@@ -72,7 +72,7 @@ final fiCompareMetrics = <FiCompareMetric>[
     'RSI (14)',
     'Risco',
     fiCompareAll,
-    (a) => a.rsi14?.toStringAsFixed(0) ?? '—',
+    (a) => formatDecimal(a.rsi14, digits: 0),
   ),
   FiCompareMetric('Tendência', 'Risco', fiCompareAll, (a) => trendLabel(a.trend)),
   FiCompareMetric(

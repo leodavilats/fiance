@@ -26,10 +26,13 @@ class QuickInvestView extends ConsumerStatefulWidget {
 class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
   final _cashCtrl = TextEditingController();
 
-  bool _simulating = false;
+  bool _editing = false;
+  bool _simulated = false;
 
   bool _loading = true;
   Object? _error;
+  Object? _actionError;
+  String? _inputError;
   QuickInvestResult? _result;
 
   @override
@@ -48,35 +51,50 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
     setState(() {
       _loading = true;
       _error = null;
+      _actionError = null;
     });
 
     try {
       final result = await ref
           .read(apiRepositoryProvider)
           .quickInvest(cashAvailable: valor);
-      if (mounted) {
-        setState(() {
-          _result = result;
-          _loading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _result = result;
+        _simulated = valor != null;
+        _loading = false;
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        if (_result == null) {
           _error = e;
-        });
-      }
+        } else {
+          _actionError = e;
+        }
+      });
     }
   }
 
   void _simulateAnotherAmount() {
-    final valor = double.tryParse(_cashCtrl.text.replaceAll(',', '.'));
+    final valor = parseDecimal(_cashCtrl.text);
     if (valor == null || valor <= 0) {
-      setState(() => _error = 'Informe um valor para simular.');
+      setState(() => _inputError = 'Informe um valor maior que zero, como 1.500 ou 1.500,50');
       return;
     }
+    setState(() => _inputError = null);
     _run(valor: valor);
+  }
+
+  void _backToSurplus() {
+    _cashCtrl.clear();
+    setState(() {
+      _editing = false;
+      _inputError = null;
+      _actionError = null;
+    });
+    if (_simulated) _run();
   }
 
   @override
@@ -89,15 +107,17 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
       );
     }
 
-    if (_error != null && _result == null) {
+    final erro = _error;
+    if (erro != null && _result == null) {
       return FiErrorState(
-        error: _error!,
+        error: erro,
         action: 'calcular onde aportar',
-        onRetry: () => _simulating ? _simulateAnotherAmount() : _run(),
+        onRetry: _run,
       );
     }
 
     final r = _result!;
+    final falhaDaAcao = _actionError;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -108,35 +128,41 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
       ),
       children: [
         FiHeadline(
-          eyebrow: _simulating ? 'Valor simulado' : 'Sobra deste mês',
+          eyebrow: _simulated ? 'Valor simulado' : 'Sobra deste mês',
           figure: _moneyOrDash(r.totalCash),
-          support: _simulating
+          support: _simulated
               ? 'A distribuição abaixo é sobre este valor, e não sobre a sua sobra.'
               : null,
         ),
 
         const SizedBox(height: FiSpace.s3),
-        if (!_simulating)
+        if (!_editing)
           Align(
             alignment: Alignment.centerLeft,
             child: FiButton.quiet(
               label: 'Simular outro valor',
-              onPressed: () => setState(() => _simulating = true),
+              onPressed: () => setState(() => _editing = true),
             ),
           )
-        else
+        else ...[
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: TextField(
                   controller: _cashCtrl,
+                  autofocus: true,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Valor a simular (R\$)',
+                    errorText: _inputError,
+                    errorMaxLines: 2,
                   ),
+                  onChanged: (_) {
+                    if (_inputError != null) setState(() => _inputError = null);
+                  },
                   onSubmitted: (_) => _simulateAnotherAmount(),
                 ),
               ),
@@ -148,12 +174,20 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
               ),
             ],
           ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FiButton.quiet(
+              label: 'Voltar à sobra',
+              onPressed: _loading ? null : _backToSurplus,
+            ),
+          ),
+        ],
 
-        if (_error != null)
+        if (falhaDaAcao != null)
           Padding(
             padding: const EdgeInsets.only(top: FiSpace.s3),
             child: Text(
-              fiErrorMessage(_error!, action: 'calcular onde aportar'),
+              fiErrorMessage(falhaDaAcao, action: 'calcular onde aportar'),
               style: FiType.body.copyWith(
                 color: fiStateColor(
                   FiState.adverse,
@@ -312,6 +346,7 @@ class _Allocation extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
       child: FiObject(
+        onTap: () => context.push('/ativo/${a.ticker}'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

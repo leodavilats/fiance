@@ -123,7 +123,7 @@ void main() {
 
     await tester.tap(find.widgetWithText(FiButton, 'Filtros'));
     await _esperar(tester);
-    for (final rotulo in ['Dividend yield mínimo', 'Margem de segurança mínima']) {
+    for (final rotulo in ['Dividendos mínimos ao ano', 'Margem de segurança mínima']) {
       final chave = find.bySemanticsLabel(rotulo).last;
       await tester.ensureVisible(chave);
       await tester.tap(chave);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/models.dart';
@@ -9,6 +10,16 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/controls.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
+
+const _tiposNegociadosPorUnidade = {'br_stock', 'bdr', 'fii', 'etf'};
+
+class _Registro {
+  const _Registro({required this.quantity, this.followError});
+
+  final double quantity;
+  final Object? followError;
+}
 
 Future<bool> openBuySheet(
   BuildContext context,
@@ -16,34 +27,60 @@ Future<bool> openBuySheet(
   required String ticker,
   double? currentPrice,
   String? verdict,
+  String? assetType,
 }) async {
-  final registrou = await showModalBottomSheet<bool>(
+  final roteador = GoRouter.maybeOf(context);
+  final registro = await showModalBottomSheet<_Registro>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: _BuyForm(ticker: ticker, currentPrice: currentPrice, verdict: verdict),
+      child: _BuyForm(
+        ticker: ticker,
+        currentPrice: currentPrice,
+        verdict: verdict,
+        wholeUnits: assetType == null || _tiposNegociadosPorUnidade.contains(assetType),
+      ),
     ),
   );
 
-  if (registrou == true) {
-    ref.invalidate(portfolioProvider);
-    ref.invalidate(dashboardProvider);
-    ref.invalidate(ledgerProvider);
-    ref.invalidate(followedSuggestionsProvider);
+  if (registro == null) return false;
+
+  ref.invalidate(portfolioProvider);
+  ref.invalidate(dashboardProvider);
+  ref.invalidate(ledgerProvider);
+  ref.invalidate(followedSuggestionsProvider);
+
+  if (context.mounted) {
+    final falha = registro.followError;
+    fiNotify(
+      context,
+      [
+        'Compra de ${formatQuantity(registro.quantity)} $ticker registrada.',
+        if (falha != null) fiErrorMessage(falha, action: 'acompanhar o resultado dela'),
+      ].join(' '),
+      actionLabel: roteador == null ? null : 'Ver no Patrimônio',
+      onAction: roteador == null ? null : () => roteador.go('/patrimonio'),
+    );
   }
 
-  return registrou == true;
+  return true;
 }
 
 class _BuyForm extends ConsumerStatefulWidget {
-  const _BuyForm({required this.ticker, this.currentPrice, this.verdict});
+  const _BuyForm({
+    required this.ticker,
+    required this.wholeUnits,
+    this.currentPrice,
+    this.verdict,
+  });
 
   final String ticker;
   final double? currentPrice;
   final String? verdict;
+  final bool wholeUnits;
 
   @override
   ConsumerState<_BuyForm> createState() => _BuyFormState();
@@ -63,9 +100,7 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
   void initState() {
     super.initState();
     _price = TextEditingController(
-      text: widget.currentPrice == null
-          ? ''
-          : widget.currentPrice!.toStringAsFixed(2).replaceAll('.', ','),
+      text: widget.currentPrice == null ? '' : formatDecimal(widget.currentPrice, digits: 2),
     );
     _quantityFormat.addListener(_recompute);
     _price.addListener(_recompute);
@@ -82,8 +117,7 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
 
   void _recompute() => setState(() {});
 
-  double _number(TextEditingController c) =>
-      double.tryParse(c.text.trim().replaceAll(',', '.')) ?? 0;
+  double _number(TextEditingController c) => parseDecimal(c.text) ?? 0;
 
   double get _total => _number(_quantityFormat) * _number(_price) + _number(_fees);
 
@@ -92,17 +126,18 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
 
     setState(() => _saving = true);
     final api = ref.read(apiRepositoryProvider);
-    final avisos = ScaffoldMessenger.of(context);
+    final quantidade = _number(_quantityFormat);
     try {
       final entryId = await api
           .createTransaction(
             kind: 'buy',
             symbol: widget.ticker,
             tradedOn: _date.toIso8601String().substring(0, 10),
-            quantity: _number(_quantityFormat),
+            quantity: quantidade,
             price: _number(_price),
             fees: _number(_fees),
           );
+      Object? falhaAoAcompanhar;
       if (widget.verdict != null && _follow) {
         try {
           await api.followFromLedger(
@@ -111,23 +146,19 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
             verdictAtSuggestion: widget.verdict,
           );
         } catch (e) {
-          avisos.showSnackBar(
-            SnackBar(
-              content: Text(
-                'A compra entrou na carteira. '
-                '${fiErrorMessage(e, action: 'acompanhar o resultado dela')}',
-              ),
-            ),
-          );
+          falhaAoAcompanhar = e;
         }
       }
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) {
+        Navigator.pop(
+          context,
+          _Registro(quantity: quantidade, followError: falhaAoAcompanhar),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(fiErrorMessage(e, action: 'registrar esta compra'))),
-        );
+        fiNotify(context, fiErrorMessage(e, action: 'registrar esta compra'));
       }
     }
   }
@@ -177,10 +208,15 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
                 controller: _quantityFormat,
                 autofocus: true,
                 decoration: const InputDecoration(labelText: 'Quantidade'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: widget.wholeUnits
+                    ? TextInputType.number
+                    : const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) {
-                  final n = double.tryParse((v ?? '').replaceAll(',', '.'));
+                  final n = parseDecimal(v);
                   if (n == null || n <= 0) return 'Informe quantas você comprou';
+                  if (widget.wholeUnits && n != n.truncateToDouble()) {
+                    return 'Na bolsa a compra é em unidades inteiras';
+                  }
                   return null;
                 },
               ),
@@ -196,7 +232,7 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) {
-                  final n = double.tryParse((v ?? '').replaceAll(',', '.'));
+                  final n = parseDecimal(v);
                   if (n == null || n <= 0) return 'Informe o preço pago';
                   return null;
                 },
@@ -232,6 +268,13 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
                   helperText: 'Entram no custo, e por isso no imposto quando você vender.',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) {
+                  if ((v ?? '').trim().isEmpty) return null;
+                  final n = parseDecimal(v);
+                  if (n == null) return 'Informe as taxas, ou 0 se não houve';
+                  if (n < 0) return 'Taxa não fica negativa: use 0 se não houve';
+                  return null;
+                },
               ),
               if (_total > 0) ...[
                 const SizedBox(height: FiSpace.s4),
