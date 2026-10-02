@@ -8,9 +8,19 @@ import '../../../core/models.dart';
 import '../../../core/sector_translations.dart';
 import '../../../core/theme.dart';
 import '../../../core/providers.dart';
+import '../../../core/widgets/button.dart';
 import '../../../core/widgets/data_row.dart';
 import '../../../core/widgets/disclosure.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/tag.dart';
+
+bool fiIsFixedIncomePosition(PortfolioPosition p) =>
+    p.categoryResolved == 'renda_fixa' || p.assetType == 'renda_fixa';
+
+List<PortfolioPosition> fiTradedPositions(Iterable<PortfolioPosition> positions) => [
+  for (final p in positions)
+    if (!fiIsFixedIncomePosition(p)) p,
+];
 
 enum FiAssetGroupMode {
   value('valor'),
@@ -27,19 +37,38 @@ enum FiAssetGroupMode {
   );
 }
 
-class FiGroupedPositionsList extends ConsumerWidget {
+class FiGroupedPositionsList extends ConsumerStatefulWidget {
   const FiGroupedPositionsList({
     super.key,
     required this.positions,
     required this.mode,
-    required this.onDelete,
+    required this.onRemove,
     required this.onSell,
   });
 
   final List<PortfolioPosition> positions;
   final FiAssetGroupMode mode;
-  final void Function(String ticker) onDelete;
+  final Future<bool> Function(PortfolioPosition position) onRemove;
   final void Function(PortfolioPosition position) onSell;
+
+  @override
+  ConsumerState<FiGroupedPositionsList> createState() => _FiGroupedPositionsListState();
+}
+
+class _FiGroupedPositionsListState extends ConsumerState<FiGroupedPositionsList> {
+  final Set<String> _removidos = {};
+
+  @override
+  void didUpdateWidget(FiGroupedPositionsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.positions, widget.positions)) _removidos.clear();
+  }
+
+  Future<bool> _remove(PortfolioPosition p) async {
+    final removido = await widget.onRemove(p);
+    if (removido && mounted) setState(() => _removidos.add(p.ticker));
+    return removido;
+  }
 
   List<PortfolioPosition> _sortedByValue(List<PortfolioPosition> items) {
     final sorted = [...items];
@@ -57,8 +86,8 @@ class FiGroupedPositionsList extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: FiSpace.s2),
               child: _FiAssetObject(
                 position: p,
-                onDelete: () => onDelete(p.ticker),
-                onSell: () => onSell(p),
+                onRemove: () => _remove(p),
+                onSell: () => widget.onSell(p),
               ),
             ),
           )
@@ -70,7 +99,19 @@ class FiGroupedPositionsList extends ConsumerWidget {
       items.fold<double>(0, (s, p) => s + (p.currentValue ?? 0));
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final positions = [
+      for (final p in fiTradedPositions(widget.positions))
+        if (!_removidos.contains(p.ticker)) p,
+    ];
+    final mode = widget.mode;
+
+    if (positions.isEmpty) {
+      return const FiEmptyLine(
+        'Nenhuma ação, FII, BDR ou ETF na carteira — só aplicações de renda fixa.',
+      );
+    }
+
     if (mode == FiAssetGroupMode.value) {
       return _objects(positions);
     }
@@ -155,12 +196,12 @@ class _SwipeBackground extends StatelessWidget {
 class _FiAssetObject extends StatelessWidget {
   const _FiAssetObject({
     required this.position,
-    required this.onDelete,
+    required this.onRemove,
     required this.onSell,
   });
 
   final PortfolioPosition position;
-  final VoidCallback onDelete;
+  final Future<bool> Function() onRemove;
   final VoidCallback onSell;
 
   @override
@@ -177,28 +218,8 @@ class _FiAssetObject extends StatelessWidget {
           onSell();
           return false;
         }
-        final confirmado = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Remover ativo'),
-            content: Text(
-              'Remover ${p.ticker} da carteira? A posição sai do patrimônio e das análises.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Remover'),
-              ),
-            ],
-          ),
-        );
-        return confirmado ?? false;
+        return onRemove();
       },
-      onDismissed: (_) => onDelete(),
       background: _SwipeBackground(
         label: 'Vender',
         state: FiState.attention,
@@ -272,9 +293,23 @@ class _FiAssetObject extends StatelessWidget {
             ),
             const SizedBox(height: FiSpace.s3),
             Text(
-              '${p.quantity} un. · PM ${formatCurrency(p.avgPrice)} · '
+              '${formatQuantity(p.quantity)} un. · PM ${formatCurrency(p.avgPrice)} · '
               'hoje ${formatCurrency(p.currentPrice)} · DY ${formatPercent(p.dividendYield)}',
               style: FiType.caption.copyWith(color: fiInk2(context)),
+            ),
+            const SizedBox(height: FiSpace.s3),
+            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
+            const SizedBox(height: FiSpace.s1),
+            Row(
+              children: [
+                Flexible(
+                  child: FiButton.quiet(label: 'Vender', onPressed: onSell),
+                ),
+                const SizedBox(width: FiSpace.s5),
+                Flexible(
+                  child: FiButton.danger(label: 'Remover', onPressed: onRemove),
+                ),
+              ],
             ),
           ],
         ),

@@ -11,15 +11,21 @@ import '../../core/vocabulary.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/chip.dart';
 import '../../core/widgets/data_row.dart';
+import '../../core/widgets/disclosure.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
-import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
+import 'widgets/form_fields.dart';
 
-Future<void> openLedgerEntryForm(BuildContext context, WidgetRef ref) async {
+Future<void> openLedgerEntryForm(
+  BuildContext context,
+  WidgetRef ref, {
+  String? symbol,
+}) async {
   final salvo = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -27,15 +33,13 @@ Future<void> openLedgerEntryForm(BuildContext context, WidgetRef ref) async {
     constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: const _LedgerEntryForm(),
+      child: _LedgerEntryForm(symbol: symbol),
     ),
   );
 
   if (salvo == true) {
-    ref.invalidate(ledgerProvider);
-    ref.invalidate(filteredLedgerProvider);
-    ref.invalidate(portfolioProvider);
-    ref.invalidate(dashboardProvider);
+    invalidateLedgerReaders(ref);
+    if (context.mounted) fiNotify(context, 'Lançamento registrado. A carteira foi refeita com ele.');
   }
 }
 
@@ -136,15 +140,16 @@ class LedgerScreen extends ConsumerWidget {
               ),
               children: [
                 const _Header(),
-                const SizedBox(height: FiSpace.s5),
-                const _FilterBar(),
                 FiSection(
-                  title: 'Lançamentos',
-                  count: data.items.length,
+                  title: filtro.isEmpty
+                      ? 'Lançamentos'
+                      : 'Recorte · ${_filterInWords(filtro)}',
+                  count: data.count,
+                  trailing: const _FilterButton(),
                   child: Column(
                     children: [
                       for (final item in data.items)
-                        _LedgerEntryObject(
+                        _LedgerEntryRow(
                           item: item,
                           onDelete: () => deleteLedgerEntry(context, ref, item),
                         ),
@@ -165,49 +170,30 @@ class LedgerScreen extends ConsumerWidget {
   }
 }
 
-Future<void> deleteLedgerEntry(
+Future<bool> deleteLedgerEntry(
   BuildContext context,
   WidgetRef ref,
   LedgerEntry item,
 ) async {
-  final confirmado = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(
-        'Apagar ${ledgerKindLabel(item.kind).toLowerCase()} de ${item.symbol}?',
-      ),
-      content: const Text(
-        'A carteira é reconstruída sem este lançamento, e a apuração do mês muda junto.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Apagar'),
-        ),
-      ],
-    ),
-  );
-  if (confirmado != true || item.id == null) return;
+  final id = item.id;
+  if (id == null) return false;
 
-  try {
-    await ref.read(apiRepositoryProvider).deleteTransaction(item.id!);
-    ref.invalidate(ledgerProvider);
-    ref.invalidate(filteredLedgerProvider);
-    ref.invalidate(portfolioProvider);
-    ref.invalidate(dashboardProvider);
-  } catch (e) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(fiErrorMessage(e, action: 'apagar este lançamento')),
-        ),
-      );
-    }
-  }
+  final confirmado = await fiConfirm(
+    context,
+    title: 'Apagar ${ledgerKindLabel(item.kind).toLowerCase()} de ${item.symbol}?',
+    body: 'A carteira é reconstruída sem este lançamento, e a apuração do mês muda junto.',
+    confirmLabel: 'Apagar',
+  );
+  if (!confirmado || !context.mounted) return false;
+
+  final apagado = await fiAttempt(
+    context,
+    () => ref.read(apiRepositoryProvider).deleteTransaction(id),
+    action: 'apagar este lançamento',
+    success: 'Lançamento apagado. A carteira foi refeita sem ele.',
+  );
+  if (apagado) invalidateLedgerReaders(ref);
+  return apagado;
 }
 
 const _ledgerKindLabels = {
@@ -245,28 +231,36 @@ class _FilterBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filtro = ref.watch(ledgerFilterProvider);
-    final activeCount = filtro.activeCount;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
-            filtro.isEmpty
-                ? 'TODOS OS LANÇAMENTOS'
-                : 'RECORTE · ${_filterInWords(filtro).toUpperCase()}',
+            'RECORTE · ${_filterInWords(filtro).toUpperCase()}',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: FiType.eyebrow.copyWith(color: fiInk3(context)),
           ),
         ),
         const SizedBox(width: FiSpace.s3),
-        FiButton.secondary(
-          label: activeCount == 0 ? 'Filtros' : 'Filtros · $activeCount',
-          icon: Icons.tune,
-          onPressed: () => openLedgerFilterSheet(context),
-        ),
+        const _FilterButton(),
       ],
+    );
+  }
+}
+
+class _FilterButton extends ConsumerWidget {
+  const _FilterButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeCount = ref.watch(ledgerFilterProvider).activeCount;
+
+    return FiButton.secondary(
+      label: activeCount == 0 ? 'Filtros' : 'Filtros · $activeCount',
+      icon: Icons.tune,
+      onPressed: () => openLedgerFilterSheet(context),
     );
   }
 }
@@ -485,9 +479,12 @@ class _OlderEntriesState extends ConsumerState<_OlderEntries> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final item in _extras)
-          _LedgerEntryObject(
+          _LedgerEntryRow(
             item: item,
-            onDelete: () => deleteLedgerEntry(context, ref, item),
+            onDelete: () async {
+              final apagado = await deleteLedgerEntry(context, ref, item);
+              if (apagado && mounted) setState(() => _extras.remove(item));
+            },
           ),
         if (_error != null) ...[
           const SizedBox(height: FiSpace.s2),
@@ -564,88 +561,135 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _LedgerEntryObject extends StatelessWidget {
-  const _LedgerEntryObject({required this.item, required this.onDelete});
+bool _showsPrice(LedgerEntry item) =>
+    item.hasPrice || (item.kind == 'adjust' && item.price > 0);
+
+bool _showsQuantity(LedgerEntry item) => item.hasQuantity || item.kind == 'adjust';
+
+String _entryDetail(LedgerEntry item) {
+  if (item.kind == 'split') {
+    return 'De ${formatQuantity(item.ratioFrom)} para ${formatQuantity(item.ratioTo)}';
+  }
+  if (item.kind == 'amortization') return 'Valor devolvido';
+  if (_showsPrice(item)) {
+    return '${formatQuantity(item.quantity)} × ${formatCurrency(item.price)}';
+  }
+  if (_showsQuantity(item)) return '${formatQuantity(item.quantity)} un.';
+  return '';
+}
+
+String? _entryValue(LedgerEntry item) {
+  if (item.kind == 'amortization') return formatCurrency(item.amount);
+  if (_showsPrice(item)) return formatCurrency(item.grossValue);
+  return null;
+}
+
+class FiEntryDate extends StatelessWidget {
+  const FiEntryDate({super.key, required this.isoDate});
+
+  final String isoDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final completa = formatDate(isoDate);
+    final partes = completa.split('/');
+
+    return SizedBox(
+      width: 44,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: partes.length == 3
+            ? [
+                Text(
+                  '${partes[0]}/${partes[1]}',
+                  style: FiType.figure.copyWith(color: fiInk2(context)),
+                ),
+                Text(partes[2], style: FiType.caption.copyWith(color: fiInk3(context))),
+              ]
+            : [Text(completa, style: FiType.caption.copyWith(color: fiInk3(context)))],
+      ),
+    );
+  }
+}
+
+class _LedgerEntryRow extends StatelessWidget {
+  const _LedgerEntryRow({required this.item, required this.onDelete});
 
   final LedgerEntry item;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: FiSpace.s2),
-      child: FiObject(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    item.symbol,
-                    style: FiType.title.copyWith(color: fiInk1(context)),
-                  ),
+    final detalhe = _entryDetail(item);
+
+    return FiDisclosure(
+      leading: FiEntryDate(isoDate: item.tradedOn),
+      title: '${item.symbol} · ${ledgerKindLabel(item.kind)}',
+      detail: detalhe.isEmpty ? null : detalhe,
+      value: _entryValue(item),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FiRows(
+            children: [
+              FiDataRow(label: 'Data', value: formatDate(item.tradedOn), dense: true),
+              if (_showsQuantity(item))
+                FiDataRow(
+                  label: 'Quantidade',
+                  value: formatQuantity(item.quantity),
+                  dense: true,
                 ),
-                const SizedBox(width: FiSpace.s2),
-                FiTag.series(
-                  label: ledgerKindLabel(item.kind),
-                  color: fiInk2(context),
+              if (_showsPrice(item))
+                FiDataRow(
+                  label: item.kind == 'adjust' ? 'Preço médio' : 'Preço',
+                  value: formatCurrency(item.price),
+                  dense: true,
                 ),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Apagar lançamento',
-                  iconSize: 20,
+              if (item.hasPrice)
+                FiDataRow(
+                  label: 'Valor bruto',
+                  value: formatCurrency(item.grossValue),
+                  dense: true,
                 ),
-              ],
-            ),
-            FiRows(
-              children: [
-                FiDataRow(label: 'Data', value: formatDate(item.tradedOn)),
-                if (item.hasQuantity)
-                  FiDataRow(
-                    label: 'Quantidade',
-                    value: formatQuantity(item.quantity),
-                  ),
-                if (item.hasPrice)
-                  FiDataRow(label: 'Preço', value: formatCurrency(item.price)),
-                if (item.hasPrice)
-                  FiDataRow(
-                    label: 'Valor bruto',
-                    value: formatCurrency(item.grossValue),
-                  ),
-                if (item.fees > 0)
-                  FiDataRow(label: 'Custos', value: formatCurrency(item.fees)),
-                if (item.kind == 'split')
-                  FiDataRow(
-                    label: 'Proporção',
-                    value: '${formatQuantity(item.ratioFrom)} : '
-                        '${formatQuantity(item.ratioTo)}',
-                  ),
-                if (item.kind == 'amortization')
-                  FiDataRow(
-                    label: 'Valor devolvido',
-                    value: formatCurrency(item.amount),
-                  ),
-              ],
-            ),
-            if ((item.note ?? '').isNotEmpty) ...[
-              const SizedBox(height: FiSpace.s2),
-              Text(
-                item.note!,
-                style: FiType.caption.copyWith(color: fiInk3(context)),
-              ),
+              if (item.fees > 0)
+                FiDataRow(label: 'Custos', value: formatCurrency(item.fees), dense: true),
+              if (item.kind == 'split')
+                FiDataRow(
+                  label: 'Proporção',
+                  value: '${formatQuantity(item.ratioFrom)} : '
+                      '${formatQuantity(item.ratioTo)}',
+                  dense: true,
+                ),
+              if (item.kind == 'amortization')
+                FiDataRow(
+                  label: 'Valor devolvido',
+                  value: formatCurrency(item.amount),
+                  dense: true,
+                ),
             ],
+          ),
+          if ((item.note ?? '').isNotEmpty) ...[
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              item.note!,
+              style: FiType.caption.copyWith(color: fiInk3(context)),
+            ),
           ],
-        ),
+          if (item.id != null) ...[
+            const SizedBox(height: FiSpace.s3),
+            FiButton.danger(label: 'Apagar lançamento', onPressed: onDelete),
+          ],
+        ],
       ),
     );
   }
 }
 
 class _LedgerEntryForm extends ConsumerStatefulWidget {
-  const _LedgerEntryForm();
+  const _LedgerEntryForm({this.symbol});
+
+  final String? symbol;
 
   @override
   ConsumerState<_LedgerEntryForm> createState() => _LedgerEntryFormState();
@@ -653,7 +697,7 @@ class _LedgerEntryForm extends ConsumerStatefulWidget {
 
 class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
   final _formKey = GlobalKey<FormState>();
-  final _ticker = TextEditingController();
+  late final _ticker = TextEditingController(text: widget.symbol ?? '');
   final _quantityFormat = TextEditingController();
   final _price = TextEditingController();
   final _fees = TextEditingController(text: '0');
@@ -665,6 +709,7 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
   String _kind = 'buy';
   DateTime _date = DateTime.now();
   bool _saving = false;
+  Object? _error;
 
   @override
   void dispose() {
@@ -690,13 +735,20 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
 
   bool get _needsPrice => _kind == 'buy' || _kind == 'sell' || _kind == 'adjust';
 
-  double _number(TextEditingController c) =>
-      double.tryParse(c.text.trim().replaceAll(',', '.')) ?? 0;
+  double _number(TextEditingController c) => parseDecimal(c.text) ?? 0;
+
+  String? _positive(String? texto, String mensagem) {
+    final n = parseDecimal(texto);
+    return n == null || n <= 0 ? mensagem : null;
+  }
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       await ref
           .read(apiRepositoryProvider)
@@ -714,12 +766,11 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
           );
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) {
-        setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(fiErrorMessage(e, action: 'registrar o lançamento'))),
-        );
-      }
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = e;
+      });
     }
   }
 
@@ -762,7 +813,7 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                 ),
               ],
               const SizedBox(height: FiSpace.s3),
-              TickerAutocompleteField(controller: _ticker),
+              FiTickerFormField(controller: _ticker),
               const SizedBox(height: FiSpace.s3),
               InputDecorator(
                 decoration: const InputDecoration(labelText: 'Data da operação'),
@@ -791,11 +842,7 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                   controller: _quantityFormat,
                   decoration: const InputDecoration(labelText: 'Quantidade'),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) {
-                    final n = double.tryParse((v ?? '').replaceAll(',', '.'));
-                    if (n == null || n <= 0) return 'Informe uma quantidade positiva';
-                    return null;
-                  },
+                  validator: (v) => _positive(v, 'Informe uma quantidade positiva'),
                 ),
               ],
               if (_needsPrice) ...[
@@ -807,11 +854,7 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                     prefixText: 'R\$ ',
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) {
-                    final n = double.tryParse((v ?? '').replaceAll(',', '.'));
-                    if (n == null || n <= 0) return 'Informe um preço positivo';
-                    return null;
-                  },
+                  validator: (v) => _positive(v, 'Informe um preço positivo'),
                 ),
               ],
               if (_kind == 'split') ...[
@@ -823,6 +866,7 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                         controller: _from,
                         decoration: const InputDecoration(labelText: 'De'),
                         keyboardType: TextInputType.number,
+                        validator: (v) => _positive(v, 'Informe a proporção'),
                       ),
                     ),
                     const SizedBox(width: FiSpace.s3),
@@ -831,6 +875,7 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                         controller: _to,
                         decoration: const InputDecoration(labelText: 'Para'),
                         keyboardType: TextInputType.number,
+                        validator: (v) => _positive(v, 'Informe a proporção'),
                       ),
                     ),
                   ],
@@ -845,11 +890,7 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                     prefixText: 'R\$ ',
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) {
-                    final n = double.tryParse((v ?? '').replaceAll(',', '.'));
-                    if (n == null || n <= 0) return 'Informe o valor devolvido';
-                    return null;
-                  },
+                  validator: (v) => _positive(v, 'Informe o valor devolvido'),
                 ),
               ],
               const SizedBox(height: FiSpace.s3),
@@ -861,6 +902,11 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                   helperText: 'Corretagem e emolumentos. Entram no custo e no imposto.',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) {
+                  if ((v ?? '').trim().isEmpty) return null;
+                  final n = parseDecimal(v);
+                  return n == null || n < 0 ? 'Informe um valor, ou deixe 0' : null;
+                },
               ),
               const SizedBox(height: FiSpace.s3),
               TextFormField(
@@ -868,6 +914,8 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                 decoration: const InputDecoration(labelText: 'Observação (opcional)'),
               ),
               const SizedBox(height: FiSpace.s5),
+              if (_error != null)
+                FiInlineError(fiErrorMessage(_error!, action: 'registrar o lançamento')),
               FiButton.primary(
                 label: _saving ? 'Registrando…' : 'Registrar lançamento',
                 onPressed: _saving ? null : _save,

@@ -9,6 +9,7 @@ import '../../../core/providers.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/data_row.dart';
 import '../../../core/widgets/disclosure.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/nav_action.dart';
 import '../../../core/widgets/section.dart';
@@ -36,7 +37,24 @@ class FiFixedIncomeSection extends ConsumerWidget {
       ),
       data: (data) {
         final visible = data.visible;
-        if (visible.isEmpty) return const SizedBox.shrink();
+        final gerenciar = FiNavAction(
+          label: 'Gerenciar aplicações',
+          onPressed: () => context.go('/patrimonio/renda-fixa'),
+        );
+        if (data.items.isEmpty) return const SizedBox.shrink();
+        if (visible.isEmpty) {
+          final ocultas = data.items.length;
+          return FiSection(
+            title: 'Renda fixa',
+            action: gerenciar,
+            child: FiEmptyLine(
+              ocultas == 1
+                  ? 'A sua aplicação está fora do total da carteira, por escolha sua.'
+                  : 'As suas $ocultas aplicações estão fora do total da carteira, por escolha '
+                        'sua.',
+            ),
+          );
+        }
 
         final brightness = Theme.of(context).brightness;
         final rendeu = data.totalReturn >= 0;
@@ -47,10 +65,7 @@ class FiFixedIncomeSection extends ConsumerWidget {
         return FiSection(
           title: 'Renda fixa',
           count: visible.length,
-          action: FiNavAction(
-            label: 'Gerenciar aplicações',
-            onPressed: () => context.go('/patrimonio/renda-fixa'),
-          ),
+          action: gerenciar,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -9,6 +9,7 @@ import '../../../core/sector_translations.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/allocation_gap.dart';
 import '../../../core/widgets/empty_state.dart';
+import 'patrimony_positions.dart';
 
 enum FiCompositionMode { position, category, sector }
 
@@ -66,7 +67,7 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
     return [
       for (final (p, valor) in visiveis.where((e) => e.$2 > 0))
         FiCompositionSlice(
-          label: p.ticker,
+          label: fiIsFixedIncomePosition(p) ? (p.name ?? 'Aplicação de renda fixa') : p.ticker,
           value: valor,
           pct: valor / total * 100,
           color: categoryColor(p.categoryResolved, brightness),
@@ -144,7 +145,12 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
     };
 
     if (slices.isEmpty) {
-      return const FiEmptyLine('Nenhuma ação ou BDR avaliada ainda.');
+      return FiEmptyLine(switch (widget.mode) {
+        FiCompositionMode.position => 'Nenhuma posição com valor na carteira ainda.',
+        FiCompositionMode.category => 'Nenhuma classe com valor na carteira ainda.',
+        FiCompositionMode.sector =>
+          'Nenhuma ação ou BDR na carteira — o setor só se lê nelas.',
+      });
     }
 
     return Column(

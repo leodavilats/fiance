@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
@@ -178,30 +179,17 @@ class _ActionsState extends ConsumerState<_Actions> {
 
   Future<void> _rebuild() async {
     final orfas = widget.reconciliation.withoutLedger;
-    final confirmado = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Refazer a carteira a partir do razão?'),
-        content: Text(
-          orfas.isEmpty
-              ? 'A carteira passa a ser exatamente o que os lançamentos projetam.'
-              : 'A carteira passa a ser exatamente o que os lançamentos projetam, e '
-                    '${orfas.map((d) => d.ticker).join(', ')} sai da carteira, porque nenhum '
-                    'lançamento a sustenta.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Refazer'),
-          ),
-        ],
-      ),
+    final confirmado = await fiConfirm(
+      context,
+      title: 'Refazer a carteira a partir do razão?',
+      body: orfas.isEmpty
+          ? 'A carteira passa a ser exatamente o que os lançamentos projetam.'
+          : 'A carteira passa a ser exatamente o que os lançamentos projetam, e '
+                '${orfas.map((d) => d.ticker).join(', ')} sai da carteira, porque nenhum '
+                'lançamento a sustenta.',
+      confirmLabel: 'Refazer',
     );
-    if (confirmado != true) return;
+    if (!confirmado) return;
 
     await _run(() async {
       final depois = await ref.read(apiRepositoryProvider).rebuildProjection();

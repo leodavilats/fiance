@@ -10,6 +10,7 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
@@ -140,27 +141,14 @@ class _FollowedObject extends ConsumerWidget {
   final FollowedSuggestion item;
 
   Future<void> _stop(BuildContext context, WidgetRef ref) async {
-    final confirmado = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Deixar de acompanhar ${item.ticker}?'),
-        content: const Text(
-          'A compra continua no razão e na carteira. Só deixa de contar no resultado das '
+    final confirmado = await fiConfirm(
+      context,
+      title: 'Deixar de acompanhar ${item.ticker}?',
+      body: 'A compra continua no razão e na carteira. Só deixa de contar no resultado das '
           'sugestões seguidas.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Deixar de acompanhar'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Deixar de acompanhar',
     );
-    if (confirmado != true) return;
+    if (!confirmado) return;
 
     try {
       await ref.read(apiRepositoryProvider).deleteFollowedSuggestion(item.id);
@@ -230,7 +218,7 @@ class _FollowedObject extends ConsumerWidget {
                 if (item.scoreAtSuggestion != null)
                   FiDataRow(
                     label: 'Score quando comprou',
-                    value: item.scoreAtSuggestion!.toStringAsFixed(0),
+                    value: formatDecimal(item.scoreAtSuggestion, digits: 0),
                   ),
               ],
             ),

@@ -14,6 +14,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/controls.dart';
+import '../../core/widgets/feedback.dart';
 
 Future<void> openFixedIncomeForm(
   BuildContext context,
@@ -36,6 +37,9 @@ Future<void> openFixedIncomeForm(
   if (saved == true) {
     ref.invalidate(fixedIncomeProvider);
     ref.invalidate(dashboardProvider);
+    if (context.mounted) {
+      fiNotify(context, existing == null ? 'Aplicação cadastrada.' : 'Aplicação atualizada.');
+    }
   }
 }
 
@@ -53,36 +57,23 @@ class FixedIncomeScreen extends ConsumerWidget {
     WidgetRef ref,
     FixedIncomePosition position,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Remover ${position.name}?'),
-        content: const Text('A aplicação sai da carteira e do histórico de rendimento.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remover'),
-          ),
-        ],
-      ),
+    final confirmed = await fiConfirm(
+      context,
+      title: 'Remover ${position.name}?',
+      body: 'A aplicação sai da carteira e do histórico de rendimento.',
+      confirmLabel: 'Remover',
     );
-    if (confirmed != true) return;
+    if (!confirmed || !context.mounted) return;
 
-    try {
-      await ref.read(apiRepositoryProvider).deleteFixedIncome(position.id);
-      ref.invalidate(fixedIncomeProvider);
-      ref.invalidate(dashboardProvider);
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(fiErrorMessage(e, action: 'remover esta aplicação'))));
-      }
-    }
+    final removida = await fiAttempt(
+      context,
+      () => ref.read(apiRepositoryProvider).deleteFixedIncome(position.id),
+      action: 'remover esta aplicação',
+      success: '${position.name} saiu da carteira.',
+    );
+    if (!removida) return;
+    ref.invalidate(fixedIncomeProvider);
+    ref.invalidate(dashboardProvider);
   }
 
   @override
@@ -94,7 +85,7 @@ class FixedIncomeScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(fixedIncomeProvider),
         child: listing.when(
-          loading: () => FiSkeleton.screen(shape: FiSkeletonShape.row, count: 5, label: 'Carregando seus títulos'),
+          loading: () => FiSkeleton.screen(shape: FiSkeletonShape.row, count: 5, label: 'Carregando suas aplicações'),
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos carregar sua renda fixa',
@@ -134,7 +125,7 @@ class FixedIncomeScreen extends ConsumerWidget {
                   title: 'Aplicações',
                   count: data.items.length,
                   trailing: FiButton.quiet(
-                    label: 'Cadastrar',
+                    label: 'Cadastrar aplicação',
                     icon: Icons.add,
                     onPressed: () => _openForm(context, ref),
                   ),
@@ -298,7 +289,7 @@ class _HoldingObject extends StatelessWidget {
                   ),
                   const SizedBox(width: FiSpace.s5),
                   Flexible(
-                    child: FiButton.quiet(label: 'Remover', onPressed: onDelete),
+                    child: FiButton.danger(label: 'Remover', onPressed: onDelete),
                   ),
                 ],
               ),
@@ -333,7 +324,8 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
   late bool _hidden;
 
   bool _saving = false;
-  String? _error;
+  String? _invalid;
+  Object? _error;
 
   static const _kinds = [
     'cdb',
@@ -352,11 +344,9 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
     super.initState();
     final e = widget.existing;
     _name = TextEditingController(text: e?.name ?? '');
-    _amount = TextEditingController(text: e != null ? '${e.investedValue}' : '');
-    _rate = TextEditingController(text: e != null ? '${e.rate}' : '');
-    _cdiPercent = TextEditingController(
-      text: e?.cdiPercent != null ? '${e!.cdiPercent}' : '',
-    );
+    _amount = TextEditingController(text: formatForInput(e?.investedValue));
+    _rate = TextEditingController(text: formatForInput(e?.rate));
+    _cdiPercent = TextEditingController(text: formatForInput(e?.cdiPercent));
     _kind = e?.kind ?? 'cdb';
     _rateKind = e?.rateKind ?? 'pre_fixado';
     _liquidity = e?.liquidity ?? 'no_vencimento';
@@ -378,10 +368,12 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
 
   Future<void> _pickDate({required bool maturity}) async {
     final now = DateTime.now();
+    final inicio = maturity ? _appliedOn : DateTime(now.year - 30);
+    final sugerida = maturity ? (_maturity ?? now) : _appliedOn;
     final picked = await showDatePicker(
       context: context,
-      initialDate: maturity ? (_maturity ?? now) : _appliedOn,
-      firstDate: DateTime(now.year - 30),
+      initialDate: sugerida.isBefore(inicio) ? inicio : sugerida,
+      firstDate: inicio,
       lastDate: DateTime(now.year + 30),
     );
     if (picked == null) return;
@@ -394,12 +386,31 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
     });
   }
 
-  Future<void> _save() async {
-    final valor = double.tryParse(_amount.text.replaceAll(',', '.'));
-    final rate = double.tryParse(_rate.text.replaceAll(',', '.'));
+  String? _validate(double? valor, double? rate, double? cdi) {
+    if (_name.text.trim().isEmpty) return 'Informe o nome da aplicação.';
+    if (valor == null || valor <= 0) return 'Informe o valor aplicado, maior que zero.';
+    if (rate == null || rate <= 0) return 'Informe a taxa ao ano, maior que zero.';
+    if (_rateKind == 'pos_fixado' && (cdi == null || cdi <= 0)) {
+      return 'Informe o % do CDI — sem ele o rendimento pós-fixado não se calcula.';
+    }
+    final vencimento = _maturity;
+    if (vencimento != null && vencimento.isBefore(_appliedOn)) {
+      return 'O vencimento não pode ser antes da data de aplicação.';
+    }
+    return null;
+  }
 
-    if (_name.text.trim().isEmpty || valor == null || valor <= 0 || rate == null || rate <= 0) {
-      setState(() => _error = 'Preencha nome, valor aplicado e taxa.');
+  Future<void> _save() async {
+    final valor = parseDecimal(_amount.text);
+    final rate = parseDecimal(_rate.text);
+    final cdi = parseDecimal(_cdiPercent.text);
+
+    final invalido = _validate(valor, rate, cdi);
+    if (invalido != null) {
+      setState(() {
+        _invalid = invalido;
+        _error = null;
+      });
       return;
     }
 
@@ -409,9 +420,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
       'valor_investido': valor,
       'taxa': rate,
       'tipo_taxa': _rateKind,
-      'percentual_cdi': _rateKind == 'pos_fixado'
-          ? double.tryParse(_cdiPercent.text.replaceAll(',', '.'))
-          : null,
+      'percentual_cdi': _rateKind == 'pos_fixado' ? cdi : null,
       'data_aplicacao': _iso(_appliedOn),
       'vencimento': _maturity != null ? _iso(_maturity!) : null,
       'liquidez': _liquidity,
@@ -420,6 +429,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
 
     setState(() {
       _saving = true;
+      _invalid = null;
       _error = null;
     });
 
@@ -436,7 +446,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Não foi possível salvar: $e';
+          _error = e;
         });
       }
     }
@@ -541,6 +551,14 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
                   ),
                 ],
               ),
+              if (_maturity != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: FiButton.quiet(
+                    label: 'Deixar sem vencimento',
+                    onPressed: () => setState(() => _maturity = null),
+                  ),
+                ),
               const SizedBox(height: FiSpace.s4),
               DropdownButtonFormField<String>(
                 initialValue: _liquidity,
@@ -564,11 +582,11 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
                   onChanged: (v) => setState(() => _hidden = v),
                 ),
               ),
-              if (_error != null)
+              if (_invalid != null || _error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: FiSpace.s2),
                   child: Text(
-                    _error!,
+                    _invalid ?? fiErrorMessage(_error!, action: 'salvar esta aplicação'),
                     style: FiType.body.copyWith(
                       color: fiStateColor(
                         FiState.adverse,

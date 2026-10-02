@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../format.dart';
 import '../theme.dart';
 import 'measure.dart';
 
@@ -30,11 +31,11 @@ class FiAllocationGap extends StatelessWidget {
     final partes = <String>[
       ?trailing,
       if (temAlvo)
-        'meta ${alvo.toStringAsFixed(0)}%'
+        'meta ${formatPercent(alvo, digits: 0)}'
       else
         'sem meta declarada',
       if (temAlvo && delta.abs() >= 1)
-        '${delta.abs().toStringAsFixed(1)} p.p. ${delta > 0 ? 'acima' : 'abaixo'}'
+        '${formatPoints(delta.abs())} ${delta > 0 ? 'acima' : 'abaixo'}'
       else if (temAlvo)
         'na meta',
     ];
@@ -43,15 +44,15 @@ class FiAllocationGap extends StatelessWidget {
       label: label,
       value: currentPct,
       reference: temAlvo ? alvo : null,
-      readout: '${currentPct.toStringAsFixed(1)}%',
+      readout: formatPercent(currentPct, digits: 1),
       note: partes.join(' · '),
       state: band.state,
       fillColor: barColor ?? fiInk3(context),
       semantics: temAlvo
-          ? '$label: ${currentPct.toStringAsFixed(1)}% da carteira contra meta de '
-                '${alvo.toStringAsFixed(1)}% — ${delta.abs().toStringAsFixed(1)} pontos '
+          ? '$label: ${formatPercent(currentPct, digits: 1)} da carteira contra meta de '
+                '${formatPercent(alvo, digits: 1)} — ${formatDecimal(delta.abs())} pontos '
                 'percentuais ${delta > 0 ? 'acima' : 'abaixo'}, ${band.label.toLowerCase()}'
-          : '$label: ${currentPct.toStringAsFixed(1)}% da carteira, sem meta definida',
+          : '$label: ${formatPercent(currentPct, digits: 1)} da carteira, sem meta definida',
     );
   }
 }

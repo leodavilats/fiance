@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../format.dart';
 import '../theme.dart';
 import 'help_tooltip.dart';
 
@@ -62,7 +63,7 @@ class FiMeasure extends StatelessWidget {
     final explicavel = hasGlossaryEntry(glossaryKey);
 
     final medida = Semantics(
-      label: semantics ?? '$label: ${readout ?? value.toStringAsFixed(0)}'
+      label: semantics ?? '$label: ${readout ?? formatDecimal(value, digits: 0)}'
           '${note == null ? '' : ' — $note'}',
       child: ExcludeSemantics(
         child: Padding(
@@ -87,10 +88,13 @@ class FiMeasure extends StatelessWidget {
                   ),
                   if (readout != null)
                     Flexible(
-                      child: Text(
-                        readout!,
-                        textAlign: TextAlign.end,
-                        style: FiType.figure.copyWith(color: ink1),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          readout!,
+                          textAlign: TextAlign.end,
+                          style: FiType.figure.copyWith(color: ink1),
+                        ),
                       ),
                     ),
                 ],

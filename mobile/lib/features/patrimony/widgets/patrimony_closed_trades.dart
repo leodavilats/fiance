@@ -7,6 +7,7 @@ import '../../../core/providers.dart';
 import '../../../core/theme.dart';
 import '../../../core/widgets/button.dart';
 import '../../../core/widgets/data_row.dart';
+import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/section.dart';
 import '../../../core/widgets/skeleton.dart';
 
@@ -57,7 +58,14 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
         title: 'Operações encerradas',
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 2),
       ),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (err, _) => FiSection(
+        title: 'Operações encerradas',
+        child: FiErrorState(
+          error: err,
+          action: 'carregar as operações encerradas',
+          onRetry: () => ref.invalidate(closedTradesProvider),
+        ),
+      ),
       data: (data) {
         if (data.trades.isEmpty) return const SizedBox.shrink();
 
@@ -131,7 +139,7 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                       FiDataRow(
                         label: t.ticker,
                         detail:
-                            '${t.quantity} un. · venda ${formatCurrency(t.sellPrice)}'
+                            '${formatQuantity(t.quantity)} un. · venda ${formatCurrency(t.sellPrice)}'
                             '${t.dayTrade ? ' · day trade' : ''}',
                         value:
                             '${t.netProfit >= 0 ? '+' : ''}${formatCurrency(t.netProfit)}',

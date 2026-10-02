@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/segments.dart';
 import '../../core/widgets/skeleton.dart';
@@ -61,14 +62,15 @@ class PatrimonyScreen extends ConsumerWidget {
                   onPressed: () => openAddPositionDialog(context, ref),
                 ),
                 secondary: FiButton.secondary(
-                  label: 'Cadastrar renda fixa',
+                  label: 'Cadastrar aplicação de renda fixa',
                   onPressed: () => context.go('/patrimonio/renda-fixa'),
                 ),
               );
             }
 
+            final negociados = fiTradedPositions(data.positions);
             final idade = formatAge(
-              oldestStamp(data.positions.map((p) => p.asOf)),
+              oldestStamp(negociados.map((p) => p.asOf)),
             );
 
             return ListView(
@@ -100,13 +102,22 @@ class PatrimonyScreen extends ConsumerWidget {
                     ),
                   ),
 
-                if (data.snapshots.length > 1)
-                  FiSection(
-                    title: 'Evolução',
-                    hint: 'A distância entre as duas linhas é o seu lucro — o que subiu por '
-                        'aporte fica na linha de baixo.',
-                    child: FiEvolutionChart(snapshots: data.snapshots),
+                FiSection(
+                  title: 'Evolução',
+                  hint: data.snapshots.length > 1
+                      ? 'A distância entre as duas linhas é o seu lucro — o que subiu por '
+                            'aporte fica na linha de baixo.'
+                      : null,
+                  action: FiNavAction(
+                    label: 'Projeção — aportando assim, onde eu chego?',
+                    onPressed: () => context.push('/patrimonio/projecao'),
                   ),
+                  child: data.snapshots.length > 1
+                      ? FiEvolutionChart(snapshots: data.snapshots)
+                      : const FiEmptyLine(
+                          'A linha do tempo aparece a partir da segunda leitura da carteira.',
+                        ),
+                ),
 
                 const FiBenchmarkSection(),
 
@@ -114,7 +125,7 @@ class PatrimonyScreen extends ConsumerWidget {
 
                 FiSection(
                   title: 'Ativos negociados',
-                  count: data.positions.length,
+                  count: negociados.length,
                   hint: idade.isEmpty ? null : 'Cotações lidas $idade.',
                   action: FiButton.secondary(
                     label: 'Adicionar ativo',
@@ -124,7 +135,7 @@ class PatrimonyScreen extends ConsumerWidget {
                   child: FiGroupedPositionsList(
                     positions: data.positions,
                     mode: groupMode,
-                    onDelete: (ticker) => deletePosition(ref, ticker),
+                    onRemove: (p) => removePosition(context, ref, p),
                     onSell: (p) => openSellDialog(context, ref, p),
                   ),
                 ),
@@ -176,30 +187,28 @@ class _WhereItComesFrom extends ConsumerWidget {
         children: [
           FiDataRow(
             label: 'Proventos',
-            value: proventos.maybeWhen(
-              data: (d) => formatCurrency(d.receivedLast12m),
-              orElse: () => null,
-            ),
-            detail: proventos.maybeWhen(
+            value: proventos.valueOrNull == null
+                ? null
+                : formatCurrency(proventos.valueOrNull!.receivedLast12m),
+            detail: proventos.when(
               data: (d) => d.totalCount == 0
                   ? 'Nada registrado ainda — o calendário pode ter sugestões'
                   : '${d.totalCount} ${d.totalCount == 1 ? 'crédito' : 'créditos'} '
                         'nos últimos 12 meses',
-              orElse: () => 'Lendo o que os seus ativos pagaram',
+              loading: () => 'Lendo o que os seus ativos pagaram',
+              error: (err, _) => fiErrorMessage(err, action: 'ler os seus proventos'),
             ),
             onTap: () => context.go('/patrimonio/proventos'),
           ),
           FiDataRow(
             label: 'Livro-razão',
-            value: razao.maybeWhen(
-              data: (d) => '${d.count}',
-              orElse: () => null,
-            ),
-            detail: razao.maybeWhen(
+            value: razao.valueOrNull == null ? null : '${razao.valueOrNull!.count}',
+            detail: razao.when(
               data: (d) => d.items.isEmpty
                   ? 'Nenhum lançamento — a carteira veio de declaração de posição'
                   : 'O último em ${formatDate(d.items.first.tradedOn)}',
-              orElse: () => 'Lendo os seus lançamentos',
+              loading: () => 'Lendo os seus lançamentos',
+              error: (err, _) => fiErrorMessage(err, action: 'ler o seu livro-razão'),
             ),
             onTap: () => context.go('/patrimonio/razao'),
           ),
