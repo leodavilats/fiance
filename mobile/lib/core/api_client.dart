@@ -24,7 +24,12 @@ class ApiClient {
             return handler.next(error);
           }
 
-          final renewed = await _authService.refreshSession();
+          final bool renewed;
+          try {
+            renewed = await _authService.refreshSession();
+          } on DioException catch (semResposta) {
+            return handler.next(semResposta);
+          }
           if (!renewed) {
             return handler.next(error);
           }

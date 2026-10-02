@@ -18,6 +18,7 @@ import '../../core/theme.dart';
 import '../../core/theme_provider.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
 import 'delete_account_screen.dart';
 import '../../core/widgets/controls.dart';
 
@@ -302,6 +303,7 @@ class FiRecommendation extends ConsumerWidget {
                   title: 'Setores preferidos',
                   hint: 'Ex.: Energia, Bancos, Varejo',
                   initial: prefs.preferredSectors,
+                  action: 'salvar os setores preferidos',
                   apply: (values) => ref
                       .read(apiRepositoryProvider)
                       .savePreferences(
@@ -322,6 +324,7 @@ class FiRecommendation extends ConsumerWidget {
                   title: 'Ativos excluídos das oportunidades',
                   hint: 'Ex.: MGLU3, IRBR3',
                   initial: prefs.excludedTickers,
+                  action: 'salvar os ativos excluídos',
                   apply: (values) => ref
                       .read(apiRepositoryProvider)
                       .savePreferences(
@@ -397,6 +400,18 @@ class FiGoals extends ConsumerWidget {
   }
 }
 
+Future<void> _savePreferences(
+  BuildContext context,
+  WidgetRef ref,
+  Future<void> Function() write, {
+  required String action,
+  String? success,
+}) async {
+  if (!context.mounted) return;
+  final ok = await fiAttempt(context, write, action: action, success: success);
+  if (ok) ref.invalidate(preferencesProvider);
+}
+
 Future<void> _pickReserveMonths(
   BuildContext context,
   WidgetRef ref,
@@ -408,54 +423,72 @@ Future<void> _pickReserveMonths(
 
   final escolha = await showDialog<String>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Reserva de emergência'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Quantos meses do seu gasto fixo você quer guardar. O produto não sugere um '
-            'número: o seu custo de vida é que decide.',
-            style: FiType.body.copyWith(color: fiInk2(context)),
+    builder: (context) => ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, digitado, _) {
+        final texto = digitado.text.trim();
+        final meses = int.tryParse(texto);
+        final valido = meses != null && meses >= 0 && meses <= 60;
+        return AlertDialog(
+          title: const Text('Reserva de emergência'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Quantos meses do seu gasto fixo você quer guardar. O produto não sugere um '
+                'número: o seu custo de vida é que decide.',
+                style: FiType.body.copyWith(color: fiInk2(context)),
+              ),
+              const SizedBox(height: FiSpace.s3),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: 'Meses',
+                  errorText: texto.isEmpty || valido ? null : 'Use um número de 0 a 60',
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: FiSpace.s3),
-          TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Meses'),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, 'cancelar'),
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, 'limpar'),
-          child: const Text('Sem alvo'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, 'salvar'),
-          child: const Text('Salvar'),
-        ),
-      ],
+          actions: [
+            FiButton.quiet(
+              label: 'Cancelar',
+              onPressed: () => Navigator.pop(context, 'cancelar'),
+            ),
+            FiButton.quiet(
+              label: 'Sem alvo',
+              onPressed: () => Navigator.pop(context, 'limpar'),
+            ),
+            FiButton.primary(
+              label: 'Salvar',
+              onPressed: valido ? () => Navigator.pop(context, 'salvar') : null,
+            ),
+          ],
+        );
+      },
     ),
   );
   if (escolha == null || escolha == 'cancelar') return;
 
+  final limpar = escolha == 'limpar';
   final meses = int.tryParse(controller.text.trim());
-  if (escolha == 'salvar' && (meses == null || meses < 0 || meses > 60)) return;
+  if (!limpar && (meses == null || meses < 0 || meses > 60)) return;
+  if (!context.mounted) return;
 
-  await ref
-      .read(apiRepositoryProvider)
-      .savePreferences(
-        passiveIncomeGoal: prefs.passiveIncomeGoal,
-        reserveMonthsTarget: escolha == 'limpar' ? null : meses,
-        clearReserveMonths: escolha == 'limpar',
-      );
-  ref.invalidate(preferencesProvider);
+  await _savePreferences(
+    context,
+    ref,
+    () => ref
+        .read(apiRepositoryProvider)
+        .savePreferences(
+          passiveIncomeGoal: prefs.passiveIncomeGoal,
+          reserveMonthsTarget: limpar ? null : meses,
+          clearReserveMonths: limpar,
+        ),
+    action: 'salvar a reserva de emergência',
+  );
 }
 
 class FiNotifications extends ConsumerWidget {
@@ -473,19 +506,7 @@ class FiNotifications extends ConsumerWidget {
           FiDataRow(
             label: 'Alertas de preço',
             detail: 'Sempre imediato, é um alerta de risco',
-            trailing: FiSwitch(
-              label: 'Alertas de preço',
-              value: prefs.notifyPriceAlerts,
-              onChanged: (v) async {
-                await ref
-                    .read(apiRepositoryProvider)
-                    .savePreferences(
-                      passiveIncomeGoal: prefs.passiveIncomeGoal,
-                      notifyPriceAlerts: v,
-                    );
-                ref.invalidate(preferencesProvider);
-              },
-            ),
+            trailing: _PriceAlertsSwitch(prefs: prefs),
           ),
           FiDataRow(
             label: 'Resumo de oportunidades',
@@ -494,6 +515,45 @@ class FiNotifications extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PriceAlertsSwitch extends ConsumerStatefulWidget {
+  const _PriceAlertsSwitch({required this.prefs});
+
+  final Preferences prefs;
+
+  @override
+  ConsumerState<_PriceAlertsSwitch> createState() => _PriceAlertsSwitchState();
+}
+
+class _PriceAlertsSwitchState extends ConsumerState<_PriceAlertsSwitch> {
+  bool? _pedido;
+
+  Future<void> _mudar(bool v) async {
+    setState(() => _pedido = v);
+    final ok = await fiAttempt(
+      context,
+      () => ref
+          .read(apiRepositoryProvider)
+          .savePreferences(
+            passiveIncomeGoal: widget.prefs.passiveIncomeGoal,
+            notifyPriceAlerts: v,
+          ),
+      action: v ? 'ligar os alertas de preço' : 'desligar os alertas de preço',
+    );
+    if (ok) ref.invalidate(preferencesProvider);
+    if (mounted) setState(() => _pedido = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final salvando = _pedido != null;
+    return FiSwitch(
+      label: 'Alertas de preço',
+      value: _pedido ?? widget.prefs.notifyPriceAlerts,
+      onChanged: salvando ? null : _mudar,
     );
   }
 }
@@ -581,12 +641,16 @@ Future<void> _pickDetailLevel(
       ],
     ),
   );
-  if (picked == null || picked == prefs.detailLevel) return;
+  if (picked == null || picked == prefs.detailLevel || !context.mounted) return;
 
-  await ref
-      .read(apiRepositoryProvider)
-      .savePreferences(passiveIncomeGoal: prefs.passiveIncomeGoal, detailLevel: picked);
-  ref.invalidate(preferencesProvider);
+  await _savePreferences(
+    context,
+    ref,
+    () => ref
+        .read(apiRepositoryProvider)
+        .savePreferences(passiveIncomeGoal: prefs.passiveIncomeGoal, detailLevel: picked),
+    action: 'salvar o nível de detalhe',
+  );
 }
 
 const _preferenceCategories = [
@@ -623,15 +687,19 @@ Future<void> _pickFrequency(
       ],
     ),
   );
-  if (picked == null || picked == prefs.opportunitiesFrequency) return;
+  if (picked == null || picked == prefs.opportunitiesFrequency || !context.mounted) return;
 
-  await ref
-      .read(apiRepositoryProvider)
-      .savePreferences(
-        passiveIncomeGoal: prefs.passiveIncomeGoal,
-        opportunitiesFrequency: picked,
-      );
-  ref.invalidate(preferencesProvider);
+  await _savePreferences(
+    context,
+    ref,
+    () => ref
+        .read(apiRepositoryProvider)
+        .savePreferences(
+          passiveIncomeGoal: prefs.passiveIncomeGoal,
+          opportunitiesFrequency: picked,
+        ),
+    action: 'salvar a cadência do resumo',
+  );
 }
 
 Future<void> _pickRiskProfile(
@@ -660,15 +728,19 @@ Future<void> _pickRiskProfile(
       ],
     ),
   );
-  if (picked == null || picked == prefs.riskProfile) return;
+  if (picked == null || picked == prefs.riskProfile || !context.mounted) return;
 
-  await ref
-      .read(apiRepositoryProvider)
-      .savePreferences(
-        passiveIncomeGoal: prefs.passiveIncomeGoal,
-        riskProfile: picked,
-      );
-  ref.invalidate(preferencesProvider);
+  await _savePreferences(
+    context,
+    ref,
+    () => ref
+        .read(apiRepositoryProvider)
+        .savePreferences(
+          passiveIncomeGoal: prefs.passiveIncomeGoal,
+          riskProfile: picked,
+        ),
+    action: 'salvar o perfil de risco',
+  );
 }
 
 Future<void> _pickPreferredCategories(
@@ -703,27 +775,31 @@ Future<void> _pickPreferredCategories(
               .toList(),
         ),
         actions: [
-          TextButton(
+          FiButton.quiet(
+            label: 'Cancelar',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
           ),
-          FilledButton(
+          FiButton.primary(
+            label: 'Salvar',
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Salvar'),
           ),
         ],
       ),
     ),
   );
-  if (confirmed != true) return;
+  if (confirmed != true || !context.mounted) return;
 
-  await ref
-      .read(apiRepositoryProvider)
-      .savePreferences(
-        passiveIncomeGoal: prefs.passiveIncomeGoal,
-        preferredCategories: selected.toList(),
-      );
-  ref.invalidate(preferencesProvider);
+  await _savePreferences(
+    context,
+    ref,
+    () => ref
+        .read(apiRepositoryProvider)
+        .savePreferences(
+          passiveIncomeGoal: prefs.passiveIncomeGoal,
+          preferredCategories: selected.toList(),
+        ),
+    action: 'salvar as categorias preferidas',
+  );
 }
 
 Future<void> _editCsvList(
@@ -734,6 +810,7 @@ Future<void> _editCsvList(
   required String hint,
   required List<String> initial,
   required Future<void> Function(List<String> values) apply,
+  required String action,
 }) async {
   final controller = TextEditingController(text: initial.join(', '));
 
@@ -746,26 +823,25 @@ Future<void> _editCsvList(
         decoration: InputDecoration(hintText: hint),
       ),
       actions: [
-        TextButton(
+        FiButton.quiet(
+          label: 'Cancelar',
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancelar'),
         ),
-        FilledButton(
+        FiButton.primary(
+          label: 'Salvar',
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Salvar'),
         ),
       ],
     ),
   );
-  if (confirmed != true) return;
+  if (confirmed != true || !context.mounted) return;
 
   final values = controller.text
       .split(',')
       .map((v) => v.trim())
       .where((v) => v.isNotEmpty)
       .toList();
-  await apply(values);
-  ref.invalidate(preferencesProvider);
+  await _savePreferences(context, ref, () => apply(values), action: action);
 }
 
 class FiReferral extends ConsumerWidget {
@@ -785,8 +861,11 @@ class FiReferral extends ConsumerWidget {
       data: (r) => FiSection(
         first: true,
         title: 'Indicação',
-        hint: 'Quem entra pelo seu link ganha ${r.rewardDays} dias de Premium — e você '
-            'também, quando essa pessoa salvar a primeira posição.',
+        hint: r.rewardDays > 0
+            ? 'Quem entra pelo seu link ganha ${r.rewardDays} dias de Premium — e você '
+                  'também, quando essa pessoa salvar a primeira posição.'
+            : 'Mande o seu link para quem quiser organizar o dinheiro do mesmo jeito. Aqui '
+                  'você acompanha quem chegou por ele.',
         action: FiButton.secondary(
           label: 'Copiar link de indicação',
           icon: Icons.link,
@@ -794,11 +873,7 @@ class FiReferral extends ConsumerWidget {
             await Clipboard.setData(
               ClipboardData(text: 'https://fiance.app/?indicacao=${r.code}'),
             );
-            if (context.mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Link copiado')));
-            }
+            if (context.mounted) fiNotify(context, 'Link copiado');
           },
         ),
         child: Column(
@@ -813,14 +888,16 @@ class FiReferral extends ConsumerWidget {
               figures: {
                 'CHEGARAM': '${r.attributed}',
                 'MONTARAM CARTEIRA': '${r.qualified}',
-                'DIAS GANHOS': '${r.daysEarned}',
+                if (r.rewardDays > 0 || r.daysEarned > 0) 'DIAS GANHOS': '${r.daysEarned}',
               },
             ),
             if (r.pending > 0) ...[
               const SizedBox(height: FiSpace.s3),
               Text(
-                '${r.pending} ainda não montaram carteira. O crédito sai quando elas '
-                'salvarem a primeira posição.',
+                r.rewardDays > 0
+                    ? '${r.pending} ainda não montaram carteira. O crédito sai quando elas '
+                          'salvarem a primeira posição.'
+                    : '${r.pending} ainda não montaram carteira.',
                 style: FiType.caption.copyWith(color: fiInk3(context)),
               ),
             ],
@@ -831,10 +908,18 @@ class FiReferral extends ConsumerWidget {
   }
 }
 
-class FiPriceAlerts extends ConsumerWidget {
+class FiPriceAlerts extends ConsumerStatefulWidget {
   const FiPriceAlerts({super.key});
 
-  Future<void> _createAlert(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<FiPriceAlerts> createState() => _FiPriceAlertsState();
+}
+
+class _FiPriceAlertsState extends ConsumerState<FiPriceAlerts> {
+  bool _criando = false;
+  final _apagando = <int>{};
+
+  Future<void> _createAlert() async {
     final tickerCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
     String condition = 'below';
@@ -859,44 +944,88 @@ class FiPriceAlerts extends ConsumerWidget {
                 onChanged: (v) => setState(() => condition = v!),
               ),
               const SizedBox(height: FiSpace.s4),
-              TextField(
-                controller: priceCtrl,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Preço alvo (R\$)',
-                ),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: priceCtrl,
+                builder: (context, digitado, _) {
+                  final texto = digitado.text.trim();
+                  final preco = parseDecimal(texto);
+                  return TextField(
+                    controller: priceCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Preço alvo (R\$)',
+                      errorText: texto.isEmpty || (preco != null && preco > 0)
+                          ? null
+                          : 'Use um preço maior que zero, como 38,50',
+                    ),
+                  );
+                },
               ),
             ],
           ),
           actions: [
-            TextButton(
+            FiButton.quiet(
+              label: 'Cancelar',
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Criar'),
+            ListenableBuilder(
+              listenable: Listenable.merge([tickerCtrl, priceCtrl]),
+              builder: (context, _) {
+                final preco = parseDecimal(priceCtrl.text.trim());
+                final valido =
+                    tickerCtrl.text.trim().isNotEmpty && preco != null && preco > 0;
+                return FiButton.primary(
+                  label: 'Criar',
+                  onPressed: valido ? () => Navigator.pop(context, true) : null,
+                );
+              },
             ),
           ],
         ),
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
     final ticker = tickerCtrl.text.trim().toUpperCase();
-    final price = double.tryParse(priceCtrl.text.replaceAll(',', '.'));
-    if (ticker.isEmpty || price == null) return;
+    final price = parseDecimal(priceCtrl.text.trim());
+    if (ticker.isEmpty || price == null || price <= 0) return;
 
-    await ref
-        .read(apiRepositoryProvider)
-        .createAlert(ticker: ticker, condition: condition, targetPrice: price);
-    ref.invalidate(alertsProvider);
+    setState(() => _criando = true);
+    final ok = await fiAttempt(
+      context,
+      () => ref
+          .read(apiRepositoryProvider)
+          .createAlert(ticker: ticker, condition: condition, targetPrice: price),
+      action: 'criar o alerta',
+      success: 'Alerta de $ticker criado',
+    );
+    if (ok) ref.invalidate(alertsProvider);
+    if (mounted) setState(() => _criando = false);
+  }
+
+  Future<void> _deleteAlert(PriceAlert a) async {
+    final confirmado = await fiConfirm(
+      context,
+      title: 'Apagar o alerta de ${a.ticker}?',
+      body: 'O aviso de ${a.condition == 'below' ? 'abaixo de' : 'acima de'} '
+          '${formatCurrency(a.targetPrice)} deixa de chegar.',
+      confirmLabel: 'Apagar',
+    );
+    if (!confirmado || !mounted) return;
+
+    setState(() => _apagando.add(a.id));
+    final ok = await fiAttempt(
+      context,
+      () => ref.read(apiRepositoryProvider).deleteAlert(a.id),
+      action: 'apagar o alerta',
+      success: 'Alerta de ${a.ticker} apagado',
+    );
+    if (ok) ref.invalidate(alertsProvider);
+    if (mounted) setState(() => _apagando.remove(a.id));
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final alerts = ref.watch(alertsProvider);
 
     return FiSection(
@@ -905,7 +1034,8 @@ class FiPriceAlerts extends ConsumerWidget {
       action: FiButton.secondary(
         label: 'Novo alerta',
         icon: Icons.add,
-        onPressed: () => _createAlert(context, ref),
+        busy: _criando,
+        onPressed: _criando ? null : _createAlert,
       ),
       child: alerts.when(
         loading: () => const FiSkeleton(shape: FiSkeletonShape.row, count: 2),
@@ -933,10 +1063,7 @@ class FiPriceAlerts extends ConsumerWidget {
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
                     tooltip: 'Apagar alerta de ${a.ticker}',
-                    onPressed: () async {
-                      await ref.read(apiRepositoryProvider).deleteAlert(a.id);
-                      ref.invalidate(alertsProvider);
-                    },
+                    onPressed: _apagando.contains(a.id) ? null : () => _deleteAlert(a),
                   ),
                 ),
             ],
@@ -998,19 +1125,45 @@ class _LegalRow extends StatelessWidget {
   }
 }
 
-class FiAccount extends ConsumerWidget {
+class FiAccount extends ConsumerStatefulWidget {
   const FiAccount({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FiAccount> createState() => _FiAccountState();
+}
+
+class _FiAccountState extends ConsumerState<FiAccount> {
+  bool _saindo = false;
+
+  Future<void> _sair() async {
+    final confirmado = await fiConfirm(
+      context,
+      title: 'Sair desta conta?',
+      body: 'Seus dados continuam guardados na conta. Neste aparelho, você entra de novo com o '
+          'Google, e os avisos deixam de chegar aqui até lá.',
+      confirmLabel: 'Sair',
+      destructive: false,
+    );
+    if (!confirmado || !mounted) return;
+
+    final roteador = GoRouter.of(context);
+    setState(() => _saindo = true);
+    try {
+      await ref.read(signOutProvider)();
+    } catch (_) {
+    } finally {
+      roteador.go('/login');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return FiSection(
       title: 'Conta',
       action: FiButton.danger(
         label: 'Sair desta conta',
-        onPressed: () async {
-          await ref.read(signOutProvider)();
-          if (context.mounted) context.go('/login');
-        },
+        busy: _saindo,
+        onPressed: _saindo ? null : _sair,
       ),
       child: FiRows(
         children: [

@@ -52,6 +52,7 @@ class ScoreRuler extends StatelessWidget {
 
     return Semantics(
       label: _semantics,
+      excludeSemantics: true,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [

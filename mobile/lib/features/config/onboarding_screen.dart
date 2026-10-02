@@ -104,9 +104,17 @@ class _StepsState extends ConsumerState<_Steps> {
     }
   }
 
-  List<Widget> _actions(int number) => switch (number) {
+  int? get _firstPending {
+    for (final p in _steps) {
+      if (!_done(p.number) && _actions(p.number, primary: false).isNotEmpty) return p.number;
+    }
+    return null;
+  }
+
+  List<Widget> _actions(int number, {required bool primary}) => switch (number) {
     2 => [
-      FiButton.primary(
+      FiButton(
+        tone: primary ? FiButtonTone.primary : FiButtonTone.secondary,
         label: 'Importar extrato',
         icon: Icons.upload_file_outlined,
         onPressed: () => context.push('/patrimonio/razao/importar'),
@@ -117,7 +125,8 @@ class _StepsState extends ConsumerState<_Steps> {
       ),
     ],
     3 => [
-      FiButton.primary(
+      FiButton(
+        tone: primary ? FiButtonTone.primary : FiButtonTone.secondary,
         label: 'Definir metas',
         icon: Icons.flag_outlined,
         onPressed: () => context.push('/voce/objetivos'),
@@ -133,6 +142,7 @@ class _StepsState extends ConsumerState<_Steps> {
         ? widget.focus!
         : s.step;
     final tudoFeito = _steps.every((p) => _done(p.number));
+    final primeiro = _firstPending;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -179,12 +189,12 @@ class _StepsState extends ConsumerState<_Steps> {
                   Text(passo.title, style: FiType.title.copyWith(color: fiInk1(context))),
                   const SizedBox(height: FiSpace.s1),
                   Text(passo.body, style: FiType.body.copyWith(color: fiInk2(context))),
-                  if (!_done(passo.number) && _actions(passo.number).isNotEmpty) ...[
+                  if (!_done(passo.number) && _actions(passo.number, primary: false).isNotEmpty) ...[
                     const SizedBox(height: FiSpace.s3),
                     Wrap(
                       spacing: FiSpace.s2,
                       runSpacing: FiSpace.s2,
-                      children: _actions(passo.number),
+                      children: _actions(passo.number, primary: passo.number == primeiro),
                     ),
                   ],
                 ],

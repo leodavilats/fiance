@@ -10,6 +10,7 @@ import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/controls.dart';
@@ -84,59 +85,67 @@ class PassiveIncomeSection extends ConsumerWidget {
     WidgetRef ref,
     Preferences prefs,
   ) async {
-    final controller = TextEditingController(
-      text: prefs.passiveIncomeGoal == null
-          ? ''
-          : prefs.passiveIncomeGoal!.toStringAsFixed(2).replaceAll('.', ','),
-    );
+    final controller = TextEditingController(text: formatForInput(prefs.passiveIncomeGoal));
 
     final salvar = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Meta de renda passiva'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quanto você quer receber de proventos por mês. Deixe vazio para não declarar '
-              'alvo nenhum.',
-              style: FiType.body.copyWith(color: fiInk2(context)),
+      builder: (context) => ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, digitado, _) {
+          final texto = digitado.text.trim();
+          final valor = parseDecimal(texto);
+          final valido = texto.isEmpty || (valor != null && valor > 0);
+          return AlertDialog(
+            title: const Text('Meta de renda passiva'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Quanto você quer receber de proventos por mês. Deixe vazio para não declarar '
+                  'alvo nenhum.',
+                  style: FiType.body.copyWith(color: fiInk2(context)),
+                ),
+                const SizedBox(height: FiSpace.s4),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Meta por mês',
+                    prefixText: r'R$ ',
+                    errorText: valido ? null : 'Use um valor em reais maior que zero, como 1.500,00',
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: FiSpace.s4),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Meta por mês',
-                prefixText: r'R$ ',
+            actions: [
+              FiButton.quiet(
+                label: 'Cancelar',
+                onPressed: () => Navigator.pop(context, false),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Salvar'),
-          ),
-        ],
+              FiButton.primary(
+                label: texto.isEmpty ? 'Ficar sem meta' : 'Salvar',
+                onPressed: valido ? () => Navigator.pop(context, true) : null,
+              ),
+            ],
+          );
+        },
       ),
     );
-    if (salvar != true) return;
+    if (salvar != true || !context.mounted) return;
 
-    final texto = controller.text.trim();
-    final valor = texto.isEmpty
-        ? null
-        : double.tryParse(texto.replaceAll('.', '').replaceAll(',', '.'));
-
-    await ref
-        .read(apiRepositoryProvider)
-        .savePreferences(passiveIncomeGoal: valor);
+    final valor = parseDecimal(controller.text.trim());
+    final ok = await fiAttempt(
+      context,
+      () => ref.read(apiRepositoryProvider).savePreferences(
+            passiveIncomeGoal: valor,
+            clearPassiveIncomeGoal: valor == null,
+          ),
+      action: 'salvar sua meta',
+      success: valor == null ? 'Meta removida' : 'Meta salva',
+    );
+    if (!ok) return;
     ref.invalidate(preferencesProvider);
     ref.invalidate(dashboardProvider);
   }
@@ -169,7 +178,7 @@ class _GoalRow extends StatelessWidget {
                 ),
               ),
               Text(
-                '${value.toStringAsFixed(0)}%',
+                formatPercent(value, digits: 0),
                 style: FiType.figure.copyWith(color: fiInk1(context)),
               ),
             ],
@@ -181,6 +190,7 @@ class _GoalRow extends StatelessWidget {
             max: 100,
             divisions: 100,
             format: formatPercent,
+            flush: true,
             onChanged: onChanged,
           ),
         ],
@@ -211,6 +221,7 @@ class _Closing extends StatelessWidget {
     required this.total,
     required this.requiresFullAllocation,
     required this.onSave,
+    this.saving = false,
   });
 
   final double total;
@@ -218,6 +229,8 @@ class _Closing extends StatelessWidget {
   final bool requiresFullAllocation;
 
   final VoidCallback? onSave;
+
+  final bool saving;
 
   @override
   Widget build(BuildContext context) {
@@ -236,19 +249,19 @@ class _Closing extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Soma ${total.toStringAsFixed(0)}%',
+                'Soma ${formatPercent(total, digits: 0)}',
                 style: FiType.metricSm.copyWith(
                   color: fiStateColor(estado, Theme.of(context).brightness),
                 ),
               ),
             ),
-            FiButton.primary(label: 'Salvar metas', onPressed: onSave),
+            FiButton.primary(label: 'Salvar metas', busy: saving, onPressed: onSave),
           ],
         ),
         if (requiresFullAllocation && !fechou) ...[
           const SizedBox(height: FiSpace.s2),
           Text(
-            'Faltam ${(100 - total).abs().toStringAsFixed(0)} pontos para fechar 100%.',
+            'Faltam ${formatDecimal((100 - total).abs(), digits: 0)} pontos para fechar 100%.',
             style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
         ],
@@ -266,6 +279,23 @@ class GoalsSection extends ConsumerStatefulWidget {
 
 class GoalsSectionState extends ConsumerState<GoalsSection> {
   List<Goal>? _editing;
+  bool _saving = false;
+
+  Future<void> _save(Future<void> Function() write) async {
+    setState(() => _saving = true);
+    final ok = await fiAttempt(
+      context,
+      write,
+      action: 'salvar suas metas por categoria',
+      success: 'Metas por categoria salvas',
+    );
+    if (!mounted) return;
+    if (ok) ref.invalidate(goalsProvider);
+    setState(() {
+      _saving = false;
+      if (ok) _editing = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -305,12 +335,9 @@ class GoalsSectionState extends ConsumerState<GoalsSection> {
             _Closing(
               total: total,
               requiresFullAllocation: true,
-              onSave: podeSalvar
-                  ? () async {
-                      await ref.read(apiRepositoryProvider).saveGoals(_editing!);
-                      ref.invalidate(goalsProvider);
-                      setState(() => _editing = null);
-                    }
+              saving: _saving,
+              onSave: podeSalvar && !_saving
+                  ? () => _save(() => ref.read(apiRepositoryProvider).saveGoals(_editing!))
                   : null,
             ),
           ],
@@ -338,6 +365,23 @@ class SectorGoalsSection extends ConsumerStatefulWidget {
 
 class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
   List<SectorGoal>? _editing;
+  bool _saving = false;
+
+  Future<void> _save(Future<void> Function() write) async {
+    setState(() => _saving = true);
+    final ok = await fiAttempt(
+      context,
+      write,
+      action: 'salvar suas metas por setor',
+      success: 'Metas por setor salvas',
+    );
+    if (!mounted) return;
+    if (ok) ref.invalidate(sectorGoalsProvider);
+    setState(() {
+      _saving = false;
+      if (ok) _editing = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -386,15 +430,10 @@ class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
             _Closing(
               total: total,
               requiresFullAllocation: false,
-              onSave: _editing == null
+              saving: _saving,
+              onSave: _editing == null || _saving
                   ? null
-                  : () async {
-                      await ref
-                          .read(apiRepositoryProvider)
-                          .saveSectorGoals(_editing!);
-                      ref.invalidate(sectorGoalsProvider);
-                      setState(() => _editing = null);
-                    },
+                  : () => _save(() => ref.read(apiRepositoryProvider).saveSectorGoals(_editing!)),
             ),
           ],
         );

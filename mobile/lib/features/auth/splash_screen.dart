@@ -15,9 +15,9 @@ class SplashScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen(authStatusProvider, (previous, next) {
       next.when(
-        data: (user) {
+        data: (sessao) {
           if (!context.mounted) return;
-          context.go(user != null ? '/dashboard' : '/login');
+          context.go(sessao == SessionCheck.signedOut ? '/login' : '/dashboard');
         },
         loading: () {},
         error: (_, _) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 class FiSwitch extends StatelessWidget {
   const FiSwitch({
     super.key,
@@ -33,6 +35,7 @@ class FiSlider extends StatelessWidget {
     required this.format,
     required this.onChanged,
     this.divisions,
+    this.flush = false,
   });
 
   final String label;
@@ -43,9 +46,12 @@ class FiSlider extends StatelessWidget {
   final String Function(double) format;
   final ValueChanged<double>? onChanged;
 
+  final bool flush;
+
   @override
   Widget build(BuildContext context) {
     return Slider(
+      padding: flush ? const EdgeInsets.symmetric(vertical: FiSpace.s3) : null,
       value: value.clamp(min, max),
       min: min,
       max: max,

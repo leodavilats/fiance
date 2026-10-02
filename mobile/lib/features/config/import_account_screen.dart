@@ -35,6 +35,8 @@ String _day(double epochSeconds) => formatDate(
   DateTime.fromMillisecondsSinceEpoch((epochSeconds * 1000).round()).toIso8601String(),
 );
 
+const _issuesShown = 10;
+
 class ImportAccountScreen extends ConsumerStatefulWidget {
   const ImportAccountScreen({super.key});
 
@@ -186,13 +188,20 @@ class _ImportAccountScreenState extends ConsumerState<ImportAccountScreen> {
                 style: FiType.label.copyWith(color: fiStateColor(FiState.adverse, brightness)),
               ),
               const SizedBox(height: FiSpace.s2),
-              for (final i in previa.issues.take(10))
+              for (final i in previa.issues.take(_issuesShown))
                 Padding(
                   padding: const EdgeInsets.only(bottom: FiSpace.s2),
                   child: Text(
                     '${i.label}, item ${i.index}: ${i.message}',
                     style: FiType.body.copyWith(color: fiInk1(context)),
                   ),
+                ),
+              if (previa.issues.length > _issuesShown)
+                Text(
+                  'e mais ${previa.issues.length - _issuesShown} '
+                  '${previa.issues.length - _issuesShown == 1 ? 'item' : 'itens'} com problema. '
+                  'Corrija estes e confira de novo.',
+                  style: FiType.caption.copyWith(color: fiInk3(context)),
                 ),
             ],
             if (previa.blockers.isNotEmpty) ...[

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api_client.dart';
@@ -29,30 +30,44 @@ final currentUserProvider = StateProvider<AppUser?>((ref) => null);
 
 final signOutProvider = Provider<Future<void> Function()>((ref) {
   return () async {
-    await ref.read(notificationsServiceProvider).unregisterToken();
-    await ref.read(authServiceProvider).signOut();
-    ref.read(currentUserProvider.notifier).state = null;
+    try {
+      await ref
+          .read(notificationsServiceProvider)
+          .unregisterToken()
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {}
+    try {
+      await ref.read(authServiceProvider).signOut();
+    } finally {
+      ref.read(currentUserProvider.notifier).state = null;
+    }
   };
 });
 
-final authStatusProvider = FutureProvider<AppUser?>((ref) async {
+enum SessionCheck { signedIn, unverified, signedOut }
+
+final authStatusProvider = FutureProvider<SessionCheck>((ref) async {
   final minDuration = Future<void>.delayed(const Duration(milliseconds: 1100));
   final authService = ref.watch(authServiceProvider);
   final token = await authService.readToken();
   if (token == null) {
     await minDuration;
-    return null;
+    return SessionCheck.signedOut;
   }
 
   try {
     final user = await ref.watch(apiRepositoryProvider).getMe();
     ref.read(currentUserProvider.notifier).state = user;
     await minDuration;
-    return user;
-  } catch (_) {
-    await authService.signOut();
+    return SessionCheck.signedIn;
+  } on DioException catch (e) {
     await minDuration;
-    return null;
+    if (e.response?.statusCode != 401) return SessionCheck.unverified;
+    await authService.clearSession();
+    return SessionCheck.signedOut;
+  } catch (_) {
+    await minDuration;
+    return SessionCheck.unverified;
   }
 });
 

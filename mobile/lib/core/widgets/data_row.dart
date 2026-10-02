@@ -41,10 +41,17 @@ class FiDataRow extends StatelessWidget {
 
   final VoidCallback? onTap;
 
+  String get _spoken => [
+    value == null ? label : '$label: $value',
+    ?detail,
+    ?note,
+  ].join('. ');
+
   @override
   Widget build(BuildContext context) {
     final navegavel = onTap != null;
     final explicavel = !navegavel && hasGlossaryEntry(glossaryKey);
+    final falado = navegavel || explicavel;
     final estiloDoRotulo = emphasis
         ? FiType.title
         : FiType.body.copyWith(color: fiInk1(context));
@@ -59,34 +66,37 @@ class FiDataRow extends StatelessWidget {
             const SizedBox(width: FiSpace.s3),
           ],
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: explicavel
-                      ? estiloDoRotulo.copyWith(
-                          decoration: TextDecoration.underline,
-                          decorationStyle: TextDecorationStyle.dotted,
-                          decorationColor: fiInk3(context),
-                        )
-                      : estiloDoRotulo,
-                ),
-                if (detail != null) ...[
-                  const SizedBox(height: 2),
+            child: ExcludeSemantics(
+              excluding: falado,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    detail!,
-                    style: FiType.caption.copyWith(color: fiInk2(context)),
+                    label,
+                    style: explicavel
+                        ? estiloDoRotulo.copyWith(
+                            decoration: TextDecoration.underline,
+                            decorationStyle: TextDecorationStyle.dotted,
+                            decorationColor: fiInk3(context),
+                          )
+                        : estiloDoRotulo,
                   ),
+                  if (detail != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      detail!,
+                      style: FiType.caption.copyWith(color: fiInk2(context)),
+                    ),
+                  ],
+                  if (note != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      note!,
+                      style: FiType.caption.copyWith(color: fiInk3(context)),
+                    ),
+                  ],
                 ],
-                if (note != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    note!,
-                    style: FiType.caption.copyWith(color: fiInk3(context)),
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
           if (value != null || trailing != null) const SizedBox(width: FiSpace.s4),
@@ -95,11 +105,14 @@ class FiDataRow extends StatelessWidget {
               fit: FlexFit.tight,
               child: Align(
                 alignment: Alignment.centerRight,
-                child: Text(
-                  value!,
-                  textAlign: TextAlign.end,
-                  style: (emphasis ? FiType.metricSm : FiType.figure).copyWith(
-                    color: valueColor ?? fiInk1(context),
+                child: ExcludeSemantics(
+                  excluding: falado,
+                  child: Text(
+                    value!,
+                    textAlign: TextAlign.end,
+                    style: (emphasis ? FiType.metricSm : FiType.figure).copyWith(
+                      color: valueColor ?? fiInk1(context),
+                    ),
                   ),
                 ),
               ),
@@ -116,7 +129,7 @@ class FiDataRow extends StatelessWidget {
     if (explicavel) {
       return Semantics(
         button: true,
-        label: glossarySemantics(value == null ? label : '$label: $value'),
+        label: glossarySemantics(_spoken),
         child: InkWell(
           onTap: () => showGlossaryTerm(context, glossaryKey!, label),
           child: ConstrainedBox(
@@ -131,7 +144,7 @@ class FiDataRow extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: value == null ? label : '$label: $value',
+      label: _spoken,
       child: InkWell(
         onTap: onTap,
         child: ConstrainedBox(

@@ -1,8 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../providers.dart';
 import '../theme.dart';
 import 'button.dart';
+
+bool fiSessionExpired(Object error) =>
+    error is DioException && error.response?.statusCode == 401;
 
 String fiErrorMessage(Object error, {String? action}) {
   final what = action ?? 'carregar estes dados';
@@ -20,8 +26,19 @@ String fiErrorMessage(Object error, {String? action}) {
     }
 
     final status = error.response?.statusCode;
-    if (status == 401 || status == 403) {
+    final detail = error.response?.data;
+    if (status == 401) {
       return 'Sua sessão expirou. Entre novamente para continuar.';
+    }
+    if (status == 402) {
+      final decisao = detail is Map ? detail['detail'] : null;
+      final motivo = decisao is Map ? decisao['reason'] : null;
+      return motivo is String && motivo.trim().isNotEmpty
+          ? 'Isso passa do limite do seu plano. ${motivo.trim()}'
+          : 'Isso passa do limite do seu plano.';
+    }
+    if (status == 403) {
+      return 'Esta conta não tem permissão para $what.';
     }
     if (status == 404) {
       return 'Não encontramos o que você pediu.';
@@ -30,7 +47,6 @@ String fiErrorMessage(Object error, {String? action}) {
       return 'O serviço está instável no momento. Tente de novo em instantes.';
     }
 
-    final detail = error.response?.data;
     if (detail is Map && detail['detail'] is String) {
       return detail['detail'] as String;
     }
@@ -79,12 +95,21 @@ class FiErrorState extends StatelessWidget {
             fiErrorMessage(error, action: action),
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
-          if (onRetry != null) ...[
+          if (fiSessionExpired(error)) ...[
+            const SizedBox(height: FiSpace.s6),
+            FiButton.primary(label: 'Entrar de novo', onPressed: () => _signInAgain(context)),
+          ] else if (onRetry != null) ...[
             const SizedBox(height: FiSpace.s6),
             FiButton.secondary(label: 'Tentar de novo', onPressed: onRetry),
           ],
         ],
       ),
     );
+  }
+
+  Future<void> _signInAgain(BuildContext context) async {
+    final roteador = GoRouter.maybeOf(context);
+    await ProviderScope.containerOf(context, listen: false).read(signOutProvider)();
+    roteador?.go('/login');
   }
 }

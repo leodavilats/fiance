@@ -27,10 +27,16 @@ class FiRange extends StatelessWidget {
     final ink2 = fiInk2(context);
     final ink3 = fiInk3(context);
 
+    final faixa = label.isEmpty
+        ? 'Entre ${formatCurrency(low)} e ${formatCurrency(high)}'
+        : '$label: entre ${formatCurrency(low)} e ${formatCurrency(high)}';
     return Semantics(
-      label: label.isEmpty
-          ? 'Entre ${formatCurrency(low)} e ${formatCurrency(high)}'
-          : '$label: entre ${formatCurrency(low)} e ${formatCurrency(high)}',
+      label: [
+        faixa,
+        if (base != null) 'cenário base: ${formatCurrency(base)}',
+        if (hypothesis.isNotEmpty) hypothesis,
+      ].join('. '),
+      excludeSemantics: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

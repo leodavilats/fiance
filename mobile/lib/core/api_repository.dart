@@ -127,10 +127,16 @@ class ApiRepository {
     required String ticker,
     required double quantity,
     required double sellPrice,
+    double? soldAt,
   }) async {
     final res = await _dio.post(
       '/portfolio/sell',
-      data: {'ticker': ticker, 'quantity': quantity, 'sell_price': sellPrice},
+      data: {
+        'ticker': ticker,
+        'quantity': quantity,
+        'sell_price': sellPrice,
+        'sold_at': ?soldAt,
+      },
     );
     return ClosedTrade.fromJson(res.data as Map<String, dynamic>);
   }
@@ -187,6 +193,7 @@ class ApiRepository {
     String? detailLevel,
     int? reserveMonthsTarget,
     bool clearReserveMonths = false,
+    bool clearPassiveIncomeGoal = false,
     List<String>? preferredCategories,
     List<String>? preferredSectors,
     List<String>? excludedTickers,
@@ -204,6 +211,7 @@ class ApiRepository {
     }..removeWhere((_, v) => v == null);
 
     if (clearReserveMonths) data['reserve_months_target'] = null;
+    if (clearPassiveIncomeGoal) data['passive_income_goal'] = null;
 
     final res = await _dio.put('/preferences', data: data);
     return Preferences.fromJson(res.data as Map<String, dynamic>);

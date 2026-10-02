@@ -8,7 +8,10 @@ import '../../core/legal_links.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/brand_background.dart';
+import '../../core/auth_service.dart';
 import '../../core/widgets/button.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -35,10 +38,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       final user = await ref.read(authServiceProvider).signInWithGoogle();
+      if (!mounted) return;
       ref.read(currentUserProvider.notifier).state = user;
-      if (mounted) context.go('/dashboard');
+      context.go('/dashboard');
+    } on SignInCancelled {
+      return;
     } catch (e) {
-      setState(() => _error = 'Falha no login: $e');
+      if (mounted) setState(() => _error = fiErrorMessage(e, action: 'entrar'));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -109,7 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           _error!,
                           style: FiType.body.copyWith(
                             color: fiStateColor(
-                              FiState.adverse,
+                              FiState.attention,
                               Theme.of(context).brightness,
                             ),
                           ),
@@ -128,30 +134,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: FiType.caption.copyWith(color: fiInk3(context)),
                     ),
                     const SizedBox(height: FiSpace.s1),
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          'Ao entrar você aceita os',
-                          style: FiType.caption.copyWith(color: fiInk3(context)),
-                        ),
-                        const _LegalLink(label: 'Termos', url: termsUrl),
-                        Text(
-                          'e a',
-                          style: FiType.caption.copyWith(color: fiInk3(context)),
-                        ),
-                        const _LegalLink(
-                          label: 'Política de Privacidade',
-                          url: privacyUrl,
-                        ),
-                      ],
-                    ),
+                    const _LegalConsent(),
                   ],
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LegalConsent extends StatelessWidget {
+  const _LegalConsent();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ao entrar você aceita os documentos:',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
+          const Wrap(
+            spacing: FiSpace.s5,
+            children: [
+              _LegalLink(label: 'Termos', url: termsUrl),
+              _LegalLink(label: 'Política de Privacidade', url: privacyUrl),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -167,8 +184,10 @@ class _LegalLink extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
       style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: FiSpace.s1),
-        minimumSize: const Size(0, FiLayout.minTouchTarget),
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(FiLayout.minTouchTarget, FiLayout.minTouchTarget),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        foregroundColor: fiInk2(context),
         textStyle: fiSans(FiType.caption).copyWith(
           decoration: TextDecoration.underline,
         ),
@@ -176,9 +195,7 @@ class _LegalLink extends StatelessWidget {
       onPressed: () async {
         final abriu = await openInBrowser(url);
         if (!abriu && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Não foi possível abrir $url')),
-          );
+          fiNotify(context, 'Não foi possível abrir $url');
         }
       },
       child: Text(label),
