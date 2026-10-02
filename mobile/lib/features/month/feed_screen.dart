@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/empty_state.dart';
@@ -12,11 +13,10 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/nav_action.dart';
+import '../surplus/allocation_drift_screen.dart' show fiRelevantGapPp;
 import 'widgets/feed_health.dart';
 import 'widgets/feed_patrimony.dart';
 import 'widgets/feed_tiles.dart';
-
-const _minGapPp = 2.0;
 
 const _topBuysLimit = 3;
 
@@ -35,7 +35,7 @@ class FeedScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'O que aconteceu',
-            onPressed: () => context.go('/mes/atividade'),
+            onPressed: () => context.push('/mes/atividade'),
           ),
         ],
       ),
@@ -75,7 +75,7 @@ class FeedScreen extends ConsumerWidget {
                 title: 'O que mudou',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _feed(data, whatsNew),
+                  children: _feed(ref, data, whatsNew),
                 ),
               ),
 
@@ -123,26 +123,46 @@ class FeedScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _feed(DashboardData data, AsyncValue<WhatsNew> whatsNew) {
+  List<Widget> _feed(
+    WidgetRef ref,
+    DashboardData data,
+    AsyncValue<WhatsNew> whatsNew,
+  ) {
     final tiles = <(int, Widget)>[];
 
     for (final alert in data.alerts) {
       tiles.add((_severityRank(alert.severity), FiAlertTile(alert: alert)));
     }
 
-    whatsNew.whenData((wn) {
-      for (final item in wn.items) {
-        if (item.kind == 'empty') continue;
-        tiles.add((_severityRank(item.severity), FiWhatsNewTile(item: item)));
-      }
-    });
-
-    if (tiles.isEmpty) {
-      return const [FiEmptyLine('Nada mudou desde a sua última visita.')];
+    List<Widget> ordenados() {
+      tiles.sort((a, b) => a.$1.compareTo(b.$1));
+      return tiles.map((t) => t.$2).toList();
     }
 
-    tiles.sort((a, b) => a.$1.compareTo(b.$1));
-    return tiles.map((t) => t.$2).toList();
+    return whatsNew.when(
+      loading: () => [
+        ...ordenados(),
+        const FiSkeleton(shape: FiSkeletonShape.row, count: 3),
+      ],
+      error: (e, _) => [
+        ...ordenados(),
+        FiErrorState(
+          error: e,
+          action: 'carregar o que mudou',
+          onRetry: () => ref.invalidate(whatsNewProvider),
+        ),
+      ],
+      data: (wn) {
+        for (final item in wn.items) {
+          if (item.kind == 'empty') continue;
+          tiles.add((_severityRank(item.severity), FiWhatsNewTile(item: item)));
+        }
+        if (tiles.isEmpty) {
+          return const [FiEmptyLine('Nada mudou desde a sua última visita.')];
+        }
+        return ordenados();
+      },
+    );
   }
 
   int _severityRank(String severity) {
@@ -172,7 +192,7 @@ class FeedScreen extends ConsumerWidget {
                 delta: a.currentPct - a.targetPct!,
               ),
             )
-            .where((a) => a.delta.abs() >= _minGapPp)
+            .where((a) => a.delta.abs() >= fiRelevantGapPp)
             .toList()
           ..sort((a, b) => b.delta.abs().compareTo(a.delta.abs()));
 
@@ -197,9 +217,10 @@ class FeedScreen extends ConsumerWidget {
             ),
             const SizedBox(height: FiSpace.s2),
             Text(
-              'Sua exposição está ${gap.delta.abs().toStringAsFixed(1)} pontos percentuais '
+              'Sua exposição está ${formatDecimal(gap.delta.abs())} pontos percentuais '
               '${below ? 'abaixo' : 'acima'} do objetivo '
-              '(${gap.current.toStringAsFixed(1)}% contra ${gap.target.toStringAsFixed(1)}%). '
+              '(${formatPercent(gap.current, digits: 1)} contra '
+              '${formatPercent(gap.target, digits: 1)}). '
               'É o maior desvio da sua carteira hoje.',
               style: FiType.body.copyWith(color: fiInk2(context)),
             ),

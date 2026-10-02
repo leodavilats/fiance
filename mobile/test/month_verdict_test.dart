@@ -60,7 +60,7 @@ void main() {
       expect(v.band.id, 'tight');
     });
 
-    test('dívida caseira assume a razão sem mudar a banda', () {
+    test('dívida cara assume a razão sem mudar a banda', () {
       final sem = _leitura(committed: 1000);
       final com = _leitura(committed: 1000, expensiveDebt: _divida());
 
@@ -75,6 +75,12 @@ void main() {
         reason: 'um mês folgado com dívida a 14,9% ao mês não é um mês resolvido',
       );
       expect(com.reason, contains('14,9% ao mês'));
+      expect(
+        com.reason,
+        startsWith('O comprometido consome 10% do que entrou. '),
+        reason: 'a pressão e a dívida são frases separadas: numa só, "Mês folgado" e "come a '
+            'sobra" se leem como contradição',
+      );
     });
 
     test('dívida sem taxa informada não inventa taxa na frase', () {
@@ -105,6 +111,11 @@ void main() {
     test('o mês anterior atravessa a virada do ano', () {
       expect(previousMonth('2026-01'), '2025-12');
       expect(previousMonth('2026-09'), '2026-08');
+    });
+
+    test('o mês seguinte atravessa a virada do ano', () {
+      expect(nextMonth('2026-12'), '2027-01');
+      expect(nextMonth('2026-09'), '2026-10');
     });
 
     test('o mês corrente sai no formato que o backend espera', () {

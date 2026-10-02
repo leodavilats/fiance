@@ -15,6 +15,8 @@ import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/disclosure.dart';
+import '../../core/widgets/feedback.dart';
+import 'cash_refresh.dart';
 
 class DebtsScreen extends ConsumerWidget {
   const DebtsScreen({super.key});
@@ -68,7 +70,7 @@ class _DebtList extends ConsumerWidget {
   final VoidCallback onRegister;
 
   static const _classLabel = {
-    DebtClass.expensive: 'Caseira',
+    DebtClass.expensive: 'Cara',
     DebtClass.manageable: 'Administrável',
     DebtClass.noRate: 'Sem taxa informada',
   };
@@ -149,7 +151,7 @@ class _DebtList extends ConsumerWidget {
   }
 }
 
-class _DebtRow extends ConsumerWidget {
+class _DebtRow extends ConsumerStatefulWidget {
   const _DebtRow({
     required this.debt,
     required this.label,
@@ -161,7 +163,18 @@ class _DebtRow extends ConsumerWidget {
   final FiState state;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DebtRow> createState() => _DebtRowState();
+}
+
+class _DebtRowState extends ConsumerState<_DebtRow> {
+  bool _busy = false;
+
+  Debt get debt => widget.debt;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = widget.label;
+    final state = widget.state;
     return FiDisclosure(
       title: debt.description,
       tag: FiTag(label: label, state: state),
@@ -186,9 +199,8 @@ class _DebtRow extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: FiButton.secondary(
                   label: 'Marcar como quitada',
-                  onPressed: debt.id == null
-                      ? null
-                      : () => _payOff(context, ref, debt),
+                  busy: _busy,
+                  onPressed: debt.id == null || _busy ? null : _payOff,
                 ),
               ),
             ],
@@ -196,33 +208,28 @@ class _DebtRow extends ConsumerWidget {
     );
   }
 
-  Future<void> _payOff(BuildContext context, WidgetRef ref, Debt d) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Quitar esta dívida?'),
-        content: Text(
-          '${d.description} sai da sua ordem de sobra, e o veredito do mês passa a não '
-          'contá-la.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Quitar dívida'),
-          ),
-        ],
-      ),
+  Future<void> _payOff() async {
+    final d = debt;
+    final ok = await fiConfirm(
+      context,
+      title: 'Quitar esta dívida?',
+      body: '${d.description} sai da sua ordem de sobra, e o veredito do mês passa a não '
+          'contá-la. Isso não se desfaz: se ela voltar, será preciso cadastrá-la de novo.',
+      confirmLabel: 'Quitar dívida',
     );
-    if (ok != true) return;
+    if (!ok || !mounted) return;
 
-    await ref.read(apiRepositoryProvider).settleDebt(d.id!);
-    ref.invalidate(debtsProvider);
-    ref.invalidate(surplusProvider);
-    ref.invalidate(cashMonthProvider);
+    setState(() => _busy = true);
+    final api = ref.read(apiRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final quitou = await fiAttempt(
+      context,
+      () => api.settleDebt(d.id!),
+      action: 'quitar esta dívida',
+      success: '${d.description} quitada',
+    );
+    if (quitou) invalidateCashReaders(container.invalidate);
+    if (mounted) setState(() => _busy = false);
   }
 }
 
@@ -254,17 +261,15 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
 
-    final saldo = double.tryParse(
-      _balance.text.replaceAll('.', '').replaceAll(',', '.'),
-    );
+    final saldo = parseDecimal(_balance.text);
     if (saldo == null) return;
 
-    final rateText = _rate.text.trim();
-    final taxa = rateText.isEmpty
-        ? null
-        : double.tryParse(rateText.replaceAll(',', '.'));
+    final taxa = _rate.text.trim().isEmpty ? null : parseDecimal(_rate.text);
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       await ref.read(apiRepositoryProvider).createDebt(
         kind: _kind,
@@ -272,11 +277,10 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
         balance: saldo,
         monthlyRate: taxa,
       );
-      ref.invalidate(debtsProvider);
-      ref.invalidate(surplusProvider);
-      ref.invalidate(cashMonthProvider);
+      invalidateCashReaders(ref.invalidate);
 
       if (!mounted) return;
+      fiNotify(context, 'Dívida cadastrada');
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -331,9 +335,7 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
                   decimal: true,
                 ),
                 validator: (v) {
-                  final n = double.tryParse(
-                    (v ?? '').replaceAll('.', '').replaceAll(',', '.'),
-                  );
+                  final n = parseDecimal(v);
                   if (n == null || n <= 0) return 'Um valor positivo';
                   return null;
                 },
@@ -352,6 +354,12 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final n = parseDecimal(v);
+                  if (n == null || n < 0) return 'Uma taxa como 2,5';
+                  return null;
+                },
               ),
 
               if (_error != null) ...[

@@ -47,7 +47,7 @@ class FiPatrimonyBlock extends StatelessWidget {
             readout: '${formatCurrency(meta)}/mês',
             reference: 100,
             note:
-                '${((summary.passiveIncomeProgress ?? 0) * 100).toStringAsFixed(0)}% do alvo, '
+                '${formatPercent((summary.passiveIncomeProgress ?? 0) * 100, digits: 0)} do alvo, '
                 'com ${formatCurrency(summary.monthlyDividendsEstimate)} por mês hoje',
             state: fiBandFor(
               (summary.passiveIncomeProgress ?? 0) * 100,
@@ -73,8 +73,8 @@ class FiPatrimonyBlock extends StatelessWidget {
 
 String fiCompactCurrency(double value) {
   final abs = value.abs();
-  if (abs >= 1000000) return 'R\$ ${(value / 1000000).toStringAsFixed(1)}M';
-  if (abs >= 1000) return 'R\$ ${(value / 1000).toStringAsFixed(0)}k';
+  if (abs >= 1000000) return 'R\$ ${formatDecimal(value / 1000000)}M';
+  if (abs >= 1000) return 'R\$ ${formatDecimal(value / 1000, digits: 0)}k';
   return formatCurrency(value);
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/cash_models.dart';
+import '../../core/format.dart';
 import '../../core/labels.dart';
 import '../../core/month.dart';
 import '../../core/providers.dart';
@@ -10,6 +11,8 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/controls.dart';
+import '../../core/widgets/feedback.dart';
+import 'cash_refresh.dart';
 
 Future<void> openCashEntrySheet(
   BuildContext context,
@@ -45,9 +48,8 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
 
   late CashKind _kind;
   late String _category;
-  late DateTime _dayFormat;
-
-  bool _settled = false;
+  late DateTime _due;
+  DateTime? _paid;
 
   bool _saving = false;
   String? _error;
@@ -58,11 +60,12 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
     final e = widget.editing;
     _kind = e?.kind ?? CashKind.expense;
     _category = e?.category ?? cashCategoryKeys(_kind).first;
-    _dayFormat = DateTime.tryParse(e?.accrualOn ?? '') ?? DateTime.now();
-    _settled = e?.paidOn != null;
+    _due = DateTime.tryParse(e?.dueOn ?? '') ?? DateTime.now();
+    _paid = DateTime.tryParse(e?.paidOn ?? '');
+    if (_kind == CashKind.income && _paid != null) _due = _paid!;
     if (e != null) {
       _description.text = e.description;
-      _amount.text = e.amount.toStringAsFixed(2).replaceAll('.', ',');
+      _amount.text = formatForInput(e.amount);
     }
   }
 
@@ -77,19 +80,50 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
     setState(() {
       _kind = k;
       _category = cashCategoryKeys(k).first;
+      if (k == CashKind.income && _paid != null) _paid = _due;
     });
   }
 
-  String get _iso => _dayFormat.toIso8601String().substring(0, 10);
+  static String _isoOf(DateTime d) => d.toIso8601String().substring(0, 10);
+
+  static String _shown(String iso) =>
+      '${dayOf(iso)}/${iso.substring(5, 7)}/${iso.substring(0, 4)}';
 
   bool get _income => _kind == CashKind.income;
+
+  bool get _settled => _paid != null;
+
+  String get _dueIso => _isoOf(_due);
+
+  String? get _paidIso => _paid == null ? null : _isoOf(_paid!);
+
+  void _toggleSettled(bool v) {
+    setState(() => _paid = v ? (_income ? _due : DateTime.now()) : null);
+  }
+
+  Future<void> _pickDate({required bool payment}) async {
+    final inicial = payment ? (_paid ?? DateTime.now()) : _due;
+    final d = await showDatePicker(
+      context: context,
+      initialDate: inicial,
+      firstDate: DateTime(inicial.year - 3),
+      lastDate: DateTime(inicial.year + 3),
+    );
+    if (d == null) return;
+    setState(() {
+      if (payment) {
+        _paid = d;
+      } else {
+        _due = d;
+        if (_income && _paid != null) _paid = d;
+      }
+    });
+  }
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
 
-    final valor = double.tryParse(
-      _amount.text.replaceAll('.', '').replaceAll(',', '.'),
-    );
+    final valor = parseDecimal(_amount.text);
     if (valor == null) return;
 
     setState(() {
@@ -106,8 +140,8 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
           category: _category,
           description: _description.text.trim(),
           amount: valor,
-          dueOn: _iso,
-          paidOn: _settled ? _iso : null,
+          dueOn: _dueIso,
+          paidOn: _paidIso,
         );
       } else {
         await api.updateCashEntry(
@@ -116,23 +150,20 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
           category: _category,
           description: _description.text.trim(),
           amount: valor,
-          dueOn: _iso,
-          paidOn: _settled ? _iso : null,
+          dueOn: _dueIso,
+          paidOn: _paidIso,
         );
       }
 
-      ref.invalidate(cashMonthProvider);
-      ref.invalidate(cashEntriesProvider);
-      ref.invalidate(surplusProvider);
+      invalidateCashReaders(ref.invalidate);
 
       if (!mounted) return;
-      final entryMonth = _iso.substring(0, 7);
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lançado em ${monthName(entryMonth)}'),
-        ),
+      final entryMonth = (_paidIso ?? _dueIso).substring(0, 7);
+      fiNotify(
+        context,
+        e == null ? 'Lançado em ${monthName(entryMonth)}' : 'Lançamento atualizado',
       );
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -146,34 +177,49 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
     final e = widget.editing;
     if (e == null) return;
 
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Apagar este lançamento?'),
-        content: Text(
-          '${e.description} sai do mês, e o livre agora e a sobra mudam junto.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Apagar lançamento'),
-          ),
-        ],
-      ),
+    final ok = await fiConfirm(
+      context,
+      title: 'Apagar este lançamento?',
+      body: '${e.description} sai do mês, e o livre agora e a sobra mudam junto.',
+      confirmLabel: 'Apagar lançamento',
     );
-    if (ok != true) return;
+    if (!ok || !mounted) return;
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final api = ref.read(apiRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
-      await ref.read(apiRepositoryProvider).deleteCashEntry(e.id);
-      ref.invalidate(cashMonthProvider);
-      ref.invalidate(cashEntriesProvider);
-      ref.invalidate(surplusProvider);
+      await api.deleteCashEntry(e.id);
+      invalidateCashReaders(container.invalidate);
       if (!mounted) return;
+      final mensageiro = ScaffoldMessenger.maybeOf(context);
+      fiNotify(
+        context,
+        'Lançamento apagado',
+        actionLabel: 'Desfazer',
+        onAction: () async {
+          try {
+            await api.createCashEntry(
+              kind: e.kind,
+              category: e.category,
+              description: e.description,
+              amount: e.amount,
+              dueOn: e.dueOn,
+              paidOn: e.paidOn,
+            );
+            invalidateCashReaders(container.invalidate);
+          } catch (falha) {
+            mensageiro?.showSnackBar(
+              SnackBar(
+                content: Text(fiErrorMessage(falha, action: 'desfazer a exclusão')),
+              ),
+            );
+          }
+        },
+      );
       Navigator.of(context).pop();
     } catch (erro) {
       if (!mounted) return;
@@ -187,6 +233,7 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
   @override
   Widget build(BuildContext context) {
     final categories = cashCategoryKeys(_kind);
+    final paidIso = _paidIso;
 
     return SafeArea(
       child: Padding(
@@ -238,9 +285,7 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
                   decimal: true,
                 ),
                 validator: (v) {
-                  final n = double.tryParse(
-                    (v ?? '').replaceAll('.', '').replaceAll(',', '.'),
-                  );
+                  final n = parseDecimal(v);
                   if (n == null || n <= 0) return 'Um valor positivo';
                   return null;
                 },
@@ -265,33 +310,30 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
               FiRows(
                 children: [
                   FiDataRow(
-                    label: _income
-                        ? 'Dia do crédito'
-                        : (_settled ? 'Dia do pagamento' : 'Vencimento'),
-                    value:
-                        '${dayOf(_iso)}/${_iso.substring(5, 7)}/${_iso.substring(0, 4)}',
-                    onTap: () async {
-                      final d = await showDatePicker(
-                        context: context,
-                        initialDate: _dayFormat,
-                        firstDate: DateTime(_dayFormat.year - 3),
-                        lastDate: DateTime(_dayFormat.year + 3),
-                      );
-                      if (d != null) setState(() => _dayFormat = d);
-                    },
+                    label: _income ? 'Dia do crédito' : 'Vencimento',
+                    value: _shown(_dueIso),
+                    onTap: () => _pickDate(payment: false),
                   ),
                   FiDataRow(
                     label: _income ? 'Já recebi' : 'Já paguei',
                     detail: _settled
-                        ? 'Entra na competência deste dia.'
+                        ? (_income
+                              ? 'Entra na competência do dia do crédito.'
+                              : 'Entra na competência do dia do pagamento.')
                         : 'Conta não paga conta no mês do vencimento, e é o que forma o '
                               'comprometido.',
                     trailing: FiSwitch(
                       label: _income ? 'Já recebi' : 'Já paguei',
                       value: _settled,
-                      onChanged: (v) => setState(() => _settled = v),
+                      onChanged: _toggleSettled,
                     ),
                   ),
+                  if (!_income && paidIso != null)
+                    FiDataRow(
+                      label: 'Dia do pagamento',
+                      value: _shown(paidIso),
+                      onTap: () => _pickDate(payment: true),
+                    ),
                 ],
               ),
 

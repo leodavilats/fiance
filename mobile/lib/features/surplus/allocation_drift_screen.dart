@@ -17,6 +17,8 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/theme.dart';
 
+const fiRelevantGapPp = 2.0;
+
 class AllocationDriftScreen extends ConsumerWidget {
   const AllocationDriftScreen({super.key});
 
@@ -42,7 +44,11 @@ class AllocationDriftScreen extends ConsumerWidget {
           ),
           data: (data) {
             final gaps = data.allocationGaps;
-            final biggest = data.biggestGap;
+            final maior = data.biggestGap;
+            final biggest =
+                maior != null && maior.gapPct.abs() >= fiRelevantGapPp ? maior : null;
+            final revisarImposto =
+                data.taxDisclaimer != null && data.items.any((i) => i.requiresTaxReview);
 
             if (gaps.isEmpty) {
               return ListView(
@@ -81,7 +87,19 @@ class AllocationDriftScreen extends ConsumerWidget {
                     isBiggest: biggest != null && gap.category == biggest.category,
                   ),
 
-                if (biggest != null)
+                if (biggest == null)
+                  FiSection(
+                    title: 'A leitura',
+                    action: FiButton.primary(
+                      label: 'Tenho dinheiro para aportar',
+                      onPressed: () => context.go('/sobra/aporte'),
+                    ),
+                    child: FiEmptyLine(
+                      'Nenhuma classe está a ${formatPoints(fiRelevantGapPp, digits: 0)} ou mais '
+                      'da meta, então não há desvio que peça ajuste agora.',
+                    ),
+                  )
+                else
                   FiSection(
                     title: 'A leitura',
                     action: FiButton.primary(
@@ -130,7 +148,7 @@ class AllocationDriftScreen extends ConsumerWidget {
                     ),
                   ),
 
-                if (data.taxDisclaimer != null) ...[
+                if (revisarImposto) ...[
                   const SizedBox(height: FiSpace.s5),
                   Text(
                     data.taxDisclaimer!,
@@ -174,7 +192,7 @@ class _GapRow extends StatelessWidget {
     final ink1 = fiInk1Of(brightness);
     final ink3 = fiInk3Of(brightness);
 
-    final relevante = gap.gapPct.abs() >= 2;
+    final relevante = gap.gapPct.abs() >= fiRelevantGapPp;
     final falta = gap.gapPct > 0;
     final categoryBarColor = categoryColor(gap.category, brightness);
     final driftColor = relevante
@@ -213,11 +231,11 @@ class _GapRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${gap.currentPct.toStringAsFixed(0)}%',
+                    formatPercent(gap.currentPct, digits: 0),
                     style: FiType.figure.copyWith(color: ink1),
                   ),
                   Text(
-                    ' de ${gap.targetPct.toStringAsFixed(0)}%',
+                    ' de ${formatPercent(gap.targetPct, digits: 0)}',
                     style: FiType.caption.copyWith(color: ink3),
                   ),
                 ],
@@ -304,7 +322,6 @@ class _RebalanceObject extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     final estado = _actionState(item.action);
 
     return Padding(
@@ -325,13 +342,6 @@ class _RebalanceObject extends StatelessWidget {
                 FiTag(label: _actionLabel(item.action), state: estado),
               ],
             ),
-            if (item.adjustmentSentence != null) ...[
-              const SizedBox(height: FiSpace.s2),
-              Text(
-                item.adjustmentSentence!,
-                style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
-              ),
-            ],
             if (item.reasons.isNotEmpty) ...[
               const SizedBox(height: FiSpace.s2),
               for (final razao in item.reasons.take(3))
@@ -345,15 +355,9 @@ class _RebalanceObject extends StatelessWidget {
             ],
             if (item.reallocateTo != null) ...[
               const SizedBox(height: FiSpace.s2),
-              _Reallocation(target: item.reallocateTo!),
-            ],
-            if (item.requiresTaxReview) ...[
-              const SizedBox(height: FiSpace.s1),
-              Text(
-                'Vender aqui pode gerar IR — vale conferir antes.',
-                style: FiType.caption.copyWith(
-                  color: fiStateColor(FiState.attention, brightness),
-                ),
+              _Reallocation(
+                target: item.reallocateTo!,
+                sentence: item.adjustmentSentence,
               ),
             ],
           ],
@@ -364,7 +368,7 @@ class _RebalanceObject extends StatelessWidget {
 
   String _actionLabel(String action) => switch (action) {
     'comprar_mais' => 'Abaixo da meta',
-    'vender' => 'Sinal de venda',
+    'vender' => 'Acima do preço justo',
     'realocar' => 'Realocar',
     _ => 'Manter',
   };
@@ -378,9 +382,10 @@ class _RebalanceObject extends StatelessWidget {
 }
 
 class _Reallocation extends StatelessWidget {
-  const _Reallocation({required this.target});
+  const _Reallocation({required this.target, this.sentence});
 
   final RebalanceTarget target;
+  final String? sentence;
 
   @override
   Widget build(BuildContext context) {
@@ -391,6 +396,13 @@ class _Reallocation extends StatelessWidget {
           'PARA ONDE IRIA',
           style: FiType.eyebrow.copyWith(color: fiInk3(context)),
         ),
+        if (sentence != null) ...[
+          const SizedBox(height: FiSpace.s1),
+          Text(
+            sentence!,
+            style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
+          ),
+        ],
         FiRows(
           children: [
             FiDataRow(

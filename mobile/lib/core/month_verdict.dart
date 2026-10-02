@@ -1,4 +1,5 @@
 import 'cash_models.dart';
+import 'format.dart';
 import 'product_rules.dart';
 
 class MonthVerdict {
@@ -37,14 +38,14 @@ MonthVerdict monthVerdict({
   if (expensiveDebt != null) {
     final taxa = expensiveDebt.monthlyRate == null
         ? ''
-        : ' a ${_trimTrailingZero(expensiveDebt.monthlyRate!)}% ao mês';
+        : ', que custa ${_trimTrailingZero(expensiveDebt.monthlyRate!)}% ao mês';
     return MonthVerdict(
       band: band,
       pressure: pressure,
       verdict: band.label,
       reason:
-          'O comprometido consome $pressure% do que entrou, e ${expensiveDebt.description}$taxa '
-          'come a sobra antes de qualquer aporte.',
+          'O comprometido consome $pressure% do que entrou. A sobra, porém, vai antes para '
+          '${expensiveDebt.description}$taxa.',
     );
   }
 
@@ -56,9 +57,6 @@ MonthVerdict monthVerdict({
   );
 }
 
-String _trimTrailingZero(double v) {
-  final texto = v == v.roundToDouble()
-      ? v.toStringAsFixed(0)
-      : v.toStringAsFixed(2).replaceFirst(RegExp(r'0$'), '');
-  return texto.replaceAll('.', ',');
-}
+String _trimTrailingZero(double v) => v == v.roundToDouble()
+    ? formatDecimal(v, digits: 0)
+    : formatDecimal(v, digits: 2).replaceFirst(RegExp(r'0$'), '');

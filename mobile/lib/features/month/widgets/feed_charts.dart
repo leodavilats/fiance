@@ -135,6 +135,8 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 48,
+                    minIncluded: false,
+                    maxIncluded: false,
                     interval: (maxY - minY + padding * 2) / 3,
                     getTitlesWidget: (value, meta) => Padding(
                       padding: const EdgeInsets.only(right: FiSpace.s1),
@@ -157,8 +159,13 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
                           index > lastIndex) {
                         return const SizedBox.shrink();
                       }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: FiSpace.s2),
+                      return SideTitleWidget(
+                        meta: meta,
+                        space: FiSpace.s2,
+                        fitInside: SideTitleFitInsideData.fromTitleMeta(
+                          meta,
+                          distanceFromEdge: 0,
+                        ),
                         child: Text(
                           _dateFormat.format(_dateAt(index)),
                           style: FiType.axis.copyWith(color: fiInk3(context)),
@@ -354,9 +361,9 @@ class FiBenchmarkSection extends ConsumerWidget {
             children: [
               Text(
                 acima
-                    ? 'Sua carteira rendeu ${delta.abs().toStringAsFixed(1)} pontos '
+                    ? 'Sua carteira rendeu ${formatDecimal(delta.abs())} pontos '
                           'percentuais acima do CDI no período.'
-                    : 'Sua carteira rendeu ${delta.abs().toStringAsFixed(1)} pontos '
+                    : 'Sua carteira rendeu ${formatDecimal(delta.abs())} pontos '
                           'percentuais abaixo do CDI no período.',
                 style: fiSerif(FiType.verdictSm).copyWith(
                   color: fiStateColor(estado, Theme.of(context).brightness),
@@ -408,5 +415,5 @@ class FiBenchmarkSection extends ConsumerWidget {
     );
   }
 
-  String _pct(double v) => '${v >= 0 ? '+' : ''}${v.toStringAsFixed(1)}%';
+  String _pct(double v) => '${v >= 0 ? '+' : ''}${formatPercent(v, digits: 1)}';
 }

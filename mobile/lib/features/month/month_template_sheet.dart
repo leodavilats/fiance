@@ -11,6 +11,8 @@ import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
+import 'cash_refresh.dart';
 
 Future<void> openMonthTemplateSheet(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet<void>(
@@ -32,6 +34,7 @@ class _TemplateSheetState extends ConsumerState<_TemplateSheet> {
   CashMonthTemplate? _template;
   Set<int> _chosen = {};
   Object? _error;
+  Object? _saveError;
   bool _saving = false;
 
   @override
@@ -64,31 +67,29 @@ class _TemplateSheetState extends ConsumerState<_TemplateSheet> {
     final m = _template;
     if (m == null || _chosen.isEmpty) return;
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
     try {
       final lote = [for (final i in _chosen) m.candidates[i]];
       await ref.read(apiRepositoryProvider).createCashEntriesBatch(lote);
 
-      ref.invalidate(cashMonthProvider);
-      ref.invalidate(cashEntriesProvider);
-      ref.invalidate(surplusProvider);
+      invalidateCashReaders(ref.invalidate);
 
       if (!mounted) return;
       final quantos = lote.length;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '$quantos ${quantos == 1 ? 'lançamento copiado' : 'lançamentos copiados'} '
-            'para ${monthName(m.target)}',
-          ),
-        ),
+      fiNotify(
+        context,
+        '$quantos ${quantos == 1 ? 'lançamento copiado' : 'lançamentos copiados'} '
+        'para ${monthName(m.target)}',
       );
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = e;
+        _saveError = e;
       });
     }
   }
@@ -182,6 +183,16 @@ class _TemplateSheetState extends ConsumerState<_TemplateSheet> {
                 ],
               ),
             ),
+
+            if (_saveError != null) ...[
+              const SizedBox(height: FiSpace.s3),
+              Text(
+                fiErrorMessage(_saveError!, action: 'copiar os lançamentos'),
+                style: FiType.body.copyWith(
+                  color: fiStateColor(FiState.adverse, Theme.of(context).brightness),
+                ),
+              ),
+            ],
 
             const SizedBox(height: FiSpace.s5),
             FiButton.primary(

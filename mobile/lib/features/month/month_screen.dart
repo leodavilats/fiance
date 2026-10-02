@@ -14,12 +14,17 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/labels.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
 import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import 'cash_entry_sheet.dart';
+import 'cash_refresh.dart';
 import 'month_template_sheet.dart';
 import '../../core/widgets/disclosure.dart';
+
+String _capitalized(String texto) =>
+    texto.isEmpty ? texto : '${texto[0].toUpperCase()}${texto.substring(1)}';
 
 class MonthScreen extends ConsumerWidget {
   const MonthScreen({super.key});
@@ -31,10 +36,20 @@ class MonthScreen extends ConsumerWidget {
     final entries = ref.watch(cashEntriesProvider);
     final debts = ref.watch(debtsProvider);
 
+    Widget carregando() => FiSkeleton.page(
+      sections: const [2, 4],
+      label: 'Carregando seu mês',
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mês'),
         actions: [
+          IconButton(
+            tooltip: 'O que mudou',
+            icon: const Icon(Icons.notifications_none_outlined),
+            onPressed: () => GoRouter.of(context).go('/mes/feed'),
+          ),
           IconButton(
             tooltip: 'Trocar de mês',
             icon: const Icon(Icons.calendar_month_outlined),
@@ -48,21 +63,34 @@ class MonthScreen extends ConsumerWidget {
         label: const Text('Lançar'),
       ),
       body: mesAsync.when(
-        loading: () => FiSkeleton.screen(
-          shape: FiSkeletonShape.metric,
-          count: 1,
-          label: 'Carregando seu mês',
-        ),
+        loading: carregando,
         error: (e, _) => FiErrorState(
           error: e,
           action: 'carregar seu mês',
           onRetry: () => ref.invalidate(cashMonthProvider),
         ),
-        data: (m) => _Body(
-          cashMonth: m,
-          entries: entries.valueOrNull ?? const [],
-          debts: debts.valueOrNull ?? const [],
-          isCurrentMonth: cashMonth == currentMonth(),
+        data: (m) => entries.when(
+          loading: carregando,
+          error: (e, _) => FiErrorState(
+            error: e,
+            action: 'carregar seus lançamentos',
+            onRetry: () => ref.invalidate(cashEntriesProvider),
+          ),
+          data: (lista) => debts.when(
+            loading: carregando,
+            error: (e, _) => FiErrorState(
+              error: e,
+              action: 'carregar suas dívidas',
+              onRetry: () => ref.invalidate(debtsProvider),
+            ),
+            data: (dividas) => _Body(
+              cashMonth: m,
+              entries: lista,
+              debts: dividas,
+              isCurrentMonth: cashMonth == currentMonth(),
+              onPickMonth: () => _pickMonth(context, ref, lista),
+            ),
+          ),
         ),
       ),
     );
@@ -73,12 +101,12 @@ class MonthScreen extends ConsumerWidget {
     WidgetRef ref,
     List<CashEntry>? entries,
   ) async {
-    final meses = <String>{currentMonth()};
+    final current = ref.read(selectedMonthProvider);
+    final meses = <String>{currentMonth(), nextMonth(currentMonth()), current};
     for (final e in entries ?? const <CashEntry>[]) {
       meses.add(e.accrualOn.substring(0, 7));
     }
     final ordenados = meses.toList()..sort((a, b) => b.compareTo(a));
-    final current = ref.read(selectedMonthProvider);
 
     final escolhido = await showModalBottomSheet<String>(
       context: context,
@@ -102,7 +130,7 @@ class MonthScreen extends ConsumerWidget {
               children: [
                 for (final m in ordenados)
                   FiDataRow(
-                    label: monthName(m),
+                    label: _capitalized(monthName(m)),
                     value: m == current ? 'em leitura' : null,
                     valueColor: m == current ? fiInk3(context) : null,
                     onTap: () => Navigator.of(context).pop(m),
@@ -126,12 +154,14 @@ class _Body extends ConsumerWidget {
     required this.entries,
     required this.debts,
     required this.isCurrentMonth,
+    required this.onPickMonth,
   });
 
   final CashMonth cashMonth;
   final List<CashEntry> entries;
   final List<Debt> debts;
   final bool isCurrentMonth;
+  final VoidCallback onPickMonth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -153,11 +183,7 @@ class _Body extends ConsumerWidget {
       ..sort((a, b) => a.accrualOn.compareTo(b.accrualOn));
 
     return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(cashMonthProvider);
-        ref.invalidate(cashEntriesProvider);
-        ref.invalidate(debtsProvider);
-      },
+      onRefresh: () async => invalidateCashReaders(ref.invalidate),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
           FiLayout.gutter,
@@ -166,6 +192,8 @@ class _Body extends ConsumerWidget {
           88,
         ),
         children: [
+          _MonthHeader(month: cashMonth.month, onPickMonth: onPickMonth),
+          const SizedBox(height: FiSpace.s3),
           _Verdict(verdict: v, cashMonth: cashMonth, isCurrentMonth: isCurrentMonth),
 
           if (caras.isNotEmpty)
@@ -188,7 +216,8 @@ class _Body extends ConsumerWidget {
               count: cashMonth.due.length,
               child: FiRows(
                 children: [
-                  for (final bill in cashMonth.due) _DueRow(bill: bill),
+                  for (final bill in cashMonth.due)
+                    _DueRow(key: ValueKey(bill.id ?? bill.description), bill: bill),
                 ],
               ),
             ),
@@ -215,6 +244,48 @@ class _Body extends ConsumerWidget {
 
           _ToSurplus(cashMonth: cashMonth),
         ],
+      ),
+    );
+  }
+}
+
+class _MonthHeader extends StatelessWidget {
+  const _MonthHeader({required this.month, required this.onPickMonth});
+
+  final String month;
+  final VoidCallback onPickMonth;
+
+  @override
+  Widget build(BuildContext context) {
+    final marca = Theme.of(context).colorScheme.primary;
+    final nome = _capitalized(monthName(month));
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Semantics(
+        button: true,
+        label: 'Trocar de mês. Em leitura: $nome',
+        excludeSemantics: true,
+        child: TextButton(
+          onPressed: onPickMonth,
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: const Size(0, FiLayout.minTouchTarget),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  nome,
+                  style: FiType.title.copyWith(color: fiInk1(context)),
+                ),
+              ),
+              const SizedBox(width: FiSpace.s1),
+              Icon(Icons.expand_more, size: 20, color: marca),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -257,7 +328,7 @@ class _Verdict extends StatelessWidget {
           source: 'Seus lançamentos de caixa, mais os proventos derivados do seu razão.',
           limitation:
               'A leitura é do mês escolhido. Dívida sem taxa informada não entra na classe de '
-              'dívida caseira.',
+              'dívida cara.',
         ),
 
         const SizedBox(height: FiSpace.s4),
@@ -309,6 +380,11 @@ class _ToSurplus extends StatelessWidget {
                       'é o próprio livre.',
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
+          const SizedBox(height: FiSpace.s2),
+          FiNavAction(
+            label: 'Ver a sobra',
+            onPressed: () => GoRouter.of(context).go('/sobra'),
+          ),
         ],
       ),
     );
@@ -344,28 +420,64 @@ class _DebtRow extends StatelessWidget {
   }
 }
 
-class _DueRow extends ConsumerWidget {
-  const _DueRow({required this.bill});
+class _DueRow extends ConsumerStatefulWidget {
+  const _DueRow({super.key, required this.bill});
 
   final CashDueEntry bill;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_DueRow> createState() => _DueRowState();
+}
+
+class _DueRowState extends ConsumerState<_DueRow> {
+  bool _busy = false;
+
+  Future<void> _markPaid() async {
+    final id = widget.bill.id!;
+    final api = ref.read(apiRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final original = ref
+        .read(cashEntriesProvider)
+        .valueOrNull
+        ?.where((e) => e.id == id && !e.derived)
+        .firstOrNull;
+
+    setState(() => _busy = true);
+    final pagou = await fiAttempt(
+      context,
+      () => api.markCashEntryPaid(id),
+      action: 'marcar esta conta como paga',
+      success: 'Conta marcada como paga',
+      undo: original == null
+          ? null
+          : () async {
+              await api.updateCashEntry(
+                id: original.id,
+                kind: original.kind,
+                category: original.category,
+                description: original.description,
+                amount: original.amount,
+                dueOn: original.dueOn,
+                paidOn: null,
+              );
+              invalidateCashReaders(container.invalidate);
+            },
+    );
+    if (pagou) invalidateCashReaders(container.invalidate);
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bill = widget.bill;
     return FiDataRow(
       leading: _Day(day: dayOf(bill.dueOn)),
       label: bill.description,
       detail: formatCurrency(bill.amount),
       trailing: FiButton.quiet(
         label: 'Marcar paga',
-        onPressed: bill.id == null
-            ? null
-            : () async {
-                await ref
-                    .read(apiRepositoryProvider)
-                    .markCashEntryPaid(bill.id!);
-                ref.invalidate(cashMonthProvider);
-                ref.invalidate(cashEntriesProvider);
-              },
+        busy: _busy,
+        onPressed: bill.id == null || _busy ? null : _markPaid,
       ),
     );
   }
@@ -378,10 +490,11 @@ class _Day extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 24,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 24),
       child: Text(
         day,
+        softWrap: false,
         style: FiType.figure.copyWith(color: fiInk3(context)),
       ),
     );

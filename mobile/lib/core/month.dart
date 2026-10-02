@@ -35,4 +35,13 @@ String previousMonth(String mes) {
       : '$ano-${(m - 1).toString().padLeft(2, '0')}';
 }
 
+String nextMonth(String mes) {
+  final partes = mes.split('-');
+  final ano = int.tryParse(partes.first) ?? DateTime.now().year;
+  final m = partes.length > 1 ? (int.tryParse(partes[1]) ?? 1) : 1;
+  return m == 12
+      ? '${ano + 1}-01'
+      : '$ano-${(m + 1).toString().padLeft(2, '0')}';
+}
+
 String dayOf(String data) => data.length >= 10 ? data.substring(8, 10) : data;

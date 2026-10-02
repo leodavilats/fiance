@@ -33,9 +33,8 @@ class SurplusScreen extends ConsumerWidget {
         title: const Text('Sobra'),
       ),
       body: surplus.when(
-        loading: () => FiSkeleton.screen(
-          shape: FiSkeletonShape.verdict,
-          count: 1,
+        loading: () => FiSkeleton.page(
+          sections: const [3, 3],
           label: 'Calculando sua sobra',
         ),
         error: (e, _) => FiErrorState(
@@ -61,7 +60,11 @@ class _Body extends ConsumerWidget {
     final temAporte = passos.any((p) => p.type == CascadeStepType.contribution);
 
     return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(surplusProvider),
+      onRefresh: () async {
+        ref.invalidate(surplusProvider);
+        ref.invalidate(quickInvestProvider);
+        ref.invalidate(rebalanceSuggestionsProvider);
+      },
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
           FiLayout.gutter,
@@ -264,34 +267,43 @@ class _FixedIncomeDestination extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
-      child: FiObject(
-        onTap: () => GoRouter.of(context).go('/descobrir/renda-fixa'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FiObject(
+            onTap: () => GoRouter.of(context).go('/descobrir/renda-fixa'),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    'Renda fixa',
-                    style: FiType.ticker.copyWith(color: fiInk1(context)),
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Renda fixa',
+                        style: FiType.ticker.copyWith(color: fiInk1(context)),
+                      ),
+                    ),
+                    const SizedBox(width: FiSpace.s3),
+                    Text(
+                      _valueOrDash(slice.amount),
+                      style: FiType.figure.copyWith(color: fiInk1(context)),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: FiSpace.s3),
+                const SizedBox(height: FiSpace.s2),
                 Text(
-                  _valueOrDash(slice.amount),
-                  style: FiType.figure.copyWith(color: fiInk1(context)),
+                  slice.rationale,
+                  style: FiType.caption.copyWith(color: fiInk2(context)),
                 ),
               ],
             ),
-            const SizedBox(height: FiSpace.s2),
-            Text(
-              slice.rationale,
-              style: FiType.caption.copyWith(color: fiInk2(context)),
-            ),
-          ],
-        ),
+          ),
+          FiNavAction(
+            label: 'Comparar renda fixa com a bolsa',
+            onPressed: () => GoRouter.of(context).go('/descobrir/renda-fixa-vs-bolsa'),
+          ),
+        ],
       ),
     );
   }
@@ -307,10 +319,18 @@ class _AgainstTarget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final desvio = ref.watch(rebalanceSuggestionsProvider);
 
-    return desvio.maybeWhen(
+    return desvio.when(
       loading: () => const FiSection(
         title: 'Contra a sua meta',
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 3),
+      ),
+      error: (e, _) => FiSection(
+        title: 'Contra a sua meta',
+        child: FiErrorState(
+          error: e,
+          action: 'cruzar sua carteira com as metas',
+          onRetry: () => ref.invalidate(rebalanceSuggestionsProvider),
+        ),
       ),
       data: (data) {
         final gaps = data.allocationGaps;
@@ -365,7 +385,6 @@ class _AgainstTarget extends ConsumerWidget {
           ),
         );
       },
-      orElse: () => const SizedBox.shrink(),
     );
   }
 }
@@ -435,6 +454,11 @@ class _Step extends StatelessWidget {
                     step.reason,
                     style: FiType.body.copyWith(color: fiInk1(context)),
                   ),
+                  if (step.type == CascadeStepType.debt)
+                    FiNavAction(
+                      label: 'Ver dívidas',
+                      onPressed: () => GoRouter.of(context).go('/mes/dividas'),
+                    ),
                   if (step.falsifier != null) ...[
                     const SizedBox(height: FiSpace.s1),
                     Text(

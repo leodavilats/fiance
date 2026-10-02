@@ -6,7 +6,11 @@ void runFeedAction(BuildContext context, String? action, String? ticker) {
   trackEvent(context, 'feed_item_opened', props: {'source': action ?? 'market'});
   switch (action) {
     case 'analyze':
-      context.go(ticker != null ? '/ativo/$ticker' : '/patrimonio');
+      if (ticker != null) {
+        context.push('/ativo/$ticker');
+      } else {
+        context.go('/patrimonio');
+      }
     case 'sell':
       context.go('/patrimonio');
     case 'fixed_income':
