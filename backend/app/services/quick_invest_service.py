@@ -1,6 +1,7 @@
 import asyncio
 
 from app.analysis.classify import auto_category
+from app.analysis.texto import numero
 from app.collectors import rates
 from app.models.quick_invest import (
     FixedIncomeSlice,
@@ -287,7 +288,7 @@ class QuickInvestService:
             else "Sua alocação-alvo pede renda fixa"
         )
         if mensal is not None:
-            razao += f", e a referência rende {mensal:.2f}% ao mês"
+            razao += f", e a referência rende {numero(mensal)}% ao mês"
         razao += ". Compare títulos antes de escolher — o produto não tem oferta para indicar."
 
         return FixedIncomeSlice(
@@ -321,7 +322,7 @@ class QuickInvestService:
         if opp.score:
             razoes.append(f"score {opp.score:.0f}")
         if opp.dividend_yield and opp.dividend_yield >= 6:
-            razoes.append(f"DY {opp.dividend_yield:.1f}%")
+            razoes.append(f"dividendos (DY) de {numero(opp.dividend_yield, 1)}% ao ano")
         if opp.margin_of_safety and opp.margin_of_safety >= 0.20:
             razoes.append(f"margem de {opp.margin_of_safety * 100:.0f}%")
         return " · ".join(razoes) if razoes else "entre os melhores scores do universo"

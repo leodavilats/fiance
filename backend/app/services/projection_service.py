@@ -8,6 +8,7 @@ from app.analysis.scenarios import (
     Scenario,
     band,
 )
+from app.analysis.texto import numero
 from app.models.projection import (
     PassiveIncomeMonth,
     PassiveIncomeProjectionRequest,
@@ -178,7 +179,7 @@ class ProjectionService:
                 "reinvest_dividends": req.reinvest_dividends,
                 "scenario_spread": (
                     "Conservador zera o crescimento; otimista multiplica as premissas "
-                    f"por {OPTIMISTIC_FACTOR:.1f}. A largura da faixa é escolhida, "
+                    f"por {numero(OPTIMISTIC_FACTOR, 1)}. A largura da faixa é escolhida, "
                     "não estimada."
                 ),
             },

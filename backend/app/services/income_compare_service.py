@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.analysis.renda_fixa_analysis import analyze_one
+from app.analysis.texto import numero
 from app.collectors.rates import get_rates
 from app.models.enums import Liquidez, RendaFixaType, TaxType
 from app.models.income_compare import IncomeCompareResponse, IncomeOption
@@ -71,7 +72,7 @@ class IncomeCompareService:
                     label=label,
                     net_income_yield_pct=result.taxa_liquida_aa,
                     income_basis=(
-                        f"{pct_cdi:.0f}% do CDI ({rates['cdi_anual']:.2f}% a.a.) por "
+                        f"{pct_cdi:.0f}% do CDI ({numero(rates['cdi_anual'])}% a.a.) por "
                         f"{horizon_months} meses"
                     ),
                     has_upside=False,
@@ -79,7 +80,7 @@ class IncomeCompareService:
                     tax_note=(
                         "Isento de IR"
                         if result.isento_ir
-                        else f"IR de {result.ir.aliquota_pct:.1f}% sobre o rendimento"
+                        else f"IR de {numero(result.ir.aliquota_pct, 1)}% sobre o rendimento"
                     ),
                     risk_note="Risco de crédito do emissor, coberto pelo FGC até R$ 250 mil.",
                     monthly_income_estimate=round(amount * (result.taxa_liquida_aa / 100) / 12, 2),
@@ -95,7 +96,7 @@ class IncomeCompareService:
                     label=f"{position.nome} (sua carteira)",
                     net_income_yield_pct=round(position.yield_equivalente_pct, 2),
                     income_basis=(
-                        f"taxa contratada de {position.taxa_anual_efetiva_pct:.2f}% a.a."
+                        f"taxa contratada de {numero(position.taxa_anual_efetiva_pct)}% a.a."
                     ),
                     has_upside=False,
                     liquidity=position.liquidez.value,
@@ -170,14 +171,14 @@ class IncomeCompareService:
             diff = best_asset.net_income_yield_pct - best_rf.net_income_yield_pct
             if diff > 1:
                 return (
-                    f"{best_asset.label} paga {diff:.1f} p.p. a.a. mais de renda que a melhor "
-                    f"opção de renda fixa ({best_rf.net_income_yield_pct:.2f}% a.a.) — e ainda "
+                    f"{best_asset.label} paga {numero(diff, 1)} p.p. a.a. mais de renda que a melhor "
+                    f"opção de renda fixa ({numero(best_rf.net_income_yield_pct)}% a.a.) — e ainda "
                     "tem potencial de valorização. Em troca, a cotação oscila e o dividendo "
                     "não é contratado."
                 )
             if diff < -1:
                 return (
-                    f"A renda fixa está pagando {abs(diff):.1f} p.p. a.a. mais que o melhor "
+                    f"A renda fixa está pagando {numero(abs(diff), 1)} p.p. a.a. mais que o melhor "
                     "pagador de dividendos da lista, com retorno contratado. Para a parte da "
                     "carteira que precisa de previsibilidade, ela vence hoje."
                 )

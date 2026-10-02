@@ -4,6 +4,7 @@ import asyncio
 from collections import defaultdict
 from datetime import date
 
+from app.analysis.texto import numero_com_sinal
 from app.collectors.universal import fetch_ibov_history
 from app.core.brt import now_brt
 from app.core.errors import ConflictError, DomainError, NotFoundError
@@ -269,10 +270,10 @@ class FollowedService:
             )
 
         plural = "compra" if count == 1 else "compras"
-        base = f"As {count} {plural} que você fez a partir de sugestões estão {pnl_pct:+.1f}%"
+        base = f"As {count} {plural} que você fez a partir de sugestões estão {numero_com_sinal(pnl_pct, 1)}%"
 
         if ibov_pct is None:
             return base + "."
 
         comparison = "acima" if pnl_pct > ibov_pct else "abaixo"
-        return f"{base} contra {ibov_pct:+.1f}% do Ibovespa no período — {comparison} do índice."
+        return f"{base} contra {numero_com_sinal(ibov_pct, 1)}% do Ibovespa no período — {comparison} do índice."

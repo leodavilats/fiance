@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from app.analysis.texto import numero, reais
 from app.core.money import ZERO, quantize, to_float
 
 from .entries import LedgerEntry
@@ -28,7 +29,7 @@ CATEGORIA_COM_ISENCAO = "acoes_br"
 
 
 def _reais(valor: Decimal) -> str:
-    return f"R$ {to_float(quantize(valor)):,.2f}"
+    return reais(to_float(quantize(valor)))
 
 
 @dataclass(frozen=True)
@@ -104,11 +105,11 @@ class ApuracaoMensal:
             origem = ", com as de day trade," if com_day_trade else ""
             return (
                 f"Vendas de ações no mês{origem} somam {_reais(self.exemption_sales)}, "
-                f"dentro da isenção de R$ {float(ISENCAO_MENSAL):,.0f} → sem imposto no mês."
+                f"dentro da isenção de R$ {numero(float(ISENCAO_MENSAL), 0)} → sem imposto no mês."
             )
         if self.exempt:
             return (
-                f"Mês isento (vendas ≤ R$ {float(ISENCAO_MENSAL):,.0f}). Prejuízo apurado em "
+                f"Mês isento (vendas ≤ R$ {numero(float(ISENCAO_MENSAL), 0)}). Prejuízo apurado em "
                 "operação isenta não compensa ganho futuro."
             )
 

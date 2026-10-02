@@ -146,8 +146,10 @@ class TestAOrdemPodeDizerNaoAporte:
         lidas = classificar_todas([divida(14.9)], retorno_mensal_da_carteira=0.9)
         c = cascata.montar(PISO, lidas)
 
-        assert "0.90% ao mês" in c.passos[0].falsificador
-        assert "14.90% ao mês" in c.passos[0].motivo
+        assert "0,90% ao mês" in c.passos[0].falsificador, (
+            "a frase vai para a tela da Sobra: número em português sai com vírgula"
+        )
+        assert "14,90% ao mês" in c.passos[0].motivo
 
     def test_sem_meta_o_aporte_diz_que_ordenou_por_score(self):
         c = cascata.montar(PISO, [])

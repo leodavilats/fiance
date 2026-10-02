@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from app.analysis.texto import numero, reais
 from app.core.money import ZERO, money, quantize, sum_money
 
 from .entries import LedgerEntry, LedgerError, TransactionKind
@@ -162,7 +163,7 @@ def _apply(state: PositionProjection, entry: LedgerEntry) -> None:
         if excedente > ZERO:
             state.warnings.append(
                 f"Amortização de {entry.traded_on} excedeu o custo restante em "
-                f"R$ {float(excedente):.2f}. Esse excedente é ganho tributável e não "
+                f"{reais(float(excedente))}. Esse excedente é ganho tributável e não "
                 f"está apurado aqui."
             )
         return
@@ -368,33 +369,33 @@ def _describe(entry: LedgerEntry, state: PositionProjection) -> str:
     kind = entry.kind
 
     if kind is TransactionKind.BUY:
-        fee = f" + {entry.fees:.2f} de custo" if entry.fees else ""
+        fee = f" + {numero(entry.fees)} de custo" if entry.fees else ""
         return (
-            f"Compra de {entry.quantity:g} a {entry.price:.2f}{fee}: "
-            f"custo sobe para {state.total_cost:.2f}."
+            f"Compra de {entry.quantity:g} a {numero(entry.price)}{fee}: "
+            f"custo sobe para {numero(state.total_cost)}."
         )
     if kind is TransactionKind.SELL:
         return (
-            f"Venda de {entry.quantity:g} a {entry.price:.2f}: sai do custo "
-            f"{entry.quantity:g} × {state.avg_price:.4f} — a média não muda."
+            f"Venda de {entry.quantity:g} a {numero(entry.price)}: sai do custo "
+            f"{entry.quantity:g} × {numero(state.avg_price, 4)} — a média não muda."
         )
     if kind is TransactionKind.SPLIT:
         verb = "Desdobramento" if entry.ratio_to > entry.ratio_from else "Grupamento"
         return (
             f"{verb} {entry.ratio_from:g}:{entry.ratio_to:g}: quantidade × "
             f"{entry.ratio_to / entry.ratio_from:g}, custo total intacto — "
-            f"a média cai para {state.avg_price:.4f}."
+            f"a média cai para {numero(state.avg_price, 4)}."
         )
     if kind is TransactionKind.BONUS:
-        return f"Bonificação de {entry.quantity:g} ao custo declarado de {entry.price:.2f}."
+        return f"Bonificação de {entry.quantity:g} ao custo declarado de {numero(entry.price)}."
     if kind is TransactionKind.AMORTIZATION:
-        return f"Amortização de {entry.amount:.2f}: devolve capital, reduz o custo."
+        return f"Amortização de {numero(entry.amount)}: devolve capital, reduz o custo."
     if kind is TransactionKind.TRANSFER_IN:
-        return f"Transferência de entrada de {entry.quantity:g} a {entry.price:.2f}."
+        return f"Transferência de entrada de {entry.quantity:g} a {numero(entry.price)}."
     if kind is TransactionKind.TRANSFER_OUT:
         return f"Transferência de saída de {entry.quantity:g}: sai pelo preço médio."
     return (
-        f"Estado declarado: {entry.quantity:g} a {entry.price:.2f}. "
+        f"Estado declarado: {entry.quantity:g} a {numero(entry.price)}. "
         "Substitui o acumulado em vez de somar."
     )
 
@@ -402,9 +403,9 @@ def _describe(entry: LedgerEntry, state: PositionProjection) -> str:
 def _describe_day_trade(day_trade: Realizacao, state: PositionProjection) -> str:
     return (
         f"Day trade de {float(day_trade.quantity):g}: compra média "
-        f"{float(day_trade.avg_price):.2f}, venda média {float(day_trade.sell_price):.2f}, "
-        f"resultado {float(quantize(day_trade.result)):.2f} apurado à parte. "
-        f"O que sobrou do dia entra na média, que fica em {state.avg_price:.4f}."
+        f"{numero(float(day_trade.avg_price))}, venda média {numero(float(day_trade.sell_price))}, "
+        f"resultado {numero(float(quantize(day_trade.result)))} apurado à parte. "
+        f"O que sobrou do dia entra na média, que fica em {numero(state.avg_price, 4)}."
     )
 
 

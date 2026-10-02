@@ -5,6 +5,7 @@ from datetime import date
 from decimal import Decimal
 
 from app.analysis.renda_fixa_analysis import DIAS_POR_MES, RendaFixaAnalysisResult, analyze_one
+from app.analysis.texto import numero
 from app.collectors.rates import get_rates
 from app.core.brt import now_brt
 from app.core.errors import NotFoundError
@@ -254,10 +255,12 @@ class FixedIncomeService:
 
 
 def _to_portfolio_position(item: FixedIncomePosition) -> PortfolioPosition:
-    label = f"{item.tipo.value.upper().replace('_', ' ')} · {item.taxa_anual_efetiva_pct:.2f}% a.a."
+    label = (
+        f"{item.tipo.value.upper().replace('_', ' ')} · {numero(item.taxa_anual_efetiva_pct)}% a.a."
+    )
     reasons = [
-        f"Rendimento líquido acumulado de {item.rendimento_pct:.2f}% "
-        f"em {item.meses_decorridos:.1f} meses."
+        f"Rendimento líquido acumulado de {numero(item.rendimento_pct)}% "
+        f"em {numero(item.meses_decorridos, 1)} meses."
     ]
     if item.vencimento_proximo and item.dias_para_vencimento is not None:
         reasons.append(f"Vence em {item.dias_para_vencimento} dias — planeje a reaplicação.")

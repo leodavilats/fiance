@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import time
 
+from app.analysis.texto import reais
 from app.notifications import send_push
 from app.repositories.asset_repository import AssetRepository
 from app.services.opportunity_service import OpportunityService
@@ -52,8 +53,8 @@ async def _check_price_alerts(user_id: str, tokens: list[str]) -> None:
             tokens,
             title=f"Alerta de preço: {alert['ticker']}",
             body=(
-                f"{alert['ticker']} está {direction} R$ {alert['target_price']:.2f} "
-                f"(atual: R$ {price:.2f})"
+                f"{alert['ticker']} está {direction} {reais(alert['target_price'])} "
+                f"(atual: {reais(price)})"
             ),
             data={"type": "price_alert", "ticker": alert["ticker"]},
         )

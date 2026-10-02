@@ -9,7 +9,7 @@ class QuickInvestRequest(BaseModel):
         gt=0,
         description=(
             "Quanto aportar (R$). Nulo resolve da cascata do caixa: o que sobra depois da "
-            "dívida caseira e da reserva."
+            "dívida cara e da reserva."
         ),
     )
     min_order_value: float = Field(100.0, ge=0, description="Valor mínimo por ordem (R$)")

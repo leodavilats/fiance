@@ -15,3 +15,7 @@ def pct(fracao: float, casas: int = 1) -> str:
 
 def numero(valor: float, casas: int = 2) -> str:
     return _virgula(f"{valor:,.{casas}f}")
+
+
+def numero_com_sinal(valor: float, casas: int = 1) -> str:
+    return ("+" if valor > 0 else "") + numero(valor, casas)

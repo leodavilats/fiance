@@ -4,6 +4,7 @@ import time
 from app.analysis.classify import auto_category, resolve_category
 from app.analysis.decision import decide
 from app.analysis.fair_price import compute_technical
+from app.analysis.texto import numero
 from app.core.brt import to_brt
 from app.core.context import memoize_request
 from app.core.errors import DomainError, NotFoundError
@@ -185,7 +186,7 @@ class PortfolioService:
             audit_store.POSITION_WRITE,
             entity="position",
             entity_id=item.ticker.upper(),
-            summary=f"{item.ticker.upper()}: {item.quantity:g} a {item.avg_price:.2f}.",
+            summary=f"{item.ticker.upper()}: {item.quantity:g} a {numero(item.avg_price)}.",
             detail={"quantity": item.quantity, "avg_price": item.avg_price},
         )
 
@@ -267,7 +268,7 @@ class PortfolioService:
             entity_id=req.ticker.upper(),
             summary=(
                 f"Venda de {req.quantity:g} {req.ticker.upper()} a "
-                f"{req.sell_price:.2f} — lucro bruto {registrada['gross_profit']:.2f}."
+                f"{numero(req.sell_price)} — lucro bruto {numero(registrada['gross_profit'])}."
             ),
             detail={
                 "quantity": req.quantity,

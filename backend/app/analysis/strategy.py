@@ -3,6 +3,7 @@ from typing import Any
 from ..models.goal import Goal
 from ..models.opportunity import Opportunity
 from ..models.portfolio import PortfolioItem
+from .texto import numero
 
 _INCOME_CATEGORIES = ("renda_fixa", "fiis")
 _GROWTH_CATEGORIES = ("acoes_br", "bdrs", "etfs")
@@ -260,7 +261,7 @@ def _generate_investment_objective(opp: Opportunity, category: str) -> str:
     base = objectives.get(category, "Diversificação de portfólio")
 
     if opp.dividend_yield and opp.dividend_yield >= 6:
-        return f"{base} — DY atrativo de {opp.dividend_yield:.1f}%"
+        return f"{base} — dividendos (DY) de {numero(opp.dividend_yield, 1)}% ao ano"
     elif opp.margin_of_safety and opp.margin_of_safety >= 0.15:
         return f"{base} — Preço com desconto de {opp.margin_of_safety * 100:.0f}%"
     else:
@@ -276,7 +277,7 @@ def _generate_suggestion_reasons(
 
     if gap["gap_value"] > 0:
         reasons.append(
-            f"Ajusta alocação de {category}: falta {gap['gap_pct']:.1f}% para atingir meta"
+            f"Ajusta alocação de {category}: falta {numero(gap['gap_pct'], 1)}% para atingir meta"
         )
 
     if opp.score >= 70:
@@ -286,7 +287,7 @@ def _generate_suggestion_reasons(
         reasons.append(f"Margem de segurança de {opp.margin_of_safety * 100:.0f}%")
 
     if opp.dividend_yield and opp.dividend_yield >= 6:
-        reasons.append(f"Dividend Yield atrativo de {opp.dividend_yield:.1f}%")
+        reasons.append(f"Dividendos (DY) de {numero(opp.dividend_yield, 1)}% ao ano")
 
     if opp.verdict == "STRONG_BUY":
         reasons.append("Bem abaixo do preço justo, com evidência que não é frágil")
@@ -569,7 +570,7 @@ def _generate_strategy_summary(
         critical_gap = gaps[0]
         if critical_gap["gap_value"] > 0:
             summary += f"Prioridade: ajustar {critical_gap['category']} "
-            summary += f"(faltam {critical_gap['gap_pct']:.1f}% para meta)."
+            summary += f"(faltam {numero(critical_gap['gap_pct'], 1)}% para meta)."
 
     return summary
 

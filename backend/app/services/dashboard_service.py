@@ -1,5 +1,6 @@
 from app.analysis.portfolio_health import compute_portfolio_health
 from app.analysis.sectors import translate_sector
+from app.analysis.texto import numero, numero_com_sinal, reais
 from app.models import (
     Alert,
     CategoryAllocation,
@@ -77,8 +78,8 @@ class DashboardService:
                     kind="sell_target",
                     title=f"{position.ticker}: acima do preço justo",
                     detail=(
-                        f"{position.label}. Preço atual R$ {position.current_price or 0:.2f}, "
-                        f"justo R$ {position.fair_price or 0:.2f}."
+                        f"{position.label}. Preço atual {reais(position.current_price or 0)}, "
+                        f"justo {reais(position.fair_price or 0)}."
                     ),
                     ticker=position.ticker,
                     count=1,
@@ -157,10 +158,12 @@ class DashboardService:
 
         if len(concentrated) == 1:
             title = f"Setor {label} concentrado"
-            detail = f"{worst_pct:.1f}% da carteira em um único setor. Considere diversificar."
+            detail = (
+                f"{numero(worst_pct, 1)}% da carteira em um único setor. Considere diversificar."
+            )
         else:
             title = f"{len(concentrated)} setores concentrados"
-            detail = f"O maior é {label}, com {worst_pct:.1f}% da carteira. Considere diversificar."
+            detail = f"O maior é {label}, com {numero(worst_pct, 1)}% da carteira. Considere diversificar."
 
         return [
             Alert(
@@ -194,14 +197,14 @@ class DashboardService:
         if len(off_target) == 1:
             title = f"{label}: {direction} da meta"
             detail = (
-                f"Atual {worst.current_pct:.1f}% vs meta {worst.target_pct:.1f}% "
-                f"({worst.delta_pct:+.1f}pp)."
+                f"Atual {numero(worst.current_pct, 1)}% vs meta {numero(worst.target_pct, 1)}% "
+                f"({numero_com_sinal(worst.delta_pct, 1)}pp)."
             )
         else:
             title = f"{len(off_target)} categorias fora da meta"
             detail = (
-                f"A maior diferença é {label}: {worst.current_pct:.1f}% contra meta de "
-                f"{worst.target_pct:.1f}% ({worst.delta_pct:+.1f}pp)."
+                f"A maior diferença é {label}: {numero(worst.current_pct, 1)}% contra meta de "
+                f"{numero(worst.target_pct, 1)}% ({numero_com_sinal(worst.delta_pct, 1)}pp)."
             )
 
         return [

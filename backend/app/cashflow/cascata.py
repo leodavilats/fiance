@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum
 
+from app.analysis.texto import numero, reais
 from app.core.money import ZERO, money, quantize, to_float
 
 from .debt import DividaClassificada, saldo_caro
@@ -102,13 +103,13 @@ def montar(
                 tipo=TipoDePasso.DIVIDA,
                 valor=valor,
                 motivo=(
-                    f"{primeira.divida.description} custa {taxa:.2f}% ao mês. "
+                    f"{primeira.divida.description} custa {numero(taxa)}% ao mês. "
                     f"Sua {'carteira' if primeira.fonte_da_referencia == 'carteira' else 'referência de renda fixa'} "
-                    f"rendeu {to_float(referencia):.2f}% ao mês. Enquanto essa diferença existir, "
+                    f"rendeu {numero(to_float(referencia))}% ao mês. Enquanto essa diferença existir, "
                     "quitar rende mais que aportar."
                 ),
                 falsificador=(
-                    f"Se a taxa da dívida cair abaixo de {to_float(referencia):.2f}% ao mês, "
+                    f"Se a taxa da dívida cair abaixo de {numero(to_float(referencia))}% ao mês, "
                     "quitar deixa de ser a prioridade."
                 ),
                 referencia=primeira.fonte_da_referencia,
@@ -128,9 +129,9 @@ def montar(
                     valor=valor,
                     motivo=(
                         f"Sua reserva cobre "
-                        f"{to_float(reserva_atual / gasto_fixo):.1f} meses do seu gasto fixo, e "
+                        f"{numero(to_float(reserva_atual / gasto_fixo), 1)} meses do seu gasto fixo, e "
                         f"você declarou {reserva_meses_alvo}. Faltam "
-                        f"R$ {to_float(quantize(falta)):.2f}."
+                        f"{reais(to_float(quantize(falta)))}."
                     ),
                     falsificador=(
                         "Se você baixar o alvo de meses, ou se o gasto fixo cair, este passo "

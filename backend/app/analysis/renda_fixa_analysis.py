@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.analysis.texto import numero
 from app.collectors.rates import get_rates
 from app.models.enums import Liquidez, RendaFixaType, TaxType
 from app.models.renda_fixa import (
@@ -170,7 +171,7 @@ def _escolher_melhor(resultados: list[RendaFixaAnalysisResult]) -> tuple[int, st
         idx = max(liquidos, key=lambda i: resultados[i].taxa_liquida_aa)
         diff = melhor_taxa - resultados[idx].taxa_liquida_aa
         return idx, (
-            f"Liquidez diária por apenas {diff:.2f} p.p. a.a. menos que a melhor "
+            f"Liquidez diária por apenas {numero(diff)} p.p. a.a. menos que a melhor "
             "taxa — resgatar quando precisar vale a diferença."
         )
 

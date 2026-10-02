@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 
 from app.analysis.score_ruler import is_highlight
+from app.analysis.texto import numero, reais
 from app.models.enums import AssetType
 from app.models.whats_new import WhatsNewItem, WhatsNewResponse
 from app.repositories import PortfolioRepository
@@ -84,17 +85,17 @@ class WhatsNewService:
         direction = "subiu" if change_pct > 0 else "caiu"
 
         detail = (
-            f"Variação de {abs(change_pct):.1f}% {window}, já descontando aportes "
-            f"de R$ {flow:,.2f}."
+            f"Variação de {numero(abs(change_pct), 1)}% {window}, já descontando aportes "
+            f"de {reais(flow)}."
             if abs(flow) > 0.01
-            else f"Variação de {abs(change_pct):.1f}% {window}."
+            else f"Variação de {numero(abs(change_pct), 1)}% {window}."
         )
 
         return [
             WhatsNewItem(
                 kind="patrimony",
                 severity="positive" if change_pct > 0 else "warning",
-                title=f"Sua carteira {direction} {abs(change_pct):.1f}%",
+                title=f"Sua carteira {direction} {numero(abs(change_pct), 1)}%",
                 detail=detail,
                 action="analyze",
                 action_label="Ver a carteira",
@@ -137,7 +138,7 @@ class WhatsNewService:
         if len(vencendo) == 1:
             title = f"{primeiro.nome} vence em {primeiro.dias_para_vencimento} dias"
             detail = (
-                f"R$ {primeiro.valor_no_vencimento or primeiro.valor_atual:,.2f} vão "
+                f"{reais(primeiro.valor_no_vencimento or primeiro.valor_atual)} vão "
                 "voltar para o caixa — decida onde reaplicar antes disso."
             )
         else:
@@ -214,7 +215,7 @@ class WhatsNewService:
             WhatsNewItem(
                 kind="tax",
                 severity="info",
-                title=f"R$ {total_loss:,.2f} de prejuízo disponível para compensar IR",
+                title=f"{reais(total_loss)} de prejuízo disponível para compensar IR",
                 detail=(
                     "A legislação permite abater esse prejuízo de ganhos futuros da mesma "
                     "categoria, e o de day trade só de day trade. O app já considera isso ao "
@@ -252,7 +253,11 @@ class WhatsNewService:
                 title=f"{best.ticker} está entre os destaques de hoje",
                 detail=(
                     f"Score {best.score:.0f}"
-                    + (f", DY {best.dividend_yield:.1f}%" if best.dividend_yield else "")
+                    + (
+                        f", dividendos (DY) de {numero(best.dividend_yield, 1)}% ao ano"
+                        if best.dividend_yield
+                        else ""
+                    )
                     + f". {len(highlights)} ativo(s) fora da sua carteira em destaque."
                 ),
                 ticker=best.ticker,

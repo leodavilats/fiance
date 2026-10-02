@@ -3,6 +3,7 @@ from __future__ import annotations
 import unicodedata
 from dataclasses import dataclass
 
+from app.analysis.texto import reais
 from app.core.universe import search_universe
 from app.storage import portfolio_store
 
@@ -40,7 +41,7 @@ def _positions(termo: str, user_id: str | None) -> list[SearchHit]:
                     title=item["ticker"],
                     subtitle=(
                         f"{item['quantity']:.0f} na carteira · "
-                        f"preço médio R$ {item['avg_price']:.2f}"
+                        f"preço médio {reais(item['avg_price'])}"
                     ),
                     ref=item["ticker"],
                 )

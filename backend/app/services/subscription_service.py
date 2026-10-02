@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import time
 
+from app.analysis.texto import numero
 from app.core.database import db_session
 from app.entitlement.resolve import TRIAL_DAYS
 from app.models.db_models import ProcessedWebhookDb, SubscriptionDb
@@ -87,7 +88,7 @@ def grant(
     audit_store.write(
         audit_store.SUBSCRIPTION_GRANT,
         entity="subscription",
-        summary=f"Plano {plan_code} concedido a {price_cents / 100:.2f}.",
+        summary=f"Plano {plan_code} concedido a {numero(price_cents / 100)}.",
         detail={"provider": provider, "locked": locked},
         user_id=user_id,
     )

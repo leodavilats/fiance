@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .texto import numero
+
 OPTIMISTIC_FACTOR = 1.5
 
 DISCLAIMER = (
@@ -50,7 +52,7 @@ OPTIMISTIC = Scenario(
     portfolio_factor=OPTIMISTIC_FACTOR,
     dividend_factor=OPTIMISTIC_FACTOR,
     rationale=(
-        f"As mesmas premissas multiplicadas por {OPTIMISTIC_FACTOR:.1f}. "
+        f"As mesmas premissas multiplicadas por {numero(OPTIMISTIC_FACTOR, 1)}. "
         "Este número não é uma estimativa: é a largura escolhida para a faixa."
     ),
 )
