@@ -2,7 +2,7 @@
 
 Por que a interface é assim, e o que uma tela nova precisa respeitar.
 Fonte compartilhada com `mobile/lib/core/design_tokens.dart` e `mobile/test/lint_ui_test.dart`.
-Última revisão: 2026-09-26
+Última revisão: 2026-10-01
 
 ---
 
@@ -133,6 +133,9 @@ poucas, ou uma tabela quando o que importa é comparar.
 | Escolher um valor numa escala | `FiSlider`, com o formatador do produto | O `Slider` com `toStringAsFixed` mostrava 5.5% com ponto |
 | Falha | `FiErrorState` + `fiErrorMessage` | Já houve oito grafias, e `Erro 500` chegou à tela |
 | Ausência de dado | `FiEmptyState` | "Não conseguimos ler" ≠ "você não tem nada" |
+| Escrita (salvar, marcar, remover) | `fiAttempt` (`core/widgets/feedback.dart`), com `busy:` no botão | A falha virava exceção solta e o toque duplo gravava duas vezes |
+| Confirmação destrutiva | `fiConfirm` — a confirmação é `FiButton.danger` | O `FilledButton` do Material pintava "Apagar" como ação principal |
+| Número digitado | `parseDecimal` e `formatForInput` (`core/format.dart`) | `replaceAll('.', '')` lia "12.50", do teclado que só tem ponto, como 1.250 |
 
 ---
 
@@ -242,8 +245,11 @@ explicabilidade.
 
 **Número em português é responsabilidade do formatador, não do template.** O locale é `pt_BR`:
 `R$ 120.000` escrito como `R$ 120,000` se lê como cento e vinte reais. Vale também para a frase que
-chega pronta do backend: razões, falsificadores e motivos de silêncio da análise saem por
-`analysis/texto.py` (`reais`, `pct`, `numero`).
+chega pronta do backend: razões, falsificadores, avisos da carteira, apuração e caixa saem por
+`analysis/texto.py` (`reais`, `pct`, `numero`, `numero_com_sinal`). Os dois lados têm máquina:
+`backend/tests/test_numero_em_portugues.py` reprova decimal em f-string, e `lint_ui_test.dart`
+reprova `toStringAsFixed` fora de `core/format.dart`. A entrada vale o mesmo: o que a pessoa digita
+passa por `parseDecimal`, que lê vírgula como decimal e o ponto sozinho com uma ou duas casas também.
 
 ### A análise se lê sem glossário
 

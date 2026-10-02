@@ -189,7 +189,8 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 - **Falha usa `fiErrorMessage`**, nunca texto solto.
 - **Preço vem com `formatAge`.** Em lista, o carimbo é o **mais antigo**.
 - **Espera é `FiSkeleton.screen()`**, nunca disco girando.
-- **Número em português é do formatador**, não do template.
+- **Número em português é do formatador**, não do template — na saída e na entrada (`parseDecimal`).
+- **Escrita tem retorno:** `fiAttempt` dá o erro e o sucesso; destrutivo confirma com `fiConfirm`.
 
 ---
 
