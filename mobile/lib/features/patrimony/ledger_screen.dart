@@ -114,16 +114,16 @@ class LedgerScreen extends ConsumerWidget {
                     body: 'O livro-razão é a fonte da sua carteira: a posição, o preço médio e a '
                         'apuração de imposto são reconstruídos a partir dele, nunca guardados '
                         'em separado.',
-                    hint: 'Registre uma compra, uma venda ou um evento corporativo — ou traga '
-                        'o extrato da corretora de uma vez.',
+                    hint: 'Registre uma compra, uma venda ou um evento corporativo — ou cole de '
+                        'uma vez a lista que a corretora exporta.',
                     action: FiButton.primary(
                       label: 'Registrar lançamento',
                       icon: Icons.add,
                       onPressed: () => openLedgerEntryForm(context, ref),
                     ),
                     secondary: FiButton.secondary(
-                      label: 'Importar extrato',
-                      icon: Icons.upload_file_outlined,
+                      label: 'Importar operações',
+                      icon: Icons.content_paste_outlined,
                       onPressed: () => context.push('/patrimonio/razao/importar'),
                     ),
                   ),
@@ -159,7 +159,7 @@ class LedgerScreen extends ConsumerWidget {
                 if (data.hasMore && data.nextCursor != null)
                   Padding(
                     padding: const EdgeInsets.only(top: FiSpace.s3),
-                    child: _OlderEntries(cursor: data.nextCursor!),
+                    child: _OlderEntries(key: ObjectKey(data), cursor: data.nextCursor!),
                   ),
               ],
             );
@@ -427,7 +427,7 @@ class _TickerFilterState extends ConsumerState<_TickerFilter> {
 }
 
 class _OlderEntries extends ConsumerStatefulWidget {
-  const _OlderEntries({required this.cursor});
+  const _OlderEntries({super.key, required this.cursor});
 
   final String cursor;
 
@@ -526,8 +526,8 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(height: FiSpace.s2),
         Text(
-          'Cada linha é um fato, e a posição, o preço médio e o imposto do mês são projeções '
-          'dele.',
+          'Cada linha é uma operação que aconteceu. A posição, o preço médio e o imposto do '
+          'mês são calculados a partir delas.',
           style: FiType.body.copyWith(color: fiInk2(context)),
         ),
         const SizedBox(height: FiSpace.s2),
@@ -545,12 +545,12 @@ class _Header extends StatelessWidget {
           runSpacing: FiSpace.s2,
           children: [
             FiButton.secondary(
-              label: 'Importar extrato',
-              icon: Icons.upload_file_outlined,
+              label: 'Importar operações',
+              icon: Icons.content_paste_outlined,
               onPressed: () => context.push('/patrimonio/razao/importar'),
             ),
             FiButton.quiet(
-              label: 'Conferir com o razão',
+              label: 'Conferir as posições',
               icon: Icons.fact_check_outlined,
               onPressed: () => context.push('/patrimonio/razao/conferir'),
             ),
@@ -593,9 +593,10 @@ class FiEntryDate extends StatelessWidget {
   Widget build(BuildContext context) {
     final completa = formatDate(isoDate);
     final partes = completa.split('/');
+    final escala = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.5);
 
     return SizedBox(
-      width: 44,
+      width: escala.scale(48),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -603,11 +604,28 @@ class FiEntryDate extends StatelessWidget {
             ? [
                 Text(
                   '${partes[0]}/${partes[1]}',
+                  maxLines: 1,
+                  softWrap: false,
+                  textScaler: escala,
                   style: FiType.figure.copyWith(color: fiInk2(context)),
                 ),
-                Text(partes[2], style: FiType.caption.copyWith(color: fiInk3(context))),
+                Text(
+                  partes[2],
+                  maxLines: 1,
+                  softWrap: false,
+                  textScaler: escala,
+                  style: FiType.caption.copyWith(color: fiInk3(context)),
+                ),
               ]
-            : [Text(completa, style: FiType.caption.copyWith(color: fiInk3(context)))],
+            : [
+                Text(
+                  completa,
+                  maxLines: 1,
+                  softWrap: false,
+                  textScaler: escala,
+                  style: FiType.caption.copyWith(color: fiInk3(context)),
+                ),
+              ],
       ),
     );
   }
@@ -735,6 +753,8 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
 
   bool get _needsPrice => _kind == 'buy' || _kind == 'sell' || _kind == 'adjust';
 
+  bool get _hasFees => _kind == 'buy' || _kind == 'sell';
+
   double _number(TextEditingController c) => parseDecimal(c.text) ?? 0;
 
   String? _positive(String? texto, String mensagem) {
@@ -758,7 +778,7 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
             tradedOn: _date.toIso8601String().substring(0, 10),
             quantity: _needsQuantity ? _number(_quantityFormat) : 0,
             price: _needsPrice ? _number(_price) : 0,
-            fees: _number(_fees),
+            fees: _hasFees ? _number(_fees) : 0,
             ratioFrom: _kind == 'split' ? _number(_from) : 1,
             ratioTo: _kind == 'split' ? _number(_to) : 1,
             amount: _kind == 'amortization' ? _number(_amount) : 0,
@@ -772,6 +792,16 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
         _error = e;
       });
     }
+  }
+
+  Future<void> _pickDate() async {
+    final escolhida = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (escolhida != null && mounted) setState(() => _date = escolhida);
   }
 
   @override
@@ -815,26 +845,14 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
               const SizedBox(height: FiSpace.s3),
               FiTickerFormField(controller: _ticker),
               const SizedBox(height: FiSpace.s3),
-              InputDecorator(
-                decoration: const InputDecoration(labelText: 'Data da operação'),
-                child: InkWell(
-                  onTap: () async {
-                    final escolhida = await showDatePicker(
-                      context: context,
-                      initialDate: _date,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime.now(),
-                    );
-                    if (escolhida != null) setState(() => _date = escolhida);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
-                    child: Text(
-                      formatDate(_date.toIso8601String().substring(0, 10)),
-                      style: FiType.body.copyWith(color: fiInk1(context)),
-                    ),
+              FiRows(
+                children: [
+                  FiDataRow(
+                    label: 'Data da operação',
+                    value: formatDate(_date.toIso8601String().substring(0, 10)),
+                    onTap: _saving ? null : _pickDate,
                   ),
-                ),
+                ],
               ),
               if (_needsQuantity) ...[
                 const SizedBox(height: FiSpace.s3),
@@ -849,9 +867,12 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                 const SizedBox(height: FiSpace.s3),
                 TextFormField(
                   controller: _price,
-                  decoration: const InputDecoration(
-                    labelText: 'Preço por unidade',
+                  decoration: InputDecoration(
+                    labelText: _kind == 'adjust' ? 'Preço médio' : 'Preço por unidade',
                     prefixText: 'R\$ ',
+                    helperText: _kind == 'adjust'
+                        ? 'O preço médio que a corretora mostra hoje para esta posição.'
+                        : null,
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (v) => _positive(v, 'Informe um preço positivo'),
@@ -893,21 +914,23 @@ class _LedgerEntryFormState extends ConsumerState<_LedgerEntryForm> {
                   validator: (v) => _positive(v, 'Informe o valor devolvido'),
                 ),
               ],
-              const SizedBox(height: FiSpace.s3),
-              TextFormField(
-                controller: _fees,
-                decoration: const InputDecoration(
-                  labelText: 'Custos da operação',
-                  prefixText: 'R\$ ',
-                  helperText: 'Corretagem e emolumentos. Entram no custo e no imposto.',
+              if (_hasFees) ...[
+                const SizedBox(height: FiSpace.s3),
+                TextFormField(
+                  controller: _fees,
+                  decoration: const InputDecoration(
+                    labelText: 'Custos da operação',
+                    prefixText: 'R\$ ',
+                    helperText: 'Corretagem e emolumentos. Entram no custo e no imposto.',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (v) {
+                    if ((v ?? '').trim().isEmpty) return null;
+                    final n = parseDecimal(v);
+                    return n == null || n < 0 ? 'Informe um valor, ou deixe 0' : null;
+                  },
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                validator: (v) {
-                  if ((v ?? '').trim().isEmpty) return null;
-                  final n = parseDecimal(v);
-                  return n == null || n < 0 ? 'Informe um valor, ou deixe 0' : null;
-                },
-              ),
+              ],
               const SizedBox(height: FiSpace.s3),
               TextFormField(
                 controller: _note,

@@ -12,6 +12,7 @@ class FiAllocationGap extends StatelessWidget {
     this.targetPct,
     this.barColor,
     this.trailing,
+    this.judged = true,
   });
 
   final String label;
@@ -20,6 +21,8 @@ class FiAllocationGap extends StatelessWidget {
   final Color? barColor;
 
   final String? trailing;
+
+  final bool judged;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +35,9 @@ class FiAllocationGap extends StatelessWidget {
       ?trailing,
       if (temAlvo)
         'meta ${formatPercent(alvo, digits: 0)}'
-      else
+      else if (judged)
         'sem meta declarada',
-      if (temAlvo && delta.abs() >= 1)
+      if (temAlvo && band.id != 'on-target')
         '${formatPoints(delta.abs())} ${delta > 0 ? 'acima' : 'abaixo'}'
       else if (temAlvo)
         'na meta',
@@ -45,14 +48,15 @@ class FiAllocationGap extends StatelessWidget {
       value: currentPct,
       reference: temAlvo ? alvo : null,
       readout: formatPercent(currentPct, digits: 1),
-      note: partes.join(' · '),
+      note: partes.isEmpty ? null : partes.join(' · '),
       state: band.state,
       fillColor: barColor ?? fiInk3(context),
       semantics: temAlvo
           ? '$label: ${formatPercent(currentPct, digits: 1)} da carteira contra meta de '
                 '${formatPercent(alvo, digits: 1)} — ${formatDecimal(delta.abs())} pontos '
                 'percentuais ${delta > 0 ? 'acima' : 'abaixo'}, ${band.label.toLowerCase()}'
-          : '$label: ${formatPercent(currentPct, digits: 1)} da carteira, sem meta definida',
+          : '$label: ${formatPercent(currentPct, digits: 1)} da carteira'
+                '${judged ? ', sem meta definida' : ''}',
     );
   }
 }

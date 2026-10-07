@@ -14,6 +14,7 @@ from app.analysis.fair_price import (
 )
 from app.analysis.score_ruler import is_highlight
 from app.analysis.scoring import score_opportunity
+from app.analysis.sectors import translate_sector
 from app.collectors.universal import prefetch_brapi_raw
 from app.core import cache
 from app.core.cache_backends import STALE_MARGIN_SECONDS
@@ -313,7 +314,9 @@ class OpportunityService:
                 boost = 0.0
                 if o.category_resolved in preferred_categories:
                     boost += 5.0
-                if o.sector and o.sector in preferred_sectors:
+                if o.sector and (
+                    o.sector in preferred_sectors or translate_sector(o.sector) in preferred_sectors
+                ):
                     boost += 3.0
                 if boost:
                     o.score = round(min(100.0, o.score + boost), 2)

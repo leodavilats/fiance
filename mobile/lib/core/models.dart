@@ -258,6 +258,7 @@ class DashboardSummary {
     required this.passiveIncomeGoal,
     required this.passiveIncomeProgress,
     required this.positionsCount,
+    this.dividendsReceivedLast12m,
   });
 
   final double totalInvested;
@@ -268,6 +269,7 @@ class DashboardSummary {
   final double? passiveIncomeGoal;
   final double? passiveIncomeProgress;
   final int positionsCount;
+  final double? dividendsReceivedLast12m;
 
   factory DashboardSummary.fromJson(Map<String, dynamic> j) => DashboardSummary(
     totalInvested: (j['total_invested'] as num).toDouble(),
@@ -279,6 +281,7 @@ class DashboardSummary {
     passiveIncomeGoal: (j['passive_income_goal'] as num?)?.toDouble(),
     passiveIncomeProgress: (j['passive_income_progress'] as num?)?.toDouble(),
     positionsCount: j['positions_count'] as int,
+    dividendsReceivedLast12m: (j['dividends_received_last_12m'] as num?)?.toDouble(),
   );
 }
 
@@ -626,6 +629,7 @@ class RebalanceTarget {
     this.fairHigh,
     this.marginOfSafety,
     this.fitsIncomeGoal,
+    this.asOf,
   });
 
   final String ticker;
@@ -639,6 +643,7 @@ class RebalanceTarget {
   final double? fairHigh;
   final double? marginOfSafety;
   final bool? fitsIncomeGoal;
+  final double? asOf;
 
   factory RebalanceTarget.fromJson(Map<String, dynamic> j) => RebalanceTarget(
     ticker: j['ticker'] as String,
@@ -652,6 +657,7 @@ class RebalanceTarget {
     fairHigh: (j['fair_high'] as num?)?.toDouble(),
     marginOfSafety: (j['margin_of_safety'] as num?)?.toDouble(),
     fitsIncomeGoal: j['fits_income_goal'] as bool?,
+    asOf: (j['as_of'] as num?)?.toDouble(),
   );
 }
 
@@ -1562,6 +1568,7 @@ class FixedIncomeList {
     required this.averageAnnualRate,
     required this.cdiReference,
     required this.ratesOrigin,
+    this.ratesReadAt,
   });
 
   final List<FixedIncomePosition> items;
@@ -1572,6 +1579,7 @@ class FixedIncomeList {
   final double averageAnnualRate;
   final double cdiReference;
   final String ratesOrigin;
+  final double? ratesReadAt;
 
   List<FixedIncomePosition> get visible =>
       items.where((i) => !i.hidden).toList(growable: false);
@@ -1587,6 +1595,7 @@ class FixedIncomeList {
     averageAnnualRate: (j['taxa_media_aa'] as num).toDouble(),
     cdiReference: (j['cdi_referencia'] as num).toDouble(),
     ratesOrigin: j['fonte_taxas'] as String? ?? 'estimativa',
+    ratesReadAt: (j['taxas_lidas_em'] as num?)?.toDouble(),
   );
 }
 
@@ -2039,9 +2048,13 @@ class DividendsReceived {
     this.estimatedMonthly,
     this.estimateAccuracyPct,
     this.totalCount = 0,
+    this.nextCursor,
+    this.hasMore = false,
   });
 
   final List<DividendReceived> items;
+  final String? nextCursor;
+  final bool hasMore;
   final double totalReceived;
   final double receivedThisMonth;
   final double receivedLast12m;
@@ -2069,6 +2082,8 @@ class DividendsReceived {
     estimatedMonthly: (j['estimated_monthly'] as num?)?.toDouble(),
     estimateAccuracyPct: (j['estimate_accuracy_pct'] as num?)?.toDouble(),
     totalCount: (j['total_count'] as num?)?.toInt() ?? 0,
+    nextCursor: j['next_cursor'] as String?,
+    hasMore: j['has_more'] as bool? ?? false,
   );
 }
 

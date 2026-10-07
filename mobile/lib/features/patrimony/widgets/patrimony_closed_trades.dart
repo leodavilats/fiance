@@ -70,10 +70,6 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
         if (data.trades.isEmpty) return const SizedBox.shrink();
 
         final brightness = Theme.of(context).brightness;
-        final totalColor = fiDirectionColor(
-          data.totalRealizedPnl >= 0 ? 1 : -1,
-          brightness,
-        );
 
         return FiSection(
           title: 'Operações encerradas',
@@ -88,15 +84,15 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
               FiFigures(
                 rule: false,
                 figures: {
-                  'RESULTADO REALIZADO': formatCurrency(data.totalRealizedPnl),
+                  'RESULTADO REALIZADO':
+                      '${data.totalRealizedPnl >= 0 ? '+' : ''}${formatCurrency(data.totalRealizedPnl)}',
                   'IR APURADO': formatCurrency(data.totalIrPaid),
                 },
               ),
               const SizedBox(height: FiSpace.s2),
               Text(
-                'O resultado realizado soma o que saiu da carteira; '
-                '${data.totalRealizedPnl >= 0 ? 'está positivo' : 'está negativo'} no período.',
-                style: FiType.caption.copyWith(color: totalColor),
+                'Lucro e prejuízo das vendas já feitas, somados.',
+                style: FiType.caption.copyWith(color: fiInk2(context)),
               ),
 
               if (_expanded) ...[
@@ -139,7 +135,8 @@ class _FiClosedTradesSectionState extends ConsumerState<FiClosedTradesSection> {
                       FiDataRow(
                         label: t.ticker,
                         detail:
-                            '${formatQuantity(t.quantity)} un. · venda ${formatCurrency(t.sellPrice)}'
+                            '${formatQuantity(t.quantity)} un. a ${formatCurrency(t.sellPrice)} · '
+                            '${formatDate(DateTime.fromMillisecondsSinceEpoch((t.soldAt * 1000).round()).toIso8601String())}'
                             '${t.dayTrade ? ' · day trade' : ''}',
                         value:
                             '${t.netProfit >= 0 ? '+' : ''}${formatCurrency(t.netProfit)}',

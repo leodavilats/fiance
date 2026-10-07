@@ -58,6 +58,12 @@ void main() {
         reason: 'o domínio para em 100: uma barra que estoura não informa',
       );
       expect(v.band.id, 'tight');
+      expect(
+        v.reason,
+        contains('400%'),
+        reason: 'a régua para em 100, mas a frase não pode esconder um mês que gastou mais do '
+            'que entrou',
+      );
     });
 
     test('dívida cara assume a razão sem mudar a banda', () {

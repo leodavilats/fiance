@@ -143,7 +143,7 @@ void main() {
     });
 
     test('controle de toque vem do sistema', () {
-      const cap = 4;
+      const cap = 0;
 
       final achados = <String>[];
       for (final f in fontes) {

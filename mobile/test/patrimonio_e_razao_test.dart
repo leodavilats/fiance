@@ -10,6 +10,8 @@ import 'package:fiance/core/theme.dart';
 import 'package:fiance/core/widgets/allocation_gap.dart';
 import 'package:fiance/core/widgets/button.dart';
 import 'package:fiance/core/widgets/measure.dart';
+import 'package:fiance/features/assets/fixed_income_screen.dart';
+import 'package:fiance/features/patrimony/dividends_screen.dart';
 import 'package:fiance/features/patrimony/ledger_screen.dart';
 import 'package:fiance/features/patrimony/patrimony_screen.dart';
 
@@ -199,9 +201,7 @@ void main() {
       });
       await _montar(tester, servidor, const PatrimonyScreen());
 
-      await tester.tap(find.widgetWithText(FiButton, 'Adicionar ativo'));
-      await _esperar(tester);
-      await tester.tap(find.text('Ativo negociado'));
+      await tester.tap(find.widgetWithText(FiButton, 'Adicionar'));
       await _esperar(tester);
 
       await tester.enterText(find.byType(TextField).first, 'PETR4');
@@ -211,6 +211,82 @@ void main() {
           reason: 'declarar posição substitui a quantidade; quem queria somar precisa saber');
       expect(find.widgetWithText(FiButton, 'Registrar compra no razão'), findsOneWidget);
       expect(find.widgetWithText(FiButton, 'Substituir posição'), findsOneWidget);
+    });
+
+    testWidgets('proventos do topo são o recebido em 12 meses, e sem o dado sai traço', (tester) async {
+      final painel = _painel();
+      final servidor = _Servidor({
+        'GET /dashboard': (_) => {
+          ...painel,
+          'summary': {
+            ...painel['summary']! as Map<String, Object?>,
+            'monthly_dividends_estimate': 412.8,
+            'dividends_received_last_12m': 321.5,
+          },
+        },
+      });
+      await _montar(tester, servidor, const PatrimonyScreen());
+
+      expect(find.text('PROVENTOS EM 12 MESES'), findsOneWidget);
+      expect(find.text(formatCurrency(321.5)), findsWidgets,
+          reason: 'o número do topo é o que caiu na conta, não a estimativa mensal');
+      expect(find.text(formatCurrency(412.8)), findsNothing,
+          reason: 'a estimativa soma juro de renda fixa e não tem faixa: não sobe para o topo');
+
+      await _montar(tester, _Servidor({'GET /dashboard': (_) => _painel()}), const PatrimonyScreen());
+      expect(find.text('—'), findsWidgets,
+          reason: 'servidor que não manda o recebido não pode virar R\$ 0,00');
+    });
+
+    testWidgets('quem só tem renda fixa fora do total não vê a carteira vazia', (tester) async {
+      final servidor = _Servidor({
+        'GET /dashboard': (_) => {..._painel(), 'positions': <Object>[], 'allocations': <Object>[]},
+        'GET /fixed-income': (_) => {
+          'items': [
+            {
+              'id': 7,
+              'nome': 'Reserva',
+              'tipo': 'cdb',
+              'valor_investido': 1000.0,
+              'taxa': 12.0,
+              'tipo_taxa': 'pre_fixado',
+              'data_aplicacao': '2025-01-10',
+              'liquidez': 'diaria',
+              'oculto': true,
+              'valor_atual': 1100.0,
+              'rendimento_acumulado': 100.0,
+              'rendimento_pct': 10.0,
+              'meses_decorridos': 20.0,
+              'taxa_anual_efetiva_pct': 12.0,
+              'yield_equivalente_pct': 12.0,
+            },
+          ],
+          'total_investido': 0.0,
+          'total_atual': 0.0,
+          'total_rendimento': 0.0,
+          'rendimento_pct': 0.0,
+          'taxa_media_aa': 0.0,
+          'cdi_referencia': 14.4,
+          'fonte_taxas': 'bcb',
+        },
+      });
+      await _montar(tester, servidor, const PatrimonyScreen());
+
+      expect(find.text('Sua carteira ainda está vazia'), findsNothing,
+          reason: 'ter carteira olha posições e renda fixa, inclusive a que está fora do total');
+      expect(find.textContaining('fora do total da carteira'), findsOneWidget);
+    });
+
+    testWidgets('na falha, puxar para baixo tenta de novo', (tester) async {
+      final servidor = _Servidor({'GET /dashboard': (_) => 503});
+      await _montar(tester, servidor, const PatrimonyScreen());
+      expect(servidor.pedidos.where((p) => p == 'GET /dashboard'), hasLength(1));
+
+      await tester.fling(find.byType(ListView).first, const Offset(0, 1600), 1000);
+      await _esperar(tester);
+
+      expect(servidor.pedidos.where((p) => p == 'GET /dashboard').length, greaterThan(1),
+          reason: 'o estado de falha precisa ser rolável, ou o gesto de atualizar não dispara');
     });
 
     testWidgets('a projeção tem caminho a partir do patrimônio', (tester) async {
@@ -287,5 +363,199 @@ void main() {
     expect(leitura.right, closeTo(linha.right, 1),
         reason: 'o percentual encosta na margem direita, alinhado com o rótulo');
     expect(leitura.left, greaterThan(rotulo.right));
+  });
+
+  group('lista que já carregou as anteriores', () {
+    testWidgets('apagar da primeira página não repete nem some com as anteriores', (tester) async {
+      var apagado = false;
+      final servidor = _Servidor({
+        'GET /transactions': (pedido) {
+          if (pedido.queryParameters['cursor'] != null) {
+            return {
+              'items': [
+                apagado
+                    ? _lancamento(3, 'ITSA4', '2024-11-20')
+                    : _lancamento(1, 'VALE3', '2025-03-04'),
+              ],
+              'count': 1,
+              'has_more': false,
+            };
+          }
+          return apagado
+              ? {
+                  'items': [_lancamento(1, 'VALE3', '2025-03-04')],
+                  'count': 1,
+                  'has_more': true,
+                  'next_cursor': 'c1',
+                }
+              : {
+                  'items': [_lancamento(2, 'PETR4', '2026-09-12')],
+                  'count': 2,
+                  'has_more': true,
+                  'next_cursor': 'c1',
+                };
+        },
+        'DELETE /transactions/2': (_) {
+          apagado = true;
+          return null;
+        },
+      });
+      await _montar(tester, servidor, const LedgerScreen());
+
+      await tester.tap(find.widgetWithText(FiButton, 'Carregar os anteriores'));
+      await _esperar(tester);
+      expect(find.text('VALE3 · Compra'), findsOneWidget);
+
+      await tester.tap(find.text('PETR4 · Compra'));
+      await _esperar(tester);
+      await tester.tap(find.widgetWithText(FiButton, 'Apagar lançamento'));
+      await _esperar(tester);
+      await tester.tap(find.widgetWithText(FiButton, 'Apagar'));
+      await _esperar(tester);
+
+      expect(find.text('PETR4 · Compra'), findsNothing);
+      expect(find.text('VALE3 · Compra'), findsOneWidget,
+          reason: 'a página recarregada já traz o lançamento; as anteriores velhas não o repetem');
+      expect(find.widgetWithText(FiButton, 'Carregar os anteriores'), findsOneWidget,
+          reason: 'a página nova recomeça as anteriores, mesmo quando o cursor tem o mesmo texto');
+    });
+  });
+
+  group('proventos', () {
+    Map<String, Object?> sugestao(String tipo, double taxa) => {
+      'ticker': 'ITSA4',
+      'paid_at': '2026-09-30',
+      'ex_date': '2026-08-29',
+      'amount': 100 * taxa,
+      'quantity_at_date': 100,
+      'rate_per_share': taxa,
+      'kind': tipo,
+      'entitlement': 'provado',
+    };
+
+    testWidgets('recebidos além da primeira página se carregam pelo cursor', (tester) async {
+      Map<String, Object?> provento(int id, String ativo, String dia) =>
+          {'id': id, 'ticker': ativo, 'paid_at': dia, 'amount': 10.0, 'kind': 'dividendo'};
+      final servidor = _Servidor({
+        'GET /dividends/received': (pedido) => pedido.queryParameters['cursor'] == 'd1'
+            ? {
+                'items': [provento(1, 'VALE3', '2025-03-04')],
+                'total_count': 2,
+                'has_more': false,
+              }
+            : {
+                'items': [provento(2, 'PETR4', '2026-09-12')],
+                'total_count': 2,
+                'has_more': true,
+                'next_cursor': 'd1',
+              },
+        'GET /dividends/pending': (_) => {'items': <Object>[], 'count': 0},
+      });
+      await _montar(tester, servidor, const DividendsScreen());
+
+      expect(find.text('VALE3 · Dividendo'), findsNothing);
+      await tester.scrollUntilVisible(
+        find.widgetWithText(FiButton, 'Carregar os anteriores'),
+        200,
+      );
+      await tester.tap(find.widgetWithText(FiButton, 'Carregar os anteriores'));
+      await _esperar(tester);
+
+      expect(find.text('VALE3 · Dividendo'), findsOneWidget,
+          reason: 'o cabeçalho conta todos; a lista não pode parar na primeira página em silêncio');
+      expect(find.text('Fim dos proventos registrados.'), findsOneWidget);
+    });
+
+    testWidgets('dividendo e JCP no mesmo dia se marcam um de cada vez', (tester) async {
+      Object? enviado;
+      final servidor = _Servidor({
+        'GET /dividends/received': (_) => {'items': <Object>[], 'total_count': 0},
+        'GET /dividends/pending': (_) => {
+          'items': [sugestao('dividendo', 0.12), sugestao('jcp', 0.31)],
+          'count': 2,
+        },
+        'POST /dividends/pending/confirm': (pedido) {
+          enviado = pedido.data;
+          return {'created': 1};
+        },
+      });
+      await _montar(tester, servidor, const DividendsScreen());
+
+      await tester.tap(find.byType(Checkbox).first);
+      await _esperar(tester);
+      expect(find.textContaining('1 de 2 marcados'), findsOneWidget,
+          reason: 'provento sugerido nunca vem marcado junto com outro do mesmo dia');
+
+      await tester.tap(find.widgetWithText(FiButton, 'Lançar 1 provento'));
+      await _esperar(tester);
+      final itens = (enviado as Map)['items'] as List;
+      expect(itens, hasLength(1), reason: 'só o que a pessoa marcou é lançado');
+      expect(find.text('1 provento lançado.'), findsOneWidget);
+    });
+  });
+  group('renda fixa', () {
+    Map<String, Object?> listagem({required String fonte, required int dias}) => {
+      'items': [
+        {
+          'id': 7,
+          'nome': 'CDB Inter 2026',
+          'tipo': 'cdb',
+          'valor_investido': 1000.0,
+          'taxa': 12.0,
+          'tipo_taxa': 'pre_fixado',
+          'data_aplicacao': '2025-01-10',
+          'vencimento': '2026-09-24',
+          'liquidez': 'no_vencimento',
+          'oculto': false,
+          'valor_atual': 1100.0,
+          'rendimento_acumulado': 100.0,
+          'rendimento_pct': 10.0,
+          'meses_decorridos': 20.0,
+          'taxa_anual_efetiva_pct': 12.0,
+          'yield_equivalente_pct': 12.0,
+          'dias_para_vencimento': dias,
+          'vencimento_proximo': false,
+        },
+      ],
+      'total_investido': 1000.0,
+      'total_atual': 1100.0,
+      'total_rendimento': 100.0,
+      'rendimento_pct': 10.0,
+      'taxa_media_aa': 12.0,
+      'cdi_referencia': 14.4,
+      'fonte_taxas': fonte,
+    };
+
+    testWidgets('aplicação vencida diz que venceu, e a leitura vencida do CDI não vira estimativa',
+        (tester) async {
+      final servidor = _Servidor({
+        'GET /fixed-income': (_) => listagem(fonte: 'bcb_cache_vencido', dias: -12),
+      });
+      await _montar(tester, servidor, const FixedIncomeScreen());
+
+      expect(find.textContaining('Venceu há 12 dias'), findsOneWidget,
+          reason: 'vencida não pode sair como "em -12 dias", e pede o resgate');
+      expect(find.textContaining('da última leitura do Banco Central'), findsOneWidget,
+          reason: 'leitura vencida do BCB é dado real, não estimativa');
+      expect(find.textContaining('lido do estimativa'), findsNothing);
+    });
+
+    testWidgets('escolher Tesouro IPCA+ ajusta o tipo de taxa e o rótulo da taxa', (tester) async {
+      final servidor = _Servidor({
+        'GET /fixed-income': (_) => listagem(fonte: 'bcb', dias: 300),
+      });
+      await _montar(tester, servidor, const FixedIncomeScreen());
+
+      await tester.tap(find.widgetWithText(FiButton, 'Cadastrar aplicação'));
+      await _esperar(tester);
+      await tester.tap(find.text('CDB').last);
+      await _esperar(tester);
+      await tester.tap(find.text('Tesouro IPCA+').last);
+      await _esperar(tester);
+
+      expect(find.text('Taxa acima do IPCA (% a.a.)'), findsOneWidget,
+          reason: 'Tesouro IPCA+ rende IPCA mais a taxa; o formulário não pode deixar pré-fixado');
+      expect(find.text('Híbrido (IPCA + taxa)'), findsOneWidget);
+    });
   });
 }

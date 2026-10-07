@@ -168,8 +168,8 @@ async def quitar_divida(debt_id: int) -> None:
 
 
 _ORDEM_POR_META = (
-    "O destino sai da sua alocação-alvo: entra primeiro a classe que está mais abaixo do alvo "
-    "que você declarou."
+    "O destino sai da sua meta de alocação: entra primeiro a classe que está mais abaixo da "
+    "meta que você declarou."
 )
 
 

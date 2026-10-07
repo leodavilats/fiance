@@ -29,7 +29,7 @@ class ReconciliationScreen extends ConsumerWidget {
     final conferencia = ref.watch(reconciliationProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Conferir com o razão')),
+      appBar: AppBar(title: const Text('Conferir as posições')),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(reconciliationProvider),
         child: conferencia.when(
@@ -63,8 +63,11 @@ class ReconciliationScreen extends ConsumerWidget {
               const SizedBox(height: FiSpace.s2),
               Text(
                 data.inSync
-                    ? '${data.positions} posição(ões) na carteira, e cada uma é exatamente o que '
-                          'os lançamentos projetam.'
+                    ? data.positions == 1
+                          ? '1 posição na carteira, e ela é exatamente o que os lançamentos '
+                                'projetam.'
+                          : '${data.positions} posições na carteira, e cada uma é exatamente o '
+                                'que os lançamentos projetam.'
                     : 'A carteira devia ser só a projeção dos lançamentos. Onde ela diverge, o '
                           'razão é quem está certo — a menos que falte lançar alguma coisa.',
                 style: FiType.body.copyWith(color: fiInk2(context)),
@@ -157,24 +160,24 @@ class _ActionsState extends ConsumerState<_Actions> {
 
   Future<void> _run(Future<String> Function() acao, String action) async {
     setState(() => _busy = true);
-    try {
-      final mensagem = await acao();
-      if (!mounted) return;
+    String? mensagem;
+    final ok = await fiAttempt(context, () async {
+      mensagem = await acao();
+    }, action: action);
+    if (!mounted) return;
+    final texto = mensagem;
+    if (ok && texto != null) {
       invalidateLedgerReaders(ref);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(fiErrorMessage(e, action: action))),
-      );
-    } finally {
-      if (mounted) setState(() => _busy = false);
+      fiNotify(context, texto);
     }
+    setState(() => _busy = false);
   }
 
   Future<void> _backfill() => _run(() async {
     final semeadas = await ref.read(apiRepositoryProvider).backfillLedger();
-    return '$semeadas posição(ões) levada(s) para o razão.';
+    return semeadas == 1
+        ? '1 posição levada para o razão.'
+        : '$semeadas posições levadas para o razão.';
   }, 'levar as posições para o razão');
 
   Future<void> _rebuild() async {
@@ -189,13 +192,15 @@ class _ActionsState extends ConsumerState<_Actions> {
                 'lançamento a sustenta.',
       confirmLabel: 'Refazer',
     );
-    if (!confirmado) return;
+    if (!confirmado || !mounted) return;
 
     await _run(() async {
       final depois = await ref.read(apiRepositoryProvider).rebuildProjection();
       return depois.inSync
           ? 'Carteira refeita: agora ela bate com o razão.'
-          : 'Carteira refeita, e ainda restam ${depois.differences.length} diferença(s).';
+          : depois.differences.length == 1
+          ? 'Carteira refeita, e ainda resta 1 diferença.'
+          : 'Carteira refeita, e ainda restam ${depois.differences.length} diferenças.';
     }, 'refazer a carteira');
   }
 

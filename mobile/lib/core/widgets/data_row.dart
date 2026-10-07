@@ -17,9 +17,12 @@ class FiDataRow extends StatelessWidget {
     this.emphasis = false,
     this.dense = false,
     this.glossaryKey,
+    this.chevron = true,
   });
 
   final String? glossaryKey;
+
+  final bool chevron;
 
   final String label;
 
@@ -118,7 +121,7 @@ class FiDataRow extends StatelessWidget {
               ),
             ),
           ?trailing,
-          if (navegavel) ...[
+          if (navegavel && chevron) ...[
             const SizedBox(width: FiSpace.s2),
             Icon(Icons.chevron_right, size: 18, color: fiInk3(context)),
           ],
@@ -208,40 +211,27 @@ class FiObject extends StatelessWidget {
 
     final conteudo = Padding(padding: padding, child: child);
 
-    Widget corpo = DecoratedBox(
-      decoration: BoxDecoration(
-        color: fiGround1(brightness),
-        borderRadius: BorderRadius.circular(FiRadius.md),
-        border: Border.all(color: borda),
-      ),
-      child: accent == null
-          ? conteudo
-          : IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    width: 3,
-                    decoration: BoxDecoration(
-                      color: accent,
-                      borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(FiRadius.md),
-                      ),
-                    ),
-                  ),
-                  Expanded(child: conteudo),
-                ],
-              ),
+    final inner = accent == null
+        ? conteudo
+        : IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(width: 3, color: accent),
+                Expanded(child: conteudo),
+              ],
             ),
-    );
+          );
 
-    if (onTap != null) {
-      corpo = InkWell(
-        onTap: onTap,
+    Widget corpo = Material(
+      color: fiGround1(brightness),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(FiRadius.md),
-        child: corpo,
-      );
-    }
+        side: BorderSide(color: borda),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: onTap == null ? inner : InkWell(onTap: onTap, child: inner),
+    );
 
     if (semanticsLabel != null) {
       corpo = Semantics(label: semanticsLabel, container: true, child: corpo);

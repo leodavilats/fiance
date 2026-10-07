@@ -24,6 +24,11 @@ void main() {
         startsWith('Justo entre ${formatCurrency(60.32)} e ${formatCurrency(146.03)}'),
         reason: '"entre R\$ 60,32 a R\$ 146,03" chegou à lista do Descobrir',
       );
+      expect(
+        fairBandSummary(60.32, 146.03, 2),
+        endsWith(', faixa confirmada por outro dado'),
+        reason: '"Justo entre …, confirmada" juntava masculino e feminino; quem é confirmada é a faixa',
+      );
     });
   });
 

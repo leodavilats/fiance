@@ -58,7 +58,13 @@ class FiSection extends StatelessWidget {
                   ),
                 ),
               ),
-              ?trailing,
+              if (trailing != null) ...[
+                const SizedBox(width: FiSpace.s3),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: fiTrailingCap(context, 0.55)),
+                  child: trailing,
+                ),
+              ],
             ],
           ),
           if (hint != null) ...[

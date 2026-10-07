@@ -115,8 +115,8 @@ class _StepsState extends ConsumerState<_Steps> {
     2 => [
       FiButton(
         tone: primary ? FiButtonTone.primary : FiButtonTone.secondary,
-        label: 'Importar extrato',
-        icon: Icons.upload_file_outlined,
+        label: 'Importar operações',
+        icon: Icons.content_paste_outlined,
         onPressed: () => context.push('/patrimonio/razao/importar'),
       ),
       FiButton.secondary(
@@ -127,7 +127,7 @@ class _StepsState extends ConsumerState<_Steps> {
     3 => [
       FiButton(
         tone: primary ? FiButtonTone.primary : FiButtonTone.secondary,
-        label: 'Definir metas',
+        label: 'Declarar metas',
         icon: Icons.flag_outlined,
         onPressed: () => context.push('/voce/objetivos'),
       ),
@@ -167,7 +167,7 @@ class _StepsState extends ConsumerState<_Steps> {
             padding: const EdgeInsets.only(bottom: FiSpace.s3),
             child: FiObject(
               accent: passo.number == foco && !_done(passo.number)
-                  ? fiStateColor(FiState.attention, Theme.of(context).brightness)
+                  ? Theme.of(context).colorScheme.primary
                   : null,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

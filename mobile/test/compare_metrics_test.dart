@@ -7,7 +7,10 @@ void main() {
 
   group('semântica por classe de ativo', () {
     test('P/L e ROE não se aplicam a FII nem a ETF', () {
-      for (final label in ['P/L', 'ROE']) {
+      for (final label in [
+        'Preço sobre lucro (P/L)',
+        'Retorno sobre o patrimônio (ROE)',
+      ]) {
         final m = metric(label);
         expect(m.appliesTo.contains('fii'), isFalse, reason: '$label em FII');
         expect(m.appliesTo.contains('etf'), isFalse, reason: '$label em ETF');
@@ -16,12 +19,17 @@ void main() {
     });
 
     test('P/VP se aplica a FII, porque FII tem patrimônio', () {
-      expect(metric('P/VP').appliesTo.contains('fii'), isTrue);
-      expect(metric('P/VP').appliesTo.contains('etf'), isFalse);
+      const pvp = 'Preço sobre valor patrimonial (P/VP)';
+      expect(metric(pvp).appliesTo.contains('fii'), isTrue);
+      expect(metric(pvp).appliesTo.contains('etf'), isFalse);
     });
 
     test('preço, DY e RSI valem para toda classe de renda variável', () {
-      for (final label in ['Preço', 'Dividend Yield', 'RSI (14)']) {
+      for (final label in [
+        'Preço',
+        'Dividendos ao ano (DY)',
+        'Força relativa (RSI, 0 a 100)',
+      ]) {
         expect(
           metric(label).appliesTo,
           containsAll(<String>['br_stock', 'bdr', 'fii', 'etf']),

@@ -170,37 +170,34 @@ final appRouter = GoRouter(
               routes: [
                 GoRoute(
                   path: 'quedas',
-                  builder: (context, state) => const ToolScreen(
-                    title: 'Quedas',
-                    question: 'Caiu por quê — e os fundamentos seguem de pé?',
-                    child: OpportunitiesTab(initialOnlyDip: true),
+                  builder: (context, state) => ToolScreen(
+                    title: fiDiscoverTools[0].$1,
+                    question: fiDiscoverTools[0].$2,
+                    child: const OpportunitiesTab(initialOnlyDip: true),
                   ),
                 ),
                 GoRoute(
                   path: 'comparar',
-                  builder: (context, state) => const ToolScreen(
-                    title: 'Comparar ativos',
-                    question:
-                        'Entre estes ativos, qual está melhor posicionado?',
-                    child: CompareAssetsView(),
+                  builder: (context, state) => ToolScreen(
+                    title: fiDiscoverTools[1].$1,
+                    question: fiDiscoverTools[1].$2,
+                    child: const CompareAssetsView(),
                   ),
                 ),
                 GoRoute(
                   path: 'renda-fixa',
-                  builder: (context, state) => const ToolScreen(
-                    title: 'Renda fixa',
-                    question:
-                        'Entre estes títulos, qual rende mais depois do IR?',
-                    child: FixedIncomeSimulatorView(),
+                  builder: (context, state) => ToolScreen(
+                    title: fiDiscoverTools[2].$1,
+                    question: fiDiscoverTools[2].$2,
+                    child: const FixedIncomeSimulatorView(),
                   ),
                 ),
                 GoRoute(
                   path: 'renda-fixa-vs-bolsa',
-                  builder: (context, state) => const ToolScreen(
-                    title: 'Renda fixa × bolsa',
-                    question:
-                        'Com a Selic nesse patamar, vale mais o CDB ou o FII?',
-                    child: IncomeCompareView(),
+                  builder: (context, state) => ToolScreen(
+                    title: fiDiscoverTools[3].$1,
+                    question: fiDiscoverTools[3].$2,
+                    child: const IncomeCompareView(),
                   ),
                 ),
               ],

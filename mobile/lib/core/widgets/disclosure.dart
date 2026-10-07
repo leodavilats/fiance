@@ -63,15 +63,15 @@ class _FiDisclosureState extends State<FiDisclosure> {
                     style: FiType.body.copyWith(color: fiInk1(context)),
                   )
                 else
-                  Row(
+                  Wrap(
+                    spacing: FiSpace.s2,
+                    runSpacing: FiSpace.s1,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Flexible(
-                        child: Text(
-                          widget.title,
-                          style: FiType.body.copyWith(color: fiInk1(context)),
-                        ),
+                      Text(
+                        widget.title,
+                        style: FiType.body.copyWith(color: fiInk1(context)),
                       ),
-                      const SizedBox(width: FiSpace.s2),
                       widget.tag!,
                     ],
                   ),
@@ -90,10 +90,14 @@ class _FiDisclosureState extends State<FiDisclosure> {
           ),
           if (widget.value != null) ...[
             const SizedBox(width: FiSpace.s3),
-            Text(
-              widget.value!,
-              style: FiType.figure.copyWith(
-                color: widget.valueColor ?? fiInk1(context),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: fiTrailingCap(context)),
+              child: Text(
+                widget.value!,
+                textAlign: TextAlign.end,
+                style: FiType.figure.copyWith(
+                  color: widget.valueColor ?? fiInk1(context),
+                ),
               ),
             ),
           ],
@@ -228,11 +232,17 @@ class _FiGroupDisclosureState extends State<FiGroupDisclosure> {
                           style: FiType.eyebrow.copyWith(color: fiInk3(context)),
                         ),
                       ),
-                      if (widget.trailing != null)
-                        Text(
-                          widget.trailing!,
-                          style: FiType.caption.copyWith(color: fiInk2(context)),
+                      if (widget.trailing != null) ...[
+                        const SizedBox(width: FiSpace.s2),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: fiTrailingCap(context)),
+                          child: Text(
+                            widget.trailing!,
+                            textAlign: TextAlign.end,
+                            style: FiType.caption.copyWith(color: fiInk2(context)),
+                          ),
                         ),
+                      ],
                     ],
                   ),
                 ),

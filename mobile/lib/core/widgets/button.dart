@@ -21,7 +21,7 @@ class FiButton extends StatelessWidget {
     this.icon,
     this.expand = false,
     this.busy = false,
-  });
+  }) : destructive = false;
 
   const FiButton.primary({
     super.key,
@@ -30,7 +30,8 @@ class FiButton extends StatelessWidget {
     this.icon,
     this.expand = false,
     this.busy = false,
-  }) : tone = FiButtonTone.primary;
+  }) : tone = FiButtonTone.primary,
+       destructive = false;
 
   const FiButton.secondary({
     super.key,
@@ -39,7 +40,8 @@ class FiButton extends StatelessWidget {
     this.icon,
     this.expand = false,
     this.busy = false,
-  }) : tone = FiButtonTone.secondary;
+  }) : tone = FiButtonTone.secondary,
+       destructive = false;
 
   const FiButton.quiet({
     super.key,
@@ -48,6 +50,7 @@ class FiButton extends StatelessWidget {
     this.icon,
     this.expand = false,
     this.busy = false,
+    this.destructive = false,
   }) : tone = FiButtonTone.quiet;
 
   const FiButton.danger({
@@ -57,7 +60,8 @@ class FiButton extends StatelessWidget {
     this.icon,
     this.expand = false,
     this.busy = false,
-  }) : tone = FiButtonTone.danger;
+  }) : tone = FiButtonTone.danger,
+       destructive = true;
 
   final String label;
   final VoidCallback? onPressed;
@@ -69,11 +73,14 @@ class FiButton extends StatelessWidget {
 
   final bool busy;
 
+  final bool destructive;
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final acionavel = onPressed != null && !busy;
     final tocar = acionavel ? onPressed : null;
+    final adverso = fiStateColor(FiState.adverse, brightness);
 
     final filho = _Content(label: label, icon: icon, busy: busy, expand: expand);
 
@@ -82,15 +89,23 @@ class FiButton extends StatelessWidget {
       FiButtonTone.secondary => OutlinedButton(onPressed: tocar, child: filho),
       FiButtonTone.danger => OutlinedButton(
         onPressed: tocar,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: fiStateColor(FiState.adverse, brightness),
-          side: BorderSide(color: fiStateColor(FiState.adverse, brightness)),
+        style: OutlinedButton.styleFrom(foregroundColor: adverso).copyWith(
+          side: WidgetStateProperty.resolveWith(
+            (estados) => BorderSide(
+              color: estados.contains(WidgetState.disabled)
+                  ? Theme.of(context).colorScheme.outlineVariant
+                  : adverso,
+            ),
+          ),
         ),
         child: filho,
       ),
       FiButtonTone.quiet => TextButton(
         onPressed: tocar,
-        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          foregroundColor: destructive ? adverso : null,
+        ),
         child: filho,
       ),
     };

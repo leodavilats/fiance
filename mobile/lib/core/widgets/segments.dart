@@ -23,8 +23,8 @@ class FiSegments<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final entradas = options.entries.toList();
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         for (var i = 0; i < entradas.length; i++) ...[
           if (i > 0)

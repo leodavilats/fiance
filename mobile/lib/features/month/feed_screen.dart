@@ -59,65 +59,71 @@ class FeedScreen extends ConsumerWidget {
               ref.invalidate(whatsNewProvider);
             },
           ),
-          data: (data) => ListView(
-            padding: const EdgeInsets.fromLTRB(
-              FiLayout.gutter,
-              FiSpace.s3,
-              FiLayout.gutter,
-              FiLayout.scrollTail,
-            ),
-            children: [
-              FiPatrimonyBlock(summary: data.summary),
-              if (data.freshness != null)
-                FiFreshnessLine(freshness: data.freshness!),
-
-              FiSection(
-                title: 'O que mudou',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _feed(ref, data, whatsNew),
-                ),
+          data: (data) {
+            final destaques = data.topBuys.take(_topBuysLimit).toList();
+            final idade = formatAge(oldestStamp(destaques.map((o) => o.asOf)));
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(
+                FiLayout.gutter,
+                FiSpace.s3,
+                FiLayout.gutter,
+                FiLayout.scrollTail,
               ),
+              children: [
+                FiPatrimonyBlock(summary: data.summary),
+                if (data.freshness != null)
+                  FiFreshnessLine(freshness: data.freshness!),
 
-              ..._nextAction(context, data),
-
-              if (data.health != null)
                 FiSection(
-                  title: 'Como está a carteira',
-                  child: FiHealthBlock(health: data.health!),
-                ),
-
-              if (data.topBuys.isNotEmpty)
-                FiSection(
-                  title: 'Em destaque',
-                  hint: 'As leituras mais fortes do universo coberto hoje.',
-                  action: FiNavAction(
-                    label: 'Ver todas as oportunidades',
-                    onPressed: () => context.go('/descobrir'),
-                  ),
+                  title: 'O que mudou',
                   child: Column(
-                    children: data.topBuys
-                        .take(_topBuysLimit)
-                        .map(
-                          (o) => FiOpportunityTile(
-                            opportunity: o,
-                            onTap: () => context.push('/ativo/${o.ticker}'),
-                          ),
-                        )
-                        .toList(),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _feed(ref, data, whatsNew),
                   ),
                 ),
 
-              const SizedBox(height: FiSpace.s8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: FiNavAction(
-                  label: 'Abrir o patrimônio',
-                  onPressed: () => context.go('/patrimonio'),
+                ..._nextAction(context, data),
+
+                if (data.health != null)
+                  FiSection(
+                    title: 'Como está a carteira',
+                    child: FiHealthBlock(health: data.health!),
+                  ),
+
+                if (data.topBuys.isNotEmpty)
+                  FiSection(
+                    title: 'Em destaque',
+                    hint: idade.isEmpty
+                        ? 'As leituras mais fortes entre os ativos que acompanhamos.'
+                        : 'As leituras mais fortes entre os ativos que acompanhamos. Cotações '
+                              'lidas $idade.',
+                    action: FiNavAction(
+                      label: 'Ver todas as oportunidades',
+                      onPressed: () => context.go('/descobrir'),
+                    ),
+                    child: Column(
+                      children: destaques
+                          .map(
+                            (o) => FiOpportunityTile(
+                              opportunity: o,
+                              onTap: () => context.push('/ativo/${o.ticker}'),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+
+                const SizedBox(height: FiSpace.s8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: FiNavAction(
+                    label: 'Abrir o patrimônio',
+                    onPressed: () => context.go('/patrimonio'),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            );
+          },
         ),
       ),
     );

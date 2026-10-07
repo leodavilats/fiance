@@ -270,4 +270,18 @@ void invalidateLedgerReaders(WidgetRef ref) {
   ref.invalidate(reconciliationProvider);
   ref.invalidate(followedSuggestionsProvider);
   ref.invalidate(onboardingProvider);
+  ref.invalidate(dividendsProvider);
+  ref.invalidate(pendingDividendsProvider);
+  ref.invalidate(closedTradesProvider);
+  ref.invalidate(cashMonthProvider);
+  ref.invalidate(cashEntriesProvider);
+  invalidateAllocationReaders(ref);
+}
+
+void invalidateAllocationReaders(WidgetRef ref) {
+  ref.invalidate(dashboardProvider);
+  ref.invalidate(fixedIncomeProvider);
+  ref.invalidate(surplusProvider);
+  ref.invalidate(quickInvestProvider);
+  ref.invalidate(rebalanceSuggestionsProvider);
 }

@@ -182,7 +182,7 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
 
   void _clearAll() {
     _searchCtrl.clear();
-    _setFilters(const OpportunitiesFilters());
+    _setFilters(OpportunitiesFilters(onlyDip: _escopo));
   }
 
   Future<void> _openFilters() async {
@@ -194,7 +194,7 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
       builder: (context) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: _FiltersSheet(initial: filters),
+        child: _FiltersSheet(initial: filters, lockDip: _escopo),
       ),
     );
     if (result == null || !mounted) return;
@@ -205,7 +205,7 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
   @override
   Widget build(BuildContext context) {
     final filters = ref.watch(opportunitiesFiltersProvider(_escopo));
-    final activeCount = _activeFilterCount(filters);
+    final activeCount = _activeFilterCount(filters) - (_escopo && filters.onlyDip ? 1 : 0);
     final dip = filters.onlyDip;
 
     return Column(
@@ -263,7 +263,7 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
                           label: _categoryLabels[filters.category] ?? filters.category,
                           onDeleted: () => _setFilters(filters.copyWith(category: '')),
                         ),
-                      if (dip)
+                      if (dip && !_escopo)
                         _ActiveFilterChip(
                           label: 'Em queda',
                           onDeleted: () => _setFilters(filters.copyWith(onlyDip: false)),
@@ -322,27 +322,31 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
   }
 }
 
+const fiDiscoverTools = [
+  (
+    'Quedas',
+    'O que caiu forte — e onde está contra o preço justo?',
+    '/descobrir/quedas',
+  ),
+  (
+    'Comparar ativos',
+    'Entre estes ativos, qual está melhor posicionado?',
+    '/descobrir/comparar',
+  ),
+  (
+    'Renda fixa',
+    'Entre estes títulos, qual rende mais depois do imposto de renda?',
+    '/descobrir/renda-fixa',
+  ),
+  (
+    'Renda fixa × bolsa',
+    'Com a Selic nesse patamar, vale mais o CDB ou o fundo imobiliário?',
+    '/descobrir/renda-fixa-vs-bolsa',
+  ),
+];
+
 class DiscoverTools extends StatelessWidget {
   const DiscoverTools({super.key});
-
-  static const _ferramentas = [
-    ('Quedas', 'Caiu por quê — e os fundamentos seguem de pé?', '/descobrir/quedas'),
-    (
-      'Comparar ativos',
-      'Entre estes ativos, qual está melhor posicionado?',
-      '/descobrir/comparar',
-    ),
-    (
-      'Renda fixa',
-      'Entre estes títulos, qual rende mais depois do imposto de renda?',
-      '/descobrir/renda-fixa',
-    ),
-    (
-      'Renda fixa × bolsa',
-      'Com a Selic nesse patamar, vale mais o CDB ou o fundo imobiliário?',
-      '/descobrir/renda-fixa-vs-bolsa',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -350,10 +354,10 @@ class DiscoverTools extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
       child: FiDisclosure(
         title: 'Ferramentas',
-        detail: 'Quedas, comparar ativos, renda fixa e renda fixa × bolsa',
+        detail: 'Quedas, comparar ativos e renda fixa',
         child: FiRows(
           children: [
-            for (final (nome, pergunta, rota) in _ferramentas)
+            for (final (nome, pergunta, rota) in fiDiscoverTools)
               FiDataRow(
                 label: nome,
                 detail: pergunta,
@@ -384,9 +388,10 @@ class _ActiveFilterChip extends StatelessWidget {
 }
 
 class _FiltersSheet extends StatefulWidget {
-  const _FiltersSheet({required this.initial});
+  const _FiltersSheet({required this.initial, this.lockDip = false});
 
   final OpportunitiesFilters initial;
+  final bool lockDip;
 
   @override
   State<_FiltersSheet> createState() => _FiltersSheetState();
@@ -419,7 +424,7 @@ class _FiltersSheetState extends State<_FiltersSheet> {
   void _clear() => setState(() {
     _search = '';
     _category = '';
-    _onlyDip = false;
+    _onlyDip = widget.lockDip;
     _onlyInteresting = false;
     _dyEnabled = false;
     _mosEnabled = false;
@@ -429,7 +434,7 @@ class _FiltersSheetState extends State<_FiltersSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final ativos = _activeFilterCount(_result);
+    final ativos = _activeFilterCount(_result) - (widget.lockDip ? 1 : 0);
 
     return SafeArea(
       child: Column(
@@ -478,37 +483,41 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                     ],
                   ),
 
-                  const _SheetEyebrow('O que mostrar'),
-                  FiRows(
-                    children: [
-                      FiDataRow(
-                        label: 'Em queda',
-                        detail: 'Varredura de ativos que caíram do topo recente',
-                        trailing: FiSwitch(
+                  if (!widget.lockDip) ...[
+                    const _SheetEyebrow('O que mostrar'),
+                    FiRows(
+                      children: [
+                        FiDataRow(
                           label: 'Em queda',
-                          value: _onlyDip,
-                          onChanged: (v) => setState(() => _onlyDip = v),
+                          detail: 'Varredura de ativos que caíram do topo recente',
+                          trailing: FiSwitch(
+                            label: 'Em queda',
+                            value: _onlyDip,
+                            onChanged: (v) => setState(() => _onlyDip = v),
+                          ),
                         ),
-                      ),
-                      FiDataRow(
-                        label: 'Somente destaques',
-                        detail: _onlyDip ? 'Não se aplica à varredura de quedas' : null,
-                        trailing: FiSwitch(
+                        FiDataRow(
                           label: 'Somente destaques',
-                          value: _onlyInteresting && !_onlyDip,
-                          onChanged: _onlyDip
-                              ? null
-                              : (v) => setState(() => _onlyInteresting = v),
+                          detail: _onlyDip ? 'Não se aplica à varredura de quedas' : null,
+                          trailing: FiSwitch(
+                            label: 'Somente destaques',
+                            value: _onlyInteresting && !_onlyDip,
+                            onChanged: _onlyDip
+                                ? null
+                                : (v) => setState(() => _onlyInteresting = v),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
 
                   if (_onlyDip) ...[
                     const SizedBox(height: FiSpace.s4),
                     Text(
-                      'Na varredura de quedas, só a classe e a busca recortam a lista. '
-                      'Variação, posição no ano e fundamentos voltam quando ela sai.',
+                      widget.lockDip
+                          ? 'Nas quedas, só a classe e a busca recortam a lista.'
+                          : 'Na varredura de quedas, só a classe e a busca recortam a lista. '
+                                'Variação, posição no ano e fundamentos voltam quando ela sai.',
                       style: FiType.caption.copyWith(color: fiInk3(context)),
                     ),
                   ] else ...[
@@ -656,7 +665,7 @@ class _DipScannerView extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(dipScanResultProvider(escopo)),
       child: result.when(
-        loading: () => FiSkeleton.screen(shape: FiSkeletonShape.row, count: 6, label: 'Varrendo o mercado'),
+        loading: () => _ScrollableState(header: cabecalho, child: const _ListSkeleton()),
         error: (err, _) => _ScrollableState(
           header: cabecalho,
           child: FiErrorState(
@@ -692,11 +701,14 @@ class _DipScannerView extends ConsumerWidget {
           final idade = formatAge(oldestStamp(items.map((i) => i.asOf)));
           final antes = [
             ?cabecalho,
-            if (idade.isNotEmpty)
-              Text(
-                'A queda filtra; a leitura de valor ordena. Cotações lidas $idade',
-                style: FiType.caption.copyWith(color: fiInk3(context)),
-              ),
+            Text(
+              [
+                'Caíram 15% ou mais da máxima de 52 semanas; as de maior margem de segurança '
+                    'vêm primeiro.',
+                if (idade.isNotEmpty) 'Cotação mais antiga lida $idade.',
+              ].join(' '),
+              style: FiType.caption.copyWith(color: fiInk3(context)),
+            ),
           ];
           return ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -741,7 +753,10 @@ class _DipScannerView extends ConsumerWidget {
                         ),
                         const SizedBox(width: FiSpace.s3),
                         Flexible(
-                          child: FiTag(label: item.label, state: fiVerdictState(item.verdict)),
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: FiTag(label: item.label, state: fiVerdictState(item.verdict)),
+                          ),
                         ),
                       ],
                     ),
@@ -767,6 +782,22 @@ class _DipScannerView extends ConsumerWidget {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class _ListSkeleton extends StatelessWidget {
+  const _ListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Varrendo o mercado',
+      liveRegion: true,
+      child: const Padding(
+        padding: EdgeInsets.fromLTRB(FiLayout.gutter, FiSpace.s3, FiLayout.gutter, 0),
+        child: FiSkeleton(shape: FiSkeletonShape.row, count: 6),
       ),
     );
   }
@@ -827,7 +858,7 @@ class _AllOpportunitiesView extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(filteredOpportunitiesProvider(escopo)),
       child: opportunities.when(
-        loading: () => FiSkeleton.screen(shape: FiSkeletonShape.row, count: 6, label: 'Varrendo o mercado'),
+        loading: () => _ScrollableState(header: cabecalho, child: const _ListSkeleton()),
         error: (err, _) => _ScrollableState(
           header: cabecalho,
           child: FiErrorState(
@@ -848,24 +879,25 @@ class _AllOpportunitiesView extends ConsumerWidget {
           );
           final antes = [
             ?cabecalho,
-            if (idade.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: FiSpace.s2),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Expanded(child: FiRankingProfile()),
+            Padding(
+              padding: const EdgeInsets.only(bottom: FiSpace.s2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Expanded(child: FiRankingProfile()),
+                  if (idade.isNotEmpty) ...[
                     const SizedBox(width: FiSpace.s3),
                     Flexible(
                       child: Text(
-                        'Cotações lidas $idade',
+                        'Cotação mais antiga lida $idade',
                         textAlign: TextAlign.end,
                         style: FiType.caption.copyWith(color: fiInk3(context)),
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
+            ),
           ];
           return ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -903,6 +935,18 @@ class _EmptyOpportunities extends StatelessWidget {
       onPressed: onClearAll,
     );
 
+    final ticker = busca.trim().toUpperCase();
+    if (busca.isNotEmpty && outros == 0 && RegExp(r'^[A-Z]{4}\d{1,2}$').hasMatch(ticker)) {
+      return FiEmptyState(
+        title: 'Fora da lista de hoje',
+        body: '$ticker não está entre os ativos varridos agora, mas dá para abrir a leitura dele.',
+        action: FiButton.primary(
+          label: 'Ver a leitura de $ticker',
+          onPressed: () => showAssetDetailSheet(context, ticker),
+        ),
+        secondary: FiButton.quiet(label: 'Limpar a busca', onPressed: onClearAll),
+      );
+    }
     if (busca.isNotEmpty) {
       return FiEmptyState(
         title: 'Nenhum ativo com esse nome',
@@ -944,7 +988,7 @@ class FiOpportunityObject extends StatelessWidget {
         basisLabel(o.basis)
       else if (temFaixa)
         fairBandSummary(o.fairLow, o.fairHigh, o.independentInputs),
-      if (o.dataYears > 0) 'Dividendos sobre ${dataYearsLabel(o.dataYears)}',
+      if (o.dataYears > 0) 'Histórico de ${dataYearsLabel(o.dataYears)}',
     ];
 
     return FiObject(
@@ -974,48 +1018,53 @@ class FiOpportunityObject extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: FiSpace.s3),
-              Flexible(child: FiTag(label: o.label, state: fiVerdictState(o.verdict))),
-            ],
-          ),
-
-          const SizedBox(height: FiSpace.s4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _Figure(label: 'PREÇO', value: formatCurrency(o.price)),
-              ),
-              Expanded(
-                child: _Figure(
-                  label: 'JUSTO',
-                  value: fairBandEdgeLabel(o.price, o.fairLow, o.fairHigh),
-                  glossaryKey: 'faixa_de_preco_justo',
-                ),
-              ),
-              Expanded(
-                child: _Figure(
-                  label: 'MARGEM',
-                  value: formatRatio(o.marginOfSafety),
-                  glossaryKey: 'ms',
-                ),
-              ),
-              Expanded(
-                child: _Figure(
-                  label: 'DY',
-                  value: formatPercent(o.dividendYield),
-                  glossaryKey: 'dy',
+              Flexible(
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: FiTag(label: o.label, state: fiVerdictState(o.verdict)),
                 ),
               ),
             ],
           ),
 
           const SizedBox(height: FiSpace.s4),
-          ScoreRuler(
-            score: o.score,
-            dataCompleteness: o.dataCompleteness,
-            size: ScoreRulerSize.list,
-            subject: 'Score de ${o.ticker}',
+          _Figures(
+            figures: [
+              _Figure(label: 'PREÇO', value: formatCurrency(o.price)),
+              _Figure(
+                label: 'JUSTO',
+                value: fairBandEdgeLabel(o.price, o.fairLow, o.fairHigh),
+                glossaryKey: 'faixa_de_preco_justo',
+              ),
+              _Figure(
+                label: 'MARGEM',
+                value: formatRatio(o.marginOfSafety),
+                glossaryKey: 'ms',
+              ),
+              _Figure(
+                label: 'DY',
+                value: formatPercent(o.dividendYield),
+                glossaryKey: 'dy',
+              ),
+            ],
           ),
+
+          if (o.dataCompleteness > 0) ...[
+            const SizedBox(height: FiSpace.s4),
+            HelpTooltip(
+              termKey: 'score',
+              label: 'PONTUAÇÃO',
+              child: Padding(
+                padding: const EdgeInsets.only(top: FiSpace.s1),
+                child: ScoreRuler(
+                  score: o.score,
+                  dataCompleteness: o.dataCompleteness,
+                  size: ScoreRulerSize.list,
+                  subject: 'Score de ${o.ticker}',
+                ),
+              ),
+            ),
+          ],
 
           if (o.changePercentDay != null || o.distanceFrom52wHighPct != null) ...[
             const SizedBox(height: FiSpace.s3),
@@ -1074,6 +1123,36 @@ class _Direction extends StatelessWidget {
   }
 }
 
+class _Figures extends StatelessWidget {
+  const _Figures({required this.figures});
+
+  final List<_Figure> figures;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget linha(Iterable<_Figure> itens) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [for (final f in itens) Expanded(child: f)],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final em = MediaQuery.textScalerOf(context).scale(FiType.figure.fontSize ?? 15);
+        if (constraints.maxWidth / figures.length >= em * 4) return linha(figures);
+        final metade = (figures.length / 2).ceil();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            linha(figures.take(metade)),
+            const SizedBox(height: FiSpace.s3),
+            linha(figures.skip(metade)),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _Figure extends StatelessWidget {
   const _Figure({required this.label, required this.value, this.glossaryKey});
 
@@ -1087,11 +1166,15 @@ class _Figure extends StatelessWidget {
 
     final figure = Padding(
       padding: const EdgeInsets.only(top: 2),
-      child: Text(
-        value,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: FiType.figure.copyWith(color: fiInk1(context)),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          value,
+          maxLines: 1,
+          softWrap: false,
+          style: FiType.figure.copyWith(color: fiInk1(context)),
+        ),
       ),
     );
 
@@ -1135,7 +1218,7 @@ class FiRankingProfile extends ConsumerWidget {
           termKey: 'perfil_de_risco',
           label: 'perfil $rotulo',
           child: Text(
-            'Ordenado pelo seu perfil $rotulo. O carimbo é o do preço mais antigo da lista.',
+            'A lista sai na ordem do que combina com ele.',
             style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
         );

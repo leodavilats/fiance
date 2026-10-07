@@ -48,10 +48,7 @@ Future<bool> openBuySheet(
 
   if (registro == null) return false;
 
-  ref.invalidate(portfolioProvider);
-  ref.invalidate(dashboardProvider);
-  ref.invalidate(ledgerProvider);
-  ref.invalidate(followedSuggestionsProvider);
+  invalidateLedgerReaders(ref);
 
   if (context.mounted) {
     final falha = registro.followError;
@@ -95,6 +92,7 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
   DateTime _date = DateTime.now();
   bool _saving = false;
   bool _follow = true;
+  Object? _saveError;
 
   @override
   void initState() {
@@ -115,7 +113,7 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
     super.dispose();
   }
 
-  void _recompute() => setState(() {});
+  void _recompute() => setState(() => _saveError = null);
 
   double _number(TextEditingController c) => parseDecimal(c.text) ?? 0;
 
@@ -124,7 +122,10 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
     final api = ref.read(apiRepositoryProvider);
     final quantidade = _number(_quantityFormat);
     try {
@@ -157,15 +158,28 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _saving = false);
-        fiNotify(context, fiErrorMessage(e, action: 'registrar esta compra'));
+        setState(() {
+          _saving = false;
+          _saveError = e;
+        });
       }
     }
+  }
+
+  Future<void> _pickDate() async {
+    final escolhida = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (escolhida != null && mounted) setState(() => _date = escolhida);
   }
 
   @override
   Widget build(BuildContext context) {
     final carteira = ref.watch(portfolioProvider);
+    final falha = _saveError;
 
     final jaTem = carteira.maybeWhen(
       data: (itens) => itens
@@ -238,26 +252,14 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
                 },
               ),
               const SizedBox(height: FiSpace.s3),
-              InputDecorator(
-                decoration: const InputDecoration(labelText: 'Data da compra'),
-                child: InkWell(
-                  onTap: () async {
-                    final escolhida = await showDatePicker(
-                      context: context,
-                      initialDate: _date,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime.now(),
-                    );
-                    if (escolhida != null) setState(() => _date = escolhida);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
-                    child: Text(
-                      formatDate(_date.toIso8601String().substring(0, 10)),
-                      style: FiType.body.copyWith(color: fiInk1(context)),
-                    ),
+              FiRows(
+                children: [
+                  FiDataRow(
+                    label: 'Data da compra',
+                    value: formatDate(_date.toIso8601String().substring(0, 10)),
+                    onTap: _saving ? null : _pickDate,
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: FiSpace.s3),
               TextFormField(
@@ -290,21 +292,39 @@ class _BuyFormState extends ConsumerState<_BuyForm> {
               ],
               if (widget.verdict != null) ...[
                 const SizedBox(height: FiSpace.s4),
-                FiSwitch(
-                  label: 'Acompanhar o resultado desta compra',
-                  value: _follow,
-                  onChanged: _saving ? null : (v) => setState(() => _follow = v),
-                ),
-                Text(
-                  'Ela entra em Patrimônio, Sugestões seguidas, medida contra o Ibovespa a partir '
-                  'da data da compra. Dá para deixar de acompanhar depois.',
-                  style: FiType.caption.copyWith(color: fiInk3(context)),
+                FiRows(
+                  children: [
+                    FiDataRow(
+                      label: 'Acompanhar o resultado desta compra',
+                      detail: 'Entra em Sugestões seguidas, medida contra o Ibovespa a partir da '
+                          'data da compra. Dá para deixar de acompanhar depois.',
+                      trailing: FiSwitch(
+                        label: 'Acompanhar o resultado desta compra',
+                        value: _follow,
+                        onChanged: _saving ? null : (v) => setState(() => _follow = v),
+                      ),
+                    ),
+                  ],
                 ),
               ],
+              if (falha != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: FiSpace.s4),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      fiErrorMessage(falha, action: 'registrar esta compra'),
+                      style: FiType.caption.copyWith(
+                        color: fiStateColor(FiState.adverse, Theme.of(context).brightness),
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: FiSpace.s5),
               FiButton.primary(
-                label: _saving ? 'Registrando…' : 'Adicionar à carteira',
-                onPressed: _saving ? null : _save,
+                label: 'Adicionar à carteira',
+                busy: _saving,
+                onPressed: _save,
               ),
             ],
           ),

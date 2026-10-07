@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:fiance/core/api_repository.dart';
 import 'package:fiance/core/providers.dart';
@@ -50,7 +51,18 @@ Future<void> _montar(WidgetTester tester, _Servidor servidor, Widget tela) async
           ApiRepository(Dio()..interceptors.add(servidor)),
         ),
       ],
-      child: MaterialApp(theme: buildAppTheme(Brightness.light), home: tela),
+      child: MaterialApp.router(
+        theme: buildAppTheme(Brightness.light),
+        routerConfig: GoRouter(
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => tela),
+            GoRoute(
+              path: '/patrimonio/razao',
+              builder: (_, _) => const Scaffold(body: Text('Livro-razão')),
+            ),
+          ],
+        ),
+      ),
     ),
   );
   await _esperar(tester);
@@ -125,6 +137,12 @@ void main() {
         {'content': 'PETR4 100 30,50\nVALE3 100 30,50', 'include_duplicates': true},
         reason: 'o que se grava é o mesmo texto que foi conferido, com a escolha da pessoa',
       );
+      expect(
+        find.text('2 operações importadas.'),
+        findsOneWidget,
+        reason: 'a escrita tem retorno, com plural de verdade',
+      );
+      expect(find.text('Livro-razão'), findsOneWidget, reason: 'depois de gravar, volta ao razão');
     });
 
     testWidgets('com linha errada, nada se importa', (tester) async {
@@ -254,7 +272,7 @@ void main() {
       await _esperar(tester);
 
       expect(servidor.pedidos.containsKey('POST /transactions/backfill'), isTrue);
-      expect(find.text('1 posição(ões) levada(s) para o razão.'), findsOneWidget);
+      expect(find.text('1 posição levada para o razão.'), findsOneWidget);
     });
 
     testWidgets('em dia, não oferece o que não precisa', (tester) async {

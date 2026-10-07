@@ -62,7 +62,7 @@ Future<void> openAddPositionDialog(BuildContext context, WidgetRef ref) async {
     return;
   }
 
-  await _openPositionForm(context, ref);
+  await openPositionForm(context, ref);
 }
 
 enum _AssetKind { traded, fixedIncome }
@@ -85,7 +85,7 @@ class _PositionOutcome {
   final bool toLedger;
 }
 
-Future<void> _openPositionForm(BuildContext context, WidgetRef ref) async {
+Future<void> openPositionForm(BuildContext context, WidgetRef ref) async {
   final atuais = [
     for (final p in ref.read(dashboardProvider).valueOrNull?.positions ?? const <PortfolioPosition>[])
       if (!fiIsFixedIncomePosition(p)) p,
@@ -102,8 +102,7 @@ Future<void> _openPositionForm(BuildContext context, WidgetRef ref) async {
     return;
   }
 
-  ref.invalidate(dashboardProvider);
-  ref.invalidate(portfolioProvider);
+  invalidateLedgerReaders(ref);
   fiNotify(
     context,
     resultado.replaced
@@ -298,12 +297,11 @@ Future<void> openSellDialog(
   if (trade == null || !context.mounted) return;
 
   invalidateLedgerReaders(ref);
-  ref.invalidate(closedTradesProvider);
-  final lucro = trade.netProfit >= 0 ? 'lucro' : 'prejuízo';
+  final resultado = trade.grossProfit >= 0 ? 'lucro' : 'prejuízo';
   fiNotify(
     context,
-    'Venda registrada: $lucro líquido de ${formatCurrency(trade.netProfit.abs())}'
-    '${trade.irAmount > 0 ? ' (IR: ${formatCurrency(trade.irAmount)})' : ''}',
+    '${trade.ticker}: venda registrada, $resultado de ${formatCurrency(trade.grossProfit.abs())}. '
+    'O imposto é apurado no mês — veja em Operações encerradas.',
   );
 }
 
@@ -395,6 +393,7 @@ class _SellDialogState extends ConsumerState<_SellDialog> {
   @override
   Widget build(BuildContext context) {
     final p = widget.position;
+    final idadeDaCotacao = p.currentPrice == null ? '' : formatAge(p.asOf);
 
     return AlertDialog(
       title: Text('Vender ${p.ticker}'),
@@ -417,9 +416,13 @@ class _SellDialogState extends ConsumerState<_SellDialog> {
               TextFormField(
                 controller: _price,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Preço de venda',
                   prefixText: 'R\$ ',
+                  helperText: idadeDaCotacao.isEmpty
+                      ? null
+                      : 'Cotação $idadeDaCotacao — ajuste para o preço da nota.',
+                  helperMaxLines: 2,
                 ),
                 validator: (v) => _positive(v, 'Informe um preço de venda positivo'),
               ),
@@ -432,7 +435,7 @@ class _SellDialogState extends ConsumerState<_SellDialog> {
               ),
               const SizedBox(height: FiSpace.s2),
               Text(
-                'Lucro/prejuízo, IR e histórico serão calculados automaticamente.',
+                'O resultado entra na apuração do mês da venda.',
                 style: FiType.caption.copyWith(color: fiInk2(context)),
               ),
               if (_error != null) ...[

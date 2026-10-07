@@ -80,26 +80,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Divider(color: hairline, height: 1, thickness: 1),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: FiSpace.s3),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(
-                              width: 100,
-                              child: Text(
-                                titulo,
-                                style: FiType.title.copyWith(
-                                  color: fiInk1(context),
-                                ),
-                              ),
+                            Text(
+                              titulo,
+                              style: FiType.title.copyWith(color: fiInk1(context)),
                             ),
-                            Expanded(
-                              child: Text(
-                                responde,
-                                style: FiType.caption.copyWith(
-                                  color: fiInk2(context),
-                                ),
-                              ),
+                            const SizedBox(height: FiSpace.s1),
+                            Text(
+                              responde,
+                              style: FiType.caption.copyWith(color: fiInk2(context)),
                             ),
                           ],
                         ),

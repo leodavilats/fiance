@@ -80,8 +80,9 @@ String fairBandLabel(double? low, double? high) {
 String fairBandSummary(double? low, double? high, int? methods) {
   if (low == null || high == null) return confirmationLabel(methods);
   if ((high - low).abs() < 0.01) return 'Preço justo pontual, ${confirmationLabel(methods)}';
-  return 'Justo entre ${formatCurrency(low)} e ${formatCurrency(high)}, '
-      '${confirmationLabel(methods)}';
+  final faixa = 'Justo entre ${formatCurrency(low)} e ${formatCurrency(high)}';
+  if (methods == null || methods == 0) return faixa;
+  return '$faixa, faixa ${confirmationLabel(methods)}';
 }
 
 String fairBandEdgeLabel(double? price, double? low, double? high) {

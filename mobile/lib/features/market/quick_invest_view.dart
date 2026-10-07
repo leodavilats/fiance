@@ -128,11 +128,11 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
       ),
       children: [
         FiHeadline(
-          eyebrow: _simulated ? 'Valor simulado' : 'Sobra deste mês',
+          eyebrow: _simulated ? 'Valor simulado' : 'Livre para aportar',
           figure: _moneyOrDash(r.totalCash),
           support: _simulated
               ? 'A distribuição abaixo é sobre este valor, e não sobre a sua sobra.'
-              : null,
+              : 'O que resta da sobra depois da dívida cara e da reserva.',
         ),
 
         const SizedBox(height: FiSpace.s3),
@@ -177,7 +177,7 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
           Align(
             alignment: Alignment.centerLeft,
             child: FiButton.quiet(
-              label: 'Voltar à sobra',
+              label: 'Desfazer a simulação',
               onPressed: _loading ? null : _backToSurplus,
             ),
           ),
@@ -187,7 +187,9 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
           Padding(
             padding: const EdgeInsets.only(top: FiSpace.s3),
             child: Text(
-              fiErrorMessage(falhaDaAcao, action: 'calcular onde aportar'),
+              '${fiErrorMessage(falhaDaAcao, action: 'calcular onde aportar')} '
+              'Os números abaixo ainda são '
+              '${r.totalCash == null ? 'do cálculo anterior' : 'de ${formatCurrency(r.totalCash)}'}.',
               style: FiType.body.copyWith(
                 color: fiStateColor(
                   FiState.adverse,
@@ -197,72 +199,82 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
             ),
           ),
 
-        const SizedBox(height: FiSpace.s5),
-        Text(
-          r.summary,
-          style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
-        ),
-        if (r.allocatedCash != null) ...[
-          const SizedBox(height: FiSpace.s4),
-          FiFigures(
-            figures: {'ALOCADO': _moneyOrDash(r.allocatedCash)},
-          ),
-        ],
-
-        if (r.hasDestination)
-          FiSection(
-            title: 'A ordem de prioridade',
-            hint: r.basis == 'goals'
-                ? 'Do que está mais longe da alocação-alvo para o que está mais perto.'
-                : 'Sem alocação-alvo declarada, a ordem sai pelo score do ativo.',
-            child: Column(
-              children: [
-                for (final allocation in r.allocations)
-                  _Allocation(allocation: allocation),
-                if (r.fixedIncome != null)
-                  _FixedIncomeSlice(slice: r.fixedIncome!),
-              ],
-            ),
-          ),
-
-        if (r.unallocated.isNotEmpty)
-          FiSection(
-            title: 'O que não coube',
-            hint: r.remainingCash == null
-                ? null
-                : '${_moneyOrDash(r.remainingCash)} do valor ficam em caixa.',
-            child: FiRows(
-              children: [
-                for (final sobra in r.unallocated)
-                  FiDataRow(
-                    label: sobra.reason,
-                    value: _moneyOrDash(sobra.value),
-                  ),
-              ],
-            ),
-          ),
-
-        if (r.affirmation?.prescriptive == false) ...[
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.only(top: FiSpace.s5),
+            child: FiSkeleton(shape: FiSkeletonShape.row, count: 3),
+          )
+        else ...[
           const SizedBox(height: FiSpace.s5),
           Text(
-            '${r.affirmation!.disclaimer} Por isso o quanto aportar em cada destino, e o '
-            'que fica em caixa, aparecem como —.',
-            style: FiType.caption.copyWith(color: fiInk3(context)),
+            r.summary,
+            style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
+          ),
+          if (r.allocatedCash != null) ...[
+            const SizedBox(height: FiSpace.s4),
+            FiFigures(
+              figures: {'ALOCADO': _moneyOrDash(r.allocatedCash)},
+            ),
+          ],
+
+          if (r.hasDestination)
+            FiSection(
+              title: 'A ordem de prioridade',
+              hint: r.basis == 'goals'
+                  ? 'Do que está mais longe da meta de alocação para o que está mais perto.'
+                  : 'Sem meta de alocação declarada, a ordem sai pelo score do ativo.',
+              child: Column(
+                children: [
+                  for (final allocation in r.allocations)
+                    _Allocation(allocation: allocation),
+                  if (r.fixedIncome != null)
+                    _FixedIncomeSlice(slice: r.fixedIncome!),
+                ],
+              ),
+            ),
+
+          if (r.unallocated.isNotEmpty)
+            FiSection(
+              title: 'O que não coube',
+              hint: r.remainingCash == null
+                  ? null
+                  : '${_moneyOrDash(r.remainingCash)} do valor ficam em caixa.',
+              child: FiRows(
+                children: [
+                  for (final sobra in r.unallocated)
+                    FiDataRow(
+                      label: sobra.reason,
+                      value: _moneyOrDash(sobra.value),
+                    ),
+                ],
+              ),
+            ),
+
+          if (r.affirmation?.prescriptive == false) ...[
+            const SizedBox(height: FiSpace.s5),
+            Text(
+              '${r.affirmation!.disclaimer} Por isso o quanto aportar em cada destino, e o '
+              'que fica em caixa, aparecem como —.',
+              style: FiType.caption.copyWith(color: fiInk3(context)),
+            ),
+          ],
+
+          const SizedBox(height: FiSpace.s3),
+          FiProvenance(
+            summary: 'Como chegamos nesta ordem',
+            method: r.basis == 'goals'
+                ? 'Compara sua alocação atual com as metas por categoria e distribui o valor no '
+                      'que está mais abaixo da meta. O score de cada ativo entra como desempate, '
+                      'na régua do sistema.'
+                : 'Sem meta de alocação declarada, distribui o valor pelos ativos de score mais '
+                      'alto, na régua do sistema.',
+            source: 'Suas posições e renda fixa, com metas de alocação e preços da BRAPI.',
+            limitation: r.basis == 'goals'
+                ? 'É uma ordem de prioridade, não uma recomendação de compra.'
+                : 'É uma ordem de prioridade, não uma recomendação de compra. Sem meta, a ordem '
+                      'não reequilibra a carteira.',
           ),
         ],
-
-        const SizedBox(height: FiSpace.s3),
-        const FiProvenance(
-          summary: 'Como chegamos nesta ordem',
-          method:
-              'Compara sua alocação atual com as metas por categoria e distribui o valor '
-              'informado no que está mais abaixo do alvo. O score de cada ativo entra como '
-              'desempate, na régua do sistema.',
-          source: 'Suas posições e renda fixa, com metas de alocação e preços da BRAPI.',
-          limitation:
-              'É uma ordem de prioridade, não uma recomendação de compra. Sem metas '
-              'declaradas não há alvo para comparar, e a distribuição sai vazia.',
-        ),
       ],
     );
   }
@@ -292,21 +304,23 @@ class _FixedIncomeSlice extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.end,
+                spacing: FiSpace.s3,
+                children: [
+                  Text(
                     'Renda fixa',
                     style: FiType.title.copyWith(color: fiInk1(context)),
                   ),
-                ),
-                const SizedBox(width: FiSpace.s3),
-                Text(
-                  _moneyOrDash(f.amount),
-                  style: FiType.metricSm.copyWith(color: fiInk1(context)),
-                ),
-              ],
+                  Text(
+                    _moneyOrDash(f.amount),
+                    style: FiType.metricSm.copyWith(color: fiInk1(context)),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: FiSpace.s2),
             Text(
@@ -389,9 +403,9 @@ class _Allocation extends StatelessWidget {
             FiFigures(
               rule: false,
               figures: {
-                'COMPRAR': a.suggestedQuantity == null
+                'COTAS': a.suggestedQuantity == null
                     ? '—'
-                    : '${a.suggestedQuantity} cota(s)',
+                    : formatQuantity(a.suggestedQuantity!.toDouble()),
                 'PREÇO': _moneyOrDash(a.currentPrice),
                 'TOTAL': _moneyOrDash(a.suggestedInvestment),
               },

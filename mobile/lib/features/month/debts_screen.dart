@@ -75,6 +75,12 @@ class _DebtList extends ConsumerWidget {
     DebtClass.noRate: 'Sem taxa informada',
   };
 
+  static String? _fonteDaReferencia(String s) => switch (s) {
+    'carteira' => 'o que sua carteira rendeu',
+    'cdi' => 'o CDI, o juro de referência entre bancos, lido do Banco Central',
+    _ => null,
+  };
+
   static FiState _state(DebtClass c) => switch (c) {
     DebtClass.expensive => FiState.adverse,
     DebtClass.manageable => FiState.neutral,
@@ -84,9 +90,12 @@ class _DebtList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final caras = debts.where((d) => d.debtClass == DebtClass.expensive);
-    final referencia = debts
-        .map((d) => d.referenceMonthly)
-        .firstWhere((r) => r != null, orElse: () => null);
+    final comRef = debts.where((d) => d.referenceMonthly != null).firstOrNull;
+    final referencia = comRef?.referenceMonthly;
+    final contra = comRef?.referenceSource == 'cdi'
+        ? 'rende o CDI, o juro de referência entre bancos'
+        : 'sua carteira rende';
+    final algumaTaxa = debts.any((d) => d.monthlyRate != null);
 
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(debtsProvider),
@@ -99,14 +108,22 @@ class _DebtList extends ConsumerWidget {
         ),
         children: [
           Text(
-            caras.isEmpty
-                ? 'Nenhuma dívida sua custa mais do que sua carteira rende.'
+            comRef == null
+                ? (algumaTaxa
+                      ? 'Ainda não há referência para dizer se suas dívidas são caras.'
+                      : 'Sem a taxa, não dá para dizer se suas dívidas são caras.')
+                : caras.isEmpty
+                ? 'Nenhuma dívida sua custa mais do que $contra.'
                 : 'Você tem ${caras.length} '
                       '${caras.length == 1 ? 'dívida que custa' : 'dívidas que custam'} mais do '
-                      'que sua carteira rende.',
+                      'que $contra.',
             style: fiSerif(FiType.verdict).copyWith(
               color: fiStateColor(
-                caras.isEmpty ? FiState.favorable : FiState.adverse,
+                comRef == null
+                    ? FiState.indeterminate
+                    : caras.isEmpty
+                    ? FiState.favorable
+                    : FiState.adverse,
                 Theme.of(context).brightness,
               ),
             ),
@@ -115,14 +132,17 @@ class _DebtList extends ConsumerWidget {
           FiProvenance(
             summary: 'Como classificamos',
             method:
-                'Compara a taxa mensal de cada dívida com o que sua carteira rende ao mês. '
+                'Compara a taxa mensal de cada dívida com o que $contra, ao mês. '
                 'Acima disso, pagar a dívida rende mais que investir.',
-            source: referencia == null
-                ? 'Sem taxa informada em nenhuma dívida, não há o que comparar.'
-                : 'Referência: ${formatPercent(referencia)} ao mês, de '
-                      '${debts.first.referenceSource == 'bcb' ? 'CDI do BCB' : debts.first.referenceSource}.',
+            source: comRef == null
+                ? (algumaTaxa
+                      ? 'Sem o rendimento da carteira e sem o CDI, o juro de referência entre '
+                            'bancos, não há com o que comparar.'
+                      : 'Sem taxa informada em nenhuma dívida, não há o que comparar.')
+                : 'Referência: ${formatPercent(referencia)} ao mês, '
+                      '${_fonteDaReferencia(comRef.referenceSource) ?? 'de fonte não informada'}.',
             limitation:
-                'Dívida sem taxa informada fica sem classe: o produto não estima taxa de '
+                'Dívida sem taxa informada não é classificada: o produto não estima taxa de '
                 'rotativo, que varia por banco e por dia.',
           ),
 
@@ -139,7 +159,9 @@ class _DebtList extends ConsumerWidget {
                 for (final d in debts)
                   _DebtRow(
                     debt: d,
-                    label: _classLabel[d.debtClass] ?? '',
+                    label: d.debtClass == DebtClass.noRate && d.monthlyRate != null
+                        ? 'Sem referência para comparar'
+                        : _classLabel[d.debtClass] ?? '',
                     state: _state(d.debtClass),
                   ),
               ],
@@ -185,13 +207,15 @@ class _DebtRowState extends ConsumerState<_DebtRow> {
             children: [
               Text(
                 debt.monthlyRate == null
-                    ? 'Taxa não informada, então não há classe.'
+                    ? 'Sem a taxa, não dá para dizer se ela é cara.'
                     : 'Custa ${formatPercent(debt.monthlyRate)} ao mês.',
                 style: FiType.body.copyWith(color: fiInk2(context)),
               ),
-              if (debt.flipRate != null)
+              if (debt.flipRate != null && debt.debtClass != DebtClass.noRate)
                 Text(
-                  'Vira administrável a ${formatPercent(debt.flipRate)} ao mês.',
+                  debt.debtClass == DebtClass.expensive
+                      ? 'Deixa de ser cara com taxa de até ${formatPercent(debt.flipRate)} ao mês.'
+                      : 'Passaria a ser cara acima de ${formatPercent(debt.flipRate)} ao mês.',
                   style: FiType.caption.copyWith(color: fiInk3(context)),
                 ),
               const SizedBox(height: FiSpace.s2),
@@ -295,94 +319,102 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        child: Form(
-          key: _form,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Cadastrar dívida', style: FiType.title),
-              const SizedBox(height: FiSpace.s4),
+        padding: const EdgeInsets.fromLTRB(FiSpace.s5, 0, FiSpace.s5, FiSpace.s6),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Cadastrar dívida', style: FiType.title),
+                const SizedBox(height: FiSpace.s4),
 
-              TextFormField(
-                controller: _description,
-                decoration: const InputDecoration(labelText: 'Descrição'),
-                textCapitalization: TextCapitalization.sentences,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Diga o que é' : null,
-              ),
-              const SizedBox(height: FiSpace.s3),
-
-              DropdownButtonFormField<String>(
-                initialValue: _kind,
-                decoration: const InputDecoration(labelText: 'Tipo'),
-                items: [
-                  for (final e in fiDebtKinds.entries)
-                    DropdownMenuItem(value: e.key, child: Text(e.value)),
-                ],
-                onChanged: (v) => setState(() => _kind = v ?? _kind),
-              ),
-              const SizedBox(height: FiSpace.s3),
-
-              TextFormField(
-                controller: _balance,
-                decoration: const InputDecoration(
-                  labelText: 'Saldo devedor',
-                  prefixText: r'R$ ',
+                TextFormField(
+                  controller: _description,
+                  decoration: const InputDecoration(labelText: 'Descrição'),
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Diga o que é' : null,
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: (v) {
-                  final n = parseDecimal(v);
-                  if (n == null || n <= 0) return 'Um valor positivo';
-                  return null;
-                },
-              ),
-              const SizedBox(height: FiSpace.s3),
-
-              TextFormField(
-                controller: _rate,
-                decoration: const InputDecoration(
-                  labelText: 'Taxa mensal (opcional)',
-                  suffixText: '% ao mês',
-                  helperText:
-                      'Sem a taxa não há classe: o produto não estima taxa de rotativo.',
-                  helperMaxLines: 2,
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return null;
-                  final n = parseDecimal(v);
-                  if (n == null || n < 0) return 'Uma taxa como 2,5';
-                  return null;
-                },
-              ),
-
-              if (_error != null) ...[
                 const SizedBox(height: FiSpace.s3),
-                Text(
-                  fiErrorMessage(_error!, action: 'cadastrar esta dívida'),
-                  style: FiType.body.copyWith(
-                    color: fiStateColor(
-                      FiState.adverse,
-                      Theme.of(context).brightness,
+
+                DropdownButtonFormField<String>(
+                  initialValue: _kind,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Tipo'),
+                  selectedItemBuilder: (context) => [
+                    for (final e in fiDebtKinds.entries)
+                      Text(e.value, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                  items: [
+                    for (final e in fiDebtKinds.entries)
+                      DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  ],
+                  onChanged: (v) => setState(() => _kind = v ?? _kind),
+                ),
+                const SizedBox(height: FiSpace.s3),
+
+                TextFormField(
+                  controller: _balance,
+                  decoration: const InputDecoration(
+                    labelText: 'Saldo devedor',
+                    prefixText: r'R$ ',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (v) {
+                    final n = parseDecimal(v);
+                    if (n == null || n <= 0) return 'Um valor positivo';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: FiSpace.s3),
+
+                TextFormField(
+                  controller: _rate,
+                  decoration: const InputDecoration(
+                    labelText: 'Taxa mensal (opcional)',
+                    suffixText: '% ao mês',
+                    helperText:
+                        'A taxa ao mês está na fatura ou no contrato. Sem ela, não dá para dizer '
+                        'se a dívida é cara.',
+                    helperMaxLines: 2,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return null;
+                    final n = parseDecimal(v);
+                    if (n == null || n < 0) return 'Uma taxa como 2,5';
+                    return null;
+                  },
+                ),
+
+                if (_error != null) ...[
+                  const SizedBox(height: FiSpace.s3),
+                  Text(
+                    fiErrorMessage(_error!, action: 'cadastrar esta dívida'),
+                    style: FiType.body.copyWith(
+                      color: fiStateColor(
+                        FiState.adverse,
+                        Theme.of(context).brightness,
+                      ),
                     ),
                   ),
+                ],
+
+                const SizedBox(height: FiSpace.s5),
+                FiButton.primary(
+                  label: 'Cadastrar dívida',
+                  expand: true,
+                  busy: _saving,
+                  onPressed: _save,
                 ),
               ],
-
-              const SizedBox(height: FiSpace.s5),
-              FiButton.primary(
-                label: 'Cadastrar dívida',
-                expand: true,
-                busy: _saving,
-                onPressed: _save,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -404,8 +436,7 @@ class _NoDebt extends StatelessWidget {
           body: 'A ordem da sobra começa pela dívida que custa mais do que sua carteira '
               'rende. Sem cadastrar, ela não entra na conta — e é a que decide se aportar '
               'faz sentido.',
-          hint: 'A taxa mensal é opcional, mas sem ela não há classe: o produto não estima '
-              'taxa de rotativo.',
+          hint: 'A taxa mensal é opcional, mas sem ela não dá para dizer se a dívida é cara.',
           action: FiButton.primary(
             label: 'Cadastrar dívida',
             icon: Icons.add,

@@ -164,6 +164,7 @@ class FixedIncomeListResponse(BaseModel):
     taxa_media_aa: float
     cdi_referencia: float
     fonte_taxas: str = "estimativa"
+    taxas_lidas_em: float | None = None
 
     next_cursor: str | None = None
     has_more: bool = False

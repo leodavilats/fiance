@@ -208,8 +208,9 @@ class _FiAssetObject extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = position;
     final brightness = Theme.of(context).brightness;
+    final temPnl = p.pnl != null && p.pnlPct != null;
     final positive = (p.pnl ?? 0) >= 0;
-    final pnlColor = fiDirectionColor(positive ? 1 : -1, brightness);
+    final pnlColor = temPnl ? fiDirectionColor(positive ? 1 : -1, brightness) : fiInk3(context);
 
     return Dismissible(
       key: ValueKey(p.ticker),
@@ -235,8 +236,9 @@ class _FiAssetObject extends StatelessWidget {
       child: FiObject(
         onTap: () => context.push('/ativo/${p.ticker}'),
         semanticsLabel:
-            '${p.ticker}, ${p.label}. ${formatCurrency(p.currentValue)}, '
-            '${formatPercent(p.pnlPct)}. Abrir a análise.',
+            '${p.ticker}, ${p.label}. '
+            '${p.currentValue == null ? 'sem cotação' : formatCurrency(p.currentValue)}'
+            '${temPnl ? ', ${formatPercent(p.pnlPct)}' : ''}. Abrir a análise.',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -247,15 +249,15 @@ class _FiAssetObject extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        spacing: FiSpace.s2,
+                        runSpacing: FiSpace.s1,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Flexible(
-                            child: Text(
-                              p.ticker,
-                              style: FiType.title.copyWith(color: fiInk1(context)),
-                            ),
+                          Text(
+                            p.ticker,
+                            style: FiType.title.copyWith(color: fiInk1(context)),
                           ),
-                          const SizedBox(width: FiSpace.s2),
                           FiTag.series(
                             label: categoryLabel(p.categoryResolved),
                             color: categoryColor(p.categoryResolved, brightness),
@@ -276,18 +278,23 @@ class _FiAssetObject extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: FiSpace.s3),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      formatCurrency(p.currentValue),
-                      style: FiType.metricSm.copyWith(color: fiInk1(context)),
-                    ),
-                    Text(
-                      '${positive ? '+' : ''}${formatPercent(p.pnlPct)}',
-                      style: FiType.caption.copyWith(color: pnlColor),
-                    ),
-                  ],
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: fiTrailingCap(context, 0.55)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        formatCurrency(p.currentValue),
+                        textAlign: TextAlign.end,
+                        style: FiType.metricSm.copyWith(color: fiInk1(context)),
+                      ),
+                      Text(
+                        temPnl ? '${positive ? '+' : ''}${formatPercent(p.pnlPct)}' : '—',
+                        textAlign: TextAlign.end,
+                        style: FiType.caption.copyWith(color: pnlColor),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -307,7 +314,11 @@ class _FiAssetObject extends StatelessWidget {
                 ),
                 const SizedBox(width: FiSpace.s5),
                 Flexible(
-                  child: FiButton.danger(label: 'Remover', onPressed: onRemove),
+                  child: FiButton.quiet(
+                    label: 'Remover',
+                    destructive: true,
+                    onPressed: onRemove,
+                  ),
                 ),
               ],
             ),

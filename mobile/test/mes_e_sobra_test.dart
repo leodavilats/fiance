@@ -4,8 +4,11 @@ import 'package:fiance/core/month.dart';
 import 'package:fiance/core/providers.dart';
 import 'package:fiance/core/theme.dart';
 import 'package:fiance/core/widgets/error_state.dart';
+import 'package:fiance/features/month/activity_screen.dart';
+import 'package:fiance/features/month/debts_screen.dart';
 import 'package:fiance/features/month/month_screen.dart';
 import 'package:fiance/features/surplus/allocation_drift_screen.dart';
+import 'package:fiance/features/surplus/surplus_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -205,6 +208,154 @@ void main() {
     });
   });
 
+  group('/mes vazio', () {
+    testWidgets('uma ação principal só, e ela abre o que a frase pede', (tester) async {
+      await _abrir(tester, const MonthScreen(), {
+        'GET /cashflow/month': (status: 200, data: _cashMonth()),
+        'GET /cashflow/entries': (status: 200, data: <Object>[]),
+        'GET /cashflow/debts': (status: 200, data: <Object>[]),
+      });
+
+      expect(
+        find.byType(FloatingActionButton),
+        findsNothing,
+        reason: 'no mês vazio o botão do estado vazio já é a ação principal: duas iguais confundem',
+      );
+
+      await tester.tap(find.text('Lançar o que você recebe'));
+      await _esperar(tester);
+
+      expect(
+        find.text('Dia do crédito'),
+        findsOneWidget,
+        reason: 'a frase pede para começar pelo que você recebe, então a folha abre em Entrada',
+      );
+    });
+
+    testWidgets('mês seguinte não diz que sobrou', (tester) async {
+      await _abrir(tester, const MonthScreen(), {
+        'GET /cashflow/month': (status: 200, data: _cashMonth()),
+        'GET /cashflow/entries': (status: 200, data: [_entrada(paidOn: '$_mes-05')]),
+        'GET /cashflow/debts': (status: 200, data: <Object>[]),
+      });
+
+      await tester.tap(find.text(_capitalizado(monthName(_mes))));
+      await _esperar(tester);
+      await tester.tap(find.text(_capitalizado(monthName(nextMonth(_mes)))));
+      await _esperar(tester);
+
+      expect(
+        find.textContaining('SOBROU EM'),
+        findsNothing,
+        reason: 'um mês que ainda não começou não tem sobra fechada para afirmar no passado',
+      );
+      expect(find.textContaining('PELO QUE ESTÁ LANÇADO'), findsOneWidget);
+    });
+  });
+
+  group('/mes/dividas', () {
+    testWidgets('sem taxa nenhuma, o veredito não diz que a dívida é barata', (tester) async {
+      await _abrir(tester, const DebtsScreen(), {
+        'GET /cashflow/debts': (
+          status: 200,
+          data: [
+            {
+              'id': 1,
+              'kind': 'rotativo_cartao',
+              'description': 'Fatura do cartão',
+              'balance': 3200.0,
+              'monthly_rate': null,
+              'class': 'no_rate',
+              'reference_monthly': null,
+              'reference_source': 'sem_taxa_informada',
+              'flip_rate': null,
+            },
+          ],
+        ),
+      });
+
+      expect(
+        find.textContaining('Nenhuma dívida sua custa mais'),
+        findsNothing,
+        reason: 'sem taxa não há classe: afirmar que nenhuma é cara é julgar sem comparação',
+      );
+      expect(find.text('Sem a taxa, não dá para dizer se suas dívidas são caras.'), findsOneWidget);
+    });
+  });
+
+  group('/mes/atividade', () {
+    testWidgets('sem novidade mostra o estado vazio', (tester) async {
+      await _abrir(tester, const ActivityScreen(), {
+        'GET /whats-new': (
+          status: 200,
+          data: {
+            'items': [
+              {
+                'kind': 'empty',
+                'severity': 'info',
+                'title': 'Nada de novo por aqui',
+                'detail': '',
+                'action': '/descobrir',
+                'action_label': 'Ver oportunidades',
+              },
+            ],
+          },
+        ),
+      });
+
+      expect(
+        find.text('Nada mudou desde a sua última visita'),
+        findsOneWidget,
+        reason: 'o servidor manda um item "empty" quando não há novidade: ele não é novidade',
+      );
+      expect(find.textContaining('do mais recente para o mais antigo'), findsNothing);
+    });
+  });
+
+  group('/sobra', () {
+    testWidgets('mês no vermelho não fala de passo que não existe', (tester) async {
+      await _abrir(tester, const SurplusScreen(), {
+        'GET /surplus': (
+          status: 200,
+          data: {
+            'month': {
+              ..._cashMonth(),
+              'free_now': -300.0,
+              'surplus_low': -800.0,
+              'surplus_high': -300.0,
+            },
+            'has_cash': true,
+            'cascade': {'surplus_low': -800.0, 'available_to_invest': 0.0, 'steps': <Object>[]},
+          },
+        ),
+      });
+
+      expect(
+        find.textContaining('o que está acima'),
+        findsNothing,
+        reason: 'sem passo nenhum, não há nada acima para a frase apontar',
+      );
+      expect(find.textContaining('não há o que distribuir'), findsOneWidget);
+      expect(find.text('Ver o Mês'), findsOneWidget);
+    });
+
+    testWidgets('a faixa da manchete não pendura traço na quebra', (tester) async {
+      await _abrir(tester, const SurplusScreen(), {
+        'GET /surplus': (
+          status: 200,
+          data: {
+            'month': _cashMonth(),
+            'has_cash': true,
+            'cascade': {'surplus_low': 7000.0, 'available_to_invest': 0.0, 'steps': <Object>[]},
+          },
+        ),
+      });
+
+      expect(find.textContaining(' — R\$'), findsNothing, reason: 'o leitor de tela lia "traço"');
+      expect(find.textContaining(' a\u00A0R\$'), findsOneWidget);
+    });
+  });
+
   group('/sobra/desvio', () {
     testWidgets('dentro da meta não há maior desvio a nomear', (tester) async {
       await _abrir(tester, const AllocationDriftScreen(), {
@@ -227,6 +378,92 @@ void main() {
             'leitura não pode contradizê-la',
       );
       expect(find.textContaining('não há desvio que peça ajuste'), findsOneWidget);
+    });
+
+    testWidgets('meta declarada sem carteira não vira "não declarou metas"', (tester) async {
+      await _abrir(tester, const AllocationDriftScreen(), {
+        'GET /rebalance-suggestions': (
+          status: 200,
+          data: {'allocation_gaps': <Object>[], 'items': <Object>[]},
+        ),
+        'GET /goals': (
+          status: 200,
+          data: [
+            {'category': 'acoes_br', 'target_pct': 60.0, 'declared': true},
+            {'category': 'renda_fixa', 'target_pct': 40.0, 'declared': true},
+          ],
+        ),
+      });
+
+      expect(
+        find.text('Você ainda não declarou metas de alocação'),
+        findsNothing,
+        reason: 'quem declarou metas e ainda não tem posição não pode ler que não declarou',
+      );
+      expect(find.text('Ainda não há carteira para comparar com as metas'), findsOneWidget);
+    });
+
+    testWidgets('sem meta declarada, o vazio pede a declaração', (tester) async {
+      await _abrir(tester, const AllocationDriftScreen(), {
+        'GET /rebalance-suggestions': (
+          status: 200,
+          data: {'allocation_gaps': <Object>[], 'items': <Object>[]},
+        ),
+        'GET /goals': (
+          status: 200,
+          data: [
+            {'category': 'acoes_br', 'target_pct': 0.0, 'declared': false},
+          ],
+        ),
+      });
+
+      expect(find.text('Você ainda não declarou metas de alocação'), findsOneWidget);
+    });
+
+    testWidgets('falha ao ler as metas não vira "não declarou metas"', (tester) async {
+      await _abrir(tester, const AllocationDriftScreen(), {
+        'GET /rebalance-suggestions': (
+          status: 200,
+          data: {'allocation_gaps': <Object>[], 'items': <Object>[]},
+        ),
+        'GET /goals': (status: 500, data: {'detail': 'fora do ar'}),
+      });
+
+      expect(
+        find.text('Você ainda não declarou metas de alocação'),
+        findsNothing,
+        reason: 'falha e vazio nunca compartilham a mesma tela',
+      );
+      expect(find.byType(FiErrorState), findsOneWidget);
+    });
+
+    testWidgets('a etiqueta da posição descreve posição, não ordem', (tester) async {
+      await _abrir(tester, const AllocationDriftScreen(), {
+        'GET /rebalance-suggestions': (
+          status: 200,
+          data: {
+            'allocation_gaps': [
+              {'category': 'acoes_br', 'target_pct': 45.0, 'current_pct': 53.7, 'gap_pct': -8.7},
+              {'category': 'renda_fixa', 'target_pct': 25.0, 'current_pct': 18.5, 'gap_pct': 6.5},
+            ],
+            'items': [
+              {'ticker': 'WEGE3', 'category': 'acoes_br', 'action': 'realocar', 'reasons': <Object>[]},
+              {'ticker': 'ITSA4', 'category': 'acoes_br', 'action': 'manter', 'reasons': <Object>[]},
+            ],
+          },
+        ),
+      });
+
+      expect(find.text('Realocar'), findsNothing, reason: 'a etiqueta descreve posição, nunca ordem');
+      expect(find.text('Manter'), findsNothing, reason: 'a etiqueta descreve posição, nunca ordem');
+      expect(find.text('Acima do preço justo'), findsOneWidget);
+      expect(find.text('Sem ajuste'), findsOneWidget);
+      expect(
+        find.text('faltam 6,5 p.p. para a meta'),
+        findsOneWidget,
+        reason: 'o desvio e os percentuais da linha precisam fechar na mesma precisão',
+      );
+      expect(find.textContaining('18,5% de 25%', findRichText: true), findsOneWidget);
     });
   });
 }

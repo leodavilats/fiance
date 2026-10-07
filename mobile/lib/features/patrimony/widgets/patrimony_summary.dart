@@ -15,6 +15,7 @@ class FiPortfolioSummary extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final positive = summary.totalPnl >= 0;
     final pnlColor = fiDirectionColor(positive ? 1 : -1, brightness);
+    final recebido = summary.dividendsReceivedLast12m;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,8 +33,8 @@ class FiPortfolioSummary extends StatelessWidget {
         FiFigures(
           figures: {
             'APLICADO': formatCurrency(summary.totalInvested),
-            'PROVENTOS/MÊS': formatCurrency(summary.monthlyDividendsEstimate),
-            'ATIVOS': '${summary.positionsCount}',
+            'PROVENTOS EM 12 MESES':
+                recebido == null ? '—' : formatCurrency(recebido),
           },
         ),
       ],

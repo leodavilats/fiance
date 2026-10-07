@@ -59,13 +59,20 @@ def _compor(taxa_anual_pct: float, meses: float) -> float:
     return (1 + taxa_anual_pct / 100.0) ** (meses / 12.0) - 1
 
 
+AGIO_MAXIMO_TESOURO_SELIC = 5.0
+
+
 def taxa_anual_efetiva(
     ativo: RendaFixaAsset,
     cdi_anual: float,
     ipca_anual: float,
+    selic_anual: float = DEFAULT_SELIC_ANUAL,
 ) -> float:
     if ativo.tipo_taxa == TaxType.pos_fixado and ativo.percentual_cdi:
         return cdi_anual * (ativo.percentual_cdi / 100.0)
+
+    if ativo.tipo == RendaFixaType.tesouro_selic and ativo.taxa <= AGIO_MAXIMO_TESOURO_SELIC:
+        return ((1 + selic_anual / 100.0) * (1 + ativo.taxa / 100.0) - 1) * 100.0
 
     indexado_ipca = ativo.tipo in INDEXADOS_IPCA or ativo.tipo_taxa == TaxType.hibrido
     if indexado_ipca:
@@ -93,7 +100,7 @@ def analyze_one(
     if isento is None:
         isento = ativo.tipo in ISENTOS_IR
 
-    taxa_anual_pct = taxa_anual_efetiva(ativo, cdi_anual, ipca_anual)
+    taxa_anual_pct = taxa_anual_efetiva(ativo, cdi_anual, ipca_anual, selic_anual=selic_anual)
     taxa_periodo = _compor(taxa_anual_pct, prazo_meses)
 
     valor_bruto = ativo.valor_investido * (1 + taxa_periodo)

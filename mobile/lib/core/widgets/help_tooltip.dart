@@ -13,25 +13,24 @@ void showGlossaryTerm(BuildContext context, String termKey, String label) {
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          FiSpace.s5,
-          0,
-          FiSpace.s5,
-          FiSpace.s6,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: FiType.title),
-            const SizedBox(height: FiSpace.s3),
-            Text(
-              text,
-              style: FiType.body.copyWith(color: fiInk2(context)),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(FiSpace.s5, 0, FiSpace.s5, FiSpace.s6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: FiType.title),
+              const SizedBox(height: FiSpace.s3),
+              Text(
+                text,
+                style: FiType.body.copyWith(color: fiInk2(context)),
+              ),
+            ],
+          ),
         ),
       ),
     ),

@@ -2,7 +2,7 @@
 
 Como trabalhar no código sem quebrar nada.
 O CI (`.github/workflows/ci.yml`) é a fonte de verdade dos comandos; aqui está a explicação.
-Última revisão: 2026-09-26
+Última revisão: 2026-10-07
 
 ---
 
@@ -137,9 +137,9 @@ imagem, uma captura que nem compilava reportava sucesso mostrando a imagem da se
 assim que uma tela apareceu "pronta" com uma correção que não estava nela (2026-09-19). Com a pasta
 limpa, o que sobra descreve o código de agora, e captura quebrada deixa a pasta vazia.
 
-**As fixtures vivem no próprio teste de captura.** Ao mudar a forma de uma resposta, elas são o
-segundo lugar a ajustar; se uma tela aparecer vazia ou em erro na pasta `conteudo/`, é sinal de que a
-fixture ficou para trás.
+**As fixtures vivem em `mobile/test/fixtures/rede_dublada.dart`**, compartilhadas pela captura e
+por `fonte_grande_test.dart`. Ao mudar a forma de uma resposta, elas são o segundo lugar a ajustar; se
+uma tela aparecer vazia ou em erro na pasta `conteudo/`, é sinal de que a fixture ficou para trás.
 
 ## Comentários: quase nunca
 
@@ -176,6 +176,7 @@ Se a explicação é boa demais para caber em uma linha, ela não é comentário
 | `mobile/test/contraste_test.dart` | WCAG nos dois temas |
 | `mobile/test/jornada_do_app_test.dart` | Ponta a ponta do app com o roteador e as telas reais e a API simulada: os cinco destinos abrem sem quebrar, e as URLs antigas continuam chegando |
 | `mobile/test/alvo_de_toque_test.dart` | Alvo de toque de 44dp e ação de toque na semântica dos componentes de toque |
+| `mobile/test/fonte_grande_test.dart` | Toda tela com conteúdo cabe em 320dp com a letra quadrada do teste, que tem a largura da fonte do sistema em cerca de 200% |
 | `mobile/test` | Widgets e modelos |
 
 A jornada do app roda em `flutter test`, sem emulador. **Não cobre** o login Google real nem o

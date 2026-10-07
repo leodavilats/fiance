@@ -7,7 +7,7 @@ class FiCategory {
 }
 
 const Map<String, FiCategory> fiCategories = {
-  'renda_fixa': FiCategory('Renda Fixa', 1),
+  'renda_fixa': FiCategory('Renda fixa', 1),
   'acoes_br': FiCategory('Ações BR', 2),
   'fiis': FiCategory('FIIs', 3),
   'bdrs': FiCategory('BDRs', 5),
@@ -26,7 +26,7 @@ const Map<String, String> fiAssetTypes = {
   'bdr': 'BDR',
   'fii': 'FII',
   'etf': 'ETF',
-  'renda_fixa': 'Renda Fixa',
+  'renda_fixa': 'Renda fixa',
 };
 
 const Map<String, String> fiAssetTypesInWords = {

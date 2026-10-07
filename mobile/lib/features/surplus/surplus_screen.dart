@@ -76,7 +76,8 @@ class _Body extends ConsumerWidget {
           FiHeadline(
             eyebrow: 'Sobra de ${monthName(m.month)}',
             figure: m.hasRange
-                ? '${formatCurrency(m.surplusLow)} — ${formatCurrency(m.surplusHigh)}'
+                ? '${formatCurrency(m.surplusLow)} a${String.fromCharCode(0xA0)}'
+                      '${formatCurrency(m.surplusHigh)}'
                 : formatCurrency(m.freeNow),
             support: m.hasRange
                 ? 'A faixa é o número: o piso desconta o gasto variável que ainda deve sair, '
@@ -87,7 +88,7 @@ class _Body extends ConsumerWidget {
           ),
 
           FiProvenance(
-            summary: 'Como chegamos nesta faixa',
+            summary: m.hasRange ? 'Como chegamos nesta faixa' : 'Como chegamos neste número',
             method:
                 'O livre agora, menos o gasto variável ainda esperado no mês. A estimativa sai '
                 'só do seu histórico, com até três meses fechados.',
@@ -105,13 +106,15 @@ class _Body extends ConsumerWidget {
                 ? 'Cada passo consome a sobra antes do seguinte.'
                 : null,
 
-            child: Column(
-              children: [
-                for (final p in passos)
-                  _Step(step: p, numbered: passos.length > 1),
-                if (!temAporte) const _NoContribution(),
-              ],
-            ),
+            child: passos.isEmpty
+                ? const _NothingToSplit()
+                : Column(
+                    children: [
+                      for (final p in passos)
+                        _Step(step: p, numbered: passos.length > 1),
+                      if (!temAporte) const _NoContribution(),
+                    ],
+                  ),
           ),
 
           if (temAporte) const _WhereToContribute(),
@@ -148,7 +151,7 @@ class _WhereToContribute extends ConsumerWidget {
             title: 'Onde aportar',
             child: FiEmptyLine(
               r.summary.isEmpty
-                  ? 'Sem meta declarada não há alvo contra o que distribuir a sobra.'
+                  ? 'Nenhum ativo coube no valor livre para aportar.'
                   : r.summary,
             ),
           );
@@ -160,8 +163,8 @@ class _WhereToContribute extends ConsumerWidget {
         return FiSection(
           title: 'Onde aportar',
           hint: r.basis == 'goals'
-              ? 'Do que está mais longe da alocação-alvo para o que está mais perto.'
-              : 'Sem alocação-alvo declarada, a ordem sai pelo score do ativo.',
+              ? 'Do que está mais longe da meta de alocação para o que está mais perto.'
+              : null,
           action: FiNavAction(
             label: restantes > 0
                 ? 'Ver os outros $restantes e simular'
@@ -239,7 +242,7 @@ class _ContributionDestination extends StatelessWidget {
               a.suggestedQuantity == null
                   ? '${_valueOrDash(a.suggestedInvestment)} · '
                         '${_valueOrDash(a.currentPrice)} por cota'
-                  : '${a.suggestedQuantity} cota(s) · '
+                  : '${a.suggestedQuantity} ${a.suggestedQuantity == 1 ? 'cota' : 'cotas'} · '
                         '${_valueOrDash(a.currentPrice)} cada · '
                         '${_valueOrDash(a.suggestedInvestment)}',
               style: FiType.caption.copyWith(color: fiInk2(context)),
@@ -275,21 +278,23 @@ class _FixedIncomeDestination extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    spacing: FiSpace.s3,
+                    children: [
+                      Text(
                         'Renda fixa',
                         style: FiType.ticker.copyWith(color: fiInk1(context)),
                       ),
-                    ),
-                    const SizedBox(width: FiSpace.s3),
-                    Text(
-                      _valueOrDash(slice.amount),
-                      style: FiType.figure.copyWith(color: fiInk1(context)),
-                    ),
-                  ],
+                      Text(
+                        _valueOrDash(slice.amount),
+                        style: FiType.figure.copyWith(color: fiInk1(context)),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: FiSpace.s2),
                 Text(
@@ -315,17 +320,19 @@ String _valueOrDash(double? valor) =>
 class _AgainstTarget extends ConsumerWidget {
   const _AgainstTarget();
 
+  static const _title = 'Desvio de alocação';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final desvio = ref.watch(rebalanceSuggestionsProvider);
 
     return desvio.when(
       loading: () => const FiSection(
-        title: 'Contra a sua meta',
+        title: _title,
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 3),
       ),
       error: (e, _) => FiSection(
-        title: 'Contra a sua meta',
+        title: _title,
         child: FiErrorState(
           error: e,
           action: 'cruzar sua carteira com as metas',
@@ -334,9 +341,76 @@ class _AgainstTarget extends ConsumerWidget {
       ),
       data: (data) {
         final gaps = data.allocationGaps;
+        final verDesvio = FiNavAction(
+          label: data.items.isEmpty
+              ? 'Ver o desvio inteiro'
+              : 'Ver o desvio e ${data.items.length} '
+                    '${data.items.length == 1 ? 'posição' : 'posições'}',
+          onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
+        );
+
         if (gaps.isEmpty) {
+          return _NoGaps(hasItems: data.items.isNotEmpty, seeDrift: verDesvio);
+        }
+
+        final maiores = [...gaps]
+          ..sort((a, b) => b.gapPct.abs().compareTo(a.gapPct.abs()));
+        final mostrados = maiores.take(3).toList();
+
+        return FiSection(
+          title: _title,
+          hint: 'Os maiores desvios são o que o próximo aporte reequilibra.',
+          action: verDesvio,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final gap in mostrados)
+                FiAllocationGap(
+                  label: categoryLabel(gap.category),
+                  currentPct: gap.currentPct,
+                  targetPct: gap.targetPct,
+                  barColor: categoryColor(
+                    gap.category,
+                    Theme.of(context).brightness,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _NoGaps extends ConsumerWidget {
+  const _NoGaps({required this.hasItems, required this.seeDrift});
+
+  final bool hasItems;
+  final Widget seeDrift;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final metas = ref.watch(goalsProvider);
+
+    return metas.when(
+      loading: () => const FiSection(
+        title: _AgainstTarget._title,
+        child: FiSkeleton(shape: FiSkeletonShape.row, count: 3),
+      ),
+      error: (e, _) => FiSection(
+        title: _AgainstTarget._title,
+        child: FiErrorState(
+          error: e,
+          action: 'ler suas metas de alocação',
+          onRetry: () => ref.invalidate(goalsProvider),
+        ),
+      ),
+      data: (goals) {
+        final declarou = goals.any((g) => g.declared);
+
+        if (!declarou) {
           return FiSection(
-            title: 'Contra a sua meta',
+            title: _AgainstTarget._title,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -354,35 +428,30 @@ class _AgainstTarget extends ConsumerWidget {
           );
         }
 
-        final maiores = [...gaps]
-          ..sort((a, b) => b.gapPct.abs().compareTo(a.gapPct.abs()));
-        final mostrados = maiores.take(3).toList();
+        if (!hasItems) {
+          return FiSection(
+            title: _AgainstTarget._title,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const FiEmptyLine(
+                  'Suas metas estão declaradas, mas ainda não há posição nem renda fixa para '
+                  'comparar com elas.',
+                ),
+                const SizedBox(height: FiSpace.s3),
+                FiNavAction(
+                  label: 'Ir para o Patrimônio',
+                  onPressed: () => GoRouter.of(context).go('/patrimonio'),
+                ),
+              ],
+            ),
+          );
+        }
 
         return FiSection(
-          title: 'Contra a sua meta',
-          hint: 'Os maiores desvios são o que o próximo aporte reequilibra.',
-          action: FiNavAction(
-            label: data.items.isEmpty
-                ? 'Ver a alocação inteira'
-                : 'Ver a alocação e ${data.items.length} '
-                      '${data.items.length == 1 ? 'posição' : 'posições'}',
-            onPressed: () => GoRouter.of(context).go('/sobra/desvio'),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final gap in mostrados)
-                FiAllocationGap(
-                  label: categoryLabel(gap.category),
-                  currentPct: gap.currentPct,
-                  targetPct: gap.targetPct,
-                  barColor: categoryColor(
-                    gap.category,
-                    Theme.of(context).brightness,
-                  ),
-                ),
-            ],
-          ),
+          title: _AgainstTarget._title,
+          action: seeDrift,
+          child: const FiEmptyLine('Nenhuma classe está longe da sua meta de alocação.'),
         );
       },
     );
@@ -407,8 +476,6 @@ class _Step extends StatelessWidget {
     'sem_taxa_informada': 'Sem a taxa da dívida não há como classificar o custo.',
     'sem_referencia': 'Sem carteira nem referência, a comparação usa o CDI.',
     'gasto_fixo_proprio': 'A base é o seu gasto fixo, não um número de mercado.',
-    'meta': 'A ordem sai da alocação-alvo que você declarou.',
-    'score': 'Sem alocação-alvo declarada, a ordem sai pelo score do ativo.',
   };
 
   FiState get _state => step.type == CascadeStepType.debt
@@ -431,23 +498,25 @@ class _Step extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Expanded(
-                        child: Text(
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      spacing: FiSpace.s3,
+                      children: [
+                        Text(
                           numbered
                               ? '${step.order} · ${_labels[step.type] ?? ''}'
                               : (_labels[step.type] ?? ''),
                           style: FiType.eyebrow.copyWith(color: fiInk3(context)),
                         ),
-                      ),
-                      Text(
-                        formatCurrency(step.amount),
-                        style: FiType.metricSm.copyWith(color: fiInk1(context)),
-                      ),
-                    ],
+                        Text(
+                          formatCurrency(step.amount),
+                          style: FiType.metricSm.copyWith(color: fiInk1(context)),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: FiSpace.s2),
                   Text(
@@ -491,10 +560,31 @@ class _NoContribution extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: FiSpace.s2),
       child: Text(
-        'A ordem termina sem passo de aporte, e isso é a resposta certa: com o que está acima '
-        'consumindo a sobra, não aportar rende mais que aportar.',
+        'A sobra inteira vai para o que está acima, e neste mês não sobra parte para '
+        'aportar. Isso é a ordem funcionando, não uma falha.',
         style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
       ),
+    );
+  }
+}
+
+class _NothingToSplit extends StatelessWidget {
+  const _NothingToSplit();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'A sobra deste mês está em zero ou abaixo: não há o que distribuir.',
+          style: fiSerif(FiType.verdictSm).copyWith(color: fiInk1(context)),
+        ),
+        FiNavAction(
+          label: 'Ver o Mês',
+          onPressed: () => GoRouter.of(context).go('/mes'),
+        ),
+      ],
     );
   }
 }

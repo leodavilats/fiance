@@ -21,6 +21,11 @@ String monthName(String mes) {
   return '$nome de ${partes[0]}';
 }
 
+String monthTitle(String mes) {
+  final nome = monthName(mes);
+  return nome.isEmpty ? nome : '${nome[0].toUpperCase()}${nome.substring(1)}';
+}
+
 String currentMonth() {
   final agora = DateTime.now();
   return '${agora.year}-${agora.month.toString().padLeft(2, '0')}';

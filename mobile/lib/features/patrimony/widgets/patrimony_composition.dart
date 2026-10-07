@@ -163,6 +163,7 @@ class _FiCompositionBlockState extends ConsumerState<FiCompositionBlock> {
             targetPct: slice.targetPct,
             barColor: slice.color,
             trailing: formatCurrency(slice.value),
+            judged: widget.mode != FiCompositionMode.position,
           ),
       ],
     );

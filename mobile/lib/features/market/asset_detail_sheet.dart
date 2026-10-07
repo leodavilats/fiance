@@ -142,22 +142,26 @@ class AssetDetailContent extends ConsumerWidget {
                 ),
                 const SizedBox(width: FiSpace.s3),
                 Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      FiTag(label: a.label, state: fiVerdictState(a.verdict)),
-                      if (basisLabel(a.basis).isNotEmpty) ...[
-                        const SizedBox(height: FiSpace.s1),
-                        SizedBox(
-                          width: 140,
-                          child: Text(
-                            basisLabel(a.basis),
-                            textAlign: TextAlign.end,
-                            style: FiType.caption.copyWith(color: fiInk3(context)),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        FiTag(label: a.label, state: fiVerdictState(a.verdict)),
+                        if (basisLabel(a.basis).isNotEmpty) ...[
+                          const SizedBox(height: FiSpace.s1),
+                          SizedBox(
+                            width: 140,
+                            child: Text(
+                              basisLabel(a.basis),
+                              textAlign: TextAlign.end,
+                              style: FiType.caption.copyWith(color: fiInk3(context)),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -167,7 +171,7 @@ class AssetDetailContent extends ConsumerWidget {
             FiHeadline(
               eyebrow: 'Preço',
               figure: formatCurrency(a.price),
-              note: idade.isEmpty ? null : 'lido $idade',
+              note: a.price == null ? 'sem cotação lida' : (idade.isEmpty ? null : 'lido $idade'),
             ),
 
             if (margem != null) ...[

@@ -492,6 +492,7 @@ def build_rebalance_suggestions(
                     "margin_of_safety": target.margin_of_safety,
                     "personal_ceiling": target.personal_ceiling,
                     "fits_income_goal": _fits_income_goal(target),
+                    "as_of": target.as_of,
                 }
                 sentence = _adjustment_sentence(ticker, pos.get("margin_of_safety"), target)
                 nome = _CATEGORY_NAMES.get(target.category_resolved, target.category_resolved)

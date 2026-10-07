@@ -32,8 +32,13 @@ MonthVerdict monthVerdict({
     );
   }
 
-  final pressure = (committed / received * 100).round().clamp(0, 100);
+  final bruto = (committed / received * 100).round();
+  final pressure = bruto.clamp(0, 100);
   final band = fiBandFor(pressure.toDouble(), fiMonthPressureBands);
+  final frase = bruto > 100
+      ? 'O comprometido passa do que entrou: equivale a '
+            '${formatDecimal(bruto.toDouble(), digits: 0)}% da entrada.'
+      : 'O comprometido consome $pressure% do que entrou.';
 
   if (expensiveDebt != null) {
     final taxa = expensiveDebt.monthlyRate == null
@@ -44,8 +49,7 @@ MonthVerdict monthVerdict({
       pressure: pressure,
       verdict: band.label,
       reason:
-          'O comprometido consome $pressure% do que entrou. A sobra, porém, vai antes para '
-          '${expensiveDebt.description}$taxa.',
+          '$frase A sobra, porém, vai antes para ${expensiveDebt.description}$taxa.',
     );
   }
 
@@ -53,7 +57,7 @@ MonthVerdict monthVerdict({
     band: band,
     pressure: pressure,
     verdict: band.label,
-    reason: 'O comprometido consome $pressure% do que entrou.',
+    reason: frase,
   );
 }
 

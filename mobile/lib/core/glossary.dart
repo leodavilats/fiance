@@ -19,7 +19,7 @@ final Map<String, String> glossary = {
       'Perfil de risco — decide o peso de cada critério no score. No conservador os dividendos '
       'pesam 26% e o crescimento 5%; no arrojado a conta se inverte, com crescimento em 44%. '
       'Em FII, o conservador dá 60% aos dividendos e o arrojado, 65% ao desconto. '
-      'Muda a ordem das oportunidades, não o preço justo. Você troca em Você → Preferências.',
+      'Muda a ordem das oportunidades, não o preço justo. Você troca em Você → Como eu invisto.',
   'bazin':
       'Pelos dividendos — o valor que o ativo teria só pelo que ele distribui num ano típico, '
       'dividido pelo rendimento que o juro exige. No fundo imobiliário (FII) é a conta principal; '
@@ -128,6 +128,6 @@ final Map<String, String> glossary = {
       'crescer.',
   'preco_teto_pessoal':
       'Preço-teto da sua meta — até que preço o que o ativo distribui num ano típico rende, em '
-      'proventos, o percentual ao ano que você declarou em Você → Preferências. É meta pessoal, não preço justo: mudar a meta muda o '
+      'proventos, o percentual ao ano que você declarou em Você → Como eu invisto. É meta pessoal, não preço justo: mudar a meta muda o '
       'teto, e não a faixa.',
 };

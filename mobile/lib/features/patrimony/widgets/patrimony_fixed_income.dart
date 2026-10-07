@@ -79,7 +79,7 @@ class FiFixedIncomeSection extends ConsumerWidget {
               const SizedBox(height: FiSpace.s2),
               Text(
                 '${rendeu ? '+' : ''}${formatCurrency(data.totalReturn)} '
-                '(${formatPercent(data.returnPct)}) de rendimento sobre o aplicado.',
+                '(${formatPercent(data.returnPct)}) de rendimento líquido sobre o aplicado.',
                 style: FiType.caption.copyWith(
                   color: fiDirectionColor(rendeu ? 1 : -1, brightness),
                 ),
@@ -116,13 +116,15 @@ class _HoldingDisclosure extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final rendeu = item.accruedReturn >= 0;
+    final dias = item.daysToMaturity;
+    final vencida = dias != null && dias < 0;
+    final atencao = (item.maturingSoon || vencida) && dias != null;
 
     return FiDisclosure(
       title: item.name,
       value: formatCurrency(item.currentValue),
-      detail: item.maturingSoon
-          ? '${fixedIncomeKindLabel(item.kind)} · vence em '
-                '${item.daysToMaturity} dias'
+      detail: atencao
+          ? '${fixedIncomeKindLabel(item.kind)} · ${formatMaturity(dias)}'
           : '${fixedIncomeKindLabel(item.kind)} · '
                 '${rendeu ? '+' : ''}${formatPercent(item.returnPct)}',
       child: FiRows(
@@ -154,8 +156,8 @@ class _HoldingDisclosure extends StatelessWidget {
                 : formatDate(item.maturity),
             detail: item.daysToMaturity == null
                 ? null
-                : 'em ${item.daysToMaturity} dias',
-            valueColor: item.maturingSoon
+                : formatMaturity(item.daysToMaturity!),
+            valueColor: atencao
                 ? fiStateColor(FiState.attention, brightness)
                 : null,
           ),

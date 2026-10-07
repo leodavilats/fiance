@@ -11,6 +11,7 @@ import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/help_tooltip.dart';
+import '../../core/widgets/provenance.dart';
 import '../../core/widgets/score_ruler.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
@@ -27,7 +28,7 @@ class AllocationDriftScreen extends ConsumerWidget {
     final async = ref.watch(rebalanceSuggestionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Alocação × meta')),
+      appBar: AppBar(title: const Text('Desvio de alocação')),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(rebalanceSuggestionsProvider),
         child: async.when(
@@ -50,21 +51,7 @@ class AllocationDriftScreen extends ConsumerWidget {
             final revisarImposto =
                 data.taxDisclaimer != null && data.items.any((i) => i.requiresTaxReview);
 
-            if (gaps.isEmpty) {
-              return ListView(
-                children: [
-                  FiEmptyState(
-                    title: 'Você ainda não declarou metas de alocação',
-                    body: 'Sem elas o fiance não tem contra o que comparar a sua carteira — e '
-                        'um alvo de mercado inventado seria pior que alvo nenhum.',
-                    action: FiButton.primary(
-                      label: 'Declarar metas de alocação',
-                      onPressed: () => context.go('/voce/objetivos'),
-                    ),
-                  ),
-                ],
-              );
-            }
+            if (gaps.isEmpty) return _NoGaps(hasItems: data.items.isNotEmpty);
 
             return ListView(
               padding: const EdgeInsets.fromLTRB(
@@ -75,7 +62,7 @@ class AllocationDriftScreen extends ConsumerWidget {
               ),
               children: [
                 Text(
-                  'ONDE VOCÊ ESTÁ × ONDE DEVERIA ESTAR',
+                  'SUA CARTEIRA CONTRA A META',
                   style: FiType.eyebrow.copyWith(color: fiInk3(context)),
                 ),
                 const SizedBox(height: FiSpace.s4),
@@ -115,11 +102,10 @@ class AllocationDriftScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: FiSpace.s2),
                         Text(
-                          'Sua exposição está '
-                          '${formatDecimal(biggest.gapPct.abs())} pontos percentuais '
-                          '${biggest.isBelowTarget ? 'abaixo' : 'acima'} do objetivo '
-                          '(${formatDecimal(biggest.currentPct)}% contra '
-                          '${formatDecimal(biggest.targetPct)}%).',
+                          'Sua exposição está ${formatPoints(biggest.gapPct.abs())} '
+                          '${biggest.isBelowTarget ? 'abaixo' : 'acima'} da meta '
+                          '(${formatPercent(biggest.currentPct, digits: 1)} contra '
+                          '${formatPercent(biggest.targetPct, digits: 0)}).',
                           style: FiType.body.copyWith(color: fiInk2(context)),
                         ),
                         const SizedBox(height: FiSpace.s3),
@@ -192,10 +178,11 @@ class _GapRow extends StatelessWidget {
     final ink1 = fiInk1Of(brightness);
     final ink3 = fiInk3Of(brightness);
 
-    final relevante = gap.gapPct.abs() >= fiRelevantGapPp;
+    final band = fiBandFor(gap.gapPct.abs(), fiAllocationGapBands, 1);
+    final relevante = band.id != 'on-target';
     final falta = gap.gapPct > 0;
     final categoryBarColor = categoryColor(gap.category, brightness);
-    final driftColor = relevante
+    final driftColor = band.id == 'relevant'
         ? fiStateColor(FiState.attention, brightness)
         : ink3;
 
@@ -207,38 +194,46 @@ class _GapRow extends StatelessWidget {
     return Semantics(
       label:
           '${categoryLabel(gap.category)}: '
-          '${formatDecimal(gap.currentPct)}% da carteira contra meta de '
-          '${formatDecimal(gap.targetPct)}% — '
-          '${formatDecimal(gap.gapPct.abs())} pontos percentuais '
-          '${falta ? 'abaixo' : 'acima'}',
+          '${formatPercent(gap.currentPct, digits: 1)} da carteira contra meta de '
+          '${formatPercent(gap.targetPct, digits: 0)} — '
+          '${relevante ? '${formatDecimal(gap.gapPct.abs())} pontos percentuais '
+                    '${falta ? 'abaixo' : 'acima'}' : 'na meta'}',
       child: ExcludeSemantics(
         child: Padding(
           padding: const EdgeInsets.only(bottom: FiSpace.s5),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Expanded(
-                    child: Text(
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  spacing: FiSpace.s3,
+                  children: [
+                    Text(
                       categoryLabel(gap.category),
                       style: FiType.body.copyWith(
                         color: ink1,
                         fontWeight: isBiggest ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
-                  ),
-                  Text(
-                    formatPercent(gap.currentPct, digits: 0),
-                    style: FiType.figure.copyWith(color: ink1),
-                  ),
-                  Text(
-                    ' de ${formatPercent(gap.targetPct, digits: 0)}',
-                    style: FiType.caption.copyWith(color: ink3),
-                  ),
-                ],
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: formatPercent(gap.currentPct, digits: 1),
+                            style: FiType.figure.copyWith(color: ink1),
+                          ),
+                          TextSpan(
+                            text: ' de ${formatPercent(gap.targetPct, digits: 0)}',
+                            style: FiType.caption.copyWith(color: ink3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: FiSpace.s2),
               LayoutBuilder(
@@ -302,9 +297,9 @@ class _GapRow extends StatelessWidget {
               Text(
                 relevante
                     ? (falta
-                          ? 'faltam ${formatDecimal(gap.gapPct.abs())} p.p. para a meta'
-                          : '${formatDecimal(gap.gapPct.abs())} p.p. acima da meta')
-                    : 'dentro da meta',
+                          ? 'faltam ${formatPoints(gap.gapPct.abs())} para a meta'
+                          : '${formatPoints(gap.gapPct.abs())} acima da meta')
+                    : 'na meta',
                 style: FiType.caption.copyWith(color: driftColor),
               ),
             ],
@@ -339,7 +334,10 @@ class _RebalanceObject extends StatelessWidget {
                     style: FiType.ticker.copyWith(color: fiInk1(context)),
                   ),
                 ),
-                FiTag(label: _actionLabel(item.action), state: estado),
+                const SizedBox(width: FiSpace.s2),
+                Flexible(
+                  child: FiTag(label: _actionLabel(item.action), state: estado),
+                ),
               ],
             ),
             if (item.reasons.isNotEmpty) ...[
@@ -369,14 +367,12 @@ class _RebalanceObject extends StatelessWidget {
   String _actionLabel(String action) => switch (action) {
     'comprar_mais' => 'Abaixo da meta',
     'vender' => 'Acima do preço justo',
-    'realocar' => 'Realocar',
-    _ => 'Manter',
+    'realocar' => 'Acima do preço justo',
+    _ => 'Sem ajuste',
   };
 
   FiState _actionState(String action) => switch (action) {
-    'comprar_mais' => FiState.favorable,
-    'vender' => FiState.adverse,
-    'realocar' => FiState.attention,
+    'vender' || 'realocar' => FiState.attention,
     _ => FiState.neutral,
   };
 }
@@ -389,6 +385,11 @@ class _Reallocation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final detalhe = [
+      target.label ?? target.name,
+      if (target.price != null) formatAge(target.asOf),
+    ].whereType<String>().where((t) => t.isNotEmpty).join(' · ');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -408,7 +409,7 @@ class _Reallocation extends StatelessWidget {
             FiDataRow(
               label: target.ticker,
               value: target.price == null ? null : formatCurrency(target.price),
-              detail: target.label ?? target.name,
+              detail: detalhe.isEmpty ? null : detalhe,
               onTap: () => context.push('/ativo/${target.ticker}'),
             ),
             if (target.fairLow != null && target.fairHigh != null)
@@ -424,7 +425,76 @@ class _Reallocation extends StatelessWidget {
           size: ScoreRulerSize.list,
           subject: 'Score de ${target.ticker}',
         ),
+        const SizedBox(height: FiSpace.s2),
+        const FiProvenance(
+          summary: 'Como chegamos nesta troca',
+          method:
+              'A troca aparece quando o ativo que você tem está acima da faixa de preço justo '
+              'e há, numa classe abaixo da sua meta de alocação, um ativo abaixo da faixa. '
+              'Entre eles, o de maior score.',
+          source: 'Suas posições, suas metas de alocação e preços da BRAPI.',
+          limitation:
+              'Não considera imposto, corretagem nem o seu preço médio. A faixa é a do modelo '
+              'da classe do ativo; a folha dele mostra a base.',
+        ),
       ],
+    );
+  }
+}
+
+class _NoGaps extends ConsumerWidget {
+  const _NoGaps({required this.hasItems});
+
+  final bool hasItems;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final metas = ref.watch(goalsProvider);
+
+    return metas.when(
+      loading: () => FiSkeleton.screen(
+        shape: FiSkeletonShape.row,
+        count: 3,
+        label: 'Lendo suas metas de alocação',
+      ),
+      error: (err, _) => FiErrorState(
+        error: err,
+        action: 'ler suas metas de alocação',
+        onRetry: () => ref.invalidate(goalsProvider),
+      ),
+      data: (goals) {
+        final declarou = goals.any((g) => g.declared);
+        final vazio = !declarou
+            ? FiEmptyState(
+                title: 'Você ainda não declarou metas de alocação',
+                body: 'Sem elas o fiance não tem contra o que comparar a sua carteira — e '
+                    'um alvo de mercado inventado seria pior que alvo nenhum.',
+                action: FiButton.primary(
+                  label: 'Declarar metas de alocação',
+                  onPressed: () => context.go('/voce/objetivos'),
+                ),
+              )
+            : !hasItems
+            ? FiEmptyState(
+                title: 'Ainda não há carteira para comparar com as metas',
+                body: 'Cadastre suas posições ou sua renda fixa e o desvio aparece aqui.',
+                action: FiButton.primary(
+                  label: 'Ir para o Patrimônio',
+                  onPressed: () => context.go('/patrimonio'),
+                ),
+              )
+            : FiEmptyState(
+                title: 'Nenhuma classe está longe da sua meta de alocação',
+                body: 'Sua carteira está perto do que você declarou, então não há desvio a '
+                    'corrigir agora.',
+                action: FiButton.primary(
+                  label: 'Tenho dinheiro para aportar',
+                  onPressed: () => context.go('/sobra/aporte'),
+                ),
+              );
+
+        return ListView(children: [vazio]);
+      },
     );
   }
 }

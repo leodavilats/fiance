@@ -94,6 +94,14 @@ class _TemplateSheetState extends ConsumerState<_TemplateSheet> {
     }
   }
 
+  void _toggle(int i, bool chosen) => setState(() {
+    if (chosen) {
+      _chosen.add(i);
+    } else {
+      _chosen.remove(i);
+    }
+  });
+
   @override
   Widget build(BuildContext context) {
     final erro = _error;
@@ -146,43 +154,48 @@ class _TemplateSheetState extends ConsumerState<_TemplateSheet> {
             ),
             const SizedBox(height: FiSpace.s2),
             Text(
-              disponiveis.isEmpty
+              m.candidates.isEmpty
+                  ? '${monthTitle(m.source)} não tem lançamento para repetir.'
+                  : disponiveis.isEmpty
                   ? 'Tudo que ${monthName(m.source)} tinha já está em ${monthName(m.target)}.'
                   : 'Vem marcado o que repete todo mês. O gasto variável fica desmarcado: o '
                         'valor do mês que passou é fato daquele mês.',
               style: FiType.body.copyWith(color: fiInk2(context)),
             ),
-            const SizedBox(height: FiSpace.s3),
+            if (disponiveis.isNotEmpty) ...[
+              const SizedBox(height: FiSpace.s3),
 
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  FiRows(
-                    children: [
-                      for (final i in disponiveis)
-                        FiDataRow(
-                          label: m.candidates[i].description,
-                          detail:
-                              '${formatCurrency(m.candidates[i].amount)} · '
-                              '${cashCategoryLabel(m.candidates[i].kind, m.candidates[i].category)}'
-                              '${m.candidates[i].repeats ? '' : ' · variável'}',
-                          trailing: Checkbox(
-                            value: _chosen.contains(i),
-                            onChanged: (v) => setState(() {
-                              if (v ?? false) {
-                                _chosen.add(i);
-                              } else {
-                                _chosen.remove(i);
-                              }
-                            }),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    FiRows(
+                      children: [
+                        for (final i in disponiveis)
+                          FiDataRow(
+                            label: m.candidates[i].description,
+                            detail:
+                                '${formatCurrency(m.candidates[i].amount)} · '
+                                '${cashCategoryLabel(m.candidates[i].kind, m.candidates[i].category)}'
+                                '${m.candidates[i].repeats ? '' : ' · variável'}',
+                            chevron: false,
+                            onTap: () => _toggle(i, !_chosen.contains(i)),
+                            trailing: MergeSemantics(
+                              child: Semantics(
+                                label: 'Copiar ${m.candidates[i].description}',
+                                child: Checkbox(
+                                  value: _chosen.contains(i),
+                                  onChanged: (v) => _toggle(i, v ?? false),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
 
             if (_saveError != null) ...[
               const SizedBox(height: FiSpace.s3),
@@ -195,15 +208,22 @@ class _TemplateSheetState extends ConsumerState<_TemplateSheet> {
             ],
 
             const SizedBox(height: FiSpace.s5),
-            FiButton.primary(
-              label: _chosen.isEmpty
-                  ? 'Escolha o que copiar'
-                  : 'Copiar ${_chosen.length} para ${monthName(m.target)}',
-              expand: true,
-              busy: _saving,
-              onPressed: _chosen.isEmpty ? null : _store,
-            ),
-            if (_chosen.isNotEmpty)
+            if (disponiveis.isEmpty)
+              FiButton.secondary(
+                label: 'Fechar',
+                expand: true,
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            else
+              FiButton.primary(
+                label: _chosen.isEmpty
+                    ? 'Escolha o que copiar'
+                    : 'Copiar ${_chosen.length} para ${monthName(m.target)}',
+                expand: true,
+                busy: _saving,
+                onPressed: _chosen.isEmpty ? null : _store,
+              ),
+            if (_chosen.isNotEmpty && disponiveis.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: FiSpace.s2),
                 child: Text(

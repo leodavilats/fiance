@@ -14,8 +14,10 @@ import '../../core/legal_links.dart';
 import '../../core/labels.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/sector_translations.dart';
 import '../../core/theme.dart';
 import '../../core/theme_provider.dart';
+import '../../core/vocabulary.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/feedback.dart';
@@ -295,22 +297,8 @@ class FiRecommendation extends ConsumerWidget {
                 label: 'Setores preferidos',
                 detail: prefs.preferredSectors.isEmpty
                     ? 'Nenhum'
-                    : prefs.preferredSectors.join(', '),
-                onTap: () => _editCsvList(
-                  context,
-                  ref,
-                  prefs,
-                  title: 'Setores preferidos',
-                  hint: 'Ex.: Energia, Bancos, Varejo',
-                  initial: prefs.preferredSectors,
-                  action: 'salvar os setores preferidos',
-                  apply: (values) => ref
-                      .read(apiRepositoryProvider)
-                      .savePreferences(
-                        passiveIncomeGoal: prefs.passiveIncomeGoal,
-                        preferredSectors: values,
-                      ),
-                ),
+                    : prefs.preferredSectors.map(translateSector).toSet().join(', '),
+                onTap: () => _pickPreferredSectors(context, ref, prefs),
               ),
               FiDataRow(
                 label: 'Ativos excluídos',
@@ -324,6 +312,7 @@ class FiRecommendation extends ConsumerWidget {
                   title: 'Ativos excluídos das oportunidades',
                   hint: 'Ex.: MGLU3, IRBR3',
                   initial: prefs.excludedTickers,
+                  invalid: _tickerInvalido,
                   action: 'salvar os ativos excluídos',
                   apply: (values) => ref
                       .read(apiRepositoryProvider)
@@ -380,6 +369,7 @@ class FiGoals extends ConsumerWidget {
             note: prefs.passiveIncomeGoal == null
                 ? 'Sem alvo declarado o produto não inventa um.'
                 : null,
+            onTap: () => context.go('/voce/objetivos'),
           ),
           FiDataRow(
             label: 'Reserva de emergência',
@@ -390,9 +380,10 @@ class FiGoals extends ConsumerWidget {
                       'liquidez diária.',
             onTap: () => _pickReserveMonths(context, ref, prefs),
           ),
-          const FiDataRow(
+          FiDataRow(
             label: 'Alocação por categoria e setor',
             detail: 'O alvo contra o qual a Sobra mede o desvio',
+            onTap: () => context.go('/voce/objetivos'),
           ),
         ],
       ),
@@ -409,7 +400,10 @@ Future<void> _savePreferences(
 }) async {
   if (!context.mounted) return;
   final ok = await fiAttempt(context, write, action: action, success: success);
-  if (ok) ref.invalidate(preferencesProvider);
+  if (!ok) return;
+  ref.invalidate(preferencesProvider);
+  ref.invalidate(opportunitiesProvider);
+  invalidateAllocationReaders(ref);
 }
 
 Future<void> _pickReserveMonths(
@@ -743,36 +737,40 @@ Future<void> _pickRiskProfile(
   );
 }
 
-Future<void> _pickPreferredCategories(
-  BuildContext context,
-  WidgetRef ref,
-  Preferences prefs,
-) async {
-  var selected = {...prefs.preferredCategories};
+Future<List<String>?> _pickMany(
+  BuildContext context, {
+  required String title,
+  required List<String> options,
+  required Iterable<String> initial,
+  String Function(String option)? label,
+}) async {
+  final selected = {...initial};
 
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: const Text('Categorias preferidas'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: _preferenceCategories
-              .map(
-                (c) => CheckboxListTile(
-                  value: selected.contains(c),
-                  title: Text(categoryLabel(c)),
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (v) => setState(() {
-                    if (v == true) {
-                      selected.add(c);
-                    } else {
-                      selected.remove(c);
-                    }
-                  }),
-                ),
-              )
-              .toList(),
+        title: Text(title),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: options
+                .map(
+                  (c) => CheckboxListTile(
+                    value: selected.contains(c),
+                    title: Text(label == null ? c : label(c)),
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (v) => setState(() {
+                      if (v == true) {
+                        selected.add(c);
+                      } else {
+                        selected.remove(c);
+                      }
+                    }),
+                  ),
+                )
+                .toList(),
+          ),
         ),
         actions: [
           FiButton.quiet(
@@ -787,7 +785,23 @@ Future<void> _pickPreferredCategories(
       ),
     ),
   );
-  if (confirmed != true || !context.mounted) return;
+  if (confirmed != true) return null;
+  return [for (final o in options) if (selected.contains(o)) o];
+}
+
+Future<void> _pickPreferredCategories(
+  BuildContext context,
+  WidgetRef ref,
+  Preferences prefs,
+) async {
+  final selected = await _pickMany(
+    context,
+    title: 'Categorias preferidas',
+    options: _preferenceCategories,
+    initial: prefs.preferredCategories,
+    label: categoryLabel,
+  );
+  if (selected == null || !context.mounted) return;
 
   await _savePreferences(
     context,
@@ -796,9 +810,35 @@ Future<void> _pickPreferredCategories(
         .read(apiRepositoryProvider)
         .savePreferences(
           passiveIncomeGoal: prefs.passiveIncomeGoal,
-          preferredCategories: selected.toList(),
+          preferredCategories: selected,
         ),
     action: 'salvar as categorias preferidas',
+  );
+}
+
+Future<void> _pickPreferredSectors(
+  BuildContext context,
+  WidgetRef ref,
+  Preferences prefs,
+) async {
+  final selected = await _pickMany(
+    context,
+    title: 'Setores preferidos',
+    options: fiSectors.values.toSet().toList()..sort(),
+    initial: prefs.preferredSectors.map(translateSector),
+  );
+  if (selected == null || !context.mounted) return;
+
+  await _savePreferences(
+    context,
+    ref,
+    () => ref
+        .read(apiRepositoryProvider)
+        .savePreferences(
+          passiveIncomeGoal: prefs.passiveIncomeGoal,
+          preferredSectors: selected,
+        ),
+    action: 'salvar os setores preferidos',
   );
 }
 
@@ -811,38 +851,54 @@ Future<void> _editCsvList(
   required List<String> initial,
   required Future<void> Function(List<String> values) apply,
   required String action,
+  String? Function(String item)? invalid,
 }) async {
   final controller = TextEditingController(text: initial.join(', '));
 
+  List<String> separar(String texto) =>
+      texto.split(',').map((v) => v.trim()).where((v) => v.isNotEmpty).toList();
+
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: TextField(
-        controller: controller,
-        decoration: InputDecoration(hintText: hint),
-      ),
-      actions: [
-        FiButton.quiet(
-          label: 'Cancelar',
-          onPressed: () => Navigator.pop(context, false),
-        ),
-        FiButton.primary(
-          label: 'Salvar',
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
+    builder: (context) => ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, digitado, _) {
+        String? erro;
+        if (invalid != null) {
+          for (final item in separar(digitado.text)) {
+            erro = invalid(item);
+            if (erro != null) break;
+          }
+        }
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(hintText: hint, errorText: erro, errorMaxLines: 2),
+          ),
+          actions: [
+            FiButton.quiet(
+              label: 'Cancelar',
+              onPressed: () => Navigator.pop(context, false),
+            ),
+            FiButton.primary(
+              label: 'Salvar',
+              onPressed: erro == null ? () => Navigator.pop(context, true) : null,
+            ),
+          ],
+        );
+      },
     ),
   );
   if (confirmed != true || !context.mounted) return;
 
-  final values = controller.text
-      .split(',')
-      .map((v) => v.trim())
-      .where((v) => v.isNotEmpty)
-      .toList();
-  await _savePreferences(context, ref, () => apply(values), action: action);
+  await _savePreferences(context, ref, () => apply(separar(controller.text)), action: action);
 }
+
+String? _tickerInvalido(String item) =>
+    RegExp(r'^[A-Z][A-Z0-9]{3}\d{1,2}$').hasMatch(item.toUpperCase())
+        ? null
+        : '"$item" não é um código da B3, como PETR4';
 
 class FiReferral extends ConsumerWidget {
   const FiReferral({super.key});
@@ -857,7 +913,15 @@ class FiReferral extends ConsumerWidget {
         title: 'Indicação',
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 2),
       ),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (err, _) => FiSection(
+        first: true,
+        title: 'Indicação',
+        child: FiErrorState(
+          error: err,
+          action: 'carregar sua indicação',
+          onRetry: () => ref.invalidate(referralProvider),
+        ),
+      ),
       data: (r) => FiSection(
         first: true,
         title: 'Indicação',
@@ -1113,6 +1177,7 @@ class _LegalRow extends StatelessWidget {
       label: label,
       detail: detail,
       trailing: Icon(Icons.open_in_new, size: 16, color: fiInk3(context)),
+      chevron: false,
       onTap: () async {
         final abriu = await openInBrowser(url);
         if (!abriu && context.mounted) {
@@ -1134,6 +1199,13 @@ class FiAccount extends ConsumerStatefulWidget {
 
 class _FiAccountState extends ConsumerState<FiAccount> {
   bool _saindo = false;
+  bool _exportando = false;
+
+  Future<void> _exportar() async {
+    setState(() => _exportando = true);
+    await exportAccountData(context, ref);
+    if (mounted) setState(() => _exportando = false);
+  }
 
   Future<void> _sair() async {
     final confirmado = await fiConfirm(
@@ -1169,9 +1241,12 @@ class _FiAccountState extends ConsumerState<FiAccount> {
         children: [
           FiDataRow(
             label: 'Baixar meus dados',
-            detail: 'Tudo o que esta conta guarda, em JSON',
+            detail: _exportando
+                ? 'Preparando o arquivo…'
+                : 'Tudo o que esta conta guarda, em JSON',
             trailing: Icon(Icons.download, size: 16, color: fiInk3(context)),
-            onTap: () => exportAccountData(context, ref),
+            chevron: false,
+            onTap: _exportando ? null : _exportar,
           ),
           FiDataRow(
             label: 'Importar meus dados',

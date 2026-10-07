@@ -82,6 +82,7 @@ Future<bool> fiConfirm(
   final confirmado = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
+      scrollable: true,
       title: Text(title),
       content: Text(body),
       actions: [

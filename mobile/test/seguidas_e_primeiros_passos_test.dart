@@ -183,6 +183,42 @@ void main() {
     expect(find.text('PETR4'), findsOneWidget);
   });
 
+  testWidgets('sem cotação, o resultado é ausência; com cotação e zero, é zero', (tester) async {
+    Map<String, Object?> corpo({required double investido}) => {
+      'items': [_seguida()],
+      'total_invested': investido,
+      'total_current_value': investido,
+      'total_pnl': 0.0,
+      'total_pnl_pct': 0.0,
+      'by_source': <Object>[],
+      'summary': investido == 0
+          ? 'As sugestões registradas ainda não têm cotação disponível para apurar o resultado.'
+          : 'A 1 compra que você fez a partir de sugestões está 0,0%.',
+      'has_more': false,
+      'total_count': 1,
+    };
+
+    await _montar(
+      tester,
+      _Servidor({'GET /suggestions/followed': (_) => corpo(investido: 0)}),
+      const FollowedScreen(),
+    );
+    expect(find.text('—'), findsWidgets, reason: 'sem cotação não há resultado, e não é zero');
+    expect(find.textContaining('ainda não têm cotação'), findsOneWidget,
+        reason: 'a frase explica a ausência');
+    expect(find.text('0,00%'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await _montar(
+      tester,
+      _Servidor({'GET /suggestions/followed': (_) => corpo(investido: 3000)}),
+      const FollowedScreen(),
+    );
+    expect(find.text('0,00%'), findsOneWidget, reason: 'investiu e ficou no zero: é zero');
+    expect(find.textContaining('está 0,0%'), findsNothing,
+        reason: 'com resultado apurado a manchete já diz tudo; a frase não repete');
+  });
+
   group('primeiros passos', () {
     Map<String, Object?> estado({required int step, bool goals = false, bool completed = false}) =>
         {
@@ -204,7 +240,7 @@ void main() {
 
       final etiquetas = tester.widgetList<FiTag>(find.byType(FiTag)).map((t) => t.label);
       expect(etiquetas, ['Feito', 'Falta', 'Falta']);
-      expect(find.widgetWithText(FiButton, 'Importar extrato'), findsOneWidget);
+      expect(find.widgetWithText(FiButton, 'Importar operações'), findsOneWidget);
       expect(
         find.widgetWithText(FiButton, 'Pular por agora'),
         findsOneWidget,

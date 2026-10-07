@@ -69,9 +69,10 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          height: 46,
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 46),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -257,10 +258,11 @@ class _FiEvolutionChartState extends State<FiEvolutionChart> {
           ),
         ),
         const SizedBox(height: FiSpace.s3),
-        Row(
+        Wrap(
+          spacing: FiSpace.s5,
+          runSpacing: FiSpace.s2,
           children: [
             _Legend(color: currentColor, label: 'valor de hoje'),
-            const SizedBox(width: FiSpace.s5),
             _Legend(color: investedColor, label: 'aplicado', dashed: true),
           ],
         ),

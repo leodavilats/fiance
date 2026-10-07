@@ -18,6 +18,7 @@ Future<void> openCashEntrySheet(
   BuildContext context,
   WidgetRef ref, {
   CashEntry? editing,
+  CashKind? initialKind,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -27,15 +28,16 @@ Future<void> openCashEntrySheet(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: _CashEntryForm(editing: editing),
+      child: _CashEntryForm(editing: editing, initialKind: initialKind),
     ),
   );
 }
 
 class _CashEntryForm extends ConsumerStatefulWidget {
-  const _CashEntryForm({this.editing});
+  const _CashEntryForm({this.editing, this.initialKind});
 
   final CashEntry? editing;
+  final CashKind? initialKind;
 
   @override
   ConsumerState<_CashEntryForm> createState() => _CashEntryFormState();
@@ -58,9 +60,9 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
   void initState() {
     super.initState();
     final e = widget.editing;
-    _kind = e?.kind ?? CashKind.expense;
+    _kind = e?.kind ?? widget.initialKind ?? CashKind.expense;
     _category = e?.category ?? cashCategoryKeys(_kind).first;
-    _due = DateTime.tryParse(e?.dueOn ?? '') ?? DateTime.now();
+    _due = DateTime.tryParse(e?.dueOn ?? '') ?? _dayInSelectedMonth();
     _paid = DateTime.tryParse(e?.paidOn ?? '');
     if (_kind == CashKind.income && _paid != null) _due = _paid!;
     if (e != null) {
@@ -84,6 +86,19 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
     });
   }
 
+  bool get _otherMonthOpen => ref.read(selectedMonthProvider) != currentMonth();
+
+  DateTime _dayInSelectedMonth() {
+    final hoje = DateTime.now();
+    if (!_otherMonthOpen) return hoje;
+    final sel = ref.read(selectedMonthProvider);
+    final ano = int.tryParse(sel.substring(0, 4));
+    final mes = sel.length >= 7 ? int.tryParse(sel.substring(5, 7)) : null;
+    if (ano == null || mes == null) return hoje;
+    final ultimo = DateTime(ano, mes + 1, 0).day;
+    return DateTime(ano, mes, hoje.day > ultimo ? ultimo : hoje.day);
+  }
+
   static String _isoOf(DateTime d) => d.toIso8601String().substring(0, 10);
 
   static String _shown(String iso) =>
@@ -98,7 +113,9 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
   String? get _paidIso => _paid == null ? null : _isoOf(_paid!);
 
   void _toggleSettled(bool v) {
-    setState(() => _paid = v ? (_income ? _due : DateTime.now()) : null);
+    setState(
+      () => _paid = v ? (_income || _otherMonthOpen ? _due : DateTime.now()) : null,
+    );
   }
 
   Future<void> _pickDate({required bool payment}) async {
@@ -243,129 +260,140 @@ class _CashEntryFormState extends ConsumerState<_CashEntryForm> {
           FiSpace.s5,
           FiSpace.s6,
         ),
-        child: Form(
-          key: _form,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.editing == null ? 'Lançar no mês' : 'Editar lançamento',
-                style: FiType.pageTitle.copyWith(color: fiInk1(context)),
-              ),
-              const SizedBox(height: FiSpace.s5),
-
-              SegmentedButton<CashKind>(
-                showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(value: CashKind.expense, label: Text('Saída')),
-                  ButtonSegment(value: CashKind.income, label: Text('Entrada')),
-                ],
-                selected: {_kind},
-                onSelectionChanged: (s) => _changeKind(s.first),
-              ),
-              const SizedBox(height: FiSpace.s5),
-
-              TextFormField(
-                controller: _description,
-                decoration: const InputDecoration(labelText: 'Descrição'),
-                textCapitalization: TextCapitalization.sentences,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Diga o que é' : null,
-              ),
-              const SizedBox(height: FiSpace.s3),
-
-              TextFormField(
-                controller: _amount,
-                decoration: const InputDecoration(
-                  labelText: 'Valor',
-                  prefixText: r'R$ ',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: (v) {
-                  final n = parseDecimal(v);
-                  if (n == null || n <= 0) return 'Um valor positivo';
-                  return null;
-                },
-              ),
-              const SizedBox(height: FiSpace.s3),
-
-              DropdownButtonFormField<String>(
-                initialValue: _category,
-                decoration: const InputDecoration(labelText: 'Categoria'),
-                items: [
-                  for (final c in categories)
-                    DropdownMenuItem(
-                      value: c,
-                      child: Text(cashCategoryLabel(_kind, c)),
-                    ),
-                ],
-                onChanged: (v) => setState(() => _category = v ?? _category),
-              ),
-              const SizedBox(height: FiSpace.s3),
-
-              const SizedBox(height: FiSpace.s2),
-              FiRows(
-                children: [
-                  FiDataRow(
-                    label: _income ? 'Dia do crédito' : 'Vencimento',
-                    value: _shown(_dueIso),
-                    onTap: () => _pickDate(payment: false),
-                  ),
-                  FiDataRow(
-                    label: _income ? 'Já recebi' : 'Já paguei',
-                    detail: _settled
-                        ? (_income
-                              ? 'Entra na competência do dia do crédito.'
-                              : 'Entra na competência do dia do pagamento.')
-                        : 'Conta não paga conta no mês do vencimento, e é o que forma o '
-                              'comprometido.',
-                    trailing: FiSwitch(
-                      label: _income ? 'Já recebi' : 'Já paguei',
-                      value: _settled,
-                      onChanged: _toggleSettled,
-                    ),
-                  ),
-                  if (!_income && paidIso != null)
-                    FiDataRow(
-                      label: 'Dia do pagamento',
-                      value: _shown(paidIso),
-                      onTap: () => _pickDate(payment: true),
-                    ),
-                ],
-              ),
-
-              if (_error != null) ...[
-                const SizedBox(height: FiSpace.s3),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  _error!,
-                  style: FiType.body.copyWith(
-                    color: fiStateColor(FiState.adverse, Theme.of(context).brightness),
+                  widget.editing == null ? 'Lançar no mês' : 'Editar lançamento',
+                  style: FiType.pageTitle.copyWith(color: fiInk1(context)),
+                ),
+                const SizedBox(height: FiSpace.s5),
+
+                SegmentedButton<CashKind>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(value: CashKind.expense, label: Text('Saída')),
+                    ButtonSegment(value: CashKind.income, label: Text('Entrada')),
+                  ],
+                  selected: {_kind},
+                  onSelectionChanged: (s) => _changeKind(s.first),
+                ),
+                const SizedBox(height: FiSpace.s5),
+
+                TextFormField(
+                  controller: _description,
+                  decoration: const InputDecoration(labelText: 'Descrição'),
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Diga o que é' : null,
+                ),
+                const SizedBox(height: FiSpace.s3),
+
+                TextFormField(
+                  controller: _amount,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor',
+                    prefixText: r'R$ ',
                   ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (v) {
+                    final n = parseDecimal(v);
+                    if (n == null || n <= 0) return 'Um valor positivo';
+                    return null;
+                  },
                 ),
-              ],
+                const SizedBox(height: FiSpace.s3),
 
-              const SizedBox(height: FiSpace.s6),
-              FiButton.primary(
-                label: widget.editing == null
-                    ? 'Lançar'
-                    : 'Salvar alterações',
-                expand: true,
-                busy: _saving,
-                onPressed: _save,
-              ),
+                DropdownButtonFormField<String>(
+                  initialValue: _category,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Categoria'),
+                  selectedItemBuilder: (context) => [
+                    for (final c in categories)
+                      Text(
+                        cashCategoryLabel(_kind, c),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                  items: [
+                    for (final c in categories)
+                      DropdownMenuItem(
+                        value: c,
+                        child: Text(cashCategoryLabel(_kind, c)),
+                      ),
+                  ],
+                  onChanged: (v) => setState(() => _category = v ?? _category),
+                ),
+                const SizedBox(height: FiSpace.s4),
+                FiRows(
+                  children: [
+                    FiDataRow(
+                      label: _income ? 'Dia do crédito' : 'Vencimento',
+                      value: _shown(_dueIso),
+                      onTap: () => _pickDate(payment: false),
+                    ),
+                    FiDataRow(
+                      label: _income ? 'Já recebi' : 'Já paguei',
+                      detail: _settled
+                          ? (_income
+                                ? 'Conta no mês em que caiu.'
+                                : 'Conta no mês em que você pagou.')
+                          : (_income
+                                ? 'Enquanto não cair, fica como a receber no dia do crédito.'
+                                : 'Enquanto não for paga, fica no mês do vencimento e soma no '
+                                      'comprometido.'),
+                      trailing: FiSwitch(
+                        label: _income ? 'Já recebi' : 'Já paguei',
+                        value: _settled,
+                        onChanged: _toggleSettled,
+                      ),
+                    ),
+                    if (!_income && paidIso != null)
+                      FiDataRow(
+                        label: 'Dia do pagamento',
+                        value: _shown(paidIso),
+                        onTap: () => _pickDate(payment: true),
+                      ),
+                  ],
+                ),
 
-              if (widget.editing != null) ...[
-                const SizedBox(height: FiSpace.s2),
-                FiButton.danger(
-                  label: 'Apagar lançamento',
+                if (_error != null) ...[
+                  const SizedBox(height: FiSpace.s3),
+                  Text(
+                    _error!,
+                    style: FiType.body.copyWith(
+                      color: fiStateColor(FiState.adverse, Theme.of(context).brightness),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: FiSpace.s6),
+                FiButton.primary(
+                  label: widget.editing == null
+                      ? 'Lançar'
+                      : 'Salvar alterações',
                   expand: true,
-                  onPressed: _saving ? null : _delete,
+                  busy: _saving,
+                  onPressed: _save,
                 ),
+
+                if (widget.editing != null) ...[
+                  const SizedBox(height: FiSpace.s2),
+                  FiButton.danger(
+                    label: 'Apagar lançamento',
+                    expand: true,
+                    onPressed: _saving ? null : _delete,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

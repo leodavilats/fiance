@@ -677,10 +677,13 @@ class ApiRepository {
     return OnboardingState.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<DividendsReceived> getDividendsReceived({double? estimatedMonthly}) async {
+  Future<DividendsReceived> getDividendsReceived({
+    double? estimatedMonthly,
+    String? cursor,
+  }) async {
     final res = await _dio.get(
       '/dividends/received',
-      queryParameters: {'estimated_monthly': ?estimatedMonthly},
+      queryParameters: {'estimated_monthly': ?estimatedMonthly, 'cursor': ?cursor},
     );
     return DividendsReceived.fromJson(res.data as Map<String, dynamic>);
   }

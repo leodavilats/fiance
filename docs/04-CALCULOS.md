@@ -733,8 +733,13 @@ Na tela em `/sobra/desvio`: a frase em serifa, as razões, e o alvo com a faixa 
 
 ## Renda fixa
 
-`analysis/renda_fixa_analysis.py` — marcação a mercado por tipo de taxa, com o IPCA do BCB para os
-indexados. Compara com o CDI e projeta o valor no vencimento.
+`analysis/renda_fixa_analysis.py` — acumula pela taxa contratada, por tipo de taxa, com o IPCA do
+BCB para os indexados. Não é marcação a mercado. Compara com o CDI e projeta o valor no vencimento.
+
+Tesouro Selic rende a Selic composta com a taxa informada (o ágio):
+`(1 + selic) × (1 + taxa) − 1`. Taxa acima de 5% não é ágio: é a taxa anual inteira, gravada antes
+de o app pedir só o ágio, e é lida como está (`AGIO_MAXIMO_TESOURO_SELIC`). O formulário recusa ágio
+acima disso. Pós-fixado com % do CDI segue o CDI.
 
 O valor atual é o **líquido se resgatasse hoje**, e o dia conta no fuso brasileiro. Dois impostos
 saem do rendimento, nesta ordem:
@@ -761,6 +766,24 @@ No comparador o prazo é de meses inteiros, então o IOF só aparece na posiçã
 
 A curva de CDI é extrapolada da taxa de hoje (`cdi_basis`), então é **referência, não acumulado
 histórico** — e o rótulo de fonte viaja até a tela.
+
+---
+
+## Proventos recebidos
+
+`services/dividends_service.py`. A média mensal divide o que caiu nos últimos 12 meses pelo tempo
+de carteira dentro do período, não pelos meses em que houve crédito:
+
+```
+início = máx(mín(primeiro lançamento do razão, primeiro crédito), hoje − 365 dias)
+meses  = (hoje − início) em dias × 12 ÷ 365, limitado entre 1 e 12
+média  = recebido nos 12 meses ÷ meses
+```
+
+Quem recebe duas vezes por ano vê a renda espalhada pelos doze meses, não por dois. Quem tem carteira
+há dois meses tem a média sobre dois, e o mês corrente conta pelo que passou dele, não inteiro.
+Crédito com data futura não zera o divisor: o mínimo é um mês. "Por ativo" soma todo o histórico
+registrado, sem corte de 12 meses.
 
 ---
 

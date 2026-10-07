@@ -1,3 +1,5 @@
+import pytest
+
 from app.analysis.renda_fixa_analysis import analyze_one
 from app.models.enums import Liquidez, RendaFixaType, TaxType
 from app.models.renda_fixa import RendaFixaAsset
@@ -93,6 +95,27 @@ def test_ipca_plus_composes_inflation_with_the_real_rate():
     esperado = round(((1.05 * 1.06) - 1) * 100, 2)
     assert result.taxa_anual_efetiva_pct == esperado
     assert result.taxa_anual_efetiva_pct > 6.0
+
+
+def test_tesouro_selic_composes_the_selic_with_the_premium():
+    result = analyze_one(
+        _asset(tipo=RendaFixaType.tesouro_selic, taxa=0.1, tipo_taxa=TaxType.pre_fixado),
+        selic_anual=10.0,
+    )
+    assert result.taxa_anual_efetiva_pct == pytest.approx(10.11, abs=0.01), (
+        "Tesouro Selic rende a Selic mais o ágio; a taxa do título sozinha (0,1%) não é o rendimento"
+    )
+
+
+def test_tesouro_selic_with_the_whole_rate_keeps_reading_it_as_the_annual_rate():
+    result = analyze_one(
+        _asset(tipo=RendaFixaType.tesouro_selic, taxa=13.0, tipo_taxa=TaxType.pre_fixado),
+        selic_anual=10.0,
+    )
+    assert result.taxa_anual_efetiva_pct == pytest.approx(13.0, abs=0.01), (
+        "Acima de 5% a taxa não é ágio: é a taxa anual que a pessoa gravou antes de o app pedir o "
+        "ágio, e compô-la com a Selic dobraria o rendimento"
+    )
 
 
 def test_hibrido_also_composes_inflation():

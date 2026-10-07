@@ -22,6 +22,9 @@ Color fiInk3Of(Brightness brightness) =>
 
 const double appRadius = FiRadius.md;
 
+double fiTrailingCap(BuildContext context, [double fraction = 0.45]) =>
+    (MediaQuery.maybeSizeOf(context)?.width ?? double.infinity) * fraction;
+
 TextStyle fiSerif(TextStyle base) => GoogleFonts.sourceSerif4(textStyle: base);
 
 TextStyle fiSans(TextStyle base) => GoogleFonts.ibmPlexSans(textStyle: base);
@@ -125,7 +128,7 @@ ThemeData buildAppTheme(Brightness brightness) {
           textStyle: TextStyle(
             fontSize: 11,
             height: 1.3,
-            letterSpacing: 0.2,
+            letterSpacing: 0,
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w600
                 : FontWeight.w400,
@@ -216,19 +219,29 @@ ThemeData buildAppTheme(Brightness brightness) {
       ),
       actionTextColor: isDark ? FiColors.darkBrand : FiColors.lightBrandLight,
       behavior: SnackBarBehavior.floating,
+      insetPadding: const EdgeInsets.fromLTRB(
+        FiLayout.gutter,
+        FiSpace.s1,
+        FiLayout.gutter,
+        FiSpace.s16 + FiSpace.s2,
+      ),
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FiRadius.md)),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: brand,
       foregroundColor: inkOnBrand,
-      elevation: 2,
-      focusElevation: 2,
-      hoverElevation: 2,
-      highlightElevation: 2,
+      elevation: 0,
+      focusElevation: 0,
+      hoverElevation: 0,
+      highlightElevation: 0,
+      disabledElevation: 0,
       extendedTextStyle: fiSans(FiType.action),
       extendedPadding: const EdgeInsets.symmetric(horizontal: FiSpace.s5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FiRadius.md)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(FiRadius.md),
+        side: BorderSide(color: ground0, width: 2),
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(

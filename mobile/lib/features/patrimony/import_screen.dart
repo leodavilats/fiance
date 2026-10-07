@@ -11,6 +11,7 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/controls.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/feedback.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/tag.dart';
 
@@ -69,29 +70,36 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
 
   Future<void> _commit() async {
     setState(() => _committing = true);
-    try {
-      final result = await ref
-          .read(apiRepositoryProvider)
-          .commitImport(_content.text, includeDuplicates: _includeDuplicates);
-      if (!mounted) return;
-      invalidateLedgerReaders(ref);
-      final ficaram = result.skippedDuplicates == 0
-          ? ''
-          : ' ${result.skippedDuplicates} repetida(s) ficaram de fora.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${result.imported} operação(ões) importada(s).$ficaram')),
-      );
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go('/patrimonio/razao');
-      }
-    } catch (e) {
-      if (!mounted) return;
+    ImportResult? result;
+    final ok = await fiAttempt(
+      context,
+      () async {
+        result = await ref
+            .read(apiRepositoryProvider)
+            .commitImport(_content.text, includeDuplicates: _includeDuplicates);
+      },
+      action: 'importar as operações',
+    );
+    if (!mounted) return;
+    final r = result;
+    if (!ok || r == null) {
       setState(() => _committing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(fiErrorMessage(e, action: 'importar as operações'))),
-      );
+      return;
+    }
+    invalidateLedgerReaders(ref);
+    final importadas = r.imported == 1
+        ? '1 operação importada'
+        : '${r.imported} operações importadas';
+    final ficaram = r.skippedDuplicates == 0
+        ? ''
+        : r.skippedDuplicates == 1
+        ? ' 1 repetida ficou de fora.'
+        : ' ${r.skippedDuplicates} repetidas ficaram de fora.';
+    fiNotify(context, '$importadas.$ficaram');
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/patrimonio/razao');
     }
   }
 
@@ -255,8 +263,6 @@ class _Review extends StatelessWidget {
                 style: FiType.caption.copyWith(color: fiInk3(context)),
               ),
             ],
-            const SizedBox(height: FiSpace.s4),
-            for (final row in preview.rows) _ImportRowObject(row: row),
           ],
           const SizedBox(height: FiSpace.s4),
           FiButton.primary(
@@ -269,6 +275,14 @@ class _Review extends StatelessWidget {
             busy: committing,
             onPressed: bloqueada || committing ? null : onCommit,
           ),
+          if (preview.rows.isNotEmpty)
+            FiSection(
+              title: 'Operações lidas',
+              count: preview.rows.length,
+              child: FiRows(
+                children: [for (final row in preview.rows) _ImportRowLine(row: row)],
+              ),
+            ),
         ],
       ),
     );
@@ -282,45 +296,38 @@ class _Review extends StatelessWidget {
   }
 }
 
-class _ImportRowObject extends StatelessWidget {
-  const _ImportRowObject({required this.row});
+class _ImportRowLine extends StatelessWidget {
+  const _ImportRowLine({required this.row});
 
   final ImportRow row;
 
   @override
   Widget build(BuildContext context) {
     final e = row.entry;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: FiSpace.s2),
-      child: FiObject(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(e.symbol, style: FiType.title.copyWith(color: fiInk1(context))),
-                ),
-                if (row.isDuplicate) ...[
-                  const FiTag(label: 'Já no razão', state: FiState.attention),
-                  const SizedBox(width: FiSpace.s2),
-                ],
-                FiTag.series(label: ledgerKindLabel(e.kind), color: fiInk2(context)),
-              ],
-            ),
-            FiRows(
-              children: [
-                FiDataRow(label: 'Linha', value: '${row.line}'),
-                FiDataRow(label: 'Data', value: formatDate(e.tradedOn)),
-                if (e.hasQuantity)
-                  FiDataRow(label: 'Quantidade', value: formatQuantity(e.quantity)),
-                if (e.hasPrice) FiDataRow(label: 'Preço', value: formatCurrency(e.price)),
-                if (e.fees > 0) FiDataRow(label: 'Custos', value: formatCurrency(e.fees)),
-              ],
-            ),
-          ],
+    final linha = FiDataRow(
+      label: '${e.symbol} · ${ledgerKindLabel(e.kind)}',
+      value: e.hasPrice ? formatCurrency(e.grossValue) : null,
+      detail: [
+        formatDate(e.tradedOn),
+        if (e.hasQuantity && e.hasPrice)
+          '${formatQuantity(e.quantity)} × ${formatCurrency(e.price)}'
+        else if (e.hasQuantity)
+          '${formatQuantity(e.quantity)} un.',
+        if (e.fees > 0) 'custos ${formatCurrency(e.fees)}',
+        'linha ${row.line}',
+      ].join(' · '),
+    );
+    if (!row.isDuplicate) return linha;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        linha,
+        const Padding(
+          padding: EdgeInsets.only(bottom: FiSpace.s3),
+          child: FiTag(label: 'Já no razão', state: FiState.attention),
         ),
-      ),
+      ],
     );
   }
 }

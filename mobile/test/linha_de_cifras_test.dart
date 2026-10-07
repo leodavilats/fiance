@@ -23,10 +23,12 @@ void main() {
     'data_completeness': 1.0,
   });
 
-  Future<void> montar(WidgetTester tester, double largura) async {
+  Future<void> montar(WidgetTester tester, double largura, {double escala = 1}) async {
     tester.view.physicalSize = Size(largura, 900);
     tester.view.devicePixelRatio = 1.0;
+    tester.platformDispatcher.textScaleFactorTestValue = escala;
     addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -76,6 +78,24 @@ void main() {
       );
     });
   }
+
+  testWidgets('com fonte grande em tela estreita, as cifras vão para duas linhas', (
+    tester,
+  ) async {
+    await montar(tester, 320, escala: 2);
+
+    final topo = toposExatos(tester, ['PREÇO', 'JUSTO']);
+    final baixo = toposExatos(tester, ['MARGEM', 'DY']);
+    expect(topo.length, 1, reason: 'preço e preço justo dividem a primeira linha');
+    expect(baixo.length, 1, reason: 'margem e dividendos dividem a segunda linha');
+    expect(
+      baixo.single,
+      greaterThan(topo.single),
+      reason: 'quatro colunas em 320dp com o dobro da fonte encolheriam o preço até a metade '
+          'do tamanho que a pessoa pediu',
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('a margem de segurança é razão, e sai em percentual', (tester) async {
     await montar(tester, 390);

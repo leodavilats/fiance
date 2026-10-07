@@ -50,10 +50,12 @@ String fiErrorMessage(Object error, {String? action}) {
     if (detail is Map && detail['detail'] is String) {
       return detail['detail'] as String;
     }
+    if (status == 400 || status == 422) {
+      return 'O que foi enviado não foi aceito. Confira os campos e tente de novo.';
+    }
   }
 
-  return 'Não conseguimos $what agora. Pode ser a conexão ou uma instabilidade na '
-      'fonte de cotações.';
+  return 'Não conseguimos $what agora. Pode ser a conexão ou uma instabilidade do serviço.';
 }
 
 class FiErrorState extends StatelessWidget {
@@ -85,7 +87,7 @@ class FiErrorState extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title ?? 'Algo não carregou',
+            title ?? (action != null ? 'Não conseguimos $action' : 'Algo não carregou'),
             style: fiSerif(FiType.verdict).copyWith(
               color: fiStateColor(FiState.attention, Theme.of(context).brightness),
             ),

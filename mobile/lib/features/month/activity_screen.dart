@@ -31,7 +31,8 @@ class ActivityScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(whatsNewProvider),
           ),
           data: (data) {
-            if (data.items.isEmpty) {
+            final itens = data.items.where((i) => i.kind != 'empty').toList();
+            if (itens.isEmpty) {
               return ListView(
                 children: const [
                   FiEmptyState(
@@ -57,7 +58,7 @@ class ActivityScreen extends ConsumerWidget {
                   style: FiType.body.copyWith(color: fiInk2(context)),
                 ),
                 const SizedBox(height: FiSpace.s5),
-                ...data.items.map((item) => FiWhatsNewTile(item: item)),
+                ...itens.map((item) => FiWhatsNewTile(item: item)),
               ],
             );
           },

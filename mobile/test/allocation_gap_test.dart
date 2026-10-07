@@ -78,6 +78,31 @@ void main() {
       expect(fiErrorMessage(domain), 'Quantidade maior que a posição.');
     });
 
+    test('recusa de validação aponta os campos, não a rede', () {
+      final recusa = DioException(
+        requestOptions: RequestOptions(),
+        response: Response(
+          requestOptions: RequestOptions(),
+          statusCode: 422,
+          data: {
+            'detail': [
+              {
+                'loc': ['body', 'amount'],
+                'msg': 'Input should be greater than 0',
+              },
+            ],
+          },
+        ),
+      );
+      final message = fiErrorMessage(recusa, action: 'salvar');
+      expect(
+        message,
+        'O que foi enviado não foi aceito. Confira os campos e tente de novo.',
+        reason: 'um 422 com detail em lista é recusa do que a pessoa digitou, não falha de conexão',
+      );
+      expect(message, isNot(contains('Input')), reason: 'a mensagem crua do Pydantic não chega à tela');
+    });
+
     test('nunca vaza a exceção crua', () {
       final message = fiErrorMessage(StateError('boom interno'), action: 'salvar');
       expect(message, isNot(contains('boom interno')));

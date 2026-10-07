@@ -98,6 +98,7 @@ class FixedIncomeService:
             taxa_media_aa=round(taxa_media, 2),
             cdi_referencia=rates["cdi_anual"],
             fonte_taxas=rates["source"],
+            taxas_lidas_em=rates.get("fetched_at"),
         )
 
     def create(self, req: FixedIncomeCreateRequest) -> FixedIncomePosition:

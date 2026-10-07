@@ -29,20 +29,24 @@ class FiProvenance extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(summary, style: FiType.title),
-              const SizedBox(height: FiSpace.s4),
-              _Field(label: 'Método', value: method),
-              _Field(label: 'Fonte', value: source),
-              _Field(label: 'Momento', value: asOf),
-              _Field(label: 'Limitação', value: limitation),
-            ],
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(FiSpace.s5, 0, FiSpace.s5, FiSpace.s6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(summary, style: FiType.title),
+                const SizedBox(height: FiSpace.s4),
+                _Field(label: 'Método', value: method),
+                _Field(label: 'Fonte', value: source),
+                _Field(label: 'Momento', value: asOf),
+                _Field(label: 'Limitação', value: limitation),
+              ],
+            ),
           ),
         ),
       ),

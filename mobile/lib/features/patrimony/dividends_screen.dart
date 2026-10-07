@@ -33,36 +33,37 @@ Future<void> openDividendForm(BuildContext context, WidgetRef ref) async {
   );
 
   if (salvo == true) {
-    ref.invalidate(dividendsProvider);
-    ref.invalidate(pendingDividendsProvider);
-    ref.invalidate(dashboardProvider);
+    invalidateLedgerReaders(ref);
     if (context.mounted) fiNotify(context, 'Provento registrado. Ele já conta na renda do mês.');
   }
 }
 
+Future<bool> deleteDividend(
+  BuildContext context,
+  WidgetRef ref,
+  DividendReceived item,
+) async {
+  final confirmado = await fiConfirm(
+    context,
+    title: 'Apagar provento de ${item.ticker}?',
+    body: 'O valor sai do histórico e da renda do mês em que foi creditado.',
+    confirmLabel: 'Apagar',
+  );
+  if (!confirmado || !context.mounted) return false;
+
+  final apagado = await fiAttempt(
+    context,
+    () => ref.read(apiRepositoryProvider).deleteDividendReceived(item.id),
+    action: 'apagar este provento',
+    success: 'Provento apagado.',
+  );
+  if (!apagado) return false;
+  invalidateLedgerReaders(ref);
+  return true;
+}
+
 class DividendsScreen extends ConsumerWidget {
   const DividendsScreen({super.key});
-
-  Future<void> _delete(BuildContext context, WidgetRef ref, DividendReceived item) async {
-    final confirmado = await fiConfirm(
-      context,
-      title: 'Apagar provento de ${item.ticker}?',
-      body: 'O valor sai do histórico e da renda do mês em que foi creditado.',
-      confirmLabel: 'Apagar',
-    );
-    if (!confirmado || !context.mounted) return;
-
-    final apagado = await fiAttempt(
-      context,
-      () => ref.read(apiRepositoryProvider).deleteDividendReceived(item.id),
-      action: 'apagar este provento',
-      success: 'Provento apagado.',
-    );
-    if (!apagado) return;
-    ref.invalidate(dividendsProvider);
-    ref.invalidate(pendingDividendsProvider);
-    ref.invalidate(dashboardProvider);
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -90,20 +91,15 @@ class DividendsScreen extends ConsumerWidget {
           data: (data) {
             if (data.items.isEmpty) {
               return ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  FiLayout.gutter,
-                  FiSpace.s3,
-                  FiLayout.gutter,
-                  FiLayout.scrollTail,
-                ),
+                padding: const EdgeInsets.only(bottom: FiLayout.scrollTail),
                 children: [
                   FiEmptyState(
                     title: 'Nenhum provento registrado',
                     body: 'Provento creditado é lançamento do razão, e é ele que alimenta a '
                         'renda do mês. Não se lança no caixa: contaria o mesmo dinheiro duas '
                         'vezes.',
-                    hint: 'Registre o que já caiu na conta, ou confirme abaixo o que o seu '
-                        'razão já prova que é seu.',
+                    hint: 'Registre o que já caiu na conta. Quando o seu razão provar que um '
+                        'provento é seu, ele aparece aqui para você só confirmar.',
                     action: FiButton.primary(
                       label: 'Registrar provento',
                       icon: Icons.add,
@@ -111,8 +107,14 @@ class DividendsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: FiSpace.s5),
-                  const _AwaitingConfirmation(),
-                  const _Calendar(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: FiLayout.gutter),
+                    child: _AwaitingConfirmation(),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: FiLayout.gutter),
+                    child: _Calendar(),
+                  ),
                 ],
               );
             }
@@ -141,15 +143,20 @@ class DividendsScreen extends ConsumerWidget {
                       for (final item in data.items)
                         _DividendRow(
                           item: item,
-                          onDelete: () => _delete(context, ref, item),
+                          onDelete: () => deleteDividend(context, ref, item),
                         ),
                     ],
                   ),
                 ),
+                if (data.hasMore && data.nextCursor != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: FiSpace.s3),
+                    child: _OlderDividends(key: ObjectKey(data), cursor: data.nextCursor!),
+                  ),
                 if (data.byTicker.isNotEmpty)
                   FiSection(
                     title: 'Por ativo',
-                    hint: 'Quem paga quanto, nos últimos 12 meses.',
+                    hint: 'Quanto cada ativo já pagou, somando tudo o que foi registrado.',
                     child: FiRows(
                       children: [
                         for (final t in data.byTicker.take(12))
@@ -196,8 +203,9 @@ class _Totals extends StatelessWidget {
         const SizedBox(height: FiSpace.s3),
         const FiProvenance(
           summary: 'De onde vem este número',
-          method: 'Soma dos proventos que você registrou, por mês de crédito. A média é dos '
-              'últimos 12 meses corridos.',
+          method: 'Soma dos proventos que você registrou, por mês de crédito. A média divide o '
+              'que caiu nos últimos 12 meses pelo tempo de carteira, até 12 meses, contando '
+              'os meses sem crédito.',
           source: 'Seus lançamentos — registrados aqui ou confirmados a partir do calendário '
               'da fonte.',
           limitation: 'Só entra o que foi registrado. Provento creditado e não lançado não '
@@ -248,6 +256,86 @@ class _DividendRow extends StatelessWidget {
   }
 }
 
+class _OlderDividends extends ConsumerStatefulWidget {
+  const _OlderDividends({super.key, required this.cursor});
+
+  final String cursor;
+
+  @override
+  ConsumerState<_OlderDividends> createState() => _OlderDividendsState();
+}
+
+class _OlderDividendsState extends ConsumerState<_OlderDividends> {
+  final List<DividendReceived> _extras = [];
+  String? _cursor;
+  bool _loading = false;
+  Object? _error;
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final page = await ref
+          .read(apiRepositoryProvider)
+          .getDividendsReceived(cursor: _cursor ?? widget.cursor);
+      if (!mounted) return;
+      setState(() {
+        _extras.addAll(page.items);
+        _cursor = page.hasMore ? page.nextCursor : null;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final temMais = _extras.isEmpty || _cursor != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final item in _extras)
+          _DividendRow(
+            item: item,
+            onDelete: () async {
+              final apagado = await deleteDividend(context, ref, item);
+              if (apagado && mounted) setState(() => _extras.remove(item));
+            },
+          ),
+        if (_error != null) ...[
+          const SizedBox(height: FiSpace.s2),
+          Text(
+            fiErrorMessage(_error!, action: 'carregar os proventos anteriores'),
+            style: FiType.caption.copyWith(
+              color: fiStateColor(FiState.adverse, Theme.of(context).brightness),
+            ),
+          ),
+        ],
+        const SizedBox(height: FiSpace.s2),
+        if (temMais)
+          FiButton.secondary(
+            label: _loading ? 'Carregando…' : 'Carregar os anteriores',
+            busy: _loading,
+            onPressed: _loading ? null : _load,
+          )
+        else
+          Text(
+            'Fim dos proventos registrados.',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
+      ],
+    );
+  }
+}
+
 class _AwaitingConfirmation extends ConsumerWidget {
   const _AwaitingConfirmation();
 
@@ -286,7 +374,7 @@ class _Calendar extends ConsumerWidget {
 
     return pendentes.when(
       loading: () => const FiSection(
-        title: 'Consultar o calendário',
+        title: 'Do calendário, por conferir',
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 1),
       ),
       error: (err, _) => FiErrorState(
@@ -301,7 +389,7 @@ class _Calendar extends ConsumerWidget {
         if (indeterminados.isEmpty) return const SizedBox.shrink();
 
         return _SuggestionList(
-          title: 'Consultar o calendário',
+          title: 'Do calendário, por conferir',
           suggestions: indeterminados,
           hint: 'Aqui o razão não prova o direito: ou a fonte não publicou a data-com, ou os '
               'seus lançamentos não alcançam aquela data. Confira contra o extrato da '
@@ -334,7 +422,8 @@ class _SuggestionListState extends ConsumerState<_SuggestionList> {
   final Set<String> _chosen = {};
   bool _confirming = false;
 
-  String _key(DividendSuggestion s) => '${s.ticker}|${s.paidAt}';
+  String _key(DividendSuggestion s) =>
+      '${s.ticker}|${s.kind}|${s.exDate ?? ''}|${s.paidAt}|${s.ratePerShare}';
 
   Future<void> _confirm() async {
     final selecionados = widget.suggestions
@@ -343,32 +432,17 @@ class _SuggestionListState extends ConsumerState<_SuggestionList> {
     if (selecionados.isEmpty) return;
 
     setState(() => _confirming = true);
+    int? criados;
     try {
-      final criados = await ref
-          .read(apiRepositoryProvider)
-          .confirmDividends(selecionados);
+      final ok = await fiAttempt(context, () async {
+        criados = await ref.read(apiRepositoryProvider).confirmDividends(selecionados);
+      }, action: 'lançar os proventos escolhidos');
+      final n = criados;
+      if (!ok || n == null) return;
       _chosen.clear();
-      ref.invalidate(dividendsProvider);
-      ref.invalidate(pendingDividendsProvider);
-      ref.invalidate(dashboardProvider);
+      invalidateLedgerReaders(ref);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '$criados ${criados == 1 ? 'provento lançado' : 'proventos lançados'}.',
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              fiErrorMessage(e, action: 'lançar os proventos escolhidos'),
-            ),
-          ),
-        );
+        fiNotify(context, '$n ${n == 1 ? 'provento lançado' : 'proventos lançados'}.');
       }
     } finally {
       if (mounted) setState(() => _confirming = false);
@@ -452,9 +526,8 @@ class _SuggestionListState extends ConsumerState<_SuggestionList> {
             '${widget.suggestions.length} '
             '${widget.suggestions.length == 1 ? 'crédito' : 'créditos'} '
             'que o razão não confirma',
-        detail: widget.suggestions.length == 1
-            ? 'Um crédito por conferir'
-            : 'Somam ${formatCurrency(total)} por conferir',
+        detail: '${widget.suggestions.length == 1 ? 'Soma' : 'Somam'} '
+            '${formatCurrency(total)}',
         initiallyOpen: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,6 +687,16 @@ class _DividendFormState extends ConsumerState<_DividendForm> {
     }
   }
 
+  Future<void> _pickDate() async {
+    final escolhida = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (escolhida != null && mounted) setState(() => _date = escolhida);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -651,26 +734,14 @@ class _DividendFormState extends ConsumerState<_DividendForm> {
                 onChanged: (v) => setState(() => _kind = v ?? 'dividendo'),
               ),
               const SizedBox(height: FiSpace.s3),
-              InputDecorator(
-                decoration: const InputDecoration(labelText: 'Data do crédito'),
-                child: InkWell(
-                  onTap: () async {
-                    final escolhida = await showDatePicker(
-                      context: context,
-                      initialDate: _date,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime.now(),
-                    );
-                    if (escolhida != null) setState(() => _date = escolhida);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: FiSpace.s1),
-                    child: Text(
-                      formatDate(_date.toIso8601String().substring(0, 10)),
-                      style: FiType.body.copyWith(color: fiInk1(context)),
-                    ),
+              FiRows(
+                children: [
+                  FiDataRow(
+                    label: 'Data do crédito',
+                    value: formatDate(_date.toIso8601String().substring(0, 10)),
+                    onTap: _saving ? null : _pickDate,
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: FiSpace.s3),
               TextFormField(

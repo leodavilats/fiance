@@ -21,7 +21,7 @@ class GoalsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Objetivos')),
+      appBar: AppBar(title: const Text('Metas')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           FiLayout.gutter,
@@ -31,9 +31,8 @@ class GoalsScreen extends StatelessWidget {
         ),
         children: [
           Text(
-            'A meta é a referência contra a qual a sua carteira é comparada. Enquanto a soma '
-            'não fechar 100%, o desvio calculado na Sobra não quer dizer nada — por isso '
-            'salvar só libera lá.',
+            'Diga quanto quer em cada tipo de investimento. A Sobra compara a sua carteira com '
+            'essa divisão, e só aponta desvio depois que você salvar uma divisão que some 100%.',
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
           const PassiveIncomeSection(),
@@ -235,6 +234,7 @@ class _Closing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fechou = (total - 100).abs() < 0.5;
+    final diferenca = 100 - total;
     final estado = !requiresFullAllocation
         ? FiState.neutral
         : (fechou ? FiState.favorable : FiState.attention);
@@ -261,7 +261,10 @@ class _Closing extends StatelessWidget {
         if (requiresFullAllocation && !fechou) ...[
           const SizedBox(height: FiSpace.s2),
           Text(
-            'Faltam ${formatDecimal((100 - total).abs(), digits: 0)} pontos para fechar 100%.',
+            diferenca > 0
+                ? 'Faltam ${formatDecimal(diferenca, digits: 0)} pontos para fechar 100%.'
+                : 'Passou ${formatDecimal(-diferenca, digits: 0)} pontos de 100%. '
+                      'Tire de alguma categoria.',
             style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
         ],
@@ -290,7 +293,11 @@ class GoalsSectionState extends ConsumerState<GoalsSection> {
       success: 'Metas por categoria salvas',
     );
     if (!mounted) return;
-    if (ok) ref.invalidate(goalsProvider);
+    if (ok) {
+      ref.invalidate(goalsProvider);
+      ref.invalidate(onboardingProvider);
+      invalidateAllocationReaders(ref);
+    }
     setState(() {
       _saving = false;
       if (ok) _editing = null;
@@ -311,8 +318,8 @@ class GoalsSectionState extends ConsumerState<GoalsSection> {
       data: (data) {
         final items = _editing ?? data;
         final total = items.fold<double>(0, (sum, g) => sum + g.targetPct);
-        final podeSalvar = _editing != null && (total - 100).abs() < 0.5;
         final padrao = data.isNotEmpty && data.every((g) => !g.declared);
+        final podeSalvar = (_editing != null || padrao) && (total - 100).abs() < 0.5;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,7 +344,7 @@ class GoalsSectionState extends ConsumerState<GoalsSection> {
               requiresFullAllocation: true,
               saving: _saving,
               onSave: podeSalvar && !_saving
-                  ? () => _save(() => ref.read(apiRepositoryProvider).saveGoals(_editing!))
+                  ? () => _save(() => ref.read(apiRepositoryProvider).saveGoals(_editing ?? data))
                   : null,
             ),
           ],
@@ -376,7 +383,10 @@ class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
       success: 'Metas por setor salvas',
     );
     if (!mounted) return;
-    if (ok) ref.invalidate(sectorGoalsProvider);
+    if (ok) {
+      ref.invalidate(sectorGoalsProvider);
+      invalidateAllocationReaders(ref);
+    }
     setState(() {
       _saving = false;
       if (ok) _editing = null;
@@ -431,9 +441,11 @@ class SectorGoalsSectionState extends ConsumerState<SectorGoalsSection> {
               total: total,
               requiresFullAllocation: false,
               saving: _saving,
-              onSave: _editing == null || _saving
+              onSave: _saving || (_editing == null && (!padrao || data.isEmpty))
                   ? null
-                  : () => _save(() => ref.read(apiRepositoryProvider).saveSectorGoals(_editing!)),
+                  : () => _save(
+                      () => ref.read(apiRepositoryProvider).saveSectorGoals(_editing ?? data),
+                    ),
             ),
           ],
         );

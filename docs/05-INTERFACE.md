@@ -122,7 +122,7 @@ poucas, ou uma tabela quando o que importa é comparar.
 |---|---|---|
 | Bloco novo | `FiSection` | O lint reprova `Card`/`ListTile` |
 | Objeto | `FiObject` | idem |
-| Ação | `FiButton` (`primary`/`secondary`/`quiet`/`danger`), uma principal por contexto | Frase solta não parece ação |
+| Ação | `FiButton` (`primary`/`secondary`/`quiet`/`danger`), uma principal por contexto. Remover dentro de um objeto é `quiet(destructive: true)`; `danger` é só a confirmação | Frase solta não parece ação; trinta molduras vermelhas pesam mais que o valor de cada posição |
 | Número contra referência | `FiMeasure`, ou `ScoreRuler` para score | A régua é a assinatura do produto |
 | Julgamento | `FiProvenance` — método, fonte, limitação | O lint reprova |
 | Número projetado | `FiRange` — piso, teto, cenário base | O lint reprova |

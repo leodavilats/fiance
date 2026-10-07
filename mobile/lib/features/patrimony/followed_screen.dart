@@ -16,6 +16,8 @@ import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
 
+String _compras(int n) => n == 1 ? '1 compra' : '$n compras';
+
 String _signed(double? pct) => pct == null ? '—' : '${pct > 0 ? '+' : ''}${formatPercent(pct)}';
 
 class FollowedScreen extends ConsumerWidget {
@@ -75,6 +77,7 @@ class _Outcome extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final ibov = data.ibovPctSamePeriod;
+    final apurado = data.totalInvested > 0;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -86,15 +89,19 @@ class _Outcome extends StatelessWidget {
       children: [
         FiHeadline(
           eyebrow: 'Resultado do que você seguiu',
-          figure: _signed(data.totalPnlPct),
+          figure: apurado ? _signed(data.totalPnlPct) : '—',
           size: FiHeadlineSize.xl,
-          support: '${data.totalPnl >= 0 ? '+' : ''}${formatCurrency(data.totalPnl)} sobre '
-              '${formatCurrency(data.totalInvested)} investidos',
+          support: apurado
+              ? '${data.totalPnl >= 0 ? '+' : ''}${formatCurrency(data.totalPnl)} sobre '
+                    '${formatCurrency(data.totalInvested)} investidos'
+              : null,
           supportColor: fiDirectionColor(data.totalPnl, brightness),
           note: ibov == null ? null : 'Ibovespa no mesmo período: ${_signed(ibov)}',
         ),
-        const SizedBox(height: FiSpace.s3),
-        Text(data.summary, style: FiType.body.copyWith(color: fiInk2(context))),
+        if (!apurado) ...[
+          const SizedBox(height: FiSpace.s3),
+          Text(data.summary, style: FiType.body.copyWith(color: fiInk2(context))),
+        ],
         const SizedBox(height: FiSpace.s2),
         const FiProvenance(
           summary: 'Como o resultado é apurado',
@@ -116,8 +123,8 @@ class _Outcome extends StatelessWidget {
                     value: _signed(g.pnlPct),
                     valueColor: fiDirectionColor(g.pnlPct, brightness),
                     detail: g.ibovPct == null
-                        ? '${g.count} compra(s)'
-                        : '${g.count} compra(s) · Ibovespa ${_signed(g.ibovPct)}',
+                        ? _compras(g.count)
+                        : '${_compras(g.count)} · Ibovespa ${_signed(g.ibovPct)}',
                   ),
               ],
             ),
@@ -126,21 +133,32 @@ class _Outcome extends StatelessWidget {
           title: 'Compras',
           count: data.totalCount,
           child: Column(
-            children: [for (final item in data.items) _FollowedObject(item: item)],
+            children: [
+              for (final item in data.items) _FollowedObject(key: ValueKey(item.id), item: item),
+            ],
           ),
         ),
-        if (data.hasMore && data.nextCursor != null) _MoreFollowed(cursor: data.nextCursor!),
+        if (data.hasMore && data.nextCursor != null)
+          _MoreFollowed(key: ObjectKey(data), cursor: data.nextCursor!),
       ],
     );
   }
 }
 
-class _FollowedObject extends ConsumerWidget {
-  const _FollowedObject({required this.item});
+class _FollowedObject extends ConsumerStatefulWidget {
+  const _FollowedObject({super.key, required this.item});
 
   final FollowedSuggestion item;
 
-  Future<void> _stop(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<_FollowedObject> createState() => _FollowedObjectState();
+}
+
+class _FollowedObjectState extends ConsumerState<_FollowedObject> {
+  bool _stopping = false;
+
+  Future<void> _stop() async {
+    final item = widget.item;
     final confirmado = await fiConfirm(
       context,
       title: 'Deixar de acompanhar ${item.ticker}?',
@@ -148,22 +166,22 @@ class _FollowedObject extends ConsumerWidget {
           'sugestões seguidas.',
       confirmLabel: 'Deixar de acompanhar',
     );
-    if (!confirmado) return;
+    if (!confirmado || !mounted) return;
 
-    try {
-      await ref.read(apiRepositoryProvider).deleteFollowedSuggestion(item.id);
-      ref.invalidate(followedSuggestionsProvider);
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(fiErrorMessage(e, action: 'deixar de acompanhar esta compra'))),
-        );
-      }
-    }
+    setState(() => _stopping = true);
+    final ok = await fiAttempt(
+      context,
+      () => ref.read(apiRepositoryProvider).deleteFollowedSuggestion(item.id),
+      action: 'deixar de acompanhar esta compra',
+      success: '${item.ticker} saiu do resultado. A compra continua no razão.',
+    );
+    if (ok) ref.invalidate(followedSuggestionsProvider);
+    if (mounted) setState(() => _stopping = false);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final item = widget.item;
     final brightness = Theme.of(context).brightness;
     final pnl = item.pnlPct;
 
@@ -178,12 +196,10 @@ class _FollowedObject extends ConsumerWidget {
                 Expanded(
                   child: Text(item.ticker, style: FiType.title.copyWith(color: fiInk1(context))),
                 ),
-                FiTag.series(
-                  label: item.action == 'vender' ? 'Venda' : 'Compra',
-                  color: fiInk2(context),
-                ),
+                if (item.action == 'vender')
+                  FiTag.series(label: 'Venda', color: fiInk2(context)),
                 IconButton(
-                  onPressed: () => _stop(context, ref),
+                  onPressed: _stopping ? null : _stop,
                   icon: const Icon(Icons.visibility_off_outlined),
                   tooltip: 'Deixar de acompanhar',
                   iconSize: 20,
@@ -218,6 +234,7 @@ class _FollowedObject extends ConsumerWidget {
                 if (item.scoreAtSuggestion != null)
                   FiDataRow(
                     label: 'Score quando comprou',
+                    glossaryKey: 'score',
                     value: formatDecimal(item.scoreAtSuggestion, digits: 0),
                   ),
               ],
@@ -230,7 +247,7 @@ class _FollowedObject extends ConsumerWidget {
 }
 
 class _MoreFollowed extends ConsumerStatefulWidget {
-  const _MoreFollowed({required this.cursor});
+  const _MoreFollowed({super.key, required this.cursor});
 
   final String cursor;
 
@@ -275,7 +292,7 @@ class _MoreFollowedState extends ConsumerState<_MoreFollowed> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final item in _extras) _FollowedObject(item: item),
+        for (final item in _extras) _FollowedObject(key: ValueKey(item.id), item: item),
         if (_error != null)
           Text(
             fiErrorMessage(_error!, action: 'carregar as compras anteriores'),

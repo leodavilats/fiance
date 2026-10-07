@@ -9,6 +9,7 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/measure.dart';
+import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 
 class IncomeCompareView extends ConsumerStatefulWidget {
@@ -20,6 +21,7 @@ class IncomeCompareView extends ConsumerStatefulWidget {
 
 class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
   final _amountCtrl = TextEditingController(text: '10000');
+  final _resultKey = GlobalKey();
   int _horizonMonths = 12;
 
   IncomeCompare? _result;
@@ -50,17 +52,34 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
       final res = await ref
           .read(apiRepositoryProvider)
           .incomeCompare(amount: amount, horizonMonths: _horizonMonths);
-      if (mounted) setState(() => _result = res);
+      if (!mounted) return;
+      setState(() => _result = res);
+      _revelar();
     } catch (err) {
-      if (mounted) {
-        setState(() {
-          _result = null;
-          _error = err;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _result = null;
+        _error = err;
+      });
+      _revelar();
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _revelar() {
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final alvo = _resultKey.currentContext;
+      if (alvo == null || !mounted) return;
+      final reduzido = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+      Scrollable.ensureVisible(
+        alvo,
+        duration: reduzido ? Duration.zero : FiMotion.slow,
+        curve: FiMotion.easeEnter,
+        alignment: 0.05,
+      );
+    });
   }
 
   @override
@@ -114,7 +133,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
         ),
 
         if (erro != null) ...[
-          const SizedBox(height: FiSpace.s4),
+          KeyedSubtree(key: _resultKey, child: const SizedBox(height: FiSpace.s4)),
           FiErrorState(
             error: erro,
             title: 'A comparação não saiu',
@@ -138,7 +157,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
     final cap = (maior > r.cdiAnnual ? maior : r.cdiAnnual) * 1.15 + 0.5;
 
     return [
-      const SizedBox(height: FiSpace.s6),
+      KeyedSubtree(key: _resultKey, child: const SizedBox(height: FiSpace.s6)),
       if (r.verdict.isNotEmpty) ...[
         Text(
           r.verdict,
@@ -175,6 +194,16 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
           ),
         ),
 
+      const SizedBox(height: FiSpace.s4),
+      const FiProvenance(
+        summary: 'Como comparamos',
+        method: 'Na renda fixa, a taxa de ofertas de referência no prazo escolhido e a dos títulos '
+            'da sua carteira, já descontado o imposto de renda. Na bolsa, os proventos dos '
+            'últimos 12 meses sobre o preço de hoje, entre os ativos que mais distribuíram na '
+            'lista varrida.',
+        source: 'CDI do Banco Central; cotações e proventos da BRAPI.',
+        limitation: 'Provento passado não garante o próximo, e o preço na bolsa oscila.',
+      ),
       const SizedBox(height: FiSpace.s6),
       Text(r.disclaimer, style: FiType.caption.copyWith(color: ink3)),
     ];

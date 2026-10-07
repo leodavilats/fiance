@@ -283,9 +283,9 @@ class QuickInvestService:
 
         alvo = metas.get(RENDA_FIXA)
         razao = (
-            f"Sua alocação-alvo pede {alvo:.0f}% em renda fixa"
+            f"Sua meta de alocação pede {alvo:.0f}% em renda fixa"
             if alvo
-            else "Sua alocação-alvo pede renda fixa"
+            else "Sua meta de alocação pede renda fixa"
         )
         if mensal is not None:
             razao += f", e a referência rende {numero(mensal)}% ao mês"
@@ -372,10 +372,9 @@ class QuickInvestService:
 
         frase = "Esta ordem cobre " + " e ".join(partes) + "."
         frase += (
-            " A distribuição sai da sua alocação-alvo."
+            " A distribuição sai da sua meta de alocação."
             if base == "goals"
-            else " Sem alocação-alvo declarada, a ordem é por score — declare suas metas para a"
-            " distribuição respeitar o que você quer construir."
+            else " Sem meta de alocação declarada, a ordem é pelo score."
         )
         if sem_destino:
             frase += " Parte do valor ficou sem destino, e o motivo vem junto."

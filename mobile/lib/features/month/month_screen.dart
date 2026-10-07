@@ -23,9 +23,6 @@ import 'cash_refresh.dart';
 import 'month_template_sheet.dart';
 import '../../core/widgets/disclosure.dart';
 
-String _capitalized(String texto) =>
-    texto.isEmpty ? texto : '${texto[0].toUpperCase()}${texto.substring(1)}';
-
 class MonthScreen extends ConsumerWidget {
   const MonthScreen({super.key});
 
@@ -35,6 +32,11 @@ class MonthScreen extends ConsumerWidget {
     final mesAsync = ref.watch(cashMonthProvider);
     final entries = ref.watch(cashEntriesProvider);
     final debts = ref.watch(debtsProvider);
+
+    final lista = entries.valueOrNull;
+    final vazio = lista != null && (lista.isEmpty || lista.every((e) => e.derived));
+    final lido = [mesAsync, entries, debts].every((a) => a.hasValue && !a.hasError);
+    final mostraLancar = lido && !vazio;
 
     Widget carregando() => FiSkeleton.page(
       sections: const [2, 4],
@@ -57,11 +59,13 @@ class MonthScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => openCashEntrySheet(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Lançar'),
-      ),
+      floatingActionButton: mostraLancar
+          ? FloatingActionButton.extended(
+              onPressed: () => openCashEntrySheet(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Lançar'),
+            )
+          : null,
       body: mesAsync.when(
         loading: carregando,
         error: (e, _) => FiErrorState(
@@ -87,7 +91,7 @@ class MonthScreen extends ConsumerWidget {
               cashMonth: m,
               entries: lista,
               debts: dividas,
-              isCurrentMonth: cashMonth == currentMonth(),
+              monthOffset: cashMonth.compareTo(currentMonth()),
               onPickMonth: () => _pickMonth(context, ref, lista),
             ),
           ),
@@ -130,7 +134,7 @@ class MonthScreen extends ConsumerWidget {
               children: [
                 for (final m in ordenados)
                   FiDataRow(
-                    label: _capitalized(monthName(m)),
+                    label: monthTitle(m),
                     value: m == current ? 'em leitura' : null,
                     valueColor: m == current ? fiInk3(context) : null,
                     onTap: () => Navigator.of(context).pop(m),
@@ -153,21 +157,23 @@ class _Body extends ConsumerWidget {
     required this.cashMonth,
     required this.entries,
     required this.debts,
-    required this.isCurrentMonth,
+    required this.monthOffset,
     required this.onPickMonth,
   });
 
   final CashMonth cashMonth;
   final List<CashEntry> entries;
   final List<Debt> debts;
-  final bool isCurrentMonth;
+  final int monthOffset;
   final VoidCallback onPickMonth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final semLancamento = entries.isNotEmpty && entries.every((e) => e.derived);
     if (entries.isEmpty || semLancamento) {
-      return _EmptyMonth(onAddEntry: () => openCashEntrySheet(context, ref));
+      return _EmptyMonth(
+        onAddEntry: () => openCashEntrySheet(context, ref, initialKind: CashKind.income),
+      );
     }
 
     final caras = debts.where((d) => d.debtClass == DebtClass.expensive).toList();
@@ -194,7 +200,7 @@ class _Body extends ConsumerWidget {
         children: [
           _MonthHeader(month: cashMonth.month, onPickMonth: onPickMonth),
           const SizedBox(height: FiSpace.s3),
-          _Verdict(verdict: v, cashMonth: cashMonth, isCurrentMonth: isCurrentMonth),
+          _Verdict(verdict: v, cashMonth: cashMonth, monthOffset: monthOffset),
 
           if (caras.isNotEmpty)
             FiSection(
@@ -258,7 +264,7 @@ class _MonthHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final marca = Theme.of(context).colorScheme.primary;
-    final nome = _capitalized(monthName(month));
+    final nome = monthTitle(month);
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -295,12 +301,12 @@ class _Verdict extends StatelessWidget {
   const _Verdict({
     required this.verdict,
     required this.cashMonth,
-    required this.isCurrentMonth,
+    required this.monthOffset,
   });
 
   final MonthVerdict verdict;
   final CashMonth cashMonth;
-  final bool isCurrentMonth;
+  final int monthOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -325,7 +331,7 @@ class _Verdict extends StatelessWidget {
           summary: 'Como lemos seu mês',
           method:
               'Compara o que já está comprometido com o que entrou, na régua de pressão do mês.',
-          source: 'Seus lançamentos de caixa, mais os proventos derivados do seu razão.',
+          source: 'Seus lançamentos de caixa, mais os proventos da sua carteira.',
           limitation:
               'A leitura é do mês escolhido. Dívida sem taxa informada não entra na classe de '
               'dívida cara.',
@@ -333,9 +339,11 @@ class _Verdict extends StatelessWidget {
 
         const SizedBox(height: FiSpace.s4),
         FiHeadline(
-          eyebrow: isCurrentMonth
+          eyebrow: monthOffset == 0
               ? 'Livre agora'
-              : 'Sobrou em ${monthName(cashMonth.month)}',
+              : monthOffset < 0
+              ? 'Sobrou em ${monthName(cashMonth.month)}'
+              : 'Livre em ${monthName(cashMonth.month)}, pelo que está lançado',
           figure: formatCurrency(cashMonth.freeNow),
         ),
 
@@ -374,8 +382,12 @@ class _ToSurplus extends StatelessWidget {
           const SizedBox(height: FiSpace.s4),
           Text(
             cashMonth.hasRange
-                ? 'Descontando o que ainda deve sair, a sobra parte de '
-                      '${formatCurrency(cashMonth.surplusLow)}.'
+                ? (cashMonth.surplusLow == cashMonth.surplusHigh
+                      ? 'Descontando o que ainda deve sair, a sobra estimada é '
+                            '${formatCurrency(cashMonth.surplusLow)}.'
+                      : 'Descontando o que ainda deve sair, a sobra deve ficar entre '
+                            '${formatCurrency(cashMonth.surplusLow)} e '
+                            '${formatCurrency(cashMonth.surplusHigh)}.')
                 : 'Sem mês fechado ainda não há como estimar o que falta sair, então a sobra '
                       'é o próprio livre.',
             style: FiType.body.copyWith(color: fiInk2(context)),
@@ -411,7 +423,7 @@ class _DebtRow extends StatelessWidget {
           ),
           if (debt.flipRate != null)
             Text(
-              'Vira administrável a ${formatPercent(debt.flipRate)} ao mês.',
+              'Deixa de ser cara com taxa de até ${formatPercent(debt.flipRate)} ao mês.',
               style: FiType.caption.copyWith(color: fiInk3(context)),
             ),
         ],
@@ -515,7 +527,7 @@ class _MonthRow extends ConsumerWidget {
       leading: _Day(day: dayOf(entry.accrualOn)),
       title: entry.description,
       detail: entry.isFuture || entry.derived
-          ? (entry.derived ? 'do seu razão' : (entrada ? 'a receber' : 'a vencer'))
+          ? (entry.derived ? 'provento da carteira' : (entrada ? 'a receber' : 'a vencer'))
           : null,
       value: '${entrada ? '+' : '−'}${formatCurrency(entry.amount)}',
       valueColor: cor,
@@ -529,7 +541,7 @@ class _MonthRow extends ConsumerWidget {
             ),
             if (entry.derived)
               Text(
-                'vem do razão',
+                'vem da sua carteira',
                 style: FiType.caption.copyWith(color: fiInk3(context)),
               )
             else
@@ -558,7 +570,7 @@ class _EmptyMonth extends StatelessWidget {
               'maiores gastos fixos. Com isso a sobra do mês já sai, e ela é o que decide o '
               'próximo aporte.',
           action: FiButton.primary(
-            label: 'Lançar o primeiro mês',
+            label: 'Lançar o que você recebe',
             icon: Icons.add,
             onPressed: onAddEntry,
           ),

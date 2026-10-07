@@ -38,34 +38,51 @@ class PatrimonyScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(dashboardProvider);
           ref.invalidate(fixedIncomeProvider);
+          ref.invalidate(closedTradesProvider);
+          ref.invalidate(dividendsProvider);
+          ref.invalidate(ledgerProvider);
+          ref.invalidate(benchmarkProvider);
         },
         child: dashboard.when(
           loading: () => FiSkeleton.page(
             sections: const [2, 4, 3],
             label: 'Carregando sua carteira',
           ),
-          error: (err, _) => FiErrorState(
-            error: err,
-            title: 'Não conseguimos carregar sua carteira',
-            action: 'carregar sua carteira',
-            onRetry: () => ref.invalidate(dashboardProvider),
+          error: (err, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              FiErrorState(
+                error: err,
+                title: 'Não conseguimos carregar sua carteira',
+                action: 'carregar sua carteira',
+                onRetry: () => ref.invalidate(dashboardProvider),
+              ),
+            ],
           ),
           data: (data) {
             if (data.positions.isEmpty) {
-              return FiEmptyState(
-                title: 'Sua carteira ainda está vazia',
-                body: 'A carteira é a base de tudo: sem ela o fiance não tem o que avaliar, '
-                    'comparar com meta ou usar para sugerir aporte.',
-                hint: 'Cadastre o que você já tem — ticker, quantidade e preço médio.',
-                action: FiButton.primary(
-                  label: 'Adicionar primeiro ativo',
-                  onPressed: () => openAddPositionDialog(context, ref),
-                ),
-                secondary: FiButton.secondary(
-                  label: 'Cadastrar aplicação de renda fixa',
-                  onPressed: () => context.go('/patrimonio/renda-fixa'),
-                ),
-              );
+              final rendaFixa = ref.watch(fixedIncomeProvider);
+              if (!rendaFixa.hasValue) {
+                return rendaFixa.hasError
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          FiErrorState(
+                            error: rendaFixa.error!,
+                            title: 'Não conseguimos carregar sua carteira',
+                            action: 'carregar suas aplicações de renda fixa',
+                            onRetry: () => ref.invalidate(fixedIncomeProvider),
+                          ),
+                        ],
+                      )
+                    : FiSkeleton.page(
+                        sections: const [2, 4, 3],
+                        label: 'Carregando sua carteira',
+                      );
+              }
+              if (rendaFixa.requireValue.items.isEmpty) {
+                return const _EmptyPortfolio();
+              }
             }
 
             final negociados = fiTradedPositions(data.positions);
@@ -85,22 +102,43 @@ class PatrimonyScreen extends ConsumerWidget {
 
                 if (data.allocations.isNotEmpty)
                   FiSection(
-                    title: switch (groupMode) {
-                      FiAssetGroupMode.value => 'Onde está concentrado, por ativo',
-                      FiAssetGroupMode.category => 'Onde está concentrado, por classe',
-                      FiAssetGroupMode.sector => 'Onde está concentrado, por setor',
-                    },
-                    trailing: _GroupModeSegments(current: groupMode),
-                    child: FiCompositionBlock(
-                      allocations: data.allocations,
-                      positions: data.positions,
-                      mode: switch (groupMode) {
-                        FiAssetGroupMode.value => FiCompositionMode.position,
-                        FiAssetGroupMode.category => FiCompositionMode.category,
-                        FiAssetGroupMode.sector => FiCompositionMode.sector,
-                      },
+                    title: 'Onde está concentrado',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _GroupModeSegments(current: groupMode),
+                        const SizedBox(height: FiSpace.s3),
+                        FiCompositionBlock(
+                          allocations: data.allocations,
+                          positions: data.positions,
+                          mode: switch (groupMode) {
+                            FiAssetGroupMode.value => FiCompositionMode.position,
+                            FiAssetGroupMode.category => FiCompositionMode.category,
+                            FiAssetGroupMode.sector => FiCompositionMode.sector,
+                          },
+                        ),
+                      ],
                     ),
                   ),
+
+                FiSection(
+                  title: 'Ativos negociados',
+                  count: negociados.length,
+                  hint: idade.isEmpty ? null : 'Cotações lidas $idade.',
+                  trailing: FiButton.quiet(
+                    label: 'Adicionar',
+                    icon: Icons.add,
+                    onPressed: () => openPositionForm(context, ref),
+                  ),
+                  child: FiGroupedPositionsList(
+                    positions: data.positions,
+                    mode: groupMode,
+                    onRemove: (p) => removePosition(context, ref, p),
+                    onSell: (p) => openSellDialog(context, ref, p),
+                  ),
+                ),
+
+                const FiFixedIncomeSection(),
 
                 FiSection(
                   title: 'Evolução',
@@ -121,25 +159,6 @@ class PatrimonyScreen extends ConsumerWidget {
 
                 const FiBenchmarkSection(),
 
-                const FiFixedIncomeSection(),
-
-                FiSection(
-                  title: 'Ativos negociados',
-                  count: negociados.length,
-                  hint: idade.isEmpty ? null : 'Cotações lidas $idade.',
-                  action: FiButton.secondary(
-                    label: 'Adicionar ativo',
-                    icon: Icons.add,
-                    onPressed: () => openAddPositionDialog(context, ref),
-                  ),
-                  child: FiGroupedPositionsList(
-                    positions: data.positions,
-                    mode: groupMode,
-                    onRemove: (p) => removePosition(context, ref, p),
-                    onSell: (p) => openSellDialog(context, ref, p),
-                  ),
-                ),
-
                 const FiClosedTradesSection(),
 
                 const _WhereItComesFrom(),
@@ -148,6 +167,34 @@ class PatrimonyScreen extends ConsumerWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class _EmptyPortfolio extends ConsumerWidget {
+  const _EmptyPortfolio();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        FiEmptyState(
+          title: 'Sua carteira ainda está vazia',
+          body: 'A carteira é a base de tudo: sem ela o fiance não tem o que avaliar, '
+              'comparar com meta ou usar para sugerir aporte.',
+          hint: 'Cadastre o que você já tem — ticker, quantidade e preço médio — ou importe os '
+              'lançamentos de uma planilha.',
+          action: FiButton.primary(
+            label: 'Adicionar primeiro ativo',
+            onPressed: () => openAddPositionDialog(context, ref),
+          ),
+          secondary: FiButton.secondary(
+            label: 'Importar de uma planilha',
+            onPressed: () => context.push('/patrimonio/razao/importar'),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -163,7 +210,7 @@ class _GroupModeSegments extends StatelessWidget {
       selected: current,
       semanticsPrefix: 'Ver a carteira por',
       options: const {
-        FiAssetGroupMode.value: 'Valor',
+        FiAssetGroupMode.value: 'Ativo',
         FiAssetGroupMode.category: 'Classe',
         FiAssetGroupMode.sector: 'Setor',
       },

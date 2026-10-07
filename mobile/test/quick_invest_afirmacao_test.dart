@@ -59,6 +59,49 @@ class _Resposta extends Interceptor {
   }
 }
 
+class _SimulacaoFalha extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final simulando = (options.data as Map?)?.containsKey('cash_available') ?? false;
+    if (simulando) {
+      handler.reject(
+        DioException(
+          requestOptions: options,
+          response: Response<dynamic>(
+            requestOptions: options,
+            statusCode: 503,
+            data: {'detail': 'fora do ar'},
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+      return;
+    }
+    handler.resolve(
+      Response<dynamic>(requestOptions: options, statusCode: 200, data: _prescritivo),
+    );
+  }
+}
+
+final _prescritivo = <String, dynamic>{
+  ..._analitico,
+  'allocated_cash': 950.0,
+  'remaining_cash': 50.0,
+  'allocations': [
+    {
+      'ticker': 'PETR4',
+      'name': 'Petrobras',
+      'category': 'acoes_br',
+      'current_price': 38.0,
+      'suggested_quantity': 25,
+      'suggested_investment': 950.0,
+      'rationale': 'score 82',
+      'score': 82.0,
+    },
+  ],
+  'affirmation': {'level': 3, 'prescriptive': true, 'disclaimer': ''},
+};
+
 List<String> _textos(WidgetTester tester) => [
   for (final w in tester.widgetList<Text>(find.byType(Text)))
     w.data ?? w.textSpan?.toPlainText() ?? '',
@@ -134,6 +177,58 @@ void main() {
       [82.0],
       reason: 'o selo dizia a faixa sem o número nem a escala: julgamento sem explicação',
     );
+  });
+
+  testWidgets('o valor do aporte não leva o nome da sobra, e a cota não é ordem', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 2400) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+
+    final dio = Dio()..interceptors.add(_SimulacaoFalha());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [apiRepositoryProvider.overrideWithValue(ApiRepository(dio))],
+        child: MaterialApp(
+          theme: buildAppTheme(Brightness.light),
+          home: const Scaffold(body: QuickInvestView()),
+        ),
+      ),
+    );
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    expect(
+      find.text('SOBRA DESTE MÊS'),
+      findsNothing,
+      reason: 'o número aqui é o que resta depois da dívida e da reserva, não a sobra',
+    );
+    expect(find.text('LIVRE PARA APORTAR'), findsOneWidget);
+    final textos = _textos(tester);
+    expect(
+      textos.any((t) => t.contains('COMPRAR') || t.contains('cota(s)')),
+      isFalse,
+      reason: 'a tela diz que não é recomendação de compra; o rótulo dá a unidade',
+    );
+
+    await tester.tap(find.text('Simular outro valor'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), '500');
+    await tester.tap(find.text('Simular'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+
+    expect(
+      _textos(tester).any(
+        (t) => t.contains('Os números abaixo ainda são de ${formatCurrency(1000.0)}'),
+      ),
+      isTrue,
+      reason: 'com a simulação falhando, a lista que ficou na tela é do valor anterior',
+    );
+    expect(find.text('Desfazer a simulação'), findsOneWidget);
   });
 
   group('QuickInvestResult', () {

@@ -9,6 +9,7 @@ from sqlalchemy import event
 
 from app.core.brt import now_brt
 from app.core.database import engine
+from app.core.money import quantize
 from app.services.fixed_income_service import FixedIncomeService
 from app.storage import portfolio_store
 from tests.conftest import make_auth_headers
@@ -146,7 +147,9 @@ class TestProventos:
         assert inteira["total_received"] == float(sum(Decimal(v) for *_, v in lancamentos))
         assert inteira["received_this_month"] == 10.17
         assert inteira["received_last_12m"] == float(sum(Decimal(v) for v in doze))
-        assert inteira["monthly_average_12m"] == 17.19
+        assert inteira["monthly_average_12m"] == float(
+            quantize(sum(Decimal(v) for v in doze) / 12)
+        ), "a média é do período de 12 meses, não só dos meses em que houve crédito"
         assert [(t["ticker"], t["total"], t["count"]) for t in inteira["by_ticker"]] == [
             ("VALE3", 133.40, 3),
             ("PETR4", 36.46, 4),
@@ -154,6 +157,60 @@ class TestProventos:
         assert sum(m["count"] for m in inteira["by_month"]) == 7
         assert inteira["by_month"][0]["month"] == hoje.strftime("%Y-%m")
         assert inteira["by_month"][0]["total"] == 10.17
+
+    def test_a_media_de_carteira_nova_divide_pelo_tempo_de_carteira(self, client):
+        headers = make_auth_headers("u_pag_agr_proventos_carteira_nova")
+        hoje = now_brt().date()
+        compra = client.post(
+            "/api/transactions",
+            headers=headers,
+            json={
+                "kind": "buy",
+                "symbol": "MXRF11",
+                "traded_on": (hoje - timedelta(days=60)).isoformat(),
+                "quantity": 100,
+                "price": 10,
+            },
+        )
+        assert compra.status_code in (200, 201), compra.text
+        for dias in (45, 15):
+            client.post(
+                "/api/dividends/received",
+                headers=headers,
+                json={
+                    "ticker": "MXRF11",
+                    "paid_at": (hoje - timedelta(days=dias)).isoformat(),
+                    "amount": 100.0,
+                },
+            )
+
+        corpo = client.get("/api/dividends/received", headers=headers).json()
+
+        meses = Decimal(60) * 12 / Decimal(365)
+        assert corpo["monthly_average_12m"] == float(quantize(Decimal(200) / meses)), (
+            "com dois meses de carteira a média é sobre dois meses, contados desde o primeiro "
+            "lançamento do razão, e o mês corrente incompleto não conta como mês inteiro"
+        )
+
+    def test_credito_com_data_futura_nao_derruba_a_media(self, client):
+        headers = make_auth_headers("u_pag_agr_proventos_futuro")
+        hoje = now_brt().date()
+        client.post(
+            "/api/dividends/received",
+            headers=headers,
+            json={
+                "ticker": "PETR4",
+                "paid_at": (hoje + timedelta(days=40)).isoformat(),
+                "amount": 90.0,
+            },
+        )
+
+        resposta = client.get("/api/dividends/received", headers=headers)
+
+        assert resposta.status_code == 200, resposta.text
+        assert resposta.json()["monthly_average_12m"] == 90.0, (
+            "um crédito lançado com data à frente não zera nem inverte o divisor: ele é de um mês"
+        )
 
     def test_o_agregado_nao_ve_outra_conta(self, client):
         dono = make_auth_headers("u_pag_agr_proventos_dono")

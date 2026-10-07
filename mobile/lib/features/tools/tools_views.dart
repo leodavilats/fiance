@@ -2,6 +2,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/widgets/range.dart';
@@ -14,6 +15,7 @@ import '../../core/widgets/button.dart';
 import '../../core/widgets/chip.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/provenance.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
@@ -54,6 +56,7 @@ class FixedIncomeSimulatorView extends ConsumerStatefulWidget {
 class FixedIncomeSimulatorViewState
     extends ConsumerState<FixedIncomeSimulatorView> {
   final _formKey = GlobalKey<FormState>();
+  final _resultKey = GlobalKey();
   final List<_FixedIncomeOption> _options = [_FixedIncomeOption()];
   List<FixedIncomeResult>? _results;
   bool _loading = false;
@@ -96,15 +99,32 @@ class FixedIncomeSimulatorViewState
           );
       if (!mounted) return;
       setState(() => _results = results);
+      _revelar();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _results = null;
         _error = e;
       });
+      _revelar();
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _revelar() {
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final alvo = _resultKey.currentContext;
+      if (alvo == null || !mounted) return;
+      final reduzido = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+      Scrollable.ensureVisible(
+        alvo,
+        duration: reduzido ? Duration.zero : FiMotion.slow,
+        curve: FiMotion.easeEnter,
+        alignment: 0.05,
+      );
+    });
   }
 
   void _changed() => setState(() => _results = null);
@@ -185,59 +205,65 @@ class FixedIncomeSimulatorViewState
             onPressed: _compare,
           ),
           if (erro != null)
-            FiErrorState(
-              error: erro,
-              title: 'A comparação não saiu',
-              action: 'comparar os títulos',
-              onRetry: _compare,
-            ),
-          if (_results case final resultados?)
-            FiSection(
-              title: 'Resultado',
-              hint: 'Já descontado o imposto de renda de cada título, no prazo informado.',
-              child: Column(
-                children: [
-                  for (final r in resultados)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: FiSpace.s2),
-                      child: FiObject(
-                        accent: r.bestOption
-                            ? fiStateColor(FiState.favorable, brightness)
-                            : null,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '${_kinds[r.kind] ?? r.kind}'
-                                    '${r.name != null ? ' · ${r.name}' : ''}',
-                                    style: FiType.title.copyWith(
-                                      color: fiInk1(context),
+            KeyedSubtree(
+              key: _resultKey,
+              child: FiErrorState(
+                error: erro,
+                title: 'A comparação não saiu',
+                action: 'comparar os títulos',
+                onRetry: _compare,
+              ),
+            )
+          else if (_results case final resultados?)
+            KeyedSubtree(
+              key: _resultKey,
+              child: FiSection(
+                title: 'Resultado',
+                hint: 'Já descontado o imposto de renda de cada título, no prazo informado.',
+                child: Column(
+                  children: [
+                    for (final r in resultados)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: FiSpace.s2),
+                        child: FiObject(
+                          accent: r.bestOption
+                              ? fiStateColor(FiState.favorable, brightness)
+                              : null,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${_kinds[r.kind] ?? r.kind}'
+                                      '${r.name != null ? ' · ${r.name}' : ''}',
+                                      style: FiType.title.copyWith(
+                                        color: fiInk1(context),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                if (r.bestOption)
-                                  const FiTag(
-                                    label: 'Rende mais',
-                                    state: FiState.favorable,
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: FiSpace.s3),
-                            FiFigures(
-                              rule: false,
-                              figures: {
-                                'LÍQUIDO': formatCurrency(r.netValue),
-                                'TAXA LÍQUIDA': formatPercent(r.netAnnualRate),
-                              },
-                            ),
-                          ],
+                                  if (r.bestOption)
+                                    const FiTag(
+                                      label: 'Rende mais',
+                                      state: FiState.favorable,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: FiSpace.s3),
+                              FiFigures(
+                                rule: false,
+                                figures: {
+                                  'LÍQUIDO': formatCurrency(r.netValue),
+                                  'TAXA LÍQUIDA': formatPercent(r.netAnnualRate),
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
         ],
@@ -345,36 +371,36 @@ class _OptionForm extends StatelessWidget {
               ],
             ),
             const SizedBox(height: FiSpace.s2),
+            TextFormField(
+              initialValue: formatForInput(option.amount),
+              decoration: const InputDecoration(
+                labelText: 'Valor (R\$)',
+                isDense: true,
+                errorMaxLines: 3,
+              ),
+              keyboardType: _teclado,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: _validateAmount,
+              onChanged: (v) {
+                final valor = parseDecimal(v);
+                if (valor != null && valor > 0) option.amount = valor;
+                onChanged();
+              },
+            ),
+            const SizedBox(height: FiSpace.s2),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: TextFormField(
-                    initialValue: formatForInput(option.amount),
-                    decoration: const InputDecoration(
-                      labelText: 'Valor (R\$)',
-                      isDense: true,
-                      errorMaxLines: 3,
-                    ),
-                    keyboardType: _teclado,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    validator: _validateAmount,
-                    onChanged: (v) {
-                      final valor = parseDecimal(v);
-                      if (valor != null && valor > 0) option.amount = valor;
-                      onChanged();
-                    },
-                  ),
-                ),
-                const SizedBox(width: FiSpace.s2),
-                Expanded(
-                  child: TextFormField(
                     key: ValueKey(option.rateKind),
                     initialValue: formatForInput(option.rate),
                     decoration: InputDecoration(
-                      labelText: option.rateKind == 'pos_fixado'
-                          ? '% do CDI'
-                          : 'Taxa % a.a.',
+                      labelText: switch (option.rateKind) {
+                        'pos_fixado' => '% do CDI',
+                        'hibrido' => 'IPCA + % ao ano',
+                        _ => 'Taxa prefixada % ao ano',
+                      },
                       isDense: true,
                       errorMaxLines: 3,
                     ),
@@ -427,6 +453,7 @@ class CompareAssetsView extends ConsumerStatefulWidget {
 
 class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
   final _tickerCtrl = TextEditingController();
+  final _resultKey = GlobalKey();
   final List<String> _tickers = [];
   bool _loading = false;
   CompareResponse? _result;
@@ -471,15 +498,32 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
           .compareAssets(List.of(_tickers));
       if (!mounted) return;
       setState(() => _result = result);
+      _revelar();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _result = null;
         _error = e;
       });
+      _revelar();
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _revelar() {
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final alvo = _resultKey.currentContext;
+      if (alvo == null || !mounted) return;
+      final reduzido = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+      Scrollable.ensureVisible(
+        alvo,
+        duration: reduzido ? Duration.zero : FiMotion.slow,
+        curve: FiMotion.easeEnter,
+        alignment: 0.05,
+      );
+    });
   }
 
   @override
@@ -540,28 +584,38 @@ class CompareAssetsViewState extends ConsumerState<CompareAssetsView> {
             ),
           ),
         if (erro != null)
-          FiErrorState(
-            error: erro,
-            title: 'A comparação não saiu',
-            action: 'comparar os ativos',
-            onRetry: _compare,
-          ),
-        if (_result case final resultado?) ...[
-          if (resultado.errors.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: FiSpace.s4),
-              child: Text(
-                'Não foi possível buscar: ${resultado.errors.join(', ')}',
-                style: FiType.caption.copyWith(
-                  color: fiStateColor(
-                    FiState.attention,
-                    Theme.of(context).brightness,
-                  ),
-                ),
-              ),
+          KeyedSubtree(
+            key: _resultKey,
+            child: FiErrorState(
+              error: erro,
+              title: 'A comparação não saiu',
+              action: 'comparar os ativos',
+              onRetry: _compare,
             ),
-          if (resultado.items.isNotEmpty) _CompareTable(items: resultado.items),
-        ],
+          )
+        else if (_result case final resultado?)
+          KeyedSubtree(
+            key: _resultKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (resultado.errors.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: FiSpace.s4),
+                    child: Text(
+                      'Não foi possível buscar: ${resultado.errors.join(', ')}',
+                      style: FiType.caption.copyWith(
+                        color: fiStateColor(
+                          FiState.attention,
+                          Theme.of(context).brightness,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (resultado.items.isNotEmpty) _CompareTable(items: resultado.items),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -578,7 +632,7 @@ class _CompareDecisions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'A DECISÃO',
+          'A LEITURA',
           style: FiType.eyebrow.copyWith(color: fiInk3(context)),
         ),
         const SizedBox(height: FiSpace.s3),
@@ -591,6 +645,7 @@ class _CompareDecisions extends StatelessWidget {
                     'segurança ${formatRatio(a.marginOfSafety)}',
                 note: confirmationLabel(a.independentInputs),
                 trailing: FiVerdictChip(verdict: a.verdict, label: a.label),
+                onTap: () => context.push('/ativo/${a.symbol}'),
               ),
           ],
         ),
@@ -606,7 +661,14 @@ class _CompareTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final groups = ['Valuation', 'Qualidade', 'Risco', 'Proventos'];
+    final groups = [
+      'Preço e valor',
+      'Qualidade',
+      'Dívida',
+      'O que o preço vem fazendo',
+      'Proventos',
+    ];
+    final idade = formatAge(oldestStamp(items.map((a) => a.asOf)));
     final muted = Theme.of(context).textTheme.bodySmall;
 
     final rows = <DataRow>[];
@@ -634,12 +696,7 @@ class _CompareTable extends StatelessWidget {
               ...items.map((a) {
                 final applies = m.appliesTo.contains(a.assetType);
                 if (!applies) {
-                  return DataCell(
-                    Text(
-                      'não se aplica a ${fiAssetTypeLabel[a.assetType] ?? a.assetType}',
-                      style: muted,
-                    ),
-                  );
+                  return DataCell(Text('não se aplica', style: muted));
                 }
                 return DataCell(Text(m.render(a)));
               }),
@@ -659,6 +716,11 @@ class _CompareTable extends StatelessWidget {
           'A EVIDÊNCIA',
           style: FiType.eyebrow.copyWith(color: fiInk3(context)),
         ),
+        if (idade.isNotEmpty)
+          Text(
+            'Cotação mais antiga lida $idade',
+            style: FiType.caption.copyWith(color: fiInk3(context)),
+          ),
         const SizedBox(height: FiSpace.s3),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -669,6 +731,16 @@ class _CompareTable extends StatelessWidget {
             ],
             rows: rows,
           ),
+        ),
+        const SizedBox(height: FiSpace.s4),
+        FiProvenance(
+          summary: 'Como chegamos nesta leitura',
+          method: 'O preço justo é uma faixa: a conta principal para o tipo de ativo, da '
+              'premissa pessimista à otimista. A margem de segurança é a distância do preço '
+              'de hoje até a borda da faixa.',
+          source: 'Fundamentos e cotações da BRAPI; juro do Banco Central.',
+          asOf: idade.isEmpty ? null : 'Cotação mais antiga lida $idade.',
+          limitation: 'É leitura do sistema sobre dado público, não recomendação de compra.',
         ),
       ],
     );
@@ -690,6 +762,8 @@ class ContributionSimulatorViewState
   final _growthCtrl = TextEditingController(text: '10');
   final _divGrowthCtrl = TextEditingController(text: '5');
   final _targetCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _resultKey = GlobalKey();
   bool _reinvest = true;
   bool _loading = false;
   PassiveIncomeProjection? _result;
@@ -705,7 +779,36 @@ class ContributionSimulatorViewState
     super.dispose();
   }
 
+  static String? _validateContribution(String? v) {
+    final n = parseDecimal(v);
+    if (n == null) return 'Informe o aporte, ou 0';
+    if (n < 0) return 'Aporte não fica negativo: use 0';
+    return null;
+  }
+
+  static String? _validateMonths(String? v) {
+    final n = int.tryParse((v ?? '').trim());
+    if (n == null || n < 1 || n > 240) return 'De 1 a 240 meses';
+    return null;
+  }
+
+  static String? Function(String?) _validateRate(double max) => (v) {
+    final n = parseDecimal(v);
+    if (n == null || n < 0 || n > max) {
+      return 'Entre 0% e ${formatDecimal(max, digits: 0)}% ao ano';
+    }
+    return null;
+  };
+
+  static String? _validateTarget(String? v) {
+    if ((v ?? '').trim().isEmpty) return null;
+    final n = parseDecimal(v);
+    if (n == null || n < 0) return 'Informe a meta, ou deixe em branco';
+    return null;
+  }
+
   Future<void> _simulate() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -714,126 +817,158 @@ class ContributionSimulatorViewState
       final result = await ref
           .read(apiRepositoryProvider)
           .projectPassiveIncome(
-            monthlyContribution: parseDecimal(_contributionCtrl.text) ?? 0,
-            monthsAhead: int.tryParse(_monthsCtrl.text.trim()) ?? 60,
-            portfolioGrowthRate: (parseDecimal(_growthCtrl.text) ?? 10) / 100,
-            dividendGrowthRate: (parseDecimal(_divGrowthCtrl.text) ?? 5) / 100,
+            monthlyContribution: parseDecimal(_contributionCtrl.text)!,
+            monthsAhead: int.parse(_monthsCtrl.text.trim()),
+            portfolioGrowthRate: parseDecimal(_growthCtrl.text)! / 100,
+            dividendGrowthRate: parseDecimal(_divGrowthCtrl.text)! / 100,
             reinvestDividends: _reinvest,
             targetMonthlyIncome: parseDecimal(_targetCtrl.text),
           );
       if (!mounted) return;
       setState(() => _result = result);
+      _revelar();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _result = null;
         _error = e;
       });
+      _revelar();
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  void _revelar() {
+    FocusScope.of(context).unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final alvo = _resultKey.currentContext;
+      if (alvo == null || !mounted) return;
+      final reduzido = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+      Scrollable.ensureVisible(
+        alvo,
+        duration: reduzido ? Duration.zero : FiMotion.slow,
+        curve: FiMotion.easeEnter,
+        alignment: 0.05,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        FiLayout.gutter,
-        FiSpace.s3,
-        FiLayout.gutter,
-        FiLayout.scrollTail,
-      ),
-      children: [
-        Text(
-          'Simule um aporte mensal recorrente e veja a evolução da sua carteira e renda passiva.',
-          style: FiType.body.copyWith(color: fiInk2(context)),
+    const decimal = TextInputType.numberWithOptions(decimal: true);
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          FiSpace.s3,
+          FiLayout.gutter,
+          FiLayout.scrollTail,
         ),
-        const SizedBox(height: FiSpace.s5),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _contributionCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Aporte mensal (R\$)',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-              ),
-            ),
-            const SizedBox(width: FiSpace.s2),
-            Expanded(
-              child: TextField(
-                controller: _monthsCtrl,
-                decoration: const InputDecoration(labelText: 'Meses'),
-                keyboardType: TextInputType.number,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: FiSpace.s3),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _growthCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Valorização anual (%)',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-              ),
-            ),
-            const SizedBox(width: FiSpace.s2),
-            Expanded(
-              child: TextField(
-                controller: _divGrowthCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Crescimento dividendos (%)',
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: FiSpace.s3),
-        TextField(
-          controller: _targetCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Meta de renda passiva/mês (opcional)',
+        children: [
+          Text(
+            'Simule um aporte mensal recorrente e veja a evolução da sua carteira e renda passiva.',
+            style: FiType.body.copyWith(color: fiInk2(context)),
           ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
-        const SizedBox(height: FiSpace.s2),
-        FiDataRow(
-          label: 'Reinvestir dividendos',
-          detail: 'O provento recebido volta para a carteira no mês seguinte',
-          trailing: FiSwitch(
+          const SizedBox(height: FiSpace.s5),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _contributionCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Aporte mensal (R\$)',
+                    errorMaxLines: 2,
+                  ),
+                  keyboardType: decimal,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: _validateContribution,
+                ),
+              ),
+              const SizedBox(width: FiSpace.s2),
+              Expanded(
+                child: TextFormField(
+                  controller: _monthsCtrl,
+                  decoration: const InputDecoration(labelText: 'Meses', errorMaxLines: 2),
+                  keyboardType: TextInputType.number,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: _validateMonths,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: FiSpace.s3),
+          TextFormField(
+            controller: _growthCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Valorização ao ano (%)',
+              errorMaxLines: 2,
+            ),
+            keyboardType: decimal,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: _validateRate(50),
+          ),
+          const SizedBox(height: FiSpace.s3),
+          TextFormField(
+            controller: _divGrowthCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Crescimento dos dividendos ao ano (%)',
+              errorMaxLines: 2,
+            ),
+            keyboardType: decimal,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: _validateRate(30),
+          ),
+          const SizedBox(height: FiSpace.s3),
+          TextFormField(
+            controller: _targetCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Meta de renda passiva por mês (opcional)',
+              errorMaxLines: 2,
+            ),
+            keyboardType: decimal,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: _validateTarget,
+          ),
+          const SizedBox(height: FiSpace.s2),
+          FiDataRow(
             label: 'Reinvestir dividendos',
-            value: _reinvest,
-            onChanged: (v) => setState(() => _reinvest = v),
+            detail: 'O provento recebido volta para a carteira no mês seguinte',
+            trailing: FiSwitch(
+              label: 'Reinvestir dividendos',
+              value: _reinvest,
+              onChanged: (v) => setState(() => _reinvest = v),
+            ),
           ),
-        ),
-        const SizedBox(height: FiSpace.s5),
-        FiButton.primary(
-          label: 'Projetar',
-          expand: true,
-          busy: _loading,
-          onPressed: _simulate,
-        ),
-        if (_error case final erro?)
-          FiErrorState(
-            error: erro,
-            title: 'A projeção não saiu',
-            action: 'projetar',
-            onRetry: _simulate,
+          const SizedBox(height: FiSpace.s5),
+          FiButton.primary(
+            label: 'Projetar',
+            expand: true,
+            busy: _loading,
+            onPressed: _simulate,
           ),
-        if (_result case final resultado?) ..._buildResult(resultado),
-      ],
+          if (_error case final erro?)
+            KeyedSubtree(
+              key: _resultKey,
+              child: FiErrorState(
+                error: erro,
+                title: 'A projeção não saiu',
+                action: 'projetar',
+                onRetry: _simulate,
+              ),
+            )
+          else if (_result case final resultado?)
+            KeyedSubtree(
+              key: _resultKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _buildResult(resultado),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

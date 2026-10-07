@@ -98,6 +98,7 @@ class RebalanceTarget(BaseModel):
     margin_of_safety: float | None = None
     personal_ceiling: float | None = None
     fits_income_goal: bool | None = None
+    as_of: float | None = None
 
 
 class RebalanceItem(BaseModel):

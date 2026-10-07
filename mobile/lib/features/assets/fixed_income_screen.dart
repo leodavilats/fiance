@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
@@ -35,8 +36,8 @@ Future<void> openFixedIncomeForm(
   );
 
   if (saved == true) {
-    ref.invalidate(fixedIncomeProvider);
-    ref.invalidate(dashboardProvider);
+    invalidateAllocationReaders(ref);
+    ref.invalidate(onboardingProvider);
     if (context.mounted) {
       fiNotify(context, existing == null ? 'Aplicação cadastrada.' : 'Aplicação atualizada.');
     }
@@ -72,8 +73,8 @@ class FixedIncomeScreen extends ConsumerWidget {
       success: '${position.name} saiu da carteira.',
     );
     if (!removida) return;
-    ref.invalidate(fixedIncomeProvider);
-    ref.invalidate(dashboardProvider);
+    invalidateAllocationReaders(ref);
+    ref.invalidate(onboardingProvider);
   }
 
   @override
@@ -86,21 +87,27 @@ class FixedIncomeScreen extends ConsumerWidget {
         onRefresh: () async => ref.invalidate(fixedIncomeProvider),
         child: listing.when(
           loading: () => FiSkeleton.screen(shape: FiSkeletonShape.row, count: 5, label: 'Carregando suas aplicações'),
-          error: (err, _) => FiErrorState(
-            error: err,
-            title: 'Não conseguimos carregar sua renda fixa',
-            action: 'carregar suas aplicações',
-            onRetry: () => ref.invalidate(fixedIncomeProvider),
+          error: (err, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              FiErrorState(
+                error: err,
+                title: 'Não conseguimos carregar sua renda fixa',
+                action: 'carregar suas aplicações',
+                onRetry: () => ref.invalidate(fixedIncomeProvider),
+              ),
+            ],
           ),
           data: (data) {
             if (data.items.isEmpty) {
               return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   FiEmptyState(
                     title: 'Nenhuma aplicação de renda fixa',
-                    body: 'Renda fixa é classe de primeira ordem aqui: o CDB entra no '
-                        'patrimônio, é marcado a mercado e conta na alocação como qualquer '
-                        'outra classe.',
+                    body: 'O CDB, a LCI ou o Tesouro que você já tem entram no patrimônio ao '
+                        'lado das ações. O valor de hoje sai da taxa contratada, já descontado '
+                        'o imposto.',
                     hint: 'Cadastre o que você já tem — CDB, LCI, LCA, Tesouro.',
                     action: FiButton.primary(
                       label: 'Cadastrar aplicação',
@@ -156,8 +163,25 @@ class _Totals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fonte = data.ratesOrigin == 'bcb' ? 'BCB' : 'estimativa';
+    final brightness = Theme.of(context).brightness;
     final rendeu = data.totalReturn >= 0;
+    final cdi = formatPercent(data.cdiReference);
+    final atencao = fiStateColor(FiState.attention, brightness);
+    final lidoEm = formatAge(data.ratesReadAt);
+    final quando = lidoEm.isEmpty ? '' : ', lida $lidoEm';
+    final (origem, corDaOrigem) = switch (data.ratesOrigin) {
+      'bcb' => ('Contra um CDI de $cdi ao ano, lido do Banco Central.', fiInk3(context)),
+      'bcb_cache_vencido' => (
+        'Contra um CDI de $cdi ao ano, da última leitura do Banco Central$quando — a fonte '
+            'não respondeu agora.',
+        atencao,
+      ),
+      _ => (
+        'O Banco Central não respondeu: o rendimento usa um CDI de referência de $cdi ao '
+            'ano, não lido da fonte.',
+        atencao,
+      ),
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,12 +191,9 @@ class _Totals extends StatelessWidget {
           figure: formatCurrency(data.totalCurrent),
           size: FiHeadlineSize.xl,
           support:
-              '${rendeu ? '+' : ''}${formatCurrency(data.totalReturn)} de rendimento '
-              'líquido (${formatPercent(data.returnPct)}) sobre o aplicado',
-          supportColor: fiDirectionColor(
-            rendeu ? 1 : -1,
-            Theme.of(context).brightness,
-          ),
+              '${rendeu ? '+' : ''}${formatCurrency(data.totalReturn)} '
+              '(${formatPercent(data.returnPct)}) de rendimento líquido sobre o aplicado',
+          supportColor: fiDirectionColor(rendeu ? 1 : -1, brightness),
         ),
         const SizedBox(height: FiSpace.s5),
         FiFigures(
@@ -183,8 +204,8 @@ class _Totals extends StatelessWidget {
         ),
         const SizedBox(height: FiSpace.s2),
         Text(
-          'Contra um CDI de ${formatPercent(data.cdiReference)} ao ano, lido do $fonte.',
-          style: FiType.caption.copyWith(color: fiInk3(context)),
+          origem,
+          style: FiType.caption.copyWith(color: corDaOrigem),
         ),
       ],
     );
@@ -205,101 +226,112 @@ class _HoldingObject extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final vencendo = item.maturingSoon && item.daysToMaturity != null;
+    final dias = item.daysToMaturity;
+    final vencida = dias != null && dias < 0;
+    final vencendo = item.maturingSoon && dias != null && !vencida;
+    final atencao = fiStateColor(FiState.attention, brightness);
     final rendeu = item.accruedReturn >= 0;
     final prazo = item.maturity == null
         ? fixedIncomeLiquidityLabel(item.liquidity)
-        : 'vence em ${formatDate(item.maturity)}';
+        : '${vencida ? 'venceu' : 'vence'} em ${formatDate(item.maturity)}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
-      child: Opacity(
-        opacity: item.hidden ? 0.6 : 1,
-        child: FiObject(
-          accent: vencendo
-              ? fiStateColor(FiState.attention, brightness)
-              : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.name,
-                      style: FiType.title.copyWith(color: fiInk1(context)),
-                    ),
+      child: FiObject(
+        accent: (vencendo || vencida) ? atencao : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    item.name,
+                    style: FiType.title.copyWith(color: fiInk1(context)),
                   ),
-                  const SizedBox(width: FiSpace.s2),
-                  FiTag.series(
-                    label: fixedIncomeKindLabel(item.kind),
-                    color: fiInk2(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: FiSpace.s1),
-              Text(
-                '${formatPercent(item.effectiveAnnualRatePct)} ao ano'
-                '${item.irExempt == true ? ' · isento de IR' : ''} · $prazo',
-                style: FiType.caption.copyWith(color: fiInk2(context)),
-              ),
-
-              const SizedBox(height: FiSpace.s4),
-              FiFigures(
-                rule: false,
-                figures: {
-                  'APLICADO': formatCurrency(item.investedValue),
-                  'HOJE': formatCurrency(item.currentValue),
-                },
-              ),
-              const SizedBox(height: FiSpace.s2),
-              Text(
-                '${rendeu ? '+' : ''}${formatCurrency(item.accruedReturn)} '
-                '(${formatPercent(item.returnPct)}) de rendimento',
-                style: FiType.caption.copyWith(
-                  color: fiDirectionColor(rendeu ? 1 : -1, brightness),
                 ),
-              ),
-
-              if (vencendo) ...[
-                const SizedBox(height: FiSpace.s3),
-                Text(
-                  'Vence em ${item.daysToMaturity} dias — planeje a reaplicação.',
-                  style: FiType.caption.copyWith(
-                    color: fiStateColor(FiState.attention, brightness),
-                  ),
+                const SizedBox(width: FiSpace.s2),
+                FiTag.series(
+                  label: fixedIncomeKindLabel(item.kind),
+                  color: fiInk2(context),
                 ),
               ],
-              if (item.hidden) ...[
-                const SizedBox(height: FiSpace.s2),
-                Text(
-                  'Fora do total da carteira, por escolha sua.',
-                  style: FiType.caption.copyWith(color: fiInk3(context)),
-                ),
-              ],
+            ),
+            const SizedBox(height: FiSpace.s1),
+            Text(
+              '${formatPercent(item.effectiveAnnualRatePct)} ao ano'
+              '${item.irExempt == true ? ' · isento de IR' : ''} · $prazo',
+              style: FiType.caption.copyWith(color: fiInk2(context)),
+            ),
 
-              const SizedBox(height: FiSpace.s4),
-              Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
-              const SizedBox(height: FiSpace.s1),
-              Row(
-                children: [
-                  Flexible(
-                    child: FiButton.quiet(label: 'Editar', onPressed: onEdit),
-                  ),
-                  const SizedBox(width: FiSpace.s5),
-                  Flexible(
-                    child: FiButton.danger(label: 'Remover', onPressed: onDelete),
-                  ),
-                ],
+            const SizedBox(height: FiSpace.s4),
+            FiFigures(
+              rule: false,
+              figures: {
+                'APLICADO': formatCurrency(item.investedValue),
+                'HOJE': formatCurrency(item.currentValue),
+              },
+            ),
+            const SizedBox(height: FiSpace.s2),
+            Text(
+              '${rendeu ? '+' : ''}${formatCurrency(item.accruedReturn)} '
+              '(${formatPercent(item.returnPct)}) de rendimento líquido',
+              style: FiType.caption.copyWith(
+                color: fiDirectionColor(rendeu ? 1 : -1, brightness),
+              ),
+            ),
+
+            if (vencendo) ...[
+              const SizedBox(height: FiSpace.s3),
+              Text(
+                '${_capitalized(formatMaturity(dias))} — planeje a reaplicação.',
+                style: FiType.caption.copyWith(color: atencao),
               ),
             ],
-          ),
+            if (vencida) ...[
+              const SizedBox(height: FiSpace.s3),
+              Text(
+                '${_capitalized(formatMaturity(dias))} — depois do resgate, edite ou remova '
+                'a aplicação.',
+                style: FiType.caption.copyWith(color: atencao),
+              ),
+            ],
+            if (item.hidden) ...[
+              const SizedBox(height: FiSpace.s2),
+              Text(
+                'Fora do total da carteira, por escolha sua.',
+                style: FiType.caption.copyWith(color: fiInk2(context)),
+              ),
+            ],
+
+            const SizedBox(height: FiSpace.s4),
+            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
+            const SizedBox(height: FiSpace.s1),
+            Row(
+              children: [
+                Flexible(
+                  child: FiButton.quiet(label: 'Editar', onPressed: onEdit),
+                ),
+                const SizedBox(width: FiSpace.s5),
+                Flexible(
+                  child: FiButton.quiet(
+                    label: 'Remover',
+                    destructive: true,
+                    onPressed: onDelete,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
+
+String _capitalized(String texto) =>
+    texto.isEmpty ? texto : '${texto[0].toUpperCase()}${texto.substring(1)}';
 
 class _FixedIncomeForm extends ConsumerStatefulWidget {
   const _FixedIncomeForm({this.existing});
@@ -368,7 +400,9 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
 
   Future<void> _pickDate({required bool maturity}) async {
     final now = DateTime.now();
-    final inicio = maturity ? _appliedOn : DateTime(now.year - 30);
+    final inicio = maturity
+        ? _appliedOn.add(const Duration(days: 1))
+        : DateTime(now.year - 30);
     final sugerida = maturity ? (_maturity ?? now) : _appliedOn;
     final picked = await showDatePicker(
       context: context,
@@ -389,13 +423,23 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
   String? _validate(double? valor, double? rate, double? cdi) {
     if (_name.text.trim().isEmpty) return 'Informe o nome da aplicação.';
     if (valor == null || valor <= 0) return 'Informe o valor aplicado, maior que zero.';
+    if (valor > 1e11) return 'Confira o valor aplicado: acima de R\$ 100 bilhões não parece certo.';
     if (rate == null || rate <= 0) return 'Informe a taxa ao ano, maior que zero.';
+    if (rate > 100) {
+      return 'Taxa acima de 100% ao ano não parece certa — confira se não é o % do CDI.';
+    }
+    if (_kind == 'tesouro_selic' && _rateKind != 'pos_fixado' && rate > 5) {
+      return 'No Tesouro Selic, informe só a taxa acima da Selic, algo como 0,1.';
+    }
     if (_rateKind == 'pos_fixado' && (cdi == null || cdi <= 0)) {
       return 'Informe o % do CDI — sem ele o rendimento pós-fixado não se calcula.';
     }
+    if (_rateKind == 'pos_fixado' && cdi != null && cdi > 500) {
+      return 'Confira o % do CDI: acima de 500% não parece certo.';
+    }
     final vencimento = _maturity;
-    if (vencimento != null && vencimento.isBefore(_appliedOn)) {
-      return 'O vencimento não pode ser antes da data de aplicação.';
+    if (vencimento != null && !vencimento.isAfter(_appliedOn)) {
+      return 'O vencimento precisa ser depois da data de aplicação.';
     }
     return null;
   }
@@ -471,6 +515,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
               const SizedBox(height: FiSpace.s5),
               TextField(
                 controller: _name,
+                inputFormatters: [LengthLimitingTextInputFormatter(120)],
                 decoration: const InputDecoration(
                   labelText: 'Nome / banco emissor',
                   hintText: 'ex.: CDB Banco Inter 2027',
@@ -479,6 +524,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
               const SizedBox(height: FiSpace.s4),
               DropdownButtonFormField<String>(
                 initialValue: _kind,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Tipo'),
                 items: _kinds
                     .map(
@@ -488,7 +534,14 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
                       ),
                     )
                     .toList(),
-                onChanged: (v) => setState(() => _kind = v ?? _kind),
+                onChanged: (v) => setState(() {
+                  _kind = v ?? _kind;
+                  if (_kind == 'tesouro_ipca') {
+                    _rateKind = 'hibrido';
+                  } else if (_kind == 'tesouro_pre' || _kind == 'tesouro_selic') {
+                    _rateKind = 'pre_fixado';
+                  }
+                }),
               ),
               const SizedBox(height: FiSpace.s4),
               TextField(
@@ -498,7 +551,9 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
               ),
               const SizedBox(height: FiSpace.s4),
               DropdownButtonFormField<String>(
+                key: ValueKey('tipo-taxa-$_rateKind'),
                 initialValue: _rateKind,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Tipo de taxa'),
                 items: const [
                   DropdownMenuItem(value: 'pre_fixado', child: Text('Pré-fixado')),
@@ -520,6 +575,10 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
                 decoration: InputDecoration(
                   labelText: isPosFixado
                       ? 'Taxa de referência (% a.a.)'
+                      : _kind == 'tesouro_selic'
+                      ? 'Taxa acima da Selic (% a.a.)'
+                      : _rateKind == 'hibrido' || _kind == 'tesouro_ipca'
+                      ? 'Taxa acima do IPCA (% a.a.)'
                       : 'Taxa (% a.a.)',
                 ),
               ),
@@ -562,6 +621,7 @@ class _FixedIncomeFormState extends ConsumerState<_FixedIncomeForm> {
               const SizedBox(height: FiSpace.s4),
               DropdownButtonFormField<String>(
                 initialValue: _liquidity,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Liquidez'),
                 items: const [
                   DropdownMenuItem(

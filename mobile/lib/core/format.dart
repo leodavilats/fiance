@@ -7,7 +7,7 @@ final _quantityFormat = NumberFormat('#,##0.########', 'pt_BR');
 final _inputFormat = NumberFormat('0.########', 'pt_BR');
 final _numeroDigitado = RegExp(r'^-?[0-9.,]+$');
 
-String formatCurrency(double? value) => _currency.format(value ?? 0);
+String formatCurrency(double? value) => value == null ? '—' : _currency.format(value);
 
 String formatDecimal(double? value, {int digits = 1}) => value == null
     ? '—'
@@ -49,6 +49,13 @@ String formatDate(String? isoDate) {
   if (isoDate == null || isoDate.length < 10) return '—';
   final data = DateTime.tryParse(isoDate.substring(0, 10));
   return data == null ? isoDate : _dayFormat.format(data);
+}
+
+String formatMaturity(int days) {
+  if (days < 0) return 'venceu há ${-days} ${days == -1 ? 'dia' : 'dias'}';
+  if (days == 0) return 'vence hoje';
+  if (days == 1) return 'vence amanhã';
+  return 'vence em $days dias';
 }
 
 String formatQuantity(double? value) =>

@@ -31,7 +31,7 @@ _ASSET_TYPE_TO_CATEGORY = {
 _VALID_CATEGORIES = {"renda_fixa", "acoes_br", "bdrs", "fiis", "etfs"}
 
 _CATEGORY_LABELS = {
-    "renda_fixa": "Renda Fixa",
+    "renda_fixa": "Renda fixa",
     "acoes_br": "Ações BR",
     "bdrs": "BDRs",
     "fiis": "FIIs",

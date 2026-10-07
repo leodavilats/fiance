@@ -92,6 +92,8 @@ class _ImportAccountScreenState extends ConsumerState<ImportAccountScreen> {
     ref.invalidate(cashEntriesProvider);
     ref.invalidate(debtsProvider);
     ref.invalidate(surplusProvider);
+    ref.invalidate(rebalanceSuggestionsProvider);
+    ref.invalidate(quickInvestProvider);
   }
 
   Future<void> _import() async {

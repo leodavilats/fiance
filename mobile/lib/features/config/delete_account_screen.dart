@@ -73,6 +73,13 @@ class _Corpo extends ConsumerStatefulWidget {
 class _CorpoState extends ConsumerState<_Corpo> {
   final _confirmation = TextEditingController();
   bool _busy = false;
+  bool _exportando = false;
+
+  Future<void> _exportar() async {
+    setState(() => _exportando = true);
+    await exportAccountData(context, ref);
+    if (mounted) setState(() => _exportando = false);
+  }
 
   @override
   void initState() {
@@ -147,7 +154,8 @@ class _CorpoState extends ConsumerState<_Corpo> {
           child: FiButton.secondary(
             label: 'Baixar meus dados',
             icon: Icons.download,
-            onPressed: () => exportAccountData(context, ref),
+            busy: _exportando,
+            onPressed: _exportando ? null : _exportar,
           ),
         ),
         FiSection(

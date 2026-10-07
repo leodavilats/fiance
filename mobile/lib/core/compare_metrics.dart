@@ -1,16 +1,17 @@
 import 'labels.dart';
 import 'models.dart';
 import 'format.dart';
+import 'score_ruler.dart' show fairBandLabel;
 
 const fiCompareStocks = {'br_stock', 'bdr'};
 const fiCompareWithPatrimony = {'br_stock', 'bdr', 'fii'};
 const fiCompareAll = {'br_stock', 'bdr', 'fii', 'etf'};
 
 const fiAssetTypeLabel = {
-  'br_stock': 'ação BR',
-  'bdr': 'BDR',
-  'fii': 'FII',
-  'etf': 'ETF',
+  'br_stock': 'ação',
+  'bdr': 'recibo de ação estrangeira (BDR)',
+  'fii': 'fundo imobiliário (FII)',
+  'etf': 'fundo de índice (ETF)',
   'renda_fixa': 'renda fixa',
 };
 
@@ -28,30 +29,30 @@ String _fmtPct(double? v) => formatPercent(v, digits: 1);
 final fiCompareMetrics = <FiCompareMetric>[
   FiCompareMetric(
     'Preço',
-    'Valuation',
+    'Preço e valor',
     fiCompareAll,
     (a) => formatCurrency(a.price),
   ),
   FiCompareMetric(
-    'Preço justo (valor central)',
-    'Valuation',
+    'Faixa de preço justo',
+    'Preço e valor',
     fiCompareAll,
-    (a) => formatCurrency(a.principalValue),
+    (a) => fairBandLabel(a.fairLow, a.fairHigh),
   ),
   FiCompareMetric(
-    'P/L',
-    'Valuation',
+    'Preço sobre lucro (P/L)',
+    'Preço e valor',
     fiCompareStocks,
     (a) => formatDecimal(a.fundamentals['pe_ratio']),
   ),
   FiCompareMetric(
-    'P/VP',
-    'Valuation',
+    'Preço sobre valor patrimonial (P/VP)',
+    'Preço e valor',
     fiCompareWithPatrimony,
     (a) => formatDecimal(a.fundamentals['pb_ratio'], digits: 2),
   ),
   FiCompareMetric(
-    'ROE',
+    'Retorno sobre o patrimônio (ROE)',
     'Qualidade',
     fiCompareStocks,
     (a) => _fmtPct(a.fundamentals['roe']),
@@ -64,19 +65,24 @@ final fiCompareMetrics = <FiCompareMetric>[
   ),
   FiCompareMetric(
     'Dívida / Patrimônio',
-    'Risco',
+    'Dívida',
     fiCompareStocks,
     (a) => _fmtPct(a.fundamentals['debt_to_equity']),
   ),
   FiCompareMetric(
-    'RSI (14)',
-    'Risco',
+    'Força relativa (RSI, 0 a 100)',
+    'O que o preço vem fazendo',
     fiCompareAll,
     (a) => formatDecimal(a.rsi14, digits: 0),
   ),
-  FiCompareMetric('Tendência', 'Risco', fiCompareAll, (a) => trendLabel(a.trend)),
   FiCompareMetric(
-    'Dividend Yield',
+    'Tendência',
+    'O que o preço vem fazendo',
+    fiCompareAll,
+    (a) => trendLabel(a.trend),
+  ),
+  FiCompareMetric(
+    'Dividendos ao ano (DY)',
     'Proventos',
     fiCompareAll,
     (a) => _fmtPct(a.fundamentals['dividend_yield']),

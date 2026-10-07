@@ -16,7 +16,7 @@ from app.models.dividends import (
     DividendsReceivedResponse,
     DividendTickerTotal,
 )
-from app.storage import portfolio_store
+from app.storage import ledger_store, portfolio_store
 
 
 def _cents(value: Decimal) -> float:
@@ -57,8 +57,15 @@ class DividendsService:
             by_month[row["paid_at"][:7]].append(row["amount"])
             by_ticker[row["ticker"]].append(row["amount"])
 
-        months_with_data = [m for m in by_month if m >= cutoff_12m.strftime("%Y-%m")]
-        monthly_average = _cents(last_12m / len(months_with_data)) if months_with_data else 0.0
+        monthly_average = 0.0
+        if any(r["paid_at"][:10] >= cutoff_iso for r in amounts):
+            starts = [min(r["paid_at"][:10] for r in amounts)]
+            first_entry = ledger_store.list_entries(limit=1)
+            if first_entry:
+                starts.append(first_entry[0].traded_on[:10])
+            start = max(date.fromisoformat(min(starts)), cutoff_12m)
+            months = Decimal((today - start).days) * 12 / Decimal(365)
+            monthly_average = _cents(last_12m / min(Decimal(12), max(Decimal(1), months)))
 
         accuracy = None
         if estimated_monthly and estimated_monthly > 0 and monthly_average > 0:

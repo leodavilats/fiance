@@ -29,6 +29,12 @@ void main() {
     test('formatCurrency escreve real em português', () {
       expect(formatCurrency(120000), contains('120.000'));
     });
+
+    test('formatCurrency não escreve zero no lugar do que não foi lido', () {
+      expect(formatCurrency(null), '—',
+          reason: 'preço ausente como R\$ 0,00 inventa um dado: ausência não vira zero');
+      expect(formatCurrency(0), contains('0,00'));
+    });
   });
 
   group('o número digitado é lido em português, e o ponto do teclado não multiplica', () {
@@ -76,6 +82,16 @@ void main() {
 
     test('formatPoints escreve p.p. em português', () {
       expect(formatPoints(8.66), '8,7 p.p.');
+    });
+  });
+
+  group('o vencimento diz o dia em palavras, no plural certo', () {
+    test('formatMaturity cobre vencido, hoje, amanhã e adiante', () {
+      expect(formatMaturity(-12), 'venceu há 12 dias', reason: 'vencida não pode sair como "em -12 dias"');
+      expect(formatMaturity(-1), 'venceu há 1 dia');
+      expect(formatMaturity(0), 'vence hoje', reason: '"vence em 0 dias" não é português');
+      expect(formatMaturity(1), 'vence amanhã', reason: '"vence em 1 dias" erra o plural');
+      expect(formatMaturity(30), 'vence em 30 dias');
     });
   });
 }
