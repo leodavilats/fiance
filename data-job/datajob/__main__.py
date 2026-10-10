@@ -9,10 +9,16 @@ import sqlalchemy as sa
 
 from datajob import armazenamento, coleta, rotina
 from datajob.config import carregar
-from datajob.fontes import b3_cotahist
+from datajob.erros import ArquivoInvalido
+from datajob.fontes import b3_cotahist, b3_emissores, cvm_cadastro, cvm_fca
 from datajob.rede import Indisponivel, baixar
 
-_FONTES = {b3_cotahist.FONTE: b3_cotahist.processar}
+_FONTES = {
+    b3_cotahist.FONTE: b3_cotahist.processar,
+    cvm_cadastro.FONTE: cvm_cadastro.processar,
+    cvm_fca.FONTE: cvm_fca.processar,
+    b3_emissores.FONTE: b3_emissores.processar,
+}
 
 
 def _relatar(arquivo: str, resultado: coleta.Resultado | None) -> None:
@@ -22,7 +28,7 @@ def _relatar(arquivo: str, resultado: coleta.Resultado | None) -> None:
         print(f"{arquivo}: já coletado com o mesmo conteúdo, pulado.", flush=True)
     else:
         print(
-            f"{arquivo}: {resultado.lidas} registros lidos, {resultado.gravadas} cotações "
+            f"{arquivo}: {resultado.lidas} registros lidos, {resultado.gravadas} linhas "
             f"gravadas ou alteradas, {resultado.quarentena} em quarentena "
             f"(coleta {resultado.coleta_id}).",
             flush=True,
@@ -43,8 +49,9 @@ def _cotahist(args, engine: sa.Engine, raiz: Path) -> None:
     _relatar(nome, resultado)
 
 
-def _diario(args, engine: sa.Engine, raiz: Path) -> None:
-    rotina.diario(engine, raiz, baixar, _relatar)
+def _diario(args, engine: sa.Engine, raiz: Path) -> int:
+    falhas = rotina.diario(engine, raiz, baixar, _relatar)
+    return 1 if falhas else 0
 
 
 def _reprocessar(args, engine: sa.Engine, raiz: Path) -> None:
@@ -81,13 +88,12 @@ def main(argv: list[str] | None = None) -> int:
     engine = sa.create_engine(config.database_url)
     comandos = {"cotahist": _cotahist, "diario": _diario, "reprocessar": _reprocessar}
     try:
-        comandos[args.comando](args, engine, config.bruto_dir)
-    except (Indisponivel, b3_cotahist.ArquivoInvalido) as e:
+        return comandos[args.comando](args, engine, config.bruto_dir) or 0
+    except (Indisponivel, ArquivoInvalido) as e:
         print(f"Falhou: {e}", file=sys.stderr)
         return 1
     finally:
         engine.dispose()
-    return 0
 
 
 if __name__ == "__main__":

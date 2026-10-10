@@ -9,16 +9,14 @@ from decimal import Decimal
 
 import sqlalchemy as sa
 
+from datajob.erros import ArquivoInvalido
+
 FONTE = "b3_cotahist"
 
 _BASE = "https://bvmf.bmfbovespa.com.br/InstDados/SerHist"
 
 _TAMANHO_DO_REGISTRO = 245
 _MERCADO_A_VISTA = "010"
-
-
-class ArquivoInvalido(ValueError):
-    pass
 
 
 def url_do_ano(ano: int) -> str:

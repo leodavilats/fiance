@@ -1,0 +1,62 @@
+[
+ {
+  "codeCVM": "50110",
+  "issuingCompany": "CBTC",
+  "companyName": "21SHARES BITCOIN CORE ETP",
+  "tradingName": "21SH BITCOIN",
+  "cnpj": "0",
+  "marketIndicator": "1",
+  "typeBDR": "DRE",
+  "dateListing": "08/09/2025",
+  "status": "A",
+  "segment": "Não Classificados",
+  "segmentEng": "Not Classified",
+  "type": "4",
+  "market": "DRE"
+ },
+ {
+  "codeCVM": "22616",
+  "issuingCompany": "BPAC",
+  "companyName": "BCO BTG PACTUAL S.A.",
+  "tradingName": "BTGP BANCO",
+  "cnpj": "30306294000145",
+  "marketIndicator": "17",
+  "typeBDR": "",
+  "dateListing": "10/11/2011",
+  "status": "A",
+  "segment": "Bancos",
+  "segmentEng": "Banks",
+  "type": "1",
+  "market": "N2"
+ },
+ {
+  "codeCVM": "80233",
+  "issuingCompany": "JBSS",
+  "companyName": "JBS N.V.",
+  "tradingName": "JBS N.V.",
+  "cnpj": "49115815000105",
+  "marketIndicator": "14",
+  "typeBDR": "DR2",
+  "dateListing": "30/05/2025",
+  "status": "A",
+  "segment": "Carnes e Derivados",
+  "segmentEng": "Meat. Poultry and Others",
+  "type": "2",
+  "market": "DR2"
+ },
+ {
+  "codeCVM": "9512",
+  "issuingCompany": "PETR",
+  "companyName": "PETROLEO BRASILEIRO S.A. PETROBRAS",
+  "tradingName": "PETROBRAS",
+  "cnpj": "33000167000101",
+  "marketIndicator": "17",
+  "typeBDR": "",
+  "dateListing": "27/08/1968",
+  "status": "A",
+  "segment": "Exploração. Refino e Distribuição",
+  "segmentEng": "Exploration. Refining and Distribution",
+  "type": "1",
+  "market": "N2"
+ }
+]

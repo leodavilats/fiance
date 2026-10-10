@@ -137,8 +137,11 @@ guarda.
 
 | Tabela | Chave | Guarda |
 |---|---|---|
-| `empresa` | `cnpj` | Código CVM, razão social, setor, situação, datas de registro e cancelamento |
-| `ativo` | `isin` | Nome resumido, espécie, código BDI, primeiro e último pregão. A fazer: CNPJ pelo FCA e classe (ação, FII, ETF, BDR) |
+| `empresa` | `cnpj` | Cadastro da CVM: código CVM, razão social, setor, situação, registro e cancelamento — inclui as canceladas |
+| `valor_mobiliario` | `(cnpj, data_referencia, versao, tipo, classe, codigo)` | FCA de 2010 em diante: o que cada empresa declara negociar, com o ticker quando preenchido |
+| `emissor_b3` | `codigo` | Lista de emissores listados na B3, com CNPJ e código CVM |
+| `emissor` | `codigo` | Derivada: o código de emissor do ISIN (`BRPETRACNPR6` → `PETR`) ligado a um CNPJ, e o método |
+| `ativo` | `isin` | Nome resumido, espécie, código BDI, primeiro e último pregão. A fazer: classe (ação, FII, ETF, BDR) |
 | `ticker` | `(codigo, isin)` | Primeiro e último pregão. Um código reaproveitado por outro ISIN é outra linha |
 | `cotacao` | `(isin, data)` | Abertura, máxima, mínima, fechamento, média, negócios, quantidade, volume, fator de cotação — tudo bruto, `NUMERIC` |
 | `documento` | `(cnpj, tipo, data_referencia, versao)` | Tipo (DFP, ITR), data de entrega, id CVM |
@@ -200,6 +203,26 @@ COTAHIST de 2005 em diante, cadastro e FCA, DFP e ITR de 2010 em diante, BCB SGS
 - Rodar o `diario` duas vezes seguidas não muda nenhuma linha
 - O volume de `demonstracao_linha` está medido, e cabe no plano do banco
 - `ruff` e `pytest` no CI, como os do backend
+
+### Ligação do ativo à empresa — feita em 2026-10-10
+
+O ISIN carrega o código do emissor na B3 (posições 3 a 6). Ele é ligado a um CNPJ por três vias, nesta
+ordem, e o método fica gravado para a pesquisa filtrar por confiança:
+
+1. **FCA** — o ticker que a própria empresa declara à CVM. Vence a B3 quando divergem (JBSS, EMBR,
+   TUPY, ENAT), porque é o CNPJ que entrega os balanços
+2. **B3** — a lista de emissores listados hoje, num endpoint não documentado do site da B3. Cobre o
+   que o FCA deixa em branco: o BTG Pactual declara o ticker como `000000`
+3. **Nome** — o nome resumido do COTAHIST como prefixo da razão social ou do nome comercial no
+   cadastro da CVM, só entre empresas com registro vigente no período de pregão, e só com um
+   candidato. É a via de quem saiu da bolsa e ficou sem ticker no FCA (Souza Cruz, BR Properties)
+
+O campo *mercado* do FCA não é confiável — a Brisanet declara BRST3 como balcão — e não é usado.
+
+Medido com 605 emissores de ação negociados desde 2005: 447 pelo FCA, 29 pela B3, 65 pelo nome, 64
+sem CNPJ. Uma amostra de 15 ligações por nome estava correta, inclusive empresas renomeadas depois de
+sair (BR Insurance → Alper, Abril Educação → Somos). Sem o endpoint da B3, cerca de 30 emissores
+listados hoje ficariam sem CNPJ; o resto não depende dele.
 
 ### Fase 2 — eventos e proventos
 

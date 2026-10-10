@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import date
 
 from datajob import rotina
@@ -52,6 +53,8 @@ def test_diario_grava_o_que_saiu_e_registra_o_que_nao_saiu(engine, tmp_path):
     def baixar(url: str) -> bytes:
         if url.endswith("COTAHIST_A2026.ZIP"):
             return zipar(texto)
+        if "sistemaswebb3" in url:
+            return json.dumps({"page": {"totalPages": 1}, "results": []}).encode()
         raise Ausente(url)
 
     rotina.diario(
@@ -71,7 +74,7 @@ def test_diario_grava_o_que_saiu_e_registra_o_que_nao_saiu(engine, tmp_path):
     )
 
     assert rotina.ultimo_pregao_gravado(engine) == date(2026, 10, 7)
-    assert relatos == [
+    assert [r for r in relatos if r[0].startswith("COTAHIST")] == [
         ("COTAHIST_D08102026.ZIP", None),
         ("COTAHIST_D09102026.ZIP", None),
     ], "o pregão que ainda não saiu fica para a próxima rodada"

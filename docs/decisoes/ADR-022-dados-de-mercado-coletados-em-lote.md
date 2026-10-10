@@ -38,6 +38,10 @@ schema `mercado` do Postgres. Quem consome — `backend/` e a pesquisa — só l
 continua no `backend/` até ele passar a ler do schema `mercado`, e só sai de vez quando proventos e
 eventos de ações tiverem fonte decidida — a peça sem fonte oficial estruturada.
 
+**A lista de emissores do site da B3** entrou em 2026-10-10, e é a única fonte não documentada: liga
+o código de emissor ao CNPJ de quem o FCA deixa sem ticker. É a terceira via de três, e cair com ela
+deixa cerca de 30 emissores sem empresa, não a base sem dado.
+
 **Regras do data-job:**
 
 - **Só ele escreve em `mercado`.** Consumidores usam um usuário de banco somente leitura.

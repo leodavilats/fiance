@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+import traceback
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -7,9 +9,9 @@ from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
-from datajob import coleta
-from datajob.esquema import cotacao
-from datajob.fontes import b3_cotahist
+from datajob import coleta, emissores
+from datajob.esquema import cotacao, valor_mobiliario
+from datajob.fontes import b3_cotahist, b3_emissores, cvm_cadastro, cvm_fca
 from datajob.rede import Ausente
 
 PRIMEIRO_ANO = 2005
@@ -17,6 +19,8 @@ PRIMEIRO_ANO = 2005
 _LACUNA_PARA_O_ANUAL = timedelta(days=10)
 
 _BRT = ZoneInfo("America/Sao_Paulo")
+
+Relatar = Callable[[str, coleta.Resultado | None], None]
 
 
 def hoje_no_brasil() -> date:
@@ -33,27 +37,92 @@ def pendencias(ultimo: date | None, hoje: date) -> list[str]:
     return [b3_cotahist.url_do_dia(dia) for dia in dias if dia.weekday() < 5]
 
 
+def anos_do_fca(tem_fca: bool, hoje: date) -> list[int]:
+    inicio = hoje.year - 1 if tem_fca else cvm_fca.PRIMEIRO_ANO
+    return list(range(inicio, hoje.year + 1))
+
+
 def ultimo_pregao_gravado(engine: sa.Engine) -> date | None:
     with engine.connect() as conn:
         return conn.execute(sa.select(sa.func.max(cotacao.c.data))).scalar_one()
+
+
+def _tem_fca(engine: sa.Engine) -> bool:
+    with engine.connect() as conn:
+        return conn.execute(sa.select(valor_mobiliario.c.cnpj).limit(1)).first() is not None
+
+
+def _arquivo(engine, raiz, relatar, baixar, fonte, url, processar, nome=None) -> None:
+    nome = nome or url.rsplit("/", 1)[1]
+    try:
+        conteudo = baixar(url)
+    except Ausente:
+        relatar(nome, None)
+        return
+    relatar(nome, coleta.executar(engine, raiz, fonte, nome, conteudo, processar))
 
 
 def diario(
     engine: sa.Engine,
     raiz: Path,
     baixar: Callable[[str], bytes],
-    relatar: Callable[[str, coleta.Resultado | None], None],
+    relatar: Relatar,
     hoje: date | None = None,
-) -> None:
-    urls = pendencias(ultimo_pregao_gravado(engine), hoje or hoje_no_brasil())
-    for url in urls:
-        nome = url.rsplit("/", 1)[1]
-        try:
-            conteudo = baixar(url)
-        except Ausente:
-            relatar(nome, None)
-            continue
-        relatar(
-            nome,
-            coleta.executar(engine, raiz, b3_cotahist.FONTE, nome, conteudo, b3_cotahist.processar),
+) -> list[str]:
+    hoje = hoje or hoje_no_brasil()
+
+    def cotahist() -> None:
+        for url in pendencias(ultimo_pregao_gravado(engine), hoje):
+            _arquivo(engine, raiz, relatar, baixar, b3_cotahist.FONTE, url, b3_cotahist.processar)
+
+    def cadastro() -> None:
+        _arquivo(
+            engine,
+            raiz,
+            relatar,
+            baixar,
+            cvm_cadastro.FONTE,
+            cvm_cadastro.URL,
+            cvm_cadastro.processar,
         )
+
+    def fca() -> None:
+        for ano in anos_do_fca(_tem_fca(engine), hoje):
+            url = cvm_fca.url_do_ano(ano)
+            _arquivo(engine, raiz, relatar, baixar, cvm_fca.FONTE, url, cvm_fca.processar)
+
+    def emissores_b3() -> None:
+        conteudo = b3_emissores.baixar_lista(baixar)
+        relatar(
+            b3_emissores.NOME,
+            coleta.executar(
+                engine,
+                raiz,
+                b3_emissores.FONTE,
+                b3_emissores.NOME,
+                conteudo,
+                b3_emissores.processar,
+            ),
+        )
+
+    def ligar_emissores() -> None:
+        with engine.begin() as conn:
+            contagem = emissores.recalcular(conn)
+        print(f"emissores ligados a CNPJ: {dict(contagem)}", flush=True)
+
+    falhas = []
+    etapas = {
+        "cotações da B3": cotahist,
+        "cadastro da CVM": cadastro,
+        "FCA da CVM": fca,
+        "emissores da B3": emissores_b3,
+        "ligação emissor-CNPJ": ligar_emissores,
+    }
+    for nome, etapa in etapas.items():
+        try:
+            etapa()
+        except Exception as e:
+            falhas.append(nome)
+            print(f"Falhou ({nome}): {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+            traceback.print_exc(file=sys.stderr)
+    return falhas
