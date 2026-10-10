@@ -101,3 +101,31 @@ def test_ano_antigo_nao_sobrescreve_o_nome_atual(engine, tmp_path):
         _um(engine, "SELECT primeiro_pregao::text FROM mercado.ticker WHERE codigo = 'PETR4'")
         == "2015-10-08"
     )
+
+
+def test_troca_de_ticker_continua_a_serie_do_papel(engine, tmp_path):
+    texto = TRECHO.read_text(encoding="latin-1")
+    antes = texto.replace("PETR4       010PETROBRAS", "PETX4       010PETROBRAS").replace(
+        "BRPETRACNPR6", "BRPETXACNPR1"
+    )
+    _executar(engine, tmp_path, _zip(antes.replace("20261008", "20261007")))
+    _executar(engine, tmp_path, _zip(texto))
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text(
+                "INSERT INTO mercado.emissor (codigo, cnpj, metodo) VALUES "
+                "('PETR', '33000167000101', 'fca'), ('PETX', '33000167000101', 'fca')"
+            )
+        )
+
+    with engine.connect() as conn:
+        serie = conn.execute(
+            sa.text(
+                "SELECT data, codigo FROM mercado.cotacao_papel "
+                "WHERE cnpj = '33000167000101' AND classe = 'PN' ORDER BY data"
+            )
+        ).all()
+
+    assert [(str(d), c) for d, c in serie] == [("2026-10-07", "PETX4"), ("2026-10-08", "PETR4")], (
+        "VVAR3, VIIA3 e BHIA3 são três ISINs da mesma empresa"
+    )
