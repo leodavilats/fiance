@@ -94,6 +94,11 @@ Serviço `data-job` no projeto `fiance` do Railway, ambiente `production`:
 | Execução | `python -m datajob diario`, sem reinício: roda e termina |
 | Agenda | `0 2 * * 2-6` (UTC): 23h de Brasília, depois de cada pregão de segunda a sexta |
 
+**Para rodar fora da agenda:** tirar o cron do serviço e fazer uma implantação **nova**
+(`railway up --service data-job`), e depois devolver o cron com outra implantação nova. O *redeploy*
+do Railway reaproveita a configuração da implantação anterior, cron incluído: com ele, o container
+fica em `created` esperando o horário, e nada roda.
+
 O `diario` busca o que falta desde o último pregão gravado: os anuais de 2005 em diante com o banco
 vazio, o anual do ano quando a lacuna passa de dez dias, e os diários no resto. O arquivo que a B3
 ainda não publicou responde 404 e fica para a rodada seguinte.
@@ -219,8 +224,8 @@ ordem, e o método fica gravado para a pesquisa filtrar por confiança:
 
 O campo *mercado* do FCA não é confiável — a Brisanet declara BRST3 como balcão — e não é usado.
 
-Medido com 605 emissores de ação negociados desde 2005: 447 pelo FCA, 29 pela B3, 65 pelo nome, 64
-sem CNPJ. Uma amostra de 15 ligações por nome estava correta, inclusive empresas renomeadas depois de
+Em produção, com o histórico inteiro, são 726 emissores de ação: 450 pelo FCA, 41 pela B3, 109 pelo
+nome, 126 sem CNPJ — na maioria, empresas que saíram da bolsa antes de 2010, antes do FCA. Uma amostra de 15 ligações por nome estava correta, inclusive empresas renomeadas depois de
 sair (BR Insurance → Alper, Abril Educação → Somos). Sem o endpoint da B3, cerca de 30 emissores
 listados hoje ficariam sem CNPJ; o resto não depende dele.
 
