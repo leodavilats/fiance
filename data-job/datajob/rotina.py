@@ -21,6 +21,7 @@ from datajob.fontes import (
     cvm_cadastro,
     cvm_demonstracoes,
     cvm_fca,
+    cvm_fre,
     cvm_ipe,
 )
 from datajob.rede import Ausente
@@ -80,6 +81,11 @@ def proventos_hoje(tem_provento: bool, hoje: date) -> bool:
 def _tem_provento(engine: sa.Engine) -> bool:
     with engine.connect() as conn:
         return conn.execute(sa.text("SELECT 1 FROM mercado.provento LIMIT 1")).first() is not None
+
+
+def anos_do_fre(tem_fre: bool, hoje: date) -> list[int]:
+    inicio = hoje.year - 1 if tem_fre else cvm_fre.PRIMEIRO_ANO
+    return list(range(inicio, hoje.year + 1))
 
 
 def anos_do_ipe(tem_ipe: bool, hoje: date) -> list[int]:
@@ -222,6 +228,13 @@ def diario(
                 f"{len(falharam)} emissores sem proventos: {', '.join(falharam[:20])}"
             )
 
+    def fre() -> None:
+        with engine.connect() as conn:
+            tem = conn.execute(sa.text("SELECT 1 FROM mercado.capital_social LIMIT 1")).first()
+        for ano in anos_do_fre(tem is not None, hoje):
+            url = cvm_fre.url_do_ano(ano)
+            _arquivo(engine, raiz, relatar, baixar, cvm_fre.FONTE, url, cvm_fre.processar)
+
     def ipe() -> None:
         for ano in anos_do_ipe(_tem_ipe(engine), hoje):
             url = cvm_ipe.url_do_ano(ano)
@@ -265,6 +278,7 @@ def diario(
         "séries do BCB": series_do_bcb,
         "proventos e eventos da B3": proventos_e_eventos,
         "IPE da CVM": ipe,
+        "FRE da CVM": fre,
         "composição do capital": composicao_do_bruto,
         "série ajustada": serie_ajustada,
     }

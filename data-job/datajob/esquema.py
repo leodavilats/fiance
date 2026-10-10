@@ -243,3 +243,16 @@ composicao_capital = sa.Table(
     sa.Column("acoes_total", sa.BigInteger),
     sa.Column("tesouraria_total", sa.BigInteger),
 )
+
+capital_social = sa.Table(
+    "capital_social",
+    metadata,
+    sa.Column("cnpj", sa.Text, primary_key=True),
+    sa.Column("data_referencia", sa.Date, primary_key=True),
+    sa.Column("versao", sa.Integer, primary_key=True),
+    sa.Column("data_aprovacao", sa.Date, primary_key=True),
+    sa.Column("acoes_ordinarias", sa.BigInteger),
+    sa.Column("acoes_preferenciais", sa.BigInteger),
+    sa.Column("acoes_total", sa.BigInteger, nullable=False),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+)

@@ -128,3 +128,24 @@ def test_salto_da_kepler_vira_evento_inferido_e_a_serie_fica_continua(engine, tm
 
     assert not dia.salto_sem_evento
     assert abs(dia.retorno_total - Decimal("0.0357")) < Decimal("0.001"), "19,04 × 3 / 55,15 − 1"
+
+
+FRE = (
+    "CNPJ_Companhia;Data_Referencia;Versao;ID_Documento;Nome_Companhia;ID_Capital_Social;"
+    "Tipo_Capital;Data_Autorizacao_Aprovacao;Valor_Capital;Prazo_Integralizacao;"
+    "Quantidade_Acoes_Ordinarias;Quantidade_Acoes_Preferenciais;Quantidade_Total_Acoes\n"
+    "33.000.167/0001-01;2016-01-01;13;65141;PETROBRAS;142148;Capital Emitido;2014-04-02;"
+    "205431960490.52;Não aplicável;7442454142;5602042788;13044496930\n"
+    "33.000.167/0001-01;2016-01-01;13;65141;PETROBRAS;142150;Capital Integralizado;2014-04-02;"
+    "205431960490.52;Não aplicável;7442454142;5602042788;13044496930\n"
+)
+
+
+def test_fre_guarda_o_capital_integralizado_com_a_data_de_aprovacao():
+    from datajob.fontes import cvm_fre
+
+    linhas = cvm_fre.interpretar(_zip("fre_cia_aberta_capital_social_2016.csv", FRE))
+
+    assert [(r["cnpj"], r["data_aprovacao"], r["acoes_total"]) for r in linhas] == [
+        ("33000167000101", date(2014, 4, 2), 13044496930)
+    ]
