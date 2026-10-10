@@ -52,11 +52,13 @@ eventos de ações tiverem fonte decidida — a peça sem fonte oficial estrutur
 - **Toda execução deixa registro** (fonte, arquivo, hash, linhas, status).
 - **Falha não apaga o que existe.** "O sistema não inventa dado" continua valendo.
 
-**Escolhas abertas, decididas assim por padrão:**
+**Onde mora, decidido em 2026-10-09 depois de medir:**
 
-- **Mesmo Postgres do aplicativo, em schema separado.** Mover para outro banco é trocar a URL, se a
-  pesquisa pesar no aplicativo.
-- **Arquivos brutos num bucket do Railway** em produção; diretório local em desenvolvimento.
+- **Um Postgres só do data-job** (serviço `Postgres-xlfC` no Railway, volume de 5 GB), e não o do
+  aplicativo. Um ano de cotação ocupa 65 MB, e o volume do aplicativo tem 500 MB: o histórico não
+  cabia, e disco cheio derruba o aplicativo. A proposta original era o mesmo banco.
+- **Arquivos brutos num volume** montado no serviço do data-job (`/bruto`), e não num bucket: o
+  armazenamento já é um diretório, e o volume não pede código novo.
 
 **Enquanto esta ADR for `PROPOSTO`, o invariante de [CLAUDE.md](../../CLAUDE.md) vale.** Ao aceitá-la,
 mudam no mesmo commit: o invariante "Fontes" de `CLAUDE.md`, a seção *Dados externos* de

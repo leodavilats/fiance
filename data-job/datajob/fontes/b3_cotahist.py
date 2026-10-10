@@ -175,7 +175,8 @@ def interpretar(linhas: str | Iterable[str]) -> Leitura:
         leitura.cotacoes.append(cotacao)
 
     declarados = int(final[31:42])
-    if declarados != leitura.registros:
+    # Até 2015 a B3 conta o cabeçalho e o registro final; de 2025 em diante, só as cotações.
+    if declarados not in (leitura.registros, leitura.registros + 2):
         raise ArquivoInvalido(
             f"O registro final declara {declarados} cotações, e o arquivo tem {leitura.registros}."
         )

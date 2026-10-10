@@ -83,6 +83,15 @@ def test_contagem_do_registro_final_que_nao_bate_recusa_o_arquivo():
         interpretar("\n".join(linhas[:-2] + [linhas[-1]]))
 
 
+def test_registro_final_que_conta_cabecalho_e_final_e_aceito():
+    linhas = _linhas()
+    final = linhas[-1][:31] + f"{len(linhas):011d}" + linhas[-1][42:]
+
+    leitura = interpretar("\n".join(linhas[:-1] + [final]))
+
+    assert leitura.registros == 7, "o anual de 2005 declara 181410 linhas para 181408 cotações"
+
+
 def test_linha_de_tamanho_errado_recusa_o_arquivo():
     with pytest.raises(ArquivoInvalido, match="posições"):
         interpretar(_com_corpo([_linha_de("PETR4")[:-1]]))

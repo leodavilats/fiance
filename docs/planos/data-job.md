@@ -81,6 +81,22 @@ data-job/
 A plausibilidade fica em cada fonte, porque a regra depende do arquivo. O data-job não importa o
 backend, para não arrastar a configuração dele.
 
+### Produção
+
+Serviço `data-job` no projeto `fiance` do Railway, ambiente `production`:
+
+| Item | Valor |
+|---|---|
+| Fonte | `main`, diretório `/data-job`, reconstrói só com mudança em `/data-job/**` |
+| Banco | `Postgres-xlfC`, só do data-job — `DATABASE_URL` referencia ele |
+| Bruto | Volume `data-job-bruto` em `/bruto` |
+| Antes de cada deploy | `python -m alembic upgrade head` |
+| Execução | `python -m datajob diario`, sem reinício: roda e termina |
+
+O `diario` busca o que falta desde o último pregão gravado: os anuais de 2005 em diante com o banco
+vazio, o anual do ano quando a lacuna passa de dez dias, e os diários no resto. O arquivo que a B3
+ainda não publicou responde 404 e fica para a rodada seguinte.
+
 ### Como rodar
 
 ```bash
@@ -101,6 +117,15 @@ eles **apagam o schema `mercado`** desse banco a cada teste. No CI é um serviç
 - **A B3 publica preço médio fora da faixa do dia.** Na BMKS3, em 08/10/2026, abertura, máxima,
   mínima e fechamento são 376,02 e a média é 380,78. A média não é conferida contra a faixa;
   abertura e fechamento são
+- **O registro final muda de convenção.** Os anuais de 2005 e 2015 declaram o total de linhas, com
+  cabeçalho e final; o de 2025 e o diário de 2026 declaram só as cotações. As duas são aceitas, e
+  qualquer outra diferença recusa o arquivo
+- **Os 22 anuais, de 2005 a 2026, passam pela interpretação**, com 3,4 milhões de cotações à vista no
+  total. A quarentena tem 351 linhas em 2005 — tickers com sufixo `B`, do balcão organizado, cujo
+  último preço não respeita a faixa do dia — e de 0 a 13 nos demais anos
+- **Até meados dos anos 2000 há cotação por lote de mil** (`fator_cotacao` 1000 e 100000). O preço
+  por ação é o preço dividido pelo fator, e o fator fica gravado por isso
+- **A B3 recusa (403) o User-Agent padrão do `urllib`**; o do `httpx` passa
 
 ---
 
