@@ -336,6 +336,13 @@ fechamento por ação, o fator de ajuste, o fechamento ajustado, o provento na d
 depois da data-com, na escala do preço ajustado) e o retorno total do dia. Nos dias com duas cotações
 para o mesmo papel, fica a de maior volume.
 
+**A lista de eventos da B3 não é completa.** A Méliuz (CASH3, set/2021), o Banco Inter (BIDI4, mai/2021),
+a Kepler Weber (KEPL3, mai/2022) e a Gafisa (GFSA3, set/2022) desdobraram ou grupuram sem o evento
+aparecer — o preço salta 82%, 67%, 66% e 849% num dia. A série **não inventa o evento**: a coluna
+`salto_sem_evento` marca a variação acima de 50% sem evento da B3 no intervalo, e `dias_desde_anterior`
+expõe o retorno que atravessa meses sem pregão. Em 2026-10-10: 1.907 dias marcados, 110 deles em papéis
+com volume acima de R$ 10 milhões desde 2010 — e parte desses é movimento real (Americanas, jan/2023).
+
 **Limites declarados:**
 
 - **Provento bruto.** O JCP tem imposto retido na fonte, e o retorno total não o desconta
