@@ -18,6 +18,7 @@ coisa, um está errado e ninguém sabe qual.
 | Como rodar, testar e não quebrar nada | [06-DESENVOLVIMENTO](06-DESENVOLVIMENTO.md) |
 | Como subir, observar e reverter | [07-OPERACAO](07-OPERACAO.md) |
 | O que vem depois | [09-FUTURO](09-FUTURO.md) |
+| Como um item planejado vai ser construído | [planos/](planos/) |
 | O que está quebrado ou aberto | [10-PROBLEMAS](10-PROBLEMAS.md) |
 | Por que essa decisão foi tomada | [decisoes/](decisoes/) |
 | O que aconteceu antes | [historico/CHANGELOG](historico/CHANGELOG.md) |

@@ -94,6 +94,14 @@ O `payments/` atual (com `api/billing.py`) tem só `FakeProvider` e será descar
 
 **Sem data.** Não há prazo de publicação definido.
 
+### 9 · Coleta própria de dados de mercado — `data-job/`
+
+Decidido em 2026-10-09. Um serviço baixa B3 (COTAHIST), CVM (DFP, ITR, FCA) e BCB
+SGS, guarda o bruto e grava no schema `mercado`; o aplicativo e a pesquisa de carteira de uso próprio
+só leem. Revisa o invariante "só BRAPI e BCB SGS" —
+[ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md), `PROPOSTO`. Plano, fases e
+critério de pronto em [planos/data-job](planos/data-job.md).
+
 ---
 
 ## Considerado
@@ -105,7 +113,7 @@ Sem decisão, mas com interesse declarado.
 | **Opções e derivativos** | Tensiona o limite "não é ferramenta de trade" de [01-PRODUTO](01-PRODUTO.md) |
 | **Controle de gastos completo** (tipo Mobills) | Aumentaria a atenção exigida de um público definido por não ter tempo |
 | **Otimizador de carteira** (Sharpe, HRP, mínima volatilidade) | Removido em 2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md)). Reconstruir é decisão nova — e é preciso responder se isso serve a quem não tem tempo |
-| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. A BRAPI não entrega fundamento *point-in-time*; os dados abertos da CVM (DFP/ITR) entregariam, e o invariante "só BRAPI e BCB SGS" teria de ser revisto |
+| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. A BRAPI não entrega fundamento *point-in-time*; os dados abertos da CVM (DFP/ITR) entregariam, e o invariante "só BRAPI e BCB SGS" teria de ser revisto. A base vem do item 9 |
 | **Preço justo de BDR** | Exige juro em dólar para descontar lucro em dólar ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)): descontar pela Selic fazia todo BDR parecer caro, cerca de 0,67× o valor. Nenhuma das duas fontes entrega essa taxa |
 
 ---
