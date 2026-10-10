@@ -1,6 +1,6 @@
 # Plano — data-job
 
-**Estado:** fase 1 em andamento — COTAHIST `[IMPLEMENTADO]`, o resto `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
+**Estado:** fase 1 em andamento — COTAHIST, cadastro, FCA, emissores, DFP e ITR `[IMPLEMENTADO]`; BCB SGS e usuário somente leitura `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
 (`PROPOSTO`) · **Escrito em:** 2026-10-09
 
 O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como veio e grava a versão
