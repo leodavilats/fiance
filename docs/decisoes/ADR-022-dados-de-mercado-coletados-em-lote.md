@@ -38,9 +38,12 @@ schema `mercado` do Postgres. Quem consome — `backend/` e a pesquisa — só l
 continua no `backend/` até ele passar a ler do schema `mercado`, e só sai de vez quando proventos e
 eventos de ações tiverem fonte decidida — a peça sem fonte oficial estruturada.
 
-**A lista de emissores do site da B3** entrou em 2026-10-10, e é a única fonte não documentada: liga
-o código de emissor ao CNPJ de quem o FCA deixa sem ticker. É a terceira via de três, e cair com ela
-deixa cerca de 30 emissores sem empresa, não a base sem dado.
+**Os endpoints do site da B3** entraram em 2026-10-10, e são as únicas fontes não documentadas: a
+lista de emissores (liga o código de emissor ao CNPJ de quem o FCA deixa sem ticker) e os proventos e
+eventos em ações por emissor — escolhidos contra a BRAPI gratuita, que conta o mesmo provento duas
+vezes e não cobre quem saiu da bolsa. Todo evento é conferido pelo salto do preço antes de ajustar a
+série. Se esses endpoints mudarem, a cotação, as empresas e as demonstrações continuam; a série
+ajustada para de receber eventos novos.
 
 **Regras do data-job:**
 

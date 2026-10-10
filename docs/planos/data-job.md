@@ -1,6 +1,6 @@
 # Plano — data-job
 
-**Estado:** fase 1 `[IMPLEMENTADO]` — COTAHIST, cadastro, FCA, emissores, DFP, ITR, BCB SGS, papel de leitura e visões de fundamento. Fase 2 `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
+**Estado:** fases 1 e 2 `[IMPLEMENTADO]` — cotação, empresas, demonstrações, BCB, proventos, eventos e série ajustada. Fase 3 `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
 (`PROPOSTO`) · **Escrito em:** 2026-10-09
 
 O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como veio e grava a versão
@@ -293,19 +293,54 @@ nome, 126 sem CNPJ — na maioria, empresas que saíram da bolsa antes de 2010, 
 sair (BR Insurance → Alper, Abril Educação → Somos). Sem o endpoint da B3, cerca de 30 emissores
 listados hoje ficariam sem CNPJ; o resto não depende dele.
 
-### Fase 2 — eventos e proventos
+### Fase 2 — eventos e proventos `[IMPLEMENTADO]`
 
-Fator de ajuste por desdobramento, grupamento e bonificação; dividendos e JCP com data-com e
-pagamento; rendimento de FII pelo informe mensal da CVM.
+**Fonte: os endpoints do site da B3**, decidida em 2026-10-10 depois de comparar com a BRAPI gratuita:
 
-**A decisão aberta é a fonte de ações.** Dois candidatos, a comparar com 20 empresas antes de
-escolher:
+| | B3 | BRAPI gratuita |
+|---|---|---|
+| Custo | Grátis | Só PETR4, VALE3, ITUB4, MGLU3 sem token |
+| Quem saiu da bolsa | Cobre (Souza Cruz até 2015, Cetip, BR Properties) | Não |
+| Valor | Limpo nos casos conferidos | Conta o mesmo provento duas vezes (Itaú: bruto + líquido) |
+| Data de pagamento | Não | Sim |
+| Formalidade | Não documentada | API comercial |
 
-- Os endpoints JSON do site da B3 por empresa — gratuitos, não documentados, podem mudar sem aviso
-- O plano gratuito da BRAPI, só para esta peça
+Por emissor, toda sexta (e na primeira carga): o histórico de proventos em dinheiro e os eventos em
+ações. Cada coleta **substitui** os proventos e eventos daquele emissor; resposta sem nome de pregão
+não substitui nada.
 
-**Pronto quando** o retorno total de 5 ações num ano bate com uma fonte de referência dentro de uma
-tolerância declarada.
+**Regras que os dados ensinaram:**
+
+- **Provento antigo vem por lote de mil** (`quotedPerShares` = 1000): o valor por ação é o valor dividido
+- **Parcela não é duplicata.** A Cemig paga o mesmo JCP em duas datas, com o mesmo valor: as duas linhas
+  entram
+- **A busca de proventos é pelo nome de pregão, exato**, e a B3 grafa o mesmo emissor de dois jeitos
+  ("AMBEV S/A" no cadastro, "AMBEV SA" nos proventos): tentam-se as variantes
+- **O fator do evento:** desdobramento e bonificação dão o percentual de ações a mais (100 = 1 para 2);
+  grupamento dá o multiplicador (0,1 = 10 para 1)
+- **Evento é conferido pelo preço** antes de ajustar: a razão entre o fechamento até a data-com e a
+  abertura seguinte, com o preço por ação (dividido pelo fator de cotação), tem de bater com o
+  multiplicador em 12%. Eventos do mesmo dia se combinam — o Bradesco fez ×50 e ×0,02 em 2009.
+  Em 24 empresas, 36 de 40 bateram; os 4 restantes eram o Itaú de 2011 (a B3 lista só o grupamento de
+  um grupamento seguido de desdobramento), a Renner de 2005 e um papel que ficou 866 dias sem negociar
+
+| Status | Ajusta? |
+|---|---|
+| `confirmado` | Sim |
+| `sem_preco` — sem pregão em volta para conferir | Sim |
+| `divergente` — o preço desmente | Não; vai para a quarentena |
+| `nao_ajusta` — cisão, resgate | Não |
+
+**`mercado.serie_papel`** (visão materializada, recalculada no fim de cada rodada): por papel e dia, o
+fechamento por ação, o fator de ajuste, o fechamento ajustado, o provento na data ex (o primeiro pregão
+depois da data-com, na escala do preço ajustado) e o retorno total do dia. Nos dias com duas cotações
+para o mesmo papel, fica a de maior volume.
+
+**Limites declarados:**
+
+- **Provento bruto.** O JCP tem imposto retido na fonte, e o retorno total não o desconta
+- **Cisão e redução de capital não ajustam** (Itaú/XP em 2021): o preço cai sem que a série saiba por quê
+- **Emissor que a B3 não encontra fica sem proventos** — a ALL, incorporada pela Rumo em 2015
 
 ### Fase 3 — o backend lê de `mercado`
 

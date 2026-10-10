@@ -175,3 +175,33 @@ indicador = sa.Table(
     sa.Column("valor", sa.Numeric, nullable=False),
     sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
 )
+
+provento = sa.Table(
+    "provento",
+    metadata,
+    sa.Column("id", sa.BigInteger, primary_key=True, autoincrement=True),
+    sa.Column("emissor", sa.Text, nullable=False),
+    sa.Column("classe", sa.Text, nullable=False),
+    sa.Column("data_com", sa.Date, nullable=False),
+    sa.Column("tipo", sa.Text, nullable=False),
+    sa.Column("valor", sa.Numeric, nullable=False),
+    sa.Column("data_aprovacao", sa.Date),
+    sa.Column("preco_vespera", sa.Numeric),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+)
+
+evento = sa.Table(
+    "evento",
+    metadata,
+    sa.Column("id", sa.BigInteger, primary_key=True, autoincrement=True),
+    sa.Column("emissor", sa.Text, nullable=False),
+    sa.Column("isin", sa.Text, nullable=False),
+    sa.Column("data_com", sa.Date, nullable=False),
+    sa.Column("tipo", sa.Text, nullable=False),
+    sa.Column("fator", sa.Numeric, nullable=False),
+    sa.Column("multiplicador", sa.Numeric),
+    sa.Column("data_aprovacao", sa.Date),
+    sa.Column("status", sa.Text, nullable=False),
+    sa.Column("razao_observada", sa.Numeric),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+)

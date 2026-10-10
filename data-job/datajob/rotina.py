@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import sys
+import time
 import traceback
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
@@ -14,6 +16,7 @@ from datajob.esquema import cotacao, documento, indicador, valor_mobiliario
 from datajob.fontes import (
     b3_cotahist,
     b3_emissores,
+    b3_proventos,
     bcb_sgs,
     cvm_cadastro,
     cvm_demonstracoes,
@@ -26,6 +29,9 @@ PRIMEIRO_ANO = 2005
 _LACUNA_PARA_O_ANUAL = timedelta(days=10)
 
 _BRT = ZoneInfo("America/Sao_Paulo")
+
+_SEXTA = 4
+PAUSA_ENTRE_EMISSORES = 0.5
 
 Relatar = Callable[[str, coleta.Resultado | None], None]
 
@@ -64,6 +70,15 @@ def _ultima_data(engine: sa.Engine, serie: int) -> date | None:
     with engine.connect() as conn:
         consulta = sa.select(sa.func.max(indicador.c.data)).where(indicador.c.serie == serie)
         return conn.execute(consulta).scalar_one()
+
+
+def proventos_hoje(tem_provento: bool, hoje: date) -> bool:
+    return not tem_provento or hoje.weekday() == _SEXTA
+
+
+def _tem_provento(engine: sa.Engine) -> bool:
+    with engine.connect() as conn:
+        return conn.execute(sa.text("SELECT 1 FROM mercado.provento LIMIT 1")).first() is not None
 
 
 def ultimo_pregao_gravado(engine: sa.Engine) -> date | None:
@@ -158,6 +173,48 @@ def diario(
                     nome=bcb_sgs.nome(serie, inicio, fim),
                 )
 
+    def proventos_e_eventos() -> None:
+        if not proventos_hoje(_tem_provento(engine), hoje):
+            print("proventos e eventos da B3: só às sextas.", flush=True)
+            return
+        with engine.connect() as conn:
+            codigos = conn.execute(
+                sa.text("SELECT codigo FROM mercado.emissor ORDER BY 1")
+            ).scalars()
+            codigos = list(codigos)
+        falharam = []
+        for codigo in codigos:
+            nome = f"b3_proventos_{codigo}.json"
+            try:
+                try:
+                    conteudo = b3_proventos.baixar_emissor(codigo, baixar)
+                except Ausente:
+                    relatar(nome, None)
+                    continue
+                if not json.loads(conteudo)["nome_pregao"]:
+                    relatar(nome, None)
+                    continue
+                relatar(
+                    nome,
+                    coleta.executar(
+                        engine, raiz, b3_proventos.FONTE, nome, conteudo, b3_proventos.processar
+                    ),
+                )
+            except Exception as e:
+                falharam.append(codigo)
+                print(f"Falhou ({nome}): {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+            time.sleep(PAUSA_ENTRE_EMISSORES)
+        if falharam:
+            raise RuntimeError(
+                f"{len(falharam)} emissores sem proventos: {', '.join(falharam[:20])}"
+            )
+
+    def serie_ajustada() -> None:
+        inicio = time.monotonic()
+        with engine.begin() as conn:
+            conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_papel"))
+        print(f"série ajustada recalculada em {time.monotonic() - inicio:.0f} s.", flush=True)
+
     falhas = []
     etapas = {
         "cotações da B3": cotahist,
@@ -167,6 +224,8 @@ def diario(
         "ligação emissor-CNPJ": ligar_emissores,
         "DFP e ITR da CVM": demonstracoes,
         "séries do BCB": series_do_bcb,
+        "proventos e eventos da B3": proventos_e_eventos,
+        "série ajustada": serie_ajustada,
     }
     for nome, etapa in etapas.items():
         try:

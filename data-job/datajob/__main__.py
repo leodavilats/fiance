@@ -10,7 +10,14 @@ import sqlalchemy as sa
 from datajob import armazenamento, coleta, rotina
 from datajob.config import carregar
 from datajob.erros import ArquivoInvalido
-from datajob.fontes import b3_cotahist, b3_emissores, cvm_cadastro, cvm_demonstracoes, cvm_fca
+from datajob.fontes import (
+    b3_cotahist,
+    b3_emissores,
+    b3_proventos,
+    cvm_cadastro,
+    cvm_demonstracoes,
+    cvm_fca,
+)
 from datajob.rede import Indisponivel, baixar
 
 _FONTES = {
@@ -18,6 +25,7 @@ _FONTES = {
     cvm_cadastro.FONTE: cvm_cadastro.processar,
     cvm_fca.FONTE: cvm_fca.processar,
     b3_emissores.FONTE: b3_emissores.processar,
+    b3_proventos.FONTE: b3_proventos.processar,
     **{cvm_demonstracoes.FONTE[t]: cvm_demonstracoes.processador(t) for t in ("DFP", "ITR")},
 }
 
