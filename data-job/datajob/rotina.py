@@ -10,8 +10,15 @@ from zoneinfo import ZoneInfo
 import sqlalchemy as sa
 
 from datajob import coleta, emissores
-from datajob.esquema import cotacao, documento, valor_mobiliario
-from datajob.fontes import b3_cotahist, b3_emissores, cvm_cadastro, cvm_demonstracoes, cvm_fca
+from datajob.esquema import cotacao, documento, indicador, valor_mobiliario
+from datajob.fontes import (
+    b3_cotahist,
+    b3_emissores,
+    bcb_sgs,
+    cvm_cadastro,
+    cvm_demonstracoes,
+    cvm_fca,
+)
 from datajob.rede import Ausente
 
 PRIMEIRO_ANO = 2005
@@ -51,6 +58,12 @@ def _tem_documento(engine: sa.Engine, tipo: str) -> bool:
     with engine.connect() as conn:
         consulta = sa.select(documento.c.id).where(documento.c.tipo == tipo).limit(1)
         return conn.execute(consulta).first() is not None
+
+
+def _ultima_data(engine: sa.Engine, serie: int) -> date | None:
+    with engine.connect() as conn:
+        consulta = sa.select(sa.func.max(indicador.c.data)).where(indicador.c.serie == serie)
+        return conn.execute(consulta).scalar_one()
 
 
 def ultimo_pregao_gravado(engine: sa.Engine) -> date | None:
@@ -130,6 +143,21 @@ def diario(
                     engine, raiz, relatar, baixar, cvm_demonstracoes.FONTE[tipo], url, processar
                 )
 
+    def series_do_bcb() -> None:
+        for serie in bcb_sgs.SERIES:
+            processar = bcb_sgs.processador(serie)
+            for inicio, fim in bcb_sgs.janelas(_ultima_data(engine, serie), hoje):
+                _arquivo(
+                    engine,
+                    raiz,
+                    relatar,
+                    baixar,
+                    bcb_sgs.FONTE,
+                    bcb_sgs.url(serie, inicio, fim),
+                    processar,
+                    nome=bcb_sgs.nome(serie, inicio, fim),
+                )
+
     falhas = []
     etapas = {
         "cotações da B3": cotahist,
@@ -138,6 +166,7 @@ def diario(
         "emissores da B3": emissores_b3,
         "ligação emissor-CNPJ": ligar_emissores,
         "DFP e ITR da CVM": demonstracoes,
+        "séries do BCB": series_do_bcb,
     }
     for nome, etapa in etapas.items():
         try:

@@ -166,3 +166,12 @@ demonstracao_linha = sa.Table(
     sa.Column("conta_fixa", sa.Boolean, nullable=False),
     sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
 )
+
+indicador = sa.Table(
+    "indicador",
+    metadata,
+    sa.Column("serie", sa.Integer, primary_key=True),
+    sa.Column("data", sa.Date, primary_key=True),
+    sa.Column("valor", sa.Numeric, nullable=False),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+)

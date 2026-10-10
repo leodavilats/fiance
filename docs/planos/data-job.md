@@ -1,6 +1,6 @@
 # Plano — data-job
 
-**Estado:** fase 1 em andamento — COTAHIST, cadastro, FCA, emissores, DFP e ITR `[IMPLEMENTADO]`; BCB SGS e usuário somente leitura `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
+**Estado:** fase 1 em andamento — COTAHIST, cadastro, FCA, emissores, DFP, ITR, BCB SGS e papel de leitura `[IMPLEMENTADO]`; visão de indicadores `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
 (`PROPOSTO`) · **Escrito em:** 2026-10-09
 
 O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como veio e grava a versão
@@ -103,6 +103,17 @@ O `diario` busca o que falta desde o último pregão gravado: os anuais de 2005 
 vazio, o anual do ano quando a lacuna passa de dez dias, e os diários no resto. O arquivo que a B3
 ainda não publicou responde 404 e fica para a rodada seguinte.
 
+### Leitura
+
+O papel `mercado_leitura` (sem login) lê todo o schema, inclusive tabelas futuras, e não escreve. Quem
+consome ganha um usuário próprio dentro dele, criado à mão quando existir:
+
+```sql
+CREATE ROLE <nome> LOGIN PASSWORD '<senha>' IN ROLE mercado_leitura;
+```
+
+A senha vai para uma variável do serviço consumidor no Railway, e não para o repositório.
+
 ### Como rodar
 
 ```bash
@@ -151,7 +162,7 @@ guarda.
 | `cotacao` | `(isin, data)` | Abertura, máxima, mínima, fechamento, média, negócios, quantidade, volume, fator de cotação — tudo bruto, `NUMERIC` |
 | `documento` | `id`; único em `(cnpj, tipo, data_referencia, versao)` | Tipo (DFP, ITR), data de entrega, id CVM — todas as versões do índice |
 | `demonstracao_linha` | `(documento_id, demonstracao, inicio_exercicio, fim_exercicio, conta)` | Descrição, valor em reais (a escala já aplicada), consolidado ou individual, conta fixa. No balanço, início = fim |
-| `indicador_serie` | `(serie, data)` | CDI, Selic, IPCA |
+| `indicador` | `(serie, data)` | Séries do BCB SGS de 2005 em diante: CDI diário (12), Selic diária (11), meta da Selic (432), IPCA mensal (433) |
 | `coleta` | `id` | Fonte, arquivo, hash, início, fim, linhas lidas, gravadas, em quarentena, status, erro |
 | `quarentena` | `id` | Coleta, chave da linha, motivo, conteúdo bruto |
 
