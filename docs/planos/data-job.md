@@ -354,7 +354,9 @@ com volume acima de R$ 10 milhões desde 2010 — e parte desses é movimento re
 
 Kepler (3 para 1) e Méliuz (6 para 1) passam. A Gafisa de 2022 não: o grupamento foi de 10 para 1, mas veio
 junto com aumento de capital, e preço e ações apontam para 1/8 e 1/9 — fica marcada, e não ajustada errado.
-Os fatores 7, 9 e 12 ficam fora da lista por isso. O inferido cede a vez ao evento da B3 a até 10 dias,
+Os fatores 7, 9 e 12 ficam fora da lista por isso. Na primeira rodada, em 2026-10-10, 21 eventos foram
+inferidos — Banco Inter (1 para 3), Méliuz (1 para 6), Kepler (1 para 3), Oi e PDG (grupamentos) entre eles —, e os
+papéis líquidos com salto marcado desde 2010 caíram de 110 para 104: o resto é, em boa parte, movimento real. O inferido cede a vez ao evento da B3 a até 10 dias,
 para não ajustar duas vezes.
 
 A composição do capital vem dos arquivos de DFP e ITR já guardados; o número de ações tem unidade
