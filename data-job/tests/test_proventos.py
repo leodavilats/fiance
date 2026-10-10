@@ -235,3 +235,26 @@ def test_serie_ajustada_com_desdobramento_e_provento(papel_com_desdobramento, tm
     assert r(serie["2024-04-15"].retorno_total) == Decimal("0.05"), "(20 + 1) / 20 - 1"
     assert r(serie["2024-04-16"].retorno_total) == 0
     assert r(serie["2024-04-17"].retorno_total) == Decimal("0.05")
+    assert not serie["2024-04-16"].salto_sem_evento
+    assert serie["2024-04-15"].dias_desde_anterior == 3
+
+
+def test_salto_que_nenhum_evento_explica_fica_marcado(engine):
+    with engine.begin() as conn:
+        _papel(
+            conn,
+            "BRKEPLACNOR1",
+            "ON NM",
+            {"2022-05-05": ("55", "55.15"), "2022-05-06": ("18.42", "19.04")},
+        )
+        conn.execute(
+            sa.text(
+                "INSERT INTO mercado.emissor (codigo, cnpj, metodo) VALUES ('KEPL', '2', 'fca')"
+            )
+        )
+        conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_papel"))
+        dia = conn.execute(
+            sa.text("SELECT * FROM mercado.serie_papel WHERE cnpj = '2' AND data = '2022-05-06'")
+        ).one()
+
+    assert dia.salto_sem_evento, "o desdobramento de 1 para 3 da Kepler em 2022 não está na B3"
