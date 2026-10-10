@@ -199,6 +199,7 @@ Nada cobra dinheiro hoje. A cerca de plano está **desligada** (`ENTITLEMENTS_EN
 |---|---|---|
 | BRAPI | `[ATUAL]` | Preço, fundamentos, dividendos, histórico de ações, FIIs, BDRs, ETFs |
 | BCB SGS | `[ATUAL]` | CDI, Selic, IPCA |
+| B3 COTAHIST, pelo `data-job/` | `[IMPLEMENTADO]` | Cotação diária bruta do mercado à vista no schema `mercado`, por CLI. Sem cron, sem banco de produção, e nada lê dela — [planos/data-job](planos/data-job.md) |
 
 Proteções ativas: disjuntor por fonte, cache com idade, faixa de plausibilidade, coleta em lote,
 portão de pregão. Detalhes em [03-ARQUITETURA](03-ARQUITETURA.md).

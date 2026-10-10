@@ -34,6 +34,9 @@ quando descreve um problema. O que está aberto está no 10-PROBLEMAS, e só lá
 cd backend && python -m pytest -q
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests
+cd data-job && python -m pytest -q                 # gravação exige DATAJOB_TEST_DATABASE_URL
+cd data-job && python -m ruff check datajob tests migrations
+cd data-job && python -m ruff format --check datajob tests migrations
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
 cd mobile  && python tool/build_icons.py --check

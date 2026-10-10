@@ -1,6 +1,6 @@
 # Plano — data-job
 
-**Estado:** `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
+**Estado:** fase 1 em andamento — COTAHIST `[IMPLEMENTADO]`, o resto `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
 (`PROPOSTO`) · **Escrito em:** 2026-10-09
 
 O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como veio e grava a versão
@@ -10,7 +10,7 @@ interpretada no schema `mercado` do Postgres. Ele é a base de dois consumidores
 - **a pesquisa de carteira** — uso próprio do autor, em horizonte de meses, que precisa de histórico
   longo, empresas que saíram da bolsa e fundamento como se sabia na data
 
-Nada aqui existe ainda. O que existe está em [08-ESTADO](../08-ESTADO.md).
+O que já existe está marcado em [08-ESTADO](../08-ESTADO.md); o resto deste plano ainda não.
 
 ---
 
@@ -61,29 +61,46 @@ Os da [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md), apli
 
 ```
 data-job/
-  pyproject.toml          # ruff, pytest — mesmas versões do backend
+  pyproject.toml          # ruff e pytest, mesma configuração do backend
   requirements.txt
   alembic.ini
-  migrations/             # version_table dentro do schema mercado
+  migrations/             # tabela de versão dentro do schema mercado
   datajob/
     __main__.py           # CLI
-    config.py             # DATABASE_URL, armazenamento, sem default para ambiente
-    armazenamento.py      # bruto: diretório local ou bucket S3 do Railway
-    coleta.py             # abre e fecha o registro de execução
-    banco.py              # sessão, COPY, upsert
+    config.py             # DATABASE_URL e DATAJOB_BRUTO_DIR, sem default
+    armazenamento.py      # bruto em diretório; o bucket do Railway entra aqui
+    coleta.py             # registro da execução, pulo por hash, transação por arquivo
+    esquema.py            # tabelas de mercado
     fontes/
-      b3_cotahist.py      # baixar + interpretar
-      cvm_cadastro.py
-      cvm_fca.py
-      cvm_dfp_itr.py
-      bcb_sgs.py
-    plausibilidade.py
+      b3_cotahist.py      # feito: interpretar, validar, gravar
+      cvm_*.py, bcb_sgs.py  # a fazer
   tests/
     fixtures/             # trechos pequenos de arquivos reais
 ```
 
-O `backend/app/collectors/plausibility.py` é a referência para as faixas; o data-job não importa o
+A plausibilidade fica em cada fonte, porque a regra depende do arquivo. O data-job não importa o
 backend, para não arrastar a configuração dele.
+
+### Como rodar
+
+```bash
+cd data-job
+export DATABASE_URL=postgresql://...  DATAJOB_BRUTO_DIR=/caminho/do/bruto
+python -m alembic upgrade head
+python -m datajob cotahist --ano 2025
+```
+
+Os testes de gravação rodam contra um Postgres descartável, indicado em `DATAJOB_TEST_DATABASE_URL`;
+eles **apagam o schema `mercado`** desse banco a cada teste. No CI é um serviço do job *Data-job*.
+
+### Medido em 2026-10-09
+
+- O ano de 2025 inteiro tem 3.174.698 registros, dos quais 335.874 do mercado à vista. Entrou em 1min30s
+  num Postgres local, e regravar a partir do bruto não baixa nada
+- 20 anos de cotação à vista devem ficar na casa de 6 a 7 milhões de linhas
+- **A B3 publica preço médio fora da faixa do dia.** Na BMKS3, em 08/10/2026, abertura, máxima,
+  mínima e fechamento são 376,02 e a média é 380,78. A média não é conferida contra a faixa;
+  abertura e fechamento são
 
 ---
 
@@ -95,8 +112,8 @@ guarda.
 | Tabela | Chave | Guarda |
 |---|---|---|
 | `empresa` | `cnpj` | Código CVM, razão social, setor, situação, datas de registro e cancelamento |
-| `ativo` | `isin` | CNPJ (quando houver), espécie (ON, PN, UNT, CI), classe (ação, FII, ETF, BDR) |
-| `ticker` | `(codigo, inicio)` | ISIN, fim de vigência. Vem do COTAHIST e do FCA |
+| `ativo` | `isin` | Nome resumido, espécie, código BDI, primeiro e último pregão. A fazer: CNPJ pelo FCA e classe (ação, FII, ETF, BDR) |
+| `ticker` | `(codigo, isin)` | Primeiro e último pregão. Um código reaproveitado por outro ISIN é outra linha |
 | `cotacao` | `(isin, data)` | Abertura, máxima, mínima, fechamento, média, negócios, quantidade, volume, fator de cotação — tudo bruto, `NUMERIC` |
 | `documento` | `(cnpj, tipo, data_referencia, versao)` | Tipo (DFP, ITR), data de entrega, id CVM |
 | `demonstracao_linha` | `(documento, demonstracao, ordem_exercicio, conta)` | Descrição, valor já multiplicado pela escala, início e fim do exercício |
