@@ -129,3 +129,30 @@ def test_troca_de_ticker_continua_a_serie_do_papel(engine, tmp_path):
     assert [(str(d), c) for d, c in serie] == [("2026-10-07", "PETX4"), ("2026-10-08", "PETR4")], (
         "VVAR3, VIIA3 e BHIA3 são três ISINs da mesma empresa"
     )
+
+
+def test_recibo_de_subscricao_fica_fora_da_serie_do_papel(engine, tmp_path):
+    texto = TRECHO.read_text(encoding="latin-1")
+    petr4 = next(linha for linha in texto.splitlines() if linha[12:24].strip() == "PETR4")
+    recibo = petr4[:10] + "10" + "PETR9       " + petr4[24:230] + "BRPETRR09PR1" + petr4[242:]
+    linhas = texto.splitlines()
+    linhas.insert(-1, recibo)
+    linhas[-1] = linhas[-1][:31] + f"{len(linhas) - 2:011d}" + linhas[-1][42:]
+    _executar(engine, tmp_path, _zip("\n".join(linhas)))
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text(
+                "INSERT INTO mercado.emissor (codigo, cnpj, metodo) "
+                "VALUES ('PETR', '33000167000101', 'fca')"
+            )
+        )
+
+    assert _um(engine, "SELECT count(*) FROM mercado.cotacao WHERE codigo = 'PETR9'") == 1
+    assert (
+        _um(
+            engine,
+            "SELECT string_agg(codigo, ',') FROM mercado.cotacao_papel "
+            "WHERE cnpj = '33000167000101' AND classe = 'PN'",
+        )
+        == "PETR4"
+    ), "o recibo tem espécie PN e código BDI 10"
