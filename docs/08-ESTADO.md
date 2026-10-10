@@ -205,6 +205,7 @@ Nada cobra dinheiro hoje. A cerca de plano está **desligada** (`ENTITLEMENTS_EN
 | BCB SGS, pelo `data-job/` | `[IMPLEMENTADO]` | CDI e Selic diários, meta da Selic e IPCA mensal de 2005 em diante, no `postgres-mercado`. O backend segue lendo o BCB por conta própria (`backend/app/collectors/rates.py`) |
 | Visões de fundamento no `postgres-mercado` | `[IMPLEMENTADO]` | Receita, EBIT, lucro, patrimônio, caixa e dívida por documento, sobre as demonstrações brutas — [planos/data-job](planos/data-job.md). Nada lê ainda |
 | Proventos, eventos em ações e série ajustada, pelo `data-job/` | `[IMPLEMENTADO]` | Da B3, por emissor, toda sexta; eventos conferidos pelo preço antes de ajustar, e o que falta na B3 inferido com preço, número de ações e IPE (21 em 2026-10-10); `mercado.serie_papel` com preço ajustado, retorno total e saltos sem explicação marcados. Nada lê ainda |
+| Pesquisa de carteira, em `trend-backend/` | `[IMPLEMENTADO]` | Uso próprio: motor de simulação mensal com custo e imposto, prova lacrada e registro; hipótese de momento 12–1 — [planos/pesquisa](planos/pesquisa.md) |
 
 Proteções ativas: disjuntor por fonte, cache com idade, faixa de plausibilidade, coleta em lote,
 portão de pregão. Detalhes em [03-ARQUITETURA](03-ARQUITETURA.md).
