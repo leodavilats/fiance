@@ -260,6 +260,19 @@ lucro R$ 41,1 bi e patrimônio R$ 211 bi — como publicados.
 O lucro de 12 meses é conta da pesquisa: acumulado do ano + último anual − acumulado do mesmo ponto
 do ano anterior.
 
+### Série contínua de um papel — `mercado.cotacao_papel`
+
+A troca de ticker cria ISIN novo: VVAR3, VIIA3 e BHIA3 são três ISINs da mesma empresa. A visão costura
+as cotações por **CNPJ e classe da ação** (ON, PN, PNA, PNB…, UNT), e só com código BDI de ação —
+recibo e direito de subscrição (ITSA9, BBDC10) têm espécie ON ou PN e ficam de fora. Em produção: 841
+papéis de 543 empresas; a Casas Bahia sai contínua de 2012 a hoje.
+
+**Restam algumas centenas de dias com duas cotações para o mesmo papel**, de tickers especiais
+negociados como lote padrão (AZUL97–99, BEES11, JBDU11/12, BPAC13). Nesses dias, a pesquisa fica com
+a de maior volume.
+
+O preço é o **bruto**: desdobramento, grupamento e provento entram na fase 2.
+
 ### Ligação do ativo à empresa — feita em 2026-10-10
 
 O ISIN carrega o código do emissor na B3 (posições 3 a 6). Ele é ligado a um CNPJ por três vias, nesta
