@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
-from datajob import coleta, emissores
+from datajob import armazenamento, coleta, emissores, inferencia
 from datajob.esquema import cotacao, documento, indicador, valor_mobiliario
 from datajob.fontes import (
     b3_cotahist,
@@ -21,6 +21,7 @@ from datajob.fontes import (
     cvm_cadastro,
     cvm_demonstracoes,
     cvm_fca,
+    cvm_ipe,
 )
 from datajob.rede import Ausente
 
@@ -79,6 +80,18 @@ def proventos_hoje(tem_provento: bool, hoje: date) -> bool:
 def _tem_provento(engine: sa.Engine) -> bool:
     with engine.connect() as conn:
         return conn.execute(sa.text("SELECT 1 FROM mercado.provento LIMIT 1")).first() is not None
+
+
+def anos_do_ipe(tem_ipe: bool, hoje: date) -> list[int]:
+    inicio = hoje.year - 1 if tem_ipe else cvm_ipe.PRIMEIRO_ANO
+    return list(range(inicio, hoje.year + 1))
+
+
+def _tem_ipe(engine: sa.Engine) -> bool:
+    with engine.connect() as conn:
+        return (
+            conn.execute(sa.text("SELECT 1 FROM mercado.ipe_documento LIMIT 1")).first() is not None
+        )
 
 
 def ultimo_pregao_gravado(engine: sa.Engine) -> date | None:
@@ -209,11 +222,37 @@ def diario(
                 f"{len(falharam)} emissores sem proventos: {', '.join(falharam[:20])}"
             )
 
-    def serie_ajustada() -> None:
+    def ipe() -> None:
+        for ano in anos_do_ipe(_tem_ipe(engine), hoje):
+            url = cvm_ipe.url_do_ano(ano)
+            _arquivo(engine, raiz, relatar, baixar, cvm_ipe.FONTE, url, cvm_ipe.processar)
+
+    def composicao_do_bruto() -> None:
+        with engine.connect() as conn:
+            vazia = conn.execute(
+                sa.text("SELECT 1 FROM mercado.composicao_capital LIMIT 1")
+            ).first()
+        if vazia is not None:
+            return
+        for tipo in ("DFP", "ITR"):
+            for caminho in armazenamento.guardados(raiz, cvm_demonstracoes.FONTE[tipo]):
+                with engine.begin() as conn:
+                    linhas = cvm_demonstracoes.gravar_composicao(conn, caminho.read_bytes(), tipo)
+                print(f"composição do capital de {caminho.name}: {linhas} linhas.", flush=True)
+
+    def recalcular_serie() -> None:
         inicio = time.monotonic()
         with engine.begin() as conn:
             conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_papel"))
         print(f"série ajustada recalculada em {time.monotonic() - inicio:.0f} s.", flush=True)
+
+    def serie_ajustada() -> None:
+        recalcular_serie()
+        with engine.begin() as conn:
+            inferidos = inferencia.inferir(conn)
+        print(f"eventos inferidos de saltos com documento no IPE: {inferidos}.", flush=True)
+        if inferidos:
+            recalcular_serie()
 
     falhas = []
     etapas = {
@@ -225,6 +264,8 @@ def diario(
         "DFP e ITR da CVM": demonstracoes,
         "séries do BCB": series_do_bcb,
         "proventos e eventos da B3": proventos_e_eventos,
+        "IPE da CVM": ipe,
+        "composição do capital": composicao_do_bruto,
         "série ajustada": serie_ajustada,
     }
     for nome, etapa in etapas.items():

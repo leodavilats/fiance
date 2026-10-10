@@ -343,6 +343,24 @@ aparecer — o preço salta 82%, 67%, 66% e 849% num dia. A série **não invent
 expõe o retorno que atravessa meses sem pregão. Em 2026-10-10: 1.907 dias marcados, 110 deles em papéis
 com volume acima de R$ 10 milhões desde 2010 — e parte desses é movimento real (Americanas, jan/2023).
 
+**Evento inferido** (`mercado.evento_inferido`). Um salto sem evento vira evento só com três evidências:
+
+1. a razão de preço (fechamento anterior ÷ abertura) a até 10% de um fator comum — 2, 3, 4, 5, 6, 8, 10,
+   20, 25, 50, 100, 200, 1000 ou o inverso;
+2. a razão do número de ações (`mercado.composicao_capital`, do trimestre anterior para o seguinte) a
+   até 10% **do mesmo fator**;
+3. um documento no IPE da CVM (`mercado.ipe_documento`) que fale em desdobramento ou bonificação (ou
+   grupamento, no sentido oposto) entre 120 dias antes e 10 dias depois.
+
+Kepler (3 para 1) e Méliuz (6 para 1) passam. A Gafisa de 2022 não: o grupamento foi de 10 para 1, mas veio
+junto com aumento de capital, e preço e ações apontam para 1/8 e 1/9 — fica marcada, e não ajustada errado.
+Os fatores 7, 9 e 12 ficam fora da lista por isso. O inferido cede a vez ao evento da B3 a até 10 dias,
+para não ajustar duas vezes.
+
+A composição do capital vem dos arquivos de DFP e ITR já guardados; o número de ações tem unidade
+inconsistente entre empresas (a Gafisa declara em milhares), o que não afeta a razão, mas afeta qualquer
+uso absoluto.
+
 **Limites declarados:**
 
 - **Provento bruto.** O JCP tem imposto retido na fonte, e o retorno total não o desconta

@@ -205,3 +205,41 @@ evento = sa.Table(
     sa.Column("razao_observada", sa.Numeric),
     sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
 )
+
+ipe_documento = sa.Table(
+    "ipe_documento",
+    metadata,
+    sa.Column("protocolo", sa.Text, primary_key=True),
+    sa.Column("versao", sa.Integer, primary_key=True),
+    sa.Column("cnpj", sa.Text, nullable=False),
+    sa.Column("data_entrega", sa.Date, nullable=False),
+    sa.Column("data_referencia", sa.Date),
+    sa.Column("categoria", sa.Text, nullable=False),
+    sa.Column("tipo", sa.Text),
+    sa.Column("especie", sa.Text),
+    sa.Column("assunto", sa.Text, nullable=False),
+    sa.Column("link", sa.Text),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+)
+
+evento_inferido = sa.Table(
+    "evento_inferido",
+    metadata,
+    sa.Column("cnpj", sa.Text, primary_key=True),
+    sa.Column("classe", sa.Text, primary_key=True),
+    sa.Column("data_com", sa.Date, primary_key=True),
+    sa.Column("multiplicador", sa.Numeric, nullable=False),
+    sa.Column("razao_observada", sa.Numeric, nullable=False),
+    sa.Column("protocolo", sa.Text, nullable=False),
+    sa.Column("assunto", sa.Text, nullable=False),
+)
+
+composicao_capital = sa.Table(
+    "composicao_capital",
+    metadata,
+    sa.Column("documento_id", sa.BigInteger, sa.ForeignKey("documento.id"), primary_key=True),
+    sa.Column("acoes_ordinarias", sa.BigInteger),
+    sa.Column("acoes_preferenciais", sa.BigInteger),
+    sa.Column("acoes_total", sa.BigInteger),
+    sa.Column("tesouraria_total", sa.BigInteger),
+)

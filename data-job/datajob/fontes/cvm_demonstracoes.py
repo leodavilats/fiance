@@ -275,6 +275,65 @@ def gravar(conn: sa.Connection, leitura: Leitura, tipo: str, coleta_id: int) -> 
     return gravadas, sem_documento
 
 
+def _inteiro(texto: str) -> int | None:
+    try:
+        return int(Decimal(texto)) if texto else None
+    except InvalidOperation:
+        return None
+
+
+def interpretar_composicao(conteudo: bytes, tipo: str) -> list[dict]:
+    prefixo = tipo.lower()
+    try:
+        arquivo = zipfile.ZipFile(io.BytesIO(conteudo))
+    except zipfile.BadZipFile as e:
+        raise ArquivoInvalido("O conteúdo baixado não é um ZIP.") from e
+    with arquivo:
+        nomes = [
+            n
+            for n in arquivo.namelist()
+            if re.fullmatch(rf"{prefixo}_cia_aberta_composicao_capital_\d{{4}}\.csv", n)
+        ]
+        linhas = {}
+        for nome in nomes:
+            for r in _csv(arquivo, nome):
+                documento_cnpj, referencia = cnpj(r["CNPJ_CIA"]), data(r["DT_REFER"])
+                if documento_cnpj is None or referencia is None or not r["VERSAO"].isdigit():
+                    continue
+                linhas[(documento_cnpj, referencia, int(r["VERSAO"]))] = {
+                    "cnpj": documento_cnpj,
+                    "data_referencia": referencia,
+                    "versao": int(r["VERSAO"]),
+                    "acoes_ordinarias": _inteiro(r["QT_ACAO_ORDIN_CAP_INTEGR"]),
+                    "acoes_preferenciais": _inteiro(r["QT_ACAO_PREF_CAP_INTEGR"]),
+                    "acoes_total": _inteiro(r["QT_ACAO_TOTAL_CAP_INTEGR"]),
+                    "tesouraria_total": _inteiro(r["QT_ACAO_TOTAL_TESOURO"]),
+                }
+    return list(linhas.values())
+
+
+_GRAVAR_COMPOSICAO = """
+INSERT INTO mercado.composicao_capital AS x
+    (documento_id, acoes_ordinarias, acoes_preferenciais, acoes_total, tesouraria_total)
+SELECT d.id, :acoes_ordinarias, :acoes_preferenciais, :acoes_total, :tesouraria_total
+FROM mercado.documento d
+WHERE d.cnpj = :cnpj AND d.tipo = :tipo AND d.data_referencia = :data_referencia
+  AND d.versao = :versao
+ON CONFLICT (documento_id) DO UPDATE SET
+    acoes_ordinarias = EXCLUDED.acoes_ordinarias,
+    acoes_preferenciais = EXCLUDED.acoes_preferenciais,
+    acoes_total = EXCLUDED.acoes_total,
+    tesouraria_total = EXCLUDED.tesouraria_total
+"""
+
+
+def gravar_composicao(conn: sa.Connection, conteudo: bytes, tipo: str) -> int:
+    linhas = interpretar_composicao(conteudo, tipo)
+    if linhas:
+        conn.execute(sa.text(_GRAVAR_COMPOSICAO), [{**linha, "tipo": tipo} for linha in linhas])
+    return len(linhas)
+
+
 def com_acao(conn: sa.Connection) -> set[str]:
     return set(conn.execute(sa.text("SELECT DISTINCT cnpj FROM mercado.emissor")).scalars())
 
@@ -283,6 +342,7 @@ def processador(tipo: str) -> Callable[[sa.Connection, bytes, int], tuple[int, i
     def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int, int, int]:
         leitura = interpretar(conteudo, tipo, com_acao(conn))
         gravadas, sem_documento = gravar(conn, leitura, tipo, coleta_id)
+        gravar_composicao(conn, conteudo, tipo)
         return leitura.lidas, gravadas, len(leitura.rejeitadas) + sem_documento
 
     return processar
