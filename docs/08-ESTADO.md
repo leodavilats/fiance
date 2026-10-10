@@ -203,6 +203,7 @@ Nada cobra dinheiro hoje. A cerca de plano está **desligada** (`ENTITLEMENTS_EN
 | CVM cadastro e FCA, e emissores da B3, pelo `data-job/` | `[IMPLEMENTADO]` | Empresa por CNPJ e a ligação do código de emissor do ISIN ao CNPJ, com o método. Nada lê ainda |
 | CVM DFP e ITR, pelo `data-job/` | `[IMPLEMENTADO]` | Balanço, resultado e fluxo de caixa de 2010 em diante, por documento, versão e data de entrega: 6,3 milhões de linhas no `postgres-mercado`. Nada lê ainda |
 | BCB SGS, pelo `data-job/` | `[IMPLEMENTADO]` | CDI e Selic diários, meta da Selic e IPCA mensal de 2005 em diante, no `postgres-mercado`. O backend segue lendo o BCB por conta própria (`backend/app/collectors/rates.py`) |
+| Visões de fundamento no `postgres-mercado` | `[IMPLEMENTADO]` | Receita, EBIT, lucro, patrimônio, caixa e dívida por documento, sobre as demonstrações brutas — [planos/data-job](planos/data-job.md). Nada lê ainda |
 
 Proteções ativas: disjuntor por fonte, cache com idade, faixa de plausibilidade, coleta em lote,
 portão de pregão. Detalhes em [03-ARQUITETURA](03-ARQUITETURA.md).

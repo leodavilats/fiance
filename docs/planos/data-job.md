@@ -1,6 +1,6 @@
 # Plano — data-job
 
-**Estado:** fase 1 em andamento — COTAHIST, cadastro, FCA, emissores, DFP, ITR, BCB SGS e papel de leitura `[IMPLEMENTADO]`; visão de indicadores `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
+**Estado:** fase 1 `[IMPLEMENTADO]` — COTAHIST, cadastro, FCA, emissores, DFP, ITR, BCB SGS, papel de leitura e visões de fundamento. Fase 2 `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
 (`PROPOSTO`) · **Escrito em:** 2026-10-09
 
 O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como veio e grava a versão
@@ -234,6 +234,31 @@ COTAHIST de 2005 em diante, cadastro e FCA, DFP e ITR de 2010 em diante, BCB SGS
 - Rodar o `diario` duas vezes seguidas não muda nenhuma linha
 - O volume de `demonstracao_linha` está medido, e cabe no plano do banco
 - `ruff` e `pytest` no CI, como os do backend
+
+### Visões de fundamento — feitas em 2026-10-10
+
+`mercado.fundamento_resultado` (por documento e período) e `mercado.fundamento_balanco` (por
+documento) leem as linhas brutas sem copiar nada; corrigir uma regra é uma migração.
+
+O código da conta muda com o plano da empresa — o lucro dos controladores é `3.11.01` na Petrobras e
+`3.09.01` no Itaú —, e a descrição das contas fixas da CVM é estável. As visões casam pela descrição,
+com as variações medidas sobre os 22.837 documentos carregados.
+
+| Coluna | Regra |
+|---|---|
+| `receita` | Receita de venda; em banco, receita da intermediação; em seguradora, receita das operações |
+| `ebit` | Resultado antes do financeiro e dos tributos — **vazio em banco e seguradora**, onde não significa o mesmo |
+| `lucro_controladores` | Atribuído aos sócios da controladora; sem consolidado, o lucro do período inteiro |
+| `divida_bruta` | Soma de *Empréstimos e Financiamentos* no circulante e no não circulante — vazia em banco |
+| `patrimonio_controladores` | Patrimônio menos a participação dos não controladores |
+
+Cobertura nas DFPs: lucro 100%, receita 99,8%, EBIT 93,3%, ativo e patrimônio 100%, caixa 98,1%,
+dívida 92,7%. Em 2024, Petrobras: lucro dos controladores R$ 36,6 bi e dívida bruta R$ 373 bi; Itaú:
+lucro R$ 41,1 bi e patrimônio R$ 211 bi — como publicados.
+
+**O ITR traz o resultado do trimestre e o acumulado no ano**, cada um com o seu início de exercício.
+O lucro de 12 meses é conta da pesquisa: acumulado do ano + último anual − acumulado do mesmo ponto
+do ano anterior.
 
 ### Ligação do ativo à empresa — feita em 2026-10-10
 
