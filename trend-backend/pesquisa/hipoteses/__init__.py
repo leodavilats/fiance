@@ -20,6 +20,6 @@ class Hipotese:
 
 
 def todas() -> dict[str, Hipotese]:
-    from pesquisa.hipoteses import momento
+    from pesquisa.hipoteses import momento, valor_qualidade
 
-    return {h.nome: h for h in (momento.MOMENTO_12_1,)}
+    return {h.nome: h for h in (momento.MOMENTO_12_1, valor_qualidade.VALOR_QUALIDADE)}

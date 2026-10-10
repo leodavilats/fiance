@@ -17,6 +17,8 @@ class Base:
     cdi: pd.Series
     nomes: pd.Series
     retrato: str
+    fundamentos: pd.DataFrame | None = None
+    acoes: pd.DataFrame | None = None
 
     @property
     def pregoes(self) -> pd.DatetimeIndex:

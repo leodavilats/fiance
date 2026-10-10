@@ -10,6 +10,7 @@ import pandas as pd
 import sqlalchemy as sa
 
 from pesquisa.dados import Base, montar
+from pesquisa.fundamentos import preparar, preparar_acoes
 
 PASTA = Path(__file__).resolve().parents[1] / ".retratos"
 
@@ -19,6 +20,42 @@ SELECT s.cnpj, s.classe, s.data, s.codigo, s.fechamento, s.fechamento_ajustado, 
 FROM mercado.serie_papel s
 """
 _CDI = "SELECT data, valor FROM mercado.indicador WHERE serie = 12"
+
+_DISPONIVEL = """(SELECT min(x.data_entrega) FROM mercado.documento x
+    WHERE x.cnpj = {t}.cnpj AND x.tipo = {t}.tipo AND x.data_referencia = {t}.data_referencia)"""
+
+_RESULTADO = f"""
+SELECT r.cnpj, r.tipo, r.data_referencia, r.versao, r.fim_exercicio, r.lucro_controladores,
+       {_DISPONIVEL.format(t="r")} AS disponivel_em
+FROM mercado.fundamento_resultado r
+WHERE r.inicio_exercicio = make_date(extract(year FROM r.fim_exercicio)::int, 1, 1)
+"""
+
+_BALANCO = """
+SELECT b.cnpj, b.tipo, b.data_referencia, b.versao, b.patrimonio_controladores
+FROM mercado.fundamento_balanco b
+WHERE b.data = b.data_referencia
+"""
+
+_ACOES = """
+SELECT d.cnpj, d.tipo, d.data_referencia, d.versao, k.acoes_total, k.tesouraria_total
+FROM mercado.composicao_capital k
+JOIN mercado.documento d ON d.id = k.documento_id
+"""
+
+_CAPITAL = """
+SELECT cnpj, data_referencia, versao, data_aprovacao, acoes_total
+FROM mercado.capital_social
+"""
+
+CONSULTAS = {
+    "serie": _SERIE,
+    "cdi": _CDI,
+    "resultado": _RESULTADO,
+    "balanco": _BALANCO,
+    "acoes": _ACOES,
+    "capital": _CAPITAL,
+}
 
 
 class SemRetrato(RuntimeError):
@@ -42,8 +79,9 @@ def tirar(pasta: Path = PASTA) -> str:
     engine = sa.create_engine(_url())
     try:
         with engine.connect() as conn:
-            pd.read_sql(sa.text(_SERIE), conn).to_parquet(destino / "serie.parquet", index=False)
-            pd.read_sql(sa.text(_CDI), conn).to_parquet(destino / "cdi.parquet", index=False)
+            for arquivo, consulta in CONSULTAS.items():
+                tabela = pd.read_sql(sa.text(consulta), conn)
+                tabela.to_parquet(destino / f"{arquivo}.parquet", index=False)
     finally:
         engine.dispose()
     return nome
@@ -73,7 +111,7 @@ def tirar_pelo_railway(servico: str = "postgres-mercado", pasta: Path = PASTA) -
     nome = date.today().isoformat()
     destino = pasta / nome
     destino.mkdir(parents=True, exist_ok=True)
-    for consulta, arquivo in ((_SERIE, "serie"), (_CDI, "cdi")):
+    for arquivo, consulta in CONSULTAS.items():
         csv = destino / f"{arquivo}.csv"
         _copiar_pelo_railway(consulta, csv, servico)
         tabela = pd.read_csv(
@@ -103,6 +141,14 @@ def carregar(nome: str | None = None, pasta: Path = PASTA) -> Base:
     nome = nome or disponiveis[-1]
     if nome not in disponiveis:
         raise SemRetrato(f"Não há retrato {nome}; há {', '.join(disponiveis)}.")
-    serie = pd.read_parquet(pasta / nome / "serie.parquet")
-    cdi = pd.read_parquet(pasta / nome / "cdi.parquet")
-    return montar(serie, cdi, nome)
+    tabelas = {
+        arquivo: pd.read_parquet(caminho)
+        for arquivo in CONSULTAS
+        if (caminho := pasta / nome / f"{arquivo}.parquet").exists()
+    }
+    base = montar(tabelas["serie"], tabelas["cdi"], nome)
+    if {"resultado", "balanco"} <= set(tabelas):
+        base.fundamentos = preparar(tabelas["resultado"], tabelas["balanco"])
+    if {"acoes", "capital"} <= set(tabelas):
+        base.acoes = preparar_acoes(tabelas["acoes"], tabelas["capital"])
+    return base

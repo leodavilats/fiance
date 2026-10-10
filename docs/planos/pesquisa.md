@@ -1,6 +1,6 @@
 # Plano — pesquisa de carteira (`trend-backend/`)
 
-**Estado:** motor, registro e momento 12–1 `[IMPLEMENTADO]`; valor e qualidade `[PLANEJADO]` · **Escrito em:** 2026-10-10 · **Uso:** próprio do autor, não é produto
+**Estado:** motor, registro, relatório, momento 12–1 e valor + qualidade `[IMPLEMENTADO]` · **Escrito em:** 2026-10-10 · **Uso:** próprio do autor, não é produto
 
 A pesquisa testa estratégias de carteira em horizonte de meses sobre a base do
 [data-job](data-job.md). Este documento é o **protocolo**: foi escrito antes do primeiro resultado, e
@@ -63,8 +63,28 @@ pontua os papéis numa data. As primeiras, nesta ordem:
 2. **Valor + qualidade:** lucro sobre valor de mercado alto entre os de retorno sobre patrimônio alto
 3. **A combinação** das duas
 
-Antes de valor e qualidade, o número de ações precisa de tratamento: a CVM recebe a quantidade em
-unidades diferentes conforme a empresa (a Gafisa declara em milhares), e valor de mercado depende disso.
+### O que valor + qualidade precisa da base
+
+- **Lucro de 12 meses só com o que já tinha sido entregue:** no trimestre, acumulado do ano + último
+  anual − acumulado do mesmo ponto do ano anterior; a disponibilidade é a **primeira** entrega do
+  documento à CVM
+- **Número de ações** de duas fontes: o FRE (quantidade integralizada, na data de aprovação do capital,
+  de 2010 em diante) e a composição do capital na DFP e no ITR (de 2020 em diante, quando a CVM passou a
+  publicá-la). Vale o registro mais recente em cada data. A data de aprovação vem antes da entrega do
+  FRE: é uma antecipação pequena, aceita
+- **Unidade:** valor de mercado abaixo de 2% do patrimônio é quantidade declarada em milhares (Gafisa), e
+  é multiplicado por mil
+- **Digitação:** quantidade que destoa por fator de 3 dos dois vizinhos, que concordam entre si, sai — o
+  Banco do Brasil declara um décimo das ações no FRE de 2015, e sairia com P/L 0,5. Desdobramento muda a
+  quantidade de vez e fica
+- **Um papel por empresa**, o mais negociado nos últimos 63 pregões
+- **Sem balanço antes de 2010**, a hipótese fica em caixa no começo do estudo e só investe de 2011 em diante
+
+### Observação de diagnóstico (não é execução do registro)
+
+De 2011 a 2018, **comprar todos os papéis do universo, em pesos iguais, rendeu 7,4% ao ano sem custo nem
+imposto, contra 10,3% do CDI**. A bolsa inteira perdeu do CDI nesse trecho; uma hipótese que perde do CDI
+ali precisa ser comparada também com esse mercado, e não só com o CDI.
 
 ## Acesso à base
 
@@ -76,6 +96,7 @@ do retrato vai para o registro.
 cd trend-backend
 python -m pesquisa retrato --pelo-railway     # pela CLI do Railway, sem expor o banco (~2 min)
 python -m pesquisa rodar --hipotese momento_12_1 --periodo estudo
+python -m pesquisa relatorio                 # relatorio.html, com as curvas e as carteiras
 ```
 
 `--pelo-railway` usa `railway ssh` no `postgres-mercado` e não exige porta pública nem senha. Sem a

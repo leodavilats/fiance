@@ -181,3 +181,22 @@ def test_registro_conta_as_variacoes(tmp_path):
         registro.anotar(h, "estudo", "2026-10-10", {}, arquivo=arquivo)
 
     assert registro.tentativas("teste", arquivo=arquivo) == 2
+
+
+def test_relatorio_mostra_a_execucao_e_a_curva(tmp_path):
+    from pesquisa import relatorio
+
+    base = _base({"A": [0.01] * 25})
+    resultado = simular(base, _periodo(base), lambda dia: ["A"], SEM_CUSTO)
+    hipotese = _hipotese(False)
+    arquivo = tmp_path / "r.jsonl"
+    registro.anotar(hipotese, "estudo", "teste", {"retorno_anual": 0.1, "excesso_anual": -0.02},
+                    arquivo=arquivo)  # fmt: skip
+    relatorio.guardar(resultado, hipotese.nome, registro.assinatura(hipotese), "estudo", base.nomes,
+                      pasta=tmp_path)  # fmt: skip
+
+    pagina = relatorio.gerar(arquivo, tmp_path)
+
+    assert "<polyline" in pagina
+    assert "-2,0%" in pagina
+    assert "<li>A</li>" in pagina

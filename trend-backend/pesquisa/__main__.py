@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from pesquisa import registro, retrato
+from pesquisa import registro, relatorio, retrato
 from pesquisa.hipoteses import todas
 from pesquisa.metricas import resumir
 from pesquisa.motor import simular
@@ -22,6 +22,9 @@ def _rodar(args) -> int:
     )
     resumo = resumir(resultado)
     registro.anotar(hipotese, args.periodo, base.retrato, resumo, forcado=args.forcar)
+    relatorio.guardar(
+        resultado, hipotese.nome, registro.assinatura(hipotese), args.periodo, base.nomes
+    )
     print(json.dumps(resumo, ensure_ascii=False, indent=2))
     print(
         f"variações já testadas de {hipotese.nome}: {registro.tentativas(hipotese.nome)}",
@@ -44,9 +47,15 @@ def main(argv: list[str] | None = None) -> int:
     rodar.add_argument("--periodo", choices=sorted(PERIODOS), required=True)
     rodar.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
     rodar.add_argument("--forcar", action="store_true", help="Reabre a prova, e fica no registro")
+    comandos.add_parser("relatorio", help="Gera relatorio.html a partir do registro")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
     try:
+        if args.comando == "relatorio":
+            destino = relatorio.PASTA.parent / "relatorio.html"
+            destino.write_text(relatorio.gerar(), encoding="utf-8")
+            print(f"relatório em {destino}")
+            return 0
         if args.comando == "retrato":
             nome = retrato.tirar_pelo_railway() if args.pelo_railway else retrato.tirar()
             print(f"retrato {nome} gravado.")
