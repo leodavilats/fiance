@@ -25,6 +25,8 @@ def _uma_vez(url: str, get: Callable[..., httpx.Response]) -> bytes:
         raise Ausente(f"{url} não existe.")
     if resposta.status_code != 200:
         raise Indisponivel(f"{url} respondeu {resposta.status_code}.")
+    if resposta.headers.get("content-type", "").startswith("text/html"):
+        raise Indisponivel(f"{url} respondeu uma página HTML no lugar do arquivo.")
     return resposta.content
 
 

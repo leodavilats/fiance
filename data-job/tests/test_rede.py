@@ -44,3 +44,20 @@ def test_desiste_depois_de_todas_as_tentativas():
     with pytest.raises(Indisponivel, match="503"):
         baixar(URL, get=get, dormir=lambda _: None)
     assert len(pedidos) == len(ESPERAS) + 1
+
+
+def test_pagina_html_com_status_200_tenta_de_novo():
+    pedidos = []
+
+    def get(url, **_):
+        pedidos.append(url)
+        if len(pedidos) == 1:
+            return httpx.Response(
+                200,
+                content=b"<html>Requisicao invalida!</html>",
+                headers={"content-type": "text/html"},
+            )
+        return httpx.Response(200, content=b"[]", headers={"content-type": "application/json"})
+
+    assert baixar(URL, get=get, dormir=lambda _: None) == b"[]"
+    assert len(pedidos) == 2, "o BCB devolve essa página de vez em quando, com status 200"
