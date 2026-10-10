@@ -153,3 +153,43 @@ def test_grava_e_regrava_sem_tocar_linha(engine, tmp_path):
         assert set(empresas) == {PETROBRAS, CPX}, "sem ação ligada, a empresa fica de fora"
     assert lucro.valor == Decimal("36606000000")
     assert lucro.data_entrega == date(2025, 2, 26), "a data de entrega é o que a pesquisa usa"
+
+
+def test_visoes_de_fundamento(engine, tmp_path):
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text("INSERT INTO mercado.emissor (codigo, cnpj, metodo) VALUES (:c, :d, 'fca')"),
+            [{"c": "PETR", "d": PETROBRAS}, {"c": "XXXX", "d": SO_INDIVIDUAL}],
+        )
+    coleta.executar(
+        engine,
+        tmp_path,
+        cvm_demonstracoes.FONTE["DFP"],
+        "dfp_cia_aberta_2024.zip",
+        _zip(),
+        cvm_demonstracoes.processador("DFP"),
+    )
+
+    with engine.connect() as conn:
+        resultado = conn.execute(
+            sa.text("SELECT * FROM mercado.fundamento_resultado WHERE cnpj = :c"), {"c": PETROBRAS}
+        ).one()
+        balanco = conn.execute(
+            sa.text("SELECT * FROM mercado.fundamento_balanco WHERE cnpj = :c"), {"c": PETROBRAS}
+        ).one()
+        individual = conn.execute(
+            sa.text("SELECT * FROM mercado.fundamento_resultado WHERE cnpj = :c"),
+            {"c": SO_INDIVIDUAL},
+        ).one()
+
+    assert resultado.receita == Decimal("490829000000")
+    assert resultado.lucro_liquido == Decimal("37009000000")
+    assert resultado.lucro_controladores == Decimal("36606000000")
+    assert resultado.data_entrega == date(2025, 2, 26)
+    assert balanco.patrimonio_liquido == Decimal("367514000000")
+    assert balanco.patrimonio_controladores < balanco.patrimonio_liquido, "sem os não controladores"
+    assert balanco.divida_bruta > 0
+    assert not individual.consolidado
+    assert individual.lucro_controladores == individual.lucro_liquido, (
+        "sem consolidado não há não controladores: o lucro do período é todo do controlador"
+    )
