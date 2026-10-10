@@ -1,49 +1,14 @@
 from __future__ import annotations
 
-import io
-import os
-import zipfile
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 import sqlalchemy as sa
-from alembic import command
-from alembic.config import Config
 
 from datajob import coleta
-from datajob.config import url_do_banco
 from datajob.fontes import b3_cotahist
-
-URL = os.environ.get("DATAJOB_TEST_DATABASE_URL")
-
-pytestmark = pytest.mark.skipif(
-    not URL, reason="DATAJOB_TEST_DATABASE_URL não definida: gravação precisa de Postgres"
-)
-
-RAIZ = Path(__file__).resolve().parents[1]
-TRECHO = Path(__file__).parent / "fixtures" / "COTAHIST_D08102026_trecho.TXT"
-
-
-@pytest.fixture
-def engine():
-    url = url_do_banco(URL)
-    motor = sa.create_engine(url)
-    with motor.begin() as conn:
-        conn.execute(sa.text("DROP SCHEMA IF EXISTS mercado CASCADE"))
-    config = Config(str(RAIZ / "alembic.ini"))
-    config.set_main_option("script_location", str(RAIZ / "migrations"))
-    config.set_main_option("sqlalchemy.url", url)
-    command.upgrade(config, "head")
-    yield motor
-    motor.dispose()
-
-
-def _zip(texto: str) -> bytes:
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w") as arquivo:
-        arquivo.writestr("COTAHIST.TXT", texto.encode("latin-1"))
-    return buffer.getvalue()
+from tests.conftest import TRECHO
+from tests.conftest import zipar as _zip
 
 
 def _executar(engine, tmp_path, conteudo: bytes, forcar: bool = False) -> coleta.Resultado:

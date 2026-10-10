@@ -11,7 +11,7 @@ import pytest
 from datajob.fontes.b3_cotahist import (
     ArquivoInvalido,
     interpretar,
-    texto_do_zip,
+    linhas_do_zip,
     url_do_ano,
     url_do_dia,
 )
@@ -130,7 +130,7 @@ def test_isin_repetido_no_pregao_guarda_o_primeiro():
 
 def test_conteudo_que_nao_e_zip_e_recusado():
     with pytest.raises(ArquivoInvalido, match="ZIP"):
-        texto_do_zip(b"<html>pregao sem arquivo</html>")
+        list(linhas_do_zip(b"<html>pregao sem arquivo</html>"))
 
 
 def test_o_zip_da_b3_e_lido_em_latin1():
@@ -138,7 +138,7 @@ def test_o_zip_da_b3_e_lido_em_latin1():
     with zipfile.ZipFile(buffer, "w") as arquivo:
         arquivo.writestr("COTAHIST_D08102026.TXT", TRECHO.read_bytes())
 
-    assert texto_do_zip(buffer.getvalue()).splitlines() == _linhas()
+    assert list(linhas_do_zip(buffer.getvalue())) == _linhas()
 
 
 def test_endereco_dos_arquivos():

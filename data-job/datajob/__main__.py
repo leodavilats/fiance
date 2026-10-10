@@ -5,37 +5,28 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import httpx
 import sqlalchemy as sa
 
-from datajob import armazenamento, coleta
+from datajob import armazenamento, coleta, rotina
 from datajob.config import carregar
 from datajob.fontes import b3_cotahist
+from datajob.rede import Indisponivel, baixar
 
 _FONTES = {b3_cotahist.FONTE: b3_cotahist.processar}
 
 
-class Indisponivel(RuntimeError):
-    pass
-
-
-def _baixar(url: str) -> bytes:
-    resposta = httpx.get(url, timeout=300, follow_redirects=True)
-    if resposta.status_code != 200:
-        raise Indisponivel(f"{url} respondeu {resposta.status_code}.")
-    return resposta.content
-
-
-def _relatar(arquivo: str, resultado: coleta.Resultado) -> None:
-    if resultado.status == "pulada":
+def _relatar(arquivo: str, resultado: coleta.Resultado | None) -> None:
+    if resultado is None:
+        print(f"{arquivo}: não publicado (sem pregão, ou ainda não saiu).", flush=True)
+    elif resultado.status == "pulada":
+        print(f"{arquivo}: já coletado com o mesmo conteúdo, pulado.", flush=True)
+    else:
         print(
-            f"{arquivo}: já coletado com o mesmo conteúdo, pulado (coleta {resultado.coleta_id})."
+            f"{arquivo}: {resultado.lidas} registros lidos, {resultado.gravadas} cotações "
+            f"gravadas ou alteradas, {resultado.quarentena} em quarentena "
+            f"(coleta {resultado.coleta_id}).",
+            flush=True,
         )
-        return
-    print(
-        f"{arquivo}: {resultado.lidas} registros lidos, {resultado.gravadas} cotações gravadas "
-        f"ou alteradas, {resultado.quarentena} em quarentena (coleta {resultado.coleta_id})."
-    )
 
 
 def _cotahist(args, engine: sa.Engine, raiz: Path) -> None:
@@ -44,12 +35,16 @@ def _cotahist(args, engine: sa.Engine, raiz: Path) -> None:
         nome, conteudo = caminho.name, caminho.read_bytes()
     else:
         url = b3_cotahist.url_do_ano(args.ano) if args.ano else b3_cotahist.url_do_dia(args.dia)
-        nome, conteudo = url.rsplit("/", 1)[1], _baixar(url)
+        nome, conteudo = url.rsplit("/", 1)[1], baixar(url)
 
     resultado = coleta.executar(
         engine, raiz, b3_cotahist.FONTE, nome, conteudo, b3_cotahist.processar, args.forcar
     )
     _relatar(nome, resultado)
+
+
+def _diario(args, engine: sa.Engine, raiz: Path) -> None:
+    rotina.diario(engine, raiz, baixar, _relatar)
 
 
 def _reprocessar(args, engine: sa.Engine, raiz: Path) -> None:
@@ -72,6 +67,8 @@ def _argumentos(argv: list[str]) -> argparse.Namespace:
     origem.add_argument("--arquivo", help="ZIP já baixado, em vez de buscar na B3")
     cotahist.add_argument("--forcar", action="store_true", help="Grava mesmo se o hash já entrou")
 
+    comandos.add_parser("diario", help="Busca o que falta desde o último pregão gravado")
+
     reprocessar = comandos.add_parser("reprocessar", help="Regrava a partir do bruto guardado")
     reprocessar.add_argument("--fonte", choices=sorted(_FONTES), required=True)
 
@@ -82,7 +79,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _argumentos(sys.argv[1:] if argv is None else argv)
     config = carregar()
     engine = sa.create_engine(config.database_url)
-    comandos = {"cotahist": _cotahist, "reprocessar": _reprocessar}
+    comandos = {"cotahist": _cotahist, "diario": _diario, "reprocessar": _reprocessar}
     try:
         comandos[args.comando](args, engine, config.bruto_dir)
     except (Indisponivel, b3_cotahist.ArquivoInvalido) as e:

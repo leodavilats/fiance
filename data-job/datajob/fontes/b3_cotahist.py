@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import zipfile
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
@@ -61,15 +62,18 @@ class Leitura:
     rejeitadas: list[Rejeitada] = field(default_factory=list)
 
 
-def texto_do_zip(conteudo: bytes) -> str:
+def linhas_do_zip(conteudo: bytes) -> Iterator[str]:
     try:
-        with zipfile.ZipFile(io.BytesIO(conteudo)) as arquivo:
-            nomes = [n for n in arquivo.namelist() if not n.endswith("/")]
-            if len(nomes) != 1:
-                raise ArquivoInvalido(f"O ZIP deveria ter um arquivo, e tem {len(nomes)}.")
-            return arquivo.read(nomes[0]).decode("latin-1")
+        arquivo = zipfile.ZipFile(io.BytesIO(conteudo))
     except zipfile.BadZipFile as e:
         raise ArquivoInvalido("O conteúdo baixado não é um ZIP.") from e
+    with arquivo:
+        nomes = [n for n in arquivo.namelist() if not n.endswith("/")]
+        if len(nomes) != 1:
+            raise ArquivoInvalido(f"O ZIP deveria ter um arquivo, e tem {len(nomes)}.")
+        with io.TextIOWrapper(arquivo.open(nomes[0]), encoding="latin-1", newline="") as texto:
+            for linha in texto:
+                yield linha.rstrip("\r\n")
 
 
 def _preco(campo: str) -> Decimal:
@@ -117,16 +121,32 @@ def _implausivel(c: Cotacao) -> str | None:
     return None
 
 
-def interpretar(texto: str) -> Leitura:
-    linhas = texto.splitlines()
-    if not linhas or not linhas[0].startswith("00COTAHIST."):
+def _registros(linhas: Iterable[str]) -> Iterator[tuple[int, str]]:
+    iterador = iter(linhas)
+    cabecalho = next(iterador, "")
+    if not cabecalho.startswith("00COTAHIST."):
         raise ArquivoInvalido("Falta o registro de cabeçalho do COTAHIST.")
-    if not linhas[-1].startswith("99COTAHIST."):
+    anterior: tuple[int, str] | None = None
+    for numero, linha in enumerate(iterador, start=2):
+        if anterior is not None:
+            yield anterior
+        anterior = (numero, linha)
+    if anterior is None or not anterior[1].startswith("99COTAHIST."):
         raise ArquivoInvalido("Falta o registro final: o arquivo chegou cortado.")
+    yield 0, anterior[1]
+
+
+def interpretar(linhas: str | Iterable[str]) -> Leitura:
+    if isinstance(linhas, str):
+        linhas = linhas.splitlines()
 
     leitura = Leitura()
     vistas: set[tuple[str, date]] = set()
-    for numero, linha in enumerate(linhas[1:-1], start=2):
+    final = ""
+    for numero, linha in _registros(linhas):
+        if numero == 0:
+            final = linha
+            break
         if len(linha) != _TAMANHO_DO_REGISTRO:
             raise ArquivoInvalido(
                 f"Linha {numero} tem {len(linha)} posições, e o registro tem {_TAMANHO_DO_REGISTRO}."
@@ -154,7 +174,7 @@ def interpretar(texto: str) -> Leitura:
         vistas.add((cotacao.isin, cotacao.data))
         leitura.cotacoes.append(cotacao)
 
-    declarados = int(linhas[-1][31:42])
+    declarados = int(final[31:42])
     if declarados != leitura.registros:
         raise ArquivoInvalido(
             f"O registro final declara {declarados} cotações, e o arquivo tem {leitura.registros}."
@@ -268,6 +288,6 @@ def gravar(conn: sa.Connection, leitura: Leitura, coleta_id: int) -> int:
 
 
 def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int, int, int]:
-    leitura = interpretar(texto_do_zip(conteudo))
+    leitura = interpretar(linhas_do_zip(conteudo))
     gravadas = gravar(conn, leitura, coleta_id)
     return leitura.registros, gravadas, len(leitura.rejeitadas)
