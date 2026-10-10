@@ -173,7 +173,7 @@ def test_fonte_fora_do_ar_nao_impede_as_outras(engine, tmp_path):
         engine, tmp_path, baixar_com_cvm_fora, lambda *_: None, hoje=date(2026, 10, 9)
     )
 
-    assert falhas == ["cadastro da CVM", "FCA da CVM"]
+    assert falhas == ["cadastro da CVM", "FCA da CVM", "DFP e ITR da CVM"]
 
 
 def test_cadastro_regravado_nao_toca_linha(engine, tmp_path):

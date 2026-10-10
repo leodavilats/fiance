@@ -135,3 +135,34 @@ emissor = sa.Table(
     sa.CheckConstraint("metodo IN ('fca', 'b3', 'nome')", name="ck_emissor_metodo"),
 )
 sa.Index("ix_emissor_cnpj", emissor.c.cnpj)
+
+documento = sa.Table(
+    "documento",
+    metadata,
+    sa.Column("id", sa.BigInteger, primary_key=True, autoincrement=True),
+    sa.Column("cnpj", sa.Text, nullable=False),
+    sa.Column("tipo", sa.Text, nullable=False),
+    sa.Column("data_referencia", sa.Date, nullable=False),
+    sa.Column("versao", sa.Integer, nullable=False),
+    sa.Column("codigo_cvm", sa.Text),
+    sa.Column("id_documento", sa.Text),
+    sa.Column("data_entrega", sa.Date),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+    sa.UniqueConstraint("cnpj", "tipo", "data_referencia", "versao", name="uq_documento"),
+    sa.CheckConstraint("tipo IN ('DFP', 'ITR')", name="ck_documento_tipo"),
+)
+
+demonstracao_linha = sa.Table(
+    "demonstracao_linha",
+    metadata,
+    sa.Column("documento_id", sa.BigInteger, sa.ForeignKey("documento.id"), primary_key=True),
+    sa.Column("demonstracao", sa.Text, primary_key=True),
+    sa.Column("inicio_exercicio", sa.Date, primary_key=True),
+    sa.Column("fim_exercicio", sa.Date, primary_key=True),
+    sa.Column("conta", sa.Text, primary_key=True),
+    sa.Column("consolidado", sa.Boolean, nullable=False),
+    sa.Column("descricao", sa.Text, nullable=False),
+    sa.Column("valor", sa.Numeric, nullable=False),
+    sa.Column("conta_fixa", sa.Boolean, nullable=False),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+)

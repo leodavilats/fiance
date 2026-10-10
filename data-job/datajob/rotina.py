@@ -10,8 +10,8 @@ from zoneinfo import ZoneInfo
 import sqlalchemy as sa
 
 from datajob import coleta, emissores
-from datajob.esquema import cotacao, valor_mobiliario
-from datajob.fontes import b3_cotahist, b3_emissores, cvm_cadastro, cvm_fca
+from datajob.esquema import cotacao, documento, valor_mobiliario
+from datajob.fontes import b3_cotahist, b3_emissores, cvm_cadastro, cvm_demonstracoes, cvm_fca
 from datajob.rede import Ausente
 
 PRIMEIRO_ANO = 2005
@@ -40,6 +40,17 @@ def pendencias(ultimo: date | None, hoje: date) -> list[str]:
 def anos_do_fca(tem_fca: bool, hoje: date) -> list[int]:
     inicio = hoje.year - 1 if tem_fca else cvm_fca.PRIMEIRO_ANO
     return list(range(inicio, hoje.year + 1))
+
+
+def anos_de_demonstracao(tipo: str, tem_documento: bool, hoje: date) -> list[int]:
+    inicio = hoje.year - 1 if tem_documento else cvm_demonstracoes.PRIMEIRO_ANO[tipo]
+    return list(range(inicio, hoje.year + 1))
+
+
+def _tem_documento(engine: sa.Engine, tipo: str) -> bool:
+    with engine.connect() as conn:
+        consulta = sa.select(documento.c.id).where(documento.c.tipo == tipo).limit(1)
+        return conn.execute(consulta).first() is not None
 
 
 def ultimo_pregao_gravado(engine: sa.Engine) -> date | None:
@@ -110,6 +121,15 @@ def diario(
             contagem = emissores.recalcular(conn)
         print(f"emissores ligados a CNPJ: {dict(contagem)}", flush=True)
 
+    def demonstracoes() -> None:
+        for tipo in ("DFP", "ITR"):
+            processar = cvm_demonstracoes.processador(tipo)
+            for ano in anos_de_demonstracao(tipo, _tem_documento(engine, tipo), hoje):
+                url = cvm_demonstracoes.url_do_ano(tipo, ano)
+                _arquivo(
+                    engine, raiz, relatar, baixar, cvm_demonstracoes.FONTE[tipo], url, processar
+                )
+
     falhas = []
     etapas = {
         "cotações da B3": cotahist,
@@ -117,6 +137,7 @@ def diario(
         "FCA da CVM": fca,
         "emissores da B3": emissores_b3,
         "ligação emissor-CNPJ": ligar_emissores,
+        "DFP e ITR da CVM": demonstracoes,
     }
     for nome, etapa in etapas.items():
         try:

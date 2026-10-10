@@ -149,17 +149,32 @@ guarda.
 | `ativo` | `isin` | Nome resumido, espécie, código BDI, primeiro e último pregão. A fazer: classe (ação, FII, ETF, BDR) |
 | `ticker` | `(codigo, isin)` | Primeiro e último pregão. Um código reaproveitado por outro ISIN é outra linha |
 | `cotacao` | `(isin, data)` | Abertura, máxima, mínima, fechamento, média, negócios, quantidade, volume, fator de cotação — tudo bruto, `NUMERIC` |
-| `documento` | `(cnpj, tipo, data_referencia, versao)` | Tipo (DFP, ITR), data de entrega, id CVM |
-| `demonstracao_linha` | `(documento, demonstracao, ordem_exercicio, conta)` | Descrição, valor já multiplicado pela escala, início e fim do exercício |
+| `documento` | `id`; único em `(cnpj, tipo, data_referencia, versao)` | Tipo (DFP, ITR), data de entrega, id CVM — todas as versões do índice |
+| `demonstracao_linha` | `(documento_id, demonstracao, inicio_exercicio, fim_exercicio, conta)` | Descrição, valor em reais (a escala já aplicada), consolidado ou individual, conta fixa. No balanço, início = fim |
 | `indicador_serie` | `(serie, data)` | CDI, Selic, IPCA |
 | `coleta` | `id` | Fonte, arquivo, hash, início, fim, linhas lidas, gravadas, em quarentena, status, erro |
 | `quarentena` | `id` | Coleta, chave da linha, motivo, conteúdo bruto |
 
-**O que entra da CVM na fase 1:** balanço ativo e passivo (BPA, BPP), DRE e fluxo de caixa (DFC),
-consolidados; o individual só quando a empresa não publica consolidado. Os arquivos consolidados de
-2025 somam cerca de 240 mil linhas na DFP; com o ITR e 15 anos, a ordem é de dezenas de milhões. Para
-caber, a fase 1 grava só empresas com valor mobiliário negociado em bolsa no FCA — e mede o volume
-real antes de seguir.
+**O que entra da CVM:** balanço ativo e passivo (BPA, BPP), resultado (DRE) e fluxo de caixa (DFC,
+direto e indireto), da DFP de 2010 em diante e do ITR de 2011 em diante, com três recortes medidos em
+2026-10-10:
+
+| Recorte | Linhas (DFP + ITR) |
+|---|---|
+| Tudo | 35 milhões |
+| Só o exercício corrente (`ÚLTIMO`), consolidado | 6,7 milhões |
+| Isso, só empresas ligadas a uma ação | 5,1 milhões |
+
+- **Só o exercício corrente.** O `PENÚLTIMO` é o ano anterior reapresentado dentro do documento
+  novo: é metade das linhas, e o ano anterior já está no documento dele
+- **Consolidado, e individual só quando o documento não tem consolidado**
+- **Só empresas em `emissor`.** Quando a ligação melhora, `reprocessar --fonte cvm_dfp` (e `cvm_itr`)
+  traz o resto do bruto guardado, sem baixar
+- **Linhas repetidas e idênticas viram uma** — CPX Distribuidora e Salta Educação publicam a mesma conta
+  duas vezes na DFP de 2024. Repetida com valor diferente vai para a quarentena
+- **Moeda sempre real, escala em mil ou unidade**; outra coisa vai para a quarentena
+- **Rotina:** com o banco vazio, todos os anos; depois, o ano corrente e o anterior. Reapresentação de
+  um ano mais antigo só entra por `reprocessar` ou carga manual do ano
 
 **O que entra do COTAHIST:** só o mercado à vista (`TPMERC = 010`), lote padrão. Fracionário, opções e
 termo ficam no bruto e fora da tabela.
