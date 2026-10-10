@@ -10,14 +10,24 @@ Subir, observar, reverter — e o que falta para publicar nas lojas.
 | Ambiente | Onde | Banco |
 |---|---|---|
 | Desenvolvimento | Máquina local | SQLite em `.cache/fiance.db` |
-| **Staging** | Railway, projeto `fiance`, ambiente `staging` | Postgres próprio, volume de 5 GB |
-| Produção | Railway, ambiente `production` | Postgres gerenciado |
+| Produção | Railway, projeto `fiance`, ambiente `production` | Postgres gerenciado |
+
+Não há staging. O ambiente existiu até 2026-10-09 e foi removido: acompanhava a mesma branch que
+produção (`main`), então era uma segunda cópia do mesmo commit, e não um passo antes do deploy.
 
 URL de produção: `https://fiance.up.railway.app`
 
-⚠️ **Staging acompanha a mesma branch que produção (`main`)**, então ele não é um passo *antes* do
-deploy: é uma segunda cópia do mesmo commit, e os dois sobem juntos. Para virar staging de verdade,
-precisaria acompanhar outra branch.
+Serviços no ambiente `production`:
+
+| Serviço | O quê | Volume |
+|---|---|---|
+| `backend` | API, de `/backend` | — |
+| `postgres-app` | Banco do aplicativo | 500 MB |
+| `data-job` | Coleta de mercado, de `/data-job` — [planos/data-job](planos/data-job.md) | `data-job-bruto`, 5 GB, em `/bruto` |
+| `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |
+
+As referências de `DATABASE_URL` apontam para o **id** do serviço de banco, e não para o nome:
+renomear um serviço não quebra quem o referencia.
 
 ---
 

@@ -88,10 +88,11 @@ Serviço `data-job` no projeto `fiance` do Railway, ambiente `production`:
 | Item | Valor |
 |---|---|
 | Fonte | `main`, diretório `/data-job`, reconstrói só com mudança em `/data-job/**` |
-| Banco | `Postgres-xlfC`, só do data-job — `DATABASE_URL` referencia ele |
+| Banco | `postgres-mercado`, só do data-job — `DATABASE_URL` referencia o id dele |
 | Bruto | Volume `data-job-bruto` em `/bruto` |
 | Antes de cada deploy | `python -m alembic upgrade head` |
 | Execução | `python -m datajob diario`, sem reinício: roda e termina |
+| Agenda | `0 2 * * 2-6` (UTC): 23h de Brasília, depois de cada pregão de segunda a sexta |
 
 O `diario` busca o que falta desde o último pregão gravado: os anuais de 2005 em diante com o banco
 vazio, o anual do ano quando a lacuna passa de dez dias, e os diários no resto. O arquivo que a B3
@@ -175,7 +176,7 @@ python -m datajob reprocessar --fonte cotahist   # do bruto guardado, sem baixar
 | O quê | Quando | Onde |
 |---|---|---|
 | Carga histórica | Uma vez | Local, gravando no banco de produção pela URL |
-| COTAHIST do dia | Dias de pregão, 21h BRT — o arquivo de 08/10 saiu às 20:42 | Cron no Railway |
+| COTAHIST do dia | 23h de Brasília, terça a sábado em UTC — o arquivo de 08/10 saiu às 20:42 | Cron no Railway, `diario` |
 | CVM (DFP, ITR, FCA, cadastro) | Diário; o hash pula o que não mudou | Cron no Railway |
 | BCB SGS | Diário | Cron no Railway |
 

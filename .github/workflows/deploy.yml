@@ -3,7 +3,8 @@ name: Deploy
 # Deploy é **acionado à mão**, e não por push. O motivo: sem este fluxo, o `main`
 # vai direto para produção por auto-deploy do Railway, sem etapa intermediária — e `main` verde nem
 # sempre significa código certo. Este fluxo troca isso por: promover para homologação, olhar, e só
-# então promover para produção, com o rollback documentado no mesmo lugar.
+# então promover para produção, com o rollback documentado no mesmo lugar. O ambiente de homologação
+# foi removido em 2026-10-09; hoje só há produção.
 #
 # Enquanto `RAILWAY_TOKEN` não existir nos segredos do repositório, o fluxo **para com uma
 # mensagem** em vez de falhar por metade — e como o gatilho é manual, ele nunca deixa o CI
@@ -15,10 +16,9 @@ on:
       ambiente:
         description: 'Para onde promover'
         required: true
-        default: staging
+        default: production
         type: choice
         options:
-          - staging
           - production
       confirmo_producao:
         description: 'Digite "produção" para confirmar quando o ambiente for production'

@@ -54,7 +54,7 @@ eventos de ações tiverem fonte decidida — a peça sem fonte oficial estrutur
 
 **Onde mora, decidido em 2026-10-09 depois de medir:**
 
-- **Um Postgres só do data-job** (serviço `Postgres-xlfC` no Railway, volume de 5 GB), e não o do
+- **Um Postgres só do data-job** (serviço `postgres-mercado` no Railway, volume de 5 GB), e não o do
   aplicativo. Um ano de cotação ocupa 65 MB, e o volume do aplicativo tem 500 MB: o histórico não
   cabia, e disco cheio derruba o aplicativo. A proposta original era o mesmo banco.
 - **Arquivos brutos num volume** montado no serviço do data-job (`/bruto`), e não num bucket: o
