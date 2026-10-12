@@ -161,8 +161,14 @@ O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte
 
 ## Backup e recuperação
 
-O Postgres do Railway é gerenciado, e o provedor tem o próprio backup. Além dele existe uma cópia
-lógica própria, portátil entre Postgres e SQLite, cuja restauração é testada no CI
+**Nenhum banco tem backup automático** — conferido em 2026-10-12. O agendamento de backup do Railway
+e o PITR são do plano Pro, e a conta não é Pro. **Risco aceito pelo autor em 2026-10-12**, enquanto o
+uso é pessoal: perder o volume do `postgres-app` perde carteiras e contas. O `postgres-mercado` se
+reconstrói do bruto guardado no volume `/bruto` do data-job (`python -m datajob reprocessar`), menos
+o que as fontes já não publicam. Rever antes de abrir o produto ao público.
+
+Existe uma cópia lógica própria do `postgres-app`, portátil entre Postgres e SQLite, cuja
+restauração é testada no CI
 (`backend/app/backup.py`, `backend/tests/test_backup_e_restauracao.py`):
 
 ```bash
