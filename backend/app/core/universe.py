@@ -4,6 +4,7 @@ import logging
 import re
 import threading
 import time
+import unicodedata
 
 from app.core import cache
 
@@ -77,6 +78,10 @@ def get_type_map() -> dict[str, str]:
     )
 
 
+def _sem_acento(texto: str) -> str:
+    return unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().upper()
+
+
 def _get_search_index() -> list[tuple[str, str, str]]:
     def _build() -> list[tuple[str, str, str]]:
         index = []
@@ -84,7 +89,7 @@ def _get_search_index() -> list[tuple[str, str, str]]:
             if _FRACTIONAL_LOT.match(a["codigo"]):
                 continue
             nome = a.get("nome") or ""
-            index.append((a["codigo"].upper(), nome, nome.upper()))
+            index.append((a["codigo"].upper(), nome, _sem_acento(nome)))
         return index
 
     return _memoized("search_index", _build)
@@ -135,7 +140,7 @@ def get_universe() -> list[str]:
 
 
 def search_universe(query: str, limit: int = 10) -> list[dict]:
-    q = query.strip().upper()
+    q = _sem_acento(query.strip())
     if not q:
         return []
 

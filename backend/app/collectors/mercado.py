@@ -71,38 +71,45 @@ SELECT codigo, tipo, emissor, classe, data, preco, preco_anterior, maxima_52s, m
 FROM mercado.ativo_hoje
 """
 
-_DOCUMENTOS = "SELECT id FROM mercado.documento WHERE cnpj = :cnpj"
-
-_RESULTADOS = """
-SELECT tipo, data_referencia, versao, fim_exercicio, receita, lucro_controladores
-FROM mercado.fundamento_resultado
-WHERE documento_id = ANY(:documentos)
-  AND inicio_exercicio = make_date(extract(year FROM fim_exercicio)::int, 1, 1)
+_IRMAOS = """
+SELECT cnpj, codigo, classe, preco, volume_medio FROM mercado.ativo_hoje
+WHERE cnpj = ANY(:cnpjs)
 """
 
-_BALANCOS = """
-SELECT tipo, data_referencia, versao, patrimonio_controladores, divida_bruta
-FROM mercado.fundamento_balanco
-WHERE documento_id = ANY(:documentos) AND data = data_referencia
+_FUNDAMENTOS = """
+SELECT cnpj, tipo, data_referencia, versao, fim_exercicio, receita, lucro_controladores,
+    patrimonio_controladores, divida_bruta
+FROM mercado.fundamento_app WHERE cnpj = ANY(:cnpjs)
 """
+
+_DO_RESULTADO = ("tipo", "data_referencia", "versao", "fim_exercicio", "receita",
+                 "lucro_controladores")  # fmt: skip
+_DO_BALANCO = ("tipo", "data_referencia", "versao", "patrimonio_controladores", "divida_bruta")
 
 
 def _pacotes(conn: sa.Connection, ativos: list[dict]) -> dict[str, dict]:
+    cnpjs = sorted({a["cnpj"] for a in ativos if a["tipo"] == "stock" and a["cnpj"]})
+    irmaos: dict[str, list[dict]] = {}
+    fundamentos: dict[str, list[dict]] = {}
+    if cnpjs:
+        for linha in _linhas(conn, _IRMAOS, cnpjs=cnpjs):
+            irmaos.setdefault(linha.pop("cnpj"), []).append(linha)
+        for linha in _linhas(conn, _FUNDAMENTOS, cnpjs=cnpjs):
+            fundamentos.setdefault(linha.pop("cnpj"), []).append(linha)
+
     pacotes = {}
     for ativo in ativos:
-        pacote = {"ativo": ativo, "irmaos": [], "resultados": [], "balancos": []}
-        if ativo["tipo"] == "stock" and ativo["cnpj"]:
-            pacote["irmaos"] = _linhas(
-                conn,
-                "SELECT codigo, classe, preco, volume_medio FROM mercado.ativo_hoje "
-                "WHERE cnpj = :cnpj",
-                cnpj=ativo["cnpj"],
-            )
-            documentos = list(conn.execute(sa.text(_DOCUMENTOS), {"cnpj": ativo["cnpj"]}).scalars())
-            if documentos:
-                pacote["resultados"] = _linhas(conn, _RESULTADOS, documentos=documentos)
-                pacote["balancos"] = _linhas(conn, _BALANCOS, documentos=documentos)
-        pacotes[ativo["codigo"]] = pacote
+        da_empresa = fundamentos.get(ativo["cnpj"], []) if ativo["tipo"] == "stock" else []
+        pacotes[ativo["codigo"]] = {
+            "ativo": ativo,
+            "irmaos": irmaos.get(ativo["cnpj"], []) if ativo["tipo"] == "stock" else [],
+            "resultados": [{k: f[k] for k in _DO_RESULTADO} for f in da_empresa],
+            "balancos": [
+                {k: f[k] for k in _DO_BALANCO}
+                for f in da_empresa
+                if f["patrimonio_controladores"] is not None
+            ],
+        }
     return pacotes
 
 

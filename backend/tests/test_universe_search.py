@@ -53,3 +53,16 @@ def test_search_respects_limit(monkeypatch):
     monkeypatch.setattr(universe, "_lista", lambda: many_stocks)
     results = universe.search_universe("TST", limit=5)
     assert len(results) == 5
+
+
+def test_busca_ignora_acento(monkeypatch):
+    monkeypatch.setattr(
+        universe,
+        "_lista",
+        lambda: [{"codigo": "ITUB4", "nome": "ITAÚ UNIBANCO", "setor": "Bancos"}],
+    )
+    universe.invalidate_universe_memo()
+
+    assert [r["ticker"] for r in universe.search_universe("itau")] == ["ITUB4"], (
+        "a base grava o nome como a CVM, com acento; quem busca digita sem"
+    )
