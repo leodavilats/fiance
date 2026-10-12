@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from pesquisa import registro, relatorio, retrato
+from pesquisa import calibracao, registro, relatorio, retrato
 from pesquisa.hipoteses import todas
 from pesquisa.metricas import resumir
 from pesquisa.motor import simular
@@ -67,6 +67,19 @@ def _ranking(args) -> int:
     return 0
 
 
+def _calibracao(args) -> int:
+    calibracao.conferir(args.variacao, args.periodo, args.forcar)
+    base = retrato.carregar(args.retrato)
+    resumo, meses = calibracao.rodar(base, args.variacao, args.periodo)
+    calibracao.anotar(args.variacao, args.periodo, base.retrato, resumo, args.forcar)
+    destino = relatorio.PASTA / f"calibracao_{args.variacao}_{args.periodo}.json"
+    destino.write_text(
+        json.dumps({"resumo": resumo, "meses": meses}, ensure_ascii=False), encoding="utf-8"
+    )
+    print(json.dumps(resumo, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m pesquisa")
     comandos = parser.add_subparsers(dest="comando", required=True)
@@ -87,6 +100,13 @@ def main(argv: list[str] | None = None) -> int:
     ranking.add_argument("--periodo", choices=sorted(PERIODOS), required=True)
     ranking.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
     ranking.add_argument("--forcar", action="store_true", help="Passa por cima do protocolo")
+    calibrar = comandos.add_parser("calibracao", help="Mede o preço justo do app no passado")
+    calibrar.add_argument(
+        "--variacao", type=int, choices=sorted(calibracao.VARIACOES), required=True
+    )
+    calibrar.add_argument("--periodo", choices=sorted(PERIODOS), required=True)
+    calibrar.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
+    calibrar.add_argument("--forcar", action="store_true", help="Passa por cima do protocolo")
     comandos.add_parser("relatorio", help="Gera relatorio.html a partir do registro")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
@@ -102,11 +122,14 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.comando == "ranking":
             return _ranking(args)
+        if args.comando == "calibracao":
+            return _calibracao(args)
         return _rodar(args)
     except (
         registro.ProvaLacrada,
         registro.TetoAtingido,
         registro_ranking.Recusado,
+        calibracao.Recusado,
         retrato.SemRetrato,
     ) as e:
         print(f"Recusado: {e}", file=sys.stderr)

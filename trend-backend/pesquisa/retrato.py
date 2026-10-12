@@ -61,6 +61,24 @@ FROM mercado.serie_fundo
 WHERE tipo_ativo = 'fii'
 """
 
+# Para a calibração do preço justo: cada versão de cada documento com a data em que foi entregue.
+_FUNDAMENTO_APP = """
+SELECT f.cnpj, f.tipo, f.data_referencia, f.versao, f.fim_exercicio, f.receita,
+       f.lucro_controladores, f.patrimonio_controladores, f.divida_bruta, d.data_entrega
+FROM mercado.fundamento_app f
+JOIN mercado.documento d ON d.cnpj = f.cnpj AND d.tipo = f.tipo
+    AND d.data_referencia = f.data_referencia AND d.versao = f.versao
+"""
+
+_PROVENTO = """
+SELECT m.cnpj, p.classe, p.data_com, p.data_pagamento, p.valor
+FROM mercado.provento p
+JOIN mercado.emissor m ON m.codigo = p.emissor
+WHERE p.origem LIKE 'b3_%'
+"""
+
+_SELIC_MENSAL = "SELECT data, valor FROM mercado.indicador WHERE serie = 4189"
+
 CONSULTAS = {
     "serie": _SERIE,
     "cdi": _CDI,
@@ -70,6 +88,9 @@ CONSULTAS = {
     "capital": _CAPITAL,
     "etf": _ETF,
     "fii": _FII,
+    "fundamento_app": _FUNDAMENTO_APP,
+    "provento": _PROVENTO,
+    "selic_mensal": _SELIC_MENSAL,
 }
 
 
@@ -168,6 +189,9 @@ def carregar(nome: str | None = None, pasta: Path = PASTA) -> Base:
         base.etf = tabelas["etf"].assign(data=pd.to_datetime(tabelas["etf"]["data"]))
     if {"acoes", "capital"} <= set(tabelas):
         base.acoes = preparar_acoes(tabelas["acoes"], tabelas["capital"])
+    for nome in ("fundamento_app", "provento", "selic_mensal"):
+        if nome in tabelas:
+            base.calibracao[nome] = tabelas[nome]
     if "fii" in tabelas:
         base.fii = montar(tabelas["fii"], tabelas["cdi"], nome)
     return base

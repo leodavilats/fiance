@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pandas as pd
 
@@ -22,6 +22,7 @@ class Base:
     fundamentos: pd.DataFrame | None = None
     acoes: pd.DataFrame | None = None
     fii: Base | None = None
+    calibracao: dict[str, pd.DataFrame] = field(default_factory=dict)
 
     @property
     def pregoes(self) -> pd.DatetimeIndex:
