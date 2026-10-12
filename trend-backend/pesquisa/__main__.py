@@ -20,7 +20,10 @@ def _rodar(args) -> int:
 
     base = retrato.carregar(args.retrato)
     resultado = simular(
-        base, PERIODOS[args.periodo], lambda dia: hipotese.escolher(base, dia, hipotese.parametros)
+        base,
+        PERIODOS[args.periodo],
+        lambda dia: hipotese.escolher(base, dia, hipotese.parametros),
+        meses_entre_rebalanceamentos=hipotese.parametros.get("meses_entre_rebalanceamentos", 1),
     )
     resumo = resumir(resultado)
     registro.anotar(hipotese, args.periodo, base.retrato, resumo, forcado=args.forcar)

@@ -28,5 +28,6 @@ def todas() -> dict[str, Hipotese]:
             momento.MOMENTO_12_1,
             valor_qualidade.VALOR_QUALIDADE,
             momento_tendencia.MOMENTO_TENDENCIA,
+            momento_tendencia.MOMENTO_TENDENCIA_TRIMESTRAL,
         )
     }

@@ -225,3 +225,28 @@ def test_filtro_de_tendencia_vai_para_o_cdi_com_o_mercado_em_queda():
 
     assert momento_tendencia.escolher(subindo, subindo.pregoes[-1], parametros) == ["B"]
     assert momento_tendencia.escolher(caindo, caindo.pregoes[-1], parametros) == []
+
+
+def test_rebalanceamento_trimestral_so_mexe_no_fim_do_trimestre():
+    base = _base({"A": [0.0] * 140, "B": [0.0] * 140}, inicio="2005-01-03")
+    escolhas = []
+
+    simular(base, _periodo(base), lambda dia: escolhas.append(dia) or ["A"], SEM_CUSTO,
+            meses_entre_rebalanceamentos=3)  # fmt: skip
+
+    assert [d.month for d in escolhas] == [3, 6]
+
+
+def test_giro_mensal_divide_pelos_meses_e_nao_pelos_rebalanceamentos():
+    from pesquisa.metricas import resumir
+
+    dias = pd.bdate_range("2005-01-03", periods=140)
+    escolhas = {d: (["A"] if d.month < 4 else ["B"]) for d in dias}
+    base = _base({"A": [0.0] * 140, "B": [0.0] * 140}, inicio="2005-01-03")
+
+    resultado = simular(base, _periodo(base), lambda dia: escolhas[dia], SEM_CUSTO,
+                        meses_entre_rebalanceamentos=3)  # fmt: skip
+
+    assert resumir(resultado)["giro_mensal_medio"] == pytest.approx(3.0 / 6, abs=0.01), (
+        "compra em março (1) e troca tudo em junho (2), em seis meses"
+    )

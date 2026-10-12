@@ -41,3 +41,10 @@ MOMENTO_TENDENCIA = Hipotese(
     escolher=escolher,
     parametros={"olhar": 252, "pular": 21, "quantidade": 20, "meses_da_media": 10},
 )
+
+MOMENTO_TENDENCIA_TRIMESTRAL = Hipotese(
+    nome="momento_tendencia_trimestral",
+    descricao="Momento com filtro de tendência, rebalanceado no fim de cada trimestre",
+    escolher=escolher,
+    parametros={**MOMENTO_TENDENCIA.parametros, "meses_entre_rebalanceamentos": 3},
+)

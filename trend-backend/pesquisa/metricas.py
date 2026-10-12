@@ -33,7 +33,7 @@ def resumir(resultado: Resultado) -> dict:
         else 0.0,
         "pior_queda": round(float(queda.min()), 4),
         "meses_acima_do_cdi": round(float((mensal > cdi_mensal.reindex(mensal.index)).mean()), 3),
-        "giro_mensal_medio": round(float(np.mean(resultado.giro)), 3) if resultado.giro else 0.0,
+        "giro_mensal_medio": round(float(np.sum(resultado.giro)) / max(len(mensal), 1), 3),
         "custos_pagos": round(resultado.custos_pagos, 2),
         "imposto_pago": round(resultado.imposto_pago, 2),
         "saltos_zerados": resultado.saltos_zerados,

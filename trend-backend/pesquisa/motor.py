@@ -44,12 +44,13 @@ def simular(
     escolher: Callable[[pd.Timestamp], list[str]],
     custos: Custos = Custos(),
     inicial: float = 100_000.0,
+    meses_entre_rebalanceamentos: int = 1,
 ) -> Resultado:
     pregoes = base.pregoes[
         (base.pregoes >= pd.Timestamp(periodo.inicio))
         & ((base.pregoes <= pd.Timestamp(periodo.fim)) if periodo.fim else True)
     ]
-    rebalancear = fins_de_mes(pregoes)
+    rebalancear = {d for d in fins_de_mes(pregoes) if d.month % meses_entre_rebalanceamentos == 0}
 
     posicoes: dict[str, Posicao] = {}
     caixa = inicial
