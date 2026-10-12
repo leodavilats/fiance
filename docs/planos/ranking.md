@@ -18,6 +18,14 @@ amostra, o ranking informa — mesmo que nenhuma carteira montada com ele bata o
 | Ações | 2005 | R$ 5 milhões |
 | FIIs | 2010 | R$ 1 milhão |
 
+Fora a liquidez, o universo segue as regras da primeira pesquisa: 252 pregões de história, preço acima
+de R$ 1 e nenhum salto sem evento no último ano.
+
+**FIIs adiados — decidido em 2026-10-12, antes de qualquer execução.** O mercado de FII era pequeno
+demais antes de 2019: com R$ 1 milhão de piso, nenhum mês do estudo (2010–2018) tem 20 fundos; com
+R$ 100 mil, só 64 de 108 meses, com quintos de 4 fundos. FIIs ganham períodos próprios num adendo,
+escrito antes de rodar qualquer sinal neles, e usam as 3 variações que sobrarem do teto.
+
 Classes não se misturam: uma ação e um FII não têm a mesma volatilidade, e o ranking viraria um ranking
 de classe. **ETFs e BDRs ficam de fora** nesta etapa — poucos papéis líquidos antes de 2019 para medir
 ordem. Entram quando a validação tiver amostra.

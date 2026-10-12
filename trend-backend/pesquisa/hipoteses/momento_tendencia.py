@@ -6,19 +6,22 @@ from pesquisa.dados import Base
 from pesquisa.hipoteses import Hipotese, momento
 from pesquisa.universo import JANELA_DE_VOLUME, VOLUME_MINIMO
 
-_MERCADO: dict[int, pd.Series] = {}
+# Guarda a base junto: o id de um objeto coletado volta em outro, e o índice viria da base errada.
+_MERCADO: dict[int, tuple[Base, pd.Series]] = {}
 
 
 def _mercado(base: Base) -> pd.Series:
-    if id(base) in _MERCADO:
-        return _MERCADO[id(base)]
+    guardado = _MERCADO.get(id(base))
+    if guardado is not None and guardado[0] is base:
+        return guardado[1]
     liquido = (
         base.volume.rolling(JANELA_DE_VOLUME, min_periods=JANELA_DE_VOLUME).median()
         >= VOLUME_MINIMO
     )
     retorno = base.retorno.where(liquido & ~base.salto)
-    _MERCADO[id(base)] = (1 + retorno.mean(axis=1).fillna(0)).cumprod()
-    return _MERCADO[id(base)]
+    indice = (1 + retorno.mean(axis=1).fillna(0)).cumprod()
+    _MERCADO[id(base)] = (base, indice)
+    return indice
 
 
 def mercado_em_alta(base: Base, dia: pd.Timestamp, meses: int) -> bool:

@@ -54,6 +54,13 @@ FROM mercado.cotacao
 WHERE codigo IN ('PIBB11', 'BOVA11')
 """
 
+_FII = """
+SELECT emissor AS cnpj, classe, data, codigo, fechamento, fechamento_ajustado, retorno_total, volume,
+       salto_sem_evento, provento
+FROM mercado.serie_fundo
+WHERE tipo_ativo = 'fii'
+"""
+
 CONSULTAS = {
     "serie": _SERIE,
     "cdi": _CDI,
@@ -62,6 +69,7 @@ CONSULTAS = {
     "acoes": _ACOES,
     "capital": _CAPITAL,
     "etf": _ETF,
+    "fii": _FII,
 }
 
 
@@ -160,4 +168,6 @@ def carregar(nome: str | None = None, pasta: Path = PASTA) -> Base:
         base.etf = tabelas["etf"].assign(data=pd.to_datetime(tabelas["etf"]["data"]))
     if {"acoes", "capital"} <= set(tabelas):
         base.acoes = preparar_acoes(tabelas["acoes"], tabelas["capital"])
+    if "fii" in tabelas:
+        base.fii = montar(tabelas["fii"], tabelas["cdi"], nome)
     return base

@@ -9,6 +9,9 @@ from pesquisa.hipoteses import todas
 from pesquisa.metricas import resumir
 from pesquisa.motor import simular
 from pesquisa.periodos import PERIODOS
+from pesquisa.ranking import CLASSES, SINAIS
+from pesquisa.ranking import registro as registro_ranking
+from pesquisa.ranking.medida import avaliar
 
 
 def _rodar(args) -> int:
@@ -38,6 +41,32 @@ def _rodar(args) -> int:
     return 0
 
 
+def _ranking(args) -> int:
+    sinal, classe = SINAIS[args.sinal], CLASSES[args.classe]
+    registro_ranking.conferir(sinal, classe, args.periodo, args.forcar)
+    base = retrato.carregar(args.retrato)
+    dados = base.fii if classe.nome == "fii" else base
+    if dados is None:
+        raise retrato.SemRetrato("O retrato não tem FIIs: tire um retrato novo.")
+    resumo, meses = avaliar(dados, PERIODOS[args.periodo], sinal, classe)
+    anotado = registro_ranking.anotar(
+        sinal, classe, args.periodo, base.retrato, resumo, forcado=args.forcar
+    )
+    destino = relatorio.PASTA / (
+        f"ranking_{classe.nome}_{sinal.nome}_{anotado['assinatura']}_{args.periodo}.json"
+    )
+    destino.write_text(
+        json.dumps({"resumo": resumo, "meses": meses}, ensure_ascii=False), encoding="utf-8"
+    )
+    print(json.dumps(resumo, ensure_ascii=False, indent=2))
+    print(
+        f"variações no estudo: {registro_ranking.variacoes_no_estudo()} de "
+        f"{registro_ranking.TETO_DO_ESTUDO}",
+        file=sys.stderr,
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m pesquisa")
     comandos = parser.add_subparsers(dest="comando", required=True)
@@ -52,6 +81,12 @@ def main(argv: list[str] | None = None) -> int:
     rodar.add_argument("--periodo", choices=sorted(PERIODOS), required=True)
     rodar.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
     rodar.add_argument("--forcar", action="store_true", help="Reabre a prova, e fica no registro")
+    ranking = comandos.add_parser("ranking", help="Mede o acerto de um sinal de tendência")
+    ranking.add_argument("--sinal", choices=sorted(SINAIS), required=True)
+    ranking.add_argument("--classe", choices=sorted(CLASSES), required=True)
+    ranking.add_argument("--periodo", choices=sorted(PERIODOS), required=True)
+    ranking.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
+    ranking.add_argument("--forcar", action="store_true", help="Passa por cima do protocolo")
     comandos.add_parser("relatorio", help="Gera relatorio.html a partir do registro")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
@@ -65,8 +100,15 @@ def main(argv: list[str] | None = None) -> int:
             nome = retrato.tirar_pelo_railway() if args.pelo_railway else retrato.tirar()
             print(f"retrato {nome} gravado.")
             return 0
+        if args.comando == "ranking":
+            return _ranking(args)
         return _rodar(args)
-    except (registro.ProvaLacrada, registro.TetoAtingido, retrato.SemRetrato) as e:
+    except (
+        registro.ProvaLacrada,
+        registro.TetoAtingido,
+        registro_ranking.Recusado,
+        retrato.SemRetrato,
+    ) as e:
         print(f"Recusado: {e}", file=sys.stderr)
         return 1
 

@@ -21,6 +21,7 @@ class Base:
     etf: pd.DataFrame | None = None
     fundamentos: pd.DataFrame | None = None
     acoes: pd.DataFrame | None = None
+    fii: Base | None = None
 
     @property
     def pregoes(self) -> pd.DatetimeIndex:

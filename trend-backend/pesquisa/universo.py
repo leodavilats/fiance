@@ -11,7 +11,7 @@ JANELA_DE_VOLUME = 63
 JANELA_DE_SALTO = 252
 
 
-def elegiveis(base: Base, dia: pd.Timestamp) -> list[str]:
+def elegiveis(base: Base, dia: pd.Timestamp, volume_minimo: float = VOLUME_MINIMO) -> list[str]:
     posicao = base.pregoes.get_loc(dia)
     if posicao + 1 < HISTORIA_MINIMA:
         return []
@@ -23,6 +23,6 @@ def elegiveis(base: Base, dia: pd.Timestamp) -> list[str]:
     salto = base.salto.iloc[posicao + 1 - JANELA_DE_SALTO : posicao + 1].any()
 
     ok = (
-        negociou_hoje & historia & (volume >= VOLUME_MINIMO) & (preco_hoje >= PRECO_MINIMO) & ~salto
+        negociou_hoje & historia & (volume >= volume_minimo) & (preco_hoje >= PRECO_MINIMO) & ~salto
     )
     return sorted(ok[ok].index)
