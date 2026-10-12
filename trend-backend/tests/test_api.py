@@ -27,6 +27,14 @@ def pastas(tmp_path: Path):
         encoding="utf-8",
     )
     (pesquisa / "resultados" / "h_abc_estudo.json").write_text('{"datas": []}', encoding="utf-8")
+    (pesquisa / "registro_ranking.jsonl").write_text(
+        json.dumps({"sinal": "s", "classe": "acoes", "assinatura": "abc", "periodo": "estudo"})
+        + "\n",
+        encoding="utf-8",
+    )
+    (pesquisa / "resultados" / "ranking_acoes_s_abc_estudo.json").write_text(
+        json.dumps({"meses": []}), encoding="utf-8"
+    )
     front = tmp_path / "dist"
     front.mkdir()
     (front / "index.html").write_text("<div id=root></div>", encoding="utf-8")
@@ -59,6 +67,15 @@ def test_registro_e_curva_da_pesquisa(cliente):
     assert execucoes[0]["hipotese"] == "h"
     assert curva.json() == {"datas": []}
     assert cliente.get("/api/pesquisa/curva/..%2F/x/y", headers=_com_senha()).status_code == 404
+
+
+def test_registro_e_meses_do_ranking(cliente):
+    execucoes = cliente.get("/api/ranking", headers=_com_senha()).json()["execucoes"]
+    meses = cliente.get("/api/ranking/acoes/s/abc/estudo", headers=_com_senha())
+
+    assert execucoes[0]["sinal"] == "s"
+    assert meses.json() == {"meses": []}
+    assert cliente.get("/api/ranking/acoes/s/..%2F/estudo", headers=_com_senha()).status_code == 404
 
 
 def test_documentos_so_da_lista(cliente):

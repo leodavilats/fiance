@@ -48,6 +48,40 @@ def criar(config: Configuracao | None = None, engine=None) -> FastAPI:
             raise HTTPException(404, "Papel não encontrado.")
         return dados
 
+    @app.get("/api/visao")
+    def visao() -> dict:
+        with engine.connect() as conn:
+            return consultas.visao(conn)
+
+    @app.get("/api/ativos")
+    def ativos() -> list[dict]:
+        with engine.connect() as conn:
+            return consultas.ativos(conn)
+
+    @app.get("/api/fundos/{emissor}/{classe}")
+    def fundo(emissor: str, classe: str) -> dict:
+        with engine.connect() as conn:
+            dados = consultas.fundo(conn, emissor, classe)
+        if dados is None:
+            raise HTTPException(404, "Fundo ou BDR não encontrado.")
+        return dados
+
+    @app.get("/api/macro")
+    def macro() -> dict:
+        with engine.connect() as conn:
+            return consultas.macro(conn)
+
+    @app.get("/api/ranking")
+    def ranking() -> dict:
+        return {"execucoes": arquivos.ranking(config.pesquisa)}
+
+    @app.get("/api/ranking/{classe}/{sinal}/{assinatura}/{periodo}")
+    def ranking_meses(classe: str, sinal: str, assinatura: str, periodo: str) -> dict:
+        dados = arquivos.ranking_meses(config.pesquisa, classe, sinal, assinatura, periodo)
+        if dados is None:
+            raise HTTPException(404, "Execução não encontrada.")
+        return dados
+
     @app.get("/api/pesquisa")
     def pesquisa() -> dict:
         return {"execucoes": arquivos.registro(config.pesquisa)}

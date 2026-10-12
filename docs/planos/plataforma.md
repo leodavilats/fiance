@@ -1,6 +1,13 @@
 # Plano — a plataforma de dados, tendência e painel
 
-**Estado:** `[PLANEJADO]` · **Decidido em:** 2026-10-12, pelo autor, a partir de um questionário
+**Estado:** `[EM CURSO]` · **Decidido em:** 2026-10-12, pelo autor, a partir de um questionário
+
+| Etapa | Estado | Onde está |
+|---|---|---|
+| 1 · Coleta de tudo o que negocia | `[IMPLEMENTADO]` | Ações, FIIs, ETFs, BDRs, PTAX e Tesouro Direto na base, todo dia útil |
+| 2 · Tendência como ranking | `[EM CURSO]` | Ações: nenhum dos três sinais passou no estudo. FIIs: adendo proposto, aguardando aceite. [Protocolo](ranking.md) |
+| 3 · Painel organizado | `[IMPLEMENTADO]` | Caminho, coleta, ativos de todas as classes, dólar e Tesouro, ranking e pesquisa |
+| 4 · App sem BRAPI | `[PLANEJADO]` | Depende só da etapa 1, que está pronta |
 
 A plataforma tem três partes e um consumidor:
 
@@ -63,6 +70,11 @@ tendência cortou as quedas grandes pela metade.
 
 O painel mostra o caminho (este plano e o estado de cada etapa), a saúde da coleta, os dados por ativo
 de todas as classes e o ranking com o histórico de acerto.
+
+**Feito (2026-10-12):** a página inicial é o Caminho — os números da base por classe, os proventos por
+origem e este plano. Ativos de todas as classes, com a tela de fundo e BDR marcando o rendimento
+estimado; dólar e Tesouro; o ranking com a correlação de cada mês e a diferença acumulada entre topo e
+fundo. O ranking do último fim de mês só aparece quando um sinal passar no protocolo.
 
 ## Etapa 4 — o app sem BRAPI
 

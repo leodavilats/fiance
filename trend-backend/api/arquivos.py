@@ -20,6 +20,22 @@ def curva(pasta: Path, hipotese: str, assinatura: str, periodo: str) -> dict | N
     return json.loads(arquivo.read_text(encoding="utf-8")) if arquivo.exists() else None
 
 
+def ranking(pasta: Path) -> list[dict]:
+    arquivo = pasta / "registro_ranking.jsonl"
+    if not arquivo.exists():
+        return []
+    linhas = arquivo.read_text(encoding="utf-8").splitlines()
+    return [json.loads(linha) for linha in linhas if linha]
+
+
+def ranking_meses(pasta: Path, classe: str, sinal: str, assinatura: str, periodo: str):
+    partes = (classe, sinal, assinatura, periodo)
+    if not all(re.fullmatch(r"[a-z0-9_]+", parte) for parte in partes):
+        return None
+    arquivo = pasta / "resultados" / f"ranking_{classe}_{sinal}_{assinatura}_{periodo}.json"
+    return json.loads(arquivo.read_text(encoding="utf-8")) if arquivo.exists() else None
+
+
 def _titulo(texto: str, padrao: str) -> str:
     for linha in texto.splitlines():
         if linha.startswith("# "):
