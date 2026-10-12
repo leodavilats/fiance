@@ -83,7 +83,7 @@ histórico de acerto do ranking mês a mês. **Não vai para o app** ([plataform
 
 ## Adendo — FIIs com períodos próprios
 
-**Estado:** `[PROPOSTO]` em 2026-10-12, antes de qualquer sinal rodar em FII. Para escolher os períodos,
+**Estado:** `[ACEITO]` em 2026-10-12, pelo autor, antes de qualquer sinal rodar em FII. Para escolher os períodos,
 olhou-se só o tamanho do universo mês a mês, nunca um retorno ou um sinal.
 
 | | FIIs |
@@ -115,3 +115,26 @@ sinal fraco e real pode não aparecer. É o preço de não ter mercado de FII l�
 - **A inclinação vezes R² chegou mais perto** (t de 1,87). Ajustar a janela até passar é exatamente o que
   o teto existe para impedir — a variação não se repete
 - **As 3 variações que sobram do teto são dos FIIs**, pelo adendo que ainda será escrito
+
+## Resultado em FIIs — 2026-10-12: nenhum sinal passou, e a tendência se inverte
+
+| # | Sinal | Correlação de postos | t | Acerto do topo | Diferença líquida ao ano | Giro |
+|---|---|---|---|---|---|---|
+| 4 | Momento ajustado ao risco | 0,038 | 1,04 | 40% | −9,1 pontos | 66% |
+| 5 | Distância da média de 200 | −0,040 | −1,39 | 38% | −15,3 pontos | 93% |
+| 6 | Inclinação vezes R² | −0,003 | −0,10 | 49% | −11,7 pontos | 69% |
+
+47 meses (2019–2022), 56 fundos por mês em média.
+
+- **Em FII, o topo do ranking perdeu do fundo na maioria dos meses.** O fundo que mais subiu tende a
+  devolver no mês seguinte — o contrário de tendência. Com 47 meses, nem isso tem força estatística
+- **O giro é alto e a troca custa caro:** a diferença líquida fica entre −9 e −15 pontos ao ano
+
+## Conclusão — 2026-10-12: o ranking de tendência não informa
+
+As 6 variações do teto foram usadas: 3 em ações, 3 em FIIs, nenhuma passou no estudo. A validação e a
+prova seguem lacradas e não serão abertas para estes sinais. Rodar mais exige `--forcar`, e fica no
+registro.
+
+O que fica para o uso: a tendência no painel é **contexto de risco** — o filtro da
+[primeira pesquisa](pesquisa.md) cortou as quedas grandes pela metade —, e não ordem de compra.

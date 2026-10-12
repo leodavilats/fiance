@@ -119,8 +119,7 @@ def test_teto_de_seis_variacoes_no_estudo(tmp_path):
         registro.conferir(outro, ACOES, "estudo", False, arquivo)
 
 
-def test_fii_nao_roda_antes_do_adendo_aceito(tmp_path):
+def test_classe_sem_aceite_nao_roda(tmp_path):
+    pendente = CLASSES["fii"].__class__("nova", 1.0, CLASSES["fii"].desde, aceita=False)
     with pytest.raises(registro.Recusado, match="adendo"):
-        registro.conferir(
-            SINAIS["momento_risco"], CLASSES["fii"], "estudo", True, tmp_path / "r.jsonl"
-        )
+        registro.conferir(SINAIS["momento_risco"], pendente, "estudo", True, tmp_path / "r.jsonl")

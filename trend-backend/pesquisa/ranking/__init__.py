@@ -66,6 +66,6 @@ CLASSES = {
     c.nome: c
     for c in (
         Classe("acoes", 5_000_000, date(2005, 1, 1)),
-        Classe("fii", 500_000, date(2019, 1, 1), PERIODOS_FII, aceita=False),
+        Classe("fii", 500_000, date(2019, 1, 1), PERIODOS_FII),
     )
 }

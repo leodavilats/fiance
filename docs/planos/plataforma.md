@@ -1,11 +1,11 @@
 # Plano — a plataforma de dados, tendência e painel
 
-**Estado:** `[EM CURSO]` · **Decidido em:** 2026-10-12, pelo autor, a partir de um questionário
+**Estado:** `[EM CURSO]` — falta a etapa 4 · **Decidido em:** 2026-10-12, pelo autor, a partir de um questionário
 
 | Etapa | Estado | Onde está |
 |---|---|---|
 | 1 · Coleta de tudo o que negocia | `[IMPLEMENTADO]` | Ações, FIIs, ETFs, BDRs, PTAX e Tesouro Direto na base, todo dia útil |
-| 2 · Tendência como ranking | `[EM CURSO]` | Ações: nenhum dos três sinais passou no estudo. FIIs: adendo proposto, aguardando aceite. [Protocolo](ranking.md) |
+| 2 · Tendência como ranking | `[CONCLUÍDO]` | Teto de 6 variações usado, nenhuma passou: o ranking não informa. A tendência fica como contexto de risco. [Protocolo e resultado](ranking.md) |
 | 3 · Painel organizado | `[IMPLEMENTADO]` | Caminho, coleta, ativos de todas as classes, dólar e Tesouro, ranking e pesquisa |
 | 4 · App sem BRAPI | `[PLANEJADO]` | Depende só da etapa 1, que está pronta |
 
