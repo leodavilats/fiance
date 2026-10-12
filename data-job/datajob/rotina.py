@@ -318,6 +318,7 @@ def diario(
         with engine.begin() as conn:
             conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_papel"))
             conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_fundo"))
+            conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.ativo_hoje"))
         print(f"séries ajustadas recalculadas em {time.monotonic() - inicio:.0f} s.", flush=True)
 
     def serie_ajustada() -> None:
