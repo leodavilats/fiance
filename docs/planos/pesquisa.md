@@ -1,6 +1,6 @@
 # Plano — pesquisa de carteira (`trend-backend/`)
 
-**Estado:** motor, registro, relatório, momento 12–1 e valor + qualidade `[IMPLEMENTADO]` · **Escrito em:** 2026-10-10 · **Uso:** próprio do autor, não é produto
+**Estado:** busca **encerrada** em 2026-10-12, com o teto de 8 variações atingido — conclusão abaixo · **Escrito em:** 2026-10-10 · **Uso:** próprio do autor, não é produto
 
 A pesquisa testa estratégias de carteira em horizonte de meses sobre a base do
 [data-job](data-job.md). Este documento é o **protocolo**: foi escrito antes do primeiro resultado, e
@@ -29,6 +29,40 @@ A régua é o CDI, não o Ibovespa: o CDI é a alternativa sem risco e com liqui
 - **Toda execução fica no registro** (`trend-backend/registro.jsonl`, só acrescenta): hipótese,
   parâmetros, período, resultado. O número de variações testadas é parte do resultado: com 200
   tentativas, uma passar é o esperado por sorte
+
+## Conclusão — 2026-10-12: não achei vantagem investível
+
+As 8 variações no estudo (2005–2018), depois de custo e imposto, contra a régua de 2 pontos acima do CDI:
+
+| # | Hipótese | Diferença para o CDI | Pior queda |
+|---|---|---|---|
+| 1 | Momento 12–1 | −2,5 | −55% |
+| 2 | Valor + qualidade | −5,0 | −50% |
+| 3 | Momento com filtro de tendência, mensal | +1,0 | −23% |
+| 4 | Momento com filtro, trimestral | −0,7 | −25% |
+| 5 | Baixa volatilidade com filtro | +0,3 | −20% |
+| 6 | Dividendos com filtro | −1,6 | −32% |
+| 7 | Mercado sintético com filtro | **+2,2** | −28% |
+| 8 | PIBB11 com filtro | −0,1 | −25% |
+
+**A única que passou na régua, a 7, não é investível.** O "mercado" dela era a média diária em pesos
+iguais dos papéis líquidos — uma aproximação declarada antes de rodar. Um diagnóstico com ETFs de
+verdade, na mesma regra, desfez o ganho: PIBB11 −0,1 ponto em 2005–2018, BOVA11 −3,9 pontos em
+2009–2018. A diferença vinha do índice (pesos iguais, rebalanceado todo dia), e não do filtro. A
+versão investível entrou como variação 8, e por isso a 7 não segue à validação.
+
+**O que os dados mostram, dentro deste protocolo:**
+
+- **Escolher ações não agregou depois de custo e imposto.** Momento, valor, volatilidade e dividendos
+  ficaram todos perto do mercado ou abaixo dele; o giro consome a diferença
+- **O filtro de tendência não aumentou o retorno, mas cortou o risco pela metade.** No PIBB11, a pior
+  queda passa de −61% (comprado sempre) para −25%, com retorno igual ao do CDI
+- **De 2011 a 2018, a bolsa inteira perdeu do CDI.** Um CDI alto por muito tempo é a régua mais difícil
+  de bater
+
+**O que esta conclusão não diz:** que nenhuma estratégia funciona. Diz que estas 8, com estas regras
+e estes custos, não mostraram vantagem — e que procurar mais, com o mesmo período de estudo, aumenta a
+chance de achar sorte. A validação e a prova continuam lacradas e intactas.
 
 ## Teto e régua — decididos em 2026-10-12, antes da terceira hipótese
 

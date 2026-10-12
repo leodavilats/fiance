@@ -18,6 +18,7 @@ class Base:
     nomes: pd.Series
     retrato: str
     provento: pd.DataFrame | None = None
+    etf: pd.DataFrame | None = None
     fundamentos: pd.DataFrame | None = None
     acoes: pd.DataFrame | None = None
 
@@ -48,3 +49,14 @@ def montar(serie: pd.DataFrame, cdi: pd.DataFrame, retrato: str) -> Base:
         retrato=retrato,
         provento=largo("provento").astype(float) if "provento" in serie else None,
     )
+
+
+def acrescentar_ativo(base: Base, nome: str, retorno: pd.Series, preco: pd.Series) -> None:
+    if nome in base.retorno.columns:
+        return
+    base.retorno = pd.concat([base.retorno, retorno.rename(nome)], axis=1)
+    base.preco = pd.concat([base.preco, preco.rename(nome)], axis=1)
+    base.preco_ajustado = pd.concat([base.preco_ajustado, preco.rename(nome)], axis=1)
+    volume = pd.Series(float("inf"), index=base.pregoes, name=nome)
+    base.volume = pd.concat([base.volume, volume], axis=1)
+    base.salto = pd.concat([base.salto, pd.Series(False, index=base.pregoes, name=nome)], axis=1)

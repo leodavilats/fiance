@@ -48,6 +48,12 @@ SELECT cnpj, data_referencia, versao, data_aprovacao, acoes_total
 FROM mercado.capital_social
 """
 
+_ETF = """
+SELECT data, codigo, fechamento, fator_cotacao
+FROM mercado.cotacao
+WHERE codigo IN ('PIBB11', 'BOVA11')
+"""
+
 CONSULTAS = {
     "serie": _SERIE,
     "cdi": _CDI,
@@ -55,6 +61,7 @@ CONSULTAS = {
     "balanco": _BALANCO,
     "acoes": _ACOES,
     "capital": _CAPITAL,
+    "etf": _ETF,
 }
 
 
@@ -149,6 +156,8 @@ def carregar(nome: str | None = None, pasta: Path = PASTA) -> Base:
     base = montar(tabelas["serie"], tabelas["cdi"], nome)
     if {"resultado", "balanco"} <= set(tabelas):
         base.fundamentos = preparar(tabelas["resultado"], tabelas["balanco"])
+    if "etf" in tabelas:
+        base.etf = tabelas["etf"].assign(data=pd.to_datetime(tabelas["etf"]["data"]))
     if {"acoes", "capital"} <= set(tabelas):
         base.acoes = preparar_acoes(tabelas["acoes"], tabelas["capital"])
     return base

@@ -23,6 +23,7 @@ def todas() -> dict[str, Hipotese]:
     from pesquisa.hipoteses import (
         baixa_volatilidade,
         dividendos,
+        mercado_tendencia,
         momento,
         momento_tendencia,
         valor_qualidade,
@@ -37,5 +38,7 @@ def todas() -> dict[str, Hipotese]:
             momento_tendencia.MOMENTO_TENDENCIA_TRIMESTRAL,
             baixa_volatilidade.BAIXA_VOLATILIDADE,
             dividendos.DIVIDENDOS,
+            mercado_tendencia.MERCADO_TENDENCIA,
+            mercado_tendencia.ETF_TENDENCIA,
         )
     }

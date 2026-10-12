@@ -279,3 +279,32 @@ def test_dividendos_escolhe_o_maior_rendimento_entre_quem_tem_historico():
     assert dividendos.escolher(base, base.pregoes[-1], parametros) == ["1:ON", "2:ON"], (
         "o 3 nunca teve provento na base: é lacuna, não rendimento zero"
     )
+
+
+def test_mercado_com_filtro_entra_no_indice_e_sai_para_o_cdi():
+    from pesquisa.hipoteses import mercado_tendencia
+
+    dias = 500
+    subindo = _base({"A": [0.001] * dias, "B": [0.003] * dias}, inicio="2005-01-03")
+    caindo = _base({"A": [-0.001] * dias, "B": [-0.003] * dias}, inicio="2005-01-03")
+    parametros = mercado_tendencia.MERCADO_TENDENCIA.parametros
+
+    assert mercado_tendencia.escolher(subindo, subindo.pregoes[-1], parametros) == [
+        "mercado:sintetico"
+    ]
+    assert subindo.retorno["mercado:sintetico"].iloc[-1] == pytest.approx(0.002)
+    assert mercado_tendencia.escolher(caindo, caindo.pregoes[-1], parametros) == []
+
+
+def test_etf_com_filtro_usa_o_preco_do_etf():
+    from pesquisa.hipoteses import mercado_tendencia
+
+    dias = 500
+    base = _base({"A": [0.001] * dias, "B": [0.003] * dias}, inicio="2005-01-03")
+    base.etf = pd.DataFrame(
+        {"data": base.pregoes, "codigo": "PIBB11", "fechamento": 50.0, "fator_cotacao": 1}
+    )
+    parametros = mercado_tendencia.ETF_TENDENCIA.parametros
+
+    assert mercado_tendencia.escolher_etf(base, base.pregoes[-1], parametros) == ["etf:PIBB11"]
+    assert base.retorno["etf:PIBB11"].iloc[-1] == 0.0
