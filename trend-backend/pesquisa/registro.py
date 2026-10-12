@@ -10,7 +10,14 @@ from pesquisa.hipoteses import Hipotese
 ARQUIVO = Path(__file__).resolve().parents[1] / "registro.jsonl"
 
 
+TETO_DO_ESTUDO = 8
+
+
 class ProvaLacrada(RuntimeError):
+    pass
+
+
+class TetoAtingido(RuntimeError):
     pass
 
 
@@ -69,3 +76,17 @@ def anotar(
 
 def tentativas(hipotese_nome: str, arquivo: Path = ARQUIVO) -> int:
     return len({r["assinatura"] for r in ler(arquivo) if r["hipotese"] == hipotese_nome})
+
+
+def variacoes_no_estudo(arquivo: Path = ARQUIVO) -> set[str]:
+    return {r["assinatura"] for r in ler(arquivo) if r["periodo"] == "estudo"}
+
+
+def conferir_teto(hipotese: Hipotese, forcar: bool, arquivo: Path = ARQUIVO) -> None:
+    feitas = variacoes_no_estudo(arquivo)
+    if assinatura(hipotese) in feitas or len(feitas) < TETO_DO_ESTUDO or forcar:
+        return
+    raise TetoAtingido(
+        f"O estudo já tem {len(feitas)} variações, o teto do protocolo. A conclusão é "
+        '"não achei vantagem"; rodar mais exige --forcar, e fica no registro.'
+    )

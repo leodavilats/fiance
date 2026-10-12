@@ -21,7 +21,7 @@ Serviços no ambiente `production`:
 
 | Serviço | O quê | Volume |
 |---|---|---|
-| `backend` | API, de `/backend` | — |
+| `backend` | API, de `/backend`; reconstrói só com mudança em `/backend/**` | — |
 | `postgres-app` | Banco do aplicativo | 500 MB |
 | `data-job` | Coleta de mercado, de `/data-job` — [planos/data-job](planos/data-job.md) | `data-job-bruto`, 5 GB, em `/bruto` |
 | `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |

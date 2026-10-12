@@ -200,3 +200,28 @@ def test_relatorio_mostra_a_execucao_e_a_curva(tmp_path):
     assert "<polyline" in pagina
     assert "-2,0%" in pagina
     assert "<li>A</li>" in pagina
+
+
+def test_teto_recusa_a_nona_variacao_e_aceita_repetir(tmp_path):
+    arquivo = tmp_path / "r.jsonl"
+    for x in range(registro.TETO_DO_ESTUDO):
+        registro.anotar(Hipotese("h", "h", lambda b, d, p: [], {"x": x}), "estudo", "t", {},
+                        arquivo=arquivo)  # fmt: skip
+
+    nova = Hipotese("h", "h", lambda b, d, p: [], {"x": 99})
+    with pytest.raises(registro.TetoAtingido):
+        registro.conferir_teto(nova, forcar=False, arquivo=arquivo)
+    registro.conferir_teto(Hipotese("h", "h", lambda b, d, p: [], {"x": 0}), False, arquivo)
+    registro.conferir_teto(nova, forcar=True, arquivo=arquivo)
+
+
+def test_filtro_de_tendencia_vai_para_o_cdi_com_o_mercado_em_queda():
+    from pesquisa.hipoteses import momento_tendencia
+
+    dias = 500
+    subindo = _base({"A": [0.001] * dias, "B": [0.002] * dias}, inicio="2005-01-03")
+    caindo = _base({"A": [-0.001] * dias, "B": [-0.002] * dias}, inicio="2005-01-03")
+    parametros = dict(momento_tendencia.MOMENTO_TENDENCIA.parametros, quantidade=1)
+
+    assert momento_tendencia.escolher(subindo, subindo.pregoes[-1], parametros) == ["B"]
+    assert momento_tendencia.escolher(caindo, caindo.pregoes[-1], parametros) == []

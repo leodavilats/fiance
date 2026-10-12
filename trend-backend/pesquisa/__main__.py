@@ -15,6 +15,8 @@ def _rodar(args) -> int:
     hipotese = todas()[args.hipotese]
     if args.periodo == "prova":
         registro.conferir_prova(hipotese, args.forcar)
+    if args.periodo == "estudo":
+        registro.conferir_teto(hipotese, args.forcar)
 
     base = retrato.carregar(args.retrato)
     resultado = simular(
@@ -27,7 +29,7 @@ def _rodar(args) -> int:
     )
     print(json.dumps(resumo, ensure_ascii=False, indent=2))
     print(
-        f"variações já testadas de {hipotese.nome}: {registro.tentativas(hipotese.nome)}",
+        f"variações no estudo: {len(registro.variacoes_no_estudo())} de {registro.TETO_DO_ESTUDO}",
         file=sys.stderr,
     )
     return 0
@@ -61,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"retrato {nome} gravado.")
             return 0
         return _rodar(args)
-    except (registro.ProvaLacrada, retrato.SemRetrato) as e:
+    except (registro.ProvaLacrada, registro.TetoAtingido, retrato.SemRetrato) as e:
         print(f"Recusado: {e}", file=sys.stderr)
         return 1
 
