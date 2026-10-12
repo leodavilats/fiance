@@ -250,3 +250,32 @@ def test_giro_mensal_divide_pelos_meses_e_nao_pelos_rebalanceamentos():
     assert resumir(resultado)["giro_mensal_medio"] == pytest.approx(3.0 / 6, abs=0.01), (
         "compra em março (1) e troca tudo em junho (2), em seis meses"
     )
+
+
+def test_baixa_volatilidade_escolhe_o_que_menos_oscila():
+    from pesquisa.hipoteses import baixa_volatilidade
+
+    dias = 500
+    calmo = [0.002 if i % 2 else 0.0 for i in range(dias)]
+    agitado = [0.03 if i % 2 else -0.025 for i in range(dias)]
+    base = _base({"1:ON": calmo, "2:ON": agitado}, inicio="2005-01-03")
+    parametros = dict(baixa_volatilidade.BAIXA_VOLATILIDADE.parametros, quantidade=1)
+
+    assert baixa_volatilidade.escolher(base, base.pregoes[-1], parametros) == ["1:ON"]
+
+
+def test_dividendos_escolhe_o_maior_rendimento_entre_quem_tem_historico():
+    from pesquisa.hipoteses import dividendos
+
+    dias = 500
+    base = _base({"1:ON": [0.001] * dias, "2:ON": [0.001] * dias, "3:ON": [0.001] * dias},
+                 inicio="2005-01-03")  # fmt: skip
+    provento = pd.DataFrame(0.0, index=base.pregoes, columns=base.retorno.columns)
+    provento.iloc[-100, 0] = 1.0
+    provento.iloc[-100, 1] = 0.5
+    base.provento = provento
+    parametros = dict(dividendos.DIVIDENDOS.parametros, quantidade=5)
+
+    assert dividendos.escolher(base, base.pregoes[-1], parametros) == ["1:ON", "2:ON"], (
+        "o 3 nunca teve provento na base: é lacuna, não rendimento zero"
+    )

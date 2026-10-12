@@ -20,7 +20,13 @@ class Hipotese:
 
 
 def todas() -> dict[str, Hipotese]:
-    from pesquisa.hipoteses import momento, momento_tendencia, valor_qualidade
+    from pesquisa.hipoteses import (
+        baixa_volatilidade,
+        dividendos,
+        momento,
+        momento_tendencia,
+        valor_qualidade,
+    )
 
     return {
         h.nome: h
@@ -29,5 +35,7 @@ def todas() -> dict[str, Hipotese]:
             valor_qualidade.VALOR_QUALIDADE,
             momento_tendencia.MOMENTO_TENDENCIA,
             momento_tendencia.MOMENTO_TENDENCIA_TRIMESTRAL,
+            baixa_volatilidade.BAIXA_VOLATILIDADE,
+            dividendos.DIVIDENDOS,
         )
     }

@@ -16,7 +16,7 @@ PASTA = Path(__file__).resolve().parents[1] / ".retratos"
 
 _SERIE = """
 SELECT s.cnpj, s.classe, s.data, s.codigo, s.fechamento, s.fechamento_ajustado, s.retorno_total,
-       s.volume, s.salto_sem_evento
+       s.volume, s.salto_sem_evento, s.provento
 FROM mercado.serie_papel s
 """
 _CDI = "SELECT data, valor FROM mercado.indicador WHERE serie = 12"

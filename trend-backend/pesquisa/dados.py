@@ -17,6 +17,7 @@ class Base:
     cdi: pd.Series
     nomes: pd.Series
     retrato: str
+    provento: pd.DataFrame | None = None
     fundamentos: pd.DataFrame | None = None
     acoes: pd.DataFrame | None = None
 
@@ -45,4 +46,5 @@ def montar(serie: pd.DataFrame, cdi: pd.DataFrame, retrato: str) -> Base:
         cdi=(taxa / 100).reindex(pregoes).fillna(0.0),
         nomes=serie.sort_values("data").groupby("papel")["codigo"].last(),
         retrato=retrato,
+        provento=largo("provento").astype(float) if "provento" in serie else None,
     )
