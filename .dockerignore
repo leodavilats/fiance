@@ -1,0 +1,13 @@
+.git
+mobile
+backend
+data-job
+build
+tool
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+trend-backend/.retratos
+trend-backend/relatorio.html
+trend-frontend/dist

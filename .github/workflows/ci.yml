@@ -156,11 +156,35 @@ jobs:
 
       - name: Lint (ruff)
         run: |
-          python -m ruff check pesquisa tests
-          python -m ruff format --check pesquisa tests
+          python -m ruff check pesquisa api tests
+          python -m ruff format --check pesquisa api tests
 
       - name: Testes
         run: python -m pytest -q
+
+  trend-frontend:
+    name: Painel (build + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: trend-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: trend-frontend/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Tipos e build
+        run: npm run build
+
+      - name: Testes
+        run: npm test
 
   mobile:
     name: Mobile (analyze + test)

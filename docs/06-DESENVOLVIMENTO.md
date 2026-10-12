@@ -18,8 +18,9 @@ cd data-job && python -m pytest -q                 # gravação exige DATAJOB_TE
 cd data-job && python -m ruff check datajob tests migrations
 cd data-job && python -m ruff format --check datajob tests migrations
 cd trend-backend && python -m pytest -q
-cd trend-backend && python -m ruff check pesquisa tests
-cd trend-backend && python -m ruff format --check pesquisa tests
+cd trend-backend && python -m ruff check pesquisa api tests
+cd trend-backend && python -m ruff format --check pesquisa api tests
+cd trend-frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
 cd mobile  && python tool/build_icons.py --check
