@@ -1,1 +1,0 @@
-{"root":["./src/api.ts","./src/formato.test.ts","./src/formato.ts","./src/main.tsx","./src/telas/coleta.tsx","./src/telas/documento.tsx","./src/telas/empresa.tsx","./src/telas/empresas.tsx","./src/telas/estado.tsx","./src/telas/pesquisa.tsx","./src/telas/planos.tsx","./vite.config.ts"],"version":"5.6.3"}
