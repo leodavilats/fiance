@@ -20,7 +20,11 @@ SERIES = {
     432: "Meta da Selic (% ao ano)",
     433: "IPCA mensal (%)",
     1: "Dólar PTAX de venda (R$)",
+    4189: "Selic acumulada no mês, anualizada (% ao ano)",
 }
+
+# A média de 10 anos da Selic, que o app usa como juro, precisa de 2001 em diante já em 2011.
+_PRIMEIRA_DATA_DA_SERIE = {4189: date(2000, 1, 1)}
 
 _JANELA = timedelta(days=365 * 10 - 5)
 _RECOBRIR = timedelta(days=45)
@@ -35,8 +39,14 @@ def nome(serie: int, inicio: date, fim: date) -> str:
     return f"sgs_{serie}_{inicio:%Y%m%d}_{fim:%Y%m%d}.json"
 
 
-def janelas(ultima: date | None, hoje: date) -> list[tuple[date, date]]:
-    inicio = PRIMEIRA_DATA if ultima is None else max(PRIMEIRA_DATA, ultima - _RECOBRIR)
+def primeira_data(serie: int) -> date:
+    return _PRIMEIRA_DATA_DA_SERIE.get(serie, PRIMEIRA_DATA)
+
+
+def janelas(
+    ultima: date | None, hoje: date, primeira: date = PRIMEIRA_DATA
+) -> list[tuple[date, date]]:
+    inicio = primeira if ultima is None else max(primeira, ultima - _RECOBRIR)
     saida = []
     while inicio <= hoje:
         fim = min(inicio + _JANELA, hoje)

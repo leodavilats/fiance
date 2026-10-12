@@ -73,3 +73,10 @@ def test_grava_serie_e_papel_de_leitura_enxerga(engine, tmp_path):
             )
         ).one()
     assert tuple(pode) == (True, False), "o papel de leitura lê tudo e não escreve nada"
+
+
+def test_selic_mensal_comeca_em_2000_para_a_media_de_dez_anos():
+    primeira = bcb_sgs.janelas(None, date(2026, 10, 12), bcb_sgs.primeira_data(4189))[0][0]
+
+    assert primeira == date(2000, 1, 1)
+    assert bcb_sgs.primeira_data(12) == bcb_sgs.PRIMEIRA_DATA

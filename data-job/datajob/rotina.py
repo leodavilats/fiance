@@ -211,7 +211,8 @@ def diario(
     def series_do_bcb() -> None:
         for serie in bcb_sgs.SERIES:
             processar = bcb_sgs.processador(serie)
-            for inicio, fim in bcb_sgs.janelas(_ultima_data(engine, serie), hoje):
+            primeira = bcb_sgs.primeira_data(serie)
+            for inicio, fim in bcb_sgs.janelas(_ultima_data(engine, serie), hoje, primeira):
                 _arquivo(
                     engine,
                     raiz,
