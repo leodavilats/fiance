@@ -57,6 +57,26 @@ def test_rendimento_estimado_pelo_yield_e_pela_cota():
     assert len(rejeitados) == 1, "yield negativo não é rendimento"
 
 
+def test_informe_ate_2022_chama_o_cnpj_de_cnpj_fundo():
+    antigo = _informe(
+        ["Fundo;11.728.688/0001-47;2020-01-01;1;BRHGLGCTF004"],
+        ["11.728.688/0001-47;2020-01-01;1;150;0.006"],
+    )
+    with zipfile.ZipFile(io.BytesIO(antigo)) as original:
+        membros = {
+            n: original.read(n).replace(b"CNPJ_Fundo_Classe", b"CNPJ_Fundo")
+            for n in original.namelist()
+        }
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as arquivo:
+        for nome, texto in membros.items():
+            arquivo.writestr(nome, texto)
+
+    proventos, _ = cvm_fii.interpretar(buffer.getvalue())
+
+    assert [p["valor"] for p in proventos] == [Decimal("0.900000")]
+
+
 def test_fii_inteiro_so_na_primeira_vez():
     assert rotina.anos_do_fii(False, date(2026, 10, 12))[0] == cvm_fii.PRIMEIRO_ANO
     assert rotina.anos_do_fii(True, date(2026, 10, 12)) == [2025, 2026]

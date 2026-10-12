@@ -33,7 +33,9 @@ def _membro(conteudo: bytes, prefixo: str) -> bytes:
     nomes = [n for n in nomes_do_zip(conteudo) if n.startswith(prefixo)]
     if len(nomes) != 1:
         raise ArquivoInvalido(f"O ZIP do informe mensal de FII não tem {prefixo}*.")
-    return membro_do_zip(conteudo, nomes[0])
+    cabecalho, _, resto = membro_do_zip(conteudo, nomes[0]).partition(b"\n")
+    colunas = [b"CNPJ_Fundo_Classe" if c == b"CNPJ_Fundo" else c for c in cabecalho.split(b";")]
+    return b";".join(colunas) + b"\n" + resto
 
 
 def _decimal(texto: str) -> Decimal | None:
