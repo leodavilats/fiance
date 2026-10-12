@@ -48,6 +48,11 @@ def criar(config: Configuracao | None = None, engine=None) -> FastAPI:
             raise HTTPException(404, "Papel não encontrado.")
         return dados
 
+    @app.get("/api/alertas")
+    def alertas_da_coleta() -> list[dict]:
+        with engine.connect() as conn:
+            return consultas.alertas(conn)
+
     @app.get("/api/visao")
     def visao() -> dict:
         with engine.connect() as conn:

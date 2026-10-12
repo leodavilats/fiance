@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 import sqlalchemy as sa
 
 from datajob import armazenamento, coleta, emissores, inferencia
-from datajob.esquema import cotacao, documento, indicador, valor_mobiliario
+from datajob.esquema import cotacao, documento, indicador, rodada, valor_mobiliario
 from datajob.fontes import (
     b3_cotahist,
     b3_emissores,
@@ -129,6 +129,18 @@ def _tem_fca(engine: sa.Engine) -> bool:
         return conn.execute(sa.select(valor_mobiliario.c.cnpj).limit(1)).first() is not None
 
 
+def _vazia(engine: sa.Engine, consulta: str) -> bool:
+    with engine.connect() as conn:
+        return conn.execute(sa.text(consulta)).first() is None
+
+
+def _reprocessar_o_guardado(engine, raiz, relatar, fonte, processar) -> None:
+    for caminho in armazenamento.mais_recentes(raiz, fonte):
+        nome = caminho.name.split("__", 1)[1]
+        conteudo = caminho.read_bytes()
+        relatar(nome, coleta.executar(engine, raiz, fonte, nome, conteudo, processar, True))
+
+
 def _arquivo(engine, raiz, relatar, baixar, fonte, url, processar, nome=None) -> None:
     nome = nome or url.rsplit("/", 1)[1]
     try:
@@ -224,6 +236,10 @@ def diario(
         )
 
     def proventos_e_eventos() -> None:
+        if _vazia(engine, "SELECT 1 FROM mercado.provento WHERE data_pagamento IS NOT NULL"):
+            _reprocessar_o_guardado(
+                engine, raiz, relatar, b3_proventos.FONTE, b3_proventos.processar
+            )
         if not proventos_hoje(_tem_provento(engine), hoje):
             print("proventos e eventos da B3: só às sextas.", flush=True)
             return
@@ -261,6 +277,8 @@ def diario(
             )
 
     def rendimentos_de_fii() -> None:
+        if _vazia(engine, "SELECT 1 FROM mercado.fii_mensal LIMIT 1"):
+            _reprocessar_o_guardado(engine, raiz, relatar, cvm_fii.FONTE, cvm_fii.processar)
         with engine.connect() as conn:
             tem = conn.execute(
                 sa.text("SELECT 1 FROM mercado.provento WHERE origem = :o LIMIT 1"),
@@ -310,7 +328,12 @@ def diario(
         if inferidos:
             recalcular_serie()
 
-    falhas = []
+    with engine.begin() as conn:
+        rodada_id = conn.execute(
+            sa.insert(rodada).values(iniciada_em=sa.func.now()).returning(rodada.c.id)
+        ).scalar_one()
+
+    falhas: dict[str, str] = {}
     etapas = {
         "cotações da B3": cotahist,
         "cadastro da CVM": cadastro,
@@ -331,7 +354,14 @@ def diario(
         try:
             etapa()
         except Exception as e:
-            falhas.append(nome)
+            falhas[nome] = f"{type(e).__name__}: {e}"[:500]
             print(f"Falhou ({nome}): {type(e).__name__}: {e}", file=sys.stderr, flush=True)
             traceback.print_exc(file=sys.stderr)
-    return falhas
+
+    with engine.begin() as conn:
+        conn.execute(
+            sa.update(rodada)
+            .where(rodada.c.id == rodada_id)
+            .values(terminada_em=sa.func.now(), falhas=falhas)
+        )
+    return list(falhas)

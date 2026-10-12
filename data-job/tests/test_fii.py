@@ -9,6 +9,7 @@ import sqlalchemy as sa
 
 from datajob import coleta, rotina
 from datajob.fontes import cvm_fii
+from datajob.rede import Ausente
 from tests.test_proventos import _papel
 
 _GERAL = "Tipo_Fundo_Classe;CNPJ_Fundo_Classe;Data_Referencia;Versao;Codigo_ISIN\n"
@@ -48,13 +49,18 @@ HGLG = _informe(
 
 
 def test_rendimento_estimado_pelo_yield_e_pela_cota():
-    proventos, rejeitados = cvm_fii.interpretar(HGLG)
+    proventos, mensal, rejeitados = cvm_fii.interpretar(HGLG)
 
     assert [(p["emissor"], p["data_com"], p["valor"]) for p in proventos] == [
         ("HGLG", date(2024, 1, 31), Decimal("1.099111")),
         ("HGLG", date(2024, 2, 29), Decimal("1.097972")),
     ], "o HGLG pagou R$ 1,10 por cota em cada mês de 2024; a versão 2 corrige a 1"
     assert len(rejeitados) == 1, "yield negativo não é rendimento"
+    assert {(m["emissor"], m["referencia"], m["valor_patrimonial_cota"]) for m in mensal} == {
+        ("HGLG", date(2024, 1, 1), Decimal("158.10")),
+        ("HGLG", date(2024, 2, 1), Decimal("157.80")),
+        ("RUIM", date(2024, 1, 1), Decimal("10")),
+    }, "o valor da cota fica guardado mesmo no mês sem rendimento, para o P/VP"
 
 
 def test_informe_ate_2022_chama_o_cnpj_de_cnpj_fundo():
@@ -72,7 +78,7 @@ def test_informe_ate_2022_chama_o_cnpj_de_cnpj_fundo():
         for nome, texto in membros.items():
             arquivo.writestr(nome, texto)
 
-    proventos, _ = cvm_fii.interpretar(buffer.getvalue())
+    proventos, _, _ = cvm_fii.interpretar(buffer.getvalue())
 
     assert [p["valor"] for p in proventos] == [Decimal("0.900000")]
 
@@ -120,3 +126,18 @@ def test_pago_pela_b3_vence_o_estimado_no_mesmo_mes(engine, tmp_path):
     assert serie["2024-02-01"].provento_estimado
     assert serie["2024-03-01"].provento == Decimal("1.10"), "o pago substitui o estimado, não soma"
     assert not serie["2024-03-01"].provento_estimado
+
+
+def test_informe_ja_guardado_e_reprocessado_quando_a_tabela_nova_esta_vazia(engine, tmp_path):
+    from datajob import armazenamento
+
+    armazenamento.guardar(tmp_path, cvm_fii.FONTE, "inf_mensal_fii_2024.zip", HGLG)
+
+    def baixar(url: str) -> bytes:
+        raise Ausente(url)
+
+    rotina.diario(engine, tmp_path, baixar, lambda *_: None, hoje=date(2026, 10, 12))
+
+    with engine.connect() as conn:
+        meses = conn.execute(sa.text("SELECT count(*) FROM mercado.fii_mensal")).scalar_one()
+    assert meses == 3, "o bruto guardado antes da tabela existir também entra"

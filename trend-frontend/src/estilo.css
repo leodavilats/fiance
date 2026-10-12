@@ -44,3 +44,6 @@ a { color: var(--destaque); }
 .abas { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
 .abas button { padding: 6px 12px; border: 1px solid var(--fio); border-radius: 999px; background: var(--superficie); color: var(--suave); font: inherit; cursor: pointer; }
 .abas button.ativa { color: var(--texto); border-color: var(--texto); font-weight: 600; }
+.alerta { border: 1px solid var(--perde); border-left-width: 4px; border-radius: 6px; padding: 10px 14px; margin: 0 0 20px; background: var(--superficie); }
+.alerta strong { color: var(--perde); }
+.alerta ul { margin: 6px 0; padding-left: 18px; }

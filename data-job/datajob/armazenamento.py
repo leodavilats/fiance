@@ -23,3 +23,13 @@ def guardados(raiz: Path, fonte: str) -> list[Path]:
     if not pasta.exists():
         return []
     return sorted(p for p in pasta.iterdir() if p.is_file() and not p.name.endswith(".parcial"))
+
+
+def mais_recentes(raiz: Path, fonte: str) -> list[Path]:
+    por_nome: dict[str, Path] = {}
+    for caminho in guardados(raiz, fonte):
+        nome = caminho.name.split("__", 1)[1]
+        atual = por_nome.get(nome)
+        if atual is None or caminho.stat().st_mtime > atual.stat().st_mtime:
+            por_nome[nome] = caminho
+    return [por_nome[n] for n in sorted(por_nome)]

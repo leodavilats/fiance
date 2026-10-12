@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 SCHEMA = "mercado"
 
@@ -188,6 +189,7 @@ provento = sa.Table(
     sa.Column("data_aprovacao", sa.Date),
     sa.Column("preco_vespera", sa.Numeric),
     sa.Column("origem", sa.Text, nullable=False, server_default="b3_historico"),
+    sa.Column("data_pagamento", sa.Date),
     sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
 )
 
@@ -269,5 +271,32 @@ tesouro = sa.Table(
     sa.Column("pu_compra", sa.Numeric),
     sa.Column("pu_venda", sa.Numeric),
     sa.Column("pu_base", sa.Numeric),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+)
+
+rodada = sa.Table(
+    "rodada",
+    metadata,
+    sa.Column("id", sa.BigInteger, primary_key=True, autoincrement=True),
+    sa.Column("iniciada_em", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("terminada_em", sa.DateTime(timezone=True)),
+    sa.Column("falhas", postgresql.JSONB, nullable=False, server_default="{}"),
+)
+
+fii_mensal = sa.Table(
+    "fii_mensal",
+    metadata,
+    sa.Column("emissor", sa.Text, primary_key=True),
+    sa.Column("classe", sa.Text, primary_key=True),
+    sa.Column("referencia", sa.Date, primary_key=True),
+    sa.Column("cnpj", sa.Text, nullable=False),
+    sa.Column("isin", sa.Text, nullable=False),
+    sa.Column("nome", sa.Text),
+    sa.Column("segmento", sa.Text),
+    sa.Column("mandato", sa.Text),
+    sa.Column("valor_patrimonial_cota", sa.Numeric),
+    sa.Column("patrimonio_liquido", sa.Numeric),
+    sa.Column("cotas_emitidas", sa.Numeric),
+    sa.Column("dividend_yield_mes", sa.Numeric),
     sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
 )

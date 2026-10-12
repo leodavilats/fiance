@@ -282,13 +282,14 @@ def test_salto_que_nenhum_evento_explica_fica_marcado(engine):
     assert dia.salto_sem_evento, "o desdobramento de 1 para 3 da Kepler em 2022 não está na B3"
 
 
-def _recente(data_com: str, valor: str) -> dict:
+def _recente(data_com: str, valor: str, pagamento: str | None = None) -> dict:
     return {
         "isinCode": "BRXPMLCTF000",
         "lastDatePrior": data_com,
         "label": "RENDIMENTO",
         "rate": valor,
         "approvedOn": data_com,
+        "paymentDate": pagamento,
     }
 
 
@@ -425,3 +426,32 @@ def test_bdr_antigo_no_bdi_das_acoes_entra_na_serie_de_fundo(engine):
         ).scalars()
 
         assert list(tipos) == ["bdr"], "até out/2022 a B3 negociava BDR no BDI 02, o das ações"
+
+
+def test_data_de_pagamento_vem_dos_recentes_tambem_para_o_historico(engine, tmp_path):
+    with engine.begin() as conn:
+        _papel(conn, "BRXPMLCTF000", "CI", {"2026-08-31": ("100", "100")}, codbdi="12")
+    historico = {
+        "typeStock": "CI",
+        "lastDatePriorEx": "31/08/2026",
+        "valueCash": "0,92",
+        "quotedPerShares": "1",
+        "corporateAction": "RENDIMENTO",
+        "dateApproval": "31/08/2026",
+    }
+    pacote = {"emissor": "XPML", "nome_pregao": "FII XP MALLS", "eventos": []}
+    _gravar(
+        engine,
+        tmp_path,
+        {
+            **pacote,
+            "proventos": [historico],
+            "recentes": [_recente("31/08/2026", "0,920000", "15/09/2026")],
+        },
+    )
+
+    with engine.connect() as conn:
+        pagamento = conn.execute(
+            sa.text("SELECT data_pagamento FROM mercado.provento WHERE data_com = '2026-08-31'")
+        ).scalar_one()
+    assert pagamento == date(2026, 9, 15), "o histórico não traz o pagamento; o recente traz"

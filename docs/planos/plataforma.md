@@ -7,7 +7,7 @@
 | 1 · Coleta de tudo o que negocia | `[IMPLEMENTADO]` | Ações, FIIs, ETFs, BDRs, PTAX e Tesouro Direto na base, todo dia útil |
 | 2 · Tendência como ranking | `[CONCLUÍDO]` | Teto de 6 variações usado, nenhuma passou: o ranking não informa. A tendência fica como contexto de risco. [Protocolo e resultado](ranking.md) |
 | 3 · Painel organizado | `[IMPLEMENTADO]` | Caminho, coleta, ativos de todas as classes, dólar e Tesouro, ranking e pesquisa |
-| 4 · App sem BRAPI | `[PLANEJADO]` | Depende só da etapa 1, que está pronta |
+| 4 · App sem BRAPI | `[EM CURSO]` | ADR-022 aceita em 2026-10-12, BRAPI sai de vez. Lacunas que o app exigia — P/VP de FII e data de pagamento — preenchidas |
 
 A plataforma tem três partes e um consumidor:
 

@@ -165,6 +165,8 @@ guarda.
 | `indicador` | `(serie, data)` | Séries do BCB SGS de 2005 em diante: CDI diário (12), Selic diária (11), meta da Selic (432), IPCA mensal (433), dólar PTAX de venda (1) |
 | `tesouro` | `(titulo, vencimento, data)` | Taxas e preços unitários de compra e venda do Tesouro Direto de 2005 em diante, do Tesouro Transparente. Título fora de venda fica sem taxa e preço de compra |
 | `coleta` | `id` | Fonte, arquivo, hash, início, fim, linhas lidas, gravadas, em quarentena, status, erro |
+| `rodada` | `id` | Cada execução do data-job: início, fim e as etapas que falharam, com o erro. O painel `trend` alerta a partir dela |
+| `fii_mensal` | `(emissor, classe, referencia)` | Informe mensal de FII da CVM, 2016 em diante: CNPJ, nome, segmento, mandato, valor patrimonial da cota, patrimônio, cotas emitidas e yield do mês — a base do P/VP |
 | `quarentena` | `id` | Coleta, chave da linha, motivo, conteúdo bruto |
 
 **O que entra da CVM:** balanço ativo e passivo (BPA, BPP), resultado (DRE) e fluxo de caixa (DFC,
@@ -382,6 +384,7 @@ usou estimativa.
 - **Rendimento antigo de ETF, Fiagro e BDR não existe na base**, nem o de FII antes de 2016. O que é
   anterior à primeira coleta (out/2026) só entra se vier de outra fonte
 - **Amortização de cota de FII não entra pela CVM**, só pela B3
+- **Data de pagamento só nos proventos recentes.** O histórico da B3 não a traz; os recentes trazem (`provento.data_pagamento`), e ela preenche também a linha do histórico de mesmo valor e data-com. Antes de out/2025, o provento fica sem data de pagamento
 - **Provento bruto.** O JCP tem imposto retido na fonte, e o retorno total não o desconta
 - **Cisão e redução de capital não ajustam** (Itaú/XP em 2021): o preço cai sem que a série saiba por quê
 - **Emissor que a B3 não encontra fica sem proventos** — a ALL, incorporada pela Rumo em 2015

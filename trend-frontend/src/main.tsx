@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, NavLink, Navigate, Route, Routes } from "react-router-dom";
 import "./estilo.css";
+import Alertas from "./telas/Alertas";
 import Ativos from "./telas/Ativos";
 import Caminho from "./telas/Caminho";
 import Coleta from "./telas/Coleta";
@@ -29,6 +30,7 @@ function App() {
         </nav>
       </header>
       <main>
+        <Alertas />
         <Routes>
           <Route path="/" element={<Navigate to="/caminho" replace />} />
           <Route path="/caminho" element={<Caminho />} />

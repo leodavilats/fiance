@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import time
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
+
+from api.alertas import avaliar as avaliar_alertas
+
+_BRT = ZoneInfo("America/Sao_Paulo")
 
 
 def _linhas(conn: sa.Connection, sql: str, **parametros) -> list[dict]:
@@ -155,6 +161,22 @@ def papel(conn: sa.Connection, cnpj: str, classe: str) -> dict | None:
         if documentos
         else [],
     }
+
+
+def alertas(conn: sa.Connection) -> list[dict]:
+    rodada = next(
+        iter(
+            _linhas(
+                conn,
+                "SELECT iniciada_em, terminada_em, falhas FROM mercado.rodada "
+                "ORDER BY iniciada_em DESC LIMIT 1",
+            )
+        ),
+        None,
+    )
+    ultima = conn.execute(sa.text("SELECT max(data) FROM mercado.cotacao")).scalar()
+    agora = datetime.now(UTC)
+    return avaliar_alertas(rodada, ultima, agora, agora.astimezone(_BRT).date())
 
 
 _GUARDADO: dict[str, tuple[float, object]] = {}

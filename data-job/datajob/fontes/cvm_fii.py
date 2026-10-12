@@ -6,7 +6,9 @@ from decimal import Decimal, InvalidOperation
 
 import sqlalchemy as sa
 
+from datajob.banco import upsert
 from datajob.erros import ArquivoInvalido
+from datajob.esquema import fii_mensal
 from datajob.fontes.cvm_comum import cnpj, data, ler_csv, membro_do_zip, nomes_do_zip
 
 FONTE = "cvm_fii"
@@ -23,6 +25,7 @@ _COMPLEMENTO = {
     "Percentual_Dividend_Yield_Mes",
 }
 _YIELD_PLAUSIVEL = Decimal("0.1")
+_NOMES_NOVOS = {b"CNPJ_Fundo": b"CNPJ_Fundo_Classe", b"Nome_Fundo": b"Nome_Fundo_Classe"}
 
 
 def url_do_ano(ano: int) -> str:
@@ -34,7 +37,7 @@ def _membro(conteudo: bytes, prefixo: str) -> bytes:
     if len(nomes) != 1:
         raise ArquivoInvalido(f"O ZIP do informe mensal de FII não tem {prefixo}*.")
     cabecalho, _, resto = membro_do_zip(conteudo, nomes[0]).partition(b"\n")
-    colunas = [b"CNPJ_Fundo_Classe" if c == b"CNPJ_Fundo" else c for c in cabecalho.split(b";")]
+    colunas = [_NOMES_NOVOS.get(c, c) for c in cabecalho.split(b";")]
     return b";".join(colunas) + b"\n" + resto
 
 
@@ -57,18 +60,35 @@ def _ultima_versao(linhas: list[dict]) -> dict[tuple[str, date], dict]:
     return escolhidas
 
 
-def interpretar(conteudo: bytes) -> tuple[list[dict], list[tuple[str, str]]]:
+def interpretar(conteudo: bytes) -> tuple[list[dict], list[dict], list[tuple[str, str]]]:
     geral = _ultima_versao(ler_csv(_membro(conteudo, "inf_mensal_fii_geral_"), _GERAL))
     complemento = _ultima_versao(
         ler_csv(_membro(conteudo, "inf_mensal_fii_complemento_"), _COMPLEMENTO)
     )
 
-    proventos, rejeitados = {}, []
+    proventos, mensal, rejeitados = {}, {}, []
     for (documento, referencia), linha in complemento.items():
-        isin = (geral.get((documento, referencia)) or {}).get("Codigo_ISIN", "").upper()
+        cadastro = geral.get((documento, referencia)) or {}
+        isin = cadastro.get("Codigo_ISIN", "").upper()
         dy = _decimal(linha["Percentual_Dividend_Yield_Mes"])
         cota = _decimal(linha["Valor_Patrimonial_Cotas"])
-        if len(isin) != 12 or not isin.startswith("BR") or not dy or not cota or cota <= 0:
+        if len(isin) != 12 or not isin.startswith("BR"):
+            continue
+        mensal[(isin[2:6], referencia)] = {
+            "emissor": isin[2:6],
+            "classe": "CI",
+            "referencia": referencia,
+            "cnpj": documento,
+            "isin": isin,
+            "nome": cadastro.get("Nome_Fundo_Classe") or None,
+            "segmento": cadastro.get("Segmento_Atuacao") or None,
+            "mandato": cadastro.get("Mandato") or None,
+            "valor_patrimonial_cota": cota if cota and cota > 0 else None,
+            "patrimonio_liquido": _decimal(linha.get("Patrimonio_Liquido", "")),
+            "cotas_emitidas": _decimal(linha.get("Cotas_Emitidas", "")),
+            "dividend_yield_mes": dy,
+        }
+        if not dy or not cota or cota <= 0:
             continue
         if not 0 < dy <= _YIELD_PLAUSIVEL:
             rejeitados.append((f"{isin} {referencia}", f"yield do mês implausível: {dy}"))
@@ -82,11 +102,17 @@ def interpretar(conteudo: bytes) -> tuple[list[dict], list[tuple[str, str]]]:
             "tipo": "RENDIMENTO",
             "valor": round(dy * cota, 6),
         }
-    return list(proventos.values()), rejeitados
+    return list(proventos.values()), list(mensal.values()), rejeitados
 
 
 def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int, int, int]:
-    proventos, rejeitados = interpretar(conteudo)
+    proventos, mensal, rejeitados = interpretar(conteudo)
+    upsert(
+        conn,
+        fii_mensal,
+        [{**m, "coleta_id": coleta_id} for m in mensal],
+        ["emissor", "classe", "referencia"],
+    )
     for ano in {p["data_com"].year for p in proventos}:
         conn.execute(
             sa.text(

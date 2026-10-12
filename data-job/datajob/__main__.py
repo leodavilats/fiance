@@ -17,8 +17,10 @@ from datajob.fontes import (
     cvm_cadastro,
     cvm_demonstracoes,
     cvm_fca,
+    cvm_fii,
     cvm_fre,
     cvm_ipe,
+    tesouro_direto,
 )
 from datajob.rede import Indisponivel, baixar
 
@@ -30,6 +32,8 @@ _FONTES = {
     b3_proventos.FONTE: b3_proventos.processar,
     cvm_ipe.FONTE: cvm_ipe.processar,
     cvm_fre.FONTE: cvm_fre.processar,
+    cvm_fii.FONTE: cvm_fii.processar,
+    tesouro_direto.FONTE: tesouro_direto.processar,
     **{cvm_demonstracoes.FONTE[t]: cvm_demonstracoes.processador(t) for t in ("DFP", "ITR")},
 }
 

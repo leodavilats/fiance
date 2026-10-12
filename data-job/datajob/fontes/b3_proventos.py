@@ -108,6 +108,7 @@ def interpretar_recentes(pacote: dict) -> list[dict]:
                 "tipo": p.get("label") or "",
                 "valor": valor,
                 "data_aprovacao": _data(p.get("approvedOn")),
+                "data_pagamento": _data(p.get("paymentDate")),
             }
         )
     return recentes
@@ -202,9 +203,10 @@ _CLASSE_DO_ISIN = sa.text(
 # acumulam a cada coleta, e não substituem o que já foi guardado.
 _ACUMULAR = sa.text(
     """
-    INSERT INTO mercado.provento (emissor, classe, data_com, tipo, valor, data_aprovacao, origem,
-        coleta_id)
-    SELECT :emissor, :classe, :data_com, :tipo, :valor, :data_aprovacao, 'b3_recente', :coleta_id
+    INSERT INTO mercado.provento (emissor, classe, data_com, tipo, valor, data_aprovacao,
+        data_pagamento, origem, coleta_id)
+    SELECT :emissor, :classe, :data_com, :tipo, :valor, :data_aprovacao, :data_pagamento,
+        'b3_recente', :coleta_id
     WHERE NOT EXISTS (
         SELECT 1 FROM mercado.provento
         WHERE emissor = :emissor AND classe = :classe AND data_com = :data_com AND tipo = :tipo
@@ -213,20 +215,36 @@ _ACUMULAR = sa.text(
 )
 
 
-def _acumular_recentes(conn: sa.Connection, pacote: dict, coleta_id: int) -> int:
+# O histórico da B3 não traz a data de pagamento; os recentes trazem, e ela vale para os dois.
+_DATA_DE_PAGAMENTO = sa.text(
+    """
+    UPDATE mercado.provento SET data_pagamento = :data_pagamento
+    WHERE emissor = :emissor AND classe = :classe AND data_com = :data_com AND valor = :valor
+      AND origem LIKE 'b3_%' AND data_pagamento IS DISTINCT FROM :data_pagamento
+    """
+)
+
+
+def _recentes_com_classe(conn: sa.Connection, pacote: dict) -> list[dict]:
     recentes = interpretar_recentes(pacote)
     if not recentes:
-        return 0
+        return []
     classes = dict(conn.execute(_CLASSE_DO_ISIN, {"isins": [r["isin"] for r in recentes]}).all())
-    gravadas = 0
+    return [
+        {**{k: v for k, v in r.items() if k != "isin"}, "classe": classes[r["isin"]]}
+        for r in recentes
+        if r["isin"] in classes
+    ]
+
+
+def _acumular_recentes(conn: sa.Connection, recentes: list[dict], coleta_id: int) -> int:
+    return sum(conn.execute(_ACUMULAR, {**r, "coleta_id": coleta_id}).rowcount for r in recentes)
+
+
+def _datas_de_pagamento(conn: sa.Connection, recentes: list[dict]) -> None:
     for r in recentes:
-        if r["isin"] not in classes:
-            continue
-        linha = {k: v for k, v in r.items() if k != "isin"}
-        gravadas += conn.execute(
-            _ACUMULAR, {**linha, "classe": classes[r["isin"]], "coleta_id": coleta_id}
-        ).rowcount
-    return gravadas
+        if r["data_pagamento"] is not None:
+            conn.execute(_DATA_DE_PAGAMENTO, r)
 
 
 def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int, int, int]:
@@ -235,8 +253,9 @@ def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int
 
     conn.execute(sa.text("DELETE FROM mercado.evento WHERE emissor = :e"), {"e": emissor})
     acumulados = 0
+    recentes = _recentes_com_classe(conn, json.loads(conteudo))
     if not proventos:
-        acumulados = _acumular_recentes(conn, json.loads(conteudo), coleta_id)
+        acumulados = _acumular_recentes(conn, recentes, coleta_id)
     else:
         conn.execute(
             sa.text("DELETE FROM mercado.provento WHERE emissor = :e AND origem LIKE 'b3_%'"),
@@ -261,6 +280,8 @@ def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int
             ),
             [{**e, "coleta_id": coleta_id} for e in eventos],
         )
+
+    _datas_de_pagamento(conn, recentes)
 
     quarentena = [(c, m, c) for c, m in rejeitados] + [
         (f"{e['isin']} {e['data_com']} {e['tipo']}", "evento não confirmado pelo preço", str(e))

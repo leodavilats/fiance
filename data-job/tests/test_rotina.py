@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 from datetime import date
 
+import sqlalchemy as sa
+
 from datajob import rotina
-from datajob.rede import Ausente
+from datajob.rede import Ausente, Indisponivel
 from tests.conftest import TRECHO, zipar
 
 
@@ -78,3 +80,16 @@ def test_diario_grava_o_que_saiu_e_registra_o_que_nao_saiu(engine, tmp_path):
         ("COTAHIST_D08102026.ZIP", None),
         ("COTAHIST_D09102026.ZIP", None),
     ], "o pregão que ainda não saiu fica para a próxima rodada"
+
+
+def test_rodada_fica_registrada_com_as_falhas(engine, tmp_path):
+    def fora_do_ar(url: str) -> bytes:
+        raise Indisponivel(f"{url} respondeu 503.")
+
+    falhas = rotina.diario(engine, tmp_path, fora_do_ar, lambda *_: None, hoje=date(2026, 10, 9))
+
+    with engine.connect() as conn:
+        registrada = conn.execute(sa.text("SELECT * FROM mercado.rodada")).one()
+    assert registrada.terminada_em is not None
+    assert set(registrada.falhas) == set(falhas)
+    assert "503" in registrada.falhas["cotações da B3"], "o painel mostra o erro sem abrir o log"
