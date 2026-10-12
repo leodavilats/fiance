@@ -38,7 +38,8 @@ def test_acao_traz_preco_faixa_acoes_e_proventos_de_doze_meses(engine):
         conn.execute(
             sa.text(
                 "INSERT INTO mercado.capital_social (cnpj, data_referencia, versao, data_aprovacao, "
-                "acoes_total, coleta_id) VALUES ('1', '2026-01-01', 1, '2026-03-01', 1000, :c)"
+                "acoes_ordinarias, acoes_preferenciais, acoes_total, coleta_id) "
+                "VALUES ('1', '2026-01-01', 1, '2026-03-01', 600, 400, 1000, :c)"
             ),
             {"c": coleta_id},
         )
@@ -58,7 +59,8 @@ def test_acao_traz_preco_faixa_acoes_e_proventos_de_doze_meses(engine):
     assert acao.tipo == "stock" and acao.classe == "ON"
     assert acao.preco == 41 and acao.preco_anterior == 39 and acao.data == date(2026, 10, 9)
     assert acao.maxima_52s == 40 and acao.minima_52s == 30
-    assert (acao.nome, acao.setor, acao.acoes) == ("Teste", "Energia", 1000)
+    assert (acao.nome, acao.setor) == ("Teste", "Energia")
+    assert (acao.acoes_ordinarias, acao.acoes_preferenciais) == (600, 400), "o FRE vence o ITR"
     assert acao.proventos_12m == Decimal("1.5"), (
         "fora da janela: o de jun/2025 e o que só paga em nov/2026"
     )
