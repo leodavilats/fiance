@@ -81,6 +81,24 @@ Cada candidato numa classe é uma variação. A ordem acima é a ordem de gasto 
 No painel: o ranking do último fim de mês por classe, a posição e o percentil de cada ativo, e o
 histórico de acerto do ranking mês a mês. **Não vai para o app** ([plataforma](plataforma.md)).
 
+## Adendo — FIIs com períodos próprios
+
+**Estado:** `[PROPOSTO]` em 2026-10-12, antes de qualquer sinal rodar em FII. Para escolher os períodos,
+olhou-se só o tamanho do universo mês a mês, nunca um retorno ou um sinal.
+
+| | FIIs |
+|---|---|
+| Liquidez mínima | **R$ 500 mil** de volume mediano em 63 pregões — com ela, há 20 fundos ou mais em todo mês desde jan/2019 |
+| Estudo | 2019-01 a 2022-12 (48 meses) |
+| Validação | 2023-01 a 2024-12 (24 meses) |
+| **Prova** | **2025-01 em diante, lacrada** |
+| Sinais | Os mesmos três, com os mesmos parâmetros e na mesma ordem — nada é reajustado para FII |
+| Variações | As 3 que sobraram do teto de 6 |
+| Medida | A mesma, com as três condições juntas |
+
+**Risco declarado:** 48 meses de estudo é pouco. Um t de 2 com essa amostra exige um sinal forte; um
+sinal fraco e real pode não aparecer. É o preço de não ter mercado de FII líquido antes de 2019.
+
 ## Resultado em ações — 2026-10-12: nenhum sinal passou no estudo
 
 | # | Sinal | Correlação de postos | t | Acerto do topo | Diferença líquida ao ano | Giro |

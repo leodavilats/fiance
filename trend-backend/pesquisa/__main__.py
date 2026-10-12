@@ -48,7 +48,7 @@ def _ranking(args) -> int:
     dados = base.fii if classe.nome == "fii" else base
     if dados is None:
         raise retrato.SemRetrato("O retrato não tem FIIs: tire um retrato novo.")
-    resumo, meses = avaliar(dados, PERIODOS[args.periodo], sinal, classe)
+    resumo, meses = avaliar(dados, classe.periodos[args.periodo], sinal, classe)
     anotado = registro_ranking.anotar(
         sinal, classe, args.periodo, base.retrato, resumo, forcado=args.forcar
     )

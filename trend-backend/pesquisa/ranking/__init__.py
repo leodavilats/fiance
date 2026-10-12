@@ -6,6 +6,7 @@ from datetime import date
 
 import pandas as pd
 
+from pesquisa.periodos import PERIODOS, Periodo
 from pesquisa.ranking import sinais
 
 Calcular = Callable[[pd.DataFrame, pd.DataFrame, int, dict], pd.Series]
@@ -24,6 +25,8 @@ class Classe:
     nome: str
     volume_minimo: float
     desde: date
+    periodos: dict[str, Periodo] = field(default_factory=lambda: dict(PERIODOS))
+    aceita: bool = True
 
 
 SINAIS = {
@@ -50,4 +53,19 @@ SINAIS = {
     )
 }
 
-CLASSES = {c.nome: c for c in (Classe("acoes", 5_000_000, date(2005, 1, 1)),)}
+PERIODOS_FII = {
+    p.nome: p
+    for p in (
+        Periodo("estudo", date(2019, 1, 1), date(2022, 12, 31)),
+        Periodo("validacao", date(2023, 1, 1), date(2024, 12, 31)),
+        Periodo("prova", date(2025, 1, 1), None),
+    )
+}
+
+CLASSES = {
+    c.nome: c
+    for c in (
+        Classe("acoes", 5_000_000, date(2005, 1, 1)),
+        Classe("fii", 500_000, date(2019, 1, 1), PERIODOS_FII, aceita=False),
+    )
+}

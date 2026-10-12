@@ -34,6 +34,8 @@ def ler(arquivo: Path = ARQUIVO) -> list[dict]:
 
 
 def conferir(sinal: Sinal, classe: Classe, periodo: str, forcar: bool, arquivo: Path = ARQUIVO):
+    if not classe.aceita:
+        raise Recusado(f"O adendo de {classe.nome} ainda não foi aceito: nada roda antes dele.")
     if forcar:
         return
     registros = ler(arquivo)
