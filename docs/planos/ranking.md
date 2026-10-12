@@ -80,3 +80,20 @@ Cada candidato numa classe é uma variação. A ordem acima é a ordem de gasto 
 
 No painel: o ranking do último fim de mês por classe, a posição e o percentil de cada ativo, e o
 histórico de acerto do ranking mês a mês. **Não vai para o app** ([plataforma](plataforma.md)).
+
+## Resultado em ações — 2026-10-12: nenhum sinal passou no estudo
+
+| # | Sinal | Correlação de postos | t | Acerto do topo | Diferença líquida ao ano | Giro |
+|---|---|---|---|---|---|---|
+| 1 | Momento ajustado ao risco | 0,030 | 1,56 | 57% | +3,9 pontos | 54% |
+| 2 | Distância da média de 200 | 0,017 | 0,93 | 60% | +3,4 pontos | 83% |
+| 3 | Inclinação vezes R² | 0,032 | **1,87** | 58% | +3,3 pontos | 62% |
+
+155 meses (2006–2018), 77 ações por mês em média. Registro em `trend-backend/registro_ranking.jsonl`.
+
+- **Os três apontam na mesma direção, e nenhum com força estatística.** O topo vence o fundo em 57% a
+  60% dos meses e paga a troca, mas a correlação mês a mês oscila tanto que o t não chega a 2. Pelo
+  protocolo, isso é "não informa": a validação fica lacrada
+- **A inclinação vezes R² chegou mais perto** (t de 1,87). Ajustar a janela até passar é exatamente o que
+  o teto existe para impedir — a variação não se repete
+- **As 3 variações que sobram do teto são dos FIIs**, pelo adendo que ainda será escrito
