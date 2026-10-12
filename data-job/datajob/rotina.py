@@ -74,13 +74,25 @@ def _ultima_data(engine: sa.Engine, serie: int) -> date | None:
         return conn.execute(consulta).scalar_one()
 
 
+# FII, fundo listado e BDR negociados nos últimos dois anos: a B3 não devolve nada de quem saiu.
+_FUNDOS_E_BDRS = sa.text(
+    """
+    SELECT DISTINCT substr(isin, 3, 4) FROM mercado.ativo
+    WHERE codbdi IN ('12', '14', '34', '35', '36') AND ultimo_pregao >= current_date - 730
+      AND substr(isin, 3, 4) <> ALL(:companhias)
+    ORDER BY 1
+    """
+)
+
+
 def proventos_hoje(tem_provento: bool, hoje: date) -> bool:
     return not tem_provento or hoje.weekday() == _SEXTA
 
 
 def _tem_provento(engine: sa.Engine) -> bool:
     with engine.connect() as conn:
-        return conn.execute(sa.text("SELECT 1 FROM mercado.provento LIMIT 1")).first() is not None
+        consulta = sa.text("SELECT 1 FROM mercado.provento WHERE origem = 'b3_recente' LIMIT 1")
+        return conn.execute(consulta).first() is not None
 
 
 def anos_do_fre(tem_fre: bool, hoje: date) -> list[int]:
@@ -197,16 +209,17 @@ def diario(
             print("proventos e eventos da B3: só às sextas.", flush=True)
             return
         with engine.connect() as conn:
-            codigos = conn.execute(
-                sa.text("SELECT codigo FROM mercado.emissor ORDER BY 1")
-            ).scalars()
-            codigos = list(codigos)
+            companhias = list(
+                conn.execute(sa.text("SELECT codigo FROM mercado.emissor ORDER BY 1")).scalars()
+            )
+            fundos_e_bdrs = list(conn.execute(_FUNDOS_E_BDRS, {"companhias": companhias}).scalars())
         falharam = []
-        for codigo in codigos:
+        com_historico = dict.fromkeys(companhias, True) | dict.fromkeys(fundos_e_bdrs, False)
+        for codigo, historico in com_historico.items():
             nome = f"b3_proventos_{codigo}.json"
             try:
                 try:
-                    conteudo = b3_proventos.baixar_emissor(codigo, baixar)
+                    conteudo = b3_proventos.baixar_emissor(codigo, baixar, historico)
                 except Ausente:
                     relatar(nome, None)
                     continue
@@ -257,7 +270,8 @@ def diario(
         inicio = time.monotonic()
         with engine.begin() as conn:
             conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_papel"))
-        print(f"série ajustada recalculada em {time.monotonic() - inicio:.0f} s.", flush=True)
+            conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_fundo"))
+        print(f"séries ajustadas recalculadas em {time.monotonic() - inicio:.0f} s.", flush=True)
 
     def serie_ajustada() -> None:
         recalcular_serie()

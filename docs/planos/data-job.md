@@ -363,8 +363,17 @@ A composição do capital vem dos arquivos de DFP e ITR já guardados; o número
 inconsistente entre empresas (a Gafisa declara em milhares), o que não afeta a razão, mas afeta qualquer
 uso absoluto.
 
+**Fundos e BDRs** (FII, ETF e outros fundos listados, BDR — BDI 12, 14, 34 a 36) entram pela
+**`mercado.serie_fundo`**, com a mesma regra, por código do emissor no ISIN e classe da cota. A B3 dá
+os eventos de cota completos, mas o histórico de proventos só de companhia: de fundo e BDR, só os
+últimos meses. Esses se **acumulam** a cada coleta (`provento.origem = 'b3_recente'`) e nunca são
+apagados; o histórico de companhia (`b3_historico`) substitui tudo o que veio da B3 para o emissor.
+Entram os fundos e BDRs negociados nos últimos dois anos.
+
 **Limites declarados:**
 
+- **Rendimento antigo de fundo e BDR não existe na base.** O que é anterior à primeira coleta (out/2026)
+  só entra se vier de outra fonte — para FII, o informe mensal da CVM
 - **Provento bruto.** O JCP tem imposto retido na fonte, e o retorno total não o desconta
 - **Cisão e redução de capital não ajustam** (Itaú/XP em 2021): o preço cai sem que a série saiba por quê
 - **Emissor que a B3 não encontra fica sem proventos** — a ALL, incorporada pela Rumo em 2015

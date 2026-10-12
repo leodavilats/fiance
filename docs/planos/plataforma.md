@@ -37,6 +37,10 @@ O preço bruto de tudo já está no COTAHIST (5.171 ISINs). O que falta é o tra
 A série ajustada (`mercado.serie_papel`) passa a cobrir as classes novas com a mesma regra: preço por
 cota ajustado por evento conferido pelo preço, provento na data ex, retorno total.
 
+**Feito (2026-10-12):** eventos de cota e rendimentos recentes de FIIs, ETFs e BDRs, e a série ajustada
+deles (`mercado.serie_fundo`). **Falta:** PTAX, Tesouro Direto e o histórico de rendimentos de FII pela
+CVM.
+
 Ordem sugerida: ETFs e dólar/Tesouro primeiro — são os instrumentos e o histórico longo que a
 tendência usa —, depois FIIs, depois BDRs.
 

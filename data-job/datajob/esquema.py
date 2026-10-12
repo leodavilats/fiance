@@ -187,6 +187,7 @@ provento = sa.Table(
     sa.Column("valor", sa.Numeric, nullable=False),
     sa.Column("data_aprovacao", sa.Date),
     sa.Column("preco_vespera", sa.Numeric),
+    sa.Column("origem", sa.Text, nullable=False, server_default="b3_historico"),
     sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
 )
 

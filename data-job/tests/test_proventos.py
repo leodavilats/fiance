@@ -75,6 +75,21 @@ def test_baixa_todas_as_paginas_e_tenta_o_nome_sem_barra():
     assert pacote["nome_pregao"] == "AMBEV S/A"
 
 
+def test_fundo_nao_pede_o_historico_de_proventos():
+    pedidos = []
+
+    def baixar(url: str) -> bytes:
+        pedidos.append(url)
+        return json.dumps(
+            [{"tradingName": "SPX FIA", "stockDividends": [], "cashDividends": [{"x": 1}]}]
+        ).encode()
+
+    pacote = json.loads(b3_proventos.baixar_emissor("SPXI", baixar, com_historico=False))
+
+    assert pedidos == [b3_proventos.url_do_complemento("SPXI")]
+    assert pacote["recentes"] == [{"x": 1}]
+
+
 def test_proventos_so_as_sextas_depois_da_carga():
     assert rotina.proventos_hoje(False, date(2026, 10, 13))
     assert rotina.proventos_hoje(True, date(2026, 10, 9)), "9/10/2026 é sexta"
@@ -90,24 +105,31 @@ def _coleta(conn) -> int:
     ).scalar_one()
 
 
-def _papel(conn, isin: str, especie: str, precos: dict[str, tuple[str, str]], fator: int = 1):
+def _papel(
+    conn,
+    isin: str,
+    especie: str,
+    precos: dict[str, tuple[str, str]],
+    fator: int = 1,
+    codbdi: str = "02",
+):
     coleta_id = _coleta(conn)
     datas = sorted(precos)
     conn.execute(
         sa.text(
             "INSERT INTO mercado.ativo (isin, nome_resumido, especie, codbdi, primeiro_pregao, "
-            "ultimo_pregao) VALUES (:i, 'TESTE', :e, '02', :p, :u)"
+            "ultimo_pregao) VALUES (:i, 'TESTE', :e, :b, :p, :u)"
         ),
-        {"i": isin, "e": especie, "p": datas[0], "u": datas[-1]},
+        {"i": isin, "e": especie, "b": codbdi, "p": datas[0], "u": datas[-1]},
     )
     conn.execute(
         sa.text(
             "INSERT INTO mercado.cotacao (isin, data, codigo, codbdi, abertura, maxima, minima, "
             "media, fechamento, negocios, quantidade, volume, fator_cotacao, coleta_id) VALUES "
-            "(:i, :d, 'TEST3', '02', :a, :a, :f, :f, :f, 1, 1, 1, :fator, :c)"
+            "(:i, :d, 'TEST3', :b, :a, :a, :f, :f, :f, 1, 1, 1, :fator, :c)"
         ),
         [
-            {"i": isin, "d": d, "a": a, "f": f, "fator": fator, "c": coleta_id}
+            {"i": isin, "d": d, "a": a, "f": f, "fator": fator, "b": codbdi, "c": coleta_id}
             for d, (a, f) in precos.items()
         ],
     )
@@ -258,3 +280,131 @@ def test_salto_que_nenhum_evento_explica_fica_marcado(engine):
         ).one()
 
     assert dia.salto_sem_evento, "o desdobramento de 1 para 3 da Kepler em 2022 não está na B3"
+
+
+def _recente(data_com: str, valor: str) -> dict:
+    return {
+        "isinCode": "BRXPMLCTF000",
+        "lastDatePrior": data_com,
+        "label": "RENDIMENTO",
+        "rate": valor,
+        "approvedOn": data_com,
+    }
+
+
+def _gravar(engine, tmp_path, pacote: dict) -> coleta.Resultado:
+    return coleta.executar(
+        engine,
+        tmp_path,
+        b3_proventos.FONTE,
+        f"b3_proventos_{pacote['emissor']}.json",
+        json.dumps(pacote).encode(),
+        b3_proventos.processar,
+    )
+
+
+def _proventos(engine, emissor: str) -> list[tuple]:
+    with engine.connect() as conn:
+        return [
+            tuple(r)
+            for r in conn.execute(
+                sa.text(
+                    "SELECT classe, data_com, valor, origem FROM mercado.provento "
+                    "WHERE emissor = :e ORDER BY data_com"
+                ),
+                {"e": emissor},
+            )
+        ]
+
+
+def test_rendimento_recente_de_fii_se_acumula(engine, tmp_path):
+    with engine.begin() as conn:
+        _papel(conn, "BRXPMLCTF000", "CI", {"2026-08-31": ("100", "100")}, codbdi="12")
+    pacote = {"emissor": "XPML", "nome_pregao": "FII XP MALLS", "eventos": [], "proventos": []}
+
+    _gravar(engine, tmp_path, {**pacote, "recentes": [_recente("31/08/2026", "0,92")]})
+    _gravar(engine, tmp_path, {**pacote, "recentes": [_recente("30/09/2026", "0,92")]})
+    _gravar(engine, tmp_path, {**pacote, "recentes": [_recente("30/09/2026", "0,92")]})
+
+    assert _proventos(engine, "XPML") == [
+        ("CI", date(2026, 8, 31), Decimal("0.92"), "b3_recente"),
+        ("CI", date(2026, 9, 30), Decimal("0.92"), "b3_recente"),
+    ], "a B3 só mostra os últimos meses: o que saiu da lista continua guardado, e nada duplica"
+
+
+def test_historico_completo_substitui_os_recentes(engine, tmp_path):
+    with engine.begin() as conn:
+        _papel(conn, "BRXPMLCTF000", "CI", {"2026-08-31": ("100", "100")}, codbdi="12")
+    pacote = {"emissor": "XPML", "nome_pregao": "FII XP MALLS", "eventos": [], "proventos": []}
+    _gravar(engine, tmp_path, {**pacote, "recentes": [_recente("31/08/2026", "0,92")]})
+
+    historico = {
+        "typeStock": "CI",
+        "lastDatePriorEx": "31/08/2026",
+        "valueCash": "0,92",
+        "quotedPerShares": "1",
+        "corporateAction": "RENDIMENTO",
+        "dateApproval": "31/08/2026",
+    }
+    _gravar(engine, tmp_path, {**pacote, "proventos": [historico], "recentes": []})
+
+    assert _proventos(engine, "XPML") == [
+        ("CI", date(2026, 8, 31), Decimal("0.92"), "b3_historico")
+    ]
+
+
+def test_serie_de_fundo_com_desdobramento_e_rendimento(engine, tmp_path):
+    with engine.begin() as conn:
+        _papel(
+            conn,
+            "BRSPXICTF006",
+            "CI",
+            {
+                "2025-03-14": ("80", "80"),
+                "2025-03-17": ("10", "10"),
+                "2025-03-18": ("10", "10.5"),
+            },
+            codbdi="14",
+        )
+    pacote = {
+        "emissor": "SPXI",
+        "nome_pregao": "SPX FIA",
+        "eventos": [
+            {
+                "isinCode": "BRSPXICTF006",
+                "lastDatePrior": "14/03/2025",
+                "label": "DESDOBRAMENTO",
+                "factor": "700,00000000000",
+                "approvedOn": "01/03/2025",
+            }
+        ],
+        "proventos": [],
+        "recentes": [
+            {
+                "isinCode": "BRSPXICTF006",
+                "lastDatePrior": "17/03/2025",
+                "label": "RENDIMENTO",
+                "rate": "0,5",
+                "approvedOn": "10/03/2025",
+            }
+        ],
+    }
+    _gravar(engine, tmp_path, pacote)
+    with engine.begin() as conn:
+        conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_fundo"))
+        serie = {
+            str(r.data): r
+            for r in conn.execute(
+                sa.text("SELECT * FROM mercado.serie_fundo WHERE emissor = 'SPXI' ORDER BY data")
+            )
+        }
+
+    def r(valor) -> Decimal:
+        return round(valor, 8)
+
+    assert serie["2025-03-17"].tipo_ativo == "fundo"
+    assert r(serie["2025-03-14"].fechamento_ajustado) == 10, "desdobramento de 700%: cota ÷ 8"
+    assert r(serie["2025-03-17"].retorno_total) == 0
+    assert not serie["2025-03-17"].salto_sem_evento
+    assert r(serie["2025-03-18"].provento) == Decimal("0.5")
+    assert r(serie["2025-03-18"].retorno_total) == Decimal("0.1"), "(10,5 + 0,5) / 10 - 1"

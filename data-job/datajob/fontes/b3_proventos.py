@@ -44,13 +44,15 @@ def nomes_possiveis(nome_pregao: str) -> list[str]:
     return list(dict.fromkeys(v for v in variantes if v))
 
 
-def baixar_emissor(emissor: str, baixar: Callable[[str], bytes]) -> bytes:
+def baixar_emissor(
+    emissor: str, baixar: Callable[[str], bytes], com_historico: bool = True
+) -> bytes:
     resposta = json.loads(baixar(url_do_complemento(emissor)) or b"null")
     complemento = resposta[0] if isinstance(resposta, list) and resposta else {}
     nome = (complemento.get("tradingName") or "").strip()
 
     proventos: list[dict] = []
-    for tentativa in nomes_possiveis(nome):
+    for tentativa in nomes_possiveis(nome) if com_historico else []:
         pagina, paginas = 1, 1
         while pagina <= paginas:
             dados = json.loads(baixar(url_dos_proventos(tentativa, pagina)))
@@ -65,6 +67,7 @@ def baixar_emissor(emissor: str, baixar: Callable[[str], bytes]) -> bytes:
         "nome_pregao": nome,
         "eventos": complemento.get("stockDividends") or [],
         "proventos": proventos,
+        "recentes": complemento.get("cashDividends") or [],
     }
     return json.dumps(pacote, ensure_ascii=False, sort_keys=True).encode()
 
@@ -89,6 +92,25 @@ def multiplicador(tipo: str, fator: Decimal) -> Decimal | None:
     if tipo in ("DESDOBRAMENTO", "BONIFICACAO"):
         return 1 + fator / 100
     return None
+
+
+def interpretar_recentes(pacote: dict) -> list[dict]:
+    recentes = []
+    for p in pacote.get("recentes") or []:
+        data_com, valor = _data(p.get("lastDatePrior")), _numero(p.get("rate"))
+        if data_com is None or valor is None or not p.get("isinCode"):
+            continue
+        recentes.append(
+            {
+                "emissor": pacote["emissor"],
+                "isin": p["isinCode"],
+                "data_com": data_com,
+                "tipo": p.get("label") or "",
+                "valor": valor,
+                "data_aprovacao": _data(p.get("approvedOn")),
+            }
+        )
+    return recentes
 
 
 def interpretar(conteudo: bytes) -> tuple[str, list[dict], list[dict], list[tuple[str, str]]]:
@@ -172,18 +194,60 @@ def validar(conn: sa.Connection, eventos: list[dict]) -> None:
             e["status"], e["razao_observada"] = status, observada
 
 
+_CLASSE_DO_ISIN = sa.text(
+    "SELECT isin, substring(especie FROM '^([A-Z0-9]+)') FROM mercado.ativo WHERE isin = ANY(:isins)"
+)
+
+# A B3 só dá o histórico de proventos de companhia; de fundo e BDR, só os últimos meses. Esses se
+# acumulam a cada coleta, e não substituem o que já foi guardado.
+_ACUMULAR = sa.text(
+    """
+    INSERT INTO mercado.provento (emissor, classe, data_com, tipo, valor, data_aprovacao, origem,
+        coleta_id)
+    SELECT :emissor, :classe, :data_com, :tipo, :valor, :data_aprovacao, 'b3_recente', :coleta_id
+    WHERE NOT EXISTS (
+        SELECT 1 FROM mercado.provento
+        WHERE emissor = :emissor AND classe = :classe AND data_com = :data_com AND tipo = :tipo
+          AND valor = :valor)
+    """
+)
+
+
+def _acumular_recentes(conn: sa.Connection, pacote: dict, coleta_id: int) -> int:
+    recentes = interpretar_recentes(pacote)
+    if not recentes:
+        return 0
+    classes = dict(conn.execute(_CLASSE_DO_ISIN, {"isins": [r["isin"] for r in recentes]}).all())
+    gravadas = 0
+    for r in recentes:
+        if r["isin"] not in classes:
+            continue
+        linha = {k: v for k, v in r.items() if k != "isin"}
+        gravadas += conn.execute(
+            _ACUMULAR, {**linha, "classe": classes[r["isin"]], "coleta_id": coleta_id}
+        ).rowcount
+    return gravadas
+
+
 def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int, int, int]:
     emissor, proventos, eventos, rejeitados = interpretar(conteudo)
     validar(conn, eventos)
 
-    conn.execute(sa.text("DELETE FROM mercado.provento WHERE emissor = :e"), {"e": emissor})
     conn.execute(sa.text("DELETE FROM mercado.evento WHERE emissor = :e"), {"e": emissor})
-    if proventos:
+    acumulados = 0
+    if not proventos:
+        acumulados = _acumular_recentes(conn, json.loads(conteudo), coleta_id)
+    else:
+        conn.execute(
+            sa.text("DELETE FROM mercado.provento WHERE emissor = :e AND origem LIKE 'b3_%'"),
+            {"e": emissor},
+        )
         conn.execute(
             sa.text(
                 "INSERT INTO mercado.provento (emissor, classe, data_com, tipo, valor, "
-                "data_aprovacao, preco_vespera, coleta_id) VALUES (:emissor, :classe, :data_com, "
-                ":tipo, :valor, :data_aprovacao, :preco_vespera, :coleta_id)"
+                "data_aprovacao, preco_vespera, origem, coleta_id) VALUES (:emissor, :classe, "
+                ":data_com, :tipo, :valor, :data_aprovacao, :preco_vespera, 'b3_historico', "
+                ":coleta_id)"
             ),
             [{**p, "coleta_id": coleta_id} for p in proventos],
         )
@@ -216,6 +280,6 @@ def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int
         )
     return (
         len(proventos) + len(eventos) + len(rejeitados),
-        len(proventos) + len(eventos),
+        len(proventos) + len(eventos) + acumulados,
         len(quarentena),
     )
