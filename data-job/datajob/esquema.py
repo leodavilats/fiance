@@ -257,3 +257,17 @@ capital_social = sa.Table(
     sa.Column("acoes_total", sa.BigInteger, nullable=False),
     sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
 )
+
+tesouro = sa.Table(
+    "tesouro",
+    metadata,
+    sa.Column("titulo", sa.Text, primary_key=True),
+    sa.Column("vencimento", sa.Date, primary_key=True),
+    sa.Column("data", sa.Date, primary_key=True),
+    sa.Column("taxa_compra", sa.Numeric),
+    sa.Column("taxa_venda", sa.Numeric),
+    sa.Column("pu_compra", sa.Numeric),
+    sa.Column("pu_venda", sa.Numeric),
+    sa.Column("pu_base", sa.Numeric),
+    sa.Column("coleta_id", sa.BigInteger, sa.ForeignKey("coleta.id"), nullable=False),
+)

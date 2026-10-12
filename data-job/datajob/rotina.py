@@ -23,6 +23,7 @@ from datajob.fontes import (
     cvm_fca,
     cvm_fre,
     cvm_ipe,
+    tesouro_direto,
 )
 from datajob.rede import Ausente
 
@@ -78,7 +79,7 @@ def _ultima_data(engine: sa.Engine, serie: int) -> date | None:
 _FUNDOS_E_BDRS = sa.text(
     """
     SELECT DISTINCT substr(isin, 3, 4) FROM mercado.ativo
-    WHERE codbdi IN ('12', '14', '34', '35', '36') AND ultimo_pregao >= current_date - 730
+    WHERE especie ~ '^(CI|DRN|DRE|DR1|DR2|DR3)' AND ultimo_pregao >= current_date - 730
       AND substr(isin, 3, 4) <> ALL(:companhias)
     ORDER BY 1
     """
@@ -204,6 +205,18 @@ def diario(
                     nome=bcb_sgs.nome(serie, inicio, fim),
                 )
 
+    def tesouro() -> None:
+        _arquivo(
+            engine,
+            raiz,
+            relatar,
+            baixar,
+            tesouro_direto.FONTE,
+            tesouro_direto.URL,
+            tesouro_direto.processar,
+            nome=tesouro_direto.NOME,
+        )
+
     def proventos_e_eventos() -> None:
         if not proventos_hoje(_tem_provento(engine), hoje):
             print("proventos e eventos da B3: só às sextas.", flush=True)
@@ -290,6 +303,7 @@ def diario(
         "ligação emissor-CNPJ": ligar_emissores,
         "DFP e ITR da CVM": demonstracoes,
         "séries do BCB": series_do_bcb,
+        "Tesouro Direto": tesouro,
         "proventos e eventos da B3": proventos_e_eventos,
         "IPE da CVM": ipe,
         "FRE da CVM": fre,

@@ -162,7 +162,8 @@ guarda.
 | `cotacao` | `(isin, data)` | Abertura, máxima, mínima, fechamento, média, negócios, quantidade, volume, fator de cotação — tudo bruto, `NUMERIC` |
 | `documento` | `id`; único em `(cnpj, tipo, data_referencia, versao)` | Tipo (DFP, ITR), data de entrega, id CVM — todas as versões do índice |
 | `demonstracao_linha` | `(documento_id, demonstracao, inicio_exercicio, fim_exercicio, conta)` | Descrição, valor em reais (a escala já aplicada), consolidado ou individual, conta fixa. No balanço, início = fim |
-| `indicador` | `(serie, data)` | Séries do BCB SGS de 2005 em diante: CDI diário (12), Selic diária (11), meta da Selic (432), IPCA mensal (433) |
+| `indicador` | `(serie, data)` | Séries do BCB SGS de 2005 em diante: CDI diário (12), Selic diária (11), meta da Selic (432), IPCA mensal (433), dólar PTAX de venda (1) |
+| `tesouro` | `(titulo, vencimento, data)` | Taxas e preços unitários de compra e venda do Tesouro Direto de 2005 em diante, do Tesouro Transparente. Título fora de venda fica sem taxa e preço de compra |
 | `coleta` | `id` | Fonte, arquivo, hash, início, fim, linhas lidas, gravadas, em quarentena, status, erro |
 | `quarentena` | `id` | Coleta, chave da linha, motivo, conteúdo bruto |
 
@@ -363,7 +364,7 @@ A composição do capital vem dos arquivos de DFP e ITR já guardados; o número
 inconsistente entre empresas (a Gafisa declara em milhares), o que não afeta a razão, mas afeta qualquer
 uso absoluto.
 
-**Fundos e BDRs** (FII, ETF e outros fundos listados, BDR — BDI 12, 14, 34 a 36) entram pela
+**Fundos e BDRs** (espécie `CI` ou `DR*`, qualquer que seja o BDI: até out/2022 o BDR era BDI 02) entram pela
 **`mercado.serie_fundo`**, com a mesma regra, por código do emissor no ISIN e classe da cota. A B3 dá
 os eventos de cota completos, mas o histórico de proventos só de companhia: de fundo e BDR, só os
 últimos meses. Esses se **acumulam** a cada coleta (`provento.origem = 'b3_recente'`) e nunca são

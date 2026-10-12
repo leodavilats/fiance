@@ -408,3 +408,20 @@ def test_serie_de_fundo_com_desdobramento_e_rendimento(engine, tmp_path):
     assert not serie["2025-03-17"].salto_sem_evento
     assert r(serie["2025-03-18"].provento) == Decimal("0.5")
     assert r(serie["2025-03-18"].retorno_total) == Decimal("0.1"), "(10,5 + 0,5) / 10 - 1"
+
+
+def test_bdr_antigo_no_bdi_das_acoes_entra_na_serie_de_fundo(engine):
+    with engine.begin() as conn:
+        _papel(
+            conn,
+            "BRAAPLBDR004",
+            "DRN",
+            {"2015-03-02": ("40", "40"), "2015-03-03": ("41", "41")},
+            codbdi="02",
+        )
+        conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_fundo"))
+        tipos = conn.execute(
+            sa.text("SELECT DISTINCT tipo_ativo FROM mercado.serie_fundo WHERE emissor = 'AAPL'")
+        ).scalars()
+
+        assert list(tipos) == ["bdr"], "até out/2022 a B3 negociava BDR no BDI 02, o das ações"

@@ -19,6 +19,7 @@ SERIES = {
     11: "Selic diária (% ao dia)",
     432: "Meta da Selic (% ao ano)",
     433: "IPCA mensal (%)",
+    1: "Dólar PTAX de venda (R$)",
 }
 
 _JANELA = timedelta(days=365 * 10 - 5)
