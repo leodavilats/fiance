@@ -94,6 +94,13 @@ O `payments/` atual (com `api/billing.py`) tem só `FakeProvider` e será descar
 
 **Sem data.** Não há prazo de publicação definido.
 
+### 10 · A plataforma: coleta completa, tendência como ranking, painel, app sem BRAPI
+
+Decidido em 2026-10-12. Quatro etapas: o data-job com tudo o que negocia na bolsa (ações, FIIs, ETFs,
+BDRs, dólar, Tesouro); a tendência como ranking dos ativos, com acerto medido em protocolo novo; o
+painel organizando o caminho e os dados; e o app fiance lendo só o dado da base própria. A tendência não
+vai para o app. Plano em [planos/plataforma](planos/plataforma.md).
+
 ### 9 · Coleta própria de dados de mercado — `data-job/`
 
 Decidido em 2026-10-09. Um serviço baixa B3 (COTAHIST), CVM (DFP, ITR, FCA) e BCB
