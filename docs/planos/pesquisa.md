@@ -30,6 +30,19 @@ A régua é o CDI, não o Ibovespa: o CDI é a alternativa sem risco e com liqui
   parâmetros, período, resultado. O número de variações testadas é parte do resultado: com 200
   tentativas, uma passar é o esperado por sorte
 
+## Teto e régua — decididos em 2026-10-12, antes da terceira hipótese
+
+- **Teto: 8 variações no período de estudo, somando todas as hipóteses.** Variação é um par hipótese +
+  parâmetros distinto (a assinatura no registro); repetir a mesma execução não conta. A nona é recusada
+  sem `--forcar`, e o forçar fica no registro
+- **Régua: bater o CDI por 2 pontos ao ano ou mais no estudo**, depois de custos e imposto, para seguir à
+  validação. A validação usa a mesma régua; a prova também
+- **Se nenhuma variação passar dentro do teto, a conclusão é "não achei vantagem"**, e fica registrada
+  aqui. A pesquisa para; não se abre um teto novo para continuar procurando
+
+Quando o teto foi fixado, o registro tinha 2 variações: momento 12–1 (−2,5 pontos) e valor + qualidade
+(−5,0 pontos).
+
 ## Regras da simulação
 
 - **Rebalanceamento** no último pregão de cada mês, comprando e vendendo pelo fechamento do dia
