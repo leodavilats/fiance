@@ -113,10 +113,10 @@ class DashboardService:
         best = strong[0]
         if len(strong) == 1:
             detail = f"Margem de segurança {(best.margin_of_safety or 0) * 100:.0f}%. {best.label}."
-            title = f"{best.ticker}: oportunidade forte"
+            title = f"{best.ticker}: 30% ou mais abaixo do preço justo"
         else:
             names = ", ".join(o.ticker for o in strong)
-            title = f"{len(strong)} oportunidades com desconto acima de 30%"
+            title = f"{len(strong)} ativos 30% ou mais abaixo do preço justo"
             detail = f"{names}. A maior margem é de {best.ticker}."
 
         return [

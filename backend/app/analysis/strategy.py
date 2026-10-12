@@ -238,7 +238,7 @@ def _generate_investment_suggestions(
                         "verdict": opp.verdict,
                         "already_held": False,
                         "reasons": [
-                            "Excelente oportunidade de entrada",
+                            "Preço abaixo da faixa de preço justo",
                             f"Score elevado: {opp.score:.0f}",
                         ],
                         "rationale": None,
@@ -263,7 +263,7 @@ def _generate_investment_objective(opp: Opportunity, category: str) -> str:
     if opp.dividend_yield and opp.dividend_yield >= 6:
         return f"{base} — dividendos (DY) de {numero(opp.dividend_yield, 1)}% ao ano"
     elif opp.margin_of_safety and opp.margin_of_safety >= 0.15:
-        return f"{base} — Preço com desconto de {opp.margin_of_safety * 100:.0f}%"
+        return f"{base} — {opp.margin_of_safety * 100:.0f}% abaixo do piso da faixa de preço justo"
     else:
         return base
 
@@ -281,7 +281,7 @@ def _generate_suggestion_reasons(
         )
 
     if opp.score >= 70:
-        reasons.append(f"Score elevado ({opp.score:.0f}) indica forte potencial")
+        reasons.append(f"Score de {opp.score:.0f} na régua do app")
 
     if opp.margin_of_safety and opp.margin_of_safety >= 0.1:
         reasons.append(f"Margem de segurança de {opp.margin_of_safety * 100:.0f}%")
@@ -419,7 +419,10 @@ def _adjustment_sentence(ticker: str, held_margin: float | None, target: Opportu
 
     atual = _distance_from_fair(held_margin, short=True)
     tem = f"você tem {ticker}, que está {atual}" if atual else f"você tem {ticker}"
-    return f"{alvo}, e {tem} — avalie se vale fazer o ajuste."
+    return (
+        f"{alvo}, e {tem} — avalie se vale fazer o ajuste; o preço justo descreve posição, "
+        "não antecipa retorno."
+    )
 
 
 def build_rebalance_suggestions(
@@ -549,7 +552,7 @@ def _generate_strategy_summary(
     gaps: list[dict[str, Any]],
 ) -> str:
     if not suggestions:
-        return "Seu portfólio está bem balanceado. Considere aguardar novas oportunidades."
+        return "Seu portfólio está bem balanceado. Nada a ajustar pelas suas metas de alocação."
 
     n_suggestions = len(suggestions)
 

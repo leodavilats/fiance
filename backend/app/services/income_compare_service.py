@@ -172,8 +172,8 @@ class IncomeCompareService:
             if diff > 1:
                 return (
                     f"{best_asset.label} paga {numero(diff, 1)} p.p. a.a. mais de renda que a melhor "
-                    f"opção de renda fixa ({numero(best_rf.net_income_yield_pct)}% a.a.) — e ainda "
-                    "tem potencial de valorização. Em troca, a cotação oscila e o dividendo "
+                    f"opção de renda fixa ({numero(best_rf.net_income_yield_pct)}% a.a.). Em troca, "
+                    "a cotação oscila e o dividendo "
                     "não é contratado."
                 )
             if diff < -1:

@@ -110,3 +110,11 @@ Execução 0, o modelo como está, no estudo (vereditos de jan/2011 a dez/2017, 
 Registro em `trend-backend/registro_calibracao.jsonl`; mês a mês em
 `trend-backend/resultados/calibracao_0_estudo.json`. O que isso muda no app está em
 [10-PROBLEMAS](../10-PROBLEMAS.md), item A12.
+
+## O que mudou no app
+
+Em 2026-10-12, saíram "oportunidade forte", "excelente oportunidade de entrada",
+"indica forte potencial", "preço com desconto" e "potencial de valorização" das frases do servidor; a
+frase de ajuste ganhou "o preço justo descreve posição, não antecipa retorno"; e a explicação do
+preço justo e o verbete de margem de segurança dizem o resultado da medida. O nome "Oportunidades"
+fica, por decisão do autor.

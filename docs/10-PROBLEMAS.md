@@ -37,12 +37,8 @@ sabia em cada data, ação **abaixo do preço justo** não rendeu mais nos 12 me
 **acima** (4,0% contra 3,0% ao ano em média, t de −0,09), e com o juro da época o modelo punha 9 em
 cada 10 ações acima da faixa.
 
-**O que isso exige do app:** nenhuma tela, texto ou notificação pode sugerir que "abaixo do preço
-justo" antecipa retorno. A etiqueta descreve posição contra premissas declaradas — é o que o
-invariante já diz —, e agora há medida mostrando que ela não é sinal. Conferir as frases do
-servidor (`adjustment_sentence`, falsificadores, notificação de oportunidade) e os textos do
-`/descobrir` com esse critério, e decidir em ADR se a taxa de desconto (Selic média + 5 pontos)
-continua sendo a do modelo, já que ela deixa quase tudo "caro" em juro alto.
+**Aberto:** os textos foram revistos ([planos/calibracao](planos/calibracao.md)); falta decidir em ADR se a taxa de desconto (Selic média de 10 anos + 5 pontos)
+continua sendo a do modelo, já que em juro alto ela deixa quase tudo acima da faixa.
 
 O preço justo de BDR segue em [09-FUTURO](09-FUTURO.md), *Considerado*.
 

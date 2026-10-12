@@ -255,7 +255,8 @@ class AssetDetailContent extends ConsumerWidget {
               source: 'Cotações da B3 e balanços da CVM, do último fechamento; juro do Banco Central.',
               asOf: idade.isEmpty ? null : 'Preço lido $idade.',
               limitation:
-                  'É leitura do sistema sobre dado público, não recomendação de compra.',
+                  'É leitura do sistema sobre dado público, não recomendação de compra. '
+                  'Medido de 2011 a 2017, estar abaixo do preço justo não antecipou retorno nos 12 meses seguintes.',
             ),
 
           ],

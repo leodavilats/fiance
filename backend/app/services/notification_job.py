@@ -102,7 +102,7 @@ async def _send_opportunities_digest(
     body_parts = []
     if highlighted:
         summary = ", ".join(f"{o.ticker} ({o.score:.0f})" for o in highlighted)
-        body_parts.append(f"{len(interesting)} ativo(s) bem avaliados: {summary}")
+        body_parts.append(f"{len(interesting)} ativo(s) com score alto: {summary}")
     if to_review:
         review_summary = ", ".join(o.ticker for o in to_review)
         body_parts.append(f"revisar na carteira: {review_summary}")

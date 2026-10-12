@@ -740,7 +740,8 @@ class _CompareTable extends StatelessWidget {
               'de hoje até a borda da faixa.',
           source: 'Cotações da B3 e balanços da CVM, do último fechamento; juro do Banco Central.',
           asOf: idade.isEmpty ? null : 'Cotação mais antiga lida $idade.',
-          limitation: 'É leitura do sistema sobre dado público, não recomendação de compra.',
+          limitation: 'É leitura do sistema sobre dado público, não recomendação de compra. '
+              'Medido de 2011 a 2017, estar abaixo do preço justo não antecipou retorno nos 12 meses seguintes.',
         ),
       ],
     );

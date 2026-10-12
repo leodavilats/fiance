@@ -50,7 +50,8 @@ def test_a_frase_diz_as_duas_margens_e_a_meta_de_renda():
 
     assert item["adjustment_sentence"] == (
         "PETR4 está 15% abaixo do preço justo e cabe na sua meta de renda, e você tem ITSA4, "
-        "que está 20% acima — avalie se vale fazer o ajuste."
+        "que está 20% acima — avalie se vale fazer o ajuste; o preço justo descreve posição, "
+        "não antecipa retorno."
     ), "é a frase-alvo do produto: os dois lados medidos contra o preço justo, e a meta declarada"
     alvo = item["realocar_para"]
     assert (alvo["margin_of_safety"], alvo["fair_low"], alvo["fair_high"]) == (0.15, 34.5, 40.0)

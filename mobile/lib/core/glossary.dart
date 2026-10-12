@@ -13,7 +13,7 @@ final Map<String, String> glossary = {
       'Margem de segurança — a folga entre o preço de hoje e a faixa de preço justo. Positiva: o '
       'preço está abaixo do piso da faixa, e o número é o desconto sobre o piso. Negativa: o preço '
       'passa do teto, e o número é o quanto do preço de hoje fica acima dele. Dentro da faixa, é '
-      'zero: nem folga, nem excesso.',
+      'zero: nem folga, nem excesso. Descreve posição, não promete retorno: Medido de 2011 a 2017, estar abaixo do preço justo não antecipou retorno nos 12 meses seguintes.',
   'score': scoreGlossary,
   'perfil_de_risco':
       'Perfil de risco — decide o peso de cada critério no score. No conservador os dividendos '

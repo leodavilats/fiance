@@ -541,7 +541,8 @@ dynamic _cheio(String caminho) {
           'label': 'Acima do preço justo',
           'margin_of_safety': -0.54,
           'adjustment_sentence': 'BBAS3 está 18% abaixo do preço justo e cabe na sua meta de '
-              'renda, e você tem WEGE3, que está 54% acima — avalie se vale fazer o ajuste.',
+              'renda, e você tem WEGE3, que está 54% acima — avalie se vale fazer o ajuste; o preço justo '
+              'descreve posição, não antecipa retorno.',
           'realocar_para': {
             'ticker': 'BBAS3',
             'name': 'Banco do Brasil',
