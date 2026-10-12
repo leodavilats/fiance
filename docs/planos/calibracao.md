@@ -28,13 +28,18 @@ fórmula para divergir.
 ## Universo e períodos
 
 Ações com volume mediano de R$ 5 milhões em 63 pregões, as regras da [primeira pesquisa](pesquisa.md).
+**Units ficam de fora:** a quantidade de ações por unit não é dado da base, e o app a deduz do preço
+das ações que compõem a unit — o que, no passado, só existiria com as duas cotações em todo mês.
 FII fica para depois, como no ranking.
 
 | Período | Datas | Uso |
 |---|---|---|
-| Estudo | 2011-01 a 2018-12 | O balanço com data de entrega começa em 2010 |
+| Estudo | 2011-01 a 2018-12 | O balanço com data de entrega começa em 2010. Vereditos até dez/2017 |
 | Validação | 2019-01 a 2022-12 | Uma vez por variação que passar no estudo |
 | **Prova** | **2023-01 a 2025-09, lacrada** | O último mês com 12 meses de retorno à frente |
+
+**O retorno à frente fica dentro do período.** O veredito de dez/2017 é o último do estudo, porque
+o de 2018 seria medido com retorno de 2019 — da validação. Na validação, o último é dez/2021.
 
 ## A medida — fixada antes
 
