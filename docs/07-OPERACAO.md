@@ -25,6 +25,10 @@ Serviços no ambiente `production`:
 | `postgres-app` | Banco do aplicativo | 500 MB |
 | `data-job` | Coleta de mercado, de `/data-job` — [planos/data-job](planos/data-job.md) | `data-job-bruto`, 5 GB, em `/bruto` |
 | `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |
+| `trend` | Painel de uso próprio: API do `trend-backend` e front do `trend-frontend`, em `https://trend-production-2b56.up.railway.app`, com senha. Imagem de `trend-backend/Dockerfile`; reconstrói com mudança em `/trend-backend/**`, `/trend-frontend/**` e `/docs/**`. Lê o `postgres-mercado` como `mercado_leitura` | — |
+
+O `trend` pede `TREND_USUARIO` e `TREND_SENHA` e falha ao subir sem elas. A senha é definida no painel do
+Railway, e não passa pelo repositório.
 
 As referências de `DATABASE_URL` apontam para o **id** do serviço de banco, e não para o nome:
 renomear um serviço não quebra quem o referencia.
