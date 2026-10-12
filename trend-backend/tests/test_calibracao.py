@@ -139,3 +139,10 @@ def test_balanco_entregue_depois_da_data_nao_entra():
     assert {r["data_referencia"] for r in pacote["resultados"]} == {"2009-12-31", "2010-12-31"}, (
         "a DFP de 2011 só foi entregue em mar/2012"
     )
+
+
+def test_periodos_sao_os_do_protocolo_da_calibracao():
+    assert calibracao.PERIODOS["estudo"].inicio.isoformat() == "2011-01-01", (
+        "a primeira execução usou o estudo da pesquisa de carteira, de 2005, sem balanço"
+    )
+    assert calibracao.PERIODOS["prova"].inicio.isoformat() == "2023-01-01"

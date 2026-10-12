@@ -30,8 +30,21 @@ Os itens da auditoria de **2026-09-13** foram fechados até 2026-09-25. A de **2
 [ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md)) e virou registro em
 [historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25](historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md).
 
-Nenhum item aberto. A calibração empírica dos parâmetros e o preço justo de BDR não são defeitos:
-estão em [09-FUTURO](09-FUTURO.md), *Considerado*.
+### A12 · O veredito de preço justo não ordenou o retorno no passado
+
+Medido em 2026-10-12 ([planos/calibracao](planos/calibracao.md)): de 2011 a 2017, com só o que se
+sabia em cada data, ação **abaixo do preço justo** não rendeu mais nos 12 meses seguintes que ação
+**acima** (4,0% contra 3,0% ao ano em média, t de −0,09), e com o juro da época o modelo punha 9 em
+cada 10 ações acima da faixa.
+
+**O que isso exige do app:** nenhuma tela, texto ou notificação pode sugerir que "abaixo do preço
+justo" antecipa retorno. A etiqueta descreve posição contra premissas declaradas — é o que o
+invariante já diz —, e agora há medida mostrando que ela não é sinal. Conferir as frases do
+servidor (`adjustment_sentence`, falsificadores, notificação de oportunidade) e os textos do
+`/descobrir` com esse critério, e decidir em ADR se a taxa de desconto (Selic média + 5 pontos)
+continua sendo a do modelo, já que ela deixa quase tudo "caro" em juro alto.
+
+O preço justo de BDR segue em [09-FUTURO](09-FUTURO.md), *Considerado*.
 
 ## B · Dado e fonte
 

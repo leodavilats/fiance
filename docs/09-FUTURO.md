@@ -57,8 +57,9 @@ de um lado só. O preço-teto da meta de renda passou a existir, e é a segunda 
 Em 2026-09-25 a faixa passou a cobrir os dois cenários de crescimento
 ([ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md)) e o FII de papel passou a exigir
 yield nominal ([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)). O que falta para
-confiar mais — calibrar os parâmetros e avaliar BDR — está em *Considerado*. A calibração já tem a
-base de que precisava (o `postgres-mercado`); o BDR continua sem juro em dólar.
+confiar mais — calibrar os parâmetros e avaliar BDR — está em *Considerado*. A medida de 2026-10-12
+mostrou que o veredito não ordenou o retorno de 2011 a 2017 ([10-PROBLEMAS](10-PROBLEMAS.md), A12);
+o BDR continua sem juro em dólar.
 
 O item 3 depende deste: recomendar com mais força um número em que não se confia aumenta o dano do
 erro.
@@ -120,7 +121,7 @@ Sem decisão, mas com interesse declarado.
 | **Opções e derivativos** | Tensiona o limite "não é ferramenta de trade" de [01-PRODUTO](01-PRODUTO.md) |
 | **Controle de gastos completo** (tipo Mobills) | Aumentaria a atenção exigida de um público definido por não ter tempo |
 | **Otimizador de carteira** (Sharpe, HRP, mínima volatilidade) | Removido em 2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md)). Reconstruir é decisão nova — e é preciso responder se isso serve a quem não tem tempo |
-| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. Desde 2026-10-12 a base própria tem fundamento *point-in-time* (DFP e ITR com data de entrega, 2010 em diante): o que falta é fazer a medida, não a fonte |
+| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. **Medida em 2026-10-12: o modelo como está não ordena o retorno**, e por protocolo a calibração não seguiu ([planos/calibracao](planos/calibracao.md)). O que isso muda no app está em [10-PROBLEMAS](10-PROBLEMAS.md), A12 |
 | **Preço justo de BDR** | Exige juro em dólar para descontar lucro em dólar ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)): descontar pela Selic fazia todo BDR parecer caro, cerca de 0,67× o valor. Nenhuma das duas fontes entrega essa taxa |
 
 ---

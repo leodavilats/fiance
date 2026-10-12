@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from pesquisa import preco_justo
 from pesquisa.dados import Base
-from pesquisa.periodos import PERIODOS
+from pesquisa.periodos import Periodo
 
 ARQUIVO = Path(__file__).resolve().parents[1] / "registro_calibracao.jsonl"
 
@@ -19,6 +19,16 @@ VARIACOES: dict[int, dict[str, float]] = {
     4: {"LONG_RUN_REAL_GROWTH": 0.02},
 }
 _ANTERIOR = {"validacao": "estudo", "prova": "validacao"}
+
+# Os da calibração, não os da primeira pesquisa: o balanço com data de entrega começa em 2010.
+PERIODOS = {
+    p.nome: p
+    for p in (
+        Periodo("estudo", date(2011, 1, 1), date(2018, 12, 31)),
+        Periodo("validacao", date(2019, 1, 1), date(2022, 12, 31)),
+        Periodo("prova", date(2023, 1, 1), None),
+    )
+}
 
 
 class Recusado(RuntimeError):

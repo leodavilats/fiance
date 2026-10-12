@@ -104,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     calibrar.add_argument(
         "--variacao", type=int, choices=sorted(calibracao.VARIACOES), required=True
     )
-    calibrar.add_argument("--periodo", choices=sorted(PERIODOS), required=True)
+    calibrar.add_argument("--periodo", choices=sorted(calibracao.PERIODOS), required=True)
     calibrar.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
     calibrar.add_argument("--forcar", action="store_true", help="Passa por cima do protocolo")
     comandos.add_parser("relatorio", help="Gera relatorio.html a partir do registro")

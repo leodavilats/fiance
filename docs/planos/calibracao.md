@@ -82,3 +82,31 @@ o que o app pode dizer dele, e vira item no [10-PROBLEMAS](../10-PROBLEMAS.md).
 - **12 meses à frente sobrepostos** inflariam o t sem a correção de Newey-West
 - **Balanço reapresentado:** a base guarda só os números da versão mais recente de cada documento
   (ADR-022). Uma reapresentação posterior entra como se fosse sabida antes — viés pequeno e declarado
+
+## Resultado — 2026-10-12: o veredito não ordena o retorno
+
+Execução 0, o modelo como está, no estudo (vereditos de jan/2011 a dez/2017, 84 meses):
+
+| Grupo | Retorno médio em 12 meses | Ações por mês |
+|---|---|---|
+| Abaixo do preço justo | 4,0% | 2,8 |
+| Dentro | 5,3% | 3,3 |
+| Acima | 3,0% | 48,8 |
+| Sem faixa | — | 38,5 |
+
+- **Não passou em nenhuma das quatro condições.** Abaixo menos acima, nos meses com os dois grupos:
+  −0,7 ponto, t de Newey-West de −0,09. A ordem não aparece (dentro rendeu mais que abaixo). E o
+  grupo abaixo nunca teve 10 ações num mês
+- **Com o juro da época, o modelo chama quase a bolsa inteira de cara.** A taxa de desconto é a
+  Selic média de 10 anos mais 5 pontos — 16% a 19% de 2011 a 2017. Com ela, 9 em cada 10 ações com
+  faixa ficavam acima do preço justo, e as poucas abaixo não renderam mais que as outras
+- **Pelo protocolo, a calibração para aqui.** As variações de prêmio e crescimento só rodariam se o
+  modelo como está passasse; ajustar parâmetro até o resultado aparecer é o que o teto existe para
+  impedir. A validação e a prova seguem lacradas
+- **A primeira execução usou a janela errada** (o estudo da pesquisa de carteira, de 2005), por erro
+  de código; ficou no registro e foi refeita com `--forcar` na janela do protocolo. Como não havia
+  balanço antes de 2010, os números dos dois grupos não mudaram
+
+Registro em `trend-backend/registro_calibracao.jsonl`; mês a mês em
+`trend-backend/resultados/calibracao_0_estudo.json`. O que isso muda no app está em
+[10-PROBLEMAS](../10-PROBLEMAS.md), item A12.
