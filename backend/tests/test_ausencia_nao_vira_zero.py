@@ -109,15 +109,15 @@ class TestCacheVencidoSobrevive:
         monkeypatch.setattr(universal, "_dividends_sync", _nao_deveria_buscar)
         assert asyncio.run(universal.fetch_dividends("XPTO3")) == []
 
-    def test_o_universo_vencido_e_servido_quando_a_brapi_cai(self, cache_real, monkeypatch, caplog):
+    def test_o_universo_vencido_e_servido_quando_a_base_cai(self, cache_real, monkeypatch, caplog):
         cache_mod.set(universe._UNIVERSE_CACHE_KEY, ["PETR4", "VALE3"], -3600)
-        monkeypatch.setattr(universe, "_fetch_brapi_list", list)
+        monkeypatch.setattr(universe, "_ler_lista", list)
 
         with caplog.at_level("WARNING", logger=universe.logger.name):
             tickers = universe.get_universe()
 
         assert tickers == ["PETR4", "VALE3"], (
-            "com a BRAPI fora do ar e o universo vencido há uma hora, a varredura inteira "
+            "com a base fora do ar e o universo vencido há uma hora, a varredura inteira "
             "esvaziava: o Descobrir ficava sem nada por falta de uma lista de tickers"
         )
         idade = re.search(r"vencido há (\d+) s", caplog.text)
@@ -129,14 +129,14 @@ class TestCacheVencidoSobrevive:
         )
 
     def test_sem_universo_em_cache_a_ausencia_se_declara(self, cache_real, monkeypatch, caplog):
-        monkeypatch.setattr(universe, "_fetch_brapi_list", list)
+        monkeypatch.setattr(universe, "_ler_lista", list)
 
         with caplog.at_level("WARNING", logger=universe.logger.name):
             assert universe.get_universe() == []
 
         assert "não há universo em cache" in caplog.text
 
-    def test_com_a_brapi_de_pe_o_universo_vencido_e_substituido(self, cache_real):
+    def test_com_a_base_de_pe_o_universo_vencido_e_substituido(self, cache_real):
         cache_mod.set(universe._UNIVERSE_CACHE_KEY, ["XPTO3"], -3600)
 
         tickers = universe.get_universe()
@@ -147,16 +147,17 @@ class TestCacheVencidoSobrevive:
 
 class TestFalhaDaFonteNaoEListaVazia:
     def test_chamada_que_falhou_nao_devolve_proventos(self, monkeypatch):
-        monkeypatch.setattr(universal, "_brapi_raw", lambda base: {})
-        monkeypatch.setattr(universal, "_ler_raw", lambda base: None)
+        def fora_do_ar(codigo):
+            raise ConnectionError("base de mercado fora do ar")
 
-        assert universal._dividends_brapi("PETR4") is None
+        monkeypatch.setattr(universal.mercado, "ler_proventos", fora_do_ar)
+
+        assert universal._dividends_sync("PETR4") is None
 
     def test_ticker_sem_resultado_e_lista_vazia(self, monkeypatch):
-        monkeypatch.setattr(universal, "_brapi_raw", lambda base: {})
-        monkeypatch.setattr(universal, "_ler_raw", lambda base: {})
+        monkeypatch.setattr(universal.mercado, "ler_proventos", lambda codigo: [])
 
-        assert universal._dividends_brapi("XPTO3") == []
+        assert universal._dividends_sync("XPTO3") == []
 
 
 class TestProventoQueNaoChegou:

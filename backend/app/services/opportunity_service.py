@@ -15,7 +15,7 @@ from app.analysis.fair_price import (
 from app.analysis.score_ruler import is_highlight
 from app.analysis.scoring import score_opportunity
 from app.analysis.sectors import translate_sector
-from app.collectors.universal import prefetch_brapi_raw
+from app.collectors.universal import prefetch
 from app.core import cache
 from app.core.cache_backends import STALE_MARGIN_SECONDS
 from app.core.context import memoize_request
@@ -224,7 +224,7 @@ class OpportunityService:
             universe = sorted(set(await asyncio.to_thread(get_universe)))
             universe_size = len(universe)
 
-            await asyncio.to_thread(prefetch_brapi_raw, universe)
+            await asyncio.to_thread(prefetch, universe)
 
             raws = await asyncio.gather(
                 *[self._fetch_market_record(t) for t in universe],

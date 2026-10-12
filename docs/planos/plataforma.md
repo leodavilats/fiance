@@ -1,13 +1,13 @@
 # Plano — a plataforma de dados, tendência e painel
 
-**Estado:** `[EM CURSO]` — falta a etapa 4 · **Decidido em:** 2026-10-12, pelo autor, a partir de um questionário
+**Estado:** `[IMPLEMENTADO]` · **Decidido em:** 2026-10-12, pelo autor, a partir de um questionário
 
 | Etapa | Estado | Onde está |
 |---|---|---|
 | 1 · Coleta de tudo o que negocia | `[IMPLEMENTADO]` | Ações, FIIs, ETFs, BDRs, PTAX e Tesouro Direto na base, todo dia útil |
 | 2 · Tendência como ranking | `[CONCLUÍDO]` | Teto de 6 variações usado, nenhuma passou: o ranking não informa. A tendência fica como contexto de risco. [Protocolo e resultado](ranking.md) |
 | 3 · Painel organizado | `[IMPLEMENTADO]` | Caminho, coleta, ativos de todas as classes, dólar e Tesouro, ranking e pesquisa |
-| 4 · App sem BRAPI | `[EM CURSO]` | ADR-022 aceita em 2026-10-12, BRAPI sai de vez. Lacunas que o app exigia — P/VP de FII e data de pagamento — preenchidas |
+| 4 · App sem BRAPI | `[IMPLEMENTADO]` | ADR-022 aceita em 2026-10-12. O backend lê `mercado.ativo_hoje`; a BRAPI saiu do código |
 
 A plataforma tem três partes e um consumidor:
 

@@ -197,7 +197,7 @@ Nada cobra dinheiro hoje. A cerca de plano está **desligada** (`ENTITLEMENTS_EN
 
 | Fonte | Estado | Fornece |
 |---|---|---|
-| BRAPI | `[ATUAL]` | Preço, fundamentos, dividendos, histórico de ações, FIIs, BDRs, ETFs |
+| Base de mercado própria (`postgres-mercado`, pelo `data-job/`) | `[ATUAL]` | Preço de fechamento, fundamentos, proventos, histórico de ações, FIIs, BDRs, ETFs. Substituiu a BRAPI em 2026-10-12 ([ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)) |
 | BCB SGS | `[ATUAL]` | CDI, Selic, IPCA |
 | B3 COTAHIST, pelo `data-job/` | `[IMPLEMENTADO]` | Cotação diária bruta do mercado à vista, de 2005 em diante, no `postgres-mercado` de produção, atualizada por cron depois de cada pregão. Nada lê dela ainda — [planos/data-job](planos/data-job.md) |
 | CVM cadastro e FCA, e emissores da B3, pelo `data-job/` | `[IMPLEMENTADO]` | Empresa por CNPJ e a ligação do código de emissor do ISIN ao CNPJ, com o método. Nada lê ainda |
@@ -224,6 +224,7 @@ portão de pregão. Detalhes em [03-ARQUITETURA](03-ARQUITETURA.md).
 | Criptomoedas | antes de 2026-09 | Nenhum vestígio no código |
 | Ações internacionais diretas (fora de BDR) | antes de 2026-09 | — |
 | Finnhub, CoinGecko, Gemini, yfinance, Alpha Vantage | antes de 2026-09 | Restaram BRAPI e BCB |
+| BRAPI | 2026-10-12 | Trocada pela base própria — [ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md) |
 | Otimizador (`optimizer/`, `OptimizationStrategy`) | 2026-09-13 | commit `88c18c5` · [ADR-010](decisoes/ADR-010-remover-otimizador.md) |
 | Diagnóstico de queda por notícia (Google News) | 2026-09-25 | [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md) — a queda virou recorte |
 | Veredito por tendência (`basis = trend`) e os nomes antigos das etiquetas | 2026-09-25 | [ADR-013](decisoes/ADR-013-o-tecnico-nao-decide.md) |

@@ -48,9 +48,7 @@ class Settings(BaseSettings):
 
     billing_webhook_secret: str = DEFAULT_WEBHOOK_SECRET
 
-    brapi_token: str = ""
-
-    brapi_history_range: str = "3mo"
+    mercado_database_url: str = ""
 
     firebase_service_account_json: str = ""
 

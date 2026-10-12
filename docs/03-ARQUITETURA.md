@@ -29,7 +29,7 @@ serviço auxiliar.
 │  cashflow/    mês, cascata, dívida       │
 │  analysis/    preço justo, score         │
 │                                          │
-│  collectors/  BRAPI, BCB, cache, disjuntor│
+│  collectors/  base de mercado, BCB, disj. │
 └───────────────────┬──────────────────────┘
                     │
         ┌───────────▼───────────┐
@@ -162,7 +162,19 @@ paywall) usa `independent_session()` / `outside_request_transaction()`.
 
 ## Dados externos
 
-**Duas fontes, e só duas:** BRAPI (ações, FIIs, BDRs, ETFs) e BCB SGS (CDI, Selic, IPCA).
+**Duas fontes, e só duas:** a base de mercado própria (`postgres-mercado`, ações, FIIs, BDRs,
+ETFs) e BCB SGS (CDI, Selic, IPCA). A base é escrita só pelo `data-job/`, a partir da B3, da CVM,
+do Tesouro e do BCB ([ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)); o backend
+lê a visão `mercado.ativo_hoje` e o histórico com a conexão que o Railway dá, assumindo o papel
+`mercado_leitura` (`collectors/mercado.py`). **A cotação é a do último fechamento**, e o `as_of`
+é o fechamento daquele pregão, às 18h de Brasília — o que a tela carimba como idade.
+
+Os índices (P/L, P/VP, ROE, margem, dívida sobre patrimônio, yield) são calculados no backend a
+partir dos números brutos (`collectors/universal.snapshot_do_pacote`): lucro de 12 meses pelo
+acumulado do ano mais o anual anterior menos o mesmo ponto do ano anterior; valor de mercado pelo
+preço de cada classe vezes a quantidade dela; quantidade em milhares corrigida quando o valor de
+mercado fica abaixo de 2% do patrimônio; unit vale as ações que contém. O Ibovespa é medido pelo
+BOVA11, porque a base não tem o índice.
 
 ### A regra que não se negocia
 
@@ -178,7 +190,7 @@ Em ordem de degradação:
 Constantes de `collectors/rates.py` são o **último** recurso, e o rótulo de fonte (`bcb`,
 `bcb_cache_vencido`, `estimativa`) viaja até a tela.
 
-O universo da varredura segue a mesma ordem (`core/universe.py::get_universe`): com a lista da BRAPI
+O universo da varredura segue a mesma ordem (`core/universe.py::get_universe`): com a base
 fora do ar, serve o universo vencido e loga a idade; só sem nenhum devolve lista vazia, e loga isso.
 A idade fica no log porque a lista não é exibida; o que a tela carimba é a idade da varredura. O
 vencido não é regravado como válido, e dura 72 h depois do vencimento (`STALE_MARGIN_SECONDS`).
@@ -192,12 +204,12 @@ meia hora.
 |---|---|---|
 | Faixa de plausibilidade | Campo absurdo vira `None`; preço absurdo rejeita o snapshot inteiro | `collectors/plausibility.py` |
 | Disjuntor | Aberto, nem tenta; quem chama cai no cache vencido | `collectors/circuit.py` |
-| Coleta em lote | 20 tickers por chamada; ~285 requisições/rodada caíram para ~15 | `collectors/universal.prefetch_brapi_raw` |
+| Leitura em lote | 50 tickers por consulta à base | `collectors/universal.prefetch` |
 | Marcador de inexistente | 6h — tem de durar mais que o ciclo de varredura | idem |
 | Portão de pregão | 10h–18h30 em dia com pregão na B3; fora disso a varredura do universo não vai à rede | `core/pregao.py` |
 
-A cota da BRAPI é de 3.000 requisições por dia. O portão de pregão existe porque reler o fechamento
-de madrugada gasta cota que o pregão precisa. Ele **não** se aplica a: busca de um ativo pedido por
+O dado muda uma vez por dia útil, depois do fechamento. O portão de pregão evita reler a base de
+madrugada sem motivo. Ele **não** se aplica a: busca de um ativo pedido por
 uma pessoa às 22h, ou num feriado; servir cache no fim de semana. A janela termina 1h depois do
 fechamento porque balanço na B3 sai depois do pregão.
 

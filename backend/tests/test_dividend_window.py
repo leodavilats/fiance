@@ -6,7 +6,6 @@ from app.analysis.fair_price import (
     bazin_fair_price,
     compute_fair_price,
 )
-from app.collectors.universal import _sum_dividends_last_12m
 
 REFERENCE = datetime(2026, 7, 1, tzinfo=UTC)
 
@@ -80,19 +79,3 @@ def test_the_personal_ceiling_reflects_the_corrected_average():
     )
 
     assert result.personal_ceiling == bazin_fair_price(avg, 0.06)
-
-
-def test_collector_dy_uses_last_12_months_not_first_12_records():
-    raw = {
-        "dividendsData": {
-            "cashDividends": [
-                {"paymentDate": f"{year}-{month:02d}-15", "rate": 1.0}
-                for year in (2023, 2024, 2025, 2026)
-                for month in (2, 5, 8, 11)
-            ]
-        }
-    }
-
-    total = _sum_dividends_last_12m(raw, reference=REFERENCE)
-
-    assert total == 4.0

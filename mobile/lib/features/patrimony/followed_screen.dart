@@ -108,7 +108,7 @@ class _Outcome extends StatelessWidget {
           method: 'Cada compra vale pela quantidade e pelo preço lançados no razão, e o valor '
               'de hoje pela cotação atual. O Ibovespa é medido do dia da compra mais antiga até '
               'hoje.',
-          source: 'Seus lançamentos; cotação e Ibovespa da BRAPI.',
+          source: 'Seus lançamentos; cotação da B3 e Ibovespa pelo BOVA11.',
           limitation: 'Não entram proventos nem custos. Compra sem cotação agora fica fora do '
               'total, e compra apagada do razão sai daqui.',
         ),

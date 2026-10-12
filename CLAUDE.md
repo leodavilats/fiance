@@ -132,16 +132,18 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 
 ### Dados externos
 
-- **Fontes: BRAPI e BCB SGS.** Só essas duas.
+- **Fonte de mercado é a base própria** (`postgres-mercado`, escrita só pelo `data-job/`), e juro
+  é BCB SGS. O backend só lê, com o papel `mercado_leitura`. Nenhuma API de mercado paga.
 - **O sistema não inventa dado.** Fonte fora do ar degrada em ordem: cache válido → cache vencido com
   idade visível → ausência declarada. **Falha de rede não vira ausência.**
+- **Rendimento estimado pela CVM (`cvm_estimado`) não chega ao app**: é dado de pesquisa.
 - **Dado externo passa por faixa de plausibilidade.** Campo absurdo vira `None`; preço absurdo
   rejeita o snapshot.
 - **Fonte tem disjuntor.** Aberto, nem tenta.
 - **`CACHE_BACKEND` errado falha alto.** Cair em silêncio para cache por nó faz a mesma pessoa ver
   preços diferentes.
-- **A cota se gasta no pregão** (`core/pregao.py`, 10h–18h30 nos dias de pregão da B3). O portão vale para a varredura
-  do universo, **não** para busca de um ativo pedido por alguém.
+- **A varredura do universo roda no pregão** (`core/pregao.py`, 10h–18h30 nos dias de pregão da B3).
+  O portão vale para a varredura, **não** para busca de um ativo pedido por alguém.
 
 ### API e dados
 

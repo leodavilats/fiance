@@ -4,18 +4,16 @@ import asyncio
 import logging
 import re
 import threading
-import time
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
+from datetime import time as hora
+from zoneinfo import ZoneInfo
 
-import httpx
-
-from app.collectors import circuit, plausibility
+from app.collectors import circuit, mercado, plausibility
 from app.core import cache
-from app.core.config import get_settings
 from app.core.observability import record_external_call
 from app.core.pregao import em_pregao
-from app.core.universe import get_sector_map, get_type_map
+from app.core.universe import get_type_map
 from app.models.enums import AssetType
 
 logger = logging.getLogger(__name__)
@@ -92,9 +90,6 @@ _BDR = re.compile(rf"^{_ROOT}3\d$")
 _ENDS_11 = re.compile(rf"^{_ROOT}11$")
 _BR_STOCK = re.compile(rf"^{_ROOT}\d{{1,2}}$")
 
-_BRAPI_BASE = "https://brapi.dev/api"
-
-
 _SUBTYPE_TO_ASSET_TYPE = {
     "stock": AssetType.br_stock,
     "fii": AssetType.fii,
@@ -134,8 +129,6 @@ def _base_symbol(symbol: str) -> str:
     s = symbol.strip().upper()
     if s.endswith(".SA"):
         return s[:-3]
-    if "-USD" in s or "-BRL" in s:
-        return s.split("-")[0]
     return s
 
 
@@ -162,7 +155,7 @@ class AssetSnapshot:
 
     change_percent_day: float | None = None
     as_of: float = 0.0
-    source: str = "brapi"
+    source: str = "b3"
     net_income_history: list[float | None] | None = None
     equity_history: list[float | None] | None = None
     net_income_ttm: float | None = None
@@ -171,177 +164,188 @@ class AssetSnapshot:
         return self.__dict__.copy()
 
 
-def _safe_float(v) -> float | None:
-    try:
-        return float(v) if v is not None else None
-    except (ValueError, TypeError):
+def _pct(numerador: float | None, denominador: float | None) -> float | None:
+    if numerador is None or denominador is None or denominador <= 0:
         return None
+    return round(numerador / denominador * 100.0, 4)
 
 
-def _ratio_to_pct(v) -> float | None:
-    try:
-        if v is None:
-            return None
-        return round(float(v) * 100.0, 4)
-    except (ValueError, TypeError):
+def _ultima_versao(linhas: list[dict]) -> dict[tuple[str, str], dict]:
+    escolhidas: dict[tuple[str, str], dict] = {}
+    for linha in sorted(linhas, key=lambda x: x["versao"]):
+        escolhidas[(linha["tipo"], linha["data_referencia"])] = linha
+    return escolhidas
+
+
+def _acumulado_por_fim(resultados: list[dict]) -> dict[str, dict]:
+    por_fim: dict[str, dict] = {}
+    for linha in sorted(_ultima_versao(resultados).values(), key=lambda x: x["tipo"] != "DFP"):
+        por_fim.setdefault(linha["fim_exercicio"], linha)
+    return por_fim
+
+
+def _doze_meses(por_fim: dict[str, dict], campo: str) -> float | None:
+    if not por_fim:
         return None
-
-
-def _estatistica(raw: dict, chave: str):
-    modulo = raw.get("defaultKeyStatistics")
-    if isinstance(modulo, dict) and modulo.get(chave) is not None:
-        return modulo[chave]
-    return raw.get(chave)
-
-
-def _exercicios(raw: dict, modulo: str) -> list[dict]:
-    bruto = raw.get(modulo)
-    if not isinstance(bruto, list):
-        return []
-    anos = [e for e in bruto if isinstance(e, dict) and e.get("endDate")]
-    return sorted(anos, key=lambda e: str(e["endDate"]), reverse=True)
-
-
-def _razao_pct(numerador: float | None, patrimonio: float | None) -> float | None:
-    if numerador is None or patrimonio is None or patrimonio <= 0:
+    fim = max(por_fim)
+    atual = por_fim[fim].get(campo)
+    if atual is None:
         return None
-    return round(numerador / patrimonio * 100.0, 4)
+    if fim[5:] == "12-31":
+        return atual
+    ano = int(fim[:4])
+    anual = (por_fim.get(f"{ano - 1}-12-31") or {}).get(campo)
+    mesmo_ponto = (por_fim.get(f"{ano - 1}{fim[4:]}") or {}).get(campo)
+    if anual is None or mesmo_ponto is None:
+        return None
+    return atual + anual - mesmo_ponto
 
-
-_CHAVES_DE_LUCRO = (
-    "netIncome",
-    "netIncomeApplicableToCommonShares",
-    "netIncomeFromContinuingOps",
-)
 
 _EXERCICIOS_NA_SERIE = 5
+# Valor de mercado abaixo de 2% do patrimônio é quantidade declarada em milhares (Itaú, Taesa).
+_MERCADO_MINIMO_SOBRE_PATRIMONIO = 0.02
 
 
-def _lucro(resultado: dict) -> float | None:
-    for chave in _CHAVES_DE_LUCRO:
-        valor = _safe_float(resultado.get(chave))
-        if valor is not None:
-            return valor
-    return None
-
-
-def _roe_do_balanco(raw: dict) -> float | None:
-    balancos = _exercicios(raw, "balanceSheetHistory")
-    resultados = _exercicios(raw, "incomeStatementHistory")
-    if not balancos or not resultados:
+def _mais_negociado(irmaos: list[dict], prefixo: str) -> float | None:
+    candidatos = [i for i in irmaos if (i["classe"] or "").startswith(prefixo) and i["preco"]]
+    if not candidatos:
         return None
-
-    if balancos[0]["endDate"] != resultados[0]["endDate"]:
-        return None
-
-    return _razao_pct(
-        _lucro(resultados[0]),
-        _safe_float(balancos[0].get("shareholdersEquity")),
-    )
+    return max(candidatos, key=lambda i: i["volume_medio"] or 0)["preco"]
 
 
-def _series_anuais(raw: dict) -> tuple[list[float | None] | None, list[float | None] | None]:
-    resultados = [
-        r for r in _exercicios(raw, "incomeStatementHistory") if r.get("type", "yearly") == "yearly"
-    ][:_EXERCICIOS_NA_SERIE]
-    if not resultados:
-        return None, None
-
-    patrimonio_por_data = {
-        str(b["endDate"]): _safe_float(b.get("shareholdersEquity"))
-        for b in _exercicios(raw, "balanceSheetHistory")
+def _fundamentos(pacote: dict) -> dict:
+    ativo = pacote["ativo"]
+    por_fim = _acumulado_por_fim(pacote["resultados"])
+    balancos = {
+        linha["data_referencia"]: linha for linha in _ultima_versao(pacote["balancos"]).values()
     }
-    lucros = [_lucro(r) for r in resultados]
-    patrimonios = [patrimonio_por_data.get(str(r["endDate"])) for r in resultados]
-    return lucros, patrimonios
+    ultimo_balanco = balancos[max(balancos)] if balancos else {}
+    patrimonio = ultimo_balanco.get("patrimonio_controladores")
+
+    lucro_12m = _doze_meses(por_fim, "lucro_controladores")
+    receita_12m = _doze_meses(por_fim, "receita")
+    anuais = sorted((f for f in por_fim if f[5:] == "12-31"), reverse=True)
+    lucros = [por_fim[f].get("lucro_controladores") for f in anuais[:_EXERCICIOS_NA_SERIE]]
+    patrimonios = [
+        (balancos.get(f) or {}).get("patrimonio_controladores")
+        for f in anuais[:_EXERCICIOS_NA_SERIE]
+    ]
+    receitas = [por_fim[f].get("receita") for f in anuais[:2]]
+    crescimento = None
+    if len(receitas) == 2 and receitas[0] is not None and receitas[1] and receitas[1] > 0:
+        crescimento = round((receitas[0] / receitas[1] - 1) * 100.0, 4)
+
+    ordinarias = ativo.get("acoes_ordinarias") or 0
+    preferenciais = ativo.get("acoes_preferenciais") or 0
+    irmaos = pacote["irmaos"]
+    preco_on = _mais_negociado(irmaos, "ON")
+    preco_pn = _mais_negociado(irmaos, "PN")
+    referencia = (
+        preco_on
+        if preferenciais == 0 or (preco_on and ordinarias >= preferenciais)
+        else preco_pn or preco_on
+    )
+    preco_on = preco_on or referencia
+    preco_pn = preco_pn or referencia
+    valor_de_mercado = None
+    if referencia and ordinarias + preferenciais > 0:
+        valor_de_mercado = (preco_on or 0) * ordinarias + (preco_pn or 0) * preferenciais
+        if (
+            patrimonio
+            and patrimonio > 0
+            and valor_de_mercado / patrimonio < (_MERCADO_MINIMO_SOBRE_PATRIMONIO)
+        ):
+            ordinarias, preferenciais = ordinarias * 1000, preferenciais * 1000
+            valor_de_mercado *= 1000
+
+    acoes = ordinarias + preferenciais
+    por_papel = None
+    if acoes > 0 and referencia:
+        por_papel = 1.0 if ativo["classe"] != "UNT" else round(ativo["preco"] / referencia)
+    lpa = lucro_12m / acoes * por_papel if lucro_12m is not None and por_papel else None
+    vpa = patrimonio / acoes * por_papel if patrimonio is not None and por_papel else None
+
+    return {
+        "market_cap": valor_de_mercado,
+        "pe_ratio": round(ativo["preco"] / lpa, 4) if lpa else None,
+        "pb_ratio": round(ativo["preco"] / vpa, 4) if vpa and vpa > 0 else None,
+        "eps": lpa,
+        "book_value": vpa,
+        "roe": _pct(lucro_12m, patrimonio),
+        "debt_to_equity": _pct(ultimo_balanco.get("divida_bruta"), patrimonio),
+        "profit_margin": _pct(lucro_12m, receita_12m) if receita_12m else None,
+        "revenue_growth": crescimento,
+        "net_income_history": lucros or None,
+        "equity_history": patrimonios or None,
+        "net_income_ttm": lucro_12m,
+    }
 
 
-_DIVIDA_FINANCEIRA = (
-    "loansAndFinancing",
-    "debentures",
-    "leaseFinancing",
-    "longTermLoansAndFinancing",
-    "longTermDebentures",
-    "longTermLeaseFinancing",
-)
+_BRT = ZoneInfo("America/Sao_Paulo")
+_FECHAMENTO = hora(18, 0)
 
 
-def _divida_financeira(balanco: dict) -> float | None:
-    parcelas = [_safe_float(balanco.get(chave)) for chave in _DIVIDA_FINANCEIRA]
-    presentes = [p for p in parcelas if p is not None]
-    return sum(presentes) if presentes else None
+def _instante_do_fechamento(dia: str) -> float:
+    return datetime.combine(datetime.fromisoformat(dia).date(), _FECHAMENTO, _BRT).timestamp()
 
 
-def _endividamento_do_balanco(raw: dict) -> float | None:
-    balancos = _exercicios(raw, "balanceSheetHistory")
-    if not balancos:
+def snapshot_do_pacote(pacote: dict, symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
+    ativo = pacote["ativo"]
+    preco = ativo.get("preco")
+    if not preco:
         return None
 
-    return _razao_pct(
-        _divida_financeira(balancos[0]),
-        _safe_float(balancos[0].get("shareholdersEquity")),
+    numeros = {
+        "price": preco,
+        "market_cap": None,
+        "pe_ratio": None,
+        "pb_ratio": None,
+        "eps": None,
+        "book_value": None,
+        "roe": None,
+        "dividend_yield": (
+            round(ativo["proventos_12m"] / preco * 100, 2) if ativo.get("proventos_12m") else None
+        ),
+        "debt_to_equity": None,
+        "profit_margin": None,
+        "revenue_growth": None,
+        "fifty_two_week_high": ativo.get("maxima_52s"),
+        "fifty_two_week_low": ativo.get("minima_52s"),
+        "change_percent_day": (
+            round((preco / ativo["preco_anterior"] - 1) * 100, 4)
+            if ativo.get("preco_anterior")
+            else None
+        ),
+    }
+    series = {"net_income_history": None, "equity_history": None, "net_income_ttm": None}
+    if ativo["tipo"] == "stock":
+        fundamentos = _fundamentos(pacote)
+        for chave in series:
+            series[chave] = fundamentos.pop(chave)
+        numeros.update(fundamentos)
+    elif ativo["tipo"] == "fii" and ativo.get("valor_patrimonial_cota"):
+        numeros["book_value"] = ativo["valor_patrimonial_cota"]
+        numeros["pb_ratio"] = round(preco / ativo["valor_patrimonial_cota"], 4)
+
+    numeros, veredito = plausibility.screen(numeros, symbol=symbol.upper())
+    if not veredito.accepted:
+        record_external_call("mercado.plausibility", ok=False)
+        return None
+
+    return AssetSnapshot(
+        symbol=symbol.upper(),
+        as_of=_instante_do_fechamento(ativo["data"]),
+        source="b3",
+        asset_type=asset_type,
+        name=ativo.get("nome") or symbol.upper(),
+        sector=ativo.get("setor"),
+        currency="BRL",
+        **series,
+        **numeros,
     )
 
 
-def _crescimento_de_receita(raw: dict) -> float | None:
-    resultados = _exercicios(raw, "incomeStatementHistory")
-    if len(resultados) < 2:
-        return None
-
-    atual = _safe_float(resultados[0].get("totalRevenue"))
-    anterior = _safe_float(resultados[1].get("totalRevenue"))
-    if atual is None or anterior is None or anterior <= 0:
-        return None
-
-    return round((atual / anterior - 1) * 100.0, 4)
-
-
-def _cash_dividends(raw: dict) -> list[dict]:
-    return (raw.get("dividendsData") or {}).get("cashDividends") or []
-
-
-def _dividend_date(d: dict) -> str | None:
-    raw_date = d.get("paymentDate") or d.get("approvedOn")
-    return str(raw_date)[:10] if raw_date else None
-
-
-def _dividend_ex_date(d: dict) -> str | None:
-    raw_date = d.get("lastDatePrior")
-    return str(raw_date)[:10] if raw_date else None
-
-
-def _sum_dividends_last_12m(raw: dict, reference: datetime | None = None) -> float:
-    today = reference or datetime.now(UTC)
-    cutoff = (today - timedelta(days=365)).strftime("%Y-%m-%d")
-    horizon = today.strftime("%Y-%m-%d")
-
-    total = 0.0
-    for d in _cash_dividends(raw):
-        date_str = _dividend_date(d)
-        if date_str is None or date_str < cutoff or date_str > horizon:
-            continue
-        total += _safe_float(d.get("rate")) or 0.0
-    return total
-
-
-def _calculate_dividend_yield(dividends_12m: float, current_price: float) -> float | None:
-    try:
-        if current_price <= 0 or dividends_12m < 0:
-            return None
-        return round((dividends_12m / current_price) * 100, 2)
-    except (ValueError, TypeError, ZeroDivisionError):
-        return None
-
-
-def _raw_ttl() -> int:
-    return fund_ttl()
-
-
-_FALLBACK_HISTORY_RANGE = "3mo"
-
-_BRAPI_PROVIDER = "brapi"
-
-_BRAPI_LOTE = 20
+_PROVEDOR = "mercado"
 
 _AUSENTE_TTL = 6 * 3600
 
@@ -351,28 +355,17 @@ _prefetch_lock = threading.Lock()
 
 _PREFETCH_ESPERA = 5.0
 
+_LOTE = 50
+
 
 def _raw_key(base: str) -> str:
-    return f"brapi_raw:{base}"
+    return f"mercado_raw:{base}"
 
 
-_MODULOS = "defaultKeyStatistics,balanceSheetHistory,incomeStatementHistory"
-
-
-def _brapi_params(range_param: str) -> dict:
-    settings = get_settings()
-    return {
-        "token": settings.brapi_token,
-        "fundamental": "true",
-        "dividends": "true",
-        "range": range_param,
-        "interval": "1d",
-        "modules": _MODULOS,
-    }
-
-
-def _guardar_raw(base: str, r: dict | None) -> None:
-    cache.set(_raw_key(base), r if r else _AUSENTE, _raw_ttl() if r else _AUSENTE_TTL)
+def _guardar_raw(base: str, pacote: dict | None) -> None:
+    cache.set(
+        _raw_key(base), pacote if pacote else _AUSENTE, fund_ttl() if pacote else _AUSENTE_TTL
+    )
 
 
 def _ler_raw(base: str) -> dict | None:
@@ -382,266 +375,111 @@ def _ler_raw(base: str) -> dict | None:
     return {} if cached.get("__ausente__") else cached
 
 
-def prefetch_brapi_raw(symbols: list[str]) -> int:
+def _buscar(bases: list[str]) -> bool:
+    try:
+        pacotes = mercado.ler_pacotes(bases)
+        record_external_call(_PROVEDOR, ok=True)
+        circuit.record_success(_PROVEDOR)
+    except Exception as e:
+        record_external_call(_PROVEDOR, ok=False)
+        circuit.record_failure(_PROVEDOR, type(e).__name__)
+        logger.warning("A base de mercado falhou para %d tickers: %s", len(bases), e)
+        return False
+    for base in bases:
+        _guardar_raw(base, pacotes.get(base))
+    return True
+
+
+def prefetch(symbols: list[str]) -> int:
     bases = list(dict.fromkeys(_base_symbol(s) for s in symbols if s))
     faltantes = [b for b in bases if _ler_raw(b) is None]
-    if not faltantes:
-        return 0
-
-    if not circuit.allows(_BRAPI_PROVIDER):
+    if not faltantes or not circuit.allows(_PROVEDOR):
         return 0
 
     exclusivo = _prefetch_lock.acquire(timeout=_PREFETCH_ESPERA)
     pedidos = 0
     try:
-        for inicio in range(0, len(faltantes), _BRAPI_LOTE):
-            lote = [b for b in faltantes[inicio : inicio + _BRAPI_LOTE] if _ler_raw(b) is None]
+        for inicio in range(0, len(faltantes), _LOTE):
+            lote = [b for b in faltantes[inicio : inicio + _LOTE] if _ler_raw(b) is None]
             if not lote:
                 continue
-            if not circuit.allows(_BRAPI_PROVIDER):
+            if not circuit.allows(_PROVEDOR):
                 break
             pedidos += 1
-            if not _buscar_lote(lote):
+            if not _buscar(lote):
                 break
     finally:
         if exclusivo:
             _prefetch_lock.release()
-
     return pedidos
 
 
-def _buscar_lote(lote: list[str]) -> bool:
-    settings = get_settings()
-    try:
-        resp = httpx.get(
-            f"{_BRAPI_BASE}/quote/{','.join(lote)}",
-            params=_brapi_params(settings.brapi_history_range),
-            timeout=30,
-        )
-        resp.raise_for_status()
-        record_external_call("brapi", ok=True)
-        circuit.record_success(_BRAPI_PROVIDER)
-    except Exception as e:
-        record_external_call("brapi", ok=False)
-        circuit.record_failure(_BRAPI_PROVIDER, type(e).__name__)
-        logger.warning("brapi falhou no lote de %d tickers: %s", len(lote), e)
-        return False
-
-    results = resp.json().get("results") or []
-    vistos = set()
-    for r in results:
-        base = _base_symbol(str(r.get("symbol") or ""))
-        if not base:
-            continue
-        vistos.add(base)
-        _guardar_raw(base, r)
-
-    for base in lote:
-        if base not in vistos:
-            _guardar_raw(base, None)
-
-    return True
-
-
-def _brapi_raw(base: str) -> dict:
+def _pacote(base: str) -> dict:
     cached = _ler_raw(base)
     if cached is not None:
         return cached
-
-    if not circuit.allows(_BRAPI_PROVIDER):
+    if not circuit.allows(_PROVEDOR) or not _buscar([base]):
         return {}
-
-    settings = get_settings()
-    ranges = [settings.brapi_history_range]
-    if _FALLBACK_HISTORY_RANGE not in ranges:
-        ranges.append(_FALLBACK_HISTORY_RANGE)
-
-    r: dict | None = None
-    for range_param in ranges:
-        try:
-            resp = httpx.get(
-                f"{_BRAPI_BASE}/quote/{base}",
-                params=_brapi_params(range_param),
-                timeout=15,
-            )
-            resp.raise_for_status()
-            record_external_call("brapi", ok=True)
-            circuit.record_success(_BRAPI_PROVIDER)
-            results = resp.json().get("results") or []
-            if not results:
-                _guardar_raw(base, None)
-                return {}
-            r = results[0]
-            break
-        except httpx.HTTPStatusError as e:
-            record_external_call("brapi", ok=False)
-            if e.response.status_code == 400 and range_param != ranges[-1]:
-                logger.info(
-                    "brapi rejeitou range=%s para %s; degradando para %s",
-                    range_param,
-                    base,
-                    _FALLBACK_HISTORY_RANGE,
-                )
-                continue
-            circuit.record_failure(_BRAPI_PROVIDER, f"HTTP {e.response.status_code}")
-            logger.warning("brapi falhou %s: %s", base, e)
-            return {}
-        except Exception as e:
-            record_external_call("brapi", ok=False)
-            circuit.record_failure(_BRAPI_PROVIDER, type(e).__name__)
-            logger.warning("brapi falhou %s: %s", base, e)
-            return {}
-
-    if r is None:
-        return {}
-
-    _guardar_raw(base, r)
-    return r
-
-
-def _fetch_brapi(symbol: str, asset_type: AssetType) -> AssetSnapshot | None:
-    base = _base_symbol(symbol)
-    r = _brapi_raw(base)
-    if not r:
-        return None
-
-    price = _safe_float(r.get("regularMarketPrice"))
-    if not price:
-        return None
-
-    t = asset_type
-    name = r.get("longName") or r.get("shortName") or base
-    if t == "fii" and any(tok in name.upper() for tok in ("UNT", "UNIT", "UNITS")):
-        t = "br_stock"
-
-    dividend_yield = None
-    try:
-        total_12m = _sum_dividends_last_12m(r)
-        if total_12m > 0:
-            dividend_yield = _calculate_dividend_yield(total_12m, price)
-    except Exception:
-        logger.debug("Falha ao calcular DY de %s", base, exc_info=True)
-
-    sector = r.get("sector") or get_sector_map().get(base)
-
-    roe_lido = _ratio_to_pct(_estatistica(r, "returnOnEquity"))
-    crescimento_lido = _ratio_to_pct(_estatistica(r, "revenueGrowth"))
-    endividamento_lido = _ratio_to_pct(_estatistica(r, "debtToEquity"))
-
-    numeros = {
-        "price": price,
-        "market_cap": _safe_float(r.get("marketCap")),
-        "pe_ratio": _safe_float(r.get("priceEarnings")),
-        "pb_ratio": _safe_float(_estatistica(r, "priceToBook") or r.get("pvp")),
-        "eps": _safe_float(r.get("earningsPerShare")),
-        "book_value": _safe_float(_estatistica(r, "bookValue")),
-        "roe": roe_lido if roe_lido is not None else _roe_do_balanco(r),
-        "dividend_yield": dividend_yield,
-        "debt_to_equity": (
-            endividamento_lido if endividamento_lido is not None else _endividamento_do_balanco(r)
-        ),
-        "profit_margin": _ratio_to_pct(_estatistica(r, "profitMargins")),
-        "revenue_growth": (
-            crescimento_lido if crescimento_lido is not None else _crescimento_de_receita(r)
-        ),
-        "fifty_two_week_high": _safe_float(r.get("fiftyTwoWeekHigh")),
-        "fifty_two_week_low": _safe_float(r.get("fiftyTwoWeekLow")),
-        "change_percent_day": _safe_float(r.get("regularMarketChangePercent")),
-    }
-
-    numeros, veredito = plausibility.screen(numeros, symbol=symbol.upper())
-    if not veredito.accepted:
-        record_external_call("brapi.plausibility", ok=False)
-        return None
-
-    lucros_anuais, patrimonios_anuais = _series_anuais(r)
-
-    return AssetSnapshot(
-        symbol=symbol.upper(),
-        as_of=time.time(),
-        source="brapi",
-        asset_type=t,
-        name=name,
-        sector=sector,
-        currency=r.get("currency") or "BRL",
-        net_income_history=lucros_anuais,
-        equity_history=patrimonios_anuais,
-        net_income_ttm=_safe_float(_estatistica(r, "netIncomeToCommon")),
-        **numeros,
-    )
-
-
-def _history_brapi(symbol: str, period: str = "1y") -> dict[str, float]:
-    base = _base_symbol(symbol)
-    r = _brapi_raw(base)
-    prices = r.get("historicalDataPrice") or []
-
-    days_map = {
-        "1d": 1,
-        "5d": 5,
-        "1mo": 31,
-        "3mo": 92,
-        "6mo": 182,
-        "1y": 365,
-        "2y": 730,
-        "max": 10_000,
-    }
-    max_days = days_map.get(period, 365)
-    prices = prices[-max_days:]
-
-    out: dict[str, float] = {}
-    for p in prices:
-        close = _safe_float(p.get("close"))
-        ts = p.get("date")
-        if close is None or ts is None:
-            continue
-        try:
-            from datetime import datetime
-
-            day = datetime.fromtimestamp(int(ts), tz=UTC).strftime("%Y-%m-%d")
-            out[day] = close
-        except Exception:
-            continue
-    return out
-
-
-def _dividends_brapi(symbol: str) -> list[dict] | None:
-    base = _base_symbol(symbol)
-    r = _brapi_raw(base)
-    if not r:
-        return None if _ler_raw(base) is None else []
-
-    out: list[dict] = []
-    for d in _cash_dividends(r):
-        date = _dividend_date(d)
-        value = _safe_float(d.get("rate"))
-        if date and value is not None:
-            out.append({"date": date, "value": value, "ex_date": _dividend_ex_date(d)})
-    return sorted(out, key=lambda x: x["date"])
+    return _ler_raw(base) or {}
 
 
 def _fetch_sync(symbol: str, asset_type: AssetType | None = None) -> AssetSnapshot | None:
     t = asset_type or detect_type(symbol)
+    pacote = _pacote(_base_symbol(symbol))
+    if not pacote:
+        return None
+    return snapshot_do_pacote(pacote, symbol, t)
 
-    if t in ("br_stock", "fii", "bdr", "etf"):
-        return _fetch_brapi(symbol, t)
-    return None
+
+_DIAS_DO_PERIODO = {
+    "1d": 1,
+    "5d": 7,
+    "1mo": 31,
+    "3mo": 92,
+    "6mo": 183,
+    "1y": 366,
+    "2y": 731,
+    "max": 10_000,
+}
 
 
 def _history_sync(symbol: str, period: str = "1y") -> dict[str, float]:
-    t = detect_type(symbol)
-
-    if t in ("br_stock", "fii", "bdr", "etf"):
-        return _history_brapi(symbol, period)
-    return {}
+    detect_type(symbol)
+    try:
+        serie = mercado.ler_historico(_base_symbol(symbol), _DIAS_DO_PERIODO.get(period, 366))
+        record_external_call(_PROVEDOR, ok=True)
+        return serie
+    except Exception as e:
+        record_external_call(_PROVEDOR, ok=False)
+        logger.warning("Histórico de %s não saiu da base de mercado: %s", symbol, e)
+        return {}
 
 
 def _dividends_sync(symbol: str) -> list[dict] | None:
-    t = detect_type(symbol)
+    detect_type(symbol)
+    try:
+        linhas = mercado.ler_proventos(_base_symbol(symbol))
+        record_external_call(_PROVEDOR, ok=True)
+    except Exception as e:
+        record_external_call(_PROVEDOR, ok=False)
+        logger.warning("Proventos de %s não saíram da base de mercado: %s", symbol, e)
+        return None
+    return proventos_do_app(linhas)
 
-    if t in ("br_stock", "fii", "bdr", "etf"):
-        return _dividends_brapi(symbol)
-    return []
+
+def proventos_do_app(linhas: list[dict]) -> list[dict]:
+    return sorted(
+        (
+            {
+                "date": linha["data_pagamento"] or linha["data_com"],
+                "value": linha["valor"],
+                "ex_date": linha["data_com"],
+            }
+            for linha in linhas
+            if linha["valor"] is not None
+        ),
+        key=lambda d: d["date"],
+    )
 
 
 async def fetch_asset(symbol: str, asset_type: AssetType | None = None) -> AssetSnapshot | None:
@@ -672,7 +510,7 @@ async def fetch_asset(symbol: str, asset_type: AssetType | None = None) -> Asset
 async def fetch_many(symbols: list[str]) -> list[AssetSnapshot]:
     frios = [s for s in symbols if cache.get(f"uasset:{s.upper()}") is None]
     if frios:
-        await asyncio.to_thread(prefetch_brapi_raw, frios)
+        await asyncio.to_thread(prefetch, frios)
 
     tasks = [fetch_asset(s) for s in symbols]
     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -701,54 +539,21 @@ async def fetch_history_universal(symbol: str, period: str = "1y") -> dict[str, 
     return series
 
 
-_IBOV_SYMBOL = "^BVSP"
-
-
-def _fetch_ibov_history_sync(days: int) -> dict[str, float]:
-    settings = get_settings()
-    range_param = "1y" if days > 90 else "3mo"
-    try:
-        resp = httpx.get(
-            f"{_BRAPI_BASE}/quote/{_IBOV_SYMBOL}",
-            params={
-                "token": settings.brapi_token,
-                "range": range_param,
-                "interval": "1d",
-            },
-            timeout=15,
-        )
-        resp.raise_for_status()
-        results = resp.json().get("results") or []
-        if not results:
-            return {}
-        prices = results[0].get("historicalDataPrice") or []
-    except Exception as e:
-        logger.warning("brapi falhou ao buscar histórico do Ibovespa: %s", e)
-        return {}
-
-    out: dict[str, float] = {}
-    for p in prices:
-        close = _safe_float(p.get("close"))
-        ts = p.get("date")
-        if close is None or ts is None:
-            continue
-        try:
-            from datetime import datetime
-
-            day = datetime.fromtimestamp(int(ts), tz=UTC).strftime("%Y-%m-%d")
-            out[day] = close
-        except Exception:
-            continue
-    return out
+# A base não tem o índice: o Ibovespa é medido pelo BOVA11, que o replica.
+_IBOV_PROXY = "BOVA11"
 
 
 async def fetch_ibov_history(days: int = 365) -> dict[str, float]:
-    ck = f"uhist:{_IBOV_SYMBOL}:{days}"
+    ck = f"uhist:ibov:{days}"
     cached = cache.get(ck)
     if cached is not None:
         return cached
 
-    series = await asyncio.to_thread(_fetch_ibov_history_sync, days)
+    try:
+        series = await asyncio.to_thread(mercado.ler_historico, _IBOV_PROXY, days)
+    except Exception as e:
+        logger.warning("Histórico do Ibovespa não saiu da base de mercado: %s", e)
+        return {}
     cache.set(ck, series, HIST_TTL)
     return series
 

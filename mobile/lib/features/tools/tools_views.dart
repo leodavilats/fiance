@@ -738,7 +738,7 @@ class _CompareTable extends StatelessWidget {
           method: 'O preço justo é uma faixa: a conta principal para o tipo de ativo, da '
               'premissa pessimista à otimista. A margem de segurança é a distância do preço '
               'de hoje até a borda da faixa.',
-          source: 'Fundamentos e cotações da BRAPI; juro do Banco Central.',
+          source: 'Cotações da B3 e balanços da CVM, do último fechamento; juro do Banco Central.',
           asOf: idade.isEmpty ? null : 'Cotação mais antiga lida $idade.',
           limitation: 'É leitura do sistema sobre dado público, não recomendação de compra.',
         ),

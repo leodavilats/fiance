@@ -75,74 +75,74 @@ class TestPlausibilidade:
 
 class TestDisjuntor:
     def test_fechado_por_padrao(self):
-        assert circuit.allows("brapi") is True
-        assert circuit.status("brapi")["state"] == "fechado"
+        assert circuit.allows("mercado") is True
+        assert circuit.status("mercado")["state"] == "fechado"
 
     def test_abre_apos_falhas_seguidas(self):
         for _ in range(circuit.FAILURE_THRESHOLD):
-            circuit.record_failure("brapi", "timeout")
+            circuit.record_failure("mercado", "timeout")
 
-        assert circuit.allows("brapi") is False
-        assert circuit.status("brapi")["state"] == "aberto"
+        assert circuit.allows("mercado") is False
+        assert circuit.status("mercado")["state"] == "aberto"
 
     def test_sucesso_no_meio_zera_a_contagem(self):
         for _ in range(circuit.FAILURE_THRESHOLD - 1):
-            circuit.record_failure("brapi", "timeout")
-        circuit.record_success("brapi")
-        circuit.record_failure("brapi", "timeout")
+            circuit.record_failure("mercado", "timeout")
+        circuit.record_success("mercado")
+        circuit.record_failure("mercado", "timeout")
 
-        assert circuit.allows("brapi") is True
+        assert circuit.allows("mercado") is True
 
     def test_depois_do_descanso_deixa_uma_tentativa_passar(self):
         agora = 1_000.0
         for _ in range(circuit.FAILURE_THRESHOLD):
-            circuit.record_failure("brapi", "timeout", now=agora)
+            circuit.record_failure("mercado", "timeout", now=agora)
 
-        assert circuit.allows("brapi", now=agora + 1) is False
-        assert circuit.allows("brapi", now=agora + circuit.OPEN_SECONDS + 1) is True
-        assert circuit.status("brapi", now=agora + circuit.OPEN_SECONDS + 1)["state"] == (
+        assert circuit.allows("mercado", now=agora + 1) is False
+        assert circuit.allows("mercado", now=agora + circuit.OPEN_SECONDS + 1) is True
+        assert circuit.status("mercado", now=agora + circuit.OPEN_SECONDS + 1)["state"] == (
             "meia-abertura"
         )
 
     def test_uma_resposta_boa_isolada_nao_reabre_a_torneira(self):
         agora = 1_000.0
         for _ in range(circuit.FAILURE_THRESHOLD):
-            circuit.record_failure("brapi", "timeout", now=agora)
+            circuit.record_failure("mercado", "timeout", now=agora)
 
-        circuit.record_success("brapi")
+        circuit.record_success("mercado")
 
-        assert circuit.status("brapi", now=agora + 1)["state"] == "aberto"
+        assert circuit.status("mercado", now=agora + 1)["state"] == "aberto"
 
     def test_sucessos_suficientes_fecham_o_circuito(self):
         for _ in range(circuit.FAILURE_THRESHOLD):
-            circuit.record_failure("brapi", "timeout")
+            circuit.record_failure("mercado", "timeout")
         for _ in range(circuit.RECOVERY_SUCCESSES):
-            circuit.record_success("brapi")
+            circuit.record_success("mercado")
 
-        assert circuit.status("brapi")["state"] == "fechado"
-        assert circuit.allows("brapi") is True
+        assert circuit.status("mercado")["state"] == "fechado"
+        assert circuit.allows("mercado") is True
 
     def test_falhar_na_meia_abertura_recomeca_o_descanso(self):
         agora = 1_000.0
         for _ in range(circuit.FAILURE_THRESHOLD):
-            circuit.record_failure("brapi", "timeout", now=agora)
+            circuit.record_failure("mercado", "timeout", now=agora)
 
         depois = agora + circuit.OPEN_SECONDS + 1
-        circuit.record_failure("brapi", "timeout de novo", now=depois)
+        circuit.record_failure("mercado", "timeout de novo", now=depois)
 
-        assert circuit.allows("brapi", now=depois + 1) is False
+        assert circuit.allows("mercado", now=depois + 1) is False
 
     def test_o_estado_conta_quantas_chamadas_foram_evitadas(self):
         for _ in range(circuit.FAILURE_THRESHOLD):
-            circuit.record_failure("brapi", "timeout")
+            circuit.record_failure("mercado", "timeout")
         for _ in range(3):
-            circuit.allows("brapi")
+            circuit.allows("mercado")
 
-        assert circuit.status("brapi")["rejected_while_open"] == 3
+        assert circuit.status("mercado")["rejected_while_open"] == 3
 
     def test_provedores_sao_independentes(self):
         for _ in range(circuit.FAILURE_THRESHOLD):
-            circuit.record_failure("brapi", "timeout")
+            circuit.record_failure("mercado", "timeout")
 
         assert circuit.allows("bcb") is True
 
@@ -159,7 +159,7 @@ class TestSaudeDaFonte:
     def test_a_saude_reflete_o_disjuntor_aberto(self, client):
         headers = make_auth_headers("u_source_open")
         for _ in range(circuit.FAILURE_THRESHOLD):
-            circuit.record_failure("brapi", "HTTP 503")
+            circuit.record_failure("mercado", "HTTP 503")
 
         corpo = client.get("/api/data-quality/source", headers=headers).json()
 

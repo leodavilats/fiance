@@ -1,6 +1,6 @@
 # ADR-022 — Dados de mercado coletados em lote, por um job dono do próprio schema
 
-**Status:** PROPOSTO
+**Status:** ACEITO em 2026-10-12, pelo autor — a BRAPI sai de vez, sem período de reserva
 **Data:** 2026-10-09
 **Decidido por:** autor do projeto; as escolhas abertas estão declaradas aqui
 
@@ -67,8 +67,7 @@ ajustada para de receber eventos novos.
 - **Arquivos brutos num volume** montado no serviço do data-job (`/bruto`), e não num bucket: o
   armazenamento já é um diretório, e o volume não pede código novo.
 
-**Enquanto esta ADR for `PROPOSTO`, o invariante de [CLAUDE.md](../../CLAUDE.md) vale.** Ao aceitá-la,
-mudam no mesmo commit: o invariante "Fontes" de `CLAUDE.md`, a seção *Dados externos* de
+**Aceita em 2026-10-12.** Mudaram no mesmo commit: o invariante "Fontes" de `CLAUDE.md`, a seção *Dados externos* de
 [03-ARQUITETURA](../03-ARQUITETURA.md) e o item de calibração de [09-FUTURO](../09-FUTURO.md).
 
 ## Consequências

@@ -25,7 +25,6 @@ de imposto e análise de ativos num só lugar.
 
 - **Python 3.13** (o CI usa 3.13)
 - **Flutter 3.x** + Android Studio, ou Xcode para iOS
-- Token da [BRAPI](https://brapi.dev) — cotações e fundamentos
 - OAuth Client IDs do Google (Web, Android, iOS) em
   [console.cloud.google.com](https://console.cloud.google.com/apis/credentials). O **Web** é usado
   como `serverClientId`, mesmo não havendo site — é ele que dá ao `idToken` uma audience validável
@@ -63,7 +62,7 @@ cp backend/.env.example backend/.env
 | `GOOGLE_CLIENT_ID` | Client IDs aceitos como audience do login, separados por vírgula |
 | `APPLE_CLIENT_ID` | Bundle id e Services ID aceitos como audience do login com Apple, separados por vírgula |
 | `JWT_SECRET` | Assina o JWT de sessão. O valor de exemplo é recusado fora de desenvolvimento |
-| `BRAPI_TOKEN` | Cotações e fundamentos |
+| `MERCADO_DATABASE_URL` | A base de mercado do `data-job/` (cotação, provento, balanço). Sem ela, não há ativo |
 
 ### Principais opcionais
 
@@ -71,7 +70,6 @@ cp backend/.env.example backend/.env
 |---|---|---|
 | `DATABASE_URL` | SQLite local | Postgres. O Railway injeta automaticamente |
 | `ALLOWED_ORIGINS` | localhost | CORS. Nenhum navegador é cliente hoje, mas fora de `development` a variável é exigida |
-| `BRAPI_HISTORY_RANGE` | `3mo` | ⚠️ `3mo` **torna a SMA200 incalculável**, e a tendência sai rotulada como curta. `1y` dá ~250 pregões e é o que produção usa |
 | `AFFIRMATION_LEVEL` | `2` | `1` descritivo, `2` analítico, `3` prescritivo — ver [ADR-007](docs/decisoes/ADR-007-nivel-de-afirmacao.md) |
 | `ENTITLEMENTS_ENABLED` | `false` | Cerca de plano. Ligar exige `ENTITLEMENTS_ENABLED_AT`, ou falha alto |
 | `ADMIN_USER_IDS` | vazio | O `sub` do Google (ou `apple:<sub>` para conta Apple), separado por vírgula. Vazio libera em dev e **nega** em produção |
@@ -133,7 +131,7 @@ backend/
     ledger/       razão, projeção, apuração — sem banco
     cashflow/     mês, cascata, dívida — sem banco
     analysis/     preço justo, score — sem banco
-    collectors/   BRAPI, BCB, cache, disjuntor
+    collectors/   base de mercado, BCB, cache, disjuntor
     entitlement/  cerca de plano, isolada
     importing/    leitura de extrato, prévia + commit
     payments/     cobrança (só FakeProvider, será refeita para loja)

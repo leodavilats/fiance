@@ -99,8 +99,7 @@ O caminho manual **nunca rodou**: ele exige `RAILWAY_TOKEN` nos segredos e `RAIL
 | `DATABASE_URL` | SQLite local | Postgres em produção |
 | `GOOGLE_CLIENT_ID` | vazio | Login |
 | `APPLE_CLIENT_ID` | vazio | Login com Apple: bundle id e Services ID aceitos como audience, separados por vírgula. Vazio, a rota recusa com 500 |
-| `BRAPI_TOKEN` | vazio | Fonte de mercado |
-| `BRAPI_HISTORY_RANGE` | `3mo` | Janela de histórico |
+| `MERCADO_DATABASE_URL` | vazio | A base de mercado. No Railway, `${{postgres-mercado.DATABASE_URL}}`: a conexão assume o papel `mercado_leitura` e só lê |
 | `ALLOWED_ORIGINS` | localhost | CORS |
 | `ADMIN_USER_IDS` | vazio | Rotas de operador. Conta Apple entra como `apple:<sub>` |
 | `RATE_LIMIT_ENABLED` | `true` | Teto de uso |
@@ -129,7 +128,7 @@ Telemetria não leva carteira: ticker no caminho vira `{id}`, valor em reais e n
 são redigidos, corpo de request e `extra` não saem. Duas suítes travam isso — é a Política de
 Privacidade escrita como código.
 
-**Qualidade de fonte:** `GET /data-quality/source` mostra o estado dos disjuntores da BRAPI e do BCB
+**Qualidade de fonte:** `GET /data-quality/source` mostra o estado dos disjuntores da base de mercado e do BCB
 sem varrer o universo.
 
 **Eventos de produto:** dicionário fechado em `core/events.py`. Nome fora dele, ou propriedade com
@@ -151,11 +150,11 @@ O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte
 **O que verificar quando o Descobrir esvaziar:**
 
 1. `GET /data-quality/source` — disjuntor aberto?
-2. Cota da BRAPI — o limite é 3.000 requisições/dia
+2. A coleta — o painel `trend` alerta quando a rodada do data-job falha ou a cotação fica velha
 3. Horário — fora de 10h–18h30 em dia com pregão na B3, a varredura do universo não vai à rede
    por desenho. Feriado nacional, Carnaval e 24 e 31/12 contam como fechados; na Quarta-feira de
    Cinzas a janela abre às 13h
-4. Log `não há universo em cache` — a lista de tickers da BRAPI falhou e não havia universo vencido
+4. Log `não há universo em cache` — a lista de tickers da base de mercado falhou e não havia universo vencido
    para servir; `servindo o universo vencido` é a degradação funcionando, não a causa
 
 ---

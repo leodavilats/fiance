@@ -65,7 +65,7 @@ class DataQualityResponse(BaseModel):
 @router.get("/data-quality/source", response_model=SourceHealth)
 async def source_health() -> dict:
     return {
-        "circuit": circuit.status("brapi"),
+        "circuit": circuit.status("mercado"),
         "plausibility_ranges": plausibility.describe_ranges(),
     }
 
@@ -73,14 +73,14 @@ async def source_health() -> dict:
 @router.get("/data-quality", response_model=DataQualityResponse)
 async def data_quality() -> DataQualityResponse:
     records, universe_size = await _service._scan_market()
-    disjuntor = circuit.status("brapi")
+    disjuntor = circuit.status("mercado")
 
     if not records:
         nota = (
             "Nenhum ativo coletado — o disjuntor da fonte está aberto, "
             "então as chamadas nem estão sendo tentadas."
             if disjuntor["state"] != "fechado"
-            else "Nenhum ativo coletado — verifique o token da BRAPI e a conectividade."
+            else "Nenhum ativo coletado — verifique MERCADO_DATABASE_URL e se o data-job rodou."
         )
         return DataQualityResponse(
             universe_size=universe_size,
@@ -157,14 +157,14 @@ async def data_quality() -> DataQualityResponse:
     if dividends and dividends.coverage_pct < 50:
         notes.append(
             f"Histórico de proventos presente em {dividends.coverage_pct:.0f}% do universo — "
-            "confirme se `dividends` está liberado no plano da BRAPI em uso."
+            "confira a etapa de proventos do data-job."
         )
 
     trend = next((f for f in fields if f.field == "technical_trend"), None)
     if trend and trend.coverage_pct < 100:
         notes.append(
-            "Tendência indisponível em parte do universo: aumente BRAPI_HISTORY_RANGE "
-            "(precisa de plano pago) para habilitar a SMA200."
+            "Tendência indisponível em parte do universo: papel com menos de 200 pregões "
+            "não tem SMA200."
         )
 
     if disjuntor["state"] != "fechado":

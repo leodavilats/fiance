@@ -57,8 +57,8 @@ de um lado só. O preço-teto da meta de renda passou a existir, e é a segunda 
 Em 2026-09-25 a faixa passou a cobrir os dois cenários de crescimento
 ([ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md)) e o FII de papel passou a exigir
 yield nominal ([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)). O que falta para
-confiar mais — calibrar os parâmetros e avaliar BDR — exige fonte fora de BRAPI e BCB SGS, e está em
-*Considerado*.
+confiar mais — calibrar os parâmetros e avaliar BDR — está em *Considerado*. A calibração já tem a
+base de que precisava (o `postgres-mercado`); o BDR continua sem juro em dólar.
 
 O item 3 depende deste: recomendar com mais força um número em que não se confia aumenta o dano do
 erro.
@@ -120,7 +120,7 @@ Sem decisão, mas com interesse declarado.
 | **Opções e derivativos** | Tensiona o limite "não é ferramenta de trade" de [01-PRODUTO](01-PRODUTO.md) |
 | **Controle de gastos completo** (tipo Mobills) | Aumentaria a atenção exigida de um público definido por não ter tempo |
 | **Otimizador de carteira** (Sharpe, HRP, mínima volatilidade) | Removido em 2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md)). Reconstruir é decisão nova — e é preciso responder se isso serve a quem não tem tempo |
-| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. A BRAPI não entrega fundamento *point-in-time*; os dados abertos da CVM (DFP/ITR) entregariam, e o invariante "só BRAPI e BCB SGS" teria de ser revisto. A base vem do item 9 |
+| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. Desde 2026-10-12 a base própria tem fundamento *point-in-time* (DFP e ITR com data de entrega, 2010 em diante): o que falta é fazer a medida, não a fonte |
 | **Preço justo de BDR** | Exige juro em dólar para descontar lucro em dólar ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)): descontar pela Selic fazia todo BDR parecer caro, cerca de 0,67× o valor. Nenhuma das duas fontes entrega essa taxa |
 
 ---
@@ -161,10 +161,12 @@ existe superfície pela qual alguém descubra o produto. A decisão de não ter 
 consciente e revisável.
 
 **Sustentação do preço.** R$ 9,90 por mês, menos a comissão de loja de 15% a 30%, deixa cerca de
-R$ 7 a R$ 8,40 por assinante. Contra isso: Railway, Postgres e a cota da BRAPI. O ponto de equilíbrio
+R$ 7 a R$ 8,40 por assinante. Contra isso: Railway e os Postgres. O ponto de equilíbrio
 não foi calculado.
 
-**Dependência de fonte única.** A BRAPI é a única fonte de mercado. O disjuntor protege contra queda,
+**Dependência de endpoints não documentados.** Desde 2026-10-12 a fonte de mercado é a base própria,
+de arquivos públicos. Proventos e eventos vêm de endpoints do site da B3 sem contrato; se mudarem,
+a série para de receber eventos novos. O disjuntor protege contra queda,
 não contra descontinuação nem mudança de preço.
 
 **Regulatório.** Registrado em [ADR-006](decisoes/ADR-006-recomendacao-personalizada.md).

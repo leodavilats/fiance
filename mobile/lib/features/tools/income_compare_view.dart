@@ -201,7 +201,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
             'da sua carteira, já descontado o imposto de renda. Na bolsa, os proventos dos '
             'últimos 12 meses sobre o preço de hoje, entre os ativos que mais distribuíram na '
             'lista varrida.',
-        source: 'CDI do Banco Central; cotações e proventos da BRAPI.',
+        source: 'CDI do Banco Central; cotações e proventos da B3.',
         limitation: 'Provento passado não garante o próximo, e o preço na bolsa oscila.',
       ),
       const SizedBox(height: FiSpace.s6),

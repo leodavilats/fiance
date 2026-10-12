@@ -48,7 +48,7 @@ def test_unsupported_ticker_raises():
 def test_classificacao_nao_depende_da_fonte_estar_de_pe(monkeypatch):
     import app.core.universe as universe_mod
 
-    monkeypatch.setattr(universe_mod, "_fetch_brapi_list", list)
+    monkeypatch.setattr(universe_mod, "_ler_lista", list)
     universe_mod.invalidate_universe_memo()
 
     assert detect_type("BOVA11") == "etf"
@@ -62,8 +62,8 @@ def test_a_fonte_vence_a_lista_quando_ela_sabe(monkeypatch):
 
     monkeypatch.setattr(
         universe_mod,
-        "_fetch_brapi_list",
-        lambda: [{"stock": "XPTO11", "subType": "etf", "sector": "Fundos"}],
+        "_ler_lista",
+        lambda: [{"codigo": "XPTO11", "tipo": "etf", "setor": "Fundos"}],
     )
     universe_mod.invalidate_universe_memo()
 

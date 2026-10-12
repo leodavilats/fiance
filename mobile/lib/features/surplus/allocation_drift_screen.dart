@@ -432,7 +432,7 @@ class _Reallocation extends StatelessWidget {
               'A troca aparece quando o ativo que você tem está acima da faixa de preço justo '
               'e há, numa classe abaixo da sua meta de alocação, um ativo abaixo da faixa. '
               'Entre eles, o de maior score.',
-          source: 'Suas posições, suas metas de alocação e preços da BRAPI.',
+          source: 'Suas posições, suas metas de alocação e preços de fechamento da B3.',
           limitation:
               'Não considera imposto, corretagem nem o seu preço médio. A faixa é a do modelo '
               'da classe do ativo; a folha dele mostra a base.',

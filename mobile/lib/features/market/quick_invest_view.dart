@@ -268,7 +268,7 @@ class _QuickInvestViewState extends ConsumerState<QuickInvestView> {
                       'na régua do sistema.'
                 : 'Sem meta de alocação declarada, distribui o valor pelos ativos de score mais '
                       'alto, na régua do sistema.',
-            source: 'Suas posições e renda fixa, com metas de alocação e preços da BRAPI.',
+            source: 'Suas posições e renda fixa, com metas de alocação e preços de fechamento da B3.',
             limitation: r.basis == 'goals'
                 ? 'É uma ordem de prioridade, não uma recomendação de compra.'
                 : 'É uma ordem de prioridade, não uma recomendação de compra. Sem meta, a ordem '

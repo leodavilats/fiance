@@ -31,7 +31,7 @@ Os itens da auditoria de **2026-09-13** foram fechados até 2026-09-25. A de **2
 [historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25](historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md).
 
 Nenhum item aberto. A calibração empírica dos parâmetros e o preço justo de BDR não são defeitos:
-exigem fonte fora de BRAPI e BCB SGS, e estão em [09-FUTURO](09-FUTURO.md), *Considerado*.
+estão em [09-FUTURO](09-FUTURO.md), *Considerado*.
 
 ## B · Dado e fonte
 

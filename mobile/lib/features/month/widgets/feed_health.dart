@@ -154,7 +154,7 @@ class _FiHealthBlockState extends State<FiHealthBlock> {
           method:
               'Quatro dimensões em 0-100 — concentração, setor, diversificação e risco — '
               'combinadas num score, lido na régua de saúde do sistema.',
-          source: 'Suas posições e renda fixa, com preços da BRAPI.',
+          source: 'Suas posições e renda fixa, com preços de fechamento da B3.',
           limitation:
               'Com menos de quatro ativos concentração e diversificação não dizem muito, '
               'e a leitura sai como carteira pequena demais para avaliar.',

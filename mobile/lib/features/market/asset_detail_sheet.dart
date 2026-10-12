@@ -252,7 +252,7 @@ class AssetDetailContent extends ConsumerWidget {
                   'pessimista à otimista. A margem de segurança é a distância do preço de hoje '
                   'até a borda da faixa, e uma segunda conta, com outro dado, confirma ou não a '
                   'leitura.',
-              source: 'Fundamentos e cotações da BRAPI; juro do Banco Central.',
+              source: 'Cotações da B3 e balanços da CVM, do último fechamento; juro do Banco Central.',
               asOf: idade.isEmpty ? null : 'Preço lido $idade.',
               limitation:
                   'É leitura do sistema sobre dado público, não recomendação de compra.',

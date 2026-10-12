@@ -78,7 +78,7 @@ async def ready(response: Response) -> dict:
             "database": {"ok": banco_ok, "detail": banco_detalhe},
             "cache": {"ok": cache_ok, "detail": cache_detalhe},
         },
-        "sources": {nome: circuit.status(nome)["state"] for nome in ("brapi", "bcb", "ibov")},
+        "sources": {nome: circuit.status(nome)["state"] for nome in ("mercado", "bcb")},
     }
 
 

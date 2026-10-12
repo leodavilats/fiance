@@ -5,41 +5,39 @@ import re
 import threading
 import time
 
-import httpx
-
 from app.core import cache
-from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-_LIST_URL = "https://brapi.dev/api/quote/list"
-_UNIVERSE_CACHE_KEY = "brapi_universe_v1"
-_STOCKS_RAW_CACHE_KEY = "brapi_stocks_raw_v1"
-_UNIVERSE_TTL = 24 * 3600
+_UNIVERSE_CACHE_KEY = "mercado_universe_v1"
+_LISTA_CACHE_KEY = "mercado_lista_v1"
+_UNIVERSE_TTL = 12 * 3600
 
 _FRACTIONAL_LOT = re.compile(r"^[A-Z]{4}\d{1,2}F$")
 
 
-def _fetch_brapi_list() -> list[dict]:
-    settings = get_settings()
+def _ler_lista() -> list[dict]:
+    from app.collectors import mercado
+
     try:
-        resp = httpx.get(_LIST_URL, params={"token": settings.brapi_token}, timeout=20)
-        resp.raise_for_status()
-        return resp.json().get("stocks") or []
+        return mercado.ler_lista()
     except Exception as e:
-        logger.warning("Falha ao buscar lista de tickers da BRAPI: %s", e)
+        logger.warning("Falha ao ler a lista de ativos da base de mercado: %s", e)
         return []
 
 
-def _get_brapi_stocks_cached() -> list[dict]:
-    cached = cache.get(_STOCKS_RAW_CACHE_KEY)
+def _lista() -> list[dict]:
+    cached = cache.get(_LISTA_CACHE_KEY)
     if cached is not None:
         return cached
 
-    stocks = _fetch_brapi_list()
-    if stocks:
-        cache.set(_STOCKS_RAW_CACHE_KEY, stocks, _UNIVERSE_TTL)
-    return stocks
+    lista = _ler_lista()
+    if lista:
+        cache.set(_LISTA_CACHE_KEY, lista, _UNIVERSE_TTL)
+        return lista
+
+    vencida, _ = cache.get_with_age(_LISTA_CACHE_KEY)
+    return vencida or []
 
 
 _MEMO_TTL = 15 * 60
@@ -68,67 +66,49 @@ def invalidate_universe_memo() -> None:
 
 
 def get_sector_map() -> dict[str, str]:
-    def _build() -> dict[str, str]:
-        stocks = _get_brapi_stocks_cached()
-        return {s["stock"]: s["sector"] for s in stocks if s.get("stock") and s.get("sector")}
-
-    return _memoized("sector_map", _build)
+    return _memoized(
+        "sector_map", lambda: {a["codigo"]: a["setor"] for a in _lista() if a.get("setor")}
+    )
 
 
 def get_type_map() -> dict[str, str]:
-    def _build() -> dict[str, str]:
-        stocks = _get_brapi_stocks_cached()
-        return {s["stock"]: s["subType"] for s in stocks if s.get("stock") and s.get("subType")}
-
-    return _memoized("type_map", _build)
+    return _memoized(
+        "type_map", lambda: {a["codigo"]: a["tipo"] for a in _lista() if a.get("tipo")}
+    )
 
 
 def _get_search_index() -> list[tuple[str, str, str]]:
-
     def _build() -> list[tuple[str, str, str]]:
-        seen: set[str] = set()
-        index: list[tuple[str, str, str]] = []
-        for s in _get_brapi_stocks_cached():
-            ticker = (s.get("stock") or "").upper()
-            if not ticker or ticker in seen or _FRACTIONAL_LOT.match(ticker):
+        index = []
+        for a in _lista():
+            if _FRACTIONAL_LOT.match(a["codigo"]):
                 continue
-            seen.add(ticker)
-            name = s.get("name") or ""
-            index.append((ticker, name, name.upper()))
+            nome = a.get("nome") or ""
+            index.append((a["codigo"].upper(), nome, nome.upper()))
         return index
 
     return _memoized("search_index", _build)
 
 
-def _build_brapi_universe(
-    max_stocks: int = 150, max_fiis: int = 60, max_bdrs: int = 40, max_etfs: int = 30
-) -> list[str]:
-    stocks = _get_brapi_stocks_cached()
-    if not stocks:
+_QUANTOS = {"stock": 150, "fii": 60, "bdr": 40, "etf": 30}
+
+
+def _montar_universo() -> list[str]:
+    lista = _lista()
+    if not lista:
         return []
 
-    stocks = [s for s in stocks if not _FRACTIONAL_LOT.match(s.get("stock") or "")]
-
-    br_stocks = [
-        s for s in stocks if s.get("subType") == "stock" and (s.get("market_cap") or 0) > 0
-    ]
-    fiis = [s for s in stocks if s.get("subType") == "fii" and (s.get("volume") or 0) > 0]
-    bdrs = [s for s in stocks if s.get("subType") == "bdr" and (s.get("market_cap") or 0) > 0]
-    etfs = [s for s in stocks if s.get("subType") == "etf" and (s.get("volume") or 0) > 0]
-
-    br_stocks.sort(key=lambda s: s.get("market_cap") or 0, reverse=True)
-    fiis.sort(key=lambda s: s.get("volume") or 0, reverse=True)
-    bdrs.sort(key=lambda s: s.get("market_cap") or 0, reverse=True)
-    etfs.sort(key=lambda s: s.get("volume") or 0, reverse=True)
-
-    etf_tickers = {s["stock"] for s in etfs[:max_etfs]}
-
-    tickers = (
-        [s["stock"] for s in br_stocks[:max_stocks]]
-        + [s["stock"] for s in fiis[:max_fiis]]
-        + [s["stock"] for s in bdrs[:max_bdrs]]
-        + sorted(etf_tickers)
-    )
+    tickers = []
+    for tipo, quantos in _QUANTOS.items():
+        da_classe = [
+            a
+            for a in lista
+            if a.get("tipo") == tipo
+            and (a.get("volume_medio") or 0) > 0
+            and not _FRACTIONAL_LOT.match(a["codigo"])
+        ]
+        da_classe.sort(key=lambda a: a["volume_medio"], reverse=True)
+        tickers += [a["codigo"] for a in da_classe[:quantos]]
     return tickers
 
 
@@ -137,19 +117,20 @@ def get_universe() -> list[str]:
     if cached is not None:
         return cached
 
-    brapi_tickers = _build_brapi_universe()
-    if brapi_tickers:
-        cache.set(_UNIVERSE_CACHE_KEY, brapi_tickers, _UNIVERSE_TTL)
-        return brapi_tickers
+    tickers = _montar_universo()
+    if tickers:
+        cache.set(_UNIVERSE_CACHE_KEY, tickers, _UNIVERSE_TTL)
+        return tickers
 
     vencido, idade = cache.get_with_age(_UNIVERSE_CACHE_KEY)
     if vencido:
         logger.warning(
-            "Lista dinâmica da BRAPI falhou — servindo o universo vencido há %.0f s.", idade or 0.0
+            "A base de mercado não deu a lista — servindo o universo vencido há %.0f s.",
+            idade or 0.0,
         )
         return vencido
 
-    logger.warning("Lista dinâmica da BRAPI falhou e não há universo em cache — universo vazio.")
+    logger.warning("A base de mercado não deu a lista e não há universo em cache — universo vazio.")
     return []
 
 

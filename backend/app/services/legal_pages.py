@@ -118,8 +118,10 @@ IRRF de 1% que aparece é o que a corretora retém, estimado a partir do que voc
 
 <section>
 <h2>5. Fontes de dado de mercado</h2>
-<p>Cotação, indicador fundamentalista e provento vêm da BRAPI; CDI, Selic e IPCA vêm do Banco
-Central (SGS). O fiance não controla essas fontes. Quando uma delas cai ou devolve número
+<p>Cotação, provento e evento corporativo vêm dos arquivos públicos da B3; demonstração financeira e
+informe de fundo imobiliário, dos dados abertos da CVM; CDI, Selic, IPCA e dólar, do Banco Central
+(SGS). O fiance coleta esses arquivos uma vez por dia útil, depois do fechamento, e não controla
+essas fontes. A cotação mostrada é a do último fechamento. Quando uma delas cai ou devolve número
 implausível, o produto avisa a origem do dado que está mostrando — inclusive quando é cache vencido
 ou estimativa.</p>
 </section>
@@ -152,8 +154,7 @@ _PRIVACIDADE_CORPO = """
 <section>
 <h2>O resumo, antes do detalhe</h2>
 <p>Sua carteira não sai do produto. Nenhuma fonte externa recebe quanto você tem, quanto pagou ou
-quanto ganhou — a BRAPI recebe apenas o código do papel, o mesmo que qualquer pessoa digita numa
-busca. Você pode exportar tudo e apagar a conta quando quiser, sem precisar falar com ninguém e sem
+quanto ganhou — a cotação é lida de uma base própria, sem consulta a terceiros. Você pode exportar tudo e apagar a conta quando quiser, sem precisar falar com ninguém e sem
 plano pago.</p>
 </section>
 
@@ -192,8 +193,6 @@ plano pago.</p>
 <tbody>
 <tr><td>Google (entrar com Google)</td>
 <td>A própria autenticação; nome, e-mail e foto voltam de lá</td><td>Nada da sua carteira</td></tr>
-<tr><td>BRAPI (cotação e fundamento)</td><td>O código do papel consultado</td>
-<td>Quem consultou, quanto tem, quanto pagou</td></tr>
 <tr><td>Banco Central — SGS (CDI, Selic, IPCA)</td><td>Nada seu: a consulta é de série pública</td>
 <td>Tudo</td></tr>
 <tr><td>Firebase (notificação)</td><td>O token do aparelho e o texto do alerta</td>

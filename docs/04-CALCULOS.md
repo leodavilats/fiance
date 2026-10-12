@@ -237,8 +237,8 @@ casas tiram o ruído de ponto flutuante, e no preço exato do gatilho a etiqueta
    inventar.
 3. **O ROE do terminal é o normalizado de hoje.** Empresa de ROE muito alto sai generosa no longo
    prazo; a concorrência tende a reduzi-lo.
-4. **Os parâmetros não têm calibração empírica.** Validá-los exige fundamento *point-in-time*, que a
-   BRAPI não entrega.
+4. **Os parâmetros não têm calibração empírica.** Validá-los exige fundamento *point-in-time*; a base
+   própria já o tem, e a medida está em [09-FUTURO](09-FUTURO.md), *Considerado*.
 5. **FII de papel fora da lista de referência parece barato.** A lista é mantida à mão; fundo que
    não está nela é lido como tijolo, e a distribuição com correção monetária sai capitalizada por
    juro real.

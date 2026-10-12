@@ -405,7 +405,7 @@ class FiBenchmarkSection extends ConsumerWidget {
                 method:
                     'O retorno da sua carteira no período, contra o CDI acumulado no mesmo '
                     'intervalo.',
-                source: 'Suas posições com preços da BRAPI; CDI do BCB.',
+                source: 'Suas posições com preços de fechamento da B3; CDI do BCB.',
                 limitation:
                     'A curva de CDI é extrapolada da taxa de hoje, então é referência e não o '
                     'acumulado histórico.',
