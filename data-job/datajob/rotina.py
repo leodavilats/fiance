@@ -21,6 +21,7 @@ from datajob.fontes import (
     cvm_cadastro,
     cvm_demonstracoes,
     cvm_fca,
+    cvm_fii,
     cvm_fre,
     cvm_ipe,
     tesouro_direto,
@@ -98,6 +99,11 @@ def _tem_provento(engine: sa.Engine) -> bool:
 
 def anos_do_fre(tem_fre: bool, hoje: date) -> list[int]:
     inicio = hoje.year - 1 if tem_fre else cvm_fre.PRIMEIRO_ANO
+    return list(range(inicio, hoje.year + 1))
+
+
+def anos_do_fii(tem_estimado: bool, hoje: date) -> list[int]:
+    inicio = hoje.year - 1 if tem_estimado else cvm_fii.PRIMEIRO_ANO
     return list(range(inicio, hoje.year + 1))
 
 
@@ -254,6 +260,16 @@ def diario(
                 f"{len(falharam)} emissores sem proventos: {', '.join(falharam[:20])}"
             )
 
+    def rendimentos_de_fii() -> None:
+        with engine.connect() as conn:
+            tem = conn.execute(
+                sa.text("SELECT 1 FROM mercado.provento WHERE origem = :o LIMIT 1"),
+                {"o": cvm_fii.ORIGEM},
+            ).first()
+        for ano in anos_do_fii(tem is not None, hoje):
+            url = cvm_fii.url_do_ano(ano)
+            _arquivo(engine, raiz, relatar, baixar, cvm_fii.FONTE, url, cvm_fii.processar)
+
     def fre() -> None:
         with engine.connect() as conn:
             tem = conn.execute(sa.text("SELECT 1 FROM mercado.capital_social LIMIT 1")).first()
@@ -305,6 +321,7 @@ def diario(
         "séries do BCB": series_do_bcb,
         "Tesouro Direto": tesouro,
         "proventos e eventos da B3": proventos_e_eventos,
+        "rendimentos de FII da CVM": rendimentos_de_fii,
         "IPE da CVM": ipe,
         "FRE da CVM": fre,
         "composição do capital": composicao_do_bruto,

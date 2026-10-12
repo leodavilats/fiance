@@ -177,6 +177,7 @@ def test_fonte_fora_do_ar_nao_impede_as_outras(engine, tmp_path):
         "cadastro da CVM",
         "FCA da CVM",
         "DFP e ITR da CVM",
+        "rendimentos de FII da CVM",
         "IPE da CVM",
         "FRE da CVM",
     ]

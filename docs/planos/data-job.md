@@ -371,10 +371,17 @@ os eventos de cota completos, mas o histórico de proventos só de companhia: de
 apagados; o histórico de companhia (`b3_historico`) substitui tudo o que veio da B3 para o emissor.
 Entram os fundos e BDRs negociados nos últimos dois anos.
 
+**O rendimento de FII anterior a out/2026 é estimado** pelo informe mensal da CVM (2016 em diante): o
+yield do mês vezes o valor patrimonial da cota, com data-com no último dia do mês de referência
+(`origem = 'cvm_estimado'`). Conferido em 2024: HGLG11 e KNRI11 batem no centavo; MXRF11 erra até 10%
+num mês. No mês em que a B3 deu o pago, o estimado sai da série; `provento_estimado` marca o dia que
+usou estimativa.
+
 **Limites declarados:**
 
-- **Rendimento antigo de fundo e BDR não existe na base.** O que é anterior à primeira coleta (out/2026)
-  só entra se vier de outra fonte — para FII, o informe mensal da CVM
+- **Rendimento antigo de ETF, Fiagro e BDR não existe na base**, nem o de FII antes de 2016. O que é
+  anterior à primeira coleta (out/2026) só entra se vier de outra fonte
+- **Amortização de cota de FII não entra pela CVM**, só pela B3
 - **Provento bruto.** O JCP tem imposto retido na fonte, e o retorno total não o desconta
 - **Cisão e redução de capital não ajustam** (Itaú/XP em 2021): o preço cai sem que a série saiba por quê
 - **Emissor que a B3 não encontra fica sem proventos** — a ALL, incorporada pela Rumo em 2015

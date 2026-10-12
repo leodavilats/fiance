@@ -38,8 +38,9 @@ A série ajustada (`mercado.serie_papel`) passa a cobrir as classes novas com a 
 cota ajustado por evento conferido pelo preço, provento na data ex, retorno total.
 
 **Feito (2026-10-12):** eventos de cota e rendimentos recentes de FIIs, ETFs e BDRs, e a série ajustada
-deles (`mercado.serie_fundo`); PTAX (série 1 do BCB) e Tesouro Direto (`mercado.tesouro`). **Falta:** o
-histórico de rendimentos de FII pela CVM.
+deles (`mercado.serie_fundo`); PTAX (série 1 do BCB) e Tesouro Direto (`mercado.tesouro`); o histórico
+de rendimentos de FII desde 2016, estimado pelo informe mensal da CVM. **Lacuna declarada:** proventos
+de BDR e ETF antes de out/2026.
 
 Ordem sugerida: ETFs e dólar/Tesouro primeiro — são os instrumentos e o histórico longo que a
 tendência usa —, depois FIIs, depois BDRs.
