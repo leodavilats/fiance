@@ -1,7 +1,7 @@
 # Domínio
 
 **Fonte de verdade** para o vocabulário e as regras de negócio. Os enums são derivados do código.
-Última revisão: 2026-09-26
+Última revisão: 2026-10-12
 
 Leia antes de tocar em `ledger/`, `cashflow/` ou `analysis/`.
 
@@ -47,7 +47,9 @@ faixa se sustenta, e entra na qualidade — nunca na borda.
 
 **Margem de segurança** — distância do preço de mercado até a **borda** da faixa: sobre o piso
 quando o preço está abaixo dele, sobre o próprio preço quando está acima do teto, e zero dentro da
-faixa. As duas pontas medem a mesma distância.
+faixa. As duas pontas medem a mesma distância. **Descreve posição:** na medida de 2026-10-12, nas
+ações de 2011 a 2017, estar abaixo do preço justo não antecipou retorno
+([planos/calibracao](planos/calibracao.md)).
 
 **Sem preço justo** — o que o produto diz sobre ativo sem modelo principal (BDR, ETF) ou sem o dado
 que o modelo exige (lucro, ROE, juro). A tendência continua na tela, como contexto, e nunca decide.
@@ -255,7 +257,7 @@ Erro de unidade é o defeito mais caro deste domínio, porque não quebra nada.
 
 | Grandeza | Unidade | Onde se converte |
 |---|---|---|
-| `roe`, `profit_margin`, `revenue_growth`, `debt_to_equity` | **percentual** (20.0 = 20%) | `collectors/universal._ratio_to_pct` |
+| `roe`, `profit_margin`, `revenue_growth`, `debt_to_equity` | **percentual** (20.0 = 20%) | `collectors/universal.py::_pct`; o crescimento, em `_fundamentos` |
 | Crescimento e ROE no modelo de lucro | **fração** (0.15 = 15%) | `analysis/fair_price.py::normalized_roe` |
 | Yield desejado | **fração** (0.06 = 6%) | `analysis/fair_price.py` |
 | Margem de segurança | fração (0.15 = 15%) | `analysis/fair_price.py` |

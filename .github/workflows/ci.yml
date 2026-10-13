@@ -86,8 +86,8 @@ jobs:
       - name: Testes
         run: python -m pytest -q
         env:
-          # A suíte não deve depender de rede nem de segredo real; o conftest
-          # já isola o banco e stuba a BRAPI.
+          # A suíte não depende de rede nem de segredo real: o conftest usa SQLite
+          # temporário, bloqueia o httpx e substitui a base de mercado, o cache e o BCB.
           APP_ENV: development
           # Só o teste de contrato do cache usa isto. `REDIS_URL` continua
           # ausente de propósito: o padrão do produto é o cache local, e é ele

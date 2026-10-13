@@ -10,7 +10,7 @@ coisa, um está errado e ninguém sabe qual.
 | A pergunta | O arquivo |
 |---|---|
 | **Isto existe? Em que estado?** | [08-ESTADO](08-ESTADO.md) ⭐ |
-| Por que o sistema existe, para quem, e como ganha dinheiro | [01-PRODUTO](01-PRODUTO.md) |
+| Por que o sistema existe, para quem (hoje o autor; depois o público) e o modelo de negócio previsto | [01-PRODUTO](01-PRODUTO.md) |
 | O que significa esse termo? Qual é a regra? | [02-DOMINIO](02-DOMINIO.md) |
 | Como o sistema é montado, e por que assim | [03-ARQUITETURA](03-ARQUITETURA.md) |
 | Como esse número é calculado, e no que não confiar | [04-CALCULOS](04-CALCULOS.md) |
@@ -75,7 +75,11 @@ seções rígidas por estágio.
 |---|---|
 | Endpoints e schemas | Código — OpenAPI do FastAPI |
 | Campos de resposta e de entrada | `backend/tests/contrato_das_rotas.json` |
-| Esquema do banco | Migrações Alembic |
+| Esquema do banco do app | Migrações Alembic em `backend/migrations/` |
+| Esquema da base de mercado (schema `mercado`) | `data-job/datajob/esquema.py` e `data-job/migrations/` — só o data-job escreve nela |
+| Coleta: fontes, rotina, tratamento | `data-job/datajob/`; intenção em [planos/data-job](planos/data-job.md) |
+| Pesquisas, ranking e calibração | `trend-backend/pesquisa/` e os registros `trend-backend/registro*.jsonl`; protocolo e resultado em [planos/](planos/) |
+| Painel do autor | `trend-backend/api/` e `trend-frontend/src/` — fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)) |
 | Vocabulário fechado (classes, categorias) | `backend/app/models/enums.py` |
 | Fórmulas | Código; [04-CALCULOS](04-CALCULOS.md) é o espelho auditado |
 | Limiares de score | `backend/app/analysis/score_ruler.py` — Python primeiro |
@@ -113,5 +117,6 @@ Duas máquinas cobram esta documentação, e ambas rodam no CI:
 - `backend/tests/test_ancoras_da_documentacao.py` — **arquivo citado que não existe**, e citação de
   linha que passou do fim do arquivo. Blocos de código ficam de fora: ali o caminho é comando, não
   referência de repositório. **Só confere caminho completo** (começando em `backend/`, `mobile/` ou
-  `docs/`): um nome curto, como `analysis/fair_price.py`, não é verificado. As ADRs antigas citam
+  `docs/`): um nome curto, como `analysis/fair_price.py`, não é verificado, e caminho em `data-job/`,
+  `trend-backend/` ou `trend-frontend/` também não — confira à mão. As ADRs antigas citam
   arquivos que já saíram, e isso é esperado — ADR não se reescreve

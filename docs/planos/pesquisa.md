@@ -108,7 +108,8 @@ pontua os papéis numa data. As primeiras, nesta ordem:
 
 1. **Momento 12–1:** retorno dos últimos 12 meses, ignorando o último; compra os 20 maiores
 2. **Valor + qualidade:** lucro sobre valor de mercado alto entre os de retorno sobre patrimônio alto
-3. **A combinação** das duas
+3. **A combinação** das duas — **não rodou.** As duas sozinhas perderam do CDI, e o teto foi gasto
+   nas variações com filtro de tendência (conclusão acima)
 
 ### O que valor + qualidade precisa da base
 
@@ -152,5 +153,6 @@ com um usuário do papel `mercado_leitura`.
 
 ## Resultados
 
-Os resultados ficam em `trend-backend/registro.jsonl`, e não neste documento: o registro é a fonte, com
-cada execução e o retrato usado.
+A fonte é `trend-backend/registro.jsonl`, com cada execução e o retrato usado. Este documento guarda só
+o resumo da [conclusão](#conclusão--2026-10-12-não-achei-vantagem-investível); quando os dois
+divergirem, vale o registro.

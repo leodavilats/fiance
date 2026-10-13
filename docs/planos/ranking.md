@@ -1,6 +1,8 @@
 # Plano — o ranking de tendência (`trend-backend/`)
 
-**Estado:** `[ACEITO]` em 2026-10-12, pelo autor — antes da primeira execução · **Etapa 2 de** [plataforma](plataforma.md)
+**Estado:** `[CONCLUÍDO]` em 2026-10-12 — **o ranking de tendência não informa** (6 variações, nenhuma
+passou no estudo). Protocolo `[ACEITO]` pelo autor no mesmo dia, antes da primeira execução · **Etapa 2 de**
+[plataforma](plataforma.md)
 
 ## A pergunta
 
@@ -27,8 +29,8 @@ R$ 100 mil, só 64 de 108 meses, com quintos de 4 fundos. FIIs ganham períodos 
 escrito antes de rodar qualquer sinal neles, e usam as 3 variações que sobrarem do teto.
 
 Classes não se misturam: uma ação e um FII não têm a mesma volatilidade, e o ranking viraria um ranking
-de classe. **ETFs e BDRs ficam de fora** nesta etapa — poucos papéis líquidos antes de 2019 para medir
-ordem. Entram quando a validação tiver amostra.
+de classe. **ETFs e BDRs ficam de fora** — poucos papéis líquidos antes de 2019 para medir ordem. Com o teto
+usado, não entram com estes sinais.
 
 ## A medida de acerto — fixada antes da primeira execução
 
@@ -114,7 +116,7 @@ sinal fraco e real pode não aparecer. É o preço de não ter mercado de FII l�
   protocolo, isso é "não informa": a validação fica lacrada
 - **A inclinação vezes R² chegou mais perto** (t de 1,87). Ajustar a janela até passar é exatamente o que
   o teto existe para impedir — a variação não se repete
-- **As 3 variações que sobram do teto são dos FIIs**, pelo adendo que ainda será escrito
+- **As 3 variações que sobram do teto são dos FIIs**, pelo adendo acima
 
 ## Resultado em FIIs — 2026-10-12: nenhum sinal passou, e a tendência se inverte
 

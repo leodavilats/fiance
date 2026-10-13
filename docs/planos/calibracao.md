@@ -1,6 +1,7 @@
 # Plano — o preço justo do app, medido contra o que veio depois
 
-**Estado:** `[ACEITO]` em 2026-10-12, pelo autor — antes da primeira execução
+**Estado:** `[ENCERRADO]` em 2026-10-12 — **o veredito não ordena o retorno**, e a calibração parou
+no protocolo, sem variação rodada. Protocolo `[ACEITO]` pelo autor no mesmo dia, antes da primeira execução
 
 ## A pergunta
 
@@ -118,3 +119,5 @@ Em 2026-10-12, saíram "oportunidade forte", "excelente oportunidade de entrada"
 frase de ajuste ganhou "o preço justo descreve posição, não antecipa retorno"; e a explicação do
 preço justo e o verbete de margem de segurança dizem o resultado da medida. O nome "Oportunidades"
 fica, por decisão do autor.
+
+**Aberto:** ADR sobre a taxa de desconto ([10-PROBLEMAS](../10-PROBLEMAS.md), item A12).

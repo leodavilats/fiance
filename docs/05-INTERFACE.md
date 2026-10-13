@@ -2,7 +2,7 @@
 
 Por que a interface é assim, e o que uma tela nova precisa respeitar.
 Fonte compartilhada com `mobile/lib/core/design_tokens.dart` e `mobile/test/lint_ui_test.dart`.
-Última revisão: 2026-10-01
+Última revisão: 2026-10-12
 
 ---
 
@@ -171,12 +171,15 @@ Regras específicas de conteúdo:
 
 | Ao mostrar | Exigência |
 |---|---|
-| Cifra de preço justo | A base junto: o modelo principal, a qualidade e as premissas |
+| Cifra de preço justo | A base junto: o modelo principal, a qualidade e as premissas. A explicação diz que o preço justo descreve posição, não antecipa retorno, e o resultado da medida: de 2011 a 2017, estar abaixo dele não antecipou retorno nos 12 meses seguintes ([planos/calibracao](planos/calibracao.md)) |
 | Preço, ou lista de preços | `formatAge`. Em lista, o carimbo é o **mais antigo** (`oldestStamp`) |
 | Projeção | Faixa, com piso, teto e cenário base |
 | Julgamento | Proveniência e papel de veredito em serifa |
 
 Dizer a idade do preço mais novo de uma lista promete frescor que a linha de baixo não tem.
+
+**A cotação é a do último fechamento**, da base própria, e não a do pregão em andamento: a idade
+carimbada é o que diz isso. O Ibovespa é medido pelo BOVA11, porque a base não tem o índice.
 
 **Momento é nível 1, não nota de rodapé.** Método e fonte moram na gaveta; **quando o dado foi lido,
 não**. Um preço de anteontem muda a decisão.

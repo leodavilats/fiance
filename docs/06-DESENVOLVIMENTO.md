@@ -2,7 +2,7 @@
 
 Como trabalhar no código sem quebrar nada.
 O CI (`.github/workflows/ci.yml`) é a fonte de verdade dos comandos; aqui está a explicação.
-Última revisão: 2026-10-07
+Última revisão: 2026-10-12
 
 ---
 
@@ -17,14 +17,18 @@ cd backend && python -m ruff format --check app tests
 cd data-job && python -m pytest -q                 # gravação exige DATAJOB_TEST_DATABASE_URL
 cd data-job && python -m ruff check datajob tests migrations
 cd data-job && python -m ruff format --check datajob tests migrations
-cd trend-backend && python -m pytest -q
+cd trend-backend && python -m pytest -q            # exige ../backend/requirements.txt instalado
 cd trend-backend && python -m ruff check pesquisa api tests
 cd trend-backend && python -m ruff format --check pesquisa api tests
 cd trend-frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
 cd mobile  && python tool/build_icons.py --check
+node docs/checar-links.mjs                         # job `documentacao`
 ```
+
+**A suíte do `trend-backend` precisa das dependências do backend.** A calibração do preço justo
+importa `app.*` do `backend/`; o CI instala `-r requirements.txt -r ../backend/requirements.txt`.
 
 ### Três ressalvas que já custaram tempo
 
@@ -185,6 +189,9 @@ Se a explicação é boa demais para caber em uma linha, ela não é comentário
 | `mobile/test/alvo_de_toque_test.dart` | Alvo de toque de 44dp e ação de toque na semântica dos componentes de toque |
 | `mobile/test/fonte_grande_test.dart` | Toda tela com conteúdo cabe em 320dp com a letra quadrada do teste, que tem a largura da fonte do sistema em cerca de 200% |
 | `mobile/test` | Widgets e modelos |
+| `data-job/tests` | Leitura de cada fonte (COTAHIST, CVM, B3, BCB, Tesouro), rotina diária e gravação. A gravação roda contra um Postgres descartável em `DATAJOB_TEST_DATABASE_URL` — ela **apaga o schema `mercado`** desse banco; sem a variável, esses testes são pulados |
+| `trend-backend/tests` | API do painel, alertas de coleta, motor e ranking da pesquisa, calibração do preço justo |
+| `trend-frontend` (`npm test`, Vitest) | Formatação do painel |
 
 A jornada do app roda em `flutter test`, sem emulador. **Não cobre** o login Google real nem o
 comportamento num aparelho: isso exige conta de loja e aparelho, e fica para o release (ver

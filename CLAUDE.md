@@ -1,7 +1,9 @@
 # fiance
 
 Plataforma de análise de investimentos focada na B3, multi-tenant.
-**FastAPI + Postgres** (`backend/`) · **Flutter** (`mobile/`), o único cliente.
+**FastAPI + Postgres** (`backend/`) · **Flutter** (`mobile/`), o único cliente do produto.
+Fora do produto: `data-job/` (coleta de mercado) e `trend-backend/` + `trend-frontend/` (pesquisa e
+painel do autor, [ADR-023](docs/decisoes/ADR-023-fase-pessoal-primeiro.md)).
 
 Este arquivo é o **contrato de trabalho**: o que não pode ser violado, e as armadilhas que não
 quebram o build. Ele não descreve o sistema — isso é [docs/](docs/), e
@@ -37,14 +39,18 @@ cd backend && python -m ruff format --check app tests
 cd data-job && python -m pytest -q                 # gravação exige DATAJOB_TEST_DATABASE_URL
 cd data-job && python -m ruff check datajob tests migrations
 cd data-job && python -m ruff format --check datajob tests migrations
-cd trend-backend && python -m pytest -q
+cd trend-backend && python -m pytest -q            # exige ../backend/requirements.txt instalado
 cd trend-backend && python -m ruff check pesquisa api tests
 cd trend-backend && python -m ruff format --check pesquisa api tests
 cd trend-frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
 cd mobile  && python tool/build_icons.py --check
+node docs/checar-links.mjs
 ```
+
+- **A calibração do `trend-backend` importa `app.*` do backend.** Sem as dependências do backend
+  instaladas, a suíte dele não roda.
 
 - **Não rode `dart format`** — reescreve o `design_tokens.dart` e quebra os `if`s de uma linha.
 - **`analyze` e `test` nunca tocam o Gradle.** O build Android é outra metade, e é o comando que
@@ -143,7 +149,8 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 - **`CACHE_BACKEND` errado falha alto.** Cair em silêncio para cache por nó faz a mesma pessoa ver
   preços diferentes.
 - **A varredura do universo roda no pregão** (`core/pregao.py`, 10h–18h30 nos dias de pregão da B3).
-  O portão vale para a varredura, **não** para busca de um ativo pedido por alguém.
+  A base muda uma vez por dia; reler fora do pregão não traz nada novo. O portão vale para a
+  varredura, **não** para busca de um ativo pedido por alguém.
 
 ### API e dados
 

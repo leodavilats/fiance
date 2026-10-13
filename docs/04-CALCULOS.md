@@ -2,9 +2,13 @@
 
 Cada número que o produto afirma, com entrada, fórmula, saída e **limitação**.
 O **código é a fonte de verdade**; este documento é o espelho auditado, com âncora em cada fórmula.
-Última revisão: 2026-09-26 · Faixa da ação refeita pela ADR-015; qualidade pela ADR-016
+Última revisão: 2026-10-12 · Medida do preço justo contra o retorno ([planos/calibracao](planos/calibracao.md)); dado da base própria
 
 Se uma fórmula aqui divergir do código, o código está certo e este documento tem um bug.
+
+**A cotação de toda conta é o último fechamento** da base própria (`mercado.ativo_hoje`), e não o
+pregão em andamento; o Ibovespa é medido pelo BOVA11, porque a base não tem o índice
+(`collectors/universal.py::fetch_ibov_history`).
 
 ---
 
@@ -81,10 +85,11 @@ V = distribuição recorrente ÷ y_FII
 a distribuição crescer com a inflação, como o aluguel de um FII de tijolo.
 
 **FII de papel exige yield nominal:** `y_FII + meta de inflação`. A distribuição dele já traz a
-correção monetária dos recebíveis, e o principal não cresce com ela. A fonte não informa o tipo do
-fundo, então a leitura de papel vale para a lista de referência em
-`analysis/fii_segments.py::PAPER_FIIS`, com data de revisão, e `premises.fii_segment` diz qual foi
-usada ([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)).
+correção monetária dos recebíveis, e o principal não cresce com ela. A leitura de papel vale para a
+lista de referência em `analysis/fii_segments.py::PAPER_FIIS`, com data de revisão, e
+`premises.fii_segment` diz qual foi usada ([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)).
+A lista nasceu porque a BRAPI não informava o tipo do fundo. **A CVM informa segmento e mandato**, e a
+base os guarda em `mercado.fii_mensal`, mas o código ainda usa a lista.
 
 ### O dividendo recorrente
 
@@ -213,6 +218,11 @@ O campo exibido tem quatro casas. **A etiqueta compara a margem com nove** (`mar
 quatro, um preço a 29,996% do piso já saía "bem abaixo", acima do gatilho que a tela anunciava. Nove
 casas tiram o ruído de ponto flutuante, e no preço exato do gatilho a etiqueta já é a nova.
 
+**A margem descreve posição, não antecipa retorno.** Medido em 2026-10-12, com o modelo do app e só o
+que se sabia em cada data, nas ações de 2011 a 2017: retorno médio em 12 meses de 4,0% abaixo da
+faixa, 5,3% dentro e 3,0% acima; abaixo menos acima, t de −0,09. O veredito não ordenou o retorno
+([planos/calibracao](planos/calibracao.md); [10-PROBLEMAS](10-PROBLEMAS.md), A12).
+
 ### Premissas
 
 | Premissa | Valor | Configurável |
@@ -237,8 +247,9 @@ casas tiram o ruído de ponto flutuante, e no preço exato do gatilho a etiqueta
    inventar.
 3. **O ROE do terminal é o normalizado de hoje.** Empresa de ROE muito alto sai generosa no longo
    prazo; a concorrência tende a reduzi-lo.
-4. **Os parâmetros não têm calibração empírica.** Validá-los exige fundamento *point-in-time*; a base
-   própria já o tem, e a medida está em [09-FUTURO](09-FUTURO.md), *Considerado*.
+4. **Os parâmetros não têm calibração empírica.** Medido em 2026-10-12: o veredito não ordenou o
+   retorno, e a calibração parou antes de mexer em parâmetro ([planos/calibracao](planos/calibracao.md);
+   [10-PROBLEMAS](10-PROBLEMAS.md), A12).
 5. **FII de papel fora da lista de referência parece barato.** A lista é mantida à mão; fundo que
    não está nela é lido como tijolo, e a distribuição com correção monetária sai capitalizada por
    juro real.
@@ -273,6 +284,9 @@ preço.
 
 Todas as entradas em **percentual**, exceto a margem de segurança, que é fração.
 
+**O score ordena por posição, não por retorno esperado.** A margem pesa nele, e a medida de
+2026-10-12 não mostrou retorno maior abaixo do preço justo (ver *Margem de segurança*).
+
 ### Pesos — ações e BDRs, por perfil de risco
 
 | Dimensão | Conservador | Moderado | Arrojado |
@@ -298,8 +312,9 @@ peso que sobra. ETF não tem score.
 | Dividendos | **60%** | 50% | 35% |
 
 `scoring.py::FII_WEIGHTS`. O conservador pesa a renda; o arrojado, o desconto. A liquidez saiu em
-2026-09-25: ela vinha do valor de mercado, que a BRAPI não entrega para FII (0 de 6 na amostra), e
-dimensão que nunca tem dado só derrubava a completude.
+2026-09-25: ela vinha do valor de mercado, que a fonte da época, a BRAPI, não entregava para FII (0 de
+6 na amostra), e dimensão que nunca tem dado só derrubava a completude. Hoje `mercado.fii_mensal` traz
+as cotas emitidas, e o dado existe; a dimensão segue fora.
 
 **ETF e BDR não têm score.** Nenhum dos dois tem preço justo (ADR-014), e a fonte não entrega
 fundamento deles: sem dimensão aplicável, a completude é zero e a tela mostra "Sem dado". Uma nota
@@ -323,8 +338,8 @@ completude = Σ(pesos disponíveis) ÷ Σ(todos os pesos)
 O corte acontece **na apresentação, não no cálculo**, e isso é deliberado: suprimir entregaria tela
 vazia em vez de leitura parcial declarada.
 
-**Cobertura dos fundamentos**, medida em 2026-09-25 sobre 31 ativos pela coleta real. Presentes /
-total:
+**Cobertura dos fundamentos — medição histórica sobre a BRAPI**, em 2026-09-25, 31 ativos. A BRAPI
+saiu em 2026-10-12, e a cobertura com a base própria **não foi remedida**. Presentes / total:
 
 | Classe | n | ROE | Margem | Cresc. | D/E | VPA | LPA | Val. mercado | DY | 3 exercícios de lucro |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -334,9 +349,9 @@ total:
 | BDR | 2 | 0 | 0 | 0 | 0 | 0 | 2 | 2 | 0 | 0 |
 | ETF | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
-Para ação, a cobertura é completa, e o piso quase nunca dispara. Banco não tem D/E, por decisão, e
-voltou a ter ROE desde que o coletor lê `netIncomeApplicableToCommonShares`. Em FII, BDR e ETF, o
-que falta é o que não se aplica à classe, e não falha de coleta. Repetir a medição:
+Naquela medição, a cobertura de ação era completa, e o piso quase nunca disparava. Banco não tem D/E,
+por decisão. Em FII, BDR e ETF, o que faltava era o que não se aplica à classe, e não falha de coleta.
+Repetir a medição:
 `GET /api/v1/data-quality` (exige sessão).
 
 `tests/test_regua_nas_duas_plataformas.py` confronta o limiar do Python com o do Dart. **O Python é
@@ -382,6 +397,10 @@ justo" na etiqueta e "Algum desconto" na medida.
 
 **A etiqueta descreve posição, não ordem.** A tela dizia *"não é recomendação de compra"* embaixo de
 *"Comprar com convicção"*. Os códigos ficam, porque carteira, alertas e estratégia os leem.
+
+**A medida confirmou que a etiqueta é só posição.** De 2011 a 2017, as ações abaixo do preço justo
+renderam 4,0% em 12 meses, as dentro 5,3% e as acima 3,0% (t −0,09): o veredito não ordenou o
+retorno ([planos/calibracao](planos/calibracao.md); [10-PROBLEMAS](10-PROBLEMAS.md), A12).
 
 **Com qualidade `fragil`, a leitura não passa de "abaixo" ou "acima"**: `STRONG_BUY` vira `BUY` e
 `STRONG_SELL` vira `SELL` (`decision.py::verdict_for`). A margem crua fica em `band_verdict`, e a razão
@@ -528,6 +547,8 @@ entra quem cai MIN_DROP_PCT = 15% ou mais                          (ajustável p
 ordem: margem de segurança, da maior para a menor; sem faixa no fim; empate pela queda
 ```
 
+A ordem é por posição: a medida de 2026-10-12 não mostrou retorno maior abaixo do preço justo.
+
 Cada item traz a mesma etiqueta, faixa, qualidade e primeira razão da folha do ativo
 (`decision.py::decide`). Até 2026-09-25 a varredura tinha nota e etiquetas próprias —
 "Oportunidade na baixa", "Aguardar", "Armadilha" — com 25 pontos de técnico, e contradizia a folha.
@@ -545,7 +566,8 @@ Cada item traz a mesma etiqueta, faixa, qualidade e primeira razão da folha do 
 | Diversificação | 20% | categorias com valor, de 5 a 0 |
 | Risco | 30% | fatia em veredito de venda, × 1,5 |
 
-`_WEIGHTS` no mesmo arquivo.
+`_WEIGHTS` no mesmo arquivo. O risco lê a posição contra o preço justo, e não um retorno esperado: a
+medida de 2026-10-12 não mostrou retorno menor acima dele.
 
 ---
 
@@ -725,7 +747,8 @@ categoria abaixo da meta, fora da carteira —, a sugestão traz a **frase do aj
 (`adjustment_sentence`): a margem do alvo e a da posição, as duas medidas contra a borda da faixa, e
 se o preço do alvo cabe na meta de renda (`fits_income_goal`: preço ≤ `personal_ceiling`). Sem
 yield declarado, a frase não fala de meta de renda. `realocar_para` leva também preço, faixa e
-margem do alvo.
+margem do alvo. A frase termina com "o preço justo descreve posição, não antecipa retorno": as
+listas ordenam por posição, e a medida de 2026-10-12 não mostrou retorno maior abaixo do preço justo.
 
 Na tela em `/sobra/desvio`: a frase em serifa, as razões, e o alvo com a faixa e a régua de score.
 

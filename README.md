@@ -3,7 +3,9 @@
 Plataforma de análise de investimentos para a B3, multi-tenant: carteira, fluxo de caixa, apuração
 de imposto e análise de ativos num só lugar.
 
-**Backend** FastAPI + Postgres (`backend/`) · **Cliente** Flutter (`mobile/`), o único
+**Backend** FastAPI + Postgres (`backend/`) · **Cliente** Flutter (`mobile/`), o único cliente do
+produto · **Coleta** de dados de mercado (`data-job/`) · **Pesquisa e painel do autor**
+(`trend-backend/`, `trend-frontend/`), fora do produto
 
 ---
 
@@ -17,7 +19,9 @@ de imposto e análise de ativos num só lugar.
 | Como trabalhar sem quebrar nada | [CLAUDE.md](CLAUDE.md) |
 | Índice completo | [docs/README.md](docs/README.md) |
 
-**Estado:** em desenvolvimento, um usuário (o autor), nada publicado em loja, sem receita.
+**Estado:** em desenvolvimento, um usuário (o autor), nada publicado em loja, sem receita. Uso
+pessoal por decisão ([ADR-023](docs/decisoes/ADR-023-fase-pessoal-primeiro.md)); publicação depois
+do teste.
 
 ---
 
@@ -106,6 +110,13 @@ O texto jurídico abre no navegador do aparelho e vem do mesmo backend. Para apo
 cd backend && python -m pytest -q
 cd backend && python -m ruff check app tests migrations
 cd backend && python -m ruff format --check app tests
+cd data-job && python -m pytest -q                 # gravação exige DATAJOB_TEST_DATABASE_URL
+cd data-job && python -m ruff check datajob tests migrations
+cd data-job && python -m ruff format --check datajob tests migrations
+cd trend-backend && python -m pytest -q
+cd trend-backend && python -m ruff check pesquisa api tests
+cd trend-backend && python -m ruff format --check pesquisa api tests
+cd trend-frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
 cd mobile  && python tool/build_icons.py --check
@@ -146,6 +157,10 @@ mobile/
     features/     telas, por destino
   test/           inclui lint_ui_test e contraste_test
 
+data-job/         coleta B3, CVM e BCB e grava o schema mercado, que o backend só lê
+trend-backend/    pesquisas com protocolo e a API do painel do autor
+trend-frontend/   o painel do autor (trend.up.railway.app), fora do produto
+
 docs/             ver docs/README.md
 ```
 
@@ -156,10 +171,12 @@ A separação entre `ledger`/`cashflow`/`analysis` e o resto **é invariante**, 
 
 ## Deploy
 
-Railway, com Postgres gerenciado. A migração roda como **pre-deploy**
-(`python -m app.release`), nunca no startup.
+Railway, com cinco serviços: `backend`, `data-job`, `trend` e dois Postgres — `postgres-app` (o
+banco do aplicativo) e `postgres-mercado` (o schema `mercado`, só o data-job escreve). A migração do
+backend roda como **pre-deploy** (`python -m app.release`), nunca no startup.
 
-Procedimento e pré-requisitos de loja em [docs/07-OPERACAO.md](docs/07-OPERACAO.md).
+**Nenhum banco tem backup automático** — risco aceito enquanto o uso é pessoal. Procedimento, backup
+e pré-requisitos de loja em [docs/07-OPERACAO.md](docs/07-OPERACAO.md).
 
 ### Chave de release do Android
 

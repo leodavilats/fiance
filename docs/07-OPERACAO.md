@@ -1,7 +1,7 @@
 # Operação
 
 Subir, observar, reverter — e o que falta para publicar nas lojas.
-Última revisão: 2026-09-26
+Última revisão: 2026-10-12
 
 ---
 
@@ -10,7 +10,11 @@ Subir, observar, reverter — e o que falta para publicar nas lojas.
 | Ambiente | Onde | Banco |
 |---|---|---|
 | Desenvolvimento | Máquina local | SQLite em `.cache/fiance.db` |
-| Produção | Railway, projeto `fiance`, ambiente `production` | Postgres gerenciado |
+| Produção | Railway, projeto `fiance`, ambiente `production` | Dois Postgres: `postgres-app` (aplicativo) e `postgres-mercado` (dados de mercado) |
+
+Em desenvolvimento, **sem `MERCADO_DATABASE_URL` não há ativo**: a leitura da base de mercado falha
+com `SemBaseDeMercado` (`collectors/mercado.py`). Aponte a variável para um Postgres com o schema
+`mercado` carregado pelo data-job.
 
 Não há staging. O ambiente existiu até 2026-10-09 e foi removido: acompanhava a mesma branch que
 produção (`main`), então era uma segunda cópia do mesmo commit, e não um passo antes do deploy.
@@ -23,12 +27,17 @@ Serviços no ambiente `production`:
 |---|---|---|
 | `backend` | API, de `/backend`; reconstrói só com mudança em `/backend/**` | — |
 | `postgres-app` | Banco do aplicativo | 500 MB |
-| `data-job` | Coleta de mercado, de `/data-job` — [planos/data-job](planos/data-job.md) | `data-job-bruto`, 5 GB, em `/bruto` |
+| `data-job` | Coleta de mercado, de `/data-job` — [planos/data-job](planos/data-job.md). Cron `0 2 * * 2-6` (UTC, 23h de Brasília), roda `python -m datajob diario` e termina. Migrações Alembic próprias (`data-job/migrations`, 0001–0020), aplicadas pelo Pre-Deploy Command (`python -m alembic upgrade head`). Cada rodada fica em `mercado.rodada` | `data-job-bruto`, 5 GB, em `/bruto` |
 | `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |
 | `trend` | Painel de uso próprio: API do `trend-backend` e front do `trend-frontend`, em `https://trend.up.railway.app`, com senha. Imagem de `trend-backend/Dockerfile`; reconstrói com mudança em `/trend-backend/**`, `/trend-frontend/**` e `/docs/**`. Lê o `postgres-mercado` como `mercado_leitura` | — |
 
 O `trend` pede `TREND_USUARIO` e `TREND_SENHA` e falha ao subir sem elas. A senha é definida no painel do
 Railway, e não passa pelo repositório.
+
+**Para rodar o data-job fora da agenda:** tirar o cron do serviço, fazer uma implantação **nova**
+(`railway up --service data-job`) e depois devolver o cron com outra implantação nova. O *redeploy*
+do Railway reaproveita a configuração anterior, cron incluído, e o container fica esperando o
+horário sem rodar.
 
 As referências de `DATABASE_URL` apontam para o **id** do serviço de banco, e não para o nome:
 renomear um serviço não quebra quem o referencia.
@@ -61,7 +70,7 @@ protegidos por lock no banco.
 
 | Caminho | Gatilho | Espera o CI? |
 |---|---|---|
-| Auto-deploy do Railway | push em `main`, nos **dois** ambientes | Sim, desde 2026-09-19 |
+| Auto-deploy do Railway | push em `main`, no ambiente `production` | Sim, desde 2026-09-19 |
 | [deploy.yml](../.github/workflows/deploy.yml) | manual, com confirmação escrita para produção | Sim, e recusa commit com verificação falhando |
 
 **A espera do CI é o botão `Wait for CI`** (Service → Settings → Source), e ele vive no
@@ -113,6 +122,26 @@ O caminho manual **nunca rodou**: ele exige `RAILWAY_TOKEN` nos segredos e `RAIL
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | vazio | Push |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Amostragem |
 | `WEB_CONCURRENCY` | `2` | Workers |
+
+### data-job
+
+As duas são obrigatórias, sem default: ausente, o job falha ao começar (`datajob/config.py`).
+
+| Variável | Para quê |
+|---|---|
+| `DATABASE_URL` | O `postgres-mercado`, com permissão de escrita no schema `mercado` |
+| `DATAJOB_BRUTO_DIR` | Onde guardar os arquivos brutos. Em produção, `/bruto` |
+
+### trend (painel)
+
+| Variável | Default | Para quê |
+|---|---|---|
+| `DATABASE_URL` | **obrigatória** | O `postgres-mercado`, lido como `mercado_leitura` |
+| `TREND_USUARIO` | **obrigatória** | Usuário do painel |
+| `TREND_SENHA` | **obrigatória** | Senha do painel; definida no Railway, nunca no repositório |
+| `TREND_DOCS` | `docs/` da raiz | Onde ler os planos exibidos |
+| `TREND_PESQUISA` | `trend-backend/` | Onde ler os resultados da pesquisa |
+| `TREND_FRONT` | `trend-frontend/dist` | O front compilado que a API serve |
 
 **`ENTITLEMENTS_ENABLED_AT` é a âncora do relógio de trial.** `start_trial` é chamado na primeira
 posição salva **sem consultar a flag**, então toda conta com carteira carrega um `trial_ends_at` no
@@ -189,9 +218,8 @@ python -m app.backup reaplicar-exclusoes nova.json  # lápides de conta de uma c
   no máximo **30 dias** (`account_store.DELETION_SLA_DAYS`): é o prazo que a política de exclusão
   promete para backups. Cópia mais velha que isso descumpre a política.
 
-**Falta decisão de operação:** agendar a exportação (um serviço de cron no Railway, por exemplo) e
-escolher o destino cifrado. As duas coisas dependem da conta do Railway e de onde guardar, e não do
-código. Até lá, a exportação roda à mão.
+A exportação roda à mão, e não há agendamento nem destino cifrado definido: é o mesmo risco aceito
+no topo desta seção, a rever antes de abrir o produto ao público.
 
 Para reverter um deploy, use o rollback do Railway. Migração aplicada **não** é revertida por
 rollback de aplicação — migração que precise voltar exige `downgrade` escrito e testado antes.
@@ -224,4 +252,7 @@ construído e testado.
 ## Rotina de operação
 
 Não há rotina automatizada de monitoramento, alerta ou verificação de saúde além do que o Railway
-oferece. Com um usuário isso é adequado; com usuários reais, não é.
+oferece, com uma exceção: o painel `trend` alerta falha de etapa na última rodada do data-job
+(`mercado.rodada`), rodada parada há mais de 80 h ou começada e não terminada, e cotação com mais de
+2 dias úteis sem pregão novo (`trend-backend/api/alertas.py`). Com um usuário isso é adequado; com
+usuários reais, não é.

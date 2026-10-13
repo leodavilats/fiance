@@ -2,9 +2,17 @@
 
 **Fonte de verdade** para visão, público, limites e modelo de negócio. Não há código que responda
 estas perguntas.
-Última revisão: 2026-09-26
+Última revisão: 2026-10-12
 
 ---
+
+## Fase atual
+
+**Hoje o fiance tem um usuário: o autor**, que o usa para investir e acompanhar o próprio dinheiro
+durante o teste. O público vem depois, sem data. Tudo o que é de loja, cobrança e aquisição está
+adiado; as regras de produto valem desde já. Decisão em
+[ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md).
+
 
 ## O problema
 
@@ -15,8 +23,10 @@ confiança. Em paralelo, controla os gastos numa planilha que ninguém atualiza 
 São três ferramentas e nenhuma se fala: a planilha não sabe quanto sobra para investir, o site de
 análise não sabe o que ela já tem, e a recomendação de terceiro não sabe nada sobre ela.
 
-**O fiance existe para responder uma pergunta só: *que ativo eu compro agora?*** — com o motivo
-junto, considerando o que sobra do mês, o que já está na carteira e o perfil declarado.
+**O fiance existe para responder uma pergunta só: *onde está cada ativo, e por quê?*** — a leitura
+de posição com o motivo junto, considerando o que sobra do mês, o que já está na carteira e o perfil
+declarado. A leitura descreve posição, não antecipa retorno: medido de 2011 a 2017, o veredito de
+preço justo não ordenou o retorno seguinte ([10-PROBLEMAS](10-PROBLEMAS.md), A12).
 
 ## Para quem
 
@@ -38,7 +48,8 @@ Três coisas encadeadas, nesta ordem, que é também a ordem da navegação:
 
 1. **Quanto sobra** — controle de gastos vivo, no celular, que termina num número utilizável
 2. **Para onde vai** — a cascata: dívida cara antes de reserva, reserva antes de aporte
-3. **O que comprar** — análise com preço justo, score por perfil, e o que derrubaria o veredito
+3. **Onde está cada ativo** — leitura de posição contra o preço justo, score por perfil, e o que
+   derrubaria o veredito. Sem promessa de retorno: o veredito não o antecipou (A12)
 
 O diferencial não é nenhum dos três isolados: é o encadeamento. Status Invest responde o terceiro e
 ignora os dois primeiros; um app de finanças pessoais responde o primeiro e para ali.
@@ -82,6 +93,9 @@ consequências registradas em [ADR-006](decisoes/ADR-006-recomendacao-personaliz
 
 ## Modelo de negócio
 
+**Da fase pública, adiada** ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)). Enquanto o uso
+é pessoal, não há cobrança nem receita, e o ponto de equilíbrio não importa.
+
 | Item | Decisão |
 |---|---|
 | Modelo | Assinatura, sem versão gratuita permanente |
@@ -94,10 +108,13 @@ consequências registradas em [ADR-006](decisoes/ADR-006-recomendacao-personaliz
 Decisões em [ADR-008](decisoes/ADR-008-monetizacao-por-loja.md) e
 [ADR-009](decisoes/ADR-009-trial-e-gratuidade.md).
 
-**A hipótese de valor:** a pessoa paga quando percebe que o aplicativo indica ativos para *ela* —
-comparando com o que ela já tem — e diz por quê.
+**A hipótese da fase pessoal:** o sistema serve ao autor para investir e acompanhar o dinheiro —
+com dado confiável e sem prometer o que não se mediu. É ela que se testa agora.
 
-**O risco que essa escolha carrega:** sem nada gratuito, sem landing page (removida em 2026-09-11) e
+**A hipótese de receita, da fase pública:** a pessoa paga quando percebe que o aplicativo lê os ativos
+para *ela* — comparando com o que ela já tem — e diz por quê.
+
+**O risco que essa escolha carrega, ao abrir ao público:** sem nada gratuito, sem landing page (removida em 2026-09-11) e
 sem presença em loja, não existe hoje superfície de descoberta do produto. O risco declarado é de
 aquisição, e a decisão de não ter gratuidade aponta na direção oposta a ele. Registrado, consciente,
 revisável.
@@ -106,3 +123,7 @@ revisável.
 
 Uma pessoa usa o sistema: o autor, com dados reais, diariamente. Nada publicado em loja, nenhuma
 conta de desenvolvedor aberta, nenhuma receita. Ver [08-ESTADO](08-ESTADO.md).
+
+Em volta do app há uma plataforma do autor, fora do produto: o `data-job/` coleta os dados de mercado
+que o app lê, e o painel `trend` (`trend.up.railway.app`) organiza dados e pesquisas. Ver
+[planos/plataforma](planos/plataforma.md).

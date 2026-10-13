@@ -34,7 +34,34 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [019](ADR-019-fii-de-papel-exige-yield-nominal.md) | FII de papel exige yield nominal, por uma classificação mantida no código — complementa 014 | `ACEITO` | 2026-09-25 |
 | [020](ADR-020-day-trade-apartado.md) | Day trade é apartado na projeção, e apurado em conta própria | `ACEITO` | 2026-09-25 |
 | [021](ADR-021-a-exportacao-volta-para-conta-vazia.md) | A exportação da conta volta, e só para conta sem dados financeiros | `ACEITO` | 2026-09-28 |
-| [022](ADR-022-dados-de-mercado-coletados-em-lote.md) | Dados de mercado coletados em lote, por um job dono do próprio schema | `PROPOSTO` | 2026-10-09 |
+| [022](ADR-022-dados-de-mercado-coletados-em-lote.md) | Dados de mercado coletados em lote, por um job dono do próprio schema | `ACEITO` | 2026-10-09, aceita em 2026-10-12 |
+| [023](ADR-023-fase-pessoal-primeiro.md) | Fase pessoal primeiro; público depois | `ACEITO` | 2026-10-12 |
+
+---
+
+## Notas de contexto
+
+O texto de uma ADR não muda. Quando um fato posterior muda o peso de uma premissa, a nota fica aqui,
+datada, e a ADR continua como foi escrita.
+
+**2026-10-12**
+
+- **006** — a frase-alvo é anterior à medida do preço justo; reexaminar antes da fase pública
+  ([ADR-023](ADR-023-fase-pessoal-primeiro.md), [calibracao](../planos/calibracao.md),
+  [10-PROBLEMAS](../10-PROBLEMAS.md) A12). A frase do app ganhou "o preço justo descreve posição, não
+  antecipa retorno".
+- **008 e 009** — valem para a fase pública, adiada pela [ADR-023](ADR-023-fase-pessoal-primeiro.md).
+- **011 e 014** — tratam "abaixo do preço justo" como lado de compra e justificam a Selic média de 10
+  anos; a medida de 2011–2017 mostrou que o veredito não ordenou o retorno e que, com essa média, 9 em
+  10 ações ficavam acima da faixa ([calibracao](../planos/calibracao.md), A12). A afirmação da 014 de
+  que validar exige dado point-in-time "que a BRAPI não entrega" foi resolvida pela base própria.
+- **017, 018 e 019** — as premissas "a BRAPI não entrega…" e o invariante "só BRAPI e BCB SGS" foram
+  trocados pela [ADR-022](ADR-022-dados-de-mercado-coletados-em-lote.md). Na 019, o informe mensal da
+  CVM (`mercado.fii_mensal`) traz segmento e mandato do FII: a lista mantida à mão deve ser revista.
+  Na 017, BDR segue sem balanço, porque a CVM não publica demonstração de empresa estrangeira.
+- **022** — a condição "a BRAPI só sai quando proventos tiverem fonte" foi cumprida com os endpoints
+  da B3; o backend já migrou (cotação do último fechamento, `as_of` às 18h BRT). O consumo é pela
+  conexão do Railway com `SET ROLE mercado_leitura`, sem usuário próprio.
 
 ---
 

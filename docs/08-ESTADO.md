@@ -1,7 +1,7 @@
 # Estado do sistema
 
 **Fonte de verdade** para a pergunta *"isto existe?"*. Nenhum outro documento responde isso.
-Última revisão: 2026-09-28 · Escopo: todo o produto
+Última revisão: 2026-10-12 · Escopo: todo o produto
 
 Se um documento descrever uma funcionalidade e este arquivo disser que ela não existe, **este
 arquivo vence**.
@@ -18,6 +18,7 @@ arquivo vence**.
 | `[PLANEJADO]` | Decidido, não construído | Tem lugar em [09-FUTURO](09-FUTURO.md) |
 | `[EM DISCUSSÃO]` | Sem decisão | Precisa de decisão |
 | `[ABANDONADO]` | Existiu, saiu | Com data e commit |
+| `[DESCONHECIDO]` | Nunca observado | Não se sabe se funciona |
 
 `[SEM CLIENTE]` existiu porque o front web saiu em 2026-09-11 e levou junto o único consumidor de
 várias rotas. Chegou a zero em 2026-09-26; o marcador fica para a próxima vez que uma rota nascer sem
@@ -106,7 +107,7 @@ card de ativo ele continua sendo vender e remover.
 | Funcionalidade | Estado | Onde vive | Tela |
 |---|---|---|---|
 | Oportunidades com score e veredito | `[ATUAL]` | `services/opportunity_service.py` | `market/opportunities_tab.dart` |
-| Preço justo por modelo de classe, faixa das premissas | `[ATUAL]` | `analysis/fair_price.py` | idem e `market/asset_detail_sheet.dart` — BDR e ETF saem "Sem preço justo" ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)) |
+| Preço justo por modelo de classe, faixa das premissas | `[ATUAL]` | `analysis/fair_price.py` | idem e `market/asset_detail_sheet.dart` — BDR e ETF saem "Sem preço justo" ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)). Descreve posição, não antecipa retorno: de 2011 a 2017 o veredito não ordenou o retorno ([planos/calibracao](planos/calibracao.md), [10-PROBLEMAS](10-PROBLEMAS.md) A12) |
 | Preço-teto da meta de renda | `[ATUAL]` | `analysis/fair_price.py::_indicators` | `market/asset_detail_sheet.dart` |
 | Score personalizado por perfil de risco | `[ATUAL]` | `analysis/scoring.py` | idem — ações e FIIs; BDR com os pesos da ação e sem a margem; ETF não tem score |
 | Falsificadores do veredito | `[ATUAL]` | `analysis/falsifiers.py` | `market/asset_detail_sheet.dart` |
@@ -144,7 +145,7 @@ A camada mais bem construída do sistema: o razão é a fonte da carteira e do i
 | Isenção mensal de R$ 20 mil | `[IMPLEMENTADO]` | `ledger/apuracao.py` | — |
 | Proventos recebidos: registrar, listar, apagar | `[IMPLEMENTADO]` | `api/dividends.py` | `patrimony/dividends_screen.dart` |
 | Proventos: sugestões do calendário | `[IMPLEMENTADO]` | `services/dividend_calendar_service.py` | ✅ `/patrimonio/proventos`, colapsado |
-| Direito a provento provado pela data-com | `[ATUAL]` | `services/dividend_calendar_service.py` | ✅ bloco "Aguardando sua confirmação" — medido em 2026-09-25, 0 de 3.659 proventos da BRAPI sem data-com; o indeterminado vem de declaração de posição que absorveu a história |
+| Direito a provento provado pela data-com | `[ATUAL]` | `services/dividend_calendar_service.py` | ✅ bloco "Aguardando sua confirmação" — medição de 2026-09-25 sobre a BRAPI, então a fonte: 0 de 3.659 proventos sem data-com; o indeterminado vem de declaração de posição que absorveu a história |
 | Razão: filtro por tipo, período e ativo, com paginação | `[ATUAL]` | `GET /transactions` | ✅ `/patrimonio/razao` |
 
 **O que o IR cobre:** swing trade de ações, BDRs, ETFs (15%) e FIIs (20%), com compensação de
@@ -172,7 +173,7 @@ corretora única. **O que não cobre:** emissão de DARF, informe anual.
 | Rotas de administrador | `[IMPLEMENTADO]` | `require_admin` |
 | Rota pública sem titular | `[IMPLEMENTADO]` | `GET /public/asset/{ticker}` |
 | Páginas jurídicas (`/termos`, `/privacidade`, `/aviso-cvm`) | `[ATUAL]` | `api/legal.py` |
-| Backup lógico: exportar, restaurar, reaplicar exclusões | `[IMPLEMENTADO]` | `backend/app/backup.py` — runbook em [07-OPERACAO](07-OPERACAO.md); agendamento no Railway pendente |
+| Backup lógico: exportar, restaurar, reaplicar exclusões | `[IMPLEMENTADO]` | `backend/app/backup.py` — runbook em [07-OPERACAO](07-OPERACAO.md); roda à mão, sem agendamento nem backup automático — risco aceito em 2026-10-12 |
 
 **Não existe senha no sistema.** O login é Google (e Apple, quando o botão chegar). Não há "esqueci minha senha"
 porque não há senha.
@@ -199,15 +200,19 @@ Nada cobra dinheiro hoje. A cerca de plano está **desligada** (`ENTITLEMENTS_EN
 |---|---|---|
 | Base de mercado própria (`postgres-mercado`, pelo `data-job/`) | `[ATUAL]` | Preço de fechamento, fundamentos, proventos, histórico de ações, FIIs, BDRs, ETFs. Substituiu a BRAPI em 2026-10-12 ([ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)) |
 | BCB SGS | `[ATUAL]` | CDI, Selic, IPCA |
-| B3 COTAHIST, pelo `data-job/` | `[IMPLEMENTADO]` | Cotação diária bruta do mercado à vista, de 2005 em diante, no `postgres-mercado` de produção, atualizada por cron depois de cada pregão. Nada lê dela ainda — [planos/data-job](planos/data-job.md) |
-| CVM cadastro e FCA, e emissores da B3, pelo `data-job/` | `[IMPLEMENTADO]` | Empresa por CNPJ e a ligação do código de emissor do ISIN ao CNPJ, com o método. Nada lê ainda |
-| CVM DFP e ITR, pelo `data-job/` | `[IMPLEMENTADO]` | Balanço, resultado e fluxo de caixa de 2010 em diante, por documento, versão e data de entrega: 6,3 milhões de linhas no `postgres-mercado`. Nada lê ainda |
-| BCB SGS, pelo `data-job/` | `[IMPLEMENTADO]` | CDI e Selic diários, meta da Selic e IPCA mensal de 2005 em diante, no `postgres-mercado`. O backend segue lendo o BCB por conta própria (`backend/app/collectors/rates.py`) |
-| Visões de fundamento no `postgres-mercado` | `[IMPLEMENTADO]` | Receita, EBIT, lucro, patrimônio, caixa e dívida por documento, sobre as demonstrações brutas — [planos/data-job](planos/data-job.md). Nada lê ainda |
-| Proventos, eventos em ações e série ajustada, pelo `data-job/` | `[IMPLEMENTADO]` | Da B3, por emissor, toda sexta; eventos conferidos pelo preço antes de ajustar, e o que falta na B3 inferido com preço, número de ações e IPE (21 em 2026-10-10); `mercado.serie_papel` com preço ajustado, retorno total e saltos sem explicação marcados; FIIs, ETFs e BDRs em `mercado.serie_fundo`, com eventos completos, rendimentos recentes da B3 acumulados desde out/2026 e, para FII, o histórico desde 2016 estimado pelo informe mensal da CVM; PTAX e preços e taxas do Tesouro Direto desde 2005. Nada lê ainda |
-| Capital social do FRE, pelo `data-job/` | `[IMPLEMENTADO]` | Quantidade de ações integralizadas por data de aprovação, de 2010 em diante, para o que a composição do capital não cobre (antes de 2020) |
+| Serviço `data-job` | `[ATUAL]` | Cron `0 2 * * 2-6` (UTC, 23h de Brasília) no Railway; arquivo bruto guardado no volume `/bruto`; cada rodada registrada em `mercado.rodada` — [planos/data-job](planos/data-job.md), [07-OPERACAO](07-OPERACAO.md) |
+| Leitura do app: `mercado.ativo_hoje` e `mercado.fundamento_app` | `[ATUAL]` | Visões materializadas que o backend lê (`collectors/mercado.py`): cotação, cadastro, quantidade de ações e proventos de 12 meses por ativo; resultado e balanço por empresa. Junto com `mercado.cotacao` (histórico) e `mercado.provento` (sem `cvm_estimado`) |
+| B3 COTAHIST, pelo `data-job/` | `[ATUAL]` | Cotação diária bruta do mercado à vista, de 2005 em diante, no `postgres-mercado` de produção, atualizada por cron depois de cada pregão. O backend lê por `ativo_hoje` e `mercado.cotacao`; a pesquisa e o painel, direto — [planos/data-job](planos/data-job.md) |
+| CVM cadastro e FCA, e emissores da B3, pelo `data-job/` | `[ATUAL]` | Empresa por CNPJ e a ligação do código de emissor do ISIN ao CNPJ, com o método. O backend lê nome, setor e CNPJ por `ativo_hoje`; a pesquisa e o painel, direto |
+| CVM DFP e ITR, pelo `data-job/` | `[ATUAL]` | Balanço, resultado e fluxo de caixa de 2010 em diante, por documento, versão e data de entrega: 6,3 milhões de linhas no `postgres-mercado`. O backend lê por `fundamento_app`; a pesquisa, pelas visões de fundamento |
+| BCB SGS, pelo `data-job/` | `[IMPLEMENTADO]` | CDI e Selic diários, meta da Selic e IPCA mensal de 2005 em diante, e a Selic mensal (SGS 4189) desde 2000, no `postgres-mercado`. Lido pela pesquisa; o backend segue lendo o BCB por conta própria (`backend/app/collectors/rates.py`) |
+| Visões de fundamento no `postgres-mercado` | `[ATUAL]` | Receita, EBIT, lucro, patrimônio, caixa e dívida por documento, sobre as demonstrações brutas — [planos/data-job](planos/data-job.md). O backend lê o recorte `fundamento_app`; a pesquisa e o painel, as visões inteiras |
+| Proventos, eventos em ações e série ajustada, pelo `data-job/` | `[ATUAL]` | Da B3, por emissor, toda sexta; eventos conferidos pelo preço antes de ajustar, e o que falta na B3 inferido com preço, número de ações e IPE (21 em 2026-10-10); `mercado.serie_papel` com preço ajustado, retorno total e saltos sem explicação marcados; FIIs, ETFs e BDRs em `mercado.serie_fundo`, com eventos completos, rendimentos recentes da B3 acumulados desde out/2026 e, para FII, o histórico desde 2016 estimado pelo informe mensal da CVM; PTAX e preços e taxas do Tesouro Direto desde 2005. O backend lê `mercado.provento`, sem a origem `cvm_estimado`; série ajustada, PTAX e Tesouro, só a pesquisa e o painel |
+| Capital social do FRE, pelo `data-job/` | `[ATUAL]` | Quantidade de ações integralizadas por data de aprovação, de 2010 em diante, para o que a composição do capital não cobre (antes de 2020). Entra no valor de mercado do app, pela quantidade de ações de `ativo_hoje` |
 | Pesquisa de carteira, em `trend-backend/` | `[IMPLEMENTADO]` | Uso próprio: motor de simulação mensal com custo e imposto, prova lacrada, registro e relatório HTML; 8 variações testadas e busca encerrada sem vantagem investível — [planos/pesquisa](planos/pesquisa.md). Ranking de tendência: 6 variações, 3 em ações e 3 em FIIs, nenhuma passou no estudo — o ranking não informa — [planos/ranking](planos/ranking.md) |
 | Painel `trend` (API no `trend-backend`, front no `trend-frontend`) | `[IMPLEMENTADO]` | Caminho, coleta, ativos de todas as classes, dólar e Tesouro, ranking, pesquisa e planos, com senha, no serviço `trend` do Railway |
+| Alertas de coleta no painel | `[IMPLEMENTADO]` | Falha de etapa na última rodada (`mercado.rodada`), rodada parada há mais de 80 h ou sem terminar, cotação com mais de 2 dias úteis sem pregão novo — `trend-backend/api/alertas.py` |
+| Calibração do preço justo, em `trend-backend/` | `[IMPLEMENTADO]` | Uso próprio: o veredito do app, com só o que se sabia na data, contra o retorno dos 12 meses seguintes. Encerrada em 2026-10-12: de 2011 a 2017, o veredito não ordenou o retorno — [planos/calibracao](planos/calibracao.md), [10-PROBLEMAS](10-PROBLEMAS.md) A12 |
 
 Proteções ativas: disjuntor por fonte, cache com idade, faixa de plausibilidade, coleta em lote,
 portão de pregão. Detalhes em [03-ARQUITETURA](03-ARQUITETURA.md).
@@ -223,7 +228,7 @@ portão de pregão. Detalhes em [03-ARQUITETURA](03-ARQUITETURA.md).
 | Renderização no servidor e E2E de navegador | 2026-09-11 | commit `3a922a6` |
 | Criptomoedas | antes de 2026-09 | Nenhum vestígio no código |
 | Ações internacionais diretas (fora de BDR) | antes de 2026-09 | — |
-| Finnhub, CoinGecko, Gemini, yfinance, Alpha Vantage | antes de 2026-09 | Restaram BRAPI e BCB |
+| Finnhub, CoinGecko, Gemini, yfinance, Alpha Vantage | antes de 2026-09 | Restaram BRAPI (até 2026-10-12) e BCB |
 | BRAPI | 2026-10-12 | Trocada pela base própria — [ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md) |
 | Otimizador (`optimizer/`, `OptimizationStrategy`) | 2026-09-13 | commit `88c18c5` · [ADR-010](decisoes/ADR-010-remover-otimizador.md) |
 | Diagnóstico de queda por notícia (Google News) | 2026-09-25 | [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao-veredito.md) — a queda virou recorte |
@@ -239,13 +244,16 @@ Sobrou da web: `mobile/web/index.html`, scaffold padrão do Flutter. Não é uma
 
 ## Resumo por estado
 
-| Estado | Quantidade aproximada |
+Contado nas tabelas deste arquivo em 2026-10-12, uma linha por item.
+
+| Estado | Linhas |
 |---|---|
-| `[ATUAL]` | ~30 funcionalidades |
-| `[IMPLEMENTADO]` | ~19 |
+| `[ATUAL]` | 52 |
+| `[IMPLEMENTADO]` | 34 |
+| `[DESCONHECIDO]` | 1 — iOS |
 | `[SEM CLIENTE]` | **0** — ver [historico/PARIDADE-WEB-APP-2026-09](historico/PARIDADE-WEB-APP-2026-09.md) |
-| `[PLANEJADO]` | ver [09-FUTURO](09-FUTURO.md) |
-| `[ABANDONADO]` | 13 blocos |
+| `[PLANEJADO]` | 1 aqui; o resto em [09-FUTURO](09-FUTURO.md) |
+| `[ABANDONADO]` | 14 |
 
 O `[SEM CLIENTE]` chegou a zero em 2026-09-26: as nove lacunas abertas pela saída da web têm tela,
 e a demonstração, que era vitrine dela, saiu do backend. O número que importa agora é o

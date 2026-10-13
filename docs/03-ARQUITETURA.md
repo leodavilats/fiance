@@ -3,14 +3,16 @@
 Como o sistema é montado e por que as fronteiras estão onde estão.
 Estrutura e endpoints são derivados do código; a **intenção** vive aqui e nas
 [decisões](decisoes/).
-Última revisão: 2026-09-28
+Última revisão: 2026-10-12
 
 ---
 
 ## Visão geral
 
-Um monólito FastAPI, um banco Postgres, um cliente Flutter. Sem microsserviços, sem fila, sem
-serviço auxiliar.
+Um backend FastAPI com o seu Postgres (`postgres-app`), um cliente Flutter. Os dados de mercado vêm
+de um segundo Postgres (`postgres-mercado`), escrito só pelo `data-job/` e lido pelo backend sem
+escrever. Sem microsserviços, sem fila. O painel do autor (`trend-backend/` + `trend-frontend/`) lê
+a mesma base e fica fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)).
 
 ```
 ┌──────────────────────────────────────────┐
@@ -29,13 +31,17 @@ serviço auxiliar.
 │  cashflow/    mês, cascata, dívida       │
 │  analysis/    preço justo, score         │
 │                                          │
-│  collectors/  base de mercado, BCB, disj. │
-└───────────────────┬──────────────────────┘
-                    │
-        ┌───────────▼───────────┐
-        │  Postgres (Railway)   │
-        │  dados + cache        │
-        └───────────────────────┘
+│  collectors/  base de mercado, BCB, disj.│
+└───────────────────┬─────────────────┬────┘
+                    │                 │ só leitura (mercado_leitura)
+        ┌───────────▼───────────┐ ┌───▼──────────────────┐
+        │  postgres-app         │ │  postgres-mercado    │
+        │  dados + cache        │ │  schema mercado      │
+        └───────────────────────┘ └───▲──────────────────┘
+                                      │ escreve (cron diário)
+                                  ┌───┴──────────────────┐
+                                  │  data-job/           │
+                                  └──────────────────────┘
 ```
 
 ---
@@ -165,8 +171,9 @@ paywall) usa `independent_session()` / `outside_request_transaction()`.
 **Duas fontes, e só duas:** a base de mercado própria (`postgres-mercado`, ações, FIIs, BDRs,
 ETFs) e BCB SGS (CDI, Selic, IPCA). A base é escrita só pelo `data-job/`, a partir da B3, da CVM,
 do Tesouro e do BCB ([ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)); o backend
-lê a visão `mercado.ativo_hoje` e o histórico com a conexão que o Railway dá, assumindo o papel
-`mercado_leitura` (`collectors/mercado.py`). **A cotação é a do último fechamento**, e o `as_of`
+lê `mercado.ativo_hoje` (cotação e cadastro), `mercado.fundamento_app` (resultado e balanço),
+`mercado.cotacao` (histórico) e `mercado.provento` (sem a origem `cvm_estimado`), com a conexão que
+o Railway dá, assumindo o papel `mercado_leitura` (`collectors/mercado.py`). **A cotação é a do último fechamento**, e o `as_of`
 é o fechamento daquele pregão, às 18h de Brasília — o que a tela carimba como idade.
 
 Os índices (P/L, P/VP, ROE, margem, dívida sobre patrimônio, yield) são calculados no backend a
@@ -206,12 +213,14 @@ meia hora.
 | Disjuntor | Aberto, nem tenta; quem chama cai no cache vencido | `collectors/circuit.py` |
 | Leitura em lote | 50 tickers por consulta à base | `collectors/universal.prefetch` |
 | Marcador de inexistente | 6h — tem de durar mais que o ciclo de varredura | idem |
-| Portão de pregão | 10h–18h30 em dia com pregão na B3; fora disso a varredura do universo não vai à rede | `core/pregao.py` |
+| Somente leitura | Toda conexão à base de mercado faz `SET ROLE mercado_leitura` e `SET default_transaction_read_only = on` | `collectors/mercado.engine` |
+| Portão de pregão | 10h–18h30 em dia com pregão na B3; fora disso a varredura do universo serve a última varredura em cache | `core/pregao.py` |
 
-O dado muda uma vez por dia útil, depois do fechamento. O portão de pregão evita reler a base de
-madrugada sem motivo. Ele **não** se aplica a: busca de um ativo pedido por
-uma pessoa às 22h, ou num feriado; servir cache no fim de semana. A janela termina 1h depois do
-fechamento porque balanço na B3 sai depois do pregão.
+O dado chega em lote: o `data-job` carrega a base uma vez por dia útil, às 23h de Brasília (cron
+`0 2 * * 2-6`, UTC). Reler a base fora do pregão não traz nada novo, e o portão evita a varredura
+sem motivo. Ele **não** se aplica a: busca de um ativo pedido por uma pessoa às 22h, ou num feriado;
+servir cache no fim de semana. A janela vai da abertura (`ABERTURA`, 10h) ao fechamento
+(`FECHAMENTO`, 18h30).
 
 **O calendário é calculado, sem rede e sem banco** (`core/pregao.py::dias_sem_pregao`):
 

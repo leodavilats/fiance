@@ -1,22 +1,23 @@
 # Plano — data-job
 
-**Estado:** fases 1 e 2 `[IMPLEMENTADO]` — cotação, empresas, demonstrações, BCB, proventos, eventos e série ajustada. Fase 3 `[PLANEJADO]` · **Decisão:** [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)
-(`PROPOSTO`) · **Escrito em:** 2026-10-09
+**Estado:** fases 1, 2 e 3 `[IMPLEMENTADO]` — cotação, empresas, demonstrações, BCB, proventos, eventos,
+série ajustada, e o backend lendo `mercado.ativo_hoje` e `mercado.fundamento_app` · **Decisão:**
+[ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md) (`ACEITO`) · **Escrito em:** 2026-10-09
 
 O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como veio e grava a versão
 interpretada no schema `mercado` do Postgres. Ele é a base de dois consumidores:
 
-- **`backend/`** — o aplicativo, que hoje busca na BRAPI sob demanda
+- **`backend/`** — o aplicativo, que lê a base pela conexão do Railway com `SET ROLE mercado_leitura`
 - **a pesquisa de carteira** — uso próprio do autor, em horizonte de meses, que precisa de histórico
   longo, empresas que saíram da bolsa e fundamento como se sabia na data
 
-O que já existe está marcado em [08-ESTADO](../08-ESTADO.md); o resto deste plano ainda não.
+O estado de cada parte está em [08-ESTADO](../08-ESTADO.md).
 
 ---
 
 ## Fontes conferidas
 
-Baixadas e abertas em 2026-10-09.
+As primeiras, baixadas e abertas em 2026-10-09; as demais, quando entraram na coleta.
 
 | Fonte | Endereço | Formato | O que se viu |
 |---|---|---|---|
@@ -24,8 +25,14 @@ Baixadas e abertas em 2026-10-09.
 | **CVM DFP** | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/ | ZIP anual de CSVs `;`, Latin-1 | O de 2025 tem 12,8 MB e 19 arquivos (284 MB descompactado). O índice traz `VERSAO` e `DT_RECEB`; as demonstrações trazem `CD_CONTA`, `VL_CONTA`, `ESCALA_MOEDA` (`MIL`) e `ORDEM_EXERC` (`ÚLTIMO`, `PENÚLTIMO`) |
 | **CVM ITR** | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/ | O mesmo da DFP, por trimestre | — |
 | **CVM FCA** | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/ | ZIP anual | `valor_mobiliario` liga CNPJ a `Codigo_Negociacao`, com início e fim de negociação |
-| **CVM informe mensal de FII** | https://dados.cvm.gov.br/dados/FII/DOC/INF_MENSAL/DADOS/ | ZIP anual, 2016 → 2026 | — |
-| **BCB SGS** | já usado em `backend/app/collectors/rates.py` | JSON | — |
+| **CVM informe mensal de FII** | https://dados.cvm.gov.br/dados/FII/DOC/INF_MENSAL/DADOS/ | ZIP anual, 2016 → 2026 | Segmento, mandato, valor patrimonial da cota, cotas emitidas e yield do mês |
+| **CVM FRE** | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FRE/DADOS/ | ZIP anual, 2010 em diante | Capital social: quantidade de ações integralizadas, em unidades, na data de aprovação |
+| **CVM IPE** | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/IPE/DADOS/ | ZIP anual, 2005 em diante | Índice de fatos relevantes, comunicados e atas, com categoria e assunto |
+| **CVM cadastro** | https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv | CSV | Companhias abertas, inclusive canceladas |
+| **BCB SGS** | `https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados`, por `datajob/fontes/bcb_sgs.py` | JSON, em janelas de até 10 anos | — |
+| **Tesouro Transparente** | `PrecoTaxaTesouroDireto.csv`, nos dados abertos do Tesouro | CSV | Taxas e preços de cada título do Tesouro Direto, 2005 em diante |
+| **B3 — emissores** | `sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies` | JSON, não documentado | Emissores listados hoje, com CNPJ |
+| **B3 — proventos e eventos** | o mesmo proxy, `GetListedCashDividends` e `GetListedSupplementCompany` | JSON, não documentado | Proventos em dinheiro e eventos em ações por emissor |
 
 **Duas descobertas que mudam o desenho:**
 
@@ -72,8 +79,18 @@ data-job/
     coleta.py             # registro da execução, pulo por hash, transação por arquivo
     esquema.py            # tabelas de mercado
     fontes/
-      b3_cotahist.py      # feito: interpretar, validar, gravar
-      cvm_*.py, bcb_sgs.py  # a fazer
+      b3_cotahist.py      # cotações
+      b3_emissores.py     # emissores listados
+      b3_proventos.py     # proventos e eventos
+      bcb_sgs.py          # séries do BCB
+      cvm_cadastro.py     # companhias abertas
+      cvm_fca.py          # valor mobiliário e ticker declarado
+      cvm_demonstracoes.py  # DFP e ITR
+      cvm_fre.py          # capital social
+      cvm_ipe.py          # documentos do IPE
+      cvm_fii.py          # informe mensal de FII
+      tesouro_direto.py   # Tesouro Direto
+      cvm_comum.py        # leitura comum aos arquivos da CVM
   tests/
     fixtures/             # trechos pequenos de arquivos reais
 ```
@@ -105,14 +122,10 @@ ainda não publicou responde 404 e fica para a rodada seguinte.
 
 ### Leitura
 
-O papel `mercado_leitura` (sem login) lê todo o schema, inclusive tabelas futuras, e não escreve. Quem
-consome ganha um usuário próprio dentro dele, criado à mão quando existir:
-
-```sql
-CREATE ROLE <nome> LOGIN PASSWORD '<senha>' IN ROLE mercado_leitura;
-```
-
-A senha vai para uma variável do serviço consumidor no Railway, e não para o repositório.
+O papel `mercado_leitura` (sem login) lê todo o schema, inclusive tabelas futuras, e não escreve. O
+backend usa a conexão que o Railway dá ao `postgres-mercado` (`MERCADO_DATABASE_URL`) e, a cada conexão
+aberta, assume o papel com `SET ROLE mercado_leitura` e transação só de leitura
+(`backend/app/collectors/mercado.py`). **Não há usuário próprio nem senha nova.**
 
 ### Como rodar
 
@@ -146,7 +159,7 @@ eles **apagam o schema `mercado`** desse banco a cada teste. No CI é um serviç
 
 ---
 
-## Schema `mercado` — fase 1
+## Schema `mercado`
 
 As colunas finais são as das migrações. O que importa decidir agora é a chave e o que cada tabela
 guarda.
@@ -157,7 +170,7 @@ guarda.
 | `valor_mobiliario` | `(cnpj, data_referencia, versao, tipo, classe, codigo)` | FCA de 2010 em diante: o que cada empresa declara negociar, com o ticker quando preenchido |
 | `emissor_b3` | `codigo` | Lista de emissores listados na B3, com CNPJ e código CVM |
 | `emissor` | `codigo` | Derivada: o código de emissor do ISIN (`BRPETRACNPR6` → `PETR`) ligado a um CNPJ, e o método |
-| `ativo` | `isin` | Nome resumido, espécie, código BDI, primeiro e último pregão. A fazer: classe (ação, FII, ETF, BDR) |
+| `ativo` | `isin` | Nome resumido, espécie, código BDI, primeiro e último pregão. A classe (ação, FII, ETF, BDR) não é coluna: sai da espécie e do BDI em `ativo_hoje` |
 | `ticker` | `(codigo, isin)` | Primeiro e último pregão. Um código reaproveitado por outro ISIN é outra linha |
 | `cotacao` | `(isin, data)` | Abertura, máxima, mínima, fechamento, média, negócios, quantidade, volume, fator de cotação — tudo bruto, `NUMERIC` |
 | `documento` | `id`; único em `(cnpj, tipo, data_referencia, versao)` | Tipo (DFP, ITR), data de entrega, id CVM — todas as versões do índice |
@@ -168,6 +181,23 @@ guarda.
 | `rodada` | `id` | Cada execução do data-job: início, fim e as etapas que falharam, com o erro. O painel `trend` alerta a partir dela |
 | `fii_mensal` | `(emissor, classe, referencia)` | Informe mensal de FII da CVM, 2016 em diante: CNPJ, nome, segmento, mandato, valor patrimonial da cota, patrimônio, cotas emitidas e yield do mês — a base do P/VP |
 | `quarentena` | `id` | Coleta, chave da linha, motivo, conteúdo bruto |
+| `provento` | `id` | Por emissor e classe: data-com, tipo, valor por ação, aprovação, `origem` (`b3_historico`, `b3_recente`, `cvm_estimado`) e `data_pagamento`, quando a fonte dá |
+| `evento` | `id` | Desdobramento, grupamento e bonificação da B3: ISIN, data-com, fator, multiplicador, status da conferência pelo preço e razão observada |
+| `evento_inferido` | `(cnpj, classe, data_com)` | Salto sem evento que virou evento: multiplicador, razão observada e o documento do IPE que o sustenta |
+| `ipe_documento` | `(protocolo, versao)` | Índice do IPE da CVM: CNPJ, entrega, referência, categoria, tipo, espécie, assunto, link |
+| `composicao_capital` | `documento_id` | Ações ordinárias, preferenciais, total e em tesouraria, da DFP e do ITR |
+| `capital_social` | `(cnpj, data_referencia, versao, data_aprovacao)` | Ações ON, PN e total, do FRE |
+
+**Visões.** `fundamento_resultado` e `fundamento_balanco` (comuns) leem as linhas da demonstração;
+`cotacao_papel` costura as cotações por CNPJ e classe. As materializadas são recalculadas no fim de
+cada rodada:
+
+| Visão materializada | Chave | Guarda |
+|---|---|---|
+| `serie_papel` | papel e dia | Ação: fechamento por ação, fator de ajuste, ajustado, provento na data ex, retorno total, saltos marcados |
+| `serie_fundo` | emissor, classe e dia | O mesmo para FII, ETF e BDR |
+| `ativo_hoje` | `codigo` | O que o app lê: um ticker negociado nos últimos 30 dias por linha, com classe (`stock`, `fii`, `etf`, `bdr`; Fiagro fora), preço do último fechamento e o anterior, faixa de 52 semanas, volume médio, nome, setor ou segmento, CNPJ, ações, valor patrimonial da cota e proventos de 12 meses |
+| `fundamento_app` | `(cnpj, tipo, data_referencia, versao)` | O que o app lê de fundamento: receita, lucro dos controladores, patrimônio e dívida bruta do período de cada documento |
 
 **O que entra da CVM:** balanço ativo e passivo (BPA, BPP), resultado (DRE) e fluxo de caixa (DFC,
 direto e indireto), da DFP de 2010 em diante e do ITR de 2011 em diante, com três recortes medidos em
@@ -200,22 +230,32 @@ termo ficam no bruto e fora da tabela.
 ```bash
 python -m datajob cotahist --ano 2024            # um ano
 python -m datajob cotahist --dia 2026-10-08      # um pregão
-python -m datajob cvm --doc dfp --ano 2025
-python -m datajob cvm --doc fca --ano 2026
-python -m datajob bcb
-python -m datajob diario                         # o que o cron roda
-python -m datajob backfill --desde 2005          # carga histórica, local, uma vez
-python -m datajob reprocessar --fonte cotahist   # do bruto guardado, sem baixar
+python -m datajob cotahist --arquivo COTAHIST_A2024.ZIP   # ZIP já baixado
+python -m datajob diario                         # o que o cron roda; com o banco vazio, carrega tudo
+python -m datajob reprocessar --fonte cvm_dfp    # do bruto guardado, sem baixar
 ```
+
+`reprocessar` aceita qualquer fonte: `b3_cotahist`, `b3_emissores`, `b3_proventos`, `cvm_cadastro`,
+`cvm_fca`, `cvm_dfp`, `cvm_itr`, `cvm_fre`, `cvm_ipe`, `cvm_fii`, `tesouro_direto`. Não há comando
+de carga histórica: o `diario` com o banco vazio busca cada fonte desde o primeiro ano dela.
 
 ## Execução
 
-| O quê | Quando | Onde |
+Tudo roda no `diario`, uma etapa depois da outra. A etapa que falha fica registrada na `rodada` e não
+impede as seguintes. Cron no Railway, 23h de Brasília, depois de cada pregão.
+
+| Etapa | Quando | O que busca |
 |---|---|---|
-| Carga histórica | Uma vez | Local, gravando no banco de produção pela URL |
-| COTAHIST do dia | 23h de Brasília, terça a sábado em UTC — o arquivo de 08/10 saiu às 20:42 | Cron no Railway, `diario` |
-| CVM (DFP, ITR, FCA, cadastro) | Diário; o hash pula o que não mudou | Cron no Railway |
-| BCB SGS | Diário | Cron no Railway |
+| Cotações da B3 | Toda rodada | O que falta desde o último pregão — o arquivo de 08/10 saiu às 20:42 |
+| Cadastro, FCA, emissores da B3 e ligação emissor–CNPJ | Toda rodada | FCA do ano corrente e do anterior; o hash pula o que não mudou |
+| DFP e ITR | Toda rodada | Ano corrente e anterior |
+| Séries do BCB | Toda rodada | Desde a última data gravada de cada série |
+| Tesouro Direto | Toda rodada | O arquivo inteiro do Tesouro Transparente |
+| Proventos e eventos da B3 | **Às sextas** (e na primeira carga) | Por emissor: companhias com histórico; fundos e BDRs negociados nos últimos dois anos, só os recentes |
+| Informe de FII da CVM | Toda rodada | Ano corrente e anterior |
+| IPE e FRE da CVM | Toda rodada | Ano corrente e anterior |
+| Composição do capital | Só com a tabela vazia | Do bruto de DFP e ITR já guardado |
+| Recálculo das visões | Fim de toda rodada | `serie_papel`, `serie_fundo`, `ativo_hoje` e `fundamento_app`; depois a inferência de eventos, e as visões de novo se algum foi inferido |
 
 O calendário de pregão já existe em `backend/app/core/pregao.py`; o data-job leva uma cópia até haver
 pacote compartilhado. Datas e horários seguem o fuso brasileiro, como em `backend/app/core/brt.py`.
@@ -274,7 +314,8 @@ papéis de 543 empresas; a Casas Bahia sai contínua de 2012 a hoje.
 negociados como lote padrão (AZUL97–99, BEES11, JBDU11/12, BPAC13). Nesses dias, a pesquisa fica com
 a de maior volume.
 
-O preço é o **bruto**: desdobramento, grupamento e provento entram na fase 2.
+O preço é o **bruto**. Desdobramento, grupamento e provento entram na série ajustada da fase 2
+(`mercado.serie_papel`).
 
 ### Ligação do ativo à empresa — feita em 2026-10-10
 
@@ -369,11 +410,11 @@ uso absoluto.
 **Fundos e BDRs** (espécie `CI` ou `DR*`, qualquer que seja o BDI: até out/2022 o BDR era BDI 02) entram pela
 **`mercado.serie_fundo`**, com a mesma regra, por código do emissor no ISIN e classe da cota. A B3 dá
 os eventos de cota completos, mas o histórico de proventos só de companhia: de fundo e BDR, só os
-últimos meses. Esses se **acumulam** a cada coleta (`provento.origem = 'b3_recente'`) e nunca são
+recentes — cerca de 12 meses antes da primeira coleta, em out/2026. Esses se **acumulam** a cada coleta (`provento.origem = 'b3_recente'`) e nunca são
 apagados; o histórico de companhia (`b3_historico`) substitui tudo o que veio da B3 para o emissor.
 Entram os fundos e BDRs negociados nos últimos dois anos.
 
-**O rendimento de FII anterior a out/2026 é estimado** pelo informe mensal da CVM (2016 em diante): o
+**O rendimento de FII anterior aos recentes da B3 é estimado** pelo informe mensal da CVM (2016 em diante): o
 yield do mês vezes o valor patrimonial da cota, com data-com no último dia do mês de referência
 (`origem = 'cvm_estimado'`). Conferido em 2024: HGLG11 e KNRI11 batem no centavo; MXRF11 erra até 10%
 num mês. No mês em que a B3 deu o pago, o estimado sai da série; `provento_estimado` marca o dia que
@@ -382,26 +423,35 @@ usou estimativa.
 **Limites declarados:**
 
 - **Rendimento antigo de ETF, Fiagro e BDR não existe na base**, nem o de FII antes de 2016. O que é
-  anterior à primeira coleta (out/2026) só entra se vier de outra fonte
+  anterior aos recentes trazidos pela primeira coleta (out/2026) só entra se vier de outra fonte
 - **Amortização de cota de FII não entra pela CVM**, só pela B3
-- **Data de pagamento só nos proventos recentes.** O histórico da B3 não a traz; os recentes trazem (`provento.data_pagamento`), e ela preenche também a linha do histórico de mesmo valor e data-com. Antes de out/2025, o provento fica sem data de pagamento
+- **Data de pagamento só nos proventos recentes.** O histórico da B3 não a traz; os recentes trazem
+  (`provento.data_pagamento`), e ela preenche também a linha do histórico de mesmo valor e data-com. Os
+  recentes cobrem cerca de 12 meses antes da primeira coleta (out/2026): antes de out/2025, o provento
+  fica sem data de pagamento
 - **Provento bruto.** O JCP tem imposto retido na fonte, e o retorno total não o desconta
 - **Cisão e redução de capital não ajustam** (Itaú/XP em 2021): o preço cai sem que a série saiba por quê
 - **Emissor que a B3 não encontra fica sem proventos** — a ALL, incorporada pela Rumo em 2015
 
-### Fase 3 — o backend lê de `mercado`
+### Fase 3 — o backend lê de `mercado` `[IMPLEMENTADO]`
 
-`backend/app/collectors/universal.py` passa a montar o `AssetSnapshot` do banco, e a BRAPI sai do
-caminho de leitura. Exige a ADR-022 `ACEITO` e muda os documentos que ela lista. Ativo que alguém
-procura e o data-job não tem continua precisando de resposta — a decisão sobre isso é desta fase.
+Em 2026-10-12, com a ADR-022 aceita, `backend/app/collectors/universal.py` passou a montar o
+`AssetSnapshot` de `mercado.ativo_hoje` e `mercado.fundamento_app` (por `collectors/mercado.py`), e a
+BRAPI saiu do código. Histórico de preço e proventos também vêm da base. Os índices (P/L, P/VP, ROE,
+yield) seguem regra do backend; a visão entrega só números brutos.
+
+**Decidido:** ativo que a base não tem — não negociou nos últimos 30 dias, é Fiagro, ou nunca entrou —
+**o app não mostra**: o coletor não devolve snapshot, e não há fonte de reserva. A cotação é a do
+último fechamento, com a idade carimbada; o Ibovespa é medido pelo BOVA11, porque a base não tem o
+índice.
 
 ---
 
 ## Fora deste plano
 
 - A pesquisa de carteira em si (motor de *backtest*, protocolo de prova lacrada): plano próprio,
-  depois da fase 1
-- `trend-frontend`: só quando houver estratégia para acompanhar
+  [pesquisa](pesquisa.md)
+- `trend-frontend`: o painel do autor existe, e está em [plataforma](plataforma.md)
 - Cotação ao longo do pregão: nenhuma fonte gratuita oficial entrega
 
 ## Perguntas abertas
