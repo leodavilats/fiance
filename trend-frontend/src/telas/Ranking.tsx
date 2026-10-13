@@ -37,7 +37,7 @@ export default function TelaRanking() {
       <p className="nota">
         A pergunta: ordenar pela força da tendência diz quem rende mais no mês seguinte? Passa quem tiver
         correlação de postos ≥ 0,03 com t ≥ 2, topo vencendo o fundo em ≥ 55% dos meses e diferença positiva
-        depois da troca. Teto de 6 variações. <Link to="/planos/planos/ranking.md">Ler o protocolo</Link>.
+        depois da troca. Teto de 6 variações. <Link to="/documentos/pesquisas/ranking.md">Ler o protocolo</Link>.
       </p>
       <Estado estado={estado}>
         {(dados) => (

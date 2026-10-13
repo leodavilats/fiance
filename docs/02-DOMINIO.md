@@ -49,7 +49,7 @@ faixa se sustenta, e entra na qualidade — nunca na borda.
 quando o preço está abaixo dele, sobre o próprio preço quando está acima do teto, e zero dentro da
 faixa. As duas pontas medem a mesma distância. **Descreve posição:** na medida de 2026-10-12, nas
 ações de 2011 a 2017, estar abaixo do preço justo não antecipou retorno
-([planos/calibracao](planos/calibracao.md)).
+([pesquisas/calibracao](pesquisas/calibracao.md)).
 
 **Sem preço justo** — o que o produto diz sobre ativo sem modelo principal (BDR, ETF) ou sem o dado
 que o modelo exige (lucro, ROE, juro). A tendência continua na tela, como contexto, e nunca decide.

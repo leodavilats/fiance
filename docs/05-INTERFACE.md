@@ -171,7 +171,7 @@ Regras específicas de conteúdo:
 
 | Ao mostrar | Exigência |
 |---|---|
-| Cifra de preço justo | A base junto: o modelo principal, a qualidade e as premissas. A explicação diz que o preço justo descreve posição, não antecipa retorno, e o resultado da medida: de 2011 a 2017, estar abaixo dele não antecipou retorno nos 12 meses seguintes ([planos/calibracao](planos/calibracao.md)) |
+| Cifra de preço justo | A base junto: o modelo principal, a qualidade e as premissas. A explicação diz que o preço justo descreve posição, não antecipa retorno, e o resultado da medida: de 2011 a 2017, estar abaixo dele não antecipou retorno nos 12 meses seguintes ([pesquisas/calibracao](pesquisas/calibracao.md)) |
 | Preço, ou lista de preços | `formatAge`. Em lista, o carimbo é o **mais antigo** (`oldestStamp`) |
 | Projeção | Faixa, com piso, teto e cenário base |
 | Julgamento | Proveniência e papel de veredito em serifa |

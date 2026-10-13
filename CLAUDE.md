@@ -22,6 +22,8 @@ quebram o build. Ele não descreve o sistema — isso é [docs/](docs/), e
 | Por que uma decisão foi tomada | [docs/decisoes/](docs/decisoes/) |
 | O que está aberto **agora** | [docs/10-PROBLEMAS.md](docs/10-PROBLEMAS.md) |
 | O que vem depois | [docs/09-FUTURO.md](docs/09-FUTURO.md) |
+| O que a base de mercado tem | [docs/11-DADOS-DE-MERCADO.md](docs/11-DADOS-DE-MERCADO.md) |
+| O que já foi medido, e com que protocolo | [docs/pesquisas/](docs/pesquisas/README.md) |
 
 **Histórico não é pendência.** Nada em [docs/historico/](docs/historico/) é trabalho a fazer, mesmo
 quando descreve um problema. O que está aberto está no 10-PROBLEMAS, e só lá.

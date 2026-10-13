@@ -18,10 +18,10 @@ Disso saíram, em poucos dias:
 
 - a coleta própria de dados de mercado ([ADR-022](ADR-022-dados-de-mercado-coletados-em-lote.md)) e a
   saída da BRAPI;
-- a plataforma de pesquisa e o painel do autor ([planos/plataforma](../planos/plataforma.md));
+- a plataforma de pesquisa e o painel do autor ([plano da plataforma](../historico/PLATAFORMA-2026-10.md));
 - três pesquisas com protocolo, todas sem vantagem a explorar: seleção de carteira
-  ([pesquisa](../planos/pesquisa.md)), ranking de tendência ([ranking](../planos/ranking.md)) e o
-  preço justo do próprio app ([calibracao](../planos/calibracao.md)).
+  ([pesquisa](../pesquisas/pesquisa.md)), ranking de tendência ([ranking](../pesquisas/ranking.md)) e o
+  preço justo do próprio app ([calibracao](../pesquisas/calibracao.md)).
 
 ## Problema
 
@@ -72,4 +72,4 @@ A alternativa 3.
 
 ## Referências
 
-- [01-PRODUTO](../01-PRODUTO.md) · [09-FUTURO](../09-FUTURO.md) · [planos/plataforma](../planos/plataforma.md)
+- [01-PRODUTO](../01-PRODUTO.md) · [09-FUTURO](../09-FUTURO.md) · [plano da plataforma](../historico/PLATAFORMA-2026-10.md)

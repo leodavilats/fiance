@@ -17,7 +17,7 @@ publicação está no bloco *Fase pública — sem data*.
 
 A medida de 2026-10-12 mostrou que o veredito de preço justo não ordenou o retorno de 2011 a 2017, e
 que com a Selic média de 10 anos + 5 pontos o modelo punha 9 em 10 ações acima da faixa
-([planos/calibracao](planos/calibracao.md)). **Falta decidir em ADR** se essa taxa continua sendo a
+([pesquisas/calibracao](pesquisas/calibracao.md)). **Falta decidir em ADR** se essa taxa continua sendo a
 do modelo. Detalhe em [10-PROBLEMAS](10-PROBLEMAS.md), A12.
 
 ---
@@ -69,7 +69,7 @@ Em 2026-09-25 a faixa passou a cobrir os dois cenários de crescimento
 yield nominal ([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)).
 
 **A calibração foi medida em 2026-10-12 e parou por protocolo:** o veredito não ordenou o retorno de
-2011 a 2017 ([planos/calibracao](planos/calibracao.md)). O aberto é a ADR da taxa de desconto
+2011 a 2017 ([pesquisas/calibracao](pesquisas/calibracao.md)). O aberto é a ADR da taxa de desconto
 ([10-PROBLEMAS](10-PROBLEMAS.md), A12), na seção *Em desenvolvimento*. O BDR continua sem juro em dólar
 (*Considerado*).
 
@@ -97,17 +97,17 @@ SGS, guarda o bruto e grava no schema `mercado`; o aplicativo e a pesquisa de ca
 só leem. Revisa o invariante "só BRAPI e BCB SGS" —
 [ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md), aceita em 2026-10-12; a BRAPI
 saiu do código. Plano, fases e
-critério de pronto em [planos/data-job](planos/data-job.md).
+critério de pronto em [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md).
 
 ### ~~10 · A plataforma: coleta completa, tendência como ranking, painel, app sem BRAPI~~ — entregue em 2026-10-12
 
 Decidido em 2026-10-12. Quatro etapas: o data-job com tudo o que negocia na bolsa (ações, FIIs, ETFs,
 BDRs, dólar, Tesouro); a tendência como ranking dos ativos, com acerto medido em protocolo novo; o
 painel organizando o caminho e os dados; e o app fiance lendo só o dado da base própria. A tendência não
-vai para o app. Plano em [planos/plataforma](planos/plataforma.md).
+vai para o app. Plano em [plano da plataforma](historico/PLATAFORMA-2026-10.md).
 
 **Resultado do ranking:** as 6 variações do teto foram usadas e nenhuma passou
-([planos/ranking](planos/ranking.md)). A tendência ficou como contexto de risco, só no painel.
+([pesquisas/ranking](pesquisas/ranking.md)). A tendência ficou como contexto de risco, só no painel.
 
 ---
 
@@ -144,9 +144,9 @@ Sem decisão, mas com interesse declarado.
 | **Opções e derivativos** | Tensiona o limite "não é ferramenta de trade" de [01-PRODUTO](01-PRODUTO.md) |
 | **Controle de gastos completo** (tipo Mobills) | Aumentaria a atenção exigida de um público definido por não ter tempo |
 | **Otimizador de carteira** (Sharpe, HRP, mínima volatilidade) | Removido em 2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md)). Reconstruir é decisão nova — e é preciso responder se isso serve a quem não tem tempo |
-| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. **Medida em 2026-10-12: o modelo como está não ordena o retorno**, e por protocolo a calibração não seguiu ([planos/calibracao](planos/calibracao.md)). O que isso muda no app está em [10-PROBLEMAS](10-PROBLEMAS.md), A12 |
+| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. **Medida em 2026-10-12: o modelo como está não ordena o retorno**, e por protocolo a calibração não seguiu ([pesquisas/calibracao](pesquisas/calibracao.md)). O que isso muda no app está em [10-PROBLEMAS](10-PROBLEMAS.md), A12 |
 | **Preço justo de BDR** | Exige juro em dólar para descontar lucro em dólar ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)): descontar pela Selic fazia todo BDR parecer caro, cerca de 0,67× o valor. Nenhuma fonte da base própria entrega juro em dólar |
-| **Seleção de carteira por fatores e ranking de tendência** | Medidos com protocolo em 2026-10, sem vantagem a explorar: escolher ações não bateu o CDI depois de custo ([planos/pesquisa](planos/pesquisa.md)), e nenhuma das 6 variações do ranking passou ([planos/ranking](planos/ranking.md)). Não reabrir sem protocolo novo |
+| **Seleção de carteira por fatores e ranking de tendência** | Medidos com protocolo em 2026-10, sem vantagem a explorar: escolher ações não bateu o CDI depois de custo ([pesquisas/pesquisa](pesquisas/pesquisa.md)), e nenhuma das 6 variações do ranking passou ([pesquisas/ranking](pesquisas/ranking.md)). Não reabrir sem protocolo novo |
 
 ---
 

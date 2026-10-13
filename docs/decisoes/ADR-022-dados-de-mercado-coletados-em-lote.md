@@ -91,7 +91,7 @@ ajustada para de receber eventos novos.
 
 ## Referências
 
-- Plano: [planos/data-job](../planos/data-job.md)
+- Plano: [11-DADOS-DE-MERCADO](../11-DADOS-DE-MERCADO.md)
 - `backend/app/collectors/universal.py` · `backend/app/core/universe.py` ·
   `backend/app/collectors/plausibility.py`
 - B3, séries históricas: https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/mercado-a-vista/series-historicas/

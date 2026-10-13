@@ -1,15 +1,18 @@
 # Plano — a plataforma de dados, tendência e painel
 
+> **Registro.** As quatro etapas foram concluídas em 2026-10-12, e este plano não é pendência. O
+> roadmap está em [09-FUTURO](../09-FUTURO.md); os protocolos, em [pesquisas](../pesquisas/README.md).
+
 **Estado:** `[IMPLEMENTADO]` · **Decidido em:** 2026-10-12, pelo autor, a partir de um questionário ·
 **Fase:** pessoal, a plataforma é ferramenta do autor ([ADR-023](../decisoes/ADR-023-fase-pessoal-primeiro.md))
 
 | Etapa | Estado | Onde está |
 |---|---|---|
 | 1 · Coleta de tudo o que negocia | `[IMPLEMENTADO]` | Ações, FIIs, ETFs, BDRs, PTAX e Tesouro Direto na base, todo dia útil |
-| 2 · Tendência como ranking | `[CONCLUÍDO]` | Teto de 6 variações usado, nenhuma passou: o ranking não informa. A tendência fica como contexto de risco. [Protocolo e resultado](ranking.md) |
+| 2 · Tendência como ranking | `[CONCLUÍDO]` | Teto de 6 variações usado, nenhuma passou: o ranking não informa. A tendência fica como contexto de risco. [Protocolo e resultado](../pesquisas/ranking.md) |
 | 3 · Painel organizado | `[IMPLEMENTADO]` | Caminho, coleta, ativos de todas as classes, dólar e Tesouro, ranking e pesquisa |
 | 4 · App sem BRAPI | `[IMPLEMENTADO]` | ADR-022 aceita em 2026-10-12. O backend lê `mercado.ativo_hoje`; a BRAPI saiu do código |
-| Calibração do preço justo | `[ENCERRADO]` | O veredito do app não ordenou o retorno de 2011 a 2017; a calibração parou no protocolo. A taxa de desconto segue aberta em [10-PROBLEMAS](../10-PROBLEMAS.md), A12. [Protocolo e resultado](calibracao.md) |
+| Calibração do preço justo | `[ENCERRADO]` | O veredito do app não ordenou o retorno de 2011 a 2017; a calibração parou no protocolo. A taxa de desconto segue aberta em [10-PROBLEMAS](../10-PROBLEMAS.md), A12. [Protocolo e resultado](../pesquisas/calibracao.md) |
 
 A plataforma tem três partes e um consumidor:
 
@@ -44,7 +47,7 @@ O preço bruto de tudo está no COTAHIST (5.171 ISINs). O tratamento por classe,
 | BDRs | Eventos e proventos recentes | Proventos antes de out/2026; **sem balanço**, porque a CVM não publica demonstrações de empresa estrangeira | B3 |
 
 A série ajustada das classes novas segue a regra de `mercado.serie_papel`: preço por cota ajustado por
-evento conferido pelo preço, provento na data ex, retorno total. O detalhe está em [data-job](data-job.md).
+evento conferido pelo preço, provento na data ex, retorno total. O detalhe está em [data-job](../11-DADOS-DE-MERCADO.md).
 
 ## Etapa 2 — a tendência como ranking
 
@@ -56,7 +59,7 @@ validação 2023–2024, prova 2025 em diante).
 
 **Resultado (2026-10-12): o ranking não informa.** As 6 variações foram usadas, 3 em ações e 3 em FIIs,
 e nenhuma passou no estudo; em FII, a tendência se inverteu. A tendência fica no painel como contexto
-de risco. Protocolo e números em [ranking](ranking.md).
+de risco. Protocolo e números em [ranking](../pesquisas/ranking.md).
 
 ## Etapa 3 — o painel organizado
 

@@ -26,7 +26,7 @@ function App() {
           <NavLink to="/mercado">Dólar e Tesouro</NavLink>
           <NavLink to="/ranking">Ranking</NavLink>
           <NavLink to="/pesquisa">Pesquisa</NavLink>
-          <NavLink to="/planos">Planos</NavLink>
+          <NavLink to="/documentos">Documentos</NavLink>
         </nav>
       </header>
       <main>
@@ -42,8 +42,9 @@ function App() {
           <Route path="/mercado" element={<Mercado />} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/pesquisa" element={<Pesquisa />} />
-          <Route path="/planos" element={<Planos />} />
-          <Route path="/planos/*" element={<Documento />} />
+          <Route path="/documentos" element={<Planos />} />
+          <Route path="/documentos/*" element={<Documento />} />
+          <Route path="/planos/*" element={<Navigate to="/documentos" replace />} />
         </Routes>
       </main>
     </BrowserRouter>

@@ -2,7 +2,7 @@
 
 Cada número que o produto afirma, com entrada, fórmula, saída e **limitação**.
 O **código é a fonte de verdade**; este documento é o espelho auditado, com âncora em cada fórmula.
-Última revisão: 2026-10-12 · Medida do preço justo contra o retorno ([planos/calibracao](planos/calibracao.md)); dado da base própria
+Última revisão: 2026-10-12 · Medida do preço justo contra o retorno ([pesquisas/calibracao](pesquisas/calibracao.md)); dado da base própria
 
 Se uma fórmula aqui divergir do código, o código está certo e este documento tem um bug.
 
@@ -221,7 +221,7 @@ casas tiram o ruído de ponto flutuante, e no preço exato do gatilho a etiqueta
 **A margem descreve posição, não antecipa retorno.** Medido em 2026-10-12, com o modelo do app e só o
 que se sabia em cada data, nas ações de 2011 a 2017: retorno médio em 12 meses de 4,0% abaixo da
 faixa, 5,3% dentro e 3,0% acima; abaixo menos acima, t de −0,09. O veredito não ordenou o retorno
-([planos/calibracao](planos/calibracao.md); [10-PROBLEMAS](10-PROBLEMAS.md), A12).
+([pesquisas/calibracao](pesquisas/calibracao.md); [10-PROBLEMAS](10-PROBLEMAS.md), A12).
 
 ### Premissas
 
@@ -248,7 +248,7 @@ faixa, 5,3% dentro e 3,0% acima; abaixo menos acima, t de −0,09. O veredito n�
 3. **O ROE do terminal é o normalizado de hoje.** Empresa de ROE muito alto sai generosa no longo
    prazo; a concorrência tende a reduzi-lo.
 4. **Os parâmetros não têm calibração empírica.** Medido em 2026-10-12: o veredito não ordenou o
-   retorno, e a calibração parou antes de mexer em parâmetro ([planos/calibracao](planos/calibracao.md);
+   retorno, e a calibração parou antes de mexer em parâmetro ([pesquisas/calibracao](pesquisas/calibracao.md);
    [10-PROBLEMAS](10-PROBLEMAS.md), A12).
 5. **FII de papel fora da lista de referência parece barato.** A lista é mantida à mão; fundo que
    não está nela é lido como tijolo, e a distribuição com correção monetária sai capitalizada por
@@ -400,7 +400,7 @@ justo" na etiqueta e "Algum desconto" na medida.
 
 **A medida confirmou que a etiqueta é só posição.** De 2011 a 2017, as ações abaixo do preço justo
 renderam 4,0% em 12 meses, as dentro 5,3% e as acima 3,0% (t −0,09): o veredito não ordenou o
-retorno ([planos/calibracao](planos/calibracao.md); [10-PROBLEMAS](10-PROBLEMAS.md), A12).
+retorno ([pesquisas/calibracao](pesquisas/calibracao.md); [10-PROBLEMAS](10-PROBLEMAS.md), A12).
 
 **Com qualidade `fragil`, a leitura não passa de "abaixo" ou "acima"**: `STRONG_BUY` vira `BUY` e
 `STRONG_SELL` vira `SELL` (`decision.py::verdict_for`). A margem crua fica em `band_verdict`, e a razão

@@ -26,12 +26,12 @@ const NOME_DA_ORIGEM: Record<string, string> = {
 
 export default function TelaCaminho() {
   const visao = useApi<Visao>("/api/visao");
-  const plano = useApi<{ texto: string }>("/api/documentos/planos/plataforma.md");
+  const plano = useApi<{ texto: string }>("/api/documentos/09-FUTURO.md");
   return (
     <>
       <h1>Caminho</h1>
       <p className="nota">
-        O que a base tem hoje e o plano das quatro etapas. <Link to="/coleta">Saúde da coleta</Link>.
+        O que a base tem hoje e o roadmap. <Link to="/coleta">Saúde da coleta</Link>.
       </p>
       <Estado estado={visao}>{(v) => <Numeros visao={v} />}</Estado>
       <Estado estado={plano}>

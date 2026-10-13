@@ -12,7 +12,7 @@ saíram em 2026-09-25 — ver [ADR-018](decisoes/ADR-018-a-queda-e-recorte-e-nao
 os itens 1, 4 e 33 antes disso. O 12, o 23 e o 24 saíram em 2026-09-26 — ver
 [ADR-007](decisoes/ADR-007-nivel-de-afirmacao.md) e [03-ARQUITETURA](03-ARQUITETURA.md) —, e no
 mesmo dia o 15, o 17 e a seção D inteira: a paridade com a web fechou. A12 entrou em 2026-10-12 —
-ver [planos/calibracao](planos/calibracao.md). No mesmo dia a fase passou a ser pessoal
+ver [pesquisas/calibracao](pesquisas/calibracao.md). No mesmo dia a fase passou a ser pessoal
 ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)): o que só bloqueia a publicação está marcado,
 e não sai daqui.
 
@@ -35,12 +35,12 @@ Os itens da auditoria de **2026-09-13** foram fechados até 2026-09-25. A de **2
 
 ### A12 · O veredito de preço justo não ordenou o retorno no passado
 
-Medido em 2026-10-12 ([planos/calibracao](planos/calibracao.md)): de 2011 a 2017, com só o que se
+Medido em 2026-10-12 ([pesquisas/calibracao](pesquisas/calibracao.md)): de 2011 a 2017, com só o que se
 sabia em cada data, ação **abaixo do preço justo** não rendeu mais nos 12 meses seguintes que ação
 **acima** (4,0% contra 3,0% ao ano em média, t de −0,09), e com o juro da época o modelo punha 9 em
 cada 10 ações acima da faixa.
 
-**Aberto:** os textos foram revistos ([planos/calibracao](planos/calibracao.md)); falta decidir em ADR se a taxa de desconto (Selic média de 10 anos + 5 pontos)
+**Aberto:** os textos foram revistos ([pesquisas/calibracao](pesquisas/calibracao.md)); falta decidir em ADR se a taxa de desconto (Selic média de 10 anos + 5 pontos)
 continua sendo a do modelo, já que em juro alto ela deixa quase tudo acima da faixa.
 
 O preço justo de BDR segue em [09-FUTURO](09-FUTURO.md), *Considerado*.
@@ -55,7 +55,7 @@ Redis com timeout e reconexão, universo com cache vencido e calendário da B3 f
 A B3 só dá o histórico de proventos de companhia; de fundo e BDR, os últimos meses. **Faltam os
 proventos de BDR e ETF antes de out/2026**, e os de FII antes de 2016 — de 2016 a out/2026 o
 rendimento de FII é estimado pelo informe mensal da CVM. Só entra se vier de outra fonte. Detalhe em
-[planos/data-job](planos/data-job.md).
+[11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md).
 
 ### Proventos e eventos dependem de endpoints da B3 sem contrato
 

@@ -126,4 +126,4 @@ conta de desenvolvedor aberta, nenhuma receita. Ver [08-ESTADO](08-ESTADO.md).
 
 Em volta do app há uma plataforma do autor, fora do produto: o `data-job/` coleta os dados de mercado
 que o app lê, e o painel `trend` (`trend.up.railway.app`) organiza dados e pesquisas. Ver
-[planos/plataforma](planos/plataforma.md).
+[plano da plataforma](historico/PLATAFORMA-2026-10.md).

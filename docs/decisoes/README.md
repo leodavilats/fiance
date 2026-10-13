@@ -47,13 +47,13 @@ datada, e a ADR continua como foi escrita.
 **2026-10-12**
 
 - **006** — a frase-alvo é anterior à medida do preço justo; reexaminar antes da fase pública
-  ([ADR-023](ADR-023-fase-pessoal-primeiro.md), [calibracao](../planos/calibracao.md),
+  ([ADR-023](ADR-023-fase-pessoal-primeiro.md), [calibracao](../pesquisas/calibracao.md),
   [10-PROBLEMAS](../10-PROBLEMAS.md) A12). A frase do app ganhou "o preço justo descreve posição, não
   antecipa retorno".
 - **008 e 009** — valem para a fase pública, adiada pela [ADR-023](ADR-023-fase-pessoal-primeiro.md).
 - **011 e 014** — tratam "abaixo do preço justo" como lado de compra e justificam a Selic média de 10
   anos; a medida de 2011–2017 mostrou que o veredito não ordenou o retorno e que, com essa média, 9 em
-  10 ações ficavam acima da faixa ([calibracao](../planos/calibracao.md), A12). A afirmação da 014 de
+  10 ações ficavam acima da faixa ([calibracao](../pesquisas/calibracao.md), A12). A afirmação da 014 de
   que validar exige dado point-in-time "que a BRAPI não entrega" foi resolvida pela base própria.
 - **017, 018 e 019** — as premissas "a BRAPI não entrega…" e o invariante "só BRAPI e BCB SGS" foram
   trocados pela [ADR-022](ADR-022-dados-de-mercado-coletados-em-lote.md). Na 019, o informe mensal da

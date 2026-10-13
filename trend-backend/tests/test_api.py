@@ -15,8 +15,8 @@ from api.config import Configuracao
 @pytest.fixture
 def pastas(tmp_path: Path):
     docs = tmp_path / "docs"
-    (docs / "planos").mkdir(parents=True)
-    (docs / "planos" / "pesquisa.md").write_text("# Plano — pesquisa\n\ntexto", encoding="utf-8")
+    (docs / "pesquisas").mkdir(parents=True)
+    (docs / "pesquisas" / "pesquisa.md").write_text("# Plano — pesquisa\n\ntexto", encoding="utf-8")
     (docs / "09-FUTURO.md").write_text("# Futuro\n", encoding="utf-8")
     (tmp_path / "segredo.md").write_text("não", encoding="utf-8")
     pesquisa = tmp_path / "trend-backend"
@@ -80,9 +80,9 @@ def test_registro_e_meses_do_ranking(cliente):
 
 def test_documentos_so_da_lista(cliente):
     lista = cliente.get("/api/documentos", headers=_com_senha()).json()
-    texto = cliente.get("/api/documentos/planos/pesquisa.md", headers=_com_senha()).json()
+    texto = cliente.get("/api/documentos/pesquisas/pesquisa.md", headers=_com_senha()).json()
 
-    assert {d["nome"] for d in lista} == {"planos/pesquisa.md", "09-FUTURO.md"}
+    assert {d["nome"] for d in lista} == {"pesquisas/pesquisa.md", "09-FUTURO.md"}
     assert texto["texto"].startswith("# Plano")
     assert cliente.get("/api/documentos/../segredo.md", headers=_com_senha()).status_code == 404
 

@@ -1,8 +1,9 @@
-# Plano — data-job
+# Dados de mercado — o data-job
 
-**Estado:** fases 1, 2 e 3 `[IMPLEMENTADO]` — cotação, empresas, demonstrações, BCB, proventos, eventos,
-série ajustada, e o backend lendo `mercado.ativo_hoje` e `mercado.fundamento_app` · **Decisão:**
-[ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md) (`ACEITO`) · **Escrito em:** 2026-10-09
+**Fonte de verdade** do que o `data-job/` coleta, como trata cada dado e o que entrega no schema
+`mercado`. O porquê está na [ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md); o
+estado de cada parte, no [08-ESTADO](08-ESTADO.md).
+Última revisão: 2026-10-12
 
 O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como veio e grava a versão
 interpretada no schema `mercado` do Postgres. Ele é a base de dois consumidores:
@@ -10,8 +11,6 @@ interpretada no schema `mercado` do Postgres. Ele é a base de dois consumidores
 - **`backend/`** — o aplicativo, que lê a base pela conexão do Railway com `SET ROLE mercado_leitura`
 - **a pesquisa de carteira** — uso próprio do autor, em horizonte de meses, que precisa de histórico
   longo, empresas que saíram da bolsa e fundamento como se sabia na data
-
-O estado de cada parte está em [08-ESTADO](../08-ESTADO.md).
 
 ---
 
@@ -49,7 +48,7 @@ As primeiras, baixadas e abertas em 2026-10-09; as demais, quando entraram na co
 
 ## Princípios
 
-Os da [ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md), aplicados:
+Os da [ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md), aplicados:
 
 | Princípio | Como fica |
 |---|---|
@@ -262,13 +261,13 @@ pacote compartilhado. Datas e horários seguem o fuso brasileiro, como em `backe
 
 ---
 
-## Fases
+## Como cada dado é tratado
 
-### Fase 1 — a base
+### A base, e como foi aceita na carga inicial
 
 COTAHIST de 2005 em diante, cadastro e FCA, DFP e ITR de 2010 em diante, BCB SGS.
 
-**Pronto quando:**
+**Conferido na carga inicial (2026-10-09):**
 
 - A série da PETR4 de 2005 a hoje bate, em 5 datas sorteadas, com o fechamento publicado pela B3
 - Uma empresa que saiu da bolsa tem cotação até a saída
@@ -278,7 +277,7 @@ COTAHIST de 2005 em diante, cadastro e FCA, DFP e ITR de 2010 em diante, BCB SGS
 - O volume de `demonstracao_linha` está medido, e cabe no plano do banco
 - `ruff` e `pytest` no CI, como os do backend
 
-### Visões de fundamento — feitas em 2026-10-10
+### Visões de fundamento
 
 `mercado.fundamento_resultado` (por documento e período) e `mercado.fundamento_balanco` (por
 documento) leem as linhas brutas sem copiar nada; corrigir uma regra é uma migração.
@@ -300,7 +299,7 @@ dívida 92,7%. Em 2024, Petrobras: lucro dos controladores R$ 36,6 bi e dívida 
 lucro R$ 41,1 bi e patrimônio R$ 211 bi — como publicados.
 
 **O ITR traz o resultado do trimestre e o acumulado no ano**, cada um com o seu início de exercício.
-O lucro de 12 meses é conta da pesquisa: acumulado do ano + último anual − acumulado do mesmo ponto
+O lucro de 12 meses é conta de quem lê (o backend e a pesquisa): acumulado do ano + último anual − acumulado do mesmo ponto
 do ano anterior.
 
 ### Série contínua de um papel — `mercado.cotacao_papel`
@@ -314,10 +313,10 @@ papéis de 543 empresas; a Casas Bahia sai contínua de 2012 a hoje.
 negociados como lote padrão (AZUL97–99, BEES11, JBDU11/12, BPAC13). Nesses dias, a pesquisa fica com
 a de maior volume.
 
-O preço é o **bruto**. Desdobramento, grupamento e provento entram na série ajustada da fase 2
+O preço é o **bruto**. Desdobramento, grupamento e provento entram na série ajustada
 (`mercado.serie_papel`).
 
-### Ligação do ativo à empresa — feita em 2026-10-10
+### Ligação do ativo à empresa
 
 O ISIN carrega o código do emissor na B3 (posições 3 a 6). Ele é ligado a um CNPJ por três vias, nesta
 ordem, e o método fica gravado para a pesquisa filtrar por confiança:
@@ -337,7 +336,7 @@ nome, 126 sem CNPJ — na maioria, empresas que saíram da bolsa antes de 2010, 
 sair (BR Insurance → Alper, Abril Educação → Somos). Sem o endpoint da B3, cerca de 30 emissores
 listados hoje ficariam sem CNPJ; o resto não depende dele.
 
-### Fase 2 — eventos e proventos `[IMPLEMENTADO]`
+### Eventos e proventos
 
 **Fonte: os endpoints do site da B3**, decidida em 2026-10-10 depois de comparar com a BRAPI gratuita:
 
@@ -433,7 +432,7 @@ usou estimativa.
 - **Cisão e redução de capital não ajustam** (Itaú/XP em 2021): o preço cai sem que a série saiba por quê
 - **Emissor que a B3 não encontra fica sem proventos** — a ALL, incorporada pela Rumo em 2015
 
-### Fase 3 — o backend lê de `mercado` `[IMPLEMENTADO]`
+### O que o app lê
 
 Em 2026-10-12, com a ADR-022 aceita, `backend/app/collectors/universal.py` passou a montar o
 `AssetSnapshot` de `mercado.ativo_hoje` e `mercado.fundamento_app` (por `collectors/mercado.py`), e a
@@ -447,14 +446,8 @@ yield) seguem regra do backend; a visão entrega só números brutos.
 
 ---
 
-## Fora deste plano
+## Fora do data-job
 
-- A pesquisa de carteira em si (motor de *backtest*, protocolo de prova lacrada): plano próprio,
-  [pesquisa](pesquisa.md)
-- `trend-frontend`: o painel do autor existe, e está em [plataforma](plataforma.md)
+- As pesquisas (motor de *backtest*, protocolos, prova lacrada): [pesquisas](pesquisas/README.md)
+- O painel do autor (`trend-frontend`), que lê esta base: [07-OPERACAO](07-OPERACAO.md)
 - Cotação ao longo do pregão: nenhuma fonte gratuita oficial entrega
-
-## Perguntas abertas
-
-- O bucket do Railway atende o volume do bruto, ou o diretório local basta enquanto só o autor usa?
-- A pesquisa e o aplicativo no mesmo Postgres pesam um no outro? A fase 1 mede antes de separar.

@@ -27,7 +27,7 @@ Serviços no ambiente `production`:
 |---|---|---|
 | `backend` | API, de `/backend`; reconstrói só com mudança em `/backend/**` | — |
 | `postgres-app` | Banco do aplicativo | 500 MB |
-| `data-job` | Coleta de mercado, de `/data-job` — [planos/data-job](planos/data-job.md). Cron `0 2 * * 2-6` (UTC, 23h de Brasília), roda `python -m datajob diario` e termina. Migrações Alembic próprias (`data-job/migrations`, 0001–0020), aplicadas pelo Pre-Deploy Command (`python -m alembic upgrade head`). Cada rodada fica em `mercado.rodada` | `data-job-bruto`, 5 GB, em `/bruto` |
+| `data-job` | Coleta de mercado, de `/data-job` — [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md). Cron `0 2 * * 2-6` (UTC, 23h de Brasília), roda `python -m datajob diario` e termina. Migrações Alembic próprias (`data-job/migrations`, 0001–0020), aplicadas pelo Pre-Deploy Command (`python -m alembic upgrade head`). Cada rodada fica em `mercado.rodada` | `data-job-bruto`, 5 GB, em `/bruto` |
 | `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |
 | `trend` | Painel de uso próprio: API do `trend-backend` e front do `trend-frontend`, em `https://trend.up.railway.app`, com senha. Imagem de `trend-backend/Dockerfile`; reconstrói com mudança em `/trend-backend/**`, `/trend-frontend/**` e `/docs/**`. Lê o `postgres-mercado` como `mercado_leitura` | — |
 
@@ -139,7 +139,7 @@ As duas são obrigatórias, sem default: ausente, o job falha ao começar (`data
 | `DATABASE_URL` | **obrigatória** | O `postgres-mercado`, lido como `mercado_leitura` |
 | `TREND_USUARIO` | **obrigatória** | Usuário do painel |
 | `TREND_SENHA` | **obrigatória** | Senha do painel; definida no Railway, nunca no repositório |
-| `TREND_DOCS` | `docs/` da raiz | Onde ler os planos exibidos |
+| `TREND_DOCS` | `docs/` da raiz | Onde ler os documentos exibidos no painel |
 | `TREND_PESQUISA` | `trend-backend/` | Onde ler os resultados da pesquisa |
 | `TREND_FRONT` | `trend-frontend/dist` | O front compilado que a API serve |
 

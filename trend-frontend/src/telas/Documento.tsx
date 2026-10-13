@@ -10,7 +10,7 @@ export default function TelaDocumento() {
   return (
     <>
       <p className="nota">
-        <Link to="/planos">← Planos</Link> · {nome}
+        <Link to="/documentos">← Documentos</Link> · {nome}
       </p>
       <Estado estado={estado}>
         {(documento) => (

@@ -32,7 +32,7 @@ export default function TelaPesquisa() {
       <h1>Pesquisa</h1>
       <p className="nota">
         Busca encerrada em 12/10/2026, no teto de 8 variações: não achei vantagem investível. Régua: 2
-        pontos ao ano acima do CDI, depois de custo e imposto. <Link to="/planos/planos/pesquisa.md">Ler o protocolo</Link>.
+        pontos ao ano acima do CDI, depois de custo e imposto. <Link to="/documentos/pesquisas/pesquisa.md">Ler o protocolo</Link>.
       </p>
       <Estado estado={estado}>
         {(dados) => (
