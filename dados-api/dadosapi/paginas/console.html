@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Console da API</title>
+<style>
+:root {
+  --fundo: #fbfaf7; --superficie: #ffffff; --texto: #1d1d1b; --suave: #6b6a65; --fio: #e3e1da;
+  --destaque: #1f5fa8; --perde: #a33a2a; --ganha: #2f6f3e; --barra: #c9d8ea;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #161615; --superficie: #1e1e1c; --texto: #ecebe6; --suave: #a3a199; --fio: #2c2b28;
+    --destaque: #7fb0ea; --perde: #e58a7a; --ganha: #86c795; --barra: #2d4a6b;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fundo); color: var(--texto); font: 15px/1.5 system-ui, sans-serif; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--fio); flex-wrap: wrap; gap: 12px; }
+header strong { font: 600 18px Georgia, serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; }
+h2 { font: 600 19px Georgia, serif; margin: 32px 0 10px; }
+a { color: var(--destaque); }
+.nota { color: var(--suave); }
+.erro { color: var(--perde); }
+.quadros { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.quadro { border: 1px solid var(--fio); border-radius: 8px; padding: 12px; background: var(--superficie); }
+.quadro span { color: var(--suave); font-size: 13px; display: block; }
+.quadro strong { font: 600 26px Georgia, serif; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid var(--fio); padding: 6px 8px; text-align: left; white-space: nowrap; }
+th { color: var(--suave); font-weight: 500; }
+td.num, th.num { text-align: right; }
+.rolar { overflow-x: auto; }
+input, select { padding: 7px 9px; border: 1px solid var(--fio); border-radius: 6px; background: var(--superficie); color: var(--texto); font: inherit; }
+form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--destaque); background: transparent; color: var(--destaque); font: inherit; cursor: pointer; }
+button.primario { background: var(--destaque); color: var(--fundo); }
+button.perigo { border-color: var(--perde); color: var(--perde); }
+.barra { height: 10px; background: var(--barra); border-radius: 2px; min-width: 1px; }
+.chave-nova { border: 1px solid var(--ganha); border-radius: 8px; padding: 12px; margin: 12px 0; word-break: break-all; }
+.escondido { display: none; }
+.inativa td { color: var(--suave); }
+</style>
+</head>
+<body>
+<header>
+  <strong>Console da API</strong>
+  <span><a href="/">Portal</a> · <a href="/docs">Documentação</a> · <button id="sair" class="escondido" type="button">Sair</button></span>
+</header>
+<main>
+  <div id="entrar">
+    <form id="form-entrar">
+      <input id="token" type="password" placeholder="Token de administração" autocomplete="off" required style="min-width:320px">
+      <button class="primario" type="submit">Entrar</button>
+    </form>
+    <p class="nota">O token fica só nesta aba, e some quando ela fecha. Dez tentativas erradas bloqueiam por 15 minutos.</p>
+  </div>
+  <p id="erro" class="erro"></p>
+
+  <div id="painel" class="escondido">
+    <div class="quadros" id="quadros"></div>
+    <div id="chave-criada" class="chave-nova escondido"></div>
+
+    <h2>Contas</h2>
+    <div class="rolar"><table>
+      <thead><tr><th>#</th><th>E-mail</th><th>Nome</th><th>Plano</th><th class="num">Chaves</th><th class="num">Hoje</th><th>Criada</th><th></th></tr></thead>
+      <tbody id="contas"></tbody>
+    </table></div>
+    <div id="detalhe"></div>
+
+    <h2>Criar conta</h2>
+    <form id="form-conta">
+      <input id="email" type="email" placeholder="E-mail" required>
+      <input id="nome" placeholder="Nome" required>
+      <select id="plano-novo"></select>
+      <input id="observacao" placeholder="Observação (opcional)">
+      <button class="primario" type="submit">Criar e emitir chave</button>
+    </form>
+
+    <h2>Uso nos últimos 30 dias</h2>
+    <div class="rolar"><table>
+      <thead><tr><th>Dia</th><th class="num">Requisições</th><th class="num">Contas</th><th style="width:50%"></th></tr></thead>
+      <tbody id="uso"></tbody>
+    </table></div>
+  </div>
+</main>
+<script>
+const TOKEN = "fiance_dados_admin";
+const numero = new Intl.NumberFormat("pt-BR");
+const $ = (id) => document.getElementById(id);
+let planos = [];
+
+function data(texto, comHora) {
+  if (!texto) return "—";
+  const d = new Date(texto.length === 10 ? texto + "T12:00:00" : texto);
+  if (isNaN(d)) return texto;
+  return comHora ? d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : d.toLocaleDateString("pt-BR");
+}
+
+function celula(linha, texto, classe) {
+  const td = document.createElement("td");
+  td.textContent = texto;
+  if (classe) td.className = classe;
+  linha.appendChild(td);
+  return td;
+}
+
+function botao(texto, classe, acao) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = texto;
+  if (classe) b.className = classe;
+  b.onclick = acao;
+  return b;
+}
+
+async function chamar(metodo, rota, corpo) {
+  const resposta = await fetch(rota, {
+    method: metodo,
+    headers: { "X-Admin-Token": sessionStorage.getItem(TOKEN), "Content-Type": "application/json" },
+    body: corpo ? JSON.stringify(corpo) : undefined,
+  });
+  const json = await resposta.json().catch(() => ({}));
+  if (!resposta.ok) throw new Error(json.erro || resposta.status + "");
+  return json;
+}
+
+function mostrarChave(chave, dono) {
+  const caixa = $("chave-criada");
+  caixa.replaceChildren();
+  const titulo = document.createElement("strong");
+  titulo.textContent = `Chave de ${dono} — entregue agora, ela não aparece de novo:`;
+  const texto = document.createElement("code");
+  texto.textContent = chave.chave;
+  caixa.append(titulo, document.createElement("br"), texto);
+  caixa.classList.remove("escondido");
+}
+
+async function tentar(acao) {
+  $("erro").textContent = "";
+  try { await acao(); } catch (e) { $("erro").textContent = e.message; }
+}
+
+function quadro(rotulo, valor) {
+  const div = document.createElement("div");
+  div.className = "quadro";
+  const span = document.createElement("span");
+  span.textContent = rotulo;
+  const forte = document.createElement("strong");
+  forte.textContent = valor;
+  div.append(span, forte);
+  return div;
+}
+
+async function verDetalhe(conta) {
+  const dados = await chamar("GET", "/admin/contas/" + conta.id);
+  const area = $("detalhe");
+  area.replaceChildren();
+  const titulo = document.createElement("h2");
+  titulo.textContent = `Chaves de ${dados.email}`;
+  const tabela = document.createElement("table");
+  const cabeca = document.createElement("tr");
+  for (const t of ["Chave", "Nome", "Criada", "Último uso", "Hoje", "Situação"]) {
+    const th = document.createElement("th");
+    th.textContent = t;
+    cabeca.appendChild(th);
+  }
+  tabela.appendChild(cabeca);
+  for (const k of dados.chaves) {
+    const linha = document.createElement("tr");
+    celula(linha, k.prefixo + "…");
+    celula(linha, k.nome);
+    celula(linha, data(k.criada_em, true));
+    celula(linha, data(k.ultimo_uso_em, true));
+    celula(linha, numero.format(k.requisicoes_hoje));
+    celula(linha, k.revogada_em ? "revogada em " + data(k.revogada_em) : "ativa");
+    tabela.appendChild(linha);
+  }
+  const rolar = document.createElement("div");
+  rolar.className = "rolar";
+  rolar.appendChild(tabela);
+  area.append(titulo, rolar);
+}
+
+async function carregar() {
+  const [contas, uso] = await Promise.all([chamar("GET", "/admin/contas"), chamar("GET", "/admin/uso?dias=30")]);
+  planos = await chamar("GET", "/admin/planos");
+  $("entrar").classList.add("escondido");
+  $("painel").classList.remove("escondido");
+  $("sair").classList.remove("escondido");
+
+  const hoje = contas.reduce((s, c) => s + c.requisicoes_hoje, 0);
+  const trinta = uso.reduce((s, d) => s + d.requisicoes, 0);
+  $("quadros").replaceChildren(
+    quadro("Contas ativas", numero.format(contas.filter((c) => c.ativa).length)),
+    quadro("Requisições hoje", numero.format(hoje)),
+    quadro("Últimos 30 dias", numero.format(trinta)),
+  );
+
+  const select = $("plano-novo");
+  select.replaceChildren();
+  for (const p of planos) {
+    const opcao = document.createElement("option");
+    opcao.value = p.codigo;
+    opcao.textContent = `${p.nome} (${numero.format(p.limite_por_dia)}/dia)`;
+    if (p.codigo === "convidado") opcao.selected = true;
+    select.appendChild(opcao);
+  }
+
+  const corpo = $("contas");
+  corpo.replaceChildren();
+  for (const c of contas) {
+    const linha = document.createElement("tr");
+    if (!c.ativa) linha.className = "inativa";
+    celula(linha, c.id);
+    celula(linha, c.email);
+    celula(linha, c.nome);
+    const plano = document.createElement("select");
+    for (const p of planos) {
+      const opcao = document.createElement("option");
+      opcao.value = p.codigo;
+      opcao.textContent = p.nome;
+      opcao.selected = p.codigo === c.plano;
+      plano.appendChild(opcao);
+    }
+    plano.onchange = () => tentar(async () => { await chamar("PATCH", "/admin/contas/" + c.id, { plano: plano.value }); await carregar(); });
+    linha.appendChild(document.createElement("td")).appendChild(plano);
+    celula(linha, c.chaves_ativas, "num");
+    celula(linha, numero.format(c.requisicoes_hoje), "num");
+    celula(linha, data(c.criada_em));
+    const acoes = celula(linha, "");
+    acoes.append(
+      botao("Chaves", "", () => tentar(() => verDetalhe(c))), " ",
+      botao("Emitir chave", "", () => tentar(async () => {
+        const nome = prompt("Nome da chave", "principal");
+        if (!nome) return;
+        mostrarChave(await chamar("POST", `/admin/contas/${c.id}/chaves`, { nome }), c.email);
+        await carregar();
+      })), " ",
+      botao(c.ativa ? "Desativar" : "Reativar", c.ativa ? "perigo" : "", () => tentar(async () => {
+        if (c.ativa && !confirm(`Desativar ${c.email}? Todas as chaves param na hora.`)) return;
+        await chamar("PATCH", "/admin/contas/" + c.id, { ativa: !c.ativa });
+        await carregar();
+      })),
+    );
+    corpo.appendChild(linha);
+  }
+
+  const maximo = Math.max(1, ...uso.map((d) => d.requisicoes));
+  const tabelaUso = $("uso");
+  tabelaUso.replaceChildren();
+  for (const d of uso.slice().reverse()) {
+    const linha = document.createElement("tr");
+    celula(linha, data(d.dia));
+    celula(linha, numero.format(d.requisicoes), "num");
+    celula(linha, d.contas, "num");
+    const barra = document.createElement("div");
+    barra.className = "barra";
+    barra.style.width = (100 * d.requisicoes / maximo) + "%";
+    celula(linha, "").appendChild(barra);
+    tabelaUso.appendChild(linha);
+  }
+  if (!uso.length) celula(tabelaUso.appendChild(document.createElement("tr")), "Nenhum uso ainda.", "nota");
+}
+
+$("form-entrar").onsubmit = (evento) => {
+  evento.preventDefault();
+  sessionStorage.setItem(TOKEN, $("token").value.trim());
+  $("token").value = "";
+  tentar(carregar);
+};
+
+$("form-conta").onsubmit = (evento) => {
+  evento.preventDefault();
+  tentar(async () => {
+    const criada = await chamar("POST", "/admin/contas", {
+      email: $("email").value.trim(),
+      nome: $("nome").value.trim(),
+      plano: $("plano-novo").value,
+      observacao: $("observacao").value.trim() || null,
+    });
+    mostrarChave(criada.chave, criada.conta.email);
+    $("form-conta").reset();
+    await carregar();
+  });
+};
+
+$("sair").onclick = () => {
+  sessionStorage.removeItem(TOKEN);
+  location.reload();
+};
+
+if (sessionStorage.getItem(TOKEN)) tentar(carregar);
+</script>
+</body>
+</html>

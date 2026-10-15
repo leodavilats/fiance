@@ -29,7 +29,7 @@ Serviços no ambiente `production`:
 | `postgres-app` | Banco do aplicativo | 500 MB |
 | `data-job` | Coleta de mercado, de `/data-job` — [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md). Cron `0 2 * * 2-6` (UTC, 23h de Brasília), roda `python -m datajob diario` e termina. Migrações Alembic próprias (`data-job/migrations`, 0001–0020), aplicadas pelo Pre-Deploy Command (`python -m alembic upgrade head`). Cada rodada fica em `mercado.rodada` | `data-job-bruto`, 5 GB, em `/bruto` |
 | `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |
-| `dados-api` | A API de dados para terceiros e para o próprio app, de `/dados-api` ([ADR-024](decisoes/ADR-024-api-de-dados.md)). Só lê `mercado` como `mercado_leitura`; contas, chaves, planos e uso no schema `acesso`, com migrações próprias (`dados-api/migrations`) pelo Pre-Deploy Command (`python -m alembic upgrade head`). Start: `uvicorn dadosapi.app:criar --factory --host 0.0.0.0 --port $PORT`; saúde em `/saude`; documentação pública em `/docs` | — |
+| `dados-api` | A API de dados para terceiros e para o próprio app, de `/dados-api` ([ADR-024](decisoes/ADR-024-api-de-dados.md)). Só lê `mercado` como `mercado_leitura`; contas, chaves, planos e uso no schema `acesso`, com migrações próprias (`dados-api/migrations`) pelo Pre-Deploy Command (`python -m alembic upgrade head`). Em `https://dados-api-production.up.railway.app`. Start: `uvicorn dadosapi.app:criar --factory --host 0.0.0.0 --port $PORT`; saúde em `/saude`; documentação pública em `/docs`, portal em `/` e console em `/console` | — |
 | `trend` | Painel de uso próprio: API do `trend-backend` e front do `trend-frontend`, em `https://trend.up.railway.app`, com senha. Imagem de `trend-backend/Dockerfile`; reconstrói com mudança em `/trend-backend/**`, `/trend-frontend/**` e `/docs/**`. Lê o `postgres-mercado` como `mercado_leitura` | — |
 
 O `trend` pede `TREND_USUARIO` e `TREND_SENHA` e falha ao subir sem elas. A senha é definida no painel do
@@ -143,7 +143,10 @@ As duas são obrigatórias, sem default: ausente, o job falha ao começar (`data
 ### Contas da API de dados
 
 Conta nasce por convite, pela administração; quem tem conta gerencia as próprias chaves em
-`/v1/conta`. A chave aparece **uma vez**, na criação; a base guarda só o hash.
+`/v1/conta`. Há duas páginas no próprio serviço: **`/`**, o portal público (o que o serviço oferece,
+a documentação, e "minha conta" para quem tem chave), e **`/console`**, o controle do autor (contas,
+planos, uso por dia, emitir chave, desativar), que pede o `DADOS_API_ADMIN_TOKEN` na tela e o guarda
+só na aba. Dez tentativas erradas do mesmo IP bloqueiam `/admin` por 15 minutos. A chave aparece **uma vez**, na criação; a base guarda só o hash.
 
 ```bash
 # criar conta (devolve a primeira chave) — planos: interno, convidado, gratuito

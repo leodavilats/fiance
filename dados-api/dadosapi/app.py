@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import secrets
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Literal
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from dadosapi import acesso, banco, consultas
@@ -52,6 +53,18 @@ class NovaChave(BaseModel):
     nome: str = Field(default="principal", min_length=1, max_length=60)
 
 
+_PAGINAS = Path(__file__).parent / "paginas"
+
+
+def _pagina(nome: str) -> str:
+    return (_PAGINAS / nome).read_text(encoding="utf-8")
+
+
+def _origem(request: Request) -> str:
+    encaminhado = request.headers.get("x-forwarded-for", "")
+    return encaminhado.split(",")[0].strip() or (request.client.host if request.client else "?")
+
+
 def _corte(a: acesso.Acesso) -> date:
     if a.plano.historico_dias is None:
         return INICIO_DA_BASE
@@ -73,6 +86,7 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
     config = config or carregar()
     bancos = bancos or banco.criar(config.database_url)
     por_minuto = acesso.LimitePorMinuto()
+    tentativas = acesso.TentativasDeAdministracao()
     app = FastAPI(
         title="fiance dados",
         version="1.0.0",
@@ -112,8 +126,12 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
         request.state.acesso = uso
         return uso
 
-    def administrador(x_admin_token: str | None = Header(default=None)) -> None:
+    def administrador(request: Request, x_admin_token: str | None = Header(default=None)) -> None:
+        origem = _origem(request)
+        if tentativas.bloqueado(origem):
+            raise HTTPException(429, "Tentativas demais. Espere 15 minutos.")
         if not x_admin_token or not secrets.compare_digest(x_admin_token, config.admin_token):
+            tentativas.falhou(origem)
             raise HTTPException(401, "Rota de administração.")
 
     def _papel(conn, codigo: str) -> consultas.Papel:
@@ -121,6 +139,14 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
         if p is None:
             raise HTTPException(404, f"Ativo {codigo.upper()} não encontrado na base.")
         return p
+
+    @app.get("/", include_in_schema=False)
+    def portal() -> HTMLResponse:
+        return HTMLResponse(_pagina("portal.html"))
+
+    @app.get("/console", include_in_schema=False)
+    def console() -> HTMLResponse:
+        return HTMLResponse(_pagina("console.html"))
 
     @app.get("/saude", include_in_schema=False)
     def saude() -> dict:
@@ -317,6 +343,10 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
     @app.get("/admin/planos", include_in_schema=False, dependencies=[Depends(administrador)])
     def admin_planos() -> list[dict]:
         return acesso.planos(bancos.acesso)
+
+    @app.get("/admin/uso", include_in_schema=False, dependencies=[Depends(administrador)])
+    def admin_uso(dias: int = Query(default=30, ge=1, le=365)) -> list[dict]:
+        return acesso.uso_por_dia(bancos.acesso, dias)
 
     @app.get("/admin/contas", include_in_schema=False, dependencies=[Depends(administrador)])
     def admin_contas() -> list[dict]:

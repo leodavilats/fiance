@@ -5,7 +5,7 @@ import secrets
 import threading
 import time
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
@@ -74,6 +74,24 @@ class LimitePorMinuto:
                 return int(60 - agora % 60) + 1
             self._contagens[chave_id] = (janela, contagem + 1)
         return None
+
+
+class TentativasDeAdministracao:
+    def __init__(self, maximo: int = 10, janela: float = 900.0, relogio=time.monotonic):
+        self._maximo, self._janela, self._relogio = maximo, janela, relogio
+        self._falhas: dict[str, list[float]] = {}
+        self._trava = threading.Lock()
+
+    def bloqueado(self, origem: str) -> bool:
+        agora = self._relogio()
+        with self._trava:
+            recentes = [t for t in self._falhas.get(origem, []) if agora - t < self._janela]
+            self._falhas[origem] = recentes
+            return len(recentes) >= self._maximo
+
+    def falhou(self, origem: str) -> None:
+        with self._trava:
+            self._falhas.setdefault(origem, []).append(self._relogio())
 
 
 _CHAVE_VALIDA = sa.text(
@@ -271,3 +289,18 @@ def planos(engine: sa.Engine) -> list[dict]:
             dict(p._mapping)
             for p in conn.execute(sa.text("SELECT * FROM acesso.plano ORDER BY limite_por_dia"))
         ]
+
+
+def uso_por_dia(engine: sa.Engine, dias: int = 30) -> list[dict]:
+    with engine.connect() as conn:
+        linhas = conn.execute(
+            sa.text(
+                """
+                SELECT u.dia, sum(u.requisicoes) AS requisicoes, count(DISTINCT k.conta_id) AS contas
+                FROM acesso.uso_diario u JOIN acesso.chave k ON k.id = u.chave_id
+                WHERE u.dia > :desde GROUP BY u.dia ORDER BY u.dia
+                """
+            ),
+            {"desde": hoje() - timedelta(days=dias)},
+        ).all()
+    return [dict(linha._mapping) for linha in linhas]

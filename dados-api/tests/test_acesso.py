@@ -100,3 +100,31 @@ def test_email_repetido_e_plano_desconhecido_sao_recusados(cliente):
     )
 
     assert repetido.status_code == 409 and sem_plano.status_code == 422
+
+
+def test_portal_e_console_sao_paginas_sem_segredo(cliente):
+    portal = cliente.get("/")
+    console = cliente.get("/console")
+
+    assert portal.status_code == 200 and "fiance dados" in portal.text
+    assert console.status_code == 200 and "noindex" in console.text
+    assert TOKEN not in console.text, "o token é digitado na tela, nunca entregue nela"
+
+
+def test_dez_tentativas_erradas_bloqueiam_ate_o_token_certo(cliente):
+    errado = {"X-Admin-Token": "errado"}
+    respostas = [cliente.get("/admin/contas", headers=errado).status_code for _ in range(10)]
+
+    assert respostas == [401] * 10
+    assert cliente.get("/admin/contas", headers={"X-Admin-Token": TOKEN}).status_code == 429, (
+        "a rota de administração fica no endereço público: chute não pode ser infinito"
+    )
+
+
+def test_uso_por_dia(cliente, chave):
+    cliente.get("/v1/ativos", headers=chave)
+    cliente.get("/v1/ativos", headers=chave)
+
+    uso = cliente.get("/admin/uso", headers={"X-Admin-Token": TOKEN}).json()
+
+    assert uso[-1]["requisicoes"] == 2 and uso[-1]["contas"] == 1

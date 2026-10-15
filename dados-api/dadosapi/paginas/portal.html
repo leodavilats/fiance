@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fiance dados</title>
+<style>
+:root {
+  --fundo: #fbfaf7; --superficie: #ffffff; --texto: #1d1d1b; --suave: #6b6a65; --fio: #e3e1da;
+  --destaque: #1f5fa8; --perde: #a33a2a; --ganha: #2f6f3e; --codigo: #f3f1ec;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #161615; --superficie: #1e1e1c; --texto: #ecebe6; --suave: #a3a199; --fio: #2c2b28;
+    --destaque: #7fb0ea; --perde: #e58a7a; --ganha: #86c795; --codigo: #232320;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fundo); color: var(--texto); font: 15px/1.55 system-ui, sans-serif; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--fio); flex-wrap: wrap; gap: 12px; }
+header strong { font: 600 18px Georgia, serif; }
+header nav { display: flex; gap: 16px; }
+a { color: var(--destaque); }
+main { max-width: 920px; margin: 0 auto; padding: 32px 16px 80px; }
+h1 { font: 600 32px/1.15 Georgia, serif; margin: 0 0 12px; }
+h2 { font: 600 21px Georgia, serif; margin: 48px 0 12px; }
+.nota { color: var(--suave); }
+.acoes { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
+.botao { display: inline-block; padding: 9px 16px; border-radius: 6px; border: 1px solid var(--destaque); background: var(--destaque); color: var(--fundo); font: inherit; cursor: pointer; text-decoration: none; }
+.botao.leve { background: transparent; color: var(--destaque); }
+.botao.perigo { border-color: var(--perde); background: transparent; color: var(--perde); padding: 4px 10px; }
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.item { border: 1px solid var(--fio); border-radius: 8px; padding: 14px; background: var(--superficie); }
+.item strong { display: block; margin-bottom: 4px; }
+pre { background: var(--codigo); border: 1px solid var(--fio); border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 13px; }
+code { font-family: ui-monospace, Consolas, monospace; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid var(--fio); padding: 7px 8px; text-align: left; }
+th { color: var(--suave); font-weight: 500; }
+.rolar { overflow-x: auto; }
+input { padding: 9px 10px; border: 1px solid var(--fio); border-radius: 6px; background: var(--superficie); color: var(--texto); font: inherit; width: 100%; max-width: 460px; }
+form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.erro { color: var(--perde); }
+.chave-nova { border: 1px solid var(--ganha); border-radius: 8px; padding: 12px; margin: 12px 0; word-break: break-all; }
+.escondido { display: none; }
+footer { border-top: 1px solid var(--fio); padding: 20px 16px; color: var(--suave); font-size: 13px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <strong>fiance dados</strong>
+  <nav><a href="/docs">Documentação</a><a href="#conta">Minha conta</a></nav>
+</header>
+<main>
+  <h1>Dados da B3, organizados para análise</h1>
+  <p class="nota">Cotação, proventos, eventos e balanços de ações, FIIs, ETFs e BDRs — com o histórico de
+    quem saiu da bolsa e cada balanço como se sabia no dia em que foi publicado. Atualizado todo dia útil,
+    depois do fechamento.</p>
+  <div class="acoes">
+    <a class="botao" href="/docs">Ver a documentação</a>
+    <a class="botao leve" href="#conta">Entrar com a minha chave</a>
+  </div>
+
+  <h2>O que tem</h2>
+  <div class="grade">
+    <div class="item"><strong>Cotação diária desde 2005</strong><span class="nota">Abertura, máxima, mínima, fechamento e volume de cada ticker, inclusive dos que deixaram de negociar.</span></div>
+    <div class="item"><strong>Série ajustada com retorno total</strong><span class="nota">Atravessa troca de ticker; desdobramento e grupamento só entram depois de conferidos pelo preço.</span></div>
+    <div class="item"><strong>Proventos e eventos</strong><span class="nota">Data-com, data de pagamento e valor; desdobramentos, grupamentos e bonificações com o status da conferência.</span></div>
+    <div class="item"><strong>Balanços como se sabia na data</strong><span class="nota">DFP e ITR com a data de entrega à CVM e cada versão: sem olhar o futuro num backtest.</span></div>
+    <div class="item"><strong>Informe mensal de FII</strong><span class="nota">Patrimônio, valor da cota, cotas emitidas, segmento e mandato, da CVM.</span></div>
+    <div class="item"><strong>Macro</strong><span class="nota">CDI, Selic, IPCA e dólar PTAX do Banco Central; taxas e preços do Tesouro Direto.</span></div>
+  </div>
+
+  <h2>Como usar</h2>
+  <pre><code>curl https://dados-api-production.up.railway.app/v1/ativos/PETR4/serie?de=2024-01-01 \
+  -H "Authorization: Bearer fd_sua_chave"</code></pre>
+  <p class="nota">Toda resposta traz <code>X-Limite-Dia</code> e <code>X-Restante-Dia</code>. Listas longas paginam por
+    <code>cursor</code>.</p>
+
+  <h2>Acesso</h2>
+  <p>Durante o beta, o acesso é <strong>por convite</strong> e sem cobrança.</p>
+  <div class="rolar"><table>
+    <thead><tr><th>Plano</th><th>Por minuto</th><th>Por dia</th><th>Histórico</th></tr></thead>
+    <tbody>
+      <tr><td>Gratuito</td><td>10</td><td>500</td><td>último ano</td></tr>
+      <tr><td>Convidado</td><td>60</td><td>20.000</td><td>inteiro</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>O que ainda não tem</h2>
+  <ul class="nota">
+    <li>Cotação ao longo do pregão: o dado é do fechamento.</li>
+    <li>Proventos de ETF e BDR antes de out/2025, e data de pagamento antes disso.</li>
+    <li>Rendimento de FII antes de out/2025 é estimado pelo informe da CVM, e só vem quando pedido.</li>
+    <li>Cisão e redução de capital não ajustam a série.</li>
+  </ul>
+
+  <h2 id="conta">Minha conta</h2>
+  <div id="entrar">
+    <form id="form-entrar">
+      <input id="chave" type="password" placeholder="Sua chave (fd_...)" autocomplete="off" required>
+      <button class="botao" type="submit">Entrar</button>
+    </form>
+    <p class="nota">A chave fica só nesta aba do navegador, e some quando ela fecha.</p>
+  </div>
+  <p id="erro-conta" class="erro"></p>
+  <div id="painel" class="escondido">
+    <p id="resumo"></p>
+    <div id="chave-criada" class="chave-nova escondido"></div>
+    <div class="rolar"><table>
+      <thead><tr><th>Chave</th><th>Nome</th><th>Criada</th><th>Último uso</th><th>Hoje</th><th></th></tr></thead>
+      <tbody id="chaves"></tbody>
+    </table></div>
+    <form id="form-nova" style="margin-top:12px">
+      <input id="nome-nova" placeholder="Nome da nova chave" maxlength="60" required style="max-width:280px">
+      <button class="botao leve" type="submit">Emitir chave</button>
+      <button class="botao leve" type="button" id="sair">Sair</button>
+    </form>
+  </div>
+</main>
+<footer>Fontes: B3 (COTAHIST, proventos e eventos); CVM, dados abertos sob ODbL; Banco Central (SGS); Tesouro Transparente. Organizado por fiance.</footer>
+<script>
+const CHAVE = "fiance_dados_chave";
+const numero = new Intl.NumberFormat("pt-BR");
+const $ = (id) => document.getElementById(id);
+
+function data(texto) {
+  if (!texto) return "—";
+  const d = new Date(texto);
+  return isNaN(d) ? texto : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+function celula(linha, texto) {
+  const td = document.createElement("td");
+  td.textContent = texto;
+  linha.appendChild(td);
+  return td;
+}
+
+async function chamar(metodo, rota, corpo) {
+  const resposta = await fetch(rota, {
+    method: metodo,
+    headers: { Authorization: "Bearer " + sessionStorage.getItem(CHAVE), "Content-Type": "application/json" },
+    body: corpo ? JSON.stringify(corpo) : undefined,
+  });
+  if (resposta.status === 204) return null;
+  const json = await resposta.json().catch(() => ({}));
+  if (!resposta.ok) throw new Error(json.erro || resposta.status + "");
+  return json;
+}
+
+async function carregar() {
+  $("erro-conta").textContent = "";
+  try {
+    const conta = (await chamar("GET", "/v1/conta")).dados;
+    $("entrar").classList.add("escondido");
+    $("painel").classList.remove("escondido");
+    const historico = conta.historico_dias ? `últimos ${conta.historico_dias} dias` : "histórico inteiro";
+    $("resumo").textContent = `${conta.nome} · plano ${conta.plano} · ${numero.format(conta.limite_por_dia)} por dia, ` +
+      `${numero.format(conta.limite_por_minuto)} por minuto, ${historico}.`;
+    const corpo = $("chaves");
+    corpo.replaceChildren();
+    for (const k of conta.chaves) {
+      const linha = document.createElement("tr");
+      celula(linha, k.prefixo + "…");
+      celula(linha, k.nome);
+      celula(linha, data(k.criada_em));
+      celula(linha, data(k.ultimo_uso_em));
+      celula(linha, numero.format(k.requisicoes_hoje));
+      const acao = celula(linha, "");
+      if (k.revogada_em) {
+        acao.textContent = "revogada";
+        acao.className = "nota";
+      } else {
+        const botao = document.createElement("button");
+        botao.className = "botao perigo";
+        botao.textContent = "Revogar";
+        botao.onclick = async () => {
+          if (!confirm(`Revogar a chave ${k.prefixo}…? Quem a usa perde o acesso na hora.`)) return;
+          try { await chamar("DELETE", "/v1/conta/chaves/" + encodeURIComponent(k.prefixo)); await carregar(); }
+          catch (e) { $("erro-conta").textContent = e.message; }
+        };
+        acao.appendChild(botao);
+      }
+      corpo.appendChild(linha);
+    }
+  } catch (e) {
+    $("erro-conta").textContent = "Não foi possível entrar: " + e.message;
+  }
+}
+
+$("form-entrar").onsubmit = (evento) => {
+  evento.preventDefault();
+  sessionStorage.setItem(CHAVE, $("chave").value.trim());
+  $("chave").value = "";
+  carregar();
+};
+
+$("form-nova").onsubmit = async (evento) => {
+  evento.preventDefault();
+  try {
+    const nova = (await chamar("POST", "/v1/conta/chaves", { nome: $("nome-nova").value.trim() })).dados;
+    const caixa = $("chave-criada");
+    caixa.replaceChildren();
+    const titulo = document.createElement("strong");
+    titulo.textContent = "Chave nova — guarde agora, ela não aparece de novo:";
+    const texto = document.createElement("code");
+    texto.textContent = nova.chave;
+    caixa.append(titulo, document.createElement("br"), texto);
+    caixa.classList.remove("escondido");
+    $("nome-nova").value = "";
+    await carregar();
+  } catch (e) {
+    $("erro-conta").textContent = e.message;
+  }
+};
+
+$("sair").onclick = () => {
+  sessionStorage.removeItem(CHAVE);
+  $("painel").classList.add("escondido");
+  $("chave-criada").classList.add("escondido");
+  $("entrar").classList.remove("escondido");
+};
+
+if (sessionStorage.getItem(CHAVE)) carregar();
+</script>
+</body>
+</html>
