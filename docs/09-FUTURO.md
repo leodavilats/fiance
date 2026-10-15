@@ -182,7 +182,7 @@ Não é "ainda não": é **não**.
 - Previdência
 - Fiagro, Fi-Infra
 - Curso ou conteúdo educacional
-- Versão web do produto — ver [ADR-003](decisoes/ADR-003-cliente-unico.md). O painel `trend` é web,
+- Versão web do produto — ver [ADR-003](decisoes/ADR-003-cliente-unico.md). O painel `fiance-trend` é web,
   mas é ferramenta do autor, fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md))
 
 ---
@@ -204,7 +204,7 @@ pessoal ([07-OPERACAO](07-OPERACAO.md#backup-e-recuperação)).
 de arquivos públicos. Proventos e eventos vêm de endpoints do site da B3 sem contrato; se mudarem,
 a série para de receber eventos novos. O disjuntor protege contra queda, não contra descontinuação.
 
-**Custo.** O Railway roda backend, data-job, trend, `postgres-app` e `postgres-mercado`; a fonte de
+**Custo.** O Railway roda backend, data-job, fiance-dados, fiance-trend, `postgres-app` e `postgres-mercado`; a fonte de
 mercado custa zero.
 
 **Regulatório.** Registrado em [ADR-006](decisoes/ADR-006-recomendacao-personalizada.md).

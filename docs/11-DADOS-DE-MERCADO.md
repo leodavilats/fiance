@@ -9,7 +9,7 @@ O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como vei
 interpretada no schema `mercado` do Postgres. Ele é a base de três consumidores:
 
 - **`backend/`** — o aplicativo, que lê a base pela conexão do Railway com `SET ROLE mercado_leitura`
-- **`dados-api/`** — a base como serviço, com contas e chaves ([ADR-024](decisoes/ADR-024-api-de-dados.md))
+- **`fiance-dados/`** — a base como serviço, com contas e chaves ([ADR-024](decisoes/ADR-024-api-de-dados.md))
 - **a pesquisa de carteira** — uso próprio do autor, em horizonte de meses, que precisa de histórico
   longo, empresas que saíram da bolsa e fundamento como se sabia na data
 
@@ -123,9 +123,9 @@ ainda não publicou responde 404 e fica para a rodada seguinte.
 ### Leitura
 
 O papel `mercado_leitura` (sem login) lê todo o schema, inclusive tabelas futuras, e não escreve. A
-`dados-api` e o painel `trend` usam a conexão que o Railway dá ao `postgres-mercado` e, a cada
+`fiance-dados` e o painel `fiance-trend` usam a conexão que o Railway dá ao `postgres-mercado` e, a cada
 conexão aberta, assumem o papel com `SET ROLE mercado_leitura` e transação só de leitura. **Não há
-usuário próprio nem senha nova.** O backend do app não lê o banco: lê pela `dados-api`
+usuário próprio nem senha nova.** O backend do app não lê o banco: lê pela `fiance-dados`
 ([ADR-024](decisoes/ADR-024-api-de-dados.md)).
 
 ### Como rodar
@@ -179,7 +179,7 @@ guarda.
 | `indicador` | `(serie, data)` | Séries do BCB SGS de 2005 em diante: CDI diário (12), Selic diária (11), meta da Selic (432), IPCA mensal (433), dólar PTAX de venda (1); Selic mensal anualizada (4189) desde 2000, para a média de 10 anos que o app usa como juro |
 | `tesouro` | `(titulo, vencimento, data)` | Taxas e preços unitários de compra e venda do Tesouro Direto de 2005 em diante, do Tesouro Transparente. Título fora de venda fica sem taxa e preço de compra |
 | `coleta` | `id` | Fonte, arquivo, hash, início, fim, linhas lidas, gravadas, em quarentena, status, erro |
-| `rodada` | `id` | Cada execução do data-job: início, fim e as etapas que falharam, com o erro. O painel `trend` alerta a partir dela |
+| `rodada` | `id` | Cada execução do data-job: início, fim e as etapas que falharam, com o erro. O painel `fiance-trend` alerta a partir dela |
 | `fii_mensal` | `(emissor, classe, referencia)` | Informe mensal de FII da CVM, 2016 em diante: CNPJ, nome, segmento, mandato, valor patrimonial da cota, patrimônio, cotas emitidas e yield do mês — a base do P/VP |
 | `quarentena` | `id` | Coleta, chave da linha, motivo, conteúdo bruto |
 | `provento` | `id` | Por emissor e classe: data-com, tipo, valor por ação, aprovação, `origem` (`b3_historico`, `b3_recente`, `cvm_estimado`) e `data_pagamento`, quando a fonte dá |
@@ -439,7 +439,7 @@ usou estimativa.
 Em 2026-10-12, com a ADR-022 aceita, `backend/app/collectors/universal.py` passou a montar o
 `AssetSnapshot` de `mercado.ativo_hoje` e `mercado.fundamento_app` (por `collectors/mercado.py`), e a
 BRAPI saiu do código. Histórico de preço e proventos também vêm da base. Desde 2026-10-14, a
-leitura passa pela `dados-api`. Os índices (P/L, P/VP, ROE,
+leitura passa pela `fiance-dados`. Os índices (P/L, P/VP, ROE,
 yield) seguem regra do backend; a visão entrega só números brutos.
 
 **Decidido:** ativo que a base não tem — não negociou nos últimos 30 dias, é Fiagro, ou nunca entrou —
@@ -452,5 +452,5 @@ yield) seguem regra do backend; a visão entrega só números brutos.
 ## Fora do data-job
 
 - As pesquisas (motor de *backtest*, protocolos, prova lacrada): [pesquisas](pesquisas/README.md)
-- O painel do autor (`trend-frontend`), que lê esta base: [07-OPERACAO](07-OPERACAO.md)
+- O painel do autor (`fiance-trend/frontend`), que lê esta base: [07-OPERACAO](07-OPERACAO.md)
 - Cotação ao longo do pregão: nenhuma fonte gratuita oficial entrega

@@ -42,6 +42,10 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 
 ## Notas de contexto
 
+- **Nomes, 2026-10-15:** o serviço e a pasta `dados-api` passaram a `fiance-dados`; `trend`,
+  `trend-backend/` e `trend-frontend/` passaram a `fiance-trend`, `fiance-trend/backend/` e
+  `fiance-trend/frontend/`. As ADRs 022 a 024 usam os nomes antigos.
+
 O texto de uma ADR não muda. Quando um fato posterior muda o peso de uma premissa, a nota fica aqui,
 datada, e a ADR continua como foi escrita.
 

@@ -13,7 +13,7 @@ Subir, observar, reverter — e o que falta para publicar nas lojas.
 | Produção | Railway, projeto `fiance`, ambiente `production` | Dois Postgres: `postgres-app` (aplicativo) e `postgres-mercado` (dados de mercado) |
 
 Em desenvolvimento, **sem `DADOS_API_URL` e `DADOS_API_CHAVE` não há ativo**: o cliente da API
-falha com `SemBaseDeMercado` (`collectors/mercado.py`). Aponte para uma `dados-api` local ou a de
+falha com `SemBaseDeMercado` (`collectors/mercado.py`). Aponte para uma `fiance-dados` local ou a de
 produção, com uma chave criada no `/console`.
 
 Não há staging. O ambiente existiu até 2026-10-09 e foi removido: acompanhava a mesma branch que
@@ -29,10 +29,10 @@ Serviços no ambiente `production`:
 | `postgres-app` | Banco do aplicativo | 500 MB |
 | `data-job` | Coleta de mercado, de `/data-job` — [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md). Cron `0 2 * * 2-6` (UTC, 23h de Brasília), roda `python -m datajob diario` e termina. Migrações Alembic próprias (`data-job/migrations`, 0001–0020), aplicadas pelo Pre-Deploy Command (`python -m alembic upgrade head`). Cada rodada fica em `mercado.rodada` | `data-job-bruto`, 5 GB, em `/bruto` |
 | `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |
-| `dados-api` | A API de dados para terceiros e para o próprio app, de `/dados-api` ([ADR-024](decisoes/ADR-024-api-de-dados.md)). Só lê `mercado` como `mercado_leitura`; contas, chaves, planos e uso no schema `acesso`, com migrações próprias (`dados-api/migrations`) pelo Pre-Deploy Command (`python -m alembic upgrade head`). Em `https://dados-api-production.up.railway.app`. Start: `uvicorn dadosapi.app:criar --factory --host 0.0.0.0 --port $PORT`; saúde em `/saude`; documentação pública em `/docs`, portal em `/` e console em `/console` | — |
-| `trend` | Painel de uso próprio: API do `trend-backend` e front do `trend-frontend`, em `https://trend.up.railway.app`, com senha. Imagem de `trend-backend/Dockerfile`; reconstrói com mudança em `/trend-backend/**`, `/trend-frontend/**` e `/docs/**`. Lê o `postgres-mercado` como `mercado_leitura` | — |
+| `fiance-dados` | A API de dados para terceiros e para o próprio app, de `/fiance-dados` ([ADR-024](decisoes/ADR-024-api-de-dados.md)). Só lê `mercado` como `mercado_leitura`; contas, chaves, planos e uso no schema `acesso`, com migrações próprias (`fiance-dados/migrations`) pelo Pre-Deploy Command (`python -m alembic upgrade head`). Em `https://fiance-dados.up.railway.app`. Start: `uvicorn dadosapi.app:criar --factory --host 0.0.0.0 --port $PORT`; saúde em `/saude`; documentação pública em `/docs`, portal em `/` e console em `/console` | — |
+| `fiance-trend` | Painel de uso próprio: API do `fiance-trend/backend` e front do `fiance-trend/frontend`, em `https://fiance-trend.up.railway.app`, com senha. Imagem de `fiance-trend/backend/Dockerfile`; reconstrói com mudança em `/fiance-trend/backend/**`, `/fiance-trend/frontend/**` e `/docs/**`. Lê o `postgres-mercado` como `mercado_leitura` | — |
 
-O `trend` pede `TREND_USUARIO` e `TREND_SENHA` e falha ao subir sem elas. A senha é definida no painel do
+O `fiance-trend` pede `TREND_USUARIO` e `TREND_SENHA` e falha ao subir sem elas. A senha é definida no painel do
 Railway, e não passa pelo repositório.
 
 **Para rodar o data-job fora da agenda:** tirar o cron do serviço, fazer uma implantação **nova**
@@ -109,8 +109,8 @@ O caminho manual **nunca rodou**: ele exige `RAILWAY_TOKEN` nos segredos e `RAIL
 | `DATABASE_URL` | SQLite local | Postgres em produção |
 | `GOOGLE_CLIENT_ID` | vazio | Login |
 | `APPLE_CLIENT_ID` | vazio | Login com Apple: bundle id e Services ID aceitos como audience, separados por vírgula. Vazio, a rota recusa com 500 |
-| `DADOS_API_URL` | vazio | A `dados-api`. No Railway, pela rede privada: `http://${{dados-api.RAILWAY_PRIVATE_DOMAIN}}:8080` |
-| `DADOS_API_CHAVE` | vazio | Chave de uma conta do plano `interno`, criada no `/console` da `dados-api`. Definida no painel, nunca no repositório |
+| `DADOS_API_URL` | vazio | A `fiance-dados`. No Railway, pela rede privada: `http://${{fiance-dados.RAILWAY_PRIVATE_DOMAIN}}:8080` |
+| `DADOS_API_CHAVE` | vazio | Chave de uma conta do plano `interno`, criada no `/console` da `fiance-dados`. Definida no painel, nunca no repositório |
 | `ALLOWED_ORIGINS` | localhost | CORS |
 | `ADMIN_USER_IDS` | vazio | Rotas de operador. Conta Apple entra como `apple:<sub>` |
 | `RATE_LIMIT_ENABLED` | `true` | Teto de uso |
@@ -134,7 +134,7 @@ As duas são obrigatórias, sem default: ausente, o job falha ao começar (`data
 | `DATABASE_URL` | O `postgres-mercado`, com permissão de escrita no schema `mercado` |
 | `DATAJOB_BRUTO_DIR` | Onde guardar os arquivos brutos. Em produção, `/bruto` |
 
-### dados-api
+### fiance-dados
 
 | Variável | Para quê |
 |---|---|
@@ -167,7 +167,7 @@ curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
 O limite por minuto fica na memória do processo: com mais de uma réplica, cada uma conta a sua.
 **Cobrar de terceiros depende da licença da B3 e da leitura da ODbL** (ADR-024).
 
-### trend (painel)
+### fiance-trend (painel)
 
 | Variável | Default | Para quê |
 |---|---|---|
@@ -175,8 +175,8 @@ O limite por minuto fica na memória do processo: com mais de uma réplica, cada
 | `TREND_USUARIO` | **obrigatória** | Usuário do painel |
 | `TREND_SENHA` | **obrigatória** | Senha do painel; definida no Railway, nunca no repositório |
 | `TREND_DOCS` | `docs/` da raiz | Onde ler os documentos exibidos no painel |
-| `TREND_PESQUISA` | `trend-backend/` | Onde ler os resultados da pesquisa |
-| `TREND_FRONT` | `trend-frontend/dist` | O front compilado que a API serve |
+| `TREND_PESQUISA` | `fiance-trend/backend/` | Onde ler os resultados da pesquisa |
+| `TREND_FRONT` | `fiance-trend/frontend/dist` | O front compilado que a API serve |
 
 **`ENTITLEMENTS_ENABLED_AT` é a âncora do relógio de trial.** `start_trial` é chamado na primeira
 posição salva **sem consultar a flag**, então toda conta com carteira carrega um `trial_ends_at` no
@@ -214,7 +214,7 @@ O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte
 **O que verificar quando o Descobrir esvaziar:**
 
 1. `GET /data-quality/source` — disjuntor aberto?
-2. A coleta — o painel `trend` alerta quando a rodada do data-job falha ou a cotação fica velha
+2. A coleta — o painel `fiance-trend` alerta quando a rodada do data-job falha ou a cotação fica velha
 3. Horário — fora de 10h–18h30 em dia com pregão na B3, a varredura do universo não vai à rede
    por desenho. Feriado nacional, Carnaval e 24 e 31/12 contam como fechados; na Quarta-feira de
    Cinzas a janela abre às 13h
@@ -287,7 +287,7 @@ construído e testado.
 ## Rotina de operação
 
 Não há rotina automatizada de monitoramento, alerta ou verificação de saúde além do que o Railway
-oferece, com uma exceção: o painel `trend` alerta falha de etapa na última rodada do data-job
+oferece, com uma exceção: o painel `fiance-trend` alerta falha de etapa na última rodada do data-job
 (`mercado.rodada`), rodada parada há mais de 80 h ou começada e não terminada, e cotação com mais de
-2 dias úteis sem pregão novo (`trend-backend/api/alertas.py`). Com um usuário isso é adequado; com
+2 dias úteis sem pregão novo (`fiance-trend/backend/api/alertas.py`). Com um usuário isso é adequado; com
 usuários reais, não é.

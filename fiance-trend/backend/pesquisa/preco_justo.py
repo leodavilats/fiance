@@ -14,7 +14,7 @@ from pesquisa.motor import fins_de_mes
 from pesquisa.periodos import Periodo
 from pesquisa.universo import elegiveis
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "backend"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "backend"))
 
 from app.analysis import fair_price as modelo  # noqa: E402
 from app.collectors.rates import FAIXAS, SELIC_AVERAGE_MONTHS  # noqa: E402

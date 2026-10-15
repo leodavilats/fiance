@@ -1,4 +1,4 @@
-# Plano — pesquisa de carteira (`trend-backend/`)
+# Plano — pesquisa de carteira (`fiance-trend/backend/`)
 
 **Estado:** busca **encerrada** em 2026-10-12, com o teto de 8 variações atingido — conclusão abaixo · **Escrito em:** 2026-10-10 · **Uso:** próprio do autor, não é produto
 
@@ -26,7 +26,7 @@ A régua é o CDI, não o Ibovespa: o CDI é a alternativa sem risco e com liqui
 - **A prova só roda para hipótese congelada** — parâmetros escritos no registro antes da abertura — e a
   abertura fica registrada. Abrir de novo a mesma hipótese exige forçar, e o forçar também fica no
   registro
-- **Toda execução fica no registro** (`trend-backend/registro.jsonl`, só acrescenta): hipótese,
+- **Toda execução fica no registro** (`fiance-trend/backend/registro.jsonl`, só acrescenta): hipótese,
   parâmetros, período, resultado. O número de variações testadas é parte do resultado: com 200
   tentativas, uma passar é o esperado por sorte
 
@@ -103,7 +103,7 @@ pagos; dias de salto sem evento zerados.
 
 ## Hipóteses
 
-Cada hipótese é um módulo em `trend-backend/pesquisa/hipoteses/`, com nome, parâmetros e a função que
+Cada hipótese é um módulo em `fiance-trend/backend/pesquisa/hipoteses/`, com nome, parâmetros e a função que
 pontua os papéis numa data. As primeiras, nesta ordem:
 
 1. **Momento 12–1:** retorno dos últimos 12 meses, ignorando o último; compra os 20 maiores
@@ -137,11 +137,11 @@ ali precisa ser comparada também com esse mercado, e não só com o CDI.
 ## Acesso à base
 
 A pesquisa roda sobre um **retrato**: a série ajustada e o CDI exportados para Parquet em
-`trend-backend/.retratos/<data>/` (fora do Git). O mesmo retrato reproduz o mesmo resultado, e a data
+`fiance-trend/backend/.retratos/<data>/` (fora do Git). O mesmo retrato reproduz o mesmo resultado, e a data
 do retrato vai para o registro.
 
 ```bash
-cd trend-backend
+cd fiance-trend/backend
 python -m pesquisa retrato --pelo-railway     # pela CLI do Railway, sem expor o banco (~2 min)
 python -m pesquisa rodar --hipotese momento_12_1 --periodo estudo
 python -m pesquisa relatorio                 # relatorio.html, com as curvas e as carteiras
@@ -153,6 +153,6 @@ com um usuário do papel `mercado_leitura`.
 
 ## Resultados
 
-A fonte é `trend-backend/registro.jsonl`, com cada execução e o retrato usado. Este documento guarda só
+A fonte é `fiance-trend/backend/registro.jsonl`, com cada execução e o retrato usado. Este documento guarda só
 o resumo da [conclusão](#conclusão--2026-10-12-não-achei-vantagem-investível); quando os dois
 divergirem, vale o registro.

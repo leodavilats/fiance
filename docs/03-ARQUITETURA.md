@@ -11,7 +11,7 @@ Estrutura e endpoints são derivados do código; a **intenção** vive aqui e na
 
 Um backend FastAPI com o seu Postgres (`postgres-app`), um cliente Flutter. Os dados de mercado vêm
 de um segundo Postgres (`postgres-mercado`), escrito só pelo `data-job/` e lido pelo backend sem
-escrever. Sem microsserviços, sem fila. O painel do autor (`trend-backend/` + `trend-frontend/`) lê
+escrever. Sem microsserviços, sem fila. O painel do autor (`fiance-trend/backend/` + `fiance-trend/frontend/`) lê
 a mesma base e fica fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)).
 
 ```
@@ -171,7 +171,7 @@ paywall) usa `independent_session()` / `outside_request_transaction()`.
 **Duas fontes, e só duas:** a base de mercado própria (`postgres-mercado`, ações, FIIs, BDRs,
 ETFs) e BCB SGS (CDI, Selic, IPCA). A base é escrita só pelo `data-job/`, a partir da B3, da CVM,
 do Tesouro e do BCB ([ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)); o backend
-lê **pela `dados-api`** ([ADR-024](decisoes/ADR-024-api-de-dados.md)), com uma chave do plano
+lê **pela `fiance-dados`** ([ADR-024](decisoes/ADR-024-api-de-dados.md)), com uma chave do plano
 `interno`, pela rede privada do Railway (`collectors/mercado.py`): `/v1/retratos` em lotes de 50
 para o retrato e as demonstrações, `/v1/ativos` para a lista, `/cotacoes` para o histórico e
 `/proventos` sem o rendimento estimado. Ticker que a API não tem (404) é ausência, não falha. **A cotação é a do último fechamento**, e o `as_of`

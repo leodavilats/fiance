@@ -19,7 +19,7 @@ def pastas(tmp_path: Path):
     (docs / "pesquisas" / "pesquisa.md").write_text("# Plano — pesquisa\n\ntexto", encoding="utf-8")
     (docs / "09-FUTURO.md").write_text("# Futuro\n", encoding="utf-8")
     (tmp_path / "segredo.md").write_text("não", encoding="utf-8")
-    pesquisa = tmp_path / "trend-backend"
+    pesquisa = tmp_path / "fiance-trend-backend"
     (pesquisa / "resultados").mkdir(parents=True)
     (pesquisa / "registro.jsonl").write_text(
         json.dumps({"hipotese": "h", "assinatura": "abc", "periodo": "estudo", "resumo": {}})

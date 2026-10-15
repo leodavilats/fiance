@@ -1,4 +1,4 @@
-# Plano — o ranking de tendência (`trend-backend/`)
+# Plano — o ranking de tendência (`fiance-trend/backend/`)
 
 **Estado:** `[CONCLUÍDO]` em 2026-10-12 — **o ranking de tendência não informa** (6 variações, nenhuma
 passou no estudo). Protocolo `[ACEITO]` pelo autor no mesmo dia, antes da primeira execução · **Etapa 2 de**
@@ -109,7 +109,7 @@ sinal fraco e real pode não aparecer. É o preço de não ter mercado de FII l�
 | 2 | Distância da média de 200 | 0,017 | 0,93 | 60% | +3,4 pontos | 83% |
 | 3 | Inclinação vezes R² | 0,032 | **1,87** | 58% | +3,3 pontos | 62% |
 
-155 meses (2006–2018), 77 ações por mês em média. Registro em `trend-backend/registro_ranking.jsonl`.
+155 meses (2006–2018), 77 ações por mês em média. Registro em `fiance-trend/backend/registro_ranking.jsonl`.
 
 - **Os três apontam na mesma direção, e nenhum com força estatística.** O topo vence o fundo em 57% a
   60% dos meses e paga a troca, mas a correlação mês a mês oscila tanto que o t não chega a 2. Pelo

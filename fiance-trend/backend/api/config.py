@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[2]
+RAIZ = Path(__file__).resolve().parents[3]
 
 
 class ConfiguracaoAusente(RuntimeError):
@@ -41,6 +41,6 @@ def carregar() -> Configuracao:
         usuario=_obrigatoria("TREND_USUARIO"),
         senha=_obrigatoria("TREND_SENHA"),
         docs=Path(os.environ.get("TREND_DOCS") or RAIZ / "docs"),
-        pesquisa=Path(os.environ.get("TREND_PESQUISA") or RAIZ / "trend-backend"),
-        front=Path(os.environ.get("TREND_FRONT") or RAIZ / "trend-frontend" / "dist"),
+        pesquisa=Path(os.environ.get("TREND_PESQUISA") or RAIZ / "fiance-trend" / "backend"),
+        front=Path(os.environ.get("TREND_FRONT") or RAIZ / "fiance-trend" / "frontend" / "dist"),
     )

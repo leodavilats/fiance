@@ -79,9 +79,9 @@ seções rígidas por estágio.
 | Esquema do banco do app | Migrações Alembic em `backend/migrations/` |
 | Esquema da base de mercado (schema `mercado`) | `data-job/datajob/esquema.py` e `data-job/migrations/` — só o data-job escreve nela |
 | Coleta: fontes, rotina, tratamento | `data-job/datajob/`; intenção em [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md) |
-| Pesquisas, ranking e calibração | `trend-backend/pesquisa/` e os registros `trend-backend/registro*.jsonl`; protocolo e resultado em [pesquisas/](pesquisas/README.md) |
-| API de dados: contas, chaves, planos, rotas `/v1` | `dados-api/dadosapi/` e `dados-api/migrations/` (schema `acesso`); por quê em [ADR-024](decisoes/ADR-024-api-de-dados.md) |
-| Painel do autor | `trend-backend/api/` e `trend-frontend/src/` — fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)) |
+| Pesquisas, ranking e calibração | `fiance-trend/backend/pesquisa/` e os registros `fiance-trend/backend/registro*.jsonl`; protocolo e resultado em [pesquisas/](pesquisas/README.md) |
+| API de dados: contas, chaves, planos, rotas `/v1` | `fiance-dados/dadosapi/` e `fiance-dados/migrations/` (schema `acesso`); por quê em [ADR-024](decisoes/ADR-024-api-de-dados.md) |
+| Painel do autor | `fiance-trend/backend/api/` e `fiance-trend/frontend/src/` — fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)) |
 | Vocabulário fechado (classes, categorias) | `backend/app/models/enums.py` |
 | Fórmulas | Código; [04-CALCULOS](04-CALCULOS.md) é o espelho auditado |
 | Limiares de score | `backend/app/analysis/score_ruler.py` — Python primeiro |
@@ -120,5 +120,5 @@ Duas máquinas cobram esta documentação, e ambas rodam no CI:
   linha que passou do fim do arquivo. Blocos de código ficam de fora: ali o caminho é comando, não
   referência de repositório. **Só confere caminho completo** (começando em `backend/`, `mobile/` ou
   `docs/`): um nome curto, como `analysis/fair_price.py`, não é verificado, e caminho em `data-job/`,
-  `trend-backend/` ou `trend-frontend/` também não — confira à mão. As ADRs antigas citam
+  `fiance-trend/backend/` ou `fiance-trend/frontend/` também não — confira à mão. As ADRs antigas citam
   arquivos que já saíram, e isso é esperado — ADR não se reescreve

@@ -2,8 +2,8 @@
 
 Plataforma de análise de investimentos focada na B3, multi-tenant.
 **FastAPI + Postgres** (`backend/`) · **Flutter** (`mobile/`), o único cliente do produto.
-Fora do app: `data-job/` (coleta de mercado), `dados-api/` (a base como serviço, com contas e
-chaves, [ADR-024](docs/decisoes/ADR-024-api-de-dados.md)) e `trend-backend/` + `trend-frontend/`
+Fora do app: `data-job/` (coleta de mercado), `fiance-dados/` (a base como serviço, com contas e
+chaves, [ADR-024](docs/decisoes/ADR-024-api-de-dados.md)) e `fiance-trend/backend/` + `fiance-trend/frontend/`
 (laboratório e painel do autor, [ADR-023](docs/decisoes/ADR-023-fase-pessoal-primeiro.md)).
 
 Este arquivo é o **contrato de trabalho**: o que não pode ser violado, e as armadilhas que não
@@ -42,20 +42,20 @@ cd backend && python -m ruff format --check app tests
 cd data-job && python -m pytest -q                 # gravação exige DATAJOB_TEST_DATABASE_URL
 cd data-job && python -m ruff check datajob tests migrations
 cd data-job && python -m ruff format --check datajob tests migrations
-cd dados-api && python -m pytest -q                # exige DADOS_API_TEST_DATABASE_URL e ../data-job/requirements.txt
-cd dados-api && python -m ruff check dadosapi tests migrations
-cd dados-api && python -m ruff format --check dadosapi tests migrations
-cd trend-backend && python -m pytest -q            # exige ../backend/requirements.txt instalado
-cd trend-backend && python -m ruff check pesquisa api tests
-cd trend-backend && python -m ruff format --check pesquisa api tests
-cd trend-frontend && npm ci && npm run build && npm test
+cd fiance-dados && python -m pytest -q                # exige DADOS_API_TEST_DATABASE_URL e ../data-job/requirements.txt
+cd fiance-dados && python -m ruff check dadosapi tests migrations
+cd fiance-dados && python -m ruff format --check dadosapi tests migrations
+cd fiance-trend/backend && python -m pytest -q            # exige ../../backend/requirements.txt instalado
+cd fiance-trend/backend && python -m ruff check pesquisa api tests
+cd fiance-trend/backend && python -m ruff format --check pesquisa api tests
+cd fiance-trend/frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
 cd mobile  && python tool/build_icons.py --check
 node docs/checar-links.mjs
 ```
 
-- **A calibração do `trend-backend` importa `app.*` do backend.** Sem as dependências do backend
+- **A calibração do `fiance-trend/backend` importa `app.*` do backend.** Sem as dependências do backend
   instaladas, a suíte dele não roda.
 
 - **Não rode `dart format`** — reescreve o `design_tokens.dart` e quebra os `if`s de uma linha.
@@ -144,10 +144,10 @@ O que não pode ser violado. O **porquê** está nas [decisões](docs/decisoes/)
 
 ### Dados externos
 
-- **A `dados-api` só lê `mercado`.** Ela escreve só no schema `acesso`; a chave nunca é guardada,
+- **A `fiance-dados` só lê `mercado`.** Ela escreve só no schema `acesso`; a chave nunca é guardada,
   só o hash; rota `/admin` exige `DADOS_API_ADMIN_TOKEN` e não aparece na documentação pública.
 - **Fonte de mercado é a base própria** (`postgres-mercado`, escrita só pelo `data-job/`), e juro
-  é BCB SGS. O backend lê **pela `dados-api`**, com uma chave do plano `interno`, nunca o banco
+  é BCB SGS. O backend lê **pela `fiance-dados`**, com uma chave do plano `interno`, nunca o banco
   direto. Nenhuma API de mercado paga.
 - **O sistema não inventa dado.** Fonte fora do ar degrada em ordem: cache válido → cache vencido com
   idade visível → ausência declarada. **Falha de rede não vira ausência.**

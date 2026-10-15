@@ -7,7 +7,7 @@ execução.
 **A regra é a das ADRs: o protocolo não se reescreve.** Depois de aceito, ele só ganha resultado,
 adendo aceito antes de rodar, ou correção de erro declarada. Ajustar a régua depois de ver o
 resultado é o que o protocolo existe para impedir. O registro de cada execução fica no
-`trend-backend/` (`registro*.jsonl`), e só acrescenta.
+`fiance-trend/backend/` (`registro*.jsonl`), e só acrescenta.
 
 | Pesquisa | Pergunta | Resultado |
 |---|---|---|

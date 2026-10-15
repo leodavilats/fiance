@@ -5,7 +5,7 @@ de imposto e análise de ativos num só lugar.
 
 **Backend** FastAPI + Postgres (`backend/`) · **Cliente** Flutter (`mobile/`), o único cliente do
 produto · **Coleta** de dados de mercado (`data-job/`) · **Pesquisa e painel do autor**
-(`trend-backend/`, `trend-frontend/`), fora do produto
+(`fiance-trend/backend/`, `fiance-trend/frontend/`), fora do produto
 
 ---
 
@@ -66,7 +66,7 @@ cp backend/.env.example backend/.env
 | `GOOGLE_CLIENT_ID` | Client IDs aceitos como audience do login, separados por vírgula |
 | `APPLE_CLIENT_ID` | Bundle id e Services ID aceitos como audience do login com Apple, separados por vírgula |
 | `JWT_SECRET` | Assina o JWT de sessão. O valor de exemplo é recusado fora de desenvolvimento |
-| `DADOS_API_URL` e `DADOS_API_CHAVE` | A base de mercado, pela `dados-api` (cotação, provento, balanço), com uma chave do plano `interno`. Sem elas, não há ativo |
+| `DADOS_API_URL` e `DADOS_API_CHAVE` | A base de mercado, pela `fiance-dados` (cotação, provento, balanço), com uma chave do plano `interno`. Sem elas, não há ativo |
 
 ### Principais opcionais
 
@@ -113,11 +113,11 @@ cd backend && python -m ruff format --check app tests
 cd data-job && python -m pytest -q                 # gravação exige DATAJOB_TEST_DATABASE_URL
 cd data-job && python -m ruff check datajob tests migrations
 cd data-job && python -m ruff format --check datajob tests migrations
-cd trend-backend && python -m pytest -q
-cd trend-backend && python -m ruff check pesquisa api tests
-cd trend-backend && python -m ruff format --check pesquisa api tests
-cd dados-api && python -m pytest -q                # exige DADOS_API_TEST_DATABASE_URL
-cd trend-frontend && npm ci && npm run build && npm test
+cd fiance-trend/backend && python -m pytest -q
+cd fiance-trend/backend && python -m ruff check pesquisa api tests
+cd fiance-trend/backend && python -m ruff format --check pesquisa api tests
+cd fiance-dados && python -m pytest -q                # exige DADOS_API_TEST_DATABASE_URL
+cd fiance-trend/frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
 cd mobile  && python tool/build_icons.py --check
@@ -159,9 +159,9 @@ mobile/
   test/           inclui lint_ui_test e contraste_test
 
 data-job/         coleta B3, CVM e BCB e grava o schema mercado, que o backend só lê
-trend-backend/    pesquisas com protocolo e a API do painel do autor
-trend-frontend/   o painel do autor (trend.up.railway.app), fora do produto
-dados-api/        a base de mercado como serviço, com contas, chaves e planos (ADR-024)
+fiance-trend/backend/    pesquisas com protocolo e a API do painel do autor
+fiance-trend/frontend/   o painel do autor (fiance-trend.up.railway.app), fora do produto
+fiance-dados/        a base de mercado como serviço, com contas, chaves e planos (ADR-024)
 
 docs/             ver docs/README.md
 ```
@@ -173,7 +173,7 @@ A separação entre `ledger`/`cashflow`/`analysis` e o resto **é invariante**, 
 
 ## Deploy
 
-Railway, com cinco serviços: `backend`, `data-job`, `trend` e dois Postgres — `postgres-app` (o
+Railway, com seis serviços: `backend`, `data-job`, `fiance-dados`, `fiance-trend` e dois Postgres — `postgres-app` (o
 banco do aplicativo) e `postgres-mercado` (o schema `mercado`, só o data-job escreve). A migração do
 backend roda como **pre-deploy** (`python -m app.release`), nunca no startup.
 

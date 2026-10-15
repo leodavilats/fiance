@@ -32,5 +32,5 @@ def run_migrations_online() -> None:
 
 
 if context.is_offline_mode():
-    raise RuntimeError("A dados-api não gera SQL offline: rode contra um banco.")
+    raise RuntimeError("A fiance-dados não gera SQL offline: rode contra um banco.")
 run_migrations_online()

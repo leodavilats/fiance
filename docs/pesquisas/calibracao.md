@@ -108,8 +108,8 @@ Execução 0, o modelo como está, no estudo (vereditos de jan/2011 a dez/2017, 
   de código; ficou no registro e foi refeita com `--forcar` na janela do protocolo. Como não havia
   balanço antes de 2010, os números dos dois grupos não mudaram
 
-Registro em `trend-backend/registro_calibracao.jsonl`; mês a mês em
-`trend-backend/resultados/calibracao_0_estudo.json`. O que isso muda no app está em
+Registro em `fiance-trend/backend/registro_calibracao.jsonl`; mês a mês em
+`fiance-trend/backend/resultados/calibracao_0_estudo.json`. O que isso muda no app está em
 [10-PROBLEMAS](../10-PROBLEMAS.md), item A12.
 
 ## O que mudou no app

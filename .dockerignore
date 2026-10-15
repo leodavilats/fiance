@@ -2,12 +2,13 @@
 mobile
 backend
 data-job
+fiance-dados
 build
 tool
 **/node_modules
 **/__pycache__
 **/.pytest_cache
 **/.ruff_cache
-trend-backend/.retratos
-trend-backend/relatorio.html
-trend-frontend/dist
+fiance-trend/backend/.retratos
+fiance-trend/backend/relatorio.html
+fiance-trend/frontend/dist
