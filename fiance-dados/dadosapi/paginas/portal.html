@@ -4,309 +4,580 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>fiance dados — a bolsa brasileira, do jeito que aconteceu</title>
-<meta name="description" content="Cotações, proventos e balanços da B3 e da CVM desde 2005, com as empresas que saíram da bolsa, eventos conferidos pelo preço e cada balanço como se sabia no dia.">
+<meta name="description" content="API de dados da B3 e da CVM desde 2005: cotações com as empresas que saíram da bolsa, série ajustada com eventos conferidos pelo preço e balanços como se sabia em cada data.">
+<meta name="theme-color" content="#fbf8f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191714" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --papel: #fbf8f1; --papel-fundo: #f3eee3; --tinta: #1c1a17; --tinta-2: #4a453d; --tinta-3: #7a7366;
-  --fio: #e2dbcc; --fio-forte: #cfc6b4; --destaque: #0f8a70; --destaque-tinta: #0b6b57;
-  --ajustado: #0f8a70; --negociado: #c9572a; --codigo: #f1ece1;
-  --serifa: "Newsreader", Georgia, serif; --sans: "IBM Plex Sans", system-ui, sans-serif;
+  --papel: #fbf8f1; --papel-fundo: #f3eee3; --papel-alto: #fffdf8;
+  --tinta: #1c1a17; --tinta-2: #47423a; --tinta-3: #6e675b;
+  --fio: #e3dccd; --fio-forte: #cdc4b1;
+  --destaque: #0f8a70; --destaque-tinta: #0b6b57; --destaque-fundo: #e9f2ed;
+  --ajustado: #0f8a70; --negociado: #c9572a; --alerta: #a5461f;
+  --codigo: #f1ece1; --codigo-fio: #e0d8c7;
+  --serifa: "Newsreader", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --gutter: 20px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
-    --papel: #191714; --papel-fundo: #211e1a; --tinta: #efe9dd; --tinta-2: #c9c1b2; --tinta-3: #968e80;
-    --fio: #2f2b25; --fio-forte: #3d3830; --destaque: #36a989; --destaque-tinta: #5cc4a6;
-    --ajustado: #36a989; --negociado: #d4703f; --codigo: #221f1b;
+    --papel: #191714; --papel-fundo: #211e1a; --papel-alto: #1e1b17;
+    --tinta: #efe9dd; --tinta-2: #cbc3b4; --tinta-3: #9d9586;
+    --fio: #2f2b25; --fio-forte: #423c33;
+    --destaque: #36a989; --destaque-tinta: #5cc4a6; --destaque-fundo: #1c2924;
+    --ajustado: #36a989; --negociado: #d4703f; --alerta: #e08a5f;
+    --codigo: #221f1b; --codigo-fio: #332e27;
     color-scheme: dark;
   }
 }
+:root[data-tema="escuro"] {
+  --papel: #191714; --papel-fundo: #211e1a; --papel-alto: #1e1b17;
+  --tinta: #efe9dd; --tinta-2: #cbc3b4; --tinta-3: #9d9586;
+  --fio: #2f2b25; --fio-forte: #423c33;
+  --destaque: #36a989; --destaque-tinta: #5cc4a6; --destaque-fundo: #1c2924;
+  --ajustado: #36a989; --negociado: #d4703f; --alerta: #e08a5f;
+  --codigo: #221f1b; --codigo-fio: #332e27;
+  color-scheme: dark;
+}
+
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--papel); color: var(--tinta); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
-a { color: var(--destaque-tinta); text-underline-offset: 3px; }
-.largura { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-.estreita { max-width: 720px; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+body { margin: 0; background: var(--papel); color: var(--tinta); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+a { color: var(--destaque-tinta); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--destaque); outline-offset: 3px; border-radius: 2px; }
+code { font-family: var(--mono); font-size: 0.88em; }
+figure { margin: 0; }
+.largura { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 var(--gutter); }
+.so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pular { position: absolute; left: 12px; top: -60px; z-index: 20; background: var(--tinta); color: var(--papel); padding: 10px 14px; border-radius: 3px; }
+.pular:focus { top: 12px; }
+.num { font-variant-numeric: tabular-nums; }
 
-header.topo { border-bottom: 1px solid var(--fio); }
-header.topo .largura { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-top: 18px; padding-bottom: 16px; flex-wrap: wrap; }
-.marca { font: 600 21px/1 var(--serifa); color: var(--tinta); text-decoration: none; letter-spacing: -0.01em; }
-.marca em { font-weight: 400; color: var(--destaque-tinta); }
-header nav { display: flex; gap: 22px; font-size: 15px; flex-wrap: wrap; }
-header nav a { color: var(--tinta-2); text-decoration: none; }
-header nav a:hover { color: var(--tinta); }
+/* topo */
+.topo { position: sticky; top: 0; z-index: 10; background: var(--papel); border-bottom: 1px solid var(--fio); }
+.topo .largura { display: flex; align-items: center; justify-content: space-between; gap: 20px; height: 62px; }
+.marca { font: 500 21px/1 var(--serifa); color: var(--tinta); text-decoration: none; letter-spacing: -0.01em; white-space: nowrap; }
+.marca em { color: var(--destaque-tinta); }
+.topo nav { display: flex; align-items: center; gap: 26px; font-size: 15px; }
+.topo nav a { color: var(--tinta-2); text-decoration: none; white-space: nowrap; }
+.topo nav a:hover { color: var(--tinta); }
+.topo nav a.conta-link { color: var(--tinta); border: 1px solid var(--fio-forte); padding: 7px 13px; border-radius: 3px; }
+.topo nav a.conta-link:hover { border-color: var(--tinta); }
 
-.abertura { padding-top: 72px; padding-bottom: 40px; }
-.sobretitulo { font: 500 13px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-3); margin: 0 0 18px; }
-section > .sobretitulo { display: flex; align-items: center; gap: 14px; }
-section > .sobretitulo::after { content: ""; flex: 1; height: 1px; background: var(--fio); }
-h1 { font: 500 clamp(36px, 6vw, 62px)/1.04 var(--serifa); letter-spacing: -0.02em; margin: 0 0 22px; max-width: 16ch; }
-h1 em { font-style: italic; font-weight: 400; }
-.lide { font-size: 20px; line-height: 1.55; color: var(--tinta-2); max-width: 46ch; margin: 0 0 32px; }
-.acoes { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
-.botao { display: inline-block; padding: 12px 20px; border-radius: 3px; background: var(--tinta); color: var(--papel); font: 500 15px/1 var(--sans); text-decoration: none; border: 1px solid var(--tinta); cursor: pointer; }
-.botao:hover { background: var(--destaque-tinta); border-color: var(--destaque-tinta); }
-.botao.contorno { background: transparent; color: var(--tinta); }
-.botao.contorno:hover { background: var(--tinta); color: var(--papel); }
+/* botões */
+.botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 3px; background: var(--tinta); color: var(--papel); font: 500 15px/1.2 var(--sans); text-decoration: none; border: 1px solid var(--tinta); cursor: pointer; white-space: nowrap; }
+.botao:hover { background: var(--destaque-tinta); border-color: var(--destaque-tinta); text-decoration: none; }
+.botao.contorno { background: transparent; color: var(--tinta); border-color: var(--fio-forte); }
+.botao.contorno:hover { border-color: var(--tinta); }
 
-.ficha { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--tinta); border-bottom: 1px solid var(--fio); margin: 56px 0 0; }
-.ficha div { padding: 18px 18px 18px 0; }
-.ficha div + div { padding-left: 18px; border-left: 1px solid var(--fio); }
-.ficha strong { display: block; font: 500 34px/1.05 var(--serifa); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.ficha span { display: block; font-size: 14px; color: var(--tinta-3); margin-top: 6px; line-height: 1.4; }
+/* tipografia de seção */
+main > section.largura { padding-top: 120px; }
+.rotulo { display: flex; align-items: center; gap: 14px; font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); margin: 0 0 22px; }
+.rotulo::after { content: ""; flex: 1; height: 1px; background: var(--fio); }
+h1, h2 { font-family: var(--serifa); font-weight: 500; letter-spacing: -0.018em; margin: 0; }
+h1 { font-size: clamp(40px, 6.2vw, 68px); line-height: 1.02; max-width: 13ch; }
+h1 em { font-weight: 400; }
+h2 { font-size: clamp(29px, 3.8vw, 42px); line-height: 1.1; max-width: 21ch; }
+h3 { font: 600 17px/1.35 var(--sans); margin: 0 0 8px; }
+.cabeca { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr); gap: 20px 64px; align-items: end; margin-bottom: 44px; }
+.cabeca p { margin: 0; color: var(--tinta-2); max-width: 52ch; }
 
-main > section.largura { margin-top: 128px; }
-h2 { font: 500 clamp(28px, 4vw, 40px)/1.12 var(--serifa); letter-spacing: -0.015em; margin: 0 0 18px; max-width: 22ch; }
-h3 { font: 600 17px/1.3 var(--sans); margin: 0 0 6px; }
-.texto { color: var(--tinta-2); max-width: 62ch; }
-.texto p { margin: 0 0 14px; }
+/* abertura */
+.abertura { padding-top: 76px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 56px 72px; align-items: start; }
+.abertura .sobre { font: 500 13px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); margin: 0 0 22px; }
+.lide { font-size: 20px; line-height: 1.55; color: var(--tinta-2); max-width: 44ch; margin: 26px 0 34px; }
+.acoes { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.atualizada { margin: 22px 0 0; font-size: 14px; color: var(--tinta-3); display: flex; align-items: center; gap: 9px; min-height: 1.6em; }
+.atualizada i { width: 7px; height: 7px; border-radius: 50%; background: var(--destaque); display: inline-block; flex: none; }
 
-.exemplo { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; align-items: start; margin-top: 36px; }
-.grafico-moldura { border-top: 1px solid var(--tinta); padding-top: 14px; }
-.grafico-titulo { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 14px; color: var(--tinta-3); margin-bottom: 10px; }
+.base-hoje { border-top: 2px solid var(--tinta); margin-top: 8px; }
+.base-hoje table { width: 100%; border-collapse: collapse; }
+.base-hoje caption { text-align: left; font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); padding: 16px 0 4px; }
+.base-hoje th, .base-hoje td { padding: 15px 0; border-bottom: 1px solid var(--fio); vertical-align: baseline; text-align: left; font-weight: 400; }
+.base-hoje th { color: var(--tinta); font-size: 15.5px; font-weight: 500; padding-right: 16px; }
+.base-hoje th small { display: block; color: var(--tinta-3); font-size: 13.5px; font-weight: 400; margin-top: 3px; line-height: 1.4; }
+.base-hoje td { font: 500 30px/1 var(--serifa); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.01em; }
+
+/* diferencial */
+.tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--tinta); }
+.tres article { padding: 28px 32px 8px 0; display: flex; flex-direction: column; }
+.tres article + article { padding-left: 32px; border-left: 1px solid var(--fio); }
+.tres .indice { font: 400 14px/1 var(--mono); color: var(--tinta-3); display: block; margin-bottom: 22px; }
+.tres h3 { font: 500 24px/1.2 var(--serifa); letter-spacing: -0.01em; margin-bottom: 12px; }
+.tres p { margin: 0 0 16px; color: var(--tinta-2); font-size: 16px; }
+.tres .prova { margin-top: auto; font-size: 14px; color: var(--tinta-3); border-top: 1px dotted var(--fio-forte); padding-top: 12px; }
+.tres .prova b { color: var(--tinta); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* exemplo */
+.exemplo { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 56px; align-items: start; }
+.grafico-moldura { border-top: 1px solid var(--tinta); padding-top: 14px; min-width: 0; }
+.grafico-titulo { display: flex; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; font-size: 14px; color: var(--tinta-3); margin-bottom: 10px; }
 .grafico-titulo strong { color: var(--tinta); font-weight: 600; }
-.legenda { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; color: var(--tinta-2); margin: 0 0 6px; }
-.legenda i { display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 7px; border-radius: 1px; }
-#grafico { position: relative; }
+.legenda { display: flex; gap: 6px 20px; flex-wrap: wrap; font-size: 14px; color: var(--tinta-2); margin: 0 0 4px; }
+.legenda i, .comparacao i { display: inline-block; width: 18px; height: 2px; vertical-align: middle; margin-right: 8px; border-radius: 1px; }
+#grafico { position: relative; aspect-ratio: 2 / 1; }
 #grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
-.dica { position: absolute; pointer-events: none; background: var(--papel); border: 1px solid var(--fio-forte); padding: 8px 10px; font-size: 13px; line-height: 1.45; white-space: nowrap; box-shadow: 0 2px 10px rgba(0,0,0,0.06); opacity: 0; transition: opacity 0.12s; }
-.dica b { font-weight: 600; }
-.notas-do-grafico { font-size: 15px; color: var(--tinta-2); }
-.notas-do-grafico ol { padding-left: 18px; margin: 0; }
-.notas-do-grafico li { margin-bottom: 14px; }
-.notas-do-grafico li::marker { font-family: var(--serifa); color: var(--tinta-3); }
-details { margin-top: 14px; font-size: 14px; color: var(--tinta-3); }
-details summary { cursor: pointer; }
-details table { margin-top: 10px; }
+.sem-dado { padding-top: 40px; color: var(--tinta-3); font-size: 15px; margin: 0; }
+.dica { position: absolute; top: 0; left: 0; pointer-events: none; background: var(--papel-alto); border: 1px solid var(--fio-forte); padding: 8px 11px; font-size: 13px; line-height: 1.5; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,0.08); opacity: 0; transition: opacity 0.12s; border-radius: 3px; z-index: 5; }
+.dica b { font-weight: 600; display: block; }
+.dica span { display: block; font-variant-numeric: tabular-nums; }
+.comparacao { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--tinta); margin-bottom: 18px; }
+.comparacao div { padding: 16px 0; border-bottom: 1px solid var(--fio); }
+.comparacao div + div { padding-left: 18px; border-left: 1px solid var(--fio); }
+.comparacao strong { display: block; font: 500 32px/1 var(--serifa); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.comparacao span { display: block; font-size: 13.5px; color: var(--tinta-3); margin-top: 9px; line-height: 1.4; }
+.comparacao i { width: 12px; margin-right: 6px; }
+.notas { font-size: 15px; color: var(--tinta-2); }
+.notas p { margin: 0 0 14px; }
+.notas .leitura { color: var(--tinta); font-size: 15.5px; }
+details { margin-top: 16px; font-size: 14.5px; color: var(--tinta-2); }
+details summary { cursor: pointer; width: fit-content; }
+details summary:hover { color: var(--tinta); }
+details[open] summary { margin-bottom: 10px; }
 
-.conteudo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; margin-top: 36px; border-top: 1px solid var(--tinta); }
-.conteudo div { padding: 22px 0; border-bottom: 1px solid var(--fio); }
-.conteudo p { margin: 0; color: var(--tinta-2); font-size: 16px; }
-.conteudo code { display: inline-block; margin-top: 8px; font: 13px var(--mono); color: var(--tinta-3); }
+/* tabelas */
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.tabela th, .tabela td { border-bottom: 1px solid var(--fio); padding: 10px 14px 10px 0; text-align: left; vertical-align: top; }
+.tabela thead th { color: var(--tinta-3); font-weight: 500; font-size: 13.5px; border-bottom-color: var(--fio-forte); }
+.rolar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-.uso { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 40px; margin-top: 30px; align-items: start; }
-pre { margin: 0; background: var(--codigo); border: 1px solid var(--fio); border-radius: 3px; padding: 16px 18px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 13.5px/1.6 var(--mono); color: var(--tinta); }
+/* cobertura */
+.cobertura { border-top: 1px solid var(--tinta); font-size: 15.5px; }
+.cobertura thead th { padding-top: 14px; }
+.cobertura tbody th { font-weight: 600; color: var(--tinta); width: 34%; padding-top: 14px; padding-bottom: 14px; }
+.cobertura tbody th small { display: block; font-weight: 400; color: var(--tinta-3); font-size: 14px; margin-top: 3px; line-height: 1.45; }
+.cobertura td { color: var(--tinta-2); padding-top: 14px; }
+.cobertura td.periodo { white-space: nowrap; }
+.cobertura td code { color: var(--tinta-2); font-size: 13px; word-break: break-word; }
+.cobertura td.plano-min { white-space: nowrap; }
+.etiqueta { display: inline-block; font: 500 12.5px/1 var(--sans); padding: 5px 8px; border-radius: 2px; border: 1px solid var(--fio-forte); color: var(--tinta-2); }
+.etiqueta.pro { border-color: var(--destaque); color: var(--destaque-tinta); }
+.nota-tabela { font-size: 14px; color: var(--tinta-3); margin: 14px 0 0; max-width: 80ch; }
+
+/* uso */
+.uso { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
+.passos { list-style: none; margin: 0; padding: 0; counter-reset: passo; border-top: 1px solid var(--tinta); }
+.passos li { counter-increment: passo; display: grid; grid-template-columns: 34px 1fr; gap: 0 10px; padding: 18px 0; border-bottom: 1px solid var(--fio); color: var(--tinta-2); font-size: 16px; }
+.passos li::before { content: counter(passo, decimal-leading-zero); font: 400 14px/1.75 var(--mono); color: var(--tinta-3); }
+.passos b { color: var(--tinta); font-weight: 600; display: block; }
+.codigo { border: 1px solid var(--codigo-fio); background: var(--codigo); border-radius: 4px; min-width: 0; }
+.codigo-barra { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--codigo-fio); padding: 0 8px 0 6px; }
+.abas { display: flex; }
+.abas button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--tinta-3); font: 500 13.5px/1 var(--sans); padding: 14px 12px 12px; cursor: pointer; margin-bottom: -1px; }
+.abas button[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--tinta); }
+.abas button:hover { color: var(--tinta); }
+.copiar { background: none; border: 1px solid var(--codigo-fio); color: var(--tinta-2); font: 500 12.5px/1 var(--sans); padding: 7px 10px; border-radius: 3px; cursor: pointer; min-width: 64px; }
+.copiar:hover { color: var(--tinta); border-color: var(--fio-forte); }
+pre { margin: 0; padding: 18px 20px 20px; overflow-x: auto; font: 13.5px/1.65 var(--mono); color: var(--tinta); }
 pre .c { color: var(--tinta-3); }
+.resposta { border-top: 1px dashed var(--codigo-fio); }
+.resposta-rotulo { display: block; padding: 14px 20px 0; font: 500 12px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-3); }
 
-.planos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 36px; border-top: 1px solid var(--tinta); }
-.plano { padding: 26px 26px 30px 0; border-bottom: 1px solid var(--fio); display: flex; flex-direction: column; gap: 10px; }
-.plano + .plano { padding-left: 26px; border-left: 1px solid var(--fio); }
-.plano .nome { font: 500 26px/1 var(--serifa); }
-.plano .preco { font: 500 30px/1 var(--serifa); font-variant-numeric: tabular-nums; }
-.plano .preco small { font: 400 15px var(--sans); color: var(--tinta-3); }
-.plano .anual { font-size: 14px; color: var(--tinta-3); min-height: 1.4em; }
-.plano p { margin: 0; color: var(--tinta-2); font-size: 15.5px; }
-.plano ul { margin: 6px 0 0; padding: 0; list-style: none; font-size: 15px; color: var(--tinta-2); }
-.plano li { padding: 5px 0; border-top: 1px dotted var(--fio-forte); }
-.plano li.nao { color: var(--tinta-3); text-decoration: line-through; text-decoration-color: var(--fio-forte); }
-.aviso { margin-top: 20px; padding: 14px 18px; background: var(--papel-fundo); border-left: 3px solid var(--destaque); font-size: 15.5px; color: var(--tinta-2); max-width: 70ch; }
+/* planos */
+.planos { border-top: 1px solid var(--tinta); font-size: 15.5px; min-width: 560px; }
+.planos th, .planos td { padding: 13px 18px; border-bottom: 1px solid var(--fio); text-align: left; vertical-align: top; }
+.planos th:first-child, .planos td:first-child { padding-left: 0; }
+.planos thead th { vertical-align: top; padding-top: 28px; padding-bottom: 22px; font-weight: 400; width: 24%; }
+.planos thead th:first-child { width: 28%; }
+.planos .nome { font: 500 26px/1 var(--serifa); display: block; color: var(--tinta); }
+.planos .para { display: block; font-size: 13.5px; color: var(--tinta-3); margin: 8px 0 18px; min-height: 2.8em; line-height: 1.4; }
+.planos .apartir { display: block; font: 400 13px var(--sans); color: var(--tinta-3); margin-bottom: 4px; }
+.planos .preco { display: block; font: 500 34px/1 var(--serifa); color: var(--tinta); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; }
+.planos .preco small { font: 400 14px var(--sans); color: var(--tinta-3); letter-spacing: 0; }
+.planos .anual { display: block; font-size: 13.5px; color: var(--tinta-3); margin-top: 8px; }
+.planos tbody th { font-weight: 400; color: var(--tinta-2); }
+.planos tbody td { color: var(--tinta); }
+.planos .grupo th { font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); padding-top: 28px; border-bottom-color: var(--fio-forte); }
+.planos .destacado { background: var(--destaque-fundo); }
+.planos thead .destacado { box-shadow: inset 0 2px 0 var(--destaque); }
+.sim { display: inline-block; width: 12px; height: 7px; border-left: 2px solid var(--destaque-tinta); border-bottom: 2px solid var(--destaque-tinta); transform: translateY(-3px) rotate(-45deg); }
+.nao { color: var(--tinta-3); }
+.convite { display: flex; flex-wrap: wrap; gap: 18px 32px; align-items: center; justify-content: space-between; margin-top: 30px; padding: 22px 26px; background: var(--papel-fundo); border-left: 3px solid var(--destaque); }
+.convite p { margin: 0; color: var(--tinta-2); font-size: 16px; max-width: 64ch; }
+.convite p b { color: var(--tinta); font-weight: 600; }
 
-.lacunas { margin-top: 26px; padding: 0; list-style: none; max-width: 70ch; border-top: 1px solid var(--tinta); }
-.lacunas li { padding: 14px 0; border-bottom: 1px solid var(--fio); color: var(--tinta-2); }
-.lacunas li b { color: var(--tinta); font-weight: 600; }
+/* limitações */
+.lacunas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--tinta); }
+.lacunas li { padding: 18px 0; border-bottom: 1px solid var(--fio); color: var(--tinta-2); font-size: 16px; }
+.lacunas li b { display: block; color: var(--tinta); font-weight: 600; margin-bottom: 4px; }
 
-.nota-pessoal { margin-top: 26px; font: 400 21px/1.6 var(--serifa); color: var(--tinta-2); max-width: 58ch; }
-.nota-pessoal p { margin: 0 0 16px; }
+/* quem faz */
+.quem { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 32px 64px; align-items: start; }
+.quem blockquote { margin: 0; font: 400 22px/1.6 var(--serifa); color: var(--tinta-2); border-left: 2px solid var(--tinta); padding-left: 28px; }
+.quem blockquote p { margin: 0 0 18px; }
+.quem blockquote p:last-child { margin: 0; }
 
-.conta { margin-top: 26px; padding: 28px; background: var(--papel-fundo); border-radius: 3px; }
-input { padding: 11px 12px; border: 1px solid var(--fio-forte); border-radius: 3px; background: var(--papel); color: var(--tinta); font: 15px var(--mono); width: 100%; max-width: 440px; }
-input:focus, .botao:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
-th, td { border-bottom: 1px solid var(--fio); padding: 8px 10px 8px 0; text-align: left; }
-th { color: var(--tinta-3); font-weight: 500; }
-.rolar { overflow-x: auto; }
-.erro { color: var(--negociado); }
-.discreto { color: var(--tinta-3); font-size: 14px; }
-.chave-nova { border: 1px solid var(--destaque); border-radius: 3px; padding: 14px; margin: 14px 0; word-break: break-all; background: var(--papel); }
+/* conta */
+.conta { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 32px 64px; align-items: start; }
+.conta-texto p { margin: 18px 0 0; color: var(--tinta-2); max-width: 40ch; }
+.conta-caixa { background: var(--papel-fundo); border-radius: 4px; padding: 28px; min-width: 0; }
+label { display: block; font-size: 14px; color: var(--tinta-2); margin-bottom: 8px; font-weight: 500; }
+input { padding: 11px 12px; border: 1px solid var(--fio-forte); border-radius: 3px; background: var(--papel); color: var(--tinta); font: 15px var(--mono); width: 100%; min-width: 0; }
+input:focus-visible { outline: 2px solid var(--destaque); outline-offset: 1px; }
+.campo { display: flex; gap: 10px; flex-wrap: wrap; }
+.campo input { flex: 1; min-width: 200px; }
+.discreto { color: var(--tinta-3); font-size: 14px; margin: 12px 0 0; }
+.erro { color: var(--alerta); margin: 12px 0 0; font-size: 15px; }
+.erro:empty { display: none; }
+#resumo { margin: 0 0 18px; color: var(--tinta-2); }
+#resumo b { color: var(--tinta); font-weight: 600; }
+.chaves td, .chaves th { font-size: 14px; }
+.chave-nova { border: 1px solid var(--destaque); border-radius: 3px; padding: 14px; margin: 0 0 18px; word-break: break-all; background: var(--papel); }
 .chave-nova code { font: 14px var(--mono); }
 .escondido { display: none !important; }
-.revogar { background: none; border: 1px solid var(--fio-forte); color: var(--tinta-2); padding: 4px 10px; border-radius: 3px; font: 13px var(--sans); cursor: pointer; }
+.revogar { background: none; border: 1px solid var(--fio-forte); color: var(--tinta-2); padding: 5px 10px; border-radius: 3px; font: 13px var(--sans); cursor: pointer; }
+.revogar:hover { border-color: var(--alerta); color: var(--alerta); }
+.painel-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; align-items: flex-end; }
+.painel-acoes > div { flex: 1; min-width: 200px; }
+.painel-acoes input { font-family: var(--sans); }
 
-footer { margin-top: 110px; border-top: 1px solid var(--tinta); padding: 28px 0 48px; font-size: 14px; color: var(--tinta-3); }
-footer .largura { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-footer p { margin: 0; max-width: 62ch; }
+/* rodapé */
+footer { margin-top: 140px; border-top: 1px solid var(--tinta); padding: 40px 0 56px; font-size: 14px; color: var(--tinta-3); }
+footer .largura { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.6fr) minmax(0, 0.6fr); gap: 28px 56px; }
+footer p { margin: 0 0 10px; max-width: 60ch; }
+footer h2 { font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); margin: 4px 0 16px; }
+footer ul { list-style: none; margin: 0; padding: 0; }
+footer li { margin-bottom: 9px; }
+footer a { color: var(--tinta-2); }
+footer .marca { display: inline-block; margin-bottom: 16px; font-size: 19px; }
 
-@media (max-width: 860px) {
-  .exemplo, .uso { grid-template-columns: 1fr; gap: 28px; }
-  .conteudo { grid-template-columns: 1fr; }
-  .planos { grid-template-columns: 1fr; }
-  .plano, .plano + .plano { padding: 24px 0; border-left: 0; }
-  .ficha { grid-template-columns: repeat(2, 1fr); }
-  .ficha div:nth-child(3) { padding-left: 0; border-left: 0; }
-  .ficha div:nth-child(n+3) { border-top: 1px solid var(--fio); }
-  .abertura { padding-top: 48px; }
-  pre { font-size: 12px; padding: 14px; }
-  main > section.largura { margin-top: 88px; }
+@media (max-width: 960px) {
+  .abertura { grid-template-columns: 1fr; gap: 48px; }
+  .exemplo, .uso, .quem, .conta { grid-template-columns: 1fr; gap: 36px; }
+  .cabeca { grid-template-columns: 1fr; gap: 18px; align-items: start; }
+  .tres { grid-template-columns: 1fr; }
+  .tres article, .tres article + article { padding: 24px 0 10px; border-left: 0; }
+  .tres article + article { border-top: 1px solid var(--fio); }
+  .lacunas { grid-template-columns: 1fr; }
+  footer .largura { grid-template-columns: 1fr 1fr; }
+  footer .largura > :first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  :root { --gutter: 18px; }
+  body { font-size: 16.5px; }
+  main > section.largura { padding-top: 88px; }
+  .abertura { padding-top: 44px; }
+  .lide { font-size: 18.5px; }
+  .topo nav { gap: 18px; font-size: 14.5px; }
+  .topo nav .opcional { display: none; }
+  .base-hoje td { font-size: 26px; }
+  #grafico { aspect-ratio: auto; min-height: 300px; }
+  .cobertura thead { display: none; }
+  .cobertura, .cobertura tbody { display: block; }
+  .cobertura tr { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 16px 0; border-bottom: 1px solid var(--fio); }
+  .cobertura th, .cobertura td { border: 0; padding: 0 !important; width: auto !important; }
+  .cobertura tbody th { grid-column: 1 / -1; }
+  .cobertura td.periodo { grid-column: 1; font-size: 14.5px; }
+  .cobertura td.plano-min { grid-column: 2; grid-row: 2; text-align: right; }
+  .cobertura td.rota { grid-column: 1 / -1; }
+  .planos { font-size: 14px; min-width: 0; }
+  .planos th, .planos td { padding: 11px 7px; }
+  .planos thead th { padding-top: 20px; padding-bottom: 16px; }
+  .planos .nome { font-size: 20px; }
+  .planos .para { display: none; }
+  .planos .preco { font-size: 22px; white-space: normal; margin-top: 10px; }
+  .planos .apartir { margin-top: 10px; margin-bottom: -6px; font-size: 12px; }
+  .planos .preco small { display: block; font-size: 12.5px; margin-top: 4px; }
+  .planos .anual { font-size: 12.5px; }
+  .planos thead th:first-child { width: 31%; }
+  .convite { padding: 20px; }
+  .convite .botao { width: 100%; }
+  .comparacao strong { font-size: 27px; }
+  pre { font-size: 12.5px; padding: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .campo .botao { flex: 1; }
+  .conta-caixa { padding: 20px; }
+  .quem blockquote { font-size: 19.5px; padding-left: 20px; }
+  footer .largura { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  .topo nav .opcional-2 { display: none; }
+  .planos .preco { white-space: nowrap; font-size: 20px; }
+  .planos thead th:first-child { width: 28%; }
+}
+@media (max-width: 340px) {
+  .topo nav a:not(.conta-link) { display: none; }
 }
 </style>
 </head>
 <body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
 <header class="topo">
   <div class="largura">
     <a class="marca" href="/">fiance <em>dados</em></a>
-    <nav>
-      <a href="#o-que-tem">O que tem</a>
+    <nav aria-label="Principal">
+      <a href="#dados" class="opcional">Dados</a>
       <a href="#planos">Planos</a>
-      <a href="/docs">Documentação</a>
-      <a href="#conta">Entrar</a>
+      <a href="/docs" class="opcional-2">Documentação</a>
+      <a href="#conta" class="conta-link">Minha conta</a>
     </nav>
   </div>
 </header>
 
-<main>
+<main id="conteudo">
   <div class="largura abertura">
-    <p class="sobretitulo">Dados de mercado da B3 e da CVM</p>
-    <h1>A bolsa brasileira, <em>do jeito que aconteceu</em>.</h1>
-    <p class="lide">Cotações, proventos e balanços desde 2005 — com as empresas que já saíram da bolsa,
-      cada desdobramento conferido pelo preço e cada balanço como se sabia no dia em que foi publicado.</p>
-    <div class="acoes">
-      <a class="botao" href="#planos">Ver os planos</a>
-      <a class="botao contorno" href="/docs">Ler a documentação</a>
+    <div>
+      <p class="sobre">API de dados de mercado · B3 e CVM</p>
+      <h1>A bolsa brasileira, <em>do jeito que aconteceu.</em></h1>
+      <p class="lide">Vinte anos de cotações, proventos e balanços para testar uma ideia sem se enganar:
+        com as empresas que saíram da bolsa, os desdobramentos conferidos pelo preço e cada balanço como
+        se sabia no dia em que foi publicado.</p>
+      <div class="acoes" id="acoes-abertura">
+        <a class="botao" href="#planos">Ver planos e acesso</a>
+        <a class="botao contorno" href="/docs">Documentação da API</a>
+      </div>
+      <p class="atualizada" id="atualizada"><i aria-hidden="true"></i><span>Atualizada todo dia útil, à noite</span></p>
     </div>
-    <div class="ficha" id="ficha" aria-live="polite">
-      <div><strong data-n="negociando">—</strong><span>ativos negociando hoje: ações, FIIs, ETFs e BDRs</span></div>
-      <div><strong data-n="acoes_que_sairam">—</strong><span>ações que já saíram da bolsa e continuam na base</span></div>
-      <div><strong data-n="demonstracoes">—</strong><span>demonstrações financeiras, cada versão com a data de entrega</span></div>
-      <div><strong data-n="desde">—</strong><span>primeiro pregão da base; atualizada todo dia útil, à noite</span></div>
-    </div>
+
+    <figure class="base-hoje">
+      <table>
+        <caption>A base hoje</caption>
+        <tbody>
+          <tr><th scope="row">Ativos negociando<small data-texto="composicao">ações, FIIs, ETFs e BDRs</small></th><td data-n="negociando">—</td></tr>
+          <tr><th scope="row">Ações na história<small data-texto="sairam">inclusive as que saíram da bolsa</small></th><td data-n="acoes_na_historia">—</td></tr>
+          <tr><th scope="row">Demonstrações financeiras<small data-texto="empresas">DFP e ITR, cada versão com a data de entrega</small></th><td data-n="demonstracoes">—</td></tr>
+          <tr><th scope="row">Primeiro pregão<small>cotação diária desde então, sem buraco</small></th><td data-n="desde">—</td></tr>
+        </tbody>
+      </table>
+    </figure>
   </div>
 
-  <section class="largura" id="exemplo">
-    <p class="sobretitulo">Um exemplo</p>
-    <h2>O preço que aparece no gráfico nem sempre é o que aconteceu.</h2>
-    <div class="texto">
-      <p>Em 2020, a Hapvida dividiu cada ação em cinco. Em 2025, juntou quinze em uma. Quem olha
-        o preço como foi negociado vê uma queda de 80% num dia e uma alta de 1.400% em outro — e um
-        backtest feito em cima disso mente.</p>
+  <section class="largura" id="diferencial" aria-labelledby="t-diferencial">
+    <p class="rotulo">Por que esta base</p>
+    <div class="cabeca">
+      <h2 id="t-diferencial">Três erros que um backtest comete sem avisar.</h2>
+      <p>Nenhum deles aparece como erro. O resultado só sai melhor do que seria — e a decisão tomada em cima dele, pior.</p>
+    </div>
+    <div class="tres">
+      <article>
+        <span class="indice" aria-hidden="true">01</span>
+        <h3>Só olhar quem sobreviveu</h3>
+        <p>Testar com as empresas que estão na bolsa hoje esquece as que quebraram, foram compradas ou fecharam o capital. A cotação de cada uma continua na base, até o último pregão.</p>
+        <p class="prova" data-prova="sairam">Ações que já saíram da bolsa seguem na base.</p>
+      </article>
+      <article>
+        <span class="indice" aria-hidden="true">02</span>
+        <h3>Ler desdobramento como queda</h3>
+        <p>Um desdobramento de 5 para 1 parece uma queda de 80%. O evento publicado pela B3 só ajusta a série depois de o salto do preço confirmar o anúncio; o salto que fica sem explicação é marcado, não escondido.</p>
+        <p class="prova">Campo <code>salto_sem_evento</code> em cada dia da série.</p>
+      </article>
+      <article>
+        <span class="indice" aria-hidden="true">03</span>
+        <h3>Usar o balanço do futuro</h3>
+        <p>O balanço de dezembro só chega à CVM em março, e às vezes é reapresentado depois. Peça as demonstrações de uma data e receba só o que já tinha sido entregue nela.</p>
+        <p class="prova" data-prova="demonstracoes">Demonstrações com a data de entrega de cada versão.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="largura" id="exemplo" aria-labelledby="t-exemplo">
+    <p class="rotulo">Um exemplo real</p>
+    <div class="cabeca">
+      <h2 id="t-exemplo">O preço que aparece no gráfico nem sempre é o que aconteceu.</h2>
+      <p>Em 2020, a Hapvida dividiu cada ação em cinco. Em 2025, juntou quinze em uma. Pelo preço negociado, uma queda de 80% num dia e uma alta de 1.400% em outro — e nenhuma das duas aconteceu com o dinheiro de quem tinha a ação.</p>
     </div>
     <div class="exemplo">
-      <div class="grafico-moldura">
+      <figure class="grafico-moldura">
         <div class="grafico-titulo"><span><strong id="titulo-grafico">HAPV3</strong> · fechamento do último pregão de cada mês, em reais</span><span>escala logarítmica</span></div>
-        <div class="legenda" aria-hidden="true">
-          <span><i style="background: var(--negociado)"></i>Como foi negociado</span>
-          <span><i style="background: var(--ajustado)"></i>Ajustado pelos eventos</span>
+        <div class="legenda">
+          <span><i style="background: var(--negociado)" aria-hidden="true"></i>Como foi negociado</span>
+          <span><i style="background: var(--ajustado)" aria-hidden="true"></i>Ajustado pelos eventos</span>
         </div>
-        <div id="grafico" role="img" aria-label="Preço da HAPV3 como foi negociado e ajustado pelos eventos, mês a mês."></div>
+        <div id="grafico" role="img" aria-label="Preço mensal da HAPV3 como foi negociado e ajustado pelos eventos. Os mesmos números estão na tabela logo abaixo.">
+          <noscript><p class="sem-dado">O gráfico precisa de JavaScript.</p></noscript>
+        </div>
         <details>
           <summary>Ver os números em tabela</summary>
-          <div class="rolar"><table>
-            <thead><tr><th>Mês</th><th>Como foi negociado</th><th>Ajustado</th></tr></thead>
+          <div class="rolar"><table class="tabela">
+            <thead><tr><th scope="col">Mês</th><th scope="col">Como foi negociado</th><th scope="col">Ajustado</th></tr></thead>
             <tbody id="tabela-grafico"></tbody>
           </table></div>
         </details>
-      </div>
-      <div class="notas-do-grafico">
-        <ol id="notas">
-          <li>A linha <b>ajustada</b> divide o passado pelos eventos: cada um só entra depois de o salto do preço confirmar o que a B3 publicou.</li>
-          <li>Evento que o preço desmente não ajusta nada e fica separado, à vista.</li>
-          <li>A série atravessa troca de ticker e traz o retorno total do dia, com o provento na data certa.</li>
-        </ol>
-      </div>
+      </figure>
+      <aside class="notas" aria-label="Como ler o gráfico">
+        <div class="comparacao" id="comparacao" hidden>
+          <div><strong data-c="negociado">—</strong><span><i style="background: var(--negociado)" aria-hidden="true"></i>pelo preço negociado</span></div>
+          <div><strong data-c="ajustado">—</strong><span><i style="background: var(--ajustado)" aria-hidden="true"></i>pelo preço ajustado</span></div>
+        </div>
+        <p class="leitura" id="leitura" hidden></p>
+        <p>A linha ajustada divide o passado pelos eventos, para que cada dia seja comparável ao de hoje. É ela que diz quanto o preço de fato variou.</p>
+        <p>Na rota da série, cada dia traz ainda o provento na data-com e o retorno total, atravessando troca de ticker.</p>
+      </aside>
     </div>
   </section>
 
-  <section class="largura" id="o-que-tem">
-    <p class="sobretitulo">O que tem na base</p>
-    <h2>O que costuma faltar quando se testa uma ideia.</h2>
-    <div class="conteudo">
-      <div><h3>Cotação diária desde 2005</h3><p>Abertura, máxima, mínima, fechamento e volume de cada ticker — inclusive dos que deixaram de negociar. Sem isso, todo teste só enxerga quem sobreviveu.</p><code>/v1/ativos/{codigo}/cotacoes</code></div>
-      <div><h3>Série ajustada, com retorno total</h3><p>Desdobramento, grupamento e bonificação conferidos pelo preço; provento na data-com; uma série só, mesmo quando o ticker muda.</p><code>/v1/ativos/{codigo}/serie</code></div>
-      <div><h3>Balanço como se sabia na data</h3><p>DFP e ITR com a data em que chegaram à CVM, e cada versão reapresentada. Peça o balanço de uma data e receba o que existia nela.</p><code>/v1/empresas/{cnpj}/demonstracoes?sabido_em=</code></div>
-      <div><h3>Proventos e eventos</h3><p>Data-com, data de pagamento e valor; e cada evento corporativo com o status da conferência.</p><code>/v1/ativos/{codigo}/proventos</code></div>
-      <div><h3>Fundos imobiliários</h3><p>O informe mensal da CVM: patrimônio, valor da cota, cotas emitidas, segmento e mandato.</p><code>/v1/ativos/{codigo}/informes</code></div>
-      <div><h3>Juros, dólar e Tesouro</h3><p>CDI, Selic, IPCA e PTAX do Banco Central; taxas e preços do Tesouro Direto desde 2005.</p><code>/v1/indicadores/{nome} · /v1/tesouro</code></div>
+  <section class="largura" id="dados" aria-labelledby="t-dados">
+    <p class="rotulo">O que tem na base</p>
+    <div class="cabeca">
+      <h2 id="t-dados">Cada dado, desde quando, e onde pedir.</h2>
+      <p>Todas as rotas respondem JSON, e as listas longas vêm em páginas, com cursor. A <a href="/docs">documentação</a> tem os campos de cada uma e um formulário para testar com a sua chave.</p>
     </div>
+    <div class="rolar">
+      <table class="tabela cobertura">
+        <caption class="so-leitor">Cobertura da base por dado, rota e plano</caption>
+        <thead><tr><th scope="col">Dado</th><th scope="col">Desde</th><th scope="col">Rota</th><th scope="col">Plano</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Cotação diária<small>Abertura, máxima, mínima, fechamento e volume, inclusive de quem saiu da bolsa</small></th><td class="periodo">jan. de 2005</td><td class="rota"><code>/v1/ativos/{codigo}/cotacoes</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+          <tr><th scope="row">Série ajustada<small>Eventos conferidos pelo preço, provento na data-com e retorno total, através de troca de ticker</small></th><td class="periodo">jan. de 2005</td><td class="rota"><code>/v1/ativos/{codigo}/serie</code></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
+          <tr><th scope="row">Proventos<small>Data-com, data de pagamento, tipo e valor</small></th><td class="periodo">1995, de companhias</td><td class="rota"><code>/v1/ativos/{codigo}/proventos</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+          <tr><th scope="row">Eventos corporativos<small>Desdobramento, grupamento e bonificação, com o status da conferência pelo preço</small></th><td class="periodo">conforme a B3</td><td class="rota"><code>/v1/ativos/{codigo}/eventos</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+          <tr><th scope="row">Demonstrações financeiras<small>DFP e ITR da CVM, todas as versões, com a data de entrega</small></th><td class="periodo">exercício de 2010</td><td class="rota"><code>/v1/empresas/{cnpj}/demonstracoes</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+          <tr><th scope="row">Balanço como se sabia na data<small>As mesmas demonstrações, só com o que já tinha sido entregue no dia pedido</small></th><td class="periodo">exercício de 2010</td><td class="rota"><code>…/demonstracoes?sabido_em=2019-05-15</code></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
+          <tr><th scope="row">Retrato de vários ativos<small>Preço do dia, os outros papéis da empresa e os balanços, até 50 ativos por chamada</small></th><td class="periodo">último pregão</td><td class="rota"><code>/v1/retratos</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+          <tr><th scope="row">Informe mensal de FII<small>Patrimônio, valor da cota, cotas emitidas, segmento e mandato</small></th><td class="periodo">set. de 2016</td><td class="rota"><code>/v1/ativos/{codigo}/informes</code></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
+          <tr><th scope="row">Juros, inflação e dólar<small>CDI, Selic, meta da Selic, IPCA e PTAX, do Banco Central</small></th><td class="periodo">jan. de 2005</td><td class="rota"><code>/v1/indicadores/{nome}</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+          <tr><th scope="row">Tesouro Direto<small>Taxas e preços de compra e venda de cada título</small></th><td class="periodo">jan. de 2005</td><td class="rota"><code>/v1/tesouro/historico</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="nota-tabela">No Essencial, toda rota devolve os últimos dois anos; o histórico inteiro começa no Pro.</p>
   </section>
 
-  <section class="largura">
-    <p class="sobretitulo">Como é usar</p>
-    <h2>Uma chave, uma chamada, um JSON.</h2>
+  <section class="largura" id="uso" aria-labelledby="t-uso">
+    <p class="rotulo">Como é usar</p>
+    <div class="cabeca">
+      <h2 id="t-uso">Uma chave, uma chamada, um JSON.</h2>
+      <p>Sem SDK para instalar e sem formato próprio: serve qualquer linguagem que faça uma requisição HTTP.</p>
+    </div>
     <div class="uso">
-      <div class="texto">
-        <p>A chave vai no cabeçalho. Toda resposta diz quanto do limite do dia ainda resta, e listas
-          longas vêm em páginas, com um cursor para a próxima.</p>
-        <p>Para análise de várias empresas de uma vez, <code>/v1/retratos</code> devolve até cinquenta
-          ativos numa chamada só: o preço do dia, os outros papéis da empresa e todas as versões
-          dos balanços.</p>
-        <p><a href="/docs">A documentação completa</a> tem cada rota, com os campos e um botão para testar.</p>
-      </div>
-      <pre><span class="c"># a série ajustada da Hapvida desde 2025</span>
-curl https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie?de=2025-01-01 \
-  -H "Authorization: Bearer fd_sua_chave"
+      <ol class="passos">
+        <li><span><b>Receba a chave</b>Começa com <code>fd_</code>, aparece uma vez só e fica guardada apenas como hash. Outras se emitem em “Minha conta”.</span></li>
+        <li><span><b>Mande no cabeçalho</b><code>Authorization: Bearer fd_…</code> em toda chamada.</span></li>
+        <li><span><b>Acompanhe o limite</b>Toda resposta traz <code>X-Limite-Dia</code> e <code>X-Restante-Dia</code>.</span></li>
+        <li><span><b>Siga o cursor</b>Lista longa vem com <code>proximo</code>; passe-o em <code>?cursor=</code> para a página seguinte.</span></li>
+      </ol>
+      <div class="codigo">
+        <div class="codigo-barra">
+          <div class="abas" role="tablist" aria-label="Linguagem do exemplo">
+            <button type="button" role="tab" id="aba-curl" aria-selected="true" aria-controls="painel-curl" tabindex="0">curl</button>
+            <button type="button" role="tab" id="aba-python" aria-selected="false" aria-controls="painel-python" tabindex="-1">Python</button>
+          </div>
+          <button class="copiar" type="button" id="copiar">Copiar</button>
+        </div>
+        <div role="tabpanel" id="painel-curl" aria-labelledby="aba-curl">
+<pre><code><span class="c"># a série ajustada da Hapvida desde 2025</span>
+curl "https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie?de=2025-01-01" \
+  -H "Authorization: Bearer fd_sua_chave"</code></pre>
+        </div>
+        <div role="tabpanel" id="painel-python" aria-labelledby="aba-python" hidden>
+<pre><code><span class="c"># a série ajustada da Hapvida desde 2025</span>
+import httpx
 
-{
+r = httpx.get(
+    "https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie",
+    params={"de": "2025-01-01"},
+    headers={"Authorization": "Bearer fd_sua_chave"},
+)
+r.headers["X-Restante-Dia"]   <span class="c"># chamadas que restam hoje</span>
+r.json()["proximo"]           <span class="c"># cursor da próxima página, ou None</span></code></pre>
+        </div>
+        <div class="resposta">
+          <span class="resposta-rotulo">Resposta · a primeira linha, com os números arredondados</span>
+<pre><code>{
   "dados": [
     { "data": "2025-01-02", "codigo": "HAPV3",
-      "fechamento": 2.17, "fechamento_ajustado": 32.55,
-      "provento": 0.0, "retorno_total": -0.0269 },
+      "fechamento": 2.17, "fator_ajuste": 0.0667,
+      "fechamento_ajustado": 32.55, "provento": 0,
+      "retorno_total": -0.0269, "dias_desde_anterior": 3,
+      "salto_sem_evento": false },
     …
   ],
   "proximo": "…"
-}</pre>
+}</code></pre>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="largura" id="planos">
-    <p class="sobretitulo">Planos</p>
-    <h2>Pago, mensal ou anual. Sem plano gratuito.</h2>
-    <div class="texto"><p>O preço sobe com o que é difícil de achar em outro lugar: o histórico inteiro, a série ajustada e o balanço como se sabia na data.</p></div>
-    <div class="planos" id="lista-de-planos"></div>
-    <div class="aviso" id="aviso-cobranca"></div>
+  <section class="largura" id="planos" aria-labelledby="t-planos">
+    <p class="rotulo">Planos</p>
+    <div class="cabeca">
+      <h2 id="t-planos">Pago, mensal ou anual. Sem plano gratuito.</h2>
+      <p>O preço sobe com o que é difícil de achar em outro lugar: o histórico inteiro, a série ajustada e o balanço como se sabia na data. No anual, dez meses pagam doze.</p>
+    </div>
+    <div class="rolar">
+      <table class="planos" id="tabela-planos">
+        <caption class="so-leitor">Comparação dos planos</caption>
+        <thead><tr><th scope="col"><span class="so-leitor">Item</span></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="erro" id="erro-planos" role="alert"></p>
+    <div class="convite" id="convite">
+      <p id="convite-texto"><b>A cobrança ainda não abriu.</b> Enquanto isso, o acesso é por convite e sem custo, para quem quer testar a base no próprio trabalho.</p>
+    </div>
   </section>
 
-  <section class="largura">
-    <p class="sobretitulo">O que ainda não tem</p>
-    <h2>Dito antes, para não descobrir depois.</h2>
+  <section class="largura" id="limites" aria-labelledby="t-limites">
+    <p class="rotulo">O que ainda não tem</p>
+    <div class="cabeca">
+      <h2 id="t-limites">Dito antes, para não descobrir depois.</h2>
+      <p>Uma base que esconde a própria lacuna faz o teste errar em silêncio. Estas são as conhecidas.</p>
+    </div>
     <ul class="lacunas">
-      <li><b>Cotação ao longo do pregão.</b> O dado é do fechamento, atualizado à noite.</li>
-      <li><b>Proventos de ETF e BDR antes de outubro de 2025</b>, e data de pagamento antes disso.</li>
-      <li><b>Rendimento de FII anterior a outubro de 2025</b> é estimado pelo informe da CVM e só vem quando pedido, marcado como estimado.</li>
-      <li><b>Cisão e redução de capital</b> não ajustam a série.</li>
-      <li><b>Balanço de BDR</b>: a CVM não publica demonstração de empresa estrangeira.</li>
+      <li><b>Cotação ao longo do pregão</b>O dado é do fechamento, atualizado à noite nos dias úteis.</li>
+      <li><b>Proventos de ETF e BDR antes de outubro de 2025</b>Nem a data de pagamento deles antes disso.</li>
+      <li><b>Rendimento de FII anterior a outubro de 2025</b>Estimado pelo informe da CVM; só vem quando pedido, e marcado como estimado.</li>
+      <li><b>Cisão e redução de capital</b>Não ajustam a série ajustada.</li>
+      <li><b>Balanço de BDR</b>A CVM não publica demonstração de empresa estrangeira.</li>
+      <li><b>Evento que a B3 não publicou</b>Quando o preço salta sem evento conhecido, o dia vem marcado em <code>salto_sem_evento</code>; a série não é corrigida por suposição.</li>
     </ul>
   </section>
 
-  <section class="largura">
-    <p class="sobretitulo">Quem faz</p>
-    <h2>Uma pessoa, e a própria carteira.</h2>
-    <div class="nota-pessoal">
-      <p>Esta base nasceu para responder a uma pergunta pessoal: alguma estratégia de verdade bate o
-        CDI, depois de custo e imposto? Para saber, era preciso o dado inteiro — com quem saiu da
-        bolsa, sem desdobramento confundindo o preço e sem balanço do futuro vazando no passado.</p>
-      <p>É mantida por uma pessoa só, que usa estes mesmos dados para investir o próprio dinheiro.
-        Quando algo quebra, quem conserta é quem também perde com isso.</p>
+  <section class="largura" id="quem-faz" aria-labelledby="t-quem">
+    <p class="rotulo">Quem faz</p>
+    <div class="quem">
+      <h2 id="t-quem">Uma pessoa, e a própria carteira.</h2>
+      <blockquote>
+        <p>Esta base nasceu de uma pergunta pessoal: alguma estratégia de verdade bate o CDI, depois de custo e imposto? Para responder, era preciso o dado inteiro — com quem saiu da bolsa, sem desdobramento confundindo o preço e sem balanço do futuro vazando no passado.</p>
+        <p>É mantida por uma pessoa só, que usa estes mesmos dados para investir o próprio dinheiro. Quando algo quebra, quem conserta também perde com isso.</p>
+      </blockquote>
     </div>
   </section>
 
-  <section class="largura" id="conta">
-    <p class="sobretitulo">Minha conta</p>
-    <h2>Já tem uma chave?</h2>
+  <section class="largura" id="conta" aria-labelledby="t-conta">
+    <p class="rotulo">Minha conta</p>
     <div class="conta">
-      <div id="entrar">
-        <form id="form-entrar">
-          <input id="chave" type="password" placeholder="fd_..." autocomplete="off" aria-label="Sua chave" required>
-          <button class="botao" type="submit">Entrar</button>
-        </form>
-        <p class="discreto">A chave fica só nesta aba do navegador e some quando ela fecha.</p>
+      <div class="conta-texto">
+        <h2 id="t-conta">Já tem uma chave?</h2>
+        <p>Entre com ela para ver o plano e o uso de hoje, emitir outra chave ou revogar uma que vazou.</p>
       </div>
-      <p id="erro-conta" class="erro"></p>
-      <div id="painel" class="escondido">
-        <p id="resumo"></p>
-        <div id="chave-criada" class="chave-nova escondido"></div>
-        <div class="rolar"><table>
-          <thead><tr><th>Chave</th><th>Nome</th><th>Criada</th><th>Último uso</th><th>Hoje</th><th></th></tr></thead>
-          <tbody id="chaves"></tbody>
-        </table></div>
-        <form id="form-nova" style="margin-top:16px">
-          <input id="nome-nova" placeholder="Nome da nova chave" maxlength="60" required style="max-width:260px; font-family: var(--sans)">
-          <button class="botao contorno" type="submit">Emitir chave</button>
-          <button class="botao contorno" type="button" id="sair">Sair</button>
-        </form>
+      <div class="conta-caixa">
+        <div id="entrar">
+          <form id="form-entrar">
+            <label for="chave">Sua chave</label>
+            <div class="campo">
+              <input id="chave" type="password" placeholder="fd_…" autocomplete="off" spellcheck="false" required>
+              <button class="botao" type="submit">Entrar</button>
+            </div>
+          </form>
+          <p class="discreto">A chave fica só nesta aba do navegador e some quando ela fecha.</p>
+        </div>
+        <p id="erro-conta" class="erro" role="alert"></p>
+        <div id="painel" class="escondido">
+          <p id="resumo"></p>
+          <div id="chave-criada" class="chave-nova escondido" role="status"></div>
+          <div class="rolar"><table class="tabela chaves">
+            <caption class="so-leitor">Suas chaves</caption>
+            <thead><tr><th scope="col">Chave</th><th scope="col">Nome</th><th scope="col">Criada</th><th scope="col">Último uso</th><th scope="col">Hoje</th><th scope="col"><span class="so-leitor">Ação</span></th></tr></thead>
+            <tbody id="chaves"></tbody>
+          </table></div>
+          <form id="form-nova" class="painel-acoes">
+            <div>
+              <label for="nome-nova">Nome da nova chave</label>
+              <input id="nome-nova" maxlength="60" required placeholder="ex.: notebook, servidor">
+            </div>
+            <button class="botao contorno" type="submit">Emitir chave</button>
+            <button class="botao contorno" type="button" id="sair">Sair</button>
+          </form>
+        </div>
       </div>
     </div>
   </section>
@@ -314,20 +585,41 @@ curl https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie?de=2025-01-01 \
 
 <footer>
   <div class="largura">
-    <p>Fontes: B3 (COTAHIST, proventos e eventos); CVM, dados abertos sob a licença ODbL; Banco Central do Brasil (SGS); Tesouro Transparente. Organizado por fiance. Nada aqui é recomendação de investimento.</p>
-    <p><a href="/docs">Documentação</a></p>
+    <div>
+      <a class="marca" href="/">fiance <em>dados</em></a>
+      <p>Fontes: B3 (COTAHIST, proventos e eventos); CVM, dados abertos sob a licença ODbL; Banco Central do Brasil (SGS); Tesouro Transparente. Organizado por fiance.</p>
+      <p>Nada aqui é recomendação de investimento.</p>
+    </div>
+    <nav aria-label="Rodapé: produto">
+      <h2>Produto</h2>
+      <ul>
+        <li><a href="#dados">O que tem na base</a></li>
+        <li><a href="#planos">Planos</a></li>
+        <li><a href="#limites">O que ainda não tem</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Rodapé: desenvolvedores">
+      <h2>Desenvolvedores</h2>
+      <ul>
+        <li><a href="/docs">Documentação</a></li>
+        <li><a href="/openapi.json">Especificação OpenAPI</a></li>
+        <li><a href="#conta">Minha conta</a></li>
+      </ul>
+    </nav>
   </div>
 </footer>
 
-<div class="dica" id="dica" role="status"></div>
+<div class="dica" id="dica" aria-hidden="true"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const inteiro = new Intl.NumberFormat("pt-BR");
 const reais = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const porcento = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 0, signDisplay: "exceptZero" });
 const mesAno = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric", timeZone: "UTC" });
 const diaMesAno = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 const SVG = "http://www.w3.org/2000/svg";
+const FONTE = "IBM Plex Sans, system-ui, sans-serif";
 
 function el(nome, atributos = {}, texto) {
   const e = document.createElementNS(SVG, nome);
@@ -335,61 +627,94 @@ function el(nome, atributos = {}, texto) {
   if (texto !== undefined) e.textContent = texto;
   return e;
 }
+function html(tag, classe, texto) {
+  const e = document.createElement(tag);
+  if (classe) e.className = classe;
+  if (texto !== undefined) e.textContent = texto;
+  return e;
+}
 
-function preencherFicha(n) {
+function preencherBase(n) {
   for (const alvo of document.querySelectorAll("[data-n]")) {
-    const chave = alvo.dataset.n;
-    const valor = n[chave];
+    const valor = n[alvo.dataset.n];
     if (valor === undefined || valor === null) continue;
-    alvo.textContent = chave === "desde" ? diaMesAno.format(new Date(valor)) : inteiro.format(valor);
+    alvo.textContent = alvo.dataset.n === "desde" ? diaMesAno.format(new Date(valor)) : inteiro.format(valor);
   }
+  const textos = {
+    composicao: n.acoes != null && `${inteiro.format(n.acoes)} ações, ${inteiro.format(n.fiis)} FIIs, ${inteiro.format(n.etfs)} ETFs e ${inteiro.format(n.bdrs)} BDRs`,
+    sairam: n.acoes_que_sairam != null && `${inteiro.format(n.acoes_que_sairam)} delas já saíram da bolsa`,
+    empresas: n.empresas != null && `DFP e ITR de ${inteiro.format(n.empresas)} empresas, cada versão com a data de entrega`,
+  };
+  for (const alvo of document.querySelectorAll("[data-texto]")) if (textos[alvo.dataset.texto]) alvo.textContent = textos[alvo.dataset.texto];
+  const provas = {
+    sairam: n.acoes_que_sairam != null && [inteiro.format(n.acoes_que_sairam), " ações que já saíram da bolsa seguem na base."],
+    demonstracoes: n.demonstracoes != null && [inteiro.format(n.demonstracoes), " demonstrações, cada versão com a data de entrega."],
+  };
+  for (const alvo of document.querySelectorAll("[data-prova]")) {
+    const p = provas[alvo.dataset.prova];
+    if (p) alvo.replaceChildren(html("b", "", p[0]), p[1]);
+  }
+  if (n.ate) $("atualizada").querySelector("span").textContent = `Dados até o pregão de ${diaMesAno.format(new Date(n.ate))} · atualizada todo dia útil, à noite`;
+}
+
+function compararPeriodo(pontos) {
+  if (pontos.length < 2) return;
+  const a = pontos[0], b = pontos.at(-1);
+  const neg = b.negociado / a.negociado - 1, aj = b.ajustado / a.ajustado - 1;
+  for (const alvo of document.querySelectorAll("[data-c]")) alvo.textContent = porcento.format(alvo.dataset.c === "negociado" ? neg : aj);
+  const periodo = `De ${mesAno.format(new Date(a.data))} a ${mesAno.format(new Date(b.data))}.`;
+  const pontosDeDiferenca = Math.round(Math.abs(aj - neg) * 100);
+  $("leitura").textContent = pontosDeDiferenca < 2
+    ? `${periodo} No período, os eventos se compensaram.`
+    : `${periodo} Só por causa dos eventos, o preço negociado erra a variação em ${inteiro.format(pontosDeDiferenca)} pontos percentuais.`;
+  $("comparacao").hidden = false;
+  $("leitura").hidden = false;
 }
 
 function desenhar(exemplo) {
   const pontos = exemplo.pontos.filter((p) => p.negociado > 0 && p.ajustado > 0);
-  if (!pontos.length) return;
+  if (pontos.length < 2) return;
   $("titulo-grafico").textContent = exemplo.codigo;
   const caixa = $("grafico");
   const estreito = caixa.clientWidth < 560;
-  const L = estreito ? Math.max(320, caixa.clientWidth) : 720, A = estreito ? 300 : 360;
-  const m = { cima: 44, direita: estreito ? 70 : 96, baixo: 30, esquerda: estreito ? 40 : 52 };
+  const L = estreito ? Math.max(300, caixa.clientWidth) : 720, A = estreito ? 300 : 360;
+  const m = { cima: 46, direita: estreito ? 68 : 92, baixo: 30, esquerda: estreito ? 38 : 50 };
   const largura = L - m.esquerda - m.direita, altura = A - m.cima - m.baixo;
   const datas = pontos.map((p) => new Date(p.data).getTime());
   const valores = pontos.flatMap((p) => [p.negociado, p.ajustado]);
   const minimo = Math.min(...valores) * 0.85, maximo = Math.max(...valores) * 1.15;
   const x = (t) => m.esquerda + ((t - datas[0]) / (datas.at(-1) - datas[0])) * largura;
   const y = (v) => m.cima + (1 - (Math.log(v) - Math.log(minimo)) / (Math.log(maximo) - Math.log(minimo))) * altura;
-
-  const svg = el("svg", { viewBox: `0 0 ${L} ${A}`, "aria-hidden": "true" });
   const estilo = getComputedStyle(document.documentElement);
   const cor = (v) => estilo.getPropertyValue(v).trim();
+  const svg = el("svg", { viewBox: `0 0 ${L} ${A}`, "aria-hidden": "true", focusable: "false" });
 
-  const marcas = [0.5, 1, 2, 5, 10, 20, 50, 100, 200].filter((v) => v >= minimo && v <= maximo);
-  for (const v of marcas) {
+  for (const v of [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500].filter((v) => v >= minimo && v <= maximo)) {
     svg.append(el("line", { x1: m.esquerda, x2: m.esquerda + largura, y1: y(v), y2: y(v), stroke: cor("--fio"), "stroke-width": 1 }));
-    svg.append(el("text", { x: m.esquerda - 10, y: y(v) + 4, "text-anchor": "end", "font-size": 12, fill: cor("--tinta-3"), "font-family": "IBM Plex Sans, sans-serif" }, reais.format(v).replace(",00", "")));
+    svg.append(el("text", { x: m.esquerda - 10, y: y(v) + 4, "text-anchor": "end", "font-size": 12, fill: cor("--tinta-3"), "font-family": FONTE }, reais.format(v).replace(",00", "")));
   }
-  const anos = [...new Set(pontos.map((p) => p.data.slice(0, 4)))].filter((a, i) => i % (estreito ? 3 : 2) === 0);
-  for (const ano of anos) {
+  svg.append(el("line", { x1: m.esquerda, x2: m.esquerda + largura, y1: m.cima + altura, y2: m.cima + altura, stroke: cor("--fio-forte"), "stroke-width": 1 }));
+  const anos = [...new Set(pontos.map((p) => p.data.slice(0, 4)))];
+  const passo = estreito ? 3 : 2;
+  anos.forEach((ano, i) => {
     const t = Date.UTC(+ano, 0, 1);
-    if (t < datas[0]) continue;
-    svg.append(el("text", { x: x(t), y: A - 8, "text-anchor": "middle", "font-size": 12, fill: cor("--tinta-3"), "font-family": "IBM Plex Sans, sans-serif" }, ano));
-  }
+    if (t < datas[0] || (anos.length - 1 - i) % passo !== 0) return;
+    svg.append(el("text", { x: x(t), y: A - 8, "text-anchor": "middle", "font-size": 12, fill: cor("--tinta-3"), "font-family": FONTE }, ano));
+  });
 
   const ocupadas = [];
   for (const ev of exemplo.eventos) {
     const t = new Date(ev.data).getTime();
     if (t < datas[0] || t > datas.at(-1)) continue;
     const rotulo = ev.multiplicador > 1 ? `desdobramento ×${inteiro.format(Math.round(ev.multiplicador))}` : `grupamento ÷${inteiro.format(Math.round(1 / ev.multiplicador))}`;
-    const texto = el("text", { y: 0, "font-size": 12, fill: cor("--tinta-2"), "font-family": "IBM Plex Sans, sans-serif" });
-    texto.append(el("tspan", { "font-weight": 600, fill: cor("--tinta") }, rotulo), el("tspan", {}, ` · ${mesAno.format(new Date(ev.data))}`));
-    const largo = (rotulo.length + 12) * 6.2;
-    const inicio = x(t) + 6 + largo <= L ? x(t) + 6 : Math.max(4, x(t) - 6 - largo);
+    const quando = ` · ${mesAno.format(new Date(ev.data))}`;
+    const largo = (rotulo.length + quando.length) * 6.3;
+    const inicio = x(t) + 6 + largo <= L ? x(t) + 6 : Math.max(2, x(t) - 6 - largo);
     let linha = 0;
     while (ocupadas.some((o) => o.linha === linha && inicio < o.fim + 12 && inicio + largo > o.inicio - 12)) linha++;
     ocupadas.push({ linha, inicio, fim: inicio + largo });
-    texto.setAttribute("x", inicio);
-    texto.setAttribute("y", 14 + linha * 17);
+    const texto = el("text", { x: inicio, y: 14 + linha * 17, "font-size": 12, fill: cor("--tinta-3"), "font-family": FONTE });
+    texto.append(el("tspan", { "font-weight": 600, fill: cor("--tinta") }, rotulo), el("tspan", {}, quando));
     svg.append(el("line", { x1: x(t), x2: x(t), y1: 20 + linha * 17, y2: m.cima + altura, stroke: cor("--tinta-3"), "stroke-width": 1, "stroke-dasharray": "2 4" }), texto);
   }
 
@@ -397,12 +722,11 @@ function desenhar(exemplo) {
   svg.append(el("path", { d: caminho("negociado"), fill: "none", stroke: cor("--negociado"), "stroke-width": 2, "stroke-linejoin": "round" }));
   svg.append(el("path", { d: caminho("ajustado"), fill: "none", stroke: cor("--ajustado"), "stroke-width": 2, "stroke-linejoin": "round" }));
 
-  const ultimo = pontos.at(-1);
-  const fimX = x(datas.at(-1)) + 8;
+  const ultimo = pontos.at(-1), fimX = x(datas.at(-1)) + 8;
   const yAj = y(ultimo.ajustado), yNeg = y(ultimo.negociado);
-  const separados = Math.abs(yAj - yNeg) < 16 ? (yAj < yNeg ? [yAj - 8, yNeg + 8] : [yAj + 8, yNeg - 8]) : [yAj, yNeg];
-  svg.append(el("text", { x: fimX, y: separados[0] + 4, "font-size": 12.5, fill: cor("--tinta"), "font-family": "IBM Plex Sans, sans-serif", "font-weight": 500 }, "ajustado"));
-  svg.append(el("text", { x: fimX, y: separados[1] + 4, "font-size": 12.5, fill: cor("--tinta-2"), "font-family": "IBM Plex Sans, sans-serif" }, "negociado"));
+  const [ra, rn] = Math.abs(yAj - yNeg) < 16 ? (yAj <= yNeg ? [yAj - 7, yNeg + 9] : [yAj + 9, yNeg - 7]) : [yAj, yNeg];
+  svg.append(el("text", { x: fimX, y: ra + 4, "font-size": 12.5, fill: cor("--tinta"), "font-family": FONTE, "font-weight": 600 }, "ajustado"));
+  svg.append(el("text", { x: fimX, y: rn + 4, "font-size": 12.5, fill: cor("--tinta-2"), "font-family": FONTE }, "negociado"));
 
   const mira = el("line", { y1: m.cima, y2: m.cima + altura, stroke: cor("--tinta"), "stroke-width": 1, opacity: 0 });
   const pontoAj = el("circle", { r: 4.5, fill: cor("--ajustado"), stroke: cor("--papel"), "stroke-width": 2, opacity: 0 });
@@ -421,89 +745,155 @@ function desenhar(exemplo) {
     mira.setAttribute("x1", cx); mira.setAttribute("x2", cx); mira.setAttribute("opacity", 0.25);
     pontoAj.setAttribute("cx", cx); pontoAj.setAttribute("cy", y(p.ajustado)); pontoAj.setAttribute("opacity", 1);
     pontoNeg.setAttribute("cx", cx); pontoNeg.setAttribute("cy", y(p.negociado)); pontoNeg.setAttribute("opacity", 1);
-    dica.replaceChildren();
-    const titulo = document.createElement("b"); titulo.textContent = mesAno.format(new Date(p.data));
-    const l1 = document.createElement("div"); l1.textContent = `Negociado: R$ ${reais.format(p.negociado)}`;
-    const l2 = document.createElement("div"); l2.textContent = `Ajustado: R$ ${reais.format(p.ajustado)}`;
-    dica.append(titulo, l1, l2);
+    dica.replaceChildren(html("b", "", mesAno.format(new Date(p.data))), html("span", "", `Negociado: R$ ${reais.format(p.negociado)}`), html("span", "", `Ajustado: R$ ${reais.format(p.ajustado)}`));
     const esquerda = window.scrollX + r.left + (cx / L) * r.width;
-    dica.style.left = Math.min(esquerda + 14, window.scrollX + window.innerWidth - dica.offsetWidth - 12) + "px";
-    dica.style.top = (window.scrollY + r.top + (y(p.ajustado) / A) * r.height - 40) + "px";
+    const cabe = esquerda + 14 + dica.offsetWidth < window.scrollX + document.documentElement.clientWidth - 8;
+    dica.style.left = (cabe ? esquerda + 14 : esquerda - 14 - dica.offsetWidth) + "px";
+    dica.style.top = (window.scrollY + r.top + (Math.min(y(p.ajustado), y(p.negociado)) / A) * r.height - 30) + "px";
     dica.style.opacity = 1;
   };
   const esconder = () => { dica.style.opacity = 0; mira.setAttribute("opacity", 0); pontoAj.setAttribute("opacity", 0); pontoNeg.setAttribute("opacity", 0); };
   area.addEventListener("pointermove", mover);
+  area.addEventListener("pointerdown", mover);
   area.addEventListener("pointerleave", esconder);
 
   const corpo = $("tabela-grafico");
   corpo.replaceChildren();
   for (const p of pontos.filter((_, i) => i % 6 === 0 || i === pontos.length - 1)) {
     const linha = document.createElement("tr");
-    for (const v of [mesAno.format(new Date(p.data)), "R$ " + reais.format(p.negociado), "R$ " + reais.format(p.ajustado)]) {
-      const td = document.createElement("td"); td.textContent = v; linha.appendChild(td);
-    }
+    for (const v of [mesAno.format(new Date(p.data)), "R$ " + reais.format(p.negociado), "R$ " + reais.format(p.ajustado)]) linha.appendChild(html("td", "", v));
     corpo.appendChild(linha);
   }
 }
 
-function centavos(c) { return "R$ " + inteiro.format(Math.round(c / 100)); }
-
-const O_QUE_LIBERA = [
+const reaisInteiros = (c) => "R$ " + inteiro.format(Math.round(c / 100));
+const PARA_QUEM = {
+  essencial: "Para acompanhar carteira e preço recente",
+  pro: "Para testar estratégia com o histórico inteiro",
+  quant: "Para uso intenso e comercial interno, sob contrato",
+};
+const RECURSOS = [
   ["serie", "Série ajustada com retorno total"],
   ["ponto_no_tempo", "Balanço como se sabia na data"],
   ["informes", "Informe mensal de FII"],
-  ["exportacao", "Exportação da base inteira"],
+  ["exportacao", "Exportação da base, sob contrato"],
 ];
 
+function marca(incluido) {
+  const s = incluido ? html("span", "sim") : html("span", "nao", "—");
+  s.setAttribute("role", "img");
+  s.setAttribute("aria-label", incluido ? "incluído" : "não incluído");
+  return s;
+}
+
 function mostrarPlanos(resposta) {
-  const lista = $("lista-de-planos");
-  lista.replaceChildren();
-  for (const p of resposta.dados) {
-    const bloco = document.createElement("div");
-    bloco.className = "plano";
-    const nome = document.createElement("div"); nome.className = "nome"; nome.textContent = p.nome;
-    const preco = document.createElement("div"); preco.className = "preco";
-    preco.textContent = (p.codigo === "quant" ? "a partir de " : "") + centavos(p.preco_mensal_centavos);
-    const mes = document.createElement("small"); mes.textContent = " /mês"; preco.appendChild(mes);
-    const anual = document.createElement("div"); anual.className = "anual";
-    anual.textContent = p.preco_anual_centavos ? `ou ${centavos(p.preco_anual_centavos)} por ano` : "sob contrato";
-    const descricao = document.createElement("p"); descricao.textContent = p.descricao || "";
-    const itens = document.createElement("ul");
-    const historico = document.createElement("li");
-    historico.textContent = p.historico_dias ? `Últimos ${Math.round(p.historico_dias / 365)} anos de histórico` : "Histórico inteiro, desde 2005";
-    const limite = document.createElement("li");
-    limite.textContent = `${inteiro.format(p.limite_por_dia)} chamadas por dia`;
-    itens.append(historico, limite);
-    for (const [recurso, rotulo] of O_QUE_LIBERA) {
-      const li = document.createElement("li");
-      li.textContent = rotulo;
-      if (!p.recursos.includes(recurso)) li.className = "nao";
-      itens.appendChild(li);
-    }
-    bloco.append(nome, preco, anual, descricao, itens);
-    lista.appendChild(bloco);
+  const planos = resposta.dados || [];
+  const tabela = $("tabela-planos");
+  const cabeca = tabela.tHead.rows[0];
+  const corpo = tabela.tBodies[0];
+  cabeca.querySelectorAll("th:not(:first-child)").forEach((th) => th.remove());
+  corpo.replaceChildren();
+  const destaque = (p) => (p.codigo === "pro" ? "destacado" : "");
+
+  for (const p of planos) {
+    const th = html("th", destaque(p));
+    th.scope = "col";
+    th.append(html("span", "nome", p.nome), html("span", "para", PARA_QUEM[p.codigo] || p.descricao || ""));
+    const apartir = html("span", "apartir", "a partir de");
+    if (p.preco_anual_centavos) apartir.style.visibility = "hidden";
+    th.append(apartir);
+    const preco = html("span", "preco", reaisInteiros(p.preco_mensal_centavos));
+    preco.append(html("small", "", " /mês"));
+    th.append(preco, html("span", "anual", p.preco_anual_centavos ? `ou ${reaisInteiros(p.preco_anual_centavos)} por ano` : "sob contrato"));
+    cabeca.appendChild(th);
   }
-  const aviso = $("aviso-cobranca");
-  aviso.replaceChildren();
+  const linha = (rotulo, celula) => {
+    const tr = document.createElement("tr");
+    const th = html("th", "", rotulo);
+    th.scope = "row";
+    tr.appendChild(th);
+    for (const p of planos) { const td = html("td", destaque(p)); td.append(celula(p)); tr.appendChild(td); }
+    corpo.appendChild(tr);
+  };
+  const grupo = (titulo) => {
+    const tr = html("tr", "grupo");
+    const th = html("th", "", titulo);
+    th.scope = "colgroup";
+    th.colSpan = planos.length + 1;
+    tr.appendChild(th);
+    corpo.appendChild(tr);
+  };
+  grupo("Uso");
+  linha("Histórico", (p) => (p.historico_dias ? `Últimos ${Math.round(p.historico_dias / 365)} anos` : "Inteiro, desde 2005"));
+  linha("Chamadas por dia", (p) => inteiro.format(p.limite_por_dia));
+  linha("Chamadas por minuto", (p) => inteiro.format(p.limite_por_minuto));
+  grupo("Dados");
+  linha("Cotação, proventos, eventos, demonstrações, retratos, BCB e Tesouro", () => marca(true));
+  for (const [recurso, rotulo] of RECURSOS) linha(rotulo, (p) => marca((p.recursos || []).includes(recurso)));
+
+  const convite = $("convite"), texto = $("convite-texto");
   if (resposta.cobranca_aberta) {
-    aviso.textContent = "Para assinar, entre com a sua chave em “Minha conta”.";
-  } else {
-    aviso.append("A cobrança abre em breve. Enquanto isso, o acesso é por convite, sem custo, para quem quer testar a base. ");
-    if (resposta.contato) {
-      const link = document.createElement("a");
-      link.href = "mailto:" + resposta.contato + "?subject=" + encodeURIComponent("Convite para o fiance dados");
-      link.textContent = "Pedir um convite";
-      aviso.append(link, ".");
-    }
+    texto.replaceChildren(html("b", "", "Para assinar, entre com a sua chave."), " A assinatura e o pagamento ficam em “Minha conta”.");
+    const link = html("a", "botao", "Ir para minha conta");
+    link.href = "#conta";
+    convite.appendChild(link);
+  } else if (resposta.contato) {
+    const endereco = `mailto:${resposta.contato}?subject=${encodeURIComponent("Convite para o fiance dados")}`;
+    const noConvite = html("a", "botao", "Pedir um convite");
+    noConvite.href = endereco;
+    convite.appendChild(noConvite);
+    const naAbertura = html("a", "botao contorno", "Pedir um convite");
+    naAbertura.href = endereco;
+    $("acoes-abertura").insertBefore(naAbertura, $("acoes-abertura").children[1]);
   }
 }
 
 let exemploGuardado = null;
-fetch("/v1/vitrine").then((r) => r.json()).then((v) => { preencherFicha(v.numeros); exemploGuardado = v.exemplo; if (v.exemplo) desenhar(v.exemplo); }).catch(() => {});
+fetch("/v1/vitrine")
+  .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+  .then((v) => {
+    preencherBase(v.numeros || {});
+    exemploGuardado = v.exemplo;
+    if (v.exemplo) {
+      desenhar(v.exemplo);
+      compararPeriodo(v.exemplo.pontos.filter((p) => p.negociado > 0 && p.ajustado > 0));
+    }
+  })
+  .catch(() => { $("grafico").replaceChildren(html("p", "sem-dado", "Não foi possível carregar o exemplo agora.")); });
+fetch("/v1/planos")
+  .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+  .then(mostrarPlanos)
+  .catch(() => { $("erro-planos").textContent = "Não foi possível carregar os planos agora. Tente recarregar a página."; });
 let espera;
 window.addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => exemploGuardado && desenhar(exemploGuardado), 150); });
-fetch("/v1/planos").then((r) => r.json()).then(mostrarPlanos).catch(() => { $("aviso-cobranca").textContent = "Não foi possível carregar os planos agora."; });
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => exemploGuardado && desenhar(exemploGuardado));
+
+const abas = [...document.querySelectorAll('[role="tab"]')];
+function escolherAba(aba, focar) {
+  for (const a of abas) {
+    const ativa = a === aba;
+    a.setAttribute("aria-selected", String(ativa));
+    a.tabIndex = ativa ? 0 : -1;
+    $(a.getAttribute("aria-controls")).hidden = !ativa;
+  }
+  if (focar) aba.focus();
+}
+abas.forEach((aba, i) => {
+  aba.addEventListener("click", () => escolherAba(aba, false));
+  aba.addEventListener("keydown", (e) => {
+    const alvo = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: abas.length - 1 }[e.key];
+    if (alvo === undefined) return;
+    e.preventDefault();
+    escolherAba(abas[(alvo + abas.length) % abas.length], true);
+  });
+});
+$("copiar").addEventListener("click", async () => {
+  const codigo = document.querySelector('[role="tabpanel"]:not([hidden]) code');
+  const botao = $("copiar");
+  try { await navigator.clipboard.writeText(codigo.innerText); botao.textContent = "Copiado"; }
+  catch { botao.textContent = "Selecione e copie"; }
+  setTimeout(() => { botao.textContent = "Copiar"; }, 1800);
+});
 
 const CHAVE = "fiance_dados_chave";
 function data(texto) {
@@ -511,7 +901,6 @@ function data(texto) {
   const d = new Date(texto);
   return isNaN(d) ? texto : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
-function celula(linha, texto) { const td = document.createElement("td"); td.textContent = texto; linha.appendChild(td); return td; }
 async function chamar(metodo, rota, corpo) {
   const resposta = await fetch(rota, {
     method: metodo,
@@ -530,19 +919,21 @@ async function carregarConta() {
     $("entrar").classList.add("escondido");
     $("painel").classList.remove("escondido");
     const historico = conta.historico_dias ? `últimos ${Math.round(conta.historico_dias / 365)} anos` : "histórico inteiro";
-    const pago = conta.pago_ate ? ` · pago até ${diaMesAno.format(new Date(conta.pago_ate))}` : "";
-    $("resumo").textContent = `${conta.nome} · plano ${conta.plano} · ${inteiro.format(conta.limite_por_dia)} chamadas por dia · ${historico}${pago}.`;
+    const resumo = $("resumo");
+    resumo.replaceChildren(html("b", "", conta.nome), ` · plano ${conta.plano} · ${inteiro.format(conta.limite_por_dia)} chamadas por dia · ${historico}`);
+    if (conta.pago_ate) resumo.append(` · pago até ${diaMesAno.format(new Date(conta.pago_ate))}`);
+    resumo.append(".");
     const corpo = $("chaves");
     corpo.replaceChildren();
     for (const k of conta.chaves) {
       const linha = document.createElement("tr");
-      celula(linha, k.prefixo + "…"); celula(linha, k.nome); celula(linha, data(k.criada_em));
-      celula(linha, data(k.ultimo_uso_em)); celula(linha, inteiro.format(k.requisicoes_hoje));
-      const acao = celula(linha, "");
+      for (const v of [k.prefixo + "…", k.nome, data(k.criada_em), data(k.ultimo_uso_em), inteiro.format(k.requisicoes_hoje)]) linha.appendChild(html("td", "", v));
+      const acao = html("td");
       if (k.revogada_em) { acao.textContent = "revogada"; acao.className = "discreto"; }
       else {
-        const botao = document.createElement("button");
-        botao.className = "revogar"; botao.type = "button"; botao.textContent = "Revogar";
+        const botao = html("button", "revogar", "Revogar");
+        botao.type = "button";
+        botao.setAttribute("aria-label", `Revogar a chave ${k.prefixo}`);
         botao.onclick = async () => {
           if (!confirm(`Revogar a chave ${k.prefixo}…? Quem a usa perde o acesso na hora.`)) return;
           try { await chamar("DELETE", "/v1/conta/chaves/" + encodeURIComponent(k.prefixo)); await carregarConta(); }
@@ -550,9 +941,11 @@ async function carregarConta() {
         };
         acao.appendChild(botao);
       }
+      linha.appendChild(acao);
       corpo.appendChild(linha);
     }
   } catch (e) {
+    sessionStorage.removeItem(CHAVE);
     $("erro-conta").textContent = "Não foi possível entrar: " + e.message;
   }
 }
@@ -562,16 +955,13 @@ $("form-nova").onsubmit = async (evento) => {
   try {
     const nova = (await chamar("POST", "/v1/conta/chaves", { nome: $("nome-nova").value.trim() })).dados;
     const caixa = $("chave-criada");
-    caixa.replaceChildren();
-    const titulo = document.createElement("strong"); titulo.textContent = "Chave nova — guarde agora, ela não aparece de novo:";
-    const texto = document.createElement("code"); texto.textContent = nova.chave;
-    caixa.append(titulo, document.createElement("br"), texto);
+    caixa.replaceChildren(html("strong", "", "Chave nova — guarde agora, ela não aparece de novo:"), document.createElement("br"), html("code", "", nova.chave));
     caixa.classList.remove("escondido");
     $("nome-nova").value = "";
     await carregarConta();
   } catch (e) { $("erro-conta").textContent = e.message; }
 };
-$("sair").onclick = () => { sessionStorage.removeItem(CHAVE); $("painel").classList.add("escondido"); $("chave-criada").classList.add("escondido"); $("entrar").classList.remove("escondido"); };
+$("sair").onclick = () => { sessionStorage.removeItem(CHAVE); $("painel").classList.add("escondido"); $("chave-criada").classList.add("escondido"); $("entrar").classList.remove("escondido"); $("chave").focus(); };
 if (sessionStorage.getItem(CHAVE)) carregarConta();
 </script>
 </body>
