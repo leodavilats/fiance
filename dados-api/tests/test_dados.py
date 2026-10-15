@@ -111,3 +111,18 @@ def test_plano_gratuito_ve_so_o_ultimo_ano(cliente):
     cotacoes = _dados(cliente, "/v1/ativos/TEST3/cotacoes", chave, de="2000-01-01")["dados"]
 
     assert "2005-01-03" not in [c["data"] for c in cotacoes], "o histórico longo é de plano pago"
+
+
+def test_retratos_em_lote_trazem_irmaos_e_todas_as_versoes(cliente, chave):
+    retratos = _dados(cliente, "/v1/retratos", chave, codigos="test3, XPML11,XPTO3")["dados"]
+
+    assert sorted(retratos) == ["TEST3", "XPML11"], "o que a base não tem fica de fora"
+    acao = retratos["TEST3"]
+    assert [i["codigo"] for i in acao["irmaos"]] == ["TEST3"]
+    assert [(d["versao"], d["data_entrega"]) for d in acao["demonstracoes"]] == [
+        (1, "2025-03-10"),
+        (2, "2025-06-01"),
+    ], "o app escolhe a versão; a API entrega todas"
+    assert retratos["XPML11"]["demonstracoes"] == []
+    muitos = ",".join(f"T{i:03d}3" for i in range(51))
+    assert cliente.get("/v1/retratos", headers=chave, params={"codigos": muitos}).status_code == 422

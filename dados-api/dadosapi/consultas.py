@@ -77,7 +77,7 @@ def ativos(
     linhas = _linhas(
         conn,
         """
-        SELECT codigo, tipo, classe, nome, setor, data AS ultimo_pregao, preco
+        SELECT codigo, tipo, classe, nome, setor, data AS ultimo_pregao, preco, volume_medio
         FROM mercado.ativo_hoje
         WHERE (CAST(:tipo AS text) IS NULL OR tipo = :tipo)
           AND (CAST(:busca AS text) IS NULL OR codigo ILIKE :padrao OR nome ILIKE :padrao)
@@ -117,6 +117,52 @@ def ativo(conn: sa.Connection, codigo: str) -> dict | None:
         codigo=codigo.upper(),
     )
     return {**antigo[0], "negociando": False} if antigo else None
+
+
+_RETRATO = """
+SELECT codigo, isin, tipo, emissor, classe, nome, setor, cnpj, data, preco, preco_anterior,
+    maxima_52s, minima_52s, volume_medio, acoes_ordinarias, acoes_preferenciais,
+    valor_patrimonial_cota, referencia_cota, proventos_12m
+FROM mercado.ativo_hoje
+"""
+
+
+def retratos(conn: sa.Connection, codigos: list[str], desde: date) -> dict[str, dict]:
+    ativos = _linhas(conn, _RETRATO + " WHERE codigo = ANY(:codigos)", codigos=codigos)
+    cnpjs = sorted({a["cnpj"] for a in ativos if a["tipo"] == "stock" and a["cnpj"]})
+    irmaos: dict[str, list[dict]] = {}
+    demonstracoes: dict[str, list[dict]] = {}
+    if cnpjs:
+        for linha in _linhas(
+            conn,
+            "SELECT cnpj, codigo, classe, preco, volume_medio FROM mercado.ativo_hoje "
+            "WHERE cnpj = ANY(:cnpjs) ORDER BY codigo",
+            cnpjs=cnpjs,
+        ):
+            irmaos.setdefault(linha.pop("cnpj"), []).append(linha)
+        for linha in _linhas(
+            conn,
+            """
+            SELECT f.cnpj, f.tipo, f.data_referencia, f.versao, d.data_entrega, f.fim_exercicio,
+                f.receita, f.lucro_controladores, f.patrimonio_controladores, f.divida_bruta
+            FROM mercado.fundamento_app f
+            JOIN mercado.documento d ON d.cnpj = f.cnpj AND d.tipo = f.tipo
+                AND d.data_referencia = f.data_referencia AND d.versao = f.versao
+            WHERE f.cnpj = ANY(:cnpjs) AND f.data_referencia >= :desde
+            ORDER BY f.cnpj, f.tipo, f.data_referencia, f.versao
+            """,
+            cnpjs=cnpjs,
+            desde=desde,
+        ):
+            demonstracoes.setdefault(linha.pop("cnpj"), []).append(linha)
+    return {
+        a["codigo"]: {
+            "ativo": a,
+            "irmaos": irmaos.get(a["cnpj"], []) if a["tipo"] == "stock" else [],
+            "demonstracoes": demonstracoes.get(a["cnpj"], []) if a["tipo"] == "stock" else [],
+        }
+        for a in ativos
+    }
 
 
 def cotacoes(

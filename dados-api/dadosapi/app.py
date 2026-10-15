@@ -18,6 +18,7 @@ FONTES = (
 )
 LIMITE_PADRAO = 500
 LIMITE_MAXIMO = 5000
+MAXIMO_DE_RETRATOS = 50
 INICIO_DA_BASE = date(2000, 1, 1)
 
 DESCRICAO = """
@@ -177,6 +178,26 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
         with bancos.leitura.connect() as conn:
             dados, proximo = consultas.ativos(conn, tipo, busca, cursor, limite)
         return _resposta(dados, proximo)
+
+    @app.get(
+        "/v1/retratos",
+        tags=["ativos"],
+        summary="O retrato completo de vários ativos numa chamada",
+        description=(
+            "Até 50 tickers separados por vírgula. Para cada um: o retrato do último pregão, os "
+            "outros papéis da mesma companhia (para o valor de mercado) e todas as versões das "
+            "demonstrações, com a data de entrega. Ticker que a base não tem fica de fora."
+        ),
+    )
+    def ver_retratos(
+        codigos: str = Query(min_length=1, max_length=600),
+        a: acesso.Acesso = Depends(autenticado),
+    ) -> dict:
+        lista = list(dict.fromkeys(c.strip().upper() for c in codigos.split(",") if c.strip()))
+        if len(lista) > MAXIMO_DE_RETRATOS:
+            raise HTTPException(422, f"No máximo {MAXIMO_DE_RETRATOS} tickers por chamada.")
+        with bancos.leitura.connect() as conn:
+            return _resposta(consultas.retratos(conn, lista, _corte(a)))
 
     @app.get("/v1/ativos/{codigo}", tags=["ativos"], summary="O retrato do ativo no último pregão")
     def ver_ativo(codigo: str, _: acesso.Acesso = Depends(autenticado)) -> dict:
