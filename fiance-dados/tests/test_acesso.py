@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from datetime import date
+
 import sqlalchemy as sa
 
 from dadosapi import acesso
 from tests.conftest import TOKEN, criar_conta
+
+ADMIN = {"X-Admin-Token": TOKEN}
 
 
 def test_sem_chave_ou_com_chave_errada_nao_entra(cliente):
@@ -128,3 +132,92 @@ def test_uso_por_dia(cliente, chave):
     uso = cliente.get("/admin/uso", headers={"X-Admin-Token": TOKEN}).json()
 
     assert uso[-1]["requisicoes"] == 2 and uso[-1]["contas"] == 1
+
+
+def test_situacao_da_conta_segue_a_regra_do_402():
+    hoje = date(2026, 10, 14)
+
+    assert acesso.situacao_da_conta(False, True, date(2099, 1, 1), hoje) == "desativada"
+    assert acesso.situacao_da_conta(True, False, None, hoje) == "ativa"
+    assert acesso.situacao_da_conta(True, True, None, hoje) == "sem_pagamento"
+    assert acesso.situacao_da_conta(True, True, date(2026, 10, 12), hoje) == "em_tolerancia"
+    assert acesso.situacao_da_conta(True, True, date(2026, 10, 10), hoje) == "sem_pagamento", (
+        "passados os três dias de tolerância, a chave responde 402"
+    )
+    assert acesso.situacao_da_conta(True, True, date(2026, 10, 20), hoje) == "a_vencer"
+    assert acesso.situacao_da_conta(True, True, date(2026, 12, 1), hoje) == "ativa"
+
+
+def test_lista_de_contas_traz_situacao_limite_e_uso(cliente, chave):
+    cliente.get("/v1/ativos", headers=chave)
+    criar_conta(cliente, plano="pro", email="pago@teste.com")
+
+    contas = {c["email"]: c for c in cliente.get("/admin/contas", headers=ADMIN).json()}
+
+    convidado, pago = contas["eu@teste.com"], contas["pago@teste.com"]
+    assert (convidado["situacao"], convidado["plano_pago"]) == ("ativa", False)
+    assert convidado["requisicoes_hoje"] == convidado["maior_chave_hoje"] == 1
+    assert convidado["requisicoes_30_dias"] == 1 and convidado["limite_por_dia"] == 20_000
+    assert convidado["ultimo_uso_em"] is not None
+    assert (pago["situacao"], pago["chaves_ativas"]) == ("sem_pagamento", 1)
+
+
+def test_administracao_edita_nome_e_observacao_e_limpa_o_pago_ate(cliente):
+    criada = criar_conta(cliente, plano="pro", email="edita@teste.com")
+    rota = f"/admin/contas/{criada['conta']['id']}"
+
+    cliente.patch(
+        rota, json={"pago_ate": "2099-01-01", "observacao": " contrato 12 "}, headers=ADMIN
+    )
+    so_nome = cliente.patch(rota, json={"nome": "Novo nome"}, headers=ADMIN).json()
+    limpa = cliente.patch(rota, json={"pago_ate": None, "observacao": ""}, headers=ADMIN).json()
+
+    assert (so_nome["nome"], so_nome["pago_ate"], so_nome["observacao"]) == (
+        "Novo nome",
+        "2099-01-01",
+        "contrato 12",
+    ), "campo não enviado fica como estava"
+    assert (limpa["pago_ate"], limpa["observacao"]) == (None, None), (
+        "nulo enviado de propósito limpa o campo"
+    )
+
+
+def test_conta_paga_criada_com_pago_ate_ja_entra(cliente):
+    resposta = cliente.post(
+        "/admin/contas",
+        json={
+            "email": "contrato@teste.com",
+            "nome": "C",
+            "plano": "quant",
+            "pago_ate": "2099-01-01",
+        },
+        headers=ADMIN,
+    )
+    chave = {"Authorization": f"Bearer {resposta.json()['chave']['chave']}"}
+
+    assert cliente.get("/v1/ativos", headers=chave).status_code == 200
+
+
+def test_administracao_revoga_chave_de_uma_conta(cliente, chave):
+    conta = cliente.get("/admin/contas", headers=ADMIN).json()[0]
+    prefixo = cliente.get(f"/admin/contas/{conta['id']}", headers=ADMIN).json()["chaves"][0][
+        "prefixo"
+    ]
+
+    revogada = cliente.delete(f"/admin/contas/{conta['id']}/chaves/{prefixo}", headers=ADMIN)
+    de_novo = cliente.delete(f"/admin/contas/{conta['id']}/chaves/{prefixo}", headers=ADMIN)
+
+    assert revogada.status_code == 204 and de_novo.status_code == 404
+    assert cliente.get("/v1/ativos", headers=chave).status_code == 401
+    assert cliente.delete(f"/admin/contas/{conta['id']}/chaves/{prefixo}").status_code == 401
+
+
+def test_uso_por_dia_filtra_por_conta(cliente, chave):
+    cliente.get("/v1/ativos", headers=chave)
+    outra = criar_conta(cliente, email="outra@teste.com")
+    conta = cliente.get("/admin/contas", headers=ADMIN).json()[0]["id"]
+
+    so_dela = cliente.get(f"/admin/uso?conta_id={conta}", headers=ADMIN).json()
+    da_outra = cliente.get(f"/admin/uso?conta_id={outra['conta']['id']}", headers=ADMIN).json()
+
+    assert so_dela[-1]["requisicoes"] == 1 and da_outra == []

@@ -44,13 +44,16 @@ class NovaConta(BaseModel):
     email: str = Field(min_length=3, max_length=200)
     nome: str = Field(min_length=1, max_length=200)
     plano: str = "convidado"
-    observacao: str | None = None
+    observacao: str | None = Field(default=None, max_length=500)
+    pago_ate: date | None = None
 
 
 class AlteracaoDeConta(BaseModel):
     plano: str | None = None
     ativa: bool | None = None
     pago_ate: date | None = None
+    nome: str | None = Field(default=None, min_length=1, max_length=200)
+    observacao: str | None = Field(default=None, max_length=500)
 
 
 class NovaAssinatura(BaseModel):
@@ -439,8 +442,10 @@ def criar(
         return acesso.planos(bancos.acesso)
 
     @app.get("/admin/uso", include_in_schema=False, dependencies=[Depends(administrador)])
-    def admin_uso(dias: int = Query(default=30, ge=1, le=365)) -> list[dict]:
-        return acesso.uso_por_dia(bancos.acesso, dias)
+    def admin_uso(
+        dias: int = Query(default=30, ge=1, le=365), conta_id: int | None = None
+    ) -> list[dict]:
+        return acesso.uso_por_dia(bancos.acesso, dias, conta_id)
 
     @app.get("/admin/contas", include_in_schema=False, dependencies=[Depends(administrador)])
     def admin_contas() -> list[dict]:
@@ -454,7 +459,7 @@ def criar(
     )
     def admin_criar_conta(corpo: NovaConta) -> dict:
         conta = acesso.criar_conta(
-            bancos.acesso, corpo.email, corpo.nome, corpo.plano, corpo.observacao
+            bancos.acesso, corpo.email, corpo.nome, corpo.plano, corpo.observacao, corpo.pago_ate
         )
         chave = acesso.emitir_chave(bancos.acesso, conta["id"], "principal")
         return {"conta": conta, "chave": chave}
@@ -463,8 +468,17 @@ def criar(
         "/admin/contas/{conta_id}", include_in_schema=False, dependencies=[Depends(administrador)]
     )
     def admin_alterar_conta(conta_id: int, corpo: AlteracaoDeConta) -> dict:
+        enviados = corpo.model_fields_set
         return acesso.alterar_conta(
-            bancos.acesso, conta_id, corpo.plano, corpo.ativa, corpo.pago_ate
+            bancos.acesso,
+            conta_id,
+            corpo.plano,
+            corpo.ativa,
+            corpo.pago_ate,
+            mudar_pago_ate="pago_ate" in enviados,
+            nome=corpo.nome,
+            observacao=corpo.observacao,
+            mudar_observacao="observacao" in enviados,
         )
 
     @app.post(
@@ -475,6 +489,15 @@ def criar(
     )
     def admin_nova_chave(conta_id: int, corpo: NovaChave) -> dict:
         return acesso.emitir_chave(bancos.acesso, conta_id, corpo.nome)
+
+    @app.delete(
+        "/admin/contas/{conta_id}/chaves/{prefixo}",
+        include_in_schema=False,
+        status_code=204,
+        dependencies=[Depends(administrador)],
+    )
+    def admin_revogar_chave(conta_id: int, prefixo: str) -> None:
+        acesso.revogar_chave(bancos.acesso, conta_id, prefixo)
 
     @app.get(
         "/admin/contas/{conta_id}", include_in_schema=False, dependencies=[Depends(administrador)]

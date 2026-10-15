@@ -151,7 +151,7 @@ As duas são obrigatórias, sem default: ausente, o job falha ao começar (`data
 Conta nasce por convite, pela administração; quem tem conta gerencia as próprias chaves em
 `/v1/conta`. Há duas páginas no próprio serviço: **`/`**, o portal público (o que o serviço oferece,
 a documentação, e "minha conta" para quem tem chave), e **`/console`**, o controle do autor (contas,
-planos, uso por dia, emitir chave, desativar), que pede o `DADOS_API_ADMIN_TOKEN` na tela e o guarda
+o que pede atenção, contas com busca e filtro, uso por dia e por conta, editar, emitir e revogar chave, desativar), que pede o `DADOS_API_ADMIN_TOKEN` na tela e o guarda
 só na aba. Dez tentativas erradas do mesmo IP bloqueiam `/admin` por 15 minutos. A chave aparece **uma vez**, na criação; a base guarda só o hash.
 
 ```bash
@@ -161,7 +161,10 @@ curl -X POST https://<dominio>/admin/contas -H "X-Admin-Token: $TOKEN" \
 curl https://<dominio>/admin/contas -H "X-Admin-Token: $TOKEN"                  # contas e uso de hoje
 curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
   -H "Content-Type: application/json" -d '{"ativa": false}'                    # desativar
-curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \n  -H "Content-Type: application/json" -d '{"pago_ate": "2026-12-31"}'         # pagamento por fora
+curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
+  -H "Content-Type: application/json" -d '{"pago_ate": "2026-12-31"}'         # pagamento por fora
+curl -X DELETE https://<dominio>/admin/contas/1/chaves/fd_abcd1234 -H "X-Admin-Token: $TOKEN"  # revogar
+curl "https://<dominio>/admin/uso?dias=90&conta_id=1" -H "X-Admin-Token: $TOKEN"       # uso de uma conta
 ```
 
 | Plano | Por minuto | Por dia | Histórico | Chaves | Preço por mês | Libera |
@@ -174,6 +177,8 @@ curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \n  -H
 
 Plano pago sem `pago_ate` em dia (mais três dias) responde **402**; rota fora do plano responde
 **403**. O Asaas avisa em `POST /cobranca/asaas`; o pagamento é reconsultado antes de liberar.
+
+O `PATCH` aceita `plano`, `ativa`, `pago_ate`, `nome` e `observacao`; campo ausente fica como está, e `null` enviado de propósito limpa `pago_ate` e `observacao`. A lista de contas traz a `situacao` (`ativa`, `a_vencer` a 7 dias do vencimento, `em_tolerancia`, `sem_pagamento` — a que responde 402 —, `desativada`), calculada pela mesma regra que autentica.
 
 O limite por minuto fica na memória do processo: com mais de uma réplica, cada uma conta a sua.
 **Cobrar de terceiros depende da licença da B3 e da leitura da ODbL** (ADR-024).
