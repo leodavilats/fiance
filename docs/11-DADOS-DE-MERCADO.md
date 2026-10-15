@@ -122,10 +122,11 @@ ainda não publicou responde 404 e fica para a rodada seguinte.
 
 ### Leitura
 
-O papel `mercado_leitura` (sem login) lê todo o schema, inclusive tabelas futuras, e não escreve. O
-backend usa a conexão que o Railway dá ao `postgres-mercado` (`MERCADO_DATABASE_URL`) e, a cada conexão
-aberta, assume o papel com `SET ROLE mercado_leitura` e transação só de leitura
-(`backend/app/collectors/mercado.py`). **Não há usuário próprio nem senha nova.**
+O papel `mercado_leitura` (sem login) lê todo o schema, inclusive tabelas futuras, e não escreve. A
+`dados-api` e o painel `trend` usam a conexão que o Railway dá ao `postgres-mercado` e, a cada
+conexão aberta, assumem o papel com `SET ROLE mercado_leitura` e transação só de leitura. **Não há
+usuário próprio nem senha nova.** O backend do app não lê o banco: lê pela `dados-api`
+([ADR-024](decisoes/ADR-024-api-de-dados.md)).
 
 ### Como rodar
 
@@ -437,7 +438,8 @@ usou estimativa.
 
 Em 2026-10-12, com a ADR-022 aceita, `backend/app/collectors/universal.py` passou a montar o
 `AssetSnapshot` de `mercado.ativo_hoje` e `mercado.fundamento_app` (por `collectors/mercado.py`), e a
-BRAPI saiu do código. Histórico de preço e proventos também vêm da base. Os índices (P/L, P/VP, ROE,
+BRAPI saiu do código. Histórico de preço e proventos também vêm da base. Desde 2026-10-14, a
+leitura passa pela `dados-api`. Os índices (P/L, P/VP, ROE,
 yield) seguem regra do backend; a visão entrega só números brutos.
 
 **Decidido:** ativo que a base não tem — não negociou nos últimos 30 dias, é Fiagro, ou nunca entrou —

@@ -12,9 +12,9 @@ Subir, observar, reverter — e o que falta para publicar nas lojas.
 | Desenvolvimento | Máquina local | SQLite em `.cache/fiance.db` |
 | Produção | Railway, projeto `fiance`, ambiente `production` | Dois Postgres: `postgres-app` (aplicativo) e `postgres-mercado` (dados de mercado) |
 
-Em desenvolvimento, **sem `MERCADO_DATABASE_URL` não há ativo**: a leitura da base de mercado falha
-com `SemBaseDeMercado` (`collectors/mercado.py`). Aponte a variável para um Postgres com o schema
-`mercado` carregado pelo data-job.
+Em desenvolvimento, **sem `DADOS_API_URL` e `DADOS_API_CHAVE` não há ativo**: o cliente da API
+falha com `SemBaseDeMercado` (`collectors/mercado.py`). Aponte para uma `dados-api` local ou a de
+produção, com uma chave criada no `/console`.
 
 Não há staging. O ambiente existiu até 2026-10-09 e foi removido: acompanhava a mesma branch que
 produção (`main`), então era uma segunda cópia do mesmo commit, e não um passo antes do deploy.
@@ -109,7 +109,8 @@ O caminho manual **nunca rodou**: ele exige `RAILWAY_TOKEN` nos segredos e `RAIL
 | `DATABASE_URL` | SQLite local | Postgres em produção |
 | `GOOGLE_CLIENT_ID` | vazio | Login |
 | `APPLE_CLIENT_ID` | vazio | Login com Apple: bundle id e Services ID aceitos como audience, separados por vírgula. Vazio, a rota recusa com 500 |
-| `MERCADO_DATABASE_URL` | vazio | A base de mercado. No Railway, `${{postgres-mercado.DATABASE_URL}}`: a conexão assume o papel `mercado_leitura` e só lê |
+| `DADOS_API_URL` | vazio | A `dados-api`. No Railway, pela rede privada: `http://${{dados-api.RAILWAY_PRIVATE_DOMAIN}}:8080` |
+| `DADOS_API_CHAVE` | vazio | Chave de uma conta do plano `interno`, criada no `/console` da `dados-api`. Definida no painel, nunca no repositório |
 | `ALLOWED_ORIGINS` | localhost | CORS |
 | `ADMIN_USER_IDS` | vazio | Rotas de operador. Conta Apple entra como `apple:<sub>` |
 | `RATE_LIMIT_ENABLED` | `true` | Teto de uso |

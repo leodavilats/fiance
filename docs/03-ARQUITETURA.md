@@ -171,9 +171,10 @@ paywall) usa `independent_session()` / `outside_request_transaction()`.
 **Duas fontes, e só duas:** a base de mercado própria (`postgres-mercado`, ações, FIIs, BDRs,
 ETFs) e BCB SGS (CDI, Selic, IPCA). A base é escrita só pelo `data-job/`, a partir da B3, da CVM,
 do Tesouro e do BCB ([ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)); o backend
-lê `mercado.ativo_hoje` (cotação e cadastro), `mercado.fundamento_app` (resultado e balanço),
-`mercado.cotacao` (histórico) e `mercado.provento` (sem a origem `cvm_estimado`), com a conexão que
-o Railway dá, assumindo o papel `mercado_leitura` (`collectors/mercado.py`). **A cotação é a do último fechamento**, e o `as_of`
+lê **pela `dados-api`** ([ADR-024](decisoes/ADR-024-api-de-dados.md)), com uma chave do plano
+`interno`, pela rede privada do Railway (`collectors/mercado.py`): `/v1/retratos` em lotes de 50
+para o retrato e as demonstrações, `/v1/ativos` para a lista, `/cotacoes` para o histórico e
+`/proventos` sem o rendimento estimado. Ticker que a API não tem (404) é ausência, não falha. **A cotação é a do último fechamento**, e o `as_of`
 é o fechamento daquele pregão, às 18h de Brasília — o que a tela carimba como idade.
 
 Os índices (P/L, P/VP, ROE, margem, dívida sobre patrimônio, yield) são calculados no backend a

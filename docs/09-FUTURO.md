@@ -22,12 +22,11 @@ do modelo. Detalhe em [10-PROBLEMAS](10-PROBLEMAS.md), A12.
 
 ---
 
-### O app como primeiro cliente da API de dados
+### A API de dados aberta a terceiros
 
-A API de dados existe ([ADR-024](decisoes/ADR-024-api-de-dados.md)); o backend do app ainda lê o
-banco direto (`collectors/mercado.py`). O passo seguinte é o app consumir a API com uma conta do
-plano `interno` — prova o serviço com uso real antes de terceiros. Cobrar de terceiros espera a
-resposta da B3 sobre a licença e a leitura da ODbL; cadastro aberto espera verificação de e-mail.
+A API existe ([ADR-024](decisoes/ADR-024-api-de-dados.md)), com portal, console e o app como
+primeiro cliente. **Cobrar de terceiros espera** a resposta da B3 sobre a licença e a leitura da
+ODbL; **cadastro aberto espera** verificação de e-mail.
 
 ---
 

@@ -80,7 +80,7 @@ async def data_quality() -> DataQualityResponse:
             "Nenhum ativo coletado — o disjuntor da fonte está aberto, "
             "então as chamadas nem estão sendo tentadas."
             if disjuntor["state"] != "fechado"
-            else "Nenhum ativo coletado — verifique MERCADO_DATABASE_URL e se o data-job rodou."
+            else "Nenhum ativo coletado — verifique DADOS_API_URL, DADOS_API_CHAVE e se o data-job rodou."
         )
         return DataQualityResponse(
             universe_size=universe_size,

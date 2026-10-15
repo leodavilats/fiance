@@ -66,7 +66,7 @@ cp backend/.env.example backend/.env
 | `GOOGLE_CLIENT_ID` | Client IDs aceitos como audience do login, separados por vírgula |
 | `APPLE_CLIENT_ID` | Bundle id e Services ID aceitos como audience do login com Apple, separados por vírgula |
 | `JWT_SECRET` | Assina o JWT de sessão. O valor de exemplo é recusado fora de desenvolvimento |
-| `MERCADO_DATABASE_URL` | A base de mercado do `data-job/` (cotação, provento, balanço). Sem ela, não há ativo |
+| `DADOS_API_URL` e `DADOS_API_CHAVE` | A base de mercado, pela `dados-api` (cotação, provento, balanço), com uma chave do plano `interno`. Sem elas, não há ativo |
 
 ### Principais opcionais
 

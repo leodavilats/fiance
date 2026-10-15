@@ -48,7 +48,9 @@ class Settings(BaseSettings):
 
     billing_webhook_secret: str = DEFAULT_WEBHOOK_SECRET
 
-    mercado_database_url: str = ""
+    dados_api_url: str = ""
+
+    dados_api_chave: str = ""
 
     firebase_service_account_json: str = ""
 

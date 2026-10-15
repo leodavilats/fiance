@@ -2,162 +2,109 @@ from __future__ import annotations
 
 import threading
 from datetime import date, timedelta
-from decimal import Decimal
 
-import sqlalchemy as sa
+import httpx
 
 from app.core.config import get_settings
 
-PAPEL_DE_LEITURA = "mercado_leitura"
+TIMEOUT = 20.0
+LOTE_DE_RETRATOS = 50
+LIMITE_DE_PAGINA = 5000
 
 
 class SemBaseDeMercado(RuntimeError):
     pass
 
 
-_engine: sa.Engine | None = None
-_engine_lock = threading.Lock()
+_cliente: httpx.Client | None = None
+_cliente_lock = threading.Lock()
 
 
-def _url(bruta: str) -> str:
-    for antigo in ("postgres://", "postgresql://"):
-        if bruta.startswith(antigo):
-            return "postgresql+psycopg://" + bruta[len(antigo) :]
-    return bruta
+def cliente() -> httpx.Client:
+    global _cliente
+    if _cliente is not None:
+        return _cliente
+    with _cliente_lock:
+        if _cliente is None:
+            settings = get_settings()
+            url, chave = settings.dados_api_url.strip(), settings.dados_api_chave.strip()
+            if not url or not chave:
+                raise SemBaseDeMercado("DADOS_API_URL e DADOS_API_CHAVE precisam estar definidas.")
+            _cliente = httpx.Client(
+                base_url=url.rstrip("/"),
+                headers={"Authorization": f"Bearer {chave}"},
+                timeout=TIMEOUT,
+            )
+    return _cliente
 
 
-def engine() -> sa.Engine:
-    global _engine
-    if _engine is not None:
-        return _engine
-    with _engine_lock:
-        if _engine is None:
-            url = get_settings().mercado_database_url.strip()
-            if not url:
-                raise SemBaseDeMercado("MERCADO_DATABASE_URL não está definida.")
-            novo = sa.create_engine(_url(url), pool_pre_ping=True, pool_size=5, max_overflow=5)
-
-            @sa.event.listens_for(novo, "connect")
-            def _so_leitura(conexao, _registro) -> None:
-                # A conexão que o Railway dá assume o papel que só lê: nenhuma senha nova.
-                with conexao.cursor() as cursor:
-                    cursor.execute(f"SET ROLE {PAPEL_DE_LEITURA}")
-                    cursor.execute("SET default_transaction_read_only = on")
-                conexao.commit()
-
-            _engine = novo
-    return _engine
+def _get(rota: str, **parametros) -> dict:
+    resposta = cliente().get(rota, params={k: v for k, v in parametros.items() if v is not None})
+    resposta.raise_for_status()
+    return resposta.json()
 
 
-def _simples(valor):
-    if isinstance(valor, Decimal):
-        return float(valor)
-    if isinstance(valor, date):
-        return valor.isoformat()
-    return valor
+def _todas_as_paginas(rota: str, **parametros) -> list[dict]:
+    linhas, cursor = [], None
+    while True:
+        pagina = _get(rota, limite=LIMITE_DE_PAGINA, cursor=cursor, **parametros)
+        linhas += pagina["dados"]
+        cursor = pagina.get("proximo")
+        if not cursor:
+            return linhas
 
-
-def _linhas(conn: sa.Connection, sql: str, **parametros) -> list[dict]:
-    return [
-        {k: _simples(v) for k, v in r._mapping.items()}
-        for r in conn.execute(sa.text(sql), parametros)
-    ]
-
-
-_ATIVOS = """
-SELECT codigo, tipo, emissor, classe, data, preco, preco_anterior, maxima_52s, minima_52s,
-    volume_medio, nome, setor, cnpj, acoes_ordinarias, acoes_preferenciais,
-    valor_patrimonial_cota, referencia_cota, proventos_12m
-FROM mercado.ativo_hoje
-"""
-
-_IRMAOS = """
-SELECT cnpj, codigo, classe, preco, volume_medio FROM mercado.ativo_hoje
-WHERE cnpj = ANY(:cnpjs)
-"""
-
-_FUNDAMENTOS = """
-SELECT cnpj, tipo, data_referencia, versao, fim_exercicio, receita, lucro_controladores,
-    patrimonio_controladores, divida_bruta
-FROM mercado.fundamento_app WHERE cnpj = ANY(:cnpjs)
-"""
 
 _DO_RESULTADO = ("tipo", "data_referencia", "versao", "fim_exercicio", "receita",
                  "lucro_controladores")  # fmt: skip
 _DO_BALANCO = ("tipo", "data_referencia", "versao", "patrimonio_controladores", "divida_bruta")
 
 
-def _pacotes(conn: sa.Connection, ativos: list[dict]) -> dict[str, dict]:
-    cnpjs = sorted({a["cnpj"] for a in ativos if a["tipo"] == "stock" and a["cnpj"]})
-    irmaos: dict[str, list[dict]] = {}
-    fundamentos: dict[str, list[dict]] = {}
-    if cnpjs:
-        for linha in _linhas(conn, _IRMAOS, cnpjs=cnpjs):
-            irmaos.setdefault(linha.pop("cnpj"), []).append(linha)
-        for linha in _linhas(conn, _FUNDAMENTOS, cnpjs=cnpjs):
-            fundamentos.setdefault(linha.pop("cnpj"), []).append(linha)
-
-    pacotes = {}
-    for ativo in ativos:
-        da_empresa = fundamentos.get(ativo["cnpj"], []) if ativo["tipo"] == "stock" else []
-        pacotes[ativo["codigo"]] = {
-            "ativo": ativo,
-            "irmaos": irmaos.get(ativo["cnpj"], []) if ativo["tipo"] == "stock" else [],
-            "resultados": [{k: f[k] for k in _DO_RESULTADO} for f in da_empresa],
-            "balancos": [
-                {k: f[k] for k in _DO_BALANCO}
-                for f in da_empresa
-                if f["patrimonio_controladores"] is not None
-            ],
-        }
-    return pacotes
+def pacote_do_retrato(retrato: dict) -> dict:
+    demonstracoes = retrato["demonstracoes"]
+    return {
+        "ativo": retrato["ativo"],
+        "irmaos": retrato["irmaos"],
+        "resultados": [{k: d[k] for k in _DO_RESULTADO} for d in demonstracoes],
+        "balancos": [
+            {k: d[k] for k in _DO_BALANCO}
+            for d in demonstracoes
+            if d["patrimonio_controladores"] is not None
+        ],
+    }
 
 
 def ler_pacotes(codigos: list[str]) -> dict[str, dict]:
-    with engine().connect() as conn:
-        ativos = _linhas(conn, _ATIVOS + " WHERE codigo = ANY(:codigos)", codigos=codigos)
-        return _pacotes(conn, ativos)
+    pacotes = {}
+    for inicio in range(0, len(codigos), LOTE_DE_RETRATOS):
+        lote = codigos[inicio : inicio + LOTE_DE_RETRATOS]
+        retratos = _get("/v1/retratos", codigos=",".join(lote))["dados"]
+        pacotes.update({codigo: pacote_do_retrato(r) for codigo, r in retratos.items()})
+    return pacotes
 
 
 def ler_lista() -> list[dict]:
-    with engine().connect() as conn:
-        return _linhas(
-            conn, "SELECT codigo, tipo, nome, setor, volume_medio FROM mercado.ativo_hoje"
-        )
+    return [
+        {k: a.get(k) for k in ("codigo", "tipo", "nome", "setor", "volume_medio")}
+        for a in _todas_as_paginas("/v1/ativos")
+    ]
 
 
 def ler_historico(codigo: str, dias: int) -> dict[str, float]:
-    with engine().connect() as conn:
-        ultimo = conn.execute(
-            sa.text("SELECT max(data) FROM mercado.cotacao WHERE codigo = :c"), {"c": codigo}
-        ).scalar()
-        if ultimo is None:
+    desde = (date.today() - timedelta(days=dias)).isoformat()
+    try:
+        cotacoes = _todas_as_paginas(f"/v1/ativos/{codigo}/cotacoes", de=desde)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
             return {}
-        linhas = conn.execute(
-            sa.text(
-                "SELECT data, fechamento / fator_cotacao AS preco FROM mercado.cotacao "
-                "WHERE codigo = :c AND data > :desde ORDER BY data"
-            ),
-            {"c": codigo, "desde": ultimo - timedelta(days=dias)},
-        )
-        return {r.data.isoformat(): float(r.preco) for r in linhas}
+        raise
+    return {c["data"]: c["fechamento"] for c in cotacoes}
 
 
 def ler_proventos(codigo: str) -> list[dict]:
-    with engine().connect() as conn:
-        ativo = conn.execute(
-            sa.text("SELECT emissor, classe FROM mercado.ativo_hoje WHERE codigo = :c"),
-            {"c": codigo},
-        ).first()
-        if ativo is None:
+    try:
+        proventos = _get(f"/v1/ativos/{codigo}/proventos")["dados"]
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
             return []
-        return _linhas(
-            conn,
-            """
-            SELECT data_com, data_pagamento, valor FROM mercado.provento
-            WHERE emissor = :emissor AND classe = :classe AND origem <> 'cvm_estimado'
-            ORDER BY data_com
-            """,
-            emissor=ativo.emissor,
-            classe=ativo.classe,
-        )
+        raise
+    return [{k: p[k] for k in ("data_com", "data_pagamento", "valor")} for p in proventos]
