@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import secrets
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Literal
@@ -9,7 +10,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from dadosapi import acesso, banco, consultas
+from dadosapi import acesso, banco, cobranca, consultas
 from dadosapi.config import Configuracao, carregar
 
 FONTES = (
@@ -19,6 +20,7 @@ FONTES = (
 LIMITE_PADRAO = 500
 LIMITE_MAXIMO = 5000
 MAXIMO_DE_RETRATOS = 50
+EXEMPLO_DA_VITRINE = "MGLU3"
 INICIO_DA_BASE = date(2000, 1, 1)
 
 DESCRICAO = """
@@ -48,6 +50,14 @@ class NovaConta(BaseModel):
 class AlteracaoDeConta(BaseModel):
     plano: str | None = None
     ativa: bool | None = None
+    pago_ate: date | None = None
+
+
+class NovaAssinatura(BaseModel):
+    plano: Literal["essencial", "pro"]
+    ciclo: Literal["mensal", "anual"] = "mensal"
+    nome: str = Field(min_length=2, max_length=200)
+    cpf_cnpj: str = Field(min_length=11, max_length=18)
 
 
 class NovaChave(BaseModel):
@@ -83,11 +93,20 @@ def _resposta(dados, proximo: str | None = None, **extra) -> dict:
     return corpo
 
 
-def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None) -> FastAPI:
+def criar(
+    config: Configuracao | None = None,
+    bancos: banco.Bancos | None = None,
+    asaas: cobranca.Asaas | None = None,
+) -> FastAPI:
     config = config or carregar()
     bancos = bancos or banco.criar(config.database_url)
     por_minuto = acesso.LimitePorMinuto()
     tentativas = acesso.TentativasDeAdministracao()
+    if asaas is None and config.cobranca_ativa:
+        asaas = cobranca.Asaas.criar(
+            config.asaas_url, config.asaas_chave, config.asaas_token_webhook
+        )
+    vitrine_guardada: dict = {"quando": 0.0, "dados": None}
     app = FastAPI(
         title="fiance dados",
         version="1.0.0",
@@ -152,6 +171,56 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
     @app.get("/saude", include_in_schema=False)
     def saude() -> dict:
         return {"ok": True}
+
+    @app.get("/v1/planos", tags=["conta"], summary="Os planos, o que cada um libera, e o preço")
+    def ver_planos() -> dict:
+        return {
+            "dados": acesso.planos_publicos(bancos.acesso),
+            "cobranca_aberta": config.cobranca_ativa,
+            "contato": config.contato or None,
+        }
+
+    @app.get("/v1/vitrine", include_in_schema=False)
+    def ver_vitrine() -> dict:
+        if (
+            vitrine_guardada["dados"] is None
+            or time.monotonic() - vitrine_guardada["quando"] > 6 * 3600
+        ):
+            with bancos.leitura.connect() as conn:
+                vitrine_guardada["dados"] = consultas.vitrine(conn, EXEMPLO_DA_VITRINE)
+            vitrine_guardada["quando"] = time.monotonic()
+        return vitrine_guardada["dados"]
+
+    @app.post(
+        "/v1/conta/assinatura",
+        tags=["conta"],
+        status_code=201,
+        summary="Assinar um plano: devolve o link de pagamento",
+    )
+    def assinar(corpo: NovaAssinatura, a: acesso.Acesso = Depends(autenticado)) -> dict:
+        if asaas is None:
+            raise HTTPException(503, "A cobrança ainda não abriu. Fale com o contato do portal.")
+        return _resposta(
+            cobranca.criar_assinatura(
+                bancos.acesso,
+                asaas,
+                a.conta_id,
+                corpo.plano,
+                corpo.ciclo,
+                corpo.nome,
+                corpo.cpf_cnpj,
+            )
+        )
+
+    @app.post("/cobranca/asaas", include_in_schema=False)
+    async def webhook_do_asaas(
+        request: Request, asaas_access_token: str | None = Header(default=None)
+    ) -> dict:
+        if asaas is None:
+            raise HTTPException(503, "Cobrança desligada.")
+        if not asaas.webhook_autentico(asaas_access_token):
+            raise HTTPException(401, "Webhook sem o token combinado.")
+        return {"resultado": cobranca.processar_evento(bancos.acesso, asaas, await request.json())}
 
     @app.get("/v1", tags=["conta"], summary="O que a API oferece, e de onde vem o dado")
     def indice() -> dict:
@@ -238,6 +307,7 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
         limite: int = Query(default=LIMITE_PADRAO, ge=1, le=LIMITE_MAXIMO),
         a: acesso.Acesso = Depends(autenticado),
     ) -> dict:
+        acesso.exigir(a, "serie")
         inicio, fim = _janela(a, de, ate)
         with bancos.leitura.connect() as conn:
             dados, proximo = consultas.serie(
@@ -271,6 +341,7 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
         summary="Informe mensal do FII na CVM: patrimônio, cota, segmento",
     )
     def ver_informes(codigo: str, a: acesso.Acesso = Depends(autenticado)) -> dict:
+        acesso.exigir(a, "informes")
         with bancos.leitura.connect() as conn:
             p = _papel(conn, codigo)
             if p.classe != "CI":
@@ -302,6 +373,8 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
         sabido_em: date | None = None,
         a: acesso.Acesso = Depends(autenticado),
     ) -> dict:
+        if sabido_em is not None:
+            acesso.exigir(a, "ponto_no_tempo")
         with bancos.leitura.connect() as conn:
             dados = consultas.demonstracoes(conn, cnpj, tipo, _corte(a), sabido_em)
         return _resposta(dados)
@@ -390,7 +463,9 @@ def criar(config: Configuracao | None = None, bancos: banco.Bancos | None = None
         "/admin/contas/{conta_id}", include_in_schema=False, dependencies=[Depends(administrador)]
     )
     def admin_alterar_conta(conta_id: int, corpo: AlteracaoDeConta) -> dict:
-        return acesso.alterar_conta(bancos.acesso, conta_id, corpo.plano, corpo.ativa)
+        return acesso.alterar_conta(
+            bancos.acesso, conta_id, corpo.plano, corpo.ativa, corpo.pago_ate
+        )
 
     @app.post(
         "/admin/contas/{conta_id}/chaves",

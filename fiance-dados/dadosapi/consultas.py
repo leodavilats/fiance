@@ -383,3 +383,56 @@ def atualidade(conn: sa.Connection) -> dict:
         "ORDER BY iniciada_em DESC LIMIT 1",
     )
     return {"ate": datas, "ultima_coleta": rodada[0] if rodada else None}
+
+
+def vitrine(conn: sa.Connection, codigo: str) -> dict:
+    numeros = _linhas(
+        conn,
+        """
+        SELECT
+            (SELECT count(*) FROM mercado.ativo_hoje) AS negociando,
+            (SELECT count(*) FROM mercado.ativo_hoje WHERE tipo = 'stock') AS acoes,
+            (SELECT count(*) FROM mercado.ativo_hoje WHERE tipo = 'fii') AS fiis,
+            (SELECT count(*) FROM mercado.ativo_hoje WHERE tipo = 'etf') AS etfs,
+            (SELECT count(*) FROM mercado.ativo_hoje WHERE tipo = 'bdr') AS bdrs,
+            (SELECT count(DISTINCT (cnpj, classe)) FROM mercado.serie_papel) AS acoes_na_historia,
+            (SELECT count(DISTINCT (s.cnpj, s.classe)) FROM mercado.serie_papel s
+                WHERE NOT EXISTS (SELECT 1 FROM mercado.ativo_hoje a
+                    WHERE a.cnpj = s.cnpj AND a.classe = s.classe)) AS acoes_que_sairam,
+            (SELECT count(*) FROM mercado.documento) AS demonstracoes,
+            (SELECT count(DISTINCT cnpj) FROM mercado.documento) AS empresas,
+            (SELECT min(data) FROM mercado.cotacao) AS desde,
+            (SELECT max(data) FROM mercado.cotacao) AS ate
+        """,
+    )[0]
+    p = papel(conn, codigo)
+    if p is None or p.cnpj is None:
+        return {"numeros": numeros, "exemplo": None}
+    pontos = _linhas(
+        conn,
+        """
+        SELECT DISTINCT ON (date_trunc('month', data)) data, fechamento AS negociado,
+            fechamento_ajustado AS ajustado
+        FROM mercado.serie_papel
+        WHERE cnpj = :cnpj AND classe = :classe AND data >= '2012-01-01'
+        ORDER BY date_trunc('month', data), data DESC
+        """,
+        cnpj=p.cnpj,
+        classe=p.classe,
+    )
+    eventos = _linhas(
+        conn,
+        f"""
+        SELECT DISTINCT e.data_com AS data, e.tipo, e.multiplicador
+        FROM mercado.evento e JOIN mercado.ativo a ON a.isin = e.isin
+        WHERE e.emissor = :emissor AND {_CLASSE} = :classe AND e.status = 'confirmado'
+          AND e.multiplicador IS NOT NULL AND abs(e.multiplicador - 1) >= 0.5
+        ORDER BY e.data_com
+        """,
+        emissor=p.emissor,
+        classe=p.classe,
+    )
+    return {
+        "numeros": numeros,
+        "exemplo": {"codigo": p.codigo, "pontos": pontos, "eventos": eventos},
+    }

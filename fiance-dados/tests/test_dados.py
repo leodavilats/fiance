@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sqlalchemy as sa
+
 from tests.conftest import criar_conta
 
 
@@ -104,13 +106,55 @@ def test_atualidade(cliente, chave):
     assert atual["ultima_coleta"]["falhas"] == {}
 
 
-def test_plano_gratuito_ve_so_o_ultimo_ano(cliente):
-    gratis = criar_conta(cliente, plano="gratuito", email="gratis@teste.com")
-    chave = {"Authorization": f"Bearer {gratis['chave']['chave']}"}
+def _essencial_pago(cliente, bancos) -> dict:
+    criada = criar_conta(cliente, plano="essencial", email="pago@teste.com")
+    with bancos.acesso.begin() as conn:
+        conn.execute(
+            sa.text("UPDATE acesso.conta SET pago_ate = current_date + 30 WHERE id = :id"),
+            {"id": criada["conta"]["id"]},
+        )
+    return {"Authorization": f"Bearer {criada['chave']['chave']}"}
+
+
+def test_essencial_ve_dois_anos_e_nao_a_serie_ajustada(cliente, bancos):
+    chave = _essencial_pago(cliente, bancos)
 
     cotacoes = _dados(cliente, "/v1/ativos/TEST3/cotacoes", chave, de="2000-01-01")["dados"]
+    serie = cliente.get("/v1/ativos/TEST3/serie", headers=chave)
+    no_tempo = cliente.get(
+        "/v1/empresas/00000000000001/demonstracoes",
+        headers=chave,
+        params={"sabido_em": "2025-04-01"},
+    )
 
-    assert "2005-01-03" not in [c["data"] for c in cotacoes], "o histórico longo é de plano pago"
+    assert "2005-01-03" not in [c["data"] for c in cotacoes], "o histórico longo é do Pro"
+    assert serie.status_code == 403 and "série ajustada" in serie.json()["erro"]
+    assert no_tempo.status_code == 403
+    assert cliente.get("/v1/ativos/XPML11/informes", headers=chave).status_code == 403
+
+
+def test_plano_pago_sem_pagamento_nao_entra(cliente):
+    criada = criar_conta(cliente, plano="pro", email="devendo@teste.com")
+    chave = {"Authorization": f"Bearer {criada['chave']['chave']}"}
+
+    resposta = cliente.get("/v1/ativos", headers=chave)
+
+    assert resposta.status_code == 402, "conta paga sem pagamento confirmado não usa a API"
+
+
+def test_planos_publicos_sem_gratuito_nem_interno(cliente):
+    planos = cliente.get("/v1/planos").json()
+
+    assert [p["codigo"] for p in planos["dados"]] == ["essencial", "pro", "quant"]
+    assert planos["cobranca_aberta"] is False
+    assert all(p["preco_mensal_centavos"] for p in planos["dados"]), "nada gratuito (ADR-025)"
+
+
+def test_vitrine_traz_os_numeros_da_base(cliente):
+    vitrine = cliente.get("/v1/vitrine").json()
+
+    assert vitrine["numeros"]["negociando"] == 2 and vitrine["numeros"]["acoes"] == 1
+    assert vitrine["numeros"]["desde"] == "2005-01-03"
 
 
 def test_retratos_em_lote_trazem_irmaos_e_todas_as_versoes(cliente, chave):

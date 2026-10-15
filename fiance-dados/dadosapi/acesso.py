@@ -13,6 +13,13 @@ import sqlalchemy as sa
 PREFIXO_DA_CHAVE = "fd_"
 TAMANHO_DO_PREFIXO = len(PREFIXO_DA_CHAVE) + 8
 _BRT = ZoneInfo("America/Sao_Paulo")
+TOLERANCIA_DE_PAGAMENTO = timedelta(days=3)
+NOME_DO_RECURSO = {
+    "serie": "a série ajustada",
+    "ponto_no_tempo": "o balanço como se sabia na data (sabido_em)",
+    "informes": "o informe mensal de FII",
+    "exportacao": "a exportação da base",
+}
 
 
 @dataclass(frozen=True)
@@ -22,6 +29,8 @@ class Plano:
     limite_por_dia: int
     historico_dias: int | None
     chaves_maximas: int
+    recursos: frozenset[str] = frozenset()
+    pago: bool = False
 
 
 @dataclass(frozen=True)
@@ -96,8 +105,9 @@ class TentativasDeAdministracao:
 
 _CHAVE_VALIDA = sa.text(
     """
-    SELECT k.id AS chave_id, k.prefixo, c.id AS conta_id, p.codigo, p.limite_por_minuto,
-        p.limite_por_dia, p.historico_dias, p.chaves_maximas
+    SELECT k.id AS chave_id, k.prefixo, c.id AS conta_id, c.pago_ate, p.codigo,
+        p.limite_por_minuto, p.limite_por_dia, p.historico_dias, p.chaves_maximas, p.recursos,
+        p.preco_mensal_centavos
     FROM acesso.chave k
     JOIN acesso.conta c ON c.id = k.conta_id
     JOIN acesso.plano p ON p.codigo = c.plano
@@ -131,12 +141,19 @@ def autenticar(
             linha.limite_por_dia,
             linha.historico_dias,
             linha.chaves_maximas,
+            frozenset(linha.recursos or ()),
+            linha.preco_mensal_centavos is not None,
         )
+        dia_de_hoje = dia or hoje()
+        if plano.pago and (
+            linha.pago_ate is None or linha.pago_ate + TOLERANCIA_DE_PAGAMENTO < dia_de_hoje
+        ):
+            raise SemAcesso(402, "A assinatura da conta está vencida ou não foi paga.")
         espera = por_minuto.registrar(linha.chave_id, plano.limite_por_minuto)
         if espera is not None:
             raise SemAcesso(429, "Limite por minuto atingido.", tentar_em=espera)
         usadas = conn.execute(
-            _CONTAR_USO, {"chave": linha.chave_id, "dia": dia or hoje()}
+            _CONTAR_USO, {"chave": linha.chave_id, "dia": dia_de_hoje}
         ).scalar_one()
         conn.execute(
             sa.text("UPDATE acesso.chave SET ultimo_uso_em = now() WHERE id = :id"),
@@ -145,6 +162,28 @@ def autenticar(
     if usadas > plano.limite_por_dia:
         raise SemAcesso(429, "Limite do dia atingido. Ele volta à meia-noite de Brasília.")
     return Acesso(linha.conta_id, linha.chave_id, linha.prefixo, plano, usadas)
+
+
+def exigir(a: Acesso, recurso: str) -> None:
+    if recurso not in a.plano.recursos:
+        raise SemAcesso(
+            403,
+            f"O plano {a.plano.codigo} não inclui {NOME_DO_RECURSO[recurso]}. Veja os planos em /.",
+        )
+
+
+def planos_publicos(engine: sa.Engine) -> list[dict]:
+    with engine.connect() as conn:
+        return [
+            dict(p._mapping)
+            for p in conn.execute(
+                sa.text(
+                    "SELECT codigo, nome, descricao, limite_por_minuto, limite_por_dia, "
+                    "historico_dias, preco_mensal_centavos, preco_anual_centavos, recursos "
+                    "FROM acesso.plano WHERE publico ORDER BY ordem"
+                )
+            )
+        ]
 
 
 def criar_conta(
@@ -220,8 +259,9 @@ def resumo_da_conta(engine: sa.Engine, conta_id: int, dia: date | None = None) -
     with engine.connect() as conn:
         conta = conn.execute(
             sa.text(
-                "SELECT c.id, c.email, c.nome, c.ativa, c.criada_em, p.codigo AS plano, "
-                "p.limite_por_minuto, p.limite_por_dia, p.historico_dias, p.chaves_maximas "
+                "SELECT c.id, c.email, c.nome, c.ativa, c.criada_em, c.pago_ate, "
+                "p.codigo AS plano, p.limite_por_minuto, p.limite_por_dia, p.historico_dias, "
+                "p.chaves_maximas, p.recursos "
                 "FROM acesso.conta c JOIN acesso.plano p ON p.codigo = c.plano WHERE c.id = :id"
             ),
             {"id": conta_id},
@@ -248,7 +288,7 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
         linhas = conn.execute(
             sa.text(
                 """
-                SELECT c.id, c.email, c.nome, c.plano, c.ativa, c.criada_em,
+                SELECT c.id, c.email, c.nome, c.plano, c.ativa, c.criada_em, c.pago_ate,
                     count(k.id) FILTER (WHERE k.revogada_em IS NULL) AS chaves_ativas,
                     coalesce(sum(u.requisicoes), 0) AS requisicoes_hoje
                 FROM acesso.conta c
@@ -262,7 +302,13 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
     return [dict(linha._mapping) for linha in linhas]
 
 
-def alterar_conta(engine: sa.Engine, conta_id: int, plano: str | None, ativa: bool | None) -> dict:
+def alterar_conta(
+    engine: sa.Engine,
+    conta_id: int,
+    plano: str | None,
+    ativa: bool | None,
+    pago_ate: date | None = None,
+) -> dict:
     with engine.begin() as conn:
         if (
             plano is not None
@@ -273,10 +319,11 @@ def alterar_conta(engine: sa.Engine, conta_id: int, plano: str | None, ativa: bo
             raise SemAcesso(422, f"Plano desconhecido: {plano}.")
         conta = conn.execute(
             sa.text(
-                "UPDATE acesso.conta SET plano = coalesce(:p, plano), ativa = coalesce(:a, ativa) "
-                "WHERE id = :id RETURNING id, email, nome, plano, ativa, criada_em"
+                "UPDATE acesso.conta SET plano = coalesce(:p, plano), ativa = coalesce(:a, ativa), "
+                "pago_ate = coalesce(CAST(:pago AS date), pago_ate) "
+                "WHERE id = :id RETURNING id, email, nome, plano, ativa, criada_em, pago_ate"
             ),
-            {"p": plano, "a": ativa, "id": conta_id},
+            {"p": plano, "a": ativa, "pago": pago_ate, "id": conta_id},
         ).first()
     if conta is None:
         raise SemAcesso(404, "Conta não encontrada.")
@@ -287,7 +334,9 @@ def planos(engine: sa.Engine) -> list[dict]:
     with engine.connect() as conn:
         return [
             dict(p._mapping)
-            for p in conn.execute(sa.text("SELECT * FROM acesso.plano ORDER BY limite_por_dia"))
+            for p in conn.execute(
+                sa.text("SELECT * FROM acesso.plano ORDER BY publico, ordem, limite_por_dia")
+            )
         ]
 
 

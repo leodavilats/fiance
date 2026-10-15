@@ -104,7 +104,12 @@ def url():
 def bancos(url):
     criados = banco.criar(url)
     with criados.acesso.begin() as conn:
-        conn.execute(sa.text("TRUNCATE acesso.uso_diario, acesso.chave, acesso.conta CASCADE"))
+        conn.execute(
+            sa.text(
+                "TRUNCATE acesso.evento_de_cobranca, acesso.assinatura, acesso.uso_diario, "
+                "acesso.chave, acesso.conta CASCADE"
+            )
+        )
         conn.execute(
             sa.text("UPDATE acesso.plano SET limite_por_dia = 20000 WHERE codigo = 'convidado'")
         )
