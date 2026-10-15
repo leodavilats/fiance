@@ -57,6 +57,14 @@ proventos de BDR e ETF antes de out/2026**, e os de FII antes de 2016 — de 201
 rendimento de FII é estimado pelo informe mensal da CVM. Só entra se vier de outra fonte. Detalhe em
 [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md).
 
+### Desdobramentos líquidos ainda sem evento na série ajustada
+
+A MGLU3 desdobrou 8 para 1 em set/2017 e em ago/2019, e nenhum dos dois está na lista da B3 nem
+passou na inferência: a série ajustada cai 87% nos dois dias, com `salto_sem_evento` marcado. A
+série não está errada em silêncio — o salto aparece —, mas um backtest que não olhe a coluna erra.
+Falta saber qual das três evidências falhou (preço, número de ações ou documento no IPE) e quantos
+papéis líquidos estão no mesmo caso. Por isso o exemplo do portal é a HAPV3, sem salto marcado.
+
 ### Proventos e eventos dependem de endpoints da B3 sem contrato
 
 São as únicas fontes não documentadas

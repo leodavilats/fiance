@@ -140,6 +140,11 @@ As duas são obrigatórias, sem default: ausente, o job falha ao começar (`data
 |---|---|
 | `DATABASE_URL` | `${{postgres-mercado.DATABASE_URL}}`. Lê `mercado` com `SET ROLE mercado_leitura` e escreve só no schema `acesso` |
 | `DADOS_API_ADMIN_TOKEN` | Token das rotas `/admin`, 32 caracteres ou mais. **Falha ao subir sem ele.** Definido no painel do Railway, nunca no repositório |
+| `CONTATO_EMAIL` | Opcional. Com ele, o portal mostra "Pedir um convite" |
+| `COBRANCA_ATIVA` | `false` por padrão. `true` abre a assinatura pela página e o webhook (ADR-025) |
+| `ASAAS_API_KEY` | Chave do Asaas. Obrigatória com a cobrança ativa |
+| `ASAAS_WEBHOOK_TOKEN` | Token que o Asaas manda no cabeçalho `asaas-access-token`, 32 caracteres ou mais. Obrigatório com a cobrança ativa |
+| `ASAAS_URL` | `https://api.asaas.com/v3`; o sandbox é `https://api-sandbox.asaas.com/v3` |
 
 ### Contas da API de dados
 
@@ -150,19 +155,25 @@ planos, uso por dia, emitir chave, desativar), que pede o `DADOS_API_ADMIN_TOKEN
 só na aba. Dez tentativas erradas do mesmo IP bloqueiam `/admin` por 15 minutos. A chave aparece **uma vez**, na criação; a base guarda só o hash.
 
 ```bash
-# criar conta (devolve a primeira chave) — planos: interno, convidado, gratuito
+# criar conta (devolve a primeira chave) — planos: interno, convidado, essencial, pro, quant
 curl -X POST https://<dominio>/admin/contas -H "X-Admin-Token: $TOKEN" \
   -H "Content-Type: application/json" -d '{"email": "a@b.com", "nome": "Fulano", "plano": "convidado"}'
 curl https://<dominio>/admin/contas -H "X-Admin-Token: $TOKEN"                  # contas e uso de hoje
 curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
   -H "Content-Type: application/json" -d '{"ativa": false}'                    # desativar
+curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \n  -H "Content-Type: application/json" -d '{"pago_ate": "2026-12-31"}'         # pagamento por fora
 ```
 
-| Plano | Por minuto | Por dia | Histórico | Chaves |
-|---|---|---|---|---|
-| `interno` | 600 | 1.000.000 | inteiro | 10 |
-| `convidado` | 60 | 20.000 | inteiro | 3 |
-| `gratuito` | 10 | 500 | 365 dias | 2 |
+| Plano | Por minuto | Por dia | Histórico | Chaves | Preço por mês | Libera |
+|---|---|---|---|---|---|---|
+| `interno` | 600 | 1.000.000 | inteiro | 10 | — | tudo |
+| `convidado` | 60 | 20.000 | inteiro | 3 | — | tudo |
+| `essencial` | 30 | 5.000 | 730 dias | 2 | R$ 49 | o básico |
+| `pro` | 60 | 30.000 | inteiro | 5 | R$ 149 | série, balanço por data, informes |
+| `quant` | 300 | 300.000 | inteiro | 20 | a partir de R$ 490 | tudo, sob contrato |
+
+Plano pago sem `pago_ate` em dia (mais três dias) responde **402**; rota fora do plano responde
+**403**. O Asaas avisa em `POST /cobranca/asaas`; o pagamento é reconsultado antes de liberar.
 
 O limite por minuto fica na memória do processo: com mais de uma réplica, cada uma conta a sua.
 **Cobrar de terceiros depende da licença da B3 e da leitura da ODbL** (ADR-024).

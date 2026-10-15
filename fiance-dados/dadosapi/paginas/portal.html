@@ -42,6 +42,8 @@ header nav a:hover { color: var(--tinta); }
 
 .abertura { padding: 72px 0 40px; }
 .sobretitulo { font: 500 13px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-3); margin: 0 0 18px; }
+section > .sobretitulo { display: flex; align-items: center; gap: 14px; }
+section > .sobretitulo::after { content: ""; flex: 1; height: 1px; background: var(--fio); }
 h1 { font: 500 clamp(36px, 6vw, 62px)/1.04 var(--serifa); letter-spacing: -0.02em; margin: 0 0 22px; max-width: 16ch; }
 h1 em { font-style: italic; font-weight: 400; }
 .lide { font-size: 20px; line-height: 1.55; color: var(--tinta-2); max-width: 46ch; margin: 0 0 32px; }
@@ -57,7 +59,7 @@ h1 em { font-style: italic; font-weight: 400; }
 .ficha strong { display: block; font: 500 34px/1.05 var(--serifa); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .ficha span { display: block; font-size: 14px; color: var(--tinta-3); margin-top: 6px; line-height: 1.4; }
 
-section { padding: 88px 0 0; }
+section { padding: 128px 0 0; }
 h2 { font: 500 clamp(28px, 4vw, 40px)/1.12 var(--serifa); letter-spacing: -0.015em; margin: 0 0 18px; max-width: 22ch; }
 h3 { font: 600 17px/1.3 var(--sans); margin: 0 0 6px; }
 .texto { color: var(--tinta-2); max-width: 62ch; }
@@ -87,7 +89,7 @@ details table { margin-top: 10px; }
 .conteudo code { display: inline-block; margin-top: 8px; font: 13px var(--mono); color: var(--tinta-3); }
 
 .uso { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 40px; margin-top: 30px; align-items: start; }
-pre { margin: 0; background: var(--codigo); border: 1px solid var(--fio); border-radius: 3px; padding: 16px 18px; overflow-x: auto; font: 13.5px/1.6 var(--mono); color: var(--tinta); }
+pre { margin: 0; background: var(--codigo); border: 1px solid var(--fio); border-radius: 3px; padding: 16px 18px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 13.5px/1.6 var(--mono); color: var(--tinta); }
 pre .c { color: var(--tinta-3); }
 
 .planos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 36px; border-top: 1px solid var(--tinta); }
@@ -138,7 +140,7 @@ footer p { margin: 0; max-width: 62ch; }
   .ficha div:nth-child(3) { padding-left: 0; border-left: 0; }
   .ficha div:nth-child(n+3) { border-top: 1px solid var(--fio); }
   .abertura { padding-top: 48px; }
-  section { padding-top: 64px; }
+  section { padding-top: 88px; }
 }
 </style>
 </head>
@@ -177,18 +179,18 @@ footer p { margin: 0; max-width: 62ch; }
     <p class="sobretitulo">Um exemplo</p>
     <h2>O preço que aparece no gráfico nem sempre é o que aconteceu.</h2>
     <div class="texto">
-      <p>Em 2020, a Magazine Luiza dividiu cada ação em quatro. Em 2024, juntou dez em uma. Quem olha
-        o preço como foi negociado vê uma queda de 75% num dia e uma alta de 900% em outro — e um
+      <p>Em 2020, a Hapvida dividiu cada ação em cinco. Em 2025, juntou quinze em uma. Quem olha
+        o preço como foi negociado vê uma queda de 80% num dia e uma alta de 1.400% em outro — e um
         backtest feito em cima disso mente.</p>
     </div>
     <div class="exemplo">
       <div class="grafico-moldura">
-        <div class="grafico-titulo"><span><strong id="titulo-grafico">MGLU3</strong> · fechamento do último pregão de cada mês, em reais</span><span>escala logarítmica</span></div>
+        <div class="grafico-titulo"><span><strong id="titulo-grafico">HAPV3</strong> · fechamento do último pregão de cada mês, em reais</span><span>escala logarítmica</span></div>
         <div class="legenda" aria-hidden="true">
           <span><i style="background: var(--negociado)"></i>Como foi negociado</span>
           <span><i style="background: var(--ajustado)"></i>Ajustado pelos eventos</span>
         </div>
-        <div id="grafico" role="img" aria-label="Preço da MGLU3 como foi negociado e ajustado pelos eventos, mês a mês."></div>
+        <div id="grafico" role="img" aria-label="Preço da HAPV3 como foi negociado e ajustado pelos eventos, mês a mês."></div>
         <details>
           <summary>Ver os números em tabela</summary>
           <div class="rolar"><table>
@@ -232,15 +234,15 @@ footer p { margin: 0; max-width: 62ch; }
           dos balanços.</p>
         <p><a href="/docs">A documentação completa</a> tem cada rota, com os campos e um botão para testar.</p>
       </div>
-      <pre><span class="c"># a série ajustada da Magazine Luiza desde 2024</span>
-curl https://fiance-dados.up.railway.app/v1/ativos/MGLU3/serie?de=2024-01-01 \
+      <pre><span class="c"># a série ajustada da Hapvida desde 2025</span>
+curl https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie?de=2025-01-01 \
   -H "Authorization: Bearer fd_sua_chave"
 
 {
   "dados": [
-    { "data": "2024-01-02", "codigo": "MGLU3",
-      "fechamento": 2.05, "fechamento_ajustado": 19.52,
-      "provento": 0.0, "retorno_total": -0.0509 },
+    { "data": "2025-01-02", "codigo": "HAPV3",
+      "fechamento": 2.17, "fechamento_ajustado": 32.55,
+      "provento": 0.0, "retorno_total": -0.0269 },
     …
   ],
   "proximo": "…"
@@ -371,12 +373,24 @@ function desenhar(exemplo) {
     svg.append(el("text", { x: x(t), y: A - 8, "text-anchor": "middle", "font-size": 12, fill: cor("--tinta-3"), "font-family": "IBM Plex Sans, sans-serif" }, ano));
   }
 
+  const ocupadas = [];
   for (const ev of exemplo.eventos) {
     const t = new Date(ev.data).getTime();
     if (t < datas[0] || t > datas.at(-1)) continue;
-    const rotulo = ev.multiplicador > 1 ? `desdobramento ×${inteiro.format(ev.multiplicador)}` : `grupamento ÷${inteiro.format(Math.round(1 / ev.multiplicador))}`;
+    const rotulo = ev.multiplicador > 1 ? `desdobramento ×${inteiro.format(Math.round(ev.multiplicador))}` : `grupamento ÷${inteiro.format(Math.round(1 / ev.multiplicador))}`;
     svg.append(el("line", { x1: x(t), x2: x(t), y1: m.cima, y2: m.cima + altura, stroke: cor("--tinta-3"), "stroke-width": 1, "stroke-dasharray": "2 4" }));
-    svg.append(el("text", { x: x(t) + 6, y: m.cima + 12, "font-size": 12, fill: cor("--tinta-2"), "font-family": "IBM Plex Sans, sans-serif" }, `${rotulo} · ${mesAno.format(new Date(ev.data))}`));
+    const texto = el("text", { y: 0, "font-size": 12, fill: cor("--tinta-2"), "font-family": "IBM Plex Sans, sans-serif" });
+    texto.append(el("tspan", { "font-weight": 600, fill: cor("--tinta") }, rotulo), el("tspan", {}, ` · ${mesAno.format(new Date(ev.data))}`));
+    const largo = (rotulo.length + 12) * 6.4;
+    const aDireita = x(t) + 6 + largo <= m.esquerda + largura;
+    const inicio = aDireita ? x(t) + 6 : x(t) - 6 - largo;
+    let linha = 0;
+    while (ocupadas.some((o) => o.linha === linha && inicio < o.fim + 12 && inicio + largo > o.inicio - 12)) linha++;
+    ocupadas.push({ linha, inicio, fim: inicio + largo });
+    texto.setAttribute("x", aDireita ? x(t) + 6 : x(t) - 6);
+    texto.setAttribute("text-anchor", aDireita ? "start" : "end");
+    texto.setAttribute("y", m.cima + 12 + linha * 17);
+    svg.append(texto);
   }
 
   const caminho = (chave) => pontos.map((p, i) => `${i ? "L" : "M"}${x(datas[i]).toFixed(1)},${y(p[chave]).toFixed(1)}`).join("");

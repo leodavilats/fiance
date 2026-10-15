@@ -25,8 +25,9 @@ do modelo. Detalhe em [10-PROBLEMAS](10-PROBLEMAS.md), A12.
 ### A API de dados aberta a terceiros
 
 A API existe ([ADR-024](decisoes/ADR-024-api-de-dados.md)), com portal, console e o app como
-primeiro cliente. **Cobrar de terceiros espera** a resposta da B3 sobre a licença e a leitura da
-ODbL; **cadastro aberto espera** verificação de e-mail.
+primeiro cliente, e planos pagos sem gratuito ([ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md)),
+com a cobrança pelo Asaas pronta e desligada. **Ligar a cobrança espera** a resposta da B3 sobre a
+licença, a leitura da ODbL, CNPJ e termos de uso; **cadastro aberto espera** verificação de e-mail.
 
 ---
 

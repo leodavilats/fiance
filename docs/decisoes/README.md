@@ -37,12 +37,13 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [022](ADR-022-dados-de-mercado-coletados-em-lote.md) | Dados de mercado coletados em lote, por um job dono do próprio schema | `ACEITO` | 2026-10-09, aceita em 2026-10-12 |
 | [023](ADR-023-fase-pessoal-primeiro.md) | Fase pessoal primeiro; público depois | `ACEITO` | 2026-10-12 |
 | [024](ADR-024-api-de-dados.md) | A base de mercado vira um serviço de dados, separado do laboratório | `ACEITO` | 2026-10-14 |
+| [025](ADR-025-cobranca-da-api-de-dados.md) | A API de dados é paga, sem plano gratuito, em três degraus | `ACEITO` | 2026-10-14 |
 
 ---
 
 ## Notas de contexto
 
-- **Nomes, 2026-10-15:** o serviço e a pasta `dados-api` passaram a `fiance-dados`; `trend`,
+- **Nomes, 2026-10-14:** o serviço e a pasta `dados-api` passaram a `fiance-dados`; `trend`,
   `trend-backend/` e `trend-frontend/` passaram a `fiance-trend`, `fiance-trend/backend/` e
   `fiance-trend/frontend/`. As ADRs 022 a 024 usam os nomes antigos.
 

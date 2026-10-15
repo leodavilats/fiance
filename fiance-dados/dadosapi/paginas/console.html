@@ -68,7 +68,7 @@ button.perigo { border-color: var(--perde); color: var(--perde); }
 
     <h2>Contas</h2>
     <div class="rolar"><table>
-      <thead><tr><th>#</th><th>E-mail</th><th>Nome</th><th>Plano</th><th class="num">Chaves</th><th class="num">Hoje</th><th>Criada</th><th></th></tr></thead>
+      <thead><tr><th>#</th><th>E-mail</th><th>Nome</th><th>Plano</th><th>Pago até</th><th class="num">Chaves</th><th class="num">Hoje</th><th>Criada</th><th></th></tr></thead>
       <tbody id="contas"></tbody>
     </table></div>
     <div id="detalhe"></div>
@@ -108,6 +108,11 @@ function celula(linha, texto, classe) {
   if (classe) td.className = classe;
   linha.appendChild(td);
   return td;
+}
+
+function preco(p) {
+  if (p.preco_mensal_centavos == null) return "sem cobrança";
+  return "R$ " + numero.format(Math.round(p.preco_mensal_centavos / 100)) + "/mês";
 }
 
 function botao(texto, classe, acao) {
@@ -207,7 +212,7 @@ async function carregar() {
   for (const p of planos) {
     const opcao = document.createElement("option");
     opcao.value = p.codigo;
-    opcao.textContent = `${p.nome} (${numero.format(p.limite_por_dia)}/dia)`;
+    opcao.textContent = `${p.nome} · ${preco(p)} · ${numero.format(p.limite_por_dia)}/dia`;
     if (p.codigo === "convidado") opcao.selected = true;
     select.appendChild(opcao);
   }
@@ -224,12 +229,22 @@ async function carregar() {
     for (const p of planos) {
       const opcao = document.createElement("option");
       opcao.value = p.codigo;
-      opcao.textContent = p.nome;
+      opcao.textContent = `${p.nome} · ${preco(p)}`;
       opcao.selected = p.codigo === c.plano;
       plano.appendChild(opcao);
     }
     plano.onchange = () => tentar(async () => { await chamar("PATCH", "/admin/contas/" + c.id, { plano: plano.value }); await carregar(); });
     linha.appendChild(document.createElement("td")).appendChild(plano);
+    const pago = document.createElement("input");
+    pago.type = "date";
+    pago.value = c.pago_ate || "";
+    pago.title = "Plano pago vale até esta data, mais três dias de tolerância";
+    pago.onchange = () => tentar(async () => {
+      if (!pago.value) return;
+      await chamar("PATCH", "/admin/contas/" + c.id, { pago_ate: pago.value });
+      await carregar();
+    });
+    linha.appendChild(document.createElement("td")).appendChild(pago);
     celula(linha, c.chaves_ativas, "num");
     celula(linha, numero.format(c.requisicoes_hoje), "num");
     celula(linha, data(c.criada_em));
