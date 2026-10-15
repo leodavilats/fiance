@@ -80,6 +80,7 @@ seções rígidas por estágio.
 | Esquema da base de mercado (schema `mercado`) | `data-job/datajob/esquema.py` e `data-job/migrations/` — só o data-job escreve nela |
 | Coleta: fontes, rotina, tratamento | `data-job/datajob/`; intenção em [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md) |
 | Pesquisas, ranking e calibração | `trend-backend/pesquisa/` e os registros `trend-backend/registro*.jsonl`; protocolo e resultado em [pesquisas/](pesquisas/README.md) |
+| API de dados: contas, chaves, planos, rotas `/v1` | `dados-api/dadosapi/` e `dados-api/migrations/` (schema `acesso`); por quê em [ADR-024](decisoes/ADR-024-api-de-dados.md) |
 | Painel do autor | `trend-backend/api/` e `trend-frontend/src/` — fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)) |
 | Vocabulário fechado (classes, categorias) | `backend/app/models/enums.py` |
 | Fórmulas | Código; [04-CALCULOS](04-CALCULOS.md) é o espelho auditado |

@@ -6,9 +6,10 @@ estado de cada parte, no [08-ESTADO](08-ESTADO.md).
 Última revisão: 2026-10-12
 
 O data-job coleta dados de mercado de fontes oficiais, guarda o arquivo como veio e grava a versão
-interpretada no schema `mercado` do Postgres. Ele é a base de dois consumidores:
+interpretada no schema `mercado` do Postgres. Ele é a base de três consumidores:
 
 - **`backend/`** — o aplicativo, que lê a base pela conexão do Railway com `SET ROLE mercado_leitura`
+- **`dados-api/`** — a base como serviço, com contas e chaves ([ADR-024](decisoes/ADR-024-api-de-dados.md))
 - **a pesquisa de carteira** — uso próprio do autor, em horizonte de meses, que precisa de histórico
   longo, empresas que saíram da bolsa e fundamento como se sabia na data
 

@@ -36,6 +36,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [021](ADR-021-a-exportacao-volta-para-conta-vazia.md) | A exportação da conta volta, e só para conta sem dados financeiros | `ACEITO` | 2026-09-28 |
 | [022](ADR-022-dados-de-mercado-coletados-em-lote.md) | Dados de mercado coletados em lote, por um job dono do próprio schema | `ACEITO` | 2026-10-09, aceita em 2026-10-12 |
 | [023](ADR-023-fase-pessoal-primeiro.md) | Fase pessoal primeiro; público depois | `ACEITO` | 2026-10-12 |
+| [024](ADR-024-api-de-dados.md) | A base de mercado vira um serviço de dados, separado do laboratório | `ACEITO` | 2026-10-14 |
 
 ---
 

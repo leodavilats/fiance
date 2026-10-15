@@ -116,6 +116,7 @@ cd data-job && python -m ruff format --check datajob tests migrations
 cd trend-backend && python -m pytest -q
 cd trend-backend && python -m ruff check pesquisa api tests
 cd trend-backend && python -m ruff format --check pesquisa api tests
+cd dados-api && python -m pytest -q                # exige DADOS_API_TEST_DATABASE_URL
 cd trend-frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
@@ -160,6 +161,7 @@ mobile/
 data-job/         coleta B3, CVM e BCB e grava o schema mercado, que o backend só lê
 trend-backend/    pesquisas com protocolo e a API do painel do autor
 trend-frontend/   o painel do autor (trend.up.railway.app), fora do produto
+dados-api/        a base de mercado como serviço, com contas, chaves e planos (ADR-024)
 
 docs/             ver docs/README.md
 ```
