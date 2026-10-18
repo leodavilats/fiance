@@ -57,13 +57,32 @@ proventos de BDR e ETF antes de out/2026**, e os de FII antes de 2016 — de 201
 rendimento de FII é estimado pelo informe mensal da CVM. Só entra se vier de outra fonte. Detalhe em
 [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md).
 
-### Desdobramentos líquidos ainda sem evento na série ajustada
+### A série ajustada tem eventos faltando e saltos sem marca
 
-A MGLU3 desdobrou 8 para 1 em set/2017 e em ago/2019, e nenhum dos dois está na lista da B3 nem
-passou na inferência: a série ajustada cai 87% nos dois dias, com `salto_sem_evento` marcado. A
-série não está errada em silêncio — o salto aparece —, mas um backtest que não olhe a coluna erra.
-Falta saber qual das três evidências falhou (preço, número de ações ou documento no IPE) e quantos
-papéis líquidos estão no mesmo caso. Por isso o exemplo do portal é a HAPV3, sem salto marcado.
+A [validação contra a brapi](pesquisas/validacao-brapi.md) (2026-10-18) achou, com o nosso próprio
+COTAHIST como prova:
+
+- **25 eventos grandes que não estão na série**, nem na lista da B3 nem na inferência: MGLU3 (2015,
+  2017 e 2019), BBDC4 (2005), Gerdau (2005 e 2006), Bradesco (2008), COGN3, SBSP3, RIAA3, AZEV3, RCSL3/4,
+  ECOM3, IFCM3 e K1LA34. Os de fator perto de 1,5 viram queda de 33% **sem marca**, porque ficam
+  abaixo do limiar de 50% do `salto_sem_evento`.
+- **Evento publicado pela B3 e recusado pelo nosso preço, com o salto dentro da série e sem marca:**
+  BTYU11 (+8.066% num dia), SEQL3 (+797%), PDGR3 (+74%). A razão observada ficou pouco fora dos 10%
+  (86× contra 100×, 9× contra 10×), e com evento no intervalo o salto não é marcado.
+- **Desdobramento 2:1 que nenhuma lista traz** (CACR11, LPLP11, DAMT11 e outros FIIs e ações
+  pequenas): queda de 42% a 49%, sem marca.
+- **Bonificações pequenas** (Itaú, Bradesco e Itaúsa, 2% a 10%, de 2009 a 2025) que só a brapi lista:
+  o preço não decide; a prova teria de vir do IPE da CVM.
+
+Corrigir é mexer na regra de ajuste do data-job — a folga da confirmação, o limiar e o que conta
+como "evento no intervalo" —, e decide-se antes de mexer. Até lá, o exemplo do portal segue na HAPV3.
+
+### As parcelas de provento: data de pagamento e parcelas faltando
+
+O histórico da B3 não traz data de pagamento, e uma parcela de JCP aparece como linha repetida; a
+soma está certa (44 de 54 grupos conferidos). Mas a data de pagamento casada depois dá a **mesma data
+a todas as parcelas** (CMIG, 22/09/2026: duas com 30/12/2027, quando uma é 30/06/2027), e em 10 grupos
+desde 2025 (B3SA entre eles) a B3 lista mais parcelas do que o histórico trouxe.
 
 ### Proventos e eventos dependem de endpoints da B3 sem contrato
 
