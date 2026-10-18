@@ -101,29 +101,45 @@ class PatrimonyScreen extends ConsumerWidget {
               ),
               children: [
                 FiPortfolioSummary(summary: data.summary),
-                if (data.summary.passiveIncomeGoal != null) ...[
-                  const SizedBox(height: FiSpace.s5),
-                  FiIncomeGoalBlock(summary: data.summary),
-                ],
+                const SizedBox(height: FiSpace.s4),
+                const _Shortcuts(),
+                FiSection(
+                  title: 'Na bolsa',
+                  count: negociados.length,
+                  hint: idade.isEmpty ? null : 'Cotações lidas $idade.',
+                  trailing: FiButton.quiet(
+                    label: 'Adicionar',
+                    icon: Icons.add,
+                    onPressed: () => openPositionForm(context, ref),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _GroupModeSegments(current: groupMode),
+                      const SizedBox(height: FiSpace.s3),
+                      FiGroupedPositionsList(
+                        positions: data.positions,
+                        mode: groupMode,
+                        onRemove: (p) => removePosition(context, ref, p),
+                        onSell: (p) => openSellDialog(context, ref, p),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const FiFixedIncomeSection(),
 
                 if (data.allocations.isNotEmpty)
                   FiSection(
                     title: 'Onde está concentrado',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _GroupModeSegments(current: groupMode),
-                        const SizedBox(height: FiSpace.s3),
-                        FiCompositionBlock(
-                          allocations: data.allocations,
-                          positions: data.positions,
-                          mode: switch (groupMode) {
-                            FiAssetGroupMode.value => FiCompositionMode.position,
-                            FiAssetGroupMode.category => FiCompositionMode.category,
-                            FiAssetGroupMode.sector => FiCompositionMode.sector,
-                          },
-                        ),
-                      ],
+                    child: FiCompositionBlock(
+                      allocations: data.allocations,
+                      positions: data.positions,
+                      mode: switch (groupMode) {
+                        FiAssetGroupMode.value => FiCompositionMode.position,
+                        FiAssetGroupMode.category => FiCompositionMode.category,
+                        FiAssetGroupMode.sector => FiCompositionMode.sector,
+                      },
                     ),
                   ),
 
@@ -133,24 +149,12 @@ class PatrimonyScreen extends ConsumerWidget {
                     child: FiHealthBlock(health: data.health!),
                   ),
 
-                FiSection(
-                  title: 'Ativos negociados',
-                  count: negociados.length,
-                  hint: idade.isEmpty ? null : 'Cotações lidas $idade.',
-                  trailing: FiButton.quiet(
-                    label: 'Adicionar',
-                    icon: Icons.add,
-                    onPressed: () => openPositionForm(context, ref),
+                if (data.summary.passiveIncomeGoal != null)
+                  FiSection(
+                    title: 'Renda passiva',
+                    child: FiIncomeGoalBlock(summary: data.summary),
                   ),
-                  child: FiGroupedPositionsList(
-                    positions: data.positions,
-                    mode: groupMode,
-                    onRemove: (p) => removePosition(context, ref, p),
-                    onSell: (p) => openSellDialog(context, ref, p),
-                  ),
-                ),
 
-                const FiFixedIncomeSection(),
 
                 FiSection(
                   title: 'Evolução',
@@ -195,16 +199,50 @@ class _EmptyPortfolio extends ConsumerWidget {
           title: 'Sua carteira ainda está vazia',
           body: 'A carteira é a base de tudo: sem ela o fiance não tem o que avaliar, '
               'comparar com meta ou usar para sugerir aporte.',
-          hint: 'Cadastre o que você já tem — ticker, quantidade e preço médio — ou importe os '
-              'lançamentos de uma planilha.',
+          hint: 'O jeito mais rápido é o extrato de movimentação da Área do Investidor da B3: '
+              'ele traz compras, vendas e proventos de uma vez. Também dá para cadastrar à mão o '
+              'que você já tem.',
           action: FiButton.primary(
-            label: 'Adicionar primeiro ativo',
-            onPressed: () => openAddPositionDialog(context, ref),
+            label: 'Importar o extrato da B3',
+            onPressed: () => context.push('/patrimonio/razao/importar/b3'),
           ),
           secondary: FiButton.secondary(
-            label: 'Importar de uma planilha',
-            onPressed: () => context.push('/patrimonio/razao/importar'),
+            label: 'Adicionar um ativo à mão',
+            onPressed: () => openAddPositionDialog(context, ref),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Shortcuts extends StatelessWidget {
+  const _Shortcuts();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: FiSpace.s4,
+      children: [
+        FiButton.quiet(
+          label: 'Proventos',
+          icon: Icons.payments_outlined,
+          onPressed: () => context.go('/patrimonio/proventos'),
+        ),
+        FiButton.quiet(
+          label: 'Renda fixa',
+          icon: Icons.savings_outlined,
+          onPressed: () => context.go('/patrimonio/renda-fixa'),
+        ),
+        FiButton.quiet(
+          label: 'Lançamentos',
+          icon: Icons.receipt_long_outlined,
+          onPressed: () => context.go('/patrimonio/razao'),
+        ),
+        FiButton.quiet(
+          label: 'Projeção',
+          icon: Icons.trending_up,
+          onPressed: () => context.push('/patrimonio/projecao'),
         ),
       ],
     );

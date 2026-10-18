@@ -298,27 +298,21 @@ class _FiAssetObject extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: FiSpace.s3),
-            Text(
-              '${formatQuantity(p.quantity)} un. · PM ${formatCurrency(p.avgPrice)} · '
-              'hoje ${formatCurrency(p.currentPrice)} · DY ${formatPercent(p.dividendYield)}',
-              style: FiType.caption.copyWith(color: fiInk2(context)),
-            ),
-            const SizedBox(height: FiSpace.s3),
-            Divider(color: Theme.of(context).dividerColor, height: 1, thickness: 1),
-            const SizedBox(height: FiSpace.s1),
+            const SizedBox(height: FiSpace.s2),
             Row(
               children: [
-                Flexible(
-                  child: FiButton.quiet(label: 'Vender', onPressed: onSell),
-                ),
-                const SizedBox(width: FiSpace.s5),
-                Flexible(
-                  child: FiButton.quiet(
-                    label: 'Remover',
-                    destructive: true,
-                    onPressed: onRemove,
+                Expanded(
+                  child: Text(
+                    '${formatQuantity(p.quantity)} ${fiUnitsLabel(p)} · '
+                    'preço médio ${formatCurrency(p.avgPrice)} · '
+                    'hoje ${formatCurrency(p.currentPrice)}',
+                    style: FiType.caption.copyWith(color: fiInk2(context)),
                   ),
+                ),
+                IconButton(
+                  tooltip: 'Mais ações de ${p.ticker}',
+                  icon: Icon(Icons.more_horiz, color: fiInk2(context)),
+                  onPressed: () => _showPositionActions(context, p, onSell, onRemove),
                 ),
               ],
             ),
@@ -327,4 +321,66 @@ class _FiAssetObject extends StatelessWidget {
       ),
     );
   }
+}
+
+String fiUnitsLabel(PortfolioPosition p) => switch (p.categoryResolved) {
+  'fii' || 'fiis' || 'etf' || 'etfs' => 'cotas',
+  'bdr' || 'bdrs' => 'BDRs',
+  _ => 'ações',
+};
+
+Future<void> _showPositionActions(
+  BuildContext context,
+  PortfolioPosition p,
+  VoidCallback onSell,
+  Future<bool> Function() onRemove,
+) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheet) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          FiLayout.gutter,
+          0,
+          FiLayout.gutter,
+          FiSpace.s4,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(p.ticker, style: FiType.title.copyWith(color: fiInk1(sheet))),
+            const SizedBox(height: FiSpace.s4),
+            FiButton.secondary(
+              label: 'Vender',
+              expand: true,
+              onPressed: () {
+                Navigator.of(sheet).pop();
+                onSell();
+              },
+            ),
+            const SizedBox(height: FiSpace.s2),
+            FiButton.quiet(
+              label: 'Ver a análise',
+              expand: true,
+              onPressed: () {
+                Navigator.of(sheet).pop();
+                context.push('/ativo/${p.ticker}');
+              },
+            ),
+            FiButton.quiet(
+              label: 'Remover da carteira',
+              expand: true,
+              destructive: true,
+              onPressed: () {
+                Navigator.of(sheet).pop();
+                onRemove();
+              },
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

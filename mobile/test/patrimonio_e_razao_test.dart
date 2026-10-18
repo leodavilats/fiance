@@ -134,14 +134,14 @@ void main() {
       final servidor = _Servidor({'GET /dashboard': (_) => _painel()});
       await _montar(tester, servidor, const PatrimonyScreen());
 
-      expect(find.text('Ativos negociados · 1'), findsOneWidget,
+      expect(find.text('Na bolsa · 1'), findsOneWidget,
           reason: 'a aplicação já tem a seção dela; contar aqui duplica o patrimônio');
       expect(find.text('RF-12'), findsNothing,
           reason: 'RF-<id> é identificador interno, não ticker que a pessoa reconheça');
       expect(find.text('CDB Inter 2027'), findsOneWidget,
           reason: 'na composição por ativo, a aplicação aparece pelo nome');
       expect(find.text('1.0 un.'), findsNothing);
-      expect(find.textContaining('100 un.'), findsOneWidget);
+      expect(find.textContaining('100 ações'), findsOneWidget);
     });
 
     testWidgets('remover pede confirmação e só some quando o servidor grava', (tester) async {
@@ -152,7 +152,9 @@ void main() {
       });
       await _montar(tester, servidor, const PatrimonyScreen());
 
-      await tester.tap(find.widgetWithText(FiButton, 'Remover'));
+      await tester.tap(find.byTooltip('Mais ações de PETR4'));
+      await _esperar(tester);
+      await tester.tap(find.widgetWithText(FiButton, 'Remover da carteira'));
       await _esperar(tester);
       expect(servidor.pedidos, isNot(contains('DELETE /portfolio/position/PETR4')),
           reason: 'remover é destrutivo: nada sai antes da confirmação');
@@ -162,11 +164,13 @@ void main() {
       expect(servidor.pedidos, contains('DELETE /portfolio/position/PETR4'));
       expect(find.textContaining('O serviço está instável'), findsOneWidget,
           reason: 'a falha da escrita precisa chegar à pessoa, e não sumir num onDismissed');
-      expect(find.textContaining('100 un.'), findsOneWidget,
+      expect(find.textContaining('100 ações'), findsOneWidget,
           reason: 'a posição continua na lista quando o servidor recusa');
 
       falhar = false;
-      await tester.tap(find.widgetWithText(FiButton, 'Remover'));
+      await tester.tap(find.byTooltip('Mais ações de PETR4'));
+      await _esperar(tester);
+      await tester.tap(find.widgetWithText(FiButton, 'Remover da carteira'));
       await _esperar(tester);
       await tester.tap(find.widgetWithText(FiButton, 'Remover').last);
       await _esperar(tester);
@@ -177,6 +181,8 @@ void main() {
       final servidor = _Servidor({'GET /dashboard': (_) => _painel()});
       await _montar(tester, servidor, const PatrimonyScreen());
 
+      await tester.tap(find.byTooltip('Mais ações de PETR4'));
+      await _esperar(tester);
       await tester.tap(find.widgetWithText(FiButton, 'Vender'));
       await _esperar(tester);
 
