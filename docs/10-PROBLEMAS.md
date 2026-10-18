@@ -95,13 +95,6 @@ Fica **sem solução com o dado que há**: evento antes de 2010 (Gerdau e Brades
 IPE) e bonificação pequena (o FRE mostra o fator, mas não a data-com). O exemplo do portal segue na
 HAPV3.
 
-### As parcelas de provento: data de pagamento e parcelas faltando
-
-O histórico da B3 não traz data de pagamento, e uma parcela de JCP aparece como linha repetida; a
-soma está certa (44 de 54 grupos conferidos). Mas a data de pagamento casada depois dá a **mesma data
-a todas as parcelas** (CMIG, 22/09/2026: duas com 30/12/2027, quando uma é 30/06/2027), e em 10 grupos
-desde 2025 (B3SA entre eles) a B3 lista mais parcelas do que o histórico trouxe.
-
 ### Proventos e eventos dependem de endpoints da B3 sem contrato
 
 São as únicas fontes não documentadas

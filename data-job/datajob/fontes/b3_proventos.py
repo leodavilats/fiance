@@ -207,7 +207,8 @@ _CLASSE_DO_ISIN = sa.text(
 )
 
 # A B3 só dá o histórico de proventos de companhia; de fundo e BDR, só os últimos meses. Esses se
-# acumulam a cada coleta, e não substituem o que já foi guardado.
+# acumulam a cada coleta, e não substituem o que já foi guardado. Parcela é a mesma data-com e o
+# mesmo valor com outra data de pagamento: entra como linha própria.
 _ACUMULAR = sa.text(
     """
     INSERT INTO mercado.provento (emissor, classe, data_com, tipo, valor, data_aprovacao,
@@ -217,17 +218,27 @@ _ACUMULAR = sa.text(
     WHERE NOT EXISTS (
         SELECT 1 FROM mercado.provento
         WHERE emissor = :emissor AND classe = :classe AND data_com = :data_com AND tipo = :tipo
-          AND valor = :valor)
+          AND valor = :valor AND data_pagamento IS NOT DISTINCT FROM :data_pagamento)
     """
 )
 
-
-# O histórico da B3 não traz a data de pagamento; os recentes trazem, e ela vale para os dois.
-_DATA_DE_PAGAMENTO = sa.text(
+_SEM_DATA = sa.text(
     """
     UPDATE mercado.provento SET data_pagamento = :data_pagamento
+    WHERE id = (
+        SELECT id FROM mercado.provento
+        WHERE emissor = :emissor AND classe = :classe AND data_com = :data_com AND tipo = :tipo
+          AND valor = :valor AND data_pagamento IS NULL AND origem LIKE 'b3_%'
+        ORDER BY id LIMIT 1)
+    """
+)
+
+_HISTORICO_DA_PARCELA = sa.text(
+    """
+    SELECT id, tipo FROM mercado.provento
     WHERE emissor = :emissor AND classe = :classe AND data_com = :data_com AND valor = :valor
-      AND origem LIKE 'b3_%' AND data_pagamento IS DISTINCT FROM :data_pagamento
+      AND origem = 'b3_historico'
+    ORDER BY id
     """
 )
 
@@ -244,14 +255,43 @@ def _recentes_com_classe(conn: sa.Connection, pacote: dict) -> list[dict]:
     ]
 
 
-def _acumular_recentes(conn: sa.Connection, recentes: list[dict], coleta_id: int) -> int:
-    return sum(conn.execute(_ACUMULAR, {**r, "coleta_id": coleta_id}).rowcount for r in recentes)
-
-
-def _datas_de_pagamento(conn: sa.Connection, recentes: list[dict]) -> None:
+def parcelas(recentes: list[dict]) -> dict[tuple, list[dict]]:
+    grupos: dict[tuple, dict] = defaultdict(dict)
     for r in recentes:
-        if r["data_pagamento"] is not None:
-            conn.execute(_DATA_DE_PAGAMENTO, r)
+        grupos[(r["emissor"], r["classe"], r["data_com"], r["valor"])][r["data_pagamento"]] = r
+    return {
+        chave: [por_data[d] for d in sorted(por_data, key=lambda d: (d is None, d or date.min))]
+        for chave, por_data in grupos.items()
+    }
+
+
+def _acumular_recentes(conn: sa.Connection, recentes: list[dict], coleta_id: int) -> int:
+    novos = 0
+    for grupo in parcelas(recentes).values():
+        for r in grupo:
+            if r["data_pagamento"] is not None and conn.execute(_SEM_DATA, r).rowcount:
+                continue
+            novos += conn.execute(_ACUMULAR, {**r, "coleta_id": coleta_id}).rowcount
+    return novos
+
+
+def _casar_parcelas(conn: sa.Connection, recentes: list[dict], coleta_id: int) -> int:
+    novas = 0
+    for (emissor, classe, data_com, valor), grupo in parcelas(recentes).items():
+        chave = {"emissor": emissor, "classe": classe, "data_com": data_com, "valor": valor}
+        historico = conn.execute(_HISTORICO_DA_PARCELA, chave).all()
+        if not historico:
+            continue
+        for (provento_id, _), r in zip(historico, grupo, strict=False):
+            conn.execute(
+                sa.text("UPDATE mercado.provento SET data_pagamento = :p WHERE id = :id"),
+                {"p": r["data_pagamento"], "id": provento_id},
+            )
+        for r in grupo[len(historico) :]:
+            novas += conn.execute(
+                _ACUMULAR, {**r, "tipo": historico[0].tipo, "coleta_id": coleta_id}
+            ).rowcount
+    return novas
 
 
 def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int, int, int]:
@@ -288,7 +328,8 @@ def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int
             [{**e, "coleta_id": coleta_id} for e in eventos],
         )
 
-    _datas_de_pagamento(conn, recentes)
+    if proventos:
+        acumulados = _casar_parcelas(conn, recentes, coleta_id)
 
     quarentena = [(c, m, c) for c, m in rejeitados] + [
         (f"{e['isin']} {e['data_com']} {e['tipo']}", "evento não confirmado pelo preço", str(e))

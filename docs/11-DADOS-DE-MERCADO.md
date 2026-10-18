@@ -361,6 +361,10 @@ não substitui nada.
   entram
 - **A busca de proventos é pelo nome de pregão, exato**, e a B3 grafa o mesmo emissor de dois jeitos
   ("AMBEV S/A" no cadastro, "AMBEV SA" nos proventos): tentam-se as variantes
+- **Parcela de provento:** o histórico da B3 não traz data de pagamento e repete a linha a cada
+  parcela; a lista recente traz uma data por parcela. As duas se casam pela ordem da data, uma a uma, e
+  a parcela que só a lista recente mostra entra como `b3_recente` (desde 2026-10-18; antes, todas as
+  parcelas ficavam com a última data, e a de FII com o mesmo valor era barrada como repetida)
 - **O fator do evento:** desdobramento e bonificação dão o percentual de ações a mais (100 = 1 para 2);
   grupamento dá o multiplicador (0,1 = 10 para 1)
 - **Evento é conferido pelo preço** antes de ajustar: a razão entre o fechamento até a data-com e a
