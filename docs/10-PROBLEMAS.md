@@ -74,8 +74,12 @@ COTAHIST como prova:
 - **Bonificações pequenas** (Itaú, Bradesco e Itaúsa, 2% a 10%, de 2009 a 2025) que só a brapi lista:
   o preço não decide; a prova teria de vir do IPE da CVM.
 
-Corrigir é mexer na regra de ajuste do data-job — a folga da confirmação, o limiar e o que conta
-como "evento no intervalo" —, e decide-se antes de mexer. Até lá, o exemplo do portal segue na HAPV3.
+**A marca já foi corrigida** (migração 0021, 2026-10-18): evento recusado ou de outra classe não
+esconde mais o salto, e a razão perto de um fator comum marca mesmo abaixo de 50% — de 1.885 para
+2.305 dias marcados em ações. O fator 1,5 ficou de fora da marca: somava 2.679 dias, quase todos
+queda comum de papel pouco líquido. **Falta o ajuste:** a regra de confirmação pelo preço (os 12%
+fixos) e a inferência de FII, de bonificação pequena e do fator 1,5. A série ainda não corrige esses
+pontos; agora, pelo menos, os mostra. O exemplo do portal segue na HAPV3.
 
 ### As parcelas de provento: data de pagamento e parcelas faltando
 
