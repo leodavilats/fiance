@@ -369,10 +369,10 @@ void main() {
       });
       await _montar(tester, servidor, const ReconciliationScreen());
 
-      expect(find.text('2 diferenças entre a carteira e o razão'), findsOneWidget);
-      expect(find.widgetWithText(FiButton, 'Levar 1 posição para o razão'), findsOneWidget);
+      expect(find.text('2 diferenças entre a carteira e os lançamentos'), findsOneWidget);
+      expect(find.widgetWithText(FiButton, 'Levar 1 posição para os lançamentos'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(FiButton, 'Refazer a carteira a partir do razão'));
+      await tester.tap(find.widgetWithText(FiButton, 'Refazer a carteira a partir dos lançamentos'));
       await tester.pumpAndSettle();
 
       expect(
@@ -395,11 +395,11 @@ void main() {
       });
       await _montar(tester, servidor, const ReconciliationScreen());
 
-      await tester.tap(find.widgetWithText(FiButton, 'Levar 1 posição para o razão'));
+      await tester.tap(find.widgetWithText(FiButton, 'Levar 1 posição para os lançamentos'));
       await _esperar(tester);
 
       expect(servidor.pedidos.containsKey('POST /transactions/backfill'), isTrue);
-      expect(find.text('1 posição levada para o razão.'), findsOneWidget);
+      expect(find.text('1 posição levada para os lançamentos.'), findsOneWidget);
     });
 
     testWidgets('em dia, não oferece o que não precisa', (tester) async {
@@ -413,8 +413,8 @@ void main() {
       });
       await _montar(tester, servidor, const ReconciliationScreen());
 
-      expect(find.text('A carteira bate com o razão'), findsOneWidget);
-      expect(find.widgetWithText(FiButton, 'Refazer a carteira a partir do razão'), findsNothing);
+      expect(find.text('A carteira bate com os lançamentos'), findsOneWidget);
+      expect(find.widgetWithText(FiButton, 'Refazer a carteira a partir dos lançamentos'), findsNothing);
     });
   });
 }

@@ -15,10 +15,10 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
 
 const _reasons = {
-  'no_razao_sem_posicao': 'O razão tem esta posição aberta, e a carteira não a mostra.',
+  'no_razao_sem_posicao': 'Os lançamentos têm esta posição aberta, e a carteira não a mostra.',
   'posicao_sem_razao': 'A carteira tem esta posição, e nenhum lançamento a sustenta.',
-  'quantidade': 'A quantidade da carteira difere da que o razão projeta.',
-  'preco_medio': 'O preço médio da carteira difere do que o razão projeta.',
+  'quantidade': 'A quantidade da carteira difere da que os lançamentos dão.',
+  'preco_medio': 'O preço médio da carteira difere do que os lançamentos dão.',
 };
 
 class ReconciliationScreen extends ConsumerWidget {
@@ -36,12 +36,12 @@ class ReconciliationScreen extends ConsumerWidget {
           loading: () => FiSkeleton.screen(
             shape: FiSkeletonShape.row,
             count: 4,
-            label: 'Conferindo a carteira contra o razão',
+            label: 'Conferindo a carteira contra os lançamentos',
           ),
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos conferir a carteira',
-            action: 'conferir a carteira contra o razão',
+            action: 'conferir a carteira contra os lançamentos',
             onRetry: () => ref.invalidate(reconciliationProvider),
           ),
           data: (data) => ListView(
@@ -54,10 +54,10 @@ class ReconciliationScreen extends ConsumerWidget {
             children: [
               Text(
                 data.inSync
-                    ? 'A carteira bate com o razão'
+                    ? 'A carteira bate com os lançamentos'
                     : data.differences.length == 1
-                    ? '1 diferença entre a carteira e o razão'
-                    : '${data.differences.length} diferenças entre a carteira e o razão',
+                    ? '1 diferença entre a carteira e os lançamentos'
+                    : '${data.differences.length} diferenças entre a carteira e os lançamentos',
                 style: FiType.title.copyWith(color: fiInk1(context)),
               ),
               const SizedBox(height: FiSpace.s2),
@@ -65,17 +65,17 @@ class ReconciliationScreen extends ConsumerWidget {
                 data.inSync
                     ? data.positions == 1
                           ? '1 posição na carteira, e ela é exatamente o que os lançamentos '
-                                'projetam.'
+                                'dão.'
                           : '${data.positions} posições na carteira, e cada uma é exatamente o '
-                                'que os lançamentos projetam.'
-                    : 'A carteira devia ser só a projeção dos lançamentos. Onde ela diverge, o '
-                          'razão é quem está certo — a menos que falte lançar alguma coisa.',
+                                'que os lançamentos dão.'
+                    : 'A carteira deveria ser só a soma dos lançamentos. Onde ela diverge, valem '
+                          'os lançamentos — a menos que falte lançar alguma coisa.',
                 style: FiType.body.copyWith(color: fiInk2(context)),
               ),
               const SizedBox(height: FiSpace.s2),
               const FiProvenance(
                 summary: 'Como a conferência é feita',
-                method: 'Cada lançamento do razão é reaplicado em ordem, pela convenção brasileira '
+                method: 'Cada lançamento é reaplicado em ordem, pela convenção brasileira '
                     'de preço médio, e o resultado é comparado posição a posição com a carteira.',
                 source: 'Seus lançamentos e a carteira gravada.',
                 limitation: 'Diferença de centavos no preço médio e de frações de cota na '
@@ -136,7 +136,7 @@ class _DifferenceObject extends StatelessWidget {
             FiRows(
               children: [
                 FiDataRow(label: 'Na carteira', value: _position(d.stored)),
-                FiDataRow(label: 'No razão', value: _position(d.projected)),
+                FiDataRow(label: 'Nos lançamentos', value: _position(d.projected)),
               ],
             ),
           ],
@@ -176,18 +176,18 @@ class _ActionsState extends ConsumerState<_Actions> {
   Future<void> _backfill() => _run(() async {
     final semeadas = await ref.read(apiRepositoryProvider).backfillLedger();
     return semeadas == 1
-        ? '1 posição levada para o razão.'
-        : '$semeadas posições levadas para o razão.';
-  }, 'levar as posições para o razão');
+        ? '1 posição levada para os lançamentos.'
+        : '$semeadas posições levadas para os lançamentos.';
+  }, 'levar as posições para os lançamentos');
 
   Future<void> _rebuild() async {
     final orfas = widget.reconciliation.withoutLedger;
     final confirmado = await fiConfirm(
       context,
-      title: 'Refazer a carteira a partir do razão?',
+      title: 'Refazer a carteira a partir dos lançamentos?',
       body: orfas.isEmpty
-          ? 'A carteira passa a ser exatamente o que os lançamentos projetam.'
-          : 'A carteira passa a ser exatamente o que os lançamentos projetam, e '
+          ? 'A carteira passa a ser exatamente o que os lançamentos dão.'
+          : 'A carteira passa a ser exatamente o que os lançamentos dão, e '
                 '${orfas.map((d) => d.ticker).join(', ')} sai da carteira, porque nenhum '
                 'lançamento a sustenta.',
       confirmLabel: 'Refazer',
@@ -197,7 +197,7 @@ class _ActionsState extends ConsumerState<_Actions> {
     await _run(() async {
       final depois = await ref.read(apiRepositoryProvider).rebuildProjection();
       return depois.inSync
-          ? 'Carteira refeita: agora ela bate com o razão.'
+          ? 'Carteira refeita: agora ela bate com os lançamentos.'
           : depois.differences.length == 1
           ? 'Carteira refeita, e ainda resta 1 diferença.'
           : 'Carteira refeita, e ainda restam ${depois.differences.length} diferenças.';
@@ -215,16 +215,16 @@ class _ActionsState extends ConsumerState<_Actions> {
         children: [
           if (orfas.isNotEmpty) ...[
             Text(
-              'Posição sem lançamento sairia da carteira ao refazer. Se ela é sua, leve-a para o '
-              'razão antes: cada uma entra como declaração de posição de hoje, com a quantidade '
+              'Posição sem lançamento sairia da carteira ao refazer. Se ela é sua, leve-a para os '
+              'lançamentos antes: cada uma entra como declaração de posição de hoje, com a quantidade '
               'e o preço médio de agora, e a carteira não muda.',
               style: FiType.body.copyWith(color: fiInk2(context)),
             ),
             const SizedBox(height: FiSpace.s3),
             FiButton.primary(
               label: orfas.length == 1
-                  ? 'Levar 1 posição para o razão'
-                  : 'Levar ${orfas.length} posições para o razão',
+                  ? 'Levar 1 posição para os lançamentos'
+                  : 'Levar ${orfas.length} posições para os lançamentos',
               expand: true,
               busy: _busy,
               onPressed: _busy ? null : _backfill,
@@ -232,12 +232,12 @@ class _ActionsState extends ConsumerState<_Actions> {
             const SizedBox(height: FiSpace.s4),
           ],
           Text(
-            'Refazer grava na carteira o que os lançamentos projetam. O razão não muda.',
+            'Refazer grava na carteira o que os lançamentos dão. Os lançamentos não mudam.',
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
           const SizedBox(height: FiSpace.s3),
           FiButton(
-            label: 'Refazer a carteira a partir do razão',
+            label: 'Refazer a carteira a partir dos lançamentos',
             tone: orfas.isEmpty ? FiButtonTone.primary : FiButtonTone.secondary,
             expand: true,
             busy: _busy,

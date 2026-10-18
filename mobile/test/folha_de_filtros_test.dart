@@ -39,7 +39,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Recortar o razão'),
+      find.text('Filtrar os lançamentos'),
       findsOneWidget,
       reason: 'o recorte virou um botão só, e é esta folha que ele abre',
     );
@@ -71,6 +71,6 @@ void main() {
     await tester.tap(find.text('Ver os lançamentos'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Recortar o razão'), findsNothing);
+    expect(find.text('Filtrar os lançamentos'), findsNothing);
   });
 }

@@ -178,6 +178,11 @@ class _Body extends ConsumerWidget {
         .where((e) => e.accrualOn.startsWith(cashMonth.month))
         .toList()
       ..sort((a, b) => a.accrualOn.compareTo(b.accrualOn));
+    final aVencer = {for (final b in cashMonth.due) ?b.id};
+    final jaAconteceu = [
+      for (final e in doMes)
+        if (!aVencer.contains(e.id)) e,
+    ];
 
     return RefreshIndicator(
       onRefresh: () async => invalidateCashReaders(ref.invalidate),
@@ -234,8 +239,10 @@ class _Body extends ConsumerWidget {
                     'Nada lançado em ${monthName(cashMonth.month)}. Repetir o mês anterior traz o '
                     'que se repete por natureza, e deixa o gasto variável desmarcado.',
                   )
+                : jaAconteceu.isEmpty
+                ? const FiEmptyLine('Por enquanto, tudo o que foi lançado está em A vencer.')
                 : Column(
-                    children: [for (final e in doMes) _MonthRow(entry: e)],
+                    children: [for (final e in jaAconteceu) _MonthRow(entry: e)],
                   ),
           ),
 

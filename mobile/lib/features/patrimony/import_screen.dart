@@ -298,7 +298,7 @@ class _Review extends StatelessWidget {
     final partes = novas == 1 ? '1 operação nova' : '$novas operações novas';
     if (repetidas == 0) return '$partes — nada foi gravado ainda.';
     final ja = repetidas == 1 ? '1 que já existe' : '$repetidas que já existem';
-    return '$partes e $ja no razão — nada foi gravado ainda.';
+    return '$partes e $ja nos lançamentos — nada foi gravado ainda.';
   }
 }
 
@@ -331,7 +331,7 @@ class _ImportRowLine extends StatelessWidget {
         linha,
         const Padding(
           padding: EdgeInsets.only(bottom: FiSpace.s3),
-          child: FiTag(label: 'Já no razão', state: FiState.attention),
+          child: FiTag(label: 'Já lançada', state: FiState.attention),
         ),
       ],
     );

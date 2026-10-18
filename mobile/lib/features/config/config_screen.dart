@@ -231,7 +231,7 @@ class AccountScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _Axis(
       title: 'Conta',
-      children: [FiReferral(), FiLegal(), FiAccount()],
+      children: [FiAccount(), FiLegal(), FiReferral()],
     );
   }
 }
@@ -909,12 +909,10 @@ class FiReferral extends ConsumerWidget {
 
     return indicacao.when(
       loading: () => const FiSection(
-        first: true,
         title: 'Indicação',
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 2),
       ),
       error: (err, _) => FiSection(
-        first: true,
         title: 'Indicação',
         child: FiErrorState(
           error: err,
@@ -923,7 +921,6 @@ class FiReferral extends ConsumerWidget {
         ),
       ),
       data: (r) => FiSection(
-        first: true,
         title: 'Indicação',
         hint: r.rewardDays > 0
             ? 'Quem entra pelo seu link ganha ${r.rewardDays} dias de Premium — e você '
@@ -1231,6 +1228,7 @@ class _FiAccountState extends ConsumerState<FiAccount> {
   @override
   Widget build(BuildContext context) {
     return FiSection(
+      first: true,
       title: 'Conta',
       action: FiButton.danger(
         label: 'Sair desta conta',

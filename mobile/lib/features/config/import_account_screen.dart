@@ -221,7 +221,7 @@ class _ImportAccountScreenState extends ConsumerState<ImportAccountScreen> {
               const SizedBox(height: FiSpace.s2),
               Text(
                 'Preferências e metas do arquivo substituem as desta conta. A carteira é refeita '
-                'a partir dos lançamentos do razão.',
+                'a partir dos lançamentos.',
                 style: FiType.caption.copyWith(color: fiInk3(context)),
               ),
             ],

@@ -76,7 +76,7 @@ class LedgerScreen extends ConsumerWidget {
           error: (err, _) => FiErrorState(
             error: err,
             title: 'Não conseguimos carregar seus lançamentos',
-            action: 'carregar o livro-razão',
+            action: 'carregar os lançamentos',
             onRetry: () => ref.invalidate(filteredLedgerProvider),
           ),
           data: (data) {
@@ -93,8 +93,8 @@ class LedgerScreen extends ConsumerWidget {
                   const SizedBox(height: FiSpace.s5),
                   FiEmptyState(
                     title: 'Nenhum lançamento com estes filtros',
-                    body: 'O corte atual não deixou nada passar. Os lançamentos continuam '
-                        'no razão — o que mudou foi só o recorte.',
+                    body: 'O filtro atual não deixou nada passar. Os lançamentos continuam '
+                        'todos lá — o que mudou foi só o recorte.',
                     action: FiButton.secondary(
                       label: 'Limpar filtros',
                       onPressed: () =>
@@ -111,8 +111,8 @@ class LedgerScreen extends ConsumerWidget {
                 children: [
                   FiEmptyState(
                     title: 'Nenhum lançamento registrado',
-                    body: 'O livro-razão é a fonte da sua carteira: a posição, o preço médio e a '
-                        'apuração de imposto são reconstruídos a partir dele, nunca guardados '
+                    body: 'Os lançamentos são a fonte da sua carteira: a posição, o preço médio e a '
+                        'apuração de imposto são refeitos a partir deles, nunca guardados '
                         'em separado.',
                     hint: 'Registre uma compra, uma venda ou um evento corporativo — ou cole de '
                         'uma vez a lista que a corretora exporta.',
@@ -296,7 +296,7 @@ class _LedgerFilterSheet extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recortar o razão',
+              'Filtrar os lançamentos',
               style: FiType.title.copyWith(color: fiInk1(context)),
             ),
             const SizedBox(height: FiSpace.s2),
@@ -504,7 +504,7 @@ class _OlderEntriesState extends ConsumerState<_OlderEntries> {
           )
         else
           Text(
-            'Fim do razão — não há lançamento anterior a estes.',
+            'Fim dos lançamentos — não há nenhum anterior a estes.',
             style: FiType.caption.copyWith(color: fiInk3(context)),
           ),
       ],

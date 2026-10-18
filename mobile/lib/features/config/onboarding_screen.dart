@@ -29,8 +29,8 @@ const _steps = [
   _Step(
     number: 2,
     title: 'Registre sua carteira',
-    body: 'Traga o extrato da corretora de uma vez, registre uma compra no razão ou cadastre uma '
-        'renda fixa. Com a carteira, o patrimônio, o imposto e o risco passam a existir.',
+    body: 'Traga o extrato da B3 de uma vez, adicione uma compra nos lançamentos ou uma '
+        'aplicação de renda fixa. Com a carteira, o patrimônio, o imposto e o risco passam a existir.',
   ),
   _Step(
     number: 3,
@@ -120,7 +120,7 @@ class _StepsState extends ConsumerState<_Steps> {
         onPressed: () => context.push('/patrimonio/razao/importar'),
       ),
       FiButton.secondary(
-        label: 'Abrir o livro-razão',
+        label: 'Abrir os lançamentos',
         onPressed: () => context.push('/patrimonio/razao'),
       ),
     ],

@@ -144,6 +144,36 @@ void main() {
       );
     });
 
+    testWidgets('a conta a vencer aparece uma vez só', (tester) async {
+      await _abrir(tester, const MonthScreen(), {
+        'GET /cashflow/month': (
+          status: 200,
+          data: _cashMonth(
+            due: [
+              {
+                'id': 2,
+                'category': 'moradia',
+                'description': 'Aluguel',
+                'amount': 1400.0,
+                'due_on': '$_mes-10',
+              },
+            ],
+          ),
+        ),
+        'GET /cashflow/entries': (
+          status: 200,
+          data: [
+            _entrada(id: 1, kind: 'income', description: 'Salário', paidOn: '$_mes-05'),
+            _entrada(id: 2),
+          ],
+        ),
+        'GET /cashflow/debts': (status: 200, data: <Object>[]),
+      });
+
+      expect(find.text('Aluguel'), findsOneWidget, reason: 'já está em A vencer, com Marcar paga');
+      expect(find.text('Salário'), findsOneWidget);
+    });
+
     testWidgets('a tela diz qual mês está em leitura, e o nome troca de mês', (tester) async {
       await _abrir(tester, const MonthScreen(), {
         'GET /cashflow/month': (status: 200, data: _cashMonth()),

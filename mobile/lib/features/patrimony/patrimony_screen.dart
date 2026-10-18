@@ -305,7 +305,7 @@ class _WhereItComesFrom extends ConsumerWidget {
                   ? 'Nenhum lançamento — a carteira veio de declaração de posição'
                   : 'O último em ${formatDate(d.items.first.tradedOn)}',
               loading: () => 'Lendo os seus lançamentos',
-              error: (err, _) => fiErrorMessage(err, action: 'ler o seu livro-razão'),
+              error: (err, _) => fiErrorMessage(err, action: 'ler os seus lançamentos'),
             ),
             onTap: () => context.go('/patrimonio/razao'),
           ),

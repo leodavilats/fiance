@@ -215,7 +215,7 @@ void main() {
 
       expect(find.textContaining('Você já tem 100 un. de PETR4'), findsOneWidget,
           reason: 'declarar posição substitui a quantidade; quem queria somar precisa saber');
-      expect(find.widgetWithText(FiButton, 'Registrar compra no razão'), findsOneWidget);
+      expect(find.widgetWithText(FiButton, 'Adicionar compra nos lançamentos'), findsOneWidget);
       expect(find.widgetWithText(FiButton, 'Substituir posição'), findsOneWidget);
     });
 

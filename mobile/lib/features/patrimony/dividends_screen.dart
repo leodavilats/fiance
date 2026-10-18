@@ -95,10 +95,10 @@ class DividendsScreen extends ConsumerWidget {
                 children: [
                   FiEmptyState(
                     title: 'Nenhum provento registrado',
-                    body: 'Provento creditado é lançamento do razão, e é ele que alimenta a '
+                    body: 'Provento creditado é um lançamento, e é ele que alimenta a '
                         'renda do mês. Não se lança no caixa: contaria o mesmo dinheiro duas '
                         'vezes.',
-                    hint: 'Registre o que já caiu na conta. Quando o seu razão provar que um '
+                    hint: 'Adicione o que já caiu na conta. Quando os seus lançamentos provarem que um '
                         'provento é seu, ele aparece aqui para você só confirmar.',
                     action: FiButton.primary(
                       label: 'Registrar provento',
@@ -355,7 +355,7 @@ class _AwaitingConfirmation extends ConsumerWidget {
         return _SuggestionList(
           title: 'Confirme o que já caiu',
           suggestions: provados,
-          hint: 'O seu razão mostra a posição já na data-com, então estes proventos são seus. '
+          hint: 'Os seus lançamentos mostram a posição já na data-com, então estes proventos são seus. '
               'Falta só dizer que caíram na conta — nada é lançado antes disso.',
           collapsed: false,
         );
@@ -391,7 +391,7 @@ class _Calendar extends ConsumerWidget {
         return _SuggestionList(
           title: 'Previstos, para confirmar',
           suggestions: indeterminados,
-          hint: 'Aqui o razão não prova o direito: ou a fonte não publicou a data-com, ou os '
+          hint: 'Aqui os lançamentos não provam o direito: ou a fonte não publicou a data-com, ou os '
               'seus lançamentos não alcançam aquela data. Confira contra o extrato da '
               'corretora antes de confirmar.',
           collapsed: true,
@@ -610,7 +610,7 @@ class _SuggestionObject extends StatelessWidget {
                       '${formatCurrency(suggestion.ratePerShare)}',
                   detail: suggestion.quantityIsCurrent
                       ? 'Quantidade de hoje, não a da data-com'
-                      : 'Quantidade que o seu razão tinha na data-com',
+                      : 'Quantidade que os seus lançamentos davam na data-com',
                 ),
               ],
             ),

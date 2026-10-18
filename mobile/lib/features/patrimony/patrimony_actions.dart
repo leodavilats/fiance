@@ -211,12 +211,12 @@ class _PositionDialogState extends ConsumerState<_PositionDialog> {
                 const SizedBox(height: FiSpace.s3),
                 Text(
                   'Você já tem ${formatQuantity(existente.quantity)} un. de ${existente.ticker} — '
-                  'salvar substitui a posição; para somar uma compra, registre no razão.',
+                  'salvar substitui a posição; para somar uma compra, adicione-a nos lançamentos.',
                   style: FiType.caption.copyWith(color: atencao),
                 ),
                 const SizedBox(height: FiSpace.s1),
                 FiButton.quiet(
-                  label: 'Registrar compra no razão',
+                  label: 'Adicionar compra nos lançamentos',
                   onPressed: _saving
                       ? null
                       : () => Navigator.pop(context, _PositionOutcome.toLedger(existente.ticker)),
@@ -269,7 +269,7 @@ Future<bool> removePosition(
   final confirmado = await fiConfirm(
     context,
     title: 'Remover ${position.ticker} da carteira?',
-    body: 'A posição sai do patrimônio e das análises, e o razão ganha uma declaração de posição '
+    body: 'A posição sai do patrimônio e das análises, e os lançamentos ganham uma declaração de posição '
         'zerada. Se você vendeu, use Vender: remover não apura lucro nem imposto.',
     confirmLabel: 'Remover',
   );

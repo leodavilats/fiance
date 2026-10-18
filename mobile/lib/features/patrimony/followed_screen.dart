@@ -51,7 +51,7 @@ class FollowedScreen extends ConsumerWidget {
                     title: 'Nenhuma compra acompanhada',
                     body: data.summary,
                     hint: 'Ao comprar pelo Descobrir, deixe ligado "Acompanhar o resultado": a '
-                        'compra entra aqui a partir do razão, sem digitar nada de novo.',
+                        'compra entra aqui a partir dos lançamentos, sem digitar nada de novo.',
                     action: FiButton.primary(
                       label: 'Ver o Descobrir',
                       onPressed: () => context.go('/descobrir'),
@@ -105,12 +105,12 @@ class _Outcome extends StatelessWidget {
         const SizedBox(height: FiSpace.s2),
         const FiProvenance(
           summary: 'Como o resultado é apurado',
-          method: 'Cada compra vale pela quantidade e pelo preço lançados no razão, e o valor '
+          method: 'Cada compra vale pela quantidade e pelo preço lançados, e o valor '
               'de hoje pela cotação atual. O Ibovespa é medido do dia da compra mais antiga até '
               'hoje.',
           source: 'Seus lançamentos; cotação da B3 e Ibovespa pelo BOVA11.',
           limitation: 'Não entram proventos nem custos. Compra sem cotação agora fica fora do '
-              'total, e compra apagada do razão sai daqui.',
+              'total, e compra apagada dos lançamentos sai daqui.',
         ),
         if (data.bySource.length > 1)
           FiSection(
@@ -162,7 +162,7 @@ class _FollowedObjectState extends ConsumerState<_FollowedObject> {
     final confirmado = await fiConfirm(
       context,
       title: 'Deixar de acompanhar ${item.ticker}?',
-      body: 'A compra continua no razão e na carteira. Só deixa de contar no resultado das '
+      body: 'A compra continua nos lançamentos e na carteira. Só deixa de contar no resultado das '
           'sugestões seguidas.',
       confirmLabel: 'Deixar de acompanhar',
     );
@@ -173,7 +173,7 @@ class _FollowedObjectState extends ConsumerState<_FollowedObject> {
       context,
       () => ref.read(apiRepositoryProvider).deleteFollowedSuggestion(item.id),
       action: 'deixar de acompanhar esta compra',
-      success: '${item.ticker} saiu do resultado. A compra continua no razão.',
+      success: '${item.ticker} saiu do resultado. A compra continua nos lançamentos.',
     );
     if (ok) ref.invalidate(followedSuggestionsProvider);
     if (mounted) setState(() => _stopping = false);

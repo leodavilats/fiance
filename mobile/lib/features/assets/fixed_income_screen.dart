@@ -170,6 +170,12 @@ class _Totals extends StatelessWidget {
     final lidoEm = formatAge(data.ratesReadAt);
     final quando = lidoEm.isEmpty ? '' : ', lida $lidoEm';
     final (origem, corDaOrigem) = switch (data.ratesOrigin) {
+      'bcb' when data.cdiReference > 0 => (
+        'A taxa média equivale a '
+            '${formatDecimal(data.averageAnnualRate / data.cdiReference * 100, digits: 0)}% '
+            'do CDI, que está em $cdi ao ano, lido do Banco Central.',
+        fiInk3(context),
+      ),
       'bcb' => ('Contra um CDI de $cdi ao ano, lido do Banco Central.', fiInk3(context)),
       'bcb_cache_vencido' => (
         'Contra um CDI de $cdi ao ano, da última leitura do Banco Central$quando — a fonte '
