@@ -169,3 +169,31 @@ a até 10%. A estimativa acerta o mês típico e erra feio em um de cada dez.
 Confirmado pela fonte primária e aberto no [10-PROBLEMAS](../10-PROBLEMAS.md): os eventos grandes que
 faltam, o salto sem marca quando o evento foi recusado, a queda de quase 50% abaixo do limiar, as
 parcelas que faltam e a data de pagamento das parcelas. Nada da brapi entrou na base.
+
+## Revalidação depois das correções (2026-10-18)
+
+Mesmas respostas da brapi, guardadas em disco — **zero requisições** —, contra a base exportada de novo
+depois das mudanças 1 a 3 do [10-PROBLEMAS](../10-PROBLEMAS.md) (marca de salto, confirmação pelo
+tamanho da [ADR-026](../decisoes/ADR-026-confirmacao-do-evento-pelo-tamanho.md), inferência pelo FRE e
+pelas cotas de FII). A régua é a mesma. Terceira linha do `registro_validacao.jsonl`.
+
+| Eventos | Antes | Depois |
+|---|---|---|
+| Batem | 426 | **470** |
+| Nossa recusou | 65 | **29** |
+| Só na brapi | 88 | 80 |
+| Só na brapi com fator ≥ 1,5 ou ≤ 0,67 | 44 | **36** |
+| Só nossa | 269 | 310 |
+
+- **Resolvidos entre os grandes:** MGLU3 (2015, 2017 e 2019), COGN3 (2013), RIAA3 (2019), ECOM3 (2024)
+  e RBFF11 (2026). AZEV3 (2019) bate na ON; segue "só na brapi" na PN, cujo preço não marcou salto.
+- **Os que seguem faltando** são, na maioria, de antes de 2010 (Bradesco, Gerdau, Ambev, Cosan) ou de
+  papel sem prova na CVM no período — sem FRE nem IPE, a série não os corrige por suposição.
+- **"Só nossa" cresceu** com os eventos inferidos que a brapi também não traz (POMO3, RADL3, CIEL3,
+  WEGE3 de 2015, e quase todos os de FII).
+- **Proventos não mudaram:** a correção das parcelas entra na coleta semanal de 23/10.
+- **Preços: 176 → 178.** Os dois novos (FIXX11 e U1NM34) são **erro da exportação desta comparação**,
+  não da base: ETF e BDR com série de fundo entraram com o preço das duas fontes, ajustado e bruto,
+  no mesmo dia; quando a mudança 2 confirmou o desdobramento da U1NM34, as duas linhas passaram a
+  discordar. Só ETF e BDR são afetados, nas duas rodadas; ação e FII, não.
+
