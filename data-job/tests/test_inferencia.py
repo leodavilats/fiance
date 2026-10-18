@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import io
 import zipfile
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -149,3 +149,49 @@ def test_fre_guarda_o_capital_integralizado_com_a_data_de_aprovacao():
     assert [(r["cnpj"], r["data_aprovacao"], r["acoes_total"]) for r in linhas] == [
         ("33000167000101", date(2014, 4, 2), 13044496930)
     ]
+
+
+def _salto(dia, antes, abertura, fre=()):
+    return inferencia.Salto(
+        "1", "ON", dia, dia - timedelta(days=1), Decimal(antes), Decimal(abertura), None, None, fre
+    )
+
+
+INICIO_DO_IPE = date(2015, 2, 25)
+
+
+def test_fator_exato_aceita_qualquer_inteiro_so_quando_o_fre_bate_em_um_por_cento():
+    assert inferencia.fator_exato(Decimal(15710) / 2244) == 7, "ECOM3, 2024: 7 para 1 exato"
+    assert inferencia.fator_exato(Decimal(1) / 41) == Decimal(1) / 41, "BRPR3, 2023"
+    assert inferencia.fator_exato(Decimal("8.814")) is None, "a MGLU3 emitiu junto do desdobramento"
+    assert inferencia.fator_exato(Decimal("1.004")) is None
+
+
+def test_antes_do_ipe_o_fre_exato_e_o_preco_bastam():
+    cogna = _salto(date(2013, 3, 6), "19.86", "10", fre=((date(2013, 3, 5), 134351938, 268703876),))
+
+    [inferido] = inferencia.candidatos([cogna], {}, INICIO_DO_IPE)
+
+    assert inferido["multiplicador"] == 2 and inferido["protocolo"] == "FRE 2013-03-05"
+
+
+def test_com_ipe_o_fre_so_corrobora_e_o_documento_e_obrigatorio():
+    fre = ((date(2017, 9, 27), 21623933, 190591464),)
+    magalu = _salto(date(2017, 9, 5), "621.79", "79.76", fre=fre)
+    documento = [(date(2017, 8, 16), "Desdobramento de Ações", "p17")]
+
+    sem_documento = inferencia.candidatos([magalu], {}, INICIO_DO_IPE)
+    [com_documento] = inferencia.candidatos([magalu], {"1": documento}, INICIO_DO_IPE)
+
+    assert sem_documento == [], "depois de 2015 o IPE existe: sem documento, não se infere"
+    assert (com_documento["multiplicador"], com_documento["protocolo"]) == (8, "p17"), (
+        "o FRE deu 8,81 (emissão junto) e registrou 22 dias depois: com documento, cabe"
+    )
+
+
+def test_fre_de_outra_mudanca_de_capital_nao_vira_evento():
+    aumento = _salto(date(2013, 3, 6), "19.86", "10", fre=((date(2013, 3, 5), 100, 115),))
+
+    assert inferencia.candidatos([aumento], {}, INICIO_DO_IPE) == [], (
+        "o preço caiu à metade, mas o FRE só mostra um aumento de 15%"
+    )

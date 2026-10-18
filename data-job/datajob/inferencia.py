@@ -13,8 +13,16 @@ FATORES = tuple(
     Decimal(f) for f in (2, 3, 4, 5, 6, 8, 10, 20, 25, 50, 100, 200, 1000)
 )  # fmt: skip
 TOLERANCIA = Decimal("0.10")
+EXATO = Decimal("0.01")
+MAIOR_FATOR = 1000
 JANELA_ANTES = timedelta(days=120)
 JANELA_DEPOIS = timedelta(days=10)
+FRE_ANTES = timedelta(days=200)
+FRE_DEPOIS = timedelta(days=30)
+# Com documento no IPE, o FRE só corrobora: a emissão junto do desdobramento e o registro tardio
+# da aprovação (MGLU3 em 2017 e 2019) cabem.
+FRE_DEPOIS_COM_DOCUMENTO = timedelta(days=120)
+FOLGA_DO_FRE_COM_DOCUMENTO = Decimal("0.15")
 MAIS_ACOES = re.compile(r"desdobr|bonifica|split", re.IGNORECASE)
 MENOS_ACOES = re.compile(r"grupam|inplit|reverse", re.IGNORECASE)
 
@@ -29,16 +37,39 @@ class Salto:
     abertura: Decimal | None
     acoes_antes: int | None
     acoes_depois: int | None
+    mudancas_fre: tuple = ()
 
 
-def _perto(razao: Decimal, fator: Decimal) -> bool:
-    return abs(razao / fator - 1) <= TOLERANCIA
+def _perto(razao: Decimal, fator: Decimal, folga: Decimal = TOLERANCIA) -> bool:
+    return abs(razao / fator - 1) <= folga
 
 
-def fator_comum(razao_preco: Decimal, razao_acoes: Decimal) -> Decimal | None:
+def fator_comum(
+    razao_preco: Decimal, razao_acoes: Decimal, folga_acoes: Decimal = TOLERANCIA
+) -> Decimal | None:
     candidatos = FATORES if razao_preco >= 1 else tuple(1 / f for f in FATORES)
-    aceitos = [f for f in candidatos if _perto(razao_preco, f) and _perto(razao_acoes, f)]
+    aceitos = [
+        f for f in candidatos if _perto(razao_preco, f) and _perto(razao_acoes, f, folga_acoes)
+    ]
     return aceitos[0] if len(aceitos) == 1 else None
+
+
+def fator_exato(razao: Decimal) -> Decimal | None:
+    n = razao if razao >= 1 else 1 / razao
+    inteiro = n.to_integral_value()
+    if not 2 <= inteiro <= MAIOR_FATOR or abs(n / inteiro - 1) > EXATO:
+        return None
+    return inteiro if razao >= 1 else 1 / inteiro
+
+
+def fator_pelo_fre(
+    razao_preco: Decimal, razao_acoes: Decimal, folga_acoes: Decimal = TOLERANCIA
+) -> Decimal | None:
+    comum = fator_comum(razao_preco, razao_acoes, folga_acoes)
+    if comum is not None:
+        return comum
+    exato = fator_exato(razao_acoes)
+    return exato if exato is not None and _perto(razao_preco, exato) else None
 
 
 def evidencia(multiplicador: Decimal, documentos: list[tuple[date, str, str]], dia: date):
@@ -77,25 +108,71 @@ _SALTOS = sa.text(
     """
 )
 
+# O histórico do capital integralizado no FRE: a quantidade de ações depois de cada aprovação.
+_MUDANCAS_DO_FRE = sa.text(
+    """
+    WITH ultima AS (
+        SELECT DISTINCT ON (cnpj, data_aprovacao) cnpj, data_aprovacao, acoes_total
+        FROM mercado.capital_social
+        WHERE cnpj = ANY(:cnpjs)
+        ORDER BY cnpj, data_aprovacao, data_referencia DESC, versao DESC
+    )
+    SELECT cnpj, data_aprovacao, acoes_total,
+        lag(acoes_total) OVER (PARTITION BY cnpj ORDER BY data_aprovacao) AS anterior
+    FROM ultima
+    """
+)
+
 _DOCUMENTOS = sa.text(
     "SELECT cnpj, data_entrega, assunto, protocolo FROM mercado.ipe_documento "
     "WHERE cnpj = ANY(:cnpjs)"
 )
 
 
-def candidatos(saltos: list[Salto], documentos: dict[str, list]) -> list[dict]:
-    inferidos = []
-    for s in saltos:
-        if not (s.fechamento_anterior and s.abertura and s.acoes_antes and s.acoes_depois):
+def _pelo_fre(s: Salto, razao_preco: Decimal, documentos: list, inicio_do_ipe: date | None):
+    com_ipe = inicio_do_ipe is not None and s.data - JANELA_ANTES >= inicio_do_ipe
+    depois_do_salto = FRE_DEPOIS_COM_DOCUMENTO if com_ipe else FRE_DEPOIS
+    folga = FOLGA_DO_FRE_COM_DOCUMENTO if com_ipe else TOLERANCIA
+    for aprovacao, antes, depois in s.mudancas_fre:
+        if not (s.data - FRE_ANTES <= aprovacao <= s.data + depois_do_salto) or not antes:
             continue
-        razao_preco = Decimal(s.fechamento_anterior) / Decimal(s.abertura)
-        razao_acoes = Decimal(s.acoes_depois) / Decimal(s.acoes_antes)
-        multiplicador = fator_comum(razao_preco, razao_acoes)
+        multiplicador = fator_pelo_fre(razao_preco, Decimal(depois) / Decimal(antes), folga)
         if multiplicador is None:
             continue
-        achado = evidencia(multiplicador, documentos.get(s.cnpj, []), s.data)
+        if com_ipe:
+            achado = evidencia(multiplicador, documentos, s.data)
+            if achado is not None:
+                return multiplicador, achado
+            continue
+        # Antes do IPE existir, o FRE e o preço são as duas provas que há.
+        return multiplicador, (
+            f"FRE {aprovacao:%Y-%m-%d}",
+            f"Capital social do FRE: {antes} para {depois} ações",
+        )
+    return None
+
+
+def candidatos(
+    saltos: list[Salto], documentos: dict[str, list], inicio_do_ipe: date | None = None
+) -> list[dict]:
+    inferidos = []
+    for s in saltos:
+        if not (s.fechamento_anterior and s.abertura):
+            continue
+        razao_preco = Decimal(s.fechamento_anterior) / Decimal(s.abertura)
+        achado = None
+        if s.acoes_antes and s.acoes_depois:
+            multiplicador = fator_comum(
+                razao_preco, Decimal(s.acoes_depois) / Decimal(s.acoes_antes)
+            )
+            if multiplicador is not None:
+                documento = evidencia(multiplicador, documentos.get(s.cnpj, []), s.data)
+                achado = (multiplicador, documento) if documento else None
+        if achado is None:
+            achado = _pelo_fre(s, razao_preco, documentos.get(s.cnpj, []), inicio_do_ipe)
         if achado is None:
             continue
+        multiplicador, achado = achado
         inferidos.append(
             {
                 "cnpj": s.cnpj,
@@ -111,17 +188,23 @@ def candidatos(saltos: list[Salto], documentos: dict[str, list]) -> list[dict]:
 
 
 def inferir(conn: sa.Connection) -> int:
-    saltos = [Salto(*linha) for linha in conn.execute(_SALTOS)]
-    if not saltos:
+    linhas = list(conn.execute(_SALTOS))
+    if not linhas:
         return 0
+    cnpjs = sorted({linha.cnpj for linha in linhas})
     documentos: dict[str, list] = {}
-    for documento, entrega, assunto, protocolo in conn.execute(
-        _DOCUMENTOS, {"cnpjs": sorted({s.cnpj for s in saltos})}
-    ):
+    for documento, entrega, assunto, protocolo in conn.execute(_DOCUMENTOS, {"cnpjs": cnpjs}):
         documentos.setdefault(documento, []).append((entrega, assunto, protocolo))
+    fre: dict[str, list] = {}
+    for cnpj, aprovacao, acoes, anterior in conn.execute(_MUDANCAS_DO_FRE, {"cnpjs": cnpjs}):
+        fre.setdefault(cnpj, []).append((aprovacao, anterior, acoes))
+    saltos = [Salto(*linha, mudancas_fre=tuple(fre.get(linha.cnpj, ()))) for linha in linhas]
+    inicio_do_ipe = conn.execute(
+        sa.text("SELECT min(data_entrega) FROM mercado.ipe_documento")
+    ).scalar()
 
     novos = 0
-    for inferido in candidatos(saltos, documentos):
+    for inferido in candidatos(saltos, documentos, inicio_do_ipe):
         novos += conn.execute(
             sa.text(
                 "INSERT INTO mercado.evento_inferido (cnpj, classe, data_com, multiplicador, "

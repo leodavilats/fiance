@@ -407,6 +407,22 @@ inferidos — Banco Inter (1 para 3), Méliuz (1 para 6), Kepler (1 para 3), Oi 
 papéis líquidos com salto marcado desde 2010 caíram de 110 para 104: o resto é, em boa parte, movimento real. O inferido cede a vez ao evento da B3 a até 10 dias,
 para não ajustar duas vezes.
 
+**O FRE como segunda fonte de ações** (desde 2026-10-18). A composição do capital só existe de 2020 em
+diante, e o IPE, de 2015. O histórico do capital integralizado no FRE (`mercado.capital_social`, de 2010
+em diante) dá a quantidade de ações depois de cada aprovação, e entra quando a composição falta:
+
+- **Antes de 2015**, sem IPE, bastam o preço e o FRE: a mudança aprovada entre 200 dias antes e 30
+  depois do salto, a até 10% do mesmo fator comum — ou, se o FRE for exato a 1%, **qualquer fator
+  inteiro**, como o 7 para 1 da ECOM3. Um FRE exato não tem a ambiguidade da Gafisa.
+- **De 2015 em diante**, o documento no IPE continua obrigatório, e o FRE só corrobora: até 15% do
+  fator e até 120 dias depois — a emissão junto do desdobramento e o registro tardio da aprovação
+  cabem (MGLU3 em 2017, ×8,81; em 2019, registrado 98 dias depois).
+
+Medido antes de aplicar: 41 eventos novos, entre eles MGLU3 (2015, 2017 e 2019), WEGE3 (2015), CIEL3
+(2014), PRIO3 (2019), RADL3 (2010), COGN3 (2013), RIAA3, AZEV3 e ECOM3. Ficam de fora o que não tem prova
+na CVM — antes de 2010 (Gerdau e Bradesco de 2005 a 2008) — e a bonificação pequena, que o FRE mostra
+mas sem a data-com.
+
 A composição do capital vem dos arquivos de DFP e ITR já guardados; o número de ações tem unidade
 inconsistente entre empresas (a Gafisa declara em milhares), o que não afeta a razão, mas afeta qualquer
 uso absoluto.

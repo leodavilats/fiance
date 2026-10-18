@@ -327,7 +327,7 @@ def diario(
         recalcular_serie()
         with engine.begin() as conn:
             inferidos = inferencia.inferir(conn)
-        print(f"eventos inferidos de saltos com documento no IPE: {inferidos}.", flush=True)
+        print(f"eventos inferidos de saltos sem evento: {inferidos}.", flush=True)
         if inferidos:
             recalcular_serie()
 
