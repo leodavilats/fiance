@@ -95,7 +95,7 @@ void main() {
     await _montar(tester, <String>[]);
 
     expect(
-      find.textContaining('livro-razão'),
+      find.textContaining('lançamentos de investimento'),
       findsOneWidget,
       reason:
           'a lista vem do backend para não descolar dele, e é traduzida para não pedir que '
