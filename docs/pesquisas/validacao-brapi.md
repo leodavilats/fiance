@@ -37,7 +37,7 @@ Plano Startup da brapi, medido antes do protocolo com três requisições:
   continuar.
 - A resposta bruta fica em disco (`fiance-trend/backend/.brapi/`, fora do git) e a comparação roda sobre
   ela, sem gastar requisição de novo. A base é lida no mesmo dia, de produção, só leitura.
-- O token sai do `backend/.env`, que não vai para o git, e nunca é impresso.
+- O token sai do `.env` do backend, que não vai para o git, e nunca é impresso.
 
 ## Comparações e réguas
 

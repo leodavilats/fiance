@@ -202,7 +202,6 @@ def _doze_meses(por_fim: dict[str, dict], campo: str) -> float | None:
 
 
 _EXERCICIOS_NA_SERIE = 5
-# Valor de mercado abaixo de 2% do patrimônio é quantidade declarada em milhares (Itaú, Taesa).
 _MERCADO_MINIMO_SOBRE_PATRIMONIO = 0.02
 
 
@@ -539,7 +538,6 @@ async def fetch_history_universal(symbol: str, period: str = "1y") -> dict[str, 
     return series
 
 
-# A base não tem o índice: o Ibovespa é medido pelo BOVA11, que o replica.
 _IBOV_PROXY = "BOVA11"
 
 
