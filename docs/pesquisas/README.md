@@ -14,6 +14,6 @@ resultado é o que o protocolo existe para impedir. O registro de cada execuçã
 | [pesquisa](pesquisa.md) | Alguma regra de seleção de carteira bate o CDI por 2 pontos, depois de custo e imposto? | Encerrada em 8 variações: não achei vantagem investível |
 | [ranking](ranking.md) | Ordenar pela força da tendência diz quem rende mais no mês seguinte? | 6 variações, nenhuma passou: o ranking não informa |
 | [calibracao](calibracao.md) | O veredito de preço justo do app ordena o retorno dos 12 meses seguintes? | Não ordenou (2011–2017); a calibração parou |
-| [validacao-brapi](validacao-brapi.md) | Onde a base discorda de uma segunda fonte, e a discordância é erro nosso? | 25 eventos faltando, saltos sem marca e a estimativa de FII medida; a maior parte do resto é convenção da brapi |
+| [validacao-brapi](validacao-brapi.md) | Onde a base discorda de uma segunda fonte, e a discordância é erro nosso? | 25 eventos faltando, saltos sem marca e a estimativa de FII medida; a maior parte do resto é convenção da brapi. Depois das correções, 470 eventos batem (eram 426) e 29 seguem recusados (eram 65) |
 
 Pesquisa nova começa por um arquivo novo aqui, com o protocolo, e só roda depois do aceite do autor.
