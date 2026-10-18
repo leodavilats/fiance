@@ -359,7 +359,7 @@ void main() {
 
     final medida = tester.widget<FiMeasure>(find.byType(FiMeasure));
     expect(medida.readout, '33,0%');
-    expect(medida.note, contains('8,7 p.p. acima'));
+    expect(medida.note, contains('8,7 pontos acima'));
     expect(medida.semantics, isNot(contains('33.0')),
         reason: 'o leitor de tela lê o mesmo número que a tela mostra');
 
@@ -552,7 +552,7 @@ void main() {
       });
       await _montar(tester, servidor, const FixedIncomeScreen());
 
-      await tester.tap(find.widgetWithText(FiButton, 'Cadastrar aplicação'));
+      await tester.tap(find.widgetWithText(FiButton, 'Adicionar aplicação'));
       await _esperar(tester);
       await tester.tap(find.text('CDB').last);
       await _esperar(tester);

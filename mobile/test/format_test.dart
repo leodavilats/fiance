@@ -80,8 +80,8 @@ void main() {
       expect(formatPercent(14.9), '14,90%');
     });
 
-    test('formatPoints escreve p.p. em português', () {
-      expect(formatPoints(8.66), '8,7 p.p.');
+    test('formatPoints escreve pontos em português', () {
+      expect(formatPoints(8.66), '8,7 pontos');
     });
   });
 

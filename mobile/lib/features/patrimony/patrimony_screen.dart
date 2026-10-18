@@ -298,7 +298,7 @@ class _WhereItComesFrom extends ConsumerWidget {
             onTap: () => context.go('/patrimonio/proventos'),
           ),
           FiDataRow(
-            label: 'Livro-razão',
+            label: 'Lançamentos',
             value: razao.valueOrNull == null ? null : '${razao.valueOrNull!.count}',
             detail: razao.when(
               data: (d) => d.items.isEmpty

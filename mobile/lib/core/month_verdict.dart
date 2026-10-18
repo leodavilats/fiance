@@ -43,13 +43,12 @@ MonthVerdict monthVerdict({
   if (expensiveDebt != null) {
     final taxa = expensiveDebt.monthlyRate == null
         ? ''
-        : ', que custa ${_trimTrailingZero(expensiveDebt.monthlyRate!)}% ao mês';
+        : ', que custa ${_trimTrailingZero(expensiveDebt.monthlyRate!)}% ao mês,';
     return MonthVerdict(
       band: band,
       pressure: pressure,
-      verdict: band.label,
-      reason:
-          '$frase A sobra, porém, vai antes para ${expensiveDebt.description}$taxa.',
+      verdict: '${band.label}, mas a sobra vai para a dívida',
+      reason: '$frase ${expensiveDebt.description}$taxa vem antes de qualquer aporte.',
     );
   }
 

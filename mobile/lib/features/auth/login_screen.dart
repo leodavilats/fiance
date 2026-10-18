@@ -27,7 +27,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   static const _whatItDoes = [
     ('Mês', 'o que entrou, o que saiu e o que ainda vence'),
     ('Sobra', 'a ordem em que o que ficou deve ser usado'),
-    ('Patrimônio', 'preço justo, margem de segurança e IR apurado'),
+    ('Patrimônio', 'quanto vale cada ativo, e o imposto de cada mês'),
   ];
 
   Future<void> _handleSignIn() async {

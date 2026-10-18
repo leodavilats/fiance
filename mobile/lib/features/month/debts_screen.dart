@@ -150,7 +150,7 @@ class _DebtList extends ConsumerWidget {
             title: 'Suas dívidas',
             count: debts.length,
             action: FiButton.secondary(
-              label: 'Cadastrar dívida',
+              label: 'Adicionar dívida',
               icon: Icons.add,
               onPressed: onRegister,
             ),
@@ -327,7 +327,7 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Cadastrar dívida', style: FiType.title),
+                Text('Adicionar dívida', style: FiType.title),
                 const SizedBox(height: FiSpace.s4),
 
                 TextFormField(
@@ -408,7 +408,7 @@ class _DebtFormState extends ConsumerState<_DebtForm> {
 
                 const SizedBox(height: FiSpace.s5),
                 FiButton.primary(
-                  label: 'Cadastrar dívida',
+                  label: 'Adicionar dívida',
                   expand: true,
                   busy: _saving,
                   onPressed: _save,
@@ -438,7 +438,7 @@ class _NoDebt extends StatelessWidget {
               'faz sentido.',
           hint: 'A taxa mensal é opcional, mas sem ela não dá para dizer se a dívida é cara.',
           action: FiButton.primary(
-            label: 'Cadastrar dívida',
+            label: 'Adicionar dívida',
             icon: Icons.add,
             onPressed: onRegister,
           ),

@@ -110,7 +110,7 @@ class FixedIncomeScreen extends ConsumerWidget {
                         'o imposto.',
                     hint: 'Cadastre o que você já tem — CDB, LCI, LCA, Tesouro.',
                     action: FiButton.primary(
-                      label: 'Cadastrar aplicação',
+                      label: 'Adicionar aplicação',
                       icon: Icons.add,
                       onPressed: () => _openForm(context, ref),
                     ),
@@ -132,7 +132,7 @@ class FixedIncomeScreen extends ConsumerWidget {
                   title: 'Aplicações',
                   count: data.items.length,
                   trailing: FiButton.quiet(
-                    label: 'Cadastrar aplicação',
+                    label: 'Adicionar aplicação',
                     icon: Icons.add,
                     onPressed: () => _openForm(context, ref),
                   ),

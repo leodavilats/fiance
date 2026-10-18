@@ -566,7 +566,7 @@ class _EmptyMonth extends StatelessWidget {
             onPressed: onAddEntry,
           ),
           secondary: FiButton.secondary(
-            label: 'Cadastrar uma dívida',
+            label: 'Adicionar uma dívida',
             onPressed: () => GoRouter.of(context).go('/mes/dividas'),
           ),
         ),

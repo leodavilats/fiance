@@ -127,7 +127,7 @@ class _StepsState extends ConsumerState<_Steps> {
     3 => [
       FiButton(
         tone: primary ? FiButtonTone.primary : FiButtonTone.secondary,
-        label: 'Declarar metas',
+        label: 'Definir metas',
         icon: Icons.flag_outlined,
         onPressed: () => context.push('/voce/objetivos'),
       ),

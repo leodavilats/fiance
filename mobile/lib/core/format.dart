@@ -20,7 +20,7 @@ String formatPercent(double? value, {int? digits}) {
 }
 
 String formatPoints(double? value, {int digits = 1}) =>
-    value == null ? '—' : '${formatDecimal(value, digits: digits)} p.p.';
+    value == null ? '—' : '${formatDecimal(value, digits: digits)} pontos';
 
 String formatForInput(double? value) => value == null ? '' : _inputFormat.format(value);
 

@@ -420,7 +420,7 @@ class _NoGaps extends ConsumerWidget {
                 ),
                 const SizedBox(height: FiSpace.s3),
                 FiNavAction(
-                  label: 'Declarar metas de alocação',
+                  label: 'Definir metas de alocação',
                   onPressed: () => GoRouter.of(context).go('/voce/objetivos'),
                 ),
               ],

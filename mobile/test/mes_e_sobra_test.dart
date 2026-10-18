@@ -429,7 +429,7 @@ void main() {
       expect(find.text('Acima do preço justo'), findsOneWidget);
       expect(find.text('Sem ajuste'), findsOneWidget);
       expect(
-        find.text('faltam 6,5 p.p. para a meta'),
+        find.text('faltam 6,5 pontos para a meta'),
         findsOneWidget,
         reason: 'o desvio e os percentuais da linha precisam fechar na mesma precisão',
       );

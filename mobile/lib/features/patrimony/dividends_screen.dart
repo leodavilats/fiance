@@ -134,7 +134,7 @@ class DividendsScreen extends ConsumerWidget {
                   title: 'Recebidos',
                   count: data.totalCount,
                   trailing: FiButton.quiet(
-                    label: 'Registrar',
+                    label: 'Adicionar',
                     icon: Icons.add,
                     onPressed: () => openDividendForm(context, ref),
                   ),
@@ -374,7 +374,7 @@ class _Calendar extends ConsumerWidget {
 
     return pendentes.when(
       loading: () => const FiSection(
-        title: 'Do calendário, por conferir',
+        title: 'Previstos, para confirmar',
         child: FiSkeleton(shape: FiSkeletonShape.row, count: 1),
       ),
       error: (err, _) => FiErrorState(
@@ -389,7 +389,7 @@ class _Calendar extends ConsumerWidget {
         if (indeterminados.isEmpty) return const SizedBox.shrink();
 
         return _SuggestionList(
-          title: 'Do calendário, por conferir',
+          title: 'Previstos, para confirmar',
           suggestions: indeterminados,
           hint: 'Aqui o razão não prova o direito: ou a fonte não publicou a data-com, ou os '
               'seus lançamentos não alcançam aquela data. Confira contra o extrato da '
@@ -524,8 +524,8 @@ class _SuggestionListState extends ConsumerState<_SuggestionList> {
         rule: false,
         title:
             '${widget.suggestions.length} '
-            '${widget.suggestions.length == 1 ? 'crédito' : 'créditos'} '
-            'que o razão não confirma',
+            '${widget.suggestions.length == 1 ? 'provento previsto' : 'proventos previstos'} '
+            'para você confirmar',
         detail: '${widget.suggestions.length == 1 ? 'Soma' : 'Somam'} '
             '${formatCurrency(total)}',
         initiallyOpen: false,

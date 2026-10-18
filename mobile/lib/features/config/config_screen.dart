@@ -356,7 +356,7 @@ class FiGoals extends ConsumerWidget {
     return FiSection(
       title: 'Metas',
       action: FiNavAction(
-        label: 'Declarar metas',
+        label: 'Definir metas',
         onPressed: () => context.go('/voce/objetivos'),
       ),
       child: FiRows(

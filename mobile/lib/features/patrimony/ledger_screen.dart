@@ -57,13 +57,13 @@ class LedgerScreen extends ConsumerWidget {
         (page.valueOrNull?.items.isEmpty ?? false) && filtro.isEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Livro-razão')),
+      appBar: AppBar(title: const Text('Lançamentos')),
       floatingActionButton: emptyLedger
           ? null
           : FloatingActionButton.extended(
               onPressed: () => openLedgerEntryForm(context, ref),
               icon: const Icon(Icons.add),
-              label: const Text('Registrar'),
+              label: const Text('Adicionar'),
             ),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(filteredLedgerProvider),

@@ -472,7 +472,7 @@ class _NoGaps extends ConsumerWidget {
                 body: 'Sem elas o fiance não tem contra o que comparar a sua carteira — e '
                     'um alvo de mercado inventado seria pior que alvo nenhum.',
                 action: FiButton.primary(
-                  label: 'Declarar metas de alocação',
+                  label: 'Definir metas de alocação',
                   onPressed: () => context.go('/voce/objetivos'),
                 ),
               )

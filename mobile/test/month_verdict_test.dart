@@ -82,6 +82,11 @@ void main() {
       );
       expect(com.reason, contains('14,9% ao mês'));
       expect(
+        com.verdict,
+        'Mês folgado, mas a sobra vai para a dívida',
+        reason: 'o título sozinho dizia "folgado" e a frase seguinte o desmentia',
+      );
+      expect(
         com.reason,
         startsWith('O comprometido consome 10% do que entrou. '),
         reason: 'a pressão e a dívida são frases separadas: numa só, "Mês folgado" e "come a '
