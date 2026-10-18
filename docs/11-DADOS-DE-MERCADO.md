@@ -365,7 +365,10 @@ não substitui nada.
   grupamento dá o multiplicador (0,1 = 10 para 1)
 - **Evento é conferido pelo preço** antes de ajustar: a razão entre o fechamento até a data-com e a
   abertura seguinte, com o preço por ação (dividido pelo fator de cotação), tem de bater com o
-  multiplicador em 12%. Eventos do mesmo dia se combinam — o Bradesco fez ×50 e ×0,02 em 2009.
+  multiplicador na medida do tamanho dele ([ADR-026](decisoes/ADR-026-confirmacao-do-evento-pelo-tamanho.md)):
+  evento grande confirma a até metade da distância, em log, entre o fator e 1; evento de até 25% vale
+  pela publicação, a menos que o preço o desminta por mais de 25%. Até 2026-10-18 a folga era de 12%
+  fixos. Eventos do mesmo dia se combinam — o Bradesco fez ×50 e ×0,02 em 2009.
   Em 24 empresas, 36 de 40 bateram; os 4 restantes eram o Itaú de 2011 (a B3 lista só o grupamento de
   um grupamento seguido de desdobramento), a Renner de 2005 e um papel que ficou 866 dias sem negociar
 

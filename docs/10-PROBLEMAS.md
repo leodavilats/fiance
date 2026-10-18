@@ -77,9 +77,16 @@ COTAHIST como prova:
 **A marca já foi corrigida** (migração 0021, 2026-10-18): evento recusado ou de outra classe não
 esconde mais o salto, e a razão perto de um fator comum marca mesmo abaixo de 50% — de 1.885 para
 2.305 dias marcados em ações. O fator 1,5 ficou de fora da marca: somava 2.679 dias, quase todos
-queda comum de papel pouco líquido. **Falta o ajuste:** a regra de confirmação pelo preço (os 12%
-fixos) e a inferência de FII, de bonificação pequena e do fator 1,5. A série ainda não corrige esses
-pontos; agora, pelo menos, os mostra. O exemplo do portal segue na HAPV3.
+queda comum de papel pouco líquido.
+
+**A confirmação também** (migração 0022, [ADR-026](decisoes/ADR-026-confirmacao-do-evento-pelo-tamanho.md)):
+a folga cresce com o tamanho do evento, e 85 eventos que a B3 publicou e o preço recusava por pouco
+passaram a ajustar a série — BTYU11, PDGR3, SEQL3, RCSL4 entre eles. Os 30 que seguem recusados são
+todos desmentidos pelo preço.
+
+**Falta a inferência** do que nenhuma lista da B3 traz: FII (pelas cotas do informe da CVM),
+bonificação pequena (pelo número de ações e pelo IPE) e o fator 1,5; e o diagnóstico, um a um, dos 25
+eventos grandes que faltam. O exemplo do portal segue na HAPV3.
 
 ### As parcelas de provento: data de pagamento e parcelas faltando
 

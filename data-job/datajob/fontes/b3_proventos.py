@@ -17,7 +17,7 @@ _BASE = "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCa
 _POR_PAGINA = 120
 
 AJUSTAM = {"DESDOBRAMENTO", "GRUPAMENTO", "BONIFICACAO"}
-_TOLERANCIA = Decimal("0.12")
+EVENTO_PEQUENO = Decimal("1.25").ln()
 
 
 def _url(metodo: str, consulta: dict) -> str:
@@ -170,6 +170,14 @@ _PRECO_EM_VOLTA = sa.text(
 )
 
 
+def confere(observada: Decimal, fator: Decimal) -> bool:
+    distancia = abs((observada / fator).ln())
+    tamanho = abs(fator.ln())
+    if tamanho <= EVENTO_PEQUENO:
+        return distancia <= EVENTO_PEQUENO
+    return distancia <= tamanho / 2
+
+
 def validar(conn: sa.Connection, eventos: list[dict]) -> None:
     grupos: dict[tuple, list[dict]] = defaultdict(list)
     for e in eventos:
@@ -189,8 +197,7 @@ def validar(conn: sa.Connection, eventos: list[dict]) -> None:
             status, observada = "sem_preco", None
         else:
             observada = Decimal(antes) / Decimal(depois)
-            confere = abs(observada / combinado - 1) <= _TOLERANCIA
-            status = "confirmado" if confere else "divergente"
+            status = "confirmado" if confere(observada, combinado) else "divergente"
         for e in grupo:
             e["status"], e["razao_observada"] = status, observada
 
