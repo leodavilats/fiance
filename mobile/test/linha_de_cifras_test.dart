@@ -62,7 +62,7 @@ void main() {
       await montar(tester, largura);
 
       expect(
-        toposExatos(tester, ['PREÇO', 'JUSTO', 'MARGEM', 'DY']).length,
+        toposExatos(tester, ['PREÇO', 'PISO', 'MARGEM', 'DY']).length,
         1,
         reason: 'os quatro rótulos começam na mesma altura',
       );
@@ -84,7 +84,7 @@ void main() {
   ) async {
     await montar(tester, 320, escala: 2);
 
-    final topo = toposExatos(tester, ['PREÇO', 'JUSTO']);
+    final topo = toposExatos(tester, ['PREÇO', 'PISO']);
     final baixo = toposExatos(tester, ['MARGEM', 'DY']);
     expect(topo.length, 1, reason: 'preço e preço justo dividem a primeira linha');
     expect(baixo.length, 1, reason: 'margem e dividendos dividem a segunda linha');

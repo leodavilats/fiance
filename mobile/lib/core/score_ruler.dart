@@ -92,6 +92,13 @@ String fairBandEdgeLabel(double? price, double? low, double? high) {
   return 'na faixa';
 }
 
+String fairBandEdgeName(double? price, double? low, double? high) {
+  if (low == null || high == null || price == null) return 'FAIXA';
+  if (price < low) return 'PISO';
+  if (price > high) return 'TETO';
+  return 'FAIXA';
+}
+
 String bandQualityLabel(String? quality, int independentInputs) {
   switch (quality) {
     case 'firme':

@@ -770,6 +770,21 @@ class ContributionSimulatorViewState
   Object? _error;
 
   @override
+  void initState() {
+    super.initState();
+    ref.listenManual(surplusProvider, (_, sobra) {
+      final livre = sobra.valueOrNull?.cascade.availableToInvest ?? 0;
+      if (livre <= 0 || _contributionCtrl.text != '500') return;
+      _contributionCtrl.text = formatForInput(livre.roundToDouble());
+    }, fireImmediately: true);
+    ref.listenManual(preferencesProvider, (_, prefs) {
+      final meta = prefs.valueOrNull?.passiveIncomeGoal;
+      if (meta == null || _targetCtrl.text.isNotEmpty) return;
+      _targetCtrl.text = formatForInput(meta);
+    }, fireImmediately: true);
+  }
+
+  @override
   void dispose() {
     _contributionCtrl.dispose();
     _monthsCtrl.dispose();

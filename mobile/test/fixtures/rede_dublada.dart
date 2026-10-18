@@ -24,6 +24,10 @@ const telasDoApp = <String, String>{
   'voce-conta': '/voce/conta',
   'voce-conta-excluir': '/voce/conta/excluir',
   'voce-conta-importar': '/voce/conta/importar',
+  'voce-notificacoes': '/voce/avisos',
+  'voce-investir': '/voce/investir',
+  'sobra-aporte': '/sobra/aporte',
+  'patrimonio-projecao': '/patrimonio/projecao',
 };
 
 class RedeDublada extends Interceptor {

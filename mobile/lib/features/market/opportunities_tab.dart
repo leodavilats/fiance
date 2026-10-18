@@ -11,11 +11,16 @@ import '../../core/labels.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/chip.dart';
 import '../../core/widgets/data_row.dart';
-import '../../core/widgets/disclosure.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/help_tooltip.dart';
 import '../../core/score_ruler.dart'
-    show basisLabel, dataYearsLabel, fairBandEdgeLabel, fairBandLabel, fairBandSummary;
+    show
+        basisLabel,
+        dataYearsLabel,
+        fairBandEdgeLabel,
+        fairBandEdgeName,
+        fairBandLabel,
+        fairBandSummary;
 import '../../core/widgets/score_ruler.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
@@ -348,23 +353,27 @@ const fiDiscoverTools = [
 class DiscoverTools extends StatelessWidget {
   const DiscoverTools({super.key});
 
+  static const _icones = [
+    Icons.trending_down,
+    Icons.compare_arrows,
+    Icons.savings_outlined,
+    Icons.balance,
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
-      child: FiDisclosure(
-        title: 'Ferramentas',
-        detail: 'Quedas, comparar ativos e renda fixa',
-        child: FiRows(
-          children: [
-            for (final (nome, pergunta, rota) in fiDiscoverTools)
-              FiDataRow(
-                label: nome,
-                detail: pergunta,
-                onTap: () => context.go(rota),
-              ),
-          ],
-        ),
+      child: Wrap(
+        spacing: FiSpace.s4,
+        children: [
+          for (final (i, (nome, _, rota)) in fiDiscoverTools.indexed)
+            FiButton.quiet(
+              label: nome,
+              icon: _icones[i],
+              onPressed: () => context.go(rota),
+            ),
+        ],
       ),
     );
   }
@@ -1032,7 +1041,7 @@ class FiOpportunityObject extends StatelessWidget {
             figures: [
               _Figure(label: 'PREÇO', value: formatCurrency(o.price)),
               _Figure(
-                label: 'JUSTO',
+                label: fairBandEdgeName(o.price, o.fairLow, o.fairHigh),
                 value: fairBandEdgeLabel(o.price, o.fairLow, o.fairHigh),
                 glossaryKey: 'faixa_de_preco_justo',
               ),

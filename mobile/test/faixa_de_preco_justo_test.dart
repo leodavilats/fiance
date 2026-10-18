@@ -44,6 +44,12 @@ void main() {
     test('dentro da faixa não há borda a favor nem contra', () {
       expect(fairBandEdgeLabel(20.0, 10.0, 30.0), 'na faixa');
     });
+
+    test('o rótulo diz qual borda é, para não se ler como preço único', () {
+      expect(fairBandEdgeName(41.91, 60.32, 146.03), 'PISO');
+      expect(fairBandEdgeName(51.78, 12.94, 23.77), 'TETO');
+      expect(fairBandEdgeName(20.0, 10.0, 30.0), 'FAIXA');
+    });
   });
 
   group('sem preço justo se declara', () {

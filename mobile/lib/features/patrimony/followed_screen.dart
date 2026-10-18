@@ -198,12 +198,6 @@ class _FollowedObjectState extends ConsumerState<_FollowedObject> {
                 ),
                 if (item.action == 'vender')
                   FiTag.series(label: 'Venda', color: fiInk2(context)),
-                IconButton(
-                  onPressed: _stopping ? null : _stop,
-                  icon: const Icon(Icons.visibility_off_outlined),
-                  tooltip: 'Deixar de acompanhar',
-                  iconSize: 20,
-                ),
               ],
             ),
             FiRows(
@@ -238,6 +232,11 @@ class _FollowedObjectState extends ConsumerState<_FollowedObject> {
                     value: formatDecimal(item.scoreAtSuggestion, digits: 0),
                   ),
               ],
+            ),
+            FiButton.quiet(
+              label: 'Deixar de acompanhar',
+              busy: _stopping,
+              onPressed: _stopping ? null : _stop,
             ),
           ],
         ),
