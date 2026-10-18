@@ -13,6 +13,7 @@ const telasDoApp = <String, String>{
   'patrimonio-renda-fixa': '/patrimonio/renda-fixa',
   'patrimonio-razao': '/patrimonio/razao',
   'patrimonio-razao-importar': '/patrimonio/razao/importar',
+  'patrimonio-razao-importar-b3': '/patrimonio/razao/importar/b3',
   'patrimonio-razao-conferir': '/patrimonio/razao/conferir',
   'patrimonio-proventos': '/patrimonio/proventos',
   'patrimonio-seguidas': '/patrimonio/seguidas',
