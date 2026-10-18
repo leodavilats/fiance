@@ -195,3 +195,38 @@ def test_fre_de_outra_mudanca_de_capital_nao_vira_evento():
     assert inferencia.candidatos([aumento], {}, INICIO_DO_IPE) == [], (
         "o preço caiu à metade, mas o FRE só mostra um aumento de 15%"
     )
+
+
+def test_desdobramento_de_fii_vira_evento_pelas_cotas_do_informe(engine):
+    with engine.begin() as conn:
+        _papel(
+            conn,
+            "BRRBRFCTF000",
+            "CI",
+            {"2024-01-29": ("100", "100"), "2024-01-30": ("10", "10.1")},
+            codbdi="12",
+        )
+        coleta = _coleta(conn)
+        for referencia, cotas in (("2023-12-01", 1000), ("2024-01-01", 10000)):
+            conn.execute(
+                sa.text(
+                    "INSERT INTO mercado.fii_mensal (emissor, classe, referencia, cnpj, isin, nome, "
+                    "cotas_emitidas, coleta_id) VALUES ('RBRF', 'CI', :r, '77', 'BRRBRFCTF000', "
+                    "'RBR ALPHA', :q, :c)"
+                ),
+                {"r": referencia, "q": cotas, "c": coleta},
+            )
+        conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_fundo"))
+        antes = conn.execute(
+            sa.text("SELECT salto_sem_evento FROM mercado.serie_fundo WHERE data = '2024-01-30'")
+        ).scalar_one()
+        assert inferencia.inferir(conn) == 1
+        conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_fundo"))
+        depois = conn.execute(
+            sa.text("SELECT * FROM mercado.serie_fundo WHERE data = '2024-01-30'")
+        ).one()
+
+    assert antes, "a queda de 90% sem evento estava marcada"
+    assert not depois.salto_sem_evento and abs(depois.retorno_total - Decimal("0.01")) < Decimal(
+        "0.001"
+    ), "10 para 1 pelas cotas do informe: a série fica contínua (100 → 10,1 ajustado é +1%)"

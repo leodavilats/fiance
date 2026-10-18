@@ -55,6 +55,8 @@ def fator_comum(
 
 
 def fator_exato(razao: Decimal) -> Decimal | None:
+    if razao <= 0:
+        return None
     n = razao if razao >= 1 else 1 / razao
     inteiro = n.to_integral_value()
     if not 2 <= inteiro <= MAIOR_FATOR or abs(n / inteiro - 1) > EXATO:
@@ -187,10 +189,74 @@ def candidatos(
     return inferidos
 
 
-def inferir(conn: sa.Connection) -> int:
+# FII não está no IPE: a segunda prova é a quantidade de cotas do informe mensal da CVM, do mês
+# anterior à data-com para o mês do salto.
+_SALTOS_DE_FII = sa.text(
+    """
+    WITH s AS (
+        SELECT s.emissor, s.classe, s.data, s.data - s.dias_desde_anterior AS data_anterior,
+            (SELECT p.fechamento FROM mercado.serie_fundo p
+              WHERE p.emissor = s.emissor AND p.classe = s.classe AND p.data < s.data
+              ORDER BY p.data DESC LIMIT 1) AS fechamento_anterior,
+            c.abertura / c.fator_cotacao AS abertura
+        FROM mercado.serie_fundo s
+        JOIN mercado.cotacao c ON c.isin = s.isin AND c.data = s.data
+        WHERE s.salto_sem_evento AND s.dias_desde_anterior <= 30 AND s.tipo_ativo = 'fii'
+    ),
+    informe AS (
+        SELECT s.*,
+            (SELECT f FROM mercado.fii_mensal f WHERE f.emissor = s.emissor AND f.classe = s.classe
+              AND f.referencia < date_trunc('month', s.data_anterior)
+              ORDER BY f.referencia DESC LIMIT 1) AS antes,
+            (SELECT f FROM mercado.fii_mensal f WHERE f.emissor = s.emissor AND f.classe = s.classe
+              AND f.referencia >= date_trunc('month', s.data)
+              ORDER BY f.referencia LIMIT 1) AS depois
+        FROM s
+    )
+    SELECT emissor, classe, data, data_anterior, fechamento_anterior, abertura,
+        (depois).cnpj AS cnpj, (antes).referencia AS referencia_antes,
+        (antes).cotas_emitidas AS cotas_antes, (depois).referencia AS referencia_depois,
+        (depois).cotas_emitidas AS cotas_depois
+    FROM informe
+    WHERE (antes).cotas_emitidas > 0 AND (depois).cotas_emitidas > 0
+    """
+)
+MESES_ENTRE_INFORMES = 3
+
+
+def candidatos_de_fii(linhas: list) -> list[dict]:
+    inferidos = []
+    for s in linhas:
+        if not (s.fechamento_anterior and s.abertura and s.cnpj):
+            continue
+        meses = (s.referencia_depois.year - s.referencia_antes.year) * 12 + (
+            s.referencia_depois.month - s.referencia_antes.month
+        )
+        if meses > MESES_ENTRE_INFORMES:
+            continue
+        razao_preco = Decimal(s.fechamento_anterior) / Decimal(s.abertura)
+        razao_cotas = Decimal(s.cotas_depois) / Decimal(s.cotas_antes)
+        multiplicador = fator_pelo_fre(razao_preco, razao_cotas)
+        if multiplicador is None:
+            continue
+        inferidos.append(
+            {
+                "cnpj": s.cnpj,
+                "classe": s.classe,
+                "data_com": s.data_anterior,
+                "multiplicador": multiplicador,
+                "razao_observada": razao_preco,
+                "protocolo": f"Informe FII {s.referencia_antes:%Y-%m} a {s.referencia_depois:%Y-%m}",
+                "assunto": f"Cotas emitidas: {s.cotas_antes} para {s.cotas_depois}",
+            }
+        )
+    return inferidos
+
+
+def _de_acoes(conn: sa.Connection) -> list[dict]:
     linhas = list(conn.execute(_SALTOS))
     if not linhas:
-        return 0
+        return []
     cnpjs = sorted({linha.cnpj for linha in linhas})
     documentos: dict[str, list] = {}
     for documento, entrega, assunto, protocolo in conn.execute(_DOCUMENTOS, {"cnpjs": cnpjs}):
@@ -202,9 +268,12 @@ def inferir(conn: sa.Connection) -> int:
     inicio_do_ipe = conn.execute(
         sa.text("SELECT min(data_entrega) FROM mercado.ipe_documento")
     ).scalar()
+    return candidatos(saltos, documentos, inicio_do_ipe)
 
+
+def inferir(conn: sa.Connection) -> int:
     novos = 0
-    for inferido in candidatos(saltos, documentos, inicio_do_ipe):
+    for inferido in _de_acoes(conn) + candidatos_de_fii(list(conn.execute(_SALTOS_DE_FII))):
         novos += conn.execute(
             sa.text(
                 "INSERT INTO mercado.evento_inferido (cnpj, classe, data_com, multiplicador, "

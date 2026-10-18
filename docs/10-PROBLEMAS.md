@@ -88,8 +88,10 @@ todos desmentidos pelo preço.
 diante, e 41 eventos que nenhuma lista da B3 trazia passam a ser inferidos — MGLU3 (2015, 2017 e 2019),
 WEGE3, CIEL3, PRIO3, RADL3 entre eles ([11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md)).
 
-**Falta:** FII (pelas cotas do informe da CVM; a `serie_fundo` ainda não lê o evento inferido). E fica
-**sem solução com o dado que há**: evento antes de 2010 (Gerdau e Bradesco de 2005 a 2008, sem FRE nem
+**E a de FII** (migração 0023): pelas cotas emitidas do informe mensal da CVM, 19 eventos — dez para um,
+na maioria. Os saltos de FII sem informe dos dois lados (237 de 481) seguem marcados.
+
+Fica **sem solução com o dado que há**: evento antes de 2010 (Gerdau e Bradesco de 2005 a 2008, sem FRE nem
 IPE) e bonificação pequena (o FRE mostra o fator, mas não a data-com). O exemplo do portal segue na
 HAPV3.
 

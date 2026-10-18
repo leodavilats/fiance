@@ -423,6 +423,15 @@ Medido antes de aplicar: 41 eventos novos, entre eles MGLU3 (2015, 2017 e 2019),
 na CVM — antes de 2010 (Gerdau e Bradesco de 2005 a 2008) — e a bonificação pequena, que o FRE mostra
 mas sem a data-com.
 
+**FII pelas cotas do informe** (desde 2026-10-18). Fundo não entrega documento ao IPE, e o FRE é de
+companhia. A segunda prova é a quantidade de cotas emitidas no informe mensal da CVM
+(`mercado.fii_mensal`), do mês anterior à data-com para o mês do salto, com até três meses entre os
+dois informes: preço e cotas no mesmo fator comum a 10%, ou qualquer fator inteiro com as cotas
+exatas a 1%. A `serie_fundo` lê o evento inferido pelo CNPJ do fundo no informe. Medido antes: 19
+eventos — a maioria 10 para 1 com as cotas exatas (HGBS11, RBRF11, MCHY11, SADI11), mais BCFF11 (8),
+NCHB11 (9) e RBFF11 (5). De 481 saltos marcados em FII, 237 não têm informe dos dois lados — antes
+de 2016, ou fundo sem informe —, e ficam marcados.
+
 A composição do capital vem dos arquivos de DFP e ITR já guardados; o número de ações tem unidade
 inconsistente entre empresas (a Gafisa declara em milhares), o que não afeta a razão, mas afeta qualquer
 uso absoluto.
