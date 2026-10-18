@@ -256,27 +256,25 @@ class _GapRow extends StatelessWidget {
                           ),
                         ),
                         Positioned(
+                          left: 0,
+                          width: largura * (falta ? current : meta),
+                          top: 2,
+                          height: 8,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: categoryBarColor,
+                              borderRadius: BorderRadius.circular(FiRadius.sm),
+                            ),
+                          ),
+                        ),
+                        Positioned(
                           left: largura * inicioDoDesvio,
                           width: largura * (fimDoDesvio - inicioDoDesvio),
                           top: 2,
                           height: 8,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: driftColor.withValues(
-                                alpha: falta ? 0.22 : 0.32,
-                              ),
-                              borderRadius: BorderRadius.circular(FiRadius.sm),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: 0,
-                          width: largura * current,
-                          top: 2,
-                          height: 8,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: categoryBarColor,
+                              color: falta ? driftColor.withValues(alpha: 0.22) : driftColor,
                               borderRadius: BorderRadius.circular(FiRadius.sm),
                             ),
                           ),
@@ -414,12 +412,16 @@ class _Reallocation extends StatelessWidget {
             ),
             if (target.fairLow != null && target.fairHigh != null)
               FiDataRow(
-                label: 'Faixa de preço justo',
+                label: 'Faixa de preço justo de ${target.ticker}',
                 value: '${formatCurrency(target.fairLow)} a ${formatCurrency(target.fairHigh)}',
               ),
           ],
         ),
         const SizedBox(height: FiSpace.s2),
+        Text(
+          'Pontuação de ${target.ticker}',
+          style: FiType.caption.copyWith(color: fiInk3(context)),
+        ),
         ScoreRuler(
           score: target.score,
           size: ScoreRulerSize.list,

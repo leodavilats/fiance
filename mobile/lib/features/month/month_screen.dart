@@ -52,11 +52,6 @@ class MonthScreen extends ConsumerWidget {
             icon: const Icon(Icons.notifications_none_outlined),
             onPressed: () => GoRouter.of(context).go('/mes/feed'),
           ),
-          IconButton(
-            tooltip: 'Trocar de mês',
-            icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: () => _pickMonth(context, ref, entries.valueOrNull),
-          ),
         ],
       ),
       floatingActionButton: mostraLancar

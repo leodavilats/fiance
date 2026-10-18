@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/format.dart';
 import '../../core/score_ruler.dart'
@@ -60,8 +61,18 @@ class AssetDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final podeVoltar = GoRouter.of(context).canPop();
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text(ticker.toUpperCase()),
+        leading: podeVoltar
+            ? null
+            : IconButton(
+                tooltip: 'Ir para Descobrir',
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.go('/descobrir'),
+              ),
+      ),
       body: AssetDetailContent(ticker: ticker.toUpperCase()),
     );
   }

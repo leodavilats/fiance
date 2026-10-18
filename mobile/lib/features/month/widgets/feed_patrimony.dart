@@ -36,24 +36,20 @@ class FiPatrimonyBlock extends StatelessWidget {
         FiFigures(
           figures: {
             'INVESTIDO': formatCurrency(summary.totalInvested),
-            'PROVENTOS/MÊS': formatCurrency(summary.monthlyDividendsEstimate),
+            'PROVENTOS ESTIMADOS/MÊS': formatCurrency(summary.monthlyDividendsEstimate),
           },
         ),
         if (meta != null) ...[
           const SizedBox(height: FiSpace.s5),
           FiMeasure(
             label: 'Meta de renda passiva',
-            value: (summary.passiveIncomeProgress ?? 0).clamp(0, 1) * 100,
+            value: (summary.passiveIncomeProgress ?? 0).clamp(0, 100),
             readout: '${formatCurrency(meta)}/mês',
             reference: 100,
             note:
-                '${formatPercent((summary.passiveIncomeProgress ?? 0) * 100, digits: 0)} do alvo, '
-                'com ${formatCurrency(summary.monthlyDividendsEstimate)} por mês hoje',
-            state: fiBandFor(
-              (summary.passiveIncomeProgress ?? 0) * 100,
-              fiGoalProgressBands,
-              1,
-            ).state,
+                '${formatPercent(summary.passiveIncomeProgress ?? 0, digits: 0)} do alvo, '
+                'com ${formatCurrency(summary.monthlyDividendsEstimate)} por mês estimados',
+            state: fiBandFor(summary.passiveIncomeProgress ?? 0, fiGoalProgressBands, 1).state,
           ),
           FiProvenance(
             summary: 'Como lemos o progresso da meta',

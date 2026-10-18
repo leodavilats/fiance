@@ -33,7 +33,7 @@ class FiPortfolioSummary extends StatelessWidget {
         FiFigures(
           figures: {
             'APLICADO': formatCurrency(summary.totalInvested),
-            'PROVENTOS EM 12 MESES':
+            'PROVENTOS RECEBIDOS EM 12 MESES':
                 recebido == null ? '—' : formatCurrency(recebido),
           },
         ),

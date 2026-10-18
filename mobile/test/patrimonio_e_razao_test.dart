@@ -227,7 +227,7 @@ void main() {
       });
       await _montar(tester, servidor, const PatrimonyScreen());
 
-      expect(find.text('PROVENTOS EM 12 MESES'), findsOneWidget);
+      expect(find.text('PROVENTOS RECEBIDOS EM 12 MESES'), findsOneWidget);
       expect(find.text(formatCurrency(321.5)), findsWidgets,
           reason: 'o número do topo é o que caiu na conta, não a estimativa mensal');
       expect(find.text(formatCurrency(412.8)), findsNothing,
