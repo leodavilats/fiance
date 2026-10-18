@@ -14,6 +14,10 @@ class WhatsNewItem(BaseModel):
     ticker: str | None = None
     action: str | None = None
     action_label: str | None = None
+    topic: str | None = Field(
+        None,
+        description="O assunto do aviso, estável entre leituras: a caixa de avisos não o repete.",
+    )
 
 
 class WhatsNewResponse(BaseModel):

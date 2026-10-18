@@ -66,6 +66,7 @@ FLOAT_PERMITIDO = frozenset(
         "rewarded_at",
         "score_at_suggestion",
         "ratio_from",
+        "read_at",
         "ratio_to",
         "settled_at",
         "sold_at",

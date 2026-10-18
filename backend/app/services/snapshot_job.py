@@ -66,6 +66,8 @@ async def record_snapshot_for_user(user_id: str) -> bool:
 
 
 async def run_snapshot_cycle() -> int:
+    from app.services import inbox_service
+
     recorded = 0
     for user_id in portfolio_store.list_all_user_ids():
         try:
@@ -73,6 +75,11 @@ async def run_snapshot_cycle() -> int:
                 recorded += 1
         except Exception:
             logger.exception("Falha ao gravar snapshot do usuário %s", user_id)
+            continue
+        try:
+            await inbox_service.sync_for_user(user_id)
+        except Exception:
+            logger.exception("Falha ao atualizar a caixa de avisos do usuário %s", user_id)
 
     if recorded:
         logger.info("Snapshot diário gravado para %d usuário(s).", recorded)

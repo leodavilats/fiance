@@ -606,6 +606,25 @@
   "GET /api/v1/health": [
     "status"
   ],
+  "GET /api/v1/inbox": [
+    "has_more",
+    "items",
+    "items[].action",
+    "items[].action_label",
+    "items[].created_at",
+    "items[].detail",
+    "items[].id",
+    "items[].kind",
+    "items[].read_at",
+    "items[].severity",
+    "items[].ticker",
+    "items[].title",
+    "next_cursor",
+    "unread"
+  ],
+  "GET /api/v1/inbox/unread": [
+    "unread"
+  ],
   "GET /api/v1/income-compare": [
     "amount",
     "assets",
@@ -1178,6 +1197,7 @@
     "items[].severity",
     "items[].ticker",
     "items[].title",
+    "items[].topic",
     "since"
   ],
   "POST /api/v1/account/import": [
@@ -1418,6 +1438,12 @@
     "tipo_taxa",
     "valor_investido!",
     "vencimento"
+  ],
+  "POST /api/v1/inbox/read": [
+    "unread"
+  ],
+  "POST /api/v1/inbox/read (entrada)": [
+    "ids"
   ],
   "POST /api/v1/metrics/reset": [
     "reset"

@@ -4,10 +4,12 @@ import logging
 import time
 
 from app.analysis.texto import reais
+from app.core.brt import now_brt
 from app.notifications import send_push
 from app.repositories.asset_repository import AssetRepository
+from app.services import inbox_service
 from app.services.opportunity_service import OpportunityService
-from app.storage import portfolio_store
+from app.storage import inbox_store, portfolio_store
 
 logger = logging.getLogger("fiance.notification_job")
 
@@ -49,6 +51,10 @@ async def _check_price_alerts(user_id: str, tokens: list[str]) -> None:
             continue
 
         direction = "abaixo de" if alert["condition"] == "below" else "acima de"
+        inbox_store.record([inbox_service.price_alert_notice(alert, price)], user_id=user_id)
+        portfolio_store.mark_alert_triggered(alert["id"], user_id=user_id)
+        if not tokens:
+            continue
         invalid = send_push(
             tokens,
             title=f"Alerta de preço: {alert['ticker']}",
@@ -58,7 +64,6 @@ async def _check_price_alerts(user_id: str, tokens: list[str]) -> None:
             ),
             data={"type": "price_alert", "ticker": alert["ticker"]},
         )
-        portfolio_store.mark_alert_triggered(alert["id"], user_id=user_id)
         for invalid_token in invalid:
             portfolio_store.unregister_device_token(invalid_token, user_id=user_id)
 
@@ -107,6 +112,9 @@ async def _send_opportunities_digest(
         review_summary = ", ".join(o.ticker for o in to_review)
         body_parts.append(f"revisar na carteira: {review_summary}")
 
+    inbox_store.record(
+        [inbox_service.digest_notice(" · ".join(body_parts), now_brt().date())], user_id=user_id
+    )
     invalid = send_push(
         tokens,
         title="Resumo de ajuste de carteira",
@@ -132,6 +140,8 @@ async def run_notification_cycle() -> None:
     tokens_by_user: dict[str, list[str]] = {}
     for row in portfolio_store.list_all_device_tokens():
         tokens_by_user.setdefault(row["user_id"], []).append(row["token"])
+    for user_id in portfolio_store.list_users_with_pending_price_alerts():
+        tokens_by_user.setdefault(user_id, [])
 
     if not tokens_by_user:
         return
@@ -144,6 +154,9 @@ async def run_notification_cycle() -> None:
 
             if prefs.get("notify_price_alerts", True):
                 await _check_price_alerts(user_id, tokens)
+
+            if not tokens:
+                continue
 
             frequency = prefs.get("opportunities_frequency", "weekly")
             last_sent = portfolio_store.get_last_digest_sent_at(user_id=user_id)

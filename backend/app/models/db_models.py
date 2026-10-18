@@ -403,3 +403,24 @@ class DebtDb(Base):
     settled_at: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[float] = mapped_column(Float, default=time.time)
     updated_at: Mapped[float] = mapped_column(Float, default=time.time)
+
+
+class InboxItemDb(Base):
+    __tablename__ = "inbox_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    dedup_key: Mapped[str] = mapped_column(String)
+    kind: Mapped[str] = mapped_column(String)
+    severity: Mapped[str] = mapped_column(String, default="info")
+    title: Mapped[str] = mapped_column(String)
+    detail: Mapped[str] = mapped_column(Text, default="")
+    ticker: Mapped[str | None] = mapped_column(String, nullable=True)
+    action: Mapped[str | None] = mapped_column(String, nullable=True)
+    action_label: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[float] = mapped_column(Float)
+    read_at: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
+Index("ux_inbox_items_user_dedup", InboxItemDb.user_id, InboxItemDb.dedup_key, unique=True)
+Index("ix_inbox_items_user_created", InboxItemDb.user_id, InboxItemDb.created_at)

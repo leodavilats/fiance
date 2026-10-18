@@ -48,6 +48,7 @@ LEFT_OUT = {
     "referral_code": "código de indicação",
     "referrals_made": "indicações feitas",
     "cash_recurrences": "recorrências de caixa",
+    "inbox_items": "avisos, que voltam a ser gerados",
 }
 
 

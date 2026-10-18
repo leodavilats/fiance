@@ -563,6 +563,15 @@ def list_all_device_tokens() -> list[DeviceToken]:
         ]
 
 
+def list_users_with_pending_price_alerts() -> list[str]:
+    with _session_global() as session:
+        return list(
+            session.scalars(
+                select(PriceAlertDb.user_id).where(PriceAlertDb.triggered_at.is_(None)).distinct()
+            )
+        )
+
+
 def list_device_tokens(user_id: str | None = None) -> list[DeviceToken]:
     with _session(user_id) as (session, uid):
         rows = session.scalars(select(DeviceTokenDb).where(DeviceTokenDb.user_id == uid)).all()

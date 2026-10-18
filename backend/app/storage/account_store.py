@@ -16,6 +16,7 @@ from app.models.db_models import (
     FixedIncomePositionDb,
     FollowedSuggestionDb,
     GoalDb,
+    InboxItemDb,
     NotifiedOpportunityDb,
     PortfolioPosition,
     PortfolioSnapshot,
@@ -58,6 +59,7 @@ USER_SCOPED_MODELS = (
     ("cash_entries", CashEntryDb),
     ("cash_recurrences", CashRecurrenceDb),
     ("debts", DebtDb),
+    ("inbox_items", InboxItemDb),
 )
 
 GLOBAL_TABLES = frozenset(

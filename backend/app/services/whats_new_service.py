@@ -99,6 +99,7 @@ class WhatsNewService:
                 detail=detail,
                 action="analyze",
                 action_label="Ver a carteira",
+                topic=f"patrimony:{direction}",
             )
         ]
 
@@ -124,6 +125,7 @@ class WhatsNewService:
                 ticker=to_review[0].ticker if len(to_review) == 1 else None,
                 action="rebalance",
                 action_label="Ver sugestões de ajuste",
+                topic="verdict:" + ",".join(sorted(p.ticker for p in to_review)),
             )
         ]
 
@@ -156,6 +158,7 @@ class WhatsNewService:
                 detail=detail,
                 action="fixed_income",
                 action_label="Ver renda fixa",
+                topic="maturity:" + ",".join(sorted(str(i.id) for i in vencendo)),
             )
         ]
 
@@ -200,6 +203,7 @@ class WhatsNewService:
                 ),
                 action="rebalance",
                 action_label="Rebalancear",
+                topic=f"allocation:{worst.category}:{direction}",
             )
         ]
 
@@ -223,6 +227,7 @@ class WhatsNewService:
                 ),
                 action="analyze",
                 action_label="Ver operações encerradas",
+                topic="tax",
             )
         ]
 
@@ -263,5 +268,6 @@ class WhatsNewService:
                 ticker=best.ticker,
                 action="market",
                 action_label="Ver oportunidades",
+                topic=f"new_opportunity:{best.ticker}",
             )
         ]

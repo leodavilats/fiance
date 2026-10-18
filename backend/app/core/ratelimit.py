@@ -18,6 +18,7 @@ EXPENSIVE_SUFFIXES = (
     "/quick-invest",
     "/dashboard",
     "/sectors-summary",
+    "/inbox",
 )
 
 WRITE_PER_MINUTE = 60
