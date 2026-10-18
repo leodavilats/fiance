@@ -39,6 +39,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [024](ADR-024-api-de-dados.md) | A base de mercado vira um serviço de dados, separado do laboratório | `ACEITO` | 2026-10-14 |
 | [025](ADR-025-cobranca-da-api-de-dados.md) | A API de dados é paga, sem plano gratuito, em três degraus | `ACEITO` | 2026-10-14 |
 | [026](ADR-026-confirmacao-do-evento-pelo-tamanho.md) | O preço confirma o evento na medida do tamanho dele | `ACEITO` | 2026-10-18 |
+| [027](ADR-027-caixa-de-avisos-guardada.md) | Os avisos são guardados numa caixa, com lido e não lido | `ACEITO` | 2026-10-18 |
 
 ---
 

@@ -177,6 +177,7 @@ corretora única. **O que não cobre:** emissão de DARF, informe anual.
 | Metas, com alvo declarado distinto do padrão | `[ATUAL]` | `api/goals.py` — sem declaração, nada cobra desvio |
 | Alertas de preço | `[ATUAL]` | `api/alerts.py` |
 | Notificações push | `[ATUAL]` | `notifications/` |
+| Caixa de avisos, com lido e não lido | `[IMPLEMENTADO]` | `services/inbox_service.py` — ✅ `/mes/avisos`, sino com contador ([ADR-027](decisoes/ADR-027-caixa-de-avisos-guardada.md)) |
 | Onboarding derivado | `[IMPLEMENTADO]` | `api/onboarding.py` — ✅ `/voce/comecar` |
 | Telemetria com dicionário fechado | `[ATUAL]` | `core/events.py` — o aplicativo envia por `mobile/lib/core/product_events.dart`, conferido contra o catálogo |
 | Rotas de administrador | `[IMPLEMENTADO]` | `require_admin` |

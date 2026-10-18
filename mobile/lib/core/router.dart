@@ -16,13 +16,12 @@ import '../features/config/config_screen.dart';
 import '../features/config/delete_account_screen.dart';
 import '../features/config/import_account_screen.dart';
 import '../features/config/onboarding_screen.dart';
-import '../features/month/feed_screen.dart';
+import '../features/month/inbox_screen.dart';
 import '../features/month/debts_screen.dart';
 import '../features/month/month_screen.dart';
 import '../features/surplus/surplus_screen.dart';
 import '../features/surplus/allocation_drift_screen.dart';
 import '../features/config/goals_screen.dart';
-import '../features/month/activity_screen.dart';
 import '../features/tools/income_compare_view.dart';
 import '../features/market/asset_detail_sheet.dart';
 import '../features/market/opportunities_tab.dart';
@@ -40,7 +39,7 @@ final appRouter = GoRouter(
 
     GoRoute(path: '/dashboard', redirect: (_, _) => '/mes'),
     GoRoute(path: '/hoje', redirect: (_, _) => '/mes'),
-    GoRoute(path: '/hoje/atividade', redirect: (_, _) => '/mes/atividade'),
+    GoRoute(path: '/hoje/atividade', redirect: (_, _) => '/mes/avisos'),
     GoRoute(path: '/estrategia', redirect: (_, _) => '/sobra/desvio'),
     GoRoute(path: '/estrategia/aporte', redirect: (_, _) => '/sobra/aporte'),
     GoRoute(path: '/estrategia/metas', redirect: (_, _) => '/voce/objetivos'),
@@ -74,12 +73,16 @@ final appRouter = GoRouter(
               builder: (context, state) => const MonthScreen(),
               routes: [
                 GoRoute(
+                  path: 'avisos',
+                  builder: (context, state) => const InboxScreen(),
+                ),
+                GoRoute(
                   path: 'atividade',
-                  builder: (context, state) => const ActivityScreen(),
+                  redirect: (_, _) => '/mes/avisos',
                 ),
                 GoRoute(
                   path: 'feed',
-                  builder: (context, state) => const FeedScreen(),
+                  redirect: (_, _) => '/mes/avisos',
                 ),
                 GoRoute(
                   path: 'dividas',

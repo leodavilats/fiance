@@ -27,7 +27,8 @@ o estado atual em vez de só encaminhar.
 
 Dois destinos deixaram de existir e não voltam:
 
-- **`Hoje`** respondia "o que mudou", e isso é feed, não lugar. O feed vive no `Mês`.
+- **`Hoje`** respondia "o que mudou", e isso é feed, não lugar. Os avisos vivem no sino do `Mês`,
+  em `/mes/avisos` ([ADR-027](decisoes/ADR-027-caixa-de-avisos-guardada.md)).
 - **`Estratégia`** se dissolveu: sem aporte, meta e projeção, sobrava o desvio de alocação, que é
   leitura de patrimônio e vive em `/sobra/desvio`.
 

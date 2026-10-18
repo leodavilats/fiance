@@ -69,7 +69,7 @@ class ConfigScreen extends ConsumerWidget {
                 onTap: () => context.go('/voce/investir'),
               ),
               FiDataRow(
-                label: 'O que chega até você',
+                label: 'Notificações',
                 detail: preferences.maybeWhen(
                   data: (p) => _notificationsSummary(p, alertas.valueOrNull?.length),
                   orElse: () => 'Notificações e alertas de preço',
@@ -195,7 +195,7 @@ class NotificationsScreen extends ConsumerWidget {
     final preferences = ref.watch(preferencesProvider);
 
     return _Axis(
-      title: 'O que chega até você',
+      title: 'Notificações',
       children: [
         preferences.when(
           loading: () => const FiSkeleton(
@@ -494,7 +494,7 @@ class FiNotifications extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return FiSection(
       first: true,
-      title: 'O que chega até você',
+      title: 'Notificações',
       child: FiRows(
         children: [
           FiDataRow(

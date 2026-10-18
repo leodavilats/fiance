@@ -14,11 +14,17 @@ const _androidChannel = AndroidNotificationChannel(
 Future<String?> _firebaseToken() => FirebaseMessaging.instance.getToken();
 
 class NotificationsService {
-  NotificationsService(this._repo, {Future<String?> Function()? readToken})
-    : _readToken = readToken ?? _firebaseToken;
+  NotificationsService(
+    this._repo, {
+    Future<String?> Function()? readToken,
+    this.onOpened,
+    this.onReceived,
+  }) : _readToken = readToken ?? _firebaseToken;
 
   final ApiRepository _repo;
   final Future<String?> Function() _readToken;
+  final void Function()? onOpened;
+  final void Function()? onReceived;
   final _localNotifications = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   bool _signedOut = false;
@@ -47,7 +53,12 @@ class NotificationsService {
     final settings = await messaging.requestPermission();
     permissionStatus = settings.authorizationStatus;
 
-    FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+    FirebaseMessaging.onMessage.listen((message) {
+      onReceived?.call();
+      _showForegroundNotification(message);
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((_) => onOpened?.call());
+    if (await messaging.getInitialMessage() != null) onOpened?.call();
 
     await _registerToken();
     messaging.onTokenRefresh.listen((_) {

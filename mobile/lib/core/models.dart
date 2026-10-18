@@ -370,50 +370,6 @@ class DataFreshness {
       : 'CDI/Selic estimados';
 }
 
-class WhatsNewItem {
-  WhatsNewItem({
-    required this.kind,
-    required this.severity,
-    required this.title,
-    required this.detail,
-    required this.ticker,
-    required this.action,
-    required this.actionLabel,
-  });
-
-  final String kind;
-  final String severity;
-  final String title;
-  final String detail;
-  final String? ticker;
-  final String? action;
-  final String? actionLabel;
-
-  factory WhatsNewItem.fromJson(Map<String, dynamic> j) => WhatsNewItem(
-    kind: j['kind'] as String? ?? '',
-    severity: j['severity'] as String? ?? 'info',
-    title: j['title'] as String? ?? '',
-    detail: j['detail'] as String? ?? '',
-    ticker: j['ticker'] as String?,
-    action: j['action'] as String?,
-    actionLabel: j['action_label'] as String?,
-  );
-}
-
-class WhatsNew {
-  WhatsNew({required this.items, required this.daysSince});
-
-  final List<WhatsNewItem> items;
-  final double? daysSince;
-
-  factory WhatsNew.fromJson(Map<String, dynamic> j) => WhatsNew(
-    items: (j['items'] as List? ?? const [])
-        .map((e) => WhatsNewItem.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    daysSince: (j['days_since'] as num?)?.toDouble(),
-  );
-}
-
 class PortfolioSnapshot {
   PortfolioSnapshot({
     required this.capturedAt,

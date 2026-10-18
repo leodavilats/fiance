@@ -13,7 +13,6 @@ import '../../../core/widgets/skeleton.dart';
 import '../../../core/models.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme.dart';
-import 'feed_patrimony.dart';
 
 class FiEvolutionChart extends StatefulWidget {
   const FiEvolutionChart({super.key, required this.snapshots});
@@ -418,4 +417,11 @@ class FiBenchmarkSection extends ConsumerWidget {
   }
 
   String _pct(double v) => '${v >= 0 ? '+' : ''}${formatPercent(v, digits: 1)}';
+}
+
+String fiCompactCurrency(double value) {
+  final abs = value.abs();
+  if (abs >= 1000000) return 'R\$ ${formatDecimal(value / 1000000)}M';
+  if (abs >= 1000) return 'R\$ ${formatDecimal(value / 1000, digits: 0)}k';
+  return formatCurrency(value);
 }

@@ -43,7 +43,6 @@ class FiChoiceChip extends StatelessWidget {
             borderRadius: BorderRadius.circular(FiRadius.pill),
             child: Container(
               constraints: const BoxConstraints(minHeight: FiLayout.minTouchTarget),
-              alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(FiRadius.pill),
                 border: Border.all(color: borda),
@@ -52,22 +51,25 @@ class FiChoiceChip extends StatelessWidget {
                 horizontal: FiSpace.s3,
                 vertical: FiSpace.s2,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: FiType.caption.copyWith(color: tinta),
+              child: Align(
+                widthFactor: 1,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: FiType.caption.copyWith(color: tinta),
+                      ),
                     ),
-                  ),
-                  if (onRemove != null) ...[
-                    const SizedBox(width: FiSpace.s1),
-                    Icon(Icons.close, size: 14, color: tinta),
+                    if (onRemove != null) ...[
+                      const SizedBox(width: FiSpace.s1),
+                      Icon(Icons.close, size: 14, color: tinta),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

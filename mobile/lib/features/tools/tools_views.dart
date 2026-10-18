@@ -21,7 +21,6 @@ import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
-import '../month/widgets/feed_tiles.dart';
 import '../../core/widgets/controls.dart';
 
 class _FixedIncomeOption {

@@ -4,7 +4,6 @@ import 'package:fiance/core/month.dart';
 import 'package:fiance/core/providers.dart';
 import 'package:fiance/core/theme.dart';
 import 'package:fiance/core/widgets/error_state.dart';
-import 'package:fiance/features/month/activity_screen.dart';
 import 'package:fiance/features/month/debts_screen.dart';
 import 'package:fiance/features/month/month_screen.dart';
 import 'package:fiance/features/surplus/allocation_drift_screen.dart';
@@ -280,35 +279,6 @@ void main() {
         reason: 'sem taxa não há classe: afirmar que nenhuma é cara é julgar sem comparação',
       );
       expect(find.text('Sem a taxa, não dá para dizer se suas dívidas são caras.'), findsOneWidget);
-    });
-  });
-
-  group('/mes/atividade', () {
-    testWidgets('sem novidade mostra o estado vazio', (tester) async {
-      await _abrir(tester, const ActivityScreen(), {
-        'GET /whats-new': (
-          status: 200,
-          data: {
-            'items': [
-              {
-                'kind': 'empty',
-                'severity': 'info',
-                'title': 'Nada de novo por aqui',
-                'detail': '',
-                'action': '/descobrir',
-                'action_label': 'Ver oportunidades',
-              },
-            ],
-          },
-        ),
-      });
-
-      expect(
-        find.text('Nada mudou desde a sua última visita'),
-        findsOneWidget,
-        reason: 'o servidor manda um item "empty" quando não há novidade: ele não é novidade',
-      );
-      expect(find.textContaining('do mais recente para o mais antigo'), findsNothing);
     });
   });
 

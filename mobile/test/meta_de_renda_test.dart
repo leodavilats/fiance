@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fiance/core/models.dart';
 import 'package:fiance/core/theme.dart';
-import 'package:fiance/features/month/widgets/feed_patrimony.dart';
+import 'package:fiance/features/patrimony/widgets/income_goal.dart';
 
 void main() {
   testWidgets('o progresso da meta chega em percentual e não é multiplicado de novo', (
@@ -14,7 +14,7 @@ void main() {
         theme: buildAppTheme(Brightness.light),
         home: Scaffold(
           body: SingleChildScrollView(
-            child: FiPatrimonyBlock(
+            child: FiIncomeGoalBlock(
               summary: DashboardSummary(
                 totalInvested: 84200,
                 totalCurrent: 97430.55,

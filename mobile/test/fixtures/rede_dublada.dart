@@ -5,7 +5,7 @@ enum Estado { conteudo, carregando, falha, isEmpty }
 const telasDoApp = <String, String>{
   'login': '/login',
   'mes': '/mes',
-  'mes-atividade': '/mes/atividade',
+  'mes-avisos': '/mes/avisos',
   'mes-dividas': '/mes/dividas',
   'sobra': '/sobra',
   'sobra-desvio': '/sobra/desvio',
@@ -76,6 +76,57 @@ dynamic _resposta(String caminho, Estado estado) {
 
   if (caminho.contains('/auth/me')) {
     return {'id': 'demo', 'name': 'Maria', 'email': 'maria@exemplo.com'};
+  }
+
+  if (caminho.contains('/inbox/unread') || caminho.contains('/inbox/read')) {
+    return {'unread': isEmpty ? 0 : 2};
+  }
+
+  if (caminho.contains('/inbox')) {
+    final agora = DateTime.now().millisecondsSinceEpoch / 1000;
+    return {
+      'items': isEmpty
+          ? <Object>[]
+          : [
+              {
+                'id': 3,
+                'kind': 'price_alert',
+                'severity': 'warning',
+                'title': 'PETR4 está abaixo de R\$ 30,00',
+                'detail': 'O preço chegou a R\$ 29,80, e o alerta que você criou disparou.',
+                'ticker': 'PETR4',
+                'action': 'analyze',
+                'action_label': 'Ver PETR4',
+                'created_at': agora - 2 * 3600,
+                'read_at': null,
+              },
+              {
+                'id': 2,
+                'kind': 'maturity',
+                'severity': 'warning',
+                'title': 'LCI Inter vence em 20 dias',
+                'detail': 'R\$ 8.492,10 vão voltar para o caixa — decida onde reaplicar antes disso.',
+                'action': 'fixed_income',
+                'action_label': 'Ver renda fixa',
+                'created_at': agora - 26 * 3600,
+                'read_at': null,
+              },
+              {
+                'id': 1,
+                'kind': 'allocation',
+                'severity': 'warning',
+                'title': 'Ações BR está 9 pontos acima da meta',
+                'detail': 'Atual 54% contra meta de 45%. São 2 categoria(s) fora da faixa.',
+                'action': 'rebalance',
+                'action_label': 'Rebalancear',
+                'created_at': agora - 9 * 86400,
+                'read_at': agora - 8 * 86400,
+              },
+            ],
+      'unread': isEmpty ? 0 : 2,
+      'next_cursor': null,
+      'has_more': false,
+    };
   }
 
   const listas = [
@@ -653,32 +704,6 @@ dynamic _cheio(String caminho) {
       },
       {'id': 2, 'ticker': 'MXRF11', 'condition': 'above', 'target_price': 11.0},
     ];
-  }
-
-  if (caminho.contains('/whats-new')) {
-    return {
-      ...base,
-      'days_since': 3,
-      'captured_at': '2026-09-11',
-      'total_invested': 84200.0,
-      'total_current': 97430.55,
-      'total_pnl': 13230.55,
-      'total_pnl_pct': 15.71,
-      'items': [
-        {
-          'kind': 'price',
-          'ticker': 'PETR4',
-          'title': 'PETR4 subiu 4,2% desde a última visita',
-          'detail': 'De R\$ 36,87 para R\$ 38,42.',
-        },
-        {
-          'kind': 'dividend',
-          'ticker': 'BBAS3',
-          'title': 'BBAS3 anunciou JCP',
-          'detail': 'R\$ 0,476 por ação, com crédito em 05/09.',
-        },
-      ],
-    };
   }
 
   if (caminho.contains('/referral')) {

@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import 'auth_service.dart';
 import 'cash_models.dart';
+import 'inbox_models.dart';
 import 'ledger_models.dart';
 import 'models.dart';
 
@@ -36,9 +37,22 @@ class ApiRepository {
     return QuickInvestResult.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<WhatsNew> getWhatsNew() async {
-    final res = await _dio.get('/whats-new');
-    return WhatsNew.fromJson(res.data as Map<String, dynamic>);
+  Future<InboxPage> getInbox({String? cursor, List<String>? kinds}) async {
+    final res = await _dio.get(
+      '/inbox',
+      queryParameters: {'cursor': ?cursor, if (kinds != null && kinds.isNotEmpty) 'kind': kinds},
+    );
+    return InboxPage.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<int> getInboxUnread() async {
+    final res = await _dio.get('/inbox/unread');
+    return ((res.data as Map<String, dynamic>)['unread'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<int> markInboxRead({List<int>? ids}) async {
+    final res = await _dio.post('/inbox/read', data: {'ids': ?ids});
+    return ((res.data as Map<String, dynamic>)['unread'] as num?)?.toInt() ?? 0;
   }
 
   Future<List<StoredPortfolioItem>> getPortfolio() async {

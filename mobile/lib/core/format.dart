@@ -79,6 +79,18 @@ String formatAge(double? epochSegundos) {
   return 'em ${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch((epochSegundos * 1000).round()))}';
 }
 
+String formatWhen(DateTime quando, {DateTime? agora}) {
+  final ref = agora ?? DateTime.now();
+  final hoje = DateTime(ref.year, ref.month, ref.day);
+  final dia = DateTime(quando.year, quando.month, quando.day);
+  final hora = DateFormat('HH:mm').format(quando);
+  final dias = hoje.difference(dia).inDays;
+  if (dias == 0) return 'hoje, $hora';
+  if (dias == 1) return 'ontem, $hora';
+  if (quando.year == ref.year) return DateFormat('dd/MM').format(quando);
+  return DateFormat('dd/MM/yyyy').format(quando);
+}
+
 double? oldestStamp(Iterable<double?> stamps) {
   final validos = stamps.whereType<double>().where((c) => c > 0);
   if (validos.isEmpty) return null;

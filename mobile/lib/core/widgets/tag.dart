@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../labels.dart';
 import '../theme.dart';
 
 class FiTag extends StatelessWidget {
@@ -32,6 +33,22 @@ class FiTag extends StatelessWidget {
         label,
         style: FiType.eyebrow.copyWith(color: tinta, letterSpacing: 0.6),
       ),
+    );
+  }
+}
+
+
+class FiVerdictChip extends StatelessWidget {
+  const FiVerdictChip({super.key, required this.verdict, required this.label});
+
+  final String verdict;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 140),
+      child: FiTag(label: label, state: fiVerdictState(verdict)),
     );
   }
 }

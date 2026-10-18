@@ -9,6 +9,7 @@ import 'ledger_models.dart';
 import 'month.dart';
 import 'models.dart';
 import 'notifications_service.dart';
+import 'router.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(apiBaseUrl: apiBaseUrl);
@@ -23,7 +24,11 @@ final apiRepositoryProvider = Provider<ApiRepository>((ref) {
 });
 
 final notificationsServiceProvider = Provider<NotificationsService>((ref) {
-  return NotificationsService(ref.watch(apiRepositoryProvider));
+  return NotificationsService(
+    ref.watch(apiRepositoryProvider),
+    onOpened: () => appRouter.push('/mes/avisos'),
+    onReceived: () => ref.invalidate(inboxUnreadProvider),
+  );
 });
 
 final currentUserProvider = StateProvider<AppUser?>((ref) => null);
@@ -89,8 +94,8 @@ final portfolioProvider = FutureProvider.autoDispose<List<StoredPortfolioItem>>(
   },
 );
 
-final whatsNewProvider = FutureProvider.autoDispose<WhatsNew>((ref) {
-  return ref.watch(apiRepositoryProvider).getWhatsNew();
+final inboxUnreadProvider = FutureProvider.autoDispose<int>((ref) {
+  return ref.watch(apiRepositoryProvider).getInboxUnread();
 });
 
 final fixedIncomeProvider = FutureProvider.autoDispose<FixedIncomeList>((ref) {

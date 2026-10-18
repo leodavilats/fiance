@@ -19,7 +19,9 @@ import 'widgets/patrimony_closed_trades.dart';
 import 'widgets/patrimony_composition.dart';
 import 'widgets/patrimony_fixed_income.dart';
 import 'widgets/patrimony_positions.dart';
+import 'widgets/income_goal.dart';
 import 'widgets/patrimony_summary.dart';
+import 'widgets/portfolio_health.dart';
 
 class PatrimonyScreen extends ConsumerWidget {
   const PatrimonyScreen({super.key, this.groupMode = FiAssetGroupMode.value});
@@ -99,6 +101,10 @@ class PatrimonyScreen extends ConsumerWidget {
               ),
               children: [
                 FiPortfolioSummary(summary: data.summary),
+                if (data.summary.passiveIncomeGoal != null) ...[
+                  const SizedBox(height: FiSpace.s5),
+                  FiIncomeGoalBlock(summary: data.summary),
+                ],
 
                 if (data.allocations.isNotEmpty)
                   FiSection(
@@ -119,6 +125,12 @@ class PatrimonyScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ),
+
+                if (data.health != null)
+                  FiSection(
+                    title: 'Como está a carteira',
+                    child: FiHealthBlock(health: data.health!),
                   ),
 
                 FiSection(

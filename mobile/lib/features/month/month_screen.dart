@@ -47,11 +47,7 @@ class MonthScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mês'),
         actions: [
-          IconButton(
-            tooltip: 'O que mudou',
-            icon: const Icon(Icons.notifications_none_outlined),
-            onPressed: () => GoRouter.of(context).go('/mes/feed'),
-          ),
+          const _InboxBell(),
         ],
       ),
       floatingActionButton: mostraLancar
@@ -575,6 +571,38 @@ class _EmptyMonth extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+
+class _InboxBell extends ConsumerWidget {
+  const _InboxBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final naoLidos = ref.watch(inboxUnreadProvider).valueOrNull ?? 0;
+    final marca = Theme.of(context).colorScheme.primary;
+
+    return IconButton(
+      tooltip: naoLidos == 0
+          ? 'Avisos'
+          : naoLidos == 1
+          ? 'Avisos, 1 novo'
+          : 'Avisos, $naoLidos novos',
+      icon: Badge(
+        isLabelVisible: naoLidos > 0,
+        backgroundColor: marca,
+        textColor: Theme.of(context).colorScheme.onPrimary,
+        label: Text(naoLidos > 9 ? '9+' : '$naoLidos'),
+        child: Icon(
+          naoLidos > 0 ? Icons.notifications : Icons.notifications_none_outlined,
+        ),
+      ),
+      onPressed: () async {
+        await GoRouter.of(context).push('/mes/avisos');
+        ref.invalidate(inboxUnreadProvider);
+      },
     );
   }
 }
