@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import 'package:fiance/core/providers.dart';
 import 'package:fiance/core/theme.dart';
 import 'package:fiance/core/widgets/button.dart';
 import 'package:fiance/core/widgets/controls.dart';
+import 'package:fiance/features/patrimony/import_b3_screen.dart';
 import 'package:fiance/features/patrimony/import_screen.dart';
 import 'package:fiance/features/patrimony/reconciliation_screen.dart';
 
@@ -39,7 +42,12 @@ class _Servidor extends Interceptor {
   }
 }
 
-Future<void> _montar(WidgetTester tester, _Servidor servidor, Widget tela) async {
+Future<void> _montar(
+  WidgetTester tester,
+  _Servidor servidor,
+  Widget tela, {
+  List<Override> overrides = const [],
+}) async {
   tester.view.physicalSize = const Size(390, 2400) * 2;
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
@@ -50,6 +58,7 @@ Future<void> _montar(WidgetTester tester, _Servidor servidor, Widget tela) async
         apiRepositoryProvider.overrideWithValue(
           ApiRepository(Dio()..interceptors.add(servidor)),
         ),
+        ...overrides,
       ],
       child: MaterialApp.router(
         theme: buildAppTheme(Brightness.light),
@@ -203,6 +212,124 @@ void main() {
         findsNothing,
         reason: 'gravar um texto que ninguém conferiu é gravar sem prévia',
       );
+    });
+  });
+
+  group('extrato da B3', () {
+    const arquivo = [80, 75, 3, 4];
+
+    Map<String, Object?> previa() => {
+      'format': 'extrato de movimentação da B3',
+      'rows': [
+        {
+          'line': 2,
+          'target': 'operacao',
+          'kind': 'buy',
+          'symbol': 'PETR4',
+          'day': '2026-04-30',
+          'settled_on': '2026-05-05',
+          'quantity': 2,
+          'price': 48.83,
+          'amount': 97.66,
+          'duplicate': null,
+        },
+        {
+          'line': 3,
+          'target': 'provento',
+          'kind': 'jcp',
+          'symbol': 'PETR4',
+          'day': '2026-09-21',
+          'settled_on': null,
+          'quantity': 4,
+          'price': 0.35,
+          'amount': 1.16,
+          'duplicate': {'id': 9, 'day': '2026-09-21', 'amount': 1.4},
+        },
+      ],
+      'issues': <Object>[],
+      'warnings': [
+        {
+          'line': 4,
+          'message': '“Desdobro” fica de fora: lance o evento à mão no razão, com a proporção.',
+          'field': null,
+          'raw': '',
+        },
+      ],
+      'ok': true,
+      'duplicates': 1,
+    };
+
+    testWidgets('a repetida vem desmarcada, ao lado do que já está no fiance', (tester) async {
+      final servidor = _Servidor({
+        'POST /transactions/import/b3/preview': (_) => previa(),
+        'POST /transactions/import/b3': (_) => {
+          'operations': 1,
+          'dividends': 1,
+          'skipped_duplicates': 0,
+          'ids': [1],
+          'dividend_ids': [2],
+        },
+      });
+      await _montar(
+        tester,
+        servidor,
+        const ImportB3Screen(),
+        overrides: [b3FileReaderProvider.overrideWithValue(() async => arquivo)],
+      );
+
+      await tester.tap(find.widgetWithText(FiButton, 'Escolher o arquivo .xlsx'));
+      await _esperar(tester);
+
+      expect(find.textContaining('1 operação nova.'), findsOneWidget);
+      expect(find.textContaining('Linha 4: “Desdobro” fica de fora'), findsOneWidget);
+      expect(find.textContaining('No fiance: 21/09/2026'), findsOneWidget);
+      expect(
+        find.widgetWithText(FiButton, 'Importar 1 lançamento'),
+        findsOneWidget,
+        reason: 'duplicidade é apresentada para decisão, e a decisão padrão é não gravar de novo',
+      );
+
+      await tester.tap(find.byType(Switch));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FiButton, 'Importar 2 lançamentos'));
+      await _esperar(tester);
+
+      expect(
+        servidor.pedidos['POST /transactions/import/b3'],
+        {'content_base64': base64Encode(arquivo), 'include_lines': [3]},
+        reason: 'grava o mesmo arquivo conferido, com a linha que a pessoa escolheu',
+      );
+      expect(find.text('1 operação e 1 provento importados.'), findsOneWidget);
+      expect(find.text('Livro-razão'), findsOneWidget);
+    });
+
+    testWidgets('com linha que impede, nada se importa', (tester) async {
+      final servidor = _Servidor({
+        'POST /transactions/import/b3/preview': (_) => {
+          ...previa(),
+          'issues': [
+            {
+              'line': 2,
+              'message': 'Venda de 25 ALLD3 em 2026-10-09 sem posição.',
+              'field': null,
+              'raw': '',
+            },
+          ],
+          'ok': false,
+        },
+      });
+      await _montar(
+        tester,
+        servidor,
+        const ImportB3Screen(),
+        overrides: [b3FileReaderProvider.overrideWithValue(() async => arquivo)],
+      );
+
+      await tester.tap(find.widgetWithText(FiButton, 'Escolher o arquivo .xlsx'));
+      await _esperar(tester);
+
+      expect(find.textContaining('Linha 2: Venda de 25 ALLD3'), findsOneWidget);
+      expect(_importar(tester).onPressed, isNull);
     });
   });
 

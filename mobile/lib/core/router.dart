@@ -5,6 +5,7 @@ import '../features/patrimony/patrimony_screen.dart';
 import '../features/patrimony/widgets/patrimony_positions.dart';
 import '../features/patrimony/dividends_screen.dart';
 import '../features/patrimony/followed_screen.dart';
+import '../features/patrimony/import_b3_screen.dart';
 import '../features/patrimony/import_screen.dart';
 import '../features/patrimony/ledger_screen.dart';
 import '../features/patrimony/reconciliation_screen.dart';
@@ -134,6 +135,12 @@ final appRouter = GoRouter(
                     GoRoute(
                       path: 'importar',
                       builder: (context, state) => const ImportScreen(),
+                      routes: [
+                        GoRoute(
+                          path: 'b3',
+                          builder: (context, state) => const ImportB3Screen(),
+                        ),
+                      ],
                     ),
                     GoRoute(
                       path: 'conferir',

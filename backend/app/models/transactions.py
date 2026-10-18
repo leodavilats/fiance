@@ -120,3 +120,41 @@ class ImportCommitted(BaseModel):
     imported: int
     skipped_duplicates: int
     ids: list[int] = Field(default_factory=list)
+
+
+class B3DuplicateOut(BaseModel):
+    id: int
+    day: str
+    quantity: float | None = None
+    price: float | None = None
+    amount: float | None = None
+
+
+class B3ImportRowOut(BaseModel):
+    line: int
+    target: str = Field(description="operacao | provento")
+    kind: str = Field(description="buy | sell, ou dividendo | jcp | rendimento")
+    symbol: str
+    day: str = Field(description="Pregão da operação, ou dia do crédito do provento.")
+    settled_on: str | None = Field(None, description="Dia da liquidação, como a B3 escreve.")
+    quantity: float
+    price: float
+    amount: float = Field(description="Valor da operação; no provento, o líquido recebido.")
+    duplicate: B3DuplicateOut | None = None
+
+
+class B3ImportPreview(BaseModel):
+    format: str
+    rows: list[B3ImportRowOut] = Field(default_factory=list)
+    issues: list[ImportIssueOut] = Field(default_factory=list)
+    warnings: list[ImportIssueOut] = Field(default_factory=list)
+    ok: bool
+    duplicates: int
+
+
+class B3ImportCommitted(BaseModel):
+    operations: int
+    dividends: int
+    skipped_duplicates: int
+    ids: list[int] = Field(default_factory=list)
+    dividend_ids: list[int] = Field(default_factory=list)

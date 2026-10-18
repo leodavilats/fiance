@@ -138,6 +138,7 @@ A camada mais bem construída do sistema: o razão é a fonte da carteira e do i
 | Apagar lançamento, com reprojeção | `[IMPLEMENTADO]` | idem | ✅ idem |
 | Eventos corporativos pela interface | `[IMPLEMENTADO]` | `ledger/entries.py` | ✅ idem |
 | Importação de extrato (prévia + commit) | `[IMPLEMENTADO]` | `importing/` | ✅ `/patrimonio/razao/importar` — colar; anexar arquivo não |
+| Importação do extrato de movimentação da B3 (.xlsx) | `[IMPLEMENTADO]` | `importing/b3.py`, `services/b3_import_service.py` | ✅ `/patrimonio/razao/importar/b3` — anexar o arquivo |
 | Reconstrução da projeção | `[IMPLEMENTADO]` | `POST /transactions/rebuild` | ✅ `/patrimonio/razao/conferir` |
 | Reconciliação projeção × razão | `[IMPLEMENTADO]` | `GET /transactions/reconciliation` | ✅ idem, com posição sem lançamento levada ao razão |
 | Apuração mensal de IR | `[IMPLEMENTADO]` | `ledger/apuracao.py` | parcial |
@@ -147,6 +148,14 @@ A camada mais bem construída do sistema: o razão é a fonte da carteira e do i
 | Proventos: sugestões do calendário | `[IMPLEMENTADO]` | `services/dividend_calendar_service.py` | ✅ `/patrimonio/proventos`, colapsado |
 | Direito a provento provado pela data-com | `[ATUAL]` | `services/dividend_calendar_service.py` | ✅ bloco "Aguardando sua confirmação" — medição de 2026-09-25 sobre a BRAPI, então a fonte: 0 de 3.659 proventos sem data-com; o indeterminado vem de declaração de posição que absorveu a história |
 | Razão: filtro por tipo, período e ativo, com paginação | `[ATUAL]` | `GET /transactions` | ✅ `/patrimonio/razao` |
+
+**O extrato da B3** traz compra e venda como "Transferência - Liquidação", na data da liquidação: a
+operação entra no pregão de dois pregões antes, pelo calendário de `core/pregao.py`. JCP, dividendo e
+rendimento entram nos proventos recebidos com o valor líquido. "Atualização" não é lançamento: confere
+a quantidade da B3 contra o razão e avisa se não bater. Linha que casa com lançamento existente (mesmo
+ativo, tipo e quantidade, até dois pregões e 2% de preço) vem desmarcada. **Não cobre:** custos de
+corretagem e emolumentos, que o extrato não tem; desdobramento, grupamento, bonificação e
+transferência entre corretoras, que ficam de fora com aviso; renda fixa.
 
 **O que o IR cobre:** swing trade de ações, BDRs, ETFs (15%) e FIIs (20%), com compensação de
 prejuízo e isenção mensal; day trade a 20%, apurado à parte, com IRRF de 1% e premissa de

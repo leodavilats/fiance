@@ -76,6 +76,118 @@ class ImportResult {
   );
 }
 
+class B3Duplicate {
+  B3Duplicate({required this.id, required this.day, this.quantity, this.price, this.amount});
+
+  final int id;
+  final String day;
+  final double? quantity;
+  final double? price;
+  final double? amount;
+
+  static B3Duplicate? fromJson(Object? raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    return B3Duplicate(
+      id: (raw['id'] as num?)?.toInt() ?? 0,
+      day: raw['day'] as String? ?? '',
+      quantity: (raw['quantity'] as num?)?.toDouble(),
+      price: (raw['price'] as num?)?.toDouble(),
+      amount: (raw['amount'] as num?)?.toDouble(),
+    );
+  }
+}
+
+class B3ImportRow {
+  B3ImportRow({
+    required this.line,
+    required this.target,
+    required this.kind,
+    required this.symbol,
+    required this.day,
+    required this.quantity,
+    required this.price,
+    required this.amount,
+    this.settledOn,
+    this.duplicate,
+  });
+
+  final int line;
+  final String target;
+  final String kind;
+  final String symbol;
+  final String day;
+  final String? settledOn;
+  final double quantity;
+  final double price;
+  final double amount;
+  final B3Duplicate? duplicate;
+
+  bool get isDividend => target == 'provento';
+
+  bool get isDuplicate => duplicate != null;
+
+  factory B3ImportRow.fromJson(Map<String, dynamic> j) => B3ImportRow(
+    line: (j['line'] as num?)?.toInt() ?? 0,
+    target: j['target'] as String? ?? 'operacao',
+    kind: j['kind'] as String? ?? '',
+    symbol: j['symbol'] as String? ?? '',
+    day: j['day'] as String? ?? '',
+    settledOn: j['settled_on'] as String?,
+    quantity: (j['quantity'] as num?)?.toDouble() ?? 0,
+    price: (j['price'] as num?)?.toDouble() ?? 0,
+    amount: (j['amount'] as num?)?.toDouble() ?? 0,
+    duplicate: B3Duplicate.fromJson(j['duplicate']),
+  );
+}
+
+class B3ImportPreview {
+  B3ImportPreview({
+    required this.format,
+    required this.rows,
+    required this.issues,
+    required this.warnings,
+    required this.ok,
+  });
+
+  final String format;
+  final List<B3ImportRow> rows;
+  final List<ImportIssue> issues;
+  final List<ImportIssue> warnings;
+  final bool ok;
+
+  static List<ImportIssue> _issues(Object? raw) => ((raw as List?) ?? const [])
+      .map((e) => ImportIssue.fromJson(e as Map<String, dynamic>))
+      .toList();
+
+  factory B3ImportPreview.fromJson(Map<String, dynamic> j) => B3ImportPreview(
+    format: j['format'] as String? ?? '',
+    rows: ((j['rows'] as List?) ?? const [])
+        .map((e) => B3ImportRow.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    issues: _issues(j['issues']),
+    warnings: _issues(j['warnings']),
+    ok: j['ok'] as bool? ?? false,
+  );
+}
+
+class B3ImportResult {
+  B3ImportResult({
+    required this.operations,
+    required this.dividends,
+    required this.skippedDuplicates,
+  });
+
+  final int operations;
+  final int dividends;
+  final int skippedDuplicates;
+
+  factory B3ImportResult.fromJson(Map<String, dynamic> j) => B3ImportResult(
+    operations: (j['operations'] as num?)?.toInt() ?? 0,
+    dividends: (j['dividends'] as num?)?.toInt() ?? 0,
+    skippedDuplicates: (j['skipped_duplicates'] as num?)?.toInt() ?? 0,
+  );
+}
+
 class ReconciledPosition {
   ReconciledPosition({required this.quantity, required this.avgPrice});
 

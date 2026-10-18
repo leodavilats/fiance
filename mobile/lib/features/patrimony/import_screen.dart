@@ -128,6 +128,12 @@ class _ImportScreenState extends ConsumerState<ImportScreen> {
             'com uma linha errada, nenhuma entra.',
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
+          const SizedBox(height: FiSpace.s3),
+          FiButton.secondary(
+            label: 'Tenho o extrato da B3 (.xlsx)',
+            icon: Icons.upload_file_outlined,
+            onPressed: () => context.push('/patrimonio/razao/importar/b3'),
+          ),
           const SizedBox(height: FiSpace.s4),
           TextField(
             controller: _content,

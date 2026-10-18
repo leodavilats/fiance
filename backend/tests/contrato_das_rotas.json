@@ -1742,6 +1742,51 @@
     "format",
     "include_duplicates"
   ],
+  "POST /api/v1/transactions/import/b3": [
+    "dividend_ids",
+    "dividends",
+    "ids",
+    "operations",
+    "skipped_duplicates"
+  ],
+  "POST /api/v1/transactions/import/b3 (entrada)": [
+    "content_base64!",
+    "include_lines"
+  ],
+  "POST /api/v1/transactions/import/b3/preview": [
+    "duplicates",
+    "format",
+    "issues",
+    "issues[].field",
+    "issues[].line",
+    "issues[].message",
+    "issues[].raw",
+    "ok",
+    "rows",
+    "rows[].amount",
+    "rows[].day",
+    "rows[].duplicate",
+    "rows[].duplicate.amount",
+    "rows[].duplicate.day",
+    "rows[].duplicate.id",
+    "rows[].duplicate.price",
+    "rows[].duplicate.quantity",
+    "rows[].kind",
+    "rows[].line",
+    "rows[].price",
+    "rows[].quantity",
+    "rows[].settled_on",
+    "rows[].symbol",
+    "rows[].target",
+    "warnings",
+    "warnings[].field",
+    "warnings[].line",
+    "warnings[].message",
+    "warnings[].raw"
+  ],
+  "POST /api/v1/transactions/import/b3/preview (entrada)": [
+    "content_base64!"
+  ],
   "POST /api/v1/transactions/import/preview": [
     "duplicates",
     "format",

@@ -66,6 +66,16 @@ def ha_pregao(dia: date) -> bool:
     return dia.weekday() < 5 and dia not in dias_sem_pregao(dia.year)
 
 
+def deslocar_pregoes(dia: date, pregoes: int) -> date:
+    passo = timedelta(days=1 if pregoes > 0 else -1)
+    restantes = abs(pregoes)
+    while restantes:
+        dia += passo
+        if ha_pregao(dia):
+            restantes -= 1
+    return dia
+
+
 def abertura(dia: date) -> time:
     return ABERTURA_CINZAS if dia == quarta_de_cinzas(dia.year) else ABERTURA
 

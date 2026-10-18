@@ -21,6 +21,8 @@ redis>=5.0,<7
 # conteúdo financeiro é WhatsApp, LinkedIn e X. A mesma dependência que o
 # gerador de ícones já usa.
 pillow>=10.0,<12
+# Extrato de movimentação da Área do Investidor da B3, que só sai em .xlsx com a direção legível.
+openpyxl>=3.1,<4
 # Telemetria de erro. Inerte sem SENTRY_DSN — está aqui, e não como extra opcional, porque a
 # alternativa é SENTRY_DSN configurado e ignorado: o sintoma seria um sistema que se acha
 # observado e não está, e ninguém descobre isso até o dia do incidente.

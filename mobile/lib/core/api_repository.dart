@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import 'auth_service.dart';
@@ -620,6 +622,25 @@ class ApiRepository {
       data: {'content': content, 'include_duplicates': includeDuplicates},
     );
     return ImportResult.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<B3ImportPreview> previewB3Import(List<int> xlsx) async {
+    final res = await _dio.post(
+      '/transactions/import/b3/preview',
+      data: {'content_base64': base64Encode(xlsx)},
+    );
+    return B3ImportPreview.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<B3ImportResult> commitB3Import(List<int> xlsx, {required Set<int> includeLines}) async {
+    final res = await _dio.post(
+      '/transactions/import/b3',
+      data: {
+        'content_base64': base64Encode(xlsx),
+        'include_lines': (includeLines.toList()..sort()),
+      },
+    );
+    return B3ImportResult.fromJson(res.data as Map<String, dynamic>);
   }
 
   Future<Reconciliation> getReconciliation() async {

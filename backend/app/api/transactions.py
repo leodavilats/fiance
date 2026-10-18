@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import base64
+import binascii
+
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
@@ -11,6 +14,8 @@ from app.importing import parse_import
 from app.ledger import LedgerEntry, TransactionKind
 from app.models.operacao import ActivityLog, DeletedById
 from app.models.transactions import (
+    B3ImportCommitted,
+    B3ImportPreview,
     BackfillResult,
     ImportCommitted,
     ImportPreview,
@@ -21,7 +26,7 @@ from app.models.transactions import (
     TransactionsCreated,
     TransactionsPage,
 )
-from app.services import ledger_service
+from app.services import b3_import_service, ledger_service
 from app.services.ledger_service import derivation_for
 from app.storage import audit_store, ledger_store
 
@@ -231,3 +236,40 @@ async def commit_import(body: ImportCommitRequest) -> dict:
 
     ids = ledger_service.import_entries(selecionadas)
     return {"imported": len(ids), "skipped_duplicates": ignoradas, "ids": ids}
+
+
+class B3ImportRequest(BaseModel):
+    content_base64: str = Field(
+        max_length=3_000_000,
+        description="O .xlsx do extrato de movimentação da Área do Investidor, em base64.",
+    )
+
+    def bytes(self) -> bytes:
+        try:
+            return base64.b64decode(self.content_base64, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise ImportRejected("O arquivo chegou corrompido. Escolha-o de novo.") from exc
+
+
+class B3ImportCommitRequest(B3ImportRequest):
+    include_lines: list[int] = Field(
+        default_factory=list,
+        description=(
+            "Linhas que a prévia casou com um lançamento existente e que a pessoa escolheu "
+            "importar mesmo assim. As demais repetidas ficam de fora."
+        ),
+    )
+
+
+@router.post("/transactions/import/b3/preview", response_model=B3ImportPreview)
+async def preview_b3_import(body: B3ImportRequest) -> dict:
+    return b3_import_service.preview(body.bytes())
+
+
+@router.post(
+    "/transactions/import/b3",
+    response_model=B3ImportCommitted,
+    dependencies=[Depends(requires(Feature.LEDGER_IMPORT))],
+)
+async def commit_b3_import(body: B3ImportCommitRequest) -> dict:
+    return b3_import_service.commit(body.bytes(), set(body.include_lines))
