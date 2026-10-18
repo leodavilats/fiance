@@ -2,7 +2,7 @@
 
 **Fonte de verdade** para visão, público, limites e modelo de negócio. Não há código que responda
 estas perguntas.
-Última revisão: 2026-10-12
+Última revisão: 2026-10-18
 
 ---
 
@@ -12,6 +12,9 @@ estas perguntas.
 durante o teste. O público vem depois, sem data. Tudo o que é de loja, cobrança e aquisição está
 adiado; as regras de produto valem desde já. Decisão em
 [ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md).
+
+**São duas frentes.** O aplicativo, descrito daqui em diante, e a **API de dados** (`fiance-dados`):
+a base de mercado oferecida a terceiros, com contas e chaves — ver *A segunda frente*, abaixo.
 
 
 ## O problema
@@ -119,11 +122,30 @@ sem presença em loja, não existe hoje superfície de descoberta do produto. O 
 aquisição, e a decisão de não ter gratuidade aponta na direção oposta a ele. Registrado, consciente,
 revisável.
 
+## A segunda frente: a API de dados
+
+A base que o app lê é oferecida como serviço, com contas, chaves e planos
+([ADR-024](decisoes/ADR-024-api-de-dados.md)).
+
+| | |
+|---|---|
+| O que entrega | Cotação desde 2005 com as empresas que saíram da bolsa, série ajustada com os eventos conferidos pelo preço, proventos, e balanços como se sabia em cada data |
+| Para quem | Quem testa estratégia ou analisa empresas com dado da B3 e da CVM: investidor quantitativo, analista, desenvolvedor |
+| Modelo | Assinatura paga, mensal ou anual, **sem plano gratuito**: Essencial, Pro e Quant ([ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md)). Os preços são hipótese |
+| Acesso hoje | Por convite, sem cobrança. O app é o primeiro cliente |
+| Condição para cobrar | Licença de dado da B3, leitura da ODbL da CVM, CNPJ e termos de uso. Até lá a cobrança fica desligada |
+
+**A hipótese:** quem testa estratégia paga por não ter de montar a base — principalmente pelo que é
+difícil de achar organizado: o histórico com quem saiu da bolsa, o ajuste por evento e o balanço sem
+o futuro vazando no passado. **O risco:** um serviço público mantido por uma pessoa; disponibilidade
+e correção do dado viram compromisso.
+
 ## Estado
 
 Uma pessoa usa o sistema: o autor, com dados reais, diariamente. Nada publicado em loja, nenhuma
 conta de desenvolvedor aberta, nenhuma receita. Ver [08-ESTADO](08-ESTADO.md).
 
-Em volta do app há uma plataforma do autor, fora do produto: o `data-job/` coleta os dados de mercado
-que o app lê, e o painel `fiance-trend` (`fiance-trend.up.railway.app`) organiza dados e pesquisas. Ver
+Em volta do app: o `data-job/` coleta os dados de mercado, a `fiance-dados`
+(`fiance-dados.up.railway.app`) os serve ao app e a quem tiver convite, e o painel `fiance-trend`
+(`fiance-trend.up.railway.app`), fora do produto, organiza dados e pesquisas. Ver
 [plano da plataforma](historico/PLATAFORMA-2026-10.md).

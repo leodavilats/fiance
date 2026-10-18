@@ -19,6 +19,7 @@ coisa, um está errado e ninguém sabe qual.
 | Como subir, observar e reverter | [07-OPERACAO](07-OPERACAO.md) |
 | O que vem depois | [09-FUTURO](09-FUTURO.md) |
 | O que o data-job coleta, e como trata cada dado | [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md) |
+| A API de dados: o que oferece, planos e contas | [01-PRODUTO](01-PRODUTO.md) (negócio) · [07-OPERACAO](07-OPERACAO.md) (contas e variáveis) · [ADR-024](decisoes/ADR-024-api-de-dados.md) |
 | Que estratégia foi medida, com que protocolo, e o que deu | [pesquisas/](pesquisas/README.md) |
 | O que está quebrado ou aberto | [10-PROBLEMAS](10-PROBLEMAS.md) |
 | Por que essa decisão foi tomada | [decisoes/](decisoes/) |

@@ -3,16 +3,18 @@
 Como o sistema é montado e por que as fronteiras estão onde estão.
 Estrutura e endpoints são derivados do código; a **intenção** vive aqui e nas
 [decisões](decisoes/).
-Última revisão: 2026-10-12
+Última revisão: 2026-10-18
 
 ---
 
 ## Visão geral
 
 Um backend FastAPI com o seu Postgres (`postgres-app`), um cliente Flutter. Os dados de mercado vêm
-de um segundo Postgres (`postgres-mercado`), escrito só pelo `data-job/` e lido pelo backend sem
-escrever. Sem microsserviços, sem fila. O painel do autor (`fiance-trend/backend/` + `fiance-trend/frontend/`) lê
-a mesma base e fica fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)).
+de um segundo Postgres (`postgres-mercado`), escrito só pelo `data-job/` e servido pela
+`fiance-dados/`, a API de dados com contas e chaves ([ADR-024](decisoes/ADR-024-api-de-dados.md)): o
+backend é um cliente dela, com uma chave do plano `interno`, e não abre o banco de mercado. Sem fila. O
+painel do autor (`fiance-trend/backend/` + `fiance-trend/frontend/`) lê a base direto e fica fora do
+produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)).
 
 ```
 ┌──────────────────────────────────────────┐
@@ -31,13 +33,18 @@ a mesma base e fica fora do produto ([ADR-023](decisoes/ADR-023-fase-pessoal-pri
 │  cashflow/    mês, cascata, dívida       │
 │  analysis/    preço justo, score         │
 │                                          │
-│  collectors/  base de mercado, BCB, disj.│
+│  collectors/  API de dados, BCB, disj.   │
 └───────────────────┬─────────────────┬────┘
-                    │                 │ só leitura (mercado_leitura)
+                    │                 │ HTTP na rede privada, chave `interno`
         ┌───────────▼───────────┐ ┌───▼──────────────────┐
-        │  postgres-app         │ │  postgres-mercado    │
-        │  dados + cache        │ │  schema mercado      │
-        └───────────────────────┘ └───▲──────────────────┘
+        │  postgres-app         │ │  fiance-dados/       │◄── terceiros, por chave
+        │  dados + cache        │ │  /v1, contas, chaves │
+        └───────────────────────┘ └───┬──────────────────┘
+                                      │ lê mercado (mercado_leitura); escreve só acesso
+                                  ┌───▼──────────────────┐
+                                  │  postgres-mercado    │
+                                  │  mercado + acesso    │
+                                  └───▲──────────────────┘
                                       │ escreve (cron diário)
                                   ┌───┴──────────────────┐
                                   │  data-job/           │
@@ -212,9 +219,9 @@ meia hora.
 |---|---|---|
 | Faixa de plausibilidade | Campo absurdo vira `None`; preço absurdo rejeita o snapshot inteiro | `collectors/plausibility.py` |
 | Disjuntor | Aberto, nem tenta; quem chama cai no cache vencido | `collectors/circuit.py` |
-| Leitura em lote | 50 tickers por consulta à base | `collectors/universal.prefetch` |
+| Leitura em lote | 50 tickers por chamada a `/v1/retratos` | `collectors/universal.prefetch` |
 | Marcador de inexistente | 6h — tem de durar mais que o ciclo de varredura | idem |
-| Somente leitura | Toda conexão à base de mercado faz `SET ROLE mercado_leitura` e `SET default_transaction_read_only = on` | `collectors/mercado.engine` |
+| Somente leitura | O backend não abre a base de mercado; na `fiance-dados`, toda conexão de leitura faz `SET ROLE mercado_leitura` e `SET default_transaction_read_only = on` | `fiance-dados/dadosapi/banco.py` |
 | Portão de pregão | 10h–18h30 em dia com pregão na B3; fora disso a varredura do universo serve a última varredura em cache | `core/pregao.py` |
 
 O dado chega em lote: o `data-job` carrega a base uma vez por dia útil, às 23h de Brasília (cron

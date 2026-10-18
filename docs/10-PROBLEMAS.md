@@ -1,7 +1,7 @@
 # Problemas conhecidos
 
 **Fonte de verdade** do que está aberto. Só pendências: nada de histórico, nada de item resolvido.
-Última verificação contra o código: **2026-10-12**
+Última verificação contra o código: **2026-10-18**
 Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria do motor de cálculo de
 2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
@@ -14,7 +14,10 @@ os itens 1, 4 e 33 antes disso. O 12, o 23 e o 24 saíram em 2026-09-26 — ver
 mesmo dia o 15, o 17 e a seção D inteira: a paridade com a web fechou. A12 entrou em 2026-10-12 —
 ver [pesquisas/calibracao](pesquisas/calibracao.md). No mesmo dia a fase passou a ser pessoal
 ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)): o que só bloqueia a publicação está marcado,
-e não sai daqui.
+e não sai daqui. Em 2026-10-18 a [validação contra a brapi](pesquisas/validacao-brapi.md) abriu
+os itens da série ajustada; a marca de salto, a confirmação pelo preço
+([ADR-026](decisoes/ADR-026-confirmacao-do-evento-pelo-tamanho.md)), a inferência pelo FRE e pelas
+cotas de FII e as parcelas de provento foram corrigidas no mesmo dia, e o que segue aberto está em B.
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -52,48 +55,29 @@ Redis com timeout e reconexão, universo com cache vencido e calendário da B3 f
 
 ### Proventos antigos de BDR, ETF e FII não estão na base
 
-A B3 só dá o histórico de proventos de companhia; de fundo e BDR, os últimos meses. **Faltam os
-proventos de BDR e ETF antes de out/2026**, e os de FII antes de 2016 — de 2016 a out/2026 o
-rendimento de FII é estimado pelo informe mensal da CVM. Só entra se vier de outra fonte. Detalhe em
+A B3 só dá o histórico de proventos de companhia; de fundo e BDR, cerca de 12 meses antes da
+primeira coleta (out/2026). **Faltam os proventos de BDR antes de out/2025**, boa parte dos de ETF, e
+os de FII antes de 2016 — de 2016 a out/2025, o mês de FII sem dado da B3 é estimado pelo informe
+mensal da CVM. Só entra se vier de outra fonte. Detalhe em
 [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md).
 
-### A série ajustada tem eventos faltando e saltos sem marca
+### A série ajustada ainda tem eventos sem prova
 
-A [validação contra a brapi](pesquisas/validacao-brapi.md) (2026-10-18) achou, com o nosso próprio
-COTAHIST como prova:
+Depois das correções de 2026-10-18, a [revalidação](pesquisas/validacao-brapi.md) deixou **36 eventos
+grandes** (fator ≥ 1,5 ou ≤ 0,67) que a brapi lista e a série não ajusta. O dia fica marcado em
+`salto_sem_evento` quando o salto passa de 50% ou cai perto de um fator comum — fora disso, não:
 
-- **25 eventos grandes que não estão na série**, nem na lista da B3 nem na inferência: MGLU3 (2015,
-  2017 e 2019), BBDC4 (2005), Gerdau (2005 e 2006), Bradesco (2008), COGN3, SBSP3, RIAA3, AZEV3, RCSL3/4,
-  ECOM3, IFCM3 e K1LA34. Os de fator perto de 1,5 viram queda de 33% **sem marca**, porque ficam
-  abaixo do limiar de 50% do `salto_sem_evento`.
-- **Evento publicado pela B3 e recusado pelo nosso preço, com o salto dentro da série e sem marca:**
-  BTYU11 (+8.066% num dia), SEQL3 (+797%), PDGR3 (+74%). A razão observada ficou pouco fora dos 10%
-  (86× contra 100×, 9× contra 10×), e com evento no intervalo o salto não é marcado.
-- **Desdobramento 2:1 que nenhuma lista traz** (CACR11, LPLP11, DAMT11 e outros FIIs e ações
-  pequenas): queda de 42% a 49%, sem marca.
-- **Bonificações pequenas** (Itaú, Bradesco e Itaúsa, 2% a 10%, de 2009 a 2025) que só a brapi lista:
-  o preço não decide; a prova teria de vir do IPE da CVM.
+- **Antes de 2010** (Bradesco de 2005 a 2008, Gerdau de 2005 e 2006, Ambev, Cosan): não há FRE nem
+  IPE para provar. A bonificação de 50% vira queda de 33% **sem marca** — o fator 1,5 ficou fora da
+  marca porque, em papel pouco líquido, essa queda é dia comum.
+- **Bonificação pequena** (Itaú, Bradesco e Itaúsa, de 2% a 10%, de 2009 a 2025): o FRE mostra o
+  fator, mas não a data-com, e o preço não a localiza. Ajustar seria adivinhar o dia.
+- **FII sem informe dos dois lados** (237 de 481 saltos marcados): sem a contagem de cotas, não se
+  infere; o salto fica marcado.
+- **Desdobramento 2:1 com queda abaixo de 45%** (CACR11, −42%): fica fora da faixa de 10% em volta
+  do fator 2 e passa sem marca.
 
-**A marca já foi corrigida** (migração 0021, 2026-10-18): evento recusado ou de outra classe não
-esconde mais o salto, e a razão perto de um fator comum marca mesmo abaixo de 50% — de 1.885 para
-2.305 dias marcados em ações. O fator 1,5 ficou de fora da marca: somava 2.679 dias, quase todos
-queda comum de papel pouco líquido.
-
-**A confirmação também** (migração 0022, [ADR-026](decisoes/ADR-026-confirmacao-do-evento-pelo-tamanho.md)):
-a folga cresce com o tamanho do evento, e 85 eventos que a B3 publicou e o preço recusava por pouco
-passaram a ajustar a série — BTYU11, PDGR3, SEQL3, RCSL4 entre eles. Os 30 que seguem recusados são
-todos desmentidos pelo preço.
-
-**A inferência de ações também** (2026-10-18): o FRE entrou como fonte do número de ações, de 2010 em
-diante, e 41 eventos que nenhuma lista da B3 trazia passam a ser inferidos — MGLU3 (2015, 2017 e 2019),
-WEGE3, CIEL3, PRIO3, RADL3 entre eles ([11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md)).
-
-**E a de FII** (migração 0023): pelas cotas emitidas do informe mensal da CVM, 19 eventos — dez para um,
-na maioria. Os saltos de FII sem informe dos dois lados (237 de 481) seguem marcados.
-
-Fica **sem solução com o dado que há**: evento antes de 2010 (Gerdau e Bradesco de 2005 a 2008, sem FRE nem
-IPE) e bonificação pequena (o FRE mostra o fator, mas não a data-com). O exemplo do portal segue na
-HAPV3.
+Só entra o que tiver prova primária; a brapi aponta, não preenche.
 
 ### Proventos e eventos dependem de endpoints da B3 sem contrato
 

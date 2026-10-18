@@ -4,8 +4,9 @@ Plataforma de análise de investimentos para a B3, multi-tenant: carteira, fluxo
 de imposto e análise de ativos num só lugar.
 
 **Backend** FastAPI + Postgres (`backend/`) · **Cliente** Flutter (`mobile/`), o único cliente do
-produto · **Coleta** de dados de mercado (`data-job/`) · **Pesquisa e painel do autor**
-(`fiance-trend/backend/`, `fiance-trend/frontend/`), fora do produto
+produto · **Coleta** de dados de mercado (`data-job/`) · **API de dados** (`fiance-dados/`), a base
+como serviço, com contas e chaves · **Pesquisa e painel do autor** (`fiance-trend/backend/`,
+`fiance-trend/frontend/`), fora do produto
 
 ---
 
@@ -117,6 +118,8 @@ cd fiance-trend/backend && python -m pytest -q
 cd fiance-trend/backend && python -m ruff check pesquisa api tests
 cd fiance-trend/backend && python -m ruff format --check pesquisa api tests
 cd fiance-dados && python -m pytest -q                # exige DADOS_API_TEST_DATABASE_URL
+cd fiance-dados && python -m ruff check dadosapi tests migrations
+cd fiance-dados && python -m ruff format --check dadosapi tests migrations
 cd fiance-trend/frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release

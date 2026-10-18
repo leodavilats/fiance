@@ -17,6 +17,9 @@ cd backend && python -m ruff format --check app tests
 cd data-job && python -m pytest -q                 # gravação exige DATAJOB_TEST_DATABASE_URL
 cd data-job && python -m ruff check datajob tests migrations
 cd data-job && python -m ruff format --check datajob tests migrations
+cd fiance-dados && python -m pytest -q                # exige DADOS_API_TEST_DATABASE_URL e ../data-job/requirements.txt
+cd fiance-dados && python -m ruff check dadosapi tests migrations
+cd fiance-dados && python -m ruff format --check dadosapi tests migrations
 cd fiance-trend/backend && python -m pytest -q            # exige ../../backend/requirements.txt instalado
 cd fiance-trend/backend && python -m ruff check pesquisa api tests
 cd fiance-trend/backend && python -m ruff format --check pesquisa api tests
