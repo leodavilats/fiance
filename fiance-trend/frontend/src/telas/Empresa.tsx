@@ -1,16 +1,11 @@
-import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApi } from "../api";
 import { formatarData, formatarNumero, formatarPorcento, formatarReais } from "../formato";
 import Estado from "./Estado";
+import GraficoDaSerie from "./GraficoDaSerie";
+import type { Ponto } from "../serie";
 
-type Dia = {
-  data: string;
-  codigo: string;
-  retorno_acumulado: number;
-  salto_sem_evento: boolean | null;
-};
+type Dia = Ponto & { codigo: string };
 
 type Fundamento = {
   data_referencia: string;
@@ -42,10 +37,6 @@ function roe(f: Fundamento): string {
 }
 
 function Detalhe({ d }: { d: DetalheDoPapel }) {
-  const semanal = useMemo(
-    () => d.serie.filter((_, i) => i % 5 === 0 || i === d.serie.length - 1),
-    [d.serie],
-  );
   const codigo = d.serie[d.serie.length - 1]?.codigo;
   const saltos = d.serie.filter((s) => s.salto_sem_evento).length;
 
@@ -59,41 +50,11 @@ function Detalhe({ d }: { d: DetalheDoPapel }) {
         {d.empresa.data_cancelamento
           ? ` · registro cancelado em ${formatarData(d.empresa.data_cancelamento)}`
           : ""}
-        {saltos ? ` · ${saltos} dia(s) com salto sem evento, fora do retorno acumulado` : ""}
+        {saltos ? ` · ${saltos} dia(s) com salto sem evento, fora do retorno acumulado e marcados no preço` : ""}
       </p>
 
-      <h2>Retorno total acumulado (base 100)</h2>
-      <div className="grafico">
-        <ResponsiveContainer>
-          <LineChart data={semanal}>
-            <CartesianGrid stroke="var(--fio)" vertical={false} />
-            <XAxis
-              dataKey="data"
-              tickFormatter={(v: string) => v.slice(0, 4)}
-              minTickGap={40}
-              stroke="var(--suave)"
-            />
-            <YAxis
-              scale="log"
-              domain={["auto", "auto"]}
-              stroke="var(--suave)"
-              tickFormatter={(v: number) => formatarNumero(v)}
-            />
-            <Tooltip
-              formatter={(v: number) => formatarNumero(v)}
-              labelFormatter={(v: string) => formatarData(v)}
-            />
-            <Line
-              dataKey="retorno_acumulado"
-              name="retorno acumulado"
-              dot={false}
-              stroke="var(--destaque)"
-              strokeWidth={2}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <h2>Retorno total e preço</h2>
+      <GraficoDaSerie serie={d.serie} />
 
       <h2>Resultado anual (DFP)</h2>
       {d.fundamentos.length === 0 ? (

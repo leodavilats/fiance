@@ -1,17 +1,17 @@
-import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApi } from "../api";
 import { formatarData, formatarNumero } from "../formato";
 import { NOME_DO_TIPO } from "./Caminho";
 import Estado from "./Estado";
+import GraficoDaSerie from "./GraficoDaSerie";
+import type { Ponto } from "../serie";
 
 type DetalheDoFundo = {
   emissor: string;
   classe: string;
   tipo: string;
   nome: string | null;
-  serie: { data: string; codigo: string; retorno_acumulado: number; salto_sem_evento: boolean | null }[];
+  serie: (Ponto & { codigo: string })[];
   proventos: { data_com: string; tipo: string; valor: number; origem: string }[];
   eventos: { data_com: string; tipo: string; multiplicador: number | null; status: string }[];
 };
@@ -29,10 +29,6 @@ export default function TelaFundo() {
 }
 
 function Detalhe({ d }: { d: DetalheDoFundo }) {
-  const semanal = useMemo(
-    () => d.serie.filter((_, i) => i % 5 === 0 || i === d.serie.length - 1),
-    [d.serie],
-  );
   const codigo = d.serie[d.serie.length - 1]?.codigo;
   const saltos = d.serie.filter((s) => s.salto_sem_evento).length;
   const estimados = d.proventos.filter((p) => p.origem === "cvm_estimado").length;
@@ -44,28 +40,11 @@ function Detalhe({ d }: { d: DetalheDoFundo }) {
       </h1>
       <p className="nota">
         {NOME_DO_TIPO[d.tipo] ?? d.tipo} · emissor {d.emissor} · classe {d.classe}
-        {saltos ? ` · ${saltos} dia(s) com salto sem evento, fora do retorno acumulado` : ""}
+        {saltos ? ` · ${saltos} dia(s) com salto sem evento, fora do retorno acumulado e marcados no preço` : ""}
       </p>
 
-      <h2>Retorno total acumulado (base 100)</h2>
-      <div className="grafico">
-        <ResponsiveContainer>
-          <LineChart data={semanal}>
-            <CartesianGrid stroke="var(--fio)" vertical={false} />
-            <XAxis dataKey="data" tickFormatter={(v: string) => v.slice(0, 4)} minTickGap={40} stroke="var(--suave)" />
-            <YAxis scale="log" domain={["auto", "auto"]} stroke="var(--suave)" tickFormatter={(v: number) => formatarNumero(v)} />
-            <Tooltip formatter={(v: number) => formatarNumero(v)} labelFormatter={(v: string) => formatarData(v)} />
-            <Line
-              dataKey="retorno_acumulado"
-              name="retorno acumulado"
-              dot={false}
-              stroke="var(--destaque)"
-              strokeWidth={2}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <h2>Retorno total e preço</h2>
+      <GraficoDaSerie serie={d.serie} />
 
       <h2>Proventos</h2>
       {estimados > 0 && (

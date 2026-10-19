@@ -256,7 +256,7 @@ def fundo(conn: sa.Connection, emissor: str, classe: str) -> dict | None:
     serie = _linhas(
         conn,
         """
-        SELECT data, codigo, tipo_ativo, isin, retorno_total, salto_sem_evento
+        SELECT data, codigo, tipo_ativo, isin, fechamento, retorno_total, salto_sem_evento
         FROM mercado.serie_fundo WHERE emissor = :emissor AND classe = :classe
         ORDER BY data
         """,
@@ -281,7 +281,10 @@ def fundo(conn: sa.Connection, emissor: str, classe: str) -> dict | None:
         "tipo": ultimo["tipo_ativo"],
         "nome": nome,
         "serie": [
-            {k: dia[k] for k in ("data", "codigo", "retorno_acumulado", "salto_sem_evento")}
+            {
+                k: dia[k]
+                for k in ("data", "codigo", "fechamento", "retorno_acumulado", "salto_sem_evento")
+            }
             for dia in serie
         ],
         "proventos": _linhas(
