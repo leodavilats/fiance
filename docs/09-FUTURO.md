@@ -19,6 +19,8 @@ A medida de 2026-10-12 mostrou que o veredito de preço justo não ordenou o ret
 que com a Selic média de 10 anos + 5 pontos o modelo punha 9 em 10 ações acima da faixa
 ([pesquisas/calibracao](pesquisas/calibracao.md)). **Falta decidir em ADR** se essa taxa continua sendo a
 do modelo. Detalhe em [10-PROBLEMAS](10-PROBLEMAS.md), A12.
+A medida que falta para a decisão está proposta em
+[pesquisas/taxa-de-desconto](pesquisas/taxa-de-desconto.md), e aguarda aceite.
 
 ---
 
