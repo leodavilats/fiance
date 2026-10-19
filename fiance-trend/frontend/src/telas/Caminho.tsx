@@ -1,9 +1,8 @@
-import ReactMarkdown from "react-markdown";
 import { Link } from "react-router-dom";
-import remarkGfm from "remark-gfm";
 import { useApi } from "../api";
 import { formatarData, formatarNumero } from "../formato";
 import Estado from "./Estado";
+import Markdown from "./Markdown";
 
 type Visao = {
   classes: { tipo: string; papeis: number; negociando: number; desde: string }[];
@@ -36,9 +35,7 @@ export default function TelaCaminho() {
       <Estado estado={visao}>{(v) => <Numeros visao={v} />}</Estado>
       <Estado estado={plano}>
         {(documento) => (
-          <article className="documento">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{documento.texto}</ReactMarkdown>
-          </article>
+          <Markdown documento="09-FUTURO.md" texto={documento.texto} />
         )}
       </Estado>
     </>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amostrar, paraOGrafico, recortar, variacao, type Ponto } from "./serie";
+import { amostrar, paraOGrafico, recortar, resumir, variacao, type Ponto } from "./serie";
 
 const ponto = (data: string, retorno_acumulado: number, extra: Partial<Ponto> = {}): Ponto => ({
   data,
@@ -42,5 +42,19 @@ describe("serie", () => {
     ]);
     expect(grafico.map((p) => p.preco)).toEqual([null, null, 12.5]);
     expect(variacao(grafico, "preco")).toBeNull();
+  });
+
+  it("o resumo de 12 meses só existe com um ano de série, e provento ausente não vira zero", () => {
+    const serie = [ponto("2024-06-28", 100), ponto("2024-07-01", 105), ponto("2025-06-30", 120)];
+    const resumo = resumir(serie, [
+      { data_com: "2024-06-10", valor: 1 },
+      { data_com: "2024-12-10", valor: "0.5" },
+      { data_com: "2025-06-10", valor: 0.25 },
+    ]);
+    expect(resumo?.retorno12m).toBeCloseTo(0.2);
+    expect(resumo?.proventos12m).toBeCloseTo(0.75);
+    expect(resumo?.preco).toBe(12);
+    expect(resumir(serie.slice(1), [])?.retorno12m).toBeNull();
+    expect(resumir(serie, [])?.proventos12m).toBeNull();
   });
 });

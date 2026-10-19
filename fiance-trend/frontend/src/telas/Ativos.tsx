@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApi } from "../api";
-import { formatarData } from "../formato";
+import { formatarData, formatarNumero } from "../formato";
 import { NOME_DO_TIPO } from "./Caminho";
 import Estado from "./Estado";
 
@@ -71,11 +71,16 @@ function Lista({
     const lista = termo
       ? daClasse.filter((a) => [a.codigo, a.nome, a.setor].some((v) => v?.toUpperCase().includes(termo)))
       : daClasse;
-    return [...lista].sort((a, b) => b.ultimo_pregao.localeCompare(a.ultimo_pregao)).slice(0, 200);
+    return [...lista].sort((a, b) => b.ultimo_pregao.localeCompare(a.ultimo_pregao));
   }, [ativos, tipo, busca]);
 
   return (
     <div className="rolar">
+      <p className="nota">
+        {filtrados.length > 200
+          ? `Os 200 de pregão mais recente, de ${formatarNumero(filtrados.length)}. Busque para achar os outros.`
+          : `${formatarNumero(filtrados.length)} papel(is).`}
+      </p>
       <table>
         <thead>
           <tr>
@@ -86,7 +91,7 @@ function Lista({
           </tr>
         </thead>
         <tbody>
-          {filtrados.map((a) => (
+          {filtrados.slice(0, 200).map((a) => (
             <tr key={`${a.tipo}:${a.chave}:${a.classe}`} className="clicavel" onClick={() => abrir(a)}>
               <td className="esq">{a.codigo}</td>
               <td className="esq">{a.nome ?? "—"}</td>

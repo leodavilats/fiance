@@ -1,8 +1,7 @@
-import ReactMarkdown from "react-markdown";
 import { Link, useParams } from "react-router-dom";
-import remarkGfm from "remark-gfm";
 import { useApi } from "../api";
 import Estado from "./Estado";
+import Markdown from "./Markdown";
 
 export default function TelaDocumento() {
   const nome = useParams()["*"] ?? "";
@@ -14,9 +13,7 @@ export default function TelaDocumento() {
       </p>
       <Estado estado={estado}>
         {(documento) => (
-          <article className="documento">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{documento.texto}</ReactMarkdown>
-          </article>
+          <Markdown documento={nome} texto={documento.texto} />
         )}
       </Estado>
     </>

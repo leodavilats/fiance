@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useApi } from "../api";
@@ -27,6 +27,8 @@ const REGUA = 0.02;
 export default function TelaPesquisa() {
   const estado = useApi<{ execucoes: Execucao[] }>("/api/pesquisa");
   const [escolhida, setEscolhida] = useState<Execucao | null>(null);
+  const detalhe = useRef<HTMLElement>(null);
+  useEffect(() => detalhe.current?.scrollIntoView({ behavior: "smooth", block: "start" }), [escolhida]);
   return (
     <>
       <h1>Pesquisa</h1>
@@ -37,8 +39,8 @@ export default function TelaPesquisa() {
       <Estado estado={estado}>
         {(dados) => (
           <>
-            <Tabela execucoes={dados.execucoes} escolher={setEscolhida} />
-            {escolhida && <Grafico execucao={escolhida} />}
+            <Tabela execucoes={dados.execucoes} escolhida={escolhida} escolher={setEscolhida} />
+            <section ref={detalhe}>{escolhida && <Grafico execucao={escolhida} />}</section>
           </>
         )}
       </Estado>
@@ -46,7 +48,15 @@ export default function TelaPesquisa() {
   );
 }
 
-function Tabela({ execucoes, escolher }: { execucoes: Execucao[]; escolher: (e: Execucao) => void }) {
+function Tabela({
+  execucoes,
+  escolhida,
+  escolher,
+}: {
+  execucoes: Execucao[];
+  escolhida: Execucao | null;
+  escolher: (e: Execucao) => void;
+}) {
   const unicas = useMemo(() => {
     const vistas = new Map<string, Execucao>();
     for (const e of execucoes) vistas.set(`${e.assinatura}:${e.periodo}`, e);
@@ -72,7 +82,9 @@ function Tabela({ execucoes, escolher }: { execucoes: Execucao[]; escolher: (e: 
           {unicas.map((e) => {
             const excesso = e.resumo.excesso_anual ?? 0;
             return (
-              <tr key={`${e.assinatura}:${e.periodo}`} className="clicavel" onClick={() => escolher(e)}>
+              <tr key={`${e.assinatura}:${e.periodo}`} className={`clicavel ${escolhida?.assinatura === e.assinatura && escolhida?.periodo === e.periodo ? "escolhida" : ""}`}
+              onClick={() => escolher(e)}
+            >
                 <td className="esq">{e.hipotese}</td>
                 <td className="esq">{e.periodo}</td>
                 <td>{formatarPorcento(e.resumo.retorno_anual)}</td>
