@@ -32,7 +32,7 @@ coisa, um está errado e ninguém sabe qual.
 **Chegou agora:** [README](../README.md) do repositório → [01-PRODUTO](01-PRODUTO.md) →
 [08-ESTADO](08-ESTADO.md) → [03-ARQUITETURA](03-ARQUITETURA.md).
 
-**Vai escrever código:** [CLAUDE.md](../CLAUDE.md) →
+**Vai escrever código:** [CLAUDE.md](../CLAUDE.md) → o `CLAUDE.md` da parte que você vai tocar →
 [06-DESENVOLVIMENTO](06-DESENVOLVIMENTO.md) → o documento da área que você vai tocar.
 
 **Vai mexer numa tela:** [05-INTERFACE](05-INTERFACE.md), antes de abrir o editor.

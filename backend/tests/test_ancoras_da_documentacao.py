@@ -21,7 +21,7 @@ def _prosa(texto: str) -> str:
 
 
 def _documentos() -> list[pathlib.Path]:
-    achados = [RAIZ / "CLAUDE.md", RAIZ / "README.md"]
+    achados = [RAIZ / "CLAUDE.md", RAIZ / "README.md", *sorted(RAIZ.glob("*/CLAUDE.md"))]
     for caminho in (RAIZ / "docs").rglob("*.md"):
         if _IGNORAR_DIR & set(caminho.relative_to(RAIZ).parts):
             continue
