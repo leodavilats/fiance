@@ -45,6 +45,9 @@ cada 10 ações acima da faixa.
 
 **Aberto:** os textos foram revistos ([pesquisas/calibracao](pesquisas/calibracao.md)); falta decidir em ADR se a taxa de desconto (Selic média de 10 anos + 5 pontos)
 continua sendo a do modelo, já que em juro alto ela deixa quase tudo acima da faixa.
+A [distribuição por taxa](pesquisas/taxa-de-desconto.md), medida em 2026-10-19 sem olhar retorno, deixa
+duas candidatas: Selic média + 3 pontos e IPCA+ longo + meta + 5 pontos. Com qualquer uma, mais de 70%
+das ações seguem acima da faixa.
 
 O preço justo de BDR segue em [09-FUTURO](09-FUTURO.md), *Considerado*.
 

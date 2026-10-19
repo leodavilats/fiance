@@ -145,40 +145,57 @@ def proventos_na_data(dados: Dados, papel: str, dia: pd.Timestamp) -> list[dict]
     )
 
 
-def veredito(base: Base, dados: Dados, papel: str, dia: pd.Timestamp, juro) -> str | None:
+def faixas(
+    base: Base, dados: Dados, papel: str, dia: pd.Timestamp, juros: dict
+) -> dict[object, tuple[str | None, str, float | None]]:
     if papel.endswith(":UNT"):
-        return None
+        return dict.fromkeys(juros, (None, "unit", None))
     pacote = pacote_na_data(base, dados, papel, dia)
     if pacote is None:
-        return None
+        return dict.fromkeys(juros, (None, "sem_dado", None))
     snap = snapshot_do_pacote(pacote, pacote["ativo"]["codigo"], "br_stock")
     if snap is None:
-        return None
-    entradas = modelo.compute_fair_price_inputs(
-        price=snap.price,
-        eps=snap.eps,
-        book_value=snap.book_value,
-        dividends=proventos_na_data(dados, papel, dia),
-        asset_type="br_stock",
-        pb_ratio=snap.pb_ratio,
-        roe_pct=snap.roe,
-        net_income_history=snap.net_income_history,
-        equity_history=snap.equity_history,
-        net_income_ttm=snap.net_income_ttm,
-        rates=juro,
-        reference=datetime.combine(dia.date(), datetime.min.time(), UTC),
-        symbol=snap.symbol,
-    )
-    justo = modelo.fair_price_from_inputs(
-        entradas, desired_yield=modelo.desired_yield_for("br_stock", None)
-    )
-    if justo.fair_low is None or justo.fair_high is None:
-        return None
-    if snap.price < justo.fair_low:
-        return "abaixo"
-    if snap.price > justo.fair_high:
-        return "acima"
-    return "dentro"
+        return dict.fromkeys(juros, (None, "sem_dado", None))
+    dividendos = proventos_na_data(dados, papel, dia)
+    saida = {}
+    for chave, juro in juros.items():
+        entradas = modelo.compute_fair_price_inputs(
+            price=snap.price,
+            eps=snap.eps,
+            book_value=snap.book_value,
+            dividends=dividendos,
+            asset_type="br_stock",
+            pb_ratio=snap.pb_ratio,
+            roe_pct=snap.roe,
+            net_income_history=snap.net_income_history,
+            equity_history=snap.equity_history,
+            net_income_ttm=snap.net_income_ttm,
+            rates=juro,
+            reference=datetime.combine(dia.date(), datetime.min.time(), UTC),
+            symbol=snap.symbol,
+        )
+        justo = modelo.fair_price_from_inputs(
+            entradas, desired_yield=modelo.desired_yield_for("br_stock", None)
+        )
+        if justo.fair_low is None or justo.fair_high is None:
+            motivo = next(
+                (m["status"] for m in justo.methods or [] if m["role"] == "principal"), "sem_faixa"
+            )
+            saida[chave] = (None, motivo, None)
+            continue
+        largura = (justo.fair_high - justo.fair_low) / justo.fair_low if justo.fair_low else None
+        if snap.price < justo.fair_low:
+            grupo = "abaixo"
+        elif snap.price > justo.fair_high:
+            grupo = "acima"
+        else:
+            grupo = "dentro"
+        saida[chave] = (grupo, "ok", largura)
+    return saida
+
+
+def veredito(base: Base, dados: Dados, papel: str, dia: pd.Timestamp, juro) -> str | None:
+    return faixas(base, dados, papel, dia, {0: juro})[0][0]
 
 
 def _t_newey_west(serie: pd.Series, defasagens: int) -> float:

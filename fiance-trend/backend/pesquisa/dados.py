@@ -23,6 +23,7 @@ class Base:
     acoes: pd.DataFrame | None = None
     fii: Base | None = None
     calibracao: dict[str, pd.DataFrame] = field(default_factory=dict)
+    extras: dict[str, pd.DataFrame] = field(default_factory=dict)
 
     @property
     def pregoes(self) -> pd.DatetimeIndex:

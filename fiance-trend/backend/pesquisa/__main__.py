@@ -4,7 +4,15 @@ import argparse
 import json
 import sys
 
-from pesquisa import calibracao, registro, relatorio, retrato
+from pesquisa import (
+    calibracao,
+    custo_de_troca,
+    filtro_de_risco,
+    registro,
+    relatorio,
+    retrato,
+    taxa_de_desconto,
+)
 from pesquisa.hipoteses import todas
 from pesquisa.metricas import resumir
 from pesquisa.motor import simular
@@ -80,6 +88,41 @@ def _calibracao(args) -> int:
     return 0
 
 
+def _taxa_de_desconto(args) -> int:
+    taxa_de_desconto.conferir(args.forcar)
+    base = retrato.carregar(args.retrato)
+    resumo, meses = taxa_de_desconto.avaliar(base)
+    taxa_de_desconto.anotar(base.retrato, resumo, args.forcar)
+    destino = relatorio.PASTA / "taxa_de_desconto.json"
+    destino.write_text(
+        json.dumps({"resumo": resumo, "meses": meses}, ensure_ascii=False), encoding="utf-8"
+    )
+    print(json.dumps(resumo, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _custo_de_troca(args) -> int:
+    custo_de_troca.conferir(args.forcar)
+    base = retrato.carregar(args.retrato)
+    resumo, _ = custo_de_troca.rodar(base)
+    custo_de_troca.anotar(base.retrato, resumo, args.forcar)
+    destino = relatorio.PASTA / "custo_de_troca.json"
+    destino.write_text(json.dumps(resumo, ensure_ascii=False), encoding="utf-8")
+    print(json.dumps(resumo, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _filtro_de_risco(args) -> int:
+    filtro_de_risco.conferir(args.forcar)
+    base = retrato.carregar(args.retrato)
+    resumo = filtro_de_risco.rodar(base)
+    filtro_de_risco.anotar(base.retrato, resumo, args.forcar)
+    destino = relatorio.PASTA / "filtro_de_risco.json"
+    destino.write_text(json.dumps(resumo, ensure_ascii=False), encoding="utf-8")
+    print(json.dumps(resumo, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m pesquisa")
     comandos = parser.add_subparsers(dest="comando", required=True)
@@ -107,6 +150,14 @@ def main(argv: list[str] | None = None) -> int:
     calibrar.add_argument("--periodo", choices=sorted(calibracao.PERIODOS), required=True)
     calibrar.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
     calibrar.add_argument("--forcar", action="store_true", help="Passa por cima do protocolo")
+    for nome, ajuda in (
+        ("taxa-de-desconto", "Distribui o veredito por taxa candidata, sem olhar retorno"),
+        ("custo-de-troca", "Estima o spread por faixa de liquidez"),
+        ("filtro-de-risco", "Mede o filtro de tendência na validação, uma vez"),
+    ):
+        estudo = comandos.add_parser(nome, help=ajuda)
+        estudo.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
+        estudo.add_argument("--forcar", action="store_true", help="Passa por cima do protocolo")
     comandos.add_parser("relatorio", help="Gera relatorio.html a partir do registro")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
@@ -124,12 +175,21 @@ def main(argv: list[str] | None = None) -> int:
             return _ranking(args)
         if args.comando == "calibracao":
             return _calibracao(args)
+        if args.comando == "taxa-de-desconto":
+            return _taxa_de_desconto(args)
+        if args.comando == "custo-de-troca":
+            return _custo_de_troca(args)
+        if args.comando == "filtro-de-risco":
+            return _filtro_de_risco(args)
         return _rodar(args)
     except (
         registro.ProvaLacrada,
         registro.TetoAtingido,
         registro_ranking.Recusado,
         calibracao.Recusado,
+        taxa_de_desconto.Recusado,
+        custo_de_troca.Recusado,
+        filtro_de_risco.Recusado,
         retrato.SemRetrato,
     ) as e:
         print(f"Recusado: {e}", file=sys.stderr)

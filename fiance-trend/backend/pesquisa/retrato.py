@@ -79,6 +79,18 @@ WHERE p.origem LIKE 'b3_%'
 
 _SELIC_MENSAL = "SELECT data, valor FROM mercado.indicador WHERE serie = 4189"
 
+_TESOURO = """
+SELECT data, titulo, vencimento, taxa_compra, taxa_venda
+FROM mercado.tesouro
+"""
+
+_EXTREMOS = """
+SELECT s.{chave} AS cnpj, s.classe, s.data, c.maxima / c.fator_cotacao AS maxima,
+       c.minima / c.fator_cotacao AS minima, c.media / c.fator_cotacao AS media
+FROM {serie} s
+JOIN mercado.cotacao c ON c.isin = s.isin AND c.data = s.data
+"""
+
 CONSULTAS = {
     "serie": _SERIE,
     "cdi": _CDI,
@@ -91,6 +103,10 @@ CONSULTAS = {
     "fundamento_app": _FUNDAMENTO_APP,
     "provento": _PROVENTO,
     "selic_mensal": _SELIC_MENSAL,
+    "tesouro": _TESOURO,
+    "extremos_acao": _EXTREMOS.format(serie="mercado.serie_papel", chave="cnpj"),
+    "extremos_fii": _EXTREMOS.format(serie="mercado.serie_fundo", chave="emissor")
+    + " WHERE s.tipo_ativo = 'fii'",
 }
 
 
@@ -189,9 +205,12 @@ def carregar(nome: str | None = None, pasta: Path = PASTA) -> Base:
         base.etf = tabelas["etf"].assign(data=pd.to_datetime(tabelas["etf"]["data"]))
     if {"acoes", "capital"} <= set(tabelas):
         base.acoes = preparar_acoes(tabelas["acoes"], tabelas["capital"])
-    for nome in ("fundamento_app", "provento", "selic_mensal"):
-        if nome in tabelas:
-            base.calibracao[nome] = tabelas[nome]
+    for tabela in ("fundamento_app", "provento", "selic_mensal"):
+        if tabela in tabelas:
+            base.calibracao[tabela] = tabelas[tabela]
+    for tabela in ("tesouro", "extremos_acao", "extremos_fii"):
+        if tabela in tabelas:
+            base.extras[tabela] = tabelas[tabela]
     if "fii" in tabelas:
         base.fii = montar(tabelas["fii"], tabelas["cdi"], nome)
     return base

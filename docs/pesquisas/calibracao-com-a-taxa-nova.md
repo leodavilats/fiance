@@ -1,6 +1,6 @@
 # Plano — o veredito com a taxa da ADR, medido contra o que veio depois
 
-**Estado:** `[PROPOSTO]` em 2026-10-19 — aguarda o aceite do autor; **só pode rodar depois da ADR da
+**Estado:** `[ACEITO]` pelo autor em 2026-10-19; **só pode rodar depois da ADR da
 A12** ([10-PROBLEMAS](../10-PROBLEMAS.md)), e só se ela trocar a taxa
 
 ## A pergunta

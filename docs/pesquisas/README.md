@@ -15,16 +15,12 @@ resultado é o que o protocolo existe para impedir. O registro de cada execuçã
 | [ranking](ranking.md) | Ordenar pela força da tendência diz quem rende mais no mês seguinte? | 6 variações, nenhuma passou: o ranking não informa |
 | [calibracao](calibracao.md) | O veredito de preço justo do app ordena o retorno dos 12 meses seguintes? | Não ordenou (2011–2017); a calibração parou |
 | [validacao-brapi](validacao-brapi.md) | Onde a base discorda de uma segunda fonte, e a discordância é erro nosso? | 25 eventos faltando, saltos sem marca e a estimativa de FII medida; a maior parte do resto é convenção da brapi. Depois das correções, 470 eventos batem (eram 426) e 29 seguem recusados (eram 65) |
-| [taxa-de-desconto](taxa-de-desconto.md) | Com cada taxa candidata, quanto do mercado a faixa põe abaixo, dentro e acima? Não olha retorno | **Proposta**, aguarda aceite. Serve à ADR da A12 |
-| [calibracao-com-a-taxa-nova](calibracao-com-a-taxa-nova.md) | Com a taxa da ADR, o veredito ordena o retorno? Uma variação | **Proposta**, só roda depois da ADR, e só se ela trocar a taxa |
-| [filtro-de-risco](filtro-de-risco.md) | O filtro de tendência corta a queda na validação, e a que custo? | **Proposta**, aguarda aceite. Gasta a validação da pesquisa de carteira |
-| [custo-de-troca](custo-de-troca.md) | Quanto custa trocar de papel, por faixa de liquidez? | **Proposta**, aguarda aceite. Descritiva, não revê conclusão encerrada |
+| [taxa-de-desconto](taxa-de-desconto.md) | Com cada taxa candidata, quanto do mercado a faixa põe abaixo, dentro e acima? Não olha retorno | Taxa de hoje não passa (88% acima); Selic + 3 e IPCA+ longo passam por pouco, com mais de 70% acima. Serve à ADR da A12 |
+| [calibracao-com-a-taxa-nova](calibracao-com-a-taxa-nova.md) | Com a taxa da ADR, o veredito ordena o retorno? Uma variação | Aceita; só roda depois da ADR, e só se ela trocar a taxa |
+| [filtro-de-risco](filtro-de-risco.md) | O filtro de tendência corta a queda na validação, e a que custo? | Não confirmado: a pior queda ficou igual (−47,6%) e o retorno caiu 8,9 pontos ao ano |
+| [custo-de-troca](custo-de-troca.md) | Quanto custa trocar de papel, por faixa de liquidez? | O método mediu volatilidade, não spread; o custo das pesquisas fica em 0,25% |
 
 Pesquisa nova começa por um arquivo novo aqui, com o protocolo, e só roda depois do aceite do autor.
-
-**Ordem sugerida:** a taxa de desconto primeiro, porque destrava a ADR da A12, e o custo de troca junto,
-porque não depende de nada. O filtro de risco é independente. A calibração com a taxa nova vem por
-último, e talvez nem rode.
 
 ## Considerados e não propostos
 

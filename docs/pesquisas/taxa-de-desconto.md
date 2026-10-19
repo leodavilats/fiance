@@ -1,6 +1,6 @@
 # Plano — como a taxa de desconto distribui o veredito
 
-**Estado:** `[PROPOSTO]` em 2026-10-19 — aguarda o aceite do autor; nada rodou · **Serve a:**
+**Estado:** `[ENCERRADO]` em 2026-10-19 — **duas candidatas passam no critério, por pouco**; com qualquer uma, mais de 70% das ações seguem acima da faixa. Protocolo `[ACEITO]` pelo autor no mesmo dia, antes da execução, com o critério de 80% como está · **Serve a:**
 [10-PROBLEMAS](../10-PROBLEMAS.md), item A12
 
 ## A pergunta
@@ -76,3 +76,38 @@ Se a ADR trocar a taxa, a ordem do retorno se mede de novo, com outro protocolo:
   trocou
 - **O Tesouro Direto não é a curva de juros inteira.** É o que a base tem de 2005 em diante, e é o
   juro que uma pessoa física de fato conseguia comprar
+
+## Resultado — 2026-10-19
+
+177 fins de mês (jan/2011 a set/2025), retrato de 2026-10-19, 79 ações com faixa por mês em média. As
+quatro candidatas tiveram taxa em todos os meses: nenhuma ficou sem título à venda e nenhuma calou o
+método por taxa implausível.
+
+| # | Candidata | Taxa (mín.–máx.) | Abaixo | Dentro | Acima | Largura da faixa | Critério |
+|---|---|---|---|---|---|---|---|
+| 0 | Selic média de 10 anos + 5 | 13,5%–20,4% | 5,6% | 7,6% | **87,7%** | 36% | não passa |
+| 1 | Selic média de 10 anos + 3 | 11,5%–18,4% | 10,0% | 14,4% | **76,7%** | 41% | passa |
+| 2 | Prefixado mais longo + 5 | 11,0%–21,5% | 6,6% | 9,6% | **83,6%** | 36% | não passa |
+| 3 | IPCA+ mais longo + meta + 5 | 11,1%–15,7% | 11,6% | 16,8% | **71,4%** | 43% | passa |
+
+Abaixo, dentro e acima são a mediana dos meses; a largura é a mediana, como fração do piso.
+
+- **A taxa de hoje não passa.** Com ela, a mediana dos meses põe 88% das ações acima da faixa, o que
+  confirma, em 15 anos, o que a [calibração](calibracao.md) viu de 2011 a 2017
+- **As duas que passam passam por pouco**, e com o mercado ainda pendendo para um lado: com qualquer
+  uma, mais de 70% das ações ficam acima da faixa na mediana dos meses
+- **O juro não explica tudo.** Na candidata 3, o mês de juro mais baixo (out/2019, 11,1%) teve **mais**
+  ações acima (79,5%) do que o de juro mais alto (jan/2016, 15,7%: 73,2%). Em 2016 os preços estavam
+  no chão. O desequilíbrio vem também do modelo de lucro, e não só da taxa
+- **A candidata 3 é a mais estável** (taxa entre 11% e 16%, com 2 trocas de título de referência),
+  porque o juro real longo oscila menos que a Selic e que o prefixado. A 2 trocou de título 10 vezes
+- **Sem faixa, pelo mesmo motivo nas quatro:** lucro negativo (3.199 papéis-mês), ROE insuficiente
+  (1.867), sem dado (1.801) e units (1.190). A taxa não muda quem tem faixa, só onde ela fica
+
+**Para a ADR da A12:** o critério deixa duas opções, a 1 e a 3, e nenhuma resolve o desequilíbrio
+sozinha. A escolha é da ADR. Se ela trocar a taxa, a ordem do retorno se mede pela
+[calibração com a taxa nova](calibracao-com-a-taxa-nova.md). Esta pesquisa não mediu retorno de
+nenhuma candidata.
+
+Registro em `fiance-trend/backend/registro_taxa.jsonl`; mês a mês em
+`fiance-trend/backend/resultados/taxa_de_desconto.json`.

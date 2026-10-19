@@ -19,8 +19,8 @@ A medida de 2026-10-12 mostrou que o veredito de preço justo não ordenou o ret
 que com a Selic média de 10 anos + 5 pontos o modelo punha 9 em 10 ações acima da faixa
 ([pesquisas/calibracao](pesquisas/calibracao.md)). **Falta decidir em ADR** se essa taxa continua sendo a
 do modelo. Detalhe em [10-PROBLEMAS](10-PROBLEMAS.md), A12.
-A medida que falta para a decisão está proposta em
-[pesquisas/taxa-de-desconto](pesquisas/taxa-de-desconto.md), e aguarda aceite.
+A distribuição do veredito por taxa foi medida em 2026-10-19
+([pesquisas/taxa-de-desconto](pesquisas/taxa-de-desconto.md)); falta a ADR.
 
 ---
 
@@ -118,7 +118,8 @@ painel organizando o caminho e os dados; e o app fiance lendo só o dado da base
 vai para o app. Plano em [plano da plataforma](historico/PLATAFORMA-2026-10.md).
 
 **Resultado do ranking:** as 6 variações do teto foram usadas e nenhuma passou
-([pesquisas/ranking](pesquisas/ranking.md)). A tendência ficou como contexto de risco, só no painel.
+([pesquisas/ranking](pesquisas/ranking.md)). A tendência ficou como contexto, só no painel; o corte de risco
+não se confirmou fora do estudo ([pesquisas/filtro-de-risco](pesquisas/filtro-de-risco.md)).
 
 ---
 

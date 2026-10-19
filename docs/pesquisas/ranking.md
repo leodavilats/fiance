@@ -140,3 +140,9 @@ registro.
 
 O que fica para o uso: a tendência no painel é **contexto de risco** — o filtro da
 [primeira pesquisa](pesquisa.md) cortou as quedas grandes pela metade —, e não ordem de compra.
+
+## Adendo — 2026-10-19: o corte de risco não se confirmou fora do estudo
+
+O [filtro de risco](filtro-de-risco.md) mediu o filtro na validação (2019–2022): a pior queda ficou
+igual à de quem ficou comprado (−47,6%), e o retorno caiu 8,9 pontos ao ano. **O corte das quedas pela
+metade só foi visto no estudo.** A tendência no painel segue como contexto, e não como proteção.
