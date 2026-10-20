@@ -31,19 +31,29 @@ deles. Ver [ADR-014](decisoes/ADR-014-um-modelo-por-classe.md). `analysis/fair_p
 ### A taxa
 
 ```
-d_ação = Selic média de 10 anos + 5 pontos
+d_ação = juro real do Tesouro IPCA+ mais longo à venda + meta de inflação (3%) + 5 pontos
 g_T    = meta de inflação (3%) + 1,5% de crescimento real       = 4,5%
 y_FII  = máx(Selic média de 10 anos − meta de inflação, 3%) + 3 pontos
 ```
 
-A Selic média de 10 anos sai da série mensal 4189 do SGS (`collectors/rates.py::_selic_media`).
-**Custo de capital é taxa de longo prazo**: a Selic de um dia mudaria todo preço justo a cada Copom,
-e a média de dois anos, no pico do ciclo, dava 19% de taxa e quase toda ação acima do preço justo.
-Sem a série, entra a Selic do dia, e `premises.rate_base` diz qual base foi usada. As premissas
-também carregam a origem da taxa (`rate_source`, que pode ser `bcb_cache_vencido`), a Selic usada
+**A taxa de ação** é a taxa de venda do Tesouro IPCA+ (sem juros semestrais) de vencimento mais longo
+à venda no último dia da base, lida pela `fiance-dados` (`collectors/juro_real.py`), mais a meta de
+inflação e o prêmio ([ADR-028](decisoes/ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md)). **Custo
+de capital é taxa de longo prazo**, e o juro real que o mercado cobra hoje por prazo longo é o que
+mais se aproxima dele; a Selic média de 10 anos + 5, a taxa de antes, punha 88% das ações acima da
+faixa na mediana de 2011 a 2025 ([pesquisas/taxa-de-desconto](pesquisas/taxa-de-desconto.md)). **Sem
+título à venda, ou com a base fora do ar e sem cache, a ação fica sem juro** e o método se cala: não
+há volta para a Selic. As premissas de ação trazem `rate_base: ipca_longo`, a taxa do título
+(`real_rate_pct`) e o vencimento dele (`real_rate_maturity`), e não trazem `selic_pct`.
+
+**O yield de FII** segue saindo da Selic média de 10 anos, da série mensal 4189 do SGS
+(`collectors/rates.py::_selic_media`). Sem a série, entra a Selic do dia, e `premises.rate_base` diz
+qual base foi usada. As premissas
+também carregam a origem da taxa (`rate_source`, que pode ser `bcb_cache_vencido` ou, na ação,
+`base_cache_vencido`), a Selic usada no FII
 (`selic_pct`), o momento da leitura (`rates_as_of`) e a data de referência da janela de dividendos
 (`reference_date`). **Com juros
-estimados (`source: estimativa`), não há avaliação** — `analysis/fair_price.py::rates_for_valuation`.
+estimados (`source: estimativa`), o FII não tem avaliação** — `analysis/fair_price.py::rates_for_valuation`.
 Selic zero, na média e no dia, conta como ausência de juro.
 
 ### O modelo de ação
@@ -221,13 +231,15 @@ casas tiram o ruído de ponto flutuante, e no preço exato do gatilho a etiqueta
 **A margem descreve posição, não antecipa retorno.** Medido em 2026-10-12, com o modelo do app e só o
 que se sabia em cada data, nas ações de 2011 a 2017: retorno médio em 12 meses de 4,0% abaixo da
 faixa, 5,3% dentro e 3,0% acima; abaixo menos acima, t de −0,09. O veredito não ordenou o retorno
-([pesquisas/calibracao](pesquisas/calibracao.md); [10-PROBLEMAS](10-PROBLEMAS.md), A12).
+([pesquisas/calibracao](pesquisas/calibracao.md)). Com a taxa da ADR-028, a ordem aparece, mas sem
+força: +1,1 ponto, t de 0,18 ([pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)).
 
 ### Premissas
 
 | Premissa | Valor | Configurável |
 |---|---|---|
-| Base da taxa | Selic média de 10 anos | ❌ |
+| Base da taxa de ação | Tesouro IPCA+ mais longo à venda + meta de inflação | ❌ |
+| Base do yield de FII | Selic média de 10 anos | ❌ |
 | Prêmio de ação | 5 pontos | ❌ |
 | Meta de inflação | 3% | ❌ |
 | Crescimento real de longo prazo | 1,5% | ❌ |
@@ -248,8 +260,9 @@ faixa, 5,3% dentro e 3,0% acima; abaixo menos acima, t de −0,09. O veredito n�
 3. **O ROE do terminal é o normalizado de hoje.** Empresa de ROE muito alto sai generosa no longo
    prazo; a concorrência tende a reduzi-lo.
 4. **Os parâmetros não têm calibração empírica.** Medido em 2026-10-12: o veredito não ordenou o
-   retorno, e a calibração parou antes de mexer em parâmetro ([pesquisas/calibracao](pesquisas/calibracao.md);
-   [10-PROBLEMAS](10-PROBLEMAS.md), A12).
+   retorno, e a calibração parou antes de mexer em parâmetro ([pesquisas/calibracao](pesquisas/calibracao.md)).
+   A taxa mudou depois por outro critério, a distribuição da régua, e nem com ela o veredito ordena
+   o retorno ([pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)).
 5. **FII de papel fora da lista de referência parece barato.** A lista é mantida à mão; fundo que
    não está nela é lido como tijolo, e a distribuição com correção monetária sai capitalizada por
    juro real.
@@ -400,7 +413,7 @@ justo" na etiqueta e "Algum desconto" na medida.
 
 **A medida confirmou que a etiqueta é só posição.** De 2011 a 2017, as ações abaixo do preço justo
 renderam 4,0% em 12 meses, as dentro 5,3% e as acima 3,0% (t −0,09): o veredito não ordenou o
-retorno ([pesquisas/calibracao](pesquisas/calibracao.md); [10-PROBLEMAS](10-PROBLEMAS.md), A12).
+retorno ([pesquisas/calibracao](pesquisas/calibracao.md); [pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)).
 
 **Com qualidade `fragil`, a leitura não passa de "abaixo" ou "acima"**: `STRONG_BUY` vira `BUY` e
 `STRONG_SELL` vira `SELL` (`decision.py::verdict_for`). A margem crua fica em `band_verdict`, e a razão
@@ -417,7 +430,7 @@ flowchart TD
     CLS -->|"FII"| QF
     CLS -->|"qualquer outra"| SEMV
 
-    JURO["Juro de referência<br/>Selic média de 10 anos, ou a do dia, declarada<br/>juro estimado não avalia"]
+    JURO["Juro de referência<br/>ação: Tesouro IPCA+ mais longo · FII: Selic média de 10 anos<br/>juro estimado não avalia"]
     JURO -.-> QA
     JURO -.-> QF
 

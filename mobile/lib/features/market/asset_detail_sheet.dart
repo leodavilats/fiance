@@ -501,6 +501,14 @@ List<Widget> _insumos(BuildContext context, AssetAnalysis a) {
               label: 'Data de referência do cálculo',
               value: formatDate(p['reference_date'] as String?),
             ),
+          if (p['real_rate_pct'] != null)
+            FiDataRow(
+              label: 'Juro real usado',
+              value: formatPercent((p['real_rate_pct'] as num).toDouble()),
+              detail: _tituloDoJuroReal(p['real_rate_maturity'] as String?),
+              note: staleRateNote(p).isEmpty ? null : staleRateNote(p),
+              glossaryKey: 'juro_real',
+            ),
           if (p['selic_pct'] != null)
             FiDataRow(
               label: 'Selic usada',
@@ -529,9 +537,19 @@ final _assetAnalysisProvider = FutureProvider.autoDispose
       return ref.watch(apiRepositoryProvider).analyzeAsset(ticker);
     });
 
+String _tituloDoJuroReal(String? vencimento) {
+  final ano = (vencimento ?? '').length >= 4 ? vencimento!.substring(0, 4) : '';
+  final titulo = ano.isEmpty ? 'Tesouro IPCA+ mais longo' : 'Tesouro IPCA+ $ano';
+  return '$titulo, acima da inflação';
+}
+
 List<Widget> _premiseRows(AssetAnalysis a) {
   final base = rateBaseLabel(a.premises['rate_base'] as String?);
-  final baseComJuro = base.isEmpty ? '' : '$base, o juro básico,';
+  final baseComJuro = a.premises['rate_base'] == 'ipca_longo'
+      ? 'o $base e a meta de inflação,'
+      : base.isEmpty
+          ? ''
+          : '$base, o juro básico,';
   final vencida = staleRateNote(a.premises);
   final origemDoYield = [
     if (base.isNotEmpty) 'a partir da $base, o juro básico',

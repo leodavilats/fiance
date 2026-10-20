@@ -84,12 +84,18 @@ final Map<String, String> glossary = {
       'nome dela.',
   'taxa_de_desconto':
       'Taxa exigida — o retorno mínimo, ao ano, para o investimento valer a pena; é com ela que '
-      'o lucro de amanhã vira valor de hoje. Sai da Selic média de 10 anos mais um prêmio '
-      'declarado de 5 pontos: custo de capital é taxa de longo prazo, e a Selic de um dia '
-      'mudaria todo preço justo a cada reunião do Copom.',
+      'o lucro de amanhã vira valor de hoje. Na ação, sai do juro real do Tesouro IPCA+ mais '
+      'longo à venda, mais a meta de inflação e um prêmio declarado de 5 pontos: custo de '
+      'capital é taxa de longo prazo, e o juro que o mercado cobra hoje por prazo longo é o '
+      'que mais se aproxima dela.',
+  'juro_real':
+      'Juro real — quanto um título paga acima da inflação. O preço justo de ação usa a taxa do '
+      'Tesouro IPCA+ de vencimento mais longo à venda, lida da base de mercado. Sem esse título, '
+      'a conta não é feita: ela não troca a taxa por outra.',
   'selic':
-      'Selic — o juro básico da economia brasileira, decidido pelo Banco Central. O preço justo '
-      'usa a média dos últimos 10 anos, lida do Banco Central, e não a do dia.',
+      'Selic — o juro básico da economia brasileira, decidido pelo Banco Central. O rendimento '
+      'exigido de fundo imobiliário usa a média dos últimos 10 anos, lida do Banco Central, e '
+      'não a do dia.',
   'yield':
       'Rendimento exigido (yield) — quanto o fundo precisa distribuir por ano, sobre o preço, '
       'para valer a pena. É o juro acima da inflação, no longo prazo, mais um prêmio pelo risco '

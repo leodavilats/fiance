@@ -26,7 +26,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [011](ADR-011-preco-justo-e-faixa.md) | Preço justo como faixa; leitura de tendência declarada | `SUBSTITUÍDO EM PARTE` por 014 | 2026-09-19 |
 | [012](ADR-012-o-alvo-e-de-quem-declara.md) | Sem alvo declarado não há julgamento | `ACEITO` | 2026-09-19 |
 | [013](ADR-013-o-tecnico-nao-decide.md) | O técnico não decide, e a faixa carrega a própria incerteza | `SUBSTITUÍDO EM PARTE` por 014 | 2026-09-20 |
-| [014](ADR-014-um-modelo-por-classe.md) | Um modelo por classe, e a faixa é das premissas dele | `SUBSTITUÍDO EM PARTE` por 015 e 016 | 2026-09-23 |
+| [014](ADR-014-um-modelo-por-classe.md) | Um modelo por classe, e a faixa é das premissas dele | `SUBSTITUÍDO EM PARTE` por 015, 016 e 028 | 2026-09-23 |
 | [015](ADR-015-a-faixa-cobre-os-dois-cenarios.md) | A faixa da ação cobre os dois cenários de crescimento | `ACEITO` | 2026-09-25 |
 | [016](ADR-016-a-confirmacao-da-acao-alarga-e-nao-derruba.md) | Na ação, o dividendo longe da faixa alarga a leitura, e não a derruba | `ACEITO` | 2026-09-25 |
 | [017](ADR-017-o-score-nao-le-o-tecnico.md) | O score de oportunidade não lê o técnico — estende 013 | `ACEITO` | 2026-09-25 |
@@ -40,6 +40,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [025](ADR-025-cobranca-da-api-de-dados.md) | A API de dados é paga, sem plano gratuito, em três degraus | `ACEITO` | 2026-10-14 |
 | [026](ADR-026-confirmacao-do-evento-pelo-tamanho.md) | O preço confirma o evento na medida do tamanho dele | `ACEITO` | 2026-10-18 |
 | [027](ADR-027-caixa-de-avisos-guardada.md) | Os avisos são guardados numa caixa, com lido e não lido | `ACEITO` | 2026-10-18 |
+| [028](ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md) | A taxa exigida de ação sai do juro real do Tesouro | `ACEITO` | 2026-10-19 |
 
 ---
 

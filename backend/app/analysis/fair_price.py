@@ -41,6 +41,7 @@ GRAHAM_PRODUCT = 22.5
 
 RATE_BASE_AVERAGE = "selic_media_10a"
 RATE_BASE_CURRENT = "selic_atual"
+RATE_BASE_REAL = "ipca_longo"
 RATES_SOURCE_ESTIMATE = "estimativa"
 
 PRINCIPAL_EARNINGS = "lucros_descontados"
@@ -110,36 +111,56 @@ def _mediana(valores: list[float]) -> float:
 
 @dataclass(frozen=True)
 class ValuationRates:
-    discount_rate: float
-    fii_yield: float
-    rate_base: str
-    selic_pct: float
+    discount_rate: float | None
+    fii_yield: float | None
+    rate_base: str | None
+    selic_pct: float | None
     source: str | None = None
     as_of: float | None = None
+    real_rate_pct: float | None = None
+    real_rate_maturity: str | None = None
+    real_rate_source: str | None = None
+    real_rate_as_of: float | None = None
 
 
-def rates_for_valuation(rates: dict | None) -> ValuationRates | None:
+def _selic_base(rates: dict | None) -> tuple[str, float] | None:
     if not rates or rates.get("source") == RATES_SOURCE_ESTIMATE:
         return None
-
     media = rates.get("selic_media_10a")
     atual = rates.get("selic_anual")
     if media and media > 0:
-        base, selic = RATE_BASE_AVERAGE, float(media)
-    elif atual and atual > 0:
-        base, selic = RATE_BASE_CURRENT, float(atual)
-    else:
+        return RATE_BASE_AVERAGE, float(media)
+    if atual and atual > 0:
+        return RATE_BASE_CURRENT, float(atual)
+    return None
+
+
+def rates_for_valuation(rates: dict | None, juro_real: dict | None = None) -> ValuationRates | None:
+    selic = _selic_base(rates)
+    real = juro_real.get("taxa") if juro_real else None
+    if selic is None and real is None:
         return None
 
-    juro_real = max(selic / 100 - INFLATION_TARGET, REAL_RATE_FLOOR)
+    fii_yield = None
+    if selic is not None:
+        real_da_selic = max(selic[1] / 100 - INFLATION_TARGET, REAL_RATE_FLOOR)
+        fii_yield = round(real_da_selic + FII_PREMIUM, 4)
 
     return ValuationRates(
-        discount_rate=round(selic / 100 + EQUITY_RISK_PREMIUM, 4),
-        fii_yield=round(juro_real + FII_PREMIUM, 4),
-        rate_base=base,
-        selic_pct=round(selic, 2),
-        source=rates.get("source"),
-        as_of=rates.get("fetched_at"),
+        discount_rate=(
+            round(float(real) / 100 + INFLATION_TARGET + EQUITY_RISK_PREMIUM, 4)
+            if real is not None
+            else None
+        ),
+        fii_yield=fii_yield,
+        rate_base=selic[0] if selic else None,
+        selic_pct=round(selic[1], 2) if selic else None,
+        source=rates.get("source") if selic else None,
+        as_of=rates.get("fetched_at") if selic else None,
+        real_rate_pct=round(float(real), 2) if real is not None else None,
+        real_rate_maturity=juro_real.get("vencimento") if real is not None else None,
+        real_rate_source=juro_real.get("source") if real is not None else None,
+        real_rate_as_of=juro_real.get("fetched_at") if real is not None else None,
     )
 
 
@@ -507,6 +528,8 @@ class FairPriceInputs:
     rate_source: str | None = None
     selic_pct: float | None = None
     rates_as_of: float | None = None
+    real_rate_pct: float | None = None
+    real_rate_maturity: str | None = None
     reference_date: str | None = None
     fii_segment: str | None = None
 
@@ -531,6 +554,7 @@ def compute_fair_price_inputs(
 ) -> FairPriceInputs:
     today = _hoje(reference)
     proventos_conhecidos = dividends is not None
+    acao = asset_type == "br_stock"
     dividends = dividends or []
 
     lucro = normalized_eps(eps, net_income_history, net_income_ttm)
@@ -563,13 +587,21 @@ def compute_fair_price_inputs(
         data_years=dividend_data_years(dividends, reference=today),
         discount_rate=rates.discount_rate if rates else None,
         fii_yield=rates.fii_yield if rates else None,
-        rate_base=rates.rate_base if rates else None,
+        rate_base=(
+            (RATE_BASE_REAL if rates.discount_rate is not None else None)
+            if acao
+            else rates.rate_base
+        )
+        if rates
+        else None,
         earnings_inconsistent=lucro.inconsistent,
         dividends_known=proventos_conhecidos,
         dividend_paid_years=dividendo.paid_years,
-        rate_source=rates.source if rates else None,
-        selic_pct=rates.selic_pct if rates else None,
-        rates_as_of=rates.as_of if rates else None,
+        rate_source=(rates.real_rate_source if acao else rates.source) if rates else None,
+        selic_pct=rates.selic_pct if rates and not acao else None,
+        rates_as_of=(rates.real_rate_as_of if acao else rates.as_of) if rates else None,
+        real_rate_pct=rates.real_rate_pct if rates and acao else None,
+        real_rate_maturity=rates.real_rate_maturity if rates and acao else None,
         reference_date=today.date().isoformat(),
         fii_segment=fii_segment(symbol) if asset_type == "fii" else None,
     )
@@ -586,6 +618,8 @@ def _rate_premises(inputs: FairPriceInputs) -> dict:
         "rate_base": inputs.rate_base,
         "rate_source": inputs.rate_source,
         "selic_pct": inputs.selic_pct,
+        "real_rate_pct": inputs.real_rate_pct,
+        "real_rate_maturity": inputs.real_rate_maturity,
         "rates_as_of": inputs.rates_as_of,
         "reference_date": inputs.reference_date,
     }

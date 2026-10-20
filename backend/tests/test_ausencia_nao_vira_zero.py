@@ -204,15 +204,19 @@ class TestAnosComPagamento:
 class TestTaxaRastreavel:
     def test_as_premissas_dizem_de_onde_veio_a_taxa(self):
         taxas = rates_for_valuation(
-            {"selic_media_10a": 10.0, "source": "bcb_cache_vencido", "fetched_at": 1_790_000_000.0}
-        )
+            {"selic_media_10a": 10.0, "source": "bcb", "fetched_at": 1_700_000_000.0},
+            {"taxa": 6.0, "vencimento": "2045-05-15", "source": "base_cache_vencido",
+             "fetched_at": 1_790_000_000.0},
+        )  # fmt: skip
         p = _acao(rates=taxas, reference=datetime(2026, 9, 23, 15, tzinfo=UTC)).premises
 
-        assert p["rate_source"] == "bcb_cache_vencido", (
+        assert p["rate_source"] == "base_cache_vencido", (
             "taxa servida de cache vencido precisa aparecer como tal, com idade"
         )
-        assert p["rates_as_of"] == 1_790_000_000.0
-        assert p["selic_pct"] == 10.0
+        assert p["rates_as_of"] == 1_790_000_000.0, "a idade é a do juro que a ação usou"
+        assert p["real_rate_pct"] == 6.0
+        assert p["real_rate_maturity"] == "2045-05-15"
+        assert p["selic_pct"] is None, "a ação não usa a Selic: mostrá-la seria premissa falsa"
         assert p["reference_date"] == "2026-09-23", (
             "sem a data de referência, a janela de dividendos não se reproduz depois"
         )

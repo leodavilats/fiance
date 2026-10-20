@@ -13,17 +13,6 @@ publicação está no bloco *Fase pública — sem data*.
 
 ## Em desenvolvimento
 
-### Taxa de desconto do preço justo — decisão aberta
-
-A medida de 2026-10-12 mostrou que o veredito de preço justo não ordenou o retorno de 2011 a 2017, e
-que com a Selic média de 10 anos + 5 pontos o modelo punha 9 em 10 ações acima da faixa
-([pesquisas/calibracao](pesquisas/calibracao.md)). **Falta decidir em ADR** se essa taxa continua sendo a
-do modelo. Detalhe em [10-PROBLEMAS](10-PROBLEMAS.md), A12.
-A distribuição do veredito por taxa foi medida em 2026-10-19
-([pesquisas/taxa-de-desconto](pesquisas/taxa-de-desconto.md)); falta a ADR.
-
----
-
 ### A API de dados aberta a terceiros
 
 A API existe ([ADR-024](decisoes/ADR-024-api-de-dados.md)), com portal, console e o app como
@@ -80,11 +69,12 @@ Em 2026-09-25 a faixa passou a cobrir os dois cenários de crescimento
 yield nominal ([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)).
 
 **A calibração foi medida em 2026-10-12 e parou por protocolo:** o veredito não ordenou o retorno de
-2011 a 2017 ([pesquisas/calibracao](pesquisas/calibracao.md)). O aberto é a ADR da taxa de desconto
-([10-PROBLEMAS](10-PROBLEMAS.md), A12), na seção *Em desenvolvimento*. O BDR continua sem juro em dólar
-(*Considerado*).
+2011 a 2017 ([pesquisas/calibracao](pesquisas/calibracao.md)). Em 2026-10-19 a taxa de ação passou a sair
+do juro real do Tesouro ([ADR-028](decisoes/ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md)), escolhida
+pela distribuição da régua, sem olhar retorno; e nem com ela o veredito ordena o retorno
+([pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)). O BDR continua sem juro em dólar (*Considerado*).
 
-O item 3 foi entregue com a força limitada pelo resultado da A12: a frase descreve posição e diz que
+O item 3 foi entregue com a força limitada pelo resultado da calibração: a frase descreve posição e diz que
 o preço justo não antecipa retorno.
 
 ### ~~5 · Simplificar a linguagem da análise de ativo~~ — entregue em 2026-09-26
@@ -156,7 +146,7 @@ Sem decisão, mas com interesse declarado.
 | **Opções e derivativos** | Tensiona o limite "não é ferramenta de trade" de [01-PRODUTO](01-PRODUTO.md) |
 | **Controle de gastos completo** (tipo Mobills) | Aumentaria a atenção exigida de um público definido por não ter tempo |
 | **Otimizador de carteira** (Sharpe, HRP, mínima volatilidade) | Removido em 2026-09-13 ([ADR-010](decisoes/ADR-010-remover-otimizador.md)). Reconstruir é decisão nova — e é preciso responder se isso serve a quem não tem tempo |
-| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. **Medida em 2026-10-12: o modelo como está não ordena o retorno**, e por protocolo a calibração não seguiu ([pesquisas/calibracao](pesquisas/calibracao.md)). O que isso muda no app está em [10-PROBLEMAS](10-PROBLEMAS.md), A12 |
+| **Calibração empírica do preço justo** | Prêmio de 5 pontos, 3 pontos de FII, 1,5% de crescimento real, teto de 20%, choque de ±1 ponto e bandas de ±15% e ±30% são convenções. Validá-las exige retorno à frente por faixa de margem, fora da amostra, com fundamentos como estavam na data. **Medida em 2026-10-12: o modelo como está não ordena o retorno**, e por protocolo a calibração não seguiu ([pesquisas/calibracao](pesquisas/calibracao.md)). A taxa mudou pela ADR-028, e nem com ela o veredito ordena ([pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)) |
 | **Preço justo de BDR** | Exige juro em dólar para descontar lucro em dólar ([ADR-014](decisoes/ADR-014-um-modelo-por-classe.md)): descontar pela Selic fazia todo BDR parecer caro, cerca de 0,67× o valor. Nenhuma fonte da base própria entrega juro em dólar |
 | **Seleção de carteira por fatores e ranking de tendência** | Medidos com protocolo em 2026-10, sem vantagem a explorar: escolher ações não bateu o CDI depois de custo ([pesquisas/pesquisa](pesquisas/pesquisa.md)), e nenhuma das 6 variações do ranking passou ([pesquisas/ranking](pesquisas/ranking.md)). Não reabrir sem protocolo novo |
 
@@ -202,7 +192,8 @@ volume do `postgres-app` perde carteiras e contas — risco aceito em 2026-10-12
 pessoal ([07-OPERACAO](07-OPERACAO.md#backup-e-recuperação)).
 
 **Preço justo sem poder preditivo.** Medido de 2011 a 2017, o veredito não ordenou o retorno seguinte
-([10-PROBLEMAS](10-PROBLEMAS.md), A12). Usá-lo como sinal de compra contraria a medida.
+([pesquisas/calibracao](pesquisas/calibracao.md)), nem com a taxa da ADR-028 ([pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)).
+Usá-lo como sinal de compra contraria a medida.
 
 **Dependência de endpoints não documentados.** Desde 2026-10-12 a fonte de mercado é a base própria,
 de arquivos públicos. Proventos e eventos vêm de endpoints do site da B3 sem contrato; se mudarem,

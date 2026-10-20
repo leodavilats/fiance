@@ -16,7 +16,7 @@ resultado é o que o protocolo existe para impedir. O registro de cada execuçã
 | [calibracao](calibracao.md) | O veredito de preço justo do app ordena o retorno dos 12 meses seguintes? | Não ordenou (2011–2017); a calibração parou |
 | [validacao-brapi](validacao-brapi.md) | Onde a base discorda de uma segunda fonte, e a discordância é erro nosso? | 25 eventos faltando, saltos sem marca e a estimativa de FII medida; a maior parte do resto é convenção da brapi. Depois das correções, 470 eventos batem (eram 426) e 29 seguem recusados (eram 65) |
 | [taxa-de-desconto](taxa-de-desconto.md) | Com cada taxa candidata, quanto do mercado a faixa põe abaixo, dentro e acima? Não olha retorno | Taxa de hoje não passa (88% acima); Selic + 3 e IPCA+ longo passam por pouco, com mais de 70% acima. Serve à ADR da A12 |
-| [calibracao-com-a-taxa-nova](calibracao-com-a-taxa-nova.md) | Com a taxa da ADR, o veredito ordena o retorno? Uma variação | Aceita; só roda depois da ADR, e só se ela trocar a taxa |
+| [calibracao-com-a-taxa-nova](calibracao-com-a-taxa-nova.md) | Com a taxa da ADR, o veredito ordena o retorno? Uma variação | Não passou: a ordem aparece (+1,1 ponto), mas com t de 0,18 e pouca amostra abaixo da faixa |
 | [filtro-de-risco](filtro-de-risco.md) | O filtro de tendência corta a queda na validação, e a que custo? | Não confirmado: a pior queda ficou igual (−47,6%) e o retorno caiu 8,9 pontos ao ano |
 | [custo-de-troca](custo-de-troca.md) | Quanto custa trocar de papel, por faixa de liquidez? | O método mediu volatilidade, não spread; o custo das pesquisas fica em 0,25% |
 

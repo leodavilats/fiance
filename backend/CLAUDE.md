@@ -32,8 +32,9 @@ python -m ruff format --check app tests
 - **Nenhum método vota de um lado só, e a faixa não depende do preço que julga.** Graham é
   indicador, nunca borda: dentro do próprio filtro ele sempre fica acima do preço.
 - **O yield que a pessoa declara é meta de renda** (`personal_ceiling`), nunca borda da faixa.
-- **Juro estimado não avalia.** A taxa sai da Selic média de 10 anos (`rates_for_valuation`); sem
-  juro real, o método se cala em vez de descontar por um número do código.
+- **Juro estimado não avalia.** A taxa de ação sai do juro real do Tesouro IPCA+ mais longo, pela
+  `fiance-dados`; o yield de FII, da Selic média de 10 anos (`rates_for_valuation`). Sem o juro da
+  classe, o método se cala: ação nunca cai para a Selic, nem desconta por um número do código.
 - **Sem faixa, não há leitura de valor** (`decision.basis = none`, "Sem preço justo"). BDR e ETF não
   têm método. A regra vive só em `decide()` — nunca numa tela.
 - **Análise técnica não decide**, com faixa ou sem ela. Tendência e RSI são contexto: não mudam a

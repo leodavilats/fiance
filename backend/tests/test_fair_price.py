@@ -78,14 +78,29 @@ class TestJuroDeReferencia:
             "taxa que decide o preço justo"
         )
 
-    def test_a_media_de_dez_anos_e_a_base_quando_existe(self):
+    def test_a_media_de_dez_anos_e_a_base_do_fii_quando_existe(self):
         taxas = rates_for_valuation({"selic_anual": 13.75, "selic_media_10a": 9.5, "source": "bcb"})
 
-        assert taxas.rate_base == RATE_BASE_AVERAGE
-        assert taxas.discount_rate == pytest.approx(0.095 + EQUITY_RISK_PREMIUM), (
-            "custo de capital é taxa de longo prazo: a Selic de um dia muda todo preço justo a "
-            "cada reunião do Copom"
+        assert taxas.rate_base == RATE_BASE_AVERAGE, (
+            "o yield de fundo é de longo prazo: a Selic de um dia mudaria todo FII a cada Copom"
         )
+
+    def test_a_taxa_de_acao_e_o_juro_real_do_tesouro_mais_a_meta_e_o_premio(self):
+        taxas = rates_for_valuation(
+            {"selic_anual": 13.75, "selic_media_10a": 9.5, "source": "bcb"},
+            {"taxa": 6.2, "vencimento": "2045-05-15", "source": "base", "fetched_at": 1.0},
+        )
+
+        assert taxas.discount_rate == pytest.approx(0.062 + INFLATION_TARGET + EQUITY_RISK_PREMIUM)
+        assert taxas.real_rate_maturity == "2045-05-15", "a premissa diz qual título deu a taxa"
+
+    def test_sem_juro_real_a_acao_nao_cai_para_a_selic(self):
+        taxas = rates_for_valuation({"selic_anual": 13.75, "selic_media_10a": 9.5, "source": "bcb"})
+
+        assert taxas.discount_rate is None, (
+            "voltar para a Selic seria outro modelo com o mesmo nome (ADR-028): sem título, cala"
+        )
+        assert taxas.fii_yield is not None, "o FII não depende do Tesouro"
 
     def test_sem_a_serie_a_selic_do_dia_entra_e_se_declara(self):
         taxas = rates_for_valuation({"selic_anual": 13.75, "source": "bcb_cache_vencido"})

@@ -1,7 +1,7 @@
 # Problemas conhecidos
 
 **Fonte de verdade** do que está aberto. Só pendências: nada de histórico, nada de item resolvido.
-Última verificação contra o código: **2026-10-18**
+Última verificação contra o código: **2026-10-19**
 Itens 1 a 33 herdados da verificação de 2026-09-11; itens A a E da auditoria do motor de cálculo de
 2026-09-13. A0, 28, 30 e 31 saíram em 2026-09-19 — ver
 [ADR-011](decisoes/ADR-011-preco-justo-e-faixa.md) e
@@ -17,7 +17,9 @@ ver [pesquisas/calibracao](pesquisas/calibracao.md). No mesmo dia a fase passou 
 e não sai daqui. Em 2026-10-18 a [validação contra a brapi](pesquisas/validacao-brapi.md) abriu
 os itens da série ajustada; a marca de salto, a confirmação pelo preço
 ([ADR-026](decisoes/ADR-026-confirmacao-do-evento-pelo-tamanho.md)), a inferência pelo FRE e pelas
-cotas de FII e as parcelas de provento foram corrigidas no mesmo dia, e o que segue aberto está em B.
+cotas de FII e as parcelas de provento foram corrigidas no mesmo dia, e o que segue aberto está em B. A A12 saiu em 2026-10-19 com a
+[ADR-028](decisoes/ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md); nem com a taxa nova o veredito ordena
+o retorno ([pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)).
 
 > **Ao fechar um item, apague-o daqui.** Item resolvido que fica é pior que item ausente, porque
 > manda alguém refazer o que já existe. Este arquivo tem histórico de apodrecer: numa revisão de
@@ -35,19 +37,6 @@ Os itens da auditoria de **2026-09-13** foram fechados até 2026-09-25. A de **2
 ([ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md) a
 [ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md)) e virou registro em
 [historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25](historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md).
-
-### A12 · O veredito de preço justo não ordenou o retorno no passado
-
-Medido em 2026-10-12 ([pesquisas/calibracao](pesquisas/calibracao.md)): de 2011 a 2017, com só o que se
-sabia em cada data, ação **abaixo do preço justo** não rendeu mais nos 12 meses seguintes que ação
-**acima** (4,0% contra 3,0% ao ano em média, t de −0,09), e com o juro da época o modelo punha 9 em
-cada 10 ações acima da faixa.
-
-**Aberto:** os textos foram revistos ([pesquisas/calibracao](pesquisas/calibracao.md)); falta decidir em ADR se a taxa de desconto (Selic média de 10 anos + 5 pontos)
-continua sendo a do modelo, já que em juro alto ela deixa quase tudo acima da faixa.
-A [distribuição por taxa](pesquisas/taxa-de-desconto.md), medida em 2026-10-19 sem olhar retorno, deixa
-duas candidatas: Selic média + 3 pontos e IPCA+ longo + meta + 5 pontos. Com qualquer uma, mais de 70%
-das ações seguem acima da faixa.
 
 O preço justo de BDR segue em [09-FUTURO](09-FUTURO.md), *Considerado*.
 

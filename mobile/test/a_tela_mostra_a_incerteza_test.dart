@@ -76,7 +76,8 @@ void main() {
   test('os termos novos têm verbete', () {
     expect(glossary['qualidade_da_faixa'], isNotNull);
     expect(glossary['premissa_e_gatilho'], isNotNull);
-    expect(glossary['taxa_de_desconto'], contains('Selic média de 10 anos'));
+    expect(glossary['taxa_de_desconto'], contains('Tesouro IPCA+'));
+    expect(glossary['juro_real'], isNotNull);
     expect(glossary['preco_teto_pessoal'], contains('não a faixa'));
   });
 

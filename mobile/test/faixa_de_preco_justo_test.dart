@@ -76,6 +76,17 @@ void main() {
       expect(nota, contains('BCB fora do ar'));
     });
 
+    test('a taxa de ação vencida diz que foi a base de mercado que caiu', () {
+      final nota = staleRateNote({'rate_source': 'base_cache_vencido'});
+
+      expect(nota, contains('base de mercado fora do ar'),
+          reason: 'desde a ADR-028 a taxa de ação vem do Tesouro, pela base, e não do BCB');
+    });
+
+    test('a base da taxa de ação tem nome', () {
+      expect(rateBaseLabel('ipca_longo'), 'juro real do Tesouro IPCA+ mais longo');
+    });
+
     test('taxa fresca não ganha nota', () {
       expect(staleRateNote({'rate_source': 'bcb', 'rates_as_of': 1790000000.0}), '');
       expect(staleRateNote(const {}), '');

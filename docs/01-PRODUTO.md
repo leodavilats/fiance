@@ -29,7 +29,7 @@ análise não sabe o que ela já tem, e a recomendação de terceiro não sabe n
 **O fiance existe para responder uma pergunta só: *onde está cada ativo, e por quê?*** — a leitura
 de posição com o motivo junto, considerando o que sobra do mês, o que já está na carteira e o perfil
 declarado. A leitura descreve posição, não antecipa retorno: medido de 2011 a 2017, o veredito de
-preço justo não ordenou o retorno seguinte ([10-PROBLEMAS](10-PROBLEMAS.md), A12).
+preço justo não ordenou o retorno seguinte ([pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)).
 
 ## Para quem
 
@@ -52,7 +52,7 @@ Três coisas encadeadas, nesta ordem, que é também a ordem da navegação:
 1. **Quanto sobra** — controle de gastos vivo, no celular, que termina num número utilizável
 2. **Para onde vai** — a cascata: dívida cara antes de reserva, reserva antes de aporte
 3. **Onde está cada ativo** — leitura de posição contra o preço justo, score por perfil, e o que
-   derrubaria o veredito. Sem promessa de retorno: o veredito não o antecipou (A12)
+   derrubaria o veredito. Sem promessa de retorno: o veredito não o antecipou ([pesquisas/calibracao](pesquisas/calibracao.md))
 
 O diferencial não é nenhum dos três isolados: é o encadeamento. Status Invest responde o terceiro e
 ignora os dois primeiros; um app de finanças pessoais responde o primeiro e para ali.

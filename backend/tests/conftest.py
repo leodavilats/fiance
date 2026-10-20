@@ -304,3 +304,9 @@ def _stub_market_data(monkeypatch, request):
     monkeypatch.setattr(rf_mod, "get_rates", lambda: dict(fake_rates))
     monkeypatch.setattr(fi_mod, "get_rates", lambda: dict(fake_rates))
     monkeypatch.setattr(bench_mod, "get_rates", lambda: dict(fake_rates))
+
+    import app.collectors.juro_real as juro_real_mod
+
+    fake_juro_real = {"taxa": 6.50, "vencimento": "2045-05-15", "data": "2026-10-16",
+                      "source": "base", "fetched_at": None}  # fmt: skip
+    monkeypatch.setattr(juro_real_mod, "get_juro_real", lambda: dict(fake_juro_real))

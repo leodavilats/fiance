@@ -7,11 +7,12 @@ from app.analysis.fair_price import (
     fair_price_from_inputs,
     rates_for_valuation,
 )
+from app.collectors import juro_real
 from app.collectors import rates as rates_source
 
 
 def valuation_rates() -> ValuationRates | None:
-    return rates_for_valuation(rates_source.get_rates())
+    return rates_for_valuation(rates_source.get_rates(), juro_real.get_juro_real())
 
 
 def fair_price_inputs_for(snap, dividends: list[dict] | None) -> FairPriceInputs:

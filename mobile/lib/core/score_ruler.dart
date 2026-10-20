@@ -139,10 +139,15 @@ String principalLabel(String? principal) {
 }
 
 String staleRateNote(Map<String, dynamic> premises) {
-  if (premises['rate_source'] != 'bcb_cache_vencido') return '';
+  final fonte = switch (premises['rate_source']) {
+    'bcb_cache_vencido' => 'o BCB',
+    'base_cache_vencido' => 'a base de mercado',
+    _ => null,
+  };
+  if (fonte == null) return '';
   final idade = formatAge((premises['rates_as_of'] as num?)?.toDouble());
-  if (idade.isEmpty) return 'taxa de uma leitura anterior, com o BCB fora do ar';
-  return 'taxa lida $idade, com o BCB fora do ar';
+  if (idade.isEmpty) return 'taxa de uma leitura anterior, com $fonte fora do ar';
+  return 'taxa lida $idade, com $fonte fora do ar';
 }
 
 String rateBaseLabel(String? base) {
@@ -151,6 +156,8 @@ String rateBaseLabel(String? base) {
       return 'Selic média de 10 anos';
     case 'selic_atual':
       return 'Selic do dia, sem a série de 10 anos';
+    case 'ipca_longo':
+      return 'juro real do Tesouro IPCA+ mais longo';
     default:
       return '';
   }

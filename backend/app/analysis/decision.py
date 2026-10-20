@@ -4,9 +4,11 @@ from dataclasses import dataclass, field
 
 from app.analysis.fair_price import (
     AGREEMENT_INSIDE,
+    INFLATION_TARGET,
     PRINCIPAL_DIVIDENDS,
     PRINCIPAL_EARNINGS,
     RATE_BASE_AVERAGE,
+    RATE_BASE_REAL,
     TREND_BASIS_LONG,
     TREND_BASIS_NONE,
     TREND_BASIS_SHORT,
@@ -181,7 +183,16 @@ def _value_reason(fair: FairPriceResult) -> str:
 
 
 def _rate_base(fair: FairPriceResult) -> str:
-    if fair.premises.get("rate_base") == RATE_BASE_AVERAGE:
+    p = fair.premises
+    if p.get("rate_base") == RATE_BASE_REAL:
+        vencimento = str(p.get("real_rate_maturity") or "")[:4]
+        titulo = f"o Tesouro IPCA+ {vencimento}" if vencimento else "o Tesouro IPCA+ mais longo"
+        juro = f"de {pct(p['real_rate_pct'] / 100)} " if p.get("real_rate_pct") is not None else ""
+        return (
+            f"o juro real {juro}que {titulo} paga acima da inflação, mais a meta de inflação "
+            f"de {pct(INFLATION_TARGET, 0)}"
+        )
+    if p.get("rate_base") == RATE_BASE_AVERAGE:
         return "a Selic média de 10 anos, o juro básico do país"
     return "a Selic do dia, o juro básico do país, sem a série de 10 anos"
 

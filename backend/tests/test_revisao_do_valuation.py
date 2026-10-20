@@ -25,7 +25,12 @@ from app.analysis.falsifiers import falsifiers, price_at_margin
 REF = datetime(2026, 9, 23, tzinfo=UTC)
 
 TAXAS = ValuationRates(
-    discount_rate=0.145, fii_yield=0.095, rate_base=RATE_BASE_AVERAGE, selic_pct=9.5
+    discount_rate=0.145,
+    fii_yield=0.095,
+    rate_base=RATE_BASE_AVERAGE,
+    selic_pct=9.5,
+    real_rate_pct=6.5,
+    real_rate_maturity="2045-05-15",
 )
 
 ALTA_FORTE = TechnicalSnapshot(
@@ -203,7 +208,9 @@ class TestVocabulario:
         assert any("taxa exigida" in m and "14,5% ao ano" in m for m in dec.reasons), (
             "a premissa que sustenta o preço justo sai com o número, e o número em português"
         )
-        assert any("Selic média de 10 anos" in m for m in dec.reasons)
+        assert any(
+            "6,5% que o Tesouro IPCA+ 2045 paga acima da inflação" in m for m in dec.reasons
+        ), "a taxa de ação diz de que título saiu (ADR-028)"
 
 
 class TestFalsificadores:
