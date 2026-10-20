@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import sys
 from collections import defaultdict
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -60,7 +61,9 @@ def juro_na_data(selic: pd.Series, dia: pd.Timestamp) -> modelo.ValuationRates |
     if len(valores) < SELIC_AVERAGE_MONTHS // 2:
         return None
     media = round(sum(valores) / len(valores), 2)
-    return modelo.rates_for_valuation({"selic_media_10a": media, "source": "bcb"})
+    juro = modelo.rates_for_valuation({"selic_media_10a": media, "source": "bcb"})
+    # A taxa de ação de antes da ADR-028, para a calibração de 2026-10-12 se reproduzir.
+    return replace(juro, discount_rate=round(media / 100 + modelo.EQUITY_RISK_PREMIUM, 4))
 
 
 def pacote_na_data(base: Base, dados: Dados, papel: str, dia: pd.Timestamp) -> dict | None:
@@ -210,15 +213,16 @@ def _t_newey_west(serie: pd.Series, defasagens: int) -> float:
     return float(serie.mean() / math.sqrt(variancia / n))
 
 
-def avaliar(base: Base, periodo: Periodo) -> tuple[dict, list[dict]]:
+def avaliar(base: Base, periodo: Periodo, juro_do_mes=None) -> tuple[dict, list[dict]]:
     dados = Dados(base)
+    juro_do_mes = juro_do_mes or (lambda d: juro_na_data(dados.selic, d))
     fins = sorted(d for d in fins_de_mes(base.pregoes) if periodo.contem(d.date()))
     retorno = base.retorno.mask(base.salto, 0.0).fillna(0.0)
 
     meses = []
     for i, dia in enumerate(fins[:-MESES_A_FRENTE]):
         adiante_dia = fins[i + MESES_A_FRENTE]
-        juro = juro_na_data(dados.selic, dia)
+        juro = juro_do_mes(dia)
         if juro is None:
             continue
         pos, pos_adiante = base.pregoes.get_loc(dia), base.pregoes.get_loc(adiante_dia)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from pesquisa import custo_de_troca, filtro_de_risco, taxa_de_desconto
+from pesquisa import calibracao_taxa_nova, custo_de_troca, filtro_de_risco, taxa_de_desconto
 
 
 def test_titulo_de_referencia_e_o_mais_longo_a_venda_no_ultimo_dia_do_mes():
@@ -93,3 +93,15 @@ def test_estudos_nao_repetem(tmp_path):
         with pytest.raises(modulo.Recusado):
             modulo.conferir(False, arquivo)
         modulo.conferir(True, arquivo)
+
+
+def test_calibracao_com_a_taxa_nova_abre_um_periodo_de_cada_vez(tmp_path):
+    arquivo = tmp_path / "r.jsonl"
+    with pytest.raises(calibracao_taxa_nova.Recusado, match="lacrada"):
+        calibracao_taxa_nova.conferir("validacao", False, arquivo)
+    calibracao_taxa_nova.conferir("estudo", False, arquivo)
+    calibracao_taxa_nova.anotar("estudo", "teste", {"passou": False}, False, arquivo)
+    with pytest.raises(calibracao_taxa_nova.Recusado, match="não repete"):
+        calibracao_taxa_nova.conferir("estudo", False, arquivo)
+    with pytest.raises(calibracao_taxa_nova.Recusado, match="lacrada"):
+        calibracao_taxa_nova.conferir("validacao", False, arquivo)

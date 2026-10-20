@@ -6,6 +6,7 @@ import sys
 
 from pesquisa import (
     calibracao,
+    calibracao_taxa_nova,
     custo_de_troca,
     filtro_de_risco,
     registro,
@@ -88,6 +89,19 @@ def _calibracao(args) -> int:
     return 0
 
 
+def _calibracao_taxa_nova(args) -> int:
+    calibracao_taxa_nova.conferir(args.periodo, args.forcar)
+    base = retrato.carregar(args.retrato)
+    resumo, meses = calibracao_taxa_nova.rodar(base, args.periodo)
+    calibracao_taxa_nova.anotar(args.periodo, base.retrato, resumo, args.forcar)
+    destino = relatorio.PASTA / f"calibracao_taxa_nova_{args.periodo}.json"
+    destino.write_text(
+        json.dumps({"resumo": resumo, "meses": meses}, ensure_ascii=False), encoding="utf-8"
+    )
+    print(json.dumps(resumo, ensure_ascii=False, indent=2))
+    return 0
+
+
 def _taxa_de_desconto(args) -> int:
     taxa_de_desconto.conferir(args.forcar)
     base = retrato.carregar(args.retrato)
@@ -150,6 +164,12 @@ def main(argv: list[str] | None = None) -> int:
     calibrar.add_argument("--periodo", choices=sorted(calibracao.PERIODOS), required=True)
     calibrar.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
     calibrar.add_argument("--forcar", action="store_true", help="Passa por cima do protocolo")
+    nova = comandos.add_parser(
+        "calibracao-taxa-nova", help="Mede o veredito com a taxa da ADR-028 contra o retorno"
+    )
+    nova.add_argument("--periodo", choices=sorted(calibracao.PERIODOS), required=True)
+    nova.add_argument("--retrato", help="Data do retrato; sem ela, o mais recente")
+    nova.add_argument("--forcar", action="store_true", help="Passa por cima do protocolo")
     for nome, ajuda in (
         ("taxa-de-desconto", "Distribui o veredito por taxa candidata, sem olhar retorno"),
         ("custo-de-troca", "Estima o spread por faixa de liquidez"),
@@ -175,6 +195,8 @@ def main(argv: list[str] | None = None) -> int:
             return _ranking(args)
         if args.comando == "calibracao":
             return _calibracao(args)
+        if args.comando == "calibracao-taxa-nova":
+            return _calibracao_taxa_nova(args)
         if args.comando == "taxa-de-desconto":
             return _taxa_de_desconto(args)
         if args.comando == "custo-de-troca":
@@ -187,6 +209,7 @@ def main(argv: list[str] | None = None) -> int:
         registro.TetoAtingido,
         registro_ranking.Recusado,
         calibracao.Recusado,
+        calibracao_taxa_nova.Recusado,
         taxa_de_desconto.Recusado,
         custo_de_troca.Recusado,
         filtro_de_risco.Recusado,
