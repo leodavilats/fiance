@@ -41,6 +41,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [026](ADR-026-confirmacao-do-evento-pelo-tamanho.md) | O preço confirma o evento na medida do tamanho dele | `ACEITO` | 2026-10-18 |
 | [027](ADR-027-caixa-de-avisos-guardada.md) | Os avisos são guardados numa caixa, com lido e não lido | `ACEITO` | 2026-10-18 |
 | [028](ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md) | A taxa exigida de ação sai do juro real do Tesouro | `ACEITO` | 2026-10-19 |
+| [029](ADR-029-documentacao-por-parte.md) | A documentação se organiza por parte, e o app deixa de ser o eixo | `ACEITO` | 2026-10-21 |
 
 ---
 
@@ -56,13 +57,13 @@ datada, e a ADR continua como foi escrita.
 **2026-10-12**
 
 - **006** — a frase-alvo é anterior à medida do preço justo; reexaminar antes da fase pública
-  ([ADR-023](ADR-023-fase-pessoal-primeiro.md), [calibracao](../pesquisas/calibracao.md),
-  [10-PROBLEMAS](../10-PROBLEMAS.md) A12). A frase do app ganhou "o preço justo descreve posição, não
+  ([ADR-023](ADR-023-fase-pessoal-primeiro.md), [calibracao](../pesquisa/estudos/calibracao.md),
+  [04-PROBLEMAS](../04-PROBLEMAS.md) A12). A frase do app ganhou "o preço justo descreve posição, não
   antecipa retorno".
 - **008 e 009** — valem para a fase pública, adiada pela [ADR-023](ADR-023-fase-pessoal-primeiro.md).
 - **011 e 014** — tratam "abaixo do preço justo" como lado de compra e justificam a Selic média de 10
   anos; a medida de 2011–2017 mostrou que o veredito não ordenou o retorno e que, com essa média, 9 em
-  10 ações ficavam acima da faixa ([calibracao](../pesquisas/calibracao.md), A12). A afirmação da 014 de
+  10 ações ficavam acima da faixa ([calibracao](../pesquisa/estudos/calibracao.md), A12). A afirmação da 014 de
   que validar exige dado point-in-time "que a BRAPI não entrega" foi resolvida pela base própria.
 - **017, 018 e 019** — as premissas "a BRAPI não entrega…" e o invariante "só BRAPI e BCB SGS" foram
   trocados pela [ADR-022](ADR-022-dados-de-mercado-coletados-em-lote.md). Na 019, o informe mensal da
@@ -71,6 +72,22 @@ datada, e a ADR continua como foi escrita.
 - **022** — a condição "a BRAPI só sai quando proventos tiverem fonte" foi cumprida com os endpoints
   da B3; o backend já migrou (cotação do último fechamento, `as_of` às 18h BRT). O consumo é pela
   conexão do Railway com `SET ROLE mercado_leitura`, sem usuário próprio.
+
+**2026-10-21**
+
+- **Documentação por parte** ([ADR-029](ADR-029-documentacao-por-parte.md)) — as ADRs citam
+  documentos pelos nomes antigos: 01-PRODUTO é hoje [01-VISAO](../01-VISAO.md) e
+  [app/produto](../app/produto.md); 03-ARQUITETURA, [02-ARQUITETURA](../02-ARQUITETURA.md) e
+  [app/arquitetura](../app/arquitetura.md); 08-ESTADO, 09-FUTURO e 10-PROBLEMAS são 03, 05 e 04;
+  11-DADOS-DE-MERCADO é [base/](../base/README.md). Os links foram corrigidos; o texto, não.
+- **Itens de problema citados que já fecharam** — a A12 (005, 006, 011, 014, 023, 024) fechou com a
+  [ADR-028](ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md); a seção D (002) fechou em 2026-09-26,
+  quando a paridade com a web se completou; o item 1 (005), o Redis com timeout, em 2026-09-25; o item
+  14 (003) e o "FII de papel" (014) não estão mais abertos.
+- **022 e 024** — o backend não lê o banco de mercado: lê pela `fiance-dados`, com a chave do plano
+  `interno`. O "passo seguinte" da 024 já foi dado.
+- **025** — o Quant não tem anual, e a exportação que ele anuncia não tem rota
+  ([04-PROBLEMAS](../04-PROBLEMAS.md#api-de-dados)).
 
 ---
 

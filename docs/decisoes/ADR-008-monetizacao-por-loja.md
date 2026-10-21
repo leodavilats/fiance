@@ -52,7 +52,7 @@ há integração real para preservar — apenas o `FakeProvider`.
 | Preço travado como **dado** (`price_cents`, `locked`) | Preço de fundador é promessa pública, não memória |
 | Idempotência de webhook | Evento repetido é normal, não exceção |
 | **Titular vem da sessão, nunca do corpo** | A rota do webhook é pública; a assinatura protege a integridade da mensagem, não a autoridade sobre quem ela nomeia |
-| Cerca de plano isolada em `entitlement/` | Ver [03-ARQUITETURA](../03-ARQUITETURA.md) |
+| Cerca de plano isolada em `entitlement/` | Ver [app/arquitetura](../app/arquitetura.md) |
 
 O último item é o mais importante: **a cerca de plano não muda.** `entitlement/` não sabe quem é o
 provedor de pagamento, e não deve passar a saber.
@@ -71,7 +71,7 @@ provedor de pagamento, e não deve passar a saber.
   30%
 - Trabalho jogado fora: o `billing/` atual sai inteiro
 - **Nada disso pode começar antes das contas de desenvolvedor**, que não existem — ver
-  [09-FUTURO](../09-FUTURO.md), item 7
+  [05-FUTURO](../05-FUTURO.md), item 7
 
 ## Referências
 

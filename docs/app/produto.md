@@ -1,21 +1,11 @@
-# Produto
+# O aplicativo — produto
 
-**Fonte de verdade** para visão, público, limites e modelo de negócio. Não há código que responda
-estas perguntas.
-Última revisão: 2026-10-18
+**Fonte de verdade** para a visão, o público, os limites e o modelo de negócio do aplicativo. Não há
+código que responda estas perguntas. A plataforma inteira, e onde o app entra nela, está em
+[01-VISAO](../01-VISAO.md).
+Última revisão: 2026-10-21
 
 ---
-
-## Fase atual
-
-**Hoje o fiance tem um usuário: o autor**, que o usa para investir e acompanhar o próprio dinheiro
-durante o teste. O público vem depois, sem data. Tudo o que é de loja, cobrança e aquisição está
-adiado; as regras de produto valem desde já. Decisão em
-[ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md).
-
-**São duas frentes.** O aplicativo, descrito daqui em diante, e a **API de dados** (`fiance-dados`):
-a base de mercado oferecida a terceiros, com contas e chaves — ver *A segunda frente*, abaixo.
-
 
 ## O problema
 
@@ -29,7 +19,7 @@ análise não sabe o que ela já tem, e a recomendação de terceiro não sabe n
 **O fiance existe para responder uma pergunta só: *onde está cada ativo, e por quê?*** — a leitura
 de posição com o motivo junto, considerando o que sobra do mês, o que já está na carteira e o perfil
 declarado. A leitura descreve posição, não antecipa retorno: medido de 2011 a 2017, o veredito de
-preço justo não ordenou o retorno seguinte ([pesquisas/calibracao-com-a-taxa-nova](pesquisas/calibracao-com-a-taxa-nova.md)).
+preço justo não ordenou o retorno seguinte ([pesquisa/calibracao-com-a-taxa-nova](../pesquisa/estudos/calibracao-com-a-taxa-nova.md)).
 
 ## Para quem
 
@@ -43,7 +33,7 @@ acima de meio milhão — não porque o sistema quebre, mas porque essas pessoas
 que é exatamente o que o produto substitui.
 
 **Premissa fechada hoje:** pessoa física brasileira, investindo na B3, declarando imposto no Brasil.
-Sair disso é ideia sem data — ver [09-FUTURO](09-FUTURO.md).
+Sair disso é ideia sem data — ver [05-FUTURO](../05-FUTURO.md).
 
 ## O que o produto entrega
 
@@ -52,7 +42,7 @@ Três coisas encadeadas, nesta ordem, que é também a ordem da navegação:
 1. **Quanto sobra** — controle de gastos vivo, no celular, que termina num número utilizável
 2. **Para onde vai** — a cascata: dívida cara antes de reserva, reserva antes de aporte
 3. **Onde está cada ativo** — leitura de posição contra o preço justo, score por perfil, e o que
-   derrubaria o veredito. Sem promessa de retorno: o veredito não o antecipou ([pesquisas/calibracao](pesquisas/calibracao.md))
+   derrubaria o veredito. Sem promessa de retorno: o veredito não o antecipou ([pesquisa/calibracao](../pesquisa/estudos/calibracao.md))
 
 O diferencial não é nenhum dos três isolados: é o encadeamento. Status Invest responde o terceiro e
 ignora os dois primeiros; um app de finanças pessoais responde o primeiro e para ali.
@@ -87,16 +77,16 @@ devolve?*
 | Home broker | Não executa ordem, não conecta com corretora |
 | Ferramenta para profissional gerir carteira de terceiros | Uma conta, uma pessoa |
 | Rede social de investidores | — |
-| Ferramenta de trade, análise técnica, candles | Tendência e RSI aparecem só como contexto de preço: não decidem a etiqueta nem pontuam no score ([ADR-017](decisoes/ADR-017-o-score-nao-le-o-tecnico.md)) |
+| Ferramenta de trade, análise técnica, candles | Tendência e RSI aparecem só como contexto de preço: não decidem a etiqueta nem pontuam no score ([ADR-017](../decisoes/ADR-017-o-score-nao-le-o-tecnico.md)) |
 | Curso ou conteúdo educacional | Explica o que calcula, não ensina a investir |
 
 **Sobre recomendação personalizada:** o produto quer indicar ativos com base no perfil, nas metas e
 na carteira da pessoa, com o motivo junto. Essa é a direção declarada e decidida — com as
-consequências registradas em [ADR-006](decisoes/ADR-006-recomendacao-personalizada.md).
+consequências registradas em [ADR-006](../decisoes/ADR-006-recomendacao-personalizada.md).
 
 ## Modelo de negócio
 
-**Da fase pública, adiada** ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)). Enquanto o uso
+**Da fase pública, adiada** ([ADR-023](../decisoes/ADR-023-fase-pessoal-primeiro.md)). Enquanto o uso
 é pessoal, não há cobrança nem receita, e o ponto de equilíbrio não importa.
 
 | Item | Decisão |
@@ -108,8 +98,8 @@ consequências registradas em [ADR-006](decisoes/ADR-006-recomendacao-personaliz
 | Cobrança | Compra dentro do aplicativo, via RevenueCat |
 | Objetivo inicial | Cobrir o custo de operação |
 
-Decisões em [ADR-008](decisoes/ADR-008-monetizacao-por-loja.md) e
-[ADR-009](decisoes/ADR-009-trial-e-gratuidade.md).
+Decisões em [ADR-008](../decisoes/ADR-008-monetizacao-por-loja.md) e
+[ADR-009](../decisoes/ADR-009-trial-e-gratuidade.md).
 
 **A hipótese da fase pessoal:** o sistema serve ao autor para investir e acompanhar o dinheiro —
 com dado confiável e sem prometer o que não se mediu. É ela que se testa agora.
@@ -121,31 +111,3 @@ para *ela* — comparando com o que ela já tem — e diz por quê.
 sem presença em loja, não existe hoje superfície de descoberta do produto. O risco declarado é de
 aquisição, e a decisão de não ter gratuidade aponta na direção oposta a ele. Registrado, consciente,
 revisável.
-
-## A segunda frente: a API de dados
-
-A base que o app lê é oferecida como serviço, com contas, chaves e planos
-([ADR-024](decisoes/ADR-024-api-de-dados.md)).
-
-| | |
-|---|---|
-| O que entrega | Cotação desde 2005 com as empresas que saíram da bolsa, série ajustada com os eventos conferidos pelo preço, proventos, e balanços como se sabia em cada data |
-| Para quem | Quem testa estratégia ou analisa empresas com dado da B3 e da CVM: investidor quantitativo, analista, desenvolvedor |
-| Modelo | Assinatura paga, mensal ou anual, **sem plano gratuito**: Essencial, Pro e Quant ([ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md)). Os preços são hipótese |
-| Acesso hoje | Por convite, sem cobrança. O app é o primeiro cliente |
-| Condição para cobrar | Licença de dado da B3, leitura da ODbL da CVM, CNPJ e termos de uso. Até lá a cobrança fica desligada |
-
-**A hipótese:** quem testa estratégia paga por não ter de montar a base — principalmente pelo que é
-difícil de achar organizado: o histórico com quem saiu da bolsa, o ajuste por evento e o balanço sem
-o futuro vazando no passado. **O risco:** um serviço público mantido por uma pessoa; disponibilidade
-e correção do dado viram compromisso.
-
-## Estado
-
-Uma pessoa usa o sistema: o autor, com dados reais, diariamente. Nada publicado em loja, nenhuma
-conta de desenvolvedor aberta, nenhuma receita. Ver [08-ESTADO](08-ESTADO.md).
-
-Em volta do app: o `data-job/` coleta os dados de mercado, a `fiance-dados`
-(`fiance-dados.up.railway.app`) os serve ao app e a quem tiver convite, e o painel `fiance-trend`
-(`fiance-trend.up.railway.app`), fora do produto, organiza dados e pesquisas. Ver
-[plano da plataforma](historico/PLATAFORMA-2026-10.md).

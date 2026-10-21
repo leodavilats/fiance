@@ -3,8 +3,9 @@
 Contrato de trabalho do backend. O que vale para o repositório inteiro está no
 [CLAUDE.md da raiz](../CLAUDE.md); o porquê, nas [decisões](../docs/decisoes/).
 
-Leitura da área: [02-DOMINIO](../docs/02-DOMINIO.md) · [03-ARQUITETURA](../docs/03-ARQUITETURA.md) ·
-[04-CALCULOS](../docs/04-CALCULOS.md).
+Leitura da área: [docs/app/](../docs/app/README.md) — [dominio](../docs/app/dominio.md) ·
+[arquitetura](../docs/app/arquitetura.md) · [calculos](../docs/app/calculos/README.md) ·
+[desenvolvimento](../docs/app/desenvolvimento.md).
 
 ```bash
 python -m pytest -q

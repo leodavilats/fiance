@@ -63,9 +63,9 @@ e **soma** posição é descartado com aviso; o que **reduz** continua valendo.
 
 **Consequência não prevista, hoje aberta:** o razão é a camada mais bem construída do sistema e
 **não tem nenhuma tela no aplicativo** desde a remoção do front web. Ver
-[10-PROBLEMAS](../10-PROBLEMAS.md), seção D.
+[04-PROBLEMAS](../04-PROBLEMAS.md), seção D.
 
 ## Referências
 
-- [02-DOMINIO](../02-DOMINIO.md)
+- [app/dominio](../app/dominio.md)
 - `backend/app/ledger/`, `backend/app/services/ledger_service.py`

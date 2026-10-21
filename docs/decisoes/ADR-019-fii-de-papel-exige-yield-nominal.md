@@ -50,7 +50,7 @@ preço R$ 9,10) para "No preço justo" (faixa R$ 8,68 a R$ 10,19), com qualidade
 - A lista envelhece: fundo novo ou que mude de estratégia não entra sozinho. A revisão é manual, e a
   data fica no código
 - FII de papel fora da lista continua parecendo barato. A limitação fica declarada em
-  [04-CALCULOS](../04-CALCULOS.md)
+  [app/calculos](../app/calculos/README.md)
 - Fundo híbrido é classificado pela maior parte da carteira
 
 ## Referências

@@ -106,4 +106,4 @@ subiram de zero (RENT3 e VIVT3, que já não cresciam) a 59% (SUZB3). FII, BDR e
   `backend/app/analysis/decision.py`
 - `backend/tests/test_faixa_coerente.py`
 - [AUDITORIA-DO-PRECO-JUSTO](../historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md), itens R-001 e R-002 ·
-  [04-CALCULOS](../04-CALCULOS.md)
+  [app/calculos](../app/calculos/README.md)

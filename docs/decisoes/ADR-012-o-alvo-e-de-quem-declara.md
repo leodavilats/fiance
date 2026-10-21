@@ -75,4 +75,4 @@ nada no aplicativo cobra desvio contra ele."*
 - `backend/app/cashflow/cascata.py` · `backend/app/api/cashflow.py`
 - `backend/app/services/goal_service.py` — `goals_for_judgement()`
 - `backend/tests/test_alvo_de_reserva.py`, `backend/tests/test_meta_declarada.py`
-- [02-DOMINIO](../02-DOMINIO.md) · [ADR-011](ADR-011-preco-justo-e-faixa.md)
+- [app/dominio](../app/dominio.md) · [ADR-011](ADR-011-preco-justo-e-faixa.md)

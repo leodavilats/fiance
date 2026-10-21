@@ -62,5 +62,5 @@ declarado como carimbo de tempo ou percentual para passar.
 
 ## Referências
 
-- [02-DOMINIO](../02-DOMINIO.md), seção Unidades
+- [app/dominio](../app/dominio.md), seção Unidades
 - `backend/app/core/money.py`, `backend/tests/test_money_columns.py`

@@ -45,12 +45,19 @@ def _titulo(texto: str, padrao: str) -> str:
 
 def documentos(docs: Path) -> list[dict]:
     caminhos = [
-        docs / "09-FUTURO.md",
-        docs / "08-ESTADO.md",
-        docs / "11-DADOS-DE-MERCADO.md",
-        *sorted((docs / "pesquisas").glob("*.md")),
+        docs / "05-FUTURO.md",
+        docs / "03-ESTADO.md",
+        docs / "04-PROBLEMAS.md",
+        docs / "01-VISAO.md",
+        docs / "02-ARQUITETURA.md",
+        *sorted((docs / "base").glob("*.md")),
+        docs / "dados" / "README.md",
+        docs / "pesquisa" / "README.md",
+        *sorted((docs / "pesquisa" / "estudos").glob("*.md")),
         docs / "decisoes" / "ADR-022-dados-de-mercado-coletados-em-lote.md",
         docs / "decisoes" / "ADR-023-fase-pessoal-primeiro.md",
+        docs / "decisoes" / "ADR-024-api-de-dados.md",
+        docs / "decisoes" / "ADR-029-documentacao-por-parte.md",
     ]
     lista = []
     for caminho in caminhos:

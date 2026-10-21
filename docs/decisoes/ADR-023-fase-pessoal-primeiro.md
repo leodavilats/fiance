@@ -20,8 +20,8 @@ Disso saíram, em poucos dias:
   saída da BRAPI;
 - a plataforma de pesquisa e o painel do autor ([plano da plataforma](../historico/PLATAFORMA-2026-10.md));
 - três pesquisas com protocolo, todas sem vantagem a explorar: seleção de carteira
-  ([pesquisa](../pesquisas/pesquisa.md)), ranking de tendência ([ranking](../pesquisas/ranking.md)) e o
-  preço justo do próprio app ([calibracao](../pesquisas/calibracao.md)).
+  ([pesquisa](../pesquisa/estudos/pesquisa.md)), ranking de tendência ([ranking](../pesquisa/estudos/ranking.md)) e o
+  preço justo do próprio app ([calibracao](../pesquisa/estudos/calibracao.md)).
 
 ## Problema
 
@@ -54,7 +54,7 @@ A alternativa 3.
   não contradiz a [ADR-003](ADR-003-cliente-unico.md): o cliente do fiance continua sendo só o
   Flutter. A tendência e o ranking ficam no painel e não vão para o app.
 - **Antes de abrir ao público, revisar:** backup dos bancos (hoje nenhum, risco aceito em
-  [07-OPERACAO](../07-OPERACAO.md)), o item A12 de [10-PROBLEMAS](../10-PROBLEMAS.md), e a frase-alvo da
+  [07-OPERACAO](../07-OPERACAO.md)), o item A12 de [04-PROBLEMAS](../04-PROBLEMAS.md), e a frase-alvo da
   ADR-006 à luz da medida do preço justo.
 
 ## Consequências
@@ -72,4 +72,4 @@ A alternativa 3.
 
 ## Referências
 
-- [01-PRODUTO](../01-PRODUTO.md) · [09-FUTURO](../09-FUTURO.md) · [plano da plataforma](../historico/PLATAFORMA-2026-10.md)
+- [app/produto](../app/produto.md) · [05-FUTURO](../05-FUTURO.md) · [plano da plataforma](../historico/PLATAFORMA-2026-10.md)

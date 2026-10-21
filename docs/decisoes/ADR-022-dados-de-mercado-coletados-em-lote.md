@@ -14,7 +14,7 @@ cada 30 minutos de pregão, e o custo cresce com o uso. A assinatura paga não f
 O autor quer usar a **mesma base** para o aplicativo e para uma frente nova, de uso próprio: pesquisa
 de estratégia de carteira em horizonte de meses. Essa frente precisa do que a BRAPI não entrega:
 histórico longo, empresas que saíram da bolsa e fundamento como se sabia na data (*point-in-time*) —
-a mesma lacuna que deixou a calibração do preço justo em [09-FUTURO](../09-FUTURO.md), *Considerado*.
+a mesma lacuna que deixou a calibração do preço justo em [05-FUTURO](../05-FUTURO.md), *Considerado*.
 
 ## Problema
 
@@ -68,7 +68,7 @@ ajustada para de receber eventos novos.
   armazenamento já é um diretório, e o volume não pede código novo.
 
 **Aceita em 2026-10-12.** Mudaram no mesmo commit: o invariante "Fontes" de `CLAUDE.md`, a seção *Dados externos* de
-[03-ARQUITETURA](../03-ARQUITETURA.md) e o item de calibração de [09-FUTURO](../09-FUTURO.md).
+[app/arquitetura](../app/arquitetura.md) e o item de calibração de [05-FUTURO](../05-FUTURO.md).
 
 ## Consequências
 
@@ -91,7 +91,7 @@ ajustada para de receber eventos novos.
 
 ## Referências
 
-- Plano: [11-DADOS-DE-MERCADO](../11-DADOS-DE-MERCADO.md)
+- Plano: [base/](../base/README.md)
 - `backend/app/collectors/universal.py` · `backend/app/core/universe.py` ·
   `backend/app/collectors/plausibility.py`
 - B3, séries históricas: https://www.b3.com.br/pt_br/market-data-e-indices/servicos-de-dados/market-data/historico/mercado-a-vista/series-historicas/

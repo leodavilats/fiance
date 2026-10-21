@@ -2,7 +2,7 @@
 
 **Estado:** `[ENCERRADO]` em 2026-10-19 — **nem com a taxa nova o veredito ordena o retorno**: a ordem
 aparece, mas sem tamanho nem força. Protocolo `[ACEITO]` pelo autor no mesmo dia; rodou depois da
-[ADR-028](../decisoes/ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md), que escolheu a taxa sem olhar retorno
+[ADR-028](../../decisoes/ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md), que escolheu a taxa sem olhar retorno
 
 ## A pergunta
 

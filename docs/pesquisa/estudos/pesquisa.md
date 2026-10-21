@@ -3,7 +3,7 @@
 **Estado:** busca **encerrada** em 2026-10-12, com o teto de 8 variações atingido — conclusão abaixo · **Escrito em:** 2026-10-10 · **Uso:** próprio do autor, não é produto
 
 A pesquisa testa estratégias de carteira em horizonte de meses sobre a base do
-[data-job](../11-DADOS-DE-MERCADO.md). Este documento é o **protocolo**: foi escrito antes do primeiro resultado, e
+[data-job](../../base/README.md). Este documento é o **protocolo**: foi escrito antes do primeiro resultado, e
 mudar uma regra depois de ver um resultado invalida o resultado.
 
 ---

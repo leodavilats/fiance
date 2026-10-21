@@ -58,6 +58,6 @@ A alternativa 3 foi descartada sem hesitação: trocaria uma propriedade valiosa
 
 ## Referências
 
-- [03-ARQUITETURA](../03-ARQUITETURA.md)
+- [app/arquitetura](../app/arquitetura.md)
 - `backend/app/ledger/`, `backend/app/cashflow/`, `backend/app/analysis/`
 - Testes de arquitetura em `backend/tests/`

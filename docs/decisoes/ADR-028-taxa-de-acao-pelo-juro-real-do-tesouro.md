@@ -7,11 +7,11 @@
 ## Contexto
 
 A taxa exigida do preço justo de ação é a Selic média de 10 anos mais 5 pontos
-([ADR-014](ADR-014-um-modelo-por-classe.md)). A [calibração](../pesquisas/calibracao.md) mostrou que,
+([ADR-014](ADR-014-um-modelo-por-classe.md)). A [calibração](../pesquisa/estudos/calibracao.md) mostrou que,
 com ela, 9 em cada 10 ações ficavam acima da faixa de 2011 a 2017, e o item A12 do
-[10-PROBLEMAS](../10-PROBLEMAS.md) pediu esta decisão.
+[04-PROBLEMAS](../04-PROBLEMAS.md) pediu esta decisão.
 
-A [distribuição do veredito por taxa](../pesquisas/taxa-de-desconto.md) mediu quatro candidatas de
+A [distribuição do veredito por taxa](../pesquisa/estudos/taxa-de-desconto.md) mediu quatro candidatas de
 2011 a 2025, **sem olhar retorno**, contra um critério fixado antes: uma régua de posição não pode pôr
 mais de 80% das ações de um lado só, na mediana dos meses.
 
@@ -69,5 +69,5 @@ A alternativa 3, só para ação:
 - **O título de referência muda** quando um vencimento novo entra ou sai da venda, e a taxa salta
   junto. Na medida de 15 anos, isso aconteceu duas vezes
 - **Esta decisão não diz que o veredito prevê retorno.** Isso se mede na
-  [calibração com a taxa nova](../pesquisas/calibracao-com-a-taxa-nova.md), que só pôde rodar depois
+  [calibração com a taxa nova](../pesquisa/estudos/calibracao-com-a-taxa-nova.md), que só pôde rodar depois
   desta ADR

@@ -75,4 +75,4 @@ esse uso, e não entrou nesta revisão.
 - `backend/app/analysis/scoring.py` · `backend/app/analysis/score_ruler.py`
 - `backend/tests/test_o_score_nao_le_o_tecnico.py`
 - `mobile/lib/core/score_ruler.dart` · `mobile/lib/core/glossary.dart`
-- [04-CALCULOS](../04-CALCULOS.md), seção *Score de oportunidade*
+- [app/calculos](../app/calculos/README.md), seção *Score de oportunidade*

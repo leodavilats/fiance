@@ -1,4 +1,4 @@
-# Interface
+# O aplicativo — interface
 
 Por que a interface é assim, e o que uma tela nova precisa respeitar.
 Fonte compartilhada com `mobile/lib/core/design_tokens.dart` e `mobile/test/lint_ui_test.dart`.
@@ -28,7 +28,7 @@ o estado atual em vez de só encaminhar.
 Dois destinos deixaram de existir e não voltam:
 
 - **`Hoje`** respondia "o que mudou", e isso é feed, não lugar. Os avisos vivem no sino do `Mês`,
-  em `/mes/avisos` ([ADR-027](decisoes/ADR-027-caixa-de-avisos-guardada.md)).
+  em `/mes/avisos` ([ADR-027](../decisoes/ADR-027-caixa-de-avisos-guardada.md)).
 - **`Estratégia`** se dissolveu: sem aporte, meta e projeção, sobrava o desvio de alocação, que é
   leitura de patrimônio e vive em `/sobra/desvio`.
 
@@ -172,7 +172,7 @@ Regras específicas de conteúdo:
 
 | Ao mostrar | Exigência |
 |---|---|
-| Cifra de preço justo | A base junto: o modelo principal, a qualidade e as premissas. A explicação diz que o preço justo descreve posição, não antecipa retorno, e o resultado da medida: de 2011 a 2017, estar abaixo dele não antecipou retorno nos 12 meses seguintes ([pesquisas/calibracao](pesquisas/calibracao.md)) |
+| Cifra de preço justo | A base junto: o modelo principal, a qualidade e as premissas. A explicação diz que o preço justo descreve posição, não antecipa retorno, e o resultado da medida: de 2011 a 2017, estar abaixo dele não antecipou retorno nos 12 meses seguintes ([pesquisa/calibracao](../pesquisa/estudos/calibracao.md)) |
 | Preço, ou lista de preços | `formatAge`. Em lista, o carimbo é o **mais antigo** (`oldestStamp`) |
 | Projeção | Faixa, com piso, teto e cenário base |
 | Julgamento | Proveniência e papel de veredito em serifa |
@@ -257,7 +257,7 @@ passa por `parseDecimal`, que lê vírgula como decimal e o ponto sozinho com um
 
 ### A análise se lê sem glossário
 
-Metade do público nunca investiu ([01-PRODUTO](01-PRODUTO.md)). Na folha do ativo, e nas frases que o
+Metade do público nunca investiu ([app/produto](produto.md)). Na folha do ativo, e nas frases que o
 backend manda para ela:
 
 - **Sigla nunca chega sozinha.** Ela pode ficar, mas com o nome por extenso ou a explicação ao lado,

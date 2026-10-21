@@ -1,7 +1,8 @@
 # Operação
 
-Subir, observar, reverter — e o que falta para publicar nas lojas.
-Última revisão: 2026-10-12
+Subir, observar e reverter os serviços da plataforma. O que é de uma parte só — variáveis, contas,
+publicação nas lojas — está na pasta dela.
+Última revisão: 2026-10-21
 
 ---
 
@@ -21,16 +22,18 @@ produção (`main`), então era uma segunda cópia do mesmo commit, e não um pa
 
 URL de produção: `https://fiance.up.railway.app`
 
-Serviços no ambiente `production`:
+### Serviços
+
+No ambiente `production`:
 
 | Serviço | O quê | Volume |
 |---|---|---|
-| `backend` | API, de `/backend`; reconstrói só com mudança em `/backend/**` | — |
+| `backend` | API do app, de `/backend`; reconstrói só com mudança em `/backend/**` | — |
 | `postgres-app` | Banco do aplicativo | 500 MB |
-| `data-job` | Coleta de mercado, de `/data-job` — [11-DADOS-DE-MERCADO](11-DADOS-DE-MERCADO.md). Cron `0 2 * * 2-6` (UTC, 23h de Brasília), roda `python -m datajob diario` e termina. Migrações Alembic próprias (`data-job/migrations`, 0001–0020), aplicadas pelo Pre-Deploy Command (`python -m alembic upgrade head`). Cada rodada fica em `mercado.rodada` | `data-job-bruto`, 5 GB, em `/bruto` |
+| `data-job` | Coleta de mercado, de `/data-job` ([base/](base/README.md)). Cron `0 2 * * 2-6` (UTC, 23h de Brasília), roda `python -m datajob diario` e termina. Migrações Alembic próprias (`data-job/migrations`), aplicadas pelo Pre-Deploy Command (`python -m alembic upgrade head`). Cada rodada fica em `mercado.rodada` | `data-job-bruto`, 5 GB, em `/bruto` |
 | `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |
-| `fiance-dados` | A API de dados para terceiros e para o próprio app, de `/fiance-dados` ([ADR-024](decisoes/ADR-024-api-de-dados.md)). Só lê `mercado` como `mercado_leitura`; contas, chaves, planos e uso no schema `acesso`, com migrações próprias (`fiance-dados/migrations`) pelo Pre-Deploy Command (`python -m alembic upgrade head`). Em `https://fiance-dados.up.railway.app`. Start: `uvicorn dadosapi.app:criar --factory --host 0.0.0.0 --port $PORT`; saúde em `/saude`; documentação pública em `/docs`, portal em `/` e console em `/console` | — |
-| `fiance-trend` | Painel de uso próprio: API do `fiance-trend/backend` e front do `fiance-trend/frontend`, em `https://fiance-trend.up.railway.app`, com senha. Imagem de `fiance-trend/backend/Dockerfile`; reconstrói com mudança em `/fiance-trend/backend/**`, `/fiance-trend/frontend/**` e `/docs/**`. Lê o `postgres-mercado` como `mercado_leitura` | — |
+| `fiance-dados` | A API de dados para terceiros e para o próprio app, de `/fiance-dados` ([dados/](dados/README.md)). Só lê `mercado` como `mercado_leitura`; contas, chaves, planos e uso no schema `acesso`, com migrações próprias (`fiance-dados/migrations`) pelo Pre-Deploy Command (`python -m alembic upgrade head`). Em `https://fiance-dados.up.railway.app`. Start: `uvicorn dadosapi.app:criar --factory --host 0.0.0.0 --port $PORT`; saúde em `/saude`; documentação pública em `/docs`, portal em `/` e console em `/console` | — |
+| `fiance-trend` | Painel de uso próprio: API do `fiance-trend/backend` e front do `fiance-trend/frontend`, em `https://fiance-trend.up.railway.app`, com senha. Imagem de `fiance-trend/Dockerfile`, com a raiz do repositório como contexto; reconstrói com mudança em `/fiance-trend/**` e `/docs/**`, porque o painel serve documentos daqui. Lê o `postgres-mercado` como `mercado_leitura` | — |
 
 O `fiance-trend` pede `TREND_USUARIO` e `TREND_SENHA` e falha ao subir sem elas. A senha é definida no painel do
 Railway, e não passa pelo repositório.
@@ -39,6 +42,9 @@ Railway, e não passa pelo repositório.
 (`railway up --service data-job`) e depois devolver o cron com outra implantação nova. O *redeploy*
 do Railway reaproveita a configuração anterior, cron incluído, e o container fica esperando o
 horário sem rodar.
+
+Build, start e Pre-Deploy Command de `data-job` e `fiance-dados` vivem só no painel do Railway, sem
+arquivo no repositório: o que está nesta tabela é a única cópia escrita.
 
 As referências de `DATABASE_URL` apontam para o **id** do serviço de banco, e não para o nome:
 renomear um serviço não quebra quem o referencia.
@@ -90,152 +96,17 @@ O caminho manual **nunca rodou**: ele exige `RAILWAY_TOKEN` nos segredos e `RAIL
 
 ## Variáveis de ambiente
 
-### Falham alto se ausentes ou erradas
+Cada parte documenta as suas; a fonte de verdade é o código que as lê.
 
-| Variável | Comportamento |
-|---|---|
-| `APP_ENV` | **Sem default.** Vazio falha no startup; se algo escapar, falha **fechado** (não é development) |
-| `JWT_SECRET` | Valor default (`change-me`) é recusado fora de desenvolvimento |
-| `BILLING_WEBHOOK_SECRET` | Mesmo rigor do JWT |
-| `CACHE_BACKEND` | Nome inválido falha alto — cair em silêncio para cache por nó é defeito que só aparece semanas depois |
-| `REDIS_URL` | Definida sem o pacote instalado, falha alto |
-| `SENTRY_DSN` | Definida sem o pacote instalado, falha alto |
-| `ENTITLEMENTS_ENABLED=true` sem `ENTITLEMENTS_ENABLED_AT` | Falha alto |
-
-### Operacionais
-
-| Variável | Default | Para quê |
+| Serviço | Onde estão | Código |
 |---|---|---|
-| `DATABASE_URL` | SQLite local | Postgres em produção |
-| `GOOGLE_CLIENT_ID` | vazio | Login |
-| `APPLE_CLIENT_ID` | vazio | Login com Apple: bundle id e Services ID aceitos como audience, separados por vírgula. Vazio, a rota recusa com 500 |
-| `DADOS_API_URL` | vazio | A `fiance-dados`. No Railway, pela rede privada: `http://${{fiance-dados.RAILWAY_PRIVATE_DOMAIN}}:8080` |
-| `DADOS_API_CHAVE` | vazio | Chave de uma conta do plano `interno`, criada no `/console` da `fiance-dados`. Definida no painel, nunca no repositório |
-| `ALLOWED_ORIGINS` | localhost | CORS |
-| `ADMIN_USER_IDS` | vazio | Rotas de operador. Conta Apple entra como `apple:<sub>` |
-| `RATE_LIMIT_ENABLED` | `true` | Teto de uso |
-| `RATE_LIMIT_FACTOR` | `1.0` | Multiplica todos os tetos |
-| `TRUSTED_PROXY_COUNT` | `0` | Quantos proxies à frente têm o `X-Forwarded-For` confiável. Zero usa o IP da conexão |
-| `SUITABILITY_PERSONALIZATION_ALLOWED` | `false` | Permite leitura personalizada no nível prescritivo de afirmação |
-| `LOG_LEVEL` | `INFO` | Nível de log |
-| `RELEASE` | vazio | Versão enviada ao Sentry |
-| `AFFIRMATION_LEVEL` | `2` | Nível de afirmação — ver [ADR-007](decisoes/ADR-007-nivel-de-afirmacao.md) |
-| `ENTITLEMENTS_ENABLED` | `false` | Cerca de plano |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | vazio | Push |
-| `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Amostragem |
-| `WEB_CONCURRENCY` | `2` | Workers |
+| `backend` | [app/operacao](app/operacao.md#variáveis-de-ambiente) | `backend/app/core/config.py` |
+| `data-job` | [base/](base/README.md#produção) | `data-job/datajob/config.py` |
+| `fiance-dados` | [dados/](dados/README.md#variáveis) | `fiance-dados/dadosapi/config.py` |
+| `fiance-trend` | [pesquisa/](pesquisa/README.md#variáveis) | `fiance-trend/backend/api/config.py` |
 
-### data-job
-
-As duas são obrigatórias, sem default: ausente, o job falha ao começar (`datajob/config.py`).
-
-| Variável | Para quê |
-|---|---|
-| `DATABASE_URL` | O `postgres-mercado`, com permissão de escrita no schema `mercado` |
-| `DATAJOB_BRUTO_DIR` | Onde guardar os arquivos brutos. Em produção, `/bruto` |
-
-### fiance-dados
-
-| Variável | Para quê |
-|---|---|
-| `DATABASE_URL` | `${{postgres-mercado.DATABASE_URL}}`. Lê `mercado` com `SET ROLE mercado_leitura` e escreve só no schema `acesso` |
-| `DADOS_API_ADMIN_TOKEN` | Token das rotas `/admin`, 32 caracteres ou mais. **Falha ao subir sem ele.** Definido no painel do Railway, nunca no repositório |
-| `CONTATO_EMAIL` | Opcional. Com ele, o portal mostra "Pedir um convite" |
-| `COBRANCA_ATIVA` | `false` por padrão. `true` abre a assinatura pela página e o webhook (ADR-025) |
-| `ASAAS_API_KEY` | Chave do Asaas. Obrigatória com a cobrança ativa |
-| `ASAAS_WEBHOOK_TOKEN` | Token que o Asaas manda no cabeçalho `asaas-access-token`, 32 caracteres ou mais. Obrigatório com a cobrança ativa |
-| `ASAAS_URL` | `https://api.asaas.com/v3`; o sandbox é `https://api-sandbox.asaas.com/v3` |
-
-### Contas da API de dados
-
-Conta nasce por convite, pela administração; quem tem conta gerencia as próprias chaves em
-`/v1/conta`. Há duas páginas no próprio serviço: **`/`**, o portal público (o que o serviço oferece,
-a documentação, e "minha conta" para quem tem chave), e **`/console`**, o controle do autor (contas,
-o que pede atenção, contas com busca e filtro, uso por dia e por conta, editar, emitir e revogar chave, desativar), que pede o `DADOS_API_ADMIN_TOKEN` na tela e o guarda
-só na aba. Dez tentativas erradas do mesmo IP bloqueiam `/admin` por 15 minutos. A chave aparece **uma vez**, na criação; a base guarda só o hash.
-
-```bash
-# criar conta (devolve a primeira chave) — planos: interno, convidado, essencial, pro, quant
-curl -X POST https://<dominio>/admin/contas -H "X-Admin-Token: $TOKEN" \
-  -H "Content-Type: application/json" -d '{"email": "a@b.com", "nome": "Fulano", "plano": "convidado"}'
-curl https://<dominio>/admin/contas -H "X-Admin-Token: $TOKEN"                  # contas e uso de hoje
-curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
-  -H "Content-Type: application/json" -d '{"ativa": false}'                    # desativar
-curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
-  -H "Content-Type: application/json" -d '{"pago_ate": "2026-12-31"}'         # pagamento por fora
-curl -X DELETE https://<dominio>/admin/contas/1/chaves/fd_abcd1234 -H "X-Admin-Token: $TOKEN"  # revogar
-curl "https://<dominio>/admin/uso?dias=90&conta_id=1" -H "X-Admin-Token: $TOKEN"       # uso de uma conta
-```
-
-| Plano | Por minuto | Por dia | Histórico | Chaves | Preço por mês | Libera |
-|---|---|---|---|---|---|---|
-| `interno` | 600 | 1.000.000 | inteiro | 10 | — | tudo |
-| `convidado` | 60 | 20.000 | inteiro | 3 | — | tudo |
-| `essencial` | 30 | 5.000 | 730 dias | 2 | R$ 49 | o básico |
-| `pro` | 60 | 30.000 | inteiro | 5 | R$ 149 | série, balanço por data, informes |
-| `quant` | 300 | 300.000 | inteiro | 20 | a partir de R$ 490 | tudo, sob contrato |
-
-Plano pago sem `pago_ate` em dia (mais três dias) responde **402**; rota fora do plano responde
-**403**. O Asaas avisa em `POST /cobranca/asaas`; o pagamento é reconsultado antes de liberar.
-
-O `PATCH` aceita `plano`, `ativa`, `pago_ate`, `nome` e `observacao`; campo ausente fica como está, e `null` enviado de propósito limpa `pago_ate` e `observacao`. A lista de contas traz a `situacao` (`ativa`, `a_vencer` a 7 dias do vencimento, `em_tolerancia`, `sem_pagamento` — a que responde 402 —, `desativada`), calculada pela mesma regra que autentica.
-
-O limite por minuto fica na memória do processo: com mais de uma réplica, cada uma conta a sua.
-**Cobrar de terceiros depende da licença da B3 e da leitura da ODbL** (ADR-024).
-
-### fiance-trend (painel)
-
-| Variável | Default | Para quê |
-|---|---|---|
-| `DATABASE_URL` | **obrigatória** | O `postgres-mercado`, lido como `mercado_leitura` |
-| `TREND_USUARIO` | **obrigatória** | Usuário do painel |
-| `TREND_SENHA` | **obrigatória** | Senha do painel; definida no Railway, nunca no repositório |
-| `TREND_DOCS` | `docs/` da raiz | Onde ler os documentos exibidos no painel |
-| `TREND_PESQUISA` | `fiance-trend/backend/` | Onde ler os resultados da pesquisa |
-| `TREND_FRONT` | `fiance-trend/frontend/dist` | O front compilado que a API serve |
-
-**`ENTITLEMENTS_ENABLED_AT` é a âncora do relógio de trial.** `start_trial` é chamado na primeira
-posição salva **sem consultar a flag**, então toda conta com carteira carrega um `trial_ends_at` no
-passado. O relógio conta do **mais tarde** entre qualificar e a cerca subir. Sem essa variável, virar
-a flag derrubaria a base inteira para Free num instante, sem volta pelo código.
-
----
-
-## Observabilidade
-
-**Sentry** (`SENTRY_DSN`), com `before_send` como **lista de permissão** nas duas plataformas.
-Telemetria não leva carteira: ticker no caminho vira `{id}`, valor em reais e número citado em erro
-são redigidos, corpo de request e `extra` não saem. Duas suítes travam isso — é a Política de
-Privacidade escrita como código.
-
-**Qualidade de fonte:** `GET /data-quality/source` mostra o estado dos disjuntores da base de mercado e do BCB
-sem varrer o universo.
-
-**Eventos de produto:** dicionário fechado em `core/events.py`. Nome fora dele, ou propriedade com
-ticker ou valor, devolve 422.
-
----
-
-## Quando uma fonte cai
-
-O sistema degrada em ordem e **nunca inventa número**:
-
-1. Cache válido
-2. Cache vencido, com a idade carimbada e visível na tela
-3. Ausência declarada — a tela diz que não conseguiu ler
-
-O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte (`bcb`,
-`bcb_cache_vencido`, `estimativa`) viaja até a interface, inclusive em `BenchmarkResponse.cdi_source`.
-
-**O que verificar quando o Descobrir esvaziar:**
-
-1. `GET /data-quality/source` — disjuntor aberto?
-2. A coleta — o painel `fiance-trend` alerta quando a rodada do data-job falha ou a cotação fica velha
-3. Horário — fora de 10h–18h30 em dia com pregão na B3, a varredura do universo não vai à rede
-   por desenho. Feriado nacional, Carnaval e 24 e 31/12 contam como fechados; na Quarta-feira de
-   Cinzas a janela abre às 13h
-4. Log `não há universo em cache` — a lista de tickers da base de mercado falhou e não havia universo vencido
-   para servir; `servindo o universo vencido` é a degradação funcionando, não a causa
+Segredo (`JWT_SECRET`, `DADOS_API_CHAVE`, `DADOS_API_ADMIN_TOKEN`, `TREND_SENHA`) é definido no
+painel do Railway, nunca no repositório — e conferido pelo nome antes do deploy.
 
 ---
 
@@ -245,7 +116,7 @@ O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte
 e o PITR são do plano Pro, e a conta não é Pro. **Risco aceito pelo autor em 2026-10-12**, enquanto o
 uso é pessoal: perder o volume do `postgres-app` perde carteiras e contas. O `postgres-mercado` se
 reconstrói do bruto guardado no volume `/bruto` do data-job (`python -m datajob reprocessar`), menos
-o que as fontes já não publicam. Rever antes de abrir o produto ao público.
+o que as fontes já não publicam. Rever antes de abrir qualquer produto ao público.
 
 Existe uma cópia lógica própria do `postgres-app`, portátil entre Postgres e SQLite, cuja
 restauração é testada no CI
@@ -274,29 +145,6 @@ no topo desta seção, a rever antes de abrir o produto ao público.
 
 Para reverter um deploy, use o rollback do Railway. Migração aplicada **não** é revertida por
 rollback de aplicação — migração que precise voltar exige `downgrade` escrito e testado antes.
-
----
-
-## Publicação nas lojas — pré-requisitos
-
-Nada disso existe hoje. Todos são bloqueadores de [09-FUTURO](09-FUTURO.md), item 7.
-
-| Pré-requisito | Estado | Observação |
-|---|---|---|
-| Conta Google Play | ❌ | Taxa única |
-| Conta Apple Developer | ❌ | Anuidade |
-| Mac para build e publicação iOS | ❌ | Não há alternativa oficial |
-| **O app rodar em iOS ao menos uma vez** | ❌ | Nunca executado, nem em simulador |
-| **Sign in with Apple** | ⚠️ | Backend pronto e testado (`POST /auth/apple`, verificação pelas chaves públicas da Apple). Falta o botão no app, que exige conta Apple Developer (Services ID), um Mac e o pacote `sign_in_with_apple` |
-| Exclusão de conta dentro do app | ✅ | `/voce/conta` → **Excluir esta conta**, com a exportação oferecida ao lado |
-| URL de privacidade pública | ✅ | `/privacidade`, sem login |
-| URL de termos pública | ✅ | `/termos` |
-| Ficha de segurança de dados | ❌ | A escrever, a partir da lista de permissão da telemetria |
-
-**Sign in with Apple** é um segundo provedor de identidade, e a parte do servidor já existe: o token
-é verificado pelas chaves públicas da Apple, a conta ganha id próprio, e o e-mail oculto (relay) nunca
-liga contas. O que falta é o cliente, e ele depende de conta Apple Developer e de um Mac para ser
-construído e testado.
 
 ---
 

@@ -71,11 +71,11 @@ A alternativa 3.
 
 - Mais um serviço no Railway, e mais uma suíte para manter
 - Um serviço público com um autor só: disponibilidade e correção do dado viram compromisso
-- Dado com lacunas declaradas ([11-DADOS-DE-MERCADO](../11-DADOS-DE-MERCADO.md)) passa a ter
+- Dado com lacunas declaradas ([base/](../base/README.md)) passa a ter
   cliente — a lacuna precisa estar na documentação da API, não só na nossa
 
 ## Referências
 
 - [Política Comercial de Market Data B3 (out/2024)](https://www.b3.com.br/data/files/6D/77/9D/65/0AB929106EEC8429AC094EA8/Politica%20Comercial%20de%20Market%20Data%20v3.0.4.1.pdf)
 - [Portal de dados abertos da CVM](https://dados.cvm.gov.br/)
-- [11-DADOS-DE-MERCADO](../11-DADOS-DE-MERCADO.md) · [ADR-022](ADR-022-dados-de-mercado-coletados-em-lote.md) · [ADR-023](ADR-023-fase-pessoal-primeiro.md)
+- [base/](../base/README.md) · [ADR-022](ADR-022-dados-de-mercado-coletados-em-lote.md) · [ADR-023](ADR-023-fase-pessoal-primeiro.md)

@@ -2,7 +2,7 @@
 
 **Estado:** `[CONCLUÍDO]` em 2026-10-12 — **o ranking de tendência não informa** (6 variações, nenhuma
 passou no estudo). Protocolo `[ACEITO]` pelo autor no mesmo dia, antes da primeira execução · **Etapa 2 de**
-[plataforma](../historico/PLATAFORMA-2026-10.md)
+[plataforma](../../historico/PLATAFORMA-2026-10.md)
 
 ## A pergunta
 
@@ -81,7 +81,7 @@ Cada candidato numa classe é uma variação. A ordem acima é a ordem de gasto 
 ## O que sai, se passar
 
 No painel: o ranking do último fim de mês por classe, a posição e o percentil de cada ativo, e o
-histórico de acerto do ranking mês a mês. **Não vai para o app** ([plataforma](../historico/PLATAFORMA-2026-10.md)).
+histórico de acerto do ranking mês a mês. **Não vai para o app** ([plataforma](../../historico/PLATAFORMA-2026-10.md)).
 
 ## Adendo — FIIs com períodos próprios
 

@@ -4,9 +4,8 @@ A base de mercado como serviço, com contas e chaves. É por ela que o backend l
 chave do plano `interno`. O que vale para o repositório inteiro está no
 [CLAUDE.md da raiz](../CLAUDE.md).
 
-Leitura da área: [ADR-024](../docs/decisoes/ADR-024-api-de-dados.md) ·
-[ADR-025](../docs/decisoes/ADR-025-cobranca-da-api-de-dados.md) ·
-[11-DADOS-DE-MERCADO](../docs/11-DADOS-DE-MERCADO.md).
+Leitura da área: [docs/dados/](../docs/dados/README.md) · [ADR-024](../docs/decisoes/ADR-024-api-de-dados.md) ·
+[ADR-025](../docs/decisoes/ADR-025-cobranca-da-api-de-dados.md) · o que a base tem: [docs/base/](../docs/base/README.md).
 
 ```bash
 python -m pytest -q                # exige DADOS_API_TEST_DATABASE_URL e ../data-job/requirements.txt

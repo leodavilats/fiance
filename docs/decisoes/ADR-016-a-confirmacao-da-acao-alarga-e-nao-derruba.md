@@ -73,4 +73,4 @@ baixa para média.
 
 - `backend/app/analysis/fair_price.py` · `backend/tests/test_confirmacao_que_nao_e_independente.py`
 - [AUDITORIA-DO-PRECO-JUSTO](../historico/AUDITORIA-DO-PRECO-JUSTO-2026-09-25.md), item R-002 ·
-  [04-CALCULOS](../04-CALCULOS.md)
+  [app/calculos](../app/calculos/README.md)

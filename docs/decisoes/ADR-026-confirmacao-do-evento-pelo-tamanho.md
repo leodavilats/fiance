@@ -10,7 +10,7 @@ O data-job só ajusta a série por um evento da B3 depois de o preço confirmar 
 ([ADR-022](ADR-022-dados-de-mercado-coletados-em-lote.md)). A confirmação compara a razão entre o
 fechamento da véspera e a abertura seguinte com o fator do evento, e aceita até **12%** de diferença.
 
-A [validação contra a brapi](../pesquisas/validacao-brapi.md) mostrou que a folga fixa erra dos dois
+A [validação contra a brapi](../pesquisa/estudos/validacao-brapi.md) mostrou que a folga fixa erra dos dois
 lados:
 
 - **Recusa evento grande que aconteceu.** Num grupamento de 100 para 1, a razão observada de 86 fica

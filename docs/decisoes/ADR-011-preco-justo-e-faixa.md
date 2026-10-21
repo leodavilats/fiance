@@ -122,4 +122,4 @@ Efeito medido na amostra de 2026-09-19:
 - `backend/app/analysis/fair_price.py` — `margin_of_safety_in_band`, `fair_low`, `fair_high`
 - `backend/app/analysis/decision.py` — `BASIS_BAND`, `BASIS_TREND`, `_verdict_from_trend`
 - `test_consenso_que_nao_e_consenso.py` e `test_etf_sem_metodo.py`, removidos pela ADR-014
-- [04-CALCULOS](../04-CALCULOS.md) · [ADR-006](ADR-006-recomendacao-personalizada.md)
+- [app/calculos](../app/calculos/README.md) · [ADR-006](ADR-006-recomendacao-personalizada.md)

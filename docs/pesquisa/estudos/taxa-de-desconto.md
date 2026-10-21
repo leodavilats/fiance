@@ -1,7 +1,7 @@
 # Plano — como a taxa de desconto distribui o veredito
 
 **Estado:** `[ENCERRADO]` em 2026-10-19 — **duas candidatas passam no critério, por pouco**; com qualquer uma, mais de 70% das ações seguem acima da faixa. Protocolo `[ACEITO]` pelo autor no mesmo dia, antes da execução, com o critério de 80% como está · **Serve a:**
-[10-PROBLEMAS](../10-PROBLEMAS.md), item A12
+[04-PROBLEMAS](../../04-PROBLEMAS.md), item A12
 
 ## A pergunta
 

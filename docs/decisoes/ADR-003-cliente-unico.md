@@ -56,7 +56,7 @@ O que o front carregava e não era tela foi realocado:
 
 - Não há acesso por navegador. Quem quiser ver a carteira no computador não tem como
 - Saíram 191 testes, o E2E de navegador e 24 regras de lint. **Três dessas regras ainda não têm
-  equivalente no Dart** — ver [10-PROBLEMAS](../10-PROBLEMAS.md), item 14
+  equivalente no Dart** — ver [04-PROBLEMAS](../04-PROBLEMAS.md), item 14
 - Não há mais landing page, e portanto **nenhuma superfície pública de descoberta do produto**. Isso
   se agrava com a decisão de não ter gratuidade ([ADR-009](ADR-009-trial-e-gratuidade.md))
 
@@ -69,4 +69,4 @@ Ver [PARIDADE-WEB-APP](../historico/PARIDADE-WEB-APP-2026-09.md) — fechada em 
 ## Referências
 
 - commit `3a922a6`, 2026-09-11
-- [08-ESTADO](../08-ESTADO.md)
+- [03-ESTADO](../03-ESTADO.md)

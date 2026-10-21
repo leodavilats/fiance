@@ -8,7 +8,7 @@ no protocolo, sem variação rodada. Protocolo `[ACEITO]` pelo autor no mesmo di
 > Ação que o app diria estar **abaixo do preço justo** rendeu mais, nos 12 meses seguintes, que ação
 > **acima do preço justo** — com o veredito calculado só com o que se sabia na data?
 
-É a pergunta que o item *Calibração empírica do preço justo* de [09-FUTURO](../09-FUTURO.md) deixou
+É a pergunta que o item *Calibração empírica do preço justo* de [05-FUTURO](../../05-FUTURO.md) deixou
 aberta. Ela vem **antes** de calibrar: se o modelo como está não ordena o retorno, ajustar parâmetro é
 procurar acaso. Se ordenar, a calibração escolhe entre poucos valores, com teto.
 
@@ -73,8 +73,8 @@ A melhor no estudo vai para a validação, uma vez. Passando, vai para a prova, 
 parâmetro muda no app — com ADR, porque é decisão de produto.
 
 **Se a execução 0 não passar, a conclusão é "o veredito não ordena o retorno"**, e fica registrada.
-Isso não tira o preço justo do app — ele descreve posição, não promete retorno ([ADR-014](../decisoes/ADR-014-um-modelo-por-classe.md)) —, mas muda
-o que o app pode dizer dele, e vira item no [10-PROBLEMAS](../10-PROBLEMAS.md).
+Isso não tira o preço justo do app — ele descreve posição, não promete retorno ([ADR-014](../../decisoes/ADR-014-um-modelo-por-classe.md)) —, mas muda
+o que o app pode dizer dele, e vira item no [04-PROBLEMAS](../../04-PROBLEMAS.md).
 
 ## Risco declarado
 
@@ -110,7 +110,7 @@ Execução 0, o modelo como está, no estudo (vereditos de jan/2011 a dez/2017, 
 
 Registro em `fiance-trend/backend/registro_calibracao.jsonl`; mês a mês em
 `fiance-trend/backend/resultados/calibracao_0_estudo.json`. O que isso muda no app está em
-[10-PROBLEMAS](../10-PROBLEMAS.md), item A12.
+[04-PROBLEMAS](../../04-PROBLEMAS.md), item A12.
 
 ## O que mudou no app
 
@@ -120,4 +120,4 @@ frase de ajuste ganhou "o preço justo descreve posição, não antecipa retorno
 preço justo e o verbete de margem de segurança dizem o resultado da medida. O nome "Oportunidades"
 fica, por decisão do autor.
 
-**Aberto:** ADR sobre a taxa de desconto ([10-PROBLEMAS](../10-PROBLEMAS.md), item A12).
+**Aberto:** ADR sobre a taxa de desconto ([04-PROBLEMAS](../../04-PROBLEMAS.md), item A12).

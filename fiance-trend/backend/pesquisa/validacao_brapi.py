@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 import httpx
 import pandas as pd
 
-# As réguas são as do protocolo (docs/pesquisas/validacao-brapi.md) e não mudam depois da execução.
+# As réguas são as do protocolo (docs/pesquisa/estudos/validacao-brapi.md) e não mudam depois da execução.
 INICIO = pd.Timestamp("2005-01-03")
 EVENTOS = {"DESDOBRAMENTO", "GRUPAMENTO", "BONIFICACAO"}
 DIAS_DE_FOLGA_DO_EVENTO = 5

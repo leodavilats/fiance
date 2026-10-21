@@ -65,4 +65,4 @@ Sem app em loja, a mudança é feita de uma vez, sem migração em dois passos.
 - `backend/app/services/dip_service.py` · `backend/app/models/dip.py` ·
   `backend/tests/test_varredura_de_quedas.py`
 - `mobile/lib/features/market/opportunities_tab.dart` · `mobile/test/varredura_de_quedas_test.dart`
-- [04-CALCULOS](../04-CALCULOS.md), seção *Varredura de quedas*
+- [app/calculos](../app/calculos/README.md), seção *Varredura de quedas*

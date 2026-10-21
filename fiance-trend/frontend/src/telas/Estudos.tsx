@@ -3,7 +3,7 @@ import { useApi } from "../api";
 import Estado from "./Estado";
 import Markdown from "./Markdown";
 
-const INDICE = "pesquisas/README.md";
+const INDICE = "pesquisa/README.md";
 
 export default function TelaEstudos() {
   const estado = useApi<{ texto: string }>(`/api/documentos/${INDICE}`);

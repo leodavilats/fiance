@@ -40,7 +40,7 @@ portfólio. Não tem.
 Toda menção a `optimizer/` sai da documentação.
 
 Isso **não** decide contra otimização de carteira como funcionalidade: ela permanece em
-[09-FUTURO](../09-FUTURO.md) como `CONSIDERADO`. Decide apenas que um diretório vazio e um enum
+[05-FUTURO](../05-FUTURO.md) como `CONSIDERADO`. Decide apenas que um diretório vazio e um enum
 órfão não são o começo dela, e que descrevê-los como camada custa mais do que preservá-los.
 
 Se a otimização for construída, ela começa com a pergunta que ninguém respondeu ainda: **Sharpe e HRP

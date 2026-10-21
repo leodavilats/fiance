@@ -18,7 +18,7 @@ CUSTO_DAS_PESQUISAS = 0.0025
 FAIXA_DA_REGRA = "5 a 20 mi"
 
 # Tarifa de negociação e liquidação da B3 para pessoa física (fora do day trade), por lado.
-# Fonte e vigência no resultado do protocolo (docs/pesquisas/custo-de-troca.md).
+# Fonte e vigência no resultado do protocolo (docs/pesquisa/estudos/custo-de-troca.md).
 TARIFA_B3 = 0.00031
 
 FAIXAS = (

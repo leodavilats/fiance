@@ -18,7 +18,7 @@ foi declarado, e não medido.
 - **Custo por lado = metade do spread + tarifa da B3** vigente no ano, com a tabela citada no resultado
 - **Fora da conta:** par de pregões com evento no intervalo, dia com `salto_sem_evento` e dia em que o
   fechamento ou a média ficam fora da faixa entre mínima e máxima (a B3 publica dias assim, ver
-  [11-DADOS-DE-MERCADO](../11-DADOS-DE-MERCADO.md))
+  [base/](../../base/README.md))
 - **Média mensal por papel**; mediana por faixa de liquidez e por ano
 
 | Faixa (volume mediano de 63 pregões) | Ações | FIIs |

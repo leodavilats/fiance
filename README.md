@@ -1,12 +1,14 @@
 # fiance
 
-Plataforma de análise de investimentos para a B3, multi-tenant: carteira, fluxo de caixa, apuração
-de imposto e análise de ativos num só lugar.
+Plataforma de investimento na B3: dois produtos sobre uma base de mercado própria, e um laboratório
+que mede antes de afirmar.
 
-**Backend** FastAPI + Postgres (`backend/`) · **Cliente** Flutter (`mobile/`), o único cliente do
-produto · **Coleta** de dados de mercado (`data-job/`) · **API de dados** (`fiance-dados/`), a base
-como serviço, com contas e chaves · **Pesquisa e painel do autor** (`fiance-trend/backend/`,
-`fiance-trend/frontend/`), fora do produto
+| Parte | Código | O quê |
+|---|---|---|
+| **App** | `backend/` (FastAPI + Postgres), `mobile/` (Flutter) | Carteira, fluxo de caixa, apuração de imposto e análise de ativos num só lugar |
+| **API de dados** | `fiance-dados/` | A base de mercado como serviço, com contas, chaves e planos |
+| **Base de mercado** | `data-job/` | Coleta diária de B3, CVM, BCB e Tesouro |
+| **Laboratório** | `fiance-trend/backend/`, `fiance-trend/frontend/` | Pesquisa com protocolo e o painel do autor, fora dos produtos |
 
 ---
 
@@ -14,9 +16,9 @@ como serviço, com contas e chaves · **Pesquisa e painel do autor** (`fiance-tr
 
 | Pergunta | Onde |
 |---|---|
-| Por que este sistema existe | [docs/01-PRODUTO.md](docs/01-PRODUTO.md) |
-| **O que realmente funciona hoje** | [docs/08-ESTADO.md](docs/08-ESTADO.md) |
-| Como ele é montado | [docs/03-ARQUITETURA.md](docs/03-ARQUITETURA.md) |
+| Por que este sistema existe, e de que partes é feito | [docs/01-VISAO.md](docs/01-VISAO.md) |
+| **O que realmente funciona hoje** | [docs/03-ESTADO.md](docs/03-ESTADO.md) |
+| Como ele é montado | [docs/02-ARQUITETURA.md](docs/02-ARQUITETURA.md) |
 | Como trabalhar sem quebrar nada | [CLAUDE.md](CLAUDE.md) |
 | Índice completo | [docs/README.md](docs/README.md) |
 
@@ -180,8 +182,8 @@ Railway, com seis serviços: `backend`, `data-job`, `fiance-dados`, `fiance-tren
 banco do aplicativo) e `postgres-mercado` (o schema `mercado`, só o data-job escreve). A migração do
 backend roda como **pre-deploy** (`python -m app.release`), nunca no startup.
 
-**Nenhum banco tem backup automático** — risco aceito enquanto o uso é pessoal. Procedimento, backup
-e pré-requisitos de loja em [docs/07-OPERACAO.md](docs/07-OPERACAO.md).
+**Nenhum banco tem backup automático** — risco aceito enquanto o uso é pessoal. Procedimento e backup em
+[docs/07-OPERACAO.md](docs/07-OPERACAO.md); pré-requisitos de loja em [docs/app/operacao.md](docs/app/operacao.md).
 
 ### Chave de release do Android
 

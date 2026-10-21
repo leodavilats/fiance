@@ -3,7 +3,8 @@
 Contrato de trabalho do app Flutter, o único cliente do produto. O que vale para o repositório
 inteiro está no [CLAUDE.md da raiz](../CLAUDE.md); o porquê, nas [decisões](../docs/decisoes/).
 
-**Antes de mexer numa tela ou rota, leia [05-INTERFACE](../docs/05-INTERFACE.md).**
+**Antes de mexer numa tela ou rota, leia [app/interface](../docs/app/interface.md).** Armadilhas e revisão
+de telas: [app/desenvolvimento](../docs/app/desenvolvimento.md).
 
 ```bash
 flutter analyze && flutter test
@@ -55,6 +56,6 @@ python tool/build_icons.py --check
 
 | O quê | Faça também |
 |---|---|
-| Tela ou rota | Ler [05-INTERFACE](../docs/05-INTERFACE.md) antes |
+| Tela ou rota | Ler [app/interface](../docs/app/interface.md) antes |
 | Dependência no `pubspec.yaml` | `flutter build apk --release` |
 | Papel de cor | Declará-lo nos dois temas |

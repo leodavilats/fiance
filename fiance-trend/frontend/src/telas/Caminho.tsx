@@ -25,7 +25,7 @@ const NOME_DA_ORIGEM: Record<string, string> = {
 
 export default function TelaCaminho() {
   const visao = useApi<Visao>("/api/visao");
-  const plano = useApi<{ texto: string }>("/api/documentos/09-FUTURO.md");
+  const plano = useApi<{ texto: string }>("/api/documentos/05-FUTURO.md");
   return (
     <>
       <h1>Caminho</h1>
@@ -35,7 +35,7 @@ export default function TelaCaminho() {
       <Estado estado={visao}>{(v) => <Numeros visao={v} />}</Estado>
       <Estado estado={plano}>
         {(documento) => (
-          <Markdown documento="09-FUTURO.md" texto={documento.texto} />
+          <Markdown documento="05-FUTURO.md" texto={documento.texto} />
         )}
       </Estado>
     </>

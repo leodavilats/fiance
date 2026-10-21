@@ -1,20 +1,17 @@
-# Arquitetura
+# O aplicativo — arquitetura
 
-Como o sistema é montado e por que as fronteiras estão onde estão.
+Como o backend e o cliente Flutter são montados, e por que as fronteiras estão onde estão. Como o app
+se liga às outras partes está em [02-ARQUITETURA](../02-ARQUITETURA.md).
 Estrutura e endpoints são derivados do código; a **intenção** vive aqui e nas
-[decisões](decisoes/).
-Última revisão: 2026-10-18
+[decisões](../decisoes/).
+Última revisão: 2026-10-21
 
 ---
 
 ## Visão geral
 
-Um backend FastAPI com o seu Postgres (`postgres-app`), um cliente Flutter. Os dados de mercado vêm
-de um segundo Postgres (`postgres-mercado`), escrito só pelo `data-job/` e servido pela
-`fiance-dados/`, a API de dados com contas e chaves ([ADR-024](decisoes/ADR-024-api-de-dados.md)): o
-backend é um cliente dela, com uma chave do plano `interno`, e não abre o banco de mercado. Sem fila. O
-painel do autor (`fiance-trend/backend/` + `fiance-trend/frontend/`) lê a base direto e fica fora do
-produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)).
+Um backend FastAPI com o seu Postgres (`postgres-app`) e um cliente Flutter, o único
+([ADR-003](../decisoes/ADR-003-cliente-unico.md)). Sem fila. Dado de mercado chega pela API de dados.
 
 ```
 ┌──────────────────────────────────────────┐
@@ -35,25 +32,16 @@ produto ([ADR-023](decisoes/ADR-023-fase-pessoal-primeiro.md)).
 │                                          │
 │  collectors/  API de dados, BCB, disj.   │
 └───────────────────┬─────────────────┬────┘
-                    │                 │ HTTP na rede privada, chave `interno`
+                    │                 │ chave `interno`
         ┌───────────▼───────────┐ ┌───▼──────────────────┐
-        │  postgres-app         │ │  fiance-dados/       │◄── terceiros, por chave
-        │  dados + cache        │ │  /v1, contas, chaves │
-        └───────────────────────┘ └───┬──────────────────┘
-                                      │ lê mercado (mercado_leitura); escreve só acesso
-                                  ┌───▼──────────────────┐
-                                  │  postgres-mercado    │
-                                  │  mercado + acesso    │
-                                  └───▲──────────────────┘
-                                      │ escreve (cron diário)
-                                  ┌───┴──────────────────┐
-                                  │  data-job/           │
-                                  └──────────────────────┘
+        │  postgres-app         │ │  fiance-dados        │
+        │  dados + cache        │ └──────────────────────┘
+        └───────────────────────┘
 ```
 
 ---
 
-## A fronteira que sustenta o sistema
+## A fronteira que sustenta o app
 
 **`ledger/`, `cashflow/` e `analysis/` não conhecem banco de dados.** Recebem dados, devolvem
 resultados. Quem liga isso à persistência são os `*_service.py`.
@@ -64,7 +52,7 @@ Consequências práticas:
 - uma regra financeira errada é um bug localizável, não um efeito de consulta;
 - o cálculo não sabe quem paga, e não pode passar a saber (ver a regra de monetização abaixo).
 
-Decisão registrada em [ADR-001](decisoes/ADR-001-matematica-pura.md).
+Decisão registrada em [ADR-001](../decisoes/ADR-001-matematica-pura.md).
 
 **A regra prática:** se um módulo dessas três pastas precisar importar `storage/` ou `models/db_*`,
 a solução está errada. Passe o dado por parâmetro.
@@ -155,7 +143,7 @@ obrigatório quebra o aplicativo que ainda não atualizou. Regravar é
 `python -m tests.contrato_das_rotas`, e o diff entra no mesmo commit.
 
 ⚠️ **7 rotas ainda devolvem `dict` solto e não têm contrato.** `SEM_MODELO_HOJE` é a catraca que
-impede esse número de crescer. Ver [10-PROBLEMAS](10-PROBLEMAS.md).
+impede esse número de crescer. Ver [04-PROBLEMAS](../04-PROBLEMAS.md).
 
 **Listas paginam por cursor keyset**, nunca offset. Onde há agregado, ele é **da conta inteira** —
 senão o total encolhe conforme a rolagem. Em proventos e renda fixa a página sai do banco com
@@ -177,8 +165,8 @@ paywall) usa `independent_session()` / `outside_request_transaction()`.
 
 **Duas fontes, e só duas:** a base de mercado própria (`postgres-mercado`, ações, FIIs, BDRs,
 ETFs) e BCB SGS (CDI, Selic, IPCA). A base é escrita só pelo `data-job/`, a partir da B3, da CVM,
-do Tesouro e do BCB ([ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)); o backend
-lê **pela `fiance-dados`** ([ADR-024](decisoes/ADR-024-api-de-dados.md)), com uma chave do plano
+do Tesouro e do BCB ([ADR-022](../decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)); o backend
+lê **pela `fiance-dados`** ([ADR-024](../decisoes/ADR-024-api-de-dados.md)), com uma chave do plano
 `interno`, pela rede privada do Railway (`collectors/mercado.py`): `/v1/retratos` em lotes de 50
 para o retrato e as demonstrações, `/v1/ativos` para a lista, `/cotacoes` para o histórico e
 `/proventos` sem o rendimento estimado. Ticker que a API não tem (404) é ausência, não falha. **A cotação é a do último fechamento**, e o `as_of`

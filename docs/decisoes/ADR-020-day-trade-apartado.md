@@ -8,7 +8,7 @@ abertas estão declaradas aqui
 ## Contexto
 
 A apuração de IR é projeção do razão, com o mês como unidade
-([02-DOMINIO](../02-DOMINIO.md#regras-de-imposto)). Até aqui ela tratava toda venda como operação
+([app/dominio](../app/dominio.md#regras-de-imposto)). Até aqui ela tratava toda venda como operação
 comum: custo pelo preço médio, 15% ou 20% por categoria, isenção de R$ 20 mil em ações. Compra e
 venda do mesmo ativo no mesmo dia saía como venda comum, com a alíquota e a isenção erradas, e o
 preço médio da posição absorvia a compra do dia.
@@ -77,4 +77,4 @@ As escolhas abertas:
 
 - `backend/app/ledger/projection.py` · `backend/app/ledger/apuracao.py`
 - `backend/tests/test_day_trade.py`
-- [04-CALCULOS](../04-CALCULOS.md), seção *Apuração de imposto*
+- [app/calculos](../app/calculos/README.md), seção *Apuração de imposto*

@@ -1,4 +1,4 @@
-# Domínio
+# O aplicativo — domínio
 
 **Fonte de verdade** para o vocabulário e as regras de negócio. Os enums são derivados do código.
 Última revisão: 2026-10-12
@@ -33,14 +33,14 @@ ação, distribuição recorrente capitalizada para FII. BDR e ETF não têm.
 **Faixa de preço justo** — a sensibilidade do modelo principal às premissas. Na ação, o envelope de
 dois cenários — crescer com o lucro retido, ou não crescer e distribuir tudo —: o piso é o menor dos
 dois com 1 ponto a mais de taxa, o teto é o maior com 1 ponto a menos
-([ADR-015](decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md)). No FII, a distribuição dividida pelo
+([ADR-015](../decisoes/ADR-015-a-faixa-cobre-os-dois-cenarios.md)). No FII, a distribuição dividida pelo
 yield exigido mais e menos 1 ponto. É incerteza sobre o valor, e não distância entre métodos que
 medem coisas diferentes.
 
 **FII de papel** — fundo de recebíveis, cuja distribuição já carrega a inflação. Exige yield
 nominal (yield exigido do FII mais a meta de inflação), e é identificado pelo segmento
 (`fii_segment`) numa lista de referência mantida à mão
-([ADR-019](decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)).
+([ADR-019](../decisoes/ADR-019-fii-de-papel-exige-yield-nominal.md)).
 
 **Confirmação** — a leitura por outro insumo: o dividendo recorrente na ação, o VPA no FII. Diz se a
 faixa se sustenta, e entra na qualidade — nunca na borda.
@@ -49,7 +49,7 @@ faixa se sustenta, e entra na qualidade — nunca na borda.
 quando o preço está abaixo dele, sobre o próprio preço quando está acima do teto, e zero dentro da
 faixa. As duas pontas medem a mesma distância. **Descreve posição:** na medida de 2026-10-12, nas
 ações de 2011 a 2017, estar abaixo do preço justo não antecipou retorno
-([pesquisas/calibracao](pesquisas/calibracao.md)).
+([pesquisa/calibracao](../pesquisa/estudos/calibracao.md)).
 
 **Sem preço justo** — o que o produto diz sobre ativo sem modelo principal (BDR, ETF) ou sem o dado
 que o modelo exige (lucro, ROE, juro). A tendência continua na tela, como contexto, e nunca decide.
@@ -104,10 +104,10 @@ Vocabulário fechado, em `models/enums.py`.
 `tesouro_ipca`, `tesouro_pre`. Tipo de taxa: `pre_fixado`, `pos_fixado`, `hibrido`.
 O valor atual de uma posição é o líquido do resgate hoje: IOF regressivo nos primeiros 29 dias,
 depois IR sobre o que o IOF deixou. LCI, LCA, CRI e CRA são isentos de IR, não de IOF. Fórmulas em
-[04-CALCULOS](04-CALCULOS.md#renda-fixa).
+[app/calculos](calculos/carteira.md#renda-fixa).
 
 **Fora de escopo:** cripto, ações internacionais diretas, previdência, Fiagro/Fi-Infra, opções e
-derivativos. Ver [09-FUTURO](09-FUTURO.md) para o que é ideia e o que é considerado.
+derivativos. Ver [05-FUTURO](../05-FUTURO.md) para o que é ideia e o que é considerado.
 
 ---
 
@@ -123,7 +123,7 @@ mudar — e o usuário não saber.
 **Preço médio segue a convenção brasileira:** venda reduz quantidade e custo, nunca a média.
 Compra e venda do mesmo ativo no mesmo dia é **day trade** e fica fora da média: a quantidade
 casada é apurada à parte, a sobra de compra entra na média, a sobra de venda sai contra ela
-([ADR-020](decisoes/ADR-020-day-trade-apartado.md)).
+([ADR-020](../decisoes/ADR-020-day-trade-apartado.md)).
 
 **Comprar não é declarar posição.** Uma compra (`buy`) soma à posição e recalcula a média; uma
 declaração (`adjust`, via `POST /portfolio/position`) diz "eu tenho isto" e ancora a linha do tempo.

@@ -66,9 +66,9 @@ A tabela `cache_entries` não é de ninguém: está em `account_store.GLOBAL_TAB
 - Três caminhos de código em vez de um, e o teste tem de cobrir os três — o CI sobe um Redis de
   serviço por isso
 - **O caminho do Redis nunca rodou contra um servidor real fora do CI**. Ver
-  [10-PROBLEMAS](../10-PROBLEMAS.md), item 1
+  [04-PROBLEMAS](../04-PROBLEMAS.md), item 1
 
 ## Referências
 
-- [03-ARQUITETURA](../03-ARQUITETURA.md)
+- [app/arquitetura](../app/arquitetura.md)
 - `backend/app/core/cache_backends.py`, `backend/app/collectors/circuit.py`

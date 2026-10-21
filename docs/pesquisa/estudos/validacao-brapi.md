@@ -166,15 +166,15 @@ a até 10%. A estimativa acerta o mês típico e erra feio em um de cada dez.
 
 ### O que vira trabalho
 
-Confirmado pela fonte primária e aberto no [10-PROBLEMAS](../10-PROBLEMAS.md): os eventos grandes que
+Confirmado pela fonte primária e aberto no [04-PROBLEMAS](../../04-PROBLEMAS.md): os eventos grandes que
 faltam, o salto sem marca quando o evento foi recusado, a queda de quase 50% abaixo do limiar, as
 parcelas que faltam e a data de pagamento das parcelas. Nada da brapi entrou na base.
 
 ## Revalidação depois das correções (2026-10-18)
 
 Mesmas respostas da brapi, guardadas em disco — **zero requisições** —, contra a base exportada de novo
-depois das mudanças 1 a 3 do [10-PROBLEMAS](../10-PROBLEMAS.md) (marca de salto, confirmação pelo
-tamanho da [ADR-026](../decisoes/ADR-026-confirmacao-do-evento-pelo-tamanho.md), inferência pelo FRE e
+depois das mudanças 1 a 3 do [04-PROBLEMAS](../../04-PROBLEMAS.md) (marca de salto, confirmação pelo
+tamanho da [ADR-026](../../decisoes/ADR-026-confirmacao-do-evento-pelo-tamanho.md), inferência pelo FRE e
 pelas cotas de FII). A régua é a mesma. Terceira linha do `registro_validacao.jsonl`.
 
 | Eventos | Antes | Depois |

@@ -191,4 +191,4 @@ firme, com taxa de equilíbrio de 13,5%.
   (séries anuais)
 - `backend/tests/test_fair_price.py` · `backend/tests/test_revisao_do_valuation.py`
 - [REVISAO-METODOLOGIA-VALUATION](../historico/REVISAO-METODOLOGIA-VALUATION-2026-09-23.md) ·
-  [04-CALCULOS](../04-CALCULOS.md)
+  [app/calculos](../app/calculos/README.md)

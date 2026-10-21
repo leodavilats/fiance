@@ -85,6 +85,6 @@ intenção de ligar o nível 3.
 ## Referências
 
 - [ADR-007](ADR-007-nivel-de-afirmacao.md)
-- [01-PRODUTO](../01-PRODUTO.md), [09-FUTURO](../09-FUTURO.md)
+- [app/produto](../app/produto.md), [05-FUTURO](../05-FUTURO.md)
 - `backend/app/affirmation.py`, `backend/app/analysis/strategy.py`
 - Resoluções CVM 19 e 20, de 2021

@@ -81,5 +81,5 @@ estrutural — a régua de plano é dado em `entitlement/plans.py`.
 
 ## Referências
 
-- [01-PRODUTO](../01-PRODUTO.md), [09-FUTURO](../09-FUTURO.md)
+- [app/produto](../app/produto.md), [05-FUTURO](../05-FUTURO.md)
 - `backend/app/entitlement/`

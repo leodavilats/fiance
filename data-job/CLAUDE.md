@@ -3,7 +3,7 @@
 Coleta de mercado: o único que escreve no `postgres-mercado`. O que vale para o repositório inteiro
 está no [CLAUDE.md da raiz](../CLAUDE.md).
 
-Leitura da área: [11-DADOS-DE-MERCADO](../docs/11-DADOS-DE-MERCADO.md) ·
+Leitura da área: [docs/base/](../docs/base/README.md) · [tratamento](../docs/base/tratamento.md) ·
 [ADR-022](../docs/decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md).
 
 ```bash

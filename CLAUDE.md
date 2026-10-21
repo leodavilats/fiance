@@ -1,43 +1,43 @@
 # fiance
 
-Plataforma de análise de investimentos focada na B3, multi-tenant.
-**FastAPI + Postgres** (`backend/`) · **Flutter** (`mobile/`), o único cliente do produto.
-Fora do app: `data-job/` (coleta de mercado), `fiance-dados/` (a base como serviço, com contas e
-chaves, [ADR-024](docs/decisoes/ADR-024-api-de-dados.md)) e `fiance-trend/backend/` + `fiance-trend/frontend/`
-(laboratório e painel do autor, [ADR-023](docs/decisoes/ADR-023-fase-pessoal-primeiro.md)).
+Plataforma de investimento na B3, em quatro partes com peso igual
+([ADR-029](docs/decisoes/ADR-029-documentacao-por-parte.md)): dois produtos — o **app** (`backend/`,
+FastAPI + Postgres, multi-tenant, e `mobile/`, Flutter, o único cliente dele) e a **API de dados**
+(`fiance-dados/`, a base como serviço, com contas e chaves) —, a **base de mercado** que os alimenta
+(`data-job/`) e o **laboratório** do autor (`fiance-trend/backend/` + `fiance-trend/frontend/`,
+[ADR-023](docs/decisoes/ADR-023-fase-pessoal-primeiro.md)).
 
 Este arquivo é o **contrato de trabalho** do repositório inteiro: o que vale para mais de uma parte.
 O que vale só para uma parte mora no `CLAUDE.md` dela:
 
-| Parte | Contrato |
-|---|---|
-| API, domínio, razão, caixa, sessão, cobrança | [backend/CLAUDE.md](backend/CLAUDE.md) |
-| App Flutter, tela, design system | [mobile/CLAUDE.md](mobile/CLAUDE.md) |
-| Coleta de mercado | [data-job/CLAUDE.md](data-job/CLAUDE.md) |
-| A base como serviço | [fiance-dados/CLAUDE.md](fiance-dados/CLAUDE.md) |
-| Laboratório e painel do autor | [fiance-trend/CLAUDE.md](fiance-trend/CLAUDE.md) |
+| Parte | Contrato | Documentação |
+|---|---|---|
+| App: API, domínio, razão, caixa, sessão, cobrança | [backend/CLAUDE.md](backend/CLAUDE.md) | [docs/app/](docs/app/README.md) |
+| App: Flutter, tela, design system | [mobile/CLAUDE.md](mobile/CLAUDE.md) | [docs/app/](docs/app/README.md) |
+| API de dados | [fiance-dados/CLAUDE.md](fiance-dados/CLAUDE.md) | [docs/dados/](docs/dados/README.md) |
+| Base de mercado | [data-job/CLAUDE.md](data-job/CLAUDE.md) | [docs/base/](docs/base/README.md) |
+| Laboratório e painel do autor | [fiance-trend/CLAUDE.md](fiance-trend/CLAUDE.md) | [docs/pesquisa/](docs/pesquisa/README.md) |
 
 Nenhum deles descreve o sistema — isso é [docs/](docs/), e [docs/README.md](docs/README.md) diz
 qual arquivo responde o quê.
 
 | Quero saber | Leia |
 |---|---|
-| **Isto existe? Em que estado?** | [docs/08-ESTADO.md](docs/08-ESTADO.md) |
+| **Isto existe? Em que estado?** | [docs/03-ESTADO.md](docs/03-ESTADO.md) |
+| O que é o fiance, de que partes é feito | [docs/01-VISAO.md](docs/01-VISAO.md) |
+| Como as partes se ligam, quem lê e escreve cada dado | [docs/02-ARQUITETURA.md](docs/02-ARQUITETURA.md) |
 | Rodar, instalar, variáveis | [README.md](README.md) · [docs/07-OPERACAO.md](docs/07-OPERACAO.md) |
-| Visão, público, negócio | [docs/01-PRODUTO.md](docs/01-PRODUTO.md) |
-| Vocabulário e regras de negócio | [docs/02-DOMINIO.md](docs/02-DOMINIO.md) |
-| Camadas, fronteiras, segurança | [docs/03-ARQUITETURA.md](docs/03-ARQUITETURA.md) |
-| Fórmulas e suas limitações | [docs/04-CALCULOS.md](docs/04-CALCULOS.md) |
-| Regras de tela | [docs/05-INTERFACE.md](docs/05-INTERFACE.md) |
 | Como trabalhar sem quebrar | [docs/06-DESENVOLVIMENTO.md](docs/06-DESENVOLVIMENTO.md) |
 | Por que uma decisão foi tomada | [docs/decisoes/](docs/decisoes/) |
-| O que está aberto **agora** | [docs/10-PROBLEMAS.md](docs/10-PROBLEMAS.md) |
-| O que vem depois | [docs/09-FUTURO.md](docs/09-FUTURO.md) |
-| O que a base de mercado tem | [docs/11-DADOS-DE-MERCADO.md](docs/11-DADOS-DE-MERCADO.md) |
-| O que já foi medido, e com que protocolo | [docs/pesquisas/](docs/pesquisas/README.md) |
+| O que está aberto **agora** | [docs/04-PROBLEMAS.md](docs/04-PROBLEMAS.md) |
+| O que vem depois | [docs/05-FUTURO.md](docs/05-FUTURO.md) |
+| App: público, regras de negócio, fórmulas, telas | [docs/app/](docs/app/README.md) |
+| API de dados: planos, rotas, contas | [docs/dados/](docs/dados/README.md) |
+| O que a base de mercado tem, e como trata cada dado | [docs/base/](docs/base/README.md) |
+| O que já foi medido, e com que protocolo | [docs/pesquisa/](docs/pesquisa/README.md) |
 
 **Histórico não é pendência.** Nada em [docs/historico/](docs/historico/) é trabalho a fazer, mesmo
-quando descreve um problema. O que está aberto está no 10-PROBLEMAS, e só lá.
+quando descreve um problema. O que está aberto está no 04-PROBLEMAS, e só lá.
 
 ---
 
