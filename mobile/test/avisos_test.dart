@@ -43,6 +43,11 @@ class _Servidor extends Interceptor {
 
 double _haHoras(double horas) => DateTime.now().millisecondsSinceEpoch / 1000 - horas * 3600;
 
+double _horasDesdeMeiaNoite() {
+  final agora = DateTime.now();
+  return agora.difference(DateTime(agora.year, agora.month, agora.day)).inSeconds / 3600;
+}
+
 Map<String, Object?> _aviso(int id, String kind, String titulo, double horas, {bool lido = false}) => {
   'id': id,
   'kind': kind,
@@ -94,8 +99,8 @@ void main() {
     await _montar(
       tester,
       _Servidor([
-        _aviso(3, 'price_alert', 'PETR4 está abaixo de R\$ 30,00', 0.5),
-        _aviso(2, 'maturity', 'LCI vence em 20 dias', 30),
+        _aviso(3, 'price_alert', 'PETR4 está abaixo de R\$ 30,00', _horasDesdeMeiaNoite() / 2),
+        _aviso(2, 'maturity', 'LCI vence em 20 dias', _horasDesdeMeiaNoite() + 12),
         _aviso(1, 'maturity', 'CDB vence em 5 dias', 24 * 10, lido: true),
       ]),
     );
