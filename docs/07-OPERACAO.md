@@ -49,6 +49,17 @@ arquivo no repositório: o que está nesta tabela é a única cópia escrita.
 As referências de `DATABASE_URL` apontam para o **id** do serviço de banco, e não para o nome:
 renomear um serviço não quebra quem o referencia.
 
+**O `postgres-mercado` tem `max_wal_size = 256MB`**, por `ALTER SYSTEM` em 2026-10-21: vive no
+`postgresql.auto.conf` do volume, e não no repositório. Com o padrão de 1 GB, o WAL ocupava quase 1 GB
+do volume de 5 GB sem servir a nada — não há réplica nem arquivamento. O custo é a carga noturna
+fazer mais checkpoints. Banco recriado do zero volta ao padrão. Medido nesse dia: 2,5 GB de dados,
+quase tudo em `demonstracao_linha`, `cotacao` e nas duas séries ajustadas.
+
+**O Postgres não tem consulta pelo painel, e `railway ssh` não passa em toda rede.** Para chegar ao
+banco, abra um proxy TCP no serviço, conecte com as variáveis `PG*` que `railway run --service
+postgres-mercado` injeta, e remova o proxy logo depois — enquanto ele existe, o banco aceita conexão
+da internet.
+
 ---
 
 ## Deploy
