@@ -316,11 +316,10 @@ def diario(
 
     def recalcular_serie() -> None:
         inicio = time.monotonic()
-        with engine.begin() as conn:
-            conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_papel"))
-            conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.serie_fundo"))
-            conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.ativo_hoje"))
-            conn.execute(sa.text("REFRESH MATERIALIZED VIEW mercado.fundamento_app"))
+        # Uma transação por visão: até o commit, a cópia velha e a nova ocupam o disco juntas.
+        for visao in ("serie_papel", "serie_fundo", "ativo_hoje", "fundamento_app"):
+            with engine.begin() as conn:
+                conn.execute(sa.text(f"REFRESH MATERIALIZED VIEW mercado.{visao}"))
         print(f"séries ajustadas recalculadas em {time.monotonic() - inicio:.0f} s.", flush=True)
 
     def serie_ajustada() -> None:
