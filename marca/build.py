@@ -7,7 +7,7 @@ from urllib.parse import quote
 from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TOKENS = os.path.join(ROOT, "lib", "core", "design_tokens.dart")
+TOKENS = os.path.join(ROOT, "mobile", "lib", "core", "design_tokens.dart")
 
 GLYPH_VIEWBOX = 100.0
 GLYPH_EIXO = [
@@ -47,7 +47,6 @@ VARIANTES = {
     "trend": ([GLYPH_LEITURA], [], GLYPH_SERIE),
 }
 
-REPO = os.path.dirname(ROOT)
 PORTAL = "fiance-dados/dadosapi/paginas/portal.html"
 CONSOLE = "fiance-dados/dadosapi/paginas/console.html"
 PAINEL_CSS = "fiance-trend/frontend/src/estilo.css"
@@ -83,7 +82,7 @@ ADAPTIVE_GLYPH_RATIO = 0.42
 SS = 4
 
 
-BRAND_DIR = "assets/brand"
+BRAND_DIR = "marca/kit"
 
 
 _COR = re.compile(
@@ -223,7 +222,7 @@ def symbol_markup(fg, ground, variante="app", pinta=_atributo):
 
 
 def cores_da_folha(rel, papel):
-    with io.open(os.path.join(REPO, rel), encoding="utf-8") as fh:
+    with io.open(os.path.join(ROOT, rel), encoding="utf-8") as fh:
         achados = re.findall(re.escape(papel) + r":\s*(#[0-9A-Fa-f]{6})", fh.read())
     if len(achados) < 2:
         raise SystemExit("%s nao declara %s nos dois temas" % (rel, papel))
@@ -270,7 +269,7 @@ def _bloco(texto, nome, conteudo, rel):
 
 
 def pagina(rel, variante, destaque, chao):
-    with io.open(os.path.join(REPO, rel), encoding="utf-8") as fh:
+    with io.open(os.path.join(ROOT, rel), encoding="utf-8") as fh:
         texto = fh.read()
     icone = '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%s">' % (
         quote(favicon(variante, rel, destaque, chao).strip())
@@ -289,7 +288,7 @@ def simbolo_tsx(variante, destaque, chao):
         a, b = attr.split("-")
         svg = svg.replace(attr + "=", a + b.capitalize() + "=")
     return (
-        "// Gerado por mobile/tool/build_icons.py; não edite à mão.\n"
+        "// Gerado por marca/build.py; não edite à mão.\n"
         "export default function Simbolo() {\n"
         "  return (\n    %s\n  );\n}\n"
     ) % svg
@@ -298,12 +297,10 @@ def simbolo_tsx(variante, destaque, chao):
 def superficies():
     out = {}
     for rel, (variante, destaque, chao) in PAGINAS.items():
-        out[os.path.join("..", rel)] = pagina(rel, variante, destaque, chao)
+        out[rel] = pagina(rel, variante, destaque, chao)
     variante, destaque, chao = PAINEL
-    out[os.path.join("..", PAINEL_FAVICON)] = favicon(
-        variante, PAINEL_CSS, destaque, chao
-    )
-    out[os.path.join("..", PAINEL_SIMBOLO)] = simbolo_tsx(variante, destaque, chao)
+    out[PAINEL_FAVICON] = favicon(variante, PAINEL_CSS, destaque, chao)
+    out[PAINEL_SIMBOLO] = simbolo_tsx(variante, destaque, chao)
     return out
 
 
@@ -457,9 +454,9 @@ def brand_files(light, dark, on_brand_hex, ground_hex):
 
 def check_derived(brand_hex):
     targets = [
-        ("pubspec.yaml", 'adaptive_icon_background: "%s"' % brand_hex),
+        ("mobile/pubspec.yaml", 'adaptive_icon_background: "%s"' % brand_hex),
         (
-            "android/app/src/main/res/values/colors.xml",
+            "mobile/android/app/src/main/res/values/colors.xml",
             '<color name="ic_launcher_background">%s</color>' % brand_hex,
         ),
     ]
@@ -489,7 +486,7 @@ def check(kit):
         raise SystemExit(
             "marca fora do gerador:\n  "
             + "\n  ".join(bad)
-            + "\nRode: python tool/build_icons.py"
+            + "\nRode: python marca/build.py"
         )
     print("conferido: %d arquivos da marca" % len(kit))
 
@@ -520,12 +517,12 @@ def main():
 
     write_png(
         render(1024, brand, on_brand, ground, rounded=False),
-        "assets/brand/icon.png",
+        "mobile/assets/brand/icon.png",
         flatten=brand,
     )
     write_png(
         render(1024, None, on_brand, ground, ratio=ADAPTIVE_GLYPH_RATIO),
-        "assets/brand/icon_foreground.png",
+        "mobile/assets/brand/icon_foreground.png",
     )
     check_derived(brand_hex)
 

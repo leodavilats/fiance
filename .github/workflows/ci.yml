@@ -13,9 +13,6 @@ jobs:
   marca:
     name: Marca (app, dados e trend)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile
     steps:
       - uses: actions/checkout@v4
 
@@ -29,7 +26,7 @@ jobs:
       # O launcher ja carregou a marca antiga por uma versao inteira: era escrito a mao e
       # ninguem o regerava quando a cor mudava.
       - name: Verificar marca (app, portal e console da dados, painel trend)
-        run: python tool/build_icons.py --check
+        run: python marca/build.py --check
 
   documentacao:
     name: Documentação (links)

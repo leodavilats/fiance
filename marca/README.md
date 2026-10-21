@@ -1,8 +1,8 @@
 # Marca fiance
 
-Mora dentro do `mobile/` porque é daqui que o `flutter_launcher_icons` lê o ícone do app. O mesmo
-gerador desenha a marca das outras duas partes com cara própria: a API de dados (`fiance-dados`) e o
-laboratório (`fiance-trend`).
+A marca das partes do fiance com cara pública: o app, a API de dados (`fiance-dados`) e o
+laboratório (`fiance-trend`). Mora na raiz porque não é de nenhuma delas: um gerador só desenha as
+três e escreve em cada uma o que ela consome.
 
 Um eixo com dois traços de comprimentos diferentes (medir, comparar), a leitura solta à direita e um
 chão que corre de borda a borda. O F é o que sobra de um instrumento de medição — não é um F metido
@@ -31,11 +31,11 @@ guarda paleta própria.
 ## Estes arquivos são gerados
 
 ```bash
-cd mobile && python tool/build_icons.py          # escreve; requer Pillow
-cd mobile && python tool/build_icons.py --check  # roda no CI
+python marca/build.py          # escreve; requer Pillow
+python marca/build.py --check  # roda no CI, job `marca`
 ```
 
-Não edite nada aqui à mão — o `--check` reprova, e com razão: o mesmo desenho vira ícone de
+Não edite à mão nada do que ele escreve — o `--check` reprova, e com razão: o mesmo desenho vira ícone de
 aplicativo Android/iOS e símbolo do produto. Duas cópias da geometria viram duas marcas em duas
 semanas. Para mudar a marca, mexa em `GLYPH_EIXO` / `GLYPH_LEITURA` / `GLYPH_CHAO` no gerador.
 
@@ -43,9 +43,9 @@ O gerador escreve estes arquivos:
 
 | Arquivo | O quê | Quem consome |
 |---|---|---|
-| `icon.png` | ícone do app | `pubspec.yaml` → `flutter_launcher_icons.image_path` |
-| `icon_foreground.png` | camada de frente do adaptive icon Android | idem → `adaptive_icon_foreground` |
-| `fiance-*.svg` | kit de referência (símbolo, assinatura, logotipo; `fiance-dados-*` e `fiance-trend-*` para as outras partes) | ninguém em runtime — é material de designer |
+| `mobile/assets/brand/icon.png` | ícone do app | `mobile/pubspec.yaml` → `flutter_launcher_icons.image_path` |
+| `mobile/assets/brand/icon_foreground.png` | camada de frente do adaptive icon Android | idem → `adaptive_icon_foreground` |
+| `marca/kit/fiance-*.svg` | kit de referência (símbolo, assinatura, logotipo; `fiance-dados-*` e `fiance-trend-*` para as outras partes) | ninguém em runtime — é material de designer |
 | `fiance-dados/dadosapi/paginas/portal.html` e `console.html`, entre `<!-- marca -->` e `<!-- favicon -->` | símbolo da dados no cabeçalho, que segue o tema da página, e o favicon | a API de dados |
 | `fiance-trend/frontend/src/Simbolo.tsx` e `fiance-trend/frontend/public/favicon.svg` | símbolo da trend na barra lateral, e o favicon | o painel |
 
@@ -58,6 +58,8 @@ cd mobile && dart run flutter_launcher_icons
 ```
 
 ## O kit
+
+Em `kit/`.
 
 | Arquivo | Uso |
 |---|---|

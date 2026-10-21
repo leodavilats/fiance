@@ -125,7 +125,7 @@ cd fiance-dados && python -m ruff format --check dadosapi tests migrations
 cd fiance-trend/frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
-cd mobile  && python tool/build_icons.py --check
+python marca/build.py --check                      # requer Pillow
 ```
 
 Três avisos que já custaram tempo, detalhados em
