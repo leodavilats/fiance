@@ -190,7 +190,6 @@ pre .c { color: var(--tinta-3); }
 .planos thead th:first-child { width: 28%; }
 .planos .nome { font: 500 26px/1 var(--serifa); display: block; color: var(--tinta); }
 .planos .para { display: block; font-size: 13.5px; color: var(--tinta-3); margin: 8px 0 18px; min-height: 2.8em; line-height: 1.4; }
-.planos .apartir { display: block; font: 400 13px var(--sans); color: var(--tinta-3); margin-bottom: 4px; }
 .planos .preco { display: block; font: 500 34px/1 var(--serifa); color: var(--tinta); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; }
 .planos .preco small { font: 400 14px var(--sans); color: var(--tinta-3); letter-spacing: 0; }
 .planos .anual { display: block; font-size: 13.5px; color: var(--tinta-3); margin-top: 8px; }
@@ -285,7 +284,6 @@ footer .marca { display: inline-flex; margin-bottom: 16px; font-size: 19px; }
   .planos .nome { font-size: 20px; }
   .planos .para { display: none; }
   .planos .preco { font-size: 22px; white-space: normal; margin-top: 10px; }
-  .planos .apartir { margin-top: 10px; margin-bottom: -6px; font-size: 12px; }
   .planos .preco small { display: block; font-size: 12.5px; margin-top: 4px; }
   .planos .anual { font-size: 12.5px; }
   .planos thead th:first-child { width: 31%; }
@@ -524,6 +522,7 @@ r.json()["proximo"]           <span class="c"># cursor da próxima página, ou N
       <p>Uma base que esconde a própria lacuna faz o teste errar em silêncio. Estas são as conhecidas.</p>
     </div>
     <ul class="lacunas">
+      <li><b>A base em arquivo</b>O acesso é pela API, consulta a consulta; a base não é entregue para download.</li>
       <li><b>Cotação ao longo do pregão</b>O dado é do fechamento, atualizado à noite nos dias úteis.</li>
       <li><b>Proventos de ETF e BDR antes de outubro de 2025</b>Nem a data de pagamento deles antes disso.</li>
       <li><b>Rendimento de FII anterior a outubro de 2025</b>Estimado pelo informe da CVM; só vem quando pedido, e marcado como estimado.</li>
@@ -772,13 +771,11 @@ const reaisInteiros = (c) => "R$ " + inteiro.format(Math.round(c / 100));
 const PARA_QUEM = {
   essencial: "Para acompanhar carteira e preço recente",
   pro: "Para testar estratégia com o histórico inteiro",
-  quant: "Para uso intenso e comercial interno, sob contrato",
 };
 const RECURSOS = [
   ["serie", "Série ajustada com retorno total"],
   ["ponto_no_tempo", "Balanço como se sabia na data"],
   ["informes", "Informe mensal de FII"],
-  ["exportacao", "Exportação da base, sob contrato"],
 ];
 
 function marca(incluido) {
@@ -801,12 +798,10 @@ function mostrarPlanos(resposta) {
     const th = html("th", destaque(p));
     th.scope = "col";
     th.append(html("span", "nome", p.nome), html("span", "para", PARA_QUEM[p.codigo] || p.descricao || ""));
-    const apartir = html("span", "apartir", "a partir de");
-    if (p.preco_anual_centavos) apartir.style.visibility = "hidden";
-    th.append(apartir);
     const preco = html("span", "preco", reaisInteiros(p.preco_mensal_centavos));
     preco.append(html("small", "", " /mês"));
-    th.append(preco, html("span", "anual", p.preco_anual_centavos ? `ou ${reaisInteiros(p.preco_anual_centavos)} por ano` : "sob contrato"));
+    th.append(preco);
+    if (p.preco_anual_centavos) th.append(html("span", "anual", `ou ${reaisInteiros(p.preco_anual_centavos)} por ano`));
     cabeca.appendChild(th);
   }
   const linha = (rotulo, celula) => {

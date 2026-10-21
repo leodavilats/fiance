@@ -437,7 +437,7 @@ function el(tag, props = {}, ...filhos) {
 function preencher(alvo, ...filhos) {
   alvo.replaceChildren(...filhos.filter((f) => f !== null && f !== undefined && f !== false));
 }
-const RECURSO = { serie: "série ajustada", ponto_no_tempo: "balanço como se sabia na data", informes: "informe de FII", exportacao: "exportação" };
+const RECURSO = { serie: "série ajustada", ponto_no_tempo: "balanço como se sabia na data", informes: "informe de FII" };
 function dataCurta(texto) {
   if (!texto) return "—";
   const d = new Date(texto.length === 10 ? texto + "T12:00:00" : texto);

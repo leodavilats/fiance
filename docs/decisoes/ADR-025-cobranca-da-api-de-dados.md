@@ -1,6 +1,6 @@
 # ADR-025 — A API de dados é paga, sem plano gratuito, em três degraus
 
-**Status:** ACEITO
+**Status:** SUBSTITUÍDO EM PARTE por [ADR-030](ADR-030-sem-exportacao-dois-planos.md) — o Quant e a exportação
 **Data:** 2026-10-14
 **Decidido por:** autor do projeto
 

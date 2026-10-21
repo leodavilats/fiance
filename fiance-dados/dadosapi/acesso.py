@@ -19,7 +19,6 @@ NOME_DO_RECURSO = {
     "serie": "a série ajustada",
     "ponto_no_tempo": "o balanço como se sabia na data (sabido_em)",
     "informes": "o informe mensal de FII",
-    "exportacao": "a exportação da base",
 }
 
 

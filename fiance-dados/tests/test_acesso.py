@@ -188,7 +188,7 @@ def test_conta_paga_criada_com_pago_ate_ja_entra(cliente):
         json={
             "email": "contrato@teste.com",
             "nome": "C",
-            "plano": "quant",
+            "plano": "pro",
             "pago_ate": "2099-01-01",
         },
         headers=ADMIN,

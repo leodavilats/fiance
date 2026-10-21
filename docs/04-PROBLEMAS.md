@@ -122,11 +122,13 @@ e no laboratório. O disjuntor protege contra queda, não contra descontinuaçã
 
 ## API de dados
 
-### O Quant anuncia uma exportação que não existe
+### O limite do Pro permite copiar a base pela API
 
-O plano `quant` tem o recurso `exportacao` (migração `0002_planos_pagos`), e o portal o oferece
-("Exportação da base, sob contrato"), mas nenhuma rota o exige nem o entrega. Construir a rota, ou
-tirar o recurso do plano e da página, antes do primeiro contrato.
+**Bloqueia só a fase pública.** A base não é entregue em arquivo
+([ADR-030](decisoes/ADR-030-sem-exportacao-dois-planos.md)), mas o Pro dá 30 mil chamadas por dia,
+com páginas de até 5.000 linhas: o histórico de cotações de todos os papéis cabe em poucas horas.
+Antes de abrir a terceiros, calibrar limite por dia e tamanho de página para quem testa estratégia,
+e não para quem espelha a base, e proibir redistribuição nos termos de uso.
 
 ### Abrir a terceiros espera licença e verificação de e-mail
 

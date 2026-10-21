@@ -37,11 +37,12 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [022](ADR-022-dados-de-mercado-coletados-em-lote.md) | Dados de mercado coletados em lote, por um job dono do próprio schema | `ACEITO` | 2026-10-09, aceita em 2026-10-12 |
 | [023](ADR-023-fase-pessoal-primeiro.md) | Fase pessoal primeiro; público depois | `ACEITO` | 2026-10-12 |
 | [024](ADR-024-api-de-dados.md) | A base de mercado vira um serviço de dados, separado do laboratório | `ACEITO` | 2026-10-14 |
-| [025](ADR-025-cobranca-da-api-de-dados.md) | A API de dados é paga, sem plano gratuito, em três degraus | `ACEITO` | 2026-10-14 |
+| [025](ADR-025-cobranca-da-api-de-dados.md) | A API de dados é paga, sem plano gratuito, em três degraus | `SUBSTITUÍDO EM PARTE` por 030 | 2026-10-14 |
 | [026](ADR-026-confirmacao-do-evento-pelo-tamanho.md) | O preço confirma o evento na medida do tamanho dele | `ACEITO` | 2026-10-18 |
 | [027](ADR-027-caixa-de-avisos-guardada.md) | Os avisos são guardados numa caixa, com lido e não lido | `ACEITO` | 2026-10-18 |
 | [028](ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md) | A taxa exigida de ação sai do juro real do Tesouro | `ACEITO` | 2026-10-19 |
 | [029](ADR-029-documentacao-por-parte.md) | A documentação se organiza por parte, e o app deixa de ser o eixo | `ACEITO` | 2026-10-21 |
+| [030](ADR-030-sem-exportacao-dois-planos.md) | A base não é entregue em arquivo, e a API de dados fica com dois planos | `ACEITO` | 2026-10-21 |
 
 ---
 
@@ -86,8 +87,7 @@ datada, e a ADR continua como foi escrita.
   14 (003) e o "FII de papel" (014) não estão mais abertos.
 - **022 e 024** — o backend não lê o banco de mercado: lê pela `fiance-dados`, com a chave do plano
   `interno`. O "passo seguinte" da 024 já foi dado.
-- **025** — o Quant não tem anual, e a exportação que ele anuncia não tem rota
-  ([04-PROBLEMAS](../04-PROBLEMAS.md#api-de-dados)).
+- **025** — o Quant e a exportação saíram pela [ADR-030](ADR-030-sem-exportacao-dois-planos.md).
 
 ---
 

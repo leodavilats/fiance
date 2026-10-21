@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 import sqlalchemy as sa
 
-from tests.conftest import criar_conta
+from dadosapi import acesso
+from tests.conftest import TOKEN, criar_conta
 
 
 def _dados(cliente, rota: str, chave: dict, **parametros):
@@ -145,9 +149,22 @@ def test_plano_pago_sem_pagamento_nao_entra(cliente):
 def test_planos_publicos_sem_gratuito_nem_interno(cliente):
     planos = cliente.get("/v1/planos").json()
 
-    assert [p["codigo"] for p in planos["dados"]] == ["essencial", "pro", "quant"]
+    assert [p["codigo"] for p in planos["dados"]] == ["essencial", "pro"]
     assert planos["cobranca_aberta"] is False
     assert all(p["preco_mensal_centavos"] for p in planos["dados"]), "nada gratuito (ADR-025)"
+
+
+def test_todo_recurso_de_plano_tem_rota_que_o_exige(cliente):
+    planos = cliente.get("/admin/planos", headers={"X-Admin-Token": TOKEN}).json()
+    oferecidos = {r for p in planos for r in p["recursos"]}
+    fonte = (Path(acesso.__file__).parent / "app.py").read_text(encoding="utf-8")
+    exigidos = set(re.findall(r'exigir\(a, "(\w+)"\)', fonte))
+
+    assert oferecidos <= exigidos, (
+        f"plano oferece {sorted(oferecidos - exigidos)} e nenhuma rota exige: o Quant prometeu "
+        "uma exportação que não existia (ADR-030)"
+    )
+    assert exigidos <= set(acesso.NOME_DO_RECURSO), "recurso exigido sem nome para a recusa 403"
 
 
 def test_vitrine_traz_os_numeros_da_base(cliente):

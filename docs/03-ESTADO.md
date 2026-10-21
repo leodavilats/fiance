@@ -248,7 +248,7 @@ O que o `data-job/` coleta e entrega no schema `mercado`. Como cada dado é trat
 
 | Item | Estado | O quê |
 |---|---|---|
-| API de dados (`fiance-dados/`) | `[IMPLEMENTADO]` | Contas por convite, chaves com hash, planos com limite por minuto e por dia, histórico por plano, uso por chave e por dia, rotas `/v1` de ativos, cotação, série ajustada, proventos, eventos, demonstrações como se sabia na data, informe de FII, BCB e Tesouro; administração em `/admin`, portal em `/` e console em `/console`. Planos Essencial, Pro e Quant, sem gratuito; cobrança pelo Asaas implementada e desligada (`COBRANCA_ATIVA`) — [ADR-024](decisoes/ADR-024-api-de-dados.md), [ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md) |
+| API de dados (`fiance-dados/`) | `[IMPLEMENTADO]` | Contas por convite, chaves com hash, planos com limite por minuto e por dia, histórico por plano, uso por chave e por dia, rotas `/v1` de ativos, cotação, série ajustada, proventos, eventos, demonstrações como se sabia na data, informe de FII, BCB e Tesouro; administração em `/admin`, portal em `/` e console em `/console`. Planos Essencial e Pro, sem gratuito e sem exportação da base; cobrança pelo Asaas implementada e desligada (`COBRANCA_ATIVA`) — [ADR-024](decisoes/ADR-024-api-de-dados.md), [ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md), [ADR-030](decisoes/ADR-030-sem-exportacao-dois-planos.md) |
 
 O que cada plano libera, e o que ainda não tem rota, em [dados/](dados/README.md).
 

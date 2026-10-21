@@ -30,8 +30,8 @@ compromisso, e a base depende de endpoints da B3 sem contrato
 
 ## Modelo de negócio
 
-Assinatura mensal ou anual (o anual custa dez meses), **sem plano gratuito**. Os preços são
-hipótese.
+Assinatura mensal ou anual (o anual custa dez meses), **sem plano gratuito**, em dois planos
+públicos. Os preços são hipótese.
 
 | Plano | Por minuto | Por dia | Histórico | Chaves | Recursos além do básico | Por mês | Na página |
 |---|---|---|---|---|---|---|---|
@@ -39,15 +39,17 @@ hipótese.
 | `convidado` | 60 | 20.000 | inteiro | 3 | todos | — | não |
 | `essencial` | 30 | 5.000 | 730 dias | 2 | nenhum | R$ 49 | sim |
 | `pro` | 60 | 30.000 | inteiro | 5 | série ajustada, demonstração por data (`sabido_em`), informe de FII | R$ 149 | sim |
-| `quant` | 300 | 300.000 | inteiro | 20 | os do Pro e exportação | a partir de R$ 490, sem anual | sob contrato |
 
 **O básico** é tudo o que não é recurso: ativos, retratos, cotação, proventos, eventos, empresas,
 demonstrações sem `sabido_em`, indicadores e Tesouro — no Essencial, cortado em 730 dias.
 
 Os planos são dados, não código: tabela `acesso.plano`, semeada pelas migrações
-(`fiance-dados/migrations/`). Os recursos são `serie`, `ponto_no_tempo`, `informes` e `exportacao`
-(`dadosapi/acesso.py`). **A exportação não tem rota**: o Quant a anuncia, e nada a entrega — ver
-[04-PROBLEMAS](../04-PROBLEMAS.md#api-de-dados).
+(`fiance-dados/migrations/`). Os recursos são `serie`, `ponto_no_tempo` e `informes`
+(`dadosapi/acesso.py`), e um teste confere que cada um tem rota que o exige.
+
+**A base não é entregue em arquivo** ([ADR-030](../decisoes/ADR-030-sem-exportacao-dois-planos.md)):
+o acesso é pela API, consulta a consulta. Volume acima do Pro é contrato, por um plano não listado
+criado quando houver o cliente.
 
 **Condição para cobrar de terceiros:** a resposta da B3 sobre a licença do dado, a leitura da ODbL
 da CVM, CNPJ e termos de uso. Até lá a cobrança fica desligada.
@@ -122,7 +124,7 @@ e `null` enviado de propósito limpa `pago_ate` e `observacao`. A lista traz a `
 Pelo Asaas (`dadosapi/cobranca.py`), **implementada e desligada** (`COBRANCA_ATIVA`). Desligada,
 `POST /v1/conta/assinatura` e o webhook respondem 503.
 
-Ligada: a página assina Essencial ou Pro (o Quant é sob contrato), o serviço cria cliente e
+Ligada: a página assina Essencial ou Pro, o serviço cria cliente e
 assinatura no Asaas e devolve o link de pagamento. O Asaas avisa em `POST /cobranca/asaas`, com o
 token no cabeçalho `asaas-access-token`; cada evento entra uma vez, o pagamento é **reconsultado**
 antes de liberar, e o titular sai da assinatura gravada aqui, nunca do corpo do webhook. O pagamento

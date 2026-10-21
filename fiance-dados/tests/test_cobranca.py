@@ -147,5 +147,5 @@ def test_admin_cria_conta_paga_e_marca_pagamento(cliente):
     )
 
     assert cliente.get("/v1/ativos", headers=chave).status_code == 200, (
-        "contrato do Quant e pagamento por fora entram pela administração"
+        "contrato e pagamento por fora entram pela administração"
     )
