@@ -1,7 +1,8 @@
 # Marca fiance
 
-Mora dentro do `mobile/` porque o aplicativo é o único cliente da marca: é daqui que o
-`flutter_launcher_icons` lê o ícone, e é aqui que o material de referência do designer fica.
+Mora dentro do `mobile/` porque é daqui que o `flutter_launcher_icons` lê o ícone do app. O mesmo
+gerador desenha a marca das outras duas partes com cara própria: a API de dados (`fiance-dados`) e o
+laboratório (`fiance-trend`).
 
 Um eixo com dois traços de comprimentos diferentes (medir, comparar), a leitura solta à direita e um
 chão que corre de borda a borda. O F é o que sobra de um instrumento de medição — não é um F metido
@@ -10,6 +11,22 @@ empresa.
 
 **O chão fica descolado da haste de propósito.** Encostado, ele vira o terceiro braço e a marca lê
 **E**. Se alguém "consertar" esse vão, quebrou a marca.
+
+## A família
+
+O F, a haste e os dois braços são os mesmos nas três partes. Muda o que está em volta, e a cor:
+
+| Parte | Leitura (à direita) | Chão (embaixo) | Cor de destaque |
+|---|---|---|---|
+| **app** | um quadrado | uma barra | `brand` de `design_tokens.dart` |
+| **dados** | grade 2 × 2 — registros | três linhas — uma tabela | `--destaque` do portal |
+| **trend** | um quadrado | uma série que oscila e **termina nivelada** | `--destaque` do painel |
+
+A série da trend não sobe de propósito: o laboratório mediu que tendência não antecipou retorno, e
+uma marca subindo prometeria o que a pesquisa negou. Nas três, o chão fica descolado da haste.
+
+Cada parte usa a sua cor de destaque e o seu neutro, lidos da folha de estilo dela: o gerador não
+guarda paleta própria.
 
 ## Estes arquivos são gerados
 
@@ -28,7 +45,9 @@ O gerador escreve estes arquivos:
 |---|---|---|
 | `icon.png` | ícone do app | `pubspec.yaml` → `flutter_launcher_icons.image_path` |
 | `icon_foreground.png` | camada de frente do adaptive icon Android | idem → `adaptive_icon_foreground` |
-| `fiance-*.svg` | kit de referência (símbolo, assinatura, logotipo) | ninguém em runtime — é material de designer |
+| `fiance-*.svg` | kit de referência (símbolo, assinatura, logotipo; `fiance-dados-*` e `fiance-trend-*` para as outras partes) | ninguém em runtime — é material de designer |
+| `fiance-dados/dadosapi/paginas/portal.html` e `console.html`, entre `<!-- marca -->` e `<!-- favicon -->` | símbolo da dados no cabeçalho, que segue o tema da página, e o favicon | a API de dados |
+| `fiance-trend/frontend/src/Simbolo.tsx` e `fiance-trend/frontend/public/favicon.svg` | símbolo da trend na barra lateral, e o favicon | o painel |
 
 `icon.png`/`icon_foreground.png` não são asset empacotado no app: só o comando abaixo os lê, em
 build-time. O launcher nativo é um **segundo passo**, e sem ele os ícones do app ficam com o
@@ -43,6 +62,8 @@ cd mobile && dart run flutter_launcher_icons
 | Arquivo | Uso |
 |---|---|
 | `fiance-symbol.svg` · `-dark` · `-mono` | símbolo isolado |
+| `fiance-dados-symbol.svg` · `-dark` · `-mono` | símbolo da API de dados |
+| `fiance-trend-symbol.svg` · `-dark` · `-mono` | símbolo do laboratório |
 | `fiance-lockup-h.svg` · `-dark` · `-mono` | assinatura horizontal (símbolo + logotipo) |
 | `fiance-lockup-v.svg` · `-dark` | assinatura vertical |
 | `fiance-wordmark.svg` · `-dark` | logotipo isolado |
@@ -53,17 +74,18 @@ são `currentColor` — uma cor só, herdada de `color:` no elemento pai.
 
 ## Cor
 
-Tudo sai de `mobile/lib/core/design_tokens.dart`, que é onde a paleta existe — não há segunda cópia,
-e o gerador falha alto se um dos quatro papéis abaixo não estiver declarado nos dois temas.
+Tudo sai de onde a paleta já existe — `mobile/lib/core/design_tokens.dart` para o app, a folha de
+estilo de cada página para as outras partes —, e o gerador falha alto se um papel não estiver
+declarado nos dois temas. Os valores não são repetidos aqui: o gerador os imprime ao rodar.
 
-| Papel | Claro | Escuro | Sobre a marca |
-|---|---|---|---|
-| eixo e leitura | `brand #295D7C` | `brand #74ACC9` | `ink-on-brand #FFFFFF` |
-| chão | `ink-3 #4B5764` | `ink-3 #A0A6B1` | `#B4C6D1` |
-| logotipo | `ink-1 #1F2933` | `ink-1 #E8EAEE` | — |
+| Papel | App | Dados e trend |
+|---|---|---|
+| eixo e leitura | `brand`; `ink-on-brand` sobre a marca | `--destaque` |
+| chão | `ink-3`; sobre a marca, `ink-on-brand` puxado na direção de `brand` | `--tinta-3` no portal, `--suave` no console e no painel |
+| logotipo | `ink-1` | o texto da própria página |
 
-O chão é **neutro**, não um azul mais claro: ele é referência, e referência não julga. `#B4C6D1` é o
-único valor que não sai direto de um token — é `ink-on-brand` puxado 35% na direção de `brand`,
+O chão é **neutro**, não um azul mais claro: ele é referência, e referência não julga. O chão sobre a
+marca é o único valor que não sai direto de um token — é `ink-on-brand` puxado 35% na direção de `brand`,
 calculado pelo gerador, porque não existe papel "secundário sobre a marca" na fundação e
 inventar um criaria uma cor que nenhuma tela conhece.
 
@@ -71,6 +93,9 @@ Nenhuma cor de **estado** (`favorable`, `attention`, `adverse`, `indeterminate`)
 (`up`/`down`) entra na marca. Elas significam julgamento e aritmética dentro do produto; se o
 símbolo usasse uma delas, o verde passaria a querer dizer marca, lucro e veredito favorável ao mesmo
 tempo — que é exatamente o defeito que derrubou as classes de direção usadas como estado.
+
+O verde da dados não fere essa regra: é o destaque do portal, e não `favorable` do app, e o símbolo
+da dados nunca aparece dentro do app.
 
 ## O logotipo
 

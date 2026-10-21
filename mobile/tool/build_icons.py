@@ -2,6 +2,8 @@ import io
 import os
 import re
 import sys
+from urllib.parse import quote
+
 from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,6 +24,41 @@ GLYPH_EIXO = [
 ]
 GLYPH_LEITURA = (83, 6, 96, 19, 3)
 GLYPH_CHAO = (0, 87, 100, 95, 4)
+GLYPH_GRADE = [
+    (82, 6, 88, 12, 1.5),
+    (90, 6, 96, 12, 1.5),
+    (82, 14, 88, 20, 1.5),
+    (90, 14, 96, 20, 1.5),
+]
+GLYPH_LINHAS = [
+    (0, 86, 100, 89, 1.5),
+    (0, 91.5, 100, 94.5, 1.5),
+    (0, 97, 100, 100, 1.5),
+]
+GLYPH_SERIE = (
+    "M2 91C7 91 9 88.5 14 88.5S21 93.5 26 93.5S33 88.5 38 88.5"
+    "S45 93.5 50 93.5S57 88.5 62 88.5S69 91 74 91L98 91"
+)
+GLYPH_SERIE_TRACO = 3
+
+VARIANTES = {
+    "app": ([GLYPH_LEITURA], [GLYPH_CHAO], None),
+    "dados": (GLYPH_GRADE, GLYPH_LINHAS, None),
+    "trend": ([GLYPH_LEITURA], [], GLYPH_SERIE),
+}
+
+REPO = os.path.dirname(ROOT)
+PORTAL = "fiance-dados/dadosapi/paginas/portal.html"
+CONSOLE = "fiance-dados/dadosapi/paginas/console.html"
+PAINEL_CSS = "fiance-trend/frontend/src/estilo.css"
+PAINEL_FAVICON = "fiance-trend/frontend/public/favicon.svg"
+PAINEL_SIMBOLO = "fiance-trend/frontend/src/Simbolo.tsx"
+
+PAGINAS = {
+    PORTAL: ("dados", "--destaque", "--tinta-3"),
+    CONSOLE: ("dados", "--destaque", "--suave"),
+}
+PAINEL = ("trend", "--destaque", "--suave")
 
 GROUND_MIX = 0.65
 
@@ -152,29 +189,122 @@ def svg_doc(width, height, label, inner):
     ) % (width, height, width, height, label, label, inner)
 
 
-def symbol_markup(fg, ground):
-    x0, y0, x1, y1, r = GLYPH_LEITURA
-    cx0, cy0, cx1, cy1, cr = GLYPH_CHAO
-    return (
-        '<path d="M%sZ" fill="%s"/>'
-        '<rect x="%g" y="%g" width="%g" height="%g" rx="%g" fill="%s"/>'
-        '<rect x="%g" y="%g" width="%g" height="%g" rx="%g" fill="%s"/>'
-    ) % (
-        "L".join("%g %g" % p for p in GLYPH_EIXO),
-        fg,
+def _atributo(cor, prop):
+    return '%s="%s"' % (prop, cor)
+
+
+def _rect(spec, pintura):
+    x0, y0, x1, y1, r = spec
+    return '<rect x="%g" y="%g" width="%g" height="%g" rx="%g" %s/>' % (
         x0,
         y0,
         x1 - x0,
         y1 - y0,
         r,
-        fg,
-        cx0,
-        cy0,
-        cx1 - cx0,
-        cy1 - cy0,
-        cr,
-        ground,
+        pintura,
     )
+
+
+def symbol_markup(fg, ground, variante="app", pinta=_atributo):
+    leituras, chaos, serie = VARIANTES[variante]
+    partes = [
+        '<path d="M%sZ" %s/>'
+        % ("L".join("%g %g" % p for p in GLYPH_EIXO), pinta(fg, "fill"))
+    ]
+    partes += [_rect(spec, pinta(fg, "fill")) for spec in leituras]
+    partes += [_rect(spec, pinta(ground, "fill")) for spec in chaos]
+    if serie:
+        partes.append(
+            '<path d="%s" fill="none" stroke-width="%g" stroke-linecap="round" '
+            'stroke-linejoin="round" %s/>'
+            % (serie, GLYPH_SERIE_TRACO, pinta(ground, "stroke"))
+        )
+    return "".join(partes)
+
+
+def cores_da_folha(rel, papel):
+    with io.open(os.path.join(REPO, rel), encoding="utf-8") as fh:
+        achados = re.findall(re.escape(papel) + r":\s*(#[0-9A-Fa-f]{6})", fh.read())
+    if len(achados) < 2:
+        raise SystemExit("%s nao declara %s nos dois temas" % (rel, papel))
+    return achados[0].upper(), achados[1].upper()
+
+
+def favicon(variante, folha, destaque, chao):
+    (fg_c, fg_e), (chao_c, chao_e) = (
+        cores_da_folha(folha, destaque),
+        cores_da_folha(folha, chao),
+    )
+    classes = {("fg", "fill"): "f", ("chao", "fill"): "c", ("chao", "stroke"): "s"}
+    corpo = symbol_markup(
+        "fg", "chao", variante, lambda cor, prop: 'class="%s"' % classes[(cor, prop)]
+    )
+    estilo = (
+        ".f{fill:%s}.c{fill:%s}.s{stroke:%s}"
+        "@media (prefers-color-scheme:dark){.f{fill:%s}.c{fill:%s}.s{stroke:%s}}"
+    ) % (fg_c, chao_c, chao_c, fg_e, chao_e, chao_e)
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        "<style>%s</style>%s</svg>\n"
+    ) % (estilo, corpo)
+
+
+def simbolo_em_linha(variante, destaque, chao):
+    corpo = symbol_markup(
+        destaque,
+        chao,
+        variante,
+        lambda var, prop: 'style="%s:var(%s)"' % (prop, var),
+    )
+    return (
+        '<svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" '
+        'focusable="false">%s</svg>'
+    ) % corpo
+
+
+def _bloco(texto, nome, conteudo, rel):
+    padrao = re.compile(r"(<!-- %s -->)(.*?)(<!-- /%s -->)" % (nome, nome), re.S)
+    if not padrao.search(texto):
+        raise SystemExit("%s nao tem o bloco <!-- %s -->" % (rel, nome))
+    return padrao.sub(lambda m: m.group(1) + conteudo + m.group(3), texto)
+
+
+def pagina(rel, variante, destaque, chao):
+    with io.open(os.path.join(REPO, rel), encoding="utf-8") as fh:
+        texto = fh.read()
+    icone = '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%s">' % (
+        quote(favicon(variante, rel, destaque, chao).strip())
+    )
+    texto = _bloco(texto, "favicon", icone, rel)
+    return _bloco(texto, "marca", simbolo_em_linha(variante, destaque, chao), rel)
+
+
+def simbolo_tsx(variante, destaque, chao):
+    svg = simbolo_em_linha(variante, destaque, chao)
+    svg = re.sub(
+        r'style="(\w+):([^"]+)"', lambda m: 'style={{ %s: "%s" }}' % m.groups(), svg
+    )
+    svg = svg.replace('class="', 'className="')
+    for attr in ("stroke-width", "stroke-linecap", "stroke-linejoin"):
+        a, b = attr.split("-")
+        svg = svg.replace(attr + "=", a + b.capitalize() + "=")
+    return (
+        "// Gerado por mobile/tool/build_icons.py; não edite à mão.\n"
+        "export default function Simbolo() {\n"
+        "  return (\n    %s\n  );\n}\n"
+    ) % svg
+
+
+def superficies():
+    out = {}
+    for rel, (variante, destaque, chao) in PAGINAS.items():
+        out[os.path.join("..", rel)] = pagina(rel, variante, destaque, chao)
+    variante, destaque, chao = PAINEL
+    out[os.path.join("..", PAINEL_FAVICON)] = favicon(
+        variante, PAINEL_CSS, destaque, chao
+    )
+    out[os.path.join("..", PAINEL_SIMBOLO)] = simbolo_tsx(variante, destaque, chao)
+    return out
 
 
 def wordmark_markup():
@@ -208,6 +338,36 @@ def brand_files(light, dark, on_brand_hex, ground_hex):
         symbol_markup(*tints["dark"]),
     )
     add("symbol-mono", 100, 100, "simbolo monocromatico", symbol_markup(*mono))
+
+    for variante, folha, destaque, chao in (
+        ("dados", PORTAL, "--destaque", "--tinta-3"),
+        ("trend", PAINEL_CSS, "--destaque", "--suave"),
+    ):
+        (fg_c, fg_e), (chao_c, chao_e) = (
+            cores_da_folha(folha, destaque),
+            cores_da_folha(folha, chao),
+        )
+        add(
+            "%s-symbol" % variante,
+            100,
+            100,
+            "%s, simbolo" % variante,
+            symbol_markup(fg_c, chao_c, variante),
+        )
+        add(
+            "%s-symbol-dark" % variante,
+            100,
+            100,
+            "%s, simbolo em fundo escuro" % variante,
+            symbol_markup(fg_e, chao_e, variante),
+        )
+        add(
+            "%s-symbol-mono" % variante,
+            100,
+            100,
+            "%s, simbolo monocromatico" % variante,
+            symbol_markup(*mono, variante=variante),
+        )
 
     size, gap = 132, 46
 
@@ -331,7 +491,7 @@ def check(kit):
             + "\n  ".join(bad)
             + "\nRode: python tool/build_icons.py"
         )
-    print("conferido: %d arquivos em %s" % (len(kit), BRAND_DIR))
+    print("conferido: %d arquivos da marca" % len(kit))
 
 
 def main():
@@ -343,6 +503,7 @@ def main():
     ground = mix(on_brand, brand, GROUND_MIX)
     ground_hex = hexa(ground)
     kit = brand_files(color, palette["dark"], on_brand_hex, ground_hex)
+    kit.update(superficies())
 
     print("marca: brand=%s glifo=%s chao=%s" % (brand_hex, on_brand_hex, ground_hex))
 
@@ -355,7 +516,7 @@ def main():
         full = os.path.join(ROOT, rel)
         os.makedirs(os.path.dirname(full), exist_ok=True)
         io.open(full, "w", encoding="utf-8", newline="\n").write(body)
-    print("escrito %d arquivos em %s" % (len(kit), BRAND_DIR))
+    print("escrito %d arquivos da marca" % len(kit))
 
     write_png(
         render(1024, brand, on_brand, ground, rounded=False),

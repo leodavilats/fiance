@@ -306,7 +306,8 @@ duas vezes a mesma coisa.
 ## Marca
 
 O ícone do aplicativo é **gerado** da cor `brand`, por `cd mobile && python tool/build_icons.py`
-(requer Pillow). O CI confere com `--check`.
+(requer Pillow). O CI confere com `--check`. O mesmo gerador desenha a marca da API de dados e do
+laboratório — a família está no [README da marca](../../mobile/assets/brand/README.md).
 
 **O launcher nativo é um segundo passo:** `dart run flutter_launcher_icons`. Sem ele, os ícones ficam
 com a cor antiga mesmo com a fundação correta.

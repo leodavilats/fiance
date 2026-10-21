@@ -12,5 +12,8 @@ cd backend && python -m ruff format --check pesquisa api tests
 cd frontend && npm ci && npm run build && npm test
 ```
 
+- **A marca é gerada.** `frontend/src/Simbolo.tsx` e `frontend/public/favicon.svg` saem de
+  `mobile/tool/build_icons.py`; editados à mão, o CI reprova. O `--destaque` e o `--suave` de
+  `estilo.css` são a cor da marca: mudar um pede regerar.
 - **A calibração importa `app.*` do backend.** Sem as dependências do backend instaladas, a suíte
   daqui não roda. Mudar o backend pode quebrar esta suíte.

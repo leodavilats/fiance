@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>fiance dados — a bolsa brasileira, do jeito que aconteceu</title>
 <meta name="description" content="API de dados da B3 e da CVM desde 2005: cotações com as empresas que saíram da bolsa, série ajustada com eventos conferidos pelo preço e balanços como se sabia em cada data.">
+<!-- favicon --><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cstyle%3E.f%7Bfill%3A%230F8A70%7D.c%7Bfill%3A%236E675B%7D.s%7Bstroke%3A%236E675B%7D%40media%20%28prefers-color-scheme%3Adark%29%7B.f%7Bfill%3A%2336A989%7D.c%7Bfill%3A%239D9586%7D.s%7Bstroke%3A%239D9586%7D%7D%3C/style%3E%3Cpath%20d%3D%22M6%206L76%206L76%2019L19%2019L19%2041L56%2041L56%2054L19%2054L19%2079L6%2079Z%22%20class%3D%22f%22/%3E%3Crect%20x%3D%2282%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221.5%22%20class%3D%22f%22/%3E%3Crect%20x%3D%2290%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221.5%22%20class%3D%22f%22/%3E%3Crect%20x%3D%2282%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221.5%22%20class%3D%22f%22/%3E%3Crect%20x%3D%2290%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221.5%22%20class%3D%22f%22/%3E%3Crect%20x%3D%220%22%20y%3D%2286%22%20width%3D%22100%22%20height%3D%223%22%20rx%3D%221.5%22%20class%3D%22c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2291.5%22%20width%3D%22100%22%20height%3D%223%22%20rx%3D%221.5%22%20class%3D%22c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2297%22%20width%3D%22100%22%20height%3D%223%22%20rx%3D%221.5%22%20class%3D%22c%22/%3E%3C/svg%3E"><!-- /favicon -->
 <meta name="theme-color" content="#fbf8f1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#191714" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,7 +64,8 @@ figure { margin: 0; }
 /* topo */
 .topo { position: sticky; top: 0; z-index: 10; background: var(--papel); border-bottom: 1px solid var(--fio); }
 .topo .largura { display: flex; align-items: center; justify-content: space-between; gap: 20px; height: 62px; }
-.marca { font: 500 21px/1 var(--serifa); color: var(--tinta); text-decoration: none; letter-spacing: -0.01em; white-space: nowrap; }
+.marca { display: inline-flex; align-items: center; gap: 0.38em; font: 500 21px/1 var(--serifa); color: var(--tinta); text-decoration: none; letter-spacing: -0.01em; white-space: nowrap; }
+.marca .simbolo { width: 1.1em; height: 1.1em; flex: none; }
 .marca em { color: var(--destaque-tinta); }
 .topo nav { display: flex; align-items: center; gap: 26px; font-size: 15px; }
 .topo nav a { color: var(--tinta-2); text-decoration: none; white-space: nowrap; }
@@ -246,7 +248,7 @@ footer h2 { font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transfo
 footer ul { list-style: none; margin: 0; padding: 0; }
 footer li { margin-bottom: 9px; }
 footer a { color: var(--tinta-2); }
-footer .marca { display: inline-block; margin-bottom: 16px; font-size: 19px; }
+footer .marca { display: inline-flex; margin-bottom: 16px; font-size: 19px; }
 
 @media (max-width: 960px) {
   .abertura { grid-template-columns: 1fr; gap: 48px; }
@@ -311,7 +313,7 @@ footer .marca { display: inline-block; margin-bottom: 16px; font-size: 19px; }
 
 <header class="topo">
   <div class="largura">
-    <a class="marca" href="/">fiance <em>dados</em></a>
+    <a class="marca" href="/"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/></svg><!-- /marca -->fiance <em>dados</em></a>
     <nav aria-label="Principal">
       <a href="#dados" class="opcional">Dados</a>
       <a href="#planos">Planos</a>
@@ -586,7 +588,7 @@ r.json()["proximo"]           <span class="c"># cursor da próxima página, ou N
 <footer>
   <div class="largura">
     <div>
-      <a class="marca" href="/">fiance <em>dados</em></a>
+      <a class="marca" href="/"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/></svg><!-- /marca -->fiance <em>dados</em></a>
       <p>Fontes: B3 (COTAHIST, proventos e eventos); CVM, dados abertos sob a licença ODbL; Banco Central do Brasil (SGS); Tesouro Transparente. Organizado por fiance.</p>
       <p>Nada aqui é recomendação de investimento.</p>
     </div>

@@ -21,3 +21,6 @@ python -m ruff format --check dadosapi tests migrations
 - **A chave nunca é guardada, só o hash.**
 - **Rota `/admin` exige `DADOS_API_ADMIN_TOKEN`** e não aparece na documentação pública.
 - **Coluna nova exige migração Alembic.**
+- **A marca no portal e no console é gerada.** O que está entre `<!-- marca -->` e `<!-- favicon -->`
+  sai de `mobile/tool/build_icons.py`; editado à mão, o CI reprova. O `--destaque` e o neutro da
+  página (`--tinta-3` no portal, `--suave` no console) são a cor da marca: mudar um pede regerar.

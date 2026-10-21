@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import "./estilo.css";
+import Simbolo from "./Simbolo";
 import Alertas from "./telas/Alertas";
 import Ativos from "./telas/Ativos";
 import Caminho from "./telas/Caminho";
@@ -42,7 +43,10 @@ function Navegacao() {
   const { pathname } = useLocation();
   return (
     <aside className="lateral">
-      <strong className="marca">trend</strong>
+      <strong className="marca">
+        <Simbolo />
+        fiance <span>trend</span>
+      </strong>
       {GRUPOS.map((g) => (
         <nav key={g.titulo} aria-label={g.titulo}>
           <span className="grupo">{g.titulo}</span>

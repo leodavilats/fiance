@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<!-- favicon --><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cstyle%3E.f%7Bfill%3A%230B6B57%7D.c%7Bfill%3A%236E675B%7D.s%7Bstroke%3A%236E675B%7D%40media%20%28prefers-color-scheme%3Adark%29%7B.f%7Bfill%3A%235CC4A6%7D.c%7Bfill%3A%239D9586%7D.s%7Bstroke%3A%239D9586%7D%7D%3C/style%3E%3Cpath%20d%3D%22M6%206L76%206L76%2019L19%2019L19%2041L56%2041L56%2054L19%2054L19%2079L6%2079Z%22%20class%3D%22f%22/%3E%3Crect%20x%3D%2282%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221.5%22%20class%3D%22f%22/%3E%3Crect%20x%3D%2290%22%20y%3D%226%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221.5%22%20class%3D%22f%22/%3E%3Crect%20x%3D%2282%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221.5%22%20class%3D%22f%22/%3E%3Crect%20x%3D%2290%22%20y%3D%2214%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221.5%22%20class%3D%22f%22/%3E%3Crect%20x%3D%220%22%20y%3D%2286%22%20width%3D%22100%22%20height%3D%223%22%20rx%3D%221.5%22%20class%3D%22c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2291.5%22%20width%3D%22100%22%20height%3D%223%22%20rx%3D%221.5%22%20class%3D%22c%22/%3E%3Crect%20x%3D%220%22%20y%3D%2297%22%20width%3D%22100%22%20height%3D%223%22%20rx%3D%221.5%22%20class%3D%22c%22/%3E%3C/svg%3E"><!-- /favicon -->
 <title>Console — fiance dados</title>
 <style>
 :root {
@@ -37,7 +38,8 @@ code, .mono { font-family: var(--mono); font-size: 13px; }
 /* topo */
 .topo { position: sticky; top: 0; z-index: 5; background: var(--fundo); border-bottom: 1px solid var(--fio); }
 .topo-dentro { max-width: 1240px; margin: 0 auto; padding: 0 20px; height: 54px; display: flex; align-items: center; gap: 24px; }
-.marca { font: 600 16px Georgia, serif; white-space: nowrap; }
+.marca { display: inline-flex; align-items: center; gap: 7px; font: 600 16px Georgia, serif; white-space: nowrap; }
+.marca .simbolo { width: 18px; height: 18px; flex: none; }
 .marca span { color: var(--suave); font: 400 14px system-ui, sans-serif; margin-left: 6px; }
 .topo nav { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
 .topo nav a { color: var(--texto-2); text-decoration: none; padding: 6px 10px; border-radius: 4px; white-space: nowrap; }
@@ -198,7 +200,7 @@ dialog.pequeno { width: 460px; }
 <div id="tela-painel" class="escondido">
   <header class="topo">
     <div class="topo-dentro">
-      <span class="marca">fiance dados<span>console</span></span>
+      <span class="marca"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--suave)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--suave)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--suave)"/></svg><!-- /marca -->fiance dados<span>console</span></span>
       <nav aria-label="Seções">
         <a href="#visao">Visão geral</a>
         <a href="#contas">Contas</a>
