@@ -109,7 +109,9 @@ A `observacao` da conta é da administração: o `/v1/conta` não a devolve.
 ## Contas
 
 Conta nasce por convite, pela administração — no `/console` ou pela rota —, e já sai com a primeira
-chave. Quem tem conta gerencia as próprias chaves em `/v1/conta`.
+chave. Com a cobrança aberta, nasce também na assinatura, pelo portal
+([ADR-031](../decisoes/ADR-031-assinatura-cria-a-conta.md)). Quem tem conta gerencia as próprias
+chaves em `/v1/conta`.
 
 ```bash
 # criar conta (devolve a primeira chave) — planos: interno, convidado, essencial, pro, quant
@@ -132,10 +134,17 @@ e `null` enviado de propósito limpa `pago_ate` e `observacao`. A lista traz a `
 ## Cobrança
 
 Pelo Asaas (`dadosapi/cobranca.py`), **implementada e desligada** (`COBRANCA_ATIVA`). Desligada,
-`POST /v1/conta/assinatura` e o webhook respondem 503.
+`POST /v1/assinatura`, `POST /v1/conta/assinatura` e o webhook respondem 503.
 
 Ligada: a página assina Essencial ou Pro, o serviço cria cliente e
-assinatura no Asaas e devolve o link de pagamento. O Asaas avisa em `POST /cobranca/asaas`, com o
+assinatura no Asaas e devolve o link de pagamento. **Quem não tem conta assina pelo
+`POST /v1/assinatura`**, sem chave: nome, e-mail e CPF ou CNPJ criam a conta no plano escolhido, e
+a resposta traz a chave, uma vez só, e o link. A chave responde 402 até o pagamento ser confirmado.
+E-mail de conta existente recebe 409 e assina em "Minha conta"; cadastro que nunca pagou é
+retomado por quem assina de novo, e as chaves antigas caem, salvo se houver assinatura de até sete
+dias aguardando pagamento. Cinco cadastros por hora por endereço.
+
+Quem já tem chave assina pelo `POST /v1/conta/assinatura`. O Asaas avisa em `POST /cobranca/asaas`, com o
 token no cabeçalho `asaas-access-token`; cada evento entra uma vez, o pagamento é **reconsultado**
 antes de liberar, e o titular sai da assinatura gravada aqui, nunca do corpo do webhook. O pagamento
 confirmado leva `pago_ate` ao fim do ciclo. Evento gravado sem `resultado` caiu antes de aplicar, e

@@ -7,7 +7,7 @@ import pytest
 import sqlalchemy as sa
 from fastapi.testclient import TestClient
 
-from dadosapi import cobranca
+from dadosapi import app, cobranca
 from dadosapi.app import criar
 from dadosapi.config import Configuracao
 from tests.conftest import TOKEN, criar_conta
@@ -29,6 +29,8 @@ def asaas(pedidos):
         "pay_velho": {"id": "pay_velho", "status": "CONFIRMED", "subscription": "sub_velha", "dueDate": "2026-10-15"},
     }  # fmt: skip
 
+    criadas = []
+
     def responder(pedido: httpx.Request) -> httpx.Response:
         pedidos.append(pedido)
         rota = pedido.url.path
@@ -37,9 +39,13 @@ def asaas(pedidos):
         if rota == "/v3/customers":
             return httpx.Response(200, json={"id": "cus_1"})
         if rota == "/v3/subscriptions":
-            return httpx.Response(200, json={"id": "sub_1"})
-        if rota == "/v3/subscriptions/sub_1/payments":
-            return httpx.Response(200, json={"data": [{"invoiceUrl": "https://asaas/pagar/1"}]})
+            criadas.append(f"sub_{len(criadas) + 1}")
+            return httpx.Response(200, json={"id": criadas[-1]})
+        if rota.startswith("/v3/subscriptions/") and rota.endswith("/payments"):
+            numero = rota.split("/")[3].removeprefix("sub_")
+            return httpx.Response(
+                200, json={"data": [{"invoiceUrl": f"https://asaas/pagar/{numero}"}]}
+            )
         if rota.startswith("/v3/payments/"):
             return httpx.Response(200, json=pagamentos[rota.rsplit("/", 1)[1]])
         return httpx.Response(404)
@@ -198,6 +204,63 @@ def test_assinar_de_novo_cancela_a_anterior_e_ignora_o_pagamento_dela(
         "a cobrança atrasada do Essencial não pode devolver ao Essencial quem assinou o Pro"
     )
     assert com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["plano"] == "convidado"
+
+
+def _cadastro(email: str = "novo@teste.com") -> dict:
+    return {"plano": "pro", "nome": "Nova", "email": email, "cpf_cnpj": "12345678909"}
+
+
+def test_assinar_sem_conta_devolve_a_chave_que_so_vale_depois_do_pagamento(com_cobranca):
+    resposta = com_cobranca.post("/v1/assinatura", json=_cadastro())
+    dados = resposta.json()["dados"]
+    chave = {"Authorization": f"Bearer {dados['chave']}"}
+
+    antes = com_cobranca.get("/v1/ativos", headers=chave).status_code
+    com_cobranca.post(
+        "/cobranca/asaas",
+        json=_evento("evt_novo", "PAYMENT_CONFIRMED", "pay_1"),
+        headers={"asaas-access-token": WEBHOOK},
+    )
+    depois = com_cobranca.get("/v1/ativos", headers=chave).status_code
+
+    assert resposta.status_code == 201 and dados["pagar_em"] == "https://asaas/pagar/1"
+    assert (antes, depois) == (402, 200), "a chave sai na hora, e o pagamento é o que a libera"
+
+
+def test_assinar_sem_conta_nao_toma_o_email_de_quem_ja_tem_conta(com_cobranca, chave, pedidos):
+    resposta = com_cobranca.post("/v1/assinatura", json=_cadastro("EU@teste.com"))
+
+    assert resposta.status_code == 409 and "Minha conta" in resposta.json()["erro"]
+    assert pedidos == [], "nada vai ao Asaas quando o e-mail já é de uma conta"
+
+
+def test_cadastro_que_nunca_pagou_e_retomado_e_a_chave_antiga_cai(com_cobranca, bancos):
+    primeira = com_cobranca.post("/v1/assinatura", json=_cadastro()).json()["dados"]
+    aguardando = com_cobranca.post("/v1/assinatura", json=_cadastro())
+    with bancos.acesso.begin() as conn:
+        conn.execute(sa.text("UPDATE acesso.assinatura SET criada_em = now() - interval '8 days'"))
+
+    segunda = com_cobranca.post("/v1/assinatura", json=_cadastro())
+    antiga = {"Authorization": f"Bearer {primeira['chave']}"}
+
+    assert aguardando.status_code == 409, (
+        "assinatura recente aguardando pagamento segura o e-mail: outro não a derruba"
+    )
+    assert segunda.status_code == 201, "cadastro que nunca pagou não prende o e-mail para sempre"
+    assert com_cobranca.get("/v1/ativos", headers=antiga).status_code == 401
+
+
+def test_cadastro_tem_teto_por_endereco(com_cobranca):
+    respostas = [
+        com_cobranca.post("/v1/assinatura", json=_cadastro(f"n{i}@teste.com")).status_code
+        for i in range(app.CADASTROS_POR_HORA + 1)
+    ]
+
+    assert respostas == [201] * app.CADASTROS_POR_HORA + [429]
+
+
+def test_assinar_sem_conta_com_a_cobranca_desligada(cliente):
+    assert cliente.post("/v1/assinatura", json=_cadastro()).status_code == 503
 
 
 def test_recusa_do_asaas_volta_so_com_a_descricao():

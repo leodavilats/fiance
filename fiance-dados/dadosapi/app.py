@@ -24,6 +24,7 @@ LIMITE_PADRAO = 500
 LIMITE_MAXIMO = 5000
 MAXIMO_DE_RETRATOS = 50
 CHAVES_NOVAS_POR_DIA = 10
+CADASTROS_POR_HORA = 5
 EXEMPLO_DA_VITRINE = "HAPV3"
 INICIO_DA_BASE = date(2000, 1, 1)
 
@@ -65,6 +66,10 @@ class NovaAssinatura(BaseModel):
     ciclo: Literal["mensal", "anual"] = "mensal"
     nome: str = Field(min_length=2, max_length=200)
     cpf_cnpj: str = Field(min_length=11, max_length=18)
+
+
+class NovoAssinante(NovaAssinatura):
+    email: str = Field(max_length=200, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class NovaChave(BaseModel):
@@ -117,7 +122,8 @@ def criar(
     config = config or carregar()
     bancos = bancos or banco.criar(config.database_url)
     por_minuto = acesso.LimitePorMinuto()
-    tentativas = acesso.TentativasDeAdministracao()
+    tentativas = acesso.Tentativas()
+    cadastros = acesso.Tentativas(maximo=CADASTROS_POR_HORA, janela=3600.0)
     if asaas is None and config.cobranca_ativa:
         asaas = cobranca.Asaas.criar(
             config.asaas_url, config.asaas_chave, config.asaas_token_webhook
@@ -181,7 +187,7 @@ def criar(
         if not x_admin_token or not secrets.compare_digest(
             x_admin_token.encode(), config.admin_token.encode()
         ):
-            tentativas.falhou(origem)
+            tentativas.registrar(origem)
             raise HTTPException(401, "Rota de administração.")
 
     def _papel(conn, codigo: str) -> consultas.Papel:
@@ -241,6 +247,41 @@ def criar(
                 corpo.nome,
                 corpo.cpf_cnpj,
             )
+        )
+
+    @app.post(
+        "/v1/assinatura",
+        tags=["conta"],
+        status_code=201,
+        summary="Criar a conta e assinar: devolve a chave e o link de pagamento",
+        description=(
+            "Sem chave. A conta nasce com a chave, que aparece só nesta resposta e responde 402 "
+            "até o Asaas confirmar o pagamento."
+        ),
+    )
+    def assinar_sem_conta(corpo: NovoAssinante, request: Request) -> dict:
+        if asaas is None:
+            raise HTTPException(503, "A cobrança ainda não abriu. Fale com o contato do portal.")
+        origem = _origem(request, config.proxies_confiaveis)
+        if cadastros.bloqueado(origem):
+            raise HTTPException(429, "Cadastros demais deste endereço. Tente de novo em uma hora.")
+        cadastros.registrar(origem)
+        conta_id = acesso.conta_do_cadastro(
+            bancos.acesso, corpo.email.strip(), corpo.nome.strip(), corpo.plano
+        )
+        chave = acesso.emitir_chave(bancos.acesso, conta_id, "principal", CHAVES_NOVAS_POR_DIA)
+        assinatura = cobranca.criar_assinatura(
+            bancos.acesso,
+            asaas,
+            conta_id,
+            corpo.plano,
+            corpo.ciclo,
+            corpo.nome.strip(),
+            corpo.cpf_cnpj,
+        )
+        return _resposta(
+            {**assinatura, "chave": chave["chave"], "prefixo": chave["prefixo"]},
+            aviso="A chave só aparece agora, e passa a valer quando o pagamento for confirmado.",
         )
 
     @app.post("/cobranca/asaas", include_in_schema=False)

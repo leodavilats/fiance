@@ -43,6 +43,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [028](ADR-028-taxa-de-acao-pelo-juro-real-do-tesouro.md) | A taxa exigida de ação sai do juro real do Tesouro | `ACEITO` | 2026-10-19 |
 | [029](ADR-029-documentacao-por-parte.md) | A documentação se organiza por parte, e o app deixa de ser o eixo | `ACEITO` | 2026-10-21 |
 | [030](ADR-030-sem-exportacao-dois-planos.md) | A base não é entregue em arquivo, e a API de dados fica com dois planos | `ACEITO` | 2026-10-21 |
+| [031](ADR-031-assinatura-cria-a-conta.md) | Com a cobrança aberta, assinar cria a conta e entrega a chave na hora | `ACEITO` | 2026-10-23 |
 
 ---
 
@@ -88,6 +89,8 @@ datada, e a ADR continua como foi escrita.
 - **022 e 024** — o backend não lê o banco de mercado: lê pela `fiance-dados`, com a chave do plano
   `interno`. O "passo seguinte" da 024 já foi dado.
 - **025** — o Quant e a exportação saíram pela [ADR-030](ADR-030-sem-exportacao-dois-planos.md).
+- **024** — com a cobrança aberta, a conta também nasce na assinatura, pela
+  [ADR-031](ADR-031-assinatura-cria-a-conta.md); o convite continua para quem não paga.
 
 ---
 

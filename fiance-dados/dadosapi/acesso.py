@@ -15,6 +15,7 @@ TAMANHO_DO_PREFIXO = len(PREFIXO_DA_CHAVE) + 8
 _BRT = ZoneInfo("America/Sao_Paulo")
 TOLERANCIA_DE_PAGAMENTO = timedelta(days=3)
 AVISO_DE_VENCIMENTO = timedelta(days=7)
+CADASTRO_AGUARDANDO_PAGAMENTO = timedelta(days=7)
 DOMINIO_DA_FUMACA = "@fumaca.invalid"
 PAGO_ATE_DA_FUMACA = date(2099, 12, 31)
 NOME_DO_RECURSO = {
@@ -87,7 +88,7 @@ class LimitePorMinuto:
         return None
 
 
-class TentativasDeAdministracao:
+class Tentativas:
     def __init__(self, maximo: int = 10, janela: float = 900.0, relogio=time.monotonic):
         self._maximo, self._janela, self._relogio = maximo, janela, relogio
         self._falhas: dict[str, list[float]] = {}
@@ -103,7 +104,7 @@ class TentativasDeAdministracao:
                 self._falhas.pop(origem, None)
             return len(recentes) >= self._maximo
 
-    def falhou(self, origem: str) -> None:
+    def registrar(self, origem: str) -> None:
         with self._trava:
             self._falhas.setdefault(origem, []).append(self._relogio())
 
@@ -243,6 +244,66 @@ def criar_conta(
             },
         ).one()
     return dict(conta._mapping)
+
+
+_CONTA_DO_EMAIL = sa.text(
+    """
+    SELECT c.id, c.ativa, c.pago_ate, p.preco_mensal_centavos IS NOT NULL AS plano_pago,
+        EXISTS (
+            SELECT 1 FROM acesso.assinatura s WHERE s.conta_id = c.id AND (
+                s.situacao = 'ativa'
+                OR (s.situacao = 'aguardando' AND s.criada_em > now() - :pendente)
+            )
+        ) AS aguardando
+    FROM acesso.conta c JOIN acesso.plano p ON p.codigo = c.plano
+    WHERE lower(c.email) = lower(:e)
+    """
+)
+
+
+def conta_do_cadastro(engine: sa.Engine, email: str, nome: str, plano: str) -> int:
+    with engine.begin() as conn:
+        conta = conn.execute(
+            _CONTA_DO_EMAIL, {"e": email, "pendente": CADASTRO_AGUARDANDO_PAGAMENTO}
+        ).first()
+        if conta is None:
+            try:
+                with conn.begin_nested():
+                    return conn.execute(
+                        sa.text(
+                            "INSERT INTO acesso.conta (email, nome, plano, observacao) "
+                            "VALUES (:e, :n, :p, 'cadastro pelo portal') RETURNING id"
+                        ),
+                        {"e": email, "n": nome, "p": plano},
+                    ).scalar_one()
+            except sa.exc.IntegrityError:
+                raise SemAcesso(
+                    409, "Esse e-mail acabou de ser cadastrado. Tente de novo."
+                ) from None
+        if not conta.ativa or not conta.plano_pago or conta.pago_ate is not None:
+            raise SemAcesso(
+                409,
+                "Já existe uma conta com esse e-mail. Entre com a sua chave em Minha conta para "
+                "assinar.",
+            )
+        if conta.aguardando:
+            raise SemAcesso(
+                409,
+                "Esse e-mail tem uma assinatura aguardando pagamento. Use o link que recebeu, ou "
+                "fale com o contato do portal.",
+            )
+        conn.execute(
+            sa.text(
+                "UPDATE acesso.chave SET revogada_em = now() "
+                "WHERE conta_id = :id AND revogada_em IS NULL"
+            ),
+            {"id": conta.id},
+        )
+        conn.execute(
+            sa.text("UPDATE acesso.conta SET nome = :n, plano = :p WHERE id = :id"),
+            {"n": nome, "p": plano, "id": conta.id},
+        )
+        return conta.id
 
 
 def emitir_chave(engine: sa.Engine, conta_id: int, nome: str, por_dia: int | None = None) -> dict:

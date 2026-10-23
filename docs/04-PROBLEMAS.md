@@ -130,11 +130,13 @@ com páginas de até 5.000 linhas: o histórico de cotações de todos os papéi
 Antes de abrir a terceiros, calibrar limite por dia e tamanho de página para quem testa estratégia,
 e não para quem espelha a base, e proibir redistribuição nos termos de uso.
 
-### Abrir a terceiros espera licença e verificação de e-mail
+### Abrir a terceiros espera licença, CNPJ e termos de uso
 
 **Bloqueia só a fase pública.** Cobrar espera a resposta da B3 sobre a licença do dado, a leitura da
-ODbL da CVM, CNPJ e termos de uso; cadastro aberto espera verificação de e-mail
+ODbL da CVM, CNPJ e termos de uso
 ([ADR-024](decisoes/ADR-024-api-de-dados.md), [ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md)).
+Com a cobrança aberta, assinar cria a conta, e o e-mail não é verificado: o pagamento é o que
+libera a chave ([ADR-031](decisoes/ADR-031-assinatura-cria-a-conta.md)).
 
 ---
 

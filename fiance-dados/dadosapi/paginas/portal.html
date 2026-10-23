@@ -239,6 +239,9 @@ pre .s { color: #8fd3bd; }
 .entrar { max-width: 460px; margin: 4vh auto 0; padding: 30px; }
 .entrar h1 { font-size: 24px; font-weight: 600; }
 .entrar > p { color: var(--tinta-2); margin: 8px 0 22px; }
+.entrar + .entrar { margin-top: 16px; }
+.entrar h2 { font-size: 19px; font-weight: 600; margin: 0; }
+.chave-nova p { margin: 10px 0 0; font-size: 14px; }
 label { display: block; font-size: 13.5px; color: var(--tinta-2); margin-bottom: 6px; font-weight: 500; }
 input, select { padding: 10px 12px; border: 1px solid var(--fio-forte); border-radius: 8px; background: var(--papel); color: var(--tinta); font: 15px var(--sans); width: 100%; min-width: 0; transition: border-color 150ms ease, box-shadow 150ms ease; }
 input:focus-visible, select:focus-visible { outline: none; border-color: var(--destaque); box-shadow: 0 0 0 3px var(--destaque-fundo); }
@@ -596,6 +599,23 @@ const { dados, proximo } = await r.json();</code></pre>
       </form>
       <p id="erro-conta" class="erro" role="alert"></p>
       <p class="discreto">A chave fica só nesta aba do navegador e some quando ela fecha. Ainda não tem uma? <a href="#planos">Veja os planos</a>.</p>
+    </div>
+
+    <div id="cadastro" class="painel entrar escondido">
+      <h2>Ainda não tem conta? Assine</h2>
+      <p>A conta e a chave saem na hora. A chave passa a funcionar quando o Asaas confirmar o pagamento.</p>
+      <form id="form-cadastro" class="assinar">
+        <div class="duas">
+          <div><label for="cadastro-plano">Plano</label><select id="cadastro-plano"></select></div>
+          <div><label for="cadastro-ciclo">Ciclo</label><select id="cadastro-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
+        </div>
+        <div><label for="cadastro-nome">Nome ou razão social</label><input id="cadastro-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
+        <div><label for="cadastro-email">E-mail</label><input id="cadastro-email" type="email" required maxlength="200" autocomplete="email"></div>
+        <div><label for="cadastro-doc">CPF ou CNPJ</label><input id="cadastro-doc" required minlength="11" maxlength="18" inputmode="numeric" autocomplete="off"></div>
+        <div><button class="botao destaque" type="submit" id="botao-cadastro">Assinar e gerar a chave</button></div>
+        <p id="erro-cadastro" class="erro" role="alert" style="margin:0"></p>
+      </form>
+      <div id="cadastro-feito" class="chave-nova escondido" role="status"></div>
     </div>
 
     <div id="painel-conta" class="escondido">
@@ -990,7 +1010,9 @@ function acaoDoPlano(resposta, p) {
   if (resposta.cobranca_aberta) {
     const a = html("a", estilo, `Assinar o ${p.nome}`);
     a.href = "#conta";
-    a.addEventListener("click", () => { $("assinar-plano").value = p.codigo; $("assinar-ciclo").value = ciclo; });
+    a.addEventListener("click", () => {
+      for (const prefixo of ["assinar", "cadastro"]) { $(`${prefixo}-plano`).value = p.codigo; $(`${prefixo}-ciclo`).value = ciclo; }
+    });
     return a;
   }
   const convite = botaoDeConvite(resposta, estilo);
@@ -1028,7 +1050,7 @@ function mostrarPlanos(resposta) {
   const convite = $("convite"), texto = $("convite-texto");
   convite.querySelectorAll("a").forEach((a) => a.remove());
   if (resposta.cobranca_aberta) {
-    texto.replaceChildren(html("b", "", "Para assinar, entre com a sua chave."), " A assinatura e o pagamento ficam em Minha conta.");
+    texto.replaceChildren(html("b", "", "Assine pelo plano."), " A conta e a chave saem na hora, e a chave passa a funcionar quando o pagamento for confirmado. Quem já tem chave assina em Minha conta.");
   } else if (botaoDeConvite(resposta, "botao")) {
     convite.appendChild(botaoDeConvite(resposta, "botao"));
     if (!$("acoes-abertura").querySelector("[data-convite]")) {
@@ -1118,12 +1140,21 @@ const NOME_RECURSO = { serie: "série ajustada", ponto_no_tempo: "balanço na da
 
 function preencherAssinatura() {
   const aberta = planosGuardados.cobranca_aberta;
+  const dentro = !$("painel-conta").classList.contains("escondido");
   $("cartao-assinar").classList.toggle("escondido", !aberta);
+  $("cadastro").classList.toggle("escondido", !aberta || dentro);
   if (!aberta) return;
-  const sel = $("assinar-plano");
-  const antes = sel.value;
-  sel.replaceChildren(...(planosGuardados.dados || []).map((p) => { const o = html("option", "", `${p.nome} · ${reaisInteiros(p.preco_mensal_centavos)}/mês`); o.value = p.codigo; return o; }));
-  if (antes) sel.value = antes;
+  for (const sel of [$("assinar-plano"), $("cadastro-plano")]) {
+    const antes = sel.value;
+    sel.replaceChildren(...(planosGuardados.dados || []).map((p) => { const o = html("option", "", `${p.nome} · ${reaisInteiros(p.preco_mensal_centavos)}/mês`); o.value = p.codigo; return o; }));
+    if (antes) sel.value = antes;
+  }
+}
+function botaoCopiar(texto) {
+  const copiar = html("button", "botao contorno pequeno", "Copiar");
+  copiar.type = "button";
+  copiar.onclick = async () => { try { await navigator.clipboard.writeText(texto); copiar.textContent = "Copiada"; } catch { copiar.textContent = "Selecione e copie"; } };
+  return copiar;
 }
 async function carregarConta(focar) {
   $("erro-conta").textContent = "";
@@ -1140,6 +1171,7 @@ async function carregarConta(focar) {
   }
   $("entrar").classList.add("escondido");
   $("painel-conta").classList.remove("escondido");
+  $("cadastro").classList.add("escondido");
   $("conta-nome").textContent = conta.nome;
   const [rotulo, tom] = SITUACAO[conta.situacao] || [conta.situacao, ""];
   $("conta-sub").replaceChildren(conta.email, html("span", `etiqueta ${tom}`, rotulo));
@@ -1201,11 +1233,8 @@ $("form-nova").onsubmit = async (evento) => {
   evento.preventDefault();
   try {
     const nova = (await chamar("POST", "/v1/conta/chaves", { nome: $("nome-nova").value.trim() })).dados;
-    const copiar = html("button", "botao contorno pequeno", "Copiar");
-    copiar.type = "button";
-    copiar.onclick = async () => { try { await navigator.clipboard.writeText(nova.chave); copiar.textContent = "Copiada"; } catch { copiar.textContent = "Selecione e copie"; } };
     const linha = html("div");
-    linha.append(html("code", "", nova.chave), copiar);
+    linha.append(html("code", "", nova.chave), botaoCopiar(nova.chave));
     $("chave-criada").replaceChildren(html("strong", "", "Chave nova — guarde agora, ela não aparece de novo:"), linha);
     $("chave-criada").classList.remove("escondido");
     $("nome-nova").value = "";
@@ -1235,7 +1264,55 @@ $("form-assinar").onsubmit = async (evento) => {
   } catch (e) { resultado.textContent = ""; $("erro-painel").textContent = e.message; }
   finally { botao.disabled = false; }
 };
-$("sair").onclick = () => { sessionStorage.removeItem(CHAVE); $("painel-conta").classList.add("escondido"); $("chave-criada").classList.add("escondido"); $("entrar").classList.remove("escondido"); $("chave").focus(); };
+$("form-cadastro").onsubmit = async (evento) => {
+  evento.preventDefault();
+  const botao = $("botao-cadastro"), erro = $("erro-cadastro");
+  botao.disabled = true;
+  erro.textContent = "";
+  let resposta;
+  try {
+    resposta = await fetch("/v1/assinatura", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plano: $("cadastro-plano").value, ciclo: $("cadastro-ciclo").value,
+        nome: $("cadastro-nome").value.trim(), email: $("cadastro-email").value.trim(),
+        cpf_cnpj: $("cadastro-doc").value.trim(),
+      }),
+    });
+  } catch {
+    erro.textContent = "Sem conexão com o servidor. Nada foi criado.";
+    botao.disabled = false;
+    return;
+  }
+  const json = await resposta.json().catch(() => ({}));
+  botao.disabled = false;
+  if (!resposta.ok) {
+    erro.textContent = json.erro || (Array.isArray(json.detail) ? "Confira o e-mail e o CPF ou CNPJ." : `Erro ${resposta.status}.`);
+    return;
+  }
+  const feito = json.dados, caixa = $("cadastro-feito");
+  const linha = html("div");
+  linha.append(html("code", "", feito.chave), botaoCopiar(feito.chave));
+  const pagar = html("p", "", "Ela passa a funcionar quando o pagamento for confirmado. ");
+  if (feito.pagar_em) {
+    const link = html("a", "", "Pagar no Asaas");
+    link.href = feito.pagar_em;
+    link.target = "_blank";
+    link.rel = "noopener";
+    pagar.append(link, ".");
+  } else {
+    pagar.append("O link de pagamento chega pelo e-mail.");
+  }
+  const entrarComEla = html("button", "botao contorno pequeno", "Entrar com esta chave");
+  entrarComEla.type = "button";
+  entrarComEla.style.marginTop = "12px";
+  entrarComEla.onclick = () => { sessionStorage.setItem(CHAVE, feito.chave); carregarConta(true); };
+  caixa.replaceChildren(html("strong", "", "Sua chave — guarde agora, ela não aparece de novo:"), linha, pagar, entrarComEla);
+  caixa.classList.remove("escondido");
+  $("form-cadastro").classList.add("escondido");
+};
+$("sair").onclick = () => { sessionStorage.removeItem(CHAVE); $("painel-conta").classList.add("escondido"); $("chave-criada").classList.add("escondido"); $("entrar").classList.remove("escondido"); preencherAssinatura(); $("chave").focus(); };
 
 mostrarTela(false);
 if (sessionStorage.getItem(CHAVE)) carregarConta();
