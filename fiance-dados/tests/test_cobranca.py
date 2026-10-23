@@ -26,11 +26,14 @@ def asaas(pedidos):
         "pay_1": {"id": "pay_1", "status": "CONFIRMED", "subscription": "sub_1", "dueDate": "2026-10-15"},
         "pay_x": {"id": "pay_x", "status": "CONFIRMED", "subscription": "sub_de_outro", "dueDate": "2026-10-15"},
         "pay_pendente": {"id": "pay_pendente", "status": "PENDING", "subscription": "sub_1", "dueDate": "2026-10-15"},
+        "pay_velho": {"id": "pay_velho", "status": "CONFIRMED", "subscription": "sub_velha", "dueDate": "2026-10-15"},
     }  # fmt: skip
 
     def responder(pedido: httpx.Request) -> httpx.Response:
         pedidos.append(pedido)
         rota = pedido.url.path
+        if pedido.method == "DELETE" and rota.startswith("/v3/subscriptions/"):
+            return httpx.Response(200, json={"deleted": True, "id": rota.rsplit("/", 1)[1]})
         if rota == "/v3/customers":
             return httpx.Response(200, json={"id": "cus_1"})
         if rota == "/v3/subscriptions":
@@ -162,6 +165,39 @@ def test_assinatura_tem_teto_por_dia(com_cobranca, chave, bancos, pedidos):
     assert resposta.status_code == 429 and pedidos == [], (
         "cada assinatura cria cliente e cobrança no Asaas"
     )
+
+
+def test_assinar_de_novo_cancela_a_anterior_e_ignora_o_pagamento_dela(
+    com_cobranca, chave, bancos, pedidos
+):
+    conta_id = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    with bancos.acesso.begin() as conn:
+        conn.execute(
+            sa.text(
+                "INSERT INTO acesso.assinatura (conta_id, plano, ciclo, asaas_cliente, "
+                "asaas_assinatura, situacao) VALUES (:c, 'essencial', 'mensal', 'cus', "
+                "'sub_velha', 'ativa')"
+            ),
+            {"c": conta_id},
+        )
+
+    nova = com_cobranca.post(
+        "/v1/conta/assinatura",
+        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        headers=chave,
+    )
+    pagamento_velho = com_cobranca.post(
+        "/cobranca/asaas",
+        json=_evento("evt_velho", "PAYMENT_CONFIRMED", "pay_velho"),
+        headers={"asaas-access-token": WEBHOOK},
+    )
+
+    assert nova.status_code == 201
+    assert ("DELETE", "/v3/subscriptions/sub_velha") in [(p.method, p.url.path) for p in pedidos]
+    assert pagamento_velho.json()["resultado"].startswith("ignorado: assinatura substituída"), (
+        "a cobrança atrasada do Essencial não pode devolver ao Essencial quem assinou o Pro"
+    )
+    assert com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["plano"] == "convidado"
 
 
 def test_recusa_do_asaas_volta_so_com_a_descricao():

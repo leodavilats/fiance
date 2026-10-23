@@ -126,14 +126,9 @@ e no laboratório. O disjuntor protege contra queda, não contra descontinuaçã
 
 A `DATABASE_URL` da `fiance-dados` é a do `postgres-mercado`, com o usuário dono do cluster. O
 `SET ROLE mercado_leitura` e a transação só de leitura (`dadosapi/banco.py`) a própria sessão
-desfaz, e a engine do schema `acesso` pode tudo. Falta um papel de login próprio, membro de
-`mercado_leitura` e dono só de `acesso`, com as migrações rodando por outra URL no pre-deploy.
-
-### Pagamento de assinatura antiga devolve a conta ao plano dela
-
-Quem assina o Pro tendo uma assinatura do Essencial ainda viva no Asaas volta ao Essencial quando a
-antiga cobrar (`dadosapi/cobranca.py`). Assinar de novo deveria cancelar a anterior no Asaas.
-**Bloqueia só a cobrança.**
+desfaz, e a engine do schema `acesso` pode tudo. O papel `dados_api` está pronto e testado
+(`fiance-dados/papel.sql`); falta aplicá-lo em produção, pelo passo a passo de
+[dados/](dados/README.md#papel-no-banco).
 
 ### O limite do Pro permite copiar a base pela API
 

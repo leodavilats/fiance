@@ -141,11 +141,15 @@ antes de liberar, e o titular sai da assinatura gravada aqui, nunca do corpo do 
 confirmado leva `pago_ate` ao fim do ciclo. Evento gravado sem `resultado` caiu antes de aplicar, e
 a reentrega do Asaas o aplica de novo. Uma conta abre no máximo três assinaturas por dia.
 
+**Assinar de novo cancela no Asaas a assinatura viva anterior**, que fica `substituida`; o que já foi
+pago vale até o `pago_ate`. Pagamento que ainda chegue de uma substituída não muda a conta: o evento
+fica com o resultado "ignorado: assinatura substituída … estornar", para o estorno à mão.
+
 ## Variáveis
 
 | Variável | Para quê |
 |---|---|
-| `DATABASE_URL` | `${{postgres-mercado.DATABASE_URL}}`. Lê `mercado` como `mercado_leitura` e escreve só no schema `acesso` |
+| `DATABASE_URL` | Hoje `${{postgres-mercado.DATABASE_URL}}`, o dono do cluster; o destino é o papel `dados_api` ([abaixo](#papel-no-banco)). Lê `mercado` como `mercado_leitura` e escreve só no schema `acesso` |
 | `DADOS_API_ADMIN_TOKEN` | Token das rotas `/admin`, 32 caracteres ou mais. **Falha ao subir sem ele.** Definido no painel do Railway, nunca no repositório |
 | `CONTATO_EMAIL` | Opcional. Com ele, o portal mostra "Pedir um convite" |
 | `PROXIES_CONFIAVEIS` | `1` por padrão: o proxy do Railway. Quantos endereços, da direita do `X-Forwarded-For`, foram escritos por proxy; `0` usa o IP da conexão |
@@ -155,3 +159,20 @@ a reentrega do Asaas o aplica de novo. Uma conta abre no máximo três assinatur
 | `ASAAS_URL` | `https://api.asaas.com/v3`; o sandbox é `https://api-sandbox.asaas.com/v3` |
 
 Serviço, migrações e deploy em [07-OPERACAO](../07-OPERACAO.md#serviços).
+
+## Papel no banco
+
+A API entra no `postgres-mercado` como `dados_api`: membro de `mercado_leitura`, dono só do schema
+`acesso`, sem poder criar schema nem escrever em `mercado`. O SQL é
+`fiance-dados/papel.sql`, e `tests/test_papel.py` roda a API e as migrações com ele.
+
+1. Chegar ao banco como o dono do cluster ([07-OPERACAO](../07-OPERACAO.md#serviços)), e rodar
+   `fiance-dados/papel.sql` seguido de `ALTER ROLE dados_api PASSWORD '<senha>'`, com uma senha
+   gerada (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
+2. No serviço `fiance-dados`, trocar a `DATABASE_URL` por
+   `postgresql://dados_api:<senha>@${{postgres-mercado.PGHOST}}:${{postgres-mercado.PGPORT}}/${{postgres-mercado.PGDATABASE}}`.
+   O Pre-Deploy Command migra com a mesma URL.
+3. Conferir `/saude`, uma chamada com a chave `interno` do backend e o `/console`.
+
+Para voltar, a `DATABASE_URL` volta a `${{postgres-mercado.DATABASE_URL}}`; o papel pode ficar.
+Tabela nova em `acesso`, criada pela migração com o próprio `dados_api`, já nasce dele.

@@ -84,6 +84,17 @@ def criar_assinatura(
             ),
             {"id": conta_id},
         ).scalar_one()
+        vivas = (
+            conn.execute(
+                sa.text(
+                    "SELECT asaas_assinatura FROM acesso.assinatura "
+                    "WHERE conta_id = :id AND situacao IN ('aguardando', 'ativa')"
+                ),
+                {"id": conta_id},
+            )
+            .scalars()
+            .all()
+        )
     if conta is None:
         raise acesso.SemAcesso(404, "Conta não encontrada ou desativada.")
     if recentes >= ASSINATURAS_POR_DIA:
@@ -94,6 +105,16 @@ def criar_assinatura(
     if centavos is None:
         raise acesso.SemAcesso(422, f"O plano {plano} não tem cobrança {ciclo} pela página.")
 
+    for antiga in vivas:
+        asaas._pedir("DELETE", f"/subscriptions/{antiga}")
+        with engine.begin() as conn:
+            conn.execute(
+                sa.text(
+                    "UPDATE acesso.assinatura SET situacao = 'substituida' "
+                    "WHERE asaas_assinatura = :a"
+                ),
+                {"a": antiga},
+            )
     cliente = asaas._pedir(
         "POST", "/customers", {"name": nome, "cpfCnpj": cpf_cnpj, "email": conta.email}
     )
@@ -161,13 +182,15 @@ def _aplicar(engine: sa.Engine, asaas: Asaas, tipo: str, corpo: dict) -> str:
         with engine.begin() as conn:
             assinatura = conn.execute(
                 sa.text(
-                    "SELECT conta_id, plano, ciclo FROM acesso.assinatura "
+                    "SELECT conta_id, plano, ciclo, situacao FROM acesso.assinatura "
                     "WHERE asaas_assinatura = :a"
                 ),
                 {"a": pagamento.get("subscription")},
             ).first()
             if assinatura is None:
                 return "ignorado: assinatura que não é nossa"
+            if assinatura.situacao == "substituida":
+                return f"ignorado: assinatura substituída da conta {assinatura.conta_id}; estornar"
             vence = date.fromisoformat(pagamento["dueDate"])
             conn.execute(
                 sa.text(
@@ -192,7 +215,8 @@ def _aplicar(engine: sa.Engine, asaas: Asaas, tipo: str, corpo: dict) -> str:
         with engine.begin() as conn:
             conn.execute(
                 sa.text(
-                    "UPDATE acesso.assinatura SET situacao = 'cancelada' WHERE asaas_assinatura = :a"
+                    "UPDATE acesso.assinatura SET situacao = 'cancelada' "
+                    "WHERE asaas_assinatura = :a AND situacao <> 'substituida'"
                 ),
                 {"a": assinatura_id},
             )

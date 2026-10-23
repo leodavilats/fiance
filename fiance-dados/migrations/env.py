@@ -18,8 +18,13 @@ def _url() -> str:
 def run_migrations_online() -> None:
     engine = sa.create_engine(_url())
     with engine.connect() as connection:
-        # A tabela de versão mora em `acesso`, longe da do data-job em `mercado`.
-        connection.execute(sa.text(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"))
+        # A tabela de versão mora em `acesso`, longe da do data-job em `mercado`. O IF NOT EXISTS
+        # pede CREATE no banco até quando o schema existe; o papel dados_api não tem.
+        existe = connection.execute(
+            sa.text("SELECT 1 FROM pg_namespace WHERE nspname = :s"), {"s": SCHEMA}
+        ).first()
+        if existe is None:
+            connection.execute(sa.text(f"CREATE SCHEMA {SCHEMA}"))
         connection.commit()
         context.configure(
             connection=connection,
