@@ -27,6 +27,7 @@ class Configuracao:
     asaas_chave: str = ""
     asaas_token_webhook: str = ""
     contato: str = ""
+    whatsapp: str = ""
     proxies_confiaveis: int = 1
 
 
@@ -63,5 +64,6 @@ def carregar() -> Configuracao:
         asaas_chave=chave,
         asaas_token_webhook=token_webhook,
         contato=_texto("CONTATO_EMAIL"),
+        whatsapp="".join(c for c in _texto("CONTATO_WHATSAPP") if c.isdigit()),
         proxies_confiaveis=int(proxies),
     )

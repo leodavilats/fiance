@@ -197,6 +197,7 @@ def criar(
             "dados": acesso.planos_publicos(bancos.acesso),
             "cobranca_aberta": config.cobranca_ativa,
             "contato": config.contato or None,
+            "whatsapp": config.whatsapp or None,
         }
 
     @app.get("/v1/vitrine", include_in_schema=False)

@@ -4,8 +4,11 @@ import re
 from pathlib import Path
 
 import sqlalchemy as sa
+from fastapi.testclient import TestClient
 
 from dadosapi import acesso
+from dadosapi.app import criar
+from dadosapi.config import carregar
 from tests.conftest import TOKEN, criar_conta
 
 
@@ -152,6 +155,17 @@ def test_planos_publicos_sem_gratuito_nem_interno(cliente):
     assert [p["codigo"] for p in planos["dados"]] == ["essencial", "pro"]
     assert planos["cobranca_aberta"] is False
     assert all(p["preco_mensal_centavos"] for p in planos["dados"]), "nada gratuito (ADR-025)"
+
+
+def test_planos_trazem_o_whatsapp_do_convite(bancos, url, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", url)
+    monkeypatch.setenv("DADOS_API_ADMIN_TOKEN", TOKEN)
+    monkeypatch.setenv("CONTATO_WHATSAPP", "+55 31 99758-9889 ")
+
+    planos = TestClient(criar(carregar(), bancos)).get("/v1/planos").json()
+
+    assert planos["whatsapp"] == "5531997589889", "o link wa.me só aceita dígitos"
+    assert planos["contato"] is None
 
 
 def test_todo_recurso_de_plano_tem_rota_que_o_exige(cliente):

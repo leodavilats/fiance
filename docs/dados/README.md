@@ -151,7 +151,8 @@ fica com o resultado "ignorado: assinatura substituída … estornar", para o es
 |---|---|
 | `DATABASE_URL` | `postgresql://dados_api:<senha>@${{postgres-mercado.PGHOST}}:${{postgres-mercado.PGPORT}}/${{postgres-mercado.PGDATABASE}}`, com o papel próprio ([abaixo](#papel-no-banco)). Lê `mercado` como `mercado_leitura` e escreve só no schema `acesso`. O valor termina no `}}`: quebra de linha colada no fim derruba o Pre-Deploy |
 | `DADOS_API_ADMIN_TOKEN` | Token das rotas `/admin`, 32 caracteres ou mais. **Falha ao subir sem ele.** Definido no painel do Railway, nunca no repositório |
-| `CONTATO_EMAIL` | Opcional. Com ele, o portal mostra "Pedir um convite" |
+| `CONTATO_WHATSAPP` | Opcional. Com ele, o "Pedir um convite" do portal abre o WhatsApp (`wa.me`) com a mensagem pronta. Só os dígitos contam, com o 55 do país |
+| `CONTATO_EMAIL` | Opcional. Sem WhatsApp, o "Pedir um convite" abre o e-mail |
 | `PROXIES_CONFIAVEIS` | `1` por padrão: o proxy do Railway. Quantos endereços, da direita do `X-Forwarded-For`, foram escritos por proxy; `0` usa o IP da conexão |
 | `COBRANCA_ATIVA` | `false` por padrão. `true` abre a assinatura pela página e o webhook |
 | `ASAAS_API_KEY` | Obrigatória com a cobrança ativa |

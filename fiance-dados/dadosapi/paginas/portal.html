@@ -972,7 +972,19 @@ function itemDoPlano(incluido, texto) {
   li.append(span);
   return li;
 }
-const linkDeConvite = (contato) => `mailto:${contato}?subject=${encodeURIComponent("Convite para o fiance dados")}`;
+const PEDIDO_DE_CONVITE = "Convite para o fiance dados";
+function botaoDeConvite(resposta, classe) {
+  if (!resposta.whatsapp && !resposta.contato) return null;
+  const a = html("a", classe, "Pedir um convite");
+  if (resposta.whatsapp) {
+    a.href = `https://wa.me/${resposta.whatsapp}?text=${encodeURIComponent(PEDIDO_DE_CONVITE)}`;
+    a.target = "_blank";
+    a.rel = "noopener";
+  } else {
+    a.href = `mailto:${resposta.contato}?subject=${encodeURIComponent(PEDIDO_DE_CONVITE)}`;
+  }
+  return a;
+}
 function acaoDoPlano(resposta, p) {
   const estilo = p.codigo === "pro" ? "botao" : "botao contorno";
   if (resposta.cobranca_aberta) {
@@ -981,11 +993,8 @@ function acaoDoPlano(resposta, p) {
     a.addEventListener("click", () => { $("assinar-plano").value = p.codigo; $("assinar-ciclo").value = ciclo; });
     return a;
   }
-  if (resposta.contato) {
-    const a = html("a", estilo, "Pedir um convite");
-    a.href = linkDeConvite(resposta.contato);
-    return a;
-  }
+  const convite = botaoDeConvite(resposta, estilo);
+  if (convite) return convite;
   const b = html("button", estilo, "Por convite, por enquanto");
   b.disabled = true;
   return b;
@@ -1020,13 +1029,10 @@ function mostrarPlanos(resposta) {
   convite.querySelectorAll("a").forEach((a) => a.remove());
   if (resposta.cobranca_aberta) {
     texto.replaceChildren(html("b", "", "Para assinar, entre com a sua chave."), " A assinatura e o pagamento ficam em Minha conta.");
-  } else if (resposta.contato) {
-    const noConvite = html("a", "botao", "Pedir um convite");
-    noConvite.href = linkDeConvite(resposta.contato);
-    convite.appendChild(noConvite);
+  } else if (botaoDeConvite(resposta, "botao")) {
+    convite.appendChild(botaoDeConvite(resposta, "botao"));
     if (!$("acoes-abertura").querySelector("[data-convite]")) {
-      const naAbertura = html("a", "botao contorno", "Pedir um convite");
-      naAbertura.href = noConvite.href;
+      const naAbertura = botaoDeConvite(resposta, "botao contorno");
       naAbertura.dataset.convite = "";
       $("acoes-abertura").append(naAbertura);
     }
