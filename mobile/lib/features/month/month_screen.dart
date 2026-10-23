@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/cash_models.dart';
+import '../../core/widgets/action_scaffold.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
 import '../../core/widgets/empty_state.dart';
@@ -43,14 +44,14 @@ class MonthScreen extends ConsumerWidget {
       label: 'Carregando seu mês',
     );
 
-    return Scaffold(
+    return FiActionScaffold(
       appBar: AppBar(
         title: const Text('Mês'),
         actions: [
           const _InboxBell(),
         ],
       ),
-      floatingActionButton: mostraLancar
+      action: mostraLancar
           ? FloatingActionButton.extended(
               onPressed: () => openCashEntrySheet(context, ref),
               icon: const Icon(Icons.add),

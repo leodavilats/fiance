@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/data_row.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/measure.dart';
 import '../../core/widgets/provenance.dart';
@@ -20,7 +21,7 @@ class IncomeCompareView extends ConsumerStatefulWidget {
 }
 
 class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
-  final _amountCtrl = TextEditingController(text: '10000');
+  final _amountCtrl = TextEditingController(text: '10.000');
   final _resultKey = GlobalKey();
   int _horizonMonths = 12;
 
@@ -148,13 +149,24 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
   }
 
   List<Widget> _buildResult(IncomeCompare r, Color ink2, Color ink3) {
+    final cdi = r.cdiAnnual;
     final todas = [...r.fixedIncome, ...r.assets];
-    final maior = todas.isEmpty
-        ? r.cdiAnnual
-        : todas
-              .map((o) => o.netIncomeYieldPct)
-              .reduce((a, b) => a > b ? a : b);
-    final cap = (maior > r.cdiAnnual ? maior : r.cdiAnnual) * 1.15 + 0.5;
+
+    if (todas.isEmpty) {
+      return [
+        KeyedSubtree(key: _resultKey, child: const SizedBox(height: FiSpace.s6)),
+        FiEmptyState(
+          title: 'Nada para comparar nesse prazo',
+          body: 'Não achamos oferta de renda fixa nem ativo com proventos para comparar em '
+              '${r.horizonMonths} meses. Outro prazo pode ter.',
+        ),
+      ];
+    }
+
+    final maior = todas
+        .map((o) => o.netIncomeYieldPct)
+        .reduce((a, b) => a > b ? a : b);
+    final cap = (cdi != null && cdi > maior ? cdi : maior) * 1.15 + 0.5;
 
     return [
       KeyedSubtree(key: _resultKey, child: const SizedBox(height: FiSpace.s6)),
@@ -166,9 +178,12 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
         const SizedBox(height: FiSpace.s2),
       ],
       Text(
-        'CDI a ${formatPercent(r.cdiAnnual)} ao ano · '
-        '${formatCurrency(r.amount)} por ${r.horizonMonths} meses. '
-        'A marca em cada régua é o CDI.',
+        cdi == null
+            ? '${formatCurrency(r.amount)} por ${r.horizonMonths} meses. Sem o CDI de hoje, as '
+                  'réguas saem sem a marca de referência.'
+            : 'CDI a ${formatPercent(cdi)} ao ano · '
+                  '${formatCurrency(r.amount)} por ${r.horizonMonths} meses. '
+                  'A marca em cada régua é o CDI.',
         style: FiType.caption.copyWith(color: ink3),
       ),
 
@@ -178,7 +193,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
           child: Column(
             children: [
               for (final o in r.fixedIncome)
-                _OptionObject(option: o, cdi: r.cdiAnnual, cap: cap),
+                _OptionObject(option: o, cdi: cdi, cap: cap),
             ],
           ),
         ),
@@ -189,7 +204,7 @@ class _IncomeCompareViewState extends ConsumerState<IncomeCompareView> {
           child: Column(
             children: [
               for (final o in r.assets)
-                _OptionObject(option: o, cdi: r.cdiAnnual, cap: cap),
+                _OptionObject(option: o, cdi: cdi, cap: cap),
             ],
           ),
         ),
@@ -225,13 +240,14 @@ class _OptionObject extends StatelessWidget {
   });
 
   final IncomeOption option;
-  final double cdi;
+  final double? cdi;
   final double cap;
 
   @override
   Widget build(BuildContext context) {
     final o = option;
-    final acimaDoCdi = o.netIncomeYieldPct >= cdi;
+    final referencia = cdi;
+    final acimaDoCdi = referencia != null && o.netIncomeYieldPct >= referencia;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: FiSpace.s2),
@@ -245,7 +261,9 @@ class _OptionObject extends StatelessWidget {
               max: cap,
               reference: cdi,
               readout: '${formatPercent(o.netIncomeYieldPct)} a.a.',
-              note: acimaDoCdi
+              note: referencia == null
+                  ? 'já descontado o IR'
+                  : acimaDoCdi
                   ? 'acima do CDI, já descontado o IR'
                   : 'abaixo do CDI, já descontado o IR',
               state: acimaDoCdi ? FiState.favorable : FiState.neutral,

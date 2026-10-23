@@ -105,11 +105,11 @@ class ApuracaoMensal:
             origem = ", com as de day trade," if com_day_trade else ""
             return (
                 f"Vendas de ações no mês{origem} somam {_reais(self.exemption_sales)}, "
-                f"dentro da isenção de R$ {numero(float(ISENCAO_MENSAL), 0)} → sem imposto no mês."
+                f"dentro da isenção de R$ {numero(float(ISENCAO_MENSAL), 0)} → sem imposto no mês."
             )
         if self.exempt:
             return (
-                f"Mês isento (vendas ≤ R$ {numero(float(ISENCAO_MENSAL), 0)}). Prejuízo apurado em "
+                f"Mês isento (vendas ≤ R$ {numero(float(ISENCAO_MENSAL), 0)}). Prejuízo apurado em "
                 "operação isenta não compensa ganho futuro."
             )
 

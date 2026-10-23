@@ -29,7 +29,7 @@ def test_nenhuma_frase_do_backend_escreve_decimal_com_ponto():
 
 
 def test_os_formatadores_escrevem_em_portugues():
-    assert reais(20000) == "R$ 20.000,00"
+    assert reais(20000) == "R$ 20.000,00"
     assert numero(14.9) == "14,90"
     assert numero(1234.5, 1) == "1.234,5"
     assert numero_com_sinal(11.54) == "+11,5"

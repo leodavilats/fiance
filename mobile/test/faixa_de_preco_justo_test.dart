@@ -20,12 +20,12 @@ void main() {
 
     test('o resumo da faixa fala português: entre um valor e outro', () {
       expect(
-        fairBandSummary(60.32, 146.03, 2),
+        fairBandSummary(60.32, 146.03, 2, 'firme'),
         startsWith('Justo entre ${formatCurrency(60.32)} e ${formatCurrency(146.03)}'),
         reason: '"entre R\$ 60,32 a R\$ 146,03" chegou à lista do Descobrir',
       );
       expect(
-        fairBandSummary(60.32, 146.03, 2),
+        fairBandSummary(60.32, 146.03, 2, 'firme'),
         endsWith(', faixa confirmada por outro dado'),
         reason: '"Justo entre …, confirmada" juntava masculino e feminino; quem é confirmada é a faixa',
       );
@@ -54,7 +54,7 @@ void main() {
 
   group('sem preço justo se declara', () {
     test('a ausência tem nome, e não vira leitura de tendência', () {
-      expect(confirmationLabel(0), 'sem preço justo');
+      expect(confirmationLabel(0, 'sem_faixa'), 'sem preço justo');
       expect(glossary['sem_preco_justo'], contains('em vez de ler compra ou venda'));
     });
 

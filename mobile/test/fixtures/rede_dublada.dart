@@ -28,6 +28,7 @@ const telasDoApp = <String, String>{
   'voce-investir': '/voce/investir',
   'sobra-aporte': '/sobra/aporte',
   'patrimonio-projecao': '/patrimonio/projecao',
+  'ativo': '/ativo/ITSA4',
 };
 
 class RedeDublada extends Interceptor {
@@ -142,6 +143,50 @@ dynamic _resposta(String caminho, Estado estado) {
   ];
   if (listas.any(caminho.contains)) {
     return isEmpty ? <dynamic>[] : _cheio(caminho);
+  }
+
+  if (caminho.startsWith('/asset/')) return analiseDeAcao;
+
+  if (caminho.contains('/income-compare')) {
+    return {
+      'amount': 10000.0,
+      'horizon_months': 12,
+      'cdi_anual': 11.15,
+      'ipca_anual': 4.4,
+      'fixed_income': isEmpty
+          ? <Object>[]
+          : [
+              {
+                'kind': 'renda_fixa',
+                'label': 'CDB 110% do CDI',
+                'net_income_yield_pct': 10.42,
+                'income_basis': 'Oferta de referência para 12 meses, já descontados 17,5% de IR.',
+                'has_upside': false,
+                'liquidity': 'no_vencimento',
+                'tax_note': 'IR de 17,5% no prazo',
+                'risk_note': 'Coberto pelo Fundo Garantidor de Créditos (FGC) até R\$ 250 mil.',
+                'monthly_income_estimate': 86.83,
+              },
+            ],
+      'assets': isEmpty
+          ? <Object>[]
+          : [
+              {
+                'kind': 'fii',
+                'label': 'MXRF11',
+                'ticker': 'MXRF11',
+                'net_income_yield_pct': 12.1,
+                'income_basis': 'Proventos dos últimos 12 meses sobre o preço de hoje.',
+                'has_upside': true,
+                'liquidity': 'bolsa',
+                'tax_note': 'Isento para pessoa física',
+                'risk_note': '',
+                'monthly_income_estimate': 100.83,
+              },
+            ],
+      'verdict': isEmpty ? '' : 'O fundo imobiliário rende mais em proventos, e o preço oscila.',
+      'disclaimer': 'Ferramenta de análise, não consultoria.',
+    };
   }
 
   if (caminho.contains('/fixed-income') && isEmpty) {
@@ -854,3 +899,93 @@ dynamic _cheio(String caminho) {
 
   return base;
 }
+
+const analiseDeAcao = {
+  'symbol': 'ITSA4',
+  'name': 'Itaúsa PN',
+  'asset_type': 'br_stock',
+  'sector': 'Financial Services',
+  'price': 5.0,
+  'as_of': 1790000000.0,
+  'fair_price': {
+    'fair_low': 6.55,
+    'fair_high': 8.33,
+    'principal_value': 7.41,
+    'margin_of_safety': 0.2366,
+    'band_quality': 'ampla',
+    'independent_inputs': 2,
+    'principal': 'lucros_descontados',
+    'dy_12m': 0.1,
+    'graham': 13.42,
+    'personal_ceiling': 8.33,
+    'data_years': 5,
+    'methods': [
+      {'method': 'dcf', 'input': 'lucro', 'role': 'principal', 'value': 7.41, 'status': 'ok', 'note': ''},
+      {'method': 'bazin', 'input': 'dividendo', 'role': 'confirmacao', 'value': 5.22, 'status': 'ok', 'note': '', 'agreement': 'fora_ate_30'},
+      {'method': 'vpa', 'input': 'patrimonio', 'role': 'inaplicavel', 'status': 'inaplicavel', 'note': 'vale para fundo imobiliário'},
+      {'method': 'graham', 'input': 'lucro_e_patrimonio', 'role': 'indicador', 'value': 13.42, 'status': 'ok', 'note': ''},
+    ],
+    'premises': {
+      'discount_rate': 0.145,
+      'rate_base': 'selic_media_10a',
+      'selic_pct': 9.5,
+      'reference_date': '2026-09-23',
+      'growth': 0.075,
+      'long_run_growth': 0.045,
+      'explicit_years': 5,
+      'roe': 0.15,
+      'payout': 0.5,
+      'distributable': 0.5,
+      'eps_normalized': 1.0,
+      'earnings_years': 3,
+      'value_without_growth': 7.11,
+      'growth_creates_value': true,
+      'breakeven_discount_rate': 0.1873,
+    },
+    'indicators': [
+      {'kind': 'graham', 'value': 13.42, 'passes': true},
+      {'kind': 'preco_teto_pessoal', 'value': 8.33, 'passes': true, 'desired_yield': 0.06},
+      {'kind': 'pvp', 'value': 0.9, 'passes': null},
+    ],
+    'quality_reasons': ['a segunda conta fica fora da faixa, a até 30% dela'],
+    'confirmation': {'method': 'bazin', 'value': 5.22, 'agreement': 'fora_ate_30'},
+  },
+  'technical': {'trend': 'uptrend', 'trend_basis': 'long', 'rsi_14': 74.0},
+  'decision': {
+    'verdict': 'BUY',
+    'label': 'Abaixo do preço justo',
+    'basis': 'band',
+    'reasons': [
+      'O preço está 23,7% abaixo do piso da faixa de preço justo, que vai de R\$ 6,55 a R\$ 8,33.',
+      'Vale cerca de R\$ 7,41 pelo lucro que a empresa pode distribuir sem deixar de crescer.',
+      'Uma segunda conta, pelos dividendos, dá R\$ 5,22, 20% abaixo do piso: não confirma a faixa.',
+      'Qualidade da faixa: a segunda conta fica fora da faixa, a até 30% dela.',
+      'Cabe na sua meta de renda: para render os 6% ao ano que você pediu em proventos, o '
+          'preço-teto é R\$ 8,33, e o de hoje está abaixo.',
+      'Na conta, a taxa exigida — o retorno mínimo para o investimento valer a pena — é de '
+          '14,5% ao ano: a Selic média de 10 anos, o juro básico do país, mais 5 pontos. O lucro '
+          'cresce 7,5% ao ano por 5 anos — o retorno sobre o patrimônio (ROE) de 15% vezes a '
+          'parte do lucro que a empresa retém — e 4,5% depois. A faixa cobre esse cenário e o de '
+          'não crescer e distribuir todo o lucro, com 1 ponto de taxa a mais e a menos.',
+      'Preço sobre valor patrimonial (P/VP) de 0,90: paga-se menos que o patrimônio que está no '
+          'balanço.',
+      'O preço vem subindo: a média do preço nos últimos 50 dias está acima da média dos '
+          'últimos 200. É contexto de preço, e não muda a leitura de valor.',
+      'O preço subiu rápido em pouco tempo: o índice de força relativa (RSI) está em 74, de 0 a '
+          '100. É contexto, não leitura de valor.',
+    ],
+    'falsifiers': [
+      {'metric': 'price', 'condition': 'O preço cair para R\$ 4,58 ou menos', 'becomes_label': 'Bem abaixo do preço justo', 'current': 5.0, 'threshold': 4.585, 'kind': 'gatilho'},
+      {'metric': 'price', 'condition': 'O preço subir para R\$ 5,57 ou mais', 'becomes_label': 'No preço justo', 'current': 5.0, 'threshold': 5.5675, 'kind': 'gatilho'},
+      {
+        'metric': 'discount_rate',
+        'condition': 'A taxa exigida, o retorno mínimo que a conta pede ao ano, subir de 14,5% '
+            'para 18,7%: aí o preço de hoje deixa de ter folga sobre o valor',
+        'becomes_label': 'Rever a tese',
+        'current': 0.145,
+        'threshold': 0.1873,
+        'kind': 'premissa',
+      },
+    ],
+  },
+};

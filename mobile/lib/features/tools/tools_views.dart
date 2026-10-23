@@ -642,7 +642,7 @@ class _CompareDecisions extends StatelessWidget {
                 label: a.symbol,
                 detail: '${fiAssetTypeLabel[a.assetType] ?? a.assetType} · margem de '
                     'segurança ${formatRatio(a.marginOfSafety)}',
-                note: confirmationLabel(a.independentInputs),
+                note: confirmationLabel(a.independentInputs, a.bandQuality),
                 trailing: FiVerdictChip(verdict: a.verdict, label: a.label),
                 onTap: () => context.push('/ativo/${a.symbol}'),
               ),

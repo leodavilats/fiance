@@ -85,6 +85,21 @@ void main() {
       expect(find.text('Tentar de novo'), findsOneWidget);
       expect(find.text('Entrar de novo'), findsNothing);
     });
+
+    testWidgets('a falha sem causa conhecida não repete o título no corpo', (tester) async {
+      await _montar(
+        tester,
+        FiErrorState(error: const FormatException('x'), action: 'analisar TAEE11'),
+      );
+
+      expect(
+        find.textContaining('Não conseguimos analisar TAEE11'),
+        findsOneWidget,
+        reason: 'a folha do ativo dizia "Não conseguimos analisar TAEE11" no título e de novo '
+            'na primeira frase do corpo',
+      );
+      expect(find.textContaining('Pode ser a conexão'), findsOneWidget);
+    });
   });
 
   group('login', () {

@@ -6,7 +6,7 @@ def _virgula(texto: str) -> str:
 
 
 def reais(valor: float | None) -> str:
-    return "R$ " + _virgula(f"{valor or 0:,.2f}")
+    return "R$ " + _virgula(f"{valor or 0:,.2f}")
 
 
 def pct(fracao: float, casas: int = 1) -> str:

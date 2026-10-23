@@ -211,7 +211,9 @@ def test_os_cenarios_cobrem_o_que_a_frase_pode_dizer():
 
 
 def test_o_formatador_fala_portugues():
-    assert reais(1234.5) == "R$ 1.234,50"
+    assert reais(1234.5) == "R$ 1.234,50", (
+        "com espaço comum, a linha quebrava entre o R$ e o número na folha do ativo"
+    )
     assert pct(0.145) == "14,5%"
     assert pct(0.2, 0) == "20%"
     assert numero(0.9) == "0,90"

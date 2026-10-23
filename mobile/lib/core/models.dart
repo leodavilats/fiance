@@ -1783,7 +1783,7 @@ class IncomeCompare {
 
   final double amount;
   final int horizonMonths;
-  final double cdiAnnual;
+  final double? cdiAnnual;
   final List<IncomeOption> fixedIncome;
   final List<IncomeOption> assets;
   final IncomeOption? bestIncomeOption;
@@ -1798,7 +1798,7 @@ class IncomeCompare {
   factory IncomeCompare.fromJson(Map<String, dynamic> j) => IncomeCompare(
     amount: (j['amount'] as num?)?.toDouble() ?? 0,
     horizonMonths: (j['horizon_months'] as num?)?.toInt() ?? 12,
-    cdiAnnual: (j['cdi_anual'] as num?)?.toDouble() ?? 0,
+    cdiAnnual: (j['cdi_anual'] as num?)?.toDouble(),
     fixedIncome: _list(j['fixed_income']),
     assets: _list(j['assets']),
     bestIncomeOption: j['best_income_option'] == null

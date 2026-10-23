@@ -8,6 +8,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/vocabulary.dart';
+import '../../core/widgets/action_scaffold.dart';
 import '../../core/widgets/button.dart';
 import '../../core/widgets/chip.dart';
 import '../../core/widgets/data_row.dart';
@@ -56,9 +57,9 @@ class LedgerScreen extends ConsumerWidget {
     final emptyLedger =
         (page.valueOrNull?.items.isEmpty ?? false) && filtro.isEmpty;
 
-    return Scaffold(
+    return FiActionScaffold(
       appBar: AppBar(title: const Text('Lançamentos')),
-      floatingActionButton: emptyLedger
+      action: emptyLedger
           ? null
           : FloatingActionButton.extended(
               onPressed: () => openLedgerEntryForm(context, ref),

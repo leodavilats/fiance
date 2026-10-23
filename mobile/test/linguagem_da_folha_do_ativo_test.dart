@@ -12,6 +12,8 @@ import 'package:fiance/core/widgets/data_row.dart';
 import 'package:fiance/core/widgets/measure.dart';
 import 'package:fiance/features/market/asset_detail_sheet.dart';
 
+import 'fixtures/rede_dublada.dart';
+
 const _siglas = <String, String>{
   'ROE': 'retorno sobre o patrimônio',
   'P/VP': 'valor patrimonial',
@@ -40,96 +42,6 @@ const _jargao = <String, String>{
   'normaliz': 'é a média',
   'taxa de desconto': 'a tela chama de taxa exigida',
   'costuma vir': 'contexto de preço não prevê o próximo movimento',
-};
-
-const _acao = {
-  'symbol': 'ITSA4',
-  'name': 'Itaúsa PN',
-  'asset_type': 'br_stock',
-  'sector': 'Financial Services',
-  'price': 5.0,
-  'as_of': 1790000000.0,
-  'fair_price': {
-    'fair_low': 6.55,
-    'fair_high': 8.33,
-    'principal_value': 7.41,
-    'margin_of_safety': 0.2366,
-    'band_quality': 'ampla',
-    'independent_inputs': 2,
-    'principal': 'lucros_descontados',
-    'dy_12m': 0.1,
-    'graham': 13.42,
-    'personal_ceiling': 8.33,
-    'data_years': 5,
-    'methods': [
-      {'method': 'dcf', 'input': 'lucro', 'role': 'principal', 'value': 7.41, 'status': 'ok', 'note': ''},
-      {'method': 'bazin', 'input': 'dividendo', 'role': 'confirmacao', 'value': 5.22, 'status': 'ok', 'note': '', 'agreement': 'fora_ate_30'},
-      {'method': 'vpa', 'input': 'patrimonio', 'role': 'inaplicavel', 'status': 'inaplicavel', 'note': 'vale para fundo imobiliário'},
-      {'method': 'graham', 'input': 'lucro_e_patrimonio', 'role': 'indicador', 'value': 13.42, 'status': 'ok', 'note': ''},
-    ],
-    'premises': {
-      'discount_rate': 0.145,
-      'rate_base': 'selic_media_10a',
-      'selic_pct': 9.5,
-      'reference_date': '2026-09-23',
-      'growth': 0.075,
-      'long_run_growth': 0.045,
-      'explicit_years': 5,
-      'roe': 0.15,
-      'payout': 0.5,
-      'distributable': 0.5,
-      'eps_normalized': 1.0,
-      'earnings_years': 3,
-      'value_without_growth': 7.11,
-      'growth_creates_value': true,
-      'breakeven_discount_rate': 0.1873,
-    },
-    'indicators': [
-      {'kind': 'graham', 'value': 13.42, 'passes': true},
-      {'kind': 'preco_teto_pessoal', 'value': 8.33, 'passes': true, 'desired_yield': 0.06},
-      {'kind': 'pvp', 'value': 0.9, 'passes': null},
-    ],
-    'quality_reasons': ['a segunda conta fica fora da faixa, a até 30% dela'],
-    'confirmation': {'method': 'bazin', 'value': 5.22, 'agreement': 'fora_ate_30'},
-  },
-  'technical': {'trend': 'uptrend', 'trend_basis': 'long', 'rsi_14': 74.0},
-  'decision': {
-    'verdict': 'BUY',
-    'label': 'Abaixo do preço justo',
-    'basis': 'band',
-    'reasons': [
-      'O preço está 23,7% abaixo do piso da faixa de preço justo, que vai de R\$ 6,55 a R\$ 8,33.',
-      'Vale cerca de R\$ 7,41 pelo lucro que a empresa pode distribuir sem deixar de crescer.',
-      'Uma segunda conta, pelos dividendos, dá R\$ 5,22, 20% abaixo do piso: não confirma a faixa.',
-      'Qualidade da faixa: a segunda conta fica fora da faixa, a até 30% dela.',
-      'Cabe na sua meta de renda: para render os 6% ao ano que você pediu em proventos, o '
-          'preço-teto é R\$ 8,33, e o de hoje está abaixo.',
-      'Na conta, a taxa exigida — o retorno mínimo para o investimento valer a pena — é de '
-          '14,5% ao ano: a Selic média de 10 anos, o juro básico do país, mais 5 pontos. O lucro '
-          'cresce 7,5% ao ano por 5 anos — o retorno sobre o patrimônio (ROE) de 15% vezes a '
-          'parte do lucro que a empresa retém — e 4,5% depois. A faixa cobre esse cenário e o de '
-          'não crescer e distribuir todo o lucro, com 1 ponto de taxa a mais e a menos.',
-      'Preço sobre valor patrimonial (P/VP) de 0,90: paga-se menos que o patrimônio que está no '
-          'balanço.',
-      'O preço vem subindo: a média do preço nos últimos 50 dias está acima da média dos '
-          'últimos 200. É contexto de preço, e não muda a leitura de valor.',
-      'O preço subiu rápido em pouco tempo: o índice de força relativa (RSI) está em 74, de 0 a '
-          '100. É contexto, não leitura de valor.',
-    ],
-    'falsifiers': [
-      {'metric': 'price', 'condition': 'O preço cair para R\$ 4,58 ou menos', 'becomes_label': 'Bem abaixo do preço justo', 'current': 5.0, 'threshold': 4.585, 'kind': 'gatilho'},
-      {'metric': 'price', 'condition': 'O preço subir para R\$ 5,57 ou mais', 'becomes_label': 'No preço justo', 'current': 5.0, 'threshold': 5.5675, 'kind': 'gatilho'},
-      {
-        'metric': 'discount_rate',
-        'condition': 'A taxa exigida, o retorno mínimo que a conta pede ao ano, subir de 14,5% '
-            'para 18,7%: aí o preço de hoje deixa de ter folga sobre o valor',
-        'becomes_label': 'Rever a tese',
-        'current': 0.145,
-        'threshold': 0.1873,
-        'kind': 'premissa',
-      },
-    ],
-  },
 };
 
 const _fii = {
@@ -308,7 +220,7 @@ void _confereSiglasEJargao(WidgetTester tester, Map<String, Object?> analise, St
 double _topo(WidgetTester tester, String trecho) => tester.getTopLeft(_texto(trecho).first).dy;
 
 void main() {
-  for (final caso in {'ação': _acao, 'fundo imobiliário de papel': _fii}.entries) {
+  for (final caso in {'ação': analiseDeAcao, 'fundo imobiliário de papel': _fii}.entries) {
     testWidgets('${caso.key}: no essencial, nenhuma sigla chega sem explicação ao lado, nem '
         'com a gaveta aberta', (tester) async {
       await _abrirNoEssencial(tester, caso.value);
@@ -357,7 +269,7 @@ void main() {
 
   testWidgets('no essencial, a leitura vem antes da evidência, e a evidência antes do método',
       (tester) async {
-    await _abrirNoEssencial(tester, _acao);
+    await _abrirNoEssencial(tester, analiseDeAcao);
 
     final etiqueta = tester.getTopLeft(find.text('Abaixo do preço justo').first).dy;
     final preco = tester.getTopLeft(find.text('PREÇO')).dy;
@@ -384,17 +296,19 @@ void main() {
   });
 
   testWidgets('a margem de segurança sai em palavras e em reais', (tester) async {
-    await _abrirNoEssencial(tester, _acao);
+    await _abrirNoEssencial(tester, analiseDeAcao);
 
     final margem = tester.widget<FiMeasure>(find.byType(FiMeasure));
     expect(margem.note, contains('${formatCurrency(1.55)} abaixo do piso do preço justo'),
         reason: 'um percentual negativo de margem não diz nada a quem começou agora; a '
             'distância em reais até a borda diz');
-    expect(margem.note, contains('confirmada por outro dado'));
+    expect(margem.note, isNot(contains('confirmada por outro dado')),
+        reason: 'a segunda conta desta ação fica fora da faixa, e a evidência logo abaixo diz '
+            '"não confirma a faixa"');
   });
 
   testWidgets('tocar no termo abre o verbete', (tester) async {
-    await _abrirNoEssencial(tester, _acao);
+    await _abrirNoEssencial(tester, analiseDeAcao);
 
     await tester.tap(find.text('Margem de segurança'));
     for (var i = 0; i < 5; i++) {

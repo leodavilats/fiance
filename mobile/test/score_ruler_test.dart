@@ -40,9 +40,16 @@ void main() {
       expect(dataYearsLabel(1), '1 ano de proventos');
       expect(dataYearsLabel(4), '4 anos de proventos');
 
-      expect(confirmationLabel(0), 'sem preço justo');
-      expect(confirmationLabel(1), 'sem confirmação por outro dado');
-      expect(confirmationLabel(2), 'confirmada por outro dado');
+      expect(confirmationLabel(0, 'sem_faixa'), 'sem preço justo');
+      expect(confirmationLabel(1, 'ampla'), 'faixa sem confirmação por outro dado');
+      expect(confirmationLabel(2, 'firme'), 'faixa confirmada por outro dado');
+      expect(
+        confirmationLabel(2, 'ampla'),
+        isNot(contains('confirmada')),
+        reason: 'com a segunda conta fora da faixa, a folha dizia "confirmada" e, duas linhas '
+            'abaixo, "não confirma a faixa"',
+      );
+      expect(confirmationLabel(2, 'fragil'), 'faixa frágil');
     });
 
     test('confiança é apresentada em percentual', () {

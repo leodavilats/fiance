@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mesma cor do ground-0 claro em lib/core/design_tokens.dart -->
+<resources>
+    <color name="chao">#F0EDE6</color>
+</resources>

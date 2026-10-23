@@ -198,9 +198,9 @@ class AssetDetailContent extends ConsumerWidget {
                     min: fiMarginOfSafetyDomain.min,
                     max: fiMarginOfSafetyDomain.max,
                     reference: 0,
-                    readout: formatRatio(margem),
+                    readout: formatPercent(pct, digits: 1),
                     note: '${band.label}: ${_margemEmPalavras(a)} · '
-                        '${confirmationLabel(a.independentInputs)}',
+                        '${confirmationLabel(a.independentInputs, a.bandQuality)}',
                     state: band.state,
                   );
                 },

@@ -75,6 +75,12 @@ class FiErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mensagem = fiErrorMessage(error, action: action);
+    final eco = 'Não conseguimos $action agora. ';
+    final corpo = title == null && action != null && mensagem.startsWith(eco)
+        ? mensagem.substring(eco.length)
+        : mensagem;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         FiLayout.gutter,
@@ -94,7 +100,7 @@ class FiErrorState extends StatelessWidget {
           ),
           const SizedBox(height: FiSpace.s3),
           Text(
-            fiErrorMessage(error, action: action),
+            corpo,
             style: FiType.body.copyWith(color: fiInk2(context)),
           ),
           if (fiSessionExpired(error)) ...[

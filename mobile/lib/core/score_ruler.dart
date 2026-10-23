@@ -65,10 +65,14 @@ String dataYearsLabel(int? dataYears) {
   return '$dataYears ${dataYears == 1 ? 'ano' : 'anos'} de proventos';
 }
 
-String confirmationLabel(int? inputs) {
+String confirmationLabel(int? inputs, String? bandQuality) {
   if (inputs == null || inputs == 0) return 'sem preço justo';
-  if (inputs == 1) return 'sem confirmação por outro dado';
-  return 'confirmada por outro dado';
+  if (inputs == 1) return 'faixa sem confirmação por outro dado';
+  return switch (bandQuality) {
+    'firme' => 'faixa confirmada por outro dado',
+    'fragil' => 'faixa frágil',
+    _ => 'faixa ampla, sem confirmação firme',
+  };
 }
 
 String fairBandLabel(double? low, double? high) {
@@ -77,12 +81,14 @@ String fairBandLabel(double? low, double? high) {
   return '${formatCurrency(low)} a ${formatCurrency(high)}';
 }
 
-String fairBandSummary(double? low, double? high, int? methods) {
-  if (low == null || high == null) return confirmationLabel(methods);
-  if ((high - low).abs() < 0.01) return 'Preço justo pontual, ${confirmationLabel(methods)}';
+String fairBandSummary(double? low, double? high, int? methods, String? bandQuality) {
+  if (low == null || high == null) return confirmationLabel(methods, bandQuality);
+  if ((high - low).abs() < 0.01) {
+    return 'Preço justo pontual, ${confirmationLabel(methods, bandQuality)}';
+  }
   final faixa = 'Justo entre ${formatCurrency(low)} e ${formatCurrency(high)}';
   if (methods == null || methods == 0) return faixa;
-  return '$faixa, faixa ${confirmationLabel(methods)}';
+  return '$faixa, ${confirmationLabel(methods, bandQuality)}';
 }
 
 String fairBandEdgeLabel(double? price, double? low, double? high) {

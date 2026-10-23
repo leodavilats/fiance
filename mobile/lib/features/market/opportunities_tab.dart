@@ -996,7 +996,7 @@ class FiOpportunityObject extends StatelessWidget {
       if (o.basis == 'trend')
         basisLabel(o.basis)
       else if (temFaixa)
-        fairBandSummary(o.fairLow, o.fairHigh, o.independentInputs),
+        fairBandSummary(o.fairLow, o.fairHigh, o.independentInputs, o.bandQuality),
       if (o.dataYears > 0) 'Histórico de ${dataYearsLabel(o.dataYears)}',
     ];
 
