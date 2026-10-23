@@ -187,3 +187,19 @@ def test_retratos_em_lote_trazem_irmaos_e_todas_as_versoes(cliente, chave):
     assert retratos["XPML11"]["demonstracoes"] == []
     muitos = ",".join(f"T{i:03d}3" for i in range(51))
     assert cliente.get("/v1/retratos", headers=chave, params={"codigos": muitos}).status_code == 422
+
+
+def test_retratos_sem_o_recurso_trazem_so_a_ultima_versao(cliente, bancos):
+    chave = _essencial_pago(cliente, bancos)
+
+    acao = _dados(cliente, "/v1/retratos", chave, codigos="TEST3")["dados"]["TEST3"]
+
+    assert [d["versao"] for d in acao["demonstracoes"]] == [2], (
+        "todas as versões com a data de entrega são o balanço como se sabia na data, do Pro"
+    )
+
+
+def test_cursor_invalido_e_recusado_sem_erro_do_servidor(cliente, chave):
+    resposta = cliente.get("/v1/ativos/TEST3/cotacoes", headers=chave, params={"cursor": "x"})
+
+    assert resposta.status_code == 422 and "Cursor" in resposta.json()["erro"]

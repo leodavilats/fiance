@@ -20,6 +20,7 @@ FONTES = (
 LIMITE_PADRAO = 500
 LIMITE_MAXIMO = 5000
 MAXIMO_DE_RETRATOS = 50
+CHAVES_NOVAS_POR_DIA = 10
 EXEMPLO_DA_VITRINE = "HAPV3"
 INICIO_DA_BASE = date(2000, 1, 1)
 
@@ -74,9 +75,12 @@ def _pagina(nome: str) -> str:
     return (_PAGINAS / nome).read_text(encoding="utf-8")
 
 
-def _origem(request: Request) -> str:
-    encaminhado = request.headers.get("x-forwarded-for", "")
-    return encaminhado.split(",")[0].strip() or (request.client.host if request.client else "?")
+def _origem(request: Request, proxies_confiaveis: int) -> str:
+    conexao = request.client.host if request.client else "?"
+    cadeia = [p.strip() for p in request.headers.get("x-forwarded-for", "").split(",") if p.strip()]
+    if proxies_confiaveis <= 0 or len(cadeia) < proxies_confiaveis:
+        return conexao
+    return cadeia[-proxies_confiaveis]
 
 
 def _corte(a: acesso.Acesso) -> date:
@@ -131,10 +135,20 @@ def criar(
     async def _erro(_request: Request, erro: HTTPException) -> JSONResponse:
         return JSONResponse({"erro": erro.detail}, status_code=erro.status_code)
 
+    @app.exception_handler(consultas.CursorInvalido)
+    async def _cursor(_request: Request, _erro: consultas.CursorInvalido) -> JSONResponse:
+        return JSONResponse(
+            {"erro": "Cursor inválido: use o `proximo` da página anterior."}, status_code=422
+        )
+
     @app.middleware("http")
     async def _cabecalhos(request: Request, seguir):
         resposta = await seguir(request)
         resposta.headers["X-Fontes"] = "B3; CVM (ODbL); BCB SGS; Tesouro Transparente"
+        resposta.headers["X-Content-Type-Options"] = "nosniff"
+        resposta.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+        resposta.headers["Referrer-Policy"] = "no-referrer"
+        resposta.headers["Strict-Transport-Security"] = "max-age=31536000"
         uso: acesso.Acesso | None = getattr(request.state, "acesso", None)
         if uso is not None:
             resposta.headers["X-Limite-Dia"] = str(uso.plano.limite_por_dia)
@@ -150,10 +164,12 @@ def criar(
         return uso
 
     def administrador(request: Request, x_admin_token: str | None = Header(default=None)) -> None:
-        origem = _origem(request)
+        origem = _origem(request, config.proxies_confiaveis)
         if tentativas.bloqueado(origem):
             raise HTTPException(429, "Tentativas demais. Espere 15 minutos.")
-        if not x_admin_token or not secrets.compare_digest(x_admin_token, config.admin_token):
+        if not x_admin_token or not secrets.compare_digest(
+            x_admin_token.encode(), config.admin_token.encode()
+        ):
             tentativas.falhou(origem)
             raise HTTPException(401, "Rota de administração.")
 
@@ -269,7 +285,9 @@ def criar(
         if len(lista) > MAXIMO_DE_RETRATOS:
             raise HTTPException(422, f"No máximo {MAXIMO_DE_RETRATOS} tickers por chamada.")
         with bancos.leitura.connect() as conn:
-            return _resposta(consultas.retratos(conn, lista, _corte(a)))
+            return _resposta(
+                consultas.retratos(conn, lista, _corte(a), "ponto_no_tempo" in a.plano.recursos)
+            )
 
     @app.get("/v1/ativos/{codigo}", tags=["ativos"], summary="O retrato do ativo no último pregão")
     def ver_ativo(codigo: str, _: acesso.Acesso = Depends(autenticado)) -> dict:
@@ -424,12 +442,14 @@ def criar(
 
     @app.get("/v1/conta", tags=["conta"], summary="A sua conta, plano, chaves e uso de hoje")
     def ver_conta(a: acesso.Acesso = Depends(autenticado)) -> dict:
-        return _resposta(acesso.resumo_da_conta(bancos.acesso, a.conta_id))
+        conta = acesso.resumo_da_conta(bancos.acesso, a.conta_id)
+        conta.pop("observacao")
+        return _resposta(conta)
 
     @app.post("/v1/conta/chaves", tags=["conta"], status_code=201, summary="Emitir outra chave")
     def nova_chave(corpo: NovaChave, a: acesso.Acesso = Depends(autenticado)) -> dict:
         return _resposta(
-            acesso.emitir_chave(bancos.acesso, a.conta_id, corpo.nome),
+            acesso.emitir_chave(bancos.acesso, a.conta_id, corpo.nome, CHAVES_NOVAS_POR_DIA),
             aviso="A chave só aparece agora. Guarde-a: depois, só o prefixo.",
         )
 

@@ -332,7 +332,7 @@ dialog.pequeno { width: 460px; }
           <tbody id="corpo-contas"></tbody>
         </table>
       </div>
-      <p class="dica">“Hoje” soma as chaves da conta; o medidor mostra a chave mais usada contra o limite do dia, que vale por chave.</p>
+      <p class="dica">“Hoje” soma as chaves da conta, inclusive as revogadas; o medidor compara essa soma com o limite do dia, que vale para a conta.</p>
     </section>
 
     <section class="tela" id="tela-uso" aria-labelledby="t-uso" hidden>
@@ -535,12 +535,12 @@ function etiqueta(situacao) {
   return el("span", { class: `etiqueta ${situacao}` }, SITUACAO[situacao] || situacao);
 }
 function usoDoLimite(c) {
-  return c.limite_por_dia ? c.maior_chave_hoje / c.limite_por_dia : 0;
+  return c.limite_por_dia ? c.requisicoes_hoje / c.limite_por_dia : 0;
 }
 function medidor(fracao) {
   const barra = el("i", { class: fracao >= ALERTA_DE_LIMITE ? "alto" : "" });
   barra.style.width = Math.min(100, Math.round(fracao * 100)) + "%";
-  return el("span", { class: "medidor", role: "img", "aria-label": `chave mais usada em ${porcento.format(fracao)} do limite do dia`, title: `Chave mais usada: ${porcento.format(fracao)} do limite do dia` }, barra);
+  return el("span", { class: "medidor", role: "img", "aria-label": `${porcento.format(fracao)} do limite do dia da conta`, title: `${porcento.format(fracao)} do limite do dia da conta` }, barra);
 }
 
 let temporizador;
@@ -725,7 +725,7 @@ function desenharVisao() {
     const nome = el("b", {}, c.nome);
     if (c.situacao === "sem_pagamento") itens.push(["pagamento", c, [nome, ` — plano ${c.plano_nome} sem pagamento em dia: as chaves respondem 402.`]]);
     if (c.situacao === "em_tolerancia") itens.push(["tolerancia", c, [nome, ` — pagamento venceu em ${dataCurta(c.pago_ate)}; o acesso corta depois de ${somarDias(c.pago_ate, 3)}.`]]);
-    if (c.ativa && usoDoLimite(c) >= ALERTA_DE_LIMITE) itens.push(["limite", c, [nome, ` — uma chave usou ${porcento.format(usoDoLimite(c))} do limite do dia (${numero.format(c.maior_chave_hoje)} de ${numero.format(c.limite_por_dia)}).`]]);
+    if (c.ativa && usoDoLimite(c) >= ALERTA_DE_LIMITE) itens.push(["limite", c, [nome, ` — usou ${porcento.format(usoDoLimite(c))} do limite do dia (${numero.format(c.requisicoes_hoje)} de ${numero.format(c.limite_por_dia)}).`]]);
     if (c.situacao === "a_vencer") itens.push(["vence", c, [nome, ` — pagamento vence em ${dataCurta(c.pago_ate)}.`]]);
     if (c.ativa && c.chaves_ativas === 0) itens.push(["sem_chave", c, [nome, " — conta ativa sem nenhuma chave ativa."]]);
   }

@@ -4,7 +4,7 @@ from datetime import date
 
 import sqlalchemy as sa
 
-from dadosapi import acesso
+from dadosapi import acesso, app
 from tests.conftest import TOKEN, criar_conta
 
 ADMIN = {"X-Admin-Token": TOKEN}
@@ -49,13 +49,44 @@ def test_limite_do_dia(cliente, bancos, chave):
     assert respostas == [200, 200, 429]
 
 
+def test_trocar_de_chave_nao_renova_o_limite_do_dia(cliente, bancos, chave):
+    with bancos.acesso.begin() as conn:
+        conn.execute(
+            sa.text("UPDATE acesso.plano SET limite_por_dia = 4 WHERE codigo = 'convidado'")
+        )
+    cliente.get("/v1/ativos", headers=chave)
+    nova = cliente.post("/v1/conta/chaves", json={"nome": "outra"}, headers=chave).json()["dados"]
+    cliente.delete(f"/v1/conta/chaves/{nova['prefixo']}", headers=chave)
+    terceira = cliente.post("/v1/conta/chaves", json={"nome": "mais"}, headers=chave).json()
+    outra = {"Authorization": f"Bearer {terceira['dados']['chave']}"}
+
+    resposta = cliente.get("/v1/ativos", headers=outra)
+
+    assert resposta.status_code == 429, (
+        "a chave nova herda o uso da conta, inclusive o das chaves revogadas"
+    )
+
+
+def test_chaves_novas_tem_teto_por_dia(cliente, chave):
+    respostas = []
+    for i in range(app.CHAVES_NOVAS_POR_DIA):
+        criada = cliente.post("/v1/conta/chaves", json={"nome": f"c{i}"}, headers=chave)
+        respostas.append(criada.status_code)
+        if criada.status_code == 201:
+            cliente.delete(f"/v1/conta/chaves/{criada.json()['dados']['prefixo']}", headers=chave)
+
+    assert respostas[-1] == 429 and set(respostas[:-1]) == {201}, (
+        "a primeira chave da conta entra no teto: emitir e revogar não vira chave infinita"
+    )
+
+
 def test_limite_por_minuto_reabre_no_minuto_seguinte():
     agora = [120.0]
     limite = acesso.LimitePorMinuto(relogio=lambda: agora[0])
 
     assert [limite.registrar(1, 2) for _ in range(2)] == [None, None]
     assert limite.registrar(1, 2) is not None, "a terceira no mesmo minuto espera"
-    assert limite.registrar(2, 2) is None, "cada chave conta a sua"
+    assert limite.registrar(2, 2) is None, "cada conta conta a sua"
     agora[0] = 181.0
     assert limite.registrar(1, 2) is None
 
@@ -125,6 +156,42 @@ def test_dez_tentativas_erradas_bloqueiam_ate_o_token_certo(cliente):
     )
 
 
+def test_x_forwarded_for_forjado_nao_escapa_do_bloqueio(cliente):
+    for i in range(10):
+        forjado = {"X-Admin-Token": "errado", "X-Forwarded-For": f"10.0.0.{i}, 203.0.113.9"}
+        cliente.get("/admin/contas", headers=forjado)
+
+    certo = {"X-Admin-Token": TOKEN, "X-Forwarded-For": "10.9.9.9, 203.0.113.9"}
+
+    assert cliente.get("/admin/contas", headers=certo).status_code == 429, (
+        "a origem é o endereço que o proxy acrescentou, à direita; o da esquerda o cliente escreve"
+    )
+
+
+def test_token_com_caractere_fora_do_ascii_e_recusado_sem_erro(cliente):
+    resposta = cliente.get("/admin/contas", headers={"X-Admin-Token": "é".encode("latin-1")})
+
+    assert resposta.status_code == 401
+
+
+def test_conta_nao_ve_a_observacao_da_administracao(cliente, chave):
+    conta_id = cliente.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    cliente.patch(f"/admin/contas/{conta_id}", json={"observacao": "nota interna"}, headers=ADMIN)
+
+    propria = cliente.get("/v1/conta", headers=chave).json()["dados"]
+    na_administracao = cliente.get(f"/admin/contas/{conta_id}", headers=ADMIN).json()
+
+    assert "observacao" not in propria and na_administracao["observacao"] == "nota interna"
+    assert propria["requisicoes_hoje"] == 2, "o uso de hoje é da conta, somando as chaves"
+
+
+def test_respostas_trazem_cabecalhos_de_seguranca(cliente):
+    cabecalhos = cliente.get("/console").headers
+
+    assert cabecalhos["Content-Security-Policy"] == "frame-ancestors 'none'"
+    assert cabecalhos["X-Content-Type-Options"] == "nosniff"
+
+
 def test_uso_por_dia(cliente, chave):
     cliente.get("/v1/ativos", headers=chave)
     cliente.get("/v1/ativos", headers=chave)
@@ -156,7 +223,7 @@ def test_lista_de_contas_traz_situacao_limite_e_uso(cliente, chave):
 
     convidado, pago = contas["eu@teste.com"], contas["pago@teste.com"]
     assert (convidado["situacao"], convidado["plano_pago"]) == ("ativa", False)
-    assert convidado["requisicoes_hoje"] == convidado["maior_chave_hoje"] == 1
+    assert convidado["requisicoes_hoje"] == 1
     assert convidado["requisicoes_30_dias"] == 1 and convidado["limite_por_dia"] == 20_000
     assert convidado["ultimo_uso_em"] is not None
     assert (pago["situacao"], pago["chaves_ativas"]) == ("sem_pagamento", 1)

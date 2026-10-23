@@ -72,16 +72,16 @@ class LimitePorMinuto:
         self._contagens: dict[int, tuple[int, int]] = {}
         self._trava = threading.Lock()
 
-    def registrar(self, chave_id: int, limite: int) -> int | None:
+    def registrar(self, conta_id: int, limite: int) -> int | None:
         agora = self._relogio()
         minuto = int(agora // 60)
         with self._trava:
-            janela, contagem = self._contagens.get(chave_id, (minuto, 0))
+            janela, contagem = self._contagens.get(conta_id, (minuto, 0))
             if janela != minuto:
                 janela, contagem = minuto, 0
             if contagem >= limite:
                 return int(60 - agora % 60) + 1
-            self._contagens[chave_id] = (janela, contagem + 1)
+            self._contagens[conta_id] = (janela, contagem + 1)
         return None
 
 
@@ -95,7 +95,10 @@ class TentativasDeAdministracao:
         agora = self._relogio()
         with self._trava:
             recentes = [t for t in self._falhas.get(origem, []) if agora - t < self._janela]
-            self._falhas[origem] = recentes
+            if recentes:
+                self._falhas[origem] = recentes
+            else:
+                self._falhas.pop(origem, None)
             return len(recentes) >= self._maximo
 
     def falhou(self, origem: str) -> None:
@@ -131,9 +134,16 @@ _CHAVE_VALIDA = sa.text(
 
 _CONTAR_USO = sa.text(
     """
-    INSERT INTO acesso.uso_diario (chave_id, dia, requisicoes) VALUES (:chave, :dia, 1)
-    ON CONFLICT (chave_id, dia) DO UPDATE SET requisicoes = acesso.uso_diario.requisicoes + 1
-    RETURNING requisicoes
+    WITH contado AS (
+        INSERT INTO acesso.uso_diario (chave_id, dia, requisicoes) VALUES (:chave, :dia, 1)
+        ON CONFLICT (chave_id, dia) DO UPDATE SET requisicoes = acesso.uso_diario.requisicoes + 1
+        RETURNING requisicoes
+    )
+    SELECT (SELECT requisicoes FROM contado) + coalesce((
+        SELECT sum(u.requisicoes) FROM acesso.uso_diario u
+        JOIN acesso.chave k ON k.id = u.chave_id
+        WHERE k.conta_id = :conta AND u.dia = :dia AND u.chave_id <> :chave
+    ), 0)
     """
 )
 
@@ -161,11 +171,11 @@ def autenticar(
         dia_de_hoje = dia or hoje()
         if situacao_da_conta(True, plano.pago, linha.pago_ate, dia_de_hoje) == "sem_pagamento":
             raise SemAcesso(402, "A assinatura da conta está vencida ou não foi paga.")
-        espera = por_minuto.registrar(linha.chave_id, plano.limite_por_minuto)
+        espera = por_minuto.registrar(linha.conta_id, plano.limite_por_minuto)
         if espera is not None:
             raise SemAcesso(429, "Limite por minuto atingido.", tentar_em=espera)
         usadas = conn.execute(
-            _CONTAR_USO, {"chave": linha.chave_id, "dia": dia_de_hoje}
+            _CONTAR_USO, {"chave": linha.chave_id, "conta": linha.conta_id, "dia": dia_de_hoje}
         ).scalar_one()
         conn.execute(
             sa.text("UPDATE acesso.chave SET ultimo_uso_em = now() WHERE id = :id"),
@@ -233,7 +243,7 @@ def criar_conta(
     return dict(conta._mapping)
 
 
-def emitir_chave(engine: sa.Engine, conta_id: int, nome: str) -> dict:
+def emitir_chave(engine: sa.Engine, conta_id: int, nome: str, por_dia: int | None = None) -> dict:
     texto, prefixo, hash_ = gerar_chave()
     with engine.begin() as conn:
         conta = conn.execute(
@@ -257,6 +267,16 @@ def emitir_chave(engine: sa.Engine, conta_id: int, nome: str) -> dict:
             raise SemAcesso(
                 409, f"O plano permite {conta.chaves_maximas} chaves ativas: revogue uma antes."
             )
+        if por_dia is not None:
+            emitidas = conn.execute(
+                sa.text(
+                    "SELECT count(*) FROM acesso.chave "
+                    "WHERE conta_id = :id AND criada_em > now() - interval '1 day'"
+                ),
+                {"id": conta_id},
+            ).scalar_one()
+            if emitidas >= por_dia:
+                raise SemAcesso(429, f"No máximo {por_dia} chaves novas por dia.")
         conn.execute(
             sa.text(
                 "INSERT INTO acesso.chave (conta_id, prefixo, hash, nome) VALUES (:c, :p, :h, :n)"
@@ -309,6 +329,7 @@ def resumo_da_conta(engine: sa.Engine, conta_id: int, dia: date | None = None) -
     return {
         **dict(conta._mapping),
         "situacao": situacao,
+        "requisicoes_hoje": sum(k.requisicoes_hoje for k in chaves),
         "chaves": [dict(k._mapping) for k in chaves],
     }
 
@@ -322,7 +343,6 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
                 WITH uso AS (
                     SELECT k.conta_id,
                         sum(u.requisicoes) FILTER (WHERE u.dia = :dia) AS hoje,
-                        max(u.requisicoes) FILTER (WHERE u.dia = :dia) AS maior_chave_hoje,
                         sum(u.requisicoes) AS trinta_dias
                     FROM acesso.uso_diario u JOIN acesso.chave k ON k.id = u.chave_id
                     WHERE u.dia > :desde GROUP BY k.conta_id
@@ -336,7 +356,6 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
                     p.preco_mensal_centavos IS NOT NULL AS plano_pago,
                     coalesce(k.ativas, 0) AS chaves_ativas, k.ultimo_uso_em,
                     coalesce(u.hoje, 0) AS requisicoes_hoje,
-                    coalesce(u.maior_chave_hoje, 0) AS maior_chave_hoje,
                     coalesce(u.trinta_dias, 0) AS requisicoes_30_dias
                 FROM acesso.conta c
                 JOIN acesso.plano p ON p.codigo = c.plano

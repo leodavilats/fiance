@@ -641,7 +641,7 @@ const { dados, proximo } = await r.json();</code></pre>
         </div>
         <div>
           <div class="painel cartao">
-            <h2>Uso de hoje <small>por chave, no dia de Brasília</small></h2>
+            <h2>Uso de hoje <small>da conta, no dia de Brasília</small></h2>
             <div class="uso-hoje" id="uso-hoje">—</div>
             <div class="medidor" aria-hidden="true"><i id="uso-barra" style="width:0"></i></div>
             <p class="discreto" id="uso-legenda" style="margin:0"></p>
@@ -1141,15 +1141,12 @@ async function carregarConta(focar) {
 
   const ativas = conta.chaves.filter((k) => !k.revogada_em);
   $("chaves-contagem").textContent = `${ativas.length} de ${conta.chaves_maximas} ativas`;
-  const maior = Math.max(0, ...ativas.map((k) => k.requisicoes_hoje));
-  const fracao = conta.limite_por_dia ? maior / conta.limite_por_dia : 0;
-  $("uso-hoje").replaceChildren(inteiro.format(maior), html("small", "", ` de ${inteiro.format(conta.limite_por_dia)}`));
+  const total = conta.requisicoes_hoje;
+  const fracao = conta.limite_por_dia ? total / conta.limite_por_dia : 0;
+  $("uso-hoje").replaceChildren(inteiro.format(total), html("small", "", ` de ${inteiro.format(conta.limite_por_dia)}`));
   $("uso-barra").style.width = Math.min(100, fracao * 100) + "%";
   $("uso-barra").className = fracao >= 0.8 ? "alto" : "";
-  const total = ativas.reduce((s, k) => s + k.requisicoes_hoje, 0);
-  $("uso-legenda").textContent = ativas.length > 1
-    ? `A chave mais usada hoje. Somando as ${ativas.length} chaves: ${inteiro.format(total)} chamadas. O limite vale por chave.`
-    : "Chamadas da chave hoje. O limite volta à meia-noite de Brasília.";
+  $("uso-legenda").textContent = "Chamadas de todas as chaves da conta hoje, inclusive as revogadas. O limite vale para a conta e volta à meia-noite de Brasília.";
 
   const ficha = $("ficha-plano");
   const linha = (dt, dd) => { ficha.append(html("dt", "", dt), html("dd", "", dd)); };

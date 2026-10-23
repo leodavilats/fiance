@@ -33,6 +33,19 @@ def _linhas(conn: sa.Connection, sql: str, **parametros) -> list[dict]:
     ]
 
 
+class CursorInvalido(ValueError):
+    pass
+
+
+def _depois_de(cursor: str | None) -> date:
+    if not cursor:
+        return date.min
+    try:
+        return date.fromisoformat(cursor)
+    except ValueError:
+        raise CursorInvalido(cursor) from None
+
+
 def _pagina(linhas: list[dict], limite: int, campo: str) -> tuple[list[dict], str | None]:
     if len(linhas) <= limite:
         return linhas, None
@@ -127,7 +140,16 @@ FROM mercado.ativo_hoje
 """
 
 
-def retratos(conn: sa.Connection, codigos: list[str], desde: date) -> dict[str, dict]:
+def _ultimas_versoes(versoes: list[dict]) -> list[dict]:
+    ultimas: dict[tuple, dict] = {}
+    for d in versoes:
+        ultimas[(d["tipo"], d["data_referencia"])] = d
+    return list(ultimas.values())
+
+
+def retratos(
+    conn: sa.Connection, codigos: list[str], desde: date, todas_as_versoes: bool
+) -> dict[str, dict]:
     ativos = _linhas(conn, _RETRATO + " WHERE codigo = ANY(:codigos)", codigos=codigos)
     cnpjs = sorted({a["cnpj"] for a in ativos if a["tipo"] == "stock" and a["cnpj"]})
     irmaos: dict[str, list[dict]] = {}
@@ -155,6 +177,8 @@ def retratos(conn: sa.Connection, codigos: list[str], desde: date) -> dict[str, 
             desde=desde,
         ):
             demonstracoes.setdefault(linha.pop("cnpj"), []).append(linha)
+    if not todas_as_versoes:
+        demonstracoes = {cnpj: _ultimas_versoes(v) for cnpj, v in demonstracoes.items()}
     return {
         a["codigo"]: {
             "ativo": a,
@@ -181,7 +205,7 @@ def cotacoes(
         codigo=codigo.upper(),
         de=de,
         ate=ate,
-        cursor=date.fromisoformat(cursor) if cursor else date.min,
+        cursor=_depois_de(cursor),
         n=limite + 1,
     )
     return _pagina(linhas, limite, "data")
@@ -210,7 +234,7 @@ def serie(
         classe=p.classe,
         de=de,
         ate=ate,
-        cursor=date.fromisoformat(cursor) if cursor else date.min,
+        cursor=_depois_de(cursor),
         n=limite + 1,
     )
     return _pagina(linhas, limite, "data")
@@ -321,7 +345,7 @@ def indicador(
         serie=serie_,
         de=de,
         ate=ate,
-        cursor=date.fromisoformat(cursor) if cursor else date.min,
+        cursor=_depois_de(cursor),
         n=limite + 1,
     )
     return _pagina(linhas, limite, "data")
@@ -360,7 +384,7 @@ def tesouro_historico(
         vencimento=vencimento,
         de=de,
         ate=ate,
-        cursor=date.fromisoformat(cursor) if cursor else date.min,
+        cursor=_depois_de(cursor),
         n=limite + 1,
     )
     return _pagina(linhas, limite, "data")

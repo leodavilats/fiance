@@ -4,7 +4,7 @@
 está na [ADR-024](../decisoes/ADR-024-api-de-dados.md) e na
 [ADR-025](../decisoes/ADR-025-cobranca-da-api-de-dados.md); as rotas e os campos, no OpenAPI do
 próprio serviço (`/docs`).
-Última revisão: 2026-10-21
+Última revisão: 2026-10-23
 
 ---
 
@@ -88,11 +88,21 @@ em `X-API-Key`. Toda resposta autenticada traz `X-Limite-Dia` e `X-Restante-Dia`
 | 403 | Rota de um recurso que o plano não tem |
 | 429 | Limite por minuto (com `Retry-After`) ou por dia |
 
+**Os limites valem para a conta, não para a chave.** O uso é contado por chave e somado na conta,
+inclusive o das chaves revogadas: trocar de chave não renova o dia. Uma conta emite no máximo 10
+chaves novas em 24 horas pelo `/v1/conta/chaves`.
+
 **O limite por minuto fica na memória do processo:** com mais de uma réplica, cada uma conta a sua.
 O por dia fica no banco, no dia de Brasília, e **a requisição recusada pelo limite diário também
 conta**.
 
-**Dez tentativas erradas do mesmo IP bloqueiam `/admin` por 15 minutos.**
+**Sem o recurso `ponto_no_tempo`, o `/v1/retratos` traz só a última versão** de cada demonstração:
+todas as versões com a data de entrega são o balanço como se sabia na data.
+
+**Dez tentativas erradas do mesmo IP bloqueiam `/admin` por 15 minutos.** O IP é o que o proxy
+acrescentou à direita do `X-Forwarded-For` (`PROXIES_CONFIAVEIS`); o da esquerda, o cliente escreve.
+
+A `observacao` da conta é da administração: o `/v1/conta` não a devolve.
 
 ---
 
@@ -128,7 +138,8 @@ Ligada: a página assina Essencial ou Pro, o serviço cria cliente e
 assinatura no Asaas e devolve o link de pagamento. O Asaas avisa em `POST /cobranca/asaas`, com o
 token no cabeçalho `asaas-access-token`; cada evento entra uma vez, o pagamento é **reconsultado**
 antes de liberar, e o titular sai da assinatura gravada aqui, nunca do corpo do webhook. O pagamento
-confirmado leva `pago_ate` ao fim do ciclo.
+confirmado leva `pago_ate` ao fim do ciclo. Evento gravado sem `resultado` caiu antes de aplicar, e
+a reentrega do Asaas o aplica de novo. Uma conta abre no máximo três assinaturas por dia.
 
 ## Variáveis
 
@@ -137,6 +148,7 @@ confirmado leva `pago_ate` ao fim do ciclo.
 | `DATABASE_URL` | `${{postgres-mercado.DATABASE_URL}}`. Lê `mercado` como `mercado_leitura` e escreve só no schema `acesso` |
 | `DADOS_API_ADMIN_TOKEN` | Token das rotas `/admin`, 32 caracteres ou mais. **Falha ao subir sem ele.** Definido no painel do Railway, nunca no repositório |
 | `CONTATO_EMAIL` | Opcional. Com ele, o portal mostra "Pedir um convite" |
+| `PROXIES_CONFIAVEIS` | `1` por padrão: o proxy do Railway. Quantos endereços, da direita do `X-Forwarded-For`, foram escritos por proxy; `0` usa o IP da conexão |
 | `COBRANCA_ATIVA` | `false` por padrão. `true` abre a assinatura pela página e o webhook |
 | `ASAAS_API_KEY` | Obrigatória com a cobrança ativa |
 | `ASAAS_WEBHOOK_TOKEN` | 32 caracteres ou mais. Obrigatória com a cobrança ativa |

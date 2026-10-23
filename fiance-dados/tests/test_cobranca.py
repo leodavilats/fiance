@@ -119,6 +119,58 @@ def test_o_titular_nao_sai_do_corpo_do_webhook(com_cobranca, chave, bancos):
     )
 
 
+def test_evento_que_falhou_no_meio_e_aplicado_na_reentrega(com_cobranca, chave, bancos):
+    com_cobranca.post(
+        "/v1/conta/assinatura",
+        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        headers=chave,
+    )
+    with bancos.acesso.begin() as conn:
+        conn.execute(
+            sa.text("INSERT INTO acesso.evento_de_cobranca (id, tipo) VALUES ('evt_9', 'x')")
+        )
+
+    reentrega = com_cobranca.post(
+        "/cobranca/asaas",
+        json=_evento("evt_9", "PAYMENT_CONFIRMED", "pay_1"),
+        headers={"asaas-access-token": WEBHOOK},
+    )
+
+    assert reentrega.json()["resultado"].endswith("no plano pro"), (
+        "evento gravado sem resultado caiu antes de aplicar: tratá-lo como repetido perde o pagamento"
+    )
+
+
+def test_assinatura_tem_teto_por_dia(com_cobranca, chave, bancos, pedidos):
+    conta_id = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    with bancos.acesso.begin() as conn:
+        for i in range(cobranca.ASSINATURAS_POR_DIA):
+            conn.execute(
+                sa.text(
+                    "INSERT INTO acesso.assinatura (conta_id, plano, ciclo, asaas_cliente, "
+                    "asaas_assinatura) VALUES (:c, 'pro', 'mensal', 'cus', :a)"
+                ),
+                {"c": conta_id, "a": f"sub_antiga_{i}"},
+            )
+
+    resposta = com_cobranca.post(
+        "/v1/conta/assinatura",
+        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        headers=chave,
+    )
+
+    assert resposta.status_code == 429 and pedidos == [], (
+        "cada assinatura cria cliente e cobrança no Asaas"
+    )
+
+
+def test_recusa_do_asaas_volta_so_com_a_descricao():
+    resposta = httpx.Response(400, json={"errors": [{"code": "x", "description": "CPF inválido"}]})
+
+    assert cobranca._motivo(resposta) == "CPF inválido"
+    assert cobranca._motivo(httpx.Response(500, text="<html>pilha</html>")) == "status 500"
+
+
 def test_webhook_sem_o_token_combinado_e_recusado(com_cobranca):
     errado = com_cobranca.post(
         "/cobranca/asaas",

@@ -13,6 +13,16 @@ from dadosapi import acesso
 CONFIRMADOS = {"PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"}
 ENCERRADOS = {"SUBSCRIPTION_DELETED", "SUBSCRIPTION_INACTIVATED"}
 CICLO_DO_ASAAS = {"mensal": "MONTHLY", "anual": "YEARLY"}
+ASSINATURAS_POR_DIA = 3
+
+
+def _motivo(resposta: httpx.Response) -> str:
+    try:
+        erros = resposta.json().get("errors") or []
+        descricoes = [str(e.get("description")) for e in erros if e.get("description")]
+    except (ValueError, AttributeError):
+        descricoes = []
+    return "; ".join(descricoes) or f"status {resposta.status_code}"
 
 
 @dataclass(frozen=True)
@@ -30,11 +40,13 @@ class Asaas:
     def _pedir(self, metodo: str, rota: str, corpo: dict | None = None) -> dict:
         resposta = self.cliente.request(metodo, rota, json=corpo)
         if resposta.is_error:
-            raise acesso.SemAcesso(502, f"O Asaas recusou {rota}: {resposta.text[:200]}")
+            raise acesso.SemAcesso(502, f"O Asaas recusou o pedido: {_motivo(resposta)}.")
         return resposta.json()
 
     def webhook_autentico(self, cabecalho: str | None) -> bool:
-        return bool(cabecalho) and secrets.compare_digest(cabecalho, self.token_do_webhook)
+        return bool(cabecalho) and secrets.compare_digest(
+            cabecalho.encode(), self.token_do_webhook.encode()
+        )
 
 
 def _somar_ciclo(dia: date, ciclo: str) -> date:
@@ -65,8 +77,19 @@ def criar_assinatura(
             ),
             {"p": plano},
         ).first()
+        recentes = conn.execute(
+            sa.text(
+                "SELECT count(*) FROM acesso.assinatura "
+                "WHERE conta_id = :id AND criada_em > now() - interval '1 day'"
+            ),
+            {"id": conta_id},
+        ).scalar_one()
     if conta is None:
         raise acesso.SemAcesso(404, "Conta não encontrada ou desativada.")
+    if recentes >= ASSINATURAS_POR_DIA:
+        raise acesso.SemAcesso(
+            429, f"No máximo {ASSINATURAS_POR_DIA} assinaturas por dia. Use o link já enviado."
+        )
     centavos = None if preco is None else preco[0 if ciclo == "mensal" else 1]
     if centavos is None:
         raise acesso.SemAcesso(422, f"O plano {plano} não tem cobrança {ciclo} pela página.")
@@ -100,14 +123,18 @@ def criar_assinatura(
 
 
 def processar_evento(engine: sa.Engine, asaas: Asaas, corpo: dict) -> str:
+    if not isinstance(corpo, dict):
+        return "ignorado: corpo que não é objeto"
     evento_id, tipo = str(corpo.get("id") or ""), str(corpo.get("event") or "")
     if not evento_id or not tipo:
         return "ignorado: evento sem id ou tipo"
+    # Evento sem resultado falhou no meio: a reentrega do Asaas o aplica de novo.
     with engine.begin() as conn:
         novo = conn.execute(
             sa.text(
                 "INSERT INTO acesso.evento_de_cobranca (id, tipo) VALUES (:id, :t) "
-                "ON CONFLICT (id) DO NOTHING RETURNING id"
+                "ON CONFLICT (id) DO UPDATE SET tipo = excluded.tipo "
+                "WHERE acesso.evento_de_cobranca.resultado IS NULL RETURNING id"
             ),
             {"id": evento_id, "t": tipo},
         ).first()

@@ -27,6 +27,7 @@ class Configuracao:
     asaas_chave: str = ""
     asaas_token_webhook: str = ""
     contato: str = ""
+    proxies_confiaveis: int = 1
 
 
 def _texto(nome: str) -> str:
@@ -49,6 +50,11 @@ def carregar() -> Configuracao:
         raise ConfiguracaoAusente(
             "COBRANCA_ATIVA=true exige ASAAS_API_KEY e ASAAS_WEBHOOK_TOKEN com 32 caracteres ou mais."
         )
+    proxies = _texto("PROXIES_CONFIAVEIS") or "1"
+    if not proxies.isdigit():
+        raise ConfiguracaoAusente(
+            "PROXIES_CONFIAVEIS precisa ser um inteiro: 0 usa o IP da conexão."
+        )
     return Configuracao(
         database_url=url_do_banco(url),
         admin_token=token,
@@ -57,4 +63,5 @@ def carregar() -> Configuracao:
         asaas_chave=chave,
         asaas_token_webhook=token_webhook,
         contato=_texto("CONTATO_EMAIL"),
+        proxies_confiaveis=int(proxies),
     )
