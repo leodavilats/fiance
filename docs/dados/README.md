@@ -149,7 +149,7 @@ fica com o resultado "ignorado: assinatura substituída … estornar", para o es
 
 | Variável | Para quê |
 |---|---|
-| `DATABASE_URL` | Hoje `${{postgres-mercado.DATABASE_URL}}`, o dono do cluster; o destino é o papel `dados_api` ([abaixo](#papel-no-banco)). Lê `mercado` como `mercado_leitura` e escreve só no schema `acesso` |
+| `DATABASE_URL` | `postgresql://dados_api:<senha>@${{postgres-mercado.PGHOST}}:${{postgres-mercado.PGPORT}}/${{postgres-mercado.PGDATABASE}}`, com o papel próprio ([abaixo](#papel-no-banco)). Lê `mercado` como `mercado_leitura` e escreve só no schema `acesso`. O valor termina no `}}`: quebra de linha colada no fim derruba o Pre-Deploy |
 | `DADOS_API_ADMIN_TOKEN` | Token das rotas `/admin`, 32 caracteres ou mais. **Falha ao subir sem ele.** Definido no painel do Railway, nunca no repositório |
 | `CONTATO_EMAIL` | Opcional. Com ele, o portal mostra "Pedir um convite" |
 | `PROXIES_CONFIAVEIS` | `1` por padrão: o proxy do Railway. Quantos endereços, da direita do `X-Forwarded-For`, foram escritos por proxy; `0` usa o IP da conexão |
@@ -162,9 +162,10 @@ Serviço, migrações e deploy em [07-OPERACAO](../07-OPERACAO.md#serviços).
 
 ## Papel no banco
 
-A API entra no `postgres-mercado` como `dados_api`: membro de `mercado_leitura`, dono só do schema
-`acesso`, sem poder criar schema nem escrever em `mercado`. O SQL é
-`fiance-dados/papel.sql`, e `tests/test_papel.py` roda a API e as migrações com ele.
+A API entra no `postgres-mercado` como `dados_api`, desde 2026-10-23: membro de `mercado_leitura`,
+dono só do schema `acesso`, sem poder criar schema nem escrever em `mercado`. O SQL é
+`fiance-dados/papel.sql`, e `tests/test_papel.py` roda a API e as migrações com ele. Os passos
+abaixo recriam o papel ou trocam a senha; cada execução do `ALTER ROLE` invalida a anterior.
 
 1. Chegar ao banco como o dono do cluster ([07-OPERACAO](../07-OPERACAO.md#serviços)), e rodar
    `fiance-dados/papel.sql` seguido de `ALTER ROLE dados_api PASSWORD '<senha>'`, com uma senha

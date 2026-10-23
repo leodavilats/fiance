@@ -122,14 +122,6 @@ e no laboratório. O disjuntor protege contra queda, não contra descontinuaçã
 
 ## API de dados
 
-### A API entra no banco de mercado como superusuário
-
-A `DATABASE_URL` da `fiance-dados` é a do `postgres-mercado`, com o usuário dono do cluster. O
-`SET ROLE mercado_leitura` e a transação só de leitura (`dadosapi/banco.py`) a própria sessão
-desfaz, e a engine do schema `acesso` pode tudo. O papel `dados_api` está pronto e testado
-(`fiance-dados/papel.sql`); falta aplicá-lo em produção, pelo passo a passo de
-[dados/](dados/README.md#papel-no-banco).
-
 ### O limite do Pro permite copiar a base pela API
 
 **Bloqueia só a fase pública.** A base não é entregue em arquivo
