@@ -171,7 +171,8 @@ cinco dias, os planos públicos e o 401 sem chave.
 próprio processo, por `127.0.0.1`, com uma chave temporária para cada plano da tabela, e a revoga no
 fim. Cada plano tem uma conta `<plano>@fumaca.invalid`, criada na primeira rodada, paga até 2099 e
 sem chave fora da rodada; ela e o tráfego dela ficam fora de `/admin/contas` e `/admin/uso`. Duas
-rodadas ao mesmo tempo: a segunda recebe 409.
+rodadas ao mesmo tempo: a segunda recebe 409. Cada conferência de rota traz a resposta: o código, `Content-Type`,
+`X-Limite-Dia`, `X-Restante-Dia`, `Retry-After` e o corpo, cortado em 4.000 caracteres.
 
 **Por fora**, contra a URL pública (o domínio e o TLS entram junto), com chaves suas:
 

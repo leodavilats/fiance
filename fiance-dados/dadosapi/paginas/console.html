@@ -165,8 +165,8 @@ td.vazio { text-align: center; color: var(--suave); padding: 28px; }
 .medidor i.alto { background: var(--barra-alta); }
 .barra-dia { height: 8px; background: var(--barra); border-radius: 2px; min-width: 1px; }
 .rolagem { max-height: 360px; overflow-y: auto; }
-details.tabela-detalhe summary { cursor: pointer; padding: 10px 14px; color: var(--texto-2); font-size: 13.5px; border-top: 1px solid var(--fio); }
-details.tabela-detalhe[open] summary { border-bottom: 1px solid var(--fio); }
+details.tabela-detalhe > summary { cursor: pointer; padding: 10px 14px; color: var(--texto-2); font-size: 13.5px; border-top: 1px solid var(--fio); }
+details.tabela-detalhe[open] > summary { border-bottom: 1px solid var(--fio); }
 
 /* nova conta */
 .nova { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
@@ -188,8 +188,14 @@ legend { font-weight: 600; font-size: 13.5px; padding: 0 4px; }
 .conferencias .sinal.ok { color: var(--destaque); }
 .conferencias .sinal.falha { color: var(--perigo); }
 .conferencias .texto { min-width: 0; }
+.conferencias .texto details { min-width: 0; }
+.conferencias .texto summary { cursor: pointer; }
+.conferencias .texto summary::marker { color: var(--suave); }
+.conferencias .resposta { margin: 8px 0 2px; padding: 10px 12px; max-height: 360px; overflow: auto; background: var(--chao); border: 1px solid var(--fio); border-radius: 7px; font: 12.5px/1.45 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.conferencias .resposta b { font-weight: 600; }
+.conferencias .texto { flex: 1; }
 .conferencias .detalhe { display: block; font: 12.5px/1.45 var(--mono); color: var(--suave); overflow-wrap: anywhere; }
-.caixa > details.tabela-detalhe:first-child summary { border-top: 0; }
+.caixa > details.tabela-detalhe:first-child > summary { border-top: 0; }
 /* diálogos */
 dialog { border: 1px solid var(--fio-forte); border-radius: 12px; background: var(--fundo); color: var(--texto); padding: 0; max-width: calc(100vw - 24px); }
 dialog::backdrop { background: rgba(20, 18, 15, 0.45); }
@@ -1155,10 +1161,18 @@ function desenharConta(conta, uso) {
 }
 
 /* ---------- fumaça ---------- */
+function blocoDaResposta(r) {
+  const cabecalhos = Object.entries(r.cabecalhos).map(([k, v]) => `${k}: ${v}`).join("\n");
+  return el("pre", { class: "resposta" }, el("b", {}, `HTTP ${r.status}`), cabecalhos ? "\n" + cabecalhos : "", "\n\n" + r.corpo);
+}
 function linhaDaConferencia(c) {
+  const detalhe = c.detalhe ? el("span", { class: "detalhe" }, c.detalhe) : null;
+  const texto = c.resposta
+    ? el("details", {}, el("summary", {}, c.nome, detalhe), blocoDaResposta(c.resposta))
+    : el("span", {}, c.nome, detalhe);
   return el("li", {},
     el("span", { class: "sinal " + (c.ok ? "ok" : "falha") }, c.ok ? "ok" : "falha"),
-    el("span", { class: "texto" }, c.nome, c.detalhe ? el("span", { class: "detalhe" }, c.detalhe) : null));
+    el("span", { class: "texto" }, texto));
 }
 function desenharFumaca({ resultados, falhas }) {
   const grupos = new Map();

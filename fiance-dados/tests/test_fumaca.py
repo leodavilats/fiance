@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import httpx
 import pytest
 import sqlalchemy as sa
 from fastapi.testclient import TestClient
@@ -42,9 +43,14 @@ def test_a_fumaca_confere_cada_plano_e_nao_deixa_chave(console, bancos):
     }, "cada plano da tabela ganha a sua rodada"
     falhas = [r for r in resultados if not r["ok"] and r["nome"] not in DEPENDEM_DO_DIA]
     assert not falhas, falhas
-    essencial = {r["nome"] for r in resultados if r["grupo"] == "plano essencial"}
-    assert "GET /v1/ativos/TEST3/serie?limite=5 → 403" in essencial, (
-        "a fumaça espera o 403 do recurso que o plano não tem"
+    essencial = {r["nome"]: r for r in resultados if r["grupo"] == "plano essencial"}
+    serie = essencial.get("GET /v1/ativos/TEST3/serie?limite=5 → 403")
+    assert serie, "a fumaça espera o 403 do recurso que o plano não tem"
+    assert serie["resposta"]["status"] == 403 and "não inclui" in serie["resposta"]["corpo"], (
+        "o console mostra o corpo da resposta, não só o código"
+    )
+    assert all(r["resposta"] for r in resultados if r["nome"].startswith("GET ")), (
+        "toda conferência de rota leva a resposta junto"
     )
     assert _chaves_ativas(bancos) == 0, "a chave da fumaça só vive enquanto ela roda"
 
@@ -76,3 +82,11 @@ def test_a_fumaca_nao_entra_nas_contas_nem_no_uso_do_console(console):
         "conta de fumaça sem chave apareceria em 'pede atenção'"
     )
     assert sum(d["requisicoes"] for d in uso) == 0, "o tráfego da fumaça não é uso de cliente"
+
+
+def test_resposta_longa_e_cortada():
+    corpo = "x" * (fumaca.LIMITE_DA_RESPOSTA + 5000)
+    resposta = fumaca._resposta(httpx.Response(200, text=corpo))
+
+    assert len(resposta["corpo"]) < len(corpo), "o portal inteiro não vai para o console"
+    assert resposta["corpo"].endswith("mais 5000 caracteres")

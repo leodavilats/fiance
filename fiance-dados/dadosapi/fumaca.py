@@ -7,6 +7,7 @@ O console roda a mesma conferência por POST /admin/fumaca, com uma chave tempor
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import time
@@ -20,6 +21,22 @@ URL_DE_PRODUCAO = "https://fiance-dados.up.railway.app"
 ACAO = "PETR4"
 FII = "HGLG11"
 DIAS_SEM_PREGAO_TOLERADOS = 5
+LIMITE_DA_RESPOSTA = 4000
+CABECALHOS_DA_RESPOSTA = ("content-type", "x-limite-dia", "x-restante-dia", "retry-after")
+
+
+def _resposta(r: httpx.Response) -> dict:
+    try:
+        corpo = json.dumps(r.json(), ensure_ascii=False, indent=2)
+    except ValueError:
+        corpo = r.text
+    if len(corpo) > LIMITE_DA_RESPOSTA:
+        corpo = f"{corpo[:LIMITE_DA_RESPOSTA]}\n… mais {len(corpo) - LIMITE_DA_RESPOSTA} caracteres"
+    return {
+        "status": r.status_code,
+        "cabecalhos": {k: r.headers[k] for k in CABECALHOS_DA_RESPOSTA if k in r.headers},
+        "corpo": corpo,
+    }
 
 
 class Fumaca:
@@ -32,9 +49,17 @@ class Fumaca:
     def falhas(self) -> int:
         return sum(not r["ok"] for r in self.resultados)
 
-    def conferir(self, nome: str, ok: bool, detalhe: str = "") -> bool:
+    def conferir(
+        self, nome: str, ok: bool, detalhe: str = "", resposta: httpx.Response | None = None
+    ) -> bool:
         self.resultados.append(
-            {"grupo": self.grupo, "nome": nome, "ok": ok, "detalhe": "" if ok else detalhe}
+            {
+                "grupo": self.grupo,
+                "nome": nome,
+                "ok": ok,
+                "detalhe": "" if ok else detalhe,
+                "resposta": _resposta(resposta) if resposta is not None else None,
+            }
         )
         return ok
 
@@ -55,7 +80,7 @@ class Fumaca:
             return {}
         rotulo = f"GET {caminho}{'?' + str(httpx.QueryParams(params)) if params else ''}"
         detalhe = f"{r.status_code}: {r.text[:200]}"
-        self.conferir(f"{rotulo} → {esperado}", r.status_code == esperado, detalhe)
+        self.conferir(f"{rotulo} → {esperado}", r.status_code == esperado, detalhe, r)
         if r.status_code == 200 and r.headers.get("content-type", "").startswith(
             "application/json"
         ):
@@ -82,7 +107,7 @@ def com_chave(f: Fumaca, chave: str) -> None:
     f.grupo = f"chave {chave[:11]}…"
     r = f.get("/v1/conta", chave)
     if r.status_code != 200:
-        f.conferir("a chave autentica", False, f"{r.status_code}: {r.text[:200]}")
+        f.conferir("a chave autentica", False, f"{r.status_code}: {r.text[:200]}", r)
         return
     conta = r.json()["dados"]
     plano, recursos, dias = conta["plano"], set(conta["recursos"]), conta["historico_dias"]
@@ -91,6 +116,7 @@ def com_chave(f: Fumaca, chave: str) -> None:
         "X-Limite-Dia é o limite do plano",
         r.headers.get("x-limite-dia") == str(conta["limite_por_dia"]),
         f"{r.headers.get('x-limite-dia')} ≠ {conta['limite_por_dia']}",
+        r,
     )
     corte = date.today() - timedelta(days=dias + 1) if dias is not None else None
 
