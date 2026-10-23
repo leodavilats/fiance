@@ -69,9 +69,17 @@ def linhas_do_zip(conteudo: bytes) -> Iterator[str]:
         nomes = [n for n in arquivo.namelist() if not n.endswith("/")]
         if len(nomes) != 1:
             raise ArquivoInvalido(f"O ZIP deveria ter um arquivo, e tem {len(nomes)}.")
-        with io.TextIOWrapper(arquivo.open(nomes[0]), encoding="latin-1", newline="") as texto:
-            for linha in texto:
-                yield linha.rstrip("\r\n")
+        with arquivo.open(nomes[0]) as bruto:
+            for linha in bruto:
+                yield _decodificar(linha.rstrip(b"\r\n"))
+
+
+def _decodificar(linha: bytes) -> str:
+    # A B3 grava em latin-1, mas já mandou linha avulsa em UTF-8 no mesmo arquivo.
+    try:
+        return linha.decode("utf-8")
+    except UnicodeDecodeError:
+        return linha.decode("latin-1")
 
 
 def _preco(campo: str) -> Decimal:

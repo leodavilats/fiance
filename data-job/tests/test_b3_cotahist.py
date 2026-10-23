@@ -150,6 +150,24 @@ def test_o_zip_da_b3_e_lido_em_latin1():
     assert list(linhas_do_zip(buffer.getvalue())) == _linhas()
 
 
+def test_linha_avulsa_em_utf8_no_meio_do_latin1_e_lida_inteira():
+    utf8 = (
+        "012026102252FR0T5L      017FROTA OCEÂNIPNA*         R$  00000000000050000000000005"
+        "0000000000005000000000000500000000000050000000000000000000000000000001000000000006"
+        "930312000000000000034652000000000000009999123100010000000000000000BRFR0TACNPA9109"
+    )
+    latin1 = _linhas()[1]
+    corpo = latin1.encode("latin-1") + b"\r\n" + utf8.encode("utf-8") + b"\r\n"
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as arquivo:
+        arquivo.writestr("COTAHIST_D22102026.TXT", corpo)
+
+    linhas = list(linhas_do_zip(buffer.getvalue()))
+
+    assert linhas == [latin1, utf8], "a linha UTF-8 de 22/10/2026 derrubou a coleta diária"
+    assert len(linhas[1]) == 245
+
+
 def test_endereco_dos_arquivos():
     assert url_do_ano(2025).endswith("/COTAHIST_A2025.ZIP")
     assert url_do_dia(date(2026, 10, 8)).endswith("/COTAHIST_D08102026.ZIP")
