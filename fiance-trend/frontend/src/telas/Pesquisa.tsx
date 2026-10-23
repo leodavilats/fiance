@@ -28,7 +28,9 @@ export default function TelaPesquisa() {
   const estado = useApi<{ execucoes: Execucao[] }>("/api/pesquisa");
   const [escolhida, setEscolhida] = useState<Execucao | null>(null);
   const detalhe = useRef<HTMLElement>(null);
-  useEffect(() => detalhe.current?.scrollIntoView({ behavior: "smooth", block: "start" }), [escolhida]);
+  useEffect(() => {
+    detalhe.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [escolhida]);
   return (
     <>
       <h1>Pesquisa</h1>

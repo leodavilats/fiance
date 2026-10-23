@@ -161,6 +161,20 @@ void main() {
     expect(find.text('PETR4 está abaixo de R\$ 30,00'), findsOneWidget);
   });
 
+  testWidgets('os filtros ficam numa linha só, mesmo na tela estreita', (tester) async {
+    await _montar(tester, _Servidor([]));
+
+    final topos = tester
+        .widgetList<FiChoiceChip>(find.byType(FiChoiceChip))
+        .map((chip) => tester.getTopLeft(find.byWidget(chip)).dy)
+        .toSet();
+    expect(
+      topos,
+      hasLength(1),
+      reason: 'filtro quebrado em duas linhas parece dois grupos de filtro, e empurra a lista',
+    );
+  });
+
   testWidgets('caixa vazia explica o que chega aqui', (tester) async {
     await _montar(tester, _Servidor([]));
 

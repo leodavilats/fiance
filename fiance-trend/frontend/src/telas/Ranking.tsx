@@ -32,7 +32,9 @@ export default function TelaRanking() {
   const estado = useApi<{ execucoes: Execucao[] }>("/api/ranking");
   const [escolhida, setEscolhida] = useState<Execucao | null>(null);
   const detalhe = useRef<HTMLElement>(null);
-  useEffect(() => detalhe.current?.scrollIntoView({ behavior: "smooth", block: "start" }), [escolhida]);
+  useEffect(() => {
+    detalhe.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [escolhida]);
   return (
     <>
       <h1>Ranking de tendência</h1>

@@ -62,9 +62,9 @@ da CVM, CNPJ e termos de uso. Até lá a cobrança fica desligada.
 |---|---|
 | `/v1/...` | A API, por chave. Ativos, retratos em lote (até 50), cotações, série ajustada, proventos, eventos, informes, empresas e demonstrações, indicadores do BCB, Tesouro; e `/v1/conta` para a própria conta e as chaves |
 | `/v1`, `/v1/planos`, `/v1/vitrine` | Sem chave: o índice, os planos públicos e o exemplo do portal |
-| `/` | Portal público: o que o serviço oferece, a documentação e "minha conta" para quem tem chave |
+| `/` | Portal público, em telas por âncora (`#inicio`, `#exemplo`, `#dados`, `#uso`, `#planos`, `#conta`): o que o serviço oferece, a documentação e "minha conta" para quem tem chave, com a assinatura quando a cobrança abre |
 | `/docs` | OpenAPI público. As rotas `/admin` ficam fora dele |
-| `/console` | O controle do autor: contas, uso por dia e por conta, emitir e revogar chave, desativar. Pede o token de administração na tela e o guarda só na aba |
+| `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`): contas, uso por dia e por conta, emitir e revogar chave, desativar. Pede o token de administração na tela e o guarda só na aba |
 | `/admin/...` | Administração, por `X-Admin-Token` |
 | `/cobranca/asaas` | Webhook do Asaas |
 | `/saude` | Saúde |

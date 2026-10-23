@@ -8,17 +8,19 @@
 <title>Console — fiance dados</title>
 <style>
 :root {
-  --fundo: #fbf8f1; --superficie: #ffffff; --chao: #f3eee3; --texto: #1c1a17; --texto-2: #47423a; --suave: #6e675b;
+  --fundo: #fbf8f1; --superficie: #ffffff; --chao: #f3eee3; --lateral: #f5f1e8; --texto: #1c1a17; --texto-2: #47423a; --suave: #6e675b;
   --fio: #e3dccd; --fio-forte: #cdc4b1; --destaque: #0b6b57; --destaque-fundo: #e6f1ec;
-  --perigo: #a33a2a; --perigo-fundo: #f8e6e1; --aviso: #8a5a00; --aviso-fundo: #fbf0d9; --barra: #9cc7b8; --barra-alta: #d9895f;
+  --perigo: #a33a2a; --perigo-fundo: #f8e6e1; --aviso: #8a5a00; --aviso-fundo: #fbf0d9; --barra: #7fb8a5; --barra-alta: #d9895f;
+  --sombra: 0 1px 2px rgba(40, 32, 20, 0.05), 0 4px 16px rgba(40, 32, 20, 0.05);
   --mono: ui-monospace, "IBM Plex Mono", Consolas, monospace;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --fundo: #191714; --superficie: #1f1c18; --chao: #24211c; --texto: #efe9dd; --texto-2: #cbc3b4; --suave: #9d9586;
+    --fundo: #191714; --superficie: #1f1c18; --chao: #24211c; --lateral: #161411; --texto: #efe9dd; --texto-2: #cbc3b4; --suave: #9d9586;
     --fio: #302c26; --fio-forte: #443e35; --destaque: #5cc4a6; --destaque-fundo: #1c2924;
-    --perigo: #ef9a87; --perigo-fundo: #3a211b; --aviso: #e6b866; --aviso-fundo: #33291a; --barra: #2f6b59; --barra-alta: #a8603b;
+    --perigo: #ef9a87; --perigo-fundo: #3a211b; --aviso: #e6b866; --aviso-fundo: #33291a; --barra: #2f7a64; --barra-alta: #a8603b;
+    --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.2);
     color-scheme: dark;
   }
 }
@@ -26,31 +28,49 @@
 body { margin: 0; background: var(--fundo); color: var(--texto); font: 14.5px/1.5 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
 a { color: var(--destaque); }
 :focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
-h1, h2, h3 { margin: 0; font-weight: 600; }
-h2 { font-size: 17px; }
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+h1 { font-size: 22px; }
+h2 { font-size: 15px; }
 h3 { font-size: 14px; }
+h1:focus { outline: none; }
 code, .mono { font-family: var(--mono); font-size: 13px; }
 .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .suave { color: var(--suave); }
 .escondido { display: none !important; }
 .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; margin: -1px; padding: 0; }
 
-/* topo */
-.topo { position: sticky; top: 0; z-index: 5; background: var(--fundo); border-bottom: 1px solid var(--fio); }
-.topo-dentro { max-width: 1240px; margin: 0 auto; padding: 0 20px; height: 54px; display: flex; align-items: center; gap: 24px; }
-.marca { display: inline-flex; align-items: center; gap: 7px; font: 600 16px Georgia, serif; white-space: nowrap; }
-.marca .simbolo { width: 18px; height: 18px; flex: none; }
-.marca span { color: var(--suave); font: 400 14px system-ui, sans-serif; margin-left: 6px; }
-.topo nav { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
-.topo nav a { color: var(--texto-2); text-decoration: none; padding: 6px 10px; border-radius: 4px; white-space: nowrap; }
-.topo nav a:hover { background: var(--chao); color: var(--texto); }
-.topo-direita { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-main { max-width: 1240px; margin: 0 auto; padding: 8px 20px 80px; }
-section.bloco { padding-top: 28px; scroll-margin-top: 64px; }
-.cabeca-bloco { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.marca { display: inline-flex; align-items: center; gap: 9px; color: var(--texto); text-decoration: none; white-space: nowrap; }
+.marca .simbolo { width: 22px; height: 22px; flex: none; }
+.marca .logotipo { height: 14px; width: auto; aspect-ratio: 418 / 100; flex: none; }
+.marca .produto { font: 600 10.5px/1 system-ui, sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--suave); padding-left: 9px; border-left: 1px solid var(--fio-forte); }
+
+/* esqueleto */
+.casca { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100vh; }
+.lateral { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: var(--lateral); border-right: 1px solid var(--fio); padding: 18px 10px 14px; }
+.lateral .marca { padding: 2px 8px 22px; }
+.lateral nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.lateral nav a { display: flex; align-items: center; gap: 10px; color: var(--texto-2); text-decoration: none; padding: 8px 10px; border-radius: 8px; font-weight: 500; transition: background-color 150ms ease, color 150ms ease; }
+.lateral nav a svg { width: 16px; height: 16px; flex: none; color: var(--suave); transition: color 150ms ease; }
+.lateral nav a:hover { background: var(--chao); color: var(--texto); }
+.lateral nav a[aria-current="page"] { background: var(--superficie); color: var(--texto); box-shadow: 0 0 0 1px var(--fio), 0 1px 2px rgba(0, 0, 0, 0.04); }
+.lateral nav a[aria-current="page"] svg { color: var(--destaque); }
+.lateral nav .cont { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--perigo); background: var(--perigo-fundo); border-radius: 99px; padding: 1px 7px; }
+.lateral-pe { border-top: 1px solid var(--fio); padding: 12px 8px 0; display: grid; gap: 8px; font-size: 12.5px; }
+.lateral-pe .linha { display: flex; gap: 6px; }
+.lateral-pe button { flex: 1; }
+main { min-width: 0; padding: 26px 32px 80px; max-width: 1280px; }
+.tela { animation: entra 220ms cubic-bezier(0.2, 0, 0, 1); }
+@keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.cabeca-tela { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 20px; }
+.cabeca-tela p { margin: 4px 0 0; color: var(--suave); }
+.bloco { margin-top: 24px; }
+.bloco > h2 { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.bloco > h2 a, .bloco > h2 small { font-size: 13px; font-weight: 500; }
+.bloco > h2 small { color: var(--suave); font-weight: 400; }
+.caixa { border: 1px solid var(--fio); border-radius: 10px; background: var(--superficie); box-shadow: var(--sombra); }
 
 /* controles */
-button, .botao { font: inherit; font-weight: 500; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--fio-forte); background: var(--superficie); color: var(--texto); cursor: pointer; white-space: nowrap; }
+button, .botao { font: inherit; font-weight: 500; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--fio-forte); background: var(--superficie); color: var(--texto); cursor: pointer; white-space: nowrap; transition: border-color 150ms ease, background-color 150ms ease; }
 button:hover { border-color: var(--texto-2); }
 button.primario { background: var(--texto); color: var(--fundo); border-color: var(--texto); }
 button.primario:hover { background: var(--destaque); border-color: var(--destaque); }
@@ -59,9 +79,9 @@ button.perigo.cheio { background: var(--perigo); color: var(--superficie); borde
 button.discreto { border-color: transparent; background: transparent; color: var(--texto-2); padding: 4px 8px; }
 button.discreto:hover { background: var(--chao); color: var(--texto); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
-input, select, textarea { font: inherit; padding: 6px 9px; border: 1px solid var(--fio-forte); border-radius: 4px; background: var(--superficie); color: var(--texto); min-width: 0; }
+input, select, textarea { font: inherit; padding: 7px 10px; border: 1px solid var(--fio-forte); border-radius: 7px; background: var(--superficie); color: var(--texto); min-width: 0; }
 textarea { resize: vertical; min-height: 60px; width: 100%; }
-input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--destaque); outline-offset: 0; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; border-color: var(--destaque); box-shadow: 0 0 0 3px var(--destaque-fundo); }
 label { display: block; font-size: 13px; font-weight: 500; color: var(--texto-2); margin-bottom: 4px; }
 .campo { margin-bottom: 12px; }
 .campo input:not([type="checkbox"]), .campo select { width: 100%; }
@@ -71,106 +91,132 @@ label { display: block; font-size: 13px; font-weight: 500; color: var(--texto-2)
 .msg-erro:empty { display: none; }
 
 /* entrada */
-.entrada { max-width: 420px; margin: 12vh auto 0; padding: 0 20px; }
-.entrada h1 { font: 600 22px Georgia, serif; margin-bottom: 4px; }
-.entrada form { margin-top: 20px; display: flex; gap: 8px; }
+.entrada { max-width: 400px; margin: 14vh auto 0; padding: 28px; }
+.entrada .marca { margin-bottom: 22px; }
+.entrada h1 { margin-bottom: 4px; }
+.entrada form { margin-top: 18px; display: flex; gap: 8px; }
 .entrada input { flex: 1; }
 
 /* visão geral */
-.indicadores { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--fio); border-radius: 6px; background: var(--superficie); margin: 0; }
-.indicadores div { padding: 12px 14px; border-left: 1px solid var(--fio); }
+.indicadores { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; }
+.indicadores div { padding: 14px 16px; border-left: 1px solid var(--fio); }
 .indicadores div:first-child { border-left: 0; }
 .indicadores dt { font-size: 12.5px; color: var(--suave); }
-.indicadores dd { margin: 2px 0 0; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.indicadores dd small { font-size: 12.5px; font-weight: 400; color: var(--suave); margin-left: 4px; }
-.atencao { list-style: none; margin: 12px 0 0; padding: 0; border: 1px solid var(--fio); border-radius: 6px; background: var(--superficie); }
-.atencao li { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--fio); }
+.indicadores dd { margin: 4px 0 0; font: 600 24px/1.1 var(--mono); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.indicadores dd small { font: 400 12.5px system-ui, sans-serif; color: var(--suave); margin-left: 4px; letter-spacing: 0; }
+.dupla { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.atencao { list-style: none; margin: 0; padding: 0; }
+.atencao li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--fio); }
 .atencao li:first-child { border-top: 0; }
 .atencao li .texto { flex: 1; min-width: 0; }
 .atencao li .texto b { font-weight: 600; }
-.atencao .vazio { color: var(--suave); }
+.atencao .vazio { color: var(--suave); display: flex; gap: 10px; align-items: center; padding: 18px 14px; }
+.atencao .vazio svg { width: 18px; height: 18px; color: var(--destaque); flex: none; }
+
+/* gráfico de barras */
+.colunas { display: flex; align-items: flex-end; gap: 2px; height: 140px; padding: 14px 14px 0; }
+.colunas.alta { height: 220px; }
+.colunas span { flex: 1; min-width: 1px; background: var(--barra); border-radius: 3px 3px 0 0; position: relative; transition: background-color 120ms ease; }
+.colunas span.zero { background: var(--fio); height: 2px !important; }
+.colunas span:hover { background: var(--destaque); }
+.eixo { display: flex; justify-content: space-between; padding: 6px 14px 12px; font-size: 12px; color: var(--suave); border-top: 1px solid var(--fio); margin-top: 0; }
+.resumo-uso { display: flex; gap: 8px 22px; flex-wrap: wrap; margin: 0; padding: 12px 14px; font-size: 13.5px; color: var(--texto-2); border-bottom: 1px solid var(--fio); }
+.resumo-uso b { color: var(--texto); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* etiquetas */
-.etiqueta { display: inline-block; font-size: 12px; font-weight: 500; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--fio-forte); color: var(--texto-2); white-space: nowrap; line-height: 1.6; }
-.etiqueta.ativa { color: var(--destaque); border-color: currentColor; background: var(--destaque-fundo); }
-.etiqueta.a_vencer, .etiqueta.em_tolerancia { color: var(--aviso); border-color: currentColor; background: var(--aviso-fundo); }
-.etiqueta.sem_pagamento { color: var(--perigo); border-color: currentColor; background: var(--perigo-fundo); }
+.etiqueta { display: inline-block; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--fio-forte); color: var(--texto-2); white-space: nowrap; line-height: 1.6; }
+.etiqueta.ativa { color: var(--destaque); border-color: transparent; background: var(--destaque-fundo); }
+.etiqueta.a_vencer, .etiqueta.em_tolerancia { color: var(--aviso); border-color: transparent; background: var(--aviso-fundo); }
+.etiqueta.sem_pagamento { color: var(--perigo); border-color: transparent; background: var(--perigo-fundo); }
 .etiqueta.desativada { color: var(--suave); }
 
+/* filtros */
+.ferramentas { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.ferramentas .busca { flex: 1; min-width: 220px; position: relative; }
+.ferramentas .busca input { width: 100%; padding-left: 32px; }
+.ferramentas .busca svg { position: absolute; left: 10px; top: 50%; width: 15px; height: 15px; transform: translateY(-50%); color: var(--suave); pointer-events: none; }
+.fichas { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.fichas button { border-radius: 99px; padding: 5px 12px; font-size: 13px; color: var(--texto-2); background: var(--superficie); }
+.fichas button span { color: var(--suave); margin-left: 4px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.fichas button[aria-pressed="true"] { background: var(--texto); color: var(--fundo); border-color: var(--texto); }
+.fichas button[aria-pressed="true"] span { color: inherit; opacity: 0.7; }
+.contagem { color: var(--suave); font-size: 13px; }
+
 /* tabelas */
-.ferramentas { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; margin-bottom: 10px; }
-.ferramentas .busca { flex: 1; min-width: 220px; }
-.ferramentas .busca input { width: 100%; }
-.ferramentas label { margin-bottom: 2px; }
-.contagem { margin-left: auto; color: var(--suave); font-size: 13px; padding-bottom: 6px; }
-.tabela-caixa { position: relative; border: 1px solid var(--fio); border-radius: 6px; background: var(--superficie); overflow-x: auto; }
+.tabela-caixa { position: relative; overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th, td { padding: 7px 10px; border-bottom: 1px solid var(--fio); text-align: left; vertical-align: middle; }
+th, td { padding: 9px 12px; border-bottom: 1px solid var(--fio); text-align: left; vertical-align: middle; }
 tbody tr:last-child td { border-bottom: 0; }
-thead th { font-size: 12.5px; font-weight: 500; color: var(--suave); background: var(--chao); white-space: nowrap; }
+thead th { font-size: 12.5px; font-weight: 500; color: var(--suave); background: var(--chao); white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+thead th:first-child { border-top-left-radius: 10px; }
+thead th:last-child { border-top-right-radius: 10px; }
 thead th button { all: unset; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
 thead th button:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
 thead th[aria-sort] button::after { content: "↕"; opacity: 0.35; font-size: 11px; }
 thead th[aria-sort="ascending"] button::after { content: "↑"; opacity: 1; }
 thead th[aria-sort="descending"] button::after { content: "↓"; opacity: 1; }
-tbody tr.clicavel { cursor: pointer; }
+tbody tr.clicavel { cursor: pointer; transition: background-color 120ms ease; }
 tbody tr.clicavel:hover { background: var(--chao); }
 tr.inativa td { color: var(--suave); }
 td .linha2 { display: block; font-size: 12.5px; color: var(--suave); }
-td.vazio { text-align: center; color: var(--suave); padding: 24px; }
+td.vazio { text-align: center; color: var(--suave); padding: 28px; }
 .medidor { display: inline-block; width: 46px; height: 5px; background: var(--fio); border-radius: 3px; vertical-align: middle; margin-left: 6px; overflow: hidden; }
 .medidor i { display: block; height: 100%; background: var(--barra); }
 .medidor i.alto { background: var(--barra-alta); }
-.barra-dia { height: 10px; background: var(--barra); border-radius: 2px; min-width: 1px; }
-
-/* uso */
-.uso { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-items: start; }
-.resumo-uso { display: flex; gap: 22px; flex-wrap: wrap; margin: 0 0 10px; font-size: 13.5px; color: var(--texto-2); }
-.resumo-uso b { color: var(--texto); font-weight: 600; font-variant-numeric: tabular-nums; }
-.rolagem { max-height: 420px; overflow-y: auto; }
+.barra-dia { height: 8px; background: var(--barra); border-radius: 2px; min-width: 1px; }
+.rolagem { max-height: 360px; overflow-y: auto; }
+details.tabela-detalhe summary { cursor: pointer; padding: 10px 14px; color: var(--texto-2); font-size: 13.5px; border-top: 1px solid var(--fio); }
+details.tabela-detalhe[open] summary { border-bottom: 1px solid var(--fio); }
 
 /* nova conta */
 .nova { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-fieldset { border: 1px solid var(--fio); border-radius: 6px; background: var(--superficie); padding: 12px 14px 4px; margin: 0 0 12px; }
+fieldset { border: 1px solid var(--fio); border-radius: 10px; background: var(--superficie); padding: 14px 16px 4px; margin: 0 0 12px; }
 legend { font-weight: 600; font-size: 13.5px; padding: 0 4px; }
 .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
-.ficha-plano { border: 1px solid var(--fio); border-radius: 6px; background: var(--chao); padding: 12px 14px; font-size: 13.5px; }
-.ficha-plano dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; margin: 8px 0 0; }
+.ficha-plano { border: 1px solid var(--fio); border-radius: 10px; background: var(--chao); padding: 14px 16px; font-size: 13.5px; }
+.ficha-plano dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 10px 0 0; }
 .ficha-plano dt { color: var(--suave); }
 .ficha-plano dd { margin: 0; font-variant-numeric: tabular-nums; }
-.passos { margin: 12px 0 0; padding-left: 18px; color: var(--texto-2); font-size: 13.5px; }
+.passos { margin: 14px 0 0; padding-left: 18px; color: var(--texto-2); font-size: 13.5px; }
 .passos li { margin-bottom: 4px; }
 
 /* diálogos */
-dialog { border: 1px solid var(--fio-forte); border-radius: 8px; background: var(--fundo); color: var(--texto); padding: 0; max-width: calc(100vw - 24px); }
+dialog { border: 1px solid var(--fio-forte); border-radius: 12px; background: var(--fundo); color: var(--texto); padding: 0; max-width: calc(100vw - 24px); }
 dialog::backdrop { background: rgba(20, 18, 15, 0.45); }
 dialog.painel { margin: 0 0 0 auto; height: 100vh; max-height: 100vh; width: 640px; border-radius: 0; border-width: 0 0 0 1px; }
-.dialogo-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px 12px; border-bottom: 1px solid var(--fio); position: sticky; top: 0; background: var(--fundo); z-index: 1; }
+dialog.painel[open] { animation: desliza 240ms cubic-bezier(0.2, 0, 0, 1); }
+@keyframes desliza { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+.dialogo-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px 12px; border-bottom: 1px solid var(--fio); position: sticky; top: 0; background: var(--fundo); z-index: 2; }
 .dialogo-corpo { padding: 14px 18px 22px; }
-.dialogo-corpo h3 { margin: 18px 0 8px; }
+.dialogo-corpo h3 { margin: 20px 0 8px; }
 .dialogo-corpo h3:first-child { margin-top: 0; }
 .dialogo-rodape { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--fio); }
 dialog.pequeno { width: 460px; }
-.chave-revelada { display: flex; gap: 8px; align-items: center; background: var(--superficie); border: 1px solid var(--destaque); border-radius: 4px; padding: 10px; margin: 10px 0; }
+.chave-revelada { display: flex; gap: 8px; align-items: center; background: var(--superficie); border: 1px solid var(--destaque); border-radius: 7px; padding: 10px; margin: 10px 0; }
 .chave-revelada code { flex: 1; word-break: break-all; }
-.aviso-caixa { border-left: 3px solid var(--aviso); background: var(--aviso-fundo); padding: 8px 10px; font-size: 13.5px; margin: 10px 0; }
+.aviso-caixa { border-left: 3px solid var(--aviso); background: var(--aviso-fundo); padding: 8px 10px; font-size: 13.5px; margin: 10px 0; border-radius: 0 6px 6px 0; }
 .lista-mudancas { margin: 8px 0 0; padding-left: 18px; }
 .acoes-linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .campo .acoes-linha input { width: auto; flex: 1; }
 
-/* aviso flutuante */
-.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--texto); color: var(--fundo); padding: 9px 14px; border-radius: 5px; font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.18); z-index: 50; max-width: calc(100vw - 32px); }
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--texto); color: var(--fundo); padding: 9px 14px; border-radius: 8px; font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.18); z-index: 50; max-width: calc(100vw - 32px); animation: entra 200ms ease; }
 .toast.erro { background: var(--perigo); color: #fff; }
 
-@media (max-width: 1000px) {
+@media (max-width: 1100px) {
   .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .indicadores div:nth-child(4) { border-left: 0; }
   .indicadores div:nth-child(n+4) { border-top: 1px solid var(--fio); }
-  .uso, .nova { grid-template-columns: 1fr; }
+  .dupla, .nova { grid-template-columns: minmax(0, 1fr); }
 }
-@media (max-width: 640px) {
-  .topo-dentro { gap: 12px; }
-  .topo .marca span, #atualizado { display: none; }
+@media (max-width: 760px) {
+  .casca { grid-template-columns: minmax(0, 1fr); }
+  .lateral { position: sticky; z-index: 10; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 12px 0; border-right: 0; border-bottom: 1px solid var(--fio); }
+  .lateral .marca { padding: 0; flex: 1; }
+  .lateral nav { order: 3; flex: 1 1 100%; flex-direction: row; overflow-x: auto; scrollbar-width: none; padding: 8px 0; }
+  .lateral nav a { white-space: nowrap; padding: 7px 10px; }
+  .lateral-pe { border: 0; padding: 0; display: flex; }
+  .lateral-pe #atualizado { display: none; }
+  main { padding: 18px 14px 60px; }
   .indicadores { grid-template-columns: 1fr 1fr; }
   .indicadores div { border-left: 0 !important; border-top: 1px solid var(--fio); }
   .indicadores div:nth-child(-n+2) { border-top: 0; }
@@ -178,13 +224,19 @@ dialog.pequeno { width: 460px; }
   .col-opcional { display: none; }
   .atencao li { flex-wrap: wrap; }
   .atencao li .texto { flex: 1 1 100%; order: 3; }
+  .atencao li button { margin-left: auto; }
   dialog.painel { width: 100vw; border-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tela, dialog.painel[open], .toast { animation: none; }
+  * { transition: none !important; }
 }
 </style>
 </head>
 <body>
 
 <div id="tela-entrada" class="entrada">
+  <span class="marca"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--suave)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--suave)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--suave)"/></svg><svg class="logotipo" viewBox="0 0 418 100" role="img" aria-label="fiance" focusable="false"><g fill="currentColor"><path d="M0 0L62 0L62 13L13 13L13 49L50 49L50 62L13 62L13 100L0 100Z" transform="translate(0 0)"/><path d="M0 0L13 0L13 100L0 100Z" transform="translate(75 0)"/><path d="M29 0L45 0L74 100L59.5 100L37 22.4L14.5 100L0 100Z M29.29 49L44.71 49L48.48 62L25.52 62Z" transform="translate(101 0)"/><path d="M0 0L13 0L59 76L59 0L72 0L72 100L59 100L13 24L13 100L0 100Z" transform="translate(188 0)"/><path d="M64.4 22.8A35 50 0 1 0 64.4 77.2L53.4 70.2A22 37 0 1 1 53.4 29.8Z" transform="translate(273 0)"/><path d="M0 0L62 0L62 13L13 13L13 49L48 49L48 62L13 62L13 87L62 87L62 100L0 100Z" transform="translate(356 0)"/></g></svg><!-- /marca --><span class="produto">console</span></span>
   <h1>Console da fiance dados</h1>
   <p class="suave">Contas, chaves e uso da API. Acesso com o token de administração.</p>
   <form id="form-entrar">
@@ -197,63 +249,75 @@ dialog.pequeno { width: 460px; }
   <p class="dica"><a href="/">Portal</a> · <a href="/docs">Documentação</a></p>
 </div>
 
-<div id="tela-painel" class="escondido">
-  <header class="topo">
-    <div class="topo-dentro">
-      <span class="marca"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--suave)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--suave)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--suave)"/></svg><!-- /marca -->fiance dados<span>console</span></span>
-      <nav aria-label="Seções">
-        <a href="#visao">Visão geral</a>
-        <a href="#contas">Contas</a>
-        <a href="#uso">Uso</a>
-        <a href="#nova">Nova conta</a>
-      </nav>
-      <div class="topo-direita">
-        <span class="suave" id="atualizado" aria-live="polite"></span>
+<div id="tela-painel" class="casca escondido">
+  <aside class="lateral">
+    <span class="marca"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--suave)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--suave)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--suave)"/></svg><svg class="logotipo" viewBox="0 0 418 100" role="img" aria-label="fiance" focusable="false"><g fill="currentColor"><path d="M0 0L62 0L62 13L13 13L13 49L50 49L50 62L13 62L13 100L0 100Z" transform="translate(0 0)"/><path d="M0 0L13 0L13 100L0 100Z" transform="translate(75 0)"/><path d="M29 0L45 0L74 100L59.5 100L37 22.4L14.5 100L0 100Z M29.29 49L44.71 49L48.48 62L25.52 62Z" transform="translate(101 0)"/><path d="M0 0L13 0L59 76L59 0L72 0L72 100L59 100L13 24L13 100L0 100Z" transform="translate(188 0)"/><path d="M64.4 22.8A35 50 0 1 0 64.4 77.2L53.4 70.2A22 37 0 1 1 53.4 29.8Z" transform="translate(273 0)"/><path d="M0 0L62 0L62 13L13 13L13 49L48 49L48 62L13 62L13 87L62 87L62 100L0 100Z" transform="translate(356 0)"/></g></svg><!-- /marca --><span class="produto">console</span></span>
+    <nav aria-label="Seções">
+      <a href="#visao" data-tela="visao"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 2.5h4.5v6H2.5zM9 2.5h4.5v3.5H9zM9 8h4.5v5.5H9zM2.5 10.5h4.5v3H2.5z"/></svg>Visão geral<span class="cont escondido" id="cont-atencao"></span></a>
+      <a href="#contas" data-tela="contas"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.8 13.5c.5-2.3 2.2-3.5 4.2-3.5s3.7 1.2 4.2 3.5M11 3.2a2.5 2.5 0 0 1 0 4.6M12.5 10.3c1 .6 1.6 1.7 1.8 3.2"/></svg>Contas</a>
+      <a href="#uso" data-tela="uso"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2.5 13.5h11M4 11V7M7 11V3.5M10 11V6M13 11V8.5"/></svg>Uso</a>
+      <a href="#nova" data-tela="nova"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>Nova conta</a>
+    </nav>
+    <div class="lateral-pe">
+      <span class="suave" id="atualizado" aria-live="polite"></span>
+      <div class="linha">
         <button type="button" id="atualizar">Atualizar</button>
         <button type="button" class="discreto" id="sair">Sair</button>
       </div>
     </div>
-  </header>
+  </aside>
 
   <main>
-    <section class="bloco" id="visao" aria-labelledby="t-visao">
-      <div class="cabeca-bloco"><h2 id="t-visao">Visão geral</h2><span class="suave" id="dia-de-hoje"></span></div>
-      <dl class="indicadores" id="indicadores"></dl>
-      <ul class="atencao" id="atencao" aria-label="O que pede atenção"></ul>
+    <section class="tela" id="tela-visao" aria-labelledby="t-visao">
+      <div class="cabeca-tela"><div><h1 id="t-visao" tabindex="-1">Visão geral</h1><p id="dia-de-hoje"></p></div></div>
+      <dl class="caixa indicadores" id="indicadores"></dl>
+      <div class="dupla">
+        <div class="bloco">
+          <h2>Pede atenção <small id="atencao-contagem"></small></h2>
+          <ul class="caixa atencao" id="atencao" aria-label="O que pede atenção"></ul>
+        </div>
+        <div class="bloco">
+          <h2>Requisições, últimos 30 dias <a href="#uso">Ver o uso</a></h2>
+          <div class="caixa" id="mini-uso"></div>
+        </div>
+      </div>
+      <div class="bloco">
+        <h2>Quem mais usou nos últimos 30 dias <a href="#contas">Todas as contas</a></h2>
+        <div class="caixa tabela-caixa">
+          <table>
+            <caption class="so-leitor">Contas com mais requisições nos últimos 30 dias</caption>
+            <thead><tr><th scope="col">Conta</th><th scope="col">Plano</th><th scope="col" class="num">30 dias</th><th scope="col" class="num">Hoje</th></tr></thead>
+            <tbody id="corpo-top"></tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
-    <section class="bloco" id="contas" aria-labelledby="t-contas">
-      <div class="cabeca-bloco"><h2 id="t-contas">Contas</h2></div>
+    <section class="tela" id="tela-contas" aria-labelledby="t-contas" hidden>
+      <div class="cabeca-tela">
+        <div><h1 id="t-contas" tabindex="-1">Contas</h1><p id="contagem" aria-live="polite"></p></div>
+        <a class="botao" href="#nova" style="text-decoration:none">Nova conta</a>
+      </div>
       <div class="ferramentas" role="search">
         <div class="busca">
-          <label for="busca">Buscar</label>
-          <input id="busca" type="search" placeholder="E-mail, nome ou observação">
+          <label for="busca" class="so-leitor">Buscar</label>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+          <input id="busca" type="search" placeholder="Buscar por e-mail, nome ou observação  ( / )">
         </div>
         <div>
-          <label for="filtro-situacao">Situação</label>
-          <select id="filtro-situacao">
-            <option value="">Todas</option>
-            <option value="ativa">Ativa</option>
-            <option value="a_vencer">Vence em breve</option>
-            <option value="em_tolerancia">Em tolerância</option>
-            <option value="sem_pagamento">Sem pagamento</option>
-            <option value="desativada">Desativada</option>
-          </select>
-        </div>
-        <div>
-          <label for="filtro-tipo">Tipo</label>
+          <label for="filtro-tipo" class="so-leitor">Tipo</label>
           <select id="filtro-tipo">
-            <option value="">Todos</option>
+            <option value="">Todos os tipos</option>
             <option value="interno">Interno</option>
             <option value="convidado">Convidado</option>
             <option value="pago">Pago</option>
           </select>
         </div>
-        <span class="contagem" id="contagem" aria-live="polite"></span>
       </div>
-      <div class="tabela-caixa">
+      <div class="fichas" id="fichas-situacao" role="group" aria-label="Situação"></div>
+      <div class="caixa tabela-caixa">
         <table id="tabela-contas">
-          <caption class="so-leitor">Contas. Clique numa linha ou em Abrir para ver os detalhes.</caption>
+          <caption class="so-leitor">Contas. Clique numa linha para ver os detalhes.</caption>
           <thead><tr>
             <th scope="col" aria-sort="none" data-ordem="nome"><button type="button">Conta</button></th>
             <th scope="col" aria-sort="none" data-ordem="plano"><button type="button">Plano</button></th>
@@ -271,26 +335,30 @@ dialog.pequeno { width: 460px; }
       <p class="dica">“Hoje” soma as chaves da conta; o medidor mostra a chave mais usada contra o limite do dia, que vale por chave.</p>
     </section>
 
-    <section class="bloco" id="uso" aria-labelledby="t-uso">
-      <div class="cabeca-bloco"><h2 id="t-uso">Uso</h2></div>
-      <div class="ferramentas">
-        <div>
-          <label for="uso-periodo">Período</label>
-          <select id="uso-periodo">
-            <option value="7">Últimos 7 dias</option>
-            <option value="30" selected>Últimos 30 dias</option>
-            <option value="90">Últimos 90 dias</option>
-            <option value="365">Últimos 365 dias</option>
-          </select>
-        </div>
-        <div>
-          <label for="uso-conta">Conta</label>
-          <select id="uso-conta"><option value="">Todas as contas</option></select>
+    <section class="tela" id="tela-uso" aria-labelledby="t-uso" hidden>
+      <div class="cabeca-tela">
+        <div><h1 id="t-uso" tabindex="-1">Uso</h1><p>Requisições por dia, no dia de Brasília.</p></div>
+        <div class="ferramentas" style="margin:0">
+          <div>
+            <label for="uso-periodo" class="so-leitor">Período</label>
+            <select id="uso-periodo">
+              <option value="7">Últimos 7 dias</option>
+              <option value="30" selected>Últimos 30 dias</option>
+              <option value="90">Últimos 90 dias</option>
+              <option value="365">Últimos 365 dias</option>
+            </select>
+          </div>
+          <div>
+            <label for="uso-conta" class="so-leitor">Conta</label>
+            <select id="uso-conta"><option value="">Todas as contas</option></select>
+          </div>
         </div>
       </div>
-      <div class="uso">
-        <div>
-          <p class="resumo-uso" id="resumo-uso" aria-live="polite"></p>
+      <div class="caixa">
+        <p class="resumo-uso" id="resumo-uso" aria-live="polite"></p>
+        <div id="grafico-uso"></div>
+        <details class="tabela-detalhe">
+          <summary>Ver dia a dia em tabela</summary>
           <div class="tabela-caixa rolagem">
             <table>
               <caption class="so-leitor">Requisições por dia no período</caption>
@@ -298,22 +366,12 @@ dialog.pequeno { width: 460px; }
               <tbody id="corpo-uso"></tbody>
             </table>
           </div>
-        </div>
-        <div>
-          <h3 style="margin-bottom:8px">Quem mais usou nos últimos 30 dias</h3>
-          <div class="tabela-caixa">
-            <table>
-              <caption class="so-leitor">Contas com mais requisições nos últimos 30 dias</caption>
-              <thead><tr><th scope="col">Conta</th><th scope="col" class="num">30 dias</th><th scope="col" class="num">Hoje</th></tr></thead>
-              <tbody id="corpo-top"></tbody>
-            </table>
-          </div>
-        </div>
+        </details>
       </div>
     </section>
 
-    <section class="bloco" id="nova" aria-labelledby="t-nova">
-      <div class="cabeca-bloco"><h2 id="t-nova">Nova conta</h2></div>
+    <section class="tela" id="tela-nova" aria-labelledby="t-nova" hidden>
+      <div class="cabeca-tela"><div><h1 id="t-nova" tabindex="-1">Nova conta</h1><p>A conta nasce ativa e já sai com a primeira chave.</p></div></div>
       <form id="form-nova" class="nova" novalidate>
         <div>
           <fieldset>
@@ -421,7 +479,7 @@ const SITUACAO = {
 };
 const ORDEM_SITUACAO = { sem_pagamento: 0, em_tolerancia: 1, a_vencer: 2, ativa: 3, desativada: 4 };
 const ALERTA_DE_LIMITE = 0.8;
-const estado = { contas: [], planos: [], ordem: { campo: "id", direcao: 1 }, aberta: null };
+const estado = { contas: [], planos: [], ordem: { campo: "id", direcao: 1 }, aberta: null, situacao: "" };
 
 function el(tag, props = {}, ...filhos) {
   const e = document.createElement(tag);
@@ -568,22 +626,76 @@ $("chave-copiar").onclick = async () => {
 $("chave-guardei").onclick = () => $("dialogo-chave").close();
 $("dialogo-chave").addEventListener("cancel", (e) => e.preventDefault());
 
+/* ---------- telas ---------- */
+const TELAS = ["visao", "contas", "uso", "nova"];
+let telaAtual = null;
+function mostrarTela(focar) {
+  let alvo = location.hash.slice(1) || "visao";
+  if (!TELAS.includes(alvo)) alvo = "visao";
+  if (alvo === telaAtual) return;
+  telaAtual = alvo;
+  for (const id of TELAS) $("tela-" + id).hidden = id !== alvo;
+  for (const a of document.querySelectorAll("[data-tela]")) {
+    if (a.dataset.tela === alvo) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  }
+  window.scrollTo(0, 0);
+  if (focar) $("t-" + alvo).focus({ preventScroll: true });
+}
+window.addEventListener("hashchange", () => mostrarTela(true));
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "/" || e.target.closest("input, textarea, select, dialog")) return;
+  if ($("tela-painel").classList.contains("escondido")) return;
+  e.preventDefault();
+  if (location.hash !== "#contas") location.hash = "#contas";
+  $("busca").focus();
+});
+
 /* ---------- carga ---------- */
+let usoGeral = [];
 async function carregar() {
-  const [contas, planos] = await Promise.all([chamar("GET", "/admin/contas"), chamar("GET", "/admin/planos")]);
+  const [contas, planos, uso] = await Promise.all([chamar("GET", "/admin/contas"), chamar("GET", "/admin/planos"), chamar("GET", "/admin/uso?dias=30")]);
   estado.contas = contas;
   estado.planos = planos;
+  usoGeral = uso;
   $("tela-entrada").classList.add("escondido");
   $("tela-painel").classList.remove("escondido");
+  mostrarTela(false);
   $("atualizado").textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   $("dia-de-hoje").textContent = "Dia de uso: " + dataCurta(hojeIso()) + ", horário de Brasília";
   desenharVisao();
+  desenharFichas();
   desenharContas();
   preencherSeletores();
   await carregarUso();
 }
 
 /* ---------- visão geral ---------- */
+function diasDoPeriodo(dias) {
+  const fim = new Date(hojeIso() + "T12:00:00");
+  return Array.from({ length: dias }, (_, i) => {
+    const d = new Date(fim);
+    d.setDate(fim.getDate() - i);
+    return d.toISOString().slice(0, 10);
+  });
+}
+function linhasDeUso(uso, dias) {
+  const porDia = new Map(uso.map((d) => [d.dia, d]));
+  return diasDoPeriodo(dias).map((dia) => porDia.get(dia) || { dia, requisicoes: 0, contas: 0 });
+}
+function colunas(linhas, alta) {
+  const cronologicas = [...linhas].reverse();
+  const maximo = Math.max(1, ...cronologicas.map((d) => d.requisicoes));
+  const caixa = el("div", { class: "colunas" + (alta ? " alta" : ""), role: "img", "aria-label": "Requisições por dia; os números estão na tabela" });
+  for (const d of cronologicas) {
+    const barra = el("span", { class: d.requisicoes ? "" : "zero", title: `${dataCurta(d.dia)}: ${numero.format(d.requisicoes)} requisições` });
+    barra.style.height = (100 * d.requisicoes / maximo) + "%";
+    caixa.append(barra);
+  }
+  const eixo = el("div", { class: "eixo", "aria-hidden": "true" },
+    el("span", {}, dataCurta(cronologicas[0].dia)), el("span", {}, `pico ${numero.format(maximo)}`), el("span", {}, "hoje"));
+  return [caixa, eixo];
+}
 function desenharVisao() {
   const contas = estado.contas;
   const ativas = contas.filter((c) => c.ativa);
@@ -623,13 +735,44 @@ function desenharVisao() {
     el("span", { class: `etiqueta ${ALERTAS[tipo][0]}` }, ALERTAS[tipo][1]),
     el("span", { class: "texto" }, ...texto),
     el("button", { type: "button", "aria-label": `Abrir a conta de ${c.nome}`, onclick: () => abrirConta(c.id) }, "Abrir"))));
-  if (!itens.length) lista.append(el("li", { class: "vazio" }, "Nada pede atenção agora: pagamentos em dia e nenhuma chave perto do limite do dia."));
+  if (!itens.length) {
+    const ok = el("li", { class: "vazio" });
+    ok.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+    ok.append("Nada pede atenção agora: pagamentos em dia e nenhuma chave perto do limite do dia.");
+    lista.append(ok);
+  }
+  $("atencao-contagem").textContent = itens.length ? `${itens.length} ${itens.length === 1 ? "item" : "itens"}` : "";
+  $("cont-atencao").textContent = itens.length;
+  $("cont-atencao").classList.toggle("escondido", !itens.length);
+  $("cont-atencao").setAttribute("aria-label", `${itens.length} pedem atenção`);
+
+  const linhas = linhasDeUso(usoGeral, 30);
+  $("mini-uso").replaceChildren(...colunas(linhas, false));
+
+  const top = estado.contas.filter((c) => c.requisicoes_30_dias > 0).sort((a, b) => b.requisicoes_30_dias - a.requisicoes_30_dias).slice(0, 6);
+  $("corpo-top").replaceChildren(...top.map((c) => el("tr", { class: "clicavel", onclick: () => abrirConta(c.id) },
+    el("td", {}, c.nome, el("span", { class: "linha2" }, c.email)),
+    el("td", {}, c.plano_nome),
+    el("td", { class: "num" }, numero.format(c.requisicoes_30_dias)),
+    el("td", { class: "num" }, numero.format(c.requisicoes_hoje)))));
+  if (!top.length) $("corpo-top").append(el("tr", {}, el("td", { class: "vazio", colSpan: 4 }, "Nenhuma requisição nos últimos 30 dias.")));
 }
 
 /* ---------- contas ---------- */
+function desenharFichas() {
+  const caixa = $("fichas-situacao");
+  const contagem = (s) => estado.contas.filter((c) => !s || c.situacao === s).length;
+  const opcoes = [["", "Todas"], ...Object.entries(SITUACAO)];
+  caixa.replaceChildren(...opcoes
+    .filter(([s]) => !s || contagem(s) > 0 || estado.situacao === s)
+    .map(([s, rotulo]) => el("button", {
+      type: "button", "aria-pressed": String(estado.situacao === s),
+      onclick: () => { estado.situacao = s; desenharFichas(); desenharContas(); },
+    }, rotulo, el("span", {}, numero.format(contagem(s))))));
+}
 function filtrarContas() {
   const termo = $("busca").value.trim().toLowerCase();
-  const situacao = $("filtro-situacao").value;
+  const situacao = estado.situacao;
   const tipo = $("filtro-tipo").value;
   const { campo, direcao } = estado.ordem;
   const valor = (c) => {
@@ -680,7 +823,7 @@ function desenharContas() {
     corpo.append(tr);
   }
 }
-for (const id of ["busca", "filtro-situacao", "filtro-tipo"]) $(id).addEventListener("input", desenharContas);
+for (const id of ["busca", "filtro-tipo"]) $(id).addEventListener("input", desenharContas);
 for (const th of document.querySelectorAll("#tabela-contas th[data-ordem]")) {
   th.querySelector("button").addEventListener("click", () => {
     const campo = th.dataset.ordem;
@@ -701,25 +844,8 @@ function preencherSeletores() {
   plano.replaceChildren(...estado.planos.map((p) => el("option", { value: p.codigo }, `${p.nome} · ${preco(p)}`)));
   plano.value = estado.planos.some((p) => p.codigo === antes) ? antes : estado.planos[0]?.codigo;
   mostrarFichaDoPlano();
-
-  const top = estado.contas.filter((c) => c.requisicoes_30_dias > 0).sort((a, b) => b.requisicoes_30_dias - a.requisicoes_30_dias).slice(0, 8);
-  $("corpo-top").replaceChildren(...top.map((c) => el("tr", { class: "clicavel", onclick: () => abrirConta(c.id) },
-    el("td", {}, c.nome, el("span", { class: "linha2" }, c.email)),
-    el("td", { class: "num" }, numero.format(c.requisicoes_30_dias)),
-    el("td", { class: "num" }, numero.format(c.requisicoes_hoje)))));
-  if (!top.length) $("corpo-top").append(el("tr", {}, el("td", { class: "vazio", colSpan: 3 }, "Nenhuma requisição nos últimos 30 dias.")));
 }
-function diasDoPeriodo(dias) {
-  const fim = new Date(hojeIso() + "T12:00:00");
-  return Array.from({ length: dias }, (_, i) => {
-    const d = new Date(fim);
-    d.setDate(fim.getDate() - i);
-    return d.toISOString().slice(0, 10);
-  });
-}
-function tabelaDeUso(corpo, uso, dias, comContas) {
-  const porDia = new Map(uso.map((d) => [d.dia, d]));
-  const linhas = diasDoPeriodo(dias).map((dia) => porDia.get(dia) || { dia, requisicoes: 0, contas: 0 });
+function tabelaDeUso(corpo, linhas, comContas) {
   const maximo = Math.max(1, ...linhas.map((d) => d.requisicoes));
   corpo.replaceChildren(...linhas.map((d) => {
     const barra = el("div", { class: "barra-dia" });
@@ -731,14 +857,15 @@ function tabelaDeUso(corpo, uso, dias, comContas) {
       comContas ? el("td", { class: "num" }, numero.format(d.contas)) : null,
       el("td", {}, d.requisicoes ? barra : null));
   }));
-  return linhas;
 }
 async function carregarUso() {
   const dias = Number($("uso-periodo").value);
   const conta = $("uso-conta").value;
   const uso = await chamar("GET", `/admin/uso?dias=${dias}` + (conta ? `&conta_id=${conta}` : ""));
   $("col-contas").classList.toggle("escondido", Boolean(conta));
-  const linhas = tabelaDeUso($("corpo-uso"), uso, dias, !conta);
+  const linhas = linhasDeUso(uso, dias);
+  tabelaDeUso($("corpo-uso"), linhas, !conta);
+  $("grafico-uso").replaceChildren(...colunas(linhas, true));
   const total = linhas.reduce((s, d) => s + d.requisicoes, 0);
   const pico = linhas.reduce((a, b) => (b.requisicoes > a.requisicoes ? b : a), linhas[0]);
   const resumo = $("resumo-uso");
@@ -773,7 +900,6 @@ function mostrarFichaDoPlano() {
   );
   $("campo-nova-pago").classList.toggle("escondido", !pago);
   $("dica-nova-pago").textContent = pago ? "Sem data, as chaves respondem 402 até o pagamento ser marcado. Vale até a data, mais 3 dias." : "";
-  $("botao-criar").textContent = "Criar conta e emitir chave";
 }
 $("nova-plano").addEventListener("change", mostrarFichaDoPlano);
 $("form-nova").addEventListener("reset", () => setTimeout(() => { $("nova-plano").value = "convidado"; mostrarFichaDoPlano(); limparErrosNova(); }));
@@ -817,6 +943,7 @@ $("form-nova").addEventListener("submit", async (e) => {
     await revelarChave(criada.chave, criada.conta.email);
     avisar(`Conta de ${criada.conta.email} criada.`);
     await tentar(carregar);
+    location.hash = "#contas";
   } catch (erro) {
     if (erro instanceof ErroDeSessao) { sairPorSessao(erro); return; }
     if (/e-mail/i.test(erro.message)) { $("nova-email").classList.add("invalido"); $("erro-nova-email").textContent = erro.message; $("nova-email").focus(); }
@@ -846,6 +973,10 @@ async function abrirConta(id) {
 }
 $("dialogo-conta").querySelector("[data-fechar]").onclick = () => $("dialogo-conta").close();
 $("dialogo-conta").addEventListener("close", () => { estado.aberta = null; });
+$("dialogo-conta").addEventListener("click", (e) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  if (e.target === e.currentTarget && (e.clientX < r.left || e.clientX > r.right)) e.currentTarget.close();
+});
 
 function desenharConta(conta, uso) {
   const resumo = estado.contas.find((c) => c.id === conta.id);
@@ -967,8 +1098,7 @@ function desenharConta(conta, uso) {
       el("td", { class: "num" }, acao));
   }) : [el("tr", {}, el("td", { class: "vazio", colSpan: 5 }, "Nenhuma chave emitida."))];
 
-  const corpoUso = el("tbody");
-  const linhasUso = tabelaDeUso(corpoUso, uso, 30, false);
+  const linhasUso = linhasDeUso(uso, 30);
   const totalUso = linhasUso.reduce((s, d) => s + d.requisicoes, 0);
 
   const acesso = conta.ativa
@@ -988,23 +1118,22 @@ function desenharConta(conta, uso) {
         } }, "Reativar conta"));
 
   preencher(corpo,
-    el("h3", {}, "Configuração"), form,
+    el("h3", {}, "Uso nos últimos 30 dias"),
+    el("div", { class: "caixa" },
+      el("p", { class: "resumo-uso" }, totalUso ? el("span", {}, "Total ", el("b", {}, numero.format(totalUso)), resumo ? ` · hoje ${numero.format(resumo.requisicoes_hoje)}` : "") : "Nenhuma requisição nos últimos 30 dias."),
+      ...(totalUso ? colunas(linhasUso, false) : [])),
     el("h3", {}, `Chaves (${ativas} de ${conta.chaves_maximas} ativas)`),
-    el("div", { class: "tabela-caixa" }, el("table", {},
+    el("div", { class: "caixa tabela-caixa" }, el("table", {},
       el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Chave"), el("th", { scope: "col", class: "col-opcional" }, "Criada"), el("th", { scope: "col" }, "Último uso"), el("th", { scope: "col", class: "num" }, "Hoje"), el("th", { scope: "col" }, el("span", { class: "so-leitor" }, "Ação")))),
       el("tbody", {}, ...linhasChaves))),
     formChave,
     el("p", { class: "dica" }, `Limite: ${numero.format(conta.limite_por_dia)} requisições por dia e ${numero.format(conta.limite_por_minuto)} por minuto, por chave. A chave inteira nunca aparece aqui: só no momento em que é emitida.`),
-    el("h3", {}, "Uso nos últimos 30 dias"),
-    el("p", { class: "resumo-uso" }, totalUso ? el("span", {}, "Total ", el("b", {}, numero.format(totalUso)), resumo ? ` · hoje ${numero.format(resumo.requisicoes_hoje)}` : "") : "Nenhuma requisição nos últimos 30 dias."),
-    totalUso ? el("div", { class: "tabela-caixa rolagem", style: "max-height:260px" }, el("table", {},
-      el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Dia"), el("th", { scope: "col", class: "num" }, "Requisições"), el("th", { scope: "col", style: "width:50%" }, el("span", { class: "so-leitor" }, "Proporção")))),
-      corpoUso)) : null,
+    el("h3", {}, "Configuração"), form,
     el("h3", {}, "Acesso"), acesso,
   );
 }
 
-/* ---------- entrada e topo ---------- */
+/* ---------- entrada ---------- */
 $("form-entrar").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("erro-entrada").textContent = "";
@@ -1017,7 +1146,7 @@ $("form-entrar").addEventListener("submit", async (e) => {
   }
 });
 $("atualizar").onclick = () => tentar(carregar, { sucesso: "Dados atualizados." }).catch(() => {});
-$("sair").onclick = () => { sessionStorage.removeItem(TOKEN); location.reload(); };
+$("sair").onclick = () => { sessionStorage.removeItem(TOKEN); location.hash = ""; location.reload(); };
 if (sessionStorage.getItem(TOKEN)) tentar(carregar).catch(() => {});
 else $("token").focus();
 </script>

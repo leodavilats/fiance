@@ -261,6 +261,14 @@ def simbolo_em_linha(variante, destaque, chao):
     ) % corpo
 
 
+def logotipo_em_linha():
+    wm, wm_w = wordmark_markup()
+    return (
+        '<svg class="logotipo" viewBox="0 0 %g 100" role="img" aria-label="fiance" '
+        'focusable="false"><g fill="currentColor">%s</g></svg>'
+    ) % (wm_w, wm)
+
+
 def _bloco(texto, nome, conteudo, rel):
     padrao = re.compile(r"(<!-- %s -->)(.*?)(<!-- /%s -->)" % (nome, nome), re.S)
     if not padrao.search(texto):
@@ -275,11 +283,15 @@ def pagina(rel, variante, destaque, chao):
         quote(favicon(variante, rel, destaque, chao).strip())
     )
     texto = _bloco(texto, "favicon", icone, rel)
-    return _bloco(texto, "marca", simbolo_em_linha(variante, destaque, chao), rel)
+    return _bloco(
+        texto,
+        "marca",
+        simbolo_em_linha(variante, destaque, chao) + logotipo_em_linha(),
+        rel,
+    )
 
 
-def simbolo_tsx(variante, destaque, chao):
-    svg = simbolo_em_linha(variante, destaque, chao)
+def _jsx(svg):
     svg = re.sub(
         r'style="(\w+):([^"]+)"', lambda m: 'style={{ %s: "%s" }}' % m.groups(), svg
     )
@@ -287,11 +299,17 @@ def simbolo_tsx(variante, destaque, chao):
     for attr in ("stroke-width", "stroke-linecap", "stroke-linejoin"):
         a, b = attr.split("-")
         svg = svg.replace(attr + "=", a + b.capitalize() + "=")
+    return svg
+
+
+def simbolo_tsx(variante, destaque, chao):
     return (
         "// Gerado por marca/build.py; não edite à mão.\n"
         "export default function Simbolo() {\n"
+        "  return (\n    %s\n  );\n}\n\n"
+        "export function Logotipo() {\n"
         "  return (\n    %s\n  );\n}\n"
-    ) % svg
+    ) % (_jsx(simbolo_em_linha(variante, destaque, chao)), _jsx(logotipo_em_linha()))
 
 
 def superficies():

@@ -78,3 +78,31 @@ class FiChoiceChip extends StatelessWidget {
     );
   }
 }
+
+class FiChipBar extends StatelessWidget {
+  const FiChipBar({
+    super.key,
+    required this.children,
+    this.padding = const EdgeInsets.symmetric(horizontal: FiLayout.gutter),
+  });
+
+  final List<Widget> children;
+
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: padding,
+      child: Row(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(width: FiSpace.s2),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}

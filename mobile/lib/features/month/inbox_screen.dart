@@ -169,16 +169,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         onRefresh: _recarregar,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(
-            FiLayout.gutter,
-            FiSpace.s3,
-            FiLayout.gutter,
-            FiLayout.scrollTail,
-          ),
+          padding: const EdgeInsets.fromLTRB(0, FiSpace.s3, 0, FiLayout.scrollTail),
           children: [
-            Wrap(
-              spacing: FiSpace.s2,
-              runSpacing: FiSpace.s2,
+            FiChipBar(
               children: [
                 for (final filtro in fiInboxFilters.entries)
                   FiChoiceChip(
@@ -189,7 +182,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               ],
             ),
             const SizedBox(height: FiSpace.s3),
-            ...primeira.when(
+            for (final bloco in primeira.when(
               loading: () => [
                 const FiSkeleton(shape: FiSkeletonShape.row, count: 6),
               ],
@@ -201,7 +194,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                 ),
               ],
               data: (pagina) => _conteudo(context, pagina),
-            ),
+            ))
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: FiLayout.gutter),
+                child: bloco,
+              ),
           ],
         ),
       ),

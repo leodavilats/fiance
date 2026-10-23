@@ -10,299 +10,328 @@
 <meta name="theme-color" content="#191714" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>try { const t = localStorage.getItem("fiance_dados_tema"); if (t) document.documentElement.dataset.tema = t; } catch {}</script>
 <style>
 :root {
   --papel: #fbf8f1; --papel-fundo: #f3eee3; --papel-alto: #fffdf8;
   --tinta: #1c1a17; --tinta-2: #47423a; --tinta-3: #6e675b;
   --fio: #e3dccd; --fio-forte: #cdc4b1;
-  --destaque: #0f8a70; --destaque-tinta: #0b6b57; --destaque-fundo: #e9f2ed;
-  --ajustado: #0f8a70; --negociado: #c9572a; --alerta: #a5461f;
-  --codigo: #f1ece1; --codigo-fio: #e0d8c7;
-  --serifa: "Newsreader", Georgia, "Times New Roman", serif;
+  --destaque: #0f8a70; --destaque-tinta: #0b6b57; --destaque-fundo: #e6f1ec;
+  --ajustado: #0f8a70; --negociado: #c9572a; --alerta: #a5461f; --alerta-fundo: #f8e9e1;
+  --codigo: #1d1b18; --codigo-tinta: #ece6d9; --codigo-suave: #9a9384; --codigo-fio: #34302a;
+  --sombra: 0 1px 2px rgba(40, 32, 20, 0.06), 0 8px 24px rgba(40, 32, 20, 0.06);
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-  --gutter: 20px;
+  --topo: 60px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
-    --papel: #191714; --papel-fundo: #211e1a; --papel-alto: #1e1b17;
+    --papel: #191714; --papel-fundo: #211e1a; --papel-alto: #1f1c18;
     --tinta: #efe9dd; --tinta-2: #cbc3b4; --tinta-3: #9d9586;
     --fio: #2f2b25; --fio-forte: #423c33;
     --destaque: #36a989; --destaque-tinta: #5cc4a6; --destaque-fundo: #1c2924;
-    --ajustado: #36a989; --negociado: #d4703f; --alerta: #e08a5f;
-    --codigo: #221f1b; --codigo-fio: #332e27;
+    --ajustado: #36a989; --negociado: #d4703f; --alerta: #e08a5f; --alerta-fundo: #33221a;
+    --codigo: #12110f; --codigo-fio: #2a2722;
+    --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
     color-scheme: dark;
   }
 }
 :root[data-tema="escuro"] {
-  --papel: #191714; --papel-fundo: #211e1a; --papel-alto: #1e1b17;
+  --papel: #191714; --papel-fundo: #211e1a; --papel-alto: #1f1c18;
   --tinta: #efe9dd; --tinta-2: #cbc3b4; --tinta-3: #9d9586;
   --fio: #2f2b25; --fio-forte: #423c33;
   --destaque: #36a989; --destaque-tinta: #5cc4a6; --destaque-fundo: #1c2924;
-  --ajustado: #36a989; --negociado: #d4703f; --alerta: #e08a5f;
-  --codigo: #221f1b; --codigo-fio: #332e27;
+  --ajustado: #36a989; --negociado: #d4703f; --alerta: #e08a5f; --alerta-fundo: #33221a;
+  --codigo: #12110f; --codigo-fio: #2a2722;
+  --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 80px; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
-body { margin: 0; background: var(--papel); color: var(--tinta); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+html { scroll-padding-top: calc(var(--topo) + 16px); }
+body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: var(--papel); color: var(--tinta); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
 a { color: var(--destaque-tinta); text-underline-offset: 3px; text-decoration-thickness: 1px; }
 a:hover { text-decoration-thickness: 2px; }
-:focus-visible { outline: 2px solid var(--destaque); outline-offset: 3px; border-radius: 2px; }
+:focus-visible { outline: 2px solid var(--destaque); outline-offset: 3px; border-radius: 3px; }
 code { font-family: var(--mono); font-size: 0.88em; }
+h1, h2, h3 { margin: 0; letter-spacing: -0.02em; }
 figure { margin: 0; }
-.largura { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 var(--gutter); }
+.largura { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 24px; }
 .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.pular { position: absolute; left: 12px; top: -60px; z-index: 20; background: var(--tinta); color: var(--papel); padding: 10px 14px; border-radius: 3px; }
+.pular { position: absolute; left: 12px; top: -60px; z-index: 30; background: var(--tinta); color: var(--papel); padding: 10px 14px; border-radius: 6px; }
 .pular:focus { top: 12px; }
 .num { font-variant-numeric: tabular-nums; }
+.escondido { display: none !important; }
 
 /* topo */
-.topo { position: sticky; top: 0; z-index: 10; background: var(--papel); border-bottom: 1px solid var(--fio); }
-.topo .largura { display: flex; align-items: center; justify-content: space-between; gap: 20px; height: 62px; }
-.marca { display: inline-flex; align-items: center; gap: 0.38em; font: 500 21px/1 var(--serifa); color: var(--tinta); text-decoration: none; letter-spacing: -0.01em; white-space: nowrap; }
-.marca .simbolo { width: 1.1em; height: 1.1em; flex: none; }
-.marca em { color: var(--destaque-tinta); }
-.topo nav { display: flex; align-items: center; gap: 26px; font-size: 15px; }
-.topo nav a { color: var(--tinta-2); text-decoration: none; white-space: nowrap; }
-.topo nav a:hover { color: var(--tinta); }
-.topo nav a.conta-link { color: var(--tinta); border: 1px solid var(--fio-forte); padding: 7px 13px; border-radius: 3px; }
-.topo nav a.conta-link:hover { border-color: var(--tinta); }
+.topo { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--papel) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--fio); }
+.topo .largura { display: flex; align-items: center; gap: 28px; height: var(--topo); }
+.marca { display: inline-flex; align-items: center; gap: 9px; color: var(--tinta); text-decoration: none; white-space: nowrap; flex: none; }
+.marca .simbolo { width: 22px; height: 22px; flex: none; }
+.marca .logotipo { height: 14px; width: auto; aspect-ratio: 418 / 100; flex: none; }
+.marca .produto { font: 600 10.5px/1 var(--sans); letter-spacing: 0.16em; text-transform: uppercase; color: var(--tinta-3); padding-left: 9px; border-left: 1px solid var(--fio-forte); }
+.abas-topo { display: flex; gap: 2px; flex: 1; min-width: 0; }
+.abas-topo a { position: relative; color: var(--tinta-2); text-decoration: none; font-size: 14.5px; font-weight: 500; padding: 8px 12px; border-radius: 8px; white-space: nowrap; transition: color 150ms ease, background-color 150ms ease; }
+.abas-topo a:hover { color: var(--tinta); background: var(--papel-fundo); }
+.abas-topo a[aria-current="page"] { color: var(--tinta); }
+.abas-topo a[aria-current="page"]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -11px; height: 2px; border-radius: 2px; background: var(--destaque); }
+.topo-direita { display: flex; align-items: center; gap: 8px; flex: none; }
+.tema { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 8px; background: none; color: var(--tinta-2); cursor: pointer; }
+.tema:hover { background: var(--papel-fundo); color: var(--tinta); }
+.tema svg { width: 18px; height: 18px; }
 
 /* botões */
-.botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 3px; background: var(--tinta); color: var(--papel); font: 500 15px/1.2 var(--sans); text-decoration: none; border: 1px solid var(--tinta); cursor: pointer; white-space: nowrap; }
+.botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 8px; background: var(--tinta); color: var(--papel); font: 600 14.5px/1.2 var(--sans); text-decoration: none; border: 1px solid var(--tinta); cursor: pointer; white-space: nowrap; transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease; }
 .botao:hover { background: var(--destaque-tinta); border-color: var(--destaque-tinta); text-decoration: none; }
+.botao:active { transform: translateY(1px); }
 .botao.contorno { background: transparent; color: var(--tinta); border-color: var(--fio-forte); }
-.botao.contorno:hover { border-color: var(--tinta); }
+.botao.contorno:hover { border-color: var(--tinta); background: var(--papel-alto); }
+.botao.pequeno { padding: 7px 12px; font-size: 13.5px; }
+.botao.destaque { background: var(--destaque-tinta); border-color: var(--destaque-tinta); }
+.botao.destaque:hover { background: var(--tinta); border-color: var(--tinta); }
+.botao:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* tipografia de seção */
-main > section.largura { padding-top: 120px; }
-.rotulo { display: flex; align-items: center; gap: 14px; font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); margin: 0 0 22px; }
-.rotulo::after { content: ""; flex: 1; height: 1px; background: var(--fio); }
-h1, h2 { font-family: var(--serifa); font-weight: 500; letter-spacing: -0.018em; margin: 0; }
-h1 { font-size: clamp(40px, 6.2vw, 68px); line-height: 1.02; max-width: 13ch; }
-h1 em { font-weight: 400; }
-h2 { font-size: clamp(29px, 3.8vw, 42px); line-height: 1.1; max-width: 21ch; }
-h3 { font: 600 17px/1.35 var(--sans); margin: 0 0 8px; }
-.cabeca { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr); gap: 20px 64px; align-items: end; margin-bottom: 44px; }
-.cabeca p { margin: 0; color: var(--tinta-2); max-width: 52ch; }
+/* telas */
+main { flex: 1; }
+.tela { padding: 48px 0 56px; animation: entra 240ms cubic-bezier(0.2, 0, 0, 1); }
+.tela[hidden] { display: none; }
+@keyframes entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.cabeca { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px 40px; flex-wrap: wrap; margin-bottom: 28px; }
+.cabeca h1 { font-size: clamp(26px, 3vw, 34px); line-height: 1.15; font-weight: 600; }
+.cabeca p { margin: 8px 0 0; color: var(--tinta-2); max-width: 62ch; }
+h1:focus { outline: none; }
+.selo { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--tinta-2); background: var(--papel-alto); border: 1px solid var(--fio); border-radius: 999px; padding: 5px 12px 5px 10px; }
+.selo i { width: 7px; height: 7px; border-radius: 50%; background: var(--destaque); box-shadow: 0 0 0 3px var(--destaque-fundo); flex: none; }
+.painel { background: var(--papel-alto); border: 1px solid var(--fio); border-radius: 14px; box-shadow: var(--sombra); }
 
-/* abertura */
-.abertura { padding-top: 76px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 56px 72px; align-items: start; }
-.abertura .sobre { font: 500 13px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); margin: 0 0 22px; }
-.lide { font-size: 20px; line-height: 1.55; color: var(--tinta-2); max-width: 44ch; margin: 26px 0 34px; }
-.acoes { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-.atualizada { margin: 22px 0 0; font-size: 14px; color: var(--tinta-3); display: flex; align-items: center; gap: 9px; min-height: 1.6em; }
-.atualizada i { width: 7px; height: 7px; border-radius: 50%; background: var(--destaque); display: inline-block; flex: none; }
-
-.base-hoje { border-top: 2px solid var(--tinta); margin-top: 8px; }
+/* início */
+.abertura { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.abertura h1 { font-size: clamp(36px, 5vw, 56px); line-height: 1.04; font-weight: 600; letter-spacing: -0.035em; margin: 22px 0 0; max-width: 14ch; }
+.abertura h1 span { color: var(--destaque-tinta); }
+.lide { font-size: 18px; line-height: 1.6; color: var(--tinta-2); max-width: 46ch; margin: 20px 0 28px; }
+.acoes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.base-hoje { padding: 6px 22px 18px; }
 .base-hoje table { width: 100%; border-collapse: collapse; }
-.base-hoje caption { text-align: left; font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); padding: 16px 0 4px; }
-.base-hoje th, .base-hoje td { padding: 15px 0; border-bottom: 1px solid var(--fio); vertical-align: baseline; text-align: left; font-weight: 400; }
-.base-hoje th { color: var(--tinta); font-size: 15.5px; font-weight: 500; padding-right: 16px; }
-.base-hoje th small { display: block; color: var(--tinta-3); font-size: 13.5px; font-weight: 400; margin-top: 3px; line-height: 1.4; }
-.base-hoje td { font: 500 30px/1 var(--serifa); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.01em; }
-
-/* diferencial */
-.tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--tinta); }
-.tres article { padding: 28px 32px 8px 0; display: flex; flex-direction: column; }
-.tres article + article { padding-left: 32px; border-left: 1px solid var(--fio); }
-.tres .indice { font: 400 14px/1 var(--mono); color: var(--tinta-3); display: block; margin-bottom: 22px; }
-.tres h3 { font: 500 24px/1.2 var(--serifa); letter-spacing: -0.01em; margin-bottom: 12px; }
-.tres p { margin: 0 0 16px; color: var(--tinta-2); font-size: 16px; }
-.tres .prova { margin-top: auto; font-size: 14px; color: var(--tinta-3); border-top: 1px dotted var(--fio-forte); padding-top: 12px; }
-.tres .prova b { color: var(--tinta); font-weight: 600; font-variant-numeric: tabular-nums; }
+.base-hoje caption { text-align: left; font-size: 13px; font-weight: 600; color: var(--tinta-3); padding: 16px 0 6px; }
+.base-hoje th, .base-hoje td { padding: 13px 0; border-bottom: 1px solid var(--fio); text-align: left; font-weight: 400; vertical-align: baseline; }
+.base-hoje th { font-size: 15px; font-weight: 500; padding-right: 16px; }
+.base-hoje th small { display: block; color: var(--tinta-3); font-size: 13px; font-weight: 400; margin-top: 2px; line-height: 1.4; }
+.base-hoje td { font: 500 24px/1 var(--mono); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.02em; }
+.faisca { display: flex; align-items: center; gap: 14px; margin-top: 14px; text-decoration: none; color: var(--tinta-2); font-size: 13.5px; line-height: 1.45; border-radius: 8px; padding: 6px; margin-left: -6px; margin-right: -6px; transition: background-color 150ms ease; }
+.faisca:hover { background: var(--papel-fundo); }
+.faisca svg { flex: none; width: 120px; height: 44px; }
+.faisca b { color: var(--tinta); font-weight: 600; }
+.armadilhas { margin-top: 44px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--fio-forte); }
+.armadilhas article { padding: 20px 28px 4px 0; }
+.armadilhas article + article { padding-left: 28px; border-left: 1px solid var(--fio); }
+.armadilhas h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.armadilhas h2 svg { width: 18px; height: 18px; color: var(--negociado); flex: none; }
+.armadilhas p { margin: 0; font-size: 14.5px; color: var(--tinta-2); line-height: 1.55; }
+.armadilhas .prova { margin-top: 10px; font-size: 13px; color: var(--tinta-3); }
+.armadilhas .prova b { color: var(--tinta); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* exemplo */
-.exemplo { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 56px; align-items: start; }
-.grafico-moldura { border-top: 1px solid var(--tinta); padding-top: 14px; min-width: 0; }
-.grafico-titulo { display: flex; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; font-size: 14px; color: var(--tinta-3); margin-bottom: 10px; }
-.grafico-titulo strong { color: var(--tinta); font-weight: 600; }
-.legenda { display: flex; gap: 6px 20px; flex-wrap: wrap; font-size: 14px; color: var(--tinta-2); margin: 0 0 4px; }
-.legenda i, .comparacao i { display: inline-block; width: 18px; height: 2px; vertical-align: middle; margin-right: 8px; border-radius: 1px; }
+.exemplo { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: stretch; }
+.grafico-moldura { padding: 18px 20px 14px; min-width: 0; }
+.grafico-titulo { display: flex; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; font-size: 13.5px; color: var(--tinta-3); margin-bottom: 6px; }
+.grafico-titulo strong { color: var(--tinta); font-weight: 600; font-family: var(--mono); }
+.legenda { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 13.5px; color: var(--tinta-2); margin: 0 0 4px; }
+.legenda i, .comparacao i { display: inline-block; width: 16px; height: 3px; vertical-align: middle; margin-right: 7px; border-radius: 2px; }
 #grafico { position: relative; aspect-ratio: 2 / 1; }
 #grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
 .sem-dado { padding-top: 40px; color: var(--tinta-3); font-size: 15px; margin: 0; }
-.dica { position: absolute; top: 0; left: 0; pointer-events: none; background: var(--papel-alto); border: 1px solid var(--fio-forte); padding: 8px 11px; font-size: 13px; line-height: 1.5; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,0.08); opacity: 0; transition: opacity 0.12s; border-radius: 3px; z-index: 5; }
+.dica { position: absolute; top: 0; left: 0; pointer-events: none; background: var(--papel-alto); border: 1px solid var(--fio-forte); padding: 8px 11px; font-size: 13px; line-height: 1.5; white-space: nowrap; box-shadow: var(--sombra); opacity: 0; transition: opacity 0.12s; border-radius: 8px; z-index: 25; }
 .dica b { font-weight: 600; display: block; }
 .dica span { display: block; font-variant-numeric: tabular-nums; }
-.comparacao { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--tinta); margin-bottom: 18px; }
-.comparacao div { padding: 16px 0; border-bottom: 1px solid var(--fio); }
-.comparacao div + div { padding-left: 18px; border-left: 1px solid var(--fio); }
-.comparacao strong { display: block; font: 500 32px/1 var(--serifa); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.comparacao span { display: block; font-size: 13.5px; color: var(--tinta-3); margin-top: 9px; line-height: 1.4; }
-.comparacao i { width: 12px; margin-right: 6px; }
-.notas { font-size: 15px; color: var(--tinta-2); }
-.notas p { margin: 0 0 14px; }
-.notas .leitura { color: var(--tinta); font-size: 15.5px; }
-details { margin-top: 16px; font-size: 14.5px; color: var(--tinta-2); }
+.notas { padding: 20px; font-size: 14.5px; color: var(--tinta-2); display: flex; flex-direction: column; }
+.comparacao { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.comparacao div { padding: 12px; border-radius: 10px; background: var(--papel-fundo); }
+.comparacao strong { display: block; font: 500 26px/1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.comparacao span { display: block; font-size: 12.5px; color: var(--tinta-3); margin-top: 8px; line-height: 1.35; }
+.comparacao i { width: 10px; margin-right: 5px; }
+.notas p { margin: 0 0 12px; }
+.notas .leitura { color: var(--tinta); font-weight: 500; }
+details { margin-top: 12px; font-size: 14px; color: var(--tinta-2); }
 details summary { cursor: pointer; width: fit-content; }
 details summary:hover { color: var(--tinta); }
 details[open] summary { margin-bottom: 10px; }
 
 /* tabelas */
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-.tabela th, .tabela td { border-bottom: 1px solid var(--fio); padding: 10px 14px 10px 0; text-align: left; vertical-align: top; }
-.tabela thead th { color: var(--tinta-3); font-weight: 500; font-size: 13.5px; border-bottom-color: var(--fio-forte); }
+.tabela th, .tabela td { border-bottom: 1px solid var(--fio); padding: 11px 14px; text-align: left; vertical-align: top; }
+.tabela thead th { color: var(--tinta-3); font-weight: 500; font-size: 13px; background: var(--papel-fundo); border-bottom-color: var(--fio-forte); }
+.tabela tbody tr:last-child > * { border-bottom: 0; }
+.tabela .num { text-align: right; }
 .rolar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-/* cobertura */
-.cobertura { border-top: 1px solid var(--tinta); font-size: 15.5px; }
-.cobertura thead th { padding-top: 14px; }
-.cobertura tbody th { font-weight: 600; color: var(--tinta); width: 34%; padding-top: 14px; padding-bottom: 14px; }
-.cobertura tbody th small { display: block; font-weight: 400; color: var(--tinta-3); font-size: 14px; margin-top: 3px; line-height: 1.45; }
-.cobertura td { color: var(--tinta-2); padding-top: 14px; }
+/* dados */
+.segmentos { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--papel-fundo); border: 1px solid var(--fio); }
+.segmentos button { border: 0; background: none; font: 500 14px/1 var(--sans); color: var(--tinta-2); padding: 9px 14px; border-radius: 7px; cursor: pointer; transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease; }
+.segmentos button span { color: var(--tinta-3); font-weight: 400; margin-left: 4px; }
+.segmentos button[aria-selected="true"] { background: var(--papel-alto); color: var(--tinta); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--fio); }
+.cobertura { font-size: 15px; overflow: hidden; }
+.cobertura tbody th { font-weight: 600; color: var(--tinta); width: 38%; }
+.cobertura tbody th small { display: block; font-weight: 400; color: var(--tinta-3); font-size: 13.5px; margin-top: 2px; line-height: 1.45; }
+.cobertura td { color: var(--tinta-2); }
 .cobertura td.periodo { white-space: nowrap; }
-.cobertura td code { color: var(--tinta-2); font-size: 13px; word-break: break-word; }
-.cobertura td.plano-min { white-space: nowrap; }
-.etiqueta { display: inline-block; font: 500 12.5px/1 var(--sans); padding: 5px 8px; border-radius: 2px; border: 1px solid var(--fio-forte); color: var(--tinta-2); }
-.etiqueta.pro { border-color: var(--destaque); color: var(--destaque-tinta); }
-.nota-tabela { font-size: 14px; color: var(--tinta-3); margin: 14px 0 0; max-width: 80ch; }
+.rota-copiar { all: unset; cursor: copy; font: 13px/1.5 var(--mono); color: var(--tinta-2); padding: 2px 6px; margin: -2px -6px; border-radius: 5px; word-break: break-word; transition: background-color 150ms ease; }
+.rota-copiar:hover { background: var(--papel-fundo); color: var(--tinta); }
+.rota-copiar:focus-visible { outline: 2px solid var(--destaque); }
+.rota-copiar.copiada { background: var(--destaque-fundo); color: var(--destaque-tinta); }
+.etiqueta { display: inline-block; font: 600 12px/1 var(--sans); padding: 5px 9px; border-radius: 999px; border: 1px solid var(--fio-forte); color: var(--tinta-2); white-space: nowrap; }
+.etiqueta.pro { border-color: transparent; background: var(--destaque-fundo); color: var(--destaque-tinta); }
+.etiqueta.alerta { border-color: transparent; background: var(--alerta-fundo); color: var(--alerta); }
+.nota-tabela { font-size: 14px; color: var(--tinta-3); margin: 14px 0 0; }
+.lacunas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
+.lacunas li { padding: 16px 18px; border: 1px solid var(--fio); border-radius: 12px; background: var(--papel-alto); color: var(--tinta-2); font-size: 14.5px; line-height: 1.5; }
+.lacunas li b { display: block; color: var(--tinta); font-weight: 600; margin-bottom: 4px; font-size: 15px; }
 
 /* uso */
-.uso { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 56px; align-items: start; }
-.passos { list-style: none; margin: 0; padding: 0; counter-reset: passo; border-top: 1px solid var(--tinta); }
-.passos li { counter-increment: passo; display: grid; grid-template-columns: 34px 1fr; gap: 0 10px; padding: 18px 0; border-bottom: 1px solid var(--fio); color: var(--tinta-2); font-size: 16px; }
-.passos li::before { content: counter(passo, decimal-leading-zero); font: 400 14px/1.75 var(--mono); color: var(--tinta-3); }
-.passos b { color: var(--tinta); font-weight: 600; display: block; }
-.codigo { border: 1px solid var(--codigo-fio); background: var(--codigo); border-radius: 4px; min-width: 0; }
-.codigo-barra { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--codigo-fio); padding: 0 8px 0 6px; }
+.uso { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 32px; align-items: start; }
+.passos { list-style: none; margin: 0; padding: 0; counter-reset: passo; }
+.passos li { counter-increment: passo; position: relative; padding: 0 0 22px 46px; color: var(--tinta-2); font-size: 15px; }
+.passos li::before { content: counter(passo); position: absolute; left: 0; top: 0; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--fio-forte); background: var(--papel-alto); font: 600 13px/1 var(--mono); color: var(--tinta); }
+.passos li:not(:last-child)::after { content: ""; position: absolute; left: 15px; top: 34px; bottom: 4px; width: 1px; background: var(--fio-forte); }
+.passos b { color: var(--tinta); font-weight: 600; display: block; margin: 3px 0 2px; }
+.codigo { background: var(--codigo); color: var(--codigo-tinta); border-radius: 14px; min-width: 0; box-shadow: var(--sombra); overflow: hidden; }
+.codigo-barra { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--codigo-fio); padding: 0 10px 0 8px; }
 .abas { display: flex; }
-.abas button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--tinta-3); font: 500 13.5px/1 var(--sans); padding: 14px 12px 12px; cursor: pointer; margin-bottom: -1px; }
-.abas button[aria-selected="true"] { color: var(--tinta); border-bottom-color: var(--tinta); }
-.abas button:hover { color: var(--tinta); }
-.copiar { background: none; border: 1px solid var(--codigo-fio); color: var(--tinta-2); font: 500 12.5px/1 var(--sans); padding: 7px 10px; border-radius: 3px; cursor: pointer; min-width: 64px; }
-.copiar:hover { color: var(--tinta); border-color: var(--fio-forte); }
-pre { margin: 0; padding: 18px 20px 20px; overflow-x: auto; font: 13.5px/1.65 var(--mono); color: var(--tinta); }
-pre .c { color: var(--tinta-3); }
+.abas button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--codigo-suave); font: 500 13.5px/1 var(--sans); padding: 15px 12px 13px; cursor: pointer; margin-bottom: -1px; transition: color 150ms ease; }
+.abas button[aria-selected="true"] { color: var(--codigo-tinta); border-bottom-color: var(--destaque); }
+.abas button:hover { color: var(--codigo-tinta); }
+.copiar { background: none; border: 1px solid var(--codigo-fio); color: var(--codigo-tinta); font: 500 12.5px/1 var(--sans); padding: 7px 11px; border-radius: 6px; cursor: pointer; min-width: 70px; }
+.copiar:hover { border-color: var(--codigo-suave); }
+pre { margin: 0; padding: 18px 20px 20px; overflow-x: auto; font: 13.5px/1.7 var(--mono); }
+pre .c { color: var(--codigo-suave); }
+pre .s { color: #8fd3bd; }
 .resposta { border-top: 1px dashed var(--codigo-fio); }
-.resposta-rotulo { display: block; padding: 14px 20px 0; font: 500 12px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-3); }
+.resposta-rotulo { display: block; padding: 14px 20px 0; font: 500 12px/1 var(--sans); color: var(--codigo-suave); }
 
 /* planos */
-.planos { border-top: 1px solid var(--tinta); font-size: 15.5px; min-width: 560px; }
-.planos th, .planos td { padding: 13px 18px; border-bottom: 1px solid var(--fio); text-align: left; vertical-align: top; }
-.planos th:first-child, .planos td:first-child { padding-left: 0; }
-.planos thead th { vertical-align: top; padding-top: 28px; padding-bottom: 22px; font-weight: 400; width: 24%; }
-.planos thead th:first-child { width: 28%; }
-.planos .nome { font: 500 26px/1 var(--serifa); display: block; color: var(--tinta); }
-.planos .para { display: block; font-size: 13.5px; color: var(--tinta-3); margin: 8px 0 18px; min-height: 2.8em; line-height: 1.4; }
-.planos .preco { display: block; font: 500 34px/1 var(--serifa); color: var(--tinta); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; }
-.planos .preco small { font: 400 14px var(--sans); color: var(--tinta-3); letter-spacing: 0; }
-.planos .anual { display: block; font-size: 13.5px; color: var(--tinta-3); margin-top: 8px; }
-.planos tbody th { font-weight: 400; color: var(--tinta-2); }
-.planos tbody td { color: var(--tinta); }
-.planos .grupo th { font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); padding-top: 28px; border-bottom-color: var(--fio-forte); }
-.planos .destacado { background: var(--destaque-fundo); }
-.planos thead .destacado { box-shadow: inset 0 2px 0 var(--destaque); }
-.sim { display: inline-block; width: 12px; height: 7px; border-left: 2px solid var(--destaque-tinta); border-bottom: 2px solid var(--destaque-tinta); transform: translateY(-3px) rotate(-45deg); }
-.nao { color: var(--tinta-3); }
-.convite { display: flex; flex-wrap: wrap; gap: 18px 32px; align-items: center; justify-content: space-between; margin-top: 30px; padding: 22px 26px; background: var(--papel-fundo); border-left: 3px solid var(--destaque); }
-.convite p { margin: 0; color: var(--tinta-2); font-size: 16px; max-width: 64ch; }
+.ciclo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ciclo small { color: var(--destaque-tinta); font-size: 13px; font-weight: 500; }
+.planos { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.plano { position: relative; padding: 26px 26px 22px; display: flex; flex-direction: column; }
+.plano.destacado { border-color: var(--destaque); box-shadow: 0 0 0 1px var(--destaque), var(--sombra); }
+.plano .fita { position: absolute; top: -11px; left: 24px; font: 600 11.5px/1 var(--sans); background: var(--destaque-tinta); color: var(--papel); padding: 6px 10px; border-radius: 999px; }
+.plano h2 { font-size: 20px; font-weight: 600; }
+.plano .para { color: var(--tinta-3); font-size: 14px; margin: 4px 0 18px; min-height: 2.9em; line-height: 1.45; }
+.plano .preco { font: 600 40px/1 var(--sans); letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+.plano .preco small { font: 400 14px var(--sans); color: var(--tinta-3); letter-spacing: 0; margin-left: 2px; }
+.plano .anual { font-size: 13px; color: var(--tinta-3); margin: 8px 0 0; min-height: 1.4em; }
+.plano ul { list-style: none; margin: 22px 0; padding: 18px 0 0; border-top: 1px solid var(--fio); display: grid; gap: 10px; font-size: 14.5px; flex: 1; align-content: start; }
+.plano li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: start; color: var(--tinta-2); }
+.plano li.fora { color: var(--tinta-3); }
+.plano li svg { width: 16px; height: 16px; margin-top: 4px; }
+.plano li .sim { color: var(--destaque-tinta); }
+.plano li .nao { color: var(--fio-forte); }
+.plano .botao { width: 100%; }
+.convite { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; justify-content: space-between; margin-top: 18px; padding: 18px 22px; border-radius: 12px; background: var(--papel-fundo); }
+.convite p { margin: 0; color: var(--tinta-2); font-size: 15px; max-width: 70ch; }
 .convite p b { color: var(--tinta); font-weight: 600; }
-
-/* limitações */
-.lacunas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--tinta); }
-.lacunas li { padding: 18px 0; border-bottom: 1px solid var(--fio); color: var(--tinta-2); font-size: 16px; }
-.lacunas li b { display: block; color: var(--tinta); font-weight: 600; margin-bottom: 4px; }
-
-/* quem faz */
-.quem { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 32px 64px; align-items: start; }
-.quem blockquote { margin: 0; font: 400 22px/1.6 var(--serifa); color: var(--tinta-2); border-left: 2px solid var(--tinta); padding-left: 28px; }
-.quem blockquote p { margin: 0 0 18px; }
-.quem blockquote p:last-child { margin: 0; }
+.quem { margin-top: 28px; display: grid; grid-template-columns: auto 1fr; gap: 6px 24px; align-items: start; padding-top: 24px; border-top: 1px solid var(--fio); }
+.quem h2 { font-size: 15px; font-weight: 600; color: var(--tinta-3); white-space: nowrap; padding-top: 2px; }
+.quem p { margin: 0 0 10px; color: var(--tinta-2); font-size: 15px; max-width: 80ch; }
 
 /* conta */
-.conta { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 32px 64px; align-items: start; }
-.conta-texto p { margin: 18px 0 0; color: var(--tinta-2); max-width: 40ch; }
-.conta-caixa { background: var(--papel-fundo); border-radius: 4px; padding: 28px; min-width: 0; }
-label { display: block; font-size: 14px; color: var(--tinta-2); margin-bottom: 8px; font-weight: 500; }
-input { padding: 11px 12px; border: 1px solid var(--fio-forte); border-radius: 3px; background: var(--papel); color: var(--tinta); font: 15px var(--mono); width: 100%; min-width: 0; }
-input:focus-visible { outline: 2px solid var(--destaque); outline-offset: 1px; }
+.entrar { max-width: 460px; margin: 4vh auto 0; padding: 30px; }
+.entrar h1 { font-size: 24px; font-weight: 600; }
+.entrar > p { color: var(--tinta-2); margin: 8px 0 22px; }
+label { display: block; font-size: 13.5px; color: var(--tinta-2); margin-bottom: 6px; font-weight: 500; }
+input, select { padding: 10px 12px; border: 1px solid var(--fio-forte); border-radius: 8px; background: var(--papel); color: var(--tinta); font: 15px var(--sans); width: 100%; min-width: 0; transition: border-color 150ms ease, box-shadow 150ms ease; }
+input:focus-visible, select:focus-visible { outline: none; border-color: var(--destaque); box-shadow: 0 0 0 3px var(--destaque-fundo); }
+input.mono { font-family: var(--mono); }
 .campo { display: flex; gap: 10px; flex-wrap: wrap; }
 .campo input { flex: 1; min-width: 200px; }
-.discreto { color: var(--tinta-3); font-size: 14px; margin: 12px 0 0; }
-.erro { color: var(--alerta); margin: 12px 0 0; font-size: 15px; }
+.discreto { color: var(--tinta-3); font-size: 13.5px; margin: 14px 0 0; }
+.erro { color: var(--alerta); margin: 12px 0 0; font-size: 14.5px; }
 .erro:empty { display: none; }
-#resumo { margin: 0 0 18px; color: var(--tinta-2); }
-#resumo b { color: var(--tinta); font-weight: 600; }
-.chaves td, .chaves th { font-size: 14px; }
-.chave-nova { border: 1px solid var(--destaque); border-radius: 3px; padding: 14px; margin: 0 0 18px; word-break: break-all; background: var(--papel); }
-.chave-nova code { font: 14px var(--mono); }
-.escondido { display: none !important; }
-.revogar { background: none; border: 1px solid var(--fio-forte); color: var(--tinta-2); padding: 5px 10px; border-radius: 3px; font: 13px var(--sans); cursor: pointer; }
+.conta-cabeca { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.conta-cabeca h1 { font-size: 28px; font-weight: 600; }
+.conta-cabeca p { margin: 4px 0 0; color: var(--tinta-2); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.conta-grade { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.cartao { padding: 20px 22px; }
+.cartao + .cartao { margin-top: 18px; }
+.cartao h2 { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.cartao h2 small { font-size: 13px; font-weight: 400; color: var(--tinta-3); }
+.ficha { display: grid; grid-template-columns: auto 1fr; gap: 9px 18px; margin: 0; font-size: 14.5px; }
+.ficha dt { color: var(--tinta-3); }
+.ficha dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.medidor { height: 8px; border-radius: 99px; background: var(--papel-fundo); overflow: hidden; margin: 10px 0 6px; border: 1px solid var(--fio); }
+.medidor i { display: block; height: 100%; background: var(--destaque); border-radius: 99px; transition: width 400ms cubic-bezier(0.2, 0, 0, 1); }
+.medidor i.alto { background: var(--negociado); }
+.uso-hoje { font: 500 30px/1 var(--mono); letter-spacing: -0.03em; }
+.uso-hoje small { font: 400 14px var(--sans); color: var(--tinta-3); letter-spacing: 0; }
+.chaves { font-size: 14px; }
+.chaves td, .chaves th { padding: 10px 12px; vertical-align: middle; }
+.chaves td:first-child, .chaves th:first-child { padding-left: 0; }
+.chaves td:last-child { text-align: right; padding-right: 0; }
+.chaves thead th { background: none; }
+.chaves tr.revogada td { color: var(--tinta-3); }
+.chave-nova { border: 1px solid var(--destaque); border-radius: 10px; padding: 14px; margin: 0 0 16px; background: var(--destaque-fundo); }
+.chave-nova strong { display: block; font-size: 14px; margin-bottom: 8px; }
+.chave-nova div { display: flex; gap: 8px; align-items: center; }
+.chave-nova code { flex: 1; font: 13.5px var(--mono); word-break: break-all; background: var(--papel); border: 1px solid var(--fio); padding: 8px 10px; border-radius: 6px; }
+.revogar { background: none; border: 1px solid var(--fio-forte); color: var(--tinta-2); padding: 5px 10px; border-radius: 6px; font: 500 13px var(--sans); cursor: pointer; }
 .revogar:hover { border-color: var(--alerta); color: var(--alerta); }
-.painel-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; align-items: flex-end; }
-.painel-acoes > div { flex: 1; min-width: 200px; }
-.painel-acoes input { font-family: var(--sans); }
+.nova-chave { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.nova-chave input { flex: 1; min-width: 180px; }
+.assinar { display: grid; gap: 12px; }
+.assinar .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+dialog { border: 1px solid var(--fio-forte); border-radius: 14px; background: var(--papel-alto); color: var(--tinta); padding: 22px; max-width: min(440px, calc(100vw - 32px)); box-shadow: var(--sombra); }
+dialog::backdrop { background: rgba(20, 18, 15, 0.45); }
+dialog h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+dialog p { margin: 0 0 18px; color: var(--tinta-2); }
+dialog form { display: flex; justify-content: flex-end; gap: 8px; }
+.perigo { background: var(--alerta); border-color: var(--alerta); color: var(--papel); }
+.perigo:hover { background: var(--tinta); border-color: var(--tinta); }
 
 /* rodapé */
-footer { margin-top: 140px; border-top: 1px solid var(--tinta); padding: 40px 0 56px; font-size: 14px; color: var(--tinta-3); }
-footer .largura { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.6fr) minmax(0, 0.6fr); gap: 28px 56px; }
-footer p { margin: 0 0 10px; max-width: 60ch; }
-footer h2 { font: 500 12.5px/1 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--tinta-3); margin: 4px 0 16px; }
-footer ul { list-style: none; margin: 0; padding: 0; }
-footer li { margin-bottom: 9px; }
-footer a { color: var(--tinta-2); }
-footer .marca { display: inline-flex; margin-bottom: 16px; font-size: 19px; }
+footer { border-top: 1px solid var(--fio); padding: 18px 0 22px; font-size: 13px; color: var(--tinta-3); }
+footer .largura { display: flex; justify-content: space-between; gap: 10px 28px; flex-wrap: wrap; }
+footer p { margin: 0; max-width: 78ch; }
+footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+footer a { color: var(--tinta-2); text-decoration: none; }
+footer a:hover { color: var(--tinta); text-decoration: underline; }
 
-@media (max-width: 960px) {
-  .abertura { grid-template-columns: 1fr; gap: 48px; }
-  .exemplo, .uso, .quem, .conta { grid-template-columns: 1fr; gap: 36px; }
-  .cabeca { grid-template-columns: 1fr; gap: 18px; align-items: start; }
-  .tres { grid-template-columns: 1fr; }
-  .tres article, .tres article + article { padding: 24px 0 10px; border-left: 0; }
-  .tres article + article { border-top: 1px solid var(--fio); }
-  .lacunas { grid-template-columns: 1fr; }
-  footer .largura { grid-template-columns: 1fr 1fr; }
-  footer .largura > :first-child { grid-column: 1 / -1; }
+@media (max-width: 1000px) {
+  .abertura, .exemplo, .uso, .conta-grade { grid-template-columns: minmax(0, 1fr); }
+  .abertura { gap: 32px; }
+  .armadilhas { grid-template-columns: minmax(0, 1fr); }
+  .armadilhas article, .armadilhas article + article { padding: 18px 0 14px; border-left: 0; }
+  .armadilhas article + article { border-top: 1px solid var(--fio); }
 }
-@media (max-width: 720px) {
-  :root { --gutter: 18px; }
-  body { font-size: 16.5px; }
-  main > section.largura { padding-top: 88px; }
-  .abertura { padding-top: 44px; }
-  .lide { font-size: 18.5px; }
-  .topo nav { gap: 18px; font-size: 14.5px; }
-  .topo nav .opcional { display: none; }
-  .base-hoje td { font-size: 26px; }
-  #grafico { aspect-ratio: auto; min-height: 300px; }
+@media (max-width: 820px) {
+  :root { --topo: 56px; }
+  .topo .largura { flex-wrap: wrap; height: auto; gap: 0 12px; padding-top: 10px; }
+  .topo-direita { margin-left: auto; }
+  .abas-topo { order: 3; flex: 1 1 100%; overflow-x: auto; scrollbar-width: none; margin: 6px -18px 0; padding: 0 12px 2px; }
+  .abas-topo::-webkit-scrollbar { display: none; }
+  .abas-topo a { padding: 10px 10px 12px; }
+  .abas-topo a[aria-current="page"]::after { bottom: 0; left: 10px; right: 10px; }
+  .tela { padding: 28px 0 40px; }
+  .largura { padding: 0 18px; }
+  .lacunas, .assinar .duas { grid-template-columns: minmax(0, 1fr); }
   .cobertura thead { display: none; }
   .cobertura, .cobertura tbody { display: block; }
-  .cobertura tr { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 16px 0; border-bottom: 1px solid var(--fio); }
-  .cobertura th, .cobertura td { border: 0; padding: 0 !important; width: auto !important; }
+  .cobertura tr { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 14px 16px; border-bottom: 1px solid var(--fio); }
+  .cobertura tr:last-child { border-bottom: 0; }
+  .cobertura th, .cobertura td { border: 0 !important; padding: 0 !important; width: auto !important; }
   .cobertura tbody th { grid-column: 1 / -1; }
-  .cobertura td.periodo { grid-column: 1; font-size: 14.5px; }
+  .cobertura td.periodo { grid-column: 1; font-size: 14px; }
   .cobertura td.plano-min { grid-column: 2; grid-row: 2; text-align: right; }
   .cobertura td.rota { grid-column: 1 / -1; }
-  .planos { font-size: 14px; min-width: 0; }
-  .planos th, .planos td { padding: 11px 7px; }
-  .planos thead th { padding-top: 20px; padding-bottom: 16px; }
-  .planos .nome { font-size: 20px; }
-  .planos .para { display: none; }
-  .planos .preco { font-size: 22px; white-space: normal; margin-top: 10px; }
-  .planos .preco small { display: block; font-size: 12.5px; margin-top: 4px; }
-  .planos .anual { font-size: 12.5px; }
-  .planos thead th:first-child { width: 31%; }
-  .convite { padding: 20px; }
-  .convite .botao { width: 100%; }
-  .comparacao strong { font-size: 27px; }
+  #grafico { aspect-ratio: auto; min-height: 300px; }
   pre { font-size: 12.5px; padding: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .campo .botao { flex: 1; }
-  .conta-caixa { padding: 20px; }
-  .quem blockquote { font-size: 19.5px; padding-left: 20px; }
-  footer .largura { grid-template-columns: 1fr 1fr; }
+  .quem { grid-template-columns: minmax(0, 1fr); }
+  .entrar { padding: 22px; margin-top: 0; }
+  .chaves .col-opcional { display: none; }
 }
-@media (max-width: 520px) {
-  .topo nav .opcional-2 { display: none; }
-  .planos .preco { white-space: nowrap; font-size: 20px; }
-  .planos thead th:first-child { width: 28%; }
-}
-@media (max-width: 340px) {
-  .topo nav a:not(.conta-link) { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .tela { animation: none; }
+  * { transition: none !important; }
 }
 </style>
 </head>
@@ -311,80 +340,78 @@ footer .marca { display: inline-flex; margin-bottom: 16px; font-size: 19px; }
 
 <header class="topo">
   <div class="largura">
-    <a class="marca" href="/"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/></svg><!-- /marca -->fiance <em>dados</em></a>
-    <nav aria-label="Principal">
-      <a href="#dados" class="opcional">Dados</a>
-      <a href="#planos">Planos</a>
-      <a href="/docs" class="opcional-2">Documentação</a>
-      <a href="#conta" class="conta-link">Minha conta</a>
+    <a class="marca" href="#inicio" aria-label="fiance dados, início"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/></svg><svg class="logotipo" viewBox="0 0 418 100" role="img" aria-label="fiance" focusable="false"><g fill="currentColor"><path d="M0 0L62 0L62 13L13 13L13 49L50 49L50 62L13 62L13 100L0 100Z" transform="translate(0 0)"/><path d="M0 0L13 0L13 100L0 100Z" transform="translate(75 0)"/><path d="M29 0L45 0L74 100L59.5 100L37 22.4L14.5 100L0 100Z M29.29 49L44.71 49L48.48 62L25.52 62Z" transform="translate(101 0)"/><path d="M0 0L13 0L59 76L59 0L72 0L72 100L59 100L13 24L13 100L0 100Z" transform="translate(188 0)"/><path d="M64.4 22.8A35 50 0 1 0 64.4 77.2L53.4 70.2A22 37 0 1 1 53.4 29.8Z" transform="translate(273 0)"/><path d="M0 0L62 0L62 13L13 13L13 49L48 49L48 62L13 62L13 87L62 87L62 100L0 100Z" transform="translate(356 0)"/></g></svg><!-- /marca --><span class="produto">dados</span></a>
+    <nav class="abas-topo" aria-label="Principal">
+      <a href="#inicio" data-tela="inicio">Início</a>
+      <a href="#exemplo" data-tela="exemplo">Exemplo</a>
+      <a href="#dados" data-tela="dados">Dados</a>
+      <a href="#uso" data-tela="uso">Como usar</a>
+      <a href="#planos" data-tela="planos">Planos</a>
+      <a href="/docs">Documentação</a>
     </nav>
+    <div class="topo-direita">
+      <button class="tema" type="button" id="tema" aria-label="Trocar o tema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+      <a class="botao contorno pequeno" href="#conta" data-tela="conta">Minha conta</a>
+    </div>
   </div>
 </header>
 
 <main id="conteudo">
-  <div class="largura abertura">
-    <div>
-      <p class="sobre">API de dados de mercado · B3 e CVM</p>
-      <h1>A bolsa brasileira, <em>do jeito que aconteceu.</em></h1>
-      <p class="lide">Vinte anos de cotações, proventos e balanços para testar uma ideia sem se enganar:
-        com as empresas que saíram da bolsa, os desdobramentos conferidos pelo preço e cada balanço como
-        se sabia no dia em que foi publicado.</p>
-      <div class="acoes" id="acoes-abertura">
-        <a class="botao" href="#planos">Ver planos e acesso</a>
-        <a class="botao contorno" href="/docs">Documentação da API</a>
+
+  <section class="tela largura" id="tela-inicio" aria-labelledby="t-inicio" data-titulo="fiance dados — a bolsa brasileira, do jeito que aconteceu">
+    <div class="abertura">
+      <div>
+        <span class="selo" id="atualizada"><i aria-hidden="true"></i><span>Atualizada todo dia útil, à noite</span></span>
+        <h1 id="t-inicio" tabindex="-1">A bolsa brasileira <span>do jeito que aconteceu.</span></h1>
+        <p class="lide">Cotações, proventos e balanços da B3 e da CVM desde 2005, numa API: com as empresas que saíram da bolsa, os desdobramentos conferidos pelo preço e cada balanço como se sabia no dia em que foi entregue.</p>
+        <div class="acoes" id="acoes-abertura">
+          <a class="botao" href="#planos">Ver planos e acesso</a>
+          <a class="botao contorno" href="#uso">Como é usar</a>
+        </div>
       </div>
-      <p class="atualizada" id="atualizada"><i aria-hidden="true"></i><span>Atualizada todo dia útil, à noite</span></p>
+
+      <figure class="painel base-hoje">
+        <table>
+          <caption>A base hoje</caption>
+          <tbody>
+            <tr><th scope="row">Ativos negociando<small data-texto="composicao">ações, FIIs, ETFs e BDRs</small></th><td data-n="negociando">—</td></tr>
+            <tr><th scope="row">Ações na história<small data-texto="sairam">inclusive as que saíram da bolsa</small></th><td data-n="acoes_na_historia">—</td></tr>
+            <tr><th scope="row">Demonstrações financeiras<small data-texto="empresas">DFP e ITR, cada versão com a data de entrega</small></th><td data-n="demonstracoes">—</td></tr>
+            <tr><th scope="row">Primeiro pregão<small>cotação diária desde então, sem buraco</small></th><td data-n="desde">—</td></tr>
+          </tbody>
+        </table>
+        <a class="faisca escondido" id="faisca" href="#exemplo"></a>
+      </figure>
     </div>
 
-    <figure class="base-hoje">
-      <table>
-        <caption>A base hoje</caption>
-        <tbody>
-          <tr><th scope="row">Ativos negociando<small data-texto="composicao">ações, FIIs, ETFs e BDRs</small></th><td data-n="negociando">—</td></tr>
-          <tr><th scope="row">Ações na história<small data-texto="sairam">inclusive as que saíram da bolsa</small></th><td data-n="acoes_na_historia">—</td></tr>
-          <tr><th scope="row">Demonstrações financeiras<small data-texto="empresas">DFP e ITR, cada versão com a data de entrega</small></th><td data-n="demonstracoes">—</td></tr>
-          <tr><th scope="row">Primeiro pregão<small>cotação diária desde então, sem buraco</small></th><td data-n="desde">—</td></tr>
-        </tbody>
-      </table>
-    </figure>
-  </div>
-
-  <section class="largura" id="diferencial" aria-labelledby="t-diferencial">
-    <p class="rotulo">Por que esta base</p>
-    <div class="cabeca">
-      <h2 id="t-diferencial">Três erros que um backtest comete sem avisar.</h2>
-      <p>Nenhum deles aparece como erro. O resultado só sai melhor do que seria — e a decisão tomada em cima dele, pior.</p>
-    </div>
-    <div class="tres">
+    <div class="armadilhas" aria-label="O que a base evita">
       <article>
-        <span class="indice" aria-hidden="true">01</span>
-        <h3>Só olhar quem sobreviveu</h3>
-        <p>Testar com as empresas que estão na bolsa hoje esquece as que quebraram, foram compradas ou fecharam o capital. A cotação de cada uma continua na base, até o último pregão.</p>
+        <h2><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 16h14M6 16V9M10 16V5M14 16v-4"/><path d="M12.5 3.5l3 3M15.5 3.5l-3 3"/></svg>Só olhar quem sobreviveu</h2>
+        <p>Testar só com quem está na bolsa hoje esquece quem quebrou, foi comprada ou fechou o capital. A cotação de cada uma segue na base até o último pregão.</p>
         <p class="prova" data-prova="sairam">Ações que já saíram da bolsa seguem na base.</p>
       </article>
       <article>
-        <span class="indice" aria-hidden="true">02</span>
-        <h3>Ler desdobramento como queda</h3>
-        <p>Um desdobramento de 5 para 1 parece uma queda de 80%. O evento publicado pela B3 só ajusta a série depois de o salto do preço confirmar o anúncio; o salto que fica sem explicação é marcado, não escondido.</p>
-        <p class="prova">Campo <code>salto_sem_evento</code> em cada dia da série.</p>
+        <h2><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h5l1 8h8"/><path d="M14 10l3 3-3 3"/></svg>Ler desdobramento como queda</h2>
+        <p>Um desdobramento de 5 para 1 parece uma queda de 80%. O evento só ajusta a série depois que o salto do preço confirma o anúncio.</p>
+        <p class="prova">Salto sem explicação vem marcado em <code>salto_sem_evento</code>.</p>
       </article>
       <article>
-        <span class="indice" aria-hidden="true">03</span>
-        <h3>Usar o balanço do futuro</h3>
-        <p>O balanço de dezembro só chega à CVM em março, e às vezes é reapresentado depois. Peça as demonstrações de uma data e receba só o que já tinha sido entregue nela.</p>
+        <h2><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2.5v3M13 2.5v3M8 12.5h4"/></svg>Usar o balanço do futuro</h2>
+        <p>O balanço de dezembro só chega à CVM em março, e às vezes é reapresentado. Peça uma data e receba só o que já tinha sido entregue nela.</p>
         <p class="prova" data-prova="demonstracoes">Demonstrações com a data de entrega de cada versão.</p>
       </article>
     </div>
   </section>
 
-  <section class="largura" id="exemplo" aria-labelledby="t-exemplo">
-    <p class="rotulo">Um exemplo real</p>
+  <section class="tela largura" id="tela-exemplo" aria-labelledby="t-exemplo" data-titulo="Um exemplo real — fiance dados" hidden>
     <div class="cabeca">
-      <h2 id="t-exemplo">O preço que aparece no gráfico nem sempre é o que aconteceu.</h2>
-      <p>Em 2020, a Hapvida dividiu cada ação em cinco. Em 2025, juntou quinze em uma. Pelo preço negociado, uma queda de 80% num dia e uma alta de 1.400% em outro — e nenhuma das duas aconteceu com o dinheiro de quem tinha a ação.</p>
+      <div>
+        <h1 id="t-exemplo" tabindex="-1">O preço do gráfico nem sempre é o que aconteceu.</h1>
+        <p>Em 2020, a Hapvida dividiu cada ação em cinco. Em 2025, juntou quinze em uma. Pelo preço negociado, uma queda de 80% num dia e uma alta de 1.400% em outro — e nenhuma das duas aconteceu com o dinheiro de quem tinha a ação.</p>
+      </div>
     </div>
     <div class="exemplo">
-      <figure class="grafico-moldura">
+      <figure class="painel grafico-moldura">
         <div class="grafico-titulo"><span><strong id="titulo-grafico">HAPV3</strong> · fechamento do último pregão de cada mês, em reais</span><span>escala logarítmica</span></div>
         <div class="legenda">
           <span><i style="background: var(--negociado)" aria-hidden="true"></i>Como foi negociado</span>
@@ -401,7 +428,7 @@ footer .marca { display: inline-flex; margin-bottom: 16px; font-size: 19px; }
           </table></div>
         </details>
       </figure>
-      <aside class="notas" aria-label="Como ler o gráfico">
+      <aside class="painel notas" aria-label="Como ler o gráfico">
         <div class="comparacao" id="comparacao" hidden>
           <div><strong data-c="negociado">—</strong><span><i style="background: var(--negociado)" aria-hidden="true"></i>pelo preço negociado</span></div>
           <div><strong data-c="ajustado">—</strong><span><i style="background: var(--ajustado)" aria-hidden="true"></i>pelo preço ajustado</span></div>
@@ -409,175 +436,220 @@ footer .marca { display: inline-flex; margin-bottom: 16px; font-size: 19px; }
         <p class="leitura" id="leitura" hidden></p>
         <p>A linha ajustada divide o passado pelos eventos, para que cada dia seja comparável ao de hoje. É ela que diz quanto o preço de fato variou.</p>
         <p>Na rota da série, cada dia traz ainda o provento na data-com e o retorno total, atravessando troca de ticker.</p>
+        <a class="botao contorno pequeno" href="#uso" style="margin-top:auto; align-self:flex-start">Pedir esta série pela API</a>
       </aside>
     </div>
   </section>
 
-  <section class="largura" id="dados" aria-labelledby="t-dados">
-    <p class="rotulo">O que tem na base</p>
+  <section class="tela largura" id="tela-dados" aria-labelledby="t-dados" data-titulo="O que tem na base — fiance dados" hidden>
     <div class="cabeca">
-      <h2 id="t-dados">Cada dado, desde quando, e onde pedir.</h2>
-      <p>Todas as rotas respondem JSON, e as listas longas vêm em páginas, com cursor. A <a href="/docs">documentação</a> tem os campos de cada uma e um formulário para testar com a sua chave.</p>
+      <div>
+        <h1 id="t-dados" tabindex="-1">Cada dado, desde quando, e onde pedir.</h1>
+        <p>Todas as rotas respondem JSON, e as listas longas vêm em páginas, com cursor. Toque numa rota para copiá-la; os campos de cada uma estão na <a href="/docs">documentação</a>.</p>
+      </div>
+      <div class="segmentos" role="tablist" aria-label="Cobertura da base">
+        <button type="button" role="tab" id="seg-tem" aria-selected="true" aria-controls="painel-tem">Disponível<span>10</span></button>
+        <button type="button" role="tab" id="seg-falta" aria-selected="false" aria-controls="painel-falta" tabindex="-1">Ainda não tem<span>7</span></button>
+      </div>
     </div>
-    <div class="rolar">
-      <table class="tabela cobertura">
-        <caption class="so-leitor">Cobertura da base por dado, rota e plano</caption>
-        <thead><tr><th scope="col">Dado</th><th scope="col">Desde</th><th scope="col">Rota</th><th scope="col">Plano</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Cotação diária<small>Abertura, máxima, mínima, fechamento e volume, inclusive de quem saiu da bolsa</small></th><td class="periodo">jan. de 2005</td><td class="rota"><code>/v1/ativos/{codigo}/cotacoes</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
-          <tr><th scope="row">Série ajustada<small>Eventos conferidos pelo preço, provento na data-com e retorno total, através de troca de ticker</small></th><td class="periodo">jan. de 2005</td><td class="rota"><code>/v1/ativos/{codigo}/serie</code></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
-          <tr><th scope="row">Proventos<small>Data-com, data de pagamento, tipo e valor</small></th><td class="periodo">1995, de companhias</td><td class="rota"><code>/v1/ativos/{codigo}/proventos</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
-          <tr><th scope="row">Eventos corporativos<small>Desdobramento, grupamento e bonificação, com o status da conferência pelo preço</small></th><td class="periodo">conforme a B3</td><td class="rota"><code>/v1/ativos/{codigo}/eventos</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
-          <tr><th scope="row">Demonstrações financeiras<small>DFP e ITR da CVM, todas as versões, com a data de entrega</small></th><td class="periodo">exercício de 2010</td><td class="rota"><code>/v1/empresas/{cnpj}/demonstracoes</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
-          <tr><th scope="row">Balanço como se sabia na data<small>As mesmas demonstrações, só com o que já tinha sido entregue no dia pedido</small></th><td class="periodo">exercício de 2010</td><td class="rota"><code>…/demonstracoes?sabido_em=2019-05-15</code></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
-          <tr><th scope="row">Retrato de vários ativos<small>Preço do dia, os outros papéis da empresa e os balanços, até 50 ativos por chamada</small></th><td class="periodo">último pregão</td><td class="rota"><code>/v1/retratos</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
-          <tr><th scope="row">Informe mensal de FII<small>Patrimônio, valor da cota, cotas emitidas, segmento e mandato</small></th><td class="periodo">set. de 2016</td><td class="rota"><code>/v1/ativos/{codigo}/informes</code></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
-          <tr><th scope="row">Juros, inflação e dólar<small>CDI, Selic, meta da Selic, IPCA e PTAX, do Banco Central</small></th><td class="periodo">jan. de 2005</td><td class="rota"><code>/v1/indicadores/{nome}</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
-          <tr><th scope="row">Tesouro Direto<small>Taxas e preços de compra e venda de cada título</small></th><td class="periodo">jan. de 2005</td><td class="rota"><code>/v1/tesouro/historico</code></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
-        </tbody>
-      </table>
+    <div role="tabpanel" id="painel-tem" aria-labelledby="seg-tem">
+      <div class="painel rolar">
+        <table class="tabela cobertura">
+          <caption class="so-leitor">Cobertura da base por dado, rota e plano</caption>
+          <thead><tr><th scope="col">Dado</th><th scope="col">Desde</th><th scope="col">Rota</th><th scope="col">Plano</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Cotação diária<small>Abertura, máxima, mínima, fechamento e volume, inclusive de quem saiu da bolsa</small></th><td class="periodo">jan. de 2005</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/cotacoes</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+            <tr><th scope="row">Série ajustada<small>Eventos conferidos pelo preço, provento na data-com e retorno total, através de troca de ticker</small></th><td class="periodo">jan. de 2005</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/serie</button></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
+            <tr><th scope="row">Proventos<small>Data-com, data de pagamento, tipo e valor</small></th><td class="periodo">1995, de companhias</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/proventos</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+            <tr><th scope="row">Eventos corporativos<small>Desdobramento, grupamento e bonificação, com o status da conferência pelo preço</small></th><td class="periodo">conforme a B3</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/eventos</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+            <tr><th scope="row">Demonstrações financeiras<small>DFP e ITR da CVM, todas as versões, com a data de entrega</small></th><td class="periodo">exercício de 2010</td><td class="rota"><button class="rota-copiar" type="button">/v1/empresas/{cnpj}/demonstracoes</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+            <tr><th scope="row">Balanço como se sabia na data<small>As mesmas demonstrações, só com o que já tinha sido entregue no dia pedido</small></th><td class="periodo">exercício de 2010</td><td class="rota"><button class="rota-copiar" type="button">/v1/empresas/{cnpj}/demonstracoes?sabido_em=2019-05-15</button></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
+            <tr><th scope="row">Retrato de vários ativos<small>Preço do dia, os outros papéis da empresa e os balanços, até 50 ativos por chamada</small></th><td class="periodo">último pregão</td><td class="rota"><button class="rota-copiar" type="button">/v1/retratos</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+            <tr><th scope="row">Informe mensal de FII<small>Patrimônio, valor da cota, cotas emitidas, segmento e mandato</small></th><td class="periodo">set. de 2016</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/informes</button></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
+            <tr><th scope="row">Juros, inflação e dólar<small>CDI, Selic, meta da Selic, IPCA e PTAX, do Banco Central</small></th><td class="periodo">jan. de 2005</td><td class="rota"><button class="rota-copiar" type="button">/v1/indicadores/{nome}</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+            <tr><th scope="row">Tesouro Direto<small>Taxas e preços de compra e venda de cada título</small></th><td class="periodo">jan. de 2005</td><td class="rota"><button class="rota-copiar" type="button">/v1/tesouro/historico</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="nota-tabela">No Essencial, toda rota devolve os últimos dois anos; o histórico inteiro começa no Pro.</p>
     </div>
-    <p class="nota-tabela">No Essencial, toda rota devolve os últimos dois anos; o histórico inteiro começa no Pro.</p>
+    <div role="tabpanel" id="painel-falta" aria-labelledby="seg-falta" hidden>
+      <p class="nota-tabela" style="margin:0 0 16px">Uma base que esconde a própria lacuna faz o teste errar em silêncio. Estas são as conhecidas.</p>
+      <ul class="lacunas">
+        <li><b>A base em arquivo</b>O acesso é pela API, consulta a consulta; a base não é entregue para download.</li>
+        <li><b>Cotação ao longo do pregão</b>O dado é do fechamento, atualizado à noite nos dias úteis.</li>
+        <li><b>Proventos de ETF e BDR antes de outubro de 2025</b>Nem a data de pagamento deles antes disso.</li>
+        <li><b>Rendimento de FII anterior a outubro de 2025</b>Estimado pelo informe da CVM; só vem quando pedido, e marcado como estimado.</li>
+        <li><b>Cisão e redução de capital</b>Não ajustam a série ajustada.</li>
+        <li><b>Balanço de BDR</b>A CVM não publica demonstração de empresa estrangeira.</li>
+        <li><b>Evento que a B3 não publicou</b>Quando o preço salta sem evento conhecido, o dia vem marcado em <code>salto_sem_evento</code>; a série não é corrigida por suposição.</li>
+      </ul>
+    </div>
   </section>
 
-  <section class="largura" id="uso" aria-labelledby="t-uso">
-    <p class="rotulo">Como é usar</p>
+  <section class="tela largura" id="tela-uso" aria-labelledby="t-uso" data-titulo="Como é usar — fiance dados" hidden>
     <div class="cabeca">
-      <h2 id="t-uso">Uma chave, uma chamada, um JSON.</h2>
-      <p>Sem SDK para instalar e sem formato próprio: serve qualquer linguagem que faça uma requisição HTTP.</p>
+      <div>
+        <h1 id="t-uso" tabindex="-1">Uma chave, uma chamada, um JSON.</h1>
+        <p>Sem SDK para instalar e sem formato próprio: serve qualquer linguagem que faça uma requisição HTTP.</p>
+      </div>
+      <a class="botao contorno" href="/docs">Abrir a documentação</a>
     </div>
     <div class="uso">
       <ol class="passos">
-        <li><span><b>Receba a chave</b>Começa com <code>fd_</code>, aparece uma vez só e fica guardada apenas como hash. Outras se emitem em “Minha conta”.</span></li>
-        <li><span><b>Mande no cabeçalho</b><code>Authorization: Bearer fd_…</code> em toda chamada.</span></li>
-        <li><span><b>Acompanhe o limite</b>Toda resposta traz <code>X-Limite-Dia</code> e <code>X-Restante-Dia</code>.</span></li>
-        <li><span><b>Siga o cursor</b>Lista longa vem com <code>proximo</code>; passe-o em <code>?cursor=</code> para a página seguinte.</span></li>
+        <li><b>Receba a chave</b>Começa com <code>fd_</code>, aparece uma vez só e fica guardada apenas como hash. Outras se emitem em <a href="#conta">Minha conta</a>.</li>
+        <li><b>Mande no cabeçalho</b><code>Authorization: Bearer fd_…</code> em toda chamada.</li>
+        <li><b>Acompanhe o limite</b>Toda resposta traz <code>X-Limite-Dia</code> e <code>X-Restante-Dia</code>.</li>
+        <li><b>Siga o cursor</b>Lista longa vem com <code>proximo</code>; passe-o em <code>?cursor=</code> para a página seguinte.</li>
       </ol>
       <div class="codigo">
         <div class="codigo-barra">
           <div class="abas" role="tablist" aria-label="Linguagem do exemplo">
             <button type="button" role="tab" id="aba-curl" aria-selected="true" aria-controls="painel-curl" tabindex="0">curl</button>
             <button type="button" role="tab" id="aba-python" aria-selected="false" aria-controls="painel-python" tabindex="-1">Python</button>
+            <button type="button" role="tab" id="aba-js" aria-selected="false" aria-controls="painel-js" tabindex="-1">JavaScript</button>
           </div>
           <button class="copiar" type="button" id="copiar">Copiar</button>
         </div>
         <div role="tabpanel" id="painel-curl" aria-labelledby="aba-curl">
 <pre><code><span class="c"># a série ajustada da Hapvida desde 2025</span>
-curl "https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie?de=2025-01-01" \
-  -H "Authorization: Bearer fd_sua_chave"</code></pre>
+curl <span class="s">"https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie?de=2025-01-01"</span> \
+  -H <span class="s">"Authorization: Bearer fd_sua_chave"</span></code></pre>
         </div>
         <div role="tabpanel" id="painel-python" aria-labelledby="aba-python" hidden>
 <pre><code><span class="c"># a série ajustada da Hapvida desde 2025</span>
 import httpx
 
 r = httpx.get(
-    "https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie",
-    params={"de": "2025-01-01"},
-    headers={"Authorization": "Bearer fd_sua_chave"},
+    <span class="s">"https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie"</span>,
+    params={<span class="s">"de"</span>: <span class="s">"2025-01-01"</span>},
+    headers={<span class="s">"Authorization"</span>: <span class="s">"Bearer fd_sua_chave"</span>},
 )
-r.headers["X-Restante-Dia"]   <span class="c"># chamadas que restam hoje</span>
-r.json()["proximo"]           <span class="c"># cursor da próxima página, ou None</span></code></pre>
+r.headers[<span class="s">"X-Restante-Dia"</span>]   <span class="c"># chamadas que restam hoje</span>
+r.json()[<span class="s">"proximo"</span>]           <span class="c"># cursor da próxima página, ou None</span></code></pre>
+        </div>
+        <div role="tabpanel" id="painel-js" aria-labelledby="aba-js" hidden>
+<pre><code><span class="c">// a série ajustada da Hapvida desde 2025</span>
+const r = await fetch(
+  <span class="s">"https://fiance-dados.up.railway.app/v1/ativos/HAPV3/serie?de=2025-01-01"</span>,
+  { headers: { Authorization: <span class="s">"Bearer fd_sua_chave"</span> } },
+);
+r.headers.get(<span class="s">"X-Restante-Dia"</span>); <span class="c">// chamadas que restam hoje</span>
+const { dados, proximo } = await r.json();</code></pre>
         </div>
         <div class="resposta">
           <span class="resposta-rotulo">Resposta · a primeira linha, com os números arredondados</span>
 <pre><code>{
-  "dados": [
-    { "data": "2025-01-02", "codigo": "HAPV3",
-      "fechamento": 2.17, "fator_ajuste": 0.0667,
-      "fechamento_ajustado": 32.55, "provento": 0,
-      "retorno_total": -0.0269, "dias_desde_anterior": 3,
-      "salto_sem_evento": false },
+  <span class="s">"dados"</span>: [
+    { <span class="s">"data"</span>: <span class="s">"2025-01-02"</span>, <span class="s">"codigo"</span>: <span class="s">"HAPV3"</span>,
+      <span class="s">"fechamento"</span>: 2.17, <span class="s">"fator_ajuste"</span>: 0.0667,
+      <span class="s">"fechamento_ajustado"</span>: 32.55, <span class="s">"provento"</span>: 0,
+      <span class="s">"retorno_total"</span>: -0.0269, <span class="s">"dias_desde_anterior"</span>: 3,
+      <span class="s">"salto_sem_evento"</span>: false },
     …
   ],
-  "proximo": "…"
+  <span class="s">"proximo"</span>: <span class="s">"…"</span>
 }</code></pre>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="largura" id="planos" aria-labelledby="t-planos">
-    <p class="rotulo">Planos</p>
+  <section class="tela largura" id="tela-planos" aria-labelledby="t-planos" data-titulo="Planos — fiance dados" hidden>
     <div class="cabeca">
-      <h2 id="t-planos">Pago, mensal ou anual. Sem plano gratuito.</h2>
-      <p>O preço sobe com o que é difícil de achar em outro lugar: o histórico inteiro, a série ajustada e o balanço como se sabia na data. No anual, dez meses pagam doze.</p>
+      <div>
+        <h1 id="t-planos" tabindex="-1">Pago, mensal ou anual. Sem plano gratuito.</h1>
+        <p>O preço sobe com o que é difícil de achar em outro lugar: o histórico inteiro, a série ajustada e o balanço como se sabia na data.</p>
+      </div>
+      <div class="ciclo">
+        <div class="segmentos" role="radiogroup" aria-label="Ciclo de cobrança">
+          <button type="button" role="radio" aria-checked="true" aria-selected="true" data-ciclo="mensal">Mensal</button>
+          <button type="button" role="radio" aria-checked="false" aria-selected="false" data-ciclo="anual">Anual</button>
+        </div>
+        <small>no anual, dez meses pagam doze</small>
+      </div>
     </div>
-    <div class="rolar">
-      <table class="planos" id="tabela-planos">
-        <caption class="so-leitor">Comparação dos planos</caption>
-        <thead><tr><th scope="col"><span class="so-leitor">Item</span></th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    <div class="planos" id="planos-cartoes" aria-live="polite"></div>
     <p class="erro" id="erro-planos" role="alert"></p>
     <div class="convite" id="convite">
       <p id="convite-texto"><b>A cobrança ainda não abriu.</b> Enquanto isso, o acesso é por convite e sem custo, para quem quer testar a base no próprio trabalho.</p>
     </div>
-  </section>
-
-  <section class="largura" id="limites" aria-labelledby="t-limites">
-    <p class="rotulo">O que ainda não tem</p>
-    <div class="cabeca">
-      <h2 id="t-limites">Dito antes, para não descobrir depois.</h2>
-      <p>Uma base que esconde a própria lacuna faz o teste errar em silêncio. Estas são as conhecidas.</p>
-    </div>
-    <ul class="lacunas">
-      <li><b>A base em arquivo</b>O acesso é pela API, consulta a consulta; a base não é entregue para download.</li>
-      <li><b>Cotação ao longo do pregão</b>O dado é do fechamento, atualizado à noite nos dias úteis.</li>
-      <li><b>Proventos de ETF e BDR antes de outubro de 2025</b>Nem a data de pagamento deles antes disso.</li>
-      <li><b>Rendimento de FII anterior a outubro de 2025</b>Estimado pelo informe da CVM; só vem quando pedido, e marcado como estimado.</li>
-      <li><b>Cisão e redução de capital</b>Não ajustam a série ajustada.</li>
-      <li><b>Balanço de BDR</b>A CVM não publica demonstração de empresa estrangeira.</li>
-      <li><b>Evento que a B3 não publicou</b>Quando o preço salta sem evento conhecido, o dia vem marcado em <code>salto_sem_evento</code>; a série não é corrigida por suposição.</li>
-    </ul>
-  </section>
-
-  <section class="largura" id="quem-faz" aria-labelledby="t-quem">
-    <p class="rotulo">Quem faz</p>
     <div class="quem">
-      <h2 id="t-quem">Uma pessoa, e a própria carteira.</h2>
-      <blockquote>
+      <h2>Quem mantém</h2>
+      <div>
         <p>Esta base nasceu de uma pergunta pessoal: alguma estratégia de verdade bate o CDI, depois de custo e imposto? Para responder, era preciso o dado inteiro — com quem saiu da bolsa, sem desdobramento confundindo o preço e sem balanço do futuro vazando no passado.</p>
         <p>É mantida por uma pessoa só, que usa estes mesmos dados para investir o próprio dinheiro. Quando algo quebra, quem conserta também perde com isso.</p>
-      </blockquote>
+      </div>
     </div>
   </section>
 
-  <section class="largura" id="conta" aria-labelledby="t-conta">
-    <p class="rotulo">Minha conta</p>
-    <div class="conta">
-      <div class="conta-texto">
-        <h2 id="t-conta">Já tem uma chave?</h2>
-        <p>Entre com ela para ver o plano e o uso de hoje, emitir outra chave ou revogar uma que vazou.</p>
-      </div>
-      <div class="conta-caixa">
-        <div id="entrar">
-          <form id="form-entrar">
-            <label for="chave">Sua chave</label>
-            <div class="campo">
-              <input id="chave" type="password" placeholder="fd_…" autocomplete="off" spellcheck="false" required>
-              <button class="botao" type="submit">Entrar</button>
-            </div>
-          </form>
-          <p class="discreto">A chave fica só nesta aba do navegador e some quando ela fecha.</p>
+  <section class="tela largura" id="tela-conta" aria-labelledby="t-conta" data-titulo="Minha conta — fiance dados" hidden>
+    <div id="entrar" class="painel entrar">
+      <h1 id="t-conta" tabindex="-1">Minha conta</h1>
+      <p>Entre com a sua chave para ver o plano e o uso de hoje, emitir outra chave ou revogar uma que vazou.</p>
+      <form id="form-entrar">
+        <label for="chave">Sua chave</label>
+        <div class="campo">
+          <input id="chave" class="mono" type="password" placeholder="fd_…" autocomplete="off" spellcheck="false" required>
+          <button class="botao" type="submit">Entrar</button>
         </div>
-        <p id="erro-conta" class="erro" role="alert"></p>
-        <div id="painel" class="escondido">
-          <p id="resumo"></p>
-          <div id="chave-criada" class="chave-nova escondido" role="status"></div>
-          <div class="rolar"><table class="tabela chaves">
-            <caption class="so-leitor">Suas chaves</caption>
-            <thead><tr><th scope="col">Chave</th><th scope="col">Nome</th><th scope="col">Criada</th><th scope="col">Último uso</th><th scope="col">Hoje</th><th scope="col"><span class="so-leitor">Ação</span></th></tr></thead>
-            <tbody id="chaves"></tbody>
-          </table></div>
-          <form id="form-nova" class="painel-acoes">
-            <div>
-              <label for="nome-nova">Nome da nova chave</label>
-              <input id="nome-nova" maxlength="60" required placeholder="ex.: notebook, servidor">
-            </div>
-            <button class="botao contorno" type="submit">Emitir chave</button>
-            <button class="botao contorno" type="button" id="sair">Sair</button>
-          </form>
+      </form>
+      <p id="erro-conta" class="erro" role="alert"></p>
+      <p class="discreto">A chave fica só nesta aba do navegador e some quando ela fecha. Ainda não tem uma? <a href="#planos">Veja os planos</a>.</p>
+    </div>
+
+    <div id="painel-conta" class="escondido">
+      <div class="conta-cabeca">
+        <div>
+          <h1 id="conta-nome" tabindex="-1"></h1>
+          <p id="conta-sub"></p>
+        </div>
+        <button class="botao contorno pequeno" type="button" id="sair">Sair</button>
+      </div>
+      <p id="erro-painel" class="erro" role="alert" style="margin:0 0 16px"></p>
+      <div class="conta-grade">
+        <div>
+          <div class="painel cartao">
+            <h2>Chaves <small id="chaves-contagem"></small></h2>
+            <div id="chave-criada" class="chave-nova escondido" role="status"></div>
+            <div class="rolar"><table class="tabela chaves">
+              <caption class="so-leitor">Suas chaves</caption>
+              <thead><tr><th scope="col">Chave</th><th scope="col" class="col-opcional">Criada</th><th scope="col">Último uso</th><th scope="col" class="num">Hoje</th><th scope="col"><span class="so-leitor">Ação</span></th></tr></thead>
+              <tbody id="chaves"></tbody>
+            </table></div>
+            <form id="form-nova" class="nova-chave">
+              <label for="nome-nova" class="so-leitor">Nome da nova chave</label>
+              <input id="nome-nova" maxlength="60" required placeholder="Nome da nova chave, ex.: servidor">
+              <button class="botao contorno" type="submit" id="emitir">Emitir chave</button>
+            </form>
+          </div>
+          <div class="painel cartao escondido" id="cartao-assinar">
+            <h2>Assinar <small>pagamento pelo Asaas</small></h2>
+            <form id="form-assinar" class="assinar">
+              <div class="duas">
+                <div><label for="assinar-plano">Plano</label><select id="assinar-plano"></select></div>
+                <div><label for="assinar-ciclo">Ciclo</label><select id="assinar-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
+              </div>
+              <div class="duas">
+                <div><label for="assinar-nome">Nome ou razão social</label><input id="assinar-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
+                <div><label for="assinar-doc">CPF ou CNPJ</label><input id="assinar-doc" required minlength="11" maxlength="18" inputmode="numeric" autocomplete="off"></div>
+              </div>
+              <div><button class="botao destaque" type="submit" id="botao-assinar">Gerar o link de pagamento</button></div>
+              <p class="discreto" id="assinar-resultado" style="margin:0" role="status"></p>
+            </form>
+          </div>
+        </div>
+        <div>
+          <div class="painel cartao">
+            <h2>Uso de hoje <small>por chave, no dia de Brasília</small></h2>
+            <div class="uso-hoje" id="uso-hoje">—</div>
+            <div class="medidor" aria-hidden="true"><i id="uso-barra" style="width:0"></i></div>
+            <p class="discreto" id="uso-legenda" style="margin:0"></p>
+          </div>
+          <div class="painel cartao">
+            <h2>Plano</h2>
+            <dl class="ficha" id="ficha-plano"></dl>
+          </div>
         </div>
       </div>
     </div>
@@ -586,31 +658,26 @@ r.json()["proximo"]           <span class="c"># cursor da próxima página, ou N
 
 <footer>
   <div class="largura">
-    <div>
-      <a class="marca" href="/"><!-- marca --><svg class="simbolo" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M6 6L76 6L76 19L19 19L19 41L56 41L56 54L19 54L19 79L6 79Z" style="fill:var(--destaque)"/><rect x="82" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="6" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="82" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="90" y="14" width="6" height="6" rx="1.5" style="fill:var(--destaque)"/><rect x="0" y="86" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="91.5" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/><rect x="0" y="97" width="100" height="3" rx="1.5" style="fill:var(--tinta-3)"/></svg><!-- /marca -->fiance <em>dados</em></a>
-      <p>Fontes: B3 (COTAHIST, proventos e eventos); CVM, dados abertos sob a licença ODbL; Banco Central do Brasil (SGS); Tesouro Transparente. Organizado por fiance.</p>
-      <p>Nada aqui é recomendação de investimento.</p>
-    </div>
-    <nav aria-label="Rodapé: produto">
-      <h2>Produto</h2>
-      <ul>
-        <li><a href="#dados">O que tem na base</a></li>
-        <li><a href="#planos">Planos</a></li>
-        <li><a href="#limites">O que ainda não tem</a></li>
-      </ul>
-    </nav>
-    <nav aria-label="Rodapé: desenvolvedores">
-      <h2>Desenvolvedores</h2>
-      <ul>
-        <li><a href="/docs">Documentação</a></li>
-        <li><a href="/openapi.json">Especificação OpenAPI</a></li>
-        <li><a href="#conta">Minha conta</a></li>
-      </ul>
+    <p>Fontes: B3 (COTAHIST, proventos e eventos); CVM, dados abertos sob a licença ODbL; Banco Central do Brasil (SGS); Tesouro Transparente. Nada aqui é recomendação de investimento.</p>
+    <nav aria-label="Rodapé">
+      <a href="/docs">Documentação</a>
+      <a href="/openapi.json">OpenAPI</a>
+      <a href="#dados">O que tem na base</a>
+      <a href="#conta">Minha conta</a>
     </nav>
   </div>
 </footer>
 
 <div class="dica" id="dica" aria-hidden="true"></div>
+
+<dialog id="confirmar" aria-labelledby="confirmar-titulo">
+  <h2 id="confirmar-titulo"></h2>
+  <p id="confirmar-texto"></p>
+  <form method="dialog">
+    <button class="botao contorno pequeno" value="nao">Cancelar</button>
+    <button class="botao pequeno perigo" value="sim" id="confirmar-sim"></button>
+  </form>
+</dialog>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -634,7 +701,45 @@ function html(tag, classe, texto) {
   if (texto !== undefined) e.textContent = texto;
   return e;
 }
+const cor = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
+/* ---------- telas ---------- */
+const TELAS = ["inicio", "exemplo", "dados", "uso", "planos", "conta"];
+const APELIDOS = { diferencial: "inicio", "quem-faz": "planos", limites: "dados" };
+let telaAtual = null;
+let exemploGuardado = null;
+function mostrarTela(focar) {
+  let alvo = location.hash.slice(1) || "inicio";
+  if (alvo === "limites") escolherSegmento($("seg-falta"));
+  alvo = APELIDOS[alvo] || alvo;
+  if (!TELAS.includes(alvo)) alvo = "inicio";
+  if (alvo === telaAtual) return;
+  telaAtual = alvo;
+  for (const id of TELAS) $("tela-" + id).hidden = id !== alvo;
+  for (const a of document.querySelectorAll("[data-tela]")) {
+    if (a.dataset.tela === alvo) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  }
+  const tela = $("tela-" + alvo);
+  document.title = tela.dataset.titulo;
+  window.scrollTo(0, 0);
+  if (alvo === "exemplo" && exemploGuardado) desenhar(exemploGuardado);
+  const titulo = [...tela.querySelectorAll("h1")].find((h) => h.offsetParent !== null);
+  if (focar && titulo) titulo.focus({ preventScroll: true });
+}
+window.addEventListener("hashchange", () => mostrarTela(true));
+
+$("tema").addEventListener("click", () => {
+  const escuro = document.documentElement.dataset.tema
+    ? document.documentElement.dataset.tema === "escuro"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  const novo = escuro ? "claro" : "escuro";
+  document.documentElement.dataset.tema = novo;
+  try { localStorage.setItem("fiance_dados_tema", novo); } catch {}
+  if (exemploGuardado) { desenhar(exemploGuardado); desenharFaisca(exemploGuardado); }
+});
+
+/* ---------- início ---------- */
 function preencherBase(n) {
   for (const alvo of document.querySelectorAll("[data-n]")) {
     const valor = n[alvo.dataset.n];
@@ -655,9 +760,31 @@ function preencherBase(n) {
     const p = provas[alvo.dataset.prova];
     if (p) alvo.replaceChildren(html("b", "", p[0]), p[1]);
   }
-  if (n.ate) $("atualizada").querySelector("span").textContent = `Dados até o pregão de ${diaMesAno.format(new Date(n.ate))} · atualizada todo dia útil, à noite`;
+  if (n.ate) $("atualizada").querySelector("span").textContent = `Dados até o pregão de ${diaMesAno.format(new Date(n.ate))}`;
 }
 
+function desenharFaisca(exemplo) {
+  const pontos = exemplo.pontos.filter((p) => p.negociado > 0 && p.ajustado > 0);
+  if (pontos.length < 2) return;
+  const L = 120, A = 44;
+  const valores = pontos.flatMap((p) => [Math.log(p.negociado), Math.log(p.ajustado)]);
+  const min = Math.min(...valores), max = Math.max(...valores);
+  const x = (i) => (i / (pontos.length - 1)) * (L - 2) + 1;
+  const y = (v) => A - 3 - ((Math.log(v) - min) / (max - min || 1)) * (A - 6);
+  const caminho = (k) => pontos.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join("");
+  const svg = el("svg", { viewBox: `0 0 ${L} ${A}`, "aria-hidden": "true" });
+  svg.append(
+    el("path", { d: caminho("negociado"), fill: "none", stroke: cor("--negociado"), "stroke-width": 1.6, "stroke-linejoin": "round" }),
+    el("path", { d: caminho("ajustado"), fill: "none", stroke: cor("--ajustado"), "stroke-width": 1.6, "stroke-linejoin": "round" }),
+  );
+  const a = pontos[0], b = pontos.at(-1);
+  const texto = html("span");
+  texto.append(html("b", "", exemplo.codigo), ` · pelo preço negociado, ${porcento.format(b.negociado / a.negociado - 1)}; ajustado, ${porcento.format(b.ajustado / a.ajustado - 1)}. Ver o exemplo →`);
+  $("faisca").replaceChildren(svg, texto);
+  $("faisca").classList.remove("escondido");
+}
+
+/* ---------- exemplo ---------- */
 function compararPeriodo(pontos) {
   if (pontos.length < 2) return;
   const a = pontos[0], b = pontos.at(-1);
@@ -674,9 +801,9 @@ function compararPeriodo(pontos) {
 
 function desenhar(exemplo) {
   const pontos = exemplo.pontos.filter((p) => p.negociado > 0 && p.ajustado > 0);
-  if (pontos.length < 2) return;
-  $("titulo-grafico").textContent = exemplo.codigo;
   const caixa = $("grafico");
+  if (pontos.length < 2 || !caixa.clientWidth) return;
+  $("titulo-grafico").textContent = exemplo.codigo;
   const estreito = caixa.clientWidth < 560;
   const L = estreito ? Math.max(300, caixa.clientWidth) : 720, A = estreito ? 300 : 360;
   const m = { cima: 46, direita: estreito ? 68 : 92, baixo: 30, esquerda: estreito ? 38 : 50 };
@@ -686,8 +813,6 @@ function desenhar(exemplo) {
   const minimo = Math.min(...valores) * 0.85, maximo = Math.max(...valores) * 1.15;
   const x = (t) => m.esquerda + ((t - datas[0]) / (datas.at(-1) - datas[0])) * largura;
   const y = (v) => m.cima + (1 - (Math.log(v) - Math.log(minimo)) / (Math.log(maximo) - Math.log(minimo))) * altura;
-  const estilo = getComputedStyle(document.documentElement);
-  const cor = (v) => estilo.getPropertyValue(v).trim();
   const svg = el("svg", { viewBox: `0 0 ${L} ${A}`, "aria-hidden": "true", focusable: "false" });
 
   for (const v of [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500].filter((v) => v >= minimo && v <= maximo)) {
@@ -721,7 +846,7 @@ function desenhar(exemplo) {
 
   const caminho = (chave) => pontos.map((p, i) => `${i ? "L" : "M"}${x(datas[i]).toFixed(1)},${y(p[chave]).toFixed(1)}`).join("");
   svg.append(el("path", { d: caminho("negociado"), fill: "none", stroke: cor("--negociado"), "stroke-width": 2, "stroke-linejoin": "round" }));
-  svg.append(el("path", { d: caminho("ajustado"), fill: "none", stroke: cor("--ajustado"), "stroke-width": 2, "stroke-linejoin": "round" }));
+  svg.append(el("path", { d: caminho("ajustado"), fill: "none", stroke: cor("--ajustado"), "stroke-width": 2.4, "stroke-linejoin": "round" }));
 
   const ultimo = pontos.at(-1), fimX = x(datas.at(-1)) + 8;
   const yAj = y(ultimo.ajustado), yNeg = y(ultimo.negociado);
@@ -730,8 +855,8 @@ function desenhar(exemplo) {
   svg.append(el("text", { x: fimX, y: rn + 4, "font-size": 12.5, fill: cor("--tinta-2"), "font-family": FONTE }, "negociado"));
 
   const mira = el("line", { y1: m.cima, y2: m.cima + altura, stroke: cor("--tinta"), "stroke-width": 1, opacity: 0 });
-  const pontoAj = el("circle", { r: 4.5, fill: cor("--ajustado"), stroke: cor("--papel"), "stroke-width": 2, opacity: 0 });
-  const pontoNeg = el("circle", { r: 4.5, fill: cor("--negociado"), stroke: cor("--papel"), "stroke-width": 2, opacity: 0 });
+  const pontoAj = el("circle", { r: 4.5, fill: cor("--ajustado"), stroke: cor("--papel-alto"), "stroke-width": 2, opacity: 0 });
+  const pontoNeg = el("circle", { r: 4.5, fill: cor("--negociado"), stroke: cor("--papel-alto"), "stroke-width": 2, opacity: 0 });
   const area = el("rect", { x: m.esquerda, y: 0, width: largura, height: A, fill: "transparent" });
   svg.append(mira, pontoNeg, pontoAj, area);
   caixa.replaceChildren(svg);
@@ -767,105 +892,36 @@ function desenhar(exemplo) {
   }
 }
 
-const reaisInteiros = (c) => "R$ " + inteiro.format(Math.round(c / 100));
-const PARA_QUEM = {
-  essencial: "Para acompanhar carteira e preço recente",
-  pro: "Para testar estratégia com o histórico inteiro",
-};
-const RECURSOS = [
-  ["serie", "Série ajustada com retorno total"],
-  ["ponto_no_tempo", "Balanço como se sabia na data"],
-  ["informes", "Informe mensal de FII"],
-];
-
-function marca(incluido) {
-  const s = incluido ? html("span", "sim") : html("span", "nao", "—");
-  s.setAttribute("role", "img");
-  s.setAttribute("aria-label", incluido ? "incluído" : "não incluído");
-  return s;
+/* ---------- dados ---------- */
+const segmentos = [$("seg-tem"), $("seg-falta")];
+function escolherSegmento(seg, focar) {
+  for (const s of segmentos) {
+    const ativo = s === seg;
+    s.setAttribute("aria-selected", String(ativo));
+    s.tabIndex = ativo ? 0 : -1;
+    $(s.getAttribute("aria-controls")).hidden = !ativo;
+  }
+  if (focar) seg.focus();
+}
+segmentos.forEach((s, i) => {
+  s.addEventListener("click", () => escolherSegmento(s));
+  s.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    escolherSegmento(segmentos[(i + 1) % 2], true);
+  });
+});
+for (const b of document.querySelectorAll(".rota-copiar")) {
+  b.setAttribute("aria-label", `Copiar a rota ${b.textContent}`);
+  b.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(b.textContent); } catch { return; }
+    b.classList.add("copiada");
+    setTimeout(() => b.classList.remove("copiada"), 1200);
+  });
 }
 
-function mostrarPlanos(resposta) {
-  const planos = resposta.dados || [];
-  const tabela = $("tabela-planos");
-  const cabeca = tabela.tHead.rows[0];
-  const corpo = tabela.tBodies[0];
-  cabeca.querySelectorAll("th:not(:first-child)").forEach((th) => th.remove());
-  corpo.replaceChildren();
-  const destaque = (p) => (p.codigo === "pro" ? "destacado" : "");
-
-  for (const p of planos) {
-    const th = html("th", destaque(p));
-    th.scope = "col";
-    th.append(html("span", "nome", p.nome), html("span", "para", PARA_QUEM[p.codigo] || p.descricao || ""));
-    const preco = html("span", "preco", reaisInteiros(p.preco_mensal_centavos));
-    preco.append(html("small", "", " /mês"));
-    th.append(preco);
-    if (p.preco_anual_centavos) th.append(html("span", "anual", `ou ${reaisInteiros(p.preco_anual_centavos)} por ano`));
-    cabeca.appendChild(th);
-  }
-  const linha = (rotulo, celula) => {
-    const tr = document.createElement("tr");
-    const th = html("th", "", rotulo);
-    th.scope = "row";
-    tr.appendChild(th);
-    for (const p of planos) { const td = html("td", destaque(p)); td.append(celula(p)); tr.appendChild(td); }
-    corpo.appendChild(tr);
-  };
-  const grupo = (titulo) => {
-    const tr = html("tr", "grupo");
-    const th = html("th", "", titulo);
-    th.scope = "colgroup";
-    th.colSpan = planos.length + 1;
-    tr.appendChild(th);
-    corpo.appendChild(tr);
-  };
-  grupo("Uso");
-  linha("Histórico", (p) => (p.historico_dias ? `Últimos ${Math.round(p.historico_dias / 365)} anos` : "Inteiro, desde 2005"));
-  linha("Chamadas por dia", (p) => inteiro.format(p.limite_por_dia));
-  linha("Chamadas por minuto", (p) => inteiro.format(p.limite_por_minuto));
-  grupo("Dados");
-  linha("Cotação, proventos, eventos, demonstrações, retratos, BCB e Tesouro", () => marca(true));
-  for (const [recurso, rotulo] of RECURSOS) linha(rotulo, (p) => marca((p.recursos || []).includes(recurso)));
-
-  const convite = $("convite"), texto = $("convite-texto");
-  if (resposta.cobranca_aberta) {
-    texto.replaceChildren(html("b", "", "Para assinar, entre com a sua chave."), " A assinatura e o pagamento ficam em “Minha conta”.");
-    const link = html("a", "botao", "Ir para minha conta");
-    link.href = "#conta";
-    convite.appendChild(link);
-  } else if (resposta.contato) {
-    const endereco = `mailto:${resposta.contato}?subject=${encodeURIComponent("Convite para o fiance dados")}`;
-    const noConvite = html("a", "botao", "Pedir um convite");
-    noConvite.href = endereco;
-    convite.appendChild(noConvite);
-    const naAbertura = html("a", "botao contorno", "Pedir um convite");
-    naAbertura.href = endereco;
-    $("acoes-abertura").insertBefore(naAbertura, $("acoes-abertura").children[1]);
-  }
-}
-
-let exemploGuardado = null;
-fetch("/v1/vitrine")
-  .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-  .then((v) => {
-    preencherBase(v.numeros || {});
-    exemploGuardado = v.exemplo;
-    if (v.exemplo) {
-      desenhar(v.exemplo);
-      compararPeriodo(v.exemplo.pontos.filter((p) => p.negociado > 0 && p.ajustado > 0));
-    }
-  })
-  .catch(() => { $("grafico").replaceChildren(html("p", "sem-dado", "Não foi possível carregar o exemplo agora.")); });
-fetch("/v1/planos")
-  .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-  .then(mostrarPlanos)
-  .catch(() => { $("erro-planos").textContent = "Não foi possível carregar os planos agora. Tente recarregar a página."; });
-let espera;
-window.addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => exemploGuardado && desenhar(exemploGuardado), 150); });
-window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => exemploGuardado && desenhar(exemploGuardado));
-
-const abas = [...document.querySelectorAll('[role="tab"]')];
+/* ---------- uso ---------- */
+const abas = [...document.querySelectorAll('.abas [role="tab"]')];
 function escolherAba(aba, focar) {
   for (const a of abas) {
     const ativa = a === aba;
@@ -885,80 +941,300 @@ abas.forEach((aba, i) => {
   });
 });
 $("copiar").addEventListener("click", async () => {
-  const codigo = document.querySelector('[role="tabpanel"]:not([hidden]) code');
+  const codigo = document.querySelector('.codigo [role="tabpanel"]:not([hidden]) code');
   const botao = $("copiar");
   try { await navigator.clipboard.writeText(codigo.innerText); botao.textContent = "Copiado"; }
   catch { botao.textContent = "Selecione e copie"; }
   setTimeout(() => { botao.textContent = "Copiar"; }, 1800);
 });
 
+/* ---------- planos ---------- */
+const reaisInteiros = (c) => "R$ " + inteiro.format(Math.round(c / 100));
+const PARA_QUEM = {
+  essencial: "Para acompanhar carteira e preço recente",
+  pro: "Para testar estratégia com o histórico inteiro",
+};
+const RECURSOS = [
+  ["serie", "Série ajustada com retorno total"],
+  ["ponto_no_tempo", "Balanço como se sabia na data"],
+  ["informes", "Informe mensal de FII"],
+];
+const ICONE_SIM = '<svg class="sim" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+const ICONE_NAO = '<svg class="nao" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 8h8"/></svg>';
+let planosGuardados = { dados: [] };
+let ciclo = "mensal";
+
+function itemDoPlano(incluido, texto) {
+  const li = html("li", incluido ? "" : "fora");
+  li.innerHTML = incluido ? ICONE_SIM : ICONE_NAO;
+  const span = html("span", "", texto);
+  if (!incluido) span.append(html("span", "so-leitor", " (não incluído)"));
+  li.append(span);
+  return li;
+}
+const linkDeConvite = (contato) => `mailto:${contato}?subject=${encodeURIComponent("Convite para o fiance dados")}`;
+function acaoDoPlano(resposta, p) {
+  const estilo = p.codigo === "pro" ? "botao" : "botao contorno";
+  if (resposta.cobranca_aberta) {
+    const a = html("a", estilo, `Assinar o ${p.nome}`);
+    a.href = "#conta";
+    a.addEventListener("click", () => { $("assinar-plano").value = p.codigo; $("assinar-ciclo").value = ciclo; });
+    return a;
+  }
+  if (resposta.contato) {
+    const a = html("a", estilo, "Pedir um convite");
+    a.href = linkDeConvite(resposta.contato);
+    return a;
+  }
+  const b = html("button", estilo, "Por convite, por enquanto");
+  b.disabled = true;
+  return b;
+}
+
+function mostrarPlanos(resposta) {
+  planosGuardados = resposta;
+  const caixa = $("planos-cartoes");
+  caixa.replaceChildren();
+  for (const p of resposta.dados || []) {
+    const cartao = html("article", "painel plano" + (p.codigo === "pro" ? " destacado" : ""));
+    if (p.codigo === "pro") cartao.append(html("span", "fita", "Histórico inteiro"));
+    cartao.append(html("h2", "", p.nome), html("p", "para", PARA_QUEM[p.codigo] || p.descricao || ""));
+    const anual = ciclo === "anual" && p.preco_anual_centavos;
+    const preco = html("div", "preco", reaisInteiros(anual ? p.preco_anual_centavos : p.preco_mensal_centavos));
+    preco.append(html("small", "", anual ? "/ano" : "/mês"));
+    cartao.append(preco, html("p", "anual", anual
+      ? `equivale a ${reaisInteiros(p.preco_anual_centavos / 12)} por mês`
+      : p.preco_anual_centavos ? `ou ${reaisInteiros(p.preco_anual_centavos)} por ano` : ""));
+    const lista = html("ul");
+    lista.append(
+      itemDoPlano(true, p.historico_dias ? `Histórico dos últimos ${Math.round(p.historico_dias / 365)} anos` : "Histórico inteiro, desde 2005"),
+      itemDoPlano(true, `${inteiro.format(p.limite_por_dia)} chamadas por dia, ${inteiro.format(p.limite_por_minuto)} por minuto`),
+      itemDoPlano(true, "Cotação, proventos, eventos, demonstrações, retratos, BCB e Tesouro"),
+      ...RECURSOS.map(([r, rotulo]) => itemDoPlano((p.recursos || []).includes(r), rotulo)),
+    );
+    cartao.append(lista, acaoDoPlano(resposta, p));
+    caixa.append(cartao);
+  }
+
+  const convite = $("convite"), texto = $("convite-texto");
+  convite.querySelectorAll("a").forEach((a) => a.remove());
+  if (resposta.cobranca_aberta) {
+    texto.replaceChildren(html("b", "", "Para assinar, entre com a sua chave."), " A assinatura e o pagamento ficam em Minha conta.");
+  } else if (resposta.contato) {
+    const noConvite = html("a", "botao", "Pedir um convite");
+    noConvite.href = linkDeConvite(resposta.contato);
+    convite.appendChild(noConvite);
+    if (!$("acoes-abertura").querySelector("[data-convite]")) {
+      const naAbertura = html("a", "botao contorno", "Pedir um convite");
+      naAbertura.href = noConvite.href;
+      naAbertura.dataset.convite = "";
+      $("acoes-abertura").append(naAbertura);
+    }
+  }
+  preencherAssinatura();
+}
+for (const b of document.querySelectorAll("[data-ciclo]")) {
+  b.addEventListener("click", () => {
+    ciclo = b.dataset.ciclo;
+    for (const o of document.querySelectorAll("[data-ciclo]")) {
+      o.setAttribute("aria-checked", String(o === b));
+      o.setAttribute("aria-selected", String(o === b));
+    }
+    mostrarPlanos(planosGuardados);
+  });
+}
+
+/* ---------- carga ---------- */
+fetch("/v1/vitrine")
+  .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+  .then((v) => {
+    preencherBase(v.numeros || {});
+    exemploGuardado = v.exemplo;
+    if (v.exemplo) {
+      desenhar(v.exemplo);
+      desenharFaisca(v.exemplo);
+      compararPeriodo(v.exemplo.pontos.filter((p) => p.negociado > 0 && p.ajustado > 0));
+    }
+  })
+  .catch(() => { $("grafico").replaceChildren(html("p", "sem-dado", "Não foi possível carregar o exemplo agora.")); });
+fetch("/v1/planos")
+  .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+  .then(mostrarPlanos)
+  .catch(() => { $("erro-planos").textContent = "Não foi possível carregar os planos agora. Tente recarregar a página."; });
+let espera;
+window.addEventListener("resize", () => { clearTimeout(espera); espera = setTimeout(() => exemploGuardado && desenhar(exemploGuardado), 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (exemploGuardado) { desenhar(exemploGuardado); desenharFaisca(exemploGuardado); } });
+
+/* ---------- conta ---------- */
 const CHAVE = "fiance_dados_chave";
-function data(texto) {
+function dataHora(texto) {
   if (!texto) return "—";
   const d = new Date(texto);
   return isNaN(d) ? texto : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
+function relativo(texto) {
+  if (!texto) return "nunca";
+  const minutos = Math.round((Date.now() - new Date(texto).getTime()) / 60000);
+  if (minutos < 1) return "agora";
+  if (minutos < 60) return `há ${minutos} min`;
+  const horas = Math.round(minutos / 60);
+  if (horas < 24) return `há ${horas} h`;
+  const dias = Math.round(horas / 24);
+  return dias < 60 ? `há ${dias} d` : new Date(texto).toLocaleDateString("pt-BR");
+}
 async function chamar(metodo, rota, corpo) {
-  const resposta = await fetch(rota, {
-    method: metodo,
-    headers: { Authorization: "Bearer " + sessionStorage.getItem(CHAVE), "Content-Type": "application/json" },
-    body: corpo ? JSON.stringify(corpo) : undefined,
-  });
+  let resposta;
+  try {
+    resposta = await fetch(rota, {
+      method: metodo,
+      headers: { Authorization: "Bearer " + sessionStorage.getItem(CHAVE), "Content-Type": "application/json" },
+      body: corpo ? JSON.stringify(corpo) : undefined,
+    });
+  } catch {
+    throw new Error("Sem conexão com o servidor. Nada foi alterado.");
+  }
   if (resposta.status === 204) return null;
   const json = await resposta.json().catch(() => ({}));
-  if (!resposta.ok) throw new Error(json.erro || String(resposta.status));
+  if (!resposta.ok) throw new Error(json.erro || `Erro ${resposta.status}.`);
   return json;
 }
-async function carregarConta() {
+function confirmar(titulo, texto, botao) {
+  const d = $("confirmar");
+  $("confirmar-titulo").textContent = titulo;
+  $("confirmar-texto").textContent = texto;
+  $("confirmar-sim").textContent = botao;
+  d.returnValue = "nao";
+  d.showModal();
+  return new Promise((resolve) => d.addEventListener("close", () => resolve(d.returnValue === "sim"), { once: true }));
+}
+const SITUACAO = { ativa: ["Ativa", "pro"], a_vencer: ["Vence em breve", "alerta"], em_tolerancia: ["Em tolerância", "alerta"], sem_pagamento: ["Sem pagamento", "alerta"], desativada: ["Desativada", ""] };
+const NOME_RECURSO = { serie: "série ajustada", ponto_no_tempo: "balanço na data", informes: "informe de FII" };
+
+function preencherAssinatura() {
+  const aberta = planosGuardados.cobranca_aberta;
+  $("cartao-assinar").classList.toggle("escondido", !aberta);
+  if (!aberta) return;
+  const sel = $("assinar-plano");
+  const antes = sel.value;
+  sel.replaceChildren(...(planosGuardados.dados || []).map((p) => { const o = html("option", "", `${p.nome} · ${reaisInteiros(p.preco_mensal_centavos)}/mês`); o.value = p.codigo; return o; }));
+  if (antes) sel.value = antes;
+}
+async function carregarConta(focar) {
   $("erro-conta").textContent = "";
+  $("erro-painel").textContent = "";
+  let conta;
   try {
-    const conta = (await chamar("GET", "/v1/conta")).dados;
-    $("entrar").classList.add("escondido");
-    $("painel").classList.remove("escondido");
-    const historico = conta.historico_dias ? `últimos ${Math.round(conta.historico_dias / 365)} anos` : "histórico inteiro";
-    const resumo = $("resumo");
-    resumo.replaceChildren(html("b", "", conta.nome), ` · plano ${conta.plano} · ${inteiro.format(conta.limite_por_dia)} chamadas por dia · ${historico}`);
-    if (conta.pago_ate) resumo.append(` · pago até ${diaMesAno.format(new Date(conta.pago_ate))}`);
-    resumo.append(".");
-    const corpo = $("chaves");
-    corpo.replaceChildren();
-    for (const k of conta.chaves) {
-      const linha = document.createElement("tr");
-      for (const v of [k.prefixo + "…", k.nome, data(k.criada_em), data(k.ultimo_uso_em), inteiro.format(k.requisicoes_hoje)]) linha.appendChild(html("td", "", v));
-      const acao = html("td");
-      if (k.revogada_em) { acao.textContent = "revogada"; acao.className = "discreto"; }
-      else {
-        const botao = html("button", "revogar", "Revogar");
-        botao.type = "button";
-        botao.setAttribute("aria-label", `Revogar a chave ${k.prefixo}`);
-        botao.onclick = async () => {
-          if (!confirm(`Revogar a chave ${k.prefixo}…? Quem a usa perde o acesso na hora.`)) return;
-          try { await chamar("DELETE", "/v1/conta/chaves/" + encodeURIComponent(k.prefixo)); await carregarConta(); }
-          catch (e) { $("erro-conta").textContent = e.message; }
-        };
-        acao.appendChild(botao);
-      }
-      linha.appendChild(acao);
-      corpo.appendChild(linha);
-    }
+    conta = (await chamar("GET", "/v1/conta")).dados;
   } catch (e) {
     sessionStorage.removeItem(CHAVE);
+    $("painel-conta").classList.add("escondido");
+    $("entrar").classList.remove("escondido");
     $("erro-conta").textContent = "Não foi possível entrar: " + e.message;
+    return;
   }
+  $("entrar").classList.add("escondido");
+  $("painel-conta").classList.remove("escondido");
+  $("conta-nome").textContent = conta.nome;
+  const [rotulo, tom] = SITUACAO[conta.situacao] || [conta.situacao, ""];
+  $("conta-sub").replaceChildren(conta.email, html("span", `etiqueta ${tom}`, rotulo));
+  if (focar) $("conta-nome").focus({ preventScroll: true });
+
+  const ativas = conta.chaves.filter((k) => !k.revogada_em);
+  $("chaves-contagem").textContent = `${ativas.length} de ${conta.chaves_maximas} ativas`;
+  const maior = Math.max(0, ...ativas.map((k) => k.requisicoes_hoje));
+  const fracao = conta.limite_por_dia ? maior / conta.limite_por_dia : 0;
+  $("uso-hoje").replaceChildren(inteiro.format(maior), html("small", "", ` de ${inteiro.format(conta.limite_por_dia)}`));
+  $("uso-barra").style.width = Math.min(100, fracao * 100) + "%";
+  $("uso-barra").className = fracao >= 0.8 ? "alto" : "";
+  const total = ativas.reduce((s, k) => s + k.requisicoes_hoje, 0);
+  $("uso-legenda").textContent = ativas.length > 1
+    ? `A chave mais usada hoje. Somando as ${ativas.length} chaves: ${inteiro.format(total)} chamadas. O limite vale por chave.`
+    : "Chamadas da chave hoje. O limite volta à meia-noite de Brasília.";
+
+  const ficha = $("ficha-plano");
+  const linha = (dt, dd) => { ficha.append(html("dt", "", dt), html("dd", "", dd)); };
+  ficha.replaceChildren();
+  linha("Plano", conta.plano_nome);
+  linha("Histórico", conta.historico_dias ? `últimos ${Math.round(conta.historico_dias / 365)} anos` : "inteiro, desde 2005");
+  linha("Por minuto", `${inteiro.format(conta.limite_por_minuto)} chamadas`);
+  linha("Recursos", (conta.recursos || []).length ? conta.recursos.map((r) => NOME_RECURSO[r] || r).join(", ") : "o básico");
+  if (conta.pago_ate) linha("Pago até", diaMesAno.format(new Date(conta.pago_ate)));
+
+  const corpo = $("chaves");
+  corpo.replaceChildren();
+  for (const k of conta.chaves) {
+    const tr = html("tr", k.revogada_em ? "revogada" : "");
+    const nome = html("td");
+    const rotuloChave = html("div", "discreto", k.nome);
+    rotuloChave.style.margin = "2px 0 0";
+    nome.append(html("code", "", k.prefixo + "…"), rotuloChave);
+    const uso = html("td", "", relativo(k.ultimo_uso_em));
+    uso.title = dataHora(k.ultimo_uso_em);
+    tr.append(nome, html("td", "col-opcional", dataHora(k.criada_em)), uso, html("td", "num", inteiro.format(k.requisicoes_hoje)));
+    const acao = html("td");
+    if (k.revogada_em) acao.append(html("span", "discreto", "revogada"));
+    else {
+      const botao = html("button", "revogar", "Revogar");
+      botao.type = "button";
+      botao.setAttribute("aria-label", `Revogar a chave ${k.prefixo}`);
+      botao.onclick = async () => {
+        if (!(await confirmar(`Revogar a chave ${k.prefixo}…?`, `“${k.nome}” para de funcionar na hora, e não volta. Quem a usa precisa de uma chave nova.`, "Revogar"))) return;
+        try { await chamar("DELETE", "/v1/conta/chaves/" + encodeURIComponent(k.prefixo)); await carregarConta(); }
+        catch (e) { $("erro-painel").textContent = e.message; }
+      };
+      acao.append(botao);
+    }
+    tr.append(acao);
+    corpo.append(tr);
+  }
+  const cheio = ativas.length >= conta.chaves_maximas;
+  $("nome-nova").disabled = cheio;
+  $("emitir").disabled = cheio;
+  $("nome-nova").placeholder = cheio ? `O plano permite ${conta.chaves_maximas} chaves ativas: revogue uma antes` : "Nome da nova chave, ex.: servidor";
+  if (!$("assinar-nome").value) $("assinar-nome").value = conta.nome;
 }
-$("form-entrar").onsubmit = (evento) => { evento.preventDefault(); sessionStorage.setItem(CHAVE, $("chave").value.trim()); $("chave").value = ""; carregarConta(); };
+$("form-entrar").onsubmit = (evento) => { evento.preventDefault(); sessionStorage.setItem(CHAVE, $("chave").value.trim()); $("chave").value = ""; carregarConta(true); };
 $("form-nova").onsubmit = async (evento) => {
   evento.preventDefault();
   try {
     const nova = (await chamar("POST", "/v1/conta/chaves", { nome: $("nome-nova").value.trim() })).dados;
-    const caixa = $("chave-criada");
-    caixa.replaceChildren(html("strong", "", "Chave nova — guarde agora, ela não aparece de novo:"), document.createElement("br"), html("code", "", nova.chave));
-    caixa.classList.remove("escondido");
+    const copiar = html("button", "botao contorno pequeno", "Copiar");
+    copiar.type = "button";
+    copiar.onclick = async () => { try { await navigator.clipboard.writeText(nova.chave); copiar.textContent = "Copiada"; } catch { copiar.textContent = "Selecione e copie"; } };
+    const linha = html("div");
+    linha.append(html("code", "", nova.chave), copiar);
+    $("chave-criada").replaceChildren(html("strong", "", "Chave nova — guarde agora, ela não aparece de novo:"), linha);
+    $("chave-criada").classList.remove("escondido");
     $("nome-nova").value = "";
     await carregarConta();
-  } catch (e) { $("erro-conta").textContent = e.message; }
+  } catch (e) { $("erro-painel").textContent = e.message; }
 };
-$("sair").onclick = () => { sessionStorage.removeItem(CHAVE); $("painel").classList.add("escondido"); $("chave-criada").classList.add("escondido"); $("entrar").classList.remove("escondido"); $("chave").focus(); };
+$("form-assinar").onsubmit = async (evento) => {
+  evento.preventDefault();
+  const botao = $("botao-assinar"), resultado = $("assinar-resultado");
+  botao.disabled = true;
+  resultado.textContent = "Gerando o link…";
+  $("erro-painel").textContent = "";
+  try {
+    const r = (await chamar("POST", "/v1/conta/assinatura", {
+      plano: $("assinar-plano").value, ciclo: $("assinar-ciclo").value,
+      nome: $("assinar-nome").value.trim(), cpf_cnpj: $("assinar-doc").value.trim(),
+    })).dados;
+    if (r.pagar_em) {
+      const link = html("a", "", "Abrir o pagamento");
+      link.href = r.pagar_em;
+      link.target = "_blank";
+      link.rel = "noopener";
+      resultado.replaceChildren("Assinatura criada. ", link, ". O acesso muda quando o pagamento for confirmado.");
+    } else {
+      resultado.textContent = "Assinatura criada. O link de pagamento chega pelo e-mail da conta.";
+    }
+  } catch (e) { resultado.textContent = ""; $("erro-painel").textContent = e.message; }
+  finally { botao.disabled = false; }
+};
+$("sair").onclick = () => { sessionStorage.removeItem(CHAVE); $("painel-conta").classList.add("escondido"); $("chave-criada").classList.add("escondido"); $("entrar").classList.remove("escondido"); $("chave").focus(); };
+
+mostrarTela(false);
 if (sessionStorage.getItem(CHAVE)) carregarConta();
 </script>
 </body>

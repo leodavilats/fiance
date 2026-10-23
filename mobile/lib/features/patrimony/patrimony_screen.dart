@@ -10,6 +10,7 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/nav_action.dart';
 import '../../core/widgets/section.dart';
 import '../../core/widgets/segments.dart';
+import '../../core/widgets/shortcuts.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/error_state.dart';
@@ -221,28 +222,31 @@ class _Shortcuts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: FiSpace.s4,
-      children: [
-        FiButton.quiet(
+    return FiShortcuts(
+      items: [
+        FiShortcut(
           label: 'Proventos',
+          detail: 'O que caiu na conta e o calendário',
           icon: Icons.payments_outlined,
-          onPressed: () => context.go('/patrimonio/proventos'),
+          onTap: () => context.go('/patrimonio/proventos'),
         ),
-        FiButton.quiet(
+        FiShortcut(
           label: 'Renda fixa',
+          detail: 'Títulos, CDBs e vencimentos',
           icon: Icons.savings_outlined,
-          onPressed: () => context.go('/patrimonio/renda-fixa'),
+          onTap: () => context.go('/patrimonio/renda-fixa'),
         ),
-        FiButton.quiet(
+        FiShortcut(
           label: 'Lançamentos',
+          detail: 'Compras, vendas e importação da B3',
           icon: Icons.receipt_long_outlined,
-          onPressed: () => context.go('/patrimonio/razao'),
+          onTap: () => context.go('/patrimonio/razao'),
         ),
-        FiButton.quiet(
+        FiShortcut(
           label: 'Projeção',
+          detail: 'Aportando assim, onde eu chego',
           icon: Icons.trending_up,
-          onPressed: () => context.push('/patrimonio/projecao'),
+          onTap: () => context.push('/patrimonio/projecao'),
         ),
       ],
     );

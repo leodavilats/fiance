@@ -46,8 +46,8 @@ O gerador escreve estes arquivos:
 | `mobile/assets/brand/icon.png` | ícone do app | `mobile/pubspec.yaml` → `flutter_launcher_icons.image_path` |
 | `mobile/assets/brand/icon_foreground.png` | camada de frente do adaptive icon Android | idem → `adaptive_icon_foreground` |
 | `marca/kit/fiance-*.svg` | kit de referência (símbolo, assinatura, logotipo; `fiance-dados-*` e `fiance-trend-*` para as outras partes) | ninguém em runtime — é material de designer |
-| `fiance-dados/dadosapi/paginas/portal.html` e `console.html`, entre `<!-- marca -->` e `<!-- favicon -->` | símbolo da dados no cabeçalho, que segue o tema da página, e o favicon | a API de dados |
-| `fiance-trend/frontend/src/Simbolo.tsx` e `fiance-trend/frontend/public/favicon.svg` | símbolo da trend na barra lateral, e o favicon | o painel |
+| `fiance-dados/dadosapi/paginas/portal.html` e `console.html`, entre `<!-- marca -->` e `<!-- favicon -->` | símbolo da dados e o logotipo no cabeçalho, que seguem o tema da página, e o favicon | a API de dados |
+| `fiance-trend/frontend/src/Simbolo.tsx` (`Simbolo` e `Logotipo`) e `fiance-trend/frontend/public/favicon.svg` | símbolo da trend e o logotipo na barra lateral, e o favicon | o painel |
 
 `icon.png`/`icon_foreground.png` não são asset empacotado no app: só o comando abaixo os lê, em
 build-time. O launcher nativo é um **segundo passo**, e sem ele os ícones do app ficam com o
@@ -56,6 +56,10 @@ desenho antigo:
 ```bash
 cd mobile && dart run flutter_launcher_icons
 ```
+
+**O texto da marca é o logotipo, nas três partes.** As páginas web não escrevem "fiance" em fonte:
+escrevem o mesmo logotipo geométrico do app (`AppWordmark`), em `currentColor`, ao lado do símbolo
+de cada parte, e o nome da parte vem depois, em caixa alta pequena (`dados`, `console`, `trend`).
 
 ## O kit
 

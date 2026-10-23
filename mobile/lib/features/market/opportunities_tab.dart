@@ -22,6 +22,7 @@ import '../../core/score_ruler.dart'
         fairBandLabel,
         fairBandSummary;
 import '../../core/widgets/score_ruler.dart';
+import '../../core/widgets/shortcuts.dart';
 import '../../core/widgets/tag.dart';
 import '../../core/widgets/ticker_autocomplete_field.dart';
 import '../../core/widgets/error_state.dart';
@@ -216,15 +217,12 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            FiLayout.gutter,
-            FiSpace.s3,
-            FiLayout.gutter,
-            0,
-          ),
+          padding: const EdgeInsets.only(top: FiSpace.s3),
           child: Column(
             children: [
-              Row(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: FiLayout.gutter),
+                child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
@@ -249,14 +247,13 @@ class _OpportunitiesTabState extends ConsumerState<OpportunitiesTab> {
                     ),
                   ),
                 ],
+                ),
               ),
               if (activeCount > 0) ...[
                 const SizedBox(height: FiSpace.s3),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Wrap(
-                    spacing: FiSpace.s2,
-                    runSpacing: FiSpace.s2,
+                  child: FiChipBar(
                     children: [
                       if (filters.search.isNotEmpty)
                         _ActiveFilterChip(
@@ -360,18 +357,25 @@ class DiscoverTools extends StatelessWidget {
     Icons.balance,
   ];
 
+  static const _resumos = [
+    'O que caiu forte, contra o preço justo',
+    'Qual está melhor posicionado',
+    'Qual título rende mais depois do IR',
+    'CDB ou fundo imobiliário, com a Selic de hoje',
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: FiSpace.s2),
-      child: Wrap(
-        spacing: FiSpace.s4,
-        children: [
+      padding: const EdgeInsets.only(bottom: FiSpace.s3),
+      child: FiShortcuts(
+        items: [
           for (final (i, (nome, _, rota)) in fiDiscoverTools.indexed)
-            FiButton.quiet(
+            FiShortcut(
               label: nome,
+              detail: _resumos[i],
               icon: _icones[i],
-              onPressed: () => context.go(rota),
+              onTap: () => context.go(rota),
             ),
         ],
       ),

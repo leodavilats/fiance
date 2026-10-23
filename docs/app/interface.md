@@ -130,7 +130,8 @@ poucas, ou uma tabela quando o que importa é comparar.
 | Número projetado | `FiRange` — piso, teto, cenário base | O lint reprova |
 | Espera | `FiSkeleton.screen(shape:, count:)`, ou `FiSkeleton.page()` quando a tela tem manchete e seções | Disco girando não diz o que vem, e a página salta |
 | Revelar detalhe | `FiDisclosure` (item) ou `FiGroupDisclosure` (grupo) | `ExpansionTile` traz a moldura do Material de volta |
-| Ficha de filtro | `FiChoiceChip` | `ChoiceChip` e `InputChip` têm estilo só no tema |
+| Ficha de filtro | `FiChoiceChip`, em fila numa `FiChipBar` | `ChoiceChip` e `InputChip` têm estilo só no tema; o `Wrap` quebrava os filtros de Avisos em duas linhas |
+| Atalho para as telas de um destino | `FiShortcuts` — grade de fio, com ícone, nome e uma linha do que tem lá | Os `FiButton.quiet` soltos num `Wrap` em Patrimônio e Descobrir pareciam links perdidos, e quebravam a linha no meio |
 | Ligar e desligar | `FiSwitch`, com o rótulo da linha | O `Switch` solto era anunciado como "ligado", sem dizer o quê |
 | Escolher um valor numa escala | `FiSlider`, com o formatador do produto | O `Slider` com `toStringAsFixed` mostrava 5.5% com ponto |
 | Falha | `FiErrorState` + `fiErrorMessage` | Já houve oito grafias, e `Erro 500` chegou à tela |

@@ -11,6 +11,7 @@ import 'package:fiance/core/widgets/help_tooltip.dart';
 import 'package:fiance/core/widgets/measure.dart';
 import 'package:fiance/core/widgets/provenance.dart';
 import 'package:fiance/core/widgets/segments.dart';
+import 'package:fiance/core/widgets/shortcuts.dart';
 
 Future<void> _montar(WidgetTester tester, Widget filho) => tester.pumpWidget(
       MaterialApp(
@@ -40,6 +41,12 @@ void main() {
       selected: 0,
       options: const {0: 'Mês', 1: 'Ano'},
       onSelect: (_) {},
+    ),
+    'FiShortcuts': FiShortcuts(
+      items: [
+        FiShortcut(label: 'Proventos', detail: 'O que caiu na conta', icon: Icons.payments_outlined, onTap: () {}),
+        FiShortcut(label: 'Renda fixa', icon: Icons.savings_outlined, onTap: () {}),
+      ],
     ),
     'HelpTooltip': const HelpTooltip(termKey: 'score', label: 'Score'),
     'FiProvenance': const FiProvenance(method: 'Lucro distribuível descontado'),
