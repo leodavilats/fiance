@@ -15,6 +15,8 @@ TAMANHO_DO_PREFIXO = len(PREFIXO_DA_CHAVE) + 8
 _BRT = ZoneInfo("America/Sao_Paulo")
 TOLERANCIA_DE_PAGAMENTO = timedelta(days=3)
 AVISO_DE_VENCIMENTO = timedelta(days=7)
+DOMINIO_DA_FUMACA = "@fumaca.invalid"
+PAGO_ATE_DA_FUMACA = date(2099, 12, 31)
 NOME_DO_RECURSO = {
     "serie": "a série ajustada",
     "ponto_no_tempo": "o balanço como se sabia na data (sabido_em)",
@@ -299,6 +301,36 @@ def revogar_chave(engine: sa.Engine, conta_id: int, prefixo: str) -> None:
         raise SemAcesso(404, "Chave não encontrada nesta conta, ou já revogada.")
 
 
+def preparar_conta_de_fumaca(engine: sa.Engine, plano: str) -> int:
+    with engine.begin() as conn:
+        conta_id = conn.execute(
+            sa.text(
+                """
+                INSERT INTO acesso.conta (email, nome, plano, observacao, pago_ate)
+                VALUES (:e, :n, :p, :o, :pago)
+                ON CONFLICT ((lower(email))) DO UPDATE
+                    SET plano = excluded.plano, ativa = true, pago_ate = excluded.pago_ate
+                RETURNING id
+                """
+            ),
+            {
+                "e": f"{plano}{DOMINIO_DA_FUMACA}",
+                "n": f"Fumaça {plano}",
+                "p": plano,
+                "o": "Conta da fumaça do console: só tem chave enquanto a fumaça roda.",
+                "pago": PAGO_ATE_DA_FUMACA,
+            },
+        ).scalar_one()
+        conn.execute(
+            sa.text(
+                "UPDATE acesso.chave SET revogada_em = now() "
+                "WHERE conta_id = :c AND revogada_em IS NULL"
+            ),
+            {"c": conta_id},
+        )
+    return conta_id
+
+
 def resumo_da_conta(engine: sa.Engine, conta_id: int, dia: date | None = None) -> dict:
     with engine.connect() as conn:
         conta = conn.execute(
@@ -361,10 +393,15 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
                 JOIN acesso.plano p ON p.codigo = c.plano
                 LEFT JOIN chaves k ON k.conta_id = c.id
                 LEFT JOIN uso u ON u.conta_id = c.id
+                WHERE c.email NOT LIKE :fumaca
                 ORDER BY c.id
                 """
             ),
-            {"dia": dia_de_hoje, "desde": dia_de_hoje - timedelta(days=30)},
+            {
+                "dia": dia_de_hoje,
+                "desde": dia_de_hoje - timedelta(days=30),
+                "fumaca": f"%{DOMINIO_DA_FUMACA}",
+            },
         ).all()
     return [
         {
@@ -440,10 +477,16 @@ def uso_por_dia(engine: sa.Engine, dias: int = 30, conta_id: int | None = None) 
                 """
                 SELECT u.dia, sum(u.requisicoes) AS requisicoes, count(DISTINCT k.conta_id) AS contas
                 FROM acesso.uso_diario u JOIN acesso.chave k ON k.id = u.chave_id
+                JOIN acesso.conta c ON c.id = k.conta_id
                 WHERE u.dia > :desde AND (CAST(:conta AS bigint) IS NULL OR k.conta_id = :conta)
+                  AND c.email NOT LIKE :fumaca
                 GROUP BY u.dia ORDER BY u.dia
                 """
             ),
-            {"desde": hoje() - timedelta(days=dias), "conta": conta_id},
+            {
+                "desde": hoje() - timedelta(days=dias),
+                "conta": conta_id,
+                "fumaca": f"%{DOMINIO_DA_FUMACA}",
+            },
         ).all()
     return [dict(linha._mapping) for linha in linhas]

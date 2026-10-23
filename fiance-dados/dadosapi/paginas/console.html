@@ -180,6 +180,16 @@ legend { font-weight: 600; font-size: 13.5px; padding: 0 4px; }
 .passos { margin: 14px 0 0; padding-left: 18px; color: var(--texto-2); font-size: 13.5px; }
 .passos li { margin-bottom: 4px; }
 
+/* fumaça */
+.conferencias { list-style: none; margin: 0; padding: 0; }
+.conferencias li { display: flex; gap: 10px; align-items: baseline; padding: 7px 14px; border-top: 1px solid var(--fio); font-size: 13.5px; }
+.conferencias li:first-child { border-top: 0; }
+.conferencias .sinal { flex: none; font-weight: 600; font-size: 12px; width: 38px; }
+.conferencias .sinal.ok { color: var(--destaque); }
+.conferencias .sinal.falha { color: var(--perigo); }
+.conferencias .texto { min-width: 0; }
+.conferencias .detalhe { display: block; font: 12.5px/1.45 var(--mono); color: var(--suave); overflow-wrap: anywhere; }
+.caixa > details.tabela-detalhe:first-child summary { border-top: 0; }
 /* diálogos */
 dialog { border: 1px solid var(--fio-forte); border-radius: 12px; background: var(--fundo); color: var(--texto); padding: 0; max-width: calc(100vw - 24px); }
 dialog::backdrop { background: rgba(20, 18, 15, 0.45); }
@@ -257,6 +267,7 @@ dialog.pequeno { width: 460px; }
       <a href="#contas" data-tela="contas"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.8 13.5c.5-2.3 2.2-3.5 4.2-3.5s3.7 1.2 4.2 3.5M11 3.2a2.5 2.5 0 0 1 0 4.6M12.5 10.3c1 .6 1.6 1.7 1.8 3.2"/></svg>Contas</a>
       <a href="#uso" data-tela="uso"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2.5 13.5h11M4 11V7M7 11V3.5M10 11V6M13 11V8.5"/></svg>Uso</a>
       <a href="#nova" data-tela="nova"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>Nova conta</a>
+      <a href="#fumaca" data-tela="fumaca"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8h3l2-4.5 3 9 2-4.5h3"/></svg>Fumaça<span class="cont escondido" id="cont-fumaca"></span></a>
     </nav>
     <div class="lateral-pe">
       <span class="suave" id="atualizado" aria-live="polite"></span>
@@ -425,6 +436,16 @@ dialog.pequeno { width: 460px; }
           </ol>
         </aside>
       </form>
+    </section>
+
+    <section class="tela" id="tela-fumaca" aria-labelledby="t-fumaca" hidden>
+      <div class="cabeca-tela">
+        <div><h1 id="t-fumaca" tabindex="-1">Fumaça</h1><p>Só GET, contra o próprio serviço, com uma chave temporária por plano: cada rota responde como o plano manda?</p></div>
+        <button type="button" class="primario" id="rodar-fumaca">Rodar a fumaça</button>
+      </div>
+      <p class="caixa resumo-uso" id="resumo-fumaca" aria-live="polite">Ainda não rodou nesta aba.</p>
+      <div id="resultado-fumaca"></div>
+      <p class="dica">Cada plano tem uma conta <code>@fumaca.invalid</code>, que só tem chave enquanto a fumaça roda, e cada rodada gasta umas 25 requisições de cada uma.</p>
     </section>
   </main>
 </div>
@@ -627,7 +648,7 @@ $("chave-guardei").onclick = () => $("dialogo-chave").close();
 $("dialogo-chave").addEventListener("cancel", (e) => e.preventDefault());
 
 /* ---------- telas ---------- */
-const TELAS = ["visao", "contas", "uso", "nova"];
+const TELAS = ["visao", "contas", "uso", "nova", "fumaca"];
 let telaAtual = null;
 function mostrarTela(focar) {
   let alvo = location.hash.slice(1) || "visao";
@@ -1132,6 +1153,54 @@ function desenharConta(conta, uso) {
     el("h3", {}, "Acesso"), acesso,
   );
 }
+
+/* ---------- fumaça ---------- */
+function linhaDaConferencia(c) {
+  return el("li", {},
+    el("span", { class: "sinal " + (c.ok ? "ok" : "falha") }, c.ok ? "ok" : "falha"),
+    el("span", { class: "texto" }, c.nome, c.detalhe ? el("span", { class: "detalhe" }, c.detalhe) : null));
+}
+function desenharFumaca({ resultados, falhas }) {
+  const grupos = new Map();
+  for (const r of resultados) {
+    if (!grupos.has(r.grupo)) grupos.set(r.grupo, []);
+    grupos.get(r.grupo).push(r);
+  }
+  const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  preencher($("resumo-fumaca"),
+    el("span", {}, el("b", {}, falhas ? `${falhas} ${falhas === 1 ? "falha" : "falhas"}` : "Tudo certo")),
+    el("span", {}, `${numero.format(resultados.length)} conferências em ${grupos.size} grupos`),
+    el("span", {}, `rodada às ${hora}`));
+  $("cont-fumaca").textContent = falhas;
+  $("cont-fumaca").classList.toggle("escondido", !falhas);
+  $("cont-fumaca").setAttribute("aria-label", `${falhas} falhas na fumaça`);
+  preencher($("resultado-fumaca"), ...[...grupos].map(([grupo, itens]) => {
+    const ruins = itens.filter((c) => !c.ok);
+    const boas = itens.filter((c) => c.ok);
+    return el("div", { class: "bloco" },
+      el("h2", {}, grupo, el("small", {}, ruins.length ? `${ruins.length} de ${itens.length} falharam` : `${itens.length} ok`)),
+      el("div", { class: "caixa" },
+        ruins.length ? el("ul", { class: "conferencias" }, ...ruins.map(linhaDaConferencia)) : null,
+        boas.length ? el("details", { class: "tabela-detalhe" },
+          el("summary", {}, `${boas.length} ${boas.length === 1 ? "passou" : "passaram"}`),
+          el("ul", { class: "conferencias" }, ...boas.map(linhaDaConferencia))) : null));
+  }));
+}
+$("rodar-fumaca").onclick = async () => {
+  const botao = $("rodar-fumaca");
+  botao.disabled = true;
+  botao.textContent = "Rodando…";
+  $("resumo-fumaca").textContent = "Rodando: uma chave temporária por plano. Leva alguns segundos, mais se um plano bater no limite por minuto.";
+  preencher($("resultado-fumaca"));
+  try {
+    desenharFumaca(await tentar(() => chamar("POST", "/admin/fumaca")));
+  } catch (e) {
+    $("resumo-fumaca").textContent = "A fumaça não terminou: " + e.message;
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Rodar a fumaça";
+  }
+};
 
 /* ---------- entrada ---------- */
 $("form-entrar").addEventListener("submit", async (e) => {

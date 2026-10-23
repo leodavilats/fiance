@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import secrets
+import threading
 import time
+from collections.abc import Callable
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Literal
 
+import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from dadosapi import acesso, banco, cobranca, consultas
+from dadosapi import acesso, banco, cobranca, consultas, fumaca
 from dadosapi.config import Configuracao, carregar
 
 FONTES = (
@@ -83,6 +86,11 @@ def _origem(request: Request, proxies_confiaveis: int) -> str:
     return cadeia[-proxies_confiaveis]
 
 
+def _cliente_local(request: Request) -> httpx.Client:
+    porta = request.scope["server"][1]
+    return httpx.Client(base_url=f"http://127.0.0.1:{porta}", timeout=30)
+
+
 def _corte(a: acesso.Acesso) -> date:
     if a.plano.historico_dias is None:
         return INICIO_DA_BASE
@@ -104,6 +112,7 @@ def criar(
     config: Configuracao | None = None,
     bancos: banco.Bancos | None = None,
     asaas: cobranca.Asaas | None = None,
+    cliente_da_fumaca: Callable[[Request], httpx.Client] | None = None,
 ) -> FastAPI:
     config = config or carregar()
     bancos = bancos or banco.criar(config.database_url)
@@ -113,6 +122,8 @@ def criar(
         asaas = cobranca.Asaas.criar(
             config.asaas_url, config.asaas_chave, config.asaas_token_webhook
         )
+    cliente_da_fumaca = cliente_da_fumaca or _cliente_local
+    fumaca_rodando = threading.Lock()
     vitrine_guardada: dict = {"quando": 0.0, "dados": None}
     app = FastAPI(
         title="fiance dados",
@@ -461,6 +472,27 @@ def criar(
     @app.get("/admin/planos", include_in_schema=False, dependencies=[Depends(administrador)])
     def admin_planos() -> list[dict]:
         return acesso.planos(bancos.acesso)
+
+    @app.post("/admin/fumaca", include_in_schema=False, dependencies=[Depends(administrador)])
+    def admin_fumaca(request: Request) -> dict:
+        if not fumaca_rodando.acquire(blocking=False):
+            raise HTTPException(409, "Já há uma fumaça rodando.")
+        try:
+            chaves: list[tuple[int, dict]] = []
+            try:
+                for plano in acesso.planos(bancos.acesso):
+                    conta_id = acesso.preparar_conta_de_fumaca(bancos.acesso, plano["codigo"])
+                    chaves.append(
+                        (conta_id, acesso.emitir_chave(bancos.acesso, conta_id, "fumaça"))
+                    )
+                with cliente_da_fumaca(request) as cliente:
+                    resultados = fumaca.rodar(cliente, [c["chave"] for _, c in chaves])
+            finally:
+                for conta_id, c in chaves:
+                    acesso.revogar_chave(bancos.acesso, conta_id, c["prefixo"])
+        finally:
+            fumaca_rodando.release()
+        return {"resultados": resultados, "falhas": sum(not r["ok"] for r in resultados)}
 
     @app.get("/admin/uso", include_in_schema=False, dependencies=[Depends(administrador)])
     def admin_uso(

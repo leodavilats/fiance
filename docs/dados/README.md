@@ -64,7 +64,7 @@ da CVM, CNPJ e termos de uso. Até lá a cobrança fica desligada.
 | `/v1`, `/v1/planos`, `/v1/vitrine` | Sem chave: o índice, os planos públicos e o exemplo do portal |
 | `/` | Portal público, em telas por âncora (`#inicio`, `#exemplo`, `#dados`, `#uso`, `#planos`, `#conta`): o que o serviço oferece, a documentação e "minha conta" para quem tem chave, com a assinatura quando a cobrança abre |
 | `/docs` | OpenAPI público. As rotas `/admin` ficam fora dele |
-| `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`): contas, uso por dia e por conta, emitir e revogar chave, desativar. Pede o token de administração na tela e o guarda só na aba |
+| `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`, `#fumaca`): contas, uso por dia e por conta, emitir e revogar chave, desativar, e a [fumaça](#fumaça-em-produção). Pede o token de administração na tela e o guarda só na aba |
 | `/admin/...` | Administração, por `X-Admin-Token` |
 | `/cobranca/asaas` | Webhook do Asaas |
 | `/saude` | Saúde |
@@ -161,6 +161,26 @@ fica com o resultado "ignorado: assinatura substituída … estornar", para o es
 
 Serviço, migrações e deploy em [07-OPERACAO](../07-OPERACAO.md#serviços).
 
+## Fumaça em produção
+
+`dadosapi/fumaca.py` faz só GET e confere cada rota contra o plano da chave, lido do `/v1/conta`:
+200 ou 403 conforme o recurso, o corte do histórico, o `X-Limite-Dia`, a última cotação com até
+cinco dias, os planos públicos e o 401 sem chave.
+
+**Pelo console** (`#fumaca`, que chama `POST /admin/fumaca`): o serviço roda a conferência contra o
+próprio processo, por `127.0.0.1`, com uma chave temporária para cada plano da tabela, e a revoga no
+fim. Cada plano tem uma conta `<plano>@fumaca.invalid`, criada na primeira rodada, paga até 2099 e
+sem chave fora da rodada; ela e o tráfego dela ficam fora de `/admin/contas` e `/admin/uso`. Duas
+rodadas ao mesmo tempo: a segunda recebe 409.
+
+**Por fora**, contra a URL pública (o domínio e o TLS entram junto), com chaves suas:
+
+```bash
+cd fiance-dados && FIANCE_DADOS_CHAVE=fd_...,fd_... python -m dadosapi.fumaca [url]
+```
+
+Sem chave, só as rotas públicas. Sai com 1 se algo falhar.
+
 ## Papel no banco
 
 A API entra no `postgres-mercado` como `dados_api`, desde 2026-10-23: membro de `mercado_leitura`,
@@ -174,7 +194,7 @@ abaixo recriam o papel ou trocam a senha; cada execução do `ALTER ROLE` invali
 2. No serviço `fiance-dados`, trocar a `DATABASE_URL` por
    `postgresql://dados_api:<senha>@${{postgres-mercado.PGHOST}}:${{postgres-mercado.PGPORT}}/${{postgres-mercado.PGDATABASE}}`.
    O Pre-Deploy Command migra com a mesma URL.
-3. Conferir `/saude`, uma chamada com a chave `interno` do backend e o `/console`.
+3. Rodar a [fumaça](#fumaça-em-produção) pelo `/console`.
 
 Para voltar, a `DATABASE_URL` volta a `${{postgres-mercado.DATABASE_URL}}`; o papel pode ficar.
 Tabela nova em `acesso`, criada pela migração com o próprio `dados_api`, já nasce dele.
