@@ -26,7 +26,7 @@ from datajob.fontes import (
     cvm_ipe,
     tesouro_direto,
 )
-from datajob.rede import Ausente
+from datajob.rede import Ausente, Indisponivel
 
 PRIMEIRO_ANO = 2005
 
@@ -225,16 +225,32 @@ def diario(
                 )
 
     def tesouro() -> None:
-        _arquivo(
-            engine,
-            raiz,
-            relatar,
-            baixar,
-            tesouro_direto.FONTE,
-            tesouro_direto.URL,
-            tesouro_direto.processar,
-            nome=tesouro_direto.NOME,
-        )
+        try:
+            _arquivo(
+                engine,
+                raiz,
+                relatar,
+                baixar,
+                tesouro_direto.FONTE,
+                tesouro_direto.URL,
+                tesouro_direto.processar,
+                nome=tesouro_direto.NOME,
+            )
+        except Indisponivel as e:
+            print(f"{e} Retrato do dia pelo site do Tesouro Direto.", flush=True)
+            nome = tesouro_direto.nome_do_site(hoje)
+            conteudo = tesouro_direto.baixar_site(baixar)
+            relatar(
+                nome,
+                coleta.executar(
+                    engine,
+                    raiz,
+                    tesouro_direto.FONTE_SITE,
+                    nome,
+                    conteudo,
+                    tesouro_direto.processar_site,
+                ),
+            )
 
     def proventos_e_eventos() -> None:
         if _vazia(engine, "SELECT 1 FROM mercado.provento WHERE data_pagamento IS NOT NULL"):

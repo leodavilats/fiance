@@ -32,7 +32,8 @@ As primeiras, baixadas e abertas em 2026-10-09; as demais, quando entraram na co
 | **CVM IPE** | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/IPE/DADOS/ | ZIP anual, 2005 em diante | Índice de fatos relevantes, comunicados e atas, com categoria e assunto |
 | **CVM cadastro** | https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv | CSV | Companhias abertas, inclusive canceladas |
 | **BCB SGS** | `https://api.bcb.gov.br/dados/serie/bcdata.sgs.{serie}/dados`, por `datajob/fontes/bcb_sgs.py` | JSON, em janelas de até 10 anos | — |
-| **Tesouro Transparente** | `PrecoTaxaTesouroDireto.csv`, nos dados abertos do Tesouro | CSV | Taxas e preços de cada título do Tesouro Direto, 2005 em diante |
+| **Tesouro Transparente** | `PrecoTaxaTesouroDireto.csv`, nos dados abertos do Tesouro | CSV | Taxas e preços de cada título do Tesouro Direto, 2005 em diante. Desde 22/10/2026, atrás de proteção anti-robô: responde 429 a script |
+| **Tesouro Direto — site** | `tesourodireto.com.br/o/rentabilidade/{investir,resgatar}` | JSON, não documentado | Só o dia corrente, com a marcação das 18h e sem PU base. Reserva do CSV ([ADR-032](../decisoes/ADR-032-tesouro-direto-pelo-site-como-reserva.md)) |
 | **B3 — emissores** | `sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies` | JSON, não documentado | Emissores listados hoje, com CNPJ |
 | **B3 — proventos e eventos** | o mesmo proxy, `GetListedCashDividends` e `GetListedSupplementCompany` | JSON, não documentado | Proventos em dinheiro e eventos em ações por emissor |
 
@@ -187,7 +188,7 @@ guarda.
 | `documento` | `id`; único em `(cnpj, tipo, data_referencia, versao)` | Tipo (DFP, ITR), data de entrega, id CVM — todas as versões do índice |
 | `demonstracao_linha` | `(documento_id, demonstracao, inicio_exercicio, fim_exercicio, conta)` | Descrição, valor em reais (a escala já aplicada), consolidado ou individual, conta fixa. No balanço, início = fim |
 | `indicador` | `(serie, data)` | Séries do BCB SGS de 2005 em diante: CDI diário (12), Selic diária (11), meta da Selic (432), IPCA mensal (433), dólar PTAX de venda (1); Selic mensal anualizada (4189) desde 2000, para a Selic média de 10 anos — o app lê a mesma série direto no BCB |
-| `tesouro` | `(titulo, vencimento, data)` | Taxas e preços unitários de compra e venda do Tesouro Direto de 2005 em diante, do Tesouro Transparente. Título fora de venda fica sem taxa e preço de compra |
+| `tesouro` | `(titulo, vencimento, data)` | Taxas e preços unitários de compra e venda do Tesouro Direto de 2005 em diante, do Tesouro Transparente; nos dias em que ele falha, do site do Tesouro Direto, sem PU base. Título fora de venda fica sem taxa e preço de compra |
 | `coleta` | `id` | Fonte, arquivo, hash, início, fim, linhas lidas, gravadas, em quarentena, status, erro |
 | `rodada` | `id` | Cada execução do data-job: início, fim e as etapas que falharam, com o erro. O painel `fiance-trend` alerta a partir dela |
 | `fii_mensal` | `(emissor, classe, referencia)` | Informe mensal de FII da CVM, 2016 em diante: CNPJ, nome, segmento, mandato, valor patrimonial da cota, patrimônio, cotas emitidas e yield do mês — a base do P/VP |
@@ -261,7 +262,7 @@ impede as seguintes. Cron no Railway, 23h de Brasília, depois de cada pregão.
 | Cadastro, FCA, emissores da B3 e ligação emissor–CNPJ | Toda rodada | FCA do ano corrente e do anterior; o hash pula o que não mudou |
 | DFP e ITR | Toda rodada | Ano corrente e anterior |
 | Séries do BCB | Toda rodada | Desde a última data gravada de cada série |
-| Tesouro Direto | Toda rodada | O arquivo inteiro do Tesouro Transparente |
+| Tesouro Direto | Toda rodada | O arquivo inteiro do Tesouro Transparente; se ele falhar, o retrato do dia pelo site do Tesouro Direto |
 | Proventos e eventos da B3 | **Às sextas** (e na primeira carga) | Por emissor: companhias com histórico; fundos e BDRs negociados nos últimos dois anos, só os recentes |
 | Informe de FII da CVM | Toda rodada | Ano corrente e anterior |
 | IPE e FRE da CVM | Toda rodada | Ano corrente e anterior |

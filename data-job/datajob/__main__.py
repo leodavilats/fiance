@@ -34,6 +34,7 @@ _FONTES = {
     cvm_fre.FONTE: cvm_fre.processar,
     cvm_fii.FONTE: cvm_fii.processar,
     tesouro_direto.FONTE: tesouro_direto.processar,
+    tesouro_direto.FONTE_SITE: tesouro_direto.processar_site,
     **{cvm_demonstracoes.FONTE[t]: cvm_demonstracoes.processador(t) for t in ("DFP", "ITR")},
 }
 

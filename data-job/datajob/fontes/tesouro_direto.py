@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import csv
 import io
+import json
+import re
+from collections.abc import Callable
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
@@ -17,6 +20,12 @@ URL = (
     "/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv"
 )
 NOME = "PrecoTaxaTesouroDireto.csv"
+
+FONTE_SITE = "tesouro_direto_site"
+URL_SITE = "https://www.tesourodireto.com.br/o/rentabilidade/{}"
+_LADOS_DO_SITE = ("investir", "resgatar")
+_TITULO_E_ANO = re.compile(r"(.+?) \d{4}")
+_TAXA = re.compile(r"(-?\d+(?:,\d+)?)\s*%")
 
 _COLUNAS = {
     "Tipo Titulo",
@@ -82,8 +91,78 @@ def interpretar(conteudo: bytes) -> tuple[list[dict], list[tuple[str, str]]]:
     return list(linhas.values()), rejeitadas
 
 
+def nome_do_site(dia: date) -> str:
+    return f"rentabilidade_{dia:%Y%m%d}.json"
+
+
+def baixar_site(baixar: Callable[[str], bytes]) -> bytes:
+    lados = {lado: json.loads(baixar(URL_SITE.format(lado))) for lado in _LADOS_DO_SITE}
+    return json.dumps(lados, ensure_ascii=False, sort_keys=True).encode("utf-8")
+
+
+def _taxa(texto: str | None) -> Decimal | None:
+    achada = _TAXA.search(texto or "")
+    return _numero(achada.group(1)) if achada else None
+
+
+def _dia(texto: str | None) -> date | None:
+    try:
+        return date.fromisoformat((texto or "")[:10])
+    except ValueError:
+        return None
+
+
+def interpretar_site(conteudo: bytes) -> tuple[list[dict], list[tuple[str, str]]]:
+    try:
+        lados = {lado: json.loads(conteudo)[lado]["TesouroLegado"] for lado in _LADOS_DO_SITE}
+    except (ValueError, KeyError, TypeError) as e:
+        raise ArquivoInvalido(f"O site do Tesouro Direto mudou o formato: {e!r}.") from e
+
+    compra = {titulo.get("isinCode"): titulo for titulo in lados["investir"]}
+    venda = {titulo.get("isinCode"): titulo for titulo in lados["resgatar"]}
+    linhas, rejeitadas = {}, []
+    for isin in venda.keys() | compra.keys():
+        bruta = venda.get(isin) or compra[isin]
+        nome = _TITULO_E_ANO.fullmatch((bruta.get("treasuryBondName") or "").strip())
+        vencimento, dia = _dia(bruta.get("maturityDate")), _dia(bruta.get("lastMarketPricingDate"))
+        if nome is None or vencimento is None or dia is None:
+            rejeitadas.append((str(bruta)[:200], "título ilegível"))
+            continue
+        de_venda, de_compra = venda.get(isin, {}), compra.get(isin, {})
+        taxa_compra, pu_compra = _lado(
+            _taxa(de_compra.get("investmentProfitabilityIndexerName")),
+            Decimal(str(de_compra.get("unitaryInvestmentValue") or 0)),
+        )
+        taxa_venda, pu_venda = _lado(
+            _taxa(de_venda.get("redemptionProfitabilityFeeIndexerName")),
+            Decimal(str(de_venda.get("unitaryRedemptionValue") or 0)),
+        )
+        linhas[(nome.group(1), vencimento, dia)] = {
+            "titulo": nome.group(1),
+            "vencimento": vencimento,
+            "data": dia,
+            "taxa_compra": taxa_compra,
+            "taxa_venda": taxa_venda,
+            "pu_compra": pu_compra,
+            "pu_venda": pu_venda,
+            "pu_base": None,
+        }
+    if not linhas:
+        raise ArquivoInvalido("O site do Tesouro Direto não trouxe nenhum título.")
+    return list(linhas.values()), rejeitadas
+
+
 def processar(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int, int, int]:
-    linhas, rejeitadas = interpretar(conteudo)
+    return _gravar(conn, *interpretar(conteudo), coleta_id)
+
+
+def processar_site(conn: sa.Connection, conteudo: bytes, coleta_id: int) -> tuple[int, int, int]:
+    return _gravar(conn, *interpretar_site(conteudo), coleta_id)
+
+
+def _gravar(
+    conn: sa.Connection, linhas: list[dict], rejeitadas: list[tuple[str, str]], coleta_id: int
+) -> tuple[int, int, int]:
     gravadas = upsert(
         conn,
         tesouro,

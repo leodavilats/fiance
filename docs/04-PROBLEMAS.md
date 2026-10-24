@@ -111,9 +111,18 @@ em `salto_sem_evento` quando o salto passa de 50% ou cai perto de um fator comum
 
 Só entra o que tiver prova primária; a brapi aponta, não preenche.
 
+### O Tesouro Transparente recusa script
+
+Desde a rodada de 22/10/2026, o site responde 429 a quem não executa o desafio anti-robô do F5. A
+`tesouro` segue pelo site do Tesouro Direto
+([ADR-032](decisoes/ADR-032-tesouro-direto-pelo-site-como-reserva.md)), com o preço das 18h no lugar
+do da manhã e sem PU base. **Os pregões entre o último CSV e a primeira rodada pelo site faltam** e
+só voltam com o CSV. Falta pedir ao
+Tesouro acesso automatizado aos dados abertos.
+
 ### Proventos e eventos dependem de endpoints da B3 sem contrato
 
-São as únicas fontes não documentadas
+São, com o site do Tesouro Direto, as únicas fontes não documentadas
 ([ADR-022](decisoes/ADR-022-dados-de-mercado-coletados-em-lote.md)). Se mudarem, cotação, empresas e
 demonstrações continuam, mas a série ajustada para de receber eventos novos — no app, na API de dados
 e no laboratório. O disjuntor protege contra queda, não contra descontinuação.

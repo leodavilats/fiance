@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from datajob import rotina
 from datajob.rede import Ausente, Indisponivel
 from tests.conftest import TRECHO, zipar
+from tests.test_tesouro import SITE
 
 
 def _nomes(urls: list[str]) -> list[str]:
@@ -93,3 +94,22 @@ def test_rodada_fica_registrada_com_as_falhas(engine, tmp_path):
     assert registrada.terminada_em is not None
     assert set(registrada.falhas) == set(falhas)
     assert "503" in registrada.falhas["cotações da B3"], "o painel mostra o erro sem abrir o log"
+
+
+def test_tesouro_fora_do_ar_cai_no_site_do_tesouro_direto(engine, tmp_path):
+    def baixar(url: str) -> bytes:
+        if "tesourotransparente" in url:
+            raise Indisponivel(f"{url} respondeu 429.")
+        if "tesourodireto.com.br" in url:
+            lado = url.rsplit("/", 1)[1]
+            return json.dumps(json.loads(SITE)[lado]).encode()
+        if "sistemaswebb3" in url:
+            return json.dumps({"page": {"totalPages": 1}, "results": []}).encode()
+        raise Ausente(url)
+
+    falhas = rotina.diario(engine, tmp_path, baixar, lambda *_: None, hoje=date(2026, 10, 9))
+
+    with engine.connect() as conn:
+        titulos = conn.execute(sa.text("SELECT count(*) FROM mercado.tesouro")).scalar_one()
+    assert "Tesouro Direto" not in falhas, "com o retrato do site, a etapa não falhou"
+    assert titulos == 3
