@@ -82,7 +82,7 @@ a { color: var(--destaque); }
 .informativo { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; margin-left: 2px; border: 1px solid var(--fio); border-radius: 50%; background: var(--superficie); color: var(--suave); font: 600 12px/1 system-ui, sans-serif; vertical-align: 1px; cursor: pointer; }
 .informativo:hover, .informativo.aberto { color: var(--destaque); border-color: var(--destaque); }
 .informativo:focus-visible { outline: 2px solid var(--destaque); outline-offset: 1px; }
-.abas .informativo { align-self: center; }
+.controles > .informativo { margin-left: -8px; }
 .explicacao { max-width: 760px; margin: 4px 0 12px; padding: 10px 14px; border-left: 3px solid var(--destaque); border-radius: 0 6px 6px 0; background: var(--superficie); font-size: 14px; }
 .explicacao p { margin: 0 0 6px; } .explicacao p:last-child { margin: 0; }
 .controles { display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; }

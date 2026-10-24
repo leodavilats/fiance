@@ -143,8 +143,8 @@ export default function GraficoDaSerie({ serie }: { serie: Ponto[] }) {
           <button className={log ? "" : "ativa"} onClick={() => setLog(false)}>
             Linear
           </button>
-          <Informativo assunto="escala" aberto={aberto} alternar={alternar} rotulo="O que muda entre log e linear" />
         </div>
+        <Informativo assunto="escala" aberto={aberto} alternar={alternar} rotulo="O que muda entre log e linear" />
       </div>
       <Explicacao visivel={aberto === "escala"}>
         <p>
