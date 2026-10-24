@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Literal
 
 import httpx
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
@@ -65,11 +65,13 @@ class AlteracaoDeConta(BaseModel):
 class NovaAssinatura(BaseModel):
     plano: Literal["essencial", "pro"]
     ciclo: Literal["mensal", "anual"] = "mensal"
-    nome: str = Field(min_length=2, max_length=200)
-    cpf_cnpj: str = Field(min_length=11, max_length=18)
+    nome: str | None = Field(default=None, min_length=2, max_length=200)
+    cpf_cnpj: str | None = Field(default=None, min_length=11, max_length=18)
 
 
 class NovoAssinante(NovaAssinatura):
+    nome: str = Field(min_length=2, max_length=200)
+    cpf_cnpj: str = Field(min_length=11, max_length=18)
     email: str = Field(max_length=200, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -181,6 +183,12 @@ def criar(
         request.state.acesso = uso
         return uso
 
+    def na_conta(request: Request, authorization: str | None = Header(default=None)) -> int:
+        texto = (authorization or "").removeprefix("Bearer ").strip() or request.headers.get(
+            "x-api-key"
+        )
+        return acesso.entrar(bancos.acesso, texto)
+
     def administrador(request: Request, x_admin_token: str | None = Header(default=None)) -> None:
         origem = _origem(request, config.proxies_confiaveis)
         if tentativas.bloqueado(origem):
@@ -235,17 +243,17 @@ def criar(
         status_code=201,
         summary="Assinar um plano: devolve o link de pagamento",
     )
-    def assinar(corpo: NovaAssinatura, a: acesso.Acesso = Depends(autenticado)) -> dict:
+    def assinar(corpo: NovaAssinatura, conta_id: int = Depends(na_conta)) -> dict:
         if asaas is None:
             raise HTTPException(503, "A cobrança ainda não abriu. Fale com o contato do portal.")
         return _resposta(
             cobranca.criar_assinatura(
                 bancos.acesso,
                 asaas,
-                a.conta_id,
+                conta_id,
                 corpo.plano,
                 corpo.ciclo,
-                corpo.nome,
+                (corpo.nome or "").strip() or None,
                 corpo.cpf_cnpj,
             )
         )
@@ -495,21 +503,38 @@ def criar(
         return _resposta(dados, proximo)
 
     @app.get("/v1/conta", tags=["conta"], summary="A sua conta, plano, chaves e uso de hoje")
-    def ver_conta(a: acesso.Acesso = Depends(autenticado)) -> dict:
-        conta = acesso.resumo_da_conta(bancos.acesso, a.conta_id)
+    def ver_conta(response: Response, conta_id: int = Depends(na_conta)) -> dict:
+        conta = acesso.resumo_da_conta(bancos.acesso, conta_id)
         conta.pop("observacao")
+        response.headers["X-Limite-Dia"] = str(conta["limite_por_dia"])
+        response.headers["X-Restante-Dia"] = str(
+            max(0, conta["limite_por_dia"] - conta["requisicoes_hoje"])
+        )
+        assinatura = conta["assinatura"]
+        if assinatura is not None:
+            assinatura_id = assinatura.pop("asaas_assinatura")
+            assinatura["pagar_em"], assinatura["pagar_em_indisponivel"] = None, False
+            if (
+                asaas is not None
+                and assinatura["situacao"] in ("aguardando", "ativa")
+                and (assinatura["situacao"] == "aguardando" or conta["situacao"] != "ativa")
+            ):
+                try:
+                    assinatura["pagar_em"] = cobranca.link_em_aberto(asaas, assinatura_id)
+                except (httpx.HTTPError, acesso.SemAcesso):
+                    assinatura["pagar_em_indisponivel"] = True
         return _resposta(conta)
 
     @app.post("/v1/conta/chaves", tags=["conta"], status_code=201, summary="Emitir outra chave")
-    def nova_chave(corpo: NovaChave, a: acesso.Acesso = Depends(autenticado)) -> dict:
+    def nova_chave(corpo: NovaChave, conta_id: int = Depends(na_conta)) -> dict:
         return _resposta(
-            acesso.emitir_chave(bancos.acesso, a.conta_id, corpo.nome, CHAVES_NOVAS_POR_DIA),
+            acesso.emitir_chave(bancos.acesso, conta_id, corpo.nome, CHAVES_NOVAS_POR_DIA),
             aviso="A chave só aparece agora. Guarde-a: depois, só o prefixo.",
         )
 
     @app.delete("/v1/conta/chaves/{prefixo}", tags=["conta"], status_code=204)
-    def revogar(prefixo: str, a: acesso.Acesso = Depends(autenticado)) -> None:
-        acesso.revogar_chave(bancos.acesso, a.conta_id, prefixo)
+    def revogar(prefixo: str, conta_id: int = Depends(na_conta)) -> None:
+        acesso.revogar_chave(bancos.acesso, conta_id, prefixo)
 
     @app.get("/admin/planos", include_in_schema=False, dependencies=[Depends(administrador)])
     def admin_planos() -> list[dict]:

@@ -44,7 +44,13 @@ def asaas(pedidos):
         if rota.startswith("/v3/subscriptions/") and rota.endswith("/payments"):
             numero = rota.split("/")[3].removeprefix("sub_")
             return httpx.Response(
-                200, json={"data": [{"invoiceUrl": f"https://asaas/pagar/{numero}"}]}
+                200,
+                json={
+                    "data": [
+                        {"status": "RECEIVED", "invoiceUrl": "https://asaas/pago"},
+                        {"status": "PENDING", "invoiceUrl": f"https://asaas/pagar/{numero}"},
+                    ]
+                },
             )
         if rota.startswith("/v3/payments/"):
             return httpx.Response(200, json=pagamentos[rota.rsplit("/", 1)[1]])
@@ -300,3 +306,93 @@ def test_admin_cria_conta_paga_e_marca_pagamento(cliente):
     assert cliente.get("/v1/ativos", headers=chave).status_code == 200, (
         "contrato e pagamento por fora entram pela administração"
     )
+
+
+def _pagar(cliente, evento: str = "evt_pago") -> None:
+    cliente.post(
+        "/cobranca/asaas",
+        json=_evento(evento, "PAYMENT_CONFIRMED", "pay_1"),
+        headers={"asaas-access-token": WEBHOOK},
+    )
+
+
+def test_quem_ainda_nao_pagou_entra_em_minha_conta_e_ve_o_link(com_cobranca):
+    feito = com_cobranca.post("/v1/assinatura", json=_cadastro()).json()["dados"]
+    chave = {"Authorization": f"Bearer {feito['chave']}"}
+
+    conta = com_cobranca.get("/v1/conta", headers=chave)
+    dados_de_mercado = com_cobranca.get("/v1/ativos", headers=chave)
+
+    assert conta.status_code == 200, "a conta sem pagamento entra; só os dados respondem 402"
+    assert dados_de_mercado.status_code == 402
+    dados = conta.json()["dados"]
+    assert dados["situacao"] == "aguardando_pagamento"
+    assert dados["assinatura"]["situacao"] == "aguardando"
+    assert dados["assinatura"]["pagar_em"] == "https://asaas/pagar/1", (
+        "o link é a cobrança em aberto, não a já paga"
+    )
+    assert "asaas_assinatura" not in dados["assinatura"]
+    assert dados["cadastro_de_cobranca"] is True
+    assert dados["requisicoes_hoje"] == 0, "abrir Minha conta não gasta a cota do dia"
+
+
+def test_assinante_vencido_renova_pela_conta_sem_repetir_o_cpf(com_cobranca, pedidos):
+    feito = com_cobranca.post("/v1/assinatura", json=_cadastro()).json()["dados"]
+    chave = {"Authorization": f"Bearer {feito['chave']}"}
+    _pagar(com_cobranca)
+    conta_id = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    com_cobranca.patch(
+        f"/admin/contas/{conta_id}",
+        json={"pago_ate": "2020-01-01"},
+        headers={"X-Admin-Token": TOKEN},
+    )
+
+    vencida = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]
+    renovada = com_cobranca.post("/v1/conta/assinatura", json={"plano": "essencial"}, headers=chave)
+
+    assert vencida["situacao"] == "sem_pagamento"
+    assert renovada.status_code == 201, renovada.text
+    clientes = [p for p in pedidos if p.url.path == "/v3/customers"]
+    assert len(clientes) == 1, "a renovação usa o cliente do Asaas que já existe"
+
+
+def test_assinar_sem_cadastro_de_cobranca_pede_nome_e_documento(com_cobranca, chave, pedidos):
+    resposta = com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=chave)
+
+    assert resposta.status_code == 422
+    assert pedidos == []
+
+
+def test_convidado_que_assina_ve_o_link_ate_pagar(com_cobranca, chave):
+    com_cobranca.post(
+        "/v1/conta/assinatura",
+        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        headers=chave,
+    )
+
+    dados = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]
+
+    assert dados["situacao"] == "ativa", "o convidado segue com acesso enquanto não paga"
+    assert dados["assinatura"]["pagar_em"] == "https://asaas/pagar/1"
+
+
+def test_asaas_fora_do_ar_nao_vira_ausencia_de_cobranca(com_cobranca, monkeypatch):
+    feito = com_cobranca.post("/v1/assinatura", json=_cadastro()).json()["dados"]
+
+    def fora(*_):
+        raise httpx.ConnectError("sem rede")
+
+    monkeypatch.setattr(cobranca, "link_em_aberto", fora)
+    conta = com_cobranca.get("/v1/conta", headers={"Authorization": f"Bearer {feito['chave']}"})
+
+    assinatura = conta.json()["dados"]["assinatura"]
+    assert conta.status_code == 200
+    assert assinatura["pagar_em"] is None and assinatura["pagar_em_indisponivel"] is True
+
+
+def test_console_separa_quem_aguarda_pagamento_de_quem_venceu(com_cobranca):
+    com_cobranca.post("/v1/assinatura", json=_cadastro())
+
+    contas = com_cobranca.get("/admin/contas", headers={"X-Admin-Token": TOKEN}).json()
+
+    assert [c["situacao"] for c in contas] == ["aguardando_pagamento"]

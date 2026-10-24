@@ -52,7 +52,7 @@ def test_limite_do_dia(cliente, bancos, chave):
 def test_trocar_de_chave_nao_renova_o_limite_do_dia(cliente, bancos, chave):
     with bancos.acesso.begin() as conn:
         conn.execute(
-            sa.text("UPDATE acesso.plano SET limite_por_dia = 4 WHERE codigo = 'convidado'")
+            sa.text("UPDATE acesso.plano SET limite_por_dia = 1 WHERE codigo = 'convidado'")
         )
     cliente.get("/v1/ativos", headers=chave)
     nova = cliente.post("/v1/conta/chaves", json={"nome": "outra"}, headers=chave).json()["dados"]
@@ -99,6 +99,7 @@ def test_chave_revogada_e_conta_desativada_param_de_entrar(cliente, chave):
     revogada = cliente.delete(f"/v1/conta/chaves/{extra.json()['dados']['prefixo']}", headers=chave)
     assert revogada.status_code == 204
     assert cliente.get("/v1/ativos", headers=segunda).status_code == 401
+    assert cliente.get("/v1/conta", headers=segunda).status_code == 401
 
     conta_id = cliente.get("/v1/conta", headers=chave).json()["dados"]["id"]
     cliente.patch(
@@ -177,12 +178,13 @@ def test_token_com_caractere_fora_do_ascii_e_recusado_sem_erro(cliente):
 def test_conta_nao_ve_a_observacao_da_administracao(cliente, chave):
     conta_id = cliente.get("/v1/conta", headers=chave).json()["dados"]["id"]
     cliente.patch(f"/admin/contas/{conta_id}", json={"observacao": "nota interna"}, headers=ADMIN)
+    cliente.get("/v1/ativos", headers=chave)
 
     propria = cliente.get("/v1/conta", headers=chave).json()["dados"]
     na_administracao = cliente.get(f"/admin/contas/{conta_id}", headers=ADMIN).json()
 
     assert "observacao" not in propria and na_administracao["observacao"] == "nota interna"
-    assert propria["requisicoes_hoje"] == 2, "o uso de hoje é da conta, somando as chaves"
+    assert propria["requisicoes_hoje"] == 1, "conta o uso dos dados; abrir a conta não gasta a cota"
 
 
 def test_respostas_trazem_cabecalhos_de_seguranca(cliente):

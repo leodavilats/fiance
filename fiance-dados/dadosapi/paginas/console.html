@@ -126,7 +126,7 @@ label { display: block; font-size: 13px; font-weight: 500; color: var(--texto-2)
 /* etiquetas */
 .etiqueta { display: inline-block; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--fio-forte); color: var(--texto-2); white-space: nowrap; line-height: 1.6; }
 .etiqueta.ativa { color: var(--destaque); border-color: transparent; background: var(--destaque-fundo); }
-.etiqueta.a_vencer, .etiqueta.em_tolerancia { color: var(--aviso); border-color: transparent; background: var(--aviso-fundo); }
+.etiqueta.a_vencer, .etiqueta.em_tolerancia, .etiqueta.aguardando_pagamento { color: var(--aviso); border-color: transparent; background: var(--aviso-fundo); }
 .etiqueta.sem_pagamento { color: var(--perigo); border-color: transparent; background: var(--perigo-fundo); }
 .etiqueta.desativada { color: var(--suave); }
 
@@ -501,10 +501,11 @@ const SITUACAO = {
   ativa: "Ativa",
   a_vencer: "Vence em breve",
   em_tolerancia: "Em tolerância",
+  aguardando_pagamento: "Aguardando pagamento",
   sem_pagamento: "Sem pagamento",
   desativada: "Desativada",
 };
-const ORDEM_SITUACAO = { sem_pagamento: 0, em_tolerancia: 1, a_vencer: 2, ativa: 3, desativada: 4 };
+const ORDEM_SITUACAO = { sem_pagamento: 0, aguardando_pagamento: 1, em_tolerancia: 2, a_vencer: 3, ativa: 4, desativada: 5 };
 const ALERTA_DE_LIMITE = 0.8;
 const estado = { contas: [], planos: [], ordem: { campo: "id", direcao: 1 }, aberta: null, situacao: "" };
 
@@ -729,7 +730,7 @@ function desenharVisao() {
   const hoje = contas.reduce((s, c) => s + c.requisicoes_hoje, 0);
   const trinta = contas.reduce((s, c) => s + c.requisicoes_30_dias, 0);
   const usaramHoje = contas.filter((c) => c.requisicoes_hoje > 0).length;
-  const pagas = ativas.filter((c) => c.plano_pago && c.situacao !== "sem_pagamento").length;
+  const pagas = ativas.filter((c) => c.plano_pago && !["sem_pagamento", "aguardando_pagamento"].includes(c.situacao)).length;
   const ind = (rotulo, valor, extra) => el("div", {}, el("dt", {}, rotulo), el("dd", {}, valor, extra ? el("small", {}, extra) : null));
   $("indicadores").replaceChildren(
     ind("Contas ativas", numero.format(ativas.length), `de ${numero.format(contas.length)}`),

@@ -123,6 +123,19 @@ def situacao_da_conta(ativa: bool, pago: bool, pago_ate: date | None, dia: date)
     return "ativa"
 
 
+def _situacao(linha, dia: date) -> str:
+    situacao = situacao_da_conta(linha.ativa, linha.plano_pago, linha.pago_ate, dia)
+    if situacao == "sem_pagamento" and linha.pago_ate is None and linha.aguardando:
+        return "aguardando_pagamento"
+    return situacao
+
+
+_AGUARDANDO = (
+    "EXISTS (SELECT 1 FROM acesso.assinatura s WHERE s.conta_id = c.id "
+    "AND s.situacao = 'aguardando') AS aguardando"
+)
+
+
 _CHAVE_VALIDA = sa.text(
     """
     SELECT k.id AS chave_id, k.prefixo, c.id AS conta_id, c.pago_ate, p.codigo,
@@ -187,6 +200,18 @@ def autenticar(
     if usadas > plano.limite_por_dia:
         raise SemAcesso(429, "Limite do dia atingido. Ele volta à meia-noite de Brasília.")
     return Acesso(linha.conta_id, linha.chave_id, linha.prefixo, plano, usadas)
+
+
+def entrar(engine: sa.Engine, texto: str | None) -> int:
+    if not texto or not texto.startswith(PREFIXO_DA_CHAVE):
+        raise SemAcesso(
+            401, "Chave ausente ou em formato inválido. Envie Authorization: Bearer <chave>."
+        )
+    with engine.connect() as conn:
+        linha = conn.execute(_CHAVE_VALIDA, {"hash": hash_da_chave(texto)}).first()
+    if linha is None:
+        raise SemAcesso(401, "Chave desconhecida, revogada, ou de conta desativada.")
+    return linha.conta_id
 
 
 def exigir(a: Acesso, recurso: str) -> None:
@@ -399,7 +424,7 @@ def resumo_da_conta(engine: sa.Engine, conta_id: int, dia: date | None = None) -
                 "SELECT c.id, c.email, c.nome, c.ativa, c.criada_em, c.pago_ate, c.observacao, "
                 "p.codigo AS plano, p.nome AS plano_nome, p.limite_por_minuto, p.limite_por_dia, "
                 "p.historico_dias, p.chaves_maximas, p.recursos, "
-                "p.preco_mensal_centavos IS NOT NULL AS plano_pago "
+                f"p.preco_mensal_centavos IS NOT NULL AS plano_pago, {_AGUARDANDO} "
                 "FROM acesso.conta c JOIN acesso.plano p ON p.codigo = c.plano WHERE c.id = :id"
             ),
             {"id": conta_id},
@@ -418,12 +443,22 @@ def resumo_da_conta(engine: sa.Engine, conta_id: int, dia: date | None = None) -
             ),
             {"id": conta_id, "dia": dia or hoje()},
         ).all()
-    situacao = situacao_da_conta(conta.ativa, conta.plano_pago, conta.pago_ate, dia or hoje())
+        assinaturas = conn.execute(
+            sa.text(
+                "SELECT plano, ciclo, situacao, criada_em, asaas_assinatura FROM acesso.assinatura "
+                "WHERE conta_id = :id ORDER BY criada_em DESC, id DESC"
+            ),
+            {"id": conta_id},
+        ).all()
+    atual = next((s for s in assinaturas if s.situacao != "substituida"), None)
+    resumo = {k: v for k, v in conta._mapping.items() if k != "aguardando"}
     return {
-        **dict(conta._mapping),
-        "situacao": situacao,
+        **resumo,
+        "situacao": _situacao(conta, dia or hoje()),
         "requisicoes_hoje": sum(k.requisicoes_hoje for k in chaves),
         "chaves": [dict(k._mapping) for k in chaves],
+        "assinatura": None if atual is None else dict(atual._mapping),
+        "cadastro_de_cobranca": bool(assinaturas),
     }
 
 
@@ -432,7 +467,7 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
     with engine.connect() as conn:
         linhas = conn.execute(
             sa.text(
-                """
+                f"""
                 WITH uso AS (
                     SELECT k.conta_id,
                         sum(u.requisicoes) FILTER (WHERE u.dia = :dia) AS hoje,
@@ -446,7 +481,7 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
                 )
                 SELECT c.id, c.email, c.nome, c.plano, p.nome AS plano_nome, c.ativa, c.criada_em,
                     c.pago_ate, c.observacao, p.limite_por_dia, p.chaves_maximas,
-                    p.preco_mensal_centavos IS NOT NULL AS plano_pago,
+                    p.preco_mensal_centavos IS NOT NULL AS plano_pago, {_AGUARDANDO},
                     coalesce(k.ativas, 0) AS chaves_ativas, k.ultimo_uso_em,
                     coalesce(u.hoje, 0) AS requisicoes_hoje,
                     coalesce(u.trinta_dias, 0) AS requisicoes_30_dias
@@ -466,10 +501,8 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
         ).all()
     return [
         {
-            **dict(linha._mapping),
-            "situacao": situacao_da_conta(
-                linha.ativa, linha.plano_pago, linha.pago_ate, dia_de_hoje
-            ),
+            **{k: v for k, v in linha._mapping.items() if k != "aguardando"},
+            "situacao": _situacao(linha, dia_de_hoje),
         }
         for linha in linhas
     ]

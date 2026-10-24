@@ -4,7 +4,7 @@
 está na [ADR-024](../decisoes/ADR-024-api-de-dados.md) e na
 [ADR-025](../decisoes/ADR-025-cobranca-da-api-de-dados.md); as rotas e os campos, no OpenAPI do
 próprio serviço (`/docs`).
-Última revisão: 2026-10-23
+Última revisão: 2026-10-24
 
 ---
 
@@ -62,7 +62,7 @@ da CVM, CNPJ e termos de uso. Até lá a cobrança fica desligada.
 |---|---|
 | `/v1/...` | A API, por chave. Ativos, retratos em lote (até 50), cotações, série ajustada, proventos, eventos, informes, empresas e demonstrações, indicadores do BCB, Tesouro; e `/v1/conta` para a própria conta e as chaves |
 | `/v1`, `/v1/planos`, `/v1/vitrine` | Sem chave: o índice, os planos públicos e o exemplo do portal |
-| `/` | Portal público, em telas por âncora (`#inicio`, `#exemplo`, `#dados`, `#uso`, `#planos`, `#conta`): o que o serviço oferece, a documentação e "minha conta" para quem tem chave, com a assinatura quando a cobrança abre |
+| `/` | Portal público, em telas por âncora (`#inicio`, `#exemplo`, `#dados`, `#uso`, `#planos`, `#assinar`, `#conta`): o que o serviço oferece, a documentação, a assinatura de quem chega e "minha conta" para quem tem chave, com a situação do pagamento |
 | `/docs` | OpenAPI público. As rotas `/admin` ficam fora dele |
 | `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`, `#fumaca`): contas, uso por dia e por conta, emitir e revogar chave, desativar, e a [fumaça](#fumaça-em-produção). Pede o token de administração na tela e o guarda só na aba |
 | `/admin/...` | Administração, por `X-Admin-Token` |
@@ -84,7 +84,7 @@ em `X-API-Key`. Toda resposta autenticada traz `X-Limite-Dia` e `X-Restante-Dia`
 | Status | Quando |
 |---|---|
 | 401 | Chave ausente, desconhecida ou revogada; conta desativada |
-| 402 | Plano pago sem `pago_ate` em dia, mais três dias de tolerância |
+| 402 | Plano pago sem `pago_ate` em dia, mais três dias de tolerância. Não vale para `/v1/conta`, que aceita a chave sem pagamento e não conta na cota ([ADR-033](../decisoes/ADR-033-conta-sem-pagamento-entra-em-minha-conta.md)) |
 | 403 | Rota de um recurso que o plano não tem |
 | 429 | Limite por minuto (com `Retry-After`) ou por dia |
 
@@ -111,7 +111,8 @@ A `observacao` da conta é da administração: o `/v1/conta` não a devolve.
 Conta nasce por convite, pela administração — no `/console` ou pela rota —, e já sai com a primeira
 chave. Com a cobrança aberta, nasce também na assinatura, pelo portal
 ([ADR-031](../decisoes/ADR-031-assinatura-cria-a-conta.md)). Quem tem conta gerencia as próprias
-chaves em `/v1/conta`.
+chaves em `/v1/conta`, pague ou não: o `/v1/conta` traz a situação, a assinatura atual e o link da
+cobrança em aberto ([ADR-033](../decisoes/ADR-033-conta-sem-pagamento-entra-em-minha-conta.md)).
 
 ```bash
 # criar conta (devolve a primeira chave) — planos: interno, convidado, essencial, pro, quant
@@ -128,8 +129,9 @@ curl "https://<dominio>/admin/uso?dias=90&conta_id=1" -H "X-Admin-Token: $TOKEN"
 
 O `PATCH` aceita `plano`, `ativa`, `pago_ate`, `nome` e `observacao`; campo ausente fica como está,
 e `null` enviado de propósito limpa `pago_ate` e `observacao`. A lista traz a `situacao` — `ativa`,
-`a_vencer` (a 7 dias do vencimento), `em_tolerancia`, `sem_pagamento` (a que responde 402),
-`desativada` —, calculada pela mesma regra que autentica.
+`a_vencer` (a 7 dias do vencimento), `em_tolerancia`, `aguardando_pagamento` (assinou e nunca pagou),
+`sem_pagamento` (venceu), `desativada` —, calculada pela mesma regra que autentica: as duas sem
+pagamento respondem 402 nas rotas de dados.
 
 ## Cobrança
 
@@ -144,8 +146,12 @@ E-mail de conta existente recebe 409 e assina em "Minha conta"; cadastro que nun
 retomado por quem assina de novo, e as chaves antigas caem, salvo se houver assinatura de até sete
 dias aguardando pagamento. Cinco cadastros por hora por endereço.
 
-Quem já tem chave assina pelo `POST /v1/conta/assinatura`. O Asaas avisa em `POST /cobranca/asaas`, com o
-token no cabeçalho `asaas-access-token`; cada evento entra uma vez, o pagamento é **reconsultado**
+Quem já tem chave assina, renova ou troca de plano pelo `POST /v1/conta/assinatura`, mesmo sem
+pagamento em dia; nome e CPF ou CNPJ só são pedidos se a conta nunca assinou, porque a renovação
+usa o cliente do Asaas que já existe. No `/v1/conta`, a assinatura traz `pagar_em`, consultado no
+Asaas na hora, ou `pagar_em_indisponivel` quando ele não responde.
+
+O Asaas avisa em `POST /cobranca/asaas`, com o token no cabeçalho `asaas-access-token`; cada evento entra uma vez, o pagamento é **reconsultado**
 antes de liberar, e o titular sai da assinatura gravada aqui, nunca do corpo do webhook. O pagamento
 confirmado leva `pago_ate` ao fim do ciclo. Evento gravado sem `resultado` caiu antes de aplicar, e
 a reentrega do Asaas o aplica de novo. Uma conta abre no máximo três assinaturas por dia.

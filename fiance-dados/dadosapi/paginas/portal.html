@@ -282,6 +282,11 @@ input.mono { font-family: var(--mono); }
 .nova-chave { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
 .nova-chave input { flex: 1; min-width: 180px; }
 .assinar { display: grid; gap: 12px; }
+.situacao { margin-bottom: 18px; border-color: var(--alerta); background: var(--alerta-fundo); }
+.situacao h2 { color: var(--alerta); margin-bottom: 0; }
+.situacao p { margin: 6px 0 0; color: var(--tinta-2); max-width: 70ch; }
+.situacao-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.situacao-acoes:empty { display: none; }
 .assinar .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 dialog { border: 1px solid var(--fio-forte); border-radius: 14px; background: var(--papel-alto); color: var(--tinta); padding: 22px; max-width: min(440px, calc(100vw - 32px)); box-shadow: var(--sombra); }
 dialog::backdrop { background: rgba(20, 18, 15, 0.45); }
@@ -585,6 +590,30 @@ const { dados, proximo } = await r.json();</code></pre>
     </div>
   </section>
 
+  <section class="tela largura" id="tela-assinar" aria-labelledby="t-assinar" data-titulo="Assinar — fiance dados" hidden>
+    <div id="cadastro" class="painel entrar">
+      <h1 id="t-assinar" tabindex="-1">Assinar</h1>
+      <p>A conta e a chave saem na hora, e você vai direto para Minha conta, com o link de pagamento. A chave passa a funcionar quando o Asaas confirmar o pagamento.</p>
+      <form id="form-cadastro" class="assinar">
+        <div class="duas">
+          <div><label for="cadastro-plano">Plano</label><select id="cadastro-plano"></select></div>
+          <div><label for="cadastro-ciclo">Ciclo</label><select id="cadastro-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
+        </div>
+        <div><label for="cadastro-nome">Nome ou razão social</label><input id="cadastro-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
+        <div><label for="cadastro-email">E-mail</label><input id="cadastro-email" type="email" required maxlength="200" autocomplete="email"></div>
+        <div><label for="cadastro-doc">CPF ou CNPJ</label><input id="cadastro-doc" required minlength="11" maxlength="18" inputmode="numeric" autocomplete="off"></div>
+        <div><button class="botao destaque" type="submit" id="botao-cadastro">Criar a conta e assinar</button></div>
+        <p id="erro-cadastro" class="erro" role="alert" style="margin:0"></p>
+      </form>
+      <div id="cadastro-feito" class="chave-nova escondido" role="status"></div>
+      <p class="discreto">Já tem conta? <a href="#conta">Entre com a sua chave</a>: a assinatura e a renovação ficam em Minha conta.</p>
+    </div>
+    <div id="assinar-fechado" class="painel entrar escondido">
+      <h1>A cobrança ainda não abriu</h1>
+      <p>Enquanto isso, o acesso é por convite e sem custo. <a href="#planos">Veja os planos</a>.</p>
+    </div>
+  </section>
+
   <section class="tela largura" id="tela-conta" aria-labelledby="t-conta" data-titulo="Minha conta — fiance dados" hidden>
     <div id="entrar" class="painel entrar">
       <h1 id="t-conta" tabindex="-1">Minha conta</h1>
@@ -597,24 +626,7 @@ const { dados, proximo } = await r.json();</code></pre>
         </div>
       </form>
       <p id="erro-conta" class="erro" role="alert"></p>
-      <p class="discreto">A chave fica só nesta aba do navegador e some quando ela fecha. Ainda não tem uma? <a href="#planos">Veja os planos</a>.</p>
-    </div>
-
-    <div id="cadastro" class="painel entrar escondido">
-      <h2>Ainda não tem conta? Assine</h2>
-      <p>A conta e a chave saem na hora. A chave passa a funcionar quando o Asaas confirmar o pagamento.</p>
-      <form id="form-cadastro" class="assinar">
-        <div class="duas">
-          <div><label for="cadastro-plano">Plano</label><select id="cadastro-plano"></select></div>
-          <div><label for="cadastro-ciclo">Ciclo</label><select id="cadastro-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
-        </div>
-        <div><label for="cadastro-nome">Nome ou razão social</label><input id="cadastro-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
-        <div><label for="cadastro-email">E-mail</label><input id="cadastro-email" type="email" required maxlength="200" autocomplete="email"></div>
-        <div><label for="cadastro-doc">CPF ou CNPJ</label><input id="cadastro-doc" required minlength="11" maxlength="18" inputmode="numeric" autocomplete="off"></div>
-        <div><button class="botao destaque" type="submit" id="botao-cadastro">Assinar e gerar a chave</button></div>
-        <p id="erro-cadastro" class="erro" role="alert" style="margin:0"></p>
-      </form>
-      <div id="cadastro-feito" class="chave-nova escondido" role="status"></div>
+      <p class="discreto">A chave fica só nesta aba do navegador e some quando ela fecha. <span id="entrar-sem-conta">Ainda não tem uma? <a href="#planos">Veja os planos</a>.</span></p>
     </div>
 
     <div id="painel-conta" class="escondido">
@@ -626,11 +638,16 @@ const { dados, proximo } = await r.json();</code></pre>
         <button class="botao contorno pequeno" type="button" id="sair">Sair</button>
       </div>
       <p id="erro-painel" class="erro" role="alert" style="margin:0 0 16px"></p>
+      <div id="chave-criada" class="chave-nova escondido" role="status"></div>
+      <div class="painel cartao situacao escondido" id="cartao-situacao" role="status">
+        <h2 id="situacao-titulo"></h2>
+        <p id="situacao-texto"></p>
+        <div class="situacao-acoes" id="situacao-acoes"></div>
+      </div>
       <div class="conta-grade">
         <div>
           <div class="painel cartao">
             <h2>Chaves <small id="chaves-contagem"></small></h2>
-            <div id="chave-criada" class="chave-nova escondido" role="status"></div>
             <div class="rolar"><table class="tabela chaves">
               <caption class="so-leitor">Suas chaves</caption>
               <thead><tr><th scope="col">Chave</th><th scope="col" class="col-opcional">Criada</th><th scope="col">Último uso</th><th scope="col" class="num">Hoje</th><th scope="col"><span class="so-leitor">Ação</span></th></tr></thead>
@@ -643,16 +660,17 @@ const { dados, proximo } = await r.json();</code></pre>
             </form>
           </div>
           <div class="painel cartao escondido" id="cartao-assinar">
-            <h2>Assinar <small>pagamento pelo Asaas</small></h2>
+            <h2><span id="assinar-titulo">Assinar um plano</span> <small>pagamento pelo Asaas</small></h2>
             <form id="form-assinar" class="assinar">
               <div class="duas">
                 <div><label for="assinar-plano">Plano</label><select id="assinar-plano"></select></div>
                 <div><label for="assinar-ciclo">Ciclo</label><select id="assinar-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
               </div>
-              <div class="duas">
+              <div class="duas" id="assinar-cadastro">
                 <div><label for="assinar-nome">Nome ou razão social</label><input id="assinar-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
                 <div><label for="assinar-doc">CPF ou CNPJ</label><input id="assinar-doc" required minlength="11" maxlength="18" inputmode="numeric" autocomplete="off"></div>
               </div>
+              <p class="discreto" id="assinar-aviso" style="margin:0"></p>
               <div><button class="botao destaque" type="submit" id="botao-assinar">Gerar o link de pagamento</button></div>
               <p class="discreto" id="assinar-resultado" style="margin:0" role="status"></p>
             </form>
@@ -723,7 +741,7 @@ function html(tag, classe, texto) {
 const cor = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
 /* ---------- telas ---------- */
-const TELAS = ["inicio", "exemplo", "dados", "uso", "planos", "conta"];
+const TELAS = ["inicio", "exemplo", "dados", "uso", "planos", "assinar", "conta"];
 const APELIDOS = { diferencial: "inicio", "quem-faz": "planos", limites: "dados" };
 let telaAtual = null;
 let exemploGuardado = null;
@@ -991,6 +1009,7 @@ function itemDoPlano(incluido, texto) {
   li.append(span);
   return li;
 }
+const CHAVE = "fiance_dados_chave";
 const PEDIDO_DE_CONVITE = "Convite para o fiance dados";
 function botaoDeConvite(resposta, classe) {
   if (!resposta.whatsapp && !resposta.contato) return null;
@@ -1008,7 +1027,7 @@ function acaoDoPlano(resposta, p) {
   const estilo = p.codigo === "pro" ? "botao" : "botao contorno";
   if (resposta.cobranca_aberta) {
     const a = html("a", estilo, `Assinar o ${p.nome}`);
-    a.href = "#conta";
+    a.href = sessionStorage.getItem(CHAVE) ? "#conta" : "#assinar";
     a.addEventListener("click", () => {
       for (const prefixo of ["assinar", "cadastro"]) { $(`${prefixo}-plano`).value = p.codigo; $(`${prefixo}-ciclo`).value = ciclo; }
     });
@@ -1093,7 +1112,7 @@ window.addEventListener("resize", () => { clearTimeout(espera); espera = setTime
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (exemploGuardado) { desenhar(exemploGuardado); desenharFaisca(exemploGuardado); } });
 
 /* ---------- conta ---------- */
-const CHAVE = "fiance_dados_chave";
+let contaAtual = null;
 function dataHora(texto) {
   if (!texto) return "—";
   const d = new Date(texto);
@@ -1122,7 +1141,7 @@ async function chamar(metodo, rota, corpo) {
   }
   if (resposta.status === 204) return null;
   const json = await resposta.json().catch(() => ({}));
-  if (!resposta.ok) throw new Error(json.erro || `Erro ${resposta.status}.`);
+  if (!resposta.ok) throw Object.assign(new Error(json.erro || `Erro ${resposta.status}.`), { status: resposta.status });
   return json;
 }
 function confirmar(titulo, texto, botao) {
@@ -1134,14 +1153,18 @@ function confirmar(titulo, texto, botao) {
   d.showModal();
   return new Promise((resolve) => d.addEventListener("close", () => resolve(d.returnValue === "sim"), { once: true }));
 }
-const SITUACAO = { ativa: ["Ativa", "pro"], a_vencer: ["Vence em breve", "alerta"], em_tolerancia: ["Em tolerância", "alerta"], sem_pagamento: ["Sem pagamento", "alerta"], desativada: ["Desativada", ""] };
+const SITUACAO = { ativa: ["Ativa", "pro"], a_vencer: ["Vence em breve", "alerta"], em_tolerancia: ["Em tolerância", "alerta"], aguardando_pagamento: ["Aguardando pagamento", "alerta"], sem_pagamento: ["Sem pagamento", "alerta"], desativada: ["Desativada", ""] };
 const NOME_RECURSO = { serie: "série ajustada", ponto_no_tempo: "balanço na data", informes: "informe de FII" };
 
 function preencherAssinatura() {
   const aberta = planosGuardados.cobranca_aberta;
-  const dentro = !$("painel-conta").classList.contains("escondido");
-  $("cartao-assinar").classList.toggle("escondido", !aberta);
-  $("cadastro").classList.toggle("escondido", !aberta || dentro);
+  $("cadastro").classList.toggle("escondido", !aberta);
+  $("assinar-fechado").classList.toggle("escondido", !!aberta);
+  const destino = aberta ? ["Assine", "#assinar"] : ["Veja os planos", "#planos"];
+  const link = html("a", "", destino[0]);
+  link.href = destino[1];
+  $("entrar-sem-conta").replaceChildren("Ainda não tem uma? ", link, ".");
+  if (contaAtual) { desenharSituacao(contaAtual); desenharAssinatura(contaAtual); }
   if (!aberta) return;
   for (const sel of [$("assinar-plano"), $("cadastro-plano")]) {
     const antes = sel.value;
@@ -1155,6 +1178,85 @@ function botaoCopiar(texto) {
   copiar.onclick = async () => { try { await navigator.clipboard.writeText(texto); copiar.textContent = "Copiada"; } catch { copiar.textContent = "Selecione e copie"; } };
   return copiar;
 }
+function mostrarChaveNova(chave, titulo) {
+  const linha = html("div");
+  linha.append(html("code", "", chave), botaoCopiar(chave));
+  $("chave-criada").replaceChildren(html("strong", "", titulo), linha);
+  $("chave-criada").classList.remove("escondido");
+}
+function linkDePagamento(texto, url, classe) {
+  const a = html("a", classe, texto);
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener";
+  return a;
+}
+const nomeDoPlano = (codigo) => ((planosGuardados.dados || []).find((p) => p.codigo === codigo) || {}).nome || codigo;
+const dia = (texto) => diaMesAno.format(new Date(texto));
+
+function desenharSituacao(conta) {
+  const cartao = $("cartao-situacao"), acoes = $("situacao-acoes");
+  const a = conta.assinatura, s = conta.situacao;
+  const aguardando = a && a.situacao === "aguardando";
+  const bloqueada = s === "aguardando_pagamento" || s === "sem_pagamento";
+  let titulo, texto;
+  if (aguardando) {
+    titulo = "Aguardando o pagamento";
+    texto = `Assinatura do ${nomeDoPlano(a.plano)}, ${a.ciclo}. ` + (bloqueada
+      ? "As chaves já existem e passam a funcionar quando o Asaas confirmar o pagamento: no Pix e no cartão, em minutos; no boleto, quando o banco compensar."
+      : `Até a confirmação, a conta segue no ${conta.plano_nome}.`);
+  } else if (s === "sem_pagamento") {
+    titulo = "Sem pagamento em dia";
+    texto = "As chaves respondem 402 nas rotas de dados até o pagamento." + (a && a.pagar_em ? "" : planosGuardados.cobranca_aberta ? " Renove abaixo." : " Fale com o contato do portal.");
+  } else if (s === "em_tolerancia") {
+    titulo = "Pagamento vencido";
+    texto = `Venceu em ${dia(conta.pago_ate)}. O acesso continua por três dias de tolerância.`;
+  } else if (s === "a_vencer") {
+    titulo = "O pagamento vence em breve";
+    texto = `Pago até ${dia(conta.pago_ate)}.`;
+  } else {
+    cartao.classList.add("escondido");
+    return;
+  }
+  acoes.replaceChildren();
+  if (a && a.pagar_em) acoes.append(linkDePagamento("Pagar no Asaas", a.pagar_em, "botao destaque pequeno"));
+  else if (a && a.pagar_em_indisponivel) texto += " O link de pagamento não pôde ser consultado agora: tente atualizar em instantes.";
+  if (a && (a.pagar_em || aguardando || a.pagar_em_indisponivel)) {
+    const atualizar = html("button", "botao contorno pequeno", "Já paguei, atualizar");
+    atualizar.type = "button";
+    atualizar.onclick = () => carregarConta();
+    acoes.append(atualizar);
+  }
+  $("situacao-titulo").textContent = titulo;
+  $("situacao-texto").textContent = texto;
+  cartao.classList.remove("escondido");
+}
+
+function desenharAssinatura(conta) {
+  const aberta = planosGuardados.cobranca_aberta;
+  $("cartao-assinar").classList.toggle("escondido", !aberta);
+  if (!aberta) return;
+  const a = conta.assinatura, viva = a && ["aguardando", "ativa"].includes(a.situacao);
+  let titulo, aviso;
+  if (!conta.plano_pago) {
+    titulo = "Assinar um plano";
+    aviso = `Quando o pagamento for confirmado, a conta passa do ${conta.plano_nome} para o plano assinado.`;
+  } else if (!viva) {
+    titulo = "Renovar";
+    aviso = "Gera uma cobrança nova no plano e no ciclo escolhidos.";
+  } else {
+    titulo = "Trocar de plano ou de ciclo";
+    aviso = "Gera uma cobrança nova e cancela a assinatura atual no Asaas." + (conta.pago_ate ? ` O que já foi pago vale até ${dia(conta.pago_ate)}.` : "");
+  }
+  if (a && a.situacao === "aguardando") aviso = "Gera uma cobrança nova e cancela a que está aguardando pagamento.";
+  $("assinar-titulo").textContent = titulo;
+  $("assinar-aviso").textContent = aviso;
+  const temCadastro = conta.cadastro_de_cobranca;
+  $("assinar-cadastro").classList.toggle("escondido", temCadastro);
+  $("assinar-nome").required = !temCadastro;
+  $("assinar-doc").required = !temCadastro;
+}
+
 async function carregarConta(focar) {
   $("erro-conta").textContent = "";
   $("erro-painel").textContent = "";
@@ -1162,15 +1264,17 @@ async function carregarConta(focar) {
   try {
     conta = (await chamar("GET", "/v1/conta")).dados;
   } catch (e) {
-    sessionStorage.removeItem(CHAVE);
+    if (e.status === 401) sessionStorage.removeItem(CHAVE);
+    if (contaAtual && !e.status) { $("erro-painel").textContent = e.message; return false; }
+    contaAtual = null;
     $("painel-conta").classList.add("escondido");
     $("entrar").classList.remove("escondido");
     $("erro-conta").textContent = "Não foi possível entrar: " + e.message;
-    return;
+    return false;
   }
+  contaAtual = conta;
   $("entrar").classList.add("escondido");
   $("painel-conta").classList.remove("escondido");
-  $("cadastro").classList.add("escondido");
   $("conta-nome").textContent = conta.nome;
   const [rotulo, tom] = SITUACAO[conta.situacao] || [conta.situacao, ""];
   $("conta-sub").replaceChildren(conta.email, html("span", `etiqueta ${tom}`, rotulo));
@@ -1226,16 +1330,16 @@ async function carregarConta(focar) {
   $("emitir").disabled = cheio;
   $("nome-nova").placeholder = cheio ? `O plano permite ${conta.chaves_maximas} chaves ativas: revogue uma antes` : "Nome da nova chave, ex.: servidor";
   if (!$("assinar-nome").value) $("assinar-nome").value = conta.nome;
+  desenharSituacao(conta);
+  desenharAssinatura(conta);
+  return true;
 }
 $("form-entrar").onsubmit = (evento) => { evento.preventDefault(); sessionStorage.setItem(CHAVE, $("chave").value.trim()); $("chave").value = ""; carregarConta(true); };
 $("form-nova").onsubmit = async (evento) => {
   evento.preventDefault();
   try {
     const nova = (await chamar("POST", "/v1/conta/chaves", { nome: $("nome-nova").value.trim() })).dados;
-    const linha = html("div");
-    linha.append(html("code", "", nova.chave), botaoCopiar(nova.chave));
-    $("chave-criada").replaceChildren(html("strong", "", "Chave nova — guarde agora, ela não aparece de novo:"), linha);
-    $("chave-criada").classList.remove("escondido");
+    mostrarChaveNova(nova.chave, "Chave nova — guarde agora, ela não aparece de novo:");
     $("nome-nova").value = "";
     await carregarConta();
   } catch (e) { $("erro-painel").textContent = e.message; }
@@ -1247,19 +1351,12 @@ $("form-assinar").onsubmit = async (evento) => {
   resultado.textContent = "Gerando o link…";
   $("erro-painel").textContent = "";
   try {
-    const r = (await chamar("POST", "/v1/conta/assinatura", {
-      plano: $("assinar-plano").value, ciclo: $("assinar-ciclo").value,
-      nome: $("assinar-nome").value.trim(), cpf_cnpj: $("assinar-doc").value.trim(),
-    })).dados;
-    if (r.pagar_em) {
-      const link = html("a", "", "Abrir o pagamento");
-      link.href = r.pagar_em;
-      link.target = "_blank";
-      link.rel = "noopener";
-      resultado.replaceChildren("Assinatura criada. ", link, ". O acesso muda quando o pagamento for confirmado.");
-    } else {
-      resultado.textContent = "Assinatura criada. O link de pagamento chega pelo e-mail da conta.";
-    }
+    const corpo = { plano: $("assinar-plano").value, ciclo: $("assinar-ciclo").value };
+    if (!contaAtual.cadastro_de_cobranca) { corpo.nome = $("assinar-nome").value.trim(); corpo.cpf_cnpj = $("assinar-doc").value.trim(); }
+    const r = (await chamar("POST", "/v1/conta/assinatura", corpo)).dados;
+    if (r.pagar_em) resultado.replaceChildren("Assinatura criada. ", linkDePagamento("Abrir o pagamento", r.pagar_em, ""), ". O acesso muda quando o pagamento for confirmado.");
+    else resultado.textContent = "Assinatura criada. O link de pagamento chega pelo e-mail da conta.";
+    await carregarConta();
   } catch (e) { resultado.textContent = ""; $("erro-painel").textContent = e.message; }
   finally { botao.disabled = false; }
 };
@@ -1291,6 +1388,13 @@ $("form-cadastro").onsubmit = async (evento) => {
     return;
   }
   const feito = json.dados, caixa = $("cadastro-feito");
+  sessionStorage.setItem(CHAVE, feito.chave);
+  if (await carregarConta()) {
+    $("form-cadastro").reset();
+    mostrarChaveNova(feito.chave, "Sua chave — guarde agora, ela não aparece de novo. Ela passa a funcionar quando o pagamento for confirmado.");
+    location.hash = "#conta";
+    return;
+  }
   const linha = html("div");
   linha.append(html("code", "", feito.chave), botaoCopiar(feito.chave));
   const pagar = html("p", "", "Ela passa a funcionar quando o pagamento for confirmado. ");
@@ -1311,7 +1415,7 @@ $("form-cadastro").onsubmit = async (evento) => {
   caixa.classList.remove("escondido");
   $("form-cadastro").classList.add("escondido");
 };
-$("sair").onclick = () => { sessionStorage.removeItem(CHAVE); $("painel-conta").classList.add("escondido"); $("chave-criada").classList.add("escondido"); $("entrar").classList.remove("escondido"); preencherAssinatura(); $("chave").focus(); };
+$("sair").onclick = () => { sessionStorage.removeItem(CHAVE); contaAtual = null; $("painel-conta").classList.add("escondido"); $("chave-criada").classList.add("escondido"); $("cartao-situacao").classList.add("escondido"); $("entrar").classList.remove("escondido"); $("chave").focus(); };
 
 mostrarTela(false);
 if (sessionStorage.getItem(CHAVE)) carregarConta();

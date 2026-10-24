@@ -45,6 +45,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [030](ADR-030-sem-exportacao-dois-planos.md) | A base não é entregue em arquivo, e a API de dados fica com dois planos | `ACEITO` | 2026-10-21 |
 | [031](ADR-031-assinatura-cria-a-conta.md) | Com a cobrança aberta, assinar cria a conta e entrega a chave na hora | `ACEITO` | 2026-10-23 |
 | [032](ADR-032-tesouro-direto-pelo-site-como-reserva.md) | Com o Tesouro Transparente fora, o retrato do dia vem do site do Tesouro Direto | `ACEITO` | 2026-10-24 |
+| [033](ADR-033-conta-sem-pagamento-entra-em-minha-conta.md) | A conta sem pagamento entra em Minha conta, e o painel segue a situação dela | `ACEITO` | 2026-10-24 |
 
 ---
 

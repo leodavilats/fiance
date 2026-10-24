@@ -11,6 +11,7 @@ import sqlalchemy as sa
 from dadosapi import acesso
 
 CONFIRMADOS = {"PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"}
+EM_ABERTO = {"PENDING", "OVERDUE"}
 ENCERRADOS = {"SUBSCRIPTION_DELETED", "SUBSCRIPTION_INACTIVATED"}
 CICLO_DO_ASAAS = {"mensal": "MONTHLY", "anual": "YEARLY"}
 ASSINATURAS_POR_DIA = 3
@@ -62,8 +63,8 @@ def criar_assinatura(
     conta_id: int,
     plano: str,
     ciclo: str,
-    nome: str,
-    cpf_cnpj: str,
+    nome: str | None,
+    cpf_cnpj: str | None,
     hoje: date | None = None,
 ) -> dict:
     with engine.connect() as conn:
@@ -95,6 +96,13 @@ def criar_assinatura(
             .scalars()
             .all()
         )
+        cliente_anterior = conn.execute(
+            sa.text(
+                "SELECT asaas_cliente FROM acesso.assinatura WHERE conta_id = :id "
+                "ORDER BY criada_em DESC, id DESC LIMIT 1"
+            ),
+            {"id": conta_id},
+        ).scalar()
     if conta is None:
         raise acesso.SemAcesso(404, "Conta não encontrada ou desativada.")
     if recentes >= ASSINATURAS_POR_DIA:
@@ -104,6 +112,9 @@ def criar_assinatura(
     centavos = None if preco is None else preco[0 if ciclo == "mensal" else 1]
     if centavos is None:
         raise acesso.SemAcesso(422, f"O plano {plano} não tem cobrança {ciclo} pela página.")
+    novo_cadastro = bool(nome and cpf_cnpj)
+    if not novo_cadastro and cliente_anterior is None:
+        raise acesso.SemAcesso(422, "Informe o nome e o CPF ou CNPJ de quem paga.")
 
     for antiga in vivas:
         asaas._pedir("DELETE", f"/subscriptions/{antiga}")
@@ -115,14 +126,18 @@ def criar_assinatura(
                 ),
                 {"a": antiga},
             )
-    cliente = asaas._pedir(
-        "POST", "/customers", {"name": nome, "cpfCnpj": cpf_cnpj, "email": conta.email}
+    cliente_id = (
+        asaas._pedir(
+            "POST", "/customers", {"name": nome, "cpfCnpj": cpf_cnpj, "email": conta.email}
+        )["id"]
+        if novo_cadastro
+        else cliente_anterior
     )
     assinatura = asaas._pedir(
         "POST",
         "/subscriptions",
         {
-            "customer": cliente["id"],
+            "customer": cliente_id,
             "billingType": "UNDEFINED",
             "value": centavos / 100,
             "nextDueDate": (hoje or acesso.hoje()).isoformat(),
@@ -136,11 +151,18 @@ def criar_assinatura(
                 "INSERT INTO acesso.assinatura (conta_id, plano, ciclo, asaas_cliente, "
                 "asaas_assinatura) VALUES (:c, :p, :ci, :cl, :a)"
             ),
-            {"c": conta_id, "p": plano, "ci": ciclo, "cl": cliente["id"], "a": assinatura["id"]},
+            {"c": conta_id, "p": plano, "ci": ciclo, "cl": cliente_id, "a": assinatura["id"]},
         )
-    cobrancas = asaas._pedir("GET", f"/subscriptions/{assinatura['id']}/payments").get("data") or []
-    link = cobrancas[0].get("invoiceUrl") if cobrancas else None
-    return {"assinatura": assinatura["id"], "pagar_em": link}
+    return {"assinatura": assinatura["id"], "pagar_em": link_em_aberto(asaas, assinatura["id"])}
+
+
+def link_em_aberto(asaas: Asaas, assinatura_id: str) -> str | None:
+    cobrancas = asaas._pedir("GET", f"/subscriptions/{assinatura_id}/payments").get("data") or []
+    abertas = sorted(
+        (c for c in cobrancas if c.get("status") in EM_ABERTO),
+        key=lambda c: str(c.get("dueDate") or ""),
+    )
+    return abertas[0].get("invoiceUrl") if abertas else None
 
 
 def processar_evento(engine: sa.Engine, asaas: Asaas, corpo: dict) -> str:
