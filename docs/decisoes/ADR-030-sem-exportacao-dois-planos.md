@@ -33,7 +33,7 @@ público. Construir a exportação aumentaria o risco do maior bloqueador da ven
 A alternativa 3.
 
 - **A base não é entregue em arquivo.** O acesso é pela API, consulta a consulta, e o portal diz isso
-  na lista do que o serviço não tem.
+  junto da cobertura, como regra — não na lista do que ainda não tem, que promete o que pode vir.
 - **Dois planos públicos:** Essencial e Pro, com os limites e preços da ADR-025.
 - **O recurso `exportacao` sai** de todos os planos, inclusive `interno` e `convidado`.
 - **Volume acima do Pro é contrato**, por um plano não listado criado quando houver o cliente, como

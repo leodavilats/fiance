@@ -452,7 +452,7 @@ footer a:hover { color: var(--tinta); text-decoration: underline; }
       </div>
       <div class="segmentos" role="tablist" aria-label="Cobertura da base">
         <button type="button" role="tab" id="seg-tem" aria-selected="true" aria-controls="painel-tem">Disponível<span>10</span></button>
-        <button type="button" role="tab" id="seg-falta" aria-selected="false" aria-controls="painel-falta" tabindex="-1">Ainda não tem<span>7</span></button>
+        <button type="button" role="tab" id="seg-falta" aria-selected="false" aria-controls="painel-falta" tabindex="-1">Ainda não tem<span>6</span></button>
       </div>
     </div>
     <div role="tabpanel" id="painel-tem" aria-labelledby="seg-tem">
@@ -474,12 +474,11 @@ footer a:hover { color: var(--tinta); text-decoration: underline; }
           </tbody>
         </table>
       </div>
-      <p class="nota-tabela">No Essencial, toda rota devolve os últimos dois anos; o histórico inteiro começa no Pro.</p>
+      <p class="nota-tabela">No Essencial, toda rota devolve os últimos dois anos; o histórico inteiro começa no Pro. A base não é entregue em arquivo: o acesso é pela API, consulta a consulta.</p>
     </div>
     <div role="tabpanel" id="painel-falta" aria-labelledby="seg-falta" hidden>
       <p class="nota-tabela" style="margin:0 0 16px">Uma base que esconde a própria lacuna faz o teste errar em silêncio. Estas são as conhecidas.</p>
       <ul class="lacunas">
-        <li><b>A base em arquivo</b>O acesso é pela API, consulta a consulta; a base não é entregue para download.</li>
         <li><b>Cotação ao longo do pregão</b>O dado é do fechamento, atualizado à noite nos dias úteis.</li>
         <li><b>Proventos de ETF e BDR antes de outubro de 2025</b>Nem a data de pagamento deles, ou de companhia, antes disso.</li>
         <li><b>Rendimento de FII antes de novembro de 2016</b>Depois disso vem do aviso do administrador no FundosNet; o mês sem aviso é estimado pelo informe da CVM, só vem quando pedido e marcado como estimado.</li>
