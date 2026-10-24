@@ -16,6 +16,7 @@ from datajob.esquema import cotacao, documento, indicador, rodada, valor_mobilia
 from datajob.fontes import (
     b3_cotahist,
     b3_emissores,
+    b3_fundosnet,
     b3_proventos,
     bcb_sgs,
     cvm_cadastro,
@@ -36,6 +37,8 @@ _BRT = ZoneInfo("America/Sao_Paulo")
 
 _SEXTA = 4
 PAUSA_ENTRE_EMISSORES = 0.5
+PAUSA_NO_FUNDOSNET = 0.2
+AVISOS_POR_RODADA = 3000
 
 Relatar = Callable[[str, coleta.Resultado | None], None]
 
@@ -293,6 +296,59 @@ def diario(
                 f"{len(falharam)} emissores sem proventos: {', '.join(falharam[:20])}"
             )
 
+    def avisos_do_fundosnet() -> None:
+        try:
+            ativos = b3_fundosnet.ativos(baixar)
+        except Ausente:
+            print("FundosNet: a lista de avisos não existe hoje.", flush=True)
+            return
+        with engine.connect() as conn:
+            coletados = set(
+                conn.execute(
+                    sa.text(
+                        "SELECT arquivo FROM mercado.coleta WHERE fonte = :f AND status = 'ok'"
+                    ),
+                    {"f": b3_fundosnet.FONTE},
+                ).scalars()
+            )
+        faltam = sorted((i for i in ativos if b3_fundosnet.nome(i) not in coletados), reverse=True)
+        falharam = []
+        try:
+            for documento_id in faltam[:AVISOS_POR_RODADA]:
+                nome = b3_fundosnet.nome(documento_id)
+                try:
+                    conteudo = baixar(b3_fundosnet.url_do_documento(documento_id))
+                except Ausente:
+                    relatar(nome, None)
+                    continue
+                try:
+                    relatar(
+                        nome,
+                        coleta.executar(
+                            engine,
+                            raiz,
+                            b3_fundosnet.FONTE,
+                            nome,
+                            conteudo,
+                            b3_fundosnet.processar,
+                            forcar=True,
+                        ),
+                    )
+                except Exception as e:
+                    falharam.append(nome)
+                    print(f"Falhou ({nome}): {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+                time.sleep(PAUSA_NO_FUNDOSNET)
+        finally:
+            with engine.begin() as conn:
+                descartados = b3_fundosnet.conciliar(conn, ativos)
+            print(
+                f"FundosNet: {len(ativos)} avisos ativos, {len(faltam)} a coletar, "
+                f"{descartados} proventos descartados por aviso inativo ou repetido.",
+                flush=True,
+            )
+        if falharam:
+            raise RuntimeError(f"{len(falharam)} avisos ilegíveis: {', '.join(falharam[:20])}")
+
     def rendimentos_de_fii() -> None:
         if _vazia(engine, "SELECT 1 FROM mercado.fii_mensal LIMIT 1"):
             _reprocessar_o_guardado(engine, raiz, relatar, cvm_fii.FONTE, cvm_fii.processar)
@@ -362,6 +418,7 @@ def diario(
         "séries do BCB": series_do_bcb,
         "Tesouro Direto": tesouro,
         "proventos e eventos da B3": proventos_e_eventos,
+        "avisos de rendimento do FundosNet": avisos_do_fundosnet,
         "rendimentos de FII da CVM": rendimentos_de_fii,
         "IPE da CVM": ipe,
         "FRE da CVM": fre,

@@ -36,6 +36,7 @@ As primeiras, baixadas e abertas em 2026-10-09; as demais, quando entraram na co
 | **Tesouro Direto — site** | `tesourodireto.com.br/o/rentabilidade/{investir,resgatar}` | JSON, não documentado | Só o dia corrente, com a marcação das 18h e sem PU base. Reserva do CSV ([ADR-032](../decisoes/ADR-032-tesouro-direto-pelo-site-como-reserva.md)) |
 | **B3 — emissores** | `sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies` | JSON, não documentado | Emissores listados hoje, com CNPJ |
 | **B3 — proventos e eventos** | o mesmo proxy, `GetListedCashDividends` e `GetListedSupplementCompany` | JSON, não documentado | Proventos em dinheiro e eventos em ações por emissor |
+| **B3 FundosNet** | `fnet.bmfbovespa.com.br/fnet/publico/`, `pesquisarGerenciadorDocumentosDados` e `downloadDocumento` | Lista em JSON, de 200 em 200; um XML por aviso | Aviso aos cotistas estruturado de rendimento e amortização de FII, de nov/2016 em diante: 35.530 avisos em 2026-10-24, com ISIN, data-base, data de pagamento e valor por cota. Versão substituída fica inativa; a cancelada, cancelada |
 
 **Duas descobertas que mudam o desenho:**
 
@@ -193,7 +194,7 @@ guarda.
 | `rodada` | `id` | Cada execução do data-job: início, fim e as etapas que falharam, com o erro. O painel `fiance-trend` alerta a partir dela |
 | `fii_mensal` | `(emissor, classe, referencia)` | Informe mensal de FII da CVM, 2016 em diante: CNPJ, nome, segmento, mandato, valor patrimonial da cota, patrimônio, cotas emitidas e yield do mês — a base do P/VP |
 | `quarentena` | `id` | Coleta, chave da linha, motivo, conteúdo bruto |
-| `provento` | `id` | Por emissor e classe: data-com, tipo, valor por ação, aprovação, `origem` (`b3_historico`, `b3_recente`, `cvm_estimado`) e `data_pagamento`, quando a fonte dá |
+| `provento` | `id` | Por emissor e classe: data-com, tipo, valor por ação, aprovação, `origem` (`b3_historico`, `b3_recente`, `fundosnet`, `cvm_estimado`) e `data_pagamento`, quando a fonte dá |
 | `evento` | `id` | Desdobramento, grupamento e bonificação da B3: ISIN, data-com, fator, multiplicador, status da conferência pelo preço e razão observada |
 | `evento_inferido` | `(cnpj, classe, data_com)` | Salto sem evento que virou evento: multiplicador, razão observada e o documento do IPE que o sustenta |
 | `ipe_documento` | `(protocolo, versao)` | Índice do IPE da CVM: CNPJ, entrega, referência, categoria, tipo, espécie, assunto, link |
@@ -247,7 +248,7 @@ python -m datajob diario                         # o que o cron roda; com o banc
 python -m datajob reprocessar --fonte cvm_dfp    # do bruto guardado, sem baixar
 ```
 
-`reprocessar` aceita qualquer fonte: `b3_cotahist`, `b3_emissores`, `b3_proventos`, `cvm_cadastro`,
+`reprocessar` aceita qualquer fonte: `b3_cotahist`, `b3_emissores`, `b3_proventos`, `b3_fundosnet`, `cvm_cadastro`,
 `cvm_fca`, `cvm_dfp`, `cvm_itr`, `cvm_fre`, `cvm_ipe`, `cvm_fii`, `tesouro_direto`. Não há comando
 de carga histórica: o `diario` com o banco vazio busca cada fonte desde o primeiro ano dela.
 
@@ -264,6 +265,7 @@ impede as seguintes. Cron no Railway, 23h de Brasília, depois de cada pregão.
 | Séries do BCB | Toda rodada | Desde a última data gravada de cada série |
 | Tesouro Direto | Toda rodada | O arquivo inteiro do Tesouro Transparente; se ele falhar, o retrato do dia pelo site do Tesouro Direto |
 | Proventos e eventos da B3 | **Às sextas** (e na primeira carga) | Por emissor: companhias com histórico; fundos e BDRs negociados nos últimos dois anos, só os recentes |
+| Avisos de rendimento do FundosNet | Toda rodada | A lista inteira, para saber o que está ativo; baixa os avisos ativos ainda não coletados, do mais novo para o mais antigo, até 3.000 por rodada |
 | Informe de FII da CVM | Toda rodada | Ano corrente e anterior |
 | IPE e FRE da CVM | Toda rodada | Ano corrente e anterior |
 | Composição do capital | Só com a tabela vazia | Do bruto de DFP e ITR já guardado |

@@ -185,21 +185,27 @@ recentes — cerca de 12 meses antes da primeira coleta, em out/2026. Esses se *
 apagados; o histórico de companhia (`b3_historico`) substitui tudo o que veio da B3 para o emissor.
 Entram os fundos e BDRs negociados nos últimos dois anos.
 
-**O rendimento de FII anterior aos recentes da B3 é estimado** pelo informe mensal da CVM (2016 em diante): o
+**O rendimento e a amortização de FII de nov/2016 em diante vêm dos avisos do FundosNet**, o sistema da
+B3 em que o administrador publica o aviso aos cotistas (`origem = 'fundosnet'`): valor por cota, data-base
+como data-com e data de pagamento. Só conta o aviso ativo — a versão substituída e o aviso cancelado têm
+os proventos apagados a cada rodada. O que a B3 já deu entre os recentes, com valor a até 1%, fica com
+a B3; aviso repetido do mesmo fundo, dia, tipo e valor conta uma vez. A cota cujo ISIN nunca negociou
+fica de fora.
+
+**O rendimento de FII sem aviso nem B3 é estimado** pelo informe mensal da CVM (2016 em diante): o
 yield do mês vezes o valor patrimonial da cota, com data-com no último dia do mês de referência
 (`origem = 'cvm_estimado'`). Conferido em 2024: HGLG11 e KNRI11 batem no centavo; MXRF11 erra até 10%
-num mês. No mês em que a B3 deu o pago, o estimado sai da série; `provento_estimado` marca o dia que
+num mês. No mês em que a B3 ou o FundosNet deram o pago, o estimado sai da série; `provento_estimado` marca o dia que
 usou estimativa.
 
 **Limites declarados:**
 
-- **Rendimento antigo de ETF, Fiagro e BDR não existe na base**, nem o de FII antes de 2016. O que é
-  anterior aos recentes trazidos pela primeira coleta (out/2026) só entra se vier de outra fonte
-- **Amortização de cota de FII não entra pela CVM**, só pela B3
-- **Data de pagamento só nos proventos recentes.** O histórico da B3 não a traz; os recentes trazem
-  (`provento.data_pagamento`), e ela preenche também a linha do histórico de mesmo valor e data-com. Os
-  recentes cobrem cerca de 12 meses antes da primeira coleta (out/2026): antes de out/2025, o provento
-  fica sem data de pagamento
+- **Rendimento antigo de ETF, Fiagro e BDR não existe na base**, nem o de FII antes de nov/2016. O que
+  é anterior aos recentes trazidos pela primeira coleta (out/2026) só entra se vier de outra fonte
+- **Data de pagamento só nos proventos recentes e nos de FII.** O histórico da B3 não a traz; os
+  recentes trazem (`provento.data_pagamento`), e ela preenche também a linha do histórico de mesmo valor
+  e data-com. Os recentes cobrem cerca de 12 meses antes da primeira coleta (out/2026): antes de
+  out/2025, o provento de companhia, ETF e BDR fica sem data de pagamento; o de FII a tem pelo aviso
 - **Provento bruto.** O JCP tem imposto retido na fonte, e o retorno total não o desconta
 - **Cisão e redução de capital não ajustam** (Itaú/XP em 2021): o preço cai sem que a série saiba por quê
 - **Emissor que a B3 não encontra fica sem proventos** — a ALL, incorporada pela Rumo em 2015

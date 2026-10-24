@@ -463,7 +463,7 @@ footer a:hover { color: var(--tinta); text-decoration: underline; }
           <tbody>
             <tr><th scope="row">Cotação diária<small>Abertura, máxima, mínima, fechamento e volume, inclusive de quem saiu da bolsa</small></th><td class="periodo">jan. de 2005</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/cotacoes</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
             <tr><th scope="row">Série ajustada<small>Eventos conferidos pelo preço, provento na data-com e retorno total, através de troca de ticker</small></th><td class="periodo">jan. de 2005</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/serie</button></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
-            <tr><th scope="row">Proventos<small>Data-com, data de pagamento, tipo e valor</small></th><td class="periodo">1995, de companhias</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/proventos</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
+            <tr><th scope="row">Proventos<small>Data-com, data de pagamento, tipo e valor</small></th><td class="periodo">1995, de companhias; nov. de 2016, de FII</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/proventos</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
             <tr><th scope="row">Eventos corporativos<small>Desdobramento, grupamento e bonificação, com o status da conferência pelo preço</small></th><td class="periodo">conforme a B3</td><td class="rota"><button class="rota-copiar" type="button">/v1/ativos/{codigo}/eventos</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
             <tr><th scope="row">Demonstrações financeiras<small>DFP e ITR da CVM, todas as versões, com a data de entrega</small></th><td class="periodo">exercício de 2010</td><td class="rota"><button class="rota-copiar" type="button">/v1/empresas/{cnpj}/demonstracoes</button></td><td class="plano-min"><span class="etiqueta">Essencial</span></td></tr>
             <tr><th scope="row">Balanço como se sabia na data<small>As mesmas demonstrações, só com o que já tinha sido entregue no dia pedido</small></th><td class="periodo">exercício de 2010</td><td class="rota"><button class="rota-copiar" type="button">/v1/empresas/{cnpj}/demonstracoes?sabido_em=2019-05-15</button></td><td class="plano-min"><span class="etiqueta pro">Pro</span></td></tr>
@@ -481,8 +481,8 @@ footer a:hover { color: var(--tinta); text-decoration: underline; }
       <ul class="lacunas">
         <li><b>A base em arquivo</b>O acesso é pela API, consulta a consulta; a base não é entregue para download.</li>
         <li><b>Cotação ao longo do pregão</b>O dado é do fechamento, atualizado à noite nos dias úteis.</li>
-        <li><b>Proventos de ETF e BDR antes de outubro de 2025</b>Nem a data de pagamento deles antes disso.</li>
-        <li><b>Rendimento de FII anterior a outubro de 2025</b>Estimado pelo informe da CVM; só vem quando pedido, e marcado como estimado.</li>
+        <li><b>Proventos de ETF e BDR antes de outubro de 2025</b>Nem a data de pagamento deles, ou de companhia, antes disso.</li>
+        <li><b>Rendimento de FII antes de novembro de 2016</b>Depois disso vem do aviso do administrador no FundosNet; o mês sem aviso é estimado pelo informe da CVM, só vem quando pedido e marcado como estimado.</li>
         <li><b>Cisão e redução de capital</b>Não ajustam a série ajustada.</li>
         <li><b>Balanço de BDR</b>A CVM não publica demonstração de empresa estrangeira.</li>
         <li><b>Evento que a B3 não publicou</b>Quando o preço salta sem evento conhecido, o dia vem marcado em <code>salto_sem_evento</code>; a série não é corrigida por suposição.</li>

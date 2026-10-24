@@ -20,6 +20,7 @@ export const NOME_DO_TIPO: Record<string, string> = {
 const NOME_DA_ORIGEM: Record<string, string> = {
   b3_historico: "B3, histórico de companhia",
   b3_recente: "B3, recentes acumulados",
+  fundosnet: "B3, aviso de FII no FundosNet",
   cvm_estimado: "CVM, estimado pelo informe de FII",
 };
 

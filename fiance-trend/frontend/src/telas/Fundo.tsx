@@ -23,6 +23,7 @@ type DetalheDoFundo = {
 const ORIGEM: Record<string, string> = {
   b3_historico: "B3",
   b3_recente: "B3",
+  fundosnet: "FundosNet",
   cvm_estimado: "estimado (CVM)",
 };
 

@@ -85,12 +85,12 @@ Não há juro em dólar na base para descontar lucro em dólar
 
 ## Base de mercado
 
-### Proventos antigos de BDR, ETF e FII não estão na base
+### Proventos antigos de BDR e ETF não estão na base
 
 A B3 só dá o histórico de proventos de companhia; de fundo e BDR, cerca de 12 meses antes da
-primeira coleta (out/2026). **Faltam os proventos de BDR antes de out/2025**, boa parte dos de ETF, e
-os de FII antes de 2016 — de 2016 a out/2025, o mês de FII sem dado da B3 é estimado pelo informe
-mensal da CVM. Só entra se vier de outra fonte. Detalhe em
+primeira coleta (out/2026). O FII tem os avisos do FundosNet desde nov/2016, mas ETF e BDR não
+publicam lá. **Faltam os proventos de BDR antes de out/2025**, boa parte dos de ETF, e os de FII
+antes de nov/2016. Só entra se vier de outra fonte. Detalhe em
 [base/tratamento](base/tratamento.md#eventos-e-proventos).
 
 ### A série ajustada ainda tem eventos sem prova

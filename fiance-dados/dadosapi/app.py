@@ -39,9 +39,10 @@ em que foram entregues à CVM, informe mensal de FII, Tesouro Direto e séries d
 **O dado é do fechamento**: a base é atualizada uma vez por dia útil, à noite. Não há cotação ao
 longo do pregão.
 
-**Lacunas conhecidas:** proventos de ETF e BDR só a partir de out/2025; data de pagamento só nos
-proventos a partir de out/2025; rendimento de FII anterior a isso é estimado pelo informe da CVM e
-só vem com `incluir_estimados=true`; cisão e redução de capital não ajustam a série.
+**Lacunas conhecidas:** proventos de ETF e BDR só a partir de out/2025, e data de pagamento de
+companhia, ETF e BDR também; rendimento de FII só a partir de nov/2016, pelo aviso do administrador
+no FundosNet (`origem` `fundosnet`), e o mês sem aviso é estimado pelo informe da CVM e só vem com
+`incluir_estimados=true`; cisão e redução de capital não ajustam a série.
 """
 
 

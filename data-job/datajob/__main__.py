@@ -13,6 +13,7 @@ from datajob.erros import ArquivoInvalido
 from datajob.fontes import (
     b3_cotahist,
     b3_emissores,
+    b3_fundosnet,
     b3_proventos,
     cvm_cadastro,
     cvm_demonstracoes,
@@ -30,6 +31,7 @@ _FONTES = {
     cvm_fca.FONTE: cvm_fca.processar,
     b3_emissores.FONTE: b3_emissores.processar,
     b3_proventos.FONTE: b3_proventos.processar,
+    b3_fundosnet.FONTE: b3_fundosnet.processar,
     cvm_ipe.FONTE: cvm_ipe.processar,
     cvm_fre.FONTE: cvm_fre.processar,
     cvm_fii.FONTE: cvm_fii.processar,
