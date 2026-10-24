@@ -2,7 +2,7 @@
 
 **Fonte de verdade** para a pergunta *"isto existe?"*, em todas as partes. Nenhum outro documento
 responde isso.
-Última revisão: 2026-10-21 · Escopo: app, base de mercado, API de dados e laboratório
+Última revisão: 2026-10-24 · Escopo: app, base de mercado, API de dados e laboratório
 
 Se um documento descrever uma funcionalidade e este arquivo disser que ela não existe, **este
 arquivo vence**.
@@ -38,7 +38,7 @@ tela.
 |---|---|---|
 | App | O autor. Nada publicado em loja, nenhuma conta de desenvolvedor | Android `[ATUAL]`, no aparelho do autor. iOS `[DESCONHECIDO]` — **nunca executado**, nem em simulador |
 | Base de mercado | Os dois produtos e o laboratório | Railway, cron diário |
-| API de dados | O app, com a chave `interno`; convidados, sem cobrança | `https://fiance-dados.up.railway.app` |
+| API de dados | O app, com a chave `interno`; convidados, sem cobrança; o autor, com a cobrança pelo Asaas | `https://fiance-dados.up.railway.app` |
 | Laboratório | O autor | `https://fiance-trend.up.railway.app`, com senha |
 
 `[ATUAL]` aqui quer dizer *"exercitado por um usuário real"* — não *"validado em escala"*. Todo
@@ -248,7 +248,7 @@ O que o `data-job/` coleta e entrega no schema `mercado`. Como cada dado é trat
 
 | Item | Estado | O quê |
 |---|---|---|
-| API de dados (`fiance-dados/`) | `[IMPLEMENTADO]` | Contas por convite e, com a cobrança aberta, pela assinatura no portal ([ADR-031](decisoes/ADR-031-assinatura-cria-a-conta.md)), chaves com hash, planos com limite por minuto e por dia, histórico por plano, uso por chave e por dia, rotas `/v1` de ativos, cotação, série ajustada, proventos, eventos, demonstrações como se sabia na data, informe de FII, BCB e Tesouro; administração em `/admin`, portal em `/` e console em `/console`, com a fumaça de cada plano. Planos Essencial e Pro, sem gratuito e sem exportação da base; cobrança pelo Asaas implementada e desligada (`COBRANCA_ATIVA`) — [ADR-024](decisoes/ADR-024-api-de-dados.md), [ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md), [ADR-030](decisoes/ADR-030-sem-exportacao-dois-planos.md) |
+| API de dados (`fiance-dados/`) | `[IMPLEMENTADO]` | Contas por convite e, com a cobrança aberta, pela assinatura no portal ([ADR-031](decisoes/ADR-031-assinatura-cria-a-conta.md)), chaves com hash, planos com limite por minuto e por dia, histórico por plano, uso por chave e por dia, rotas `/v1` de ativos, cotação, série ajustada, proventos, eventos, demonstrações como se sabia na data, informe de FII, BCB e Tesouro; administração em `/admin`, portal em `/` e console em `/console`, com a fumaça de cada plano. Planos Essencial e Pro, sem gratuito e sem exportação da base; cobrança pelo Asaas ligada em produção, usada só pelo autor, com estorno que recua o acesso e conferência do Asaas a cada seis horas — [ADR-024](decisoes/ADR-024-api-de-dados.md), [ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md), [ADR-030](decisoes/ADR-030-sem-exportacao-dois-planos.md), [ADR-034](decisoes/ADR-034-cobranca-ligada-e-conferida.md) |
 
 O que cada plano libera, e o que ainda não tem rota, em [dados/](dados/README.md).
 

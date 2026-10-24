@@ -2,7 +2,7 @@
 
 **Fonte de verdade** para o que o fiance é, de que partes é feito e o que cada uma promete. A
 visão de cada produto mora na pasta dele.
-Última revisão: 2026-10-21
+Última revisão: 2026-10-24
 
 ---
 
@@ -85,9 +85,9 @@ As regras de produto valem desde já, nos dois produtos.
 |---|---|---|
 | Modelo | Assinatura, sem gratuidade, trial de 14 dias | Assinatura mensal ou anual, sem plano gratuito: Essencial e Pro. A base não é entregue em arquivo |
 | Preço | Até R$ 9,90 por mês | R$ 49 e R$ 149 por mês — hipótese |
-| Cobrança | Compra dentro do app, via RevenueCat — não iniciada | Asaas, implementada e desligada |
+| Cobrança | Compra dentro do app, via RevenueCat — não iniciada | Asaas, ligada e usada só pelo autor |
 | Condição para cobrar | Publicação nas lojas | Licença de dado da B3, leitura da ODbL da CVM, CNPJ e termos de uso |
-| Decisões | [ADR-008](decisoes/ADR-008-monetizacao-por-loja.md), [ADR-009](decisoes/ADR-009-trial-e-gratuidade.md) | [ADR-024](decisoes/ADR-024-api-de-dados.md), [ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md), [ADR-030](decisoes/ADR-030-sem-exportacao-dois-planos.md) |
+| Decisões | [ADR-008](decisoes/ADR-008-monetizacao-por-loja.md), [ADR-009](decisoes/ADR-009-trial-e-gratuidade.md) | [ADR-024](decisoes/ADR-024-api-de-dados.md), [ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md), [ADR-030](decisoes/ADR-030-sem-exportacao-dois-planos.md), [ADR-034](decisoes/ADR-034-cobranca-ligada-e-conferida.md) |
 
 Detalhe e hipótese de cada um em [app/produto](app/produto.md#modelo-de-negócio) e
 [dados/](dados/README.md#modelo-de-negócio).

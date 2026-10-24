@@ -1,8 +1,9 @@
 # API de dados — `fiance-dados`
 
 **Fonte de verdade** para o que a API de dados oferece, a quem, por quanto e como se opera. O porquê
-está na [ADR-024](../decisoes/ADR-024-api-de-dados.md) e na
-[ADR-025](../decisoes/ADR-025-cobranca-da-api-de-dados.md); as rotas e os campos, no OpenAPI do
+está na [ADR-024](../decisoes/ADR-024-api-de-dados.md), na
+[ADR-025](../decisoes/ADR-025-cobranca-da-api-de-dados.md) e na
+[ADR-034](../decisoes/ADR-034-cobranca-ligada-e-conferida.md); as rotas e os campos, no OpenAPI do
 próprio serviço (`/docs`).
 Última revisão: 2026-10-24
 
@@ -18,7 +19,7 @@ chaves e planos.
 | O que entrega | Cotação desde 2005 com as empresas que saíram da bolsa, série ajustada com os eventos conferidos pelo preço, proventos, demonstrações como se sabia em cada data, informe mensal de FII, séries do BCB e Tesouro Direto |
 | Para quem | Quem testa estratégia ou analisa empresa com dado da B3 e da CVM: investidor quantitativo, analista, desenvolvedor |
 | Primeiro cliente | O próprio app, com uma chave do plano `interno` (`backend/app/collectors/mercado.py`) |
-| Acesso hoje | Por convite, sem cobrança |
+| Acesso hoje | Por convite, sem cobrança. A cobrança está ligada, e só o autor paga por ela ([ADR-034](../decisoes/ADR-034-cobranca-ligada-e-conferida.md)) |
 
 **A hipótese:** quem testa estratégia paga por não ter de montar a base — principalmente pelo que é
 difícil de achar organizado: o histórico com quem saiu da bolsa, o ajuste por evento e o balanço sem
@@ -52,7 +53,8 @@ o acesso é pela API, consulta a consulta. Volume acima do Pro é contrato, por 
 criado quando houver o cliente.
 
 **Condição para cobrar de terceiros:** a resposta da B3 sobre a licença do dado, a leitura da ODbL
-da CVM, CNPJ e termos de uso. Até lá a cobrança fica desligada.
+da CVM, CNPJ e termos de uso. Até lá a cobrança fica ligada só para o autor: a assinatura está no
+portal, e ninguém é levado até ela.
 
 ---
 
@@ -64,7 +66,7 @@ da CVM, CNPJ e termos de uso. Até lá a cobrança fica desligada.
 | `/v1`, `/v1/planos`, `/v1/vitrine` | Sem chave: o índice, os planos públicos e o exemplo do portal |
 | `/` | Portal público, em telas por âncora (`#inicio`, `#exemplo`, `#dados`, `#uso`, `#planos`, `#assinar`, `#conta`): o que o serviço oferece, a documentação, a assinatura de quem chega e "minha conta" para quem tem chave, com a situação do pagamento |
 | `/docs` | OpenAPI público. As rotas `/admin` ficam fora dele |
-| `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`, `#fumaca`): contas, uso por dia e por conta, emitir e revogar chave, desativar, e a [fumaça](#fumaça-em-produção). Pede o token de administração na tela e o guarda só na aba |
+| `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`, `#fumaca`): contas, uso por dia e por conta, emitir e revogar chave, desativar, a [fumaça](#fumaça-em-produção) e as pendências da [cobrança](#cobrança). Pede o token de administração na tela e o guarda só na aba |
 | `/admin/...` | Administração, por `X-Admin-Token` |
 | `/cobranca/asaas` | Webhook do Asaas |
 | `/saude` | Saúde |
@@ -135,30 +137,65 @@ pagamento respondem 402 nas rotas de dados.
 
 ## Cobrança
 
-Pelo Asaas (`dadosapi/cobranca.py`), **implementada e desligada** (`COBRANCA_ATIVA`). Desligada,
-`POST /v1/assinatura`, `POST /v1/conta/assinatura` e o webhook respondem 503.
+Pelo Asaas (`dadosapi/cobranca.py`), atrás de `COBRANCA_ATIVA`. **Está ligada em produção, e só o
+autor paga** ([ADR-034](../decisoes/ADR-034-cobranca-ligada-e-conferida.md)). Desligada,
+`POST /v1/assinatura`, `POST /v1/conta/assinatura`, o webhook e a conferência respondem 503.
 
 Ligada: a página assina Essencial ou Pro, o serviço cria cliente e
 assinatura no Asaas e devolve o link de pagamento. **Quem não tem conta assina pelo
-`POST /v1/assinatura`**, sem chave: nome, e-mail e CPF ou CNPJ criam a conta no plano escolhido, e
-a resposta traz a chave, uma vez só, e o link. A chave responde 402 até o pagamento ser confirmado.
-E-mail de conta existente recebe 409 e assina em "Minha conta"; cadastro que nunca pagou é
-retomado por quem assina de novo, e as chaves antigas caem, salvo se houver assinatura de até sete
-dias aguardando pagamento. Cinco cadastros por hora por endereço.
+`POST /v1/assinatura`**, sem chave, e a resposta traz a chave, uma vez só, e o link. A chave
+responde 402 até o pagamento ser confirmado. E-mail de conta existente recebe 409 e assina em
+"Minha conta"; cadastro que nunca pagou é retomado por quem assina de novo, e as chaves antigas
+caem, salvo se houver assinatura de até sete dias aguardando pagamento. Cinco cadastros por hora por
+endereço.
+
+**O que se pede de quem paga:**
+
+| Campo | | Onde fica |
+|---|---|---|
+| `nome` | obrigatório | na conta e no cliente do Asaas |
+| `email` | obrigatório; o portal pede duas vezes | na conta e no cliente do Asaas |
+| `cpf_cnpj` | obrigatório; validado aqui pelo dígito, com ou sem máscara, inclusive o CNPJ com letras | só no Asaas |
+| `cep` | obrigatório, oito dígitos | só no Asaas |
+| `numero` | obrigatório, até 10 caracteres (`S/N` vale) | só no Asaas |
+| `telefone` | opcional; celular com DDD, para o lembrete do Asaas | só no Asaas |
+
+Documento, CEP ou telefone inválido respondem 422 antes de qualquer gravação e de qualquer chamada
+ao Asaas. Cliente e assinatura levam `externalReference` com o id da conta.
 
 Quem já tem chave assina, renova ou troca de plano pelo `POST /v1/conta/assinatura`, mesmo sem
-pagamento em dia; nome e CPF ou CNPJ só são pedidos se a conta nunca assinou, porque a renovação
-usa o cliente do Asaas que já existe. No `/v1/conta`, a assinatura traz `pagar_em`, consultado no
-Asaas na hora, ou `pagar_em_indisponivel` quando ele não responde.
+pagamento em dia; os dados de quem paga só são pedidos se a conta nunca assinou, porque a renovação
+usa o cliente do Asaas que já existe. No `/v1/conta`, a assinatura traz `pagar_em`, o link da
+cobrança vencida mais antiga ou, sem vencida, da pendente, consultado no Asaas na hora, ou
+`pagar_em_indisponivel` quando ele não responde. Uma conta abre no máximo três assinaturas por dia.
 
-O Asaas avisa em `POST /cobranca/asaas`, com o token no cabeçalho `asaas-access-token`; cada evento entra uma vez, o pagamento é **reconsultado**
-antes de liberar, e o titular sai da assinatura gravada aqui, nunca do corpo do webhook. O pagamento
-confirmado leva `pago_ate` ao fim do ciclo. Evento gravado sem `resultado` caiu antes de aplicar, e
-a reentrega do Asaas o aplica de novo. Uma conta abre no máximo três assinaturas por dia.
+**Assinar de novo cria a assinatura nova antes de cancelar a viva anterior**, que fica
+`substituida`; o que já foi pago vale até o `pago_ate`. Se o Asaas recusar a nova, a antiga segue
+intacta. Se a antiga não for cancelada na hora, fica com `cancelamento_pendente`, e a conferência
+tenta de novo.
 
-**Assinar de novo cancela no Asaas a assinatura viva anterior**, que fica `substituida`; o que já foi
-pago vale até o `pago_ate`. Pagamento que ainda chegue de uma substituída não muda a conta: o evento
-fica com o resultado "ignorado: assinatura substituída … estornar", para o estorno à mão.
+**O webhook** é `POST /cobranca/asaas`, com o token no cabeçalho `asaas-access-token`. Cada evento
+entra uma vez. Evento gravado sem `resultado` caiu antes de aplicar, e a reentrega do Asaas o aplica
+de novo. O corpo só aponta o pagamento: o estado e o titular saem da **consulta ao Asaas** e da
+assinatura gravada aqui. Para cada estado do pagamento:
+
+| Estado no Asaas | Efeito |
+|---|---|
+| `CONFIRMED`, `RECEIVED`, `RECEIVED_IN_CASH` | Grava o pagamento em `acesso.pagamento` e leva o `pago_ate` ao fim do ciclo. Põe a conta no plano da assinatura só se é ele que estende o `pago_ate`: pagamento antigo não desfaz ajuste à mão |
+| Os mesmos, numa assinatura `substituida` | Pede o estorno ao Asaas. Se ele recusar, ou negar depois, o evento fica com "estornar à mão" |
+| Estornado, em chargeback ou removido | Marca o pagamento como estornado. Se era ele que segurava o `pago_ate`, o recua ao último pagamento que segue de pé ou, sem outro, à véspera do vencimento dele |
+| Qualquer outro | Ignorado |
+
+Os eventos que levam à consulta são os de confirmação, recebimento, estorno, chargeback, remoção e
+restauração; o resto é ignorado sem chamar o Asaas.
+
+**A conferência** (`cobranca.conferir`) roda sozinha um minuto depois de o serviço subir e depois a
+cada seis horas, e na hora pelo console (`POST /admin/cobranca/conferir`). Ela cancela as
+substituídas pendentes, aplica os pagamentos confirmados das assinaturas vivas que ainda não estão em
+`acesso.pagamento` e reconsulta os pagamentos que seguram acesso hoje, para achar estorno. É o que
+cobre a fila de webhooks que o Asaas interrompe depois de 15 falhas seguidas. `GET /admin/cobranca`
+traz a última conferência e as pendências: evento sem resultado há mais de uma hora e estorno à mão
+dos últimos 30 dias. O console as mostra em "Pede atenção".
 
 ## Variáveis
 
@@ -169,7 +206,7 @@ fica com o resultado "ignorado: assinatura substituída … estornar", para o es
 | `CONTATO_WHATSAPP` | Opcional. Com ele, o "Pedir um convite" do portal abre o WhatsApp (`wa.me`) com a mensagem pronta. Só os dígitos contam, com o 55 do país |
 | `CONTATO_EMAIL` | Opcional. Sem WhatsApp, o "Pedir um convite" abre o e-mail |
 | `PROXIES_CONFIAVEIS` | `1` por padrão: o proxy do Railway. Quantos endereços, da direita do `X-Forwarded-For`, foram escritos por proxy; `0` usa o IP da conexão |
-| `COBRANCA_ATIVA` | `false` por padrão. `true` abre a assinatura pela página e o webhook |
+| `COBRANCA_ATIVA` | `false` por padrão. `true` abre a assinatura pela página, o webhook e a conferência. Em produção, `true` |
 | `ASAAS_API_KEY` | Obrigatória com a cobrança ativa |
 | `ASAAS_WEBHOOK_TOKEN` | 32 caracteres ou mais. Obrigatória com a cobrança ativa |
 | `ASAAS_URL` | `https://api.asaas.com/v3`; o sandbox é `https://api-sandbox.asaas.com/v3` |

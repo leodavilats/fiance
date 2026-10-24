@@ -46,6 +46,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [031](ADR-031-assinatura-cria-a-conta.md) | Com a cobrança aberta, assinar cria a conta e entrega a chave na hora | `ACEITO` | 2026-10-23 |
 | [032](ADR-032-tesouro-direto-pelo-site-como-reserva.md) | Com o Tesouro Transparente fora, o retrato do dia vem do site do Tesouro Direto | `ACEITO` | 2026-10-24 |
 | [033](ADR-033-conta-sem-pagamento-entra-em-minha-conta.md) | A conta sem pagamento entra em Minha conta, e o painel segue a situação dela | `ACEITO` | 2026-10-24 |
+| [034](ADR-034-cobranca-ligada-e-conferida.md) | A cobrança liga para o autor, o cadastro pede o endereço, e o Asaas é conferido | `ACEITO` | 2026-10-24 |
 
 ---
 
@@ -90,7 +91,8 @@ datada, e a ADR continua como foi escrita.
   14 (003) e o "FII de papel" (014) não estão mais abertos.
 - **022 e 024** — o backend não lê o banco de mercado: lê pela `fiance-dados`, com a chave do plano
   `interno`. O "passo seguinte" da 024 já foi dado.
-- **025** — o Quant e a exportação saíram pela [ADR-030](ADR-030-sem-exportacao-dois-planos.md).
+- **025** — o Quant e a exportação saíram pela [ADR-030](ADR-030-sem-exportacao-dois-planos.md); a
+  cobrança ligou antes da licença, só para o autor, pela [ADR-034](ADR-034-cobranca-ligada-e-conferida.md).
 - **024** — com a cobrança aberta, a conta também nasce na assinatura, pela
   [ADR-031](ADR-031-assinatura-cria-a-conta.md); o convite continua para quem não paga.
 

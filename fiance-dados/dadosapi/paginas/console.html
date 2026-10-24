@@ -292,6 +292,7 @@ dialog.pequeno { width: 460px; }
         <div class="bloco">
           <h2>Pede atenção <small id="atencao-contagem"></small></h2>
           <ul class="caixa atencao" id="atencao" aria-label="O que pede atenção"></ul>
+          <p class="dica escondido" id="conferencia"><span id="conferencia-texto"></span> <button type="button" id="conferir-agora">Conferir agora</button></p>
         </div>
         <div class="bloco">
           <h2>Requisições, últimos 30 dias <a href="#uso">Ver o uso</a></h2>
@@ -682,9 +683,10 @@ document.addEventListener("keydown", (e) => {
 /* ---------- carga ---------- */
 let usoGeral = [];
 async function carregar() {
-  const [contas, planos, uso] = await Promise.all([chamar("GET", "/admin/contas"), chamar("GET", "/admin/planos"), chamar("GET", "/admin/uso?dias=30")]);
+  const [contas, planos, uso, cobranca] = await Promise.all([chamar("GET", "/admin/contas"), chamar("GET", "/admin/planos"), chamar("GET", "/admin/uso?dias=30"), chamar("GET", "/admin/cobranca")]);
   estado.contas = contas;
   estado.planos = planos;
+  estado.cobranca = cobranca;
   usoGeral = uso;
   $("tela-entrada").classList.add("escondido");
   $("tela-painel").classList.remove("escondido");
@@ -741,14 +743,24 @@ function desenharVisao() {
   );
 
   const ALERTAS = {
+    cobranca: ["sem_pagamento", "Cobrança"],
     pagamento: ["sem_pagamento", "Sem pagamento"],
     tolerancia: ["em_tolerancia", "Em tolerância"],
     limite: ["em_tolerancia", "Perto do limite"],
     vence: ["a_vencer", "Vence em breve"],
     sem_chave: ["desativada", "Sem chave"],
   };
-  const ORDEM_ALERTA = ["pagamento", "tolerancia", "limite", "vence", "sem_chave"];
+  const ORDEM_ALERTA = ["cobranca", "pagamento", "tolerancia", "limite", "vence", "sem_chave"];
   const itens = [];
+  const cobranca = estado.cobranca || { pendencias: [] };
+  for (const p of cobranca.pendencias) {
+    itens.push(["cobranca", null, p.resultado === null
+      ? [el("b", {}, p.tipo), ` — evento ${p.id} chegou ${relativo(p.recebido_em)} e não foi aplicado: o Asaas reenvia, e a conferência o pega.`]
+      : [el("b", {}, p.tipo), ` — ${p.resultado}. Evento ${p.id}, ${dataHora(p.recebido_em)}.`]]);
+  }
+  for (const falha of (cobranca.ultima_conferencia || {}).falhas || []) {
+    itens.push(["cobranca", null, [el("b", {}, "Conferência do Asaas"), ` — ${falha}.`]]);
+  }
   for (const c of contas) {
     const nome = el("b", {}, c.nome);
     if (c.situacao === "sem_pagamento") itens.push(["pagamento", c, [nome, ` — plano ${c.plano_nome} sem pagamento em dia: as chaves respondem 402.`]]);
@@ -762,7 +774,12 @@ function desenharVisao() {
   lista.replaceChildren(...itens.map(([tipo, c, texto]) => el("li", {},
     el("span", { class: `etiqueta ${ALERTAS[tipo][0]}` }, ALERTAS[tipo][1]),
     el("span", { class: "texto" }, ...texto),
-    el("button", { type: "button", "aria-label": `Abrir a conta de ${c.nome}`, onclick: () => abrirConta(c.id) }, "Abrir"))));
+    c ? el("button", { type: "button", "aria-label": `Abrir a conta de ${c.nome}`, onclick: () => abrirConta(c.id) }, "Abrir") : null)));
+  const ultima = cobranca.ultima_conferencia;
+  $("conferencia").classList.toggle("escondido", !cobranca.ligada);
+  $("conferencia-texto").textContent = ultima && ultima.em
+    ? `Asaas conferido ${relativo(ultima.em)}: ${ultima.aplicados.length ? ultima.aplicados.length + " ajuste(s) aplicado(s)" : "nada fora do lugar"}. Confere sozinho a cada 6 horas.`
+    : "O Asaas é conferido sozinho a cada 6 horas; ainda não rodou desde o último deploy.";
   if (!itens.length) {
     const ok = el("li", { class: "vazio" });
     ok.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
@@ -1215,6 +1232,15 @@ $("rodar-fumaca").onclick = async () => {
     botao.disabled = false;
     botao.textContent = "Rodar a fumaça";
   }
+};
+$("conferir-agora").onclick = async () => {
+  const botao = $("conferir-agora");
+  botao.disabled = true;
+  try {
+    const r = await tentar(() => chamar("POST", "/admin/cobranca/conferir"));
+    avisar(r.falhas.length ? `Conferido, com ${r.falhas.length} falha(s).` : `Conferido: ${r.aplicados.length} ajuste(s).`, r.falhas.length > 0);
+    await tentar(carregar);
+  } catch {} finally { botao.disabled = false; }
 };
 
 /* ---------- entrada ---------- */

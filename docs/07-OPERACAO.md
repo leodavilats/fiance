@@ -2,7 +2,7 @@
 
 Subir, observar e reverter os serviços da plataforma. O que é de uma parte só — variáveis, contas,
 publicação nas lojas — está na pasta dela.
-Última revisão: 2026-10-21
+Última revisão: 2026-10-24
 
 ---
 
@@ -32,7 +32,7 @@ No ambiente `production`:
 | `postgres-app` | Banco do aplicativo | 500 MB |
 | `data-job` | Coleta de mercado, de `/data-job` ([base/](base/README.md)). Cron `0 2 * * 2-6` (UTC, 23h de Brasília), roda `python -m datajob diario` e termina. Migrações Alembic próprias (`data-job/migrations`), aplicadas pelo Pre-Deploy Command (`python -m alembic upgrade head`). Cada rodada fica em `mercado.rodada` | `data-job-bruto`, 5 GB, em `/bruto` |
 | `postgres-mercado` | Schema `mercado`, só do data-job | 5 GB |
-| `fiance-dados` | A API de dados para terceiros e para o próprio app, de `/fiance-dados` ([dados/](dados/README.md)). Entra como o papel `dados_api` ([dados/](dados/README.md#papel-no-banco)) e só lê `mercado` como `mercado_leitura`; contas, chaves, planos e uso no schema `acesso`, com migrações próprias (`fiance-dados/migrations`) pelo Pre-Deploy Command (`python -m alembic upgrade head`). Em `https://fiance-dados.up.railway.app`. Start: `uvicorn dadosapi.app:criar --factory --host 0.0.0.0 --port $PORT`; saúde em `/saude`; documentação pública em `/docs`, portal em `/` e console em `/console` | — |
+| `fiance-dados` | A API de dados para terceiros e para o próprio app, de `/fiance-dados` ([dados/](dados/README.md)). Entra como o papel `dados_api` ([dados/](dados/README.md#papel-no-banco)) e só lê `mercado` como `mercado_leitura`; contas, chaves, planos e uso no schema `acesso`, com migrações próprias (`fiance-dados/migrations`) pelo Pre-Deploy Command (`python -m alembic upgrade head`). Em `https://fiance-dados.up.railway.app`. Start: `uvicorn dadosapi.app:criar --factory --host 0.0.0.0 --port $PORT`; saúde em `/saude`; documentação pública em `/docs`, portal em `/` e console em `/console`. Com a cobrança ligada, confere o Asaas a cada seis horas, numa thread do próprio processo ([dados/](dados/README.md#cobrança)) | — |
 | `fiance-trend` | Painel de uso próprio: API do `fiance-trend/backend` e front do `fiance-trend/frontend`, em `https://fiance-trend.up.railway.app`, com senha. Imagem de `fiance-trend/Dockerfile`, com a raiz do repositório como contexto; reconstrói com mudança em `/fiance-trend/**` e `/docs/**`, porque o painel serve documentos daqui. Lê o `postgres-mercado` como `mercado_leitura` | — |
 
 O `fiance-trend` pede `TREND_USUARIO` e `TREND_SENHA` e falha ao subir sem elas. A senha é definida no painel do

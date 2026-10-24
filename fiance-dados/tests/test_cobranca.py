@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import threading
 from datetime import date
 
 import httpx
@@ -13,6 +15,7 @@ from dadosapi.config import Configuracao
 from tests.conftest import TOKEN, criar_conta
 
 WEBHOOK = "w" * 40
+PAGADOR = {"nome": "Fulano", "cpf_cnpj": "123.456.789-09", "cep": "01310-100", "numero": "1000"}
 
 
 @pytest.fixture
@@ -21,19 +24,30 @@ def pedidos() -> list[httpx.Request]:
 
 
 @pytest.fixture
-def asaas(pedidos):
-    pagamentos = {
+def pagamentos() -> dict[str, dict]:
+    return {
         "pay_1": {"id": "pay_1", "status": "CONFIRMED", "subscription": "sub_1", "dueDate": "2026-10-15"},
         "pay_x": {"id": "pay_x", "status": "CONFIRMED", "subscription": "sub_de_outro", "dueDate": "2026-10-15"},
         "pay_pendente": {"id": "pay_pendente", "status": "PENDING", "subscription": "sub_1", "dueDate": "2026-10-15"},
         "pay_velho": {"id": "pay_velho", "status": "CONFIRMED", "subscription": "sub_velha", "dueDate": "2026-10-15"},
     }  # fmt: skip
 
+
+@pytest.fixture
+def recusas() -> dict[tuple[str, str], int]:
+    return {}
+
+
+@pytest.fixture
+def asaas(pedidos, pagamentos, recusas):
     criadas = []
 
     def responder(pedido: httpx.Request) -> httpx.Response:
         pedidos.append(pedido)
         rota = pedido.url.path
+        if (pedido.method, rota) in recusas:
+            erro = {"errors": [{"description": "recusado no teste"}]}
+            return httpx.Response(recusas[(pedido.method, rota)], json=erro)
         if pedido.method == "DELETE" and rota.startswith("/v3/subscriptions/"):
             return httpx.Response(200, json={"deleted": True, "id": rota.rsplit("/", 1)[1]})
         if rota == "/v3/customers":
@@ -42,18 +56,23 @@ def asaas(pedidos):
             criadas.append(f"sub_{len(criadas) + 1}")
             return httpx.Response(200, json={"id": criadas[-1]})
         if rota.startswith("/v3/subscriptions/") and rota.endswith("/payments"):
-            numero = rota.split("/")[3].removeprefix("sub_")
+            assinatura = rota.split("/")[3]
+            numero = assinatura.removeprefix("sub_")
+            status = pedido.url.params.get("status")
+            cobrancas = [
+                {"status": "PENDING", "invoiceUrl": f"https://asaas/pagar/{numero}"},
+                *(p for p in pagamentos.values() if p["subscription"] == assinatura),
+            ]
             return httpx.Response(
-                200,
-                json={
-                    "data": [
-                        {"status": "RECEIVED", "invoiceUrl": "https://asaas/pago"},
-                        {"status": "PENDING", "invoiceUrl": f"https://asaas/pagar/{numero}"},
-                    ]
-                },
+                200, json={"data": [c for c in cobrancas if status in (None, c["status"])]}
             )
+        if rota.startswith("/v3/payments/") and rota.endswith("/refund"):
+            pagamento = pagamentos[rota.split("/")[3]]
+            pagamento["status"] = "REFUND_IN_PROGRESS"
+            return httpx.Response(200, json=pagamento)
         if rota.startswith("/v3/payments/"):
-            return httpx.Response(200, json=pagamentos[rota.rsplit("/", 1)[1]])
+            pagamento = pagamentos.get(rota.rsplit("/", 1)[1])
+            return httpx.Response(404) if pagamento is None else httpx.Response(200, json=pagamento)
         return httpx.Response(404)
 
     cliente = httpx.Client(
@@ -77,7 +96,7 @@ def _evento(evento_id: str, tipo: str, pagamento: str) -> dict:
 def test_cobranca_desligada_nao_cria_assinatura_nem_aceita_webhook(cliente, chave):
     assinatura = cliente.post(
         "/v1/conta/assinatura",
-        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        json={"plano": "pro", **PAGADOR},
         headers=chave,
     )
 
@@ -88,7 +107,7 @@ def test_cobranca_desligada_nao_cria_assinatura_nem_aceita_webhook(cliente, chav
 def test_assinar_cria_cliente_e_assinatura_e_devolve_o_link(com_cobranca, chave, pedidos, bancos):
     resposta = com_cobranca.post(
         "/v1/conta/assinatura",
-        json={"plano": "pro", "ciclo": "anual", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        json={"plano": "pro", "ciclo": "anual", **PAGADOR},
         headers=chave,
     )
 
@@ -104,7 +123,7 @@ def test_assinar_cria_cliente_e_assinatura_e_devolve_o_link(com_cobranca, chave,
 def test_pagamento_confirmado_libera_o_plano_ate_o_fim_do_ciclo(com_cobranca, chave, bancos):
     com_cobranca.post(
         "/v1/conta/assinatura",
-        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        json={"plano": "pro", **PAGADOR},
         headers=chave,
     )
     cabecalho = {"asaas-access-token": WEBHOOK}
@@ -137,7 +156,7 @@ def test_o_titular_nao_sai_do_corpo_do_webhook(com_cobranca, chave, bancos):
 def test_evento_que_falhou_no_meio_e_aplicado_na_reentrega(com_cobranca, chave, bancos):
     com_cobranca.post(
         "/v1/conta/assinatura",
-        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        json={"plano": "pro", **PAGADOR},
         headers=chave,
     )
     with bancos.acesso.begin() as conn:
@@ -170,7 +189,7 @@ def test_assinatura_tem_teto_por_dia(com_cobranca, chave, bancos, pedidos):
 
     resposta = com_cobranca.post(
         "/v1/conta/assinatura",
-        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        json={"plano": "pro", **PAGADOR},
         headers=chave,
     )
 
@@ -195,7 +214,7 @@ def test_assinar_de_novo_cancela_a_anterior_e_ignora_o_pagamento_dela(
 
     nova = com_cobranca.post(
         "/v1/conta/assinatura",
-        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        json={"plano": "pro", **PAGADOR},
         headers=chave,
     )
     pagamento_velho = com_cobranca.post(
@@ -205,15 +224,20 @@ def test_assinar_de_novo_cancela_a_anterior_e_ignora_o_pagamento_dela(
     )
 
     assert nova.status_code == 201
-    assert ("DELETE", "/v3/subscriptions/sub_velha") in [(p.method, p.url.path) for p in pedidos]
-    assert pagamento_velho.json()["resultado"].startswith("ignorado: assinatura substituída"), (
+    chamadas = [(p.method, p.url.path) for p in pedidos]
+    assert ("DELETE", "/v3/subscriptions/sub_velha") in chamadas
+    assert chamadas.index(("POST", "/v3/subscriptions")) < chamadas.index(
+        ("DELETE", "/v3/subscriptions/sub_velha")
+    ), "a antiga só cai depois que a nova existe"
+    assert pagamento_velho.json()["resultado"].startswith("estornado:"), (
         "a cobrança atrasada do Essencial não pode devolver ao Essencial quem assinou o Pro"
     )
+    assert ("POST", "/v3/payments/pay_velho/refund") in [(p.method, p.url.path) for p in pedidos]
     assert com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["plano"] == "convidado"
 
 
 def _cadastro(email: str = "novo@teste.com") -> dict:
-    return {"plano": "pro", "nome": "Nova", "email": email, "cpf_cnpj": "12345678909"}
+    return {"plano": "pro", **PAGADOR, "nome": "Nova", "email": email}
 
 
 def test_assinar_sem_conta_devolve_a_chave_que_so_vale_depois_do_pagamento(com_cobranca):
@@ -366,7 +390,7 @@ def test_assinar_sem_cadastro_de_cobranca_pede_nome_e_documento(com_cobranca, ch
 def test_convidado_que_assina_ve_o_link_ate_pagar(com_cobranca, chave):
     com_cobranca.post(
         "/v1/conta/assinatura",
-        json={"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"},
+        json={"plano": "pro", **PAGADOR},
         headers=chave,
     )
 
@@ -396,3 +420,257 @@ def test_console_separa_quem_aguarda_pagamento_de_quem_venceu(com_cobranca):
     contas = com_cobranca.get("/admin/contas", headers={"X-Admin-Token": TOKEN}).json()
 
     assert [c["situacao"] for c in contas] == ["aguardando_pagamento"]
+
+
+def _assinar_e_pagar(cliente, pagamentos) -> dict:
+    feito = cliente.post("/v1/assinatura", json=_cadastro()).json()["dados"]
+    _pagar(cliente, "evt_pay_1")
+    return {"Authorization": f"Bearer {feito['chave']}"}
+
+
+def _webhook(cliente, evento: str, tipo: str, pagamento: str) -> str:
+    return cliente.post(
+        "/cobranca/asaas",
+        json=_evento(evento, tipo, pagamento),
+        headers={"asaas-access-token": WEBHOOK},
+    ).json()["resultado"]
+
+
+def _assinatura_antiga(cliente, chave, bancos) -> None:
+    conta_id = cliente.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    with bancos.acesso.begin() as conn:
+        conn.execute(
+            sa.text(
+                "INSERT INTO acesso.assinatura (conta_id, plano, ciclo, asaas_cliente, "
+                "asaas_assinatura, situacao) VALUES (:c, 'essencial', 'mensal', 'cus_1', "
+                "'sub_velha', 'ativa')"
+            ),
+            {"c": conta_id},
+        )
+
+
+def test_cpf_e_cnpj_valem_pelo_digito_e_o_cnpj_aceita_letras():
+    assert cobranca.documento_valido("123.456.789-09") == "12345678909"
+    assert cobranca.documento_valido("11.222.333/0001-81") == "11222333000181"
+    assert cobranca.documento_valido("12.abc.345/01de-35") == "12ABC34501DE35", (
+        "o CNPJ alfanumérico vale desde julho de 2026"
+    )
+    for invalido in ("123.456.789-00", "111.111.111-11", "11222333000182", "1234567890", ""):
+        assert cobranca.documento_valido(invalido) is None, invalido
+
+
+def test_documento_invalido_nao_cria_conta_nem_vai_ao_asaas(com_cobranca, pedidos, bancos):
+    resposta = com_cobranca.post("/v1/assinatura", json={**_cadastro(), "cpf_cnpj": "12345678900"})
+
+    assert resposta.status_code == 422
+    assert "CPF ou CNPJ inválido" in resposta.json()["erro"]
+    assert pedidos == []
+    with bancos.acesso.connect() as conn:
+        contas = conn.execute(sa.text("SELECT count(*) FROM acesso.conta")).scalar_one()
+    assert contas == 0, "a recusa do Asaas chegava depois da conta e da chave já gravadas"
+
+
+def test_cadastro_de_cobranca_exige_cep_e_numero(com_cobranca, chave, pedidos):
+    sem_endereco = {"plano": "pro", "nome": "Fulano", "cpf_cnpj": "12345678909"}
+    cep_errado = {"plano": "pro", **PAGADOR, "cep": "0131-100"}
+
+    faltando = com_cobranca.post("/v1/conta/assinatura", json=sem_endereco, headers=chave)
+    errado = com_cobranca.post("/v1/conta/assinatura", json=cep_errado, headers=chave)
+
+    assert faltando.status_code == 422 and "CEP e número" in faltando.json()["erro"]
+    assert errado.status_code == 422 and "CEP" in errado.json()["erro"]
+    assert pedidos == []
+
+
+def test_cliente_e_assinatura_levam_endereco_telefone_e_a_conta(com_cobranca, pedidos):
+    com_cobranca.post("/v1/assinatura", json={**_cadastro(), "telefone": "+55 (11) 98765-4321"})
+
+    contas = com_cobranca.get("/admin/contas", headers={"X-Admin-Token": TOKEN}).json()
+    cliente = json.loads(next(p for p in pedidos if p.url.path == "/v3/customers").content)
+    assinatura = json.loads(next(p for p in pedidos if p.url.path == "/v3/subscriptions").content)
+    assert cliente["cpfCnpj"] == "12345678909", "o Asaas recebe o documento sem máscara"
+    assert (cliente["postalCode"], cliente["addressNumber"]) == ("01310100", "1000")
+    assert cliente["mobilePhone"] == "11987654321"
+    assert cliente["externalReference"] == assinatura["externalReference"] == str(contas[0]["id"])
+
+
+def test_troca_que_o_asaas_recusa_nao_derruba_a_assinatura_antiga(
+    com_cobranca, chave, bancos, pedidos, recusas
+):
+    _assinatura_antiga(com_cobranca, chave, bancos)
+    recusas[("POST", "/v3/subscriptions")] = 400
+
+    resposta = com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=chave)
+
+    assert resposta.status_code == 502
+    assert not [p for p in pedidos if p.method == "DELETE"], (
+        "cancelar antes de criar deixava o assinante sem assinatura nenhuma"
+    )
+    with bancos.acesso.connect() as conn:
+        situacao = conn.execute(sa.text("SELECT situacao FROM acesso.assinatura")).scalar_one()
+    assert situacao == "ativa"
+
+
+def test_cancelamento_que_falha_fica_para_a_conferencia(com_cobranca, chave, bancos, recusas):
+    _assinatura_antiga(com_cobranca, chave, bancos)
+    recusas[("DELETE", "/v3/subscriptions/sub_velha")] = 500
+
+    nova = com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=chave)
+    recusas.clear()
+    relatorio = com_cobranca.post(
+        "/admin/cobranca/conferir", headers={"X-Admin-Token": TOKEN}
+    ).json()
+
+    assert nova.status_code == 201, "a nova já existe: a falha em cancelar a antiga não a desfaz"
+    assert "assinatura sub_velha cancelada no Asaas" in relatorio["aplicados"]
+    with bancos.acesso.connect() as conn:
+        pendente = conn.execute(
+            sa.text(
+                "SELECT cancelamento_pendente FROM acesso.assinatura "
+                "WHERE asaas_assinatura = 'sub_velha'"
+            )
+        ).scalar_one()
+    assert pendente is False
+
+
+def test_estorno_tira_o_acesso_que_o_pagamento_deu(com_cobranca, pagamentos):
+    chave = _assinar_e_pagar(com_cobranca, pagamentos)
+    assert com_cobranca.get("/v1/ativos", headers=chave).status_code == 200
+
+    pagamentos["pay_1"]["status"] = "REFUNDED"
+    resultado = _webhook(com_cobranca, "evt_estorno", "PAYMENT_REFUNDED", "pay_1")
+
+    assert "pagamento desfeito (REFUNDED), pago até 2026-10-14" in resultado
+    assert com_cobranca.get("/v1/ativos", headers=chave).status_code == 402
+
+
+def test_chargeback_de_um_mes_volta_ao_mes_pago_antes(com_cobranca, pagamentos):
+    chave = _assinar_e_pagar(com_cobranca, pagamentos)
+    pagamentos["pay_2"] = {"id": "pay_2", "status": "RECEIVED", "subscription": "sub_1", "dueDate": "2026-11-15"}  # fmt: skip
+    _webhook(com_cobranca, "evt_pay_2", "PAYMENT_RECEIVED", "pay_2")
+    assert com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["pago_ate"] == "2026-12-15"
+
+    pagamentos["pay_2"]["status"] = "CHARGEBACK_REQUESTED"
+    _webhook(com_cobranca, "evt_chargeback", "PAYMENT_CHARGEBACK_REQUESTED", "pay_2")
+
+    assert com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["pago_ate"] == "2026-11-15"
+
+
+def test_estorno_de_mes_antigo_nao_corta_o_mes_pago_depois(com_cobranca, pagamentos):
+    chave = _assinar_e_pagar(com_cobranca, pagamentos)
+    pagamentos["pay_2"] = {"id": "pay_2", "status": "RECEIVED", "subscription": "sub_1", "dueDate": "2026-11-15"}  # fmt: skip
+    _webhook(com_cobranca, "evt_pay_2", "PAYMENT_RECEIVED", "pay_2")
+
+    pagamentos["pay_1"]["status"] = "REFUNDED"
+    resultado = _webhook(com_cobranca, "evt_estorno", "PAYMENT_REFUNDED", "pay_1")
+
+    assert resultado.endswith("o acesso não dependia dele")
+    assert com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["pago_ate"] == "2026-12-15"
+
+
+def test_cobranca_removida_que_nao_e_nossa_nao_mexe_na_conta(com_cobranca, pagamentos):
+    chave = _assinar_e_pagar(com_cobranca, pagamentos)
+
+    resultado = _webhook(com_cobranca, "evt_removida", "PAYMENT_DELETED", "pay_sumiu")
+
+    assert resultado == "ignorado: assinatura que não é nossa"
+    assert com_cobranca.get("/v1/ativos", headers=chave).status_code == 200
+
+
+def test_conferencia_aplica_o_pagamento_que_o_webhook_perdeu(com_cobranca):
+    feito = com_cobranca.post("/v1/assinatura", json=_cadastro()).json()["dados"]
+    chave = {"Authorization": f"Bearer {feito['chave']}"}
+    conta_id = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    assert com_cobranca.get("/v1/ativos", headers=chave).status_code == 402
+
+    primeira = com_cobranca.post("/admin/cobranca/conferir", headers={"X-Admin-Token": TOKEN})
+    segunda = com_cobranca.post("/admin/cobranca/conferir", headers={"X-Admin-Token": TOKEN})
+
+    assert primeira.json()["aplicados"] == [f"pagamento pay_1: conta {conta_id} no plano pro"]
+    assert segunda.json()["aplicados"] == [], "a conferência aplica cada pagamento uma vez"
+    assert com_cobranca.get("/v1/ativos", headers=chave).status_code == 200
+
+
+def test_conferencia_acha_o_estorno_que_o_webhook_perdeu(com_cobranca, pagamentos):
+    chave = _assinar_e_pagar(com_cobranca, pagamentos)
+    pagamentos["pay_1"]["status"] = "REFUNDED"
+
+    com_cobranca.post("/admin/cobranca/conferir", headers={"X-Admin-Token": TOKEN})
+
+    assert com_cobranca.get("/v1/ativos", headers=chave).status_code == 402
+
+
+def test_evento_parado_e_estorno_a_mao_aparecem_no_console(com_cobranca, bancos):
+    with bancos.acesso.begin() as conn:
+        conn.execute(
+            sa.text(
+                "INSERT INTO acesso.evento_de_cobranca (id, tipo, recebido_em, resultado) VALUES "
+                "('evt_parado', 'PAYMENT_RECEIVED', now() - interval '2 hours', NULL), "
+                "('evt_chegando', 'PAYMENT_RECEIVED', now(), NULL), "
+                "('evt_mao', 'PAYMENT_RECEIVED', now(), 'ignorado: x; estornar à mão (y)'), "
+                "('evt_ok', 'PAYMENT_RECEIVED', now() - interval '2 hours', 'conta 1 no plano pro')"
+            )
+        )
+
+    painel = com_cobranca.get("/admin/cobranca", headers={"X-Admin-Token": TOKEN}).json()
+
+    assert painel["ligada"] is True
+    assert {p["id"] for p in painel["pendencias"]} == {"evt_parado", "evt_mao"}, (
+        "evento recém-chegado ainda está sendo aplicado"
+    )
+
+
+def test_o_link_e_o_da_cobranca_vencida_antes_da_pendente(com_cobranca, pagamentos, chave):
+    com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro", **PAGADOR}, headers=chave)
+    pagamentos["pay_atrasado"] = {"id": "pay_atrasado", "status": "OVERDUE", "subscription": "sub_1", "dueDate": "2026-09-15", "invoiceUrl": "https://asaas/atrasada"}  # fmt: skip
+
+    dados = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]
+
+    assert dados["assinatura"]["pagar_em"] == "https://asaas/atrasada"
+
+
+def test_estorno_negado_da_substituida_vai_para_a_mao(com_cobranca, chave, bancos, pagamentos):
+    _assinatura_antiga(com_cobranca, chave, bancos)
+    com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=chave)
+    _webhook(com_cobranca, "evt_velho", "PAYMENT_CONFIRMED", "pay_velho")
+
+    pagamentos["pay_velho"]["status"] = "RECEIVED"
+    negado = _webhook(com_cobranca, "evt_negado", "PAYMENT_REFUND_DENIED", "pay_velho")
+
+    assert "estornar à mão" in negado, "boleto pode ter o estorno negado, e o dinheiro fica"
+    painel = com_cobranca.get("/admin/cobranca", headers={"X-Admin-Token": TOKEN}).json()
+    assert [p["id"] for p in painel["pendencias"]] == ["evt_negado"]
+
+
+def test_pagamento_antigo_nao_muda_o_plano_de_quem_ja_esta_pago_adiante(com_cobranca, pagamentos):
+    chave = _assinar_e_pagar(com_cobranca, pagamentos)
+    conta_id = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    com_cobranca.patch(
+        f"/admin/contas/{conta_id}",
+        json={"plano": "essencial", "pago_ate": "2027-06-30"},
+        headers={"X-Admin-Token": TOKEN},
+    )
+    pagamentos["pay_2"] = {"id": "pay_2", "status": "RECEIVED", "subscription": "sub_1", "dueDate": "2026-11-15"}  # fmt: skip
+
+    _webhook(com_cobranca, "evt_pay_2", "PAYMENT_RECEIVED", "pay_2")
+
+    conta = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]
+    assert (conta["plano"], conta["pago_ate"]) == ("essencial", "2027-06-30"), (
+        "a primeira conferência reaplica pagamentos antigos: o ajuste à mão não pode voltar"
+    )
+
+
+def test_a_conferencia_roda_sozinha_ate_parar(monkeypatch):
+    monkeypatch.setattr(app, "PRIMEIRA_CONFERENCIA", 0)
+    monkeypatch.setattr(app, "CONFERENCIA_A_CADA", 0)
+    parar, rodadas = threading.Event(), []
+
+    def conferir() -> dict:
+        rodadas.append(1)
+        if len(rodadas) == 3:
+            parar.set()
+        return {}
+
+    app._conferir_sempre(conferir, parar)
+
+    assert len(rodadas) == 3

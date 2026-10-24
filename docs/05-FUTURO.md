@@ -2,7 +2,7 @@
 
 **Fonte de verdade** do roadmap, em todas as partes. Nada aqui existe — o que existe está em
 [03-ESTADO](03-ESTADO.md); o que foi entregue sai daqui.
-Última revisão: 2026-10-21
+Última revisão: 2026-10-24
 
 As seções são rígidas e não se misturam. Um item só muda de seção por decisão explícita. Cada item
 diz a que parte pertence: **App**, **Base**, **Dados** (a API de dados) ou **Laboratório**.
@@ -17,7 +17,7 @@ abertura ao público está em *Fase pública — sem data*.
 ### Dados · A API de dados aberta a terceiros
 
 A API existe, com portal, console, o app como primeiro cliente e planos pagos sem gratuito; a
-cobrança pelo Asaas está pronta e desligada ([dados/](dados/README.md)). O que falta para abrir é
+cobrança pelo Asaas está ligada, e só o autor paga ([dados/](dados/README.md)). O que falta para abrir é
 da fase pública — ver abaixo.
 
 ---
@@ -66,9 +66,10 @@ O `payments/` atual (com `api/billing.py`) tem só `FakeProvider` e será descar
 
 ### Dados · Cobrança e cadastro aberto
 
-**Ligar a cobrança espera** a resposta da B3 sobre a licença, a leitura da ODbL, CNPJ e termos de
+**Cobrar de terceiros espera** a resposta da B3 sobre a licença, a leitura da ODbL, CNPJ e termos de
 uso; **cadastro aberto espera** verificação de e-mail
-([ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md)).
+([ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md)). A cobrança em si já está ligada, para o
+autor ([ADR-034](decisoes/ADR-034-cobranca-ligada-e-conferida.md)).
 
 ---
 

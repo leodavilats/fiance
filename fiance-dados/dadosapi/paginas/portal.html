@@ -600,8 +600,17 @@ const { dados, proximo } = await r.json();</code></pre>
           <div><label for="cadastro-ciclo">Ciclo</label><select id="cadastro-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
         </div>
         <div><label for="cadastro-nome">Nome ou razão social</label><input id="cadastro-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
-        <div><label for="cadastro-email">E-mail</label><input id="cadastro-email" type="email" required maxlength="200" autocomplete="email"></div>
-        <div><label for="cadastro-doc">CPF ou CNPJ</label><input id="cadastro-doc" required minlength="11" maxlength="18" inputmode="numeric" autocomplete="off"></div>
+        <div class="duas">
+          <div><label for="cadastro-email">E-mail</label><input id="cadastro-email" type="email" required maxlength="200" autocomplete="email"></div>
+          <div><label for="cadastro-email2">Repita o e-mail</label><input id="cadastro-email2" type="email" required maxlength="200" autocomplete="off"></div>
+        </div>
+        <div><label for="cadastro-doc">CPF ou CNPJ</label><input id="cadastro-doc" required minlength="11" maxlength="18" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>
+        <div class="duas">
+          <div><label for="cadastro-cep">CEP</label><input id="cadastro-cep" required minlength="8" maxlength="9" inputmode="numeric" autocomplete="postal-code"></div>
+          <div><label for="cadastro-numero">Número do endereço</label><input id="cadastro-numero" required maxlength="10" autocomplete="off" placeholder="ou S/N"></div>
+        </div>
+        <div><label for="cadastro-telefone">Celular <small>opcional, para o Asaas lembrar do vencimento</small></label><input id="cadastro-telefone" type="tel" maxlength="20" inputmode="tel" autocomplete="tel"></div>
+        <p class="discreto" style="margin:0">Nome, documento, endereço e celular vão para o Asaas, que emite a cobrança. Aqui ficam só o nome e o e-mail.</p>
         <div><button class="botao destaque" type="submit" id="botao-cadastro">Criar a conta e assinar</button></div>
         <p id="erro-cadastro" class="erro" role="alert" style="margin:0"></p>
       </form>
@@ -666,9 +675,16 @@ const { dados, proximo } = await r.json();</code></pre>
                 <div><label for="assinar-plano">Plano</label><select id="assinar-plano"></select></div>
                 <div><label for="assinar-ciclo">Ciclo</label><select id="assinar-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
               </div>
-              <div class="duas" id="assinar-cadastro">
-                <div><label for="assinar-nome">Nome ou razão social</label><input id="assinar-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
-                <div><label for="assinar-doc">CPF ou CNPJ</label><input id="assinar-doc" required minlength="11" maxlength="18" inputmode="numeric" autocomplete="off"></div>
+              <div id="assinar-cadastro" class="assinar">
+                <div class="duas">
+                  <div><label for="assinar-nome">Nome ou razão social</label><input id="assinar-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
+                  <div><label for="assinar-doc">CPF ou CNPJ</label><input id="assinar-doc" required minlength="11" maxlength="18" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>
+                </div>
+                <div class="duas">
+                  <div><label for="assinar-cep">CEP</label><input id="assinar-cep" required minlength="8" maxlength="9" inputmode="numeric" autocomplete="postal-code"></div>
+                  <div><label for="assinar-numero">Número do endereço</label><input id="assinar-numero" required maxlength="10" autocomplete="off" placeholder="ou S/N"></div>
+                </div>
+                <div><label for="assinar-telefone">Celular <small>opcional</small></label><input id="assinar-telefone" type="tel" maxlength="20" inputmode="tel" autocomplete="tel"></div>
               </div>
               <p class="discreto" id="assinar-aviso" style="margin:0"></p>
               <div><button class="botao destaque" type="submit" id="botao-assinar">Gerar o link de pagamento</button></div>
@@ -1253,8 +1269,7 @@ function desenharAssinatura(conta) {
   $("assinar-aviso").textContent = aviso;
   const temCadastro = conta.cadastro_de_cobranca;
   $("assinar-cadastro").classList.toggle("escondido", temCadastro);
-  $("assinar-nome").required = !temCadastro;
-  $("assinar-doc").required = !temCadastro;
+  for (const campo of ["nome", "doc", "cep", "numero"]) $(`assinar-${campo}`).required = !temCadastro;
 }
 
 async function carregarConta(focar) {
@@ -1344,6 +1359,10 @@ $("form-nova").onsubmit = async (evento) => {
     await carregarConta();
   } catch (e) { $("erro-painel").textContent = e.message; }
 };
+function dadosDeQuemPaga(prefixo) {
+  const valor = (campo) => $(`${prefixo}-${campo}`).value.trim();
+  return { nome: valor("nome"), cpf_cnpj: valor("doc"), cep: valor("cep"), numero: valor("numero"), telefone: valor("telefone") || null };
+}
 $("form-assinar").onsubmit = async (evento) => {
   evento.preventDefault();
   const botao = $("botao-assinar"), resultado = $("assinar-resultado");
@@ -1352,7 +1371,7 @@ $("form-assinar").onsubmit = async (evento) => {
   $("erro-painel").textContent = "";
   try {
     const corpo = { plano: $("assinar-plano").value, ciclo: $("assinar-ciclo").value };
-    if (!contaAtual.cadastro_de_cobranca) { corpo.nome = $("assinar-nome").value.trim(); corpo.cpf_cnpj = $("assinar-doc").value.trim(); }
+    if (!contaAtual.cadastro_de_cobranca) Object.assign(corpo, dadosDeQuemPaga("assinar"));
     const r = (await chamar("POST", "/v1/conta/assinatura", corpo)).dados;
     if (r.pagar_em) resultado.replaceChildren("Assinatura criada. ", linkDePagamento("Abrir o pagamento", r.pagar_em, ""), ". O acesso muda quando o pagamento for confirmado.");
     else resultado.textContent = "Assinatura criada. O link de pagamento chega pelo e-mail da conta.";
@@ -1363,8 +1382,13 @@ $("form-assinar").onsubmit = async (evento) => {
 $("form-cadastro").onsubmit = async (evento) => {
   evento.preventDefault();
   const botao = $("botao-cadastro"), erro = $("erro-cadastro");
-  botao.disabled = true;
   erro.textContent = "";
+  if ($("cadastro-email").value.trim().toLowerCase() !== $("cadastro-email2").value.trim().toLowerCase()) {
+    erro.textContent = "Os dois e-mails não conferem. É para ele que o Asaas manda a cobrança.";
+    $("cadastro-email2").focus();
+    return;
+  }
+  botao.disabled = true;
   let resposta;
   try {
     resposta = await fetch("/v1/assinatura", {
@@ -1372,8 +1396,7 @@ $("form-cadastro").onsubmit = async (evento) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         plano: $("cadastro-plano").value, ciclo: $("cadastro-ciclo").value,
-        nome: $("cadastro-nome").value.trim(), email: $("cadastro-email").value.trim(),
-        cpf_cnpj: $("cadastro-doc").value.trim(),
+        email: $("cadastro-email").value.trim(), ...dadosDeQuemPaga("cadastro"),
       }),
     });
   } catch {

@@ -144,8 +144,17 @@ e não para quem espelha a base, e proibir redistribuição nos termos de uso.
 **Bloqueia só a fase pública.** Cobrar espera a resposta da B3 sobre a licença do dado, a leitura da
 ODbL da CVM, CNPJ e termos de uso
 ([ADR-024](decisoes/ADR-024-api-de-dados.md), [ADR-025](decisoes/ADR-025-cobranca-da-api-de-dados.md)).
-Com a cobrança aberta, assinar cria a conta, e o e-mail não é verificado: o pagamento é o que
-libera a chave ([ADR-031](decisoes/ADR-031-assinatura-cria-a-conta.md)).
+A cobrança está ligada, mas só o autor paga por ela
+([ADR-034](decisoes/ADR-034-cobranca-ligada-e-conferida.md)). Assinar cria a conta, e o e-mail não é
+verificado: o pagamento é o que libera a chave ([ADR-031](decisoes/ADR-031-assinatura-cria-a-conta.md)).
+
+### Renovar e trocar de plano cobram no dia
+
+**Não bloqueia.** A assinatura nova vence no dia em que é criada (`dadosapi/cobranca.py`). Renovar o
+mesmo plano antes do vencimento descarta os dias que restavam; subir de plano cobra o preço cheio sem
+descontar o anterior; descer rebaixa o acesso no pagamento, mesmo com o plano maior pago até mais
+tarde. Pede decidir entre descontar o proporcional e aplicar a troca no vencimento
+([ADR-034](decisoes/ADR-034-cobranca-ligada-e-conferida.md)).
 
 ---
 

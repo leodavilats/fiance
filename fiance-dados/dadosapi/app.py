@@ -4,6 +4,7 @@ import secrets
 import threading
 import time
 from collections.abc import Callable
+from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Literal
@@ -25,6 +26,8 @@ LIMITE_MAXIMO = 5000
 MAXIMO_DE_RETRATOS = 50
 CHAVES_NOVAS_POR_DIA = 10
 CADASTROS_POR_HORA = 5
+CONFERENCIA_A_CADA = 6 * 3600
+PRIMEIRA_CONFERENCIA = 60
 EXEMPLO_DA_VITRINE = "HAPV3"
 INICIO_DA_BASE = date(2000, 1, 1)
 
@@ -66,12 +69,20 @@ class NovaAssinatura(BaseModel):
     plano: Literal["essencial", "pro"]
     ciclo: Literal["mensal", "anual"] = "mensal"
     nome: str | None = Field(default=None, min_length=2, max_length=200)
-    cpf_cnpj: str | None = Field(default=None, min_length=11, max_length=18)
+    cpf_cnpj: str | None = Field(default=None, max_length=18)
+    cep: str | None = Field(default=None, max_length=9)
+    numero: str | None = Field(default=None, max_length=10)
+    telefone: str | None = Field(default=None, max_length=20)
+
+    def pagador(self) -> cobranca.Pagador | None:
+        return cobranca.pagador(self.nome, self.cpf_cnpj, self.cep, self.numero, self.telefone)
 
 
 class NovoAssinante(NovaAssinatura):
     nome: str = Field(min_length=2, max_length=200)
-    cpf_cnpj: str = Field(min_length=11, max_length=18)
+    cpf_cnpj: str = Field(max_length=18)
+    cep: str = Field(max_length=9)
+    numero: str = Field(max_length=10)
     email: str = Field(max_length=200, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -92,6 +103,13 @@ def _origem(request: Request, proxies_confiaveis: int) -> str:
     if proxies_confiaveis <= 0 or len(cadeia) < proxies_confiaveis:
         return conexao
     return cadeia[-proxies_confiaveis]
+
+
+def _conferir_sempre(conferir: Callable[[], dict], parar: threading.Event) -> None:
+    espera = PRIMEIRA_CONFERENCIA
+    while not parar.wait(espera):
+        conferir()
+        espera = CONFERENCIA_A_CADA
 
 
 def _cliente_local(request: Request) -> httpx.Client:
@@ -134,10 +152,31 @@ def criar(
     cliente_da_fumaca = cliente_da_fumaca or _cliente_local
     fumaca_rodando = threading.Lock()
     vitrine_guardada: dict = {"quando": 0.0, "dados": None}
+    conferencia: dict = {"ultima": None}
+
+    def conferir_cobranca() -> dict:
+        try:
+            relatorio = cobranca.conferir(bancos.acesso, asaas)
+        except Exception as erro:
+            relatorio = {"em": None, "aplicados": [], "falhas": [f"a conferência caiu: {erro}"]}
+        conferencia["ultima"] = relatorio
+        return relatorio
+
+    @asynccontextmanager
+    async def ciclo_de_vida(_app: FastAPI):
+        parar = threading.Event()
+        if asaas is not None:
+            threading.Thread(
+                target=_conferir_sempre, args=(conferir_cobranca, parar), daemon=True
+            ).start()
+        yield
+        parar.set()
+
     app = FastAPI(
         title="fiance dados",
         version="1.0.0",
         description=DESCRICAO,
+        lifespan=ciclo_de_vida,
         openapi_tags=[
             {"name": "ativos", "description": "Ações, FIIs, ETFs e BDRs negociados na B3"},
             {"name": "empresas", "description": "Companhias abertas e demonstrações"},
@@ -248,13 +287,7 @@ def criar(
             raise HTTPException(503, "A cobrança ainda não abriu. Fale com o contato do portal.")
         return _resposta(
             cobranca.criar_assinatura(
-                bancos.acesso,
-                asaas,
-                conta_id,
-                corpo.plano,
-                corpo.ciclo,
-                (corpo.nome or "").strip() or None,
-                corpo.cpf_cnpj,
+                bancos.acesso, asaas, conta_id, corpo.plano, corpo.ciclo, corpo.pagador()
             )
         )
 
@@ -271,6 +304,7 @@ def criar(
     def assinar_sem_conta(corpo: NovoAssinante, request: Request) -> dict:
         if asaas is None:
             raise HTTPException(503, "A cobrança ainda não abriu. Fale com o contato do portal.")
+        quem_paga = corpo.pagador()
         origem = _origem(request, config.proxies_confiaveis)
         if cadastros.bloqueado(origem):
             raise HTTPException(429, "Cadastros demais deste endereço. Tente de novo em uma hora.")
@@ -280,13 +314,7 @@ def criar(
         )
         chave = acesso.emitir_chave(bancos.acesso, conta_id, "principal", CHAVES_NOVAS_POR_DIA)
         assinatura = cobranca.criar_assinatura(
-            bancos.acesso,
-            asaas,
-            conta_id,
-            corpo.plano,
-            corpo.ciclo,
-            corpo.nome.strip(),
-            corpo.cpf_cnpj,
+            bancos.acesso, asaas, conta_id, corpo.plano, corpo.ciclo, quem_paga
         )
         return _resposta(
             {**assinatura, "chave": chave["chave"], "prefixo": chave["prefixo"]},
@@ -560,6 +588,22 @@ def criar(
         finally:
             fumaca_rodando.release()
         return {"resultados": resultados, "falhas": sum(not r["ok"] for r in resultados)}
+
+    @app.get("/admin/cobranca", include_in_schema=False, dependencies=[Depends(administrador)])
+    def admin_cobranca() -> dict:
+        return {
+            "ligada": asaas is not None,
+            "ultima_conferencia": conferencia["ultima"],
+            "pendencias": cobranca.pendencias(bancos.acesso),
+        }
+
+    @app.post(
+        "/admin/cobranca/conferir", include_in_schema=False, dependencies=[Depends(administrador)]
+    )
+    def admin_conferir_cobranca() -> dict:
+        if asaas is None:
+            raise HTTPException(503, "Cobrança desligada.")
+        return conferir_cobranca()
 
     @app.get("/admin/uso", include_in_schema=False, dependencies=[Depends(administrador)])
     def admin_uso(
