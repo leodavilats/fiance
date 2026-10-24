@@ -73,6 +73,7 @@ class NovaAssinatura(BaseModel):
     cep: str | None = Field(default=None, max_length=9)
     numero: str | None = Field(default=None, max_length=10)
     telefone: str | None = Field(default=None, max_length=20)
+    parcelas: int | None = Field(default=None, ge=2, le=cobranca.PARCELAS_NO_ANUAL)
 
     def pagador(self) -> cobranca.Pagador | None:
         return cobranca.pagador(self.nome, self.cpf_cnpj, self.cep, self.numero, self.telefone)
@@ -261,6 +262,7 @@ def criar(
         return {
             "dados": acesso.planos_publicos(bancos.acesso),
             "cobranca_aberta": config.cobranca_ativa,
+            "parcelas_no_anual": cobranca.PARCELAS_NO_ANUAL,
             "contato": config.contato or None,
             "whatsapp": config.whatsapp or None,
         }
@@ -287,7 +289,13 @@ def criar(
             raise HTTPException(503, "A cobrança ainda não abriu. Fale com o contato do portal.")
         return _resposta(
             cobranca.criar_assinatura(
-                bancos.acesso, asaas, conta_id, corpo.plano, corpo.ciclo, corpo.pagador()
+                bancos.acesso,
+                asaas,
+                conta_id,
+                corpo.plano,
+                corpo.ciclo,
+                corpo.pagador(),
+                parcelas=corpo.parcelas,
             )
         )
 
@@ -305,6 +313,7 @@ def criar(
         if asaas is None:
             raise HTTPException(503, "A cobrança ainda não abriu. Fale com o contato do portal.")
         quem_paga = corpo.pagador()
+        cobranca.validar_parcelas(corpo.ciclo, corpo.parcelas)
         origem = _origem(request, config.proxies_confiaveis)
         if cadastros.bloqueado(origem):
             raise HTTPException(429, "Cadastros demais deste endereço. Tente de novo em uma hora.")
@@ -314,7 +323,13 @@ def criar(
         )
         chave = acesso.emitir_chave(bancos.acesso, conta_id, "principal", CHAVES_NOVAS_POR_DIA)
         assinatura = cobranca.criar_assinatura(
-            bancos.acesso, asaas, conta_id, corpo.plano, corpo.ciclo, quem_paga
+            bancos.acesso,
+            asaas,
+            conta_id,
+            corpo.plano,
+            corpo.ciclo,
+            quem_paga,
+            parcelas=corpo.parcelas,
         )
         return _resposta(
             {**assinatura, "chave": chave["chave"], "prefixo": chave["prefixo"]},
@@ -548,7 +563,9 @@ def criar(
                 and (assinatura["situacao"] == "aguardando" or conta["situacao"] != "ativa")
             ):
                 try:
-                    assinatura["pagar_em"] = cobranca.link_em_aberto(asaas, assinatura_id)
+                    assinatura["pagar_em"] = cobranca.link_em_aberto(
+                        asaas, assinatura_id, bool(assinatura["parcelas"])
+                    )
                 except (httpx.HTTPError, acesso.SemAcesso):
                     assinatura["pagar_em_indisponivel"] = True
         return _resposta(conta)

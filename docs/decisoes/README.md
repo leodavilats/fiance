@@ -47,6 +47,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [032](ADR-032-tesouro-direto-pelo-site-como-reserva.md) | Com o Tesouro Transparente fora, o retrato do dia vem do site do Tesouro Direto | `ACEITO` | 2026-10-24 |
 | [033](ADR-033-conta-sem-pagamento-entra-em-minha-conta.md) | A conta sem pagamento entra em Minha conta, e o painel segue a situação dela | `ACEITO` | 2026-10-24 |
 | [034](ADR-034-cobranca-ligada-e-conferida.md) | A cobrança liga para o autor, o cadastro pede o endereço, e o Asaas é conferido | `ACEITO` | 2026-10-24 |
+| [035](ADR-035-anual-parcelado-no-cartao.md) | O anual pode ser dividido em até 12x no cartão, como parcelamento e sem renovação automática | `ACEITO` | 2026-10-24 |
 
 ---
 

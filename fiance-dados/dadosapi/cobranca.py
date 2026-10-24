@@ -36,6 +36,7 @@ EM_ABERTO = ("OVERDUE", "PENDING")
 ENCERRADOS = {"SUBSCRIPTION_DELETED", "SUBSCRIPTION_INACTIVATED"}
 CICLO_DO_ASAAS = {"mensal": "MONTHLY", "anual": "YEARLY"}
 ASSINATURAS_POR_DIA = 3
+PARCELAS_NO_ANUAL = 12
 EVENTO_PARADO = timedelta(hours=1)
 PENDENCIAS_DOS_ULTIMOS = timedelta(days=30)
 _PESOS_DO_CNPJ = (6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2)
@@ -146,11 +147,22 @@ def pagador(
     return Pagador(nome, valido, so_digitos, numero, celular or None)
 
 
+def _rota(asaas_id: str, parcelado: bool) -> str:
+    return f"/installments/{asaas_id}" if parcelado else f"/subscriptions/{asaas_id}"
+
+
 def _somar_ciclo(dia: date, ciclo: str) -> date:
     meses = 12 if ciclo == "anual" else 1
     total = dia.month - 1 + meses
     ano, mes = dia.year + total // 12, total % 12 + 1
     return dia.replace(year=ano, month=mes, day=min(dia.day, calendar.monthrange(ano, mes)[1]))
+
+
+def validar_parcelas(ciclo: str, parcelas: int | None) -> None:
+    if parcelas is not None and (ciclo != "anual" or not 2 <= parcelas <= PARCELAS_NO_ANUAL):
+        raise acesso.SemAcesso(
+            422, f"Só o anual se divide, no cartão, de 2 a {PARCELAS_NO_ANUAL} parcelas."
+        )
 
 
 def criar_assinatura(
@@ -161,7 +173,9 @@ def criar_assinatura(
     ciclo: str,
     quem_paga: Pagador | None,
     hoje: date | None = None,
+    parcelas: int | None = None,
 ) -> dict:
+    validar_parcelas(ciclo, parcelas)
     with engine.connect() as conn:
         conta = conn.execute(
             sa.text("SELECT email FROM acesso.conta WHERE id = :id AND ativa"), {"id": conta_id}
@@ -180,17 +194,14 @@ def criar_assinatura(
             ),
             {"id": conta_id},
         ).scalar_one()
-        vivas = (
-            conn.execute(
-                sa.text(
-                    "SELECT asaas_assinatura FROM acesso.assinatura "
-                    "WHERE conta_id = :id AND situacao IN ('aguardando', 'ativa')"
-                ),
-                {"id": conta_id},
-            )
-            .scalars()
-            .all()
-        )
+        vivas = conn.execute(
+            sa.text(
+                "SELECT asaas_assinatura, parcelas IS NOT NULL AS parcelado "
+                "FROM acesso.assinatura "
+                "WHERE conta_id = :id AND situacao IN ('aguardando', 'ativa')"
+            ),
+            {"id": conta_id},
+        ).all()
         cliente_anterior = conn.execute(
             sa.text(
                 "SELECT asaas_cliente FROM acesso.assinatura WHERE conta_id = :id "
@@ -225,26 +236,53 @@ def criar_assinatura(
         if quem_paga.telefone:
             cadastro["mobilePhone"] = quem_paga.telefone
         cliente_id = asaas._pedir("POST", "/customers", cadastro)["id"]
-    assinatura = asaas._pedir(
-        "POST",
-        "/subscriptions",
-        {
-            "customer": cliente_id,
-            "billingType": "UNDEFINED",
-            "value": centavos / 100,
-            "nextDueDate": (hoje or acesso.hoje()).isoformat(),
-            "cycle": CICLO_DO_ASAAS[ciclo],
-            "description": f"fiance dados — plano {plano}",
-            "externalReference": referencia,
-        },
-    )
+    inicio = hoje or acesso.hoje()
+    descricao = f"fiance dados — plano {plano}"
+    if parcelas is None:
+        criada = asaas._pedir(
+            "POST",
+            "/subscriptions",
+            {
+                "customer": cliente_id,
+                "billingType": "UNDEFINED",
+                "value": centavos / 100,
+                "nextDueDate": inicio.isoformat(),
+                "cycle": CICLO_DO_ASAAS[ciclo],
+                "description": descricao,
+                "externalReference": referencia,
+            },
+        )
+        asaas_id, pagar_em = criada["id"], None
+    else:
+        primeira = asaas._pedir(
+            "POST",
+            "/payments",
+            {
+                "customer": cliente_id,
+                "billingType": "CREDIT_CARD",
+                "installmentCount": parcelas,
+                "totalValue": centavos / 100,
+                "dueDate": inicio.isoformat(),
+                "description": f"{descricao}, anual em {parcelas}x",
+                "externalReference": referencia,
+            },
+        )
+        asaas_id, pagar_em = primeira["installment"], primeira.get("invoiceUrl")
     with engine.begin() as conn:
         conn.execute(
             sa.text(
                 "INSERT INTO acesso.assinatura (conta_id, plano, ciclo, asaas_cliente, "
-                "asaas_assinatura) VALUES (:c, :p, :ci, :cl, :a)"
+                "asaas_assinatura, parcelas, inicio) VALUES (:c, :p, :ci, :cl, :a, :n, :i)"
             ),
-            {"c": conta_id, "p": plano, "ci": ciclo, "cl": cliente_id, "a": assinatura["id"]},
+            {
+                "c": conta_id,
+                "p": plano,
+                "ci": ciclo,
+                "cl": cliente_id,
+                "a": asaas_id,
+                "n": parcelas,
+                "i": inicio if parcelas else None,
+            },
         )
         if vivas:
             conn.execute(
@@ -252,20 +290,23 @@ def criar_assinatura(
                     "UPDATE acesso.assinatura SET situacao = 'substituida', "
                     "cancelamento_pendente = true WHERE asaas_assinatura = ANY(:a)"
                 ),
-                {"a": vivas},
+                {"a": [v.asaas_assinatura for v in vivas]},
             )
     for antiga in vivas:
-        _cancelar_no_asaas(engine, asaas, antiga)
-    try:
-        pagar_em = link_em_aberto(asaas, assinatura["id"])
-    except (httpx.HTTPError, acesso.SemAcesso):
-        pagar_em = None
-    return {"assinatura": assinatura["id"], "pagar_em": pagar_em}
+        _cancelar_no_asaas(engine, asaas, antiga.asaas_assinatura, antiga.parcelado)
+    if pagar_em is None:
+        try:
+            pagar_em = link_em_aberto(asaas, asaas_id, parcelas is not None)
+        except (httpx.HTTPError, acesso.SemAcesso):
+            pagar_em = None
+    return {"assinatura": asaas_id, "pagar_em": pagar_em}
 
 
-def _cancelar_no_asaas(engine: sa.Engine, asaas: Asaas, assinatura_id: str) -> bool:
+def _cancelar_no_asaas(
+    engine: sa.Engine, asaas: Asaas, assinatura_id: str, parcelado: bool
+) -> bool:
     try:
-        asaas._pedir("DELETE", f"/subscriptions/{assinatura_id}", ausente_vale={})
+        asaas._pedir("DELETE", _rota(assinatura_id, parcelado), ausente_vale={})
     except (httpx.HTTPError, acesso.SemAcesso):
         return False
     with engine.begin() as conn:
@@ -284,17 +325,14 @@ def remover_conta(engine: sa.Engine, asaas: Asaas | None, conta_id: int) -> None
         ativa = conn.execute(
             sa.text("SELECT ativa FROM acesso.conta WHERE id = :id"), {"id": conta_id}
         ).scalar()
-        vivas = (
-            conn.execute(
-                sa.text(
-                    "SELECT asaas_assinatura FROM acesso.assinatura WHERE conta_id = :id "
-                    "AND (situacao IN ('aguardando', 'ativa') OR cancelamento_pendente)"
-                ),
-                {"id": conta_id},
-            )
-            .scalars()
-            .all()
-        )
+        vivas = conn.execute(
+            sa.text(
+                "SELECT asaas_assinatura, parcelas IS NOT NULL AS parcelado "
+                "FROM acesso.assinatura WHERE conta_id = :id "
+                "AND (situacao IN ('aguardando', 'ativa') OR cancelamento_pendente)"
+            ),
+            {"id": conta_id},
+        ).all()
     if ativa is None:
         raise acesso.SemAcesso(404, "Conta não encontrada.")
     if ativa:
@@ -304,16 +342,16 @@ def remover_conta(engine: sa.Engine, asaas: Asaas | None, conta_id: int) -> None
             409,
             "A conta tem assinatura viva no Asaas e a cobrança está desligada: cancele lá antes.",
         )
-    for assinatura_id in vivas:
-        asaas._pedir("DELETE", f"/subscriptions/{assinatura_id}", ausente_vale={})
+    for viva in vivas:
+        asaas._pedir("DELETE", _rota(viva.asaas_assinatura, viva.parcelado), ausente_vale={})
     acesso.remover_conta(engine, conta_id)
 
 
-def link_em_aberto(asaas: Asaas, assinatura_id: str) -> str | None:
+def link_em_aberto(asaas: Asaas, assinatura_id: str, parcelado: bool = False) -> str | None:
     for status in EM_ABERTO:
         cobrancas = (
             asaas._pedir(
-                "GET", f"/subscriptions/{assinatura_id}/payments", params={"status": status}
+                "GET", f"{_rota(assinatura_id, parcelado)}/payments", params={"status": status}
             ).get("data")
             or []
         )
@@ -399,10 +437,14 @@ def conciliar(engine: sa.Engine, asaas: Asaas, pagamento: dict) -> str:
         ).first()
         assinatura = conn.execute(
             sa.text(
-                "SELECT id, conta_id, plano, ciclo, situacao FROM acesso.assinatura "
-                "WHERE asaas_assinatura = :a"
+                "SELECT id, conta_id, plano, ciclo, situacao, parcelas, inicio, asaas_assinatura "
+                "FROM acesso.assinatura WHERE asaas_assinatura = :a"
             ),
-            {"a": pagamento.get("subscription") or (registrado and registrado.asaas_assinatura)},
+            {
+                "a": pagamento.get("subscription")
+                or pagamento.get("installment")
+                or (registrado and registrado.asaas_assinatura)
+            },
         ).first()
     if assinatura is None:
         return "ignorado: assinatura que não é nossa"
@@ -421,6 +463,10 @@ def conciliar(engine: sa.Engine, asaas: Asaas, pagamento: dict) -> str:
     return _desfazer(engine, pagamento_id, assinatura, vence, status or "removida")
 
 
+def _cobre_ate(assinatura, vence: date) -> date:
+    return _somar_ciclo(assinatura.inicio if assinatura.parcelas else vence, assinatura.ciclo)
+
+
 def _gravar_pagamento(conn, pagamento_id: str, assinatura, vence: date, situacao: str) -> bool:
     return (
         conn.execute(
@@ -434,7 +480,7 @@ def _gravar_pagamento(conn, pagamento_id: str, assinatura, vence: date, situacao
                 "id": pagamento_id,
                 "a": assinatura.id,
                 "v": vence,
-                "ate": _somar_ciclo(vence, assinatura.ciclo),
+                "ate": _cobre_ate(assinatura, vence),
                 "s": situacao,
             },
         ).first()
@@ -454,25 +500,32 @@ def _confirmar(engine: sa.Engine, pagamento_id: str, assinatura, vence: date) ->
             ),
             {
                 "p": assinatura.plano,
-                "ate": _somar_ciclo(vence, assinatura.ciclo),
+                "ate": _cobre_ate(assinatura, vence),
                 "c": assinatura.conta_id,
             },
         )
         conn.execute(
             sa.text(
-                "UPDATE acesso.assinatura SET situacao = 'ativa' "
+                "UPDATE acesso.assinatura SET situacao = :s "
                 "WHERE id = :id AND situacao = 'aguardando'"
             ),
-            {"id": assinatura.id},
+            {"s": "quitada" if assinatura.parcelas else "ativa", "id": assinatura.id},
         )
     return f"conta {assinatura.conta_id} no plano {assinatura.plano}"
 
 
 def _desfazer(engine: sa.Engine, pagamento_id: str, assinatura, vence: date, motivo: str) -> str:
-    cobria_ate = _somar_ciclo(vence, assinatura.ciclo)
+    cobria_ate = _cobre_ate(assinatura, vence)
     with engine.begin() as conn:
         if not _gravar_pagamento(conn, pagamento_id, assinatura, vence, "estornado"):
             return f"repetido: pagamento já desfeito na conta {assinatura.conta_id}"
+        if assinatura.parcelas:
+            conn.execute(
+                sa.text(
+                    "UPDATE acesso.pagamento SET situacao = 'estornado' WHERE assinatura_id = :a"
+                ),
+                {"a": assinatura.id},
+            )
         anterior = conn.execute(
             sa.text(
                 "SELECT s.plano, p.cobre_ate FROM acesso.pagamento p "
@@ -503,17 +556,33 @@ def _desfazer(engine: sa.Engine, pagamento_id: str, assinatura, vence: date, mot
 def _estornar_da_substituida(
     engine: sa.Engine, asaas: Asaas, pagamento_id: str, assinatura, vence: date, registrado
 ) -> str:
+    if assinatura.parcelas:
+        with engine.connect() as conn:
+            pedido = conn.execute(
+                sa.text(
+                    "SELECT 1 FROM acesso.pagamento WHERE assinatura_id = :a "
+                    "AND situacao = 'estornado' AND asaas_pagamento <> :id"
+                ),
+                {"a": assinatura.id, "id": pagamento_id},
+            ).first()
+        if pedido is not None:
+            with engine.begin() as conn:
+                _gravar_pagamento(conn, pagamento_id, assinatura, vence, "estornado")
+            return f"repetido: estorno do parcelamento já pedido na conta {assinatura.conta_id}"
     if registrado is not None and registrado.situacao == "estornado":
         return (
             f"ignorado: assinatura substituída da conta {assinatura.conta_id}; estornar à mão "
             "(o estorno foi pedido, e o Asaas ainda diz que o pagamento está de pé)"
         )
     try:
-        asaas._pedir(
-            "POST",
-            f"/payments/{pagamento_id}/refund",
-            {"description": "Assinatura substituída por outra da mesma conta."},
-        )
+        if assinatura.parcelas:
+            asaas._pedir("POST", f"{_rota(assinatura.asaas_assinatura, True)}/refund", {})
+        else:
+            asaas._pedir(
+                "POST",
+                f"/payments/{pagamento_id}/refund",
+                {"description": "Assinatura substituída por outra da mesma conta."},
+            )
     except acesso.SemAcesso as erro:
         return (
             f"ignorado: assinatura substituída da conta {assinatura.conta_id}; "
@@ -526,25 +595,18 @@ def _estornar_da_substituida(
 
 def conferir(engine: sa.Engine, asaas: Asaas, dia: date | None = None) -> dict:
     with engine.connect() as conn:
-        vivas = (
-            conn.execute(
-                sa.text(
-                    "SELECT asaas_assinatura FROM acesso.assinatura "
-                    "WHERE situacao IN ('aguardando', 'ativa')"
-                )
+        vivas = conn.execute(
+            sa.text(
+                "SELECT asaas_assinatura, parcelas IS NOT NULL AS parcelado "
+                "FROM acesso.assinatura WHERE situacao IN ('aguardando', 'ativa')"
             )
-            .scalars()
-            .all()
-        )
-        a_cancelar = (
-            conn.execute(
-                sa.text(
-                    "SELECT asaas_assinatura FROM acesso.assinatura WHERE cancelamento_pendente"
-                )
+        ).all()
+        a_cancelar = conn.execute(
+            sa.text(
+                "SELECT asaas_assinatura, parcelas IS NOT NULL AS parcelado "
+                "FROM acesso.assinatura WHERE cancelamento_pendente"
             )
-            .scalars()
-            .all()
-        )
+        ).all()
         confirmados = conn.execute(
             sa.text(
                 "SELECT asaas_pagamento, cobre_ate FROM acesso.pagamento WHERE situacao = 'confirmado'"
@@ -553,10 +615,10 @@ def conferir(engine: sa.Engine, asaas: Asaas, dia: date | None = None) -> dict:
     aplicados: list[str] = []
     falhas: list[str] = []
     for antiga in a_cancelar:
-        if _cancelar_no_asaas(engine, asaas, antiga):
-            aplicados.append(f"assinatura {antiga} cancelada no Asaas")
+        if _cancelar_no_asaas(engine, asaas, antiga.asaas_assinatura, antiga.parcelado):
+            aplicados.append(f"assinatura {antiga.asaas_assinatura} cancelada no Asaas")
         else:
-            falhas.append(f"assinatura {antiga}: o Asaas não cancelou")
+            falhas.append(f"assinatura {antiga.asaas_assinatura}: o Asaas não cancelou")
     conhecidos = {c.asaas_pagamento for c in confirmados}
     vigentes = [c.asaas_pagamento for c in confirmados if c.cobre_ate >= (dia or acesso.hoje())]
     pagamentos: list[dict] = []
@@ -565,14 +627,14 @@ def conferir(engine: sa.Engine, asaas: Asaas, dia: date | None = None) -> dict:
             for status in sorted(LIBERA):
                 pagina = asaas._pedir(
                     "GET",
-                    f"/subscriptions/{viva}/payments",
+                    f"{_rota(viva.asaas_assinatura, viva.parcelado)}/payments",
                     params={"status": status, "limit": 100},
                 )
                 pagamentos += [
                     p for p in pagina.get("data") or [] if str(p.get("id")) not in conhecidos
                 ]
         except (httpx.HTTPError, acesso.SemAcesso) as erro:
-            falhas.append(f"assinatura {viva}: {erro}")
+            falhas.append(f"assinatura {viva.asaas_assinatura}: {erro}")
     for pagamento_id in vigentes:
         try:
             pagamento = _consultar_pagamento(asaas, pagamento_id)

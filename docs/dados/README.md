@@ -32,7 +32,9 @@ compromisso, e a base depende de endpoints da B3 sem contrato
 ## Modelo de negócio
 
 Assinatura mensal ou anual (o anual custa dez meses), **sem plano gratuito**, em dois planos
-públicos. Os preços são hipótese.
+públicos. O anual se paga à vista, com renovação automática, ou em até 12x no cartão, sem juros e
+sem renovação automática ([ADR-035](../decisoes/ADR-035-anual-parcelado-no-cartao.md)). Os preços
+são hipótese.
 
 | Plano | Por minuto | Por dia | Histórico | Chaves | Recursos além do básico | Por mês | Na página |
 |---|---|---|---|---|---|---|---|
@@ -164,9 +166,19 @@ endereço.
 | `cep` | obrigatório, oito dígitos | só no Asaas |
 | `numero` | obrigatório, até 10 caracteres (`S/N` vale) | só no Asaas |
 | `telefone` | opcional; celular com DDD, para o lembrete do Asaas | só no Asaas |
+| `parcelas` | opcional, de 2 a 12, só com `ciclo` anual: o anual parcelado no cartão | na assinatura |
 
-Documento, CEP ou telefone inválido respondem 422 antes de qualquer gravação e de qualquer chamada
-ao Asaas. Cliente e assinatura levam `externalReference` com o id da conta.
+Documento, CEP, telefone ou parcelas inválidos respondem 422 antes de qualquer gravação e de
+qualquer chamada ao Asaas. Cliente e assinatura levam `externalReference` com o id da conta.
+
+**O anual parcelado** ([ADR-035](../decisoes/ADR-035-anual-parcelado-no-cartao.md)) não é assinatura
+no Asaas: é uma cobrança parcelada no cartão (`POST /payments` com `installmentCount` e
+`totalValue`), e `acesso.assinatura` guarda o id do parcelamento em `asaas_assinatura`, com
+`parcelas` e `inicio`. A primeira parcela confirmada libera o ano contado do `inicio`, e a
+assinatura passa a `quitada`: não há recorrência a cancelar, e trocar de plano não mexe nela.
+Estorno ou chargeback de qualquer parcela desfaz o ano inteiro. Não renova sozinho: perto do
+vencimento, a pessoa gera a cobrança do próximo ano em Minha conta. `GET /v1/planos` traz
+`parcelas_no_anual`, o máximo que o portal oferece.
 
 Quem já tem chave assina, renova ou troca de plano pelo `POST /v1/conta/assinatura`, mesmo sem
 pagamento em dia; os dados de quem paga só são pedidos se a conta nunca assinou, porque a renovação
@@ -187,7 +199,7 @@ assinatura gravada aqui. Para cada estado do pagamento:
 | Estado no Asaas | Efeito |
 |---|---|
 | `CONFIRMED`, `RECEIVED`, `RECEIVED_IN_CASH` | Grava o pagamento em `acesso.pagamento` e leva o `pago_ate` ao fim do ciclo. Põe a conta no plano da assinatura só se é ele que estende o `pago_ate`: pagamento antigo não desfaz ajuste à mão |
-| Os mesmos, numa assinatura `substituida` | Pede o estorno ao Asaas. Se ele recusar, ou negar depois, o evento fica com "estornar à mão" |
+| Os mesmos, numa assinatura `substituida` | Pede o estorno ao Asaas, do parcelamento inteiro se for parcelado. Se ele recusar, ou negar depois, o evento fica com "estornar à mão" |
 | Estornado, em chargeback ou removido | Marca o pagamento como estornado. Se era ele que segurava o `pago_ate`, o recua ao último pagamento que segue de pé ou, sem outro, à véspera do vencimento dele |
 | Qualquer outro | Ignorado |
 

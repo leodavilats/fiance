@@ -466,7 +466,8 @@ def resumo_da_conta(engine: sa.Engine, conta_id: int, dia: date | None = None) -
         ).all()
         assinaturas = conn.execute(
             sa.text(
-                "SELECT plano, ciclo, situacao, criada_em, asaas_assinatura FROM acesso.assinatura "
+                "SELECT plano, ciclo, parcelas, situacao, criada_em, asaas_assinatura "
+                "FROM acesso.assinatura "
                 "WHERE conta_id = :id ORDER BY criada_em DESC, id DESC"
             ),
             {"id": conta_id},

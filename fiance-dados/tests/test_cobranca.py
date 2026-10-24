@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import json
 import threading
-from datetime import date
+from datetime import date, timedelta
 
 import httpx
 import pytest
 import sqlalchemy as sa
 from fastapi.testclient import TestClient
 
-from dadosapi import app, cobranca
+from dadosapi import acesso, app, cobranca
 from dadosapi.app import criar
 from dadosapi.config import Configuracao
 from tests.conftest import TOKEN, criar_conta
@@ -48,8 +48,33 @@ def asaas(pedidos, pagamentos, recusas):
         if (pedido.method, rota) in recusas:
             erro = {"errors": [{"description": "recusado no teste"}]}
             return httpx.Response(recusas[(pedido.method, rota)], json=erro)
-        if pedido.method == "DELETE" and rota.startswith("/v3/subscriptions/"):
+        if pedido.method == "DELETE" and rota.startswith(
+            ("/v3/subscriptions/", "/v3/installments/")
+        ):
             return httpx.Response(200, json={"deleted": True, "id": rota.rsplit("/", 1)[1]})
+        if rota == "/v3/payments":
+            return httpx.Response(
+                200,
+                json={
+                    "id": "pay_parcela_1",
+                    "installment": "ins_1",
+                    "status": "PENDING",
+                    "invoiceUrl": "https://asaas/parcelado/1",
+                },
+            )
+        if rota.startswith("/v3/installments/") and rota.endswith("/refund"):
+            parcelamento = rota.split("/")[3]
+            for p in pagamentos.values():
+                if p.get("installment") == parcelamento:
+                    p["status"] = "REFUNDED"
+            return httpx.Response(200, json={"id": parcelamento})
+        if rota.startswith("/v3/installments/") and rota.endswith("/payments"):
+            parcelamento = rota.split("/")[3]
+            status = pedido.url.params.get("status")
+            cobrancas = [p for p in pagamentos.values() if p.get("installment") == parcelamento]
+            return httpx.Response(
+                200, json={"data": [c for c in cobrancas if status in (None, c["status"])]}
+            )
         if rota == "/v3/customers":
             return httpx.Response(200, json={"id": "cus_1"})
         if rota == "/v3/subscriptions":
@@ -61,7 +86,7 @@ def asaas(pedidos, pagamentos, recusas):
             status = pedido.url.params.get("status")
             cobrancas = [
                 {"status": "PENDING", "invoiceUrl": f"https://asaas/pagar/{numero}"},
-                *(p for p in pagamentos.values() if p["subscription"] == assinatura),
+                *(p for p in pagamentos.values() if p.get("subscription") == assinatura),
             ]
             return httpx.Response(
                 200, json={"data": [c for c in cobrancas if status in (None, c["status"])]}
@@ -715,6 +740,129 @@ def test_convidado_desativado_sai_com_a_cobranca_desligada(cliente):
 
     assert removida.status_code == 204, "a chave usada deixa uso gravado, que sai junto"
     assert cliente.delete(f"/admin/contas/{conta_id}", headers=admin).status_code == 404
+
+
+def _parcelas(pagamentos, quantas: int = 12) -> None:
+    inicio = acesso.hoje()
+    for n in range(1, quantas + 1):
+        pagamentos[f"pay_parcela_{n}"] = {
+            "id": f"pay_parcela_{n}",
+            "status": "PENDING",
+            "installment": "ins_1",
+            "installmentNumber": n,
+            "dueDate": cobranca._somar_ciclo(inicio, "mensal").isoformat()
+            if n > 1
+            else inicio.isoformat(),
+            "invoiceUrl": f"https://asaas/parcelado/{n}",
+        }
+
+
+def _assinar_parcelado(cliente, pagamentos) -> dict:
+    _parcelas(pagamentos)
+    feito = cliente.post("/v1/assinatura", json={**_cadastro(), "ciclo": "anual", "parcelas": 12})
+    assert feito.status_code == 201, feito.text
+    return feito.json()["dados"]
+
+
+def _pagar_no_cartao(cliente, pagamentos) -> None:
+    for p in pagamentos.values():
+        if p.get("installment") == "ins_1":
+            p["status"] = "CONFIRMED"
+    for n in (1, 2):
+        _webhook(cliente, f"evt_parcela_{n}", "PAYMENT_CONFIRMED", f"pay_parcela_{n}")
+
+
+def test_anual_parcelado_vira_parcelamento_no_cartao(com_cobranca, pagamentos, pedidos):
+    feito = _assinar_parcelado(com_cobranca, pagamentos)
+
+    corpo = json.loads(next(p for p in pedidos if p.url.path == "/v3/payments").content)
+    assert (corpo["billingType"], corpo["installmentCount"], corpo["totalValue"]) == (
+        "CREDIT_CARD",
+        12,
+        1490.0,
+    )
+    assert not [p for p in pedidos if p.url.path == "/v3/subscriptions"], (
+        "o Asaas não parcela assinatura: o anual dividido é um parcelamento"
+    )
+    assert feito["pagar_em"] == "https://asaas/parcelado/1"
+
+
+def test_parcela_confirmada_libera_o_ano_contado_do_inicio(com_cobranca, pagamentos):
+    feito = _assinar_parcelado(com_cobranca, pagamentos)
+    chave = {"Authorization": f"Bearer {feito['chave']}"}
+
+    _pagar_no_cartao(com_cobranca, pagamentos)
+
+    dados = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]
+    assert dados["pago_ate"] == cobranca._somar_ciclo(acesso.hoje(), "anual").isoformat(), (
+        "o ano conta do início, não do vencimento de cada parcela"
+    )
+    assert (dados["assinatura"]["situacao"], dados["assinatura"]["parcelas"]) == ("quitada", 12)
+    assert com_cobranca.get("/v1/ativos", headers=chave).status_code == 200
+
+
+def test_estorno_de_uma_parcela_desfaz_o_ano_inteiro(com_cobranca, pagamentos):
+    feito = _assinar_parcelado(com_cobranca, pagamentos)
+    chave = {"Authorization": f"Bearer {feito['chave']}"}
+    _pagar_no_cartao(com_cobranca, pagamentos)
+
+    pagamentos["pay_parcela_1"]["status"] = "REFUNDED"
+    pagamentos["pay_parcela_2"]["status"] = "REFUNDED"
+    primeira = _webhook(com_cobranca, "evt_estorno_1", "PAYMENT_REFUNDED", "pay_parcela_1")
+    segunda = _webhook(com_cobranca, "evt_estorno_2", "PAYMENT_REFUNDED", "pay_parcela_2")
+
+    assert "pagamento desfeito" in primeira and "pago até" in primeira
+    assert segunda.startswith("repetido"), "o parcelamento é uma compra só: cai inteiro uma vez"
+    vespera = (acesso.hoje() - timedelta(days=1)).isoformat()
+    assert com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["pago_ate"] == vespera
+
+
+def test_parcelas_so_no_anual(com_cobranca, pedidos, bancos):
+    resposta = com_cobranca.post("/v1/assinatura", json={**_cadastro(), "parcelas": 12})
+
+    assert resposta.status_code == 422 and "anual" in resposta.json()["erro"]
+    assert pedidos == []
+    with bancos.acesso.connect() as conn:
+        assert conn.execute(sa.text("SELECT count(*) FROM acesso.conta")).scalar_one() == 0
+
+
+def test_trocar_de_plano_nao_mexe_no_parcelado_ja_pago(com_cobranca, pagamentos, pedidos):
+    feito = _assinar_parcelado(com_cobranca, pagamentos)
+    chave = {"Authorization": f"Bearer {feito['chave']}"}
+    _pagar_no_cartao(com_cobranca, pagamentos)
+
+    com_cobranca.post("/v1/conta/assinatura", json={"plano": "essencial"}, headers=chave)
+
+    assert not [p for p in pedidos if p.method == "DELETE"], (
+        "o parcelado pago já foi cobrado no cartão: não há recorrência a cancelar"
+    )
+
+
+def test_parcelado_que_nao_foi_pago_cai_no_asaas_quando_substituido(
+    com_cobranca, pagamentos, pedidos
+):
+    feito = _assinar_parcelado(com_cobranca, pagamentos)
+    chave = {"Authorization": f"Bearer {feito['chave']}"}
+
+    com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=chave)
+
+    assert ("DELETE", "/v3/installments/ins_1") in [(p.method, p.url.path) for p in pedidos]
+
+
+def test_parcelado_pago_depois_de_substituido_e_estornado_inteiro(
+    com_cobranca, pagamentos, pedidos
+):
+    feito = _assinar_parcelado(com_cobranca, pagamentos)
+    chave = {"Authorization": f"Bearer {feito['chave']}"}
+    com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=chave)
+
+    for p in pagamentos.values():
+        if p.get("installment") == "ins_1":
+            p["status"] = "CONFIRMED"
+    primeira = _webhook(com_cobranca, "evt_p1", "PAYMENT_CONFIRMED", "pay_parcela_1")
+
+    assert primeira.startswith("estornado:")
+    assert ("POST", "/v3/installments/ins_1/refund") in [(p.method, p.url.path) for p in pedidos]
 
 
 def test_a_conferencia_roda_sozinha_ate_parar(monkeypatch):

@@ -599,6 +599,7 @@ const { dados, proximo } = await r.json();</code></pre>
           <div><label for="cadastro-plano">Plano</label><select id="cadastro-plano"></select></div>
           <div><label for="cadastro-ciclo">Ciclo</label><select id="cadastro-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
         </div>
+        <div id="cadastro-pagamento" class="escondido"><label for="cadastro-parcelas">Pagamento do anual</label><select id="cadastro-parcelas"></select></div>
         <div><label for="cadastro-nome">Nome ou razão social</label><input id="cadastro-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
         <div class="duas">
           <div><label for="cadastro-email">E-mail</label><input id="cadastro-email" type="email" required maxlength="200" autocomplete="email"></div>
@@ -675,6 +676,7 @@ const { dados, proximo } = await r.json();</code></pre>
                 <div><label for="assinar-plano">Plano</label><select id="assinar-plano"></select></div>
                 <div><label for="assinar-ciclo">Ciclo</label><select id="assinar-ciclo"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></div>
               </div>
+              <div id="assinar-pagamento" class="escondido"><label for="assinar-parcelas">Pagamento do anual</label><select id="assinar-parcelas"></select></div>
               <div id="assinar-cadastro" class="assinar">
                 <div class="duas">
                   <div><label for="assinar-nome">Nome ou razão social</label><input id="assinar-nome" required minlength="2" maxlength="200" autocomplete="name"></div>
@@ -1045,7 +1047,7 @@ function acaoDoPlano(resposta, p) {
     const a = html("a", estilo, `Assinar o ${p.nome}`);
     a.href = sessionStorage.getItem(CHAVE) ? "#conta" : "#assinar";
     a.addEventListener("click", () => {
-      for (const prefixo of ["assinar", "cadastro"]) { $(`${prefixo}-plano`).value = p.codigo; $(`${prefixo}-ciclo`).value = ciclo; }
+      for (const prefixo of ["assinar", "cadastro"]) { $(`${prefixo}-plano`).value = p.codigo; $(`${prefixo}-ciclo`).value = ciclo; preencherParcelas(prefixo); }
     });
     return a;
   }
@@ -1068,7 +1070,7 @@ function mostrarPlanos(resposta) {
     const preco = html("div", "preco", reaisInteiros(anual ? p.preco_anual_centavos : p.preco_mensal_centavos));
     preco.append(html("small", "", anual ? "/ano" : "/mês"));
     cartao.append(preco, html("p", "anual", anual
-      ? `equivale a ${reaisInteiros(p.preco_anual_centavos / 12)} por mês`
+      ? `equivale a ${reaisInteiros(p.preco_anual_centavos / 12)} por mês` + (resposta.parcelas_no_anual ? `, ou em até ${resposta.parcelas_no_anual}x no cartão` : "")
       : p.preco_anual_centavos ? `ou ${reaisInteiros(p.preco_anual_centavos)} por ano` : ""));
     const lista = html("ul");
     lista.append(
@@ -1187,7 +1189,32 @@ function preencherAssinatura() {
     sel.replaceChildren(...(planosGuardados.dados || []).map((p) => { const o = html("option", "", `${p.nome} · ${reaisInteiros(p.preco_mensal_centavos)}/mês`); o.value = p.codigo; return o; }));
     if (antes) sel.value = antes;
   }
+  for (const prefixo of ["assinar", "cadastro"]) preencherParcelas(prefixo);
 }
+function preencherParcelas(prefixo) {
+  const plano = ((planosGuardados && planosGuardados.dados) || []).find((p) => p.codigo === $(`${prefixo}-plano`).value);
+  const anual = $(`${prefixo}-ciclo`).value === "anual" && plano && plano.preco_anual_centavos;
+  const maximo = (planosGuardados && planosGuardados.parcelas_no_anual) || 0;
+  const sel = $(`${prefixo}-parcelas`), antes = sel.value;
+  $(`${prefixo}-pagamento`).classList.toggle("escondido", !anual || maximo < 2);
+  if (!anual) { sel.replaceChildren(); return; }
+  const avista = html("option", "", `À vista, ${reaisInteiros(plano.preco_anual_centavos)} — Pix, boleto ou cartão`);
+  avista.value = "";
+  const opcoes = [avista];
+  for (let n = 2; n <= maximo; n++) {
+    const o = html("option", "", `${n}x de R$ ${reais.format(plano.preco_anual_centavos / 100 / n)} no cartão, sem juros`);
+    o.value = String(n);
+    opcoes.push(o);
+  }
+  sel.replaceChildren(...opcoes);
+  sel.value = antes;
+  if (sel.selectedIndex < 0) sel.value = "";
+}
+for (const prefixo of ["assinar", "cadastro"]) {
+  for (const campo of ["plano", "ciclo"]) $(`${prefixo}-${campo}`).addEventListener("change", () => preencherParcelas(prefixo));
+}
+const parcelasEscolhidas = (prefixo) => Number($(`${prefixo}-parcelas`).value) || null;
+const cicloDaAssinatura = (a) => (a.parcelas ? `anual em ${a.parcelas}x no cartão` : a.ciclo);
 function botaoCopiar(texto) {
   const copiar = html("button", "botao contorno pequeno", "Copiar");
   copiar.type = "button";
@@ -1218,7 +1245,7 @@ function desenharSituacao(conta) {
   let titulo, texto;
   if (aguardando) {
     titulo = "Aguardando o pagamento";
-    texto = `Assinatura do ${nomeDoPlano(a.plano)}, ${a.ciclo}. ` + (bloqueada
+    texto = `Assinatura do ${nomeDoPlano(a.plano)}, ${cicloDaAssinatura(a)}. ` + (bloqueada
       ? "As chaves já existem e passam a funcionar quando o Asaas confirmar o pagamento: no Pix e no cartão, em minutos; no boleto, quando o banco compensar."
       : `Até a confirmação, a conta segue no ${conta.plano_nome}.`);
   } else if (s === "sem_pagamento") {
@@ -1257,6 +1284,9 @@ function desenharAssinatura(conta) {
   if (!conta.plano_pago) {
     titulo = "Assinar um plano";
     aviso = `Quando o pagamento for confirmado, a conta passa do ${conta.plano_nome} para o plano assinado.`;
+  } else if (a && a.situacao === "quitada") {
+    titulo = "Próximo ano ou outro plano";
+    aviso = "O anual parcelado não renova sozinho: perto do vencimento, gere aqui a cobrança do próximo ano." + (conta.pago_ate ? ` O que já foi pago vale até ${dia(conta.pago_ate)}.` : "");
   } else if (!viva) {
     titulo = "Renovar";
     aviso = "Gera uma cobrança nova no plano e no ciclo escolhidos.";
@@ -1370,7 +1400,7 @@ $("form-assinar").onsubmit = async (evento) => {
   resultado.textContent = "Gerando o link…";
   $("erro-painel").textContent = "";
   try {
-    const corpo = { plano: $("assinar-plano").value, ciclo: $("assinar-ciclo").value };
+    const corpo = { plano: $("assinar-plano").value, ciclo: $("assinar-ciclo").value, parcelas: parcelasEscolhidas("assinar") };
     if (!contaAtual.cadastro_de_cobranca) Object.assign(corpo, dadosDeQuemPaga("assinar"));
     const r = (await chamar("POST", "/v1/conta/assinatura", corpo)).dados;
     if (r.pagar_em) resultado.replaceChildren("Assinatura criada. ", linkDePagamento("Abrir o pagamento", r.pagar_em, ""), ". O acesso muda quando o pagamento for confirmado.");
@@ -1396,7 +1426,7 @@ $("form-cadastro").onsubmit = async (evento) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         plano: $("cadastro-plano").value, ciclo: $("cadastro-ciclo").value,
-        email: $("cadastro-email").value.trim(), ...dadosDeQuemPaga("cadastro"),
+        email: $("cadastro-email").value.trim(), parcelas: parcelasEscolhidas("cadastro"), ...dadosDeQuemPaga("cadastro"),
       }),
     });
   } catch {
