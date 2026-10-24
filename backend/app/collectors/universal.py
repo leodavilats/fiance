@@ -5,14 +5,15 @@ import logging
 import re
 import threading
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from datetime import time as hora
 from zoneinfo import ZoneInfo
 
 from app.collectors import circuit, mercado, plausibility
 from app.core import cache
+from app.core.brt import now_brt
 from app.core.observability import record_external_call
-from app.core.pregao import em_pregao
+from app.core.pregao import proxima_carga, ultimo_pregao_carregado
 from app.core.universe import get_type_map
 from app.models.enums import AssetType
 
@@ -23,17 +24,16 @@ class UnsupportedTickerError(ValueError):
     pass
 
 
-FUND_TTL_PREGAO = 30 * 60
-FUND_TTL_FECHADO = 12 * 3600
+REVALIDAR = 30 * 60
 
-FUND_TTL = FUND_TTL_FECHADO
-
-HIST_TTL = 12 * 3600
 DIV_TTL = 24 * 3600
 
 
-def fund_ttl(momento=None) -> int:
-    return FUND_TTL_PREGAO if em_pregao(momento) else FUND_TTL_FECHADO
+def validade(pregao: date | None, momento: datetime | None = None) -> int:
+    agora = momento or now_brt()
+    if pregao is None or pregao < ultimo_pregao_carregado(agora):
+        return REVALIDAR
+    return max(60, int((proxima_carga(agora) - agora).total_seconds()))
 
 
 _FETCH_SEMAPHORE = asyncio.Semaphore(30)
@@ -361,10 +361,31 @@ def _raw_key(base: str) -> str:
     return f"mercado_raw:{base}"
 
 
-def _guardar_raw(base: str, pacote: dict | None) -> None:
-    cache.set(
-        _raw_key(base), pacote if pacote else _AUSENTE, fund_ttl() if pacote else _AUSENTE_TTL
-    )
+_PREGAO_KEY = "mercado_pregao_da_base"
+
+
+def pregao_da_base() -> date | None:
+    cached = cache.get(_PREGAO_KEY)
+    if cached:
+        return date.fromisoformat(cached)
+    if not circuit.allows(_PROVEDOR):
+        return None
+    try:
+        pregao = mercado.ler_pregao_da_base()
+    except Exception as e:
+        logger.warning("A base de mercado não disse até que pregão vai: %s", e)
+        return None
+    if pregao is not None:
+        cache.set(_PREGAO_KEY, pregao.isoformat(), validade(pregao))
+    return pregao
+
+
+def validade_do_mercado() -> int:
+    return validade(pregao_da_base())
+
+
+def _guardar_raw(base: str, pacote: dict | None, prazo: int) -> None:
+    cache.set(_raw_key(base), pacote if pacote else _AUSENTE, prazo if pacote else _AUSENTE_TTL)
 
 
 def _ler_raw(base: str) -> dict | None:
@@ -384,8 +405,9 @@ def _buscar(bases: list[str]) -> bool:
         circuit.record_failure(_PROVEDOR, type(e).__name__)
         logger.warning("A base de mercado falhou para %d tickers: %s", len(bases), e)
         return False
+    prazo = validade_do_mercado()
     for base in bases:
-        _guardar_raw(base, pacotes.get(base))
+        _guardar_raw(base, pacotes.get(base), prazo)
     return True
 
 
@@ -501,7 +523,7 @@ async def fetch_asset(symbol: str, asset_type: AssetType | None = None) -> Asset
         snap = await asyncio.to_thread(_fetch_sync, symbol, asset_type)
 
     if snap:
-        cache.set(ck, snap.to_dict(), fund_ttl())
+        cache.set(ck, snap.to_dict(), await asyncio.to_thread(validade_do_mercado))
 
     return snap
 
@@ -533,7 +555,7 @@ async def fetch_history_universal(symbol: str, period: str = "1y") -> dict[str, 
     series = await asyncio.to_thread(_history_sync, symbol, period)
 
     if series:
-        cache.set(ck, series, HIST_TTL)
+        cache.set(ck, series, await asyncio.to_thread(validade_do_mercado))
 
     return series
 
@@ -552,7 +574,7 @@ async def fetch_ibov_history(days: int = 365) -> dict[str, float]:
     except Exception as e:
         logger.warning("Histórico do Ibovespa não saiu da base de mercado: %s", e)
         return {}
-    cache.set(ck, series, HIST_TTL)
+    cache.set(ck, series, await asyncio.to_thread(validade_do_mercado))
     return series
 
 

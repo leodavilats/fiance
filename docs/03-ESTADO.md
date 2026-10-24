@@ -214,7 +214,7 @@ Nada cobra dinheiro hoje. A cerca de plano está **desligada** (`ENTITLEMENTS_EN
 | BCB SGS, direto | `[ATUAL]` | CDI, Selic, IPCA e a Selic mensal (4189), lidos pelo backend no BCB, sem passar pela base (`collectors/rates.py`) |
 
 Proteções ativas: disjuntor por fonte, cache com idade, faixa de plausibilidade, coleta em lote,
-portão de pregão. Detalhes em [app/arquitetura](app/arquitetura.md).
+cache que vence na carga da base. Detalhes em [app/arquitetura](app/arquitetura.md).
 
 ### `[SEM CLIENTE]`
 

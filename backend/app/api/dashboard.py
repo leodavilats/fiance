@@ -1,7 +1,10 @@
+import asyncio
+
 from fastapi import APIRouter
 
 from app.collectors.rates import get_rates
-from app.collectors.universal import fund_ttl
+from app.collectors.universal import pregao_da_base, validade
+from app.core.pregao import ultimo_pregao_carregado
 from app.models import DashboardResponse, DataFreshness
 from app.services import (
     DashboardService,
@@ -36,11 +39,12 @@ async def dashboard() -> DashboardResponse:
     goals = goal_service.goals_for_judgement()
 
     age = await opportunity_service.market_data_age_seconds()
+    pregao = await asyncio.to_thread(pregao_da_base)
     freshness = DataFreshness(
         rates_source=get_rates()["source"],
         market_data_age_seconds=round(age, 1) if age is not None else None,
-        market_data_stale=age is not None and age > fund_ttl(),
-        quotes_ttl_seconds=fund_ttl(),
+        market_data_stale=pregao is not None and pregao < ultimo_pregao_carregado(),
+        quotes_ttl_seconds=validade(pregao),
     )
 
     received = dividends_service.list_received()

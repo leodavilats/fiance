@@ -210,13 +210,19 @@ meia hora.
 | Leitura em lote | 50 tickers por chamada a `/v1/retratos` | `collectors/universal.prefetch` |
 | Marcador de inexistente | 6h — tem de durar mais que o ciclo de varredura | idem |
 | Somente leitura | O backend não abre a base de mercado; na `fiance-dados`, toda conexão de leitura faz `SET ROLE mercado_leitura` e `SET default_transaction_read_only = on` | `fiance-dados/dadosapi/banco.py` |
-| Portão de pregão | 10h–18h30 em dia com pregão na B3; fora disso a varredura do universo serve a última varredura em cache | `core/pregao.py` |
+| Validade pela carga | Cotação, histórico e varredura valem até a próxima carga da base; com a base atrasada, 30 min | `collectors/universal.py::validade` |
 
 O dado chega em lote: o `data-job` carrega a base uma vez por dia útil, às 23h de Brasília (cron
-`0 2 * * 2-6`, UTC). Reler a base fora do pregão não traz nada novo, e o portão evita a varredura
-sem motivo. Ele **não** se aplica a: busca de um ativo pedido por uma pessoa às 22h, ou num feriado;
-servir cache no fim de semana. A janela vai da abertura (`ABERTURA`, 10h) ao fechamento
-(`FECHAMENTO`, 18h30).
+`0 2 * * 2-6`, UTC). Entre duas cargas, reler a base não traz nada novo; logo depois de uma, traz o
+fechamento do dia. Por isso o dado de mercado não tem prazo fixo: vale até a próxima carga
+(`core/pregao.py::proxima_carga`, às 23h do próximo dia de pregão). O backend pergunta à
+`fiance-dados` qual o último pregão da base (`/v1/atualidade`) e compara com o que ela já deveria
+ter (`ultimo_pregao_carregado`); enquanto falta, porque a carga está rodando ou atrasou, tudo
+revalida em 30 min (`REVALIDAR`), e o job de varredura, a cada 15, pega o pregão novo assim que
+ele chega. Sem resposta da base, o prazo também é de 30 min, e a falha não fica guardada.
+
+O aviso de dado velho do resumo (`freshness.market_data_stale`) acende quando a base não tem o
+pregão que já deveria ter — não pela idade do fechamento, que de manhã é sempre de ontem.
 
 **O calendário é calculado, sem rede e sem banco** (`core/pregao.py::dias_sem_pregao`):
 
@@ -225,11 +231,11 @@ servir cache no fim de semana. A janela vai da abertura (`ABERTURA`, 10h) ao fec
 - móveis, pela Páscoa (`pascoa`): segunda e terça de Carnaval, Sexta-feira Santa, Corpus Christi;
 - os dias sem pregão da própria B3: 24/12 e 31/12.
 
-Feriado municipal ou estadual de São Paulo (25/1, 9/7) **não** fecha a janela: a B3 funciona neles.
-Na Quarta-feira de Cinzas o pregão começa às 13h, e a janela abre às 13h (`abertura`). Feriado que
-cai no fim de semana não se transfere. O instante com fuso é lido em horário de Brasília. Um
-fechamento extraordinário que a B3 anuncie fora dessas regras não entra sozinho: é linha nova no
-cálculo.
+Feriado municipal ou estadual de São Paulo (25/1, 9/7) **não** é dia sem pregão: a B3 funciona
+neles, e a Quarta-feira de Cinzas também, à tarde. Feriado que cai no fim de semana não se
+transfere. O instante com fuso é lido em horário de Brasília. Um fechamento extraordinário que a B3
+anuncie fora dessas regras não entra sozinho: é linha nova no cálculo — até lá, naquele dia a base
+parece atrasada e o backend revalida a cada 30 min.
 
 ### Cache
 

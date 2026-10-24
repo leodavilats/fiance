@@ -89,8 +89,8 @@ Vale em todas as partes, e cada uma o aplica no seu ponto:
 
 O dado de mercado chega **em lote, uma vez por dia útil**: o `data-job` roda às 23h de Brasília,
 depois de cada pregão, e proventos e eventos da B3 às sextas. Tudo o que vem depois — a API, o app,
-o painel — serve o último fechamento, nunca o pregão em andamento. Por isso o app só varre o
-universo dentro do horário de pregão: fora dele, reler a base não traz nada novo.
+o painel — serve o último fechamento, nunca o pregão em andamento. Por isso o app guarda o dado de
+mercado até a próxima carga, e não por um prazo fixo: durante o dia, reler a base não traz nada novo.
 
 ## Operação
 

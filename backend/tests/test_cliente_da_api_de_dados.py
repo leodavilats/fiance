@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import date
+
 import httpx
 import pytest
 
 from app.collectors import mercado
+from app.collectors.mercado import ler_pregao_da_base
 
 
 def _retrato(codigo: str) -> dict:
@@ -43,6 +46,10 @@ def api(monkeypatch):
             return httpx.Response(
                 200, json={"dados": [{"codigo": "BBBB3", "tipo": "fii"}], "proximo": None}
             )
+        if rota == "/v1/atualidade":
+            return httpx.Response(200, json={"dados": {
+                "ate": {"cotacao": "2026-10-23", "provento": "2026-10-20"}, "ultima_coleta": None
+            }})  # fmt: skip
         if rota.startswith("/v1/ativos/XPTO3"):
             return httpx.Response(404, json={"erro": "Ativo XPTO3 não encontrado na base."})
         if rota == "/v1/ativos/PETR4/proventos":
@@ -76,6 +83,10 @@ def test_retratos_saem_em_lotes_de_cinquenta_e_viram_o_pacote_do_snapshot(api):
 
 def test_lista_percorre_todas_as_paginas(api):
     assert [a["codigo"] for a in mercado.ler_lista()] == ["AAAA3", "BBBB3"]
+
+
+def test_o_pregao_da_base_e_o_da_ultima_cotacao(api):
+    assert ler_pregao_da_base() == date(2026, 10, 23)
 
 
 def test_ticker_desconhecido_e_ausencia_e_nao_falha(api):

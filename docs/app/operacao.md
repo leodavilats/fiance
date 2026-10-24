@@ -80,9 +80,9 @@ O disjuntor abre depois de falhas repetidas e para de tentar. O rótulo de fonte
 
 1. `GET /data-quality/source` — disjuntor aberto?
 2. A coleta — o painel do laboratório alerta quando a rodada do data-job falha ou a cotação fica velha
-3. Horário — fora de 10h–18h30 em dia com pregão na B3, a varredura do universo não vai à rede
-   por desenho. Feriado nacional, Carnaval e 24 e 31/12 contam como fechados; na Quarta-feira de
-   Cinzas a janela abre às 13h
+3. A carga da noite — a varredura guarda o resultado até a próxima carga da base (23h do próximo
+   dia de pregão). Se o `data-job` não rodou, o backend revalida a cada 30 min e serve o mesmo
+   fechamento
 4. A API de dados — `/saude` da `fiance-dados`, e a chave do `DADOS_API_CHAVE` ativa no `/console`
 5. Log `não há universo em cache` — a lista de tickers da base de mercado falhou e não havia universo vencido
    para servir; `servindo o universo vencido` é a degradação funcionando, não a causa

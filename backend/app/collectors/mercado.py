@@ -82,6 +82,11 @@ def ler_pacotes(codigos: list[str]) -> dict[str, dict]:
     return pacotes
 
 
+def ler_pregao_da_base() -> date | None:
+    cotacao = _get("/v1/atualidade")["dados"]["ate"]["cotacao"]
+    return date.fromisoformat(cotacao[:10]) if cotacao else None
+
+
 def ler_lista() -> list[dict]:
     return [
         {k: a.get(k) for k in ("codigo", "tipo", "nome", "setor", "volume_medio")}

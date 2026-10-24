@@ -15,11 +15,10 @@ from app.analysis.fair_price import (
 from app.analysis.score_ruler import is_highlight
 from app.analysis.scoring import score_opportunity
 from app.analysis.sectors import translate_sector
-from app.collectors.universal import prefetch
+from app.collectors.universal import prefetch, validade_do_mercado
 from app.core import cache
 from app.core.cache_backends import STALE_MARGIN_SECONDS
 from app.core.context import memoize_request
-from app.core.pregao import em_pregao
 from app.core.universe import get_universe
 from app.models import AssetType, OpportunitiesResponse, Opportunity
 from app.models.enums import RiskProfile
@@ -29,7 +28,6 @@ from app.services.valuation import fair_price_inputs_for
 logger = logging.getLogger(__name__)
 
 _SCAN_CACHE_KEY = "opps_market_scan_v3"
-_SCAN_TTL = 20 * 60
 
 _SCAN_STALE_TOLERANCE = STALE_MARGIN_SECONDS
 
@@ -214,13 +212,6 @@ class OpportunityService:
             if cached is not None and stale_by == 0:
                 return self._decode(cached)
 
-            if cached is not None and not em_pregao():
-                logger.info(
-                    "Fora do pregão: servindo scan de %.0f s atrás em vez de varrer.",
-                    stale_by or 0.0,
-                )
-                return self._decode(cached)
-
             universe = sorted(set(await asyncio.to_thread(get_universe)))
             universe_size = len(universe)
 
@@ -252,7 +243,7 @@ class OpportunityService:
                     "items": [r.to_dict() for r in records],
                     "universe_size": universe_size,
                 },
-                _SCAN_TTL,
+                await asyncio.to_thread(validade_do_mercado),
             )
             return records, universe_size
 

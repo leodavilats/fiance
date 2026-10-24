@@ -23,10 +23,12 @@ class TestJobPeriodico:
 
         assert "market-scan-loop" in nomes
 
-    def test_o_intervalo_chega_antes_do_ttl_vencer(self):
-        from app.services.opportunity_service import _SCAN_TTL
+    def test_o_intervalo_chega_antes_da_revalidacao(self):
+        from app.collectors.universal import REVALIDAR
 
-        assert jobs.MARKET_SCAN_INTERVAL < _SCAN_TTL
+        assert jobs.MARKET_SCAN_INTERVAL < REVALIDAR, (
+            "com a base atrasada, o job precisa passar antes de a varredura revalidar"
+        )
 
     def test_o_lock_expira_antes_do_proximo_ciclo(self):
         assert jobs.MARKET_SCAN_INTERVAL * 0.9 < jobs.MARKET_SCAN_INTERVAL

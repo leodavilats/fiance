@@ -94,9 +94,10 @@ python -m ruff format --check app tests
 - **Fonte tem disjuntor.** Aberto, nem tenta.
 - **`CACHE_BACKEND` errado falha alto.** Cair em silêncio para cache por nó faz a mesma pessoa ver
   preços diferentes.
-- **A varredura do universo roda no pregão** (`core/pregao.py`, 10h–18h30 nos dias de pregão da B3).
-  A base muda uma vez por dia; reler fora do pregão não traz nada novo. O portão vale para a
-  varredura, **não** para busca de um ativo pedido por alguém.
+- **Dado de mercado vale até a próxima carga da base** (`universal.validade`). A base vira uma vez
+  por dia de pregão, às 23h (`core/pregao.py::CARGA`, o cron do `data-job`); cotação, histórico e
+  varredura valem até lá. Se a base ainda não tem o pregão que já deveria ter, revalida em 30 min.
+  Mudar o cron do `data-job` exige mudar `CARGA`.
 
 ### API e dados
 

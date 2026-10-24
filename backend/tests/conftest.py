@@ -261,6 +261,10 @@ def _stub_market_data(monkeypatch, request):
     import app.core.universe as universe_mod
 
     monkeypatch.setattr(universe_mod, "_ler_lista", lambda: list(_FAKE_LISTA))
+
+    import app.collectors.mercado as mercado_mod
+
+    monkeypatch.setattr(mercado_mod, "ler_pregao_da_base", lambda: None)
     universe_mod.invalidate_universe_memo()
 
     import app.core.cache as cache_mod

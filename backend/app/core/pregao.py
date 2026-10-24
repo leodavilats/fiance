@@ -5,11 +5,7 @@ from functools import lru_cache
 
 from app.core.brt import BRT, now_brt
 
-ABERTURA = time(10, 0)
-
-ABERTURA_CINZAS = time(13, 0)
-
-FECHAMENTO = time(18, 30)
+CARGA = time(23, 0)  # cron do data-job, 0 2 * * 2-6 em UTC
 
 _FIXOS = (
     (1, 1),
@@ -39,10 +35,6 @@ def pascoa(ano: int) -> date:
     m = (a + 11 * h + 22 * el) // 451
     mes, dia = divmod(h + el - 7 * m + 114, 31)
     return date(ano, mes, dia + 1)
-
-
-def quarta_de_cinzas(ano: int) -> date:
-    return pascoa(ano) - timedelta(days=46)
 
 
 @lru_cache(maxsize=32)
@@ -76,17 +68,22 @@ def deslocar_pregoes(dia: date, pregoes: int) -> date:
     return dia
 
 
-def abertura(dia: date) -> time:
-    return ABERTURA_CINZAS if dia == quarta_de_cinzas(dia.year) else ABERTURA
-
-
-def em_pregao(momento: datetime | None = None) -> bool:
+def _em_brasilia(momento: datetime | None) -> datetime:
     agora = momento or now_brt()
-    if agora.tzinfo is not None:
-        agora = agora.astimezone(BRT)
+    return agora.astimezone(BRT) if agora.tzinfo is not None else agora.replace(tzinfo=BRT)
+
+
+def ultimo_pregao_carregado(momento: datetime | None = None) -> date:
+    agora = _em_brasilia(momento)
     dia = agora.date()
+    if ha_pregao(dia) and agora.time() >= CARGA:
+        return dia
+    return deslocar_pregoes(dia, -1)
 
-    if not ha_pregao(dia):
-        return False
 
-    return abertura(dia) <= agora.time() <= FECHAMENTO
+def proxima_carga(momento: datetime | None = None) -> datetime:
+    agora = _em_brasilia(momento)
+    dia = agora.date()
+    if not (ha_pregao(dia) and agora.time() < CARGA):
+        dia = deslocar_pregoes(dia, 1)
+    return datetime.combine(dia, CARGA, tzinfo=BRT)
