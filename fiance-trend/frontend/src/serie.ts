@@ -76,3 +76,20 @@ export function resumir(serie: Ponto[], proventos: { data_com: string; valor: nu
     saltos: serie.filter((p) => p.salto_sem_evento).length,
   };
 }
+
+export type Janela = [string, string];
+
+export function dentro<T extends { data: string }>(serie: T[], janela: Janela | null): T[] {
+  if (!janela) return serie;
+  return serie.filter((p) => p.data >= janela[0] && p.data <= janela[1]);
+}
+
+export function indicesDaJanela(pontos: { data: string }[], janela: Janela | null): [number, number] {
+  const fim = pontos.length - 1;
+  if (!janela || fim < 0) return [0, Math.max(fim, 0)];
+  const de = pontos.findIndex((p) => p.data >= janela[0]);
+  const depois = pontos.findIndex((p) => p.data > janela[1]);
+  const ate = depois === -1 ? fim : depois - 1;
+  if (de === -1 || ate < de) return [0, fim];
+  return [de, ate];
+}

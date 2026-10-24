@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amostrar, paraOGrafico, recortar, resumir, variacao, type Ponto } from "./serie";
+import { amostrar, dentro, indicesDaJanela, paraOGrafico, recortar, resumir, variacao, type Ponto } from "./serie";
 
 const ponto = (data: string, retorno_acumulado: number, extra: Partial<Ponto> = {}): Ponto => ({
   data,
@@ -56,5 +56,15 @@ describe("serie", () => {
     expect(resumo?.preco).toBe(12);
     expect(resumir(serie.slice(1), [])?.retorno12m).toBeNull();
     expect(resumir(serie, [])?.proventos12m).toBeNull();
+  });
+
+  it("a janela do zoom é por data, e cai nos pontos da amostra mais próximos por dentro", () => {
+    const serie = [ponto("2024-01-02", 100), ponto("2024-01-05", 101), ponto("2024-01-09", 102), ponto("2024-01-12", 103)];
+    expect(dentro(serie, ["2024-01-03", "2024-01-10"]).map((p) => p.data)).toEqual(["2024-01-05", "2024-01-09"]);
+    expect(dentro(serie, null)).toBe(serie);
+    expect(indicesDaJanela(serie, ["2024-01-03", "2024-01-10"])).toEqual([1, 2]);
+    expect(indicesDaJanela(serie, ["2024-01-05", "2024-01-12"])).toEqual([1, 3]);
+    expect(indicesDaJanela(serie, null), "sem zoom, a faixa cobre o período inteiro").toEqual([0, 3]);
+    expect(indicesDaJanela(serie, ["2024-01-06", "2024-01-08"]), "janela sem ponto não some com a faixa").toEqual([0, 3]);
   });
 });
