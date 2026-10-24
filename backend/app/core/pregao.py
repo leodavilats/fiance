@@ -5,7 +5,7 @@ from functools import lru_cache
 
 from app.core.brt import BRT, now_brt
 
-CARGA = time(23, 0)  # cron do data-job, 0 2 * * 2-6 em UTC
+CARGA = time(23, 0)
 
 _FIXOS = (
     (1, 1),
