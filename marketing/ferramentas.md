@@ -19,7 +19,7 @@ chamada à API.
 
 Também não se gera:
 
-- **logotipo** — vem de [marca/kit/](../marca/kit/); IA redesenha o símbolo e quebra o vão entre o
+- **logotipo** — vem de [brand/kit/](../brand/kit/); IA redesenha o símbolo e quebra o vão entre o
   chão e a haste que o faz ler F e não E;
 - **marca de terceiro** — logotipo da B3, da CVM ou de corretora em cena sugere parceria que não
   existe;

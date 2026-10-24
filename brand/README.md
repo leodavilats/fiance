@@ -31,8 +31,8 @@ guarda paleta própria.
 ## Estes arquivos são gerados
 
 ```bash
-python marca/build.py          # escreve; requer Pillow
-python marca/build.py --check  # roda no CI, job `marca`
+python brand/build.py          # escreve; requer Pillow
+python brand/build.py --check  # roda no CI, job `brand`
 ```
 
 Não edite à mão nada do que ele escreve — o `--check` reprova, e com razão: o mesmo desenho vira ícone de
@@ -45,7 +45,7 @@ O gerador escreve estes arquivos:
 |---|---|---|
 | `mobile/assets/brand/icon.png` | ícone do app | `mobile/pubspec.yaml` → `flutter_launcher_icons.image_path` |
 | `mobile/assets/brand/icon_foreground.png` | camada de frente do adaptive icon Android | idem → `adaptive_icon_foreground` |
-| `marca/kit/fiance-*.svg` | kit de referência (símbolo, assinatura, logotipo; `fiance-dados-*` e `fiance-trend-*` para as outras partes) | ninguém em runtime — é material de designer |
+| `brand/kit/fiance-*.svg` | kit de referência (símbolo, assinatura, logotipo; `fiance-dados-*` e `fiance-trend-*` para as outras partes) | ninguém em runtime — é material de designer |
 | `fiance-dados/dadosapi/paginas/portal.html` e `console.html`, entre `<!-- marca -->` e `<!-- favicon -->` | símbolo da dados e o logotipo no cabeçalho, que seguem o tema da página, e o favicon | a API de dados |
 | `fiance-trend/frontend/src/Simbolo.tsx` (`Simbolo` e `Logotipo`) e `fiance-trend/frontend/public/favicon.svg` | símbolo da trend e o logotipo na barra lateral, e o favicon | o painel |
 

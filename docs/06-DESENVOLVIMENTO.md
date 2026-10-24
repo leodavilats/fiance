@@ -27,7 +27,7 @@ cd fiance-trend/backend && python -m ruff format --check pesquisa api tests
 cd fiance-trend/frontend && npm ci && npm run build && npm test
 cd mobile  && flutter analyze && flutter test
 cd mobile  && flutter build apk --release
-python marca/build.py --check                      # requer Pillow
+python brand/build.py --check                      # requer Pillow
 node docs/checar-links.mjs                         # job `documentacao`
 ```
 

@@ -82,7 +82,7 @@ ADAPTIVE_GLYPH_RATIO = 0.42
 SS = 4
 
 
-BRAND_DIR = "marca/kit"
+BRAND_DIR = "brand/kit"
 
 
 _COR = re.compile(
@@ -304,7 +304,7 @@ def _jsx(svg):
 
 def simbolo_tsx(variante, destaque, chao):
     return (
-        "// Gerado por marca/build.py; não edite à mão.\n"
+        "// Gerado por brand/build.py; não edite à mão.\n"
         "export default function Simbolo() {\n"
         "  return (\n    %s\n  );\n}\n\n"
         "export function Logotipo() {\n"
@@ -504,7 +504,7 @@ def check(kit):
         raise SystemExit(
             "marca fora do gerador:\n  "
             + "\n  ".join(bad)
-            + "\nRode: python marca/build.py"
+            + "\nRode: python brand/build.py"
         )
     print("conferido: %d arquivos da marca" % len(kit))
 

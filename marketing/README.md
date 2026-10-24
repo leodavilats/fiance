@@ -18,9 +18,9 @@ do autor, não produto ([ADR-023](../docs/decisoes/ADR-023-fase-pessoal-primeiro
 | [fiance-dados/](fiance-dados/README.md) | A API de dados: público, mensagens, provas, roteiros | Posicionamento pronto, roteiros por fazer |
 | [fiance-app/](fiance-app/README.md) | O app | Sem conteúdo: não está nas lojas |
 
-A marca não mora aqui. Símbolo, assinatura e logotipo vêm de [marca/kit/](../marca/kit/), gerados
-por `marca/build.py`; copiar o desenho para cá cria uma segunda marca
-([marca/README.md](../marca/README.md)).
+A marca não mora aqui. Símbolo, assinatura e logotipo vêm de [brand/kit/](../brand/kit/), gerados
+por `brand/build.py`; copiar o desenho para cá cria uma segunda marca
+([brand/README.md](../brand/README.md)).
 
 ## O que vai para o Git, e o que não vai
 

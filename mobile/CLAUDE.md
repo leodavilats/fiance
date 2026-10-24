@@ -11,7 +11,7 @@ flutter analyze && flutter test
 flutter build apk --release
 ```
 
-- **O ícone do app é gerado** por `marca/build.py`, na raiz. Depois dele, `dart run flutter_launcher_icons`.
+- **O ícone do app é gerado** por `brand/build.py`, na raiz. Depois dele, `dart run flutter_launcher_icons`.
 - **Não rode `dart format`** — reescreve o `design_tokens.dart` e quebra os `if`s de uma linha.
 - **`analyze` e `test` nunca tocam o Gradle.** O build Android é outra metade, e é o comando que
   ninguém roda. Obrigatório ao mexer em plugin, `pubspec.yaml` ou `mobile/android/`.

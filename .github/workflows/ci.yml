@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  marca:
+  brand:
     name: Marca (app, dados e trend)
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +26,7 @@ jobs:
       # O launcher ja carregou a marca antiga por uma versao inteira: era escrito a mao e
       # ninguem o regerava quando a cor mudava.
       - name: Verificar marca (app, portal e console da dados, painel trend)
-        run: python marca/build.py --check
+        run: python brand/build.py --check
 
   documentacao:
     name: Documentação (links)

@@ -18,7 +18,7 @@ Copie para `roteiros/NN-titulo-curto.md`.
 |---|---|---|
 | 0–3 s | Gancho: a dor, numa frase | Leonardo em close |
 | 3–… s | … | Captura real: … · ou cena Veo: … |
-| últimos 5 s | Chamada | Símbolo da fiance-dados (marca/kit) e o endereço |
+| últimos 5 s | Chamada | Símbolo da fiance-dados (brand/kit) e o endereço |
 
 ## Legenda da publicação
 
